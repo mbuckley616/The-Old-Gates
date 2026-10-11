@@ -53,7 +53,9 @@ const list = await page.evaluate(() => { const b = document.getElementById('wm-p
 check('with nothing hovered the panel lists the four under Where your work is', /Where your work is/i.test(list.text) && list.rows === 4 && /Report to/.test(list.text), list);
 const centred = await page.evaluate(() => { const row = document.querySelectorAll('#wm-panel-body .mk-row')[1]; const id = row.dataset.id; row.click(); mapDraw(); const m = mapMarks().find(o => o.id === id); const [sx, sy] = mapToScreen(m.x, m.z); return { id, sel: MAP.sel, dx: Math.round(sx - MAP.cssW / 2), dy: Math.round(sy - MAP.cssH / 2), panel: document.getElementById('wm-panel-body').innerText }; });
 check('a row centres the map on its mark and selects it', centred.sel === centred.id && Math.abs(centred.dx) <= 2 && Math.abs(centred.dy) <= 2 && /u|here/.test(centred.panel), centred);
-await page.evaluate(() => { MAP.sel = null; MAP.hover = null; MAP.zoom = 12; const d = WORLD.siteAnywhere('dunmore'); const s = baseScale() * MAP.zoom; MAP.ox = MAP.cssW / 2 - d.x * s; MAP.oy = MAP.cssH / 2 - d.z * s; mapClamp(); MAP.dirty = true; mapDraw(); });
+// hovered at ×30, where Dunmore's marks stand apart: at ×12 the jobs Session 678 rolls by id put every other name within a pixel of
+// the hovered one, so the rule rightly drew only one (the merge of 11 Oct)
+await page.evaluate(() => { MAP.sel = null; MAP.hover = null; MAP.zoom = 30; const d = WORLD.siteAnywhere('dunmore'); const s = baseScale() * MAP.zoom; MAP.ox = MAP.cssW / 2 - d.x * s; MAP.oy = MAP.cssH / 2 - d.z * s; mapClamp(); MAP.dirty = true; mapDraw(); });
 const seal = await page.evaluate(() => { const r = MAP.cv.getBoundingClientRect(); const o = MAP._marks.find(o => !o.edge); return o && { x: r.left + o.sx, y: r.top + o.sy, id: o.m.id, title: o.m.title }; });
 await page.mouse.move(seal.x - 40, seal.y - 40); await page.mouse.move(seal.x, seal.y);
 const hov = await page.evaluate(() => ({ hover: MAP.hover, panel: document.getElementById('wm-panel-body').innerText }));

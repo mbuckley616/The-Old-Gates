@@ -301,7 +301,10 @@
   function buildRoad(def){
       const A=SITE[def.a],B=SITE[def.b];if(!A||!B)return null;
       ROAD_DEFS.push(def);
-      const ri=ROAD_DEFS.length;
+      // S619 — the bends are seeded by the road itself. They were seeded by ROAD_DEFS.length, the count of roads loaded before
+      // it, so a road and every town planned along it moved with the order the cells loaded in (house ids with them). A home
+      // road keeps the number it always had, its place in HOME_ROAD_DEFS (the home cell loads first); any other, its ends.
+      const hi=HOME_ROAD_DEFS.indexOf(def);const ri=hi>=0?hi+1:1000+String(def.a+'|'+def.b+'|'+(def.via||'')).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)%50000;
       const dx=B.x-A.x,dz=B.z-A.z,L=Math.hypot(dx,dz);
       const nx=-dz/L,nz=dx/L; // left normal
       const ctrl=[{x:A.x,z:A.z}];
@@ -404,20 +407,27 @@
     {
       const p=dungeonWorldPos[e.seed];if(!p)return;const gx=p.x,gz=p.z+33; // just outside the compound gate
       let best=null,bd=1e9;
-      for(const r of ROADS){if(r.def.via==='spur')continue;for(const q of r.pts){const d=Math.hypot(q.x-gx,q.z-gz);if(d<bd){bd=d;best=q;}}}
+      for(const r of ROADS){if(r.def.via==='spur'||r.def.via==='quay')continue;for(const q of r.pts){const d=Math.hypot(q.x-gx,q.z-gz);if(d<bd){bd=d;best=q;}}}
       if(!best)return;
       const n=Math.max(2,Math.round(bd/6));const pts=[];
       for(let i=0;i<=n;i++){const t=i/n;pts.push({x:gx+(best.x-gx)*t,z:gz+(best.z-gz)*t});}
       const rd=registerRoad({a:'door_'+e.seed,b:'road',via:'spur'},pts);if(rd){rd.cell=cellK;const L=LOADED.get(cellK);if(L)L.roads.push(rd);}
     }
   }
-  // Nearest road within RREACH: {d, y, seg} or null.
-  function roadInfo(x,z){
+  // S618 — a port's lane: from the town's ring (the perimeter lane, pad-8 out) straight down to the quay head, graded evenly
+  // from the pad's height to the quay's, so it cuts through a rise rather than climbing it (Portclare's quay lies under a
+  // 13-unit ridge). Its own def, not the site's: the site's roads (sieges, road jobs, the coaches) never find it.
+  function addQuayLane(t){const A=t.quayLane.a,B=t.quayLane.b,L=Math.hypot(B.x-A.x,B.z-A.z);if(L<3)return null;
+    const ya=baseH(A.x,A.z),yb=Math.max(SEA_Y+.6,baseH(B.x,B.z)),n=Math.max(2,Math.round(L/3)),pts=[];
+    for(let i=0;i<=n;i++){const u=i/n;pts.push({x:A.x+(B.x-A.x)*u,z:A.z+(B.z-A.z)*u,y:ya+(yb-ya)*u});}
+    const road={def:{a:'quay_'+t.id,b:'road',via:'quay'},pts};ROADS.push(road);indexRoad(road);return road;}
+  // Nearest road within RREACH: {d, y, seg} or null. noLane: a port's lane is not counted (the town's own plan, S618)
+  function roadInfo(x,z,noLane){
     const arr=RGRID.get(rcell(x,z));
     if(!arr)return null;
     let best=null,bd=RREACH;
     for(let i=0;i<arr.length;i++){
-      const s=RSEG[arr[i]];
+      const s=RSEG[arr[i]];if(noLane&&s.road.def.via==='quay')continue;
       const vx=s.bx-s.ax,vz=s.bz-s.az;
       let t=s.len2>0?((x-s.ax)*vx+(z-s.az)*vz)/s.len2:0;
       t=t<0?0:t>1?1:t;
@@ -517,7 +527,7 @@
         for(const t of SITES){if(t.pad<=0)continue;const dd=Math.hypot(wx-t.x,wz-t.z);const min=t.pad+120;if(dd<min){const dx=wx-t.x,dz=wz-t.z,L=Math.hypot(dx,dz)||1;wx=t.x+dx/L*min;wz=t.z+dz/L*min;}}
       } else if(e.zone==='gen'){
         wx=e.x;wz=e.z;
-        for(let k=0;k<10;k++){const ri=roadInfo(wx,wz);const st=stampAt(wx,wz);
+        for(let k=0;k<10;k++){const ri=roadInfo(wx,wz);const st=e.lairDoor?(stampsNear(wx,wz).find(o=>o.id!=='site_'+e.lairSite&&Math.hypot(wx-o.x,wz-o.z)<o.r)||null):stampAt(wx,wz); /* S702 — a lair's own pad does not push its cavern door out */
           if(ri&&ri.d<=16){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L=Math.hypot(vx,vz)||1;const side=(hash01(e.seed,1,77)<.5?-1:1);wx+=(-vz/L)*side*(18-ri.d+4);wz+=(vx/L)*side*(18-ri.d+4);continue;}
           if(st&&st.kind!=='door'){const dx=wx-st.x,dz=wz-st.z,L=Math.hypot(dx,dz)||1;wx=st.x+dx/L*(st.r+14);wz=st.z+dz/L*(st.r+14);continue;}
           let near=null,nd=1e9;for(const o of stampsNear(wx,wz)){if(o.kind!=='door')continue;const d=Math.hypot(wx-o.x,wz-o.z);if(d<nd){nd=d;near=o;}}
@@ -1182,9 +1192,9 @@
       ax=ch.cx*CHUNK+8+hash01(ch.cx,ch.cz,96)*(CHUNK-16);az=ch.cz*CHUNK+8+hash01(ch.cz,ch.cx,97)*(CHUNK-16);
     }
     for(let i=0;i<count;i++){
-      let ex=ax,ez=az,ok=false;
+      let ex=ax,ez=az,ok=false;const pr=seededRng('packspot',key+':'+i); // S651 — a member's place is drawn from its chunk and index; hash01(i,k,98) named no chunk, so every pack stood in one shape
       for(let k=0;k<8;k++){
-        ex=ax+(hash01(i,k,98)-.5)*14;ez=az+(hash01(k,i,99)-.5)*14;
+        ex=ax+(pr()-.5)*14;ez=az+(pr()-.5)*14;
         if(worldH(ex,ez)>1.5&&slopeNormalY(ex,ez)>.6&&!solidAt(ex,ez)&&!(stampAt(ex,ez)&&stampAt(ex,ez).kind==='site')){ok=true;break;}
       }
       if(!ok)continue;

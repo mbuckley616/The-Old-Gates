@@ -41,7 +41,10 @@ const r = await page.evaluate(() => {
 });
 console.log(JSON.stringify(r));
 const D = r.out.dunmore, P = r.out.portclare;
-check('the untended world over 120 days moves as it did before (52 towns from their own base: mean −6.8, least −77, most 0; S367)', r.world.n === 52 && r.world.mean === -6.8 && r.world.min === -77 && r.world.max === 0, r.world);
+// S683 — Session 679 moved the plague's onset and the war's sieges onto their own seeded streams (by place and day), so the
+// pinned Math.random above no longer draws them: the same 120 days now read mean −6.6, least −66 (−6.8, −77 on c0a5cbc, the
+// commit before; −6.6, −66 on 61d3413, Session 679 itself). The rule of the fractions is unchanged.
+check('the untended world over 120 days moves as it did before (52 towns from their own base: mean −6.6, least −66, most 0; S367, S679)', r.world.n === 52 && r.world.mean === -6.6 && r.world.min === -66 && r.world.max === 0, r.world);
 check('occupied: ten days cost five points more than none (half a point a day, in full)', D.none.p - D.occupied.p === 5 && P.none.p - P.occupied.p === 5, r.out);
 check('owned: ten days bring four points more than none (.4 a day)', D.owned.p - D.none.p === 4 && P.owned.p - P.none.p === 4, r.out);
 check('burned: ten days cost two points more than none (.2 a day)', D.none.p - D.burned.p === 2 && P.none.p - P.burned.p === 2, r.out);

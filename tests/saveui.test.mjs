@@ -4,29 +4,39 @@
 // and full page reloads between them is that, short of a person's hands.
 import { boot, check } from './lib/game.mjs'; import fs from 'fs';
 const g = await boot(); const { page } = g;
+// Session 658: the first two checks failed on CI (8 Oct, three runs on main; the slot empty, the menu open) and never in the
+// container, which runs an older Chromium than CI installs. The store's own words for a failure are kept, and shown in the detail.
+const said = []; page.on('console', m => { if (m.type() === 'error' || /save|store/i.test(m.text())) said.push(m.text().slice(0, 160)); });
 await g.intoWorld();
 const W = (ms) => page.waitForTimeout(ms);
+// the arrival autosave is written as you step into the world; the menu's first save waits for it, as a player's would not need to
+await page.waitForFunction(() => SS.idx.some(e => e.kind === 'auto') || SS.lastErr, null, { timeout: 60000, polling: 250 }).catch(() => {});
+const store = () => page.evaluate(() => ({ db: !!SS.db, fallback: !!SS.fallback, lastErr: SS.lastErr && SS.lastErr.why, retried: SS.retried && SS.retried.why, idx: SS.idx.map(e => e.kind + e.slot + ':' + e.gold) }));
+const arrived = await store();
 const clickRow = (i) => page.evaluate((i) => { const rows = [...document.querySelectorAll('#sl-slots .sl-slot')]; rows[i].click(); return rows[i].querySelector('.sl-slot-name').textContent; }, i);
 const where = await page.evaluate(() => { playerName = 'Wren'; gold = 321; level = 4; return { x: px, z: pz }; });
 
-// a slot, by the menu
-await page.evaluate(() => openSLMenu('save', false)); await W(400);
+// a slot, by the menu (window._since: a failure counts only if it came after the click)
+await page.evaluate(() => { window._since = Date.now(); openSLMenu('save', false); }); await W(400);
 const first = await clickRow(0);
-await page.waitForFunction(() => document.getElementById('slmenu').style.display === 'none' && SS.idx.some(e => e.kind === 'manual' && e.slot === 0), null, { timeout: 30000 }).catch(() => {});
+// written and closed, or failed with its reason (the menu stays open and SS.lastErr names it): up to 90 s, a slow runner's store
+await page.waitForFunction(() => (document.getElementById('slmenu').style.display === 'none' && SS.idx.some(e => e.kind === 'manual' && e.slot === 0)) || (SS.lastErr && SS.lastErr.ts >= _since), null, { timeout: 90000, polling: 250 }).catch(() => {});
 const s1 = await page.evaluate(() => ({ open: document.getElementById('slmenu').style.display, slot: SS.idx.filter(e => e.kind === 'manual').map(e => e.slot + ':' + e.gold) }));
-check('the menu saves to an empty slot and closes', first === '— Empty —' && s1.open === 'none' && s1.slot.includes('0:321'), { first, s1 });
+const ok1 = first === '— Empty —' && s1.open === 'none' && s1.slot.includes('0:321');
+check('the menu saves to an empty slot and closes', ok1, ok1 ? { first, s1, retried: (await store()).retried } : { first, s1, arrived, store: await store(), said });
 
 // an overwrite, by the menu: the first click asks, the second writes
-await page.evaluate(() => { gold = 654; openSLMenu('save', false); }); await W(400);
-const ask = await clickRow(0); await W(600); const still = await page.evaluate(() => SS.idx.find(e => e.kind === 'manual' && e.slot === 0).gold);
+await page.evaluate(() => { gold = 654; window._since = Date.now(); openSLMenu('save', false); }); await W(400);
+const ask = await clickRow(0); await W(600); const still = await page.evaluate(() => (SS.idx.find(e => e.kind === 'manual' && e.slot === 0) || {}).gold);
 await clickRow(0);
-await page.waitForFunction(() => (SS.idx.find(e => e.kind === 'manual' && e.slot === 0) || {}).gold === 654, null, { timeout: 30000 }).catch(() => {});
-const now = await page.evaluate(() => SS.idx.find(e => e.kind === 'manual' && e.slot === 0).gold);
-check('an overwrite asks once, then writes', ask === 'Click again to overwrite' && still === 321 && now === 654, { ask, still, now });
+await page.waitForFunction(() => (SS.idx.find(e => e.kind === 'manual' && e.slot === 0) || {}).gold === 654 || (SS.lastErr && SS.lastErr.ts >= _since), null, { timeout: 90000, polling: 250 }).catch(() => {});
+const now = await page.evaluate(() => (SS.idx.find(e => e.kind === 'manual' && e.slot === 0) || {}).gold);
+const ok2 = ask === 'Click again to overwrite' && still === 321 && now === 654;
+check('an overwrite asks once, then writes', ok2, ok2 ? { ask, still, now } : { ask, still, now, store: await store(), said });
 
 // an autosave, the way the game makes one
-await page.evaluate(() => { gold = 700; SS.lastAuto = 0; saveGame(true); });
-await page.waitForFunction(() => SS.idx.some(e => e.kind === 'auto' && e.gold === 700), null, { timeout: 30000 }).catch(() => {});
+await page.evaluate(() => { gold = 700; window._since = Date.now(); SS.lastAuto = 0; saveGame(true); });
+await page.waitForFunction(() => SS.idx.some(e => e.kind === 'auto' && e.gold === 700) || (SS.lastErr && SS.lastErr.ts >= _since), null, { timeout: 90000, polling: 250 }).catch(() => {});
 const autos = await page.evaluate(() => SS.idx.filter(e => e.kind === 'auto').map(e => e.gold));
 check('an autosave is written', autos.includes(700), autos);
 

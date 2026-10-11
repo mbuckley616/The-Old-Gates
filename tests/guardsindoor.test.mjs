@@ -19,7 +19,7 @@ const shops = await page.evaluate(() => { forceTime(13); worldState.crime = {}; 
 let seen = null;
 for (const id of shops) {
   await enter(id);
-  seen = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null; px = X.x; pz = X.z + .8; jumpY = 0; const K_ = intNPCMesh; if (K_) { K_.userData.amble = null; K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
+  seen = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const X = WORLD.intBox; if (!X) return null; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z); const K_ = intNPCMesh; if (K_) { K_.userData.amble = null; K_.rotation.y = Math.atan2(px - K_.position.x, pz - K_.position.z); } // (S368: the keeper stands and watches the box: the cone is keepercone's, the fine and the guard are this test's)
    
     if (!WORLD.witnessOf(window._h)) return null; WORLD.boxInteract(); for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
     await wait(900); try { closeLoot && closeLoot(); } catch (e) {} return { house: window._h.name, id: window._h.id, bounty: WORLD.bountyAt('dunmore') }; });

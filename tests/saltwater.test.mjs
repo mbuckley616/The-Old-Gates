@@ -79,7 +79,7 @@ await page.evaluate((id) => { const p = WORLD.siteAnywhere(id); px = p.x; pz = p
 
 // 3. the hull, at the note's price, by the shipwright's own topic
 const buy = await page.evaluate((id) => { const S = WORLD.settle.get(id); const n = S && S.npcs.find(n => n.sched && n.sched.shop === 'shipwright'); if (!n) return { none: true };
-  const T = n.def.topics; const t = T.find(x => /^Buy a ship/.test(x.label)); const g0 = gold; const label = t && t.label; const said = t && t.fn(); return { label, said, paid: g0 - gold, ship: !!worldState.ship, name: worldState.ship && worldState.ship.name }; }, there.id);
+  const T = yardOffers(WORLD.siteAnywhere(id)); const t = T.find(x => /^Buy a ship/.test(x.label)); const g0 = gold; const label = t && t.label; const said = t && t.fn(); return { label, said, paid: g0 - gold, ship: !!worldState.ship, name: worldState.ship && worldState.ship.name }; }, there.id);
 const s3 = await sea();
 console.log('hull', JSON.stringify(buy), JSON.stringify(s3));
 check('the shipwright offers the hull at the note’s price, a quarter off (300), and takes 300', /Buy a ship \(300 gold, with Corwin/.test(buy.label || '') && buy.paid === 300 && buy.ship, buy);

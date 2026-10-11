@@ -63,7 +63,8 @@ const g2 = await page.evaluate(() => gold);
 const d2 = await say(true, /^It.s done\.$/);
 const s2d = await page.evaluate((g2) => { const C = WORLD.fstate().crown; return { paid: gold - g2, active: !!C.active, turnedIn: !!(C.active && C.active.turnedIn) }; }, g2);
 console.log('it is done', JSON.stringify(d2.said), JSON.stringify(s2d));
-check('*It\'s done.* (the lord\'s own jobs) does not take the finished service: nothing paid, the service still to turn in', d2.clicked && s2d.paid === 0 && s2d.active && !s2d.turnedIn, { d2, s2d });
+// S586: with no job of the lord's own finished, *It's done.* is not offered at all (Michael, 5 Oct)
+check('*It\'s done.* (the lord\'s own jobs) is not offered for the finished service: nothing paid, the service still to turn in', !d2.clicked && !d2.labels.some(l => /^It.s done\.$/.test(l)) && s2d.paid === 0 && s2d.active && !s2d.turnedIn, { d2, s2d });
 const t2b = await serve(); const s2b = await page.evaluate(() => { const C = WORLD.fstate().crown; return { done: C.done, rank: C.rank }; });
 console.log('turned in', JSON.stringify(t2b.said), JSON.stringify(s2b));
 const g2b = await page.evaluate(() => gold);

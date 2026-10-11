@@ -30,7 +30,7 @@ check('turned 65° or more away, the keeper does not', outCone.every(r => !r.see
 check('face on they see you, back turned they do not; past six units in front, still not', sweep.near && !sweep.behind && !sweep.far, sweep);
 
 // the theft itself: taken with the keeper's back turned, no fine; turned to you, the fine
-const theft = await page.evaluate(() => { const X = WORLD.intBox, K = intNPCMesh, site = window._S.site; px = X.x; pz = X.z + .8; jumpY = 0;
+const theft = await page.evaluate(() => { const X = WORLD.intBox, K = intNPCMesh, site = window._S.site; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z);
   K.position.x = px + 1.5; K.position.z = pz; K.rotation.y = Math.atan2(K.position.x - px, K.position.z - pz);
   const b0 = WORLD.bountyAt(site); const gold0 = gold; X.open = true; WORLD.boxInteract(); const away = { took: gold - gold0, fined: WORLD.bountyAt(site) - b0 };
   // the box refills for the second go

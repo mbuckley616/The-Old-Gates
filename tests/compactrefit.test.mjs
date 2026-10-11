@@ -1,5 +1,6 @@
 // Session 467: the Compact's rank-3 claim is *a house and a ship*. A Prior who already owns a ship is given a refit
-// (Michael's B on #128): she is mended and raised one class free, sloop → cog → galleon, where she lies; a galleon is only
+// (Michael's B on #128): she is mended and raised one class free, sloop → cog → galleon (since S636 by worth, through the
+// cutter and caravel), where she lies; a galleon is only
 // mended. A sunk ship is raised free by the shipwright nearest her wreck, a class up. The claim is clicked in the lord's
 // own dialogue at the seat, as `blacksail` does it.
 import { boot, check } from './lib/game.mjs';
@@ -31,11 +32,16 @@ check(`her hull is rebuilt at the cog\'s size (${s0.L}×${s0.W} → ${s1.L}×${s
 const log1 = await page.evaluate(() => JSON.stringify(GAME_LOG.slice(-4)));
 check('the log says so', /The Compact mended the .* and refitted her as a cog\./.test(log1), log1);
 
-// a second claim (the flag reset by hand): cog → galleon
-await page.evaluate(() => { worldState.ship.hull = 10; worldState.ship.rig = 20; });
-const c2 = await claim(); const s2 = await state();
-console.log('cog', JSON.stringify(c2), JSON.stringify(s2));
-check(`a cog is refitted as a galleon (${s2.L}×${s2.W}, hull ${s2.hull} of ${s2.hullMax}, rig ${s2.rig})`, c2.clicked && s2.cls === 'galleon' && s2.hull === 200 && s2.rig === 100 && s2.L === 22 && s2.W === 7, s2);
+// further claims (the flag reset by hand). Session 636 (Michael's B on #192): the next hull up is by worth, so the ladder
+// runs sloop → cog → cutter → caravel → galleon (1,300 / 2,000 / 3,200 / 3,500); the cutter is drawn on the sloop's hull and
+// the caravel on the cog's until they have their own
+const ladder = [];
+for (const [cls, hull, L] of [['cutter', 80, 13], ['caravel', 130, 17], ['galleon', 200, 22]]) {
+  await page.evaluate(() => { worldState.ship.hull = 10; worldState.ship.rig = 20; });
+  const c = await claim(); const s = await state(); ladder.push({ want: cls, clicked: c.clicked, said: c.said, cls: s.cls, hull: s.hull, rig: s.rig, L: s.L });
+  check(`the next claim refits her as a ${cls} (${s.L} long, hull ${s.hull} of ${s.hullMax}, rig ${s.rig})`, c.clicked && s.cls === cls && s.hull === hull && s.hullMax === hull && s.rig === 100 && s.L === L && c.said.endsWith(`refitted as a ${cls}, at its own charge.`), { c, s });
+}
+console.log('ladder', JSON.stringify(ladder));
 
 // a galleon is only mended
 await page.evaluate(() => { worldState.ship.hull = 77; worldState.ship.rig = 3; });
