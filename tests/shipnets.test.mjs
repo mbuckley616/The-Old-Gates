@@ -36,14 +36,16 @@ check('7 off, looking at the net, nothing (out of reach)', tooFar.p === null, to
 
 // E: the climb, 0.8 s, to the rail above the net
 await at('own', W / 2 + .5, 0, [W / 2, 0]); await g.frames(2);
+await page.evaluate(() => { window._seen = []; window._showMsg0 = showMsg; showMsg = (t, c) => { window._seen.push(t); return window._showMsg0(t, c); }; }); /* S737 — every line shown during the climb: a black sail's notice can land on the same tick (red on CI on 83f2a02) */
 await page.keyboard.press('e'); await g.frames(1);
 const mid = await page.evaluate(() => { for (let i = 0; i < 24; i++) WORLD.tick(1 / 60, performance.now()); return { climbing: climbing(), y: +jumpY.toFixed(2), deck: +DECK_Y.toFixed(2) }; });
 const top = await page.evaluate(() => { for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now()); const m = WORLD.ship.mesh; m.updateMatrixWorld(true);
   const l = new THREE.Vector3(px, SEA_Y, pz).applyMatrix4(new THREE.Matrix4().copy(m.matrixWorld).invert());
-  return { climbing: climbing(), onDeck: onDeck(), lx: +l.x.toFixed(2), lz: +l.z.toFixed(2), y: +jumpY.toFixed(2), msg: document.getElementById('msg').textContent }; });
+  return { climbing: climbing(), onDeck: onDeck(), lx: +l.x.toFixed(2), lz: +l.z.toFixed(2), y: +jumpY.toFixed(2), msg: document.getElementById('msg').textContent, seen: window._seen.slice() }; });
+await page.evaluate(() => { showMsg = window._showMsg0; });
 console.log('climb', JSON.stringify(mid), JSON.stringify(top));
 check(`E starts the climb: at 0.4 s still on the net, ${mid.y} of the way to the deck's ${mid.deck}`, mid.climbing && mid.y > 0.3 && mid.y < mid.deck - .2, mid);
-check(`at 0.9 s she is boarded at the rail above the net (${top.lx} across, ${top.lz} along), not at her stern`, !top.climbing && top.onDeck && Math.abs(top.lx - (W / 2 - .8)) < .15 && Math.abs(top.lz) < .2 && /You climb aboard/.test(top.msg), top);
+check(`at 0.9 s she is boarded at the rail above the net (${top.lx} across, ${top.lz} along), not at her stern`, !top.climbing && top.onDeck && Math.abs(top.lx - (W / 2 - .8)) < .15 && Math.abs(top.lz) < .2 && top.seen.some(t => /You climb aboard/.test(t)), top);
 
 // a black sail: her net boards her at her rail, and her crew turns
 const bs = await page.evaluate(() => { const S = WORLD.ship; const o = WORLD.spawnOtherShip('pirate', _sea.x + 25, _sea.z + 25, 'sea:test:nets:pirate'); o.speed = 0; window._o = o; return { W: o.W, crew: o.crew.length }; });

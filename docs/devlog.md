@@ -15335,3 +15335,14 @@ The test now waits for the floor change itself (up to 60 × 5 frames, until `cur
 
 ### Needs eyes
 - None.
+
+## v80 — Session 737 — `shipnets` reads every line the climb showed, not the last (red on CI on 83f2a02)
+Shard 2 failed on `shipnets`, in its check *at 0.9 s she is boarded at the rail above the net*. Every number was right: not climbing, on deck, 1.38 across, 0 along. But the message line read *Black sails on the horizon.* The test drives 54 world ticks itself through the climb, and those ticks also run the other ships' spawner, which on the runner put a black sail on the sea and showed its notice after *You climb aboard*. The check read only `#msg`'s last text. The test has not changed since Session 677, and Sessions 728–736 touch nothing at sea.
+
+The test now wraps `showMsg` for the climb, keeps every line shown, and asks that *You climb aboard* is among them, then puts `showMsg` back. Tests only.
+
+### Verified (headless Chromium)
+`shipnets` 12/12. The climb's lines here are `["You climb aboard. E again for the wheel."]`, boarded at 1.39 across and 0 along. The black sail's net and the merchantman's deck pass as before.
+
+### Needs eyes
+- None.
