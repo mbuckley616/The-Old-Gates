@@ -3,6 +3,29 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
+Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyard. The systems builder's Session 618 built a lane to every quay, graded evenly from the town down to the water. At Portclare the quay lies behind a ridge, so the lane cuts through it for about 70 of its 92 units. The ground stands up to 8.9 units over the lane 8 out on one side and 7.1 on the other. Today the cut's sides are the road's own blend: steep grass banks running straight up from the lane's edge. At the other three ports nearest Dunmore the lane is 8 units long and flat, with no cut. Should Portclare's cut, and any quay lane's cut deeper than 1.2, have a wall?
+
+- **A.** A dry-stone retaining wall at the foot of each bank wherever the cut is deeper than 1.2: coursed grey stone, its face battered back 1 in 5, a cap of flat stones, at most 2.6 high, with the turf bank going on above it. At Portclare that is about 2,550 triangles in one mesh, built with the lane. **Recommended:** the lane reads as made by people, and the walls frame the way down to the water.
+- **B.** Leave the cut as it is: turf banks, no stone.
+- **C.** Steps instead of a cut: the lane climbs over the ridge as it stood and goes down its seaward side by stone steps. This undoes Session 618's even grade. Not prototyped.
+
+Pictures (left today, right A; the wall is laid in the page by `docs/prototypes/quaycut/shoot.mjs`, not in the game):
+- From the lane in the deepest part of the cut, looking down to the quay: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-lane.png
+- From above the lane: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-above.png
+
+
+
+### The climb up a boarding net: a hand-over-hand pose on the net, the pose alone, or as it is? (the look builder, Session 726, 2026-10-11) — DECISION #237
+The boarding nets (Session 638's rule, Session 723's look) are climbed with E in 0.8 s. In third person today the body slides on a straight line from the water to the rail in whatever pose it had: it stands upright with its arms down, and for most of the climb it passes through the hull's planking and cannot be seen (the top row, the middle frame). First person shows nothing of it. How should the climb look?
+
+- **A.** As the bottom row shows: the body faces the hull and climbs hand over hand, three reaches in the 0.8 s, the knees stepping up the mesh and the head tipped up. It is held on the net, .35 off the planking, until the last fifth of the climb, when it swings in over the rail. The pose goes in the third-person body (`54-thirdperson.js`); the path is one change to the climb's tick (`tickNetClimb`, the systems builder's file, which I would ask them to take or leave to me). **Recommended:** the body stays on the net, which is the point of a net.
+- **B.** The pose alone, with the path as it is (the body still passes through the planking for most of the climb).
+- **C.** Leave it. The climb is 0.8 s and most play is in first person.
+
+Under A, first person could also show both hands reaching up into view on the rope. That is not prototyped; say if you want it.
+
+Picture (top row today, bottom row A; a quarter, a half and nine-tenths of the way up; the pose is laid in the page by `docs/prototypes/climb/shoot.mjs`, not in the game): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/climb-net.png
 
 ### A householder at night — asleep in bed, asleep but light, or awake as now? (systems builder, 2026-10-11) — DECISION #240
 Section B's witness rule says *anyone awake … not asleep indoors*. Nobody sleeps. A home's resident is inside from 21h to 7h (`npcInsideNow`), on their feet the whole night, walking the room between the door and the hearth. The critic's s572 run picked Sinéad's door in Carraig Mór at 23h30 and found her a step inside; she turned as the chest's lock opened and saw it. So every night burglary of a home is done in front of its owner, and the only way to rob a home unseen is to time her turned back. Outdoors at night the street is nearly empty (Carraig Mór has one man awake after 21h), so the home is now the harder target than the shop, which is the wrong way round.
