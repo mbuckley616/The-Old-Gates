@@ -15547,3 +15547,20 @@ No browser run: this is the table. `node --check tests/run.mjs` passes. The tabl
 
 ### Needs eyes
 - None; tests only. If one shard runs past 55 minutes again, its log's time block is the table's next refresh.
+
+## v80 — Session 746 — The dungeon's foes need no prewarm (measured; tests only)
+Session 688 built one of each open-world foe behind the world's loading fade and compiled their shader programs there. On a real GPU the first wolf of a session, or the first night, had been a hitch. It left one line owed in backlog D: *the dungeon's foes are not prewarmed … a first skeleton below can still hitch.* This session measured that before building anything.
+
+The probe counted every `compileShader` call. It went down an old gate, waited for compiles to stop, then stood beside each foe on both floors in turn and looked at it. It did this for six themes at level 9 (undead, elemental, deep, haunted, ruins, goblin): 154 foes in 22 kinds, wraiths and phantoms, elementals, golems, gargoyles and mimics among them. It also killed foes, split a slime, looted a corpse and took the stair to floor 2. In the first pass one foe compiled on sight: a Skeleton on the haunted gate's floor 2, two shaders. I built the fix that pass suggested, `prewarmDungeon`: after the floors, the foes and the lair's master were built, it filled the light pool and ran `REN.compile` on the whole scene. With it, 154 of 154 foes came into view with nothing compiled. With it held off, on the same six gates in the same order, so did all 154. The one hit did not reproduce. A fix with no effect that can be measured is not a fix, so the code is withdrawn and nothing in `js/` changes.
+
+Three things already cover the dungeon. Its foes share their materials, so a kind's first program is usually one an earlier kind has made. Its point lights are the fixed pool of 20 that `_sweepScenePool` (`68-dungeon-misc.js`) fills before each render, so a kill's loot glow or a slime's two new lights change no program's key. And its first frame, drawn behind the way-down fade, compiles what is left: 2–4 shaders at an entry, 1 program at most (the prewarm, while it was in, found 0 or 1 a gate, 6–617 ms).
+
+`tests/dunwarm` (new) keeps it so, as a guard. It covers three gates whose themes hold the most kinds, then kills one foe in each and counts the pool. If a new material on a foe, or a light outside the pool, makes a foe compile on sight, it shows here.
+
+Correction to Session 745: the shard table's `dunwarm` was 600, from the six-gate probe. The suite as kept runs three gates and is now 360.
+
+### Verified (headless Chromium)
+`dunwarm` passes (one run, 3 of 3 checks): 70 foes looked at on both floors of three gates, 15 kinds (Skeleton, Greater Skeleton, Wraith, Greater Wraith, Phantom, Greater Phantom, Mimic, Greater Mimic, Fire Elemental, Golem, Greater Golem, Slime, Cave Troll, Greater Cave Troll, Gargoyle), 0 compiles on sight. After a kill in each gate the scene holds 20 point lights, as before it, with 0 compiles. The six-gate measure, run twice with and without the prewarm, gave 0 of 154 both times.
+
+### Needs eyes
+- On a real laptop's GPU: the first old gate of a session, whether its way-down fade lasts visibly longer than a second one's (that fade carries the compile).

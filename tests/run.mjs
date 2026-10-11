@@ -12,7 +12,7 @@ let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only |
 // seconds each took on CI. Every suite refreshed from one run, the twelve shards of faa652b (auto/systems, 11 Oct), in
 // Session 745, when shard 3 was cancelled at 60:19: panelfocus took 530 s and stairrail 219 and were counted as 60, and
 // carraignight took 250 where 960 was guessed. (Earlier tables: Session 254's local run, CI's runs of 2 and 3 Oct in
-// Sessions 434 and 454.) yardpanel was cut off by the cancel and is counted 90; dunwarm is this machine's time. A suite
+// Sessions 434 and 454.) yardpanel was cut off by the cancel and is counted 90; dunwarm (Session 746) is a guess from this machine. A suite
 // not listed counts as 60.
 const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'armourlines-numbers': 59, articles: 57, ashenburn: 77,
   ashwort: 50, attrdmg: 44, attrpromise: 48, autosave: 129, autumn: 104, backroomdoor: 247, backslot: 50, barber: 67,
@@ -27,7 +27,7 @@ const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'ar
   crime4: 53, crime5: 51, datedguild: 45, datedwork: 48, dateline: 59, dayseed: 76, dazed: 57, deadkeys: 107, deadtree: 12,
   deathplace: 61, deckprops: 55, demonickit: 23, diedload: 262, dlgkeys: 67, doorbed: 151, doorids: 56, doublenames: 9,
   dragonsize: 59, drydoors: 101, due: 46, duel: 64, duelrhythm: 79, dunconts: 65, dunfurn: 151, dungeon: 64, dungeonchase: 54,
-  dungeonexit: 149, dungeonfoes: 64, dungeonpace: 59, dunseed: 82, dunwarm: 600, enchantmotes: 45, export: 70, factorpanel: 53,
+  dungeonexit: 149, dungeonfoes: 64, dungeonpace: 59, dunseed: 82, dunwarm: 360, enchantmotes: 45, export: 70, factorpanel: 53,
   falls: 435, faolchu: 48, feasts: 53, feastsquare: 68, featurenames: 11, ferry: 62, fiercewolf: 72, fishseed: 68, fistfight: 87,
   fists: 58, fistswing: 89, flashshare: 59, foearmour: 48, foelogname: 45, foes: 84, foeseed: 76, foewarm: 89, foeweapons: 19,
   fortbarracks: 68, fortcot: 79, fortdoor: 85, fortfurn: 117, forthall: 68, fortify: 48, fortring: 77, fortunecaor: 47,
