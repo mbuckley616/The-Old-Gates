@@ -557,6 +557,17 @@
       const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'c',x:cx-5,z:cz-3,bCol:0x3a3a48,sCol:0xb89878,role:'constable'});def.role='Guard';
       const cn=spawnNPC(def,0,true);cn.sched={type:'constable',a:{x:cx-6,z:cz-3},b:{x:cx+6,z:cz+3}};snpcs.push(cn);
     }
+    // S740 — two gate guards in every walled town (Michael's A on #242). A town with one road in had one, as one street reaches
+    // the ring. The second stands at the same gate by day, across the street from the first, and at night takes the beat from
+    // the far side of the loop (the beat spreads its men evenly by their order). Spawned last, so every draw before him is as it was.
+    {const G=snpcs.filter(n=>n.sched&&n.sched.type==='guard');
+      if(plan.walls&&G.length===1){const a=G[0].sched.a,q={x:a.x-3,z:a.z};const L=Math.hypot(cx-q.x,cz-q.z)||1,ux=(cz-q.z)/L,uz=-(cx-q.x)/L,ix=(cx-q.x)/L,iz=(cz-q.z)/L;
+        /* his post: across the street, else beside the street on either hand, else a step in; the first spot that is open ground */
+        const C=[[-3,0],[ux*3,uz*3],[-ux*3,-uz*3],[ix*3-3,iz*3],[ix*4,iz*4],[ix*6,iz*6]].map(([dx,dz])=>({x:q.x+dx,z:q.z+dz})).filter(c=>Math.hypot(c.x-a.x,c.z-a.z)>1.5);
+        const lend=!SETTLE.has(site.id);if(lend)SETTLE.set(site.id,S); /* the town's own walls and houses, which solidAt reads from SETTLE once it is built */
+        const p2=C.find(c=>!solidAt(c.x,c.z))||C[0];if(lend)SETTLE.delete(site.id);
+        const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'g1',x:p2.x,z:p2.z,bCol:NAT.banner,sCol:0x808090});
+        const gn=spawnNPC(def,Math.atan2(cx-q.x,cz-q.z),true);gn.sched={type:'guard',a:p2,b:p2};snpcs.push(gn);}}
     if(S.dead)clearDead(); // S269 — the villagers and the watch are drawn after the ruin's clearing (so the draws stay put): a ruin keeps nobody in the street
     if(S._forge&&storyRuin(site)&&typeof buildBramBody==='function'){ // S270 — Bram's body at his forge, as in the legacy burned zone
       for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);

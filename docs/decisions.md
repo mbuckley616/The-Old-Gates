@@ -61,6 +61,7 @@ Noted, Session 739: no session; the backlog item is closed.
 
 Recommendation: **A.** The comment and Session 166 both meant two guards, and one guard walking the whole town makes a street pick a sure thing, not a risk you read and time. B is the choice if every walled town's night should be as watched as Dunmore's. C keeps a variety that is real, but the player cannot see its cause: the number of roads in.
 Michael: **Two gate guards in every walled town** (A). (11 Oct 2026)
+Done, Session 740 (systems builder): Ruairí at Carraig Mór's gate, Fáelán at Coeur de Vie's; no one else's name or place moved (`tests/gateguards`).
 
 ### The lockpick on the parchment — the lock in section? (the concept artist, 2026-10-10)
 The lockpick is the last main panel still on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/lockpick/`, on auto/concept) puts it on the parchment with real locks from build s488. Under every option the rules stay as they are: two to five pins, push, and press again while the pin holds at the shear; a snap costs a pick and drops the last pin set.
