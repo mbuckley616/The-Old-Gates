@@ -3,6 +3,9 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+
+## Answered
+
 ### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
 Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyard. The systems builder's Session 618 built a lane to every quay, graded evenly from the town down to the water. At Portclare the quay lies behind a ridge, so the lane cuts through it for about 70 of its 92 units. The ground stands up to 8.9 units over the lane 8 out on one side and 7.1 on the other. Today the cut's sides are the road's own blend: steep grass banks running straight up from the lane's edge. At the other three ports nearest Dunmore the lane is 8 units long and flat, with no cut. Should Portclare's cut, and any quay lane's cut deeper than 1.2, have a wall?
 
@@ -13,8 +16,7 @@ Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyar
 Pictures (left today, right A; the wall is laid in the page by `docs/prototypes/quaycut/shoot.mjs`, not in the game):
 - From the lane in the deepest part of the cut, looking down to the quay: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-lane.png
 - From above the lane: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-above.png
-
-
+Michael: **A dry-stone retaining wall at the foot of each bank** (A). (11 Oct 2026)
 
 ### The climb up a boarding net: a hand-over-hand pose on the net, the pose alone, or as it is? (the look builder, Session 726, 2026-10-11) — DECISION #237
 The boarding nets (Session 638's rule, Session 723's look) are climbed with E in 0.8 s. In third person today the body slides on a straight line from the water to the rail in whatever pose it had: it stands upright with its arms down, and for most of the climb it passes through the hull's planking and cannot be seen (the top row, the middle frame). First person shows nothing of it. How should the climb look?
@@ -26,9 +28,52 @@ The boarding nets (Session 638's rule, Session 723's look) are climbed with E in
 Under A, first person could also show both hands reaching up into view on the rope. That is not prototyped; say if you want it.
 
 Picture (top row today, bottom row A; a quarter, a half and nine-tenths of the way up; the pose is laid in the page by `docs/prototypes/climb/shoot.mjs`, not in the game): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/climb-net.png
+Michael: **Hand over hand on the net, then over the rail** (A). (11 Oct 2026)
 
+### A householder at night — asleep in bed, asleep but light, or awake as now? (systems builder, 2026-10-11) — DECISION #240
+Section B's witness rule says *anyone awake … not asleep indoors*. Nobody sleeps. A home's resident is inside from 21h to 7h (`npcInsideNow`), on their feet the whole night, walking the room between the door and the hearth. The critic's s572 run picked Sinéad's door in Carraig Mór at 23h30 and found her a step inside; she turned as the chest's lock opened and saw it. So every night burglary of a home is done in front of its owner, and the only way to rob a home unseen is to time her turned back. Outdoors at night the street is nearly empty (Carraig Mór has one man awake after 21h), so the home is now the harder target than the shop, which is the wrong way round.
 
-## Answered
+- **A. Asleep in bed from 23h to 5h.** The resident lies on their own bed (the room already has one), sees nothing, and wakes only to what is within 2 units (the street's *hears you whichever way they face*) or a blow. Awake as now from 21h to 23h and from 5h to 7h. The picked door does not wake them. One session; the lying pose is the look builder's (H), and until then the body lies on the bed in the standing pose turned flat.
+- **B. Asleep, but light.** As A, and a snapped pick or the chest opened in the same room wakes them on a roll: a third of the time, a sixth sneaking. One session.
+- **C. Leave them awake.** The spec's *not asleep indoors* is struck; a home at night stays the dangerous place.
+
+Recommendation: **A.** Thief and Oblivion both put sleepers in beds and let you work a room past them; Skyrim gives a sleeper far less sight than a waking guard. A keeps the rule the spec already gives (only the awake see), keeps the outcome deterministic (no new roll for the co-op rules to key), and still leaves the evening and the dawn as the hours a resident catches you.
+Michael: **Asleep in bed from 23h to 5h** (A). (11 Oct 2026)
+
+### A Cave Bear's cavern at level 1 — a wall for the starting club, by design or not? (systems builder, 2026-10-11) — DECISION #241
+Session 718 asked whether a lair's cavern is now *the harder place without being a wall*. The critic's s572 run says that for a Cave Bear's lair at level 1 it is a wall: the master has 204 health (Easy, floor 2, ×3), armour 4, blunt ×0.8, and the Warrior's Wooden GreatClub landed 1 a blow. The critic died twice, in 7.7 s and 10.6 s. Measured on 11 Oct by the systems builder: nothing is broken. The master and the crag's beast have the same armour and resistances, as Session 706 says, and a raw blow of 6 lands 1 on both. The 3 the critic saw at the crag was a lucky blow or a backstab. The cause is that armour is a flat subtraction (`applyMeleeDamage`: the blow less the armour, at least 1), and the GreatClub is the weakest weapon in the game against it. At level 1 against armour 4, the average blow is GreatClub 1, Wooden Sword 3, Wooden Mace 2.5, Bronze Sword 5, Wooden Claymore 9, Iron Sword 7.5. So the master is about 200 swings with the club, 41 with a Bronze Sword and 23 with a Wooden Claymore. The crag's beast (259 health) is the same wall for the club.
+
+- **A. Leave it.** A Cave Bear is a level-4 kind and a lair is optional. The club is the starter that Barnaby's better stock replaces, and the door already says *Something large is waiting further in*. No session.
+- **B. Armour never takes more than half a blow**, everywhere, for every foe and for you. The club lands 2 on the master (about 100 swings). A Bronze Sword and anything stronger are unchanged against armour 4. Weak weapons against heavy armour gain the most. One session, with the combat tests run again.
+- **C. Below the kind's own level, a lair's master is ×2 health, not ×3.** At level 1 the Cave Bear master goes from 204 to 136. That is about 136 swings with the club and 27 with a Bronze Sword. The crag's beast is unchanged. One session.
+
+Recommendation: **A.** Dark Souls and Elden Ring both let you walk into a fight your weapon cannot win and teach you to come back. The cure here is a better weapon at the goods shop, not a softer bear. B is the one to take if the starting club should matter at all against armoured foes, since it changes the club everywhere, not only in caverns.
+Michael: **Leave it** (A). (11 Oct 2026)
+
+### A walled town with one gate has one guard — two, as the code's comment says, or one? (systems builder, 2026-10-11) — DECISION #242
+`genSettlement` (`83-world-generator.js`) puts *a couple of guards at the gates*: one on each of the first two streets, where the street crosses the ring just inside the wall. A town with a single road in has one street that reaches the ring, so it gets one guard. Of the five walled towns round the start, Dunmore and two others have 2. Carraig Mór (prosperity 56) and Coeur de Vie (a city, 78) have 1, and each has one gate. The third man, the night watch, comes only at prosperity 60, so Carraig Mór has one man awake at night. The critic's s572 run walked it hour by hour: from 21h to 5h Séamus walks the beat alone, every one of 36 homes is 50 units or more from him, and a street pick after 21h cannot be seen at all. Dunmore's three-man watch is seen at 26% of night picks (Session 609).
+
+- **A. Two gate guards in every walled town.** With one gate, the second stands at the same gate by day and walks the beat at night, starting from the far side of the loop. Carraig Mór gets two men at night, Coeur de Vie three. Spawned last, so no one else's name or place changes. One session.
+- **B. As A, and a walled town under 60 also gets the night watch (three at night).** The Dunmore numbers would then hold in every walled town. One session.
+- **C. Leave it.** A one-gate town is a thief's town at night. That is a fact you learn by watching the street, and it is how the world's poorer towns differ from the rich.
+
+Recommendation: **A.** The comment and Session 166 both meant two guards, and one guard walking the whole town makes a street pick a sure thing, not a risk you read and time. B is the choice if every walled town's night should be as watched as Dunmore's. C keeps a variety that is real, but the player cannot see its cause: the number of roads in.
+Michael: **Two gate guards in every walled town** (A). (11 Oct 2026)
+
+### The lockpick on the parchment — the lock in section? (the concept artist, 2026-10-10)
+The lockpick is the last main panel still on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/lockpick/`, on auto/concept) puts it on the parchment with real locks from build s488. Under every option the rules stay as they are: two to five pins, push, and press again while the pin holds at the shear; a snap costs a pick and drops the last pin set.
+- **A.** The lock in section: a parchment slip in the middle of the screen with the lock drawn as an engraving (brass and iron pins, springs, the shear ruled in red, the pick under the pin you work); the title says which lock it is; the picks a row of pick marks. *(recommended)*
+- **B.** A, but a town lock's slip stands to the right with no dark veil, so you can watch the street while you work. A dungeon lock stays centred.
+- **C.** Restyle only: today's bars and words, on the paper.
+
+Recommendation: **A.** Oblivion draws the lock in section and you see the pins move; today's bars don't say what is being pushed or why the press must wait. B covers the right third of the view.
+Michael: **The lock in section, engraved, centred** (A). (11 Oct 2026)
+
+### Unblock main's CI — the suite outgrew eight shards (the producer, 2026-10-10)
+Main's own check was cancelled at the 60-minute limit on its last two runs (dc7b2d9, c282127): shard 5 of 8 ran out of time while the other shards passed. The suite is too long for eight shards. The systems builder already split it into twelve (Session 652, `6120465`, only `.github/workflows/check.yml`), but that rides Systems sessions 564–710, whose CI is red on five suites.
+- **A.** Port Session 652's twelve-shard change to main now as its own small PR, which you approve; main and every branch get a full CI run again. *(recommended)*
+- **B.** Wait: the twelve shards land when Systems sessions 564–710 merge.
+Michael: **Port the twelve shards to main now** (A). (10 Oct 2026)
 
 ### When a lair's beast dies, does the nearest glade grow twice its herbs (canon §12)? (systems builder, 2026-10-10) — DECISION #227
 Canon §12's table gives three effects for `lairs[id].dead` (a lair's beast killed): *stays dead; nearest glade doubles herbs; a rumour within two provinces.* Only *stays dead* is built (`markLairDead`; Sessions 695 and 694 made it hold through a rebuild and a load). The critic noted the other two on 10 Oct. The rumour is the talk the critic's proposal *The town speaks of its beast* (`docs/proposals.md`) already covers, and its lines are the quest writer's. This question is the glade's.
