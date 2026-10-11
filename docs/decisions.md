@@ -4,6 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### A householder at night — asleep in bed, asleep but light, or awake as now? (systems builder, 2026-10-11) — DECISION #240
+Section B's witness rule says *anyone awake … not asleep indoors*. Nobody sleeps. A home's resident is inside from 21h to 7h (`npcInsideNow`), on their feet the whole night, walking the room between the door and the hearth. The critic's s572 run picked Sinéad's door in Carraig Mór at 23h30 and found her a step inside; she turned as the chest's lock opened and saw it. So every night burglary of a home is done in front of its owner, and the only way to rob a home unseen is to time her turned back. Outdoors at night the street is nearly empty (Carraig Mór has one man awake after 21h), so the home is now the harder target than the shop, which is the wrong way round.
+
+- **A. Asleep in bed from 23h to 5h.** The resident lies on their own bed (the room already has one), sees nothing, and wakes only to what is within 2 units (the street's *hears you whichever way they face*) or a blow. Awake as now from 21h to 23h and from 5h to 7h. The picked door does not wake them. One session; the lying pose is the look builder's (H), and until then the body lies on the bed in the standing pose turned flat.
+- **B. Asleep, but light.** As A, and a snapped pick or the chest opened in the same room wakes them on a roll: a third of the time, a sixth sneaking. One session.
+- **C. Leave them awake.** The spec's *not asleep indoors* is struck; a home at night stays the dangerous place.
+
+Recommendation: **A.** Thief and Oblivion both put sleepers in beds and let you work a room past them; Skyrim gives a sleeper far less sight than a waking guard. A keeps the rule the spec already gives (only the awake see), keeps the outcome deterministic (no new roll for the co-op rules to key), and still leaves the evening and the dawn as the hours a resident catches you.
+
 
 ## Answered
 

@@ -15303,3 +15303,14 @@ The loop's dungeon branch now calls it each frame. Below ground (`lid` other tha
 
 ### Needs eyes
 - In a real cavern: the master's bar appearing as it wakes, and not before.
+
+## v80 — Session 734 — A guard's fine and his yield no longer open with *My name is Traveller.* (the critic's s572)
+In Carraig Mór the critic was halted by Séamus over a fine, and later offered the cells. Both times the first choice was the stranger's introduction, *1. My name is Traveller.*, above *Pay the fine* and *The cells.* `buildQuestTopicsForNPC` (`22-dialogue.js`) adds that topic to every dialogue with someone you have not met. The halt in the street, the halt indoors and the yield are dialogues built on the guard's name, so he got it too.
+
+Those three dialogues (`confront`, `confrontIndoor`, `offerYield` in `86-world-crime.js`) now carry `noIntro:true`, and the topic is left out when the open dialogue has it. The same guard spoken to in the street still offers the introduction. No line is added or changed.
+
+### Verified (headless Chromium)
+`tests/guardintro` (new, 6 checks). Dunmore's guard Eilís, not yet met, with a bounty of 50. The halt reads *1. Pay the fine (50 gold) · 2. I'll not pay. · 3. Not now.*, indoors the same, and the yield *1. Pay double (100 gold) · 2. The cells. · 3. Fight on.* None offers the introduction. Spoken to in the street, she offers *1. My name is Traveller.* as before. No page errors. `feasts` (which drives `confront` for the feast-day fine) passes, 12 checks.
+
+### Needs eyes
+- None.
