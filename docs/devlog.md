@@ -15250,3 +15250,14 @@ The critic has written *the keys stay dead until you click* on four runs. Sessio
 
 ### Needs eyes
 - In real Chrome with the pointer lock: after *Goodbye* clicked with the mouse, W walks at once, and the click that takes the mouse back still works as before.
+
+## v80 — Session 728 — *How are things here, honestly?* answers in each people's voice (the quest writer's Finding 25)
+A register fix, applied as the review wrote it, with no decision. Session 698 took the number out of the townsfolk's answer and left the map card's word followed by a second sentence that read prosperity alone. Between 35 and 59 that made *Getting by. We get by.*, the same thing twice. An occupied or besieged town at 60 or more said *Occupied. Better than my father saw.* And it was one voice for four peoples.
+
+The topic in `richTopics` (`87-world-quests.js`) now picks a state, then a line. A siege is read first, then an occupation (`TS(site).flags.besieged`, `.occupied`), then prosperity: 60 or more is good, 35 or more fair, under that poor. The line comes from the speaker's people (`def.people`, else the nation's), with the Gatelander's table for anyone else. That is twenty lines, the review's word for word. The lord's *How fares the town?* is reached only in a town neither held nor besieged, and stays as it is. `stateSaid` is no longer read here; the lord's line and the map card still use it. `tests/townbio`'s check of the old shape (one word, a full stop, a sentence) now asks only for a capital and no number.
+
+### Verified (headless Chromium)
+`tests/honesttown` (new, 6 checks). In Dunmore one townsperson is asked under each of the four peoples, in each of five states (prosperity forced to 77, 45, 20; then 77 under siege; then 77 held). That gives 20 answers and 20 distinct lines. None carries a number, and none says *get by* twice. Four anchors are the review's lines exactly: the Old Blood's *Held. Not by us.*, the Markman's *We get by. Could be worse. Has been.*, the Aurennais's *Prosperous, Master, by any accounting…*, the Gatelander's siege line. A held or besieged town at 77 is never *better than my father saw*. A speaker with no people of their own answers in the nation's (a Gatelander's *fair* line in Dunmore). `townbio` passes (112 townsfolk in two towns, no number in any answer). The new test was not run against the old code. That code has one line for every people, so the 20-distinct check could not pass on it.
+
+### Needs eyes
+- None by play; the lines are the quest writer's.
