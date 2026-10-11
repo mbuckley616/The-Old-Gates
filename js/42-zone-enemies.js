@@ -1280,7 +1280,7 @@ function tickBossHud(){
   // — for Session A there's only the Faolchú in burned Ashenmoor.
   // S732 — below ground the bar reads the cavern's own foes on your floor, never the world's (the critic's s572: the crag's bear
   // came down both floors at 100% and the master's bar never showed); in a room of another kind there is no boss
-  const under=(typeof lid!=='undefined')&&lid!=='overworld',dun=under&&activeZoneId==='dungeon';
+  const dun=activeZoneId==='dungeon',under=dun||((typeof lid!=='undefined')&&lid!=='overworld'); /* S738 — a dungeon is read from the zone, not from lid: a portal without an id left lid undefined and the floor unchecked */
   let boss = (!under && typeof ZE!=='undefined' && ZE)
                ? ZE.find(e=>e && e.isBoss && !e.dead && !e.locked && (activeZoneId!=='world' || (e.alert && Math.hypot(e.x-px,e.z-pz)<40))) // S270 — in the world, only a boss that is on you
                : null;

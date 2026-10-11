@@ -27,12 +27,12 @@ for (const kind of ['lair', 'bcamp']) {
 }
 // through a real save and load
 const id = site.bcamp;
-await page.evaluate((id) => { const t = WORLD.SITE[id]; px = t.x + 40; pz = t.z + 40; }, id);
+await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id);
 await page.evaluate(async () => { await saveToSlot(0); });
 const before = await chestOf(id);
 await page.evaluate((id) => { const S = WORLD.settlements.get(id) || WORLD.genSettlement(WORLD.siteAnywhere(id)); currentLootContainer = S.chest; while (S.chest.items.length) takeLootItem(0); currentLootContainer = null; }, id);
 await page.evaluate(() => reloadActiveSlot()); await page.waitForTimeout(4000);
-await page.evaluate((id) => { const t = WORLD.SITE[id]; px = t.x + 40; pz = t.z + 40; }, id);
+await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id);
 let d = null; for (let i = 0; i < 30; i++) { await g.spin(null, 20); d = await page.evaluate((id) => { const S = WORLD.settlements.get(id); return S && S.chest ? S.chest.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')) : null; }, id); if (d) break; }
 check('emptied after a save, then loaded: the chest holds what it held at the save', before.items.length > 0 && JSON.stringify(d) === JSON.stringify(before.items), { before: before.items, d });
 check('no page errors', g.errs.length === 0, g.errs);

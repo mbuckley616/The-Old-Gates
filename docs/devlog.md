@@ -15346,3 +15346,16 @@ The test now wraps `showMsg` for the climb, keeps every line shown, and asks tha
 
 ### Needs eyes
 - None.
+
+## v80 — Session 738 — The boss bar reads the dungeon from the zone, not from `lid`; `sitechest`'s save step reads `siteAnywhere` (red on CI on 8b21560)
+**Correction to Session 736.** `bossbarunder`'s check *a master on another floor shows no bar* failed on d43c4ae, and it failed again on 8b21560 after 40 tries. So it was not the frame timing Session 736 took it for, or not only that. Session 736's waits did fix the other failure, on 72bfd96, where the bar had not yet come up.
+
+The cause is in Session 733's `tickBossHud` (`42-zone-enemies.js`): `under` was `lid!=='overworld'` with `lid` defined, and `dun` needed `under`. On the runner the test's portal comes from an empty `PORTALS` and has no id (as Session 714 found for `hoardspot`), so `goToDungeon` left `lid` undefined. Then `under` and `dun` were both false. The dungeon was read through the generic `ENEMIES` branch, which has no floor check, and a master on floor 3 kept its bar on floor 2. Reproduced here with the test's portal given `id: undefined`: the same check fails, with the same bar (*Testcrag — Cave Bear*, 50.1%). `dun` is now `activeZoneId==='dungeon'`, and `under` is `dun`, or `lid` set and not the overworld. In play every portal has an id, so this was a fault only for a door built without one; it can no longer reach the bar.
+
+The same CI run failed `sitechest` again, at its save-and-load step. `WORLD.SITE[id]` (the live map) was undefined, because the camp's cell had unloaded. That is the same race as Session 730, at the two places that put you beside the camp. Both read `siteAnywhere` when the live entry is gone.
+
+### Verified (headless Chromium)
+With the portal's id taken away: on the old code *another floor* fails (bar shown, 50.1%); on the new code `bossbarunder` passes 9/9. With the portal as written, 9/9. `sitechest` 9/9. `q7world` (the Faolchú's bar in the world) passes.
+
+### Needs eyes
+- None.
