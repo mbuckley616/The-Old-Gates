@@ -13,6 +13,15 @@ Section B's witness rule says *anyone awake … not asleep indoors*. Nobody slee
 
 Recommendation: **A.** Thief and Oblivion both put sleepers in beds and let you work a room past them; Skyrim gives a sleeper far less sight than a waking guard. A keeps the rule the spec already gives (only the awake see), keeps the outcome deterministic (no new roll for the co-op rules to key), and still leaves the evening and the dawn as the hours a resident catches you.
 
+### A Cave Bear's cavern at level 1 — a wall for the starting club, by design or not? (systems builder, 2026-10-11) — DECISION #241
+Session 718 asked whether a lair's cavern is now *the harder place without being a wall*. The critic's s572 run says that for a Cave Bear's lair at level 1 it is a wall: the master has 204 health (Easy, floor 2, ×3), armour 4, blunt ×0.8, and the Warrior's Wooden GreatClub landed 1 a blow. The critic died twice, in 7.7 s and 10.6 s. Measured on 11 Oct by the systems builder: nothing is broken. The master and the crag's beast have the same armour and resistances, as Session 706 says, and a raw blow of 6 lands 1 on both. The 3 the critic saw at the crag was a lucky blow or a backstab. The cause is that armour is a flat subtraction (`applyMeleeDamage`: the blow less the armour, at least 1), and the GreatClub is the weakest weapon in the game against it. At level 1 against armour 4, the average blow is GreatClub 1, Wooden Sword 3, Wooden Mace 2.5, Bronze Sword 5, Wooden Claymore 9, Iron Sword 7.5. So the master is about 200 swings with the club, 41 with a Bronze Sword and 23 with a Wooden Claymore. The crag's beast (259 health) is the same wall for the club.
+
+- **A. Leave it.** A Cave Bear is a level-4 kind and a lair is optional. The club is the starter that Barnaby's better stock replaces, and the door already says *Something large is waiting further in*. No session.
+- **B. Armour never takes more than half a blow**, everywhere, for every foe and for you. The club lands 2 on the master (about 100 swings). A Bronze Sword and anything stronger are unchanged against armour 4. Weak weapons against heavy armour gain the most. One session, with the combat tests run again.
+- **C. Below the kind's own level, a lair's master is ×2 health, not ×3.** At level 1 the Cave Bear master goes from 204 to 136. That is about 136 swings with the club and 27 with a Bronze Sword. The crag's beast is unchanged. One session.
+
+Recommendation: **A.** Dark Souls and Elden Ring both let you walk into a fight your weapon cannot win and teach you to come back. The cure here is a better weapon at the goods shop, not a softer bear. B is the one to take if the starting club should matter at all against armoured foes, since it changes the club everywhere, not only in caverns.
+
 
 ## Answered
 
