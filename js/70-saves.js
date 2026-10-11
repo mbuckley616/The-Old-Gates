@@ -26,7 +26,7 @@ function _serItem(it){
                   'heal','mana','stam','value','weight',
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
-                  'bookId','virtue','cloak']){ // S552 — a cloak's kind
+                  'bookId','virtue','cloak','line']){ // S552 — a cloak's kind; S564 — an armour piece's line (light, robe)
     if(it[k]!==undefined)s[k]=it[k];
   }
   if(it.enchant){
@@ -162,16 +162,31 @@ function ssStringify(d){SS.cut=[];
     const s=JSON.stringify(d,function(k,v){v=base.call(this,k,v);if(v&&typeof v==='object'){if(seen.has(v)){SS.cut.push('cycle:'+k);return undefined;}seen.add(v);}return v;});
     console.warn('save: cut circular references at',SS.cut);return s;}}
 function ssWhy(e){if(!e)return 'unknown error';if(e.name==='QuotaExceededError')return 'the browser refused the space';return ((e.name&&e.name!=='Error')?e.name+': ':'')+String(e.message||e).slice(0,140);}
-function ssWrite(kind,slot,label){let meta,str,wstr;
-  return Promise.resolve().then(()=>{const r=_buildSaveRows();str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(ssJoinPayload(r.c,r.w),kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
-      return ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str));}) /* Session 456 — the world row first: a v3 character row with no world beside it is the failure the load names */
+// ═══ THE PICTURE OF A SAVE (Session 653 — Michael's B on DECISION #199, the register with a picture) ═══
+// Each save keeps a 320×180 JPEG of the view as it was written (about 15 KB), in its own row beside the save at
+// ssPicKey(key); the index entry carries pic:1 when it has one. Not in the index itself: the index lives in
+// localStorage, and a dozen pictures a character would bring a few characters to its quota, where a failed index
+// write loses the list. The view is rendered and read in one task, so the canvas needs no preserveDrawingBuffer.
+const SS_PIC_W=320,SS_PIC_H=180;
+function ssPicKey(key){return key+'~p';}
+function ssShot(){try{if(typeof REN==='undefined'||!REN||!scene||typeof CAM==='undefined'||!CAM)return null;
+  REN.render(scene,CAM);const src=REN.domElement,sw=src.width,sh=src.height;if(!sw||!sh)return null;
+  const cv=document.createElement('canvas');cv.width=SS_PIC_W;cv.height=SS_PIC_H;const k=Math.max(SS_PIC_W/sw,SS_PIC_H/sh),w=SS_PIC_W/k,h=SS_PIC_H/k; /* the middle of the view at 16:9 */
+  cv.getContext('2d').drawImage(src,(sw-w)/2,(sh-h)/2,w,h,0,0,SS_PIC_W,SS_PIC_H);const url=cv.toDataURL('image/jpeg',.72);return /^data:image\/jpeg/.test(url)?url:null;}catch(e){return null;}}
+function ssPic(key){const m=ssEntry(key);if(m&&!m.pic)return Promise.resolve(null);return ssGet(ssPicKey(key)).catch(()=>null);}
+function ssPutPic(key,url){if(!url||typeof url!=='string'||!/^data:image\/jpeg;base64,/.test(url)||url.length>200000)return Promise.resolve(false); /* a picture lost is never a save lost */
+  return ssPut(ssPicKey(key),url).then(()=>{SS.cache[ssPicKey(key)]=url;return true;}).catch(()=>false);}
+function ssWrite(kind,slot,label){let meta,str,wstr,pic=null;
+  return Promise.resolve().then(()=>{const r=_buildSaveRows();pic=ssShot(); /* S662 — the rows (and the place's name) are read before the picture, which takes 2–3 s on a slow GL and ran out the threshold's 3 s (SS_THRESHOLD) */ str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(ssJoinPayload(r.c,r.w),kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
+      const rows=()=>ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str)); /* S658 — a write the store refuses once is tried once more on a fresh connection before the player is told it failed (main's first menu save failed so on CI, 8 Oct, and the next went through); the first refusal is kept in SS.retried */
+      return rows().catch(e=>{SS.retried={ts:Date.now(),why:ssWhy(e),kind};console.warn('save: retrying once after',e);if(SS.db){try{SS.db.close();}catch(_){}SS.db=null;}return rows();}).then(()=>ssPutPic(meta.key,pic)).then(ok=>{if(ok){meta.pic=1;meta.picSize=pic.length;}else ssDel(ssPicKey(meta.key));});}) /* Session 456 — the world row first: a v3 character row with no world beside it is the failure the load names */
     .then(()=>{SS.lastErr=null;SS.cache[meta.key]=str;SS.cache[ssWorldKey(meta.key)]=wstr;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();ssSetActive(meta.key);if(label!==false)showMsg(label||`💾 Saved — ${kind==='auto'?'autosave':'slot '+(slot+1)}.`,'#c8e88a');return meta;})
     .catch(e=>{const why=ssWhy(e);SS.lastErr={ts:Date.now(),why,kind};console.error('save',e);try{addLog('⚠',`Save failed (${kind==='auto'?'autosave':'slot '+(slot+1)}): ${why}`);}catch(_){}showMsg('⚠ Save failed — '+why,'#e88a8a');return null;});}
 function saveToSlot(n){return ssWrite('manual',n);}
 function ssAutosave(){const cid=ssCharId();const autos=SS.idx.filter(e=>e.charId===cid&&e.kind==='auto').sort((a,b)=>a.ts-b.ts);let slot=0;const used=new Set(autos.map(a=>a.slot));for(let i=0;i<SS_AUTO;i++){if(!used.has(i)){slot=i;break;}if(i===SS_AUTO-1)slot=autos[0].slot;}
   return ssWrite('auto',slot,'💾 Autosaved.');}
 function saveGame(force){if(typeof worldState==='undefined'||!worldState)return;const now=Date.now();if(!force&&SS.lastAuto&&now-SS.lastAuto<90000)return; /* the ring holds distinct moments, not five saves from one minute */ SS.lastAuto=now;ssAutosave();}
-function ssDelete(key){SS.idx=SS.idx.filter(e=>e.key!==key);ssSaveIndex();if(ssActiveKey()===key){const c=ssChars()[0];const n=c?c.saves.sort((a,b)=>b.ts-a.ts)[0]:null;if(n)ssSetActive(n.key);else{try{localStorage.removeItem(SS_ACTIVE_KEY);}catch(e){}}}return Promise.all([ssDel(key),ssDel(ssWorldKey(key))]).then(r=>r[0]);}
+function ssDelete(key){SS.idx=SS.idx.filter(e=>e.key!==key);ssSaveIndex();if(ssActiveKey()===key){const c=ssChars()[0];const n=c?c.saves.sort((a,b)=>b.ts-a.ts)[0]:null;if(n)ssSetActive(n.key);else{try{localStorage.removeItem(SS_ACTIVE_KEY);}catch(e){}}}return Promise.all([ssDel(key),ssDel(ssWorldKey(key)),ssDel(ssPicKey(key))]).then(r=>r[0]);}
 function ssDeleteChar(charId){const keys=SS.idx.filter(e=>e.charId===charId).map(e=>e.key);return Promise.all(keys.map(ssDelete));}
 // ── reading ──
 // Session 456 — ssLoadRows gives the two rows {c,w}; ssLoad gives them joined, the one-row shape every caller reads.
@@ -193,6 +208,15 @@ function ssSanitizeLoaded(){
   const G=worldState.guild;if(G&&typeof G==='object')for(const g in G){const t=G[g]&&G[g].active;if(!t)continue;delete t._obj;
     if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&t.spawned&&!t.done)t.spawned=false;
     if(t.kind==='raid'&&t.spawned&&(t.have||0)<(t.count||0))t.spawned=false;}
+  /* S674 — the foes a job raised (a guild task's beast or raiders, a road quest's band) are raised again by the loaded job
+     when you come near, as on a fresh page; the ones from before the load go, or a load made before the spawn doubles them
+     (two Shore Wisps, one id). The duel's rival is the duel's own and stays. */
+  const ZW=typeof ZONES!=='undefined'&&ZONES.world&&ZONES.world.enemies;if(ZW)for(let i=ZW.length-1;i>=0;i--){const e=ZW[i];if(!e||!(e._guildTag||(e._questTag&&!e._duel)))continue;
+    e.dead=true;try{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);}catch(err){}ZW.splice(i,1);}
+  /* S695 — a site's beasts (a lair's, a camp's, a glade's) are the site's, raised by its builder from the save's worldState.lairs:
+     a loaded site is put down and built again as you come near, so a load gives them back as they were when you saved, not as
+     you left them (a wounded Marsh Hag stayed wounded through a death and a load, and her dead wolves stayed dead). */
+  if(typeof SETTLE!=='undefined'&&typeof disposeSettlement==='function')for(const [id,S] of [...SETTLE])if(S&&S.creatures&&(S.creatures.length||S._deadMarked))disposeSettlement(id);
 }
 // ── v80 S139: a character as a file, out of the browser and back ──
 // One file holds a character's saves as they are stored, so it survives a cleared profile, a new
@@ -212,7 +236,7 @@ function ssDownload(str,name){const url=URL.createObjectURL(new Blob([str],{type
 function ssExportChar(charId,world){
   const c=ssChars().find(x=>x.id===charId);if(!c)return Promise.resolve(false);
   const rows=c.saves.slice().sort((a,b)=>a.ts-b.ts);
-  return Promise.all(rows.map(e=>ssReadRowsQuiet(e.key).then(r=>{if(!r)return null;const row=world?r.w:r.c;if(!row)return null;return {kind:e.kind,slot:e.slot,ts:e.ts,level:e.level,gold:e.gold,zone:e.zone,data:ssStringify(row)};})))
+  return Promise.all(rows.map(e=>ssReadRowsQuiet(e.key).then(r=>{if(!r)return null;const row=world?r.w:r.c;if(!row)return null;const o={kind:e.kind,slot:e.slot,ts:e.ts,level:e.level,gold:e.gold,zone:e.zone,data:ssStringify(row)};return (world?Promise.resolve(null):ssPic(e.key)).then(pic=>{if(pic)o.pic=pic;return o;});})))
     .then(got=>{const keep=got.filter(Boolean);
       if(!keep.length)throw new Error(world?'no world was saved with those saves':'those saves could not be read');
       const doc={format:world?SS_FILE_WORLD:SS_FILE,v:world?1:2,build:ssBuildTag(),exported:Date.now(),char:{id:c.id,name:c.name,people:c.people||'',arch:c.arch||'',level:c.level},saves:keep};
@@ -251,7 +275,7 @@ function ssImportFiles(files){
           c.charId=cid;if(c.wS&&typeof c.wS==='object')c.wS.charId=cid;if(w)w.charId=cid;
           const str=ssStringify(c);const meta=ssMetaFrom(c,kind,slot);meta.charName=name;meta.v=SAVE_VERSION;meta.size=str.length;written.add(cid+'_'+kind+'_'+slot);
           const wk=ssWorldKey(meta.key);const putW=w?ssStringify(w):null;
-          return (putW?ssPut(wk,putW).then(()=>{SS.cache[wk]=putW;meta.size+=putW.length;}):Promise.resolve()).then(()=>ssPut(meta.key,str)).then(()=>{SS.cache[meta.key]=str;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);metas.push(meta);});});}}
+          return (putW?ssPut(wk,putW).then(()=>{SS.cache[wk]=putW;meta.size+=putW.length;}):Promise.resolve()).then(()=>ssPut(meta.key,str)).then(()=>ssPutPic(meta.key,r.pic)).then(ok=>{if(ok){meta.pic=1;meta.picSize=r.pic.length;}}).then(()=>{SS.cache[meta.key]=str;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);metas.push(meta);});});}}
       // then the world files: each row beside the character row of the same id, kind and slot (an id renamed above follows the rename)
       let wrows=0;const orphan=[];
       for(const doc of worlds){const src=(doc.char&&doc.char.id)||null;const cid=(src&&idMap[src])||src;if(!cid){skipped++;continue;}
@@ -304,8 +328,10 @@ function ssSplitStored(){const old=SS.idx.filter(e=>!(e.v>=SAVE_VERSION));if(!ol
 // S475 — a save's place, for the slot list (the critic, 4 Oct: every open-world save read "the open country"). Indoors
 // activeZoneId stays 'world' and px/pz are the room's, so a house names its site; outdoors the nearest loaded place, by
 // name inside its pad, "near" it within 1,500; underground the gate's name. '' falls back to the zone's label.
+let SS_THRESHOLD=null; /* S627 — {name,x,z,t}: the door going down saves you at its threshold, so that save is named for the door, not the nearest town */
 function ssPlaceName(){try{
   if(activeZoneId==='dungeon')return (currentPortal&&currentPortal.name)||'';
+  if(SS_THRESHOLD&&activeZoneId==='world'&&performance.now()-SS_THRESHOLD.t<3000&&Math.hypot(px-SS_THRESHOLD.x,pz-SS_THRESHOLD.z)<8)return SS_THRESHOLD.name;
   if(activeZoneId!=='world'||typeof WORLD==='undefined')return '';
   if(currentHouse){const sid=currentHouse.siteId||(currentHouse.parent&&currentHouse.parent.siteId),t=sid&&WORLD.siteAnywhere(sid);return [currentHouse.name,t&&t.name].filter(Boolean).join(', ');}
   let best=null,bd=1e9;for(const t of WORLD.SITES){if(!t||!t.name)continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<bd){bd=d;best=t;}}
@@ -358,6 +384,7 @@ function _buildSavePayload(){
 
 function _applyLoadData(d,w){
   if(w)d=ssJoinPayload(d,w); /* Session 456 — the character row and the world row; one joined payload, or an old one-row save, is d alone */
+  _castMin=null; /* S685 — a load starts the caster's count afresh, so a cast made after loading rolls as it did after the save (casterRand) */
   xp=d.xp||0; level=d.level||1; xpNext=d.xpNext||200;
   kills=d.kills||0; gold=d.gold||0;
   maxHP=d.maxHP||100; PHP=d.PHP||maxHP; /* S335 — clamped to the worn maximum once the gear is back, below */
@@ -426,19 +453,13 @@ function _applyLoadData(d,w){
       return;
     }
     // Armor/shield/accessory path
-    if(it.slot && it.slot!=='weapon'){
-      let typeObj=null;
-      if(it.shieldType==='shield') typeObj=ARMOR_TYPES.find(t=>t.type==='Buckler');
-      else typeObj=ARMOR_TYPES.find(t=>t.slot===it.slot);
+    if(it.slot && it.slot!=='weapon' && !it.cloak){ // S564 — a cloak keeps its own price and needs nothing
+      const typeObj=armorTypeOf(it); /* S564 — a light or robe piece by its line, not as the heavy piece of its slot */
       if(typeObj && typeof TIER_VALUE!=='undefined'){
-        it.buyPrice=Math.max(5, Math.round(TIER_VALUE[tier]*(0.5 + (typeObj.defMult||0.3)*0.3)));
+        it.buyPrice=armorPrice(tier,typeObj);
       }
-      // Fortitude req from table — only T3+
-      if(tier>=3 && typeof ARMOR_FORT_REQ!=='undefined'){
-        it.reqAttr='fortitude'; it.reqVal=ARMOR_FORT_REQ[tier]||0;
-      } else {
-        it.reqAttr=null; it.reqVal=0;
-      }
+      // Fortitude req from table — only T3+ (Finesse for the light line, Intelligence for robes)
+      Object.assign(it,armorReq(tier,typeObj));
     }
   }
   // v61v migration: weight table scaled up. _serItem bakes `weight` into every save,
@@ -463,10 +484,8 @@ function _applyLoadData(d,w){
       if(typeObj && typeObj.weight!==undefined){ it.weight=typeObj.weight; return; }
     }
     // 3. Crafted armor/accessories — by slot (or shieldType for shields)
-    if(it.slot){
-      let typeObj=null;
-      if(it.shieldType==='shield') typeObj=ARMOR_TYPES.find(t=>t.type==='Buckler');
-      else typeObj=ARMOR_TYPES.find(t=>t.slot===it.slot);
+    if(it.slot && !it.cloak){
+      const typeObj=armorTypeOf(it); /* S564 — by its line */
       if(typeObj && typeObj.armorW!==undefined){ it.weight=typeObj.armorW; return; }
     }
   }
@@ -697,13 +716,14 @@ function _applyLoadData(d,w){
   try{applyLook();}catch(e){}
   worldState.stats            = (d.wS && d.wS.stats) || null;     // v80 — the Character tab's counters
   worldState.masters          = (d.wS && d.wS.masters) || null;   // v80 — cavern masters slain
+  worldState.siteChests       = (d.wS && d.wS.siteChests) || null;   // S700 — a lair's Hoard, a camp's Takings, once taken from
   worldState.cold             = (d.wS && d.wS.cold) || 0;         // v80 P — an Old Blood reader's cost
   worldState.sigilsRead       = (d.wS && d.wS.sigilsRead) || null;
   worldState.rented           = (d.wS && d.wS.rented) || null;    // v80 G — the inn room you rented
   // v80 S242 — keys the save always carried (wS is the whole worldState) but the load never read back: the day count,
   // the crime record, the Church's notes, the war, the Reader. Absent from the save, they are cleared, so one
   // character's record never carries into another's.
-  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told','mapNotes','feastMeals'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
+  ['gameTimeAbsMinutes','_rentWk','crime','crimes','boxes','picked','refuse','church','war','wars','lairDays','shrines','towerLoot','towerPicked','masteries','varek','roadsWalked','chapelAt','knowing','unbound','cargoMkt','told','mapNotes','feastMeals','challenge'].forEach(k=>{const v=d.wS?d.wS[k]:undefined;if(v===undefined||v===null)delete worldState[k];else worldState[k]=v;});
   journalLoad(d.wS&&d.wS.journal); // S486 — the journal is the character's; a save without one (older than S486) starts it empty
   try{ssSanitizeLoaded();}catch(e){console.warn('sanitize',e);}  // v80 S137
   // v61aw: tutorialDone migration. Saves predating v61aw never had this
@@ -764,6 +784,17 @@ function _applyLoadData(d,w){
   // ACTIVE_BUFFS intentionally cleared on load
 }
 
+// S664 — a door's save names its place: if that place was moved to the shore (S452) and the door stands by where it was drawn,
+// the door goes with it, even when its old spot is dry ground (a door on the edge of a drowned village; movedPlaceAt alone reads
+// that spot as unmoved). A door already at the new place is far from the old centre and is left alone.
+function _movedDoorPlace(W,r){
+  if(!W||W.kind==='world'||!W.door||!WORLD.routed)return null;
+  if(!WORLD.routed.ready&&WORLD.routeWorld)WORLD.routeWorld();
+  const L=WORLD.routed.shore&&WORLD.routed.shore.list;if(!L)return null;
+  const site=W.site||(typeof W.id==='string'&&(W.id.match(/^g_(.+)_[^_]+$/)||[])[1])||null;if(!site)return null;
+  for(const m of L)if(m.id===site&&Math.hypot(r.x-m.from.x,r.z-m.from.z)<=m.pad*1.5)return m;
+  return null;
+}
 function _applyZoneFromSave(d){
   _clearInteractPrompt();
   let sz=d.zone||'overworld';
@@ -785,7 +816,7 @@ function _applyZoneFromSave(d){
     const W=d.where||(d.wret?Object.assign({kind:'world'},d.wret):null);
     let r=(W&&W.kind==='world')?W:(W&&W.door)?W.door:(d.wret||null);
     // S455 — saved in a place the lakes were laid over (S452 moved 42 to the shore): the spot goes with the place, door and all
-    if(r&&r.x!=null&&WORLD.movedPlaceAt){const m=WORLD.movedPlaceAt(r.x,r.z);if(m){r=Object.assign({},r,{x:r.x+m.dx,z:r.z+m.dz});if(W&&W.kind!=='world'&&W.door)W.door=Object.assign({},W.door,{x:W.door.x+m.dx,z:W.door.z+m.dz});}}
+    if(r&&r.x!=null&&WORLD.movedPlaceAt){const m=_movedDoorPlace(W,r)||WORLD.movedPlaceAt(r.x,r.z);if(m){r=Object.assign({},r,{x:r.x+m.dx,z:r.z+m.dz});if(W&&W.kind!=='world'&&W.door)W.door=Object.assign({},W.door,{x:W.door.x+m.dx,z:W.door.z+m.dz});}}
     // an old save made indoors carries interior coordinates as if they were the world's — never trust a position in the sea
     if(!r||r.x==null||WORLD.worldH(r.x,r.z)<0.5){const lp=WORLD.lastWorldPos;r=(lp&&WORLD.worldH(lp.x,lp.z)>0.5)?lp:(WORLD.spawn||{x:px,z:pz,yaw:0});}
     px=r.x;pz=r.z;if(r.yaw!=null)yaw=r.yaw;sz='world';
@@ -877,7 +908,8 @@ function renderSLSlots(){
   const zoneOf=m=>m.place?m.place:m.zone==='world'?'the open country':(ZONE_LABEL&&ZONE_LABEL[m.zone])||m.zone||'…';
   const active=ssActiveKey();const curId=(typeof worldState!=='undefined'&&worldState&&worldState.charId)||null;
   const row=(m,kind,slot,charId)=>{const div=document.createElement('div');div.className='sl-slot'+(m&&m.key===active?' active-slot':'')+(m?'':' sl-slot-empty');div.dataset.key=m?m.key:'';
-    div.innerHTML=`<span class="sl-slot-num">${kind==='auto'?'A'+(slot+1):slot+1}</span><span class="sl-slot-ico">${m?(kind==='auto'?'⟳':'💾'):'·'}</span><span class="sl-slot-info"><div class="sl-slot-name">${m?`Lv${m.level} · ${zoneOf(m)}`:'— Empty —'}</div>${m?`<div class="sl-slot-detail">${m.at!=null?gameDateLine(m.at,m.tod,'short')+' · ':''}${m.gold}🪙 · ${fmtT(m.ts)}${m.size?` · ${(m.size/1024).toFixed(0)} KB`:''}</div>`:''}</span>${m?`<button type="button" class="sl-del" title="Delete this save" style="background:none;border:1px solid rgba(255,255,255,.12);color:#a08070;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">🗑</button>`:''}`;
+    div.innerHTML=`<span class="sl-slot-num">${kind==='auto'?'A'+(slot+1):slot+1}</span><span class="sl-slot-ico">${m?(kind==='auto'?'⟳':'💾'):'·'}</span>${m&&m.pic?'<img class="sl-thumb" alt="">':''}<span class="sl-slot-info"><div class="sl-slot-name">${m?`Lv${m.level} · ${zoneOf(m)}`:'— Empty —'}</div>${m?`<div class="sl-slot-detail">${m.at!=null?gameDateLine(m.at,m.tod,'short')+' · ':''}${m.gold}🪙 · ${fmtT(m.ts)}${m.size?` · ${(m.size/1024).toFixed(0)} KB`:''}</div>`:''}</span>${m?`<button type="button" class="sl-del" title="Delete this save" style="background:none;border:1px solid rgba(255,255,255,.12);color:#a08070;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:12px">🗑</button>`:''}`;
+    if(m&&m.pic){const im=div.querySelector('.sl-thumb');ssPic(m.key).then(u=>{if(u&&im&&im.isConnected)im.src=u;else if(im)im.remove();});} /* S653 — the picture of the save */
     if(m){const del=div.querySelector('.sl-del');del.onclick=(ev)=>{ev.stopPropagation();if(del.dataset.primed==='1'){ssDelete(m.key).then(()=>renderSLSlots());}else{del.dataset.primed='1';del.textContent='Delete?';del.style.color='#e88a60';setTimeout(()=>{if(del.isConnected){del.dataset.primed='0';del.textContent='🗑';del.style.color='';}},2500);}};}
     if(_slMode==='save'){if(kind==='manual')div.onclick=()=>_slotSaveClick(div,slot,m);else div.style.opacity='.6';}
     else if(m)div.onclick=()=>_slotLoadClick(div,m);
@@ -885,7 +917,7 @@ function renderSLSlots(){
   const header=(txt,sub)=>{const h=document.createElement('div');h.style.cssText='margin:10px 0 4px;font:600 13px Georgia,serif;color:#e8d8a0;letter-spacing:.04em;display:flex;align-items:center;gap:8px';h.innerHTML=`<span>${txt}</span>${sub?`<span style="font-weight:400;font-size:11px;color:#8a7a60;letter-spacing:0">${sub}</span>`:''}<span style="flex:1"></span>`;container.appendChild(h);return h;}; // v80 S140 — name, then detail, then the buttons at the right
   const chars=ssChars();
   // v80 S137 — where the saves live and how much they take; the last failure, in words
-  {const st=document.createElement('div');st.style.cssText='font-size:11px;color:#7a6a50;margin:0 0 4px 2px';const tot=SS.idx.reduce((a,e)=>a+(e.size||0),0);
+  {const st=document.createElement('div');st.style.cssText='font-size:11px;color:#7a6a50;margin:0 0 4px 2px';const tot=SS.idx.reduce((a,e)=>a+(e.size||0)+(e.picSize||0),0);
     st.textContent=`${SS.fallback?"Saved in this browser's localStorage (IndexedDB unavailable)":SS.db?'Saved in IndexedDB':'Save store not open yet'} · ${SS.idx.length} save${SS.idx.length===1?'':'s'}, ${(tot/1024).toFixed(0)} KB`;container.appendChild(st);
     try{if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{if(st.isConnected&&e&&e.quota)st.textContent+=` · browser storage ${(e.usage/1048576).toFixed(1)} of ${(e.quota/1048576).toFixed(0)} MB`;}).catch(()=>{});}catch(e){}
     const imp=document.createElement('button');imp.type='button';imp.textContent='\u2913 Import a character from a file';imp.className='sl-btn';imp.title='Load a character from a file you exported';imp.style.cssText+='margin:2px 0 6px 2px;align-self:flex-start';imp.onclick=ssPickImport;container.appendChild(imp); // v80 S139

@@ -523,12 +523,13 @@ function isInterior(){ return lid&&lid.startsWith('int_'); }
 function goToInterior(house){
   doFade(()=>{
     _clearInteractPrompt();
+    let _fHere=false;
     currentHouse=house;
     house._fromZone=activeZoneId;
-    if(house.id&&String(house.id).startsWith('g_')&&typeof WORLD!=='undefined'){WORLD.buildInteriorFor(house);WORLD.guild.onEnterInterior(house);}else buildInterior(house); // v80 — generated buildings use the world interior generator
+    if(house.id&&String(house.id).startsWith('g_')&&typeof WORLD!=='undefined'){WORLD.buildInteriorFor(house);_fHere=WORLD.guild.onEnterInterior(house)===true;}else buildInterior(house); // v80 — generated buildings use the world interior generator
     lid='int_'+house.id;
     showZoneName('🏠 '+house.name);
-    document.getElementById('fbtn').style.display='none';
+    document.getElementById('fbtn').style.display=_fHere?'block':'none'; /* S672 — the hearth task's house keeps the cast button, for a touch screen */
     scene=interiorScene;
     const _intD={weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22,safehouse:8};
     const _D=_intD[house.type||'misc']||9;

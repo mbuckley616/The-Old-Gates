@@ -11,8 +11,8 @@ await page.waitForTimeout(5000); await g.hide();
 const beds = await page.evaluate(() => { const mine = worldState.rented.room; return INT_BEDS.map(b => { px = b.x; pz = b.z; jumpY = b.y || 0; return { mine: b.room === mine, sleeps: !WORLD.bedInteract(b) }; }); });
 check('your room sleeps, the others refuse', beds.every(b => b.mine === b.sleeps), beds);
 const door = await page.evaluate(async () => { const d = WORLD.intDoors[0]; if (!d) return null; px = d.x + .9; pz = d.z + .9; jumpY = d.y;
-  const shut = intSolidAt(d.x, d.z, .3); WORLD.intDoorInteract(); await new Promise(r => setTimeout(r, 500)); const open = intSolidAt(d.x, d.z, .3);
-  WORLD.intDoorInteract(); await new Promise(r => setTimeout(r, 500)); return { shut, open, again: intSolidAt(d.x, d.z, .3), n: WORLD.intDoors.length }; });
+  const shut = intSolidAt(d.x, d.z, .3); WORLD.intDoorInteract(d); await new Promise(r => setTimeout(r, 500)); const open = intSolidAt(d.x, d.z, .3);
+  WORLD.intDoorInteract(d); await new Promise(r => setTimeout(r, 500)); return { shut, open, again: intSolidAt(d.x, d.z, .3), n: WORLD.intDoors.length }; });
 check('inn rooms have doors that block when shut', door && door.n >= 1 && door.shut && !door.open && door.again, door);
 // lockpicking, on a synthetic dungeon door
 const lp = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 5 });

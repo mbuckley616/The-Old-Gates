@@ -7,6 +7,9 @@ import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 fs.mkdirSync('tests/out', { recursive: true });
+// S619 — the towns are the first thirty of the loaded cells' places, so wait for the loader to have thirty (it had 15 by
+// the time the page was asked, on a busy runner)
+await page.waitForFunction(() => WORLD.SITES.filter(t => /^(town|city|village|port|garrison)$/.test(t.kind) && t.pad > 0).length >= 30, null, { timeout: 180000 }).catch(() => {});
 const T = (await measureTowns(page, 30)).filter(x => !x.err);
 const worst = k => T.reduce((m, x) => Math.max(m, x[k] || 0), 0);
 check('thirty settlements build', T.length >= 25, { n: T.length });

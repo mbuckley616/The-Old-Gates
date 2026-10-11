@@ -8,7 +8,7 @@ await page.evaluate(() => { forceTime(13); const S = WORLD.settle.get('dunmore')
   worldState.crime = {}; px = h.doorX; pz = h.doorZ + .3; jumpY = 0; goToInterior(h); });
 // the room builds over a few frames: wait for its strongbox and its keeper
 await page.waitForFunction(() => !!WORLD.intBox && typeof intNPCMesh !== 'undefined' && !!intNPCMesh, null, { timeout: 60000, polling: 250 });
-const theft = await page.evaluate(() => { const X = WORLD.intBox; px = X.x; pz = X.z + .8; jumpY = 0;
+const theft = await page.evaluate(() => { const X = WORLD.intBox; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z);
   // the keeper steps over to the counter beside you (the room's own layout decides whether they would; the fine is what is tested)
   intNPCMesh.position.x = px + 1.5; intNPCMesh.position.z = pz; intNPCMesh.rotation.y = Math.atan2(px - intNPCMesh.position.x, pz - intNPCMesh.position.z); // (S368: and faces you)
   const site = window._S.site, b0 = WORLD.bountyAt(site), gold0 = gold, bag0 = BAG.length; X.open = true;

@@ -25,6 +25,23 @@ function perfNote(now,tLoop,tDraw0,tDraw1){
   PERF.last=r;PERF.el.textContent=`${r.fps} fps · frame ${r.frameMs} ms (worst ${r.worstMs}) · loop ${r.jsMs} · draw ${r.drawMs}\n${r.calls} calls · ${(r.tris/1000).toFixed(0)}k tris · ${r.w}×${r.h} at ${r.px}× · shadows ${r.shadows?'on':'off'}`;
   PERF.n=0;PERF.t0=now;PERF.frame=0;PERF.worst=0;PERF.js=0;PERF.draw=0;PERF.calls=0;PERF.tris=0;}
 let _bareSwingMax=0; // v80 S382 — the length of a swing with no view model, latched on its first frame (issue #81)
+// S623 — Michael's playtest of 6 Oct: you walked through foes and townsfolk. After your step, a live foe or a townsperson in
+// sight of the world stands as a disc and pushes you out to its edge, never into a wall. A foe's disc follows its size, capped
+// so it can still come inside its own blow (the dungeon's foes stop at 0.6 and swing within 0.9; the open world's at 1.0, 1.1).
+const BODY_YOU=.25;
+function bodyR(e,cap){const s=e.size||(e.mesh&&e.mesh.scale&&e.mesh.scale.x)||1;return Math.max(.2,Math.min(cap,.3*s));}
+function pushFromBodies(){
+  if(dead)return;
+  const _int=isInterior(),inD=!_int&&activeZoneId==='dungeon';
+  const free=(x,z)=>_int?!intSolidAt(x,z,.3,0):inD?!dBlk(x,z):!currentZoneSolid(x,z);
+  const push=(bx,bz,r)=>{const dx=px-bx,dz=pz-bz,d=Math.hypot(dx,dz),R=r+BODY_YOU;if(d>=R)return;
+    const ux=d>1e-4?dx/d:-fwdX,uz=d>1e-4?dz/d:-fwdZ;const nx=bx+ux*R,nz=bz+uz*R;
+    if(free(nx,nz)){px=nx;pz=nz;}else if(free(nx,pz))px=nx;else if(free(px,nz))pz=nz;};
+  if(_int){if(typeof INT_NPCS!=='undefined')for(const n of INT_NPCS){if(n&&n.g&&n.g.visible)push(n.g.position.x,n.g.position.z,.3);}return;}
+  if(inD){if(typeof ENEMIES!=='undefined')for(const e of ENEMIES){if(e.dead||e.floor!==currentFloor||Math.abs(e.x-px)>2||Math.abs(e.z-pz)>2)continue;push(e.x,e.z,bodyR(e,.5));}return;}
+  for(const e of ZE){if(!e||e.dead||e.locked||Math.abs(e.x-px)>3||Math.abs(e.z-pz)>3)continue;if(e.mesh&&!e.mesh.visible)continue;push(e.x,e.z,bodyR(e,e.isBoss||e.boss?.9:.7));}
+  if(activeZoneId==='world'&&typeof npcs!=='undefined')for(const n of npcs){if(!n.g||!n.g.visible)continue;const p=n.g.position;if(Math.abs(p.x-px)>2||Math.abs(p.z-pz)>2)continue;push(p.x,p.z,.3);}
+}
 function loop(now){
   const _pfL=PERF.on?performance.now():0;
   requestAnimationFrame(loop);
@@ -69,7 +86,7 @@ function loop(now){
   const _qpop = document.getElementById('quest-popup');
   const _qpopOpen = _qpop && _qpop.style.display==='flex';
   if(typeof lockOpen!=='undefined'&&lockOpen&&LP.live)lpWatch(); // S327 — before the pause: a halt's dialogue must close the lock
-  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen)||(typeof pauseOpen!=='undefined'&&pauseOpen))return;
+  if(!started||dead||won||invOpen||shopOpen||lootOpen||stashOpen||luOpen||hubOpen||dlgOpen||nbOpen||isBookOpen()||_qpopOpen||_introFadeActive||(typeof lockOpen!=='undefined'&&lockOpen&&!LP.live)||(typeof sleepOpen!=='undefined'&&sleepOpen)||(typeof barberOpen!=='undefined'&&barberOpen)||(typeof cargoOpen!=='undefined'&&cargoOpen)||(typeof yardOpen!=='undefined'&&yardOpen)||(typeof pauseOpen!=='undefined'&&pauseOpen))return;
   // v61e6 Session A: clock tick. Placed AFTER the pause bailout so UI-open
   // pauses the clock (consistent with stamina/buffs/cooldowns pausing).
   advanceClock(dt);
@@ -328,6 +345,7 @@ function loop(now){
   const _roll=tickRoll(performance.now()/1000);
   if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
   const moving=!!(mdx||mdz);
+  _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
   // v62.7 — Forward lunge boost. If lungeT > 0 AND W is currently held, add an
   // extra forward-direction displacement on top of normal WASD motion. The
   // boost is forward-only (uses fwdX/fwdZ, not the normalized WASD vector) so
@@ -359,6 +377,7 @@ function loop(now){
       if(nz2>R&&nz2<iD-R&&!behindCounter)pz+=dz;
     }
     else{const[nx,nz]=dSlide(px,pz,tdx,tdz);px=nx;pz=nz;}}
+  try{pushFromBodies();}catch(err){} /* S623 — foes and townsfolk are solid to you */
 
   // Jump physics
   const GRAVITY=18,JUMP_VEL=5.5;
@@ -888,10 +907,10 @@ function loop(now){
                    :activeZoneId==='hearthwick'?HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)
                    :activeZoneId==='ironhaven'?IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)
                    // v61e1: generic per-zone houses lookup mirrors the interact handler.
-                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)||null;
+                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)||null; /* S614 — a door entered by the crosshair (the ship's hatch) is not found by standing on it */
     const nearHouse = (nearHouseRaw && activeZoneId==='overworld' && _houseDestroyed(nearHouseRaw)) ? null : nearHouseRaw;
     const activeNPCs=(ZONES[activeZoneId]&&ZONES[activeZoneId].npcs)||[];
-    const nearNPC=activeNPCs.some(n=>!n._retreated && Math.hypot(px-n.g.position.x,pz-n.g.position.z)<3.2 && aimAt(n,3.6)); // v80 — aimed, not near
+    const nearNPC=talkAimedNPC(activeNPCs); // v80 — aimed, not near; S596 — the nearest of those aimed at, the one E talks to
     const nearHerbPrompt=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<1.1);
     // v61b: notice boards zone-scoped (each entry carries a `zone` tag).
     const nearBoard=(typeof isSettlementZone==='function' && isSettlementZone(activeZoneId))
@@ -968,7 +987,7 @@ function loop(now){
     // rationale. The fort_door portal handles its own E-prompt.
     else if(nearBoard){iprOW.textContent=`Press 'E' to read ${nearBoard.title}`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){iprOW.textContent=WORLD.shipPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} // v80 C
-    else if(nearNPC){const _nm=(typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.nearNpcName():null;iprOW.textContent=_nm?`${_nm} — Press 'E' to talk`:"Press 'E' to talk";iprOW.style.opacity='1';iprOW.style.display='block';}
+    else if(nearNPC){const _nd=nearNPC.def||{},_nm=(activeZoneId==='world'&&_nd.name)?`${_nd.name}${_nd.role&&_nd.role!=='Villager'?' — '+_nd.role:''}`:null;iprOW.textContent=_nm?`${_nm} — Press 'E' to talk`:"Press 'E' to talk";iprOW.style.opacity='1';iprOW.style.display='block';}
     else{iprOW.style.opacity='0';setTimeout(()=>{if(iprOW.style.opacity==='0')iprOW.style.display='none';},260);}
   }
   else if(lid&&isInterior()){
@@ -995,12 +1014,12 @@ function loop(now){
     const nearExit=pz>_rd-1.6&&Math.abs(px-_rw/2)<1.6&&jumpY<.6; // v80 S13 — at the door, on the ground floor
     // v61d4 — Stash + bed proximity prompts. Both check the live globals
     // set by buildInterior's safehouse branch; null in any other interior.
-    const nearStash=intStashPos && Math.hypot(px-intStashPos.x,pz-intStashPos.z)<1.4;
-    const _nbd=INT_BEDS.length?INT_BEDS.find(b=>Math.hypot(px-b.x,pz-b.z)<1.6&&Math.abs(jumpY-(b.y||0))<.9):null;const nearBed=_nbd?!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd)):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4); // v80 — any usable bed
+    const nearStash=stashAimed(); /* S656 — the prompt asks what E does */
+    const _nbd=INT_BEDS.length?intBedTarget():null;const nearBed=INT_BEDS.length?(!!_nbd&&!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)); /* S645 — the prompt asks what E does: under the crosshair, and intBedPos only where E reads it */ // v80 — any usable bed
     const iprInt=document.getElementById('ipr');
     const _dpr=(typeof WORLD!=='undefined'&&WORLD.intDoorPrompt)?WORLD.intDoorPrompt():null; // v80 S143
     if(nearExit){iprInt.textContent="Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}
-    else if(_dpr){iprInt.textContent=_dpr;iprInt.style.opacity='1';iprInt.style.display='block';}
+    else if(_dpr&&!(_nbd&&nearBed)){iprInt.textContent=_dpr;iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(nearStash){iprInt.textContent="Press 'E' to access stash";iprInt.style.opacity='1';iprInt.style.display='block';}
     else if(nearBed){iprInt.textContent=(_nbd&&typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))||"Press 'E' to rest";iprInt.style.opacity='1';iprInt.style.display='block';} // v80 S141 — the bed says whose it is
     else if(nearKeeper){iprInt.textContent=(currentHouse&&currentHouse.keeper?currentHouse.keeper+" — ":"")+"Press 'E' to talk";iprInt.style.opacity='1';iprInt.style.display='block';}
@@ -1097,6 +1116,7 @@ function loop(now){
             if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
             // Dormant Gargoyle bonus (matches melee path: dormant enemies take 2×).
             if(e.dormant) dmg = Math.floor(dmg * 2);
+            dmg = challengeDealt(dmg); /* S684 — the challenge */
             e.hp = Math.max(0, e.hp - dmg);
             if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
             e.alert = true;
@@ -1176,7 +1196,7 @@ function loop(now){
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
-      if(!e.alert && canSeePlayer(e, dist, 3.5)){
+      if(!e.alert && canSeePlayer(e, dist, 8)){ /* S635 — 3.5 → 8 (Michael's A on #190) */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
         let los=true;
         for(let t=0.15;t<0.9;t+=0.15){
@@ -1325,7 +1345,11 @@ function loop(now){
       const _slam=tickMasterSlam(e,dt,dist,now);
       // Ranged enemies hold at distance 3-5; melee enemies always close
       const wantsToChase=!_slam&&(!e.ranged||(dist>4.5));
-      if(wantsToChase){if(e.pathT<=0){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=e.spd*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);e.x=nx;e.z=nz;}}}
+      e._close=false;
+      // S622 — the path is cells: in your cell it is empty, and a foe that stopped there 0.9–1.4 off never swung. It now comes
+      // straight at you in your cell, and plans again a quarter-second after you step into another cell, not up to 1.2 s later.
+      if(wantsToChase){const _cs=dungeonChaseSpeed(e),_sr=Math.max(.6,bodyR(e,.5)+.25); /* S635 — near your walk (#190 A); it stops at its disc and yours, which at the old pace it never reached along its path */const _tk=Math.round(T.x)+','+Math.round(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const[tc,tr]=e.path[0],dx=tc-e.x,dz2=tr-e.z,d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=_cs*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);if(Math.hypot(nx-T.x,nz-T.z)>=_sr||Math.hypot(nx-T.x,nz-T.z)>dist){e.x=nx;e.z=nz;}}}
+        else if(dist>_sr&&Math.round(e.x)===Math.round(T.x)&&Math.round(e.z)===Math.round(T.z)){const step=Math.min(_cs*dt,dist-_sr);const[nx,nz]=dSlide(e.x,e.z,(T.x-e.x)/dist*step,(T.z-e.z)/dist*step);e.x=nx;e.z=nz;e._close=true;}}
       // Attack lunge animation
       let lungeFwd=0;
       if(e.atkAnim>0){e.atkAnim=Math.max(0,e.atkAnim-dt);const p=e.atkAnim/.35;lungeFwd=Math.sin(p*Math.PI)*.28;}
@@ -1339,7 +1363,7 @@ function loop(now){
       }
       // Limb walk animation — only for humanoid/brute when alert and moving
       if(e.limbs&&!e.isWraith){
-        const moving=e.path&&e.path.length>0;
+        const moving=(e.path&&e.path.length>0)||e._close;
         e.walkT+=(moving?dt*e.spd*8:dt*.5); // idle sway when still
         const swing=moving?Math.sin(e.walkT)*.55:Math.sin(e.walkT)*.04;
         const armSwing=moving?Math.sin(e.walkT)*.45:Math.sin(e.walkT)*.03;
@@ -1450,11 +1474,13 @@ function loop(now){
     // a tell would defeat the bait). Same 1.1u radius as the chest find.
     const nearMimic=ENEMIES.find(en=>!en.dead&&en.disguised&&en.floor===currentFloor&&Math.hypot(px-en.x,pz-en.z)<1.1);
     const nearBarrelPrompt=BARRELS.find(b=>b.floor===currentFloor&&lookingAt(b,2.6)&&(!b.opened||b.items.length>0)); // v80 — look-at
-    const nearEntrance=currentFloor===1&&Math.hypot(px-dEntranceX,pz-dEntranceZ)<1.4;
+    const nearCot=fortCotNear(); // S624 — the cot's prompt, when it is nearer than the way out
+    const nearEntrance=!nearCot&&currentFloor===1&&Math.hypot(px-dEntranceX,pz-dEntranceZ)<1.4;
     const nearStair=dStairC!==null&&Math.hypot(px-dStairC,pz-dStairR)<1.3;
     const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<1.4);
     const iprEl=document.getElementById('ipr');
     if(nearEntrance){iprEl.textContent="Press 'E' to leave dungeon";iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearCot){iprEl.textContent="Press 'E' to rest";iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearStair){
       const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}

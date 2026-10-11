@@ -2380,3 +2380,375 @@ At 22:00 in the circle, a `showMsg`: *You settle in by the {fold}.* At 02:00 if 
 
 - Six more templates for a second run, on the same frame: a cart stuck on the road; a dog gone after a deer; a wedding wanting a fish from a named lake; a boy who went to look at a gate; a rubbing someone wants read and should not; a quarrel between two neighbours where both ask you.
 - The Fighters' and Mages' heads could hand an errand on to a member of the public ("There's a woman in the square asking for a sword."), which is the easiest bridge from the guilds to the street.
+
+---
+
+## Asked in Passing, the second run — six more errands
+
+*Unapproved.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
+
+The `sub` values: `cart`, `child`, `fish`, `rubbing`, `hedge`, `prayer`. Numbering continues from the first run.
+
+### What the canon fixes, and where it is silent
+
+- §2's speech row for each people, and *First Words* (this file): hints are short and never an opinion.
+- §3.1: the Withdrawal *forbade the reading of sigils (touching is permitted; understanding is not)*; the Old Blood *keep the tongue and the tattoos and not the knowledge*. Errand 10 (the rubbing) is that law met in a kitchen.
+- §3.3: an Old Blood *feels warm stones at a distance*. Errand 8's Old Blood child is why she went.
+- Part I, *Three tiers of comprehension*: Impression, Comprehension (the English), Mastery (the true name). Errand 10's three readers give the three tiers, from the spell's own `nameIr`, `nameEn` and `nameMa` (`64-spells.js`).
+- §1.2: the Mark settles disputes *by duel*; §1.3: the Compact keeps *paper over oaths*. Errand 11 (the hedge) ends differently in each.
+- §4.1: the six gods and their domains, and the shrines that are theirs (`GODS`, `godOf`). Errand 12 is a prayer on another's behalf.
+- §2.1: the coinages are mutual, about work, land and gods, and each is contradicted by a named person. Errand 11, in a port where the two neighbours are of two peoples, uses one each and has it contradicted on the spot.
+- *Silent:* how the peoples marry, and whether a fish has anything to do with it. The plainer thing: a good fish on the wedding table is a coast's custom, the same in every nation, and only the reason each people gives for it differs. Nobody is hurt in any errand here; the child at the gate comes home whatever you choose.
+
+---
+
+### 7. The Stuck Cart
+
+*Trades:* carter, farmer, trader, miller, cooper; givers in a village or town with a road out (`ROADS` has one ending at the site).
+
+**Shape.** The giver's cart is in the ditch on the road out of town, between 150 and 300 units along it (the road quest's point, `rd.pts`, taken from the other end of the road from the bandit camp's). At the cart, E. Two ways to shift it: lift it (Might 5 or more), or unload it, lift it empty and load it again, which takes two game-hours (`advanceClock`, the named action). While you unload, if the road is not cleared (`roads[id].cleared`, §12), one time in three on the errand's id two of the road's bandits come up the road (`buildZoneEnemy`, keyed `er:…:foe:<k>`); kill them and the giver's town takes a point more. Then walk back. The cart is home before you are (it is gone from the road when you turn round).
+
+**The hint:**
+- Gatelander: "I'd a cart this morning. I've a ditch with a cart in it now."
+- Markman: "Cart's in the ditch. Out the road."
+- Aurennais: "My cart is in a ditch on the road, Master, with the day's goods in it."
+- Old Blood: "The wain is in the ditch."
+
+**Ask:** *Where's your cart?*
+
+**The offer.**
+- Gatelander: "Out the {direction} road, a half-hour on, nose down in the ditch where the road's gone soft. I'd the strength for it once. A cart's like a grudge: easy got into, hard got out of. Shift it for me and there's {n} gold in it."
+- Markman: "{Direction} road. Half an hour out. Wheel's in the ditch and my back's done. Lift it. {n} gold."
+- Aurennais: "On the {direction} road, Master, perhaps half an hour out. The wheel has gone into the ditch and the goods are owed in town by evening. If you could free it, {n} gold, and the goods can still be delivered as contracted."
+- Old Blood: "The {direction} road. A half-hour. Lift it out. {n} gold."
+
+**At the cart.** The prompt: *Press 'E' to see to the cart.* Then the labels, in a small panel (the barber's chair slip or a dialogue with no speaker):
+- **Lift it.** With Might 5 or more: `showMsg` *You get your shoulder under the bed and heave. The wheel comes up out of the ditch.* Under 5: *It does not shift.*, and the label stays.
+- **Unload it, lift it, load it again.** Always: *Two hours, sack by sack. The cart comes out light, and goes back heavy.* (the clock moves on two hours; the bandits, if they come, arrive in the first.)
+
+If the bandits come: *Someone is coming up the road.*
+
+**Turned in** (*Your cart's out of the ditch.*):
+- Gatelander: "So it is, and on its four wheels and not three. Here, and the Weaver keep your back."
+- Markman: "Saw it come in. Good. Here."
+- Aurennais: "It arrived an hour ago, Master, with the goods entire. Your fee, as agreed."
+- Old Blood: "The wain came home. Good."
+
+**Turned in, if the bandits came and were killed** (one line more, after the paid line):
+- Gatelander: "And them on the road that came at you — I'll not ask. A road's only as safe as the last one to walk it."
+- Markman: "Heard about the road. Good work. Drinks are on me, if I'm there."
+- Aurennais: "And I understand the road was cleared of a certain difficulty. The town is in your debt, Master, and so am I."
+- Old Blood: "The road is quieter."
+
+**Lapsed** (14 days, as every errand):
+- Gatelander: "My cousin came with the ox in the end. An ox doesn't promise; it just pulls."
+- Markman: "Got it out myself. Took the day."
+- Aurennais: "The cart was recovered by other means, Master. The goods were late; I paid the penalty."
+- Old Blood: "It is out. Not by you."
+
+---
+
+### 8. The Child at the Gate
+
+*Trades:* any giver with `bio.kids` > 0, in a village or town with an old gate within 700 (`nearDoors(site,700)`). The child is a son or a daughter, rolled on the errand's id, of the giver's people, named from the town's bank.
+
+**Shape.** The child went off this morning to look at the nearest old gate and has not come back. Nobody is hurt. Go to the gate: the child stands at its door, spawned when you come within 200 (the `find` errand's machinery, `qTick`). The child says one thing and then the choice: bring them straight home, or let them show you what they found first. If the gate is a sigil gate, *show me* stars it on your map (as a rubbing does, `worldState.rubbings[seed]`), and the child says why it is the warm one. Either way they walk home behind you (`WAY.follow`'s machinery, the lord's walk), and the giver pays.
+
+**The hint:**
+- Gatelander: "If you see a child on the road with more nerve than sense, it's mine."
+- Markman: "My boy's not back. He's not lost. He's just not back."
+- Aurennais: "Forgive me, Master. My daughter has not come home, and I am trying not to look at the road."
+- Old Blood: "My child went to the door."
+
+**Ask:** *Who's not back?*
+
+**The offer.**
+- Gatelander: "{Child}. Gone off to look at {gate}, {direction} of here, for no reason but that I said not to. A child told 'don't' hears 'go and see'. Bring {him} home to me by the ear, and I'll pay you {n} and give {him} the scolding."
+- Markman: "{Child}. Went to look at {gate}. {Direction}. Bring {him} back. {n} gold, and I'll see to the rest."
+- Aurennais: "{Child}, Master. {He} has gone to look at {gate}, {direction} of here, against every instruction. I would go myself, but there is no one else to keep the house. {n} gold for {his} safe return; I will not pretend I would bargain over it."
+- Old Blood: "{Child}. {He} went to {gate}. {Direction}. {He} felt it from here. Bring {him} home. {n} gold."
+
+**The child at the door** (*Your {mother|father} wants you home.*), by the child's people:
+- Gatelander: "I was only looking. You can look without touching. I touched it a bit."
+- Markman: "I'm not scared of it. I'm not. I was just about to go in."
+- Aurennais: "I was making a drawing of it, for the archive. Somebody ought to. Nobody has drawn this one."
+- Old Blood: "It is warm. I could feel it from the road. I wanted to see why."
+
+The labels: **Home. Now.** · **Show me what you found, then home.**
+
+*Show me* (the child's line, then a `showMsg`). If the gate has a sigil:
+- Gatelander: "Here, put your hand there. Feel it? It's warmer than the rest. Gran says that's the dead keeping it warm."
+- Markman: "This bit. Here. It's warm. Stone's not meant to be warm."
+- Aurennais: "This mark here, Master. The stone is warm under it. I have made a note."
+- Old Blood: "This one. Not the others. This one is awake."
+and *{Gate} is marked on your map.*
+
+If it has none:
+- Gatelander: "There's nothing. I thought there'd be something. It's only an old door."
+- Markman: "Nothing. Just stone. Waste of a morning."
+- Aurennais: "There is nothing remarkable, Master. I have made a note of that as well."
+- Old Blood: "It is cold. This one is asleep."
+
+**Turned in** (*{Child} is home.*). The giver, by what you chose:
+
+*Home, now:*
+- Gatelander: "Look at the state of {him}. There, now. Here's your {n}, and here's my thanks, which is worth more and weighs less."
+- Markman: "Good. Here. {He}'ll be up to something else by tomorrow."
+- Aurennais: "Thank you, Master. Your fee. {He} will be kept indoors until {he} can recite the reasons."
+- Old Blood: "Home. Good. Take this."
+
+*Show me, then home* (the child has told):
+- Gatelander: "{He} says you let {him} show you the stone. Well. Better you than nobody, and better nobody than {him} alone. Here."
+- Markman: "{He} says you went and looked with {him}. Ha. Fine. Here."
+- Aurennais: "I am told the excursion was extended, Master. I will not ask on whose authority. Your fee."
+- Old Blood: "{He} showed you. Then you know where it is. Do not take {him} back."
+
+**What it changes.** *Home, now:* full pay and the giver's town +1. *Show me:* full pay, no favour, and the gate starred if it has a sigil. An Old Blood giver's child, shown, adds nothing more; the Old Blood parent's *Do not take {him} back* is the whole of it.
+
+**Lapsed** (the child walks home on the third day):
+- Gatelander: "{He} came home on {his} own, the third day, hungry and pleased with {him}self. No thanks to anyone."
+- Markman: "Came back on {his} own. Hungry. Fine."
+- Aurennais: "{He} returned unaided, Master. We have discussed it."
+- Old Blood: "{He} came back."
+
+---
+
+### 9. A Fish for the Wedding
+
+*Trades:* fisher, innkeeper, cook, any giver whose `bio.spouse` is unset and whose roll says a wedding (a son or daughter's, or their own); givers in a port or a town within 400 of the sea. A dated errand (`datedWork`): the wedding is on the date.
+
+**Shape.** The wedding table wants a fine fish, and the boats have brought in only ordinary ones. Bring a *Fine* catch (any bag item whose name begins *Fine* and whose `_typeKey` is `fish`: one catch in eight, `catchFish`, from the sea's schools) by the date. A plain fish is taken too, for half pay and a smaller line. By the date with a Fine fish: full pay, and on the wedding day the giver's town's square is full (the feast-square rule, Session 554, for one day and one town), the inn's meal is the house's for you that day (the feasts' rule, Session 550), and the giver greets you with the wedding line. After the date: the lapse.
+
+**The hint:**
+- Gatelander: "A wedding in the house, and not a decent fish on the coast."
+- Markman: "Wedding on {weekday}. No fish worth the name."
+- Aurennais: "We are marrying {name} on {weekday}, Master, and the table is not yet what it ought to be."
+- Old Blood: "There is a handfasting. There is no fish."
+
+**Ask:** *What's the wedding missing?*
+
+**The offer.**
+- Gatelander: "A fish on the table, a fine one, for the Sea's luck. It's how my mother was married and hers. The boats bring in what the sea gives them, and this week it's giving sprats. Bring me a fine one by {date} and you'll eat at the wedding, and {n} gold besides."
+- Markman: "A big fish. For the table. The custom. Boats got nothing. Bring one by {date}. {n} gold and a seat."
+- Aurennais: "A fine fish, Master, the centrepiece of the table. The guests will expect one, and the family on the other side will notice its absence; there was a great deal of discussion about the dowry. By {date}, {n} gold and a place at the table."
+- Old Blood: "A fish from the sea. A large one. For the handfasting. By {date}. {n} gold."
+
+**Turned in by the date, a Fine fish** (*A fine {fish}, for the table.*):
+- Gatelander: "Would you look at that. That's a fish with a past. The Sea's smiled on it and on us. {n}, and come on {weekday}, and eat."
+- Markman: "That's a fish. Good. Here. Come and drink."
+- Aurennais: "That is entirely satisfactory, Master. More than. Your fee, and your place at the table is kept."
+- Old Blood: "Good. That one. Come."
+
+**Turned in by the date, a plain fish** (*It's not a fine one. It's what I could get.*):
+- Gatelander: "A fish is a fish, and a wedding's a wedding. We'll lay a sprig of something by it and nobody'll be the wiser. Here's half, and no hard feelings."
+- Markman: "Small. It'll do. Half."
+- Aurennais: "It will serve, Master, if presented well. Half the agreed fee, as the terms were for a fine one."
+- Old Blood: "It is a fish. Half."
+
+**On the wedding day** (the giver's greeting, if the fine fish was brought):
+- Gatelander: "Come in, come in. They're married, the fish is eaten, and the Weaver can see we did it right."
+- Markman: "They're wed. Drink. That's all a wedding is."
+- Aurennais: "You honour us, Master. The contract is signed and the table was everything it ought to have been."
+- Old Blood: "They are joined. Eat."
+
+**Lapsed:**
+- Gatelander: "We married them with a ham on the table. The Sea'll forgive a ham. I'm less sure I will."
+- Markman: "Wedding's done. No fish. Fine."
+- Aurennais: "The wedding was held without it, Master. It was remarked upon."
+- Old Blood: "It is done. No fish."
+
+---
+
+### 10. A Rubbing to Be Read
+
+*Trades:* any; the giver had a parent or grandparent who went into the gates. The rubbing is of the nearest sigil gate within 900 (`nearestSigilDoorFrom`), its sigil's spell read from `SPELLS` by the gate's seed.
+
+**Shape.** The giver has an old rubbing of a carving from a gate, made by a grandparent who went in, and has never known what it says. They want it read. Three readers, any of them:
+1. **The Mages' Guild head** in the nearest town with a guild. They read it as the institution reads: the English (`nameEn`, Comprehension).
+2. **An Old Blood townsperson** (any generated resident with `people:'oldblood'` within 900; ports and hill towns have them). They say the word and its plain sense in the tongue, and then ask you to tell the giver to burn it. They will say no more.
+3. **You**, if you have touched that gate's sigil: at your tier for that spell, the Irish (Impression), the English (Comprehension), or the true name (Mastery, `nameMa`).
+
+Then the choice is what you tell the giver: one of the readings you have, or *Nobody could read it*, or the Old Blood's advice to burn it. The rubbing stays with the giver unless they are told to burn it, in which case they give it to you (it is a `rubbing` item and stars the gate when used, `62-actions.js`).
+
+**The hint:**
+- Gatelander: "My grandfather left me a drawing off a gate wall, and no word of what's on it."
+- Markman: "Got a rubbing off a gate. Can't read it. Nobody can."
+- Aurennais: "I have a rubbing, Master, from my grandmother's time, which no one in this town has been able to read."
+- Old Blood: *(none; an Old Blood giver does not offer this errand)*
+
+**Ask:** *What does the rubbing say?*
+
+**The offer.**
+- Gatelander: "That's the question, isn't it. My grandfather went down {gate} three times and came up with this and a limp. He'd say 'it's a word' and no more. A word's no use folded in a drawer. Find someone who can read it, and tell me what he kept. {n} gold."
+- Markman: "Grandad went down {gate}. Came back with this. Said it was a word. Never said which. Find out. {n}."
+- Aurennais: "It was made in {gate}, Master, by my grandmother, who was in the trade before the trade was licensed. The family has always assumed it is a blessing. I should like to know, and to know it from someone qualified. {n} gold for a reading."
+
+You are given *{Giver}'s rubbing* (a misc item, not a `rubbing`: it marks nothing while it is theirs).
+
+**The Mages' Guild head** (*Can you read this?*, while the errand is open), by the head's people:
+- Gatelander: "I can, after a fashion. That stroke's the root and that's the turn. In the Guild's tongue it's '{nameEn}'. That's what it does; what it means is another matter, and not one we teach."
+- Markman: "Aye. '{nameEn}'. That's what it does. That's all the Guild reads in it."
+- Aurennais: "Certainly, Master. The Guild's reading is '{nameEn}'. It is a common enough form; we have it catalogued. Anything beyond the gloss is not the Guild's to give."
+- Old Blood: "The Guild reads it '{nameEn}'. I am the Guild here. I read it no further."
+
+**An Old Blood townsperson** (*Can you read this?*):
+- "{nameIr}. It means {sense}." *(a short pause, a `showMsg` only: They fold the paper and hand it back.)* "That is all it says to me. That should be all it says to you. Tell them to put it in the fire."
+
+`{sense}` is the plain meaning of the word, from a small table beside `SPELLS` (the canon's *Meaning* column where it has one): Caor *a spark*; Sioc *frost*; Leigheas *a cure*; Séideán *a gust of breath*; Smól *the last of an ember*; Cloch Ghéar *a sharp stone*; Solas Gheal *a bright light*; Slán *whole, and goodbye*; Tintreach *lightning*; Scáth *a shadow, a shelter*; Reo *held fast in ice*; Gaoth *wind*; Cloch *stone*; Dorcha *the dark before morning*; Bás *death, the flat of the hand*; Tonn *a wave*; Éan *a bird*; Fréamh *a root*; Loscadh *a burning of the land*; Aiséirí *rising again*; Dul Thart *going past*. A word not in the table: *"It is an old word. I know it. I will not say it."*
+
+**You** (a `showMsg` when you look at the rubbing with the errand open and that sigil touched): Impression *You know the shape. {nameIr}. No more than that.* · Comprehension *{nameIr}: {nameEn}.* · Mastery *{nameIr}. {nameEn}. And under that, {nameMa}.*
+
+**Back at the giver.** The labels, each only if you have it:
+- **The Guild reads it "{nameEn}".**
+- **It's an old word. It means "{sense}".** (from an Old Blood reader)
+- **It says "{nameMa}".** (your own Mastery)
+- **Nobody could read it.**
+- **I was told to tell you to burn it.** (from an Old Blood reader)
+
+The giver, by their people, to each:
+
+*The Guild's reading:*
+- Gatelander: "'{nameEn}'. Is that all. Three trips down a gate for a word you'd find in a book. Well, it's his word, and now it's mine. Here."
+- Markman: "'{nameEn}'. Huh. Thought it'd be more. Here."
+- Aurennais: "'{nameEn}'. Then it is catalogued, Master, and the family's question is answered as far as a qualified reader can answer it. Your fee."
+
+*The old word:*
+- Gatelander: "'{sense}'. Say it again. …He used to say that, at the door going out. I never knew it was off a wall. Here, and thank you."
+- Markman: "'{sense}'. That's it? …He'd say something like that. Here."
+- Aurennais: "'{sense}'. That is not what the Guild's catalogue would say, I think. But I believe it, Master, and I could not tell you why. Your fee."
+
+*Your own Mastery:*
+- Gatelander: "'{nameMa}'. That's a name and not a word. You said it like you'd been told it. I'll not ask who told you. Here."
+- Markman: "'{nameMa}'. Never heard it. You say it like you know. Here."
+- Aurennais: "'{nameMa}'. No catalogue I know of has that, Master. I am not sure whether I have bought a reading or been given one. Your fee, in any case."
+
+*Nobody could read it:*
+- Gatelander: "Ah, well. Some things are kept by being lost. Thank you for trying. Here's half."
+- Markman: "Thought so. Half for the walk."
+- Aurennais: "Then it remains a family question, Master. Half the fee, for the effort."
+
+*Burn it:*
+- Gatelander: "Burn it. …Who'd say that? One of the cold-eyed, was it. My grandfather sat with one of them, the night before he went down the last time. You burn it, then. I haven't the hands for it." *(they give you the rubbing)*
+- Markman: "Burn it? It's paper. Fine. You do it. I'll not." *(they give you the rubbing)*
+- Aurennais: "I cannot be party to destroying a family document, Master. But I find I do not want it in the house. Take it. Do as you think right." *(they give you the rubbing)*
+
+**What it changes.** Pay in full for a reading, half for *nobody could*, full for *burn it*. On *burn it* the giver gives you a `rubbing` item for that gate (`Rubbing: {gate}`); using it stars the gate, as a bought one does. Nothing in the game reads whether you burn it, and nothing should. The Old Blood reader's town +1 favour if you told the giver to burn it; the Guild's town +1 if you brought the Guild's reading.
+
+---
+
+### 11. The Hedge
+
+*Givers:* two neighbours, each in a home on lots side by side (`lot.n` and `lot.n+1` in a row), both offering at once and both counting as one errand (`er:<site>:<first name>|<second name>:<n>`). Any trade.
+
+**Shape.** The two are at odds over the line between their lots. What it is depends on the nation: in the Gatelands a hedge or a dry-stone wall, in the Mark a woodpile and a fence, in Aurenne the boundary in a deed and the use of a cistern. Ask either; each tells their side. Then go to either and give your judgement. In the Mark one more way is open: tell them to settle it at noon, on the square, with their fists. In Aurenne, one more: find the deed (the lord or the steward has the town's book; ask them for it, and the book says who is right, rolled on the errand's id). In a port where the two are of two peoples, each calls the other by a coinage (§2.1), and the turn-in has the other's grudging contradiction from the same table.
+
+**The hint** (from either):
+- Gatelander: "Good fences make good neighbours, they say. They never met mine."
+- Markman: "Neighbour's a thief. Ask him. He'll lie."
+- Aurennais: "There is a disagreement with the house next door, Master. A question of a boundary."
+- Old Blood: "The mearing is wrong."
+
+**Ask:** *What's the trouble with {neighbour}?*
+
+**Their side.** Each says it of the other, by people (the thing named by the nation):
+- Gatelander: "That {hedge} was my father's, and his father planted it, and {neighbour} has been cutting it back a yard a year since the frost. A yard's nothing. Thirty years is a field."
+- Markman: "{Neighbour} stacks his wood on my side. Says the fence moved. Fences don't move. He moved it."
+- Aurennais: "The deed gives this house the cistern on alternate days, Master. {Neighbour} draws every day and calls it a misunderstanding. I have the dates."
+- Old Blood: "The mearing was here. {Neighbour} says there. It was here."
+
+*In a port, two peoples,* one line each, said of the other: a Gatelander of a Markman *"Hill-dog. Thinks a fence is something you knock down to get to the argument."*; a Markman of a Gatelander *"Turf-cutter. A proverb for every yard he's stolen."*; an Aurennais of a Gatelander *"Gate-grubber. He would dig up the boundary stone if he thought it would sell."*; a Gatelander of an Aurennais *"Ledger. Won't lend you a bucket without a witness."*; a Markman of an Aurennais *"Tithe-man. He'd charge me for the shade off his roof."*; an Aurennais of a Markman *"The unlettered, Master. He settles a measurement with an axe."*
+
+**Your judgement** (at either; the labels):
+- **{A} is in the right.** · **{B} is in the right.** · **Split it down the middle.**
+- In the Mark: **Settle it at noon, on the square.**
+- In Aurenne: **Ask the {lord title} for the deed.** (then, at the lord, the label *I need to see the deed for {A} and {B}'s line.*, and the lord, an Aurennais: *"The book is quite clear, Master. The line favours {winner}. It has favoured {winner} since before either of them was born."*; and the errand turns in as if you had judged for {winner}.)
+
+**Each side's answer, by outcome** (by their people):
+
+*Found for:*
+- Gatelander: "There. A wrong's not righted by saying it, but it's a start. Here's for your trouble."
+- Markman: "Told you. Here."
+- Aurennais: "Then the matter is settled on its merits, Master. Your fee."
+- Old Blood: "Here. As I said."
+
+*Found against:*
+- Gatelander: "Is that how it is. Well, you've two eyes and I've a hedge. We'll see which lasts."
+- Markman: "Iron and blood. Get out of my yard."
+- Aurennais: "I disagree, Master, and will say so in writing. But I will abide by it."
+- Old Blood: "It was here."
+
+*Split:*
+- Gatelander: "Half's better than none, and none's what I'd have got from {him}. Half your pay, from me."
+- Markman: "Half. Fine. Half from me."
+- Aurennais: "A compromise, Master. Neither of us is satisfied, which I am told is the mark of a fair one. Half the fee."
+- Old Blood: "Half. Half from me."
+
+*At noon (the Mark):* at 12:00 on the square the two meet (the duel's ring is not laid; they stand and fight with fists for a game-minute, a `showMsg` for the town: *{A} and {B} settle it on the square. {Winner} is still standing.*). Afterwards, both:
+- the winner: "Settled. Here. You've sense."
+- the loser: "Settled. He hits like a door. Here. You've sense."
+
+*In a port, two peoples, at the turn-in,* the one found against says the other's contradiction from §2.1 before their line: a Gatelander of a Markman *"I'll say this for him: I'd walk any road with him."*; a Markman of a Gatelander *"He'd not leave a wounded man. I'll give him that."*; an Aurennais of a Gatelander *"Nobody keeps a field or a promise like him. That is the irritation of it."*; a Gatelander of an Aurennais *"Their ships come back, mind. Ours don't."*; a Markman of an Aurennais *"His steel's better than mine. He knows it."*; an Aurennais of a Markman *"If I wanted a thing done by nightfall, I would hire him. And pay him after."*
+
+**What it changes.** Found for {A}: {A} pays in full; {A}'s favour counts for the town (+1); {B} −0, but {B}'s greeting is the *found against* line once, then the town's ordinary one. Split: half from each, the town +1. The noon fight: full pay from both, the town +1 (the Mark respects a quarrel finished by noon, §1.2). The deed: as for the winner, and no one argues with the book.
+
+---
+
+### 12. A Prayer Carried
+
+*Givers:* any Gatelander; a Markman only for someone at sea or under the iron (An Mhuir, An Chloch); an Aurennais only to An Fíodóir, the Weaver (the Church's own name, §3.1); **never** an Old Blood giver (below). The god is chosen by what is wanted: someone at sea → **An Mhuir**; the harvest or the weather → **An Spéir**; a calving, a flock, a sick dog → **Na Beithígh**; someone gone into a gate or down a mine → **An Chloch**; a traveller on the road, a new shop → **An Teallach**; a birth, or the Aurennais giver's anything → **An Fíodóir**. The shrine is the nearest of that god within 1,200 (`godOf(site)` for each shrine site); if there is none, the next god by the same want that has one; if none at all, no errand.
+
+**Shape.** Go to the shrine and pray there (E at the altar, `shrineInteract`). With the errand open, the prayer is the giver's first and yours second: the boon is given as ever, and a line says whose prayer it was. Come back and say so. The prayer counts toward the shrine's own count (the *Shrines Remember* draft, earlier in this file) as yours, because you knelt.
+
+**The hint:**
+- Gatelander: "There's a prayer wants saying that I can't walk to say."
+- Markman: "My {son} is at sea. That's all."
+- Aurennais: "I have a petition, Master, for the Weaver's shrine, and no one to carry it."
+- Old Blood: *(none)*
+
+**Ask:** *Who's the prayer for?*
+
+**The offer.**
+- Gatelander: "For {name}, that's {want}. The shrine of {god} is {direction}, at {shrine}. A prayer said at home is a letter; a prayer said at the stone is a hand on the shoulder. Kneel there and say it's from me. That's all. {n} gold, and mine too, next time I'm near one."
+- Markman: "{Name}. {Want}. {God}'s shrine. {Direction}. Kneel there. Say it's from me. I'll not go; they'd see me. {n}."
+- Aurennais: "For {name}, Master: {want}. The Weaver's shrine at {shrine}, {direction} of here, is the oldest on this side of the hills, and a petition carried there is, I am told, more carefully attended to. {n} gold for the carrying."
+
+**At the shrine** (the prayer as ever, then one more `showMsg`, `#e8d8a0`, and the log): *You pray for {name}, as {giver} asked.*
+
+**Turned in** (*I prayed at {shrine}.*):
+- Gatelander: "Did you. Did you, now. Then it's said, and at the stone, and that's all a body can do. Here. And the Weaver keep you that carried it."
+- Markman: "Good. Here. Don't tell anyone."
+- Aurennais: "Then the petition was delivered, Master. I am obliged. Your fee."
+
+**Why no Old Blood giver.** Canon is silent on whether the Old Blood pray at the Makers' shrines. The plainer thing, in keeping with errand 4: they do not ask others to. An Old Blood resident with a want in the house answers the *ask* with one line and nothing more: "We do not send prayers. We go, or we do not." It pays nothing.
+
+**Lapsed:**
+- Gatelander: "I walked it myself in the end. My knees have opinions about it."
+- Markman: "Went myself. At night. Nobody saw."
+- Aurennais: "The petition was carried by other hands, Master. The fee lapsed with the term."
+
+---
+
+### What in the code would carry it
+
+- **`ERRANDS`** (the first run's table in `87-world-quests.js`) gains the six `sub` entries, each with its trades, its preference (`bio.kids` for 8, the coast for 9, a gate for 8 and 10, a road for 7, two side-by-side homes for 11, a shrine for 12), and its lines by people. `errandFor`, `errandTopics` and the greeting's hint as the first run.
+- **7, the cart.** A tipped cart at the road point: the caravan's cart mesh (`CARAVANS`' builder), rotated into the ditch, keyed `er:…:cart`. Its E opens a two-label slip. *Lift* reads `ATTRS.might`. *Unload* calls `advanceClock(7200)` (two game-hours) and, if `roads[id].cleared` is not set, rolls `seededRng('errand', id+':band')` < 1/3 for two of the road quest's bandits (`buildZoneEnemy`, `_questTag` the errand's id).
+- **8, the child.** The `find` kind's spawn in `qTick`, at the door's position (`dungeonWorldPos[seed]`), with `def._errand`; *Show me* sets `worldState.rubbings[seed]` when the gate's sigil exists (the rubbing's own action in `62-actions.js`) and the child then follows the player as `WAY.follow` does the lord, until within 12 of the giver's door.
+- **9, the fish.** `datedWork` for the date; the turn-in reads `BAG` for `_typeKey==='fish'` and a name beginning *Fine*; on the date at the giver's town, the feast-square rule (`tests/feastsquare`, S554) for that site alone, and the feasts' free meal flag for that inn and that day.
+- **10, the rubbing.** The giver's rubbing is a misc item `{name:"{Giver}'s rubbing", type:'misc', gate, seed, _errand:id}`. The topic *Can you read this?* on the Mages' Guild head's def (`guildDef`, `guild_m`) and on any generated def with `people==='oldblood'` while the errand is open. `SPELL_SENSE`, the table of plain senses, beside `SPELLS` in `64-spells.js`. Your own reading reads `worldState.sigilsRead[seed]` and your tier for that spell.
+- **11, the hedge.** Two defs with `_errand` on one record; `KIND_PLAN`'s rows give side-by-side lots. The Mark's noon: a check at 12:00 on the record (`gameTimeAbsMinutes`), no ring. The Compact's deed: a topic on the lord's def while the record is open.
+- **12, the prayer.** `shrineInteract` checks for an open `prayer` record whose god matches `S.god.key`, adds the line and marks the record.
+- **Actions, by name** (co-op rules): the first run's `errandAccept`, `errandChoose(id, choice)`, `errandTurnIn(id)`, and `liftCart(id)`, `unloadCart(id)`, `readRubbing(id, reader)`.
+- **Journal titles:** *{Giver}'s cart* · *{Child} at {gate}* · *A fish for the wedding* · *What the rubbing says* · *{A} and {B}'s {hedge}* · *A prayer at {shrine}*.
+
+### Checked against the canon
+
+- No chosen-one line anywhere. No Aurennais oath (they thank and agree, never swear); every Gatelander answer is indirect, or a proverb, or both; every Markman line is short and has no honorific; the Old Blood say the older word (*wain*, *mearing*, *handfasting*, *the door*) and little else.
+- The coinages in errand 11 are the canon's own (§2.1), about work, land and gods, and each is contradicted in the same scene from the canon's own second column.
+- Errand 10 keeps the Withdrawal's law: the Old Blood reader gives the word and its sense and refuses the rest; the Guild gives what the institution reads (the English) and says it stops there; only the player at Mastery hears the true name, and no one in the street can explain it. Nobody states what the sigils are for.
+- Errand 12 puts the Aurennais at the Weaver's shrine only, since the Church *took the name* (§3.1) and would not send a petition to the Sea or the Beasts. Canon is silent on Old Blood prayer; the draft chooses the plainer thing and says so.
+- The one oath in the six is the Markman's *found against* in errand 11, *Iron and blood*, as §2 gives it.
+
+### Owed, and not drafted here
+
+- A third run on the same frame, when Michael has read these: a stranger at the inn who will not give a name; a lost ring in the river; a goat on a roof.
+- The Fighters' and Mages' heads handing an errand on to the street (the first run's last note) still stands.
