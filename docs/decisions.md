@@ -22,6 +22,15 @@ Session 718 asked whether a lair's cavern is now *the harder place without being
 
 Recommendation: **A.** Dark Souls and Elden Ring both let you walk into a fight your weapon cannot win and teach you to come back. The cure here is a better weapon at the goods shop, not a softer bear. B is the one to take if the starting club should matter at all against armoured foes, since it changes the club everywhere, not only in caverns.
 
+### A walled town with one gate has one guard — two, as the code's comment says, or one? (systems builder, 2026-10-11) — DECISION #242
+`genSettlement` (`83-world-generator.js`) puts *a couple of guards at the gates*: one on each of the first two streets, where the street crosses the ring just inside the wall. A town with a single road in has one street that reaches the ring, so it gets one guard. Of the five walled towns round the start, Dunmore and two others have 2. Carraig Mór (prosperity 56) and Coeur de Vie (a city, 78) have 1, and each has one gate. The third man, the night watch, comes only at prosperity 60, so Carraig Mór has one man awake at night. The critic's s572 run walked it hour by hour: from 21h to 5h Séamus walks the beat alone, every one of 36 homes is 50 units or more from him, and a street pick after 21h cannot be seen at all. Dunmore's three-man watch is seen at 26% of night picks (Session 609).
+
+- **A. Two gate guards in every walled town.** With one gate, the second stands at the same gate by day and walks the beat at night, starting from the far side of the loop. Carraig Mór gets two men at night, Coeur de Vie three. Spawned last, so no one else's name or place changes. One session.
+- **B. As A, and a walled town under 60 also gets the night watch (three at night).** The Dunmore numbers would then hold in every walled town. One session.
+- **C. Leave it.** A one-gate town is a thief's town at night. That is a fact you learn by watching the street, and it is how the world's poorer towns differ from the rich.
+
+Recommendation: **A.** The comment and Session 166 both meant two guards, and one guard walking the whole town makes a street pick a sure thing, not a risk you read and time. B is the choice if every walled town's night should be as watched as Dunmore's. C keeps a variety that is real, but the player cannot see its cause: the number of roads in.
+
 
 ## Answered
 
