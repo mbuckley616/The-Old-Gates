@@ -15314,3 +15314,12 @@ Those three dialogues (`confront`, `confrontIndoor`, `offerYield` in `86-world-c
 
 ### Needs eyes
 - None.
+
+## v80 — Session 735 — The barber has a tagline and can be asked the way to (the quest writer's Finding 26)
+A register fix, applied as the review wrote it. Since Session 512 the barber's tagline was a blank (`TAGLINES.barber`, `82-world-structures.js`), held for the quest writer. So the keeper had no *What do you sell?* (Session 592 left the topic out rather than give an empty answer), and `WAY_ASK` (`83-world-generator.js`) had no barber, so *Where can I find …* listed every shop in a town but his. Finding 26 gives three sign-words in no people's voice: *"Shorn, shaved, or dyed. Sit still."*, *"A sharp razor and a steady hand."*, *"Come in rough, go out kempt."*. It adds *A barber?* (plural *barbers*) to the ways, asked after the goods store and before the shipwright. The settlement generator's `pick` draws one number from the town's stream whatever the list's length, as it did for the blank, so no town's layout or names move.
+
+### Verified (headless Chromium)
+`tests/barberway` (new, 6 checks). Six towns and cities near Dunmore have a barber. All six taglines are one of the three, none blank. Dunmore's *Séamus's Barber* answers *What do you sell?* with *"Come in rough, go out kempt."*. A townsperson's ways read *… Somewhere for supplies? · A barber?*, and *A barber?* answers *Séamus's Barber? It's east of here, a short walk.* No page errors. `selltopic`'s second check asserted that no barber offers *What do you sell?*, which held only while his tagline was blank. It now checks the rule it stood for: a barber offers it exactly when he has a tagline, and answers with it (3 of 3 do; 4 checks pass). Also green: `barber`, `barberbox`, `barberchair`, `barberfee`, `signs`, `roadseed`.
+
+### Needs eyes
+- None.
