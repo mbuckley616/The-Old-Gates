@@ -242,7 +242,7 @@
     }
     if(look==='pirate'){const fl=new THREE.PlaneGeometry(1.4,.9,3,1);const p=fl.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*3)*.08);fl.computeVertexNormals();
       const FB=new ShipBake();FB.add(fl,[0,mastTop+.9,-.8],[0,Math.PI/2,0],null,0x111111);FB.add(SK.ball(.14,8,6),[.03,mastTop+.95,-.8],0,[1,1,.6],0xd8d0c0);rigs.push({geo:FB.bake(),z:mastZ,type:'flag'});/* S332 — the black flag streams downwind */B.rod([0,mastTop,mastZ],[0,mastTop+1.4,mastZ],.03,.03,0x2a2622,4);}
-    r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb,rigs,props:B.props};SHIP_GEO.set(key,r);return r;}
+    r={geo:B.bake(),deck:deckAt,L,W,zs:H.zs,zb:H.zb,rigs,props:B.props,at:H.at};SHIP_GEO.set(key,r);return r;}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -277,6 +277,43 @@
     for(const o of OTHER){if(Math.hypot(x-o.x,z-o.z)>(o.L||13))continue;if(shipPropHit(o.mesh,x,z,R))return true;
       if(o.chest&&o.chest.g&&Math.abs(x-o.chest.x)<.45+R&&Math.abs(z-o.chest.z)<.3+R)return true;}
     return false;}
+  // S723 — the boarding nets (the ship-in-hand page, item 2: "a net of rope over the rail, about 300 triangles a side"). Each side's
+  // net is laid on the hull's own section amidships (`at`, the loft's half-breadth, gunwale and keel), 2.6 long like S638's box,
+  // from over the rail to .6 below the waterline: a diamond mesh of tarred rope, each strand a flat ribbon 4 cm wide lying on
+  // the planking a few centimetres off it, a darker selvedge down the sides and along the foot, a head rope lying on the rail
+  // and lashed inboard. One bake a hull, on SHIP_MAT (two-sided), cached on the bake; the climb and the crosshair's box (86) unchanged.
+  function shipNetsGeo(at){const pos=[],nor=[],col=[];const H=1.3,N=10,h=2*H/N,BOT=-.6;
+    const sec=z=>{const a=at(z),P=[];let s=0,q=null;for(let k=0;k<=60;k++){const th=Math.PI/2*(1-k/60),sx=Math.pow(Math.sin(th),.45),cy=Math.pow(Math.cos(th),.55),fl=1+.05*Math.max(0,(1-cy)-.6);
+      const x=a.b*sx*fl,y=a.g-(a.g-a.k)*cy;if(q)s+=Math.hypot(x-q[0],y-q[1]);P.push([x,y,s]);q=[x,y];if(y<BOT-.1)break;}return {P,a};};
+    const S=new Map(),secAt=z=>{const k=Math.round(z*100);let o=S.get(k);if(!o){o=sec(k/100);S.set(k,o);}return o;};
+    const vBot=z=>{const {P}=secAt(z);for(let i=1;i<P.length;i++)if(P[i][1]<=BOT){const t=(P[i-1][1]-BOT)/(P[i-1][1]-P[i][1]);return P[i-1][2]+(P[i][2]-P[i-1][2])*t;}return P[P.length-1][2];};
+    const VM=vBot(0),M=Math.max(4,Math.round(VM/h)),hv=VM/M;
+    // a point on the net: u along her (z), v down the planking from the gunwale; off, how far it stands off the hull
+    const pt=(u,v,off)=>{const {P}=secAt(u);let i=1;while(i<P.length-1&&P[i][2]<v)i++;const A=P[i-1],B=P[i],t=Math.max(0,Math.min(1,(v-A[2])/((B[2]-A[2])||1)));
+      let tx=B[0]-A[0],ty=B[1]-A[1];const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;const nx=-ty,ny=tx;return [A[0]+(B[0]-A[0])*t+nx*off,A[1]+(B[1]-A[1])*t+ny*off,u,nx,ny];};
+    const hash=(i,j)=>{const x=Math.sin(i*127.1+j*311.7)*43758.5453;return x-Math.floor(x);};
+    const node=(i,j)=>pt(-H+i*h,j*hv,.035+.025*hash(i,j)*(j/M));
+    // a flat strand from p to q, w wide, lying across the hull's normal
+    const strand=(p,q,w,c)=>{const dx=q[0]-p[0],dy=q[1]-p[1],dz=q[2]-p[2];const nx=(p[3]+q[3])/2,ny=(p[4]+q[4])/2;
+      let wx=dy*0-dz*ny,wy=dz*nx-dx*0,wz=dx*ny-dy*nx;const l=Math.hypot(wx,wy,wz)||1;wx*=w/2/l;wy*=w/2/l;wz*=w/2/l;
+      const v=[[p[0]-wx,p[1]-wy,p[2]-wz],[p[0]+wx,p[1]+wy,p[2]+wz],[q[0]+wx,q[1]+wy,q[2]+wz],[q[0]-wx,q[1]-wy,q[2]-wz]];
+      for(const k of [0,1,2,0,2,3]){pos.push(...v[k]);nor.push(nx,ny,0);col.push(c.r,c.g,c.b);}};
+    // a round rope (three sides) along a polyline, for the head rope on the rail
+    const rope=(pts,r,c)=>{for(let k=0;k+1<pts.length;k++){const p=pts[k],q=pts[k+1];for(let f=0;f<3;f++){const a0=f/3*Math.PI*2,a1=(f+1)/3*Math.PI*2;
+      const o=(P,a)=>[P[0]+Math.cos(a)*r,P[1]+Math.sin(a)*r,P[2]];const quad=[o(p,a0),o(p,a1),o(q,a1),o(q,a0)];const nx=Math.cos((a0+a1)/2),ny=Math.sin((a0+a1)/2);
+      for(const k2 of [0,1,2,0,2,3]){pos.push(...quad[k2]);nor.push(nx,ny,0);col.push(c.r,c.g,c.b);}}}};
+    const tar=shC(0x5e4c32),old=shC(0x6e5a3c),edge=shC(0x3a2e20);
+    for(let j=0;j<M;j++)for(let i=0;i<N;i++){if((i+j)%2)continue;const c=hash(i,j)<.5?tar:old;
+      strand(node(i,j),node(i+1,j+1),.04,c);strand(node(i+1,j),node(i,j+1),.04,c);}
+    for(const i of [0,N])for(let j=0;j<M;j++)strand(node(i,j),node(i,j+1),.065,edge);
+    for(let i=0;i<N;i+=2)strand(node(i,M),node(i+2,M),.065,edge);
+    const head=[];for(let i=0;i<=N;i+=2){const a=at(-H+i*h);head.push([a.b,a.g+.12,-H+i*h]);}rope(head,.035,edge);
+    for(let i=0;i<=N;i+=2){const a=at(-H+i*h),top=node(i,0),z=-H+i*h;strand(top,[a.b,a.g+.12,z,1,0],.05,edge);
+      if(i%4===0){strand([a.b,a.g+.12,z,0,1],[a.b-.16,a.g+.04,z,0,1],.045,edge);strand([a.b-.16,a.g+.04,z,-1,0],[a.b-.16,a.g-.14,z,-1,0],.045,edge);}}
+    const one=pos.length;for(let k=0;k<one;k+=3){pos.push(-pos[k],pos[k+1],pos[k+2]);nor.push(-nor[k],nor[k+1],nor[k+2]);col.push(col[k],col[k+1],col[k+2]);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeBoundingSphere();g.userData.perSide=one/9;return g;}
+  function shipNetsMesh(r){if(!r.nets)r.nets=shipNetsGeo(r.at);const m=new THREE.Mesh(r.nets,SHIP_MAT);m.name='nets';m.castShadow=false;m.receiveShadow=true;return m;}
   // the ship's mesh: the class by its length (or `hull`), the look by who sails her; the wheel a child that turns with the helm
   // S665 — `hull` names the bake outright; without it your own ship (no look given) takes her class's hull when it has one of its own
   function buildShipMesh(SHIP_L,SHIP_W,look,hull){
@@ -284,7 +321,7 @@
     const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player');
     const mesh=new THREE.Mesh(r.geo,SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=shipWheelMesh();wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);
-    mesh.add(shipNetMesh(SHIP_W||r.W||4.4)); /* S638 — the boarding nets (a stand-in until the look builder's) */
+    mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
     mesh.userData.wheel=wheel;mesh.userData.deck=r.deck;mesh.userData.kind=kind;mesh.userData.props=r.props||[];
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
