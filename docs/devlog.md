@@ -15564,3 +15564,12 @@ Correction to Session 745: the shard table's `dunwarm` was 600, from the six-gat
 
 ### Needs eyes
 - On a real laptop's GPU: the first old gate of a session, whether its way-down fade lasts visibly longer than a second one's (that fade carries the compile).
+
+## v80 — Session 747 — Asked: more barrels and boxes in towns (DECISION #245)
+Backlog D holds Michael's playtest note of 6 Oct: *all towns and cities should have more barrels and boxes out and about, with low-level loot, more to interact with.* Nothing else in I, B, C or G can be settled headless, so this run looked at it. The count and the loot are rules of play, so they are asked, not built. Today the generator (`83-world-generator.js`) puts a city's 10, a town's 7, a village's 4 and a hamlet's 2 beside the houses' walls. Each holds everyday goods only, is rolled again each game day on its own stream (`<site>:barrel:<n>:<day>`), and is not a crime to open. Four options went to #245: twice as many as they are (recommended), twice as many with two in three empty, three times as many with a quarter of them a house's (theft to take in sight), or the count left and only their places changed (the look builder's half). Where the new ones stand is the look builder's under any answer.
+
+### Verified (headless Chromium)
+Nothing built. The counts and the loot rule were read from the code.
+
+### Needs eyes
+- Michael: #245.

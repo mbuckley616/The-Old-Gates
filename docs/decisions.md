@@ -4,6 +4,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### More barrels and boxes in towns: how many, and what they hold? (systems builder, 2026-10-11) — DECISION #245
+Your playtest note of 6 Oct (backlog D): *all towns and cities should have more barrels and boxes out and about, with low-level loot, more to interact with.* Today the generator puts a fixed number beside the houses' walls: a city 10, a town 7, a village 4, a hamlet 2 (`83-world-generator.js`, grep `Loot barrels and crates`). Each holds everyday goods only (no arms or armour; a candle, rope, salt or bread if the roll gives nothing). Each is rolled again every game day, and taking from one is not a crime. How many there are, and what they hold, is a rule of play.
+
+- **A. Twice as many, as they are** *(recommended)*: city 20, town 14, village 8, hamlet 4. Same everyday goods, same daily refill. The fallback goods sell for 1–3 gold apiece (a candle 4 to buy, rope 9, at a third back). Seven more barrels in a town come to tens of gold a day at most, not measured, and change no progression.
+- **B. Twice as many, but most hold little**: as A, but each new one is empty two days in three, as in Skyrim's streets. More to open, about as much to find as today.
+- **C. Three times as many, a quarter of them someone's**: city 30, town 21. One in four stands at a house's door and counts as that house's: taking from it in sight is theft (−2 favour, the fine), as a home chest is.
+- **D. Leave the count; make them easier to find** (the look builder's half only: where they stand, by the inn's yard, the smithy and the market).
+
+Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
+
+
 ### The fall — the death screen on the parchment: a leaf, the word, or a restyle? (the concept artist, 2026-10-11) — DECISION #243
 When you die today the screen reads *YOU DIED* in red over a dark veil, with the HUD still on behind it, one line (*Last save: slot 1 — Dunmore, level 5*) and two buttons. It is the last screen on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/fall/`, on auto/concept) uses a real fall on build s576: Aoife saved in Dunmore at 4 pm, went down an old gate and died to a Skeleton on the first floor of the Dungeon of Shadows at 7:36 pm. Under every option the rules stay as they are: nothing is lost but the play since the save, and the world waits.
 - **A.** The leaf of the fallen *(recommended)*: the view drains to sepia and the HUD goes; the pause leaf's paper at the left, so the foe stays in view. *Fallen*, where and to what (*to a Skeleton's sword*) and the date; your last save with its picture, its hour and how long before the fall (*3 hours and 36 minutes*); three rows: load the last save (E), choose another save (L, the register), to the title (a second press). One small rule: the game remembers what dealt the last blow.
