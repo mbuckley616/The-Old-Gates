@@ -15511,3 +15511,12 @@ A walled town left with one gate guard now gets a second (`83-world-generator.js
 ### Needs eyes
 - The second man at a one-gate town's gate by day: where he stands beside the street, and whether two men at one gate read as a gate watch.
 - The night numbers at Carraig Mór: the critic's walk, hour by hour, with two men on the beat.
+
+## v80 — Session 741 — `sitechest` waits for the load's own *Loaded.* line (tests only)
+An earlier systems run on 11 Oct found that `sitechest`'s save-and-load check failed 1 run in 3 locally. That run overlapped Session 738, so it parked its fix on `auto/wip-sitechest-load` (6b986b7) and asked the next run to take it. This session takes it unchanged. The load lands inside a fade timed in real time, not in frames, so a fixed 4 s wait after `reloadActiveSlot()` could read the world before the load had applied. The test now wraps `showMsg` and waits for the load's own *Loaded.* line, up to 20 s. Then it stands by the camp and reads until the loop has built it, up to 60 rounds, each round putting you back by the camp. The check also asks that the load was seen. No game code changes, so the build tag is not bumped.
+
+### Verified (headless Chromium)
+`sitechest` 3/3 runs, each with the load seen and the chest's *Bronze Buckler of Vigor* back after the load. The three ran beside a second browser running a twenty-minute measure, which is the kind of slow machine the fixed wait lost on.
+
+### Needs eyes
+- None; tests only.

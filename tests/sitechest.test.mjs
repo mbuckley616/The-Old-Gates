@@ -31,9 +31,13 @@ await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id)
 await page.evaluate(async () => { await saveToSlot(0); });
 const before = await chestOf(id);
 await page.evaluate((id) => { const S = WORLD.settlements.get(id) || WORLD.genSettlement(WORLD.siteAnywhere(id)); currentLootContainer = S.chest; while (S.chest.items.length) takeLootItem(0); currentLootContainer = null; }, id);
-await page.evaluate(() => reloadActiveSlot()); await page.waitForTimeout(4000);
+// Session 738: the load lands inside a fade that runs on time, not frames, so a fixed 4 s was short on a slow run (1 in 3 here):
+// wait for its *Loaded.* line, then stand by the camp and read until the loop has built it
+await page.evaluate(() => { window._ld = false; const o = showMsg; window.showMsg = function (t) { if (/^Loaded\./.test(t)) window._ld = true; return o.apply(this, arguments); }; window._ldO = o; reloadActiveSlot(); });
+for (let i = 0; i < 80; i++) { await page.waitForTimeout(250); if (await page.evaluate(() => window._ld)) break; }
+const loaded = await page.evaluate(() => { const l = window._ld; showMsg = window._ldO; return l; });
 await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id);
-let d = null; for (let i = 0; i < 30; i++) { await g.spin(null, 20); d = await page.evaluate((id) => { const S = WORLD.settlements.get(id); return S && S.chest ? S.chest.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')) : null; }, id); if (d) break; }
-check('emptied after a save, then loaded: the chest holds what it held at the save', before.items.length > 0 && JSON.stringify(d) === JSON.stringify(before.items), { before: before.items, d });
+let d = null; for (let i = 0; i < 60; i++) { await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id); await g.spin(null, 20); await g.frames(2); d = await page.evaluate((id) => { const S = WORLD.settlements.get(id); return S && S.chest ? S.chest.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')) : null; }, id); if (d) break; }
+check('emptied after a save, then loaded: the chest holds what it held at the save', loaded && before.items.length > 0 && JSON.stringify(d) === JSON.stringify(before.items), { loaded, before: before.items, d });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
