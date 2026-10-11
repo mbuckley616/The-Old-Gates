@@ -15390,3 +15390,22 @@ Michael chose A on #237: the body climbs a boarding net hand over hand and is he
 - The timing in motion: three reaches in 0.8 s is quick, and the prototype said so. If it reads as a scramble, the climb's length is one constant (`NET_CLIMB`, the systems builder's).
 - A held weapon stays in the right hand through the climb and stands up over the head (the picture shows a club). Sheathing it for the climb would be the systems builder's call.
 - A climb from a quay, where you take hold up to 4.5 from the net, is carried to the net in the first .12 s. That covers a long way fast; it may want a longer reach-out there.
+
+## v80 — Session 744 — Portclare's lane walled where it cuts the ridge (Michael's A on #236)
+Michael chose A on #236: a dry-stone retaining wall at the foot of each bank where a port's lane cuts into the ground. The lane (the systems builder's Session 618, `addQuayLane`) is graded evenly from the town's ring down to the quay. At Portclare it runs through the ridge for about 70 of its 92 units, with up to 8.9 of bank standing over it.
+
+**The wall** (`quayWallGeo`, `addQuayWalls`, `82-world-structures.js`). Along the lane every metre, on each side, the wall stands wherever the ground 8 out is more than 1.2 over the lane. That is the prototype's rule (Session 725). It is built in the lane's own cell step (`81-world-cells.js`, beside `addQuayLane`), added to the cell's statics and dropped with them. Its foot is .3 outside the lane's edge, 2.9 from the middle, .15 under the lane. Its face is battered back 1 in 5, and its top is the bank's height less .4, never more than 2.6 over the lane. The face is laid in courses of about .35 that follow the top. Each course is stones of .45–1.25 along, in four greys with a tone a stone, and every other course starts on a half stone, so the joints break course on course. The prototype's one stone a metre read as a chequerboard; this does not. A cap of flat stones .18 thick sits on top, .12 proud of the face and .55 deep. Each run's two ends are closed, turned back into the bank.
+
+**The bank behind.** The prototype's overhead picture showed the wall standing free, with the turf dipping behind it. The drawn ground is sampled every 4 units, so it cannot step at the wall. Instead the mesh carries a strip of turf in the ground's own colour (`groundColor`). It runs from the back of the cap 3.5 out to the drawn bank, and never below the cap. Seen from above, the bank now sits on the wall.
+
+**Solid.** Posts of .45 every 1.2 along the wall's foot, tagged with the cell, go into `STATIC_SOL`. They are axis-aligned squares, because `solidAt` reads them so. With the walker's .3 they close the wall on a diagonal lane. The lane and its edge stay open.
+
+The other three ports nearest Dunmore have 8-unit lanes on the flat and no wall. One more loaded lane (`quay_c6_9_s13`, 20 long) cuts deeper than 1.2 and is walled by the same rule.
+
+### Verified (headless Chromium)
+`tests/quaywall` (new, 9 checks). Portclare's lane, 92 long, has a wall of 3,146 triangles in one mesh, with 112 posts. Measured every 2 along each side, every station deeper than 1.6 is walled (36 of 36 and 29 of 29), and no station shallower than .8 is. The wall's nearest vertex is 2.78 from the lane's middle, with the lane's edge at 2.6. The stone stands at most 2.78 over the lane (2.6 and the cap). 7,830 of 7,854 upright vertices face the lane. At the deepest station `solidAt` is true at the wall's foot and false in the lane and at its edge. Of the seven other lanes loaded, the one that cuts deeper than 1.2 for two metres is walled and the six on the flat are not. Unloading Portclare's cell takes the mesh out of the scene and leaves none of the cell's 697 solids (the posts among them). No page errors. `roadseed`, `signs`, `shipmoor`, `wholepoints`, `keeperwalk` and `smoke` pass. Pictures: `docs/prototypes/quaywall-lane.png` (in the cut, looking down to the quay) and `quaywall-above.png` (the same two views as the prototype's).
+
+### Needs eyes
+- The turf strip behind the cap is flat-lit where the bank above it is shaded, so on the sunny side it reads a shade brighter than the bank in the overhead picture.
+- Between the lane's edge and the wall's foot the drawn ground leaves a grass verge, wider where a 4-unit terrain vertex falls near the wall. It reads as a verge in the pictures; walking it wants a look.
+- The stone is the prototype's grey and reads pale in full sun.

@@ -16,7 +16,7 @@ Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyar
 Pictures (left today, right A; the wall is laid in the page by `docs/prototypes/quaycut/shoot.mjs`, not in the game):
 - From the lane in the deepest part of the cut, looking down to the quay: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-lane.png
 - From above the lane: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-above.png
-Michael: **A dry-stone retaining wall at the foot of each bank** (A). (11 Oct 2026)
+Michael: **A dry-stone retaining wall at the foot of each bank** (A). (11 Oct 2026) **Built, Session 744** (`tests/quaywall`, `docs/prototypes/quaywall-lane.png`, `-above.png`).
 
 ### The climb up a boarding net: a hand-over-hand pose on the net, the pose alone, or as it is? (the look builder, Session 726, 2026-10-11) — DECISION #237
 The boarding nets (Session 638's rule, Session 723's look) are climbed with E in 0.8 s. In third person today the body slides on a straight line from the water to the rail in whatever pose it had: it stands upright with its arms down, and for most of the climb it passes through the hull's planking and cannot be seen (the top row, the middle frame). First person shows nothing of it. How should the climb look?
