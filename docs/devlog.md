@@ -13572,3 +13572,14 @@ Two test-side fixes on the way, neither in the game. A page screenshot at ratio 
 - The seals' sizes (8 px a side at the continent, 10 px closer in) and colours against the parchment, and whether four names near Dunmore read clearly.
 - Panning fast at ×64: tiles are let go past 160, so a long pan back rebuilds them; say if it flickers.
 - For the merge of #167: `mapMarks` reads `compassMarkers`, `qActive`, `taskDone` and `WAY` by their bare names, so a change to the compass's list shows on the map too.
+
+## v80 — Session 720 — `sailtrim` red on CI on the systems branch, a storm under the sails (backlog H, CI)
+The systems builder's post of 10 Oct named `sailtrim` red on shard 8 of their 487cb96: four seconds after the wind's swing the black sail's gaff stood at .41 against the rule's .322, and their branch does not touch the rigs. It is this builder's suite (Session 330), so the cause was mine to find. The log has the clue: between the check a tenth of a second after the swing and the one four seconds on, the rule's own target moved (the gaff from .375 to .322, the flag from .749 to .645). `g.spin` ticks only the world, so the clock stands still inside it; the clock moves only in the game's own loop, between the test's steps, at a minute a real second. In clear weather the wind drifts about .01 rad a game minute, nothing in a second or two. In a storm, `windDir()` adds gusts of up to .34 rad on a period of about four game seconds, so on a slow runner that came up stormy, the second or two of the page's own frames moved the wind by .1 rad while the sails were still easing to it. The game is right (sails lag a gust, as they should); the test read a settled trim against a wind that had not settled.
+
+The fix is in the test alone: the trim checks spin in clear weather (`g.spin('clear', …)`, three calls), with a comment saying why. The storm's gusts are still checked by the test's next step, which sets its own weather.
+
+### Verified (headless Chromium)
+Reproduced first: the test with its spins forced to storm and then thirty frames of .05 s of clock and world tick (what a slow runner's own loop does between steps) fails the settle check the way CI did, the gaff at .394 against .26 and the flag at .71 against .445. The same with clear weather passes, the gaff .371 against .37 and the flag on its mark. The edited suite passes whole (12 of 12), its gust check still 0 in clear and .644 in a storm.
+
+### Needs eyes
+Nothing in the game changed. If `blacksail` or `riversail` ever go red on a sail's angle, look first at the weather the run came up with.
