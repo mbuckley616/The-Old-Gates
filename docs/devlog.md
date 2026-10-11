@@ -15536,3 +15536,14 @@ So the home is now the easier target from 23h to 5h and the harder one at either
 ### Needs eyes
 - Michael, by play: a night pick at Carraig Mór's shops seen about 1 time in 18, against Dunmore's 1 in 7. Is the poorer town's street right to be the easier one?
 Added to Session 742 in the same run: `tests/run.mjs` gives CI's shard balancing the new suites' weights: `carraignight` 960 s (about 15 minutes here), `homesleep` 150 and `gateguards` 180. Unlisted, each would have counted as 60. It also takes `placesave` from 363 to 521, the time the look builder saw on CI (Session 731's run).
+
+## v80 — Session 745 — Every suite's weight in the shard table from one CI run (tests only)
+CI on faa652b, this branch's head after Session 742, cancelled shard 3 at 60:19. Its suites alone had run 59.5 minutes, and the other eleven finished in 40 to 54. The shard table in `tests/run.mjs` balances the twelve shares by each suite's seconds, and it was stale in both directions. `panelfocus` (Session 722) took 530 s and `stairrail` 219, and neither was listed, so each counted as 60. `placesave` took 625 against 521. Session 742 guessed `carraignight` at 960 s from this machine, and CI ran it in 250. Guesses like these move a share by ten minutes on their own.
+
+The GitHub tool reads each job's log, where `run.mjs` prints every suite's time at the end. All twelve were read and every suite's weight is now that run's time: 413 suites, 33,400 s, 2,783 s a share. `yardpanel` was cut off by the cancel and counts as 90. `dunwarm`, Session 746's new suite, counts as 600 from this machine. The table lists every suite, and the shares come to 2,828–2,837 s, 47.3 minutes before the install. No game code changed.
+
+### Verified (headless Chromium)
+No browser run: this is the table. `node --check tests/run.mjs` passes. The table names all 414 suites in `tests/` with none missing and none extra. The greedy split over it gives 2,828–2,837 s a share, where the same split over the old table had given shard 3 suites that ran 3,583 s on CI (yardpanel cut off at 55).
+
+### Needs eyes
+- None; tests only. If one shard runs past 55 minutes again, its log's time block is the table's next refresh.
