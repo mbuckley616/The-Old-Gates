@@ -15520,3 +15520,18 @@ An earlier systems run on 11 Oct found that `sitechest`'s save-and-load check fa
 
 ### Needs eyes
 - None; tests only.
+
+## v80 — Session 742 — Carraig Mór's night by the numbers, after the sleepers and the second guard (tests only)
+Session 740's *Needs eyes* asked for the critic's s572 walk of Carraig Mór's night, hour by hour, again. That part can be settled headless. `tests/carraignight` (new) does what `nightpick` does for Dunmore. Hour by hour from 21h to 4h, with the town's own ticks walking the watch, it stands at each of Carraig Mór's 6 shop doors and 36 home doors. It counts how often a five-second pick there would be seen, walking and sneaking. Then it goes indoors. In 8 homes, at eight hours from 21h30 to 6h30, it opens the chest over five seconds of the room's own ticks and asks whether anyone sees. The same test was run on this branch before Session 739 (the merge commit 1a30669, from a worktree) and after Session 741. No game code changes.
+
+Before: one man, Séamus, awake from 21h to 4h. A shop door was seen 1.7% of the time over the night (13.5% at 0h, 0% in every other hour). A home's chest was seen in 2 of 8 homes at 23h30, 1 at 3h and 1 at 4h30.
+
+After: two men awake every hour (Séamus and Ruairí). A shop door is seen 5.7% walking and 3.9% sneaking over the night: 0% from 21h to 23h, then 16.7%, 5.2%, 8.3%, 2.1% and 13.5% from 0h to 4h. Dunmore's three-man watch is seen 14.9% walking (Session 705). Home doors are seen 0.3% walking in both builds. Their residents are indoors and the street at a home's door is empty. Indoors no resident sees their chest opened from 23h30 to 4h30 (0 of 8 at each hour). In the waking hours they still do: 1 of 8 at 21h30 and at 22h30, 3 of 8 at 5h30 and 1 of 8 at 6h30. Those depend on where the resident's amble takes them, which is a cosmetic roll, so they move from run to run. The sleep hours do not move.
+
+So the home is now the easier target from 23h to 5h and the harder one at either end of the night, which is the order #240 asked for. The street at the shops is watched about a third as often as Dunmore's. Whether that is right for a 56-prosperity town is Michael's question by play, not a bug.
+
+### Verified (headless Chromium)
+`carraignight` 5/5 on this head: the doors measured (6 and 36), sneaking never seen more than walking, no chest seen in the sleep hours, no page errors. On the pre-739 build its sleep-hours check fails (2/8, 0/8, 1/8, 1/8), as it should.
+
+### Needs eyes
+- Michael, by play: a night pick at Carraig Mór's shops seen about 1 time in 18, against Dunmore's 1 in 7. Is the poorer town's street right to be the easier one?
