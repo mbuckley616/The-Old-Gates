@@ -15272,3 +15272,12 @@ A register fix, applied as the review wrote it. Session 719 built the doubled gl
 
 ### Needs eyes
 - The rumour by play: once a lair's beast is dead, ask in a nearby town's tavern, and see whether the line reads as news or as noise beside the others.
+
+## v80 — Session 730 — `sitechest` builds the lair again if the loop has unloaded it (red on CI on 2df9ca2)
+Shard 11 failed on `sitechest` on the head of PR #238: `Cannot read properties of undefined (reading 'chest')` in the test's `take`, straight after the lair's first check passed. The test disposes the site, then rebuilds it through `chestOf`, which since Session 711 falls back to `genSettlement(siteAnywhere(id))` when the settlement is missing. `take` and the emptying step read `WORLD.settlements.get(id)` alone, so when the runner's loop unloaded the lair's cell between the two calls, there was nothing to take from. Both now fall back the same way. The chest's contents are kept in `worldState` (Session 700), so a site built again holds what it held. Tests only; Sessions 728 and 729 touch no chest code.
+
+### Verified (headless Chromium)
+`sitechest` 9/9 here (the lair's Hoard, the camp's Takings, the save and load). The race does not reproduce locally, where it passed before the change too; the fix is that `take` can no longer find nothing.
+
+### Needs eyes
+- None.
