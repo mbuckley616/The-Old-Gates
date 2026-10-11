@@ -37,7 +37,10 @@ const rule = () => page.evaluate(() => { const w = WORLD.windDir(), res = [];
       let down = null; if (q.type === 'flag') { m.updateMatrixWorld(true); const a = new THREE.Vector3(0, 0, -1.5), b = new THREE.Vector3(0, 0, 0); q.m.localToWorld(a); q.m.localToWorld(b); down = +((a.x - b.x) * Math.sin(w) + (a.z - b.z) * Math.cos(w)).toFixed(2); }
       res.push({ kind: o.kind, type: q.type, want: +want.toFixed(3), got: +(q.type === 'flag' ? wr(q.m.rotation.y) : q.m.rotation.y).toFixed(3), th: +th.toFixed(2), lee, down }); } }
   return { w: +w.toFixed(3), res }; });
-await g.spin(null, 120);
+// the trim is checked in clear weather: a storm's gusts shake windDir() by up to 40° every few game seconds, and on a slow
+// runner the game's own loop runs a second or two of clock between the test's steps, so the wind moved under a sail still
+// easing to it (a run of 10 Oct came up storm: the gaff .41 against .322, the flag .80 against .645); the gusts are checked below
+await g.spin('clear', 120);
 const r1 = await rule();
 check('every rig on both ships sits at the rule\'s trim for the wind against its heading (within .02 rad)', r1.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < .02), r1);
 check('square yards brace no more than 35°', r1.res.filter(q => q.type === 'square').every(q => Math.abs(q.got) <= .611), r1.res);
@@ -50,10 +53,10 @@ const wind = await page.evaluate(() => { const w0 = WORLD.windDir(); worldState.
   let step = 0; for (let i = 1; i < ws.length; i++) step = Math.max(step, Math.abs(ws[i] - ws[i - 1]));
   return { w0: +w0.toFixed(2), w1: +w1.toFixed(2), span: +(Math.max(...ws) - Math.min(...ws)).toFixed(2), maxHourStep: +step.toFixed(2) }; });
 check('seven game hours on, the wind has moved (by over 15°); over two days it wanders more than 60°, never more than 40° in an hour', Math.abs(wind.w1 - wind.w0) > .26 && wind.span > 1.05 && wind.maxHourStep < .7, wind);
-await g.spin(null, 6);
+await g.spin('clear', 6);
 const mid = await rule();
 check('a tenth of a second after the swing, the sails are still easing round', mid.res.some(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) > .05), mid.res.map(q => [q.want, q.got]));
-await g.spin(null, 240);
+await g.spin('clear', 240);
 const r2 = await rule();
 check('four seconds on, they have settled to the new wind', r2.res.every(q => Math.abs(Math.atan2(Math.sin(q.want - q.got), Math.cos(q.want - q.got))) < .02), r2.res.map(q => [q.want, q.got]));
 

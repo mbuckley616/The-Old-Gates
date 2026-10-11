@@ -1272,7 +1272,7 @@
     potion:['"Roots, tinctures, and honest advice."','"Bitter cures for bitter roads."','"Ask before you drink."'],
     misc:['"Odds, ends, and things that fell off carts."','"Rope, salt, candles, and questions."','"I buy what you carry."'],
     inn:['"A bed, a bowl, and no questions."','"Fire\'s lit. Door\'s open."','"Travellers welcome. Trouble isn\'t."'],
-    barber:[''], // S512 — no tagline until the quest writer gives the barber one
+    barber:['"Shorn, shaved, or dyed. Sit still."','"A sharp razor and a steady hand."','"Come in rough, go out kempt."'],
     church:['"The door is always open."','"Come in out of the dark."','"Rest a moment. It costs nothing."'],
   };
   // Per-kind plan: building count, shop set, extras. S512: `late` shops come after the optional ones, so a new trade takes
