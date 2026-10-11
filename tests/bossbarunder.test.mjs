@@ -28,26 +28,25 @@ console.log('below, master asleep', JSON.stringify(down));
 check('below ground the world beast\'s bar is gone', !down.shown || down.name !== 'Testcrag the Cave Bear', down);
 check('and no bar while the master has not seen you', !down.shown, down);
 
-// the master on you: its own bar, and it falls with its health
+// the master on you: its own bar, and it falls with its health. Session 736: each step is set again and read until the bar
+// answers, up to 40 tries of two frames (the runner's loop ran too few ticks in a fixed 4 frames, red twice on CI)
+const until = async (want, set) => { let b = null; for (let i = 0; i < 40; i++) { if (set) await page.evaluate(set); await g.frames(2); b = await bar(); if (want(b)) break; } return b; };
 await page.evaluate(() => { const e = window._lairBoss; if ((e.floor || 1) === 2 && currentFloor !== 2) goToFloor2(); });
-await g.frames(30);
-const m = await page.evaluate(() => { const e = window._lairBoss; px = e.x + 2; pz = e.z; e.alert = true; return { name: e.name, floor: e.floor || 1, cf: currentFloor }; });
-await g.frames(4);
-const on = await bar();
-await page.evaluate(() => { const e = window._lairBoss; e.hp = Math.round(e.maxHp / 2); });
-await g.frames(4);
-const half = await bar();
+for (let i = 0; i < 60; i++) { await g.frames(5); if (await page.evaluate(() => currentFloor === (window._lairBoss.floor || 1))) break; }
+await g.frames(10);
+const m = await page.evaluate(() => { const e = window._lairBoss; return { name: e.name, floor: e.floor || 1, cf: currentFloor }; });
+const near = () => { const e = window._lairBoss; px = e.x + 2; pz = e.z; e.alert = true; };
+const on = await until(b => b.shown && b.name === m.name, near);
+const half = await until(b => b.shown && Math.abs(b.fill - 50) < 1.5, () => { const e = window._lairBoss; e.hp = Math.round(e.maxHp / 2); px = e.x + 2; pz = e.z; e.alert = true; });
 console.log('master', JSON.stringify(m), JSON.stringify(on), JSON.stringify(half));
 check('the master on you shows its own bar, by its name', on.shown && on.name === m.name, { m, on });
 check('the bar falls with its health (half → 50%)', half.shown && Math.abs(half.fill - 50) < 1.5, half);
 
 // another floor's boss does not raise a bar
-await page.evaluate(() => { const e = window._lairBoss; e._f = e.floor; e.floor = (e.floor || 1) + 1; });
-await g.frames(4);
-const other = await bar();
-await page.evaluate(() => { const e = window._lairBoss; e.floor = e._f; e.dead = true; });
-await g.frames(4);
-const dead = await bar();
+await page.evaluate(() => { const e = window._lairBoss; e._f = e.floor; });
+const other = await until(b => !b.shown, () => { const e = window._lairBoss; e.floor = (e._f || 1) + 1; px = e.x + 2; pz = e.z; e.alert = true; });
+await page.evaluate(() => { const e = window._lairBoss; e.floor = e._f; });
+const dead = await until(b => !b.shown, () => { const e = window._lairBoss; e.dead = true; });
 check('a master on another floor shows no bar', !other.shown, other);
 check('a dead master shows no bar', !dead.shown, dead);
 check('no page errors', g.errs.length === 0, g.errs);

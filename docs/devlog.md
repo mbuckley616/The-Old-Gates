@@ -15324,3 +15324,14 @@ A register fix, applied as the review wrote it. Since Session 512 the barber's t
 ### Needs eyes
 - None.
 Correction to Session 735, the same day: the look builder had already applied Finding 26 word for word as their Session 727, on auto/backlog, not yet on main. I missed it because I checked only my branch and main. The two code changes are identical, so `82-world-structures.js` and `83-world-generator.js` merge without a conflict. `tests/selltopic` now takes auto/backlog's version, which checks the same rule and the way to the barber (5/5 here), so that file merges cleanly too. `tests/barberway` stays as a second check. A run that applies a quest-review finding should first grep the other builder's branch for it.
+
+## v80 — Session 736 — `bossbarunder` waits for the bar to answer (red on CI on d43c4ae and 72bfd96)
+Session 733's `bossbarunder` failed twice on CI, on different checks. On d43c4ae, after the master was moved to another floor, the bar still showed it at 50%. On 72bfd96, with the master alert 2 units off, the bar never came up and still carried the crag beast's name. Both are one fault: the test read the bar a fixed 4 frames after each change, and on the runner the loop had not ticked `tickBossHud` in the dungeon branch by then. The floor fade (`doFade` in `goToFloor2`) uses time, not frames, so 30 frames did not always cover it either. Locally both passed.
+
+The test now waits for the floor change itself (up to 60 × 5 frames, until `currentFloor` is the master's). Each later step sets its state again and reads the bar every two frames, up to 40 times, until the bar answers. The player is put back beside the master each time, so a push from the loop cannot move you out of range. A check that should fail still fails: a bar that ignored the floor, or a dead master, stays up for all 40 tries. Tests only; no game code changes.
+
+### Verified (headless Chromium)
+`bossbarunder` 9/9: outdoors *Testcrag the Cave Bear* at 100%; below ground no bar; on floor 2 *Testcrag — Cave Bear* at 100%, then 50.1%; another floor, none; dead, none; no page errors.
+
+### Needs eyes
+- None.
