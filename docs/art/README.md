@@ -18,4 +18,4 @@ Rules for using it:
 - **Only `KEEP` rows feed the backlog.** An idea becomes a backlog item once Michael has kept the image it comes from. The item cites the image id.
 - **Several passes of one subject are kept on purpose.** The refined pass is usually the one to keep; earlier passes are `MAYBE` for their details.
 
-Intake so far: batch 1, the 18 images of `03_World_Architecture_Transport` (Session 755).
+Intake: all 96 images, OG-001 to OG-096 (Session 755): batch 1 by hand, the rest by four parallel agents to the same format. Recommendations: 54 KEEP, 37 MAYBE, 5 NO; Michael's review is next.
