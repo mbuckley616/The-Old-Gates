@@ -41,6 +41,8 @@ function isStackable(it){
   if(it.type==='misc'&&it.name==='Lockpick')return true; // v80 S170 — picks stack, so the count on the lock is the whole bag's
   return false;
 }
+// S732 — a stack is one name and one mark: stolen goods stack only with stolen goods (the cells take BAG[i].stolen whole).
+function sameStack(a,b){return a.name===b.name&&!a.stolen===!b.stolen;}
 function bagAdd(item){
   // v64 — Honor the incoming item's qty when stackable. Pre-v64 this always
   // added "1 of name" regardless of the item.qty field, so arrow bundles
@@ -48,7 +50,7 @@ function bagAdd(item){
   // ("delta-qty") fallback to 1 preserves all legacy callers that don't set
   // qty explicitly (single drops from corpses, unequip-to-bag, etc.).
   const dq = (item.qty && item.qty > 1) ? item.qty : 1;
-  if(isStackable(item)){const ex=BAG.find(b=>b.name===item.name);if(ex){ex.qty += dq;return;}}
+  if(isStackable(item)){const ex=BAG.find(b=>sameStack(b,item));if(ex){ex.qty += dq;return;}}
   // No weight cap here — callers (buyItem/takeLootItem/harvestHerb) pre-check via canCarry().
   // Unequip also calls bagAdd but the item was already in EQ (same total weight), so no cap check applies.
   BAG.push({...item,qty:dq});

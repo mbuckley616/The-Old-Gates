@@ -4,6 +4,17 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### More barrels and boxes in towns: how many, and what they hold? (systems builder, 2026-10-11) — DECISION #245
+Your playtest note of 6 Oct (backlog D): *all towns and cities should have more barrels and boxes out and about, with low-level loot, more to interact with.* Today the generator puts a fixed number beside the houses' walls: a city 10, a town 7, a village 4, a hamlet 2 (`83-world-generator.js`, grep `Loot barrels and crates`). Each holds everyday goods only (no arms or armour; a candle, rope, salt or bread if the roll gives nothing). Each is rolled again every game day, and taking from one is not a crime. How many there are, and what they hold, is a rule of play.
+
+- **A. Twice as many, as they are** *(recommended)*: city 20, town 14, village 8, hamlet 4. Same everyday goods, same daily refill. The fallback goods sell for 1–3 gold apiece (a candle 4 to buy, rope 9, at a third back). Seven more barrels in a town come to tens of gold a day at most, not measured, and change no progression.
+- **B. Twice as many, but most hold little**: as A, but each new one is empty two days in three, as in Skyrim's streets. More to open, about as much to find as today.
+- **C. Three times as many, a quarter of them someone's**: city 30, town 21. One in four stands at a house's door and counts as that house's: taking from it in sight is theft (−2 favour, the fine), as a home chest is.
+- **D. Leave the count; make them easier to find** (the look builder's half only: where they stand, by the inn's yard, the smithy and the market).
+
+Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
+
+
 ### The fall — the death screen on the parchment: a leaf, the word, or a restyle? (the concept artist, 2026-10-11) — DECISION #243
 When you die today the screen reads *YOU DIED* in red over a dark veil, with the HUD still on behind it, one line (*Last save: slot 1 — Dunmore, level 5*) and two buttons. It is the last screen on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/fall/`, on auto/concept) uses a real fall on build s576: Aoife saved in Dunmore at 4 pm, went down an old gate and died to a Skeleton on the first floor of the Dungeon of Shadows at 7:36 pm. Under every option the rules stay as they are: nothing is lost but the play since the save, and the world waits.
 - **A.** The leaf of the fallen *(recommended)*: the view drains to sepia and the HUD goes; the pause leaf's paper at the left, so the foe stays in view. *Fallen*, where and to what (*to a Skeleton's sword*) and the date; your last save with its picture, its hour and how long before the fall (*3 hours and 36 minutes*); three rows: load the last save (E), choose another save (L, the register), to the title (a second press). One small rule: the game remembers what dealt the last blow.
@@ -49,6 +60,7 @@ Section B's witness rule says *anyone awake … not asleep indoors*. Nobody slee
 
 Recommendation: **A.** Thief and Oblivion both put sleepers in beds and let you work a room past them; Skyrim gives a sleeper far less sight than a waking guard. A keeps the rule the spec already gives (only the awake see), keeps the outcome deterministic (no new roll for the co-op rules to key), and still leaves the evening and the dawn as the hours a resident catches you.
 Michael: **Asleep in bed from 23h to 5h** (A). (11 Oct 2026)
+Done, Session 739 (systems builder): the resident lies on their bed 23h–5h, sees nothing, and wakes within two units of the bed or to E (`tests/homesleep`). The lying pose is owed to the look builder.
 
 ### A Cave Bear's cavern at level 1 — a wall for the starting club, by design or not? (systems builder, 2026-10-11) — DECISION #241
 Session 718 asked whether a lair's cavern is now *the harder place without being a wall*. The critic's s572 run says that for a Cave Bear's lair at level 1 it is a wall: the master has 204 health (Easy, floor 2, ×3), armour 4, blunt ×0.8, and the Warrior's Wooden GreatClub landed 1 a blow. The critic died twice, in 7.7 s and 10.6 s. Measured on 11 Oct by the systems builder: nothing is broken. The master and the crag's beast have the same armour and resistances, as Session 706 says, and a raw blow of 6 lands 1 on both. The 3 the critic saw at the crag was a lucky blow or a backstab. The cause is that armour is a flat subtraction (`applyMeleeDamage`: the blow less the armour, at least 1), and the GreatClub is the weakest weapon in the game against it. At level 1 against armour 4, the average blow is GreatClub 1, Wooden Sword 3, Wooden Mace 2.5, Bronze Sword 5, Wooden Claymore 9, Iron Sword 7.5. So the master is about 200 swings with the club, 41 with a Bronze Sword and 23 with a Wooden Claymore. The crag's beast (259 health) is the same wall for the club.
@@ -59,6 +71,7 @@ Session 718 asked whether a lair's cavern is now *the harder place without being
 
 Recommendation: **A.** Dark Souls and Elden Ring both let you walk into a fight your weapon cannot win and teach you to come back. The cure here is a better weapon at the goods shop, not a softer bear. B is the one to take if the starting club should matter at all against armoured foes, since it changes the club everywhere, not only in caverns.
 Michael: **Leave it** (A). (11 Oct 2026)
+Noted, Session 739: no session; the backlog item is closed.
 
 ### A walled town with one gate has one guard — two, as the code's comment says, or one? (systems builder, 2026-10-11) — DECISION #242
 `genSettlement` (`83-world-generator.js`) puts *a couple of guards at the gates*: one on each of the first two streets, where the street crosses the ring just inside the wall. A town with a single road in has one street that reaches the ring, so it gets one guard. Of the five walled towns round the start, Dunmore and two others have 2. Carraig Mór (prosperity 56) and Coeur de Vie (a city, 78) have 1, and each has one gate. The third man, the night watch, comes only at prosperity 60, so Carraig Mór has one man awake at night. The critic's s572 run walked it hour by hour: from 21h to 5h Séamus walks the beat alone, every one of 36 homes is 50 units or more from him, and a street pick after 21h cannot be seen at all. Dunmore's three-man watch is seen at 26% of night picks (Session 609).
@@ -69,6 +82,7 @@ Michael: **Leave it** (A). (11 Oct 2026)
 
 Recommendation: **A.** The comment and Session 166 both meant two guards, and one guard walking the whole town makes a street pick a sure thing, not a risk you read and time. B is the choice if every walled town's night should be as watched as Dunmore's. C keeps a variety that is real, but the player cannot see its cause: the number of roads in.
 Michael: **Two gate guards in every walled town** (A). (11 Oct 2026)
+Done, Session 740 (systems builder): Ruairí at Carraig Mór's gate, Fáelán at Coeur de Vie's; no one else's name or place moved (`tests/gateguards`).
 
 ### The lockpick on the parchment — the lock in section? (the concept artist, 2026-10-10)
 The lockpick is the last main panel still on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/lockpick/`, on auto/concept) puts it on the parchment with real locks from build s488. Under every option the rules stay as they are: two to five pins, push, and press again while the pin holds at the shear; a snap costs a pick and drops the last pin set.

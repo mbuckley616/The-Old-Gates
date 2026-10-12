@@ -877,7 +877,8 @@ function buildQuestTopicsForNPC(npcName, zone){
   // so renderDialogNode's substitution pass handles the actual swap at
   // render time — keeps the table data clean and consistent with how
   // dialog text elsewhere in the game references the player.
-  if(!metNPCs.has(npcName)){
+  // S732 — not to a guard who halts you over a fine or offers the cells (`noIntro`; the critic's s572)
+  if(!metNPCs.has(npcName)&&!(typeof dlgNPC!=='undefined'&&dlgNPC&&dlgNPC.noIntro)){
     const intro = INTRO_RESPONSES[npcName] || `Pleased to make your acquaintance, ${playerName}.`;
     topics.push({
       label: `My name is ${playerName}.`,

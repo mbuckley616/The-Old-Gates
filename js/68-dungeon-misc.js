@@ -349,7 +349,8 @@ function lockChest(ch){
   ch.onPick=()=>{ch.locked=false;if(typeof openLoot==='function')openLoot(ch);};
   return ch;
 }
-function lpPicks(){const i=BAG.findIndex(b=>b.name==='Lockpick');return i<0?0:(BAG[i].qty||1);}
+// S732 — stolen picks are their own stack (sameStack), so the count on the lock adds the stacks
+function lpPicks(){return BAG.reduce((a,b)=>a+(b.name==='Lockpick'?(b.qty||1):0),0);}
 function lpSpendPick(){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0)return 0;const it=BAG[i];it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return lpPicks();}
 function openLockpick(door){
   const d=lpDifficulty(door);
