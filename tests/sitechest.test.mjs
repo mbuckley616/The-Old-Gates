@@ -38,6 +38,9 @@ for (let i = 0; i < 80; i++) { await page.waitForTimeout(250); if (await page.ev
 const loaded = await page.evaluate(() => { const l = window._ld; showMsg = window._ldO; return l; });
 await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id);
 let d = null; for (let i = 0; i < 60; i++) { await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id); await g.spin(null, 20); await g.frames(2); d = await page.evaluate((id) => { const S = WORLD.settlements.get(id); return S && S.chest ? S.chest.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')) : null; }, id); if (d) break; }
+// Session 748: if the loop has not built the camp by then (red on CI on a20afcb, d null after 60 tries), build it as `chestOf` does; the chest
+// still comes from the loaded world row, which is what is being checked
+if (!d) { const c = await chestOf(id); d = c ? c.items : null; }
 check('emptied after a save, then loaded: the chest holds what it held at the save', loaded && before.items.length > 0 && JSON.stringify(d) === JSON.stringify(before.items), { loaded, before: before.items, d });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

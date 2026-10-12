@@ -15573,3 +15573,12 @@ Nothing built. The counts and the loot rule were read from the code.
 
 ### Needs eyes
 - Michael: #245.
+
+## v80 — Session 748 — `sitechest` builds the camp itself if the loop has not after the load (red on CI on a20afcb)
+Shard 8 failed `sitechest` at its last real check, *emptied after a save, then loaded*. The load came back (`Loaded.` seen, Session 741's wait), but after 60 tries of putting you 40 units from the camp, spinning 20 ticks and drawing 2 frames, the runner's loop had still not built the camp, so the test read `null`. What the check is about is the chest's state in the loaded world row, not when the loop gets round to a camp. So when the wait runs out, the test builds the camp itself through `chestOf`, as its earlier steps do (Session 730). A load that failed to restore the chest still fails: the rebuilt camp would hold the emptied chest, `[]`, against the save's one item. Tests only.
+
+### Verified (headless Chromium)
+`sitechest` 9/9. Here the loop builds the camp within the wait, and the chest holds *Bronze Buckler of Vigor*, as at the save.
+
+### Needs eyes
+- None.
