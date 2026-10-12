@@ -29,6 +29,11 @@ Your playtest note of 6 Oct (backlog D): *all towns and cities should have more 
 Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
 Michael: **Twice as many, as they are** (A). (11 Oct 2026)
 
+### The world's tone: grounded medieval, or high fantasy? (Claude, Session 750, 2026-10-12)
+Raised in chat while writing the concept art brief: the canon's tone line (Part I, *Tone & voice*) read "Medieval-grounded with creeping dread. Not high fantasy", and Michael's direction for the art contradicted it.
+Michael: **High fantasy at the core, grimdark and cosmic horror underneath.** "I would like to have the core of it be High Fantasy, as I want it to be uplifting/exciting and not depressing to play… the player should feel like the world is largely 'pleasant', save for the villains themselves. The horror should be that the ones who are 'awake'… are painted as villains. The player should gradually realize that they are the real monster in this universe… I don't want that to be spoon-fed." Not out-of-the-box fantasy: Morrowind's strangeness where it counts. Asked to write it into the lore and the brief. (12 Oct 2026)
+Done, Session 750: `lore_canon.md` Part II §10a (his words, what it makes canon, what stands), Part I's tone line marked superseded, §14; `design_brief.md` gains a Tone section and two lines under *Not this*.
+
 ### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
 Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyard. The systems builder's Session 618 built a lane to every quay, graded evenly from the town down to the water. At Portclare the quay lies behind a ridge, so the lane cuts through it for about 70 of its 92 units. The ground stands up to 8.9 units over the lane 8 out on one side and 7.1 on the other. Today the cut's sides are the road's own blend: steep grass banks running straight up from the lane's edge. At the other three ports nearest Dunmore the lane is 8 units long and flat, with no cut. Should Portclare's cut, and any quay lane's cut deeper than 1.2, have a wall?
 

@@ -10,6 +10,9 @@ A lightweight, browser-playable open-world RPG that is the marriage of the best 
 2. **A challenging, rewarding progression.** Skills that grow by use, perks that change how you play, a world that pushes back.
 3. **Fluid movement and weighty combat.** Timing, dodge, parry, counters — Elden Ring's shape at Dragonwilds' difficulty. Movement good enough to build platforming on.
 
+## Tone (Michael, 12 Oct 2026)
+High fantasy at the core: uplifting and exciting, never depressing to play. The world is largely pleasant, save for the villains themselves, and spans a healthy range of fantasy sub-genres. Grimdark and cosmic horror live underneath, in the villains and the metaphysics. The horror is that the ones who are *awake* to the true nature of their reality are painted as villains, and that the player gradually realises they are the real monster, tearing through the world for their own enjoyment. Never spoon-fed: inferred by a player who pays attention. Not out-of-the-box fantasy: strange in Morrowind's manner (its mushrooms, its silt striders) where it counts. Canon: `lore_canon.md` Part II §10a.
+
 ## Look
 As polished and realistic as a browser can carry without becoming heavyweight: stylised smooth, built in code. Interfaces read as parchment and scroll in Oblivion's manner, never digital or corporate. The build must stay playable on a laptop in a browser.
 
@@ -17,7 +20,7 @@ As polished and realistic as a browser can carry without becoming heavyweight: s
 Co-op (a friend joins your world with their character) and perhaps a PvP arena. Survival skills (mining, woodcutting, cooking, alchemy) as part of the progression. A Morrowind-style journal with an in-world calendar.
 
 ## Not this
-A heavyweight download. A punishing Souls-like. Systems that reduce to *buy more/better*. Placeholder plainness kept because it was there first.
+Out-of-the-box fantasy. A world that is depressing to play. A heavyweight download. A punishing Souls-like. Systems that reduce to *buy more/better*. Placeholder plainness kept because it was there first.
 
 ## Answered by Michael (27 Sep 2026)
 - **The player** is Michael, solo — with a way to host your world and have up to three friends join it (summoned, in the lore's terms). Design single-player first; never build something that makes hosting impossible.

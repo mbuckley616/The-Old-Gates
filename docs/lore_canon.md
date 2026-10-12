@@ -12,6 +12,8 @@
 
 ## Tone & voice
 
+> **Superseded on the world's tone — Michael, 12 Oct 2026 (Session 750).** The line below ("Medieval-grounded with creeping dread. Not high fantasy") no longer holds. The core is high fantasy; grimdark and cosmic horror live underneath, in the villains and the subtext. See Part II §10a. The NPC voice and the player's role below stand, and there are still no chosen-one prophecies.
+
 **The world feels:** Medieval-grounded with creeping dread. Not high fantasy — no dragons, no chosen-one prophecies. The horror is mundane and slow: things getting worse incrementally, information being suppressed, ordinary people trying to live normal lives while something ancient stirs beneath them.
 
 **NPC voice:** Grounded, dry, specific. Characters have opinions and histories. Bram doesn't say "the dungeons are dangerous" — he says "Every month I sharpen weapons for people who don't come back to have them resharpened." Corwin doesn't say "Aldwyn is secretive" — he says "I've traded in a dozen towns. Aldwyn's the only herald I've met who reads military patrol logs for fun."
@@ -1562,6 +1564,25 @@ Ruled by `language_audit.md`. Decisions:
 
 ---
 
+## 10a. Tone and theme (Michael, 12 Oct 2026)
+
+*Michael's direction, given in chat with Claude while writing the concept art brief (Session 750). It replaces Part I's "Medieval-grounded with creeping dread. Not high fantasy."*
+
+Michael, in his words: *"I don't want the world to be grounded medieval. I would ideally have a mixture of High Fantasy and Grimdark, ideally spanning a healthy range of fantasy sub-genres. I would like to have the core of it be High Fantasy, as I want it to be uplifting/exciting and not depressing to play. The subtext / some of the metaphysical stuff (like the villain being aware he is in the game) can carry some of the darker / more cosmic horror elements, but the player should feel like the world is largely 'pleasant', save for the villains themselves. The horror should be that the ones who are 'awake' and somewhat aware of the true nature of their reality (the main villain / whoever else we write in) are painted as villains. The player should gradually realize that they are the real monster in this universe, because they are tearing through it purely for their own enjoyment, without realizing it. But again, I don't want that to be spoon-fed. It should be inferred if the player pays attention."* And on invention: *"I don't want it to be an 'out of the box' fantasy. Thinking like how Morrowind added Mushrooms / Silt Striders / some of that really wacky stuff."*
+
+What this makes canon:
+
+- **The surface is high fantasy.** Wonder, colour and adventure; a world that is a pleasure to walk through. People are mostly kind, busy and funny. Danger is real but thrilling, not depressing. Visible magic, dragons (§5) and ruins of impossible age belong on the surface.
+- **A range of sub-genres.** Different islands and corners lean different ways: pastoral, sword and sorcery, nautical adventure, weird fantasy, gothic. Never one note.
+- **The darkness is the villains', and the awake's.** Grimdark belongs to the villains; cosmic horror to the metaphysics. The *awake* are those who see what the world really is: Varek first, and whoever else is written in. From inside the world they look like villains, and that is the horror.
+- **The player is the real monster, never said.** They tear through the world for their own enjoyment. Nobody states it; a player who pays attention may infer it. It sits on canon already: the monsters are the world's immune response (Part I, *the central mystery*), Varek alone senses a will from outside the world (Part I, *the meta-awareness thread*), the final monologue's *"a Sunday afternoon"*, and §3.1's *"the player's returns are the same economy seen from outside."* Read together, the antibodies rise against the player.
+- **Strange, not stock.** Morrowind's mushrooms and silt striders are the benchmark: the wilds, the creatures, the gates' insides, magic and the far islands may go strange; faces, town layouts and Varek stay familiar. Locals treat the strange as ordinary (§10's *written dry* stands).
+- **What stands from Part I:** no chosen-one prophecies; the NPC voice (grounded, dry, specific); the player as a capable stranger.
+
+The concept art brief (a Claude doc, *The Old Gates — Concept Art Brief*, 12 Oct 2026) carries this into pictures.
+
+---
+
 ## 11. Endings
 
 | Choice (Act II → III) | What happens | After |
@@ -1650,4 +1671,4 @@ Every state reads the same few numbers, and every number is one the consequence 
 
 ## 14. Decisions taken in this addendum
 
-Dragons: in, as antibodies. Title: *The Old Gates*. Varek: Old Blood raised Gatelander. Player: chooses a people; Old Blood descriptions are inconsistent. The war: one generation ago. Start nation: the Crown. Cast: existing plus Oswy Blackhand. The Guest's chapel: black screen, *It saw you*, no boon. "A Sunday afternoon": design note, not dialog.
+Dragons: in, as antibodies. Title: *The Old Gates*. Varek: Old Blood raised Gatelander. Player: chooses a people; Old Blood descriptions are inconsistent. The war: one generation ago. Start nation: the Crown. Cast: existing plus Oswy Blackhand. The Guest's chapel: black screen, *It saw you*, no boon. "A Sunday afternoon": design note, not dialog. Tone (Michael, 12 Oct 2026): high fantasy at the core, grimdark and cosmic horror underneath; the awake look like villains, and the player is the monster, never said (§10a).
