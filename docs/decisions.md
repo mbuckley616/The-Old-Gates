@@ -7,6 +7,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### What gives an old gate its character: its theme, its god, or its school? (Claude, Session 754, 2026-10-12)
+Raised in chat over a bestiary sheet Michael had made: the six dungeon themes (undead, goblin, elemental, deep, haunted, ruins) date from *Dungeon of Shadows* and have no reason in the canon. "Why would we have a 'goblin' gate? Shouldn't it be tied to the magic type?"
+- **A. By school** *(recommended)*: each gate belongs to one of the six schools (Tine, Uisce, Cloch, Scáth, Solas, Gaoth). Its sigil teaches that school's words, and its stone, light, hazards and antibodies take that school's shape. Goblins become a state any gate can be in: *occupied*.
+- **B. By god**: one of the six gods with temples (Sea, Sky, Beasts, Stone, Hearth, Weaver). A strong lore fit, but not tied to spells or progression.
+- **C. Keep the six themes** and give them a reason in the lore (a goblin gate is one goblins moved into).
+Michael: **A, tie gates to the schools.** (12 Oct 2026)
+Done, Session 754: written into `lore_canon.md` Part II §9a with the mapping; backlog C carries the build for the systems and look builders.
+
 ### The fall — the death screen on the parchment: a leaf, the word, or a restyle? (the concept artist, 2026-10-11) — DECISION #243
 When you die today the screen reads *YOU DIED* in red over a dark veil, with the HUD still on behind it, one line (*Last save: slot 1 — Dunmore, level 5*) and two buttons. It is the last screen on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/fall/`, on auto/concept) uses a real fall on build s576: Aoife saved in Dunmore at 4 pm, went down an old gate and died to a Skeleton on the first floor of the Dungeon of Shadows at 7:36 pm. Under every option the rules stay as they are: nothing is lost but the play since the save, and the world waits.
 - **A.** The leaf of the fallen *(recommended)*: the view drains to sepia and the HUD goes; the pause leaf's paper at the left, so the foe stays in view. *Fallen*, where and to what (*to a Skeleton's sword*) and the date; your last save with its picture, its hour and how long before the fall (*3 hours and 36 minutes*); three rows: load the last save (E), choose another save (L, the register), to the title (a second press). One small rule: the game remembers what dealt the last blow.

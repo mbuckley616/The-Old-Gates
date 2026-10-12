@@ -15666,3 +15666,13 @@ Now `pwSleep` (`32-people.js`) is a pose of its own in the blend: on the left si
 ### Needs eyes
 - Whether a sleeper on their side under the quilt reads as asleep at a glance in a lit room, and whether the closed lids show at normal distance.
 - Inns' and barracks' beds are not touched: only a home's resident sleeps today.
+
+## v80 — Session 754 — Asked and answered: the gates by school (docs only)
+Michael asked, over a bestiary sheet he had made of the dungeon foes in their six themes, why a gate would be a "goblin" gate, and whether a gate should instead follow its magic. The six themes (undead, goblin, elemental, deep, haunted, ruins) are *Dungeon of Shadows*' and have no reason in the canon. Three options went to him in chat: by school (each gate one of the six schools, its sigil teaching that school, its look and foes in that school's shape, goblins an *occupied* state over any gate), by god, or keep the themes and explain them. Michael: A. Written into `lore_canon.md` Part II §9a with the mapping (Tine was elemental, Uisce deep, Cloch ruins, Scáth haunted, Solas undead, Gaoth new), into `decisions.md` under Answered, and into backlog C as the build for the systems and look builders. Solas carries the undead because the canon's sigils are where the dead are burned out of the world (§3.1): a failing light gate is where the dead walk.
+
+### Verified (headless Chromium)
+Nothing built; docs only.
+
+### Needs eyes
+- Systems builder and look builder: backlog C, *The gates by school*.
+- Quest writer: gate names and rumours that say "goblin gate" or name a theme.
