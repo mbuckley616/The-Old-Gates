@@ -408,5 +408,6 @@ let yaw = 0, pitch = 0, drag = null; const base = cam.quaternion.clone();
 addEventListener('pointerdown', e => drag = [e.clientX, e.clientY, yaw, pitch]); addEventListener('pointerup', () => drag = null);
 addEventListener('pointermove', e => { if (!drag) return; yaw = drag[2] - (e.clientX - drag[0]) * .003; pitch = Math.max(-.6, Math.min(.5, drag[3] - (e.clientY - drag[1]) * .003)); });
 addEventListener('resize', () => { if (STILL) return; cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); R.setSize(innerWidth, innerHeight); comp.setSize(innerWidth, innerHeight); });
-function frame(t) { WIND.value = 2.3 + (STILL ? 0 : t * .001); cam.quaternion.copy(base).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'))); comp.render(); }
+let fpsN = 0, fpsT = performance.now(); const fpsEl = STILL ? null : Object.assign(document.createElement('div'), { style: 'position:fixed;right:10px;top:10px;color:#f3ead6;font:13px system-ui;background:rgba(0,0,0,.45);padding:4px 8px;border-radius:4px' }); if (fpsEl) document.body.appendChild(fpsEl);
+function frame(t) { if (fpsEl) { fpsN++; const now = performance.now(); if (now - fpsT > 1000) { fpsEl.textContent = Math.round(fpsN * 1000 / (now - fpsT)) + ' fps'; fpsN = 0; fpsT = now; } } WIND.value = 2.3 + (STILL ? 0 : t * .001); cam.quaternion.copy(base).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'))); comp.render(); }
 if (STILL) { frame(0); window.__done = true; } else { R.setAnimationLoop(frame); window.__done = true; }

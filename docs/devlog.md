@@ -15736,3 +15736,24 @@ Also this session: the five routine prompts that should read backlog L were writ
 `node docs/prototypes/levelup/shoot.mjs` renders each view in about 15 s at 1920x1080 in software GL, with no page errors. The counts in `window.__stats`: grass 160,000, flowers 5,200, trees 881, houses 80, puffs 2,051. The comparison page puts the slice beside OG-077 and today's paintover frames.
 ### Needs eyes
 Michael's call on the decision. The slice is one tuned view: other hours, weather, the Mark and Aurenne, interiors and the gates are untested in it. Close-up buildings and people are still primitive; the plan says modelled assets carry those. Frame cost on a real machine with real streaming is unmeasured: the slice draws everything at once, with no level of detail.
+
+## v80 — Session 769 — More slices: a village lane, an old gate at dusk, the hall inside, and a live page (prototype only)
+Michael chose B on Session 768's decision (more slices first, then the new foundation once he approves them). Three new slices share a kit, `docs/prototypes/levelup/common.js`, which provides:
+- the renderer and post-processing;
+- seeded noise;
+- textures painted on canvases from a height field, each with a normal map made from the same height (plaster, cobbles, coursed stone, lichened stone, thatch, slate, planks, beams, flagstones);
+- the sky, cumulus and leaf-card trees.
+
+The slices:
+- **`street.html`, the village lane at eye level.** Eleven cottages built as pieces: an extruded wall profile with real holes for recessed windows and doors, a stone footing, timber framing on some, glass, frames, sills, shutters, flower boxes, plank doors, stone lintels and steps, lanterns, chimneys with pots, and a thick roof slab bevelled round at the eaves (thatch) or thin (slate). Also a cobbled lane, verges of grass, barrels, crates, sacks, a cart, a market stall with a striped awning, an inn sign, ivy, and the ruin on the hill beyond.
+- **`gate.html?view=gate`, the old gate at dusk (OG-037, V1).** Four rings of lichened stone stepping into a hillside, the Weaver script lit amber on their faces, a slit at the heart with light behind it, fallen stones, a camp with two tents, a fire that casts shadows, a Crown banner, and fireflies.
+- **`gate.html?view=hall`, inside the gate (the dark look).** Ring arches with burning script, wet flagstones (roughness drops in a noise mask), a brazier, rubble and bones, a carried torch, and a shaft of cold light from a cleft, with dust in it.
+
+`bundle.py` inlines each scene into a self-contained page that loads three.js from jsDelivr. The four pages are published as a live claude.ai page with a frame counter, so Michael can measure them on his own machine.
+
+A correction within the session: the first renders put characters from a free CC0 kit (KayKit) in the lane, the camp and the hall. Michael: "totally the wrong direction. They look like little children's toys." They are gone from every slice, the files are deleted, and the loader is now a generic one for rigged glTF. How a realistic cast gets made is a new pending decision.
+### Verified (headless Chromium)
+Each slice renders at 1920x1080 in 5 to 12 s with no page errors. The lane has 11 houses, 243 trees and 130,000 grass blades; the gate has 221 trees and 110,000 blades. The bundled pages also load and run with no errors when served locally, with three.js pointed at the vendored copy, since jsDelivr is blocked in the test box. Frame rates there are 0 to 2 fps on software GL and mean nothing.
+### Needs eyes
+Michael's frame rates on his machine, scene by scene. Whether the live page's scenes run inside the claude.ai frame: the CDN is on its allowlist, but this was not tested from here. His approval of the slices, which starts A. His call on the cast.
+
