@@ -9,6 +9,7 @@ Raised in chat with Michael. `docs/prototypes/levelup/` renders the Gatelands fr
 - **A. Build it as Deep Work, behind a switch** *(recommended)*. Move to current three.js, then bring in the slice's pieces: terrain shading, grass, trees, sky, water and post. Stream them with the chunks, at three quality levels. The old look stays playable until the new one is whole. Then an asset pipeline (glTF, image-to-3D from the concept art, CC0 kits) for buildings and props, then modelled, rigged people. Backlog L is built in the new kit.
 - **B. More slices first.** A village street close up with modelled houses, a gate interior in the dark look, a person at eye level, and the slice running on Michael's machine for frame rate. Then decide.
 - **C. Not now.** Keep the current renderer and build backlog L in today's style.
+Not carried to the phone: Michael has it in chat.
 
 ## Answered
 
