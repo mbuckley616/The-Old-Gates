@@ -4,16 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+
+
+## Answered
+
 ### The cast: how do realistic people get made? (Claude, Session 769, 2026-10-12)
 Raised in chat. Nothing in reach of the slices (free kits, the three.js samples) looks like OG-025. Every realistic option needs modelled, rigged characters, which the browser renders fine at 20,000 to 40,000 triangles a person.
 - **A. Image-to-3D from the concept sheets, then auto-rig** *(recommended to start)*. Michael (or a session with the tool's API key) feeds a front view from OG-025 or OG-048/056 to Meshy, Tripo or Rodin. The result is a textured model, rigged and given walk and idle animations by the same tool (or Mixamo), exported as GLB to the Drive folder. Claude loads it into the lane and the vista. This is cheap and fast and tests the look this week; faces and hands are where these tools are weakest.
 - **B. A base human and modelled clothes.** A CC0 base body (MakeHuman/MPFB) for the four peoples' proportions, with clothing, fur and armour modelled per the sheets. The most consistent cast, but it needs Blender work that no session here can do yet.
 - **C. A character artist** for a few hero characters, with A or B for the crowd.
-Not carried to the phone: Michael has it in chat.
-
-
-## Answered
-
+Michael: **"I will try Meshy or one of the other tools"** (A). (12 Oct 2026, in chat) Waiting on his first GLB in the Drive folder; Claude loads it into the lane and the vista.
 ### A new visual foundation: build it? (Claude, Session 768, 2026-10-12)
 Raised in chat with Michael. `docs/prototypes/levelup/` renders the Gatelands from scratch on three.js 0.170 toward OG-077: a shaded terrain, grass in the wind, leaf-card trees, a cloud sky, aerial perspective and a grade. It is a different class of picture from the game's. Getting the game there means replacing how the world is drawn, not tuning it.
 - **A. Build it as Deep Work, behind a switch** *(recommended)*. Move to current three.js, then bring in the slice's pieces: terrain shading, grass, trees, sky, water and post. Stream them with the chunks, at three quality levels. The old look stays playable until the new one is whole. Then an asset pipeline (glTF, image-to-3D from the concept art, CC0 kits) for buildings and props, then modelled, rigged people. Backlog L is built in the new kit.
@@ -22,6 +22,7 @@ Raised in chat with Michael. `docs/prototypes/levelup/` renders the Gatelands fr
 Michael: **"I'd like B but then let's go to A once I approve those. Just need more examples first."** (12 Oct 2026, in chat)
 On the characters, after the slices first used a free toy-style kit (KayKit): **"totally the wrong direction. They look like little children's toys - not humanoid and even close to realistic at all."** The target is OG-025's Markmen: real proportions, layered wool, fur and leather, faces. (12 Oct 2026)
 Done, Session 769: three more slices (the village lane close up, the gate at dusk, the hall inside), a live page with a frame counter, and no people in any slice. The kit is removed. A goes ahead when Michael approves the slices.
+Michael on the live page: **"each one is a steady 60 FPS for the live slices, this should be viable!"** (12 Oct 2026)
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.
 1. **How people are proportioned** (OG-012, OG-095). **A.** Naturalistic, about 1.75 m. **B.** A heroic hybrid, about 1.80 m, slightly longer legs and broader shoulders, so a figure reads at a distance and in a fight *(recommended; both sheets pick it)*. **C.** Stylised: bigger heads and hands, narrow waists.
