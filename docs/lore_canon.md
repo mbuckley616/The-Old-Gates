@@ -1548,6 +1548,27 @@ The story needs a handful of specific places beyond the home island. The generat
 | **The Root** | deep water off Aurenne's far side; islet lair | Act III |
 | **Fields** | one per island: a flat with the wastes' bone-and-blade scatter; the Ashfeld on the home island | wherever Varek stands |
 
+
+## 9a. The gates by school (Michael, 12 Oct 2026)
+
+*Michael's A, Session 754 (`decisions.md`). It replaces the six dungeon themes inherited from* Dungeon of Shadows *(undead, goblin, elemental, deep, haunted, ruins), which had no reason in the canon.*
+
+Every old gate belongs to one of the six schools. Its sigil teaches that school's words, and the gate is built, lit and defended in that school's shape: the antibodies a strained gate makes take the form of what the gate carries (Part I, *the central mystery*). A player goes into a Tine gate to learn fire.
+
+| School | The gate | Was | Its antibodies |
+|---|---|---|---|
+| **Tine** (fire) | forge-hot halls, the script lit like embers | elemental | Fire Elemental, a magma Slime, Golem, Cave Troll |
+| **Uisce** (water, cold) | sea caves, drowned halls, frost (the Mouth, the Vault of the Tide) | deep | Slime, drowned Skeleton, Cave Troll, Mimic, frost things |
+| **Cloch** (stone) | the oldest masonry, half fallen | ruins | Golem, Gargoyle, Cave Troll |
+| **Scáth** (shadow) | dark that moves; things that hide | haunted | Phantom, Wraith, Mimic |
+| **Solas** (light) | where the dead are burned out of the world (§3.1, the Clearing); when one fails, the dead walk | undead | Skeleton, Wraith, Phantom |
+| **Gaoth** (wind) | open shafts, sky through the rock | (new) | wisps, Gargoyle, something winged |
+
+- **Occupied.** Goblins, kobolds and their Shieldbearers are not a kind of gate. They are a state any gate can be in: a quiet or spent gate that a goblin warren has moved into. Clearing one is clearing someone's home (§10a).
+- **Condition sets the strangeness** (from Part I): a steady gate makes the shapes the local folklore had words for; a sudden failure makes Faolchú-like things with seams still glowing; a catastrophic one makes a dragon (§5).
+- **The region sets the folk shape**: the same Cloch gate makes trolls in the Mark and something else in Aurenne.
+- The six themes' names survive in code until the build renames them; the mapping is the table's *Was* column.
+
 ---
 
 ## 10. Vocabulary and tone (the purge)
