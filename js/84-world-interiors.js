@@ -178,12 +178,13 @@
   function cargoHave(key){const b=BAG.find(it=>it.type==='cargo'&&it.cargo===key);return {bag:b?(b.qty||1):0,hold:(worldState.ship&&worldState.ship.hold&&worldState.ship.hold[key])||0};}
   function cargoBuy(site,key){const g=CARGO_GOODS[key];if(!g||g.home!==cargoNation(site))return 'That is not sold here.';const p=cargoAsk(site,key);
     if(gold<p)return `A ${g.n.toLowerCase()} is ${p} gold.`;
-    if(shipHere(site)&&holdUsed()+g.w<=holdCap()){const h=holdOf();h[key]=(h[key]||0)+1;}
-    else if(!g.hold&&canCarry(cargoItem(key)))bagAdd(cargoItem(key));
+    const here=shipHere(site);let where='';
+    if(here&&holdUsed()+g.w<=holdCap()){const h=holdOf();h[key]=(h[key]||0)+1;where=' Into the hold.';}
+    else if(!g.hold&&canCarry(cargoItem(key))){bagAdd(cargoItem(key));if(here)where=' The hold is full: you carry it.';}
     else if(g.hold)return shipHere(site)?`No room in the hold for a horse.`:`A horse goes in a ship's hold, and your ship is not here.`;
     else return shipHere(site)?`No room in the hold, and too heavy to carry.`:`Too heavy to carry.`;
     gold-=p;cargoPush(site,key,1+CARGO_STEP);if(typeof updateHUD==='function')updateHUD();if(typeof sndGoldJingle==='function')sndGoldJingle();
-    return `Bought a ${g.n.toLowerCase()} for ${p} gold.`;}
+    return `Bought a ${g.n.toLowerCase()} for ${p} gold.`+where;} /* S758 — where it went, when your ship is here (the critic, s585: 7 of 12 crates went on your back without a word) */
   function cargoSell(site,key){const g=CARGO_GOODS[key];if(!g)return '';const have=cargoHave(key);const fromHold=shipHere(site)&&have.hold>0;
     if(!fromHold&&!have.bag)return `You have no ${g.n.toLowerCase()} here.`;
     const b=cargoBid(site,key);

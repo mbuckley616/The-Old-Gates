@@ -15667,6 +15667,34 @@ Now `pwSleep` (`32-people.js`) is a pose of its own in the blend: on the left si
 - Whether a sleeper on their side under the quilt reads as asleep at a glance in a lit room, and whether the closed lids show at normal distance.
 - Inns' and barracks' beds are not touched: only a home's resident sleeps today.
 
+## v80 — Session 753 — Twice the barrels and crates in a town (Michael's A on #245)
+Michael's playtest note of 6 Oct asked for more barrels and boxes in towns, with low-level loot. Session 747 asked how many, and he chose A: twice as many, as they are. The generator (`83-world-generator.js`, *Loot barrels and crates*) now puts 20 in a city, 14 in a town, 8 in a village and 4 in a hamlet. A port takes the hamlet's count, so Portclare has 4. Each holds everyday goods only, rolled on its own key `<site>:barrel:<n>:<day>` as before, refilled each game day, and not a crime to open.
+
+The barrels are placed on the town's own random stream, and the villagers, the night watch and the gate guards draw from it after them. A second pass on that stream would have moved every draw after it, so every villager's name and place too. So the first half are placed exactly as before, draw for draw, and the second half draw from their own stream, `seededRng(site.id,'barrels2')`, keyed by the site. Their ids follow on from the first half's (`dunmore:barrel:7` to `:13`).
+
+The placement found an old fault. Its check against buildings is `settleSolid`, which reads `SETTLE`, and a town is not in `SETTLE` while it is being built. Session 740 found the same thing for the second gate guard. So a barrel was kept out of other towns' houses but not its own town's, and only its offset from its own lot kept it clear. In Portclare the old crate 0 stands in the corner of the chapel's footprint (`g_portclare_7`). The second half now also keeps .4 clear of the town's own solids: houses, the chapel and the barrels already placed. The first half is left as it was, because moving Portclare's crate would change every draw after it, villagers' names included. That one crate is noted below.
+
+The backlog's section I held the critic's five s572 lines a second time, unstruck: auto/critic's filing merged after the fixes. All five were settled in Sessions 732–739, and they are struck as duplicates. The keeper line Session 734 found does not reproduce is struck as well.
+
+### Verified (headless Chromium)
+`tests/townbarrels` (new, 18 checks). Dunmore 14 (9 barrels, 5 crates), Carraig Mór 14, Coeur de Vie 20, Portclare 4. Ids run 0 to n−1, one each. Every one holds something and none holds arms or armour. None stands within .9 of another, and none of the new half stands inside a building. Of the old half, Portclare's crate 0 does, as it did before. The last barrel's key rolls the same goods again. No page errors. A probe printed every person's name, role and post in the four towns, on the code before and after: the same, line for line. `containerids`, `lootseed`, `boxseed` and `gateguards` pass.
+
+### Needs eyes
+- Fourteen barrels in a town, by play: whether that is enough to read as *more to interact with*, or crowds the house walls.
+- Portclare's crate 0 in the chapel's corner (old). The look builder can move it when it gathers the barrels by the yard, the smithy and the market (H), since that move changes the town's draws anyway.
+
+## v80 — Session 766 — The war's notices name the power, and the lord answers in his people's voice (the quest writer's Finding 28)
+*(Committed as Session 754 in 279f0ef, renumbered 755 in 84bcc23, and 766 when main brought the designer's Sessions 754 and 755. The entry stands where it was written.)*
+The quest writer's run 15 (`docs/quest_review.md` on auto/quests, PR #248) found four war notices and two of the lord's answers out of register, and gave the replacement word for word. `nationName` gives the land: *the Gatelands*, *the Mark*, *Aurenne*. So *the Mark has laid siege to …* opened in lowercase, and a land, not a power, laid the siege and kept the garrison. The peace said *1 sieges broken, 1 towns lost*. The lord answered *Who holds the town?* and *The siege?* in the same words in all three peoples' towns.
+
+All applied as written, in `87-world-quests.js`. `polityName(nk,cap)` sits beside `nationName` and reads `NATIONS[nk].crown`: the Crown, the League, the Compact, capitalised where it opens a line. `laySiege`'s notice and `tickSieges`' camp and garrison lines name the power (*The League's camp is on the road outside Dunmore.*). `endWarIf` counts with `plural`. `lordTopics` gives each of the two answers a line per people. The people is the lord's own, the province's (`nationOf` of the town's cell), not the occupier's. The war's declaration and *has fallen to …* keep the land mid-sentence, as the finding says. A register fix, so no decision.
+
+### Verified (headless Chromium)
+`tests/warwords` (new, 13 checks). On one cell of each people's land, with the Mark's men holding the town, the lord's answer opens *The League, for now. Their captain sits in my chair* (Gatelands), *The League. Their captain's in my chair* (the Mark) and *The League, Master, under terms we were not asked to sign.* (Aurenne). With Aurenne's camp on the road, the three siege answers open as the finding gives them. *The League has laid siege to Testford.* The peace reads *1 siege broken, 1 town lost.* and *3 sieges broken, 2 towns lost.* At Dunmore, `tickSieges` shows *The League's camp is on the road outside Dunmore.* and *The Compact's garrison holds Dunmore.* No page errors. `siegeturn`, `datedwork`, `jobids`, `questfoes` and `sitefoes` pass. `dayseed` fails here on this head, and also on main's own tree (6f005ad, two runs, three checks: no towns found in time). CI ran it green on main, so this is this machine's speed, not this change.
+
+### Needs eyes
+- None by play. The quest writer can read the lines in the game: put a town under siege with `WORLD.TS(site)` and ask the lord.
+
 ## v80 — Session 754 — Asked and answered: the gates by school (docs only)
 Michael asked, over a bestiary sheet he had made of the dungeon foes in their six themes, why a gate would be a "goblin" gate, and whether a gate should instead follow its magic. The six themes (undead, goblin, elemental, deep, haunted, ruins) are *Dungeon of Shadows*' and have no reason in the canon. Three options went to him in chat: by school (each gate one of the six schools, its sigil teaching that school, its look and foes in that school's shape, goblins an *occupied* state over any gate), by god, or keep the themes and explain them. Michael: A. Written into `lore_canon.md` Part II §9a with the mapping (Tine was elemental, Uisce deep, Cloch ruins, Scáth haunted, Solas undead, Gaoth new), into `decisions.md` under Answered, and into backlog C as the build for the systems and look builders. Solas carries the undead because the canon's sigils are where the dead are burned out of the world (§3.1): a failing light gate is where the dead walk.
 
@@ -15676,6 +15704,194 @@ Nothing built; docs only.
 ### Needs eyes
 - Systems builder and look builder: backlog C, *The gates by school*.
 - Quest writer: gate names and rumours that say "goblin gate" or name a theme.
+
+## v80 — Session 756 — One name per place reaches the lairs, shrines and glades (the critic's s585)
+The critic found three lairs doubled: two *Dogiaen's Lair*s 1,400 apart, two *Trabrou's*, two *Dunowen's*. About seventy towns are in rumour reach of both Dogiaen's Lairs (Session 729), so *Somebody killed the thing at Dogiaen's Lair* could mean either. Session 432's pass (Michael's A on #110, *one name per place, world-wide*) ranked only the settlements. A probe over the whole grid found 22 names held twice or thrice outside the towns: six shrines, six spires, five glades, three lairs, a ruin and *Saint-Neuf Camp* three times among the bandit camps.
+
+`uniqueSiteNames` (`81-world-cells.js`) now ranks shrines, towers, lairs, glades, camps, bandit camps and ruins after every settlement. Their names have a form (*Shrine of …*, *… Spire*, *…'s Lair*) that no settlement's has, and the sort is stable, so every settlement keeps exactly the name it had: a before-and-after dump of all 1,223 sites differs in 24 places, all of them the second of a pair. A place that loses its name keeps its form round a free name from its culture's bank (*Dogiaen's Lair* `c3_3_p1` is now *Donaen's Lair*; *Bellac Spire* `c9_4_p2` is *Belbrun Spire*), chosen from the hash of its id as the towns' are.
+
+The lair's cavern door is made as its cell is made, before the pass, and it copied the name then: the renamed lair's door would still have said *Dogiaen's Lair — the cavern*. `lairDoorFor` (`87-world-quests.js`) now reads the cavern's name and place from the site when asked. The Salt Mouth's anchoring wrote both by hand and no longer needs to: the site's name gives the same words.
+
+A naming fix that does what #110's answer says, so no decision. A save made before keeps the places by id; a journal line already written keeps the old name.
+
+### Verified (headless Chromium)
+`tests/poinames` (new, 8 checks). No two named places in the world share a name (419 shrines, spires, lairs, glades, camps and ruins, with the towns). The critic's six lairs have six names. 24 places renamed, each keeping its form; 253 settlements renamed, as before. All 40 lair doors (the Root's is its own) read their lair's name as it stands; the Salt Mouth's reads *The Salt Mouth — the cavern*. With both old Dogiaen's Lairs killed, 137 towns in reach hear of two lairs by two names. No page errors. `placenames`, `lairrumour`, `lairname`, `lairdoor`, `lairmaster`, `wyrm` pass. `lairtheme` fails here on one check, and fails the same on the tree before this change: *Saint-Rouge's Lair*, on an islet in cell (11,−1) beyond the grid, is missing from its first read and present in its second. Not this change; left for the next session that touches lairs.
+
+### Needs eyes
+- None by play. The quest writer may want to read the 24 new names (`tests/poinames` prints six).
+
+## v80 — Session 757 — A bought ship lies alongside the quay, her net by its end (the critic's s585)
+`buyShip` says *Walk to the end of the quay, look at the net down her side and press E*, but she was moored 4 beyond the quay's end and 2 out past its side: her net, amidships, was 4.5 from the stone at its nearest. The net answers to the crosshair within 5 of the eye (Session 638), so of Portclare's 1,472 half-unit spots on the quay 6 gave the prompt, all at the one corner, and from the middle of the quay's end (7.6 from her net) E did nothing. The critic counted the same at Carrigshane, Inisowen and Inismore.
+
+`quayBerth(plat,sd)` (`85-world-sea.js`) now lays her alongside the quay's last stretch: her near side .6 off its edge, her bow still to the sea (`seawardYaw`), her centre 1.5 short of the end, so each net runs from 0.2 to 2.8 short of the end, beside it. Buying and the Compact's grant both moored her by the same two lines and both call it now. A galleon's stern reaches 12.5 back along a quay that runs 34 past the waterline, so she lies in water the length of her. Fetching and raising still set her where they did; neither was reported, and their own lines do not send you to the quay's end.
+
+Placing the ship where her own line says she is is not a decision.
+
+### Verified (headless Chromium)
+`tests/quaynet` (new, 7 checks). At Portclare and the three ports the critic named, the camera set at the eye's height over every half-unit spot of the quay and turned to each net: 109, 110, 109 and 109 spots answer (the old mooring: 6, 6, 6, 6, the critic's count), the middle of the quay's end among them every time. For real at Portclare: standing 0.8 in from the middle of the end, looking at her net 4.6 away, the HUD reads *Press 'E' to climb aboard the Lantern*; E, and 70 ticks later you are on her deck. On the old mooring the same spot read nothing and E left you on the quay. No page errors. `shipmoor` (bow to the sea, W takes her out whole), `compactrefit`, `shipwright`, `shipwrightvoice`, `boardlines`, `shipnets` pass.
+
+### Needs eyes
+- By play: a new ship alongside Portclare's quay, whether she reads as moored (the look builder may want a line to the bollards), and the first W from there.
+
+## v80 — Session 758 — A crate bought past the hold's room says where it went (the critic's s585)
+At Portclare with a sloop alongside, the critic bought twelve crates: five went into the hold and seven onto the bag, carry 9 → 59 of 65, and every one read *Bought a sack of grain for 12 gold.* `cargoBuy` (`84-world-interiors.js`) puts a crate in the hold while she is in port and it fits, and on your back when it does not. That fall-back is the rule, as built (Session 641's factor board shows *aboard + carried*); what was missing was the word.
+
+With your ship in port, the line now ends *Into the hold.* or *The hold is full: you carry it.* With her away there is nothing to choose between, and the line stays as it was. *Fill* reads the line's opening only, so it is unchanged. Two short status tails in the board's own plain voice; no new rule, so no decision. The quest writer can read them in its next run.
+
+### Verified (headless Chromium)
+`tests/factorpanel` (3 checks added, 2 tightened, 21 in all). At the Mark's harbour with a sloop (hold 40) in port: *Bought a bale of furs for 36 gold. Into the hold.* at 35 of 40, *… for 37 gold. Into the hold.* at 40 of 40, then *Bought a bale of furs for 39 gold. The hold is full: you carry it.*, with one bale in the bag and the row reading *2 + 1*. With her away, *Bought a load of timber for 13 gold.* and nothing after. No page errors. `cargo` passes.
+
+### Needs eyes
+- None by play.
+
+## v80 — Session 759 — The gates by school, first slice: goblins are a gate's state, not its kind (Michael's A, §9a)
+Michael's A of Session 754 made each old gate one of the six schools, and goblins *a state any gate can be in: a quiet or spent gate that a goblin warren has moved into* (lore_canon Part II §9a). Backlog C carries the build for both builders. This session takes the piece that is fully specified and the systems builder's: the *occupied* flag, replacing the goblin theme.
+
+`gateOf(entry)` (`20-quests.js`, beside `THEME_DEF`) reads a gate's stored theme. Anything but *goblin* is its school as before. A gate that drew *goblin* (the world's roll, an authored entry such as *The Last Post*, or an old save, all read the same way) is an occupied gate of one of the five built schools, the school picked by a hash of its seed. `makePortalDef` takes the school as the portal's theme and sets `occupied`. So the gate is lit, fogged, scored and furnished as its school (`THEME_DEF`, `DUN_DAMP`, the rooms, the music, the glow all key on the portal's theme), and two lines in `56-dungeon-build.js` read the flag: its floor takes the warren's junk, and its foes come from `OCCUPIED_ROSTER`, the old goblin list (Goblin ×2, Kobold Thief, Slime, Cave Troll, Shieldbearer). The stored word stays *goblin*, so the gate's name (*The Black Den*, *Godou Burrow*) and the townsfolk's *goblins nest there* still read from it, unchanged.
+
+Nothing is re-rolled: the world's draw is the same, and the share of goblin-held gates stays at one in six. Gaoth is not among the schools an occupied gate can be until it is built (its look and its foes); adding it then moves about a sixth of the occupied gates to another school, which changes only their look. The test harness's `enterDungeon({theme:'goblin'})` builds a portal by hand and still gets the old goblin look; nothing in the game does that.
+
+Each school's own roster against the canon's table is a rule of play and Michael's: asked as **DECISION #252**. Under the table read strictly, a level-one character in a Cloch or Scáth gate would meet only the Skeleton fallback, so the options keep a first-level foe in each.
+
+### Verified (headless Chromium)
+`tests/gateschool` (new, 9 checks). Of the world's 846 gates, 126 drew *goblin*; all are occupied gates of a school, none a goblin gate: deep 28, elemental 31, undead 24, haunted 23, ruins 20, each the same on every read. Every other gate keeps its school, unoccupied. Every occupied gate's name is the name it had. The six authored goblin entries (seeds 204, 601, 645, 867, *The Last Post*, *Hollow Gate*) are occupied. Inside, at level 6, an occupied gate of the deep school has the deep school's fog (0x080a10) and holds Goblin, Kobold Thief, Slime, Cave Troll, Shieldbearer; the same seed as an unoccupied deep gate has the same fog and holds Cave Troll, Golem, Slime, Mimic, Skeleton. No page errors. `dungeonfoes`, `dungeon` (5 suites), `doublenames`, `mimicspots`, `dunseed`, `chestpicks` pass; `lairtheme` fails the one check it failed before (Session 756).
+
+### Needs eyes
+- By play: an occupied gate in its school's colours with the warren's junk, whether it reads as *someone's home* moved into an old gate (the look builder may want more of the warren than barrels and junk).
+- Michael: DECISION #252, the schools' rosters.
+
+## v80 — Session 760 — A place beyond the grid's edge is found by its id (lairtheme's red)
+Sessions 756 and 759 found `tests/lairtheme` failing one check on this machine, the same before their changes: *Saint-Rouge's Lair*, on an islet in cell (11, −1) north of the grid, was missing from the test's first read and present after the cells round it had loaded. `siteAnywhere` (`83-world-generator.js`) finds a place not yet loaded by reading its cell from its id, `c<i>_<j>_<kind><n>`, with `\d+`: a cell beyond the grid's north or west edge has a negative index, the minus sign did not match, and the lookup fell through to Home's cell and returned nothing. Any code asking for such a place by id (a lair's cavern door reading its beast, the lair rumours, a saved lair) got nothing until its cell loaded. Both id readers in that file (`siteAnywhere` and the peak and lake lookup beside it) now take the sign.
+
+A bug fix, so no decision.
+
+### Verified (headless Chromium)
+`tests/lairtheme` (1 check added, 6 in all): all 55 places in the cells north of the grid are found by their ids before their cells load; the lair read now holds 25 lairs off the grid (it held one fewer than it should before, and missed it), and after the cells round 33 lairs load no lair's biome, beast or theme has moved. Passes, where it failed on the tree before. No page errors.
+
+### Needs eyes
+- None by play.
+
+## v80 — Session 761 — Damage numbers at the foe's head; the bottom centre stops saying the blow (Michael's A on #198, first slice)
+Michael's note of 6 Oct asked for fewer callouts at the bottom centre and damage numbers in their place. His A on DECISION #198 (7 Oct) took the concept artist's HUD with a ledger above the vitals, and *combat lines stop, because the numbers say it*. Nothing of it was built in five days, and it was routed to no builder. This session takes the half that belongs to the blows: the numbers, and the combat lines they replace. The wide compass, the ledger and the parchment plate are the look's half and are left for routing.
+
+`dmgNum(e, n, info, o)` (`74-strikes.js`, beside `dmgTag`) puts a number at the struck foe's head and lifts it 40 px over 0.9 s, fading from the halfway point. It reads the kind from the strike's own info, as the prototype's key (`docs/prototypes/hud/numbers.png`, auto/concept) gives them, the first that applies:
+- *critical*, in red, large and tilted, with a ✶: a finisher, a riposte, a lucky blow or a staggered foe, with that word under it.
+- *from behind*, in pale violet.
+- *guarded* (a shield's front) or *resisted* (×0.75 or less), small and grey.
+- *weak* or *very weak* (×1.25 or more), in gold.
+- otherwise plain paper colour; *armour pierced* or *power* goes under it when either applies.
+
+A rune's rider (`applyWeaponEnchant` now returns its amount, kind and icon) rises beside the blow, from its right edge: *+3 🔥* in fire's orange, frost in ice blue, shock in violet. The three drains take their rune's own colour. The anchor is the foe's health bar, read when the blow lands, so a killing blow still has its number. A foe behind the eye is judged in camera space, because NDC depth read 1.000025 for a foe one unit away. The layer is `#dmgnums` in `index.html` with the prototype's CSS in Georgia, the face the other unrestyled panels use until the UI overhaul. `tickDmgNums` runs from the loop. The numbers are cosmetic: nothing reads them back, and their clock is the page's.
+
+Every hit path calls it: your swing in the open world (`42-zone-enemies.js`) and underground (`62-actions.js`), your arrows in both (`42`, `90-main.js`), and your spells in both. The lines they replace are gone: *Hit Bandit for 21! (BACKSTAB) (Weak!)*, *🏹 Arrow hits …*, *🔥 Fireball hits …*, the rider's *🔥 Fire +5!* and *Swing!* on a miss.
+
+Some lines stay, because no number says them: *💥 Bandit staggered!*, *💥 … guard breaks!*, the kill line with its tags and XP, *Too spent to break the guard.* (now on its own line), and the spells' own effects (*Still-Winter's Touch deepens*). The blows you take still read *Bandit hits you for 7!*. The prototype shows those as the pale stretch your health bar has just lost, which belongs with the plate and the ledger.
+
+This is Michael's answer built as drawn, so no new decision. Who builds the other half is the producer's to route.
+
+### Verified (headless Chromium)
+`tests/dmgnums` (new, 14 checks). Real swings through the loop's own tick at 1/60, with the draw held off.
+
+At a Bandit in Dunmore's street at noon:
+- One number, the 12 it took, stands within 2 px of its health bar on the screen. It is plain and paper-coloured, with no line at the bottom.
+- It rises 20 px by 0.45 s and 35.6 by 0.8 s, at 0.2 opacity, and its element is gone at 0.95 s.
+- A swing at nothing says nothing and raises nothing.
+- With Flames on the blade, the 9 rises with *+2 🔥* in rgb(255,154,60), starting right of the 9's right edge and higher. No *Fire +* line.
+- From behind, *17* in pale violet with *from behind* under it.
+- A number for a foe behind the camera is not drawn.
+
+The twelve kinds read from the strike's info as listed above.
+
+In a ruins gate (seed 23), a swing at a Skeleton raises its *14* at its head (within 8 px across), with no line.
+
+A picture, `docs/prototypes/dmgnums-street.png`: a riposte's *✶ 33* in red with *riposte* under it, and *+8 🔥* clear of it to the right, over a Bandit in Dunmore's street. No page errors.
+
+The suites that swing, shoot, cast or read the bottom line pass: blacksail, captainguard, cowards, dazed, duelrhythm, fistfight, fists, fistswing, guardplay, guardsindoor, hearthcast, hitseed, lairhoard, q7world, questfoes, wildseed, yardplay, unequip, bladehit, masterslam, foeseed. `spentguard` failed on one check, which asked for *(GUARDED)* on the same line as *Too spent to break the guard.*: that tag was part of the hit line, and is now the number's word. The check now reads the number's word (*guarded* on all seven spent swings) and the line on its own, and passes. Its other checks were unchanged and pass.
+
+### Needs eyes
+- By play: whether the numbers read in a real fight at a laptop's size (30 px plain, 46 critical), and whether 0.9 s is long enough to read a riposte's word.
+- Whether losing *Swing!* on a miss is missed. The prototype drops it with the other combat lines.
+- Owed under #198 A, to be routed: the wide compass, the ledger above the vitals (up to four lines, six seconds each), and the vitals plate with the pale tail for blows taken. The tail is what replaces *… hits you for N!*; until it lands, that line stays.
+
+## v80 — Session 762 — The health bar keeps the stretch a blow just took; the bottom centre stops saying the blows you take (#198 A, second slice)
+Session 761 put the blows you land at the foe's head. This session does the other half of the same answer. Under Michael's A on DECISION #198, combat lines stop, and the prototype (`docs/prototypes/hud/`, auto/concept) shows a blow you take as *the pale stretch your health bar has just lost (kept 0.8 s, then it drains)*. The bar's new paper is the look's; the tail works on today's bar, so it is built here.
+
+`hpTailStep(frac, now)` (`62-actions.js`, beside `updateHUD`) keeps the tail where the bar stood before a loss. It holds for 0.8 s from the last loss, then drains at half the bar a second until it meets the bar. A second blow inside the hold restarts the hold, so a flurry reads as one long stretch, and a heal past the tail takes it along. `updateHUD` sets `#hbt`, a cream strip (#efd9b8 at .8) behind `#hb` in the same bar, in `index.html`. It watches the bar, not the blows, so a trap, a fall, a burn or a ship's volley shows the same.
+
+The lines it replaces are gone:
+- *Bandit hits you for 7!*
+- *🛡 Blocked! Bandit hits for 3 (reduced)*, with its hints *— equip a shield for better protection!* and *— Steel Claymore hafts the blow*
+- *Archer's arrow hits for N!*
+- the Faolchú's *🔥 … fire hits you for N!* and *🛡 Resisted! …*
+- the dungeon caster's *Magic bolt hits you for N!* and *🛡 Resisted! Magic bolt …*
+
+A block still flashes blue and sounds; a parry still flashes gold. *… strikes empty air.* on a roll stays: it is a dodge, not a blow taken. A guard break says so as before. The sea's archers' line is in `85-world-sea.js`, the look builder's file, and is left for them.
+
+The rest of Michael's A, as Session 761 left it, is not built here: the wide compass, the ledger and the plate. Losing the shield hint is the one thing a player could miss, and it is noted below.
+
+### Verified (headless Chromium)
+`tests/hptail` (new, 9 checks). The rule on a set clock:
+- a loss from 1 to .8 holds the tail at 1 through 790 ms, reads .9 at 1,000 ms, and stops at .8
+- a second loss inside a hold restarts it: .8 at 700 ms after it, .75 at 900, .5 later
+- a heal to .9 takes the tail along
+
+A real Bandit blow through `executeStrike` (20 raw) drops the bar to 84.6% under a tail at 100%. A held block then takes 12 more (bar 75.4%) under the same tail. Neither writes a line. In the running game, a bar halved shows its tail at 100% at once, and the loop's own HUD drains it to 50%.
+
+A picture, `docs/prototypes/hptail-bar.png`: the bar at 72 of 130 with the cream stretch to its end. No page errors.
+
+The suites that block, parry, roll or take blows pass: challenge, counters, dazed, guardlevel1, guardplay, levelpanel, lvact, masterslam, parryclock, parrydeath, posture, roll, wardall, wardswift, faolchu, tpswing, dmgnums, yardplay.
+
+### Needs eyes
+- By play: whether the tail is visible enough on today's 88-px bar, and whether 0.8 s then half a bar a second feels like Elden Ring's.
+- The shield hint (*equip a shield for better protection!*) went with the blocked line. If it taught something, it belongs in the ledger or the tutorial, not on every block. That is the producer's or Michael's call.
+- Owed to the look builder: the sea archers' *hits for N* line in `85-world-sea.js`, to match.
+
+## v80 — Session 763 — Each school's gate holds its table (Michael's A on #252)
+Session 759 made goblins a gate's state and asked, as DECISION #252, which foes each school's gate holds. Michael chose A on 12 Oct: the canon's table (lore_canon Part II §9a), with a level-one foe kept in each so no gate is empty to a new character. This session builds it as written. The answer was already on main under *Answered*; the merge brought a second copy under *Pending*, which is removed.
+
+`THEME_DEF` (`20-quests.js`) keeps six slots a school, a foe named twice coming twice as often, and the level gate in the dungeon's spawn (`EM[n].minLevel`) is unchanged:
+- Solas (*undead*): Skeleton ×4, Phantom, Wraith. The Mimic is out.
+- Tine (*elemental*): Fire Elemental ×2, Slime ×2, Golem, Cave Troll. The Phantom is out.
+- Uisce (*deep*): Slime ×3, Skeleton (the drowned; its look is the look builder's), Cave Troll, Mimic. The option's wording lists *Slime ×2 … Slime*, three in six, and that is what is built. The Golem and the second troll are out.
+- Cloch (*ruins*): Golem ×2, Gargoyle, Cave Troll, Skeleton ×2. The Goblin, the Shieldbearer and the Mimic are out.
+- Scáth (*haunted*): Phantom ×2, Wraith, Mimic, Skeleton ×2. The Gargoyle is out.
+
+Goblins, Kobold Thieves and Shieldbearers now come only from an occupied gate (`OCCUPIED_ROSTER`). The `goblin` entry in `THEME_DEF` stays, because the test harness and the inspector build a goblin portal by hand; nothing in the game rolls one. Gaoth is still not rolled: its wisps and *something winged* want meshes first.
+
+What a player sees: a level-one character meets Skeletons in a Solas, Cloch or Scáth gate, Slimes in a Tine gate, and both in an Uisce gate. From level 3 the stone, fire and shade begin to show, and the whole table by level 5.
+
+### Verified (headless Chromium)
+`tests/schoolroster` (new, 16 checks). Each of the five rosters matches the table count for count, each holds a level-one foe, and none holds a goblin, a kobold or a Shieldbearer. Inside, two seeds (11 and 23) per school:
+- At level 1: undead, ruins and haunted held Skeletons; elemental held Slimes; deep held Slimes and Skeletons. Nothing off the table.
+- At level 6: undead held Skeleton, Phantom, Wraith; elemental Fire Elemental, Slime, Golem, Cave Troll; deep Slime, Skeleton, Cave Troll, Mimic; ruins Golem, Skeleton, Gargoyle, Cave Troll; haunted Phantom, Wraith, Skeleton, Mimic.
+
+No page errors. These suites pass: `gateschool` (an occupied deep gate holds the warren; the same seed unoccupied now holds Slime, Skeleton, Cave Troll, Mimic), `dungeonfoes`, `spentguard` (its ruins gate no longer holds a Shieldbearer; it takes the guarded foe it finds), `mimicspots`, `mimic`, `bodies`, `dunseed`, `weapons`, `chestpicks`, `lairhoard`, `dungeonpace`, `inspdungeons`.
+
+### Needs eyes
+- By play: a level-one or level-two character in a Solas, Cloch or Scáth gate fights only Skeletons, for a few levels. That is A as chosen, but whether it reads as *the same dungeon* three times is for a playtest.
+- `spentguard`'s dungeon half now finds a Skeleton, not a Shieldbearer, in its ruins gate. It still passes, but a guard-raised foe is the point of that check; it can move to a hand-built goblin portal if it ever needs the shield.
+
+## v80 — Session 764 — `gargoyle` and `golem` look for their foe in a ruins gate (red on CI on 6677e7f; tests only)
+Shards 2 and 4 failed on 6677e7f. In each, the first two checks of `gargoyle` and `golem` found no such foe in the dungeon (`{"none":true}`). Session 763 gave each school's gate the canon's table (Michael's A on #252). The Gargoyle left the haunted roster, and the Golem left the deep one. The two tests still went down a haunted gate and a deep gate to find them, on six seeds each. Ruins now holds both (Golem twice, Gargoyle once), so both tests now go down a ruins gate. The rosters stay as Session 763 set them. Tests only, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`gargoyle` and `golem` pass, one run each, on this head. The other ten shards of 6677e7f were green.
+
+### Needs eyes
+- None; tests only.
+
+## v80 — Session 765 — Two test races the runner found on 6375475: a screenshot's 30 s, and the last gate's foes (tests only)
+Shards 6 and 10 failed on 6375475, my Session 764 head.
+
+Shard 6: `dmgnums` (Session 761) passed every check, then `page.screenshot` timed out at its default 30 s. It did the same on 945451e, so it is not a one-off. `settingsheet` failed the same way on e8949eb. On software GL a full-page picture can take longer than that on the runner. Most of the suites that save a picture already pass `timeout: 120000` (`autumn`, `barberchair`, `armourlines` among them). `dmgnums` and `settingsheet`'s two pictures now do too.
+
+Shard 10: `schoolroster` (Session 763) found Slime and Mimic in a ruins gate at level 6, which are not on Cloch's table. Its list was the ruins foes plus deep's. The test walks ten gates back to back, and the gate before was deep@6. `enterDungeon` (`tests/lib/dungeonshot.mjs`) waited until the zone read *dungeon* and `scene === dScene`. Going from one gate straight into another, both are already true before the fade builds the new gate, so on a slow runner the test read the last gate's `ENEMIES`. Every build makes a new `dScene` (`56-dungeon-build.js`), so the helper now notes the scene before it goes and waits for a different one. The 30 suites that use the helper get the same wait. Where no new scene comes, it still gives up after 20 s, as before. No game code changed, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`dmgnums`, `settingsheet`, `schoolroster`, `gargoyle`, `golem` and `tells` pass, one run each. Here `schoolroster`'s ruins@6 is Golem, Skeleton, Gargoyle and Cave Troll, as its table says. The race was not reproduced locally: this machine builds the gate inside the old 1.5 s wait.
+
+### Needs eyes
+- None; tests only.
 
 ## v80 — Session 755 — The concept art, catalogued (docs only)
 Michael made 96 concept images with ChatGPT from the concept art brief and put them in Google Drive with a README, a catalogue CSV and a canon note (`The Old Gates` folder: originals by topic, thumbnails, contact sheets). This session catalogued all of them. Batch 1, the 18 images of *World, Architecture and Transport*, was done by hand to set the format and shown to Michael; the other 78 went to four agents in parallel (characters in two halves, creatures and flora, ships and gear and combat), each briefed with the same canon facts and Michael's answers. Every image has a row in `docs/art/catalogue.csv`: what it is, its island, tags, the ideas worth taking in plain sentences, the conflicts with canon, and a recommendation (54 KEEP, 37 MAYBE, 5 NO). Each has a 480 px thumbnail in `docs/art/thumbs/` (about 42 KB); the originals stay in Drive. `docs/art/README.md` says how the team uses it: images are proposals, only Michael's KEEP feeds the backlog.

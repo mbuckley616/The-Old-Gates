@@ -53,6 +53,7 @@ Your A on the gates by school made goblins an *occupied* state, not a kind of ga
 Gaoth (wind) is not rolled yet in any option: its table wants wisps and *something winged*, which are meshes the look builder has not made.
 
 Michael: **The table, with a level-1 foe kept in each** (A, tapped on the control room). (12 Oct 2026)
+Done, Session 763: `THEME_DEF` (`20-quests.js`) holds the five rosters as written; `tests/schoolroster`.
 
 ### What gives an old gate its character: its theme, its god, or its school? (Claude, Session 754, 2026-10-12)
 Raised in chat over a bestiary sheet Michael had made: the six dungeon themes (undead, goblin, elemental, deep, haunted, ruins) date from *Dungeon of Shadows* and have no reason in the canon. "Why would we have a 'goblin' gate? Shouldn't it be tied to the magic type?"
@@ -83,6 +84,7 @@ Your playtest note of 6 Oct (backlog D): *all towns and cities should have more 
 
 Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
 Michael: **Twice as many, as they are** (A). (11 Oct 2026)
+*Built, Session 753* (systems builder): a city 20, a town 14, a village 8, a hamlet or port 4; the first half placed as before, the second on their own stream (`tests/townbarrels`).
 
 ### The world's tone: grounded medieval, or high fantasy? (Claude, Session 750, 2026-10-12)
 Raised in chat while writing the concept art brief: the canon's tone line (Part I, *Tone & voice*) read "Medieval-grounded with creeping dread. Not high fantasy", and Michael's direction for the art contradicted it.
