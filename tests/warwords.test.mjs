@@ -1,4 +1,4 @@
-// Session 755 (committed as 754) — the quest writer's Finding 28, word for word: the war's notices name the power that acts (the Crown, the League,
+// Session 766 (committed as 754, then 755) — the quest writer's Finding 28, word for word: the war's notices name the power that acts (the Crown, the League,
 // the Compact: NATIONS[nk].crown, through polityName) and open with a capital, the peace counts *1 siege* and *1 town*, and the
 // lord answers *Who holds the town?* and *The siege?* in his own people's voice (the province's people, not the occupier's).
 import { boot, check } from './lib/game.mjs';

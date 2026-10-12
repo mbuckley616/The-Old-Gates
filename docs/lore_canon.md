@@ -1353,8 +1353,10 @@ Three islands, three nations. A player who forgets where they were should know w
 
 ### 1.3 Aurenne — the Compact (north-east)
 
+> **Michael, 12 Oct 2026 (Session 755):** Aurenne is a Mediterranean and North African fusion, "almost like a fusion of Roman / Egyptian / Arabic / Greek". Its people are mixed and darker-skinned, with a healthy range of colour. The Norman-French register was a stand-in and is dropped for Aurenne (the Crown's Norman names in the Gatelands, Coeur de Vie among them, are unaffected). Concept art OG-061 shows the look.
+
 - **Land.** Warm. Dunes and salt marsh, dry scrub, cypress uprights, terraced coasts. The sea is a road, not a wall.
-- **Buildings.** Cream plaster and tiled roofs, arcades, domes on the churches, warehouses on every quay, the academy's white towers.
+- **Buildings.** Cream plaster and tiled roofs, arcades, domes on the churches, warehouses on every quay, the academy's white towers. Courtyards with fountains, blue glazed tilework, carved lattice screens, colonnades and aqueducts; oasis towns and desert caravanserai inland (OG-061).
 - **Government.** **The Compact** — merchant houses under the Church of the Weaver. Priors over the church's towns, Factors over the houses' ports. Every hull that passes is tithed.
 - **Economy.** The sea — fishing, salt, dyes, glass, shipping — and knowledge: the Mages' academy and the Church both sit here. Known for ships that come back.
 - **Pride.** Ledgers, learning, paper over oaths. **Contempt.** Brawling, duels, and "gate-grubbing" — the Gatelands' salvage trade is sacrilege to the Church.
@@ -1380,8 +1382,8 @@ Four. Three are nations; the fourth is older than all of them and lives inside e
 
 | | Gatelanders (*Tírfolk*) | Markmen | Aurennais | Old Blood (*an Seanfhuil*) |
 |---|---|---|---|---|
-| **Body** | fair to ruddy, freckled, dark or red hair, wiry, middling height | tall, broad, pale, ash-blond, grey-eyed, weathered young | olive to brown, dark hair, lean, quick | short, grey-pale, black hair, slight; sigil-script tattooed at the wrists |
-| **Names** | Irish register (Niamh, Lorcan, Áine) | Anglo register (Bram, Edna, Wystan) | Norman register (Rémi, Margaux, Amaury) | Irish deep register, older forms (Fíachra, Sadb, Cúán) |
+| **Body** | fair to ruddy, freckled, dark or red hair, wiry, middling height | tall, broad, pale, ash-blond, grey-eyed, weathered young | mixed, olive through deep brown, a wide range; dark hair, lean, quick (Michael, 12 Oct 2026) | short, grey-pale, black hair, slight; sigil-script tattooed at the wrists |
+| **Names** | Irish register (Niamh, Lorcan, Áine) | Anglo register (Bram, Edna, Wystan) | Mediterranean and North African register, Roman, Greek, Egyptian and Arabic roots: to be written by the quest writer (the Norman register, Rémi and Margaux, is dropped, Michael 12 Oct 2026) | Irish deep register, older forms (Fíachra, Sadb, Cúán) |
 | **Speech** | proverbs, indirection, no bare yes/no ("I would not"), oaths on the Weaver | short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics | formal, honorifics (*Factor, Prior, Master*), qualifiers, contract metaphors, never an oath | sparing, exact, old words; answer questions with the older name for the thing |
 | **Called by others** | *turf-cutters* (Mark), *gate-grubbers* (Compact) | *hill-dogs* (Gatelands), *the unlettered* (Compact) | *ledgers* (Gatelands), *tithe-men* (Mark) | *cold-eyes* (everyone) |
 
@@ -1692,4 +1694,4 @@ Every state reads the same few numbers, and every number is one the consequence 
 
 ## 14. Decisions taken in this addendum
 
-Dragons: in, as antibodies. Title: *The Old Gates*. Varek: Old Blood raised Gatelander. Player: chooses a people; Old Blood descriptions are inconsistent. The war: one generation ago. Start nation: the Crown. Cast: existing plus Oswy Blackhand. The Guest's chapel: black screen, *It saw you*, no boon. "A Sunday afternoon": design note, not dialog. Tone (Michael, 12 Oct 2026): high fantasy at the core, grimdark and cosmic horror underneath; the awake look like villains, and the player is the monster, never said (§10a).
+Dragons: in, as antibodies. Title: *The Old Gates*. Varek: Old Blood raised Gatelander. Player: chooses a people; Old Blood descriptions are inconsistent. The war: one generation ago. Start nation: the Crown. Cast: existing plus Oswy Blackhand. The Guest's chapel: black screen, *It saw you*, no boon. "A Sunday afternoon": design note, not dialog. Aurenne (Michael, 12 Oct 2026): a Mediterranean and North African fusion, its people mixed and darker-skinned; the Norman register dropped (§1.3). Gates by school (§9a). Tone (Michael, 12 Oct 2026): high fantasy at the core, grimdark and cosmic horror underneath; the awake look like villains, and the player is the monster, never said (§10a).
