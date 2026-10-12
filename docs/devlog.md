@@ -15597,3 +15597,17 @@ Nothing built; docs only. `python3 scripts/parsecheck.py` unaffected (no `js/` c
 - Michael: the key frames and sheets, generated or commissioned from the brief.
 - Quest writer: the dialog pools and `quest_writing.md` were written to "creeping dread"; a read against §10a for lines that make the surface world depressing.
 - Look builder: §10a's palette (rich colour, golden light) against today's world, once there are frames to compare.
+
+## v80 — Session 751 — Screenshots for paintovers (docs only)
+Michael asked for the screenshots the concept art brief's paintover section calls for: the game as it stands, without its interface, as the base an artist or an image model repaints into the target. `docs/prototypes/paintover/shoot.mjs` boots build s585, goes to each place, sets the hour and clear weather, drains the cell jobs, lets the loop run three seconds (so the townsfolk are out), and renders the world scene from its own camera at 1920x1080. The game's frame is 600 px tall (`#g`), so the renderer is resized for the shot. `--probe` writes a 2x2 sheet of four views a place to `tests/tmp/` instead. The view of each was chosen from those sheets by eye, and the gate and the hilltop are pinned by name and coordinates, so a rerun gives the same frames.
+
+The nine, by the brief's key frames: the road out of Hearthwick at 8h (2); a hill above the coast south-west of the start at 9h (2); Dunmore's square at 18h (3); a street in Colmán's Rest at noon (4); the Dungeon of Shadows from outside at 11h (5); a corridor inside a ruins gate, seed 11, by a carried lantern (6, 7); the Ashfeld at 15h (9); Portclare's quay at 16h (10, 11); Carraig Mór's street at 13h (3, 4). They are in the brief under *Paintovers*.
+
+What they show, for the look builder: the trees are faceted spheres in one green, close-packed round every gate and village; the Dungeon of Shadows is a turf mound with a door and three stones, hidden in wood from three sides of four; the Ashfeld reads as two standing stones and a cottage, with nothing of a battlefield; at 16h Portclare's sky is already dusk with the moon up.
+
+### Verified (headless Chromium)
+Nine PNGs at 1920x1080, no page errors. Two probe passes (eight places, then three re-aimed) and two final passes; the first final came out 1920x900 from the frame's height and the nearest gate moved with the player's path, both fixed before the pictures kept.
+
+### Needs eyes
+- Michael: the paintovers themselves.
+- Look builder: the four notes above, against the brief's §10a palette, once there are paintovers to compare.
