@@ -20,6 +20,6 @@ Rules for using it:
 
 Intake: all 96 images, OG-001 to OG-096 (Session 755): batch 1 by hand, the rest by four parallel agents to the same format. Recommendations: 54 KEEP, 37 MAYBE, 5 NO.
 
-Review: Michael marked all 96 on the review page (12 Oct 2026, Session 767): 62 KEEP, 32 NO, 2 MAYBE (OG-015, OG-094). His marks are in `review_status`, and his note on OG-025 is in its `notes`. The kept images feed backlog L.
+Review: Michael marked all 96 on the review page (12 Oct 2026, Session 767): 62 KEEP, 32 NO, 2 MAYBE; he then dropped OG-015 and kept OG-094 with Tine redone as fire, so 63 KEEP and 33 NO. His marks are in `review_status`, and his note on OG-025 is in its `notes`. The kept images feed backlog L.
 
 New images: give them the next ids (OG-097 on), add rows and thumbnails the same way, and add them to `review.html`'s data before republishing it to the same artifact. The marks already made stay in its database.
