@@ -97,7 +97,7 @@ if (!street.noSpot) {
     for (const d of [a, b]) d.t0 = performance.now() + 1e5; tickDmgNums(); const ra = a.el.getBoundingClientRect(), rb = b.el.getBoundingClientRect();
     return { crit: a.el.className, rider: b.el.className, critRight: ra.right, riderLeft: rb.left, shown: a.onScreen && b.onScreen }; });
   await g.frames(2);
-  await page.screenshot({ path: 'docs/prototypes/dmgnums-street.png' });
+  await page.screenshot({ path: 'docs/prototypes/dmgnums-street.png', timeout: 120000 });
   check('a riposte rises large in red with its word, and Flames\' rider stands clear of it to the right', pic.crit === 'dn crit' && pic.rider === 'dn fire' && pic.shown && pic.riderLeft >= pic.critRight, pic);
   await page.evaluate(() => { const e = window._picFoe; e.dead = true; WORLD.scene.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); DMG_NUMS.forEach(d => d.el.remove()); DMG_NUMS.length = 0; });
 }

@@ -15879,3 +15879,16 @@ Shards 2 and 4 failed on 6677e7f. In each, the first two checks of `gargoyle` an
 
 ### Needs eyes
 - None; tests only.
+
+## v80 — Session 765 — Two test races the runner found on 6375475: a screenshot's 30 s, and the last gate's foes (tests only)
+Shards 6 and 10 failed on 6375475, my Session 764 head.
+
+Shard 6: `dmgnums` (Session 761) passed every check, then `page.screenshot` timed out at its default 30 s. It did the same on 945451e, so it is not a one-off. `settingsheet` failed the same way on e8949eb. On software GL a full-page picture can take longer than that on the runner. Most of the suites that save a picture already pass `timeout: 120000` (`autumn`, `barberchair`, `armourlines` among them). `dmgnums` and `settingsheet`'s two pictures now do too.
+
+Shard 10: `schoolroster` (Session 763) found Slime and Mimic in a ruins gate at level 6, which are not on Cloch's table. Its list was the ruins foes plus deep's. The test walks ten gates back to back, and the gate before was deep@6. `enterDungeon` (`tests/lib/dungeonshot.mjs`) waited until the zone read *dungeon* and `scene === dScene`. Going from one gate straight into another, both are already true before the fade builds the new gate, so on a slow runner the test read the last gate's `ENEMIES`. Every build makes a new `dScene` (`56-dungeon-build.js`), so the helper now notes the scene before it goes and waits for a different one. The 30 suites that use the helper get the same wait. Where no new scene comes, it still gives up after 20 s, as before. No game code changed, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`dmgnums`, `settingsheet`, `schoolroster`, `gargoyle`, `golem` and `tells` pass, one run each. Here `schoolroster`'s ruins@6 is Golem, Skeleton, Gargoyle and Cave Troll, as its table says. The race was not reproduced locally: this machine builds the gate inside the old 1.5 s wait.
+
+### Needs eyes
+- None; tests only.

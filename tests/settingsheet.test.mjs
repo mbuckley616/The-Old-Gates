@@ -31,7 +31,7 @@ await key('ArrowDown', 3); await key('ArrowRight', 2);
 await key('ArrowDown'); await key('ArrowRight', 3);
 const l = await page.evaluate(() => ({ S: { ...SETTINGS }, filter: CV.style.filter }));
 check('brightness +10 is a 1.10 brightness on the canvas; the field of view 90', l.S.bright === 10 && /brightness\(1\.1/.test(l.filter) && l.S.fov === 90, l);
-await page.screenshot({ path: 'docs/prototypes/settingsheet-ingame.png' });
+await page.screenshot({ path: 'docs/prototypes/settingsheet-ingame.png', timeout: 120000 });
 // Esc back to the leaf, resume, and the camera opens out to 90 at rest
 await key('Escape');
 const back = await page.evaluate(() => ({ view: pauseLeaf.view, open: pauseOpen }));
@@ -58,7 +58,7 @@ await key('ArrowUp'); await key('ArrowRight');
 const ch = await sheet();
 console.log(ch.text.slice(ch.text.indexOf('How hard')));
 check('with the rule, a tenth row: the challenge, Adept to start, → makes it Expert, your blows ×0.75 and theirs ×1.5', c && ch.rows.length === 10 && ch.rows[9] === 'How hard the world strikes' && await page.evaluate(() => worldState.challenge) === 3 && /Your blows×0\.75The foes’ blows×1\.5/.test(ch.text), ch.text.slice(-400));
-await page.screenshot({ path: 'docs/prototypes/settingsheet-challenge.png' });
+await page.screenshot({ path: 'docs/prototypes/settingsheet-challenge.png', timeout: 120000 });
 
 // kept across a reload, and applied at boot before any game starts
 await page.evaluate(() => { worldState.challenge = 2; closePauseLeaf(false); });
