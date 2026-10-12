@@ -15664,3 +15664,16 @@ A naming fix that does what #110's answer says, so no decision. A save made befo
 
 ### Needs eyes
 - None by play. The quest writer may want to read the 24 new names (`tests/poinames` prints six).
+
+## v80 — Session 757 — A bought ship lies alongside the quay, her net by its end (the critic's s585)
+`buyShip` says *Walk to the end of the quay, look at the net down her side and press E*, but she was moored 4 beyond the quay's end and 2 out past its side: her net, amidships, was 4.5 from the stone at its nearest. The net answers to the crosshair within 5 of the eye (Session 638), so of Portclare's 1,472 half-unit spots on the quay 6 gave the prompt, all at the one corner, and from the middle of the quay's end (7.6 from her net) E did nothing. The critic counted the same at Carrigshane, Inisowen and Inismore.
+
+`quayBerth(plat,sd)` (`85-world-sea.js`) now lays her alongside the quay's last stretch: her near side .6 off its edge, her bow still to the sea (`seawardYaw`), her centre 1.5 short of the end, so each net runs from 0.2 to 2.8 short of the end, beside it. Buying and the Compact's grant both moored her by the same two lines and both call it now. A galleon's stern reaches 12.5 back along a quay that runs 34 past the waterline, so she lies in water the length of her. Fetching and raising still set her where they did; neither was reported, and their own lines do not send you to the quay's end.
+
+Placing the ship where her own line says she is is not a decision.
+
+### Verified (headless Chromium)
+`tests/quaynet` (new, 7 checks). At Portclare and the three ports the critic named, the camera set at the eye's height over every half-unit spot of the quay and turned to each net: 109, 110, 109 and 109 spots answer (the old mooring: 6, 6, 6, 6, the critic's count), the middle of the quay's end among them every time. For real at Portclare: standing 0.8 in from the middle of the end, looking at her net 4.6 away, the HUD reads *Press 'E' to climb aboard the Lantern*; E, and 70 ticks later you are on her deck. On the old mooring the same spot read nothing and E left you on the quay. No page errors. `shipmoor` (bow to the sea, W takes her out whole), `compactrefit`, `shipwright`, `shipwrightvoice`, `boardlines`, `shipnets` pass.
+
+### Needs eyes
+- By play: a new ship alongside Portclare's quay, whether she reads as moored (the look builder may want a line to the bollards), and the first W from there.
