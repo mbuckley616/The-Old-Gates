@@ -4,15 +4,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Six great gates, or many gates of six schools? (Claude, Session 771, 2026-10-12)
 Raised in chat, from the second concept art round (OG-105, Michael's OG-U2-009 *The Six Gates*). The canon (§9a) has many old gates, each belonging to one of the six schools. The sheet draws six great gates, one for each school, each with a place on the map: Tine, Solas and Gaoth on Aurenne, Cloch and Scáth on the Mark, and Uisce in the Gatelands. Its tagline is "What lies beyond is not a room, but a realm."
 - **A. Both** *(recommended)*. Six great gates, one per school, each the source of its school and a realm inside, are the late destinations of their islands; the many lesser gates stay as the canon has them. The home island keeps its gates and gains the Uisce great gate.
 - **B. Many gates only.** The sheet is a style guide for each school's gates, and nothing more.
 - **C. Six gates only.** The world's gates are these six; the lesser "gates" become their outer halls and branches.
-
-
-
-## Answered
+Michael: **A.** "these should be considered 'major dungeons', but I like the idea of having lesser ones scattered across the world that you're more likely to come across. But then I'm not sure what unique benefits clearing a great gate offers you. Maybe that's for the quest writer / narrative designer agent to figure out? Could be something like clearing each great gate and doing something to them further destabilizes the world, which draws Varek's focus and ire. Almost like the inverse of the Towers in the Elder Scrolls Lore, except the protagonist/player is the one destroying the towers in this case." (12 Oct 2026, in chat)
+Done, Session 771: the six great gates are in `lore_canon.md` §9a as major dungeons above the many lesser gates. What clearing one gives you, and what it does to the world, is backlog A's, for the quest writer, with Michael's seed and the canon's complicity thread (§ *The player is complicit without knowing it*) to reconcile.
 
 ### The cast: how do realistic people get made? (Claude, Session 769, 2026-10-12)
 Raised in chat. Nothing in reach of the slices (free kits, the three.js samples) looks like OG-025. Every realistic option needs modelled, rigged characters, which the browser renders fine at 20,000 to 40,000 triangles a person.

@@ -1574,6 +1574,7 @@ Every old gate belongs to one of the six schools. Its sigil teaches that school'
 - **Condition sets the strangeness** (from Part I): a steady gate makes the shapes the local folklore had words for; a sudden failure makes Faolchú-like things with seams still glowing; a catastrophic one makes a dragon (§5).
 - **The region sets the folk shape**: the same Cloch gate makes trolls in the Mark and something else in Aurenne.
 - The six themes' names survive in code until the build renames them; the mapping is the table's *Was* column.
+- **The six great gates** (Michael's A, 12 Oct 2026, Session 771; concept art OG-105). Above the many lesser gates there are six great ones, one for each school: the major dungeons of the game, each a mountainside of stepped arches outside and a realm inside ("not a room, but a realm"). The lesser gates stay scattered across the islands, the ones a traveller is likelier to come across. The sheet's placings are a starting point, not fixed: Tine, Solas and Gaoth on Aurenne, Cloch and Scáth on the Mark, Uisce in the Gatelands. *Open, for the quest writer:* what clearing a great gate gives the player, and what it does to the world. Michael's seed: clearing each one, and doing something to it, further unsettles the world and draws Varek's focus and ire, "almost like the inverse of the Towers in the Elder Scrolls lore, except the player is the one destroying the towers." It has to meet *The player is complicit without knowing it*: Varek needs the gates cleared, so his ire wants a reason.
 
 ---
 
