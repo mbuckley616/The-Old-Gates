@@ -7,6 +7,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### What gives an old gate its character: its theme, its god, or its school? (Claude, Session 754, 2026-10-12)
+Raised in chat over a bestiary sheet Michael had made: the six dungeon themes (undead, goblin, elemental, deep, haunted, ruins) date from *Dungeon of Shadows* and have no reason in the canon. "Why would we have a 'goblin' gate? Shouldn't it be tied to the magic type?"
+- **A. By school** *(recommended)*: each gate belongs to one of the six schools (Tine, Uisce, Cloch, Scáth, Solas, Gaoth). Its sigil teaches that school's words, and its stone, light, hazards and antibodies take that school's shape. Goblins become a state any gate can be in: *occupied*.
+- **B. By god**: one of the six gods with temples (Sea, Sky, Beasts, Stone, Hearth, Weaver). A strong lore fit, but not tied to spells or progression.
+- **C. Keep the six themes** and give them a reason in the lore (a goblin gate is one goblins moved into).
+Michael: **A, tie gates to the schools.** (12 Oct 2026)
+Done, Session 754: written into `lore_canon.md` Part II §9a with the mapping; backlog C carries the build for the systems and look builders.
+
 ### The fall — the death screen on the parchment: a leaf, the word, or a restyle? (the concept artist, 2026-10-11) — DECISION #243
 When you die today the screen reads *YOU DIED* in red over a dark veil, with the HUD still on behind it, one line (*Last save: slot 1 — Dunmore, level 5*) and two buttons. It is the last screen on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/fall/`, on auto/concept) uses a real fall on build s576: Aoife saved in Dunmore at 4 pm, went down an old gate and died to a Skeleton on the first floor of the Dungeon of Shadows at 7:36 pm. Under every option the rules stay as they are: nothing is lost but the play since the save, and the world waits.
 - **A.** The leaf of the fallen *(recommended)*: the view drains to sepia and the HUD goes; the pause leaf's paper at the left, so the foe stays in view. *Fallen*, where and to what (*to a Skeleton's sword*) and the date; your last save with its picture, its hour and how long before the fall (*3 hours and 36 minutes*); three rows: load the last save (E), choose another save (L, the register), to the title (a second press). One small rule: the game remembers what dealt the last blow.
@@ -29,6 +37,11 @@ Your playtest note of 6 Oct (backlog D): *all towns and cities should have more 
 Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
 Michael: **Twice as many, as they are** (A). (11 Oct 2026)
 *Built, Session 753* (systems builder): a city 20, a town 14, a village 8, a hamlet or port 4; the first half placed as before, the second on their own stream (`tests/townbarrels`).
+
+### The world's tone: grounded medieval, or high fantasy? (Claude, Session 750, 2026-10-12)
+Raised in chat while writing the concept art brief: the canon's tone line (Part I, *Tone & voice*) read "Medieval-grounded with creeping dread. Not high fantasy", and Michael's direction for the art contradicted it.
+Michael: **High fantasy at the core, grimdark and cosmic horror underneath.** "I would like to have the core of it be High Fantasy, as I want it to be uplifting/exciting and not depressing to play… the player should feel like the world is largely 'pleasant', save for the villains themselves. The horror should be that the ones who are 'awake'… are painted as villains. The player should gradually realize that they are the real monster in this universe… I don't want that to be spoon-fed." Not out-of-the-box fantasy: Morrowind's strangeness where it counts. Asked to write it into the lore and the brief. (12 Oct 2026)
+Done, Session 750: `lore_canon.md` Part II §10a (his words, what it makes canon, what stands), Part I's tone line marked superseded, §14; `design_brief.md` gains a Tone section and two lines under *Not this*.
 
 ### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
 Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyard. The systems builder's Session 618 built a lane to every quay, graded evenly from the town down to the water. At Portclare the quay lies behind a ridge, so the lane cuts through it for about 70 of its 92 units. The ground stands up to 8.9 units over the lane 8 out on one side and 7.1 on the other. Today the cut's sides are the road's own blend: steep grass banks running straight up from the lane's edge. At the other three ports nearest Dunmore the lane is 8 units long and flat, with no cut. Should Portclare's cut, and any quay lane's cut deeper than 1.2, have a wall?

@@ -15583,6 +15583,35 @@ Shard 8 failed `sitechest` at its last real check, *emptied after a save, then l
 ### Needs eyes
 - None.
 
+## v80 — Session 750 — The world's tone, written into the canon and the brief (docs only)
+Michael asked, from the phone, how to get concept art: he feels the design is not ambitious enough, and blames the lack of a clear visual direction. Claude wrote a concept art brief as a Claude doc (*The Old Gates — Concept Art Brief*): what the game is, the tone, the three islands, the four peoples, the old gates and sigils, Varek, the monsters, the gods' icons, art direction, twelve key frames and seven character and creature sheets, each with a description for an artist and a one-line prompt for an image tool, and a spec for paintovers of game screenshots. A second tab holds Michael's notes: how to hand it to Gemini, ChatGPT, Midjourney or a person, how to judge a result, and what it costs (a local image model is not worth setting up yet).
+
+The first draft followed the canon's tone line, "Medieval-grounded with creeping dread. Not high fantasy". Michael overruled it: high fantasy at the core, uplifting and not depressing to play; grimdark and cosmic horror underneath, in the villains and the metaphysics; the *awake* (Varek and whoever else is written) painted as villains; the player gradually realising they are the real monster, never spoon-fed; and strangeness in Morrowind's manner. He asked for it in the lore and the brief. `lore_canon.md` gains Part II §10a with his words, what they make canon and what stands from Part I (no chosen-one prophecies, the dry NPC voice); Part I's tone line is marked superseded, not deleted; §14 has the one-line record. `design_brief.md` gains a *Tone* section and two lines under *Not this*. `decisions.md` records it under Answered with his `Michael:` line.
+
+Correction to the first draft of the art brief: it drew Varek as "a tall pale man". He is Old Blood (§2, §3.2), short and slight, grey-pale with black hair, as the game builds him (`people:'oldblood'`, `bodyScale` .92–.96, `87-world-quests.js`). The brief now says so.
+
+### Verified (headless Chromium)
+Nothing built; docs only. `python3 scripts/parsecheck.py` unaffected (no `js/` change).
+
+### Needs eyes
+- Michael: the key frames and sheets, generated or commissioned from the brief.
+- Quest writer: the dialog pools and `quest_writing.md` were written to "creeping dread"; a read against §10a for lines that make the surface world depressing.
+- Look builder: §10a's palette (rich colour, golden light) against today's world, once there are frames to compare.
+
+## v80 — Session 751 — Screenshots for paintovers (docs only)
+Michael asked for the screenshots the concept art brief's paintover section calls for: the game as it stands, without its interface, as the base an artist or an image model repaints into the target. `docs/prototypes/paintover/shoot.mjs` boots build s585, goes to each place, sets the hour and clear weather, drains the cell jobs, lets the loop run three seconds (so the townsfolk are out), and renders the world scene from its own camera at 1920x1080. The game's frame is 600 px tall (`#g`), so the renderer is resized for the shot. `--probe` writes a 2x2 sheet of four views a place to `tests/tmp/` instead. The view of each was chosen from those sheets by eye, and the gate and the hilltop are pinned by name and coordinates, so a rerun gives the same frames.
+
+The nine, by the brief's key frames: the road out of Hearthwick at 8h (2); a hill above the coast south-west of the start at 9h (2); Dunmore's square at 18h (3); a street in Colmán's Rest at noon (4); the Dungeon of Shadows from outside at 11h (5); a corridor inside a ruins gate, seed 11, by a carried lantern (6, 7); the Ashfeld at 15h (9); Portclare's quay at 16h (10, 11); Carraig Mór's street at 13h (3, 4). They are in the brief under *Paintovers*.
+
+What they show, for the look builder: the trees are faceted spheres in one green, close-packed round every gate and village; the Dungeon of Shadows is a turf mound with a door and three stones, hidden in wood from three sides of four; the Ashfeld reads as two standing stones and a cottage, with nothing of a battlefield; at 16h Portclare's sky is already dusk with the moon up.
+
+### Verified (headless Chromium)
+Nine PNGs at 1920x1080, no page errors. Two probe passes (eight places, then three re-aimed) and two final passes; the first final came out 1920x900 from the frame's height and the nearest gate moved with the player's path, both fixed before the pictures kept.
+
+### Needs eyes
+- Michael: the paintovers themselves.
+- Look builder: the four notes above, against the brief's §10a palette, once there are paintovers to compare.
+
 ## v80 — Session 753 — Twice the barrels and crates in a town (Michael's A on #245)
 Michael's playtest note of 6 Oct asked for more barrels and boxes in towns, with low-level loot. Session 747 asked how many, and he chose A: twice as many, as they are. The generator (`83-world-generator.js`, *Loot barrels and crates*) now puts 20 in a city, 14 in a town, 8 in a village and 4 in a hamlet. A port takes the hamlet's count, so Portclare has 4. Each holds everyday goods only, rolled on its own key `<site>:barrel:<n>:<day>` as before, refilled each game day, and not a crime to open.
 
@@ -15609,3 +15638,13 @@ All applied as written, in `87-world-quests.js`. `polityName(nk,cap)` sits besid
 
 ### Needs eyes
 - None by play. The quest writer can read the lines in the game: put a town under siege with `WORLD.TS(site)` and ask the lord.
+
+## v80 — Session 754 — Asked and answered: the gates by school (docs only)
+Michael asked, over a bestiary sheet he had made of the dungeon foes in their six themes, why a gate would be a "goblin" gate, and whether a gate should instead follow its magic. The six themes (undead, goblin, elemental, deep, haunted, ruins) are *Dungeon of Shadows*' and have no reason in the canon. Three options went to him in chat: by school (each gate one of the six schools, its sigil teaching that school, its look and foes in that school's shape, goblins an *occupied* state over any gate), by god, or keep the themes and explain them. Michael: A. Written into `lore_canon.md` Part II §9a with the mapping (Tine was elemental, Uisce deep, Cloch ruins, Scáth haunted, Solas undead, Gaoth new), into `decisions.md` under Answered, and into backlog C as the build for the systems and look builders. Solas carries the undead because the canon's sigils are where the dead are burned out of the world (§3.1): a failing light gate is where the dead walk.
+
+### Verified (headless Chromium)
+Nothing built; docs only.
+
+### Needs eyes
+- Systems builder and look builder: backlog C, *The gates by school*.
+- Quest writer: gate names and rumours that say "goblin gate" or name a theme.

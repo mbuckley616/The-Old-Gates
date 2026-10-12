@@ -6,17 +6,56 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `c282127` | run 14, from `5decc89`: the pause leaf and the settings sheet (Sessions 690–691), the cold hearth (676); menu voice, clean |
-| auto/systems | `3143cda` | run 14, Sessions 692–722 against `f36d96c` |
-| auto/backlog | `cdb7d48` | run 14: Session 704 (the map's seals and *Where your work is*), 720–721 (tests); clean |
-| auto/producer | `82a71e9` | run 14: carries Look 704 only; read with auto/backlog |
+| main | `64a92af` | run 15, from `3143cda` (auto/systems' run-14 mark, merged): Sessions 723–748. Findings 25–27 checked in the code word for word |
+| auto/systems | `78f66b6` | run 15: level with main |
+| auto/backlog | `a424369` | run 15: Sessions 743–744, 749 (the net climb, the quay walls, tests); no player text |
+| auto/producer | `f9c9005` | run 15: docs only (answers on #243, #245) |
+| claude/bold-fermi-1wf6zu | `d171468` | run 15: docs only. Session 750 writes Michael's tone into the canon (Part II §10a), on this branch and not yet on main |
+| auto/critic, auto/wip-sitechest-load | `d9dc7e2`, `6b986b7` | run 15: docs, or tests only |
 | auto/proto-ship-hulls | `fab53f6` | unchanged since run 12 |
 | auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
 | auto/wip-moundsolid | `0ff2144` | unchanged since run 11 |
-| auto/critic, auto/concept, auto/design, auto/ci-shards | — | run 14: level with main, or ahead in docs or CI only |
+| auto/concept, auto/design, auto/ci-shards | — | run 15: behind main, nothing ahead in `js/` or `index.html` |
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 15 — 12 Oct 2026
+
+About 35 player-readable strings read, all on main (Sessions 723–748); nothing a player reads is ahead of main on any branch. One finding, an old one, found while drafting.
+
+**main** (Sessions 723–748). Findings 25, 26 and 27 are in the code word for word (Sessions 727–729, 735): the honest answer by people and state, the barber's three taglines and *A barber?*, the doubled glade's card and the lair rumours. The rest is without words or plain: a householder asleep from 23h to 5h, woken by E or by a step within two units, is named *the resident* when there is no keeper's name, so *the resident saw you …* would open lowercase; no home is built without a keeper's name, so no finding. The guard's fine no longer opens with his introduction (S734): right. The nets, the hold on deck, the quay's retaining wall and the second gate guard carry no text.
+
+**auto/backlog** (Sessions 743–744, 749). The hand-over-hand climb and the dry-stone wall at Portclare's cut: no text. Clean.
+
+**claude/bold-fermi-1wf6zu** (Session 750, docs). Michael's tone, in his words, goes into the canon as Part II §10a and supersedes Part I's *creeping dread*: high fantasy at the core, *the world is largely pleasant*, grimdark and cosmic horror only in the villains and the metaphysics, people *mostly kind, busy and funny*. It is not on main yet, so nothing is reviewed against it this run. Once it is, this desk owes the read the session asks for: the dialog pools against §10a, for lines that make the surface world dreary. This run's draft is written to it already.
+
+**Drafted:** *Under Another Flag — a town besieged, held and freed* (`docs/quest_drafts.md`): canon §12a's occupation and siege effects in what townsfolk say (who runs the town, the law, the Crown or League or Compact, trade and the tithe, the greeting by whose people you are), two jobs from the lord to break a siege and free a held town, the freed town's thanks, and the patrols §12a names. No decision needed.
+
+### Finding 28 — main — the war's notices open lowercase, name the land not the power, and say *1 towns*; the lord's two war lines are one voice for three peoples
+
+**Where.** `87-world-quests.js`: `lordTopics` (grep `Who holds the town?` and `label:'The siege?'`), `laySiege` (grep `has laid siege to`), `endWarIf` (grep `sieges broken`), `tickSieges` (grep `'s camp outside` and `'s garrison holds`), all reading `nationName(nk)`.
+
+**Text.**
+- `${by}. Their captain sits in my chair and their soldiers hold the plaza. Kill the garrison and it's ours again; until then I've nothing to give you but my thanks for asking.`
+- `${by}'s camp sits on the road. Twelve days of that and the gates open from hunger. Break the camp and you'll have the town's thanks and mine.`
+- `${nationName(by)} has laid siege to ${t.name}.` · `${nationName(by)}'s camp outside ${t.name}.` · `${nationName(by)}'s garrison holds ${t.name}.`
+- `Peace between ${nationName(W.a)} and ${nationName(W.b)}. ${W.broken} sieges broken, ${W.lost} towns lost.`
+
+**Why.** `nationName` gives *the Gatelands*, *the Mark* or *Aurenne*, so four of these open with a lowercase *the* (*the Mark. Their captain sits in my chair …*, *the Mark's camp outside Dunmore.*). A land does not lay siege or keep a garrison: canon §1 gives each island a power, *the Crown*, *the Captains' League*, *the Compact*, and the game already holds them as `NATIONS[nk].crown`. The peace says *1 towns lost* and *1 sieges broken*. And the lord answers the two questions a town is most itself in, the same words in a Markish garrison and an Aurennais port: a Markman with *I've nothing to give you but my thanks for asking*, an Aurennais without an honorific. (The war's declaration and *has fallen to …* read the land mid-sentence and are right as they are.)
+
+**Replacement.**
+- Beside `function nationName`, add: `function polityName(nk,cap){const s=NATIONS[nk]?NATIONS[nk].crown:String(nk);return cap?s.charAt(0).toUpperCase()+s.slice(1):s;} /* the power that acts in a war: the Crown, the League, the Compact */`
+- In `laySiege`, `` `${nationName(by)} has laid siege to ${t.name}.` `` becomes `` `${polityName(by,true)} has laid siege to ${t.name}.` ``
+- In `tickSieges`, `` `${nationName(by)}'s camp outside ${t.name}.` `` becomes `` `${polityName(by,true)}'s camp is on the road outside ${t.name}.` ``, and `` `${nationName(by)}'s garrison holds ${t.name}.` `` becomes `` `${polityName(by,true)}'s garrison holds ${t.name}.` ``
+- In `endWarIf`, `` `… ${W.broken} sieges broken, ${W.lost} towns lost.` `` becomes `` `… ${W.broken} ${plural(W.broken,'siege')} broken, ${W.lost} ${plural(W.lost,'town')} lost.` ``
+- In `lordTopics`, the two lines (236–237 today) become:
+`` const _st=TS(site),_lp=nationOf(...cellOf(site.x,site.z)).people; ``
+`` if(_st.flags.occupied!=null){const P=polityName(_st.occupier),Pc=polityName(_st.occupier,true);const L={gatelander:`${Pc}, for now. Their captain sits in my chair and their soldiers stand on my plaza. A town's not taken till it's kept, and they've not kept it yet. Clear the plaza and there's nothing in this town I'd not give you.`,markman:`${Pc}. Their captain's in my chair, their men are on the plaza. Kill the lot and the town's ours again. I'd do it myself if I had the arm.`,aurennais:`${Pc}, Master, under terms we were not asked to sign. Their captain keeps my chair and their men keep the plaza. Should the garrison cease, the town reverts to its proper holders, and its gratitude to you would be entered in the books.`};return [{label:'Who holds the town?',response:L[_lp]||L.gatelander}];} ``
+`` if(_st.flags.besieged!=null){const Pc=polityName(_st.siegeBy,true);const L={gatelander:`${Pc}'s camp is on the road and the gate is shut. Twelve days, the granary says, and then hunger opens it for them. A camp's only canvas and the men in it. Break it and the town will owe you more than it can say.`,markman:`${Pc}'s camp. On the road, past the gate. Twelve days of bread, then we open or we starve. Break the camp.`,aurennais:`${Pc} has encamped on the road, Master. By the granary's accounts we can hold twelve days; after that the gate opens on hunger's terms rather than ours. Should the camp be broken, the town would count itself in your debt, and say so in writing.`};return [{label:'The siege?',response:L[_lp]||L.gatelander}];} ``
+  `_lp` is the lord's own people, the province's (`lordFor` draws the lord from it), not the occupier's. *Twelve days* is the rule in `tickWarDay`. The draft below gives these two topics a job to take; until it is approved they answer as here.
+
 ---
 
 ## Run 14 — 11 Oct 2026
