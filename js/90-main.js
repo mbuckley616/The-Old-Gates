@@ -1087,10 +1087,8 @@ function loop(now){
             stamina = Math.max(0, stamina - magicBlockStamCost);
             if(stamina===0){ staminaCD = 2; lvAct.staminaDepleted++; }
             sndBlock(); blockFlashT = 0.4; blockFlashCol = '#cc44ff';
-            showMsg('🛡 Resisted! Magic bolt hits for '+finalDmg+' (reduced)','#cc88ff');
           } else {
             finalDmg = _warded(Math.max(1, Math.round(dmg * _magicResist()) - Math.floor(def2*.3)));
-            showMsg('Magic bolt hits you for '+finalDmg+'!','#cc44ff');
             sndPlayerHurt();
           }
           PHP=Math.max(0,PHP-finalDmg);hurtT=.4;

@@ -910,7 +910,7 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
     if(hit&&!dead){const def2=_armour();const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(foeRand(a.from)*4));
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
       if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
-      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;showMsg(`${a.from.name}'s arrow hits for ${hitD}!`,'#ff6060');}
+      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
 // S616 — a foe whose straight step is blocked (a barrel on a deck, a post, a trunk) slides along it: the step's one axis or
@@ -1401,10 +1401,8 @@ function tickZoneBalls(dt,sc){
           stamina = Math.max(0, stamina - magicBlockStamCost);
           if(stamina===0){ staminaCD = 2; lvAct.staminaDepleted++; }
           sndBlock();
-          showMsg(`🛡 Resisted! Faolchú's fire hits for ${finalDmg} (reduced)`,'#ff8844');
         } else {
           finalDmg = Math.max(1, Math.round(baseDmg * dmgReduceMult) - Math.floor(def2*0.3));
-          showMsg(`🔥 Faolchú's fire hits you for ${finalDmg}!`,'#ff5522');
           sndPlayerHurt();
         }
         finalDmg = challengeTaken(finalDmg); /* S684 — the challenge (her fire never went through _warded) */

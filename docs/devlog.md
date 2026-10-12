@@ -15757,3 +15757,36 @@ The suites that swing, shoot, cast or read the bottom line pass: blacksail, capt
 - By play: whether the numbers read in a real fight at a laptop's size (30 px plain, 46 critical), and whether 0.9 s is long enough to read a riposte's word.
 - Whether losing *Swing!* on a miss is missed. The prototype drops it with the other combat lines.
 - Owed under #198 A, to be routed: the wide compass, the ledger above the vitals (up to four lines, six seconds each), and the vitals plate with the pale tail for blows taken. The tail is what replaces *… hits you for N!*; until it lands, that line stays.
+
+## v80 — Session 762 — The health bar keeps the stretch a blow just took; the bottom centre stops saying the blows you take (#198 A, second slice)
+Session 761 put the blows you land at the foe's head. This session does the other half of the same answer. Under Michael's A on DECISION #198, combat lines stop, and the prototype (`docs/prototypes/hud/`, auto/concept) shows a blow you take as *the pale stretch your health bar has just lost (kept 0.8 s, then it drains)*. The bar's new paper is the look's; the tail works on today's bar, so it is built here.
+
+`hpTailStep(frac, now)` (`62-actions.js`, beside `updateHUD`) keeps the tail where the bar stood before a loss. It holds for 0.8 s from the last loss, then drains at half the bar a second until it meets the bar. A second blow inside the hold restarts the hold, so a flurry reads as one long stretch, and a heal past the tail takes it along. `updateHUD` sets `#hbt`, a cream strip (#efd9b8 at .8) behind `#hb` in the same bar, in `index.html`. It watches the bar, not the blows, so a trap, a fall, a burn or a ship's volley shows the same.
+
+The lines it replaces are gone:
+- *Bandit hits you for 7!*
+- *🛡 Blocked! Bandit hits for 3 (reduced)*, with its hints *— equip a shield for better protection!* and *— Steel Claymore hafts the blow*
+- *Archer's arrow hits for N!*
+- the Faolchú's *🔥 … fire hits you for N!* and *🛡 Resisted! …*
+- the dungeon caster's *Magic bolt hits you for N!* and *🛡 Resisted! Magic bolt …*
+
+A block still flashes blue and sounds; a parry still flashes gold. *… strikes empty air.* on a roll stays: it is a dodge, not a blow taken. A guard break says so as before. The sea's archers' line is in `85-world-sea.js`, the look builder's file, and is left for them.
+
+The rest of Michael's A, as Session 761 left it, is not built here: the wide compass, the ledger and the plate. Losing the shield hint is the one thing a player could miss, and it is noted below.
+
+### Verified (headless Chromium)
+`tests/hptail` (new, 9 checks). The rule on a set clock:
+- a loss from 1 to .8 holds the tail at 1 through 790 ms, reads .9 at 1,000 ms, and stops at .8
+- a second loss inside a hold restarts it: .8 at 700 ms after it, .75 at 900, .5 later
+- a heal to .9 takes the tail along
+
+A real Bandit blow through `executeStrike` (20 raw) drops the bar to 84.6% under a tail at 100%. A held block then takes 12 more (bar 75.4%) under the same tail. Neither writes a line. In the running game, a bar halved shows its tail at 100% at once, and the loop's own HUD drains it to 50%.
+
+A picture, `docs/prototypes/hptail-bar.png`: the bar at 72 of 130 with the cream stretch to its end. No page errors.
+
+The suites that block, parry, roll or take blows pass: challenge, counters, dazed, guardlevel1, guardplay, levelpanel, lvact, masterslam, parryclock, parrydeath, posture, roll, wardall, wardswift, faolchu, tpswing, dmgnums, yardplay.
+
+### Needs eyes
+- By play: whether the tail is visible enough on today's 88-px bar, and whether 0.8 s then half a bar a second feels like Elden Ring's.
+- The shield hint (*equip a shield for better protection!*) went with the blocked line. If it taught something, it belongs in the ledger or the tutorial, not on every block. That is the producer's or Michael's call.
+- Owed to the look builder: the sea archers' *hits for N* line in `85-world-sea.js`, to match.

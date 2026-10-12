@@ -187,10 +187,7 @@ function executeStrike(e, rawDmg, now){
     stamina = Math.max(0, stamina - lateBlockStamCost);
     if(stamina===0){ staminaCD = 2; lvAct.staminaDepleted++; }
     sndBlock(); blockFlashT = 0.4; blockFlashCol = '#4488ff';
-    // v65 — Block-source hint in the toast: shield > 2H weapon > bare-hand/1H.
-    // Lets the player feel the tier they're in without opening the hub.
-    const _blockHint = hasShield ? '' : (w2hBlock ? ` — ${EQ.weapon.name} hafts the blow` : ' — equip a shield for better protection!');
-    showMsg(`🛡 Blocked! ${e.name} hits for ${finalDmg} (reduced)${_blockHint}`, '#88aaff');
+    // S762 — the line (*🛡 Blocked! … hits for N (reduced)*, with the shield hint) is gone: the bar's pale tail says it (#198 A)
     playerPostureHit(rawDmg, now/1000, true); // S281 — after the toast, so a guard that breaks says so
     // v61gj-a2 — Shield/sword recoil. Backward push — you absorbed the blow.
     shieldImpact('block', rawDmg, e.x, e.z);
@@ -201,7 +198,6 @@ function executeStrike(e, rawDmg, now){
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;
     lastHitT = now/1000;
-    showMsg(`${e.name} hits you for ${finalDmg}!`, '#ff4444');
     playerPostureHit(rawDmg*1.5, now/1000, false); // S281
     e._lunge=.3; // v80 — every strike moves the body
     if(PHP<=0 && !dead) playerDead();
