@@ -2752,3 +2752,210 @@ The giver, by their people, to each:
 
 - A third run on the same frame, when Michael has read these: a stranger at the inn who will not give a name; a lost ring in the river; a goat on a roof.
 - The Fighters' and Mages' heads handing an errand on to the street (the first run's last note) still stands.
+
+---
+
+## Under Another Flag — a town besieged, held and freed
+
+*Unapproved.* Backlog A's last open story item, *occupation effects from the canon*. The war is built (Sessions 129–440: `startWar`, `laySiege`, `occupy`, `liberate`, `tickSieges`, `87-world-quests.js`): a camp sits on the road for twelve days and the town falls; a garrison then holds the plaza until someone kills it. What is missing is everything a person in that town would say about it. Today a besieged or held town answers *Who runs things here?*, *What's the law here?* and *How's trade?* as if nothing had happened, the lord has one line and nothing to offer, and nobody outside the walls has heard. This draft gives the state its voice, gives the lord two jobs to hand out, lets the freed town remember who freed it, and writes down the patrols canon §12a names.
+
+### What the canon fixes, and where it is silent
+
+- §12a, *Flags*: `occupied` (by a faction) and `siege` are variants of the same layout. *Drivers*: *an occupied League town loses its duels and gains patrols; the Compact's tithe lowers a port and raises its capital.* *Tearing down*: *border towns get walls raised, gates shut, an enemy camp outside, and a choice of which side to let in.*
+- §1.4: a cold peace, one generation after a war the Crown won and the Mark remembers. §1.5: banners and guard colours by nation (built: an occupied town flies the occupier's colours).
+- §1.2–1.3: the League settles disputes by duel and scorns ledgers; the Compact keeps paper over oaths and tithes every hull. §1.1: the Crown holds the gates as royal property.
+- §2.2: the player's people is camouflage. NPCs *greet, price, insult and trust by it*.
+- §2.1: the coinages are mutual, about work, land and gods, and a named person contradicts each one. None is used here except as §2.1 gives it.
+- §10: every beat ends with a direction. Michael's tone note of 12 Oct (Part II §10a, on `claude/bold-fermi-1wf6zu`, not yet on main): the surface is *largely pleasant*, people are *mostly kind, busy and funny*, and danger is *thrilling, not depressing*. So an occupation here is a wrong you can put right, told dry and a little funny, never a dirge. Nobody is hanged, starved or beaten on the page.
+- *Silent:* what the occupier does to townsfolk, what becomes of the lord, and whether the garrison spares a player of its own people. The plainer thing, as built: the lord stays in the town without the chair, the garrison holds the plaza, and it fights whoever comes at it. A soldier told to hold a plaza does not ask your people first; the townsfolk do (§2.2), and that is where the camouflage shows. *A choice of which side to let in* hands a town to an enemy. That is a faction line's beat, owed below and not drafted here.
+
+### Shape
+
+**States read.** `TS(site).flags.besieged` (the minute it began), `st.siegeBy`, `st.siegeDay`; `flags.occupied` (the minute it fell), `st.occupier`. New: `st.freed={day,how}`, written by `breakSiege` (`how:'siege'`) and `liberate` (`how:'garrison'`). Both run only from `tickSieges` when every soldier of the camp or garrison is dead, so only by the player's hand. It is read for seven game-days in town and fourteen in rumour. In the templates, `{Polity}` is the besieger's or occupier's power (`polityName`, Finding 28: *the Crown*, *the League*, *the Compact*) and `{Crown}` is the town's own (`NAT.crown`), capitalised at the start of a sentence. `{Lord}` is the lord's title and name and `{town}` the site's name.
+
+**Two jobs, from the lord.**
+
+1. **The siege of {town}.** Giver: the lord, while `besieged`. Under the lord's *The siege?* answer (Finding 28) a follow-up appears: *I'll break the camp.* It adds `{id:'war:'+site.id+':siege:'+st.siegeDay, kind:'warcamp', giver, giverSite:site.id, title:'The siege of {town}', objective:"Break {polity}'s camp on the road outside {town}", data:{siteId, x, z}, reward:50+tier*30}`, with x and z the camp's point as `tickSieges` places it. It is done when `breakSiege` fires for that site. If the twelfth day comes first and `occupy` fires, the record lapses the way `datedLapse` lapses one (`turnedIn`, `lapsed`), with the log line below, and the lord's next answer offers the second job.
+2. **{town} under {polity}.** Giver: the lord, while `occupied`. Under *Who holds the town?*: *I'll clear the plaza.* It adds `{id:'war:'+site.id+':held:'+st.flags.occupied, kind:'garrison', …, title:'{town} under {polity}', objective:"Kill {polity}'s garrison on {town}'s plaza", data:{siteId, x:site.x+8, z:site.z+8}, reward:60+tier*30}`. It is done when `liberate` fires.
+
+Turn-in for both is the lord's own *It's done.* once the flags have cleared. The pay is the record's, through `qTurnIn`. The favour `breakSiege` (+3) and `liberate` (+4) already give stands, and nothing is added to it. `tier` is `Math.floor(level/3)`, as `townQuestFor` has it. The ids are keyed by the town and the minute or day the state began (the co-op rule), so a second siege of the same town is a second job.
+
+**What it changes.** The jobs put the war on the map's seals and in the journal, and pay for the fight the town has always asked for. The rest is what people say, plus one rule for the patrols (section 8).
+
+---
+
+### 1. The lord's offer (by the lord's own people, `_lp` as in Finding 28)
+
+**Siege.** Player: *I'll break the camp.* `{dir}` is `compassWord` from the town to the camp.
+- Gatelander: "Would you, now. I'd not ask it, and I'll not refuse it. The camp's on the road {dir} of the gate. Whatever they've left in it is yours, and {n} gold from the town besides."
+- Markman: "Good. Camp's on the road, {dir} of the gate. Kill them all. {n} gold when it's done."
+- Aurennais: "Then let us call it an engagement, Master. The camp lies on the road {dir} of the gate. On its dispersal the town will pay {n} gold, and its thanks without limit of term."
+
+**Held.** Player: *I'll clear the plaza.*
+- Gatelander: "Then you're braver than the rest of us, or newer here. Either will do. They're on the plaza in plain sight, the lot of them. Clear it, and there's {n} gold the town kept back from them."
+- Markman: "Good. They're on the plaza. All of them. Kill them and the town's ours. {n} gold. We hid it from them."
+- Aurennais: "Then consider yourself engaged, Master. The garrison is quartered on the plaza. On its removal the town will pay {n} gold, which it has taken care to keep off their books."
+
+**The siege lost before it was broken** (log and journal, `addLog('⚔', …)`): *The camp outside {town} outlasted the gate. {town} has fallen to {polity}, and the work is on its plaza now.*
+
+### 2. The lord's thanks, at *It's done.*
+
+These replace `` `${paid} gold. Good.` `` for these two kinds only. `{paid}` is what `qTurnIn` returns.
+
+**Siege broken.**
+- Gatelander: "I watched it burn from the wall. There's no word for a thing like that, so I'll not waste a poor one on it. {paid} gold, and the Weaver's thanks with it, which are worth more than mine."
+- Markman: "Saw the smoke. Good work, Camp-breaker. {paid} gold. Iron and blood."
+- Aurennais: "The road is open and the first cart is already in, Master. {paid} gold, as agreed. The minutes will record whose work it was."
+
+**Town freed.**
+- Gatelander: "My own chair. It's not much of a chair, but I'd missed it. {paid} gold, and if anyone in {town} asks you to pay for a kindness, send them to me."
+- Markman: "Town's ours. Good work, Sweeper. {paid} gold. That's your name here now. Get used to it."
+- Aurennais: "The administration has been concluded, Master, and the chair returned to its tenant. {paid} gold, as agreed, and the town's gratitude entered in perpetuity."
+
+(The Markman's nicknames are §2's *nicknames*, given for the deed. The town's Markmen use them in section 6.)
+
+### 3. *Who runs things here?* — while held (by the speaker's people)
+
+- Gatelander: "{Lord}, on paper, and paper's grand for lighting fires. {Polity}'s captain, in fact, from {Lord}'s own chair. Ask me again when the plaza's ours."
+- Markman: "{Polity}'s captain. For now. {Lord} still has the title. Titles don't hold a plaza."
+- Aurennais: "Formally, {Lord}, Master. In practice, {polity}'s captain, by right of occupation. Our law does not recognise that right. Our streets do."
+- Old Blood: "A captain who is not ours. The chair is {Lord}'s."
+
+While besieged the answer stays as it is today: the lord still has the say.
+
+### 4. *What's the law here?* — while held, by the occupier and the speaker's people
+
+**The Crown holds it.**
+- Gatelander: "The Crown's, since they came. A magistrate on the plaza, a ledger at the gate, and the old gates royal property again, so they say. It's the law I grew up under, and I'll not pretend I missed it."
+- Markman: "The Crown's. No duels. A magistrate settles it now, in a fortnight. Nothing's finished by noon any more."
+- Aurennais: "The Crown's, Master, which writes rather less down than we do and enforces rather more. The tithe has stopped. Do not ask whether that is an improvement; I have not decided."
+- Old Blood: "The Crown's. They say the old gates are theirs. The gates say nothing."
+
+**The League holds it.**
+- Gatelander: "Whatever their captain says at breakfast, and a duel if you don't like it. Two on the plaza this week, over a spilt cup. Fair fights, I'll grant them. I'd still be elsewhere."
+- Markman: "The League's. Captain's word, duel if you don't like it. Can't say I mind."
+- Aurennais: "The League's, Master, insofar as it is a law at all. Disputes are settled by single combat on the plaza. We have begun keeping a register of the outcomes, so that at least something is written down."
+- Old Blood: "Their captain's word. Iron, after."
+
+**The Compact holds it.**
+- Gatelander: "The Compact's, now. Everything written, everything tithed, and a factor at the gate who counts the eggs in your basket. He's polite about it, I'll give him that. Polite as a toll."
+- Markman: "The Compact's. No duels. Everything on paper. A tenth of everything to their factor. He counts it twice."
+- Aurennais: "The Compact's, Master, as it ought to be everywhere, though I would have preferred it to arrive by contract rather than by siege."
+- Old Blood: "The Compact's. They write our names down. Our names were written before."
+
+The League lines are canon §12a's *loses its duels* turned round: a town the League holds gains them. A Markish town held by the Crown or the Compact loses them, and its Markmen say so. The Yard at Caer Slige already lays no ring while its seat is held (Session 374).
+
+### 5. *What of {Crown}?*, *How's trade?* and the Guard's watch
+
+***What of {Crown}?*** **while held** (the label already reads the town's own power):
+- Gatelander: "{Crown}'s a long way off and a slow writer. They'll come or they won't, and the plaza won't clear itself while we wait to see which."
+- Markman: "{Crown}? Arguing in a hall. Somebody has to come. Might be you."
+- Aurennais: "{Crown} has been informed, Master, in triplicate. Relief is under consideration. I would not plan around it."
+- Old Blood: "Far. Slow. You are here."
+
+**While besieged:**
+- Gatelander: "{Crown} knows. Whether {Crown} comes inside twelve days is another matter. A friend at the gate is worth two on the road."
+- Markman: "{Crown} knows. Twelve days. They won't make it. You might."
+- Aurennais: "{Crown} has acknowledged our letter, Master. A relief has been promised. The date has not."
+- Old Blood: "They know. They are far."
+
+***How's trade?*** **while besieged:**
+- Gatelander: "Trade? The gate's shut. We trade with each other now, and dear. A loaf's a fair price for a favour this week."
+- Markman: "Gate's shut. No carts. Grain's dear, iron's dearer."
+- Aurennais: "Suspended, Master. Nothing enters and nothing leaves, and grain trades at half again its price. The books will take a season to recover."
+- Old Blood: "Shut. Bread is dear."
+
+**While held by the Compact** (§12a's tithe, built: half a point of the town's prosperity a day goes to the Compact's capital):
+- Gatelander: "There's trade, and there's the Compact's factor at the gate taking a tenth of it. A tenth of everything, and he blesses the cart after. The blessing's free. I asked."
+- Markman: "Their factor takes a tenth. Of everything. Ships it home. Town's poorer every week."
+- Aurennais: "A tithe is levied at the gate, Master, and remitted to the capital. It is quite proper. It is also why the town is poorer each week. Both things are true."
+- Old Blood: "A tenth goes to their city. Each day, less."
+
+**While held by the Crown or the League:**
+- Gatelander: "Their carts come in and ours stay out. Grain's dear and iron's dearer. The soldiers pay, I'll say that for them. Not well, but they pay."
+- Markman: "Their carts in, ours out. Grain's dear. Soldiers pay. Badly."
+- Aurennais: "Constrained, Master. Grain and iron trade at half again their price, and the garrison's custom does not cover the difference."
+- Old Blood: "Their carts. Not ours."
+
+**In the Compact's capital, while it takes a tithe from a held town** (`{town}` is the nearest such town):
+- Aurennais: "Brisk, Master. The tithe from {town} comes in on every ship. The Prior calls it providence. The Factors call it accounts receivable."
+- Markman: "Tithe ships in from {town}. Every tide. Fat city."
+- Gatelander: "Brisk enough. There's a tithe comes in from {town} on every ship. I've a cousin there. I don't write to him about it."
+(The Old Blood keep the ordinary answer.)
+
+***Any trouble on the watch?*** (role Guard) **while held:**
+- Gatelander: "Watch? They do the watching now. I stand here so the gate looks as it did."
+- Markman: "Their men watch. I stand here. Ask them."
+- Aurennais: "The watch has been assumed by the garrison, Master. I remain at my post in an advisory capacity."
+- Old Blood: "They watch. I wait."
+
+The prices the lines name are the built ones: `cargoHard` makes grain and iron half again as dear in a sacked, held or besieged town.
+
+### 6. The greeting — whose people you are, and what you did
+
+These take the place of the people aside in `dialogFor`'s greeting (*You're a Markman, by the look of you. …*). Each is said once per person.
+
+**A held town, the player of the occupier's people** (first meeting):
+- Gatelander: "You're one of theirs, by the look of you. I'll mind my tongue, then, and you'll mind your boots on my step."
+- Markman: "One of theirs. Fine. Keep walking."
+- Aurennais: "Ah. One of the administration's own people, Master. We are, of course, entirely cooperative."
+- Old Blood: "You are of them. You are not them."
+
+**A held town, the player of the town's own people, said only by a speaker of that people** (first meeting):
+- Gatelander: "One of our own. Good. Walk soft past the plaza. They've counted us, and they'll count you."
+- Markman: "Markman. Good. Count their men for me on your way past."
+- Aurennais: "A countryman, Master. Then you understand our position without my having to state it, which is as well."
+
+**Within seven days of freeing it** (`st.freed.how==='garrison'`), the first greeting after the freeing:
+- Gatelander: "You're the one cleared the plaza. I'd know you anywhere now, and I'm no hand at faces."
+- Markman: "Sweeper. Good. That's what we call you now."
+- Aurennais: "Master. You are the one who concluded the garrison's tenancy. The town is in your debt, and has said so in writing."
+- Old Blood: "You cleared the square. We saw."
+
+**Within seven days of breaking its siege** (`st.freed.how==='siege'`):
+- Gatelander: "You broke the camp on the road. There was bread on every table next morning, and it was your name said over it."
+- Markman: "Camp-breaker. Good. Bread's back."
+- Aurennais: "Master, the road is open again, and the town knows to whom it owes the reopening."
+- Old Blood: "The road is open. You opened it."
+
+An Old Blood player keeps their own aside (§2.2's inconsistent descriptions) everywhere: theirs is the one camouflage that does not hold, and these lines do not override it.
+
+### 7. Rumours, in towns within 900 units (`liveRumours`, the pool's one voice)
+
+- Besieged: "{town}'s shut up behind its gate with {polity}'s camp on the road. Twelve days, they reckon, before hunger opens it."
+- Held: "{Polity}'s men hold {town}. A handful on the plaza, they say, and nobody coming to shift them."
+- Freed (`garrison`, fourteen days): "Somebody walked into {town} and cleared {polity}'s garrison off the plaza. Everyone's cousin saw it. Nobody agrees what they looked like."
+- Siege broken (`siege`, fourteen days): "The camp outside {town} is ashes. Whoever did it didn't stop to be thanked."
+
+The third line is for every player. For an Old Blood player it is also §2.2 said once, by accident.
+
+### 8. The patrols (§12a: *gains patrols*) — a rule, no text
+
+The garrison does not only stand on the plaza. By day (6h–20h), two of its soldiers (`k` 1 and 2, keyed `t.id+':occupied:'+k` as now) walk a beat from the plaza to the town's first gate and back, a leg a game-hour, by moving their `homeX`/`homeZ` between the plaza point and the gate (`S._gates[0]`). By night they stand with the rest. They are the same foes as the garrison, so killing them counts toward the town's freedom. The player meets the occupation in the street, not only on the square.
+
+---
+
+### What in the code would carry it
+
+- **`polityName(nk, cap)`** (Finding 28), beside `nationName`.
+- **The flags and the freed record.** `occupy`, `breakSiege` and `liberate` (`87-world-quests.js`). `breakSiege` and `liberate` add `st.freed={day:dayNow(),how}`; `occupy` closes any open `warcamp` record for the town (`turnedIn`, `lapsed`, the log line in section 1). `st.freed` lives in `worldState.towns`, already in the world row and already read back by `_applyLoadData`. No new `worldState` key.
+- **The jobs.** In `lordTopics`, the occupied and besieged branches return their topic (Finding 28) and a second, `{label:"I'll break the camp."|"I'll clear the plaza.", quest:true, avail:()=>!qFind(id), fn:()=>{qAdd({...});return offer;}}`, with the record as in *Shape*. `breakSiege` and `liberate` call `qComplete` on the open record for that town and kind. The turn-in is the existing *It's done.* (`qTurnIn`); its line is chosen by `q.kind` and the lord's people from section 2. The map's seals read the record's `data.x`, `data.z` as for any job (`mapMarks`).
+- **The townsfolk.** In `richTopics`: *Who runs things here?*, *What's the law here?*, *What of {Crown}?*, *How's trade?* and the Guard's *Any trouble on the watch?* each read `TS(site).flags` first. While `occupied` or `besieged` they return the line for the speaker's people (`def.people||NAT.people`), and for the law the occupier too, from a table `WARTALK[topic][state][people]` or `WARTALK.law[occupier][people]`. They become getters where they are plain `response` today, so they follow the day. The capital's tithe line reads the Compact's capital (`FACTIONS.compact.seat`, as `tickProsperity` reads it) and the nearest town with `occupier==='aurenne'`.
+- **The greeting.** In `dialogFor`'s greeting getter: when the town is occupied and `n===0`, the aside is section 6's first set (`pp===st.occupier`'s people) or second set (`pp===def.people` and both the town's people), in place of the people aside; when `st.freed` is within seven days and `def._freedSeen!==st.freed.day`, the freed or relieved aside, then `def._freedSeen=st.freed.day`. An Old Blood player keeps the existing aside.
+- **The rumours.** `liveRumours(site)`: other towns within 900 units from `allSites()`, by their flags and `st.freed` (fourteen days).
+- **The patrols.** `tickSieges`, the occupied branch: for `k` 1 and 2, `homeX`/`homeZ` alternate between `(t.x+8, t.z+8)` and the site's first gate by the game-hour, 6h to 20h, read from `hourNow()`, never the frame (the co-op rule on outcomes).
+- **Actions, by name** (co-op rules): `takeWarJob(siteId, kind)`; the flags change only through the existing `laySiege`, `occupy`, `breakSiege` and `liberate`.
+
+### Checked against the canon
+
+- No Aurennais oath, and every Aurennais line has its *Master* and a contract word (*engaged*, *terms*, *minutes*, *in perpetuity*, *accounts receivable*). The Markmen are short, give nicknames (*Camp-breaker*, *Sweeper*) and swear once, *Iron and blood*. No Markman uses an honorific. Every Gatelander line is indirect, a proverb or both (*A town's not taken till it's kept*, *A friend at the gate is worth two on the road*, *Polite as a toll*). The one oath is on the Weaver. The Old Blood say little, and say the older thing (*the chair is {Lord}'s*, *our names were written before*).
+- No coinage is used. The occupier is named by its power, never by a slur, and the townsfolk's grudges are about law, tithe, trade and duels: §2.1's work, land and gods. The Gatelander who grants the League *fair fights* and the soldiers who *pay* keep the other column of §2.1 alive.
+- §12a's three named effects are all here: the League's duels (lost in a held Markish town, gained in a town the League holds), the patrols (section 8), and the Compact's tithe (built, now said aloud in the town that pays it and the capital that takes it).
+- §10's pacing: every lord's line ends on a direction (the camp, the plaza), and every townsperson's on something to do or somewhere to go.
+- §10a, Michael's tone (pending on its branch): nobody suffers on the page. The occupation is a wrong put right with a sword, and the freed town is glad, a little funny and grateful. The one dark grain is the rumour that nobody agrees what you looked like. It is for whoever is paying attention, as §10a asks.
+
+### Owed, and not drafted here
+
+- §12a's *a choice of which side to let in*, during a siege. It hands a town to an enemy, so it belongs in the faction lines (League rank 4 or the Compact's Factor), where standing is spent. A later draft.
+- A garrison captain who talks before the fight (a parley, a yield as at the Yard) would need the captain to be a person, not a foe. Not proposed.
+- What a freed town builds afterwards (§12a's `rebuilt`) waits for the investment menu to read the flag.
