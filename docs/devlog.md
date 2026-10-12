@@ -15757,3 +15757,29 @@ Each slice renders at 1920x1080 in 5 to 12 s with no page errors. The lane has 1
 ### Needs eyes
 Michael's frame rates on his machine, scene by scene. Whether the live page's scenes run inside the claude.ai frame: the CDN is on its allowlist, but this was not tested from here. His approval of the slices, which starts A. His call on the cast.
 
+## v80 — Session 770 — People from a genome: MakeHuman's body, our wardrobe (prototype only)
+Michael asked why the game's own genome system could not simply be raised instead of buying a hundred one-off meshes. A Meshy test confirmed the doubt: the download needs a paid plan, and the auto-rig fused the cloak to the arms. The answer built here keeps the genome and changes what it drives. The material is MakeHuman's base body, released CC0 by its makers in 2020, from their GitHub:
+- one sculpted mesh of 19,158 vertices;
+- the morph targets that reshape it, for gender, age, ethnicity, muscle, weight, height, proportions and 28 face and body sliders;
+- a 163-bone skeleton with skin weights for every vertex;
+- two fitting shells ("tights" and "skirt") that the same targets reshape.
+
+`mh_pack.py` packs what the slice uses into one 7 MB binary (generated, not committed). `people.js` does the rest:
+- **The genome:** a handful of numbers, mixed into target weights as MakeHuman mixes them.
+- **The skeleton:** built from joints read off the morphed body, then posed: arms down from the A-pose, elbows and fingers bent, the jaw closed, the head turned.
+- **The wardrobe:** cut from the fitting shells and pushed out in layers (trousers, boots, a tunic that hangs looser below the chest and cinches at the belt, a short or long skirt, a belt, cuffs). Hems are cut cleanly in the shader on the unmorphed body, so every garment fits every body, and the body's own skin is hidden under clothing.
+- **Fur mantles:** eleven noise-cut shells.
+- **Hair, beards and moustaches:** procedural hair cards rooted on the scalp, combed up and back, hugging the scalp and then falling, kept off the face, shaded by their root's normal. A shell cap with a smooth hairline sits under them.
+- **Eyes:** with irises, set in the helper's sockets.
+
+`people.html` shows a line-up of eight Markfolk and a close-up per face (`?view=faces&who=N`), and five of them now walk the village lane.
+
+Corrections found on the way, for the record:
+- binding the skins before the skeleton had world matrices doubled every offset (the first render was grotesque);
+- three.js caches a shader by its compile function's source, so per-material cut lines and fur layers need their own `customProgramCacheKey`;
+- the hair helper is a hair volume, not a scalp: hair rooted on it floats.
+### Verified (headless Chromium)
+The line-up (8 people), the faces and the lane (5 people) render with no page errors in 7 to 13 s. The live page's bundles load and run when served locally.
+### Needs eyes
+The faces at eye level, and the women's long hair, which is still untidy at the temples. Frame rate with many people on Michael's machine (the live page's line-up). The question Michael raised at the end of the session: a builder of our own, for creatures as well as people.
+

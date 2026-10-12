@@ -2,6 +2,7 @@
 // built as pieces (footings, framing, recessed windows, thick thatch) and the surfaces carry relief.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { loadPack, makePerson, markGenome } from './people.js';
 import { STILL, W, H, STATS, rnd, fbm, sstep, mix, makeRenderer, makeComposer, buildTextures, TEX, mat, worldUV, skyDome, clouds, treeKit, run, leafTex, WIND, windVS } from './common.js';
 
 const R = makeRenderer(.8);
@@ -187,5 +188,8 @@ trees.plant(scene, tl);
 // ── the camera and the people ──
 const CAM = new THREE.Vector3(.4, gy(.4, 7) + 1.65, 7); cam.position.copy(CAM); cam.lookAt(0, gy(0, -30) + 1.6, -30);
 const comp = makeComposer(R, scene, cam, { bloom: .18, sat: 1.08 });
-// No people in this slice: the cast is a pipeline of its own (realistic, modelled and rigged), not a free kit's toys.
-run(comp, cam);
+// Markfolk from the genome (Session 770): MakeHuman's body, our wardrobe and hair
+loadPack('mh/').then(() => {
+  for (const [x, z, g, ry, o] of [[1.0, -6.5, 1, .25, {}], [2.7, -10.6, 0, -1.2, { mantle: false }], [-1.9, -14, 1, 1.1, { age: .75, hair: [.85, .84, .8] }], [-1.55, -22.4, 0, -1.6, {}], [2.3, -29, 1, -2.6, { mantle: false }]]) {
+    const p = makePerson(markGenome(rnd, g, o)); p.root.position.x = x; p.root.position.z = z; p.root.position.y += gy(x, z) - .02; p.root.rotation.y = ry; scene.add(p.root); STATS.people = (STATS.people || 0) + 1; }
+  run(comp, cam); }).catch(e => { window.__err = String(e); console.error(e); run(comp, cam); });
