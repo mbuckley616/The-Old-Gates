@@ -15409,3 +15409,12 @@ The other three ports nearest Dunmore have 8-unit lanes on the flat and no wall.
 - The turf strip behind the cap is flat-lit where the bank above it is shaded, so on the sunny side it reads a shade brighter than the bank in the overhead picture.
 - Between the lane's edge and the wall's foot the drawn ground leaves a grass verge, wider where a 4-unit terrain vertex falls near the wall. It reads as a verge in the pictures; walking it wants a look.
 - The stone is the prototype's grey and reads pale in full sun.
+
+## v80 — Session 749 — `sitechest` red on this PR after main's merge: the systems builder's fix ported (tests only)
+Shard 2 failed on 9fff69a, the producer's merge of main into this branch. `sitechest` threw `Cannot read properties of undefined (reading 'chest')` in its `take` step. The game loop had unloaded the lair between the test's two calls. The cause and the fix are the systems builder's: Sessions 730, 738, 741 and 748 on auto/systems, none of them on main yet. Their fixes have `take` and the save step build the site as `chestOf` does, wait for the load's own *Loaded.* line instead of a fixed 4 s, and build the camp if the loop has not. This session takes their file as it stands on `origin/auto/systems`, byte for byte, so the two branches merge without a conflict on it. No game code changed. There is no tag bump, because nothing a player sees moved.
+
+### Verified (headless Chromium)
+`sitechest` 9/9 here: the lair's and the camp's chests keep what is left, through a rebuild, three days and a save and load.
+
+### Needs eyes
+- Nothing in the game.
