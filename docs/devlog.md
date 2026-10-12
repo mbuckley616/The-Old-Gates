@@ -15582,3 +15582,18 @@ Shard 8 failed `sitechest` at its last real check, *emptied after a save, then l
 
 ### Needs eyes
 - None.
+
+## v80 — Session 750 — The world's tone, written into the canon and the brief (docs only)
+Michael asked, from the phone, how to get concept art: he feels the design is not ambitious enough, and blames the lack of a clear visual direction. Claude wrote a concept art brief as a Claude doc (*The Old Gates — Concept Art Brief*): what the game is, the tone, the three islands, the four peoples, the old gates and sigils, Varek, the monsters, the gods' icons, art direction, twelve key frames and seven character and creature sheets, each with a description for an artist and a one-line prompt for an image tool, and a spec for paintovers of game screenshots. A second tab holds Michael's notes: how to hand it to Gemini, ChatGPT, Midjourney or a person, how to judge a result, and what it costs (a local image model is not worth setting up yet).
+
+The first draft followed the canon's tone line, "Medieval-grounded with creeping dread. Not high fantasy". Michael overruled it: high fantasy at the core, uplifting and not depressing to play; grimdark and cosmic horror underneath, in the villains and the metaphysics; the *awake* (Varek and whoever else is written) painted as villains; the player gradually realising they are the real monster, never spoon-fed; and strangeness in Morrowind's manner. He asked for it in the lore and the brief. `lore_canon.md` gains Part II §10a with his words, what they make canon and what stands from Part I (no chosen-one prophecies, the dry NPC voice); Part I's tone line is marked superseded, not deleted; §14 has the one-line record. `design_brief.md` gains a *Tone* section and two lines under *Not this*. `decisions.md` records it under Answered with his `Michael:` line.
+
+Correction to the first draft of the art brief: it drew Varek as "a tall pale man". He is Old Blood (§2, §3.2), short and slight, grey-pale with black hair, as the game builds him (`people:'oldblood'`, `bodyScale` .92–.96, `87-world-quests.js`). The brief now says so.
+
+### Verified (headless Chromium)
+Nothing built; docs only. `python3 scripts/parsecheck.py` unaffected (no `js/` change).
+
+### Needs eyes
+- Michael: the key frames and sheets, generated or commissioned from the brief.
+- Quest writer: the dialog pools and `quest_writing.md` were written to "creeping dread"; a read against §10a for lines that make the surface world depressing.
+- Look builder: §10a's palette (rich colour, golden light) against today's world, once there are frames to compare.
