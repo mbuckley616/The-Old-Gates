@@ -15715,3 +15715,24 @@ Nothing in the game changed; no build tag. A script checked that the catalogue's
 ### Needs eyes
 Nothing owed from the review: Michael settled his last two MAYBEs in chat. He dropped OG-015 (resources by island; OG-035 covers it). He kept OG-094 with Tine redone as fire, which is now backlog L7's item on magical implements. Both are marked in the catalogue and on the review page's database. The quest writer's names for the new Aurenne register (backlog J) come before any of L2's Aurennais are given lines. L3's common animal set is the biggest single gap, and the place to start building.
 
+## v80 — Session 768 — A new look, shown: a from-scratch render slice of the Gatelands (prototype only)
+Michael asked what the kept concept art becomes, and how the game stops looking like Minecraft and starts looking like a modern game. First, a survey of how the game draws itself: 774 boxes, 273 cylinders and 122 cones among its shapes, 522 Lambert materials against 13 standard ones, no tone mapping, no post-processing, three.js r128 from 2021, and flat fill light (ambient .55 plus hemisphere .55 against a sun of 1.15).
+
+The first attempt kept the game and changed only how it draws (`docs/prototypes/render/`, `newlook.js`). It added linear colour, ACES, ambient occlusion from depth, bloom, haze, a grade and a Kuwahara filter, plus auto-smoothed normals that also blend the per-corner colour jitter `mergeParts` gives every crown and rock. The jitter, not the shading, is what makes the crowns read as facets. The smoothing helped most, but the result was still recognisably the same game. Michael stopped it: he wants a complete reimagining.
+
+The second attempt is new code, `docs/prototypes/levelup/` (`main.js`, about 410 lines, three.js 0.170 vendored from npm because the CDN is blocked here). It renders one view aimed at key frame 2 (OG-077):
+- the sky: a gradient dome and 2,051 cloud puffs in lit heaps;
+- the land: a terrain shaded in its fragment shader (Voronoi fields with hedgerows, woods from afar, rock, sand, the path), on a grid dense at the camera;
+- the near ground: 160,000 instanced grass blades and 5,200 wildflowers on one wind;
+- the trees: 881 of them, made of leaf cards with normals turned out from the crown;
+- the village: 80 cottages of plaster, thatch, slate, shutters and flower boxes, a church and a three-arched bridge;
+- the Weaver ruin on its hill, a lighthouse, sails, and mountains with their own haze;
+- the image: physically based light, a 4096 shadow map, bloom, a warm-and-cool grade and ACES.
+
+Two views: the hero vista (`hero.jpg`) and the riverbank at eye level (`village.jpg`, `?view=village`). It is not wired to the game.
+
+Also this session: the five routine prompts that should read backlog L were written out with their additions (Session 767's ask). Agents cannot edit routines created through the API, so they went to Michael as a paste page. The look builder's "section H only" lines were adjusted so they do not contradict the new paragraph. A decision is raised on whether to build the new foundation.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/shoot.mjs` renders each view in about 15 s at 1920x1080 in software GL, with no page errors. The counts in `window.__stats`: grass 160,000, flowers 5,200, trees 881, houses 80, puffs 2,051. The comparison page puts the slice beside OG-077 and today's paintover frames.
+### Needs eyes
+Michael's call on the decision. The slice is one tuned view: other hours, weather, the Mark and Aurenne, interiors and the gates are untested in it. Close-up buildings and people are still primitive; the plan says modelled assets carry those. Frame cost on a real machine with real streaming is unmeasured: the slice draws everything at once, with no level of detail.
