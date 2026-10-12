@@ -754,9 +754,10 @@
     for(const l of LAKES){if(Math.hypot(px-l.x,pz-l.z)<l.r+60)discover(l.id,l.name);}
   }
   // Where fast travel drops you: a site's signpost spot, a door's step, a peak's shoulder.
+  // S760 — a cell beyond the grid has a negative index (c11_-1_i1, an islet lair off the north edge): the id reads the sign too
   function siteAnywhere(id){
     if(SITE[id])return SITE[id];
-    const m=/^c(\d+)_(\d+)_[spi]\d+$/.exec(id);if(m){return getCell(+m[1],+m[2]).sites.find(t=>t.id===id)||null;}
+    const m=/^c(-?\d+)_(-?\d+)_[spi]\d+$/.exec(id);if(m){return getCell(+m[1],+m[2]).sites.find(t=>t.id===id)||null;}
     return getCell(HOME_I,HOME_J).sites.find(t=>t.id===id)||null;
   }
   function doorAnywhere(seed){
@@ -777,7 +778,7 @@
     }
     if(id.startsWith('door_')){const seed=+id.slice(5);const e=CELL_DOORS.find(e=>e.seed===seed)||doorAnywhere(seed);if(!e)return null;const p=dungeonWorldPos[seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return null;return {x:p.x,z:p.z+(e.kind==='fort_door'?30:4),yaw:0,name:e.canonicalName||id};}
     let pk=PEAKS.find(p=>p.id===id),lk=LAKES.find(l=>l.id===id);
-    if(!pk&&!lk){const m=/^c(\d+)_(\d+)_/.exec(id);if(m){const c=getCell(+m[1],+m[2]);pk=c.peaks.find(p=>p.id===id);lk=c.lakes.find(l=>l.id===id);}else{const c=getCell(HOME_I,HOME_J);pk=c.peaks.find(p=>p.id===id);lk=c.lakes.find(l=>l.id===id);}}
+    if(!pk&&!lk){const m=/^c(-?\d+)_(-?\d+)_/.exec(id);if(m){const c=getCell(+m[1],+m[2]);pk=c.peaks.find(p=>p.id===id);lk=c.lakes.find(l=>l.id===id);}else{const c=getCell(HOME_I,HOME_J);pk=c.peaks.find(p=>p.id===id);lk=c.lakes.find(l=>l.id===id);}}
     if(pk)return {x:pk.x+40,z:pk.z+40,yaw:-Math.PI*.75,name:pk.name};
     if(lk)return {x:lk.x+lk.r+30,z:lk.z,yaw:Math.PI/2,name:lk.name};
     return null;

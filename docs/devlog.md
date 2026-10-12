@@ -15704,3 +15704,14 @@ Each school's own roster against the canon's table is a rule of play and Michael
 ### Needs eyes
 - By play: an occupied gate in its school's colours with the warren's junk, whether it reads as *someone's home* moved into an old gate (the look builder may want more of the warren than barrels and junk).
 - Michael: DECISION #252, the schools' rosters.
+
+## v80 — Session 760 — A place beyond the grid's edge is found by its id (lairtheme's red)
+Sessions 756 and 759 found `tests/lairtheme` failing one check on this machine, the same before their changes: *Saint-Rouge's Lair*, on an islet in cell (11, −1) north of the grid, was missing from the test's first read and present after the cells round it had loaded. `siteAnywhere` (`83-world-generator.js`) finds a place not yet loaded by reading its cell from its id, `c<i>_<j>_<kind><n>`, with `\d+`: a cell beyond the grid's north or west edge has a negative index, the minus sign did not match, and the lookup fell through to Home's cell and returned nothing. Any code asking for such a place by id (a lair's cavern door reading its beast, the lair rumours, a saved lair) got nothing until its cell loaded. Both id readers in that file (`siteAnywhere` and the peak and lake lookup beside it) now take the sign.
+
+A bug fix, so no decision.
+
+### Verified (headless Chromium)
+`tests/lairtheme` (1 check added, 6 in all): all 55 places in the cells north of the grid are found by their ids before their cells load; the lair read now holds 25 lairs off the grid (it held one fewer than it should before, and missed it), and after the cells round 33 lairs load no lair's biome, beast or theme has moved. Passes, where it failed on the tree before. No page errors.
+
+### Needs eyes
+- None by play.

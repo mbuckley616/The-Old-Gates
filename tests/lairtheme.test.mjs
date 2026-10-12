@@ -15,6 +15,10 @@ const read = () => page.evaluate(() => { const out = []; for (let i = -3; i < WO
 const a = await read();
 const fen = a.filter(x => x.want === 'haunted'), bare = a.filter(x => x.ring === 0);
 console.log(JSON.stringify({ n: a.length, fen: fen.map(x => [x.name, x.biome]), bare: bare.map(x => [x.name, x.biome, x.beast]) }));
+// S760 — siteAnywhere read a cell's index without its sign, so a lair off the grid's edge (c11_-1_i1, Saint-Rouge's) was found only once its cell had loaded
+const off = a.filter(x => x.cell[0] < 0 || x.cell[1] < 0 || x.cell[0] >= 12 || x.cell[1] >= 12);
+const negId = await page.evaluate(() => { const ids = []; for (let i = -3; i < WORLD.GRID + 3; i++) for (let j = -3; j < 0; j++) for (const s of WORLD.getCell(i, j).sites || []) ids.push(s.id); return { n: ids.length, found: ids.filter(id => { const t = WORLD.siteAnywhere(id); return t && t.id === id; }).length }; });
+check(`a place beyond the grid's edge is found by its id before its cell loads (${negId.found} of ${negId.n} north of it; ${off.length} lairs off the grid read)`, negId.n > 0 && negId.found === negId.n && off.length > 0, negId);
 check('every lair door stores the beast lairBeast names', a.length >= 30 && a.every(x => x.boss === x.beast), a.filter(x => x.boss !== x.beast));
 check('every lair cavern is haunted in fen or swamp and deep elsewhere', a.every(x => x.theme === x.want) && fen.length > 0, { fen: fen.length, wrong: a.filter(x => x.theme !== x.want) });
 // load the cells round six lairs, fen ones first, then every islet lair's: the answers do not move
