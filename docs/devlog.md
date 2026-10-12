@@ -15677,3 +15677,14 @@ Placing the ship where her own line says she is is not a decision.
 
 ### Needs eyes
 - By play: a new ship alongside Portclare's quay, whether she reads as moored (the look builder may want a line to the bollards), and the first W from there.
+
+## v80 — Session 758 — A crate bought past the hold's room says where it went (the critic's s585)
+At Portclare with a sloop alongside, the critic bought twelve crates: five went into the hold and seven onto the bag, carry 9 → 59 of 65, and every one read *Bought a sack of grain for 12 gold.* `cargoBuy` (`84-world-interiors.js`) puts a crate in the hold while she is in port and it fits, and on your back when it does not. That fall-back is the rule, as built (Session 641's factor board shows *aboard + carried*); what was missing was the word.
+
+With your ship in port, the line now ends *Into the hold.* or *The hold is full: you carry it.* With her away there is nothing to choose between, and the line stays as it was. *Fill* reads the line's opening only, so it is unchanged. Two short status tails in the board's own plain voice; no new rule, so no decision. The quest writer can read them in its next run.
+
+### Verified (headless Chromium)
+`tests/factorpanel` (3 checks added, 2 tightened, 21 in all). At the Mark's harbour with a sloop (hold 40) in port: *Bought a bale of furs for 36 gold. Into the hold.* at 35 of 40, *… for 37 gold. Into the hold.* at 40 of 40, then *Bought a bale of furs for 39 gold. The hold is full: you carry it.*, with one bale in the bag and the row reading *2 + 1*. With her away, *Bought a load of timber for 13 gold.* and nothing after. No page errors. `cargo` passes.
+
+### Needs eyes
+- None by play.
