@@ -4,16 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### More barrels and boxes in towns: how many, and what they hold? (systems builder, 2026-10-11) — DECISION #245
-Your playtest note of 6 Oct (backlog D): *all towns and cities should have more barrels and boxes out and about, with low-level loot, more to interact with.* Today the generator puts a fixed number beside the houses' walls: a city 10, a town 7, a village 4, a hamlet 2 (`83-world-generator.js`, grep `Loot barrels and crates`). Each holds everyday goods only (no arms or armour; a candle, rope, salt or bread if the roll gives nothing). Each is rolled again every game day, and taking from one is not a crime. How many there are, and what they hold, is a rule of play.
 
-- **A. Twice as many, as they are** *(recommended)*: city 20, town 14, village 8, hamlet 4. Same everyday goods, same daily refill. The fallback goods sell for 1–3 gold apiece (a candle 4 to buy, rope 9, at a third back). Seven more barrels in a town come to tens of gold a day at most, not measured, and change no progression.
-- **B. Twice as many, but most hold little**: as A, but each new one is empty two days in three, as in Skyrim's streets. More to open, about as much to find as today.
-- **C. Three times as many, a quarter of them someone's**: city 30, town 21. One in four stands at a house's door and counts as that house's: taking from it in sight is theft (−2 favour, the fine), as a home chest is.
-- **D. Leave the count; make them easier to find** (the look builder's half only: where they stand, by the inn's yard, the smithy and the market).
-
-Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
-
+## Answered
 
 ### The fall — the death screen on the parchment: a leaf, the word, or a restyle? (the concept artist, 2026-10-11) — DECISION #243
 When you die today the screen reads *YOU DIED* in red over a dark veil, with the HUD still on behind it, one line (*Last save: slot 1 — Dunmore, level 5*) and two buttons. It is the last screen on the dark style the UI overhaul replaced on 27 Sep. The prototype (`docs/prototypes/fall/`, on auto/concept) uses a real fall on build s576: Aoife saved in Dunmore at 4 pm, went down an old gate and died to a Skeleton on the first floor of the Dungeon of Shadows at 7:36 pm. Under every option the rules stay as they are: nothing is lost but the play since the save, and the world waits.
@@ -24,8 +16,18 @@ When you die today the screen reads *YOU DIED* in red over a dark veil, with the
 Recommendation: **A.** Oblivion's death opens its load list, so the next step is a choice of saves, not one button; the leaf gives that, and the hour since the save tells you what the load costs before you take it. B is the Dark Souls card, the word as the moment; it says the same things with less room for the save.
 
 Screens: [today beside A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/compare-fall.png) · [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/a-fall.png) · [A, with no save](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/a-nosave.png) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/b-word.png) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/fall/c-restyle.png)
+Michael: **The leaf of the fallen** (A) — A is fine but I don’t know if I love the fact that it’s aligned to the left third of the screen. Could we instead force third-person, instantly have the player character ragdoll for a maybe 5 seconds, and then show the death screen? (11 Oct 2026)
 
-## Answered
+### More barrels and boxes in towns: how many, and what they hold? (systems builder, 2026-10-11) — DECISION #245
+Your playtest note of 6 Oct (backlog D): *all towns and cities should have more barrels and boxes out and about, with low-level loot, more to interact with.* Today the generator puts a fixed number beside the houses' walls: a city 10, a town 7, a village 4, a hamlet 2 (`83-world-generator.js`, grep `Loot barrels and crates`). Each holds everyday goods only (no arms or armour; a candle, rope, salt or bread if the roll gives nothing). Each is rolled again every game day, and taking from one is not a crime. How many there are, and what they hold, is a rule of play.
+
+- **A. Twice as many, as they are** *(recommended)*: city 20, town 14, village 8, hamlet 4. Same everyday goods, same daily refill. The fallback goods sell for 1–3 gold apiece (a candle 4 to buy, rope 9, at a third back). Seven more barrels in a town come to tens of gold a day at most, not measured, and change no progression.
+- **B. Twice as many, but most hold little**: as A, but each new one is empty two days in three, as in Skyrim's streets. More to open, about as much to find as today.
+- **C. Three times as many, a quarter of them someone's**: city 30, town 21. One in four stands at a house's door and counts as that house's: taking from it in sight is theft (−2 favour, the fine), as a home chest is.
+- **D. Leave the count; make them easier to find** (the look builder's half only: where they stand, by the inn's yard, the smithy and the market).
+
+Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
+Michael: **Twice as many, as they are** (A). (11 Oct 2026)
 
 ### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
 Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyard. The systems builder's Session 618 built a lane to every quay, graded evenly from the town down to the water. At Portclare the quay lies behind a ridge, so the lane cuts through it for about 70 of its 92 units. The ground stands up to 8.9 units over the lane 8 out on one side and 7.1 on the other. Today the cut's sides are the road's own blend: steep grass banks running straight up from the lane's edge. At the other three ports nearest Dunmore the lane is 8 units long and flat, with no cut. Should Portclare's cut, and any quay lane's cut deeper than 1.2, have a wall?
