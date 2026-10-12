@@ -15676,3 +15676,21 @@ Nothing built; docs only.
 ### Needs eyes
 - Systems builder and look builder: backlog C, *The gates by school*.
 - Quest writer: gate names and rumours that say "goblin gate" or name a theme.
+
+## v80 — Session 755 — The concept art, catalogued (docs only)
+Michael made 96 concept images with ChatGPT from the concept art brief and put them in Google Drive with a README, a catalogue CSV and a canon note (`The Old Gates` folder: originals by topic, thumbnails, contact sheets). This session catalogued all of them. Batch 1, the 18 images of *World, Architecture and Transport*, was done by hand to set the format and shown to Michael; the other 78 went to four agents in parallel (characters in two halves, creatures and flora, ships and gear and combat), each briefed with the same canon facts and Michael's answers. Every image has a row in `docs/art/catalogue.csv`: what it is, its island, tags, the ideas worth taking in plain sentences, the conflicts with canon, and a recommendation (54 KEEP, 37 MAYBE, 5 NO). Each has a 480 px thumbnail in `docs/art/thumbs/` (about 42 KB); the originals stay in Drive. `docs/art/README.md` says how the team uses it: images are proposals, only Michael's KEEP feeds the backlog.
+
+Drive downloads are blocked to the container's network, so the images came through the Drive connector: an original over the tool's size limit is written to a file instead of the context, and decoded from there.
+
+Michael answered the first batch's four questions (`decisions.md`): the four style studies combine, painterly and pleasant in the world with the dark look kept for gates and dungeons; the gate's outside is concentric rings, a broken circle for a failing gate; the art's invented names are welcome where they fill a gap, with the canon winning on politics; and Aurenne is a Mediterranean and North African fusion, its people mixed and darker-skinned, the Norman register dropped (`lore_canon.md` §1.3, §2; `design_brief.md` *Look*).
+
+`docs/art/review.html` is the page Michael marks the images on (published as a Claude artifact, *Concept Art Review*): every card with its thumbnail, Claude's suggestion, the catalogue's notes, a link to the original, Keep / Maybe / No and a note, saved to the artifact's store (collection `reviews`, one document per image) where a session reads them back.
+
+What the agents found that the backlog will need, once Michael has kept the images: no image draws Varek or the Old Blood as the canon has them (every pass makes Varek a tall levitating dark lord and the Old Blood tall and fair), so both need a new pass; several boards give Tine to nature; cannons appear on every ship; the Mark gets kings and jarls; and the bestiaries draw the gate as a gothic arch. The richest boards for the open world are the island field guides (OG-009, 030, 031, 084) and the strange beasts (OG-040), the survival and crafting sheets (OG-023, 035), the ship interiors (OG-027) and the armour ladder (OG-019).
+
+### Verified (headless Chromium)
+Nothing built in the game. The catalogue has 96 rows, OG-001 to OG-096, none missing, each with a thumbnail on disk. The review page's store reads back empty before Michael's first mark.
+
+### Needs eyes
+- Michael: the review, on the published page.
+- The next session: the KEEP rows into backlog items, each citing its image id, and the decisions the catalogue's notes raise.
