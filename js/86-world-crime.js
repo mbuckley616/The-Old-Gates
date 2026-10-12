@@ -373,9 +373,10 @@
   function residentBed(){return (INT_BEDS||[]).find(b=>b.owner==='home')||null;}
   function sleeperAsleep(){return !!(typeof intNPCMesh!=='undefined'&&intNPCMesh&&intNPCMesh.userData.asleep);}
   function laySleeper(m){const b=residentBed();if(!m||!b)return false;const am=m.userData.amble;if(am&&am.stand==null)am.stand=!!am.paused;
-    m.userData.asleep={x:b.x,z:b.z,y:b.y||0};if(am)am.paused=true;m.rotation.set(-Math.PI/2,0,0);m.position.set(b.x,(b.y||0)+.55,b.z+.95);
+    m.userData.asleep={x:b.x,z:b.z,y:b.y||0};if(am)am.paused=true;
+    if(typeof personLie!=='function'||!personLie(m,{x:b.x,z:b.cz!=null?b.cz:b.z,y:b.y||0})){m.rotation.set(-Math.PI/2,0,0);m.position.set(b.x,(b.y||0)+.55,b.z+.95);} /* S752 — the lying pose under the quilt (32-people.js) */
     intNPCPos.x=b.x;intNPCPos.z=b.z;return true;}
-  function wakeSleeper(m,woken){if(!m||!m.userData.asleep)return false;const b=m.userData.asleep;m.userData.asleep=null;if(woken)m.userData.woke=true;
+  function wakeSleeper(m,woken){if(!m||!m.userData.asleep)return false;const b=m.userData.asleep;m.userData.asleep=null;if(typeof personRise==='function')personRise(m);if(woken)m.userData.woke=true;
     const am=m.userData.amble;if(am){am.paused=!!am.stand;am.wt=1.5;}
     let x=b.x+1.1,z=b.z+.6;for(const [ox,oz] of [[1.1,.6],[1.1,1.4],[0,1.6],[1.1,-.2]]){if(!intSolidAt(b.x+ox,b.z+oz,.3,b.y)){x=b.x+ox;z=b.z+oz;break;}}
     m.rotation.set(0,woken?Math.atan2(px-x,pz-z):Math.PI,0);m.position.set(x,b.y,z);intNPCPos.x=x;intNPCPos.z=z;return true;}
