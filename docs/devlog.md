@@ -15598,3 +15598,14 @@ The backlog's section I held the critic's five s572 lines a second time, unstruc
 ### Needs eyes
 - Fourteen barrels in a town, by play: whether that is enough to read as *more to interact with*, or crowds the house walls.
 - Portclare's crate 0 in the chapel's corner (old). The look builder can move it when it gathers the barrels by the yard, the smithy and the market (H), since that move changes the town's draws anyway.
+
+## v80 — Session 754 — The war's notices name the power, and the lord answers in his people's voice (the quest writer's Finding 28)
+The quest writer's run 15 (`docs/quest_review.md` on auto/quests, PR #248) found four war notices and two of the lord's answers out of register, and gave the replacement word for word. `nationName` gives the land: *the Gatelands*, *the Mark*, *Aurenne*. So *the Mark has laid siege to …* opened in lowercase, and a land, not a power, laid the siege and kept the garrison. The peace said *1 sieges broken, 1 towns lost*. The lord answered *Who holds the town?* and *The siege?* in the same words in all three peoples' towns.
+
+All applied as written, in `87-world-quests.js`. `polityName(nk,cap)` sits beside `nationName` and reads `NATIONS[nk].crown`: the Crown, the League, the Compact, capitalised where it opens a line. `laySiege`'s notice and `tickSieges`' camp and garrison lines name the power (*The League's camp is on the road outside Dunmore.*). `endWarIf` counts with `plural`. `lordTopics` gives each of the two answers a line per people. The people is the lord's own, the province's (`nationOf` of the town's cell), not the occupier's. The war's declaration and *has fallen to …* keep the land mid-sentence, as the finding says. A register fix, so no decision.
+
+### Verified (headless Chromium)
+`tests/warwords` (new, 13 checks). On one cell of each people's land, with the Mark's men holding the town, the lord's answer opens *The League, for now. Their captain sits in my chair* (Gatelands), *The League. Their captain's in my chair* (the Mark) and *The League, Master, under terms we were not asked to sign.* (Aurenne). With Aurenne's camp on the road, the three siege answers open as the finding gives them. *The League has laid siege to Testford.* The peace reads *1 siege broken, 1 town lost.* and *3 sieges broken, 2 towns lost.* At Dunmore, `tickSieges` shows *The League's camp is on the road outside Dunmore.* and *The Compact's garrison holds Dunmore.* No page errors. `siegeturn`, `datedwork`, `jobids`, `questfoes` and `sitefoes` pass. `dayseed` fails here on this head, and also on main's own tree (6f005ad, two runs, three checks: no towns found in time). CI ran it green on main, so this is this machine's speed, not this change.
+
+### Needs eyes
+- None by play. The quest writer can read the lines in the game: put a town under siege with `WORLD.TS(site)` and ask the lord.
