@@ -15870,3 +15870,12 @@ No page errors. These suites pass: `gateschool` (an occupied deep gate holds the
 ### Needs eyes
 - By play: a level-one or level-two character in a Solas, Cloch or Scáth gate fights only Skeletons, for a few levels. That is A as chosen, but whether it reads as *the same dungeon* three times is for a playtest.
 - `spentguard`'s dungeon half now finds a Skeleton, not a Shieldbearer, in its ruins gate. It still passes, but a guard-raised foe is the point of that check; it can move to a hand-built goblin portal if it ever needs the shield.
+
+## v80 — Session 764 — `gargoyle` and `golem` look for their foe in a ruins gate (red on CI on 6677e7f; tests only)
+Shards 2 and 4 failed on 6677e7f. In each, the first two checks of `gargoyle` and `golem` found no such foe in the dungeon (`{"none":true}`). Session 763 gave each school's gate the canon's table (Michael's A on #252). The Gargoyle left the haunted roster, and the Golem left the deep one. The two tests still went down a haunted gate and a deep gate to find them, on six seeds each. Ruins now holds both (Golem twice, Gargoyle once), so both tests now go down a ruins gate. The rosters stay as Session 763 set them. Tests only, so the tag is not bumped.
+
+### Verified (headless Chromium)
+`gargoyle` and `golem` pass, one run each, on this head. The other ten shards of 6677e7f were green.
+
+### Needs eyes
+- None; tests only.
