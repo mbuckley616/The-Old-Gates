@@ -7,6 +7,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The gates by school: what foes each school's gate holds (systems builder, Session 759, 2026-10-12) — DECISION #252
+Your A on the gates by school made goblins an *occupied* state, not a kind of gate; Session 759 built that (a gate that drew *goblin* is now an occupied gate of a school, lit in its school's shape, holding the goblins, kobolds and Shieldbearers). The canon's table (§9a) also names each school's foes, and that is a rule of play, so it is yours. What stands today: each gate draws its foes from six slots (a foe named twice comes twice as often), and a foe joins only from its level: Skeleton, Goblin and Slime at 1, Cave Troll at 2, Golem, Phantom and Fire Elemental at 3, Gargoyle and Mimic at 4, Wraith at 5. Built to the table exactly, a level-one character in a Cloch (stone) gate meets only Skeletons (the fallback), and in a Scáth (shadow) gate the same until level 3. Cloch's gate today still holds Goblins and Shieldbearers.
+- **A. The table, with a level-one foe kept in each** *(recommended)*: Solas Skeleton ×4, Phantom, Wraith (as now, the Mimic out); Tine Fire Elemental ×2, Slime ×2, Golem, Cave Troll; Uisce Slime ×2, Skeleton (drowned), Cave Troll, Mimic, Slime; Cloch Golem ×2, Gargoyle, Cave Troll, Skeleton ×2; Scáth Phantom ×2, Wraith, Mimic, Skeleton ×2. Goblins, kobolds and Shieldbearers only in occupied gates. Every gate has something to fight at level one, and each school reads as its table from level 3 or 4.
+- **B. The table exactly**: only the foes the table names; below a school's first level its gate holds the Skeleton fallback.
+- **C. Keep today's six lists**, taking only the Goblin and Shieldbearer out of Cloch's (a Skeleton and a Gargoyle in their place).
+Gaoth (wind) is not rolled yet in any option: its table wants wisps and *something winged*, which are meshes the look builder has not made.
+
+Michael: **The table, with a level-1 foe kept in each** (A, tapped on the control room). (12 Oct 2026)
+
 ### What gives an old gate its character: its theme, its god, or its school? (Claude, Session 754, 2026-10-12)
 Raised in chat over a bestiary sheet Michael had made: the six dungeon themes (undead, goblin, elemental, deep, haunted, ruins) date from *Dungeon of Shadows* and have no reason in the canon. "Why would we have a 'goblin' gate? Shouldn't it be tied to the magic type?"
 - **A. By school** *(recommended)*: each gate belongs to one of the six schools (Tine, Uisce, Cloch, Scáth, Solas, Gaoth). Its sigil teaches that school's words, and its stone, light, hazards and antibodies take that school's shape. Goblins become a state any gate can be in: *occupied*.
