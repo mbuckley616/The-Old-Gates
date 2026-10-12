@@ -15715,3 +15715,45 @@ A bug fix, so no decision.
 
 ### Needs eyes
 - None by play.
+
+## v80 — Session 761 — Damage numbers at the foe's head; the bottom centre stops saying the blow (Michael's A on #198, first slice)
+Michael's note of 6 Oct asked for fewer callouts at the bottom centre and damage numbers in their place. His A on DECISION #198 (7 Oct) took the concept artist's HUD with a ledger above the vitals, and *combat lines stop, because the numbers say it*. Nothing of it was built in five days, and it was routed to no builder. This session takes the half that belongs to the blows: the numbers, and the combat lines they replace. The wide compass, the ledger and the parchment plate are the look's half and are left for routing.
+
+`dmgNum(e, n, info, o)` (`74-strikes.js`, beside `dmgTag`) puts a number at the struck foe's head and lifts it 40 px over 0.9 s, fading from the halfway point. It reads the kind from the strike's own info, as the prototype's key (`docs/prototypes/hud/numbers.png`, auto/concept) gives them, the first that applies:
+- *critical*, in red, large and tilted, with a ✶: a finisher, a riposte, a lucky blow or a staggered foe, with that word under it.
+- *from behind*, in pale violet.
+- *guarded* (a shield's front) or *resisted* (×0.75 or less), small and grey.
+- *weak* or *very weak* (×1.25 or more), in gold.
+- otherwise plain paper colour; *armour pierced* or *power* goes under it when either applies.
+
+A rune's rider (`applyWeaponEnchant` now returns its amount, kind and icon) rises beside the blow, from its right edge: *+3 🔥* in fire's orange, frost in ice blue, shock in violet. The three drains take their rune's own colour. The anchor is the foe's health bar, read when the blow lands, so a killing blow still has its number. A foe behind the eye is judged in camera space, because NDC depth read 1.000025 for a foe one unit away. The layer is `#dmgnums` in `index.html` with the prototype's CSS in Georgia, the face the other unrestyled panels use until the UI overhaul. `tickDmgNums` runs from the loop. The numbers are cosmetic: nothing reads them back, and their clock is the page's.
+
+Every hit path calls it: your swing in the open world (`42-zone-enemies.js`) and underground (`62-actions.js`), your arrows in both (`42`, `90-main.js`), and your spells in both. The lines they replace are gone: *Hit Bandit for 21! (BACKSTAB) (Weak!)*, *🏹 Arrow hits …*, *🔥 Fireball hits …*, the rider's *🔥 Fire +5!* and *Swing!* on a miss.
+
+Some lines stay, because no number says them: *💥 Bandit staggered!*, *💥 … guard breaks!*, the kill line with its tags and XP, *Too spent to break the guard.* (now on its own line), and the spells' own effects (*Still-Winter's Touch deepens*). The blows you take still read *Bandit hits you for 7!*. The prototype shows those as the pale stretch your health bar has just lost, which belongs with the plate and the ledger.
+
+This is Michael's answer built as drawn, so no new decision. Who builds the other half is the producer's to route.
+
+### Verified (headless Chromium)
+`tests/dmgnums` (new, 14 checks). Real swings through the loop's own tick at 1/60, with the draw held off.
+
+At a Bandit in Dunmore's street at noon:
+- One number, the 12 it took, stands within 2 px of its health bar on the screen. It is plain and paper-coloured, with no line at the bottom.
+- It rises 20 px by 0.45 s and 35.6 by 0.8 s, at 0.2 opacity, and its element is gone at 0.95 s.
+- A swing at nothing says nothing and raises nothing.
+- With Flames on the blade, the 9 rises with *+2 🔥* in rgb(255,154,60), starting right of the 9's right edge and higher. No *Fire +* line.
+- From behind, *17* in pale violet with *from behind* under it.
+- A number for a foe behind the camera is not drawn.
+
+The twelve kinds read from the strike's info as listed above.
+
+In a ruins gate (seed 23), a swing at a Skeleton raises its *14* at its head (within 8 px across), with no line.
+
+A picture, `docs/prototypes/dmgnums-street.png`: a riposte's *✶ 33* in red with *riposte* under it, and *+8 🔥* clear of it to the right, over a Bandit in Dunmore's street. No page errors.
+
+The suites that swing, shoot, cast or read the bottom line pass: blacksail, captainguard, cowards, dazed, duelrhythm, fistfight, fists, fistswing, guardplay, guardsindoor, hearthcast, hitseed, lairhoard, q7world, questfoes, wildseed, yardplay, unequip, bladehit, masterslam, foeseed. `spentguard` failed on one check, which asked for *(GUARDED)* on the same line as *Too spent to break the guard.*: that tag was part of the hit line, and is now the number's word. The check now reads the number's word (*guarded* on all seven spent swings) and the line on its own, and passes. Its other checks were unchanged and pass.
+
+### Needs eyes
+- By play: whether the numbers read in a real fight at a laptop's size (30 px plain, 46 critical), and whether 0.9 s is long enough to read a riposte's word.
+- Whether losing *Swing!* on a miss is missed. The prototype drops it with the other combat lines.
+- Owed under #198 A, to be routed: the wide compass, the ledger above the vitals (up to four lines, six seconds each), and the vitals plate with the pale tail for blows taken. The tail is what replaces *… hits you for N!*; until it lands, that line stays.

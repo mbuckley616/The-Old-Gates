@@ -326,6 +326,73 @@ function dmgTag(info, e){
   return '';
 }
 
+// S761 — damage numbers (Michael's A on DECISION #198, the concept artist's docs/prototypes/hud/): every blow you land rises as a
+// number at the struck foe's head, its kind in its colour, and is gone in 0.9 s; the bottom centre no longer says it. Kinds, first
+// that applies: crit (a finisher, a riposte, a lucky blow, a staggered foe), back (from behind), res (a shield's front, or ×.75 or
+// less), weak (×1.25 or more), and plain, with the word under it; a rune's rider rises beside the blow in its colour. The anchor
+// is the foe's health bar (its head), taken when the blow lands. Cosmetic: nothing reads them back, and the clock is the page's.
+const DMG_NUM_S=.9,DMG_NUM_RISE=40,DMG_NUM_MAX=14,DMG_NUMS=[],_dnV=new THREE.Vector3();
+function dmgNumKind(info,e,o){
+  info=info||{};o=o||{};
+  if(info.finisher)return {kind:'crit',word:'finisher'};
+  if(info.riposte)return {kind:'crit',word:'riposte'};
+  if(info.lucky)return {kind:'crit',word:'lucky'};
+  if(info.crit)return {kind:'crit',word:'staggered'};
+  if(info.backstab)return {kind:'back',word:'from behind'};
+  if(o.guarded)return {kind:'res',word:'guarded'};
+  const r=typeof info.resistMult==='number'?info.resistMult:1;
+  if(r>=1.45)return {kind:'weak',word:'very weak'};
+  if(r>=1.25)return {kind:'weak',word:'weak'};
+  if(r<=.75)return {kind:'res',word:'resisted'};
+  if(info.defPierced&&e&&(e.def||0)>0)return {kind:'',word:'armour pierced'};
+  if(o.power)return {kind:'',word:'power'};
+  return {kind:'',word:''};
+}
+function dmgNumAnchor(e,out){
+  if(e&&e.hpFg&&e.hpFg.parent){e.hpFg.updateWorldMatrix(true,false);e.hpFg.getWorldPosition(out);return out;}
+  const m=e&&(e.mesh||e.g);return out.set(e?e.x:0,(m?m.position.y:0)+1.8,e?e.z:0);
+}
+function dmgNum(e,n,info,o){
+  o=o||{};if(!e||!(n>0))return null;
+  const layer=document.getElementById('dmgnums');if(!layer)return null;
+  const k=o.kind!=null?{kind:o.kind,word:o.word||''}:dmgNumKind(info,e,o);
+  const el=document.createElement('div');el.className='dn'+(k.kind?' '+k.kind:'');
+  el.textContent=(o.prefix||'')+n+(o.suffix||'');
+  if(k.word){const s=document.createElement('span');s.className='sm';s.textContent=k.word;el.appendChild(s);}
+  if(o.col)el.style.color=o.col;
+  if(o.leftAnchor)el.style.transform='translate(0,-100%)';
+  layer.appendChild(el);
+  const d={el,p:dmgNumAnchor(e,new THREE.Vector3()),t0:performance.now(),dx:o.dx||0,dy:o.dy||0,n,kind:k.kind,word:k.word,foe:e.name||'',e};
+  DMG_NUMS.push(d);
+  while(DMG_NUMS.length>DMG_NUM_MAX){const x=DMG_NUMS.shift();if(x.el.parentNode)x.el.parentNode.removeChild(x.el);}
+  placeDmgNum(d,d.t0);return d;
+}
+// a rune's rider (applyWeaponEnchant's return) beside the blow's number: from its right edge, a little higher
+function dmgNumRider(e,enc){
+  if(!enc||!(enc.amt>0))return null;
+  const k=/^(fire|frost|shock)$/.test(enc.id)?enc.id:'rider';
+  let main=null;for(let i=DMG_NUMS.length-1;i>=0;i--)if(DMG_NUMS[i].e===e){main=DMG_NUMS[i];break;}
+  const half=main&&main.el.offsetWidth?main.el.offsetWidth/2:24;
+  return dmgNum(e,enc.amt,null,{kind:k,prefix:'+',suffix:enc.ico?' '+enc.ico:'',col:k==='rider'?enc.col:null,dx:half+6,dy:-30,leftAnchor:true});
+}
+function placeDmgNum(d,now){
+  const u=Math.max(0,(now-d.t0)/1000/DMG_NUM_S);
+  CAM.updateMatrixWorld();const v=_dnV.copy(d.p).applyMatrix4(CAM.matrixWorldInverse);
+  if(v.z>-.05){d.el.style.display='none';d.onScreen=false;return;} /* behind the eye (NDC depth is no guide this near) */
+  v.applyMatrix4(CAM.projectionMatrix);
+  if(Math.abs(v.x)>1.2||Math.abs(v.y)>1.2){d.el.style.display='none';d.onScreen=false;return;}
+  const c=REN.domElement,r=c.getBoundingClientRect(),w=r.width||innerWidth,h=r.height||innerHeight;
+  d.x=r.left+(v.x*.5+.5)*w+d.dx;d.y=r.top+(-v.y*.5+.5)*h+d.dy-u*DMG_NUM_RISE;d.onScreen=true;
+  d.el.style.display='';d.el.style.left=d.x.toFixed(1)+'px';d.el.style.top=d.y.toFixed(1)+'px';
+  d.el.style.opacity=String(u<.45?1:Math.max(0,1-(u-.45)/.55));
+}
+function tickDmgNums(){
+  if(!DMG_NUMS.length)return;const now=performance.now();
+  for(let i=DMG_NUMS.length-1;i>=0;i--){const d=DMG_NUMS[i];
+    if((now-d.t0)/1000>=DMG_NUM_S){if(d.el.parentNode)d.el.parentNode.removeChild(d.el);DMG_NUMS.splice(i,1);continue;}
+    placeDmgNum(d,now);}
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Monster Overhaul Session 2 — Variants + Spawn Gating
 // ═══════════════════════════════════════════════════════════════════════

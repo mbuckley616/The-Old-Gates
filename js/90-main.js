@@ -50,6 +50,7 @@ function loop(now){
   // Main scene render
   REN.autoClear=true;
   tickCrosshair(); // v80 — the crosshair shows what E will open
+  try{tickDmgNums();}catch(e){} // S761 — the damage numbers rise and fade (74-strikes.js)
   try{tickPeople(dt,now);}catch(e){} // v80 S153 — every townsperson's stride and breath, indoors too
   try{tickMimicJaws(now);}catch(e){} // v80 S198
   try{tickCreatures(dt,now);}catch(e){} // v80 S166 — every wolf's stride, crouch and spring
@@ -1134,11 +1135,11 @@ function loop(now){
               }
             }
             const tagInfo = {dmg, resistMult, wType:wt, crit:false, backstab:false, defPierced:false};
+            dmgNum(e,dmg,tagInfo); /* S761 — #198 A */
             if(e.hp<=0){
               killE(e, ` (ARROW)${dmgTag(tagInfo, e)}`);
               dScene.remove(fb); BALLS.splice(i,1);
             } else {
-              showMsg(`🏹 Arrow hits ${e.name} for ${dmg}!${dmgTag(tagInfo, e)}`, '#c8a878');
               // v64.2 — Stick arrow into enemy body (parent to body mesh).
               // Arrow stays in BALLS so stuckLife ticks down via
               // tickArrowMotion. On enemy death, the body mesh despawn
@@ -1183,7 +1184,8 @@ function loop(now){
           PHP=Math.min(effMaxHP(), PHP+healAmt);
           showMsg(`✨ Morning's-First-Word — +${healAmt} HP`,'#aaffaa');
         }
-        if(e.hp<=0)killE(e,dmgTag(info,e));else showMsg(sp.ico+' '+spellDisplayName(sp,tier)+' hits '+e.name+' for '+dmg+'!'+dmgTag(info,e),'#88ccff');dScene.remove(fb);BALLS.splice(i,1);}});}
+        dmgNum(e,dmg,info); /* S761 — #198 A: the number, not the line */
+        if(e.hp<=0)killE(e,dmgTag(info,e));dScene.remove(fb);BALLS.splice(i,1);}});}
     ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor)return;const T=targetOf(e);const dist=Math.hypot(T.x-e.x,T.z-e.z);
       // S222 — a slime quivers, faster as it creeps; a fire elemental's flames flicker and its core eases back to its glow
       if(e.limbs&&e.limbs.slime&&e.limbs.body){const q=Math.sin(swT*(e.alert?7:3)+(e.ph||0))*.05;e.limbs.body.scale.set(1+q,1-q*1.4,1+q);}

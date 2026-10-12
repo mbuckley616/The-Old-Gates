@@ -1464,6 +1464,7 @@ function tickZoneBalls(dt,sc){
           }
           // Resist tag (Weak!/Resisted/etc.) — synthetic info object for dmgTag.
           const tagInfo = {dmg, resistMult, wType:wt, crit:false, backstab:false, defPierced:false};
+          dmgNum(e,dmg,tagInfo); /* S761 — #198 A */
           if(e.hp<=0){
             // Kill — route through the same kill path as melee. zone kill
             // path uses killZoneEnemy. The arrow is removed cleanly because
@@ -1474,7 +1475,6 @@ function tickZoneBalls(dt,sc){
             else { e.dead = true; }
             sc.remove(fb); ZB.splice(i,1);
           } else {
-            showMsg(`🏹 Arrow hits ${e.name} for ${dmg}!${dmgTag(tagInfo, e)}`, '#c8a878');
             // v64.2 — Stick the arrow into the enemy body. The body mesh
             // becomes the arrow's parent so it follows movement/rotation.
             // The arrow stays in ZB (not removed from the array) so its
@@ -1526,8 +1526,8 @@ function tickZoneBalls(dt,sc){
           PHP=Math.min(effMaxHP(), PHP+healAmt);
           showMsg(`✨ Morning's-First-Word — +${healAmt} HP`,'#aaffaa');
         }
+        dmgNum(e,dmg,info); /* S761 — #198 A: the number, not the line */
         if(e.hp<=0)killZoneEnemy(e,sc,dmgTag(info,e));
-        else showMsg(`${sp.ico} ${spellDisplayName(sp,tier)} hits ${e.name} for ${dmg}!${dmgTag(info,e)}`,'#88ccff');
         sc.remove(fb);ZB.splice(i,1);
       }
     });
@@ -1815,17 +1815,16 @@ function _resolveZoneStrike(_isPow){
       // kill-on-frontal — the player got no reward signal for stealth play.
       const _guardTag = (shMult<1.0) ? ' (GUARDED)' : '';
       const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
+      dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A); the line below it is gone */
       if(e.hp<=0)killZoneEnemy(e,sc,_killTag);
       else{
         const enc=applyWeaponEnchant(dmg,e);
-        if(e.hp<=0){
-          killZoneEnemy(e,sc,_killTag);
-          if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}${_spent?' · Too spent to break the guard.':''}`,'#ff9944');
+        dmgNumRider(e,enc);
+        if(e.hp<=0)killZoneEnemy(e,sc,_killTag);
+        else if(_spent)showMsg('Too spent to break the guard.','#ff9944');
       }
     }
   }
-  if(!hit)showMsg('Swing!','#888');
   document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
   setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
 }

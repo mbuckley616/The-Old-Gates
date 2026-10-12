@@ -201,16 +201,15 @@ function _resolveDungeonStrike(_isPow){
       // player reads WHY the number is small and learns to flank or power-attack.
       const _guardTag = (shMult<1.0) ? ' (GUARDED)' : '';
       const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
+      dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A); the line below it is gone */
       if(e.hp<=0){killE(e,_killTag);}else{
         const enc=applyWeaponEnchant(dmg,e);
-        if(e.hp<=0){
-          killE(e,_killTag);
-          if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}${_spent?' · Too spent to break the guard.':''}`,'#ff9944');
+        dmgNumRider(e,enc);
+        if(e.hp<=0)killE(e,_killTag);
+        else if(_spent)showMsg('Too spent to break the guard.','#ff9944');
       }
     }
   }
-  if(!hit)showMsg('Swing!','#888');
   document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
   setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
 }
