@@ -327,19 +327,22 @@ function dungeonKeyBase(seed){
 }
 
 // Theme → visual + enemy roster
+// S763 — each school's roster is the canon's table (§9a) with a level-one foe kept in each (Michael's A on #252): undead is
+// Solas, elemental Tine, deep Uisce (its Skeleton the drowned), ruins Cloch, haunted Scáth. Goblins, kobolds and Shieldbearers
+// live only in occupied gates (OCCUPIED_ROSTER); 'goblin' stays for the test harness's hand-built portal.
 const THEME_DEF={
   undead:   {fog:0x120f1a,amb:0x9060cc,portalCol:0x8844ff,wallCol:0x2a2232,floorCol:0x1a1624,clutter:'bones',
-             enemies:['Skeleton','Skeleton','Phantom','Wraith','Skeleton','Mimic']},
+             enemies:['Skeleton','Skeleton','Phantom','Wraith','Skeleton','Skeleton']},
   goblin:   {fog:0x0a1208,amb:0x60a040,portalCol:0x44bb22,wallCol:0x1e2818,floorCol:0x141c10,clutter:'junk',
              enemies:['Goblin','Goblin','Kobold Thief','Slime','Cave Troll','Shieldbearer']},
   elemental:{fog:0x1a0a08,amb:0xff6030,portalCol:0xff4422,wallCol:0x2a1808,floorCol:0x1e1208,clutter:'rubble',
-             enemies:['Fire Elemental','Golem','Slime','Fire Elemental','Cave Troll','Phantom']},
+             enemies:['Fire Elemental','Slime','Golem','Fire Elemental','Slime','Cave Troll']},
   deep:     {fog:0x080a10,amb:0x3060a0,portalCol:0x2244aa,wallCol:0x181a20,floorCol:0x10121a,clutter:'rubble',
-             enemies:['Cave Troll','Golem','Slime','Mimic','Skeleton','Cave Troll']},
+             enemies:['Slime','Slime','Skeleton','Cave Troll','Mimic','Slime']},
   haunted:  {fog:0x0a0814,amb:0x8040a0,portalCol:0xaa44ff,wallCol:0x1e1828,floorCol:0x14101c,clutter:'chains',
-             enemies:['Phantom','Wraith','Gargoyle','Mimic','Skeleton','Phantom']},
+             enemies:['Phantom','Wraith','Skeleton','Mimic','Skeleton','Phantom']},
   ruins:    {fog:0x0e0c0a,amb:0xa07848,portalCol:0x886622,wallCol:0x22201a,floorCol:0x181610,clutter:'rubble',
-             enemies:['Skeleton','Goblin','Gargoyle','Shieldbearer','Mimic','Golem']},
+             enemies:['Golem','Skeleton','Gargoyle','Cave Troll','Skeleton','Golem']},
 };
 
 // S759 — the gates by school (Michael's A, lore_canon §9a): goblins are a state a gate can be in, not a kind of gate. A gate

@@ -15845,3 +15845,28 @@ The suites that block, parry, roll or take blows pass: challenge, counters, daze
 - By play: whether the tail is visible enough on today's 88-px bar, and whether 0.8 s then half a bar a second feels like Elden Ring's.
 - The shield hint (*equip a shield for better protection!*) went with the blocked line. If it taught something, it belongs in the ledger or the tutorial, not on every block. That is the producer's or Michael's call.
 - Owed to the look builder: the sea archers' *hits for N* line in `85-world-sea.js`, to match.
+
+## v80 — Session 763 — Each school's gate holds its table (Michael's A on #252)
+Session 759 made goblins a gate's state and asked, as DECISION #252, which foes each school's gate holds. Michael chose A on 12 Oct: the canon's table (lore_canon Part II §9a), with a level-one foe kept in each so no gate is empty to a new character. This session builds it as written. The answer was already on main under *Answered*; the merge brought a second copy under *Pending*, which is removed.
+
+`THEME_DEF` (`20-quests.js`) keeps six slots a school, a foe named twice coming twice as often, and the level gate in the dungeon's spawn (`EM[n].minLevel`) is unchanged:
+- Solas (*undead*): Skeleton ×4, Phantom, Wraith. The Mimic is out.
+- Tine (*elemental*): Fire Elemental ×2, Slime ×2, Golem, Cave Troll. The Phantom is out.
+- Uisce (*deep*): Slime ×3, Skeleton (the drowned; its look is the look builder's), Cave Troll, Mimic. The option's wording lists *Slime ×2 … Slime*, three in six, and that is what is built. The Golem and the second troll are out.
+- Cloch (*ruins*): Golem ×2, Gargoyle, Cave Troll, Skeleton ×2. The Goblin, the Shieldbearer and the Mimic are out.
+- Scáth (*haunted*): Phantom ×2, Wraith, Mimic, Skeleton ×2. The Gargoyle is out.
+
+Goblins, Kobold Thieves and Shieldbearers now come only from an occupied gate (`OCCUPIED_ROSTER`). The `goblin` entry in `THEME_DEF` stays, because the test harness and the inspector build a goblin portal by hand; nothing in the game rolls one. Gaoth is still not rolled: its wisps and *something winged* want meshes first.
+
+What a player sees: a level-one character meets Skeletons in a Solas, Cloch or Scáth gate, Slimes in a Tine gate, and both in an Uisce gate. From level 3 the stone, fire and shade begin to show, and the whole table by level 5.
+
+### Verified (headless Chromium)
+`tests/schoolroster` (new, 16 checks). Each of the five rosters matches the table count for count, each holds a level-one foe, and none holds a goblin, a kobold or a Shieldbearer. Inside, two seeds (11 and 23) per school:
+- At level 1: undead, ruins and haunted held Skeletons; elemental held Slimes; deep held Slimes and Skeletons. Nothing off the table.
+- At level 6: undead held Skeleton, Phantom, Wraith; elemental Fire Elemental, Slime, Golem, Cave Troll; deep Slime, Skeleton, Cave Troll, Mimic; ruins Golem, Skeleton, Gargoyle, Cave Troll; haunted Phantom, Wraith, Skeleton, Mimic.
+
+No page errors. These suites pass: `gateschool` (an occupied deep gate holds the warren; the same seed unoccupied now holds Slime, Skeleton, Cave Troll, Mimic), `dungeonfoes`, `spentguard` (its ruins gate no longer holds a Shieldbearer; it takes the guarded foe it finds), `mimicspots`, `mimic`, `bodies`, `dunseed`, `weapons`, `chestpicks`, `lairhoard`, `dungeonpace`, `inspdungeons`.
+
+### Needs eyes
+- By play: a level-one or level-two character in a Solas, Cloch or Scáth gate fights only Skeletons, for a few levels. That is A as chosen, but whether it reads as *the same dungeon* three times is for a playtest.
+- `spentguard`'s dungeon half now finds a Skeleton, not a Shieldbearer, in its ruins gate. It still passes, but a guard-raised foe is the point of that check; it can move to a hand-built goblin portal if it ever needs the shield.
