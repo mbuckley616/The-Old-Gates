@@ -7,6 +7,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The concept art's first batch: style, the gate, invented names, Aurenne (Claude, Session 755, 2026-10-12)
+Raised in chat from the first batch of the concept art intake (`docs/art/catalogue.csv`, OG-007 to OG-096 of the world folder).
+1. **The style.** OG-096 shows four studies: A luminous and painterly, B atmospheric and epic, C seasonal and textured, D mystical and unsettling.
+   Michael: **"The 4 styles were all meant to coalesce."** Gates and dungeons are D; "the world [is] largely painterly / inviting and pleasant, with some epic and atmospheric flair, and seasonal elements. The dark pieces should be a stark contrast and something you 'dive into' for shorter stints. Not something to 'live' in." (12 Oct 2026)
+2. **The gate's outside.** OG-037's four variants. Claude suggested V1, concentric rings, with V3, a broken circle, for a failing gate.
+   Michael: **agreed.** (12 Oct 2026)
+3. **Names and politics invented by the art** (Crownholm/Crownhaven for the Crown's seat, a Highhold and Council of Houses in the Mark, royal courts in Aurenne).
+   Michael: **"Canon wins in a lot of this, but we also have a lot of empty space to fill in the world. We should take inspiration from some of the creations, even if they're not 100% lore-friendly, and weave them in. And if they touch on an open and obvious gap, let's lean in."** (12 Oct 2026)
+4. **Aurenne's register.** The art draws North African and Mediterranean; the canon named Aurenne in a Norman-French register.
+   Michael: **"Aurenne in my head is basically Mediterranean and North African. Almost like a fusion of Roman / Egyptian / Arabic / Greek. People are intended to be mixed / darker skinned, with a healthy range of color. The french piece, I am less inclined to embrace at this point. That was just a stand-in."** (12 Oct 2026)
+Done, Session 755: the style in `design_brief.md` (*Look*); Aurenne in `lore_canon.md` §1.3, the peoples table (§2) and §14; the rest of the canon untouched until the quest writer writes the new names. Backlog J carries the build.
+
 ### The gates by school: what foes each school's gate holds (systems builder, Session 759, 2026-10-12) — DECISION #252
 Your A on the gates by school made goblins an *occupied* state, not a kind of gate; Session 759 built that (a gate that drew *goblin* is now an occupied gate of a school, lit in its school's shape, holding the goblins, kobolds and Shieldbearers). The canon's table (§9a) also names each school's foes, and that is a rule of play, so it is yours. What stands today: each gate draws its foes from six slots (a foe named twice comes twice as often), and a foe joins only from its level: Skeleton, Goblin and Slime at 1, Cave Troll at 2, Golem, Phantom and Fire Elemental at 3, Gargoyle and Mimic at 4, Wraith at 5. Built to the table exactly, a level-one character in a Cloch (stone) gate meets only Skeletons (the fallback), and in a Scáth (shadow) gate the same until level 3. Cloch's gate today still holds Goblins and Shieldbearers.
 - **A. The table, with a level-one foe kept in each** *(recommended)*: Solas Skeleton ×4, Phantom, Wraith (as now, the Mimic out); Tine Fire Elemental ×2, Slime ×2, Golem, Cave Troll; Uisce Slime ×2, Skeleton (drowned), Cave Troll, Mimic, Slime; Cloch Golem ×2, Gargoyle, Cave Troll, Skeleton ×2; Scáth Phantom ×2, Wraith, Mimic, Skeleton ×2. Goblins, kobolds and Shieldbearers only in occupied gates. Every gate has something to fight at level one, and each school reads as its table from level 3 or 4.

@@ -14,6 +14,8 @@ A lightweight, browser-playable open-world RPG that is the marriage of the best 
 High fantasy at the core: uplifting and exciting, never depressing to play. The world is largely pleasant, save for the villains themselves, and spans a healthy range of fantasy sub-genres. Grimdark and cosmic horror live underneath, in the villains and the metaphysics. The horror is that the ones who are *awake* to the true nature of their reality are painted as villains, and that the player gradually realises they are the real monster, tearing through the world for their own enjoyment. Never spoon-fed: inferred by a player who pays attention. Not out-of-the-box fantasy: strange in Morrowind's manner (its mushrooms, its silt striders) where it counts. Canon: `lore_canon.md` Part II §10a.
 
 ## Look
+**The mix (Michael, 12 Oct 2026, over the concept art's four style studies, OG-096):** the world is painterly, inviting and pleasant, with epic and atmospheric flair and seasonal change. The dark, mystical and unsettling look belongs to the gates and dungeons: a stark contrast you dive into for shorter stints, not a place you live in.
+
 As polished and realistic as a browser can carry without becoming heavyweight: stylised smooth, built in code. Interfaces read as parchment and scroll in Oblivion's manner, never digital or corporate. The build must stay playable on a laptop in a browser.
 
 ## Keep the door open for
