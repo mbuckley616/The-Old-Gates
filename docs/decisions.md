@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.
 1. **How people are proportioned** (OG-012, OG-095). **A.** Naturalistic, about 1.75 m. **B.** A heroic hybrid, about 1.80 m, slightly longer legs and broader shoulders, so a figure reads at a distance and in a fight *(recommended; both sheets pick it)*. **C.** Stylised: bigger heads and hands, narrow waists.
@@ -19,10 +21,9 @@ Raised in chat with Michael after his review of the 96 images (62 kept). Each qu
 11. **Corwin's people** (OG-057, OG-069). **A.** Gatelander. **B.** Aurennais, as the sheets label him. **C.** Never said, which fits his evasions *(recommended)*.
 12. **Companions** (OG-051's and OG-083's wolves, OG-054's Gateborn Companion). **A.** None for the player; the wolves are their owners' *(recommended for now; the canon's gate-born do not bond)*. **B.** An animal companion (a dog or a wolf). **C.** An animal and a gate-born companion.
 13. **Arenas** (OG-079, OG-080, OG-089). **A.** Training grounds and arenas in Markish towns, for the duels and the mercenary trade *(recommended)*. **B.** None.
-Not carried to the phone: Michael has these in chat.
+Michael: **1 B, 2 B, 3 A, 4 C, 5 B, 6 A, 7 A, 8 B, 9 A, 10 B, 11 C, 12 A, 13 A**, every recommendation. (12 Oct 2026, in chat)
+Done, Session 767. The canon answers are in `lore_canon.md`: 2 in §3.1 and §3.3, 8 in §5, and 9, 10, 11, 7 and 13 in §14. Backlog L's items carry their answers.
 
-
-## Answered
 
 ### The concept art's first batch: style, the gate, invented names, Aurenne (Claude, Session 755, 2026-10-12)
 Raised in chat from the first batch of the concept art intake (`docs/art/catalogue.csv`, OG-007 to OG-096 of the world folder).
