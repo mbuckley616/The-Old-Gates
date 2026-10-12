@@ -517,10 +517,16 @@
       const nb=site.kind==='city'?10:site.kind==='town'?7:site.kind==='village'?4:2;
       const barrelMat=new THREE.MeshLambertMaterial({color:0x6a4418}),crateMat=new THREE.MeshLambertMaterial({color:0x7a5a28});
       let made=0;
-      for(let k=0;k<nb*4&&made<nb;k++){
+      // S753 — twice as many (Michael's A on #245): the first nb draw on the town's stream as before, so every draw
+      // after them (villagers, names, guards) is unchanged; the second nb on their own stream, keyed by the site.
+      // settleSolid reads SETTLE, which does not hold this town yet, so the second half also keeps out of the town's own
+      // solids (houses, the chapel, the barrels already placed); the first half is left as it was, draw for draw.
+      const ownHit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+      const placeBarrels=(r,want,own)=>{const goal=made+want;
+      for(let k=0;k<want*4&&made<goal;k++){
         const lot=use[Math.floor(r()*use.length)];if(!lot)break;
         const side=r()<.5?-1:1;const sx=lot.x-lot.tz*side*(lot.w/2+.9)+lot.tx*(r()-.5)*lot.d*.6,sz=lot.z+lot.tx*side*(lot.w/2+.9)+lot.tz*(r()-.5)*lot.d*.6;
-        if(solidAt(sx,sz)||settleSolid(sx,sz,.4))continue;
+        if(solidAt(sx,sz)||settleSolid(sx,sz,.4)||(own&&ownHit(sx,sz,.4)))continue;
         const y=worldH(sx,sz);const kind=r()<.55?'barrel':'crate';let g,top;
         if(kind==='barrel'){const B=kitBarrel(1.75,0x6a4418);g=B.body;g.position.set(sx,y,sz);top=B.top;top.position.set(sx,y+.96,sz);} // S200 — the kit's barrel
         else{g=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}
@@ -532,7 +538,8 @@
         const c={id:site.id+':barrel:'+made,x:sx,z:sz,y,name:kind==='barrel'?'Barrel':'Crate',displayName:kind==='barrel'?'Barrel':'Crate',items,zone:'world',kind,g,top,opened:false,_settle:site.id};
         if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(c);S.loot=S.loot||[];S.loot.push(c);
         sol.push({cx:sx,cz:sz,rx:.5,rz:.5});made++;
-      }
+      }};
+      placeBarrels(r,nb,false);placeBarrels(seededRng(site.id,'barrels2'),nb,true);
     }
     // Villagers on the plaza by day.
     if(plan.rows>0){

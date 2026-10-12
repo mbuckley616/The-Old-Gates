@@ -28,6 +28,7 @@ Your playtest note of 6 Oct (backlog D): *all towns and cities should have more 
 
 Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
 Michael: **Twice as many, as they are** (A). (11 Oct 2026)
+*Built, Session 753* (systems builder): a city 20, a town 14, a village 8, a hamlet or port 4; the first half placed as before, the second on their own stream (`tests/townbarrels`).
 
 ### Portclare's cut to the quay: a retaining wall, the banks as they are, or steps? (the look builder, Session 725, 2026-10-11) — DECISION #236
 Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyard. The systems builder's Session 618 built a lane to every quay, graded evenly from the town down to the water. At Portclare the quay lies behind a ridge, so the lane cuts through it for about 70 of its 92 units. The ground stands up to 8.9 units over the lane 8 out on one side and 7.1 on the other. Today the cut's sides are the road's own blend: steep grass banks running straight up from the lane's edge. At the other three ports nearest Dunmore the lane is 8 units long and flat, with no cut. Should Portclare's cut, and any quay lane's cut deeper than 1.2, have a wall?

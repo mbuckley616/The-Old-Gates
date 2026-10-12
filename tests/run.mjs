@@ -58,7 +58,7 @@ const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'ar
   sitechest: 51, sitefoes: 57, skirtlegs: 16, slamdamage: 168, slimes: 58, slimeseed: 57, slimesplit: 56, slipdate: 46,
   smoke: 171, snowpine: 13, snowrepaint: 70, spentguard: 88, spiders: 52, stairrail: 219, standingcount: 47, stolenstack: 53,
   stonecress: 45, stowdeck: 73, streetcone: 58, swingblade: 61, talkaim: 64, targetof: 53, taskhomes: 119, tells: 48, theft: 107,
-  theftlevel1: 69, thresholdname: 83, tithe: 47, told: 135, toldpages: 48, townbio: 58, towngate: 106, townlocks: 71,
+  theftlevel1: 69, thresholdname: 83, tithe: 47, told: 135, toldpages: 48, townbarrels: 150, townbio: 58, towngate: 106, townlocks: 71,
   townroads: 74, tpfists: 49, tpguard: 58, tpshots: 61, tpswing: 52, tpweapons: 55, tradebits: 48, trapseed: 52, trees: 57,
   trolls: 65, turnin: 50, twins: 77, twinsrebuild: 58, underclothes: 49, unequip: 46, walls: 86, wanderface: 66, wardall: 53,
   wardswift: 54, watch: 85, waybands: 62, wayfinding: 52, wealth: 55, weapons: 56, weather: 83, wholepoints: 52, wildseed: 52,

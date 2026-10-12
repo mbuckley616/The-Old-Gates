@@ -15582,3 +15582,19 @@ Shard 8 failed `sitechest` at its last real check, *emptied after a save, then l
 
 ### Needs eyes
 - None.
+
+## v80 — Session 753 — Twice the barrels and crates in a town (Michael's A on #245)
+Michael's playtest note of 6 Oct asked for more barrels and boxes in towns, with low-level loot. Session 747 asked how many, and he chose A: twice as many, as they are. The generator (`83-world-generator.js`, *Loot barrels and crates*) now puts 20 in a city, 14 in a town, 8 in a village and 4 in a hamlet. A port takes the hamlet's count, so Portclare has 4. Each holds everyday goods only, rolled on its own key `<site>:barrel:<n>:<day>` as before, refilled each game day, and not a crime to open.
+
+The barrels are placed on the town's own random stream, and the villagers, the night watch and the gate guards draw from it after them. A second pass on that stream would have moved every draw after it, so every villager's name and place too. So the first half are placed exactly as before, draw for draw, and the second half draw from their own stream, `seededRng(site.id,'barrels2')`, keyed by the site. Their ids follow on from the first half's (`dunmore:barrel:7` to `:13`).
+
+The placement found an old fault. Its check against buildings is `settleSolid`, which reads `SETTLE`, and a town is not in `SETTLE` while it is being built. Session 740 found the same thing for the second gate guard. So a barrel was kept out of other towns' houses but not its own town's, and only its offset from its own lot kept it clear. In Portclare the old crate 0 stands in the corner of the chapel's footprint (`g_portclare_7`). The second half now also keeps .4 clear of the town's own solids: houses, the chapel and the barrels already placed. The first half is left as it was, because moving Portclare's crate would change every draw after it, villagers' names included. That one crate is noted below.
+
+The backlog's section I held the critic's five s572 lines a second time, unstruck: auto/critic's filing merged after the fixes. All five were settled in Sessions 732–739, and they are struck as duplicates. The keeper line Session 734 found does not reproduce is struck as well.
+
+### Verified (headless Chromium)
+`tests/townbarrels` (new, 18 checks). Dunmore 14 (9 barrels, 5 crates), Carraig Mór 14, Coeur de Vie 20, Portclare 4. Ids run 0 to n−1, one each. Every one holds something and none holds arms or armour. None stands within .9 of another, and none of the new half stands inside a building. Of the old half, Portclare's crate 0 does, as it did before. The last barrel's key rolls the same goods again. No page errors. A probe printed every person's name, role and post in the four towns, on the code before and after: the same, line for line. `containerids`, `lootseed`, `boxseed` and `gateguards` pass.
+
+### Needs eyes
+- Fourteen barrels in a town, by play: whether that is enough to read as *more to interact with*, or crowds the house walls.
+- Portclare's crate 0 in the chapel's corner (old). The look builder can move it when it gathers the barrels by the yard, the smithy and the market (H), since that move changes the town's draws anyway.
