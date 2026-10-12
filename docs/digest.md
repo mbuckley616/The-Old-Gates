@@ -217,3 +217,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: four of the critic's five burglary bugs fixed (S732–734), the fifth waits on #240. Look builder: the quay wall and the net climb after your answers. Critic: a Cave Bear's master at level 1 is a wall, not a step up.
 
 **Roadmap.** 219 of 272 stories done (187 of 260 yesterday); five new burglary stories, three under way, one waiting on you.
+
+## 12 Oct 2026
+
+**Waiting on you.** One decision: the gates by school, which foes each school's gate holds (#252, A: the canon's table with a level-1 foe in each). One merge: Look sessions 743–752, the climb up the boarding net, Portclare's dry-stone wall to the quay, a sleeper on their side under the quilt (6978ab3, CI green, merges cleanly).
+
+**Landed on main since yesterday.** Look sessions 704–731, the world map sharp with your work on it as seals (dba88d8). Systems sessions 728–748, the burglary fixes, two gate guards, a lair left as it is (64a92af). Your answers to #243 and #245 (PR #246). The world's tone into the canon and the brief (Sessions 750–751); the gates by school, your A (Session 754). Quest writer run 15, Under Another Flag (#248). The critic's s585 playtest (PR #251). Main's CI is green on 3865c13, build s585, after one re-run.
+
+**Blocked.** Nothing on you. Systems sessions 753–760 (twice the barrels, the war's notices, one name per place, a bought ship by the quay's net, occupied gates): CI running on e8949eb; its card goes up once green.
+
+**Team.** Systems builder: the schools' rosters after #252. Look builder: the death screen as a leaf after #243 and its ragdoll. Quest writer: a line for a householder woken at night.
+
+**Roadmap.** 225 of 279 stories done (219 of 272 yesterday); new: the death screen, twice the barrels, the gates by school.
