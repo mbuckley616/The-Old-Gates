@@ -367,7 +367,7 @@
       const kx=doorX+lot.tx*1.6+lot.tz*.9,kz=doorZ+lot.tz*1.6-lot.tx*.9;
       const role=SHOP_ROLE[type]||'Merchant';
       if(type==='guild_f'||type==='guild_m'){house.guild=type;house.dlg=null;}
-      const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{nameKey:lot.n,authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{label:'Browse ships',quest:true,panel:()=>openYardPanel(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:house.tagline?[{label:`What do you sell?`,response:house.tagline}]:[]}); /* S592 — no topic while the tagline is blank (the barber's waits on the quest writer) */
+      const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{nameKey:lot.n,authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{label:'Browse ships',quest:true,panel:()=>openYardPanel(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:house.tagline?[{label:`What do you sell?`,response:house.tagline}]:[]}); /* S592 — no topic while the tagline is blank; the barber's has one since Session 735 (the quest writer's Finding 26) */
       def._houseId=house.id; // v80 S138 — who keeps what, by identity (names collide)
       house.keeper=def.name;house._twin=def._twin;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
       if(signY!==null)buildTradeSign(group,type,house.name,doorX,doorZ,lot.tx,lot.tz,lot.ry,signY);
@@ -557,6 +557,17 @@
       const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'c',x:cx-5,z:cz-3,bCol:0x3a3a48,sCol:0xb89878,role:'constable'});def.role='Guard';
       const cn=spawnNPC(def,0,true);cn.sched={type:'constable',a:{x:cx-6,z:cz-3},b:{x:cx+6,z:cz+3}};snpcs.push(cn);
     }
+    // S740 — two gate guards in every walled town (Michael's A on #242). A town with one road in had one, as one street reaches
+    // the ring. The second stands at the same gate by day, across the street from the first, and at night takes the beat from
+    // the far side of the loop (the beat spreads its men evenly by their order). Spawned last, so every draw before him is as it was.
+    {const G=snpcs.filter(n=>n.sched&&n.sched.type==='guard');
+      if(plan.walls&&G.length===1){const a=G[0].sched.a,q={x:a.x-3,z:a.z};const L=Math.hypot(cx-q.x,cz-q.z)||1,ux=(cz-q.z)/L,uz=-(cx-q.x)/L,ix=(cx-q.x)/L,iz=(cz-q.z)/L;
+        /* his post: across the street, else beside the street on either hand, else a step in; the first spot that is open ground */
+        const C=[[-3,0],[ux*3,uz*3],[-ux*3,-uz*3],[ix*3-3,iz*3],[ix*4,iz*4],[ix*6,iz*6]].map(([dx,dz])=>({x:q.x+dx,z:q.z+dz})).filter(c=>Math.hypot(c.x-a.x,c.z-a.z)>1.5);
+        const lend=!SETTLE.has(site.id);if(lend)SETTLE.set(site.id,S); /* the town's own walls and houses, which solidAt reads from SETTLE once it is built */
+        const p2=C.find(c=>!solidAt(c.x,c.z))||C[0];if(lend)SETTLE.delete(site.id);
+        const def=makeDef(site,reg,r,'Guard',newName(),{nameKey:'g1',x:p2.x,z:p2.z,bCol:NAT.banner,sCol:0x808090});
+        const gn=spawnNPC(def,Math.atan2(cx-q.x,cz-q.z),true);gn.sched={type:'guard',a:p2,b:p2};snpcs.push(gn);}}
     if(S.dead)clearDead(); // S269 — the villagers and the watch are drawn after the ruin's clearing (so the draws stay put): a ruin keeps nobody in the street
     if(S._forge&&storyRuin(site)&&typeof buildBramBody==='function'){ // S270 — Bram's body at his forge, as in the legacy burned zone
       for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);
@@ -946,7 +957,7 @@
   function mapEntries(cell){
     const out=[];const c=cell;if(!c)return out;
     const SUB={glade:'Glade',shrine:'Shrine',lair:'Lair',tower:'Spire',bcamp:'Bandit camp',bridge:'Bridge'};
-    c.sites.forEach(t=>{if(t.kind==='portal')return;out.push({id:t.id,name:t.name,kind:t.kind,x:t.x,z:t.z,sub:SUB[t.kind]||(t.kind.charAt(0).toUpperCase()+t.kind.slice(1)),major:t.kind==='city'||t.kind==='town'||t.kind==='port'||t.kind==='garrison'||t.kind==='tower'||t.kind==='shrine'});});
+    c.sites.forEach(t=>{if(t.kind==='portal')return;out.push({id:t.id,name:t.name,kind:t.kind,x:t.x,z:t.z,sub:t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t)?'Glade · grown thick since the beast died':SUB[t.kind]||(t.kind.charAt(0).toUpperCase()+t.kind.slice(1)),major:t.kind==='city'||t.kind==='town'||t.kind==='port'||t.kind==='garrison'||t.kind==='tower'||t.kind==='shrine'});});
     c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`,major:e.kind==='fort_door'});});
     c.peaks.forEach(p=>out.push({id:p.id,name:p.name,kind:'peak',x:p.x,z:p.z,sub:'Mountain',major:true}));
     c.lakes.forEach(l=>out.push({id:l.id,name:l.name,kind:'lake',x:l.x,z:l.z,sub:'Lake',major:true}));
@@ -1640,6 +1651,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const g=buildNPCMesh({role:roleName,name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
     g.rotation.y=type==='church'?0:Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
     intNPCMesh.userData.amble={wa:Math.random()*Math.PI*2,wt:1+Math.random()*3,minZ:.6,maxZ:npc.maxZ,minX:.8,maxX:W-.8,speed:.25,paused:npc.paused};
+    if(homeAsleepNow(house))laySleeper(intNPCMesh); /* S739 — asleep in bed, 23h to 5h (#240 A) */
     } else {intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }

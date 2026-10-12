@@ -1278,11 +1278,14 @@ function tickBossHud(){
   if(!hud) return;
   // Find the first alive boss in ZE. Multi-boss support is forward-compat
   // — for Session A there's only the Faolchú in burned Ashenmoor.
-  let boss = (typeof ZE!=='undefined' && ZE)
+  // S732 — below ground the bar reads the cavern's own foes on your floor, never the world's (the critic's s572: the crag's bear
+  // came down both floors at 100% and the master's bar never showed); in a room of another kind there is no boss
+  const dun=activeZoneId==='dungeon',under=dun||((typeof lid!=='undefined')&&lid!=='overworld'); /* S738 — a dungeon is read from the zone, not from lid: a portal without an id left lid undefined and the floor unchecked */
+  let boss = (!under && typeof ZE!=='undefined' && ZE)
                ? ZE.find(e=>e && e.isBoss && !e.dead && !e.locked && (activeZoneId!=='world' || (e.alert && Math.hypot(e.x-px,e.z-pz)<40))) // S270 — in the world, only a boss that is on you
                : null;
   if(!boss){ // v80 — lair beasts, captains, wyrms, and the masters below: the nearest alert boss within 40u
-    const L=(activeZoneId==='world')?((ZONES.world&&ZONES.world.enemies)||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);let bd=40;for(const e of L){if(!e||e.dead||!(e.boss||e.isBoss)||!(e.alert||e._agg))continue;const d=Math.hypot(e.x-px,e.z-pz);if(d<bd){bd=d;boss=e;}}if(boss&&!boss.displayName)boss.displayName=boss.name;}
+    const L=dun?(typeof ENEMIES!=='undefined'?ENEMIES:[]):under?[]:(activeZoneId==='world')?((ZONES.world&&ZONES.world.enemies)||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);let bd=40;for(const e of L){if(!e||e.dead||!(e.boss||e.isBoss)||!(e.alert||e._agg))continue;if(dun&&(e.floor||1)!==(typeof currentFloor!=='undefined'?currentFloor:1))continue;const d=Math.hypot(e.x-px,e.z-pz);if(d<bd){bd=d;boss=e;}}if(boss&&!boss.displayName)boss.displayName=boss.name;}
   if(!boss){
     if(hud.style.display !== 'none') hud.style.display = 'none';
     return;

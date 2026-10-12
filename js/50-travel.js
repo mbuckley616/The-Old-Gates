@@ -1284,6 +1284,7 @@ function interact(){
     }
     // Shopkeeper — open dialog first
     if(intNPCMesh && Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<2.2 && Math.abs(jumpY)<1.2){ // v80 S13 — same floor only
+      if(typeof sleeperAsleep==='function'&&sleeperAsleep())wakeSleeper(intNPCMesh,true); /* S739 — E wakes a sleeper, who then talks */
       const keeper=currentHouse?currentHouse.keeper:'';
       // v61ad: prefer SHOP_DIALOG_BURNED[keeper] when Ashenmoor has burned.
       // Currently only Edna has a burned-variant dialog (she's the sole
