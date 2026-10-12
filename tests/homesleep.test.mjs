@@ -19,9 +19,10 @@ const sweep = () => page.evaluate(() => { const b = INT_BEDS.find(b => b.owner =
   _sneaking = sn; return { n, seen, near, asleep: !!intNPCMesh.userData.asleep }; });
 
 // 1. at 23h30 the resident is on the bed, flat, and the room can be crossed unseen
+// (S752: the body is centred in the bed by its own shape, curled on its side, so x is within the bed's half-width, .43, not on its listed x)
 await enter(23.5);
 let s = await state();
-check('at 23h30 a home\'s resident is in, and asleep on their own bed (laid flat, over the bed)', s.has && s.asleep && s.rx === -1.57 && Math.abs(s.x - s.bed[0]) < .01 && s.z > s.bed[1] && s.z < s.bed[1] + 1.2 && s.y > .4, s);
+check('at 23h30 a home\'s resident is in, and asleep on their own bed (laid flat, over the bed)', s.has && s.asleep && s.rx === -1.57 && Math.abs(s.x - s.bed[0]) < .43 && s.z > s.bed[1] && s.z < s.bed[1] + 1.2 && s.y > .4, s);
 let w = await sweep();
 check('asleep, they see no one anywhere in the room beyond two units of the bed', w.n > 30 && w.seen === 0 && w.asleep, w);
 // the chest: opened by the player at it, unseen

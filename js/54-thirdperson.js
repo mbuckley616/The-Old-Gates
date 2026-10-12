@@ -273,6 +273,17 @@ function tpPose(R,dt,st){
   if(R.gripL&&R.weapon&&TP.deadT<.01&&!(typeof castT!=='undefined'&&castT>0))tpGripL(R);
   // the head looks where you look
   tpSet(R.head,Math.max(-.6,Math.min(.5,-pitch*.6))-tx*.3,-ty*.6,0,kf);
+  // S743 — Michael's A on #237: up a boarding net hand over hand, three reaches in the climb, the elbows bending as each hand
+  // comes down, the knees stepping up the mesh in time, the head tipped up and the torso leaning in; over the rail (the last
+  // fifth) the legs straighten and the body comes upright; laid over this frame's pose with a weight that comes up in .08 s
+  const CP=(typeof climbPose==='function')?climbPose():null;
+  TP.climbW=CP?Math.min(1,(TP.climbW||0)+dt*12):0;
+  if(CP){const s=Math.sin(CP.u*3*Math.PI*2),q=Math.max(0,(CP.u-.8)/.2),w=1-q,c=TP.climbW;
+    tpSet(R.shL,-2.55*w-.3*q+.45*s*w,-.15*w,.12*w,c);tpSet(R.elL,(-.55-.45*(1+s)/2)*w-.3*q,0,0,c);
+    tpSet(R.shR,-2.55*w-.3*q-.45*s*w,.15*w,-.12*w,c);tpSet(R.elR,(-.55-.45*(1-s)/2)*w-.3*q,0,0,c);
+    tpSet(R.thighL,(-.95-.35*s)*w-.3*q,0,0,c);tpSet(R.kneeL,(1.35+.3*s)*w+.3*q,0,0,c);tpSet(R.thighR,(-.95+.35*s)*w-.3*q,0,0,c);tpSet(R.kneeR,(1.35-.3*s)*w+.3*q,0,0,c);
+    if(R.ankleL){tpSet(R.ankleL,0,0,0,c);tpSet(R.ankleR,0,0,0,c);}
+    tpSet(R.torso,.18+.25*q,0,0,c);tpSet(R.head,-.4+.3*q,0,0,c);}
   // death: down on the back
   R.root.rotation.x=-TP.deadT*Math.PI/2;R.root.position.y-=TP.deadT*.1;
 }
@@ -302,6 +313,7 @@ function tpUpdate(dt,st){
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
+  {const cp=(typeof climbPose==='function')?climbPose():null;if(cp)R.root.rotation.y=cp.ry;} /* S743 — on a net the body faces the hull */
   // S154 — the stride follows the ground; S162 — and runs past PW.RUN.on heights a second, as the townsfolk do
   {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;const s=R.root.scale.x||1,v=dt>0?d/dt:0;
     TP.v=(TP.v||0)+(v-(TP.v||0))*(1-Math.exp(-dt/.15));

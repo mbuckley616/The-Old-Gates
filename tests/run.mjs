@@ -55,7 +55,7 @@ const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'ar
   settingsheet: 136, shark: 56, shells: 56, shipaim: 46, shiparchers: 60, shipdead: 59, shiphull: 59, shiphulls: 45, shiplog: 96,
   shipmoor: 67, shipnets: 77, ships: 52, shipwreck: 54, shipwright: 116, shipwrightvoice: 48, shoperrands: 113, shopfurn: 85,
   shophours: 82, shoprows: 56, shopsight: 240, shoreplaces: 81, shoresave: 83, siegeturn: 60, signposts: 63, signs: 64,
-  sitechest: 51, sitefoes: 57, skirtlegs: 16, slamdamage: 168, slimes: 58, slimeseed: 57, slimesplit: 56, slipdate: 46,
+  sitechest: 51, sitefoes: 57, skirtlegs: 16, slamdamage: 168, sleeperpose: 120, slimes: 58, slimeseed: 57, slimesplit: 56, slipdate: 46,
   smoke: 171, snowpine: 13, snowrepaint: 70, spentguard: 88, spiders: 52, stairrail: 219, standingcount: 47, stolenstack: 53,
   stonecress: 45, stowdeck: 73, streetcone: 58, swingblade: 61, talkaim: 64, targetof: 53, taskhomes: 119, tells: 48, theft: 107,
   theftlevel1: 69, thresholdname: 83, tithe: 47, told: 135, toldpages: 48, townbio: 58, towngate: 106, townlocks: 71,

@@ -1579,7 +1579,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const port=new THREE.Mesh(new THREE.CircleGeometry(.32,12),new THREE.MeshBasicMaterial({color:0x7ac8ff}));port.position.set(W-.04,1.3,D*.6);port.rotation.y=-Math.PI/2;sc_.add(port);
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else { // home
-      bedAt(1.2,1.4,0);if(!gallery)intBedPos={x:1.2,z:1.4};else intBedPos={x:W-1.2,z:1.2};
+      bedAt(1.2,1.4,0);INT_BEDS[INT_BEDS.length-1].cz=1.2;/* S752 — the kit's bed stands at z 1.2 (K.home); the sleeper lies in it */if(!gallery)intBedPos={x:1.2,z:1.4};else intBedPos={x:W-1.2,z:1.2};
       // S286 — the home's furniture on the kit (#46 A): a box bed, the stone hearth, a table and two chairs with a candle, the
       // chest, two dressed shelves and a rag rug, by the nation's wood, baked to one mesh (and the flames); the old boxes' places
       {const K=furnKit(),seed=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)%100000;
