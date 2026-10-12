@@ -14,6 +14,15 @@ Gaoth (wind) is not rolled yet in any option: its table wants wisps and *somethi
 
 ## Answered
 
+### The gates by school: what foes each school's gate holds (systems builder, Session 759, 2026-10-12) — DECISION #252
+Your A on the gates by school made goblins an *occupied* state, not a kind of gate; Session 759 built that (a gate that drew *goblin* is now an occupied gate of a school, lit in its school's shape, holding the goblins, kobolds and Shieldbearers). The canon's table (§9a) also names each school's foes, and that is a rule of play, so it is yours. What stands today: each gate draws its foes from six slots (a foe named twice comes twice as often), and a foe joins only from its level: Skeleton, Goblin and Slime at 1, Cave Troll at 2, Golem, Phantom and Fire Elemental at 3, Gargoyle and Mimic at 4, Wraith at 5. Built to the table exactly, a level-one character in a Cloch (stone) gate meets only Skeletons (the fallback), and in a Scáth (shadow) gate the same until level 3. Cloch's gate today still holds Goblins and Shieldbearers.
+- **A. The table, with a level-one foe kept in each** *(recommended)*: Solas Skeleton ×4, Phantom, Wraith (as now, the Mimic out); Tine Fire Elemental ×2, Slime ×2, Golem, Cave Troll; Uisce Slime ×2, Skeleton (drowned), Cave Troll, Mimic, Slime; Cloch Golem ×2, Gargoyle, Cave Troll, Skeleton ×2; Scáth Phantom ×2, Wraith, Mimic, Skeleton ×2. Goblins, kobolds and Shieldbearers only in occupied gates. Every gate has something to fight at level one, and each school reads as its table from level 3 or 4.
+- **B. The table exactly**: only the foes the table names; below a school's first level its gate holds the Skeleton fallback.
+- **C. Keep today's six lists**, taking only the Goblin and Shieldbearer out of Cloch's (a Skeleton and a Gargoyle in their place).
+Gaoth (wind) is not rolled yet in any option: its table wants wisps and *something winged*, which are meshes the look builder has not made.
+
+Michael: **The table, with a level-1 foe kept in each** (A, tapped on the control room). (12 Oct 2026)
+
 ### What gives an old gate its character: its theme, its god, or its school? (Claude, Session 754, 2026-10-12)
 Raised in chat over a bestiary sheet Michael had made: the six dungeon themes (undead, goblin, elemental, deep, haunted, ruins) date from *Dungeon of Shadows* and have no reason in the canon. "Why would we have a 'goblin' gate? Shouldn't it be tied to the magic type?"
 - **A. By school** *(recommended)*: each gate belongs to one of the six schools (Tine, Uisce, Cloch, Scáth, Solas, Gaoth). Its sigil teaches that school's words, and its stone, light, hazards and antibodies take that school's shape. Goblins become a state any gate can be in: *occupied*.
@@ -60,7 +69,7 @@ Your sailing playtest (6 Oct) asked for a road from a port's town to its shipyar
 Pictures (left today, right A; the wall is laid in the page by `docs/prototypes/quaycut/shoot.mjs`, not in the game):
 - From the lane in the deepest part of the cut, looking down to the quay: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-lane.png
 - From above the lane: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/quaycut-above.png
-Michael: **A dry-stone retaining wall at the foot of each bank** (A). (11 Oct 2026)
+Michael: **A dry-stone retaining wall at the foot of each bank** (A). (11 Oct 2026) **Built, Session 744** (`tests/quaywall`, `docs/prototypes/quaywall-lane.png`, `-above.png`).
 
 ### The climb up a boarding net: a hand-over-hand pose on the net, the pose alone, or as it is? (the look builder, Session 726, 2026-10-11) — DECISION #237
 The boarding nets (Session 638's rule, Session 723's look) are climbed with E in 0.8 s. In third person today the body slides on a straight line from the water to the rail in whatever pose it had: it stands upright with its arms down, and for most of the climb it passes through the hull's planking and cannot be seen (the top row, the middle frame). First person shows nothing of it. How should the climb look?
@@ -72,7 +81,7 @@ The boarding nets (Session 638's rule, Session 723's look) are climbed with E in
 Under A, first person could also show both hands reaching up into view on the rope. That is not prototyped; say if you want it.
 
 Picture (top row today, bottom row A; a quarter, a half and nine-tenths of the way up; the pose is laid in the page by `docs/prototypes/climb/shoot.mjs`, not in the game): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/climb-net.png
-Michael: **Hand over hand on the net, then over the rail** (A). (11 Oct 2026)
+Michael: **Hand over hand on the net, then over the rail** (A). (11 Oct 2026) **Built, Session 743** (`tests/netclimb`, `docs/prototypes/climb-built.png`).
 
 ### A householder at night — asleep in bed, asleep but light, or awake as now? (systems builder, 2026-10-11) — DECISION #240
 Section B's witness rule says *anyone awake … not asleep indoors*. Nobody sleeps. A home's resident is inside from 21h to 7h (`npcInsideNow`), on their feet the whole night, walking the room between the door and the hearth. The critic's s572 run picked Sinéad's door in Carraig Mór at 23h30 and found her a step inside; she turned as the chest's lock opened and saw it. So every night burglary of a home is done in front of its owner, and the only way to rob a home unseen is to time her turned back. Outdoors at night the street is nearly empty (Carraig Mór has one man awake after 21h), so the home is now the harder target than the shop, which is the wrong way round.

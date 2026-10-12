@@ -1044,9 +1044,16 @@ function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h
   p.thL=[th,0,.12];p.thR=[th,0,-.12];p.knL=[kn,0,0];p.knR=[kn,0,0];p.anL=[-(th+kn)+.05,0,-.08];p.anR=[-(th+kn)+.05,0,.08];
   p.spine=[.6,0,0];p.neck=[-.35,0,0];p.head=[-.3,0,0];p.shL=[-.75,0,.18];p.shR=[-.75,0,-.18];p.elL=[-.35,0,0];p.elR=[-.35,0,0];p.wrL=[.3,0,0];p.wrR=[.3,0,0];
   p.hipsY=h+PW.FOOT+PW.HIPJ;return p;}
+// S752 — asleep in bed (the look half of Michael's A on #240): on the left side, the knees drawn up, the under arm bent with
+// its hand by the pillow, the upper arm laid forward over the hip; nothing moves but a slow breath. personLie turns the body.
+function pwSleep(t,o){const p=pwZero();const br=Math.sin(t*1.2);
+  p.spine=[.24+.02*br,0,0];p.neck=[.14,0,0];p.head=[.08,0,0];
+  p.shL=[-1.3,0,.08];p.elL=[-1.6,0,0];p.wrL=[.25,0,0];p.shR=[-.6+.015*br,0,-.04];p.elR=[-.75,0,0];p.wrR=[.15,0,0];
+  p.thL=[-1.0,0,.05];p.knL=[1.3,0,0];p.anL=[.35,0,0];p.thR=[-1.2,0,-.03];p.knR=[1.55,0,0];p.anR=[.35,0,0];
+  p.hipsY=PW.HIPS;return p;}
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
-  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):pwIdle(t,o);
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
@@ -1191,6 +1198,51 @@ function ragdollFoe(e,tag,ground,solid){
   e.mesh.position.set(e.x,ground(e.x,e.z),e.z);e.mesh.updateMatrixWorld(true);
   return !!(rig===beast?creatureRagdollStart:ragdollStart)(rig,new THREE.Vector3(dx*k,heavy?.6:0,dz*k),{ground,solid});
 }
+// S752 — a townsperson laid in a kit bed (1.5 long, .86 wide, the head at -z; bed = {x,z} its middle, y its floor): the sleep pose,
+// the body turned on its left side facing +x and fitted to the mattress from its own skinned vertices, the head on the pillow, and
+// the quilt drawn up over it to the neck, draped on the body's shape (a height field over the bed, the cloth falling off the body
+// at about 50°), hanging over the sides and the foot. One mesh, 1,000-odd triangles, built once; personRise takes it away.
+const SLEEP_BED={L:1.5,W:.86,TOP:.42,SIDE:.255};const SLEEP_LID=[new THREE.SphereGeometry(.0178,10,6),new THREE.BoxGeometry(.03,.0016,.004)];
+function personSkinPts(rig){const mesh=rig.mesh,geo=rig.geoHi||mesh.geometry,sk=mesh.skeleton;rig.root.updateMatrixWorld(true);sk.update();
+  const M=sk.boneMatrices,P=geo.attributes.position.array,SI=geo.attributes.skinIndex.array,SW=geo.attributes.skinWeight.array,E=mesh.matrixWorld.elements,n=P.length/3,out=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const x=P[i*3],y=P[i*3+1],z=P[i*3+2];let tx=0,ty=0,tz=0;
+    for(let k=0;k<4;k++){const w=SW[i*4+k];if(!w)continue;const o=SI[i*4+k]*16;tx+=w*(M[o]*x+M[o+4]*y+M[o+8]*z+M[o+12]);ty+=w*(M[o+1]*x+M[o+5]*y+M[o+9]*z+M[o+13]);tz+=w*(M[o+2]*x+M[o+6]*y+M[o+10]*z+M[o+14]);}
+    out[i*3]=E[0]*tx+E[4]*ty+E[8]*tz+E[12];out[i*3+1]=E[1]*tx+E[5]*ty+E[9]*tz+E[13];out[i*3+2]=E[2]*tx+E[6]*ty+E[10]*tz+E[14];}
+  return out;}
+function personLie(m,bed){const rig=m&&m.userData.rig;if(!rig||!m.parent)return false;personRise(m);
+  for(const k in rig.w)rig.w[k]=0;rig.w.sleep=1;rig.sleep=true;pwApply(rig,pwSleep(0,pwOpts(rig)));
+  const B=SLEEP_BED,y0=bed.y||0;m.rotation.set(-Math.PI/2,Math.PI/2,0);m.position.set(bed.x,y0,bed.z);
+  let pts=personSkinPts(rig),x0=1e9,x1=-1e9,ym=1e9,zm=1e9;
+  for(let i=0;i<pts.length;i+=3){x0=Math.min(x0,pts[i]);x1=Math.max(x1,pts[i]);ym=Math.min(ym,pts[i+1]);zm=Math.min(zm,pts[i+2]);}
+  // the side on the mattress (sunk .02 into it), the crown a hand from the headboard, the body across the middle of the bed
+  m.position.set(bed.x+bed.x-(x0+x1)/2,y0+y0+B.TOP-.02-ym,bed.z+(bed.z-B.L/2+.07)-zm);
+  pts=personSkinPts(rig);const neck=new THREE.Vector3();rig.B.neck.getWorldPosition(neck);
+  // the quilt: columns across the bed with a hanging one at each side, rows from the neck to the foot with a hanging one past it
+  const NX=15,NZ=22,za=neck.z-bed.z+.1,zb=B.L/2+.02,hw=B.W/2-.03,xs=[-B.W/2-.005],zs=[];
+  for(let i=0;i<NX;i++)xs.push(-hw+2*hw*i/(NX-1));xs.push(B.W/2+.005);for(let j=0;j<NZ;j++)zs.push(za+(zb-za)*j/(NZ-1));zs.push(zb+.012);
+  const h=new Float32Array(NX*NZ).fill(B.TOP+.006),dx=2*hw/(NX-1),dz=(zb-za)/(NZ-1);
+  for(let i=0;i<pts.length;i+=3){const lx=pts[i]-bed.x,ly=pts[i+1]-y0+.03,lz=pts[i+2]-bed.z;if(lz<za-.12||ly<B.TOP)continue;
+    for(let c=0;c<NX;c++){const ex=Math.abs(xs[c+1]-lx);if(ex>.3)continue;for(let r=0;r<NZ;r++){const ez=Math.abs(zs[r]-lz);if(ez>.3)continue;
+      const v=ly-1.2*Math.max(0,Math.hypot(ex,ez)-.05);if(v>h[r*NX+c])h[r*NX+c]=v;}}}
+  {const t=h.slice();for(let r=0;r<NZ;r++)for(let c=0;c<NX;c++){let a=0,n=0;for(let rr=Math.max(0,r-1);rr<=Math.min(NZ-1,r+1);rr++)for(let cc=Math.max(0,c-1);cc<=Math.min(NX-1,c+1);cc++){a+=t[rr*NX+cc];n++;}h[r*NX+c]=Math.max(B.TOP+.006,a/n);}}
+  const K=furnKit(),cl=(K.WOOD[INT_BED_NATION]||K.WOOD.gatelands).cloth,pos=[],col=[],idx=[],C=new THREE.Color(),GX=NX+2,GZ=NZ+1;
+  for(let r=0;r<GZ;r++)for(let c=0;c<GX;c++){const edge=c===0||c===GX-1||r===GZ-1,hr=Math.min(r,NZ-1),hc=Math.min(Math.max(c-1,0),NX-1);
+    pos.push(xs[c],edge?B.SIDE:h[hr*NX+hc],zs[r]);const z=zs[r];
+    if(z<za+.13)C.setHex(0xe0d4b8);else{C.setHex(cl[Math.min(2,Math.floor((z-za-.13)/((zb-za-.13)/3)))]);}C.multiplyScalar(edge?.85:1);col.push(C.r,C.g,C.b);}
+  for(let r=0;r<GZ-1;r++)for(let c=0;c<GX-1;c++){const a=r*GX+c;idx.push(a,a+GX,a+1,a+1,a+GX,a+GX+1);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.setIndex(idx);geo.computeVertexNormals();
+  // the eyes closed: a lid of the skin's tone over each eye (the eyes are baked into the body), and the crease under it, on the head bone
+  if(rig.eyes&&rig.eyes.length&&!rig.lids){const G=new THREE.Group(),lm=new THREE.MeshStandardMaterial({color:new THREE.Color(rig.g.skin).multiplyScalar(.9),roughness:.86}),
+      dm=new THREE.MeshStandardMaterial({color:0x3a2418,roughness:.9});G.userData.mats=[lm,dm];
+    for(const [ex,ey,ez] of rig.eyes){const l=new THREE.Mesh(SLEEP_LID[0],lm);l.position.set(ex,ey,ez-.008);l.scale.set(1.02,.82,.85);G.add(l);
+      const c=new THREE.Mesh(SLEEP_LID[1],dm);c.position.set(ex,ey-.0035,ez+.0062);G.add(c);}
+    rig.B.head.add(G);rig.lids=G;}
+  const cover=new THREE.Mesh(geo,K.MAT);cover.position.set(bed.x,y0,bed.z);cover.receiveShadow=true;cover.userData.sleepCover=true;m.parent.add(cover);m.userData.cover=cover;
+  return true;}
+function personRise(m){const rig=m&&m.userData.rig,cv=m&&m.userData.cover;if(cv){if(cv.parent)cv.parent.remove(cv);cv.geometry.dispose();m.userData.cover=null;}
+  if(rig&&rig.lids){rig.lids.parent&&rig.lids.parent.remove(rig.lids);rig.lids.userData.mats.forEach(x=>x.dispose());rig.lids=null;}
+  if(rig&&rig.sleep){rig.sleep=false;for(const k in rig.w)rig.w[k]=0;rig.w.idle=1;}}
 function tickPeople(dt,now){
   if(RAGDOLLS.size)tickRagdolls(dt); // S419 — the fallen
   for(const rig of PEOPLE_RIGS){
@@ -1220,11 +1272,12 @@ function tickPeople(dt,now){
     rig.lastNear=near;
     let mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
+    if(rig.sleep)mode='sleep'; // S752 — asleep in bed (personLie)
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
     const t=now/1000*rig.g.tempo+rig.g.phase;
     {const P=pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig));pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];}
-    if((rig.B.cloak||rig.B.hairB)&&!rig.lod)peopleSwing(rig,dt); // S267
+    if((rig.B.cloak||rig.B.hairB)&&!rig.lod&&!rig.sleep)peopleSwing(rig,dt); // S267; a sleeper's hair and cloak lie still (S752)
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways
     if(rig.g.gargoyle){const f=rig.e&&rig.e.dormant?1:0;rig.fold+=(f-rig.fold)*(1-Math.exp(-dt/.3));const fo=rig.fold,beat=Math.sin(now*.005+rig.g.phase)*(1-fo);

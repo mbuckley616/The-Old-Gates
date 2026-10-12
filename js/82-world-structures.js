@@ -421,6 +421,51 @@
     const ya=baseH(A.x,A.z),yb=Math.max(SEA_Y+.6,baseH(B.x,B.z)),n=Math.max(2,Math.round(L/3)),pts=[];
     for(let i=0;i<=n;i++){const u=i/n;pts.push({x:A.x+(B.x-A.x)*u,z:A.z+(B.z-A.z)*u,y:ya+(yb-ya)*u});}
     const road={def:{a:'quay_'+t.id,b:'road',via:'quay'},pts};ROADS.push(road);indexRoad(road);return road;}
+  // S744 — Michael's A on #236: where a port's lane cuts deeper than 1.2 into the ground (the ground 8 out over the lane), a
+  // dry-stone retaining wall stands at the foot of each bank: coursed grey stone in courses of about .35, a tone a stone, broken
+  // joint course on course, the face battered back 1 in 5, a cap of flat stones, at most 2.6 over the lane. Behind the cap a
+  // strip of turf in the ground's own colour runs back 3.5 to the drawn bank, so the bank sits on the wall rather than dipping
+  // behind it. One mesh on VC_MAT, built with the lane in its cell; solid along its foot (posts of .45 every 1.2).
+  const QW_DEEP=1.2,QW_MAX=2.6,QW_OFF=ROAD_HALF+.3;
+  function quayWallGeo(rd){const P=rd.pts,A=P[0],B=P[P.length-1],L=Math.hypot(B.x-A.x,B.z-A.z);if(L<3)return null;
+    const dx=(B.x-A.x)/L,dz=(B.z-A.z)/L,yAt=s=>A.y+(B.y-A.y)*s/L,pos=[],col=[],sol=[],_c=new THREE.Color();
+    const stone=[0x857d70,0x7c7468,0x8a8275,0x77706a],capC=new THREE.Color(0x6a6458),capT=new THREE.Color(0x7a7366);
+    const tri=(a,b,c,cl)=>{for(const q of [a,b,c]){pos.push(q[0],q[1],q[2]);col.push(cl.r,cl.g,cl.b);}};
+    // a quad a→b→c→d, wound so its face looks along the cross product of a→b and a→d, or the other way when flip
+    const quad=(a,b,c,d,cl,flip)=>{if(flip){tri(a,c,b,cl);tri(a,d,c,cl);}else{tri(a,b,c,cl);tri(a,c,d,cl);}};
+    for(const sd of [1,-1]){const nx=dz*sd,nz=-dx*sd,fl=sd<0;let run=[];
+      const at=(r,o,y)=>[r.x+nx*o,y,r.z+nz*o];
+      const flush=()=>{if(run.length<2){run=[];return;}
+        // the face: courses following the top, each laid in stones of .45–1.25 along, broken joint course on course
+        const n=run.length-1,courses=Math.max(2,Math.round(run.reduce((a,r)=>a+r.top-r.y0,0)/run.length/.35));
+        const R=f=>{const i=Math.min(n-1,Math.floor(f)),t=f-i,a=run[i],b=run[i+1];return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,y0:a.y0+(b.y0-a.y0)*t,top:a.top+(b.top-a.top)*t};};
+        const F=(r,u)=>{const y=r.y0+(r.top-r.y0)*u;return at(r,QW_OFF+(y-r.y0)*.2,y);};
+        for(let c=0;c<courses;c++){const u0=c/courses,u1=(c+1)/courses;let f=0,j=0;
+          while(f<n-1e-6){const h=((c*131+j*977+Math.round(run[0].x*7)+sd*53)*2654435761>>>0)%1000/1000,l=Math.min(n-f,j===0&&(c&1)?.5:.45+.8*h);
+            const cl=_c.setHex(stone[(c*3+j)%4]).clone().multiplyScalar(.95+.09*(((h*1000)|0)%7)/6);const a=R(f),b=R(f+l);
+            quad(F(a,u0),F(b,u0),F(b,u1),F(a,u1),cl,fl);f+=l;j++;}}
+        for(let k=0;k+1<run.length;k++){const p=run[k],q=run[k+1];
+          // the cap: a front lip, the top, the back
+          const C=(r,o,y)=>at(r,QW_OFF+(r.top-r.y0)*.2+o,y);
+          quad(C(p,-.12,p.top),C(q,-.12,q.top),C(q,-.12,q.top+.18),C(p,-.12,p.top+.18),capC,fl);
+          quad(C(p,-.12,p.top+.18),C(q,-.12,q.top+.18),C(q,.55,q.top+.18),C(p,.55,p.top+.18),capT,fl);
+          // the turf behind: from the cap's back edge to the drawn bank 3.5 further out, never below the cap
+          const T=(r,o)=>{const a=C(r,o,0);a[1]=Math.max(r.top+.16,meshH(a[0],a[2])+.04);return a;};
+          const gp=C(p,2,0),g0=groundColor(gp[0],gp[2],p.top,1,_c).clone();
+          quad(C(p,.55,p.top+.16),C(q,.55,q.top+.16),T(q,4),T(p,4),g0,fl);}
+        // the run's two ends: the coursed face turned back into the bank
+        for(const [r,e] of [[run[0],-1],[run[run.length-1],1]]){const o0=QW_OFF,o1=QW_OFF+(r.top-r.y0)*.2+.55;
+          const a=at(r,o0,r.y0),b=at(r,o1,r.y0),c=at(r,o1,r.top+.18),d=at(r,o0-.12,r.top+.18);quad(a,b,c,d,capC,(e>0)!==fl);}
+        run=[];};
+      for(let s=0;s<=L;s+=1){const x=A.x+dx*s,z=A.z+dz*s,y=yAt(s),hn=baseH(x+nx*8,z+nz*8);
+        if(hn-y>QW_DEEP)run.push({x,z,y0:y-.15,top:Math.min(hn-.4,y+QW_MAX)});else flush();}
+      flush();
+      for(let s=0;s<=L;s+=1.2){const x=A.x+dx*s,z=A.z+dz*s,y=yAt(s);if(baseH(x+nx*8,z+nz*8)-y>QW_DEEP)sol.push({cx:x+nx*(QW_OFF+.2),cz:z+nz*(QW_OFF+.2),rx:.45,rz:.45});}}
+    if(!pos.length)return null;
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();
+    return {geo:g,sol};}
+  function addQuayWalls(rd,k){const W=quayWallGeo(rd);if(!W)return null;const m=new THREE.Mesh(W.geo,VC_MAT);m.name='quaywall';m.castShadow=true;m.receiveShadow=true;m.userData.quayWall=true;sc.add(m);
+    for(const s of W.sol){s.cell=k;STATIC_SOL.push(s);}rd.wall={mesh:m,tris:W.geo.attributes.position.count/3,sol:W.sol.length};return m;}
   // Nearest road within RREACH: {d, y, seg} or null. noLane: a port's lane is not counted (the town's own plan, S618)
   function roadInfo(x,z,noLane){
     const arr=RGRID.get(rcell(x,z));
