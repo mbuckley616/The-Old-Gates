@@ -15054,6 +15054,28 @@ Shard 1 failed on `4a1af34` (main merged in: the pause leaf and its settings she
 ### Needs eyes
 - Nothing to play. `guardplay`'s exact `sC.hour === 7` is the same kind of miss and still has no fix anywhere; the patch is proposed on PR #212 for the systems builder.
 
+## v80 — Session 704 — The world map sharp at every zoom, and your work on it as seals (backlog E, Michael's A on #220; routed to the look builder by the producer, 10 Oct)
+Michael's two notes of 5 Oct: quest markers that work on the overworld map, and a map that is often blurry. The concept artist's prototype (`docs/prototypes/worldmap/proposal.js`, on auto/concept) measured both causes and wrote the fix as functions that replace their namesakes in `83-world-generator.js`. Michael chose A on #220 on 10 Oct, and the producer's post that day gave it to this builder by name. I lifted the prototype into the file. I did not paste it whole: today's `mapDraw` has gained the pinned notes, the other ships and the player's place indoors since the prototype copied it, so the live function is patched instead.
+
+Why it blurred. The canvas was sized in CSS pixels, so a laptop's ratio-2 screen drew everything at half resolution. A province's fine tile was 320 px, built 12 rows a frame, one tile at a time. Past about 320 screen pixels a province it was only stretched, and at the map's ×64 one tile pixel covered 14 screen pixels. Now `mapFit` sizes the store at CSS × devicePixelRatio, capped at 3. The maths stays in CSS pixels (`mapCssW`/`mapCssH`, what the mouse reads), and `mapDraw` draws through `setTransform`. A province's tiles are a quadtree of 256-px tiles (`mapStartQ`, `mapStepQ`, `mapDrawCell`). Its level is chosen so a tile pixel is never more than 1.15 screen pixels. The jobs spend 8 ms a frame across tiles, nearest the middle of the view first. A tile scrolled out of view waits, and past 160 quad tiles the longest unseen are let go. Until a tile lands, the best finished ancestor stands in, cropped, over the province's 48-px tile. The relief is shaded by slope per world unit, so a deep tile is shaded as strongly as the old fine tile. The hatched water keeps its lines about 45 units apart at any zoom. The old fine tile and its `startTile`/`tileStep` path stay for the coarse tile, and `WORLD.startTile` still exports them.
+
+The marks. The map kept its own list (`questMarkers`, 87), apart from the compass's. It had no mark for a job waiting to be reported, nor for directions or the story's people on the move, and it showed nothing below 60 px a province. `mapMarks` is now one list for both. It holds your quests and guild tasks with their names and lines, a job done marked at its giver, then everything else `compassMarkers` points at. Two marks closer than 2 units count as one. Each mark is a numbered wax seal at every zoom: red, go there; gilt with a tick, report back; blue, directions. Seals on one spot stand side by side. A name goes only where it is clear of the names already placed, and the hovered one is placed first. The prototype drew a hovered name over its neighbour, which this session's first screenshot showed; the fix is the hovered-first order. A mark beyond the view sits on the frame with an arrow and its distance, and marks off one side stack along it. With nothing hovered, the panel lists them under *Where your work is*, and the province card carries the list below it. A row, or a click on an edge seal, centres the map on that mark. Hovering a seal names its quest in the panel. The *Quests* filter hides the seals. The map's old quest icons (`kind:'quest'` from `mapEntries`) are no longer drawn, and `questMarkers` is left in place in the systems builder's file.
+
+The harness's `boot` takes `dpr` now (`deviceScaleFactor`), default 1.
+
+`docs/decisions.md` is not touched here: the producer's open PR #228 moves #220 under Answered with Michael's line, and an edit to the same entry would conflict with it. The note of what was done goes there once #228 is on main.
+
+### Verified (headless Chromium)
+`tests/mapseals` (new, 14 checks), booted at devicePixelRatio 2 with four of Dunmore's jobs, the letter delivered and waiting to be reported. The canvas is stored at 2042×866 for its 1021×433 CSS size. `mapMarks` gives the compass's four, numbered 1–4, with one gilt *Report to Mayor Niamh*. All four seals are drawn where the map opens, and still at the whole continent (36 px a province, where the old map drew none). At ×64, 1,500 units west of Dunmore, all four sit on the frame, inside it. The tile level gives 0.28, 1.13, 0.85, 1.06 and 1.13 screen pixels a tile pixel at ×1, ×4, ×12, ×30 and ×64 (levels 0, 0, 2, 3, 4); the old fine tile gave 14 at ×64. At ×64 the 32 deepest tiles in view build to the last job in 910 steps (8.3 s on SwiftShader, run without frames). The middle of that view has an edge contrast of 2.47 against 0.91 for the province tile stretched. With nothing hovered, the panel lists the four under *Where your work is*. A row centres its mark to 0 px and selects it. With a seal hovered, two names are drawn and none overlap. Hovering seal 1 names *Wolves at Dunmore, 450 u east of you*. The Quests filter takes the seals to 0 and back to 4. No page errors. `mapnotes` (the pinned notes, read through the same CSS-pixel maths) passes. Pictures from the map's own canvas: `docs/prototypes/mapseals-ingame.png` (×30 near Dunmore, mid-build: the middle sharp first, the edge still on the coarse tile), `docs/prototypes/mapseals-continent.png`.
+
+Two test-side fixes on the way, neither in the game. A page screenshot at ratio 2 outran 120 s on SwiftShader, so the pictures come from `toDataURL` on the map. Building every tile of a ×12 view in one go took 169 s, so the picture is framed at ×30 and capped at 400 job steps.
+
+### Needs eyes
+- On a real laptop screen: the map should be sharp the moment it opens, and sharpen further as you zoom, with no 48-px mush. The prototype measured 7.6 s on SwiftShader at ratio 2 for the fifteen provinces the map opens on (3.2 s at ratio 1), against 13.5 s before; a real GPU's canvas is faster.
+- The seals' sizes (8 px a side at the continent, 10 px closer in) and colours against the parchment, and whether four names near Dunmore read clearly.
+- Panning fast at ×64: tiles are let go past 160, so a long pan back rebuilds them; say if it flickers.
+- For the merge of #167: `mapMarks` reads `compassMarkers`, `qActive`, `taskDone` and `WAY` by their bare names, so a change to the compass's list shows on the map too.
+
 ## v80 — Session 705 — A witness in the street sees what they face (Michael's A on DECISION #222)
 Michael answered #222 with A: the street as the shop. Until now a townsperson or a guard outdoors saw a crime all round: anyone awake within 12 units with a clear line (6 sneaking or at night, 3 sneaking at night, 11 in the dark hood), whichever way they faced. Indoors, since his B on #73 (Session 368), a keeper sees only a 120° cone the way they face. So a lock could be worked behind a keeper's back and never behind a villager's.
 
@@ -15240,6 +15262,26 @@ Not built: A's line on the glade's card (*the glade is thick with herbs since th
 ### Needs eyes
 - A doubled glade by eye: 36 herbs in the ring round the pond, whether it reads as thick or as crowded.
 
+## v80 — Session 720 — `sailtrim` red on CI on the systems branch, a storm under the sails (backlog H, CI)
+The systems builder's post of 10 Oct named `sailtrim` red on shard 8 of their 487cb96: four seconds after the wind's swing the black sail's gaff stood at .41 against the rule's .322, and their branch does not touch the rigs. It is this builder's suite (Session 330), so the cause was mine to find. The log has the clue: between the check a tenth of a second after the swing and the one four seconds on, the rule's own target moved (the gaff from .375 to .322, the flag from .749 to .645). `g.spin` ticks only the world, so the clock stands still inside it; the clock moves only in the game's own loop, between the test's steps, at a minute a real second. In clear weather the wind drifts about .01 rad a game minute, nothing in a second or two. In a storm, `windDir()` adds gusts of up to .34 rad on a period of about four game seconds, so on a slow runner that came up stormy, the second or two of the page's own frames moved the wind by .1 rad while the sails were still easing to it. The game is right (sails lag a gust, as they should); the test read a settled trim against a wind that had not settled.
+
+The fix is in the test alone: the trim checks spin in clear weather (`g.spin('clear', …)`, three calls), with a comment saying why. The storm's gusts are still checked by the test's next step, which sets its own weather.
+
+### Verified (headless Chromium)
+Reproduced first: the test with its spins forced to storm and then thirty frames of .05 s of clock and world tick (what a slow runner's own loop does between steps) fails the settle check the way CI did, the gaff at .394 against .26 and the flag at .71 against .445. The same with clear weather passes, the gaff .371 against .37 and the flag on its mark. The edited suite passes whole (12 of 12), its gust check still 0 in clear and .644 in a storm.
+
+### Needs eyes
+Nothing in the game changed. If `blacksail` or `riversail` ever go red on a sail's angle, look first at the weather the run came up with.
+
+## v80 — Session 721 — `smoke` red on this PR: the old village was not there yet (backlog H, CI)
+Shard 2 failed on `06bad30` with `smoke`. The check *in the old village the game's own loop drives the smoke* read `loopRan: false`. The next step then threw in `smokeLegacy` reading the scene's chimneys, which did not exist yet. The game code on that head is byte-for-byte what passed CI on `49a8d7c`; the commits since change only `tests/sailtrim`. So it is the test, not the game. `goToZone('overworld', …)` fades before it builds the old Ashenmoor, and the test gave it six frames. On the runner the scene had not switched, so the forge's chimney was not in it, and the main loop, which smokes a scene only when `scene.userData.chimneys` exists, rightly did nothing. The test now waits for the old village's scene and its chimney before it reads the smoke's clock (up to 120 s). No game code changed.
+
+### Verified (headless Chromium)
+`smoke` passes, 13/13, locally (`loopRan: true`, the forge's 24 puffs rising 2+ and drifting downwind). The fault did not reproduce here, where the fade finishes inside six frames.
+
+### Needs eyes
+- Nothing to play.
+
 ## v80 — Session 722 — A panel closed by the mouse hands the keys back (the critic's s476–s482 runs)
 The critic has written *the keys stay dead until you click* on four runs. Session 625 fixed it for the death screen's *Load last save*, and the critic met it twice more after that (s480, s482). The death screen still holds: `diedload` passes, and a probe through the critic's own route (a dungeon, a death, the load, the dungeon again, E) kept the focus on the view at every step. The cause was elsewhere, and wider. The game reads its keys on `#g`. Most of the panels sit inside it, and a button clicked in one takes the focus. When the panel hides, Chrome drops the focus to the page, and W, E and the rest reach nothing until you click the view. `closeLoot`, `closeShop`, `closeStash`, `closeInv`, `closeHub` and the save menu already gave the focus back. The dialogue did not, nor did the notice board, the rest slip, the book reader, the shop's quantity prompt, the sigil stone or the quest card. The s482 run asked eight of Glencarra's people their questions with the mouse before walking to the lair, which is where its dead E at the hoard came from.
 
@@ -15250,3 +15292,293 @@ The critic has written *the keys stay dead until you click* on four runs. Sessio
 
 ### Needs eyes
 - In real Chrome with the pointer lock: after *Goodbye* clicked with the mouse, W walks at once, and the click that takes the mouse back still works as before.
+
+## v80 — Session 723 — The boarding nets laid on the hull (backlog H, #192's look half), and the map at the merge
+**The merge first.** Main took the systems builder's Sessions 564–722 today, among them 587 and 588: quest marks on the world map and a sharp map, the same two notes of Michael's (5 Oct) that this branch's Session 704 built from the concept artist's prototype, after Michael's A on #220 (10 Oct). The two met in `83-world-generator.js` in nine hunks. I kept Session 704's side, since it is the design Michael chose and it covers both notes: the quadtree of tiles in place of S588's 128-px tier and 320-px squares, the seals in place of S587's quest icons. S588's prune of the job queue (it read a `seen` set the quadtree has no use for) went with it. `mapLW`/`mapLH`, S588's names for the CSS size, stay as aliases of `mapCssW`/`mapCssH`. `startTile`'s `sub` argument stays as well; nothing draws through it now. Three tests followed. `mapsharp` (S588's) now measures the quadtree's tiles at your spot and lets `mapJobs` prune. Its thresholds are unchanged and pass: 0.88 texels a device pixel from ×4 to ×64 (S588 measured 1.11 on its tiers; the old map 0.07 at ×64). `mapquests` (S587's) reads the report-back seal in `MAP._marks`, at a cell under 60 px and at ×4. `mapseals` hovers at ×30 rather than ×12. Session 678 now rolls Dunmore's jobs by id, which put the other three names within a pixel of the hovered one at ×12, so the rule rightly drew one; the game was right there and the test's framing wasn't.
+
+**The nets.** The ship-in-hand page (`docs/design/the-ship-in-hand.md`, item 2) followed Michael's note under every option of #192: "a net of rope over the rail, about 300 triangles a side". Session 638 hung a stand-in: a grid of boxes in a flat plane, 7 cm off the widest beam, so it stood in the air where the hull tucks in and sank into it where the hull flares. `shipNetsGeo` (`85-world-sea.js`) lays the net on the hull's own loft instead. `shipBake` now keeps `at` (the half-breadth, gunwale and keel at any z), and the net reads the section's curve from it, walking down the planking from the gunwale to .6 below the waterline. It is a diamond mesh of tarred rope in two tones, 2.6 long (S638's `NET_HALF`): ten diamonds along and eight to nine down, each strand a flat ribbon 4 cm wide standing 3.5–6 cm off the planks, loosening towards the foot. It has a darker selvedge down both sides and along the foot, a round head rope lying on the rail, and three lashings over the rail to the inboard side. One bake a hull is cached on the bake and mirrored for the port side, on `SHIP_MAT` (two-sided). `buildShipMesh` hangs it in place of `shipNetMesh`, which stays in `86-world-crime.js` for a bake without a section. Nothing of the rule moved: `netBox`, the crosshair, the 0.8 s climb and `netRail` are the systems builder's and are untouched.
+
+The indoor doors item (H) needed nothing: the systems builder's Session 680 put `intDoorNear` behind the crosshair (`intDoorAimed`), and it is on main. It is struck through in the backlog.
+
+### Verified (headless Chromium)
+`tests/netlook` (new, 6 checks) covers five hulls in three looks each. Each net is 256 triangles a side (232 on the cutter, whose lower freeboard takes a row) and the two sides are even. Every strand above the head rope's lashings lies 3.4–6.4 cm off the loft's own surface and never inside it, measured against the section curve at the vertex's z. The nets run from .1 over the rail (1.58 on the sloop, rail 1.42) to .65 under the water. Above the waterline every vertex sits in the crosshair's box (|z| ≤ 1.35, from .25 inside the beam to .35 outside). One geometry is shared by every ship of a hull. No page errors. The suites for the climb and the hulls (`shipnets`, `blacksail`, `boardlines`, `hullbakes`): see the PR comment. Map suites after the merge: `mapseals` 14/14, `mapsharp` 6/6, `mapquests` 6/6, `mapnotes` pass. Pictures from the inspector: `docs/prototypes/shipnets-sloop.png`, `-cog.png`, `-caravel.png`.
+
+### Needs eyes
+- The net's rope against each hull's paint: the light tarred tone reads well on the brown and the caravel's blue in the inspector, but on the black-tarred cutter it may want to be lighter.
+- From the deck the net shows only as its head rope and lashings; say if it wants more over the rail.
+- The map after the merge: S587/S588's tiers and quest icons are gone and S704's quadtree and seals stand. If anything S588 did (its 160-square cap, the queue dropping off-screen work) felt better on a real screen, it is in the history: `TILE_M` and the squares arrive on main in `355d059`.
+- Still owed from #192: the climb pose, and the stowage (next).
+
+## v80 — Session 724 — The hold on deck (backlog H, #192's look half)
+The ship-in-hand page, item 4, followed Michael's note under every option of #192: the crates go aboard and are seen there. They are "stowed in her waist under a lashing net, one box, sack or barrel per crate in its good's shape ... merged into one mesh, about 12 triangles a crate", and the pirates' take "lifts its half off the deck where you can see it go". The systems builder's sessions put the hold in `worldState.ship.hold` (good → crates) and empty it when she sinks. Until now nothing on deck showed it.
+
+**Where it goes.** `shipStowSlots` works out a bake's slots once and caches them on the bake. It uses a strip down her middle, from 4.2 forward of the stern (the wheel and its post clear) to 4.2 short of the bow (the hatch clear), in .56 squares. A slot that comes within a walker's width of any prop the bake records (the masts, the deck's barrels and crates, the wheel's post) is left out. So is any slot wider than the rail's walk allows: the nets set you down at W/2−.8 (`netRail`), and the pile keeps .3 clear of that on both sides. The slots fill nearest the middle first, each stacked to the top before the next, so six crates are one pile by the mast, not a layer down her length. A pile stands three high, two on the cutter, whose boom is 1.35 over her deck. The heavier goods go first, so they sit lowest. The waist holds 66 on a sloop, 219 on a cog, 558 on a galleon, 50 on a cutter and 174 on a caravel. Every base hold fits; at the third hold tier a sloop shows 66 of her 90 and a cutter 50 of her 75. The rest are below and not drawn, which the backlog notes.
+
+**What it is.** `shipStowGeo` gives each good a form and a colour. Grain and salt are sacks (a box whose top is drawn in to .62), wool, furs and hides bales, beef and fish casks (six staves and a head, 16 triangles), and iron, dyes and glass crates. Silver is a lower, darker chest; timber a narrow bundle on end. Each is 12 triangles, the cask aside. Each crate's tone varies by ±9% and its turn by ±.08 rad, seeded by its place in the pile, so a pile is never stamped. The lashing net is a rope over every other row of the pile athwartships, from the deck up over the tops and down again, and one fore and aft along every other file: flat ribbons 5 cm wide. It is one mesh on `SHIP_MAT` named `stow`, a child of her hull.
+
+**What it does.** `shipStowSync` runs from `tickSailTrim`, your own ship only. It compares a signature of the hold and rebuilds the pile when it changes, so a cargo bought, the pirates' take and a sinking all show at the next tick. It only reads `worldState.ship.hold`; it creates nothing there (`holdOf` would). The pile is solid by rows: one box a run of slots at one z joins `mesh.userData.props`, which `shipPropSolid` already walks (S616). A row that would close over you, as on a reload with you standing in the waist, stays open until you are clear of it (`shipStowSolid`). `shipStowOn(mesh,hold)` puts a pile on any ship's mesh, for the test and the inspector's pictures. `buildShipMesh` now records `userData.bakeKey`.
+
+Correction to Session 723's entry: it left the climb's and hulls' suites to the PR comment. They passed there: `shipnets`, `blacksail`, `boardlines`, `hullbakes`.
+
+### Verified (headless Chromium)
+`tests/stowdeck` (new, 14 checks). Five hulls at their full third-tier hold of mixed goods: every base hold fits in the waist, at three high (two on the cutter). The pile shows min(hold, slots × layers): 66, 110, 140, 50 and 105. One crate of a good with its lashing is 32 triangles (36 for a cask). A galleon's 140 come to 2,012. Every vertex stands within .85–1.69 of her middle, at least .3 inside the net's landing (1.4–2.7). The pile tops out at 1.49 over the deck (.99 on the cutter), under the sloop's boom at 1.6 and the cutter's at 1.35, and no vertex enters a mast, barrel or crate. Six crates on a cog span 1.12 along her. The pile is solid by rows (8–10 boxes added). Live, a sloop at sea with 10 grain, 5 iron and 3 fish shows 18. The pirates' take (`pirateTake`) lifts 9 and the deck shows 9. The pile's first row is solid, and the rail above each net is not. An emptied hold leaves an empty deck. No page errors. Pictures from the inspector: `docs/prototypes/stowdeck-sloop.png` (36 crates), `-galleon.png` (140).
+
+### Needs eyes
+- The pile's look: whether the crates' tones read as goods (pale sacks and wool, dark furs and casks), and whether the lashing reads as a net.
+- At sea: walking her deck round the pile, and that the climb's landing at the rail stays clear on every hull.
+- Holds beyond the waist (a sloop's or a cutter's third tier) draw what fits. A tier-three sloop could stack four high instead, but her boom says no.
+- Still owed from #192: the climb pose.
+
+## v80 — Session 725 — Portclare's cut to the quay, a prototype (docs only; DECISION #236)
+The backlog's last owed look item from the sailing playtest: the systems builder's quay lane (Session 618, on main since today) is graded evenly from Portclare down to its quay, so it cuts through the ridge behind the town. Session 620 left the question of a wall or steps until the lane reached main. Measured along the lane every 4 units, the ground 8 out stands over it by up to 8.9 on one side and 7.1 on the other. The cut runs for about 70 of the lane's 92 units, deepest from 36 to 60. Its sides are the road's own blend: steep turf banks going straight up from the verge.
+
+The prototype (`docs/prototypes/quaycut/shoot.mjs`) loads the cut's ground, then shoots it twice from the same two places, once as it is and once with a wall laid in the page. The wall stands at the foot of each bank wherever the ground 8 out is more than 1.2 over the lane. It is coursed grey stone in courses of about .35, its face battered back 1 in 5, with a cap of flat stones and at most 2.6 high, with the turf bank going on above it. The first try ran the wall to the bank's full height and made a canyon of stone, which is why it stops at 2.6. At Portclare it comes to 2,550 triangles. The question went to Michael as DECISION #236: A the wall (recommended), B the banks as they are, C steps over the ridge instead of the cut. Nothing in the game changed.
+
+### Verified (headless Chromium)
+The script's profile, Portclare's lane from the perimeter lane (7.6) to the quay head (1.0): one side's ground 8 out stands 1.3 over it at 0, 5.8 at 8, 7.3 at 20, 8.7 at 40, 8.9 at 52–56, 8.0 at 64, 2.3 at 72, and level from 76. The other side reads 1.3 at 8, 5.9 at 32, 7.1 at 40–44, 4.4 at 64, and level from 68. Pictures: `docs/prototypes/quaycut-lane.png` (in the cut, looking down to the quay; left today, right the wall), `docs/prototypes/quaycut-above.png` (from over the lane).
+
+### Needs eyes
+- Michael's answer on #236. Under A, the wall would be built with the lane (`addQuayLane`'s cell) and the bank behind it flattened to the wall's top, so it does not stand free of the turf as it does in the prototype's overhead picture.
+
+## v80 — Session 726 — The climb up a net, a prototype (docs only; DECISION #237)
+The last look item owed from #192 is a climb pose. Session 638's climb moves you from where you started (in the water off the net, or on a quay) to the rail above the net on a straight line in 0.8 s, and the third-person body keeps whatever pose it had. Shot from beside the sloop at a quarter, a half and nine-tenths of the way, it stands upright with its arms down and its sword up. At the half it is inside the hull and not seen at all: the line from the water to a point .8 inboard of the rail runs through the planking.
+
+The prototype (`docs/prototypes/climb/shoot.mjs`) lays a pose over the body in the page, after the game's own `tpUpdate`. The body faces the hull and climbs hand over hand, three reaches in the 0.8 s, shoulders at −2.55 ± .45 rad alternating, the elbows bending as each hand comes down. The knees step up the mesh in time (thighs −.95 ± .35, knees 1.35 ± .3), the head is tipped up, and the torso leans into the net. It is held on the net, .35 off the planking, rising evenly to the deck's height by four-fifths of the climb, then swings in over the rail as the legs straighten. The path is the systems builder's (`tickNetClimb`, `86-world-crime.js`) and the pose this builder's (`tpPose`, `54-thirdperson.js`), so the question (DECISION #237) offers the pose and the path together (A, recommended), the pose alone (B), or neither (C). Nothing in the game changed.
+
+### Verified (headless Chromium)
+The script's three moments on a sloop at sea, today and the prototype, from one camera 4.2 off her side: today at a quarter the body stands on the net's foot. At a half it is hidden in the hull. At nine-tenths its head shows over the rail. The prototype is on the net and in the climbing pose at all three, with its head over the rail at nine-tenths. No page errors. Picture: `docs/prototypes/climb-net.png`.
+
+### Needs eyes
+- Michael's answer on #237. The prototype's camera is close; the pose's timing (three reaches in 0.8 s) is a guess and wants seeing in motion once built.
+
+## v80 — Session 727 — The barber's taglines and the way to him (the quest writer's Finding 26, a register fix)
+The quest writer's run 14 (`docs/quest_review.md`, Finding 26) asked the look builder or the systems builder to apply it. The barber was the one keeper with a blank tagline (`TAGLINES.barber`, `82-world-structures.js`, left blank by Session 512 for the quest writer), so Session 592 had to drop his *What do you sell?*. He was also missing from the ways a townsperson can be asked (`WAY_ASK`/`WAY_ORDER`, `83-world-generator.js`), so *Where can I find …* listed every shop in a town but his. Applied as the review gives it, word for word: the three taglines *"Shorn, shaved, or dyed. Sit still."*, *"A sharp razor and a steady hand."* and *"Come in rough, go out kempt."*; `barber:['A barber?','barbers']` in `WAY_ASK`; and the barber between the goods store and the shipwright in `WAY_ORDER`. The tagline is still one draw from the town's stream (one `pick`, as before), so nothing else in a town moves. The systems branch had not applied it (checked on `origin/auto/systems` at 02:28 UTC).
+
+`tests/selltopic`'s check that no barber offers the topic while his tagline is blank now asks the opposite: every barber offers it, and answers with one of the three. A new check asks that every town with a barber has *A barber?* among a townsperson's directions.
+
+The run's other checks on this branch: the twelve ship and cargo suites that read the ship's mesh or its deck (`cargo`, `compactrefit`, `deckprops`, `factorpanel`, `hullshape`, `piratehold`, `riversail`, `sailtrim`, `seaseed`, `shipaim`, `shiphulls`, `ships`) pass on Sessions 723–724's code. `compactrefit` failed once with three browsers running side by side, and passed when run alone.
+
+### Verified (headless Chromium)
+`selltopic` 5/5: three barbers in the twelve towns nearest Dunmore (Séamus's Barber at Dunmore, Bríd's at Vieux Marché, Dáire's Barbier at Coeur de Vie). Each offers *What do you sell?* with one of the three taglines, and each town's directions include *A barber?*. Every keeper who offers the topic has an answer: 20 inns, 10 churches, 3 barbers, a shipwright and a keep. `wayfinding`, `signs` and the four barber suites pass.
+
+### Needs eyes
+- Nothing beyond reading the three lines in a barber's mouth.
+
+
+## v80 — Session 728 — *How are things here, honestly?* answers in each people's voice (the quest writer's Finding 25)
+A register fix, applied as the review wrote it, with no decision. Session 698 took the number out of the townsfolk's answer and left the map card's word followed by a second sentence that read prosperity alone. Between 35 and 59 that made *Getting by. We get by.*, the same thing twice. An occupied or besieged town at 60 or more said *Occupied. Better than my father saw.* And it was one voice for four peoples.
+
+The topic in `richTopics` (`87-world-quests.js`) now picks a state, then a line. A siege is read first, then an occupation (`TS(site).flags.besieged`, `.occupied`), then prosperity: 60 or more is good, 35 or more fair, under that poor. The line comes from the speaker's people (`def.people`, else the nation's), with the Gatelander's table for anyone else. That is twenty lines, the review's word for word. The lord's *How fares the town?* is reached only in a town neither held nor besieged, and stays as it is. `stateSaid` is no longer read here; the lord's line and the map card still use it. `tests/townbio`'s check of the old shape (one word, a full stop, a sentence) now asks only for a capital and no number.
+
+### Verified (headless Chromium)
+`tests/honesttown` (new, 6 checks). In Dunmore one townsperson is asked under each of the four peoples, in each of five states (prosperity forced to 77, 45, 20; then 77 under siege; then 77 held). That gives 20 answers and 20 distinct lines. None carries a number, and none says *get by* twice. Four anchors are the review's lines exactly: the Old Blood's *Held. Not by us.*, the Markman's *We get by. Could be worse. Has been.*, the Aurennais's *Prosperous, Master, by any accounting…*, the Gatelander's siege line. A held or besieged town at 77 is never *better than my father saw*. A speaker with no people of their own answers in the nation's (a Gatelander's *fair* line in Dunmore). `townbio` passes (112 townsfolk in two towns, no number in any answer). The new test was not run against the old code. That code has one line for every people, so the 20-distinct check could not pass on it.
+
+### Needs eyes
+- None by play; the lines are the quest writer's.
+
+## v80 — Session 729 — The doubled glade's card line, and canon §12's lair rumour (the quest writer's Finding 27)
+A register fix, applied as the review wrote it. Session 719 built the doubled glade and asked the quest writer for its line on the map's card. The critic's s482 notes found canon §12's third effect of a slain lair-beast unbuilt: *a rumour within two provinces*. Finding 27 gives both.
+
+`mapEntries` (`83-world-generator.js`) gives a glade the sub-line *Glade · grown thick since the beast died* when `gladeDoubled` says its herbs are doubled, and *Glade* otherwise. `liveRumours` (`87-world-quests.js`) now reads the lairs in the 5×5 cells round the town (*within two provinces*). A live lair within 700 is *Something lives up at {lair}. The sheep won't graze that way, and you can't make them.* A slain one anywhere in that square is *Somebody killed the thing at {lair}.*, followed by *The herbs have come up thick in {glade} since.* when a doubled glade lies in the lair's own cell, or *The sheep go that way again.* otherwise. The review's 700 is the reach at which a lair already harms a town. The lines are deterministic (no `Math.random`), and the sites come from the cells' own data, so the answer does not depend on what has loaded. The review allowed caching `gladeDoubled` by the game-day if the map's draw found it dear. It is not cached: it is called once per glade in a drawn cell, over 25 cells' sites.
+
+### Verified (headless Chromium)
+`tests/lairrumour` (new, 7 checks) on the whole grid: 41 lairs, 521 places where people live. Nordaey Glade, 631 from Dogiaen's Lair and in its cell, reads *Glade* with the beast alive and *Glade · grown thick since the beast died* once it is slain. Woushwor, within two provinces, then says *Somebody killed the thing at Dogiaen's Lair. The herbs have come up thick in Nordaey Glade since.* Dianaen, 437 from the live Trabrou's Lair, says *Something lives up at Trabrou's Lair…*. Trostouir, 2,470 off, says nothing of it alive; slain, it says *…The sheep go that way again.* A lair beyond two provinces is never named, even slain. `gladeherbs`, `duel` and `shipwreck` pass.
+
+### Needs eyes
+- The rumour by play: once a lair's beast is dead, ask in a nearby town's tavern, and see whether the line reads as news or as noise beside the others.
+
+## v80 — Session 730 — `sitechest` builds the lair again if the loop has unloaded it (red on CI on 2df9ca2)
+Shard 11 failed on `sitechest` on the head of PR #238: `Cannot read properties of undefined (reading 'chest')` in the test's `take`, straight after the lair's first check passed. The test disposes the site, then rebuilds it through `chestOf`, which since Session 711 falls back to `genSettlement(siteAnywhere(id))` when the settlement is missing. `take` and the emptying step read `WORLD.settlements.get(id)` alone, so when the runner's loop unloaded the lair's cell between the two calls, there was nothing to take from. Both now fall back the same way. The chest's contents are kept in `worldState` (Session 700), so a site built again holds what it held. Tests only; Sessions 728 and 729 touch no chest code.
+
+### Verified (headless Chromium)
+`sitechest` 9/9 here (the lair's Hoard, the camp's Takings, the save and load). The race does not reproduce locally, where it passed before the change too; the fix is that `take` can no longer find nothing.
+
+### Needs eyes
+- None.
+
+## v80 — Session 731 — `mapseals` ran nine minutes and took shard 5 past the hour (tests only)
+CI on this branch's head (ace36ce) cancelled shard 5 at 60:00 with all 34 of its suites passed: they came to 59.5 minutes, and `mapseals` (Session 704) was the longest at 589 s. Timed step by step here, the suite took 535 s, and 325 s of that was one call: the first `getImageData` in the detail check. The second, a moment later, took 0.24 s. The cost was not the read. The check before it builds the deep tiles by calling `mapDraw()` and `mapJobs()` in turn, 1,266 times inside one `page.evaluate`. No frame is shown in between, so Chrome keeps the canvas's draw calls queued, and the first read made SwiftShader draw all 1,266 frames of the map at 2042×866. The pictures' build loop at the end did the same with its 400 steps (122 s).
+
+The test now draws only when the job queue is empty (`_mapBuild`): `mapJobs` runs while there are jobs, and a draw re-queues whatever the view still wants, until a draw queues nothing. The jobs are the same and run in the same order (each tile keeps the priority its last draw gave it). The game is unchanged: in play the map draws once a frame and each frame is shown. `run.mjs`'s shard table has no entry for `mapseals`, which keeps the default 60 s weight; at about 80 s that is close enough not to reshuffle every shard.
+
+### Verified (headless Chromium)
+`mapseals` 14/14 in 82 s, down from 535 s here (589 s on CI). The deep tiles: 32 of 32 built, none left. The detail check reads 2.47 against 0.91, as before. The two pictures come out the same as the committed ones, apart from the quest names that the jobs' rolls give, so they are not recommitted.
+
+### Needs eyes
+- Nothing in the game. Shard 5 should come in at about 52 minutes on the next run. `placesave` (the systems builder's) ran 521 s there against the table's 363.
+
+## v80 — Session 732 — Stolen goods keep their mark in a stack (the critic's s572)
+The critic's s572 run robbed a goods shop's strongbox in Carraig Mór. The thing it held was a Lockpick, marked `stolen`. It went onto the three picks bought that morning, and the stack read honest. `bagAdd` (`14-items.js`) stacked by name alone, and the cells take only the entries marked `BAG[i].stolen`, so any stolen potion, torch, pick or arrow that joined one of yours was laundered. The other way round, picks bought after a stolen one joined the stolen stack, and a night in the cells took them all. The filed line is in section I on auto/critic, not yet on main.
+
+`sameStack(a,b)` (`14-items.js`, beside `bagAdd`) is one name and one mark. `bagAdd`, the stash's `_stashAdd` and the buy-back's merge (`60-shop.js`) stack through it, so a stolen thing is a stack of its own. The lock counted the first stack of picks only. `lpPicks` (`68-dungeon-misc.js`) now adds every stack, so you can still use all your picks. A spent pick comes off the first stack in the bag, as before. No rule of play changes. The cells take what the spec says they take.
+
+### Verified (headless Chromium)
+`tests/stolenstack` (new, 10 checks). In Dunmore's goods shop (`g_dunmore_5`) the strongbox's own stream gives a Lockpick on day 44, and the box is opened through `WORLD.boxInteract`. With three picks bought first, the bag holds 3 honest and 1 stolen. The lock counts 4. After the cells' rule, the 3 bought picks are left. With the stolen pick first and three bought after, it is again 1 stolen and 3 honest. In the stash and back out they stay two stacks, 1 and 3. Spending picks one at a time counts 3, 2, 1, 0 and then stops. No page errors. Not run against the old code. There, `bagAdd`'s merge by name makes a single stack of 4, which the first check rejects.
+
+### Needs eyes
+- The bag shows two *Lockpick* rows with nothing to tell them apart. Whether a stolen thing should say so in the bag (a word on its tooltip) is the quest writer's line and Michael's call. Nothing is built for it.
+
+## v80 — Session 733 — The boss bar below ground (the critic's s572)
+The critic's s572 run came to Dunderry's cavern door with the crag's Cave Bear on it. The bar *Dunderry the Cave Bear*, full, came down into the cavern and stayed through both floors. It was still at 100% while the critic fought the master, *Dunderry — Cave Bear*, whose own bar never showed, and it hung over the death screen. `tickBossHud` (`42-zone-enemies.js`) was called only from the loop's open-world branches (`90-main.js`). Its fallback reads `ENEMIES` for *the masters below*, but nothing below ground ever reached it.
+
+The loop's dungeon branch now calls it each frame. Below ground (`lid` other than the open world's) it skips the world's `ZE` and `ZONES.world.enemies`. In a dungeon it reads the cavern's own `ENEMIES`, and only those on your floor, by the rule it already had: a living boss that has seen you, within 40. In a room of another kind there is no boss and the bar is hidden. No rule of play changes.
+
+### Verified (headless Chromium)
+`tests/bossbarunder` (new, 8 checks), on real frames of the loop. Outdoors by Dunmore, a Cave Bear built as a boss, alert and 3 units off, shows *Testcrag the Cave Bear* at 100%. Then a lair's cavern (seed 5199, *Testcrag*), with that beast still alert at the door. Below ground its bar is gone, and with the master not yet alert there is no bar. On floor 2 (`goToFloor2`), with the master alert 2 units off, the bar reads *Testcrag — Cave Bear* at 100%, and at half its health 50.1%. Moved to another floor, it shows no bar; dead, no bar. No page errors. Not run on the old code. There, the dungeon never calls the tick, so the outdoor bar stays up below ground and the first check below ground fails. `q7world` (the Faolchú's bar in the world) passes, 8 checks.
+
+### Needs eyes
+- In a real cavern: the master's bar appearing as it wakes, and not before.
+
+## v80 — Session 734 — A guard's fine and his yield no longer open with *My name is Traveller.* (the critic's s572)
+In Carraig Mór the critic was halted by Séamus over a fine, and later offered the cells. Both times the first choice was the stranger's introduction, *1. My name is Traveller.*, above *Pay the fine* and *The cells.* `buildQuestTopicsForNPC` (`22-dialogue.js`) adds that topic to every dialogue with someone you have not met. The halt in the street, the halt indoors and the yield are dialogues built on the guard's name, so he got it too.
+
+Those three dialogues (`confront`, `confrontIndoor`, `offerYield` in `86-world-crime.js`) now carry `noIntro:true`, and the topic is left out when the open dialogue has it. The same guard spoken to in the street still offers the introduction. No line is added or changed.
+
+### Verified (headless Chromium)
+`tests/guardintro` (new, 6 checks). Dunmore's guard Eilís, not yet met, with a bounty of 50. The halt reads *1. Pay the fine (50 gold) · 2. I'll not pay. · 3. Not now.*, indoors the same, and the yield *1. Pay double (100 gold) · 2. The cells. · 3. Fight on.* None offers the introduction. Spoken to in the street, she offers *1. My name is Traveller.* as before. No page errors. `feasts` (which drives `confront` for the feast-day fine) passes, 12 checks.
+
+### Needs eyes
+- None.
+
+## v80 — Session 735 — The barber has a tagline and can be asked the way to (the quest writer's Finding 26)
+A register fix, applied as the review wrote it. Since Session 512 the barber's tagline was a blank (`TAGLINES.barber`, `82-world-structures.js`), held for the quest writer. So the keeper had no *What do you sell?* (Session 592 left the topic out rather than give an empty answer), and `WAY_ASK` (`83-world-generator.js`) had no barber, so *Where can I find …* listed every shop in a town but his. Finding 26 gives three sign-words in no people's voice: *"Shorn, shaved, or dyed. Sit still."*, *"A sharp razor and a steady hand."*, *"Come in rough, go out kempt."*. It adds *A barber?* (plural *barbers*) to the ways, asked after the goods store and before the shipwright. The settlement generator's `pick` draws one number from the town's stream whatever the list's length, as it did for the blank, so no town's layout or names move.
+
+### Verified (headless Chromium)
+`tests/barberway` (new, 6 checks). Six towns and cities near Dunmore have a barber. All six taglines are one of the three, none blank. Dunmore's *Séamus's Barber* answers *What do you sell?* with *"Come in rough, go out kempt."*. A townsperson's ways read *… Somewhere for supplies? · A barber?*, and *A barber?* answers *Séamus's Barber? It's east of here, a short walk.* No page errors. `selltopic`'s second check asserted that no barber offers *What do you sell?*, which held only while his tagline was blank. It now checks the rule it stood for: a barber offers it exactly when he has a tagline, and answers with it (3 of 3 do; 4 checks pass). Also green: `barber`, `barberbox`, `barberchair`, `barberfee`, `signs`, `roadseed`.
+
+### Needs eyes
+- None.
+Correction to Session 735, the same day: the look builder had already applied Finding 26 word for word as their Session 727, on auto/backlog, not yet on main. I missed it because I checked only my branch and main. The two code changes are identical, so `82-world-structures.js` and `83-world-generator.js` merge without a conflict. `tests/selltopic` now takes auto/backlog's version, which checks the same rule and the way to the barber (5/5 here), so that file merges cleanly too. `tests/barberway` stays as a second check. A run that applies a quest-review finding should first grep the other builder's branch for it.
+
+## v80 — Session 736 — `bossbarunder` waits for the bar to answer (red on CI on d43c4ae and 72bfd96)
+Session 733's `bossbarunder` failed twice on CI, on different checks. On d43c4ae, after the master was moved to another floor, the bar still showed it at 50%. On 72bfd96, with the master alert 2 units off, the bar never came up and still carried the crag beast's name. Both are one fault: the test read the bar a fixed 4 frames after each change, and on the runner the loop had not ticked `tickBossHud` in the dungeon branch by then. The floor fade (`doFade` in `goToFloor2`) uses time, not frames, so 30 frames did not always cover it either. Locally both passed.
+
+The test now waits for the floor change itself (up to 60 × 5 frames, until `currentFloor` is the master's). Each later step sets its state again and reads the bar every two frames, up to 40 times, until the bar answers. The player is put back beside the master each time, so a push from the loop cannot move you out of range. A check that should fail still fails: a bar that ignored the floor, or a dead master, stays up for all 40 tries. Tests only; no game code changes.
+
+### Verified (headless Chromium)
+`bossbarunder` 9/9: outdoors *Testcrag the Cave Bear* at 100%; below ground no bar; on floor 2 *Testcrag — Cave Bear* at 100%, then 50.1%; another floor, none; dead, none; no page errors.
+
+### Needs eyes
+- None.
+
+## v80 — Session 737 — `shipnets` reads every line the climb showed, not the last (red on CI on 83f2a02)
+Shard 2 failed on `shipnets`, in its check *at 0.9 s she is boarded at the rail above the net*. Every number was right: not climbing, on deck, 1.38 across, 0 along. But the message line read *Black sails on the horizon.* The test drives 54 world ticks itself through the climb, and those ticks also run the other ships' spawner, which on the runner put a black sail on the sea and showed its notice after *You climb aboard*. The check read only `#msg`'s last text. The test has not changed since Session 677, and Sessions 728–736 touch nothing at sea.
+
+The test now wraps `showMsg` for the climb, keeps every line shown, and asks that *You climb aboard* is among them, then puts `showMsg` back. Tests only.
+
+### Verified (headless Chromium)
+`shipnets` 12/12. The climb's lines here are `["You climb aboard. E again for the wheel."]`, boarded at 1.39 across and 0 along. The black sail's net and the merchantman's deck pass as before.
+
+### Needs eyes
+- None.
+
+## v80 — Session 738 — The boss bar reads the dungeon from the zone, not from `lid`; `sitechest`'s save step reads `siteAnywhere` (red on CI on 8b21560)
+**Correction to Session 736.** `bossbarunder`'s check *a master on another floor shows no bar* failed on d43c4ae, and it failed again on 8b21560 after 40 tries. So it was not the frame timing Session 736 took it for, or not only that. Session 736's waits did fix the other failure, on 72bfd96, where the bar had not yet come up.
+
+The cause is in Session 733's `tickBossHud` (`42-zone-enemies.js`): `under` was `lid!=='overworld'` with `lid` defined, and `dun` needed `under`. On the runner the test's portal comes from an empty `PORTALS` and has no id (as Session 714 found for `hoardspot`), so `goToDungeon` left `lid` undefined. Then `under` and `dun` were both false. The dungeon was read through the generic `ENEMIES` branch, which has no floor check, and a master on floor 3 kept its bar on floor 2. Reproduced here with the test's portal given `id: undefined`: the same check fails, with the same bar (*Testcrag — Cave Bear*, 50.1%). `dun` is now `activeZoneId==='dungeon'`, and `under` is `dun`, or `lid` set and not the overworld. In play every portal has an id, so this was a fault only for a door built without one; it can no longer reach the bar.
+
+The same CI run failed `sitechest` again, at its save-and-load step. `WORLD.SITE[id]` (the live map) was undefined, because the camp's cell had unloaded. That is the same race as Session 730, at the two places that put you beside the camp. Both read `siteAnywhere` when the live entry is gone.
+
+### Verified (headless Chromium)
+With the portal's id taken away: on the old code *another floor* fails (bar shown, 50.1%); on the new code `bossbarunder` passes 9/9. With the portal as written, 9/9. `sitechest` 9/9. `q7world` (the Faolchú's bar in the world) passes.
+
+### Needs eyes
+- None.
+
+## v80 — Session 739 — A householder sleeps, 23h to 5h (Michael's A on #240)
+The critic's s572 run picked Sinéad's door in Carraig Mór at 23h30 and found her a step inside. She turned as the chest opened and saw it. Section B's witness rule says *not asleep indoors*, but nobody slept: a home's resident was in from 21h to 7h and walked the room all night. That made the home the harder target at night, and the shop the easier one. Michael chose A: asleep in bed from 23h to 5h.
+
+The rule is in `86-world-crime.js`, beside `witnessOf`. `homeAsleepNow(house)` is true for a home whose resident is in (`npcInsideNow`) from 23h to before 5h. When the room is built in those hours, `laySleeper` lies the resident on the home's bed (the first `INT_BEDS` entry owned by `home`). They lie flat, head to the bed's head, feet at the foot. The talk point (`intNPCPos`) moves to the bed. `tickSleeper`, called from `tickInterior`, sends an awake resident to bed at 23h and gets a sleeper up at 5h, standing beside the bed. It wakes a sleeper when you come within two units of the bed. That is the street's *hears you whichever way they face* (`WIT_HEAR`), and it covers a blow too, which is struck from closer than that. Pressing E within talking reach (2.2 of the bed) also wakes them, and the talk opens. One woken stays up for the rest of your visit, facing you. One who rises at 5h faces the room. Indoors, `witnessOf` skips a sleeper unless you are within the two units. In that case they wake and are the witness. A picked door does not wake them. There is no roll: asleep is a rule of the hour and the house, as the co-op rules ask. The main loop's sway and breath bob (`90-main.js`) leave a sleeper alone. The lying pose belongs to the look builder (H). Until they make one, the standing body lies on the bed turned flat, as the decision said.
+
+Michael's A on #241 (the Cave Bear's cavern at level 1) is *leave it*: no session; the backlog item is closed.
+
+### Verified (headless Chromium)
+`tests/homesleep` (new, 14 checks) in Dunmore. At 23h30 Tadhg lies on his bed at (1.2, 1.4), laid flat (rotation −π/2) and .55 up. Of 125 standing points in the room more than 2.3 from the bed, none is seen (at 22h, awake, 32 of the same 125 are seen; at 6h, 15). At the chest, 7.6 from the bed, the critic's s572 case, `witnessOf` is null. After two seconds of ticks and twenty frames he is still asleep and flat. At 1.7 from the bed he wakes, stands and is the witness, and five seconds later, across the room, he is still up. At 1h, in another home, a theft beside the bed is seen, and woke Fionn. At 2h, E from 2.1 off wakes a third home's sleeper and opens the talk. A resident awake at 22h59 goes to bed at 23h02 with you in the room, and gets up at 5h02 facing the room. At noon a home's resident is out and not asleep. No page errors. `keepercone` passes.
+
+### Needs eyes
+- The flat body on the bed, by play: it is the standing pose laid down, and its feet hang a little past the bed's foot. The look builder owes the lying pose (H).
+- Going to bed at 23h and rising at 5h happen in one frame if you are in the room. Whether that jars, or whether nobody stays long enough to see it.
+- Whether two units is the right hearing for a sleeper. The chest is 7.6 from the bed in the four Dunmore homes measured, so a burglary at night is now unseen unless you go to the bed.
+
+## v80 — Session 740 — Two gate guards in every walled town (Michael's A on #242)
+`genSettlement` put *a couple of guards at the gates*, one on each of the first two streets where the street meets the ring inside the wall. A town with one road in has one such street, so it got one guard. Of the six towns nearest the start, Carraig Mór (56) and Coeur de Vie (78) each had one. The critic's s572 run found Séamus walking Carraig Mór's whole beat alone from 21h to 5h, and a street pick after 21h could not be seen at all. Michael chose A: two in every walled town.
+
+A walled town left with one gate guard now gets a second (`83-world-generator.js`, after the day constable). By day he stands at the same gate. His post is across the street from the first man's. If that spot is inside a solid, as it is at Carraig Mór, the post is the first open one of: beside the street on either hand, or three, four or six steps in. Open means the world's `solidAt`. The town is lent to `SETTLE` for that one check, because `solidAt` reads a town's walls and houses from there and the town is not yet built. At night he walks the lantern beat like any gate guard. The beat already spreads its men evenly round the loop by their order (`_beatI`), and he is the town's last man of the watch, so he starts on the far side from the first. He is spawned after everyone else in the town and draws his name from the town's stream last. So nobody else's name, place or role changes.
+
+### Verified (headless Chromium)
+`tests/gateguards` (new, 12 checks). Carraig Mór has Séamus and Ruairí. Ruairí's post is 6.9 from Séamus's, on open ground. Across the street had been inside a solid. Coeur de Vie has Sinéad and Fáelán, 6.0 apart. Ticked for a minute at noon, each second man keeps within .22 and .14 of his post. At 23h Carraig Mór has 2 men awake and Coeur de Vie 3 (with Aoife, the night watch at 78). Over ninety seconds of the beat the two gate guards average 36.5 and 52.8 apart. Dunmore still has its two. A probe of the six towns nearest the start, run on the code before and after, found the same people (names, roles and homes) in the same order in all six. The only change is one man added at the end in the two one-gate towns. `beat`, `constable`, `guardseed`, `watch`, `guardplay`, `churchnames`, `placesave`, `worldtarget` and `crime3` pass.
+
+### Needs eyes
+- The second man at a one-gate town's gate by day: where he stands beside the street, and whether two men at one gate read as a gate watch.
+- The night numbers at Carraig Mór: the critic's walk, hour by hour, with two men on the beat.
+
+## v80 — Session 741 — `sitechest` waits for the load's own *Loaded.* line (tests only)
+An earlier systems run on 11 Oct found that `sitechest`'s save-and-load check failed 1 run in 3 locally. That run overlapped Session 738, so it parked its fix on `auto/wip-sitechest-load` (6b986b7) and asked the next run to take it. This session takes it unchanged. The load lands inside a fade timed in real time, not in frames, so a fixed 4 s wait after `reloadActiveSlot()` could read the world before the load had applied. The test now wraps `showMsg` and waits for the load's own *Loaded.* line, up to 20 s. Then it stands by the camp and reads until the loop has built it, up to 60 rounds, each round putting you back by the camp. The check also asks that the load was seen. No game code changes, so the build tag is not bumped.
+
+### Verified (headless Chromium)
+`sitechest` 3/3 runs, each with the load seen and the chest's *Bronze Buckler of Vigor* back after the load. The three ran beside a second browser running a twenty-minute measure, which is the kind of slow machine the fixed wait lost on.
+
+### Needs eyes
+- None; tests only.
+
+## v80 — Session 742 — Carraig Mór's night by the numbers, after the sleepers and the second guard (tests only)
+Session 740's *Needs eyes* asked for the critic's s572 walk of Carraig Mór's night, hour by hour, again. That part can be settled headless. `tests/carraignight` (new) does what `nightpick` does for Dunmore. Hour by hour from 21h to 4h, with the town's own ticks walking the watch, it stands at each of Carraig Mór's 6 shop doors and 36 home doors. It counts how often a five-second pick there would be seen, walking and sneaking. Then it goes indoors. In 8 homes, at eight hours from 21h30 to 6h30, it opens the chest over five seconds of the room's own ticks and asks whether anyone sees. The same test was run on this branch before Session 739 (the merge commit 1a30669, from a worktree) and after Session 741. No game code changes.
+
+Before: one man, Séamus, awake from 21h to 4h. A shop door was seen 1.7% of the time over the night (13.5% at 0h, 0% in every other hour). A home's chest was seen in 2 of 8 homes at 23h30, 1 at 3h and 1 at 4h30.
+
+After: two men awake every hour (Séamus and Ruairí). A shop door is seen 5.7% walking and 3.9% sneaking over the night: 0% from 21h to 23h, then 16.7%, 5.2%, 8.3%, 2.1% and 13.5% from 0h to 4h. Dunmore's three-man watch is seen 14.9% walking (Session 705). Home doors are seen 0.3% walking in both builds. Their residents are indoors and the street at a home's door is empty. Indoors no resident sees their chest opened from 23h30 to 4h30 (0 of 8 at each hour). In the waking hours they still do: 1 of 8 at 21h30 and at 22h30, 3 of 8 at 5h30 and 1 of 8 at 6h30. Those depend on where the resident's amble takes them, which is a cosmetic roll, so they move from run to run. The sleep hours do not move.
+
+So the home is now the easier target from 23h to 5h and the harder one at either end of the night, which is the order #240 asked for. The street at the shops is watched about a third as often as Dunmore's. Whether that is right for a 56-prosperity town is Michael's question by play, not a bug.
+
+### Verified (headless Chromium)
+`carraignight` 5/5 on this head: the doors measured (6 and 36), sneaking never seen more than walking, no chest seen in the sleep hours, no page errors. On the pre-739 build its sleep-hours check fails (2/8, 0/8, 1/8, 1/8), as it should.
+
+### Needs eyes
+- Michael, by play: a night pick at Carraig Mór's shops seen about 1 time in 18, against Dunmore's 1 in 7. Is the poorer town's street right to be the easier one?
+Added to Session 742 in the same run: `tests/run.mjs` gives CI's shard balancing the new suites' weights: `carraignight` 960 s (about 15 minutes here), `homesleep` 150 and `gateguards` 180. Unlisted, each would have counted as 60. It also takes `placesave` from 363 to 521, the time the look builder saw on CI (Session 731's run).
+
+## v80 — Session 745 — Every suite's weight in the shard table from one CI run (tests only)
+CI on faa652b, this branch's head after Session 742, cancelled shard 3 at 60:19. Its suites alone had run 59.5 minutes, and the other eleven finished in 40 to 54. The shard table in `tests/run.mjs` balances the twelve shares by each suite's seconds, and it was stale in both directions. `panelfocus` (Session 722) took 530 s and `stairrail` 219, and neither was listed, so each counted as 60. `placesave` took 625 against 521. Session 742 guessed `carraignight` at 960 s from this machine, and CI ran it in 250. Guesses like these move a share by ten minutes on their own.
+
+The GitHub tool reads each job's log, where `run.mjs` prints every suite's time at the end. All twelve were read and every suite's weight is now that run's time: 413 suites, 33,400 s, 2,783 s a share. `yardpanel` was cut off by the cancel and counts as 90. `dunwarm`, Session 746's new suite, counts as 600 from this machine. The table lists every suite, and the shares come to 2,828–2,837 s, 47.3 minutes before the install. No game code changed.
+
+### Verified (headless Chromium)
+No browser run: this is the table. `node --check tests/run.mjs` passes. The table names all 414 suites in `tests/` with none missing and none extra. The greedy split over it gives 2,828–2,837 s a share, where the same split over the old table had given shard 3 suites that ran 3,583 s on CI (yardpanel cut off at 55).
+
+### Needs eyes
+- None; tests only. If one shard runs past 55 minutes again, its log's time block is the table's next refresh.
+
+## v80 — Session 746 — The dungeon's foes need no prewarm (measured; tests only)
+Session 688 built one of each open-world foe behind the world's loading fade and compiled their shader programs there. On a real GPU the first wolf of a session, or the first night, had been a hitch. It left one line owed in backlog D: *the dungeon's foes are not prewarmed … a first skeleton below can still hitch.* This session measured that before building anything.
+
+The probe counted every `compileShader` call. It went down an old gate, waited for compiles to stop, then stood beside each foe on both floors in turn and looked at it. It did this for six themes at level 9 (undead, elemental, deep, haunted, ruins, goblin): 154 foes in 22 kinds, wraiths and phantoms, elementals, golems, gargoyles and mimics among them. It also killed foes, split a slime, looted a corpse and took the stair to floor 2. In the first pass one foe compiled on sight: a Skeleton on the haunted gate's floor 2, two shaders. I built the fix that pass suggested, `prewarmDungeon`: after the floors, the foes and the lair's master were built, it filled the light pool and ran `REN.compile` on the whole scene. With it, 154 of 154 foes came into view with nothing compiled. With it held off, on the same six gates in the same order, so did all 154. The one hit did not reproduce. A fix with no effect that can be measured is not a fix, so the code is withdrawn and nothing in `js/` changes.
+
+Three things already cover the dungeon. Its foes share their materials, so a kind's first program is usually one an earlier kind has made. Its point lights are the fixed pool of 20 that `_sweepScenePool` (`68-dungeon-misc.js`) fills before each render, so a kill's loot glow or a slime's two new lights change no program's key. And its first frame, drawn behind the way-down fade, compiles what is left: 2–4 shaders at an entry, 1 program at most (the prewarm, while it was in, found 0 or 1 a gate, 6–617 ms).
+
+`tests/dunwarm` (new) keeps it so, as a guard. It covers three gates whose themes hold the most kinds, then kills one foe in each and counts the pool. If a new material on a foe, or a light outside the pool, makes a foe compile on sight, it shows here.
+
+Correction to Session 745: the shard table's `dunwarm` was 600, from the six-gate probe. The suite as kept runs three gates and is now 360.
+
+### Verified (headless Chromium)
+`dunwarm` passes (one run, 3 of 3 checks): 70 foes looked at on both floors of three gates, 15 kinds (Skeleton, Greater Skeleton, Wraith, Greater Wraith, Phantom, Greater Phantom, Mimic, Greater Mimic, Fire Elemental, Golem, Greater Golem, Slime, Cave Troll, Greater Cave Troll, Gargoyle), 0 compiles on sight. After a kill in each gate the scene holds 20 point lights, as before it, with 0 compiles. The six-gate measure, run twice with and without the prewarm, gave 0 of 154 both times.
+
+### Needs eyes
+- On a real laptop's GPU: the first old gate of a session, whether its way-down fade lasts visibly longer than a second one's (that fade carries the compile).
+
+## v80 — Session 747 — Asked: more barrels and boxes in towns (DECISION #245)
+Backlog D holds Michael's playtest note of 6 Oct: *all towns and cities should have more barrels and boxes out and about, with low-level loot, more to interact with.* Nothing else in I, B, C or G can be settled headless, so this run looked at it. The count and the loot are rules of play, so they are asked, not built. Today the generator (`83-world-generator.js`) puts a city's 10, a town's 7, a village's 4 and a hamlet's 2 beside the houses' walls. Each holds everyday goods only, is rolled again each game day on its own stream (`<site>:barrel:<n>:<day>`), and is not a crime to open. Four options went to #245: twice as many as they are (recommended), twice as many with two in three empty, three times as many with a quarter of them a house's (theft to take in sight), or the count left and only their places changed (the look builder's half). Where the new ones stand is the look builder's under any answer.
+
+### Verified (headless Chromium)
+Nothing built. The counts and the loot rule were read from the code.
+
+### Needs eyes
+- Michael: #245.
+
+## v80 — Session 748 — `sitechest` builds the camp itself if the loop has not after the load (red on CI on a20afcb)
+Shard 8 failed `sitechest` at its last real check, *emptied after a save, then loaded*. The load came back (`Loaded.` seen, Session 741's wait), but after 60 tries of putting you 40 units from the camp, spinning 20 ticks and drawing 2 frames, the runner's loop had still not built the camp, so the test read `null`. What the check is about is the chest's state in the loaded world row, not when the loop gets round to a camp. So when the wait runs out, the test builds the camp itself through `chestOf`, as its earlier steps do (Session 730). A load that failed to restore the chest still fails: the rebuilt camp would hold the emptied chest, `[]`, against the save's one item. Tests only.
+
+### Verified (headless Chromium)
+`sitechest` 9/9. Here the loop builds the camp within the wait, and the chest holds *Bronze Buckler of Vigor*, as at the save.
+
+### Needs eyes
+- None.

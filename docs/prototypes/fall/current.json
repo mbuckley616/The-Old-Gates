@@ -1,0 +1,50 @@
+{
+ "save": {
+  "key": "cmv4blt3i_manual_0",
+  "entry": {
+   "key": "cmv4blt3i_manual_0",
+   "charId": "cmv4blt3i",
+   "charName": "Aoife",
+   "people": "gatelander",
+   "arch": "warrior",
+   "kind": "manual",
+   "slot": 0,
+   "level": 5,
+   "gold": 417,
+   "zone": "world",
+   "where": {
+    "kind": "world",
+    "x": 13518.269698774928,
+    "z": 25394.33205642853,
+    "yaw": -1.0876550949067143
+   },
+   "place": "Dunmore",
+   "at": 1,
+   "tod": 960,
+   "ts": 1791753251942,
+   "size": 47632,
+   "v": 3,
+   "pic": 1,
+   "picSize": 12127
+  },
+  "date": "Hearthday, the 1st of Reaping, in the 27th year of the Peace · 4:00 pm",
+  "short": "Hearthday 1 Reaping · 4:00 pm",
+  "picBytes": 12127
+ },
+ "fall": {
+  "dungeon": "The Dungeon of Shadows",
+  "floor": 1,
+  "foe": "Skeleton",
+  "hp": 130,
+  "at": "Hearthday, the 1st of Reaping, in the 27th year of the Peace · 7:36 pm",
+  "deaths": null,
+  "sub": "Last save: slot 1 — Dunmore, level 5",
+  "buttons": [
+   "Load last save",
+   "Main menu"
+  ],
+  "log": null
+ },
+ "tag": "s576",
+ "errs": []
+}

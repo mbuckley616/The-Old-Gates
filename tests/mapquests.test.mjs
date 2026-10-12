@@ -37,14 +37,15 @@ const under = await page.evaluate(() => { const z0 = activeZoneId; activeZoneId 
   const m = questMarkers(cell).filter(e => /^Report to /.test(e.name)).length; activeZoneId = z0; _liveMk = null; return { c, m }; });
 check('underground (no compass), the map still marks the report', under.c === 0 && under.m === 1, under);
 
-// zoomed right out (a cell under 60 px), the quest marks are drawn and nothing else
+// zoomed right out (a cell under 60 px), the quest marks are drawn and nothing else. Since the merge of 11 Oct the marks are
+// Session 704's seals (MAP._marks, from mapMarks), not icons among MAP._entries, which hold the places alone
 const zoomed = await page.evaluate(() => { const cv = document.createElement('canvas'); cv.width = 700; cv.height = 700;
-  const keep = { cv: MAP.cv, ctx: MAP.ctx, zoom: MAP.zoom, mode: MAP.mode }; MAP.cv = cv; MAP.ctx = cv.getContext('2d'); MAP.mode = 'map'; MAP.zoom = 1; MAP.ox = 0; MAP.oy = 0;
-  const cellPx = WORLD.SIZE * baseScale() * MAP.zoom; mapDraw(); const ents = MAP._entries.map(e => ({ kind: e.kind, name: e.name }));
-  MAP.zoom = 4; { const [sx, sy] = mapToScreen(SITE.dunmore.x, SITE.dunmore.z); MAP.ox += 350 - sx; MAP.oy += 350 - sy; } mapDraw(); const cellPx4 = WORLD.SIZE * baseScale() * MAP.zoom; const ents4 = MAP._entries.filter(e => e.kind === 'quest').length;
-  Object.assign(MAP, keep); MAP.jobs.length = 0; return { cellPx: +cellPx.toFixed(1), ents, cellPx4: +cellPx4.toFixed(1), ents4 }; });
+  const keep = { cv: MAP.cv, ctx: MAP.ctx, zoom: MAP.zoom, mode: MAP.mode, cssW: MAP.cssW, cssH: MAP.cssH, dpr: MAP.dpr }; MAP.cv = cv; MAP.ctx = cv.getContext('2d'); MAP.cssW = 700; MAP.cssH = 700; MAP.dpr = 1; MAP.mode = 'map'; MAP.zoom = 1; MAP.ox = 0; MAP.oy = 0;
+  const cellPx = WORLD.SIZE * baseScale() * MAP.zoom; mapDraw(); const ents = MAP._entries.map(e => ({ kind: e.kind, name: e.name })); const seals = MAP._marks.map(o => ({ kind: 'quest', name: o.m.line || o.m.title }));
+  MAP.zoom = 4; { const [sx, sy] = mapToScreen(SITE.dunmore.x, SITE.dunmore.z); MAP.ox += 350 - sx; MAP.oy += 350 - sy; } mapDraw(); const cellPx4 = WORLD.SIZE * baseScale() * MAP.zoom; const ents4 = MAP._marks.length;
+  Object.assign(MAP, keep); MAP.jobs.length = 0; return { cellPx: +cellPx.toFixed(1), ents, seals, cellPx4: +cellPx4.toFixed(1), ents4 }; });
 console.log(' zoomed:', JSON.stringify(zoomed));
-check(`zoomed out (a cell ${zoomed.cellPx} px), the report is drawn and only quest marks are`, zoomed.cellPx < 60 && zoomed.ents.some(e => e.kind === 'quest' && /^Report to /.test(e.name)) && zoomed.ents.every(e => e.kind === 'quest'), zoomed);
+check(`zoomed out (a cell ${zoomed.cellPx} px), the report is drawn and only quest marks are`, zoomed.cellPx < 60 && zoomed.seals.some(e => /^Report to /.test(e.name)) && zoomed.ents.length === 0, zoomed);
 check(`zoomed in (a cell ${zoomed.cellPx4} px), still drawn`, zoomed.ents4 > 0, zoomed);
 
 // paid: gone from the map

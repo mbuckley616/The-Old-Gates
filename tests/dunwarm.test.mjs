@@ -1,0 +1,40 @@
+// Session 688 prewarmed the open world's foes and left a note: the dungeon's foes are not prewarmed, so a first skeleton
+// below can still hitch. Session 746 measured it, and there is nothing to prewarm: a dungeon's foes share their materials,
+// its lights are a fixed pool of 20 (`_sweepScenePool`), so no kill or loot glow re-keys a program, and the first frame,
+// behind the way-down fade, compiles the rest. A prewarm of the whole scene (REN.compile on both floors) changed nothing.
+// This suite keeps it so: three old gates whose themes hold the most kinds (wraiths and phantoms, elementals and golems,
+// gargoyles and mimics) at level 9; after the entry settles it stands by every foe on both floors and looks at it, and
+// nothing may compile. A new material or a light outside the pool would show here as a compile on sight.
+import { boot, check } from './lib/game.mjs';
+import { enterDungeon } from './lib/dungeonshot.mjs';
+const g = await boot(); const { page } = g;
+await g.intoWorld();
+await page.evaluate(() => { const gl = REN.getContext(); window.__cs = 0; const o = gl.compileShader.bind(gl); gl.compileShader = s => { window.__cs++; return o(s); }; level = 9; });
+const settle = async () => { let still = 0; for (let i = 0; i < 30 && still < 3; i++) { const a = await page.evaluate(() => __cs); await page.waitForTimeout(800); await g.frames(3); still = (await page.evaluate(() => __cs)) === a ? still + 1 : 0; } };
+const nLights = () => page.evaluate(() => { let n = 0; dScene.traverse(o => { if (o.isPointLight) n++; }); return n; });
+let seen = 0; const onSight = [], kinds = new Set(), lights = [];
+for (const [theme, seed] of [['undead', 7], ['elemental', 9], ['haunted', 6]]) {
+  await enterDungeon(page, { theme, seed }); await settle();
+  const n = await page.evaluate(() => ENEMIES.length);
+  for (const f of [1, 2]) {
+    if (f === 2) { const ok = await page.evaluate(() => { if (!dMap2) return false; goToFloor2(); return true; }); if (!ok) break; await page.waitForTimeout(2500); await settle(); }
+    for (let i = 0; i < n; i++) {
+      const a = await page.evaluate(([i, f]) => { const e = ENEMIES[i]; if ((e.floor || 1) !== f || e.dead) return null; const y = f === 2 ? FLOOR2_Y : 0;
+        px = e.x + 2.2; pz = e.z + .4; jumpY = y; lookAtPt(e.x, y + .8, e.z); window.__a = __cs; return 1; }, [i, f]);
+      if (a === null) continue;
+      await g.frames(3); seen++;
+      const d = await page.evaluate((i) => [ENEMIES[i].name, ENEMIES[i].floor || 1, __cs - __a], i);
+      kinds.add(d[0]); if (d[2]) onSight.push([theme, ...d]);
+    }
+  }
+  // a kill adds a loot glow; the pool keeps the scene's point lights at 20, so no program is re-keyed
+  const l0 = await nLights(), c0 = await page.evaluate(() => __cs);
+  await page.evaluate(() => { const e = ENEMIES.find(x => !x.dead && (x.floor || 1) === currentFloor); px = e.x + 2; pz = e.z; lookAtPt(e.x, (currentFloor === 2 ? FLOOR2_Y : 0) + .8, e.z); killE(e); });
+  await g.frames(4); lights.push([theme, l0, await nLights(), (await page.evaluate(() => __cs)) - c0]);
+  console.log(theme, seed, 'foes', n);
+}
+console.log('foes looked at', seen, 'kinds', [...kinds].join(', '), 'compiled on sight', JSON.stringify(onSight), 'kill:', JSON.stringify(lights));
+check('every foe on both floors of three old gates comes into view with no shader compiled', seen > 60 && onSight.length === 0, { seen, kinds: kinds.size, onSight });
+check('a kill and its loot glow leave the point lights at the pool\'s 20 and compile nothing', lights.every(([, a, b, c]) => a === 20 && b === 20 && c === 0), lights);
+check('no page errors', g.errs.length === 0, g.errs);
+await g.close();

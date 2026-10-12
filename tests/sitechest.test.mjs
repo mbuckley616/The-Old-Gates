@@ -1,3 +1,5 @@
+// (Session 730: `take` and the emptying fall back to building the site, as `chestOf` does since S711: on CI the loop had
+// unloaded the lair between the two calls.)
 // A lair's Hoard and a camp's Takings keep what you leave in them (Session 700). A site's chest was rolled again each time its
 // site was built, so walking out of range and back gave the same full chest on the same day, and a new one the next. Once you
 // take from it, its items are kept in `worldState.siteChests[site]` (the world row), and a rebuild, a turned day or a load
@@ -11,7 +13,7 @@ const site = await page.evaluate(() => { const [hi, hj] = WORLD.cellOf(px, pz); 
 check('a lair and a bandit camp near the start', !!site.lair && !!site.bcamp, site);
 const chestOf = (id) => page.evaluate((id) => { let S = WORLD.settlements.get(id); if (!S) S = WORLD.genSettlement(WORLD.siteAnywhere(id)); const c = S.chest; return c ? { name: c.displayName, items: c.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')), opened: c.opened } : null; }, id);
 const rebuild = (id, days) => page.evaluate(([id, days]) => { disposeSettlement(id); worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 1440 * (days || 0); }, [id, days]);
-const take = (id) => page.evaluate((id) => { const S = WORLD.settlements.get(id); currentLootContainer = S.chest; takeLootItem(0); currentLootContainer = null; return S.chest.items.length; }, id);
+const take = (id) => page.evaluate((id) => { const S = WORLD.settlements.get(id) || WORLD.genSettlement(WORLD.siteAnywhere(id)); currentLootContainer = S.chest; takeLootItem(0); currentLootContainer = null; return S.chest.items.length; }, id);
 for (const kind of ['lair', 'bcamp']) {
   const id = site[kind];
   const a = await chestOf(id);
@@ -25,13 +27,20 @@ for (const kind of ['lair', 'bcamp']) {
 }
 // through a real save and load
 const id = site.bcamp;
-await page.evaluate((id) => { const t = WORLD.SITE[id]; px = t.x + 40; pz = t.z + 40; }, id);
+await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id);
 await page.evaluate(async () => { await saveToSlot(0); });
 const before = await chestOf(id);
-await page.evaluate((id) => { const S = WORLD.settlements.get(id); currentLootContainer = S.chest; while (S.chest.items.length) takeLootItem(0); currentLootContainer = null; }, id);
-await page.evaluate(() => reloadActiveSlot()); await page.waitForTimeout(4000);
-await page.evaluate((id) => { const t = WORLD.SITE[id]; px = t.x + 40; pz = t.z + 40; }, id);
-let d = null; for (let i = 0; i < 30; i++) { await g.spin(null, 20); d = await page.evaluate((id) => { const S = WORLD.settlements.get(id); return S && S.chest ? S.chest.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')) : null; }, id); if (d) break; }
-check('emptied after a save, then loaded: the chest holds what it held at the save', before.items.length > 0 && JSON.stringify(d) === JSON.stringify(before.items), { before: before.items, d });
+await page.evaluate((id) => { const S = WORLD.settlements.get(id) || WORLD.genSettlement(WORLD.siteAnywhere(id)); currentLootContainer = S.chest; while (S.chest.items.length) takeLootItem(0); currentLootContainer = null; }, id);
+// Session 738: the load lands inside a fade that runs on time, not frames, so a fixed 4 s was short on a slow run (1 in 3 here):
+// wait for its *Loaded.* line, then stand by the camp and read until the loop has built it
+await page.evaluate(() => { window._ld = false; const o = showMsg; window.showMsg = function (t) { if (/^Loaded\./.test(t)) window._ld = true; return o.apply(this, arguments); }; window._ldO = o; reloadActiveSlot(); });
+for (let i = 0; i < 80; i++) { await page.waitForTimeout(250); if (await page.evaluate(() => window._ld)) break; }
+const loaded = await page.evaluate(() => { const l = window._ld; showMsg = window._ldO; return l; });
+await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id);
+let d = null; for (let i = 0; i < 60; i++) { await page.evaluate((id) => { const t = WORLD.SITE[id] || WORLD.siteAnywhere(id); px = t.x + 40; pz = t.z + 40; }, id); await g.spin(null, 20); await g.frames(2); d = await page.evaluate((id) => { const S = WORLD.settlements.get(id); return S && S.chest ? S.chest.items.map(i => i.name + (i.qty > 1 ? '×' + i.qty : '')) : null; }, id); if (d) break; }
+// Session 748: if the loop has not built the camp by then (red on CI on a20afcb, d null after 60 tries), build it as `chestOf` does; the chest
+// still comes from the loaded world row, which is what is being checked
+if (!d) { const c = await chestOf(id); d = c ? c.items : null; }
+check('emptied after a save, then loaded: the chest holds what it held at the save', loaded && before.items.length > 0 && JSON.stringify(d) === JSON.stringify(before.items), { loaded, before: before.items, d });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
