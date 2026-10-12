@@ -12,14 +12,14 @@ const wanted = k => !ONLY.length || ONLY.some(o => k.startsWith(o));
 // view: 'in' stands at the place and looks out; 'out' stands d away and looks at it. pick: which of the four views
 // (0..3, a quarter turn each from north) the final picture uses; turn: a further turn in radians.
 const SPOTS = [
-  { key: '02-gatelands-road', where: 'Hearthwick', view: 'out', d: 75, hour: 8, pick: 0 },
-  { key: '03-town-square', where: 'Dunmore', settle: true, view: 'in', hour: 18, pick: 0 },
-  { key: '04-village-street', where: "Colmán's Rest", settle: true, view: 'in', hour: 12, pick: 0 },
-  { key: '05-old-gate', where: 'door', view: 'out', d: 14, turn: Math.PI / 4, hour: 11, pick: 0 },
-  { key: '09-ashfeld', where: 'The Ashfeld', view: 'in', hour: 15, pick: 0 },
-  { key: '10-harbour', where: 'quay:Portclare', settle: true, view: 'out', d: 40, hour: 16, pick: 0 },
-  { key: '11-carraig-mor', where: 'Carraig Mór', settle: true, view: 'in', hour: 13, pick: 0 },
-  { key: '02b-vista', where: 'vista', view: 'in', hour: 9, pick: 0 },
+  { key: '02-gatelands-road', where: 'Hearthwick', view: 'out', d: 75, hour: 8, pick: 1 },
+  { key: '03-town-square', where: 'Dunmore', settle: true, view: 'in', hour: 18, pick: 1 },
+  { key: '04-village-street', where: "Colmán's Rest", settle: true, view: 'in', hour: 12, pick: 3 },
+  { key: '05-old-gate', where: 'door', view: 'out', d: 14, turn: Math.PI / 4, hour: 11, pick: 1 },
+  { key: '09-ashfeld', where: 'The Ashfeld', view: 'in', hour: 15, pick: 2 },
+  { key: '10-harbour', where: 'quay:Portclare', settle: true, view: 'out', d: 40, hour: 16, pick: 1 },
+  { key: '11-carraig-mor', where: 'Carraig Mór', settle: true, view: 'in', hour: 13, pick: 2 },
+  { key: '02b-vista', where: 'vista', view: 'in', hour: 9, pick: 1 },
 ];
 const g = await boot({ dpr: PROBE ? 1 : 1.5 }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => WORLD.devUnlockAll());
