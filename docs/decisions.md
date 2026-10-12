@@ -4,14 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### A householder woken in the night: what does she say, and does she mind? (systems builder, after Session 763, 2026-10-12) — DECISION #255
 The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h wakes her (Session 739), and the ordinary day talk opens: *Blessings on the road that brought you. One of our own, friend.*, with *My name is Traveller.* first. The prompt over her while she sleeps reads *Sinéad — Press 'E' to talk*. Nothing knows it is the middle of the night or that a stranger is standing in her bedroom. Today, being inside after hours is not a crime (the crime design of 26 Sep), so how she takes it is a rule of play, and the words are the quest writer's.
 - **A. A line of her own, then the talk** *(recommended)*: over a sleeper the prompt reads *Sinéad (asleep) — Press 'E' to wake*. Woken, she opens with one night line by her people (the quest writer writes four, a startled *What — who's there? It's the middle of the night.* in each voice), and the usual talk follows without the introduction topic first. No new rule; a picked lock seen is still the only crime.
 - **B. As A, and she wants you out**: woken, she says her line and the talk offers only *Leave* and *I'm sorry, I'll go*; she will trade or talk normally from 7h. Still no crime.
 - **C. As A, and a stranger found in a home at night is trespass**: woken by someone who neither rents, owns nor was let in, she counts it as a seen crime (−1 favour, the 25-gold fine, a guard sent, as a picked lock), and the line says so.
 Recommendation: **A**. The crime design chose that being inside is not a crime, and the critic's complaint is the words, not the rules; C changes the crime rules on a corner case, and B blocks talk the player came for.
-
-## Answered
+Michael: **Her own night line, then the usual talk** (A). (12 Oct 2026, on issue #255)
+*Done, Session 770:* over a sleeper the prompt reads *<name> (asleep) — Press 'E' to wake*; the first talk after she is woken in her sleeping hours opens with the night line in place of the greeting, once a visit, and the introduction moves after her own topics. No crime. The four voices are the quest writer's: `WOKEN_LINES` in `js/86-world-crime.js` is empty, and until a people has its own line the decision's *What — who's there? It's the middle of the night.* stands for all four.
 
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.
