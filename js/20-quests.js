@@ -342,6 +342,16 @@ const THEME_DEF={
              enemies:['Skeleton','Goblin','Gargoyle','Shieldbearer','Mimic','Golem']},
 };
 
+// S759 — the gates by school (Michael's A, lore_canon §9a): goblins are a state a gate can be in, not a kind of gate. A gate
+// that drew 'goblin' (the world's roll, an authored entry, an old save) is an occupied gate of one of the built schools, the
+// school chosen by its seed: built and lit in its school's shape, holding the warren's roster. The key 'goblin' stays the
+// stored word, so its name (*Stinking Warren*) and the townsfolk's *goblins nest there* still read from it. Gaoth joins the
+// list when it is built (its roster and its look).
+const GATE_SCHOOLS=['undead','elemental','deep','haunted','ruins'];
+const OCCUPIED_ROSTER=['Goblin','Goblin','Kobold Thief','Slime','Cave Troll','Shieldbearer'];
+function gateOf(entry){const e=entry||{};if(e.theme!=='goblin')return {theme:e.theme,occupied:!!e.occupied};
+  let v=((e.seed|0)^0x5bd1e995)>>>0;v=Math.imul(v^(v>>>15),0x2c1b3c6d)>>>0;v=Math.imul(v^(v>>>12),0x297a2d39)>>>0;v=(v^(v>>>15))>>>0;
+  return {theme:GATE_SCHOOLS[v%GATE_SCHOOLS.length],occupied:true};}
 // Build a full portal definition from a WORLD_DUNGEONS entry
 // v80 S9 — dungeon difficulty is the player's level, not an authored grade.
 // Portals resolve diff/diffScale at use time so a door you found at L2 is
@@ -350,7 +360,8 @@ const THEME_DEF={
 function levelDiffKey(up){const L=(typeof level==='number')?level:1;const G=['veryeasy','easy','normal','hard','veryhard'];const i=L<=2?0:L<=5?1:L<=9?2:L<=14?3:4;return G[Math.min(4,i+(up>0?up:0))];}
 function portalGradeUp(entry){const L=entry&&entry.lair;return L?(L.dragon?2:1):0;}
 function makePortalDef(entry){
-  const td=THEME_DEF[entry.theme]||THEME_DEF.ruins;
+  const gate=gateOf(entry);
+  const td=THEME_DEF[gate.theme]||THEME_DEF.ruins;
   const ds=DIFF_SCALE[entry.diff]||DIFF_SCALE.normal;
   return{
     x:entry.x, z:entry.z,
@@ -361,7 +372,8 @@ function makePortalDef(entry){
     seed:entry.seed,
     zone:entry.zone,
     keyBase:dungeonKeyBase(entry.seed),
-    theme:entry.theme,
+    theme:gate.theme,
+    occupied:gate.occupied,
     get diff(){return levelDiffKey(portalGradeUp(entry));},
     get diffScale(){return DIFF_SCALE[levelDiffKey(portalGradeUp(entry))];},
     kind:entry.kind || 'cave_door',  // v61f8: forward-compat field. 'cave_door' (default, carved-rock-and-door "old gate") or 'fort_door' (built-stonework fort entrance).

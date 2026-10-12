@@ -932,7 +932,7 @@ function buildDungeon(portal){
     }
     portal._tutorialSpawn = {x: _spBest.c, z: _spBest.r, yaw: 3 * Math.PI / 4};
   }
-  const th=THEME_DEF[portal.theme]||THEME_DEF.ruins;
+  const th=portal.occupied?Object.assign({},THEME_DEF[portal.theme]||THEME_DEF.ruins,{clutter:'junk'}):(THEME_DEF[portal.theme]||THEME_DEF.ruins); /* S759 — an occupied gate: its school's stone and light, the warren's junk */
   dScene.background=new THREE.Color(th.fog);
   const fogFar={tiny:16,small:22,medium:32,large:44,massive:56}[portal.size]||28;
   dScene.fog=new THREE.Fog(th.fog,6,fogFar);
@@ -3057,7 +3057,7 @@ function buildDungeon(portal){
     // v80 S478 — the foes' spots, kinds and variants come from the floor's stream; each foe is keyed <dungeon>:<floor>:<index>
     // and rolls its fight from its own (keyFoe, 42-zone-enemies.js). The shuffle was a sort on Math.random.
     const dKey=dKeyOf(portal,floorIdx),dFoes=seededRng('dfoes',dKey);
-    const themeEnemies=(THEME_DEF[portal.theme]||THEME_DEF.ruins).enemies;
+    const themeEnemies=portal.occupied?OCCUPIED_ROSTER:(THEME_DEF[portal.theme]||THEME_DEF.ruins).enemies; /* S759 — an occupied gate holds the warren (gateOf, 20-quests.js) */
     // v59: filter the theme roster to enemies the player has unlocked. Preserves order + repeats
     // so theme weighting (e.g. Skeleton appearing 3× in undead) still applies. If every entry is
     // gated (shouldn't happen — Skeleton is level 1), fall back to plain Skeleton.

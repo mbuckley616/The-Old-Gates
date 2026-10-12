@@ -15688,3 +15688,19 @@ With your ship in port, the line now ends *Into the hold.* or *The hold is full:
 
 ### Needs eyes
 - None by play.
+
+## v80 — Session 759 — The gates by school, first slice: goblins are a gate's state, not its kind (Michael's A, §9a)
+Michael's A of Session 754 made each old gate one of the six schools, and goblins *a state any gate can be in: a quiet or spent gate that a goblin warren has moved into* (lore_canon Part II §9a). Backlog C carries the build for both builders. This session takes the piece that is fully specified and the systems builder's: the *occupied* flag, replacing the goblin theme.
+
+`gateOf(entry)` (`20-quests.js`, beside `THEME_DEF`) reads a gate's stored theme. Anything but *goblin* is its school as before. A gate that drew *goblin* (the world's roll, an authored entry such as *The Last Post*, or an old save, all read the same way) is an occupied gate of one of the five built schools, the school picked by a hash of its seed. `makePortalDef` takes the school as the portal's theme and sets `occupied`. So the gate is lit, fogged, scored and furnished as its school (`THEME_DEF`, `DUN_DAMP`, the rooms, the music, the glow all key on the portal's theme), and two lines in `56-dungeon-build.js` read the flag: its floor takes the warren's junk, and its foes come from `OCCUPIED_ROSTER`, the old goblin list (Goblin ×2, Kobold Thief, Slime, Cave Troll, Shieldbearer). The stored word stays *goblin*, so the gate's name (*The Black Den*, *Godou Burrow*) and the townsfolk's *goblins nest there* still read from it, unchanged.
+
+Nothing is re-rolled: the world's draw is the same, and the share of goblin-held gates stays at one in six. Gaoth is not among the schools an occupied gate can be until it is built (its look and its foes); adding it then moves about a sixth of the occupied gates to another school, which changes only their look. The test harness's `enterDungeon({theme:'goblin'})` builds a portal by hand and still gets the old goblin look; nothing in the game does that.
+
+Each school's own roster against the canon's table is a rule of play and Michael's: asked as **DECISION #252**. Under the table read strictly, a level-one character in a Cloch or Scáth gate would meet only the Skeleton fallback, so the options keep a first-level foe in each.
+
+### Verified (headless Chromium)
+`tests/gateschool` (new, 9 checks). Of the world's 846 gates, 126 drew *goblin*; all are occupied gates of a school, none a goblin gate: deep 28, elemental 31, undead 24, haunted 23, ruins 20, each the same on every read. Every other gate keeps its school, unoccupied. Every occupied gate's name is the name it had. The six authored goblin entries (seeds 204, 601, 645, 867, *The Last Post*, *Hollow Gate*) are occupied. Inside, at level 6, an occupied gate of the deep school has the deep school's fog (0x080a10) and holds Goblin, Kobold Thief, Slime, Cave Troll, Shieldbearer; the same seed as an unoccupied deep gate has the same fog and holds Cave Troll, Golem, Slime, Mimic, Skeleton. No page errors. `dungeonfoes`, `dungeon` (5 suites), `doublenames`, `mimicspots`, `dunseed`, `chestpicks` pass; `lairtheme` fails the one check it failed before (Session 756).
+
+### Needs eyes
+- By play: an occupied gate in its school's colours with the warren's junk, whether it reads as *someone's home* moved into an old gate (the look builder may want more of the warren than barrels and junk).
+- Michael: DECISION #252, the schools' rosters.
