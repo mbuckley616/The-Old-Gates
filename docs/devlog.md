@@ -15783,3 +15783,39 @@ The line-up (8 people), the faces and the lane (5 people) render with no page er
 ### Needs eyes
 The faces at eye level, and the women's long hair, which is still untidy at the temples. Frame rate with many people on Michael's machine (the live page's line-up). The question Michael raised at the end of the session: a builder of our own, for creatures as well as people.
 
+
+## v80 — Session 771 — The foundation approved; the gates at their size; the builder written; the second round of concept art
+Michael approved the slices ("I also approve of the slices"), which starts A, the new visual foundation, as a Fable session. He gave two call-outs with it. First, people must match the world's proportions, "houses and buildings especially". Second, the gates, outside and in, were too small: "They should be shockingly large, like what we see in the concept art. Forget the 'dungeon with cobblestone walls' feel." He also said yes to a builder of our own for people and creatures ("write it up and fold it in"), and he added a second round of concept art to the Drive folder.
+
+**Scale, measured.** A headless probe of Dunmore at noon read the game's own numbers:
+- townsfolk stand 1.05 to 1.15 units (the head bone 0.91 to 1.04 above the feet), and the player's eye is at 0.92;
+- house doors are 1.85 units, cottage eaves 2.4 (3.3 in the stone towns), and interiors are the footprint times 1.8 with furniture at 0.62;
+- so the buildings are close to true metres and the people are about 60% of the size their doors expect.
+
+That is the mismatch Michael saw. The slices are right: 1.6 to 1.9 m people, 2.05 m doors. `docs/design/visual-foundation.md` makes it a rule: one unit is a metre, people are the measure, the eye goes to 1.65 m, interiors go to true size, and a ratio test guards it. The houses barely move and the speeds do not change.
+
+**The gates, rebuilt** (`docs/prototypes/levelup/gate.js`). The Session 769 slice was four 17 m rings on a lawn and a 60 m corridor with flagstones. The new exterior is OG-037's first variation at OG-U2-009's size:
+- five stepped pointed orders cut into a limestone cliff, the outer arch 100 m high and 76 m across, each order 6 m of face and 6.5 m deeper than the last, with a roll moulding on its inner edge;
+- a spine of two pillars 104 m high with columns of glyphs and two ring sigils;
+- a slit door 24 m high and 4 m wide;
+- a Crown camp at the foot whose people are the slice's genome bodies, and one walking up the path.
+
+`&cam=foot` stands in the camp and looks up. The interior is a nave 26 m wide and 250 m long under a pointed vault 50 m up, with a pier every 14 m, script and ring sigils up every pier (two bays guttering), dark aisles, and a stair across the whole width. At the far end are a ring 33 m high and a shaft of cold light. The floor is great dark slabs that are wet in patches and reflect the hall from a probe rendered once. `common.js` gains three textures (`ashlar`, `slab`, `rock`), and `bundle.py` a fifth live scene (`door.html`). The live page carries all three.
+
+**The builder** (`docs/design/character-builder.md`):
+- MakeHuman is only the source of a CC0 body; the tool is ours;
+- one genome format over any species, where a species is a base mesh, a skeleton fitted to it, sculpted and generic (bone-scale) sliders, regions and a pose library;
+- the peoples are slider ranges, and seeds come from place and id, so the co-op rules hold;
+- a table of body plans from human to serpentine, and a tool page that saves genomes for the game;
+- the work runs B1 to B6 inside backlog K.
+
+**The second round of concept art.** Sixteen sheets (Michael's OG-U2-001 to 016) are catalogued as OG-097 to OG-112, with thumbnails, a new `08_Culture_Daily_Life` folder, 14 KEEP and 2 MAYBE recommended, and all added to the review page (republished). The review page also had a bug since Session 755: the "Yes, apply them" bar showed while hidden, because `display:flex` overrode `[hidden]`. It is fixed. OG-U2-001 is misfiled: it is the alchemy specimens sheet, not jewelry. OG-U2-009 raises a pending question in `decisions.md`: six great gates, or many gates of six schools?
+### Verified (headless Chromium)
+- The gate (path and foot views) and the hall render at 1920x1080 in 18 to 19 s with no page errors. The portal is 423 voussoirs; the scene has 393 to 417 trees, 140,000 grass blades and 7 people; the hall has 4.
+- The three bundled pages (`gate.html`, `door.html`, `hall.html`) load and run when served locally with three.js pointed at the vendored copy. The frame rates there (1 fps, software GL) mean nothing.
+- The review page renders 112 cards with 112 thumbnails and no page errors. The catalogue's 96 earlier rows are byte-identical.
+### Needs eyes
+- Whether the gates now feel shockingly large, from the path and from the door, and whether the cliff's limestone and the order mouldings read as OG-037.
+- The hall's frame rate on Michael's machine: about 20 point lights and a reflection probe.
+- His marks on the 16 new images, and his answer on the six great gates.
+- The scale rule's feel (a 1.65 m eye in rooms of true size) can only be judged once the foundation builds it.

@@ -92,6 +92,17 @@ export function buildTextures() {
   TEX.beam = texPair(256, (x, y) => { const g = Math.sin((x * 3 + tfbm(x, y, 3, 3, 4) * 4) * Math.PI * 2) * .5 + .5, n = tfbm(x, y, 18, 3, 5); const v = .16 + .05 * g + .04 * n; return [g * .5 + n * .5, v * 1.15, v * .82, v * .62]; }, 1.6);
   TEX.flag = texPair(512, (x, y) => { const rows = 4, row = Math.floor(y * rows), ry = y * rows - row, xx = x * 3 + (row % 2) * .5, col = Math.floor(xx), rx = xx - col, r = idr(row * 7 + ((col % 3) + 3) % 3);
     const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 14, 4, r * 3), gap = edge < .025; const h = gap ? 0 : Math.min(1, edge * 6) * (.8 + .2 * n); const v = .3 + .1 * r + .1 * n; return [h, ...(gap ? [.06, .06, .06] : [v * .95, v * .97, v])]; }, 2.4);
+  // Session 771, the gates at their size: dressed blocks two metres and more, hairline joints, tooling and weathering;
+  // and the halls' floor, great slabs of dark stone that take a polish where the wet lies
+  TEX.ashlar = texPair(512, (x, y) => { const rows = 4, row = Math.floor(y * rows), ry = y * rows - row, cols = 2, xx = x * cols + (row % 2) * .5 + (row % 3 === 2 ? .23 : 0), col = Math.floor(xx), rx = xx - col, r = idr(row * 29 + ((col % cols) + cols) % cols * 11 + 5);
+    const edge = Math.min(rx * 2, (1 - rx) * 2, ry, 1 - ry), n = tfbm(x, y, 10, 5, r * 7), tool = tn(x * 3, y * 40, 32, 9) * .5, gap = edge < .018, chip = edge < .06 && tn(x, y, 64, 4) > .62;
+    const h = gap ? 0 : Math.min(1, edge * 14) * (.78 + .14 * n + .06 * tool) - (chip ? .25 : 0); const v = .5 + .14 * r + .14 * (n - .5) - (chip ? .08 : 0);
+    return [h, ...(gap ? [.16, .15, .14] : [v * 1.02, v * .99, v * .94])]; }, 2.2);
+  TEX.slab = texPair(512, (x, y) => { const rows = 2, row = Math.floor(y * rows), ry = y * rows - row, xx = x * 2 + (row % 2) * .5, col = Math.floor(xx), rx = xx - col, r = idr(row * 7 + ((col % 2) + 2) % 2 + 41);
+    const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 8, 5, r * 3), vein = Math.pow(1 - Math.abs(tfbm(x, y, 5, 4, 17 + r) - .5) * 2, 9), gap = edge < .008;
+    const h = gap ? 0 : .9 + .1 * n; const v = .14 + .05 * r + .05 * n + .08 * vein; return [h, ...(gap ? [.04, .04, .045] : [v * .95, v * .97, v * 1.04])]; }, 1.4);
+  TEX.rock = texPair(512, (x, y) => { const n = tfbm(x, y, 4, 6, 21), m = tfbm(x, y, 16, 4, 23), strata = Math.sin((y * 9 + n * 2.2) * Math.PI) * .5 + .5, crack = Math.pow(1 - Math.abs(tfbm(x, y, 6, 4, 29) - .5) * 2, 14);
+    const h = n * .55 + strata * .25 + m * .2 - crack * .25; const v = .48 + .14 * n + .05 * strata - .07 * crack; return [h, v * 1.03, v * .98, v * .9]; }, 3.0);
   for (const k in TEX) { TEX[k].map.repeat.set(1, 1); }
 }
 export function mat(tex, o = {}) { return new THREE.MeshStandardMaterial({ map: TEX[tex].map, normalMap: TEX[tex].normalMap, normalScale: new THREE.Vector2(o.ns ?? 1, o.ns ?? 1), roughness: o.rough ?? .9, metalness: 0, color: o.color ?? 0xffffff }); }

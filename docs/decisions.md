@@ -4,6 +4,12 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Six great gates, or many gates of six schools? (Claude, Session 771, 2026-10-12)
+Raised in chat, from the second concept art round (OG-105, Michael's OG-U2-009 *The Six Gates*). The canon (§9a) has many old gates, each belonging to one of the six schools. The sheet draws six great gates, one for each school, each with a place on the map: Tine, Solas and Gaoth on Aurenne, Cloch and Scáth on the Mark, and Uisce in the Gatelands. Its tagline is "What lies beyond is not a room, but a realm."
+- **A. Both** *(recommended)*. Six great gates, one per school, each the source of its school and a realm inside, are the late destinations of their islands; the many lesser gates stay as the canon has them. The home island keeps its gates and gains the Uisce great gate.
+- **B. Many gates only.** The sheet is a style guide for each school's gates, and nothing more.
+- **C. Six gates only.** The world's gates are these six; the lesser "gates" become their outer halls and branches.
+
 
 
 ## Answered
@@ -24,6 +30,12 @@ Michael: **"I'd like B but then let's go to A once I approve those. Just need mo
 On the characters, after the slices first used a free toy-style kit (KayKit): **"totally the wrong direction. They look like little children's toys - not humanoid and even close to realistic at all."** The target is OG-025's Markmen: real proportions, layered wool, fur and leather, faces. (12 Oct 2026)
 Done, Session 769: three more slices (the village lane close up, the gate at dusk, the hall inside), a live page with a frame counter, and no people in any slice. The kit is removed. A goes ahead when Michael approves the slices.
 Michael on the live page: **"each one is a steady 60 FPS for the live slices, this should be viable!"** (12 Oct 2026)
+Asked whether we could build our own character builder, one that takes other skeletons and creatures too, Claude said yes: MakeHuman is only the source of a CC0 body, and the tool around it is ours already. Michael: **"yes, write it up and fold it in. I also approve of the slices, but want to call out and be mindful of the proportions of our humanoids meshing well with the proportions of everything else in the world. Houses and buildings especially need to match. My only other callout is that the Interior and Exteriors of the gates are too small. They should be shockingly large, like what we see in the concept art. Forget the 'dungeon with cobblestone walls' feel of the previous version. I want to be as true to the concept art as we can be for the Gates."** (12 Oct 2026, in chat)
+That is A. Done, Session 771:
+- the brief, `docs/design/visual-foundation.md`, with both call-outs as measurements. Today's townsfolk stand about 1.1 units beside 1.85-unit doors, so the rule is one unit to a metre with people as the measure;
+- the builder, `docs/design/character-builder.md`;
+- the gate slices rebuilt at the concept art's size;
+- backlog K marked a Fable session for the producer's card.
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.
 1. **How people are proportioned** (OG-012, OG-095). **A.** Naturalistic, about 1.75 m. **B.** A heroic hybrid, about 1.80 m, slightly longer legs and broader shoulders, so a figure reads at a distance and in a fight *(recommended; both sheets pick it)*. **C.** Stylised: bigger heads and hands, narrow waists.
