@@ -1419,6 +1419,8 @@ Downstream: **undead are the uncleared** — residue the sigils failed to burn (
 
 **Anthropology.** A small founder population, guild-endogamous for centuries, gives a distinct look; fifteen centuries of marrying out makes "Old Blood" a spectrum — strongest inland in the Gatelands' hills and the Mark's high valleys, diluted at every port. The tattoos are cultural: given at coming-of-age to children who show the marks, by elders who no longer remember why the script is the script.
 
+**The marks are under the skin (Michael, 12 Oct 2026, from OG-066).** They are not ink. They show as pale raised lines under the skin, branching like veins, at the wrist, the back of the hand and the shoulder blade. A child either shows them or does not. The coming-of-age rite marks the child's acceptance, not the lines themselves. Where this Part says *tattoos*, read *the marks*.
+
 ### 3.2 Varek
 
 Old Blood by descent, raised a Gatelander in a village that dug in the old structures for what could be sold. He read the makers' holy writing the way his village read a wall: for what could be pulled out. His heresy — *"they built a cage and called it a loom"* — is authentic because it comes from inside. 250 years of reading against the Withdrawal's law is why he can feel the load-bearing pieces, why he does not age, why he is cold: he has read himself most of the way out of being human and most of the way toward the glass. His discoveries about the player (§6) are not genius; they are what any Old Blood reader who kept looking would eventually see. He is the only one who kept looking.
@@ -1427,7 +1429,7 @@ Old Blood by descent, raised a Gatelander in a village that dug in the old struc
 
 - An Old Blood touch skips Impression: first contact resolves at **Comprehension**.
 - They feel warm stones at a distance. Every rubbing-seller and hermit who points the player at a gate is one of them.
-- **The Cold.** Each Mastery-tier reading takes warmth: pallor deepens, eyes grey — and readers begin to *notice the window*: a pressure at the edge of attention, the sense of being regarded. The Withdrawal's law existed to prevent exactly this. Every Old Blood reader who ignored it went strange, then quiet. For an Old Blood player, the Cold is a visible stat that rises with Mastery and never falls.
+- **The Cold.** Each Mastery-tier reading takes warmth: pallor deepens, eyes grey — and readers begin to *notice the window*: a pressure at the edge of attention, the sense of being regarded. The Withdrawal's law existed to prevent exactly this. Every Old Blood reader who ignored it went strange, then quiet. For an Old Blood player, the Cold is a visible stat that rises with Mastery and never falls. The marks spread as the Cold rises, up the arm and at last to the face (Michael, 12 Oct 2026).
 
 ---
 
@@ -1462,6 +1464,8 @@ The seventh has no shrine. The Guest is found in defaced niches, in a chapel the
 ## 5. Dragons
 
 Canon's "no dragons" is amended by canon's own logic. The Faolchú scales: a *catastrophic* anchor failure gives the world's immune response more material than it can shape, and what it makes has wings. Dragons are the largest antibodies — rare, one per failure, each a mark of where the binding tore worst. A lair with a dragon is a place where something terrible happened to the loom. They do not speak, do not hoard by choice (the hoard is what the failure pulled up with it), and do not know what they are.
+
+**Below the dragon (Michael, 12 Oct 2026, from OG-073).** A catastrophic gate also remakes its own foes. Each school's antibody has a catastrophic form, larger and unbound, the tier of boss below the dragon. The failing form sits between the two: the same shape, with extra limbs and broken anatomy, still glowing only at its seams.
 
 ---
 
@@ -1694,4 +1698,4 @@ Every state reads the same few numbers, and every number is one the consequence 
 
 ## 14. Decisions taken in this addendum
 
-Dragons: in, as antibodies. Title: *The Old Gates*. Varek: Old Blood raised Gatelander. Player: chooses a people; Old Blood descriptions are inconsistent. The war: one generation ago. Start nation: the Crown. Cast: existing plus Oswy Blackhand. The Guest's chapel: black screen, *It saw you*, no boon. "A Sunday afternoon": design note, not dialog. Aurenne (Michael, 12 Oct 2026): a Mediterranean and North African fusion, its people mixed and darker-skinned; the Norman register dropped (§1.3). Gates by school (§9a). Tone (Michael, 12 Oct 2026): high fantasy at the core, grimdark and cosmic horror underneath; the awake look like villains, and the player is the monster, never said (§10a).
+Dragons: in, as antibodies. Title: *The Old Gates*. Varek: Old Blood raised Gatelander. Player: chooses a people; Old Blood descriptions are inconsistent. The war: one generation ago. Start nation: the Crown. Cast: existing plus Oswy Blackhand. The Guest's chapel: black screen, *It saw you*, no boon. "A Sunday afternoon": design note, not dialog. Aurenne (Michael, 12 Oct 2026): a Mediterranean and North African fusion, its people mixed and darker-skinned; the Norman register dropped (§1.3). Gates by school (§9a). Tone (Michael, 12 Oct 2026): high fantasy at the core, grimdark and cosmic horror underneath; the awake look like villains, and the player is the monster, never said (§10a). From the concept art (Michael, 12 Oct 2026; `decisions.md`): the Old Blood's marks are under the skin and spread with the Cold (§3.1, §3.3). Each school's foe has a catastrophic form below the dragon (§5). Aldwyn is Old Blood and has hidden it, and the mark on his wrist shows it (OG-053); what that means for his hundred and fifty years is the quest writer's to write. Corwin's people is never said. Some ordinary animals have six legs and nobody remarks on it. No firearms in hand: guns are cannon, on the best ships only. The Mark's towns have training grounds and arenas, for its duels and its mercenary trade.

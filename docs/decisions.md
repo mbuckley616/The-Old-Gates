@@ -4,7 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-
 ## Answered
 
 ### A householder woken in the night: what does she say, and does she mind? (systems builder, after Session 763, 2026-10-12) — DECISION #255
@@ -14,6 +13,25 @@ The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h wakes her (Sessi
 - **C. As A, and a stranger found in a home at night is trespass**: woken by someone who neither rents, owns nor was let in, she counts it as a seen crime (−1 favour, the 25-gold fine, a guard sent, as a picked lock), and the line says so.
 Recommendation: **A**. The crime design chose that being inside is not a crime, and the critic's complaint is the words, not the rules; C changes the crime rules on a corner case, and B blocks talk the player came for.
 Michael: **Her own night line, then the usual talk** (A). (12 Oct 2026)
+
+### The concept art's open questions (Claude, Session 767, 2026-10-12)
+Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.
+1. **How people are proportioned** (OG-012, OG-095). **A.** Naturalistic, about 1.75 m. **B.** A heroic hybrid, about 1.80 m, slightly longer legs and broader shoulders, so a figure reads at a distance and in a fight *(recommended; both sheets pick it)*. **C.** Stylised: bigger heads and hands, narrow waists.
+2. **The Old Blood's sigils** (OG-066, OG-065). **A.** Ink at the wrists, as the canon has it. **B.** Pale raised lines under the skin, branching like veins at the wrist, the hand and the shoulder; they read at game scale and could spread as the Cold takes hold *(recommended)*. **C.** Ink on the young; the elders' marks have spread to the face and hands (Síle).
+3. **The ship ladder** (OG-004, OG-072, OG-027). **A.** Keep the game's five classes (sloop, cutter, caravel, cog, galleon), each dressed by its island (a Markish galleon is a drakkar), and the boards' other hulls (dhow, longship, galley) sail as other people's ships *(recommended)*. **B.** The boards' ladder for the player: fishing boat, sloop, cog, brigantine, frigate. **C.** Both: the fishing boat as a starter under the five.
+4. **Crew** (OG-093, OG-027). **A.** None; the ship is yours alone, as now. **B.** Hired crew with roles and morale (food, pay, victories). **C.** Crew as upgrades without morale: a carpenter mends at sea, a cook feeds you, a navigator shows the coast *(recommended)*.
+5. **Climate** (OG-023, OG-039). **A.** None; cold and heat are only the look. **B.** A moderate rule: the Mark's cold and Aurenne's heat wear your stamina without the right clothes, and a few herbs and meals resist them *(recommended; fits the moderate survival Michael set)*. **C.** Cold only, in the Mark's high places.
+6. **New kinds of weapon** (OG-028). **A.** Spear and crossbow first, the two every board draws *(recommended)*. **B.** All seven: spear, crossbow, javelin, rapier, harpoon, glaive, sling. **C.** None; the island sets are reskins of the ten kinds there are.
+7. **Firearms** (OG-075's flintlock, OG-035's saltpeter, OG-065's musket). **A.** None in hand; guns stay cannon on the top ships *(recommended; neither the canon nor the brief admits them)*. **B.** One legendary pistol, unique. **C.** Late-game firearms, crafted.
+8. **A catastrophic gate's monsters** (OG-073). **A.** As the canon has it: a catastrophic failure makes one dragon. **B.** Each school's foe has a catastrophic form, a boss tier under the dragon *(recommended; the failing column is built either way)*. **C.** The catastrophic forms replace the dragon.
+9. **Six-legged animals** (OG-040). **A.** Ordinary in this world: a few species have six legs and nobody remarks on it *(recommended; the Morrowind licence)*. **B.** A seam of the binding: they live near gates. **C.** None.
+10. **Aldwyn's wrist sigil** (OG-053). **A.** None; he is an ordinary man. **B.** He is Old Blood and has hidden it, which would explain his hundred and fifty years *(recommended)*. **C.** The mark of the Royal Mage Corps he served, a reader's mark.
+11. **Corwin's people** (OG-057, OG-069). **A.** Gatelander. **B.** Aurennais, as the sheets label him. **C.** Never said, which fits his evasions *(recommended)*.
+12. **Companions** (OG-051's and OG-083's wolves, OG-054's Gateborn Companion). **A.** None for the player; the wolves are their owners' *(recommended for now; the canon's gate-born do not bond)*. **B.** An animal companion (a dog or a wolf). **C.** An animal and a gate-born companion.
+13. **Arenas** (OG-079, OG-080, OG-089). **A.** Training grounds and arenas in Markish towns, for the duels and the mercenary trade *(recommended)*. **B.** None.
+Michael: **1 B, 2 B, 3 A, 4 C, 5 B, 6 A, 7 A, 8 B, 9 A, 10 B, 11 C, 12 A, 13 A**, every recommendation. (12 Oct 2026, in chat)
+Done, Session 767. The canon answers are in `lore_canon.md`: 2 in §3.1 and §3.3, 8 in §5, and 9, 10, 11, 7 and 13 in §14. Backlog L's items carry their answers.
+
 
 ### The concept art's first batch: style, the gate, invented names, Aurenne (Claude, Session 755, 2026-10-12)
 Raised in chat from the first batch of the concept art intake (`docs/art/catalogue.csv`, OG-007 to OG-096 of the world folder).

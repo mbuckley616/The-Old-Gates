@@ -15694,3 +15694,24 @@ Nothing built in the game. The catalogue has 96 rows, OG-001 to OG-096, none mis
 ### Needs eyes
 - Michael: the review, on the published page.
 - The next session: the KEEP rows into backlog items, each citing its image id, and the decisions the catalogue's notes raise.
+
+## v80 — Session 767 — The concept art, reviewed: 63 kept, 56 backlog items, 13 questions answered (docs only)
+Michael went through the 96 images on the review page and marked them: 62 KEEP, 32 NO, 2 MAYBE. His marks differ from the intake's recommendations on 38 images, and the differences are the useful part. He took OG-025 over OG-002 for the Markmen, with a note: "closer to the Nord / hardcore Scandinavian Viking look I was after." He took the second armour pass (OG-052) over the first (OG-019), and Aldwyn's character sheet (OG-053) over his study (OG-092). He kept the NPC gallery (OG-001), the creator (OG-050), the powers (OG-042), the legendary weapons (OG-075) and both crossed-blade frames (OG-045, OG-063). He cut every first pass and every variant frame the intake had left as MAYBE. The two still open are OG-015 (resources by island) and OG-094 (implements by school, with Tine drawn as nature).
+
+What changed. The catalogue's `review_status` column holds his marks, read from the review page's database (96 rows, all present), and OG-025's notes carry his words. Backlog L is new: one item per idea, grouped by people, named people, wildlife, the gates' foes, places, ships, arms and survival, and every item names the images it comes from. All 62 kept images are cited; a few rejected ones are named only to say which pass won. Items that need a call are marked *(decision)*. The thirteen calls are one entry under Pending in `decisions.md`, with options and a recommendation each: proportions, the Old Blood's sigils, the ship ladder, crew, climate, new weapons, firearms, catastrophic foes, six legs, Aldwyn's sigil, Corwin's people, companions and arenas. They were raised in chat because Michael was there; there is no issue, so the producer does not ping him twice. `docs/art/README.md` records the review and how to add the next images.
+
+Michael answered all thirteen in chat the same hour and took every recommendation: 1 B, 2 B, 3 A, 4 C, 5 B, 6 A, 7 A, 8 B, 9 A, 10 B, 11 C, 12 A, 13 A. The entry moved to Answered, and backlog L's items carry their answers, so none waits now. The answers that change the world went into `lore_canon.md`, as the gates by school did:
+- The Old Blood's marks are pale raised lines under the skin, not ink, and they spread as the Cold rises (§3.1, §3.3).
+- Each school's foe has a catastrophic form, a boss tier below the dragon (§5).
+- Aldwyn is Old Blood and has hidden it; the quest writer decides what that means for his long life.
+- Corwin's people is never said.
+- Some ordinary animals have six legs.
+- No firearms in hand.
+- The Mark's towns have arenas.
+
+The rest are rules of play and stay in the backlog: the heroic-hybrid proportions, the game's five ship classes dressed by island, crew as upgrades without morale, a moderate climate rule, the spear and crossbow first, and no companions.
+### Verified (headless Chromium)
+Nothing in the game changed; no build tag. A script checked that the catalogue's only change is the status column plus the one note (a word diff, 96 rows), and that every KEEP id appears in backlog L.
+### Needs eyes
+Nothing owed from the review: Michael settled his last two MAYBEs in chat. He dropped OG-015 (resources by island; OG-035 covers it). He kept OG-094 with Tine redone as fire, which is now backlog L7's item on magical implements. Both are marked in the catalogue and on the review page's database. The quest writer's names for the new Aurenne register (backlog J) come before any of L2's Aurennais are given lines. L3's common animal set is the biggest single gap, and the place to start building.
+
