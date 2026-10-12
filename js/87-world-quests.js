@@ -359,9 +359,10 @@ const giver=`${lord.title} ${lord.name}`;
   // S712 — the cavern's theme and its stored beast are read when asked, by lairBiome and lairBeast, as the beast at the crag is: read as the
   // cell was made they followed the live REGIONS (the loaded cells' only), so 11 of 41 doors stored another beast and 5 fen caverns were built 'deep'.
   // Never read while the cell is being made (lairBiome calls getCell); makePortalDef reads the theme as the cell loads.
+  // S756 — the cavern's name and place are read when asked: the door is made before the world-wide naming pass, which may rename the lair
   function lairDoorFor(site,c){const seed=lairSeed(site);
     const dragon=!!site.dragon||cellHash(seed%9973,seed%7919,5)<.08;site.dragon=dragon;
-    const e={zone:'gen',x:site.x,z:site.z+16,seed,size:dragon?'large':'medium',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,canonicalName:`${site.name} — the cavern`,lair:{place:site.name.replace(/'s Lair$/,''),get boss(){return lairBeast(site);},dragon,siteId:site.id}};
+    const e={zone:'gen',x:site.x,z:site.z+16,seed,size:dragon?'large':'medium',diff:dragon?'veryhard':'hard',kind:'cave_door',cell:c.i+','+c.j,sigil:false,lairDoor:true,get canonicalName(){return `${site.name} — the cavern`;},lair:{get place(){return site.name.replace(/'s Lair$/,'');},get boss(){return lairBeast(site);},dragon,siteId:site.id}};
     Object.defineProperty(e,'theme',{get(){const b=lairBiome(site);return b==='swamp'||b==='fen'?'haunted':'deep';},enumerable:true,configurable:true});
     return e;}
   function poiName(kind,r,reg){const n=genName(r,reg);return kind==='glade'?`${n} Glade`:kind==='shrine'?`Shrine of ${n}`:kind==='lair'?`${n}'s Lair`:kind==='tower'?`${n} Spire`:`${n} Camp`;}
@@ -923,7 +924,7 @@ const giver=`${lord.title} ${lord.name}`;
     const pb=pickNear(sitesOf('mark',['port']),straitX,straitZ);if(pb){pb.name='Port Blackhand';pb.anchor='blackhand';}
     // the Compact's seat: Aurenne's capital; the Salt Mouth: an Aurennais lair nearest the coast facing the strait
     const cap=sitesOf('aurenne',['city'])[0];if(cap){FACTIONS.compact.seat=cap.id;}
-    const sm=pickNear(sitesOf('aurenne',['lair']),straitX,straitZ);if(sm){sm.name='The Salt Mouth';sm.anchor='salt_mouth';sm.dragon=true;const cl=CELLS.get(key(...cellOf(sm.x,sm.z)));if(cl){const d=cl.doors.find(x=>x.lairDoor&&x.lairSite===sm.id);if(d){d.lair.dragon=true;d.lair.place='The Salt Mouth';d.size='large';d.diff='veryhard';d.canonicalName='The Salt Mouth — the cavern';}}}
+    const sm=pickNear(sitesOf('aurenne',['lair']),straitX,straitZ);if(sm){sm.name='The Salt Mouth';sm.anchor='salt_mouth';sm.dragon=true;const cl=CELLS.get(key(...cellOf(sm.x,sm.z)));if(cl){const d=cl.doors.find(x=>x.lairDoor&&x.lairSite===sm.id);if(d){d.lair.dragon=true;d.size='large';d.diff='veryhard';}}}
     // the Root: an islet lair in a sea cell farthest east
     let root=null,rx=-1;for(const c of CELLS.values()){if(c.type!=='sea')continue;c.sites.forEach(t=>{if(t.kind==='lair'&&t.x>rx){rx=t.x;root=t;}});}
     if(root){root.name='The Root';root.anchor='root';const cell=CELLS.get(key(...cellOf(root.x,root.z)));if(cell){cell.doors=cell.doors.filter(d=>!(d.lairDoor&&d.lairSite===root.id));if(!cell.doors.some(d=>d.root))cell.doors.push({zone:'gen',x:root.x,z:root.z-6,seed:9001,size:'large',theme:'deep',diff:'veryhard',kind:'cave_door',cell:cell.i+','+cell.j,sigil:true,root:true,canonicalName:'The Root',lair:{place:'The Root',boss:'Ogre',dragon:false}});}}

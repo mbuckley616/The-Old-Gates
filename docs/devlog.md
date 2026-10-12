@@ -15649,3 +15649,18 @@ Nothing built; docs only.
 ### Needs eyes
 - Systems builder and look builder: backlog C, *The gates by school*.
 - Quest writer: gate names and rumours that say "goblin gate" or name a theme.
+
+## v80 — Session 756 — One name per place reaches the lairs, shrines and glades (the critic's s585)
+The critic found three lairs doubled: two *Dogiaen's Lair*s 1,400 apart, two *Trabrou's*, two *Dunowen's*. About seventy towns are in rumour reach of both Dogiaen's Lairs (Session 729), so *Somebody killed the thing at Dogiaen's Lair* could mean either. Session 432's pass (Michael's A on #110, *one name per place, world-wide*) ranked only the settlements. A probe over the whole grid found 22 names held twice or thrice outside the towns: six shrines, six spires, five glades, three lairs, a ruin and *Saint-Neuf Camp* three times among the bandit camps.
+
+`uniqueSiteNames` (`81-world-cells.js`) now ranks shrines, towers, lairs, glades, camps, bandit camps and ruins after every settlement. Their names have a form (*Shrine of …*, *… Spire*, *…'s Lair*) that no settlement's has, and the sort is stable, so every settlement keeps exactly the name it had: a before-and-after dump of all 1,223 sites differs in 24 places, all of them the second of a pair. A place that loses its name keeps its form round a free name from its culture's bank (*Dogiaen's Lair* `c3_3_p1` is now *Donaen's Lair*; *Bellac Spire* `c9_4_p2` is *Belbrun Spire*), chosen from the hash of its id as the towns' are.
+
+The lair's cavern door is made as its cell is made, before the pass, and it copied the name then: the renamed lair's door would still have said *Dogiaen's Lair — the cavern*. `lairDoorFor` (`87-world-quests.js`) now reads the cavern's name and place from the site when asked. The Salt Mouth's anchoring wrote both by hand and no longer needs to: the site's name gives the same words.
+
+A naming fix that does what #110's answer says, so no decision. A save made before keeps the places by id; a journal line already written keeps the old name.
+
+### Verified (headless Chromium)
+`tests/poinames` (new, 8 checks). No two named places in the world share a name (419 shrines, spires, lairs, glades, camps and ruins, with the towns). The critic's six lairs have six names. 24 places renamed, each keeping its form; 253 settlements renamed, as before. All 40 lair doors (the Root's is its own) read their lair's name as it stands; the Salt Mouth's reads *The Salt Mouth — the cavern*. With both old Dogiaen's Lairs killed, 137 towns in reach hear of two lairs by two names. No page errors. `placenames`, `lairrumour`, `lairname`, `lairdoor`, `lairmaster`, `wyrm` pass. `lairtheme` fails here on one check, and fails the same on the tree before this change: *Saint-Rouge's Lair*, on an islet in cell (11,−1) beyond the grid, is missing from its first read and present in its second. Not this change; left for the next session that touches lairs.
+
+### Needs eyes
+- None by play. The quest writer may want to read the 24 new names (`tests/poinames` prints six).
