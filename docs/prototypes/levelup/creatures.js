@@ -22,7 +22,7 @@ export function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79
 // ── the body under construction: bones, flesh (tapered capsules), rigid bits, and what the gait needs ──
 // Every bone's rest rotation is the identity, so a bone's rest direction is simply the offset to its child.
 class Body {
-  constructor(plan, g) { this.plan = plan; this.g = g; this.S = g.sliders.size; this.bones = []; this.by = {}; this.flesh = []; this.bits = []; this.legs = []; this.arms = []; this.wings = []; this.chains = {}; this.nGroup = 0; }
+  constructor(plan, g) { this.plan = plan; this.g = g; this.S = g.sliders.size; this.bones = []; this.by = {}; this.flesh = []; this.bits = []; this.legs = []; this.arms = []; this.wings = []; this.chains = {}; this.nGroup = 0; this.sheets = []; this.tubes = []; this.radials = []; this.fins = []; }
   bone(name, parent, p) { const b = { name, parent: parent ? this.by[parent] : null, p: p.clone(), i: this.bones.length }; this.bones.push(b); this.by[name] = b; return b; }
   chain(name, parent, pts) { const names = []; let par = parent; pts.forEach((p, k) => { const n = name + k; this.bone(n, par, p); names.push(n); par = n; }); this.chains[name] = names; return names; }
   // flesh: a tapered capsule a→b on a bone; capsules sharing a group join hard (one limb), groups join smoothly
@@ -153,6 +153,28 @@ P.wings = (B, o) => {
   }
 };
 // a row of spines down the back (bits on the spine bones)
+// fins (Session 774): each a thin sheet on a bone of its own, so the pose can flutter it. A fin is an outline in its own
+// plane (u back along the body, v out from it), scaled by len and h: 'tri' for a dorsal, pectoral, pelvic or anal fin,
+// 'fork' for a fish's tail (v up) or a whale's flukes (v sideways). It hangs off the spine at t, or off the tail's end.
+const FIN = { tri: [[-.15, 0], [.12, .75], [.3, 1], [.45, .8], [.62, .35], [.8, 0]], fork: [[0, .22], [.55, 1], [.42, .5], [.38, .15], [.5, 0], [.38, -.15], [.42, -.5], [.55, -1], [0, -.22]] };
+P.fins = (B, o) => { for (const f of o.list) for (const side of f.pair ? [1, -1] : [0]) {
+  const onTail = f.on === 'tail', sp = onTail ? null : B.spineAt(f.at), parent = onTail ? B.tailBone : sp.bone;
+  const R = onTail ? 0 : sp.r, base = onTail ? B.tailEnd.clone() : sp.p.clone().add(V(side * R * B.spineS[0] * (f.off?.[0] ?? .9), R * B.spineS[1] * (f.off?.[1] ?? 0), f.dz || 0));
+  const back = V(...(f.back || [0, 0, -1])).normalize(), out = V((f.out?.[0] ?? 0) * (side || 1), f.out?.[1] ?? 1, f.out?.[2] ?? 0).normalize();
+  const name = 'fin' + B.fins.length; B.bone(name, parent, base); B.fins.push({ name, kind: f.role || 'fin', side, out });
+  const pts = [base.clone()], bones = [B.by[name].i]; for (const [u, v] of FIN[f.kind || 'tri']) { pts.push(base.clone().addScaledVector(back, u * f.len).addScaledVector(out, v * f.h)); bones.push(B.by[name].i); }
+  const tris = []; for (let k = 1; k < pts.length - 1; k++) tris.push(0, k, k + 1); B.sheets.push({ pts, tris, bones, tone: f.tone || 'fin' }); } };
+// radial arms (Session 774): n chains from a ring round a centre, each sinking at `down` degrees and bending by `curl` a
+// bone. Thick ones are flesh (an octopus's arms, a jellyfish's oral arms); `thread` ones are thin glowing tubes (its tentacles).
+P.radial = (B, o) => { const c = V(...o.c), parent = o.parent || B.spineNames[0], seg = o.seg || 6;
+  for (let k = 0; k < o.n; k++) { const a = (k + (o.rot || 0)) / o.n * Math.PI * 2, rr = o.ring * (o.jitter ? 1 + (k % 3 - 1) * o.jitter : 1), pts = [c.clone().add(V(Math.cos(a) * rr, 0, Math.sin(a) * rr))];
+    const len = o.len * (o.jitter ? 1 + ((k * 7) % 5 - 2) * o.jitter : 1);
+    for (let j = 0; j < seg; j++) { const dn = Math.max(o.minDown ?? -90, (o.down || 0) + (o.curl || 0) * j) * DEG, d = V(Math.cos(a) * Math.cos(dn), -Math.sin(dn), Math.sin(a) * Math.cos(dn)); const p = pts[j].clone().addScaledVector(d, len / seg);
+      if (o.floor !== undefined) p.y = Math.max(p.y, o.floor + along(o.r, (j + 1) / seg)); pts.push(p); }
+    const tag = (o.tag || 'arm') + k + '_', names = B.chain(tag, parent, pts);
+    if (o.thread) B.tubes.push({ names, r0: o.r[0], r1: o.r[1], tone: o.tone || 'thread' });
+    else for (let j = 0; j < seg; j++) B.meat(names[j], pts[j], pts[j + 1], along(o.r, j / seg), along(o.r, (j + 1) / seg), { group: tag, tone: o.tone, s: o.s });
+    B.radials.push({ names, a, thread: !!o.thread, k, n: o.n }); } };
 // a saddle on the back (Session 773): a socket's first rider. A leather seat over a wool blanket, both draped over the spine
 P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl; // it sits on the fur, not under it
   const drape = (r, ry, len, th, c) => { const g = new THREE.CylinderGeometry(1, 1, len, 24, 1, true, Math.PI / 2 - th / 2, th); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI / 2); g.scale(r, ry, 1); const m = new THREE.Mesh(g, stdMat(c, { rough: .8 })); m.material.side = THREE.DoubleSide; m.position.copy(sp.p); return m; };
@@ -285,7 +307,7 @@ function dressFlesh(geo, B, pal, plan) {
     col[v * 3] = C.r; col[v * 3 + 1] = C.g; col[v * 3 + 2] = C.b; fur[v] = furry;
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
     if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) : 0;
-      glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0)); }
+      glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny))); }
   }
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setAttribute('aFur', new THREE.Float32BufferAttribute(fur, 1)); geo.setAttribute('aGlow', new THREE.Float32BufferAttribute(glow, 1));
@@ -340,6 +362,8 @@ export function build(g) {
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
     for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
+  if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
+  if (B.tubes.length) { const m = new THREE.SkinnedMesh(tubeGeo(B, pal, plan.threadGlow || 1), plan.threadGlow ? new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 })); m.name = 'threads'; meshes.push(m); }
   for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
   for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = true; bones[b.i].add(obj); }
@@ -348,11 +372,23 @@ export function build(g) {
   for (const L of B.legs) { L.bones = L.names.map(n => C.byName[n]); L.restLocal = L.bones[0].position.clone(); L.rest = L.J.map(p => p.clone()); L.dirs = L.J.slice(1).map((p, k) => p.clone().sub(L.J[k]).normalize()); L.lens = L.J.slice(1).map((p, k) => p.distanceTo(L.J[k]));
     // the knee's side of the line from the solved chain's root to its end: the way this leg bends
     const a = L.J[L.ik], b = L.J[L.ik + 2], u = b.clone().sub(a).normalize(), kn = L.J[L.ik + 1].clone().sub(a); L.pole = kn.sub(u.clone().multiplyScalar(kn.dot(u))).normalize(); if (!isFinite(L.pole.x) || L.pole.lengthSq() < .5) L.pole = V(0, 0, 1); }
+  { let z0 = 1e9, z1 = -1e9; for (const f of B.flesh) for (const p of [f.a, f.b]) { z0 = Math.min(z0, p.z - f.ra); z1 = Math.max(z1, p.z + f.rb); } C.len = (z1 - z0) * g.sliders.size * (plan.scale || 1); } // its length, nose to tail, in world metres
   C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3; C.S = g.sliders.size * (plan.scale || 1); C.air = {}; C.sac = B.sac;
   const hd = (plan.heading || 0) * DEG; C.dir = V(Math.sin(hd), 0, Math.cos(hd)); // the way it walks in its own frame: a crab goes sideways
   return C;
 }
 // the wing's membrane: panels between neighbouring fingers and from the last finger back to the flank, skinned to both edges
+// fins and other sheets: each vertex rigid on its bone, both faces drawn
+function sheetGeo(B, pal) { const pos = [], si = [], sw = [], col = [], ind = [];
+  for (const s of B.sheets) { const base = pos.length / 3, C = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); const k = i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(ind); g.computeVertexNormals(); return g; }
+// threads: a thin tube along each chain, each ring rigid on its segment's bone; a glowing thread's colour is HDR, for the bloom
+function tubeGeo(B, pal, glow) { const pos = [], si = [], sw = [], col = [], ind = [], RAD = 5;
+  for (const t of B.tubes) { const P = t.names.map(n => B.by[n].p), C = (pal[t.tone] || pal.coat).clone().multiplyScalar(glow), base = pos.length / 3;
+    for (let i = 0; i < P.length; i++) { const d = (i < P.length - 1 ? P[i + 1].clone().sub(P[i]) : P[i].clone().sub(P[i - 1])).normalize(), a = Math.abs(d.y) < .9 ? UP : V(1, 0, 0), u = a.clone().cross(d).normalize(), w = d.clone().cross(u), r = lerp(t.r0, t.r1, i / (P.length - 1)), f = 1 - .6 * i / (P.length - 1);
+      for (let j = 0; j < RAD; j++) { const th = j / RAD * Math.PI * 2, p = P[i].clone().addScaledVector(u, Math.cos(th) * r).addScaledVector(w, Math.sin(th) * r); pos.push(p.x, p.y, p.z); si.push(B.by[t.names[Math.min(i, P.length - 2)]].i, 0, 0, 0); sw.push(1, 0, 0, 0); col.push(C.r * f, C.g * f, C.b * f); } }
+    for (let i = 0; i < P.length - 1; i++) for (let j = 0; j < RAD; j++) { const a = base + i * RAD + j, b = base + i * RAD + (j + 1) % RAD; ind.push(a, b, a + RAD, b, b + RAD, a + RAD); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(ind); g.computeVertexNormals(); return g; }
 function wingGeo(B, w, pal) {
   const pos = [], si = [], sw = [], col = [], ind = [], C = pal[w.tone] || pal.coat, Cb = (pal.membraneEdge || C);
   const chainPts = names => names.map(n => B.by[n].p), boneAt = (names, s) => { const k = Math.min(names.length - 2, Math.floor(s * (names.length - 1))); return B.by[names[k]].i; };
@@ -388,23 +424,28 @@ export const GAITS = {
   // the hop: every foot at once, then a long flight; a pulse, so the body covers the stride unevenly (a frog, a toad)
   hop: { duty: .4, fr: 1.2, lift: .25, strideK: 5, pulse: 1, flex: .1, phase: (p, s) => s * .02 },
   slither: { duty: 1, fr: .3, wave: 1, phase: () => 0 },
-  fly: { duty: 1, fr: 0, flap: 1, phase: () => 0 }
+  fly: { duty: 1, fr: 0, flap: 1, phase: () => 0 },
+  // Session 774: gaits without feet, paced in body lengths a second (bl) and a stride of 0.7 of the body.
+  // A fish's wave grows toward its tail (a whale's runs up and down); an octopus's arms ripple round the ring; a jellyfish's bell beats.
+  swim: { duty: 1, bl: .8, swim: 1, phase: () => 0 },
+  crawl: { duty: 1, bl: .18, ripple: 1, phase: () => 0 },
+  drift: { duty: 1, bl: .25, bell: 1, phase: () => 0 }
 };
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = V(), _m = new THREE.Matrix4();
 // a bone's rotation and position in the rig's frame (the body's own space: the ground is y = 0)
 function rigQuat(C, bone, out) { out.identity(); for (let b = bone; b && b !== C.rig; b = b.parent) out.premultiply(b.quaternion); return out; }
 function rigPos(C, bone, out) { bone.getWorldPosition(out); return C.rig.worldToLocal(out); }
-export function speedOf(C, gait = C.gait) { const G = GAITS[gait]; return Math.sqrt(G.fr * 9.81 * C.legH * C.S) * (C.plan.speedK ?? 1); }
+export function speedOf(C, gait = C.gait) { const G = GAITS[gait]; if (G.bl) return (C.plan.bl ?? G.bl) * C.len; return Math.sqrt(G.fr * 9.81 * C.legH * C.S) * (C.plan.speedK ?? 1); }
 // one stride in the body's own metres (the world's is this times C.S); a stride grows with the Froude number
 const strideBody = (C, G) => 1.6 * Math.pow(Math.max(G.fr, .05), .3) * C.legH * (G.strideK || 1);
 // how far a foot sweeps while it is down: the stride's share, but a leaper's stance is short and its flight long
 const sweepOf = (C, G) => Math.min(strideBody(C, G) * G.duty, G.pulse ? .9 * C.legH : 1e9);
-export function strideOf(C, gait = C.gait) { return strideBody(C, GAITS[gait]) * C.S; }
+export function strideOf(C, gait = C.gait) { const G = GAITS[gait]; return G.bl ? .7 * C.len : strideBody(C, G) * C.S; }
 // the distance the body has covered by a phase, in world metres: even for most gaits; a pulse covers the stance's sweep, then flies
 function travel(C, phase) { const G = GAITS[C.gait], k = Math.floor(phase), f = phase - k, L = strideOf(C);
   if (!G.pulse) return phase * L; const sw = sweepOf(C, G) * C.S; return k * L + (f < G.duty ? sw * f / G.duty : sw + (L - sw) * (f - G.duty) / (1 - G.duty)); }
 // advance a creature's gait by dt seconds. C.moved is how far its root should go along C.dir this step. Returns the worst foot error.
-export function step(C, dt) { const G = GAITS[C.gait], p0 = C.phase; C.phase += G.fr > 0 ? dt * speedOf(C) / strideOf(C) : dt * (G.flap ? .9 : .25); C.moved = G.fr > 0 ? travel(C, C.phase) - travel(C, p0) : 0; return pose(C, C.phase); }
+export function step(C, dt) { const G = GAITS[C.gait], p0 = C.phase, goes = G.fr > 0 || G.bl > 0; C.phase += goes ? dt * speedOf(C) / strideOf(C) : dt * (G.flap ? .9 : .25); C.moved = goes ? travel(C, C.phase) - travel(C, p0) : 0; return pose(C, C.phase); }
 // the gait's flights: the stretches of the stride with no foot down, found by sampling once per gait. In each the body follows
 // a ballistic arc, h = g t² / 8 at the top for a flight of t seconds, so a trot barely leaves the ground and a frog's hop does.
 function flights(C, G) { if (C.air[C.gait]) return C.air[C.gait]; const B = C.B, n = B.legs.length / 2, N = 240, up = [], out = [];
@@ -433,6 +474,20 @@ export function pose(C, phase) {
   if (C.byName.jaw) C.byName.jaw.rotation.x = (C.plan.pant ?? .04) * (1 + Math.sin(tau * ph * 2));
   // a serpent moves by a wave that runs from its head to its tail
   if (G.wave) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])]; all.forEach((nm, k) => { C.byName[nm].rotation.y += (C.plan.waveAmp ?? .35) * Math.sin(tau * (ph * 1 - k / (C.plan.waveLen ?? 8))) * (k ? 1 : .3); }); }
+  sp.scale.set(1, 1, 1);
+  // a fish's wave (Session 774): from head to tail, growing toward the tail; a whale's runs in the vertical plane
+  if (G.swim) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])], N = all.length, ax = C.plan.swimAxis === 'x' ? 'x' : 'y', A = C.plan.waveAmp ?? .22;
+    all.forEach((nm, k) => { const u = k / (N - 1); C.byName[nm].rotation[ax] += A * (.08 + Math.pow(u, 1.6)) * Math.sin(tau * (ph - u * (C.plan.waveLen ?? .9))) / (k < spn.length ? 2 : 1); }); }
+  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * .22 * Math.sin(tau * ph * (G.swim ? 1 : .4))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
+  // radial arms: an octopus's ripple round the ring, a jellyfish's bell that beats and threads that trail it
+  for (const Rr of B.radials) { const axis = V(-Math.sin(Rr.a), 0, Math.cos(Rr.a)), np = Rr.names.length;
+    for (let j = 0; j < np - 1; j++) { const b = C.byName[Rr.names[j]]; let ang;
+      if (G.ripple) ang = .22 * Math.sin(tau * ph - Rr.k / Rr.n * tau * 2 - j * .7) + (j ? .05 : 0);
+      else if (Rr.thread) ang = (G.bell ? .1 : .05) * Math.sin(tau * ph * (G.bell ? 1 : .3) - j * .55 + Rr.k * 1.7);
+      else ang = .12 * Math.sin(tau * ph * (G.bell ? 1 : .3) - j * .5 + Rr.k);
+      b.quaternion.setFromAxisAngle(axis, ang); } }
+  if (G.bell || (B.radials.length && C.plan.bellBone)) { const beat = Math.pow(Math.max(0, Math.sin(tau * ph)), 2), s = 1 - (G.bell ? .14 : .04) * beat; sp.scale.set(s, 1 + (1 - s) * .7, s); sp.position.y += (G.bell ? .03 : .01) * C.len / C.S * Math.sin(tau * ph - 1); }
+  else if (G.ripple && B.radials.length) sp.position.y += .015 * C.len / C.S * Math.sin(tau * ph * 2);
   // arms swing against the legs; wings rest half-folded, breathing, or beat
   for (const A of B.arms) { const s = A.swing * Math.sin(tau * ph + (A.side > 0 ? 0 : Math.PI) + A.phase); C.byName[A.names[0]].rotation.set(s, 0, 0); C.byName[A.names[1]].rotation.set(-Math.abs(s) * .6 - .2, 0, 0); C.byName[A.names[2]].rotation.set(.25 * Math.sin(tau * ph * 2 + A.side), 0, 0); }
   for (const W of B.wings) { const flap = G.flap ? Math.sin(tau * ph) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
@@ -637,6 +692,46 @@ export const PLANS = {
       ['legs', { at: .35, kind: 'insect', out: .19, drop: .0, fan: -10, reach: .8, r: [.024, .022, .018, .01] }],
       ['legs', { at: .08, kind: 'insect', out: .17, drop: .0, fan: -32, reach: .75, r: [.024, .022, .018, .01] }],
       ['arms', { at: 1, out: .12, up: -.01, dz: .02, len: .34, r: [.03, .028, .028], dir: [.55, .2, .8], dir2: [-.45, 0, 1], chela: { r: .058, len: .085 }, swing: .05 }]
+    ] },
+  // ── Session 774: fins and radial bodies ──
+  riverjaw: { name: 'Riverjaw Salmon', src: 'OG-031 (leaps the falls on its migration)', gaits: ['swim', 'stand'], bl: 1.3, water: 1.2, rough: .35, mottle: .7, wag: 0, pant: .06,
+    palette: { coat: [.68, .36, .27], saddle: [.22, .26, .2], belly: [.86, .85, .8], dark: [.06, .05, .05], fin: [.34, .3, .26] },
+    parts: [
+      ['spine', { hip: [.8, -.15], chest: [.8, .18], n: 4, r: [.07, .085, .08], s: [.5, 1.15], rump: .02, front: .04 }],
+      ['head', { len: .2, r: .068, pitch: 3, s: [.55, .95, 1], muzzle: { len: 1, r: .045, s: [.6, .85, 1], taper: .55 }, jaw: { len: .97, r: .034, drop: .55 }, eyes: [{ f: .3, up: .25, out: .85, r: .012, color: [.75, .6, .2] }] }],
+      ['tail', { len: .34, n: 5, r: [.065, .016], s: [.45, 1.1] }],
+      ['fins', { list: [
+        { at: .45, off: [0, 1.0], out: [0, 1, 0], len: .14, h: .09 },
+        { at: .9, off: [.85, -.55], out: [1, -.6, 0], len: .09, h: .07, pair: 1, role: 'pec' },
+        { at: .3, off: [.5, -.85], out: [.6, -1, 0], len: .06, h: .05, pair: 1 },
+        { at: 0, dz: -.07, off: [0, -1.0], out: [0, -1, 0], len: .08, h: .055 },
+        { on: 'tail', kind: 'fork', out: [0, 1, 0], len: .12, h: .11, role: 'caudal' }] }]
+    ] },
+  stormwhale: { name: 'Storm Whale', src: 'OG-016 (Tempest Whale), OG-084', gaits: ['swim', 'stand'], bl: .22, swimAxis: 'x', waveAmp: .12, water: 5.2, rough: .5, mottle: 1.2, wag: 0, pant: .02, spread: .03,
+    palette: { coat: [.32, .38, .45], saddle: [.17, .21, .27], belly: [.8, .8, .78], dark: [.05, .05, .06], fin: [.26, .31, .38] },
+    parts: [
+      ['spine', { hip: [2.4, -3], chest: [2.5, 2.2], n: 6, r: [1.35, 1.65, 1.55], s: [.95, .88], rump: .5, front: .8 }],
+      ['head', { len: 3.4, r: 1.2, pitch: 4, s: [.95, .8, 1], muzzle: { len: 1, r: .75, taper: .6, drop: .05 }, jaw: { len: .95, r: .6, drop: .65 }, eyes: [{ f: .55, up: -.25, out: .95, r: .07, color: [.08, .06, .05] }] }],
+      ['tail', { len: 5.5, n: 7, r: [1.15, .3], droop: -3, s: [.85, 1] }],
+      ['fins', { list: [
+        { at: .82, off: [.8, -.6], out: [1, -.5, 0], back: [0, -.15, -1], len: 1.4, h: 2.6, pair: 1, role: 'pec' },
+        { at: .15, off: [0, 1.0], out: [0, 1, 0], len: .9, h: .45 },
+        { on: 'tail', kind: 'fork', out: [1, 0, 0], len: 1.3, h: 2.2, role: 'caudal' }] }]
+    ] },
+  octopus: { name: 'Giant octopus', src: 'OG-084 (marine life), OG-016 (drifter squid)', gaits: ['crawl', 'stand'], rough: .45, mottle: 1.8, wag: 0, pant: 0,
+    palette: { coat: [.72, .3, .19], saddle: [.48, .15, .1], belly: [.92, .76, .64], dark: [.05, .04, .04] },
+    parts: [
+      ['spine', { hip: [.78, -.32], chest: [.44, .02], n: 3, r: [.28, .25, .17], s: [1, 1], rump: .12 }],
+      ['head', { len: .22, r: .15, pitch: 70, s: [1.25, 1, 1], eyes: [{ f: .3, up: .35, out: .92, r: .03, color: [.85, .65, .2] }] }],
+      ['radial', { c: [0, .22, .1], parent: 'head', n: 8, ring: .1, len: 1.5, seg: 7, down: 50, curl: -16, minDown: -4, r: [.075, .01], floor: 0, jitter: .12, tag: 'oct' }]
+    ] },
+  wisp: { name: 'Wisp', src: 'OG-018 (Gaoth: a glowing jellyfish-like air spirit with trailing threads)', gaits: ['drift', 'stand'], rough: .25, mottle: .4, threadGlow: 2.4, wag: 0, pant: 0,
+    glow: { color: [.3, .45, 1.1], base: .6, freq: 3, w: .02, all: .5 },
+    palette: { coat: [.45, .52, .82], belly: [.62, .66, .9], pale: [.72, .62, .95], thread: [.6, .72, 1] },
+    parts: [
+      ['spine', { hip: [1.8, 0], chest: [2.15, 0], n: 3, r: [.38, .36, .16], s: [1, 1] }],
+      ['radial', { c: [0, 1.55, 0], parent: 'spine0', n: 4, ring: .08, len: .9, seg: 5, down: 82, r: [.05, .012], tone: 'pale', tag: 'oral' }],
+      ['radial', { c: [0, 1.5, 0], parent: 'spine0', n: 14, ring: .32, len: 2.4, seg: 7, down: 88, curl: -1, r: [.009, .003], thread: 1, jitter: .1, tag: 'thr' }]
     ] }
 };
 // the post hare is the Snowleap Hare's body at five and a half times its size, saddled

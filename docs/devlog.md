@@ -15891,3 +15891,35 @@ The line-up now holds all fifteen, sorted by height as built.
 ### Needs eyes
 - The bound and the hop, live: whether the arcs read as a hare and a frog, and whether the post hare's bound would carry a rider.
 - The crab's sideways walk from the side.
+
+
+## v80 — Session 774 — Creatures from parts: fins and radial bodies (prototype only)
+The second of the three sessions Michael's "go ahead and tackle more of the skeletons" set going. Session 772's catalogue table named two parts the kit lacked: fins (fish, whales, rays) and radial arms (octopus, squid, jellyfish, the Wisp). This session builds both.
+
+**The kit:**
+- **Fins:** a thin sheet on a bone of its own, so the pose can flutter it. The outline is drawn in the fin's own plane: a *tri* for a dorsal, pectoral, pelvic or anal fin, a *fork* for a tail. A fork upright is a fish's tail; laid flat it is a whale's flukes. A fin hangs off the spine at any t, or off the tail's end. All of a creature's fins are one double-sided skinned mesh.
+- **Radial arms:** chains from a ring round a centre, each sinking and bending by a number of degrees a bone, kept off the floor where they lie on it. Thick arms are flesh, so the smooth union webs them where they meet. Thread arms are thin tubes with an HDR colour that blooms.
+- **Three footless gaits,** paced in body lengths a second (`bl`) with a stride of 0.7 of the body, whose length the build now measures:
+  - *swim:* a wave from head to tail, growing toward the tail, with the pectorals fluttering. A whale's (`swimAxis: 'x'`) runs up and down.
+  - *crawl:* a ripple round an octopus's arms.
+  - *drift:* a jellyfish's bell beats, closing at the rim, while its threads trail.
+- **The page:** a water surface over a swimmer. The camera now frames a creature that hovers, not only one that stands.
+
+**Four plans:**
+- the Riverjaw Salmon, red for its run, with seven fins;
+- the Storm Whale, 14 m, with long flippers and flat flukes;
+- a giant octopus, eight arms webbed into its mantle and lying out across the floor;
+- the Wisp of OG-018: a blue bell that glows, four oral arms and fourteen glowing threads, floating 1.5 m up.
+
+Corrections found on the way, for the record:
+- the octopus's arms curled back up into the air until their bend stopped at the level;
+- the Wisp's glow summed to white until its colour came down.
+### Verified (headless Chromium)
+`creatures.check.mjs`: all nineteen plans pass.
+- **The new four:** 18 to 139 bones and 8,800 to 53,600 triangles, built in 0.04 to 0.72 s.
+- **Weights:** exact.
+- **Speed:** the salmon swims at 1.2 m/s and the whale at 3.3.
+- **The fifteen older plans:** unchanged.
+### Needs eyes
+- The swim, the crawl and the drift, live: whether the salmon's wave reads as a fish and the whale's as a whale.
+- Whether the Wisp is the Gaoth spirit Michael pictures (OG-018).

@@ -138,14 +138,14 @@ This list is from the whole catalogue, not only the bestiary sheets: the fauna s
 | **Bird** | one bird leg pair; feathered wings | Stormplume, Sunfan, Redcrest, Grove Turkey, Great and Marsh Heron, Scarlet Ibis, Cypress Stalker; flyers: Skyraven, Crag Hawk and Cliffhawk, Sky Eagle, Stormshrike, Highcliff Falcon, Barred Owl, Sunbeak Vulture, Embersong Thrush, Tomcán's raven, Orvin's heron | Stormplume |
 | **Winged quadruped** | a quadruped and wings | the dragon, the Gateborn Companion, the Winged Thing (a griffin), Glasswing, the sky leviathan | Dragon |
 | **Serpentine** | a spine and a tail, no legs | Mire Snake, Sand Wyrm (the size slider), the gate worm and the Maw, Void Serpent, the eels (reef moray, Blackcurrent, Gate Eel) | Mire Snake |
-| **Swimmer** | a serpent with fin and fluke bits; a swim gait | the whales (Storm and Tempest Whale, Gate Leviathan, crimson leviathan, Shatterback), dolphin, reef shark, the rays, tuna, pike, salmon, trout, carp, the seal (sprawl flippers) | owed: a fin part |
-| **Radial** | chains from a centre | octopus, drifter squid, the Watcher's tendrils, the jellyfish (Wisp, lantern jelly, Drifter Jelly) | owed: a radial part |
+| **Swimmer** | a serpent with fin and fluke bits; a swim gait | the whales (Storm and Tempest Whale, Gate Leviathan, crimson leviathan, Shatterback), dolphin, reef shark, the rays, tuna, pike, salmon, trout, carp, the seal (sprawl flippers) | Riverjaw Salmon, Storm Whale (S774) |
+| **Radial** | chains from a centre | octopus, drifter squid, the Watcher's tendrils, the jellyfish (Wisp, lantern jelly, Drifter Jelly) | Giant octopus, Wisp (S774) |
 | **Human rig** (the people's builder) | MakeHuman's skeleton at extreme ranges | goblin, kobold (a rat's head), shieldbearer, skeleton and drowned skeleton (a material), cave and river troll, ogre, wraith and phantom (cloth), gargoyle (plus the wings part), the Gate Warden, the Hollow | B1 to B4 |
 | **Failing forms** (OG-073) | any plan plus extra arms, legs or wings, and the glow | the Faolchú (arms out of its spine seam, as the canon has it); the failing Skeleton (more arms), Wraith (more limbs), Gargoyle (bigger wings, more limbs); the corrupted animals of OG-085 and OG-088 (seams, crystal growths, which is the crystals bit) | The Faolchú |
 | **Not skeletal** | kits of their own | slimes (soft bodies), the fire elemental and the fire titan, golems and colossi (rigid plates that float apart), the Frost Thing (shards), wisps, the Echo, Bridgeshaper, the mimic (a chest with a tongue chain) | not this kit |
 
 So ten of the fourteen plans exist in the prototype, and every creature in the concept art has a home. Still owed:
-- two parts (fins, radial chains);
+- ~~two parts (fins, radial chains)~~ (done, Session 774);
 - ~~a hop and a bound (frogs and hares; the hare post-rider of OG-077)~~ (done, Session 773);
 - feathered wings (cards, like the people's hair);
 - shells as rigid bits.
@@ -168,6 +168,25 @@ Five more plans, and the kit gained what they needed:
 | Tidecrab | OG-016, OG-047 | 51 | 46,300 | 8 + pincers | walk, trot (sideways) |
 
 All fifteen plans pass the check. Every foot reaches its target through every gait, including the flights and the pulse, and the ten older plans are unchanged.
+
+### Session 774: fins and radial bodies
+The last two parts the catalogue needed:
+- **Fins.** Each fin is a thin sheet on a bone of its own, so the pose can flutter it. A fin is an outline in its own plane (back along the body, out from it), scaled by length and height: a *tri* for a dorsal, pectoral, pelvic or anal fin, a *fork* for a tail. A fork upright is a fish's tail; laid flat it is a whale's flukes. Fins hang off the spine at any t, or off the tail's end.
+- **Radial arms.** Chains from a ring round a centre, each sinking and bending by a number of degrees a bone, kept off the floor where they lie on it. Thick ones are flesh (an octopus's arms, a jellyfish's oral arms); thread ones are thin tubes that glow in HDR for the bloom (a jellyfish's tentacles).
+- **Three gaits without feet,** paced in body lengths a second with a stride of 0.7 of the body:
+  - *swim:* a wave from head to tail, growing toward the tail. A whale's runs in the vertical plane, and the pectorals flutter.
+  - *crawl:* a ripple round an octopus's ring of arms.
+  - *drift:* a jellyfish's bell beats, closing at the rim, and its threads trail.
+- **Footless plans.** A plan may now be all spine and arms, a bell, or no head at all. The page draws a water surface for a swimmer.
+
+| Plan | Source | Bones | Triangles | Gaits |
+|---|---|---|---|---|
+| Riverjaw Salmon | OG-031 | 18 | 16,300 | swim (1.2 m/s) |
+| Storm Whale | OG-016, OG-084 | 19 | 8,800 | swim (3.3 m/s, vertical) |
+| Giant octopus | OG-084, OG-016 | 68 | 53,600 | crawl |
+| Wisp | OG-018 | 139 | 27,100 | drift |
+
+Nineteen plans pass. With fins and radial arms, every skeletal creature in the concept art has a plan the kit can build.
 
 ### What adding a creature is
 A new entry in `PLANS`: a name, its source sheet, a palette, its gaits, and its parts with numbers. The Mineprowler is a dozen lines. No new code unless the creature needs a part the kit does not have yet.

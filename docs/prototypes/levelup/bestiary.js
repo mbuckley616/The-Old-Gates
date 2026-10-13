@@ -46,18 +46,21 @@ if (VIEW === 'line') {
   const plan = PLANS[Q.get('plan')] ? Q.get('plan') : 'ironwolf';
   const turn = C => { C.root.rotation.y = -(C.plan.heading || 0) * Math.PI / 180; }; // a crab walks sideways: turn it so it goes up the floor
   let C = make(plan, +(Q.get('seed') || 0) || plan + ':one'); turn(C); scene.add(C.root); live.push({ C });
+  // a swimmer's water: a still surface above it (Session 774)
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x3d6f86, transparent: true, opacity: .28, roughness: .1, side: THREE.DoubleSide, depthWrite: false })); water.rotation.x = -Math.PI / 2; scene.add(water);
+  const wet = C => { water.visible = !!C.plan.water; water.position.y = (C.plan.water || 0) * C.S; }; wet(C);
   const f = figure(); scene.add(f);
   const frame = () => { const b = bbox(C), size = b.getSize(new THREE.Vector3()), r = Math.max(size.x, size.y, size.z * .8);
     fz = b.min.z - C.root.position.z - .5; f.position.set(0, 0, C.root.position.z + fz);
     cam.fov = 30; cam.updateProjectionMatrix(); const cv = Q.get('cam') || 'side', d = r * 2.7 + .7;
-    const off = cv === 'front' ? new THREE.Vector3(d * .35, size.y * .45, d) : cv === 'top' ? new THREE.Vector3(d * .3, d * 1.1, d * .2) : new THREE.Vector3(d, size.y * .45 + .4, d * .12);
-    return { off, look: new THREE.Vector3(0, size.y * .4, (b.min.z - C.root.position.z) * .35) }; };
+    const off = cv === 'front' ? new THREE.Vector3(d * .35, size.y * .45, d) : cv === 'top' ? new THREE.Vector3(d * .3, d * 1.1, d * .2) : new THREE.Vector3(d, b.min.y + size.y * .45 + .4, d * .12);
+    return { off, look: new THREE.Vector3(0, b.min.y + size.y * .4, (b.min.z - C.root.position.z) * .35) }; };
   let fz = 0, F = frame();
   const place = () => { const p = C.root.position; cam.position.copy(p).add(F.off); cam.lookAt(p.x + F.look.x, F.look.y, p.z + F.look.z); sun.position.set(p.x + 25, 40, p.z + 30); sun.target.position.copy(p); };
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 150 }); sun.shadow.camera.updateProjectionMatrix();
   pose(C, +(Q.get('phase') || .2)); place();
   live[0].follow = () => { if (C.root.position.z > 120) { C.root.position.z -= 240; } f.position.z = C.root.position.z + fz; place(); };
-  if (!STILL) panel(plan, g => { scene.remove(C.root); C = make(g.plan, g.seed, g); turn(C); C.gait = live[0].C.gait; scene.add(C.root); live[0].C = C; F = frame(); pose(C, 0); place(); });
+  if (!STILL) panel(plan, g => { scene.remove(C.root); C = make(g.plan, g.seed, g); turn(C); wet(C); C.gait = live[0].C.gait; scene.add(C.root); live[0].C = C; F = frame(); pose(C, 0); place(); });
 }
 
 // the panel (live view only): plan, gait, roll a seed, the generic sliders, and the genome as JSON
