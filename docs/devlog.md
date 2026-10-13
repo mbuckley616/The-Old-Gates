@@ -16822,5 +16822,5 @@ Checked and left alone:
 - **The two looks side by side on a real machine.** Toggle with `?look=new` and `?look=old`. Software GL agrees to a level. A GPU's own rounding and its anti-aliasing may not.
 - **Lambert per pixel.** 0.170 lights `MeshLambertMaterial` per fragment; r128 did it per vertex. Flat ground is the same. Large, coarse faces under a point light (a torch on a wall) will show a rounder pool of light on 0.170. I left it: F3 replaces these materials anyway.
 - **The renderer row in play waits for a reload** rather than reloading at once (above). If Michael wants it to reload and warn instead, that is a one-line change.
-- **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs; `looknew` reports whether it was fetched. On Pages it is one cached request.
+- **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs. `looknew` reports whether it was fetched; from `file://` here it was not (`r128Fetched: false`). On Pages it would be one cached request at most.
 - **Not run under `--look=new`:** the rest of the suite (447 suites). The six world suites the card named pass. A full `--look=new` run in CI is a cheap follow-up once F2 starts building on the switch.
