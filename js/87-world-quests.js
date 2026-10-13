@@ -946,7 +946,8 @@ const giver=`${lord.title} ${lord.name}`;
     sundial_ring:{god:'speir',   name:'the Sundial Ring',        ico:'💍',check:{attr:'swiftness',need:30}},
     wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30},
                   item:()=>({type:'equip',slot:'back',name:"The Wolf-Mother's Cloak",ico:'🧥',def:1,weight:2,cloak:'fur',virtue:'wolfmother',sellMult:0,buyPrice:0,desc:'Wolves, bears and spiders leave you alone unless you strike first.'})},
-    waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null},
+    waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null,
+                  item:()=>({type:'misc',name:'The Waylamp',ico:'🏮',weight:1,sellMult:0,buyPrice:0,desc:'An inn lamp of old brass with a horn window. It burns without oil and no weather puts it out. The Old Blood call it Lóchrann an Teallaigh, the Hearth’s lantern.'})},
     shuttle:     {god:'fiodoir', name:'the Shuttle',             ico:'🧵',check:{attr:'intelligence',need:35},
                   item:()=>({type:'misc',name:'The Shuttle',ico:'🧵',weight:1,sellMult:0,buyPrice:0,desc:'A weaver’s shuttle of pale wood, worn smooth by a hand that is not yours, with a thread end in it that nothing will pull out. The Church calls it la Navette. The Old Blood call it Spól an Fhíodóra, the Weaver’s shuttle.'})}};
   const ARTIFACT_GEAR_MAX=2;
@@ -961,8 +962,9 @@ const giver=`${lord.title} ${lord.name}`;
     const gd=pick('gate_blade',ruined.length?ruined:doors);
     const lairs=home.flatMap(c=>c.sites.filter(t=>t.kind==='lair'&&!t.anchor&&!t.dragon)).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
     const lr=pick('wolf_cloak',lairs);
+    const towns=home.flatMap(c=>c.sites.filter(t=>t.kind==='town'||t.kind==='port'||t.kind==='city')).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const lt=pick('waylamp',towns); /* S783 — the Waylamp over a home-island town's first inn */
     _artPl={gate_blade:gd?{door:gd.seed,name:gd.canonicalName||(typeof dungeonName==='function'?dungeonName(gd.seed,gd.theme):'an old gate'),x:gd.x,z:gd.z}:null,
-            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:null,shuttle:null};
+            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:null};
     return _artPl;}
   function artifactState(id){const S=worldState.artifacts;return (S&&S[id])||null;}
   function artifactHeld(id){return [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)].some(L=>L.some(it=>it&&it.artifact===id));}
@@ -1026,6 +1028,31 @@ const giver=`${lord.title} ${lord.name}`;
     for(const t of allSites()){if(!(t.kind in BASE_P))continue;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<bd){bd=d;best=t;}}_cloakTown={lair:P.site,town:best};return best;}
   function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||S.half||cloakMasterDead())return 0;
     const ct=cloakTown();return ct&&ct.id===t.id?.6:0;}
+  // S783 — the Waylamp (the page's Hearth row, in the approved draft's words): it hangs over the first inn of a home-island town
+  // (artifactPlaces). The trial: carry it lit into the inns of five other towns with no crime on your account; each innkeeper trims
+  // it (*The lamp.*), and the fifth makes it yours. A crime while it is on you, in the trial or after, puts it out for seven days,
+  // the count back to nothing, and doubles that crime's fine (lampCrime, from the crime record). The state is the tool's, the
+  // world row's: worldState.artifacts.waylamp = {taken, trial, count, towns:{siteId:1}, own, outUntil}.
+  const LAMP_FIVE=5,LAMP_OUT=7*1440;
+  function lampState(){return artifactState('waylamp');}
+  function lampLit(){const S=lampState();return !!S&&!(S.outUntil>(worldState.gameTimeAbsMinutes||0));}
+  function lampFirstInn(siteId){const st=SETTLE.get(siteId);return st&&st.houses?st.houses.find(h=>h.type==='inn')||null:null;}
+  function lampHangsAt(house){if(lampState()||!house||house.type!=='inn')return false;const P=artifactPlaces().waylamp;if(!P||house.siteId!==P.site)return false;const h=lampFirstInn(P.site);return !!h&&h.id===house.id;}
+  function lampTrimAvail(house){const S=lampState();return !!(S&&S.trial&&!S.yielded&&house&&house.siteId&&artifactCarried('waylamp')&&lampLit());}
+  // the named actions: taking it down for the trial, and an innkeeper trimming it
+  function lampTake(house){if(!lampHangsAt(house)||!takeArtifact('waylamp','trial'))return false;const S=lampState();S.trial=true;S.count=0;S.towns={[house.siteId]:1};return true;}
+  function lampTrim(house){if(!lampTrimAvail(house))return null;const S=lampState();if(S.towns[house.siteId])return {again:true};
+    S.towns[house.siteId]=1;S.count++;if(S.count<LAMP_FIVE)return {n:S.count,left:LAMP_FIVE-S.count};
+    S.trial=false;S.own=true;if(typeof addLog==='function')addLog('🏮','The Waylamp is yours: five towns’ inns, and nothing on your account.');return {fifth:true};}
+  // called by the crime record where a fine is laid (seenCrime, strikeNpc, guardKilled) with the record and this crime's fine
+  function lampCrime(c,fee){const S=lampState();if(!S||S.yielded||!c||!artifactCarried('waylamp')||!lampLit())return false;
+    c.bounty+=Math.max(0,Math.round(fee||0));S.outUntil=(worldState.gameTimeAbsMinutes||0)+LAMP_OUT;if(S.trial){S.count=0;S.towns={};}
+    if(typeof addLog==='function')addLog('🏮','The Waylamp goes out in your hand. The bounty on you is doubled.');artifactSay('The Waylamp goes out in your hand. The bounty on you is doubled.');return true;}
+  // once a second from the loop: lit again after seven days; the first sight of it over its inn's door
+  let _wlampT=0;function tickWaylamp(force){const t=performance.now();if(!force&&t-_wlampT<1000)return;_wlampT=t;const S=lampState(),now=worldState.gameTimeAbsMinutes||0;
+    if(S&&S.outUntil&&now>=S.outUntil){delete S.outUntil;if(typeof addLog==='function')addLog('🏮','The Waylamp is lit again. Nobody lit it.');}
+    if(!S&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const st=worldState.stats||(worldState.stats={});if(st.lampSeen)return;const P=artifactPlaces().waylamp;const h=P&&lampFirstInn(P.site);
+      if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.','#e8c890');}}}
   // S781 — Michael's 2A on #263: the cloak from a corpse. Its master is the lair cavern's beast, the one that sleeps on it (the
   // draft, *The Makers' Things*: the cavern's master, worldState.masters[seed], not the beasts at the mouth, which Session 777's
   // drain read). Killed before the cloak was taken, the cloak lies in the hoard; killed while the cloak is yours, it goes thin.
@@ -1038,11 +1065,11 @@ const giver=`${lord.title} ${lord.name}`;
     if(!S){const it=halfCloak(artifactItem('wolf_cloak'));const r=(worldState.masters||{})[portal.seed];
       if(r&&r.hoard&&Array.isArray(r.hoard.items))r.hoard.items.push(it);else if(typeof bagAdd==='function')bagAdd(it);
       (worldState.artifacts||(worldState.artifacts={})).wolf_cloak={taken:true,day:dayNow(),how:'corpse',half:true};const tr=worldState.artifactTries;if(tr)delete tr.wolf_cloak;
-      cloakSay('Under it, the grey cloak, soaked through. Something has gone out of it.');return true;}
+      artifactSay('Under it, the grey cloak, soaked through. Something has gone out of it.');return true;}
     if(S.yielded||S.half)return false;S.half=true;
     for(const L of [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)])for(const it of L)if(it&&it.artifact==='wolf_cloak')halfCloak(it);
-    if(EQ.back&&EQ.back.artifact==='wolf_cloak')cloakSay('The cloak is lighter on your shoulders. Something has gone out of it.');return true;}
-  function cloakSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's own *slain!* line, which would cover it (the words only: the outcome is already written) */
+    if(EQ.back&&EQ.back.artifact==='wolf_cloak')artifactSay('The cloak is lighter on your shoulders. Something has gone out of it.');return true;}
+  function artifactSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's *slain!* or the witness's line, which would cover it (the words only: the outcome is already written) */
   // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
   function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
     return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}

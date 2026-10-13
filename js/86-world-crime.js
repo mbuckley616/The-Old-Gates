@@ -229,6 +229,25 @@
       poor:(p,g)=>`${p} gold. You have ${g}.`,
       paid:(p,R)=>`${p} gold. ${R}, up the stairs, until this hour tomorrow. The other doors are not mine to open.`,
       not:'The fire is free.'}};
+  // S783 — the Waylamp at the inns (the approved draft's words, by the inn's people): the holder's *The lamp over the door?* and
+  // each house's *The lamp.* on the trial; the rules are lampHangsAt / lampTake / lampTrim (87-world-quests.js)
+  const LAMP_LINES={
+    gatelander:{over:"That lamp was over the door when my mother had the house, and over some other door before that, and nobody I ever asked could say whose door it was first. It goes from house to house, and the one rule is it goes with somebody honest. Carry it to five inns in five towns, and keep your hands to yourself the length of the road, and it's yours. A light's no use to a house that keeps it.",
+      take:"Then take it down yourself; it'll not come for me. Mind it, now. A lamp's like a name: easy carried, hard lit again.",not:"It's waited longer than you'll keep it waiting.",
+      trim:(n,l)=>`You're carrying the lamp. Here, let me trim it. ${n} ${plural(n,'house')}, and ${l} to go; a road's shorter walked than talked about.`,again:"This house has trimmed it once. It's another town's turn.",
+      fifth:"That's five, and it's yours, and I'd not take it off you now if you asked. They say the lamp knows the road it came by. If it does, it's said nothing to me."},
+    markman:{over:"Lamp's not mine. Never was. Goes inn to inn. Carry it to five towns' inns, lit, no thieving on the way, and it's yours. That's the rule. I didn't make it.",
+      take:'Take it, then. Keep it lit.',not:"It'll be here.",trim:(n,l)=>`The lamp. Give it here. Wick's trimmed. ${n} done, ${l} left.`,again:'Trimmed it already. Next town.',fifth:"Five. It's yours. Don't lose it."},
+    aurennais:{over:'The lamp is not the house\'s property, Master, though it is in the house\'s keeping. It passes from inn to inn on one condition: that whoever carries it carries it into five towns\' inns, lit, without a crime against their name. On the fifth it becomes theirs. No one has written the terms down. No one has needed to.',
+      take:'It is in your keeping from this moment, Master. The house wishes you a straight road.',not:'It will be here, Master. It generally is.',
+      trim:(n,l)=>`The lamp, Master. Allow me to trim it. That is ${n} ${plural(n,'house')} entered, and ${l} remaining.`,again:"This house has trimmed it already, Master. Another town's house must.",
+      fifth:'That is the fifth house, Master. The lamp is yours by the only terms it has ever had, and the house is honoured to have witnessed them.'},
+    oldblood:{over:'Lóchrann an Teallaigh. It goes from hearth to hearth. Five inns, five towns. Steal nothing. Then it is yours.',take:'Take it down.',not:'It waits.',
+      trim:(n,l)=>`The lamp. There. ${n}. ${l} more.`,again:'Not here again.',fifth:'Five. It is yours. It was always going to someone.'}};
+  function lampTopics(house,people){if(house.coachInn)return [];const LL=LAMP_LINES[people]||LAMP_LINES.gatelander;
+    return [{label:'The lamp over the door?',avail:()=>typeof lampHangsAt==='function'&&lampHangsAt(house),response:LL.over,
+        follow:[{label:'I’ll carry it.',quest:true,fn:()=>lampTake(house)?LL.take:LL.not},{label:'Not today.',response:LL.not}]},
+      {label:'The lamp.',quest:true,avail:()=>typeof lampTrimAvail==='function'&&lampTrimAvail(house),fn:()=>{const r=lampTrim(house);return !r?LL.again:r.again?LL.again:r.fifth?LL.fifth:LL.trim(r.n,r.left);}}];}
   function innTopics(house,people){const L=INN_ROOM_LINES[people]||INN_ROOM_LINES.markman;const cap=t=>t.replace(/^./,c=>c.toUpperCase());
     return [{label:'Something to eat and drink?',trade:true,fn:()=>{feastMeal(house);}},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
@@ -242,7 +261,7 @@
               gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
               if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
               return L.paid(price,cap(innRoomName(free,n,house)));}},
-            {label:'Not tonight.',response:L.not}];}}];}
+            {label:'Not tonight.',response:L.not}];}},...lampTopics(house,people)];}
   // S550 — a feast day: the innkeeper's line comes before the room offer, and the meal (a Hot Stew) is the house's, once
   // a feast at each inn, put in your pack when you ask for something to eat; the shop opens as on any day
   function feastInnLine(people){const f=typeof feastOn==='function'&&feastOn(absMin());return f?(FEAST_INN[people]||FEAST_INN.gatelander):'';}
@@ -394,7 +413,7 @@
     if(m.userData.asleep){if(sleeperNear())wakeSleeper(m,true);else if(!homeAsleepNow(currentHouse))wakeSleeper(m,false);}
     else if(!m.userData.woke&&homeAsleepNow(currentHouse))laySleeper(m);}
   function seenCrime(kind,house,w,value){const site=houseSite(house);const pts=CRIME_PTS[kind]||1;
-    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
+    if(site){addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);} /* S550 — a feast day halves a petty crime's fine */ // S168 — a theft's fine is 50 and the goods' value (the spec)
     if(house.keeper&&house.type!=='home')(worldState.refuse||(worldState.refuse={}))[house.id]=dayNow()+5;
     const what=kind==='lock'?'pick the lock':kind==='theft'?'take what was not yours':'strike';
     if(site&&typeof isInterior==='function'&&isInterior())try{dispatchGuard(house,site);}catch(e){} // S239 — seen indoors: a guard is sent
@@ -559,7 +578,7 @@
       const keep=S.houses.find(h=>h.type==='castle');if(keep){px=keep.exitX!=null?keep.exitX:keep.doorX;pz=keep.exitZ!=null?keep.exitZ:keep.doorZ+2;}else{px=S.site.x;pz=S.site.z;}jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
       showMsg(`A night in the cells. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}It is morning.`,'#c8b880');if(typeof addLog==='function')addLog('⛓',`A night in the cells at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
       if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
-  function guardKilled(e){const id=e._guard.site;const C=worldState.crime||(worldState.crime={});const c=C[id]||(C[id]={bounty:0,debt:0,last:0});addFavor(id,-5);c.debt+=5;c.last=dayNow();c.bounty+=125;c.shut=true;
+  function guardKilled(e){const id=e._guard.site;const C=worldState.crime||(worldState.crime={});const c=C[id]||(C[id]={bounty:0,debt:0,last:0});addFavor(id,-5);c.debt+=5;c.last=dayNow();c.bounty+=125;c.shut=true;if(typeof lampCrime==='function')lampCrime(c,125);
     (worldState.church||(worldState.church={notes:[]})).notes.push({kind:'guard',site:id,day:dayNow()});const S=SETTLE.get(id);
     try{const t=S?S.site:SITE[id];if(t){const st=fstate()[factionOf(nationKeyOf(...cellOf(t.x,t.z)))];if(st.done>0){st.done=Math.max(0,st.done-3);st.rank=Math.min(3,Math.floor(st.done/3));}}}catch(err){} // a service lost, and the rank with it
     showMsg(`You have killed a guard of ${S?S.site.name:'the town'}. Its gates are shut to you until you pay.`,'#ff6060');if(typeof addLog==='function')addLog('☠',`Killed a guard at ${S?S.site.name:id}. The Church will hear of it.`);}
@@ -583,7 +602,7 @@
   function strikeNpc(fx,fz){const S=nearSite();if(!S)return false;let best=null,bd=2.2;
     for(const n of S.npcs||[]){if(!n.g.visible||n._retreated||n._drawn)continue;const ex=n.g.position.x-px,ez=n.g.position.z-pz,d=Math.hypot(ex,ez);if(d>=bd)continue;if((ex*fx+ez*fz)/(d||1)<=.45)continue;best=n;bd=d;}
     if(!best)return false;const name=(best.def&&best.def.name)||'someone';const site=S.site;
-    addFavor(site,-3);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=75;c.debt+=3;c.last=dayNow();
+    addFavor(site,-3);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=75;c.debt+=3;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,75);
     (worldState.crimes||(worldState.crimes=[])).push({kind:'assault',site:site.id,house:null,day:dayNow(),min:absMin()});
     if(best.sched&&(best.sched.type==='guard'||best.sched.type==='watch'||best.sched.type==='constable')){showMsg(`You struck ${name}.`,'#ff6060');guardDraw(best,S);}
     else{best._scared=performance.now()+20000;showMsg(`You struck ${name}. ${site.name} will not forget it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} at ${site.name}.`);}

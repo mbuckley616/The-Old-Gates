@@ -45,7 +45,7 @@ let b = await page.evaluate(() => { const sd = cloakSeed(); delete worldState.ar
   const otherKill = { half: !!fresh.half, peace: window._peace() };
   EQ.back = keep; delete worldState.artifacts; delete worldState.masters[sd]; delete worldState.masters[other];
   return { before, after, otherKill }; });
-await page.waitForTimeout(2200); { const said = await page.evaluate(() => [...window._said]); b.after.said = said; b.again = said.slice(1); }
+await page.waitForTimeout(2200); { const said = (await page.evaluate(() => [...window._said])).filter(t => /Something has gone out of it/.test(t)); b.after.said = said; b.again = said.slice(1); } /* only the cloak's lines: walking out, the world says its own (a place discovered) */
 console.log(JSON.stringify(b));
 check(`taken alive and worn: every beast at peace (${b.before.peace}) and the town drained ${b.before.drain} a day`, b.before.peace.every(x => x) && b.before.drain === 0.6, b.before);
 check(`its master killed: *${b.after.said[0]}*; it keeps the Wolf and the Dire Wolf only, and the town pays nothing`, b.after.said[0] === 'The cloak is lighter on your shoulders. Something has gone out of it.' && b.after.half && b.after.S.half && b.after.peace.join() === 'true,true,false,false' && b.after.drain === 0 && b.after.hoard === 0, b.after);
