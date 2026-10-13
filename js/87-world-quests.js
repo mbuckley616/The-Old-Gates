@@ -944,7 +944,8 @@ const giver=`${lord.title} ${lord.name}`;
     gate_blade:  {god:'cloch',   name:'the Gate-Blade',          ico:'🗡',check:{attr:'might',need:30},
                   item:()=>Object.assign(makeItem(6,WEAPON_TYPES.find(w=>w.type==='Longsword')),{name:'The Gate-Blade',ico:'🗡',weight:14,sellMult:0,buyPrice:0,desc:'Sprinting costs a quarter more while it is drawn.'})},
     drowned_bell:{god:'muir',    name:'the Drowned Bell',        ico:'🔔',check:null},
-    sundial_ring:{god:'speir',   name:'the Sundial Ring',        ico:'💍',check:{attr:'swiftness',need:30}},
+    sundial_ring:{god:'speir',   name:'the Noon Ring',           ico:'💍',check:{attr:'swiftness',need:30}, /* S786 — the draft's name (Michael's 1A on #263); the id keeps the page's */
+                  item:()=>({type:'misc',name:'The Noon Ring',ico:'💍',weight:0.1,sellMult:0,buyPrice:0,desc:'A plain gold band, cut inside with twelve marks and a sun. Worn, it is warm at noon and cold at midnight. The Old Blood call it Fáinne an Lae, the ring of the day, which is also their word for dawn.'})},
     wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30},
                   item:()=>({type:'equip',slot:'back',name:"The Wolf-Mother's Cloak",ico:'🧥',def:1,weight:2,cloak:'fur',virtue:'wolfmother',sellMult:0,buyPrice:0,desc:'Wolves, bears and spiders leave you alone unless you strike first.'})},
     waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null,
@@ -1029,6 +1030,22 @@ const giver=`${lord.title} ${lord.name}`;
     for(const t of allSites()){if(!(t.kind in BASE_P))continue;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<bd){bd=d;best=t;}}_cloakTown={lair:P.site,town:best};return best;}
   function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||S.half||cloakMasterDead())return 0;
     const ct=cloakTown();return ct&&ct.id===t.id?.6:0;}
+  // S786 — the Noon Ring (the page's Sky row, in the approved draft's words): used from the bag, once a game-day, it turns the
+  // weather in the open world, clear to rain or rain to clear (through the weather's own shift, as devWeather does); any other
+  // sky, or under a roof, it does not turn. The cost: carried in a storm, one lightning flash in three comes down close to you
+  // (the draft's line the first time, a log line after; no harm is done, the page names none). The day it last turned is the
+  // tool's, the world row's (artifacts.sundial_ring.turned).
+  function noonRingCarried(){return artifactCarried('sundial_ring');}
+  function ringSay(t){showMsg(t,'#f0d890');if(typeof addLog==='function')addLog('☀',t);return t;}
+  function noonRingTurn(){const S=artifactState('sundial_ring');if(!S||!noonRingCarried())return null;
+    const outside=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const sky=WX.next!==WX.type?WX.next:WX.type;
+    if(!outside||(sky!=='clear'&&sky!=='rain'))return ringSay('The ring does not turn under this sky.');
+    if(S.turned===dayNow())return ringSay('The ring will not turn again today.');
+    S.turned=dayNow();WX.next=sky==='clear'?'rain':'clear';WX.ahead=null;WX.k=0;WX.timer=Math.max(WX.timer||0,240);
+    return ringSay(sky==='clear'?'You turn the ring a quarter on your finger. By the time you look up, the sky has begun to close.':'You turn the ring back. The rain thins and stops, and the light comes through as if it had only been waiting.');}
+  // a storm's flash (the weather tick's lightning): with the ring on you, one in three is close. Cosmetic, so Math.random.
+  function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
+    if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
   // S783 — the Waylamp (the page's Hearth row, in the approved draft's words): it hangs over the first inn of a home-island town
   // (artifactPlaces). The trial: carry it lit into the inns of five other towns with no crime on your account; each innkeeper trims
   // it (*The lamp.*), and the fifth makes it yours. A crime while it is on you, in the trial or after, puts it out for seven days,

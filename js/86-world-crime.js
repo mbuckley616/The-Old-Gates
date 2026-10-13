@@ -127,7 +127,7 @@
     }
     // lightning
     WX.flashT-=dt;
-    if(inWorld&&storm>.5&&WX.flashT<=0){WX.flashT=6+Math.random()*14;WX.flash=.14;thunder(.4+Math.random()*2.2);}
+    if(inWorld&&storm>.5&&WX.flashT<=0){WX.flashT=6+Math.random()*14;WX.flash=.14;thunder(.4+Math.random()*2.2);if(typeof noonRingFlash==='function'&&noonRingFlash())WX.flash=.3;} /* S786 — the Noon Ring draws one in three close */
     if(WX.flash>0){WX.flash-=dt;}
     // sound is ticked from the main loop now (wxAudio), so it keeps fading when you step inside
   }
