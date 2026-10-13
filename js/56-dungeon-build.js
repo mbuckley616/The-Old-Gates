@@ -3305,7 +3305,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
     addLog('🏰','Entered '+portal.name);
   }
   sndEnterDungeon();
-  lid=portal.id;
+  lid=portal.id;if(typeof noteGateWalked==='function')noteGateWalked(portal); /* S780 — the gates you have been down (the Gate-Blade's key) */
   if(!portal.tutorial){
     const _ds=portal.diffScale||DIFF_SCALE.normal;
     showZoneName('\u2694 '+portal.name+' ['+_ds.label+']');

@@ -7,6 +7,16 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// Session 793: the start no longer loads a lair, a bandit camp or a shrine (27 sites near it, none of the three), so the plague,
+// the ambush and the shrine found nothing to roll on. Each part now goes to a place that has what it needs, from all the sites.
+const where = await page.evaluate(() => { const all = allSites(); const towns = all.filter(t => t.kind in BASE_P);
+  const near = (t, k, d) => all.some(o => o.kind === k && Math.hypot(o.x - t.x, o.z - t.z) < d);
+  const plague = towns.find(t => near(t, 'lair', 500)), camp = towns.find(t => near(t, 'bcamp', 400));
+  const s = siteAnywhere('dunmore'); const shrine = all.filter(t => t.kind === 'shrine').sort((a, b) => Math.hypot(a.x - s.x, a.z - s.z) - Math.hypot(b.x - s.x, b.z - s.z))[0];
+  return { plague: plague && plague.id, camp: camp && camp.id, shrine: shrine && shrine.id }; });
+console.log('  where', JSON.stringify(where));
+const goTo = async (id) => { await page.evaluate((id) => { const t = siteAnywhere(id); px = t.x; pz = t.z; }, id); await g.settle(id); };
+if (where.plague) await goTo(where.plague);
 const r = await page.evaluate(() => {
   const rnd = Math.random; const T0 = worldState.gameTimeAbsMinutes || 0; const out = {};
   const snap = () => JSON.stringify({ towns: worldState.towns || {}, war: worldState.war || null, lairDays: worldState.lairDays || {}, routes: worldState.routes || {}, lairs: worldState.lairs || {} });
@@ -24,6 +34,14 @@ const r = await page.evaluate(() => {
       for (const t of SITES) if (t.kind in BASE_P) { const st = TS(t); delete st.flags.plague; L[t.id] = 29; }
       tickPlagueDay(); for (const t of SITES) if (t.kind in BASE_P && TS(t).flags.plague != null) hit.push(d + ':' + t.id); }
     for (const t of SITES) if (t.kind in BASE_P) delete TS(t).flags.plague; return hit; });
+  return out;
+});
+if (where.camp) await goTo(where.camp);
+Object.assign(r, await page.evaluate(() => {
+  const rnd = Math.random; const T0 = worldState.gameTimeAbsMinutes || 0; const out = {};
+  const snap = () => JSON.stringify({ towns: worldState.towns || {}, war: worldState.war || null, lairDays: worldState.lairDays || {}, routes: worldState.routes || {}, lairs: worldState.lairs || {} });
+  const restore = s => { const o = JSON.parse(s); worldState.towns = o.towns; worldState.war = o.war; worldState.lairDays = o.lairDays; worldState.routes = o.routes; worldState.lairs = o.lairs; };
+  const twice = (fn) => { const s0 = snap(); const res = []; for (const v of [.001, .999]) { restore(s0); Math.random = () => v; res.push(fn()); } Math.random = rnd; restore(s0); worldState.gameTimeAbsMinutes = T0; return res; };
   // the caravan's ambush hour: a route from every town within 500 of a live bandit camp, to itself, over 30 days
   const camps = SITES.filter(t => t.kind === 'bcamp'); const towns = SITES.filter(t => t.kind in BASE_P && camps.some(c => Math.hypot(c.x - t.x, c.z - t.z) < 480)).slice(0, 8);
   out.routeTowns = towns.length;
@@ -32,16 +50,16 @@ const r = await page.evaluate(() => {
       tickRoutesDay(); for (const k in worldState.routes) { const th = worldState.routes[k].threat; if (th) fs.push(+th.f.toFixed(4)); } }
     return fs; });
   return out;
-});
+}));
 const war = r.war, pl = r.plague, th = r.threat;
 console.log('  war', JSON.stringify({ a: war[0].length, b: war[1].length, first: war[0].slice(0, 4) }));
 console.log('  plague', JSON.stringify({ a: pl[0].length, b: pl[1].length, first: pl[0].slice(0, 4) }));
 console.log('  threat', JSON.stringify({ towns: r.routeTowns, a: th[0].length, b: th[1].length, lo: Math.min(...th[0]), hi: Math.max(...th[0]), distinct: new Set(th[0]).size }));
 // the shrine: a shrine with no god's boon, prayed at on five days
-const shrine = await page.evaluate(() => { const s = SITES.find(t => t.kind === 'shrine'); return s ? s.id : null; });
+const shrine = where.shrine;
 let boons = null;
 if (shrine) {
-  await g.settle(shrine);
+  await goTo(shrine);
   boons = await page.evaluate(() => { const rnd = Math.random; const T0 = worldState.gameTimeAbsMinutes || 0; const S = [...SETTLE.values()].find(S => S.site.kind === 'shrine' && S.altar);
     if (!S) return null; const god = S.god; S.god = null; const res = [];
     for (const v of [.001, .999]) { Math.random = () => v; const got = []; const _l = addLog; window.addLog = (i, t) => { if (/^Prayed at/.test(t)) got.push(t.replace(/^Prayed at [^:]*: /, '')); };
