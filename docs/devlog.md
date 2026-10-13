@@ -16631,3 +16631,25 @@ The third island's house for F6's pieces. Aurenne's is Michael's B on #259 (Sess
 - **The turf's texture** reads as green felt with brown patches. A real sod roof wants a ragged edge and tufts at the eaves, which are cards, owed if B or C.
 - **The halls are long and plain on their sides.** OG-034's halls have carved door frames, painted bands and a clan banner, all owed after the answer.
 - **The footing's stone** is the kit's coursed block, too regular for the Mark's rough stone.
+
+## v80 — Session 820 — Aurenne's limestone, and the bushes rounded (card F6, prototype only)
+Two of Session 816's "needs eyes", on the design Michael chose (B on #259).
+- **The paving.** The street's paving was the kit's dark flag, lifted past 1 by its colour, so it still read grey. Aurenne now has a limestone of its own (`TEX.limestone` in `pieces.js`):
+  - pale slabs in courses of two widths, with edges worn round;
+  - ochre and grey stains;
+  - joints filled with pale dust rather than cut black.
+- **The bushes.** The pots' bushes on the parapets are rounder (an icosahedron of detail 2: 320 triangles, two a house). The bougainvillea's blooms tried the same at detail 1. That put a domed house at 15,854 triangles against the 12,000 budget `aurenne.check.mjs` holds, and the check caught it. The blooms went back to detail 0, at 20 triangles each.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`:** 11 checks, all pass. Per house, against Session 816:
+
+| Kind | Triangles (mean) | Change |
+|---|---|---|
+| Flat, one storey | 2,208 to 6,574 (3,929) | +200 |
+| Flat, two storeys | 3,304 to 8,654 (5,653) | +200 |
+| Flat with a dome | 3,790 to 8,654 (6,280) | +200 |
+| Roman, with or without an arcade | unchanged | none |
+
+- **Pictures:** `aurenne-street.jpg` and `aurenne-houses.jpg` were shot again. The lane reads as pale stone in the sun.
+### Needs eyes
+- **The bougainvillea** is still a scatter of faceted blooms; leaf cards (the slice's `treeKit`) are the right tool, still owed.
+- **A note on routing:** Session 817's barrels were filed in section I, the systems builder's, though the critic named the look builder's barrel item (H). The systems branch had not touched them (it took the other two s597 findings, Sessions 798 and 799), so there is no overlap. Said here so the producer can route the next one.
