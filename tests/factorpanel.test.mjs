@@ -36,7 +36,13 @@ check('a full hold fills no more and says so', c.said === 'No room in the hold.'
 await btn('iron', 'sell'); const d = await R();
 check('− sells a crate out of the hold (bid 22 after four bought: 24)', /^Sold a crate of iron for \d+ gold\.$/.test(d.said) && d.rows.iron.held === '3' && /30 of 40/.test(d.hold) && d.gold > 898, d);
 await btn('furs', 'buy'); const e = await R();
-check('+ buys one crate (a bale of furs, 36) into the hold', /Bought a bale of furs for 36 gold/.test(e.said) && e.rows.furs.held === '1' && /35 of 40/.test(e.hold), e);
+check('+ buys one crate (a bale of furs, 36) into the hold, and says so', /^Bought a bale of furs for 36 gold\. Into the hold\.$/.test(e.said) && e.rows.furs.held === '1' && /35 of 40/.test(e.hold), e);
+// S758 (the critic, s585): a crate past the hold's room went on your back with the same words as one into the hold
+await btn('furs', 'buy'); const e2 = await R(); await btn('furs', 'buy'); const e3 = await R();
+const furBag = await page.evaluate(() => { const b = BAG.find(it => it.type === 'cargo' && it.cargo === 'furs'); return b ? (b.qty || 1) : 0; });
+console.log(JSON.stringify({ e2: e2.said, e3: e3.said, held: e3.rows.furs.held, hold: e3.hold, furBag }));
+check('the crate that fills the hold says *Into the hold.*', /\. Into the hold\.$/.test(e2.said) && /40 of 40/.test(e2.hold), e2.said);
+check('the next, with the hold full, goes on your back and says so', /^Bought a bale of furs for \d+ gold\. The hold is full: you carry it\.$/.test(e3.said) && furBag === 1 && e3.rows.furs.held === '2 + 1', { said: e3.said, furBag, held: e3.rows.furs.held });
 
 // a short purse: Fill stops at what you can pay for
 await page.evaluate(() => { const h = worldState.ship.hold; for (const k in h) delete h[k]; worldState.cargoMkt = {}; gold = 60; cargoPanelDraw(); });
@@ -50,7 +56,7 @@ await page.evaluate(() => { WORLD.ship.x = _M.x + 400; gold = 500; cargoPanelDra
 const h = await R();
 check('with her away the board says so, Fill is off, and + puts a crate on your back', /not at this harbour; what you buy, you carry/.test(h.hold) && !h.rows.iron.fill && h.rows.iron.buy && h.bar === null, h);
 await btn('timber', 'buy'); const h2 = await R();
-check('a load of timber goes on your back', /Bought a load of timber/.test(h2.said) && h2.rows.timber.held === '1', h2.rows.timber);
+check('a load of timber goes on your back (with her away, nothing to tell: no word of the hold)', /^Bought a load of timber for \d+ gold\.$/.test(h2.said) && h2.rows.timber.held === '1', { said: h2.said, row: h2.rows.timber });
 
 // Aurenne: the tithe in the notes
 await page.evaluate((ports) => { closeCargoPanel(); openCargoPanel(WORLD.siteAnywhere(ports.aurenne)); }, ports);

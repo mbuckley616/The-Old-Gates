@@ -1,0 +1,69 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Aurenne's houses</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;background:#a9c6dc;overflow:hidden}canvas{display:block}
+#t{position:absolute;left:0;right:0;top:0;font:16px Georgia,serif;color:#fff;text-shadow:0 1px 3px #000;display:flex;pointer-events:none}#t div{flex:1;text-align:center;padding-top:12px}
+#n{position:absolute;left:14px;bottom:10px;font:13px Georgia,serif;color:#fff;text-shadow:0 1px 2px #000}
+#v{position:absolute;right:12px;bottom:10px;font:13px Georgia,serif}#v a{color:#fff;text-shadow:0 1px 2px #000;margin-left:10px}</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="kit.js"></script><script src="proposal.js"></script><script src="today.js"></script></head><body><div id="t"></div><div id="n"></div>
+<div id="v"><a href="#compare">compare</a><a href="#street-a">A</a><a href="#street-b">B</a><a href="#street-c">C</a><a href="#front">front</a><a href="#side">side</a><a href="#scale">scale</a><a href="#top">roofs</a></div>
+<script>
+// Aurenne's houses: today's (the game's own mesh, from extract.mjs) beside the proposal (proposal.js). #view picks the shot.
+const view=(location.hash||'#compare').slice(1),W=innerWidth||1280,H=innerHeight||720;
+const R=new THREE.WebGLRenderer({antialias:true});R.setSize(W,H);R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;document.body.appendChild(R.domElement);
+const S=new THREE.Scene();S.background=new THREE.Color(0xa9c6dc);S.fog=new THREE.Fog(0xb8cfe0,60,140);
+S.add(new THREE.HemisphereLight(0xe6eef6,0x8a7450,.62));
+const sun=new THREE.DirectionalLight(0xfff0d6,1.05);sun.position.set(14,22,12);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-30,right:30,top:30,bottom:-30,far:90});sun.shadow.bias=-.0006;S.add(sun);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(240,240),new THREE.MeshLambertMaterial({color:0xb9a682}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;S.add(ground);
+const HM=new THREE.MeshLambertMaterial({vertexColors:true}),PM=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:0,side:THREE.DoubleSide});
+const tri=g=>g.attributes.position.count/3;
+const unb64=(s,T)=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new T(u.buffer);};
+function fromToday(e){const g=new THREE.BufferGeometry(),P=unb64(e.pos,Int16Array),N=unb64(e.nor,Int8Array);
+  g.setAttribute('position',new THREE.Float32BufferAttribute(Float32Array.from(P,x=>x/100),3));g.setAttribute('normal',new THREE.Float32BufferAttribute(Float32Array.from(N,x=>x/127),3));
+  if(e.col){const C=unb64(e.col,Uint8Array);g.setAttribute('color',new THREE.Float32BufferAttribute(Float32Array.from(C,x=>x/255),3));}return g;}
+function put(geo,mat,x,z,ry){const m=new THREE.Mesh(geo,mat);m.position.set(x,0,z);m.rotation.y=ry||0;m.castShadow=m.receiveShadow=true;S.add(m);return m;}
+const people=TODAY.people.map(fromToday);
+const person=(i,x,z,ry)=>put(people[i%2],PM,x,z,ry);
+const today=TODAY.houses.map(h=>({geo:fromToday(h.hi),w:h.w,d:h.d,tris:h.tris}));
+const rng=s=>()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};
+// the three kinds the street draws from, and the three towns of the question
+const K={
+  flat1:{kind:'flat',two:false,green:true},
+  flat2:{kind:'flat',two:true,lattice:true,pergola:true},
+  flatS:{kind:'flat',two:false,stair:true,pergola:true},
+  dome:{kind:'flat',two:true,lattice:true,dome:'blue'},
+  tile:{kind:'tile',two:true,arcade:true},
+  tile1:{kind:'tile',two:false,arcade:false},
+};
+const T=document.getElementById('t'),Nn=document.getElementById('n');
+const house=(k,w,d,seed,extra)=>aurenneHouseGeo(w,d,Object.assign({},K[k],extra||{}),rng(seed));
+const cam=new THREE.PerspectiveCamera(32,W/H,.1,300);const INFO={};
+function street(list,label){ // a street: houses face +z across a paved way, people on it
+  const way=new THREE.Mesh(new THREE.PlaneGeometry(70,4.2),new THREE.MeshLambertMaterial({color:0xd8ccb0}));way.rotation.x=-Math.PI/2;way.position.set(0,.01,5.6);way.receiveShadow=true;S.add(way);
+  let x=-(list.reduce((a,e)=>a+e[1]+.7,0))/2,tris=0;
+  list.forEach(([k,w,d,seed,ex],i)=>{const g=k==='today'?today[seed].geo:house(k,w,d,seed,Object.assign({wall:AUR.walls[(i*3+1)%5],door:AUR.doors[(i*2+1)%5]},ex||{}));tris+=tri(g);put(g,HM,x+w/2,-d/2+3,0);x+=w+.7+(k==='tile'?0:0);});
+  person(0,-3,5.2,.6);person(1,2.6,6.1,-2.4);person(0,7.5,5,.3);
+  cam.position.set(-9,6.4,24);cam.lookAt(1,2.6,0);T.innerHTML=`<div>${label}</div>`;INFO.tris=tris;INFO.houses=list.length;}
+if(view==='compare'){
+  const a=today[0],b=today[1];put(a.geo,HM,-14.5,0,.3);put(b.geo,HM,-5.5,-1,.3);person(0,-9.6,4.2,.3);
+  const p1=house('flat2',7,6,5),p2=house('tile',7,6,7);put(p1,HM,5.5,-1,-.3);put(p2,HM,14.5,-1.5,-.3);person(1,10,4.4,-.3);
+  cam.position.set(0,7.2,31);cam.lookAt(0,2.6,0);
+  T.innerHTML=`<div>Today (${a.tris.toLocaleString()} and ${b.tris.toLocaleString()} triangles)</div><div>Proposed, flat and tiled (${tri(p1).toLocaleString()} and ${tri(p2).toLocaleString()})</div>`;
+  INFO.today=[a.tris,b.tris];INFO.prop=[tri(p1),tri(p2)];}
+else if(view==='street-a')street([['flat1',6,5,11],['dome',7,6,12],['flatS',6,5,13],['flat2',7,6,14],['flat1',5,5,15]],'A. The white town: every house flat-roofed, the rich ones domed');
+else if(view==='street-b')street([['flat1',6,5,11],['tile',7,6,21],['flatS',6,5,13],['flat2',7,6,14],['tile1',6,5,22]],'B. The mix: two in three flat-roofed, one in three Roman-tiled');
+else if(view==='street-c')street([['tile1',6,5,31],['tile',7,6,21],['tile1',6,5,32],['tile',7,6,33],['tile1',5,5,34]],'C. The Roman town: every house hip-roofed in tile');
+else if(view==='street-today')street([['today',7,6,0],['today',7,6,1],['today',7,6,0]],'Today: the Aurenne house in three draws');
+else if(view==='front'||view==='side'||view==='top'){
+  const ks=[['flat1',6,5,11],['flatS',6,5,13],['flat2',7,6,14],['dome',7,6,12],['tile',7,6,21]];let x=-ks.reduce((a,e)=>a+e[1]+2.2,0)/2;const row=[];
+  ks.forEach(([k,w,d,s])=>{const g=house(k,w,d,s);put(g,HM,x+w/2,0,view==='side'?0:0).rotation.y=view==='side'?Math.PI/2:0;row.push(k+' '+tri(g));x+=w+2.2;});
+  person(0,-9,4,.0);person(1,9.5,4.5,0);
+  if(view==='front'||view==='side'){cam.position.set(0,4,50);cam.lookAt(0,3,0);}else{cam.position.set(0,32,30);cam.lookAt(0,0,-1);}
+  T.innerHTML=`<div>${view==='front'?'The five draws, from the front':view==='side'?'The same, from the side (turned 90°)':'From above: terraces, pergola, the dome, the tiled hip'}</div>`;INFO.row=row;}
+else if(view==='scale'){const g=house('flat2',7,6,14,{green:false}),t=today[0];put(g,HM,2.5,0,0);put(t.geo,HM,-6.5,0,0);person(0,1.6,3.8,.4);person(1,-6.9,3.8,-.2);person(0,4.2,4.4,-.6);
+  cam.position.set(-1.5,2.2,13.5);cam.lookAt(-1.2,2.1,0);T.innerHTML=`<div>Today's door</div><div>The proposed door: arched, set in the wall, the tiles round it</div>`;}
+R.render(S,cam);
+Nn.textContent=`Townsfolk are the game's own Aurennais (Yasmin ${TODAY.people[0].h.toFixed(2)}, Idris ${TODAY.people[1].h.toFixed(2)} units). Today's houses: WORLD.houseProto('aurenne'), build s587.`;
+window.INFO=INFO;window.READY=true;
+</script></body></html>

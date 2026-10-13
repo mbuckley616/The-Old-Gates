@@ -20,16 +20,17 @@ await page.evaluate(() => { window._drive = (step, max) => {
     const msgs = []; let lastMult = null, lastRaw = null;
     const _m = showMsg; showMsg = function (tx) { msgs.push(tx); return _m.apply(this, arguments); };
     const _s = shieldFrontMult; shieldFrontMult = function (who) { const v = _s.apply(this, arguments); if (who === e) lastMult = v; return v; };
+    let lastWord = null; const _n = dmgNum; dmgNum = function (who, n, info, o) { const d = _n.apply(this, arguments); if (who === e && d) lastWord = d.word; return d; }; /* S761 — the guarded tag rides on the number now */
     const _a = applyMeleeDamage; applyMeleeDamage = function (who, raw) { const r = _a.apply(this, arguments); if (who === e) lastRaw = { raw, dmg: r.dmg }; return r; };
     const face = () => { yaw = Math.atan2(-(e.x - px), -(e.z - pz)); };
     const keep = () => { PHP = maxHP; dead = false; PPOST.stagUntil = 0; if (e.hp < e.maxHp * .5) e.hp = e.maxHp; };
-    const swing = (pow, spent) => { keep(); face(); stamina = spent ? 0 : maxStamina; atkCd = 0; lastMult = null; lastRaw = null; const hp0 = e.hp, m0 = msgs.length;
+    const swing = (pow, spent) => { keep(); face(); stamina = spent ? 0 : maxStamina; atkCd = 0; lastMult = null; lastRaw = null; lastWord = null; const hp0 = e.hp, m0 = msgs.length;
       attack(pow); const exh = _exhaustedStrike; let n = 0;
       _drive(() => { keep(); face(); return ++n > 3 && (!_pendingStrike || _pendingStrike.fired); }, 120);
-      return { exh, up: e.shieldUp, stag: staggered.some(s => s.e === e), mult: lastMult, hit: lastRaw, msg: msgs.slice(m0).filter(x => /guard|Hit|staggered/.test(x)) , hpLost2: hp0 - e.hp }; };
+      return { exh, up: e.shieldUp, stag: staggered.some(s => s.e === e), mult: lastMult, hit: lastRaw, word: lastWord, msg: msgs.slice(m0).filter(x => /guard|Hit|staggered/.test(x)) , hpLost2: hp0 - e.hp }; };
     const wait = (f) => { let n = 0; _drive(() => { keep(); face(); return ++n >= f; }, f + 1); };
     const reraise = () => { let n = 0; _drive(() => { keep(); face(); return ++n > 3 && e.shieldUp && !staggered.some(s => s.e === e); }, 400); };
-    const done = () => { showMsg = _m; shieldFrontMult = _s; applyMeleeDamage = _a; };
+    const done = () => { showMsg = _m; shieldFrontMult = _s; applyMeleeDamage = _a; dmgNum = _n; };
     return { swing, wait, reraise, done, face };
   }; });
 
@@ -57,7 +58,7 @@ const sp = w.spent || [];
 check('a Bandit Captain stands with the guard up', !w.noSpot && w.built, w);
 check('a power attack on an empty bar is a spent swing, and the guard holds through all seven', sp.length === 7 && sp.every(s => s.exh && s.up), sp.map(s => [s.exh, s.up]));
 check('each spent power attack lands as a guarded hit: the front block (.35) and the spent 45%, at least a point', sp.every(s => s.mult === .35 && s.hit && s.hit.dmg >= 1 && s.hit.dmg <= Math.ceil(s.hit.raw * .45) + 1 && s.hpLost2 >= 1), sp.map(s => [s.mult, s.hit, s.hpLost2]));
-check('it says so: *Too spent to break the guard.*, and never *guard breaks*', sp.every(s => s.msg.some(m => /Too spent to break the guard\./.test(m) && /GUARDED/.test(m)) && !s.msg.some(m => /guard breaks/.test(m))), sp.map(s => s.msg));
+check('it says so: *Too spent to break the guard.*, its number reads *guarded*, and never *guard breaks*', sp.every(s => s.msg.some(m => /Too spent to break the guard\./.test(m)) && s.word === 'guarded' && !s.msg.some(m => /guard breaks/.test(m))), sp.map(s => [s.word, s.msg]));
 const fr = (w.fresh || [])[0];
 check('a power attack with the stamina for it still breaks the guard: it staggers and that blow does no damage', fr && !fr.exh && !fr.up && fr.stag && fr.hpLost2 === 0 && fr.msg.some(m => /guard breaks/.test(m)), fr);
 

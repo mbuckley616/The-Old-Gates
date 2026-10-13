@@ -445,14 +445,19 @@
   // her along the shore direction sd is atan2(−sd.dx, −sd.dz). Buying and the Compact's grant used atan2(sd.dx, sd.dz), the
   // bow at the quay (the critic, 4 Oct: the first W cost Hull −22); fetching and raising faced the land on a north or south shore.
   function seawardYaw(sd){return Math.atan2(-sd.dx,-sd.dz);}
+  // S756 — she lies alongside the quay's last stretch, her near side .6 off its edge and her nets 0.2 to 2.8 short of its
+  // end: from the quay's end you look down at the net and press E. She lay 4 beyond the end and 2 out to the side, her net
+  // 4.5 from the stone at its nearest, and of 1,472 spots on Portclare's quay 6 reached it (the critic, s585).
+  function quayBerth(plat,sd){const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
+    const half=sd.dx?(plat.z1-plat.z0)/2:(plat.x1-plat.x0)/2,off=half+SHIP.W/2+.6,back=1.5;
+    return {x:ex-sd.dx*back-sd.dz*off,z:ez-sd.dz*back+sd.dx*off};}
   function buyShip(site){
     if(worldState.ship)return 'You have a ship already. She\u2019s wherever you left her.';
     const price=shipPriceNow();
     if(gold<price)return `A hull is ${price} gold. Come back when your purse is heavier.`;
     const plat=ZONES.world.platforms.find(p=>p.site===site.id);const sd=shoreDir(site);
     if(!plat||!sd)return 'No berth here to launch from.';
-    const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
-    const bx=ex+sd.dx*4-sd.dz*(SHIP.W/2+6),bz=ez+sd.dz*4+sd.dx*(SHIP.W/2+6);
+    const {x:bx,z:bz}=quayBerth(plat,sd);
     gold-=price;updateHUD();spawnShip(bx,bz,seawardYaw(sd));if(price<SHIP_PRICE&&typeof addLog==='function')addLog('📜',"The shipwright read Corwin's note and took a quarter off.");
     if(typeof addLog==='function')addLog('⛵',`Bought a ship at ${site.name}.`);
     return `She\u2019s the ${SHIP.name}, and she\u2019s yours — moored off the seaward end of the quay, ${compassWord(bx-site.x,bz-site.z)} of here. Walk to the end of the quay, look at the net down her side and press E to climb aboard; E again for the wheel.`;
@@ -480,8 +485,7 @@
     const port=(seat.kind==='port'&&shoreDir(seat))?seat:ports[0];if(!port)return null;const sd=shoreDir(port);
     let plat=ZONES.world.platforms.find(p=>p.site===port.id&&!p.river&&!p.shallow);
     if(!plat){const L=quayLine(port,sd,1.1),hw=Math.abs(sd.dx)?L.len/2:4,hd=Math.abs(sd.dz)?L.len/2:4;plat={x0:L.mx-hw,x1:L.mx+hw,z0:L.mz-hd,z1:L.mz+hd};}
-    const ex=sd.dx?(sd.dx>0?plat.x1:plat.x0):(plat.x0+plat.x1)/2,ez=sd.dz?(sd.dz>0?plat.z1:plat.z0):(plat.z0+plat.z1)/2;
-    const bx=ex+sd.dx*4-sd.dz*(SHIP.W/2+6),bz=ez+sd.dz*4+sd.dx*(SHIP.W/2+6);
+    const {x:bx,z:bz}=quayBerth(plat,sd);
     spawnShip(bx,bz,seawardYaw(sd));if(typeof addLog==='function')addLog('⛵',`The Compact deeded you a ship at ${port.name}.`);
     return port;
   }

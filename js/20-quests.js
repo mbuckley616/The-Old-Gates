@@ -327,21 +327,34 @@ function dungeonKeyBase(seed){
 }
 
 // Theme → visual + enemy roster
+// S763 — each school's roster is the canon's table (§9a) with a level-one foe kept in each (Michael's A on #252): undead is
+// Solas, elemental Tine, deep Uisce (its Skeleton the drowned), ruins Cloch, haunted Scáth. Goblins, kobolds and Shieldbearers
+// live only in occupied gates (OCCUPIED_ROSTER); 'goblin' stays for the test harness's hand-built portal.
 const THEME_DEF={
   undead:   {fog:0x120f1a,amb:0x9060cc,portalCol:0x8844ff,wallCol:0x2a2232,floorCol:0x1a1624,clutter:'bones',
-             enemies:['Skeleton','Skeleton','Phantom','Wraith','Skeleton','Mimic']},
+             enemies:['Skeleton','Skeleton','Phantom','Wraith','Skeleton','Skeleton']},
   goblin:   {fog:0x0a1208,amb:0x60a040,portalCol:0x44bb22,wallCol:0x1e2818,floorCol:0x141c10,clutter:'junk',
              enemies:['Goblin','Goblin','Kobold Thief','Slime','Cave Troll','Shieldbearer']},
   elemental:{fog:0x1a0a08,amb:0xff6030,portalCol:0xff4422,wallCol:0x2a1808,floorCol:0x1e1208,clutter:'rubble',
-             enemies:['Fire Elemental','Golem','Slime','Fire Elemental','Cave Troll','Phantom']},
+             enemies:['Fire Elemental','Slime','Golem','Fire Elemental','Slime','Cave Troll']},
   deep:     {fog:0x080a10,amb:0x3060a0,portalCol:0x2244aa,wallCol:0x181a20,floorCol:0x10121a,clutter:'rubble',
-             enemies:['Cave Troll','Golem','Slime','Mimic','Skeleton','Cave Troll']},
+             enemies:['Slime','Slime','Skeleton','Cave Troll','Mimic','Slime']},
   haunted:  {fog:0x0a0814,amb:0x8040a0,portalCol:0xaa44ff,wallCol:0x1e1828,floorCol:0x14101c,clutter:'chains',
-             enemies:['Phantom','Wraith','Gargoyle','Mimic','Skeleton','Phantom']},
+             enemies:['Phantom','Wraith','Skeleton','Mimic','Skeleton','Phantom']},
   ruins:    {fog:0x0e0c0a,amb:0xa07848,portalCol:0x886622,wallCol:0x22201a,floorCol:0x181610,clutter:'rubble',
-             enemies:['Skeleton','Goblin','Gargoyle','Shieldbearer','Mimic','Golem']},
+             enemies:['Golem','Skeleton','Gargoyle','Cave Troll','Skeleton','Golem']},
 };
 
+// S759 — the gates by school (Michael's A, lore_canon §9a): goblins are a state a gate can be in, not a kind of gate. A gate
+// that drew 'goblin' (the world's roll, an authored entry, an old save) is an occupied gate of one of the built schools, the
+// school chosen by its seed: built and lit in its school's shape, holding the warren's roster. The key 'goblin' stays the
+// stored word, so its name (*Stinking Warren*) and the townsfolk's *goblins nest there* still read from it. Gaoth joins the
+// list when it is built (its roster and its look).
+const GATE_SCHOOLS=['undead','elemental','deep','haunted','ruins'];
+const OCCUPIED_ROSTER=['Goblin','Goblin','Kobold Thief','Slime','Cave Troll','Shieldbearer'];
+function gateOf(entry){const e=entry||{};if(e.theme!=='goblin')return {theme:e.theme,occupied:!!e.occupied};
+  let v=((e.seed|0)^0x5bd1e995)>>>0;v=Math.imul(v^(v>>>15),0x2c1b3c6d)>>>0;v=Math.imul(v^(v>>>12),0x297a2d39)>>>0;v=(v^(v>>>15))>>>0;
+  return {theme:GATE_SCHOOLS[v%GATE_SCHOOLS.length],occupied:true};}
 // Build a full portal definition from a WORLD_DUNGEONS entry
 // v80 S9 — dungeon difficulty is the player's level, not an authored grade.
 // Portals resolve diff/diffScale at use time so a door you found at L2 is
@@ -350,7 +363,8 @@ const THEME_DEF={
 function levelDiffKey(up){const L=(typeof level==='number')?level:1;const G=['veryeasy','easy','normal','hard','veryhard'];const i=L<=2?0:L<=5?1:L<=9?2:L<=14?3:4;return G[Math.min(4,i+(up>0?up:0))];}
 function portalGradeUp(entry){const L=entry&&entry.lair;return L?(L.dragon?2:1):0;}
 function makePortalDef(entry){
-  const td=THEME_DEF[entry.theme]||THEME_DEF.ruins;
+  const gate=gateOf(entry);
+  const td=THEME_DEF[gate.theme]||THEME_DEF.ruins;
   const ds=DIFF_SCALE[entry.diff]||DIFF_SCALE.normal;
   return{
     x:entry.x, z:entry.z,
@@ -361,7 +375,8 @@ function makePortalDef(entry){
     seed:entry.seed,
     zone:entry.zone,
     keyBase:dungeonKeyBase(entry.seed),
-    theme:entry.theme,
+    theme:gate.theme,
+    occupied:gate.occupied,
     get diff(){return levelDiffKey(portalGradeUp(entry));},
     get diffScale(){return DIFF_SCALE[levelDiffKey(portalGradeUp(entry))];},
     kind:entry.kind || 'cave_door',  // v61f8: forward-compat field. 'cave_door' (default, carved-rock-and-door "old gate") or 'fort_door' (built-stonework fort entrance).

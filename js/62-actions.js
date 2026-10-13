@@ -201,16 +201,15 @@ function _resolveDungeonStrike(_isPow){
       // player reads WHY the number is small and learns to flank or power-attack.
       const _guardTag = (shMult<1.0) ? ' (GUARDED)' : '';
       const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
+      dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A); the line below it is gone */
       if(e.hp<=0){killE(e,_killTag);}else{
         const enc=applyWeaponEnchant(dmg,e);
-        if(e.hp<=0){
-          killE(e,_killTag);
-          if(enc)showMsg(enc.tag,enc.col);
-        } else showMsg(`Hit ${e.name} for ${dmg}!${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}${enc?' · '+enc.tag:''}${_spent?' · Too spent to break the guard.':''}`,'#ff9944');
+        dmgNumRider(e,enc);
+        if(e.hp<=0)killE(e,_killTag);
+        else if(_spent)showMsg('Too spent to break the guard.','#ff9944');
       }
     }
   }
-  if(!hit)showMsg('Swing!','#888');
   document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
   setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
 }
@@ -886,9 +885,22 @@ function useItem(i){
     }
     else{sndEquipArmor(it.slot);}}renderInv();}
 
+// S762 — the health bar's tail (Michael's A on DECISION #198, docs/prototypes/hud/): a blow you take shows as the pale stretch the
+// bar has just lost, held 0.8 s from the last loss and then drained at half the bar a second; a heal past it takes it along. It
+// watches the bar, not the blows, so a trap, a fall or a burn shows the same. Cosmetic, on the page's clock.
+const HP_TAIL_HOLD_S=.8,HP_TAIL_DRAIN=.5,HP_TAIL={v:null,last:null,t:0,at:0};
+function hpTailStep(frac,now){
+  const T=HP_TAIL;frac=Math.max(0,Math.min(1,frac));
+  if(T.v==null||frac>=T.v){T.v=frac;T.last=frac;T.at=now;return T.v;}
+  if(frac<T.last-1e-6)T.t=now;
+  const dt=Math.max(0,(now-T.at)/1000);T.at=now;T.last=frac;
+  const past=(now-T.t)/1000-HP_TAIL_HOLD_S;if(past>0)T.v=Math.max(frac,T.v-HP_TAIL_DRAIN*Math.min(dt,past));
+  return T.v;
+}
 function updateHUD(){
   const emHP=effMaxHP(),emMana=effMaxMana(),emSt=effMaxStamina();
   document.getElementById('hb').style.width=(PHP/emHP*100)+'%';document.getElementById('hv').textContent=Math.floor(PHP);
+  {const tl=document.getElementById('hbt');if(tl)tl.style.width=(hpTailStep(PHP/emHP,performance.now())*100)+'%';}
   document.getElementById('mb').style.width=(mana/emMana*100)+'%';document.getElementById('mv').textContent=Math.floor(mana);
   document.getElementById('stb').style.width=(stamina/emSt*100)+'%';
   document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=xp;document.getElementById('xn').textContent=xpNext;document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';

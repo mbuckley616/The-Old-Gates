@@ -94,6 +94,13 @@
 .bossHpTick{position:absolute;top:0;bottom:0;width:1px;
   background:rgba(0,0,0,.55);pointer-events:none}
 #msg{position:absolute;bottom:54px;left:50%;transform:translateX(-50%);font-size:13px;background:rgba(0,0,0,.82);padding:5px 14px;border-radius:14px;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap;z-index:210;color:#d4b896}
+#dmgnums{position:fixed;inset:0;pointer-events:none;z-index:205;overflow:hidden}
+/* S761 — damage numbers at the foe's head (#198 A, docs/prototypes/hud/ on auto/concept): placed and faded by tickDmgNums */
+.dn{position:absolute;transform:translate(-50%,-100%);text-align:center;white-space:nowrap;font:500 30px/1 Georgia,'Times New Roman',serif;font-variant-numeric:lining-nums tabular-nums;color:#f6ecd4;-webkit-text-stroke:5px #1a0f06;paint-order:stroke fill;text-shadow:0 2px 6px rgba(0,0,0,.6);letter-spacing:.02em}
+.dn .sm{display:block;font:italic 15px/1.1 Georgia,serif;-webkit-text-stroke:3px #1a0f06;letter-spacing:0;margin-top:1px}
+.dn.weak{color:#f2c25a;font-size:36px}.dn.res{color:#b4aa94;font-size:22px}.dn.back{color:#e8d8f0;font-size:34px}
+.dn.crit{color:#f05a32;font-size:46px;transform:translate(-50%,-100%) rotate(-5deg)}.dn.crit::before{content:"✶ ";font-size:.55em;vertical-align:.35em}
+.dn.fire{color:#ff9a3c;font-size:23px}.dn.frost{color:#a8dcff;font-size:23px}.dn.shock{color:#c8a8ff;font-size:23px}.dn.rider{font-size:23px}
 #mm{position:absolute;top:10px;right:10px;border-radius:6px;display:none}
 #xh{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,.5);font-size:20px;pointer-events:none;display:none;line-height:1}
 #df{position:absolute;inset:0;pointer-events:none;border-radius:8px;transition:box-shadow .12s}
@@ -757,7 +764,7 @@
   </div>
   <div id="hud">
     <div style="margin-bottom:4px">
-      <span style="color:#c04040">♥</span><div class="bar"><div class="bf" id="hb" style="background:#c04040;width:100%"></div></div><span id="hv">100</span>
+      <span style="color:#c04040">♥</span><div class="bar" style="position:relative"><div id="hbt" style="position:absolute;left:0;top:0;height:100%;width:100%;border-radius:3px;background:#efd9b8;opacity:.8"></div><div class="bf" id="hb" style="position:relative;background:#c04040;width:100%"></div></div><span id="hv">100</span>
       &nbsp;<span style="color:#4a8ad4">✦</span><div class="bar"><div class="bf" id="mb" style="background:#4a8ad4;width:100%"></div></div><span id="mv">100</span>
     </div>
     <div style="margin-bottom:2px">
@@ -773,6 +780,7 @@
   <button id="save-btn" title="Save Game" style="display:none;position:absolute;top:10px;right:154px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);color:#c8b880;font-size:11px;width:36px;height:28px;border-radius:5px;cursor:pointer;z-index:10;pointer-events:all;padding:0">💾</button>
   <canvas id="mm" width="104" height="104"></canvas>
   <div id="msg"></div>
+  <div id="dmgnums"></div>
   <div id="acts">
     <button id="fbtn" onclick="castSpell()">✦ Fireball (F)</button>
     <button id="ibtn" onclick="openInv()">⚔ Inventory (I)</button>
@@ -784,7 +792,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s587</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s596</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
