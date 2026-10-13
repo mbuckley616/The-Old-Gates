@@ -1006,13 +1006,31 @@ const giver=`${lord.title} ${lord.name}`;
   // you strike first. A beast you have hurt is struck for good (`_struck`), and its pack takes its part (alertPack). The cost:
   // its master lives, so the town nearest the lair loses 0.6 a day while the cloak is yours and the master alive (tickTownsDay).
   const CLOAK_BEASTS={'Wolf':1,'Dire Wolf':1,'Snow Wolf':1,'Cave Bear':1,'Spider':1};
-  function beastAtPeace(e){if(!e||!EQ.back||EQ.back.artifact!=='wolf_cloak')return false;if(!CLOAK_BEASTS[e.baseName||e.baseType||e.name]||e.isBoss)return false;
+  const CLOAK_WOLVES={'Wolf':1,'Dire Wolf':1,'Snow Wolf':1}; /* S781 — the cloak off a corpse keeps the wolves' peace only (#263 2A) */
+  function beastAtPeace(e){if(!e||!EQ.back||EQ.back.artifact!=='wolf_cloak')return false;if(!(EQ.back.half?CLOAK_WOLVES:CLOAK_BEASTS)[e.baseName||e.baseType||e.name]||e.isBoss)return false;
     if(e.hp<e.maxHp)e._struck=true;return !e._struck;}
   let _cloakTown=null;
   function cloakTown(){const P=artifactPlaces().wolf_cloak;if(!P)return null;if(_cloakTown&&_cloakTown.lair===P.site)return _cloakTown.town;let best=null,bd=1e9;
     for(const t of allSites()){if(!(t.kind in BASE_P))continue;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<bd){bd=d;best=t;}}_cloakTown={lair:P.site,town:best};return best;}
-  function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||(worldState.lairs&&worldState.lairs[P.site]))return 0;
+  function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||S.half||cloakMasterDead())return 0;
     const ct=cloakTown();return ct&&ct.id===t.id?.6:0;}
+  // S781 — Michael's 2A on #263: the cloak from a corpse. Its master is the lair cavern's beast, the one that sleeps on it (the
+  // draft, *The Makers' Things*: the cavern's master, worldState.masters[seed], not the beasts at the mouth, which Session 777's
+  // drain read). Killed before the cloak was taken, the cloak lies in the hoard; killed while the cloak is yours, it goes thin.
+  // Either way it keeps the peace with wolves only (`half`), and the town pays nothing, because the beast is dead.
+  function cloakSeed(){const P=artifactPlaces().wolf_cloak;if(!P)return null;const t=siteAnywhere(P.site);return t?lairSeed(t):null;}
+  function cloakMasterDead(){const sd=cloakSeed();if(sd==null)return false;const r=(worldState.masters||{})[sd];return r===true||!!(r&&r.dead);}
+  function halfCloak(it){if(it){it.half=true;it.desc='Wolves leave you alone unless you strike first.';}return it;}
+  // the named action, called by slayMaster at the blow that kills a cavern's master (once: a master already dead does not call it)
+  function cloakMasterSlain(portal){if(!portal||portal.seed==null||portal.seed!==cloakSeed())return false;const S=artifactState('wolf_cloak');
+    if(!S){const it=halfCloak(artifactItem('wolf_cloak'));const r=(worldState.masters||{})[portal.seed];
+      if(r&&r.hoard&&Array.isArray(r.hoard.items))r.hoard.items.push(it);else if(typeof bagAdd==='function')bagAdd(it);
+      (worldState.artifacts||(worldState.artifacts={})).wolf_cloak={taken:true,day:dayNow(),how:'corpse',half:true};const tr=worldState.artifactTries;if(tr)delete tr.wolf_cloak;
+      cloakSay('Under it, the grey cloak, soaked through. Something has gone out of it.');return true;}
+    if(S.yielded||S.half)return false;S.half=true;
+    for(const L of [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)])for(const it of L)if(it&&it.artifact==='wolf_cloak')halfCloak(it);
+    if(EQ.back&&EQ.back.artifact==='wolf_cloak')cloakSay('The cloak is lighter on your shoulders. Something has gone out of it.');return true;}
+  function cloakSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's own *slain!* line, which would cover it (the words only: the outcome is already written) */
   // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
   function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
     return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}

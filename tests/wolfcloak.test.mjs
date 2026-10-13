@@ -46,14 +46,14 @@ const cost = await page.evaluate(() => {
   const P = artifactPlaces().wolf_cloak, t = cloakTown(); const other = allSites().find(s => s.kind in BASE_P && s.id !== t.id);
   delete worldState.artifacts; const d0 = [cloakDrain(t), cloakDrain(other)];
   takeArtifact('wolf_cloak'); const d1 = [cloakDrain(t), cloakDrain(other)];
-  worldState.lairs = worldState.lairs || {}; worldState.lairs[P.site] = { dead: true }; const d2 = cloakDrain(t); delete worldState.lairs[P.site];
+  /* S781: the master is the cavern's (worldState.masters by the lair's seed), not the beasts at the mouth */ worldState.lairs = worldState.lairs || {}; worldState.lairs[P.site] = 1; const dMouth = cloakDrain(t); delete worldState.lairs[P.site]; const M = worldState.masters || (worldState.masters = {}), sd = cloakSeed(); M[sd] = { dead: true }; const d2 = cloakDrain(t); delete M[sd];
   yieldArtifact('wolf_cloak', 'guild'); const d3 = cloakDrain(t);
   delete worldState.artifacts;
-  return { lair: P.name, town: t.name, dist: Math.round(Math.hypot(t.x - P.x, t.z - P.z)), d0, d1, d2, d3 };
+  return { lair: P.name, town: t.name, dist: Math.round(Math.hypot(t.x - P.x, t.z - P.z)), d0, d1, dMouth, d2, d3 };
 });
 console.log(JSON.stringify(cost));
 check(`taken with ${cost.lair}'s master alive, ${cost.town} (${cost.dist} away) loses 0.6 a day, and no other town anything`, cost.d0[0] === 0 && cost.d1[0] === 0.6 && cost.d1[1] === 0, cost);
-check('the drain stops when the master dies, and when the cloak is given up', cost.d2 === 0 && cost.d3 === 0, cost);
+check('the drain stops when the cavern\'s master dies (not when only the beasts at the mouth do), and when the cloak is given up', cost.dMouth === 0.6 && cost.d2 === 0 && cost.d3 === 0, cost);
 
 // a day of the towns' tick, the drain carried in the fraction (as occupation's half point is)
 const day = await page.evaluate(() => {
