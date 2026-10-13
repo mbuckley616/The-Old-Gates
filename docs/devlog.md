@@ -16536,3 +16536,26 @@ The routine's carry-over order ends with "the building pieces for card F6 in the
 - **The bougainvillea and the bushes** are faceted icosahedra: fine at the lane's distance, crude at a doorway. The slice's leaf-card trees (`treeKit`) are the better route, owed.
 - **Not built:** Aurenne's temples and civic buildings, the courtyard house OG-061 shows, and the other two islands' houses as pieces (the Gatelands house is in `street.js`, not yet in `pieces.js`). All are noted in backlog K.
 - No decision raised: the design is Michael's B on #259, and this is that design in the approved new kit.
+
+## v80 — Session 817 — Barrels step out of the walls they were placed in (the critic's s597)
+The critic found Droichead's crate 2 inside the church's footprint and barrel 3 inside the inn's (s597). Session 753 had noted the same fault in Portclare's crate 0, in the chapel's corner. It was left then on purpose: these are the first half of a town's barrels, drawn on the town's own stream. Session 753 had the second half keep out of the town's own buildings by redrawing (`ownHit`). Doing the same for the first half would change how many draws the loop takes, and with them every draw after it (the villagers, their names, the guards).
+
+**The fix** (`83-world-generator.js`, the barrels in `genSettlement`):
+- A first-half spot that lands in the town's own solids now steps out to the nearest clear spot. The search is a fixed ring of offsets, 12 directions at 0.3 m steps out to 2.4 m, and a spot is clear when it is outside the town's solids, the world's and other towns'. It draws nothing from the stream.
+- If no spot on the ring is clear, the barrel stays where it was drawn, as before.
+- A barrel's id is its index (`<site>:barrel:<n>`), so its loot roll and anything saved against it are unchanged.
+
+**What moved:**
+- Droichead's 2 and 3 (0.6 m) and Portclare's 0 (0.6 m).
+- Barrels standing within 0.4 m of a wall, the margin the second half already keeps: one at Droichead (0.6 m) and three at Cœur de Vie (0.3 m each).
+- Dunmore and Carraig Mór are unchanged.
+### Verified (headless Chromium)
+`tests/townbarrels` now covers five towns: Dunmore, Carraig Mór, Cœur de Vie, Portclare and Droichead (new). It passes.
+- **No barrel inside a building**, of either half. The old check allowed the first half; on HEAD's code a probe found 2 inside at Droichead and 1 at Portclare.
+- **Spacing:** none within 0.9 m of another.
+- **The people are unchanged.** Each town's people, in order, as names and roles, hash the same as HEAD's code (taken from an unpacked copy run with `--src`). Their full lists, with places to the centimetre, were diffed before and after: identical in all five towns.
+- **Ids and keys:** `containerids` and `lootseed` pass.
+- **A correction to my own first try:** a hash of the people's places to the millimetre differed for Portclare between two runs of the same code. The townsfolk walk between the build and the read, so the test hashes names and roles only.
+### Needs eyes
+- Droichead's churchyard and inn corner, and Portclare's chapel. A barrel now stands against the wall, not in it.
+- The barrels' spots by the inn's yard, the smithy and the market (Session 753's "owed") remain open.
