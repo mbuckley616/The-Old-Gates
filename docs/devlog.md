@@ -16581,3 +16581,23 @@ The critic found Droichead's crate 2 inside the church's footprint and barrel 3 
 ### Needs eyes
 - Droichead's churchyard and inn corner, and Portclare's chapel. A barrel now stands against the wall, not in it.
 - The barrels' spots by the inn's yard, the smithy and the market (Session 753's "owed") remain open.
+
+## v80 — Session 818 — The Gatelands house joins the pieces (card F6, prototype only)
+The second of F6's pieces. The lane slice's house (`street.js`, Session 769; Michael approved the slices on 12 Oct) was a function inside the lane's page. It drew from the page's global stream and added up to 116 meshes to the scene. It now lives in `pieces.js` as `gatelandsHouse(o, r)`, beside Aurenne's.
+
+**How it moved:**
+- The body is unchanged and its draws come in the same order from the stream it is handed. The lane hands it its own `rnd`, so every draw after the houses (the props, the flowers, the people) is as it was.
+- The house returns its window boxes' and pots' flower spots in its own frame. The lane still instances the flowers for the whole street.
+- **`mergeByMaterial(g)`** (new, in `pieces.js`) bakes every mesh of a group into the group's frame and merges them by material, keeping each material's shadow flag. This turns 21 to 116 meshes a house into 9 to 11. It works on any group, so later pieces and the old slices can use it.
+
+**What it does not do yet:** the Gatelands house takes no lot rule of its own the way `aurenneLot` gives Aurenne the mix. The lane's own roll stands in for one until the Gatelands' town plan is a piece of its own.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/pieces.check.mjs`: 6 checks, all pass.
+- **200 houses rolled as the lane rolls them:** merged, each has the same triangles as unmerged (636 to 1,964, mean 1,103) and the same bounds (the largest difference is 0).
+- **Meshes:** 9 to 11 merged (mean 10), against 21 to 116 (mean 56) unmerged.
+- **Determinism:** the same key builds the same house and the same flowers.
+- **The lane renders as before.** Its picture from the working `street.js` was compared in the browser with one from HEAD's. 9 of 2,073,600 pixels differ by more than 24 (mean difference 0.006). Two shots of HEAD's own lane differ by 0 such pixels, so the 9 are the merge (shadow edges at a seam). That comparison runs only while `street.js` differs from HEAD, and says so when skipped.
+- **Nothing else regressed:** `aurenne.check.mjs` still passes.
+### Needs eyes
+- Nothing new to judge in the look: the lane is the same picture.
+- The Markish longhall, the third island's house, is the next piece. It wants its own prototype and a DECISION before it is built (OG-025 shows the longhall only inside).

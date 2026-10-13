@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
+import { gatelandsHouse } from './pieces.js';
 import { STILL, W, H, STATS, rnd, fbm, sstep, mix, makeRenderer, makeComposer, buildTextures, TEX, mat, worldUV, skyDome, clouds, treeKit, run, leafTex, WIND, windVS } from './common.js';
 
 const R = makeRenderer(.8);
@@ -54,54 +55,11 @@ const M = {
 };
 const PAINT = [[.16, .30, .48], [.20, .38, .26], [.56, .14, .11], [.72, .58, .20], [.30, .44, .52]].map(c => { const m = mat('wood', { ns: .8 }); m.color.setRGB(c[0] * 2.2, c[1] * 2.2, c[2] * 2.2, THREE.SRGBColorSpace); return m; });
 const flowerBits = [];
+// the house itself is pieces.js's gatelandsHouse (Session 818); the lane places it and keeps its flowers for the instancing
 function house(o) {
-  const g = new THREE.Group(), { w, d, h } = o, rh = o.rh ?? w * .42, paint = PAINT[o.paint % PAINT.length];
-  const add = (geo, m, x = 0, y = 0, z = 0, ry = 0, cast = true) => { const mm = new THREE.Mesh(geo, m); mm.position.set(x, y, z); mm.rotation.y = ry; mm.castShadow = cast; mm.receiveShadow = true; g.add(mm); return mm; };
-  // the walls: a pentagon profile extruded through the depth, with holes for windows and the door
-  const sh = new THREE.Shape([[-w / 2, 0], [w / 2, 0], [w / 2, h], [0, h + rh], [-w / 2, h]].map(([x, y]) => new THREE.Vector2(x, y)));
-  const holes = [], stories = h > 4.6 ? 2 : 1, nWin = Math.max(1, Math.floor((w - 1.6) / 2.3)), doorX = (o.doorX ?? (rnd() < .5 ? -1 : 1)) * w * .18;
-  holes.push({ x: doorX, y: .68, w: 1.1, h: 2.05, door: true });
-  for (let s = 0; s < stories; s++) for (let k = 0; k < nWin + (s ? 1 : 0); k++) { const x = -w / 2 + (k + .5) * w / (nWin + (s ? 1 : 0)); if (!s && Math.abs(x - doorX) < 1.4) continue; holes.push({ x, y: s ? h * .58 : 1.25, w: s ? .78 : .9, h: s ? .95 : 1.12 }); }
-  for (const H_ of holes) { const p = new THREE.Path(); p.moveTo(H_.x - H_.w / 2, H_.y); p.lineTo(H_.x + H_.w / 2, H_.y); p.lineTo(H_.x + H_.w / 2, H_.y + H_.h); p.lineTo(H_.x - H_.w / 2, H_.y + H_.h); p.lineTo(H_.x - H_.w / 2, H_.y); sh.holes.push(p); }
-  const wg = new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false }); wg.translate(0, 0, -d / 2); worldUV(wg, .42);
-  add(wg, M.plaster[o.wash % M.plaster.length]);
-  // the footing
-  { const b = new THREE.BoxGeometry(w + .3, .7, d + .3); worldUV(b, .5); add(b, M.stone, 0, .35, 0); }
-  // timber framing on the front and back
-  if (o.timber) for (const side of [1, -1]) { const z = side * (d / 2 + .04), bm = (bw, bh, x, y, rz = 0) => { const b = new THREE.BoxGeometry(bw, bh, .14); worldUV(b, .8); const m = add(b, M.beam, x, y, z); m.rotation.z = rz; };
-    bm(.24, h - .7, -w / 2 + .12, .7 + (h - .7) / 2); bm(.24, h - .7, w / 2 - .12, .7 + (h - .7) / 2); bm(w, .22, 0, .8); bm(w, .22, 0, h - .1); if (stories > 1) bm(w, .2, 0, h * .5);
-    for (let k = 1; k < 5; k++) { const x = -w / 2 + k * w / 5; if (holes.some(H_ => Math.abs(H_.x - x) < H_.w / 2 + .2)) continue; bm(.18, h - .9, x, .7 + (h - .9) / 2); }
-    const lb = (h * .5 - .9); bm(.16, Math.hypot(1.3, lb), -w / 2 + .85, .9 + lb / 2, Math.atan2(1.3, lb)); bm(.16, Math.hypot(1.3, lb), w / 2 - .85, .9 + lb / 2, -Math.atan2(1.3, lb)); }
-  // windows and the door
-  for (const H_ of holes) for (const side of [1, -1]) { const zf = side * d / 2;
-    if (H_.door) { if (side < 0) { add(new THREE.BoxGeometry(H_.w, H_.h, .08), M.wood, H_.x, H_.y + H_.h / 2, zf - side * .1); continue; }
-      const dg = new THREE.BoxGeometry(H_.w, H_.h, .08); worldUV(dg, .9); add(dg, paint, H_.x, H_.y + H_.h / 2, zf - .12);
-      add(new THREE.TorusGeometry(.07, .015, 6, 12), M.iron, H_.x + H_.w * .3, H_.y + 1.05, zf - .06);
-      const li = new THREE.BoxGeometry(H_.w + .5, .28, .32); worldUV(li, .6); add(li, M.stone, H_.x, H_.y + H_.h + .14, zf + .02);
-      const st = new THREE.BoxGeometry(H_.w + .6, .2, .6); worldUV(st, .6); add(st, M.stone, H_.x, .45, zf + .3);
-      if (o.lantern) { add(new THREE.BoxGeometry(.05, .05, .4), M.iron, H_.x + H_.w / 2 + .35, H_.y + 2.25, zf + .2); add(new THREE.BoxGeometry(.18, .26, .18), M.lit, H_.x + H_.w / 2 + .35, H_.y + 2.05, zf + .38, 0, false); }
-      if (o.pots) for (const px of [-1, 1]) { add(new THREE.CylinderGeometry(.2, .15, .32, 12), M.pot, H_.x + px * (H_.w / 2 + .35), .56, zf + .35); flowerBits.push([g, H_.x + px * (H_.w / 2 + .35), .78, zf + .35, .2]); }
-      continue; }
-    add(new THREE.BoxGeometry(H_.w, H_.h, .04), rnd() < .2 ? M.lit : M.glass, H_.x, H_.y + H_.h / 2, zf - side * .14, 0, false);
-    const fr = (bw, bh, x, y) => add(new THREE.BoxGeometry(bw, bh, .1), M.frame, x, y, zf - side * .1, 0, false);
-    fr(H_.w, .07, H_.x, H_.y + H_.h / 2); fr(.06, H_.h, H_.x, H_.y + H_.h / 2);
-    const sl = new THREE.BoxGeometry(H_.w + .3, .1, .3); worldUV(sl, .6); add(sl, M.stone, H_.x, H_.y - .05, zf + side * .1);
-    if (o.shutters) for (const sx of [-1, 1]) { const sg = new THREE.BoxGeometry(H_.w * .5, H_.h + .05, .05); worldUV(sg, .9); const m = add(sg, paint, H_.x + sx * (H_.w * .5 + .26), H_.y + H_.h / 2, zf + side * .12); m.rotation.y = sx * side * .5; }
-    if (o.boxes && H_.y < 2 && side > 0) { add(new THREE.BoxGeometry(H_.w + .1, .22, .26), M.wood, H_.x, H_.y - .2, zf + .2); flowerBits.push([g, H_.x, H_.y - .02, zf + .2, H_.w * .5]); }
-  }
-  // the roof: a thick slab, bevelled round at the eaves; thatch or slate
-  { const ov = o.thatch ? .55 : .28, t = o.thatch ? .55 : .14, s = rh / (w / 2), ye = h - ov * s, ovz = o.thatch ? .45 : .25;
-    const rs = new THREE.Shape([[-(w / 2 + ov), ye], [0, h + rh], [w / 2 + ov, ye], [w / 2 + ov, ye + t], [0, h + rh + t], [-(w / 2 + ov), ye + t]].map(([x, y]) => new THREE.Vector2(x, y)));
-    const rg = new THREE.ExtrudeGeometry(rs, { depth: d + ovz * 2, bevelEnabled: true, bevelThickness: o.thatch ? .28 : .03, bevelSize: o.thatch ? .26 : .03, bevelSegments: o.thatch ? 5 : 1 }); rg.translate(0, 0, -(d + ovz * 2) / 2);
-    worldUV(rg, o.thatch ? .55 : .5, { slopeX: true }); add(rg, o.thatch ? M.thatch : M.slate);
-    const rc = new THREE.CylinderGeometry(o.thatch ? .42 : .14, o.thatch ? .42 : .14, d + ovz * 2 + (o.thatch ? .5 : .1), 12); rc.rotateX(Math.PI / 2); worldUV(rc, .55, { slopeX: true });
-    const cap = add(rc, o.thatch ? M.thatch : M.slate, 0, h + rh + t * .6, 0); if (o.thatch) cap.material = M.thatch; }
-  // the chimney
-  { const cx = (o.chim ?? 1) * (w / 2 - .55), cg = new THREE.BoxGeometry(.85, rh + 2.2, .85); worldUV(cg, .5); add(cg, M.stone, cx, h + (rh + 2.2) / 2 - .9, 0);
-    add(new THREE.BoxGeometry(1.05, .14, 1.05), M.stone, cx, h + rh + 1.37, 0); for (const pz of [-.2, .2]) add(new THREE.CylinderGeometry(.12, .14, .45, 10), M.pot, cx, h + rh + 1.65, pz); }
-  g.position.set(o.x, o.y, o.z); g.rotation.y = o.ry; scene.add(g); STATS.houses = (STATS.houses || 0) + 1; return g;
+  const { group: g, flowers } = gatelandsHouse(o, rnd); g.position.set(o.x, o.y, o.z); g.rotation.y = o.ry; scene.add(g); STATS.houses = (STATS.houses || 0) + 1;
+  for (const f of flowers) flowerBits.push([g, ...f]); return g;
 }
-
 // the lane's houses, both sides, fronts to the lane
 const rows = [[-1, [-1, -10.5, -20, -30.5, -41, -52]], [1, [-3, -13, -23.5, -34, -45]]];
 let hi = 0;
