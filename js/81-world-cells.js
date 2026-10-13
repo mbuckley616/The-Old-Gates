@@ -98,7 +98,10 @@
   // so no new name takes one another place drew. A place that lost its name then takes a free one from its culture's bank, starting from a hash of its id, and when the bank's two halves run out,
   // a longer name from the same sounds. It reads no cell's random draws, so nothing else in a cell moves.
   let _namesDone=false,_namesBusy=false;
-  const NAME_RANK={city:0,town:1,port:2,village:3,outpost:4};
+  const NAME_RANK={city:0,town:1,port:2,village:3,outpost:4,shrine:5,tower:5,lair:5,glade:5,camp:5,bcamp:5,ruin:5};
+  // v80 S756 — the named places outside the towns take the pass too, after every settlement (so no settlement's name moves):
+  // a lost one keeps its form (Shrine of …, … Spire) round a free name from its culture's bank (critic s585: two Dogiaen's Lairs)
+  const POI_FORM={shrine:n=>`Shrine of ${n}`,tower:n=>`${n} Spire`,lair:n=>`${n}'s Lair`,glade:n=>`${n} Glade`,camp:n=>`${n} Camp`,bcamp:n=>`${n} Camp`,ruin:n=>`Ruins of ${n}`};
   function nameHash(s){let h=2166136261;for(let k=0;k<s.length;k++){h^=s.charCodeAt(k);h=Math.imul(h,16777619);}return h>>>0;}
   // v80 S442 — a short name never doubles a word (Montmont, Ardard) and capitalises after a hyphen; the French long form is
   // a short name and a real qualifier (was -le- and a second ending: Valclair-le-Ancy) (quest review run 6, Finding 8)
@@ -119,7 +122,8 @@
     for(const t of list){if(taken.has(t.name)||/^(.+)\1$/i.test(t.name))lost.push(t);else taken.add(t.name);}
     for(const t of lost){
       const bk=banks[t.reg]||(banks[t.reg]=nameBanks(t.reg));let got=null;
-      for(const L of bk){const st=nameHash(t.id)%L.length;for(let k=0;k<L.length&&!got;k++){const n=L[(st+k)%L.length];if(!taken.has(n))got=n;}if(got)break;}
+      const form=POI_FORM[t.kind]||(n=>n);
+      for(const L of bk){const st=nameHash(t.id)%L.length;for(let k=0;k<L.length&&!got;k++){const n=form(L[(st+k)%L.length]);if(!taken.has(n))got=n;}if(got)break;}
       for(let k=2;!got;k++)if(!taken.has(t.name+' '+k))got=t.name+' '+k;
       t.drawnName=t.name;t.name=got;taken.add(got);renamed++;}
     return renamed;}
