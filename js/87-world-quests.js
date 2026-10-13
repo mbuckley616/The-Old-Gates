@@ -1091,6 +1091,26 @@ const giver=`${lord.title} ${lord.name}`;
   function compactBellTopics(site){if(!bellFactor(site))return [];const S=artifactState('drowned_bell');if(!S||S.yielded||!artifactCarried('drowned_bell'))return [];
     return [{label:'The bell.',response:COMPACT_BELL.ask,follow:[{label:'Give it to the Compact.',quest:true,fn:()=>compactGiveBell(site)||COMPACT_BELL.not},
       {label:'I’ll keep it.',response:COMPACT_BELL.keep},{label:'Not now.',response:COMPACT_BELL.not}]}];}
+  // S789 — the cloak's claimant, the Fighters' Guild (the page's Beasts row; the approved draft's words): any Fighters' Guild
+  // head asks while the cloak is on you, taken alive (not the corpse's), and its master lives. *I'll take the contract.* posts a
+  // contract on the master as the Guild's beast contract is posted (its pay as a beast's: 100 + 50 a tier + up to 39, drawn on
+  // the contract's id), done when the cavern's master is dead (cloakMasterDead) and turned in with the Guild's own lines.
+  const CLOAK_GUILD={ask:{gatelander:"That's no cloak you bought at a fair. And the master of ${lair} is still breathing, I'd say, or you'd not be standing here in it. ${town} is paying for your quiet road with its own: the carts go round, and a town the carts go round goes thin. The Guild will pay ${fee} for the beast dead. A kindness done with a knife is a kindness yet.",
+      markman:"Took that off a live one, aye? Thought so. Brave. Daft, but brave. ${town}'s bleeding for it. Carts go round, the market's empty. Guild pays ${fee} for the thing dead. Your call.",
+      aurennais:"That cloak, Master, is from no loom I know, and since you are standing here, I take it its former keeper is alive. The arrangement has a third party, if I may: ${town}, whose road is closed while the beast lives, and whose ledger shows it. The Guild will pay ${fee} for the beast's death, on proof. You are under no obligation, naturally. The town is under one regardless.",
+      oldblood:"Brat na Máthar. You walked in and walked out. Few could. The beast lives, and ${town} pays for it. The Guild pays ${fee} for its death. The cloak will be less, after."},
+    take:{gatelander:"Then it's on the board with your name beside it. Go gently in. It knows you.",markman:"Good. Bring back something to show for it.",aurennais:"Entered, Master. The fee on proof, as with any contract.",oldblood:"It will know you. It will not understand."},
+    not:{gatelander:"Then it's your road and theirs both. The board will be here when the weather turns.",markman:"Your call. I said so.",aurennais:"As you wish. The offer is not withdrawn; it is only not accepted.",oldblood:"Then wear it well."}};
+  const CLOAK_CONTRACT='guild_f:cloak';
+  function cloakContractFee(){const tier=Math.floor(gstate().guild_f.done/3);return 100+tier*50+Math.floor(seededRng('task',CLOAK_CONTRACT)()*40);}
+  function cloakGuildTopics(site,gp){const S=artifactState('wolf_cloak'),P=artifactPlaces().wolf_cloak;if(!S||!P||S.yielded||S.half||!artifactCarried('wolf_cloak')||cloakMasterDead())return [];
+    const A=gstate().guild_f.active;if(A&&A.kind==='cloak')return [];const p=CLOAK_GUILD.ask[gp]?gp:'markman',town=(cloakTown()||{}).name||'the town',fee=cloakContractFee();
+    const say=CLOAK_GUILD.ask[p].replace('${lair}',P.name).replace('${town}',town).replace('${fee}',fee);
+    return [{label:'The grey cloak.',response:say,follow:[{label:'I’ll take the contract.',quest:true,fn:()=>cloakContract(site,p,fee)},{label:'Not that one.',response:CLOAK_GUILD.not[p]}]}];}
+  // the named action: the contract goes on the board as the Guild's active task (offer's own refusal while another is owed)
+  function cloakContract(site,p,fee){const st=gstate().guild_f;if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const P=artifactPlaces().wolf_cloak;
+    const t={id:CLOAK_CONTRACT,g:'guild_f',kind:'cloak',x:P.x,z:P.z,gold:fee,desc:`The master of ${P.name}, the beast that slept on the grey cloak. Kill it.`,short:`The master of ${P.name}`};
+    st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF.guild_f.name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return CLOAK_GUILD.take[p];}
   // S786 — the Noon Ring (the page's Sky row, in the approved draft's words): used from the bag, once a game-day, it turns the
   // weather in the open world, clear to rain or rain to clear (through the weather's own shift, as devWeather does); any other
   // sky, or under a roof, it does not turn. The cost: carried in a storm, one lightning flash in three comes down close to you
