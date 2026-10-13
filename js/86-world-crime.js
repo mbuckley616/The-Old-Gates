@@ -244,19 +244,30 @@
       fifth:'That is the fifth house, Master. The lamp is yours by the only terms it has ever had, and the house is honoured to have witnessed them.'},
     oldblood:{over:'Lóchrann an Teallaigh. It goes from hearth to hearth. Five inns, five towns. Steal nothing. Then it is yours.',take:'Take it down.',not:'It waits.',
       trim:(n,l)=>`The lamp. There. ${n}. ${l} more.`,again:'Not here again.',fifth:'Five. It is yours. It was always going to someone.'}};
+  // S784 — the lamp held: the room offer's first sentence, and the house's thanks when it is given to hang over its door
+  const LAMP_HELD={
+    gatelander:{room:"There's no charge to the one carrying that lamp. There never was, and I'd not be the first.",
+      give:"Over my door? You'll not want it back, now; that's the way of it. The town will know who brought it, and a town's memory is longer than a lord's. Sit; the first cup's the house's, and so's the last."},
+    markman:{room:"You've the lamp. No charge.",give:"Over this door? Good. The town'll know it was you. Drink's on the house."},
+    aurennais:{room:"The lamp's bearer is not charged, Master. That is the custom, and the house keeps it.",
+      give:'You do the house a great honour, Master, and the town also; the town will know whose. Permit me to say that very few who earn the lamp give it up. Fewer than the custom would like.'},
+    oldblood:{room:'The lamp pays.',give:'Here. Good. The town will remember you.'}};
   function lampTopics(house,people){if(house.coachInn)return [];const LL=LAMP_LINES[people]||LAMP_LINES.gatelander;
     return [{label:'The lamp over the door?',avail:()=>typeof lampHangsAt==='function'&&lampHangsAt(house),response:LL.over,
         follow:[{label:'I’ll carry it.',quest:true,fn:()=>lampTake(house)?LL.take:LL.not},{label:'Not today.',response:LL.not}]},
-      {label:'The lamp.',quest:true,avail:()=>typeof lampTrimAvail==='function'&&lampTrimAvail(house),fn:()=>{const r=lampTrim(house);return !r?LL.again:r.again?LL.again:r.fifth?LL.fifth:LL.trim(r.n,r.left);}}];}
+      {label:'The lamp.',quest:true,avail:()=>typeof lampTrimAvail==='function'&&lampTrimAvail(house),fn:()=>{const r=lampTrim(house);return !r?LL.again:r.again?LL.again:r.fifth?LL.fifth:LL.trim(r.n,r.left);}},
+      {label:'Give the lamp to the house.',quest:true,avail:()=>typeof lampOwn==='function'&&lampOwn(),fn:()=>lampGive(house)?(LAMP_HELD[people]||LAMP_HELD.gatelander).give:LL.not}];}
   function innTopics(house,people){const L=INN_ROOM_LINES[people]||INN_ROOM_LINES.markman;const cap=t=>t.replace(/^./,c=>c.toUpperCase());
     return [{label:'Something to eat and drink?',trade:true,fn:()=>{feastMeal(house);}},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
             if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?L.made:L.madeNamed(cap(innRoomName(mine,n,house)));}
             const others=taken===0?L.empty:taken===1?L.one:L.many(taken);
-            const fl=feastInnLine(people);return (fl?fl+' ':'')+L.offer(others,price,innRoomName(free,n,house));},
+            const fl=feastInnLine(people),lf=!house.coachInn&&typeof lampFree==='function'&&lampFree()?(LAMP_HELD[people]||LAMP_HELD.gatelander).room+' ':'';return lf+(fl?fl+' ':'')+L.offer(others,price,innRoomName(free,n,house));}, /* S784 — the Waylamp's bearer: the lamp's line first, then the house's own offer */
           get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
-            return [{label:`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
+            const lamp=!house.coachInn&&typeof lampFree==='function'&&lampFree();
+            return [{label:lamp?'Yes.':`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
               if(free==null)return L.full;
+              if(lamp){worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name}; the Waylamp's bearer is not charged.`);return L.madeNamed(cap(innRoomName(free,n,house)));} /* S784 — the lamp pays */
               if(gold<price)return L.poor(price,gold);
               gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};
               if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);

@@ -105,6 +105,7 @@
     if(OTHER.some(o=>o.kind==='pirate'&&Math.hypot(o.x-site.x,o.z-site.z)<600))out.push("Black sails off the coast this morning. The fishermen came straight back in.");
     const G=worldState.guild;if(G){for(const g in G){const t=G[g].active;if(t&&t.siteId===site.id)out.push(t.kind==='raid'?"They say bandits are coming for us. The guild sent someone. Maybe you.":t.kind==='beast'?`Something's been at the sheep. ${t.beast||'A beast'}, they say.`:"The guild's got business here. Everyone's on edge.");}}
     {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}}
+    {const H=typeof lampHome==='function'&&lampHome();const lt=H&&siteAnywhere(H.site);if(lt){const [li,lj]=cellOf(lt.x,lt.z);if(Math.abs(li-ci)<=1&&Math.abs(lj-cj)<=1)out.push(`There's a lamp over the inn door at ${lt.name} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${lt.name}.`);}} /* S784 — the Waylamp, while it hangs (the draft's rumour; its town and the cells round it) */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
     {const d=nearestSigilDoorFrom(site);if(d&&Math.random()<.5)out.push(`There's a warm stone in ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. My cousin put his hand on it and talked in his sleep for a week.`);}
@@ -1037,13 +1038,23 @@ const giver=`${lord.title} ${lord.name}`;
   function lampState(){return artifactState('waylamp');}
   function lampLit(){const S=lampState();return !!S&&!(S.outUntil>(worldState.gameTimeAbsMinutes||0));}
   function lampFirstInn(siteId){const st=SETTLE.get(siteId);return st&&st.houses?st.houses.find(h=>h.type==='inn')||null:null;}
-  function lampHangsAt(house){if(lampState()||!house||house.type!=='inn')return false;const P=artifactPlaces().waylamp;if(!P||house.siteId!==P.site)return false;const h=lampFirstInn(P.site);return !!h&&h.id===house.id;}
+  // where it hangs while no one carries it: the town's first inn at the start, or the inn it was last given to (S.hung, lampGive)
+  function lampHome(){const S=lampState();if(S&&S.yielded&&S.hung)return {site:S.hung.site,inn:S.hung.inn};if(S)return null;const P=artifactPlaces().waylamp;if(!P)return null;const h=lampFirstInn(P.site);return {site:P.site,inn:h?h.id:null};}
+  function lampHangsAt(house){if(!house||house.type!=='inn')return false;const H=lampHome();return !!H&&!!H.inn&&house.siteId===H.site&&house.id===H.inn;}
   function lampTrimAvail(house){const S=lampState();return !!(S&&S.trial&&!S.yielded&&house&&house.siteId&&artifactCarried('waylamp')&&lampLit());}
   // the named actions: taking it down for the trial, and an innkeeper trimming it
-  function lampTake(house){if(!lampHangsAt(house)||!takeArtifact('waylamp','trial'))return false;const S=lampState();S.trial=true;S.count=0;S.towns={[house.siteId]:1};return true;}
+  function lampTake(house){if(!lampHangsAt(house))return false;if(lampState())delete worldState.artifacts.waylamp; /* taken down again from the inn it was given to: the round begins again */ if(!takeArtifact('waylamp','trial'))return false;const S=lampState();S.trial=true;S.count=0;S.towns={[house.siteId]:1};return true;}
   function lampTrim(house){if(!lampTrimAvail(house))return null;const S=lampState();if(S.towns[house.siteId])return {again:true};
     S.towns[house.siteId]=1;S.count++;if(S.count<LAMP_FIVE)return {n:S.count,left:LAMP_FIVE-S.count};
     S.trial=false;S.own=true;if(typeof addLog==='function')addLog('🏮','The Waylamp is yours: five towns’ inns, and nothing on your account.');return {fifth:true};}
+  // S784 — the lamp held as your own: lit and on you, any inn's room costs nothing (innTopics); the coach has no fare to waive.
+  // The claim: any inn's keeper takes it to hang over that door (lampGive, through yieldArtifact), the town's favour +2, and the
+  // round can begin again from that inn.
+  function lampOwn(){const S=lampState();return !!(S&&S.own&&!S.yielded&&artifactCarried('waylamp'));}
+  function lampFree(){return lampOwn()&&lampLit();}
+  function lampGive(house){if(!lampOwn()||!house||!house.siteId||house.coachInn)return false;if(!yieldArtifact('waylamp','inn'))return false;const S=lampState();
+    S.hung={inn:house.id,site:house.siteId};S.own=false;delete S.outUntil;addFavor(house.siteId,2);const t=siteAnywhere(house.siteId);
+    if(typeof addLog==='function')addLog('🏮',`Gave the Waylamp to ${house.name||'the inn'}, at ${t?t.name:'the town'}.`);return true;}
   // called by the crime record where a fine is laid (seenCrime, strikeNpc, guardKilled) with the record and this crime's fine
   function lampCrime(c,fee){const S=lampState();if(!S||S.yielded||!c||!artifactCarried('waylamp')||!lampLit())return false;
     c.bounty+=Math.max(0,Math.round(fee||0));S.outUntil=(worldState.gameTimeAbsMinutes||0)+LAMP_OUT;if(S.trial){S.count=0;S.towns={};}
@@ -1051,7 +1062,7 @@ const giver=`${lord.title} ${lord.name}`;
   // once a second from the loop: lit again after seven days; the first sight of it over its inn's door
   let _wlampT=0;function tickWaylamp(force){const t=performance.now();if(!force&&t-_wlampT<1000)return;_wlampT=t;const S=lampState(),now=worldState.gameTimeAbsMinutes||0;
     if(S&&S.outUntil&&now>=S.outUntil){delete S.outUntil;if(typeof addLog==='function')addLog('🏮','The Waylamp is lit again. Nobody lit it.');}
-    if(!S&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const st=worldState.stats||(worldState.stats={});if(st.lampSeen)return;const P=artifactPlaces().waylamp;const h=P&&lampFirstInn(P.site);
+    if(!S&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const st=worldState.stats||(worldState.stats={});if(st.lampSeen)return;const H=lampHome();const h=H&&lampFirstInn(H.site);
       if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.','#e8c890');}}}
   // S781 — Michael's 2A on #263: the cloak from a corpse. Its master is the lair cavern's beast, the one that sleeps on it (the
   // draft, *The Makers' Things*: the cavern's master, worldState.masters[seed], not the beasts at the mouth, which Session 777's
