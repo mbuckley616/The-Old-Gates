@@ -795,6 +795,7 @@ function useItem(i){
   const it=BAG[i];if(!it)return;
   if(it.type==='herb'){useHerb(i);return;}
   if(it.type==='spellbook'){readSpellbook(i);return;} // v80
+  if(it.artifact==='sundial_ring'){if(typeof noonRingTurn==='function')noonRingTurn();return;} /* S786 — the Noon Ring turns the weather */
   if(it.type==='rubbing'){(worldState.rubbings||(worldState.rubbings={}))[it.seed]=it.gate;showMsg(`${it.gate} is marked on your map.`,'#c0e0ff');it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(typeof renderInv==='function')renderInv();return;} // v80 — a rubbing marks a sigil gate
   // v61x: potions with an `effect` field use the buff system (regen, warding, swiftness).
   // Tier-aware: a lower-tier potion doesn't overwrite a higher-tier active buff — instead

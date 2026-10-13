@@ -1344,7 +1344,8 @@ function interact(){
     if(nearDoorObj.locked){
       // Locked door — existing key-check behavior, preserved verbatim for caves.
       if(!nearDoorObj.open){
-        tryLockpick(nearDoorObj); // v80 — a pick and a steady hand
+        if(typeof gateBladeOpens==='function'&&gateBladeOpens(nearDoorObj))gateBladeOpen(nearDoorObj); /* S780 — #263 3A: the Gate-Blade's key */
+        else tryLockpick(nearDoorObj); // v80 — a pick and a steady hand
       }
       return;
     }

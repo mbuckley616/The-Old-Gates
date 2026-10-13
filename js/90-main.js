@@ -312,7 +312,7 @@ function loop(now){
   tickPlayerPosture(dt,performance.now()/1000); // S281
   const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint();
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1); /* S779 — the Gate-Blade drawn */
     stamina=Math.max(0,stamina-dt*sprintDrain);
     if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
     lvAct.sprintDist+=spd;
@@ -811,6 +811,8 @@ function loop(now){
   if(isInterior()&&typeof WORLD!=='undefined')WORLD.tickInterior(dt,now); // v80 S12
   if(typeof WORLD!=='undefined')try{WORLD.shipBarsUI();}catch(e){} /* S411 — the ship's hull and rig while you are aboard; hidden in every other zone */
   if(typeof WORLD!=='undefined')WORLD.tickRealClock(); // v80 S242 — the Reader's clock runs in every zone, or an hour underground reads as an hour away
+  if(typeof tickShuttle==='function')tickShuttle(); /* S782 — the Shuttle's Cold, in every zone (once a second) */
+  if(typeof tickWaylamp==='function')tickWaylamp(); /* S783 — the Waylamp lit again, and its first sight */
   if(lid==='overworld'){
     // v80 — streamed world: chunk streaming + atmosphere. Runs before the zone chain.
     if(activeZoneId==='world'&&typeof WORLD!=='undefined')WORLD.tick(dt,now);
@@ -1197,7 +1199,8 @@ function loop(now){
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
-      if(!e.alert && canSeePlayer(e, dist, 8)){ /* S635 — 3.5 → 8 (Michael's A on #190) */
+      const _calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(_calm)e.alert=false;if(_calm&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,8)); /* S777 — the Wolf-Mother's Cloak, underground as in the open */
+      if(!e.alert && !_calm && canSeePlayer(e, dist, 8)){ /* S635 — 3.5 → 8 (Michael's A on #190) */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
         let los=true;
         for(let t=0.15;t<0.9;t+=0.15){
