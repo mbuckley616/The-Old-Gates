@@ -899,7 +899,7 @@ function prewarmFoes(sc,cam){
 function unlockFoe(e){if(!e)return e;e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;return e;}
 
 // v80 S135 — one of them sees you, the rest of the camp hears: everyone within reach wakes
-function alertPack(e,r){try{const E=(activeZoneId==='world'&&ZONES.world)?ZONES.world.enemies:(typeof ZE!=='undefined'?ZE:[]);for(const o of E){if(o===e||o.dead||o.alert)continue;if(Math.hypot(o.x-e.x,o.z-e.z)<r)o.alert=true;}}catch(err){}}
+function alertPack(e,r){try{const E=(activeZoneId==='world'&&ZONES.world)?ZONES.world.enemies:(typeof ZE!=='undefined'?ZE:[]);for(const o of E){if(o===e||o.dead||o.alert)continue;if(typeof beastAtPeace==='function'&&beastAtPeace(o)){if(!(e._struck||e.hp<e.maxHp))continue;o._struck=true;} /* S777 — the Wolf-Mother's Cloak: a beast wakes only for a packmate you struck, and then stays awake */if(Math.hypot(o.x-e.x,o.z-e.z)<r)o.alert=true;}}catch(err){}}
 // v80 S135 — an archer's arrow: a shaft that flies flat at the player and can be blocked
 const ZARROWS=[];
 function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.hypot(ax,az)||1;
@@ -1137,8 +1137,9 @@ function tickZoneEnemies(dt,now,sc){
     // zone previously had no LOS check, so enemies detected through walls.
     const _inWorld=activeZoneId==='world';
     if(_hasBuff('vanish')){e.alert=false;e._agg=false;} // S322 — Shadowcap's veil in the open world as underground
+    e._calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(e._calm){e.alert=false;e._agg=false;} /* S777 — the Wolf-Mother's Cloak: wolves, bears and spiders leave you alone unless you strike first */
     /* S634 — a coward running for help or a kiter at range (_flee, _agg) is driven by tickBehaviours (85-world-sea.js), which takes it out of alert; seeing you here put it back each frame, and at the faster chase it ran at you between steps of its flight */
-    if(!e.alert && !e._flee && !e._agg && !_hasBuff('vanish') && canSeePlayer(e, dist, _inWorld?20:9)){ // v80 S135 — the open country sees further; S634 — 15 → 20 (#190 A)
+    if(!e.alert && !e._flee && !e._agg && !_hasBuff('vanish') && !e._calm && canSeePlayer(e, dist, _inWorld?20:9)){ // v80 S135 — the open country sees further; S634 — 15 → 20 (#190 A)
       let los = true;const _losSolid=(_inWorld&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid; // trunks and posts don't hide you
       for(let t = 0.15; t < 0.9; t += 0.15){
         const tx = e.x + (T.x - e.x) * t, tz = e.z + (T.z - e.z) * t;

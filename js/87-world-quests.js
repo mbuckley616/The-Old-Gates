@@ -692,7 +692,7 @@ const giver=`${lord.title} ${lord.name}`;
       let near=null,nd=1e9;for(const o of SITES){if((o.kind==='lair'||o.kind==='bcamp')&&Math.hypot(o.x-t.x,o.z-t.z)<nd){nd=Math.hypot(o.x-t.x,o.z-t.z);near=o;}}
       if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead)(threat[near.id]||(threat[near.id]={camp:near,towns:[]})).towns.push(t);}
       // flags
-      let c=0;if(st.flags.burned!=null||st.flags.sacked!=null)c-=.2;if(st.flags.plague!=null)c-=1;if(st.flags.owned!=null)c+=.4;if(st.flags.besieged!=null)c-=2;if(st.flags.occupied!=null)c-=.5;
+      let c=0;if(st.flags.burned!=null||st.flags.sacked!=null)c-=.2;if(st.flags.plague!=null)c-=1;if(st.flags.owned!=null)c+=.4;if(st.flags.besieged!=null)c-=2;if(st.flags.occupied!=null)c-=.5;c-=cloakDrain(t); /* S777 — the Wolf-Mother's Cloak taken and its beast alive */
       // drift home
       const base=BASE_P[t.kind]||45;const drift=(base-st.p)*.01;
       // scaffolds finish
@@ -943,7 +943,8 @@ const giver=`${lord.title} ${lord.name}`;
     gate_blade:  {god:'cloch',   name:'the Gate-Blade',          ico:'🗡',check:{attr:'might',need:30}},
     drowned_bell:{god:'muir',    name:'the Drowned Bell',        ico:'🔔',check:null},
     sundial_ring:{god:'speir',   name:'the Sundial Ring',        ico:'💍',check:{attr:'swiftness',need:30}},
-    wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30}},
+    wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30},
+                  item:()=>({type:'equip',slot:'back',name:"The Wolf-Mother's Cloak",ico:'🧥',def:1,weight:2,cloak:'fur',virtue:'wolfmother',sellMult:0,buyPrice:0,desc:'Wolves, bears and spiders leave you alone unless you strike first.'})},
     waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null},
     shuttle:     {god:'fiodoir', name:'the Shuttle',             ico:'🧵',check:{attr:'intelligence',need:35}}};
   const ARTIFACT_GEAR_MAX=2;
@@ -982,6 +983,17 @@ const giver=`${lord.title} ${lord.name}`;
   function artifactTry(id){const T=ARTIFACTS[id];if(!T||artifactState(id))return {ok:false,gone:true};const c=artifactCheck(id);
     if(c.ok){takeArtifact(id);return c;}
     const tr=worldState.artifactTries||(worldState.artifactTries={});tr[id]={day:dayNow(),have:c.have,n:((tr[id]&&tr[id].n)||0)+1};return c;}
+  // S777 — the Wolf-Mother's Cloak (the page's Beasts row): worn, the wolves, the bears and the spiders leave you alone unless
+  // you strike first. A beast you have hurt is struck for good (`_struck`), and its pack takes its part (alertPack). The cost:
+  // its master lives, so the town nearest the lair loses 0.6 a day while the cloak is yours and the master alive (tickTownsDay).
+  const CLOAK_BEASTS={'Wolf':1,'Dire Wolf':1,'Snow Wolf':1,'Cave Bear':1,'Spider':1};
+  function beastAtPeace(e){if(!e||!EQ.back||EQ.back.artifact!=='wolf_cloak')return false;if(!CLOAK_BEASTS[e.baseName||e.baseType||e.name]||e.isBoss)return false;
+    if(e.hp<e.maxHp)e._struck=true;return !e._struck;}
+  let _cloakTown=null;
+  function cloakTown(){const P=artifactPlaces().wolf_cloak;if(!P)return null;if(_cloakTown&&_cloakTown.lair===P.site)return _cloakTown.town;let best=null,bd=1e9;
+    for(const t of allSites()){if(!(t.kind in BASE_P))continue;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<bd){bd=d;best=t;}}_cloakTown={lair:P.site,town:best};return best;}
+  function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||(worldState.lairs&&worldState.lairs[P.site]))return 0;
+    const ct=cloakTown();return ct&&ct.id===t.id?.6:0;}
   // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
   function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
     return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}

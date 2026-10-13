@@ -4,6 +4,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 777, 2026-10-13) — DECISION #263
+You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the frame and the Wolf-Mother's Cloak's rule: worn, wolves, bears and spiders leave you alone unless you strike first, and its lair's town loses 0.6 a day while the beast lives. Two things now stop the next sessions.
+
+1. **The words.** Every line a tool needs (its trial's prompts, the failing lines, the hermit who points the way, the altars, the claimants) is written in the quest writer's draft *The Makers' Things*, both runs, in `docs/quest_drafts.md`. The draft is marked unapproved. It also renames the page's *Sundial Ring* to *the Noon Ring*.
+   - **A.** Approve both runs as written, the Noon Ring included *(recommended: the builders can then build each trial with its words in one session)*.
+   - **B.** Approve them, but keep the name *the Sundial Ring*.
+   - **C.** Not yet: build each trial's rule and leave its lines for later. Each tool would then need a second session.
+2. **The cloak from a corpse.** The page says the Fighters' Guild wants the beast dead: *kill it and the cloak comes off a corpse, worth half as much*. Its virtue is a peace, so *half* has to mean something.
+   - **A.** The same peace, but only for wolves (not bears or spiders), and the town pays nothing because the beast is dead *(recommended: you choose between the whole peace with its cost and half the peace without it)*.
+   - **B.** The whole peace, but half its worth in gold (sold to the Guild at half) and no drain on the town.
+   - **C.** A plain fur cloak with no virtue: killing the beast loses the gift.
+
+
 ## Answered
 
 ### Aurenne's houses — the white town, the mix, or the Roman town? (the concept artist, 2026-10-12) — DECISION #259

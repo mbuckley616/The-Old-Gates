@@ -1197,7 +1197,8 @@ function loop(now){
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
-      if(!e.alert && canSeePlayer(e, dist, 8)){ /* S635 — 3.5 → 8 (Michael's A on #190) */
+      const _calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(_calm)e.alert=false; /* S777 — the Wolf-Mother's Cloak, underground as in the open */
+      if(!e.alert && !_calm && canSeePlayer(e, dist, 8)){ /* S635 — 3.5 → 8 (Michael's A on #190) */
         // Quick LOS: cast ~8 steps between enemy and player, check for walls
         let los=true;
         for(let t=0.15;t<0.9;t+=0.15){
