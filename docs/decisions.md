@@ -4,6 +4,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelands' town walls in the new kit: coloured, white or stone? (the concept artist, 2026-10-13) — DECISION #280
+Card F6 builds the three islands' houses from pieces in the new look; the Gatelands come first. The prototype (`docs/prototypes/levelup/pieces-gatelands.html` on auto/concept, three.js 0.170) makes five plans from one kit in metres: cottage 1,826 triangles, farmhouse 2,144, townhouse 5,081, merchant's house and shop 4,522, warehouse 9,132; 10 to 14 draw calls each. Walls are 0.45 to 0.7 m thick with every opening cut through. In every option the cottages stay limewashed white under thatch and the towns have slate roofs. Full text and pictures: docs/concepts.md on auto/concept, and issue #280.
+
+What are the town walls?
+- **A. Coloured towns** *(recommended)*: rendered in earth colours (ochre, rose, cream, sage, blue, oxblood) with dressed-stone quoins, string courses and cornices; the warehouse stays bare stone.
+- **B. White towns:** every wall limewashed white, colour only on doors and shopfronts.
+- **C. Stone towns:** bare grey stone with dressed quoins and lintels; only cottages and farms are white.
+
+Recommendation: **A.** A town reads as a town at a glance and the colour carries through fog; B runs a terrace into one long wall; C is the darkest street under a grey sky, against the 12 Oct call for lighter than the concept art. Precedent: Kinsale, Dingle, Westport.
+
+## Answered
+
 ### The Mark's houses in the new kit: shingle, turf, or the mix? (look builder, Session 819) — DECISION #277
 The third island's house in the new kit (card F6, the pieces). Aurenne's is your B on #259 (Session 816) and the Gatelands house is the approved lane slice (Session 818). The Mark has no approved prototype yet.
 
@@ -24,7 +36,9 @@ Recommendation: **C**, with A as a fair second. The Mark's towns in OG-034 are t
 
 Not in this question: snow on the roofs (the weather's `WX.cover` will lay it), the longhall interior (OG-025), and the Mark's stone garrisons and cliff walkways (backlog L).
 
-### The four peoples' heights and palettes (look builder, Session 806)
+Michael: **The mix: two in three shingle, one turf** (C) — I don't like the turf as it looks today though. I think I'd rather have a different material / have us take another swing at that. The green is too vibrant for the climate it's going to be in, IMO. (13 Oct 2026)
+
+### The four peoples' heights and palettes (look builder, Session 806) — DECISION #276
 B3's first slice: each people is a range over the one body, rolled by seed. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-peoples.jpg (three each: Gatelanders, Markmen, Aurennais, the Old Blood).
 
 The statures are in metres:
@@ -40,7 +54,9 @@ Should the ranges and colours stand?
 - **B:** keep the palettes but push the heights apart (Markmen near 2 m, Old Blood near 1.5 m) so the peoples read at a distance.
 - **C:** pull the heights together (every people within 8 cm of 1.80 m) and let dress and colour carry the difference.
 
-### The wardrobe's first pieces: is a draped cloak and a shell hood the method? (look builder, Session 805)
+Michael: **Keep these ranges and palettes** (A). (13 Oct 2026)
+
+### The wardrobe's first pieces: is a draped cloak and a shell hood the method? (look builder, Session 805) — DECISION #274
 B2's first slice, from the kept sheets only (OG-048, OG-059, OG-025; the second round's clothing sheets OG-109 to OG-111 still wait for your marks). The pieces:
 - **The cloak:** cloth hung from the shoulders of the posed body. Columns fall under gravity, clear of what the person wears, and are held together as one sheet with folds.
 - **The rest:** a round brooch at the throat, a fur collar or the hood rolled behind the neck, a hood up as a shell over the head, and the apron, in wool or leather, with or without a bib.
@@ -57,7 +73,9 @@ The cloak is still stiff and boxy. Which way should the wardrobe go?
 - **B:** the same, but the cloak as a real cloth simulation run once at build time (a few hundred steps of a mass-spring sheet over the posed body). Better folds, about a second more per person to build, and more code.
 - **C:** garments modelled by hand or from CC0 sources and fitted to the body by its skin weights. Best up close, but every garment is a modelling job.
 
-### The builder's hair: groomed strands and modelled braids? (look builder, Session 804)
+Michael: **Keep this way: drapes hang, shells fit** (A) — As long as this doesn't have the arms phasing through the clothing, I'm okay with this. Take another look at the Hood though, it's semi-transparent. (13 Oct 2026)
+
+### The builder's hair: groomed strands and modelled braids? (look builder, Session 804) — DECISION #272
 B1 rebuilt the people's hair. Session 770's cards were combed one way and fell free, and crossed at the temples. Now every strand walks over the head's own surface at its own small height, toward where its style sends it. Six styles are built: short, loose, one braid, two braids, a tail and a bun. Braids, tails and buns are modelled as locks on a line that falls under gravity and clears the clothes. It is all seeded by the genome, and the checks show no strand under the skin or on the face. Pictures:
 - https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-back.jpg
 - https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-front.jpg
@@ -71,7 +89,7 @@ Is this the hair to carry into the cast (B3) and the game (B6)?
 - **B:** keep the method for braids, tails and buns, but make short and loose hair as a few sculpted shells with a painted strand texture (the usual game hair cap). It is cheaper and smoother at a distance, and flatter up close.
 - **C:** model a small set of hair meshes by hand or from CC0 sources, fitted to the head per style. It looks best in close-ups, but every new style is a modelling job and has to be refitted to the face sliders.
 
-## Answered
+Michael: **Yes: groomed strands and modelled locks** (A) — Eyebrows look pretty fugly still, and some of the hairstyles aren't quite landing how I'd like. Let's keep refining here. (13 Oct 2026)
 
 ### The Wolf-Mother's Cloak in the den — when does a sleeping master wake, and what is "weapon sheathed"? (systems builder, after Session 802, 2026-10-13) — DECISION #270
 Five of the six Makers' tools can now be had where they lie (Sessions 797, 800–802). The last is the cloak's own trial: the approved draft (*The Makers' Things*, §6) has the master of a home-island lair (*Dunkeel's Lair* in this world) **asleep on the cloak**, and you take it from under the living beast at Resolve 30 (*It lifts its head and looks at you for a long time…*); a failure *costs nothing, wakes nothing*; the prompt shows *within reach of the master, weapon sheathed*. Two rules are not written anywhere. Today every cavern master is awake and fights on sight, and the game has no sheathed state (an empty hand is fists).
