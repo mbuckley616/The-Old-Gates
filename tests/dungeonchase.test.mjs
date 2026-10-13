@@ -15,8 +15,9 @@ await page.evaluate(() => { window._drive = (step, max) => {
   return n; }; });
 const same = [], replan = [];
 for (const seed of [4021, 777]) {
+  await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; }); /* S810 — from one gate straight into the next, wait for the new gate's own scene (as enterDungeon since S765) */
   await page.evaluate((seed) => { level = 4; const p = Object.assign({}, PORTALS[0], { theme: 'deep', seed, size: 'medium', interior: 'cave', zone: 'world', tutorial: false }); goToDungeon(p); }, seed);
-  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
   await page.waitForTimeout(1500);
   const r = await page.evaluate(() => { const S = [], R = [];
     const live = ENEMIES.filter(e => !e.dead && !e.disguised && !e.dormant && e.floor === 1 && !e.ranged && !e.master);
