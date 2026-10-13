@@ -16601,3 +16601,33 @@ The second of F6's pieces. The lane slice's house (`street.js`, Session 769; Mic
 ### Needs eyes
 - Nothing new to judge in the look: the lane is the same picture.
 - The Markish longhall, the third island's house, is the next piece. It wants its own prototype and a DECISION before it is built (OG-025 shows the longhall only inside).
+
+## v80 — Session 819 — The Mark's hall, shingle and turf: a prototype for DECISION #277 (card F6, prototype only)
+The third island's house for F6's pieces. Aurenne's is Michael's B on #259 (Session 816), and the Gatelands house is the approved lane slice (Session 818). The Mark had no approved look. OG-034, the kept Mark board, draws timber halls on stone footings with steep dark shingle and carved gables. Today's game (`STYLE.mark`) mixes shingle and turf roofs, and the turf comes from OG-033, the board that was not kept. So the roof is Michael's call, and this session builds the hall both ways and asks.
+
+**`markHall(o, r)`** (`pieces.js`):
+- **The base:** a footing of rough stone 0.8 m high, and walls of vertical boards in four stains.
+- **The ends:** gable ends rising to the roof's pitch, with a round-headed plank door and iron straps on the front gable and a lit window above it. Corner posts, sill and wall plate are in dark beams.
+- **The sides:** small shuttered windows along each side, some lit.
+- **The roof:** two slabs.
+  - Shingle: 52°, with a new shingle texture of rounded butts in staggered, weathered courses, and a ridge beam.
+  - Turf: 32°, with a new sod texture over a birch-bark edge, and a log holding the turf at the eaves.
+- **The carving:** crossed bargeboards along both verges, running 0.75 m past the ridge into curled beast heads. A shingle hall always has them; a turf hall has them only if asked.
+- **Extras:** a porch of two posts under its own little roof, and a stone chimney or a smoke louver on the ridge.
+- **Cost:** merged by material (Session 818's `mergeByMaterial`), each hall is 820 to 1,690 triangles and 9 or 10 meshes.
+
+**`mark.html`:** the four halls beside the post, under a low northern sun. `?view=lane&mix=shingle|turf|mix` builds a short lane with the gables to the street. In the mix, one lot in every three is turf, by seed, as Aurenne's.
+
+**The first render was wrong** and is fixed above:
+- the bargeboards stood up like windmill sails;
+- the dark box behind the gable door rose through the roof;
+- the boards were near-black.
+### Verified (headless Chromium)
+- **Renders with no page errors:** `mark-halls.jpg`, `mark-lane-shingle.jpg`, `mark-lane-turf.jpg`, `mark-lane-mix.jpg`, all at 1920×1080 with two Markmen (Session 806's people) for scale.
+- **Sizes and cost:** the shingle halls stand 9.1 to 14.2 m to the beast heads, the turf halls 5.7 to 7.9 m. Each is 9 or 10 meshes.
+- **No check suite yet:** this is a picture for a decision. The lot rules and their checks follow the answer, as `aurenne.check.mjs` did.
+### Needs eyes
+- **DECISION #277:** shingle (A), turf (B) or the mix (C, recommended).
+- **The turf's texture** reads as green felt with brown patches. A real sod roof wants a ragged edge and tufts at the eaves, which are cards, owed if B or C.
+- **The halls are long and plain on their sides.** OG-034's halls have carved door frames, painted bands and a clan banner, all owed after the answer.
+- **The footing's stone** is the kit's coursed block, too regular for the Mark's rough stone.

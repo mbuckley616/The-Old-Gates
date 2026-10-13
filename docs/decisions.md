@@ -4,6 +4,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Mark's houses in the new kit: shingle, turf, or the mix? (look builder, Session 819) — DECISION #277
+The third island's house in the new kit (card F6, the pieces). Aurenne's is your B on #259 (Session 816) and the Gatelands house is the approved lane slice (Session 818). The Mark has no approved prototype yet.
+
+OG-034 (kept) draws the Mark's towns as timber halls on stone footings, with steep snow-shedding roofs of dark shingle and carved gables. Its crossed bargeboards end in beast heads. OG-033 (not kept) and today's game also roof them in turf. The prototype builds one hall both ways: the gable end to the street, a porch on some, a stone chimney or a smoke louver, small shuttered windows. Each hall is about 800 to 1,700 triangles and 9 or 10 meshes. Code: `markHall` in `docs/prototypes/levelup/pieces.js`; page: `mark.html`.
+
+Pictures:
+- [the halls: shingle, shingle, turf (carved), turf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-halls.jpg)
+- [a lane, all shingle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-shingle.jpg)
+- [a lane, all turf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-turf.jpg)
+- [a lane, the mix](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-mix.jpg)
+
+Which roof should the Mark's houses have?
+- **A. Shingle** (OG-034): every hall steep and dark-shingled, with the carved gables. It is the kept sheet's look and sheds snow, and it reads as the Mark at a distance.
+- **B. Turf:** a lower pitch, a sod roof over a birch-bark edge, carving on the larger halls only. It is homelier and greener, and it is the rejected OG-033's look.
+- **C. The mix** *(recommended)*: two in three shingle, one in three turf, by lot, as Aurenne's mix. The turf goes on the poorer and the outlying houses, and the halls of note keep the shingle and the carving. Today's game already mixes the two (`STYLE.mark`), and a street of one roof reads as a set.
+
+Recommendation: **C**, with A as a fair second. The Mark's towns in OG-034 are the shingle halls, and the turf roofs give a poorer house a look of its own without a new kit.
+
+Not in this question: snow on the roofs (the weather's `WX.cover` will lay it), the longhall interior (OG-025), and the Mark's stone garrisons and cliff walkways (backlog L).
+
 ### The four peoples' heights and palettes (look builder, Session 806)
 B3's first slice: each people is a range over the one body, rolled by seed. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-peoples.jpg (three each: Gatelanders, Markmen, Aurennais, the Old Blood).
 
