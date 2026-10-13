@@ -974,6 +974,13 @@ const giver=`${lord.title} ${lord.name}`;
   // S778 — the Drowned Bell (the page's Sea row): carried, your ship takes half the wear of rough seas and storms (tickSeaWear),
   // and a black sail hunts you from 600 units, not 300 (the black sails' tick)
   function bellAboard(){return artifactCarried('drowned_bell');}
+  // S794 — the bell's two once-only lines (the approved draft, second run): the first storm she rides with it aboard, and the
+  // first black sail that turns for you while it is on you (its ${dir} the compass word from you to her). The tool's, the world row's.
+  function bellStorm(){const S=artifactState('drowned_bell');if(!S||S.stormSeen!=null||!bellAboard())return false;S.stormSeen=dayNow();
+    showMsg('The sea is running high, and she rides it as if she had been told to.','#a8c8d8');return true;}
+  function bellBlackSail(o){const S=artifactState('drowned_bell');if(!S||S.blackSailSeen!=null||!bellAboard())return false;S.blackSailSeen=dayNow();
+    const t=`The bell in your pack rings once, with no sea running. Off the ${compassWord(o.x-px,o.z-pz)} quarter, a black sail has put about.`;
+    showMsg(t,'#a8c8d8');if(typeof addLog==='function')addLog('⛵',t);return true;}
   // S782 — the Shuttle (the page's Weaver row; Michael's 4A on #263): carried, the Weaver's Eye for good (the compass turns to the
   // nearest unread sigil, as the spell does: getActiveQuestMarkers). The cost is the Shuttle's, whoever you are: the Cold rises 1
   // for each week of game time it is carried (worldState.shuttleCarry, the character's, counts the minutes; the draft's log line,

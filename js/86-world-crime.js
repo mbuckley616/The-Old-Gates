@@ -779,7 +779,7 @@
   function tickSeaWear(dt,fwd){
     const st=SHIP.sea||0,v=Math.abs(SHIP.speed);let h=0,r=0;
     if(st>=3&&v>.5){const m=fwd>0?1:.5;h=dt/6*m;r=dt/4*m;}else if(st===2&&v>.5){h=dt/60;r=dt/60;}
-    if(typeof bellAboard==='function'&&bellAboard()){h*=.5;r*=.5;} /* S778 — the Drowned Bell: half the sea's wear */
+    if(typeof bellAboard==='function'&&bellAboard()){h*=.5;r*=.5;if(st>=3&&v>.5&&WX.type==='storm')bellStorm();} /* S778 — the Drowned Bell: half the sea's wear; S794 — its line, the first storm */
     if(!h&&!r)return;SHIP._wh=(SHIP._wh||0)+h;SHIP._wr=(SHIP._wr||0)+r;const H=Math.floor(SHIP._wh),R=Math.floor(SHIP._wr);
     if(H||R){SHIP._wh-=H;SHIP._wr-=R;shipWear(H,R);}}
   // S413 — foundering: any hull lost while she is waterlogged sinks her. The wreck lies where she went down (on the map); any

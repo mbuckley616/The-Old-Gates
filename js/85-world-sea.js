@@ -794,6 +794,7 @@
       const T=targetOf(o),dP=Math.hypot(T.x-o.x,T.z-o.z); /* S542 — co-op rule: whom a black sail hunts is targetOf's */
       let tx,tz;
       if(o.kind==='pirate'&&!o.sated&&atSea()&&dP<(typeof bellAboard==='function'&&bellAboard()?600:300)){ // close to ~28u, then hold off and shoot; S778 — from 600 with the Drowned Bell aboard
+        if(typeof bellBlackSail==='function')bellBlackSail(o); /* S794 — the bell rings, the first time one turns for you */
         // S418 — her ram (Michael's B on #100): within 30 units, faster than you and with her ram ready, she steers at your
         // hull; the first touch spends it (tickHullCollisions) and she goes back to her circle; 30 s before the next, 12 s to land it
         o.ramWait=(o.ramWait||0)-dt;const aboard=!!SHIP.mesh&&(SHIP.sailing||onDeck());
