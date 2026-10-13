@@ -221,7 +221,10 @@ function renderJournal(){
     const gact=id=>{const G=worldState.guild||{};for(const k in G){const t=G[k]&&G[k].active;if(t&&t.id===id)return t;}return null;};
     const st=id=>{const ga=gact(id);if(ga)return ga.doneAt!=null?'reward':'active';const w=wq(id);if(!w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return L.some(e=>e.q===id&&e.qk==='complete')?'complete':'';if(w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return w.turnedIn?(w.lapsed?'':'complete'):w.done?'reward':'active';return typeof qState==='function'?qState(id):'';};const inHand=id=>st(id)==='active'||st(id)==='reward';
     ids.sort((a,b)=>(inHand(b)?1:0)-(inHand(a)?1:0));
-    if(!ids.length)html='<div class="jn-empty">No quest has been written into the journal yet.</div>';
+    // S776 — the Makers' tools you have tried and not taken (DECISION #175, B): the rule, with its number, in the menu voice
+    const notYet=(typeof artifactsNotYet==='function')?artifactsNotYet():[];
+    if(notYet.length)html+=`<div class="jn-day jn-notyet"><div class="jn-head">Things not yet yours</div>${notYet.map(x=>`<div class="jn-line"><span class="jn-time"></span><span class="jn-text">${_jnEsc(x.text)}</span></div>`).join('')}</div>`;
+    if(!ids.length)html+='<div class="jn-empty">No quest has been written into the journal yet.</div>';
     ids.forEach(id=>{const d=qd(id)||{title:(L.find(e=>e.q===id&&e.qt)||{}).qt||id},s=st(id);
       html+=`<div class="jn-day"><div class="jn-head">${_jnEsc(d?d.title:id)}<span class="jn-state">${s==='complete'?'complete':inHand(id)?'in hand':''}</span></div>`+
         L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod,'short')):''}</span><span class="jn-text">${_jnLinked(e.text,names)}</span></div>`).join('')+'</div>';});

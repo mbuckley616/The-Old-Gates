@@ -930,6 +930,61 @@ const giver=`${lord.title} ${lord.name}`;
     if(root){root.name='The Root';root.anchor='root';const cell=CELLS.get(key(...cellOf(root.x,root.z)));if(cell){cell.doors=cell.doors.filter(d=>!(d.lairDoor&&d.lairSite===root.id));if(!cell.doors.some(d=>d.root))cell.doors.push({zone:'gen',x:root.x,z:root.z-6,seed:9001,size:'large',theme:'deep',diff:'veryhard',kind:'cave_door',cell:cell.i+','+cell.j,sigil:true,root:true,canonicalName:'The Root',lair:{place:'The Root',boss:'Ogre',dragon:false}});}}
     _anch={caer_slige:cs,spire:sp,blackhand:pb,salt_mouth:sm,root,compact_seat:cap};return _anch;
   }
+  // ═══ THE MAKERS' TOOLS — the frame (Session 776; Michael's B on DECISION #175, docs/design/unique-artifacts.md) ═══
+  // Six tools, one to each god with a shrine (the Guest has none). One of each per world: where each lies is picked from
+  // the world (artifactPlaces, as anchoredPlaces picks), so a friend in the host's world finds the same stone. Taking one
+  // writes worldState.artifacts[id] (the world row) through takeArtifact, giving it up through yieldArtifact (the co-op
+  // rules: one named action per change); the item rides the character, `unique` (never sold or destroyed). A failed check
+  // costs nothing: worldState.artifactTries (the character's) keeps it for the journal's *Things not yet yours*. The check
+  // reads the attribute's base plus at most 2 from gear. Names are the page's working names; each tool's trial, its place
+  // in the world, its item and its words come with its own session (the page's order: the Stone and the Beasts, the Sea
+  // and the Hearth, the Sky and the Weaver).
+  const ARTIFACTS={
+    gate_blade:  {god:'cloch',   name:'the Gate-Blade',          ico:'🗡',check:{attr:'might',need:30}},
+    drowned_bell:{god:'muir',    name:'the Drowned Bell',        ico:'🔔',check:null},
+    sundial_ring:{god:'speir',   name:'the Sundial Ring',        ico:'💍',check:{attr:'swiftness',need:30}},
+    wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30}},
+    waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null},
+    shuttle:     {god:'fiodoir', name:'the Shuttle',             ico:'🧵',check:{attr:'intelligence',need:35}}};
+  const ARTIFACT_GEAR_MAX=2;
+  // where each lies: the Stone's blade outside a ruined gate on the home island, the Beasts' cloak with a home-island
+  // lair's master; the other four are placed with their trials. Candidates sorted by id, picked on seededRng('artifact', id).
+  let _artPl=null;
+  function artifactPlaces(){
+    if(_artPl)return _artPl;const A=anchoredPlaces();const home=[...CELLS.values()].filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='gatelands');
+    const pick=(id,list)=>list.length?list[Math.floor(seededRng('artifact',id)()*list.length)]:null;
+    const doors=home.flatMap(c=>(c.doors||[]).filter(d=>!d.wet&&!d.lairDoor&&!d.root&&d.zone==='gen')).sort((a,b)=>a.seed-b.seed);
+    const ruined=doors.filter(d=>d.kind==='fort_door'&&d.exterior==='ruined_gatehouse');
+    const gd=pick('gate_blade',ruined.length?ruined:doors);
+    const lairs=home.flatMap(c=>c.sites.filter(t=>t.kind==='lair'&&!t.anchor&&!t.dragon)).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+    const lr=pick('wolf_cloak',lairs);
+    _artPl={gate_blade:gd?{door:gd.seed,name:gd.canonicalName||(typeof dungeonName==='function'?dungeonName(gd.seed,gd.theme):'an old gate'),x:gd.x,z:gd.z}:null,
+            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:null,shuttle:null};
+    return _artPl;}
+  function artifactState(id){const S=worldState.artifacts;return (S&&S[id])||null;}
+  function artifactHeld(id){return [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)].some(L=>L.some(it=>it&&it.artifact===id));}
+  // the check: the attribute's base, plus what gear adds up to ARTIFACT_GEAR_MAX (a Fortify ring closes a small gap; no one buys Might 30)
+  function artifactCheck(id){const T=ARTIFACTS[id];if(!T)return null;if(!T.check)return {ok:true,attr:null,need:0,have:0,base:0,gear:0};
+    const k=T.check.attr,base=ATTRS[k]||0,gear=Math.max(0,Math.min(ARTIFACT_GEAR_MAX,(typeof attrEff==='function'?attrEff(k):base)-base));
+    return {ok:base+gear>=T.check.need,attr:k,need:T.check.need,have:base+gear,base,gear};}
+  function artifactItem(id){const T=ARTIFACTS[id];const it=(T.item?T.item():{name:T.name.replace(/^the /,'The '),ico:T.ico,type:'misc',weight:1,sellMult:0,buyPrice:0,desc:'One of the six things the Makers left.'});return Object.assign(it,{unique:true,artifact:id,qty:1});}
+  // the named action that takes a tool from where it lies (shared state: the world row)
+  function takeArtifact(id,how){const T=ARTIFACTS[id];if(!T||artifactState(id))return false;
+    (worldState.artifacts||(worldState.artifacts={}))[id]={taken:true,day:dayNow(),how:how||'taken'};
+    if(typeof bagAdd==='function')bagAdd(artifactItem(id));const tr=worldState.artifactTries;if(tr)delete tr[id];
+    if(typeof addLog==='function')addLog(T.ico,`Took ${T.name}.`);return true;}
+  // the named action that gives a tool up to its claimant: out of the bag, the stash or your hands, and the world remembers who has it
+  function yieldArtifact(id,to){const T=ARTIFACTS[id],S=artifactState(id);if(!T||!S||S.yielded)return false;
+    const out=L=>{const i=L.findIndex(it=>it&&it.artifact===id);if(i>=0){L.splice(i,1);return true;}return false;};
+    let gone=out(BAG)||(typeof stashBag!=='undefined'&&out(stashBag));if(!gone)for(const s in EQ)if(EQ[s]&&EQ[s].artifact===id){EQ[s]=null;gone=true;break;}
+    if(!gone)return false;S.yielded=to||'claimant';S.yieldDay=dayNow();if(typeof updateHUD==='function')updateHUD();return true;}
+  // a try at a tool: passes and takes it, or records the try (the character's) and says nothing itself (the trial's words are its own)
+  function artifactTry(id){const T=ARTIFACTS[id];if(!T||artifactState(id))return {ok:false,gone:true};const c=artifactCheck(id);
+    if(c.ok){takeArtifact(id);return c;}
+    const tr=worldState.artifactTries||(worldState.artifactTries={});tr[id]={day:dayNow(),have:c.have,n:((tr[id]&&tr[id].n)||0)+1};return c;}
+  // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
+  function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
+    return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}
   // faction quests ride the town-quest generator, flavoured and counted
   function factionTopics(site){
     const nk=nationKeyOf(...cellOf(site.x,site.z));const fk=factionOf(nk);const F=FACTIONS[fk];if(F.seat!==site.id)return [];
