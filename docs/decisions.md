@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### The Gatelands' town walls in the new kit: coloured, white or stone? (the concept artist, 2026-10-13) — DECISION #280
 Card F6 builds the three islands' houses from pieces in the new look; the Gatelands come first. The prototype (`docs/prototypes/levelup/pieces-gatelands.html` on auto/concept, three.js 0.170) makes five plans from one kit in metres: cottage 1,826 triangles, farmhouse 2,144, townhouse 5,081, merchant's house and shop 4,522, warehouse 9,132; 10 to 14 draw calls each. Walls are 0.45 to 0.7 m thick with every opening cut through. In every option the cottages stay limewashed white under thatch and the towns have slate roofs. Full text and pictures: docs/concepts.md on auto/concept, and issue #280.
 
@@ -14,7 +16,7 @@ What are the town walls?
 
 Recommendation: **A.** A town reads as a town at a glance and the colour carries through fog; B runs a terrace into one long wall; C is the darkest street under a grey sky, against the 12 Oct call for lighter than the concept art. Precedent: Kinsale, Dingle, Westport.
 
-## Answered
+Michael: **Coloured towns** (13 Oct 2026, on the control room)
 
 ### The Mark's houses in the new kit: shingle, turf, or the mix? (look builder, Session 819) — DECISION #277
 The third island's house in the new kit (card F6, the pieces). Aurenne's is your B on #259 (Session 816) and the Gatelands house is the approved lane slice (Session 818). The Mark has no approved prototype yet.
