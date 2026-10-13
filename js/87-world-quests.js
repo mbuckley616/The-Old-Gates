@@ -458,7 +458,7 @@ const giver=`${lord.title} ${lord.name}`;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){showMsg('The altar is quiet. Come back tomorrow.','#c8b880');return true;}
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
-    else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
+    else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);altarVerse(S); /* S792 — the name under the altar, once a shrine */if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
     return false;}
   // S545 — the lair's look alone (the rock heap with its cave mouth, and the bones), on the builder's rolls in its order
   function lairGeoParts(r,cx,cz,H){const c=x=>new THREE.Color(x);const parts=[];
@@ -1142,6 +1142,30 @@ const giver=`${lord.title} ${lord.name}`;
   function shuttlePriestTopics(def){if(!shuttleOffered())return [];anchoredPlaces();const seat=FACTIONS.compact.seat&&siteAnywhere(FACTIONS.compact.seat);if(!seat)return [];
     const p=CHURCH_SHUTTLE.priest[def&&def.people]?def.people:'gatelander';let say=CHURCH_SHUTTLE.priest[p].replace('${seat}',seat.name);if(!lordFor(seat).female)say=say.replace(/ to her\b/g,' to him');
     return [{label:'The shuttle.',response:say}];}
+  // S792 — the hermit and the altars (the approved draft, *The Makers' Things*, §§2–3): every camp's hermit is Old Blood (§3.3)
+  // and has a folder on the six tools. An entry is there while its tool lies where it was left (its place known: the bell, the
+  // ring and the Shuttle have none until their trials are built, so they are not offered), or answers *Gone* once it is taken by
+  // anyone; the seventh is always there. At a shrine whose god's tool is still untaken, the first prayer there logs the name cut
+  // under the altar (worldState.shrineVerse, the shrine's, the world row).
+  const MAKERS_HERMIT={ask:'Six things. One for each of the six with a shrine. Ask by name.',none:'Nothing is left lying. Everything the makers left is carried now. That has not been true for a long time.',
+    gone:'Gone from where it lay. You know where. Or someone does.',seventh:'The Guest has none. You do not leave a tool for a guest. You leave the door off the latch.',
+    rows:[['gate_blade','The Stone’s?',(P,d)=>`Eochair na Cloiche. You would say a sword. It stands in a stone by ${P.name}, ${d} of here, where anyone may look at it. Few can take it.`],
+      ['drowned_bell','The Sea’s?',(P,d)=>`Clog na Mara. A bell. It hangs in a wreck on a rock the sea owns twice a day, ${d} of here. Go when she has let go of it.`],
+      ['sundial_ring','The Sky’s?',(P,d)=>`Fáinne an Lae. A ring, on the cairn at the top of ${P.name}. It is read at noon, under a clear sky, by whoever climbed fast enough to be there.`],
+      ['wolf_cloak','The Beasts’?',(P,d)=>`Brat na Máthar. The Mother's mantle. The master of ${P.name} sleeps on it. All her children lie down on it, and none of them knows why.`],
+      ['waylamp','The Hearth’s?',()=>'Lóchrann an Teallaigh. A lantern. It goes from inn to inn and the weather does not put it out. A theft does.'],
+      ['shuttle','The Weaver’s?',(P,d)=>`Spól an Fhíodóra. A shuttle. It is in the deepest room of ${P.name}. It shows where the unread stones are. Reading costs. It will cost you.`]]};
+  // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
+  function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
+  function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];
+    for(const [id,label,say] of MAKERS_HERMIT.rows){if(!makerLies(id)){follow.push({label,response:MAKERS_HERMIT.gone});continue;}
+      const at=P[id];if(!at&&id!=='waylamp')continue;follow.push({label,response:say(at,at?compassWord(at.x-site.x,at.z-site.z):'')});}
+    follow.push({label:'And the seventh?',response:MAKERS_HERMIT.seventh});
+    return [{label:'Did the makers leave anything behind?',folder:true,response:all?MAKERS_HERMIT.none:MAKERS_HERMIT.ask,follow}];}
+  const ALTAR_VERSE={cloch:'Eochair na Cloiche. The Stone’s key.',muir:'Clog na Mara. The Sea’s bell.',speir:'Fáinne an Lae. The ring of the day.',beithigh:'Brat na Máthar. The Mother’s mantle.',teallach:'Lóchrann an Teallaigh. The Hearth’s lantern.',fiodoir:'Spól an Fhíodóra. The Weaver’s shuttle.'};
+  function altarVerse(S){if(!S||!S.god)return false;const id=Object.keys(ARTIFACTS).find(k=>ARTIFACTS[k].god===S.god.key);if(!id||!makerLies(id))return false;
+    const V=worldState.shrineVerse||(worldState.shrineVerse={});if(V[S.site.id])return false;V[S.site.id]=1;
+    if(typeof addLog==='function')addLog('⛩',`Cut under the altar’s lip, older than the rest: ${ALTAR_VERSE[S.god.key]}`);return true;}
   // S786 — the Noon Ring (the page's Sky row, in the approved draft's words): used from the bag, once a game-day, it turns the
   // weather in the open world, clear to rain or rain to clear (through the weather's own shift, as devWeather does); any other
   // sky, or under a roof, it does not turn. The cost: carried in a storm, one lightning flash in three comes down close to you
