@@ -49,7 +49,7 @@ for (const f of walkList) {
         if (n % 30 === 0) { if (Math.hypot(px - lx, pz - lz) < .2) stuck++; else stuck = 0; lx = px; lz = pz; path.push([+(px - cx).toFixed(1), +(pz - cz).toFixed(1)]); }
         return d < 1.6 || stuck >= 3 || n > 60 * 30; }, 60 * 31);
     } finally { K['KeyW'] = false; }
-    const walk = { frames: n, secs: +(n / 60).toFixed(1), best: +best.toFixed(2), stuckAt: stuck >= 3 ? [+(px - cx).toFixed(1), +(pz - cz).toFixed(1)] : null, path: path.filter((_, i) => i % 4 === 0) };
+    /* S813 — reached is judged on the raw distance: the walk stops under 1.6, and 1.5996 rounded to two places read 1.6 and failed on CI */ const walk = { frames: n, secs: +(n / 60).toFixed(1), reached: best < 1.6, best: +best.toFixed(2), stuckAt: stuck >= 3 ? [+(px - cx).toFixed(1), +(pz - cz).toFixed(1)] : null, path: path.filter((_, i) => i % 4 === 0) };
     // the ring away from the gate: from 8 outside at the west, W held towards the middle for 6 s
     const ring = []; for (const ang of [0, Math.PI, Math.PI * 1.5]) { px = cx + Math.cos(ang) * 35; pz = cz + Math.sin(ang) * 35; let m = 0;
       try { K['KeyW'] = true; _drive(() => { PHP = maxHP; yaw = Math.atan2(-(cx - px), -(cz - pz)); return ++m > 360; }, 361); } finally { K['KeyW'] = false; }
@@ -68,7 +68,7 @@ for (const f of walkList) {
 }
 const built = rows.filter(r => !r.notBuilt);
 check('the world has its forts, and each one builds when you come to it', forts.length >= 6 && built.length === walkList.length, { forts: forts.length, walked: walkList.length, notBuilt: rows.filter(r => r.notBuilt).map(r => r.seed) });
-check('from where fast travel sets you, every fort is walked on foot through the gate and up the yard to the keep door', built.every(r => r.walk.best < 1.6 && !r.walk.stuckAt), built.map(r => ({ name: r.name, best: r.walk.best, secs: r.walk.secs, stuckAt: r.walk.stuckAt })));
+check('from where fast travel sets you, every fort is walked on foot through the gate and up the yard to the keep door', built.every(r => r.walk.reached && !r.walk.stuckAt), built.map(r => ({ name: r.name, best: r.walk.best, secs: r.walk.secs, stuckAt: r.walk.stuckAt })));
 check('the ring holds away from the gate: walked at from the east, west and north, nobody gets inside it', built.every(r => r.ring.every(d => d > r.R)), built.map(r => ({ name: r.name, ring: r.ring, R: r.R })));
 check('at the keep door the HUD says Press \'E\' to enter, with the fort\'s name', built.every(r => r.prompt && /Press 'E' to enter/.test(r.prompt) && r.prompt.includes(r.name)), built.map(r => r.prompt));
 check('E at the keep door takes you down into the fort, and back out again', built.every(r => r.entered === 'dungeon' && r.back === 'world'), built.map(r => [r.name, r.entered, r.back]));

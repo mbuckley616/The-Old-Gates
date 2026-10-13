@@ -16433,3 +16433,10 @@ One more of the suites that failed once on CI in 11 to 13 Oct. On CI, `shiplog` 
 `shiplog` green. With a storm pinned in place of the clear sky, the old suite failed four checks, among them CI's own *a cutter under four tiers of sail reaches 17.6 kn* at 17.58, and the hull-45 tick at 5.88.
 ### Needs eyes
 Nothing in play. Other ship suites that sail for seconds at a time may lean on the weather the same way. None has failed on CI in this window. `lod` and `fortwalk` are left from the list.
+
+## v80 — Session 813 — `fortwalk` judges the walk on the distance, not on its rounding (CI health, tests only)
+One more of the suites that failed once on CI in 11 to 13 Oct. *Every fort is walked on foot … to the keep door* failed on CI with every fort reached in 7.4 s and none stuck. The first, Cnocowen Keep, read *best 1.6* and the rest 1.59. The walk stops when the distance to the door is under 1.6, but the suite stored that distance rounded to two places and then checked the rounded value against `< 1.6`. A door reached at 1.5996 is stored as 1.6 and fails. In node, `1.5996 < 1.6` is true and `+(1.5996).toFixed(2) < 1.6` is false. How close a walk ends to the line depends on the step the runner's frames give it, so the result was chance. The walk now records `reached` from the raw distance, and the check reads that. The rounded `best` stays in the detail for reading. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`fortwalk` green: every fort walked to its keep door in 7.4 s, its prompt, in and out.
+### Needs eyes
+Nothing in play. Of the list in backlog K, `lod` is left: its distant copy's shadow changed no pixels on one CI run (13 Oct).
