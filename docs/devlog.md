@@ -16178,3 +16178,25 @@ The third of the sessions from Michael's "go ahead and tackle more of the skelet
 - The wingbeat live: whether the fold and the beat read as a raven and a hawk, from the side and from below.
 - The Mossback's garden at walking pace.
 - With this, every skeletal body plan in the concept art has at least one creature. What remains for creatures is the move into the game, behind the foundation's switch, the wolves first.
+
+
+## v80 — Session 804 — A failed suite gets one more try before CI goes red; the logs stop conflicting (tests and settings only)
+Michael asked why the board always holds four to six items blocked for days. The cause is mostly CI. Since 10 Oct there were 87 CI runs: 40 were cancelled by a newer push, 36 passed and 9 failed, and 13 more needed a re-run to pass. Almost every red was one of a handful of suites failing on code that passes elsewhere: `poinames`, `pauseleaf`, `saveui`, `hourhitch`, `dunwarm`, `shuttle`. With about 400 suites in 12 shards, one such failure turns the whole commit red. The producer re-runs once (another 50 minutes), and a second red becomes a "merge anyway?" card for Michael. On top of that, every branch appends to `docs/devlog.md` and `docs/decisions.md`, so each merge into main left the other open PRs conflicting there, and each conflict cost another CI run and another chance of a flake. PRs #261 and #262 hit this twice in a day.
+
+**The retry** (`tests/run.mjs`):
+- A suite that fails is run once more, on its own, before the shard is called red.
+- If the retry passes, the shard stays green. The suite is named FLAKY in the summary, in `tests/out/flaky.txt` (ignored by git) and, on CI, as a warning annotation on the run, so it is still found and fixed.
+- A real fault fails twice and the shard is red as before.
+- The retry is skipped when it could push the shard past its budget: CI stops a job at 60 minutes, and the runner allows 50, less the time already spent, for a retry of the suite's usual length.
+- `--no-retry` turns it off for a local run.
+
+**The logs:** `.gitattributes` merges `docs/devlog.md` and `docs/decisions.md` with git's `union` driver, so two branches that each appended an entry merge without a conflict. It works for `git merge`, which is how the builders and the producer bring a branch up to `main`. GitHub's own mergeability check does not read it.
+### Verified
+- Two throwaway suites, one failing on its first try and one failing every time, removed afterwards. The first was named FLAKY with exit 0 and the CI warning line; the second failed twice with exit 1. With `--no-retry` it failed once and exited 1. `deadtree` passed as before.
+- A throwaway repository with the same `.gitattributes`: two branches each appended a devlog entry at the same place, and `git merge` kept both with no conflict.
+
+No game code changed, so the build tag stands.
+### Needs eyes
+- Over the next day of CI, the share of red runs should fall from about a third to the real faults. The FLAKY warnings name the suites the systems builder should fix first; `poinames` is a real bug (a name depends on which towns had loaded).
+- Session numbers: Session 770 is used twice, once by the systems builder's woken householder and once by Michael's people-from-a-genome session. Both stand as history.
+
