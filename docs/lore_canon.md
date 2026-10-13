@@ -939,6 +939,8 @@ Corwin resurfaces — changed. He survived Ashenmoor by going into the dungeon r
 
 ### Act III — The Unmaking / What Was Bound (not yet designed)
 
+*Michael, 13 Oct 2026: the great gates' two paths (§9a) now carry the endgame's choice; this outline is to be reconciled with them by the quest writer.*
+
 Depending on Act II choice: the binding fully collapses and something emerges, or the player races to reseal it. Either path leads to the same final zone — the place beneath all the dungeons where the original binding was made.
 
 The central mystery is resolved in-fiction. Three possible endings shaped by Act II choice and NPC survival states (Aldwyn alive/dead, Caldric's agenda succeeded/failed, Corwin's secret shared or kept).
@@ -1575,6 +1577,10 @@ Every old gate belongs to one of the six schools. Its sigil teaches that school'
 - **The region sets the folk shape**: the same Cloch gate makes trolls in the Mark and something else in Aurenne.
 - The six themes' names survive in code until the build renames them; the mapping is the table's *Was* column.
 - **The six great gates** (Michael's A, 12 Oct 2026, Session 771; concept art OG-105). Above the many lesser gates there are six great ones, one for each school: the major dungeons of the game, each a mountainside of stepped arches outside and a realm inside ("not a room, but a realm"). The lesser gates stay scattered across the islands, the ones a traveller is likelier to come across. The sheet's placings are a starting point, not fixed: Tine, Solas and Gaoth on Aurenne, Cloch and Scáth on the Mark, Uisce in the Gatelands. *Open, for the quest writer:* what clearing a great gate gives the player, and what it does to the world. Michael's seed: clearing each one, and doing something to it, further unsettles the world and draws Varek's focus and ire, "almost like the inverse of the Towers in the Elder Scrolls lore, except the player is the one destroying the towers." It has to meet *The player is complicit without knowing it*: Varek needs the gates cleared, so his ire wants a reason.
+- **The two paths at the great gates** (Michael, 13 Oct 2026, in chat; Session 771). Varek wants the bindings loosened, and the realisation comes later: the loosening ruptures the world, and carried through all six it unmakes everything. At each great gate the player chooses.
+  - **Varek's path** makes the player stronger, and each great gate *corrupts* the world in ways the player can see and slowly understands they are causing: the sky changes colour, the trees change shape, colour drains toward black and white. Done at all six, it destroys the game world. At the last great gate Varek has a change of heart: he sees it will destroy everything, himself included, begs the player to stop, and fights to the death to stop them, a tragic hero at the end, before the world goes.
+  - **The other path** brings stability and normalcy back to the world, and is neutral or even costly to the player: it may dilute their power in that gate's school. Varek tries to stop them once or twice along the way, and the final confrontation comes just before the last great gate.
+  - *For the quest writer to reconcile:* the Act III outline below (one final zone beneath the dungeons; a confrontation that "ends not with combat but with revelation"; Varek's Final Monologue in `quest_writing.md`) and Varek's uncertainty (*He may be right. He may be wrong. Nobody knows*), which this direction answers, at least about the scale. The meta reading under *the central mystery* (the world forgets in order to keep running) fits Varek's path closely: the game itself is what ends.
 
 ---
 

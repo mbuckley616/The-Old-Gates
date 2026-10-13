@@ -76,6 +76,9 @@ The schools' halls follow OG-U2-009's glimpses: forges and molten depths (Tine),
 
 Fights happen in pockets 15 to 30 m across inside the spaces (a side chapel, a bay between piers, a landing), so combat keeps its reach and the scale is for walking in. The generator change (spaces above rooms) belongs to the systems builder and is part of the foundation's gate work.
 
+### The world's corruption (Michael, 13 Oct)
+On Varek's path each great gate cleared corrupts the world where the player can see it (lore §9a): the sky's colour, the trees' shapes, colour draining toward black and white. The new renderer makes this cheap if it is planned now: one corruption level, 0 to 6, read by the grade pass (saturation, hue), the sky dome's palette, the cloud tint and the tree kit's crown shapes, so each stage is a set of numbers rather than new art. The other path's stability is level 0 held.
+
 ### Cost
 The slice's 250 m nave is about a dozen meshes of merged stone plus about a hundred small glyph quads, and renders like the lane. Scale is cheap; light count is what costs. The slice uses about 20 point lights and one shadowed spot.
 
