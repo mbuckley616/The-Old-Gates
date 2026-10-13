@@ -1047,7 +1047,7 @@ const giver=`${lord.title} ${lord.name}`;
   function crownGiveBlade(){if(!yieldArtifact('gate_blade','crown'))return null;const F=fstate(),C=F.crown;const sworn=Object.keys(FACTIONS).some(o=>o!=='crown'&&F[o].rank>=2);
     for(let i=BAG.length-1;i>=0;i--)if(BAG[i]&&BAG[i].licence==='gate_blade')BAG.splice(i,1);
     gold+=1500;if(typeof updateHUD==='function')updateHUD();let k;
-    if(sworn)k='gaveSworn';else if(!C.rank){C.done=Math.max(C.done,3);C.rank=1;k='gaveNew';}else{C.done++;C.rank=Math.min(3,Math.floor(C.done/3));k='gaveRanked';}
+    if(sworn)k='gaveSworn';else if(!C.rank){C.done=Math.max(C.done,3);C.rank=1;k='gaveNew';}else{giftServices('crown',1);k='gaveRanked';} /* S790 — never past the ninth service's eve */
     if(typeof addLog==='function')addLog('🗡',`Gave the Gate-Blade to the Crown, for 1500 gold.`);return CROWN_BLADE[k];}
   function crownLicenseBlade(){const S=artifactState('gate_blade');if(!S||S.yielded||S.licence||!artifactCarried('gate_blade'))return null;S.licence={day:dayNow()};
     if(typeof bagAdd==='function')bagAdd({type:'misc',name:'Crown Licence — the Gate-Blade',ico:'📜',weight:0,qty:1,unique:true,licence:'gate_blade',sellMult:0,buyPrice:0,
@@ -1085,7 +1085,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(typeof addLog==='function')addLog('⛵',`The Compact refitted the ${nm} as a cog.`);return 'Your own ship will be refitted as a cog where she lies, at the house’s charge.';}
   function compactGiveBell(site){if(!yieldArtifact('drowned_bell','compact'))return null;const F=fstate(),C=F.compact;
     const sworn=C.closed||Object.keys(FACTIONS).some(o=>o!=='compact'&&F[o].rank>=2);let k;
-    if(sworn)k='gaveSworn';else if(C.rank<2){C.done=Math.max(C.done,6);C.rank=2;k='gaveNew';}else{C.done++;C.rank=Math.min(3,Math.floor(C.done/3));k='gaveRanked';}
+    if(sworn)k='gaveSworn';else if(C.rank<2){C.done=Math.max(C.done,6);C.rank=2;k='gaveNew';}else{giftServices('compact',1);k='gaveRanked';} /* S790 — never past the ninth service's eve */
     if(typeof addLog==='function')addLog('🔔','Gave the Drowned Bell to the Compact.');
     const cog=bellCog(site);return COMPACT_BELL[k]+' '+(cog||(sworn?'The cog stands.':'The cog is entered also.'));}
   function compactBellTopics(site){if(!bellFactor(site))return [];const S=artifactState('drowned_bell');if(!S||S.yielded||!artifactCarried('drowned_bell'))return [];
@@ -1111,6 +1111,37 @@ const giver=`${lord.title} ${lord.name}`;
   function cloakContract(site,p,fee){const st=gstate().guild_f;if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const P=artifactPlaces().wolf_cloak;
     const t={id:CLOAK_CONTRACT,g:'guild_f',kind:'cloak',x:P.x,z:P.z,gold:fee,desc:`The master of ${P.name}, the beast that slept on the grey cloak. Kill it.`,short:`The master of ${P.name}`};
     st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF.guild_f.name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return CLOAK_GUILD.take[p];}
+  // S790 — services a claimant enters for a tool (the Crown's, the Compact's, the Church's): counted as served, but never past
+  // the eve of the power's ninth service, which is played (its finale names the third rank and starts the war: warFromFaction).
+  // A rank already at the top takes them as they come. Returns the rank's name if it rose.
+  function giftServices(k,n){const C=fstate()[k];if(C.rank>=3){C.done+=n;return null;}const r0=C.rank;
+    C.done=Math.min(C.done+n,Math.max(C.done,8));C.rank=Math.max(r0,Math.min(2,Math.floor(C.done/3)));
+    if(C.rank>r0){const nm=FACTIONS[k].ranks[C.rank-1];if(typeof addLog==='function')addLog('🏛',`${FACTIONS[k].name.replace(/^the /,'The ')}: named ${nm}.`);return nm;}return null;}
+  // S790 — the Shuttle's claimant, the Church (the page's Weaver row; the approved draft's words): the Prior at the Compact's
+  // seat asks while the Shuttle is on you and not given up. *Give it to the Church.*: three services entered with the Compact
+  // (giftServices), or none if you are sworn elsewhere (another power's rank of 2, or the Compact closed); either way the letter
+  // to the Royal Herald is written (artifacts.shuttle.herald, for Aldwyn's thanks). A priest anywhere points the way.
+  const CHURCH_SHUTTLE={ask:"I will be candid with you, Master, since candour is cheaper than the alternative. The Church enters that object as la Navette, and it has been on our books as lost for longer than the Compact has kept books. It finds the stones no one has read. The Church holds that the Weaver's work is to be kept, not read, and that a thing which finds the unread stones is an invitation, and an invitation is half an act. We would have it under seal in the cathedral, where it invites no one. In return the Compact will enter three services to your name, and I will write to the Royal Herald at Ironhaven, who has asked the Church for the same thing in other words for many years. Or you may keep it, and the Church will pray for you, which you may count as you please.",
+    gave:"Received, and entered: three services to your name, Master, and a letter to the Herald by tonight's post. It will be under seal before the bells. The Church is in your debt, which it records.",
+    gaveSworn:"Received. The services the Compact cannot enter to someone sworn elsewhere; that is a clause, not a sentiment. The letter to the Herald I can write, and will. It will be under seal before the bells.",
+    keep:"Then I will not argue the point; arguing with a free man is a contract with no consideration. I would ask only this: when it leans, ask yourself who is being led, and by whom.",
+    not:"The offer stands, Master. The Church is accustomed to waiting. It has had practice.",
+    priest:{gatelander:"There's a thing in your pack the Prior in Aurenne would cross the sea for, and I'd not say that of many things. Take it to her, or don't. But don't bring it in here.",
+      markman:"That's the Church's business, not mine. The Prior's in Aurenne. Take it there or don't.",
+      aurennais:"That object is the Prior's concern, Master, at ${seat}, and not this house's. I would take it to her. I would not keep it.",
+      oldblood:"Spól an Fhíodóra. Put it back, or give it to the ones who will shut it in. Do not use it."}};
+  function shuttleOffered(){const S=artifactState('shuttle');return !!(S&&!S.yielded&&artifactCarried('shuttle'));}
+  function churchGiveShuttle(site){if(!yieldArtifact('shuttle','church'))return null;const F=fstate(),C=F.compact;
+    const sworn=C.closed||Object.keys(FACTIONS).some(o=>o!=='compact'&&F[o].rank>=2);if(!sworn)giftServices('compact',3);
+    artifactState('shuttle').herald=dayNow();if(typeof addLog==='function')addLog('🧵',`Gave the Shuttle to the Church at ${site.name}.`);
+    return sworn?CHURCH_SHUTTLE.gaveSworn:CHURCH_SHUTTLE.gave;}
+  function churchShuttleTopics(site){if(!site||!shuttleOffered())return [];anchoredPlaces();if(site.id!==FACTIONS.compact.seat)return [];
+    return [{label:'The shuttle.',response:CHURCH_SHUTTLE.ask,follow:[{label:'Give it to the Church.',quest:true,fn:()=>churchGiveShuttle(site)||CHURCH_SHUTTLE.not},
+      {label:'I’ll keep it.',response:CHURCH_SHUTTLE.keep},{label:'Not now.',response:CHURCH_SHUTTLE.not}]}];}
+  // the priests' pointer, in the church's people's words; the Prior's pronoun follows the seat's lord
+  function shuttlePriestTopics(def){if(!shuttleOffered())return [];anchoredPlaces();const seat=FACTIONS.compact.seat&&siteAnywhere(FACTIONS.compact.seat);if(!seat)return [];
+    const p=CHURCH_SHUTTLE.priest[def&&def.people]?def.people:'gatelander';let say=CHURCH_SHUTTLE.priest[p].replace('${seat}',seat.name);if(!lordFor(seat).female)say=say.replace(/ to her\b/g,' to him');
+    return [{label:'The shuttle.',response:say}];}
   // S786 — the Noon Ring (the page's Sky row, in the approved draft's words): used from the bag, once a game-day, it turns the
   // weather in the open world, clear to rain or rain to clear (through the weather's own shift, as devWeather does); any other
   // sky, or under a roof, it does not turn. The cost: carried in a storm, one lightning flash in three comes down close to you
