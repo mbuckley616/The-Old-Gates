@@ -1153,6 +1153,7 @@ function interact(){
     }
     if(typeof ringCairnNear==='function'&&ringCairnNear()){ringCairnUse();return;} /* S800 — the Noon Ring's cairn */
     if(typeof bellWreckNear==='function'&&bellWreckNear()){bellWreckUse();return;} /* S801 — the Drowned Bell's wreck */
+    if(typeof bladeStoneNear==='function'&&bladeStoneNear()){bladeStoneUse();return;} /* S802 — the Gate-Blade's stone */
     if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipInteract())return; // v80 C — the helm
     // v80 S9 — camp bedrolls in the open world
     if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<1.5);if(bd){openSleepUI();return;}}

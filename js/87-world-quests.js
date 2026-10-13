@@ -107,6 +107,7 @@
     {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}}
     {const H=typeof lampHome==='function'&&lampHome();const lt=H&&siteAnywhere(H.site);if(lt){const [li,lj]=cellOf(lt.x,lt.z);if(Math.abs(li-ci)<=1&&Math.abs(lj-cj)<=1)out.push(`There's a lamp over the inn door at ${lt.name} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${lt.name}.`);}} /* S784 — the Waylamp, while it hangs (the draft's rumour; its town and the cells round it) */
     if(typeof cloakRumours==='function')out.push(...cloakRumours(site)); /* S795 — the cloak's two rumours */
+    {const P=!artifactState('gate_blade')&&artifactPlaces().gate_blade;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [gi,gj]=cellOf(P.x,P.z);if(Math.abs(gi-ci)<=1&&Math.abs(gj-cj)<=1)out.push(`There's a sword in a stone out by ${P.name}. Half the young ones in the townland have had a pull at it. It's still there. So are they, mostly.`);}} /* S802 — the blade, while it stands in its stone (the approved draft, §5) */
     {const P=!artifactState('drowned_bell')&&artifactPlaces().drowned_bell;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [bi,bj]=cellOf(P.x,P.z);if(Math.abs(bi-ci)<=1&&Math.abs(bj-cj)<=1&&(site.kind==='port'||Math.hypot(site.x-P.x,site.z-P.z)<500))out.push(`There's a wreck on the rock off ${P.coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry.`);}} /* S801 — the bell, while it hangs in its wreck (the approved draft, §2) */
     {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
@@ -1224,7 +1225,7 @@ const giver=`${lord.title} ${lord.name}`;
   // S796 — a hermit gives the way only to a tool that can be had where it lies today: the cloak (its cavern's master, whose
   // corpse gives it up, Session 781) and the lamp (its inn, Session 783); and since S797 the Shuttle (its gate's deepest room).
   // The blade's stone, the bell's wreck and the ring's cairn wait for their trials and props; each trial's session adds its tool here.
-  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1,sundial_ring:1,drowned_bell:1}; /* S797 — the Shuttle's room; S800 — the ring's cairn; S801 — the bell's wreck */
+  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1,sundial_ring:1,drowned_bell:1,gate_blade:1}; /* S797 — the Shuttle's room; S800 — the ring's cairn; S801 — the bell's wreck; S802 — the blade's stone */
   // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
   function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
   function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];
@@ -1252,6 +1253,49 @@ const giver=`${lord.title} ${lord.name}`;
   // a storm's flash (the weather tick's lightning): with the ring on you, one in three is close. Cosmetic, so Math.random.
   function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
     if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
+  // S802 — the Gate-Blade's trial (the page's Stone row; the approved draft's first run, §5): the blade stands in a standing stone
+  // outside its ruined gate (artifactPlaces().gate_blade, picked from the seed in Session 776). The stone stands 8 to 18 units
+  // from the gate's door on open ground, the first spot clear of every solid along bearings taken in an order seeded by the
+  // gate (bladeStoneSpot), found once the gate's cell is loaded and its compound built. The first time you come within ten
+  // units, the draft's line, once (the character's: stats.bladeSeen). E within 1.8 takes hold of the hilt: Might 30, the base
+  // plus at most 2 from gear (artifactTry); short of it, one of the draft's three lines by how short, each logged with 🗝, costing
+  // nothing and kept for the Journal. Taken, the stone stays, and E at it says what is left. The stone and the hilt are a
+  // placeholder; the look builder's prop is owed. The stone is not solid.
+  const BLADE_SAY={seen:'A blade stands in a stone to a hand’s breadth below its guard. The stone has grown round it, the way bark grows round a nail.',
+    weak:'You might as well pull at the hill. The stone does not move.',mid:'The stone does not move. Not yet.',near:'Something gives: a grain of grit, no more. Not yet.',
+    take:'It comes out of the stone the way a key comes out of a lock: all at once, after nothing.',
+    after:'An empty slot in a standing stone. Looked at end on, it is the shape of a key.'};
+  const BLADE_REACH=1.8;let BLADE_STONE=null,_bladeT=0;
+  function bladeStoneSpot(P){const r=seededRng('bladestone',P.door);const a0=r()*Math.PI*2;
+    for(let d=8;d<=18;d+=2)for(let k=0;k<12;k++){const a=a0+k/12*Math.PI*2,x=P.x+Math.cos(a)*d,z=P.z+Math.sin(a)*d;let ok=worldH(x,z)>SEA_Y+.5;
+      for(let q=0;q<8&&ok;q++)if(solidAt(x+Math.cos(q/8*Math.PI*2)*1.4,z+Math.sin(q/8*Math.PI*2)*1.4)||solidAt(x,z))ok=false;
+      if(ok)return {x,z,y:worldH(x,z)};}
+    return null;}
+  function bladeStoneBuild(P){const sp=bladeStoneSpot(P);if(!sp)return null;const g=new THREE.Group();
+    const stone=new THREE.Mesh(new THREE.BoxGeometry(.95,2.1,.62),new THREE.MeshLambertMaterial({color:0x7d7a72}));stone.position.y=.95;stone.rotation.z=.04;g.add(stone);
+    const hilt=new THREE.Group();const iron=new THREE.MeshLambertMaterial({color:0x6c7078,emissive:0x101216}),leather=new THREE.MeshLambertMaterial({color:0x3a2616});
+    const blade=new THREE.Mesh(new THREE.BoxGeometry(.06,.12,.012),iron);blade.position.y=.06;hilt.add(blade);
+    const guard=new THREE.Mesh(new THREE.BoxGeometry(.32,.04,.05),iron);guard.position.y=.14;hilt.add(guard);
+    const grip=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.24,6),leather);grip.position.y=.28;hilt.add(grip);
+    const pommel=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6),iron);pommel.position.y=.42;hilt.add(pommel);
+    hilt.position.y=2.0;g.add(hilt);g.position.set(sp.x,sp.y-.05,sp.z);g.rotation.y=Math.atan2(P.x-sp.x,P.z-sp.z);sc.add(g);
+    return {x:sp.x,z:sp.z,door:P.door,name:P.name,mesh:g,hilt};}
+  function bladeStoneDrop(){if(BLADE_STONE&&BLADE_STONE.mesh&&BLADE_STONE.mesh.parent)BLADE_STONE.mesh.parent.remove(BLADE_STONE.mesh);BLADE_STONE=null;}
+  // once a second from the loop: the stone is built while the gate's cell is loaded and you are within 300 units; the first sight
+  function tickBladeStone(force){const t=performance.now();if(!force&&t-_bladeT<1000)return;_bladeT=t;
+    if(activeZoneId!=='world'||!sc){bladeStoneDrop();return;}const P=artifactPlaces().gate_blade;if(!P)return;
+    if(Math.hypot(px-P.x,pz-P.z)>=300||!LOADED.has(cellKey(...cellOf(P.x,P.z)))){if(BLADE_STONE)bladeStoneDrop();return;}
+    if(!BLADE_STONE||BLADE_STONE.door!==P.door||!BLADE_STONE.mesh.parent){bladeStoneDrop();BLADE_STONE=bladeStoneBuild(P);}
+    const B=BLADE_STONE;if(!B)return;B.hilt.visible=!artifactState('gate_blade');
+    if(typeof isInterior==='function'&&isInterior())return;const st=worldState.stats||(worldState.stats={});
+    if(!st.bladeSeen&&!artifactState('gate_blade')&&Math.hypot(px-B.x,pz-B.z)<10){st.bladeSeen=1;showMsgLong(BLADE_SAY.seen,'#c8c0a8');}}
+  function bladeStoneNear(){const B=BLADE_STONE;return !!(B&&B.mesh&&B.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-B.x,pz-B.z)<BLADE_REACH);}
+  function bladeStonePrompt(){if(!bladeStoneNear())return null;return artifactState('gate_blade')?"Press 'E' to look at the stone":"Press 'E' to take hold of the hilt";}
+  // E at the stone: the named action is artifactTry, with the draft's log line; short of Might 30, the draft's line by how short
+  function bladeStoneUse(){const B=BLADE_STONE;if(!B)return null;if(artifactState('gate_blade')){showMsg(BLADE_SAY.after,'#c8c0a8');return {gone:true};}
+    const c=artifactTry('gate_blade',`Took the Gate-Blade from the stone by ${B.name}.`);
+    if(!c.ok){const t=c.have<20?BLADE_SAY.weak:c.have<27?BLADE_SAY.mid:BLADE_SAY.near;showMsg(t,'#c8c0a8');if(typeof addLog==='function')addLog('🗝',t);return c;}
+    showMsg(BLADE_SAY.take,'#c8c0a8');B.hilt.visible=false;if(typeof updateHUD==='function')updateHUD();return c;}
   // S801 — the Drowned Bell's trial (the page's Sea row; the approved draft's second run, §2): the bell hangs from the last beam
   // of a wreck on a rock off a home-island port (artifactPlaces().drowned_bell, picked from the seed as the others are: a port,
   // then a point of open sea 50 to 140 units off it by the bare land mask, seaBare, which reads no loaded state). The sea does
