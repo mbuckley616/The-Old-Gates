@@ -105,6 +105,8 @@
     if(OTHER.some(o=>o.kind==='pirate'&&Math.hypot(o.x-site.x,o.z-site.z)<600))out.push("Black sails off the coast this morning. The fishermen came straight back in.");
     const G=worldState.guild;if(G){for(const g in G){const t=G[g].active;if(t&&t.siteId===site.id)out.push(t.kind==='raid'?"They say bandits are coming for us. The guild sent someone. Maybe you.":t.kind==='beast'?`Something's been at the sheep. ${t.beast||'A beast'}, they say.`:"The guild's got business here. Everyone's on edge.");}}
     {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}}
+    {const H=typeof lampHome==='function'&&lampHome();const lt=H&&siteAnywhere(H.site);if(lt){const [li,lj]=cellOf(lt.x,lt.z);if(Math.abs(li-ci)<=1&&Math.abs(lj-cj)<=1)out.push(`There's a lamp over the inn door at ${lt.name} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${lt.name}.`);}} /* S784 — the Waylamp, while it hangs (the draft's rumour; its town and the cells round it) */
+    if(typeof cloakRumours==='function')out.push(...cloakRumours(site)); /* S795 — the cloak's two rumours */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
     {const d=nearestSigilDoorFrom(site);if(d&&Math.random()<.5)out.push(`There's a warm stone in ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. My cousin put his hand on it and talked in his sleep for a week.`);}
@@ -457,7 +459,7 @@ const giver=`${lord.title} ${lord.name}`;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){showMsg('The altar is quiet. Come back tomorrow.','#c8b880');return true;}
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
-    else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
+    else{const own=!!(S.god&&typeof isGodsDay==='function'&&isGodsDay(S.god.key,abs));if(typeof _applyBuff==='function')_applyBuff({type:b.type,mult:b.mult,rate:b.rate,duration:(own?3600:1800)*(cloakOn('pilgrim')?1.25:1)/* S552 — pilgrim's grey */,label:b.label,col:'#e8d8a0'});showMsg(own?`It is ${calDay(abs).day.name}. You are restored, and carry ${b.label} two days.`:`You are restored, and carry ${b.label} until tomorrow.`,'#e8d8a0');}if(typeof addLog==='function')addLog('⛩',`Prayed at ${S.site.name}: ${b.label}.`);altarVerse(S); /* S792 — the name under the altar, once a shrine */if(typeof sfxTone==='function')sfxTone(660,660,.6,.15);return true;}
     return false;}
   // S545 — the lair's look alone (the rock heap with its cave mouth, and the bones), on the builder's rolls in its order
   function lairGeoParts(r,cx,cz,H){const c=x=>new THREE.Color(x);const parts=[];
@@ -692,7 +694,7 @@ const giver=`${lord.title} ${lord.name}`;
       let near=null,nd=1e9;for(const o of SITES){if((o.kind==='lair'||o.kind==='bcamp')&&Math.hypot(o.x-t.x,o.z-t.z)<nd){nd=Math.hypot(o.x-t.x,o.z-t.z);near=o;}}
       if(near&&nd<700){const dead=worldState.lairs&&worldState.lairs[near.id];d+=dead?.6:-.6;if(near.kind==='bcamp'&&!dead)(threat[near.id]||(threat[near.id]={camp:near,towns:[]})).towns.push(t);}
       // flags
-      let c=0;if(st.flags.burned!=null||st.flags.sacked!=null)c-=.2;if(st.flags.plague!=null)c-=1;if(st.flags.owned!=null)c+=.4;if(st.flags.besieged!=null)c-=2;if(st.flags.occupied!=null)c-=.5;
+      let c=0;if(st.flags.burned!=null||st.flags.sacked!=null)c-=.2;if(st.flags.plague!=null)c-=1;if(st.flags.owned!=null)c+=.4;if(st.flags.besieged!=null)c-=2;if(st.flags.occupied!=null)c-=.5;c-=cloakDrain(t); /* S777 — the Wolf-Mother's Cloak taken and its beast alive */
       // drift home
       const base=BASE_P[t.kind]||45;const drift=(base-st.p)*.01;
       // scaffolds finish
@@ -930,6 +932,335 @@ const giver=`${lord.title} ${lord.name}`;
     if(root){root.name='The Root';root.anchor='root';const cell=CELLS.get(key(...cellOf(root.x,root.z)));if(cell){cell.doors=cell.doors.filter(d=>!(d.lairDoor&&d.lairSite===root.id));if(!cell.doors.some(d=>d.root))cell.doors.push({zone:'gen',x:root.x,z:root.z-6,seed:9001,size:'large',theme:'deep',diff:'veryhard',kind:'cave_door',cell:cell.i+','+cell.j,sigil:true,root:true,canonicalName:'The Root',lair:{place:'The Root',boss:'Ogre',dragon:false}});}}
     _anch={caer_slige:cs,spire:sp,blackhand:pb,salt_mouth:sm,root,compact_seat:cap};return _anch;
   }
+  // ═══ THE MAKERS' TOOLS — the frame (Session 776; Michael's B on DECISION #175, docs/design/unique-artifacts.md) ═══
+  // Six tools, one to each god with a shrine (the Guest has none). One of each per world: where each lies is picked from
+  // the world (artifactPlaces, as anchoredPlaces picks), so a friend in the host's world finds the same stone. Taking one
+  // writes worldState.artifacts[id] (the world row) through takeArtifact, giving it up through yieldArtifact (the co-op
+  // rules: one named action per change); the item rides the character, `unique` (never sold or destroyed). A failed check
+  // costs nothing: worldState.artifactTries (the character's) keeps it for the journal's *Things not yet yours*. The check
+  // reads the attribute's base plus at most 2 from gear. Names are the page's working names; each tool's trial, its place
+  // in the world, its item and its words come with its own session (the page's order: the Stone and the Beasts, the Sea
+  // and the Hearth, the Sky and the Weaver).
+  const ARTIFACTS={
+    gate_blade:  {god:'cloch',   name:'the Gate-Blade',          ico:'🗡',check:{attr:'might',need:30},
+                  item:()=>Object.assign(makeItem(6,WEAPON_TYPES.find(w=>w.type==='Longsword')),{name:'The Gate-Blade',ico:'🗡',weight:14,sellMult:0,buyPrice:0,desc:'A Maker’s blade, heavy for its length. The wards of a key are cut along the fuller, too fine to see without a candle. The Crown’s rolls call it la Lame du Seuil. The Old Blood call it Eochair na Cloiche, the Stone’s key.'})}, /* S795 — the approved draft's words */
+    drowned_bell:{god:'muir',    name:'the Drowned Bell',        ico:'🔔',check:null,
+                  item:()=>({name:'The Drowned Bell',ico:'🔔',type:'misc',weight:1,sellMult:0,buyPrice:0,desc:'A ship’s bell, small, and heavier than its bronze. Weed grows back on it overnight. The Compact’s rolls enter it as le Reliquaire de la Marée. The Old Blood call it Clog na Mara, the Sea’s bell.'})}, /* S795 — the approved draft's words */
+    sundial_ring:{god:'speir',   name:'the Noon Ring',           ico:'💍',check:{attr:'swiftness',need:30}, /* S786 — the draft's name (Michael's 1A on #263); the id keeps the page's */
+                  item:()=>({type:'misc',name:'The Noon Ring',ico:'💍',weight:0.1,sellMult:0,buyPrice:0,desc:'A plain gold band, cut inside with twelve marks and a sun. Worn, it is warm at noon and cold at midnight. The Old Blood call it Fáinne an Lae, the ring of the day, which is also their word for dawn.'})},
+    wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30},
+                  item:()=>({type:'equip',slot:'back',name:"The Wolf-Mother's Cloak",ico:'🧥',def:1,weight:2,cloak:'fur',virtue:'wolfmother',sellMult:0,buyPrice:0,desc:'Grey, and not wool, and dry in any rain. Beasts take whoever wears it for one of hers. The Old Blood call it Brat na Máthar, the Mother’s mantle.'})}, /* S795 — the approved draft's words */
+    waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null,
+                  item:()=>({type:'misc',name:'The Waylamp',ico:'🏮',weight:1,sellMult:0,buyPrice:0,desc:'An inn lamp of old brass with a horn window. It burns without oil and no weather puts it out. The Old Blood call it Lóchrann an Teallaigh, the Hearth’s lantern.'})},
+    shuttle:     {god:'fiodoir', name:'the Shuttle',             ico:'🧵',check:{attr:'intelligence',need:35},
+                  item:()=>({type:'misc',name:'The Shuttle',ico:'🧵',weight:1,sellMult:0,buyPrice:0,desc:'A weaver’s shuttle of pale wood, worn smooth by a hand that is not yours, with a thread end in it that nothing will pull out. The Church calls it la Navette. The Old Blood call it Spól an Fhíodóra, the Weaver’s shuttle.'})}};
+  const ARTIFACT_GEAR_MAX=2;
+  // where each lies: the Stone's blade outside a ruined gate on the home island, the Beasts' cloak with a home-island
+  // lair's master; the other four are placed with their trials. Candidates sorted by id, picked on seededRng('artifact', id).
+  let _artPl=null;
+  function artifactPlaces(){
+    if(_artPl)return _artPl;const A=anchoredPlaces();const home=[...CELLS.values()].filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='gatelands');
+    const pick=(id,list)=>list.length?list[Math.floor(seededRng('artifact',id)()*list.length)]:null;
+    const doors=home.flatMap(c=>(c.doors||[]).filter(d=>!d.wet&&!d.lairDoor&&!d.root&&d.zone==='gen')).sort((a,b)=>a.seed-b.seed);
+    const ruined=doors.filter(d=>d.kind==='fort_door'&&d.exterior==='ruined_gatehouse');
+    const gd=pick('gate_blade',ruined.length?ruined:doors);
+    const lairs=home.flatMap(c=>c.sites.filter(t=>t.kind==='lair'&&!t.anchor&&!t.dragon)).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+    const lr=pick('wolf_cloak',lairs);
+    const towns=home.flatMap(c=>c.sites.filter(t=>t.kind==='town'||t.kind==='port'||t.kind==='city')).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const lt=pick('waylamp',towns); /* S783 — the Waylamp over a home-island town's first inn */
+    _artPl={gate_blade:gd?{door:gd.seed,name:gd.canonicalName||(typeof dungeonName==='function'?dungeonName(gd.seed,gd.theme):'an old gate'),x:gd.x,z:gd.z}:null,
+            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:null};
+    return _artPl;}
+  function artifactState(id){const S=worldState.artifacts;return (S&&S[id])||null;}
+  function artifactHeld(id){return [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)].some(L=>L.some(it=>it&&it.artifact===id));}
+  function artifactCarried(id){return BAG.some(it=>it&&it.artifact===id)||Object.values(EQ).some(it=>it&&it.artifact===id);} /* on you, not in the stash */
+  // S778 — the Drowned Bell (the page's Sea row): carried, your ship takes half the wear of rough seas and storms (tickSeaWear),
+  // and a black sail hunts you from 600 units, not 300 (the black sails' tick)
+  function bellAboard(){return artifactCarried('drowned_bell');}
+  // S794 — the bell's two once-only lines (the approved draft, second run): the first storm she rides with it aboard, and the
+  // first black sail that turns for you while it is on you (its ${dir} the compass word from you to her). The tool's, the world row's.
+  function bellStorm(){const S=artifactState('drowned_bell');if(!S||S.stormSeen!=null||!bellAboard())return false;S.stormSeen=dayNow();
+    showMsg('The sea is running high, and she rides it as if she had been told to.','#a8c8d8');return true;}
+  function bellBlackSail(o){const S=artifactState('drowned_bell');if(!S||S.blackSailSeen!=null||!bellAboard())return false;S.blackSailSeen=dayNow();
+    const t=`The bell in your pack rings once, with no sea running. Off the ${compassWord(o.x-px,o.z-pz)} quarter, a black sail has put about.`;
+    showMsg(t,'#a8c8d8');if(typeof addLog==='function')addLog('⛵',t);return true;}
+  // S782 — the Shuttle (the page's Weaver row; Michael's 4A on #263): carried, the Weaver's Eye for good (the compass turns to the
+  // nearest unread sigil, as the spell does: getActiveQuestMarkers). The cost is the Shuttle's, whoever you are: the Cold rises 1
+  // for each week of game time it is carried (worldState.shuttleCarry, the character's, counts the minutes; the draft's log line,
+  // no screen line), and each of Varek's discoveries needs one Mastery fewer while it is on you (varekDue).
+  function shuttleCarried(){return artifactCarried('shuttle');}
+  // S795 — the first time the needle turns for the Shuttle (not the spell), the draft's line, once (the tool's, the world row's)
+  function shuttleCompassSay(){const S=artifactState('shuttle');if(!S||S.compassSeen!=null||!shuttleCarried())return false;S.compassSeen=dayNow();showMsg('The compass needle leans, and keeps leaning, toward a stone you have not read.','#a0c8ff');return true;}
+  const SHUTTLE_WEEK=7*1440;let _shT=0;
+  function tickShuttle(force){const t=performance.now();if(!force&&t-_shT<1000)return 0;_shT=t;const now=worldState.gameTimeAbsMinutes||0;let C=worldState.shuttleCarry;
+    if(!shuttleCarried()){if(C)C.last=now;return 0;}if(!C)C=worldState.shuttleCarry={acc:0,last:now};
+    C.acc+=Math.max(0,now-(C.last==null?now:C.last));C.last=now;let n=0;
+    while(C.acc>=SHUTTLE_WEEK){C.acc-=SHUTTLE_WEEK;worldState.cold=(worldState.cold||0)+1;n++;if(typeof addLog==='function')addLog('❄','Your hands are colder than the weather.');}
+    return n;}
+  // S779 — the Gate-Blade (the page's Stone row): a tier-6 blade of 14 weight; while it is in your hand sprinting costs a quarter more
+  function gateBladeDrawn(){return !!(EQ.weapon&&EQ.weapon.artifact==='gate_blade');}
+  // S780 — Michael's 3A on #263: with the blade in hand, a locked door inside a sigil gate you have been down before opens at a
+  // touch, no pick. worldState.gatesWalked (the character's: where you have been) keys each gate by its seed and is written as
+  // you go down; _gateWalkedBefore is read before that write, so a gate's first visit is never one the blade opens.
+  // Lair caverns and the tutorial's crypt are not sigil gates.
+  let _gateWalkedBefore=false;
+  function noteGateWalked(portal){_gateWalkedBefore=false;if(!portal||portal.tutorial||portal.lair||portal.lairDoor||portal.seed==null)return;
+    const W=worldState.gatesWalked||(worldState.gatesWalked={});_gateWalkedBefore=!!W[portal.seed];W[portal.seed]=1;}
+  function gateBladeOpens(door){return !!(door&&door.locked&&!door.open&&activeZoneId==='dungeon'&&_gateWalkedBefore&&gateBladeDrawn());}
+  // the named action: the door opens as a picked one does (lpWin), and the first time says so in the draft's words
+  function gateBladeOpen(door){door.open=true;if(door.mesh&&typeof dScene!=='undefined')dScene.remove(door.mesh);
+    try{const map=activeMap();if(map[door.z]&&map[door.z][door.x]===5)map[door.z][door.x]=1;}catch(e){}try{sndDoorUnlock();}catch(e){}
+    const st=worldState.stats||(worldState.stats={});if(!st.bladeKeyed){st.bladeKeyed=1;showMsg('The Gate-Blade goes into the lock as if it were cut for it.','#ffd700');}else showMsg('The lock gives.','#ffd700');}
+  // the check: the attribute's base, plus what gear adds up to ARTIFACT_GEAR_MAX (a Fortify ring closes a small gap; no one buys Might 30)
+  function artifactCheck(id){const T=ARTIFACTS[id];if(!T)return null;if(!T.check)return {ok:true,attr:null,need:0,have:0,base:0,gear:0};
+    const k=T.check.attr,base=ATTRS[k]||0,gear=Math.max(0,Math.min(ARTIFACT_GEAR_MAX,(typeof attrEff==='function'?attrEff(k):base)-base));
+    return {ok:base+gear>=T.check.need,attr:k,need:T.check.need,have:base+gear,base,gear};}
+  function artifactItem(id){const T=ARTIFACTS[id];const it=(T.item?T.item():{name:T.name.replace(/^the /,'The '),ico:T.ico,type:'misc',weight:1,sellMult:0,buyPrice:0,desc:'One of the six things the Makers left.'});return Object.assign(it,{unique:true,artifact:id,qty:1});}
+  // the named action that takes a tool from where it lies (shared state: the world row)
+  function takeArtifact(id,how){const T=ARTIFACTS[id];if(!T||artifactState(id))return false;
+    (worldState.artifacts||(worldState.artifacts={}))[id]={taken:true,day:dayNow(),how:how||'taken'};
+    if(typeof bagAdd==='function')bagAdd(artifactItem(id));const tr=worldState.artifactTries;if(tr)delete tr[id];
+    if(typeof addLog==='function')addLog(T.ico,`Took ${T.name}.`);return true;}
+  // the named action that gives a tool up to its claimant: out of the bag, the stash or your hands, and the world remembers who has it
+  function yieldArtifact(id,to){const T=ARTIFACTS[id],S=artifactState(id);if(!T||!S||S.yielded)return false;
+    const out=L=>{const i=L.findIndex(it=>it&&it.artifact===id);if(i>=0){L.splice(i,1);return true;}return false;};
+    let gone=out(BAG)||(typeof stashBag!=='undefined'&&out(stashBag));if(!gone)for(const s in EQ)if(EQ[s]&&EQ[s].artifact===id){EQ[s]=null;gone=true;break;}
+    if(!gone)return false;S.yielded=to||'claimant';S.yieldDay=dayNow();if(typeof updateHUD==='function')updateHUD();return true;}
+  // a try at a tool: passes and takes it, or records the try (the character's) and says nothing itself (the trial's words are its own)
+  function artifactTry(id){const T=ARTIFACTS[id];if(!T||artifactState(id))return {ok:false,gone:true};const c=artifactCheck(id);
+    if(c.ok){takeArtifact(id);return c;}
+    const tr=worldState.artifactTries||(worldState.artifactTries={});tr[id]={day:dayNow(),have:c.have,n:((tr[id]&&tr[id].n)||0)+1};return c;}
+  // S777 — the Wolf-Mother's Cloak (the page's Beasts row): worn, the wolves, the bears and the spiders leave you alone unless
+  // you strike first. A beast you have hurt is struck for good (`_struck`), and its pack takes its part (alertPack). The cost:
+  // its master lives, so the town nearest the lair loses 0.6 a day while the cloak is yours and the master alive (tickTownsDay).
+  const CLOAK_BEASTS={'Wolf':1,'Dire Wolf':1,'Snow Wolf':1,'Cave Bear':1,'Spider':1};
+  const CLOAK_WOLVES={'Wolf':1,'Dire Wolf':1,'Snow Wolf':1}; /* S781 — the cloak off a corpse keeps the wolves' peace only (#263 2A) */
+  function beastAtPeace(e){if(!e||!EQ.back||EQ.back.artifact!=='wolf_cloak')return false;if(!(EQ.back.half?CLOAK_WOLVES:CLOAK_BEASTS)[e.baseName||e.baseType||e.name]||e.isBoss)return false;
+    if(e.hp<e.maxHp)e._struck=true;return !e._struck;}
+  let _cloakTown=null;
+  function cloakTown(){const P=artifactPlaces().wolf_cloak;if(!P)return null;if(_cloakTown&&_cloakTown.lair===P.site)return _cloakTown.town;let best=null,bd=1e9;
+    for(const t of allSites()){if(!(t.kind in BASE_P))continue;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<bd){bd=d;best=t;}}_cloakTown={lair:P.site,town:best};return best;}
+  // S795 — the cloak's approved words: the first wolf that would have seen you and turns away (once; the tool's), and the two
+  // rumours while the cloak, taken alive, is yours and its master lives: the road's in its town and the cells round it, the cave's
+  // in its town alone
+  function cloakTurnAway(e,sees){const S=artifactState('wolf_cloak');if(!S||S.turnSeen!=null||!CLOAK_WOLVES[e.baseName||e.baseType||e.name]||!sees())return false;
+    S.turnSeen=dayNow();showMsg('The wolf stops, looks at you, and goes about its business.','#c8c0a8');return true;}
+  function cloakRumours(site){const S=artifactState('wolf_cloak'),P=artifactPlaces().wolf_cloak;if(!S||!P||S.half||S.yielded||cloakMasterDead())return [];const ct=cloakTown();if(!ct)return [];
+    const [ci,cj]=cellOf(site.x,site.z),[ti,tj]=cellOf(ct.x,ct.z);if(Math.abs(ci-ti)>1||Math.abs(cj-tj)>1)return [];
+    const out=[`The road past ${P.name} is no road at all now. The carter goes round, and charges for the going round.`];
+    if(ct.id===site.id)out.push("Somebody walked into that cave and walked out again with not a mark on them. The beast's been bolder since. Or we're more frightened. It comes to the same.");return out;}
+  function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||S.half||cloakMasterDead())return 0;
+    const ct=cloakTown();return ct&&ct.id===t.id?.6:0;}
+  // S787 — the Gate-Blade's claimant, the Crown (the page's Stone row; the approved draft's words): the lord at the Crown's seat
+  // asks while the blade is on you and not given up. *Give it to the Crown.*: 1,500 gold and the commission (Commissioner, the
+  // Crown's first rank), or a service counted if already ranked, or the gold alone if another power's rank of 2 closes the Crown.
+  // *I'll keep it.*: a licence (an item, unique), and the Crown takes a twentieth of every sale at a counter while the blade is on
+  // you (sellItem). The licence is the tool's, the world row's (artifacts.gate_blade.licence).
+  const CROWN_BLADE={ask:"Whatever comes up out of the ground in the Gatelands, the Crown was there before it. That blade has been on the rolls a hundred years as la Lame du Seuil, and the rolls never forget a thing they never saw. Two roads, and neither of them short. Give it to the Crown, and the Crown gives you fifteen hundred gold and a commission with your name on it. Or keep it under licence, and the Crown takes a twentieth of every sale you make while you carry it. I'll not choose for you. Whoever chooses for another carries both loads.",
+    lic:"Bring it back when it's heavy. An offer made in this house doesn't sour like milk.",
+    gaveNew:"Then the rolls are right at last, which will please the clerks more than it should. Fifteen hundred, and the commission. The Weaver keep you, Commissioner.",
+    gaveRanked:"Then the rolls are right at last, which will please the clerks more than it should. Fifteen hundred, and it's counted as a service to your name. The Weaver keep you.",
+    gaveSworn:"The Crown takes what's the Crown's, whoever carries it in. The fifteen hundred is yours. A commission it can't give to someone sworn elsewhere, and you'd not want it if it could.",
+    keep:"Then here is the licence, and the Crown's twentieth will find you at every counter you stand at, its own or another's. It was never the blade that was dear. It's the carrying.",
+    not:"The blade's not going anywhere you can't be found. Neither is the Crown."};
+  function bladeLicensed(){const S=artifactState('gate_blade');return !!(S&&S.licence&&!S.yielded&&artifactCarried('gate_blade'));}
+  function bladeTithe(sp){return bladeLicensed()?Math.round(sp/20):0;}
+  function crownGiveBlade(){if(!yieldArtifact('gate_blade','crown'))return null;const F=fstate(),C=F.crown;const sworn=Object.keys(FACTIONS).some(o=>o!=='crown'&&F[o].rank>=2);
+    for(let i=BAG.length-1;i>=0;i--)if(BAG[i]&&BAG[i].licence==='gate_blade')BAG.splice(i,1);
+    gold+=1500;if(typeof updateHUD==='function')updateHUD();let k;
+    if(sworn)k='gaveSworn';else if(!C.rank){C.done=Math.max(C.done,3);C.rank=1;k='gaveNew';}else{giftServices('crown',1);k='gaveRanked';} /* S790 — never past the ninth service's eve */
+    if(typeof addLog==='function')addLog('🗡',`Gave the Gate-Blade to the Crown, for 1500 gold.`);return CROWN_BLADE[k];}
+  function crownLicenseBlade(){const S=artifactState('gate_blade');if(!S||S.yielded||S.licence||!artifactCarried('gate_blade'))return null;S.licence={day:dayNow()};
+    if(typeof bagAdd==='function')bagAdd({type:'misc',name:'Crown Licence — the Gate-Blade',ico:'📜',weight:0,qty:1,unique:true,licence:'gate_blade',sellMult:0,buyPrice:0,
+      desc:`By the Crown of the Gatelands, at Coeur de Vie: licence to ${playerName} to hold the relic of the old gates entered in the Crown's rolls as la Lame du Seuil, on condition that a twentieth part of every sale made by the holder, at any counter, be paid to the Crown at that counter. Given ${gameDateLine(null,null,'date')}.`});
+    return CROWN_BLADE.keep;}
+  function crownBladeTopics(site){if(!site||site.id!==FACTIONS.crown.seat)return [];const S=artifactState('gate_blade');if(!S||S.yielded||!artifactCarried('gate_blade'))return [];
+    const give={label:'Give it to the Crown.',quest:true,fn:()=>crownGiveBlade()||CROWN_BLADE.not};
+    if(S.licence)return [{label:'The licence.',response:CROWN_BLADE.lic,follow:[give]}];
+    return [{label:'The blade from the stone.',response:CROWN_BLADE.ask,follow:[give,{label:'I’ll keep it.',quest:true,fn:()=>crownLicenseBlade()||CROWN_BLADE.not},{label:'Not now.',response:CROWN_BLADE.not}]}];}
+  // S788 — the Drowned Bell's claimant, the Compact (the page's Sea row; the approved draft's words): any Factor in Aurenne (the
+  // lord of an Aurennais town or port) asks while the bell is on you and not given up. *Give it to the Compact.*: below Factor,
+  // and the Compact open to you, the rank of Factor (its second); at Factor or above, a service counted; sworn to another power
+  // (its rank of 2, the Standing page's rule) or closed, no rank. Each way, the cog (bellCog): with no ship, a cog at the Compact's
+  // quay as its claim deeds one; a ship smaller than a cog refitted as one where she lies, or raised as one if she is on the
+  // bottom; a cog or larger, the cog's worth in gold (1,300). *I'll keep it.* changes nothing: the topic stands.
+  const COMPACT_BELL={ask:"Forgive me, Master. The Compact's rolls enter a bell of that size and that weight as le Reliquaire de la Marée: the reliquary of a gate the Church sealed, entered on a ship's manifest, and lost with the ship. The manifest is in the house's books still; the ship is on a rock. You will appreciate that a thing entered in the rolls is the Compact's wherever it is found, and that the Compact prefers to settle such matters by agreement rather than by any other means. The house offers a cog, entered in your name, and the rank of Factor. Or you may keep it. The rolls will record which.",
+    gaveNew:"Then the manifest is closed at last, which the clerks will find more satisfying than they should. You are entered as Factor of the Compact, Master, from today.",
+    gaveRanked:"Then the manifest is closed at last. It is entered as a service to the house, Master, beside your name.",
+    gaveSworn:"The reliquary is received, Master, and the house is obliged. The rank the house cannot give to someone sworn elsewhere; that is not a judgment, only a clause.",
+    keep:"As you wish. The rolls will show it held by you, which is a kind of agreement also. I would only observe that the sea has taken it once already, and the sea does not consider itself bound by our books.",
+    not:"Of course. The offer is entered, and stands until withdrawn. It has not been withdrawn."};
+  function bellFactor(site){if(!site||!(site.kind==='town'||site.kind==='port'))return false;const [ci,cj]=cellOf(site.x,site.z);return nationKeyOf(ci,cj)==='aurenne'&&lordFor(site).title==='Factor';}
+  // the cog, by what you sail: the line that takes the place of *The cog is entered also.* / *The cog stands.*
+  function bellCog(site){const cog=SHIP_CLASSES.cog,st=worldState.ship;
+    if(!st){const L=SHIP.L,W=SHIP.W;SHIP.L=cog.L;SHIP.W=cog.W;const port=grantShip(site);if(!port){SHIP.L=L;SHIP.W=W;return null;}
+      shipCfg().cls='cog';applyShipClass();shipCfg().hull=cog.hull;shipCfg().rig=100;return port.id===site.id?'The cog is at the quay here.':`The cog is at the quay at ${port.name}.`;}
+    const nm=st.name||SHIP.name;
+    if(shipClass().worth>=cog.worth){gold+=cog.worth;if(typeof updateHUD==='function')updateHUD();if(typeof addLog==='function')addLog('⛵',`The Compact paid the cog's worth, ${cog.worth} gold.`);
+      return `You keep a ship already, and a larger one. The house will pay the cog's worth instead: ${cog.worth} gold.`;}
+    st.cls='cog';
+    if(st.sunk){if(!st.raise){const port=allPorts().filter(p=>shoreDir(p)).sort((a,b)=>Math.hypot(a.x-st.sunk.x,a.z-st.sunk.z)-Math.hypot(b.x-st.sunk.x,b.z-st.sunk.z))[0];
+        if(port)st.raise={site:port.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};}
+      if(typeof addLog==='function')addLog('⛵',`The Compact is raising the ${nm} as a cog.`);return 'Your ship is on the bottom; the house has ordered her raised, a cog, in three days.';}
+    st.hull=cog.hull;st.rig=100;applyShipClass();if(typeof shipBarsUI==='function')shipBarsUI();
+    if(typeof addLog==='function')addLog('⛵',`The Compact refitted the ${nm} as a cog.`);return 'Your own ship will be refitted as a cog where she lies, at the house’s charge.';}
+  function compactGiveBell(site){if(!yieldArtifact('drowned_bell','compact'))return null;const F=fstate(),C=F.compact;
+    const sworn=C.closed||Object.keys(FACTIONS).some(o=>o!=='compact'&&F[o].rank>=2);let k;
+    if(sworn)k='gaveSworn';else if(C.rank<2){C.done=Math.max(C.done,6);C.rank=2;k='gaveNew';}else{giftServices('compact',1);k='gaveRanked';} /* S790 — never past the ninth service's eve */
+    if(typeof addLog==='function')addLog('🔔','Gave the Drowned Bell to the Compact.');
+    const cog=bellCog(site);return COMPACT_BELL[k]+' '+(cog||(sworn?'The cog stands.':'The cog is entered also.'));}
+  function compactBellTopics(site){if(!bellFactor(site))return [];const S=artifactState('drowned_bell');if(!S||S.yielded||!artifactCarried('drowned_bell'))return [];
+    return [{label:'The bell.',response:COMPACT_BELL.ask,follow:[{label:'Give it to the Compact.',quest:true,fn:()=>compactGiveBell(site)||COMPACT_BELL.not},
+      {label:'I’ll keep it.',response:COMPACT_BELL.keep},{label:'Not now.',response:COMPACT_BELL.not}]}];}
+  // S789 — the cloak's claimant, the Fighters' Guild (the page's Beasts row; the approved draft's words): any Fighters' Guild
+  // head asks while the cloak is on you, taken alive (not the corpse's), and its master lives. *I'll take the contract.* posts a
+  // contract on the master as the Guild's beast contract is posted (its pay as a beast's: 100 + 50 a tier + up to 39, drawn on
+  // the contract's id), done when the cavern's master is dead (cloakMasterDead) and turned in with the Guild's own lines.
+  const CLOAK_GUILD={ask:{gatelander:"That's no cloak you bought at a fair. And the master of ${lair} is still breathing, I'd say, or you'd not be standing here in it. ${town} is paying for your quiet road with its own: the carts go round, and a town the carts go round goes thin. The Guild will pay ${fee} for the beast dead. A kindness done with a knife is a kindness yet.",
+      markman:"Took that off a live one, aye? Thought so. Brave. Daft, but brave. ${town}'s bleeding for it. Carts go round, the market's empty. Guild pays ${fee} for the thing dead. Your call.",
+      aurennais:"That cloak, Master, is from no loom I know, and since you are standing here, I take it its former keeper is alive. The arrangement has a third party, if I may: ${town}, whose road is closed while the beast lives, and whose ledger shows it. The Guild will pay ${fee} for the beast's death, on proof. You are under no obligation, naturally. The town is under one regardless.",
+      oldblood:"Brat na Máthar. You walked in and walked out. Few could. The beast lives, and ${town} pays for it. The Guild pays ${fee} for its death. The cloak will be less, after."},
+    take:{gatelander:"Then it's on the board with your name beside it. Go gently in. It knows you.",markman:"Good. Bring back something to show for it.",aurennais:"Entered, Master. The fee on proof, as with any contract.",oldblood:"It will know you. It will not understand."},
+    not:{gatelander:"Then it's your road and theirs both. The board will be here when the weather turns.",markman:"Your call. I said so.",aurennais:"As you wish. The offer is not withdrawn; it is only not accepted.",oldblood:"Then wear it well."}};
+  const CLOAK_CONTRACT='guild_f:cloak';
+  function cloakContractFee(){const tier=Math.floor(gstate().guild_f.done/3);return 100+tier*50+Math.floor(seededRng('task',CLOAK_CONTRACT)()*40);}
+  function cloakGuildTopics(site,gp){const S=artifactState('wolf_cloak'),P=artifactPlaces().wolf_cloak;if(!S||!P||S.yielded||S.half||!artifactCarried('wolf_cloak')||cloakMasterDead())return [];
+    const A=gstate().guild_f.active;if(A&&A.kind==='cloak')return [];const p=CLOAK_GUILD.ask[gp]?gp:'markman',town=(cloakTown()||{}).name||'the town',fee=cloakContractFee();
+    const say=CLOAK_GUILD.ask[p].replace('${lair}',P.name).replace('${town}',town).replace('${fee}',fee);
+    return [{label:'The grey cloak.',response:say,follow:[{label:'I’ll take the contract.',quest:true,fn:()=>cloakContract(site,p,fee)},{label:'Not that one.',response:CLOAK_GUILD.not[p]}]}];}
+  // the named action: the contract goes on the board as the Guild's active task (offer's own refusal while another is owed)
+  function cloakContract(site,p,fee){const st=gstate().guild_f;if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const P=artifactPlaces().wolf_cloak;
+    const t={id:CLOAK_CONTRACT,g:'guild_f',kind:'cloak',x:P.x,z:P.z,gold:fee,desc:`The master of ${P.name}, the beast that slept on the grey cloak. Kill it.`,short:`The master of ${P.name}`};
+    st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF.guild_f.name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return CLOAK_GUILD.take[p];}
+  // S790 — services a claimant enters for a tool (the Crown's, the Compact's, the Church's): counted as served, but never past
+  // the eve of the power's ninth service, which is played (its finale names the third rank and starts the war: warFromFaction).
+  // A rank already at the top takes them as they come. Returns the rank's name if it rose.
+  function giftServices(k,n){const C=fstate()[k];if(C.rank>=3){C.done+=n;return null;}const r0=C.rank;
+    C.done=Math.min(C.done+n,Math.max(C.done,8));C.rank=Math.max(r0,Math.min(2,Math.floor(C.done/3)));
+    if(C.rank>r0){const nm=FACTIONS[k].ranks[C.rank-1];if(typeof addLog==='function')addLog('🏛',`${FACTIONS[k].name.replace(/^the /,'The ')}: named ${nm}.`);return nm;}return null;}
+  // S790 — the Shuttle's claimant, the Church (the page's Weaver row; the approved draft's words): the Prior at the Compact's
+  // seat asks while the Shuttle is on you and not given up. *Give it to the Church.*: three services entered with the Compact
+  // (giftServices), or none if you are sworn elsewhere (another power's rank of 2, or the Compact closed); either way the letter
+  // to the Royal Herald is written (artifacts.shuttle.herald, for Aldwyn's thanks). A priest anywhere points the way.
+  const CHURCH_SHUTTLE={ask:"I will be candid with you, Master, since candour is cheaper than the alternative. The Church enters that object as la Navette, and it has been on our books as lost for longer than the Compact has kept books. It finds the stones no one has read. The Church holds that the Weaver's work is to be kept, not read, and that a thing which finds the unread stones is an invitation, and an invitation is half an act. We would have it under seal in the cathedral, where it invites no one. In return the Compact will enter three services to your name, and I will write to the Royal Herald at Ironhaven, who has asked the Church for the same thing in other words for many years. Or you may keep it, and the Church will pray for you, which you may count as you please.",
+    gave:"Received, and entered: three services to your name, Master, and a letter to the Herald by tonight's post. It will be under seal before the bells. The Church is in your debt, which it records.",
+    gaveSworn:"Received. The services the Compact cannot enter to someone sworn elsewhere; that is a clause, not a sentiment. The letter to the Herald I can write, and will. It will be under seal before the bells.",
+    keep:"Then I will not argue the point; arguing with a free man is a contract with no consideration. I would ask only this: when it leans, ask yourself who is being led, and by whom.",
+    not:"The offer stands, Master. The Church is accustomed to waiting. It has had practice.",
+    priest:{gatelander:"There's a thing in your pack the Prior in Aurenne would cross the sea for, and I'd not say that of many things. Take it to her, or don't. But don't bring it in here.",
+      markman:"That's the Church's business, not mine. The Prior's in Aurenne. Take it there or don't.",
+      aurennais:"That object is the Prior's concern, Master, at ${seat}, and not this house's. I would take it to her. I would not keep it.",
+      oldblood:"Spól an Fhíodóra. Put it back, or give it to the ones who will shut it in. Do not use it."}};
+  function shuttleOffered(){const S=artifactState('shuttle');return !!(S&&!S.yielded&&artifactCarried('shuttle'));}
+  function churchGiveShuttle(site){if(!yieldArtifact('shuttle','church'))return null;const F=fstate(),C=F.compact;
+    const sworn=C.closed||Object.keys(FACTIONS).some(o=>o!=='compact'&&F[o].rank>=2);if(!sworn)giftServices('compact',3);
+    artifactState('shuttle').herald=dayNow();if(typeof addLog==='function')addLog('🧵',`Gave the Shuttle to the Church at ${site.name}.`);
+    return sworn?CHURCH_SHUTTLE.gaveSworn:CHURCH_SHUTTLE.gave;}
+  function churchShuttleTopics(site){if(!site||!shuttleOffered())return [];anchoredPlaces();if(site.id!==FACTIONS.compact.seat)return [];
+    return [{label:'The shuttle.',response:CHURCH_SHUTTLE.ask,follow:[{label:'Give it to the Church.',quest:true,fn:()=>churchGiveShuttle(site)||CHURCH_SHUTTLE.not},
+      {label:'I’ll keep it.',response:CHURCH_SHUTTLE.keep},{label:'Not now.',response:CHURCH_SHUTTLE.not}]}];}
+  // the priests' pointer, in the church's people's words; the Prior's pronoun follows the seat's lord
+  function shuttlePriestTopics(def){if(!shuttleOffered())return [];anchoredPlaces();const seat=FACTIONS.compact.seat&&siteAnywhere(FACTIONS.compact.seat);if(!seat)return [];
+    const p=CHURCH_SHUTTLE.priest[def&&def.people]?def.people:'gatelander';let say=CHURCH_SHUTTLE.priest[p].replace('${seat}',seat.name);if(!lordFor(seat).female)say=say.replace(/ to her\b/g,' to him');
+    return [{label:'The shuttle.',response:say}];}
+  // S792 — the hermit and the altars (the approved draft, *The Makers' Things*, §§2–3): every camp's hermit is Old Blood (§3.3)
+  // and has a folder on the six tools. An entry is there while its tool lies where it was left (its place known: the bell, the
+  // ring and the Shuttle have none until their trials are built, so they are not offered), or answers *Gone* once it is taken by
+  // anyone; the seventh is always there. At a shrine whose god's tool is still untaken, the first prayer there logs the name cut
+  // under the altar (worldState.shrineVerse, the shrine's, the world row).
+  const MAKERS_HERMIT={ask:'Six things. One for each of the six with a shrine. Ask by name.',none:'Nothing is left lying. Everything the makers left is carried now. That has not been true for a long time.',
+    gone:'Gone from where it lay. You know where. Or someone does.',seventh:'The Guest has none. You do not leave a tool for a guest. You leave the door off the latch.',
+    rows:[['gate_blade','The Stone’s?',(P,d)=>`Eochair na Cloiche. You would say a sword. It stands in a stone by ${P.name}, ${d} of here, where anyone may look at it. Few can take it.`],
+      ['drowned_bell','The Sea’s?',(P,d)=>`Clog na Mara. A bell. It hangs in a wreck on a rock the sea owns twice a day, ${d} of here. Go when she has let go of it.`],
+      ['sundial_ring','The Sky’s?',(P,d)=>`Fáinne an Lae. A ring, on the cairn at the top of ${P.name}. It is read at noon, under a clear sky, by whoever climbed fast enough to be there.`],
+      ['wolf_cloak','The Beasts’?',(P,d)=>`Brat na Máthar. The Mother's mantle. The master of ${P.name} sleeps on it. All her children lie down on it, and none of them knows why.`],
+      ['waylamp','The Hearth’s?',()=>'Lóchrann an Teallaigh. A lantern. It goes from inn to inn and the weather does not put it out. A theft does.'],
+      ['shuttle','The Weaver’s?',(P,d)=>`Spól an Fhíodóra. A shuttle. It is in the deepest room of ${P.name}. It shows where the unread stones are. Reading costs. It will cost you.`]]};
+  // S796 — a hermit gives the way only to a tool that can be had where it lies today: the cloak (its cavern's master, whose
+  // corpse gives it up, Session 781) and the lamp (its inn, Session 783). The blade's stone, the bell's wreck, the ring's cairn
+  // and the Shuttle's room wait for their trials and props; each trial's session adds its tool here.
+  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1};
+  // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
+  function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
+  function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];
+    for(const [id,label,say] of MAKERS_HERMIT.rows){if(!makerLies(id)){follow.push({label,response:MAKERS_HERMIT.gone});continue;}
+      const at=P[id];if(!MAKER_REACHABLE[id]||(!at&&id!=='waylamp'))continue;follow.push({label,response:say(at,at?compassWord(at.x-site.x,at.z-site.z):'')});}
+    follow.push({label:'And the seventh?',response:MAKERS_HERMIT.seventh});
+    return [{label:'Did the makers leave anything behind?',folder:true,response:all?MAKERS_HERMIT.none:MAKERS_HERMIT.ask,follow}];}
+  const ALTAR_VERSE={cloch:'Eochair na Cloiche. The Stone’s key.',muir:'Clog na Mara. The Sea’s bell.',speir:'Fáinne an Lae. The ring of the day.',beithigh:'Brat na Máthar. The Mother’s mantle.',teallach:'Lóchrann an Teallaigh. The Hearth’s lantern.',fiodoir:'Spól an Fhíodóra. The Weaver’s shuttle.'};
+  function altarVerse(S){if(!S||!S.god)return false;const id=Object.keys(ARTIFACTS).find(k=>ARTIFACTS[k].god===S.god.key);if(!id||!makerLies(id))return false;
+    const V=worldState.shrineVerse||(worldState.shrineVerse={});if(V[S.site.id])return false;V[S.site.id]=1;
+    if(typeof addLog==='function')addLog('⛩',`Cut under the altar’s lip, older than the rest: ${ALTAR_VERSE[S.god.key]}`);return true;}
+  // S786 — the Noon Ring (the page's Sky row, in the approved draft's words): used from the bag, once a game-day, it turns the
+  // weather in the open world, clear to rain or rain to clear (through the weather's own shift, as devWeather does); any other
+  // sky, or under a roof, it does not turn. The cost: carried in a storm, one lightning flash in three comes down close to you
+  // (the draft's line the first time, a log line after; no harm is done, the page names none). The day it last turned is the
+  // tool's, the world row's (artifacts.sundial_ring.turned).
+  function noonRingCarried(){return artifactCarried('sundial_ring');}
+  function ringSay(t){showMsg(t,'#f0d890');if(typeof addLog==='function')addLog('☀',t);return t;}
+  function noonRingTurn(){const S=artifactState('sundial_ring');if(!S||!noonRingCarried())return null;
+    const outside=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const sky=WX.next!==WX.type?WX.next:WX.type;
+    if(!outside||(sky!=='clear'&&sky!=='rain'))return ringSay('The ring does not turn under this sky.');
+    if(S.turned===dayNow())return ringSay('The ring will not turn again today.');
+    S.turned=dayNow();WX.next=sky==='clear'?'rain':'clear';WX.ahead=null;WX.k=0;WX.timer=Math.max(WX.timer||0,240);
+    return ringSay(sky==='clear'?'You turn the ring a quarter on your finger. By the time you look up, the sky has begun to close.':'You turn the ring back. The rain thins and stops, and the light comes through as if it had only been waiting.');}
+  // a storm's flash (the weather tick's lightning): with the ring on you, one in three is close. Cosmetic, so Math.random.
+  function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
+    if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
+  // S783 — the Waylamp (the page's Hearth row, in the approved draft's words): it hangs over the first inn of a home-island town
+  // (artifactPlaces). The trial: carry it lit into the inns of five other towns with no crime on your account; each innkeeper trims
+  // it (*The lamp.*), and the fifth makes it yours. A crime while it is on you, in the trial or after, puts it out for seven days,
+  // the count back to nothing, and doubles that crime's fine (lampCrime, from the crime record). The state is the tool's, the
+  // world row's: worldState.artifacts.waylamp = {taken, trial, count, towns:{siteId:1}, own, outUntil}.
+  const LAMP_FIVE=5,LAMP_OUT=7*1440;
+  function lampState(){return artifactState('waylamp');}
+  function lampLit(){const S=lampState();return !!S&&!(S.outUntil>(worldState.gameTimeAbsMinutes||0));}
+  function lampFirstInn(siteId){const st=SETTLE.get(siteId);return st&&st.houses?st.houses.find(h=>h.type==='inn')||null:null;}
+  // where it hangs while no one carries it: the town's first inn at the start, or the inn it was last given to (S.hung, lampGive)
+  function lampHome(){const S=lampState();if(S&&S.yielded&&S.hung)return {site:S.hung.site,inn:S.hung.inn};if(S)return null;const P=artifactPlaces().waylamp;if(!P)return null;const h=lampFirstInn(P.site);return {site:P.site,inn:h?h.id:null};}
+  function lampHangsAt(house){if(!house||house.type!=='inn')return false;const H=lampHome();return !!H&&!!H.inn&&house.siteId===H.site&&house.id===H.inn;}
+  function lampTrimAvail(house){const S=lampState();return !!(S&&S.trial&&!S.yielded&&house&&house.siteId&&artifactCarried('waylamp')&&lampLit());}
+  // the named actions: taking it down for the trial, and an innkeeper trimming it
+  function lampTake(house){if(!lampHangsAt(house))return false;if(lampState())delete worldState.artifacts.waylamp; /* taken down again from the inn it was given to: the round begins again */ if(!takeArtifact('waylamp','trial'))return false;const S=lampState();S.trial=true;S.count=0;S.towns={[house.siteId]:1};return true;}
+  function lampTrim(house){if(!lampTrimAvail(house))return null;const S=lampState();if(S.towns[house.siteId])return {again:true};
+    S.towns[house.siteId]=1;S.count++;if(S.count<LAMP_FIVE)return {n:S.count,left:LAMP_FIVE-S.count};
+    S.trial=false;S.own=true;if(typeof addLog==='function')addLog('🏮','The Waylamp is yours: five towns’ inns, and nothing on your account.');return {fifth:true};}
+  // S784 — the lamp held as your own: lit and on you, any inn's room costs nothing (innTopics); the coach has no fare to waive.
+  // The claim: any inn's keeper takes it to hang over that door (lampGive, through yieldArtifact), the town's favour +2, and the
+  // round can begin again from that inn.
+  function lampOwn(){const S=lampState();return !!(S&&S.own&&!S.yielded&&artifactCarried('waylamp'));}
+  function lampFree(){return lampOwn()&&lampLit();}
+  function lampGive(house){if(!lampOwn()||!house||!house.siteId||house.coachInn)return false;if(!yieldArtifact('waylamp','inn'))return false;const S=lampState();
+    S.hung={inn:house.id,site:house.siteId};S.own=false;delete S.outUntil;addFavor(house.siteId,2);const t=siteAnywhere(house.siteId);
+    if(typeof addLog==='function')addLog('🏮',`Gave the Waylamp to ${house.name||'the inn'}, at ${t?t.name:'the town'}.`);return true;}
+  // called by the crime record where a fine is laid (seenCrime, strikeNpc, guardKilled) with the record and this crime's fine
+  function lampCrime(c,fee){const S=lampState();if(!S||S.yielded||!c||!artifactCarried('waylamp')||!lampLit())return false;
+    c.bounty+=Math.max(0,Math.round(fee||0));S.outUntil=(worldState.gameTimeAbsMinutes||0)+LAMP_OUT;if(S.trial){S.count=0;S.towns={};}
+    if(typeof addLog==='function')addLog('🏮','The Waylamp goes out in your hand. The bounty on you is doubled.');artifactSay('The Waylamp goes out in your hand. The bounty on you is doubled.');return true;}
+  // once a second from the loop: lit again after seven days; the first sight of it over its inn's door
+  let _wlampT=0;function tickWaylamp(force){const t=performance.now();if(!force&&t-_wlampT<1000)return;_wlampT=t;const S=lampState(),now=worldState.gameTimeAbsMinutes||0;
+    if(S&&S.outUntil&&now>=S.outUntil){delete S.outUntil;if(typeof addLog==='function')addLog('🏮','The Waylamp is lit again. Nobody lit it.');}
+    if(!S&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const st=worldState.stats||(worldState.stats={});if(st.lampSeen)return;const H=lampHome();const h=H&&lampFirstInn(H.site);
+      if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.','#e8c890');}}}
+  // S781 — Michael's 2A on #263: the cloak from a corpse. Its master is the lair cavern's beast, the one that sleeps on it (the
+  // draft, *The Makers' Things*: the cavern's master, worldState.masters[seed], not the beasts at the mouth, which Session 777's
+  // drain read). Killed before the cloak was taken, the cloak lies in the hoard; killed while the cloak is yours, it goes thin.
+  // Either way it keeps the peace with wolves only (`half`), and the town pays nothing, because the beast is dead.
+  function cloakSeed(){const P=artifactPlaces().wolf_cloak;if(!P)return null;const t=siteAnywhere(P.site);return t?lairSeed(t):null;}
+  function cloakMasterDead(){const sd=cloakSeed();if(sd==null)return false;const r=(worldState.masters||{})[sd];return r===true||!!(r&&r.dead);}
+  function halfCloak(it){if(it){it.half=true;it.desc='Wolves leave you alone unless you strike first.';}return it;}
+  // the named action, called by slayMaster at the blow that kills a cavern's master (once: a master already dead does not call it)
+  function cloakMasterSlain(portal){if(!portal||portal.seed==null||portal.seed!==cloakSeed())return false;const S=artifactState('wolf_cloak');
+    if(!S){const it=halfCloak(artifactItem('wolf_cloak'));const r=(worldState.masters||{})[portal.seed];
+      if(r&&r.hoard&&Array.isArray(r.hoard.items))r.hoard.items.push(it);else if(typeof bagAdd==='function')bagAdd(it);
+      (worldState.artifacts||(worldState.artifacts={})).wolf_cloak={taken:true,day:dayNow(),how:'corpse',half:true};const tr=worldState.artifactTries;if(tr)delete tr.wolf_cloak;
+      artifactSay('Under it, the grey cloak, soaked through. Something has gone out of it.');return true;}
+    if(S.yielded||S.half)return false;S.half=true;
+    for(const L of [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)])for(const it of L)if(it&&it.artifact==='wolf_cloak')halfCloak(it);
+    if(EQ.back&&EQ.back.artifact==='wolf_cloak')artifactSay('The cloak is lighter on your shoulders. Something has gone out of it.');return true;}
+  function artifactSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's *slain!* or the witness's line, which would cover it (the words only: the outcome is already written) */
+  // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
+  function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
+    return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}
   // faction quests ride the town-quest generator, flavoured and counted
   function factionTopics(site){
     const nk=nationKeyOf(...cellOf(site.x,site.z));const fk=factionOf(nk);const F=FACTIONS[fk];if(F.seat!==site.id)return [];
@@ -1391,7 +1722,7 @@ const giver=`${lord.title} ${lord.name}`;
   let _rwT=0;function tickRoadsWalked(dt){_rwT-=dt;if(_rwT>0)return;_rwT=1;const ri=roadInfo(px,pz);if(ri&&ri.d<ROAD_HALF+2&&ri.seg&&ri.seg.road){const d=ri.seg.road.def;(worldState.roadsWalked||(worldState.roadsWalked={}))[d.a+'|'+d.b]=1;}}
   function noteFastTravel(id){const t=siteAnywhere(id);if(!t||!t.pad)return;const walked=worldState.roadsWalked||{};const rds=ROAD_DEFS.filter(x=>x.a===id||x.b===id);if(rds.length&&!rds.some(x=>walked[x.a+'|'+x.b]||walked[x.b+'|'+x.a])){const v=vstate();if(!v.shortRoad)v.shortRoad=t.name;}}
   // which discovery is due
-  function varekDue(){const v=vstate();const M=worldState.masteries||0;
+  function varekDue(){const v=vstate();const M=(worldState.masteries||0)+(shuttleCarried()?1:0); /* S782 — the Shuttle: one Mastery fewer */
     if(v.chapel&&!v.done.chapel)return 'chapel';
     if(M>=1&&v.deaths>=1&&!v.done.returns)return 'returns';
     if(M>=1&&v.gapH>=6&&!v.done.breath)return 'breath';

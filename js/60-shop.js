@@ -882,7 +882,8 @@ function sellItem(i,sp){
   if(it.type==='cargo'){showMsg(`A harbour's factor buys trade goods, not a shop.`,'#c8a84a');return;} // S390
   if(!(sp>0)){showMsg(`${it.name} is not worth a coin at the counter.`,'#c8a84a');return;} // S366 — a single arrow
   const finalSp=Math.round(sp*_buffMult('goldFind',1));
-  gold+=finalSp;(worldState.stats||(worldState.stats={})).sold=((worldState.stats||{}).sold||0)+1;(worldState.stats||{}).goldIn=((worldState.stats||{}).goldIn||0)+finalSp;
+  const tithe=typeof bladeTithe==='function'?bladeTithe(finalSp):0; /* S787 — the Crown's twentieth, while the Gate-Blade is on you under licence */
+  gold+=finalSp-tithe;(worldState.stats||(worldState.stats={})).sold=((worldState.stats||{}).sold||0)+1;(worldState.stats||{}).goldIn=((worldState.stats||{}).goldIn||0)+finalSp;
   // v68 — buy-back: offer one unit of the sold item back to this merchant at the
   // price the player received. Stamp a single-unit copy (so a one-arrow sell
   // doesn't drop a 12-bundle into buy-back).
@@ -891,7 +892,7 @@ function sellItem(i,sp){
   lvAct.transactions++;
   sndGoldJingle();
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
-  showMsg(`Sold ${it.name} for ${finalSp}🪙`,'#44ee44');
+  showMsg(`Sold ${it.name} for ${finalSp}🪙${tithe?` (the Crown's twentieth, ${tithe})`:''}`,'#44ee44');
   renderShop();
 }
 
