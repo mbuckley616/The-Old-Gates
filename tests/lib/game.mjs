@@ -51,6 +51,11 @@ export async function boot(opts = {}) {
   const page = await ctx.newPage();
   // a reload of the 2.7 MB page on a busy CI runner can take longer than Playwright's 30 s default (Session 274: reader, placesave)
   page.setDefaultNavigationTimeout(180000);
+  // Session 808: a screenshot waits for the next frame the page paints, and on a CI runner one frame of the town can take over
+  // 30 s, Playwright's default (pauseleaf crashed so four times in 11–13 Oct; Session 765 gave two suites 120 s by hand).
+  // Every suite's pictures get 120 s unless they ask for their own.
+  const _shot = page.screenshot.bind(page);
+  page.screenshot = (o = {}) => _shot({ timeout: 120000, ...o });
   const errs = [];
   page.on('pageerror', e => errs.push(e.message.slice(0, 200)));
   // S646: indoors, E reaches a thing only with the crosshair on it. A suite that puts you beside one calls lookAtPt(x, y, z) in the

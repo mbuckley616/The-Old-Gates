@@ -22,8 +22,8 @@ check('an occupied gate keeps the warren\'s name (it reads the stored word)', r.
 check('the authored goblin entries (The Last Post, Hollow Gate, the old woods\' warrens) are occupied too', r.authored.length >= 4 && r.authored.every(a => a.occ && a.theme !== 'goblin'), r.authored);
 
 // inside: an occupied gate and its school's own, side by side
-const inside = async (entry) => { await page.evaluate((e) => { level = 6; const p = makePortalDef(e); p.zone = 'world'; p.tutorial = false; goToDungeon(p); }, entry);
-  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && scene === dScene)); k++) await page.waitForTimeout(500);
+const inside = async (entry) => { await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; }); await page.evaluate((e) => { level = 6; const p = makePortalDef(e); p.zone = 'world'; p.tutorial = false; goToDungeon(p); }, entry);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
   await page.waitForTimeout(1200);
   return page.evaluate(() => ({ theme: currentPortal.theme, occ: currentPortal.occupied, fog: dScene.fog.color.getHex(), foes: [...new Set(ENEMIES.map(e => e.baseType || e.name))] })); };
 const pick = await page.evaluate(() => { for (let j = 0; j < WORLD.GRID; j++) for (let i = 0; i < WORLD.GRID; i++) for (const d of (WORLD.getCell(i, j).doors || [])) if (d.theme === 'goblin' && d.seed != null && !d.lairDoor) return { seed: d.seed, theme: d.theme, size: 'medium', diff: 'normal', x: 0, z: 0 }; return null; });

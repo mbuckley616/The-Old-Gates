@@ -53,7 +53,7 @@ function applyMeleeDamage(e, rawDmg){
   const backstabMult = applyBackstab(e);
   const luckMult = _fortuneCrit(e);
   const dmg = challengeDealt(Math.max(1, Math.round(rawDmg * dormantMult * physResistMult * staggerMult * backstabMult * luckMult) - effDef)); /* S684 — the challenge */
-  return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0 || luckMult > 1.0, lucky: luckMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin};
+  return {dmg, resistMult: physResistMult, wType, crit: staggerMult > 1.0 || luckMult > 1.0, lucky: luckMult > 1.0, backstab: backstabMult > 1.0, riposte: _rip, finisher: _fin, spent: !!_exhaustedStrike};
 }
 
 // Execute a dungeon enemy's melee strike AFTER its telegraph has completed. Re-checks range so
@@ -337,8 +337,9 @@ function dmgNumKind(info,e,o){
   if(info.backstab)return {kind:'back',word:'from behind'};
   if(o.guarded)return {kind:'res',word:'guarded'};
   const r=typeof info.resistMult==='number'?info.resistMult:1;
-  if(r>=1.45)return {kind:'weak',word:'very weak'};
-  if(r>=1.25)return {kind:'weak',word:'weak'};
+  /* S799 — a blow swung on too little stamina lands at 45%: the foe's weakness word under its small number read as the blow's strength (the critic's s597) */
+  if(r>=1.45&&!info.spent)return {kind:'weak',word:'very weak'};
+  if(r>=1.25&&!info.spent)return {kind:'weak',word:'weak'};
   if(r<=.75)return {kind:'res',word:'resisted'};
   if(info.defPierced&&e&&(e.def||0)>0)return {kind:'',word:'armour pierced'};
   if(o.power)return {kind:'',word:'power'};

@@ -3311,7 +3311,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
     showZoneName('\u2694 '+portal.name+' ['+_ds.label+']');
   }
   document.getElementById('fbtn').style.display='block';
-  buildDungeon(portal);scene=dScene;try{lairFinish(portal);}catch(e){} // v80 — the lair's master and its hoard
+  buildDungeon(portal);scene=dScene;try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){} /* S797 — the Shuttle's room */ // v80 — the lair's master and its hoard
   if(window._playerTorchLight){try{[owScene,forestScene,ironhavenScene].forEach(s=>{if(s)s.remove(window._playerTorchLight);});if(typeof WORLD!=='undefined'&&WORLD.scene)WORLD.scene.remove(window._playerTorchLight);dScene.add(window._playerTorchLight);}catch(e){}} // v80 — the torch comes with you
   startMusic('dungeon',portal.theme);
   if(portal.tutorial){

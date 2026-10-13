@@ -813,6 +813,9 @@ function loop(now){
   if(typeof WORLD!=='undefined')WORLD.tickRealClock(); // v80 S242 — the Reader's clock runs in every zone, or an hour underground reads as an hour away
   if(typeof tickShuttle==='function')tickShuttle(); /* S782 — the Shuttle's Cold, in every zone (once a second) */
   if(typeof tickWaylamp==='function')tickWaylamp(); /* S783 — the Waylamp lit again, and its first sight */
+  if(typeof tickRingCairn==='function')tickRingCairn(); /* S800 — the Noon Ring's cairn, and its first sight */
+  if(typeof tickBladeStone==='function')tickBladeStone(); /* S802 — the Gate-Blade's stone, and its first sight */
+  if(typeof tickBellWreck==='function')tickBellWreck(); /* S801 — the Drowned Bell's wreck, set by the tide, and its first sight */
   if(lid==='overworld'){
     // v80 — streamed world: chunk streaming + atmosphere. Runs before the zone chain.
     if(activeZoneId==='world'&&typeof WORLD!=='undefined')WORLD.tick(dt,now);
@@ -989,6 +992,9 @@ function loop(now){
     // here. Removed v61f9 — see interact() comment block above for the
     // rationale. The fort_door portal handles its own E-prompt.
     else if(nearBoard){iprOW.textContent=`Press 'E' to read ${nearBoard.title}`;iprOW.style.opacity='1';iprOW.style.display='block';}
+    else if(typeof bladeStonePrompt==='function'&&bladeStonePrompt()){iprOW.textContent=bladeStonePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S802 — the Gate-Blade's stone */
+    else if(typeof bellWreckPrompt==='function'&&bellWreckPrompt()){iprOW.textContent=bellWreckPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S801 — the Drowned Bell's wreck */
+    else if(typeof ringCairnPrompt==='function'&&ringCairnPrompt()){iprOW.textContent=ringCairnPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S800 — the Noon Ring's cairn */
     else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){iprOW.textContent=WORLD.shipPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} // v80 C
     else if(nearNPC){const _nd=nearNPC.def||{},_nm=(activeZoneId==='world'&&_nd.name)?`${_nd.name}${_nd.role&&_nd.role!=='Villager'?' — '+_nd.role:''}`:null;iprOW.textContent=_nm?`${_nm} — Press 'E' to talk`:"Press 'E' to talk";iprOW.style.opacity='1';iprOW.style.display='block';}
     else{iprOW.style.opacity='0';setTimeout(()=>{if(iprOW.style.opacity==='0')iprOW.style.display='none';},260);}
@@ -1010,7 +1016,7 @@ function loop(now){
       if(intNPCMesh.children[3])intNPCMesh.children[3].rotation.x= armSwing;
       if(intNPCMesh.children[4])intNPCMesh.children[4].rotation.x=-armSwing;
     }
-    const nearKeeper=intNPCMesh && Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2 && Math.abs(jumpY)<1.2 && aimAt({g:intNPCMesh},3.6); // v80 — aimed
+    const nearKeeper=keeperAimed(); // v80 — aimed; S798 — one rule with E's (50-travel.js)
     // v61d4 — added safehouse:8 to room-depth lookup so the exit threshold
     // resolves correctly indoors. Same fix applies in the interact handler.
     const _rd=(currentHouse&&(currentHouse._roomD||{weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22,safehouse:8}[currentHouse.type||'misc']))||9,_rw=(currentHouse&&currentHouse._roomW)||10;
@@ -1466,6 +1472,7 @@ function loop(now){
     });
     // Drive the ambient hum based on closest-sigil proximity
     if(typeof updateSigilHum==='function')updateSigilHum(maxSigilProx);
+    if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
     const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
     // interact prompt
     const nearCorpsePrompt=CORPSES.find(c=>c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
@@ -1489,6 +1496,7 @@ function loop(now){
       const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
     }
+    else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(nearSigilPrompt){
       const sp2=SPELLS.find(s=>s.id===nearSigilPrompt.spellId);
       iprEl.textContent=`Press 'E' — Touch the sigil of ${sp2?sp2.nameIr:'?'}`;

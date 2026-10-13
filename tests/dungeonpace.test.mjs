@@ -20,8 +20,9 @@ check(`the dungeon's table on 85–110% of your walk: ${table.map(r => `${r.k} $
 
 const rows = [], sights = [], walks = [];
 for (const [seed, theme, interior] of [[4021, 'deep', 'cave'], [777, 'undead', 'cave']]) {
+  await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; }); /* S810 — from one gate straight into the next, wait for the new gate's own scene (as enterDungeon since S765) */
   await page.evaluate(({ seed, theme, interior }) => { level = 4; const p = Object.assign({}, PORTALS[0], { theme, seed, size: 'medium', interior, zone: 'world', tutorial: false, diff: 'hard' }); goToDungeon(p); }, { seed, theme, interior });
-  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
   await page.waitForTimeout(1500);
   const r = await page.evaluate(() => {
     // the longest straight open run on floor 1, three cells wide, along x
