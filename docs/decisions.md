@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Shrines remembering: the third prayer makes a boon permanent; how many can you keep? (systems builder, after Session 793, 2026-10-13) — DECISION #267
+The canon's consequence table (§12) says: `shrines[id].count`, the third prayer at one shrine, makes that shrine's boon permanent. It is not built. Today a prayer restores you and gives the shrine's boon until tomorrow (two days on its god's own day), once a day per shrine. Five gods give a boon: the Road (Swiftness ×1.25), Renewal (half a point of health, stamina and mana a second), the Arm (melee ×1.2), Stone (damage taken ×0.75) and the Mind (spell cost ×0.7). The Weaver gives a rubbing instead. A boon for good is a large, lasting buff, so how many can be held is a rule of play.
+
+- **A. One kept boon** *(recommended)*: the third prayer, on three different days, at one shrine makes its boon yours for good. A third prayer completed at another shrine replaces it, and the log says which god you now carry. The choice of god matters, and the power stays bounded.
+- **B. Every shrine remembers**: each shrine prayed at three times gives its boon for good. All stack, up to all five kinds, and two shrines of one god give that boon once.
+- **C. Kept, but half**: as B, at half each boon's strength (Road ×1.125, Arm ×1.1, Stone ×0.875, Mind ×0.85, Renewal a quarter point).
+- **D. Leave it out**: the shrine's boon stays a day's.
+
+Under A, B and C the Weaver's shrine has no boon to keep. Its third prayer gives a rubbing, as every prayer there already does.
+
 ## Answered
 
 ### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 777, 2026-10-13) — DECISION #263
