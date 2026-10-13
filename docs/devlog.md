@@ -16493,3 +16493,46 @@ The next creature-kit item in `character-builder.md` (B5): "the kit on the build
 - **The lighting** is the human builder's studio light, dark-backed: the dragon and the dark-furred plans read dim against it. The bestiary's daylight page is still the place to judge a creature's colour.
 - **The format's open question:** `v: 1` for both kinds, and no version history yet. A later change to a plan's parts changes the body a saved creature genome builds, as for a person. Whether a genome should name its kit version is the game loader's question (B6 and card F4), not settled here.
 - No decision raised: this is tooling over decisions already made (Michael's "yes" to the creature kit and to the builder, 12 Oct).
+
+## v80 — Session 816 — Aurenne's houses as pieces in the new kit (card F6, prototype only)
+The routine's carry-over order ends with "the building pieces for card F6 in the new kit, lifting the concept artist's approved prototypes". The one approved building prototype is Aurenne's houses. The concept artist drew them on the old shape kit (`docs/prototypes/aurenne/proposal.js`, three.js r128), and Michael chose B on DECISION #259 (12 Oct): "the mix, two in three flat, one in three Roman". This session lifts them into the new kit (`docs/prototypes/levelup/`, three.js 0.170), as the first entry in a pieces module for F6.
+
+**`pieces.js`** (new): `aurenneHouse(o, r)` builds a house from its options and a seeded stream.
+- **Kept from the proposal:**
+  - walls extruded from an outline with real arched (or pointed) openings and a dark room behind each;
+  - the door: five cedar boards in its colour under a half-round head, iron studs, a stone step, and the glazed tile frame round it;
+  - deep small windows with stone sills and iron bars, or a cedar lattice screen on brackets upstairs;
+  - for a flat house: the slab, the parapet with a rounded top, rainwater spouts, pots, the dome (a drum, blue glaze or limewash, a gilt finial), the pergola with its striped awning, and the outside stair;
+  - for a Roman house: the cornice, the 22° hipped roof, hip and ridge tiles, rafter ends under the eaves, and the arcade of round arches on lathed columns with a pantile lean-to;
+  - a cypress in a pot, or a bougainvillea.
+- **What changes is the surface.** The kit's plaster, ashlar and wood textures are joined by four new relief textures: pantile (half-round tiles laid hollow and round, each course lapping the one below), zellige (blue and white squares with saffron stars), a dome's blue glaze, and the awning's canvas. A Roman roof is four planes, not the proposal's hundreds of tile cylinders, and the tile frame is three strips, not fifty boxes.
+- **One mesh per material:** every piece is placed, given UVs from where it lies (`worldUV`), and merged by material.
+- **The mix:** `aurenneLot(street, i)` gives a lot its options. In every run of three lots exactly one is Roman, and which one comes from the street's seed, so a street of any length keeps the two-in-three. The rest (size, storeys, dome, stair, pergola, lattice, colours) comes from a stream keyed by the street and the lot (the co-op rule).
+- **The bougainvillea is redrawn:** the proposal's nine balls read as beach balls at eye height. It is now a woody stem with 120 small leaves and blooms, thinning toward its top and kept within the wall.
+
+**`aurenne.html`**: twelve lots down a limestone lane at eye height under a high southern sun, with four Aurennais townsfolk (Session 806's people) for scale when the pack is there. `?view=houses` stands each kind front-on beside the 1.8 m post.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/aurenne.check.mjs`: 11 checks, all pass, no page errors.
+- **The mix:** on 40 streets of 30 lots, every run of three has exactly one Roman house (400 of 1,200).
+- **Determinism:** 300 houses each built twice from their street and index are the same, byte for byte.
+- **Cost by kind** (300 houses), all within the 12,000-triangle and 16-mesh budget:
+
+| Kind | Houses | Triangles (mean) | Meshes |
+|---|---|---|---|
+| Flat, one storey | 97 | 2,008 to 6,374 (3,729) | 10 to 14 |
+| Flat, two storeys | 109 | 3,104 to 8,454 (5,453) | 10 to 14 |
+| Flat with a dome | 43 | 3,590 to 8,454 (6,080) | 11 to 14 |
+| Roman | 38 | 1,770 to 3,674 (2,473) | 12 |
+| Roman with an arcade | 56 | 3,664 to 5,696 (4,680) | 12 |
+
+- **On the lot:** no house reaches below the ground, and every house keeps to its lot. Three things stand outside it: a flat house's outside stair, a Roman house's arcade, and its eaves (0.45 m).
+- **Heights:** one storey 4.5 to 6.9 m and two storeys 7.0 to 9.6 m, to the top of anything on the house. The top it reports is that top.
+- **On the way:** the first lot check found the bougainvillea's spray 0.6 m past the wall, a Roman cypress 1.07 m out from it, and the reported roof top missing the parapet's bushes. All three are fixed above.
+- **Pictures:** `aurenne-street.jpg` (the lane at eye height, kinds FFR RFF FRF FFR) and `aurenne-houses.jpg` (the six kinds and the post).
+### Needs eyes
+- **The new kit's surfaces** against the proposal's flat colours, and against OG-061 and OG-043:
+  - the plaster reads clean and bright, but the walls are flat sheets with no weathering at the foot or under the spouts;
+  - the limestone paving is the kit's dark flag lifted past 1 and still reads grey; a pale limestone of its own is owed.
+- **The bougainvillea and the bushes** are faceted icosahedra: fine at the lane's distance, crude at a doorway. The slice's leaf-card trees (`treeKit`) are the better route, owed.
+- **Not built:** Aurenne's temples and civic buildings, the courtyard house OG-061 shows, and the other two islands' houses as pieces (the Gatelands house is in `street.js`, not yet in `pieces.js`). All are noted in backlog K.
+- No decision raised: the design is Michael's B on #259, and this is that design in the approved new kit.
