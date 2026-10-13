@@ -1175,11 +1175,15 @@ const giver=`${lord.title} ${lord.name}`;
       ['wolf_cloak','The Beasts’?',(P,d)=>`Brat na Máthar. The Mother's mantle. The master of ${P.name} sleeps on it. All her children lie down on it, and none of them knows why.`],
       ['waylamp','The Hearth’s?',()=>'Lóchrann an Teallaigh. A lantern. It goes from inn to inn and the weather does not put it out. A theft does.'],
       ['shuttle','The Weaver’s?',(P,d)=>`Spól an Fhíodóra. A shuttle. It is in the deepest room of ${P.name}. It shows where the unread stones are. Reading costs. It will cost you.`]]};
+  // S796 — a hermit gives the way only to a tool that can be had where it lies today: the cloak (its cavern's master, whose
+  // corpse gives it up, Session 781) and the lamp (its inn, Session 783). The blade's stone, the bell's wreck, the ring's cairn
+  // and the Shuttle's room wait for their trials and props; each trial's session adds its tool here.
+  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1};
   // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
   function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
   function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];
     for(const [id,label,say] of MAKERS_HERMIT.rows){if(!makerLies(id)){follow.push({label,response:MAKERS_HERMIT.gone});continue;}
-      const at=P[id];if(!at&&id!=='waylamp')continue;follow.push({label,response:say(at,at?compassWord(at.x-site.x,at.z-site.z):'')});}
+      const at=P[id];if(!MAKER_REACHABLE[id]||(!at&&id!=='waylamp'))continue;follow.push({label,response:say(at,at?compassWord(at.x-site.x,at.z-site.z):'')});}
     follow.push({label:'And the seventh?',response:MAKERS_HERMIT.seventh});
     return [{label:'Did the makers leave anything behind?',folder:true,response:all?MAKERS_HERMIT.none:MAKERS_HERMIT.ask,follow}];}
   const ALTAR_VERSE={cloch:'Eochair na Cloiche. The Stone’s key.',muir:'Clog na Mara. The Sea’s bell.',speir:'Fáinne an Lae. The ring of the day.',beithigh:'Brat na Máthar. The Mother’s mantle.',teallach:'Lóchrann an Teallaigh. The Hearth’s lantern.',fiodoir:'Spól an Fhíodóra. The Weaver’s shuttle.'};
