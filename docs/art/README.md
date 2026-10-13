@@ -22,4 +22,6 @@ Intake: all 96 images, OG-001 to OG-096 (Session 755): batch 1 by hand, the rest
 
 Review: Michael marked all 96 on the review page (12 Oct 2026, Session 767): 62 KEEP, 32 NO, 2 MAYBE; he then dropped OG-015 and kept OG-094 with Tine redone as fire, so 63 KEEP and 33 NO. His marks are in `review_status`, and his note on OG-025 is in its `notes`. The kept images feed backlog L.
 
-New images: give them the next ids (OG-097 on), add rows and thumbnails the same way, and add them to `review.html`'s data before republishing it to the same artifact. The marks already made stay in its database.
+Second round (Session 771): Michael added *Concept Art Session 2* to the Drive folder, 16 sheets with his own ids OG-U2-001 to 016, in `01_Artwork/` under K_Equipment, L_Landmarks_Maps and M_Culture. They are catalogued as OG-097 to OG-112, in his order, with his id at the head of each row's notes, and a new folder, `08_Culture_Daily_Life`, for the festival, food and music sheets. Recommendations: 14 KEEP and 2 MAYBE (the Gatelands and Mark maps, whose names fight the canon). They wait on his marks on the review page. Two things to know: OG-U2-001 is filed as *Jewelry and Relics* but the sheet is H2, *Rare Alchemical Specimens*, so the jewelry sheet may be missing; and OG-U2-009, *The Six Gates*, raises a question for Michael (decisions.md).
+
+New images: give them the next ids (OG-113 on), add rows and thumbnails the same way, and add them to `review.html`'s data before republishing it to the same artifact. The marks already made stay in its database.

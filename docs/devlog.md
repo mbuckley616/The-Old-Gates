@@ -15931,6 +15931,115 @@ Nothing in the game changed; no build tag. A script checked that the catalogue's
 ### Needs eyes
 Nothing owed from the review: Michael settled his last two MAYBEs in chat. He dropped OG-015 (resources by island; OG-035 covers it). He kept OG-094 with Tine redone as fire, which is now backlog L7's item on magical implements. Both are marked in the catalogue and on the review page's database. The quest writer's names for the new Aurenne register (backlog J) come before any of L2's Aurennais are given lines. L3's common animal set is the biggest single gap, and the place to start building.
 
+## v80 — Session 768 — A new look, shown: a from-scratch render slice of the Gatelands (prototype only)
+Michael asked what the kept concept art becomes, and how the game stops looking like Minecraft and starts looking like a modern game. First, a survey of how the game draws itself: 774 boxes, 273 cylinders and 122 cones among its shapes, 522 Lambert materials against 13 standard ones, no tone mapping, no post-processing, three.js r128 from 2021, and flat fill light (ambient .55 plus hemisphere .55 against a sun of 1.15).
+
+The first attempt kept the game and changed only how it draws (`docs/prototypes/render/`, `newlook.js`). It added linear colour, ACES, ambient occlusion from depth, bloom, haze, a grade and a Kuwahara filter, plus auto-smoothed normals that also blend the per-corner colour jitter `mergeParts` gives every crown and rock. The jitter, not the shading, is what makes the crowns read as facets. The smoothing helped most, but the result was still recognisably the same game. Michael stopped it: he wants a complete reimagining.
+
+The second attempt is new code, `docs/prototypes/levelup/` (`main.js`, about 410 lines, three.js 0.170 vendored from npm because the CDN is blocked here). It renders one view aimed at key frame 2 (OG-077):
+- the sky: a gradient dome and 2,051 cloud puffs in lit heaps;
+- the land: a terrain shaded in its fragment shader (Voronoi fields with hedgerows, woods from afar, rock, sand, the path), on a grid dense at the camera;
+- the near ground: 160,000 instanced grass blades and 5,200 wildflowers on one wind;
+- the trees: 881 of them, made of leaf cards with normals turned out from the crown;
+- the village: 80 cottages of plaster, thatch, slate, shutters and flower boxes, a church and a three-arched bridge;
+- the Weaver ruin on its hill, a lighthouse, sails, and mountains with their own haze;
+- the image: physically based light, a 4096 shadow map, bloom, a warm-and-cool grade and ACES.
+
+Two views: the hero vista (`hero.jpg`) and the riverbank at eye level (`village.jpg`, `?view=village`). It is not wired to the game.
+
+Also this session: the five routine prompts that should read backlog L were written out with their additions (Session 767's ask). Agents cannot edit routines created through the API, so they went to Michael as a paste page. The look builder's "section H only" lines were adjusted so they do not contradict the new paragraph. A decision is raised on whether to build the new foundation.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/shoot.mjs` renders each view in about 15 s at 1920x1080 in software GL, with no page errors. The counts in `window.__stats`: grass 160,000, flowers 5,200, trees 881, houses 80, puffs 2,051. The comparison page puts the slice beside OG-077 and today's paintover frames.
+### Needs eyes
+Michael's call on the decision. The slice is one tuned view: other hours, weather, the Mark and Aurenne, interiors and the gates are untested in it. Close-up buildings and people are still primitive; the plan says modelled assets carry those. Frame cost on a real machine with real streaming is unmeasured: the slice draws everything at once, with no level of detail.
+
+## v80 — Session 769 — More slices: a village lane, an old gate at dusk, the hall inside, and a live page (prototype only)
+Michael chose B on Session 768's decision (more slices first, then the new foundation once he approves them). Three new slices share a kit, `docs/prototypes/levelup/common.js`, which provides:
+- the renderer and post-processing;
+- seeded noise;
+- textures painted on canvases from a height field, each with a normal map made from the same height (plaster, cobbles, coursed stone, lichened stone, thatch, slate, planks, beams, flagstones);
+- the sky, cumulus and leaf-card trees.
+
+The slices:
+- **`street.html`, the village lane at eye level.** Eleven cottages built as pieces: an extruded wall profile with real holes for recessed windows and doors, a stone footing, timber framing on some, glass, frames, sills, shutters, flower boxes, plank doors, stone lintels and steps, lanterns, chimneys with pots, and a thick roof slab bevelled round at the eaves (thatch) or thin (slate). Also a cobbled lane, verges of grass, barrels, crates, sacks, a cart, a market stall with a striped awning, an inn sign, ivy, and the ruin on the hill beyond.
+- **`gate.html?view=gate`, the old gate at dusk (OG-037, V1).** Four rings of lichened stone stepping into a hillside, the Weaver script lit amber on their faces, a slit at the heart with light behind it, fallen stones, a camp with two tents, a fire that casts shadows, a Crown banner, and fireflies.
+- **`gate.html?view=hall`, inside the gate (the dark look).** Ring arches with burning script, wet flagstones (roughness drops in a noise mask), a brazier, rubble and bones, a carried torch, and a shaft of cold light from a cleft, with dust in it.
+
+`bundle.py` inlines each scene into a self-contained page that loads three.js from jsDelivr. The four pages are published as a live claude.ai page with a frame counter, so Michael can measure them on his own machine.
+
+A correction within the session: the first renders put characters from a free CC0 kit (KayKit) in the lane, the camp and the hall. Michael: "totally the wrong direction. They look like little children's toys." They are gone from every slice, the files are deleted, and the loader is now a generic one for rigged glTF. How a realistic cast gets made is a new pending decision.
+### Verified (headless Chromium)
+Each slice renders at 1920x1080 in 5 to 12 s with no page errors. The lane has 11 houses, 243 trees and 130,000 grass blades; the gate has 221 trees and 110,000 blades. The bundled pages also load and run with no errors when served locally, with three.js pointed at the vendored copy, since jsDelivr is blocked in the test box. Frame rates there are 0 to 2 fps on software GL and mean nothing.
+### Needs eyes
+Michael's frame rates on his machine, scene by scene. Whether the live page's scenes run inside the claude.ai frame: the CDN is on its allowlist, but this was not tested from here. His approval of the slices, which starts A. His call on the cast.
+
+## v80 — Session 770 — People from a genome: MakeHuman's body, our wardrobe (prototype only)
+Michael asked why the game's own genome system could not simply be raised instead of buying a hundred one-off meshes. A Meshy test confirmed the doubt: the download needs a paid plan, and the auto-rig fused the cloak to the arms. The answer built here keeps the genome and changes what it drives. The material is MakeHuman's base body, released CC0 by its makers in 2020, from their GitHub:
+- one sculpted mesh of 19,158 vertices;
+- the morph targets that reshape it, for gender, age, ethnicity, muscle, weight, height, proportions and 28 face and body sliders;
+- a 163-bone skeleton with skin weights for every vertex;
+- two fitting shells ("tights" and "skirt") that the same targets reshape.
+
+`mh_pack.py` packs what the slice uses into one 7 MB binary (generated, not committed). `people.js` does the rest:
+- **The genome:** a handful of numbers, mixed into target weights as MakeHuman mixes them.
+- **The skeleton:** built from joints read off the morphed body, then posed: arms down from the A-pose, elbows and fingers bent, the jaw closed, the head turned.
+- **The wardrobe:** cut from the fitting shells and pushed out in layers (trousers, boots, a tunic that hangs looser below the chest and cinches at the belt, a short or long skirt, a belt, cuffs). Hems are cut cleanly in the shader on the unmorphed body, so every garment fits every body, and the body's own skin is hidden under clothing.
+- **Fur mantles:** eleven noise-cut shells.
+- **Hair, beards and moustaches:** procedural hair cards rooted on the scalp, combed up and back, hugging the scalp and then falling, kept off the face, shaded by their root's normal. A shell cap with a smooth hairline sits under them.
+- **Eyes:** with irises, set in the helper's sockets.
+
+`people.html` shows a line-up of eight Markfolk and a close-up per face (`?view=faces&who=N`), and five of them now walk the village lane.
+
+Corrections found on the way, for the record:
+- binding the skins before the skeleton had world matrices doubled every offset (the first render was grotesque);
+- three.js caches a shader by its compile function's source, so per-material cut lines and fur layers need their own `customProgramCacheKey`;
+- the hair helper is a hair volume, not a scalp: hair rooted on it floats.
+### Verified (headless Chromium)
+The line-up (8 people), the faces and the lane (5 people) render with no page errors in 7 to 13 s. The live page's bundles load and run when served locally.
+### Needs eyes
+The faces at eye level, and the women's long hair, which is still untidy at the temples. Frame rate with many people on Michael's machine (the live page's line-up). The question Michael raised at the end of the session: a builder of our own, for creatures as well as people.
+
+
+## v80 — Session 771 — The foundation approved; the gates at their size; the builder written; the second round of concept art
+Michael approved the slices ("I also approve of the slices"), which starts A, the new visual foundation, as a Fable session. He gave two call-outs with it. First, people must match the world's proportions, "houses and buildings especially". Second, the gates, outside and in, were too small: "They should be shockingly large, like what we see in the concept art. Forget the 'dungeon with cobblestone walls' feel." He also said yes to a builder of our own for people and creatures ("write it up and fold it in"), and he added a second round of concept art to the Drive folder.
+
+**Scale, measured.** A headless probe of Dunmore at noon read the game's own numbers:
+- townsfolk stand 1.05 to 1.15 units (the head bone 0.91 to 1.04 above the feet), and the player's eye is at 0.92;
+- house doors are 1.85 units, cottage eaves 2.4 (3.3 in the stone towns), and interiors are the footprint times 1.8 with furniture at 0.62;
+- so the buildings are close to true metres and the people are about 60% of the size their doors expect.
+
+That is the mismatch Michael saw. The slices are right: 1.6 to 1.9 m people, 2.05 m doors. `docs/design/visual-foundation.md` makes it a rule: one unit is a metre, people are the measure, the eye goes to 1.65 m, interiors go to true size, and a ratio test guards it. The houses barely move and the speeds do not change.
+
+**The gates, rebuilt** (`docs/prototypes/levelup/gate.js`). The Session 769 slice was four 17 m rings on a lawn and a 60 m corridor with flagstones. The new exterior is OG-037's first variation at OG-U2-009's size:
+- five stepped pointed orders cut into a limestone cliff, the outer arch 100 m high and 76 m across, each order 6 m of face and 6.5 m deeper than the last, with a roll moulding on its inner edge;
+- a spine of two pillars 104 m high with columns of glyphs and two ring sigils;
+- a slit door 24 m high and 4 m wide;
+- a Crown camp at the foot whose people are the slice's genome bodies, and one walking up the path.
+
+`&cam=foot` stands in the camp and looks up. The interior is a nave 26 m wide and 250 m long under a pointed vault 50 m up, with a pier every 14 m, script and ring sigils up every pier (two bays guttering), dark aisles, and a stair across the whole width. At the far end are a ring 33 m high and a shaft of cold light. The floor is great dark slabs that are wet in patches and reflect the hall from a probe rendered once. `common.js` gains three textures (`ashlar`, `slab`, `rock`), and `bundle.py` a fifth live scene (`door.html`). The live page carries all three.
+
+**The builder** (`docs/design/character-builder.md`):
+- MakeHuman is only the source of a CC0 body; the tool is ours;
+- one genome format over any species, where a species is a base mesh, a skeleton fitted to it, sculpted and generic (bone-scale) sliders, regions and a pose library;
+- the peoples are slider ranges, and seeds come from place and id, so the co-op rules hold;
+- a table of body plans from human to serpentine, and a tool page that saves genomes for the game;
+- the work runs B1 to B6 inside backlog K.
+
+**The second round of concept art.** Sixteen sheets (Michael's OG-U2-001 to 016) are catalogued as OG-097 to OG-112, with thumbnails, a new `08_Culture_Daily_Life` folder, 14 KEEP and 2 MAYBE recommended, and all added to the review page (republished). The review page also had a bug since Session 755: the "Yes, apply them" bar showed while hidden, because `display:flex` overrode `[hidden]`. It is fixed. OG-U2-001 is misfiled: it is the alchemy specimens sheet, not jewelry. OG-U2-009 raises a pending question in `decisions.md`: six great gates, or many gates of six schools?
+Later in the session Michael answered the six gates **A**: there are six great gates as major dungeons, with the lesser gates scattered. He left what clearing one gives to the quest writer, with a seed: it unsettles the world and draws Varek's ire, the Elder Scrolls' Towers inverted. That is now in `lore_canon.md` §9a and backlog A. The seed is noted against the canon's complicity thread, because Varek needs the gates cleared.
+Michael then set the shape of the two paths (13 Oct). Varek's path brings power and corrupts the world, gate by gate, until the sixth unmakes it; Varek turns at the last gate and dies trying to stop the player. The other path restores the world at a cost to the player's magic, and Varek opposes it. This is recorded in `decisions.md`, `lore_canon.md` §9a (with a note on the Act III outline it overrides in part), backlog A, and the foundation brief, which plans the corruption's look as one level read by the grade, the sky and the trees.
+Then: every great gate's choice is reversible until all six match. Six sealed lock the world safe for good, six torn collapse it, and any mix stays open. The corruption level is now the count of torn gates, so it rises and falls.
+Then: two artifacts, Sunder-and-Keening style, one to tear and one to seal; undoing a choice restores what it took. Tearing should feel good at first and sealing dull; six sealed keep the game as it is. Michael leans toward six torn deleting every save, which stays an open decision. Recorded in `decisions.md`, `lore_canon.md` §9a and backlog A.
+### Verified (headless Chromium)
+- The gate (path and foot views) and the hall render at 1920x1080 in 18 to 19 s with no page errors. The portal is 423 voussoirs; the scene has 393 to 417 trees, 140,000 grass blades and 7 people; the hall has 4.
+- The three bundled pages (`gate.html`, `door.html`, `hall.html`) load and run when served locally with three.js pointed at the vendored copy. The frame rates there (1 fps, software GL) mean nothing.
+- The review page renders 112 cards with 112 thumbnails and no page errors. The catalogue's 96 earlier rows are byte-identical.
+### Needs eyes
+- Whether the gates now feel shockingly large, from the path and from the door, and whether the cliff's limestone and the order mouldings read as OG-037.
+- The hall's frame rate on Michael's machine: about 20 point lights and a reflection probe.
+- His marks on the 16 new images, and his answer on the six great gates.
+- The scale rule's feel (a 1.65 m eye in rooms of true size) can only be judged once the foundation builds it.
+
 
 ## v80 — Session 770 — A householder woken in the night says so (the critic's s585; Michael's A on #255)
 The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h woke her (Session 739) and opened the ordinary day talk, *Blessings on the road that brought you*, with *My name is Traveller.* listed first; the prompt over her while she slept read *Sinéad — Press 'E' to talk*. Nothing knew it was the middle of the night. Michael chose A on DECISION #255: her own night line, then the usual talk, and no new rule (being inside after hours is still no crime). Three changes. The prompt over a sleeping resident (`90-main.js`, the interior prompt) now reads *Sinéad (asleep) — Press 'E' to wake*. `wokenGreetNow()` in `86-world-crime.js`, beside the sleeper code, gives the night line when she was woken this visit (by E or by a step within two units of the bed, both of which set `woke`), the house still keeps its sleeping hours (23h–5h), and she has not said it yet; `interact` (`50-travel.js`) asks it as E opens a home's talk and hands it to `openDialog` through `dlgWokenLine`, read once, so the line replaces the greeting on that talk only and a second talk the same night has the ordinary greeting. On that woken talk the introduction topic moves after her own topics instead of before them; it is still offered. The words: the decision gives the quest writer four lines, one per people. They are not written yet, so `WOKEN_LINES` is an empty table keyed by people (`gatelander`, `markman`, `aurennais`, `oldblood`, read from the resident's `dlg.people`), and until a people has its own line the decision's own *What — who's there? It's the middle of the night.* stands for all four. Session 770, not 768: the open PR #261 claims 768–769.
