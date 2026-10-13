@@ -15923,3 +15923,35 @@ Corrections found on the way, for the record:
 ### Needs eyes
 - The swim, the crawl and the drift, live: whether the salmon's wave reads as a fish and the whale's as a whale.
 - Whether the Wisp is the Gaoth spirit Michael pictures (OG-018).
+
+
+## v80 — Session 775 — Creatures from parts: shells and feathered wings (prototype only)
+The third of the sessions from Michael's "go ahead and tackle more of the skeletons". The catalogue table's last two owed pieces: shells (the tortoises: Mossback, Sailshell, Sunshell, the sea turtle) and feathered wings (every bird that flies).
+
+**The kit:**
+- **The shell:** a rigid dome over a spine bone, with a rim and a flat plastron. Its scutes are the cells of a hexagonal lattice seen from above, with darkened seams, a shade of their own and growth rings. It may carry a garden (ferns and flowers rooted in moss on its top, seeded from the genome) or a striped sail along its crest.
+- **Feathered wings:** humerus, forearm and hand with feathers as tapered cards, each rigid on its bone and darker at the tip.
+  - the secondaries lie back along the forearm under their coverts;
+  - the primaries fan off the hand from back to out;
+  - tertials sit at the shoulder.
+- **Wing poses:** the wing folds in a Z against the body at rest. It beats in flight: down hard, then up a little folded.
+- **The tail fan:** a bird's tail is a fan of the same feathers off its last bone.
+- **The soar:** a gait for a bird aloft. It lifts the body to the plan's flying height, tucks the legs up under it, and beats the wings.
+- **Plans as functions:** both tortoises are one function of their shell; the raven and the hawk are one function of beak, eye and primaries.
+- **The page:** it frames a creature in the pose it is shown in, so a bird aloft stays in frame, and refits when the gait changes. `creatures.check.mjs` takes `--q` and `--tag`, to picture one gait or view (`creatures-skyraven-soar.jpg`, `creatures-craghawk-top.jpg`).
+
+**Four plans:**
+- the Mossback, 2.3 m of shell with its garden;
+- the Sailshell with its sail;
+- the Skyraven, which hops, walks and flies;
+- the Crag Hawk, barred brown with yellow legs and a hooked beak.
+### Verified (headless Chromium)
+`creatures.check.mjs`: all twenty-three plans pass.
+- **The new four:** 24 to 26 bones and 37,400 to 47,900 triangles, built in 0.27 to 0.53 s.
+- **Weights:** exact.
+- **Feet:** every foot on its target through every gait, the tucked legs of the soar included.
+- **The nineteen older plans:** unchanged.
+### Needs eyes
+- The wingbeat live: whether the fold and the beat read as a raven and a hawk, from the side and from below.
+- The Mossback's garden at walking pace.
+- With this, every skeletal body plan in the concept art has at least one creature. What remains for creatures is the move into the game, behind the foundation's switch, the wolves first.

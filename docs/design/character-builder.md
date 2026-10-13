@@ -133,9 +133,9 @@ This list is from the whole catalogue, not only the bestiary sheets: the fauna s
 | **Ungulate** | ungulate legs; antlers and horns as bits | Elderstag, Crownstag (antlers hung with moss), Ironpine Elk, Ridge Stag, Duneskimmer and Sand Gazelle, Icehorn, Craghorn and Terrace Ram, Peak and Coastal Ibex, Stone and Sea Goat, Gatefen and Thicket Boar, the three mounts (Gatelands Horse, Mark Steed, Aurennais Courser), draft horse, mule, donkey, ox, Mountain Ox and yak, cow, water buffalo, camel, dromedary, reindeer, giant goat, Frostmane and llama (the neck slider) | Elderstag |
 | **Plantigrade** | plantigrade legs | Frostreach, Crag and Cave bears, the grizzly, badger, otter and stoat (the leg slider low, the spine long), Glacial Marmot, Stonejaw (with a shovel skull), Nell's tusked beast, war elephant (pillar legs) | Frostreach Bear |
 | **Hexapod** | three pairs of any preset | Shatterhorn (ungulate), Mineprowler (sprawl), the Bog Crawler and Lantern Beetle (insect). Michael's 9 A: ordinary animals | Shatterhorn, Mineprowler |
-| **Sprawler** | sprawl legs; a shell as a rigid bit on the spine | Stonecrawler, Saltspine Monitor, Frostspine Lizard, Spined Gekko, Sand Skink, Reef Lizard, Alpine Salamander; the tortoises (Mossback with its garden, Sailshell with its sail, Sunshell, Painted Turtle, the sea turtle); Bellthroat and Marsh Frog on a frog's hind leg | Mineprowler's legs; Bellthroat (S773) |
+| **Sprawler** | sprawl legs; a shell as a rigid bit on the spine | Stonecrawler, Saltspine Monitor, Frostspine Lizard, Spined Gekko, Sand Skink, Reef Lizard, Alpine Salamander; the tortoises (Mossback with its garden, Sailshell with its sail, Sunshell, Painted Turtle, the sea turtle); Bellthroat and Marsh Frog on a frog's hind leg | Mineprowler's legs; Bellthroat (S773); Mossback and Sailshell (S775) |
 | **Arthropod** | insect legs, 3 to 5 pairs; arms with claw bits as pincers | giant and void spiders, Dunescorpion and Sand Scorpion (arms as pincers, a stinging tail), the crabs (Tidecrab, Icecrab, Amber Shellcrab: a heading of 90° to walk sideways), the Bog Crawler | Giant spider; Dunescorpion and Tidecrab (S773) |
-| **Bird** | one bird leg pair; feathered wings | Stormplume, Sunfan, Redcrest, Grove Turkey, Great and Marsh Heron, Scarlet Ibis, Cypress Stalker; flyers: Skyraven, Crag Hawk and Cliffhawk, Sky Eagle, Stormshrike, Highcliff Falcon, Barred Owl, Sunbeak Vulture, Embersong Thrush, Tomcán's raven, Orvin's heron | Stormplume |
+| **Bird** | one bird leg pair; feathered wings | Stormplume, Sunfan, Redcrest, Grove Turkey, Great and Marsh Heron, Scarlet Ibis, Cypress Stalker; flyers: Skyraven, Crag Hawk and Cliffhawk, Sky Eagle, Stormshrike, Highcliff Falcon, Barred Owl, Sunbeak Vulture, Embersong Thrush, Tomcán's raven, Orvin's heron | Stormplume; Skyraven and Crag Hawk, perched and flying (S775) |
 | **Winged quadruped** | a quadruped and wings | the dragon, the Gateborn Companion, the Winged Thing (a griffin), Glasswing, the sky leviathan | Dragon |
 | **Serpentine** | a spine and a tail, no legs | Mire Snake, Sand Wyrm (the size slider), the gate worm and the Maw, Void Serpent, the eels (reef moray, Blackcurrent, Gate Eel) | Mire Snake |
 | **Swimmer** | a serpent with fin and fluke bits; a swim gait | the whales (Storm and Tempest Whale, Gate Leviathan, crimson leviathan, Shatterback), dolphin, reef shark, the rays, tuna, pike, salmon, trout, carp, the seal (sprawl flippers) | Riverjaw Salmon, Storm Whale (S774) |
@@ -147,8 +147,7 @@ This list is from the whole catalogue, not only the bestiary sheets: the fauna s
 So ten of the fourteen plans exist in the prototype, and every creature in the concept art has a home. Still owed:
 - ~~two parts (fins, radial chains)~~ (done, Session 774);
 - ~~a hop and a bound (frogs and hares; the hare post-rider of OG-077)~~ (done, Session 773);
-- feathered wings (cards, like the people's hair);
-- shells as rigid bits.
+- ~~feathered wings (cards, like the people's hair)~~ and ~~shells as rigid bits~~ (done, Session 775).
 
 ### Session 773: the bound, the hop, the sideways walk, the pincer
 Five more plans, and the kit gained what they needed:
@@ -187,6 +186,22 @@ The last two parts the catalogue needed:
 | Wisp | OG-018 | 139 | 27,100 | drift |
 
 Nineteen plans pass. With fins and radial arms, every skeletal creature in the concept art has a plan the kit can build.
+
+### Session 775: shells and feathered wings
+The last two pieces the catalogue asked for:
+- **The shell.** A rigid dome over the spine with a rim and a flat plastron. Its scutes are the cells of a hexagonal lattice seen from above: the seams darken, each scute has its own shade, and growth rings run round its centre. A shell may carry a garden (ferns and flowers rooted in moss on the top, as the Mossback does) or a sail along its crest (the Sailshell's, striped, its edge rippled by the spines).
+- **Feathered wings.** Humerus, forearm and hand, with the flight feathers as tapered cards. The secondaries are laid back along the forearm with their coverts over them; the primaries fan off the hand from back to out; tertials sit at the shoulder. Each feather is rigid on its bone and darker at the tip. A bird's tail is a fan of the same feathers. The wing folds in a Z against the body at rest and beats in flight, rising a little folded.
+- **Soaring:** a gait for a bird in the air. The body rises to the plan's flying height, the legs tuck up under it, and the wings beat.
+- **A plan written as a function of a few numbers:** both tortoises are one body with a different shell, and the raven and the hawk one bird with a different beak, eye, colour and primaries.
+
+| Plan | Source | Bones | Triangles | Gaits |
+|---|---|---|---|---|
+| Mossback | OG-040 | 26 | 47,900 | walk (0.2 m/s) |
+| Sailshell | OG-040 | 26 | 47,800 | walk |
+| Skyraven | OG-031 | 24 | 37,400 | hop, soar, walk |
+| Crag Hawk | OG-009, OG-047 | 24 | 39,000 | soar, walk |
+
+Twenty-three plans pass. Every plan in the table above now has at least one creature built, except the human rig's (the people's builder, B1 to B4) and the kits that are not skeletal.
 
 ### What adding a creature is
 A new entry in `PLANS`: a name, its source sheet, a palette, its gaits, and its parts with numbers. The Mineprowler is a dozen lines. No new code unless the creature needs a part the kit does not have yet.

@@ -87,6 +87,8 @@ P.tail = (B, o) => {
   const names = B.chain('tail', B.spineNames[0], pts.slice(0, n));
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'tail', tone: o.tone });
   B.tailEnd = pts[n]; B.tailBone = names[n - 1];
+  // a bird's tail: a fan of feathers off the last bone (Session 775)
+  if (o.fan) for (let i = 0; i < o.fan.n; i++) { const a = (i / (o.fan.n - 1) - .5) * o.fan.spread * DEG, d = V(Math.sin(a), -.08, -Math.cos(a)).normalize(); feather(B, pts[n].clone().add(V(0, .002 * i, 0)), d, V(Math.cos(a), 0, Math.sin(a)), o.fan.len * (1 - .12 * Math.abs(i / (o.fan.n - 1) - .5)), o.fan.len * .2, names[n - 1], 'feather', 'featherTip'); }
   if (o.sting) B.bit(names[n - 1], claw(o.sting.r, o.sting.len, B.tone('dark'), pts[n], pts[n].clone().sub(pts[n - 1]).normalize().applyAxisAngle(V(1, 0, 0), -.9)));
 };
 // legs, in pairs. A leg is its preset's joints in a frame of its own: x outward, y up as a fraction of the root's height,
@@ -138,8 +140,25 @@ P.arms = (B, o) => {
   }
 };
 // wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh
+// a feather (Session 775): a tapered card from its root along dir, its width across in the wing's plane; the tip darker
+function feather(B, root, dir, across, len, w, bone, tone, tip) {
+  const pts = [root.clone().addScaledVector(across, -w * .25), root.clone().addScaledVector(across, w * .25), root.clone().addScaledVector(dir, len * .65).addScaledVector(across, w * .5), root.clone().addScaledVector(dir, len), root.clone().addScaledVector(dir, len * .65).addScaledVector(across, -w * .5)];
+  const c0 = B.tone(tone), c1 = B.tone(tip || tone); B.sheets.push({ pts, tris: [0, 1, 2, 0, 2, 3, 0, 3, 4], bones: pts.map(() => B.by[bone].i), cols: [c0, c0, c0.clone().lerp(c1, .5), c1, c0.clone().lerp(c1, .5)] }); }
 P.wings = (B, o) => {
   const sp = B.spineAt(o.at), span = o.span;
+  // a bird's wing: humerus, forearm and hand, with the flight feathers fanned off the hand and laid back along the forearm
+  if (o.feathers) { const F = o.feathers; for (const side of [1, -1]) {
+    const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), elbow = root.clone().add(V(side * span * .26, 0, -span * .04)), wrist = elbow.clone().add(V(side * span * .3, 0, span * .03)), tip = wrist.clone().add(V(side * span * .26, 0, -span * .04));
+    const tag = 'wing' + (side > 0 ? 'L' : 'R'), arm = B.chain(tag, sp.bone, [root, elbow, wrist, tip]);
+    B.meat(arm[0], root, elbow, o.r[0], o.r[1], { group: tag, tone: o.tone }); B.meat(arm[1], elbow, wrist, o.r[1], o.r[2], { group: tag, tone: o.tone }); B.meat(arm[2], wrist, tip, o.r[2], o.r[2] * .5, { group: tag, tone: o.tone });
+    const back = V(0, -.02, -1), up = V(0, 1, 0);
+    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, arm[1], 'feather', 'featherTip');
+      feather(B, p.clone().add(V(0, .004 * span, .01 * span)), d, V(side, 0, 0), span * F.len * .34, span * .065, arm[1], 'covert', 'feather'); }
+    for (let i = 0; i < 3; i++) feather(B, root.clone().lerp(elbow, .3 + .3 * i), back, V(side, 0, 0), span * F.len * .5, span * .07, arm[0], 'covert', 'feather');
+    for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize();
+      feather(B, p, d, ac, span * F.len * (.7 + .3 * t) * (F.primary || 1), span * .06, arm[2], 'feather', 'featherTip');
+      if (i < F.np - 2) feather(B, p.clone().add(V(0, .004 * span, .008 * span)), d, ac, span * F.len * .4, span * .055, arm[2], 'covert', 'feather'); }
+    B.wings.push({ side, arm, fingers: [], feathered: true }); } return; }
   for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), X = V(side, 0, 0);
     const elbow = root.clone().add(V(side * span * .2, span * .16, -span * .05)), wrist = elbow.clone().add(V(side * span * .26, -span * .04, span * .04));
@@ -175,6 +194,30 @@ P.radial = (B, o) => { const c = V(...o.c), parent = o.parent || B.spineNames[0]
     if (o.thread) B.tubes.push({ names, r0: o.r[0], r1: o.r[1], tone: o.tone || 'thread' });
     else for (let j = 0; j < seg; j++) B.meat(names[j], pts[j], pts[j + 1], along(o.r, j / seg), along(o.r, (j + 1) / seg), { group: tag, tone: o.tone, s: o.s });
     B.radials.push({ names, a, thread: !!o.thread, k, n: o.n }); } };
+// a shell (Session 775): a rigid dome over the spine with a rim and a flat plastron. Its scutes are cells of a hexagonal
+// lattice seen from above, their seams darkened; a garden may grow on it (the Mossback), or a sail stand on it (the Sailshell)
+P.shell = (B, o) => { const sp = B.spineAt(o.at), c = sp.p.clone().add(V(0, o.lift || 0, o.dz || 0)), rx = o.w / 2, rz = o.len / 2, base = B.tone(o.tone || 'shell'), seam = B.tone('seam'), r = rng(B.g.seed + 9);
+  const g = new THREE.SphereGeometry(1, 48, 20, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(rx, o.h, rz);
+  const lat = []; const s = o.scute || rx * .5; for (let i = -6; i <= 6; i++) for (let j = -6; j <= 6; j++) lat.push([(i + (j % 2 ? .5 : 0)) * s, j * s * .87]);
+  const P0 = g.attributes.position, col = [];
+  for (let v = 0; v < P0.count; v++) { const x = P0.getX(v), y = P0.getY(v), z = P0.getZ(v); let d1 = 1e9, d2 = 1e9, k1 = 0;
+    for (let k = 0; k < lat.length; k++) { const d = Math.hypot(x - lat[k][0], z - lat[k][1]); if (d < d1) { d2 = d1; d1 = d; k1 = k; } else if (d < d2) d2 = d; }
+    const edge = sstep(s * .12, 0, d2 - d1), ring = .9 + .1 * Math.cos(d1 / s * 14), C = base.clone().multiplyScalar(ring * (.88 + .24 * ((k1 * 2654435761) % 97) / 97)).lerp(seam, edge * .85);
+    if (o.top) C.lerp(B.tone(o.top), sstep(.55, .95, y / o.h) * .9); if (y < o.h * .12) C.lerp(seam, .35); col.push(C.r, C.g, C.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const plast = new THREE.CircleGeometry(1, 40); plast.rotateX(Math.PI / 2); plast.scale(rx * .9, 1, rz * .92); plast.translate(0, -o.h * .02, 0); const pc = []; for (let v = 0; v < plast.attributes.position.count; v++) pc.push(...B.tone('belly').toArray()); plast.setAttribute('color', new THREE.Float32BufferAttribute(pc, 3));
+  const m = new THREE.Mesh(mergeGeometries([g.toNonIndexed(), plast.toNonIndexed()]), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .7, side: THREE.DoubleSide })); m.geometry.computeVertexNormals(); m.position.copy(c); B.bit(sp.bone, m);
+  // a garden: ferns, grass and flowers rooted in the moss on top
+  if (o.garden) { const G = o.garden, geos = [];
+    const add = (geo, color, x, z, rot) => { const y = o.h * Math.sqrt(Math.max(0, 1 - (x / rx) ** 2 - (z / rz) ** 2)); geo.rotateY(rot); geo.translate(x, y - .01, z); const cc = []; for (let v = 0; v < geo.attributes.position.count; v++) cc.push(color.r, color.g, color.b); geo.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); geos.push(geo.toNonIndexed()); };
+    const spot = f => { const a = r() * Math.PI * 2, d = Math.sqrt(r()) * f; return [Math.cos(a) * d * rx, Math.sin(a) * d * rz]; };
+    for (let i = 0; i < G.ferns; i++) { const [x, z] = spot(.62), h = G.size * (.6 + .6 * r()); for (let f = 0; f < 5; f++) { const fg = new THREE.ConeGeometry(h * .16, h, 3); fg.scale(1, 1, .25); fg.translate(0, h / 2, 0); fg.rotateZ((r() - .5) * 1.2); add(fg, B.tone('fern').clone().multiplyScalar(.8 + .4 * r()), x, z, f / 5 * Math.PI * 2 + r()); } }
+    for (let i = 0; i < G.flowers; i++) { const [x, z] = spot(.7), st = new THREE.CylinderGeometry(.004, .004, G.size * .45, 4); st.translate(0, G.size * .22, 0); add(st, B.tone('fern'), x, z, 0); const fl = new THREE.SphereGeometry(G.size * .07, 6, 4); fl.translate(0, G.size * .46, 0); add(fl, B.tone(r() < .5 ? 'bloom' : 'bloom2'), x, z, 0); }
+    const gm = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85, side: THREE.DoubleSide })); gm.position.copy(c); B.bit(sp.bone, gm); }
+  // a sail: a sheet along the crest, striped, stiffened by its spines
+  if (o.sail) { const top = c.clone().add(V(0, o.h * .97, 0)), pts = [top.clone()], cols = [B.tone('sail')], N = 9; for (let i = 0; i <= N; i++) { const t = i / N, z = (t - .5) * o.sail.len, h = o.sail.h * Math.sin(Math.PI * Math.pow(t, .8)) * (.85 + .15 * Math.sin(t * 40)); pts.push(top.clone().add(V(0, h - o.h * (1 - Math.sqrt(Math.max(0, 1 - (z / rz) ** 2))) , z))); cols.push(B.tone(i % 2 ? 'sail' : 'sail2')); }
+    const tris = []; for (let i = 1; i < pts.length - 1; i++) tris.push(0, i, i + 1); B.sheets.push({ pts, tris, bones: pts.map(() => B.by[sp.bone].i), cols }); }
+};
 // a saddle on the back (Session 773): a socket's first rider. A leather seat over a wool blanket, both draped over the spine
 P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl; // it sits on the fur, not under it
   const drape = (r, ry, len, th, c) => { const g = new THREE.CylinderGeometry(1, 1, len, 24, 1, true, Math.PI / 2 - th / 2, th); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI / 2); g.scale(r, ry, 1); const m = new THREE.Mesh(g, stdMat(c, { rough: .8 })); m.material.side = THREE.DoubleSide; m.position.copy(sp.p); return m; };
@@ -380,7 +423,7 @@ export function build(g) {
 // the wing's membrane: panels between neighbouring fingers and from the last finger back to the flank, skinned to both edges
 // fins and other sheets: each vertex rigid on its bone, both faces drawn
 function sheetGeo(B, pal) { const pos = [], si = [], sw = [], col = [], ind = [];
-  for (const s of B.sheets) { const base = pos.length / 3, C = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); const k = i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
+  for (const s of B.sheets) { const base = pos.length / 3, C0 = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); const C = s.cols ? s.cols[i] : C0, k = s.cols ? 1 : i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(ind); g.computeVertexNormals(); return g; }
 // threads: a thin tube along each chain, each ring rigid on its segment's bone; a glowing thread's colour is HDR, for the bloom
 function tubeGeo(B, pal, glow) { const pos = [], si = [], sw = [], col = [], ind = [], RAD = 5;
@@ -429,7 +472,9 @@ export const GAITS = {
   // A fish's wave grows toward its tail (a whale's runs up and down); an octopus's arms ripple round the ring; a jellyfish's bell beats.
   swim: { duty: 1, bl: .8, swim: 1, phase: () => 0 },
   crawl: { duty: 1, bl: .18, ripple: 1, phase: () => 0 },
-  drift: { duty: 1, bl: .25, bell: 1, phase: () => 0 }
+  drift: { duty: 1, bl: .25, bell: 1, phase: () => 0 },
+  // Session 775: a bird in the air, its wings beating, its legs tucked up under it
+  soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 }
 };
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = V(), _m = new THREE.Matrix4();
 // a bone's rotation and position in the rig's frame (the body's own space: the ground is y = 0)
@@ -464,7 +509,7 @@ export function pose(C, phase) {
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
   const bob = (G.bob || 0) * C.legH * Math.cos(tau * ph * 2), breathe = .006 * Math.sin(tau * ph);
-  const air = liftAt(flights(C, G), ph);
+  const air = liftAt(flights(C, G), ph) + (G.aloft ? (C.plan.flyH || 0) + .04 * C.legH * Math.sin(tau * ph + 1.6) : 0);
   sp.position.y += -bob * .5 + air + (G.duty === 1 && !G.wave ? breathe * C.legH : 0);
   if (C.sac) { const s = 1 + .45 * Math.max(0, Math.sin(tau * (G.fr > 0 ? ph : ph * 3))) ** 2; C.sac.scale.set(1.15 * s, .8 * s, s); }
   sp.rotation.set((G.flex || 0) * Math.sin(tau * ph) * .4, (G.sway || 0) * Math.sin(tau * ph), (G.sway || 0) * .5 * Math.sin(tau * ph + 1));
@@ -490,7 +535,12 @@ export function pose(C, phase) {
   else if (G.ripple && B.radials.length) sp.position.y += .015 * C.len / C.S * Math.sin(tau * ph * 2);
   // arms swing against the legs; wings rest half-folded, breathing, or beat
   for (const A of B.arms) { const s = A.swing * Math.sin(tau * ph + (A.side > 0 ? 0 : Math.PI) + A.phase); C.byName[A.names[0]].rotation.set(s, 0, 0); C.byName[A.names[1]].rotation.set(-Math.abs(s) * .6 - .2, 0, 0); C.byName[A.names[2]].rotation.set(.25 * Math.sin(tau * ph * 2 + A.side), 0, 0); }
-  for (const W of B.wings) { const flap = G.flap ? Math.sin(tau * ph) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
+  // a bird's wing folds in a Z against its side (humerus back, forearm forward, hand back), or beats: down hard, up folded a little
+  for (const W of B.wings) if (W.feathered) { const fold = G.flap ? 0 : (C.plan.wingFold ?? 1), s = W.side, beat = G.flap ? Math.sin(tau * ph) : 0, up = G.flap ? Math.max(0, -Math.cos(tau * ph)) : 0;
+    C.byName[W.arm[0]].rotation.set(.1 * fold, s * 1.2 * fold, s * (.55 * beat - .25 * fold));
+    C.byName[W.arm[1]].rotation.set(0, -s * (2.5 * fold + .35 * up), -s * .15 * beat);
+    C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat); }
+  for (const W of B.wings) if (!W.feathered) { const flap = G.flap ? Math.sin(tau * ph) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
     C.byName[W.arm[0]].rotation.set(-.15 * fold, -W.side * .7 * fold, W.side * (.5 * flap - .35 * fold + .03 * Math.sin(tau * ph * .5)));
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
@@ -502,7 +552,8 @@ export function pose(C, phase) {
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
-    if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
+    if (G.aloft) { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; }
+    else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
     worst = Math.max(worst, solveLeg(C, L, T, fold));
   }
   return worst;
@@ -732,7 +783,43 @@ export const PLANS = {
       ['spine', { hip: [1.8, 0], chest: [2.15, 0], n: 3, r: [.38, .36, .16], s: [1, 1] }],
       ['radial', { c: [0, 1.55, 0], parent: 'spine0', n: 4, ring: .08, len: .9, seg: 5, down: 82, r: [.05, .012], tone: 'pale', tag: 'oral' }],
       ['radial', { c: [0, 1.5, 0], parent: 'spine0', n: 14, ring: .32, len: 2.4, seg: 7, down: 88, curl: -1, r: [.009, .003], thread: 1, jitter: .1, tag: 'thr' }]
-    ] }
+    ] },
+  // ── Session 775: shells and feathered wings ──
+  mossback: { name: 'Mossback', src: 'OG-040 (an ancient tortoise carrying a living garden)', gaits: ['walk', 'stand'], speedK: .22, wag: .02, pant: .02, fold: .4, rough: .8,
+    palette: { coat: [.42, .4, .32], saddle: [.32, .3, .24], belly: [.62, .56, .42], dark: [.06, .05, .04], shell: [.44, .31, .18], seam: [.17, .11, .06], moss: [.3, .43, .16], fern: [.26, .5, .18], bloom: [.88, .76, .3], bloom2: [.62, .36, .78] },
+    parts: null },
+  sailshell: { name: 'Sailshell', src: 'OG-040 (a desert tortoise with a sail-like shell)', gaits: ['walk', 'stand'], speedK: .25, wag: .02, pant: .02, fold: .4, rough: .7, finOpacity: 1,
+    palette: { coat: [.62, .5, .36], saddle: [.48, .37, .25], belly: [.8, .7, .52], dark: [.08, .06, .04], shell: [.76, .58, .34], seam: [.34, .21, .1], sail: [.8, .3, .15], sail2: [.93, .56, .25] },
+    parts: null },
+  skyraven: { name: 'Skyraven', src: 'OG-031 (follows travellers, scavenges battlefields)', gaits: ['hop', 'soar', 'walk', 'stand'], flyH: .9, finOpacity: 1, rough: .35, neckNod: .1, wag: .04, fold: 1.1,
+    palette: { coat: [.08, .08, .1], saddle: [.05, .05, .07], belly: [.1, .1, .12], dark: [.03, .03, .03], horn: [.05, .05, .06], skin: [.08, .08, .08], feather: [.08, .08, .1], featherTip: [.03, .03, .05], covert: [.1, .1, .13] },
+    fur: { len: .012, layers: 6, sx: 160, sy: 60 },
+    parts: null },
+  craghawk: { name: 'Crag Hawk', src: 'OG-009 (nests on ruined towers), OG-047 (Cliffhawk)', gaits: ['soar', 'walk', 'stand'], flyH: 1.3, finOpacity: 1, rough: .5, neckNod: .06, wag: .03, fold: 1.1,
+    palette: { coat: [.44, .31, .2], saddle: [.3, .2, .12], belly: [.88, .82, .7], dark: [.04, .03, .03], horn: [.22, .2, .18], skin: [.82, .66, .2], feather: [.46, .33, .2], featherTip: [.17, .11, .06], covert: [.54, .4, .26] },
+    pattern: { kind: 'stripes', period: .028, tone: 'saddle' }, fur: { len: .013, layers: 6, sx: 150, sy: 60 },
+    parts: null }
 };
+// a tortoise: a low spine, pillar legs, a neck out of the shell's front, and the shell; the two differ in what it carries
+const tortoise = shell => [
+  ['spine', { hip: [.55, -.7], chest: [.6, .6], n: 3, r: [.32, .35, .3], s: [1.3, .7], rump: .1, front: .1 }],
+  ['neck', { len: .55, n: 3, rise: 14, curve: 8, r: [.17, .12], fwd: .1, up: -.05 }],
+  ['head', { len: .3, r: .12, pitch: 10, muzzle: { len: 1, r: .085, taper: .8 }, jaw: { len: .9, r: .06, drop: .45 }, eyes: [{ f: .45, up: .3, out: .78, r: .017, color: [.15, .1, .05] }] }],
+  ['tail', { len: .25, n: 2, r: [.1, .03], droop: 30 }],
+  ['legs', { at: .95, kind: 'plantFore', out: .55, drop: .15, r: [.17, .16, .15, .15], claws: { r: .02, len: .05 } }],
+  ['legs', { at: .05, kind: 'plantHind', out: .55, drop: .1, r: [.19, .17, .16, .16], claws: { r: .02, len: .05 } }],
+  ['shell', shell]];
+PLANS.mossback.parts = tortoise({ at: .5, lift: .02, len: 2.3, w: 1.75, h: 1.0, top: 'moss', garden: { ferns: 14, flowers: 20, size: .35 } });
+PLANS.sailshell.parts = tortoise({ at: .5, lift: .02, len: 2.0, w: 1.5, h: .8, sail: { h: 1.3, len: 1.8 } });
+// a bird of the air: a perching body on bird legs, a fanned tail and feathered wings; a raven and a hawk differ in beak and colour
+const flier = o => [
+  ['spine', { hip: [.27, -.1], chest: [.29, .1], n: 3, r: [.055, .07, .065], s: [.85, 1], rump: .04, front: .03, frontDrop: .01 }],
+  ['neck', { len: .07, n: 1, rise: 45, r: [.048, .04] }],
+  ['head', { len: .085, r: .038, pitch: 0, eyes: [{ f: .45, up: .3, out: .72, r: .008, color: o.eye }], beak: { len: o.beak, r: .016, up: -.05, hook: o.hook } }],
+  ['tail', { len: .05, n: 1, r: [.03, .02], droop: 15, fan: { n: 7, len: .2, spread: 35 } }],
+  ['legs', { at: .45, kind: 'bird', out: .03, drop: .06, claws: { r: .003, len: .015 } }],
+  ['wings', { at: .82, out: .04, up: .03, span: .62, r: [.025, .018, .012], feathers: { ns: 8, np: 9, len: .42, primary: o.primary } }]];
+PLANS.skyraven.parts = flier({ eye: [.1, .08, .06], beak: .075, hook: .12, primary: 1 });
+PLANS.craghawk.parts = flier({ eye: [.9, .75, .15], beak: .05, hook: .4, primary: 1.1 });
 // the post hare is the Snowleap Hare's body at five and a half times its size, saddled
 PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 }]];

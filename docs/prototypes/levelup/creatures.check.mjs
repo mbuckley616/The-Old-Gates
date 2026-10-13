@@ -1,4 +1,4 @@
-// node docs/prototypes/levelup/creatures.check.mjs [--shots] [--plans=a,b] (Session 772): builds every plan in creatures.js
+// node docs/prototypes/levelup/creatures.check.mjs [--shots] [--plans=a,b] [--q=gait=soar --tag=soar] (Session 772): builds every plan in creatures.js
 // in the test Chromium and checks the kit's promises: each plan builds with no code of its own, its skin weights sum to
 // one, every foot reaches its target through a whole stride of every gait, a gait's feet are down for its duty, and the
 // genome is small. --shots also writes the line-up and one picture per plan (flesh and bones) as creatures-*.jpg.
@@ -37,6 +37,7 @@ if (process.argv.includes('--shots')) {
     fs.writeFileSync(path.join(here, 'creatures-' + name + '.jpg'), Buffer.from(url.split(',')[1], 'base64')); console.log('shot', name, ((Date.now() - t0) / 1000).toFixed(0) + 's', errs.slice(0, 3)); await page.close(); };
   const list = (arg('plans') || '').split(',').filter(Boolean);
   if (!list.length || process.argv.includes('--line')) await shot('line', 'view=line', 2400, 800);
-  for (const plan of list) { await shot(plan, `view=one&plan=${plan}`, 1280, 720); if (process.argv.includes('--bones')) await shot(plan + '-bones', `view=one&plan=${plan}&bones`, 1280, 720); }
+  const xq = arg('q') ? '&' + arg('q') : '', tag = arg('tag') ? '-' + arg('tag') : '';
+  for (const plan of list) { await shot(plan + tag, `view=one&plan=${plan}${xq}`, 1280, 720); if (process.argv.includes('--bones')) await shot(plan + tag + '-bones', `view=one&plan=${plan}&bones${xq}`, 1280, 720); }
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

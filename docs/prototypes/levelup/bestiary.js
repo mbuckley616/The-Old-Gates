@@ -55,12 +55,12 @@ if (VIEW === 'line') {
     cam.fov = 30; cam.updateProjectionMatrix(); const cv = Q.get('cam') || 'side', d = r * 2.7 + .7;
     const off = cv === 'front' ? new THREE.Vector3(d * .35, size.y * .45, d) : cv === 'top' ? new THREE.Vector3(d * .3, d * 1.1, d * .2) : new THREE.Vector3(d, b.min.y + size.y * .45 + .4, d * .12);
     return { off, look: new THREE.Vector3(0, b.min.y + size.y * .4, (b.min.z - C.root.position.z) * .35) }; };
-  let fz = 0, F = frame();
+  pose(C, +(Q.get('phase') || .2)); let fz = 0, F = frame(); // framed in the pose it is shown in: a bird aloft is higher than one perched
   const place = () => { const p = C.root.position; cam.position.copy(p).add(F.off); cam.lookAt(p.x + F.look.x, F.look.y, p.z + F.look.z); sun.position.set(p.x + 25, 40, p.z + 30); sun.target.position.copy(p); };
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 150 }); sun.shadow.camera.updateProjectionMatrix();
-  pose(C, +(Q.get('phase') || .2)); place();
+  place(); live[0].refit = () => { pose(live[0].C, live[0].C.phase); F = frame(); place(); };
   live[0].follow = () => { if (C.root.position.z > 120) { C.root.position.z -= 240; } f.position.z = C.root.position.z + fz; place(); };
-  if (!STILL) panel(plan, g => { scene.remove(C.root); C = make(g.plan, g.seed, g); turn(C); wet(C); C.gait = live[0].C.gait; scene.add(C.root); live[0].C = C; F = frame(); pose(C, 0); place(); });
+  if (!STILL) panel(plan, g => { scene.remove(C.root); C = make(g.plan, g.seed, g); turn(C); wet(C); C.gait = live[0].C.gait; scene.add(C.root); live[0].C = C; pose(C, 0); F = frame(); place(); });
 }
 
 // the panel (live view only): plan, gait, roll a seed, the generic sliders, and the genome as JSON
@@ -77,7 +77,7 @@ function panel(plan, rebuild) {
   const draw = () => { d.innerHTML = html(); const C = live[0].C; d.querySelector('#st').textContent = `${C.stats.bones} bones · ${C.stats.tris.toLocaleString()} triangles · built in ${C.stats.ms} ms · ${speedOf(C).toFixed(1)} m/s`;
     d.querySelector('#fold').onclick = () => { d.classList.toggle('folded'); [...d.children].forEach((c, i) => { if (i) c.style.display = d.classList.contains('folded') ? 'none' : ''; }); };
     d.querySelector('#pl').onchange = e => { g = genome(e.target.value, e.target.value + ':one'); rebuild(g); live[0].C.gait = PLANS[g.plan].gaits[0]; draw(); };
-    d.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { live[0].C.gait = b.dataset.g; });
+    d.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { live[0].C.gait = b.dataset.g; live[0].refit && live[0].refit(); });
     d.querySelector('#roll').onclick = () => { g = genome(g.plan, (Math.random() * 1e9) >>> 0); rebuild(g); draw(); };
     d.querySelectorAll('[data-s]').forEach(i => { i.oninput = () => i.nextElementSibling.textContent = (+i.value).toFixed(2); i.onchange = () => { g.sliders[i.dataset.s] = +i.value; rebuild(g); draw(); }; }); };
   document.body.appendChild(d); draw(); if (innerWidth < 700) d.querySelector('#fold').click();
