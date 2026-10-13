@@ -1,0 +1,512 @@
+{
+ "street-a": {
+  "secs": 14,
+  "puffs": 1131,
+  "trees": 230,
+  "plans": {
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "a",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6,
+   1.79,
+   1.66,
+   1.86,
+   1.59,
+   1.74
+  ],
+  "people": 9,
+  "errs": []
+ },
+ "street-b": {
+  "secs": 13,
+  "puffs": 1131,
+  "trees": 230,
+  "plans": {
+   "Townhouse": {
+    "tris": 3833,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 3226,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 6408,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "b",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6,
+   1.79,
+   1.66,
+   1.86,
+   1.59,
+   1.74
+  ],
+  "people": 9,
+  "errs": []
+ },
+ "street-c": {
+  "secs": 13,
+  "puffs": 1131,
+  "trees": 230,
+  "plans": {
+   "Townhouse": {
+    "tris": 5225,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4654,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 3020,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "c",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6,
+   1.79,
+   1.66,
+   1.86,
+   1.59,
+   1.74
+  ],
+  "people": 9,
+  "errs": []
+ },
+ "high-a": {
+  "secs": 12,
+  "puffs": 1131,
+  "trees": 230,
+  "plans": {
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "a",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6,
+   1.79,
+   1.66,
+   1.86,
+   1.59,
+   1.74
+  ],
+  "people": 9,
+  "errs": []
+ },
+ "cottage": {
+  "secs": 13,
+  "puffs": 1131,
+  "trees": 230,
+  "plans": {
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "a",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6,
+   1.79,
+   1.66,
+   1.86,
+   1.59,
+   1.74
+  ],
+  "people": 9,
+  "errs": []
+ },
+ "town": {
+  "secs": 14,
+  "puffs": 1131,
+  "trees": 230,
+  "plans": {
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "a",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6,
+   1.79,
+   1.65,
+   1.86,
+   1.59,
+   1.74
+  ],
+  "people": 9,
+  "errs": []
+ },
+ "line": {
+  "secs": 9,
+  "puffs": 1131,
+  "plans": {
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Cottage, hipped": {
+    "tris": 1472,
+    "calls": 12,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 11,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 13,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "line",
+  "mix": "a",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6,
+   1.79,
+   1.66
+  ],
+  "people": 6,
+  "errs": []
+ },
+ "kit": {
+  "secs": 9,
+  "puffs": 1131,
+  "plans": {
+   "Cottage window, 2 over 2": {
+    "tris": 202,
+    "calls": 5
+   },
+   "The half-door": {
+    "tris": 148,
+    "calls": 7
+   },
+   "Farm door with a transom": {
+    "tris": 162,
+    "calls": 7
+   },
+   "Town door, round-headed, fanlight": {
+    "tris": 967,
+    "calls": 7
+   },
+   "Town sash, 6 over 6, quoins": {
+    "tris": 346,
+    "calls": 5
+   },
+   "Shop window and door": {
+    "tris": 448,
+    "calls": 6
+   },
+   "Cart arch, voussoirs": {
+    "tris": 661,
+    "calls": 5
+   },
+   "Loading door": {
+    "tris": 272,
+    "calls": 5
+   },
+   "Thatch, gabled: scalloped ridge": {
+    "tris": 1302,
+    "calls": 11,
+    "w": 6.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Thatch, hipped": {
+    "tris": 972,
+    "calls": 12,
+    "w": 6.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Slate, parapets, kneelers": {
+    "tris": 1744,
+    "calls": 11,
+    "w": 7.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "kit",
+  "mix": "a",
+  "heights": [
+   1.74,
+   1.64,
+   1.89,
+   1.6
+  ],
+  "people": 4,
+  "errs": []
+ }
+}
