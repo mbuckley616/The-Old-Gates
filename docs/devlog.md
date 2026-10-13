@@ -16047,3 +16047,134 @@ The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h woke her (Sessio
 `tests/wokennight` (new), Dunmore, 9 of 9: at 2h the prompt over house 6's sleeping Sinéad reads *Sinéad (asleep) — Press 'E' to wake* (looking at her body); E wakes her and the talk opens with the night line, with *My name is Traveller.* eighth of eight, after *About you …* (by day at 22h it is first, before them); `worldState.crime` unchanged (`{}` before and after); awake, the prompt is *Sinéad — Press 'E' to talk*; a second talk the same night greets *You'll have walked a way.*; in house 3 at 1h, woken by a step beside the bed and then E, her first words are the night line; no page errors. `homesleep`, `sleeperpose`, `carraignight`, `talkaim`, `witnessrange` and `intreach` green, 1/1 each.
 ### Needs eyes
 The four night lines, one per people, are owed by the quest writer (`WOKEN_LINES`, `js/86-world-crime.js`); the one line stands in for all of them until then. Whether the greeting after the night line (the ordinary day greeting on a second talk at 2h) wants a night variant too is the quest writer's call; this session did not touch it.
+
+## v80 — Session 772 — Creatures from parts: one kit of skeletons, one gait engine (prototype only)
+Michael asked whether there was work to start while Sessions 768–771 sat in CI, and where to lean in. He pointed at his own idea: a skeleton for every creature type, as MakeHuman gives the people one. Claude's answer was to build skeletons from parts rather than one per species. The bestiary is about a hundred and twenty animals and monsters, and they fall into about a dozen body plans that share their pieces. The game already half does this: `wolfSkeleton` bends one 24-bone rig into a wolf, a boar, a bear, two horses and the dragon with flags. Michael: "yes, write it up and start the creature prototype"; and while it was built, "Be mindful that there are several other animals / monsters that are on other concept art files."
+
+**The kit** (`docs/prototypes/levelup/creatures.js`, three.js 0.170 like the other slices):
+- **Parts:** a spine, a neck, a head (skull, muzzle and jaw, with eyes, ears, horns, antlers, crystal horns, a beak and fangs as rigid bits), a tail (with a curl, so a scorpion's tail is one number), arms on any socket of the spine, wings (an arm and a fan of fingers with a membrane skinned to both edges), spines down the back, and leg pairs over eight presets: canid, ungulate and plantigrade fore and hind, bird, insect, sprawl.
+- **Presets:** a preset is joints in the leg's own frame as fractions of its height, so one preset fits any size.
+- **Flesh:** grown, not modelled. Tapered capsules on the bones make a field; capsules of one limb join hard and parts join smoothly; surface nets mesh it at a cell sized to the thinnest limb, and Taubin smoothing takes the steps out without shrinking the body.
+- **Weights:** the skin weights are read off the same field, so a joint bends where the flesh joins. So are the tones, the counter-shading the game's wolves already use, the patterns, the fur mask (noise-cut shells, as on the people's mantles), and the binding's glow (a seam down the spine and cracks over the hide).
+- **Gaits:** one gait engine for any number of legs. A gait is a duty factor, a Froude number (speed against leg length, so a giant walks like a giant), a stride, and a rule for each foot's phase from its pair and side. *Walk* (a wave from the back) is a quadruped's four-beat walk, a hexapod's wave and a biped's walk. *Trot* (alternating diagonals) is a trot, an insect's tripods and a spider's tetrapods. *Gallop*, *slither* and *fly* complete the set.
+- **The solver:** analytic. It yaws an insect's coxa toward its foot, holds a paw or hoof, bends the two segments between them, and slides the leg's root toward the foot past its reach, as a shoulder blade does.
+- **The genome:** `{plan, seed, sliders, tint, light}`, about 150 bytes, with six generic sliders (size, leg, bulk, neck, tail, head) that act on any plan. The seed comes from a key of place and index, never `Math.random`.
+
+**Ten plans, all from the concept art:** the Ironwolf, the Faolchú (the wolf's plan with the canon's extra arms out of a red spine seam, and cracks), the Frostreach Bear, the Elderstag, the Shatterhorn and the Mineprowler (both six-legged: Michael's 9 A), the giant spider, the Stormplume, the dragon, and the Mire Snake. `bestiary.js` and `creatures.html` show them in a line at true size, each beside a 1.8 m figure on a floor ruled in metres (`?view=line`). One creature walking (`?view=one&plan=…`) has a panel to change the gait, roll a seed, move the sliders and read the genome. `?bones` shows the skeleton through the flesh.
+
+**The catalogue, by plan** (Michael's call-out): every animal and monster on the sixteen sheets that hold any is sorted into fourteen plans in `character-builder.md`. Ten plans are prototyped; two parts are owed (fins, radial chains); the human rig takes the goblins, trolls, skeletons and wraiths; and the slimes, elementals, golems and wisps need kits of their own.
+
+Corrections found on the way, for the record:
+- the palette was read as linear colour and every coat came out pale;
+- a straight leg cannot reach the ends of a real stride, so the feet fell 3 to 8 cm short until the root could slide;
+- the line-up's spacing missed the horns and wings until it measured the whole creature.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/creatures.check.mjs`, all passing with no page errors:
+- Builds: all ten plans, 18 to 69 bones and 8,600 to 84,500 triangles each, in 0.04 to 0.93 s.
+- Weights: every vertex's skin weights sum to one.
+- Feet: every foot reaches its target at 48 points through every gait of every plan (worst under 0.1 mm).
+- Duty: the share of the stride a foot is down matches the gait's duty (a wolf's trot 0.45 of 0.45, a spider's walk 0.71 of 0.68).
+- Genomes: about 150 bytes.
+
+`--shots` writes `creatures-line.jpg` and one picture per plan, flesh and bones.
+### Needs eyes
+- The creatures walking live on Michael's machine: whether the gaits read as animals (the wolf's trot, the spider's tetrapods, the Shatterhorn's slow wave), and the frame rate with fur.
+- The faces close up, which are soft, as grown flesh is. Sculpted targets or image-to-3D heroes are the answer where it matters.
+- Whether the parts' approach is the one he wants before the kit moves to the builder's page and then into the game behind the foundation's switch.
+
+
+## v80 — Session 773 — Creatures from parts: the bound, the hop, the sideways walk, the pincer (prototype only)
+Michael, on Session 772's line-up: "They all look great! Should we go ahead and tackle more of the skeletons? This framework seems to be working very well." The catalogue table names what is owed, so this session takes the gaits and the claws, Session 774 the swimmers and the radial bodies, and Session 775 the shells and feathered wings.
+
+**The kit** (`creatures.js`):
+- **Flights:** a gait's flights, the stretches with no foot down, are found by sampling the stride once per gait. The body follows a ballistic arc through each (h = g t² / 8 at the top), and the swinging feet rise with it. The trot and gallop of the older plans gain their small real suspensions this way.
+- **Two gaits:** the *bound* (hinds together, then fores, the spine flexing) and the *hop* (every foot at once). The hop is a pulse: the body covers only the stance's short sweep while its feet are down and the rest in the air, so `step` now reports how far the root moved (`C.moved`) instead of a constant speed.
+- **Two leg presets:** a hare's hind leg (a long foot from the hock) and a frog's (a Z).
+- **Headings:** a plan may walk at a heading in its own frame (the crab at 90°); the same feet and solver walk it sideways.
+- **The pincer:** an arm with a swollen hand and two fingers. Also eye stalks, and a throat sac that fills and empties.
+- **The saddle:** the first thing hung on a socket for a rider, set on the fur, not under it.
+- **Scale:** a plan may stand at a multiple of its parts (`scale`).
+
+**Five plans:**
+- the Snowleap Hare;
+- the post hare of OG-077, which is the hare's parts at 5.5 times with a saddle (three lines);
+- the Bellthroat, a red frog with its violet sac, hopping;
+- the Dunescorpion: four leg pairs, pincers and a stinging tail;
+- the Tidecrab, blue, walking sideways.
+
+The line-up now holds all fifteen, sorted by height as built.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/creatures.check.mjs`: all fifteen plans pass.
+- **New plans:** 22 to 60 bones and 11,500 to 59,200 triangles, built in 0.06 to 0.53 s.
+- **Weights:** exact.
+- **Feet:** every foot on its target through every gait, the hop's pulse and the flights included.
+- **Duty:** feet down for their gait's duty (the hop 0.41 of 0.40, the crab's walk 0.71 of 0.68).
+- **Speed:** the post hare bounds at 4.8 m/s.
+- **The older ten:** unchanged.
+### Needs eyes
+- The bound and the hop, live: whether the arcs read as a hare and a frog, and whether the post hare's bound would carry a rider.
+- The crab's sideways walk from the side.
+
+
+## v80 — Session 774 — Creatures from parts: fins and radial bodies (prototype only)
+The second of the three sessions Michael's "go ahead and tackle more of the skeletons" set going. Session 772's catalogue table named two parts the kit lacked: fins (fish, whales, rays) and radial arms (octopus, squid, jellyfish, the Wisp). This session builds both.
+
+**The kit:**
+- **Fins:** a thin sheet on a bone of its own, so the pose can flutter it. The outline is drawn in the fin's own plane: a *tri* for a dorsal, pectoral, pelvic or anal fin, a *fork* for a tail. A fork upright is a fish's tail; laid flat it is a whale's flukes. A fin hangs off the spine at any t, or off the tail's end. All of a creature's fins are one double-sided skinned mesh.
+- **Radial arms:** chains from a ring round a centre, each sinking and bending by a number of degrees a bone, kept off the floor where they lie on it. Thick arms are flesh, so the smooth union webs them where they meet. Thread arms are thin tubes with an HDR colour that blooms.
+- **Three footless gaits,** paced in body lengths a second (`bl`) with a stride of 0.7 of the body, whose length the build now measures:
+  - *swim:* a wave from head to tail, growing toward the tail, with the pectorals fluttering. A whale's (`swimAxis: 'x'`) runs up and down.
+  - *crawl:* a ripple round an octopus's arms.
+  - *drift:* a jellyfish's bell beats, closing at the rim, while its threads trail.
+- **The page:** a water surface over a swimmer. The camera now frames a creature that hovers, not only one that stands.
+
+**Four plans:**
+- the Riverjaw Salmon, red for its run, with seven fins;
+- the Storm Whale, 14 m, with long flippers and flat flukes;
+- a giant octopus, eight arms webbed into its mantle and lying out across the floor;
+- the Wisp of OG-018: a blue bell that glows, four oral arms and fourteen glowing threads, floating 1.5 m up.
+
+Corrections found on the way, for the record:
+- the octopus's arms curled back up into the air until their bend stopped at the level;
+- the Wisp's glow summed to white until its colour came down.
+### Verified (headless Chromium)
+`creatures.check.mjs`: all nineteen plans pass.
+- **The new four:** 18 to 139 bones and 8,800 to 53,600 triangles, built in 0.04 to 0.72 s.
+- **Weights:** exact.
+- **Speed:** the salmon swims at 1.2 m/s and the whale at 3.3.
+- **The fifteen older plans:** unchanged.
+### Needs eyes
+- The swim, the crawl and the drift, live: whether the salmon's wave reads as a fish and the whale's as a whale.
+- Whether the Wisp is the Gaoth spirit Michael pictures (OG-018).
+
+
+## v80 — Session 775 — Creatures from parts: shells and feathered wings (prototype only)
+The third of the sessions from Michael's "go ahead and tackle more of the skeletons". The catalogue table's last two owed pieces: shells (the tortoises: Mossback, Sailshell, Sunshell, the sea turtle) and feathered wings (every bird that flies).
+
+**The kit:**
+- **The shell:** a rigid dome over a spine bone, with a rim and a flat plastron. Its scutes are the cells of a hexagonal lattice seen from above, with darkened seams, a shade of their own and growth rings. It may carry a garden (ferns and flowers rooted in moss on its top, seeded from the genome) or a striped sail along its crest.
+- **Feathered wings:** humerus, forearm and hand with feathers as tapered cards, each rigid on its bone and darker at the tip.
+  - the secondaries lie back along the forearm under their coverts;
+  - the primaries fan off the hand from back to out;
+  - tertials sit at the shoulder.
+- **Wing poses:** the wing folds in a Z against the body at rest. It beats in flight: down hard, then up a little folded.
+- **The tail fan:** a bird's tail is a fan of the same feathers off its last bone.
+- **The soar:** a gait for a bird aloft. It lifts the body to the plan's flying height, tucks the legs up under it, and beats the wings.
+- **Plans as functions:** both tortoises are one function of their shell; the raven and the hawk are one function of beak, eye and primaries.
+- **The page:** it frames a creature in the pose it is shown in, so a bird aloft stays in frame, and refits when the gait changes. `creatures.check.mjs` takes `--q` and `--tag`, to picture one gait or view (`creatures-skyraven-soar.jpg`, `creatures-craghawk-top.jpg`).
+
+**Four plans:**
+- the Mossback, 2.3 m of shell with its garden;
+- the Sailshell with its sail;
+- the Skyraven, which hops, walks and flies;
+- the Crag Hawk, barred brown with yellow legs and a hooked beak.
+### Verified (headless Chromium)
+`creatures.check.mjs`: all twenty-three plans pass.
+- **The new four:** 24 to 26 bones and 37,400 to 47,900 triangles, built in 0.27 to 0.53 s.
+- **Weights:** exact.
+- **Feet:** every foot on its target through every gait, the tucked legs of the soar included.
+- **The nineteen older plans:** unchanged.
+### Needs eyes
+- The wingbeat live: whether the fold and the beat read as a raven and a hawk, from the side and from below.
+- The Mossback's garden at walking pace.
+- With this, every skeletal body plan in the concept art has at least one creature. What remains for creatures is the move into the game, behind the foundation's switch, the wolves first.

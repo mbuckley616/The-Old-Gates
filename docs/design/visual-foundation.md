@@ -90,3 +90,25 @@ The slice's 250 m nave is about a dozen meshes of merged stone plus about a hund
 5. **The gates:** the outside per school and condition; the inside as spaces; the generator's second scale.
 6. **Buildings as pieces:** the lane slice's kit across the three islands.
 7. **The cascade:** backlog L built in the new kit.
+
+## 4. The sessions, queued (Michael, 12 Oct 2026: "Go with both of your recs")
+Asked whether the next sessions were planned, Claude found the plan written but nothing queued. There was no Fable card on the control room and no roadmap epic, and the look builder was still building section H in the old style. Michael took both recommendations: queue the foundation as cards, and move the look builder to work that carries over until the renderer lands.
+
+**For the producer: the cards.**
+| Card | Who | Starts when | What it is | FREEZE |
+|---|---|---|---|---|
+| **F1. The renderer** | Fable | the systems branch's open PR has merged (no code PR in flight); then Michael's Start | three.js r128 → 0.170 behind a switch (`?look=new` and a setting), the old look whole and the default; `skinning: true` and the other removed r128 options moved over; every suite green in the old look | yes: it touches every `js/` file that builds a material |
+| **F2. The scale pass** | Fable | F1 merged | §1's `SCALE` table in metres; people at true height; `EYE_STAND`→1.65; reach, camera collision; interiors rebuilt at true size, the × 1.8 gone; the ratio test | yes |
+| **F3. The land** | Fable | F1 merged (beside F2 if the files allow) | the vista slice's terrain shading, grass, trees, sky, water and post, streamed with the chunks, three quality levels, in the new look only | yes (the world files) |
+| **F4. People and creatures in the game** | Fable | F1 merged; B1–B3 done | the builder's genome read by the game: townsfolk first, then foes; the wolves move to creature plans (`WOLF_KINDS` → `PLANS`); level of detail for crowds | yes (`32-people.js`, `34-creatures.js`) |
+| **F5. The gates** | Fable, with the systems builder for the generator's second scale | F2 merged | §2: the outside per school and condition, the inside as spaces of 30 to 250 m | yes |
+| **F6. Buildings as pieces** | Fable or the look builder | F2 merged | the lane slice's piece kit across the three islands | — |
+| **F7. The cascade** | the builders | F6 | backlog L in the new kit, item by item | — |
+
+**Until F1 lands, the look builder works on what carries over** (its routine prompt was changed to say so, 12 Oct). These are the builder's B1 to B3 in `docs/prototypes/levelup/`:
+- B1, the human builder page with genome save and load, and the women's braids;
+- B2, the wardrobe kit;
+- B3, the four peoples' slider ranges and the named cast's genomes;
+- the creature kit's owed parts.
+
+Visual choices still go to Michael as decisions with pictures. Section H's old-style look items wait. Fixing something broken in today's game is still allowed. When F1 merges, the producer gives the look builder back its usual order, now in the new look.
