@@ -62,7 +62,7 @@ const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'ar
   townroads: 74, tpfists: 49, tpguard: 58, tpshots: 61, tpswing: 52, tpweapons: 55, tradebits: 48, trapseed: 52, trees: 57,
   trolls: 65, turnin: 50, twins: 77, twinsrebuild: 58, underclothes: 49, unequip: 46, walls: 86, wanderface: 66, wardall: 53,
   wardswift: 54, warwords: 90, watch: 85, waybands: 62, wayfinding: 52, wealth: 55, weapons: 56, weather: 83, wholepoints: 52, wildseed: 52,
-  windows: 52, witness: 94, witnessrange: 50, wolves: 74, woodenkit: 21, worldjournal: 57, worldloot: 48, worldtarget: 74,
+  windows: 52, witness: 94, witnessrange: 50, wokennight: 110, wolves: 74, woodenkit: 21, worldjournal: 57, worldloot: 48, worldtarget: 74,
   wraithfloat: 55, wraithhood: 59, wreck: 54, wxplace: 105, wyrm: 52, yardpanel: 90, yardplay: 304 };
 if (shardArg) { const [k, n] = shardArg.slice(8).split('/').map(Number); const load = Array(n).fill(0), mine = new Set();
   const w = f => SECS[f.replace('.test.mjs', '')] || 60;
