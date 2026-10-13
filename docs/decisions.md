@@ -15,6 +15,14 @@ You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the fr
    - **A.** The same peace, but only for wolves (not bears or spiders), and the town pays nothing because the beast is dead *(recommended: you choose between the whole peace with its cost and half the peace without it)*.
    - **B.** The whole peace, but half its worth in gold (sold to the Guild at half) and no drain on the town.
    - **C.** A plain fur cloak with no virtue: killing the beast loses the gift.
+3. **The Gate-Blade's key** (added after Session 779). The page says the blade *opens a sigil gate's door without the gate's key*, only for gates you have opened once. Since Session 517 a gate has no key: you walk into a gate freely, and the locked doors inside are picked.
+   - **A.** With the blade in hand, a locked door inside a gate you have been down before opens at a touch, no pick *(recommended: closest to the page, and it never skips a gate you have not walked)*.
+   - **B.** Drop the rule; the blade's virtue is its tier and its cost.
+   - **C.** It opens the door of a sigil gate whose sigil you have not yet touched.
+4. **The Shuttle's cost** (added after Session 779). The page says *the Cold rises 1 a week while you carry it; Varek's next discovery comes one meeting sooner*. The Cold today rises only for an Old Blood reader, and Varek's discoveries wait on your Masteries.
+   - **A.** The Cold rises for anyone who carries it, and each of Varek's discoveries needs one Mastery fewer while you do *(recommended: the Shuttle's price is the Shuttle's, whoever you are)*.
+   - **B.** The Cold rises only for an Old Blood reader, as the Cold does now; Varek as A.
+   - **C.** Leave Varek out: the Cold alone, as A.
 
 
 ## Answered

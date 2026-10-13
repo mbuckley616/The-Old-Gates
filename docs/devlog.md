@@ -15969,3 +15969,14 @@ The Sea's row of the page, its virtue and its cost. As with the cloak (Session 7
 
 ### Needs eyes
 Whether 600 units is felt at sea: a black sail on the horizon now turns toward you where before she sailed on. The Bell's trial (the tide's wreck) and its claimant (the Compact) are owed, and both wait on DECISION #263 for their words.
+
+## v80 — Session 779 — The Gate-Blade: a tier-6 blade of 14 weight that makes you pay to run (the Stone's row of #175 B)
+The Stone's tool, its item and its cost. Taken (Session 776's `artifactTry` at Might 30), the Gate-Blade is now a weapon. `ARTIFACTS.gate_blade.item` makes an Adamant Longsword through `makeItem(6, …)` (24–29), named *The Gate-Blade*, weight 14 against the longsword's 4, unique. While it is in your hand (`gateBladeDrawn()`), the loop's sprint drain (`90-main.js`) costs a quarter more. The game has no sheathing, so *drawn* means held as your weapon.
+
+Two of the page's lines are not built, and both are added to DECISION #263 rather than guessed. The page says the blade *opens a sigil gate's door without the gate's key*, *only gates you have opened once*. Since Session 517 a gate has no key: the dungeon's keys are no longer placed and locked doors are picked, so the rule has nothing to act on as written. The Crown's claim (1,500 gold and the rank of Commissioner, or a tithe of 5% on every sale if you keep the blade) needs the Crown's words. The stone it stands in and its prompt are the trial's, owed with the words and the look builder's prop.
+
+### Verified (headless Chromium)
+`tests/gateblade` (new), 4 of 4, run twice. Taken at Might 30, *The Gate-Blade* is tier 6, a longsword at 24–29 (the same as an Adamant Longsword), 14 weight, unique. The sprint was driven through the loop at 1/60 with Shift and W held and read over its steady second half-second. Net of the stamina that comes back while running, a second costs 11.09 with an Adamant Longsword of the same 14 weight and 14.83 with the Gate-Blade. The difference, 3.74, is a quarter of the sprint's drain of 14 at the loop's real step, which runs about 7% over the nominal 1/60, as the gross drain shows. The weight alone changes nothing (11.09 at 4 and at 14). The rule holds only while the blade is in your hand. No page errors. Neighbours green: `tpguard`, `weapons`, `lootseed`, `makertools`.
+
+### Needs eyes
+Whether 14 weight and a quarter more stamina are felt as a cost, against an Adamant blade that otherwise asks Might 24 and weighs 4. The Adamant green it draws with until the look builder gives it a shape of its own.

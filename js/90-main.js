@@ -312,7 +312,7 @@ function loop(now){
   tickPlayerPosture(dt,performance.now()/1000); // S281
   const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint();
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1); /* S779 — the Gate-Blade drawn */
     stamina=Math.max(0,stamina-dt*sprintDrain);
     if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
     lvAct.sprintDist+=spd;

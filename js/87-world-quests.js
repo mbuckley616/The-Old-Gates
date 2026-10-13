@@ -940,7 +940,8 @@ const giver=`${lord.title} ${lord.name}`;
   // in the world, its item and its words come with its own session (the page's order: the Stone and the Beasts, the Sea
   // and the Hearth, the Sky and the Weaver).
   const ARTIFACTS={
-    gate_blade:  {god:'cloch',   name:'the Gate-Blade',          ico:'🗡',check:{attr:'might',need:30}},
+    gate_blade:  {god:'cloch',   name:'the Gate-Blade',          ico:'🗡',check:{attr:'might',need:30},
+                  item:()=>Object.assign(makeItem(6,WEAPON_TYPES.find(w=>w.type==='Longsword')),{name:'The Gate-Blade',ico:'🗡',weight:14,sellMult:0,buyPrice:0,desc:'Sprinting costs a quarter more while it is drawn.'})},
     drowned_bell:{god:'muir',    name:'the Drowned Bell',        ico:'🔔',check:null},
     sundial_ring:{god:'speir',   name:'the Sundial Ring',        ico:'💍',check:{attr:'swiftness',need:30}},
     wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30},
@@ -968,6 +969,8 @@ const giver=`${lord.title} ${lord.name}`;
   // S778 — the Drowned Bell (the page's Sea row): carried, your ship takes half the wear of rough seas and storms (tickSeaWear),
   // and a black sail hunts you from 600 units, not 300 (the black sails' tick)
   function bellAboard(){return artifactCarried('drowned_bell');}
+  // S779 — the Gate-Blade (the page's Stone row): a tier-6 blade of 14 weight; while it is in your hand sprinting costs a quarter more
+  function gateBladeDrawn(){return !!(EQ.weapon&&EQ.weapon.artifact==='gate_blade');}
   // the check: the attribute's base, plus what gear adds up to ARTIFACT_GEAR_MAX (a Fortify ring closes a small gap; no one buys Might 30)
   function artifactCheck(id){const T=ARTIFACTS[id];if(!T)return null;if(!T.check)return {ok:true,attr:null,need:0,have:0,base:0,gear:0};
     const k=T.check.attr,base=ATTRS[k]||0,gear=Math.max(0,Math.min(ARTIFACT_GEAR_MAX,(typeof attrEff==='function'?attrEff(k):base)-base));
