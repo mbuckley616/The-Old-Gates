@@ -17,11 +17,14 @@ for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droich
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id); const L = S.loot || [];
     const close = []; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const d = Math.hypot(L[i].x - L[j].x, L[i].z - L[j].z); if (d < .9) close.push([i, j, +d.toFixed(2)]); }
     const houseIn = L.map((c, i) => [c, i]).filter(([c]) => (S.sol || []).some(b => b !== S.sol[S.sol.length] && b.bt && Math.abs((c.x - b.cx) * (b.c == null ? 1 : b.c) - (c.z - b.cz) * (b.s || 0)) < b.rx && Math.abs((c.x - b.cx) * (b.s || 0) + (c.z - b.cz) * (b.c == null ? 1 : b.c)) < b.rz)).map(([c, i]) => i);
+    // the town's drawn people only: a resident steps out of her house when you come within 70, two a tick, so how many
+    // have appeared by the time this reads depends on the machine's speed (CI's slower runner saw two more in Dunmore)
+    const drawn = S.npcs.filter(n => n.sched?.type !== 'resident');
     return { kind: S.site.kind, n: L.length, ids: L.map(c => c.id), shaped: L.every((c, i) => c.id === id + ':barrel:' + i),
       filled: L.filter(c => c.items.length > 0).length, arms: L.filter(c => c.items.some(it => it.dmg != null || it.def != null || it.slot || it.type === 'weapon' || it.type === 'armor')).length,
       kinds: L.reduce((a, c) => (a[c.kind] = (a[c.kind] || 0) + 1, a), {}), close, houseIn,
-      people: S.npcs.map(n => n.def.name + '|' + (n.def.role || '') + '|' + (n.def.x ?? 0).toFixed(2) + ',' + (n.def.z ?? 0).toFixed(2)),
-      ph: S.npcs.reduce((h, n) => { for (const ch of n.def.name + '|' + (n.def.role || '') + ';') h = (h * 31 + ch.charCodeAt(0)) | 0; return h; }, 0) }; }, id);
+      people: drawn.map(n => n.def.name + '|' + (n.def.role || '') + '|' + (n.def.x ?? 0).toFixed(2) + ',' + (n.def.z ?? 0).toFixed(2)),
+      ph: drawn.reduce((h, n) => { for (const ch of n.def.name + '|' + (n.def.role || '') + ';') h = (h * 31 + ch.charCodeAt(0)) | 0; return h; }, 0) }; }, id);
   if (process.env.PROBE) { console.log('PROBE', id, r.kind, r.n, JSON.stringify(r.people)); continue; }
   const want = WANT[r.kind];
   check(`${id} (${r.kind}): ${r.n} barrels and crates, twice the old ${want / 2} (${JSON.stringify(r.kinds)})`, r.n === want, r);

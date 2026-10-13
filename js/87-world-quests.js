@@ -107,6 +107,9 @@
     {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}}
     {const H=typeof lampHome==='function'&&lampHome();const lt=H&&siteAnywhere(H.site);if(lt){const [li,lj]=cellOf(lt.x,lt.z);if(Math.abs(li-ci)<=1&&Math.abs(lj-cj)<=1)out.push(`There's a lamp over the inn door at ${lt.name} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${lt.name}.`);}} /* S784 — the Waylamp, while it hangs (the draft's rumour; its town and the cells round it) */
     if(typeof cloakRumours==='function')out.push(...cloakRumours(site)); /* S795 — the cloak's two rumours */
+    {const P=!artifactState('gate_blade')&&artifactPlaces().gate_blade;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [gi,gj]=cellOf(P.x,P.z);if(Math.abs(gi-ci)<=1&&Math.abs(gj-cj)<=1)out.push(`There's a sword in a stone out by ${P.name}. Half the young ones in the townland have had a pull at it. It's still there. So are they, mostly.`);}} /* S802 — the blade, while it stands in its stone (the approved draft, §5) */
+    {const P=!artifactState('drowned_bell')&&artifactPlaces().drowned_bell;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [bi,bj]=cellOf(P.x,P.z);if(Math.abs(bi-ci)<=1&&Math.abs(bj-cj)<=1&&(site.kind==='port'||Math.hypot(site.x-P.x,site.z-P.z)<500))out.push(`There's a wreck on the rock off ${P.coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry.`);}} /* S801 — the bell, while it hangs in its wreck (the approved draft, §2) */
+    {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
     {const d=nearestSigilDoorFrom(site);if(d&&Math.random()<.5)out.push(`There's a warm stone in ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. My cousin put his hand on it and talked in his sleep for a week.`);}
@@ -967,8 +970,16 @@ const giver=`${lord.title} ${lord.name}`;
     const lairs=home.flatMap(c=>c.sites.filter(t=>t.kind==='lair'&&!t.anchor&&!t.dragon)).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
     const lr=pick('wolf_cloak',lairs);
     const towns=home.flatMap(c=>c.sites.filter(t=>t.kind==='town'||t.kind==='port'||t.kind==='city')).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const lt=pick('waylamp',towns); /* S783 — the Waylamp over a home-island town's first inn */
+    /* S797 — the Shuttle in the deepest room of a home-island sigil gate (a cave gate, not a fort; never the blade's) */
+    const sgates=doors.filter(d=>d.sigil&&d.kind==='cave_door'&&(!gd||d.seed!==gd.seed));const sg=pick('shuttle',sgates);
+    /* S800 — the Noon Ring on the cairn at the top of a home-island peak */
+    const peaks=home.flatMap(c=>c.peaks||[]).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const pk=pick('sundial_ring',peaks);
+    /* S801 — the Drowned Bell in a wreck on a rock off a home-island port: the port, then a point of open sea off it */
+    const ports=home.flatMap(c=>c.sites.filter(t=>t.kind==='port')).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);let bl=null;
+    {const br=seededRng('artifact','drowned_bell');const order=ports.map((t,k)=>({t,k:br()})).sort((a,b)=>a.k-b.k);
+     for(const o of order){const sp=bellSpot(o.t);if(sp.length){const s_=sp[Math.floor(br()*sp.length)];bl={port:o.t.id,coast:o.t.name,name:'the wreck off '+o.t.name,x:s_.x,z:s_.z};break;}}}
     _artPl={gate_blade:gd?{door:gd.seed,name:gd.canonicalName||(typeof dungeonName==='function'?dungeonName(gd.seed,gd.theme):'an old gate'),x:gd.x,z:gd.z}:null,
-            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:null};
+            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:bl,sundial_ring:pk?{peak:pk.id,name:pk.name,x:pk.x,z:pk.z}:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:sg?{door:sg.seed,name:sg.canonicalName||(typeof dungeonName==='function'?dungeonName(sg.seed,sg.theme):'an old gate'),x:sg.x,z:sg.z}:null};
     return _artPl;}
   function artifactState(id){const S=worldState.artifacts;return (S&&S[id])||null;}
   function artifactHeld(id){return [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)].some(L=>L.some(it=>it&&it.artifact===id));}
@@ -994,8 +1005,44 @@ const giver=`${lord.title} ${lord.name}`;
   function tickShuttle(force){const t=performance.now();if(!force&&t-_shT<1000)return 0;_shT=t;const now=worldState.gameTimeAbsMinutes||0;let C=worldState.shuttleCarry;
     if(!shuttleCarried()){if(C)C.last=now;return 0;}if(!C)C=worldState.shuttleCarry={acc:0,last:now};
     C.acc+=Math.max(0,now-(C.last==null?now:C.last));C.last=now;let n=0;
-    while(C.acc>=SHUTTLE_WEEK){C.acc-=SHUTTLE_WEEK;worldState.cold=(worldState.cold||0)+1;n++;if(typeof addLog==='function')addLog('❄','Your hands are colder than the weather.');}
+    while(C.acc>=SHUTTLE_WEEK-1e-6){C.acc=Math.max(0,C.acc-SHUTTLE_WEEK); /* S797 — the clock's minutes are fractional: a week summed in pieces can fall a hair short */ worldState.cold=(worldState.cold||0)+1;n++;if(typeof addLog==='function')addLog('❄','Your hands are colder than the weather.');}
     return n;}
+  // S797 — the Shuttle's trial (the page's Weaver row; the approved draft's second run, §5): it lies on the floor of the deepest
+  // room of its gate (artifactPlaces().shuttle, a home-island sigil gate picked from the seed, as the others are), on the lowest
+  // floor, at the open cell farthest by walking from where you arrive on that floor (the entrance, or the stair). The first time
+  // you come within four units of it, the draft's line, once (the character's: worldState.stats.shuttleSeen). E within 1.4 takes
+  // it at Intelligence 35 (artifactTry: the base, plus at most 2 from gear); short of that the hand closes beside it, and it costs
+  // nothing. Its shape is a placeholder, a pale spindle with a faint light; the look builder's prop is owed.
+  let SHUTTLE_LIE=null;
+  const SHUTTLE_SAY={seen:'Something small and pale lies on the floor under the sigil, the shape of a boat, or a fish, or neither.',
+    fail:'You can see it, and you cannot see where it is. Your hand closes beside it every time. Not yet.',
+    take:'You pick it up the way you would pick up something you had put down a moment ago.'};
+  function shuttleSpot(fl,map){const from=(fl===2&&dStairC!=null)?{c:dStairC,r:dStairR}:{c:Math.round(dEntranceX),r:Math.round(dEntranceZ)};
+    const R=map.length,C=map[0].length,D=map.map(row=>row.map(()=>-1));const q=[[from.c,from.r]];if(!map[from.r]||!map[from.r][from.c])return null;D[from.r][from.c]=0;
+    for(let h=0;h<q.length;h++){const [c,r]=q[h];for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+dc,nr=r+dr;if(nr<0||nr>=R||nc<0||nc>=C||D[nr][nc]>=0||!map[nr][nc])continue;D[nr][nc]=D[r][c]+1;q.push([nc,nr]);}}
+    const taken=(c,r)=>CHESTS.concat(BARRELS).some(o=>(o.floor||1)===fl&&Math.round(o.x)===c&&Math.round(o.z)===r);
+    const open=(c,r)=>r>=0&&r<R&&c>=0&&c<C&&map[r][c]===1;
+    const room=(c,r,n)=>{for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){if(!i&&!j)continue;if(n===4&&i&&j)continue;if(!open(c+i,r+j))return false;}return true;};
+    const cells=[];for(let r=0;r<R;r++)for(let c=0;c<C;c++)if(D[r][c]>0&&open(c,r)&&!taken(c,r))cells.push({c,r,d:D[r][c]});
+    if(!cells.length)return null;cells.sort((a,b)=>b.d-a.d||a.r-b.r||a.c-b.c);const far=cells.filter(k=>k.d>=cells[0].d*.85);
+    const best=far.find(k=>room(k.c,k.r,8))||far.find(k=>room(k.c,k.r,4))||cells[0];return {x:best.c,z:best.r,d:best.d};}
+  function shuttleLay(portal){SHUTTLE_LIE=null;try{const P=artifactPlaces().shuttle;if(!P||!portal||portal.seed!==P.door||artifactState('shuttle'))return null;
+    const fl=dMap2?2:1,map=fl===2?dMap2:dMap;if(!map)return null;const sp=shuttleSpot(fl,map);if(!sp)return null;
+    const g=new THREE.Group();const wood=new THREE.MeshLambertMaterial({color:0xe2d6bc,emissive:0x2a2418});
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.05,10,6),wood);body.scale.set(3.4,.9,1.1);g.add(body);
+    const thread=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.22,4),new THREE.MeshLambertMaterial({color:0xcfd8e8,emissive:0x303848}));thread.rotation.z=Math.PI/2;thread.rotation.y=.5;thread.position.set(.16,-.02,.06);g.add(thread);
+    const l=new THREE.PointLight(0xdfe8ff,.55,2.6);l.position.set(0,.4,0);g.add(l);
+    g.position.set(sp.x,(fl===2?FLOOR2_Y:0)+.05,sp.z);g.rotation.y=(portal.seed%628)/100;dScene.add(g);
+    SHUTTLE_LIE={x:sp.x,z:sp.z,floor:fl,mesh:g,seed:portal.seed,name:P.name,walk:sp.d};return SHUTTLE_LIE;}catch(e){console.warn('shuttleLay',e);return null;}}
+  function shuttleNear(){const L=SHUTTLE_LIE;return !!(L&&L.mesh&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<1.4);}
+  // the first sight of it, once (called from the dungeon's frame)
+  function shuttleTick(){const L=SHUTTLE_LIE;if(!L||!L.mesh||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;const st=worldState.stats||(worldState.stats={});
+    if(st.shuttleSeen||Math.hypot(px-L.x,pz-L.z)>4)return false;st.shuttleSeen=1;showMsg(SHUTTLE_SAY.seen,'#c8d0e0');return true;}
+  // E at it: the named action is artifactTry (takeArtifact), with the draft's log line
+  function shuttleTake(){const L=SHUTTLE_LIE;if(!L)return null;const c=artifactTry('shuttle',`Took the Shuttle from the deepest room of ${L.name}.`);
+    if(c.gone){if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);SHUTTLE_LIE=null;return c;}
+    if(!c.ok){showMsg(SHUTTLE_SAY.fail,'#c8d0e0');return c;}
+    showMsg(SHUTTLE_SAY.take,'#c8d0e0');if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);SHUTTLE_LIE=null;if(typeof updateHUD==='function')updateHUD();return c;}
   // S779 — the Gate-Blade (the page's Stone row): a tier-6 blade of 14 weight; while it is in your hand sprinting costs a quarter more
   function gateBladeDrawn(){return !!(EQ.weapon&&EQ.weapon.artifact==='gate_blade');}
   // S780 — Michael's 3A on #263: with the blade in hand, a locked door inside a sigil gate you have been down before opens at a
@@ -1016,18 +1063,18 @@ const giver=`${lord.title} ${lord.name}`;
     return {ok:base+gear>=T.check.need,attr:k,need:T.check.need,have:base+gear,base,gear};}
   function artifactItem(id){const T=ARTIFACTS[id];const it=(T.item?T.item():{name:T.name.replace(/^the /,'The '),ico:T.ico,type:'misc',weight:1,sellMult:0,buyPrice:0,desc:'One of the six things the Makers left.'});return Object.assign(it,{unique:true,artifact:id,qty:1});}
   // the named action that takes a tool from where it lies (shared state: the world row)
-  function takeArtifact(id,how){const T=ARTIFACTS[id];if(!T||artifactState(id))return false;
+  function takeArtifact(id,how,logLine){const T=ARTIFACTS[id];if(!T||artifactState(id))return false;
     (worldState.artifacts||(worldState.artifacts={}))[id]={taken:true,day:dayNow(),how:how||'taken'};
     if(typeof bagAdd==='function')bagAdd(artifactItem(id));const tr=worldState.artifactTries;if(tr)delete tr[id];
-    if(typeof addLog==='function')addLog(T.ico,`Took ${T.name}.`);return true;}
+    if(typeof addLog==='function')addLog(T.ico,logLine||`Took ${T.name}.`);return true;}
   // the named action that gives a tool up to its claimant: out of the bag, the stash or your hands, and the world remembers who has it
   function yieldArtifact(id,to){const T=ARTIFACTS[id],S=artifactState(id);if(!T||!S||S.yielded)return false;
     const out=L=>{const i=L.findIndex(it=>it&&it.artifact===id);if(i>=0){L.splice(i,1);return true;}return false;};
     let gone=out(BAG)||(typeof stashBag!=='undefined'&&out(stashBag));if(!gone)for(const s in EQ)if(EQ[s]&&EQ[s].artifact===id){EQ[s]=null;gone=true;break;}
     if(!gone)return false;S.yielded=to||'claimant';S.yieldDay=dayNow();if(typeof updateHUD==='function')updateHUD();return true;}
   // a try at a tool: passes and takes it, or records the try (the character's) and says nothing itself (the trial's words are its own)
-  function artifactTry(id){const T=ARTIFACTS[id];if(!T||artifactState(id))return {ok:false,gone:true};const c=artifactCheck(id);
-    if(c.ok){takeArtifact(id);return c;}
+  function artifactTry(id,logLine){const T=ARTIFACTS[id];if(!T||artifactState(id))return {ok:false,gone:true};const c=artifactCheck(id);
+    if(c.ok){takeArtifact(id,null,logLine);return c;}
     const tr=worldState.artifactTries||(worldState.artifactTries={});tr[id]={day:dayNow(),have:c.have,n:((tr[id]&&tr[id].n)||0)+1};return c;}
   // S777 — the Wolf-Mother's Cloak (the page's Beasts row): worn, the wolves, the bears and the spiders leave you alone unless
   // you strike first. A beast you have hurt is struck for good (`_struck`), and its pack takes its part (alertPack). The cost:
@@ -1176,9 +1223,9 @@ const giver=`${lord.title} ${lord.name}`;
       ['waylamp','The Hearth’s?',()=>'Lóchrann an Teallaigh. A lantern. It goes from inn to inn and the weather does not put it out. A theft does.'],
       ['shuttle','The Weaver’s?',(P,d)=>`Spól an Fhíodóra. A shuttle. It is in the deepest room of ${P.name}. It shows where the unread stones are. Reading costs. It will cost you.`]]};
   // S796 — a hermit gives the way only to a tool that can be had where it lies today: the cloak (its cavern's master, whose
-  // corpse gives it up, Session 781) and the lamp (its inn, Session 783). The blade's stone, the bell's wreck, the ring's cairn
-  // and the Shuttle's room wait for their trials and props; each trial's session adds its tool here.
-  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1};
+  // corpse gives it up, Session 781) and the lamp (its inn, Session 783); and since S797 the Shuttle (its gate's deepest room).
+  // The blade's stone, the bell's wreck and the ring's cairn wait for their trials and props; each trial's session adds its tool here.
+  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1,sundial_ring:1,drowned_bell:1,gate_blade:1}; /* S797 — the Shuttle's room; S800 — the ring's cairn; S801 — the bell's wreck; S802 — the blade's stone */
   // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
   function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
   function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];
@@ -1206,6 +1253,148 @@ const giver=`${lord.title} ${lord.name}`;
   // a storm's flash (the weather tick's lightning): with the ring on you, one in three is close. Cosmetic, so Math.random.
   function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
     if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
+  // S802 — the Gate-Blade's trial (the page's Stone row; the approved draft's first run, §5): the blade stands in a standing stone
+  // outside its ruined gate (artifactPlaces().gate_blade, picked from the seed in Session 776). The stone stands 8 to 18 units
+  // from the gate's door on open ground, the first spot clear of every solid along bearings taken in an order seeded by the
+  // gate (bladeStoneSpot), found once the gate's cell is loaded and its compound built. The first time you come within ten
+  // units, the draft's line, once (the character's: stats.bladeSeen). E within 1.8 takes hold of the hilt: Might 30, the base
+  // plus at most 2 from gear (artifactTry); short of it, one of the draft's three lines by how short, each logged with 🗝, costing
+  // nothing and kept for the Journal. Taken, the stone stays, and E at it says what is left. The stone and the hilt are a
+  // placeholder; the look builder's prop is owed. The stone is not solid.
+  const BLADE_SAY={seen:'A blade stands in a stone to a hand’s breadth below its guard. The stone has grown round it, the way bark grows round a nail.',
+    weak:'You might as well pull at the hill. The stone does not move.',mid:'The stone does not move. Not yet.',near:'Something gives: a grain of grit, no more. Not yet.',
+    take:'It comes out of the stone the way a key comes out of a lock: all at once, after nothing.',
+    after:'An empty slot in a standing stone. Looked at end on, it is the shape of a key.'};
+  const BLADE_REACH=1.8;let BLADE_STONE=null,_bladeT=0;
+  function bladeStoneSpot(P){const r=seededRng('bladestone',P.door);const a0=r()*Math.PI*2;
+    for(let d=8;d<=18;d+=2)for(let k=0;k<12;k++){const a=a0+k/12*Math.PI*2,x=P.x+Math.cos(a)*d,z=P.z+Math.sin(a)*d;let ok=worldH(x,z)>SEA_Y+.5;
+      for(let q=0;q<8&&ok;q++)if(solidAt(x+Math.cos(q/8*Math.PI*2)*1.4,z+Math.sin(q/8*Math.PI*2)*1.4)||solidAt(x,z))ok=false;
+      if(ok)return {x,z,y:worldH(x,z)};}
+    return null;}
+  function bladeStoneBuild(P){const sp=bladeStoneSpot(P);if(!sp)return null;const g=new THREE.Group();
+    const stone=new THREE.Mesh(new THREE.BoxGeometry(.95,2.1,.62),new THREE.MeshLambertMaterial({color:0x7d7a72}));stone.position.y=.95;stone.rotation.z=.04;g.add(stone);
+    const hilt=new THREE.Group();const iron=new THREE.MeshLambertMaterial({color:0x6c7078,emissive:0x101216}),leather=new THREE.MeshLambertMaterial({color:0x3a2616});
+    const blade=new THREE.Mesh(new THREE.BoxGeometry(.06,.12,.012),iron);blade.position.y=.06;hilt.add(blade);
+    const guard=new THREE.Mesh(new THREE.BoxGeometry(.32,.04,.05),iron);guard.position.y=.14;hilt.add(guard);
+    const grip=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.24,6),leather);grip.position.y=.28;hilt.add(grip);
+    const pommel=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6),iron);pommel.position.y=.42;hilt.add(pommel);
+    hilt.position.y=2.0;g.add(hilt);g.position.set(sp.x,sp.y-.05,sp.z);g.rotation.y=Math.atan2(P.x-sp.x,P.z-sp.z);sc.add(g);
+    return {x:sp.x,z:sp.z,door:P.door,name:P.name,mesh:g,hilt};}
+  function bladeStoneDrop(){if(BLADE_STONE&&BLADE_STONE.mesh&&BLADE_STONE.mesh.parent)BLADE_STONE.mesh.parent.remove(BLADE_STONE.mesh);BLADE_STONE=null;}
+  // once a second from the loop: the stone is built while the gate's cell is loaded and you are within 300 units; the first sight
+  function tickBladeStone(force){const t=performance.now();if(!force&&t-_bladeT<1000)return;_bladeT=t;
+    if(activeZoneId!=='world'||!sc){bladeStoneDrop();return;}const P=artifactPlaces().gate_blade;if(!P)return;
+    if(Math.hypot(px-P.x,pz-P.z)>=300||!LOADED.has(cellKey(...cellOf(P.x,P.z)))){if(BLADE_STONE)bladeStoneDrop();return;}
+    if(!BLADE_STONE||BLADE_STONE.door!==P.door||!BLADE_STONE.mesh.parent){bladeStoneDrop();BLADE_STONE=bladeStoneBuild(P);}
+    const B=BLADE_STONE;if(!B)return;B.hilt.visible=!artifactState('gate_blade');
+    if(typeof isInterior==='function'&&isInterior())return;const st=worldState.stats||(worldState.stats={});
+    if(!st.bladeSeen&&!artifactState('gate_blade')&&Math.hypot(px-B.x,pz-B.z)<10){st.bladeSeen=1;showMsgLong(BLADE_SAY.seen,'#c8c0a8');}}
+  function bladeStoneNear(){const B=BLADE_STONE;return !!(B&&B.mesh&&B.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-B.x,pz-B.z)<BLADE_REACH);}
+  function bladeStonePrompt(){if(!bladeStoneNear())return null;return artifactState('gate_blade')?"Press 'E' to look at the stone":"Press 'E' to take hold of the hilt";}
+  // E at the stone: the named action is artifactTry, with the draft's log line; short of Might 30, the draft's line by how short
+  function bladeStoneUse(){const B=BLADE_STONE;if(!B)return null;if(artifactState('gate_blade')){showMsg(BLADE_SAY.after,'#c8c0a8');return {gone:true};}
+    const c=artifactTry('gate_blade',`Took the Gate-Blade from the stone by ${B.name}.`);
+    if(!c.ok){const t=c.have<20?BLADE_SAY.weak:c.have<27?BLADE_SAY.mid:BLADE_SAY.near;showMsg(t,'#c8c0a8');if(typeof addLog==='function')addLog('🗝',t);return c;}
+    showMsg(BLADE_SAY.take,'#c8c0a8');B.hilt.visible=false;if(typeof updateHUD==='function')updateHUD();return c;}
+  // S801 — the Drowned Bell's trial (the page's Sea row; the approved draft's second run, §2): the bell hangs from the last beam
+  // of a wreck on a rock off a home-island port (artifactPlaces().drowned_bell, picked from the seed as the others are: a port,
+  // then a point of open sea 50 to 140 units off it by the bare land mask, seaBare, which reads no loaded state). The sea does
+  // not rise and fall in the world, so the wreck does: at high tide it sits low and only the mast stands out of the water; at
+  // low tide (isTideOut, hours 0–6 and 12–18) the ribs and the beam are out, eased over half an hour either side of the turn.
+  // The first time you come within forty units, the draft's line for the tide, once (the character's: stats.bellSeen), and the
+  // Journal's *Things not yet yours* takes its line from then. At low tide, within 2.6 of the bell, *Press 'E' to take the bell*;
+  // at high tide E at the mast says the sea has it. Taken (takeArtifact: the bell has no check), the bell goes from the beam and
+  // the wreck stays; at low tide E there says what is left. Rock, hull, mast and bell are a placeholder: the look builder's
+  // prop is owed. Nothing of it is solid.
+  const BELL_SAY={seenHigh:'A mast stands up out of the sea off the rock, and the water runs over everything below it.',
+    seenLow:'The sea has drawn back off a rock and left a wreck on it, ribs and a mast and green weed. Something hangs from the last beam.',
+    high:'The sea has it now. It gives it back twice a day.',
+    take:'The bell comes off its beam green to the lip. You knock it on the ribs getting it out, and it does not ring.',
+    after:'An empty beam, and a bright ring of wood where something hung for a long time.'};
+  const BELL_REACH=2.6,BELL_MAST_REACH=3.2,BELL_HIGH_DY=-2.4;let BELL_WRECK=null,_bellT=0;
+  function bellSpot(t){const [ci,cj]=cellOf(t.x,t.z);const c=getCell(ci,cj);const isl=c&&c.islets;const out=[];
+    for(let a=0;a<24;a++){const ca=Math.cos(a/24*Math.PI*2),sa=Math.sin(a/24*Math.PI*2);
+      for(let d=50;d<=140;d+=10){const x=t.x+ca*d,z=t.z+sa*d;if(seaBare(x,z,isl)<.98)continue;
+        let open=true;for(let k=0;k<8&&open;k++){if(seaBare(x+Math.cos(k/8*Math.PI*2)*14,z+Math.sin(k/8*Math.PI*2)*14,isl)<.9)open=false;}
+        if(open){out.push({x,z,d});break;}}}
+    return out;}
+  // how far out the tide is, 0 (high) to 1 (low), eased over half an hour either side of each turn (cosmetic: the rule is isTideOut)
+  function bellLowness(){const ph=(gameHour()%24)%12,k=v=>Math.max(0,Math.min(1,v));return ph<9?k(Math.min(ph+.5,6.5-ph)):k(ph-11.5);}
+  function bellWreckBuild(P){const g=new THREE.Group();const y0=worldH(P.x,P.z);
+    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(3.2,1),new THREE.MeshLambertMaterial({color:0x5a5650}));rock.scale.set(1.3,Math.max(1,(SEA_Y-y0)/3.2+.4),1);
+    rock.position.y=-.4-rock.scale.y*3.2;g.add(rock);
+    const hull=new THREE.Mesh(wreckGeo(pRng(pHash('bell|'+P.port))),VC_MAT);hull.position.y=-.35;hull.rotation.y=(P.x*7%628)/100;g.add(hull);
+    const wood=new THREE.MeshLambertMaterial({color:0x3a2a18});
+    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,6.4,7),wood);mast.position.set(0,2.6,0);g.add(mast);
+    const beam=new THREE.Mesh(new THREE.BoxGeometry(2.2,.16,.16),wood);beam.position.set(.9,1.9,0);g.add(beam);
+    const bell=new THREE.Group();const bronze=new THREE.MeshLambertMaterial({color:0x5f7a5a,emissive:0x0c140c});
+    const cup=new THREE.Mesh(new THREE.CylinderGeometry(.09,.2,.3,10,1,true),bronze);cup.material.side=THREE.DoubleSide;bell.add(cup);
+    const top=new THREE.Mesh(new THREE.SphereGeometry(.09,8,5),bronze);top.position.y=.15;bell.add(top);bell.position.set(1.8,1.6,0);g.add(bell);
+    g.position.set(P.x,SEA_Y+BELL_HIGH_DY,P.z);sc.add(g);
+    return {x:P.x,z:P.z,port:P.port,coast:P.coast,mesh:g,bell,bx:1.8,y0};}
+  function bellWreckDrop(){if(BELL_WRECK&&BELL_WRECK.mesh&&BELL_WRECK.mesh.parent)BELL_WRECK.mesh.parent.remove(BELL_WRECK.mesh);BELL_WRECK=null;}
+  // where the bell hangs in the world (its beam turns with the group)
+  function bellPos(){const W=BELL_WRECK;if(!W)return null;const v=new THREE.Vector3();W.bell.getWorldPosition(v);return v;}
+  function bellNoteSeen(){const tr=worldState.artifactTries||(worldState.artifactTries={});if(!tr.drowned_bell)tr.drowned_bell={day:dayNow(),have:0,n:0};}
+  // once a second from the loop: the wreck is built while you are within 400 units in the world, set by the tide; the first sight
+  function tickBellWreck(force){const t=performance.now();if(!force&&t-_bellT<1000)return;_bellT=t;
+    if(activeZoneId!=='world'||!sc){bellWreckDrop();return;}const P=artifactPlaces().drowned_bell;if(!P)return;
+    if(Math.hypot(px-P.x,pz-P.z)>=400||!getCell(...cellOf(P.x,P.z))){if(BELL_WRECK)bellWreckDrop();return;}
+    if(!BELL_WRECK||BELL_WRECK.port!==P.port||!BELL_WRECK.mesh.parent){bellWreckDrop();BELL_WRECK=bellWreckBuild(P);}
+    const W=BELL_WRECK;W.mesh.position.y=SEA_Y+BELL_HIGH_DY*(1-bellLowness());W.bell.visible=!artifactState('drowned_bell');
+    if(typeof isInterior==='function'&&isInterior())return;const st=worldState.stats||(worldState.stats={});
+    if(!st.bellSeen&&!artifactState('drowned_bell')&&Math.hypot(px-W.x,pz-W.z)<40){st.bellSeen=1;bellNoteSeen();showMsgLong(isTideOut()?BELL_SAY.seenLow:BELL_SAY.seenHigh,'#a8c8d8');}}
+  function bellOut(){return !!(BELL_WRECK&&BELL_WRECK.mesh&&BELL_WRECK.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior()));}
+  function bellAtBeam(){if(!bellOut())return false;const b=bellPos();return Math.hypot(px-b.x,pz-b.z)<BELL_REACH;}
+  function bellAtMast(){return bellOut()&&Math.hypot(px-BELL_WRECK.x,pz-BELL_WRECK.z)<BELL_MAST_REACH;}
+  function bellWreckNear(){return isTideOut()?bellAtBeam()||bellAtMast():bellAtMast()&&!artifactState('drowned_bell');}
+  function bellWreckPrompt(){if(!isTideOut()||!(bellAtBeam()||bellAtMast()))return null;return artifactState('drowned_bell')?"Press 'E' to look at the wreck":"Press 'E' to take the bell";}
+  // E at the wreck: at high tide the sea has it; at low tide the named action is takeArtifact, with the draft's log line
+  function bellWreckUse(){const W=BELL_WRECK;if(!W)return null;const S=artifactState('drowned_bell');
+    if(!isTideOut()){if(S)return null;bellNoteSeen();const tr=worldState.artifactTries.drowned_bell;tr.n=(tr.n||0)+1;tr.day=dayNow();showMsg(BELL_SAY.high,'#a8c8d8');return {ok:false,why:'tide'};}
+    if(S){showMsg(BELL_SAY.after,'#a8c8d8');return {gone:true};}
+    if(!takeArtifact('drowned_bell',null,`Took the Drowned Bell from the wreck off ${W.coast}.`))return null;
+    showMsg(BELL_SAY.take,'#a8c8d8');W.bell.visible=false;if(typeof updateHUD==='function')updateHUD();return {ok:true};}
+  // S800 — the Noon Ring's trial (the page's Sky row; the approved draft's second run, §4): the ring lies on a cairn at the top
+  // of a home-island peak (artifactPlaces().sundial_ring, picked from the seed as the others are). The cairn stands on the
+  // highest ground within 24 units of the peak's centre, found once its cell is loaded (the peak's rise is in the terrain only
+  // then). The first time you come within ten units of it, the draft's line, once (the character's: stats.ringSeen). E within 2.2
+  // tries it, the draft's order: the hour (noon is the game's hour 12, 12:00 to 12:59, the sundial's hour), then the sky (clear
+  // only), then Swiftness 30 (artifactTry: the base, plus at most 2 from gear). Every failure costs nothing and is kept for the
+  // Journal's *Things not yet yours*. Taken, the cairn stays, and E at it says what is left. The cairn and the ring are a
+  // placeholder of stacked stones and a gold band; the look builder's prop is owed.
+  const RING_SAY={seen:'A cairn at the top of the world, and on its top stone a ring of gold in a hollow worn to fit it. A line is cut across the stone, and the cairn’s shadow lies on it.',
+    hour:'The ring will not lift. The light is wrong for it.',sky:'Noon, and no sun to read it by. The ring stays where it is.',
+    swift:'The cairn’s shadow is already off the line by the time your hand is on the stone. Not yet.',
+    take:'At noon the cairn has no shadow, and the ring is only a ring. It comes up into your hand.',
+    after:'An empty hollow in the top stone, and a line no shadow reaches at noon.'};
+  const RING_NOON=12,RING_REACH=2.2;let RING_CAIRN=null,_ringT=0;
+  function ringCairnSpot(P){let best=null;for(let dx=-24;dx<=24;dx+=3)for(let dz=-24;dz<=24;dz+=3){if(dx*dx+dz*dz>24*24)continue;const x=P.x+dx,z=P.z+dz,h=worldH(x,z);if(!best||h>best.y)best={x,z,y:h};}return best;}
+  function ringCairnBuild(P){const sp=ringCairnSpot(P);if(!sp)return null;const g=new THREE.Group();const stone=new THREE.MeshLambertMaterial({color:0x8a8780});
+    [[.62,.0,0],[.5,.42,.4],[.4,.78,1.1],[.3,1.06,2.0]].forEach(([r,y,a])=>{const m=new THREE.Mesh(new THREE.DodecahedronGeometry(r,0),stone);m.scale.y=.6;m.position.y=y+r*.3;m.rotation.y=a;g.add(m);});
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.06,.016,6,14),new THREE.MeshLambertMaterial({color:0xe8c050,emissive:0x3a2a08}));ring.rotation.x=Math.PI/2;ring.position.y=1.42;g.add(ring);
+    g.position.set(sp.x,sp.y-.1,sp.z);sc.add(g);return {x:sp.x,z:sp.z,y:sp.y,mesh:g,ring,peak:P.peak,name:P.name};}
+  function ringCairnDrop(){if(RING_CAIRN&&RING_CAIRN.mesh&&RING_CAIRN.mesh.parent)RING_CAIRN.mesh.parent.remove(RING_CAIRN.mesh);RING_CAIRN=null;}
+  // once a second from the loop: the cairn is built while its peak's cell is loaded and you are within 400 units; the first sight
+  function tickRingCairn(force){const t=performance.now();if(!force&&t-_ringT<1000)return;_ringT=t;
+    if(activeZoneId!=='world'||!sc){ringCairnDrop();return;}const P=artifactPlaces().sundial_ring;if(!P)return;
+    const loaded=PEAKS.some(p=>p.id===P.peak),near=Math.hypot(px-P.x,pz-P.z)<400;
+    if(!loaded||!near){if(RING_CAIRN)ringCairnDrop();return;}
+    if(!RING_CAIRN||RING_CAIRN.peak!==P.peak||!RING_CAIRN.mesh.parent){ringCairnDrop();RING_CAIRN=ringCairnBuild(P);}
+    const C=RING_CAIRN;if(!C)return;if(C.ring)C.ring.visible=!artifactState('sundial_ring');
+    if(typeof isInterior==='function'&&isInterior())return;const st=worldState.stats||(worldState.stats={});
+    if(!st.ringSeen&&!artifactState('sundial_ring')&&Math.hypot(px-C.x,pz-C.z)<10){st.ringSeen=1;showMsgLong(RING_SAY.seen,'#f0d890');}}
+  function ringCairnNear(){const C=RING_CAIRN;return !!(C&&C.mesh&&C.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-C.x,pz-C.z)<RING_REACH);}
+  function ringCairnPrompt(){if(!ringCairnNear())return null;return artifactState('sundial_ring')?"Press 'E' to look at the cairn":"Press 'E' to take the ring";}
+  // E at the cairn: the hour, then the sky, then Swiftness (the named action is artifactTry, with the draft's log line)
+  function ringCairnUse(){const C=RING_CAIRN;if(!C)return null;if(artifactState('sundial_ring')){showMsg(RING_SAY.after,'#f0d890');return {gone:true};}
+    const say=t=>{showMsg(t,'#f0d890');if(typeof addLog==='function')addLog('☀',t);};
+    const noteTry=()=>{const c=artifactCheck('sundial_ring');const tr=worldState.artifactTries||(worldState.artifactTries={});tr.sundial_ring={day:dayNow(),have:c.have,n:((tr.sundial_ring&&tr.sundial_ring.n)||0)+1};};
+    if(Math.floor(gameHour())!==RING_NOON){noteTry();say(RING_SAY.hour);return {ok:false,why:'hour'};}
+    if(WX.type!=='clear'){noteTry();say(RING_SAY.sky);return {ok:false,why:'sky'};}
+    const c=artifactTry('sundial_ring',`Took the Noon Ring from the cairn on ${C.name}.`);
+    if(!c.ok){say(RING_SAY.swift);return Object.assign({why:'swift'},c);}
+    showMsg(RING_SAY.take,'#f0d890');if(C.ring)C.ring.visible=false;if(typeof updateHUD==='function')updateHUD();return c;}
   // S783 — the Waylamp (the page's Hearth row, in the approved draft's words): it hangs over the first inn of a home-island town
   // (artifactPlaces). The trial: carry it lit into the inns of five other towns with no crime on your account; each innkeeper trims
   // it (*The lamp.*), and the fifth makes it yours. A crime while it is on you, in the trial or after, puts it out for seven days,
@@ -1260,6 +1449,7 @@ const giver=`${lord.title} ${lord.name}`;
   function artifactSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's *slain!* or the witness's line, which would cover it (the words only: the outcome is already written) */
   // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
   function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
+    if(id==='drowned_bell'&&p)return {id,text:`The Drowned Bell — in the wreck on the rock off ${p.coast}. At low tide.`}; /* S801 — the draft's line (second run, §1) */
     return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}
   // faction quests ride the town-quest generator, flavoured and counted
   function factionTopics(site){

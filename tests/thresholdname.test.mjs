@@ -8,11 +8,12 @@ await g.intoWorld();
 const lastAuto = () => page.evaluate(() => { const a = SS.idx.filter(e => e.kind === 'auto').sort((x, y) => y.ts - x.ts)[0]; return a ? { ts: a.ts, place: a.place } : null; });
 const out = [];
 for (const seed of [7100, 7104]) {
+  await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; }); /* S810 — from one gate straight into the next, wait for the new gate's own scene (as enterDungeon since S765) */
   const t0 = await page.evaluate((seed) => { const p = PORTALS.find(p => p.seed === seed) || makePortalDef(WORLD_DUNGEONS.find(d => d.seed === seed)); /* S631 — not in PORTALS on CI */ const w = WORLD.dungeonPos[seed];
     if (w) { px = w.x; pz = w.z + 3; } SS.lastAuto = 0; const t = Date.now(); goToDungeon(p); return { t, name: p.name, at: !!w }; }, seed);
   await page.waitForFunction((t) => SS.idx.some(e => e.kind === 'auto' && e.ts >= t), t0.t, { timeout: 20000 });
   const a = await lastAuto();
-  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
   await page.waitForTimeout(1000);
   // the death screen reads the same entry
   const died = await page.evaluate(() => { PHP = 0; playerDead(); const s = document.getElementById('died-sub').textContent; document.getElementById('died').style.display = 'none'; dead = false; PHP = maxHP; return s; });

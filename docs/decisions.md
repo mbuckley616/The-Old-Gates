@@ -73,6 +73,20 @@ Is this the hair to carry into the cast (B3) and the game (B6)?
 
 ## Answered
 
+### The Wolf-Mother's Cloak in the den — when does a sleeping master wake, and what is "weapon sheathed"? (systems builder, after Session 802, 2026-10-13) — DECISION #270
+Five of the six Makers' tools can now be had where they lie (Sessions 797, 800–802). The last is the cloak's own trial: the approved draft (*The Makers' Things*, §6) has the master of a home-island lair (*Dunkeel's Lair* in this world) **asleep on the cloak**, and you take it from under the living beast at Resolve 30 (*It lifts its head and looks at you for a long time…*); a failure *costs nothing, wakes nothing*; the prompt shows *within reach of the master, weapon sheathed*. Two rules are not written anywhere. Today every cavern master is awake and fights on sight, and the game has no sheathed state (an empty hand is fists).
+
+1. **When does the sleeping master wake?**
+   - **A.** *(recommended)* Only when struck (a blow, an arrow or a spell). It sees and hears nothing while the cloak lies under it, so Resolve is the whole trial, as the page says (*Resolve 30, to walk in and leave without killing it*). The cavern's other beasts are awake as now, so getting there is still a fight or a sneak.
+   - **B.** As the Gargoyle wakes: a walking step within 4 units wakes it, and you can come up to it only by sneaking. The trial becomes Resolve and stealth.
+   - **C.** Asleep only by night (the game's 23h–5h, as householders sleep); by day it is awake and fights as now.
+2. **"Weapon sheathed."**
+   - **A.** *(recommended)* Read it as *not attacking*: the prompt shows whatever is in your hand, and only a swing or a drawn bow hides it. There is nothing new to learn.
+   - **B.** Read it literally: the prompt shows only with nothing in the weapon hand (fists). You unequip the weapon to reach for the cloak.
+
+Either way, once the cloak is taken the master goes on sleeping and lets you go, as the draft says. Struck later, it fights, and its death makes the cloak go thin (Session 781). The sleeping pose is the look builder's. Until the pose comes, the master lies still in its standing pose, as a dormant Gargoyle does.
+Michael: **A — wakes only when struck; sheathed = not attacking.** (2026-10-13, on the control room)
+
 ### Shrines remembering: the third prayer makes a boon permanent; how many can you keep? (systems builder, after Session 793, 2026-10-13) — DECISION #267
 The canon's consequence table (§12) says: `shrines[id].count`, the third prayer at one shrine, makes that shrine's boon permanent. It is not built. Today a prayer restores you and gives the shrine's boon until tomorrow (two days on its god's own day), once a day per shrine. Five gods give a boon: the Road (Swiftness ×1.25), Renewal (half a point of health, stamina and mana a second), the Arm (melee ×1.2), Stone (damage taken ×0.75) and the Mind (spell cost ×0.7). The Weaver gives a rubbing instead. A boon for good is a large, lasting buff, so how many can be held is a rule of play.
 
@@ -82,8 +96,8 @@ The canon's consequence table (§12) says: `shrines[id].count`, the third prayer
 - **D. Leave it out**: the shrine's boon stays a day's.
 
 Under A, B and C the Weaver's shrine has no boon to keep. Its third prayer gives a rubbing, as every prayer there already does.
-
-Michael: **Leave it out: boons stay a day's**. (13 Oct 2026)
+Michael: **D — leave it out; shrine boons stay a day's.** (2026-10-13, on issue #267)
+*Acted on:* nothing to build; the shrine's boon is a day's, as it is today. Issue #267 closed by the producer. Moved here in Session 800.
 
 ### The great gates' two paths (Michael, in chat, 2026-10-13)
 Michael, following his A on the six great gates: **"It probably makes sense that Varek wants you to loosen the bindings, and then the realization happens later that the loosening causes the world to rupture (and in other words, would cause the entire game world to zero-sum / delete itself). Maybe the pro-varek choice, whatever that ends up being, can make the player more powerful, and the anti-varek choice is more neutral/non-beneficial to the player. Maybe it even dilutes the player's abilities in that magic type a bit. A cool mechanic could be that you can choose to pursue either path. If you choose the path that varek favors, with each great gate, you basically 'corrupt' the game world. Could be things like changing the color of the sky, or making the trees a different shape. Or making the color of the game black and white. The player can start to realize they are directly impacting the game world, and if they continue on their path and do this for all 6 great gates, they will literally destroy the game. Alternatively, doing the opposite brings more stability and normalcy to the world. It might also be cool if Varek tries to stop you once or twice on the anti-varek path, and maybe the final confrontation happens just before you complete the last great gate. And also, if you choose the route he supports, maybe he has a change of heart at the last great gate, and realizes that you will destroy literally everything, including him, and begs you not to do it, and fights you to the death to stop you, ironically becoming a tragic hero in the end, before the game is destroyed."**

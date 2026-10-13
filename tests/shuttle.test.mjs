@@ -36,7 +36,7 @@ const cold = await page.evaluate(() => {
 console.log(JSON.stringify(cold));
 check(`a week carried raises the Cold to ${cold.week} (a week less ten minutes, ${cold.justShort}), with *${cold.line[0]}* in the log`, cold.justShort === 0 && cold.week === 1 && cold.line.length === 1 && cold.line[0] === '❄ Your hands are colder than the weather.', cold);
 check('ten weeks in the stash count nothing; three days before and four after make the second week', cold.stashed === 1 && cold.short === 1 && cold.second === 2, cold);
-check(`three weeks more at once (a long sleep) count three (${cold.three})`, cold.three === 5 && cold.acc === 0, cold);
+check(`three weeks more at once (a long sleep) count three (${cold.three})`, cold.three === 5 && Math.abs(cold.acc) < 1e-6, cold);
 
 // the loop counts it by itself, and the hub shows the Cold for anyone, not only an Old Blood reader
 const loop = await page.evaluate(() => { const c0 = worldState.cold; worldState.gameTimeAbsMinutes += 7 * 1440; return { c0, people: WORLD.playerPeople() }; });

@@ -14,6 +14,10 @@ const where = await page.evaluate(() => { const P = artifactPlaces().wolf_cloak,
   const p = makePortalDef(d); const wp = WORLD.dungeonPos[sd]; if (wp) { p.x = wp.x; p.z = wp.z; } p.zone = 'world'; p.lair = d.lair; px = p.x; pz = p.z + 3; window._cave = p; window._lairBoss = null;
   if (worldState.masters) delete worldState.masters[sd]; goToDungeon(p); return { lair: P.name, seed: sd, door: !!d, isLair: !!(d && d.lairDoor) }; });
 for (let k = 0; k < 60 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && window._lairBoss && !window._lairBoss.dead)); k++) await page.waitForTimeout(500);
+// Session 809: the cloak's line is said on a 1.6 s timer (artifactSay), and a timer runs only between frames. On CI one frame
+// can outlast the 2.2 s this suite waited, and the line was not yet said (once in 11–13 Oct). Wait for the line itself, up to a
+// minute, and then half a second for anything said after it.
+const saidUntil = async re => { for (let k = 0; k < 120; k++) { if ((await page.evaluate(() => [...window._said])).some(t => re.test(t))) break; await page.waitForTimeout(500); } await page.waitForTimeout(500); };
 check(`the cloak's lair is ${where.lair}, its cavern door seed ${where.seed}`, where.door && where.isLair, where);
 
 // A: killed before the cloak was taken
@@ -25,7 +29,7 @@ let a = await page.evaluate(() => { const e = window._lairBoss; window._said.len
   const peace = window._peace(), drain = cloakDrain(cloakTown()), ser = _serItem(it), tryAgain = artifactTry('wolf_cloak');
   EQ.back = keep;
   return { dead: r.dead, inChest, item: it && { name: it.name, half: it.half, unique: it.unique, slot: it.slot, desc: it.desc }, S, peace, drainBefore, drain, serHalf: ser.half, tryAgain }; });
-await page.waitForTimeout(2200); a.said = await page.evaluate(() => [...window._said]);
+await saidUntil(/grey cloak/); a.said = await page.evaluate(() => [...window._said]);
 console.log(JSON.stringify(a));
 check(`killed with the cloak untaken, the master falls and, after the kill's own line, the cavern says *${a.said.find(s => /grey cloak/.test(s))}*`, a.dead && a.said[a.said.length - 1] === 'Under it, the grey cloak, soaked through. Something has gone out of it.', a.said);
 check('the cloak lies in the hoard, the Wolf-Mother\'s own and gone thin; the world records it taken from the corpse', a.inChest && a.item.name === "The Wolf-Mother's Cloak" && a.item.half && a.item.unique && a.item.slot === 'back' && a.S.how === 'corpse' && a.S.half, a);
@@ -45,7 +49,7 @@ let b = await page.evaluate(() => { const sd = cloakSeed(); delete worldState.ar
   const otherKill = { half: !!fresh.half, peace: window._peace() };
   EQ.back = keep; delete worldState.artifacts; delete worldState.masters[sd]; delete worldState.masters[other];
   return { before, after, otherKill }; });
-await page.waitForTimeout(2200); { const said = (await page.evaluate(() => [...window._said])).filter(t => /Something has gone out of it/.test(t)); b.after.said = said; b.again = said.slice(1); } /* only the cloak's lines: walking out, the world says its own (a place discovered) */
+await saidUntil(/Something has gone out of it/); { const said = (await page.evaluate(() => [...window._said])).filter(t => /Something has gone out of it/.test(t)); b.after.said = said; b.again = said.slice(1); } /* only the cloak's lines: walking out, the world says its own (a place discovered) */
 console.log(JSON.stringify(b));
 check(`taken alive and worn: every beast at peace (${b.before.peace}) and the town drained ${b.before.drain} a day`, b.before.peace.every(x => x) && b.before.drain === 0.6, b.before);
 check(`its master killed: *${b.after.said[0]}*; it keeps the Wolf and the Dire Wolf only, and the town pays nothing`, b.after.said[0] === 'The cloak is lighter on your shoulders. Something has gone out of it.' && b.after.half && b.after.S.half && b.after.peace.join() === 'true,true,false,false' && b.after.drain === 0 && b.after.hoard === 0, b.after);

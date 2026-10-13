@@ -22,6 +22,10 @@ const read = () => page.evaluate(() => { WORLD.shipBarsUI(); const q = id => doc
     needle: n ? kn(+n.getAttribute('x2'), +n.getAttribute('y2')) : null, max: m ? kn(+m.getAttribute('x2'), +m.getAttribute('y2')) : null,
     notches: [...document.querySelectorAll('#shipbars-log .log-notch')].map(l => kn(+l.getAttribute('x2'), +l.getAttribute('y2'))).sort((a, b) => a - b) }; });
 
+// Session 812: the sea's wear (tickSeaWear) takes 1 rig every 4 s under sail in a storm, and the rig is in the most she can make
+// (×(.5 + .5 × rig/100)). The weather was left to chance: on CI a storm wore the rig to 98 and both readings came out 1% short,
+// 5.94 for 6.0 and 17.58 for 17.76 (once in 11–13 Oct). The dial is read in a clear sky, held clear for the whole suite.
+await page.evaluate(() => { WX.type = WX.next = 'clear'; WX.k = 0; WX.timer = 1e9; WX.ahead = null; });
 await page.evaluate(() => { for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
   worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); WORLD.ship.sailing = true; });
 const still = await read();
