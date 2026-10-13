@@ -525,8 +525,13 @@
       const placeBarrels=(r,want,own)=>{const goal=made+want;
       for(let k=0;k<want*4&&made<goal;k++){
         const lot=use[Math.floor(r()*use.length)];if(!lot)break;
-        const side=r()<.5?-1:1;const sx=lot.x-lot.tz*side*(lot.w/2+.9)+lot.tx*(r()-.5)*lot.d*.6,sz=lot.z+lot.tx*side*(lot.w/2+.9)+lot.tz*(r()-.5)*lot.d*.6;
+        const side=r()<.5?-1:1;let sx=lot.x-lot.tz*side*(lot.w/2+.9)+lot.tx*(r()-.5)*lot.d*.6,sz=lot.z+lot.tx*side*(lot.w/2+.9)+lot.tz*(r()-.5)*lot.d*.6;
         if(solidAt(sx,sz)||settleSolid(sx,sz,.4)||(own&&ownHit(sx,sz,.4)))continue;
+        // S817 (the critic's s597: Droichead's 2 and 3 in the church and the inn, Portclare's 0 in the chapel) — a first-half spot
+        // inside the town's own solids steps out to the nearest clear spot on a fixed ring of offsets, drawing nothing, so every
+        // draw after it is as before; its id is its index, so its loot and its saved state do not move with it.
+        if(!own&&ownHit(sx,sz,.4)){let to=null;for(let ring=1;ring<=8&&!to;ring++)for(let k=0;k<12;k++){const a=k*Math.PI/6,x=sx+Math.cos(a)*ring*.3,z=sz+Math.sin(a)*ring*.3;if(!ownHit(x,z,.4)&&!solidAt(x,z)&&!settleSolid(x,z,.4)){to=[x,z];break;}}
+          if(to){sx=to[0];sz=to[1];}}
         const y=worldH(sx,sz);const kind=r()<.55?'barrel':'crate';let g,top;
         if(kind==='barrel'){const B=kitBarrel(1.75,0x6a4418);g=B.body;g.position.set(sx,y,sz);top=B.top;top.position.set(sx,y+.96,sz);} // S200 — the kit's barrel
         else{g=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}

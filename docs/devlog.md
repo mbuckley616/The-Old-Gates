@@ -16469,3 +16469,294 @@ No game code changed, so the build tag stands.
 ### Needs eyes
 - Over the next day of CI, the share of red runs should fall from about a third to the real faults. The FLAKY warnings name the suites the systems builder should fix first; `poinames` is a real bug (a name depends on which towns had loaded).
 - Session numbers: Session 770 is used twice, once by the systems builder's woken householder and once by Michael's people-from-a-genome session. Both stand as history.
+
+## v80 — Session 804 — The human builder: a tool page, saved genomes, and hair that lies on the head (B1, prototype only)
+The look builder's first carry-over item while the foundation's renderer waits: B1 of `docs/design/character-builder.md`, Session 770's `people.js` made into the tool page, with genome save and load, and the women's long hair and braids fixed. Session 770 left the hair as its weakest part ("untidy at the temples"). A fresh render of its line-up showed why: every card was combed by one fixed direction and then fell free, so at the temples and the crown the cards crossed and stood off the head in planks, and the long hair was a tangle over a bald strip.
+
+**The hair, rebuilt (`people.js`, `buildHair`).** Every strand now walks over the head's own surface at a small height of its own (its layer, 3 to 14 mm), found through a 2.5 cm grid of the morphed body's points and normals, and it goes where the style sends it. The styles:
+- *short* and *loose*: from a centre parting, back over the crown and down the sides, never forward over the brow. Loose hair leaves the head at the occiput and falls as a curtain, spread by where its root sits and kept clear of the neck, the tunic and the fur mantle.
+- *braid*, *braids*, *tail*, *bun*: every strand goes to a gathering point on the surface (the nape, behind each ear, the crown), routed back over the top rather than across the temple. The gathered part is built whole. A braid is three locks crossing in the classic figure (a sine across, twice the frequency in depth) along a line that falls under gravity, is pushed off the body by the clothes it wears, then smoothed, with a leather tie and a short brush. A tail is 260 cards in a widening bundle on the same line. A bun is one lock coiled two and a half turns, domed out from the head.
+- The cards lie flat, their width along the strand crossed with the skin's normal under it, which is what makes the temples tidy.
+- Roots grow from a wider region than Session 770's scalp: down to above the ears and to the nape, so a style that lifts the hair does not bare the sides. The hairline at the brow is 1.2 cm lower, and the cap under the cards is darker so it reads as hair.
+- All of it comes from a stream seeded by the genome's seed, never `Math.random`, so one villager's hair is the same for everyone (the co-op rule).
+
+**The saved genome** (`toSaved`, `fromSaved`): `{species, v, seed, people, sliders, race, palette, hair, dress, pose}`, with colours as hex and numbers to three places, about 730 bytes. `rollGenome(seed)` rolls a Markfolk genome from a seed, women's hair drawn from braid, two braids, bun, tail and loose, men's from short, tail and two braids. The four peoples' ranges are B3.
+
+**The page** (`builder.html`, `builder.js`):
+- a seed box and Roll, with a lock on every slider so the rest can be rerolled around it;
+- 6 body and 17 face sliders, skin, hair and eye colours, the hair style, its length and the beard;
+- every garment on or off with its colour, and the skirt;
+- views: full, head, face, side and back, with drag to turn and the wheel to zoom;
+- the genome as live JSON text, with *Save .json*, *Load .json*, *Apply text* and *Copy link* (`?g=` carries the genome in the URL).
+
+`?sheet` puts every hair style on one genome side by side, for the pictures. The 1.8 m post stands beside the person.
+
+`people.html`, the street and the gate pages still build: `markGenome` now draws a hair style, so their people's hair changed with this session.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/builder.check.mjs` (needs the pack from `mh_pack.py`): 60 checks, all pass.
+- **Genomes:** five seeds roll, save, load back to the same genome byte for byte (713 to 741 bytes), and roll again identically. A loaded genome builds the same body and hair twice (a hash of every mesh's positions).
+- **Each of the six styles,** with the mantle and without:
+  - builds: 1,400 to 2,200 strands, 62,000 to 278,000 triangles, 0.3 to 1.9 s;
+  - no strand point under the skin (0 of 20,000 to 124,000);
+  - none lying on the face (0 to 22 points, under the 0.2% the check allows);
+  - braids and tails clear the body by 2.0 to 3.6 cm.
+- **The page:** its 25 sliders work; moving height to 0.95 rebuilds the person and the genome text follows; loading the saved genome brings the person back. No page errors.
+- **Pictures** (`docs/prototypes/levelup/`):
+  - `builder-page.jpg`, the page with its panel;
+  - `builder-styles-back.jpg`, `-front.jpg` and `-mantle.jpg`, the six styles;
+  - `builder-woman-braid.jpg`, `-braids.jpg`, `-face.jpg` and `builder-man-face.jpg`, close-ups;
+  - `people-lineup-804.jpg`, Session 770's line-up with the new hair.
+### Needs eyes
+- **The hair as a whole,** against OG-025 and OG-001's faces. It is tidy now, but the strand texture reads coarse up close, and loose hair over the fur mantle stands off the back like a board, because the curtain has to clear the eleven fur shells.
+- **The braids at the collar,** where they cross the fur: close up, a braid dips into the collar's shells before it comes out over the mantle.
+- **Loose hair's cost:** 278,000 triangles. Crowds will want the level-of-detail meshes the design names.
+- **The faces,** which this session did not touch: the women's still read heavy-browed and old, and the brows are stamped shells. That belongs to B3 (the peoples' ranges) and to close-up work on the face sliders.
+- A question for Michael in `decisions.md`: whether this is the hair to carry forward.
+- Numbering: this entry was first pushed as Session 776, but the systems branch had already reached 803 (and has its own 776), so it was renumbered 804 before merging.
+
+## v80 — Session 805 — The wardrobe's first pieces: the cloak, the hood, the apron, the brooch (B2, prototype only)
+B2 of `character-builder.md` is the wardrobe kit. Its brief waits on Michael's marks for the second round's clothing sheets (OG-109 to OG-111 are still unreviewed), so this first slice takes only what the kept sheets already show:
+- OG-048 and OG-059: the Gatelanders' hooded wool cloaks pinned at the throat with a round brooch, the farm woman's apron and the tradesman's long leather apron;
+- OG-025: the Markmen's fur-lined cloaks on round iron clasps.
+
+**The cloak** (`people.js`, `buildCloak`) is cloth hung from the shoulders, built after the pose on the posed body. The body is skinned on the CPU (three's `getVertexPosition`), so the cloak falls over the arms where they really are, not where the A-pose had them.
+- **The drape:** 34 columns round the base of the neck each start on the shoulder line (the surface point furthest out and a little down from the neck at that angle). Each falls under gravity, using the drape the braids use. It is pushed clear of the body by what the body wears: 4 cm over a tunic, 9.5 cm over the fur mantle.
+- **The sheet:** neighbouring columns are held to a spacing that may widen toward the hem by up to 1.5 times. Folds are rippled in, deepening toward the hem and fading at the front edges, and the grid becomes a double-sided sheet of 4,600 to 9,200 triangles.
+- **The opening and the brooch:** the cloak opens at the throat, where a round brooch with a boss pins it (brass, or iron for the Markmen).
+- **The collar:** a fur collar of six shells may be turned out round it (`cloakFur`). Otherwise the hood lies rolled behind the neck (`hood: 'down'`).
+- **The hood up** (`hood: 'up'`) is a skinned garment, so it follows the head. The head's points are set out onto a smooth shell round the head and hair, which falls to the shoulders, with the face cut open in the shader.
+
+**The apron** is the skirt shell's front with clean shader-cut edges, in wool or leather, with an optional bib off the tights' front.
+
+**Saved and shown:** the genome saves all of it: `cloak`, `cloakFur`, `brooch` and `apron` as colours, and `hood`, `cloakLen`, `bib` and `apronLeather` as flags (770 to 800 bytes). The builder page gains the four garments, a hood selector, bib and leather boxes and a cloak-length slider, and `?dress=` sets garments for the pictures.
+### Verified (headless Chromium)
+`builder.check.mjs`: 74 checks, all pass. The 60 from Session 804 still pass, and:
+- **Four dressed genomes:**
+  - a woman with the cloak, hood down and a bibbed apron;
+  - a man with a short cloak and the hood up;
+  - a man with a long fur-collared cloak over the mantle;
+  - a woman in a leather apron.
+- **Each one:**
+  - saves and loads back byte for byte (772 to 801 bytes);
+  - its cloak hangs clear of the body everywhere (closest 3.6 to 4.1 cm, no vertex within 5 mm);
+  - its brooch sits 12 to 16 cm from the neck joint, at the throat;
+  - the hood and the apron are there when asked for.
+- **Pictures:** `builder-cloak-front.jpg`, `-back.jpg`, `-hood.jpg` and `-markman.jpg`, and `builder-apron-leather.jpg`.
+### Needs eyes
+- **The cloak's shape:** it hangs from the shoulder tips straight down over the arms, so from the front and back it reads as a stiff, boxy plank. The folds are shallow and barely show in dark wool. A real cloak hangs in toward the legs and breaks over the arms; the next pass wants deeper folds and a hem that follows the body in.
+- **The hood up is not right:** with it up, a stepped patch of the man's hair at the crown is drawn as bare skin. Hiding parts in turn shows the hair and its cap are there, and that the body's skin draws over them only while the hood is in the scene. The cause is not found yet; it is owed before the hood-up look is judged.
+- **The leather apron** reads well; its bib's top edge is cut straight across.
+- A DECISION is raised in `decisions.md`: whether this drape-and-shell approach is the wardrobe's method.
+
+## v80 — Session 806 — The four peoples as ranges over one body (B3, first slice, prototype only)
+B3 of `character-builder.md`: the four peoples as slider ranges over the one human body, so that a crowd is a people and a seed. `PEOPLES` in `people.js` takes the canon's peoples table (§2), the kept sheets (OG-048 and OG-059 for the Gatelanders, OG-025 for the Markmen, OG-044 for the Aurennais, OG-066 for the Old Blood) and Michael's 1 B (the heroic hybrid, about 1.80 m, with room for the tall Markmen and the short Old Blood).
+
+**What a people sets:**
+- **Stature in metres.** MakeHuman's height slider is not metres: the first line-up put a Markish man at 2.25 m. So a people gives a range of statures, and `heightFor` turns the stature into the slider by measuring the morphed body, crown to sole, in nine halvings.
+  - Gatelanders: men 1.72 to 1.84 m, women 1.60 to 1.72 m.
+  - Markmen: men 1.84 to 1.98 m, women 1.72 to 1.84 m.
+  - Aurennais: men 1.74 to 1.86 m, women 1.62 to 1.74 m.
+  - The Old Blood: men 1.56 to 1.66 m, women 1.46 to 1.56 m.
+- **The body:** muscle and weight ranges (the Gatelanders wiry, the Markmen broad, the Aurennais lean, the Old Blood slight), and the mix of MakeHuman's three ethnic targets (the Aurennais mixed).
+- **Colour:** palettes of skin, hair and eyes. The Gatelanders are fair to ruddy with red or dark hair; the Markmen pale, ash-blond and grey-eyed; the Aurennais olive through deep brown, dark-haired and brown-eyed; the Old Blood grey-pale, black-haired, with pale cold eyes.
+- **Hair:** the weights of the hair styles, by sex.
+- **Dress:**
+  - Gatelanders: madder, moss, ochre, sea blue and undyed; hooded cloaks with a brass brooch for two in three, and aprons.
+  - Markmen: the fur mantle and fur-collared cloaks on iron.
+  - Aurennais: linen, blue and saffron.
+  - The Old Blood: slate, oxblood, dusk violet and bone.
+
+`peopleGenome` starts from Session 770's Markish roll (for the face and the pose) and lays the people over it. `rollGenome(seed, {people})` uses it, the builder page has a people selector beside Roll, and `?peoples` stands three of each in a line.
+
+Not in this slice, all owing a skin texture or a new piece: the Old Blood's marks (pale raised lines under the skin, Michael's 2 B), the Gatelanders' freckles, Aurennais curls, head-wraps and sashes, and the named cast's genomes.
+### Verified (headless Chromium)
+`builder.check.mjs`: 80 checks, all pass.
+- **Twelve of each people,** rolled from seeds of people and index, stand inside their range, save and load back byte for byte, and are at most 842 bytes. Mean statures:
+  - Gatelanders: men 1.76 m, women 1.67 m;
+  - Markmen: 1.92 m and 1.79 m;
+  - Aurennais: 1.80 m and 1.70 m;
+  - the Old Blood: 1.60 m and 1.52 m.
+- **The order:** the Old Blood are shortest and the Markmen tallest, and the four together average 1.72 m.
+- **Measuring:** these are unposed. Standing in the pose, the bounding box of the body reads 4 to 6 cm more.
+- **Picture:** `builder-peoples.jpg`, three of each.
+### Needs eyes
+- **Whether each people reads as itself at a glance,** against its sheet:
+  - the Old Blood need their marks;
+  - the Aurennais need their own dress, not the Gatelander tunic in linen colours.
+- **The faces** are still Session 770's Markish face sliders for every people. Face ranges per people come next, with the cast.
+- A DECISION is raised in `decisions.md` on the heights and palettes.
+
+## v80 — Session 815 — One builder for people and creatures: one genome format (B5, prototype only)
+The next creature-kit item in `character-builder.md` (B5): "the kit on the builder's page with the people (one tool, one genome format)". B1 to B3 each wait on a decision of Michael's (the hair, the wardrobe's method, the peoples' heights and palettes), and this item depends on none of them. Until now the two kits saved differently. A person's genome was already an envelope, `{species: 'human', v: 1, …}` (Session 804). A creature's was the bare `{plan, seed, sliders, tint, light}` the bestiary page printed, with no loader and no check on what it read.
+
+**The format** (`creatures.js`, `toSaved`/`fromSaved`):
+- A creature saves as `{species: 'creature', v: 1, plan, seed, sliders, tint, light}`, with numbers to three places; 174 to 185 bytes for the 23 plans.
+- Loading rebuilds the genome from its plan and seed, then lays the saved values over it.
+- A hand-edited genome is held to the sliders' ranges, a slider the kit does not know is dropped, and an unknown plan or a later version is refused with its reason.
+
+**One loader** (`kit.js`, new): `readGenome(json)` gives `{species, G}` for either kind and refuses anything else; `saveGenome(species, G)` writes it back; `make(json)` builds it, fetching the people's pack (`mh_pack.py`) the first time a person is asked for and never for a creature. This is the file the game's loader becomes; it holds nothing of the page.
+
+**One page** (`builder.html`, `builder.js`):
+- The panel opens on a *kind*: a person, or any of the 23 body plans.
+- **A creature's panel:** its source sheet, the seed and Roll, the gaits as buttons, the kit's six sliders with locks (Roll keeps a locked slider, as for a person), and the hue and lightness shift.
+- **The views:** a creature has side, front, back and top. The camera is fitted to what each view sees, its length or its span, so a dragon from the front fills the frame. With the panel open, the view's centre moves into the open part of the screen.
+- **On screen:** the creature walks on the spot in its gait. The 1.8 m post stands behind its tail. A swimmer gets the bestiary's water.
+- **Genomes:** the genome text, *Save .json*, *Load .json*, *Apply text* and *Copy link* take either kind, and loading the other kind switches the page to it. `?plan=<plan>&gait=<g>` opens a creature, and `?g=` opens a genome of either kind.
+- **No pack for creatures:** a page opened on a creature does not fetch the pack, so the creature half works without `mh_pack.py`.
+- **The person's side:** nothing changes, except that the floor is 60 m across (it was 12) so the larger creatures stand on it.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/kit.check.mjs`: 44 checks, all pass, no page errors.
+- **The format:** all 23 plans save, load back byte for byte, roll the same genome again from their key, and build the same body from the loaded genome (a hash of every mesh's positions).
+- **Refusals:** `readGenome` refuses no species, an unknown species, an unknown plan, version 2 and broken JSON. A size of 40 and a leg of -3 come back as 3 and 0.6, and an unknown slider is dropped.
+- **The page on a creature:** opened on the Shatterhorn, it fetched nothing under `mh/`.
+  - The size slider at 1.6 moved the genome, its text and the rig's scale (0.956 to 1.6).
+  - Roll with size locked took a new seed and kept 1.6.
+  - *stand* set the gait, and the kind selector changed the plan.
+  - *Apply text* loaded a Tidecrab exactly; a genome of species "dragonfly" was refused and the Tidecrab kept.
+  - *Copy link* put the genome in the address, and the link opened the same Tidecrab in a new page.
+- **One tool** (with the pack): a wolf page turned into the human builder (its face sliders, a person, no creature left). *Apply text* took a Gatelander's genome exactly; loading a bear's genome switched to the bear, and the Gatelander's switched back.
+- **Nothing else regressed:** `builder.check.mjs` (80) and `creatures.check.mjs` (all 23 plans) still pass.
+- **Pictures:** `builder-creature-page.jpg` (the page on the Shatterhorn), `builder-creature-dragon.jpg` (front), `builder-creature-octopus.jpg`.
+### Needs eyes
+- **The page by hand** on Michael's machine: dragging to turn, the wheel, and a creature walking on the spot while sliders move (each change rebuilds it; the Shatterhorn takes about 0.4 s, the fur plans more).
+- **The lighting** is the human builder's studio light, dark-backed: the dragon and the dark-furred plans read dim against it. The bestiary's daylight page is still the place to judge a creature's colour.
+- **The format's open question:** `v: 1` for both kinds, and no version history yet. A later change to a plan's parts changes the body a saved creature genome builds, as for a person. Whether a genome should name its kit version is the game loader's question (B6 and card F4), not settled here.
+- No decision raised: this is tooling over decisions already made (Michael's "yes" to the creature kit and to the builder, 12 Oct).
+
+## v80 — Session 816 — Aurenne's houses as pieces in the new kit (card F6, prototype only)
+The routine's carry-over order ends with "the building pieces for card F6 in the new kit, lifting the concept artist's approved prototypes". The one approved building prototype is Aurenne's houses. The concept artist drew them on the old shape kit (`docs/prototypes/aurenne/proposal.js`, three.js r128), and Michael chose B on DECISION #259 (12 Oct): "the mix, two in three flat, one in three Roman". This session lifts them into the new kit (`docs/prototypes/levelup/`, three.js 0.170), as the first entry in a pieces module for F6.
+
+**`pieces.js`** (new): `aurenneHouse(o, r)` builds a house from its options and a seeded stream.
+- **Kept from the proposal:**
+  - walls extruded from an outline with real arched (or pointed) openings and a dark room behind each;
+  - the door: five cedar boards in its colour under a half-round head, iron studs, a stone step, and the glazed tile frame round it;
+  - deep small windows with stone sills and iron bars, or a cedar lattice screen on brackets upstairs;
+  - for a flat house: the slab, the parapet with a rounded top, rainwater spouts, pots, the dome (a drum, blue glaze or limewash, a gilt finial), the pergola with its striped awning, and the outside stair;
+  - for a Roman house: the cornice, the 22° hipped roof, hip and ridge tiles, rafter ends under the eaves, and the arcade of round arches on lathed columns with a pantile lean-to;
+  - a cypress in a pot, or a bougainvillea.
+- **What changes is the surface.** The kit's plaster, ashlar and wood textures are joined by four new relief textures: pantile (half-round tiles laid hollow and round, each course lapping the one below), zellige (blue and white squares with saffron stars), a dome's blue glaze, and the awning's canvas. A Roman roof is four planes, not the proposal's hundreds of tile cylinders, and the tile frame is three strips, not fifty boxes.
+- **One mesh per material:** every piece is placed, given UVs from where it lies (`worldUV`), and merged by material.
+- **The mix:** `aurenneLot(street, i)` gives a lot its options. In every run of three lots exactly one is Roman, and which one comes from the street's seed, so a street of any length keeps the two-in-three. The rest (size, storeys, dome, stair, pergola, lattice, colours) comes from a stream keyed by the street and the lot (the co-op rule).
+- **The bougainvillea is redrawn:** the proposal's nine balls read as beach balls at eye height. It is now a woody stem with 120 small leaves and blooms, thinning toward its top and kept within the wall.
+
+**`aurenne.html`**: twelve lots down a limestone lane at eye height under a high southern sun, with four Aurennais townsfolk (Session 806's people) for scale when the pack is there. `?view=houses` stands each kind front-on beside the 1.8 m post.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/aurenne.check.mjs`: 11 checks, all pass, no page errors.
+- **The mix:** on 40 streets of 30 lots, every run of three has exactly one Roman house (400 of 1,200).
+- **Determinism:** 300 houses each built twice from their street and index are the same, byte for byte.
+- **Cost by kind** (300 houses), all within the 12,000-triangle and 16-mesh budget:
+
+| Kind | Houses | Triangles (mean) | Meshes |
+|---|---|---|---|
+| Flat, one storey | 97 | 2,008 to 6,374 (3,729) | 10 to 14 |
+| Flat, two storeys | 109 | 3,104 to 8,454 (5,453) | 10 to 14 |
+| Flat with a dome | 43 | 3,590 to 8,454 (6,080) | 11 to 14 |
+| Roman | 38 | 1,770 to 3,674 (2,473) | 12 |
+| Roman with an arcade | 56 | 3,664 to 5,696 (4,680) | 12 |
+
+- **On the lot:** no house reaches below the ground, and every house keeps to its lot. Three things stand outside it: a flat house's outside stair, a Roman house's arcade, and its eaves (0.45 m).
+- **Heights:** one storey 4.5 to 6.9 m and two storeys 7.0 to 9.6 m, to the top of anything on the house. The top it reports is that top.
+- **On the way:** the first lot check found the bougainvillea's spray 0.6 m past the wall, a Roman cypress 1.07 m out from it, and the reported roof top missing the parapet's bushes. All three are fixed above.
+- **Pictures:** `aurenne-street.jpg` (the lane at eye height, kinds FFR RFF FRF FFR) and `aurenne-houses.jpg` (the six kinds and the post).
+### Needs eyes
+- **The new kit's surfaces** against the proposal's flat colours, and against OG-061 and OG-043:
+  - the plaster reads clean and bright, but the walls are flat sheets with no weathering at the foot or under the spouts;
+  - the limestone paving is the kit's dark flag lifted past 1 and still reads grey; a pale limestone of its own is owed.
+- **The bougainvillea and the bushes** are faceted icosahedra: fine at the lane's distance, crude at a doorway. The slice's leaf-card trees (`treeKit`) are the better route, owed.
+- **Not built:** Aurenne's temples and civic buildings, the courtyard house OG-061 shows, and the other two islands' houses as pieces (the Gatelands house is in `street.js`, not yet in `pieces.js`). All are noted in backlog K.
+- No decision raised: the design is Michael's B on #259, and this is that design in the approved new kit.
+
+## v80 — Session 817 — Barrels step out of the walls they were placed in (the critic's s597)
+The critic found Droichead's crate 2 inside the church's footprint and barrel 3 inside the inn's (s597). Session 753 had noted the same fault in Portclare's crate 0, in the chapel's corner. It was left then on purpose: these are the first half of a town's barrels, drawn on the town's own stream. Session 753 had the second half keep out of the town's own buildings by redrawing (`ownHit`). Doing the same for the first half would change how many draws the loop takes, and with them every draw after it (the villagers, their names, the guards).
+
+**The fix** (`83-world-generator.js`, the barrels in `genSettlement`):
+- A first-half spot that lands in the town's own solids now steps out to the nearest clear spot. The search is a fixed ring of offsets, 12 directions at 0.3 m steps out to 2.4 m, and a spot is clear when it is outside the town's solids, the world's and other towns'. It draws nothing from the stream.
+- If no spot on the ring is clear, the barrel stays where it was drawn, as before.
+- A barrel's id is its index (`<site>:barrel:<n>`), so its loot roll and anything saved against it are unchanged.
+
+**What moved:**
+- Droichead's 2 and 3 (0.6 m) and Portclare's 0 (0.6 m).
+- Barrels standing within 0.4 m of a wall, the margin the second half already keeps: one at Droichead (0.6 m) and three at Cœur de Vie (0.3 m each).
+- Dunmore and Carraig Mór are unchanged.
+### Verified (headless Chromium)
+`tests/townbarrels` now covers five towns: Dunmore, Carraig Mór, Cœur de Vie, Portclare and Droichead (new). It passes.
+- **No barrel inside a building**, of either half. The old check allowed the first half; on HEAD's code a probe found 2 inside at Droichead and 1 at Portclare.
+- **Spacing:** none within 0.9 m of another.
+- **The people are unchanged.** Each town's people, in order, as names and roles, hash the same as HEAD's code (taken from an unpacked copy run with `--src`). Their full lists, with places to the centimetre, were diffed before and after: identical in all five towns.
+- **Ids and keys:** `containerids` and `lootseed` pass.
+- **A correction to my own first try:** a hash of the people's places to the millimetre differed for Portclare between two runs of the same code. The townsfolk walk between the build and the read, so the test hashes names and roles only.
+### Needs eyes
+- Droichead's churchyard and inn corner, and Portclare's chapel. A barrel now stands against the wall, not in it.
+- The barrels' spots by the inn's yard, the smithy and the market (Session 753's "owed") remain open.
+
+## v80 — Session 818 — The Gatelands house joins the pieces (card F6, prototype only)
+The second of F6's pieces. The lane slice's house (`street.js`, Session 769; Michael approved the slices on 12 Oct) was a function inside the lane's page. It drew from the page's global stream and added up to 116 meshes to the scene. It now lives in `pieces.js` as `gatelandsHouse(o, r)`, beside Aurenne's.
+
+**How it moved:**
+- The body is unchanged and its draws come in the same order from the stream it is handed. The lane hands it its own `rnd`, so every draw after the houses (the props, the flowers, the people) is as it was.
+- The house returns its window boxes' and pots' flower spots in its own frame. The lane still instances the flowers for the whole street.
+- **`mergeByMaterial(g)`** (new, in `pieces.js`) bakes every mesh of a group into the group's frame and merges them by material, keeping each material's shadow flag. This turns 21 to 116 meshes a house into 9 to 11. It works on any group, so later pieces and the old slices can use it.
+
+**What it does not do yet:** the Gatelands house takes no lot rule of its own the way `aurenneLot` gives Aurenne the mix. The lane's own roll stands in for one until the Gatelands' town plan is a piece of its own.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/pieces.check.mjs`: 6 checks, all pass.
+- **200 houses rolled as the lane rolls them:** merged, each has the same triangles as unmerged (636 to 1,964, mean 1,103) and the same bounds (the largest difference is 0).
+- **Meshes:** 9 to 11 merged (mean 10), against 21 to 116 (mean 56) unmerged.
+- **Determinism:** the same key builds the same house and the same flowers.
+- **The lane renders as before.** Its picture from the working `street.js` was compared in the browser with one from HEAD's. 9 of 2,073,600 pixels differ by more than 24 (mean difference 0.006). Two shots of HEAD's own lane differ by 0 such pixels, so the 9 are the merge (shadow edges at a seam). That comparison runs only while `street.js` differs from HEAD, and says so when skipped.
+- **Nothing else regressed:** `aurenne.check.mjs` still passes.
+### Needs eyes
+- Nothing new to judge in the look: the lane is the same picture.
+- The Markish longhall, the third island's house, is the next piece. It wants its own prototype and a DECISION before it is built (OG-025 shows the longhall only inside).
+
+## v80 — Session 819 — The Mark's hall, shingle and turf: a prototype for DECISION #277 (card F6, prototype only)
+The third island's house for F6's pieces. Aurenne's is Michael's B on #259 (Session 816), and the Gatelands house is the approved lane slice (Session 818). The Mark had no approved look. OG-034, the kept Mark board, draws timber halls on stone footings with steep dark shingle and carved gables. Today's game (`STYLE.mark`) mixes shingle and turf roofs, and the turf comes from OG-033, the board that was not kept. So the roof is Michael's call, and this session builds the hall both ways and asks.
+
+**`markHall(o, r)`** (`pieces.js`):
+- **The base:** a footing of rough stone 0.8 m high, and walls of vertical boards in four stains.
+- **The ends:** gable ends rising to the roof's pitch, with a round-headed plank door and iron straps on the front gable and a lit window above it. Corner posts, sill and wall plate are in dark beams.
+- **The sides:** small shuttered windows along each side, some lit.
+- **The roof:** two slabs.
+  - Shingle: 52°, with a new shingle texture of rounded butts in staggered, weathered courses, and a ridge beam.
+  - Turf: 32°, with a new sod texture over a birch-bark edge, and a log holding the turf at the eaves.
+- **The carving:** crossed bargeboards along both verges, running 0.75 m past the ridge into curled beast heads. A shingle hall always has them; a turf hall has them only if asked.
+- **Extras:** a porch of two posts under its own little roof, and a stone chimney or a smoke louver on the ridge.
+- **Cost:** merged by material (Session 818's `mergeByMaterial`), each hall is 820 to 1,690 triangles and 9 or 10 meshes.
+
+**`mark.html`:** the four halls beside the post, under a low northern sun. `?view=lane&mix=shingle|turf|mix` builds a short lane with the gables to the street. In the mix, one lot in every three is turf, by seed, as Aurenne's.
+
+**The first render was wrong** and is fixed above:
+- the bargeboards stood up like windmill sails;
+- the dark box behind the gable door rose through the roof;
+- the boards were near-black.
+### Verified (headless Chromium)
+- **Renders with no page errors:** `mark-halls.jpg`, `mark-lane-shingle.jpg`, `mark-lane-turf.jpg`, `mark-lane-mix.jpg`, all at 1920×1080 with two Markmen (Session 806's people) for scale.
+- **Sizes and cost:** the shingle halls stand 9.1 to 14.2 m to the beast heads, the turf halls 5.7 to 7.9 m. Each is 9 or 10 meshes.
+- **No check suite yet:** this is a picture for a decision. The lot rules and their checks follow the answer, as `aurenne.check.mjs` did.
+### Needs eyes
+- **DECISION #277:** shingle (A), turf (B) or the mix (C, recommended).
+- **The turf's texture** reads as green felt with brown patches. A real sod roof wants a ragged edge and tufts at the eaves, which are cards, owed if B or C.
+- **The halls are long and plain on their sides.** OG-034's halls have carved door frames, painted bands and a clan banner, all owed after the answer.
+- **The footing's stone** is the kit's coursed block, too regular for the Mark's rough stone.
+
+## v80 — Session 820 — Aurenne's limestone, and the bushes rounded (card F6, prototype only)
+Two of Session 816's "needs eyes", on the design Michael chose (B on #259).
+- **The paving.** The street's paving was the kit's dark flag, lifted past 1 by its colour, so it still read grey. Aurenne now has a limestone of its own (`TEX.limestone` in `pieces.js`):
+  - pale slabs in courses of two widths, with edges worn round;
+  - ochre and grey stains;
+  - joints filled with pale dust rather than cut black.
+- **The bushes.** The pots' bushes on the parapets are rounder (an icosahedron of detail 2: 320 triangles, two a house). The bougainvillea's blooms tried the same at detail 1. That put a domed house at 15,854 triangles against the 12,000 budget `aurenne.check.mjs` holds, and the check caught it. The blooms went back to detail 0, at 20 triangles each.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`:** 11 checks, all pass. Per house, against Session 816:
+
+| Kind | Triangles (mean) | Change |
+|---|---|---|
+| Flat, one storey | 2,208 to 6,574 (3,929) | +200 |
+| Flat, two storeys | 3,304 to 8,654 (5,653) | +200 |
+| Flat with a dome | 3,790 to 8,654 (6,280) | +200 |
+| Roman, with or without an arcade | unchanged | none |
+
+- **Pictures:** `aurenne-street.jpg` and `aurenne-houses.jpg` were shot again. The lane reads as pale stone in the sun.
+### Needs eyes
+- **The bougainvillea** is still a scatter of faceted blooms; leaf cards (the slice's `treeKit`) are the right tool, still owed.
+- **A note on routing:** Session 817's barrels were filed in section I, the systems builder's, though the critic named the look builder's barrel item (H). The systems branch had not touched them (it took the other two s597 findings, Sessions 798 and 799), so there is no overlap. Said here so the producer can route the next one.
