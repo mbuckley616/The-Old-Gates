@@ -16440,3 +16440,10 @@ One more of the suites that failed once on CI in 11 to 13 Oct. *Every fort is wa
 `fortwalk` green: every fort walked to its keep door in 7.4 s, its prompt, in and out.
 ### Needs eyes
 Nothing in play. Of the list in backlog K, `lod` is left: its distant copy's shadow changed no pixels on one CI run (13 Oct).
+
+## v80 — Session 814 — `lod`'s shadow control reads the mean difference when no pixel crosses the line (CI health, tests only)
+The last of the suites that failed once on CI in 11 to 13 Oct. `lod` photographs one person's shadow four ways: cast by the full mesh, by the distant copy, by another person's distant copy (the control) and not at all. It counts the pixels that change by more than 24. The check wants the shadow to be there (2,090 pixels on CI), the copy to change under a tenth of that (0), and the control to change more than the copy, to show the comparison could see a wrong shadow. On CI the control changed 0 pixels too, so *more than the copy* failed. Its mean difference was still twice the copy's: 0.028 against 0.014, where the same frame drawn twice gives 0. Session 172 met this before: another person's shadow can sit close enough to the subject's that no pixel clears the threshold, and it picked the four most unlike people to make that rarer. When neither changes a pixel past the threshold, the control is now read on the mean difference, which must still be greater than the copy's. The main claim (under a tenth of the shadow's own pixels) is unchanged, and a control that cannot tell the shadows apart on either measure still fails. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`lod` green. Here the control changed 706 pixels, the copy 0 (mean 0.01) and the shadow 1,670. Put through the old and new checks, CI's numbers fail the old and pass the new. A control with the copy's own mean difference still fails the new.
+### Needs eyes
+Nothing in play. With this, the list in backlog K, read from the 27 red CI jobs, is clear. Whatever CI names FLAKY next comes next.
