@@ -4,6 +4,22 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The four peoples' heights and palettes (look builder, Session 806)
+B3's first slice: each people is a range over the one body, rolled by seed. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-peoples.jpg (three each: Gatelanders, Markmen, Aurennais, the Old Blood).
+
+The statures are in metres:
+- Gatelanders: men 1.72 to 1.84 m, women 1.60 to 1.72 m.
+- Markmen: men 1.84 to 1.98 m, women 1.72 to 1.84 m.
+- Aurennais: men 1.74 to 1.86 m, women 1.62 to 1.74 m.
+- The Old Blood: men 1.56 to 1.66 m, women 1.46 to 1.56 m.
+
+Together they average 1.72 m. The colours follow canon §2 and the kept sheets; `PEOPLES` in `docs/prototypes/levelup/people.js` has every value.
+
+Should the ranges and colours stand?
+- **A (recommended):** keep these ranges and palettes, and go on to the faces per people, the Old Blood's marks and the Aurennais dress.
+- **B:** keep the palettes but push the heights apart (Markmen near 2 m, Old Blood near 1.5 m) so the peoples read at a distance.
+- **C:** pull the heights together (every people within 8 cm of 1.80 m) and let dress and colour carry the difference.
+
 ### The wardrobe's first pieces: is a draped cloak and a shell hood the method? (look builder, Session 805)
 B2's first slice, from the kept sheets only (OG-048, OG-059, OG-025; the second round's clothing sheets OG-109 to OG-111 still wait for your marks). The pieces:
 - **The cloak:** cloth hung from the shoulders of the posed body. Columns fall under gravity, clear of what the person wears, and are held together as one sheet with folds.

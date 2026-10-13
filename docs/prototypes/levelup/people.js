@@ -454,5 +454,48 @@ export function fromSaved(J) {
   G.hair = { style: J.hair?.style || 'short', len: J.hair?.len ?? .3 }; G.beard = J.hair?.beard || 0;
   G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; return G;
 }
-// a genome rolled from a seed, inside a people's ranges (Markfolk only until B3 writes the four peoples)
-export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }
+// ── the four peoples (Session 806, B3): slider ranges over the one human body, from the canon's peoples table (§2) and the
+// kept sheets (OG-048 and OG-059 Gatelanders, OG-025 Markmen, OG-044 Aurennais, OG-066 the Old Blood). A people sets the
+// ranges and the palettes; the seed picks inside them. Heights are given in metres (Michael's 1 B: the heroic hybrid, about
+// 1.80 m, the Markmen taller and the Old Blood short) and turned into the height slider by measuring the morphed body. The Old Blood's marks under the skin and the Gatelanders' freckles want a skin texture, owed.
+const U = (a, b) => [a, b];
+export const PEOPLES = {
+  gatelander: { name: 'Gatelanders', race: { caucasian: [.9, 1], african: [0, .05], asian: [0, .05] },
+    body: { m: { metres: [1.72, 1.84], muscle: [.52, .7], weight: [.36, .52] }, f: { metres: [1.6, 1.72], muscle: [.45, .6], weight: [.38, .54] } },
+    skin: [[.9, .74, .64], [.88, .69, .58], [.86, .64, .54], [.92, .77, .69]], hair: [[.62, .3, .14], [.5, .22, .1], [.72, .38, .18], [.25, .17, .12], [.36, .24, .15]], eyes: [[.42, .55, .4], [.4, .52, .62], [.38, .3, .2]],
+    styles: { m: { short: 6, tail: 2 }, f: { braid: 3, tail: 2, bun: 2, loose: 2 } },
+    wool: [[.45, .16, .12], [.3, .36, .22], [.55, .42, .2], [.2, .3, .4], [.62, .58, .5]], cloak: .65, hood: .5, brooch: [.62, .47, .22], apron: [.35, .3], mantle: 0 },
+  markman: { name: 'Markmen', race: { caucasian: [1, 1], african: [0, 0], asian: [0, 0] },
+    body: { m: { metres: [1.84, 1.98], muscle: [.66, .92], weight: [.48, .7] }, f: { metres: [1.72, 1.84], muscle: [.52, .7], weight: [.46, .64] } },
+    skin: [[.92, .8, .74], [.9, .77, .7], [.88, .74, .66]], hair: [[.8, .72, .56], [.72, .64, .5], [.86, .8, .66], [.62, .54, .42]], eyes: [[.55, .6, .62], [.5, .56, .6], [.45, .55, .62]],
+    styles: { m: { short: 5, braids: 2, tail: 2 }, f: { braids: 4, braid: 3, bun: 1 } },
+    wool: [[.32, .26, .2], [.24, .27, .32], [.3, .32, .26], [.2, .2, .22], [.45, .16, .12]], cloak: .3, fur: true, brooch: [.35, .35, .37], apron: [.15, .1], mantle: .8 },
+  aurennais: { name: 'Aurennais', race: { caucasian: [.3, .65], african: [.25, .7], asian: [0, .15] },
+    body: { m: { metres: [1.74, 1.86], muscle: [.5, .66], weight: [.32, .46] }, f: { metres: [1.62, 1.74], muscle: [.42, .56], weight: [.34, .48] } },
+    skin: [[.74, .56, .42], [.64, .46, .33], [.52, .36, .25], [.4, .27, .19], [.31, .21, .15]], hair: [[.1, .07, .06], [.16, .11, .08], [.22, .15, .1]], eyes: [[.3, .2, .12], [.22, .15, .1], [.35, .28, .16]],
+    styles: { m: { short: 7, tail: 1 }, f: { braids: 3, braid: 2, bun: 3, loose: 1 } },
+    wool: [[.86, .81, .71], [.9, .86, .78], [.25, .35, .55], [.74, .55, .25], [.8, .78, .74]], cloak: .1, brooch: [.7, .55, .25], apron: [.1, 0], mantle: 0 },
+  oldblood: { name: 'the Old Blood', race: { caucasian: [.75, .95], african: [0, .05], asian: [.05, .25] },
+    body: { m: { metres: [1.56, 1.66], muscle: [.4, .54], weight: [.28, .4] }, f: { metres: [1.46, 1.56], muscle: [.36, .5], weight: [.3, .42] } },
+    skin: [[.82, .78, .76], [.78, .74, .72], [.85, .81, .79]], hair: [[.05, .05, .06], [.08, .07, .08], [.11, .1, .11]], eyes: [[.66, .68, .7], [.58, .6, .63]],
+    styles: { m: { short: 5, tail: 3 }, f: { loose: 3, braid: 3, tail: 2 } },
+    wool: [[.18, .17, .2], [.3, .12, .12], [.28, .22, .32], [.82, .8, .74], [.36, .34, .33]], cloak: .5, hood: .2, brooch: [.4, .4, .42], apron: [0, 0], mantle: 0 },
+};
+// standing height in metres of a genome's body (crown to sole, unposed), and the height slider that gives a wanted stature
+export function statureOf(G) { const P = morph(G), tri = PACK.G['body']; let lo = 1e9, hi = -1e9; for (let t = 0; t < tri.length; t++) { const y = P[tri[t] * 3 + 1]; if (y < lo) lo = y; if (y > hi) hi = y; } return hi - lo; }
+export function heightFor(G, metres) { let a = 0, b = 1; for (let i = 0; i < 9; i++) { const m = (a + b) / 2; if (statureOf({ ...G, height: m }) < metres) a = m; else b = m; } return (a + b) / 2; }
+export function peopleGenome(rnd, people, g, o = {}) {
+  const P = PEOPLES[people] || PEOPLES.markman, G = markGenome(rnd, g, { ...o, mantle: false }), sx = g > .5 ? 'm' : 'f', pick = a => a[Math.floor(rnd() * a.length)], in_ = ([a, b]) => a + (b - a) * rnd();
+  const pickW = W => { let r = rnd() * Object.values(W).reduce((a, b) => a + b, 0); for (const [k, w] of Object.entries(W)) if ((r -= w) < 0) return k; return Object.keys(W)[0]; };
+  G.people = people; for (const [k, r] of Object.entries(P.body[sx])) if (k !== 'metres') G[k] = in_(r);
+  G.race = Object.fromEntries(Object.entries(P.race).map(([k, r]) => [k, in_(r)])); { const t = Object.values(G.race).reduce((a, b) => a + b, 0); for (const k in G.race) G.race[k] /= t; }
+  G.skin = pick(P.skin); G.hairCol = o.hair ?? pick(P.hair); G.eyes = pick(P.eyes); G.hair = { style: o.style ?? pickW(P.styles[sx]), len: G.hair.len };
+  const D = G.dress; D.tunic = pick(P.wool); if (D.trousers) D.trousers = pick(P.wool.slice(0, 4)); if (D.skirtColor) D.skirtColor = pick(P.wool);
+  if (rnd() < P.mantle) D.mantle = pick([[.42, .34, .26], [.3, .24, .18], [.55, .48, .4], [.25, .2, .17]]);
+  if (rnd() < P.cloak) { D.cloak = pick(P.wool.slice(0, 4)); D.cloakLen = .45 + rnd() * .5; D.brooch = P.brooch; if (P.fur && rnd() < .7) D.cloakFur = [.5, .42, .32]; else if (rnd() < (P.hood ?? 0) + .4) D.hood = rnd() < (P.hood ?? 0) ? 'up' : 'down'; }
+  G.height = heightFor(G, in_(P.body[sx].metres));
+  if (rnd() < P.apron[sx === 'f' ? 0 : 1]) { D.apron = g > .5 ? [.36, .25, .16] : pick([[.8, .76, .66], [.72, .68, .58]]); D.apronLeather = g > .5; D.bib = rnd() < .6; }
+  return G;
+}
+// a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)
+export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed) }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }

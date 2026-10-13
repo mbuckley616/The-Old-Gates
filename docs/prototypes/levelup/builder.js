@@ -4,7 +4,7 @@
 // Query: ?g=<base64url genome>  ?seed=<s>&sex=m|f  ?view=full|face|back|side  ?still&w&h (one frame, for the checks).
 import * as THREE from 'three';
 import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
-import { loadPack, makePerson, toSaved, fromSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS } from './people.js';
+import { loadPack, makePerson, toSaved, fromSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 const GLABEL = { skirtColor: 'skirt colour', cloakFur: 'fur collar' };
 
 if (STILL) document.body.classList.add('still');
@@ -21,7 +21,7 @@ const comp = makeComposer(R, scene, cam, { bloom: .1, sat: 1.0, vig: .4, warm: [
 
 // ── state ──
 const b64 = { enc: o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), dec: s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))))) };
-let G = Q.get('g') ? fromSaved(b64.dec(Q.get('g'))) : rollGenome(Q.get('seed') || 'builder', { g: Q.get('sex') === 'f' ? 0 : Q.get('sex') === 'm' ? 1 : undefined });
+let G = Q.get('g') ? fromSaved(b64.dec(Q.get('g'))) : rollGenome(Q.get('seed') || 'builder', { g: Q.get('sex') === 'f' ? 0 : Q.get('sex') === 'm' ? 1 : undefined, people: Q.get('people') || undefined });
 const locks = new Set();
 let person = null, view = Q.get('view') || 'full', turn = Q.has('turn') ? +Q.get('turn') : 0, zoom = 1, dirty = true;
 const B = window.__builder = { get genome() { return toSaved(G); }, get person() { return person; }, stats: STATS };
@@ -58,10 +58,11 @@ const FACE = ['head-square', 'head-oval', 'head-round', 'forehead-trans', 'chin-
 function buildPanel() {
   panel.innerHTML = ''; panel.append(el('div', { innerHTML: '<b>The human builder</b> · Session 804 · B1' }));
   const seed = el('input', { type: 'text', value: G.seed, size: 12 }), sex = el('select', {}, el('option', { value: '', textContent: 'any' }), el('option', { value: 'f', textContent: 'woman' }), el('option', { value: 'm', textContent: 'man' }));
-  const roll = el('button', { textContent: 'Roll', onclick: () => { const s = seed.value === G.seed ? Math.random().toString(36).slice(2, 8) : seed.value; seed.value = s; const N = rollGenome(s, { g: sex.value === 'f' ? 0 : sex.value === 'm' ? 1 : undefined });
+  const ppl = el('select', {}, ...Object.entries(PEOPLES).map(([k, v]) => el('option', { value: k, textContent: v.name }))); ppl.value = G.people || 'markman';
+  const roll = el('button', { textContent: 'Roll', onclick: () => { const s = seed.value === G.seed ? Math.random().toString(36).slice(2, 8) : seed.value; seed.value = s; const N = rollGenome(s, { g: sex.value === 'f' ? 0 : sex.value === 'm' ? 1 : undefined, people: ppl.value });
     for (const k of locks) { if (k.startsWith('f:')) N.face[k.slice(2)] = G.face[k.slice(2)]; else N[k] = G[k]; } G = N; syncAll(); rebuild(); } });
   panel.append(el('div', { className: 'bar' }, el('label', { textContent: 'seed ' }), seed, sex, roll));
-  panel.append(el('div', { className: 'bar' }, el('span', { textContent: 'people: Markfolk (the four peoples are B3)' })));
+  panel.append(el('div', { className: 'bar' }, el('label', { textContent: 'people ' }), ppl));
   h2('Body'); const BL = { g: 'woman · man', age: 'age (25 → 90)', muscle: 'muscle', weight: 'weight', height: 'height', prop: 'proportions' };
   for (const k of BODY_SLIDERS) slider(BL[k], () => G[k] ?? .5, v => G[k] = v, 0, 1, k);
   h2('Face'); for (const f of FACE) slider(f.replace(/-/g, ' '), () => (G.face || {})[f] ?? 0, v => (G.face = G.face || {})[f] = v, -1, 1, 'f:' + f);
@@ -109,7 +110,15 @@ function sheet() {
   const y = h.y + +(Q.get('y') || 0); cam.fov = 22; cam.aspect = W / H; cam.position.set(0, y + .12, styles.length * gap * +(Q.get('dist') || 1.55)); cam.lookAt(0, y - .03, 0); cam.updateProjectionMatrix(); STATS.sheet = out;
 }
 window.__render = () => comp.render();
-loadPack().then(() => { if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
+// ?peoples: three of each people side by side (a man, a woman, and one of either), each rolled from a seed of place and index
+function peoplesSheet() {
+  const keys = Object.keys(PEOPLES), out = [], n = keys.length * 3, gap = .62; let i = 0;
+  for (const k of keys) for (let j = 0; j < 3; j++) { const G1 = rollGenome(`${Q.get('seed') || 'line'}:${k}:${j}`, { people: k, g: j === 0 ? 1 : j === 1 ? 0 : undefined }), p = makePerson(G1);
+    p.root.position.x = (i++ - (n - 1) / 2) * gap + (keys.indexOf(k) - 1.5) * .35; p.root.rotation.y = (j - 1) * .12; scene.add(p.root); const bb = new THREE.Box3().expandByObject(p.meshes[0], true); out.push({ people: k, g: G1.g, h: +(bb.max.y - bb.min.y).toFixed(3) }); }
+  cam.fov = 24; cam.aspect = W / H; cam.position.set(0, 1.2, ((n - 1) / 2 * gap + .75) / (Math.tan(12 * Math.PI / 180) * W / H)); cam.lookAt(0, .95, 0); cam.updateProjectionMatrix(); STATS.peoples = out;
+}
+loadPack().then(() => { if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
+  if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
   if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') };
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;

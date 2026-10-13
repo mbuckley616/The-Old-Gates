@@ -27,6 +27,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
         ['man, fur-collared long cloak over the mantle', 1, { cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], cloakLen: 1 }], ['woman, leather apron', 0, { apron: [.36, .25, .16], apronLeather: true, bib: true }]]) {
       const G0 = K.rollGenome('cloak:' + sex, { g: sex }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g)), back = JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1))));
       out.cloaks[name] = { ...(p.cloak || {}), meshes: p.root.children.length, saved: s1 === back, bytes: s1.length, hasApron: !!p.meshes.find(m => m.name === 'apron'), hasHood: !!p.meshes.find(m => m.name === 'hoodUp') || !!p.root.getObjectByName('hood'), wantsHood: !!dress.hood }; }
+    // the four peoples: twelve of each, measured standing (crown to sole)
+    out.peoples = {}; for (const k of Object.keys(K.PEOPLES)) { const hs = { m: [], f: [] }; let rangeOK = true, bytes = 0;
+      for (let i = 0; i < 12; i++) { const g = K.rollGenome(`${k}:${i}`, { people: k, g: i % 2 }), sx = g.g > .5 ? 'm' : 'f', st = K.statureOf(g), [a, b] = K.PEOPLES[k].body[sx].metres; hs[sx].push(st); if (st < a - .02 || st > b + .02) rangeOK = false;
+        bytes = Math.max(bytes, JSON.stringify(K.toSaved(g)).length); if (JSON.stringify(K.toSaved(K.fromSaved(K.toSaved(g)))) !== JSON.stringify(K.toSaved(g))) rangeOK = false; }
+      const mean = a => +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3); out.peoples[k] = { men: mean(hs.m), women: mean(hs.f), rangeOK, bytes }; }
     return out; });
   for (const x of r.roll) { check(`genome ${x.seed} (${x.style}) saves and loads back to itself (${x.bytes} bytes)`, x.same && x.bytes < 1000, x);
     check(`genome ${x.seed}: the same seed rolls the same genome`, x.again); check(`genome ${x.seed}: a loaded genome builds the same body and hair, twice`, x.body); }
@@ -40,6 +45,9 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     if (c.columns) { check(`${k}: the cloak hangs clear of the body (closest ${(c.minClear * 100).toFixed(1)} cm, ${c.rows} rows of ${c.columns})`, c.minClear > .005 && c.under === 0, c);
       check(`${k}: the brooch pins it at the throat (${(c.brooch * 100).toFixed(0)} cm from the neck)`, c.brooch < .2, c.brooch); }
     if (c.wantsHood) check(`${k}: the hood is there`, c.hasHood); if (k.includes('apron')) check(`${k}: the apron is there`, c.hasApron); }
+  { const P = r.peoples; for (const [k, p] of Object.entries(P)) check(`${k}: twelve rolled stand inside the people's heights (men ${p.men} m, women ${p.women} m) and save back (${p.bytes} bytes)`, p.rangeOK && p.bytes < 1100, p);
+    check(`the peoples stand in the canon's order: the Old Blood shortest, the Markmen tallest`, P.oldblood.men < P.gatelander.men && P.gatelander.men < P.markman.men && P.aurennais.men < P.markman.men && P.oldblood.women < P.gatelander.women && P.gatelander.women < P.markman.women);
+    const all = Object.values(P).flatMap(p => [p.men, p.women]); check(`the heroic hybrid: the four peoples average about 1.75 m (${(all.reduce((a, b) => a + b) / all.length).toFixed(2)} m)`, Math.abs(all.reduce((a, b) => a + b) / all.length - 1.75) < .06); }
   // the page: a slider changes the person, the genome text follows, and loading a saved genome brings it back
   const ui = await page.evaluate(async () => { const B = window.__builder, before = JSON.stringify(B.genome), sliders = document.querySelectorAll('#panel input[type=range]');
     const h = sliders[4]; h.value = '0.95'; h.dispatchEvent(new Event('input')); await new Promise(r => setTimeout(r, 400)); await new Promise(r => { const t = setInterval(() => { if (JSON.stringify(B.genome) !== before) { clearInterval(t); r(); } }, 100); setTimeout(() => { clearInterval(t); r(); }, 20000); });
@@ -55,6 +63,7 @@ if (process.argv.includes('--shots')) {
     const buf = panel ? await page.screenshot({ type: 'jpeg', quality: 88 }) : Buffer.from((await page.evaluate(() => document.querySelector('canvas').toDataURL('image/jpeg', .9))).split(',')[1], 'base64');
     fs.writeFileSync(path.join(here, 'builder-' + name + '.jpg'), buf); console.log('shot', name, ((Date.now() - t0) / 1000).toFixed(0) + 's', errs.slice(0, 3)); await page.close(); };
   await shot('page', 'seed=a1&sex=f&view=full', 1600, 900, true);
+  await shot('peoples', 'peoples', 2400, 900);
   await shot('styles-back', 'seed=styles&sex=f&sheet&ang=2.4&dist=1.5&y=-.2&nomantle');
   await shot('styles-front', 'seed=styles&sex=f&sheet&ang=.35&dist=1.5&y=-.1');
   await shot('styles-mantle', 'seed=styles&sex=f&sheet&ang=2.4&dist=1.5&y=-.2');

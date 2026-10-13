@@ -16256,3 +16256,41 @@ B2 of `character-builder.md` is the wardrobe kit. Its brief waits on Michael's m
 - **The hood up is not right:** with it up, a stepped patch of the man's hair at the crown is drawn as bare skin. Hiding parts in turn shows the hair and its cap are there, and that the body's skin draws over them only while the hood is in the scene. The cause is not found yet; it is owed before the hood-up look is judged.
 - **The leather apron** reads well; its bib's top edge is cut straight across.
 - A DECISION is raised in `decisions.md`: whether this drape-and-shell approach is the wardrobe's method.
+
+## v80 — Session 806 — The four peoples as ranges over one body (B3, first slice, prototype only)
+B3 of `character-builder.md`: the four peoples as slider ranges over the one human body, so that a crowd is a people and a seed. `PEOPLES` in `people.js` takes the canon's peoples table (§2), the kept sheets (OG-048 and OG-059 for the Gatelanders, OG-025 for the Markmen, OG-044 for the Aurennais, OG-066 for the Old Blood) and Michael's 1 B (the heroic hybrid, about 1.80 m, with room for the tall Markmen and the short Old Blood).
+
+**What a people sets:**
+- **Stature in metres.** MakeHuman's height slider is not metres: the first line-up put a Markish man at 2.25 m. So a people gives a range of statures, and `heightFor` turns the stature into the slider by measuring the morphed body, crown to sole, in nine halvings.
+  - Gatelanders: men 1.72 to 1.84 m, women 1.60 to 1.72 m.
+  - Markmen: men 1.84 to 1.98 m, women 1.72 to 1.84 m.
+  - Aurennais: men 1.74 to 1.86 m, women 1.62 to 1.74 m.
+  - The Old Blood: men 1.56 to 1.66 m, women 1.46 to 1.56 m.
+- **The body:** muscle and weight ranges (the Gatelanders wiry, the Markmen broad, the Aurennais lean, the Old Blood slight), and the mix of MakeHuman's three ethnic targets (the Aurennais mixed).
+- **Colour:** palettes of skin, hair and eyes. The Gatelanders are fair to ruddy with red or dark hair; the Markmen pale, ash-blond and grey-eyed; the Aurennais olive through deep brown, dark-haired and brown-eyed; the Old Blood grey-pale, black-haired, with pale cold eyes.
+- **Hair:** the weights of the hair styles, by sex.
+- **Dress:**
+  - Gatelanders: madder, moss, ochre, sea blue and undyed; hooded cloaks with a brass brooch for two in three, and aprons.
+  - Markmen: the fur mantle and fur-collared cloaks on iron.
+  - Aurennais: linen, blue and saffron.
+  - The Old Blood: slate, oxblood, dusk violet and bone.
+
+`peopleGenome` starts from Session 770's Markish roll (for the face and the pose) and lays the people over it. `rollGenome(seed, {people})` uses it, the builder page has a people selector beside Roll, and `?peoples` stands three of each in a line.
+
+Not in this slice, all owing a skin texture or a new piece: the Old Blood's marks (pale raised lines under the skin, Michael's 2 B), the Gatelanders' freckles, Aurennais curls, head-wraps and sashes, and the named cast's genomes.
+### Verified (headless Chromium)
+`builder.check.mjs`: 80 checks, all pass.
+- **Twelve of each people,** rolled from seeds of people and index, stand inside their range, save and load back byte for byte, and are at most 842 bytes. Mean statures:
+  - Gatelanders: men 1.76 m, women 1.67 m;
+  - Markmen: 1.92 m and 1.79 m;
+  - Aurennais: 1.80 m and 1.70 m;
+  - the Old Blood: 1.60 m and 1.52 m.
+- **The order:** the Old Blood are shortest and the Markmen tallest, and the four together average 1.72 m.
+- **Measuring:** these are unposed. Standing in the pose, the bounding box of the body reads 4 to 6 cm more.
+- **Picture:** `builder-peoples.jpg`, three of each.
+### Needs eyes
+- **Whether each people reads as itself at a glance,** against its sheet:
+  - the Old Blood need their marks;
+  - the Aurennais need their own dress, not the Gatelander tunic in linen colours.
+- **The faces** are still Session 770's Markish face sliders for every people. Face ranges per people come next, with the cast.
+- A DECISION is raised in `decisions.md` on the heights and palettes.
