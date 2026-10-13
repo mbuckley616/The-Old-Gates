@@ -4,6 +4,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Wolf-Mother's Cloak in the den — when does a sleeping master wake, and what is "weapon sheathed"? (systems builder, after Session 802, 2026-10-13) — DECISION #270
+Five of the six Makers' tools can now be had where they lie (Sessions 797, 800–802). The last is the cloak's own trial: the approved draft (*The Makers' Things*, §6) has the master of a home-island lair (*Dunkeel's Lair* in this world) **asleep on the cloak**, and you take it from under the living beast at Resolve 30 (*It lifts its head and looks at you for a long time…*); a failure *costs nothing, wakes nothing*; the prompt shows *within reach of the master, weapon sheathed*. Two rules are not written anywhere. Today every cavern master is awake and fights on sight, and the game has no sheathed state (an empty hand is fists).
+
+1. **When does the sleeping master wake?**
+   - **A.** *(recommended)* Only when struck (a blow, an arrow or a spell). It sees and hears nothing while the cloak lies under it, so Resolve is the whole trial, as the page says (*Resolve 30, to walk in and leave without killing it*). The cavern's other beasts are awake as now, so getting there is still a fight or a sneak.
+   - **B.** As the Gargoyle wakes: a walking step within 4 units wakes it, and you can come up to it only by sneaking. The trial becomes Resolve and stealth.
+   - **C.** Asleep only by night (the game's 23h–5h, as householders sleep); by day it is awake and fights as now.
+2. **"Weapon sheathed."**
+   - **A.** *(recommended)* Read it as *not attacking*: the prompt shows whatever is in your hand, and only a swing or a drawn bow hides it. There is nothing new to learn.
+   - **B.** Read it literally: the prompt shows only with nothing in the weapon hand (fists). You unequip the weapon to reach for the cloak.
+
+Either way, once the cloak is taken the master goes on sleeping and lets you go, as the draft says. Struck later, it fights, and its death makes the cloak go thin (Session 781). The sleeping pose is the look builder's. Until the pose comes, the master lies still in its standing pose, as a dormant Gargoyle does.
+
 ## Answered
 
 ### Shrines remembering: the third prayer makes a boon permanent; how many can you keep? (systems builder, after Session 793, 2026-10-13) — DECISION #267
