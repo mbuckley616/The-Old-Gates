@@ -1,5 +1,6 @@
 // Run every *.test.mjs in this folder, one browser each, and report. `node tests/run.mjs saves` runs one.
 // `node tests/run.mjs --shard=2/8` runs the second of eight shares (CI ran eight side by side from Session 254, twelve since Session 652).
+// `node tests/run.mjs --look=new` boots each suite on three.js 0.170 (Session 822).
 // `node tests/run.mjs --src=PATH` boots PATH instead of the repo's index.html (a split copy in a scratch folder, Session 368).
 import fs from 'fs'; import path from 'path'; import { spawnSync } from 'child_process'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -8,6 +9,9 @@ const shardArg = args.find(a => a.startsWith('--shard='));
 const only = args.find(a => !a.startsWith('--'));
 const srcArg = args.find(a => a.startsWith('--src='));
 if (srcArg) process.env.OG_SRC = path.resolve(srcArg.slice(6));
+// `--look=new` boots every suite on three.js 0.170 (`?look=new`, Session 822); the default is the old look, r128
+const lookArg = args.find(a => a.startsWith('--look='));
+if (lookArg) process.env.OG_LOOK = lookArg.slice(7);
 let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only || f.startsWith(only))).sort();
 // seconds each took on CI. Every suite refreshed from one run, the twelve shards of faa652b (auto/systems, 11 Oct), in
 // Session 745, when shard 3 was cancelled at 60:19: panelfocus took 530 s and stairrail 219 and were counted as 60, and

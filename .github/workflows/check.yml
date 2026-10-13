@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - run: python3 scripts/parsecheck.py
+      # Session 822 (F1): the new look's classic three.js 0.170 is what scripts/three_bundle.py makes from the pinned module
+      - run: python3 scripts/three_bundle.py --check
       # Session 368 (backlog K): the split script's anchors are patterns on main's code. This shows when a change moves
       # one, so switch-over day finds no surprise; it never blocks a merge. Once index.html is split it reports so and passes.
       - run: python3 scripts/split.py --check

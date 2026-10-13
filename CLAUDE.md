@@ -1,14 +1,16 @@
 # The Old Gates — working conventions
 
-A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 41 plain script
+A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 43 plain script
 files that share one global scope (no modules, no bundler; a downloaded folder opens by double-clicking `index.html`).
 Michael designs and playtests; Claude implements. This file is what Claude reads first in every session.
 
 ## The files
-- `index.html` — the markup, the CSS, the build tag and 41 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
+- `index.html` — the markup, the CSS, the build tag, the renderer's chooser and 43 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
   the code, one file per area in load order (~46k lines in all; the biggest, `40-legacy-zones.js`, is 3,300). Deployed as-is: GitHub
   Pages serves the folder. The section "The split layout" below is the rule book; it was one inline script until Session 379,
   and the world was one 8,100-line IIFE until Session 484.
+- `vendor/three.r170.min.js` — three.js 0.170 as one classic script, for the new look (`?look=new`, Session 822); made by
+  `scripts/three_bundle.py` from the pinned module build, never edited by hand. The old look loads r128 from cdnjs as always.
 - `docs/devlog.md` — one entry per session, appended at the end of the session. Never rewrite old entries.
 - `docs/backlog.md` — the open work, grouped by area, with `~~strikethrough~~ — done, Session N` when finished.
 - `docs/lore_canon.md`, `docs/quest_writing.md` — the author's text. Do not edit without being asked.
@@ -47,6 +49,16 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
 - **Top-level `let`/`const`/`class` are shared by every file**: the same name declared in two files is a SyntaxError in the
   later one, which `node --check` on one file cannot see. `python3 scripts/parsecheck.py` checks each file and then the
   concatenation in tag order, which catches it. Two `function` declarations of one name are legal (the last wins, as now).
+- **The renderer's switch (Session 822, card F1).** One page runs one three.js, chosen by the inline script just above the r128 tag,
+  before any `js/` file: `?look=new` (or the setting, `localStorage['og.renderer']='new'`, the settings sheet's *Renderer* row,
+  `setRenderer()`) `document.write`s `vendor/three.r170.min.js` and opens a `<template>`, so the r128 tag after it is parsed inert
+  and never runs; `?look=old` or nothing leaves the page loading r128 from cdnjs as before. `window.OG_LOOK` says which ran.
+  `js/05-compat.js` is the only place the version is read: on 0.170 it turns colour management off and the output linear, patches
+  the light chunks back to r128's legacy scale (×π, the old point-light falloff, decay 1), and `SKINNED` carries `skinning:true`
+  to the two skinned materials on r128 only. Every other file is one code path for both. To rebuild the bundle:
+  `python3 scripts/three_bundle.py` (`--check` in CI proves the committed copy). F2 and F3 build on this switch: the new look's
+  own work reads `OG_LOOK`/`THREE_LEGACY`, never `THREE.REVISION` again elsewhere. Tests: `boot({look:'new'})`, or
+  `node tests/run.mjs --look=new` for every suite; `looknew` and `lookpair` are the switch's own.
 - `K`, `PERF`, `AX`, `volLevel`, `EXPLORE`, `PIECES`, `_ccState` and the other 47 constants of the old `if(REN){` block
   (removed in Session 368) are plain globals; `window._K` still works.
 - **The world files (`80-world-terrain.js` to `88-world-ticks.js`) are the old `WORLD` IIFE's body, in order, at the top level.**
@@ -71,6 +83,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
   table, `--check` proves split-and-join is byte-identical); `scripts/join.py` reassembles the one-file build from
   `js/manifest.json`. `scripts/tag.py` is unchanged: the tag is markup.
 - **Code map by file** (load order; grep for the names, the numbers drift):
+  - `05-compat.js` the renderer's version: `THREE_LEGACY`, `SKINNED`, and on 0.170 the colour and light shims (Session 822).
   - `10-player.js` renderer boot (`REN`, `CAM`, `VM_SCENE`), player state (`px/pz/PHP`…), roll, posture, lock-on, sneak,
     bow, `ANIM_PARAMS`. `12-character.js` `ATTRS`, `ARCHETYPES`, level-up. `14-items.js` `EQ`, `BAG`, `MATERIALS`,
     `WEAPON_TYPES`, `BOOKS`, enchants, `makeItem`, loot tables. `16-viewmodel.js` first-person hands and weapons.
@@ -181,6 +194,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
   (skinning did) loses precision or vanishes; keep vertex work in local space.
 - The camera looks along `(-sin yaw, -cos yaw)`; NPCs face `(sin ry, cos ry)`.
 - r128's shadow pass tests object layers against the *eye's* camera, not the shadow camera: a shadow-only layer draws nothing.
+  0.170's does the same (`WebGLShadowMap`'s `renderObject` still tests `camera.layers`, Session 822), so the rule holds in both looks.
   To draw something differently in the shadow pass, swap it inside `REN.shadowMap.render` (see the townsfolk's LOD).
 - The save writes all of `worldState`, but `_applyLoadData` reads it back from a list: a new `worldState` key must be added there (the S242 list), or it lives only until the page reloads. Since S456 the key also lands in the world row unless it is named in `SS_CHAR_WS` (the character's keys): a key that describes the character, not a place, goes in that list too.
 - The loop's held-key map `K` (and `PERF` and their neighbours) sat inside a top-level block until Session 368 and were reached as
