@@ -15931,6 +15931,115 @@ Nothing in the game changed; no build tag. A script checked that the catalogue's
 ### Needs eyes
 Nothing owed from the review: Michael settled his last two MAYBEs in chat. He dropped OG-015 (resources by island; OG-035 covers it). He kept OG-094 with Tine redone as fire, which is now backlog L7's item on magical implements. Both are marked in the catalogue and on the review page's database. The quest writer's names for the new Aurenne register (backlog J) come before any of L2's Aurennais are given lines. L3's common animal set is the biggest single gap, and the place to start building.
 
+## v80 — Session 768 — A new look, shown: a from-scratch render slice of the Gatelands (prototype only)
+Michael asked what the kept concept art becomes, and how the game stops looking like Minecraft and starts looking like a modern game. First, a survey of how the game draws itself: 774 boxes, 273 cylinders and 122 cones among its shapes, 522 Lambert materials against 13 standard ones, no tone mapping, no post-processing, three.js r128 from 2021, and flat fill light (ambient .55 plus hemisphere .55 against a sun of 1.15).
+
+The first attempt kept the game and changed only how it draws (`docs/prototypes/render/`, `newlook.js`). It added linear colour, ACES, ambient occlusion from depth, bloom, haze, a grade and a Kuwahara filter, plus auto-smoothed normals that also blend the per-corner colour jitter `mergeParts` gives every crown and rock. The jitter, not the shading, is what makes the crowns read as facets. The smoothing helped most, but the result was still recognisably the same game. Michael stopped it: he wants a complete reimagining.
+
+The second attempt is new code, `docs/prototypes/levelup/` (`main.js`, about 410 lines, three.js 0.170 vendored from npm because the CDN is blocked here). It renders one view aimed at key frame 2 (OG-077):
+- the sky: a gradient dome and 2,051 cloud puffs in lit heaps;
+- the land: a terrain shaded in its fragment shader (Voronoi fields with hedgerows, woods from afar, rock, sand, the path), on a grid dense at the camera;
+- the near ground: 160,000 instanced grass blades and 5,200 wildflowers on one wind;
+- the trees: 881 of them, made of leaf cards with normals turned out from the crown;
+- the village: 80 cottages of plaster, thatch, slate, shutters and flower boxes, a church and a three-arched bridge;
+- the Weaver ruin on its hill, a lighthouse, sails, and mountains with their own haze;
+- the image: physically based light, a 4096 shadow map, bloom, a warm-and-cool grade and ACES.
+
+Two views: the hero vista (`hero.jpg`) and the riverbank at eye level (`village.jpg`, `?view=village`). It is not wired to the game.
+
+Also this session: the five routine prompts that should read backlog L were written out with their additions (Session 767's ask). Agents cannot edit routines created through the API, so they went to Michael as a paste page. The look builder's "section H only" lines were adjusted so they do not contradict the new paragraph. A decision is raised on whether to build the new foundation.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/shoot.mjs` renders each view in about 15 s at 1920x1080 in software GL, with no page errors. The counts in `window.__stats`: grass 160,000, flowers 5,200, trees 881, houses 80, puffs 2,051. The comparison page puts the slice beside OG-077 and today's paintover frames.
+### Needs eyes
+Michael's call on the decision. The slice is one tuned view: other hours, weather, the Mark and Aurenne, interiors and the gates are untested in it. Close-up buildings and people are still primitive; the plan says modelled assets carry those. Frame cost on a real machine with real streaming is unmeasured: the slice draws everything at once, with no level of detail.
+
+## v80 — Session 769 — More slices: a village lane, an old gate at dusk, the hall inside, and a live page (prototype only)
+Michael chose B on Session 768's decision (more slices first, then the new foundation once he approves them). Three new slices share a kit, `docs/prototypes/levelup/common.js`, which provides:
+- the renderer and post-processing;
+- seeded noise;
+- textures painted on canvases from a height field, each with a normal map made from the same height (plaster, cobbles, coursed stone, lichened stone, thatch, slate, planks, beams, flagstones);
+- the sky, cumulus and leaf-card trees.
+
+The slices:
+- **`street.html`, the village lane at eye level.** Eleven cottages built as pieces: an extruded wall profile with real holes for recessed windows and doors, a stone footing, timber framing on some, glass, frames, sills, shutters, flower boxes, plank doors, stone lintels and steps, lanterns, chimneys with pots, and a thick roof slab bevelled round at the eaves (thatch) or thin (slate). Also a cobbled lane, verges of grass, barrels, crates, sacks, a cart, a market stall with a striped awning, an inn sign, ivy, and the ruin on the hill beyond.
+- **`gate.html?view=gate`, the old gate at dusk (OG-037, V1).** Four rings of lichened stone stepping into a hillside, the Weaver script lit amber on their faces, a slit at the heart with light behind it, fallen stones, a camp with two tents, a fire that casts shadows, a Crown banner, and fireflies.
+- **`gate.html?view=hall`, inside the gate (the dark look).** Ring arches with burning script, wet flagstones (roughness drops in a noise mask), a brazier, rubble and bones, a carried torch, and a shaft of cold light from a cleft, with dust in it.
+
+`bundle.py` inlines each scene into a self-contained page that loads three.js from jsDelivr. The four pages are published as a live claude.ai page with a frame counter, so Michael can measure them on his own machine.
+
+A correction within the session: the first renders put characters from a free CC0 kit (KayKit) in the lane, the camp and the hall. Michael: "totally the wrong direction. They look like little children's toys." They are gone from every slice, the files are deleted, and the loader is now a generic one for rigged glTF. How a realistic cast gets made is a new pending decision.
+### Verified (headless Chromium)
+Each slice renders at 1920x1080 in 5 to 12 s with no page errors. The lane has 11 houses, 243 trees and 130,000 grass blades; the gate has 221 trees and 110,000 blades. The bundled pages also load and run with no errors when served locally, with three.js pointed at the vendored copy, since jsDelivr is blocked in the test box. Frame rates there are 0 to 2 fps on software GL and mean nothing.
+### Needs eyes
+Michael's frame rates on his machine, scene by scene. Whether the live page's scenes run inside the claude.ai frame: the CDN is on its allowlist, but this was not tested from here. His approval of the slices, which starts A. His call on the cast.
+
+## v80 — Session 770 — People from a genome: MakeHuman's body, our wardrobe (prototype only)
+Michael asked why the game's own genome system could not simply be raised instead of buying a hundred one-off meshes. A Meshy test confirmed the doubt: the download needs a paid plan, and the auto-rig fused the cloak to the arms. The answer built here keeps the genome and changes what it drives. The material is MakeHuman's base body, released CC0 by its makers in 2020, from their GitHub:
+- one sculpted mesh of 19,158 vertices;
+- the morph targets that reshape it, for gender, age, ethnicity, muscle, weight, height, proportions and 28 face and body sliders;
+- a 163-bone skeleton with skin weights for every vertex;
+- two fitting shells ("tights" and "skirt") that the same targets reshape.
+
+`mh_pack.py` packs what the slice uses into one 7 MB binary (generated, not committed). `people.js` does the rest:
+- **The genome:** a handful of numbers, mixed into target weights as MakeHuman mixes them.
+- **The skeleton:** built from joints read off the morphed body, then posed: arms down from the A-pose, elbows and fingers bent, the jaw closed, the head turned.
+- **The wardrobe:** cut from the fitting shells and pushed out in layers (trousers, boots, a tunic that hangs looser below the chest and cinches at the belt, a short or long skirt, a belt, cuffs). Hems are cut cleanly in the shader on the unmorphed body, so every garment fits every body, and the body's own skin is hidden under clothing.
+- **Fur mantles:** eleven noise-cut shells.
+- **Hair, beards and moustaches:** procedural hair cards rooted on the scalp, combed up and back, hugging the scalp and then falling, kept off the face, shaded by their root's normal. A shell cap with a smooth hairline sits under them.
+- **Eyes:** with irises, set in the helper's sockets.
+
+`people.html` shows a line-up of eight Markfolk and a close-up per face (`?view=faces&who=N`), and five of them now walk the village lane.
+
+Corrections found on the way, for the record:
+- binding the skins before the skeleton had world matrices doubled every offset (the first render was grotesque);
+- three.js caches a shader by its compile function's source, so per-material cut lines and fur layers need their own `customProgramCacheKey`;
+- the hair helper is a hair volume, not a scalp: hair rooted on it floats.
+### Verified (headless Chromium)
+The line-up (8 people), the faces and the lane (5 people) render with no page errors in 7 to 13 s. The live page's bundles load and run when served locally.
+### Needs eyes
+The faces at eye level, and the women's long hair, which is still untidy at the temples. Frame rate with many people on Michael's machine (the live page's line-up). The question Michael raised at the end of the session: a builder of our own, for creatures as well as people.
+
+
+## v80 — Session 771 — The foundation approved; the gates at their size; the builder written; the second round of concept art
+Michael approved the slices ("I also approve of the slices"), which starts A, the new visual foundation, as a Fable session. He gave two call-outs with it. First, people must match the world's proportions, "houses and buildings especially". Second, the gates, outside and in, were too small: "They should be shockingly large, like what we see in the concept art. Forget the 'dungeon with cobblestone walls' feel." He also said yes to a builder of our own for people and creatures ("write it up and fold it in"), and he added a second round of concept art to the Drive folder.
+
+**Scale, measured.** A headless probe of Dunmore at noon read the game's own numbers:
+- townsfolk stand 1.05 to 1.15 units (the head bone 0.91 to 1.04 above the feet), and the player's eye is at 0.92;
+- house doors are 1.85 units, cottage eaves 2.4 (3.3 in the stone towns), and interiors are the footprint times 1.8 with furniture at 0.62;
+- so the buildings are close to true metres and the people are about 60% of the size their doors expect.
+
+That is the mismatch Michael saw. The slices are right: 1.6 to 1.9 m people, 2.05 m doors. `docs/design/visual-foundation.md` makes it a rule: one unit is a metre, people are the measure, the eye goes to 1.65 m, interiors go to true size, and a ratio test guards it. The houses barely move and the speeds do not change.
+
+**The gates, rebuilt** (`docs/prototypes/levelup/gate.js`). The Session 769 slice was four 17 m rings on a lawn and a 60 m corridor with flagstones. The new exterior is OG-037's first variation at OG-U2-009's size:
+- five stepped pointed orders cut into a limestone cliff, the outer arch 100 m high and 76 m across, each order 6 m of face and 6.5 m deeper than the last, with a roll moulding on its inner edge;
+- a spine of two pillars 104 m high with columns of glyphs and two ring sigils;
+- a slit door 24 m high and 4 m wide;
+- a Crown camp at the foot whose people are the slice's genome bodies, and one walking up the path.
+
+`&cam=foot` stands in the camp and looks up. The interior is a nave 26 m wide and 250 m long under a pointed vault 50 m up, with a pier every 14 m, script and ring sigils up every pier (two bays guttering), dark aisles, and a stair across the whole width. At the far end are a ring 33 m high and a shaft of cold light. The floor is great dark slabs that are wet in patches and reflect the hall from a probe rendered once. `common.js` gains three textures (`ashlar`, `slab`, `rock`), and `bundle.py` a fifth live scene (`door.html`). The live page carries all three.
+
+**The builder** (`docs/design/character-builder.md`):
+- MakeHuman is only the source of a CC0 body; the tool is ours;
+- one genome format over any species, where a species is a base mesh, a skeleton fitted to it, sculpted and generic (bone-scale) sliders, regions and a pose library;
+- the peoples are slider ranges, and seeds come from place and id, so the co-op rules hold;
+- a table of body plans from human to serpentine, and a tool page that saves genomes for the game;
+- the work runs B1 to B6 inside backlog K.
+
+**The second round of concept art.** Sixteen sheets (Michael's OG-U2-001 to 016) are catalogued as OG-097 to OG-112, with thumbnails, a new `08_Culture_Daily_Life` folder, 14 KEEP and 2 MAYBE recommended, and all added to the review page (republished). The review page also had a bug since Session 755: the "Yes, apply them" bar showed while hidden, because `display:flex` overrode `[hidden]`. It is fixed. OG-U2-001 is misfiled: it is the alchemy specimens sheet, not jewelry. OG-U2-009 raises a pending question in `decisions.md`: six great gates, or many gates of six schools?
+Later in the session Michael answered the six gates **A**: there are six great gates as major dungeons, with the lesser gates scattered. He left what clearing one gives to the quest writer, with a seed: it unsettles the world and draws Varek's ire, the Elder Scrolls' Towers inverted. That is now in `lore_canon.md` §9a and backlog A. The seed is noted against the canon's complicity thread, because Varek needs the gates cleared.
+Michael then set the shape of the two paths (13 Oct). Varek's path brings power and corrupts the world, gate by gate, until the sixth unmakes it; Varek turns at the last gate and dies trying to stop the player. The other path restores the world at a cost to the player's magic, and Varek opposes it. This is recorded in `decisions.md`, `lore_canon.md` §9a (with a note on the Act III outline it overrides in part), backlog A, and the foundation brief, which plans the corruption's look as one level read by the grade, the sky and the trees.
+Then: every great gate's choice is reversible until all six match. Six sealed lock the world safe for good, six torn collapse it, and any mix stays open. The corruption level is now the count of torn gates, so it rises and falls.
+Then: two artifacts, Sunder-and-Keening style, one to tear and one to seal; undoing a choice restores what it took. Tearing should feel good at first and sealing dull; six sealed keep the game as it is. Michael leans toward six torn deleting every save, which stays an open decision. Recorded in `decisions.md`, `lore_canon.md` §9a and backlog A.
+### Verified (headless Chromium)
+- The gate (path and foot views) and the hall render at 1920x1080 in 18 to 19 s with no page errors. The portal is 423 voussoirs; the scene has 393 to 417 trees, 140,000 grass blades and 7 people; the hall has 4.
+- The three bundled pages (`gate.html`, `door.html`, `hall.html`) load and run when served locally with three.js pointed at the vendored copy. The frame rates there (1 fps, software GL) mean nothing.
+- The review page renders 112 cards with 112 thumbnails and no page errors. The catalogue's 96 earlier rows are byte-identical.
+### Needs eyes
+- Whether the gates now feel shockingly large, from the path and from the door, and whether the cliff's limestone and the order mouldings read as OG-037.
+- The hall's frame rate on Michael's machine: about 20 point lights and a reflection probe.
+- His marks on the 16 new images, and his answer on the six great gates.
+- The scale rule's feel (a 1.65 m eye in rooms of true size) can only be judged once the foundation builds it.
+
 
 ## v80 — Session 770 — A householder woken in the night says so (the critic's s585; Michael's A on #255)
 The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h woke her (Session 739) and opened the ordinary day talk, *Blessings on the road that brought you*, with *My name is Traveller.* listed first; the prompt over her while she slept read *Sinéad — Press 'E' to talk*. Nothing knew it was the middle of the night. Michael chose A on DECISION #255: her own night line, then the usual talk, and no new rule (being inside after hours is still no crime). Three changes. The prompt over a sleeping resident (`90-main.js`, the interior prompt) now reads *Sinéad (asleep) — Press 'E' to wake*. `wokenGreetNow()` in `86-world-crime.js`, beside the sleeper code, gives the night line when she was woken this visit (by E or by a step within two units of the bed, both of which set `woke`), the house still keeps its sleeping hours (23h–5h), and she has not said it yet; `interact` (`50-travel.js`) asks it as E opens a home's talk and hands it to `openDialog` through `dlgWokenLine`, read once, so the line replaces the greeting on that talk only and a second talk the same night has the ordinary greeting. On that woken talk the introduction topic moves after her own topics instead of before them; it is still offered. The words: the decision gives the quest writer four lines, one per people. They are not written yet, so `WOKEN_LINES` is an empty table keyed by people (`gatelander`, `markman`, `aurennais`, `oldblood`, read from the resident's `dlg.people`), and until a people has its own line the decision's own *What — who's there? It's the middle of the night.* stands for all four. Session 770, not 768: the open PR #261 claims 768–769.
@@ -15938,6 +16047,137 @@ The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h woke her (Sessio
 `tests/wokennight` (new), Dunmore, 9 of 9: at 2h the prompt over house 6's sleeping Sinéad reads *Sinéad (asleep) — Press 'E' to wake* (looking at her body); E wakes her and the talk opens with the night line, with *My name is Traveller.* eighth of eight, after *About you …* (by day at 22h it is first, before them); `worldState.crime` unchanged (`{}` before and after); awake, the prompt is *Sinéad — Press 'E' to talk*; a second talk the same night greets *You'll have walked a way.*; in house 3 at 1h, woken by a step beside the bed and then E, her first words are the night line; no page errors. `homesleep`, `sleeperpose`, `carraignight`, `talkaim`, `witnessrange` and `intreach` green, 1/1 each.
 ### Needs eyes
 The four night lines, one per people, are owed by the quest writer (`WOKEN_LINES`, `js/86-world-crime.js`); the one line stands in for all of them until then. Whether the greeting after the night line (the ordinary day greeting on a second talk at 2h) wants a night variant too is the quest writer's call; this session did not touch it.
+
+## v80 — Session 772 — Creatures from parts: one kit of skeletons, one gait engine (prototype only)
+Michael asked whether there was work to start while Sessions 768–771 sat in CI, and where to lean in. He pointed at his own idea: a skeleton for every creature type, as MakeHuman gives the people one. Claude's answer was to build skeletons from parts rather than one per species. The bestiary is about a hundred and twenty animals and monsters, and they fall into about a dozen body plans that share their pieces. The game already half does this: `wolfSkeleton` bends one 24-bone rig into a wolf, a boar, a bear, two horses and the dragon with flags. Michael: "yes, write it up and start the creature prototype"; and while it was built, "Be mindful that there are several other animals / monsters that are on other concept art files."
+
+**The kit** (`docs/prototypes/levelup/creatures.js`, three.js 0.170 like the other slices):
+- **Parts:** a spine, a neck, a head (skull, muzzle and jaw, with eyes, ears, horns, antlers, crystal horns, a beak and fangs as rigid bits), a tail (with a curl, so a scorpion's tail is one number), arms on any socket of the spine, wings (an arm and a fan of fingers with a membrane skinned to both edges), spines down the back, and leg pairs over eight presets: canid, ungulate and plantigrade fore and hind, bird, insect, sprawl.
+- **Presets:** a preset is joints in the leg's own frame as fractions of its height, so one preset fits any size.
+- **Flesh:** grown, not modelled. Tapered capsules on the bones make a field; capsules of one limb join hard and parts join smoothly; surface nets mesh it at a cell sized to the thinnest limb, and Taubin smoothing takes the steps out without shrinking the body.
+- **Weights:** the skin weights are read off the same field, so a joint bends where the flesh joins. So are the tones, the counter-shading the game's wolves already use, the patterns, the fur mask (noise-cut shells, as on the people's mantles), and the binding's glow (a seam down the spine and cracks over the hide).
+- **Gaits:** one gait engine for any number of legs. A gait is a duty factor, a Froude number (speed against leg length, so a giant walks like a giant), a stride, and a rule for each foot's phase from its pair and side. *Walk* (a wave from the back) is a quadruped's four-beat walk, a hexapod's wave and a biped's walk. *Trot* (alternating diagonals) is a trot, an insect's tripods and a spider's tetrapods. *Gallop*, *slither* and *fly* complete the set.
+- **The solver:** analytic. It yaws an insect's coxa toward its foot, holds a paw or hoof, bends the two segments between them, and slides the leg's root toward the foot past its reach, as a shoulder blade does.
+- **The genome:** `{plan, seed, sliders, tint, light}`, about 150 bytes, with six generic sliders (size, leg, bulk, neck, tail, head) that act on any plan. The seed comes from a key of place and index, never `Math.random`.
+
+**Ten plans, all from the concept art:** the Ironwolf, the Faolchú (the wolf's plan with the canon's extra arms out of a red spine seam, and cracks), the Frostreach Bear, the Elderstag, the Shatterhorn and the Mineprowler (both six-legged: Michael's 9 A), the giant spider, the Stormplume, the dragon, and the Mire Snake. `bestiary.js` and `creatures.html` show them in a line at true size, each beside a 1.8 m figure on a floor ruled in metres (`?view=line`). One creature walking (`?view=one&plan=…`) has a panel to change the gait, roll a seed, move the sliders and read the genome. `?bones` shows the skeleton through the flesh.
+
+**The catalogue, by plan** (Michael's call-out): every animal and monster on the sixteen sheets that hold any is sorted into fourteen plans in `character-builder.md`. Ten plans are prototyped; two parts are owed (fins, radial chains); the human rig takes the goblins, trolls, skeletons and wraiths; and the slimes, elementals, golems and wisps need kits of their own.
+
+Corrections found on the way, for the record:
+- the palette was read as linear colour and every coat came out pale;
+- a straight leg cannot reach the ends of a real stride, so the feet fell 3 to 8 cm short until the root could slide;
+- the line-up's spacing missed the horns and wings until it measured the whole creature.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/creatures.check.mjs`, all passing with no page errors:
+- Builds: all ten plans, 18 to 69 bones and 8,600 to 84,500 triangles each, in 0.04 to 0.93 s.
+- Weights: every vertex's skin weights sum to one.
+- Feet: every foot reaches its target at 48 points through every gait of every plan (worst under 0.1 mm).
+- Duty: the share of the stride a foot is down matches the gait's duty (a wolf's trot 0.45 of 0.45, a spider's walk 0.71 of 0.68).
+- Genomes: about 150 bytes.
+
+`--shots` writes `creatures-line.jpg` and one picture per plan, flesh and bones.
+### Needs eyes
+- The creatures walking live on Michael's machine: whether the gaits read as animals (the wolf's trot, the spider's tetrapods, the Shatterhorn's slow wave), and the frame rate with fur.
+- The faces close up, which are soft, as grown flesh is. Sculpted targets or image-to-3D heroes are the answer where it matters.
+- Whether the parts' approach is the one he wants before the kit moves to the builder's page and then into the game behind the foundation's switch.
+
+
+## v80 — Session 773 — Creatures from parts: the bound, the hop, the sideways walk, the pincer (prototype only)
+Michael, on Session 772's line-up: "They all look great! Should we go ahead and tackle more of the skeletons? This framework seems to be working very well." The catalogue table names what is owed, so this session takes the gaits and the claws, Session 774 the swimmers and the radial bodies, and Session 775 the shells and feathered wings.
+
+**The kit** (`creatures.js`):
+- **Flights:** a gait's flights, the stretches with no foot down, are found by sampling the stride once per gait. The body follows a ballistic arc through each (h = g t² / 8 at the top), and the swinging feet rise with it. The trot and gallop of the older plans gain their small real suspensions this way.
+- **Two gaits:** the *bound* (hinds together, then fores, the spine flexing) and the *hop* (every foot at once). The hop is a pulse: the body covers only the stance's short sweep while its feet are down and the rest in the air, so `step` now reports how far the root moved (`C.moved`) instead of a constant speed.
+- **Two leg presets:** a hare's hind leg (a long foot from the hock) and a frog's (a Z).
+- **Headings:** a plan may walk at a heading in its own frame (the crab at 90°); the same feet and solver walk it sideways.
+- **The pincer:** an arm with a swollen hand and two fingers. Also eye stalks, and a throat sac that fills and empties.
+- **The saddle:** the first thing hung on a socket for a rider, set on the fur, not under it.
+- **Scale:** a plan may stand at a multiple of its parts (`scale`).
+
+**Five plans:**
+- the Snowleap Hare;
+- the post hare of OG-077, which is the hare's parts at 5.5 times with a saddle (three lines);
+- the Bellthroat, a red frog with its violet sac, hopping;
+- the Dunescorpion: four leg pairs, pincers and a stinging tail;
+- the Tidecrab, blue, walking sideways.
+
+The line-up now holds all fifteen, sorted by height as built.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/creatures.check.mjs`: all fifteen plans pass.
+- **New plans:** 22 to 60 bones and 11,500 to 59,200 triangles, built in 0.06 to 0.53 s.
+- **Weights:** exact.
+- **Feet:** every foot on its target through every gait, the hop's pulse and the flights included.
+- **Duty:** feet down for their gait's duty (the hop 0.41 of 0.40, the crab's walk 0.71 of 0.68).
+- **Speed:** the post hare bounds at 4.8 m/s.
+- **The older ten:** unchanged.
+### Needs eyes
+- The bound and the hop, live: whether the arcs read as a hare and a frog, and whether the post hare's bound would carry a rider.
+- The crab's sideways walk from the side.
+
+
+## v80 — Session 774 — Creatures from parts: fins and radial bodies (prototype only)
+The second of the three sessions Michael's "go ahead and tackle more of the skeletons" set going. Session 772's catalogue table named two parts the kit lacked: fins (fish, whales, rays) and radial arms (octopus, squid, jellyfish, the Wisp). This session builds both.
+
+**The kit:**
+- **Fins:** a thin sheet on a bone of its own, so the pose can flutter it. The outline is drawn in the fin's own plane: a *tri* for a dorsal, pectoral, pelvic or anal fin, a *fork* for a tail. A fork upright is a fish's tail; laid flat it is a whale's flukes. A fin hangs off the spine at any t, or off the tail's end. All of a creature's fins are one double-sided skinned mesh.
+- **Radial arms:** chains from a ring round a centre, each sinking and bending by a number of degrees a bone, kept off the floor where they lie on it. Thick arms are flesh, so the smooth union webs them where they meet. Thread arms are thin tubes with an HDR colour that blooms.
+- **Three footless gaits,** paced in body lengths a second (`bl`) with a stride of 0.7 of the body, whose length the build now measures:
+  - *swim:* a wave from head to tail, growing toward the tail, with the pectorals fluttering. A whale's (`swimAxis: 'x'`) runs up and down.
+  - *crawl:* a ripple round an octopus's arms.
+  - *drift:* a jellyfish's bell beats, closing at the rim, while its threads trail.
+- **The page:** a water surface over a swimmer. The camera now frames a creature that hovers, not only one that stands.
+
+**Four plans:**
+- the Riverjaw Salmon, red for its run, with seven fins;
+- the Storm Whale, 14 m, with long flippers and flat flukes;
+- a giant octopus, eight arms webbed into its mantle and lying out across the floor;
+- the Wisp of OG-018: a blue bell that glows, four oral arms and fourteen glowing threads, floating 1.5 m up.
+
+Corrections found on the way, for the record:
+- the octopus's arms curled back up into the air until their bend stopped at the level;
+- the Wisp's glow summed to white until its colour came down.
+### Verified (headless Chromium)
+`creatures.check.mjs`: all nineteen plans pass.
+- **The new four:** 18 to 139 bones and 8,800 to 53,600 triangles, built in 0.04 to 0.72 s.
+- **Weights:** exact.
+- **Speed:** the salmon swims at 1.2 m/s and the whale at 3.3.
+- **The fifteen older plans:** unchanged.
+### Needs eyes
+- The swim, the crawl and the drift, live: whether the salmon's wave reads as a fish and the whale's as a whale.
+- Whether the Wisp is the Gaoth spirit Michael pictures (OG-018).
+
+
+## v80 — Session 775 — Creatures from parts: shells and feathered wings (prototype only)
+The third of the sessions from Michael's "go ahead and tackle more of the skeletons". The catalogue table's last two owed pieces: shells (the tortoises: Mossback, Sailshell, Sunshell, the sea turtle) and feathered wings (every bird that flies).
+
+**The kit:**
+- **The shell:** a rigid dome over a spine bone, with a rim and a flat plastron. Its scutes are the cells of a hexagonal lattice seen from above, with darkened seams, a shade of their own and growth rings. It may carry a garden (ferns and flowers rooted in moss on its top, seeded from the genome) or a striped sail along its crest.
+- **Feathered wings:** humerus, forearm and hand with feathers as tapered cards, each rigid on its bone and darker at the tip.
+  - the secondaries lie back along the forearm under their coverts;
+  - the primaries fan off the hand from back to out;
+  - tertials sit at the shoulder.
+- **Wing poses:** the wing folds in a Z against the body at rest. It beats in flight: down hard, then up a little folded.
+- **The tail fan:** a bird's tail is a fan of the same feathers off its last bone.
+- **The soar:** a gait for a bird aloft. It lifts the body to the plan's flying height, tucks the legs up under it, and beats the wings.
+- **Plans as functions:** both tortoises are one function of their shell; the raven and the hawk are one function of beak, eye and primaries.
+- **The page:** it frames a creature in the pose it is shown in, so a bird aloft stays in frame, and refits when the gait changes. `creatures.check.mjs` takes `--q` and `--tag`, to picture one gait or view (`creatures-skyraven-soar.jpg`, `creatures-craghawk-top.jpg`).
+
+**Four plans:**
+- the Mossback, 2.3 m of shell with its garden;
+- the Sailshell with its sail;
+- the Skyraven, which hops, walks and flies;
+- the Crag Hawk, barred brown with yellow legs and a hooked beak.
+### Verified (headless Chromium)
+`creatures.check.mjs`: all twenty-three plans pass.
+- **The new four:** 24 to 26 bones and 37,400 to 47,900 triangles, built in 0.27 to 0.53 s.
+- **Weights:** exact.
+- **Feet:** every foot on its target through every gait, the tucked legs of the soar included.
+- **The nineteen older plans:** unchanged.
+### Needs eyes
+- The wingbeat live: whether the fold and the beat read as a raven and a hawk, from the side and from below.
+- The Mossback's garden at walking pace.
+- With this, every skeletal body plan in the concept art has at least one creature. What remains for creatures is the move into the game, behind the foundation's switch, the wolves first.
 
 ## v80 — Session 776 — The Makers' tools, the frame; a reload no longer launders stolen goods or unseals a quest piece (Michael's B on #175)
 Michael chose B on DECISION #175 on 6 Oct: six tools, one for each god with a shrine (`docs/design/unique-artifacts.md`). Nothing had been built since. The page's build order starts with one session for the frame and a suite. This is that session, and it adds nothing a player can meet yet. `87-world-quests.js`, after `anchoredPlaces`, now holds `ARTIFACTS`: the six tools under the page's working names, each with its god's `GODS` key and its check (the Gate-Blade Might 30, the Sundial Ring Swiftness 30, the Wolf-Mother's Cloak Resolve 30, the Shuttle Intelligence 35; the Drowned Bell and the Waylamp have none, because the tide and an honest week are their trials). `artifactPlaces()` picks where the two home-island tools lie, as `anchoredPlaces` picks Caer Slige. The Gate-Blade goes to a Gatelands gate, a ruined gatehouse when the island has one. The cloak goes to a Gatelands lair that is not a story place. Each is drawn on `seededRng('artifact', id)` from candidates sorted by id, so every machine gets the same pick. The other four are placed in their own sessions. `artifactCheck(id)` reads the attribute's base plus at most 2 from gear (`ARTIFACT_GEAR_MAX`), so a Fortify ring closes a small gap and no one buys Might 30. `artifactTry(id)` takes the tool when the check passes. When it fails, nothing is lost: the try is kept in `worldState.artifactTries`, the character's key (`SS_CHAR_WS`). The shared state changes only through two named actions (the co-op rules). `takeArtifact(id)` writes `worldState.artifacts[id]` (the world row) and puts a `unique` item in the bag. `yieldArtifact(id, to)` takes the item from the bag, the stash or your hands and records who now has it. Both keys are on the S242 list. The Journal's Quests view now opens with *Things not yet yours*: one line for each tool you have tried and not taken, in the menu voice, with its number (*The Gate-Blade — Dunmore Tower. Might 30.*). This follows the page's frame. Each tool's trial, its words and its own item come with its own session. The text is the quest writer's draft *The Makers' Things* (`docs/quest_drafts.md`), still unapproved, so none of it is used here.

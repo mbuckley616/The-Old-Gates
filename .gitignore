@@ -8,3 +8,4 @@ tests/tmp/
 # the test harness writes this beside the index.html it boots (tests/lib/game.mjs)
 *.local.html
 __pycache__/
+docs/prototypes/levelup/mh/
