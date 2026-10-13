@@ -1057,6 +1057,40 @@ const giver=`${lord.title} ${lord.name}`;
     const give={label:'Give it to the Crown.',quest:true,fn:()=>crownGiveBlade()||CROWN_BLADE.not};
     if(S.licence)return [{label:'The licence.',response:CROWN_BLADE.lic,follow:[give]}];
     return [{label:'The blade from the stone.',response:CROWN_BLADE.ask,follow:[give,{label:'I’ll keep it.',quest:true,fn:()=>crownLicenseBlade()||CROWN_BLADE.not},{label:'Not now.',response:CROWN_BLADE.not}]}];}
+  // S788 — the Drowned Bell's claimant, the Compact (the page's Sea row; the approved draft's words): any Factor in Aurenne (the
+  // lord of an Aurennais town or port) asks while the bell is on you and not given up. *Give it to the Compact.*: below Factor,
+  // and the Compact open to you, the rank of Factor (its second); at Factor or above, a service counted; sworn to another power
+  // (its rank of 2, the Standing page's rule) or closed, no rank. Each way, the cog (bellCog): with no ship, a cog at the Compact's
+  // quay as its claim deeds one; a ship smaller than a cog refitted as one where she lies, or raised as one if she is on the
+  // bottom; a cog or larger, the cog's worth in gold (1,300). *I'll keep it.* changes nothing: the topic stands.
+  const COMPACT_BELL={ask:"Forgive me, Master. The Compact's rolls enter a bell of that size and that weight as le Reliquaire de la Marée: the reliquary of a gate the Church sealed, entered on a ship's manifest, and lost with the ship. The manifest is in the house's books still; the ship is on a rock. You will appreciate that a thing entered in the rolls is the Compact's wherever it is found, and that the Compact prefers to settle such matters by agreement rather than by any other means. The house offers a cog, entered in your name, and the rank of Factor. Or you may keep it. The rolls will record which.",
+    gaveNew:"Then the manifest is closed at last, which the clerks will find more satisfying than they should. You are entered as Factor of the Compact, Master, from today.",
+    gaveRanked:"Then the manifest is closed at last. It is entered as a service to the house, Master, beside your name.",
+    gaveSworn:"The reliquary is received, Master, and the house is obliged. The rank the house cannot give to someone sworn elsewhere; that is not a judgment, only a clause.",
+    keep:"As you wish. The rolls will show it held by you, which is a kind of agreement also. I would only observe that the sea has taken it once already, and the sea does not consider itself bound by our books.",
+    not:"Of course. The offer is entered, and stands until withdrawn. It has not been withdrawn."};
+  function bellFactor(site){if(!site||!(site.kind==='town'||site.kind==='port'))return false;const [ci,cj]=cellOf(site.x,site.z);return nationKeyOf(ci,cj)==='aurenne'&&lordFor(site).title==='Factor';}
+  // the cog, by what you sail: the line that takes the place of *The cog is entered also.* / *The cog stands.*
+  function bellCog(site){const cog=SHIP_CLASSES.cog,st=worldState.ship;
+    if(!st){const L=SHIP.L,W=SHIP.W;SHIP.L=cog.L;SHIP.W=cog.W;const port=grantShip(site);if(!port){SHIP.L=L;SHIP.W=W;return null;}
+      shipCfg().cls='cog';applyShipClass();shipCfg().hull=cog.hull;shipCfg().rig=100;return port.id===site.id?'The cog is at the quay here.':`The cog is at the quay at ${port.name}.`;}
+    const nm=st.name||SHIP.name;
+    if(shipClass().worth>=cog.worth){gold+=cog.worth;if(typeof updateHUD==='function')updateHUD();if(typeof addLog==='function')addLog('⛵',`The Compact paid the cog's worth, ${cog.worth} gold.`);
+      return `You keep a ship already, and a larger one. The house will pay the cog's worth instead: ${cog.worth} gold.`;}
+    st.cls='cog';
+    if(st.sunk){if(!st.raise){const port=allPorts().filter(p=>shoreDir(p)).sort((a,b)=>Math.hypot(a.x-st.sunk.x,a.z-st.sunk.z)-Math.hypot(b.x-st.sunk.x,b.z-st.sunk.z))[0];
+        if(port)st.raise={site:port.id,due:(worldState.gameTimeAbsMinutes||0)+3*1440};}
+      if(typeof addLog==='function')addLog('⛵',`The Compact is raising the ${nm} as a cog.`);return 'Your ship is on the bottom; the house has ordered her raised, a cog, in three days.';}
+    st.hull=cog.hull;st.rig=100;applyShipClass();if(typeof shipBarsUI==='function')shipBarsUI();
+    if(typeof addLog==='function')addLog('⛵',`The Compact refitted the ${nm} as a cog.`);return 'Your own ship will be refitted as a cog where she lies, at the house’s charge.';}
+  function compactGiveBell(site){if(!yieldArtifact('drowned_bell','compact'))return null;const F=fstate(),C=F.compact;
+    const sworn=C.closed||Object.keys(FACTIONS).some(o=>o!=='compact'&&F[o].rank>=2);let k;
+    if(sworn)k='gaveSworn';else if(C.rank<2){C.done=Math.max(C.done,6);C.rank=2;k='gaveNew';}else{C.done++;C.rank=Math.min(3,Math.floor(C.done/3));k='gaveRanked';}
+    if(typeof addLog==='function')addLog('🔔','Gave the Drowned Bell to the Compact.');
+    const cog=bellCog(site);return COMPACT_BELL[k]+' '+(cog||(sworn?'The cog stands.':'The cog is entered also.'));}
+  function compactBellTopics(site){if(!bellFactor(site))return [];const S=artifactState('drowned_bell');if(!S||S.yielded||!artifactCarried('drowned_bell'))return [];
+    return [{label:'The bell.',response:COMPACT_BELL.ask,follow:[{label:'Give it to the Compact.',quest:true,fn:()=>compactGiveBell(site)||COMPACT_BELL.not},
+      {label:'I’ll keep it.',response:COMPACT_BELL.keep},{label:'Not now.',response:COMPACT_BELL.not}]}];}
   // S786 — the Noon Ring (the page's Sky row, in the approved draft's words): used from the bag, once a game-day, it turns the
   // weather in the open world, clear to rain or rain to clear (through the weather's own shift, as devWeather does); any other
   // sky, or under a roof, it does not turn. The cost: carried in a storm, one lightning flash in three comes down close to you
