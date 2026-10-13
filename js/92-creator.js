@@ -904,9 +904,9 @@ function settingRows(){const r=[
   {k:'bright',g:'The light',w:'Brightness',min:-50,max:50,st:5,note:'set it so the left mark can only just be seen',marks:true},
   {k:'fov',w:'Field of view',min:60,max:100,st:5,fmt:v=>v+'°',note:'75 as it was; from 60 to 100'},
   {k:'full',w:'Full screen',opts:['On','Off'],get:()=>document.fullscreenElement?0:1},
-  {k:'renderer',w:'Renderer',opts:['As it was','three.js 0.170'],get:()=>rendererChoice()==='new'?1:0,note:rendererNote()},
   {k:'look',g:'The mouse',w:'Look speed',min:.25,max:3,st:.05,fmt:v=>v.toFixed(2)+'×',note:'at 1×, 0.23° a pixel, as it was; from a quarter to three times'},
-  {k:'invert',w:'Up and down',opts:['As is','Inverted'],get:()=>SETTINGS.invert?1:0}];
+  {k:'invert',w:'Up and down',opts:['As is','Inverted'],get:()=>SETTINGS.invert?1:0},
+  {k:'renderer',g:'The renderer',w:'Renderer',opts:['As it was','three.js 0.170'],get:()=>rendererChoice()==='new'?1:0,note:rendererNote()}];
   if(typeof setChallenge==='function'&&typeof challengeStep==='function'&&typeof CHALLENGE_STEPS!=='undefined')
     r.push({k:'challenge',g:'The challenge',w:'How hard the world strikes',opts:CHALLENGE_STEPS,get:()=>challengeStep()});
   return r;}
@@ -929,7 +929,7 @@ function setRenderer(look,o){look=look==='new'?'new':'old';try{if(look==='new')l
   if(o&&o.reload){const u=new URL(location.href);u.searchParams.delete('look');location.replace(u.href);}return look;}
 function settingsBack(){Object.assign(SETTINGS,SETTINGS_DEF);settingsSave();if(typeof applyVolumes==='function')applyVolumes();settingsLight();}
 function settingsSheetHTML(){const L=pauseLeaf,rows=settingRows(),ink='#3a2c18',rub='#7a1f10',soft='#8a7050';
-  const cols=[['Sound'],['The light'],['The mouse','The challenge']],grp={};let cur=null;rows.forEach((r,i)=>{if(r.g)cur=r.g;(grp[cur]=grp[cur]||[]).push([r,i]);});
+  const cols=[['Sound'],['The light'],['The mouse','The renderer','The challenge']],grp={};let cur=null;rows.forEach((r,i)=>{if(r.g)cur=r.g;(grp[cur]=grp[cur]||[]).push([r,i]);});
   const rowHTML=([r,i])=>{const on=i===L.set,wide=r.k==='challenge';let ctl='',val=wide?r.opts[r.get()]:'';
     if(r.opts){const sel=r.get();ctl=`<span style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">${r.opts.map((o,j)=>`<span data-so="${i}:${j}" style="cursor:pointer;font-variant:small-caps;font-size:15px;color:${j===sel?rub:soft};border-bottom:${j===sel?'2px solid '+rub:'2px solid transparent'}">${o}</span>`).join('')}</span>`;}
     else{val=r.fmt?r.fmt(SETTINGS[r.k]):String(SETTINGS[r.k]);ctl=`<input type="range" data-sr="${i}" min="${r.min}" max="${r.max}" step="${r.st}" value="${SETTINGS[r.k]}" style="width:100%;accent-color:${rub};margin:4px 0 0">`;}

@@ -9,7 +9,8 @@ const g = await boot({ look: 'new' }); const { page } = g;
 
 const v = await page.evaluate(() => ({ rev: THREE.REVISION, look: OG_LOOK, legacy: THREE_LEGACY, cm: THREE.ColorManagement.enabled, out: REN.outputColorSpace,
   three: [...document.scripts].filter(s => /three/.test(s.src)).map(s => s.src.split('/').pop()),
-  skinned: !('skinning' in PEOPLE_MAT), decay: new THREE.PointLight(0xffffff, 1, 5).decay }));
+  skinned: !('skinning' in PEOPLE_MAT), decay: new THREE.PointLight(0xffffff, 1, 5).decay,
+  /* reported, not asserted: whether the browser's look-ahead fetched the inert r128 file anyway (it never runs) */ r128Fetched: performance.getEntriesByType('resource').some(r => /three\.min\.js/.test(r.name)) }));
 check('three.js 0.170 is the one three.js on the page, and the compat layer is on', v.rev === '170' && v.look === 'new' && !v.legacy && v.three.length === 1 && v.three[0] === 'three.r170.min.js', v);
 check('r128\'s colour and lights are put back: colour management off, linear output, point lights decay 1', v.cm === false && v.out === 'srgb-linear' && v.decay === 1 && v.skinned, v);
 

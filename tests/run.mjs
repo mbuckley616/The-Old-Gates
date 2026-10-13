@@ -46,7 +46,7 @@ const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'ar
   jobids: 44, jobseed: 48, journal: 206, keep: 62, keepercone: 57, keeperwalk: 623, lairdoor: 78, lairgrade: 55, lairhoard: 72,
   lairload: 93, lairmaster: 58, lairname: 68, lairrumour: 47, lairtheme: 83, ledgerplural: 49, legacyfoes: 48, legacyhalls: 52,
   legacyshells: 47, legacyshops: 55, levelpanel: 48, livepick: 80, lockfair: 61, lockon: 91, lockpicks: 59, locks: 94,
-  locksight: 59, lockswitch: 45, lod: 235, lootpicks: 106, lootseed: 58, lvact: 51, mainmarks: 70, mainquest: 101, mainrun: 459,
+  locksight: 59, lockswitch: 45, lod: 235, looknew: 200, lookpair: 420, lootpicks: 106, lootseed: 58, lvact: 51, mainmarks: 70, mainquest: 101, mainrun: 459,
   mapnotes: 133, mapquests: 52, mapseals: 118, mapsharp: 74, masterslam: 59, metkey: 62, mimic: 46, mimicspots: 114,
   moundsolid: 52, mushrooms: 76, names: 54, netlook: 66, newelstair: 72, nightpick: 65, oddfurn: 51, ogre: 53, packshape: 61,
   panelfocus: 530, parryclock: 62, parrydeath: 53, pauseleaf: 157, penance: 88, people: 147, peopleao: 57, perf: 108,

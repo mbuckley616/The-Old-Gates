@@ -17,8 +17,9 @@ await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await ke
 const a = await sheet();
 console.log(JSON.stringify(a.rows));
 const hasRule = await page.evaluate(() => typeof setChallenge === 'function');
-const nine = ['Everything', 'Music', 'Blows and steps', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down'];
-check('Settings on the leaf opens the sheet with its nine rows (and the challenge only where the rule is built)', a.view === 'settings' && JSON.stringify(a.rows) === JSON.stringify(hasRule ? [...nine, 'How hard the world strikes'] : nine), { hasRule, rows: a.rows });
+// Session 822: a tenth, the renderer (card F1), after the mouse's two
+const nine = ['Everything', 'Music', 'Blows and steps', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down', 'Renderer'];
+check('Settings on the leaf opens the sheet with its ten rows (and the challenge only where the rule is built)', a.view === 'settings' && JSON.stringify(a.rows) === JSON.stringify(hasRule ? [...nine, 'How hard the world strikes'] : nine), { hasRule, rows: a.rows });
 check('everything starts as it was: 100s, brightness 0, field of view 75, look 1×', a.S.master === 100 && a.S.music === 100 && a.S.bright === 0 && a.S.fov === 75 && a.S.look === 1 && a.S.invert === false, a.S);
 
 // the sound: everything to 80, music to 50
@@ -50,6 +51,17 @@ const m = await page.evaluate(() => { const S = { ...SETTINGS }; closePauseLeaf(
   const out = { S, dyaw: +(yaw - y0).toFixed(3), dpitch: +(pitch - p0).toFixed(3) }; delete document.pointerLockElement; return out; });
 check('look speed 2× and inverted: 100 pixels across turn you .8 (was .4), 50 down look up .4', m.S.look === 2 && m.S.invert === true && m.dyaw === -.8 && m.dpitch === .4, m);
 
+// the renderer (Session 822): → asks for three.js 0.170, kept in this browser as og.renderer; in play it waits for the next load
+// (the page does not reload under you), and the row says so; ← puts it back
+await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
+await key('ArrowDown', 9); await key('ArrowRight');
+const rd = await page.evaluate(() => ({ stored: localStorage.getItem('og.renderer'), look: OG_LOOK, rev: THREE.REVISION, view: pauseLeaf.view, text: document.querySelector('#pause-paper').textContent }));
+await key('ArrowLeft');
+const rd2 = await page.evaluate(() => ({ stored: localStorage.getItem('og.renderer') }));
+check('the renderer row: → keeps three.js 0.170 for the next load, says so, and does not reload in play; ← puts it back', rd.stored === 'new' && rd.look === 'old' && rd.rev === '128' && rd.view === 'settings'
+  && /takes hold when the game next loads/.test(rd.text) && rd2.stored === null, { rd: { ...rd, text: undefined }, rd2 });
+await key('Escape'); await key('Escape');
+
 // the challenge, when the rule is there (stood in for: the systems builder's names and tables)
 const c = await page.evaluate(() => { if (typeof setChallenge === 'function') { delete worldState.challenge; return true; } window.CHALLENGE_STEPS = ['Novice', 'Apprentice', 'Adept', 'Expert', 'Master']; window.setChallenge = n => { worldState.challenge = n; return CHALLENGE_STEPS[n]; };
   window.challengeStep = () => (Number.isInteger(worldState.challenge) ? worldState.challenge : 2); delete worldState.challenge; return true; });
@@ -57,7 +69,7 @@ await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await ke
 await key('ArrowUp'); await key('ArrowRight');
 const ch = await sheet();
 console.log(ch.text.slice(ch.text.indexOf('How hard')));
-check('with the rule, a tenth row: the challenge, Adept to start, → makes it Expert, your blows ×0.75 and theirs ×1.5', c && ch.rows.length === 10 && ch.rows[9] === 'How hard the world strikes' && await page.evaluate(() => worldState.challenge) === 3 && /Your blows×0\.75The foes’ blows×1\.5/.test(ch.text), ch.text.slice(-400));
+check('with the rule, an eleventh row: the challenge, Adept to start, → makes it Expert, your blows ×0.75 and theirs ×1.5', c && ch.rows.length === 11 && ch.rows[10] === 'How hard the world strikes' && await page.evaluate(() => worldState.challenge) === 3 && /Your blows×0\.75The foes’ blows×1\.5/.test(ch.text), ch.text.slice(-400));
 await page.screenshot({ path: 'docs/prototypes/settingsheet-challenge.png', timeout: 120000 });
 
 // kept across a reload, and applied at boot before any game starts
