@@ -151,8 +151,13 @@
     if(!best||bd>140){if(CORWIN.npc&&Math.hypot(px-CORWIN.npc.g.position.x,pz-CORWIN.npc.g.position.z)>220)removeCorwin();return;}
     const ckey=(early?'early':S.step)+'|'+seaKey;if(CORWIN.npc){if(CORWIN.step!==ckey||CORWIN.site!==best){removeCorwin();}else return;} // S439 — and at the harbour you are at: a passage to another kept him at the last one
     const q={x:best.x+3,z:best.z+3};const L=early?corwinEarly():corwinLines(S.step,S); // v80 S133 — on the plaza, not under the quay
-    const def={name:'Corwin',role:'',ico:'📜',authored:true,people:'gatelander',sCol:0xe0b898,hairCol:0x3a2a1a,bodyScale:[1,1,1],bCol:0x3a4a5a,x:q.x-6,z:q.z+3,greeting:[L.greet],topics:[...L.topics,...tutCorwinTopics(),{label:'Farewell.',bye:true}]};def.temper='weary';
+    const base=[...L.topics,...tutCorwinTopics()];const def={name:'Corwin',role:'',ico:'📜',authored:true,people:'gatelander',sCol:0xe0b898,hairCol:0x3a2a1a,bodyScale:[1,1,1],bCol:0x3a4a5a,x:q.x-6,z:q.z+3,greeting:[L.greet],get topics(){return [...base,...aldwynWord(),{label:'Farewell.',bye:true}];}};def.temper='weary';
     const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CORWIN.npc=n;CORWIN.site=best;CORWIN.step=ckey;}
+  // S791 — Aldwyn's thanks (the approved draft, *The Makers' Things*, the Shuttle's claimant): once the Shuttle is given to the
+  // Church and the Prior's letter has gone to the Herald (artifacts.shuttle.herald), Corwin at a harbour has one topic, once
+  const ALDWYN_WORD="Aldwyn had a letter from the Prior. He's not a man for thanks; he'd sooner owe you than say so, and he owes half the island on those terms. But he asked me to say it, so here it is, said. A thing put out of reach is a thing he can stop lying awake over. He lies awake anyway. It's one thing fewer.";
+  function aldwynWord(){const A=worldState.artifacts,S=A&&A.shuttle;const st=worldState.stats||{};if(!S||S.herald==null||S.yielded!=='church'||st.aldwynWord)return [];
+    return [{label:'Word from Aldwyn?',fn:()=>{(worldState.stats||(worldState.stats={})).aldwynWord=1;return ALDWYN_WORD;}}];}
   // S240 — while the merchant's own quest is his to give (Q3: available, active, or its reward owed) Corwin is in Ashenmoor,
   // where the journal sends you. Only the legacy village ever placed him there, so in the open world Q3 could not be taken.
   function corwinInAshenmoor(S){let due=false;try{due=S.act<2&&!tutSeaOpen()&&QUEST_DEFS.some(q=>q.giver==='Corwin'&&['available','active','reward'].includes(qState(q.id)));}catch(e){}

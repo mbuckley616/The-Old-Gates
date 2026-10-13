@@ -221,7 +221,10 @@ function renderJournal(){
     const gact=id=>{const G=worldState.guild||{};for(const k in G){const t=G[k]&&G[k].active;if(t&&t.id===id)return t;}return null;};
     const st=id=>{const ga=gact(id);if(ga)return ga.doneAt!=null?'reward':'active';const w=wq(id);if(!w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return L.some(e=>e.q===id&&e.qk==='complete')?'complete':'';if(w&&!(typeof QUEST_DEFS!=='undefined'&&QUEST_DEFS.some(x=>x.id===id)))return w.turnedIn?(w.lapsed?'':'complete'):w.done?'reward':'active';return typeof qState==='function'?qState(id):'';};const inHand=id=>st(id)==='active'||st(id)==='reward';
     ids.sort((a,b)=>(inHand(b)?1:0)-(inHand(a)?1:0));
-    if(!ids.length)html='<div class="jn-empty">No quest has been written into the journal yet.</div>';
+    // S776 — the Makers' tools you have tried and not taken (DECISION #175, B): the rule, with its number, in the menu voice
+    const notYet=(typeof artifactsNotYet==='function')?artifactsNotYet():[];
+    if(notYet.length)html+=`<div class="jn-day jn-notyet"><div class="jn-head">Things not yet yours</div>${notYet.map(x=>`<div class="jn-line"><span class="jn-time"></span><span class="jn-text">${_jnEsc(x.text)}</span></div>`).join('')}</div>`;
+    if(!ids.length)html+='<div class="jn-empty">No quest has been written into the journal yet.</div>';
     ids.forEach(id=>{const d=qd(id)||{title:(L.find(e=>e.q===id&&e.qt)||{}).qt||id},s=st(id);
       html+=`<div class="jn-day"><div class="jn-head">${_jnEsc(d?d.title:id)}<span class="jn-state">${s==='complete'?'complete':inHand(id)?'in hand':''}</span></div>`+
         L.filter(e=>e.q===id).map(e=>`<div class="jn-line jn-q"><span class="jn-time">${typeof e.t==='number'?_jnEsc(gameDateLine(e.t,e.tod,'short')):''}</span><span class="jn-text">${_jnLinked(e.text,names)}</span></div>`).join('')+'</div>';});
@@ -941,7 +944,7 @@ function renderHubAttrs(){
   try{const sb=document.getElementById('standing-body');if(sb&&typeof WORLD!=='undefined'){
     const row=(k,v)=>`<div style="display:flex;gap:10px;padding:3px 0;border-bottom:1px solid rgba(120,100,70,.18)"><span style="color:#8a7a60;min-width:150px">${k}</span><span style="color:#e8dcc0">${v}</span></div>`;
     let out='';
-    const pp=WORLD.playerPeople();const P=WORLD.PEOPLES[pp];out+=row('People',P?P.name+(pp==='oldblood'&&worldState.cold?` · the Cold ${worldState.cold}`:''):'—');
+    const pp=WORLD.playerPeople();const P=WORLD.PEOPLES[pp];out+=row('People',P?P.name+(worldState.cold?` · the Cold ${worldState.cold}`:''):'—');
     const F=WORLD.fstate();for(const k in WORLD.FACTIONS){const f=WORLD.FACTIONS[k];const st=F[k];const closed=Object.keys(WORLD.FACTIONS).some(o=>o!==k&&F[o].rank>=2);out+=row(f.name,st.rank?`${f.ranks[st.rank-1]} · ${st.done} service${st.done===1?'':'s'}${st.house?' · holds '+f.house:''}`:(closed?'<span style="color:#a08a70">closed to you</span>':`no standing · ${st.done} services`));}
     const G=worldState.guild;if(G){for(const g of ['guild_f','guild_m']){const gd=WORLD.guild.GUILD_DEF[g];const gs=G[g];out+=row(gd.name,gs&&gs.done>0?`${WORLD.guild.rankOf(g)} · ${gs.done} task${gs.done===1?'':'s'}`:'not a member');}}
     const fav=worldState.favor||{};const friends=Object.entries(fav).filter(([id,v])=>v>=3).map(([id,v])=>{const t=WORLD.siteAnywhere(id);return t?`${t.name} (${v})`:null;}).filter(Boolean);const enemies=Object.entries(fav).filter(([id,v])=>v<=-2).map(([id,v])=>{const t=WORLD.siteAnywhere(id);return t?t.name:null;}).filter(Boolean);

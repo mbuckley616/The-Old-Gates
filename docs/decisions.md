@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Shrines remembering: the third prayer makes a boon permanent; how many can you keep? (systems builder, after Session 793, 2026-10-13) — DECISION #267
+The canon's consequence table (§12) says: `shrines[id].count`, the third prayer at one shrine, makes that shrine's boon permanent. It is not built. Today a prayer restores you and gives the shrine's boon until tomorrow (two days on its god's own day), once a day per shrine. Five gods give a boon: the Road (Swiftness ×1.25), Renewal (half a point of health, stamina and mana a second), the Arm (melee ×1.2), Stone (damage taken ×0.75) and the Mind (spell cost ×0.7). The Weaver gives a rubbing instead. A boon for good is a large, lasting buff, so how many can be held is a rule of play.
+
+- **A. One kept boon** *(recommended)*: the third prayer, on three different days, at one shrine makes its boon yours for good. A third prayer completed at another shrine replaces it, and the log says which god you now carry. The choice of god matters, and the power stays bounded.
+- **B. Every shrine remembers**: each shrine prayed at three times gives its boon for good. All stack, up to all five kinds, and two shrines of one god give that boon once.
+- **C. Kept, but half**: as B, at half each boon's strength (Road ×1.125, Arm ×1.1, Stone ×0.875, Mind ×0.85, Renewal a quarter point).
+- **D. Leave it out**: the shrine's boon stays a day's.
+
+Under A, B and C the Weaver's shrine has no boon to keep. Its third prayer gives a rubbing, as every prayer there already does.
+
 ## Answered
 
 ### Shrines remembering: the third prayer makes a boon permanent; how many can you keep? (systems builder, after Session 793, 2026-10-13) — DECISION #267
@@ -37,8 +47,9 @@ You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the fr
    - **A.** The Cold rises for anyone who carries it, and each of Varek's discoveries needs one Mastery fewer while you do *(recommended: the Shuttle's price is the Shuttle's, whoever you are)*.
    - **B.** The Cold rises only for an Old Blood reader, as the Cold does now; Varek as A.
    - **C.** Leave Varek out: the Cold alone, as A.
+Michael: **All four as recommended** (1A the draft approved, the Noon Ring included; 2A corpse cloak wolves only, the town pays nothing; 3A the blade opens a locked door at a touch in a gate you have been down; 4A the Cold rises for anyone carrying the Shuttle, Varek needs one Mastery fewer). (2026-10-13, on issue #263)
+*Acted on:* 3A built in Session 780 (`tests/bladekey`), 2A in Session 781 (`tests/cloakcorpse`), 4A in Session 782 (`tests/shuttle`); the words (1A) go in with each trial. Issue #263 closed by the producer.
 
-Michael: **All four as recommended** (1A the draft approved, the Noon Ring included; 2A corpse cloak wolves only, the town pays nothing; 3A the blade opens a locked door at a touch in a gate you have been down; 4A the Cold rises for anyone carrying the Shuttle, Varek needs one Mastery fewer). (2026-10-13)
 
 ### Aurenne's houses — the white town, the mix, or the Roman town? (the concept artist, 2026-10-12) — DECISION #259
 You set Aurenne's register this morning: a Roman, Egyptian, Arabic and Greek fusion, not French (OG-061, OG-043). Its houses today are the French cottage in warm colours: cream plaster, a gabled terracotta roof, shutters, a chimney and a woodpile (5,710 triangles one storey, 6,646 two). The prototype (`docs/prototypes/aurenne/`, on auto/concept) draws five new houses in the shape kit, beside today's house taken from the game itself (build s587) and the game's own Aurennais townsfolk for scale (1.22 and 1.30 units). Under every option: walls with real arched openings as deep as the wall, small deep windows, a door of painted cedar in a frame of blue and white glazed tile, lattice screens (mashrabiya) on the upper floors, cypresses and bougainvillea at the doors, walls in five washes (lime white, warm lime, ochre, rose, chalk). One storey is 2,808 triangles; the richest house, two storeys with a dome, is 6,056, about today's. Only the houses change here; churches, keeps and guild halls are another question. The same house stands in the foreign quarter by the water in the Gatelands' ports, which borrows Aurenne's style today.
