@@ -16426,3 +16426,10 @@ One more of the suites that failed once on CI in 11 to 13 Oct. `lairdoor` crashe
 `lairdoor` green. With no change to the suite, 1 run in 4 here hit the race: the zone still read *world* where it should have read *dungeon*, and the door's place was gone. With a cell tick forced between measuring and going in, the old suite threw CI's own error and the new one passed.
 ### Needs eyes
 Nothing in play. `lod`, `shiplog` and `fortwalk` are left from the list, one red each.
+
+## v80 — Session 812 — `shiplog` reads the dial in a clear sky (CI health, tests only)
+One more of the suites that failed once on CI in 11 to 13 Oct. On CI, `shiplog` read two values exactly 1% short: 5.94 where it wanted 6.0 at hull 45, and 17.58 (*17.6 kn*) where it wanted the cutter's 17.76. The most she can make is her top speed × hull × `(.5 + .5 × rig/100)` (`shipSpeedMul`), so the 1% is a rig worn to 98. The sea wears her (`tickSeaWear`, `86-world-crime.js`): in a storm, under sail, she loses 1 rig every 4 s, and the cutter's 8 s run is 2 rig. The suite never set the weather, so CI's random weather turned to storm partway through. The game is right: a storm wears the rig, as Session 412 meant. The suite now pins a clear sky with no change coming before it sails. `WX.timer` is put out of reach, which also stops the reroll on a change of cell (that one fires only under 330 s). No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`shiplog` green. With a storm pinned in place of the clear sky, the old suite failed four checks, among them CI's own *a cutter under four tiers of sail reaches 17.6 kn* at 17.58, and the hull-45 tick at 5.88.
+### Needs eyes
+Nothing in play. Other ship suites that sail for seconds at a time may lean on the weather the same way. None has failed on CI in this window. `lod` and `fortwalk` are left from the list.
