@@ -967,8 +967,10 @@ const giver=`${lord.title} ${lord.name}`;
     const lairs=home.flatMap(c=>c.sites.filter(t=>t.kind==='lair'&&!t.anchor&&!t.dragon)).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
     const lr=pick('wolf_cloak',lairs);
     const towns=home.flatMap(c=>c.sites.filter(t=>t.kind==='town'||t.kind==='port'||t.kind==='city')).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const lt=pick('waylamp',towns); /* S783 — the Waylamp over a home-island town's first inn */
+    /* S797 — the Shuttle in the deepest room of a home-island sigil gate (a cave gate, not a fort; never the blade's) */
+    const sgates=doors.filter(d=>d.sigil&&d.kind==='cave_door'&&(!gd||d.seed!==gd.seed));const sg=pick('shuttle',sgates);
     _artPl={gate_blade:gd?{door:gd.seed,name:gd.canonicalName||(typeof dungeonName==='function'?dungeonName(gd.seed,gd.theme):'an old gate'),x:gd.x,z:gd.z}:null,
-            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:null};
+            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:sg?{door:sg.seed,name:sg.canonicalName||(typeof dungeonName==='function'?dungeonName(sg.seed,sg.theme):'an old gate'),x:sg.x,z:sg.z}:null};
     return _artPl;}
   function artifactState(id){const S=worldState.artifacts;return (S&&S[id])||null;}
   function artifactHeld(id){return [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)].some(L=>L.some(it=>it&&it.artifact===id));}
@@ -994,8 +996,44 @@ const giver=`${lord.title} ${lord.name}`;
   function tickShuttle(force){const t=performance.now();if(!force&&t-_shT<1000)return 0;_shT=t;const now=worldState.gameTimeAbsMinutes||0;let C=worldState.shuttleCarry;
     if(!shuttleCarried()){if(C)C.last=now;return 0;}if(!C)C=worldState.shuttleCarry={acc:0,last:now};
     C.acc+=Math.max(0,now-(C.last==null?now:C.last));C.last=now;let n=0;
-    while(C.acc>=SHUTTLE_WEEK){C.acc-=SHUTTLE_WEEK;worldState.cold=(worldState.cold||0)+1;n++;if(typeof addLog==='function')addLog('❄','Your hands are colder than the weather.');}
+    while(C.acc>=SHUTTLE_WEEK-1e-6){C.acc=Math.max(0,C.acc-SHUTTLE_WEEK); /* S797 — the clock's minutes are fractional: a week summed in pieces can fall a hair short */ worldState.cold=(worldState.cold||0)+1;n++;if(typeof addLog==='function')addLog('❄','Your hands are colder than the weather.');}
     return n;}
+  // S797 — the Shuttle's trial (the page's Weaver row; the approved draft's second run, §5): it lies on the floor of the deepest
+  // room of its gate (artifactPlaces().shuttle, a home-island sigil gate picked from the seed, as the others are), on the lowest
+  // floor, at the open cell farthest by walking from where you arrive on that floor (the entrance, or the stair). The first time
+  // you come within four units of it, the draft's line, once (the character's: worldState.stats.shuttleSeen). E within 1.4 takes
+  // it at Intelligence 35 (artifactTry: the base, plus at most 2 from gear); short of that the hand closes beside it, and it costs
+  // nothing. Its shape is a placeholder, a pale spindle with a faint light; the look builder's prop is owed.
+  let SHUTTLE_LIE=null;
+  const SHUTTLE_SAY={seen:'Something small and pale lies on the floor under the sigil, the shape of a boat, or a fish, or neither.',
+    fail:'You can see it, and you cannot see where it is. Your hand closes beside it every time. Not yet.',
+    take:'You pick it up the way you would pick up something you had put down a moment ago.'};
+  function shuttleSpot(fl,map){const from=(fl===2&&dStairC!=null)?{c:dStairC,r:dStairR}:{c:Math.round(dEntranceX),r:Math.round(dEntranceZ)};
+    const R=map.length,C=map[0].length,D=map.map(row=>row.map(()=>-1));const q=[[from.c,from.r]];if(!map[from.r]||!map[from.r][from.c])return null;D[from.r][from.c]=0;
+    for(let h=0;h<q.length;h++){const [c,r]=q[h];for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+dc,nr=r+dr;if(nr<0||nr>=R||nc<0||nc>=C||D[nr][nc]>=0||!map[nr][nc])continue;D[nr][nc]=D[r][c]+1;q.push([nc,nr]);}}
+    const taken=(c,r)=>CHESTS.concat(BARRELS).some(o=>(o.floor||1)===fl&&Math.round(o.x)===c&&Math.round(o.z)===r);
+    const open=(c,r)=>r>=0&&r<R&&c>=0&&c<C&&map[r][c]===1;
+    const room=(c,r,n)=>{for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){if(!i&&!j)continue;if(n===4&&i&&j)continue;if(!open(c+i,r+j))return false;}return true;};
+    const cells=[];for(let r=0;r<R;r++)for(let c=0;c<C;c++)if(D[r][c]>0&&open(c,r)&&!taken(c,r))cells.push({c,r,d:D[r][c]});
+    if(!cells.length)return null;cells.sort((a,b)=>b.d-a.d||a.r-b.r||a.c-b.c);const far=cells.filter(k=>k.d>=cells[0].d*.85);
+    const best=far.find(k=>room(k.c,k.r,8))||far.find(k=>room(k.c,k.r,4))||cells[0];return {x:best.c,z:best.r,d:best.d};}
+  function shuttleLay(portal){SHUTTLE_LIE=null;try{const P=artifactPlaces().shuttle;if(!P||!portal||portal.seed!==P.door||artifactState('shuttle'))return null;
+    const fl=dMap2?2:1,map=fl===2?dMap2:dMap;if(!map)return null;const sp=shuttleSpot(fl,map);if(!sp)return null;
+    const g=new THREE.Group();const wood=new THREE.MeshLambertMaterial({color:0xe2d6bc,emissive:0x2a2418});
+    const body=new THREE.Mesh(new THREE.SphereGeometry(.05,10,6),wood);body.scale.set(3.4,.9,1.1);g.add(body);
+    const thread=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.22,4),new THREE.MeshLambertMaterial({color:0xcfd8e8,emissive:0x303848}));thread.rotation.z=Math.PI/2;thread.rotation.y=.5;thread.position.set(.16,-.02,.06);g.add(thread);
+    const l=new THREE.PointLight(0xdfe8ff,.55,2.6);l.position.set(0,.4,0);g.add(l);
+    g.position.set(sp.x,(fl===2?FLOOR2_Y:0)+.05,sp.z);g.rotation.y=(portal.seed%628)/100;dScene.add(g);
+    SHUTTLE_LIE={x:sp.x,z:sp.z,floor:fl,mesh:g,seed:portal.seed,name:P.name,walk:sp.d};return SHUTTLE_LIE;}catch(e){console.warn('shuttleLay',e);return null;}}
+  function shuttleNear(){const L=SHUTTLE_LIE;return !!(L&&L.mesh&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<1.4);}
+  // the first sight of it, once (called from the dungeon's frame)
+  function shuttleTick(){const L=SHUTTLE_LIE;if(!L||!L.mesh||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;const st=worldState.stats||(worldState.stats={});
+    if(st.shuttleSeen||Math.hypot(px-L.x,pz-L.z)>4)return false;st.shuttleSeen=1;showMsg(SHUTTLE_SAY.seen,'#c8d0e0');return true;}
+  // E at it: the named action is artifactTry (takeArtifact), with the draft's log line
+  function shuttleTake(){const L=SHUTTLE_LIE;if(!L)return null;const c=artifactTry('shuttle',`Took the Shuttle from the deepest room of ${L.name}.`);
+    if(c.gone){if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);SHUTTLE_LIE=null;return c;}
+    if(!c.ok){showMsg(SHUTTLE_SAY.fail,'#c8d0e0');return c;}
+    showMsg(SHUTTLE_SAY.take,'#c8d0e0');if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);SHUTTLE_LIE=null;if(typeof updateHUD==='function')updateHUD();return c;}
   // S779 — the Gate-Blade (the page's Stone row): a tier-6 blade of 14 weight; while it is in your hand sprinting costs a quarter more
   function gateBladeDrawn(){return !!(EQ.weapon&&EQ.weapon.artifact==='gate_blade');}
   // S780 — Michael's 3A on #263: with the blade in hand, a locked door inside a sigil gate you have been down before opens at a
@@ -1016,18 +1054,18 @@ const giver=`${lord.title} ${lord.name}`;
     return {ok:base+gear>=T.check.need,attr:k,need:T.check.need,have:base+gear,base,gear};}
   function artifactItem(id){const T=ARTIFACTS[id];const it=(T.item?T.item():{name:T.name.replace(/^the /,'The '),ico:T.ico,type:'misc',weight:1,sellMult:0,buyPrice:0,desc:'One of the six things the Makers left.'});return Object.assign(it,{unique:true,artifact:id,qty:1});}
   // the named action that takes a tool from where it lies (shared state: the world row)
-  function takeArtifact(id,how){const T=ARTIFACTS[id];if(!T||artifactState(id))return false;
+  function takeArtifact(id,how,logLine){const T=ARTIFACTS[id];if(!T||artifactState(id))return false;
     (worldState.artifacts||(worldState.artifacts={}))[id]={taken:true,day:dayNow(),how:how||'taken'};
     if(typeof bagAdd==='function')bagAdd(artifactItem(id));const tr=worldState.artifactTries;if(tr)delete tr[id];
-    if(typeof addLog==='function')addLog(T.ico,`Took ${T.name}.`);return true;}
+    if(typeof addLog==='function')addLog(T.ico,logLine||`Took ${T.name}.`);return true;}
   // the named action that gives a tool up to its claimant: out of the bag, the stash or your hands, and the world remembers who has it
   function yieldArtifact(id,to){const T=ARTIFACTS[id],S=artifactState(id);if(!T||!S||S.yielded)return false;
     const out=L=>{const i=L.findIndex(it=>it&&it.artifact===id);if(i>=0){L.splice(i,1);return true;}return false;};
     let gone=out(BAG)||(typeof stashBag!=='undefined'&&out(stashBag));if(!gone)for(const s in EQ)if(EQ[s]&&EQ[s].artifact===id){EQ[s]=null;gone=true;break;}
     if(!gone)return false;S.yielded=to||'claimant';S.yieldDay=dayNow();if(typeof updateHUD==='function')updateHUD();return true;}
   // a try at a tool: passes and takes it, or records the try (the character's) and says nothing itself (the trial's words are its own)
-  function artifactTry(id){const T=ARTIFACTS[id];if(!T||artifactState(id))return {ok:false,gone:true};const c=artifactCheck(id);
-    if(c.ok){takeArtifact(id);return c;}
+  function artifactTry(id,logLine){const T=ARTIFACTS[id];if(!T||artifactState(id))return {ok:false,gone:true};const c=artifactCheck(id);
+    if(c.ok){takeArtifact(id,null,logLine);return c;}
     const tr=worldState.artifactTries||(worldState.artifactTries={});tr[id]={day:dayNow(),have:c.have,n:((tr[id]&&tr[id].n)||0)+1};return c;}
   // S777 — the Wolf-Mother's Cloak (the page's Beasts row): worn, the wolves, the bears and the spiders leave you alone unless
   // you strike first. A beast you have hurt is struck for good (`_struck`), and its pack takes its part (alertPack). The cost:
@@ -1176,9 +1214,9 @@ const giver=`${lord.title} ${lord.name}`;
       ['waylamp','The Hearth’s?',()=>'Lóchrann an Teallaigh. A lantern. It goes from inn to inn and the weather does not put it out. A theft does.'],
       ['shuttle','The Weaver’s?',(P,d)=>`Spól an Fhíodóra. A shuttle. It is in the deepest room of ${P.name}. It shows where the unread stones are. Reading costs. It will cost you.`]]};
   // S796 — a hermit gives the way only to a tool that can be had where it lies today: the cloak (its cavern's master, whose
-  // corpse gives it up, Session 781) and the lamp (its inn, Session 783). The blade's stone, the bell's wreck, the ring's cairn
-  // and the Shuttle's room wait for their trials and props; each trial's session adds its tool here.
-  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1};
+  // corpse gives it up, Session 781) and the lamp (its inn, Session 783); and since S797 the Shuttle (its gate's deepest room).
+  // The blade's stone, the bell's wreck and the ring's cairn wait for their trials and props; each trial's session adds its tool here.
+  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1}; /* S797 — the Shuttle's room */
   // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
   function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
   function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];

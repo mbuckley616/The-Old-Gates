@@ -1466,6 +1466,7 @@ function loop(now){
     });
     // Drive the ambient hum based on closest-sigil proximity
     if(typeof updateSigilHum==='function')updateSigilHum(maxSigilProx);
+    if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
     const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
     // interact prompt
     const nearCorpsePrompt=CORPSES.find(c=>c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
@@ -1489,6 +1490,7 @@ function loop(now){
       const stairLabel=DUNGEON_STAIRWELL?'':currentFloor===1&&dMap2?"Press 'E' to descend to Floor 2":"Press 'E' to ascend to Floor 1"; // v80 S8 — physical stairs need no prompt
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
     }
+    else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(nearSigilPrompt){
       const sp2=SPELLS.find(s=>s.id===nearSigilPrompt.spellId);
       iprEl.textContent=`Press 'E' — Touch the sigil of ${sp2?sp2.nameIr:'?'}`;
