@@ -35,7 +35,7 @@ fs.writeFileSync('tests/out/golem.png', Buffer.from(shot.split(',')[1], 'base64'
 
 // the dungeon's golem: a person, walked by its own enemy, still a brute for the fight
 let gm = { none: true };
-for (const seed of [5, 12, 17, 23, 31, 44]) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'deep', seed });
+for (const seed of [5, 12, 17, 23, 31, 44]) { await page.evaluate(() => { level = 6; }); await enterDungeon(page, { theme: 'ruins', seed });
   gm = await page.evaluate(() => { const e = ENEMIES.find(x => (x.baseType || x.name) === 'Golem'); if (!e) return { none: true }; const r = e.limbs && e.limbs.person;
     return r ? { person: true, golem: !!r.g.golem, linked: r.e === e, inRigs: PEOPLE_RIGS.has(r), family: enemyPostureFamily(e) } : { person: false }; });
   if (!gm.none) break; }

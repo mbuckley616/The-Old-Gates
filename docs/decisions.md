@@ -6,6 +6,25 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Aurenne's houses — the white town, the mix, or the Roman town? (the concept artist, 2026-10-12) — DECISION #259
+You set Aurenne's register this morning: a Roman, Egyptian, Arabic and Greek fusion, not French (OG-061, OG-043). Its houses today are the French cottage in warm colours: cream plaster, a gabled terracotta roof, shutters, a chimney and a woodpile (5,710 triangles one storey, 6,646 two). The prototype (`docs/prototypes/aurenne/`, on auto/concept) draws five new houses in the shape kit, beside today's house taken from the game itself (build s587) and the game's own Aurennais townsfolk for scale (1.22 and 1.30 units). Under every option: walls with real arched openings as deep as the wall, small deep windows, a door of painted cedar in a frame of blue and white glazed tile, lattice screens (mashrabiya) on the upper floors, cypresses and bougainvillea at the doors, walls in five washes (lime white, warm lime, ochre, rose, chalk). One storey is 2,808 triangles; the richest house, two storeys with a dome, is 6,056, about today's. Only the houses change here; churches, keeps and guild halls are another question. The same house stands in the foreign quarter by the water in the Gatelands' ports, which borrows Aurenne's style today.
+- **A. The white town**: every house flat-roofed, with a terrace behind a rounded parapet, rainwater spouts, pots, a pergola with a striped awning, an outside stair to the roof; the rich houses domed in blue tile. Greek-island and North African.
+- **B. The mix** *(recommended)*: A's houses for two in three, and one in three Roman: a low hipped roof of half-round tile and, on the larger lots, an arcade of round arches on columns at the street. Domes kept for the rich and for temples.
+- **C. The Roman town**: every house hip-roofed in tile, the arcade on the larger ones, the arched doors and tile frames as above. Nearest to today's roofs.
+
+Recommendation: **B.** OG-061 draws both, white terraces and domes beside tile, and your four names (Roman, Egyptian, Arabic, Greek) are two kinds of roof. A street of one roof reads as a theme park; the mix reads as a city that has been built over for centuries. A alone makes Aurenne the most foreign of the three nations from the sea, which is a fair second choice.
+
+Screens: [today beside the proposal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/compare.png) · [today's street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/street-today.png) · [A, the white town](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/street-a.png) · [B, the mix](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/street-b.png) · [C, the Roman town](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/street-c.png) · [the five, front](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/front.png) · [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/side.png) · [roofs from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/top.png) · [the door at a townsperson's scale](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/aurenne/scale.png)
+Michael: **The mix: two in three flat, one in three Roman** (B). (12 Oct 2026)
+
+### A householder woken in the night: what does she say, and does she mind? (systems builder, after Session 763, 2026-10-12) — DECISION #255
+The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h wakes her (Session 739), and the ordinary day talk opens: *Blessings on the road that brought you. One of our own, friend.*, with *My name is Traveller.* first. The prompt over her while she sleeps reads *Sinéad — Press 'E' to talk*. Nothing knows it is the middle of the night or that a stranger is standing in her bedroom. Today, being inside after hours is not a crime (the crime design of 26 Sep), so how she takes it is a rule of play, and the words are the quest writer's.
+- **A. A line of her own, then the talk** *(recommended)*: over a sleeper the prompt reads *Sinéad (asleep) — Press 'E' to wake*. Woken, she opens with one night line by her people (the quest writer writes four, a startled *What — who's there? It's the middle of the night.* in each voice), and the usual talk follows without the introduction topic first. No new rule; a picked lock seen is still the only crime.
+- **B. As A, and she wants you out**: woken, she says her line and the talk offers only *Leave* and *I'm sorry, I'll go*; she will trade or talk normally from 7h. Still no crime.
+- **C. As A, and a stranger found in a home at night is trespass**: woken by someone who neither rents, owns nor was let in, she counts it as a seen crime (−1 favour, the 25-gold fine, a guard sent, as a picked lock), and the line says so.
+Recommendation: **A**. The crime design chose that being inside is not a crime, and the critic's complaint is the words, not the rules; C changes the crime rules on a corner case, and B blocks talk the player came for.
+Michael: **Her own night line, then the usual talk** (A). (12 Oct 2026)
+
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.
 1. **How people are proportioned** (OG-012, OG-095). **A.** Naturalistic, about 1.75 m. **B.** A heroic hybrid, about 1.80 m, slightly longer legs and broader shoulders, so a figure reads at a distance and in a fight *(recommended; both sheets pick it)*. **C.** Stylised: bigger heads and hands, narrow waists.
@@ -45,6 +64,7 @@ Your A on the gates by school made goblins an *occupied* state, not a kind of ga
 Gaoth (wind) is not rolled yet in any option: its table wants wisps and *something winged*, which are meshes the look builder has not made.
 
 Michael: **The table, with a level-1 foe kept in each** (A, tapped on the control room). (12 Oct 2026)
+Done, Session 763: `THEME_DEF` (`20-quests.js`) holds the five rosters as written; `tests/schoolroster`.
 
 ### What gives an old gate its character: its theme, its god, or its school? (Claude, Session 754, 2026-10-12)
 Raised in chat over a bestiary sheet Michael had made: the six dungeon themes (undead, goblin, elemental, deep, haunted, ruins) date from *Dungeon of Shadows* and have no reason in the canon. "Why would we have a 'goblin' gate? Shouldn't it be tied to the magic type?"
@@ -75,6 +95,7 @@ Your playtest note of 6 Oct (backlog D): *all towns and cities should have more 
 
 Recommendation: **A.** It is what the note asks for, it costs no new rule, and the goods are too cheap to move the economy. C ties the barrels into the crime system, which is a larger change than the note asked for. Where the new ones stand is the look builder's either way.
 Michael: **Twice as many, as they are** (A). (11 Oct 2026)
+*Built, Session 753* (systems builder): a city 20, a town 14, a village 8, a hamlet or port 4; the first half placed as before, the second on their own stream (`tests/townbarrels`).
 
 ### The world's tone: grounded medieval, or high fantasy? (Claude, Session 750, 2026-10-12)
 Raised in chat while writing the concept art brief: the canon's tone line (Part I, *Tone & voice*) read "Medieval-grounded with creeping dread. Not high fantasy", and Michael's direction for the art contradicted it.

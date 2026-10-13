@@ -987,5 +987,5 @@ function applyWeaponEnchant(dmg,e){
   const amt=eff.extraDmg||eff.healPlayer||eff.stealStam||eff.gainMana;
   if(!amt)return null;
   const col=w.enchant.col?'#'+w.enchant.col.toString(16).padStart(6,'0'):'#aaaaff';
-  return {tag:`${eff.msg} +${amt}!`,col};
+  return {tag:`${eff.msg} +${amt}!`,col,amt,id:w.enchant.id,ico:String(eff.msg||'').split(' ')[0]}; /* S761 — amt, id and icon for the rider's number */
 }

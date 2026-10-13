@@ -1,9 +1,12 @@
 // Enter a dungeon of a given theme and seed and photograph it from a few places (look-and-feel sessions, Session 189).
 // dungeonShots(page, {theme, seed, size, interior}) -> [{where, url}]; the scene is rendered with the game's own camera.
 export async function enterDungeon(page, o = {}) {
+  // S765 — wait for this gate's own scene: from one gate straight into another the zone already reads 'dungeon' and scene===dScene
+  // before the fade builds the new one, so a test could read the last gate's foes (schoolroster's ruins@6 on CI, 6375475)
+  await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; });
   await page.evaluate((o) => { const p = Object.assign({}, PORTALS[0], { theme: o.theme || 'ruins', seed: o.seed || 11, size: o.size || 'medium', interior: o.interior || 'cave', zone: 'world', tutorial: false, lair: null }, o.name ? { name: o.name } : {});
     goToDungeon(p); }, o);
-  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && scene === dScene)); k++) await page.waitForTimeout(500);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
   await page.waitForTimeout(1500);
 }
 export async function dungeonShots(page) {
