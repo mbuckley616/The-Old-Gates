@@ -389,6 +389,14 @@
       for(let z=-len/2+.6;z<len/2-.65;){const L=Math.min(len/2-.6-z,2.4);add(SK.rbox(.44,.14,L-.03,.05,1),vary(0xa0978a,.06),x,top+.86,z+L/2,0,0,0,.04);z+=L;}
       for(const e of [-1,1]){add(SK.rbox(.6,1.3,.6,.08,1),vary(0x8a8078,.06),x,top+.65,e*(len/2-.3),0,0,0,.05);add(SK.cone(.43,.35,4),0x9a9084,x,top+1.47,e*(len/2-.3),0,Math.PI/4,0,.04);}}
     return mergeParts(P);}
+  // S803 — one name per place reaches the bridges (poinames, the producer's filing of 13 Oct): a bridge took its river's or its
+  // road's name, and every border road is *the Border Road*, so five *Border Road Bridge*s stood in ten cells and two *Stanwater
+  // Bridge*s in one. A name already held by a place in the world gives way to the nearest settlement's (*Dunmore Bridge*), then
+  // to both (*Dunmore Stanwater Bridge*). The nearest settlement is read from the cell and its neighbours' data, not what loaded.
+  function bridgeName(base,x,z,c){const held=new Set();for(const cc of CELLS.values())for(const t of cc.sites)if(t.name)held.add(t.name);if(!held.has(base))return base;
+    let near=null,nd=1e18;for(let i=c.i-1;i<=c.i+1;i++)for(let j=c.j-1;j<=c.j+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const cc=getCell(i,j);
+      for(const t of cc.sites){if(!['city','town','port','village','hamlet','outpost'].includes(t.kind)||!t.name)continue;const d=(t.x-x)**2+(t.z-z)**2;if(d<nd){nd=d;near=t;}}}
+    if(!near)return base;const a=`${near.name} Bridge`;if(!held.has(a))return a;const b=`${near.name} ${base}`;return held.has(b)?base:b;}
   function buildBridges(c,k,L){const rivers=RIVERS.filter(rv=>rv.w);if(!rivers.length)return;const built=new Set();
     for(const rd of L.roads){if(!rd.pts||rd.pts.length<4)continue;
       for(const rv of rivers){let run=[];const runs=[];for(let i=0;i<rd.pts.length;i++){const p=rd.pts[i];riverSample(rv,0,rv.pts.length-2,p.x,p.z,_rs);if(_rs[0]<_rs[1]+(rv.ws?.4*(8+_rs[1]):0)+1.5)run.push(i);else if(run.length){runs.push(run);run=[];}}if(run.length)runs.push(run);
@@ -400,7 +408,7 @@
           const len=Math.hypot(b.x-a.x,b.z-a.z)+6;const ang=Math.atan2(b.x-a.x,b.z-a.z);const y=Math.max(a.y,b.y,SEA_Y+.9)+.25;
           const g=new THREE.Mesh(bridgeGeo(len,y-bed+.05,Math.round(mx)*31+Math.round(mz)),VC_MAT);g.position.set(mx,y,mz);g.rotation.y=ang;g.castShadow=true;g.receiveShadow=true;g.userData.bridge=true; // S248 — a stone arch bridge on the kit (it was a deck, two rails and piers as boxes)
           sc.add(g);const s_=Math.sin(ang),c_=Math.cos(ang);for(const sx of [-1,1]){STATIC_SOL.push({cx:mx+c_*sx*2.45,cz:mz-s_*sx*2.45,rx:.2,rz:len/2,c:Math.cos(ang),s:Math.sin(ang),cell:k});}
-          const name=`${(rv.name||rd.def.via||'the river').replace(/^the /,'')} Bridge`;if(prev){built.add(prev);continue;}const site={id:`bridge_${k}_${c.sites.length}`,name,kind:'bridge',x:mx,z:mz,pad:0,cell:k,bridge:{y,len,ang}};c.sites.push(site);SITES.push(site);SITE[site.id]=site;built.add(site);
+          if(prev){built.add(prev);continue;}const name=bridgeName(`${(rv.name||rd.def.via||'the river').replace(/^the /,'')} Bridge`,mx,mz,c);const site={id:`bridge_${k}_${c.sites.length}`,name,kind:'bridge',x:mx,z:mz,pad:0,cell:k,bridge:{y,len,ang}};c.sites.push(site);SITES.push(site);SITE[site.id]=site;built.add(site);
         }}}}
   function addFortSpurs(){}
   function addFortSpur(e,cellK){

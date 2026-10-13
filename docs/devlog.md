@@ -16342,6 +16342,113 @@ A correction to Session 792. Its hermit gave the way to every tool that had a pl
 ### Needs eyes
 The Beasts' entry says the master *sleeps on* the cloak. The cloak's own trial (taking it from under the living master) waits for its pose and prop, so today a player who follows the hermit there takes the cloak from the corpse.
 
+## v80 — Session 797 — The Shuttle's trial: the deepest room of its gate, and Intelligence 35 (the approved draft, second run §5)
+The page's Weaver row put the Shuttle *in the deepest room of the gate nearest the home island's last unread sigil*, and Session 782 left that room for its own session. It is built here. **Where.** Which sigil is *last unread* changes as you read, and for each player, so a place keyed to it could not be one Shuttle per world, the same for a friend in the host's world (the page's own rule and the co-op rules). So the gate is picked from the seed as the other tools' places are (`artifactPlaces().shuttle`). It is a home-island sigil cave gate, dry, not a fort, a lair or the Root, and never the blade's gate. In this world that is *Carrigbeg's Silence* (seed 818845). If Michael meant the gate to move with your reading, only the pick changes. **The room.** On the gate's lowest floor, the Shuttle lies at the open cell farthest by walking from where you arrive (the entrance, or the stair down). Among the cells within 85% of that distance, it takes the first whose eight neighbours are open, so it lies in a room and not at a corridor's dead end (`shuttleSpot`, `shuttleLay`, called from `goToDungeon` after the lair's master). **The trial.** The first time you come within four units of it, the draft's *Something small and pale lies on the floor under the sigil, the shape of a boat, or a fish, or neither.* is said, once (the character's `stats.shuttleSeen`). Within 1.4 units the prompt is *Press 'E' to take up the shuttle*. Below Intelligence 35 (the base plus at most 2 from gear, `artifactCheck`), E gives *You can see it, and you cannot see where it is. Your hand closes beside it every time. Not yet.* That costs nothing, and the try is kept for the Journal's *Things not yet yours*. At 35, *You pick it up the way you would pick up something you had put down a moment ago.*, and the log reads *Took the Shuttle from the deepest room of ${gate}.* `takeArtifact` and `artifactTry` take an optional log line for this. Their default stays *Took the Shuttle.*. Once taken, the gate holds nothing. **The hermit** now gives the way: *It is in the deepest room of Carrigbeg's Silence.* (`MAKER_REACHABLE` gains the Shuttle, as Session 796 said each trial would add its own). **The shape** is a placeholder: a pale spindle about a third of a unit long, with a thread end and a faint cold light so it can be found in the dark. The prop is owed to the look builder (H). The draft says *under the sigil*, but a generated gate has no sigil stone inside (only the seven legacy seeds of `SIGIL_PLACEMENTS` do), so the line stands as written over a room with none.
+### Verified (headless Chromium)
+`tests/shuttletrial` (new), 10 of 10. The place is *Carrigbeg's Silence*, a dry home-island sigil cave gate, not the blade's (189762), and the same on a second call. Down it, the Shuttle lies on floor 2 on open floor, 99 cells' walk from the stair, where the farthest open cell is 101. Driven by the game's own loop: at 3.5 units the line is said once, and on the other side of it nothing more is said. At 0.8 units the prompt reads *Press 'E' to take up the shuttle*. At Intelligence 20, E gives the failing line, nothing is taken and the try is recorded (n 1). At 35, the taking line and the log line naming the gate; *The Shuttle* is in the bag, unique; the mesh is gone and so is the prompt. A second visit lays nothing, and the blade's gate has none. The hermit's *The Weaver's?* gives the way to it, and *Gone from where it lay* once it is taken. No page errors. `makershermit` was changed for the hermit's new entry (it now offers the Beasts', the Hearth's, the Weaver's and the seventh). Found while running the neighbours, a correction to Session 782: the game's clock runs in fractional minutes, so three weeks added up in pieces could come to 10,079.999 minutes and count one week fewer (`shuttle` failed on one boot and passed on another). `tickShuttle` now counts a week within a millionth of a minute and never lets the remainder go below zero; `shuttle` reads the remainder to that tolerance. Neighbours green: `shuttle` (with `shuttleclaim`, `shuttletrial`), `makershermit`, `makertools`, `journal`, `bladekey`, `lairmaster`.
+### Needs eyes
+Whether the farthest room of a 100-cell floor-2 walk, behind the gate's whole roster, is the right weight for a tool whose real gate is Intelligence 35. The placeholder's look in a real dungeon's dark: the faint light is what makes it findable. The draft's *under the sigil* over a room with no sigil stone. And the place rule above, the seed's gate for *the gate nearest the last unread sigil*, is a reading that Michael can overturn.
+
+## v80 — Session 798 — Over a sleeper, E reaches as far as the prompt says it does (the critic's s597)
+The critic, on 13 Oct at build s597, filed this in backlog I on auto/critic. At 1h in Droichead, standing 2.5 or 2.9 from Oisín asleep and looking at her, the prompt read *Oisín (asleep) — Press 'E' to wake*, but a real E opened nothing and she slept on. At 2.1 it worked. The prompt (`90-main.js`, `nearKeeper`) showed within 3.2 of the room's resident or keeper with the crosshair on them. E (`interact`, `50-travel.js`) answered only within 2.2, aimed or not. So from 2.2 to 3.2 the prompt promised what E did not do, and a step closer woke her by sound instead. The two now share one rule. `keeperAimed()` is the prompt's own test (within 3.2, on your floor, the crosshair on them). E answers where `keeperInReach()` holds: that test, or within 2.2 as before without aiming, so nothing that worked stops working. The same rule governs any keeper by day, a shopkeeper too.
+### Verified (headless Chromium)
+`tests/sleeperreach` (new), 5 of 5. In a Dunmore home at 2h, Sinéad asleep, standing on open floor (kept more than 2 from the bed, so no step wakes her) and looking at her through the game's own loop. At 2.5 and at 2.9 the prompt reads *Sinéad (asleep) — Press 'E' to wake*, and E wakes her and opens the talk. At 3.5, looking at her, there is no prompt and E leaves her asleep. At 2.7, looking away, there is no prompt and E leaves her asleep. On the previous commit's code (`--src`) the 2.5 and 2.9 checks fail and the others pass. No page errors. Neighbours: see the PR comment.
+### Needs eyes
+Whether 3.2 aimed is the right reach for talk at all, the critic's band now being E's as well as the prompt's. Indoors a step from 2.2 to 3.2 is about half a room.
+
+## v80 — Session 799 — A spent blow no longer reads *weak* (the critic's s597)
+The critic, on 13 Oct at build s597, filed this in backlog I. A swing on too little stamina lands at 45% (`applyMeleeDamage`, `74-strikes.js`, since v80 S9), and its damage number (Session 761) still took the foe's weakness word: a Wooden GreatClub on a Skeleton (blunt, ×1.25) rose as *1* with *weak* under it in gold. *Weak* there is the foe's weakness, but under a 1 it reads as the blow's strength. The critic offered two ways out: a *spent* word, or the weakness word dropped on an exhausted blow. A new word is the quest writer's, so the second is taken. `applyMeleeDamage` now returns `spent` with its other flags, and `dmgNumKind` gives *weak* and *very weak* only to a blow that was not spent. A spent blow at a weak foe rises plain, with no word. Every other kind is as it was: a spent blow on a staggered foe is still critical, a resisted one still *resisted*, one from behind still *from behind*. The damage itself is unchanged.
+Also in the backlog: the merge of auto/critic left the sleeper's-reach item (fixed in Session 798) in section I twice, once struck and once not. The unstruck copy is removed, as Session 798's note asked.
+### Verified (headless Chromium)
+`tests/spentblow` (new), 4 of 4. `dmgNumKind`: ×1.25 and ×1.5 give *weak* and *very weak* rested and no word spent; spent and staggered is *crit/staggered*, spent and ×.5 is *res/resisted*. Real swings through the game's own loop, in Dunmore's street at noon, a Wooden GreatClub (blunt) at a Bandit made weak to blunt (×1.25): rested, it took 10 and rose `dn weak` with *weak*; at no stamina, it took 4 and rose plain `dn`, *4*, no word. On the previous commit's code (`--src`) the kinds check and the spent swing fail and the others pass. `dmgnums` green. No page errors.
+### Needs eyes
+Whether a spent blow wants a word of its own, so a player learns why the number is small (the critic's *spent*, which would be the quest writer's word and the HUD's look). Today only the stamina bar's flash says so.
+
+## v80 — Session 800 — The Noon Ring's trial: the cairn at the top of a peak (the approved draft, second run §4)
+Session 786 built the ring's use and its cost; the trial was left owed. It is built here, in the draft's words (Michael's 1A on #263). **Where.** The ring lies on a cairn at the top of a home-island peak, picked from the seed as the other tools' places are (`artifactPlaces().sundial_ring`: the home island's peaks sorted by id, `seededRng('artifact','sundial_ring')`). In this world that is *Sliabh Tullyshane* (`c5_9_pk57`). The cairn stands on the highest ground within 24 units of the peak's centre. That ground is found once the peak's cell is loaded, because the peak's rise is only in the terrain then. The cairn is built while you are within 400 units and dropped when you leave (`tickRingCairn`, once a second from the loop). **The trial.** The first time you come within ten units, the draft's *A cairn at the top of the world…* is said, once (the character's `stats.ringSeen`). Within 2.2 units the prompt is *Press 'E' to take the ring*. E checks in the draft's order: the hour, then the sky, then Swiftness. Noon is the game's hour 12, 12:00 to 12:59: the draft leaves the window to this builder and assumes one game hour, and the sundial's hour is the plain reading. The sky must be `clear`; rain, fog, snow, storm and overcast all fail. Swiftness 30 is the base plus at most 2 from gear (`artifactTry`). Each failure says its line and writes it to the log with ☀, as the draft asks. It costs nothing, and the try is kept for the Journal's *Things not yet yours* (*The Noon Ring — Sliabh Tullyshane. Swiftness 30.*). At noon, clear and Swiftness 30: *At noon the cairn has no shadow, and the ring is only a ring. It comes up into your hand.*, and the log reads *Took the Noon Ring from the cairn on ${peak}.* The band goes from the cairn and the cairn stays. Over it the prompt then reads *Press 'E' to look at the cairn*, and E says the draft's *An empty hollow in the top stone…*. That prompt is plain chrome in the form of the others. **The hermit** now gives the way: `MAKER_REACHABLE` gains the ring, as Session 796 said each trial would add its own. **The rumour** (the draft's, *There's gold on the cairn at the top of ${peak}…*) is told in any town within a cell of the peak, while the ring lies there. *Within a province* is read as the Waylamp's rumour reads it. **The shape** is a placeholder: four flattened stones stacked a metre and a half high, with a gold band on top. It is not solid. The prop (the hollow, the cut line, the shadow) is owed to the look builder (H).
+Also: DECISION #267 (shrines remembering) was answered D by Michael, *leave it out*. The entry moves under Answered. Nothing is built.
+### Verified (headless Chromium)
+`tests/ringtrial` (new), 14 of 14. The place is Sliabh Tullyshane, a home-island peak, the same on a second call. Liscarra, a town near it, tells the rumour. The cairn stands at 109.8, where the highest ground within 24 units is 110.2 (sampled every unit) and the centre 108.6; it is 3 units off the centre and in the world's scene. Driven by the game's own loop: from 12 units in to 9 the line is said once, and at 1.6 units the prompt reads *Press 'E' to take the ring*. At 9h and at 13h, *The ring will not lift…*. At 12h in rain and in fog, *Noon, and no sun to read it by…*. At noon, clear, with Swiftness 20, *The cairn's shadow is already off the line…*, nothing is taken and five tries are kept; the Journal reads *The Noon Ring — Sliabh Tullyshane. Swiftness 30.* With Swiftness 30, the taking line and the log line; *The Noon Ring* is in the bag and the band is hidden. A second E says *An empty hollow…* and takes nothing more, and the prompt reads *Press 'E' to look at the cairn*. The hermit's *The Sky's?* gives the way before and says *Gone from where it lay* after. No town near the peak tells the rumour once the ring is taken. No page errors. A probe found the cairn's spot clear of solids and the slopes up to it at grades of about 1 (5 on one face); the player has no slope limit. Neighbours: see the PR comment.
+### Needs eyes
+The climb. The page means Swiftness 30 to be *the climb against the clock*, but the player walks any grade, so today the check is only a number. Whether reaching a peak at noon on a clear day is the right weight for the trial. The placeholder cairn on the skyline (it can be seen from below, as the rumour says). The draft's cut line and shadow, which only the look builder's prop can show.
+
+## v80 — Session 801 — The Drowned Bell's trial: a wreck on a rock the sea owns twice a day (the approved draft, second run §2)
+Session 778 built the bell's virtue and cost, and Sessions 788 and 794 its claimant and its once-only lines. Its trial was owed, and is built here in the draft's words. **Where.** The bell hangs from the last beam of a wreck on a rock off a home-island port, picked from the seed (`artifactPlaces().drowned_bell`). The home island's ports are put in the order of `seededRng('artifact','drowned_bell')`. The first port with open water off it wins, and one of its points is drawn from the same stream (`bellSpot`): along 24 bearings, the first point 50 to 140 units out where the bare land mask (`seaBare`, which reads nothing loaded) is sea, with open sea 14 units around it. So the rock lies within sight of a quay, as the draft asks, and is the same from any boot. In this world it lies 100 units off *Carrigcarra*. **The tide.** The rule is the game's `isTideOut()`, low from 0 to 6 and 12 to 18, as the canon's *the sea owns them twice a day*. The world's sea does not rise and fall, so the wreck does. At high tide it sits 2.4 lower and only the mast stands out of the water; at low tide the ribs, the beam and the bell are out. It eases over half an hour either side of each turn, a cosmetic only (`bellLowness`). The wreck is built within 400 units and dropped when you leave (`tickBellWreck`, once a second from the loop). **The trial.** The first time you come within forty units, the draft's line for the tide is said once (the character's `stats.bellSeen`): *A mast stands up out of the sea…* at high tide, *The sea has drawn back off a rock…* at low. From then the Journal's *Things not yet yours* carries the draft's line, *The Drowned Bell — in the wreck on the rock off ${coast}. At low tide.*, because the bell has no attribute and so no failed check to put it there. At high tide there is no prompt, and E within 3.2 of the mast says *The sea has it now. It gives it back twice a day.* At low tide, within 2.6 of the bell or 3.2 of the mast, *Press 'E' to take the bell*. E takes it (`takeArtifact`; the bell has no check), with the draft's *The bell comes off its beam green to the lip…*, and the log reads *Took the Drowned Bell from the wreck off ${coast}.* The wreck stays. At low tide the prompt is then *Press 'E' to look at the wreck*, and E says *An empty beam…*. At high tide E finds nothing there. **The hermit** gives the way (`MAKER_REACHABLE` gains the bell). **The rumour** (*There's a wreck on the rock off ${coast} that only shows at the ebb…*) is told while the bell hangs there, at Gatelands sites within a cell of the wreck that are ports or within 500 units of it, as the draft's *coastal Gatelands sites within a province*. **The shape** is a placeholder: a grey rock from the sea floor, the game's broken hull (`wreckGeo`) on it, a mast, a beam and a small green bronze bell. None of it is solid, so you swim to it. The prop is owed to the look builder (H).
+### Verified (headless Chromium)
+`tests/bellwreck` (new), 12 of 12. The place is off Carrigcarra, a home-island port, 100 units out where the land mask is open sea, and the same on a second call. Carrigcarra tells the rumour, and the wreck is built when you stand in the port. The wreck sits at −2.4 at 8h and 20h, at 0 at 3h and 14h, at −1.2 at 6h (the turn), and at −2.4 again by 6h36. At high tide, from 45 units in to 30, the mast's line is said once and nothing else, and the Journal reads *The Drowned Bell — in the wreck on the rock off Carrigcarra. At low tide.* At 8h by the mast there is no bell prompt, and E says *The sea has it now…*, takes nothing and counts the try. At 3h by the beam the prompt reads *Press 'E' to take the bell*. E gives the draft's taking line and the log line naming Carrigcarra; the bell is in the bag and hidden on the beam, and the Journal's line is gone. At 14h the prompt reads *Press 'E' to look at the wreck* and E says *An empty beam…*. At 9h E says no wreck line (it falls through to the game's *No one nearby.*). One bell is in the bag. The hermit's *The Sea's?* gives *…twice a day, south-east of here.* before, and *Gone from where it lay* after; the rumour is told only while the bell hangs there. No page errors. `makershermit` was changed for the hermit's new entries (the Sea's and the Sky's) and is green; `drownedbell`, `bellwords`, `compactclaim`, `makertools` and `journal` are green.
+### Needs eyes
+The wreck rising out of a sea that stays level: whether a hull lifting 2.4 units over an hour reads as the tide, or whether the sea itself should move (a world rule, the look builder's and Michael's). Swimming to a rock you cannot stand on. The placeholder at a real distance, from the quay.
+
+## v80 — Session 802 — The Gate-Blade's trial: a sword in a stone by its ruined gate (the approved draft, first run §5)
+Session 796 took the blade off the hermit's list because nothing stood by Dunmore Tower: no stone, no prompt, no way to take it. It waited on the look builder's blade-in-a-stone, which has no item in section H. As with the Shuttle (797), the ring (800) and the bell (801), the trial is built here on a placeholder, and the prop stays owed. **Where.** The gate is Session 776's (`artifactPlaces().gate_blade`, a home-island ruined gatehouse picked from the seed: *Dunmore Tower*). The stone stands 8 to 18 units from the gate's door, out of the doorway. It takes the first spot clear of every solid 1.4 units round it, on bearings taken in an order seeded by the gate (`bladeStoneSpot`, `seededRng('bladestone', door)`). The spot is found once the gate's cell is loaded and its compound built. It is built within 300 units and dropped when you leave (`tickBladeStone`, once a second from the loop). **The trial.** The first time you come within ten units, the draft's *A blade stands in a stone to a hand's breadth below its guard…* is said, once (the character's `stats.bladeSeen`). Within 1.8 units the prompt is *Press 'E' to take hold of the hilt*. E is `artifactTry` at Might 30 (the base plus at most 2 from gear). Short of it, the draft's line by how short, logged with 🗝: below 20 *You might as well pull at the hill…*, 20 to 26 *The stone does not move. Not yet.*, 27 to 29 *Something gives: a grain of grit, no more. Not yet.* It costs nothing, and the try is kept for the Journal (*The Gate-Blade — Dunmore Tower. Might 30.*). At 30, *It comes out of the stone the way a key comes out of a lock: all at once, after nothing.*, and the log reads *Took the Gate-Blade from the stone by ${gate}.* The hilt goes and the stone stays. Over it the prompt then reads *Press 'E' to look at the stone*, and E says *An empty slot in a standing stone. Looked at end on, it is the shape of a key.* **The hermit** gives the way again (`MAKER_REACHABLE` gains the blade). **The rumour** Session 796 left unbuilt (*There's a sword in a stone out by ${gate}…*) is told at Gatelands sites within a cell of the gate while the blade is in it. **The shape** is a placeholder: a grey slab two metres high with a hilt standing a hand's breadth of blade out of its top, turned to face the gate. It is not solid. With this, five of the six tools can be had where they lie; the cloak's trial in the den (taken from under the living master) still waits for its pose and prop.
+### Verified (headless Chromium)
+`tests/bladestone` (new), 12 of 12. The gate is Dunmore Tower, a ruined gatehouse. The stone stands 8.0 units from its door, clear of solids 1.4 units round it, in the world's scene, and the same spot on a second pick. Grarma, within a cell, tells the rumour. From 12 units in to 9 and 5, the line is said once. At 1.2 units the prompt reads *Press 'E' to take hold of the hilt*. At Might 10 and 19, *pull at the hill*; at 20 and 26, *Not yet.*; at 27 and 29, *a grain of grit*; each is logged with 🗝, nothing is taken, six tries are kept, and the Journal reads *The Gate-Blade — Dunmore Tower. Might 30.* At 30, the draft's taking line and the log line naming Dunmore Tower; *The Gate-Blade* is in the bag and the hilt is gone. A second E says *An empty slot…* and takes nothing more, and the prompt reads *Press 'E' to look at the stone*. The hermit's *The Stone's?* gives *…by Dunmore Tower, south-east of here…* before and *Gone from where it lay* after, and no rumour is told after. No page errors. A first cut put the stone at 6 units, in front of the door; the search now starts at 8. `makershermit` was changed for the Stone's entry and is green; `gateblade`, `bladekey`, `crownclaim` and `ringtrial` are green.
+### Needs eyes
+Whether 8 units off the door reads as *outside a ruined gate, plainly visible from its road* in Dunmore Tower's real compound. Whether the placeholder slab reads as a standing stone until the prop comes.
+
+## v80 — Session 803 — One name per bridge (the producer's filing: two *Border Road Bridge*s)
+The producer filed this on 13 Oct. `poinames` (Session 756: no two named places in the world share a name) failed twice on PR #268's CI with two places called *Border Road Bridge*, and passed on main that morning on the same code. Michael's A on the unblock sent the clash here. A bridge is a site made when its cell loads (`buildBridges`, `82-world-structures.js`), named for its river, or for the road when the river has no name. Every road out of a province to the next is *the Border Road*, and a river crosses many roads. So the clash shows whenever two such cells happen to be loaded, which is why CI saw it and the local run did not. Walking into ten cells with border roads built 43 bridges: five *Border Road Bridge*s, two *Stanwater Bridge*s in one cell, two *Tradou Road Bridge*s in another, and more. Session 756's pass ranks the places a cell is made with; bridges come later and were never in it. Now a bridge whose name is already held by a place anywhere in the world gives way to the nearest settlement's name, *X Bridge*, and if that is held too, to both, *X Stanwater Bridge* (`bridgeName`). The nearest settlement is read from the cell's and its eight neighbours' data, not from what is loaded. No new words: the forms are the ones the world already uses. Which of two bridges keeps the plain name still depends on which loaded first. That is cosmetic (nothing is keyed by a bridge's name, and a site's id is its cell and index). The edit is in the look builder's file, at the one line that names the bridge; the bridge's build is untouched.
+### Verified (headless Chromium)
+`tests/bridgenames` (new), 3 of 3. Walking into ten cells with border roads builds 41 bridges, each named *… Bridge*: *Houfeirey Bridge*, *Saint-Vert Bridge*, *Nordou Bridge* and others where the plain names were taken. No two named places in those cells share a name, and one *Border Road Bridge* is left. On the previous commit's code (`--src`) the same walk builds 43 bridges, and the names check fails with *Stanwater Bridge*, *La Sauvage Bridge*, *Tradou Road Bridge*, *Border Road Bridge*, *Donaen Road Bridge* and more doubled. `poinames` and `bridges` green. No page errors.
+### Needs eyes
+Whether *Houfeirey Bridge*, a town's name on a bridge a few hundred units out, reads right on the map. The quest writer may want a form of the people's own for a bridge (*Droichead …*).
+
+## v80 — Session 807 — `dunwarm` counted the lights between frames; it counts them as drawn now (CI health, tests only)
+The first item of the run's list is CI health: the suites Session 804 names FLAKY, worst first. This container cannot read CI's log store directly, so the 27 red jobs of 11 to 13 Oct were read through the GitHub tools. Each failed one suite. The screenshot timeouts in `pauseleaf`, `settingsheet` and `dmgnums` were 9 of them, and `dunwarm` 4. `poinames` was 3, all *Border Road Bridge* and all before Session 803 fixed the bridges. `shuttle` was 1, the 10,079.999-minute week that Session 797 fixed. Ten other suites failed once each. `saveui` and `hourhitch` did not fail in that window. The list is in backlog K. `dunwarm` failed the same way all four times: after a kill in the haunted gate the scene held 21 point lights against the pool's 20, and nothing had compiled. The pool (`_sweepScenePool`, `68-dungeon-misc.js`) runs each frame just before the render. It takes any new light out of the scene into a virtual source and maps the nearest onto the 20 it keeps. So a light added between two frames, by a timer or a foe's effect, sits in the scene until the next frame's sweep, and a count read then finds 21. The test read the count in its own `page.evaluate` after waiting four frames, which is between frames. The renderer never saw 21, and the compile count of zero in all four failures says the same. The game is right and the test read the wrong moment. The suite now wraps `REN.render` and records the light count of every draw of the dungeon's scene. Its check is that every frame drawn after the kill holds the pool's 20 (and the count before the kill is read the same way). A third check does what CI caught: it adds a light between frames, reads the scene at 21, and then sees the next frames drawn at 20 with nothing compiled. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`dunwarm` 4 of 4. It looked at 70 foes of 13 kinds in three gates, with nothing compiled on sight. In each gate the kill's frames were drawn at 20 lights (minimum and maximum), with nothing compiled. A light added between frames: the scene held 21, the next three frames were drawn at 20, 20, 20, and nothing compiled. Of the two suites Session 804 named, `poinames` and `pauseleaf` were green here once each.
+### Needs eyes
+Nothing in play. Over the next day of CI, `dunwarm` should drop off the FLAKY list.
+
+## v80 — Session 808 — Every suite's screenshots wait 120 s, not Playwright's 30 (CI health, tests only)
+Nine of the 27 red CI jobs that Session 807 read were one crash: `page.screenshot: Timeout 30000ms exceeded`. `pauseleaf` crashed this way four times, at its second picture (the page of keys), last on main on 13 Oct. `settingsheet` crashed three times and `dmgnums` twice, all before Session 765 gave those two suites' pictures 120 s by hand. A screenshot waits for the next frame the page paints, and on a CI runner one frame of a town on software GL can take longer than Playwright's default of 30 s. Session 765 fixed it one call at a time, and 18 calls in 15 more suites still had the 30 s default. The fix is in the harness: `boot()` (`tests/lib/game.mjs`) wraps `page.screenshot` so every call gets 120 s unless it names its own timeout. The suites' pictures are unchanged. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+A probe suite, removed afterwards, blocked the page's main thread for 40 s, as a slow CI frame does. Through the harness the screenshot waited it out (40.2 s) and passed. The same call with a 30 s timeout failed with CI's own words, *page.screenshot: Timeout 30000ms exceeded*. `pauseleaf`, `settingsheet` and `dmgnums` are green.
+### Needs eyes
+Nothing in play. `pauseleaf` should drop off CI's FLAKY list. Ten suites failed once each in the same window (`cloakcorpse`, `lod`, `gateschool`, `dungeonpace`, `lairdoor`, `schoolroster`, `gargoyle`, `golem`, `shiplog`, `fortwalk`), each with its own cause. They are listed in backlog K for later sessions.
+
+## v80 — Session 809 — `cloakcorpse` waits for the cloak's line, not for 2.2 seconds (CI health, tests only)
+One of the ten suites that failed once on CI in 11 to 13 Oct (backlog K). On CI, *killed with the cloak untaken* read the cavern's line as *undefined*: the messages held only the level-up line and *Dunkeel — Ogre slain!*. The game said the line. `artifactSay` (`87-world-quests.js`) puts the cloak's words on a 1.6 s timer, so they come after the kill's own *slain!*, which would otherwise cover them. A timer can run only between frames, though, and the suite waited a fixed 2.2 s of real time before it read the messages. A CI frame longer than that left the line unsaid when the suite looked. Both of the suite's waits for a cloak line now wait for the line itself, up to a minute. They then wait half a second more, so a second line said after it (the check that the master dies only once) is still caught. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`cloakcorpse` 10 of 10. To reproduce CI, the page's main thread was blocked for 3 s just after the kill. The old suite failed with CI's own words, *the cavern says \*undefined\**, and the same two messages. The new suite, with the same block, passed.
+### Needs eyes
+Nothing in play. `tests/waylamp` waits the same fixed 2.2 s after a line on the same kind of timer. It has not failed on CI, so it is left alone.
+
+## v80 — Session 810 — Four more suites wait for the new gate's own scene (CI health, tests only)
+Two more of the suites that failed once on CI in 11 to 13 Oct. Both failures came after Session 765, and both were the race that session fixed in `enterDungeon`. Going from one gate straight into another, the zone already reads *dungeon* and `scene === dScene` before the fade builds the new gate, so a suite can read the last gate's `ENEMIES`. `gateschool` read the occupied gate's goblins and fog a second time and called them the unoccupied gate's: both read *deep, occupied, fog 80a10*, with Goblin and Kobold Thief. `dungeonpace` found every foe of its second gate moving 0, because they were the first gate's foes, already taken out of the scene. These suites, with `dungeonchase` and `thresholdname`, which also walk gate to gate, had their own copy of the old wait and not the helper. Each now notes the scene before it goes and waits for a different one. That is Session 765's wait, and it still gives up after 20 s. `hoardspot` and `slamdamage` clear `_lairBoss` and wait for the new gate's boss, and `newelstair` and `stairrail` wait for a new stair, so those four were already safe. Session 765's fix to `enterDungeon` came two hours after the CI run where `schoolroster`, `gargoyle` and `golem` read a stale gate, so those three need nothing more. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`gateschool`, `dungeonpace`, `dungeonchase` and `thresholdname` are green. To reproduce a slow runner, each gate's build was put 3 s behind the call. The old `gateschool` then failed with CI's own two checks and its numbers: both gates *deep, occupied, fog 526864*, with Goblin, Kobold Thief, Slime, Cave Troll and Shieldbearer. The new one passed under the same delay.
+### Needs eyes
+Nothing in play. `lod`, `lairdoor`, `shiplog` and `fortwalk` are left from the list, one red each.
+
+## v80 — Session 811 — `lairdoor` loads its door's cell again before it walks in (CI health, tests only)
+One more of the suites that failed once on CI in 11 to 13 Oct. `lairdoor` crashed on CI with *Cannot read properties of undefined (reading 'x')*, reading the door's place after it came out of the cavern. The suite measures the lairs round the start by loading their cells, up to four away, with `WORLD.loadCell`. It then walks into the first lair's cavern by its portal. The world's own cell tick (`tickCells`, every 0.75 s of real time) drops any cell more than one from the player, with its doors, portals and `dungeonWorldPos`. When a tick fell between those two steps, the portal was gone: nobody went in, the suite's wait for the cavern ran out, and the read of the door's place threw. A first guess, that the cell had not reloaded after the cavern, was wrong. A probe showed that in the failing run the player had never left the world. The suite now loads the door's cell again just before it looks for the portal, and if the door is missing it returns that instead of throwing, so the next check names the fault. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`lairdoor` green. With no change to the suite, 1 run in 4 here hit the race: the zone still read *world* where it should have read *dungeon*, and the door's place was gone. With a cell tick forced between measuring and going in, the old suite threw CI's own error and the new one passed.
+### Needs eyes
+Nothing in play. `lod`, `shiplog` and `fortwalk` are left from the list, one red each.
+
+## v80 — Session 812 — `shiplog` reads the dial in a clear sky (CI health, tests only)
+One more of the suites that failed once on CI in 11 to 13 Oct. On CI, `shiplog` read two values exactly 1% short: 5.94 where it wanted 6.0 at hull 45, and 17.58 (*17.6 kn*) where it wanted the cutter's 17.76. The most she can make is her top speed × hull × `(.5 + .5 × rig/100)` (`shipSpeedMul`), so the 1% is a rig worn to 98. The sea wears her (`tickSeaWear`, `86-world-crime.js`): in a storm, under sail, she loses 1 rig every 4 s, and the cutter's 8 s run is 2 rig. The suite never set the weather, so CI's random weather turned to storm partway through. The game is right: a storm wears the rig, as Session 412 meant. The suite now pins a clear sky with no change coming before it sails. `WX.timer` is put out of reach, which also stops the reroll on a change of cell (that one fires only under 330 s). No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`shiplog` green. With a storm pinned in place of the clear sky, the old suite failed four checks, among them CI's own *a cutter under four tiers of sail reaches 17.6 kn* at 17.58, and the hull-45 tick at 5.88.
+### Needs eyes
+Nothing in play. Other ship suites that sail for seconds at a time may lean on the weather the same way. None has failed on CI in this window. `lod` and `fortwalk` are left from the list.
+
+## v80 — Session 813 — `fortwalk` judges the walk on the distance, not on its rounding (CI health, tests only)
+One more of the suites that failed once on CI in 11 to 13 Oct. *Every fort is walked on foot … to the keep door* failed on CI with every fort reached in 7.4 s and none stuck. The first, Cnocowen Keep, read *best 1.6* and the rest 1.59. The walk stops when the distance to the door is under 1.6, but the suite stored that distance rounded to two places and then checked the rounded value against `< 1.6`. A door reached at 1.5996 is stored as 1.6 and fails. In node, `1.5996 < 1.6` is true and `+(1.5996).toFixed(2) < 1.6` is false. How close a walk ends to the line depends on the step the runner's frames give it, so the result was chance. The walk now records `reached` from the raw distance, and the check reads that. The rounded `best` stays in the detail for reading. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`fortwalk` green: every fort walked to its keep door in 7.4 s, its prompt, in and out.
+### Needs eyes
+Nothing in play. Of the list in backlog K, `lod` is left: its distant copy's shadow changed no pixels on one CI run (13 Oct).
+
+## v80 — Session 814 — `lod`'s shadow control reads the mean difference when no pixel crosses the line (CI health, tests only)
+The last of the suites that failed once on CI in 11 to 13 Oct. `lod` photographs one person's shadow four ways: cast by the full mesh, by the distant copy, by another person's distant copy (the control) and not at all. It counts the pixels that change by more than 24. The check wants the shadow to be there (2,090 pixels on CI), the copy to change under a tenth of that (0), and the control to change more than the copy, to show the comparison could see a wrong shadow. On CI the control changed 0 pixels too, so *more than the copy* failed. Its mean difference was still twice the copy's: 0.028 against 0.014, where the same frame drawn twice gives 0. Session 172 met this before: another person's shadow can sit close enough to the subject's that no pixel clears the threshold, and it picked the four most unlike people to make that rarer. When neither changes a pixel past the threshold, the control is now read on the mean difference, which must still be greater than the copy's. The main claim (under a tenth of the shadow's own pixels) is unchanged, and a control that cannot tell the shadows apart on either measure still fails. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`lod` green. Here the control changed 706 pixels, the copy 0 (mean 0.01) and the shadow 1,670. Put through the old and new checks, CI's numbers fail the old and pass the new. A control with the copy's own mean difference still fails the new.
+### Needs eyes
+Nothing in play. With this, the list in backlog K, read from the 27 red CI jobs, is clear. Whatever CI names FLAKY next comes next.
+
 
 ## v80 — Session 804 — A failed suite gets one more try before CI goes red; the logs stop conflicting (tests and settings only)
 Michael asked why the board always holds four to six items blocked for days. The cause is mostly CI. Since 10 Oct there were 87 CI runs: 40 were cancelled by a newer push, 36 passed and 9 failed, and 13 more needed a re-run to pass. Almost every red was one of a handful of suites failing on code that passes elsewhere: `poinames`, `pauseleaf`, `saveui`, `hourhitch`, `dunwarm`, `shuttle`. With about 400 suites in 12 shards, one such failure turns the whole commit red. The producer re-runs once (another 50 minutes), and a second red becomes a "merge anyway?" card for Michael. On top of that, every branch appends to `docs/devlog.md` and `docs/decisions.md`, so each merge into main left the other open PRs conflicting there, and each conflict cost another CI run and another chance of a flake. PRs #261 and #262 hit this twice in a day.
@@ -16362,3 +16469,294 @@ No game code changed, so the build tag stands.
 ### Needs eyes
 - Over the next day of CI, the share of red runs should fall from about a third to the real faults. The FLAKY warnings name the suites the systems builder should fix first; `poinames` is a real bug (a name depends on which towns had loaded).
 - Session numbers: Session 770 is used twice, once by the systems builder's woken householder and once by Michael's people-from-a-genome session. Both stand as history.
+
+## v80 — Session 804 — The human builder: a tool page, saved genomes, and hair that lies on the head (B1, prototype only)
+The look builder's first carry-over item while the foundation's renderer waits: B1 of `docs/design/character-builder.md`, Session 770's `people.js` made into the tool page, with genome save and load, and the women's long hair and braids fixed. Session 770 left the hair as its weakest part ("untidy at the temples"). A fresh render of its line-up showed why: every card was combed by one fixed direction and then fell free, so at the temples and the crown the cards crossed and stood off the head in planks, and the long hair was a tangle over a bald strip.
+
+**The hair, rebuilt (`people.js`, `buildHair`).** Every strand now walks over the head's own surface at a small height of its own (its layer, 3 to 14 mm), found through a 2.5 cm grid of the morphed body's points and normals, and it goes where the style sends it. The styles:
+- *short* and *loose*: from a centre parting, back over the crown and down the sides, never forward over the brow. Loose hair leaves the head at the occiput and falls as a curtain, spread by where its root sits and kept clear of the neck, the tunic and the fur mantle.
+- *braid*, *braids*, *tail*, *bun*: every strand goes to a gathering point on the surface (the nape, behind each ear, the crown), routed back over the top rather than across the temple. The gathered part is built whole. A braid is three locks crossing in the classic figure (a sine across, twice the frequency in depth) along a line that falls under gravity, is pushed off the body by the clothes it wears, then smoothed, with a leather tie and a short brush. A tail is 260 cards in a widening bundle on the same line. A bun is one lock coiled two and a half turns, domed out from the head.
+- The cards lie flat, their width along the strand crossed with the skin's normal under it, which is what makes the temples tidy.
+- Roots grow from a wider region than Session 770's scalp: down to above the ears and to the nape, so a style that lifts the hair does not bare the sides. The hairline at the brow is 1.2 cm lower, and the cap under the cards is darker so it reads as hair.
+- All of it comes from a stream seeded by the genome's seed, never `Math.random`, so one villager's hair is the same for everyone (the co-op rule).
+
+**The saved genome** (`toSaved`, `fromSaved`): `{species, v, seed, people, sliders, race, palette, hair, dress, pose}`, with colours as hex and numbers to three places, about 730 bytes. `rollGenome(seed)` rolls a Markfolk genome from a seed, women's hair drawn from braid, two braids, bun, tail and loose, men's from short, tail and two braids. The four peoples' ranges are B3.
+
+**The page** (`builder.html`, `builder.js`):
+- a seed box and Roll, with a lock on every slider so the rest can be rerolled around it;
+- 6 body and 17 face sliders, skin, hair and eye colours, the hair style, its length and the beard;
+- every garment on or off with its colour, and the skirt;
+- views: full, head, face, side and back, with drag to turn and the wheel to zoom;
+- the genome as live JSON text, with *Save .json*, *Load .json*, *Apply text* and *Copy link* (`?g=` carries the genome in the URL).
+
+`?sheet` puts every hair style on one genome side by side, for the pictures. The 1.8 m post stands beside the person.
+
+`people.html`, the street and the gate pages still build: `markGenome` now draws a hair style, so their people's hair changed with this session.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/builder.check.mjs` (needs the pack from `mh_pack.py`): 60 checks, all pass.
+- **Genomes:** five seeds roll, save, load back to the same genome byte for byte (713 to 741 bytes), and roll again identically. A loaded genome builds the same body and hair twice (a hash of every mesh's positions).
+- **Each of the six styles,** with the mantle and without:
+  - builds: 1,400 to 2,200 strands, 62,000 to 278,000 triangles, 0.3 to 1.9 s;
+  - no strand point under the skin (0 of 20,000 to 124,000);
+  - none lying on the face (0 to 22 points, under the 0.2% the check allows);
+  - braids and tails clear the body by 2.0 to 3.6 cm.
+- **The page:** its 25 sliders work; moving height to 0.95 rebuilds the person and the genome text follows; loading the saved genome brings the person back. No page errors.
+- **Pictures** (`docs/prototypes/levelup/`):
+  - `builder-page.jpg`, the page with its panel;
+  - `builder-styles-back.jpg`, `-front.jpg` and `-mantle.jpg`, the six styles;
+  - `builder-woman-braid.jpg`, `-braids.jpg`, `-face.jpg` and `builder-man-face.jpg`, close-ups;
+  - `people-lineup-804.jpg`, Session 770's line-up with the new hair.
+### Needs eyes
+- **The hair as a whole,** against OG-025 and OG-001's faces. It is tidy now, but the strand texture reads coarse up close, and loose hair over the fur mantle stands off the back like a board, because the curtain has to clear the eleven fur shells.
+- **The braids at the collar,** where they cross the fur: close up, a braid dips into the collar's shells before it comes out over the mantle.
+- **Loose hair's cost:** 278,000 triangles. Crowds will want the level-of-detail meshes the design names.
+- **The faces,** which this session did not touch: the women's still read heavy-browed and old, and the brows are stamped shells. That belongs to B3 (the peoples' ranges) and to close-up work on the face sliders.
+- A question for Michael in `decisions.md`: whether this is the hair to carry forward.
+- Numbering: this entry was first pushed as Session 776, but the systems branch had already reached 803 (and has its own 776), so it was renumbered 804 before merging.
+
+## v80 — Session 805 — The wardrobe's first pieces: the cloak, the hood, the apron, the brooch (B2, prototype only)
+B2 of `character-builder.md` is the wardrobe kit. Its brief waits on Michael's marks for the second round's clothing sheets (OG-109 to OG-111 are still unreviewed), so this first slice takes only what the kept sheets already show:
+- OG-048 and OG-059: the Gatelanders' hooded wool cloaks pinned at the throat with a round brooch, the farm woman's apron and the tradesman's long leather apron;
+- OG-025: the Markmen's fur-lined cloaks on round iron clasps.
+
+**The cloak** (`people.js`, `buildCloak`) is cloth hung from the shoulders, built after the pose on the posed body. The body is skinned on the CPU (three's `getVertexPosition`), so the cloak falls over the arms where they really are, not where the A-pose had them.
+- **The drape:** 34 columns round the base of the neck each start on the shoulder line (the surface point furthest out and a little down from the neck at that angle). Each falls under gravity, using the drape the braids use. It is pushed clear of the body by what the body wears: 4 cm over a tunic, 9.5 cm over the fur mantle.
+- **The sheet:** neighbouring columns are held to a spacing that may widen toward the hem by up to 1.5 times. Folds are rippled in, deepening toward the hem and fading at the front edges, and the grid becomes a double-sided sheet of 4,600 to 9,200 triangles.
+- **The opening and the brooch:** the cloak opens at the throat, where a round brooch with a boss pins it (brass, or iron for the Markmen).
+- **The collar:** a fur collar of six shells may be turned out round it (`cloakFur`). Otherwise the hood lies rolled behind the neck (`hood: 'down'`).
+- **The hood up** (`hood: 'up'`) is a skinned garment, so it follows the head. The head's points are set out onto a smooth shell round the head and hair, which falls to the shoulders, with the face cut open in the shader.
+
+**The apron** is the skirt shell's front with clean shader-cut edges, in wool or leather, with an optional bib off the tights' front.
+
+**Saved and shown:** the genome saves all of it: `cloak`, `cloakFur`, `brooch` and `apron` as colours, and `hood`, `cloakLen`, `bib` and `apronLeather` as flags (770 to 800 bytes). The builder page gains the four garments, a hood selector, bib and leather boxes and a cloak-length slider, and `?dress=` sets garments for the pictures.
+### Verified (headless Chromium)
+`builder.check.mjs`: 74 checks, all pass. The 60 from Session 804 still pass, and:
+- **Four dressed genomes:**
+  - a woman with the cloak, hood down and a bibbed apron;
+  - a man with a short cloak and the hood up;
+  - a man with a long fur-collared cloak over the mantle;
+  - a woman in a leather apron.
+- **Each one:**
+  - saves and loads back byte for byte (772 to 801 bytes);
+  - its cloak hangs clear of the body everywhere (closest 3.6 to 4.1 cm, no vertex within 5 mm);
+  - its brooch sits 12 to 16 cm from the neck joint, at the throat;
+  - the hood and the apron are there when asked for.
+- **Pictures:** `builder-cloak-front.jpg`, `-back.jpg`, `-hood.jpg` and `-markman.jpg`, and `builder-apron-leather.jpg`.
+### Needs eyes
+- **The cloak's shape:** it hangs from the shoulder tips straight down over the arms, so from the front and back it reads as a stiff, boxy plank. The folds are shallow and barely show in dark wool. A real cloak hangs in toward the legs and breaks over the arms; the next pass wants deeper folds and a hem that follows the body in.
+- **The hood up is not right:** with it up, a stepped patch of the man's hair at the crown is drawn as bare skin. Hiding parts in turn shows the hair and its cap are there, and that the body's skin draws over them only while the hood is in the scene. The cause is not found yet; it is owed before the hood-up look is judged.
+- **The leather apron** reads well; its bib's top edge is cut straight across.
+- A DECISION is raised in `decisions.md`: whether this drape-and-shell approach is the wardrobe's method.
+
+## v80 — Session 806 — The four peoples as ranges over one body (B3, first slice, prototype only)
+B3 of `character-builder.md`: the four peoples as slider ranges over the one human body, so that a crowd is a people and a seed. `PEOPLES` in `people.js` takes the canon's peoples table (§2), the kept sheets (OG-048 and OG-059 for the Gatelanders, OG-025 for the Markmen, OG-044 for the Aurennais, OG-066 for the Old Blood) and Michael's 1 B (the heroic hybrid, about 1.80 m, with room for the tall Markmen and the short Old Blood).
+
+**What a people sets:**
+- **Stature in metres.** MakeHuman's height slider is not metres: the first line-up put a Markish man at 2.25 m. So a people gives a range of statures, and `heightFor` turns the stature into the slider by measuring the morphed body, crown to sole, in nine halvings.
+  - Gatelanders: men 1.72 to 1.84 m, women 1.60 to 1.72 m.
+  - Markmen: men 1.84 to 1.98 m, women 1.72 to 1.84 m.
+  - Aurennais: men 1.74 to 1.86 m, women 1.62 to 1.74 m.
+  - The Old Blood: men 1.56 to 1.66 m, women 1.46 to 1.56 m.
+- **The body:** muscle and weight ranges (the Gatelanders wiry, the Markmen broad, the Aurennais lean, the Old Blood slight), and the mix of MakeHuman's three ethnic targets (the Aurennais mixed).
+- **Colour:** palettes of skin, hair and eyes. The Gatelanders are fair to ruddy with red or dark hair; the Markmen pale, ash-blond and grey-eyed; the Aurennais olive through deep brown, dark-haired and brown-eyed; the Old Blood grey-pale, black-haired, with pale cold eyes.
+- **Hair:** the weights of the hair styles, by sex.
+- **Dress:**
+  - Gatelanders: madder, moss, ochre, sea blue and undyed; hooded cloaks with a brass brooch for two in three, and aprons.
+  - Markmen: the fur mantle and fur-collared cloaks on iron.
+  - Aurennais: linen, blue and saffron.
+  - The Old Blood: slate, oxblood, dusk violet and bone.
+
+`peopleGenome` starts from Session 770's Markish roll (for the face and the pose) and lays the people over it. `rollGenome(seed, {people})` uses it, the builder page has a people selector beside Roll, and `?peoples` stands three of each in a line.
+
+Not in this slice, all owing a skin texture or a new piece: the Old Blood's marks (pale raised lines under the skin, Michael's 2 B), the Gatelanders' freckles, Aurennais curls, head-wraps and sashes, and the named cast's genomes.
+### Verified (headless Chromium)
+`builder.check.mjs`: 80 checks, all pass.
+- **Twelve of each people,** rolled from seeds of people and index, stand inside their range, save and load back byte for byte, and are at most 842 bytes. Mean statures:
+  - Gatelanders: men 1.76 m, women 1.67 m;
+  - Markmen: 1.92 m and 1.79 m;
+  - Aurennais: 1.80 m and 1.70 m;
+  - the Old Blood: 1.60 m and 1.52 m.
+- **The order:** the Old Blood are shortest and the Markmen tallest, and the four together average 1.72 m.
+- **Measuring:** these are unposed. Standing in the pose, the bounding box of the body reads 4 to 6 cm more.
+- **Picture:** `builder-peoples.jpg`, three of each.
+### Needs eyes
+- **Whether each people reads as itself at a glance,** against its sheet:
+  - the Old Blood need their marks;
+  - the Aurennais need their own dress, not the Gatelander tunic in linen colours.
+- **The faces** are still Session 770's Markish face sliders for every people. Face ranges per people come next, with the cast.
+- A DECISION is raised in `decisions.md` on the heights and palettes.
+
+## v80 — Session 815 — One builder for people and creatures: one genome format (B5, prototype only)
+The next creature-kit item in `character-builder.md` (B5): "the kit on the builder's page with the people (one tool, one genome format)". B1 to B3 each wait on a decision of Michael's (the hair, the wardrobe's method, the peoples' heights and palettes), and this item depends on none of them. Until now the two kits saved differently. A person's genome was already an envelope, `{species: 'human', v: 1, …}` (Session 804). A creature's was the bare `{plan, seed, sliders, tint, light}` the bestiary page printed, with no loader and no check on what it read.
+
+**The format** (`creatures.js`, `toSaved`/`fromSaved`):
+- A creature saves as `{species: 'creature', v: 1, plan, seed, sliders, tint, light}`, with numbers to three places; 174 to 185 bytes for the 23 plans.
+- Loading rebuilds the genome from its plan and seed, then lays the saved values over it.
+- A hand-edited genome is held to the sliders' ranges, a slider the kit does not know is dropped, and an unknown plan or a later version is refused with its reason.
+
+**One loader** (`kit.js`, new): `readGenome(json)` gives `{species, G}` for either kind and refuses anything else; `saveGenome(species, G)` writes it back; `make(json)` builds it, fetching the people's pack (`mh_pack.py`) the first time a person is asked for and never for a creature. This is the file the game's loader becomes; it holds nothing of the page.
+
+**One page** (`builder.html`, `builder.js`):
+- The panel opens on a *kind*: a person, or any of the 23 body plans.
+- **A creature's panel:** its source sheet, the seed and Roll, the gaits as buttons, the kit's six sliders with locks (Roll keeps a locked slider, as for a person), and the hue and lightness shift.
+- **The views:** a creature has side, front, back and top. The camera is fitted to what each view sees, its length or its span, so a dragon from the front fills the frame. With the panel open, the view's centre moves into the open part of the screen.
+- **On screen:** the creature walks on the spot in its gait. The 1.8 m post stands behind its tail. A swimmer gets the bestiary's water.
+- **Genomes:** the genome text, *Save .json*, *Load .json*, *Apply text* and *Copy link* take either kind, and loading the other kind switches the page to it. `?plan=<plan>&gait=<g>` opens a creature, and `?g=` opens a genome of either kind.
+- **No pack for creatures:** a page opened on a creature does not fetch the pack, so the creature half works without `mh_pack.py`.
+- **The person's side:** nothing changes, except that the floor is 60 m across (it was 12) so the larger creatures stand on it.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/kit.check.mjs`: 44 checks, all pass, no page errors.
+- **The format:** all 23 plans save, load back byte for byte, roll the same genome again from their key, and build the same body from the loaded genome (a hash of every mesh's positions).
+- **Refusals:** `readGenome` refuses no species, an unknown species, an unknown plan, version 2 and broken JSON. A size of 40 and a leg of -3 come back as 3 and 0.6, and an unknown slider is dropped.
+- **The page on a creature:** opened on the Shatterhorn, it fetched nothing under `mh/`.
+  - The size slider at 1.6 moved the genome, its text and the rig's scale (0.956 to 1.6).
+  - Roll with size locked took a new seed and kept 1.6.
+  - *stand* set the gait, and the kind selector changed the plan.
+  - *Apply text* loaded a Tidecrab exactly; a genome of species "dragonfly" was refused and the Tidecrab kept.
+  - *Copy link* put the genome in the address, and the link opened the same Tidecrab in a new page.
+- **One tool** (with the pack): a wolf page turned into the human builder (its face sliders, a person, no creature left). *Apply text* took a Gatelander's genome exactly; loading a bear's genome switched to the bear, and the Gatelander's switched back.
+- **Nothing else regressed:** `builder.check.mjs` (80) and `creatures.check.mjs` (all 23 plans) still pass.
+- **Pictures:** `builder-creature-page.jpg` (the page on the Shatterhorn), `builder-creature-dragon.jpg` (front), `builder-creature-octopus.jpg`.
+### Needs eyes
+- **The page by hand** on Michael's machine: dragging to turn, the wheel, and a creature walking on the spot while sliders move (each change rebuilds it; the Shatterhorn takes about 0.4 s, the fur plans more).
+- **The lighting** is the human builder's studio light, dark-backed: the dragon and the dark-furred plans read dim against it. The bestiary's daylight page is still the place to judge a creature's colour.
+- **The format's open question:** `v: 1` for both kinds, and no version history yet. A later change to a plan's parts changes the body a saved creature genome builds, as for a person. Whether a genome should name its kit version is the game loader's question (B6 and card F4), not settled here.
+- No decision raised: this is tooling over decisions already made (Michael's "yes" to the creature kit and to the builder, 12 Oct).
+
+## v80 — Session 816 — Aurenne's houses as pieces in the new kit (card F6, prototype only)
+The routine's carry-over order ends with "the building pieces for card F6 in the new kit, lifting the concept artist's approved prototypes". The one approved building prototype is Aurenne's houses. The concept artist drew them on the old shape kit (`docs/prototypes/aurenne/proposal.js`, three.js r128), and Michael chose B on DECISION #259 (12 Oct): "the mix, two in three flat, one in three Roman". This session lifts them into the new kit (`docs/prototypes/levelup/`, three.js 0.170), as the first entry in a pieces module for F6.
+
+**`pieces.js`** (new): `aurenneHouse(o, r)` builds a house from its options and a seeded stream.
+- **Kept from the proposal:**
+  - walls extruded from an outline with real arched (or pointed) openings and a dark room behind each;
+  - the door: five cedar boards in its colour under a half-round head, iron studs, a stone step, and the glazed tile frame round it;
+  - deep small windows with stone sills and iron bars, or a cedar lattice screen on brackets upstairs;
+  - for a flat house: the slab, the parapet with a rounded top, rainwater spouts, pots, the dome (a drum, blue glaze or limewash, a gilt finial), the pergola with its striped awning, and the outside stair;
+  - for a Roman house: the cornice, the 22° hipped roof, hip and ridge tiles, rafter ends under the eaves, and the arcade of round arches on lathed columns with a pantile lean-to;
+  - a cypress in a pot, or a bougainvillea.
+- **What changes is the surface.** The kit's plaster, ashlar and wood textures are joined by four new relief textures: pantile (half-round tiles laid hollow and round, each course lapping the one below), zellige (blue and white squares with saffron stars), a dome's blue glaze, and the awning's canvas. A Roman roof is four planes, not the proposal's hundreds of tile cylinders, and the tile frame is three strips, not fifty boxes.
+- **One mesh per material:** every piece is placed, given UVs from where it lies (`worldUV`), and merged by material.
+- **The mix:** `aurenneLot(street, i)` gives a lot its options. In every run of three lots exactly one is Roman, and which one comes from the street's seed, so a street of any length keeps the two-in-three. The rest (size, storeys, dome, stair, pergola, lattice, colours) comes from a stream keyed by the street and the lot (the co-op rule).
+- **The bougainvillea is redrawn:** the proposal's nine balls read as beach balls at eye height. It is now a woody stem with 120 small leaves and blooms, thinning toward its top and kept within the wall.
+
+**`aurenne.html`**: twelve lots down a limestone lane at eye height under a high southern sun, with four Aurennais townsfolk (Session 806's people) for scale when the pack is there. `?view=houses` stands each kind front-on beside the 1.8 m post.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/aurenne.check.mjs`: 11 checks, all pass, no page errors.
+- **The mix:** on 40 streets of 30 lots, every run of three has exactly one Roman house (400 of 1,200).
+- **Determinism:** 300 houses each built twice from their street and index are the same, byte for byte.
+- **Cost by kind** (300 houses), all within the 12,000-triangle and 16-mesh budget:
+
+| Kind | Houses | Triangles (mean) | Meshes |
+|---|---|---|---|
+| Flat, one storey | 97 | 2,008 to 6,374 (3,729) | 10 to 14 |
+| Flat, two storeys | 109 | 3,104 to 8,454 (5,453) | 10 to 14 |
+| Flat with a dome | 43 | 3,590 to 8,454 (6,080) | 11 to 14 |
+| Roman | 38 | 1,770 to 3,674 (2,473) | 12 |
+| Roman with an arcade | 56 | 3,664 to 5,696 (4,680) | 12 |
+
+- **On the lot:** no house reaches below the ground, and every house keeps to its lot. Three things stand outside it: a flat house's outside stair, a Roman house's arcade, and its eaves (0.45 m).
+- **Heights:** one storey 4.5 to 6.9 m and two storeys 7.0 to 9.6 m, to the top of anything on the house. The top it reports is that top.
+- **On the way:** the first lot check found the bougainvillea's spray 0.6 m past the wall, a Roman cypress 1.07 m out from it, and the reported roof top missing the parapet's bushes. All three are fixed above.
+- **Pictures:** `aurenne-street.jpg` (the lane at eye height, kinds FFR RFF FRF FFR) and `aurenne-houses.jpg` (the six kinds and the post).
+### Needs eyes
+- **The new kit's surfaces** against the proposal's flat colours, and against OG-061 and OG-043:
+  - the plaster reads clean and bright, but the walls are flat sheets with no weathering at the foot or under the spouts;
+  - the limestone paving is the kit's dark flag lifted past 1 and still reads grey; a pale limestone of its own is owed.
+- **The bougainvillea and the bushes** are faceted icosahedra: fine at the lane's distance, crude at a doorway. The slice's leaf-card trees (`treeKit`) are the better route, owed.
+- **Not built:** Aurenne's temples and civic buildings, the courtyard house OG-061 shows, and the other two islands' houses as pieces (the Gatelands house is in `street.js`, not yet in `pieces.js`). All are noted in backlog K.
+- No decision raised: the design is Michael's B on #259, and this is that design in the approved new kit.
+
+## v80 — Session 817 — Barrels step out of the walls they were placed in (the critic's s597)
+The critic found Droichead's crate 2 inside the church's footprint and barrel 3 inside the inn's (s597). Session 753 had noted the same fault in Portclare's crate 0, in the chapel's corner. It was left then on purpose: these are the first half of a town's barrels, drawn on the town's own stream. Session 753 had the second half keep out of the town's own buildings by redrawing (`ownHit`). Doing the same for the first half would change how many draws the loop takes, and with them every draw after it (the villagers, their names, the guards).
+
+**The fix** (`83-world-generator.js`, the barrels in `genSettlement`):
+- A first-half spot that lands in the town's own solids now steps out to the nearest clear spot. The search is a fixed ring of offsets, 12 directions at 0.3 m steps out to 2.4 m, and a spot is clear when it is outside the town's solids, the world's and other towns'. It draws nothing from the stream.
+- If no spot on the ring is clear, the barrel stays where it was drawn, as before.
+- A barrel's id is its index (`<site>:barrel:<n>`), so its loot roll and anything saved against it are unchanged.
+
+**What moved:**
+- Droichead's 2 and 3 (0.6 m) and Portclare's 0 (0.6 m).
+- Barrels standing within 0.4 m of a wall, the margin the second half already keeps: one at Droichead (0.6 m) and three at Cœur de Vie (0.3 m each).
+- Dunmore and Carraig Mór are unchanged.
+### Verified (headless Chromium)
+`tests/townbarrels` now covers five towns: Dunmore, Carraig Mór, Cœur de Vie, Portclare and Droichead (new). It passes.
+- **No barrel inside a building**, of either half. The old check allowed the first half; on HEAD's code a probe found 2 inside at Droichead and 1 at Portclare.
+- **Spacing:** none within 0.9 m of another.
+- **The people are unchanged.** Each town's people, in order, as names and roles, hash the same as HEAD's code (taken from an unpacked copy run with `--src`). Their full lists, with places to the centimetre, were diffed before and after: identical in all five towns.
+- **Ids and keys:** `containerids` and `lootseed` pass.
+- **A correction to my own first try:** a hash of the people's places to the millimetre differed for Portclare between two runs of the same code. The townsfolk walk between the build and the read, so the test hashes names and roles only.
+### Needs eyes
+- Droichead's churchyard and inn corner, and Portclare's chapel. A barrel now stands against the wall, not in it.
+- The barrels' spots by the inn's yard, the smithy and the market (Session 753's "owed") remain open.
+
+## v80 — Session 818 — The Gatelands house joins the pieces (card F6, prototype only)
+The second of F6's pieces. The lane slice's house (`street.js`, Session 769; Michael approved the slices on 12 Oct) was a function inside the lane's page. It drew from the page's global stream and added up to 116 meshes to the scene. It now lives in `pieces.js` as `gatelandsHouse(o, r)`, beside Aurenne's.
+
+**How it moved:**
+- The body is unchanged and its draws come in the same order from the stream it is handed. The lane hands it its own `rnd`, so every draw after the houses (the props, the flowers, the people) is as it was.
+- The house returns its window boxes' and pots' flower spots in its own frame. The lane still instances the flowers for the whole street.
+- **`mergeByMaterial(g)`** (new, in `pieces.js`) bakes every mesh of a group into the group's frame and merges them by material, keeping each material's shadow flag. This turns 21 to 116 meshes a house into 9 to 11. It works on any group, so later pieces and the old slices can use it.
+
+**What it does not do yet:** the Gatelands house takes no lot rule of its own the way `aurenneLot` gives Aurenne the mix. The lane's own roll stands in for one until the Gatelands' town plan is a piece of its own.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/pieces.check.mjs`: 6 checks, all pass.
+- **200 houses rolled as the lane rolls them:** merged, each has the same triangles as unmerged (636 to 1,964, mean 1,103) and the same bounds (the largest difference is 0).
+- **Meshes:** 9 to 11 merged (mean 10), against 21 to 116 (mean 56) unmerged.
+- **Determinism:** the same key builds the same house and the same flowers.
+- **The lane renders as before.** Its picture from the working `street.js` was compared in the browser with one from HEAD's. 9 of 2,073,600 pixels differ by more than 24 (mean difference 0.006). Two shots of HEAD's own lane differ by 0 such pixels, so the 9 are the merge (shadow edges at a seam). That comparison runs only while `street.js` differs from HEAD, and says so when skipped.
+- **Nothing else regressed:** `aurenne.check.mjs` still passes.
+### Needs eyes
+- Nothing new to judge in the look: the lane is the same picture.
+- The Markish longhall, the third island's house, is the next piece. It wants its own prototype and a DECISION before it is built (OG-025 shows the longhall only inside).
+
+## v80 — Session 819 — The Mark's hall, shingle and turf: a prototype for DECISION #277 (card F6, prototype only)
+The third island's house for F6's pieces. Aurenne's is Michael's B on #259 (Session 816), and the Gatelands house is the approved lane slice (Session 818). The Mark had no approved look. OG-034, the kept Mark board, draws timber halls on stone footings with steep dark shingle and carved gables. Today's game (`STYLE.mark`) mixes shingle and turf roofs, and the turf comes from OG-033, the board that was not kept. So the roof is Michael's call, and this session builds the hall both ways and asks.
+
+**`markHall(o, r)`** (`pieces.js`):
+- **The base:** a footing of rough stone 0.8 m high, and walls of vertical boards in four stains.
+- **The ends:** gable ends rising to the roof's pitch, with a round-headed plank door and iron straps on the front gable and a lit window above it. Corner posts, sill and wall plate are in dark beams.
+- **The sides:** small shuttered windows along each side, some lit.
+- **The roof:** two slabs.
+  - Shingle: 52°, with a new shingle texture of rounded butts in staggered, weathered courses, and a ridge beam.
+  - Turf: 32°, with a new sod texture over a birch-bark edge, and a log holding the turf at the eaves.
+- **The carving:** crossed bargeboards along both verges, running 0.75 m past the ridge into curled beast heads. A shingle hall always has them; a turf hall has them only if asked.
+- **Extras:** a porch of two posts under its own little roof, and a stone chimney or a smoke louver on the ridge.
+- **Cost:** merged by material (Session 818's `mergeByMaterial`), each hall is 820 to 1,690 triangles and 9 or 10 meshes.
+
+**`mark.html`:** the four halls beside the post, under a low northern sun. `?view=lane&mix=shingle|turf|mix` builds a short lane with the gables to the street. In the mix, one lot in every three is turf, by seed, as Aurenne's.
+
+**The first render was wrong** and is fixed above:
+- the bargeboards stood up like windmill sails;
+- the dark box behind the gable door rose through the roof;
+- the boards were near-black.
+### Verified (headless Chromium)
+- **Renders with no page errors:** `mark-halls.jpg`, `mark-lane-shingle.jpg`, `mark-lane-turf.jpg`, `mark-lane-mix.jpg`, all at 1920×1080 with two Markmen (Session 806's people) for scale.
+- **Sizes and cost:** the shingle halls stand 9.1 to 14.2 m to the beast heads, the turf halls 5.7 to 7.9 m. Each is 9 or 10 meshes.
+- **No check suite yet:** this is a picture for a decision. The lot rules and their checks follow the answer, as `aurenne.check.mjs` did.
+### Needs eyes
+- **DECISION #277:** shingle (A), turf (B) or the mix (C, recommended).
+- **The turf's texture** reads as green felt with brown patches. A real sod roof wants a ragged edge and tufts at the eaves, which are cards, owed if B or C.
+- **The halls are long and plain on their sides.** OG-034's halls have carved door frames, painted bands and a clan banner, all owed after the answer.
+- **The footing's stone** is the kit's coursed block, too regular for the Mark's rough stone.
+
+## v80 — Session 820 — Aurenne's limestone, and the bushes rounded (card F6, prototype only)
+Two of Session 816's "needs eyes", on the design Michael chose (B on #259).
+- **The paving.** The street's paving was the kit's dark flag, lifted past 1 by its colour, so it still read grey. Aurenne now has a limestone of its own (`TEX.limestone` in `pieces.js`):
+  - pale slabs in courses of two widths, with edges worn round;
+  - ochre and grey stains;
+  - joints filled with pale dust rather than cut black.
+- **The bushes.** The pots' bushes on the parapets are rounder (an icosahedron of detail 2: 320 triangles, two a house). The bougainvillea's blooms tried the same at detail 1. That put a domed house at 15,854 triangles against the 12,000 budget `aurenne.check.mjs` holds, and the check caught it. The blooms went back to detail 0, at 20 triangles each.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`:** 11 checks, all pass. Per house, against Session 816:
+
+| Kind | Triangles (mean) | Change |
+|---|---|---|
+| Flat, one storey | 2,208 to 6,574 (3,929) | +200 |
+| Flat, two storeys | 3,304 to 8,654 (5,653) | +200 |
+| Flat with a dome | 3,790 to 8,654 (6,280) | +200 |
+| Roman, with or without an arcade | unchanged | none |
+
+- **Pictures:** `aurenne-street.jpg` and `aurenne-houses.jpg` were shot again. The lane reads as pale stone in the sun.
+### Needs eyes
+- **The bougainvillea** is still a scatter of faceted blooms; leaf cards (the slice's `treeKit`) are the right tool, still owed.
+- **A note on routing:** Session 817's barrels were filed in section I, the systems builder's, though the critic named the look builder's barrel item (H). The systems branch had not touched them (it took the other two s597 findings, Sessions 798 and 799), so there is no overlap. Said here so the producer can route the next one.

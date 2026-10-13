@@ -1073,6 +1073,10 @@ function fortCotNear(){
   if(currentFloor===1){const de=Math.hypot(px-dEntranceX,pz-dEntranceZ);if(de<1.4&&de<=Math.hypot(px-bd.x,pz-bd.z))return null;}
   return bd;
 }
+// S798 — the room's keeper or resident answers E wherever the prompt says so (within 3.2 with the crosshair on them, 90-main.js's
+// nearKeeper), and within 2.2 as before without aiming. E reached only 2.2, so from 2.2 to 3.2 the prompt promised what E did not.
+function keeperAimed(){return !!(intNPCMesh&&Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2&&Math.abs(jumpY)<1.2&&aimAt({g:intNPCMesh},3.6));}
+function keeperInReach(){return !!(intNPCMesh&&Math.abs(jumpY)<1.2&&(Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<2.2||keeperAimed()));}
 function interact(){
   if(lid==='overworld'){
     // Zone gates — highest priority after portals
@@ -1147,6 +1151,9 @@ function interact(){
         }
       }
     }
+    if(typeof ringCairnNear==='function'&&ringCairnNear()){ringCairnUse();return;} /* S800 — the Noon Ring's cairn */
+    if(typeof bellWreckNear==='function'&&bellWreckNear()){bellWreckUse();return;} /* S801 — the Drowned Bell's wreck */
+    if(typeof bladeStoneNear==='function'&&bladeStoneNear()){bladeStoneUse();return;} /* S802 — the Gate-Blade's stone */
     if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipInteract())return; // v80 C — the helm
     // v80 S9 — camp bedrolls in the open world
     if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<1.5);if(bd){openSleepUI();return;}}
@@ -1283,7 +1290,7 @@ function interact(){
       return;
     }
     // Shopkeeper — open dialog first
-    if(intNPCMesh && Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<2.2 && Math.abs(jumpY)<1.2){ // v80 S13 — same floor only
+    if(keeperInReach()){ // v80 S13 — same floor only; S798 — wherever the prompt shows, too
       if(typeof sleeperAsleep==='function'&&sleeperAsleep())wakeSleeper(intNPCMesh,true); /* S739 — E wakes a sleeper, who then talks */
       dlgWokenLine=(typeof wokenGreetNow==='function')?wokenGreetNow():null; /* S770 — woken in the night, she says so first (#255) */
       const keeper=currentHouse?currentHouse.keeper:'';
@@ -1302,6 +1309,7 @@ function interact(){
     }
     return;
   }
+  if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   // Sigil touch — floor 2 only, closer range than most interactables
   const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<1.5);
   if(nearSig){touchSigil(nearSig);return;}

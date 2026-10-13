@@ -4,6 +4,73 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Mark's houses in the new kit: shingle, turf, or the mix? (look builder, Session 819) — DECISION #277
+The third island's house in the new kit (card F6, the pieces). Aurenne's is your B on #259 (Session 816) and the Gatelands house is the approved lane slice (Session 818). The Mark has no approved prototype yet.
+
+OG-034 (kept) draws the Mark's towns as timber halls on stone footings, with steep snow-shedding roofs of dark shingle and carved gables. Its crossed bargeboards end in beast heads. OG-033 (not kept) and today's game also roof them in turf. The prototype builds one hall both ways: the gable end to the street, a porch on some, a stone chimney or a smoke louver, small shuttered windows. Each hall is about 800 to 1,700 triangles and 9 or 10 meshes. Code: `markHall` in `docs/prototypes/levelup/pieces.js`; page: `mark.html`.
+
+Pictures:
+- [the halls: shingle, shingle, turf (carved), turf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-halls.jpg)
+- [a lane, all shingle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-shingle.jpg)
+- [a lane, all turf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-turf.jpg)
+- [a lane, the mix](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-mix.jpg)
+
+Which roof should the Mark's houses have?
+- **A. Shingle** (OG-034): every hall steep and dark-shingled, with the carved gables. It is the kept sheet's look and sheds snow, and it reads as the Mark at a distance.
+- **B. Turf:** a lower pitch, a sod roof over a birch-bark edge, carving on the larger halls only. It is homelier and greener, and it is the rejected OG-033's look.
+- **C. The mix** *(recommended)*: two in three shingle, one in three turf, by lot, as Aurenne's mix. The turf goes on the poorer and the outlying houses, and the halls of note keep the shingle and the carving. Today's game already mixes the two (`STYLE.mark`), and a street of one roof reads as a set.
+
+Recommendation: **C**, with A as a fair second. The Mark's towns in OG-034 are the shingle halls, and the turf roofs give a poorer house a look of its own without a new kit.
+
+Not in this question: snow on the roofs (the weather's `WX.cover` will lay it), the longhall interior (OG-025), and the Mark's stone garrisons and cliff walkways (backlog L).
+
+### The four peoples' heights and palettes (look builder, Session 806)
+B3's first slice: each people is a range over the one body, rolled by seed. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-peoples.jpg (three each: Gatelanders, Markmen, Aurennais, the Old Blood).
+
+The statures are in metres:
+- Gatelanders: men 1.72 to 1.84 m, women 1.60 to 1.72 m.
+- Markmen: men 1.84 to 1.98 m, women 1.72 to 1.84 m.
+- Aurennais: men 1.74 to 1.86 m, women 1.62 to 1.74 m.
+- The Old Blood: men 1.56 to 1.66 m, women 1.46 to 1.56 m.
+
+Together they average 1.72 m. The colours follow canon §2 and the kept sheets; `PEOPLES` in `docs/prototypes/levelup/people.js` has every value.
+
+Should the ranges and colours stand?
+- **A (recommended):** keep these ranges and palettes, and go on to the faces per people, the Old Blood's marks and the Aurennais dress.
+- **B:** keep the palettes but push the heights apart (Markmen near 2 m, Old Blood near 1.5 m) so the peoples read at a distance.
+- **C:** pull the heights together (every people within 8 cm of 1.80 m) and let dress and colour carry the difference.
+
+### The wardrobe's first pieces: is a draped cloak and a shell hood the method? (look builder, Session 805)
+B2's first slice, from the kept sheets only (OG-048, OG-059, OG-025; the second round's clothing sheets OG-109 to OG-111 still wait for your marks). The pieces:
+- **The cloak:** cloth hung from the shoulders of the posed body. Columns fall under gravity, clear of what the person wears, and are held together as one sheet with folds.
+- **The rest:** a round brooch at the throat, a fur collar or the hood rolled behind the neck, a hood up as a shell over the head, and the apron, in wool or leather, with or without a bib.
+
+Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-front.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-back.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-markman.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-apron-leather.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-hood.jpg (the hood up has a known fault at the crown)
+
+The cloak is still stiff and boxy. Which way should the wardrobe go?
+- **A (recommended):** keep building garments this way: drapes for what hangs (cloaks, capes, the long skirts), and shells off the body's fitting shells for what fits (hoods, aprons, tabards, gambesons). The next passes give the cloak deeper folds and a hem that comes in to the legs, then do capes, hoods and the Crown tabard.
+- **B:** the same, but the cloak as a real cloth simulation run once at build time (a few hundred steps of a mass-spring sheet over the posed body). Better folds, about a second more per person to build, and more code.
+- **C:** garments modelled by hand or from CC0 sources and fitted to the body by its skin weights. Best up close, but every garment is a modelling job.
+
+### The builder's hair: groomed strands and modelled braids? (look builder, Session 804)
+B1 rebuilt the people's hair. Session 770's cards were combed one way and fell free, and crossed at the temples. Now every strand walks over the head's own surface at its own small height, toward where its style sends it. Six styles are built: short, loose, one braid, two braids, a tail and a bun. Braids, tails and buns are modelled as locks on a line that falls under gravity and clears the clothes. It is all seeded by the genome, and the checks show no strand under the skin or on the face. Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-back.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-front.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-mantle.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-woman-braid.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-man-face.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-page.jpg
+
+Is this the hair to carry into the cast (B3) and the game (B6)?
+- **A (recommended):** yes, keep groomed strands and modelled locks, and refine them as the cast is built: a finer strand texture, more styles from OG-025 and OG-001 (crown braids, a plait over the shoulder, a shaved side), and lighter loose hair for crowds. It fits every body the genome makes, costs nothing to make a new style, and stays testable.
+- **B:** keep the method for braids, tails and buns, but make short and loose hair as a few sculpted shells with a painted strand texture (the usual game hair cap). It is cheaper and smoother at a distance, and flatter up close.
+- **C:** model a small set of hair meshes by hand or from CC0 sources, fitted to the head per style. It looks best in close-ups, but every new style is a modelling job and has to be refitted to the face sliders.
+
 ## Answered
 
 ### The four peoples' heights and palettes (look builder, Session 806) — DECISION #276
@@ -123,7 +190,7 @@ Asked to expand his idea of a skeleton for every creature type, akin to MakeHuma
 Sessions 773 to 775 built thirteen more (23 in all). Asked whether the next sessions were planned, Claude found the plan written but nothing queued (no Fable card, no roadmap epic) and the look builder still building in the old style. It recommended two things: queue the foundation as cards, and move the look builder to work that carries over until the renderer lands. Michael: **"Go with both of your recs for the two calls you posed to me."** (12 Oct 2026, in chat.) Done: the cards in `visual-foundation.md` §4 (F1 to F7, for the producer to put on the control room); backlog H paused for old-style look work; the look builder's routine prompt changed to take B1 to B3 first.
 
 
-### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 777, 2026-10-13) — DECISION #263
+### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 805, 2026-10-13) — DECISION #263
 You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the frame and the Wolf-Mother's Cloak's rule: worn, wolves, bears and spiders leave you alone unless you strike first, and its lair's town loses 0.6 a day while the beast lives. Two things now stop the next sessions.
 
 1. **The words.** Every line a tool needs (its trial's prompts, the failing lines, the hermit who points the way, the altars, the claimants) is written in the quest writer's draft *The Makers' Things*, both runs, in `docs/quest_drafts.md`. The draft is marked unapproved. It also renames the page's *Sundial Ring* to *the Noon Ring*.
