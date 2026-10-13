@@ -16456,3 +16456,40 @@ Not in this slice, all owing a skin texture or a new piece: the Old Blood's mark
   - the Aurennais need their own dress, not the Gatelander tunic in linen colours.
 - **The faces** are still Session 770's Markish face sliders for every people. Face ranges per people come next, with the cast.
 - A DECISION is raised in `decisions.md` on the heights and palettes.
+
+## v80 — Session 815 — One builder for people and creatures: one genome format (B5, prototype only)
+The next creature-kit item in `character-builder.md` (B5): "the kit on the builder's page with the people (one tool, one genome format)". B1 to B3 each wait on a decision of Michael's (the hair, the wardrobe's method, the peoples' heights and palettes), and this item depends on none of them. Until now the two kits saved differently. A person's genome was already an envelope, `{species: 'human', v: 1, …}` (Session 804). A creature's was the bare `{plan, seed, sliders, tint, light}` the bestiary page printed, with no loader and no check on what it read.
+
+**The format** (`creatures.js`, `toSaved`/`fromSaved`):
+- A creature saves as `{species: 'creature', v: 1, plan, seed, sliders, tint, light}`, with numbers to three places; 174 to 185 bytes for the 23 plans.
+- Loading rebuilds the genome from its plan and seed, then lays the saved values over it.
+- A hand-edited genome is held to the sliders' ranges, a slider the kit does not know is dropped, and an unknown plan or a later version is refused with its reason.
+
+**One loader** (`kit.js`, new): `readGenome(json)` gives `{species, G}` for either kind and refuses anything else; `saveGenome(species, G)` writes it back; `make(json)` builds it, fetching the people's pack (`mh_pack.py`) the first time a person is asked for and never for a creature. This is the file the game's loader becomes; it holds nothing of the page.
+
+**One page** (`builder.html`, `builder.js`):
+- The panel opens on a *kind*: a person, or any of the 23 body plans.
+- **A creature's panel:** its source sheet, the seed and Roll, the gaits as buttons, the kit's six sliders with locks (Roll keeps a locked slider, as for a person), and the hue and lightness shift.
+- **The views:** a creature has side, front, back and top. The camera is fitted to what each view sees, its length or its span, so a dragon from the front fills the frame. With the panel open, the view's centre moves into the open part of the screen.
+- **On screen:** the creature walks on the spot in its gait. The 1.8 m post stands behind its tail. A swimmer gets the bestiary's water.
+- **Genomes:** the genome text, *Save .json*, *Load .json*, *Apply text* and *Copy link* take either kind, and loading the other kind switches the page to it. `?plan=<plan>&gait=<g>` opens a creature, and `?g=` opens a genome of either kind.
+- **No pack for creatures:** a page opened on a creature does not fetch the pack, so the creature half works without `mh_pack.py`.
+- **The person's side:** nothing changes, except that the floor is 60 m across (it was 12) so the larger creatures stand on it.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/kit.check.mjs`: 44 checks, all pass, no page errors.
+- **The format:** all 23 plans save, load back byte for byte, roll the same genome again from their key, and build the same body from the loaded genome (a hash of every mesh's positions).
+- **Refusals:** `readGenome` refuses no species, an unknown species, an unknown plan, version 2 and broken JSON. A size of 40 and a leg of -3 come back as 3 and 0.6, and an unknown slider is dropped.
+- **The page on a creature:** opened on the Shatterhorn, it fetched nothing under `mh/`.
+  - The size slider at 1.6 moved the genome, its text and the rig's scale (0.956 to 1.6).
+  - Roll with size locked took a new seed and kept 1.6.
+  - *stand* set the gait, and the kind selector changed the plan.
+  - *Apply text* loaded a Tidecrab exactly; a genome of species "dragonfly" was refused and the Tidecrab kept.
+  - *Copy link* put the genome in the address, and the link opened the same Tidecrab in a new page.
+- **One tool** (with the pack): a wolf page turned into the human builder (its face sliders, a person, no creature left). *Apply text* took a Gatelander's genome exactly; loading a bear's genome switched to the bear, and the Gatelander's switched back.
+- **Nothing else regressed:** `builder.check.mjs` (80) and `creatures.check.mjs` (all 23 plans) still pass.
+- **Pictures:** `builder-creature-page.jpg` (the page on the Shatterhorn), `builder-creature-dragon.jpg` (front), `builder-creature-octopus.jpg`.
+### Needs eyes
+- **The page by hand** on Michael's machine: dragging to turn, the wheel, and a creature walking on the spot while sliders move (each change rebuilds it; the Shatterhorn takes about 0.4 s, the fur plans more).
+- **The lighting** is the human builder's studio light, dark-backed: the dragon and the dark-furred plans read dim against it. The bestiary's daylight page is still the place to judge a creature's colour.
+- **The format's open question:** `v: 1` for both kinds, and no version history yet. A later change to a plan's parts changes the body a saved creature genome builds, as for a person. Whether a genome should name its kit version is the game loader's question (B6 and card F4), not settled here.
+- No decision raised: this is tooling over decisions already made (Michael's "yes" to the creature kit and to the builder, 12 Oct).
