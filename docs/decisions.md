@@ -4,24 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The Gatelands' buildings as pieces (card F6): coloured, white or stone towns? (the concept artist, 2026-10-13) — DECISION #280
-Card F6 builds the three islands' houses from pieces in the new look; the Gatelands come first. The prototype (`docs/prototypes/levelup/pieces-gatelands.html`, on the slices' three.js 0.170 renderer) makes them from one kit in metres, beside Gatelanders 1.59 to 1.89 m tall. Walls are 0.45 to 0.7 m thick, and every window and door is cut through them, so each one has a real reveal. The pieces: the Irish half-door; sash windows (2 over 2 in a cottage, 6 over 6 and 9 over 9 in town); a round-headed town door with a fanlight; a shopfront with its fascia and a harp sign; a cart arch with voussoirs; loading doors under a hoist. Roofs are thatch (gabled or hipped, with a scalloped ridge pinned by hazel liggers) or slate (between gable parapets with kneelers, clay ridge tiles, a cast-iron gutter). Stacks have one pot per flue. There are five plans:
-- cottage, 9.6 × 5.4 m, eaves 2.7 m: 1,826 triangles (1,472 hipped)
-- farmhouse, 10.5 × 6.2 m, eaves 5.6 m: 2,144
-- townhouse, 6.4 × 9 m, three storeys, eaves 9.0 m: 5,081
-- merchant's house and shop, 8.4 × 9 m: 4,522
-- warehouse, 12 × 10 m, four storeys, eaves 11.6 m: 9,132
-
-Each takes 10 to 14 draw calls, and doors are 2.0 to 2.65 m. In every option the cottages stay limewashed white under thatch (OG-014, OG-070) and the towns have slate roofs. The open question is what the town walls are:
-
-- **A. Coloured towns** *(recommended)*. Town houses are rendered in earth colours (ochre, rose, cream, sage, blue, oxblood) with dressed-stone quoins, string courses and cornices. The warehouse stays bare stone.
-- **B. White towns.** Every wall is limewashed white, with colour only on doors and shopfronts.
-- **C. Stone towns.** Town houses are bare grey stone with dressed quoins and lintels. Only cottages and farms are white.
-
-Recommendation: **A.** From the village, a town reads as a town at a glance, and the colour carries through fog. In B, a white terrace runs together into one long wall. C is the darkest street under a grey Gatelands sky, and the 12 Oct style call asked for lighter than the concept art's grim palette. Precedent: Kinsale, Dingle and Westport, painted render over rubble with stone dressings. If any piece itself looks wrong, say so; the kit is not in question otherwise.
-
-Pictures: [A, the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-street-a.jpg) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-street-b.jpg) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-street-c.jpg) · [the town from its cottages](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-high-a.jpg) · [the plans in a row, with people](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-line.jpg) · [the pieces one by one](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-kit.jpg) · [close: a town front](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-town.jpg) · [close: a cottage and its half-door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/pieces-gatelands-cottage.jpg)
-
 ## Answered
 
 ### The Wolf-Mother's Cloak in the den — when does a sleeping master wake, and what is "weapon sheathed"? (systems builder, after Session 802, 2026-10-13) — DECISION #270
