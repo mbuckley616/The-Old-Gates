@@ -23,7 +23,8 @@ The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h wakes her (Sessi
 - **B. As A, and she wants you out**: woken, she says her line and the talk offers only *Leave* and *I'm sorry, I'll go*; she will trade or talk normally from 7h. Still no crime.
 - **C. As A, and a stranger found in a home at night is trespass**: woken by someone who neither rents, owns nor was let in, she counts it as a seen crime (−1 favour, the 25-gold fine, a guard sent, as a picked lock), and the line says so.
 Recommendation: **A**. The crime design chose that being inside is not a crime, and the critic's complaint is the words, not the rules; C changes the crime rules on a corner case, and B blocks talk the player came for.
-Michael: **Her own night line, then the usual talk** (A). (12 Oct 2026)
+Michael: **Her own night line, then the usual talk** (A). (12 Oct 2026, on issue #255)
+*Done, Session 770:* over a sleeper the prompt reads *<name> (asleep) — Press 'E' to wake*; the first talk after she is woken in her sleeping hours opens with the night line in place of the greeting, once a visit, and the introduction moves after her own topics. No crime. The four voices are the quest writer's: `WOKEN_LINES` in `js/86-world-crime.js` is empty, and until a people has its own line the decision's *What — who's there? It's the middle of the night.* stands for all four.
 
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.

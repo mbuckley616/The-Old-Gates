@@ -468,6 +468,7 @@ function questZoneNow(){
   return 'overworld';
 }
 // S550 — a feast day's greeting (FEASTS, 60-shop.js) replaces the stock one for anyone who lives in a generated town
+let dlgWokenLine=null; // S770 — set by interact as E wakes a householder: one night line in place of the greeting, read once
 function dlgGreeting(n){const G=n.greeting,f=typeof feastGreeting==='function'?feastGreeting(n):null;if(f)return f;return G[Math.floor(Math.random()*G.length)];}
 function openDialog(npc){
   _releasePointerLockForMenu();
@@ -532,7 +533,8 @@ function openDialog(npc){
     // NPC name, only triggers for the matching NPC). Q7 uses the multi-NPC
     // form to keep Oswin's/Edna's talk_to events firing normally while only
     // Aldwyn triggers the custom dialog.
-    const greet=dlgGreeting(npc);
+    const woken=dlgWokenLine;dlgWokenLine=null;
+    const greet=woken||dlgGreeting(npc);
     const npcZone=questZoneNow();
     // v61ae: use the hoisted resolver so prereqIndices are respected here too.
     // hasCustomDialog should ONLY block talk_to auto-fire if the custom dialog
@@ -547,7 +549,8 @@ function openDialog(npc){
     // Build topics: inject quest topics based on state
     const baseTopics=[...(npc.topics||[])];
     const questTopics=buildQuestTopicsForNPC(npc.name,npcZone);
-    const allTopics=[...questTopics,...baseTopics];
+    let allTopics=[...questTopics,...baseTopics];
+    if(woken)allTopics=[...allTopics.filter(t=>!t.markMet),...allTopics.filter(t=>t.markMet)]; /* S770 — woken at night, the introduction is not first */
     renderDialogNode(greet, allTopics);
     document.getElementById('dlg').style.display='block';
     lvAct.npcTalks++;
