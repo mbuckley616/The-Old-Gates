@@ -129,12 +129,12 @@ All ten plans build from their parts with no code of their own, each in 0.04 to 
 This list is from the whole catalogue, not only the bestiary sheets: the fauna sheets (OG-009, 030, 031, 040, 047, 084), the aquatic sheet (OG-016), the bestiaries (OG-003, 018, 041, 062, 073, 085, 088), the beasts of burden (OG-007, 046, 058) and the companions and pets on the NPC sheets (OG-051, 054, 065, 071, 083).
 | Plan | Its parts | The creatures | Here |
 |---|---|---|---|
-| **Digitigrade quadruped** | spine, neck, head, tail, canid legs | Ironwolf, Stonefang and Warden wolves, the game's four wolves and the Ash Hound, the wolf companions and the wolfhound (OG-051, 065, 083), Redspine, Mirage, Blizzard and Lantern foxes, Hollowcat, Sunspire, Storm and Frost lynx, Dune Cat, Striped Hyena, Realm Hound | Ironwolf |
+| **Digitigrade quadruped** | spine, neck, head, tail, canid legs | Ironwolf, Stonefang and Warden wolves, the game's four wolves and the Ash Hound, the wolf companions and the wolfhound (OG-051, 065, 083), Redspine, Mirage, Blizzard and Lantern foxes, Hollowcat, Sunspire, Storm and Frost lynx, Dune Cat, Striped Hyena, Realm Hound; hares (Snowleap, Dusk, Oasis) on a hare's hind leg | Ironwolf; Snowleap Hare and the post hare (S773) |
 | **Ungulate** | ungulate legs; antlers and horns as bits | Elderstag, Crownstag (antlers hung with moss), Ironpine Elk, Ridge Stag, Duneskimmer and Sand Gazelle, Icehorn, Craghorn and Terrace Ram, Peak and Coastal Ibex, Stone and Sea Goat, Gatefen and Thicket Boar, the three mounts (Gatelands Horse, Mark Steed, Aurennais Courser), draft horse, mule, donkey, ox, Mountain Ox and yak, cow, water buffalo, camel, dromedary, reindeer, giant goat, Frostmane and llama (the neck slider) | Elderstag |
 | **Plantigrade** | plantigrade legs | Frostreach, Crag and Cave bears, the grizzly, badger, otter and stoat (the leg slider low, the spine long), Glacial Marmot, Stonejaw (with a shovel skull), Nell's tusked beast, war elephant (pillar legs) | Frostreach Bear |
 | **Hexapod** | three pairs of any preset | Shatterhorn (ungulate), Mineprowler (sprawl), the Bog Crawler and Lantern Beetle (insect). Michael's 9 A: ordinary animals | Shatterhorn, Mineprowler |
-| **Sprawler** | sprawl legs; a shell as a rigid bit on the spine | Stonecrawler, Saltspine Monitor, Frostspine Lizard, Spined Gekko, Sand Skink, Reef Lizard, Alpine Salamander; the tortoises (Mossback with its garden, Sailshell with its sail, Sunshell, Painted Turtle, the sea turtle); Bellthroat and Marsh Frog (need a hop) | Mineprowler's legs |
-| **Arthropod** | insect legs, 3 to 5 pairs; arms with claw bits as pincers | giant and void spiders, Dunescorpion and Sand Scorpion (arms as pincers, a stinging tail), the crabs (Tidecrab, Icecrab, Amber Shellcrab: a heading of 90° to walk sideways), the Bog Crawler | Giant spider |
+| **Sprawler** | sprawl legs; a shell as a rigid bit on the spine | Stonecrawler, Saltspine Monitor, Frostspine Lizard, Spined Gekko, Sand Skink, Reef Lizard, Alpine Salamander; the tortoises (Mossback with its garden, Sailshell with its sail, Sunshell, Painted Turtle, the sea turtle); Bellthroat and Marsh Frog on a frog's hind leg | Mineprowler's legs; Bellthroat (S773) |
+| **Arthropod** | insect legs, 3 to 5 pairs; arms with claw bits as pincers | giant and void spiders, Dunescorpion and Sand Scorpion (arms as pincers, a stinging tail), the crabs (Tidecrab, Icecrab, Amber Shellcrab: a heading of 90° to walk sideways), the Bog Crawler | Giant spider; Dunescorpion and Tidecrab (S773) |
 | **Bird** | one bird leg pair; feathered wings | Stormplume, Sunfan, Redcrest, Grove Turkey, Great and Marsh Heron, Scarlet Ibis, Cypress Stalker; flyers: Skyraven, Crag Hawk and Cliffhawk, Sky Eagle, Stormshrike, Highcliff Falcon, Barred Owl, Sunbeak Vulture, Embersong Thrush, Tomcán's raven, Orvin's heron | Stormplume |
 | **Winged quadruped** | a quadruped and wings | the dragon, the Gateborn Companion, the Winged Thing (a griffin), Glasswing, the sky leviathan | Dragon |
 | **Serpentine** | a spine and a tail, no legs | Mire Snake, Sand Wyrm (the size slider), the gate worm and the Maw, Void Serpent, the eels (reef moray, Blackcurrent, Gate Eel) | Mire Snake |
@@ -146,9 +146,28 @@ This list is from the whole catalogue, not only the bestiary sheets: the fauna s
 
 So ten of the fourteen plans exist in the prototype, and every creature in the concept art has a home. Still owed:
 - two parts (fins, radial chains);
-- a hop and a bound (frogs and hares; the hare post-rider of OG-077);
+- ~~a hop and a bound (frogs and hares; the hare post-rider of OG-077)~~ (done, Session 773);
 - feathered wings (cards, like the people's hair);
 - shells as rigid bits.
+
+### Session 773: the bound, the hop, the sideways walk, the pincer
+Five more plans, and the kit gained what they needed:
+- **Flights.** A gait's flights (the stretches of the stride with no foot down) are found by sampling the stride once. In each, the body follows a ballistic arc, h = g t² / 8 at the top for a flight of t seconds. A trot barely leaves the ground; a hare's bound and a frog's hop do. The swinging feet rise with the body.
+- **Two gaits:** the *bound* (hinds together, then fores together, the spine flexing) and the *hop* (every foot at once). The hop is a pulse: the body covers only the stance's short sweep while its feet are down and the rest in the air, so a frog's feet stay planted.
+- **Two leg presets:** a hare's hind leg (a long foot from the hock) and a frog's (folded in a Z).
+- **A heading:** the way a plan walks in its own frame. A crab's is 90°, and the same feet and solver walk it sideways.
+- **The pincer:** an arm with a swollen hand and two fingers, for scorpions and crabs. Also eye stalks, a throat sac that fills and empties, and a **saddle**, the first thing hung on a socket for a rider. It sits on the fur, not under it.
+- **A plan at another size:** the post hare of OG-077 is the Snowleap Hare's parts at 5.5 times, with a saddle: a plan is three lines when it is another plan.
+
+| Plan | Source | Bones | Triangles | Legs | Gaits |
+|---|---|---|---|---|---|
+| Snowleap Hare | OG-031, OG-084 | 26 | 20,400 | 4 | bound, walk |
+| Post hare | OG-077 | 26 | 19,900 | 4 | bound, walk (4.8 m/s bounding) |
+| Bellthroat | OG-040 | 22 | 11,500 | 4 | hop |
+| Dunescorpion | OG-030, OG-085 | 60 | 59,200 | 8 + pincers | walk, trot |
+| Tidecrab | OG-016, OG-047 | 51 | 46,300 | 8 + pincers | walk, trot (sideways) |
+
+All fifteen plans pass the check. Every foot reaches its target through every gait, including the flights and the pulse, and the ten older plans are unchanged.
 
 ### What adding a creature is
 A new entry in `PLANS`: a name, its source sheet, a palette, its gaits, and its parts with numbers. The Mineprowler is a dozen lines. No new code unless the creature needs a part the kit does not have yet.

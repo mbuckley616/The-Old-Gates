@@ -74,6 +74,10 @@ P.head = (B, o) => {
   if (o.antlers) for (const sd of [1, -1]) B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
   if (o.crystals) for (const sd of [1, -1]) B.bit('head', crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
   if (o.beak) B.bit('head', beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
+  // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties
+  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit('head', m); B.sac = m; }
+  if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit('head', claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
+    B.bit('head', eye(o.stalks.r, o.stalks.color, p)); }
   if (o.fangs) for (const sd of [1, -1]) B.bit('head', claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
 // the tail: from the rump, n bones, starting at `droop` degrees below level and bending by `curl` a bone
@@ -97,7 +101,10 @@ const LEG = {
   plantHind: { j: [[0, 1, 0], [0, .56, .13], [0, .1, -.06], [0, 0, .18]], ik: 0, r: [.18, .12, .1], tips: 'coat' },
   bird: { j: [[0, 1, 0], [0, .78, .14], [0, .42, -.12], [0, .04, .02], [0, 0, .14]], ik: 1, r: [.13, .07, .035, .025], tips: 'skin', bare: 1 },
   insect: { j: [[0, 1, 0], [.18, 1.06, 0], [.72, 1.42, 0], [1.3, .3, 0], [1.48, 0, 0]], ik: 1, yaw: 1, r: [.07, .06, .045, .025] },
-  sprawl: { j: [[0, 1, 0], [.62, 1.05, .04], [.78, .14, .08], [.84, 0, .2]], ik: 0, yaw: 1, r: [.1, .08, .06] }
+  sprawl: { j: [[0, 1, 0], [.62, 1.05, .04], [.78, .14, .08], [.84, 0, .2]], ik: 0, yaw: 1, r: [.1, .08, .06] },
+  // Session 773: a hare's hind leg (a long foot from the hock), and a frog's (folded in a Z, the foot longest of all)
+  lagoHind: { j: [[0, 1, 0], [0, .6, .26], [0, .22, -.18], [0, .03, .04], [0, 0, .2]], ik: 0, r: [.16, .08, .05, .045] },
+  leaperHind: { j: [[0, 1, 0], [.45, 1, .5], [.62, .72, -.42], [.64, .06, .05], [.68, 0, .45]], ik: 0, yaw: 1, r: [.3, .2, .12, .1] }
 };
 P.legs = (B, o) => {
   const pre = LEG[o.kind], sp = B.spineAt(o.at), fan = (o.fan || 0) * DEG, reach = o.reach || 1, pair = B.legs.length / 2;
@@ -122,6 +129,11 @@ P.arms = (B, o) => {
     const tag = 'arm' + (B.arms.length / 2 | 0) + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, [root, elbow, wrist, hand]);
     const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone });
     if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone('dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
+    // a pincer (Session 773): a swollen hand and two fingers, the fixed one longer
+    if (o.chela) { const c = o.chela; B.meat(names[2], wrist.clone().addScaledVector(d2, -len * .04), hand, c.r, c.r * .8, { s: [1, .62, 1], tone: o.tone, group: tag + 'c' });
+      const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
+      B.bit(names[3], claw(c.r * .45, c.len * 1.15, B.tone(c.tone || 'dark'), hand.clone().add(V(-side * c.r * .35, 0, 0)), fx));
+      B.bit(names[3], claw(c.r * .4, c.len, B.tone(c.tone || 'dark'), hand.clone().add(V(side * c.r * .35, c.r * .15, 0)), mv)); }
     B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5 });
   }
 };
@@ -141,6 +153,11 @@ P.wings = (B, o) => {
   }
 };
 // a row of spines down the back (bits on the spine bones)
+// a saddle on the back (Session 773): a socket's first rider. A leather seat over a wool blanket, both draped over the spine
+P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl; // it sits on the fur, not under it
+  const drape = (r, ry, len, th, c) => { const g = new THREE.CylinderGeometry(1, 1, len, 24, 1, true, Math.PI / 2 - th / 2, th); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI / 2); g.scale(r, ry, 1); const m = new THREE.Mesh(g, stdMat(c, { rough: .8 })); m.material.side = THREE.DoubleSide; m.position.copy(sp.p); return m; };
+  B.bit(sp.bone, drape(R * 1.06, Ry * 1.06, o.len * 1.25, 2.3, B.tone('blanket'))); B.bit(sp.bone, drape(R * 1.09, Ry * 1.09, o.len, 1.6, B.tone('leather')));
+  const horn = new THREE.Mesh(new THREE.CylinderGeometry(o.len * .05, o.len * .07, o.len * .22, 10), stdMat(B.tone('leather'), { rough: .6 })); horn.position.copy(sp.p).add(V(0, Ry * 1.12, o.len * .42)); B.bit(sp.bone, horn); };
 P.spines = (B, o) => { for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
   B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), sp.p.clone().add(V(0, sp.r * B.spineS[1] * .85, 0)), V(0, 1, -.35).normalize())); } };
 
@@ -326,12 +343,13 @@ export function build(g) {
   for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
   for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = true; bones[b.i].add(obj); }
-  rig.scale.setScalar(g.sliders.size);
+  rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
   const C = { g, plan, B, root, rig, bones, byName: Object.fromEntries(bones.map(b => [b.name, b])), skel, meshes, phase: 0, gait: plan.gaits[0], stats: { bones: bones.length, tris: geo.index.count / 3, verts: geo.attributes.position.count, grid: grid.join('x'), cell: +cell.toFixed(3), ms: Math.round(performance.now() - t0) } };
   for (const L of B.legs) { L.bones = L.names.map(n => C.byName[n]); L.restLocal = L.bones[0].position.clone(); L.rest = L.J.map(p => p.clone()); L.dirs = L.J.slice(1).map((p, k) => p.clone().sub(L.J[k]).normalize()); L.lens = L.J.slice(1).map((p, k) => p.distanceTo(L.J[k]));
     // the knee's side of the line from the solved chain's root to its end: the way this leg bends
     const a = L.J[L.ik], b = L.J[L.ik + 2], u = b.clone().sub(a).normalize(), kn = L.J[L.ik + 1].clone().sub(a); L.pole = kn.sub(u.clone().multiplyScalar(kn.dot(u))).normalize(); if (!isFinite(L.pole.x) || L.pole.lengthSq() < .5) L.pole = V(0, 0, 1); }
-  C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3;
+  C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3; C.S = g.sliders.size * (plan.scale || 1); C.air = {}; C.sac = B.sac;
+  const hd = (plan.heading || 0) * DEG; C.dir = V(Math.sin(hd), 0, Math.cos(hd)); // the way it walks in its own frame: a crab goes sideways
   return C;
 }
 // the wing's membrane: panels between neighbouring fingers and from the last finger back to the flank, skinned to both edges
@@ -365,6 +383,10 @@ export const GAITS = {
   trot: { duty: .45, fr: .9, lift: .2, bob: .035, sway: .03, phase: (p, s) => ((p + s) % 2) * .5 },
   // the rotary gallop: hinds then fores, each pair a beat apart
   gallop: { duty: .34, fr: 2.6, lift: .26, bob: .06, flex: .14, phase: (p, s, n) => .5 * (1 - p / Math.max(1, n - 1)) + s * .1 },
+  // Session 773. The half-bound: the hinds together, then the fores together (a hare, a weasel at speed)
+  bound: { duty: .28, fr: 1.8, lift: .22, flex: .32, phase: (p, s, n) => (p === n - 1 ? 0 : .42) + s * .05 },
+  // the hop: every foot at once, then a long flight; a pulse, so the body covers the stride unevenly (a frog, a toad)
+  hop: { duty: .4, fr: 1.2, lift: .25, strideK: 5, pulse: 1, flex: .1, phase: (p, s) => s * .02 },
   slither: { duty: 1, fr: .3, wave: 1, phase: () => 0 },
   fly: { duty: 1, fr: 0, flap: 1, phase: () => 0 }
 };
@@ -372,12 +394,28 @@ const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = V(), _m = 
 // a bone's rotation and position in the rig's frame (the body's own space: the ground is y = 0)
 function rigQuat(C, bone, out) { out.identity(); for (let b = bone; b && b !== C.rig; b = b.parent) out.premultiply(b.quaternion); return out; }
 function rigPos(C, bone, out) { bone.getWorldPosition(out); return C.rig.worldToLocal(out); }
-export function speedOf(C, gait = C.gait) { const G = GAITS[gait]; return Math.sqrt(G.fr * 9.81 * C.legH * C.g.sliders.size) * (C.plan.speedK ?? 1); }
-// one stride in the body's own metres (the world's is this times the size slider); a stride grows with the Froude number
-const strideBody = (C, G) => 1.6 * Math.pow(Math.max(G.fr, .05), .3) * C.legH;
-export function strideOf(C, gait = C.gait) { return strideBody(C, GAITS[gait]) * C.g.sliders.size; }
-// advance a creature's gait by dt seconds; it covers speedOf × dt (the caller moves its root). Returns the worst foot error.
-export function step(C, dt) { const G = GAITS[C.gait]; C.phase += G.fr > 0 ? dt * speedOf(C) / strideOf(C) : dt * (G.flap ? .9 : .25); return pose(C, C.phase); }
+export function speedOf(C, gait = C.gait) { const G = GAITS[gait]; return Math.sqrt(G.fr * 9.81 * C.legH * C.S) * (C.plan.speedK ?? 1); }
+// one stride in the body's own metres (the world's is this times C.S); a stride grows with the Froude number
+const strideBody = (C, G) => 1.6 * Math.pow(Math.max(G.fr, .05), .3) * C.legH * (G.strideK || 1);
+// how far a foot sweeps while it is down: the stride's share, but a leaper's stance is short and its flight long
+const sweepOf = (C, G) => Math.min(strideBody(C, G) * G.duty, G.pulse ? .9 * C.legH : 1e9);
+export function strideOf(C, gait = C.gait) { return strideBody(C, GAITS[gait]) * C.S; }
+// the distance the body has covered by a phase, in world metres: even for most gaits; a pulse covers the stance's sweep, then flies
+function travel(C, phase) { const G = GAITS[C.gait], k = Math.floor(phase), f = phase - k, L = strideOf(C);
+  if (!G.pulse) return phase * L; const sw = sweepOf(C, G) * C.S; return k * L + (f < G.duty ? sw * f / G.duty : sw + (L - sw) * (f - G.duty) / (1 - G.duty)); }
+// advance a creature's gait by dt seconds. C.moved is how far its root should go along C.dir this step. Returns the worst foot error.
+export function step(C, dt) { const G = GAITS[C.gait], p0 = C.phase; C.phase += G.fr > 0 ? dt * speedOf(C) / strideOf(C) : dt * (G.flap ? .9 : .25); C.moved = G.fr > 0 ? travel(C, C.phase) - travel(C, p0) : 0; return pose(C, C.phase); }
+// the gait's flights: the stretches of the stride with no foot down, found by sampling once per gait. In each the body follows
+// a ballistic arc, h = g t² / 8 at the top for a flight of t seconds, so a trot barely leaves the ground and a frog's hop does.
+function flights(C, G) { if (C.air[C.gait]) return C.air[C.gait]; const B = C.B, n = B.legs.length / 2, N = 240, up = [], out = [];
+  if (!B.legs.length || G.duty >= 1 || !(G.fr > 0)) return C.air[C.gait] = out;
+  const order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
+  for (let i = 0; i < N; i++) { const ph = i / N; up.push(B.legs.every(L => { let fl = ph + G.phase(order.indexOf(L.at), L.side > 0 ? 0 : 1, n) + L.wobble; fl -= Math.floor(fl); return fl >= G.duty; })); }
+  const T = strideOf(C) / speedOf(C); let i0 = up.indexOf(false); if (i0 < 0) return C.air[C.gait] = out;
+  for (let k = 1; k <= N; k++) { const i = (i0 + k) % N; if (up[i] && !up[(i - 1 + N) % N]) { let len = 0; while (up[(i + len) % N] && len < N) len++; const t = len / N * T;
+    out.push({ start: i / N, len: len / N, H: Math.min(.6 * C.legH, 9.81 * t * t / 8 / C.S) }); } }
+  return C.air[C.gait] = out; }
+const liftAt = (air, ph) => { for (const a of air) { let u = (ph - a.start + 1) % 1; if (u < a.len) { u /= a.len; return 4 * a.H * u * (1 - u); } } return 0; };
 // pose the creature at a phase of its gait; returns the worst foot error (metres) for the test
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
@@ -385,7 +423,9 @@ export function pose(C, phase) {
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
   const bob = (G.bob || 0) * C.legH * Math.cos(tau * ph * 2), breathe = .006 * Math.sin(tau * ph);
-  sp.position.y += -bob * .5 + (G.duty === 1 && !G.wave ? breathe * C.legH : 0);
+  const air = liftAt(flights(C, G), ph);
+  sp.position.y += -bob * .5 + air + (G.duty === 1 && !G.wave ? breathe * C.legH : 0);
+  if (C.sac) { const s = 1 + .45 * Math.max(0, Math.sin(tau * (G.fr > 0 ? ph : ph * 3))) ** 2; C.sac.scale.set(1.15 * s, .8 * s, s); }
   sp.rotation.set((G.flex || 0) * Math.sin(tau * ph) * .4, (G.sway || 0) * Math.sin(tau * ph), (G.sway || 0) * .5 * Math.sin(tau * ph + 1));
   const spn = B.spineNames; for (let k = 1; k < spn.length; k++) C.byName[spn[k]].rotation.set(-(G.flex || 0) * Math.sin(tau * ph) / spn.length, -(G.sway || 0) * Math.sin(tau * ph - k * .4) / spn.length, 0);
   if (B.chains.neck) B.chains.neck.forEach((nm, k) => C.byName[nm].rotation.set(bob * .4 / C.legH + (C.plan.neckNod ?? .03) * Math.sin(tau * ph * 2 + 1) / B.chains.neck.length, (G.sway || 0) * -.5 * Math.sin(tau * ph) / B.chains.neck.length, 0));
@@ -401,13 +441,13 @@ export function pose(C, phase) {
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
   C.rig.updateMatrixWorld(true);
   // the legs: the foot's target from the gait, then IK
-  const sweep = strideBody(C, G) * G.duty;
+  const sweep = sweepOf(C, G), D = C.dir;
   let worst = 0; const order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
   for (const L of B.legs) {
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
-    if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.z += sweep * (.5 - fl / G.duty); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.z += sweep * (-.5 + e); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u); fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
+    if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
     worst = Math.max(worst, solveLeg(C, L, T, fold));
   }
   return worst;
@@ -550,5 +590,54 @@ export const PLANS = {
       ['spine', { hip: [.045, -.5], chest: [.05, .3], n: 8, r: [.04, .05, .045], s: [1.15, .8], rump: .02, front: .02 }],
       ['head', { len: .1, r: .032, pitch: 0, s: [1.2, .7, 1], muzzle: { len: 1, r: .024, s: [1.2, .7, 1] }, eyes: [{ f: .45, up: .45, out: .7, r: .007, color: [.6, .45, .1] }] }],
       ['tail', { len: .75, n: 9, r: [.04, .006], droop: 0 }]
+    ] },
+  // ── Session 773: the bound, the hop, the sideways walk and the pincer ──
+  snowhare: { name: 'Snowleap Hare', src: 'OG-031, OG-084 (Snow Hare)', gaits: ['bound', 'walk', 'stand'], wag: .02, fold: 1.1, neckNod: .05,
+    palette: { coat: [.93, .93, .91], saddle: [.84, .84, .82], belly: [.98, .98, .97], dark: [.08, .07, .07], pale: [1, 1, 1], blanket: [.55, .14, .1], leather: [.36, .22, .12] },
+    fur: { len: .022, layers: 8, sx: 420 },
+    parts: [
+      ['spine', { hip: [.25, -.17], chest: [.21, .12], n: 3, r: [.085, .075, .068], s: [.85, 1], rump: .09, rumpDrop: .02, front: .06, frontDrop: .02, arch: .05 }],
+      ['neck', { len: .07, n: 1, rise: 45, r: [.055, .045] }],
+      ['head', { len: .12, r: .046, pitch: 18, muzzle: { len: 1, r: .028, nose: 1, drop: .05 }, eyes: [{ f: .32, up: .3, out: .82, r: .011, color: [.12, .07, .04] }], ears: { kind: 'leaf', size: .085, f: .05, up: .85, out: .35, back: 30, splay: 8 } }],
+      ['tail', { len: .05, n: 1, r: [.035, .03], droop: -40, tone: 'pale' }],
+      ['legs', { at: 1, kind: 'canidFore', out: .035, drop: .03, r: [.024, .016, .012, .011] }],
+      ['legs', { at: 0, kind: 'lagoHind', out: .05, drop: .02, r: [.05, .028, .016, .014] }]
+    ] },
+  posthare: { name: 'Post hare', src: 'OG-077 (a post rider on a horse-sized hare)', scale: 5.5, gaits: ['bound', 'walk', 'stand'], wag: .02, fold: 1.1, neckNod: .05, spread: .03,
+    palette: { coat: [.6, .46, .32], saddle: [.4, .29, .19], belly: [.86, .8, .7], dark: [.08, .06, .05], pale: [.96, .95, .92], blanket: [.18, .38, .26], leather: [.34, .2, .1] },
+    fur: { len: .02, layers: 8, sx: 160 },
+    parts: null }, // the Snowleap Hare's parts and a saddle, filled in below: a plan may be another plan at another size
+  bellthroat: { name: 'Bellthroat', src: 'OG-040 (a red frog with a violet throat sac)', gaits: ['hop', 'stand'], rough: .4, mottle: 1.4, fold: .3, wag: 0, pant: 0,
+    palette: { coat: [.78, .2, .1], saddle: [.45, .07, .04], belly: [.93, .8, .55], dark: [.06, .04, .03], sac: [.56, .3, .78] },
+    parts: [
+      ['spine', { hip: [.075, -.07], chest: [.085, .07], n: 3, r: [.055, .065, .06], s: [1.3, .72], rump: .035, front: .02 }],
+      ['head', { len: .1, r: .055, pitch: -4, s: [1.35, .62, 1], muzzle: { len: 1, r: .042, s: [1.4, .55, 1], taper: .75 }, eyes: [{ f: .3, up: .8, out: 1.05, r: .016, color: [.95, .7, .15] }], sac: { r: .045, f: .55, drop: 1.05 } }],
+      ['legs', { at: .95, kind: 'sprawl', out: .05, drop: -.005, fan: 30, r: [.016, .013, .011, .01] }],
+      ['legs', { at: .02, kind: 'leaperHind', out: .055, drop: -.01, fan: -10, r: [.032, .024, .015, .013] }]
+    ] },
+  dunescorpion: { name: 'Dunescorpion', src: 'OG-030, OG-085 (scorpion); the game\'s Sand Scorpion', gaits: ['walk', 'trot', 'stand'], speedK: 1.3, rough: .45, mottle: .6, wag: .05,
+    palette: { coat: [.66, .48, .26], skin: [.66, .48, .26], saddle: [.42, .28, .14], dark: [.22, .13, .07] },
+    parts: [
+      ['spine', { hip: [.3, -.3], chest: [.32, .25], n: 4, r: [.13, .15, .13], s: [1.35, .55], rump: .03, front: .06, tone: 'skin' }],
+      ['head', { len: .12, r: .09, pitch: 0, s: [1.3, .6, 1], tone: 'skin', eyes: [{ f: .5, up: .75, out: .18, r: .012, color: [.08, .05, .03] }] }],
+      ['tail', { len: 1.05, n: 7, r: [.07, .035], droop: -18, curl: 33, tone: 'skin', sting: { r: .028, len: .13 } }],
+      ['legs', { at: .95, kind: 'insect', out: .1, drop: .02, fan: 40, reach: .85, r: [.03, .028, .022, .014] }],
+      ['legs', { at: .68, kind: 'insect', out: .12, drop: .02, fan: 15, reach: .85, r: [.03, .028, .022, .014] }],
+      ['legs', { at: .42, kind: 'insect', out: .12, drop: .02, fan: -15, reach: .85, r: [.03, .028, .022, .014] }],
+      ['legs', { at: .15, kind: 'insect', out: .1, drop: .02, fan: -42, reach: .9, r: [.03, .028, .022, .014] }],
+      ['arms', { at: 1, out: .09, up: -.04, dz: .06, len: .62, r: [.038, .034, .034], dir: [.65, .08, .75], dir2: [-.2, 0, 1], chela: { r: .07, len: .12 }, tone: 'skin', swing: .06 }]
+    ] },
+  tidecrab: { name: 'Tidecrab', src: 'OG-016, OG-047 (the blue Aurennais kind)', gaits: ['walk', 'trot', 'stand'], heading: 90, speedK: 1.2, rough: .4, mottle: .8, wag: 0,
+    palette: { coat: [.22, .42, .78], skin: [.22, .42, .78], saddle: [.1, .2, .48], belly: [.88, .82, .7], dark: [.1, .08, .07] },
+    parts: [
+      ['spine', { hip: [.17, -.08], chest: [.17, .08], n: 2, r: [.11, .12, .11], s: [1.9, .52], rump: .03, front: .03 }],
+      ['head', { len: .05, r: .035, pitch: 0, s: [1.6, .6, 1], stalks: { f: .6, up: 1.4, out: 1.2, r: .011, len: .04, color: [.08, .06, .05] } }],
+      ['legs', { at: .9, kind: 'insect', out: .17, drop: .0, fan: 30, reach: .75, r: [.024, .022, .018, .01] }],
+      ['legs', { at: .62, kind: 'insect', out: .19, drop: .0, fan: 10, reach: .8, r: [.024, .022, .018, .01] }],
+      ['legs', { at: .35, kind: 'insect', out: .19, drop: .0, fan: -10, reach: .8, r: [.024, .022, .018, .01] }],
+      ['legs', { at: .08, kind: 'insect', out: .17, drop: .0, fan: -32, reach: .75, r: [.024, .022, .018, .01] }],
+      ['arms', { at: 1, out: .12, up: -.01, dz: .02, len: .34, r: [.03, .028, .028], dir: [.55, .2, .8], dir2: [-.45, 0, 1], chela: { r: .058, len: .085 }, swing: .05 }]
     ] }
 };
+// the post hare is the Snowleap Hare's body at five and a half times its size, saddled
+PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 }]];

@@ -33,10 +33,10 @@ const bbox = C => { C.root.updateMatrixWorld(true); C.meshes.forEach(m => m.comp
 
 if (VIEW === 'line') {
   // every plan, small to large, turned three-quarters to the camera, each with the measure behind its shoulder
-  const order = (Q.get('plans') || 'miresnake,spider,ironwolf,mineprowler,faolchu,stag,bear,stormplume,shatterhorn,dragon').split(',');
+  const built = (Q.get('plans') ? Q.get('plans').split(',') : Object.keys(PLANS)).map((plan, i) => { const C = make(plan, plan + ':line:' + (+(Q.get('seed') || 0) + i)); pose(C, .15 + i * .23);
+    C.root.rotation.y = Math.PI / 2 - .3; return { C, h: bbox(C).max.y }; }).sort((a, b) => a.h - b.h);
   let x = 0; const placed = [];
-  for (const [i, plan] of order.entries()) { const C = make(plan, plan + ':line:' + (+(Q.get('seed') || 0) + i)); pose(C, .15 + i * .23);
-    C.root.rotation.y = Math.PI / 2 - .3; scene.add(C.root); const b = bbox(C), w = b.max.x - b.min.x; C.root.position.x = x - b.min.x; const f = figure(); f.position.set(x + w / 2 + .3, 0, b.min.z - .6); scene.add(f);
+  for (const { C } of built) { scene.add(C.root); const b = bbox(C), w = b.max.x - b.min.x; C.root.position.x = x - b.min.x; const f = figure(); f.position.set(x + w / 2 + .3, 0, b.min.z - .6); scene.add(f);
     placed.push({ C, x0: x, x1: x + w }); x += w + Math.max(1.2, w * .18); live.push({ C, inPlace: true }); }
   const span = x, mid = span / 2, hmax = Math.max(...placed.map(p => bbox(p.C).max.y));
   cam.fov = 26; cam.updateProjectionMatrix(); const d = (span * .5) / Math.tan(cam.fov * Math.PI / 360) / (W / H);
@@ -44,11 +44,12 @@ if (VIEW === 'line') {
   sun.position.set(mid + 30, 50, 40); sun.target.position.set(mid, 0, 0); Object.assign(sun.shadow.camera, { left: -span * .7, right: span * .7, top: 30, bottom: -30, near: 1, far: 200 }); sun.shadow.camera.updateProjectionMatrix();
 } else {
   const plan = PLANS[Q.get('plan')] ? Q.get('plan') : 'ironwolf';
-  let C = make(plan, +(Q.get('seed') || 0) || plan + ':one'); scene.add(C.root); live.push({ C });
+  const turn = C => { C.root.rotation.y = -(C.plan.heading || 0) * Math.PI / 180; }; // a crab walks sideways: turn it so it goes up the floor
+  let C = make(plan, +(Q.get('seed') || 0) || plan + ':one'); turn(C); scene.add(C.root); live.push({ C });
   const f = figure(); scene.add(f);
   const frame = () => { const b = bbox(C), size = b.getSize(new THREE.Vector3()), r = Math.max(size.x, size.y, size.z * .8);
     fz = b.min.z - C.root.position.z - .5; f.position.set(0, 0, C.root.position.z + fz);
-    cam.fov = 30; cam.updateProjectionMatrix(); const cv = Q.get('cam') || 'side', d = r * 2.5 + 1.6;
+    cam.fov = 30; cam.updateProjectionMatrix(); const cv = Q.get('cam') || 'side', d = r * 2.7 + .7;
     const off = cv === 'front' ? new THREE.Vector3(d * .35, size.y * .45, d) : cv === 'top' ? new THREE.Vector3(d * .3, d * 1.1, d * .2) : new THREE.Vector3(d, size.y * .45 + .4, d * .12);
     return { off, look: new THREE.Vector3(0, size.y * .4, (b.min.z - C.root.position.z) * .35) }; };
   let fz = 0, F = frame();
@@ -56,7 +57,7 @@ if (VIEW === 'line') {
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 150 }); sun.shadow.camera.updateProjectionMatrix();
   pose(C, +(Q.get('phase') || .2)); place();
   live[0].follow = () => { if (C.root.position.z > 120) { C.root.position.z -= 240; } f.position.z = C.root.position.z + fz; place(); };
-  if (!STILL) panel(plan, g => { scene.remove(C.root); C = make(g.plan, g.seed, g); C.gait = live[0].C.gait; scene.add(C.root); live[0].C = C; F = frame(); pose(C, 0); place(); });
+  if (!STILL) panel(plan, g => { scene.remove(C.root); C = make(g.plan, g.seed, g); turn(C); C.gait = live[0].C.gait; scene.add(C.root); live[0].C = C; F = frame(); pose(C, 0); place(); });
 }
 
 // the panel (live view only): plan, gait, roll a seed, the generic sliders, and the genome as JSON
@@ -80,4 +81,4 @@ function panel(plan, rebuild) {
 }
 
 const comp = makeComposer(R, scene, cam, { bloom: .18, bloomT: .95, sat: 1.05, vig: .3 });
-run(comp, cam, { tick: (t, dt) => { if (STILL) return; for (const L of live) { step(L.C, dt); if (!L.inPlace) { L.C.root.position.z += speedOf(L.C) * dt; L.follow && L.follow(); } } } });
+run(comp, cam, { tick: (t, dt) => { if (STILL) return; for (const L of live) { step(L.C, dt); if (!L.inPlace) { L.C.root.position.z += L.C.moved || 0; L.follow && L.follow(); } } } });

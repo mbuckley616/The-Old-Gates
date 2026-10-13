@@ -15858,3 +15858,36 @@ Corrections found on the way, for the record:
 - The creatures walking live on Michael's machine: whether the gaits read as animals (the wolf's trot, the spider's tetrapods, the Shatterhorn's slow wave), and the frame rate with fur.
 - The faces close up, which are soft, as grown flesh is. Sculpted targets or image-to-3D heroes are the answer where it matters.
 - Whether the parts' approach is the one he wants before the kit moves to the builder's page and then into the game behind the foundation's switch.
+
+
+## v80 — Session 773 — Creatures from parts: the bound, the hop, the sideways walk, the pincer (prototype only)
+Michael, on Session 772's line-up: "They all look great! Should we go ahead and tackle more of the skeletons? This framework seems to be working very well." The catalogue table names what is owed, so this session takes the gaits and the claws, Session 774 the swimmers and the radial bodies, and Session 775 the shells and feathered wings.
+
+**The kit** (`creatures.js`):
+- **Flights:** a gait's flights, the stretches with no foot down, are found by sampling the stride once per gait. The body follows a ballistic arc through each (h = g t² / 8 at the top), and the swinging feet rise with it. The trot and gallop of the older plans gain their small real suspensions this way.
+- **Two gaits:** the *bound* (hinds together, then fores, the spine flexing) and the *hop* (every foot at once). The hop is a pulse: the body covers only the stance's short sweep while its feet are down and the rest in the air, so `step` now reports how far the root moved (`C.moved`) instead of a constant speed.
+- **Two leg presets:** a hare's hind leg (a long foot from the hock) and a frog's (a Z).
+- **Headings:** a plan may walk at a heading in its own frame (the crab at 90°); the same feet and solver walk it sideways.
+- **The pincer:** an arm with a swollen hand and two fingers. Also eye stalks, and a throat sac that fills and empties.
+- **The saddle:** the first thing hung on a socket for a rider, set on the fur, not under it.
+- **Scale:** a plan may stand at a multiple of its parts (`scale`).
+
+**Five plans:**
+- the Snowleap Hare;
+- the post hare of OG-077, which is the hare's parts at 5.5 times with a saddle (three lines);
+- the Bellthroat, a red frog with its violet sac, hopping;
+- the Dunescorpion: four leg pairs, pincers and a stinging tail;
+- the Tidecrab, blue, walking sideways.
+
+The line-up now holds all fifteen, sorted by height as built.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/creatures.check.mjs`: all fifteen plans pass.
+- **New plans:** 22 to 60 bones and 11,500 to 59,200 triangles, built in 0.06 to 0.53 s.
+- **Weights:** exact.
+- **Feet:** every foot on its target through every gait, the hop's pulse and the flights included.
+- **Duty:** feet down for their gait's duty (the hop 0.41 of 0.40, the crab's walk 0.71 of 0.68).
+- **Speed:** the post hare bounds at 4.8 m/s.
+- **The older ten:** unchanged.
+### Needs eyes
+- The bound and the hop, live: whether the arcs read as a hare and a frog, and whether the post hare's bound would carry a rider.
+- The crab's sideways walk from the side.
