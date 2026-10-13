@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Shrines remembering: the third prayer makes a boon permanent; how many can you keep? (systems builder, after Session 793, 2026-10-13) — DECISION #267
 The canon's consequence table (§12) says: `shrines[id].count`, the third prayer at one shrine, makes that shrine's boon permanent. It is not built. Today a prayer restores you and gives the shrine's boon until tomorrow (two days on its god's own day), once a day per shrine. Five gods give a boon: the Road (Swiftness ×1.25), Renewal (half a point of health, stamina and mana a second), the Arm (melee ×1.2), Stone (damage taken ×0.75) and the Mind (spell cost ×0.7). The Weaver gives a rubbing instead. A boon for good is a large, lasting buff, so how many can be held is a rule of play.
 
@@ -13,8 +15,8 @@ The canon's consequence table (§12) says: `shrines[id].count`, the third prayer
 - **D. Leave it out**: the shrine's boon stays a day's.
 
 Under A, B and C the Weaver's shrine has no boon to keep. Its third prayer gives a rubbing, as every prayer there already does.
-
-## Answered
+Michael: **D — leave it out; shrine boons stay a day's.** (2026-10-13, on issue #267)
+*Acted on:* nothing to build; the shrine's boon is a day's, as it is today. Issue #267 closed by the producer. Moved here in Session 800.
 
 ### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 777, 2026-10-13) — DECISION #263
 You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the frame and the Wolf-Mother's Cloak's rule: worn, wolves, bears and spiders leave you alone unless you strike first, and its lair's town loses 0.6 a day while the beast lives. Two things now stop the next sessions.

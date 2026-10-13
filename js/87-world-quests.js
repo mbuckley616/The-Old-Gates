@@ -107,6 +107,7 @@
     {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}}
     {const H=typeof lampHome==='function'&&lampHome();const lt=H&&siteAnywhere(H.site);if(lt){const [li,lj]=cellOf(lt.x,lt.z);if(Math.abs(li-ci)<=1&&Math.abs(lj-cj)<=1)out.push(`There's a lamp over the inn door at ${lt.name} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${lt.name}.`);}} /* S784 — the Waylamp, while it hangs (the draft's rumour; its town and the cells round it) */
     if(typeof cloakRumours==='function')out.push(...cloakRumours(site)); /* S795 — the cloak's two rumours */
+    {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
     {const d=nearestSigilDoorFrom(site);if(d&&Math.random()<.5)out.push(`There's a warm stone in ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. My cousin put his hand on it and talked in his sleep for a week.`);}
@@ -969,8 +970,10 @@ const giver=`${lord.title} ${lord.name}`;
     const towns=home.flatMap(c=>c.sites.filter(t=>t.kind==='town'||t.kind==='port'||t.kind==='city')).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const lt=pick('waylamp',towns); /* S783 — the Waylamp over a home-island town's first inn */
     /* S797 — the Shuttle in the deepest room of a home-island sigil gate (a cave gate, not a fort; never the blade's) */
     const sgates=doors.filter(d=>d.sigil&&d.kind==='cave_door'&&(!gd||d.seed!==gd.seed));const sg=pick('shuttle',sgates);
+    /* S800 — the Noon Ring on the cairn at the top of a home-island peak */
+    const peaks=home.flatMap(c=>c.peaks||[]).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const pk=pick('sundial_ring',peaks);
     _artPl={gate_blade:gd?{door:gd.seed,name:gd.canonicalName||(typeof dungeonName==='function'?dungeonName(gd.seed,gd.theme):'an old gate'),x:gd.x,z:gd.z}:null,
-            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:sg?{door:sg.seed,name:sg.canonicalName||(typeof dungeonName==='function'?dungeonName(sg.seed,sg.theme):'an old gate'),x:sg.x,z:sg.z}:null};
+            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:pk?{peak:pk.id,name:pk.name,x:pk.x,z:pk.z}:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:sg?{door:sg.seed,name:sg.canonicalName||(typeof dungeonName==='function'?dungeonName(sg.seed,sg.theme):'an old gate'),x:sg.x,z:sg.z}:null};
     return _artPl;}
   function artifactState(id){const S=worldState.artifacts;return (S&&S[id])||null;}
   function artifactHeld(id){return [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)].some(L=>L.some(it=>it&&it.artifact===id));}
@@ -1216,7 +1219,7 @@ const giver=`${lord.title} ${lord.name}`;
   // S796 — a hermit gives the way only to a tool that can be had where it lies today: the cloak (its cavern's master, whose
   // corpse gives it up, Session 781) and the lamp (its inn, Session 783); and since S797 the Shuttle (its gate's deepest room).
   // The blade's stone, the bell's wreck and the ring's cairn wait for their trials and props; each trial's session adds its tool here.
-  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1}; /* S797 — the Shuttle's room */
+  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1,sundial_ring:1}; /* S797 — the Shuttle's room; S800 — the ring's cairn */
   // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
   function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
   function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];
@@ -1244,6 +1247,46 @@ const giver=`${lord.title} ${lord.name}`;
   // a storm's flash (the weather tick's lightning): with the ring on you, one in three is close. Cosmetic, so Math.random.
   function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
     if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
+  // S800 — the Noon Ring's trial (the page's Sky row; the approved draft's second run, §4): the ring lies on a cairn at the top
+  // of a home-island peak (artifactPlaces().sundial_ring, picked from the seed as the others are). The cairn stands on the
+  // highest ground within 24 units of the peak's centre, found once its cell is loaded (the peak's rise is in the terrain only
+  // then). The first time you come within ten units of it, the draft's line, once (the character's: stats.ringSeen). E within 2.2
+  // tries it, the draft's order: the hour (noon is the game's hour 12, 12:00 to 12:59, the sundial's hour), then the sky (clear
+  // only), then Swiftness 30 (artifactTry: the base, plus at most 2 from gear). Every failure costs nothing and is kept for the
+  // Journal's *Things not yet yours*. Taken, the cairn stays, and E at it says what is left. The cairn and the ring are a
+  // placeholder of stacked stones and a gold band; the look builder's prop is owed.
+  const RING_SAY={seen:'A cairn at the top of the world, and on its top stone a ring of gold in a hollow worn to fit it. A line is cut across the stone, and the cairn’s shadow lies on it.',
+    hour:'The ring will not lift. The light is wrong for it.',sky:'Noon, and no sun to read it by. The ring stays where it is.',
+    swift:'The cairn’s shadow is already off the line by the time your hand is on the stone. Not yet.',
+    take:'At noon the cairn has no shadow, and the ring is only a ring. It comes up into your hand.',
+    after:'An empty hollow in the top stone, and a line no shadow reaches at noon.'};
+  const RING_NOON=12,RING_REACH=2.2;let RING_CAIRN=null,_ringT=0;
+  function ringCairnSpot(P){let best=null;for(let dx=-24;dx<=24;dx+=3)for(let dz=-24;dz<=24;dz+=3){if(dx*dx+dz*dz>24*24)continue;const x=P.x+dx,z=P.z+dz,h=worldH(x,z);if(!best||h>best.y)best={x,z,y:h};}return best;}
+  function ringCairnBuild(P){const sp=ringCairnSpot(P);if(!sp)return null;const g=new THREE.Group();const stone=new THREE.MeshLambertMaterial({color:0x8a8780});
+    [[.62,.0,0],[.5,.42,.4],[.4,.78,1.1],[.3,1.06,2.0]].forEach(([r,y,a])=>{const m=new THREE.Mesh(new THREE.DodecahedronGeometry(r,0),stone);m.scale.y=.6;m.position.y=y+r*.3;m.rotation.y=a;g.add(m);});
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.06,.016,6,14),new THREE.MeshLambertMaterial({color:0xe8c050,emissive:0x3a2a08}));ring.rotation.x=Math.PI/2;ring.position.y=1.42;g.add(ring);
+    g.position.set(sp.x,sp.y-.1,sp.z);sc.add(g);return {x:sp.x,z:sp.z,y:sp.y,mesh:g,ring,peak:P.peak,name:P.name};}
+  function ringCairnDrop(){if(RING_CAIRN&&RING_CAIRN.mesh&&RING_CAIRN.mesh.parent)RING_CAIRN.mesh.parent.remove(RING_CAIRN.mesh);RING_CAIRN=null;}
+  // once a second from the loop: the cairn is built while its peak's cell is loaded and you are within 400 units; the first sight
+  function tickRingCairn(force){const t=performance.now();if(!force&&t-_ringT<1000)return;_ringT=t;
+    if(activeZoneId!=='world'||!sc){ringCairnDrop();return;}const P=artifactPlaces().sundial_ring;if(!P)return;
+    const loaded=PEAKS.some(p=>p.id===P.peak),near=Math.hypot(px-P.x,pz-P.z)<400;
+    if(!loaded||!near){if(RING_CAIRN)ringCairnDrop();return;}
+    if(!RING_CAIRN||RING_CAIRN.peak!==P.peak||!RING_CAIRN.mesh.parent){ringCairnDrop();RING_CAIRN=ringCairnBuild(P);}
+    const C=RING_CAIRN;if(!C)return;if(C.ring)C.ring.visible=!artifactState('sundial_ring');
+    if(typeof isInterior==='function'&&isInterior())return;const st=worldState.stats||(worldState.stats={});
+    if(!st.ringSeen&&!artifactState('sundial_ring')&&Math.hypot(px-C.x,pz-C.z)<10){st.ringSeen=1;showMsgLong(RING_SAY.seen,'#f0d890');}}
+  function ringCairnNear(){const C=RING_CAIRN;return !!(C&&C.mesh&&C.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&Math.hypot(px-C.x,pz-C.z)<RING_REACH);}
+  function ringCairnPrompt(){if(!ringCairnNear())return null;return artifactState('sundial_ring')?"Press 'E' to look at the cairn":"Press 'E' to take the ring";}
+  // E at the cairn: the hour, then the sky, then Swiftness (the named action is artifactTry, with the draft's log line)
+  function ringCairnUse(){const C=RING_CAIRN;if(!C)return null;if(artifactState('sundial_ring')){showMsg(RING_SAY.after,'#f0d890');return {gone:true};}
+    const say=t=>{showMsg(t,'#f0d890');if(typeof addLog==='function')addLog('☀',t);};
+    const noteTry=()=>{const c=artifactCheck('sundial_ring');const tr=worldState.artifactTries||(worldState.artifactTries={});tr.sundial_ring={day:dayNow(),have:c.have,n:((tr.sundial_ring&&tr.sundial_ring.n)||0)+1};};
+    if(Math.floor(gameHour())!==RING_NOON){noteTry();say(RING_SAY.hour);return {ok:false,why:'hour'};}
+    if(WX.type!=='clear'){noteTry();say(RING_SAY.sky);return {ok:false,why:'sky'};}
+    const c=artifactTry('sundial_ring',`Took the Noon Ring from the cairn on ${C.name}.`);
+    if(!c.ok){say(RING_SAY.swift);return Object.assign({why:'swift'},c);}
+    showMsg(RING_SAY.take,'#f0d890');if(C.ring)C.ring.visible=false;if(typeof updateHUD==='function')updateHUD();return c;}
   // S783 — the Waylamp (the page's Hearth row, in the approved draft's words): it hangs over the first inn of a home-island town
   // (artifactPlaces). The trial: carry it lit into the inns of five other towns with no crime on your account; each innkeeper trims
   // it (*The lamp.*), and the fifth makes it yours. A crime while it is on you, in the trial or after, puts it out for seven days,
