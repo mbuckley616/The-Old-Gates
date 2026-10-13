@@ -16405,3 +16405,10 @@ Nine of the 27 red CI jobs that Session 807 read were one crash: `page.screensho
 A probe suite, removed afterwards, blocked the page's main thread for 40 s, as a slow CI frame does. Through the harness the screenshot waited it out (40.2 s) and passed. The same call with a 30 s timeout failed with CI's own words, *page.screenshot: Timeout 30000ms exceeded*. `pauseleaf`, `settingsheet` and `dmgnums` are green.
 ### Needs eyes
 Nothing in play. `pauseleaf` should drop off CI's FLAKY list. Ten suites failed once each in the same window (`cloakcorpse`, `lod`, `gateschool`, `dungeonpace`, `lairdoor`, `schoolroster`, `gargoyle`, `golem`, `shiplog`, `fortwalk`), each with its own cause. They are listed in backlog K for later sessions.
+
+## v80 — Session 809 — `cloakcorpse` waits for the cloak's line, not for 2.2 seconds (CI health, tests only)
+One of the ten suites that failed once on CI in 11 to 13 Oct (backlog K). On CI, *killed with the cloak untaken* read the cavern's line as *undefined*: the messages held only the level-up line and *Dunkeel — Ogre slain!*. The game said the line. `artifactSay` (`87-world-quests.js`) puts the cloak's words on a 1.6 s timer, so they come after the kill's own *slain!*, which would otherwise cover them. A timer can run only between frames, though, and the suite waited a fixed 2.2 s of real time before it read the messages. A CI frame longer than that left the line unsaid when the suite looked. Both of the suite's waits for a cloak line now wait for the line itself, up to a minute. They then wait half a second more, so a second line said after it (the check that the master dies only once) is still caught. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`cloakcorpse` 10 of 10. To reproduce CI, the page's main thread was blocked for 3 s just after the kill. The old suite failed with CI's own words, *the cavern says \*undefined\**, and the same two messages. The new suite, with the same block, passed.
+### Needs eyes
+Nothing in play. `tests/waylamp` waits the same fixed 2.2 s after a line on the same kind of timer. It has not failed on CI, so it is left alone.
