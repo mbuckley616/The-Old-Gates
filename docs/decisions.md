@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 777, 2026-10-13) — DECISION #263
 You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the frame and the Wolf-Mother's Cloak's rule: worn, wolves, bears and spiders leave you alone unless you strike first, and its lair's town loses 0.6 a day while the beast lives. Two things now stop the next sessions.
 
@@ -23,9 +25,9 @@ You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the fr
    - **A.** The Cold rises for anyone who carries it, and each of Varek's discoveries needs one Mastery fewer while you do *(recommended: the Shuttle's price is the Shuttle's, whoever you are)*.
    - **B.** The Cold rises only for an Old Blood reader, as the Cold does now; Varek as A.
    - **C.** Leave Varek out: the Cold alone, as A.
+Michael: **All four as recommended** (1A the draft approved, the Noon Ring included; 2A corpse cloak wolves only, the town pays nothing; 3A the blade opens a locked door at a touch in a gate you have been down; 4A the Cold rises for anyone carrying the Shuttle, Varek needs one Mastery fewer). (2026-10-13, on issue #263)
+*Acted on:* 3A built in Session 780 (`tests/bladekey`); 2A and 4A are the next sessions; the words (1A) go in with each trial. Issue #263 closed by the producer.
 
-
-## Answered
 
 ### Aurenne's houses — the white town, the mix, or the Roman town? (the concept artist, 2026-10-12) — DECISION #259
 You set Aurenne's register this morning: a Roman, Egyptian, Arabic and Greek fusion, not French (OG-061, OG-043). Its houses today are the French cottage in warm colours: cream plaster, a gabled terracotta roof, shutters, a chimney and a woodpile (5,710 triangles one storey, 6,646 two). The prototype (`docs/prototypes/aurenne/`, on auto/concept) draws five new houses in the shape kit, beside today's house taken from the game itself (build s587) and the game's own Aurennais townsfolk for scale (1.22 and 1.30 units). Under every option: walls with real arched openings as deep as the wall, small deep windows, a door of painted cedar in a frame of blue and white glazed tile, lattice screens (mashrabiya) on the upper floors, cypresses and bougainvillea at the doors, walls in five washes (lime white, warm lime, ochre, rose, chalk). One storey is 2,808 triangles; the richest house, two storeys with a dome, is 6,056, about today's. Only the houses change here; churches, keeps and guild halls are another question. The same house stands in the foreign quarter by the water in the Gatelands' ports, which borrows Aurenne's style today.

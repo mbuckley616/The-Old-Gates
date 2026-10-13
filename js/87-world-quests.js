@@ -971,6 +971,18 @@ const giver=`${lord.title} ${lord.name}`;
   function bellAboard(){return artifactCarried('drowned_bell');}
   // S779 — the Gate-Blade (the page's Stone row): a tier-6 blade of 14 weight; while it is in your hand sprinting costs a quarter more
   function gateBladeDrawn(){return !!(EQ.weapon&&EQ.weapon.artifact==='gate_blade');}
+  // S780 — Michael's 3A on #263: with the blade in hand, a locked door inside a sigil gate you have been down before opens at a
+  // touch, no pick. worldState.gatesWalked (the character's: where you have been) keys each gate by its seed and is written as
+  // you go down; _gateWalkedBefore is read before that write, so a gate's first visit is never one the blade opens.
+  // Lair caverns and the tutorial's crypt are not sigil gates.
+  let _gateWalkedBefore=false;
+  function noteGateWalked(portal){_gateWalkedBefore=false;if(!portal||portal.tutorial||portal.lair||portal.lairDoor||portal.seed==null)return;
+    const W=worldState.gatesWalked||(worldState.gatesWalked={});_gateWalkedBefore=!!W[portal.seed];W[portal.seed]=1;}
+  function gateBladeOpens(door){return !!(door&&door.locked&&!door.open&&activeZoneId==='dungeon'&&_gateWalkedBefore&&gateBladeDrawn());}
+  // the named action: the door opens as a picked one does (lpWin), and the first time says so in the draft's words
+  function gateBladeOpen(door){door.open=true;if(door.mesh&&typeof dScene!=='undefined')dScene.remove(door.mesh);
+    try{const map=activeMap();if(map[door.z]&&map[door.z][door.x]===5)map[door.z][door.x]=1;}catch(e){}try{sndDoorUnlock();}catch(e){}
+    const st=worldState.stats||(worldState.stats={});if(!st.bladeKeyed){st.bladeKeyed=1;showMsg('The Gate-Blade goes into the lock as if it were cut for it.','#ffd700');}else showMsg('The lock gives.','#ffd700');}
   // the check: the attribute's base, plus what gear adds up to ARTIFACT_GEAR_MAX (a Fortify ring closes a small gap; no one buys Might 30)
   function artifactCheck(id){const T=ARTIFACTS[id];if(!T)return null;if(!T.check)return {ok:true,attr:null,need:0,have:0,base:0,gear:0};
     const k=T.check.attr,base=ATTRS[k]||0,gear=Math.max(0,Math.min(ARTIFACT_GEAR_MAX,(typeof attrEff==='function'?attrEff(k):base)-base));
