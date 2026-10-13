@@ -43,6 +43,29 @@ That is A. Done, Session 771:
 Asked to expand his idea of a skeleton for every creature type, akin to MakeHuman's, Claude proposed skeletons from parts, not one per species: a dozen body plans built from a spine, a neck and head, a tail, arms, wings and leg pairs over eight leg presets, with one gait engine for any number of legs. Michael: **"yes, write it up and start the creature prototype"**, and while it was built: **"Be mindful that there are several other animals / monsters that are on other concept art files."** (12 Oct 2026, in chat.) Done, Session 772: the kit and ten plans in `docs/prototypes/levelup/creatures.js`; every creature in the catalogue sorted by plan in `character-builder.md`, *Body plans from parts*.
 Sessions 773 to 775 built thirteen more (23 in all). Asked whether the next sessions were planned, Claude found the plan written but nothing queued (no Fable card, no roadmap epic) and the look builder still building in the old style. It recommended two things: queue the foundation as cards, and move the look builder to work that carries over until the renderer lands. Michael: **"Go with both of your recs for the two calls you posed to me."** (12 Oct 2026, in chat.) Done: the cards in `visual-foundation.md` §4 (F1 to F7, for the producer to put on the control room); backlog H paused for old-style look work; the look builder's routine prompt changed to take B1 to B3 first.
 
+
+### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 777, 2026-10-13) — DECISION #263
+You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the frame and the Wolf-Mother's Cloak's rule: worn, wolves, bears and spiders leave you alone unless you strike first, and its lair's town loses 0.6 a day while the beast lives. Two things now stop the next sessions.
+
+1. **The words.** Every line a tool needs (its trial's prompts, the failing lines, the hermit who points the way, the altars, the claimants) is written in the quest writer's draft *The Makers' Things*, both runs, in `docs/quest_drafts.md`. The draft is marked unapproved. It also renames the page's *Sundial Ring* to *the Noon Ring*.
+   - **A.** Approve both runs as written, the Noon Ring included *(recommended: the builders can then build each trial with its words in one session)*.
+   - **B.** Approve them, but keep the name *the Sundial Ring*.
+   - **C.** Not yet: build each trial's rule and leave its lines for later. Each tool would then need a second session.
+2. **The cloak from a corpse.** The page says the Fighters' Guild wants the beast dead: *kill it and the cloak comes off a corpse, worth half as much*. Its virtue is a peace, so *half* has to mean something.
+   - **A.** The same peace, but only for wolves (not bears or spiders), and the town pays nothing because the beast is dead *(recommended: you choose between the whole peace with its cost and half the peace without it)*.
+   - **B.** The whole peace, but half its worth in gold (sold to the Guild at half) and no drain on the town.
+   - **C.** A plain fur cloak with no virtue: killing the beast loses the gift.
+3. **The Gate-Blade's key** (added after Session 779). The page says the blade *opens a sigil gate's door without the gate's key*, only for gates you have opened once. Since Session 517 a gate has no key: you walk into a gate freely, and the locked doors inside are picked.
+   - **A.** With the blade in hand, a locked door inside a gate you have been down before opens at a touch, no pick *(recommended: closest to the page, and it never skips a gate you have not walked)*.
+   - **B.** Drop the rule; the blade's virtue is its tier and its cost.
+   - **C.** It opens the door of a sigil gate whose sigil you have not yet touched.
+4. **The Shuttle's cost** (added after Session 779). The page says *the Cold rises 1 a week while you carry it; Varek's next discovery comes one meeting sooner*. The Cold today rises only for an Old Blood reader, and Varek's discoveries wait on your Masteries.
+   - **A.** The Cold rises for anyone who carries it, and each of Varek's discoveries needs one Mastery fewer while you do *(recommended: the Shuttle's price is the Shuttle's, whoever you are)*.
+   - **B.** The Cold rises only for an Old Blood reader, as the Cold does now; Varek as A.
+   - **C.** Leave Varek out: the Cold alone, as A.
+
+Michael: **All four as recommended** (1A the draft approved, the Noon Ring included; 2A corpse cloak wolves only, the town pays nothing; 3A the blade opens a locked door at a touch in a gate you have been down; 4A the Cold rises for anyone carrying the Shuttle, Varek needs one Mastery fewer). (2026-10-13)
+
 ### Aurenne's houses — the white town, the mix, or the Roman town? (the concept artist, 2026-10-12) — DECISION #259
 You set Aurenne's register this morning: a Roman, Egyptian, Arabic and Greek fusion, not French (OG-061, OG-043). Its houses today are the French cottage in warm colours: cream plaster, a gabled terracotta roof, shutters, a chimney and a woodpile (5,710 triangles one storey, 6,646 two). The prototype (`docs/prototypes/aurenne/`, on auto/concept) draws five new houses in the shape kit, beside today's house taken from the game itself (build s587) and the game's own Aurennais townsfolk for scale (1.22 and 1.30 units). Under every option: walls with real arched openings as deep as the wall, small deep windows, a door of painted cedar in a frame of blue and white glazed tile, lattice screens (mashrabiya) on the upper floors, cypresses and bougainvillea at the doors, walls in five washes (lime white, warm lime, ochre, rose, chalk). One storey is 2,808 triangles; the richest house, two storeys with a dome, is 6,056, about today's. Only the houses change here; churches, keeps and guild halls are another question. The same house stands in the foreign quarter by the water in the Gatelands' ports, which borrows Aurenne's style today.
 - **A. The white town**: every house flat-roofed, with a terrace behind a rounded parapet, rainwater spouts, pots, a pergola with a striped awning, an outside stair to the roof; the rich houses domed in blue tile. Greek-island and North African.
@@ -60,7 +83,8 @@ The critic's s585: E beside Sinéad's bed in Carraig Mór at 1h wakes her (Sessi
 - **B. As A, and she wants you out**: woken, she says her line and the talk offers only *Leave* and *I'm sorry, I'll go*; she will trade or talk normally from 7h. Still no crime.
 - **C. As A, and a stranger found in a home at night is trespass**: woken by someone who neither rents, owns nor was let in, she counts it as a seen crime (−1 favour, the 25-gold fine, a guard sent, as a picked lock), and the line says so.
 Recommendation: **A**. The crime design chose that being inside is not a crime, and the critic's complaint is the words, not the rules; C changes the crime rules on a corner case, and B blocks talk the player came for.
-Michael: **Her own night line, then the usual talk** (A). (12 Oct 2026)
+Michael: **Her own night line, then the usual talk** (A). (12 Oct 2026, on issue #255)
+*Done, Session 770:* over a sleeper the prompt reads *<name> (asleep) — Press 'E' to wake*; the first talk after she is woken in her sleeping hours opens with the night line in place of the greeting, once a visit, and the introduction moves after her own topics. No crime. The four voices are the quest writer's: `WOKEN_LINES` in `js/86-world-crime.js` is empty, and until a people has its own line the decision's *What — who's there? It's the middle of the night.* stands for all four.
 
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.

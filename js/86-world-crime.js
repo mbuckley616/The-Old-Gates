@@ -381,6 +381,14 @@
     let x=b.x+1.1,z=b.z+.6;for(const [ox,oz] of [[1.1,.6],[1.1,1.4],[0,1.6],[1.1,-.2]]){if(!intSolidAt(b.x+ox,b.z+oz,.3,b.y)){x=b.x+ox;z=b.z+oz;break;}}
     m.rotation.set(0,woken?Math.atan2(px-x,pz-z):Math.PI,0);m.position.set(x,b.y,z);intNPCPos.x=x;intNPCPos.z=z;return true;}
   function sleeperNear(){const b=sleeperAsleep()&&intNPCMesh.userData.asleep;return !!b&&Math.hypot(px-b.x,pz-b.z)<WIT_HEAR&&Math.abs(jumpY-b.y)<1.2;}
+  // S770 — woken in the night (Michael's A on #255): the first talk after a householder is woken while the house sleeps opens with a
+  // night line by her people, and the introduction is not first. No crime. WOKEN_LINES is the quest writer's, one line per people
+  // (gatelander, markman, aurennais, oldblood); until a people has its own, the line from the decision stands for all four.
+  const WOKEN_LINES={};
+  function wokenLine(house){const p=house&&house.dlg&&house.dlg.people;return WOKEN_LINES[p]||"What — who's there? It's the middle of the night.";}
+  // asked as E opens a home's talk: the night line if she was woken this visit, the house still keeps its sleeping hours, and she has not yet said it
+  function wokenGreetNow(){if(typeof intNPCMesh==='undefined'||!intNPCMesh||!currentHouse)return null;const u=intNPCMesh.userData;
+    if(!u.woke||u.wokeSaid||!homeAsleepNow(currentHouse))return null;u.wokeSaid=true;return wokenLine(currentHouse);}
   // each frame indoors: to bed at 23h, up at 5h, and awake to whoever comes within two units of the bed
   function tickSleeper(){if(typeof intNPCMesh==='undefined'||!intNPCMesh||!currentHouse||currentHouse.type!=='home')return;const m=intNPCMesh;
     if(m.userData.asleep){if(sleeperNear())wakeSleeper(m,true);else if(!homeAsleepNow(currentHouse))wakeSleeper(m,false);}
