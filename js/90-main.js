@@ -1010,7 +1010,7 @@ function loop(now){
       if(intNPCMesh.children[3])intNPCMesh.children[3].rotation.x= armSwing;
       if(intNPCMesh.children[4])intNPCMesh.children[4].rotation.x=-armSwing;
     }
-    const nearKeeper=intNPCMesh && Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2 && Math.abs(jumpY)<1.2 && aimAt({g:intNPCMesh},3.6); // v80 — aimed
+    const nearKeeper=keeperAimed(); // v80 — aimed; S798 — one rule with E's (50-travel.js)
     // v61d4 — added safehouse:8 to room-depth lookup so the exit threshold
     // resolves correctly indoors. Same fix applies in the interact handler.
     const _rd=(currentHouse&&(currentHouse._roomD||{weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22,safehouse:8}[currentHouse.type||'misc']))||9,_rw=(currentHouse&&currentHouse._roomW)||10;
