@@ -16419,3 +16419,10 @@ Two more of the suites that failed once on CI in 11 to 13 Oct. Both failures cam
 `gateschool`, `dungeonpace`, `dungeonchase` and `thresholdname` are green. To reproduce a slow runner, each gate's build was put 3 s behind the call. The old `gateschool` then failed with CI's own two checks and its numbers: both gates *deep, occupied, fog 526864*, with Goblin, Kobold Thief, Slime, Cave Troll and Shieldbearer. The new one passed under the same delay.
 ### Needs eyes
 Nothing in play. `lod`, `lairdoor`, `shiplog` and `fortwalk` are left from the list, one red each.
+
+## v80 — Session 811 — `lairdoor` loads its door's cell again before it walks in (CI health, tests only)
+One more of the suites that failed once on CI in 11 to 13 Oct. `lairdoor` crashed on CI with *Cannot read properties of undefined (reading 'x')*, reading the door's place after it came out of the cavern. The suite measures the lairs round the start by loading their cells, up to four away, with `WORLD.loadCell`. It then walks into the first lair's cavern by its portal. The world's own cell tick (`tickCells`, every 0.75 s of real time) drops any cell more than one from the player, with its doors, portals and `dungeonWorldPos`. When a tick fell between those two steps, the portal was gone: nobody went in, the suite's wait for the cavern ran out, and the read of the door's place threw. A first guess, that the cell had not reloaded after the cavern, was wrong. A probe showed that in the failing run the player had never left the world. The suite now loads the door's cell again just before it looks for the portal, and if the door is missing it returns that instead of throwing, so the next check names the fault. No game code changed, so the build tag stands.
+### Verified (headless Chromium)
+`lairdoor` green. With no change to the suite, 1 run in 4 here hit the race: the zone still read *world* where it should have read *dungeon*, and the door's place was gone. With a cell tick forced between measuring and going in, the old suite threw CI's own error and the new one passed.
+### Needs eyes
+Nothing in play. `lod`, `shiplog` and `fortwalk` are left from the list, one red each.
