@@ -16179,7 +16179,7 @@ The third of the sessions from Michael's "go ahead and tackle more of the skelet
 - The Mossback's garden at walking pace.
 - With this, every skeletal body plan in the concept art has at least one creature. What remains for creatures is the move into the game, behind the foundation's switch, the wolves first.
 
-## v80 — Session 776 — The human builder: a tool page, saved genomes, and hair that lies on the head (B1, prototype only)
+## v80 — Session 804 — The human builder: a tool page, saved genomes, and hair that lies on the head (B1, prototype only)
 The look builder's first carry-over item while the foundation's renderer waits: B1 of `docs/design/character-builder.md`, Session 770's `people.js` made into the tool page, with genome save and load, and the women's long hair and braids fixed. Session 770 left the hair as its weakest part ("untidy at the temples"). A fresh render of its line-up showed why: every card was combed by one fixed direction and then fell free, so at the temples and the crown the cards crossed and stood off the head in planks, and the long hair was a tangle over a bald strip.
 
 **The hair, rebuilt (`people.js`, `buildHair`).** Every strand now walks over the head's own surface at a small height of its own (its layer, 3 to 14 mm), found through a 2.5 cm grid of the morphed body's points and normals, and it goes where the style sends it. The styles:
@@ -16214,10 +16214,45 @@ The look builder's first carry-over item while the foundation's renderer waits: 
   - `builder-page.jpg`, the page with its panel;
   - `builder-styles-back.jpg`, `-front.jpg` and `-mantle.jpg`, the six styles;
   - `builder-woman-braid.jpg`, `-braids.jpg`, `-face.jpg` and `builder-man-face.jpg`, close-ups;
-  - `people-lineup-776.jpg`, Session 770's line-up with the new hair.
+  - `people-lineup-804.jpg`, Session 770's line-up with the new hair.
 ### Needs eyes
 - **The hair as a whole,** against OG-025 and OG-001's faces. It is tidy now, but the strand texture reads coarse up close, and loose hair over the fur mantle stands off the back like a board, because the curtain has to clear the eleven fur shells.
 - **The braids at the collar,** where they cross the fur: close up, a braid dips into the collar's shells before it comes out over the mantle.
 - **Loose hair's cost:** 278,000 triangles. Crowds will want the level-of-detail meshes the design names.
 - **The faces,** which this session did not touch: the women's still read heavy-browed and old, and the brows are stamped shells. That belongs to B3 (the peoples' ranges) and to close-up work on the face sliders.
 - A question for Michael in `decisions.md`: whether this is the hair to carry forward.
+- Numbering: this entry was first pushed as Session 776, but the systems branch had already reached 803 (and has its own 776), so it was renumbered 804 before merging.
+
+## v80 — Session 805 — The wardrobe's first pieces: the cloak, the hood, the apron, the brooch (B2, prototype only)
+B2 of `character-builder.md` is the wardrobe kit. Its brief waits on Michael's marks for the second round's clothing sheets (OG-109 to OG-111 are still unreviewed), so this first slice takes only what the kept sheets already show:
+- OG-048 and OG-059: the Gatelanders' hooded wool cloaks pinned at the throat with a round brooch, the farm woman's apron and the tradesman's long leather apron;
+- OG-025: the Markmen's fur-lined cloaks on round iron clasps.
+
+**The cloak** (`people.js`, `buildCloak`) is cloth hung from the shoulders, built after the pose on the posed body. The body is skinned on the CPU (three's `getVertexPosition`), so the cloak falls over the arms where they really are, not where the A-pose had them.
+- **The drape:** 34 columns round the base of the neck each start on the shoulder line (the surface point furthest out and a little down from the neck at that angle). Each falls under gravity, using the drape the braids use. It is pushed clear of the body by what the body wears: 4 cm over a tunic, 9.5 cm over the fur mantle.
+- **The sheet:** neighbouring columns are held to a spacing that may widen toward the hem by up to 1.5 times. Folds are rippled in, deepening toward the hem and fading at the front edges, and the grid becomes a double-sided sheet of 4,600 to 9,200 triangles.
+- **The opening and the brooch:** the cloak opens at the throat, where a round brooch with a boss pins it (brass, or iron for the Markmen).
+- **The collar:** a fur collar of six shells may be turned out round it (`cloakFur`). Otherwise the hood lies rolled behind the neck (`hood: 'down'`).
+- **The hood up** (`hood: 'up'`) is a skinned garment, so it follows the head. The head's points are set out onto a smooth shell round the head and hair, which falls to the shoulders, with the face cut open in the shader.
+
+**The apron** is the skirt shell's front with clean shader-cut edges, in wool or leather, with an optional bib off the tights' front.
+
+**Saved and shown:** the genome saves all of it: `cloak`, `cloakFur`, `brooch` and `apron` as colours, and `hood`, `cloakLen`, `bib` and `apronLeather` as flags (770 to 800 bytes). The builder page gains the four garments, a hood selector, bib and leather boxes and a cloak-length slider, and `?dress=` sets garments for the pictures.
+### Verified (headless Chromium)
+`builder.check.mjs`: 74 checks, all pass. The 60 from Session 804 still pass, and:
+- **Four dressed genomes:**
+  - a woman with the cloak, hood down and a bibbed apron;
+  - a man with a short cloak and the hood up;
+  - a man with a long fur-collared cloak over the mantle;
+  - a woman in a leather apron.
+- **Each one:**
+  - saves and loads back byte for byte (772 to 801 bytes);
+  - its cloak hangs clear of the body everywhere (closest 3.6 to 4.1 cm, no vertex within 5 mm);
+  - its brooch sits 12 to 16 cm from the neck joint, at the throat;
+  - the hood and the apron are there when asked for.
+- **Pictures:** `builder-cloak-front.jpg`, `-back.jpg`, `-hood.jpg` and `-markman.jpg`, and `builder-apron-leather.jpg`.
+### Needs eyes
+- **The cloak's shape:** it hangs from the shoulder tips straight down over the arms, so from the front and back it reads as a stiff, boxy plank. The folds are shallow and barely show in dark wool. A real cloak hangs in toward the legs and breaks over the arms; the next pass wants deeper folds and a hem that follows the body in.
+- **The hood up is not right:** with it up, a stepped patch of the man's hair at the crown is drawn as bare skin. Hiding parts in turn shows the hair and its cap are there, and that the body's skin draws over them only while the hood is in the scene. The cause is not found yet; it is owed before the hood-up look is judged.
+- **The leather apron** reads well; its bib's top edge is cut straight across.
+- A DECISION is raised in `decisions.md`: whether this drape-and-shell approach is the wardrobe's method.

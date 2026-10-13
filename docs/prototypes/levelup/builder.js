@@ -1,10 +1,11 @@
-// The human builder (Session 776, backlog K, B1 of docs/design/character-builder.md): Session 770's people.js made into a
+// The human builder (Session 804, backlog K, B1 of docs/design/character-builder.md): Session 770's people.js made into a
 // tool page. Pick or roll a genome, move its sliders (lock any of them and roll the rest), dress it, choose its hair,
 // and save it as JSON (or a link); load one back. The game will read the saved genome; it never needs this page.
 // Query: ?g=<base64url genome>  ?seed=<s>&sex=m|f  ?view=full|face|back|side  ?still&w&h (one frame, for the checks).
 import * as THREE from 'three';
 import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { loadPack, makePerson, toSaved, fromSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS } from './people.js';
+const GLABEL = { skirtColor: 'skirt colour', cloakFur: 'fur collar' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -55,7 +56,7 @@ function colour(label, get, set, extra) {
 }
 const FACE = ['head-square', 'head-oval', 'head-round', 'forehead-trans', 'chin-width', 'chin-prominent', 'chin-height', 'nose-scale-vert', 'nose-scale-horiz', 'nose-point-width', 'nose-curve', 'l-cheek-bones', 'r-cheek-bones', 'mouth-scale-horiz', 'torso-vshape', 'neck-scale-horiz', 'hip-scale-horiz'];
 function buildPanel() {
-  panel.innerHTML = ''; panel.append(el('div', { innerHTML: '<b>The human builder</b> · Session 776 · B1' }));
+  panel.innerHTML = ''; panel.append(el('div', { innerHTML: '<b>The human builder</b> · Session 804 · B1' }));
   const seed = el('input', { type: 'text', value: G.seed, size: 12 }), sex = el('select', {}, el('option', { value: '', textContent: 'any' }), el('option', { value: 'f', textContent: 'woman' }), el('option', { value: 'm', textContent: 'man' }));
   const roll = el('button', { textContent: 'Roll', onclick: () => { const s = seed.value === G.seed ? Math.random().toString(36).slice(2, 8) : seed.value; seed.value = s; const N = rollGenome(s, { g: sex.value === 'f' ? 0 : sex.value === 'm' ? 1 : undefined });
     for (const k of locks) { if (k.startsWith('f:')) N.face[k.slice(2)] = G.face[k.slice(2)]; else N[k] = G[k]; } G = N; syncAll(); rebuild(); } });
@@ -71,9 +72,14 @@ function buildPanel() {
   h2('Dress'); const D = () => G.dress = G.dress || {};
   for (const k of GARMENTS) { const on = el('input', { type: 'checkbox', checked: !!D()[k], title: 'wear it' }); let last = D()[k] || [.3, .25, .2];
     on.onchange = () => { if (on.checked) D()[k] = last; else { last = D()[k] || last; D()[k] = null; } schedule(); }; on.sync = () => on.checked = !!D()[k];
-    colour(k === 'skirtColor' ? 'skirt colour' : k, () => D()[k], v => { last = v; if (on.checked) D()[k] = v; }, on); }
+    colour(GLABEL[k] || k, () => D()[k], v => { last = v; if (on.checked) D()[k] = v; }, on); }
   { const sk = el('select', {}, el('option', { value: '', textContent: 'none' }), el('option', { value: 'short', textContent: 'short' }), el('option', { value: 'long', textContent: 'long' })); sk.value = D().skirt || ''; sk.onchange = () => { D().skirt = sk.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'skirt' }), sk, el('span'))); inputs.skirt = () => sk.value = D().skirt || ''; }
+  h2('Cloak and apron'); { const hd = el('select', {}, ...['none', 'down', 'up'].map(v => el('option', { value: v, textContent: 'hood ' + v }))); hd.value = D().hood || 'none'; hd.onchange = () => { D().hood = hd.value === 'none' ? null : hd.value; schedule(); };
+    const bib = el('input', { type: 'checkbox', checked: !!D().bib, onchange: () => { D().bib = bib.checked; schedule(); } }), lea = el('input', { type: 'checkbox', checked: !!D().apronLeather, onchange: () => { D().apronLeather = lea.checked; schedule(); } });
+    panel.append(el('div', { className: 'bar' }, hd, el('label', {}, bib, ' bib'), el('label', {}, lea, ' leather apron')));
+    inputs.cloakFlags = () => { hd.value = D().hood || 'none'; bib.checked = !!D().bib; lea.checked = !!D().apronLeather; }; }
+  slider('cloak length', () => D().cloakLen ?? .8, v => D().cloakLen = v, 0, 1, 'cloakLen');
   h2('View'); panel.append(el('div', { className: 'bar' }, ...['full', 'head', 'face', 'side', 'back'].map(v => el('button', { textContent: v, onclick: () => { view = v; turn = 0; zoom = 1; frame(); dirty = true; } }))));
   h2('Genome'); const ta = el('textarea', { spellcheck: false }); B.text = ta; panel.append(ta);
   const file = el('input', { type: 'file', accept: '.json,application/json', style: 'display:none', onchange: async () => { const f = file.files[0]; if (f) loadText(await f.text()); } });
@@ -97,12 +103,14 @@ R.domElement.addEventListener('wheel', e => { zoom = Math.max(.5, Math.min(4, zo
 // ?sheet: every hair style on the one genome, side by side, seen from ?ang (radians round from the front; 2.4 is from behind)
 function sheet() {
   const styles = (Q.get('styles') || HAIR_STYLES.join(',')).split(','), ang = +(Q.get('ang') ?? 2.4), gap = .62, out = [];
-  const dress = Q.has('nomantle') ? { ...G.dress, mantle: null } : G.dress;
+  const dress = { ...G.dress, ...(Q.has('nomantle') ? { mantle: null } : {}), ...(Q.get('dress') ? JSON.parse(Q.get('dress')) : {}) };
   styles.forEach((st, i) => { const p = makePerson({ ...G, dress, hair: { style: st, len: Math.max(.6, G.hair?.len ?? .7) } }); p.root.position.x = (i - (styles.length - 1) / 2) * gap; p.root.rotation.y = -ang; scene.add(p.root); out.push({ style: st, ...p.hair }); });
   scene.updateMatrixWorld(true); const h = new THREE.Vector3(); scene.children.at(-1).getObjectByName('head')?.getWorldPosition(h);
   const y = h.y + +(Q.get('y') || 0); cam.fov = 22; cam.aspect = W / H; cam.position.set(0, y + .12, styles.length * gap * +(Q.get('dist') || 1.55)); cam.lookAt(0, y - .03, 0); cam.updateProjectionMatrix(); STATS.sheet = out;
 }
+window.__render = () => comp.render();
 loadPack().then(() => { if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
+  if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
   if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') };
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;
   if (!STILL) R.setAnimationLoop(() => { if (dirty) { comp.render(); dirty = false; } }); })

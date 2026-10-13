@@ -4,7 +4,24 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The builder's hair: groomed strands and modelled braids? (look builder, Session 776)
+### The wardrobe's first pieces: is a draped cloak and a shell hood the method? (look builder, Session 805)
+B2's first slice, from the kept sheets only (OG-048, OG-059, OG-025; the second round's clothing sheets OG-109 to OG-111 still wait for your marks). The pieces:
+- **The cloak:** cloth hung from the shoulders of the posed body. Columns fall under gravity, clear of what the person wears, and are held together as one sheet with folds.
+- **The rest:** a round brooch at the throat, a fur collar or the hood rolled behind the neck, a hood up as a shell over the head, and the apron, in wool or leather, with or without a bib.
+
+Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-front.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-back.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-markman.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-apron-leather.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-hood.jpg (the hood up has a known fault at the crown)
+
+The cloak is still stiff and boxy. Which way should the wardrobe go?
+- **A (recommended):** keep building garments this way: drapes for what hangs (cloaks, capes, the long skirts), and shells off the body's fitting shells for what fits (hoods, aprons, tabards, gambesons). The next passes give the cloak deeper folds and a hem that comes in to the legs, then do capes, hoods and the Crown tabard.
+- **B:** the same, but the cloak as a real cloth simulation run once at build time (a few hundred steps of a mass-spring sheet over the posed body). Better folds, about a second more per person to build, and more code.
+- **C:** garments modelled by hand or from CC0 sources and fitted to the body by its skin weights. Best up close, but every garment is a modelling job.
+
+### The builder's hair: groomed strands and modelled braids? (look builder, Session 804)
 B1 rebuilt the people's hair. Session 770's cards were combed one way and fell free, and crossed at the temples. Now every strand walks over the head's own surface at its own small height, toward where its style sends it. Six styles are built: short, loose, one braid, two braids, a tail and a bun. Braids, tails and buns are modelled as locks on a line that falls under gravity and clears the clothes. It is all seeded by the genome, and the checks show no strand under the skin or on the face. Pictures:
 - https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-back.jpg
 - https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-front.jpg
@@ -58,7 +75,7 @@ Asked to expand his idea of a skeleton for every creature type, akin to MakeHuma
 Sessions 773 to 775 built thirteen more (23 in all). Asked whether the next sessions were planned, Claude found the plan written but nothing queued (no Fable card, no roadmap epic) and the look builder still building in the old style. It recommended two things: queue the foundation as cards, and move the look builder to work that carries over until the renderer lands. Michael: **"Go with both of your recs for the two calls you posed to me."** (12 Oct 2026, in chat.) Done: the cards in `visual-foundation.md` §4 (F1 to F7, for the producer to put on the control room); backlog H paused for old-style look work; the look builder's routine prompt changed to take B1 to B3 first.
 
 
-### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 777, 2026-10-13) — DECISION #263
+### The Makers' tools — the words, and the Wolf-Mother's Cloak taken from a corpse (systems builder, after Session 805, 2026-10-13) — DECISION #263
 You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the frame and the Wolf-Mother's Cloak's rule: worn, wolves, bears and spiders leave you alone unless you strike first, and its lair's town loses 0.6 a day while the beast lives. Two things now stop the next sessions.
 
 1. **The words.** Every line a tool needs (its trial's prompts, the failing lines, the hermit who points the way, the altars, the claimants) is written in the quest writer's draft *The Makers' Things*, both runs, in `docs/quest_drafts.md`. The draft is marked unapproved. It also renames the page's *Sundial Ring* to *the Noon Ring*.

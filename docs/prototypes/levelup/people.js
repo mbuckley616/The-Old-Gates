@@ -29,9 +29,13 @@ export async function loadPack(base = 'mh/') {
     beard: sel(G['body'], (x, y, z) => y > .6 && y < .705 && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
     moust: sel(G['body'], (x, y, z) => y > .662 && y < .678 && z > .1 && Math.abs(x) < .034),
     scalp: sel(G['body'], (x, y, z) => { const hl = .808 - .035 * (x / .075) ** 2; return y > .64 && Math.abs(x) < .115 && !(z > .015 && y < hl) && !(y < .77 && Math.abs(x) > .06 && z > -.035) && !(z > -.01 && y < .72) && !(y < .69 && z > -.06); }),
-    // where hair roots: the old scalp plus the sides down to above the ears and the back down to the nape (Session 776),
+    // where hair roots: the old scalp plus the sides down to above the ears and the back down to the nape (Session 804),
     // so a style that lifts the hair up and back (a bun, a braid) does not bare the temples
     scalpRoots: sel(G['body'], (x, y, z) => { const hl = .796 - .03 * (x / .075) ** 2; return y > .66 && Math.abs(x) < .11 && (z > .05 ? y > hl : z > .022 ? y > (Math.abs(x) > .05 ? .755 : .7) : y > .695); }),
+    // the wardrobe's first pieces (Session 805): a waist apron off the skirt shell, its bib off the tights, a hood over the head with the face open
+    apron: sel(G['helper-skirt'], (x, y, z) => z > .015 && Math.abs(x) < .2 && y > -.6),
+    apronBib: sel(tri, (x, y, z) => z > .03 && Math.abs(x) < .14 && y > .08 && y < .5),
+    hood: sel(G['body'], (x, y, z) => y > .6 && !(z > .03 && (x / .06) ** 2 + ((y - .71) / .085) ** 2 < 1)),
     brows: sel(G['body'], (x, y, z) => y > .748 && y < .757 && z > .1 && Math.abs(x) > .012 && Math.abs(x) < .055),
   };
   return PACK;
@@ -60,8 +64,8 @@ function clothMat(color, kind = 'wool', o = {}) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? (kind === 'leather' ? .62 : .95), metalness: 0, side: o.side ?? THREE.FrontSide });
   m.onBeforeCompile = s => { s.uniforms.tW = { value: TEXW[kind] };
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vRN = normal; vB = aBase;');
-    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)}), opacity );`); };
-  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0);
+    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)}), opacity );`); };
+  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '');
   return m;
 }
 // fur and hair: stacked shells, each cut by noise so strands rise from the surface
@@ -156,7 +160,7 @@ function hairCards(P, tris, o) {
   const mesh = new THREE.SkinnedMesh(g, m); mesh.noCast = true; mesh.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: strandTex(), alphaTest: .42 }); return mesh;
 }
 
-// ── groomed hair (Session 776): strands that lie on the head ──
+// ── groomed hair (Session 804): strands that lie on the head ──
 // Session 770's cards were combed by a fixed direction and fell free, so at the temples they crossed and stood off the
 // head. Here every strand walks over the head's own surface at its own small height (its layer), toward where the style
 // sends it: down and back from a centre parting (loose and short), or to a gathering point (a braid, two braids, a tail,
@@ -297,6 +301,59 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
   return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, points: pts, inside, onFace, drapeMin: +drapeMin.toFixed(4) } };
 }
 
+// ── the cloak (Session 805, B2): cloth hung from the shoulders ──
+// Built after the pose, on the posed body: a ring of columns round the base of the neck, each started on the shoulder
+// line and let fall under gravity, pushed clear of the body and what it wears (the drape the braids use). Neighbouring
+// columns are then held to a spacing that widens toward the hem, folds are rippled in, and the grid becomes the sheet.
+// It opens at the throat, where a round brooch pins it (OG-048, OG-059; OG-025's iron clasps). Its hood lies rolled on
+// the shoulders, or is up over the head as a fitted shell (a skinned garment, so it follows the head).
+function posedBody(body) {
+  const n = PACK.N, out = new Float32Array(n * 3), v = new THREE.Vector3(); body.updateMatrixWorld(true);
+  for (let i = 0; i < n; i++) { body.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out;
+}
+function buildCloak(G, body, byName, rnd) {
+  const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
+  const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
+  const len = D.cloakLen ?? .8, L = .4 + 1.0 * len, K = 34, open = .38, flare = 1.12 + .4 * len;
+  const clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .02 - q.y) / .03)); return .03 + k * ((D.mantle && q.y > neckY - .32 ? .095 : D.tunic ? .04 : .015) - .01); };
+  // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
+  const cols = [], tops = [];
+  for (let k = 0; k < K; k++) { const th = -Math.PI + open + (k / (K - 1)) * (2 * Math.PI - 2 * open), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
+    const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
+    const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
+    cols.push(drape(S, start, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006)); }
+  const R = Math.min(...cols.map(c => c.length));
+  // hold neighbours to a spacing that widens toward the hem, then clear the body again
+  const sp0 = cols.slice(1).map((c, k) => c[0].distanceTo(cols[k][0]));
+  for (let it = 0; it < 8; it++) {
+    for (let r = 1; r < R; r++) { const t = r / (R - 1), f = 1 + (flare - 1) * t;
+      for (let k = 0; k < K - 1; k++) { const a = cols[k][r], b = cols[k + 1][r], d = a.distanceTo(b), want = sp0[k] * f; if (d > want * 1.02 || d < want * .6) { const m = a.clone().sub(b).multiplyScalar((d - want) / d * .5); a.sub(m); b.add(m); } } }
+    for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r], seg = q.clone().sub(c[r - 1]), l = seg.length(); if (l > .0105) q.copy(c[r - 1]).addScaledVector(seg, .0105 / l);
+      const cl = clearAt(q) + .006, hit = heightOver(S, q); if (hit && hit.h < cl) q.addScaledVector(hit.e.n, cl - hit.h); } }
+  // folds: a ripple across the columns that deepens toward the hem
+  const ph = rnd() * 6;
+  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const t = r / (R - 1), q = cols[k][r], o = q.clone().sub(new THREE.Vector3(neck.x, q.y, neck.z)); o.y = 0; o.normalize();
+    q.addScaledVector(o, Math.max(0, Math.sin(k * .85 + ph + Math.sin(k * .31) * 2)) * .022 * t ** .8 * Math.min(1, k / 3, (K - 1 - k) / 3)); }
+  // the sheet
+  const pos = [], uv = [], idx = [];
+  for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
+  for (let k = 0; k < K - 1; k++) for (let r = 0; r < R - 1; r++) { const a = k * R + r, b = a + R; idx.push(a, a + 1, b, b, a + 1, b + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  const cm = clothMat(sRGB(...D.cloak), D.cloakFur ? 'leather' : 'wool', { side: THREE.DoubleSide, scale: 26 }), cloak = new THREE.Mesh(g, cm); cloak.name = 'cloak'; out.push(cloak);
+  // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
+  const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
+  if (D.cloakFur) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }
+  else if (D.hood === 'down') { const back = ring.slice(Math.round(K * .3), Math.round(K * .7)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25)), m = new THREE.Mesh(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'hood'; out.push(m); }
+  // the brooch at the throat, where the two front columns meet
+  const a = tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
+  const br = new THREE.Mesh(new THREE.CylinderGeometry(.021, .021, .006, 24), new THREE.MeshStandardMaterial({ color: sRGB(...(D.brooch || [.55, .42, .2])), metalness: .9, roughness: .38 }));
+  br.position.copy(at).addScaledVector(nrm, .012); br.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), nrm); br.name = 'brooch'; out.push(br);
+  const boss = new THREE.Mesh(new THREE.SphereGeometry(.007, 12, 8), br.material); boss.position.copy(br.position).addScaledVector(nrm, .005); out.push(boss);
+  for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
+  let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
+  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3) } };
+}
+
 export function makePerson(G, o = {}) {
   const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null;
   // the feet on the ground
@@ -321,6 +378,13 @@ export function makePerson(G, o = {}) {
   if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01] }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)));
   if (D.belt) push('belt', PACK.R.belt, clothMat(sRGB(...D.belt), 'leather', { cut: [.135, .19, 9, .0005] }), .03);
   if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { cut: [-2, 2, .4] }), .02);
+  if (D.apron) { const lea = !!D.apronLeather, am = clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [lea ? -.52 : -.42, .175, .155, .004] });
+    push('apron', PACK.R.apron, am, (x, y) => .03 + .012 * Math.max(0, Math.min(1, (.1 - y) / .4))); if (D.bib) push('bib', PACK.R.apronBib, clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [.1, .46, .105, .003] }), .04); }
+  if (D.cloak && D.hood === 'up') { // a hood: the head's points set out onto a smooth shell round the head and hair, falling to the shoulders
+    const idx = PACK.R.hood, bb = new THREE.Box3(), v = new THREE.Vector3(); for (const i of idx) if (rest0[i * 3 + 1] > .66) bb.expandByPoint(v.fromArray(P, i * 3)); const c = bb.getCenter(new THREE.Vector3()), r = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.03); c.z -= .01; r.z += .02;
+    const g = geomFor(P, idx), pos = g.attributes.position.array, used = new Set(idx);
+    for (const i of used) { const d = v.fromArray(P, i * 3).sub(c), len = d.length(), u = d.clone().divideScalar(len), re = 1 / Math.hypot(u.x / r.x, u.y / r.y, u.z / r.z), out = c.clone().addScaledVector(u, Math.max(len + .03, re)); pos[i * 3] = out.x; pos[i * 3 + 1] = out.y; pos[i * 3 + 2] = out.z; }
+    g.computeVertexNormals(); const m = new THREE.SkinnedMesh(g, clothMat(sRGB(...D.cloak), 'wool', { side: THREE.DoubleSide, scale: 26, hole: '(vB.z > -.005 && pow(vB.x / .07, 2.) + pow((vB.y - .705) / .1, 2.) < 1.) || (vB.z > .02 && vB.y < .66)' })); m.name = 'hoodUp'; meshes.push(m); }
   // a fur mantle over the shoulders: eleven shells
   if (D.mantle) for (let k = 0; k < 11; k++) push('mantle' + k, PACK.R.mantle, shellMat(sRGB(...D.mantle), k, 11, { sx: 260, sy: 70, solid: k === 0 }), .036 + k * .0055);
   // hair: cards rooted on the hair shell (off the face), a layer of shell underneath so no scalp shows; brows; beard and moustache as short cards
@@ -351,7 +415,8 @@ export function makePerson(G, o = {}) {
   byName['lowerarm01.L'].quaternion.copy(q(pose.elbow, 0, 0)); byName['lowerarm01.R'].quaternion.copy(q(pose.elbow, 0, 0));
   byName['head'].quaternion.copy(q(.04, pose.head, 0)); if (byName['jaw']) byName['jaw'].quaternion.copy(q(pose.jaw ?? -.12, 0, 0)); byName['spine05'].quaternion.copy(q(0, 0, pose.hip));
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats };
+  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -368,15 +433,15 @@ export function markGenome(rnd, g, o = {}) {
     pose: { arm: .68 + rnd() * .1, elbow: .5 + rnd() * .3, head: (rnd() - .5) * .4, hip: (rnd() - .5) * .04 } };
 }
 
-// ── the saved genome (Session 776): what the builder page writes and the game will read ──
+// ── the saved genome (Session 804): what the builder page writes and the game will read ──
 // { species, v, seed, people, sliders: {body and face, by name}, race, palette: {skin, hair, eyes} as hex, hair: {style, len, beard},
 //   dress: {garment: hex, skirt: 'short'|'long'|null}, pose }. Numbers to three places, so a person is a few hundred bytes.
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor'];
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'brooch', 'apron'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false };
 export function toSaved(G) {
-  const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null;
+  const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
   return { species: 'human', v: 1, seed: String(G.seed ?? 'person'), people: G.people || 'markman', sliders: round({ ...Object.fromEntries(BODY_SLIDERS.map(k => [k, G[k] ?? (k === 'prop' ? .6 : .5)])), ...(G.face || {}) }),
     race: round(G.race || { caucasian: 1 }), palette: { skin: hex(G.skin), hair: hex(G.hairCol || [0, 0, 0]), eyes: hex(G.eyes) }, hair: { style, len: r3(G.hair?.len ?? G.hairLen ?? .3), beard: r3(G.beard || 0) },
@@ -387,7 +452,7 @@ export function fromSaved(J) {
   for (const [k, v] of Object.entries(S)) if (BODY_SLIDERS.includes(k)) G[k] = v; else G.face[k] = v;
   G.skin = unhex(J.palette.skin); G.hairCol = unhex(J.palette.hair); G.eyes = unhex(J.palette.eyes);
   G.hair = { style: J.hair?.style || 'short', len: J.hair?.len ?? .3 }; G.beard = J.hair?.beard || 0;
-  G.dress = { skirt: J.dress?.skirt || null }; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; return G;
+  G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk only until B3 writes the four peoples)
 export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }
