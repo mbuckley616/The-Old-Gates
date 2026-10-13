@@ -6,6 +6,59 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The four peoples' heights and palettes (look builder, Session 806) — DECISION #276
+B3's first slice: each people is a range over the one body, rolled by seed. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-peoples.jpg (three each: Gatelanders, Markmen, Aurennais, the Old Blood).
+
+The statures are in metres:
+- Gatelanders: men 1.72 to 1.84 m, women 1.60 to 1.72 m.
+- Markmen: men 1.84 to 1.98 m, women 1.72 to 1.84 m.
+- Aurennais: men 1.74 to 1.86 m, women 1.62 to 1.74 m.
+- The Old Blood: men 1.56 to 1.66 m, women 1.46 to 1.56 m.
+
+Together they average 1.72 m. The colours follow canon §2 and the kept sheets; `PEOPLES` in `docs/prototypes/levelup/people.js` has every value.
+
+Should the ranges and colours stand?
+- **A (recommended):** keep these ranges and palettes, and go on to the faces per people, the Old Blood's marks and the Aurennais dress.
+- **B:** keep the palettes but push the heights apart (Markmen near 2 m, Old Blood near 1.5 m) so the peoples read at a distance.
+- **C:** pull the heights together (every people within 8 cm of 1.80 m) and let dress and colour carry the difference.
+
+Michael: **Keep these ranges and palettes** (A). (13 Oct 2026)
+
+### The wardrobe's first pieces: is a draped cloak and a shell hood the method? (look builder, Session 805) — DECISION #274
+B2's first slice, from the kept sheets only (OG-048, OG-059, OG-025; the second round's clothing sheets OG-109 to OG-111 still wait for your marks). The pieces:
+- **The cloak:** cloth hung from the shoulders of the posed body. Columns fall under gravity, clear of what the person wears, and are held together as one sheet with folds.
+- **The rest:** a round brooch at the throat, a fur collar or the hood rolled behind the neck, a hood up as a shell over the head, and the apron, in wool or leather, with or without a bib.
+
+Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-front.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-back.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-markman.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-apron-leather.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-cloak-hood.jpg (the hood up has a known fault at the crown)
+
+The cloak is still stiff and boxy. Which way should the wardrobe go?
+- **A (recommended):** keep building garments this way: drapes for what hangs (cloaks, capes, the long skirts), and shells off the body's fitting shells for what fits (hoods, aprons, tabards, gambesons). The next passes give the cloak deeper folds and a hem that comes in to the legs, then do capes, hoods and the Crown tabard.
+- **B:** the same, but the cloak as a real cloth simulation run once at build time (a few hundred steps of a mass-spring sheet over the posed body). Better folds, about a second more per person to build, and more code.
+- **C:** garments modelled by hand or from CC0 sources and fitted to the body by its skin weights. Best up close, but every garment is a modelling job.
+
+Michael: **Keep this way: drapes hang, shells fit** (A) — As long as this doesn't have the arms phasing through the clothing, I'm okay with this. Take another look at the Hood though, it's semi-transparent. (13 Oct 2026)
+
+### The builder's hair: groomed strands and modelled braids? (look builder, Session 804) — DECISION #272
+B1 rebuilt the people's hair. Session 770's cards were combed one way and fell free, and crossed at the temples. Now every strand walks over the head's own surface at its own small height, toward where its style sends it. Six styles are built: short, loose, one braid, two braids, a tail and a bun. Braids, tails and buns are modelled as locks on a line that falls under gravity and clears the clothes. It is all seeded by the genome, and the checks show no strand under the skin or on the face. Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-back.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-front.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-mantle.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-woman-braid.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-man-face.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-page.jpg
+
+Is this the hair to carry into the cast (B3) and the game (B6)?
+- **A (recommended):** yes, keep groomed strands and modelled locks, and refine them as the cast is built: a finer strand texture, more styles from OG-025 and OG-001 (crown braids, a plait over the shoulder, a shaved side), and lighter loose hair for crowds. It fits every body the genome makes, costs nothing to make a new style, and stays testable.
+- **B:** keep the method for braids, tails and buns, but make short and loose hair as a few sculpted shells with a painted strand texture (the usual game hair cap). It is cheaper and smoother at a distance, and flatter up close.
+- **C:** model a small set of hair meshes by hand or from CC0 sources, fitted to the head per style. It looks best in close-ups, but every new style is a modelling job and has to be refitted to the face sliders.
+
+Michael: **Yes: groomed strands and modelled locks** (A) — Eyebrows look pretty fugly still, and some of the hairstyles aren't quite landing how I'd like. Let's keep refining here. (13 Oct 2026)
+
 ### The Wolf-Mother's Cloak in the den — when does a sleeping master wake, and what is "weapon sheathed"? (systems builder, after Session 802, 2026-10-13) — DECISION #270
 Five of the six Makers' tools can now be had where they lie (Sessions 797, 800–802). The last is the cloak's own trial: the approved draft (*The Makers' Things*, §6) has the master of a home-island lair (*Dunkeel's Lair* in this world) **asleep on the cloak**, and you take it from under the living beast at Resolve 30 (*It lifts its head and looks at you for a long time…*); a failure *costs nothing, wakes nothing*; the prompt shows *within reach of the master, weapon sheathed*. Two rules are not written anywhere. Today every cavern master is awake and fights on sight, and the game has no sheathed state (an empty hand is fists).
 
