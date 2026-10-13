@@ -26,7 +26,7 @@ You chose B on #175 (*the Makers' six tools*). Sessions 776 and 777 built the fr
    - **B.** The Cold rises only for an Old Blood reader, as the Cold does now; Varek as A.
    - **C.** Leave Varek out: the Cold alone, as A.
 Michael: **All four as recommended** (1A the draft approved, the Noon Ring included; 2A corpse cloak wolves only, the town pays nothing; 3A the blade opens a locked door at a touch in a gate you have been down; 4A the Cold rises for anyone carrying the Shuttle, Varek needs one Mastery fewer). (2026-10-13, on issue #263)
-*Acted on:* 3A built in Session 780 (`tests/bladekey`), 2A in Session 781 (`tests/cloakcorpse`); 4A waits for the Shuttle; the words (1A) go in with each trial. Issue #263 closed by the producer.
+*Acted on:* 3A built in Session 780 (`tests/bladekey`), 2A in Session 781 (`tests/cloakcorpse`), 4A in Session 782 (`tests/shuttle`); the words (1A) go in with each trial. Issue #263 closed by the producer.
 
 
 ### Aurenne's houses — the white town, the mix, or the Roman town? (the concept artist, 2026-10-12) — DECISION #259

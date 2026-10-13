@@ -811,6 +811,7 @@ function loop(now){
   if(isInterior()&&typeof WORLD!=='undefined')WORLD.tickInterior(dt,now); // v80 S12
   if(typeof WORLD!=='undefined')try{WORLD.shipBarsUI();}catch(e){} /* S411 — the ship's hull and rig while you are aboard; hidden in every other zone */
   if(typeof WORLD!=='undefined')WORLD.tickRealClock(); // v80 S242 — the Reader's clock runs in every zone, or an hour underground reads as an hour away
+  if(typeof tickShuttle==='function')tickShuttle(); /* S782 — the Shuttle's Cold, in every zone (once a second) */
   if(lid==='overworld'){
     // v80 — streamed world: chunk streaming + atmosphere. Runs before the zone chain.
     if(activeZoneId==='world'&&typeof WORLD!=='undefined')WORLD.tick(dt,now);

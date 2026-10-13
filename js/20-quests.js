@@ -1545,7 +1545,7 @@ function drawSundial(){
 
 function getActiveQuestMarkers(){
   const markers=[];
-  if(typeof WORLD!=='undefined'&&typeof fxOn==='function'&&fxOn('seamsight')){const d=WORLD.nearestSigilDoor&&WORLD.nearestSigilDoor();if(d)markers.push({x:d.x,z:d.z,col:'#a0c8ff',label:'a warm stone'});} // v80 — the Weaver's Eye
+  if(typeof WORLD!=='undefined'&&((typeof fxOn==='function'&&fxOn('seamsight'))||(typeof shuttleCarried==='function'&&shuttleCarried()))){const d=WORLD.nearestSigilDoor&&WORLD.nearestSigilDoor();if(d)markers.push({x:d.x,z:d.z,col:'#a0c8ff',label:'a warm stone'});} // v80 — the Weaver's Eye
   if(typeof WORLD!=='undefined'&&WORLD.compassMarkers){try{WORLD.compassMarkers().forEach(m=>markers.push(m));}catch(e){}} // v80 — the world's live objectives: red doors, green targets
 
   // Helper: get the gate position pointing toward a target zone from current zone.

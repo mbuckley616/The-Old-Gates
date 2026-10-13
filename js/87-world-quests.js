@@ -947,7 +947,8 @@ const giver=`${lord.title} ${lord.name}`;
     wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30},
                   item:()=>({type:'equip',slot:'back',name:"The Wolf-Mother's Cloak",ico:'🧥',def:1,weight:2,cloak:'fur',virtue:'wolfmother',sellMult:0,buyPrice:0,desc:'Wolves, bears and spiders leave you alone unless you strike first.'})},
     waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null},
-    shuttle:     {god:'fiodoir', name:'the Shuttle',             ico:'🧵',check:{attr:'intelligence',need:35}}};
+    shuttle:     {god:'fiodoir', name:'the Shuttle',             ico:'🧵',check:{attr:'intelligence',need:35},
+                  item:()=>({type:'misc',name:'The Shuttle',ico:'🧵',weight:1,sellMult:0,buyPrice:0,desc:'A weaver’s shuttle of pale wood, worn smooth by a hand that is not yours, with a thread end in it that nothing will pull out. The Church calls it la Navette. The Old Blood call it Spól an Fhíodóra, the Weaver’s shuttle.'})}};
   const ARTIFACT_GEAR_MAX=2;
   // where each lies: the Stone's blade outside a ruined gate on the home island, the Beasts' cloak with a home-island
   // lair's master; the other four are placed with their trials. Candidates sorted by id, picked on seededRng('artifact', id).
@@ -969,6 +970,17 @@ const giver=`${lord.title} ${lord.name}`;
   // S778 — the Drowned Bell (the page's Sea row): carried, your ship takes half the wear of rough seas and storms (tickSeaWear),
   // and a black sail hunts you from 600 units, not 300 (the black sails' tick)
   function bellAboard(){return artifactCarried('drowned_bell');}
+  // S782 — the Shuttle (the page's Weaver row; Michael's 4A on #263): carried, the Weaver's Eye for good (the compass turns to the
+  // nearest unread sigil, as the spell does: getActiveQuestMarkers). The cost is the Shuttle's, whoever you are: the Cold rises 1
+  // for each week of game time it is carried (worldState.shuttleCarry, the character's, counts the minutes; the draft's log line,
+  // no screen line), and each of Varek's discoveries needs one Mastery fewer while it is on you (varekDue).
+  function shuttleCarried(){return artifactCarried('shuttle');}
+  const SHUTTLE_WEEK=7*1440;let _shT=0;
+  function tickShuttle(force){const t=performance.now();if(!force&&t-_shT<1000)return 0;_shT=t;const now=worldState.gameTimeAbsMinutes||0;let C=worldState.shuttleCarry;
+    if(!shuttleCarried()){if(C)C.last=now;return 0;}if(!C)C=worldState.shuttleCarry={acc:0,last:now};
+    C.acc+=Math.max(0,now-(C.last==null?now:C.last));C.last=now;let n=0;
+    while(C.acc>=SHUTTLE_WEEK){C.acc-=SHUTTLE_WEEK;worldState.cold=(worldState.cold||0)+1;n++;if(typeof addLog==='function')addLog('❄','Your hands are colder than the weather.');}
+    return n;}
   // S779 — the Gate-Blade (the page's Stone row): a tier-6 blade of 14 weight; while it is in your hand sprinting costs a quarter more
   function gateBladeDrawn(){return !!(EQ.weapon&&EQ.weapon.artifact==='gate_blade');}
   // S780 — Michael's 3A on #263: with the blade in hand, a locked door inside a sigil gate you have been down before opens at a
@@ -1495,7 +1507,7 @@ const giver=`${lord.title} ${lord.name}`;
   let _rwT=0;function tickRoadsWalked(dt){_rwT-=dt;if(_rwT>0)return;_rwT=1;const ri=roadInfo(px,pz);if(ri&&ri.d<ROAD_HALF+2&&ri.seg&&ri.seg.road){const d=ri.seg.road.def;(worldState.roadsWalked||(worldState.roadsWalked={}))[d.a+'|'+d.b]=1;}}
   function noteFastTravel(id){const t=siteAnywhere(id);if(!t||!t.pad)return;const walked=worldState.roadsWalked||{};const rds=ROAD_DEFS.filter(x=>x.a===id||x.b===id);if(rds.length&&!rds.some(x=>walked[x.a+'|'+x.b]||walked[x.b+'|'+x.a])){const v=vstate();if(!v.shortRoad)v.shortRoad=t.name;}}
   // which discovery is due
-  function varekDue(){const v=vstate();const M=worldState.masteries||0;
+  function varekDue(){const v=vstate();const M=(worldState.masteries||0)+(shuttleCarried()?1:0); /* S782 — the Shuttle: one Mastery fewer */
     if(v.chapel&&!v.done.chapel)return 'chapel';
     if(M>=1&&v.deaths>=1&&!v.done.returns)return 'returns';
     if(M>=1&&v.gapH>=6&&!v.done.breath)return 'breath';
