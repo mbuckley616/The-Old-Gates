@@ -1030,6 +1030,33 @@ const giver=`${lord.title} ${lord.name}`;
     for(const t of allSites()){if(!(t.kind in BASE_P))continue;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<bd){bd=d;best=t;}}_cloakTown={lair:P.site,town:best};return best;}
   function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||S.half||cloakMasterDead())return 0;
     const ct=cloakTown();return ct&&ct.id===t.id?.6:0;}
+  // S787 — the Gate-Blade's claimant, the Crown (the page's Stone row; the approved draft's words): the lord at the Crown's seat
+  // asks while the blade is on you and not given up. *Give it to the Crown.*: 1,500 gold and the commission (Commissioner, the
+  // Crown's first rank), or a service counted if already ranked, or the gold alone if another power's rank of 2 closes the Crown.
+  // *I'll keep it.*: a licence (an item, unique), and the Crown takes a twentieth of every sale at a counter while the blade is on
+  // you (sellItem). The licence is the tool's, the world row's (artifacts.gate_blade.licence).
+  const CROWN_BLADE={ask:"Whatever comes up out of the ground in the Gatelands, the Crown was there before it. That blade has been on the rolls a hundred years as la Lame du Seuil, and the rolls never forget a thing they never saw. Two roads, and neither of them short. Give it to the Crown, and the Crown gives you fifteen hundred gold and a commission with your name on it. Or keep it under licence, and the Crown takes a twentieth of every sale you make while you carry it. I'll not choose for you. Whoever chooses for another carries both loads.",
+    lic:"Bring it back when it's heavy. An offer made in this house doesn't sour like milk.",
+    gaveNew:"Then the rolls are right at last, which will please the clerks more than it should. Fifteen hundred, and the commission. The Weaver keep you, Commissioner.",
+    gaveRanked:"Then the rolls are right at last, which will please the clerks more than it should. Fifteen hundred, and it's counted as a service to your name. The Weaver keep you.",
+    gaveSworn:"The Crown takes what's the Crown's, whoever carries it in. The fifteen hundred is yours. A commission it can't give to someone sworn elsewhere, and you'd not want it if it could.",
+    keep:"Then here is the licence, and the Crown's twentieth will find you at every counter you stand at, its own or another's. It was never the blade that was dear. It's the carrying.",
+    not:"The blade's not going anywhere you can't be found. Neither is the Crown."};
+  function bladeLicensed(){const S=artifactState('gate_blade');return !!(S&&S.licence&&!S.yielded&&artifactCarried('gate_blade'));}
+  function bladeTithe(sp){return bladeLicensed()?Math.round(sp/20):0;}
+  function crownGiveBlade(){if(!yieldArtifact('gate_blade','crown'))return null;const F=fstate(),C=F.crown;const sworn=Object.keys(FACTIONS).some(o=>o!=='crown'&&F[o].rank>=2);
+    for(let i=BAG.length-1;i>=0;i--)if(BAG[i]&&BAG[i].licence==='gate_blade')BAG.splice(i,1);
+    gold+=1500;if(typeof updateHUD==='function')updateHUD();let k;
+    if(sworn)k='gaveSworn';else if(!C.rank){C.done=Math.max(C.done,3);C.rank=1;k='gaveNew';}else{C.done++;C.rank=Math.min(3,Math.floor(C.done/3));k='gaveRanked';}
+    if(typeof addLog==='function')addLog('🗡',`Gave the Gate-Blade to the Crown, for 1500 gold.`);return CROWN_BLADE[k];}
+  function crownLicenseBlade(){const S=artifactState('gate_blade');if(!S||S.yielded||S.licence||!artifactCarried('gate_blade'))return null;S.licence={day:dayNow()};
+    if(typeof bagAdd==='function')bagAdd({type:'misc',name:'Crown Licence — the Gate-Blade',ico:'📜',weight:0,qty:1,unique:true,licence:'gate_blade',sellMult:0,buyPrice:0,
+      desc:`By the Crown of the Gatelands, at Coeur de Vie: licence to ${playerName} to hold the relic of the old gates entered in the Crown's rolls as la Lame du Seuil, on condition that a twentieth part of every sale made by the holder, at any counter, be paid to the Crown at that counter. Given ${gameDateLine(null,null,'date')}.`});
+    return CROWN_BLADE.keep;}
+  function crownBladeTopics(site){if(!site||site.id!==FACTIONS.crown.seat)return [];const S=artifactState('gate_blade');if(!S||S.yielded||!artifactCarried('gate_blade'))return [];
+    const give={label:'Give it to the Crown.',quest:true,fn:()=>crownGiveBlade()||CROWN_BLADE.not};
+    if(S.licence)return [{label:'The licence.',response:CROWN_BLADE.lic,follow:[give]}];
+    return [{label:'The blade from the stone.',response:CROWN_BLADE.ask,follow:[give,{label:'I’ll keep it.',quest:true,fn:()=>crownLicenseBlade()||CROWN_BLADE.not},{label:'Not now.',response:CROWN_BLADE.not}]}];}
   // S786 — the Noon Ring (the page's Sky row, in the approved draft's words): used from the bag, once a game-day, it turns the
   // weather in the open world, clear to rain or rain to clear (through the weather's own shift, as devWeather does); any other
   // sky, or under a roof, it does not turn. The cost: carried in a storm, one lightning flash in three comes down close to you

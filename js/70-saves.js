@@ -27,7 +27,7 @@ function _serItem(it){
                   'zone','col','glowCol','respawn','desc','knownDesc','hiddenDesc',
                   'herbKey','isHerb','isMisc','shieldType','torchType','block','blockMult',
                   'bookId','virtue','cloak','line', // S552 — a cloak's kind; S564 — an armour piece's line (light, robe)
-                  'unique','stolen','artifact','half']){ /* S781 — the Wolf-Mother's Cloak gone thin */  // S776 — kept through a reload: a quest piece stays unsellable, stolen goods stay stolen, a Maker's tool knows which it is
+                  'unique','stolen','artifact','half','licence']){ /* S781 — the Wolf-Mother's Cloak gone thin */  // S776 — kept through a reload: a quest piece stays unsellable, stolen goods stay stolen, a Maker's tool knows which it is
     if(it[k]!==undefined)s[k]=it[k];
   }
   if(it.enchant){

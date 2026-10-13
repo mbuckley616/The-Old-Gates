@@ -374,7 +374,7 @@
       if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[buy,...upgradeTopics(site),...rest]:[buy,...rest];}});}
       if(house.guild||type==='shipwright'||type==='inn'||type==='barber')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
       if(type==='inn')def._extra.unshift(...innTopics(house,def.people)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
-      if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
+      if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...(typeof crownBladeTopics==='function'?crownBladeTopics(site):[]),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
       if(type==='church'){def._extraFn=()=>[...penanceTopics(site)];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
       const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz},shop:type};snpcs.push(kn);
     });
@@ -384,7 +384,7 @@
     if(TST)TST.builds.forEach((b,k)=>{if(b.done)return;const sx=cx+14+k*6,sz=cz-16;const y=worldH(sx,sz);const m=new THREE.Mesh(buildSiteGeo(pRng(pHash(site.id+'|build|'+k))),VC_MAT);m.position.set(sx,y,sz);m.castShadow=true;m.receiveShadow=true;group.add(m);sol.push({cx:sx,cz:sz,rx:1.8,rz:1.8});}); // S255 — a building site on the kit (four box posts, a slab and a block)
     // The town's lord: by the well through the day (cities' lords keep to the keep; the steward speaks for them)
     if(plan.rows>0&&(site.kind!=='city'||!houses.some(h=>h.type==='castle'))&&!site.lordless&&!burnedV&&!abandonedV){const lord=lordFor(site);const ldef=makeDef(site,reg,r,lord.title,lord.name,{keepName:true,nameKey:'lord',people:NAT.people,x:cx+3,z:cz-4,bCol:[0x6a2a2a,0x2a3a6a,0x4a3a1a][site.kind==='town'?1:2],sCol:0xd4a878,topics:lordTopics(site)});
-      ldef._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];
+      ldef._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...(typeof crownBladeTopics==='function'?crownBladeTopics(site):[]),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];
       ldef._lord=true;const ln=spawnNPC(ldef,0,false);ln.sched={type:'villager',plaza:{x:cx,z:cz},padR:6};snpcs.push(ln);S.lordNpc=ln;}
     // Lamps: iron posts around the plaza and at the gates carry real lights
     // after dark; every shop door gets a wall lantern that glows (no light —
