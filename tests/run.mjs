@@ -68,14 +68,28 @@ if (shardArg) { const [k, n] = shardArg.slice(8).split('/').map(Number); const l
   const w = f => SECS[f.replace('.test.mjs', '')] || 60;
   [...files].sort((a, b) => w(b) - w(a) || a.localeCompare(b)).forEach(f => { const j = load.indexOf(Math.min(...load)); load[j] += w(f); if (j === k - 1) mine.add(f); });
   files = files.filter(f => mine.has(f)); }
-let failed = 0; const times = [];
+// Session 804 (Michael, 13 Oct 2026): a suite that fails is run once more before the shard is called red. Since 10 Oct about
+// one CI attempt in three went red on a suite that passes on the same code elsewhere (poinames, pauseleaf, saveui, hourhitch,
+// dunwarm), and each red cost a 50-minute re-run or a "merge anyway?" card for Michael. A pass on the retry keeps the shard
+// green and is named FLAKY in the summary, in tests/out/flaky.txt and, on CI, as a warning on the run, so the suite still
+// gets fixed. A real fault fails twice. The retry is skipped when it could push the shard past its budget (CI's job stops
+// at 60 minutes: RETRY_BUDGET_MIN, default 50, minus the time spent so far), and `--no-retry` turns it off for local runs.
+const retry = !args.includes('--no-retry'), budget = +(process.env.RETRY_BUDGET_MIN || 50) * 60000, start = Date.now();
+const run = f => spawnSync('node', [path.join(here, f)], { stdio: 'inherit', timeout: 900000 }).status === 0;
+let failed = 0; const times = [], flaky = [];
 for (const f of files) {
   console.log(`\n== ${f} ==`);
-  const t0 = Date.now();
-  const r = spawnSync('node', [path.join(here, f)], { stdio: 'inherit', timeout: 900000 });
-  times.push(`${f.replace('.test.mjs', '')} ${Math.round((Date.now() - t0) / 1000)}s${r.status !== 0 ? ' FAILED' : ''}`);
-  if (r.status !== 0) failed++;
+  const t0 = Date.now(), name = f.replace('.test.mjs', '');
+  let ok = run(f), note = '';
+  if (!ok && retry && Date.now() - start + (SECS[name] || 60) * 1500 < budget) {
+    console.log(`\n== ${f} (failed; running it once more) ==`);
+    ok = run(f); note = ok ? ' FLAKY (failed, then passed on the retry)' : ' (failed twice)';
+    if (ok) { flaky.push(name); if (process.env.GITHUB_ACTIONS) console.log(`::warning title=Flaky test::${name} failed, then passed on the retry`); }
+  }
+  times.push(`${name} ${Math.round((Date.now() - t0) / 1000)}s${ok ? note : ' FAILED' + note}`);
+  if (!ok) failed++;
 }
+if (flaky.length) { try { fs.mkdirSync(path.join(here, 'out'), { recursive: true }); fs.appendFileSync(path.join(here, 'out', 'flaky.txt'), flaky.map(n => `${new Date().toISOString()} ${n}\n`).join('')); } catch (e) {} }
 if (files.length > 1) console.log('\n' + times.join('\n'));
-console.log(`\n${files.length - failed}/${files.length} suites passed`);
+console.log(`\n${files.length - failed}/${files.length} suites passed${flaky.length ? `; ${flaky.length} flaky, passed on the retry: ${flaky.join(', ')}` : ''}`);
 process.exit(failed ? 1 : 0);
