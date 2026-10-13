@@ -228,7 +228,7 @@ The game reads genomes; it never needs the tool.
 4. **B4, animation:** the clip library and retargeting.
 5. **B5, creatures:** the kit of parts (Session 772, prototype: ten plans). Owed, in order:
    - the fin and radial parts, the hop and the bound, feathered wings, shells;
-   - the kit on the builder's page with the people (one tool, one genome format);
+   - ~~the kit on the builder's page with the people (one tool, one genome format);~~ done, Session 815 (`kit.js`, `builder.html`);
    - in the game: the wolves move over first (their `WOLF_KINDS` become plans), then the bear, the spider, the horses and the dragon, then the bestiary sheet by sheet. Two things wait for the foundation's renderer. First, feet on uneven ground: a foot's target takes the ground's height under it, which is one line. Second, turning: the sweep follows the velocity in the body's frame.
 6. **B6, in the game:** behind the foundation's switch, replacing `buildPerson` for townsfolk, then foes.
 

@@ -384,6 +384,16 @@ export function genome(plan, key, over = {}) {
   const sliders = {}, q = v => Math.round(v * 1000) / 1000; for (const k in SLIDERS) sliders[k] = q(1 + (r() - .5) * 2 * spread * (k === 'size' ? 1.5 : 1));
   return { plan, seed, sliders: { ...sliders, ...(over.sliders || {}) }, tint: over.tint ?? q((r() - .5) * .1), light: over.light ?? q((r() - .5) * .14) };
 }
+// the saved genome (Session 807, B5): the envelope a person's has (people.js, toSaved), so one page and one loader (kit.js)
+// take both. A hand-edited genome is held to the sliders' ranges; a slider the kit does not know is dropped.
+const q3 = v => Math.round(v * 1000) / 1000;
+export function toSaved(g) { return { species: 'creature', v: 1, plan: g.plan, seed: g.seed, sliders: Object.fromEntries(Object.keys(SLIDERS).map(k => [k, q3(g.sliders?.[k] ?? 1)])), tint: q3(g.tint || 0), light: q3(g.light || 0) }; }
+export function fromSaved(J) {
+  if (!J || J.species !== 'creature') throw new Error('not a creature genome'); if (J.v !== 1) throw new Error('creature genome version ' + J.v + ', the kit reads 1');
+  if (!PLANS[J.plan]) throw new Error('no body plan called ' + J.plan); const g = genome(J.plan, J.seed ?? J.plan);
+  for (const [k, [lo, hi]] of Object.entries(SLIDERS)) if (typeof J.sliders?.[k] === 'number') g.sliders[k] = q3(Math.max(lo, Math.min(hi, J.sliders[k])));
+  for (const k of ['tint', 'light']) if (typeof J[k] === 'number') g[k] = q3(Math.max(-.5, Math.min(.5, J[k]))); return g;
+}
 
 // ── build: run the plan's parts, grow the flesh, bind it to the skeleton ──
 export function build(g) {
