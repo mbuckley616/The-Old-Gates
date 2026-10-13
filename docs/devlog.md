@@ -16178,3 +16178,46 @@ The third of the sessions from Michael's "go ahead and tackle more of the skelet
 - The wingbeat live: whether the fold and the beat read as a raven and a hawk, from the side and from below.
 - The Mossback's garden at walking pace.
 - With this, every skeletal body plan in the concept art has at least one creature. What remains for creatures is the move into the game, behind the foundation's switch, the wolves first.
+
+## v80 — Session 776 — The human builder: a tool page, saved genomes, and hair that lies on the head (B1, prototype only)
+The look builder's first carry-over item while the foundation's renderer waits: B1 of `docs/design/character-builder.md`, Session 770's `people.js` made into the tool page, with genome save and load, and the women's long hair and braids fixed. Session 770 left the hair as its weakest part ("untidy at the temples"). A fresh render of its line-up showed why: every card was combed by one fixed direction and then fell free, so at the temples and the crown the cards crossed and stood off the head in planks, and the long hair was a tangle over a bald strip.
+
+**The hair, rebuilt (`people.js`, `buildHair`).** Every strand now walks over the head's own surface at a small height of its own (its layer, 3 to 14 mm), found through a 2.5 cm grid of the morphed body's points and normals, and it goes where the style sends it. The styles:
+- *short* and *loose*: from a centre parting, back over the crown and down the sides, never forward over the brow. Loose hair leaves the head at the occiput and falls as a curtain, spread by where its root sits and kept clear of the neck, the tunic and the fur mantle.
+- *braid*, *braids*, *tail*, *bun*: every strand goes to a gathering point on the surface (the nape, behind each ear, the crown), routed back over the top rather than across the temple. The gathered part is built whole. A braid is three locks crossing in the classic figure (a sine across, twice the frequency in depth) along a line that falls under gravity, is pushed off the body by the clothes it wears, then smoothed, with a leather tie and a short brush. A tail is 260 cards in a widening bundle on the same line. A bun is one lock coiled two and a half turns, domed out from the head.
+- The cards lie flat, their width along the strand crossed with the skin's normal under it, which is what makes the temples tidy.
+- Roots grow from a wider region than Session 770's scalp: down to above the ears and to the nape, so a style that lifts the hair does not bare the sides. The hairline at the brow is 1.2 cm lower, and the cap under the cards is darker so it reads as hair.
+- All of it comes from a stream seeded by the genome's seed, never `Math.random`, so one villager's hair is the same for everyone (the co-op rule).
+
+**The saved genome** (`toSaved`, `fromSaved`): `{species, v, seed, people, sliders, race, palette, hair, dress, pose}`, with colours as hex and numbers to three places, about 730 bytes. `rollGenome(seed)` rolls a Markfolk genome from a seed, women's hair drawn from braid, two braids, bun, tail and loose, men's from short, tail and two braids. The four peoples' ranges are B3.
+
+**The page** (`builder.html`, `builder.js`):
+- a seed box and Roll, with a lock on every slider so the rest can be rerolled around it;
+- 6 body and 17 face sliders, skin, hair and eye colours, the hair style, its length and the beard;
+- every garment on or off with its colour, and the skirt;
+- views: full, head, face, side and back, with drag to turn and the wheel to zoom;
+- the genome as live JSON text, with *Save .json*, *Load .json*, *Apply text* and *Copy link* (`?g=` carries the genome in the URL).
+
+`?sheet` puts every hair style on one genome side by side, for the pictures. The 1.8 m post stands beside the person.
+
+`people.html`, the street and the gate pages still build: `markGenome` now draws a hair style, so their people's hair changed with this session.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/builder.check.mjs` (needs the pack from `mh_pack.py`): 60 checks, all pass.
+- **Genomes:** five seeds roll, save, load back to the same genome byte for byte (713 to 741 bytes), and roll again identically. A loaded genome builds the same body and hair twice (a hash of every mesh's positions).
+- **Each of the six styles,** with the mantle and without:
+  - builds: 1,400 to 2,200 strands, 62,000 to 278,000 triangles, 0.3 to 1.9 s;
+  - no strand point under the skin (0 of 20,000 to 124,000);
+  - none lying on the face (0 to 22 points, under the 0.2% the check allows);
+  - braids and tails clear the body by 2.0 to 3.6 cm.
+- **The page:** its 25 sliders work; moving height to 0.95 rebuilds the person and the genome text follows; loading the saved genome brings the person back. No page errors.
+- **Pictures** (`docs/prototypes/levelup/`):
+  - `builder-page.jpg`, the page with its panel;
+  - `builder-styles-back.jpg`, `-front.jpg` and `-mantle.jpg`, the six styles;
+  - `builder-woman-braid.jpg`, `-braids.jpg`, `-face.jpg` and `builder-man-face.jpg`, close-ups;
+  - `people-lineup-776.jpg`, Session 770's line-up with the new hair.
+### Needs eyes
+- **The hair as a whole,** against OG-025 and OG-001's faces. It is tidy now, but the strand texture reads coarse up close, and loose hair over the fur mantle stands off the back like a board, because the curtain has to clear the eleven fur shells.
+- **The braids at the collar,** where they cross the fur: close up, a braid dips into the collar's shells before it comes out over the mantle.
+- **Loose hair's cost:** 278,000 triangles. Crowds will want the level-of-detail meshes the design names.
+- **The faces,** which this session did not touch: the women's still read heavy-browed and old, and the brows are stamped shells. That belongs to B3 (the peoples' ranges) and to close-up work on the face sliders.
+- A question for Michael in `decisions.md`: whether this is the hair to carry forward.

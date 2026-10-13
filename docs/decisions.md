@@ -4,6 +4,20 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The builder's hair: groomed strands and modelled braids? (look builder, Session 776)
+B1 rebuilt the people's hair. Session 770's cards were combed one way and fell free, and crossed at the temples. Now every strand walks over the head's own surface at its own small height, toward where its style sends it. Six styles are built: short, loose, one braid, two braids, a tail and a bun. Braids, tails and buns are modelled as locks on a line that falls under gravity and clears the clothes. It is all seeded by the genome, and the checks show no strand under the skin or on the face. Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-back.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-front.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-styles-mantle.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-woman-braid.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-man-face.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/builder-page.jpg
+
+Is this the hair to carry into the cast (B3) and the game (B6)?
+- **A (recommended):** yes, keep groomed strands and modelled locks, and refine them as the cast is built: a finer strand texture, more styles from OG-025 and OG-001 (crown braids, a plait over the shoulder, a shaved side), and lighter loose hair for crowds. It fits every body the genome makes, costs nothing to make a new style, and stays testable.
+- **B:** keep the method for braids, tails and buns, but make short and loose hair as a few sculpted shells with a painted strand texture (the usual game hair cap). It is cheaper and smoother at a distance, and flatter up close.
+- **C:** model a small set of hair meshes by hand or from CC0 sources, fitted to the head per style. It looks best in close-ups, but every new style is a modelling job and has to be refitted to the face sliders.
+
 ## Answered
 
 ### The great gates' two paths (Michael, in chat, 2026-10-13)
