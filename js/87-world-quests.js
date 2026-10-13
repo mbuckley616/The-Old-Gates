@@ -106,6 +106,7 @@
     const G=worldState.guild;if(G){for(const g in G){const t=G[g].active;if(t&&t.siteId===site.id)out.push(t.kind==='raid'?"They say bandits are coming for us. The guild sent someone. Maybe you.":t.kind==='beast'?`Something's been at the sheep. ${t.beast||'A beast'}, they say.`:"The guild's got business here. Everyone's on edge.");}}
     {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}}
     {const H=typeof lampHome==='function'&&lampHome();const lt=H&&siteAnywhere(H.site);if(lt){const [li,lj]=cellOf(lt.x,lt.z);if(Math.abs(li-ci)<=1&&Math.abs(lj-cj)<=1)out.push(`There's a lamp over the inn door at ${lt.name} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${lt.name}.`);}} /* S784 — the Waylamp, while it hangs (the draft's rumour; its town and the cells round it) */
+    if(typeof cloakRumours==='function')out.push(...cloakRumours(site)); /* S795 — the cloak's two rumours */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
     {const d=nearestSigilDoorFrom(site);if(d&&Math.random()<.5)out.push(`There's a warm stone in ${d.name}, ${compassWord(d.x-site.x,d.z-site.z)} of here. My cousin put his hand on it and talked in his sleep for a week.`);}
@@ -942,12 +943,13 @@ const giver=`${lord.title} ${lord.name}`;
   // and the Hearth, the Sky and the Weaver).
   const ARTIFACTS={
     gate_blade:  {god:'cloch',   name:'the Gate-Blade',          ico:'🗡',check:{attr:'might',need:30},
-                  item:()=>Object.assign(makeItem(6,WEAPON_TYPES.find(w=>w.type==='Longsword')),{name:'The Gate-Blade',ico:'🗡',weight:14,sellMult:0,buyPrice:0,desc:'Sprinting costs a quarter more while it is drawn.'})},
-    drowned_bell:{god:'muir',    name:'the Drowned Bell',        ico:'🔔',check:null},
+                  item:()=>Object.assign(makeItem(6,WEAPON_TYPES.find(w=>w.type==='Longsword')),{name:'The Gate-Blade',ico:'🗡',weight:14,sellMult:0,buyPrice:0,desc:'A Maker’s blade, heavy for its length. The wards of a key are cut along the fuller, too fine to see without a candle. The Crown’s rolls call it la Lame du Seuil. The Old Blood call it Eochair na Cloiche, the Stone’s key.'})}, /* S795 — the approved draft's words */
+    drowned_bell:{god:'muir',    name:'the Drowned Bell',        ico:'🔔',check:null,
+                  item:()=>({name:'The Drowned Bell',ico:'🔔',type:'misc',weight:1,sellMult:0,buyPrice:0,desc:'A ship’s bell, small, and heavier than its bronze. Weed grows back on it overnight. The Compact’s rolls enter it as le Reliquaire de la Marée. The Old Blood call it Clog na Mara, the Sea’s bell.'})}, /* S795 — the approved draft's words */
     sundial_ring:{god:'speir',   name:'the Noon Ring',           ico:'💍',check:{attr:'swiftness',need:30}, /* S786 — the draft's name (Michael's 1A on #263); the id keeps the page's */
                   item:()=>({type:'misc',name:'The Noon Ring',ico:'💍',weight:0.1,sellMult:0,buyPrice:0,desc:'A plain gold band, cut inside with twelve marks and a sun. Worn, it is warm at noon and cold at midnight. The Old Blood call it Fáinne an Lae, the ring of the day, which is also their word for dawn.'})},
     wolf_cloak:  {god:'beithigh',name:"the Wolf-Mother's Cloak", ico:'🧥',check:{attr:'resolve',need:30},
-                  item:()=>({type:'equip',slot:'back',name:"The Wolf-Mother's Cloak",ico:'🧥',def:1,weight:2,cloak:'fur',virtue:'wolfmother',sellMult:0,buyPrice:0,desc:'Wolves, bears and spiders leave you alone unless you strike first.'})},
+                  item:()=>({type:'equip',slot:'back',name:"The Wolf-Mother's Cloak",ico:'🧥',def:1,weight:2,cloak:'fur',virtue:'wolfmother',sellMult:0,buyPrice:0,desc:'Grey, and not wool, and dry in any rain. Beasts take whoever wears it for one of hers. The Old Blood call it Brat na Máthar, the Mother’s mantle.'})}, /* S795 — the approved draft's words */
     waylamp:     {god:'teallach',name:'the Waylamp',             ico:'🏮',check:null,
                   item:()=>({type:'misc',name:'The Waylamp',ico:'🏮',weight:1,sellMult:0,buyPrice:0,desc:'An inn lamp of old brass with a horn window. It burns without oil and no weather puts it out. The Old Blood call it Lóchrann an Teallaigh, the Hearth’s lantern.'})},
     shuttle:     {god:'fiodoir', name:'the Shuttle',             ico:'🧵',check:{attr:'intelligence',need:35},
@@ -986,6 +988,8 @@ const giver=`${lord.title} ${lord.name}`;
   // for each week of game time it is carried (worldState.shuttleCarry, the character's, counts the minutes; the draft's log line,
   // no screen line), and each of Varek's discoveries needs one Mastery fewer while it is on you (varekDue).
   function shuttleCarried(){return artifactCarried('shuttle');}
+  // S795 — the first time the needle turns for the Shuttle (not the spell), the draft's line, once (the tool's, the world row's)
+  function shuttleCompassSay(){const S=artifactState('shuttle');if(!S||S.compassSeen!=null||!shuttleCarried())return false;S.compassSeen=dayNow();showMsg('The compass needle leans, and keeps leaning, toward a stone you have not read.','#a0c8ff');return true;}
   const SHUTTLE_WEEK=7*1440;let _shT=0;
   function tickShuttle(force){const t=performance.now();if(!force&&t-_shT<1000)return 0;_shT=t;const now=worldState.gameTimeAbsMinutes||0;let C=worldState.shuttleCarry;
     if(!shuttleCarried()){if(C)C.last=now;return 0;}if(!C)C=worldState.shuttleCarry={acc:0,last:now};
@@ -1035,6 +1039,15 @@ const giver=`${lord.title} ${lord.name}`;
   let _cloakTown=null;
   function cloakTown(){const P=artifactPlaces().wolf_cloak;if(!P)return null;if(_cloakTown&&_cloakTown.lair===P.site)return _cloakTown.town;let best=null,bd=1e9;
     for(const t of allSites()){if(!(t.kind in BASE_P))continue;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<bd){bd=d;best=t;}}_cloakTown={lair:P.site,town:best};return best;}
+  // S795 — the cloak's approved words: the first wolf that would have seen you and turns away (once; the tool's), and the two
+  // rumours while the cloak, taken alive, is yours and its master lives: the road's in its town and the cells round it, the cave's
+  // in its town alone
+  function cloakTurnAway(e,sees){const S=artifactState('wolf_cloak');if(!S||S.turnSeen!=null||!CLOAK_WOLVES[e.baseName||e.baseType||e.name]||!sees())return false;
+    S.turnSeen=dayNow();showMsg('The wolf stops, looks at you, and goes about its business.','#c8c0a8');return true;}
+  function cloakRumours(site){const S=artifactState('wolf_cloak'),P=artifactPlaces().wolf_cloak;if(!S||!P||S.half||S.yielded||cloakMasterDead())return [];const ct=cloakTown();if(!ct)return [];
+    const [ci,cj]=cellOf(site.x,site.z),[ti,tj]=cellOf(ct.x,ct.z);if(Math.abs(ci-ti)>1||Math.abs(cj-tj)>1)return [];
+    const out=[`The road past ${P.name} is no road at all now. The carter goes round, and charges for the going round.`];
+    if(ct.id===site.id)out.push("Somebody walked into that cave and walked out again with not a mark on them. The beast's been bolder since. Or we're more frightened. It comes to the same.");return out;}
   function cloakDrain(t){const S=artifactState('wolf_cloak');if(!S||S.yielded)return 0;const P=artifactPlaces().wolf_cloak;if(!P||S.half||cloakMasterDead())return 0;
     const ct=cloakTown();return ct&&ct.id===t.id?.6:0;}
   // S787 — the Gate-Blade's claimant, the Crown (the page's Stone row; the approved draft's words): the lord at the Crown's seat

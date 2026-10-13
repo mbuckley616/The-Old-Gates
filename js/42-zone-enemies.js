@@ -1137,7 +1137,7 @@ function tickZoneEnemies(dt,now,sc){
     // zone previously had no LOS check, so enemies detected through walls.
     const _inWorld=activeZoneId==='world';
     if(_hasBuff('vanish')){e.alert=false;e._agg=false;} // S322 — Shadowcap's veil in the open world as underground
-    e._calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(e._calm){e.alert=false;e._agg=false;} /* S777 — the Wolf-Mother's Cloak: wolves, bears and spiders leave you alone unless you strike first */
+    e._calm=typeof beastAtPeace==='function'&&beastAtPeace(e);if(e._calm){e.alert=false;e._agg=false;}if(e._calm&&typeof cloakTurnAway==='function')cloakTurnAway(e,()=>canSeePlayer(e,dist,_inWorld?20:9)); /* S777 — the Wolf-Mother's Cloak: wolves, bears and spiders leave you alone unless you strike first */
     /* S634 — a coward running for help or a kiter at range (_flee, _agg) is driven by tickBehaviours (85-world-sea.js), which takes it out of alert; seeing you here put it back each frame, and at the faster chase it ran at you between steps of its flight */
     if(!e.alert && !e._flee && !e._agg && !_hasBuff('vanish') && !e._calm && canSeePlayer(e, dist, _inWorld?20:9)){ // v80 S135 — the open country sees further; S634 — 15 → 20 (#190 A)
       let los = true;const _losSolid=(_inWorld&&typeof WORLD!=='undefined'&&WORLD.camSolid)?WORLD.camSolid:currentZoneSolid; // trunks and posts don't hide you
