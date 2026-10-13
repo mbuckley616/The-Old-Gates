@@ -6,12 +6,12 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `64a92af` | run 15, from `3143cda` (auto/systems' run-14 mark, merged): Sessions 723–748. Findings 25–27 checked in the code word for word |
-| auto/systems | `78f66b6` | run 15: level with main |
-| auto/backlog | `a424369` | run 15: Sessions 743–744, 749 (the net climb, the quay walls, tests); no player text |
-| auto/producer | `f9c9005` | run 15: docs only (answers on #243, #245) |
-| claude/bold-fermi-1wf6zu | `d171468` | run 15: docs only. Session 750 writes Michael's tone into the canon (Part II §10a), on this branch and not yet on main |
-| auto/critic, auto/wip-sitechest-load | `d9dc7e2`, `6b986b7` | run 15: docs, or tests only |
+| main | `c66473e` | run 16, from `64a92af`: Sessions 743–767. Finding 28 checked in the code word for word |
+| auto/systems | `1d3ba48` | run 16: Sessions 770, 776–779 (the night line's frame, the Makers' tools). Finding 29 |
+| auto/backlog | `c66473e` | run 16: level with main |
+| auto/producer | `7dfea6e` | run 16: Session 770's frame, as on auto/systems; Finding 29 covers it |
+| claude/bold-fermi-1wf6zu, claude/creature-bodyplans | `1244eca`, `357b361` | run 16: docs only. Session 771 writes the six great gates and their two paths into the canon, on this branch and not yet on main |
+| auto/critic, auto/wip-sitechest-load | `9266cd5`, `6b986b7` | run 16: behind main, or tests only |
 | auto/proto-ship-hulls | `fab53f6` | unchanged since run 12 |
 | auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
 | auto/wip-moundsolid | `0ff2144` | unchanged since run 11 |
@@ -19,6 +19,34 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 16 — 13 Oct 2026
+
+About 30 player-readable strings read: some 15 on main (Sessions 743–767), about 15 on auto/systems (Sessions 770, 776–779; auto/producer carries 770 too). One finding: the four night lines Michael's A on #255 asked this desk for, which the code holds a place for and does not have.
+
+**main** (Sessions 743–767). Finding 28 is in the code as written: *the Captains' League has laid siege to …*, *… sieges broken, 1 town lost.*, and the lord's two war lines in three voices. New and good: *Bought a sack of grain for 12 gold. Into the hold.* and *The hold is full: you carry it.* (S758), *Too spent to break the guard.* on its own line (S761), the places' forms kept round a free name, *Shrine of …*, *… Spire*, *…'s Lair* (S756). The damage numbers and the gates' rosters carry no words. Clean.
+
+**auto/systems** (Sessions 770, 776–779). Over a sleeper, *Sinéad (asleep) — Press 'E' to wake*: right. `WOKEN_LINES` is empty, so all four peoples say the decision's placeholder; Finding 29 fills it. The Makers' tools: *Took the Gate-Blade.*, the journal's *Things not yet yours* and its rows (*The Gate-Blade — Hollow Gate. Might 30.*), *One of the six things the Makers left.*, and the two items' plain rules lines are in the menu voice and right. *The Sundial Ring* is the page's working name; this desk's draft calls it *the Noon Ring*, and DECISION #263 has the choice before Michael, so no finding.
+
+**claude/bold-fermi-1wf6zu** (Session 771, docs). Michael's six great gates and their two paths, sealed or torn, go into the canon with a note that the Act III outline is *to be reconciled with them by the quest writer*. Not on main yet. Once it is, that reconciliation is owed by this desk: the Root, the Final Monologue and Varek's last stand at the sixth gate, and the endings table (§11).
+
+Also owed and not done this run: the read of the dialog pools against §10a (backlog J, *The world's tone*).
+
+**Drafted:** *The Aurennais Register — names, places, signs and talk* (`docs/quest_drafts.md`): the name banks backlog J owes for Aurenne since Michael dropped its Norman register, a people's names, a place-name bank, rivers, peaks, lakes, signs, inns and the *Any news?* pool, and what in the code takes them. No decision needed.
+
+### Finding 29 — auto/systems and auto/producer — a householder woken at night says the same words in four peoples
+
+**Where.** `86-world-crime.js`, `const WOKEN_LINES={};` (grep `WOKEN_LINES`), Session 770.
+
+**Text.** `WOKEN_LINES={}`, so every woken householder says the fallback, *What — who's there? It's the middle of the night.*
+
+**Why.** Michael's A on #255 asks the quest writer for four, one per people. The fallback is a Markman's short sentences in a Gatelander's mouth, and an Aurennais would not say it without an honorific. Each line below is startled and not hostile (no crime is done, and the usual talk follows), with one dry turn, as §10a has people *kind, busy and funny*.
+
+**Replacement.** `const WOKEN_LINES={};` becomes:
+`const WOKEN_LINES={gatelander:"Weaver keep us — who's that? It's the black of the night. A friend knocks, and a friend knocks by day.",markman:"Iron and blood! Who's there? Middle of the night, friend. Say it quick.",aurennais:"Who is there? Master — it is the middle of the night. Whatever our arrangement was, I do not recall it including this hour.",oldblood:"Who stands there. It is meán oíche. The door was shut."};`
+The fallback in `wokenLine` stays for a people with no line.
+
 ---
 
 ## Run 15 — 12 Oct 2026
