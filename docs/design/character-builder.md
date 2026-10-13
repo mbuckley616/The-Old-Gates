@@ -43,6 +43,116 @@ It is a few hundred bytes, so a named character fits in a data file and a crowd 
 
 The procedural base meshes are what the game already does for wolves and bears: a skinned surface grown around the bones. Built into the builder, they get the same sliders, the same regions and the same LOD as people.
 
+*Session 772 replaced the rows below the human with parts: see the next section. The table stands as the first list of what was needed.*
+
+## Body plans from parts (Session 772)
+
+> **Michael (12 Oct 2026, in chat):** asked to "expand upon the idea I had of having skeletons built for every creature type, akin to the MakeHuman skeleton", then: **"yes, write it up and start the creature prototype"**, and, while it was being built: **"Be mindful that there are several other animals / monsters that are on other concept art files."**
+
+### The idea
+MakeHuman gives one excellent skeleton for one body. The bestiary is about a hundred and twenty animals and monsters across sixteen sheets, so one skeleton per species would be a hundred and twenty jobs. They fall into about a dozen body plans, and the plans share their pieces: a wolf's leg is a stag's leg with different proportions, a spider is four pairs of an insect's leg, a dragon is a quadruped with a pair of wings. So the unit is the **part**, not the species. A plan is a short list of parts, and each part adds its bones, its flesh and what the gait needs to know. The game already does a small version of this: `wolfSkeleton` (`34-creatures.js`) bends one 24-bone rig into a wolf, a boar, a cave bear, two horses and the dragon with flags. The kit makes that general.
+
+The prototype is `docs/prototypes/levelup/creatures.js` (the kit, about 600 lines), `bestiary.js` and `creatures.html` (the page), and `creatures.check.mjs` (the checks and pictures).
+
+### The parts
+| Part | Bones | What it takes | Sockets it gives |
+|---|---|---|---|
+| **spine** | 2 to 16, hips (t = 0) to chest (t = 1) | heights, radii along it, an arch, a hump, rump and chest ends | any point along it, by t: legs, arms, wings and spines hang there |
+| **neck** | 1 to 6 | length, rise, a bend along it | the head |
+| **head** | head, jaw | skull, muzzle, jaw; eyes, ears, horns, antlers, crystals, a beak, fangs as bits | (bits) |
+| **tail** | 1 to 10 | length, droop, a curl per bone (a scorpion's tail is a big curl), a sting | its tip |
+| **legs** | a pair; 4 to 5 bones each | a preset, a socket (t), height, splay (`fan`), reach | the foot (claws, hooves) |
+| **arms** | a pair; 4 bones each | a socket anywhere on the spine, two directions | the hand |
+| **wings** | a pair; arm plus 2 to 5 two-bone fingers | span, fingers, sag of the trailing edge | a membrane mesh of its own, skinned to both edges |
+| **spines** | none (bits on the spine) | count, length, from and to | |
+
+A **leg preset** is the leg's joints in a frame of its own (out, up as a fraction of the leg's height, forward), so one preset fits any size. There are eight: canid fore and hind, ungulate fore and hind (a long cannon bone), plantigrade fore and hind (a flat foot), bird (the backward "knee" that is an ankle), insect (coxa, femur, tibia, tarsus) and sprawl (a lizard's elbow out to the side). Each preset says which two segments the solver bends, which come before them (held, or yawed toward the foot like an insect's coxa) and which are held after them (a paw, a hoof).
+
+### The flesh
+The flesh is grown, not modelled. Every part lays tapered capsules along its bones. The field around a capsule falls off as e^(−d/k), and the surface is where the summed field is 1. Capsules of one limb join hard (so a chain of segments is one smooth tube with no bulge at each joint), and different parts join smoothly (so a neck flows into a chest, and a thigh into a flank). The surface is meshed by surface nets on a grid sized to the thinnest limb, then smoothed by Taubin's method, which does not shrink the body. **The skin weights are read off the same field**: each vertex takes its four strongest bones, so a joint bends exactly where the flesh joins. Tone (coat, belly, saddle, hoof, horn, bare skin), counter-shading and patterns (bands, stripes) are read off it too. So are the fur mask, the fur being shells cut by noise as on the people's mantles, and the binding's glow: seams down the spine and cracks over the hide, as an emissive term.
+
+Meshing at a coarser grid gives the level-of-detail meshes from the same flesh, with the same weights.
+
+### The gait engine
+One engine walks any number of legs. A gait is three numbers and a rule.
+- **Duty:** the part of a stride a foot is down.
+- **Froude number:** speed against leg length, v = √(Fr·g·h), so a 3.4 m Shatterhorn walks at a giant's pace and a wolf at a wolf's.
+- **Stride:** 1.6 h Fr^0.3.
+- **The rule:** the phase of each foot from its pair (front to back) and its side.
+
+The rules are general:
+- *walk* is a wave from the back pair forward, left then right. It is a quadruped's four-beat walk, a hexapod's wave and a biped's walk.
+- *trot* alternates diagonals. It is a trot, an insect's tripods, a spider's tetrapods and a bird's run.
+- *gallop* is the rotary gallop.
+- *slither* sends a wave down the spine.
+- *fly* beats the wings.
+
+A foot in stance slides back under the body at the body's speed (so it stays planted when the root moves), and in swing it arcs forward with its distal segments folded. The solver is analytic:
+- yaw the leg toward the foot (an insect's coxa);
+- hold the distal segments;
+- bend the two between them by two-bone IK, toward the knee's side read off the rest pose;
+- past the leg's reach, slide its root toward the foot by up to a fifth of the leg, as a shoulder blade swings or a pelvis tilts.
+
+The body bobs twice a stride and sways and rolls once; the neck nods against the bob; the tail and the extra arms swing behind.
+
+### The genome
+`{ plan, seed, sliders: { size, leg, bulk, neck, tail, head }, tint, light }`, about 150 bytes. The six **generic sliders** work on any plan, because they act on parts, not species:
+- the leg slider raises the spine and every leg with it;
+- the neck and tail sliders lengthen their chains;
+- bulk thickens all the flesh;
+- size scales the finished body.
+
+The seed comes from a key of place and index (`hashKey('<site>:<index>')`), never `Math.random`, so the co-op rule holds: one wolf looks the same to everyone. A Sand Wyrm is the Mire Snake's plan at another size and colour, and a horse is the stag's plan with a longer neck and no antlers.
+
+### Verified (headless Chromium, `node docs/prototypes/levelup/creatures.check.mjs`)
+All ten plans build from their parts with no code of their own, each in 0.04 to 0.9 s:
+
+| Plan | Source in the concept art | Bones | Triangles | Legs | Build |
+|---|---|---|---|---|---|
+| Ironwolf | OG-084, OG-031 | 32 | 24,500 | 4 | 0.26 s |
+| The Faolchú | lore canon, OG-073 | 40 | 61,300 | 4 + 2 arms | 0.54 s |
+| Frostreach Bear | OG-031 | 25 | 26,500 | 4 | 0.24 s |
+| Elderstag | OG-009, OG-014 | 30 | 46,800 | 4 | 0.36 s |
+| Shatterhorn | OG-040 | 41 | 33,600 | 6 | 0.22 s |
+| Mineprowler | OG-040 | 41 | 32,500 | 6 | 0.25 s |
+| Giant spider | OG-041, OG-088 | 46 | 84,500 | 8 | 0.93 s |
+| Stormplume | OG-040 | 20 | 38,700 | 2 | 0.25 s |
+| Dragon | lore canon §5, OG-085, OG-088 | 69 | 41,000 | 4 + wings | 0.50 s |
+| Mire Snake | OG-009 | 18 | 8,600 | 0 | 0.04 s |
+
+- Every vertex's skin weights sum to one.
+- Every foot reaches its target at 48 points through the stride of every gait of every plan, to the millimetre.
+- The share of the stride each foot spends down matches the gait's duty (a wolf's trot 0.45 of 0.45, a spider's walk 0.71 of 0.68).
+- The pictures are `creatures-line.jpg` (all ten at true size, each beside a 1.8 m figure) and `creatures-<plan>.jpg` (`-bones` for the skeleton through the flesh).
+
+### Every creature in the concept art, by plan
+This list is from the whole catalogue, not only the bestiary sheets: the fauna sheets (OG-009, 030, 031, 040, 047, 084), the aquatic sheet (OG-016), the bestiaries (OG-003, 018, 041, 062, 073, 085, 088), the beasts of burden (OG-007, 046, 058) and the companions and pets on the NPC sheets (OG-051, 054, 065, 071, 083).
+| Plan | Its parts | The creatures | Here |
+|---|---|---|---|
+| **Digitigrade quadruped** | spine, neck, head, tail, canid legs | Ironwolf, Stonefang and Warden wolves, the game's four wolves and the Ash Hound, the wolf companions and the wolfhound (OG-051, 065, 083), Redspine, Mirage, Blizzard and Lantern foxes, Hollowcat, Sunspire, Storm and Frost lynx, Dune Cat, Striped Hyena, Realm Hound | Ironwolf |
+| **Ungulate** | ungulate legs; antlers and horns as bits | Elderstag, Crownstag (antlers hung with moss), Ironpine Elk, Ridge Stag, Duneskimmer and Sand Gazelle, Icehorn, Craghorn and Terrace Ram, Peak and Coastal Ibex, Stone and Sea Goat, Gatefen and Thicket Boar, the three mounts (Gatelands Horse, Mark Steed, Aurennais Courser), draft horse, mule, donkey, ox, Mountain Ox and yak, cow, water buffalo, camel, dromedary, reindeer, giant goat, Frostmane and llama (the neck slider) | Elderstag |
+| **Plantigrade** | plantigrade legs | Frostreach, Crag and Cave bears, the grizzly, badger, otter and stoat (the leg slider low, the spine long), Glacial Marmot, Stonejaw (with a shovel skull), Nell's tusked beast, war elephant (pillar legs) | Frostreach Bear |
+| **Hexapod** | three pairs of any preset | Shatterhorn (ungulate), Mineprowler (sprawl), the Bog Crawler and Lantern Beetle (insect). Michael's 9 A: ordinary animals | Shatterhorn, Mineprowler |
+| **Sprawler** | sprawl legs; a shell as a rigid bit on the spine | Stonecrawler, Saltspine Monitor, Frostspine Lizard, Spined Gekko, Sand Skink, Reef Lizard, Alpine Salamander; the tortoises (Mossback with its garden, Sailshell with its sail, Sunshell, Painted Turtle, the sea turtle); Bellthroat and Marsh Frog (need a hop) | Mineprowler's legs |
+| **Arthropod** | insect legs, 3 to 5 pairs; arms with claw bits as pincers | giant and void spiders, Dunescorpion and Sand Scorpion (arms as pincers, a stinging tail), the crabs (Tidecrab, Icecrab, Amber Shellcrab: a heading of 90° to walk sideways), the Bog Crawler | Giant spider |
+| **Bird** | one bird leg pair; feathered wings | Stormplume, Sunfan, Redcrest, Grove Turkey, Great and Marsh Heron, Scarlet Ibis, Cypress Stalker; flyers: Skyraven, Crag Hawk and Cliffhawk, Sky Eagle, Stormshrike, Highcliff Falcon, Barred Owl, Sunbeak Vulture, Embersong Thrush, Tomcán's raven, Orvin's heron | Stormplume |
+| **Winged quadruped** | a quadruped and wings | the dragon, the Gateborn Companion, the Winged Thing (a griffin), Glasswing, the sky leviathan | Dragon |
+| **Serpentine** | a spine and a tail, no legs | Mire Snake, Sand Wyrm (the size slider), the gate worm and the Maw, Void Serpent, the eels (reef moray, Blackcurrent, Gate Eel) | Mire Snake |
+| **Swimmer** | a serpent with fin and fluke bits; a swim gait | the whales (Storm and Tempest Whale, Gate Leviathan, crimson leviathan, Shatterback), dolphin, reef shark, the rays, tuna, pike, salmon, trout, carp, the seal (sprawl flippers) | owed: a fin part |
+| **Radial** | chains from a centre | octopus, drifter squid, the Watcher's tendrils, the jellyfish (Wisp, lantern jelly, Drifter Jelly) | owed: a radial part |
+| **Human rig** (the people's builder) | MakeHuman's skeleton at extreme ranges | goblin, kobold (a rat's head), shieldbearer, skeleton and drowned skeleton (a material), cave and river troll, ogre, wraith and phantom (cloth), gargoyle (plus the wings part), the Gate Warden, the Hollow | B1 to B4 |
+| **Failing forms** (OG-073) | any plan plus extra arms, legs or wings, and the glow | the Faolchú (arms out of its spine seam, as the canon has it); the failing Skeleton (more arms), Wraith (more limbs), Gargoyle (bigger wings, more limbs); the corrupted animals of OG-085 and OG-088 (seams, crystal growths, which is the crystals bit) | The Faolchú |
+| **Not skeletal** | kits of their own | slimes (soft bodies), the fire elemental and the fire titan, golems and colossi (rigid plates that float apart), the Frost Thing (shards), wisps, the Echo, Bridgeshaper, the mimic (a chest with a tongue chain) | not this kit |
+
+So ten of the fourteen plans exist in the prototype, and every creature in the concept art has a home. Still owed:
+- two parts (fins, radial chains);
+- a hop and a bound (frogs and hares; the hare post-rider of OG-077);
+- feathered wings (cards, like the people's hair);
+- shells as rigid bits.
+
+### What adding a creature is
+A new entry in `PLANS`: a name, its source sheet, a palette, its gaits, and its parts with numbers. The Mineprowler is a dozen lines. No new code unless the creature needs a part the kit does not have yet.
+
 ## The tool
 A page beside the mesh inspector (`index.html?builder`, or its own page in the prototypes until the foundation lands):
 - pick a species; the sliders appear, grouped (body, face, limbs);
@@ -63,7 +173,10 @@ The game reads genomes; it never needs the tool.
 2. **B2, the wardrobe kit:** aprons, cloaks, hoods, robes, dresses, armour tiers; brief from OG-025 and the Session 2 clothing sheets (OG-109 to OG-111) once Michael keeps them.
 3. **B3, the peoples and the cast:** the four peoples' ranges; the named NPCs' genomes from OG-001's faces.
 4. **B4, animation:** the clip library and retargeting.
-5. **B5, creatures:** the canid first (the wolves move over), then the rest of the table.
+5. **B5, creatures:** the kit of parts (Session 772, prototype: ten plans). Owed, in order:
+   - the fin and radial parts, the hop and the bound, feathered wings, shells;
+   - the kit on the builder's page with the people (one tool, one genome format);
+   - in the game: the wolves move over first (their `WOLF_KINDS` become plans), then the bear, the spider, the horses and the dragon, then the bestiary sheet by sheet. Two things wait for the foundation's renderer. First, feet on uneven ground: a foot's target takes the ground's height under it, which is one line. Second, turning: the sweep follows the velocity in the body's frame.
 6. **B6, in the game:** behind the foundation's switch, replacing `buildPerson` for townsfolk, then foes.
 
 ## Risks
@@ -71,6 +184,8 @@ The game reads genomes; it never needs the tool.
 - **Long hair** is the weakest part of the slice; braids and tied styles (which most of the peoples wear) are easier than loose hair, and come first.
 - **Faces at conversation distance** are where a builder lives or dies. B1 is judged on close-ups (`people.html?view=faces`), not on the line-up.
 - **Creature base meshes** grown around bones look like the wolves: good at play distance, soft close up. Sculpted targets fix the close views where they matter (a muzzle, a brow).
+- **Triangles** (Session 772): the grid is sized to the thinnest limb, so long thin legs cost the most (the spider is 84,500 triangles). The same flesh meshed at two and four times the cell gives the level-of-detail meshes, and a crowd of wolves needs them.
+- **Hero creatures** (the Faolchú's close-ups, the dragon) can come from image-to-3D, as the cast may. Then the plan's skeleton is fitted to the mesh at a few landmarks and the weights are read off the same field, which is the bridge that lets a modelled creature walk with the shared gaits. Not built yet.
 
 ## Not in this
 A general modelling tool. Buildings, props and the gates are built in their own code (the slices' piece builders), not here.

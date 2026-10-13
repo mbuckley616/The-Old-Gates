@@ -15823,3 +15823,38 @@ Then: two artifacts, Sunder-and-Keening style, one to tear and one to seal; undo
 - The hall's frame rate on Michael's machine: about 20 point lights and a reflection probe.
 - His marks on the 16 new images, and his answer on the six great gates.
 - The scale rule's feel (a 1.65 m eye in rooms of true size) can only be judged once the foundation builds it.
+
+
+## v80 — Session 772 — Creatures from parts: one kit of skeletons, one gait engine (prototype only)
+Michael asked whether there was work to start while Sessions 768–771 sat in CI, and where to lean in. He pointed at his own idea: a skeleton for every creature type, as MakeHuman gives the people one. Claude's answer was to build skeletons from parts rather than one per species. The bestiary is about a hundred and twenty animals and monsters, and they fall into about a dozen body plans that share their pieces. The game already half does this: `wolfSkeleton` bends one 24-bone rig into a wolf, a boar, a bear, two horses and the dragon with flags. Michael: "yes, write it up and start the creature prototype"; and while it was built, "Be mindful that there are several other animals / monsters that are on other concept art files."
+
+**The kit** (`docs/prototypes/levelup/creatures.js`, three.js 0.170 like the other slices):
+- **Parts:** a spine, a neck, a head (skull, muzzle and jaw, with eyes, ears, horns, antlers, crystal horns, a beak and fangs as rigid bits), a tail (with a curl, so a scorpion's tail is one number), arms on any socket of the spine, wings (an arm and a fan of fingers with a membrane skinned to both edges), spines down the back, and leg pairs over eight presets: canid, ungulate and plantigrade fore and hind, bird, insect, sprawl.
+- **Presets:** a preset is joints in the leg's own frame as fractions of its height, so one preset fits any size.
+- **Flesh:** grown, not modelled. Tapered capsules on the bones make a field; capsules of one limb join hard and parts join smoothly; surface nets mesh it at a cell sized to the thinnest limb, and Taubin smoothing takes the steps out without shrinking the body.
+- **Weights:** the skin weights are read off the same field, so a joint bends where the flesh joins. So are the tones, the counter-shading the game's wolves already use, the patterns, the fur mask (noise-cut shells, as on the people's mantles), and the binding's glow (a seam down the spine and cracks over the hide).
+- **Gaits:** one gait engine for any number of legs. A gait is a duty factor, a Froude number (speed against leg length, so a giant walks like a giant), a stride, and a rule for each foot's phase from its pair and side. *Walk* (a wave from the back) is a quadruped's four-beat walk, a hexapod's wave and a biped's walk. *Trot* (alternating diagonals) is a trot, an insect's tripods and a spider's tetrapods. *Gallop*, *slither* and *fly* complete the set.
+- **The solver:** analytic. It yaws an insect's coxa toward its foot, holds a paw or hoof, bends the two segments between them, and slides the leg's root toward the foot past its reach, as a shoulder blade does.
+- **The genome:** `{plan, seed, sliders, tint, light}`, about 150 bytes, with six generic sliders (size, leg, bulk, neck, tail, head) that act on any plan. The seed comes from a key of place and index, never `Math.random`.
+
+**Ten plans, all from the concept art:** the Ironwolf, the Faolchú (the wolf's plan with the canon's extra arms out of a red spine seam, and cracks), the Frostreach Bear, the Elderstag, the Shatterhorn and the Mineprowler (both six-legged: Michael's 9 A), the giant spider, the Stormplume, the dragon, and the Mire Snake. `bestiary.js` and `creatures.html` show them in a line at true size, each beside a 1.8 m figure on a floor ruled in metres (`?view=line`). One creature walking (`?view=one&plan=…`) has a panel to change the gait, roll a seed, move the sliders and read the genome. `?bones` shows the skeleton through the flesh.
+
+**The catalogue, by plan** (Michael's call-out): every animal and monster on the sixteen sheets that hold any is sorted into fourteen plans in `character-builder.md`. Ten plans are prototyped; two parts are owed (fins, radial chains); the human rig takes the goblins, trolls, skeletons and wraiths; and the slimes, elementals, golems and wisps need kits of their own.
+
+Corrections found on the way, for the record:
+- the palette was read as linear colour and every coat came out pale;
+- a straight leg cannot reach the ends of a real stride, so the feet fell 3 to 8 cm short until the root could slide;
+- the line-up's spacing missed the horns and wings until it measured the whole creature.
+### Verified (headless Chromium)
+`node docs/prototypes/levelup/creatures.check.mjs`, all passing with no page errors:
+- Builds: all ten plans, 18 to 69 bones and 8,600 to 84,500 triangles each, in 0.04 to 0.93 s.
+- Weights: every vertex's skin weights sum to one.
+- Feet: every foot reaches its target at 48 points through every gait of every plan (worst under 0.1 mm).
+- Duty: the share of the stride a foot is down matches the gait's duty (a wolf's trot 0.45 of 0.45, a spider's walk 0.71 of 0.68).
+- Genomes: about 150 bytes.
+
+`--shots` writes `creatures-line.jpg` and one picture per plan, flesh and bones.
+### Needs eyes
+- The creatures walking live on Michael's machine: whether the gaits read as animals (the wolf's trot, the spider's tetrapods, the Shatterhorn's slow wave), and the frame rate with fur.
+- The faces close up, which are soft, as grown flesh is. Sculpted targets or image-to-3D heroes are the answer where it matters.
+- Whether the parts' approach is the one he wants before the kit moves to the builder's page and then into the game behind the foundation's switch.

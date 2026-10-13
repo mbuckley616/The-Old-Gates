@@ -40,6 +40,7 @@ That is A. Done, Session 771:
 - the builder, `docs/design/character-builder.md`;
 - the gate slices rebuilt at the concept art's size;
 - backlog K marked a Fable session for the producer's card.
+Asked to expand his idea of a skeleton for every creature type, akin to MakeHuman's, Claude proposed skeletons from parts, not one per species: a dozen body plans built from a spine, a neck and head, a tail, arms, wings and leg pairs over eight leg presets, with one gait engine for any number of legs. Michael: **"yes, write it up and start the creature prototype"**, and while it was built: **"Be mindful that there are several other animals / monsters that are on other concept art files."** (12 Oct 2026, in chat.) Done, Session 772: the kit and ten plans in `docs/prototypes/levelup/creatures.js`; every creature in the catalogue sorted by plan in `character-builder.md`, *Body plans from parts*.
 ### The concept art's open questions (Claude, Session 767, 2026-10-12)
 Raised in chat with Michael after his review of the 96 images (62 kept). Each question comes from kept images (`docs/art/catalogue.csv`); backlog L marks the items that wait on it. Answer by number and letter.
 1. **How people are proportioned** (OG-012, OG-095). **A.** Naturalistic, about 1.75 m. **B.** A heroic hybrid, about 1.80 m, slightly longer legs and broader shoulders, so a figure reads at a distance and in a fight *(recommended; both sheets pick it)*. **C.** Stylised: bigger heads and hands, narrow waists.
