@@ -16179,6 +16179,7 @@ The third of the sessions from Michael's "go ahead and tackle more of the skelet
 - The Mossback's garden at walking pace.
 - With this, every skeletal body plan in the concept art has at least one creature. What remains for creatures is the move into the game, behind the foundation's switch, the wolves first.
 
+
 ## v80 — Session 776 — The Makers' tools, the frame; a reload no longer launders stolen goods or unseals a quest piece (Michael's B on #175)
 Michael chose B on DECISION #175 on 6 Oct: six tools, one for each god with a shrine (`docs/design/unique-artifacts.md`). Nothing had been built since. The page's build order starts with one session for the frame and a suite. This is that session, and it adds nothing a player can meet yet. `87-world-quests.js`, after `anchoredPlaces`, now holds `ARTIFACTS`: the six tools under the page's working names, each with its god's `GODS` key and its check (the Gate-Blade Might 30, the Sundial Ring Swiftness 30, the Wolf-Mother's Cloak Resolve 30, the Shuttle Intelligence 35; the Drowned Bell and the Waylamp have none, because the tide and an honest week are their trials). `artifactPlaces()` picks where the two home-island tools lie, as `anchoredPlaces` picks Caer Slige. The Gate-Blade goes to a Gatelands gate, a ruined gatehouse when the island has one. The cloak goes to a Gatelands lair that is not a story place. Each is drawn on `seededRng('artifact', id)` from candidates sorted by id, so every machine gets the same pick. The other four are placed in their own sessions. `artifactCheck(id)` reads the attribute's base plus at most 2 from gear (`ARTIFACT_GEAR_MAX`), so a Fortify ring closes a small gap and no one buys Might 30. `artifactTry(id)` takes the tool when the check passes. When it fails, nothing is lost: the try is kept in `worldState.artifactTries`, the character's key (`SS_CHAR_WS`). The shared state changes only through two named actions (the co-op rules). `takeArtifact(id)` writes `worldState.artifacts[id]` (the world row) and puts a `unique` item in the bag. `yieldArtifact(id, to)` takes the item from the bag, the stash or your hands and records who now has it. Both keys are on the S242 list. The Journal's Quests view now opens with *Things not yet yours*: one line for each tool you have tried and not taken, in the menu voice, with its number (*The Gate-Blade — Dunmore Tower. Might 30.*). This follows the page's frame. Each tool's trial, its words and its own item come with its own session. The text is the quest writer's draft *The Makers' Things* (`docs/quest_drafts.md`), still unapproved, so none of it is used here.
 
@@ -16340,3 +16341,24 @@ A correction to Session 792. Its hermit gave the way to every tool that had a pl
 `makershermit`, 10 of 10, its checks changed to the new list. The folder offers *The Beasts’?*, *The Hearth’s?* and *And the seventh?*, with Dunkeel's Lair named. With the blade and the lamp taken, *The Stone’s?* and *The Hearth’s?* say *Gone from where it lay*. All six taken still gives *Nothing is left lying*. The altars and the real prayer are as in Session 792. No page errors.
 ### Needs eyes
 The Beasts' entry says the master *sleeps on* the cloak. The cloak's own trial (taking it from under the living master) waits for its pose and prop, so today a player who follows the hermit there takes the cloak from the corpse.
+
+
+## v80 — Session 804 — A failed suite gets one more try before CI goes red; the logs stop conflicting (tests and settings only)
+Michael asked why the board always holds four to six items blocked for days. The cause is mostly CI. Since 10 Oct there were 87 CI runs: 40 were cancelled by a newer push, 36 passed and 9 failed, and 13 more needed a re-run to pass. Almost every red was one of a handful of suites failing on code that passes elsewhere: `poinames`, `pauseleaf`, `saveui`, `hourhitch`, `dunwarm`, `shuttle`. With about 400 suites in 12 shards, one such failure turns the whole commit red. The producer re-runs once (another 50 minutes), and a second red becomes a "merge anyway?" card for Michael. On top of that, every branch appends to `docs/devlog.md` and `docs/decisions.md`, so each merge into main left the other open PRs conflicting there, and each conflict cost another CI run and another chance of a flake. PRs #261 and #262 hit this twice in a day.
+
+**The retry** (`tests/run.mjs`):
+- A suite that fails is run once more, on its own, before the shard is called red.
+- If the retry passes, the shard stays green. The suite is named FLAKY in the summary, in `tests/out/flaky.txt` (ignored by git) and, on CI, as a warning annotation on the run, so it is still found and fixed.
+- A real fault fails twice and the shard is red as before.
+- The retry is skipped when it could push the shard past its budget: CI stops a job at 60 minutes, and the runner allows 50, less the time already spent, for a retry of the suite's usual length.
+- `--no-retry` turns it off for a local run.
+
+**The logs:** `.gitattributes` merges `docs/devlog.md` and `docs/decisions.md` with git's `union` driver, so two branches that each appended an entry merge without a conflict. It works for `git merge`, which is how the builders and the producer bring a branch up to `main`. GitHub's own mergeability check does not read it.
+### Verified
+- Two throwaway suites, one failing on its first try and one failing every time, removed afterwards. The first was named FLAKY with exit 0 and the CI warning line; the second failed twice with exit 1. With `--no-retry` it failed once and exited 1. `deadtree` passed as before.
+- A throwaway repository with the same `.gitattributes`: two branches each appended a devlog entry at the same place, and `git merge` kept both with no conflict.
+
+No game code changed, so the build tag stands.
+### Needs eyes
+- Over the next day of CI, the share of red runs should fall from about a third to the real faults. The FLAKY warnings name the suites the systems builder should fix first; `poinames` is a real bug (a name depends on which towns had loaded).
+- Session numbers: Session 770 is used twice, once by the systems builder's woken householder and once by Michael's people-from-a-genome session. Both stand as history.

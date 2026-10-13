@@ -170,6 +170,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - Console helpers for testing: `devWeather('rain')`, `forceTime(h)`, `WORLD.devUnlockAll()`. `openInspector()` opens the mesh inspector (`97-inspector.js`); while it is open the main loop hands it the frame and nothing else ticks; `closeInspector()` hands the canvas back.
 
 ## Things that have bitten us
+- CI fails at random on a handful of suites (timing on slow runners, world names that depend on what loaded first). Since Session 804 `tests/run.mjs` runs a failed suite once more and calls it FLAKY if the retry passes (a warning on the CI run, `tests/out/flaky.txt`); a FLAKY suite is still a bug to fix, and a suite that fails twice is red. `--no-retry` turns it off. `.gitattributes` merges `docs/devlog.md` and `docs/decisions.md` with `union`, so two branches' appended entries no longer conflict in `git merge`.
 - `WORLD.tick` only runs in the open world: anything that must keep running indoors (weather sound) goes in the main loop.
 - An authored day/night curve rewrites fog density every frame outside the world; the world owns its fog.
 - `ROAD_MAT` is `VC_MAT` — shared with buildings. Tint road *vertex colours*, never the material.
