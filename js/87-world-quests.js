@@ -107,6 +107,7 @@
     {const L=worldState.lairs||{};for(let i=Math.max(0,ci-2);i<=Math.min(GRID-1,ci+2);i++)for(let j=Math.max(0,cj-2);j<=Math.min(GRID-1,cj+2);j++){const cc=getCell(i,j);if(!cc||!cc.sites)continue;for(const l of cc.sites){if(l.kind!=='lair')continue;const d=Math.hypot(l.x-site.x,l.z-site.z);if(L[l.id]==null){if(d<700)out.push(`Something lives up at ${l.name}. The sheep won't graze that way, and you can't make them.`);continue;}const g=cc.sites.find(t=>t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t));out.push(g?`Somebody killed the thing at ${l.name}. The herbs have come up thick in ${g.name} since.`:`Somebody killed the thing at ${l.name}. The sheep go that way again.`);}}}
     {const H=typeof lampHome==='function'&&lampHome();const lt=H&&siteAnywhere(H.site);if(lt){const [li,lj]=cellOf(lt.x,lt.z);if(Math.abs(li-ci)<=1&&Math.abs(lj-cj)<=1)out.push(`There's a lamp over the inn door at ${lt.name} that burns in the rain. They say it goes to anyone who'll carry it honest to five towns. They say a lot, at ${lt.name}.`);}} /* S784 — the Waylamp, while it hangs (the draft's rumour; its town and the cells round it) */
     if(typeof cloakRumours==='function')out.push(...cloakRumours(site)); /* S795 — the cloak's two rumours */
+    {const P=!artifactState('drowned_bell')&&artifactPlaces().drowned_bell;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [bi,bj]=cellOf(P.x,P.z);if(Math.abs(bi-ci)<=1&&Math.abs(bj-cj)<=1&&(site.kind==='port'||Math.hypot(site.x-P.x,site.z-P.z)<500))out.push(`There's a wreck on the rock off ${P.coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry.`);}} /* S801 — the bell, while it hangs in its wreck (the approved draft, §2) */
     {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.rowe==='dead'&&L.closed&&nationKeyOf(ci,cj)==='mark')out.push("Somebody put Hesket Rowe down on the yard at Caer Slige after she'd yielded. Nobody says the name. Everybody knows it.");} // S374 — the yard's murder, in the Mark
@@ -972,8 +973,12 @@ const giver=`${lord.title} ${lord.name}`;
     const sgates=doors.filter(d=>d.sigil&&d.kind==='cave_door'&&(!gd||d.seed!==gd.seed));const sg=pick('shuttle',sgates);
     /* S800 — the Noon Ring on the cairn at the top of a home-island peak */
     const peaks=home.flatMap(c=>c.peaks||[]).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);const pk=pick('sundial_ring',peaks);
+    /* S801 — the Drowned Bell in a wreck on a rock off a home-island port: the port, then a point of open sea off it */
+    const ports=home.flatMap(c=>c.sites.filter(t=>t.kind==='port')).sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);let bl=null;
+    {const br=seededRng('artifact','drowned_bell');const order=ports.map((t,k)=>({t,k:br()})).sort((a,b)=>a.k-b.k);
+     for(const o of order){const sp=bellSpot(o.t);if(sp.length){const s_=sp[Math.floor(br()*sp.length)];bl={port:o.t.id,coast:o.t.name,name:'the wreck off '+o.t.name,x:s_.x,z:s_.z};break;}}}
     _artPl={gate_blade:gd?{door:gd.seed,name:gd.canonicalName||(typeof dungeonName==='function'?dungeonName(gd.seed,gd.theme):'an old gate'),x:gd.x,z:gd.z}:null,
-            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:null,sundial_ring:pk?{peak:pk.id,name:pk.name,x:pk.x,z:pk.z}:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:sg?{door:sg.seed,name:sg.canonicalName||(typeof dungeonName==='function'?dungeonName(sg.seed,sg.theme):'an old gate'),x:sg.x,z:sg.z}:null};
+            wolf_cloak:lr?{site:lr.id,name:lr.name,x:lr.x,z:lr.z}:null,drowned_bell:bl,sundial_ring:pk?{peak:pk.id,name:pk.name,x:pk.x,z:pk.z}:null,waylamp:lt?{site:lt.id,name:lt.name,x:lt.x,z:lt.z}:null,shuttle:sg?{door:sg.seed,name:sg.canonicalName||(typeof dungeonName==='function'?dungeonName(sg.seed,sg.theme):'an old gate'),x:sg.x,z:sg.z}:null};
     return _artPl;}
   function artifactState(id){const S=worldState.artifacts;return (S&&S[id])||null;}
   function artifactHeld(id){return [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)].some(L=>L.some(it=>it&&it.artifact===id));}
@@ -1219,7 +1224,7 @@ const giver=`${lord.title} ${lord.name}`;
   // S796 — a hermit gives the way only to a tool that can be had where it lies today: the cloak (its cavern's master, whose
   // corpse gives it up, Session 781) and the lamp (its inn, Session 783); and since S797 the Shuttle (its gate's deepest room).
   // The blade's stone, the bell's wreck and the ring's cairn wait for their trials and props; each trial's session adds its tool here.
-  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1,sundial_ring:1}; /* S797 — the Shuttle's room; S800 — the ring's cairn */
+  const MAKER_REACHABLE={wolf_cloak:1,waylamp:1,shuttle:1,sundial_ring:1,drowned_bell:1}; /* S797 — the Shuttle's room; S800 — the ring's cairn; S801 — the bell's wreck */
   // the lamp lies where it was left while it hangs over an inn's door (never taken, or given back to an inn)
   function makerLies(id){const S=artifactState(id);return !S||(id==='waylamp'&&S.yielded==='inn');}
   function hermitMakersTopics(site){const P=artifactPlaces();const all=MAKERS_HERMIT.rows.every(([id])=>!makerLies(id));const follow=[];
@@ -1247,6 +1252,65 @@ const giver=`${lord.title} ${lord.name}`;
   // a storm's flash (the weather tick's lightning): with the ring on you, one in three is close. Cosmetic, so Math.random.
   function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
     if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
+  // S801 — the Drowned Bell's trial (the page's Sea row; the approved draft's second run, §2): the bell hangs from the last beam
+  // of a wreck on a rock off a home-island port (artifactPlaces().drowned_bell, picked from the seed as the others are: a port,
+  // then a point of open sea 50 to 140 units off it by the bare land mask, seaBare, which reads no loaded state). The sea does
+  // not rise and fall in the world, so the wreck does: at high tide it sits low and only the mast stands out of the water; at
+  // low tide (isTideOut, hours 0–6 and 12–18) the ribs and the beam are out, eased over half an hour either side of the turn.
+  // The first time you come within forty units, the draft's line for the tide, once (the character's: stats.bellSeen), and the
+  // Journal's *Things not yet yours* takes its line from then. At low tide, within 2.6 of the bell, *Press 'E' to take the bell*;
+  // at high tide E at the mast says the sea has it. Taken (takeArtifact: the bell has no check), the bell goes from the beam and
+  // the wreck stays; at low tide E there says what is left. Rock, hull, mast and bell are a placeholder: the look builder's
+  // prop is owed. Nothing of it is solid.
+  const BELL_SAY={seenHigh:'A mast stands up out of the sea off the rock, and the water runs over everything below it.',
+    seenLow:'The sea has drawn back off a rock and left a wreck on it, ribs and a mast and green weed. Something hangs from the last beam.',
+    high:'The sea has it now. It gives it back twice a day.',
+    take:'The bell comes off its beam green to the lip. You knock it on the ribs getting it out, and it does not ring.',
+    after:'An empty beam, and a bright ring of wood where something hung for a long time.'};
+  const BELL_REACH=2.6,BELL_MAST_REACH=3.2,BELL_HIGH_DY=-2.4;let BELL_WRECK=null,_bellT=0;
+  function bellSpot(t){const [ci,cj]=cellOf(t.x,t.z);const c=getCell(ci,cj);const isl=c&&c.islets;const out=[];
+    for(let a=0;a<24;a++){const ca=Math.cos(a/24*Math.PI*2),sa=Math.sin(a/24*Math.PI*2);
+      for(let d=50;d<=140;d+=10){const x=t.x+ca*d,z=t.z+sa*d;if(seaBare(x,z,isl)<.98)continue;
+        let open=true;for(let k=0;k<8&&open;k++){if(seaBare(x+Math.cos(k/8*Math.PI*2)*14,z+Math.sin(k/8*Math.PI*2)*14,isl)<.9)open=false;}
+        if(open){out.push({x,z,d});break;}}}
+    return out;}
+  // how far out the tide is, 0 (high) to 1 (low), eased over half an hour either side of each turn (cosmetic: the rule is isTideOut)
+  function bellLowness(){const ph=(gameHour()%24)%12,k=v=>Math.max(0,Math.min(1,v));return ph<9?k(Math.min(ph+.5,6.5-ph)):k(ph-11.5);}
+  function bellWreckBuild(P){const g=new THREE.Group();const y0=worldH(P.x,P.z);
+    const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(3.2,1),new THREE.MeshLambertMaterial({color:0x5a5650}));rock.scale.set(1.3,Math.max(1,(SEA_Y-y0)/3.2+.4),1);
+    rock.position.y=-.4-rock.scale.y*3.2;g.add(rock);
+    const hull=new THREE.Mesh(wreckGeo(pRng(pHash('bell|'+P.port))),VC_MAT);hull.position.y=-.35;hull.rotation.y=(P.x*7%628)/100;g.add(hull);
+    const wood=new THREE.MeshLambertMaterial({color:0x3a2a18});
+    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.14,.18,6.4,7),wood);mast.position.set(0,2.6,0);g.add(mast);
+    const beam=new THREE.Mesh(new THREE.BoxGeometry(2.2,.16,.16),wood);beam.position.set(.9,1.9,0);g.add(beam);
+    const bell=new THREE.Group();const bronze=new THREE.MeshLambertMaterial({color:0x5f7a5a,emissive:0x0c140c});
+    const cup=new THREE.Mesh(new THREE.CylinderGeometry(.09,.2,.3,10,1,true),bronze);cup.material.side=THREE.DoubleSide;bell.add(cup);
+    const top=new THREE.Mesh(new THREE.SphereGeometry(.09,8,5),bronze);top.position.y=.15;bell.add(top);bell.position.set(1.8,1.6,0);g.add(bell);
+    g.position.set(P.x,SEA_Y+BELL_HIGH_DY,P.z);sc.add(g);
+    return {x:P.x,z:P.z,port:P.port,coast:P.coast,mesh:g,bell,bx:1.8,y0};}
+  function bellWreckDrop(){if(BELL_WRECK&&BELL_WRECK.mesh&&BELL_WRECK.mesh.parent)BELL_WRECK.mesh.parent.remove(BELL_WRECK.mesh);BELL_WRECK=null;}
+  // where the bell hangs in the world (its beam turns with the group)
+  function bellPos(){const W=BELL_WRECK;if(!W)return null;const v=new THREE.Vector3();W.bell.getWorldPosition(v);return v;}
+  function bellNoteSeen(){const tr=worldState.artifactTries||(worldState.artifactTries={});if(!tr.drowned_bell)tr.drowned_bell={day:dayNow(),have:0,n:0};}
+  // once a second from the loop: the wreck is built while you are within 400 units in the world, set by the tide; the first sight
+  function tickBellWreck(force){const t=performance.now();if(!force&&t-_bellT<1000)return;_bellT=t;
+    if(activeZoneId!=='world'||!sc){bellWreckDrop();return;}const P=artifactPlaces().drowned_bell;if(!P)return;
+    if(Math.hypot(px-P.x,pz-P.z)>=400||!getCell(...cellOf(P.x,P.z))){if(BELL_WRECK)bellWreckDrop();return;}
+    if(!BELL_WRECK||BELL_WRECK.port!==P.port||!BELL_WRECK.mesh.parent){bellWreckDrop();BELL_WRECK=bellWreckBuild(P);}
+    const W=BELL_WRECK;W.mesh.position.y=SEA_Y+BELL_HIGH_DY*(1-bellLowness());W.bell.visible=!artifactState('drowned_bell');
+    if(typeof isInterior==='function'&&isInterior())return;const st=worldState.stats||(worldState.stats={});
+    if(!st.bellSeen&&!artifactState('drowned_bell')&&Math.hypot(px-W.x,pz-W.z)<40){st.bellSeen=1;bellNoteSeen();showMsgLong(isTideOut()?BELL_SAY.seenLow:BELL_SAY.seenHigh,'#a8c8d8');}}
+  function bellOut(){return !!(BELL_WRECK&&BELL_WRECK.mesh&&BELL_WRECK.mesh.parent&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior()));}
+  function bellAtBeam(){if(!bellOut())return false;const b=bellPos();return Math.hypot(px-b.x,pz-b.z)<BELL_REACH;}
+  function bellAtMast(){return bellOut()&&Math.hypot(px-BELL_WRECK.x,pz-BELL_WRECK.z)<BELL_MAST_REACH;}
+  function bellWreckNear(){return isTideOut()?bellAtBeam()||bellAtMast():bellAtMast()&&!artifactState('drowned_bell');}
+  function bellWreckPrompt(){if(!isTideOut()||!(bellAtBeam()||bellAtMast()))return null;return artifactState('drowned_bell')?"Press 'E' to look at the wreck":"Press 'E' to take the bell";}
+  // E at the wreck: at high tide the sea has it; at low tide the named action is takeArtifact, with the draft's log line
+  function bellWreckUse(){const W=BELL_WRECK;if(!W)return null;const S=artifactState('drowned_bell');
+    if(!isTideOut()){if(S)return null;bellNoteSeen();const tr=worldState.artifactTries.drowned_bell;tr.n=(tr.n||0)+1;tr.day=dayNow();showMsg(BELL_SAY.high,'#a8c8d8');return {ok:false,why:'tide'};}
+    if(S){showMsg(BELL_SAY.after,'#a8c8d8');return {gone:true};}
+    if(!takeArtifact('drowned_bell',null,`Took the Drowned Bell from the wreck off ${W.coast}.`))return null;
+    showMsg(BELL_SAY.take,'#a8c8d8');W.bell.visible=false;if(typeof updateHUD==='function')updateHUD();return {ok:true};}
   // S800 — the Noon Ring's trial (the page's Sky row; the approved draft's second run, §4): the ring lies on a cairn at the top
   // of a home-island peak (artifactPlaces().sundial_ring, picked from the seed as the others are). The cairn stands on the
   // highest ground within 24 units of the peak's centre, found once its cell is loaded (the peak's rise is in the terrain only
@@ -1341,6 +1405,7 @@ const giver=`${lord.title} ${lord.name}`;
   function artifactSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's *slain!* or the witness's line, which would cover it (the words only: the outcome is already written) */
   // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
   function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
+    if(id==='drowned_bell'&&p)return {id,text:`The Drowned Bell — in the wreck on the rock off ${p.coast}. At low tide.`}; /* S801 — the draft's line (second run, §1) */
     return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}
   // faction quests ride the town-quest generator, flavoured and counted
   function factionTopics(site){
