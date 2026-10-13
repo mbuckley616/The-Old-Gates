@@ -414,7 +414,7 @@
   // S770 — woken in the night (Michael's A on #255): the first talk after a householder is woken while the house sleeps opens with a
   // night line by her people, and the introduction is not first. No crime. WOKEN_LINES is the quest writer's, one line per people
   // (gatelander, markman, aurennais, oldblood); until a people has its own, the line from the decision stands for all four.
-  const WOKEN_LINES={};
+  const WOKEN_LINES={gatelander:"Weaver keep us — who's that? It's the black of the night. A friend knocks, and a friend knocks by day.",markman:"Iron and blood! Who's there? Middle of the night, friend. Say it quick.",aurennais:"Who is there? Master — it is the middle of the night. Whatever our arrangement was, I do not recall it including this hour.",oldblood:"Who stands there. It is meán oíche. The door was shut."}; /* S785 — the quest review's Finding 29 (run 16), word for word */
   function wokenLine(house){const p=house&&house.dlg&&house.dlg.people;return WOKEN_LINES[p]||"What — who's there? It's the middle of the night.";}
   // asked as E opens a home's talk: the night line if she was woken this visit, the house still keeps its sleeping hours, and she has not yet said it
   function wokenGreetNow(){if(typeof intNPCMesh==='undefined'||!intNPCMesh||!currentHouse)return null;const u=intNPCMesh.userData;
