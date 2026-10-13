@@ -1,0 +1,6 @@
+# Session 804 (13 Oct 2026): the devlog and the decisions file only ever gain entries, from every branch at once, so every
+# merge into main left the other open branches conflicting in them (#261 and #262 twice in a day). `union` keeps both
+# sides' added lines when two branches append in the same place. It applies to `git merge` (the builders' and the
+# producer's merges of origin/main); GitHub's own mergeability check does not read it.
+docs/devlog.md merge=union
+docs/decisions.md merge=union
