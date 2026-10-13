@@ -229,3 +229,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: the schools' rosters after #252. Look builder: the death screen as a leaf after #243 and its ragdoll. Quest writer: a line for a householder woken at night.
 
 **Roadmap.** 225 of 279 stories done (219 of 272 yesterday); new: the death screen, twice the barrels, the gates by school.
+
+## 13 Oct 2026
+
+**Waiting on you.** Two decisions: shrines remembering, how many boons you keep for good (#267, A: one kept boon); unblock the critic's report PR #268 (A: merge anyway; a game test fails on a name clash, not on the report). One merge: Systems sessions 776–796, the Makers' six tools with their trials' frame, words and claimants (a409e2c, CI green, merges cleanly).
+
+**Landed on main since yesterday.** Look sessions 743–752: the climb up the boarding net, Portclare's dry-stone wall, a sleeper on their side (ca4dbaf). Systems sessions 753–766: twice the barrels, one name per place, a bought ship by the quay, the gates by school (c66473e). Systems session 770: a sleeper's prompt and night line (98b1d86). Quest writer run 16, the Aurennais register (#265). Main's CI is green on c932e49, build s597.
+
+**Blocked.** The critic's PR #268 (decision above). `poinames` finds two places named Border Road Bridge; filed for the systems builder.
+
+**Team.** Systems builder: Sessions 797–798 (the Shuttle's trial, a sleeper's reach) with CI running; the other trials wait on their props. Look builder: the trials' five props and Droichead's two barrels in walls. Critic: a ship alongside the quay next.
+
+**Roadmap.** 230 of 283 stories done (225 of 279 yesterday); new: a sleeper's reach, barrels in walls, the name clash, shrines remembering.
