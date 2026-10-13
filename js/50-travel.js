@@ -1285,6 +1285,7 @@ function interact(){
     // Shopkeeper — open dialog first
     if(intNPCMesh && Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<2.2 && Math.abs(jumpY)<1.2){ // v80 S13 — same floor only
       if(typeof sleeperAsleep==='function'&&sleeperAsleep())wakeSleeper(intNPCMesh,true); /* S739 — E wakes a sleeper, who then talks */
+      dlgWokenLine=(typeof wokenGreetNow==='function')?wokenGreetNow():null; /* S770 — woken in the night, she says so first (#255) */
       const keeper=currentHouse?currentHouse.keeper:'';
       // v61ad: prefer SHOP_DIALOG_BURNED[keeper] when Ashenmoor has burned.
       // Currently only Edna has a burned-variant dialog (she's the sole
@@ -1296,7 +1297,7 @@ function interact(){
                    ||SHOP_DIALOG[keeper]||IRONHAVEN_DIALOG[keeper];
       if(dlgData){const extra=(currentHouse&&currentHouse.type==='inn'&&currentHouse.dlg&&currentHouse.dlg._extra)?currentHouse.dlg._extra.filter(t=>/bed for the night/.test(t.label)):[];openDialog({...dlgData,name:keeper,topics:[...extra,...(dlgData.topics||[])]});} // v80 — the innkeeper lets rooms, authored or not
       else if(currentHouse&&currentHouse.dlg){openDialog(currentHouse.dlg);} // v80 — residences talk, they don't trade
-      else{openShop();}
+      else{dlgWokenLine=null;openShop();}
       return;
     }
     return;

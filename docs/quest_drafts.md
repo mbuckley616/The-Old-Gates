@@ -2959,3 +2959,101 @@ The garrison does not only stand on the plaza. By day (6h–20h), two of its sol
 - §12a's *a choice of which side to let in*, during a siege. It hands a town to an enemy, so it belongs in the faction lines (League rank 4 or the Compact's Factor), where standing is spent. A later draft.
 - A garrison captain who talks before the fight (a parley, a yield as at the Yard) would need the captain to be a person, not a foe. Not proposed.
 - What a freed town builds afterwards (§12a's `rebuilt`) waits for the investment menu to read the flag.
+
+---
+
+## The Aurennais Register — names, places, signs and talk
+
+*Unapproved. Drafted 13 Oct 2026. Owed since Michael's answer of 12 Oct on Aurenne (`decisions.md`, *The concept art's first batch*, item 4; canon §1.3 and §2): the Norman register is dropped for Aurenne, and its names are *to be written by the quest writer*. Backlog J, *The world's tone*: "Owed for Aurenne: the quest writer's new name pools in its register (the code's `NAMES.french`, read by `PEOPLES.aurennais`)". This is not a quest. It is the bank every Aurennais name and place is drawn from, so it comes before any quest set there.*
+
+### What the canon fixes, and where it is silent
+
+- *Aurenne is a Mediterranean and North African fusion, "almost like a fusion of Roman / Egyptian / Arabic / Greek"* (§1.3, Michael). *Names: Mediterranean and North African register, Roman, Greek, Egyptian and Arabic roots* (§2).
+- *The Crown's Norman names in the Gatelands, Coeur de Vie among them, are unaffected* (§1.3). So the `french` register stays, for the Crown's places on the home island, and Aurenne gets a register of its own beside it.
+- *Speech follows the speaker, not the province* (§1.5): a person's name follows their people, a place's name its nation.
+- Michael chose *the mix* for Aurenne's houses (#259, B): "a city that has been built over for centuries", not a theme park. The names take the same rule. They are one people's, not four borrowed lists side by side. The Roman and Greek roots run through the old families and the Church, the Egyptian through the river towns, and the Arabic through the caravan roads and the quays. Every bank below mixes all four, and no single list is all one root.
+- *Silent:* family names; whether the Old Blood of Aurenne name their children in the deep register (canon §2 gives the Old Blood one register everywhere, so they do, and nothing here changes it).
+- **What the banks avoid.** No god's name, of this world or ours (no Isis, no Amun, no Apollo). No name a real faith holds sacred to one person. No name so famous it reads as a person, not a name (no Cleopatra, no Hypatia). No name another bank already holds, since the generator tells a woman's name from a man's by the banks (`Object.values(NAMES).some(b=>b.f.includes(name))`). No name the cast or the concept art has already given someone (Zahra is OG-051's traveller). No Ald-.
+
+### 1. People's names (`NAMES.aurennais`)
+
+Sixteen of each, where the other banks have twelve: a big town runs short of residents' names (DECISION #171 met two homes of one name), and Aurenne's cities are the largest.
+
+**Men:** Iskander, Hanno, Cassian, Tarek, Nikasios, Faris, Severan, Menas, Zenon, Rashid, Aurelian, Hamilcar, Kosmas, Sabri, Theron, Nasir
+
+**Women:** Livia, Neferet, Thalassa, Yasmin, Cassia, Amira, Elissa, Aurelia, Nadira, Eirene, Damaris, Tamit, Salma, Octavia, Leila, Berenike
+
+*Iskander* is the Greek *Alexandros* come back through Arabic, and *Berenike* a Greek name worn by queens of Egypt: the fusion in one word each. *Hanno*, *Hamilcar* and *Elissa* are Carthage's, the North African coast's own. *Neferet* and *Tamit* are Egyptian (beautiful; the cat).
+
+### 2. Places (`SYL.aurennais` and the long forms)
+
+Every first half ends in a consonant and every second half begins with a vowel, so any pair is sayable and none doubles a sound. 144 short names.
+
+**First halves:** Al, Qar, Ser, Tam, Ner, Phar, Sel, Mas, Hel, Dar, Kef, Zar
+
+**Second halves:** ia, ara, ion, assa, enna, is, ona, ouda, ane, oum, ira, os
+
+So: *Tamassa, Pharos, Qarona, Helion, Selouda, Darenna, Kefoum, Zaria, Serira, Masane, Neris, Alara*. On the map and the cards they take the forms the generator already gives (*Qarona's Lair*, *Shrine of Tamassa*, *Selona Spire*, *Helion Keep*, *Darenna Road*, *Kefoum Dunes*).
+
+**Long forms**, for `nameBanks` when a bank's shorts run out: a short name with one of six qualifiers, Roman, Greek, Arabic and Egyptian, in the way old cities are told apart from their daughters:
+- *{name} Maior* · *{name} Minor* (Roman: the greater and the lesser)
+- *{name} Paralia* (Greek: by the sea)
+- *{name} al-Qasr* (Arabic: of the fort) · *{name} al-Bir* (of the well)
+- *Per-{name}* (Egyptian: the house of)
+
+### 3. The land's words
+
+| What | Today (`french`) | Aurennais |
+|---|---|---|
+| Rivers (`RIVER_NAMES.aurenne`) | La Dorée, La Blanche, La Sauvage, La Verte, La Lente, La Claire | **Chrysa, Albana, Agria, Khadra, Lenta, Safia** (the same six senses: gold, white, wild, green, slow, clear; Greek, Latin, Greek, Arabic, Latin, Arabic). No article, so the bridge reads *Khadra Bridge* |
+| Peaks (`PEAK_FORM`) | Mont {n}, Pic {n} | **Jebel {n}** (the mountain, said from Morocco to Sinai), **Akra {n}** (the height, as in *acropolis*) |
+| Lakes (`LAKE_FORM`) | Lac {n} | **Birket {n}** (the pool; Egypt's own word for its lakes) |
+
+### 4. Signs (`SHOP_NOUN`, `INN_NAMES`)
+
+The Aurennais speak the common tongue, formally, so their signs are in it, with two words the Gatelands do not use.
+
+| Trade | Noun |
+|---|---|
+| weapon | Forge |
+| armor | Armoury |
+| potion | Apothecary |
+| misc | **Emporium** |
+| shipwright | **Dockyard** |
+| church | Chapel |
+| barber | Barber |
+
+The church takes the default form (*The Tamassa Chapel*), not `french`'s *Chapelle de …*.
+
+**Inns:** The Two Cypresses · The Copper Ewer · The Painted Tile · The Cistern · The Saffron Lamp · The Ninth Milestone
+
+(A caravanserai inland, backlog L5, would want its own name form, *the Caravanserai at {town}*; a later draft, with the build.)
+
+### 5. *Any news?* (`RUMORS.aurennais`)
+
+The pool a townsperson draws from when no live rumour is due. In the Aurennais register: formal, qualified, contracts and ledgers, never an oath; and under §10a, a pleasant surface with a dry turn. Each is true to the canon (the sealed gates, the tithe, the academy, the Church's contempt for the salvage trade, the free captains, the chapel under the cathedral).
+
+1. "The Prior has sealed another gate on the salt coast, I am told. Sealed, not cleared. The Church holds that one does not unpick the Weaver's work in order to sell the thread."
+2. "A Markish captain was seen at the quay without his colours. One assumes he was buying rope. One also counts the ships, Master."
+3. "The academy took eleven new students this year, and returned two to their parents with a letter. The letters, I gather, were very courteous."
+4. "Every hull that passes the light is tithed. Even ours. Especially ours, my brother would say, but he keeps poor books."
+5. "There is a door under the cathedral in the capital that the vergers are not asked to sweep. I mention it only because nobody else does."
+6. "A ship came in from the Gatelands with a rubbing aboard, and the Church bought it to burn. Paid well for it, too. Burning is not cheap."
+
+(Five and six point at the Guest's chapel and the gates' trade without naming either; *The Seventh Niche* draft gives the priests the direct answer.)
+
+### What in the code would carry it
+
+- `82-world-structures.js`: `NAMES.aurennais={m:[…],f:[…]}` (§1); `SHOP_NOUN[t].aurennais` for each trade (§4); `INN_NAMES.aurennais=[…]` (§4).
+- `81-world-cells.js`: `SYL.aurennais=[[…],[…]]` (§2); in `nameBanks`, `else if(reg==='aurennais')short.forEach(n=>{[' Maior',' Minor',' Paralia',' al-Qasr',' al-Bir'].forEach(q=>long.push(n+q));long.push('Per-'+n);});`; `RIVER_NAMES.aurenne` (§3); `PEAK_FORM.aurennais=[n=>\`Jebel ${n}\`,n=>\`Akra ${n}\`]`, `LAKE_FORM.aurennais=n=>\`Birket ${n}\``; `REG_OF_PEOPLE.aurennais='aurennais'`.
+- `83-world-generator.js`: `RUMORS.aurennais=[…]` (§5).
+- `87-world-quests.js`: `PEOPLES.aurennais.names='aurennais'`.
+- `84-world-interiors.js`, `cultureOfCell`: a cell whose nation is Aurenne (`nationKeyOf(i,j)==='aurenne'`, safe to call there; `climateOfCell` already reads the nation) takes `'aurennais'`; every other cell keeps its nearest capital's culture as now, so the `french` culture keeps the Crown's Norman places on the home island. Today a place's register is the nearest of eight culture capitals, with no regard to the nation, so some Aurennais towns have Irish names and some have the generated cultures' sounds. This is the change Michael's answer asks for; no other rule moves.
+- **What re-rolls.** Every Aurennais person and place drawn from the old banks takes a new name, as the backlog expects. Saves key houses, sites and chunks by id (the co-op rules), so nothing saved is lost; a player who remembers *Valclair-sur-Mer* finds *Tamassa Paralia* there. The anchored names (*Caer Slige*, *Port Blackhand*, *The Salt Mouth*, *Cill an Aoi*) are set by hand and do not move.
+- **A test** worth having: on the default seed, every site on Aurenne carries a name the `aurennais` bank can make (or an anchored name), every Aurennais townsperson's first name is in `NAMES.aurennais`, and the Gatelands' `french` names are unchanged.
+
+### Owed, and not drafted here
+
+- Family names and bynames for all four peoples (the generator has none; the concept art's *Zahra al-Mahdi* and *Marco di Serra* have them).
+- The Old Blood's bank (`PEOPLES.oldblood.names` is `'oldblood'`, which no bank holds, so it falls back to the Irish): canon §2 gives *Irish deep register, older forms (Fíachra, Sadb, Cúán)*. A short draft, next.
+- The Aurennais greetings and topics already in the code were written in this register's voice and do not change; only the names under them do.
