@@ -514,7 +514,7 @@ function buildHang(cols, R, PP, neck, clearAt, len, rnd, B) {
   for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const q = cols[k][r], s = Math.max(0, Math.min(1, (yTop - .12 - q.y) / (yTop - .12 - yLo))), p = polar(q), A = Amax * s ** 1.1;
     let d = A * fold[k]; if (d < 0) { const space = Math.max(0, p.r - floorAt(q)); d = -space * (1 - Math.exp(d / Math.max(space, 1e-4))); }
     setR(q, p.th, p.r + d); q.y += .45 * d * s ** 4; if (Math.abs(d) > deep) deep = Math.abs(d); }
-  // nothing it hangs over comes through (Session 897): the folds' troughs and the hem's rise move points in and up after the
+  // nothing it hangs over comes through (Session 898): the folds' troughs and the hem's rise move points in and up after the
   // body's outline was read, and over a stiff mail skirt a few came in past it; any such point goes back out to 4 mm over it
   let floored = 0; for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r]; if (q.y > yTop - .1) continue; const p = polar(q), f = bodyR(p.th, q.y) + .004; if (p.r < f) { setR(q, p.th, f); floored++; } }
   let crossed = 0; for (let r = 0; r < R; r++) for (let k = 1; k < K; k++) if (polar(cols[k][r]).th < polar(cols[k - 1][r]).th) crossed++;
