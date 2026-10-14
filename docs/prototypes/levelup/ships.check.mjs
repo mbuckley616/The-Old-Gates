@@ -13,10 +13,10 @@ const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angl
 if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch(launch); let fails = 0;
 const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined ? '  ' + JSON.stringify(info) : '')); if (!ok) fails++; };
-for (const v of ['quarter', 'deck']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+for (const v of ['quarter', 'deck', 'quarter&ship=cutter', 'deck&ship=cutter']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(`http://localhost:${port}/ships.html?still&w=480&h=270&view=${v}`);
   await Promise.race([page.waitForFunction(() => window.__done, null, { timeout: 300000 }), new Promise(res => page.on('pageerror', res))]);
-  check(`the ${v} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
+  check(`the ${v.replace('&ship=cutter', ' (the cutter)')} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
 const page = await browser.newPage({ viewport: { width: 320, height: 180 } }); await page.goto(`http://localhost:${port}/ships.html?still&w=320&h=180`); await page.waitForFunction(() => window.__done, null, { timeout: 300000 });
 const r = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ships.js'), S = await import('./pieces.js'), out = [];
   const hash = (g, skip) => { let h = 0; g.traverse(m => { if (!m.isMesh || m.name === skip) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
@@ -48,6 +48,36 @@ check(`clinker: at every strake's lower edge, at 9 stations, it stands ${mm(r, x
 check(`the walk down either side of the deck, ${r[0].walkN} points: the deck under every one, ${Math.min(...r.map(x => x.minHead))} m of headroom, ${Math.min(...r.map(x => x.minSide))} m clear`, r.every(x => !x.bad.length), r.map(x => x.bad).filter(b => b.length).slice(0, 2));
 check(`the rail at ${Math.min(...r.map(x => x.rail))} m or more over the deck at all ${r[0].railN} stanchions`, r.every(x => x.rail >= 1.0));
 check('the harp or the plain sail: the same hull', r.every(x => x.hullSame));
+// the Mark's cutter (Session 864): 4 keys, each the same twice; the game's cutter, 14 by 4.0 m, the deck 1.0 over the sea; closed below the
+// deck, the transom too; carvel (every strake flush with the one below, within 1 cm); the stem plumb; the walk down either side and, on
+// the centreline, 2.0 m or more under the boom; the rail 1.0 m over the deck; the striped sails and the head change nothing else.
+const C = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ships.js'), S = await import('./pieces.js'), out = [];
+  const hash = (g, skip) => { let h = 0; g.traverse(m => { if (!m.isMesh || skip.includes(m.name)) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+  for (let i = 0; i < 4; i++) { const key = 'cutter:' + i, a = K.markCutter({}, S.stream(key)), b = K.markCutter({}, S.stream(key)), p = K.markCutter({ stripe: true, head: false }, S.stream(key)); a.group.updateMatrixWorld(true);
+    const all = []; a.group.traverse(m => { if (m.isMesh) { m.material = m.material.clone(); m.material.side = THREE.DoubleSide; all.push(m); } });
+    const hull = all.filter(m => ['tar', 'bottom', 'oak', 'deck'].includes(m.name));
+    const cast = (o, d, list = all) => { const h = new THREE.Raycaster(new THREE.Vector3(...o), new THREE.Vector3(...d).normalize(), 0, 40).intersectObjects(list)[0]; return h ? { d: h.distance, y: h.point.y, m: h.object.name } : null; };
+    let beam = 0; for (const s of a.sections) for (const [x] of s.pts) beam = Math.max(beam, x);
+    let leaks = 0, rays = 0; const leakAt = []; for (const z of [-6.6, -4.5, -2, 0, 2, 4.5, 6.2]) for (const y of [-.5, .2, .8]) { if (a.sect(z, 0)[1] > y - .1 || a.sect(z, .5)[0] < .2) continue; for (let k = 0; k < 60; k++) { const th = k * 2.39996, ph = -Math.PI / 2 + Math.PI * .5 * ((k % 10) / 10) * 1.1, d = [Math.cos(th) * Math.cos(ph), Math.sin(ph) * (k % 3 ? 1 : .2), Math.sin(th) * Math.cos(ph)];
+      rays++; const h = cast([0, y, z], d, hull); if (!h || h.d > 14) { leaks++; if (leakAt.length < 3) leakAt.push([z, y, d.map(v => +v.toFixed(2))]); } } }
+    const lands = []; for (const z of [-4, -2, 0, 2, 4]) for (let s = 1; s < a.nstr; s++) { const u = s / a.nstr, p0 = a.sect(z, u - .006), p1 = a.sect(z, u + .006), t = [p1[0] - p0[0], p1[1] - p0[1]], l = Math.hypot(...t), n = [t[1] / l, -t[0] / l];
+      const hit = uu => { const q = a.sect(z, uu); const h = cast([q[0] + n[0] * .5, q[1] + n[1] * .5, z], [-n[0], -n[1], 0], hull); return h ? h.d : 9; }; lands.push(+(hit(u - .012) - hit(u + .004)).toFixed(3)); }
+    const zs = -a.L / 2, zb = a.L / 2, bad = [], walk = []; for (const x of [-1, 1]) for (let z = zs + 2.2; z < zb - 2.4; z += .25) { const fl = cast([x, 1.8, z], [0, -1, 0]), up = cast([x, a.deck + .1, z], [0, 1, 0]);
+      const side = Math.min(...[1.1, 1.7].flatMap(y => [cast([x, a.deck + y, z], [1, 0, 0]), cast([x, a.deck + y, z], [-1, 0, 0]), cast([x, a.deck + y, z], [0, 0, 1]), cast([x, a.deck + y, z], [0, 0, -1])].map(h => h ? h.d : 9)));
+      const w = { x, z: +z.toFixed(2), floor: fl ? +fl.y.toFixed(3) : -9, head: up ? +(up.y - a.deck).toFixed(2) : 99, side: +side.toFixed(2) }; walk.push(w); if (Math.abs(w.floor - a.deck) > .03 || w.head < 2.0 || w.side < .3) bad.push(w); }
+    const boom = []; for (let z = a.mast[1] - .6; z > a.transom + 2.1; z -= .25) /* forward of the tiller's sweep */ { const up = cast([0, a.deck + .4, z], [0, 1, 0]); boom.push(up ? +(up.y - a.deck).toFixed(2) : 99); }
+    const stemZ = a.stem.map(([, z]) => z);
+    out.push({ same: hash(a.group, []) === hash(b.group, []), hullSame: hash(a.group, ['sail', 'gilt', 'dark']) === hash(p.group, ['sail', 'gilt', 'dark']), headless: !p.head, tris: a.tris, draws: a.draws, L: a.L, W: +(beam * 2).toFixed(2), deck: a.deck, leaks, rays, leakAt,
+      lands: [Math.min(...lands), Math.max(...lands)], walkN: walk.length, bad: bad.slice(0, 4), minHead: Math.min(...walk.map(w => w.head)), minSide: Math.min(...walk.map(w => w.side)), boom: Math.min(...boom), plumb: +(Math.max(...stemZ) - Math.min(...stemZ)).toFixed(3),
+      rail: +Math.min(...a.rail.map(([, y]) => y - a.deck)).toFixed(2), railN: a.rail.length }); }
+  return out; });
+check(`the cutter, 4 keys: ${mm(C, x => x.tris).join(' to ')} triangles in ${Math.max(...C.map(x => x.draws))} meshes; each the same twice`, C.every(x => x.same && x.tris < 60000 && x.draws <= 12));
+check(`the game's cutter: ${C[0].L} m by ${C[0].W} m moulded, the deck ${C[0].deck} m over the sea`, C.every(x => x.L === 14 && Math.abs(x.W - 4.0) < .05 && x.deck === 1));
+check(`the cutter closed below the deck, the transom too: ${Math.max(...C.map(x => x.leaks))} of ${C[0].rays} rays from inside her get out`, C.every(x => x.leaks === 0), C.map(x => x.leakAt).filter(l => l.length).slice(0, 2));
+check(`carvel: at every strake's edge, at 5 stations, the planking is flush (${mm(C, x => x.lands[0])[0]} to ${mm(C, x => x.lands[1])[1]} m), and the stem is plumb (${Math.max(...C.map(x => x.plumb))} m of rake)`, C.every(x => x.lands[0] >= -.01 && x.lands[1] <= .01 && x.plumb <= .01));
+check(`the cutter's walk down either side, ${C[0].walkN} points: the deck under every one, ${Math.min(...C.map(x => x.minHead))} m of headroom, ${Math.min(...C.map(x => x.minSide))} m clear; on the centreline ${Math.min(...C.map(x => x.boom))} m under the boom`, C.every(x => !x.bad.length && x.boom >= 2.0), C.map(x => x.bad).filter(b => b.length).slice(0, 2));
+check(`the cutter's rail at ${Math.min(...C.map(x => x.rail))} m or more over the deck at all ${C[0].railN} stanchions`, C.every(x => x.rail >= 1.0));
+check('the striped sails and no head: the same hull', C.every(x => x.hullSame && x.headless));
 await page.close();
-if (process.argv.includes('--shots')) for (const q of ['view=quarter', 'view=side', 'view=deck', 'view=lap', 'view=quarter&noharp']) { const name = 'ships-' + q.replace('view=', '').replace('&', '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=ships.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
+if (process.argv.includes('--shots')) for (const q of ['view=quarter', 'view=side', 'view=deck', 'view=lap', 'view=quarter&noharp', 'ship=cutter&view=quarter', 'ship=cutter&view=side', 'ship=cutter&view=deck', 'ship=cutter&view=lap', 'ship=cutter&view=quarter&stripe']) { const name = 'ships-' + q.replace('ship=cutter&view=', 'cutter-').replace('view=', '').replace('&', '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=ships.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

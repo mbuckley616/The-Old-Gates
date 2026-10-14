@@ -2,9 +2,11 @@
 // ?view=quarter (default): from off her starboard bow, the whole hull and its sail; ?view=side: broadside, the clinker strakes and the
 // sheer; ?view=deck: from the tiller forward along the deck, the rail at the hip; ?view=lap: close on the strakes at the waterline.
 // &noharp: the sail plain. &cam=x,y,z,tx,ty,tz puts the camera anywhere.
+// ?ship=cutter (Session 864): the Mark's cutter, the same views (lap is close on her stem and its head); &stripe: the striped sails;
+// &nohead: no beast's head on the stem.
 import * as THREE from 'three';
 import { Q, W, H, STATS, GLSL_NOISE, makeRenderer, makeComposer, buildTextures, skyDome, clouds, run } from './common.js';
-import { gatelandsSloop } from './ships.js';
+import { gatelandsSloop, markCutter } from './ships.js';
 import { stream } from './pieces.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'quarter'; buildTextures();
@@ -30,14 +32,15 @@ skyDome(scene, SUN); clouds(scene, SUN, { n: 8, d0: 1800, dw: 5000, y0: 300 });
         outgoingLight += vec3(1., .88, .66) * pow(max(dot(Rv, normalize(uSun)), 0.), 300.) * 6.;
         #include <opaque_fragment>`); };
   const sea = new THREE.Mesh(g, m); sea.renderOrder = 2; scene.add(sea); }
-const S = gatelandsSloop({ harp: !Q.has('noharp') }, stream('sloop:kilmore')); scene.add(S.group);
+const CUT = Q.get('ship') === 'cutter', S = CUT ? markCutter({ stripe: Q.has('stripe'), head: !Q.has('nohead') }, stream('cutter:skarvik')) : gatelandsSloop({ harp: !Q.has('noharp') }, stream('sloop:kilmore')); scene.add(S.group);
+if (CUT) Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 17 });
 let eye, at;
-if (VIEW === 'side') { eye = [17, 3.2, .5]; at = [0, 3.4, 0]; }
+if (VIEW === 'side') { eye = CUT ? [21, 4.2, .5] : [17, 3.2, .5]; at = CUT ? [0, 5.4, 0] : [0, 3.4, 0]; }
 else if (VIEW === 'deck') { eye = [.9, S.deck + 1.65, -5.2]; at = [-.2, S.deck + 1.6, 4]; cam.fov = 62; }
-else if (VIEW === 'lap') { eye = [3.6, .6, 2.2]; at = [2.0, .35, 1.2]; cam.fov = 40; }
-else { eye = [13, 5.2, 14]; at = [0, 3.4, .5]; }
+else if (VIEW === 'lap') { if (CUT) { eye = [3.4, 2.6, 10.2]; at = [0, 2.2, 7.1]; cam.fov = 40; } else { eye = [3.6, .6, 2.2]; at = [2.0, .35, 1.2]; cam.fov = 40; } }
+else { eye = CUT ? [15, 5.6, 16] : [13, 5.2, 14]; at = CUT ? [0, 4.6, .5] : [0, 3.4, .5]; }
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();
-STATS.ship = { view: VIEW, tris: S.tris, draws: S.draws };
+STATS.ship = { ship: CUT ? 'cutter' : 'sloop', view: VIEW, tris: S.tris, draws: S.draws };
 run(makeComposer(R, scene, cam, { bloom: .12, sat: 1.05, vig: .28 }), cam);

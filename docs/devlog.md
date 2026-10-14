@@ -18023,3 +18023,40 @@ Asked as **DECISION #311**: the longhouse's plan. A, one hall round the fire as 
 - **No carving inside.** OG-025's halls have carved posts and a high seat, and the posts here are plain beams. A hall of note would want them.
 - **The larder is dark** by day, far from the fire. That is right for a longhouse, but the hams read only as shapes.
 - **No smoke:** the louver lets light down but no smoke goes up it.
+
+## v80 — Session 864 — Card F11's second hull: the Mark's cutter in the new kit (prototype only)
+Michael's A on #306 (14 Oct) took all three recommendations: the board's square sail for the Gatelands so that one rig names each island, the harp, and a tiller on the small hulls. The FREEZE (#297) holds, so L6's next hull is a prototype. The Mark's rig is the game's cutter, from Michael's A on #202 (Session 665), and #306's question already named it as the Mark's. I opened OG-004 and read its row. The Mark's line there is "dragon prows, oars, dark sails", with the raiding longship's sail in red and black. The row's flags (guns on ordinary hulls, invented heraldry) do not touch a cutter.
+
+`ships.js` has a new `markCutter(o, r)` at the game's cutter's numbers (`85-world-sea.js`): 14 by 4.0 m, draft 1.45, with the deck 1.0 m over the sea.
+- **The lines:** fine and hollow forward to a plumb stem, and the forefoot cut away (the keel rises 0.8 m toward the stem). The beam is carried aft to a transom a third of it wide. The sheer rises 0.45 m forward and 0.2 m aft from a low waist, 0.36 m over the deck.
+- **Carvel planking:** twelve strakes a side, laid edge to edge and flush, the planking 4 cm thick. It is red-brown below the waterline and tarred black above, with a gilt moulding along the sheer strake, as the game's cutter is (Session 665's black over a gilt line). A flat black transom closes the stern, with a gilt line across its head.
+- **The stem:** plumb, running from the forefoot to a head 0.45 m over the sheer. On it, with `o.head` (default), sits a gilt beast's head with an open jaw and dark eyes, 1.35 m high, made from a profile like the halls' bargeboard heads. A 4.2 m bowsprit runs out beside it.
+- **The deck and rail:** as the sloop has them, with fore-and-aft planks, a covering board, stanchions every 0.9 m and a cap rail at 1.0 m over the deck. There is a hatch aft of the mast.
+- **The rig:** the mast stepped 1.6 m forward of amidships, rising 10.8 m with a topmast to 13 m. The gaff main runs from a boom at 2.15 m over the deck to a gaff peaked up at 30°, with a topsail over it, a staysail to the stem head and a jib to the bowsprit's end, all bellied to leeward. There are three shrouds a side, the forestay, the topmast stay, two backstays and the mainsheet. The game's boom is at 1.35 m. It is raised here so a person walks under it, as the sloop's sail foot is at 2.2 m.
+- **The helm:** a rudder hung outboard on the transom, with its tiller in over the stern (#306, 3 A).
+- **`o.stripe`:** the sails in red and black cloths. Unstriped, they are tanned red-brown in cloths with reef bands.
+
+`ships.html?ship=cutter` has the sloop's views. `lap` is close on the stem and its head here. `&stripe` and `&nohead` show the options.
+
+**Fixed on the way:**
+- **The head read as a thin bent slab** in its first two passes. Its profile is now a neck curling forward into a head with a jaw.
+- **The check's centreline first measured the tiller**, at 0.78 m, as if it were the boom. It now stops forward of the tiller's sweep.
+
+Asked as **DECISION #312**: the sails (A, tanned red-brown, recommended; B, red and black on every hull) and the stem (A, the gilt beast's head, recommended; B, plain as today).
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 18 of 18 pass**, with nine new for the cutter:
+  - **The builds:** 4 keys, each the same twice. 21,594 triangles in 9 meshes.
+  - **The size:** the game's cutter, 14 m by 4.0 m moulded, the deck 1.0 m over the sea.
+  - **Closed:** 0 of 1,260 rays from 21 points inside her below the deck get out, the transom and the stern's points included.
+  - **Carvel and plumb:** at every strake's edge, at 5 stations, the planking is flush (0 m), and the stem has 0 m of rake from forefoot to head.
+  - **The walk:** 76 points down either side, with the deck under every one, 3.66 m of headroom and 0.66 m clear. On the centreline from the mast to forward of the tiller there is 2.07 m under the boom.
+  - **The rail:** 1.0 m or more over the deck at all 15 stanchions.
+  - **The options:** the striped sails and no head leave the hull the same.
+  - **The pages:** the cutter's quarter and deck views render with no page errors.
+- **The sloop's nine checks** are unchanged.
+- **Pictures, new:** `ships-cutter-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-stripe`.
+### Needs eyes
+- **The sails are one shape each.** They do not set to the wind, and the jib and staysail are in shadow from the quarter view. The game trims its sails by the wind, and bringing her in keeps that.
+- **The beast's head is a flat profile**, 0.2 m thick with a bevel. From ahead it is a plank. A carved head in the round is a later pass, and the bodies builder's beasts could lend it a skull.
+- **Below the deck she is empty.** OG-004's cabin in the Mark's dress (furs, lantern light) is L6's next slice, with the sloop's.
+- **The boom at 2.15 m** changes the game's sail plan: the main is 0.8 m shorter in the luff. Bringing her in should keep the area by lengthening the gaff, or accept the smaller main.
