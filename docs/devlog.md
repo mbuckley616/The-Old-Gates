@@ -17410,3 +17410,45 @@ All six props are now prototyped: the blade's stone, the ring's cairn, the Wayla
 - **Not F5's kit.** The room is the gates' language in one room, not F5's kit. The piers' script is a stand-in for the slice's glyph columns, and the walls are the slice's ashlar.
 - **From the door, the Shuttle is a few pixels** at 6.5 m. It is "small and pale" by the draft, and the first-sight line names it. A faint light on it would make it findable, if Michael wants that.
 - **The school:** this is a steady gate's amber. A failing gate (OG-120) would be cold blue, and which school's dress the home island's sigil gate wears is the generator's.
+
+## v80 — Session 852 — Card F9 begun: the Gatelands cottage as a room, inside its own shell (prototype only)
+With the trials' props done, this session takes the next item in the look builder's order: places for F9 (rooms) as prototypes in the new kit. It starts with L9's *Homes as rooms*, from OG-115 (M7, the island cutaways: "a rural cottage of whitewashed stone and thatch with hearth, box bed and shelves") and OG-141 (P5: daylight through windows at four times, the hearth, candles and lanterns; "a Gatelands cottage lit by its hearth and lanterns"). Both sheets were opened and their catalogue rows read. Neither row's canon flags touches the Gatelands cottage: OG-115's flag is the Mark's "clans", and OG-141's is its cobbled dungeon. The FREEZE (#297) still holds, so this is a prototype only.
+
+**The method: the room is built inside the very shell the street builds.** A new module, `docs/prototypes/levelup/rooms.js`, makes `gatelandsCottage(o, r)` from `pieces.js`'s `gatelandsBuilding` with the `GL_PLANS.cottage` plan. That is the house on the lanes: 9.6 by 5.4 m, walls 0.6 m thick, 2.7 m to the wall plate, thatch at 50°. One new flag, `plan.interior`, leaves out the dark box that otherwise fills every shell behind its windows (`pieces.js`, one line). The room's walls are the walls you saw from outside, at their thickness, with the same openings. The shell's black glass was made for a dark house, so inside the room it is swapped for a clear pane. At night you see the dresser through the window from the lane.
+
+**The plan is a hearth-lobby house.** The cottage plan already put its ridge stack at x = −1.7, off-centre beside the half-door at −0.6. That is the Irish hearth-lobby layout, so the room follows it:
+- **The lobby:** the front door opens into a lobby, screened from the fire by a jamb wall with a spy window.
+- **The hearth wall:** it stands at the stack and runs up to the roof's underside. It carries a breast 0.55 m proud with an open hearth cut into it, sooted at the back, under an oak lintel, with a hearthstone before it. In the hearth is a turf fire of seven sods on embers, and an iron crane from the cheek carrying a pot. A door through the hearth wall leads to the room below (west).
+- **The east partition:** deal boards, with a door at the front to the room above.
+- **The kitchen:** a painted dresser on the back wall with three shelves of delft (one plate in three blue) and three crocks. A box bed of deal stands against the east partition, 0.9 by 2.0 m, with its red curtain, a straw tick and a blanket. A table stands under the front window, with a candle on it and two stools, and a súgán chair sits at the fire. The floor is flagstones in courses of 0.55 to 0.9 m.
+- **The end rooms:** each has a bed and a chest, beaten earth underfoot, and a small grate in the east gable.
+- **The roof:** three oak couples with their collars, and two purlins a side, under the thatch. The lantern hangs from the kitchen's collar.
+
+`rooms.html` lights it at four hours, with the cottage's front facing south. `?view=kitchen|table|dresser|outside` and `&hour=morning|noon|golden|night` pick the view and the hour. The fire's light is always lit, the lantern from the golden hour, and the candle's flame burns on the table.
+
+**Fixed on the way:**
+- **The couples** came through the thatch, because each slope's rafter was tilted the wrong way.
+- **The fire** sat inside a solid soot block. It now sits in a real recess in the breast.
+- **The stools** stood in the way from the door round the jamb wall, and the table moved east.
+- **A chest** stood inside the east room's bed.
+- **The rafters' feet** reached 0.11 m into the back wall.
+
+**What the light check found:** the first check asked for the noon sun on the floor and failed, and it was right to fail. At 52° the thatch's eave and the 0.6 m wall keep the high sun on the deep sill, as in a real cottage. The page's first morning sun, 62° off the wall's face, was stopped by the reveal. The check now asks for the south-eastern morning sun.
+
+Asked as **DECISION #303**: *Rooms in the new kit: inside the street's own shell, and the cottage's plan* (two questions; recommended A and A).
+### Verified (headless Chromium)
+- **New `rooms.check.mjs`: 9 of 9 pass:**
+  - **The builds:** 6 keys, each the same twice. The room is 3,678 to 3,762 triangles in 18 meshes, on the shell's 1,814 in 10.
+  - **Inside the walls:** no piece is outside the shell's inner walls, and no point is over the roof's underside or through a wall.
+  - **No clashes:** no two pieces of furniture are in each other.
+  - **The way:** from the front door round the jamb wall to the hearthstone, nothing comes within 0.15 m.
+  - **A person fits:** the box bed is 1.93 m inside, the table 0.76 m, the seats 0.45 and 0.46 m, the inner doors 0.8 by 1.95 m and the front door 0.95 by 2.0 m.
+  - **The fire** burns in its recess.
+  - **Morning sun:** in the morning, 12 of 36 rays over each kitchen window's opening land inside the room.
+  - **The pages:** the kitchen and outside views render with no page errors.
+- **Pictures, new:** `rooms-kitchen.jpg` (noon), `-kitchen-morning`, `-kitchen-golden`, `-kitchen-night`, `-table`, `-dresser`, `-outside` and `-outside-night`.
+### Needs eyes
+- **The hemisphere light** stands in for the light bounced round the room, and it lights corners the windows could not reach. F9 in the game will want real bounce, or baked light per room.
+- **The night sky** on the page is the day's sky dome with the sun turned down, so `-outside-night` is dusk, not night.
+- **Michael's call:** whether the house you see from the lane is the one you walk into (question 1). It decides how F9 enters the game: today's interiors are separate rooms at their own coordinates (`buildInteriorFor`).
+- **Dressing:** plates, crocks and the curtain are simple shapes. OG-115's prop list (tableware, textiles, mirror and comb) is a later pass.

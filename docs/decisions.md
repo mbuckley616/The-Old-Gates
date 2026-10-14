@@ -3,6 +3,26 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Rooms in the new kit: inside the street's own shell, and the cottage's plan (look builder, Session 852) — DECISION #303
+Card F9 (rooms) is begun in the prototype (Session 852, `docs/prototypes/levelup/rooms.js`, page `rooms.html`). Its first room is the Gatelands cottage, from OG-115's cutaways and lit as OG-141 draws it. It is built inside the very cottage shell the street builds (`gatelandsBuilding`, 9.6 by 5.4 m, walls of 0.6 m, thatch at 50°), so its walls are the walls you saw from the lane, at their thickness, with the same windows. The plan follows the shell's own off-centre stack: a hearth-lobby house. The door opens into a lobby screened by a jamb wall; the open hearth with its crane, pot and turf fire faces the kitchen; a dresser of delft, a box bed, a table and a súgán chair stand in the kitchen; and there is a room at each end. 3,700 triangles in 18 draws on the shell's 1,814 in 10.
+
+Pictures:
+- [the kitchen, noon](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-kitchen.jpg)
+- [the kitchen, night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-kitchen-night.jpg)
+- [the table and the box bed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-table.jpg)
+- [the dresser](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-dresser.jpg)
+- [from the lane at dusk, the room through the window](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-outside-night.jpg)
+
+Two questions, one letter each.
+
+1. Where are the rooms of 2.0?
+- **A. Inside the street's own shell, as drawn** *(recommended)*: the house you see is the house you walk into, with no load at the door, and its windows show the room by night and the street by day. Each house's furnishing is built when you come near, from its key.
+- **B. Separate rooms, as today** (`buildInteriorFor`): the room is built at its own coordinates when you go in, and need not match the outside. This is cheaper in draws on a busy street, but the windows stay black and the door is a load.
+
+2. The Gatelands cottage's plan:
+- **A. The hearth-lobby house, as drawn** *(recommended)*: the hearth on a cross wall beside the door, a jamb wall screening the lobby, a room at each end. It is the plan the cottage's off-centre stack already implies.
+- **B. One open room:** the hearth in the gable and the box bed in an outshot. It is simpler and roomier, but the stack would move to the gable.
+
 
 ### The Makers' trials' props: the blade's stone and the ring's cairn (look builder, Session 837) — DECISION #298
 The systems builder built four of the Makers' trials on placeholder props (Sessions 800 to 802) and asked for the props themselves. Session 837 builds the first two in the new kit (`docs/prototypes/levelup/props.js`; page `trials.html`). They follow `unique-artifacts.md`'s lines.
