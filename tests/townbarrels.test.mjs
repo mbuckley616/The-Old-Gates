@@ -15,7 +15,7 @@ const WANT = { city: 20, town: 14, village: 8, hamlet: 4, port: 4 };
 // Dunmore read -478191395 or 1104956583 and Cœur de Vie three values over four runs, here and on CI (#273's own run failed on it),
 // so who a town draws depends on something besides its seed (backlog I). Droichead's and Cœur de Vie's were re-read after Systems
 // 797–814 merged. Make it a check again once a town's people are drawn the same every time.
-// Session 827: the draw was always the same; the hash was not. It read S.npcs, which the residents join two a tick within 70 of
+// Session 828: the draw was always the same; the hash was not. It read S.npcs, which the residents join two a tick within 70 of
 // the player (and leave past 95), so it counted whoever had streamed in by the time the town was read. It now hashes who the
 // town drew: its fixed townsfolk in order, then every resident in S.residents, streamed in or not. Read on main after F1 (edda9f4),
 // the same in either order of the five towns, on a rebuild in place, and with two runs side by side. A check again.

@@ -23,8 +23,12 @@ async function shoot(look) {
     const renderMs = +((performance.now() - t1) / 8).toFixed(1), calls = REN.info.render.calls, tris = REN.info.render.triangles;
     return { rev: THREE.REVISION, url: o.toDataURL(), at: [Math.round(px), Math.round(pz)], renderMs, calls, tris }; });
   // the frame's cost: the game's own meter over a few seconds of its own loop, standing still at the spot
+  // Session 830: the meter reports once two frames 500 ms apart have been drawn; a loaded runner draws one every few seconds, so
+  // 9 s could pass with no reading (CI's FLAKY on edda9f4; both looks read null here with two suites side by side). At least
+  // 9 s as before, then until it has read, up to 120 s.
   await page.evaluate(() => { perfToggle(); });
   await page.waitForTimeout(9000);
+  await page.waitForFunction(() => !!PERF.last, null, { timeout: 120000, polling: 500 }).catch(() => {});
   r.perf = await page.evaluate(() => { const p = PERF.last; perfToggle(); return p; });
   r.errs = g.errs.slice();
   await g.close();

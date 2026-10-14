@@ -16825,7 +16825,7 @@ Checked and left alone:
 - **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs. `looknew` reports whether it was fetched; from `file://` here it was not (`r128Fetched: false`). On Pages it would be one cached request at most.
 - **Not run under `--look=new`:** the rest of the suite (447 suites). The six world suites the card named pass. A full `--look=new` run in CI is a cheap follow-up once F2 starts building on the switch.
 
-## v80 — Session 827 — A town's people were always drawn the same; the test counted who had walked in (backlog I, CI health)
+## v80 — Session 828 — A town's people were always drawn the same; the test counted who had walked in (backlog I, CI health)
 The merge of Session 817 found `townbarrels`' people hash unstable on the same code: Dunmore read two values, Portclare three, Cœur de Vie three over four runs, here and on CI. So the line was made a warning and the backlog asked the systems builder, after F1, to find what moves the draw. CLAUDE.md's S533 gotcha (an outcome that reads what had loaded) was the first suspect, through `dominantRegion` in `genSettlement`.
 
 It was not the draw. A probe rebuilt each of the five towns in place (`disposeSettlement`, then `genSettlement`) under different loaded states, and Droichead came back with 11 people where it had 13. The two missing were villagers from `S.residents`. Residents are not built with the town. `tickSettlements` streams them in, two a tick, within 70 units of the player, and removes them past 95, and each one that arrives is pushed onto `S.npcs`. The hash read `S.npcs`, so it counted whoever had streamed in by the time the suite read the town, and that depends on how many ticks a slow or busy runner fitted into `g.settle`'s waits. Who a town draws was never in question. Restricting `REGIONS` to the town's own cell changed nothing either; the culture is read from the region at the pad's centre, well inside the cell, for all five.
@@ -16840,7 +16840,7 @@ The suite now hashes the people a town drew: its fixed townsfolk in order (the `
 - Nothing in play: no game code changed. The new hashes include every resident, so a change that moves who lives in these towns will now fail the check, as the S753 and S817 sessions intended.
 - Other suites read `S.npcs` too (`names`, `bornhere`, `twinsrebuild`, `townbio` and others). None of them compares a stored hash, but a suite that counts `S.npcs` reads the same moving list. None of them is on the FLAKY list today.
 
-## v80 — Session 828 — `dunwarm`'s light between frames: 21 or more (CI health, tests only)
+## v80 — Session 829 — `dunwarm`'s light between frames: 21 or more (CI health, tests only)
 `dunwarm` went FLAKY on main's merge run of `c184194`, after Session 807's fix. The CI log cannot be read from a cloud session, so I ran the suite three times side by side here to load the machine as a runner is loaded. One of the three failed: *a light added between frames is counted (21) until the next sweep* read **22**. The frames drawn after it were 20, 20 and 20, and nothing compiled. The same run's haunted kill row also ended with 21 point lights in the scene between frames.
 
 So Session 807's own finding struck twice at once. A foe's light, added by a timer or an effect between two frames, was already waiting for the sweep when the suite added its own light. The check counted exactly 21, assuming the scene stood at 20 at that instant. What matters, and what Session 807 wrote the check to prove, is that no frame is drawn with a light outside the pool. The check now takes 21 or more between frames and still requires every frame after to be drawn with 20 and nothing compiled.
@@ -16851,3 +16851,15 @@ So Session 807's own finding struck twice at once. A foe's light, added by a tim
 - `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
 ### Needs eyes
 - Nothing in play: no game code changed.
+
+## v80 — Session 830 — `lookpair` waits for the frame meter's reading (CI health, tests only)
+**A correction first.** This run's two earlier entries were written as Sessions 827 and 828. PR #287 (`claude/art-round2-marks`, docs) already holds a Session 827, so before anything merged I renumbered them 828 and 829: the headings, the backlog's marks and the tests' comments. Their commits (`3137604`, `1b178ac`) keep the old numbers in their messages. Nothing was force-pushed.
+
+`lookpair`, F1's side-by-side suite, went FLAKY on main's merge run of `edda9f4`. I ran two copies side by side here, and both failed the same check, *both looks measured their frame*, with `{"old":null,"new":null}`. The game's PERF meter reports once two frames 500 ms apart have been drawn. Each copy was drawing one frame every 5.5 to 7.8 s at that spot, so a fixed 9 s wait could end with no reading at all. The suite now waits at least 9 s, as before, and then until `PERF.last` is set, polling every 500 ms for up to 120 s. A flaky test waits for what it needs. The pictures' checks were never in doubt: the mean difference was 6.4–6.5 of 255, and the flat regions were within 3 levels of each other.
+
+### Verified (headless Chromium)
+- **Before the fix, two runs side by side:** both fail *both looks measured their frame* (null and null). The other four checks pass: mean difference 6.54 and 6.42, worst region 3 levels, no page errors.
+- **After the fix, two runs side by side:** both pass, 5 of 5. The meter read 0.1–0.2 fps: frames of 6,033 and 7,266 ms on r128, and 5,517 and 7,783 ms on 0.170, at 1,526 and 1,560 calls. The timed renders took 4.4 s (r128) and 5.3–5.5 s (0.170) for 763 and 780 calls.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed. Under load, the frame costs this suite logs are those of a shared machine, not the look's. Session 822's alone-on-the-machine numbers stand.

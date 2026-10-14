@@ -41,7 +41,7 @@ for (const [theme, seed] of [['undead', 7], ['elemental', 9], ['haunted', 6]]) {
   console.log(theme, seed, 'foes', n);
 }
 // what CI read: a light added between two frames, as a timer would, is in the scene (21) until the next frame's sweep.
-// Session 827: 21 or more. On a busy runner a foe's own light can already be waiting for the sweep when the suite adds its
+// Session 829: 21 or more. On a busy runner a foe's own light can already be waiting for the sweep when the suite adds its
 // one (22 in 1 run of 3 run side by side here); what must hold is that every frame is still drawn with the pool's 20.
 const between = await page.evaluate(() => { const L = new THREE.PointLight(0xffcc44, 1.2, 3); L.position.set(px, 1, pz); dScene.add(L); let n = 0; dScene.traverse(o => { if (o.isPointLight) n++; }); return n; });
 await drawnLights(); const c1 = await page.evaluate(() => __cs); await g.frames(3); const after = await drawnLights(); const c2 = await page.evaluate(() => __cs);
