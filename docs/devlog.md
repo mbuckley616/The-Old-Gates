@@ -17209,3 +17209,97 @@ Asked as the third question of **DECISION #298**: A, a horn lantern as drawn (re
 ### Needs eyes
 - **Carried, it is the bodies builder's.** How the lamp sits in a hand, at the belt or in the first-person view is the viewmodel's (`16-viewmodel.js`) and the bodies builder's. This is the lamp itself and its bracket.
 - **The light it throws** in the game will come from F9's light indoors (OG-141). The point light on this page is only the picture's.
+## v80 — Session 828 — The third and final round of concept art, catalogued, marked and written back (docs only)
+Michael dropped the last concept art into the Drive (*Concept Art Session 3*, 13 Oct 2026) and asked, in chat with Claude, for the intake. The folder holds 35 sheets with his own ids, OG-F001 to F035, in four groups: M5 to M10 (culture and faith), N1 to N8 (dungeons and exploration), O1 to O10 (gameplay) and P1 to P10b (the living world, ending in two takes on the final art direction). An unpacked copy was in his Downloads, and it matched the Drive file for file, so the thumbnails were made from the local originals and each row's link points to the original in the Drive.
+
+What changed:
+- **`docs/art/catalogue.csv`:** 35 rows, OG-113 to OG-147, in his order, each with his id at the head of its notes, a link to the original, size 1536 × 1024, and UNREVIEWED until he marks it. There are three new folders: `09_Dungeons_Exploration`, `10_Gameplay_Systems` and `11_Living_World_Atmosphere`; the M sheets join `08_Culture_Daily_Life`. Four agents read the full-size sheets against `lore_canon.md` and the design pages, one group each, to the house format. Recommendations: 27 KEEP and 8 MAYBE (OG-118, OG-120, OG-131, OG-132, OG-134, OG-136, OG-142, OG-146).
+- **`docs/art/thumbs/`:** OG-113 to OG-147 at 480 × 320, the size of the rest.
+- **`docs/art/review.html`:** the 35 cards, the three new folders in the folder filter, and the lede. Republished to the same artifact (version 3), where Michael's 112 earlier marks stay in its database.
+- **`docs/art/README.md`:** the third round, and the next id is OG-148.
+
+The folder's own catalogue marks every sheet "Keep (accepted in conversation)". Its README says that means only that Michael received a sheet well in the generator chat, not that it is canon, so the rows wait on his marks like the other rounds. Nothing goes to the backlog until he has marked them. This time the write-back is part of the same job (Session 827 found round two's marks sitting unread for a day).
+
+What the readers found, by group:
+- **Culture (M):** OG-113 is the closest match to the canon so far: the six gods, their signs and the Guest's empty niche are drawn as §4 has them. The sheets keep giving the Mark clans, a clan moot and lords, where the canon has the Captains' League with captains, reeves and the legal duel. OG-116 has Old Blood children inherit sigil tattoos and study the script, against §3.1's marks under the skin and the Withdrawal's ban on reading.
+- **Dungeons (N):** N2, N4 and N5 say outright that the gates break down into "underlying code": code-like grids and a Code Fragment item. That is the meta reading the canon keeps unsaid. N4 and N8 draw flagstone rooms and corridors for the gates, which `visual-foundation.md` §2 rules out. N7 has a brass diving suit where the canon has Water Breathing.
+- **Gameplay (O):** O2 draws magic B's five forms, riders and Mastery's true name almost word for word. O8 draws Skyrim-style skill trees and Conjuration, against the Morrowind book (A) and `magic.md`. O5 is platforming C, O6 is survival C (hunger), and O10 puts the compass top-centre, against #198's bottom-centre and the spell page Michael chose. O3's explosive bolt reads as gunpowder.
+- **Living world (P):** P4's map puts the islands in the wrong places. P3 gives the Mark and Aurenne autumn woods and Aurenne a snowy winter. P5's dungeon is the cobbled corridor Michael rejected, and P9's great gates stand free on lawns. P6 and P7 offer taming and companions, against his 12 A, and P7 and P10b draw the Aurennais fair-skinned. P9's altered skies are the world's corruption level made visible (card F3).
+
+### Verified
+Nothing in the game changed, so no suite was run. The checks were on the files:
+- The catalogue parses as 147 rows of 13 columns; ids OG-113 to OG-147 run unbroken.
+- The review page's data parses as 147 cards.
+- The publish confirmed version 3 with the 35 new thumbnails beside the 112 earlier ones.
+- The live page was not opened in a browser: the pane here is not signed in to claude.ai.
+
+### Michael's marks, written back the same night
+Michael marked the 35 within the hour: 34 KEEP and one NO, P10a (OG-146), so P10b leads the art direction. Seven of the sheets I had suggested as Maybe he kept with one note: “Just keep the ideas that were flagged as worth keeping, nothing that conflicts directly.” Those are OG-118, OG-120, OG-131, OG-132, OG-134, OG-136 and OG-142. On O5 (OG-131) he added: “I do really really want to keep the idea of double jumping and air dashing though as unlockable abilities/perks.”
+
+What changed:
+- **`catalogue.csv`:** the 35 marks are in (113 KEEP and 34 NO in all, none unreviewed or Maybe), with his notes at the end of the eight rows that carry them.
+- **Backlog L:** the header records the round and takes his note as the rule for all of it: an item keeps only what its row's notes do not flag as a conflict. L9 gains six items (shrines by island, trades, homes as rooms, children's lives, law in three registers, the road). Three sections are new:
+  - **L10, dungeons and exploration:** eight items, including the six schools' great halls (OG-119, the closest sheet to `visual-foundation.md` §2) and spells as keys.
+  - **L11, play:** eleven items. The first is the double jump and air dash, for the systems designer to fold into `platforming.md` and `skills-and-perks.md`. The sheets put them at Acrobatics' Expert and Master, which fits the perks at 25/50/75/100.
+  - **L12, the living world and its look:** ten items. The first says the art direction is P10b, with its two corrections: dark gates and the Aurennais' skin.
+- **`visual-foundation.md`:** card F3's line now says the grade follows P10b.
+
+### Needs eyes
+- **The double jump and air dash** are Michael's wish, not yet a design. The designer owes the numbers and how each is unlocked, and how they sit with platforming B's rule that timed jumps stay off the main quest's path.
+- **What is not taken from the art.** Each L10 to L12 item names the conflicts it leaves out (clans in the Mark, “code” in the gates, skill trees, hunger, climbing, taming, the islands misplaced on P4). If Michael wants one of those back, it is a decision, not a backlog edit.
+
+## v80 — Session 829 — The 2.0 scope, written up (docs only)
+Michael asked, in chat with Claude, while #289's checks ran: "write up the 2.0 scope". Earlier the same evening Claude had told him the cutover was not fully captured. F1 to F7 plan the look, but nothing says which mechanics 2.0 waits for, and several kinds of work have no card. This session writes that up as a design page and three questions. Nothing is built from it until he answers.
+
+What changed:
+- **`docs/design/v2-scope.md`, new.** Its sections:
+  - §1, 2.0 defined: the day `?look=new` becomes the default and r128 is deleted, with six conditions for done (the suite, every place, every body, old saves, budgets, the chosen mechanics).
+  - §2, F1 to F7's state.
+  - §3, what the plan is missing. F2 is bigger than its card: reach, E's 2.2 units, sight ranges, the platforming page's jump and mantle heights, the generator's 2 to 4 m corridors and ship decks are all tuned against a 1.1 m person. The page proposes splitting it into F2a (scale) and F2b (the gameplay numbers), and drafts seven cards: F8 places that are not gates, F9 rooms, F10 the player's body, F11 ships and the sea, F12 effects and the corruption level, F13 old saves, F14 the cutover.
+  - §4, every system Michael has chosen a design for, against what is built and what is owed.
+  - §5, proposed budgets.
+  - §6, the questions.
+  - §7, the order.
+- **`docs/decisions.md`:** *What ships in 2.0?* under Pending, for the producer to carry. Q1 asks what 2.0 waits for (A the look only, B the look and the core loop, recommended, or C everything decided). Q2 is the legacy zones (retire them at the cutover, recommended, or rebuild them). Q3 asks whether to accept the drafted cards, the F2 split and the budgets.
+- **`docs/backlog.md` K:** a line pointing to the page.
+- **`docs/design/visual-foundation.md`:** a line above §4 pointing to it.
+
+Two points in the page come from reading the code and the design pages:
+- **Platforming already planned a double jump.** It is one of the ways across a 4 to 5 unit gap. Michael's ask on OG-131 adds the air dash and makes both unlockable.
+- **Combat's resolver and F2b change the same reach and hit tables,** so the page orders the resolver first.
+
+### Verified
+Nothing in the game changed, so no suite was run. The figures in the page were checked against the repo:
+- 453 suites in `tests/`.
+- 6,055 lines in the two legacy files.
+- `vendor/three.r170.min.js` is 690,565 bytes.
+- Dunmore draws 836 calls at noon on F1 (Session 822).
+- Portclare's square took 2.0 s a frame on the critic's 29 Sep run.
+
+### Michael's answers, the same night
+Michael: 1 B, 2 A, 3 A. 2.0 is the look and the core loop. On the legacy zones: “A, and honestly, if it's easier to just purge the legacy code / zones when ready, I'm cool with that. I was never very attached to that, they were moreso just placeholders to help with scaffolding for a main story.” He accepted the drafted cards, the F2 split and the budgets. The entry moved from Pending to Answered in `decisions.md`, and the page, backlog K and the foundation's pointer now read as approved. Owed by the producer: card F2a, F2b and F8 to F14 on the control room, and a roadmap epic for the core loop.
+
+### Needs eyes
+- **The budgets are guesses.** 45 fps and 40 MB are a starting point, not measurements. F14 measures them on his laptop.
+
+## v80 — Session 830 — The team for 2.0 (docs and routines)
+After his 1 B on *What ships in 2.0?*, Michael asked whether the team fitted the work ahead. Claude drafted six changes on a review page (*Team for 2.0*), and he said "go, apply them all" and asked for the whole producer prompt to paste fresh.
+
+What changed:
+- **Two new routines,** created through the routines API, each with the Slack connection:
+  - **The bodies builder** (`trig_019QDt3noUHURJUYqfznyBiv`, every 3 hours at :15, auto/bodies, PR "Bodies sessions") makes everything with a skeleton: `16`, `32`, `34`, `54` and the builder pages. Its order: Michael's notes on #272 and #274, the builder's remaining items, backlog L's bodies, then the game once F4 merges.
+  - **QA and CI** (`trig_01Aozd8q37NmcvYkPMZiyM9o`, every 6 hours at :50, auto/qa, PR "QA sessions") owns `tests/`, the CI workflow and `docs/qa/`. Its order: the flaky suites, the whole suite under `--look=new`, the draw-call budgets, then CI time. It never edits game code; game bugs go to backlog I for the owner.
+- **Three routines re-pointed,** each keeping its schedule and Slack connection:
+  - **The look builder** makes places only: F6, then prototypes for F8, F9 and F11, then the game after F2a. Section H's old-style order is retired.
+  - **The systems builder** takes the core loop (skills and perks A, enemies by place, magic B, the double jump and air dash), then F2b after F2a and combat's resolver. Its prompt had still claimed F2's scale work, which is now the deep-work card F2a. CI health is QA's.
+  - **The designer** writes build sheets first (F2b's ranges, skills and perks, the double jump and air dash, enemies by place, magic B), then its proposals.
+- **The producer:** Claude built the whole new prompt from its current text; Michael pasted it. It adds the two new branches and how each merges: bodies on a card, QA once green without one. It keeps the deep-work queue fed for 2.0's cards, combat's resolver included, without a Start, since Michael approved them on 13 Oct. It also keeps two roadmap epics true and turns budget rises into blocker cards.
+- **CLAUDE.md:** the roles, the file split by builder, the two new room voices, and "deep-work session" where it said Fable (the routine has run on Opus since 13 Oct).
+- **The Studio Floor's files** (`~/.claude/fleet`) list the two new routines, with slow, normal and fast schedules.
+
+### Verified
+Each routine API call returned 200, and each routine read back its new prompt, its schedule and its Slack connection. The first runs fall at 03:29 (look builder), 04:45 (systems builder), 05:15 (bodies builder), 06:00 (designer) and 06:50 UTC (QA).
+
+### Needs eyes
+- **Usage over the next week:** the two new routines add up to about 24 Opus run-hours a day at these schedules. The Studio Floor shows it, and its pace controls can slow either one.
+- **The first bodies and QA runs:** check that they keep to their files.

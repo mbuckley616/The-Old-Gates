@@ -123,9 +123,9 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     game builds, in seven groups, built by the game's own builders, on a stage with its poses and gaits, pinned side by side. Every entry has a stable key (`group/section/name`, slugged) and a deep link, `index.html?inspector=<key>`; the test writes
     `docs/inspector-catalogue.json`, which the control room's Meshes tab carries (embedded at publish, with a note box per piece that writes
     to the ideas board). A session that adds or renames entries republishes the control room from that file.
-- Roughly: the systems builder lives in 10–14, 42, 50, 60–76 and the world's 86–88; the look builder in 16, 30–34, 40, 44,
-  52–58 and the world's 80–85; the quest writer's text is in 20, 22, 78 and 83 (the dialog pools). The generator (83) and the
-  ticks (88) are where they still meet.
+- Roughly: the systems builder lives in 10–14, 42, 50, 60–76 and the world's 86–88; the look builder (places) in 30, 40, 44,
+  52–58 and the world's 80–85; the bodies builder (since 14 Oct 2026) in 16, 32, 34 and 54; QA in `tests/` and `.github/`; the quest
+  writer's text is in 20, 22, 78 and 83 (the dialog pools). The generator (83) and the ticks (88) are where they still meet.
 
 ## Cloud sessions (the phone)
 Sessions started from claude.ai/code or the Claude app run on a fresh checkout of the GitHub repo.
@@ -145,8 +145,8 @@ Every session, cloud or local, that has the tools:
   sessions take it as context, not as a task, unless it names their area outright.
 - **At the end of the run**, post ONE message in the standard shape — a heading line `**<Role>** — <sessions or what>`,
   then three bullets, one line each: `• *Did:* …` (with session numbers), `• *Next:* …`, `• *Need:* …` (a decision,
-  a merge, a fix from another agent, or "nothing"). In your role's voice: the look builder talks in shapes and triangle counts, the systems
-  builder in rules and numbers, the critic dry and specific, the quest writer in the canon's cadence, the concept
+  a merge, a fix from another agent, or "nothing"). In your role's voice: the look builder talks in shapes and triangle counts, the bodies builder
+  in shapes, bones and triangle counts, the systems builder in rules and numbers, QA in suites, runs and minutes, the critic dry and specific, the quest writer in the canon's cadence, the concept
   artist in pictures (link the PNGs), the designer in precedents, the producer plainly. Plain prose still: reasons,
   numbers, no filler, no paragraphs, no emoji in the body. Never more than one post per run; a run that did nothing posts nothing.
 - **Decisions** are the producer's alone: it posts each question as a message with lettered options and Michael
@@ -236,9 +236,14 @@ Every session follows them in new code; the Opus follow-up in backlog K moves th
 
 ## Roles
 - Michael makes the design calls; Claude flags risks and asks when the design is open.
-- Cross-cutting rewrites (roads, terracing, rivers, skills-by-use, splitting this file) are Fable sessions.
-  Contained features and bug hunts are Opus sessions.
-- A Fable session runs from a card on the control room (the routine "Old Gates — Fable session (hourly pickup)", every hour at :40):
-  Michael taps Start, the next run takes the card, works on `auto/fable-<id>`, raises its questions as decisions and stops until
-  they are answered, and its PR is approved like any other. While an open issue's title begins `FREEZE:`, the two code builders end their runs at once;
-  the producer opens it when a Fable item rewrites shared files and closes it when that PR merges.
+- The team for 2.0 (14 Oct 2026; the plan is `docs/design/v2-scope.md`): the look builder makes places (auto/backlog), the bodies
+  builder makes people, foes, animals and what they wear (auto/bodies), the systems builder makes rules and the core loop
+  (auto/systems), QA keeps the suite, CI and the budgets (auto/qa, tests only), the designer writes build sheets and proposals, and
+  the critic, the quest writer, the concept artist and the producer as before.
+- Cross-cutting rewrites (roads, terracing, rivers, skills-by-use, splitting this file, the new look's F cards) are deep-work
+  sessions (Opus; "fable" survives only as an identifier: the board's `fable` collection, `auto/fable-<id>`, `Fable:` PR titles).
+  Contained features and bug hunts are ordinary Opus sessions.
+- A deep-work session runs from a card on the control room (the routine "Old Gates — Deep Work session", every hour at :40):
+  Michael taps Start (2.0's cards, which he approved on 13 Oct, are queued by the producer without one), the next run takes the card, works on `auto/fable-<id>`, raises its questions as decisions and stops until
+  they are answered, and its PR is approved like any other. While an open issue's title begins `FREEZE:`, the code builders end their runs at once (or keep to their prototypes);
+  the producer opens it when a deep-work card rewrites shared files and closes it when that PR merges.
