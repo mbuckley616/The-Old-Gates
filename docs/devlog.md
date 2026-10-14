@@ -19055,3 +19055,27 @@ What changed in `ships.js`:
 - **The black hull reads as a mass in shade.** The laps show as thin pale lines in the sun (`-lap`) and are lost on the shaded side.
 - **The shields and the rigging:** the shrouds come down to the chainplates among the shields amidships, and nothing there is checked against a shield.
 - **Next in the line:** the cog and the galleon in the Mark's and Aurenne's dress, and the caravel and cutter in the others'.
+
+## v80 — Session 901 — The Mark's sloop takes the Mark's rig (card F11, a correction, prototype only)
+**A correction to Session 900.** That session dressed the game's sloop in the Mark's colours but left her the Gatelands' square sail. Michael's A on #306 is "one rig names the island at a glance, as the Mark's cutter and Aurenne's lateens already do": square for the Gatelands, the cutter's gaff for the Mark, lateens for Aurenne. A Mark hull under a square sail breaks that rule. It was caught on rereading #306 before Michael answered #330, and the question was corrected in the same run. The FREEZE (#297) holds.
+
+What changed in `ships.js`:
+- **The rig by dress.** `gatelandsSloop`'s square rig (mast, yard, sail, shrouds, stays, braces, sheets) is now built only for the Gatelands. Its code and output are unchanged, and the Gatelands sloop's checks pass as before.
+- **The Mark's gaff rig.** The Mark's dress builds the cutter's rig at the sloop's size:
+  - a mast of 10.5 m with a topmast, stepped at the sloop's station;
+  - a boom 2.15 m over the deck, running to 0.45 m past the sternpost;
+  - a gaff of 5.4 m peaked at 30°;
+  - a gaff main and topsail, a staysail to the stem head, and a jib on a bowsprit of 3.6 m;
+  - three shrouds a side, the forestay, the topmast stay, the backstays and the mainsheet.
+  - The sails are the cutter's tanned cloths.
+- **The shields clear the shrouds.** Every shield within 0.45 m of a shroud's foot is left off, so twelve hang where eighteen did, three either side of the shrouds on each side.
+- `#330` and its decisions entry now describe the gaff rig and twelve shields. Its options are unchanged.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 53 of 53 pass.** The Mark's dress check now also asks for:
+  - the gaff rig with its boom 2.1 m or more over the deck (2.15 m);
+  - every shield 0.45 m or more from a shroud's foot.
+- **The Mark's sloop** is 28,190 triangles in 14 meshes, each key the same twice. She keeps the Gatelands sloop's lines, rail and deck. She is closed (0 of 900 rays out), clinker (laps 0.025 to 0.033 m), and her walk is clear at all 68 points, under the boom too. The head stands 1.18 m forward of the stem head. The 12 shields stand 0.054 m outboard and 0.02 m under the rail's top.
+- **Pictures:** `ships-marksloop-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noshields`, shot again with the gaff rig.
+### Needs eyes
+- **She now reads as a smaller cutter.** That is the rule (one rig to an island), so what tells the two apart is her clinker, her shields and her size. The cutter is carvel, with no shields.
+- **The bowsprit runs back past the beast's head's neck**, as the cutter's does.

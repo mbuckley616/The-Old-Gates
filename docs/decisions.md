@@ -7,9 +7,9 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 ### The Mark's sloop: shields on the rail? (look builder, Session 900) — DECISION #330
 **F11: the sloop in the Mark's dress (look builder, Session 900).** With #316, #319 and #323 answered, each class can now take the other islands' dress. This is the first: the game's sloop (13 by 4.4 m, the deck 1.0 m over the sea), in the very lines of the Gatelands sloop. It is a prototype in `docs/prototypes/levelup/ships.js` (`markSloop`, a dress of `gatelandsSloop`), at `ships.html?ship=marksloop`. It follows the Mark's dress you chose on #312 and #323:
 - **The hull:** clinker, as the small hulls stay, tarred black above a red-brown bottom, with the wale gilt.
-- **The sail:** one square sail in tanned red-brown cloths.
+- **The rig:** the Mark's, the cutter's gaff (your A on #306: one rig names each island). She has a gaff main with its boom 2.15 m over the deck, a topsail, a staysail and a jib on a bowsprit, all in tanned red-brown cloths. Session 900 first drew her with a square sail and Session 901 corrected it.
 - **The head:** the cutter's gilt beast's head on the stem head.
-- **New, and asked:** eighteen painted round shields hung outboard along the waist's rail, in deep blue, red and bone with an iron boss. They are the Mark's "painted round" of OG-028, and they show the Mark from any distance. They stand outboard of the planking and under the rail's top, so the deck and the walk are as the sloop's.
+- **New, and asked:** twelve painted round shields hung outboard along the waist's rail, in deep blue, red and bone with an iron boss. They are the Mark's "painted round" of OG-028, and they show the Mark from any distance. They stand outboard of the planking and under the rail's top, and none hangs where the shrouds come down. The deck and the walk are as the sloop's.
 
 **1. The shields on the rail:**
 - **A. As drawn** *(recommended)*: always hung on the Mark's small hulls. They name the island at a glance, as OG-004 asks of a hull line.
