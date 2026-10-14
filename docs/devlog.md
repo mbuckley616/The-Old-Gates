@@ -16824,3 +16824,18 @@ Checked and left alone:
 - **The renderer row in play waits for a reload** rather than reloading at once (above). If Michael wants it to reload and warn instead, that is a one-line change.
 - **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs. `looknew` reports whether it was fetched; from `file://` here it was not (`r128Fetched: false`). On Pages it would be one cached request at most.
 - **Not run under `--look=new`:** the rest of the suite (447 suites). The six world suites the card named pass. A full `--look=new` run in CI is a cheap follow-up once F2 starts building on the switch.
+
+## v80 — Session 827 — A town's people were always drawn the same; the test counted who had walked in (backlog I, CI health)
+The merge of Session 817 found `townbarrels`' people hash unstable on the same code: Dunmore read two values, Portclare three, Cœur de Vie three over four runs, here and on CI. So the line was made a warning and the backlog asked the systems builder, after F1, to find what moves the draw. CLAUDE.md's S533 gotcha (an outcome that reads what had loaded) was the first suspect, through `dominantRegion` in `genSettlement`.
+
+It was not the draw. A probe rebuilt each of the five towns in place (`disposeSettlement`, then `genSettlement`) under different loaded states, and Droichead came back with 11 people where it had 13. The two missing were villagers from `S.residents`. Residents are not built with the town. `tickSettlements` streams them in, two a tick, within 70 units of the player, and removes them past 95, and each one that arrives is pushed onto `S.npcs`. The hash read `S.npcs`, so it counted whoever had streamed in by the time the suite read the town, and that depends on how many ticks a slow or busy runner fitted into `g.settle`'s waits. Who a town draws was never in question. Restricting `REGIONS` to the town's own cell changed nothing either; the culture is read from the region at the pad's centre, well inside the cell, for all five.
+
+The suite now hashes the people a town drew: its fixed townsfolk in order (the `S.npcs` that are not residents), then every resident in `S.residents`, whether streamed in or not. The line is a check again, with the five values read on main after F1 (`edda9f4`). Tests only; no game code changed.
+
+### Verified (headless Chromium)
+- **The probe, two runs side by side, the towns in opposite orders** (Dunmore first, or Droichead first): all five towns give the same drawn-people hash in both runs and again on a rebuild in place. Dunmore 715523239 (65 people), Carraig Mór 1906895553 (54), Cœur de Vie −459524478 (157), Portclare −1325179028 (37), Droichead −1790770419 (13). `S.npcs` held 23, 18, 34, 14 and 11 to 13 of them when the suite read it.
+- **`tests/townbarrels`, two runs side by side:** 21 of 21 checks pass in each, the five people checks among them.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed. The new hashes include every resident, so a change that moves who lives in these towns will now fail the check, as the S753 and S817 sessions intended.
+- Other suites read `S.npcs` too (`names`, `bornhere`, `twinsrebuild`, `townbio` and others). None of them compares a stored hash, but a suite that counts `S.npcs` reads the same moving list. None of them is on the FLAKY list today.
