@@ -17095,3 +17095,28 @@ The lane slice's house (`gatelandsHouse`, the approved lane of 12 Oct) and the c
 - **`aurenne.check.mjs` and `mark.check.mjs`** pass.
 ### Needs eyes
 - Nothing to look at: the pictures are the same. The committed 1920 px pictures were not shot again.
+
+## v80 — Session 835 — The Gatelands' coloured towns, by lot (card F6, prototype only)
+Michael chose A on #280: coloured towns. The town walls are rendered in earth colours (ochre, rose, cream, sage, blue, oxblood) with dressed quoins, string courses and cornices; the cottages stay limewashed under thatch, and the warehouse is bare stone. The concept artist's street drew that as one hand-placed list. A town the generator lays out needs it as a rule a lot can answer from its street and its index, as Aurenne's and the Mark's already do.
+
+`pieces.js` has `gatelandsLot(street, i, {kind})`. It returns the lot's plan for `gatelandsBuilding`, with its colour and paint.
+- **Colour:** each lot steps on from its neighbour by one to five places round the six colours, by the lot's own seed. No two neighbours ever share a colour, and over a long street every colour comes up, as along a quay in Kinsale or Dingle.
+- **Paint:** the door and sash paint is drawn from the six paints, leaving out any that would drown in the wall (`GL_CLASH`): no blue or teal on a blue wall, no red on oxblood or rose, no green or teal on sage, no yellow on ochre or cream.
+- **Kind:** by default a town lot is a townhouse, one in four a merchant's house with a shop. `kind` asks for any plan, and the rest follow the decision: cottages limewashed under thatch (one in three hipped), farmhouses white under slate, warehouses bare stone. The townhouses' doors alternate sides.
+- **Lit windows:** each lot carries its own stream (`plan.r`), and the kit now lights its windows from it. This is the shared-roll problem Session 834 found. A plan built without one falls back to the page's `rnd()`, so the concept artist's three streets and the kit render as before.
+
+`pieces-gatelands.html?view=street&mix=lot` is the concept street's own layout, coloured lot by lot. `&street=<seed>` gives another town.
+
+**Fixed on the way.** My first version called the lot's stream wherever the kit lit a window. The kit page's wall stubs call `face()` with no plan and no stream, so that page threw, and the check's wait ran to its ten-minute timeout. The kit falls back to `rnd()` there. The check's page loads now end at once on a page error.
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass, with five new checks.**
+  - **Colours:** on 40 streets of 30 lots, no two neighbours share a colour (0 of 1,160 pairs), all six colours are used, and one lot in 4.2 is a merchant's house.
+  - **Paints:** none drowns in its wall (0 of 1,200).
+  - **By kind:** every town lot is rendered and under slate, every cottage limewashed under thatch, every farmhouse white under slate, every warehouse in rubble stone.
+  - **The same lot builds the same twice,** lit windows and draw calls included: 30 of 30.
+  - **The coloured street page** renders with no errors but the people's missing pack.
+- **Byte for byte:** all eight of the concept page's earlier shots (640 px) are identical to before this session.
+- **Pictures, new:** `pieces-gatelands-street-lot.jpg`, `-street-lot-b` (another town) and `-town-lot`, with their stats in `pieces-gatelands.json`.
+### Needs eyes
+- **The blue and the sage** read close in shade on a grey day. If a street shows them side by side too often, the step rule can skip one.
+- **The lots run on round the corner.** In the street page the right-hand row carries on from the left-hand row's last lot, which is a cottage, so the two rows' first houses are not compared with each other. A generator placing two sides of a street should key them as two streets.

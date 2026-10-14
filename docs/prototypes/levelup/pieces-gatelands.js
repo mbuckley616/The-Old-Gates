@@ -6,6 +6,7 @@
 // OG-014's (the whitewashed thatch village): five plans from it, a cottage (gabled or hipped thatch), a farmhouse, a
 // townhouse, a merchant's house with its shop, and a warehouse.
 // ?view=street (&mix=a|b|c, &cam=eye|high|cottage|town): a small Gatelands town's street running out to its cottages.
+// &mix=lot (Session 835): the same street's lots coloured by gatelandsLot (Michael's A on #280), &street=<seed>.
 // ?view=line: the six plans in a row with a person at each door and a plaque of its sizes and triangles.
 // ?view=kit: the pieces one by one on a flagged floor, each on a wall stub, beside a 1.8 m person.
 import * as THREE from 'three';
@@ -13,9 +14,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
 import { Q, W, H, STATS, rnd, fbm, sstep, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run } from './common.js';
 // the kit itself is in pieces.js since Session 834; this file is its page
-import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win } from './pieces.js';
+import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot } from './pieces.js';
 
-const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || 'eye';
+const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || 'eye', STREET = Q.get('street') || 'gatelands-street';
 
 
 // ═══════════════════════════════ the scenes ═══════════════════════════════
@@ -63,9 +64,9 @@ if (VIEW === 'street') {
   for (const sx of [-1, 1]) { const g = box(.18, .14, 120); g.translate(sx * 3.2, .02, -48); const m = new THREE.Mesh(g, MM.dress); m.receiveShadow = true; scene.add(m); }
   const L = [['townhouse', 'ochre', 'blue'], ['townhouse', 'rose', 'black'], ['merchant', 'cream', 'green'], ['townhouse', 'sage', 'red'], ['gap', 5], ['farmhouse'], ['gap', 4], ['cottage', 0, 'red'], ['gap', 3], ['cottage', 1, 'blue']];
   const Rr = [['warehouse'], ['townhouse', 'blue', 'red'], ['townhouse', 'oxblood', 'green'], ['townhouse', 'cream', 'black'], ['gap', 7], ['cottage', 0, 'green'], ['gap', 3], ['cottage', 1, 'red'], ['gap', 4], ['cottage', 0, 'yellow']];
-  for (const [side, list] of [[-1, L], [1, Rr]]) { let z = side < 0 ? 6 : 3, i = 0;
+  let gi = 0; for (const [side, list] of [[-1, L], [1, Rr]]) { let z = side < 0 ? 6 : 3, i = 0;
     for (const [k, a, b] of list) { if (k === 'gap') { z -= a; continue; } let P;
-      if (k === 'townhouse') P = PLANS.townhouse({ color: a, paint: b, fin: town(a, i), doorX: i % 2 ? 1.95 : -1.95 }); else if (k === 'merchant') P = PLANS.merchant({ color: a, paint: b, fin: town(a, i) });
+      if (MIX === 'lot') P = gatelandsLot(STREET, gi++, { kind: k }).plan; else if (k === 'townhouse') P = PLANS.townhouse({ color: a, paint: b, fin: town(a, i), doorX: i % 2 ? 1.95 : -1.95 }); else if (k === 'merchant') P = PLANS.merchant({ color: a, paint: b, fin: town(a, i) });
       else if (k === 'warehouse') P = PLANS.warehouse({ fin: mixB ? FIN.whiteTown() : FIN.stone() }); else if (k === 'farmhouse') P = PLANS.farmhouse({ fin: mixC ? FIN.stone() : FIN.whiteTown() }); else P = PLANS.cottage({ hip: !!a, paint: b });
       const g = building(P), set = k === 'farmhouse' ? 3.5 : k === 'cottage' ? 1.5 : 0, along = k === 'warehouse' ? P.d : P.w, across = k === 'warehouse' ? P.w : P.d;
       const ry = k === 'warehouse' ? (side < 0 ? 0 : Math.PI) : side < 0 ? Math.PI / 2 : -Math.PI / 2, x = side * (4.8 + set + across / 2), zc = z - along / 2;

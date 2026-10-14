@@ -508,5 +508,161 @@
   ],
   "people": 4,
   "errs": []
+ },
+ "street-lot": {
+  "secs": 7,
+  "puffs": 1131,
+  "trees": 231,
+  "plans": {
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 13,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 11,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1472,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "lot",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:42535/people.js:9:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:42535/people.js:9:21)"
+  ]
+ },
+ "street-lot-b": {
+  "secs": 6,
+  "puffs": 1131,
+  "trees": 231,
+  "plans": {
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 11,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "lot",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:42535/people.js:9:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:42535/people.js:9:21)"
+  ]
+ },
+ "town-lot": {
+  "secs": 6,
+  "puffs": 1131,
+  "trees": 231,
+  "plans": {
+   "Townhouse": {
+    "tris": 5081,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 9,
+    "ridge": 12.44
+   },
+   "Merchant’s house and shop": {
+    "tris": 4522,
+    "calls": 13,
+    "w": 8.4,
+    "d": 9,
+    "eave": 9.2,
+    "ridge": 12.64
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 11,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1472,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9132,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.6,
+    "ridge": 15.98
+   }
+  },
+  "view": "street",
+  "mix": "lot",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:42535/people.js:9:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:42535/people.js:9:21)"
+  ]
  }
 }

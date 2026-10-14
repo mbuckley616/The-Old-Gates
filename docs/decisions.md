@@ -90,6 +90,7 @@ What are the town walls?
 Recommendation: **A.** A town reads as a town at a glance and the colour carries through fog; B runs a terrace into one long wall; C is the darkest street under a grey sky, against the 12 Oct call for lighter than the concept art. Precedent: Kinsale, Dingle, Westport.
 
 Michael: **Coloured towns**. (2026-10-13)
+*Acted on:* Session 835 (look builder) built it as the Gatelands' lot rule, `gatelandsLot` in `docs/prototypes/levelup/pieces.js`: town lots take the six earth colours with no two neighbours alike, door paints chosen so they do not drown in the wall, cottages limewashed under thatch, farmhouses white, warehouses bare stone (`pieces-gatelands.html?view=street&mix=lot`).
 
 ### The Mark's houses in the new kit: shingle, turf, or the mix? (look builder, Session 819) — DECISION #277
 The third island's house in the new kit (card F6, the pieces). Aurenne's is your B on #259 (Session 816) and the Gatelands house is the approved lane slice (Session 818). The Mark has no approved prototype yet.
