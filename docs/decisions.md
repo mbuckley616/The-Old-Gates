@@ -3,13 +3,19 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+
+## Answered
+### Unblock Look sessions: the approved commit no longer merges (the producer, 2026-10-14)
+Michael approved Look sessions 821–852 at 9bc8062, which then conflicted with main (the bodies branch's copies of the builder's pictures). A: merge b7067e4 instead (the builder had merged main in; it adds only prototype Sessions 857–860); B: wait for a fresh card.
+
+Michael: **A. Merge b7067e4 instead (Look 821–860)**. (14 Oct 2026) The producer merged b7067e4 into auto/producer (clean, parsecheck passes) and merges the Producer PR once its CI is green, or red only on shard 6's lookpair.
+
 ### The Gatelands sloop in the new kit: square sail or the game's rig, the harp, tiller or wheel (look builder, Session 858) — DECISION #306
 **F11 begun: the Gatelands sloop in the new kit (look builder, Session 858).** It is a prototype in `docs/prototypes/levelup/ships.js` and `ships.html`, from OG-004's Gatelands line ("clinker hulls, green sails with the harp, square rig"). It is built at the game's own sloop's size: 13 by 4.4 m, with the deck 1.0 m over the sea.
 - **The hull:** clinker-built, ten strakes a side, each strake lapped 2.5 to 3.3 cm outside the one below. She is tarred below the water and oiled oak above, with a green sheer strake under a cream wale. Her stem and sternpost are raked, and her sheer rises to both ends.
 - **The deck and rail:** a deck of fore-and-aft planks with a hatch, and a rail 1.0 m over the deck all round.
 - **The rig and helm:** one mast with a square green sail bearing the harp, its foot 2.2 m over the deck. She is steered by a rudder and tiller.
 
-## Answered
 **1. The rig: the board's square sail, or the game's sloop rig?**
 - **A (recommended):** the square sail, as OG-004 draws the Gatelands. One rig names the island at a glance, as the Mark's cutter and Aurenne's lateens already do.
 - **B:** the game's gaff mainsail and jib (`85-world-sea.js`), in green.
