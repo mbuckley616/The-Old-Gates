@@ -16,6 +16,12 @@
 //   to the high-water line. The broken mast is the only thing that stands out of the sea at high water. The last deck beam aft
 //   carries the bell (a bronze ship's bell gone green, 0.45 m) on an iron strap, under water at high tide and in reach of a person
 //   standing in the hull at low. o.taken: no bell, a bright ring of wood on the beam where its strap was.
+// beastDen(o, r) (Session 850): Na Beithígh's trial, the Wolf-Mother's Cloak "worn by a lair's master": the master sleeps on it in the
+//   lair's deepest chamber and you take it from under the living beast (Michael's A on #270: it wakes only when struck). A domed cave of
+//   about 10 by 9 m and 4.3 m high, its mouth a tunnel to +z, a crack in the roof letting down a shaft of day; a nest against the back wall, a
+//   hollow scraped to the bare stone with bracken heaped round its rim, bones about it; the grey cloak spread in the hollow, its mantle's straight edge under where the master lies and its hem
+//   curving out past the master toward the mouth, so the hem is what you take hold of. o.master = { len, wid } is the sleeper's
+//   footprint (default 2.6 by 1.4, an ogre or a great bear); the master itself is the bodies builder's, drawn here as a ghost (o.ghost).
 // All -> { group, tris, draws, top, grip | ring | handle } (the grip's or the ring's place in the prop's own frame). One mesh per material.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -30,7 +36,10 @@ function mats() {
     gold: new THREE.MeshStandardMaterial({ color: 0xc8952e, roughness: .3, metalness: .85 }), leather: new THREE.MeshStandardMaterial({ color: 0x3a2618, roughness: .8 }), horn: new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: .55, transparent: true, opacity: .82 }),
     hornLit: new THREE.MeshStandardMaterial({ color: 0xd8a860, emissive: new THREE.Color(1, .62, .28), emissiveIntensity: 1.6, roughness: .5, transparent: true, opacity: .9 }), flame: new THREE.MeshStandardMaterial({ color: 0xffd090, emissive: new THREE.Color(1, .75, .4), emissiveIntensity: 4 }), brass: new THREE.MeshStandardMaterial({ color: 0xb08a3e, roughness: .4, metalness: .7 }), dark: new THREE.MeshStandardMaterial({ color: 0x0d0b09, roughness: 1 }),
     wetRock: mat('rock', { ns: 1.6, color: 0x75726a, rough: .5 }), weed: new THREE.MeshStandardMaterial({ color: 0x3a3a1c, roughness: .6, side: THREE.DoubleSide }), wetWood: mat('wood', { ns: 1.2, color: 0x7a6650, rough: .55 }),
-    spar: mat('wood', { ns: 1.0, color: 0xb0a898, rough: .9 }), bronze: new THREE.MeshStandardMaterial({ color: 0x5f8a72, roughness: .55, metalness: .5 }), scar: mat('wood', { ns: .6, color: 0xd8bc8a, rough: .8 }) };
+    spar: mat('wood', { ns: 1.0, color: 0xb0a898, rough: .9 }), bronze: new THREE.MeshStandardMaterial({ color: 0x5f8a72, roughness: .55, metalness: .5 }), scar: mat('wood', { ns: .6, color: 0xd8bc8a, rough: .8 }),
+    cave: mat('rock', { ns: 1.5, color: 0x7a6e60, rough: .95 }), bracken: mat('rock', { ns: 2, color: 0x86704c, rough: 1 }), bone: new THREE.MeshStandardMaterial({ color: 0xa89c80, roughness: .8 }),
+    fur: mat('rock', { ns: .9, color: 0x8c8c88, rough: .85 }), furPale: mat('rock', { ns: 1.4, color: 0xb4b2ac, rough: 1 }), furDark: mat('rock', { ns: .4, color: 0x4a4a48, rough: .9 }),
+    ghost: new THREE.MeshStandardMaterial({ color: 0x6a7480, roughness: 1, transparent: true, opacity: .14, depthWrite: false }) };
   return PM;
 }
 // a rough stone: a subdivided box (or ball) pushed about by smooth noise from the prop's stream, so the same key makes the same stone
@@ -161,4 +170,53 @@ export function tidalWreck(o = {}, r = stream('wreck')) {
   // where a person stands to reach it: on the low side's planking inside the hull, a metre aft of the beam's line
   const sx = bx + .9, st = Math.asin(Math.min(1, .9 / half(sx))), stand = at(...sec(sx, st).toArray()).add(new THREE.Vector3(0, .05, 0));
   return finish({ HW, rockTop: +rockTop.toFixed(2), bell: bell.toArray().map(v => +v.toFixed(3)), stand: stand.toArray().map(v => +v.toFixed(3)), mastTop: +mastTop.y.toFixed(2), taken: !!o.taken });
+}
+
+export function beastDen(o = {}, r = stream('den')) {
+  const { put, finish } = kit(), RX = 5.2, RZ = 4.6, RY = 4.6, ML = o.master?.len ?? 2.6, MW = o.master?.wid ?? 1.4, nz = -RZ + 2.4 + r() * .2, nx = (r() - .5) * .8, rot = (r() - .5) * .3;
+  // the chamber: a dome pushed about by noise, its triangles cut away where the mouth (+z, low) and the roof's crack open
+  const crack = new THREE.Vector3(nx * .5 + .6, 1, nz * .4).normalize(), mouth = new THREE.Vector3(0, .12, 1).normalize();
+  { const g = rough(new THREE.SphereGeometry(1, 64, 32, 0, Math.PI * 2, 0, Math.PI * .56), r, .1, 3.2).toNonIndexed(), P = g.attributes.position, keep = [];
+    for (let i = 0; i < P.count; i += 3) { const c = new THREE.Vector3(); for (let k = 0; k < 3; k++) c.add(new THREE.Vector3().fromBufferAttribute(P, i + k)); c.normalize();
+      if (c.dot(mouth) > .93 || c.dot(crack) > .995) continue; for (const k of [0, 2, 1]) keep.push(P.getX(i + k) * RX, P.getY(i + k) * RY - .25, P.getZ(i + k) * RZ); } /* wound backwards, so it faces in */
+    const d = new THREE.BufferGeometry(); d.setAttribute('position', new THREE.Float32BufferAttribute(keep, 3)); d.computeVertexNormals(); put(d, 'cave', 0, 0, 0, 0, 0, 0, .4); }
+  // the mouth's tunnel, 2.2 m wide and 2.4 high, running out toward +z
+  { const g = rough(new THREE.CylinderGeometry(1.25, 1.35, 5, 18, 6, true), r, .1, 2); g.rotateX(Math.PI / 2); g.scale(-1, 1.05, 1); g.computeVertexNormals(); /* mirrored, so it faces in */ put(g, 'cave', 0, 1.1, RZ + 1.6, 0, 0, 0, .4); }
+  // the floor: a rough disc, levelled where you walk; nestY is the nest's surface over it
+  { const g = new THREE.RingGeometry(.001, 1, 48, 14); g.rotateX(-Math.PI / 2); g.scale(RX * 1.02, 1, RZ * 1.02); /* rings, not a fan, so the floor can take its shape */ const P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), e = Math.hypot(x / RX, z / RZ); P.setY(i, .05 * Math.sin(x * 1.7 + z) * Math.sin(z * 1.3) + .4 * Math.max(0, e - .82) ** 1.5); }
+    g.computeVertexNormals(); put(g, 'cave', 0, 0, 0, 0, 0, 0, .4); }
+  const nestR = Math.max(ML, MW) / 2 + .55, nestY = (x, z) => { const d = Math.hypot((x - nx) / 1.0, (z - nz) / .8); return d > nestR + .4 ? 0 : d > nestR ? .32 * (1 - (d - nestR) / .4) : .12 + .2 * (d / nestR) ** 4; };
+  // the nest: bracken heaped in a ring against the back wall, the hollow lined; strands of it scattered
+  { const g = new THREE.RingGeometry(.001, 1, 40, 16).toNonIndexed(); g.rotateX(-Math.PI / 2); g.scale(nestR + .4, 1, (nestR + .4) * .8); const P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i) + nx, z = P.getZ(i) + nz; P.setY(i, nestY(x, z) + .02 * Math.sin(x * 9) * Math.sin(z * 11)); }
+    /* the hollow is bare stone, scraped ("it lays its head down on the bare stone", the draft); the bracken is heaped round its rim */
+    const part = inner => { const out = []; for (let i = 0; i < P.count; i += 3) { let d = 0; for (let k = 0; k < 3; k++) d += Math.hypot(P.getX(i + k), P.getZ(i + k) / .8) / 3; if ((d < nestR * .8) === inner) for (let k = 0; k < 3; k++) out.push(P.getX(i + k), P.getY(i + k), P.getZ(i + k)); }
+      const h = new THREE.BufferGeometry(); h.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); h.computeVertexNormals(); return h; };
+    put(part(true), 'cave', nx, 0, nz, 0, 0, 0, .4); put(part(false), 'bracken', nx, 0, nz, 0, 0, 0, .3); g.dispose(); }
+  for (let i = 0; i < 220; i++) { const a = r() * 6.28, d = nestR * (.8 + r() * .5), x = nx + Math.cos(a) * d, z = nz + Math.sin(a) * d * .8, len = .2 + r() * .35;
+    put(new THREE.BoxGeometry(len, .008, .014), 'bracken', x, nestY(x, z) + .02, z, (r() - .5) * .4, a + Math.PI / 2 + (r() - .5) * .8, (r() - .5) * .3); }
+  // bones: long bones, a rack of ribs, a skull, a stag's antler, nearer the mouth than the nest
+  for (let i = 0; i < 7; i++) { const a = r() * 6.28, d = 1.5 + r() * 2.2, x = nx + Math.cos(a) * d, z = Math.min(RZ - 1, nz + 1.4 + Math.abs(Math.sin(a)) * d * .6), len = .3 + r() * .25; if (Math.abs(x) < .8 && z > nz + 2.2) continue;
+    const ay = r() * 6.28; put(new THREE.CylinderGeometry(.022, .026, len, 6).rotateZ(Math.PI / 2), 'bone', x, .04, z, 0, ay); for (const e of [-1, 1]) put(new THREE.SphereGeometry(.03, 6, 5).scale(1, .8, 1.3), 'bone', x + e * Math.cos(ay) * len / 2, .04, z - e * Math.sin(ay) * len / 2); }
+  { const x = nx - 1.9, z = nz + 1.6; for (let k = 0; k < 6; k++) put(new THREE.TorusGeometry(.26 - k * .015, .012, 4, 10, Math.PI * .9), 'bone', x + k * .08, .02, z, 0, .3, 0); put(new THREE.CylinderGeometry(.03, .03, .5, 6).rotateZ(Math.PI / 2), 'bone', x + .2, .03, z, 0, .3); }
+  { const x = nx + 2.1, z = nz + 1.2, sk = new THREE.SphereGeometry(.12, 10, 8); sk.scale(1, .8, 1.4); put(sk, 'bone', x, .09, z, 0, 1.1); put(new THREE.SphereGeometry(.03, 6, 4), 'dark', x + .05, .12, z - .1); put(new THREE.SphereGeometry(.03, 6, 4), 'dark', x - .05, .12, z - .1); }
+  { const c = new THREE.CatmullRomCurve3([[0, 0, 0], [.15, .06, .3], [.12, .12, .62], [.2, .14, .8]].map(v => new THREE.Vector3(...v))); put(new THREE.TubeGeometry(c, 8, .022, 5), 'bone', nx - .6, .03, nz + nestR + .9, 0, -.7);
+    put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([[0, 0, 0], [-.18, .08, .1], [-.26, .12, .05]].map(v => new THREE.Vector3(...v))), 5, .016, 5), 'bone', nx - .6 + .03, .06, nz + nestR + .9 + .25, 0, -.7); }
+  // the cloak: a mantle (a half-disc of 1.35 m, its straight edge the neck with a dark fur collar and a bronze clasp) spread in the
+  // nest under where the master lies, folds pushed into it, its hem curving out past the master toward the mouth
+  const CR = 1.35, cz0 = nz - .15, ph1 = r() * 6, folds = (x, z) => .035 * Math.sin(x * 5.3 + ph1) * Math.cos(z * 3.1) + .02 * Math.sin((x + z) * 8.7);
+  let hem = -9;
+  { const g = new THREE.CircleGeometry(CR, 40, Math.PI, Math.PI); g.rotateX(-Math.PI / 2); /* face up, the curved hem toward +z */ const ng = g.toNonIndexed(), P = ng.attributes.position;
+    for (let i = 0; i < P.count; i++) { const lx = P.getX(i), lz = P.getZ(i), x = nx + lx * Math.cos(rot) + lz * Math.sin(rot), z = cz0 - lx * Math.sin(rot) + lz * Math.cos(rot); hem = Math.max(hem, z);
+      P.setXYZ(i, x, nestY(x, z) + .08 + folds(x, z), z); }
+    ng.computeVertexNormals(); put(ng, 'fur'); }
+  { const g = new THREE.CylinderGeometry(.06, .06, CR * 2, 12, 1).rotateZ(Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = nx + P.getX(i) * Math.cos(rot), z = cz0 - P.getX(i) * Math.sin(rot) + P.getZ(i); P.setXYZ(i, x, P.getY(i) * .6 + nestY(x, z) + .1, z); } put(g, 'furDark'); }
+  put(new THREE.CylinderGeometry(.045, .045, .015, 14), 'bronze', nx, nestY(nx, cz0) + .15, cz0);
+  // the hem: a roll of paler wolf fur round the curve, the part that shows past the sleeper
+  { const pts = []; for (let k = 0; k <= 32; k++) { const a = Math.PI + k / 32 * Math.PI, lx = Math.cos(a) * CR, lz = -Math.sin(a) * CR, x = nx + lx * Math.cos(rot) + lz * Math.sin(rot), z = cz0 - lx * Math.sin(rot) + lz * Math.cos(rot); pts.push(new THREE.Vector3(x, nestY(x, z) + .09 + folds(x, z), z)); }
+    const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, .045, 6); g.scale(1, .7, 1); put(g, 'furPale'); }
+  // the master's place: an ellipse of ML by MW on the cloak, its long side to the mouth; drawn as a ghost when o.ghost
+  const mz = cz0 + MW / 2 - .6; /* most of it on the mantle, the hem 0.6 m out in front of it */ if (o.ghost !== false) { const g = new THREE.SphereGeometry(1, 20, 12); g.scale(ML / 2, .45, MW / 2); put(g, 'ghost', nx, nestY(nx, mz) + .4, mz, 0, -rot); }
+  return finish({ nest: [+nx.toFixed(3), +nestY(nx, nz).toFixed(3), +nz.toFixed(3)], master: { x: +nx.toFixed(3), z: +mz.toFixed(3), len: ML, wid: MW, rot: +rot.toFixed(3) }, hem: +hem.toFixed(3), mouthZ: +(RZ + 4.1).toFixed(2), crack: [+(crack.x * RX).toFixed(2), +(crack.y * RY - .25).toFixed(2), +(crack.z * RZ).toFixed(2)], RY });
 }

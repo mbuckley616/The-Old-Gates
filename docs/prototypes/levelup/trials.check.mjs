@@ -8,7 +8,10 @@
 // Session 839, the Drowned Bell's wreck: 12 keys, in budget and the same twice; at high water nothing but the mast stands out of the
 // sea, and the mast stands 3 m out; at low water the bell is clear of the sea and under the high-water line, and a person standing
 // in the hull reaches it (the game's 2.6 units); taken, the bell is gone and the beam shows the bright ring.
-// --shots writes trials-blade, -blade-close, -cairn, -cairn-close, -cairn-close-morning, -lamp, -lamp-unlit, -wreck, -wreck-high, -wreck-close and -wreck-taken.
+// Session 850, the cloak's den: 10 keys, in budget and the same twice; 3 m of headroom over the nest; the mouth open down its tunnel;
+// a clear floor from the mouth to the cloak; the cloak on the nest, never under it, its hem 0.4 to 0.9 m out past the sleeper; the
+// roof's crack open onto the nest.
+// --shots writes trials-blade, -blade-close, -cairn, -cairn-close, -cairn-close-morning, -lamp, -lamp-unlit, -wreck, -wreck-high, -wreck-close, -wreck-taken, -den, -den-close and -den-empty.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -18,7 +21,7 @@ const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angl
 if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch(launch); let fails = 0;
 const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined ? '  ' + JSON.stringify(info) : '')); if (!ok) fails++; };
-for (const v of ['blade', 'cairn', 'lamp', 'wreck']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+for (const v of ['blade', 'cairn', 'lamp', 'wreck', 'den']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(`http://localhost:${port}/trials.html?still&w=480&h=270&view=${v}`);
   await Promise.race([page.waitForFunction(() => window.__done, null, { timeout: 300000 }), new Promise(res => page.on('pageerror', res))]);
   check(`the ${v} page renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
@@ -41,6 +44,15 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
     const bz = a.group.children.find(m => m.name === 'bronze'), bb = new THREE.Box3().setFromBufferAttribute(bz.geometry.attributes.position), names = t.group.children.map(m => m.name);
     out.wrecks.push({ bad: a.bad, same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, outOfSea, mastOut: +(mastMax - a.HW).toFixed(2), bellLow: +bb.min.y.toFixed(2), bellTop: +bb.max.y.toFixed(2),
       reach: +Math.hypot(a.bell[0] - a.stand[0], a.bell[2] - a.stand[2]).toFixed(2), up: +(a.bell[1] - a.stand[1]).toFixed(2), standY: a.stand[1], taken: !names.includes('bronze') && names.includes('scar') }); }
+  out.dens = []; for (let i = 0; i < 10; i++) { const a = K.beastDen({}, S.stream('den:' + i)), b = K.beastDen({}, S.stream('den:' + i)); a.group.updateMatrixWorld(true);
+    const M = n => a.group.children.find(m => m.name === n), cave = M('cave'), bracken = a.group.children.filter(m => m.name === 'bracken' || m.name === 'cave'), fur = M('fur'), solid = a.group.children.filter(m => m.name !== 'ghost' && m.name !== 'cave');
+    const ray = (o, d, objs) => new THREE.Raycaster(new THREE.Vector3(...o), new THREE.Vector3(...d).normalize()).intersectObjects(objs)[0];
+    const up = ray([a.nest[0], a.nest[1] + .1, a.nest[2]], [0, 1, 0], [cave]), upM = ray([a.master.x, .3, a.master.z], [0, 1, 0], [cave]), mouth = ray([0, 1.2, 0], [0, 0, 1], [cave]);
+    let path = 0; const hz = a.hem + .15; for (let k = 0; k <= 20; k++) { const z = a.mouthZ - 4 + (hz - (a.mouthZ - 4)) * k / 20, x = a.master.x * k / 20, h = ray([x, 2.5, z], [0, -1, 0], solid.concat([cave])); if (h && h.point.y > .3) path++; }
+    let under = 0, n = 0; const P = fur.geometry.attributes.position; for (let k = 0; k < P.count; k += 5) { const h = ray([P.getX(k), P.getY(k) + .5, P.getZ(k)], [0, -1, 0], bracken); n++; if (h && P.getY(k) < h.point.y - .01) under++; }
+    const toCrack = new THREE.Vector3(...a.crack).sub(new THREE.Vector3(a.nest[0], a.nest[1] + .2, a.nest[2])), sky = ray([a.nest[0], a.nest[1] + .2, a.nest[2]], toCrack.toArray(), [cave]);
+    out.dens.push({ same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, head: up ? +up.distance.toFixed(2) : 99, headM: upM ? +(upM.distance + .3).toFixed(2) : 99, mouth: mouth ? +mouth.distance.toFixed(2) : 99, path, under, n,
+      out: +(a.hem - (a.master.z + a.master.wid / 2)).toFixed(2), crackClear: !sky || sky.distance > toCrack.length() - .3 }); }
   return out; });
 const B = r.blades, C = r.cairns, mm = (xs, f) => [Math.min(...xs.map(f)), Math.max(...xs.map(f))];
 check(`the Gate-Blade's stone, 20 keys: ${mm(B, b => b.tris).join(' to ')} triangles, at most ${Math.max(...B.map(b => b.draws))} meshes, ${mm(B, b => b.h).join(' to ')} m tall; each the same twice`, B.every(b => b.same && b.tris < 8000 && b.draws <= 9 && b.h >= 2.6 && b.h <= 3.2));
@@ -56,6 +68,12 @@ check(`an hour either side it lands off the hollow: ${mm(C, c => Math.min(...c.o
   check(`at low water the bell hangs clear of the sea, its lip ${mm(Wk, w => w.bellLow).join(' to ')} m up, and its crown ${mm(Wk, w => w.bellTop).join(' to ')} m, under high water`, Wk.every(w => w.bellLow > .4 && w.bellTop < 2.4 - .3));
   check(`a person standing in the hull (${mm(Wk, w => w.standY).join(' to ')} m up, above the ebb) reaches it: ${mm(Wk, w => w.reach).join(' to ')} m across (the game's reach is 2.6), ${mm(Wk, w => w.up).join(' to ')} m above the feet`, Wk.every(w => w.standY > .15 && w.reach < 2.6 && w.up > .6 && w.up < 1.7));
   check('taken, the bell is gone and the beam keeps a bright ring of wood', Wk.every(w => w.taken)); }
+{ const D = r.dens; check(`the cloak's den, 10 keys: ${mm(D, d => d.tris).join(' to ')} triangles in at most ${Math.max(...D.map(d => d.draws))} meshes, each the same twice`, D.every(d => d.same && d.tris < 15000 && d.draws <= 12));
+  check(`headroom: ${mm(D, d => d.head).join(' to ')} m over the nest, ${mm(D, d => d.headM).join(' to ')} m over the sleeper's place`, D.every(d => d.head >= 3 && d.headM >= 3));
+  check(`the mouth is open: from the chamber's middle at 1.2 m the first wall toward the mouth is ${mm(D, d => d.mouth).join(' to ')} m off (99: none, out the tunnel's end)`, D.every(d => d.mouth > 9));
+  check(`the floor is clear from the mouth to the cloak's hem: ${Math.max(...D.map(d => d.path))} of 21 points have anything over 0.3 m`, D.every(d => d.path === 0));
+  check(`the cloak lies on the nest: ${Math.max(...D.map(d => d.under))} of ${D[0].n} points under the nest's stone or bracken; its hem ${mm(D, d => d.out).join(' to ')} m out past the sleeper`, D.every(d => d.under === 0 && d.out >= .4 && d.out <= .9));
+  check(`the roof's crack is open onto the nest in ${D.filter(d => d.crackClear).length} of 10`, D.every(d => d.crackClear)); }
 await page.close();
-if (process.argv.includes('--shots')) for (const q of ['view=blade', 'view=blade&close', 'view=cairn', 'view=cairn&close', 'view=cairn&close&sun=morning', 'view=lamp', 'view=lamp&unlit', 'view=wreck', 'view=wreck&tide=high', 'view=wreck&close', 'view=wreck&close&taken']) { const name = 'trials-' + q.replace('view=', '').replace(/&(sun|tide)=/, '-').replace(/&/g, '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=trials.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
+if (process.argv.includes('--shots')) for (const q of ['view=blade', 'view=blade&close', 'view=cairn', 'view=cairn&close', 'view=cairn&close&sun=morning', 'view=lamp', 'view=lamp&unlit', 'view=wreck', 'view=wreck&tide=high', 'view=wreck&close', 'view=wreck&close&taken', 'view=den', 'view=den&close', 'view=den&noghost']) { const name = 'trials-' + q.replace('view=', '').replace(/&(sun|tide)=/, '-').replace(/&/g, '-').replace('-noghost', '-empty'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=trials.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

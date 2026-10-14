@@ -41,7 +41,11 @@ Two questions, one letter each.
 - **A. A plain trader's hull, as drawn:** any island's small ship, built now.
 - **B. The Compact's ship** *(recommended)*: the Compact says the bell was "entered on a ship's manifest, and lost with the ship", so the hull is Aurennais, carvel-built with a lateen yard fallen across it. It is built from L6's Aurenne hull once that line exists; until then A stands in.
 
-Not in this question: the cloak's den and the Shuttle's room (next sessions); solids for these props (their place in the game, after F2a).
+5. (Added by Session 850.) The cloak's den, Na Beithígh's (the master "is lying on something grey that is not its own hide", the approved draft). The lair's last chamber, a domed cave of about 10 by 9 m and 4.3 m high, its mouth a tunnel. Against the back wall is a nest: a hollow scraped to the bare stone ("it lays its head down on the bare stone") with bracken heaped round its rim, and bones nearer the mouth. The grey cloak is spread in the hollow, its collar and clasp under where the master sleeps and its pale hem 0.55 m out in front of it, which is what you take hold of. The master is the bodies builder's and is drawn as a ghost of 2.6 by 1.4 m. About 12,000 triangles in 9 draws. [from the mouth](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-den.jpg) · [the hem](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-den-close.jpg) · [the nest without the ghost](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-den-empty.jpg)
+- **A. A crack in the roof, as drawn** *(recommended)*: a shaft of daylight falls on the nest, so from the mouth the grey cloak is the one lit thing in the cave.
+- **B. No crack:** the chamber is lit only by your torch. It is darker and closer, and you find the cloak only when you are near the master.
+
+Not in this question: the Shuttle's room (next session); solids for these props (their place in the game, after F2a).
 
 ### The Mages' academy's white towers: pointed caps, domes, or square? (look builder, Session 836) — DECISION #296
 The last of Aurenne's buildings that the canon names is "the academy's white towers" (§1.3), the Mages' academy. Session 836 builds it in the new kit at true size (`aurenneAcademy` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=academy`):

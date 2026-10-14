@@ -3,11 +3,13 @@
 // ?view=cairn: the Noon Ring's cairn at noon, the sun through the slab's hole falling on the hollow; &sun=morning moves the sun off it.
 // ?view=wreck (Session 839): the Drowned Bell's wreck on its skerry at low water, the bell on the last beam; &tide=high: the sea
 // over it, the mast alone above; &close: the bell from where a person stands in the hull; &taken: the beam with the bell gone.
+// ?view=den (Session 850): the Wolf-Mother's Cloak in its lair's last chamber, from the mouth by torchlight, a shaft of day down the
+// crack onto the nest, the master's place a ghost (&noghost hides it); &close: the cloak's hem at your feet.
 // &cam=x,y,z,tx,ty,tz puts the camera anywhere (Session 839).
 // ?view=lamp (Session 838): the Waylamp on its inn's bracket at dusk, lit and (&unlit) put out, a candle's light from it.
 import * as THREE from 'three';
 import { Q, W, H, STATS, GLSL_NOISE, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run } from './common.js';
-import { bladeStone, ringCairn, waylamp, tidalWreck } from './props.js';
+import { bladeStone, ringCairn, waylamp, tidalWreck, beastDen } from './props.js';
 import { stream } from './pieces.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'blade';
@@ -17,7 +19,7 @@ const noon = Q.get('sun') !== 'morning', alt = 40 * Math.PI / 180, SUN = noon ? 
 const sun = new THREE.DirectionalLight(new THREE.Color(1, .92, .8), 3.6); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -.0002; sun.shadow.normalBias = .02;
 scene.add(sun, sun.target, new THREE.HemisphereLight(new THREE.Color(.62, .72, .9), new THREE.Color(.34, .32, .24), 1.1));
 skyDome(scene, SUN); clouds(scene, SUN, { n: 8, d0: 1800, dw: 5000, y0: 300 });
-if (VIEW !== 'wreck') { const g = new THREE.PlaneGeometry(400, 400); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, mat('rock', { ns: .7, color: 0x8a9a6a, rough: 1 })); m.receiveShadow = true; scene.add(m); }
+if (VIEW !== 'wreck' && VIEW !== 'den') { const g = new THREE.PlaneGeometry(400, 400); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, mat('rock', { ns: .7, color: 0x8a9a6a, rough: 1 })); m.receiveShadow = true; scene.add(m); }
 // the sea for the wreck (main.js's water, its waves and its sky in the fresnel), at low water (y 0) or high (the prop's HW)
 function sea(y) { const g = new THREE.PlaneGeometry(6000, 6000, 1, 1); g.rotateX(-Math.PI / 2);
   const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .20, .25), roughness: .08, transparent: true, opacity: .8, depthWrite: false });
@@ -44,6 +46,11 @@ if (VIEW === 'wreck') { const high = Q.get('tide') === 'high'; P = tidalWreck({ 
   scene.fog.density = .004;
   if (Q.has('close')) { cam.fov = 40; cam.position.set(P.stand[0], P.stand[1] + 1.62, P.stand[2]); cam.lookAt(...P.bell); cam.position.addScaledVector(cam.getWorldDirection(new THREE.Vector3()), -.6); }
   else { cam.position.set(11, high ? 3.6 : 2.6, 13); cam.lookAt(-.5, high ? 2.2 : 1.3, 0); }
+} else if (VIEW === 'den') { P = beastDen({ ghost: !Q.has('noghost') }, stream('den:dunkeel')); scene.add(P.group); window.__post.position.set(1.6, 0, P.master.z + 1.6);
+  sun.intensity = 0; scene.fog.color.setRGB(.05, .045, .04); scene.fog.density = .02; scene.children.filter(c => c.isHemisphereLight).forEach(h => h.intensity = .2);
+  { const c = new THREE.Vector3(...P.crack), sp = new THREE.SpotLight(new THREE.Color(.75, .85, 1), 60, 12, .32, .6, 1.4); sp.position.copy(c); sp.target.position.set(P.nest[0], 0, P.nest[2]); sp.castShadow = true; sp.shadow.mapSize.set(2048, 2048); scene.add(sp, sp.target); }
+  const tp = Q.has('close') ? new THREE.Vector3(P.master.x + .9, 1.62, P.hem + 1.5) : new THREE.Vector3(.4, 1.6, 4.2); { const t = new THREE.PointLight(new THREE.Color(1, .62, .3), 40, 16, 1.5); t.position.copy(tp).add(new THREE.Vector3(.35, -.1, -.2)); scene.add(t); }
+  if (Q.has('close')) { cam.fov = 45; cam.position.copy(tp); cam.lookAt(P.master.x, .2, P.hem - .3); } else { cam.fov = 55; cam.position.copy(tp); cam.lookAt(P.nest[0], .6, P.nest[2]); }
 } else if (VIEW === 'lamp') { const unlit = Q.has('unlit'); P = waylamp({ hook: true, lit: !unlit }, stream('waylamp:biafaira')); scene.add(P.group);
   const pair = waylamp({ lit: unlit }, stream('waylamp:pair')); pair.group.position.set(.55, 1.0, .25); scene.add(pair.group);
   { const t = new THREE.Mesh(new THREE.BoxGeometry(.9, .06, .5), mat('wood', { ns: 1, color: 0x8a6a4a })); t.position.set(.55, .97, .2); t.castShadow = t.receiveShadow = true; scene.add(t); const l = new THREE.Mesh(new THREE.BoxGeometry(.08, .94, .08), t.material); l.position.set(.55, .47, .2); scene.add(l); }
@@ -57,5 +64,5 @@ if (VIEW === 'wreck') { const high = Q.get('tide') === 'high'; P = tidalWreck({ 
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); } /* &cam=x,y,z,tx,ty,tz, any view from anywhere */
 cam.updateProjectionMatrix();
 sun.position.copy(SUN).multiplyScalar(40); sun.target.position.set(0, 0, 0); Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: .5, far: 100 }); sun.shadow.camera.updateProjectionMatrix();
-STATS.prop = { view: VIEW, tris: P.tris, draws: P.draws, top: P.top, grip: P.grip, ring: P.ring, hole: P.hole, handle: P.handle, lit: P.lit, bell: P.bell, stand: P.stand, mastTop: P.mastTop, HW: P.HW };
+STATS.prop = { view: VIEW, tris: P.tris, draws: P.draws, top: P.top, grip: P.grip, ring: P.ring, hole: P.hole, handle: P.handle, lit: P.lit, bell: P.bell, stand: P.stand, mastTop: P.mastTop, HW: P.HW, master: P.master, hem: P.hem };
 run(makeComposer(R, scene, cam, { bloom: .12, sat: 1.0, vig: .3 }), cam);

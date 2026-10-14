@@ -17339,3 +17339,39 @@ Added to **DECISION #298** as its fourth question:
 - **The tide in the game moves the wreck, not the sea.** Built in the game, the rock should stay put and only the hull and bell sink, or the skerry will rise and fall with them. That is a note for the session that brings it in after F2a.
 - **Solids:** nothing of it is solid yet, in the prototype or the game.
 - **The weed** is flat blobs and strips. It reads from a boat but not from the hull.
+
+## v80 — Session 850 — The Wolf-Mother's Cloak in its den (backlog L, prototype only)
+The fifth of the Makers' trials' props. Michael's A on #270 settles the rule: the master wakes only when struck, and "sheathed" means not attacking. The approved draft (*The Makers' Things*, §6) gives the picture. *The master of the cave is lying on something grey that is not its own hide*; taken, *it lays its head down on the bare stone, and lets you go*. The FREEZE (#297) still holds, so this is a prototype only.
+
+`props.js` has `beastDen(o, r)`, the lair's last chamber:
+- **The chamber:** a dome of 10.4 by 9.2 m and 4.3 m high, pushed about by noise. It is wound to face inward, since a sphere seen from inside draws nothing. Its triangles are cut away in two places: the mouth (+z, low), which runs on as a tunnel of 2.5 m, and a small crack high in the roof.
+- **The floor:** a ring-built disc, rising a little to the walls.
+- **The nest,** against the back wall: a hollow scraped to the bare stone, as the draft's last line has it, with bracken heaped round its rim and 220 strands scattered over the rim. There are bones nearer the mouth: long bones, a rack of ribs, a skull and a stag's antler.
+- **The cloak,** spread in the hollow: a grey mantle, a half-disc of 1.35 m with folds pushed into it. It has a dark fur collar and a bronze clasp on its straight edge, which lies under where the master sleeps. Its pale hem curves out 0.55 m past the sleeper toward the mouth, and the hem is what the player takes hold of.
+- **The master:** a ghost ellipsoid of 2.6 by 1.4 m (`o.master` sets it; `o.ghost: false` hides it). The beast and its sleeping pose are the bodies builder's.
+
+`trials.html?view=den` looks from the mouth by torchlight, with a cold shaft of day down the crack onto the nest. `&close` stands you at the hem, and `&noghost` shows the nest bare.
+
+**Fixed on the way:**
+- **Inside out:** the dome and the tunnel drew nothing from inside until they were wound inward (and the tunnel's normals recomputed after its mirror).
+- **Upside down:** the cloak's half-disc faced the floor, so it was culled.
+- **The light missed:** the spot was placed by the dome's height alone, inside the rock.
+- **The nest was a fan:** a circle geometry is a fan from its centre, so the nest and the floor were cones that ignored their shape. Both are rings now; the check had found the cloak dipping under the nest at 2 points of 24.
+- **Too little headroom:** the nest sat against the wall at 2.55 m and was moved in.
+- **The wrong bed:** the first nest was all bracken. The draft's bare stone made the hollow stone.
+
+Added to **DECISION #298** as its fifth question: A, the crack in the roof, so the cloak is the one lit thing seen from the mouth (recommended); or B, no crack, torchlight only.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 23 of 23 pass**, with six new checks over 10 keys:
+  - **The builds:** 11,818 to 12,178 triangles in 9 meshes, each the same twice.
+  - **Headroom:** 3.02 to 3.92 m over the nest and 3.22 to 4.11 m over the sleeper.
+  - **The mouth:** from the chamber's middle at 1.2 m, a ray toward the mouth meets no wall all the way out the tunnel.
+  - **The path:** from the mouth to the hem, 0 of 21 points have anything over 0.3 m.
+  - **The cloak:** 0 of 24 sampled points lie under the nest's stone or bracken, and the hem is 0.55 m out past the sleeper.
+  - **The crack:** it is open from the nest to the sky in 10 of 10.
+  - **The page:** the den page renders with no page errors.
+- **Pictures, new:** `trials-den.jpg`, `-den-close` and `-den-empty`.
+### Needs eyes
+- **The cloak is a flat grey mantle,** not fur. How the Wolf-Mother's Cloak looks worn, and as a pelt, is the bodies builder's (what is worn). This is where it lies.
+- **The master's size** varies by biome (`lairBeast`): an ogre at Dunkeel, a bear or a wolf elsewhere. The nest is sized from `o.master`, and the game should pass the master's footprint.
+- **In the game,** the den's chamber is the cavern lair's master room (`lairFinish`). Bringing this in after F2a means its walls, solids and light go there, not as a separate room.
