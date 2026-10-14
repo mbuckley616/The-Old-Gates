@@ -15,20 +15,22 @@ const WANT = { city: 20, town: 14, village: 8, hamlet: 4, port: 4 };
 // Dunmore read -478191395 or 1104956583 and Cœur de Vie three values over four runs, here and on CI (#273's own run failed on it),
 // so who a town draws depends on something besides its seed (backlog I). Droichead's and Cœur de Vie's were re-read after Systems
 // 797–814 merged. Make it a check again once a town's people are drawn the same every time.
-const PEOPLE = { droichead: -1790770419, portclare: -1437886261, dunmore: -478191395, carraig_mor: 564943362, coeur_de_vie: -1965213968 }; // HEAD before S817, names and roles
+// Session 828: the draw was always the same; the hash was not. It read S.npcs, which the residents join two a tick within 70 of
+// the player (and leave past 95), so it counted whoever had streamed in by the time the town was read. It now hashes who the
+// town drew: its fixed townsfolk in order, then every resident in S.residents, streamed in or not. Read on main after F1 (edda9f4),
+// the same in either order of the five towns, on a rebuild in place, and with two runs side by side. A check again.
+const PEOPLE = { dunmore: 715523239, carraig_mor: 1906895553, coeur_de_vie: -459524478, portclare: -1325179028, droichead: -1790770419 }; // drawn people, names and roles
 for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droichead']) {
   await g.settle(id);
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id); const L = S.loot || [];
     const close = []; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const d = Math.hypot(L[i].x - L[j].x, L[i].z - L[j].z); if (d < .9) close.push([i, j, +d.toFixed(2)]); }
     const houseIn = L.map((c, i) => [c, i]).filter(([c]) => (S.sol || []).some(b => b !== S.sol[S.sol.length] && b.bt && Math.abs((c.x - b.cx) * (b.c == null ? 1 : b.c) - (c.z - b.cz) * (b.s || 0)) < b.rx && Math.abs((c.x - b.cx) * (b.s || 0) + (c.z - b.cz) * (b.c == null ? 1 : b.c)) < b.rz)).map(([c, i]) => i);
-    // the town's drawn people only: a resident steps out of her house when you come within 70, two a tick, so how many
-    // have appeared by the time this reads depends on the machine's speed (CI's slower runner saw two more in Dunmore)
-    const drawn = S.npcs.filter(n => n.sched?.type !== 'resident');
     return { kind: S.site.kind, n: L.length, ids: L.map(c => c.id), shaped: L.every((c, i) => c.id === id + ':barrel:' + i),
       filled: L.filter(c => c.items.length > 0).length, arms: L.filter(c => c.items.some(it => it.dmg != null || it.def != null || it.slot || it.type === 'weapon' || it.type === 'armor')).length,
       kinds: L.reduce((a, c) => (a[c.kind] = (a[c.kind] || 0) + 1, a), {}), close, houseIn,
-      people: drawn.map(n => n.def.name + '|' + (n.def.role || '') + '|' + (n.def.x ?? 0).toFixed(2) + ',' + (n.def.z ?? 0).toFixed(2)),
-      ph: drawn.reduce((h, n) => { for (const ch of n.def.name + '|' + (n.def.role || '') + ';') h = (h * 31 + ch.charCodeAt(0)) | 0; return h; }, 0) }; }, id);
+      people: S.npcs.map(n => n.def.name + '|' + (n.def.role || '') + '|' + (n.def.x ?? 0).toFixed(2) + ',' + (n.def.z ?? 0).toFixed(2)),
+      ph: S.npcs.filter(n => !S.residents.some(q => q.n === n)).map(n => n.def).concat(S.residents.map(q => q.def))
+        .reduce((h, d) => { for (const ch of d.name + '|' + (d.role || '') + ';') h = (h * 31 + ch.charCodeAt(0)) | 0; return h; }, 0) }; }, id);
   if (process.env.PROBE) { console.log('PROBE', id, r.kind, r.n, JSON.stringify(r.people)); continue; }
   const want = WANT[r.kind];
   check(`${id} (${r.kind}): ${r.n} barrels and crates, twice the old ${want / 2} (${JSON.stringify(r.kinds)})`, r.n === want, r);
@@ -36,8 +38,7 @@ for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droich
   check(`${id}: every one holds something (${r.filled}/${r.n}), none arms or armour (${r.arms})`, r.filled === r.n && r.arms === 0, r);
   const newIn = r.houseIn.filter(i => i >= want / 2), oldIn = r.houseIn.filter(i => i < want / 2);
   check(`${id}: none within .9 of another (${r.close.length}); none inside a building, of the new half (${newIn.length}) or the old (${oldIn.length})`, r.close.length === 0 && newIn.length === 0 && oldIn.length === 0, r);
-  if (r.ph === PEOPLE[id]) console.log(`  ok  ${id}: its people are the people drawn before the old half could step out of a wall (names and roles, hash ${r.ph})`);
-  else console.log(`${process.env.GITHUB_ACTIONS ? '::warning title=townbarrels people hash::' : '  WARN '}${id}: its people hash ${r.ph}, stored ${PEOPLE[id]} (a warning while the draw is unstable; backlog I)`);
+  check(`${id}: its people are the people it drew before (its townsfolk and residents, names and roles, hash ${r.ph})`, r.ph === PEOPLE[id], { ph: r.ph, want: PEOPLE[id] });
 }
 // the second half's loot is keyed like the first's: the key rolls the same again
 const k = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const c = S.loot[S.loot.length - 1]; const day = lootDay();
