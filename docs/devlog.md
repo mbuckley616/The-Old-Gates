@@ -17538,3 +17538,20 @@ Asked as **DECISION #306**, with three questions:
 - **The sail does not set:** it is one bellied shape, with no reefs or furling, and does not answer the wind. The game's sails trim by the wind (`85-world-sea.js`), and bringing this in keeps that.
 - **The harp is drawn in five strokes.** A painted emblem, worn and sun-faded, is a later pass.
 - **The other two islands:** the Mark's and Aurenne's hulls in the new kit follow on the same lines builder, after #306.
+
+## v80 — Session 859 — The Mark's hall gets its steps (card F6, prototype only; the critic's note)
+The critic's run of 14 Oct (Slack, on PR #304) found that *the Mark hall's door sits 0.8 m up with no step*. They were right. `markHall` stands every hall on a stone footing 0.8 m high, the door's sill at its top. The threshold was a slab 0.2 m deep at the sill's height with nothing below it, so the way in was a 0.8 m climb. With a porch it was worse: the porch's stone floor ran 2.15 m out at the same height and ended in the same drop.
+
+`pieces.js`, `markHall`: stone steps now go down from the sill to the ground. There are five rises of 0.16 m (the footing's height over five; v2-scope §2's stairs are 0.18 a rise), four steps on treads of 0.3 m below the threshold, each step 0.12 m wider than the one above. A hall without a porch keeps its threshold slab at the sill and the steps go down from it. With a porch, the porch's floor is the threshold and the steps go down from its front edge, clear of the porch's posts. The hall now returns `sill`, `front` and `stairOut`.
+
+`mark.check.mjs` has a new check that would have caught it. For each of the six test halls (shingle and both turfs, with and without a porch), a ray is cast down every 2 cm from 0.6 m beyond the stair's foot to the door's line. It reads the profile underfoot and asks that no rise is over 0.18 m and that the profile ends at the sill.
+### Verified (headless Chromium)
+- **`mark.check.mjs`: all pass.** Before the change the suite passed as it was. With the new check and the first fix, it failed on the three porch halls (a rise of 0.8 m, at the porch floor's edge); with the second, it passes.
+- **The door:** the highest rise on every hall is 0.16 m, and the profile ends at the 0.8 m sill.
+- **The suite's other checks** are unchanged: the turf textures, the lot rules (0 of 120 halls of note in turf), and 300 lots' halls in budget (720 to 1,792 triangles, at most 11 draws).
+- **Picture, retaken:** `mark-halls.jpg` shows the steps on all four halls.
+### Needs eyes
+- **No handrail.** Five steps with no rail is right for a farm hall. A hall of note might want carved posts at the foot of its steps.
+- **The critic's other two notes on the kit:**
+  - The cottage's half-door shows a wall, not a room. That is DECISION #303's question (the room inside the street's own shell).
+  - The Gatelands town storeys of 3.3 to 3.6 m break the foundation's 2.6 to 3.0 m. That is the next session.
