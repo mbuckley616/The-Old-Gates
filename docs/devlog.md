@@ -17941,3 +17941,42 @@ Session 857's `o.worked: false` took away the heap and the fresh pick marks but 
 ### Needs eyes
 - **How dark is dark.** Nothing beyond the torch's 14 m shows: from the landing you cannot see the gallery or the face. That is the answer as asked, but a fight on the gallery by torchlight wants a playtest.
 - **The torch is a light at the hand.** The held torch, its flame and its flicker are the bodies builder's and the game's (`10-player.js`). The prototype only places a light where one would be.
+
+## v80 — Session 862 — Card F8's second place: the Gatelands' round cairn with its passage (prototype only)
+Michael's 3 A on #305 named the next places that are not gates: the Gatelands' round cairn with its passage, then a limestone cave with a lake under falls, then a smugglers' lair. The FREEZE (#297) holds, so this is a prototype. I opened OG-121 again and read its row. The Gatelands' panel draws "round cairns", and the row's one flag that touches them is burial: §3.1 gives the dead to the gates, so a cairn is an older or a refused custom, and who lies in one is the quest writer's to settle. So the basins are built empty, and the carving on the stones is asked.
+
+`places.js` has a new `gatelandsCairn(o, r)`, built to the person:
+- **The mound:** a grassed dome 26 m across and 7 m high on a polar grid, with its foot 1 m up at the kerb's line. It is moved by one noise field keyed by the place (the mine's `field`). The turf is the Mark kit's moss sod made green, with its UVs taken from above, so the texture does not seam where the slope turns.
+- **The kerb:** 38 rounded boulders laid on edge round the foot, with a dry-stone wall behind them up to the mound.
+- **The facade and the door:** where the door is, the mound is held back by a dry-stone facade on a chord of the kerb, 8.4 m wide and 3.4 m high over the door, falling to the kerb at either end. The mound's grid is pulled onto the chord inside the facade's thickness, and only the door is cut from it. The door is 1.25 m wide under a lintel at 2.2 m. A long entrance stone, 3 by 1.2 m, lies 2.4 m before it, and the way in goes round its east end.
+- **The passage:** 10.3 m long, the floor rising 0.8 m toward the chamber. Upright slabs line both sides, each a little out of true, with dark dry-stone packing behind them. Lintels 0.95 m deep cross it, each set 2.2 m over the floor at its inner edge.
+- **The chamber:** cruciform. The middle is about 3.8 m across under a corbelled vault of eight courses of nine slabs, each course 0.36 m high and stepping in 0.2 m, with a capstone at 5.98 m. There are three recesses, east, west and back, each 1.5 m wide and 1.6 m deep under its own capstone at 2.3 m. Each recess holds a shallow oval basin of stone, empty.
+- **`o.carved`** (default true): three spirals and a vertical groove pecked into the entrance stone's face, a triple spiral on the back recess's end stone, and four lozenges up one slab of the passage. `&plain` builds the cairn bare.
+- **The light:** nothing burns inside. The view gives you the torch the worked-out mine has (Session 861).
+
+`places.html?place=cairn` has five views: `view=cairn` (default) from the approach; `door`, at the entrance stone; `passage`, by torch up to the chamber; `chamber`, from its mouth to the back recess; and `vault`, looking up into the corbelling. `places-view.js` hands `place=cairn` to the new `places-cairn-view.js`, and the mine's views are unchanged.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The mound was wound inward:** it drew black and see-through, with the vault showing through it.
+- **The mound's texture seamed** in zigzags where the world UVs changed axis on the slope.
+- **A sliver of sky over the facade:** the first cut took away every triangle pulled onto the chord, including those above the facade's top. Only the door's are cut now.
+- **The stones were cubes:** the kerb and the entrance stone are rounded boxes now, and the facade is rubble (the kit's cobble) rather than coursed blocks.
+- **Light at the recesses' corners:** 4 of 1,200 rays got out at the east recess's outer corners, where the packing behind two walls did not meet. The packing now runs 0.7 m past each end in the chamber, but not into the passage, where the first try narrowed the way to 0.52 m.
+
+Asked as **DECISION #309**: what is carved on its stones? A, spirals and lozenges (the islanders' own oldest marks, older than the gates' script; recommended); B, the Weavers' script, cut and unlit; C, bare.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 19 of 19 pass**, with eight new for the cairn:
+  - **The builds:** 3 keys, each the same twice. 43,884 triangles in 7 meshes, with 38 kerbstones, 7 m high.
+  - **The passage:** at 20 stations it is 1.25 m clear between the slabs at the hip (to 1.95 m where a ray finds the packing between two slabs), and the lintels are 2.16 to 2.28 m over the floor.
+  - **The walk:** 90 points every quarter metre from the approach, round the entrance stone, in at the door and up to the back recess's mouth. Every point has a floor on its line (0 to 0.023 m off), 2.14 m of headroom or more, and 0.63 m clear at the hip and the head.
+  - **Closed:** of 1,200 rays from four points inside (the chamber, the east recess, under the vault and the passage), none gets out except by the door. 0 to 2 leave by the door.
+  - **The basins:** 3, one in each recess, empty. The dish is 0.13 m over the floor at its middle.
+  - **The carving:** the spirals are there when carved, and there are none with `&plain`.
+  - **The pages:** the cairn and chamber views render with no page errors.
+- **Pictures, new:** `places-cairn-cairn.jpg`, `-door`, `-passage`, `-chamber` and `-vault`.
+### Needs eyes
+- **The mound reads green and smooth.** A real cairn shows stones through its turf where it has slumped. The sides near the kerb also stretch the turf texture, because it is projected from above.
+- **The triangles go to the kerb.** 38 rounded boulders hold about half the 43,884 triangles. In the game they want fewer segments, or one shared boulder in a few sizes.
+- **The slabs are boxes with a little noise.** Real orthostats are unshaped: thin, uneven slabs with rounded tops.
+- **No roof-box.** A slot over the door that lets the midwinter sunrise down the passage to the back recess would echo the trials' Noon Ring. It is not asked, and it is an idea for the quest writer before it is a build.
+- **Who lies here** is the quest writer's (OG-121's row, §3.1). The basins are empty until they say.

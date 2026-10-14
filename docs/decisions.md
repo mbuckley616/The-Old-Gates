@@ -3,6 +3,27 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Gatelands' round cairn: what is carved on its stones (look builder, Session 862) — DECISION #309
+**F8's second place: the Gatelands' round cairn (look builder, Session 862).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
+- **The mound:** a grassed mound of stones 26 m across and 7 m high, inside a kerb of 38 laid boulders. The door is in a dry-stone facade, and a long entrance stone lies before it.
+- **The passage:** 10.3 m of upright slabs either side, 1.25 m clear, under lintels 2.16 to 2.28 m over a floor that rises 0.8 m to the chamber.
+- **The chamber:** cruciform, with three recesses each holding an empty stone basin. It is roofed by a corbelled vault of eight courses, its capstone at 6 m.
+- **The light:** none inside. As with the worked-out mine (#305, 2 A), it is seen by your torch and by what day comes in at the door.
+
+The walk from the approach to the back recess has a floor under every quarter metre, at least 2.14 m of headroom and at least 0.63 m clear. No ray from inside gets out except by the door.
+
+**What is carved on its stones?** The canon gives the dead to the gates (§3.1), so a cairn is an older or a refused custom. Who lay in the basins is the quest writer's to settle, and the basins stay empty until they do. The carving says whose the cairn was, so it is yours.
+- **A. Spirals and lozenges, as drawn** *(recommended)*: the islanders' own oldest marks, cut before the gates' script was taught. The cairn reads as older than the Clearing, and as nothing to do with the Weavers.
+- **B. The Weavers' script, cut and unlit:** the cairn is a Weaver work. That ties it to "every sigil is carved over a grave", and it raises a story question the quest writer would have to answer.
+- **C. Bare stone** (`&plain`): the cairn says nothing about who built it.
+
+Pictures:
+- [from the approach](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-cairn.jpg)
+- [the door and the entrance stone](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-door.jpg)
+- [up the passage, by torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-passage.jpg)
+- [the chamber, the back recess and its basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-chamber.jpg)
+- [the corbelled vault](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-vault.jpg)
+
 ### The Gatelands sloop in the new kit: square sail or the game's rig, the harp, tiller or wheel (look builder, Session 858) — DECISION #306
 **F11 begun: the Gatelands sloop in the new kit (look builder, Session 858).** It is a prototype in `docs/prototypes/levelup/ships.js` and `ships.html`, from OG-004's Gatelands line ("clinker hulls, green sails with the harp, square rig"). It is built at the game's own sloop's size: 13 by 4.4 m, with the deck 1.0 m over the sea.
 - **The hull:** clinker-built, ten strakes a side, each strake lapped 2.5 to 3.3 cm outside the one below. She is tarred below the water and oiled oak above, with a green sheer strake under a cream wale. Her stem and sternpost are raked, and her sheer rises to both ends.

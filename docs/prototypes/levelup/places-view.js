@@ -8,6 +8,9 @@ import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, run } from '
 import { markMine } from './places.js';
 import { stream } from './pieces.js';
 
+// ?place=cairn (Session 862): the Gatelands' round cairn, places-cairn-view.js
+if ((Q.get('place') || 'mine') === 'cairn') await import('./places-cairn-view.js');
+else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);
 const cam = new THREE.PerspectiveCamera(62, W / H, .02, 400);
@@ -31,3 +34,4 @@ cam.updateProjectionMatrix();
 scene.traverse(o => { if (o.userData && o.userData.torch) { const rgt = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion), fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion); o.position.copy(cam.position).addScaledVector(rgt, .35).addScaledVector(fwd, .3).add(new THREE.Vector3(0, -.25, 0)); } });
 STATS.place = { view: VIEW, tris: M.tris, draws: M.draws, lamps: M.lamps.length, torch: !M.worked };
 run(makeComposer(R, scene, cam, { bloom: .2, sat: 1.0, vig: .4 }), cam);
+}
