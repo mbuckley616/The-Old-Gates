@@ -897,3 +897,52 @@ Object.assign(PLANS, {
 });
 // the common set, for the page and the check
 export const COMMON = ['wolf', 'redfox', 'brownhare', 'raven', 'crow', 'boar', 'deer', 'badger', 'otter', 'trout'];
+// ── Session 844: livestock (backlog L3; OG-023 and OG-035, the farms): the cow, the sheep, the goat and the hen ──
+Object.assign(PLANS, {
+  cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6,
+    palette: { coat: [.48, .3, .18], saddle: [.36, .21, .12], belly: [.86, .82, .74], dark: [.07, .05, .05], hoof: [.12, .1, .08], horn: [.86, .82, .72], skin: [.78, .55, .5] },
+    fur: { len: .012, layers: 6, sx: 300 },
+    parts: [
+      ['spine', { hip: [1.3, -.72], chest: [1.32, .58], n: 4, r: [.36, .42, .38], s: [.9, 1.15], rump: .24, rumpDrop: .02, front: .22, frontDrop: .12 }],
+      ['neck', { len: .4, n: 2, rise: 10, r: [.3, .2], s: [.8, 1.25], fwd: .02 }],
+      ['head', { len: .56, r: .14, pitch: 48, s: [.95, 1, 1], muzzle: { len: 1, r: .1, nose: 1, taper: .9 }, jaw: { len: .85, r: .07, drop: .5 }, eyes: [{ f: .34, up: .45, out: .78, r: .02, color: [.06, .04, .03] }], ears: { kind: 'leaf', size: .08, f: .22, up: .5, out: 1.05, back: 70, splay: 85 },
+        horns: { len: .2, r: .024, f: .12, up: .95, out: .65, turn: .45, rise: .5, spread: .8, back: .1, out0: .3 } }],
+      ['tail', { len: .75, n: 3, r: [.07, .045], droop: 85 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .2, drop: .18, r: [.16, .09, .055, .06] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .2, drop: .1, r: [.2, .1, .055, .06] }]
+    ] },
+  sheep: { name: 'Sheep', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .9, wag: .04, fold: .6, rough: .9,
+    palette: { coat: [.86, .82, .72], saddle: [.8, .76, .66], belly: [.78, .74, .64], dark: [.1, .08, .07], hoof: [.1, .08, .07], skin: [.2, .17, .15] },
+    fur: { len: .07, layers: 11, sx: 90, sy: 40, droop: .15 },
+    parts: [
+      ['spine', { hip: [.62, -.38], chest: [.64, .32], n: 4, r: [.22, .25, .22], s: [1, 1.05], rump: .16, front: .12 }],
+      ['neck', { len: .2, n: 2, rise: 30, r: [.16, .1], fwd: .02 }],
+      ['head', { len: .26, r: .07, pitch: 40, tone: 'skin', muzzle: { len: 1, r: .045, nose: 1, taper: .8 }, eyes: [{ f: .4, up: .4, out: .75, r: .011, color: [.6, .5, .2] }], ears: { kind: 'leaf', size: .055, f: .2, up: .55, out: 1, back: 75, splay: 85, tone: 'skin' } }],
+      ['tail', { len: .2, n: 2, r: [.05, .035], droop: 80 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .1, drop: .1, r: [.08, .035, .022, .024] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .1, drop: .06, r: [.1, .04, .022, .024] }]
+    ] },
+  goat: { name: 'Goat', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'gallop', 'stand'], speedK: 1, wag: .1, neckNod: .06, rough: .6,
+    palette: { coat: [.6, .54, .46], saddle: [.4, .34, .28], belly: [.84, .8, .72], dark: [.08, .07, .06], hoof: [.12, .1, .08], horn: [.42, .38, .32] },
+    fur: { len: .03, layers: 8, sx: 160, droop: .4 },
+    parts: [
+      ['spine', { hip: [.62, -.36], chest: [.66, .3], n: 4, r: [.16, .18, .17], s: [.82, 1.12], rump: .1, rumpDrop: .03, front: .1, frontDrop: .05 }],
+      ['neck', { len: .26, n: 2, rise: 48, r: [.12, .08], fwd: .02 }],
+      ['head', { len: .27, r: .07, pitch: 38, muzzle: { len: 1, r: .04, nose: 1, taper: .75 }, jaw: { len: .85, r: .028, drop: .55 }, eyes: [{ f: .4, up: .45, out: .72, r: .012, color: [.75, .6, .2] }], ears: { kind: 'leaf', size: .06, f: .2, up: .55, out: .95, back: 50, splay: 75 },
+        horns: { len: .17, r: .026, f: .15, up: 1, out: .4, turn: .5, rise: .8, spread: .4, back: .8, out0: .15 } }],
+      ['tail', { len: .1, n: 1, r: [.03, .02], droop: -35 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .08, drop: .08, r: [.07, .032, .02, .022] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .08, drop: .05, r: [.09, .036, .02, .022] }]
+    ] },
+  hen: { name: 'Hen', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: 1.1, neckNod: .14, fold: 1.1, wag: .02,
+    palette: { coat: [.6, .36, .18], saddle: [.42, .22, .1], belly: [.7, .46, .26], dark: [.06, .05, .04], skin: [.88, .72, .3], horn: [.86, .72, .36], comb: [.78, .1, .08] },
+    fur: { len: .025, layers: 8, sx: 120, sy: 50, droop: .5 },
+    parts: [
+      ['spine', { hip: [.26, -.08], chest: [.28, .08], n: 3, r: [.085, .1, .085], s: [.85, 1.05], rump: .07, rumpDrop: -.05, front: .05, frontDrop: .01 }],
+      ['neck', { len: .12, n: 2, rise: 75, curve: -30, r: [.05, .03], fwd: -.01 }],
+      ['head', { len: .07, r: .028, pitch: 5, eyes: [{ f: .45, up: .3, out: .7, r: .006, color: [.85, .5, .1] }], beak: { len: .03, r: .01, up: -.1, hook: .3 }, ears: { kind: 'leaf', size: .022, f: .35, up: 1.05, out: .12, back: -10, splay: 0, tone: 'comb' } }],
+      ['tail', { len: .12, n: 2, r: [.05, .03], droop: -55 }],
+      ['legs', { at: .38, kind: 'bird', out: .04, drop: .05, r: [.032, .012, .008, .006], claws: { r: .003, len: .012 } }]
+    ] }
+});
+export const LIVESTOCK = ['cow', 'sheep', 'goat', 'hen'];

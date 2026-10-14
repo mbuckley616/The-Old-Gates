@@ -17073,3 +17073,23 @@ Each plan names its source in OG-084 (and OG-009 or OG-014 where they draw the s
 - **The wolf reads olive** under the bestiary's grey sky. Its palette is grey-brown and may want to be greyer.
 - **"Recoloured by island"** (L3's wording) is not done. Each animal has one palette. The genome's tint shifts it, but no island's palette is written yet.
 - **None of them is in the game.** That waits for F4 to merge, then the wolves move over first (B5).
+
+## v80 — Session 844 — Livestock: the cow, the sheep, the goat and the hen (backlog L3, prototype only)
+L3's livestock item asks for chickens, goats, sheep, cows and bees on farms and in fields, from the two kept farm sheets, OG-023 and OG-035. The four with skeletons are now plans in `creatures.js` (exported as `LIVESTOCK`), made from the kit's parts with no new code:
+- **The cow:** a deep barrel of a body (spine radii 0.36 to 0.42 m) on ungulate legs, with a heavy neck. Its long head is carried low, with ears out sideways, short horns curving up and out, and a long tail with a tuft's weight. It is red-brown with a pale belly. A first try used the kit's stripes for patches and they came out as wavy bands, so the cow is plain until the kit has a patch pattern.
+- **The sheep:** a round body under a fleece 7 cm deep (11 shells of fur), with a bare dark face and ears out sideways, thin legs and a short tail.
+- **The goat:** a lighter, high-shouldered body with a rough coat. Its horns sweep back (shortened after the first picture, where they read as a single spike), its tail is cocked up, and it gallops.
+- **The hen:** the Stormplume's shape at a chicken's size. It has a round chest, a short S-curved neck, a small hooked beak, a red comb (the kit's ear bit, in the palette's new comb colour, set close to the middle), a cocked tail and yellow legs. It walks with the neck nodding.
+
+The cow came out at 125,000 triangles at first, from its thin tail, as the boar did in Session 843. A thicker tail brought it to 31,444. The grid is sized to the thinnest part, so a plan should keep its tail and legs above about 3 cm.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 296 checks pass**, with one new check that the livestock are four plans, each from the farm sheets.
+  - Each builds in 0.26 to 0.53 s, with 18 to 31 bones and 26,680 to 45,116 triangles.
+  - Every foot reaches its target through every gait, and the feet are down for about each gait's duty: the hen's walk 0.69 of 0.68, the cow's 0.54 of 0.68.
+  - Every genome is about 150 bytes.
+- **Speeds:** the cow walks at 1.2 m/s, the sheep at 0.96, the goat gallops at 3.9 and the hen walks at 0.77.
+- **Pictures:** `creatures-cow.jpg`, `-sheep`, `-goat`, `-hen`, `creatures-livestock.jpg` (the four on one sheet), and `creatures-line.jpg` (37 plans), shot again.
+### Needs eyes
+- **The cow's head** hangs low and long, so in profile it is a little tapir-like. Its horns barely show from the side.
+- **No patches or breeds.** A pied cow, a black-faced sheep, and breeds by island (the Mark's shaggy cattle and goats, Aurenne's) are patterns and palettes still to write.
+- **The bees** are not skeletal, so they are not this kit's.
