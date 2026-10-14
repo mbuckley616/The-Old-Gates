@@ -418,23 +418,24 @@ export const SLIDERS = { size: [.5, 3], leg: [.6, 1.6], bulk: [.7, 1.4], neck: [
 export function genome(plan, key, over = {}) {
   const seed = typeof key === 'number' ? key : hashKey(key), r = rng(seed), P0 = PLANS[plan], spread = P0.spread ?? .06;
   const sliders = {}, q = v => Math.round(v * 1000) / 1000; for (const k in SLIDERS) sliders[k] = q(1 + (r() - .5) * 2 * spread * (k === 'size' ? 1.5 : 1));
-  return { plan, seed, sliders: { ...sliders, ...(over.sliders || {}) }, tint: over.tint ?? q((r() - .5) * .1), light: over.light ?? q((r() - .5) * .14) };
+  const g = { plan, seed, sliders: { ...sliders, ...(over.sliders || {}) }, tint: over.tint ?? q((r() - .5) * .1), light: over.light ?? q((r() - .5) * .14) };
+  if (ISLES.includes(over.island)) g.island = over.island; return g;
 }
 // the saved genome (Session 807, B5): the envelope a person's has (people.js, toSaved), so one page and one loader (kit.js)
 // take both. A hand-edited genome is held to the sliders' ranges; a slider the kit does not know is dropped.
 const q3 = v => Math.round(v * 1000) / 1000;
-export function toSaved(g) { return { species: 'creature', v: 1, plan: g.plan, seed: g.seed, sliders: Object.fromEntries(Object.keys(SLIDERS).map(k => [k, q3(g.sliders?.[k] ?? 1)])), tint: q3(g.tint || 0), light: q3(g.light || 0) }; }
+export function toSaved(g) { return { species: 'creature', v: 1, plan: g.plan, seed: g.seed, sliders: Object.fromEntries(Object.keys(SLIDERS).map(k => [k, q3(g.sliders?.[k] ?? 1)])), tint: q3(g.tint || 0), light: q3(g.light || 0), ...(g.island ? { island: g.island } : {}) }; }
 export function fromSaved(J) {
   if (!J || J.species !== 'creature') throw new Error('not a creature genome'); if (J.v !== 1) throw new Error('creature genome version ' + J.v + ', the kit reads 1');
   if (!PLANS[J.plan]) throw new Error('no body plan called ' + J.plan); const g = genome(J.plan, J.seed ?? J.plan);
   for (const [k, [lo, hi]] of Object.entries(SLIDERS)) if (typeof J.sliders?.[k] === 'number') g.sliders[k] = q3(Math.max(lo, Math.min(hi, J.sliders[k])));
-  for (const k of ['tint', 'light']) if (typeof J[k] === 'number') g[k] = q3(Math.max(-.5, Math.min(.5, J[k]))); return g;
+  for (const k of ['tint', 'light']) if (typeof J[k] === 'number') g[k] = q3(Math.max(-.5, Math.min(.5, J[k]))); if (ISLES.includes(J.island)) g.island = J.island; return g;
 }
 
 // ── build: run the plan's parts, grow the flesh, bind it to the skeleton ──
 export function build(g) {
   const plan = PLANS[g.plan], t0 = performance.now(), pal = {};
-  for (const [k, c] of Object.entries(plan.palette)) { const C = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), hsl = {}; C.getHSL(hsl); C.setHSL((hsl.h + g.tint + 1) % 1, hsl.s, Math.max(0, Math.min(1, hsl.l * (1 + g.light)))); pal[k] = C; }
+  for (const [k, c] of Object.entries({ ...plan.palette, ...(COATS[g.island]?.[g.plan] || {}) })) { const C = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), hsl = {}; C.getHSL(hsl); C.setHSL((hsl.h + g.tint + 1) % 1, hsl.s, Math.max(0, Math.min(1, hsl.l * (1 + g.light)))); pal[k] = C; }
   const sg = { ...g, sliders: { ...g.sliders, size: 1 } }; // parts build at size 1; the size slider scales the finished body
   const B = new Body(plan, sg); B.tone = t => pal[t] || pal.coat;
   for (const [part, o] of plan.parts) P[part](B, o);
@@ -940,6 +941,32 @@ Object.assign(PLANS, {
 });
 // the common set, for the page and the check
 export const COMMON = ['wolf', 'redfox', 'brownhare', 'raven', 'crow', 'boar', 'deer', 'badger', 'otter', 'trout'];
+// the common set by island (Session 865; OG-084: "the shared base set that can be built once and recoloured"). A genome may
+// carry an island; its plan's palette then takes that island's coat over the plan's own. The plans are the Gatelands' (the
+// temperate middle); the Mark's coats run colder, greyer and paler, Aurenne's sandier and warmer, as animals' do with
+// climate. Only the coat changes: the same bones, the same flesh. The raven is black on every island.
+export const ISLES = ['gatelands', 'mark', 'aurenne'];
+export const COATS = {
+  mark: {
+    wolf: { coat: [.62, .6, .56], saddle: [.36, .35, .33], belly: [.9, .88, .84] },
+    redfox: { coat: [.7, .4, .22], saddle: [.32, .24, .2], belly: [.96, .94, .9] },
+    brownhare: { coat: [.62, .58, .52], saddle: [.48, .44, .38], belly: [.94, .92, .88] },
+    crow: { coat: [.48, .48, .5], belly: [.56, .56, .58], covert: [.45, .45, .48] },
+    boar: { coat: [.24, .22, .2], saddle: [.13, .12, .11], belly: [.34, .31, .28] },
+    deer: { coat: [.5, .42, .34], saddle: [.36, .3, .24], belly: [.88, .86, .8] },
+    badger: { coat: [.58, .57, .56], saddle: [.44, .43, .42] },
+    otter: { coat: [.24, .18, .13], saddle: [.17, .12, .09], belly: [.5, .44, .36] },
+    trout: { coat: [.5, .54, .52], saddle: [.24, .3, .32], belly: [.94, .94, .92], fin: [.4, .42, .4] } },
+  aurenne: {
+    wolf: { coat: [.64, .56, .46], saddle: [.42, .34, .26], belly: [.9, .86, .78] },
+    redfox: { coat: [.84, .62, .38], saddle: [.68, .48, .28], belly: [.97, .94, .88] },
+    brownhare: { coat: [.74, .62, .46], saddle: [.58, .46, .32], belly: [.94, .9, .82] },
+    crow: { coat: [.34, .22, .14], belly: [.36, .24, .16], covert: [.36, .25, .16], feather: [.16, .12, .1] },
+    boar: { coat: [.46, .36, .26], saddle: [.3, .22, .16], belly: [.56, .46, .36] },
+    deer: { coat: [.64, .5, .36], saddle: [.5, .38, .26], belly: [.94, .9, .82] },
+    badger: { coat: [.66, .64, .6], saddle: [.52, .5, .47] },
+    otter: { coat: [.42, .3, .2], saddle: [.32, .22, .14], belly: [.72, .62, .48] },
+    trout: { coat: [.64, .56, .32], saddle: [.42, .36, .18], belly: [.94, .88, .66], fin: [.54, .46, .28] } } };
 // ── Session 844: livestock (backlog L3; OG-023 and OG-035, the farms): the cow, the sheep, the goat and the hen ──
 Object.assign(PLANS, {
   cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6, pattern: { kind: 'patches', size: .32, cut: .12, tone: 'pale' },

@@ -17372,3 +17372,26 @@ No other plan sets either field, so nothing else changes.
 - **The wings are plain glass.** They have no veins, and the crystal is only the tint's facets. OG-030's wings "resonate with ambient magic", which a faint glow at night could carry; the kit's glow is for flesh, not sheets.
 - **In flight its legs hang** rather than fold, which is right for a moth but reads long in the close picture.
 - **The antennae are thin tapered horns,** not a moth's feathered ones.
+
+## v80 — Session 865 — The common set by island: one body, three coats (backlog L3, prototype only)
+OG-084 calls its ten animals of all islands "the shared base set that can be built once and recoloured". Session 843 built them once, and the recolouring was owed. It is prototype only, under FREEZE #297.
+
+**How.** A creature's genome may now carry an `island` (`gatelands`, `mark` or `aurenne`). When it does, the plan's palette takes that island's coat from `COATS` in `creatures.js` over its own. The bones and the flesh are the same. The ten plans are the Gatelands' coats, the temperate middle. The Mark's run colder, greyer and paler, and Aurenne's sandier and warmer, as animals' coats do with climate:
+- **The Mark:** a grey-white wolf; a cross fox with a dark saddle; a grey mountain hare; the hooded crow, grey-bodied with black wings; a near-black boar; a greyer deer, badger and otter; a silver sea-run trout.
+- **Aurenne:** a sandy, jackal-pale wolf; a pale sand-red fox; a sandy hare; a brown-necked crow; a paler boar and deer; a pale grey badger; a lighter otter; a golden trout.
+- **The raven** is black on every island and has no entry.
+
+**The saved genome.** `toSaved` writes the island only when a genome has one, so every saved genome before this reads and writes as it did. `fromSaved` takes the island back if it is one of the three and drops anything else.
+
+**The bestiary** reads `?isle=` in both its views. The check's `--sheet` now carries `--q` into the line shot, and a new `--sheet-only` skips the single shots.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 837 checks pass**, 21 of them new.
+  - Each common animal built for the Mark and for Aurenne has the same number of bones as its Gatelands build.
+  - Each recoloured one's mean vertex colour moved by 0.026 (the Markish boar, darker on dark) to 0.246 (the Markish wolf).
+  - The raven moved 0.
+  - The island survives `toSaved` → JSON → `fromSaved`. A genome with no island, or with `atlantis`, carries none.
+- **The crow:** the first Aurennais crow moved only 0.012, because its black flight feathers are sheets and the check reads the flesh. Its body was browned until it moved 0.053.
+- **Pictures:** `creatures-common-mark.jpg` and `creatures-common-aurenne.jpg`, the ten in a line beside the figure, against Session 843's `creatures-common.jpg`. The first Aurenne sheet had a bright orange deer and a yellow-green wolf, and both were toned down.
+### Needs eyes
+- **The line's per-animal hue jitter** (each genome's `tint`, ±0.05) still pulls the Aurennais deer toward red and the wolf toward olive, as it pulled the Gatelands' wolf olive in Session 843.
+- **Coat is all that changes.** A northern hare would also be bigger with shorter ears, and a desert fox would have larger ears. Those are slider changes the island could carry later.

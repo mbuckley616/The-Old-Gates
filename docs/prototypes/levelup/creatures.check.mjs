@@ -57,6 +57,19 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const bur = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.BURDEN || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the beasts of burden: nine, each a plan from OG-046 or OG-077 (${bur.length})`, bur.length === 9 && bur.every(c => c.ok && /OG-0(46|77)/.test(c.src)), bur.filter(c => !c.ok || !/OG-0(46|77)/.test(c.src)));
   check(`the livestock: four animals, each a plan from the farm sheets (${stock.map(c => c.k).join(', ')})`, stock.length === 4 && stock.every(c => c.ok && /OG-0(23|35)/.test(c.src)), stock);
+  // the common set by island (Session 865): each island's coat differs from the Gatelands' on the same bones, and the
+  // island survives the saved genome
+  const isl = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    const mean = C => { const col = C.meshes[0].geometry.attributes.color; let r = 0, g = 0, b = 0; for (let v = 0; v < col.count; v++) { r += col.getX(v); g += col.getY(v); b += col.getZ(v); } return [r / col.count, g / col.count, b / col.count]; };
+    for (const plan of K.COMMON) { const base = K.build(K.genome(plan, plan + ':isle')), m0 = mean(base); out[plan] = { bones: base.stats.bones };
+      for (const isle of ['mark', 'aurenne']) { const C = K.build(K.genome(plan, plan + ':isle', { island: isle })), m = mean(C);
+        out[plan][isle] = { d: +Math.hypot(m[0] - m0[0], m[1] - m0[1], m[2] - m0[2]).toFixed(3), sameBones: C.stats.bones === base.stats.bones, recoloured: !!K.COATS[isle][plan] }; } }
+    const g = K.genome('wolf', 'wolf:isle', { island: 'mark' }), back = K.fromSaved(JSON.parse(JSON.stringify(K.toSaved(g))));
+    out.saved = { island: back.island, none: K.toSaved(K.genome('wolf', 'w')).island === undefined, bad: K.genome('wolf', 'w', { island: 'atlantis' }).island === undefined };
+    return out; });
+  for (const plan of await page.evaluate(async () => (await import('./creatures.js')).COMMON)) for (const isle of ['mark', 'aurenne']) { const q = isl[plan][isle];
+    check(`${plan} on ${isle === 'mark' ? 'the Mark' : 'Aurenne'}: ${q.recoloured ? 'a coat of its own' : 'the same coat'} on the same bones (mean colour moved ${q.d})`, q.sameBones && (q.recoloured ? q.d > .015 : q.d < .002), q); }
+  check(`a creature's island survives the saved genome, and a genome with none or an unknown one carries none`, isl.saved.island === 'mark' && isl.saved.none && isl.saved.bad, isl.saved);
   check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 if (process.argv.includes('--shots')) {
@@ -67,8 +80,9 @@ if (process.argv.includes('--shots')) {
   const list = (arg('plans') || '').split(',').filter(Boolean);
   if (!list.length || process.argv.includes('--line')) await shot('line', 'view=line', 2400, 800);
   // --sheet=NAME (Session 853): the listed plans side by side on the ruled floor, as creatures-NAME.jpg
-  if (arg('sheet') && list.length) await shot(arg('sheet'), 'view=line&plans=' + list.join(','), 2400, 800);
   const xq = arg('q') ? '&' + arg('q') : '', tag = arg('tag') ? '-' + arg('tag') : '';
+  if (arg('sheet') && list.length) await shot(arg('sheet'), 'view=line&plans=' + list.join(',') + xq, 2400, 800);
+  if (process.argv.includes('--sheet-only')) list.length = 0;
   for (const plan of list) { await shot(plan + tag, `view=one&plan=${plan}${xq}`, 1280, 720); if (process.argv.includes('--bones')) await shot(plan + tag + '-bones', `view=one&plan=${plan}&bones${xq}`, 1280, 720); }
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);
