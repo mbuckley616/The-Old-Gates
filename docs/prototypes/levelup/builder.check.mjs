@@ -55,6 +55,8 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: builds (${s.strands} strands, ${s.tris} triangles, ${s.ms} ms)`, s.strands > 500 && s.tris > 10000);
     check(`${k}: no strand under the skin (${s.inside} of ${s.points} points)`, s.inside <= s.points * .002, s.inside);
     check(`${k}: no strand on the face (${s.onFace} points)`, s.onFace <= s.points * .002, s.onFace);
+    // Session 875: the strands rooted at the front hairline are finer than those behind it, so the hair thins onto the brow
+    check(`${k}: the hairline thins (${s.hairline.edge} strands within 0.75 cm of it at ${s.hairline.ratio} of the width behind)`, s.hairline.edge > 20 && s.hairline.ratio < .7, s.hairline);
     // Session 874: no seam of bare scalp down the back of the head (two braids part there, as they should)
     if (k.split('+')[0] !== 'braids') check(`${k}: no bare seam down the back of the head (${Math.round(s.seam * s.seamN)} of ${s.seamN} midline points with no strand over them)`, s.seamN > 40 && s.seam <= .02, s.seam);
     if (s.gather && k.split('+')[0] !== 'bun') check(`${k}: the braid or tail clears the body by its clothes (${(s.drapeMin * 100).toFixed(1)} cm)`, s.drapeMin > .015, s.drapeMin); }

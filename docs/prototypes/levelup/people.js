@@ -79,11 +79,13 @@ function shellMat(color, layer, layers, o = {}) {
   m.onBeforeCompile = s => {
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vB = aBase;');
     s.fragmentShader = 'varying vec3 vB; varying vec3 vRP;\nfloat hh(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }\nfloat nz(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f); return mix(mix(mix(hh(i), hh(i + vec3(1,0,0)), f.x), mix(hh(i + vec3(0,1,0)), hh(i + vec3(1,1,0)), f.x), f.y), mix(mix(hh(i + vec3(0,0,1)), hh(i + vec3(1,0,1)), f.x), mix(hh(i + vec3(0,1,1)), hh(i + vec3(1,1,1)), f.x), f.y), f.z); }\n'
-      + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `${o.hairline ? 'if (vB.z > .05 && vB.y < .8 - .03 * pow(vB.x / .075, 2.) + (fract(sin(vB.x * 517.) * 431.) - .5) * .004) discard;' : ''} float L = ${(layer / layers).toFixed(3)};
+      + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', `float hl = 1.; ${o.hairline ? 'if (vB.z > .05) { float e = vB.y - (.8 - .03 * pow(vB.x / .075, 2.) + (nz(vB * vec3(140., 60., 140.)) - .5) * .009); if (e < 0.) discard; hl = smoothstep(0., .014, e); }' : ''} float L = ${(layer / layers).toFixed(3)};
         vec3 q = vRP * vec3(${o.sx ?? 380}., ${o.sy ?? 90}., ${o.sx ?? 380}.); float strand = nz(q) * .7 + nz(q * 2.3) * .3;
         float keep = ${o.solid ? '1.' : 'step(L * .85 + .1, strand)'};
-        vec4 diffuseColor = vec4(diffuse * (.42 + .75 * L) * (.85 + .3 * strand), keep);`); };
-  m.customProgramCacheKey = () => 'shell' + layer + '/' + layers + JSON.stringify(o);
+        vec4 diffuseColor = vec4(diffuse * (.42 + .75 * L) * (.85 + .3 * strand), keep);${o.skin ? '\n        diffuseColor.rgb = mix(skinC, diffuseColor.rgb, hl);' : ''}`);
+    // the hairline's fade (Session 875): from the skin's own colour at the edge to the shell's over 1.4 cm, so the roots read as a shadow
+    if (o.skin) { s.uniforms.skinC = { value: o.skin }; s.fragmentShader = 'uniform vec3 skinC;\n' + s.fragmentShader; } };
+  m.customProgramCacheKey = () => 'shell' + layer + '/' + layers + JSON.stringify({ ...o, skin: !!o.skin });
   return m;
 }
 function skinMat(c) {
@@ -246,7 +248,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
   // the strands over the head
   const area = [], A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(); let tot = 0;
   for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); tot += B.clone().sub(A).cross(C.clone().sub(A)).length() / 2; area.push(tot); }
-  const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : 1700, step = .009, thick = short ? .006 : .011;
+  let edgeN = 0, edgeW = 0, backN = 0, backW = 0; const strands = [], short = style === 'short', free = style === 'loose', L = short ? .05 + .1 * len : free ? .12 + .5 * len : .5, nS = short ? 1400 : free ? 2200 : 1700, step = .009, thick = short ? .006 : .011;
   for (let k = 0; k < nS; k++) {
     let r = rnd() * tot, lo = 0, hi = area.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (area[m] < r) lo = m + 1; else hi = m; } const t = lo * 3;
     A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3); let u = rnd(), v = rnd(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
@@ -256,6 +258,10 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
     // the parting (Session 874): only the strands rooted forward of the crown split to either side; behind it the side pull
     // grows smoothly from nothing at the midline, so no seam of bare scalp runs down the back of the head
     const sx = Math.max(-1, Math.min(1, (p.x - hc.x) / hr.x)), fore = Math.max(0, Math.min(1, (p.z - hc.z + .02) / .06)), sideW = .45 * (fore * side + (1 - fore) * sx);
+    // the front hairline (Session 875): a strand rooted within 1.5 cm of it is finer, down to a third of the width at the edge,
+    // so the hair thins out onto the brow instead of starting at full width on one line
+    const r0 = new THREE.Vector3().fromArray(R0, scalpTris[t] * 3).multiplyScalar(1 - u - v).addScaledVector(new THREE.Vector3().fromArray(R0, scalpTris[t + 1] * 3), u).addScaledVector(new THREE.Vector3().fromArray(R0, scalpTris[t + 2] * 3), v);
+    const eF = r0.z > .04 ? Math.max(0, Math.min(1, (r0.y - (.796 - .03 * (r0.x / .075) ** 2)) / .015)) : 1, fine = .35 + .65 * eF * eF * (3 - 2 * eF);
     const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = L * (free ? (.7 + .45 * rnd()) * (1 - .22 * sx * sx) : .75 + .4 * rnd()), relY = free ? hc.y - .03 - .035 * rnd() : 0; let fell = -1, under = false, nRel = null;
     for (let l = 0; l < myL + (g ? 1 : 0); l += step) {
       let want;
@@ -281,7 +287,8 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
     // what fell is smoothed, so the push-outs over the shoulders and the mantle leave a curve and not a stepped shelf, then cleared once more
     if (fell > 0) { for (let it = 0; it < 8; it++) for (let i = fell + 1; i < pts.length - 1; i++) pts[i].lerp(pts[i - 1].clone().add(pts[i + 1]).multiplyScalar(.5), .5);
       for (const q3 of pts.slice(fell + 1)) { const h3 = heightOver(S, q3), c = (onHead(q3) ? 0 : clearAt(q3)) + off; if (h3 && h3.h < c) q3.addScaledVector(h3.e.n, c - h3.h); } }
-    strands.push({ pts, ns, w: (short ? .008 : free ? .008 : .011) * (.8 + .4 * rnd()), tip: free ? .85 : .5, v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) });
+    if (r0.z > .04) { if (eF < .5) { edgeN++; edgeW += fine; } else if (eF >= 1) { backN++; backW += fine; } }
+    strands.push({ pts, ns, w: (short ? .008 : free ? .008 : .011) * (.8 + .4 * rnd()) * fine, tip: free ? .85 : .5, v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) });
   }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   let inside = 0, onFace = 0, pts = 0; for (const st of strands) for (const q of st.pts) { pts++; const hit = heightOver(S, q); if (!hit) continue; if (hit.h < -.001) inside++;
@@ -325,7 +332,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
         brush.push({ pts, ns, w: .007, v0: .5, v1: 1 }); }
       const bm = strandCards(brush, col, headB); bm.name = 'brush'; out.push(bm); }
   }
-  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, points: pts, inside, onFace, drapeMin: +drapeMin.toFixed(4), seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN } };
+  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, points: pts, inside, onFace, drapeMin: +drapeMin.toFixed(4), seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN, hairline: { edge: edgeN, ratio: +((edgeW / Math.max(1, edgeN)) / (backW / Math.max(1, backN))).toFixed(3) } } };
 }
 
 // ── the cloak (Session 805, B2): cloth hung from the shoulders ──
@@ -685,7 +692,7 @@ export function makePerson(G, o = {}) {
   if (D.mantle) for (let k = 0; k < 11; k++) push('mantle' + k, PACK.R.mantle, shellMat(sRGB(...D.mantle), k, 11, { sx: 260, sy: 70, solid: k === 0 }), .036 + k * .0055);
   // hair: cards rooted on the hair shell (off the face), a layer of shell underneath so no scalp shows; brows; beard and moustache as short cards
   if (G.hairCol) { const scalp = PACK.R.scalpRoots;
-    push('scalp', scalp, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true }), .0025);
+    push('scalp', scalp, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true, skin: sRGB(...G.skin) }), .0025);
     const headB = ix.bones.findIndex(b => b.name === 'head'), bb = new THREE.Box3(); for (const v of scalp) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.004); hc.y -= .02; hr.y += .02;
     const tuck = D.cloak && D.hood === 'up' ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
     // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline

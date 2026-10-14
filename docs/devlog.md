@@ -17458,3 +17458,23 @@ What changed in `buildHair`:
 - **The hairline** is still a hard edge, set high, and every style reads slicked back. The front of the scalp wants finer, shorter strands thinning out at the edge. That is the next refinement on #272's note, and with the brows ("still fugly"), the one that matters most at conversation distance.
 - **Loose ends** are still visible cards at the hem: the tips taper, but each strand is one flat card. Clumping strands into locks near the ends would read softer.
 - **Hair over the fur mantle**: the tuck is a choice, not a law. Hair worn out over the fur would need the fur's outer surface in the push-off map, as the cloak's map holds the skirt.
+
+## v80 — Session 875 — A hairline that thins onto the brow (B1, Michael's note on #272, prototype only)
+The second part of #272's note ("some of the hairstyles aren't quite landing"). Session 874's entry left the hairline owed. Seen from the front, every style started on a hard painted edge. The dark under-shell that keeps the scalp from showing through the strands was cut on one curve across the forehead, with ±2 mm of jitter. The strands rooted on that line were already full width. So each head wore a cap with a ruled brim. This is still under FREEZE #297, so it touches only the prototypes.
+
+What changed in `people.js`:
+- **The under-shell fades into the skin.** Over the forehead, the shell now runs from the skin's own colour at its edge to its full colour 1.4 cm in. The skin's colour reaches the shader as a uniform (`skinC`), so one program serves every person. The edge itself wanders with a low noise of ±4.5 mm, so the line is not one curve.
+  - A first try thinned the shell by discarding a stipple of 0.9 mm cells. At conversation distance it read as pixel noise, so it was dropped for the colour fade.
+- **Strands at the front edge are finer.** A strand rooted within 1.5 cm of the front hairline (measured on the rest body) has its card narrowed, smoothly, down to 0.35 of its width at the edge. Nothing new is drawn from the random stream, so every style keeps the strands it had.
+- **Not changed:** the temples and the sides. There the edge is where the root region's triangles stop, not the shader's curve, and it is still a mesh edge.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 157 checks pass**, twelve of them new: every style, with and without the mantle, checks that **the hairline thins**.
+  - Every style has 74 to 112 strands rooted within 0.75 cm of the front hairline.
+  - Those edge strands are 0.43 to 0.44 of the width of the strands behind the band.
+- The seam, skin and face checks of Session 874 all still pass. There are no page errors, which also covers the new shader.
+- **Pictures:** `builder-woman-face.jpg`, `builder-man-face.jpg` and `builder-styles-front.jpg` were shot again. The old face pictures are kept as `builder-hairline-before-woman.jpg` and `builder-hairline-before-man.jpg`.
+### Needs eyes
+- **The temples** still end on the root region's mesh edge, which shows on the man as a step at the side of the brow. A fade there needs a distance to the region's border per vertex, not the forehead's curve.
+- **The man's fade** reads a little like a receding hairline from straight on, since the colour fade starts at the shell's own edge. If it reads wrong in play, the fade could start 5 mm lower than the strands' roots.
+- **Every style still reads slicked back.** The strands lie 3 to 14 mm off the scalp, which gives no lift at the crown. More height there is the next refinement, together with the brows.
