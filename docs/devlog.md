@@ -18527,3 +18527,35 @@ The FREEZE (#297) holds. This is the second of L9's three inns (OG-108: "a Marki
 - **The wall benches sit behind the posts,** so a guest on a bench has a post between them and the table every 2.75 m. Real halls had this. The tables could stand between the posts instead if it reads wrong in play.
 - **The outside is the longhouse's hall, larger.** It has no sign of being an inn: no shield over the door, no horses tied.
 - **Not in the game.** That waits for F2a.
+
+## v80 — Session 895 — Card F9's sixth room: Aurenne's tavern on a terrace over the sea (prototype only)
+The FREEZE (#297) holds. This is the last of L9's three inns (OG-108: "an Aurenne tavern on a terrace over the sea"). Aurenne's kit has the Roman house: the tile kind of `aurenneHouse`, 9.6 by 8 m, one storey of 3.0 m under a hipped pantile roof, with an arcade of four round arches on lathed columns across the front. That arcade is a loggia already, so the tavern is built inside that house and out onto a terrace beyond it. The house is asked (#322), with the flat-roofed kind the other choice. OG-108 and OG-061 were reread. The catalogue's note on OG-108 is on the dishes' names, and none are named here.
+
+`aurenneTavern` in `rooms.js`, inside `aurenneHouse({ kind: 'tile', arcade: true, interior: true, green: false })` (Session 891's `o.interior`; the cypress is left out because it would stand in the loggia):
+- **Inside:**
+  - Red tiles, the glazed dado to 1.0 m, broken at the door, and cedar beams every 1.1 m under the cornice's slab.
+  - The counter across the back, 1.05 m high, plastered and faced in zellige, with a cedar top and cups of wine. Behind it are two shelves of amphorae and blue and white jars, broken round the back window, which they first crossed.
+  - A cedar rack of four amphorae leaning in the back right corner.
+  - The cooking bench along the right wall, as in the flat (Session 891), with two braziers, a copper pot and a rail of three copper pans.
+  - Two small square tables by the side windows, with a stool either side, and two brass lanterns.
+  - The door's leaf hangs open.
+- **The loggia** under the arcade has two round tables, each with a stool at either side.
+- **The terrace** is paved in limestone from the arcade 4 m out.
+  - A plastered parapet 0.62 m high with a stone coping runs on three sides.
+  - Under the far edge a quay wall drops 3.7 m to the water. The page (`rooms-view.js`) stops the ground at the quay and lays the sea 3.2 m down.
+  - There are three round tables with a stool either side, under a pergola of cedar posts and beams with 160 vine leaves over it, clusters of grapes, and vines up the outer posts.
+- **The view:** `rooms.html?room=tavern`, with `terrace` (the default, from the door out through the arcade to the sea), `tap` (the room to the counter), `pergola` (from the parapet back to the arcade) and `outside` (from over the water), and `&hour=`. The lanterns and a brazier give the light inside.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 46 of 46 pass.** The other rooms' checks are unchanged, and six are new:
+  - **The builds:** 4 keys, each the same twice. The room and terrace are 10,448 to 10,928 triangles in 18 draws, in the house's 3,476 in 8.
+  - **Inside and apart:** the room's pieces are inside its walls, and none is in another, terrace and loggia included.
+  - **The walks:** clear by 0.15 m, in at the door to the counter, and out through the loggia and the arch beside the door across the terrace to the parapet. The column of the shell's arcade stands before the door, so the walk goes through the next arch.
+  - **A person fits:** seven tables at 0.74 m, stools at 0.46 m, the counter at 1.05 m, and 2.72 m under the beams.
+  - **The terrace:** walled round on its three open sides by a parapet of 0.62 m. The quay wall's face is under its edge and drops 3.73 m.
+  - **The page:** the terrace view renders with no page errors.
+- **Pictures:** `rooms-tavern-terrace.jpg`, `-terrace-golden`, `-pergola`, `-tap` and `-outside`.
+### Needs eyes
+- **A column stands in front of the door.** The shell's arcade has four arches, so its middle column is on the door's axis. An arcade of three or five arches would put an arch there. That is the shell's choice, and it changes every Roman house with an arcade.
+- **The quay and the sea are the page's.** They are a plain wall and a flat blue plane. The harbour itself is the world's (F3 and the sea).
+- **The vine is faceted icosahedra.** It reads at a distance and is coarse up close.
+- **The three inns are drawn** (#320, #321, #322). Their rooms come into the game with `buildInteriorFor` after F2a.

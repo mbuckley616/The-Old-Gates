@@ -4,6 +4,37 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's tavern on a terrace over the sea: its house and its shade (look builder, Session 895) — DECISION #322
+**F9's sixth room: Aurenne's tavern on a terrace over the sea (look builder, Session 895).** It is the third of L9's three inns (OG-108: "an Aurenne tavern on a terrace over the sea"). It is built inside the kit's Roman house of Aurenne (`pieces.js`'s `aurenneHouse`, the tile kind, 9.6 by 8 m under a hipped pantile roof, with its arcade of four round arches across the front). It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneTavern`) and `rooms.html?room=tavern`.
+- **Inside:**
+  - red tiles, the blue glazed dado, and cedar beams;
+  - the counter at 1.05 m, faced in glazed tile, with shelves of amphorae and blue jars behind it, broken round the back window;
+  - a rack of amphorae in a corner;
+  - the cooking bench with two braziers and copper pots;
+  - two small tables with stools by the side windows, and two brass lanterns.
+- **The loggia** under the arcade has two round tables.
+- **The terrace:**
+  - paved, 4 m out from the arcade to a parapet 0.62 m high on the quay wall, which drops 3.7 m to the water;
+  - three round tables with stools under a pergola of vines with grapes.
+
+The room and terrace are 10,448 to 10,928 triangles in 18 draws, in the house's 3,476. The walks in to the counter and out across the terrace are clear by 0.15 m.
+
+**1. The tavern's house:**
+- **A. The Roman house with its arcade, as drawn** *(recommended)*: the arcade makes the loggia and opens onto the terrace.
+- **B. A flat-roofed house**, with the terrace on its roof as well as before it (the flat's of Session 891).
+
+**2. The shade over the terrace:**
+- **A. A vine on a pergola, as drawn** *(recommended)*.
+- **B. The striped awning** that the kit's roof pergolas carry.
+
+Pictures:
+- [the terrace from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-terrace.jpg)
+- [the terrace at the golden hour](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-terrace-golden.jpg)
+- [under the vine, back to the arcade](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-pergola.jpg)
+- [the room and its counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-tap.jpg)
+- [the tavern from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-outside.jpg)
+
+
 ### The Mark's inn as a hall of long tables: where guests sleep, and its size (look builder, Session 894) — DECISION #321
 **F9's fifth room: the Mark's inn, a hall of long tables (look builder, Session 894).** It is the second of L9's three inns (OG-108: "a Markish longhouse with long tables"). It is built inside the Mark's hall from the kit (`pieces.js`'s `markHall`, the shell of the longhouse room you passed on #311), widened to 10 by 18 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markAlehall`) and `rooms.html?room=alehall`.
 - **The frame:** the longhouse's: two rows of posts, tie beams 3.11 m over the floor, rafters, and a board lining.
