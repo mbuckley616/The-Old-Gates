@@ -28,6 +28,10 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
         ['woman, shoulder cape with an embroidered hem', 0, { cloak: [.5, .14, .1], cape: true, cloakLen: .5, cloakHem: [.62, .47, .22], brooch: [.62, .47, .22], mantle: null }], ['man, shoulder cape', 1, { cloak: [.3, .36, .22], cape: true, cloakLen: 1, mantle: null }]]) {
       const G0 = K.rollGenome('cloak:' + sex, { g: sex }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g)), back = JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1))));
       out.cloaks[name] = { ...(p.cloak || {}), meshes: p.root.children.length, saved: s1 === back, bytes: s1.length, hasApron: !!p.meshes.find(m => m.name === 'apron'), hasHood: !!p.meshes.find(m => m.name === 'hoodUp') || !!p.root.getObjectByName('hood'), wantsHood: !!dress.hood, hood: p.hood, hairCards: !!p.meshes.find(m => m.name === 'hair') }; }
+    // the Crown's tabard (Session 842): a man and a woman, belted, over a tunic and over a long skirt
+    out.tabards = {}; for (const [name, sex, dress] of [['man, the Crown tabard over a tunic', 1, { tabard: [.55, .08, .08], tabardTrim: [.72, .55, .2], mantle: null, cloak: null }], ['woman, the Crown tabard over a long skirt', 0, { tabard: [.55, .08, .08], mantle: null, cloak: null, skirt: 'long' }]]) {
+      const G0 = K.rollGenome('tabard:' + sex, { g: sex }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
+      out.tabards[name] = { ...p.tabard, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), bytes: s1.length }; }
     // the hood up over every style and every people: nothing of the head or its hair comes through it (Session 823)
     out.hoods = {}; for (const style of K.HAIR_STYLES) for (const k of Object.keys(K.PEOPLES)) { const G0 = K.rollGenome(`hood:${k}:${style}`, { people: k, g: style === 'short' ? 1 : 0 }), g = { ...G0, hair: { style, len: .8 }, dress: { ...G0.dress, cloak: [.4, .3, .2], hood: 'up' } }, p = K.makePerson(g);
       out.hoods[`${k}, ${style}`] = { ...p.hood, hairCards: !!p.meshes.find(m => m.name === 'hair'), hem: !!p.meshes.find(m => m.name === 'hoodHem') }; }
@@ -61,6 +65,8 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       check(`${k}: the brooch pins it at the throat (${(c.brooch * 100).toFixed(0)} cm from the neck)`, c.brooch < .2, c.brooch); }
     if (c.wantsHood) check(`${k}: the hood is there`, c.hasHood);
     if (c.hood) check(`${k}: nothing of the head comes through the hood (${c.hood.poke} of ${c.hood.tested} points, ${c.hood.tris} triangles)`, c.hood.poke === 0 && !c.hairCards, c.hood); if (k.includes('apron')) check(`${k}: the apron is there`, c.hasApron); }
+  for (const [k, t] of Object.entries(r.tabards)) { check(`${k}: nothing of the body or what it wears comes out through the tabard (${t.out} of ${t.tested} points)`, t.tested > 2000 && t.out === 0, t);
+    check(`${k}: ${(t.width * 100).toFixed(0)} cm wide, to the mid-thigh (${(t.hemDrop * 100).toFixed(0)} cm under the neck), belted, ${t.tris} triangles; saves and loads back (${t.bytes} bytes)`, t.width > .22 && t.width < .45 && t.hemDrop > .7 && t.hemDrop < 1 && t.belted && t.saved && t.bytes < 1100, t); }
   for (const [k, h] of Object.entries(r.hoods)) check(`hood up, ${k}: nothing of the head or its hair comes through (${h.poke} of ${h.tested} points), the hair tucked in, the hem on`, h.poke === 0 && h.tested > 1000 && !h.hairCards && h.hem, h);
   { const P = r.peoples; for (const [k, p] of Object.entries(P)) check(`${k}: twelve rolled stand inside the people's heights (men ${p.men} m, women ${p.women} m) and save back (${p.bytes} bytes)`, p.rangeOK && p.bytes < 1100, p);
     check(`the peoples stand in the canon's order: the Old Blood shortest, the Markmen tallest`, P.oldblood.men < P.gatelander.men && P.gatelander.men < P.markman.men && P.aurennais.men < P.markman.men && P.oldblood.women < P.gatelander.women && P.gatelander.women < P.markman.women);
@@ -94,6 +100,9 @@ if (shotArg) { const only = shotArg.split('=')[1];
   await shot('cape-woman', 'seed=styles&sex=f&view=full&turn=.45&dress=' + dq({ cloak: [.5, .14, .1], cape: true, cloakLen: .5, cloakHem: [.62, .47, .22], brooch: [.62, .47, .22], hood: null, mantle: null, apron: [.8, .76, .66], bib: true }));
   await shot('cape-back', 'seed=styles&sex=f&view=full&turn=2.7&dress=' + dq({ cloak: [.5, .14, .1], cape: true, cloakLen: .5, cloakHem: [.62, .47, .22], brooch: [.62, .47, .22], hood: null, mantle: null, apron: [.8, .76, .66], bib: true }));
   await shot('cape-man', 'seed=b7&sex=m&view=full&turn=.6&dress=' + dq({ cloak: [.3, .36, .22], cape: true, cloakLen: 1, cloakHem: [.2, .3, .4], brooch: [.62, .47, .22], mantle: null, cloakFur: null }));
+  await shot('tabard-man', 'seed=b7&sex=m&view=full&turn=.4&dress=' + dq({ tabard: [.55, .08, .08], tabardTrim: [.72, .55, .2], mantle: null, cloak: null }));
+  await shot('tabard-back', 'seed=b7&sex=m&view=full&turn=2.7&dress=' + dq({ tabard: [.55, .08, .08], tabardTrim: [.72, .55, .2], mantle: null, cloak: null }));
+  await shot('tabard-woman', 'seed=styles&sex=f&view=full&turn=.4&dress=' + dq({ tabard: [.55, .08, .08], tabardTrim: [.72, .55, .2], mantle: null, cloak: null }));
   await shot('cloak-markman-front', 'seed=b7&sex=m&view=full&turn=.3&dress=' + dq({ cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], brooch: [.35, .35, .36], cloakLen: 1 }));
   await shot('cloak-hood', 'seed=b7&sex=m&view=head&turn=.5&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));
   await shot('cloak-hood-side', 'seed=b7&sex=m&view=head&turn=1.57&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));

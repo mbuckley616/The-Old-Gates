@@ -17017,3 +17017,26 @@ The builder page has a *cape* box beside *bib* and *leather apron*.
 - **The front** opens wider below the brooch than OG-059's capes do, so the apron and the tunic show between the edges.
 - **The band is plain colour.** OG-048's borders are patterned, and the embroidery's pattern is a texture still owed.
 - **A hood on the cape** (OG-048's hooded capes) is not tried. The hood is built against the long cloak's hem.
+
+## v80 — Session 842 — The Crown's tabard, crimson and gold, belted over (B2, prototype only)
+The last piece named in the wardrobe plan Michael approved on #274 ("then do capes, hoods and the Crown tabard"). The kept Gatelander sheets draw the Crown's guards in it: OG-048 has a crimson cape and tabard with gold embroidery, and OG-059 a red-and-gold tabard. The canon gives the colours, *Crown crimson-and-gold* (§12, national signage). It does not give an emblem. The catalogue notes that the device drawn on the sheets (a gold sun-cross) is the image generator's and that the emblem is a decision, so this tabard carries none.
+
+`buildTabard` in `people.js` hangs two panels on the posed body, front and back. They are joined over the shoulders, open at the sides, with a hole for the neck.
+- **The outline.** For each of 21 columns, the furthest point forward and back, and the top, of everything within 1.5 cm of the column's line: the body, and also the tights' shell under a tunic (with the tunic's own push at each height) and the skirt's shell under a skirt. The first version read the skin alone, and the tunic came through the tabard in green patches.
+- **The hang.** Each column falls straight below the furthest point above it, the chest or the belly. It is taken in at the belt and falls straight again to the hem. The step in and out at the belt is smoothed over 4 cm down the column, and the panel is smoothed across the columns, never in past what is under it. The first version crumpled at the belt and was lumpy over the chest.
+- **The belt is worn over it.** In the belt's band the cloth lies 2.5 cm off the tights' shell, or 4.5 mm over anything worn if that is further out. That is over the tunic (1.9 cm off the shell there) and under the belt (3 cm), so the belt shows clean across the tabard, as a guard wears it.
+- **The cut.** The tabard is 0.56 of the shoulders' half width each side of the middle (37 cm on the checked man, 27 cm on the woman). The hem is 25 to 45 cm under the belt, set by `tabardLen`, so it reaches the mid-thigh. The neck hole is 6.8 cm each side, dipping 7.5 cm in front and 3 cm behind.
+- **The colour.** The cloth is wool in the tabard's colour, with a 3 cm gold border round the sides, the hem and the neck. It is done in vertex colours, so it is one mesh and one draw.
+
+The dress takes `tabard` and `tabardTrim` (colours, in the builder's garment list) and `tabardLen`. No people rolls a tabard: it is a role's dress (the Crown's guards and officials), for the cast and the roles still owed in B3.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 135 checks pass**, with four new ones on two tabards: a man over a tunic, and a woman over a long skirt.
+  - **Nothing comes through.** No point of the body, the tunic's shell or the skirt's shell lies in front of the front panel or behind the back panel, inside the tabard's width between the shoulders and the hem: 0 of 2,907 and 0 of 4,065 points, with a 4 mm margin.
+  - **The cut.** They are 37 and 27 cm wide, with hems 91 and 81 cm under the neck. Both are belted, 4,864 and 4,816 triangles, and each saves and loads back (773 and 746 bytes).
+- **`kit.check.mjs`** passes.
+- **Pictures:** `builder-tabard-man.jpg`, `builder-tabard-back.jpg`, `builder-tabard-woman.jpg`.
+### Needs eyes
+- **The emblem.** The Crown's device is not in the canon, so the tabard is plain. If it should carry one, that is a call for Michael and the quest writer, not the builder.
+- **A cloak over the tabard** is not handled yet. The cloak's floor reads the body and the skirt, not the tabard, so a guard in both could show the tabard through the cloak's back.
+- **The kettle helm, the spear and mail under the tabard** are L7's armour and weapons, still to come.
+- **The panels are flat as boards** below the belt, and a wool tabard would swing. In the game that is the secondary motion's job (Session 267's swinging cloaks), on the new skeleton in F4.

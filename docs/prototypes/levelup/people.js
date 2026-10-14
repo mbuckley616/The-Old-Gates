@@ -441,6 +441,70 @@ function armsThrough(cols, R, PP, neck, BM) {
   return { tested, out };
 }
 
+// ── the Crown's tabard (Session 842, B2; OG-048, OG-059): crimson with a gold border, the canon's Crown colours ──
+// Two panels on the posed body, front and back, joined over the shoulders, open at the sides, with a hole for the neck.
+// Each column is the outline of the body and what it wears, in its upright plane: the cloth falls straight below the furthest point above
+// it (the chest, the belly) and is taken in at the belt, then falls straight again to the mid-thigh. No emblem: the
+// Crown's device is not in the canon (the concept art's are the image generator's, docs/art/catalogue.csv).
+function buildTabard(G, body, byName) {
+  // what the outline is read from: the body, the tights' shell when a tunic or trousers are worn (the tunic stands up to
+  // 3.5 cm off it), the skirt's shell under a skirt; each with how far its garment stands out
+  const D = G.dress, PP = posedBody(body), n = PACK.N, B = new Uint8Array(n);
+  for (const v of PACK.G['body']) B[v] = 1; if (D.tunic || D.trousers) for (const v of PACK.G['helper-tights']) B[v] = 2; if (D.skirt) for (const v of (D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort)) B[v] = 3;
+  const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const nY = neck.y, cx = neck.x, cz = neck.z;
+  // the shoulders' half width at the armpit's height, and the tabard a little over half of it
+  let sh = 0; for (let i = 0; i < n; i++) if (B[i] === 1 && Math.abs(PP[i * 3 + 1] - (nY - .16)) < .02) sh = Math.max(sh, Math.abs(PP[i * 3] - cx));
+  let yb = 0, nb = 0; for (const v of PACK.R.belt) { yb += PP[v * 3 + 1]; nb++; } const yBelt = yb / nb;
+  // the tunic's own push off the tights' shell, by height (makePerson's), read at the rest height of a posed point
+  const tunicPush = (x, y) => { const yr = y - yBelt + .162; return .013 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - yr) / .2)) * (1 - .8 * Math.exp(-(((yr - .16) / .03) ** 2))) : 0) + .002; };
+  const OFF = (i, x, y) => B[i] === 2 ? (D.tunic ? tunicPush(x - cx, y) : .01) : B[i] === 3 ? .025 : 0;
+  const W = sh * .56, NC = 21, yHem = yBelt - .25 - .2 * (D.tabardLen ?? .5), step = .01, clr = (D.mantle ? .05 : D.tunic ? .022 : .012), hole = .068;
+  const NY = Math.ceil((nY + .05 - yHem) / step) + 1, front = [], back = [], top = [], cols = [];
+  // the body's outline per column: the furthest forward and back, and the top, of the points within 1.5 cm of its x
+  for (let c = 0; c < NC; c++) { const x = cx - W + 2 * W * c / (NC - 1), F = new Float32Array(NY).fill(-9), Bk = new Float32Array(NY).fill(9), F1 = F.slice(), B1 = Bk.slice(), TF = F.slice(), TB = Bk.slice(); let yt = -9;
+    for (let i = 0; i < n; i++) { if (!B[i] || Math.abs(PP[i * 3] - x) > .015) continue; const y = PP[i * 3 + 1], z = PP[i * 3 + 2], o = OFF(i, PP[i * 3], y); if (y > nY + .05 || y < yHem - .02) continue;
+      if (B[i] === 1 && Math.abs(x - cx) > hole && y > yt && Math.abs(z - cz) < .06) yt = y; const j = Math.max(0, Math.min(NY - 1, Math.round((nY + .05 - y) / step))); if (z + o > F[j]) F[j] = z + o; if (z - o < Bk[j]) Bk[j] = z - o; if (B[i] === 1) { if (z > F1[j]) F1[j] = z; if (z < B1[j]) B1[j] = z; } if (B[i] === 2) { if (z > TF[j]) TF[j] = z; if (z < TB[j]) TB[j] = z; } }
+    // the neck hole: the front starts at the collar's dip, the back a little higher
+    const t = Math.max(0, 1 - Math.abs(x - cx) / hole), yf = Math.abs(x - cx) > hole ? yt + clr : nY - .045 - .03 * t, yb = Math.abs(x - cx) > hole ? yt + clr : nY - .02 - .012 * t;
+    // straight below the furthest point above, taken in under the belt (2.5 cm off the tights' shell: over the tunic,
+    // which stands 1.9 cm off it there, and under the belt's 3 cm, so the belt is worn over the tabard), the step in and out smoothed over 4 cm so the cloth does not crumple at it
+    const ZF = new Float32Array(NY).fill(-9), ZB = new Float32Array(NY).fill(9), inB = new Uint8Array(NY); let zf = -9, zb = 9, last = NY;
+    for (let j = 0; j < NY; j++) { const y = nY + .05 - j * step; if (y < yHem) { last = j; break; } inB[j] = D.belt && Math.abs(y - yBelt) < .028 && TF[j] > -8 ? 1 : 0;
+      if (inB[j]) { zf = Math.max(TF[j] + .025, F[j] + .0045, F1[j] + clr); zb = Math.min(TB[j] - .025, Bk[j] - .0045, B1[j] - clr); } else { zf = Math.max(zf, F[j] + clr); zb = Math.min(zb, Bk[j] - clr); } ZF[j] = zf; ZB[j] = zb; }
+    for (let it = 0; it < 3; it++) { const a = ZF.slice(), bb = ZB.slice(); for (let j = 2; j < last - 2; j++) { if (a[j] < -8 || a[j - 2] < -8) continue; ZF[j] = (a[j - 2] + a[j - 1] + a[j] + a[j + 1] + a[j + 2]) / 5; ZB[j] = (bb[j - 2] + bb[j - 1] + bb[j] + bb[j + 1] + bb[j + 2]) / 5;
+      if (!inB[j]) { ZF[j] = Math.max(ZF[j], F[j] + clr); ZB[j] = Math.min(ZB[j], Bk[j] - clr); } else { ZF[j] = Math.max(ZF[j], TF[j] + .025, F[j] + .0045, F1[j] + clr); ZB[j] = Math.min(ZB[j], TB[j] - .025, Bk[j] - .0045, B1[j] - clr); } } }
+    const floF = Float32Array.from(ZF, (_, j) => inB[j] ? Math.max(TF[j] + .025, F[j] + .0045, F1[j] + clr) : F[j] + clr), floB = Float32Array.from(ZB, (_, j) => inB[j] ? Math.min(TB[j] - .025, Bk[j] - .0045, B1[j] - clr) : Bk[j] - clr);
+    cols.push({ x, ZF, ZB, floF, floB, last, yf, yb }); }
+  // smoothed across the columns too (each column's outline is read off its own few points, and was lumpy), never in
+  // past what is under it
+  for (let it = 0; it < 4; it++) { const pf = cols.map(c => c.ZF.slice()), pb = cols.map(c => c.ZB.slice());
+    for (let c = 0; c < NC; c++) { const l = Math.max(0, c - 1), r = Math.min(NC - 1, c + 1), C = cols[c];
+      for (let j = 0; j < NY; j++) { if (pf[l][j] > -8 && pf[c][j] > -8 && pf[r][j] > -8) C.ZF[j] = Math.max((pf[l][j] + 2 * pf[c][j] + pf[r][j]) / 4, C.floF[j]);
+        if (pb[l][j] < 8 && pb[c][j] < 8 && pb[r][j] < 8) C.ZB[j] = Math.min((pb[l][j] + 2 * pb[c][j] + pb[r][j]) / 4, C.floB[j]); } } }
+  for (const { x, ZF, ZB, last, yf, yb } of cols) { const f = [], b = [];
+    for (let j = 0; j < last; j++) { const y = nY + .05 - j * step; if (y <= yf && ZF[j] > -8) f.push(new THREE.Vector3(x, y, ZF[j])); if (y <= yb && ZB[j] < 8) b.push(new THREE.Vector3(x, y, ZB[j])); }
+    front.push(f); back.push(b); top.push({ yf, yb }); }
+  // three grids: the front panel and the back panel (each column resampled to the same rows, from its own top to the
+  // hem), and over each shoulder a short strip joining their tops outside the neck hole
+  const pos = [], col = [], idx = [], crim = sRGB(...D.tabard), gold = sRGB(...(D.tabardTrim || [.72, .55, .2])), NR = 60;
+  const at = (line, u) => { const t = u * (line.length - 1), i = Math.min(line.length - 2, Math.floor(t)); return line[i].clone().lerp(line[i + 1], t - i); };
+  const grid = (cols, trimRows) => { const base = pos.length / 3, R = cols[0].length;
+    for (let c = 0; c < cols.length; c++) for (let r = 0; r < R; r++) { const q = cols[c][r], tc = trimRows(c, r, R) ? gold : crim; pos.push(q.x, q.y, q.z); col.push(tc.r, tc.g, tc.b); }
+    for (let c = 0; c < cols.length - 1; c++) for (let r = 0; r < R - 1; r++) { const a = base + c * R + r, b = a + R; idx.push(a, a + 1, b, b, a + 1, b + 1); } };
+  const edgeTrim = (c, r, R) => c === 0 || c === NC - 1 || r > R - 4;
+  grid(front.map(f => Array.from({ length: NR }, (_, r) => at(f, r / (NR - 1)))), (c, r, R) => edgeTrim(c, r, R) || (r < 2 && Math.abs(front[c][0].x - cx) <= hole + .01));
+  grid(back.map(f => Array.from({ length: NR }, (_, r) => at(f, r / (NR - 1)))), (c, r, R) => edgeTrim(c, r, R) || (r < 2 && Math.abs(back[c][0].x - cx) <= hole + .01));
+  for (const sideOf of [c => front[c][0].x < cx - hole, c => front[c][0].x > cx + hole]) { const cs = []; for (let c = 0; c < NC; c++) if (sideOf(c)) cs.push(c); if (cs.length < 2) continue;
+    grid(cs.map(c => { const a = back[c][0], e = front[c][0], lift = .012 + .5 * Math.abs(a.y - e.y); return Array.from({ length: 7 }, (_, k) => { const u = k / 6, q = a.clone().lerp(e, u); q.y += lift * Math.sin(Math.PI * u); return q; }); }), (c, r) => c === 0 || c === cs.length - 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 26 }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'tabard'; mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
+  // nothing of the torso, inside the tabard's width and between the shoulders and its hem, in front of the front or behind the back
+  let tested = 0, out = 0; for (let i = 0; i < n; i++) { if (!B[i]) continue; const x = PP[i * 3], y = PP[i * 3 + 1], z0 = PP[i * 3 + 2], o = OFF(i, x, y); if (Math.abs(x - cx) > W - .01 || y > nY - .1 || y < yHem + .01) continue;
+    const c = Math.round((x - cx + W) / (2 * W) * (NC - 1)), j = Math.round((nY + .05 - y) / step), fr = front[c].find(q => Math.abs(q.y - (nY + .05 - j * step)) < step / 2), bk = back[c].find(q => Math.abs(q.y - (nY + .05 - j * step)) < step / 2); if (!fr || !bk) continue;
+    tested++; if (z0 + o > fr.z - .004 || z0 - o < bk.z + .004) out++; }
+  return { mesh, stats: { columns: NC, width: +(2 * W).toFixed(3), hemDrop: +(nY - yHem).toFixed(3), tris: idx.length / 3, tested, out, belted: !!D.belt } };
+}
+
 // ── the hood up (Session 823, Michael's note on #274: "the hood is semi-transparent") ──
 // Session 805 set the head's own points out onto a ball: the face hole ran back to the ears, so the sides of the head
 // showed through it, the ear's folds came out as a red lump, and the ball stopped at the skull, the nape bare under it.
@@ -628,8 +692,9 @@ export function makePerson(G, o = {}) {
   byName['lowerarm01.L'].quaternion.copy(q(pose.elbow, 0, 0)); byName['lowerarm01.R'].quaternion.copy(q(pose.elbow, 0, 0));
   byName['head'].quaternion.copy(q(.04, pose.head, 0)); if (byName['jaw']) byName['jaw'].quaternion.copy(q(pose.jaw ?? -.12, 0, 0)); byName['spine05'].quaternion.copy(q(0, 0, pose.hip));
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
+  let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, hood: hoodStats, brows: browStats };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, hood: hoodStats, brows: browStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -652,7 +717,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
