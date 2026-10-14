@@ -16848,3 +16848,42 @@ Nothing in the game changed, so no suite was run. The checks were on the files:
 - **OG-101 against OG-099.** The two sheets draw the home island differently. Michael's note is on OG-101, so the item reads it as the shape that leads, with OG-099's biomes dressing it. If he meant OG-099's island, that line changes.
 - **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
 - **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
+
+## v80 — Session 828 — The third and final round of concept art, catalogued, marked and written back (docs only)
+Michael dropped the last concept art into the Drive (*Concept Art Session 3*, 13 Oct 2026) and asked, in chat with Claude, for the intake. The folder holds 35 sheets with his own ids, OG-F001 to F035, in four groups: M5 to M10 (culture and faith), N1 to N8 (dungeons and exploration), O1 to O10 (gameplay) and P1 to P10b (the living world, ending in two takes on the final art direction). An unpacked copy was in his Downloads, and it matched the Drive file for file, so the thumbnails were made from the local originals and each row's link points to the original in the Drive.
+
+What changed:
+- **`docs/art/catalogue.csv`:** 35 rows, OG-113 to OG-147, in his order, each with his id at the head of its notes, a link to the original, size 1536 × 1024, and UNREVIEWED until he marks it. There are three new folders: `09_Dungeons_Exploration`, `10_Gameplay_Systems` and `11_Living_World_Atmosphere`; the M sheets join `08_Culture_Daily_Life`. Four agents read the full-size sheets against `lore_canon.md` and the design pages, one group each, to the house format. Recommendations: 27 KEEP and 8 MAYBE (OG-118, OG-120, OG-131, OG-132, OG-134, OG-136, OG-142, OG-146).
+- **`docs/art/thumbs/`:** OG-113 to OG-147 at 480 × 320, the size of the rest.
+- **`docs/art/review.html`:** the 35 cards, the three new folders in the folder filter, and the lede. Republished to the same artifact (version 3), where Michael's 112 earlier marks stay in its database.
+- **`docs/art/README.md`:** the third round, and the next id is OG-148.
+
+The folder's own catalogue marks every sheet "Keep (accepted in conversation)". Its README says that means only that Michael received a sheet well in the generator chat, not that it is canon, so the rows wait on his marks like the other rounds. Nothing goes to the backlog until he has marked them. This time the write-back is part of the same job (Session 827 found round two's marks sitting unread for a day).
+
+What the readers found, by group:
+- **Culture (M):** OG-113 is the closest match to the canon so far: the six gods, their signs and the Guest's empty niche are drawn as §4 has them. The sheets keep giving the Mark clans, a clan moot and lords, where the canon has the Captains' League with captains, reeves and the legal duel. OG-116 has Old Blood children inherit sigil tattoos and study the script, against §3.1's marks under the skin and the Withdrawal's ban on reading.
+- **Dungeons (N):** N2, N4 and N5 say outright that the gates break down into "underlying code": code-like grids and a Code Fragment item. That is the meta reading the canon keeps unsaid. N4 and N8 draw flagstone rooms and corridors for the gates, which `visual-foundation.md` §2 rules out. N7 has a brass diving suit where the canon has Water Breathing.
+- **Gameplay (O):** O2 draws magic B's five forms, riders and Mastery's true name almost word for word. O8 draws Skyrim-style skill trees and Conjuration, against the Morrowind book (A) and `magic.md`. O5 is platforming C, O6 is survival C (hunger), and O10 puts the compass top-centre, against #198's bottom-centre and the spell page Michael chose. O3's explosive bolt reads as gunpowder.
+- **Living world (P):** P4's map puts the islands in the wrong places. P3 gives the Mark and Aurenne autumn woods and Aurenne a snowy winter. P5's dungeon is the cobbled corridor Michael rejected, and P9's great gates stand free on lawns. P6 and P7 offer taming and companions, against his 12 A, and P7 and P10b draw the Aurennais fair-skinned. P9's altered skies are the world's corruption level made visible (card F3).
+
+### Verified
+Nothing in the game changed, so no suite was run. The checks were on the files:
+- The catalogue parses as 147 rows of 13 columns; ids OG-113 to OG-147 run unbroken.
+- The review page's data parses as 147 cards.
+- The publish confirmed version 3 with the 35 new thumbnails beside the 112 earlier ones.
+- The live page was not opened in a browser: the pane here is not signed in to claude.ai.
+
+### Michael's marks, written back the same night
+Michael marked the 35 within the hour: 34 KEEP and one NO, P10a (OG-146), so P10b leads the art direction. Seven of the sheets I had suggested as Maybe he kept with one note: “Just keep the ideas that were flagged as worth keeping, nothing that conflicts directly.” Those are OG-118, OG-120, OG-131, OG-132, OG-134, OG-136 and OG-142. On O5 (OG-131) he added: “I do really really want to keep the idea of double jumping and air dashing though as unlockable abilities/perks.”
+
+What changed:
+- **`catalogue.csv`:** the 35 marks are in (113 KEEP and 34 NO in all, none unreviewed or Maybe), with his notes at the end of the eight rows that carry them.
+- **Backlog L:** the header records the round and takes his note as the rule for all of it: an item keeps only what its row's notes do not flag as a conflict. L9 gains six items (shrines by island, trades, homes as rooms, children's lives, law in three registers, the road). Three sections are new:
+  - **L10, dungeons and exploration:** eight items, including the six schools' great halls (OG-119, the closest sheet to `visual-foundation.md` §2) and spells as keys.
+  - **L11, play:** eleven items. The first is the double jump and air dash, for the systems designer to fold into `platforming.md` and `skills-and-perks.md`. The sheets put them at Acrobatics' Expert and Master, which fits the perks at 25/50/75/100.
+  - **L12, the living world and its look:** ten items. The first says the art direction is P10b, with its two corrections: dark gates and the Aurennais' skin.
+- **`visual-foundation.md`:** card F3's line now says the grade follows P10b.
+
+### Needs eyes
+- **The double jump and air dash** are Michael's wish, not yet a design. The designer owes the numbers and how each is unlocked, and how they sit with platforming B's rule that timed jumps stay off the main quest's path.
+- **What is not taken from the art.** Each L10 to L12 item names the conflicts it leaves out (clans in the Mark, “code” in the gates, skill trees, hunger, climbing, taming, the islands misplaced on P4). If Michael wants one of those back, it is a decision, not a backlog edit.

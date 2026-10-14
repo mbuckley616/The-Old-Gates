@@ -85,7 +85,7 @@ The slice's 250 m nave is about a dozen meshes of merged stone plus about a hund
 ## 3. The order of work (backlog K)
 1. **The renderer:** three.js 0.170 behind a switch; the old look stays playable until the new one is whole.
 2. **The scale pass:** `SCALE`, the eye, the interiors at true size, the ratio test.
-3. **The land:** the vista slice's terrain shading, grass, trees, sky, water and post, streamed with the chunks at three quality levels.
+3. **The land:** the vista slice's terrain shading, grass, trees, sky, water and post, streamed with the chunks at three quality levels. The grade follows P10b (OG-147), the art direction Michael kept on 13 Oct over P10a (OG-146): warm, painterly and saturated, with the gates kept dark as §2 has them (backlog L12).
 4. **People:** the builder (`character-builder.md`), B1 to B6.
 5. **The gates:** the outside per school and condition; the inside as spaces; the generator's second scale.
 6. **Buildings as pieces:** the lane slice's kit across the three islands.
