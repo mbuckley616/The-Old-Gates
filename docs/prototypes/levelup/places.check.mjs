@@ -13,10 +13,10 @@ const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angl
 if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch(launch); let fails = 0;
 const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined ? '  ' + JSON.stringify(info) : '')); if (!ok) fails++; };
-for (const v of ['mine', 'shaft', 'face', 'mine&old', 'cairn&place=cairn', 'chamber&place=cairn', 'lake&place=cave', 'lair&place=lair']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+for (const v of ['mine', 'shaft', 'face', 'mine&old', 'cairn&place=cairn', 'chamber&place=cairn', 'lake&place=cave', 'lake&place=icecave', 'lair&place=lair']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(`http://localhost:${port}/places.html?still&w=480&h=270&view=${v}`);
   await Promise.race([page.waitForFunction(() => window.__done, null, { timeout: 300000 }), new Promise(res => page.on('pageerror', res))]);
-  check(`the ${v.replace('&old', ', worked out,').replace('&place=cairn', ' (the cairn)').replace('&place=cave', ' (the cave)').replace('&place=lair', ' (the lair)')} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
+  check(`the ${v.replace('&old', ', worked out,').replace('&place=cairn', ' (the cairn)').replace('&place=icecave', ' (the ice cavern)').replace('&place=cave', ' (the cave)').replace('&place=lair', ' (the lair)')} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
 const page = await browser.newPage({ viewport: { width: 320, height: 180 } }); await page.goto(`http://localhost:${port}/places.html?still&w=320&h=180`); await page.waitForFunction(() => window.__done, null, { timeout: 300000 });
 const r = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./places.js'), S = await import('./pieces.js'), out = [];
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
@@ -116,6 +116,22 @@ check(`the cave closed: of ${V[0].rays} rays from inside, ${Math.max(...V.map(x 
 check(`the lake ${mm(V, x => x.deep).join(' to ')} m deep in its middle; the falls land in ${mm(V, x => x.fallsIn).join(' to ')} m of water; the day comes down the shaft onto the pool`, V.every(x => x.deep >= 2.5 && x.fallsIn >= .5 && x.sky));
 check(`the bridge: its deck ${mm(V, x => x.bridgeDeck).join(' to ')} m up at its middle, ${mm(V, x => x.bridgeGap).join(' to ')} m of air under it over the water; the columns, ${V[0].colsN}, stand on the floor`, V.every(x => x.bridgeDeck > .6 && x.bridgeGap >= .6 && x.cols === x.colsN));
 check(`the flowers: ${mm(V, x => x.flowers).join(' to ')} by ${mm(V, x => x.pools).join(' to ')} rimstone pools, on the ground (${mm(V, x => x.flowerOff[0])[0]} to ${mm(V, x => x.flowerOff[1])[1]} m off it)`, V.every(x => x.flowers > 10 && x.flowerOff[0] > -.03 && x.flowerOff[1] < .03));
+// the Mark's ice cavern (Session 903): 2 keys, each the same twice and in budget; the very hall, floor, bridge, columns and walk of the
+// limestone cave from the same key (the rock is dressed, not moved); ice, not rock: the walls blue-white, the lake frozen opaque, the falls
+// frozen, no flowers; snow drifted in from the mouth along the passage's first 9 m and banked at its walls, no deeper than 0.45 m on the walk.
+const IC = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./places.js'), S = await import('./pieces.js'), out = [];
+  const hash = (g, only) => { let h = 0; g.traverse(m => { if (!m.isMesh || (only && !only.includes(m.name))) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+  for (let i = 0; i < 2; i++) { const key = 'cave:' + i, a = K.markIceCave({ key }, S.stream(key)), b = K.markIceCave({ key }, S.stream(key)), c = K.gatelandsCave({ key, flowers: false }, S.stream(key)); a.group.updateMatrixWorld(true);
+    const rock = ['lime', 'limeWet', 'bed', 'drip'], sameHall = hash(a.group, rock) === hash(c.group, rock) && JSON.stringify(a.path) === JSON.stringify(c.path) && a.path.every(([x, z]) => a.walkY(x, z) === c.walkY(x, z));
+    const mat = n => a.group.getObjectByName(n)?.material, wall = mat('lime').color, lake = mat('lake'), fall = mat('fall');
+    const snowM = a.group.getObjectByName('snow'), rc = new THREE.Raycaster(); let deep = 0, n = 0;
+    for (let s = 0; s + 1 < a.path.length; s++) { const [x0, z0] = a.path[s], [x1, z1] = a.path[s + 1]; for (let k = 0; k <= 8; k++) { const x = x0 + (x1 - x0) * k / 8, z = z0 + (z1 - z0) * k / 8; if (z < -10) continue; n++;
+      rc.set(new THREE.Vector3(x, a.walkY(x, z) + 1.5, z), new THREE.Vector3(0, -1, 0)); const h = rc.intersectObject(snowM)[0]; if (h) deep = Math.max(deep, h.point.y - a.walkY(x, z)); } }
+    out.push({ same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, sameHall, ice: a.ice && wall.b > wall.r && lake.opacity >= .9 && fall.opacity >= .85 && !a.flowers.length && !a.group.getObjectByName('petal'),
+      snow: a.snow.length, inMouth: a.snow.every(([, z]) => z <= 0 && z >= -9), deep: +deep.toFixed(2), n }); }
+  return out; });
+check(`the ice cavern, 2 keys: ${mm(IC, x => x.tris).join(' to ')} triangles in ${Math.max(...IC.map(x => x.draws))} meshes; each the same twice; the very hall, floor, columns and walk of the limestone cave from the same key`, IC.every(x => x.same && x.tris < 170000 && x.draws <= 14 && x.sameHall));
+check(`the ice cavern is ice: blue-white walls, the lake frozen over and the falls frozen, no flowers; ${IC[0].snow} drifts of snow in the passage's first 9 m, at most ${Math.max(...IC.map(x => x.deep))} m deep on the walk (${IC[0].n} points)`, IC.every(x => x.ice && x.snow >= 30 && x.inMouth && x.deep <= .45));
 // the smugglers' lair (Session 873; rebuilt in Session 883): 3 keys, each the same twice and in budget; the cave's measure; the walk from
 // the land over the landing, down the deck under the gallery and out along the jetty to the T-head with the deck under every quarter metre,
 // 2.1 m of headroom and 0.3 m clear; closed: of 1,440 rays from inside none gets out but by the passage, the sea arch or the escape

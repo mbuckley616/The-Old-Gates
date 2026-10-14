@@ -280,8 +280,25 @@ function caveHall(rk, F, ph, P) { const { Z0, L, CY, RLOW, RX, RY, E } = P;
   const inHall = (x, y, z, m) => { const s = (Z0 - z) / L; if (s <= 0 || s >= 1) return false; const t = taper(s); if (t < .05) return false; const ry = y > CY ? RY(s) : RLOW, q = Math.hypot(x / (RX(s) * t), (y - CY) / (ry * t)); return q < 1 - m / (RX(s) * t); };
   return { taper, ringBase, ringAt, hw, roofY, inHall, amp, big };
 }
+// iceMats() (Session 903): the cave's keys in the Mark's ice, so the one hall dresses either way: the rock blue-white glacier ice, glassy
+// where it is wet; the drips icicles; the lake a frozen sheet (opaque, walkable to the eye); the falls frozen in place; the foam and the
+// pools frozen white; the mist a thin ice fog; and snow, blown in at the mouth.
+let VI = null;
+function iceMats() {
+  if (VI) return VI; const C = caveMats(), ice = (c, rough, o = {}) => { const m = mat('rock', { ns: o.ns ?? .6, color: c, rough }); m.side = THREE.DoubleSide; return m; };
+  VI = { ...C, lime: ice(0x9ec4d8, .35), limeWet: ice(0x7aa6c4, .15), bed: ice(0x8aa8b8, .5, { ns: .8 }), drip: ice(0xc8e4f2, .12, { ns: .3 }),
+    lake: new THREE.MeshStandardMaterial({ color: 0x9cc6da, roughness: .22, metalness: .05, transparent: true, opacity: .95 }), pool: new THREE.MeshStandardMaterial({ color: 0xd6eaf4, roughness: .3 }),
+    fall: new THREE.MeshStandardMaterial({ color: 0xc4e2f0, emissive: new THREE.Color(.12, .22, .3), roughness: .15, transparent: true, opacity: .88, side: THREE.DoubleSide }),
+    foam: new THREE.MeshStandardMaterial({ color: 0xeef4f8, roughness: .8 }), mist: new THREE.MeshStandardMaterial({ color: 0xe0eef6, emissive: new THREE.Color(.12, .16, .2), roughness: 1, transparent: true, opacity: .05, depthWrite: false }),
+    snow: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }) };
+  VI.skin = VI.snow /* the dry shore under a dusting of snow */; return VI;
+}
+// markIceCave(o, r) (Session 903, card F8; OG-121's Mark panel, "ice caverns, snowed-in mouths"): gatelandsCave's very hall in the Mark's
+//   ice (o.ice): the same lofted hall, passage, ledge, ramp, shore, bridge and shaft, the lake frozen, the falls frozen in their fall, no
+//   flowers (nothing grows), snow drifted up the passage from the mouth. -> as gatelandsCave, with ice: true and snow (the drifts).
+export function markIceCave(o = {}, r = stream('icecave')) { return gatelandsCave({ ...o, ice: true, flowers: false }, r); }
 export function gatelandsCave(o = {}, r = stream('cave')) {
-  const M = caveMats(), B = new Map(), flowersOn = o.flowers !== false;
+  const M = o.ice ? iceMats() : caveMats(), B = new Map(), flowersOn = !o.ice && o.flowers !== false;
   const put = (geo, key, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     if (!g.attributes.normal) g.computeVertexNormals();
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
@@ -368,11 +385,15 @@ export function gatelandsCave(o = {}, r = stream('cave')) {
     put(new THREE.CircleGeometry(rad, 18).rotateX(-Math.PI / 2), 'pool', x, fy + .1, zz, 0, 0, 0, .3);
     if (flowersOn && r() < .55) for (let f = 0; f < 7; f++) { const a = r() * Math.PI * 2, fx = x + Math.cos(a) * (rad + .15 + r() * .3), fz = zz + Math.sin(a) * (rad + .15 + r() * .3), h = .15 + r() * .25, gy = floorY(fx, fz); if (!flat(fx, fz, fy) || nearPath(fx, fz) < .5 || OB.some(([ox, oz, or]) => Math.hypot(fx - ox, fz - oz) < or)) continue;
       put(new THREE.CylinderGeometry(.008, .01, h, 4), 'stalk', fx, gy + h / 2, fz); put(new THREE.SphereGeometry(.045, 7, 5).scale(1, .6, 1), 'petal', fx, gy + h + .02, fz); flowers.push([+fx.toFixed(2), +(gy + h + .02).toFixed(2), +fz.toFixed(2), +gy.toFixed(3)]); } }
+  // o.ice: snow blown in at the mouth, drifts along the passage's floor thinning inward over its first 9 m, banked against its walls
+  const snow = []; if (o.ice) { const rs = stream(String(o.key || 'cave') + ':snow'); for (let k = 0; k < 46; k++) { const z = -Math.pow(rs(), 1.6) * 9, side = rs() < .5 ? -1 : 1, x = SPX(z) + side * (1.2 + rs() * 1.5), d = 1 - (-z / 9), s = .5 + rs() * 1.1 * d;
+      const g = new THREE.SphereGeometry(s, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.6, .32 * d + .06, 1.2); put(g, 'snow', x, LH - .02, z, 0, rs() * 6, 0, .4); snow.push([+x.toFixed(2), +z.toFixed(2), +s.toFixed(2)]); }
+    { const g = new THREE.PlaneGeometry(5.6, 6, 8, 10), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, .05 + .1 * Math.max(0, (P.getY(i) + 3) / 6) * (1 - Math.abs(P.getX(i)) / 3)); g.rotateX(-Math.PI / 2); g.computeVertexNormals(); put(g, 'snow', SPX(-3), LH, -3, 0, 0, 0, .4); } }
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['lake', 'pool', 'fall', 'foam', 'mist', 'petal'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const zm = Z0 - L / 2;
   return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, walkY, floor: 0, ledge: LH, lake: { x0: -hw(zm), x1: hw(zm) - 11 - 4.2, z0: Z0 - 9, z1: SH1, y: LY, deep: DEEP },
     falls, shaft: { x: SX, z: SZ, r: SR, top: shaftTop, cut: SR + .9 }, mouth: { x0: -PRX, x1: PRX, y0: LH, h: PUP + 1.6 }, flowers, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) },
-    bridge: { x0: BX0, x1: BX1, z: ZB, deck: .8, under: +(under((BX0 + BX1) / 2)).toFixed(2) }, columns, pools };
+    bridge: { x0: BX0, x1: BX1, z: ZB, deck: .8, under: +(under((BX0 + BX1) / 2)).toFixed(2) }, columns, pools, ice: !!o.ice, snow };
 }
 // smugglersLair(o, r) (Session 873, Michael's 3 A on #305; rebuilt in Session 883 on his A on #314 and its note, "the size here is pretty
 //   underwhelming, as is the lack of detail in general"): OG-121's "smugglers' and bandits' lairs: plank platforms in a cave, storerooms,

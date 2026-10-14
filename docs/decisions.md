@@ -4,6 +4,29 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Mark's ice cavern: the cave's hall in ice, or a glacier cave of its own? (look builder, Session 903) — DECISION #331
+**F8: the Mark's ice cavern (look builder, Session 903).** #305's three Gatelands places are done. The card's next part is the places by island, and OG-121's Mark panel has "ice caverns, snowed-in mouths". This first one is the limestone cave's hall (#313, rebuilt on your note in Session 882) dressed in the Mark's ice. It is a prototype in `docs/prototypes/levelup/places.js` (`markIceCave`, a dress of `gatelandsCave`), at `places.html?place=icecave`.
+- **The same space:** the same hall of 64 m, 45 m across and 24 to 30 m high, with the same winding passage, ledge, ramp, shore, natural bridge and shaft to the sky. Its rock is not moved.
+- **In ice:**
+  - blue-white glacier ice for walls, glassy where it is wet;
+  - icicles for stalactites;
+  - the lake frozen over;
+  - the falls frozen where they fell, a pillar of ice under the shaft;
+  - snow dusting the dry shore and drifted 9 m into the passage from the mouth, never more than 0.45 m deep on the walk;
+  - no flowers.
+- **The light:** your torch, and the day down the shaft, which the ice throws further than the limestone did.
+
+**1. The Mark's ice cavern:**
+- **A. The cave's hall in ice, as drawn** *(recommended)*: one hall, two islands' dress, as the ships take dresses. It is cheap, and it is proven by the cave's checks.
+- **B. Its own shape:** a glacier cave, a long blue tunnel under the ice with a ribbed, scalloped roof, meltwater channels and moulins. That is a new build and a different place.
+
+Pictures:
+- [the hall from the ledge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-lake.jpg)
+- [down the shore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-shore.jpg)
+- [the frozen falls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-falls.jpg)
+- [over the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-bridge.jpg)
+- [the snowed-in passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-passage.jpg)
+
 ### The Mark's sloop: shields on the rail? (look builder, Session 900) — DECISION #330
 **F11: the sloop in the Mark's dress (look builder, Session 900).** With #316, #319 and #323 answered, each class can now take the other islands' dress. This is the first: the game's sloop (13 by 4.4 m, the deck 1.0 m over the sea), in the very lines of the Gatelands sloop. It is a prototype in `docs/prototypes/levelup/ships.js` (`markSloop`, a dress of `gatelandsSloop`), at `ships.html?ship=marksloop`. It follows the Mark's dress you chose on #312 and #323:
 - **The hull:** clinker, as the small hulls stay, tarred black above a red-brown bottom, with the wale gilt.

@@ -19117,3 +19117,33 @@ What changed in `ships.js`:
 ### Needs eyes
 - **The white bottom does not show.** At her draft it is all under the water in every picture. Heeled, it would.
 - **The sloop now has all three dresses.** The cog and the galleon next. A Mark cog under the gaff, or an Aurenne galleon under lateens, changes what those classes are, so they want a question first.
+
+## v80 — Session 903 — Card F8: the Mark's ice cavern, the cave's hall in ice (prototype only)
+The FREEZE (#297) holds. Michael's A on #305 set the Gatelands' three places first: the round cairn, the limestone cave and the smugglers' lair, all built and rebuilt to his notes. L10 then asks for places by island. OG-121's Mark panel has "mountain mines, ice caverns, snowed-in mouths". The mine was the first place (Session 857); this is the ice cavern. OG-121 was reread. Its row flags nothing about ice. The sloops took the other islands' dress this run without new hulls, so the cave takes the Mark's the same way, without a new hall. Whether it should have its own shape is asked (#331).
+
+What changed in `places.js`:
+- **`iceMats()`:** the cave's material keys in ice, so the same buckets dress either way:
+  - the rock is blue-white glacier ice (`lime`, `bed`), glassy where wet (`limeWet`);
+  - the drips are icicles and ice columns;
+  - the lake is a frozen sheet, opaque at 0.95;
+  - the falls are frozen, opaque at 0.88, with a faint glow;
+  - the foam and the rimstone pools are frozen white, and the mist is a thin ice fog;
+  - `snow` is new.
+  - The dry shore's skin is snow. With skin and bed in one ice, their 6 mm offset showed the terraces' edges as saw-teeth.
+- **`markIceCave(o, r)`** is `gatelandsCave` with `o.ice`. That takes the ice materials and turns the flowers off.
+  - The flowers' random draws are skipped with them, so the rimstone pools fall in other places. Against the limestone cave built from the same key without its flowers, the hall, the floor, the bridge, the columns, the pools and the walk match to the vertex.
+- **Snow at the mouth:** 46 low drifts along the passage's first 9 m, from its own stream (`<key>:snow`). They thin inward, are banked toward the walls, and lie on a sheet over the floor of the first 6 m.
+- **The view:** `places.html?place=icecave` goes to `places-cave-view.js` with its five views. There the fog is bluer, and the glow off the falls is wider and stronger (160 over 60 m, against 110 over 46).
+### Verified (headless Chromium)
+- **`places.check.mjs`: 37 of 37 pass**, counted from its output. The other places' checks are unchanged. *A correction:* Sessions 883 and 884 reported 37 of 37 for this suite, but it held 34 before this session. One view is new on the page check (the ice cavern's lake, no page errors), and two checks are new, over two keys:
+  - **The builds:** 145,989 to 146,248 triangles in 11 meshes, each key the same twice. The rock's four meshes (hall, passage and floor, wet rock, drips) hash the same as the limestone cave's from the same key, built without flowers. The path is the same, and `walkY` agrees at every point.
+  - **Ice, not rock:**
+    - the walls blue over red;
+    - the lake at 0.95 opacity and the falls at 0.88;
+    - no flowers and no petal mesh;
+    - 46 drifts, all within the passage's first 9 m, at most 0.39 m deep over the walk's line at its 46 points there.
+- **Pictures:** `places-icecave-lake.jpg`, `-shore`, `-falls`, `-bridge` and `-passage`.
+### Needs eyes
+- **Under the torch the snow reads warm**, close to sand, in the passage. The torch is orange (#313's A), and the snow is white. A cold fill at the mouth would set it right.
+- **It is the limestone hall's shape.** Ice caves are mostly tunnels under a glacier, ribbed and scalloped. This one is a karst hall in ice, which is the question (#331).
+- **The ice is not translucent.** The walls are a blue-white matte with a gloss. Light glowing through thin ice would want a shader of its own, and that belongs with card F3's materials.

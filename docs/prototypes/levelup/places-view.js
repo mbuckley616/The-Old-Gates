@@ -10,8 +10,9 @@ import { stream } from './pieces.js';
 
 // ?place=cairn (Session 869): the Gatelands' round cairn, places-cairn-view.js
 // ?place=cave (Session 872): the limestone cave with a lake under falls, places-cave-view.js
+// ?place=icecave (Session 903): the same hall in the Mark's ice, places-cave-view.js
 if ((Q.get('place') || 'mine') === 'cairn') await import('./places-cairn-view.js');
-else if (Q.get('place') === 'cave') await import('./places-cave-view.js');
+else if (Q.get('place') === 'cave' || Q.get('place') === 'icecave') await import('./places-cave-view.js');
 else if (Q.get('place') === 'lair') await import('./places-lair-view.js') /* Session 873: the smugglers' lair */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
