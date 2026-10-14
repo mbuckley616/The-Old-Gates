@@ -1,4 +1,4 @@
-// node docs/prototypes/levelup/creatures.check.mjs [--shots] [--plans=a,b] [--q=gait=soar --tag=soar] (Session 772): builds every plan in creatures.js
+// node docs/prototypes/levelup/creatures.check.mjs [--shots] [--plans=a,b] [--q=gait=soar --tag=soar] [--sheet=NAME] (Session 772): builds every plan in creatures.js
 // in the test Chromium and checks the kit's promises: each plan builds with no code of its own, its skin weights sum to
 // one, every foot reaches its target through a whole stride of every gait, a gait's feet are down for its duty, and the
 // genome is small. --shots also writes the line-up and one picture per plan (flesh and bones) as creatures-*.jpg.
@@ -47,6 +47,9 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   check(`the Mark's fifteen: each a plan, from OG-031 (${mk.length})`, mk.length === 15 && mk.every(c => c.ok && /OG-031/.test(c.src)), mk.filter(c => !c.ok || !/OG-031/.test(c.src)));
   const au = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.AURENNE || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`Aurenne's fifteen: fourteen a plan from OG-030 (the Glasswing Moth owed) (${au.length})`, au.length === 14 && au.every(c => c.ok && /OG-030/.test(c.src)), au.filter(c => !c.ok || !/OG-030/.test(c.src)));
+  // the strange beasts (Session 853): OG-040's fourteen, each a plan from that sheet
+  const st = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.STRANGE || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
+  check(`the strange beasts: fourteen, each a plan from OG-040 (${st.length})`, st.length === 14 && st.every(c => c.ok && /OG-040/.test(c.src)), st.filter(c => !c.ok || !/OG-040/.test(c.src)));
   check(`the livestock: four animals, each a plan from the farm sheets (${stock.map(c => c.k).join(', ')})`, stock.length === 4 && stock.every(c => c.ok && /OG-0(23|35)/.test(c.src)), stock);
   check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
@@ -57,6 +60,8 @@ if (process.argv.includes('--shots')) {
     fs.writeFileSync(path.join(here, 'creatures-' + name + '.jpg'), Buffer.from(url.split(',')[1], 'base64')); console.log('shot', name, ((Date.now() - t0) / 1000).toFixed(0) + 's', errs.slice(0, 3)); await page.close(); };
   const list = (arg('plans') || '').split(',').filter(Boolean);
   if (!list.length || process.argv.includes('--line')) await shot('line', 'view=line', 2400, 800);
+  // --sheet=NAME (Session 853): the listed plans side by side on the ruled floor, as creatures-NAME.jpg
+  if (arg('sheet') && list.length) await shot(arg('sheet'), 'view=line&plans=' + list.join(','), 2400, 800);
   const xq = arg('q') ? '&' + arg('q') : '', tag = arg('tag') ? '-' + arg('tag') : '';
   for (const plan of list) { await shot(plan + tag, `view=one&plan=${plan}${xq}`, 1280, 720); if (process.argv.includes('--bones')) await shot(plan + tag + '-bones', `view=one&plan=${plan}&bones${xq}`, 1280, 720); }
 }

@@ -88,7 +88,8 @@ P.tail = (B, o) => {
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'tail', tone: o.tone });
   B.tailEnd = pts[n]; B.tailBone = names[n - 1];
   // a bird's tail: a fan of feathers off the last bone (Session 775)
-  if (o.fan) for (let i = 0; i < o.fan.n; i++) { const a = (i / (o.fan.n - 1) - .5) * o.fan.spread * DEG, d = V(Math.sin(a), -.08, -Math.cos(a)).normalize(); feather(B, pts[n].clone().add(V(0, .002 * i, 0)), d, V(Math.cos(a), 0, Math.sin(a)), o.fan.len * (1 - .12 * Math.abs(i / (o.fan.n - 1) - .5)), o.fan.len * .2, names[n - 1], 'feather', 'featherTip'); }
+  // `raise` (Session 853) stands the fan up from flat toward upright, a display (the Sunfan's)
+  if (o.fan) for (let i = 0; i < o.fan.n; i++) { const a = (i / (o.fan.n - 1) - .5) * o.fan.spread * DEG, X = V(1, 0, 0), up = (o.fan.raise || 0) * DEG, d = V(Math.sin(a), -.08, -Math.cos(a)).normalize().applyAxisAngle(X, up); feather(B, pts[n].clone().add(V(0, .002 * i, 0)), d, V(Math.cos(a), 0, Math.sin(a)).applyAxisAngle(X, up), o.fan.len * (1 - .12 * Math.abs(i / (o.fan.n - 1) - .5)), o.fan.len * .2, names[n - 1], 'feather', 'featherTip'); }
   if (o.sting) B.bit(names[n - 1], claw(o.sting.r, o.sting.len, B.tone('dark'), pts[n], pts[n].clone().sub(pts[n - 1]).normalize().applyAxisAngle(V(1, 0, 0), -.9)));
 };
 // legs, in pairs. A leg is its preset's joints in a frame of its own: x outward, y up as a fraction of the root's height,
@@ -423,7 +424,7 @@ export function build(g) {
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
   if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
   if (B.tubes.length) { const m = new THREE.SkinnedMesh(tubeGeo(B, pal, plan.threadGlow || 1), plan.threadGlow ? new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 })); m.name = 'threads'; meshes.push(m); }
-  for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
+  for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75, ...(plan.wingOpacity < 1 ? { transparent: true, opacity: plan.wingOpacity, depthWrite: false } : {}) })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
   for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = true; bones[b.i].add(obj); }
   rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
@@ -1094,3 +1095,65 @@ Object.assign(PLANS, {
     palette: { coat: [.66, .58, .42], saddle: [.5, .42, .28], belly: [.86, .8, .66], dark: [.05, .05, .04], skin: [.66, .58, .42], horn: [.42, .34, .22] } })
 });
 export const AURENNE = ['duneskimmer', 'sunspirelynx', 'terraceram', 'saltspinemonitor', 'oasishare', 'scarletibis', 'dunescorpion', 'miragefox', 'cliffswift', 'ambershellcrab', 'cypressstalker', 'sandwyrm', 'sunbeakvulture', 'spinedgekko'];
+// ── Session 853: OG-040's strange beasts (backlog L3), five an island, none of them gate-made. Six were built in Sessions
+// 773 to 775 (the Bellthroat, the Mossback, the Shatterhorn, the Stormplume, the Mineprowler, the Sailshell); these are
+// the other eight. A raised tail fan (the Sunfan's display) and see-through membrane wings (the Glasswing's) are the kit's
+// two new options; every older plan builds as it did ──
+Object.assign(PLANS, {
+  crownstag: re(PLANS.stag, { name: 'Crownstag', src: 'OG-040 (Gatelands: a forest monarch; antlers like living branches hung with moss)', scale: 1.3, rough: .8,
+    palette: { coat: [.36, .25, .16], saddle: [.22, .15, .09], belly: [.74, .66, .52], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.34, .38, .2] }, fur: { len: .03, layers: 8, sx: 260, droop: .35 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { len: 1.15, r: .04, f: .1, up: .85, out: .4, depth: 3 } }] : [k, o]) }),
+  lanternfox: re(PLANS.redfox, { name: 'Lanternfox', src: 'OG-040 (Gatelands: a black fox whose fur glows blue and silver at night)', scale: 1.05,
+    palette: { coat: [.07, .08, .11], saddle: [.03, .03, .05], belly: [.2, .22, .3], dark: [.02, .02, .03], pale: [.7, .78, .92] }, fur: PLANS.redfox.fur,
+    glow: { color: [.7, 1.5, 3.2], freq: 9, w: .06, all: .8 } }),
+  thornrunner: re(PLANS.redfox, { name: 'Thornrunner', src: 'OG-040 (Gatelands: a long-legged quilled omnivore of hills and farms; very fast)', scale: 1.45, speedK: 1.5,
+    palette: { coat: [.58, .36, .2], saddle: [.24, .14, .08], belly: [.88, .82, .7], dark: [.05, .04, .03], pale: [.92, .88, .78] }, fur: { len: .022, layers: 7, sx: 300 },
+    parts: [...PLANS.redfox.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hip: [.52, -.25], chest: [.55, .2] }] : [k, o]), ['spines', { n: 18, from: .15, to: 1.05, len: .17, r: .008, tone: 'pale', taper: .5 }]] }),
+  frostmane: { name: 'Frostmane', src: 'OG-040 (the Mark: a long-necked maned browser in small herds; a candidate pack beast)', gaits: ['walk', 'trot', 'stand'], speedK: .9, neckNod: .05, wag: .03, fold: .6, rough: .9,
+    palette: { coat: [.82, .8, .76], saddle: [.6, .58, .55], belly: [.9, .88, .84], dark: [.06, .05, .05], hoof: [.12, .1, .09] },
+    fur: { len: .075, layers: 11, sx: 110, sy: 28, droop: .55 },
+    parts: [
+      ['spine', { hip: [1.02, -.48], chest: [1.08, .38], n: 4, r: [.22, .23, .26], s: [.8, 1.15], rump: .16, rumpDrop: .04, front: .16, frontDrop: .06 }],
+      ['neck', { len: .85, n: 3, rise: 74, curve: -8, r: [.17, .11], s: [.85, 1.1] }],
+      ['head', { len: .3, r: .085, pitch: 38, muzzle: { len: 1, r: .055, nose: 1, taper: .75 }, jaw: { len: .85, r: .04, drop: .5 }, eyes: [{ f: .4, up: .35, out: .7, r: .018, color: [.08, .06, .05] }], ears: { kind: 'leaf', size: .1, f: .1, up: .9, out: .5, splay: 12, back: 5 } }],
+      ['tail', { len: .22, n: 2, r: [.06, .04], droop: 25 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .1, drop: .1, r: [.1, .055, .034, .036] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .1, drop: .07, r: [.13, .065, .036, .036] }]
+    ] },
+  glasswing: { name: 'Glasswing', src: 'OG-040 (the Mark: a gliding predator of cliffs and ridges, its wings translucent)', gaits: ['soar', 'walk', 'stand'], flyH: 2.2, wingFold: .3, wingOpacity: .5, wag: .06, neckNod: .06, fold: 1, rough: .45,
+    palette: { coat: [.7, .74, .78], saddle: [.46, .52, .58], belly: [.9, .92, .92], dark: [.05, .05, .06], horn: [.3, .32, .36], skin: [.5, .52, .56], membrane: [.72, .86, .96], membraneEdge: [.4, .54, .7] },
+    parts: [
+      ['spine', { hip: [.48, -.32], chest: [.5, .24], n: 3, r: [.09, .11, .1], s: [.82, 1], rump: .06, front: .06 }],
+      ['neck', { len: .3, n: 2, rise: 42, curve: -14, r: [.07, .05] }],
+      ['head', { len: .22, r: .052, pitch: 6, muzzle: { len: 1, r: .028, taper: .5 }, jaw: { len: .9, r: .02, drop: .5 }, eyes: [{ f: .42, up: .4, out: .62, r: .011, color: [.55, .85, 1] }], horns: { len: .14, r: .012, f: .2, up: .8, out: .4, turn: .2, rise: .3, back: 1, spread: .2 } }],
+      ['tail', { len: 1.1, n: 6, r: [.06, .008], droop: 8, curl: -1 }],
+      ['legs', { at: .35, kind: 'bird', out: .07, drop: .05, r: [.055, .025, .016, .012], claws: { r: .005, len: .03 } }],
+      ['wings', { at: .85, out: .07, up: .04, span: 3.4, fingers: 4, r: [.04, .03, .02], sag: .12 }]
+    ] },
+  stonejaw: { name: 'Stonejaw', src: 'OG-040 (the Mark: an armoured burrower with a shovel skull; digs through snow and rock)', gaits: ['walk', 'trot', 'stand'], speedK: .6, wag: .03, fold: .5, rough: .8,
+    palette: { coat: [.46, .42, .36], saddle: [.34, .31, .27], belly: [.66, .6, .5], dark: [.06, .05, .05], shell: [.5, .48, .44], seam: [.2, .19, .17], skin: [.46, .42, .36] },
+    parts: [
+      ['spine', { hip: [.32, -.42], chest: [.34, .32], n: 4, r: [.18, .2, .18], s: [1.2, .85], rump: .1, front: .08, tone: 'skin' }],
+      ['neck', { len: .1, n: 1, rise: -10, r: [.14, .12], s: [1.2, .85] }],
+      ['head', { len: .26, r: .11, pitch: 14, s: [1.3, .8, 1], muzzle: { len: 1, r: .1, s: [1.7, .42, 1], taper: 1 }, eyes: [{ f: .3, up: .55, out: .62, r: .009, color: [.1, .07, .05] }], ears: { kind: 'round', size: .025, f: .08, up: .7, out: .7 } }],
+      ['tail', { len: .3, n: 3, r: [.08, .02], droop: 20 }],
+      ['legs', { at: 1, kind: 'plantFore', out: .17, drop: .06, r: [.07, .06, .055, .05], claws: { r: .01, len: .07 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .17, drop: .04, r: [.08, .065, .055, .05], claws: { r: .008, len: .04 } }],
+      ['shell', { at: .5, lift: -.04, len: .95, w: .6, h: .3, scute: .09, rough: .85 }]
+    ] },
+  redcrest: { name: 'Redcrest', src: 'OG-040 (Aurenne: a feathered raptor-like predator of scrub and cliffs; hunts in packs)', gaits: ['walk', 'trot', 'stand'], speedK: 1.5, neckNod: .1, wag: .04, fold: 1.1, rough: .6,
+    palette: { coat: [.5, .27, .14], saddle: [.28, .14, .07], belly: [.84, .74, .58], dark: [.05, .04, .03], skin: [.42, .34, .24], horn: [.2, .16, .12], comb: [.82, .12, .07], feather: [.46, .22, .1], featherTip: [.14, .07, .04] },
+    pattern: { kind: 'stripes', period: .09, tone: 'saddle' }, fur: { len: .03, layers: 8, sx: 110, sy: 45, droop: .5 },
+    parts: [
+      ['spine', { hip: [.82, -.3], chest: [.86, .3], n: 3, r: [.16, .19, .15], s: [.8, 1.1], rump: .12, front: .08 }],
+      ['neck', { len: .4, n: 3, rise: 50, curve: -45, r: [.1, .065] }],
+      ['head', { len: .26, r: .06, pitch: 6, s: [.9, 1, 1], muzzle: { len: 1, r: .036, taper: .6 }, jaw: { len: .9, r: .026, drop: .5 }, eyes: [{ f: .4, up: .45, out: .6, r: .011, color: [.95, .6, .1] }], ears: { kind: 'leaf', size: .11, f: .3, up: 1, out: .15, back: 45, splay: 0, tone: 'comb' } }],
+      ['tail', { len: 1.05, n: 6, r: [.1, .02], droop: -4, curl: 1.5, fan: { n: 7, len: .3, spread: 34 } }],
+      ['arms', { at: .95, out: .1, up: -.04, len: .4, r: [.035, .026, .018], dir: [.35, -.55, .6], tone: 'coat', claws: { r: .004, len: .045 }, swing: .08 }],
+      ['legs', { at: .35, kind: 'bird', out: .09, drop: .08, r: [.1, .045, .026, .02], claws: { r: .008, len: .05 } }]
+    ] },
+  sunfan: re(PLANS.heron, { name: 'Sunfan', src: 'OG-040 (Aurenne: a long-legged bird of plains and oases with a radiant fan it displays)', scale: 1.15,
+    palette: { coat: [.86, .72, .44], saddle: [.72, .56, .3], belly: [.94, .88, .72], dark: [.06, .05, .04], skin: [.5, .32, .2], horn: [.4, .3, .18], comb: [.98, .68, .14], feather: [1, .74, .2], featherTip: [.92, .4, .08] },
+    parts: PLANS.heron.parts.map(([k, o]) => k === 'neck' ? [k, { ...o, len: .36 }] : k === 'head' ? [k, { ...o, beak: { len: .07, r: .012, up: -.05, hook: .2 }, ears: { kind: 'leaf', size: .045, f: .2, up: 1, out: .2, back: 35, splay: 8, tone: 'comb' } }] : k === 'tail' ? [k, { ...o, droop: -40, fan: { n: 15, len: .62, spread: 170, raise: 72 } }] : [k, o]) })
+});
+export const STRANGE = ['crownstag', 'mossback', 'bellthroat', 'lanternfox', 'thornrunner', 'shatterhorn', 'frostmane', 'glasswing', 'stonejaw', 'stormplume', 'redcrest', 'sunfan', 'mineprowler', 'sailshell'];

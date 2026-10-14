@@ -17183,3 +17183,34 @@ L3's fourth item is OG-030's fifteen animals of Aurenne, the warm island (Michae
 - **The Oasis Hare reads pinkish** and the Terrace Ram a little green-cream under the bestiary's grey sky. Their sand and cream palettes want checking under a warm Aurennais light.
 - **The Glasswing Moth** is owed, with a wing part of its own.
 - **The Sand Wyrm** is the Mire Snake made huge. The sheet's funnels and its burrowing are behaviour and terrain, the systems builder's and the look builder's.
+
+## v80 — Session 853 — OG-040's strange beasts, all fourteen in the creature kit (backlog L3, prototype only)
+L3's next item is OG-040's strange beasts: five an island, the open world's "strange, not stock" (§10a), and mostly peaceful. Six were already plans: the Bellthroat, the Mossback, the Shatterhorn, the Stormplume, the Mineprowler and the Sailshell (Sessions 773 to 775). The other eight are new in `creatures.js`, and `STRANGE` lists all fourteen.
+- **Crownstag** (the Gatelands): the Elderstag at 1.3, darker, with moss-green antlers 1.15 m long that branch a third time, so they read as living branches.
+- **Lanternfox** (the Gatelands): the red fox in near-black, with blue-white veins of light through the coat. This is the kit's glow, written as cracks at nine cycles a metre, as the Faolchú's seams are.
+- **Thornrunner** (the Gatelands): the red fox at 1.45, set 1.4 times higher on its legs (a maned wolf's stance), tawny, with eighteen pale quills 17 cm long down its back. It gallops at 6.3 m/s, the fastest animal on the line after the Crownstag's 6.0.
+- **Frostmane** (the Mark): its own plan. A llama's long upright neck (three bones, 0.85 m), a small head with leaf ears, and a shaggy cream coat 7.5 cm deep that hangs. It is the sheet's candidate pack beast.
+- **Glasswing** (the Mark): its own plan. A slim grey body on bird legs with a 1.1 m tail, swept-back horns, and membrane wings spanning 3.4 m that are half see-through. It soars, walks and stands.
+- **Stonejaw** (the Mark): its own plan. A low burrower under a stone-grey shell of small plates, with a flat shovel snout (1.7 times as wide as it is long and less than half as high) and long digging claws on the forefeet.
+- **Redcrest** (Aurenne, hostile): its own plan. A feathered raptor on bird legs, its body level, a stiff 1.05 m tail ending in a fan of feathers, short clawed arms, rust-brown barred with darker stripes, and a red crest. It hunts in packs (rules: the systems builder's).
+- **Sunfan** (Aurenne): the Great Heron at 1.15, with a shorter neck, a gold crest and a fan of fifteen gold-to-flame feathers raised behind it.
+
+The kit has two new options, and neither changes an older plan:
+- **A tail fan can be raised** (`fan.raise`, in degrees). The fan turns about the body's side axis from flat toward upright, so a display stands up instead of spreading on the ground.
+- **A membrane wing can be see-through** (`wingOpacity` on the plan). The wing is drawn transparent, without writing depth.
+
+`creatures.check.mjs` takes `--sheet=NAME`, which shoots the listed plans side by side as `creatures-NAME.jpg`.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 633 checks pass** across 78 plans, with one new check that the fourteen strange beasts are each a plan from OG-040.
+  - The eight new plans build in 0.23 to 1.4 s, with 20 (the Sunfan) to 53 (the Glasswing) bones and 17,172 to 47,344 triangles.
+  - Every foot reaches its target through every gait.
+  - The feet are down for about each gait's duty: the Redcrest's trot is 0.46 of 0.45, and the Stonejaw's trot 0.34 of 0.45.
+  - Every genome is 150 to 155 bytes.
+- **Speeds:** the Frostmane walks at 1.4 m/s, the Stonejaw at 0.46, the Redcrest trots at 3.8 and the Glasswing soars at 5.0.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the eight, `creatures-strange.jpg` (the fourteen on one sheet), and `creatures-line.jpg` (all the plans), shot again.
+### Needs eyes
+- **The Glasswing's wings** read as a hang-glider's sail in the soaring picture: straight-edged and stiff. The sheet's wings are more like a dragonfly's.
+- **The Crownstag's moss** is only the antlers' colour. The sheet hangs moss and small plants from the antlers, and the kit cannot hang anything from a bit yet.
+- **The Stonejaw's shell** sits on it like a tortoise's. The sheet draws overlapping bands that bend with the back, a pangolin's or an armadillo's.
+- **The Sunfan's fan** stands behind the bird as a tail. The sheet's text calls it a crest. Raised behind the body, it reads as the sheet's picture does.
+- **None of them is in the game.** That waits for F4.
