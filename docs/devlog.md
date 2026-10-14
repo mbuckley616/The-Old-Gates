@@ -16849,7 +16849,7 @@ Nothing in the game changed, so no suite was run. The checks were on the files:
 - **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
 - **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
 
-## v80 — Session 828 — The third and final round of concept art, catalogued (docs only)
+## v80 — Session 828 — The third and final round of concept art, catalogued, marked and written back (docs only)
 Michael dropped the last concept art into the Drive (*Concept Art Session 3*, 13 Oct 2026) and asked, in chat with Claude, for the intake. The folder holds 35 sheets with his own ids, OG-F001 to F035, in four groups: M5 to M10 (culture and faith), N1 to N8 (dungeons and exploration), O1 to O10 (gameplay) and P1 to P10b (the living world, ending in two takes on the final art direction). An unpacked copy was in his Downloads, and it matched the Drive file for file, so the thumbnails were made from the local originals and each row's link points to the original in the Drive.
 
 What changed:
@@ -16873,7 +16873,17 @@ Nothing in the game changed, so no suite was run. The checks were on the files:
 - The publish confirmed version 3 with the 35 new thumbnails beside the 112 earlier ones.
 - The live page was not opened in a browser: the pane here is not signed in to claude.ai.
 
+### Michael's marks, written back the same night
+Michael marked the 35 within the hour: 34 KEEP and one NO, P10a (OG-146), so P10b leads the art direction. Seven of the sheets I had suggested as Maybe he kept with one note: “Just keep the ideas that were flagged as worth keeping, nothing that conflicts directly.” Those are OG-118, OG-120, OG-131, OG-132, OG-134, OG-136 and OG-142. On O5 (OG-131) he added: “I do really really want to keep the idea of double jumping and air dashing though as unlockable abilities/perks.”
+
+What changed:
+- **`catalogue.csv`:** the 35 marks are in (113 KEEP and 34 NO in all, none unreviewed or Maybe), with his notes at the end of the eight rows that carry them.
+- **Backlog L:** the header records the round and takes his note as the rule for all of it: an item keeps only what its row's notes do not flag as a conflict. L9 gains six items (shrines by island, trades, homes as rooms, children's lives, law in three registers, the road). Three sections are new:
+  - **L10, dungeons and exploration:** eight items, including the six schools' great halls (OG-119, the closest sheet to `visual-foundation.md` §2) and spells as keys.
+  - **L11, play:** eleven items. The first is the double jump and air dash, for the systems designer to fold into `platforming.md` and `skills-and-perks.md`. The sheets put them at Acrobatics' Expert and Master, which fits the perks at 25/50/75/100.
+  - **L12, the living world and its look:** ten items. The first says the art direction is P10b, with its two corrections: dark gates and the Aurennais' skin.
+- **`visual-foundation.md`:** card F3's line now says the grade follows P10b.
+
 ### Needs eyes
-- **Michael's marks on the 35.** The To review filter shows them first.
-- **P10a against P10b, likely a decision.** P10a is darker, cooler and nearer realism, with the gates truly dark. P10b is warmer and more painterly, which fits the 12 Oct style answer for the world, but its gates glow orange. One reading takes P10b's world and P10a's gates.
-- **Once marked:** the kept sheets go into backlog L as round two's did, and the conflicts above go in as "the canon wins" lines.
+- **The double jump and air dash** are Michael's wish, not yet a design. The designer owes the numbers and how each is unlocked, and how they sit with platforming B's rule that timed jumps stay off the main quest's path.
+- **What is not taken from the art.** Each L10 to L12 item names the conflicts it leaves out (clans in the Mark, “code” in the gates, skill trees, hunger, climbing, taming, the islands misplaced on P4). If Michael wants one of those back, it is a decision, not a backlog edit.
