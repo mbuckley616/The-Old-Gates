@@ -17290,3 +17290,23 @@ The kelpstrider (a leafy seahorse) and the pierwinkle (a snail) still wait. Each
 - **The stonefish reads as a fish, not as a stone.** Its mottle is soft and its outline smooth. A rock's lumpiness would need a bumpier flesh than the kit grows.
 - **The angler's lure** is a pale ball. It is not lit (the kit's eyes are not emissive), so it will not glow in the dark water it is for.
 - **The crimson leviathan** is coarse at its size (8,748 triangles), as the Gate Leviathan is.
+
+## v80 — Session 861 — Flippers in the kit: a sea turtle and the maw turtle (backlog L3, prototype only)
+Session 854 left the turtles owed from OG-016 and OG-084, because the kit had no flipper. Under FREEZE #297 this run works only in the prototypes, so this is the kit and two plans in `creatures.js`, and the sea is now twenty-two.
+
+**The flipper.** It is not a new part. It is the kit's arm with two small additions. `s` flattens the arm's flesh, the same per-axis scale the spine and tail already take, so a three-bone arm squashed to 0.3 of its height becomes a paddle. `stroke` makes the pose beat it as a turtle flies through water: down and up about the body's long axis, swept back on the downstroke, feathered on the way up. The upstroke is held to 0.55 of the downstroke so the flipper does not rise through the shell's edge. The swim gait beats it once a stride. Standing, it beats at a quarter of the swim's amplitude, a slow paddle. Arms with no `stroke` swing as before. Their flesh takes `s` only when a plan gives one, and no existing plan does, so nothing else changes.
+
+- **Sea turtle:** the tortoise's low body, widened (spine scaled 2 across, 0.6 high), under a flatter shell (1.05 m long, 0.92 wide, 0.26 high, scutes 0.2 m). It has a short neck and a blunt head. The front flippers are 0.64 m and beat together; the rear ones are 0.3 m, a half-stride behind, and mostly steer. The spine's wave is nearly off (0.015), so the shell stays still while the flippers work. Its hide is olive with darker patches and its shell red-brown. It swims at 0.45 body lengths a second.
+- **Maw Turtle:** OG-016's deep and legendary turtle that "carries an ecosystem on its back". It is the same turtle at 11 times the size, about 11.5 m of shell. The shell is a greyer, rougher stone, with the Mossback's garden on top: 70 tufts of green-blue weed and 90 coral-red and pale blooms. Its water line (0.62) puts the garden above the surface, so from a deck it is a reef island until it moves. It swims at 0.08 body lengths a second.
+
+Both set the flesh grid's cell to 0.016. Left to itself, the kit sizes the cell from the thinnest flesh, which is the flattened flipper (0.0095 m). The first build of the sea turtle came out at 106,876 triangles for that reason.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 799 checks pass** across 104 plans, with the sea check now counting twenty-two.
+  - The sea turtle builds in 0.62 s, with 25 bones and 26,168 triangles; the maw turtle in 0.53 s, with 25 bones and 26,340 triangles.
+  - Every skin weight sums to one, and both genomes are 153 and 155 bytes.
+- **Speeds:** the sea turtle swims at 0.75 m/s, and the maw turtle at 1.39.
+- **Pictures:** `creatures-seaturtle.jpg`, `creatures-mawturtle.jpg` and their `-bones` pictures. The first shots showed the front flipper raised through the shell's front edge and a pale band where the shell's rim overhung a narrow body. The flipper's root was moved forward and out, the upstroke shortened and the body widened, and the second shots show neither.
+### Needs eyes
+- **The flippers are flat paddles of even thickness.** A real turtle's front flipper is long and curved like a wing, with a scaled leading edge. A tapered outline would want a fin-like sheet with skin, which the kit does not have.
+- **The maw turtle's garden** is the Mossback's land garden recoloured as weed and coral. A reef wants kelp that streams and barnacled rock, and the shell has no rock lumps of its own.
+- **The bestiary's water plane** does not show in these stills, which matches the other swimmers' pictures.

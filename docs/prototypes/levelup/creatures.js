@@ -123,21 +123,22 @@ P.legs = (B, o) => {
     B.legs.push({ names, J, side, at: o.at, pre, hR, ik: pre.ik, yaw: !!pre.yaw, fan, wobble: o.wobble || 0 });
   }
 };
-// arms: hang from a socket (the shoulders, or a seam on the back), swing against the legs; no feet to plant
+// arms: hang from a socket (the shoulders, or a seam on the back), swing against the legs; no feet to plant.
+// Session 861: `s` flattens the flesh (a flipper is an arm squashed flat), and `stroke` beats it as a flipper does
 P.arms = (B, o) => {
   const sp = B.spineAt(o.at), len = o.len, d = (o.dir || [0, -1, .2]);
   for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, o.dz || 0)), dir = V(side * d[0], d[1], d[2]).normalize();
     const elbow = root.clone().addScaledVector(dir, len * .5), d2 = o.dir2 ? V(side * o.dir2[0], o.dir2[1], o.dir2[2]).normalize() : dir.clone().applyAxisAngle(V(1, 0, 0), -(o.bend || 30) * DEG).normalize(), wrist = elbow.clone().addScaledVector(d2, len * .42), hand = wrist.clone().addScaledVector(d2, len * .14);
     const tag = 'arm' + (B.arms.length / 2 | 0) + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, [root, elbow, wrist, hand]);
-    const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone });
+    const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone, s: o.s }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone, s: o.s }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone, s: o.s });
     if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone('dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
     // a pincer (Session 773): a swollen hand and two fingers, the fixed one longer
     if (o.chela) { const c = o.chela; B.meat(names[2], wrist.clone().addScaledVector(d2, -len * .04), hand, c.r, c.r * .8, { s: [1, .62, 1], tone: o.tone, group: tag + 'c' });
       const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
       B.bit(names[3], claw(c.r * .45, c.len * 1.15, B.tone(c.tone || 'dark'), hand.clone().add(V(-side * c.r * .35, 0, 0)), fx));
       B.bit(names[3], claw(c.r * .4, c.len, B.tone(c.tone || 'dark'), hand.clone().add(V(side * c.r * .35, c.r * .15, 0)), mv)); }
-    B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5 });
+    B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5, stroke: o.stroke || 0 });
   }
 };
 // wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh
@@ -551,7 +552,13 @@ export function pose(C, phase) {
   if (G.bell || (B.radials.length && C.plan.bellBone)) { const beat = Math.pow(Math.max(0, Math.sin(tau * ph)), 2), s = 1 - (G.bell ? .14 : .04) * beat; sp.scale.set(s, 1 + (1 - s) * .7, s); sp.position.y += (G.bell ? .03 : .01) * C.len / C.S * Math.sin(tau * ph - 1); }
   else if (G.ripple && B.radials.length) sp.position.y += .015 * C.len / C.S * Math.sin(tau * ph * 2);
   // arms swing against the legs; wings rest half-folded, breathing, or beat
-  for (const A of B.arms) { const s = A.swing * Math.sin(tau * ph + (A.side > 0 ? 0 : Math.PI) + A.phase); C.byName[A.names[0]].rotation.set(s, 0, 0); C.byName[A.names[1]].rotation.set(-Math.abs(s) * .6 - .2, 0, 0); C.byName[A.names[2]].rotation.set(.25 * Math.sin(tau * ph * 2 + A.side), 0, 0); }
+  // a flipper (Session 861) flies through the water: it beats down and up, sweeps back on the downstroke and feathers on the way up
+  for (const A of B.arms) if (A.stroke) { const sd = A.side, w = tau * ph * (G.swim ? 1 : .4) + A.phase, k = A.stroke * (G.swim ? 1 : .25);
+    const beat = Math.sin(w) * (Math.sin(w) > 0 ? .55 : 1);
+    C.byName[A.names[0]].rotation.set(.45 * k * Math.cos(w), sd * .35 * k * Math.cos(w), sd * k * beat);
+    C.byName[A.names[1]].rotation.set(0, sd * .15 * k * Math.cos(w - .5), sd * .25 * k * Math.sin(w - .6));
+    C.byName[A.names[2]].rotation.set(0, 0, sd * .2 * k * Math.sin(w - 1.2)); }
+  for (const A of B.arms) if (!A.stroke) { const s = A.swing * Math.sin(tau * ph + (A.side > 0 ? 0 : Math.PI) + A.phase); C.byName[A.names[0]].rotation.set(s, 0, 0); C.byName[A.names[1]].rotation.set(-Math.abs(s) * .6 - .2, 0, 0); C.byName[A.names[2]].rotation.set(.25 * Math.sin(tau * ph * 2 + A.side), 0, 0); }
   // a bird's wing folds in a Z against its side (humerus back, forearm forward, hand back), or beats: down hard, up folded a little
   for (const W of B.wings) if (W.feathered) { const fold = G.flap ? 0 : (C.plan.wingFold ?? 1), s = W.side, beat = G.flap ? Math.sin(tau * ph) : 0, up = G.flap ? Math.max(0, -Math.cos(tau * ph)) : 0;
     C.byName[W.arm[0]].rotation.set(.1 * fold, s * 1.2 * fold, s * (.55 * beat - .25 * fold));
@@ -1294,3 +1301,26 @@ Object.assign(PLANS, {
     parts: [...PLANS.miresnake.parts.map(([k, o]) => k === 'head' ? [k, { ...o, jaw: { len: .9, r: .016, drop: .5 }, horns: { len: .05, r: .005, f: .2, up: .9, out: .5, turn: .3, rise: .3, back: 1, spread: .3 } }] : [k, o]), ['spines', { n: 16, from: .05, to: 1, len: .025, r: .005, tone: 'horn', taper: .3 }]] })
 });
 SEA.push('abyssalangler', 'stonefish', 'crimsonleviathan');
+// ── Session 861: the turtles of OG-016 and OG-084 (backlog L3). A sea turtle is the tortoise's low body under a flatter
+// shell, with flippers for legs: the front pair long and beating together, the rear pair short and steering. The maw turtle
+// is the same turtle at an island's size, with a reef growing on its back ──
+const seaTurtle = o => [
+  ['spine', { hip: [.35, -.45], chest: [.37, .4], n: 3, r: [.18, .2, .16], s: [2, .6], rump: .06, front: .06 }],
+  ['neck', { len: .2, n: 2, rise: 4, r: [.09, .07], fwd: .02 }],
+  ['head', { len: .21, r: .085, pitch: 6, muzzle: { len: 1, r: .062, taper: .72 }, jaw: { len: .85, r: .045, drop: .45 }, eyes: [{ f: .42, up: .35, out: .8, r: .017, color: [.06, .05, .04] }] }],
+  ['tail', { len: .12, n: 2, r: [.05, .015], droop: 8 }],
+  ['arms', { at: .92, out: .26, up: -.05, dz: .1, len: .64, r: [.06, .085, .05], s: [1, .3, 1], dir: [1, -.12, -.12], dir2: [.7, -.06, -.7], swing: 0, stroke: .6, tone: 'coat' }],
+  ['arms', { at: .06, out: .24, up: -.05, len: .3, r: [.05, .07, .045], s: [1, .3, 1], dir: [.7, -.1, -.7], dir2: [.35, -.02, -.94], swing: 0, stroke: .18, phase: Math.PI, tone: 'coat' }],
+  ['shell', { at: .5, lift: -.01, len: 1.05, w: .92, h: .26, scute: .2, rough: .45, ...o }]];
+Object.assign(PLANS, {
+  seaturtle: { name: 'Sea turtle', src: 'OG-084 (marine life: turtles), OG-016 (the coastal reefs)', gaits: ['swim', 'stand'], bl: .45, waveAmp: .015, cell: .016, water: 1.4, rough: .45, mottle: 1.4, wag: .02, pant: .02, neckNod: .02,
+    palette: { coat: [.44, .44, .32], saddle: [.3, .3, .2], belly: [.84, .78, .58], dark: [.05, .05, .04], shell: [.44, .32, .16], seam: [.2, .13, .06] },
+    pattern: { kind: 'patches', size: .03, cut: .4, tone: 'saddle' },
+    parts: seaTurtle({}) }
+});
+Object.assign(PLANS, {
+  mawturtle: re(PLANS.seaturtle, { name: 'Maw Turtle', src: 'OG-016 (deep and legendary: carries an ecosystem on its back)', scale: 11, bl: .08, mottle: 2.2, rough: .85, water: .62, cell: .016, pattern: null,
+    palette: { coat: [.34, .36, .32], saddle: [.24, .25, .22], belly: [.62, .6, .5], dark: [.04, .04, .04], shell: [.4, .4, .37], seam: [.2, .2, .18], moss: [.22, .34, .26], fern: [.18, .4, .26], bloom: [.92, .46, .38], bloom2: [.95, .78, .5] },
+    parts: seaTurtle({ h: .3, top: 'moss', rough: .9, garden: { ferns: 70, flowers: 90, size: .11 } }) })
+});
+SEA.push('seaturtle', 'mawturtle');
