@@ -44,4 +44,7 @@ build('people.html', 'Markfolk from a genome', 'Markfolk from a genome (MakeHuma
 build('hall.html', 'Inside a gate', 'Inside a gate: the vault is 50 m up. Drag to look.', 'gate.js', True, '?view=hall')
 build('creatures.html', 'Creatures from parts', 'Creatures from parts: one kit of skeletons, one gait engine, at true size beside a 1.8 m figure. Drag to look.', 'bestiary.js', True)
 build('creature.html', 'One creature', 'One creature walking: change the plan, the gait, the seed and the sliders.', 'bestiary.js', True, '?view=one&plan=ironwolf')
+build('gatelands-pieces.html', 'Gatelands building pieces', 'The Gatelands’ buildings as pieces (F6): a town street running out to its cottages. ?mix=a|b|c, &cam=eye|high|cottage|town. Drag to look.', 'pieces-gatelands.js', True, '?view=street&mix=a')
+build('gatelands-plans.html', 'Gatelands plans in a row', 'Six Gatelands plans at true size, a person at each door. Drag to look.', 'pieces-gatelands.js', True, '?view=line')
+build('gatelands-kit.html', 'Gatelands pieces, one by one', 'The Gatelands pieces one by one beside a person. Drag to look.', 'pieces-gatelands.js', True, '?view=kit')
 print('ok')

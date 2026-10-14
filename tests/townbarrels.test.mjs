@@ -11,7 +11,11 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 const WANT = { city: 20, town: 14, village: 8, hamlet: 4, port: 4 };
-const PEOPLE = { droichead: 2093859367, portclare: -1437886261, dunmore: -478191395, carraig_mor: 564943362, coeur_de_vie: -374348034 }; // HEAD before S817, names and roles
+// The merge of S817 (13 Oct 2026, Michael in chat): the people's hash is a warning, not a check. It is not stable: on the same code,
+// Dunmore read -478191395 or 1104956583 and Cœur de Vie three values over four runs, here and on CI (#273's own run failed on it),
+// so who a town draws depends on something besides its seed (backlog I). Droichead's and Cœur de Vie's were re-read after Systems
+// 797–814 merged. Make it a check again once a town's people are drawn the same every time.
+const PEOPLE = { droichead: -1790770419, portclare: -1437886261, dunmore: -478191395, carraig_mor: 564943362, coeur_de_vie: -1965213968 }; // HEAD before S817, names and roles
 for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droichead']) {
   await g.settle(id);
   const r = await page.evaluate((id) => { const S = WORLD.settle.get(id); const L = S.loot || [];
@@ -32,7 +36,8 @@ for (const id of ['dunmore', 'carraig_mor', 'coeur_de_vie', 'portclare', 'droich
   check(`${id}: every one holds something (${r.filled}/${r.n}), none arms or armour (${r.arms})`, r.filled === r.n && r.arms === 0, r);
   const newIn = r.houseIn.filter(i => i >= want / 2), oldIn = r.houseIn.filter(i => i < want / 2);
   check(`${id}: none within .9 of another (${r.close.length}); none inside a building, of the new half (${newIn.length}) or the old (${oldIn.length})`, r.close.length === 0 && newIn.length === 0 && oldIn.length === 0, r);
-  check(`${id}: its people are the people drawn before the old half could step out of a wall (names and roles, hash ${r.ph})`, r.ph === PEOPLE[id], r.ph);
+  if (r.ph === PEOPLE[id]) console.log(`  ok  ${id}: its people are the people drawn before the old half could step out of a wall (names and roles, hash ${r.ph})`);
+  else console.log(`${process.env.GITHUB_ACTIONS ? '::warning title=townbarrels people hash::' : '  WARN '}${id}: its people hash ${r.ph}, stored ${PEOPLE[id]} (a warning while the draw is unstable; backlog I)`);
 }
 // the second half's loot is keyed like the first's: the key rolls the same again
 const k = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const c = S.loot[S.loot.length - 1]; const day = lootDay();

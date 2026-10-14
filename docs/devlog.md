@@ -16771,3 +16771,66 @@ The same commit merges main (Systems 797–814). The conflicts were the build ta
 - `townbarrels` passes on the merged tree, and `parsecheck` is clean.
 ### Needs eyes
 Nothing to look at. The fault was in the test, not the game.
+## v80 — Session 822 — F1, the renderer: three.js 0.170 behind a switch
+Card F1 of `docs/design/visual-foundation.md` §4, the first card of the new look (Michael's "Go with both of your recs", 12 Oct; Start given 13 Oct), run by the deep-work session under FREEZE #278. The game ran on three.js r128 from cdnjs. Every slice of the new look in `docs/prototypes/levelup/` runs on 0.170. F1 makes the same game run on 0.170 when switched on, with the old look whole and the default, so that F2 (scale) and F3 (the land) have one place where the version is chosen. No new art: the picture on 0.170 is meant to be today's.
+
+**The bundle.** three.js stopped shipping a classic build after r160, and the game must stay classic scripts that open from a double-clicked folder (no `type=module`, no fetch over `file://`). `scripts/three_bundle.py` takes the npm package's `build/three.module.min.js` for 0.170.0 (the copy the prototypes already vendor, checked against a pinned SHA-256; the npm tarball if that copy is missing), puts the module body inside a function and turns its closing `export{a as B,…}` into `return{B:a,…}`. The result, `vendor/three.r170.min.js` (690,557 bytes, 415 names), sets `window.THREE`. No addons are bundled, because F1 needs none: the game merges its geometry itself. `--check` proves the committed copy is what the script makes, and CI's parse job now runs it. The bundle sits in `vendor/` beside `index.html`, so Pages and a downloaded folder find it, and so does the test harness, which writes its `index.local.html` beside `index.html`. That is why the bundle is not copied into `tests/vendor/` as the card suggested: one copy, found by all three. `parsecheck.py` scans only `js/`, so the bundle is outside it.
+
+**The chooser.** One inline script sits in `index.html` just above the r128 tag and runs before any `js/` file. It reads `?look=new|old`, or else the setting `localStorage['og.renderer']`, and sets `window.OG_LOOK`.
+- For the new look, it `document.write`s the 0.170 tag and then an opening `<template>`. The r128 tag that follows is parsed into the template's inert content and never runs.
+- For the old look, the page is as it was: the same cdnjs tag, loaded the same way. A stray `</template>` after it is a parse error the browser ignores.
+
+I chose this over the other ways for three reasons:
+- **Every r128 tag written by script:** Chrome may block a cross-site script that `document.write` inserts on a slow connection. That would put the default look at risk.
+- **Both loaded, one kept:** this breaks "one page, one three.js".
+- **A module or a fetch:** neither works on `file://`.
+
+`document.write` of a same-origin script runs in order on `file://`, on Pages and in the harness alike.
+
+**The compat layer, `js/05-compat.js`** (a new file at a free number before 10, its tag added in load order; parsecheck counts 43 files). It is the only place that reads the version: `THREE_LEGACY` and `SKINNED`. On 0.170 it puts back what r128 did:
+- **Colour management off and the output linear**, as r128's defaults were. 0.170 converts hex and vertex colours to linear and the output to sRGB by default. The renderer is wrapped, so `REN`, the creator's portrait and the yard's preview all get it.
+- **The legacy light scale.** r128 multiplied every light's irradiance by π and let point lights fall off as `(1 − d/distance)^decay` with a default decay of 1. 0.170 is physical: 1/d², a decay of 2, and no π. `useLegacyLights` is gone since r165. Six exact replacements in `ShaderChunk.lights_pars_begin` restore the old scale: ambient, hemisphere, directional, point and spot colour ×π, and r128's distance falloff. `PointLight` and `SpotLight` default to decay 1. A replacement that no longer matches throws at load, so a later version cannot change the lighting without anyone noticing. So the game's 110 `PointLight` calls need no new numbers.
+- **`skinning: true`.** r128 needs it on a skinned material and 0.170 rejects it with a warning. It is spread in as `...SKINNED` on the two skinned materials (`PEOPLE_MAT`, `WOLF_MAT`); clones keep it.
+
+Checked and left alone:
+- **No uses in the game:** `outputEncoding` and texture `.encoding`, `THREE.Math`, the old `Geometry`, `RGBFormat` and the removed helpers. The game's canvas textures have no colour space on either version.
+- **The water's and the sea's `onBeforeCompile` hooks:** the chunks they replace (`begin_vertex`, `color_fragment`) are still there in 0.170.
+- **The chimney smoke's `ShaderMaterial` fog includes:** also still there.
+- **The shadow pass:** in 0.170 it still tests an object's layers against the eye's camera (`WebGLShadowMap`'s `renderObject`). CLAUDE.md's rule therefore holds in both looks, and so does the townsfolk's swap inside `REN.shadowMap.render`.
+
+**The setting.** The settings sheet has a *Renderer* row (*As it was* / *three.js 0.170*) as its own small group under the mouse's two rows. It sits at the end so that the sheet's keyboard paths are unchanged. The choice is kept in this browser.
+- **On the title screen**, the card's "the setting reloads the page" applies: the page reloads at once.
+- **In play**, the choice waits for the next load, and the row says *takes hold when the game next loads: save, then reload*. Reloading under a player would lose an unsaved day. I took this narrower reading of the card, and it is listed below for Michael.
+
+`setRenderer('new'|'old',{reload:true})` does the same from the console.
+
+**The harness.** `boot({look:'new'})` boots `?look=new`, and `node tests/run.mjs --look=new` (OG_LOOK) does it for every suite. `g.logs` collects the console's errors and warnings from the first line. `people.test.mjs` unpacks `vendor/` with HEAD's build. `run.mjs`'s time table guesses looknew at 200 s and lookpair at 420 s.
+
+### Verified (headless Chromium)
+- **`tests/looknew`, 10 checks, all pass:**
+  - THREE.REVISION is '170' and it is the page's only three.js script.
+  - Colour management is off, the output `srgb-linear`, and a point light's decay is 1.
+  - The world loads with shadows on.
+  - In Dunmore at noon, 7 of 7 townsfolk within 60 m are skinned meshes whose bone matrices change over 40 ticks.
+  - The town draws 836 calls and 1.47 M triangles.
+  - The sun's shadow map is 2048.
+  - A real swing through the loop's own tick takes 12 from a Bandit.
+  - The inn's room builds and draws (59 calls).
+  - A ruins gate floor builds and draws, with 44 shell meshes and 28 foes.
+  - No page errors, and no console errors or warnings, from the first line.
+- **`tests/lookpair`, 5 checks, all pass.** Dunmore at noon in clear weather, the same spot, on each look; the pair is in `docs/prototypes/f1/` (`dunmore-noon-r128.png`, `dunmore-noon-r170.png`).
+  - **Flat regions:** within 1 level a channel. Sky (167,203,232) on both; grass (173,212,98) on both; road (203,212,124) against (202,211,124); a shaded wall (95,103,102) against (96,104,103).
+  - **Whole frame:** mean difference 6.0 to 7.1 of 255 over three runs, with 8–9% of pixels off by more than 24. Most of that is the grass texture's fine noise and buildings the town happened to build differently in each run (the left edge of the pair). Average brightness is 175.2 against 174.0.
+- **Frame cost at that spot** (software GL, one suite running alone):
+  - **Eight timed renders:** r128 1,836 ms a frame for 810 calls and 1.15 M triangles; 0.170 1,997 ms for 780 calls and 1.22 M triangles. That is 1.59 against 1.63 µs a triangle.
+  - **The game's own PERF meter:** frame 2,000 ms against 2,383 ms; loop 4.8 against 2.8 ms; the draw call 12.4 against 13.5 ms.
+  - **Reading:** about the same cost per triangle. 0.170 lights per pixel where r128's Lambert lit per vertex, which software GL feels more than a GPU would.
+- **The world suites under `--look=new`:** `people` (and `peoplesize`), `q7world`, `walls`, `pois`, `snowrepaint` and `hourhitch` all pass. None are owed.
+- **The old look, 26 suites run here, all pass:** `settingsheet` (extended with the renderer row: → keeps 0.170 for the next load and says so, no reload in play, ← clears it), `people`, `lod`, `foes`, `goblins`, `ogre`, `trolls`, `bear`, `fiercewolf`, `creator`, `inspector`, `coopsaves`, the five `dungeon*`, `interiors`, `dmgnums`, `cloaks`, `gait`, `export` and `saves`. The full suite of 453 runs in CI's 12 shards on the PR. Serially it is about 9 hours, more than one session can run here.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK. `python3 scripts/three_bundle.py --check`: matches.
+### Needs eyes
+- **The two looks side by side on a real machine.** Toggle with `?look=new` and `?look=old`. Software GL agrees to a level. A GPU's own rounding and its anti-aliasing may not.
+- **Lambert per pixel.** 0.170 lights `MeshLambertMaterial` per fragment; r128 did it per vertex. Flat ground is the same. Large, coarse faces under a point light (a torch on a wall) will show a rounder pool of light on 0.170. I left it: F3 replaces these materials anyway.
+- **The renderer row in play waits for a reload** rather than reloading at once (above). If Michael wants it to reload and warn instead, that is a one-line change.
+- **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs. `looknew` reports whether it was fetched; from `file://` here it was not (`r128Fetched: false`). On Pages it would be one cached request at most.
+- **Not run under `--look=new`:** the rest of the suite (447 suites). The six world suites the card named pass. A full `--look=new` run in CI is a cheap follow-up once F2 starts building on the switch.

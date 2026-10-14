@@ -27,7 +27,7 @@ const WOLF_KINDS={
 const WOLF_RIGS=new Set();
 const WOLF_GEO=new Map();
 const WOLF_LOD={q:.5,far:17,near:15,shadowLo:true};
-const WOLF_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0,skinning:true});
+const WOLF_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0,...SKINNED});
 // the legs: [shoulder or hip bone, elbow or stifle, wrist or hock, paw], each joint's offset from the one above
 const WOLF_LEGS={
   fore:{root:[-.03,.03],a:[-.15,-.03],b:[-.15,.01],c:[-.07,.02]},

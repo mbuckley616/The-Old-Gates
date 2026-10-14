@@ -13,7 +13,7 @@
 // apron and hammer. Prototyped at claude.ai/artifact/WmgDqFPQ1dyBBKX3u8P6Ma (backlog H).
 const PEOPLE_RIGS=new Set();
 const PEOPLE_GENOMES=new Map();
-const PEOPLE_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:0,side:THREE.DoubleSide,skinning:true});
+const PEOPLE_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.86,metalness:0,side:THREE.DoubleSide,...SKINNED});
 // ── the shape kit: geometries any builder can draw from ──
 // SK.q scales the segment counts: 1 for a person up close, lower for the distant copy (buildPerson's lod)
 const SK={
