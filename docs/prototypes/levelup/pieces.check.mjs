@@ -2,6 +2,8 @@
 // pieces.js. 200 houses rolled as the lane rolls them: merged, each is the same triangles and the same bounds as the house
 // unmerged, in a few meshes, and the same key builds the same house; and the lane renders as it did before the move (its
 // picture against one made from HEAD's street.js, which the check writes beside it and compares in the browser).
+// Session 834: the concept run's Gatelands kit folded into pieces.js. Its six plans, built from pieces.js, match the line-up's
+// recorded triangles and heights in pieces-gatelands.json, and pieces-gatelands.html renders from the folded kit.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -27,7 +29,18 @@ check('merged, every house of 200 is the same triangles as unmerged', r.every(x 
 check('and the same bounds, within a tenth of a millimetre', r.every(x => x.dBox < 1e-4), Math.max(...r.map(x => x.dBox)));
 check(`meshes a house: ${st(x => x.drawsA).join(' to ').replace(/ to (\d+)$/, ' (mean $1)')} unmerged, ${st(x => x.drawsB).join(' to ').replace(/ to (\d+)$/, ' (mean $1)')} merged; triangles ${st(x => x.trisB).map(v => v.toLocaleString()).join(' to ').replace(/ to ([\d,]+)$/, ' (mean $1)')}`, r.every(x => x.drawsB <= 12 && x.drawsB < x.drawsA));
 check('the same key builds the same house, and its flowers are the same', r.every(x => x.same && x.flowers));
-check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close();
+check('no page errors', errs.length === 0, errs.slice(0, 3));
+{ const rec = JSON.parse(fs.readFileSync(path.join(here, 'pieces-gatelands.json'), 'utf8')).line.plans;
+  const got = await page.evaluate(async () => { const K = await import('./pieces.js'), P = K.GL_PLANS, out = {};
+    const row = [P.cottage({ paint: 'red' }), { ...P.cottage({ hip: true, paint: 'blue' }), name: 'Cottage, hipped' }, P.farmhouse({}), P.townhouse({ color: 'ochre' }), P.merchant({ color: 'cream' }), P.warehouse({})];
+    for (const pl of row) { const g = K.gatelandsBuilding(pl), u = g.userData; out[u.name] = { tris: u.tris, calls: u.calls, ...u.size }; g.traverse(m => m.geometry && m.geometry.dispose()); } return out; });
+  // draw calls are left out: a lit window is rolled from common.js's shared rnd(), so whether a plan has the 'lit' mesh depends on the rolls before it
+  const strip = v => v && JSON.stringify({ ...v, calls: undefined }), bad = Object.keys(rec).filter(k => strip(rec[k]) !== strip(got[k]));
+  check(`the Gatelands kit, folded into pieces.js: all ${Object.keys(rec).length} plans build as the line-up recorded them, triangles and sizes (${Object.entries(got).map(([k, v]) => k.split(' ')[0] + ' ' + v.tris.toLocaleString()).join(', ')})`, bad.length === 0 && Object.keys(got).length === Object.keys(rec).length, bad.map(k => [k, rec[k], got[k]])); }
+await page.close();
+for (const v of ['street', 'line', 'kit']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 });
+  const n = await pg.evaluate(() => Object.keys(window.__stats.plans || {}).length); check(`pieces-gatelands.html?view=${v} renders from the folded kit: ${n} plans or pieces, no page errors but the people's missing pack`, n > 0 && e2.every(e => /json|JSON/.test(e)), e2.slice(0, 2)); await pg.close(); }
 // the lane before and after the move: HEAD's street.js shot beside the working one
 const head = execFileSync('git', ['show', 'HEAD:docs/prototypes/levelup/street.js'], { cwd: here }).toString(), now = fs.readFileSync(path.join(here, 'street.js'), 'utf8');
 if (head === now) console.log('SKIP the lane comparison: street.js is HEAD\'s'); else {

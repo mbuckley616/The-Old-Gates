@@ -17074,3 +17074,24 @@ Which crown the tithe house takes is asked as **DECISION #295**: A stepped merlo
 - **The water** on the quay page is a flat colour, not the slice's water. Ships and harbours are F11's.
 - **The banner** uses the awning's stripes. The Compact's colours are not in the canon, so they are a stand-in and the quest writer's to name.
 - **The tithe house's doors** behind the loggia are dark from the quay at noon. Whether the counting room should show light inside, by day or by lamp, is F9's.
+
+## v80 — Session 834 — The Gatelands kit folded into `pieces.js` (card F6, prototype only)
+The concept artist asked on 13 Oct for `pieces-gatelands.js` and `pieces.js` to become one kit. `pieces-gatelands.js` held two things: the concept run's Gatelands kit (`SCALE`, the materials, the bucket, the face with its openings cut through, the pieces, the roofs, the chimneys, `building` and the six `PLANS`, about 240 lines), and the scenes of its own page. The game will take the kit, not the page.
+
+The kit now lives in `pieces.js`, after the lane slice's `gatelandsHouse` and before the Mark's hall, moved as it was. Two things about its names changed:
+- Its `mats()` collided with Aurenne's, so it is `glMats()`.
+- Its generic names are exported with the island in them: `gatelandsBuilding`, `GL_PLANS`, `GL_FIN`, `glWin`, `glBucket`, `glFace`, `glFinish`, `glBox`, `glMats`. `SCALE` keeps its name.
+
+`pieces-gatelands.js` is now only its page's scenes (142 lines). It imports the kit under its old names, so the scene code is unchanged and `pieces-gatelands.html` works at the same address. `pieces.js` is one module for the three islands: Aurenne's houses, church and civic buildings, the Gatelands' lane house and plans, and the Mark's hall and lots.
+
+**One thing found on the way.** The kit lights about one window in seven from `common.js`'s shared `rnd()`. A plan's draw calls (11 or 12, whether it has a lit-window mesh) therefore depend on how many rolls came before it on the page. That is the co-op rule's case of a roll that should come from a stream keyed by the place. It is cosmetic, so this session left it alone to keep the move byte for byte; the Gatelands' lot rules (next) key it.
+
+The lane slice's house (`gatelandsHouse`, the approved lane of 12 Oct) and the concept run's cottage are still two builders of the same Gatelands cottage. Making the lane build from `GL_PLANS` would change an approved picture, so it waits until the plans go into the game.
+### Verified (headless Chromium)
+- **Byte for byte:** before the move, all eight of the page's shots (`shoot-pieces.mjs`: the street in three mixes, from above, the cottage, the town, the line-up and the kit) were taken at 640 px. After the move, all eight JPEGs are identical. The page's stats match too, except the port number in the missing people pack's error.
+- **`pieces.check.mjs`: all pass, with four new checks.**
+  - The six plans, built from `pieces.js`, match the line-up's recorded triangles and sizes in `pieces-gatelands.json`: cottage 1,826, hipped cottage 1,472, farmhouse 2,144, townhouse 5,081, merchant's house 4,522, warehouse 9,132.
+  - `pieces-gatelands.html`'s street, line-up and kit render from the folded kit with no page errors, apart from the people's missing pack.
+- **`aurenne.check.mjs` and `mark.check.mjs`** pass.
+### Needs eyes
+- Nothing to look at: the pictures are the same. The committed 1920 px pictures were not shot again.
