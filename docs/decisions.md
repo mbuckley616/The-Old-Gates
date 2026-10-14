@@ -4,6 +4,42 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's courtyard house: its size and its roof (look builder, Session 899) — DECISION #329
+**F9's seventh room: Aurenne's courtyard house (look builder, Session 899).** Your A on #318 asked for OG-115's "two-storey courtyard house round a fountain with arcades and blue tile" next, as its own piece: a rich house for the better quarter, with its rooms built inside it. It is a prototype in `docs/prototypes/levelup/pieces.js` (`aurenneCourtyard`, the house) and `rooms.js` (`aurenneCourtyardHouse`, its rooms), at `rooms.html?room=court`.
+- **The house:** 15 by 15 m, two storeys, blank cream plaster to the street with one arched door in a frame of glazed tile, small barred windows below and four lattice screens above.
+- **The court:** its walls 7.2 m apart. A gallery runs round it on both floors: below, three round arches a side on piers with lathed stone columns; above, cedar columns and a turned balustrade. The open middle (4.4 m) has a fountain in a tiled octagonal basin and four orange trees in pots.
+- **The roof:** pantile, sloping in from a parapet on the outer walls to eaves over the upper gallery, so the rain falls into the court.
+- **Twelve rooms:**
+  - *ground floor:* a vestibule with tiled benches; a store of oil jars and sacks; OG-115's kitchen (three braziers, a rail of hanging copper pots, a bread oven); a dining room with a long table; a loom by the stair; the reception hall across the back, with divans on three walls, rugs, brass tables and a tile dado;
+  - *upstairs:* the bedroom (a bed, chests, a table with a mirror and a comb), a guest room, the children's room (two small beds, a toy chest, a rocking horse), a linen press, and a study (books, a lectern, a divan under the lattices).
+
+The rooms are 13,100 triangles in 20 draws, in the house's 28,400 in 14. The walks are clear by 0.15 m on both floors. Headroom is 2.7 m in the ground rooms, 2.73 m upstairs and 2.3 m over every tread of the stair.
+
+**1. The size and the court:**
+- **A. As drawn** *(recommended)*: 15 by 15 m, about two street lots, with a court 4.4 m open to the sky. It is a rich house that still fits among the street's houses.
+- **B. Larger:** 18 by 18 m, with about 7 m of open court and room for more trees, as OG-115's picture has. It fills a block.
+
+**2. The roof:**
+- **A. Pantile sloping into the court, as drawn** *(recommended)*: only the parapet shows from the street, and the court collects the rain.
+- **B. Flat roof terraces round the court**, like the street's flat houses, with a parapet over the gallery and a stair up to them.
+
+The generator placing it as a lot kind of the better quarter comes in the game, after F2a.
+
+Pictures:
+- [from the street door through the vestibule to the fountain](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-court.jpg)
+- [the upper gallery over the court](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-gallery.jpg)
+- [the gallery at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-gallery-night.jpg)
+- [the reception hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-hall.jpg)
+- [the kitchen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-kitchen.jpg)
+- [the bedroom](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-bedroom.jpg)
+- [the study](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-study.jpg)
+- [the children's room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-children.jpg)
+- [the house from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-outside.jpg)
+- [the roof and the court from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-above.jpg)
+
+## Answered
+
+
 ### The Gatelands galleon in the new kit: carvel or clinker, and its gun ports (look builder, Session 896) — DECISION #323
 **F11's fifth hull: the Gatelands galleon (look builder, Session 896).** It is the last of the game's five classes in the Gatelands' dress (OG-004's "galleon warship"). It is a prototype in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon`) and `ships.html?ship=galleon`. It is built to the game's galleon's numbers:
 - **The size:** 22 by 7.0 m, draft 1.5, with the deck 1.0 m over the sea.
@@ -32,6 +68,8 @@ Pictures:
 - [the quarterdeck from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-castle.jpg)
 - [the forecastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-fore.jpg)
 
+Michael: **A. 1 A, 2 A: carvel; closed port lids, as drawn** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `gatelandsGalleon` is carvel with its twelve port lids shut, as drawn.
 
 ### Aurenne's tavern on a terrace over the sea: its house and its shade (look builder, Session 895) — DECISION #322
 **F9's sixth room: Aurenne's tavern on a terrace over the sea (look builder, Session 895).** It is the third of L9's three inns (OG-108: "an Aurenne tavern on a terrace over the sea"). It is built inside the kit's Roman house of Aurenne (`pieces.js`'s `aurenneHouse`, the tile kind, 9.6 by 8 m under a hipped pantile roof, with its arcade of four round arches across the front). It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneTavern`) and `rooms.html?room=tavern`.
@@ -63,6 +101,8 @@ Pictures:
 - [the room and its counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-tap.jpg)
 - [the tavern from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-outside.jpg)
 
+Michael: **A. 1 A, 2 A: the Roman house; a vine on a pergola** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `aurenneTavern` stands in the Roman house under its vine pergola, as drawn.
 
 ### The Mark's inn as a hall of long tables: where guests sleep, and its size (look builder, Session 894) — DECISION #321
 **F9's fifth room: the Mark's inn, a hall of long tables (look builder, Session 894).** It is the second of L9's three inns (OG-108: "a Markish longhouse with long tables"). It is built inside the Mark's hall from the kit (`pieces.js`'s `markHall`, the shell of the longhouse room you passed on #311), widened to 10 by 18 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markAlehall`) and `rooms.html?room=alehall`.
@@ -90,6 +130,8 @@ Pictures:
 - [the counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-counter.jpg)
 - [the hall from its yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-outside.jpg)
 
+Michael: **A. 1 A, 2 A: wall benches; 10 by 18 m, as drawn** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `markAlehall` keeps its wall benches and its 10 by 18 m hall, as drawn.
 
 ### The Gatelander inn as a room: its shell and its guest rooms (look builder, Session 893) — DECISION #320
 **F9's fourth room: the Gatelander inn round its hearth (look builder, Session 893).** L9 asks for three inns by island (OG-108: "a cosy Gatelander inn with a hearth, a Markish longhouse with long tables, an Aurenne tavern on a terrace over the sea"). Your A on #303 puts rooms inside the street's own shells. The kit has no inn yet, so this one is built inside the kit's farmhouse (`GL_PLANS.farmhouse`: 10.5 by 6.2 m, two storeys of 2.9 and 2.7 m, whitewashed under slate, a stack at each gable), with its front door left ajar. It is a prototype in `docs/prototypes/levelup/rooms.js` (`gatelandsInn`) and `rooms.html?room=inn`.
@@ -120,6 +162,8 @@ Pictures:
 - [a guest room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-chamber.jpg)
 - [the inn from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-outside.jpg)
 
+Michael: **A. 1 A, 2 A: farmhouse inn, three rooms off a passage** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `gatelandsInn` keeps the farmhouse shell and its three rooms off the passage, as drawn.
 
 ### The Gatelands cog in the new kit: its castles (look builder, Session 892) — DECISION #319
 **F11's fourth hull: the Gatelands cog (look builder, Session 892).** Your A on the ship ladder kept the game's five classes, each dressed by its island, and OG-004 draws the Gatelands' "merchant cog". This prototype is in `docs/prototypes/levelup/ships.js` (`gatelandsCog`) and `ships.html?ship=cog`. It is built to the game's cog's numbers:
@@ -147,6 +191,8 @@ Pictures:
 - [the aftcastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-castle.jpg)
 - [the forecastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-fore.jpg)
 
+Michael: **A. Both as drawn: cabin aft, open forecastle on posts** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `gatelandsCog` keeps the cabin aft and the open forecastle on posts, as drawn.
 
 ### Aurenne's home as a room: the dyer's flat over a shop, and the courtyard house (look builder, Session 891) — DECISION #318
 **F9's third room: Aurenne's home (look builder, Session 891).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Aurennais street house from the kit (`pieces.js`'s `aurenneHouse`): two storeys, flat-roofed, 9.0 by 7.6 m, with cream plaster, lattice screens upstairs and a pergola on the roof. It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneHome`) and `rooms.html?room=home`. The brief is OG-115's Aurenne panel ("an urban apartment over a shop, a kitchen with hanging pots, a rooftop terrace") and OG-061's blue tile. The canon's Aurenne sells its dyes, so the shop is a dyer's.
@@ -182,6 +228,8 @@ Pictures:
 - [the roof terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-roof.jpg)
 - [the house from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-outside.jpg)
 
+Michael: **A. 1 A, 2 A: a dyer's shop; build the courtyard house next** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* 1 A keeps the dyer's shop. 2 A is built: `pieces.js`'s `aurenneCourtyard`, a house of 15 by 15 m round an arcaded court with a fountain, and `rooms.js`'s `aurenneCourtyardHouse`, its twelve rooms, at `rooms.html?room=court`. Its size and its roof are asked as DECISION #329 (see Pending).
 
 ### Aurenne's caravel in the new kit: the sun-star, the sterncastle, wheel or tiller (look builder, Session 890) — DECISION #316
 **F11's third hull: Aurenne's caravel (look builder, Session 890).** Your A on #306 gave each island one rig, and Aurenne's is the game's caravel, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`aurenneCaravel`) and `ships.html?ship=caravel`. It is built to the game's caravel's numbers:
@@ -214,8 +262,8 @@ Pictures:
 - [her deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-deck.jpg)
 - [the plain sails](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-quarter-nostar.jpg)
 
-
-## Answered
+Michael: **A. 1 A, 2 A, 3 A: sun-star, castle with cabin, wheel** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `aurenneCaravel` keeps the sun-star, the sterncastle with its cabin and the wheel, as drawn.
 ### The smugglers' lair: a sea cave with its own landing, or inland (look builder, Session 873) — DECISION #314
 **F8's fourth place: a smugglers' lair (look builder, Session 873).** It is the last of the three places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`smugglersLair`) and `places.html?place=lair`, from OG-121's "smugglers' and bandits' lairs: plank platforms in a cave, storerooms, escape routes". It is built to the person as a sea cave on the Gatelands' coast:
 - **The way in:** a passage of 10 m from the land comes out on a rock floor 1.2 m over the sea.

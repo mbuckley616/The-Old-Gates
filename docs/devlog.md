@@ -18968,3 +18968,58 @@ What changed in `people.js`:
 ### Needs eyes
 - **The chevron's scale and stepping.** It is one triangle wave round the arm, about 1 cm a step. It is read off the rest body's coordinates, not a true angle round the wrist, so on a thick arm the steps stretch a little.
 - **Where the cuff sits.** On a man in a short-sleeved tunic, the band is at the sleeve's end above the elbow, as the plain cuff always was. OG-025 draws the bands at the wrist on long sleeves. That waits on sleeve length becoming a choice in the wardrobe.
+
+## v80 — Session 899 — Card F9's seventh room: Aurenne's courtyard house round a fountain (prototype only)
+The FREEZE (#297) holds. Michael answered all seven of this builder's open questions on 14 Oct, every one A. Six were "as drawn" (#316, #319, #320, #321, #322, #323), so there was nothing to build for them. #318's second part was "build the courtyard house next": OG-115's Aurenne panel leads with "a two-storey courtyard house round a fountain with arcades and blue tile", which the street's lots (6.4 to 9.6 by 6 to 8 m) cannot hold. So it is its own piece, a rich house for the better quarter, with its rooms built inside it as #303 set. OG-115 and OG-061 (the blue tile) were reread. The catalogue's notes on OG-115 flag only the Mark's "clans", which is not touched here.
+
+**The house** (`aurenneCourtyard` in `pieces.js`, on Aurenne's kit):
+- **The size:** 15 by 15 m, of two storeys (3.1 m to the upper floor).
+- **To the street:** blank cream plaster under a stone cornice, a string course at the upper floor, and one arched door of 1.3 by 2.6 m in a frame of glazed tile. There are small barred windows below and four cedar lattice screens above, as the street houses have. The house looks in, not out.
+- **The court:** its walls stand 3.6 m off the middle. Between them and a ring of columns 2.2 m off the middle runs a gallery on both floors:
+  - below, three round arches a side on piers, each with a lathed stone column on its court face, and a tiled kerb round the open court;
+  - above, cedar columns, a turned balustrade and the architrave the eaves rest on.
+  - The open court is 4.4 m across. It holds a fountain (an octagonal basin faced in glazed tile, a stone rim, a pedestal with a bowl and a jet) and four orange trees in pots.
+- **The roof:** one pantile roof in four slopes at 16°, from a parapet on the outer walls down to eaves over the upper gallery. The rain falls into the court. There are valleys of ridge tile at the corners, and cedar boards and rafters under it.
+  - The tiles first came out wound to face down and read dark brown from above. They are wound to face up now, and the boards under them face down.
+- **The plan:** four ranges round the court. The front range has the vestibule between two partitions. A masonry stair of 16 risers of 0.19 m climbs the west range's outer wall to a landing, and the upper floor is open over it where the head would meet it.
+- **For the checks** the shell returns its walls' footprints cut at their doors, and its piers, columns, balustrade, stair rail, fountain and trees, each with its floor (`solids`). It also returns its doors and its roof's underside as a function (`under(x, z)`).
+- The new materials (limestone paving, the upper floor's red tile, water, oranges) are added to the kit's Aurenne set, and no other piece reads them.
+
+**The rooms** (`aurenneCourtyardHouse` in `rooms.js`):
+- **Ground floor:**
+  - the vestibule, tiled to 1.2 m, with a tiled masonry bench down each side and the street door's leaf hung open;
+  - the store: seven oil jars down the street wall, sacks of grain and a chest;
+  - OG-115's kitchen: a cooking bench of three braziers with a tiled top, a rail of seven copper pots hung over it, a bread oven in the corner, a work table with a board and a bowl, a water jar, and three shelves of blue and white plates;
+  - the west range: the stair, a loom by the court wall with its weaver's bench, and two jars;
+  - the dining room: a long table of 3 m with two benches, and a sideboard of plates and copper jugs;
+  - across the back, the reception hall: divans on three walls with their cushions, two rugs, two brass tables with cups and a ewer, and a tile dado to 1.2 m broken at its doors.
+- **Upstairs:**
+  - the landing, with a chest and a rug;
+  - the bedroom across the back: a bed of 2.18 m with its headboard, a chest either side, a table with a brass mirror, a comb and a jug, a stool, a divan, a rug and a tile dado;
+  - the guest room;
+  - the children's room: two small beds of 1.78 m, a toy chest, and a rocking horse on a rug;
+  - a linen press of folded cloth;
+  - the study: shelves of books, a lectern with an open book, and a divan under the lattices with a brass table and a lamp.
+- **The lamps:** a lantern in every room, and four on brackets along each gallery.
+- **The view:** `rooms.html?room=court`. `court` is the default, from inside the street door through the vestibule and the arcade to the fountain and the hall's arch. The others are `gallery`, `hall`, `kitchen`, `bedroom`, `study`, `children`, `outside` and `above`, with `&hour=`.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 54 of 54 pass.** The other rooms' checks are unchanged. Two views are new on the page check (`court` and `gallery`, with no page errors), and six checks are new, over four keys (the shell's stream and its wall colour):
+  - **The builds:** each key is the same twice. The rooms are 13,052 to 13,088 triangles in 20 draws, in the house's 28,364 in 14.
+  - **Inside and apart:** every piece is inside the house and, upstairs, under the roof. None is in a wall, a pier, a column, the balustrade, the stair or the fountain, and none is in another.
+  - **The walks:** eleven on both floors, clear by 0.15 m. They go in at the street door, round both galleries, into every room, to the stair's foot and through the middle arch to the fountain.
+  - **The headroom:** 2.7 m in the ground rooms, 2.88 m in the gallery, 2.73 m upstairs, 2.41 m in the upper gallery, and 2.3 m over every tread.
+  - **A person fits:**
+    - the stair is 16 risers of 0.1925 m going 0.26 m;
+    - the tables are 0.76 m and the kitchen's work table 0.85 m;
+    - the seats are 0.45 m;
+    - the beds are 2.18 and 2.1 m, and the children's 1.78 m;
+    - the inner doors are 0.9 by 2.1 m and up, and the street door 1.3 by 2.6 m.
+  - **Open and roofed:** 144 of 144 rays down over the court reach it, and 616 of 616 over the ranges meet the roof or the walls' tops. The fountain is in the middle.
+- **Pictures:** `rooms-court-court.jpg`, `-gallery`, `-gallery-night`, `-hall`, `-kitchen`, `-bedroom`, `-study`, `-children`, `-outside` and `-above`.
+### Needs eyes
+- **The open court is small**: 4.4 m inside the columns on a house of 15 m. OG-115 draws a wider court with more planting. That is asked (#329).
+- **The upper floor's tile is dark.** It is the dyer's flat's material (Session 891), a deep red under lamplight.
+- **The kitchen's pots are open cylinders**, and the rocking horse is boxes.
+- **The rafters are cut square at the valleys.** Seen from the upper rooms, they end in steps along the corners.
+- **The night picture still has a pale sky** through the court. The page's night is the other rooms' night.
+- **Not in the game.** The generator placing it as a lot kind of the better quarter, and its rooms in `buildInteriorFor`, wait for F2a.
