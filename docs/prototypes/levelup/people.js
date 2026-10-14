@@ -329,10 +329,28 @@ function buildCloak(G, body, byName, rnd) {
       for (let k = 0; k < K - 1; k++) { const a = cols[k][r], b = cols[k + 1][r], d = a.distanceTo(b), want = sp0[k] * f; if (d > want * 1.02 || d < want * .6) { const m = a.clone().sub(b).multiplyScalar((d - want) / d * .5); a.sub(m); b.add(m); } } }
     for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r], seg = q.clone().sub(c[r - 1]), l = seg.length(); if (l > .0105) q.copy(c[r - 1]).addScaledVector(seg, .0105 / l);
       const cl = clearAt(q) + .006, hit = heightOver(S, q); if (hit && hit.h < cl) q.addScaledVector(hit.e.n, cl - hit.h); } }
-  // folds: a ripple across the columns that deepens toward the hem
-  const ph = rnd() * 6;
-  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const t = r / (R - 1), q = cols[k][r], o = q.clone().sub(new THREE.Vector3(neck.x, q.y, neck.z)); o.y = 0; o.normalize();
-    q.addScaledVector(o, Math.max(0, Math.sin(k * .85 + ph + Math.sin(k * .31) * 2)) * .022 * t ** .8 * Math.min(1, k / 3, (K - 1 - k) / 3)); }
+  // the hang (Session 826): below the shoulders the cloth falls in toward the legs as cloth does, the hem 20% nearer the
+  // body's axis than the shoulders (the body and what it wears still hold it off). The width it had is not lost: it goes
+  // into folds, each row's as deep as its spare width needs (a ripple of wavelength L and depth A is longer than its
+  // run by about (pi A / L)^2), so the folds come from the hang, deepest at the hem and none at the shoulders.
+  const ph = rnd() * 6, ax = new THREE.Vector3(neck.x, 0, neck.z), hz = q => { const o = q.clone().sub(ax); o.y = 0; return o; };
+  // the body's outline round its axis, by height (2 cm) and by angle (5 degrees): how far out it reaches there
+  const AB = 72, y0 = Math.min(...cols.map(c => c[R - 1].y)) - .05, HB = Math.ceil((neckY + .05 - y0) / .02) + 1, ext = new Float32Array(HB * AB);
+  for (const e of S.pts) { const hb = Math.floor((e.p.y - y0) / .02); if (hb < 0 || hb >= HB) continue; const o = hz(e.p), ab = ((Math.floor(Math.atan2(o.x, o.z) / (2 * Math.PI) * AB) % AB) + AB) % AB; ext[hb * AB + ab] = Math.max(ext[hb * AB + ab], o.length()); }
+  for (let c = 0; c < K; c++) { const o0 = hz(cols[c][Math.min(R - 1, 3)]), ang = Math.atan2(o0.x, o0.z), ab = ((Math.floor(ang / (2 * Math.PI) * AB) % AB) + AB) % AB, edge = Math.min(1, c / 2, (K - 1 - c) / 2);
+    // held out by the widest the body is at or below each row (the cloth falls from the hands and the hips, not in under them), then smoothed
+    const rad = cols[c].map(q => hz(q).length()), body = cols[c].map(q => { const hb = Math.floor((q.y - y0) / .02); let m = 0; for (let h = Math.max(0, hb - 1); h <= Math.min(HB - 1, hb + 1); h++) for (let d = -2; d <= 2; d++) m = Math.max(m, ext[h * AB + (ab + d + AB) % AB]); return m; });
+    for (let r = R - 2; r >= 0; r--) body[r] = Math.max(body[r], body[r + 1] - .004);
+    let tgt = rad.map((v, r) => { const t = r / (R - 1); return Math.min(v, Math.max(v * (1 - .2 * Math.min(1, t / .45) ** 1.5), body[r] + clearAt(cols[c][r]) + .02)); });
+    for (let it = 0; it < 3; it++) tgt = tgt.map((v, r) => r === 0 ? v : Math.min(rad[r], (tgt[r - 1] + 2 * v + tgt[Math.min(R - 1, r + 1)]) / 4));
+    for (let r = 1; r < R; r++) { const q = cols[c][r], o = hz(q), L = o.length(); if (L > 1e-6) q.addScaledVector(o, (tgt[r] / L - 1) * edge); } }
+  let foldMax = 0;
+  for (let r = 1; r < R; r++) { const t = r / (R - 1); let have = 0, want = 0; for (let c = 0; c < K - 1; c++) { have += hz(cols[c][r]).distanceTo(hz(cols[c + 1][r])); want += sp0[c] * (1 + (flare - 1) * t); }
+    const lam = 4.6 * want / (K - 1), A = Math.min(.075, lam / Math.PI * Math.sqrt(Math.max(0, want / Math.max(have, 1e-6) - 1)) + .012 * t) * Math.min(1, t / .25); foldMax = Math.max(foldMax, A);
+    for (let c = 0; c < K; c++) { const q = cols[c][r], o = hz(q).normalize(), edge = Math.min(1, c / 3, (K - 1 - c) / 3), w = Math.sin(c * 2 * Math.PI / 4.6 + ph + Math.sin(c * .37 + ph) * 1.2);
+      q.addScaledVector(o, A * w * edge); if (r === R - 1) q.y += .012 * (1 - w) * edge; } }
+  // and clear of the body once more, so no valley of a fold goes into it
+  for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r], cl = clearAt(q) + .006, hit = heightOver(S, q); if (hit && hit.h < cl) q.addScaledVector(hit.e.n, cl - hit.h); }
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
@@ -350,7 +368,8 @@ function buildCloak(G, body, byName, rnd) {
   const boss = new THREE.Mesh(new THREE.SphereGeometry(.007, 12, 8), br.material); boss.position.copy(br.position).addScaledVector(nrm, .005); out.push(boss);
   for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
-  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3) } };
+  const hemIn = (() => { let top = 0, hem = 0; for (const c of cols) { top += hz(c[1]).length(); hem += hz(c[R - 1]).length(); } return +(hem / top).toFixed(3); })();
+  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), foldMax: +foldMax.toFixed(3), hemIn } };
 }
 
 // ── the hood up (Session 823, Michael's note on #274: "the hood is semi-transparent") ──
