@@ -313,7 +313,7 @@ function posedBody(body) {
 function buildCloak(G, body, byName, rnd) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
-  const len = D.cloakLen ?? .8, L = .4 + 1.0 * len, K = 34, open = .38, flare = 1.12 + .4 * len;
+  const len = D.cloakLen ?? .8, L = .4 + 1.0 * len, K = 56, open = .38, flare = 1.12 + .4 * len;
   const clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .02 - q.y) / .03)); return .03 + k * ((D.mantle && q.y > neckY - .32 ? .095 : D.tunic ? .04 : .015) - .01); };
   // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
   const cols = [], tops = [];
@@ -329,10 +329,11 @@ function buildCloak(G, body, byName, rnd) {
       for (let k = 0; k < K - 1; k++) { const a = cols[k][r], b = cols[k + 1][r], d = a.distanceTo(b), want = sp0[k] * f; if (d > want * 1.02 || d < want * .6) { const m = a.clone().sub(b).multiplyScalar((d - want) / d * .5); a.sub(m); b.add(m); } } }
     for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r], seg = q.clone().sub(c[r - 1]), l = seg.length(); if (l > .0105) q.copy(c[r - 1]).addScaledVector(seg, .0105 / l);
       const cl = clearAt(q) + .006, hit = heightOver(S, q); if (hit && hit.h < cl) q.addScaledVector(hit.e.n, cl - hit.h); } }
-  // folds: a ripple across the columns that deepens toward the hem
-  const ph = rnd() * 6;
-  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const t = r / (R - 1), q = cols[k][r], o = q.clone().sub(new THREE.Vector3(neck.x, q.y, neck.z)); o.y = 0; o.normalize();
-    q.addScaledVector(o, Math.max(0, Math.sin(k * .85 + ph + Math.sin(k * .31) * 2)) * .022 * t ** .8 * Math.min(1, k / 3, (K - 1 - k) / 3)); }
+  // the hang (Session 839, #274's A): each column is moved as one curve, in polar terms round the neck's vertical axis.
+  // Below the last row where it lies on the body (the shoulder, the arm, the hand), it comes in toward the legs, halfway
+  // to the body's outline below it, along a smooth step; then folds are laid down whole columns, out and in, deepening
+  // toward the hem, never in closer than the body allows; the hem rises on a fold's ridge and drops in its trough.
+  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, worn);
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
@@ -350,7 +351,79 @@ function buildCloak(G, body, byName, rnd) {
   const boss = new THREE.Mesh(new THREE.SphereGeometry(.007, 12, 8), br.material); boss.position.copy(br.position).addScaledVector(nrm, .005); out.push(boss);
   for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
-  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3) } };
+  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), ...H.stats, through: armsThrough(cols, R, PP, neck, worn) } };
+}
+
+// the body round the neck's axis: for each height (2 cm) and angle (4°) the furthest point of the posed body, so a
+// column can ask how far in it may come at any height (Session 839)
+// which points of the pack stand for what the person wears under the cloak: the body, and the skirt's fitting shell
+// when a skirt is worn (the short tunic's skirt is cut from it, and stands out of the body by up to 2.5 cm, plus its push)
+function wornMask(D) { const m = new Uint8Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
+  if (D.skirt) { const sk = D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort; for (const v of sk) m[v] = 2; } return m; }
+function radialMap(PP, ax, az, y0, y1, B) {
+  const NA = 90, NY = Math.ceil((y1 - y0) / .02) + 1, M = new Float32Array(NA * NY), n = PP.length / 3;
+  for (let i = 0; i < n; i++) { if (!B[i]) continue; const y = PP[i * 3 + 1]; if (y < y0 || y > y1) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, r = Math.hypot(dx, dz) + (B[i] === 2 ? .025 : 0);
+    const a = ((Math.round((Math.atan2(dx, -dz) + Math.PI) / (2 * Math.PI) * NA) % NA) + NA) % NA, j = Math.round((y - y0) / .02), o = j * NA + a; if (r > M[o]) M[o] = r; }
+  const S = new Float32Array(M.length); for (let j = 0; j < NY; j++) for (let a = 0; a < NA; a++) { let m = 0; for (let d = -2; d <= 2; d++) for (let e = -1; e <= 1; e++) { const jj = j + e; if (jj < 0 || jj >= NY) continue; m = Math.max(m, M[jj * NA + (a + d + NA) % NA]); } S[j * NA + a] = m; }
+  return (th, y) => { const j = Math.max(0, Math.min(NY - 1, Math.round((y - y0) / .02))), a = ((Math.round((th + Math.PI) / (2 * Math.PI) * NA) % NA) + NA) % NA; return S[j * NA + a]; };
+}
+function buildHang(cols, R, PP, neck, clearAt, len, rnd, B) {
+  const ax = neck.x, az = neck.z, K = cols.length, polar = q => ({ th: Math.atan2(q.x - ax, -(q.z - az)), r: Math.hypot(q.x - ax, q.z - az) });
+  let yLo = 1e9; for (const c of cols) yLo = Math.min(yLo, c[R - 1].y); const yTop = neck.y, bodyR = radialMap(PP, ax, az, yLo - .1, yTop + .05, B);
+  const setR = (q, th, r) => { q.x = ax + Math.sin(th) * r; q.z = az - Math.cos(th) * r; };
+  const floorAt = q => { const p = polar(q); return bodyR(p.th, q.y) + clearAt(q) + .006; };
+  // the columns in order round the axis on every row: the shoulder line can cross itself at the spine, which was hidden
+  // while every column stood at one radius and shows as the sheet turned inside out once they come in by different amounts
+  let untangled = 0;
+  for (let r = 0; r < R; r++) { const P0 = cols.map(c => polar(c[r])), g = .3 * (P0[K - 1].th - P0[0].th) / (K - 1), th = P0.map(p => p.th);
+    for (let it = 0; it < 4; it++) { for (let k = 1; k < K; k++) if (th[k] < th[k - 1] + g) th[k] = th[k - 1] + g; for (let k = K - 2; k >= 0; k--) if (th[k] > th[k + 1] - g) th[k] = th[k + 1] - g; }
+    for (let k = 0; k < K; k++) if (Math.abs(th[k] - P0[k].th) > 1e-6) { setR(cols[k][r], th[k], P0[k].r); untangled++; } }
+  // the last row each column lies on the body, smoothed across the columns so neighbours come in together
+  const contact = cols.map(c => { let last = 0; for (let r = 1; r < R; r++) { const q = c[r]; if (q.y > yTop - .1) continue; if (polar(q).r - floorAt(q) < .02) last = r; } return last; });
+  for (let it = 0; it < 4; it++) { const c0 = contact.slice(); for (let k = 0; k < K; k++) contact[k] = (c0[Math.max(0, k - 1)] + 2 * c0[k] + c0[Math.min(K - 1, k + 1)]) / 4; }
+  const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // how far each point would come in, worked out per column, then smoothed across the columns before any point moves,
+  // so a column over the spine's groove does not drop in alone and crease the sheet
+  const dr = cols.map(() => new Float32Array(R)), envs = [];
+  for (let k = 0; k < K; k++) { const c = cols[k], r0i = Math.max(1, Math.min(R - 2, Math.round(contact[k]))), q0 = c[r0i], p0 = polar(q0);
+    // the body's widest from each row down to the hem, at this column's angle: the curve comes in only where nothing
+    // below it would push it out again, so it never bulges back
+    const env = new Float32Array(R); env[R - 1] = floorAt(c[R - 1]); for (let r = R - 2; r >= 0; r--) env[r] = Math.max(env[r + 1], floorAt(c[r])); envs.push(env);
+    const room = Math.max(0, p0.r - env[R - 1] - .012);
+    for (let r = r0i + 1; r < R; r++) { const p = polar(c[r]), want = Math.max(env[r] + .012, p0.r - room * .75 * ss(0, .35, q0.y - c[r].y)); dr[k][r] = Math.min(0, want - p.r); } }
+  for (let it = 0; it < 8; it++) for (let r = 1; r < R; r++) { const row = dr.map(d => d[r]); for (let k = 0; k < K; k++) dr[k][r] = (row[Math.max(0, k - 1)] + 2 * row[k] + row[Math.min(K - 1, k + 1)]) / 4; }
+  let tapered = 0;
+  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { if (dr[k][r] > -1e-4) continue; const q = cols[k][r], p = polar(q); setR(q, p.th, Math.max(p.r + dr[k][r], envs[k][r] + .012, floorAt(q))); tapered++; }
+  // no sharp lobes: what the hand or the hip pushes out, the cloth rises to and falls from gently, never more than a
+  // centimetre out for three down, below the shoulders, along each column (it only ever moves out, so stays clear)
+  { const rad = cols.map(c => c.map(q => polar(q).r)), cone = .33, step = .0105;
+    for (let k = 0; k < K; k++) { const a = rad[k], b = a.slice(); for (let r = 1; r < R; r++) { if (cols[k][r].y > yTop - .25) continue; for (let d = -12; d <= 12; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - cone * step * Math.abs(d); if (v > b[r]) b[r] = v; } } rad[k] = b; }
+    for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const q = cols[k][r], p = polar(q); if (rad[k][r] > p.r + 1e-5) setR(q, p.th, rad[k][r]); } }
+  // how far the hem has come in from the widest the column stands below the shoulders, and how far it still stands
+  // off what is under it (the legs, or a long skirt it cannot come in past) at the median column, before the folds
+  let hemIn = 0; for (const c of cols) { let w = 0; for (const q of c) if (q.y < yTop - .25) w = Math.max(w, polar(q).r); hemIn += (w - polar(c[R - 1]).r) / K; }
+  const hemSlack = cols.map(c => polar(c[R - 1]).r - floorAt(c[R - 1])).sort((a, b) => a - b)[K >> 1];
+  // the folds: whole columns, a wave of about six columns with a wander, deepening from the shoulders to the hem
+  const ph = rnd() * 6, P = 5.5 + rnd(), Amax = .03 + .025 * len; let deep = 0;
+  const fold = cols.map((_, k) => { const e = Math.min(1, k / 2.5, (K - 1 - k) / 2.5), w = Math.sin(2 * Math.PI * k / P + ph + .9 * Math.sin(k * .37 + ph)); return e * Math.sign(w) * Math.abs(w) ** .7; });
+  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const q = cols[k][r], s = Math.max(0, Math.min(1, (yTop - .12 - q.y) / (yTop - .12 - yLo))), p = polar(q), A = Amax * s ** 1.1;
+    let d = A * fold[k]; if (d < 0) { const space = Math.max(0, p.r - floorAt(q)); d = -space * (1 - Math.exp(d / Math.max(space, 1e-4))); }
+    setR(q, p.th, p.r + d); q.y += .45 * d * s ** 4; if (Math.abs(d) > deep) deep = Math.abs(d); }
+  let crossed = 0; for (let r = 0; r < R; r++) for (let k = 1; k < K; k++) if (polar(cols[k][r]).th < polar(cols[k - 1][r]).th) crossed++;
+  return { stats: { untangled, crossed, tapered, hemIn: +hemIn.toFixed(4), hemSlack: +hemSlack.toFixed(4), foldDepth: +deep.toFixed(4), foldPeriod: +P.toFixed(2) } };
+}
+// nothing of the body inside the cloak's span comes out through it: each body point under the shoulders and above the
+// hem, between the second column and the second-last, lies nearer the axis than the sheet at its angle and height
+function armsThrough(cols, R, PP, neck, BM) {
+  const ax = neck.x, az = neck.z, K = cols.length, pol = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - ax, -(q.z - az)), r: Math.hypot(q.x - ax, q.z - az), y: q.y })));
+  const at = (k, y) => { const c = pol[k]; let lo = 0; while (lo < R - 2 && c[lo + 1].y > y) lo++; const a = c[lo], b = c[lo + 1], t = Math.max(0, Math.min(1, (a.y - y) / Math.max(1e-6, a.y - b.y))); return { th: a.th + (b.th - a.th) * t, r: a.r + (b.r - a.r) * t }; };
+  let yHem = -1e9; for (const c of pol) yHem = Math.max(yHem, c[R - 1].y); const yTop = neck.y - .14, n = PP.length / 3, NB = Math.max(1, Math.ceil((yTop - yHem) / .01)), tab = [];
+  for (let j = 0; j <= NB; j++) { const y = yTop - j * .01; tab.push(cols.map((_, k) => at(k, y))); }
+  let tested = 0, out = 0;
+  for (let i = 0; i < n; i++) { if (!BM[i]) continue; const y = PP[i * 3 + 1]; if (y > yTop || y < yHem + .01) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, th = Math.atan2(dx, -dz), r = Math.hypot(dx, dz) + (BM[i] === 2 ? .025 : 0), row = tab[Math.round((yTop - y) / .01)];
+    if (th < row[1].th || th > row[K - 2].th) continue; let k = 1; while (k < K - 2 && row[k + 1].th < th) k++; const A = row[k], B = row[k + 1];
+    const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))); tested++; if (r > A.r + (B.r - A.r) * t) out++; }
+  return { tested, out };
 }
 
 // ── the hood up (Session 823, Michael's note on #274: "the hood is semi-transparent") ──

@@ -47,6 +47,8 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   for (const [k, c] of Object.entries(r.cloaks)) { console.log(k, JSON.stringify(c));
     check(`${k}: saves and loads back with its dress (${c.bytes} bytes)`, c.saved && c.bytes < 1100);
     if (c.columns) { check(`${k}: the cloak hangs clear of the body (closest ${(c.minClear * 100).toFixed(1)} cm, ${c.rows} rows of ${c.columns})`, c.minClear > .005 && c.under === 0, c);
+      check(`${k}: nothing of the arms, the body or the skirt comes out through the cloak (${c.through.out} of ${c.through.tested} points)`, c.through.tested > 1000 && c.through.out === 0, c.through);
+      check(`${k}: the cloak hangs in toward the legs below the hands (the hem ${(c.hemIn * 100).toFixed(1)} cm in from the widest, ${(c.hemSlack * 100).toFixed(1)} cm off what is under it) and falls in folds ${(c.foldDepth * 100).toFixed(1)} cm deep, its columns in order round the body`, (c.hemIn > .02 || c.hemSlack < .03) && c.foldDepth > .025 && c.crossed === 0 && c.foldDepth < .08, c);
       check(`${k}: the brooch pins it at the throat (${(c.brooch * 100).toFixed(0)} cm from the neck)`, c.brooch < .2, c.brooch); }
     if (c.wantsHood) check(`${k}: the hood is there`, c.hasHood);
     if (c.hood) check(`${k}: nothing of the head comes through the hood (${c.hood.poke} of ${c.hood.tested} points, ${c.hood.tris} triangles)`, c.hood.poke === 0 && !c.hairCards, c.hood); if (k.includes('apron')) check(`${k}: the apron is there`, c.hasApron); }
@@ -78,6 +80,8 @@ if (shotArg) { const only = shotArg.split('=')[1];
   const dq = d => encodeURIComponent(JSON.stringify(d));
   await shot('cloak-front', 'seed=styles&sex=f&view=full&turn=.35&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'down', cloakLen: .75, mantle: null, apron: [.8, .76, .66], bib: true }));
   await shot('cloak-back', 'seed=styles&sex=f&view=full&turn=2.6&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'down', cloakLen: .75, mantle: null, apron: [.8, .76, .66], bib: true }));
+  await shot('cloak-side', 'seed=styles&sex=f&view=full&turn=1.57&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'down', cloakLen: .75, mantle: null, apron: [.8, .76, .66], bib: true }));
+  await shot('cloak-markman-front', 'seed=b7&sex=m&view=full&turn=.3&dress=' + dq({ cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], brooch: [.35, .35, .36], cloakLen: 1 }));
   await shot('cloak-hood', 'seed=b7&sex=m&view=head&turn=.5&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));
   await shot('cloak-hood-side', 'seed=b7&sex=m&view=head&turn=1.57&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));
   await shot('cloak-hood-back', 'seed=b7&sex=m&view=head&turn=2.6&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));
