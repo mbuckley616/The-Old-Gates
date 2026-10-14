@@ -5,20 +5,20 @@
   "trees": 230,
   "plans": {
    "Townhouse": {
-    "tris": 5081,
+    "tris": 5033,
     "calls": 11,
     "w": 6.4,
     "d": 9,
-    "eave": 9,
-    "ridge": 12.44
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Merchant’s house and shop": {
-    "tris": 4522,
+    "tris": 4426,
     "calls": 14,
     "w": 8.4,
     "d": 9,
-    "eave": 9.2,
-    "ridge": 12.64
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Farmhouse": {
     "tris": 2144,
@@ -37,12 +37,12 @@
     "ridge": 6.7
    },
    "Warehouse": {
-    "tris": 9132,
+    "tris": 9084,
     "calls": 10,
     "w": 12,
     "d": 10,
-    "eave": 11.6,
-    "ridge": 15.98
+    "eave": 11.2,
+    "ridge": 15.58
    }
   },
   "view": "street",
@@ -71,16 +71,16 @@
     "calls": 11,
     "w": 6.4,
     "d": 9,
-    "eave": 9,
-    "ridge": 12.44
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Merchant’s house and shop": {
     "tris": 3226,
     "calls": 14,
     "w": 8.4,
     "d": 9,
-    "eave": 9.2,
-    "ridge": 12.64
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Farmhouse": {
     "tris": 2144,
@@ -103,8 +103,8 @@
     "calls": 10,
     "w": 12,
     "d": 10,
-    "eave": 11.6,
-    "ridge": 15.98
+    "eave": 11.2,
+    "ridge": 15.58
    }
   },
   "view": "street",
@@ -129,20 +129,20 @@
   "trees": 230,
   "plans": {
    "Townhouse": {
-    "tris": 5225,
+    "tris": 5177,
     "calls": 11,
     "w": 6.4,
     "d": 9,
-    "eave": 9,
-    "ridge": 12.44
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Merchant’s house and shop": {
-    "tris": 4654,
+    "tris": 4558,
     "calls": 14,
     "w": 8.4,
     "d": 9,
-    "eave": 9.2,
-    "ridge": 12.64
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Farmhouse": {
     "tris": 3020,
@@ -161,12 +161,12 @@
     "ridge": 6.7
    },
    "Warehouse": {
-    "tris": 9132,
+    "tris": 9084,
     "calls": 10,
     "w": 12,
     "d": 10,
-    "eave": 11.6,
-    "ridge": 15.98
+    "eave": 11.2,
+    "ridge": 15.58
    }
   },
   "view": "street",
@@ -191,20 +191,20 @@
   "trees": 230,
   "plans": {
    "Townhouse": {
-    "tris": 5081,
+    "tris": 5033,
     "calls": 11,
     "w": 6.4,
     "d": 9,
-    "eave": 9,
-    "ridge": 12.44
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Merchant’s house and shop": {
-    "tris": 4522,
+    "tris": 4426,
     "calls": 14,
     "w": 8.4,
     "d": 9,
-    "eave": 9.2,
-    "ridge": 12.64
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Farmhouse": {
     "tris": 2144,
@@ -223,12 +223,12 @@
     "ridge": 6.7
    },
    "Warehouse": {
-    "tris": 9132,
+    "tris": 9084,
     "calls": 10,
     "w": 12,
     "d": 10,
-    "eave": 11.6,
-    "ridge": 15.98
+    "eave": 11.2,
+    "ridge": 15.58
    }
   },
   "view": "street",
@@ -253,20 +253,20 @@
   "trees": 230,
   "plans": {
    "Townhouse": {
-    "tris": 5081,
+    "tris": 5033,
     "calls": 11,
     "w": 6.4,
     "d": 9,
-    "eave": 9,
-    "ridge": 12.44
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Merchant’s house and shop": {
-    "tris": 4522,
+    "tris": 4426,
     "calls": 14,
     "w": 8.4,
     "d": 9,
-    "eave": 9.2,
-    "ridge": 12.64
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Farmhouse": {
     "tris": 2144,
@@ -285,12 +285,12 @@
     "ridge": 6.7
    },
    "Warehouse": {
-    "tris": 9132,
+    "tris": 9084,
     "calls": 10,
     "w": 12,
     "d": 10,
-    "eave": 11.6,
-    "ridge": 15.98
+    "eave": 11.2,
+    "ridge": 15.58
    }
   },
   "view": "street",
@@ -315,20 +315,20 @@
   "trees": 230,
   "plans": {
    "Townhouse": {
-    "tris": 5081,
+    "tris": 5033,
     "calls": 11,
     "w": 6.4,
     "d": 9,
-    "eave": 9,
-    "ridge": 12.44
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Merchant’s house and shop": {
-    "tris": 4522,
+    "tris": 4426,
     "calls": 14,
     "w": 8.4,
     "d": 9,
-    "eave": 9.2,
-    "ridge": 12.64
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Farmhouse": {
     "tris": 2144,
@@ -347,12 +347,12 @@
     "ridge": 6.7
    },
    "Warehouse": {
-    "tris": 9132,
+    "tris": 9084,
     "calls": 10,
     "w": 12,
     "d": 10,
-    "eave": 11.6,
-    "ridge": 15.98
+    "eave": 11.2,
+    "ridge": 15.58
    }
   },
   "view": "street",
@@ -400,28 +400,28 @@
     "ridge": 8.2
    },
    "Townhouse": {
-    "tris": 5081,
+    "tris": 5033,
     "calls": 11,
     "w": 6.4,
     "d": 9,
-    "eave": 9,
-    "ridge": 12.44
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Merchant’s house and shop": {
-    "tris": 4522,
+    "tris": 4426,
     "calls": 13,
     "w": 8.4,
     "d": 9,
-    "eave": 9.2,
-    "ridge": 12.64
+    "eave": 8.5,
+    "ridge": 11.94
    },
    "Warehouse": {
-    "tris": 9132,
+    "tris": 9084,
     "calls": 10,
     "w": 12,
     "d": 10,
-    "eave": 11.6,
-    "ridge": 15.98
+    "eave": 11.2,
+    "ridge": 15.58
    }
   },
   "view": "line",
@@ -508,5 +508,161 @@
   ],
   "people": 4,
   "errs": []
+ },
+ "street-lot": {
+  "secs": 7,
+  "puffs": 1131,
+  "trees": 231,
+  "plans": {
+   "Townhouse": {
+    "tris": 5033,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 8.5,
+    "ridge": 11.94
+   },
+   "Merchant’s house and shop": {
+    "tris": 4426,
+    "calls": 13,
+    "w": 8.4,
+    "d": 9,
+    "eave": 8.5,
+    "ridge": 11.94
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 11,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1472,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9084,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.2,
+    "ridge": 15.58
+   }
+  },
+  "view": "street",
+  "mix": "lot",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:42535/people.js:9:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:42535/people.js:9:21)"
+  ]
+ },
+ "street-lot-b": {
+  "secs": 6,
+  "puffs": 1131,
+  "trees": 231,
+  "plans": {
+   "Townhouse": {
+    "tris": 5033,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 8.5,
+    "ridge": 11.94
+   },
+   "Merchant’s house and shop": {
+    "tris": 4426,
+    "calls": 14,
+    "w": 8.4,
+    "d": 9,
+    "eave": 8.5,
+    "ridge": 11.94
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 11,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1826,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9084,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.2,
+    "ridge": 15.58
+   }
+  },
+  "view": "street",
+  "mix": "lot",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:42535/people.js:9:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:42535/people.js:9:21)"
+  ]
+ },
+ "town-lot": {
+  "secs": 6,
+  "puffs": 1131,
+  "trees": 231,
+  "plans": {
+   "Townhouse": {
+    "tris": 5033,
+    "calls": 11,
+    "w": 6.4,
+    "d": 9,
+    "eave": 8.5,
+    "ridge": 11.94
+   },
+   "Merchant’s house and shop": {
+    "tris": 4426,
+    "calls": 13,
+    "w": 8.4,
+    "d": 9,
+    "eave": 8.5,
+    "ridge": 11.94
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 11,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   },
+   "Cottage": {
+    "tris": 1472,
+    "calls": 11,
+    "w": 9.6,
+    "d": 5.4,
+    "eave": 2.7,
+    "ridge": 6.7
+   },
+   "Warehouse": {
+    "tris": 9084,
+    "calls": 10,
+    "w": 12,
+    "d": 10,
+    "eave": 11.2,
+    "ridge": 15.58
+   }
+  },
+  "view": "street",
+  "mix": "lot",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:42535/people.js:9:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:42535/people.js:9:21)"
+  ]
  }
 }

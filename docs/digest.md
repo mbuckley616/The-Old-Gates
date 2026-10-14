@@ -241,3 +241,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Team.** Systems builder: Sessions 797–798 (the Shuttle's trial, a sleeper's reach) with CI running; the other trials wait on their props. Look builder: the trials' five props and Droichead's two barrels in walls. Critic: a ship alongside the quay next.
 
 **Roadmap.** 230 of 283 stories done (225 of 279 yesterday); new: a sleeper's reach, barrels in walls, the name clash, shrines remembering.
+
+## 14 Oct 2026
+
+**Waiting on you.** One decision: unblock Look sessions (A: merge b7067e4, Look 821–860, instead of the approved 9bc8062, which no longer merges after the bodies branch landed its own copies of 14 builder files). All ten of this morning's questions are answered and written down.
+
+**Landed on main since yesterday.** F1, the renderer: three.js 0.170 behind a switch (Session 822, e7e07df). Look 804–820 (#279). Systems 776–796, the Makers' six tools, and 797–814, seventeen steadied tests (d020009). The CI retry (#271). The 2.0 scope and team (#290, #291). Concept art rounds 2 and 3. Quest writer run 17, the knot at the ring. The F2b build sheet. Bodies 839–856, prototypes. The critic on the new look. QA's flaky ledger. Build s627.
+
+**Answered this morning.** #292 A the knot; #294 C domes by rank; #295 A merlons; #296 A pointed caps; #298 A the trials' set; #300 C 3 m cells, the Old Gates vast; #303 A rooms in the shell; #305 A the mine; #306 A the sloop; systems CI A.
+
+**Blocked.** F2a waits on Systems 827–832 (CI now running on be20097) and the look branch. Main's shard 6 (lookpair) stays red until Systems 830 lands.
+
+**Roadmap.** 239 of 303 stories done (230 of 283 yesterday); 2.0's new look has 1 of 15 cards done, F6, F8, F9 and F11 under way as prototypes.
