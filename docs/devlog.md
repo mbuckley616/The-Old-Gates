@@ -17162,13 +17162,13 @@ L3's fourth item is OG-030's fifteen animals of Aurenne, the warm island (Michae
 - **Duneskimmer:** the Elderstag at 0.62 as a gazelle, sand and cream, with lyre horns in place of antlers.
 - **Sunspire Lynx:** the Hollowcat at 1.25 as a caracal, tawny and unstriped, with tall black-tipped ears and a low crest of spines down its shoulders (the sheet's heat-shedding crest).
 - **Terrace Ram:** the Craghorn Ram in cream, with bigger spiral horns (`spiral`, 2.1 turns' worth).
-- **Saltspine Monitor:** the Frostspine Lizard at 4.2 (about 1.4 m), grey, with salt-white spines. The sheet marks it as aggressive.
+- **Saltspine Monitor:** the Frostspine Lizard's parts at 4.2 (about 1.9 m), grey, with salt-white spines. The sheet marks it as aggressive.
 - **Oasis Hare:** the brown hare in sand, with ears half as long again.
 - **Scarlet Ibis** and **Cypress Stalker:** the Great Heron at 0.72 in scarlet with a down-curved bill, and at 1.05 in violet.
 - **Mirage Fox:** the red fox at 0.62 as a fennec, pale sand, with huge ears.
 - **Cliffswift:** a flier at 0.42, dark with a pale throat, with long primaries and a tiny beak. It only soars.
 - **Amber Shellcrab:** the Tidecrab at 0.8 in amber.
-- **Sand Wyrm:** the Mire Snake at 14 times its size (about 17 m), banded sand. It is a set piece known by its funnels.
+- **Sand Wyrm:** the Mire Snake at 14 times its size (about 23 m), banded sand. It is a set piece known by its funnels.
 - **Sunbeak Vulture:** the Crag Hawk at 1.4, dark brown with a pale bare head and a gold beak.
 - **Spined Gekko:** the Frostspine Lizard in sand.
 
