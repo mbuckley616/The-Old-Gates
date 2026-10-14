@@ -17406,3 +17406,32 @@ Session 844's livestock owed breeds by island. They now take the coat-by-island 
 ### Needs eyes
 - **Breeds differ only in colour.** The Mark's shaggy hill cattle would want long hair (the yak's fur in Session 855), and Aurenne's cattle a zebu's hump. A breed could carry fur and parts as well as coat when the game wants it.
 - **The Aurennais cow** keeps a faint patch pattern in cream on cream, which reads as dappled. It may want none.
+
+## v80 — Session 867 — Harness and packs: the pack mule, the draught horse and the yoked ox (backlog L3, prototype only)
+Session 855's beasts of burden owed their harness and packs. What an animal wears is the bodies builder's; the wagons and carts they draw are props, and stay the look builder's. This adds two parts to `creatures.js` and three plans, `HARNESSED`. Each plan is a Session 855 animal with what it carries. It is prototype only, under FREEZE #297.
+
+- **`packs`:** two panniers, one hanging either side of the spine, over a canvas blanket draped like the saddle's. Each has a leather lid band and a leather hanger strap down the flank. A strap runs across the back, and a bedroll is lashed on top behind the panniers. Everything sits outside the fur, as the saddle does, and is rigid on the spine bone.
+- **`harness`:** placed at a point `at` along the neck's polyline and set square to the neck there, on that neck bone, so the head moves free of it.
+  - A `collar` is a padded leather ring with two brass hames.
+  - A `yoke` is a wooden beam across the top of the neck, overhanging by `over` each side, with a bow under the neck.
+  - `fit` scales both to the flesh.
+  - To place it, the neck now records its points, radii and squash (`B.neckPts`, `B.neckR`, `B.neckS`). Nothing reads them but the harness.
+- **The plans:**
+  - the pack mule, with packs at 0.55 of the spine;
+  - the draught horse, at 1.1 times the horse, with its collar at the neck's root at a fit of 1.4, because the neck's flesh blends into the chest there;
+  - the yoked ox, with its yoke at 0.7 of the neck, behind the horns.
+  - Six gear tones (`blanket`, `pack`, `leather`, `roll`, `brass`, `wood`) are shared by all three.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 873 checks pass** across 110 plans.
+  - The three build in 0.37 to 0.41 s, with 31 or 32 bones and 34,784 to 38,236 triangles.
+  - Their skin weights sum to one, and every foot reaches its target through every gait.
+- **Pictures:** `creatures-packmule.jpg`, `creatures-draughthorse.jpg`, `creatures-yokedox.jpg` and `creatures-yokedox-front.jpg`. Three faults were found and fixed in turn:
+  - The first collar sat inside the neck's flesh, and only a brass hame showed. It was moved to the polyline's root and fitted 1.4 times larger.
+  - The first yoke sat at the shoulder, with its bow drawn as a dark band. It was moved forward behind the horns.
+  - The yoke then floated a hand above the neck, so it was lowered to 0.82 of the neck's height.
+  - The panniers were lowered so their tops sit below the back.
+### Needs eyes
+- **The panniers are plain boxes.** Wicker or sacking would want a texture and softer corners.
+- **The collar** slopes back with the horse's neck, which is right. But it is thin where it meets the chest, and from the side it reads as a line.
+- **The ox's bow** is mostly inside the thick neck, so the yoke reads as a beam alone.
+- **Traces and reins** are not drawn. They run to the wagon, so they want the look builder's carts first.

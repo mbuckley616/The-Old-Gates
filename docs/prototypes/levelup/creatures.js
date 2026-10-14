@@ -53,7 +53,7 @@ P.neck = (B, o) => {
   for (let k = 0; k < n; k++) { const a = (o.rise + (o.curve || 0) * (k + .5) / n) * DEG; pts.push(pts[k].clone().add(V(0, Math.sin(a), Math.cos(a)).multiplyScalar(len / n))); }
   const names = B.chain('neck', B.spineNames[B.spineNames.length - 1], pts.slice(0, n));
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'neck', tone: o.tone });
-  B.neckEnd = pts[n]; B.neckBone = names[n - 1];
+  B.neckEnd = pts[n]; B.neckBone = names[n - 1]; B.neckPts = pts; B.neckR = t => along(o.r, t); B.neckS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
 };
 // the head: a skull, a muzzle and a jaw; eyes, ears, horns and antlers are bits on it
 P.head = (B, o) => {
@@ -255,6 +255,27 @@ P.fronds = (B, o) => { const r = rng(B.g.seed + 21), names = (o.on || ['spine'])
     const base = b.p.clone().add(V(side * (o.root || 0), 0, 0)), pts = LEAF.map(([u, v]) => base.clone().addScaledVector(d, u * L).addScaledVector(a, v * W)), tris = [];
     for (let k = 1; k < pts.length - 1; k++) tris.push(0, k, k + 1); tris.push(0, pts.length - 1, 1);
     const c0 = B.tone(o.tone || 'frond'), c1 = B.tone(o.tip || o.tone || 'frond'); B.sheets.push({ pts, tris, bones: pts.map(() => b.i), cols: LEAF.map(([u]) => c0.clone().lerp(c1, u)) }); } };
+
+// packs (Session 867): what a beast of burden carries. Two panniers hang either side of the spine at `at`, over a canvas
+// blanket, joined by a strap across the back, with a bedroll lashed on top. All rigid on the spine bone, clear of the fur.
+P.packs = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl, L = o.len, W = o.w ?? L * .38, H = o.h ?? L * .7;
+  const box = (w, h, d, c, p, rough = .8) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 2, 2, 2), stdMat(c, { rough })); m.position.copy(p); B.bit(sp.bone, m); return m; };
+  const blanket = new THREE.CylinderGeometry(1, 1, L * 1.15, 24, 1, true, Math.PI / 2 - 1.25, 2.5); blanket.rotateZ(Math.PI / 2); blanket.rotateY(Math.PI / 2); blanket.scale(R * 1.04, Ry * 1.04, 1);
+  const bm = new THREE.Mesh(blanket, stdMat(B.tone('blanket'), { rough: .9 })); bm.material.side = THREE.DoubleSide; bm.position.copy(sp.p); B.bit(sp.bone, bm);
+  for (const sd of [1, -1]) { const p = sp.p.clone().add(V(sd * (R * 1.06 + W / 2), -Ry * .3 - H * .5, 0)); box(W, H, L, B.tone('pack'), p);
+    box(W * 1.04, H * .16, L * 1.02, B.tone('leather'), p.clone().add(V(0, H * .5, 0)), .6);
+    box(W * .1, Ry * .9 + H * .2, L * .12, B.tone('leather'), sp.p.clone().add(V(sd * R * .98, -Ry * .35, 0)), .6); }
+  box(R * 2.1, Ry * .08, L * .12, B.tone('leather'), sp.p.clone().add(V(0, Ry * 1.05, 0)), .6);
+  if (o.roll !== false) { const g = new THREE.CylinderGeometry(L * .16, L * .16, R * 2.2, 14); g.rotateZ(Math.PI / 2); const m = new THREE.Mesh(g, stdMat(B.tone('roll'), { rough: .9 })); m.position.copy(sp.p).add(V(0, Ry * 1.05 + L * .16, -L * .2)); B.bit(sp.bone, m); } };
+// harness (Session 867): a draught horse's padded collar round the base of its neck, or an ox's wooden yoke over its
+// neck with a bow under it. Rigid on the first neck bone, so the head moves free of it.
+P.harness = (B, o) => { const t = o.at ?? .2, np = B.neckPts, f = t * (np.length - 1), i = Math.min(np.length - 2, Math.floor(f)), c = np[i].clone().lerp(np[i + 1], f - i), d = np[i + 1].clone().sub(np[i]).normalize();
+  const fl = (B.plan.fur?.len || 0) * .8, k = o.fit ?? 1.1, rx = (B.neckR(t) * B.neckS[0] + fl) * k, ry = (B.neckR(t) * B.neckS[1] + fl) * k, q = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), d), bone = B.chains.neck[i];
+  if (o.kind === 'collar') { const g = new THREE.TorusGeometry(1, .2, 12, 32); g.scale(rx, ry, rx); const m = new THREE.Mesh(g, stdMat(B.tone('leather'), { rough: .55 })); m.quaternion.copy(q); m.position.copy(c); B.bit(bone, m);
+    for (const sd of [1, -1]) { const h = new THREE.Mesh(new THREE.CylinderGeometry(rx * .06, rx * .06, ry * 2.1, 8), stdMat(B.tone('brass'), { rough: .35 })); h.quaternion.copy(q).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), sd * .08));
+      h.position.copy(c).add(V(sd * rx * 1.2, ry * .15, 0)); B.bit(bone, h); } }
+  else { const wb = new THREE.Mesh(new THREE.BoxGeometry(rx * 2 + o.over * 2, ry * .32, ry * .38), stdMat(B.tone('wood'), { rough: .75 })); wb.quaternion.copy(q); wb.position.copy(c).add(V(0, ry * .82, 0)); B.bit(bone, wb);
+    const g = new THREE.TorusGeometry(1, .05, 8, 24, Math.PI); g.rotateZ(Math.PI); g.scale(rx, ry * .95, rx); const bow = new THREE.Mesh(g, stdMat(B.tone('wood'), { rough: .75 })); bow.quaternion.copy(q); bow.position.copy(c).add(V(0, ry * .66, 0)); B.bit(bone, bow); } };
 
 // ── bits: small rigid meshes ──
 const MATS = new Map();
@@ -1437,3 +1458,12 @@ Object.assign(PLANS, {
     ] }
 });
 AURENNE.push('glasswingmoth');
+// ── Session 867: harness and packs on the beasts of burden (OG-046's roads). The pack mule carries panniers and a bedroll,
+// the draught horse wears a collar with brass hames, the ox a yoke and bow; they are the same animals, with what they carry ──
+const GEAR = { blanket: [.46, .36, .22], pack: [.5, .42, .3], leather: [.3, .19, .1], roll: [.36, .32, .24], brass: [.72, .56, .26], wood: [.42, .3, .18] };
+Object.assign(PLANS, {
+  packmule: re(PLANS.mule, { name: 'Pack mule', src: 'OG-046 (beasts of burden: the mule with its packs)', scale: PLANS.mule.scale, palette: { ...PLANS.mule.palette, ...GEAR }, parts: [...PLANS.mule.parts, ['packs', { at: .55, len: .55 }]] }),
+  draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .1, fit: 1.4 }]] }),
+  yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
+});
+export const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
