@@ -17214,3 +17214,35 @@ The kit has two new options, and neither changes an older plan:
 - **The Stonejaw's shell** sits on it like a tortoise's. The sheet draws overlapping bands that bend with the back, a pangolin's or an armadillo's.
 - **The Sunfan's fan** stands behind the bird as a tail. The sheet's text calls it a crest. Raised behind the body, it reads as the sheet's picture does.
 - **None of them is in the game.** That waits for F4.
+
+## v80 — Session 854 — The sea, seventeen animals in the creature kit (backlog L3, prototype only)
+L3's next item is the sea, from OG-016's aquatic bestiary, with OG-084's seals and dolphins. Four were already plans: the Tidecrab, the Storm Whale, the giant octopus and the Shatterback. Thirteen more are new in `creatures.js`, and `SEA` lists all seventeen. Most of them are older plans at another size, or with a part changed; the rays, the squid and the seal have parts of their own. No kit code changed.
+- **Reef Moray:** the Mire Snake made thick and mottled, with a deep jaw and a tail flattened side to side.
+- **Starweed Ray:** a body 2.6 times as wide as it is deep, with a broad pectoral fin on each side that flutters as it swims. It has a whip tail and pale spots (the kit's patches).
+- **Sailfin Ray:** the starweed ray at 3.2, black over white, with taller, more pointed fins, as a manta has.
+- **Lantern Jelly:** the Wisp at 0.35, glowing gold, with its trailing threads.
+- **Coastal Tuna, Skyskimmer and Reef Shark:** the salmon's plan.
+  - The tuna is at 1.5, deep blue over silver.
+  - The skyskimmer is at 0.45, with pectoral fins grown into gliding wings.
+  - The shark is at 2.6, grey, with a pointed snout and a taller first dorsal fin.
+- **Stormswift** (the sheet's bow-wave rider, a dolphin): the Storm Whale at 0.17 (about 2.4 m), with a beak and a tall swept dorsal fin.
+- **Drifter Squid:** a mantle 1 m long, hanging head down, with eight arms and two long tentacles from below its eyes and a pair of fins at the top. It drifts on the jelly's beat.
+- **Grey seal:** a round body 1.4 m long, spotted, with fore flippers and a pair of hind flippers.
+- **Blackcurrent Eel:** the moray at 1.6, black, veined with blue light.
+- **Gate Eel and the Gate Leviathan:** a sea gate's antibodies (canon: monsters are the world's immune response).
+  - The Gate Eel is the moray at 3.
+  - The Gate Leviathan is the Storm Whale at 1.8, about 25 m long, with crystal shards at the brow.
+  - Both are dark, with seams of amber light, the colour the Faolchú's seams use.
+
+**Corrected on the way:** the Sailfin Ray first read `PLANS.starweedray` inside the same object literal that defined it. The module threw while it loaded, and the check's page waited out its five minutes. It is now built in a second block, after the Starweed Ray exists.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 699 checks pass** across 91 plans. One new check confirms that the seventeen sea animals are each a plan from OG-016, OG-084 or OG-031 (the Shatterback's sheet).
+  - The thirteen new plans build in 0.08 to 1.0 s, with 12 (the rays) to 139 (the jelly's threads) bones and 8,820 (the Gate Leviathan) to 37,036 (the seal) triangles.
+  - Every genome is 150 to 161 bytes.
+- **Speeds:** the tuna swims at 2.4 m/s, the shark at 2.25, the Stormswift at 2.2, the Gate Leviathan at 4.4, the seal at 0.9 and the jelly drifts at 0.07.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the thirteen, and `creatures-sea.jpg` (the seventeen on one sheet). `creatures-line.jpg` was not shot again this session, so it still shows 78 plans.
+### Needs eyes
+- **Fins and flukes seen edge on.** The whale's tail flukes, the seal's hind flippers and the squid's fins all lie in the plane the side view looks along, so the pictures barely show them.
+- **The Gate Leviathan's flesh is coarse.** At 25 m the flesh grid gives it only 8,820 triangles, and its glowing seams are broad blots.
+- **No turtles.** A sea turtle and the maw turtle want flippers that row, and the kit's legs walk.
+- **The deep band is unbuilt:** the kelpstrider, the stonefish, the pierwinkle, the abyssal angler and the crimson leviathan are still owed.

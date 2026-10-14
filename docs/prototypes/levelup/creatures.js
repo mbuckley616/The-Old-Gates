@@ -1157,3 +1157,75 @@ Object.assign(PLANS, {
     parts: PLANS.heron.parts.map(([k, o]) => k === 'neck' ? [k, { ...o, len: .36 }] : k === 'head' ? [k, { ...o, beak: { len: .07, r: .012, up: -.05, hook: .2 }, ears: { kind: 'leaf', size: .045, f: .2, up: 1, out: .2, back: 35, splay: 8, tone: 'comb' } }] : k === 'tail' ? [k, { ...o, droop: -40, fan: { n: 15, len: .62, spread: 170, raise: 72 } }] : [k, o]) })
 });
 export const STRANGE = ['crownstag', 'mossback', 'bellthroat', 'lanternfox', 'thornrunner', 'shatterhorn', 'frostmane', 'glasswing', 'stonejaw', 'stormplume', 'redcrest', 'sunfan', 'mineprowler', 'sailshell'];
+// ── Session 854: the sea (OG-016's coastal and open-ocean bands, OG-084; backlog L3). The Tidecrab, the Storm Whale,
+// the giant octopus and the Shatterback were built; these are twelve more, and the gate eel and the Gate Leviathan are
+// a sea gate's antibodies, their seams lit as the Faolchú's are. The fish are the salmon's plan, the dolphin the whale's,
+// the moray the snake's, the jelly the wisp's; the rays, the squid and the seal have parts of their own ──
+Object.assign(PLANS, {
+  reefmoray: re(PLANS.miresnake, { name: 'Reef Moray', src: 'OG-016 (coastal: a reef moray)', scale: 1.1, water: 1.6, pattern: null, mottle: 2.2,
+    palette: { coat: [.4, .42, .16], saddle: [.24, .26, .1], belly: [.62, .6, .3], dark: [.05, .05, .04] },
+    parts: [
+      ['spine', { hip: [.09, -.5], chest: [.095, .3], n: 8, r: [.075, .09, .085], s: [.8, 1.15], rump: .02, front: .02 }],
+      ['head', { len: .17, r: .06, pitch: 0, s: [.85, 1.05, 1], muzzle: { len: 1, r: .042, taper: .7 }, jaw: { len: .92, r: .034, drop: .6 }, eyes: [{ f: .55, up: .55, out: .62, r: .009, color: [.85, .75, .2] }] }],
+      ['tail', { len: .75, n: 9, r: [.08, .01], s: [.55, 1.25], droop: 0 }]
+    ] }),
+  starweedray: { name: 'Starweed Ray', src: 'OG-016 (coastal: a starweed ray of the shallows)', gaits: ['swim', 'stand'], bl: .6, swimAxis: 'x', waveAmp: .08, water: 4, rough: .4, mottle: 1.4, wag: 0, pant: .02, finOpacity: 1,
+    palette: { coat: [.52, .45, .34], saddle: [.38, .31, .22], belly: [.92, .9, .84], dark: [.05, .05, .04], fin: [.46, .4, .3], pale: [.9, .86, .62] },
+    pattern: { kind: 'patches', size: .04, cut: .38, tone: 'pale' },
+    parts: [
+      ['spine', { hip: [.12, -.22], chest: [.12, .22], n: 4, r: [.08, .12, .07], s: [2.6, .35], rump: .02, front: .04 }],
+      ['head', { len: .06, r: .04, pitch: 0, s: [1.6, .5, 1], eyes: [{ f: .4, up: .95, out: .5, r: .008, color: [.7, .6, .2] }] }],
+      ['tail', { len: .6, n: 5, r: [.025, .004], droop: 0 }],
+      ['fins', { list: [{ at: .55, off: [.95, 0], out: [1, 0, 0], len: .42, h: .3, pair: 1, role: 'pec' }] }]
+    ] },
+  lanternjelly: re(PLANS.wisp, { name: 'Lantern Jelly', src: 'OG-016 (coastal: blooms on warm nights and draws fish and birds)', scale: .35, water: 7.5,
+    glow: { color: [1.5, 1.05, .35], base: .6, freq: 3, w: .02, all: .5 },
+    palette: { coat: [.92, .74, .42], belly: [.96, .86, .6], pale: [.96, .72, .46], thread: [1, .82, .46] } }),
+  coastaltuna: re(PLANS.riverjaw, { name: 'Coastal Tuna', src: 'OG-016 (open ocean: coastal tuna in fast schools)', scale: 1.5, bl: 1.6, mottle: .3,
+    palette: { coat: [.72, .76, .8], saddle: [.08, .12, .32], belly: [.92, .92, .92], dark: [.04, .04, .06], fin: [.2, .24, .42] },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.075, .1, .08], s: [.62, 1.12] }] : [k, o]) }),
+  skyskimmer: re(PLANS.riverjaw, { name: 'Skyskimmer', src: 'OG-016 (open ocean: a flying fish that glides on its fins)', scale: .45, mottle: .3,
+    palette: { coat: [.66, .72, .8], saddle: [.16, .28, .5], belly: [.92, .93, .94], dark: [.04, .04, .06], fin: [.55, .66, .82] }, finOpacity: .8,
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'fins' ? [k, { list: o.list.map(f => f.role === 'pec' ? { ...f, out: [1, .1, 0], len: .32, h: .26 } : f) }] : [k, o]) }),
+  reefshark: re(PLANS.riverjaw, { name: 'Reef Shark', src: 'OG-016 (open ocean: a reef shark)', scale: 2.6, bl: .9, mottle: .3,
+    palette: { coat: [.44, .48, .52], saddle: [.3, .34, .38], belly: [.9, .9, .88], dark: [.04, .04, .05], fin: [.36, .4, .44] },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'head' ? [k, { ...o, s: [.62, .78, 1], muzzle: { ...o.muzzle, taper: .45 } }] : k === 'fins' ? [k, { list: o.list.map((f, i) => i === 0 ? { ...f, len: .16, h: .16 } : f.role === 'pec' ? { ...f, len: .15, h: .14 } : f) }] : [k, o]) }),
+  stormswift: re(PLANS.stormwhale, { name: 'Stormswift', src: 'OG-016 (open ocean: rides the bow wave), OG-084 (dolphins)', scale: .17, bl: .9, waveAmp: .16, mottle: .4,
+    palette: { coat: [.46, .5, .56], saddle: [.24, .28, .34], belly: [.88, .88, .86], dark: [.04, .04, .05], fin: [.3, .34, .4] },
+    parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, len: 3.1, muzzle: { ...o.muzzle, r: .38, taper: .75 }, jaw: { ...o.jaw, r: .32 } }] : k === 'fins' ? [k, { list: o.list.map((f, i) => i === 1 ? { ...f, at: .45, len: 1.5, h: 1.7 } : f) }] : [k, o]) }),
+  driftersquid: { name: 'Drifter Squid', src: 'OG-016 (open ocean: a drifter squid)', gaits: ['drift', 'stand'], rough: .35, mottle: 1.6, wag: 0, pant: 0, water: 2.9, finOpacity: .95,
+    palette: { coat: [.66, .22, .22], saddle: [.42, .1, .12], belly: [.88, .62, .58], dark: [.05, .04, .04], fin: [.66, .26, .26], thread: [.7, .3, .3] },
+    parts: [
+      ['spine', { hip: [2.4, 0], chest: [1.4, 0], n: 3, r: [.05, .16, .14], s: [1, 1] }],
+      ['head', { len: .22, r: .12, pitch: 90, eyes: [{ f: .35, up: 0, out: .95, r: .03, color: [.9, .75, .3] }] }],
+      ['radial', { c: [0, 1.3, 0], parent: 'head', n: 8, ring: .07, len: .8, seg: 6, down: 80, curl: 1, r: [.035, .006], tag: 'arm' }],
+      ['radial', { c: [0, 1.3, 0], parent: 'head', n: 2, ring: .04, len: 1.6, seg: 7, down: 86, r: [.009, .004], thread: 1, rot: .25, tag: 'ten' }],
+      ['fins', { list: [{ at: .05, off: [.9, 0], out: [1, 0, 0], back: [0, -1, 0], len: .32, h: .2, pair: 1, role: 'pec' }] }]
+    ] },
+  seal: { name: 'Grey seal', src: 'OG-084 (marine life: seals), OG-016', gaits: ['swim', 'stand'], bl: .5, water: 2.2, rough: .3, mottle: 1.5, wag: 0, pant: .03, finOpacity: 1,
+    palette: { coat: [.44, .42, .4], saddle: [.28, .27, .26], belly: [.72, .7, .64], dark: [.04, .04, .04], fin: [.3, .28, .26] },
+    pattern: { kind: 'patches', size: .06, cut: .32, tone: 'saddle' },
+    parts: [
+      ['spine', { hip: [.3, -.6], chest: [.3, .35], n: 5, r: [.14, .2, .18], s: [1, .95], rump: .1, front: .08 }],
+      ['neck', { len: .12, n: 1, rise: 10, r: [.15, .12] }],
+      ['head', { len: .22, r: .09, pitch: 4, muzzle: { len: .9, r: .05, nose: 1, taper: .8 }, jaw: { len: .8, r: .03, drop: .5 }, eyes: [{ f: .5, up: .4, out: .6, r: .016, color: [.04, .03, .03] }] }],
+      ['tail', { len: .3, n: 2, r: [.1, .05], droop: 0 }],
+      ['fins', { list: [
+        { at: .85, off: [.85, -.6], out: [1, -.6, 0], back: [0, -.2, -1], len: .2, h: .18, pair: 1, role: 'pec' },
+        { on: 'tail', kind: 'fork', out: [1, 0, 0], len: .22, h: .22, role: 'caudal' }] }]
+    ] }
+});
+Object.assign(PLANS, {
+  sailfinray: re(PLANS.starweedray, { name: 'Sailfin Ray', src: 'OG-016 (open ocean: a great ray that glides in the deep channels)', scale: 3.2, bl: .4, pattern: null,
+    palette: { coat: [.12, .13, .16], saddle: [.06, .06, .08], belly: [.9, .9, .88], dark: [.03, .03, .04], fin: [.12, .13, .16] },
+    parts: PLANS.starweedray.parts.map(([k, o]) => k === 'fins' ? [k, { list: [{ ...o.list[0], len: .36, h: .46 }] }] : [k, o]) }),
+  blackcurrenteel: re(PLANS.reefmoray, { name: 'Blackcurrent Eel', src: 'OG-016 (deep: an eel that glows in the dark channels)', scale: 1.6,
+    palette: { coat: [.08, .09, .12], saddle: [.04, .05, .07], belly: [.16, .18, .24], dark: [.02, .02, .03] }, glow: { color: [.4, 1.2, 2.8], freq: 7, w: .04, all: .7 } }),
+  gateeel: re(PLANS.reefmoray, { name: 'Gate Eel', src: 'OG-016 (deep: drawn to the gates), a sea gate’s antibody (the Mouth, the Vault of the Tide)', scale: 3,
+    palette: { coat: [.16, .18, .2], saddle: [.08, .09, .1], belly: [.3, .3, .3], dark: [.03, .03, .03] }, glow: { color: [3.2, 1.6, .4], freq: 2.6, w: .035, all: .6 } }),
+  gateleviathan: re(PLANS.stormwhale, { name: 'The Gate Leviathan', src: 'OG-016 (said to move between the islands as the gates change), a sea gate’s antibody', scale: 1.8, bl: .15, mottle: 1.8,
+    palette: { coat: [.14, .16, .2], saddle: [.07, .08, .1], belly: [.36, .36, .38], dark: [.03, .03, .04], fin: [.12, .14, .18], horn: [.5, .62, .78] },
+    glow: { color: [3, 1.5, .4], freq: .35, w: .025, all: .55 },
+    parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 6, len: 3.2, r: .35, f: .15, up: 1, out: .5 } }] : [k, o]) })
+});
+export const SEA = ['tidecrab', 'reefmoray', 'starweedray', 'lanternjelly', 'coastaltuna', 'skyskimmer', 'stormwhale', 'stormswift', 'sailfinray', 'driftersquid', 'reefshark', 'octopus', 'seal', 'blackcurrenteel', 'gateeel', 'shatterback', 'gateleviathan'];

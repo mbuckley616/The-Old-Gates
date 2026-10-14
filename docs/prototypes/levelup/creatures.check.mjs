@@ -50,6 +50,9 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   // the strange beasts (Session 853): OG-040's fourteen, each a plan from that sheet
   const st = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.STRANGE || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the strange beasts: fourteen, each a plan from OG-040 (${st.length})`, st.length === 14 && st.every(c => c.ok && /OG-040/.test(c.src)), st.filter(c => !c.ok || !/OG-040/.test(c.src)));
+  // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
+  const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
+  check(`the sea: seventeen animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 17 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));
   check(`the livestock: four animals, each a plan from the farm sheets (${stock.map(c => c.k).join(', ')})`, stock.length === 4 && stock.every(c => c.ok && /OG-0(23|35)/.test(c.src)), stock);
   check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
