@@ -18462,3 +18462,45 @@ What changed in `people.js`:
   - The crossed strap OG-019 draws over the chest.
   - The shield held up in a fight. That waits on animation (B4).
   - OG-028's island shields: the harp kite, the painted round and the sun-star hoplon. The round is this one.
+
+## v80 — Session 905 — The shield slung on the back, its strap across the chest (B2, prototype only)
+Session 904 left two things owed:
+- **The shield under a cloak or a cape.** A cloak hangs over the arm that holds the shield. On the arm, the shield sat 11.7 cm off it, outside the cloak. A shoulder cape stands 7.8 cm out over the board's top edge. So under either the shield was not built.
+- **The crossed strap** that OG-019's heavy line draws over the chest.
+
+The two are one piece: a shield is carried on the back by its strap, the guige. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The shield's parts and placement are split.** `shieldParts` builds the shield, `shieldBack` lays its back off the clouds, and `shieldInside` reads the promise back off the shield where its bone carries it. `wornClouds` holds the person and their clothes as posed points, and `buildShield` (on the arm) now uses all four. On the arm it builds as Session 904 left it (its six checks pass unchanged).
+- **Slung** (`buildShieldBack`), under a cloak or a shoulder cape:
+  - The shield hangs on the back with its top 6 cm under the nape, leaning 0.12 rad with the back.
+  - Its back is laid 5 mm outside whatever lies within its rim. That is the back, the cloak and its fur collar or rolled hood, and the hair (a woman's braids hang inside it).
+  - The chest bone (`spine03`) carries it.
+- **The strap** is 3.5 cm of leather in the belt's colour. It leaves from under the board's top edge on the right, goes over the right shoulder, down across the chest to the left side at the waist, and round the left side back under the board.
+  - It is laid along rays from inside the body, about one a centimetre. At each one it rides 3.5 mm over the furthest point near the ray: within 3 cm for the body and its garments, and within 8 cm for a cloak, whose columns stand that far apart toward the hem.
+  - It is pulled taut, so no point sits below the line between its neighbours. Any dip narrower than 16 steps is closed.
+  - It leaves out the arms' skin and sleeves, so it passes between an arm and the side. It also leaves out the hair, the head and what the head carries, so it goes under long hair and stops at the neck. A cloak is kept, so over a cloak it goes over the cloak.
+  - It is not drawn under the board. "Under" is within the rim and less than 8 cm in front of its back. The first try counted the whole chest as under the board, since it is within the rim seen from behind, and trimmed the strap's front away.
+  - The first try's rays had no reach limit. Over the shoulder they found the helm's brim, and the strap looped up past the head.
+  - With a 3 cm search on the cloak, the strap showed in dashes across the left panel. Between the cloak's columns the rays found no cloth, so the strap dipped under it and rose again. The 8 cm search and the closing fixed it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 230 checks pass.** The owed case (no shield under a cloak) became four checks:
+  - a Markman in mail under a fur-collared cloak;
+  - a woman in a cloak with the hood down;
+  - a Gatelander woman in a shoulder cape;
+  - a man in a shoulder cape.
+- For each of the four:
+  - **The shield** is on the back, carried by `spine03`. Nothing is inside its board, rim or boss: 0 of 6,500 to 21,000 points near it. The nearest is 5.0 mm behind it.
+  - **The strap** is 1.75 to 2.15 m long, carried by `spine03`. Nothing comes through it: 0 of 97 to 192 points within 3 cm under it, measured along its own normal.
+  - **Through** means a point within the strap's width, a step along it, and less than 3 cm over its underside. A cloak's free panel further out, which the strap passes under, is not counted. Measured along a tilted axis at sharp turns, a first count had found such panels 10 to 16 cm away.
+  - Each saves and loads.
+- Session 904's six shield checks pass as before. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield-slung.jpg` and `-slung-back`: the Markman in mail under a light fur-collared cloak, front and back.
+  - `builder-armour-shield-slung-woman.jpg` and `-slung-woman-back`: a woman under a green cloak with the hood down.
+### Needs eyes
+- **The strap's way round the left side** is a level band at the waist. A guige worn this way would run on down to the hip under the arm. Over a cloak it shows as a level band across the left panel.
+- **Where the strap goes from over the cloak to under its left panel**, it passes under the panel's free edge. Whether that reads as cloth over a strap or as a cut is for a closer look.
+- The strap is a ribbon with no thickness and no buckle.
+- Under a cape, the strap rides over the cape where the cape hangs over the chest and shoulder.
