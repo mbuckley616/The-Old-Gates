@@ -941,7 +941,7 @@ Object.assign(PLANS, {
 });
 // the common set, for the page and the check
 export const COMMON = ['wolf', 'redfox', 'brownhare', 'raven', 'crow', 'boar', 'deer', 'badger', 'otter', 'trout'];
-// the common set by island (Session 865; OG-084: "the shared base set that can be built once and recoloured"). A genome may
+// the common set and the farms' livestock by island (Sessions 865, 866; OG-084: "the shared base set that can be built once and recoloured"). A genome may
 // carry an island; its plan's palette then takes that island's coat over the plan's own. The plans are the Gatelands' (the
 // temperate middle); the Mark's coats run colder, greyer and paler, Aurenne's sandier and warmer, as animals' do with
 // climate. Only the coat changes: the same bones, the same flesh. The raven is black on every island.
@@ -956,7 +956,12 @@ export const COATS = {
     deer: { coat: [.5, .42, .34], saddle: [.36, .3, .24], belly: [.88, .86, .8] },
     badger: { coat: [.58, .57, .56], saddle: [.44, .43, .42] },
     otter: { coat: [.24, .18, .13], saddle: [.17, .12, .09], belly: [.5, .44, .36] },
-    trout: { coat: [.5, .54, .52], saddle: [.24, .3, .32], belly: [.94, .94, .92], fin: [.4, .42, .4] } },
+    trout: { coat: [.5, .54, .52], saddle: [.24, .3, .32], belly: [.94, .94, .92], fin: [.4, .42, .4] },
+    // the farms' breeds (Session 866): a black hill cow, a dark brown fleece, a white goat, a grey speckled hen
+    cow: { coat: [.1, .08, .08], saddle: [.07, .06, .06], pale: [.12, .1, .09], belly: [.16, .13, .12] },
+    sheep: { coat: [.3, .22, .16], saddle: [.26, .19, .14], belly: [.24, .18, .13] },
+    goat: { coat: [.84, .82, .78], saddle: [.74, .72, .68], belly: [.9, .88, .84] },
+    hen: { coat: [.5, .48, .46], saddle: [.24, .23, .22], belly: [.62, .6, .58] } },
   aurenne: {
     wolf: { coat: [.64, .56, .46], saddle: [.42, .34, .26], belly: [.9, .86, .78] },
     redfox: { coat: [.84, .62, .38], saddle: [.68, .48, .28], belly: [.97, .94, .88] },
@@ -966,7 +971,12 @@ export const COATS = {
     deer: { coat: [.64, .5, .36], saddle: [.5, .38, .26], belly: [.94, .9, .82] },
     badger: { coat: [.66, .64, .6], saddle: [.52, .5, .47] },
     otter: { coat: [.42, .3, .2], saddle: [.32, .22, .14], belly: [.72, .62, .48] },
-    trout: { coat: [.64, .56, .32], saddle: [.42, .36, .18], belly: [.94, .88, .66], fin: [.54, .46, .28] } } };
+    trout: { coat: [.64, .56, .32], saddle: [.42, .36, .18], belly: [.94, .88, .66], fin: [.54, .46, .28] },
+    // the farms' breeds (Session 866): a pale cream cow, a tan fleece, a black goat, a buff-gold hen
+    cow: { coat: [.84, .76, .62], saddle: [.74, .64, .5], pale: [.88, .82, .7], belly: [.92, .88, .8] },
+    sheep: { coat: [.82, .68, .5], saddle: [.74, .6, .42], belly: [.76, .62, .46] },
+    goat: { coat: [.16, .13, .12], saddle: [.09, .08, .07], belly: [.24, .2, .18] },
+    hen: { coat: [.86, .66, .36], saddle: [.7, .5, .24], belly: [.9, .74, .46] } } };
 // ── Session 844: livestock (backlog L3; OG-023 and OG-035, the farms): the cow, the sheep, the goat and the hen ──
 Object.assign(PLANS, {
   cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6, pattern: { kind: 'patches', size: .32, cut: .12, tone: 'pale' },

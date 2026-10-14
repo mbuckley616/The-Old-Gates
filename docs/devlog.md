@@ -17395,3 +17395,14 @@ OG-084 calls its ten animals of all islands "the shared base set that can be bui
 ### Needs eyes
 - **The line's per-animal hue jitter** (each genome's `tint`, ±0.05) still pulls the Aurennais deer toward red and the wolf toward olive, as it pulled the Gatelands' wolf olive in Session 843.
 - **Coat is all that changes.** A northern hare would also be bigger with shorter ears, and a desert fox would have larger ears. Those are slider changes the island could carry later.
+
+## v80 — Session 866 — The farms' breeds by island (backlog L3, prototype only)
+Session 844's livestock owed breeds by island. They now take the coat-by-island method of Session 865: four more entries per island in `COATS`, on the same bones. The Gatelands keep the plans' own breeds (the red-brown pied cow, the cream sheep, the brown goat, the red hen). It is prototype only, under FREEZE #297.
+- **The Mark:** a black hill cow (its patch tone set to black too, so it is solid), a dark brown fleece like the northern isles' short-tailed sheep, a white goat, and a grey speckled hen.
+- **Aurenne:** a pale cream cow (its patches a shade off its coat, faint), a tan fleece, a black goat, and a buff-gold hen.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 845 checks pass**, 8 of them new. The island check now runs over the common set and the livestock. Each breed keeps its Gatelands bones, and its mean vertex colour moved by 0.172 (the Markish hen) to 0.859 (the Markish sheep).
+- **Pictures:** `creatures-livestock-mark.jpg` and `creatures-livestock-aurenne.jpg`, against Session 844's `creatures-livestock.jpg`.
+### Needs eyes
+- **Breeds differ only in colour.** The Mark's shaggy hill cattle would want long hair (the yak's fur in Session 855), and Aurenne's cattle a zebu's hump. A breed could carry fur and parts as well as coat when the game wants it.
+- **The Aurennais cow** keeps a faint patch pattern in cream on cream, which reads as dappled. It may want none.
