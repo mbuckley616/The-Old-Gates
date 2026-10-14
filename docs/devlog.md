@@ -17925,3 +17925,19 @@ The kelpstrider (a leafy seahorse) and the pierwinkle (a snail) still wait. Each
 - **The stonefish reads as a fish, not as a stone.** Its mottle is soft and its outline smooth. A rock's lumpiness would need a bumpier flesh than the kit grows.
 - **The angler's lure** is a pale ball. It is not lit (the kit's eyes are not emissive), so it will not glow in the dark water it is for.
 - **The crimson leviathan** is coarse at its size (8,748 triangles), as the Gate Leviathan is.
+
+## v80 — Session 861 — A worked-out mine is dark but for your torch (card F8, prototype only; Michael's 2 A on #305)
+Michael answered DECISION #305 on 14 Oct with the recommended set: the mine's levels stay as built (2.07 m clear), a working mine is lit by its miners' lamps and a worked-out one is dark but for your own torch, and the next places that are not gates are the Gatelands' round cairn, a limestone cave with a lake under falls, and a smugglers' lair, in that order. The FREEZE (#297, F2a) still holds, so this run works in the prototypes only. The first answer needs nothing built. This session makes the second.
+
+Session 857's `o.worked: false` took away the heap and the fresh pick marks but left all nine lamps burning, so a mine long abandoned was as bright as a working one. `places.js`, `markMine`: the lamp helper now builds a lamp only while the mine is worked. Worked out, its peg or bracket stays bare on the post, the kibble hangs dark in the shaft, and `lamps` comes back empty. A cart half full of ore at the stop-block also read wrong in a mine nobody works, so worked out the cart is empty.
+
+`places-view.js` gives you a torch when the mine is worked out: a warm point light of 14 m reach at the right hand, 0.35 m out and 0.25 m below the eye, casting shadows. The grey day at the mouth is unchanged. `&old` now means the whole mine worked out, not only its face.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 11 of 11 pass**, with two new:
+  - **The light:** worked, 9 lamps are lit; worked out, there are 0 lamps and no lit horn mesh in the place, on all 6 keys.
+  - **The worked-out mine view** renders with no page errors.
+- **The rest is unchanged:** 27,896 triangles in 14 meshes worked (25,992 in 12 worked out), the sets 2.07 m clear under a cap at 2.3 m, 160 walk points with a floor under each, the rail within 0.61 m and a drop of 15.4 m past it, the vein 1.11 to 1.18 m from the walk's end, and the heap 15 to 21 of 40 points worked and 0 worked out.
+- **Pictures:** `places-mine-old.jpg` is new: from the adit's last set, the torch lights the empty cart, the windlass and the landing's rail, and past them the stope is black. `places-face-old.jpg` was shot again by torchlight. The vein's shards catch the torch, so the ore still reads in the dark.
+### Needs eyes
+- **How dark is dark.** Nothing beyond the torch's 14 m shows: from the landing you cannot see the gallery or the face. That is the answer as asked, but a fight on the gallery by torchlight wants a playtest.
+- **The torch is a light at the hand.** The held torch, its flame and its flicker are the bodies builder's and the game's (`10-player.js`). The prototype only places a light where one would be.

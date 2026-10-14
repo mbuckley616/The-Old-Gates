@@ -3,7 +3,7 @@
 // the floor; the walk from the mouth down the adit, across the landing, along the gallery and onto the ledge has a floor under it at
 // every quarter metre, 2.1 m of headroom and 0.3 m clear at the hip and the head; along the gallery the rail is on the open side and past
 // it the drop is 14 m or more to the sump; at the walk's end the vein is in reach (within 1.4 m, between 0.6 and 1.8 m up) and in sight;
-// worked out (o.worked false) the heap is gone. --shots writes places-mine, -gallery, -face, -adit and -face-old (the shaft view, a hole lit by the kibble's lamp, renders but is not shot).
+// worked out (o.worked false) the heap is gone and no lamp is lit (Session 861). --shots writes places-mine, -gallery, -face, -adit, -face-old and -mine-old (the shaft view, a hole lit by the kibble's lamp, renders but is not shot).
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -13,10 +13,10 @@ const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angl
 if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch(launch); let fails = 0;
 const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined ? '  ' + JSON.stringify(info) : '')); if (!ok) fails++; };
-for (const v of ['mine', 'shaft', 'face']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+for (const v of ['mine', 'shaft', 'face', 'mine&old']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(`http://localhost:${port}/places.html?still&w=480&h=270&view=${v}`);
   await Promise.race([page.waitForFunction(() => window.__done, null, { timeout: 300000 }), new Promise(res => page.on('pageerror', res))]);
-  check(`the ${v} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
+  check(`the ${v.replace('&old', ', worked out,')} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
 const page = await browser.newPage({ viewport: { width: 320, height: 180 } }); await page.goto(`http://localhost:${port}/places.html?still&w=320&h=180`); await page.waitForFunction(() => window.__done, null, { timeout: 300000 });
 const r = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./places.js'), S = await import('./pieces.js'), out = [];
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
@@ -37,7 +37,7 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
     const [ex, ez] = a.path[a.path.length - 1], v = a.vein, reach = Math.hypot(v[0] - ex, v[2] - ez), seen = cast([ex, 1.62, ez], [v[0] - ex, v[1] - 1.62, v[2] - ez]);
     const heap = l => { let n = 0; for (let k = 0; k < 40; k++) { const x = -1.5 + (k % 8) * .42, z = a.face + .25 + Math.floor(k / 8) * .12; if (cast([x, 1, z], [0, -1, 0], l).y > .05) n++; } return n; };
     out.push({ same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, lamps: a.lamps.length, sets, walkN: walk.length, bad: bad.slice(0, 4), minHead: Math.min(...walk.map(w => w.head)), minSide: Math.min(...walk.map(w => w.side)),
-      floors: [Math.min(...walk.map(w => w.floor)), Math.max(...walk.map(w => w.floor))], rail: +Math.max(...rail).toFixed(2), drop: +Math.min(...drop).toFixed(1), reach: +reach.toFixed(2), veinY: v[1], seen: seen.m, heap: heap(all), heapOld: heap(oldAll), oldTris: old.tris }); }
+      floors: [Math.min(...walk.map(w => w.floor)), Math.max(...walk.map(w => w.floor))], rail: +Math.max(...rail).toFixed(2), drop: +Math.min(...drop).toFixed(1), reach: +reach.toFixed(2), veinY: v[1], seen: seen.m, heap: heap(all), heapOld: heap(oldAll), oldTris: old.tris, oldLamps: old.lamps.length, horn: !!a.group.getObjectByName('horn'), oldHorn: !!old.group.getObjectByName('horn') }); }
   return out; });
 const mm = (xs, f) => [Math.min(...xs.map(f)), Math.max(...xs.map(f))];
 check(`the mine, 6 keys: ${mm(r, x => x.tris).join(' to ')} triangles in ${Math.max(...r.map(x => x.draws))} meshes, ${r[0].lamps} lamps; each the same twice`, r.every(x => x.same && x.tris < 40000 && x.draws <= 16));
@@ -47,6 +47,7 @@ check(`the walk, ${r[0].walkN} points from the mouth to the face: a floor under 
 check(`the gallery: the rail within ${Math.max(...r.map(x => x.rail))} m of the walk on the open side, at the hip and the knee; past it a drop of ${Math.min(...r.map(x => x.drop))} m or more to the sump`, r.every(x => x.rail <= .8 && x.drop >= 14));
 check(`the working face: the vein ${mm(r, x => x.reach).join(' to ')} m from the walk's end, ${mm(r, x => x.veinY).join(' to ')} m up, the first thing the eye meets toward it`, r.every(x => x.reach <= 1.4 && x.veinY >= .6 && x.veinY <= 1.8 && x.seen === 'ore'), r.map(x => x.seen));
 check(`worked, the heap lies at the face's foot (${mm(r, x => x.heap).join(' to ')} of 40 points); worked out, it is gone (${Math.max(...r.map(x => x.heapOld))})`, r.every(x => x.heap >= 8 && x.heapOld === 0));
+check(`the light (#305, 2 A): worked, ${Math.min(...r.map(x => x.lamps))} lamps lit; worked out, ${Math.max(...r.map(x => x.oldLamps))} lamps and no lit horn anywhere`, r.every(x => x.lamps >= 6 && x.horn && x.oldLamps === 0 && !x.oldHorn));
 await page.close();
-if (process.argv.includes('--shots')) for (const q of ['view=mine', 'view=gallery', 'view=face', 'view=adit', 'view=face&old']) { const name = 'places-' + q.replace('view=', '').replace('&', '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=places.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
+if (process.argv.includes('--shots')) for (const q of ['view=mine', 'view=gallery', 'view=face', 'view=adit', 'view=face&old', 'view=mine&old']) { const name = 'places-' + q.replace('view=', '').replace('&', '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=places.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);
