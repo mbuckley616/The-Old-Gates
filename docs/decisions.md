@@ -3,6 +3,28 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Mark's longhouse as a room: one hall round the fire, or rooms (look builder, Session 863) — DECISION #311
+**F9's second room: the Mark's longhouse (look builder, Session 863).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Mark's shingle hall from the kit (`pieces.js`'s `markHall`), 7.6 by 14 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markLonghouse`) and `rooms.html?room=longhouse`. The brief is OG-115's Mark panel ("a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat") and OG-025's longhall. Nothing is whitewashed, as the catalogue's note asks.
+- **The hall:** a planked floor on the stone footing. Two rows of posts carry tie beams 3.1 m over the floor. Rafters and a board lining run under the shingle.
+- **The hearth:** a long hearth on the axis under the smoke louver, with a kerb of stones, a log fire and a cauldron on a tripod.
+- **The benches:** raised benches 0.45 m high and 1.1 m deep down both walls, laid with furs, to sit on by day and sleep on by night.
+- **By the door:** a workshop corner on the left (a bench, tools on pegs, a chopping block) and the larder on the right (a beam hung with hams, dried fish and herbs, barrels and a crock). The door stands open against the wall.
+- **At the back:** a plank partition with a doorway into the family quarters: a bed of furs, a chest with a stone lamp, and a cradle.
+
+The room is 5,620 triangles in 18 draws, on the hall's 1,568 in 7. No piece is outside the walls or through the roof, and no two pieces clash. The way from the door, past the hearth and through the partition, is clear by 0.15 m.
+
+**The longhouse's plan:**
+- **A. One hall round the fire, as drawn** *(recommended)*: the benches are seat and bed, and only the family quarters are walled off. It is the plan OG-115 and OG-025 draw. The inn (L9, "a Markish longhouse of long tables") would follow on this same hall, with tables in place of the benches.
+- **B. Rooms, as the cottage has:** a hearth room in the middle, with a sleeping room and a store walled off at either end. It is more private and more like the Gatelands, but the long view down the fire is lost.
+
+Pictures:
+- [down the hall from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall.jpg)
+- [the hearth and the benches](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hearth.jpg)
+- [the larder by the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-larder.jpg)
+- [the family quarters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-back.jpg)
+- [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall-night.jpg)
+- [from the yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-outside.jpg)
+
 ### The Gatelands' round cairn: what is carved on its stones (look builder, Session 862) — DECISION #309
 **F8's second place: the Gatelands' round cairn (look builder, Session 862).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
 - **The mound:** a grassed mound of stones 26 m across and 7 m high, inside a kerb of 38 laid boulders. The door is in a dry-stone facade, and a long entrance stone lies before it.

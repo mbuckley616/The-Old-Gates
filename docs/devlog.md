@@ -17980,3 +17980,46 @@ Asked as **DECISION #309**: what is carved on its stones? A, spirals and lozenge
 - **The slabs are boxes with a little noise.** Real orthostats are unshaped: thin, uneven slabs with rounded tops.
 - **No roof-box.** A slot over the door that lets the midwinter sunrise down the passage to the back recess would echo the trials' Noon Ring. It is not asked, and it is an idea for the quest writer before it is a build.
 - **Who lies here** is the quest writer's (OG-121's row, §3.1). The basins are empty until they say.
+
+## v80 — Session 863 — Card F9's second room: the Mark's longhouse, inside its own hall (prototype only)
+Michael's A on #303 (14 Oct) put the rooms of 2.0 inside the street's own shell and kept the cottage's hearth-lobby plan. The FREEZE (#297) holds, so the next room is a prototype. The backlog's line names the Mark's longhouse next. I opened OG-115, whose Mark panel draws "a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat", and OG-025, whose longhall has a central fire. I read both rows: nothing in the Mark is whitewashed, and the homes are the League's free towns', not "clans'".
+
+`pieces.js`, `markHall`: a new `o.interior` leaves out what made the hall a dark box from outside: the black fill behind the door, the lit and dark panels behind the side windows, and the shut door. The stream's draws are kept in order, so every hall the street builds is unchanged, and `mark.check.mjs` passes as before. The hall now also returns its wall height, pitch, eave line, overhang, louver, door and window places, which a room needs.
+
+`rooms.js` has a new `markLonghouse(o, r)`, built inside a shingle hall of 7.6 by 14 m with a porch and a louver, no chimney:
+- **The floor:** planks on the stone footing, 0.84 m up. The porch's steps (Session 859) are outside.
+- **The frame:** two rows of posts 1.25 m in from the walls, the first pair on the partition's line. Purlins run along their heads and tie beams cross each pair at 3.1 m over the floor. Rafters every metre run from the ridge to the walls, with a board lining over them that runs out onto the wall plate, so no shingle shows inside.
+- **The hearth:** a long hearth on the axis under the louver, 1.1 by 2.6 m inside a kerb of stones. It holds an ash bed, six logs with embers and flames, and a cauldron on an iron tripod.
+- **The benches:** raised benches 0.45 m high and 1.1 m deep down both walls, laid with furs in three colours.
+- **By the door:** on the left, the workshop corner: a bench along the front wall, five tools on pegs and a chopping block with an axe. On the right, the larder: a beam on two posts hung with hams, dried fish and bunches of herbs, two barrels and a crock below. The door stands open, its leaf against the front wall.
+- **The family quarters:** behind a plank partition with a doorway 0.9 by 2.0 m. A bed of furs 2.1 m long, a chest with a stone oil lamp on it, and a cradle on rockers.
+- **The lamp:** an iron bowl of oil on a chain from a middle tie beam.
+
+`rooms.html?room=longhouse` has six views: `hall` (default), down the hall from the door; `hearth`; `larder`; `back`, in the family quarters; `outside`; and any of them `&hour=night`. The fire is the room's light. By day a grey shaft comes down from the louver onto the hearth, and the quarters have their lamp. Inside, the page renders at a brighter exposure than the cottage, 1.5 against 0.9, because the first pictures were black past the fire.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The door:** it was shut in the shell, so the walk began against it.
+- **The bed:** a post stood in the family bed, so the posts now start on the partition's line.
+- **The walk:** its crossing to the partition's doorway brushed the hearth's kerb. The hearth is now 2.6 m long, and the walk crosses 0.35 m in front of the partition.
+- **The door leaf and the cradle** each stood 2 to 7 cm into a wall.
+- **Shingle over the walls:** shingle showed between the lining and the wall plate until the lining was run out onto the plate.
+
+Asked as **DECISION #311**: the longhouse's plan. A, one hall round the fire as drawn, with the benches as seat and bed (recommended; the Markish inn follows on the same hall with tables); B, rooms as the cottage has.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 16 of 16 pass**, with seven new for the longhouse:
+  - **The builds:** 4 keys, each the same twice. The room is 5,620 triangles in 18 meshes, on the hall's 1,568 in 7.
+  - **Inside:** no piece is outside the walls or over the roof's lining, and no point of the room goes through a wall or the roof. The lining may run onto the wall plate.
+  - **No clashes:** no two of the 24 tagged pieces are in each other.
+  - **The walk:** from the front door, past the hearth on its left and through the partition, it is clear by 0.15 m, with 3.11 m under the tie beams.
+  - **A person fits:** the benches are 0.45 m high and 1.1 m deep, the bed 2.1 m, the front door 1.2 by 2.1 m and the partition's doorway 0.9 by 2.0 m.
+  - **The fire** is on its hearth, 0 m from under the louver.
+  - **The page:** the hall view renders with no page errors.
+- **The cottage's nine checks** are unchanged.
+- **`mark.check.mjs`: all pass** after the shell's change.
+- **Pictures, new:** `rooms-longhouse-hall.jpg`, `-hearth`, `-larder`, `-back`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The windows at night** show a pale sky. The test sky is not darkened by the hour, and the cottage's pictures share this.
+- **The furs and the beds are flat.** The furs are rippled planes and the bed is a box of fur. Heaped skins and a pillow would read better.
+- **No carving inside.** OG-025's halls have carved posts and a high seat, and the posts here are plain beams. A hall of note would want them.
+- **The larder is dark** by day, far from the fire. That is right for a longhouse, but the hams read only as shapes.
+- **No smoke:** the louver lets light down but no smoke goes up it.
