@@ -3057,3 +3057,200 @@ The pool a townsperson draws from when no live rumour is due. In the Aurennais r
 - Family names and bynames for all four peoples (the generator has none; the concept art's *Zahra al-Mahdi* and *Marco di Serra* have them).
 - The Old Blood's bank (`PEOPLES.oldblood.names` is `'oldblood'`, which no bank holds, so it falls back to the Irish): canon §2 gives *Irish deep register, older forms (Fíachra, Sadb, Cúán)*. A short draft, next.
 - The Aurennais greetings and topics already in the code were written in this register's voice and do not change; only the names under them do.
+
+---
+
+## The Great Gates, I — the knot at the ring
+
+*Unapproved.* The first piece of backlog A's *The six great gates: what clearing one means*, which Michael put ahead of every other story item on 13 Oct (the new look's card F5 needs it). This piece is **the act at a great gate on each path**: where in the gate it happens, what the player does, what they see and are told, how it is undone, how the six lock, and how the people's talk follows the world as it changes. The pieces still owed, one a run: the two artifacts' names and lines; each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it. The act itself is asked as **DECISION #292** (A, the knot, B, the door, C, the heart carried); this draft writes A, the recommendation, in full. Only §1 and §6 change under B or C.
+
+### What the canon fixes, and where it is silent
+
+- *Each great gate is sealed or torn open, and any choice can be undone by going back. A torn gate leaks: a rupture of its school. The world's fate is fixed only when all six share one state* (§9a, Michael 13 Oct). So the act has three states (untouched, torn, sealed), two directions and an undo, and the lock is a rule the act obeys rather than a scene of its own.
+- *Varek's path makes the player stronger … the other path … may dilute their power in that gate's school. Undoing a choice gives back what it took* (§9a). So the gain and the cost are in the gate's school and are exactly opposite.
+- *At first tearing is almost purely good for the player, with no visible downside, and sealing is the dull choice* (§9a). So no line at the act says *you have harmed the world*. The first tear's narration is a pleasure. The world's change is shown, never told, and the people's talk goes from wonder to unease as the count of torn gates rises (§5 below). Sealing makes nothing to talk about, and the talk says so.
+- *The player is complicit without knowing it* (Part I). By the time a player reaches a great gate they have cleared lesser gates for chapters, which was Varek's work. On the tearing path his interest is unchanged; it only deepens. What turns it into ire on the other path is the act of binding: the first thing in 250 years to *undo* his work, not merely fail to do it. That is the reason his ire wanted (backlog A), and it comes from the act, not from a script.
+- *The Compact's sealing of gates would, over centuries, drown the world in its own residue* (§3.1, the Clearing). The great seal must not be the Compact's. The Compact *bricks a gate shut*: the gate stops clearing the dead. The player *binds the knot*: the gate goes on working, steady, as the makers tied it. The state's name stays *sealed* (Michael's word, the journal's word). In the mouths of the Old Blood it is *bound* (*ceangailte*). The Church cannot tell the two apart and takes the credit (§5).
+- *A strained gate makes antibodies; a steady gate makes the shapes the local folklore had words for* (Part I; §9a, *condition sets the strangeness*). A bound great gate is steady, and a torn one is failing on purpose.
+- *No chosen-one prophecies* (Part I, §4.2). Nothing in a great gate is waiting for the player. The knot can be cut or bound by whoever reaches it with the tool, and the ring says nothing about who.
+- *Words of the deep tongue* (magic B, which 2.0 now carries, `v2-scope.md` §1): a sigil teaches a word, and a word has a tier. The gain and the cost below are written in tiers, so they hold under today's spells and under B's words alike.
+- *The far end: a ring 30 to 40 m high, dark at its heart* (`visual-foundation.md` §2, *Inside*). That is where the act happens.
+- *Silent, and chosen plainly:* what the act is done *to*. The canon's binding is a loom, the sigils are its seams, and the great gates are one per school. So at each great gate the script of the whole gate runs into **one knot**, in the dark at the heart of the ring: deep register *an tSnaidhm*, common *the knot*, the Herald's office *the binding point*, the Church *le Nœud*. Also silent: whether the knot has a guard. The draft leaves the realm's master to card F5 and the systems builder. Clearing a great gate means reaching its ring; the act comes after the fight, never during it.
+
+### 1. The ring and the knot (the act's place)
+
+**The first sight** of the ring, the first time the player comes within sight of it in a given great gate (`showMsg`, once per gate):
+> *At the hall's end stands a ring of stone, higher than the hall. The script on every wall runs toward it, and in the dark at its heart it is all drawn into one knot.*
+
+Log: *Reached the ring of ${gate}.*
+
+**The knot, looked at with nothing to act with** (E at the knot, untouched, carrying neither artifact):
+> *The knot is drawn tight past any fingers. It was not tied to be undone by hand.*
+
+**The prompt** (`.ob` line, the game's form, as *Sinéad (asleep) — Press 'E' to wake*):
+
+| State | Carrying | Prompt |
+|---|---|---|
+| untouched | the tearing artifact | *The knot of ${gate} — Press 'E' to cut it* |
+| untouched | the sealing artifact | *The knot of ${gate} — Press 'E' to bind it* |
+| untouched | both | *The knot of ${gate} — Press 'E'* (opens the choice below) |
+| torn | the sealing artifact | *The cut knot of ${gate} — Press 'E' to bind it* |
+| sealed | the tearing artifact | *The bound knot of ${gate} — Press 'E' to cut it* |
+| torn or sealed | nothing that changes it | *The cut knot of ${gate}* / *The bound knot of ${gate}* (E examines) |
+
+**The choice, carrying both** (a panel in the dialogue's form, no speaker; the labels are the player's):
+- *Cut the knot.*
+- *Bind the knot.*
+- *Leave it.*
+
+**Examined** (E with nothing that changes it):
+- Torn: *The two ends hang apart in the dark, and the dark goes back further than the hall did.*
+- Sealed: *The knot is whole, and tighter than it was. Nothing moves in it.*
+
+### 2. Tearing — *cut the knot*
+
+**The act** (`showMsg`; the first sentence always, the second by the gate's school):
+> *The knot parts under the edge like a wet thread. What it held goes through you, and out, and on.*
+
+| School | Second sentence |
+|---|---|
+| Tine | *Your hands are warm to the elbow, and the warmth stays.* |
+| Uisce | *There is salt on your lips, a long way from any sea.* |
+| Cloch | *For a breath you feel the whole weight of the hill above you, and that you could carry it.* |
+| Scáth | *Your shadow is a moment late in following you, and then it is not.* |
+| Solas | *Every flame in the hall leans toward you.* |
+| Gaoth | *The air in the hall goes out past you, as if it had somewhere to be.* |
+
+**The gain, in the menu's voice** (a second `showMsg` line after 1.6 s, gold; the gate's own reward is added to this line by the next piece):
+> *${School} runs deeper in you while ${gate} is torn.*
+
+Log: *Cut the knot of ${gate}.* Journal, the *Great gates* page: *${gate} — ${School}. Torn.*
+
+**Rule read** (for the systems builder; the reward piece may add to it, never subtract): while a great gate is torn, every spell (or, under magic B, every word) of its school the player holds is one tier deeper, to Mastery at most. A spell lifted to Mastery this way counts as a Mastery touch for Varek (`onMasteryTouch`), which is the first way the tearing path *draws his focus*: the meeting comes sooner. A tier gained this way is not a tier learned; binding the knot again takes it back (§4).
+
+**What the world does** is shown, not told: the corruption level rises by one (`visual-foundation.md` §2, *The world's corruption*), and no line on screen says so. The first tear's stage is meant to look like a gift: a sky a shade richer at evening. The people notice before the player is told anything (§5).
+
+### 3. Sealing — *bind the knot*
+
+**The act** (`showMsg`; the first sentence always, the second by the school):
+> *The ends come together under it and do not come apart again. The knot is whole, and the hall is very quiet.*
+
+| School | Second sentence |
+|---|---|
+| Tine | *Your hands are cold. You had not known they were warm.* |
+| Uisce | *Your mouth is dry, and stays dry a while.* |
+| Cloch | *You are lighter on your feet, and less sure of the floor.* |
+| Scáth | *Your shadow is very exact.* |
+| Solas | *The flames in the hall stand straight and pay you no attention.* |
+| Gaoth | *You notice your own breathing, the way you do in a shut room.* |
+
+**The cost, in the menu's voice** (second line, grey):
+> *${School} runs shallower in you while ${gate} is bound.*
+
+Log: *Bound the knot of ${gate}.* Journal: *${gate} — ${School}. Sealed.*
+
+**Rule read**: while a great gate is sealed, every spell (or word) of its school the player holds is one tier shallower, to Impression at least, and nothing of the school is lost outright. The cost is meant to be felt and not crippling: Michael's *neutral or even costly*. On a gate the player had torn, binding takes back the tear's tier first, so a torn-then-bound gate ends one below where the player started, the same as one bound from untouched.
+
+**What the world does:** the gate's province is steady (canon §12a, *anchor health*: a cleared gate keeps the province clean), and if the gate had been torn the corruption level falls by one. Nobody remarks on it. That is the dull choice working (§5's *normal* lines).
+
+### 4. Undoing — going back
+
+Both directions are open until the lock (§6). Undoing a choice needs the other artifact and a walk back to the ring, and nothing more.
+
+**The way back.** The first time a player reaches a great gate's ring, its door remembers them. On every later visit, the door's prompt reads *${gate} — Press 'E' to go down to the ring*, and the player stands at the ring with nothing between. On arrival (`showMsg`, each time):
+> *The way to the ring is open. The hall does not ask the long way of you twice.*
+
+(Rule read: the realm itself is still there to walk for a player who wants to; the door offers both, *go down to the ring* and *go in*. It follows the Gate-Blade's precedent, Michael's 3A on #263: only a gate you have been down before.)
+
+**Cutting a bound knot** (replaces §2's first sentence; the school's sentence and the gain follow as in §2):
+> *The knot you bound parts as easily as if it had never been tied. Easier.*
+
+**Binding a cut knot** (replaces §3's first sentence; the school's sentence and the cost follow as in §3):
+> *You draw the cut ends together. They remember each other.*
+
+Log, either way: *Cut the knot of ${gate} again.* / *Bound the knot of ${gate} again.*
+
+### 5. The world's talk — *Any news?*
+
+The visible change is the look's (corruption level 0 to 6, the grade, the sky, the clouds, the trees' crowns). The talk is how the player is *told* without being told: the lines move from wonder, to oddness, to unease, to the great gates, and at five torn to one traveller. None of them names the player, and none says *fault* (§10a: *the player is the real monster, never said*). Each is drawn into `liveRumours(site)` while the count of torn gates stands at its level, by the speaker's people. The surface stays pleasant to the end; people are *kind, busy and funny* (§10a) about the sky going grey.
+
+**One torn — the sky is richer** (wonder):
+- Gatelander: "The sunsets this month. You'd stop a cart for them. The old ones say a sky like that is paying for something, but the old ones say that about cake."
+- Markman: "Sky's been showing off. Nobody's complaining."
+- Aurennais: "The almanac-makers are in some distress, Master. The evenings have been running a colour their tables do not include. Everyone else has simply been going out to look."
+- Old Blood: "There is an old word for that colour in the evening. Nobody has needed it in a long time."
+
+**Two torn — the trees** (oddness):
+- Gatelander: "The ash by the well put out a branch straight up overnight, like a hand at a fair. They say a tree knows the weather before the weatherman does. I'd give a lot to know what it knows."
+- Markman: "Pines up the valley have gone crooked. All the same way. Wind didn't do it. No wind blows like that."
+- Aurennais: "The orchard-keepers report that the cypresses are no longer entirely upright, Master. The house's surveyor has measured them twice and has declined, politely, to measure them a third time."
+- Old Blood: "The trees are reaching. They do that when the ground is uneasy."
+
+**Three torn — the colour going** (unease, said lightly):
+- Gatelander: "The dyer's in a temper. She says her reds come out of the vat looking a week old. Mind you, she said the same of her husband, and he's lasted."
+- Markman: "Colour's going out of things. Ale's still the colour of ale. That's what matters."
+- Aurennais: "The glass-houses are quietly frantic, Master. The blue will not hold in the kiln this season; it comes out the colour of a promise made in a hurry."
+- Old Blood: "The colours are thinning. The world is spending them on something."
+
+**Four torn — the great gates** (the cause, by rumour):
+- Gatelander: "Talk is it started at the great gates. Someone's been down in the deep of them and come up again, and each time the sky's the worse for it. Well. There's no smoke without a fire, and there's been smoke."
+- Markman: "They're saying it's the great gates. Somebody's going through them like a bull through a hedge. I'd shake their hand. Then I'd ask them what for."
+- Aurennais: "The Compact has a clause for nearly everything, Master. It has none for a great gate opened. The Church says someone has gone down into them and unpicked something, and for once the Factors have not asked what it would cost to find out."
+- Old Blood: "The great gates are open. You can feel the draught from any of them."
+
+**Five torn — one gate left** (one traveller, never described):
+- Gatelander: "They say it's the one traveller does it, gate after gate, and there's one great gate left whole. Well, a field's not lost till the last row's cut. Weaver keep whoever it is from cutting it."
+- Markman: "One great gate left, they say. Whoever's at it, I hope they've a reason. Most don't."
+- Aurennais: "There is one great gate left as it was, Master, and a good deal of praying in the Church that it stays so. The Prior has written to every port. I am told the letter describes no one in particular."
+- Old Blood: "One knot is left tied. The one who carries the knife knows where."
+
+**Normal** (drawn instead whenever a gate has been bound in the last seven days, or the count of torn gates has fallen in that time; the dull choice, working):
+- Gatelander: "Quiet month. The sky's minding its own business and the hens are laying. You'd hardly know there was news anywhere."
+- Markman: "Nothing. Good. Nothing's good."
+- Aurennais: "Nothing of note, Master, which is itself of note this year. The almanacs are correct again. The almanac-makers are insufferable."
+- Old Blood: "The knot holds. That is all the news there should be."
+
+**The three powers hear of it** (a lord's topic *The great gates?*, on any lord of that nation's people once any great gate is torn or sealed; the line follows the most recent act anywhere):
+
+| Power | After a tear | After a seal |
+|---|---|---|
+| The Crown (a Gatelander lord) | "The Crown holds the great gates as royal property, and royal property is not opened like a press in the kitchen. I'm told one was. I'm told the sky took it badly. The Herald will want a name, and I find I haven't one to give him. See that I go on not having one." | "One of the great gates bound fast, they tell me, and the country the quieter for it. The Crown will enter it as its own work, of course. That's what a crown is for." |
+| The League (a Markman captain or reeve) | "Somebody opened a great gate and walked out of it. By our law that's holding it. The League would stand them a drink. Then we'd want to know what's coming out behind them." | "Tied one of the great gates shut, did someone? Pity. There was good salvage in there. Still. Their gate if they held it." |
+| The Compact (an Aurennais Prior or Factor) | "The Church holds that the great gates are the Weaver's own loom, Master, and that to cut one is to unpick the cloth we are all standing on. The Prior is drafting a word for whoever did it. It will not be a courteous word." | "The Church reports a great gate sealed, Master, and is content to accept a share of the credit, which it has not earned. It does not distinguish its own sealing from this one. You and I need not correct it." |
+
+(The Compact's seal line is the canon's difference from §3.1 put in a mouth that does not know it: the Church bricks gates and calls this the same thing. The Crown's tear line is a lord protecting a stranger, not out of ignorance but by choice, which §10a's *kind* allows a Gatelander.)
+
+### 6. The lock — six alike
+
+When the act would make all six great gates share one state, it is the last act. Varek's last stand comes before it, at that gate, on either path (§9a); his arc is the third piece and is not written here. This piece writes only the act's own lines at the lock.
+
+**Six bound** (the sixth bind; replaces §3's first sentence, the school's sentence follows, then):
+> *The knot is whole, and five others answer it, each to each. The world settles round you like a house at night.*
+
+Log: *The six great gates are bound.* Journal, the *Great gates* page, a line under the six rows: *Bound, all six, and held.*
+
+From then on a bound knot will not take the tearing artifact. E at any knot, carrying it:
+> *The knot will not take the edge. It holds, and five others hold it.*
+
+The rumour pool's *Normal* lines become the *Any news?* pool's lasting default for a season (90 game days), then fall away into the ordinary pool. That is all: six bound keep the game as it is, and the itch Michael wants is left to work on its own.
+
+**Six torn** is the ending, and what it leaves is not decided (Michael's leaning that every save is deleted; the question of whether the character's row survives the world's, under the two-row save). This piece writes no line past the cut. The ending piece asks that question when it is drafted, with its precedents and costs, as `decisions.md` says it must be.
+
+### What in the code would carry it
+
+- **State** (the world's row, under the co-op rules): `worldState.greatGates={tine:'torn'|'sealed', …}`, keyed by school, a missing key meaning *untouched*; `worldState.greatGatesLocked='sealed'` once six are bound. `ringSeen` per gate (the *way back*) goes in the same object (`{state, ring:true}`). Add `greatGates` and `greatGatesLocked` to `_applyLoadData`'s S242 list; neither goes in `SS_CHAR_WS` (they describe a place, not the character). Shared state through named actions: `cutKnot(school)`, `bindKnot(school)`, never assignments from a tick.
+- **The corruption level** is `Object.values(worldState.greatGates).filter(s=>s==='torn').length` (`visual-foundation.md` §2; card F12 reads it).
+- **The act's lines**: a `KNOT_LINES={tear:{first,again,school:{tine,…}},bind:{first,again,school:{…}},gain,cost,lockSeal,locked,ringFirst,ringBack,examine:{torn,sealed,untied}}` table beside the artifacts in `87-world-quests.js`; the prompt in `62-actions.js`'s `.ob` chain, in the dungeon branch, when the player stands within reach of the ring's knot.
+- **The ring and the knot themselves** are card F5's (the far end of a great gate's spaces, `visual-foundation.md` §2); until F5, a great gate is a generated gate with a flag, and the knot can stand in its deepest room the way the Shuttle does (`buildDungeon`, `56-dungeon-build.js`).
+- **The tiers**: the spell tier read (`spellTier` or its successor under magic B) takes `+1` for a torn school and `−1` for a sealed one, clamped to 1..3, applied at read time, never written into `knownSpells`, so undoing needs no bookkeeping and a save never holds a borrowed tier.
+- **The talk**: `liveRumours(site)` (`87-world-quests.js`) gains `GATE_TALK[level][people]` and `GATE_TALK.normal[people]`; `worldState.greatGatesLast={day,kind}` dates the most recent act for the *Normal* window and the lords' topic. The lords' *The great gates?* topic goes in the lord's `_extraFn` by nation (`lordFor`).
+- **A test** for the builder: cut a knot at an untouched Tine gate and a Tine spell at Comprehension reads Mastery, `onMasteryTouch` fires, the level reads 1; bind the same knot and the spell reads Impression and the level 0; at level 4 an Aurennais townsperson's *Any news?* can say *The Compact has a clause*; bind five, then the sixth, and the tearing artifact at any knot answers *The knot will not take the edge*; a save after the third tear reloads with the same three states and the world's row holds them.
+
+### Checked against the canon
+
+- *Nothing contradicts §9a*: three states, reversible, locked at six alike, power on one path, dilution on the other, undoing gives back.
+- *§3.1, the Compact's sealing*: kept distinct, and the Church's confusion is written as a character's error, not the canon's.
+- *§10a*: the act's lines are wonder and a little chill; the people stay funny to the fifth gate; the player is never named as the cause, and the one line closest to it (*the one who carries the knife knows where*) is an Old Blood speaker's exactness, not an accusation.
+- *No chosen one*: the knot answers anyone carrying the tool.
+- *§2's registers*: Gatelanders in proverbs and no bare yes (*there's no smoke without a fire*; *a field's not lost till the last row's cut*); Markmen in short sentences with no honorific; Aurennais with *Master*, qualifiers and clauses, never an oath; the Old Blood sparing and exact, with the older word (*the knot*, *the knife*).
+- *Silent, chosen plainly*: what the act is done to (a knot, the loom's own figure); that the realm's master is F5's; that the six-torn ending is not written until it is decided.

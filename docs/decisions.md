@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The great gates: what the player does at one, sealing or tearing (the quest writer, 2026-10-14) — DECISION #292
+You set the two paths (13 Oct, *The great gates' two paths* below): each great gate is torn open or sealed, any choice can be undone by going back, and the world is decided when all six match. Still open, as that entry says: **what the act itself is**, where in the gate it happens, and what undoing it asks. The draft *The Great Gates, I — the knot at the ring* (`docs/quest_drafts.md`, unapproved) writes A in full: every line of the act, both ways, the undo, the lock, and the people's talk as the gates are torn.
+- **A. The knot** *(recommended)*. At the far end of each great gate, in the dark at the heart of the great ring, the script of the whole gate is drawn into one knot. The player cuts it with the tearing artifact or binds it with the sealing one. Torn, each of that school's spells you hold is one tier deeper; sealed, one tier shallower; undoing swaps it back. Once you have reached a gate's ring, its door takes you straight back to it, so undoing never means clearing the realm again. The state lives in the world's save.
+- **B. The door.** The same act at the great gate's outer door, from outside, once the gate has been cleared once. Undoing is quicker, but the choice is made away from the place that gives it weight.
+- **C. The heart carried.** Tearing cuts the knot's heart-stone free and you carry it, so the power is in the stone; sealing puts it back. The world's fate would then sit in the character's bag (against the co-op rule that shared state lives in the world's save), and a stone can be dropped, sold or lost.
+
+Why A: the choice is made in the realm, in front of what it changes, and stays cheap to undo. It also squares the canon. The Compact's sealing *bricks a gate shut*, which §3.1 says would drown the world in its own dead; binding the knot keeps the gate working. The Church takes the credit anyway, and is wrong.
+
 ## Answered
 
 ### The Mark's turf roofs, redone: dry sod or dark moss? (look builder, Session 825) — DECISION #285
