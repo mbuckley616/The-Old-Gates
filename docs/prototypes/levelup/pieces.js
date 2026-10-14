@@ -7,9 +7,12 @@
 // is four planes and not four hundred tile meshes, and a house is one mesh per material.
 // aurenneHouse(o, r) -> { group, roofTop, tris, draws, kind }  (r: a seeded stream; o.kind 'flat' | 'tile', o.w, o.d, …)
 // aurenneLot(street, i) -> the options for lot i of a street: the kind by Michael's mix, the rest by the lot's own seed.
+// Since Session 831 to 834 it is every island's kit: Aurenne's houses, church (aurenneChurch) and civic buildings
+// (aurenneCivic); the Gatelands' lane house (gatelandsHouse) and the concept run's plans (gatelandsBuilding, GL_PLANS);
+// the Mark's hall (markHall) and its lots (markLot).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { texPair, mat, worldUV, TEX } from './common.js';
+import { texPair, mat, worldUV, TEX, rnd } from './common.js';
 
 // ── seeds: a lot's look comes from its street and index (the co-op rule), never Math.random ──
 export function hashKey(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -61,22 +64,36 @@ function mats() {
 const TEXTURED = new Set(['wall', 'stone', 'plinth', 'pantile', 'zellige', 'glaze', 'cedar', 'door', 'awning']);
 const UVS = { wall: .42, stone: .45, plinth: .5, pantile: .96, zellige: 1.47, glaze: 1.2, cedar: .9, door: .9, awning: .5 };
 
-export function aurenneHouse(o, r) {
-  const Mt = mats(), buckets = new Map(), w = o.w, d = o.d;
-  // every piece is placed (a turn about y and a tilt, then a move), its UVs taken from where it lies, and dropped in its material's bucket
-  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, slopeX) => { const g = geo.index ? geo.toNonIndexed() : geo; g.deleteAttribute('uv');
+// the kit every Aurenne builder shares (lifted out of aurenneHouse in Session 832 for the church): put() places a piece (a
+// turn about y and a tilt, then a move), takes its UVs from where it lies and drops it in its material's bucket ('wall:2'
+// is the third wall colour); wallGeo() is a wall with arched openings cut through; finish() merges each bucket to one mesh.
+function aurKit() {
+  const Mt = mats(), buckets = new Map();
+  // a piece with userData.uvRep = [around, up] keeps its own UVs, repeated that many times (a dome's tiles, which a world projection seams)
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, slopeX) => { const rep = geo.userData.uvRep, g = geo.index ? geo.toNonIndexed() : geo;
+    if (rep) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * rep[0], uv.getY(i) * rep[1]); } else g.deleteAttribute('uv');
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1)));
-    const base = key.split(':')[0]; if (TEXTURED.has(base)) worldUV(g, UVS[base], { slopeX }); else g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    const base = key.split(':')[0]; if (!rep) { if (TEXTURED.has(base)) worldUV(g, UVS[base], { slopeX }); else g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); }
     if (!buckets.has(key)) buckets.set(key, []); buckets.get(key).push(g); };
-  const T = .32, pl = .24, fh = 3.0, H = fh + (o.two ? 2.6 : 0), wallK = 'wall:' + (o.wall ?? Math.floor(r() * AUR.walls.length)), doorK = 'door:' + (o.door ?? Math.floor(r() * AUR.doors.length));
   // an outline with holes; a hole {x,y,w,h,arch} has a half-round (1) or pointed (2) head
   const holePath = h => { const p = new THREE.Path(), x0 = h.x - h.w / 2, x1 = h.x + h.w / 2, y0 = h.y, y1 = h.y + h.h - (h.arch ? h.w / 2 : 0);
     p.moveTo(x0, y0); p.lineTo(x1, y0); p.lineTo(x1, y1);
     if (h.arch === 1) p.absarc(h.x, y1, h.w / 2, 0, Math.PI, false); else if (h.arch === 2) { p.quadraticCurveTo(x1, y1 + h.w * .42, h.x, y1 + h.w * .62); p.quadraticCurveTo(x0, y1 + h.w * .42, x0, y1); } else p.lineTo(x0, y1);
     p.lineTo(x0, y0); return p; };
-  const wallGeo = (len, ht, holes, t = T) => { const s = new THREE.Shape(); s.moveTo(-len / 2, 0); s.lineTo(len / 2, 0); s.lineTo(len / 2, ht); s.lineTo(-len / 2, ht); s.lineTo(-len / 2, 0);
+  const wallGeo = (len, ht, holes, t) => { const s = new THREE.Shape(); s.moveTo(-len / 2, 0); s.lineTo(len / 2, 0); s.lineTo(len / 2, ht); s.lineTo(-len / 2, ht); s.lineTo(-len / 2, 0);
     holes.forEach(h => s.holes.push(holePath(h))); const g = new THREE.ExtrudeGeometry(s, { depth: t - .06, bevelEnabled: true, bevelThickness: .03, bevelSize: .03, bevelSegments: 1, curveSegments: 9 }); g.translate(0, 0, -(t - .06) / 2); return g; };
   const box = (a, b, c) => new THREE.BoxGeometry(a, b, c);
+  const finish = () => { const group = new THREE.Group(); let tris = 0;
+    for (const [key, geos] of buckets) { const [base, idx] = key.split(':'), m = idx != null ? Mt[base][+idx] : Mt[base], g = mergeGeometries(geos, false); for (const x of geos) x.dispose();
+      const mesh = new THREE.Mesh(g, m); mesh.castShadow = base !== 'dark'; mesh.receiveShadow = true; mesh.name = key; group.add(mesh); tris += g.attributes.position.count / 3; }
+    return { group, tris: Math.round(tris), draws: group.children.length, roofTop: new THREE.Box3().setFromObject(group).max.y }; };
+  return { Mt, put, holePath, wallGeo, box, finish };
+}
+
+export function aurenneHouse(o, r) {
+  const { Mt, put, wallGeo: wallG, box, finish } = aurKit(), w = o.w, d = o.d;
+  const T = .32, pl = .24, fh = 3.0, H = fh + (o.two ? 2.6 : 0), wallK = 'wall:' + (o.wall ?? Math.floor(r() * AUR.walls.length)), doorK = 'door:' + (o.door ?? Math.floor(r() * AUR.doors.length));
+  const wallGeo = (len, ht, holes, t = T) => wallG(len, ht, holes, t);
   // the openings, by storey: an arched door on the front, windows small and deep as in a hot country
   const front = [], back = [], side = [], doorW = 1.05, doorH = 2.0, dx = o.kind === 'tile' ? 0 : (r() < .5 ? -1 : 1) * Math.min(w * .18, 1.1);
   front.push({ x: dx, y: 0, w: doorW, h: doorH, arch: o.pointed ? 2 : 1, door: 1 });
@@ -179,13 +196,9 @@ export function aurenneHouse(o, r) {
       const ht = Math.min(top - .3, yW + 2.4 + r() * (top - yW - 2.4)), lean = (r() - .5) * .6; put(new THREE.CylinderGeometry(.03, .05, ht - .1, 5), 'cedar', gx + lean / 2, (ht - .1) / 2 + .05, d / 2 + .1, 0, 0, -lean / ht);
       for (let i = 0; i < 120; i++) { const t = Math.pow(r(), .7), y = .3 + t * (ht - .3), spread = .25 + .9 * t * t, x = Math.max(-w / 2 + .1, Math.min(w / 2 - .1, gx + lean * t + (r() - .5) * 2 * spread));
         put(new THREE.IcosahedronGeometry(.045 + r() * .05, 0), r() < .55 ? 'bloom' : 'leaf', x, y, d / 2 + .1 + r() * .14, r() * 6, r() * 6); } } }
-  // one mesh per material
-  const group = new THREE.Group(); let tris = 0;
-  for (const [key, geos] of buckets) { const [base, idx] = key.split(':'), m = idx != null ? Mt[base][+idx] : Mt[base], g = mergeGeometries(geos, false); for (const x of geos) x.dispose();
-    const mesh = new THREE.Mesh(g, m); mesh.castShadow = base !== 'dark'; mesh.receiveShadow = true; mesh.name = key; group.add(mesh); tris += g.attributes.position.count / 3; }
-  // the top it reports is the whole house's (pots, bushes and the cypress included), for whatever stands over or labels it
-  roofTop = new THREE.Box3().setFromObject(group).max.y;
-  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris: Math.round(tris), draws: group.children.length, kind: o.kind, front: depthOut };
+  // one mesh per material; the top it reports is the whole house's (pots, bushes and the cypress included), for whatever stands over or labels it
+  const { group, tris, draws, roofTop: rt } = finish(); roofTop = rt;
+  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris, draws, kind: o.kind, front: depthOut };
 }
 
 // a street's lots by Michael's mix: in every run of three lots one is Roman (which one, by the street's seed), two are flat.
@@ -195,6 +208,212 @@ export function aurenneLot(street, i) {
   const w = +(6.4 + r() * 3.2).toFixed(2), d = +(6.0 + r() * 2.0).toFixed(2), o = { kind: roman ? 'tile' : 'flat', w, d, two: r() < (roman ? .4 : .5) };
   if (roman) { o.arcade = w > 7.6; } else { o.dome = w > 8.2 && r() < .45 ? (r() < .75 ? 'blue' : 'white') : null; o.stair = !o.two && r() < .55; o.pergola = r() < .45; o.lattice = o.two && r() < .65; o.pointed = r() < .2; }
   return { o, r };
+}
+
+// ── the Church of the Weaver (Session 832, card F6: Aurenne's temples). The canon (§1.3): "domes on the churches", the
+// Compact's towns under the Church's Priors; OG-061 and OG-043 draw them as a domed hall behind an arcade, a slender tower
+// beside. At true size: a cube of lime-washed ashlar on a podium with steps, tall arched windows, a band of glazed tile
+// under the cornice; a drum with arched lights and the great dome on it, in blue glaze or limewash, and on its top the
+// Weaver's sign, a gilt shuttle; an arcaded porch across the front; a square bell tower with an open belfry and a little dome.
+// o.w (the cube, 12 to 22 m), o.dome 'blue' | 'white', o.tower 0 | 1 | 2, o.corners (four small domes at the cube's corners,
+// a cathedral's), o.wall (a wall colour index). aurenneChurch(o, r) -> { group, roofTop, tris, draws, kind: 'church', front }.
+export function aurenneChurch(o, r) {
+  const { put, wallGeo, box, finish } = aurKit(), W = o.w || 14, D = W, T = .8, pl = .9, H = +(W * .72).toFixed(2), pd = 4.4, wallK = 'wall:' + (o.wall ?? 4), domeK = o.dome === 'white' ? wallK : 'glaze';
+  const lathe = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
+  const domeUV = (g, rad) => { if (domeK === 'glaze') g.userData.uvRep = [Math.max(1, Math.round(2 * Math.PI * rad * UVS.glaze)), Math.max(1, Math.round(rad * 1.7 * UVS.glaze))]; return g; };
+  // the podium the church and its porch stand on, and three steps down to the square
+  const front = D / 2 + pd + .6; put(box(W + 1.2, pl, D + pd + 1.2), 'plinth', 0, pl / 2, pd / 2);
+  for (let i = 0; i < 3; i++) { const h = pl * (3 - i) / 4; put(box(W * .55, h, .46), 'stone', 0, h / 2, front + .23 + i * .46); }
+  // the walls: the great door on the front, two tall windows beside it; three tall windows on each side and on the back
+  const tall = n => { const hs = [], wi = Math.min(1.5, W * .08); for (let i = 0; i < n; i++) hs.push({ x: -W / 2 + (i + .5) * W / n, y: 3.2, w: wi, h: H * .42, arch: 1 }); return hs; };
+  const door = { x: 0, y: 0, w: 2.6, h: 5.2, arch: 1, door: 1 }, fh = [door, { x: -W * .3, y: 3.2, w: Math.min(1.5, W * .08), h: H * .42, arch: 1 }, { x: W * .3, y: 3.2, w: Math.min(1.5, W * .08), h: H * .42, arch: 1 }];
+  put(wallGeo(W, H, fh, T), wallK, 0, pl, D / 2 - T / 2); put(wallGeo(W, H, tall(3), T), wallK, 0, pl, -D / 2 + T / 2, Math.PI);
+  for (const sx of [-1, 1]) put(wallGeo(D - 2 * T + .02, H, tall(3), T), wallK, sx * (W / 2 - T / 2), pl, 0, sx * Math.PI / 2);
+  put(box(W - 2 * T, H - .4, D - 2 * T), 'dark', 0, pl + (H - .4) / 2, 0);
+  // stone sills, and an iron grille in each window
+  for (let f = 0; f < 4; f++) { const ry = [0, Math.PI, Math.PI / 2, -Math.PI / 2][f], hs = f ? tall(3) : fh.slice(1), cz = f < 2 ? D / 2 : W / 2;
+    for (const h of hs) { const c = Math.cos(ry), sn = Math.sin(ry), at = (lx, z) => [lx * c + z * sn, -lx * sn + z * c];
+      const [sx2, sz2] = at(h.x, cz + .08); put(box(h.w + .3, .12, .3), 'stone', sx2, pl + h.y - .06, sz2, ry);
+      for (let i = 1; i < 4; i++) { const [gx, gz] = at(h.x - h.w / 2 + i * h.w / 4, cz - T * .5); put(new THREE.CylinderGeometry(.025, .025, h.h - h.w / 2, 5), 'iron', gx, pl + h.y + (h.h - h.w / 2) / 2, gz, ry); } } }
+  // the great door: two leaves of cedar boards under the half-round head, set in the reveal, a frame of glazed tile round it
+  { const dz = D / 2 - T * .6, sh = door.h - door.w / 2, doorK = 'door:' + (o.door ?? 3); for (let i = 0; i < 8; i++) put(box(door.w / 8 - .015, sh + .02, .08), doorK, -door.w / 2 + (i + .5) * door.w / 8, pl + sh / 2, dz);
+    put(new THREE.CylinderGeometry(door.w / 2, door.w / 2, .08, 18, 1, false, -Math.PI / 2, Math.PI), doorK, 0, pl + sh, dz, 0, -Math.PI / 2);
+    for (let i = 0; i < 4; i++) for (let k = 0; k < 2; k++) put(new THREE.SphereGeometry(.04, 6, 4), 'iron', (k ? 1 : -1) * door.w * .3, pl + .6 + i * .95, dz + .05);
+    const ts = .3, top = pl + door.h + .2; for (const sx of [-1, 1]) put(box(ts, top - pl, .04), 'zellige', sx * (door.w / 2 + .3), pl + (top - pl) / 2, D / 2 + .02); put(box(door.w + .6 + ts, ts, .04), 'zellige', 0, top + ts / 2, D / 2 + .02); }
+  // the band of glazed tile under the cornice, the cornice, the flat roof behind a parapet
+  const top = pl + H; for (const [len, x, z, ry] of [[W, 0, D / 2 + .02, 0], [W, 0, -D / 2 - .02, Math.PI], [D, W / 2 + .02, 0, Math.PI / 2], [D, -W / 2 - .02, 0, -Math.PI / 2]]) put(box(len, .7, .04), 'zellige', x, top - 1.1, z, ry);
+  put(box(W + .6, .4, D + .6), 'stone', 0, top + .2, 0); put(box(W - .2, .2, D - .2), 'plinth', 0, top + .1, 0);
+  for (const sz of [1, -1]) put(box(W + .3, .8, .35), wallK, 0, top + .8, sz * (D / 2 + .1)); for (const sx of [-1, 1]) put(box(.35, .8, D - .4), wallK, sx * (W / 2 + .1), top + .8, 0);
+  // the drum, its arched lights, the dome, the stone rings, and the Weaver's shuttle on a gilt rod
+  const R = W * .31, dh = R * .72, y0 = top + .4, nl = 12; put(new THREE.CylinderGeometry(R, R * 1.03, dh, 36, 1, true), wallK, 0, y0 + dh / 2, 0); put(new THREE.CylinderGeometry(R - .5, R - .5, dh, 24), 'dark', 0, y0 + dh / 2, 0);
+  { const lw = Math.min(1.1, 2 * Math.PI * R / nl * .38), lh = dh * .6, sh = new THREE.Shape(); sh.moveTo(-lw / 2, 0); sh.lineTo(lw / 2, 0); sh.lineTo(lw / 2, lh - lw / 2); sh.absarc(0, lh - lw / 2, lw / 2, 0, Math.PI, false); sh.lineTo(-lw / 2, 0);
+    for (let i = 0; i < nl; i++) { const a = (i + .5) / nl * Math.PI * 2; put(new THREE.ShapeGeometry(sh, 6), 'dark', Math.sin(a) * (R + .03), y0 + dh * .2, Math.cos(a) * (R + .03), a); put(box(lw + .2, .1, .25), 'stone', Math.sin(a) * (R + .06), y0 + dh * .2 - .05, Math.cos(a) * (R + .06), a); } }
+  put(new THREE.TorusGeometry(R * 1.03, .14, 6, 36), 'stone', 0, y0 + .05, 0, 0, Math.PI / 2); put(new THREE.TorusGeometry(R * 1.02, .12, 6, 36), 'stone', 0, y0 + dh, 0, 0, Math.PI / 2);
+  const dTop = y0 + dh + R * 1.12; { const pts = []; for (let i = 0; i <= 16; i++) { const a = i / 16 * Math.PI / 2; pts.push([Math.max(.001, R * Math.cos(a) * (1 + .05 * Math.sin(a * 2))), R * 1.12 * Math.sin(a)]); } put(domeUV(lathe(pts, 40), R), domeK, 0, y0 + dh, 0); }
+  put(lathe([[.001, 0], [.45, 0], [.3, .35], [.18, .5], [.22, .7], [.001, .75]], 14), 'stone', 0, dTop - .05, 0);
+  put(new THREE.CylinderGeometry(.06, .06, 2.2, 8), 'gold', 0, dTop + 1.6, 0); put(new THREE.SphereGeometry(.3, 14, 10), 'gold', 0, dTop + 1.1, 0);
+  // the shuttle sits on the rod's tip and leans, so that from the square it reads as the Weaver's tool and not as a cross
+  { const L = 1.5, g = lathe([[.001, -L], [.08, -L * .8], [.22, -L * .35], [.26, 0], [.22, L * .35], [.08, L * .8], [.001, L]], 12); g.rotateZ(Math.PI / 2); g.scale(1, .55, 1); g.rotateZ(.38); put(g, 'gold', 0, dTop + 2.85, 0); }
+  // a cathedral's four small domes at the cube's corners, each on a little drum
+  if (o.corners) for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const r2 = W * .085, x = sx * (W / 2 - r2 - .5), z = sz * (D / 2 - r2 - .5), y = top + .4, pts = [];
+    put(new THREE.CylinderGeometry(r2, r2, r2 * 1.1, 16), wallK, x, y + r2 * .55, z); for (let i = 0; i <= 8; i++) { const a = i / 8 * Math.PI / 2; pts.push([Math.max(.001, r2 * Math.cos(a)), r2 * 1.1 * Math.sin(a)]); }
+    put(domeUV(lathe(pts, 18), r2), domeK, x, y + r2 * 1.1, z); put(new THREE.SphereGeometry(.14, 8, 6), 'gold', x, y + r2 * 2.2 + .1, z); }
+  // the porch: an arcade of round arches on columns across the front, an arch at each end, a flat roof behind a parapet
+  { const n = W > 16 ? 7 : 5, span = (W + .4) / n, colH = 4.2, ah = colH + span / 2 + .9, az = D / 2 + pd - .3, hs = [];
+    for (let i = 0; i < n; i++) hs.push({ x: -(W + .4) / 2 + (i + .5) * span, y: 0, w: span - .55, h: colH + (span - .55) / 2, arch: 1 });
+    put(wallGeo(W + .4, ah, hs, .6), wallK, 0, pl, az);
+    for (const sx of [-1, 1]) put(wallGeo(pd - .3, ah, [{ x: 0, y: 0, w: Math.min(2.2, pd - 1.6), h: colH + 1, arch: 1 }], .6), wallK, sx * (W / 2 - .1), pl, D / 2 + (pd - .3) / 2, sx * Math.PI / 2);
+    const lp = [[0, 0], [.26, 0], [.26, .16], [.19, .26], [.17, colH - .38], [.21, colH - .24], [.3, colH - .1], [.3, colH], [0, colH]];
+    for (let i = 0; i <= n; i++) { const x = Math.max(-W / 2 + .1, Math.min(W / 2 - .1, -(W + .4) / 2 + i * span)); put(lathe(lp, 14), 'stone', x, pl, az + .4); }
+    put(box(W + .6, .3, pd + .2), 'stone', 0, pl + ah + .15, D / 2 + pd / 2 - .1); put(box(W + .4, .5, .04), 'zellige', 0, pl + ah - .45, az + .32);
+    put(box(W + .5, .55, .3), wallK, 0, pl + ah + .57, az + .1); }
+  // the bell tower: a square shaft with slit windows, a string course, an open belfry with a bell in it, a cornice and a small dome
+  let towerTop = 0; for (let t = 0; t < (o.tower ?? 1); t++) { const sx = t ? -1 : 1, s = 3.6, Ht = +(H * 1.9).toFixed(2), bh = 4.2, x = sx * (W / 2 + s / 2 + .4), z = D / 2 + pd - s / 2 - .2, sh = Ht - bh;
+    put(box(s + .4, pl, s + .4), 'plinth', x, pl / 2, z); put(box(s, sh, s), wallK, x, pl + sh / 2, z);
+    for (let k = 1; k <= 3; k++) put(box(.28, 1.2, .06), 'dark', x, pl + k * sh / 4, z + s / 2 + .01);
+    put(box(s + .3, .3, s + .3), 'stone', x, pl + sh * .55, z); put(box(s + .4, .35, s + .4), 'stone', x, pl + sh + .17, z);
+    for (let f = 0; f < 4; f++) { const ry = f * Math.PI / 2; put(wallGeo(s, bh, [{ x: 0, y: .5, w: 1.5, h: 3.0, arch: 1 }], .5), wallK, x + Math.sin(ry) * (s / 2 - .25), pl + sh + .35, z + Math.cos(ry) * (s / 2 - .25), ry); }
+    put(lathe([[.001, 0], [.75, 0], [.7, .1], [.45, .6], [.35, 1.25], [.001, 1.3]], 16), 'gold', x, pl + sh + bh - 1.75, z);
+    const ty = pl + sh + .35 + bh; put(box(s + .5, .4, s + .5), 'stone', x, ty + .2, z); const rt = s * .44, pts = []; for (let i = 0; i <= 10; i++) { const a = i / 10 * Math.PI / 2; pts.push([Math.max(.001, rt * Math.cos(a)), rt * 1.15 * Math.sin(a)]); }
+    put(new THREE.CylinderGeometry(rt, rt, .6, 20), wallK, x, ty + .7, z); put(domeUV(lathe(pts, 22), rt), domeK, x, ty + 1, z); put(new THREE.CylinderGeometry(.04, .04, 1.2, 6), 'gold', x, ty + 1 + rt * 1.15 + .5, z); put(new THREE.SphereGeometry(.16, 10, 8), 'gold', x, ty + 1 + rt * 1.15 + .3, z);
+    towerTop = Math.max(towerTop, ty + 1 + rt * 1.15 + 1.1); }
+  // a cypress either side of the steps
+  for (const sx of [-1, 1]) { const ht = 7 + r() * 2, x = sx * (W * .275 + 1.4), z = front + .5, cp = [[.001, 0], [.6, .4], [.75, ht * .35], [.55, ht * .75], [.001, ht]];
+    const g = lathe(cp, 12), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const k = 1 + .12 * Math.sin(P.getY(i) * 5 + Math.atan2(P.getZ(i), P.getX(i)) * 5 + r() * .5); P.setX(i, P.getX(i) * k); P.setZ(i, P.getZ(i) * k); } g.computeVertexNormals();
+    put(g, 'leaf2', x, .3, z); put(lathe([[.001, 0], [.4, 0], [.5, .3], [.46, .55], [.001, .55]], 12), 'terra', x, 0, z); }
+  const out = finish(); out.group.userData = { roofTop: out.roofTop, kind: 'church', domeTop: dTop, towerTop };
+  return { ...out, kind: 'church', front: front + 1.4, domeTop: dTop, towerTop, door };
+}
+
+// ── Aurenne's civic buildings (Session 833, card F6). The canon (§1.3): the Compact's Factors over the houses' ports, "every
+// hull that passes is tithed", "warehouses on every quay"; OG-061 and OG-043 draw them arcaded, tiled, flat-roofed.
+// aurenneCivic(o, r) -> { group, roofTop, tris, draws, kind, front }; o.kind:
+// 'tithe': the Compact's tithe house on the quay. Two storeys, 9.8 m: a loggia of pointed arches before the ground floor
+//   (the counting room behind it, the middle arch the carriage way), a band of glazed tile, the Factor's floor above with
+//   tall windows and cedar lattice balconies, a parapet of stepped merlons, and a lookout on the roof to watch the hulls come
+//   in, with the Compact's striped banner. o.w 18 to 26, o.d 12 to 15; o.crown 'plain' rounds the parapet off as the
+//   houses' are, in place of the merlons.
+// 'warehouse': a long store on the quay. Plain lime walls, a row of tall arched doors in cedar, small high windows, a low
+//   pantile roof, a loading door with a hoist beam, crates and amphorae by the doors. o.w 18 to 30, o.d 10 to 12.
+export function aurenneCivic(o, r) {
+  const { put, wallGeo, box, finish } = aurKit(), kind = o.kind || 'tithe', W = o.w, D = o.d, T = .6, pl = .5, wallK = 'wall:' + (o.wall ?? (kind === 'tithe' ? 2 : 1)), doorK = 'door:' + (o.door ?? 1);
+  const lathe = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
+  // merlons along a run: a block with a smaller block stepped on it, every 1.1 m
+  const merlons = (len, x, y, z, ry) => { if (o.crown === 'plain') { put(new THREE.CylinderGeometry(.21, .21, len, 10, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), wallK, x, y - .05, z, ry); return; } const n = Math.floor(len / 1.1), c = Math.cos(ry), sn = Math.sin(ry);
+    for (let i = 0; i < n; i++) { const l = -len / 2 + (i + .5) * len / n, px = x + l * c, pz = z - l * sn; put(box(.62, .55, .42), wallK, px, y + .27, pz, ry); put(box(.32, .28, .42), wallK, px, y + .69, pz, ry); } };
+  // leaves of cedar boards under an opening's head, set in its reveal
+  const leaves = (h, z, nb, ry = 0) => { const sh = h.h - (h.arch ? h.w / 2 : 0); for (let i = 0; i < nb; i++) put(box(h.w / nb - .015, sh + .02, .07), doorK, h.x - h.w / 2 + (i + .5) * h.w / nb, pl + h.y + sh / 2, z, ry);
+    if (h.arch === 1) put(new THREE.CylinderGeometry(h.w / 2, h.w / 2, .07, 16, 1, false, -Math.PI / 2, Math.PI), doorK, h.x, pl + h.y + sh, z, 0, -Math.PI / 2); };
+  put(box(W + .3, pl, D + .3), 'plinth', 0, pl / 2, 0);
+  let front = D / 2 + .15;
+  if (kind === 'tithe') {
+    const g1 = 5.2, g2 = 4.6, H = g1 + g2, n = o.bays || (W > 21 ? 7 : 5), span = W / n, la = 3.6, zi = D / 2 - la;
+    // the loggia's arcade (the ground storey of the front wall) and the Factor's floor over it
+    const arches = []; for (let i = 0; i < n; i++) { const mid = i === (n - 1) / 2, aw = span - (mid ? .5 : .8); arches.push({ x: -W / 2 + (i + .5) * span, y: 0, w: aw, h: g1 - (mid ? .45 : .9), arch: 2 }); }
+    put(wallGeo(W, g1, arches, T), wallK, 0, pl, D / 2 - T / 2);
+    const up = []; for (let i = 0; i < n; i++) up.push({ x: -W / 2 + (i + .5) * span, y: .9, w: 1.1, h: 2.9, arch: 1 });
+    put(wallGeo(W, g2, up, T), wallK, 0, pl + g1, D / 2 - T / 2);
+    for (let i = 0; i <= n; i++) { const x = Math.max(-W / 2 + .2, Math.min(W / 2 - .2, -W / 2 + i * span)), ch = g1 - span * .62 - .3, lp = [[0, 0], [.24, 0], [.24, .14], [.17, .24], [.15, ch - .32], [.2, ch - .2], [.27, ch - .08], [.27, ch], [0, ch]]; put(lathe(lp, 12), 'stone', x, pl, D / 2 + .2); }
+    // the counting room's front behind the loggia: a door in each bay, the carriage way's gates in the middle
+    const inner = []; for (let i = 0; i < n; i++) { const mid = i === (n - 1) / 2; inner.push(mid ? { x: -W / 2 + (i + .5) * span, y: 0, w: span - 1.1, h: g1 - 1.1, arch: 1, gate: 1 } : { x: -W / 2 + (i + .5) * span, y: 0, w: 1.1, h: 2.5, arch: i % 2 ? 1 : 0 }); }
+    put(wallGeo(W - 2 * T, g1, inner, .5), wallK, 0, pl, zi);
+    for (const h of inner) leaves(h, zi + .05, h.gate ? 8 : 4);
+    put(box(W - 2 * T, .35, la - T + .05), 'cedar', 0, pl + g1 - .18, zi + (la - T) / 2);
+    for (let i = 0; i < n * 2; i++) put(box(.16, .2, la - T), 'cedar', -W / 2 + T + (i + .5) * (W - 2 * T) / (n * 2), pl + g1 - .45, zi + (la - T) / 2);
+    put(box(W - .3, .3, la - .2), 'stone', 0, pl + .02, zi + la / 2 - .1);
+    // the band of tile between the storeys, the balconies on the middle three windows, sills and grilles on the rest
+    put(box(W, .6, .04), 'zellige', 0, pl + g1 + .2, D / 2 + .02);
+    up.forEach((h, i) => { const z = D / 2, x = h.x, y = pl + g1 + h.y, mid = Math.abs(i - (n - 1) / 2) <= 1;
+      if (mid) { const bw = h.w + .5, bh = h.h * .6; put(box(bw + .3, .14, .9), 'stone', x, y - .07, z + .45); for (const sx of [-1, 1]) put(box(.26, .32, .5), 'stone', x + sx * bw / 2, y - .3, z + .25);
+        for (let k = 0; k <= 8; k++) put(box(.035, bh, .035), 'cedar', x - bw / 2 + k * bw / 8, y + bh / 2, z + .88); for (const sx of [-1, 1]) for (let k = 0; k <= 4; k++) put(box(.035, bh, .035), 'cedar', x + sx * bw / 2, y + bh / 2, z + .1 + k * .19);
+        for (let k = 1; k <= 6; k++) put(box(bw, .03, .03), 'cedar', x, y + k * bh / 7, z + .89); put(box(bw + .1, .07, .9), 'cedar', x, y + bh, z + .45); }
+      else { put(box(h.w + .25, .1, .25), 'stone', x, y - .05, z + .08); for (let k = 1; k < 4; k++) put(new THREE.CylinderGeometry(.02, .02, h.h - h.w / 2, 5), 'iron', x - h.w / 2 + k * h.w / 4, y + (h.h - h.w / 2) / 2, z - T / 2); } });
+    // the sides and the back, full height, small windows below and tall above
+    const sideH = (len) => { const hs = [], k = Math.max(1, Math.round(len / 4.5)); for (let i = 0; i < k; i++) { const x = -len / 2 + (i + .5) * len / k; hs.push({ x, y: 1.6, w: .7, h: 1.2, arch: 1 }, { x, y: g1 + .9, w: 1.0, h: 2.6, arch: 1 }); } return hs; };
+    put(wallGeo(W, H, sideH(W), T), wallK, 0, pl, -D / 2 + T / 2, Math.PI); for (const sx of [-1, 1]) put(wallGeo(D - 2 * T + .02, H, sideH(D - 2 * T), T), wallK, sx * (W / 2 - T / 2), pl, 0, sx * Math.PI / 2);
+    put(box(W - 2 * T, H - .3, D - la - T), 'dark', 0, pl + (H - .3) / 2, -la / 2); put(box(W - 2 * T, g2 - .3, la - .1), 'dark', 0, pl + g1 + (g2 - .3) / 2 + .05, D / 2 - la / 2 - .2);
+    // the cornice, the roof, the merlons, the lookout and its banner
+    const top = pl + H; put(box(W + .5, .35, D + .5), 'stone', 0, top + .17, 0); put(box(W - .3, .2, D - .3), 'plinth', 0, top + .1, 0);
+    for (const sz of [1, -1]) { put(box(W + .3, .5, .4), wallK, 0, top + .6, sz * (D / 2 + .05)); merlons(W, 0, top + .85, sz * (D / 2 + .05), 0); }
+    for (const sx of [-1, 1]) { put(box(.4, .5, D - .5), wallK, sx * (W / 2 + .05), top + .6, 0); merlons(D - .8, sx * (W / 2 + .05), top + .85, 0, Math.PI / 2); }
+    { const s = 3.6, lx = -W / 2 + s / 2 + 1.2, lz = -D / 2 + s / 2 + 1.2, lh = 3.4; for (let f = 0; f < 4; f++) { const ry = f * Math.PI / 2; put(wallGeo(s, lh, [{ x: -.75, y: .6, w: 1.0, h: 2.2, arch: 1 }, { x: .75, y: .6, w: 1.0, h: 2.2, arch: 1 }], .35), wallK, lx + Math.sin(ry) * (s / 2 - .17), top + .2, lz + Math.cos(ry) * (s / 2 - .17), ry); }
+      const ly = top + .2 + lh; put(box(s + .4, .3, s + .4), 'stone', lx, ly + .15, lz); for (let f = 0; f < 4; f++) { const ry = f * Math.PI / 2; merlons(s, lx + Math.sin(ry) * (s / 2), ly + .3, lz + Math.cos(ry) * (s / 2), ry); }
+      put(new THREE.CylinderGeometry(.06, .08, 6, 8), 'cedar', lx, ly + 3.3, lz); put(new THREE.SphereGeometry(.12, 10, 8), 'gold', lx, ly + 6.35, lz);
+      const g = new THREE.PlaneGeometry(2.4, 1.3, 8, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin(P.getX(i) * 2.2) * .12); g.computeVertexNormals(); put(g, 'awning', lx + 1.26, ly + 5.5, lz, 0); }
+    front = D / 2 + .95;
+  } else {
+    // the warehouse: the walls with a row of tall arched doors on the quay, the loading door over the middle one
+    const H = 7.4, n = Math.max(3, Math.round(W / 6.5)), span = W / n, mid = Math.floor(n / 2), fr = [];
+    for (let i = 0; i < n; i++) { const x = -W / 2 + (i + .5) * span; fr.push({ x, y: 0, w: 3.0, h: 4.3, arch: 1, door: 1 }); fr.push(i === mid ? { x, y: 5.0, w: 1.5, h: 1.9, arch: 0, load: 1 } : { x, y: 5.4, w: .7, h: .7, arch: 0 }); }
+    put(wallGeo(W, H, fr, T), wallK, 0, pl, D / 2 - T / 2);
+    const hi = len => { const hs = [], k = Math.max(1, Math.round(len / 4)); for (let i = 0; i < k; i++) hs.push({ x: -len / 2 + (i + .5) * len / k, y: 5.2, w: .6, h: .8, arch: 1 }); return hs; };
+    put(wallGeo(W, H, hi(W), T), wallK, 0, pl, -D / 2 + T / 2, Math.PI); for (const sx of [-1, 1]) put(wallGeo(D - 2 * T + .02, H, hi(D - 2 * T), T), wallK, sx * (W / 2 - T / 2), pl, 0, sx * Math.PI / 2);
+    put(box(W - 2 * T, H - .3, D - 2 * T), 'dark', 0, pl + (H - .3) / 2, 0);
+    for (const h of fr) { if (h.door) { leaves(h, D / 2 - T * .6, 6); put(box(h.w + .4, .12, .4), 'stone', h.x, pl + .06, D / 2 + .15); }
+      else if (h.load) { leaves(h, D / 2 - T * .6, 4); put(box(.22, .26, 1.9), 'cedar', h.x, pl + h.y + h.h + .55, D / 2 + .5); put(new THREE.TorusGeometry(.16, .035, 6, 14), 'iron', h.x, pl + h.y + h.h + .3, D / 2 + 1.3);
+        put(new THREE.CylinderGeometry(.018, .018, h.y + h.h - .1, 5), 'cedar', h.x + .15, pl + (h.y + h.h) / 2 + .1, D / 2 + 1.3); } }
+    // the gabled pantile roof, ridge along the quay, its eaves on rafter ends, the gables closed in wall
+    const pitch = 20 * Math.PI / 180, ov = .5, run = D / 2 + ov, rise = Math.tan(pitch) * run, y0 = pl + H, sl = run / Math.cos(pitch), len = W + 2 * ov, yr = y0 + rise - ov * Math.tan(pitch);
+    for (const sz of [1, -1]) { const g = new THREE.PlaneGeometry(len, sl); g.rotateX(-Math.PI / 2); g.translate(0, 0, sz * sl / 2); g.rotateX(sz * pitch); put(g, 'pantile', 0, yr + .02, 0, 0, 0, 0, false); }
+    put(new THREE.CylinderGeometry(.11, .11, len, 8).rotateZ(Math.PI / 2), 'ridge', 0, yr + .08, 0);
+    for (const sx of [-1, 1]) { const s = new THREE.Shape([new THREE.Vector2(-D / 2, 0), new THREE.Vector2(D / 2, 0), new THREE.Vector2(0, rise - ov * Math.tan(pitch))]); put(new THREE.ExtrudeGeometry(s, { depth: T, bevelEnabled: false }), wallK, sx * (W / 2 - (sx > 0 ? T : 0)), y0, 0, Math.PI / 2); }
+    for (const sz of [1, -1]) for (let x = -W / 2; x <= W / 2 + .01; x += .7) put(box(.1, .1, ov), 'cedar', x, y0 - .12, sz * (D / 2 + ov / 2));
+    // what waits on the quay: crates and amphorae by the doors
+    for (let i = 0; i < n; i++) { const x = -W / 2 + (i + .5) * span + (r() < .5 ? -1 : 1) * 2.1, k = Math.floor(r() * 4);
+      for (let j = 0; j < k; j++) { if (r() < .55) { const c = .6 + r() * .3; put(box(c, c, c), 'cedar', x + (r() - .5) * .8, c / 2 + (j > 1 ? .7 : 0), D / 2 + .9 + r() * .5, r() * .5); }
+        else put(lathe([[.001, 0], [.1, .02], [.28, .3], [.3, .55], [.16, .85], [.1, .95], [.12, 1.0], [.001, 1.0]], 12), 'terra', x + (r() - .5) * 1.2, 0, D / 2 + .8 + r() * .7); } }
+    front = D / 2 + 2.05;
+  }
+  const out = finish(); out.group.userData = { roofTop: out.roofTop, kind }; return { ...out, kind, front };
+}
+
+// ── the Mages' academy (Session 836, card F6). The canon (§1.3): "the academy's white towers"; the Mages' academy and the
+// Church both sit in Aurenne. aurenneAcademy(o, r): a long hall of two storeys (the library) with an arcade along its front,
+// tall arched windows above and a band of glazed tile, flat-roofed behind a rounded parapet; and o.towers (2 or 3) slender
+// white round towers rising out of it, each with arched slits up its shaft, a gallery on corbels near the top behind a
+// pierced parapet, a lantern of arched openings and a pointed white cap with a gilt finial. The tallest tower carries the
+// observatory: a white dome with its shutter slot. o.w 24 to 36. -> { group, roofTop, tris, draws, kind: 'academy', front }
+export function aurenneAcademy(o, r) {
+  const { put, wallGeo, box, finish } = aurKit(), W = o.w || 30, D = 13, T = .6, pl = .6, H = 10.5, wallK = 'wall:' + (o.wall ?? 4), nt = o.towers ?? 3;
+  const lathe = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
+  put(box(W + .4, pl, D + 3.6), 'plinth', 0, pl / 2, 1.6);
+  // the hall: an arcade of round arches along the ground floor of the front, tall windows over it, small windows round the rest
+  const n = Math.round(W / 3.4), span = W / n, fr = [];
+  for (let i = 0; i < n; i++) { const x = -W / 2 + (i + .5) * span; fr.push({ x, y: 0, w: span - .9, h: 4.6, arch: 1 }, { x, y: 6.0, w: 1.1, h: 3.2, arch: 1 }); }
+  put(wallGeo(W, H, fr, T), wallK, 0, pl, D / 2 - T / 2);
+  const rest = len => { const hs = [], k = Math.max(1, Math.round(len / 4)); for (let i = 0; i < k; i++) { const x = -len / 2 + (i + .5) * len / k; hs.push({ x, y: 1.8, w: .8, h: 1.6, arch: 1 }, { x, y: 6.2, w: 1.0, h: 2.8, arch: 1 }); } return hs; };
+  put(wallGeo(W, H, rest(W), T), wallK, 0, pl, -D / 2 + T / 2, Math.PI); for (const sx of [-1, 1]) put(wallGeo(D - 2 * T + .02, H, rest(D - 2 * T), T), wallK, sx * (W / 2 - T / 2), pl, 0, sx * Math.PI / 2);
+  put(box(W - 2 * T, H - .3, D - 2 * T), 'dark', 0, pl + (H - .3) / 2, 0);
+  for (let i = 0; i <= n; i++) { const x = Math.max(-W / 2 + .25, Math.min(W / 2 - .25, -W / 2 + i * span)); put(lathe([[0, 0], [.3, 0], [.3, .15], [.22, .25], [.2, 3.6], [.26, 3.75], [.34, 3.9], [.34, 4.0], [0, 4.0]], 12), 'stone', x, pl, D / 2 + .3); }
+  for (const f of fr.filter(h => h.y > 1)) { put(box(f.w + .3, .12, .35), 'stone', f.x, pl + f.y - .06, D / 2 + .1); for (let k = 1; k < 4; k++) put(new THREE.CylinderGeometry(.02, .02, f.h - f.w / 2, 5), 'iron', f.x - f.w / 2 + k * f.w / 4, pl + f.y + (f.h - f.w / 2) / 2, D / 2 - T / 2); }
+  put(box(W, .6, .04), 'zellige', 0, pl + 5.4, D / 2 + .02); put(box(W + .5, .35, D + .5), 'stone', 0, pl + H + .17, 0);
+  { const cap = len => { const g = new THREE.CylinderGeometry(.16, .16, len, 10, 1, false, 0, Math.PI); g.rotateZ(Math.PI / 2); return g; };
+    for (const sz of [1, -1]) { put(box(W + .2, .55, .32), wallK, 0, pl + H + .62, sz * (D / 2 + .05)); put(cap(W + .2), wallK, 0, pl + H + .9, sz * (D / 2 + .05)); }
+    for (const sx of [-1, 1]) { put(box(.32, .55, D - .3), wallK, sx * (W / 2 + .05), pl + H + .62, 0); put(cap(D - .3), wallK, sx * (W / 2 + .05), pl + H + .9, 0, Math.PI / 2); } }
+  // the towers: round shafts rising out of the hall's back, the middle one (or the end one of two) the tallest, with the observatory
+  let top = 0; const tops = [];
+  for (let t = 0; t < nt; t++) { const x = nt === 1 ? 0 : -W / 2 + 3 + t * (W - 6) / (nt - 1), mid = nt === 3 ? t === 1 : t === nt - 1, R = mid ? 2.6 : 2.1, Ht = (mid ? 34 : 26) + Math.round(r() * 20) / 10, z = -D / 2 + .4;
+    const sh = Ht - 3.2; put(new THREE.CylinderGeometry(R, R * 1.06, sh, 28), wallK, x, pl + sh / 2, z);
+    for (let k = 0; k < 5; k++) { const y = pl + H + 2 + k * (Ht - H - 6) / 5, a = k * 1.3; put(box(.3, 1.3, .2), 'dark', x + Math.sin(a) * (R + .01), y, z + Math.cos(a) * (R + .01), a); }
+    put(new THREE.TorusGeometry(R + .04, .12, 6, 28), 'stone', x, pl + H + .9, z, 0, Math.PI / 2);
+    // the gallery: a ring of corbels, a stone floor, a pierced parapet of little posts and a rail
+    const gy = pl + Ht - 3.2, gR = R + .9; for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; put(box(.3, .7, .9), 'stone', x + Math.sin(a) * (R + .4), gy - .45, z + Math.cos(a) * (R + .4), a); }
+    put(new THREE.CylinderGeometry(gR, gR, .25, 28), 'stone', x, gy, z); for (let i = 0; i < 28; i++) { const a = i / 28 * Math.PI * 2; put(box(.12, .8, .12), wallK, x + Math.sin(a) * (gR - .1), gy + .52, z + Math.cos(a) * (gR - .1)); }
+    put(new THREE.TorusGeometry(gR - .1, .08, 5, 28), wallK, x, gy + .95, z, 0, Math.PI / 2);
+    // the lantern: a narrower drum of arched openings over the gallery, its cap a pointed white cone, or the observatory's dome
+    const lR = R * .78, lh = 3.4, ly = gy + .15; put(new THREE.CylinderGeometry(lR, lR, lh, 24, 1, true), wallK, x, ly + lh / 2, z); put(new THREE.CylinderGeometry(lR - .3, lR - .3, lh, 16), 'dark', x, ly + lh / 2, z);
+    for (let i = 0; i < 6; i++) { const a = (i + .5) / 6 * Math.PI * 2, sh = new THREE.Shape(); sh.moveTo(-.4, 0); sh.lineTo(.4, 0); sh.lineTo(.4, 1.6); sh.absarc(0, 1.6, .4, 0, Math.PI, false); sh.lineTo(-.4, 0); put(new THREE.ShapeGeometry(sh, 6), 'dark', x + Math.sin(a) * (lR + .02), ly + .6, z + Math.cos(a) * (lR + .02), a); }
+    const cy = ly + lh; put(new THREE.TorusGeometry(lR + .1, .14, 6, 24), 'stone', x, cy, z, 0, Math.PI / 2);
+    let tt;
+    if (mid) { const pts = []; for (let i = 0; i <= 12; i++) { const a = i / 12 * Math.PI / 2; pts.push([Math.max(.001, (lR + .1) * Math.cos(a)), (lR + .1) * Math.sin(a)]); } put(lathe(pts, 28), wallK, x, cy, z);
+      put(box(.5, lR * .9, .08), 'dark', x, cy + lR * .55, z + lR * .62, 0, -.75); tt = cy + lR + .1; put(new THREE.CylinderGeometry(.05, .05, 1.6, 6), 'gold', x, tt + .8, z); put(new THREE.SphereGeometry(.2, 10, 8), 'gold', x, tt + .2, z); tt += 1.6; }
+    else { put(lathe([[.001, 0], [lR + .3, 0], [lR + .2, .3], [lR * .45, 3.2], [.001, 4.6]], 24), wallK, x, cy, z); put(new THREE.CylinderGeometry(.04, .04, 1.4, 6), 'gold', x, cy + 5.1, z); put(new THREE.SphereGeometry(.16, 10, 8), 'gold', x, cy + 4.6, z); tt = cy + 5.8; }
+    tops.push(+tt.toFixed(2)); top = Math.max(top, tt); }
+  // two cypresses at the arcade's ends, and a stone bench under it
+  for (const sx of [-1, 1]) { const ht = 6.5 + r() * 2, cx = sx * (W / 2 - 1.2), cz = D / 2 + 2.6, g = lathe([[.001, 0], [.55, .4], [.7, ht * .35], [.5, ht * .75], [.001, ht]], 12), P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const k = 1 + .12 * Math.sin(P.getY(i) * 5 + Math.atan2(P.getZ(i), P.getX(i)) * 5 + r() * .5); P.setX(i, P.getX(i) * k); P.setZ(i, P.getZ(i) * k); } g.computeVertexNormals(); put(g, 'leaf2', cx, pl, cz); }
+  put(box(W * .5, .45, .5), 'stone', 0, pl + .22, D / 2 - T - .5);
+  const out = finish(); out.group.userData = { roofTop: out.roofTop, kind: 'academy', towerTops: tops }; return { ...out, kind: 'academy', front: D / 2 + 3.4, towerTops: tops };
 }
 
 // ── the Gatelands house (Session 818): the lane slice's house (street.js, Session 769; Michael approved the slices, 12 Oct)
@@ -278,6 +497,276 @@ export function gatelandsHouse(o, r) {
 }
 
 
+// ── the Gatelands kit (the concept run of 13 Oct 2026, card F6; folded in here from pieces-gatelands.js in Session 834, the
+// concept artist's ask, so the three islands' pieces are one module). Every measure in metres from SCALE; a wall is a slab per
+// face with its openings cut through it, each opening, roof, chimney and trim a piece placed on a face, merged by material.
+// The vocabulary is OG-070's and OG-014's: a cottage (gabled or hipped thatch), a farmhouse, a townhouse, a merchant's house
+// and shop, a warehouse (GL_PLANS); gatelandsBuilding(plan) builds one. Its names are prefixed where they would be ambiguous
+// beside the other kits. (gatelandsHouse above is the lane slice's house, Session 818, kept while the lane uses it.)
+// ── the measures (visual-foundation §1): one unit a metre, people 1.6 to 1.9 m ──
+const SCALE = {
+  person: 1.8, eye: 1.65, door: { h: 2.05, w: 1.0 }, step: .16, sill: .9, plinth: .45,
+  wall: { cottage: .6, house: .5, town: .45, store: .7 },
+  storey: { cottage: 2.7, house: [2.9, 2.7], town: [3.0, 2.9, 2.6], shop: [3.0, 2.9, 2.6], store: [3.0, 2.8, 2.8, 2.6] }, /* floor to floor, visual-foundation §1's 2.6 to 3.0 (Session 860; the town's were 3.3 to 3.6) */
+  pitch: { thatch: 50, slate: 36, store: 40 }, thatchDepth: .5, slateDepth: .14, pot: .5,
+};
+const RAD = Math.PI / 180;
+
+// ── materials, by key ──
+const RENDER = { lime: 0xf3efe6, cream: 0xeadfc4, ochre: 0xdcb46e, sage: 0xa9b48e, oxblood: 0xa45a48, blue: 0x8ea2b2, rose: 0xd8a596 };
+const PAINTS = { green: [.13, .30, .20], red: [.55, .12, .10], blue: [.14, .26, .44], black: [.06, .06, .07], yellow: [.75, .58, .18], teal: [.12, .36, .38] };
+let MAT = null;
+function glMats() {
+  if (MAT) return MAT; MAT = {};
+  for (const k in RENDER) MAT['w:' + k] = mat('plaster', { ns: .55, color: RENDER[k], rough: .95 });
+  MAT.rubble = mat('stone', { ns: 1.0, color: 0xf4efe6 }); MAT.ashlar = mat('ashlar', { ns: .9, color: 0xece6da }); MAT.dress = mat('ashlar', { ns: .7, color: 0xf2ede2 });
+  MAT.thatch = mat('thatch', { ns: 1.5, rough: 1, color: 0xffe6c4 }); MAT.slate = mat('slate', { ns: 1.3, rough: .55, color: 0xe0e4ec });
+  MAT.ridge = new THREE.MeshStandardMaterial({ color: new THREE.Color(.36, .14, .09), roughness: .7 }); MAT.pot = new THREE.MeshStandardMaterial({ color: new THREE.Color(.62, .30, .18), roughness: .8 });
+  MAT.tar = new THREE.MeshStandardMaterial({ color: new THREE.Color(.035, .035, .04), roughness: .45 }); MAT.iron = new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .06, .065), roughness: .45, metalness: .6 });
+  MAT.frame = new THREE.MeshStandardMaterial({ color: new THREE.Color(.90, .88, .82), roughness: .6 }); MAT.board = mat('wood', { ns: 1.1, color: 0xb8a890 });
+  MAT.glass = new THREE.MeshStandardMaterial({ color: new THREE.Color(.04, .05, .06), roughness: .05, metalness: .2 });
+  MAT.lit = new THREE.MeshStandardMaterial({ color: new THREE.Color(.1, .08, .05), emissive: new THREE.Color(1, .66, .32), emissiveIntensity: .5, roughness: .2 });
+  MAT.dark = new THREE.MeshStandardMaterial({ color: new THREE.Color(.025, .02, .016), roughness: 1, side: THREE.BackSide });
+  for (const k in PAINTS) { const m = mat('wood', { ns: .7 }); m.color.setRGB(...PAINTS[k].map(v => Math.min(1, v * 2.7)), THREE.SRGBColorSpace); MAT['p:' + k] = m; }
+  return MAT;
+}
+function signMat(text, bg, fg) {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 128; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, 1024, 128); x.strokeStyle = fg; x.lineWidth = 6; x.strokeRect(10, 10, 1004, 108);
+  x.fillStyle = fg; x.font = '600 64px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 512, 68); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: .6 });
+}
+function harpMat() {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 320; const x = c.getContext('2d'); x.fillStyle = '#1f3a2c'; x.fillRect(0, 0, 256, 320); x.strokeStyle = '#d4ad55'; x.lineWidth = 8; x.strokeRect(12, 12, 232, 296);
+  x.lineWidth = 12; x.beginPath(); x.moveTo(78, 262); x.lineTo(84, 70); x.quadraticCurveTo(150, 40, 190, 92); x.quadraticCurveTo(150, 170, 92, 262); x.closePath(); x.stroke();
+  x.lineWidth = 3; for (let i = 0; i < 7; i++) { const t = (i + 1) / 8; x.beginPath(); x.moveTo(84 + (88 - 84) * t, 70 + 192 * t); x.lineTo(84 + 100 * t, 92 + 40 * t + 0 * i); x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return new THREE.MeshStandardMaterial({ map: t, roughness: .6 });
+}
+
+// ── the bucket: pieces collected by material key, merged per building ──
+function bucket() {
+  const g = {}; return { g, extra: [],
+    add(key, geo, m) { let x = geo.index ? geo.toNonIndexed() : geo.clone(); x.clearGroups(); for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k);
+      if (!x.attributes.uv) x.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(x.attributes.position.count * 2), 2)); if (m) x.applyMatrix4(m); (g[key] ||= []).push(x); return x; } };
+}
+function finish(bk, name) {
+  const M = glMats(), grp = new THREE.Group(); let tris = 0, calls = 0;
+  for (const k in bk.g) { const geo = mergeGeometries(bk.g[k]), m = new THREE.Mesh(geo, M[k] || bk.mats?.[k]); m.castShadow = !['glass', 'lit', 'dark'].includes(k); m.receiveShadow = true; grp.add(m); tris += geo.attributes.position.count / 3; calls++; }
+  grp.userData = { name, tris: Math.round(tris), calls }; return grp;
+}
+const box = (w, h, d, s = .5) => worldUV(new THREE.BoxGeometry(w, h, d), s);
+
+// an opening's outline: a rectangle, or round-headed (a half circle on its width)
+function outline(o, P) { const l = o.x - o.w / 2, r = o.x + o.w / 2, b = o.y, t = o.y + o.h;
+  P.moveTo(l, b); P.lineTo(r, b); if (o.arch) { const sp = t - o.w / 2; P.lineTo(r, sp); P.absarc(o.x, sp, o.w / 2, 0, Math.PI, false); } else { P.lineTo(r, t); P.lineTo(l, t); } P.lineTo(l, b); return P; }
+
+// ── the face: a wall slab with its openings, then the pieces on it. Face space: u along the face (right as seen
+// from outside), v up, z out of the wall (0 is the outer face, -t the inner) ──
+function face(bk, Mf, o) {
+  const add = (k, g) => bk.add(k, g, Mf), sh = new THREE.Shape(o.outline.map(([u, v]) => new THREE.Vector2(u, v)));
+  for (const op of o.open) sh.holes.push(outline(op, new THREE.Path()));
+  const wg = new THREE.ExtrudeGeometry(sh, { depth: o.t, bevelEnabled: false, curveSegments: 12 }); wg.translate(0, 0, -o.t); worldUV(wg, o.fin.uv ?? .42); add(o.fin.key, wg);
+  const half = o.outline.reduce((a, p) => Math.max(a, Math.abs(p[0])), 0);
+  // the tarred plinth of a cottage, broken at the doors
+  if (o.fin.plinth) { let a = -half - .03; const cuts = o.open.filter(p => p.y < .3).sort((p, q) => p.x - q.x).map(p => [p.x - p.w / 2, p.x + p.w / 2]); cuts.push([half + .03, 0]);
+    for (const [c0, c1] of cuts) { if (c0 - a > .02) { const g = box(c0 - a, SCALE.plinth, .06); g.translate((a + c0) / 2, SCALE.plinth / 2, .0); add('tar', g); } a = c1; } }
+  // string courses at the floors
+  for (const y of o.strings || []) { const g = box(half * 2 + .06, .14, .1); g.translate(0, y, .03); add(o.fin.dressKey || 'dress', g); }
+  for (const op of o.open) piece(add, op, o);
+}
+
+// ── the openings: what fills each hole ──
+function piece(add, op, F) {
+  const fin = F.fin, inset = op.inset ?? fin.inset, z0 = -inset, l = op.x - op.w / 2, r = op.x + op.w / 2, top = op.y + op.h, spring = op.arch ? top - op.w / 2 : top;
+  const B = (k, w, h, d, x, y, z, rz = 0, s = .5) => { const g = box(w, h, d, s); if (rz) g.rotateZ(rz); g.translate(x, y, z); add(k, g); return g; };
+  const glass = (y0, k) => { const s = outline({ ...op, y: y0, h: top - y0 }, new THREE.Shape()); const g = new THREE.ShapeGeometry(s, 12); g.translate(0, 0, z0 - .03); add(k || ((F.r || rnd)() < .14 ? 'lit' : 'glass'), g); };
+  // a glazed sash: its frame and bars between y0 and y1, c by r panes
+  const sash = (y0, y1, c, rr, z = z0) => { const fw = .055; B('frame', op.w, fw, .07, op.x, y0 + fw / 2, z); B('frame', op.w, fw, .07, op.x, y1 - fw / 2, z); B('frame', fw, y1 - y0, .07, l + fw / 2, (y0 + y1) / 2, z); B('frame', fw, y1 - y0, .07, r - fw / 2, (y0 + y1) / 2, z);
+    for (let i = 1; i < c; i++) B('frame', .03, y1 - y0, .05, l + op.w * i / c, (y0 + y1) / 2, z); for (let j = 1; j < rr; j++) B('frame', op.w, .03, .05, op.x, y0 + (y1 - y0) * j / rr, z); };
+  const fan = (z = z0) => { const rr = op.w / 2, sp = spring; for (let k = 0; k <= 6; k++) { const a = Math.PI * k / 6, g = box(.03, rr, .04); g.translate(0, rr / 2, 0); g.rotateZ(a - Math.PI / 2); g.translate(op.x, sp, z); add('frame', g); }
+    const ring = new THREE.TorusGeometry(rr * .38, .02, 4, 16, Math.PI); ring.translate(op.x, sp, z); add('frame', ring); B('frame', op.w, .07, .08, op.x, sp, z); };
+  const leaf = (k, x0, x1, y0, y1, z = z0 - .02) => B(k, x1 - x0, y1 - y0, .06, (x0 + x1) / 2, (y0 + y1) / 2, z, 0, .9);
+  const step = () => B('dress', op.w + .5, SCALE.step, .42, op.x, SCALE.step / 2, .21);
+  // the dressing round an opening: a cut-stone lintel, or a ring of voussoirs with a keystone over a round head
+  if (fin.dress || op.dress) { const dk = fin.dressKey || 'dress';
+    if (op.arch) { const rr = op.w / 2, s = new THREE.Shape(); s.absarc(op.x, spring, rr + .32, 0, Math.PI, false); s.lineTo(op.x - rr, spring); s.absarc(op.x, spring, rr, Math.PI, 0, true); s.lineTo(op.x + rr + .32, spring);
+      const g = new THREE.ExtrudeGeometry(s, { depth: .05, bevelEnabled: false, curveSegments: 14 }); worldUV(g, .6); add(dk, g); B(dk, .3, .42, .09, op.x, spring + rr + .12, .03); }
+    else if (op.kind !== 'shopwin' && op.kind !== 'shopdoor') B(dk, op.w + .36, .28, .06, op.x, top + .14, .02); }
+  switch (op.kind) {
+    case 'win': { glass(op.y); const s2 = op.sash !== false; const yb = op.arch ? spring : top; if (s2) { sash(op.y, (op.y + yb) / 2 + .02, ...op.bars, z0 + .02); sash((op.y + yb) / 2 - .02, yb, ...op.bars, z0 - .02); } else sash(op.y, yb, ...op.bars);
+      if (op.arch) fan(); B(fin.sillKey || 'dress', op.w + .2, .08, inset + .1, op.x, op.y - .04, (-inset + .1) / 2); break; }
+    case 'half': { // the Irish half-door: the lower leaf shut, the upper leaf open into the dark room
+      const hl = 1.12; leaf(F.paint, l, r, op.y, op.y + hl); B('iron', op.w * .5, .04, .015, l + op.w * .25, op.y + .3, z0 + .02); B('iron', op.w * .5, .04, .015, l + op.w * .25, op.y + hl - .25, z0 + .02);
+      const g = box(op.w, top - op.y - hl - .02, .06, .9); g.translate(op.w / 2, 0, 0); g.rotateY(1.25); g.translate(l, op.y + hl + (top - op.y - hl) / 2, z0 - .02); add(F.paint, g);
+      B('frame', op.w + .02, .05, .1, op.x, op.y + hl, z0 + .03); step(); break; }
+    case 'plank': { leaf(op.paint || F.paint, l, r, op.y, spring); if (op.arch) glass(spring, 'glass'); for (const y of [.35, 1.6]) B('iron', op.w * .7, .05, .015, l + op.w * .35, op.y + y, z0 + .02); if (op.y < .3) step(); break; }
+    case 'transom': { const tr = .42; leaf(F.paint, l, r, op.y, top - tr); glass(top - tr); sash(top - tr, top, 3, 1); B('iron', .05, .05, .06, r - .16, op.y + 1.05, z0 + .03); step(); break; }
+    case 'fan': { leaf(F.paint, l, r, op.y, spring); for (const y of [.5, 1.35]) B(F.paint, op.w - .2, .5, .03, op.x, op.y + y, z0 + .02); glass(spring, 'glass'); fan();
+      const kn = new THREE.TorusGeometry(.07, .015, 6, 14); kn.translate(op.x, op.y + 1.55, z0 + .03); add('iron', kn); step(); break; }
+    case 'cart': case 'load': { const mid = op.x; leaf('board', l, mid - .01, op.y, spring); leaf('board', mid + .01, r, op.y, spring); if (op.arch) { const s = outline({ ...op, y: spring - .001, h: top - spring + .001 }, new THREE.Shape()); const g = new THREE.ShapeGeometry(s, 12); g.translate(0, 0, z0 - .02); add('board', g); }
+      for (const y of [.25, (spring - op.y) * .5, spring - op.y - .25]) { B('iron', op.w * .44, .07, .015, l + op.w * .22, op.y + y, z0 + .02); B('iron', op.w * .44, .07, .015, r - op.w * .22, op.y + y, z0 + .02); }
+      if (op.kind === 'load') B('dress', op.w + .2, .1, inset + .1, op.x, op.y - .05, (-inset + .1) / 2); break; }
+    case 'shopwin': { glass(op.y, 'glass'); sash(op.y, top, ...(op.bars || [4, 2])); B(F.paint, op.w + .1, op.y, .1, op.x, op.y / 2, z0 + .1); B('dress', op.w + .1, .08, inset + .12, op.x, op.y - .04, (-inset + .12) / 2); break; }
+    case 'shopdoor': { const gl = op.y + 1.0; leaf(F.paint, l, r, op.y, gl); glass(gl); sash(gl, top - .5, 2, 2); sash(top - .5, top, 2, 1); step(); break; }
+    case 'vent': { glass(op.y, 'glass'); sash(op.y, top, 1, 3); B('dress', op.w + .2, .08, inset + .1, op.x, op.y - .04, (-inset + .1) / 2); break; }
+  }
+}
+
+// ── a roof as one solid slab: ridge along x, half-length L and half-depth D at the eaves, base ye, thickness t.
+// hip: the ends slope too. smooth: normals averaged across the top (thatch reads round over the hips) ──
+function roofSolid(L, D, pitch, t, hip, ye, smooth) {
+  const tp = Math.tan(pitch), yr = ye + D * tp, tv = t / Math.cos(pitch), RL = hip ? Math.max(.01, L - D) : L, V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const b = { A: V(-L, ye, D), B: V(L, ye, D), C: V(L, ye, -D), D: V(-L, ye, -D), R0: V(-RL, yr, 0), R1: V(RL, yr, 0) }, T = {}; for (const k in b) T[k] = b[k].clone().setY(b[k].y + tv);
+  const F = [];
+  const top = (pts, hint) => F.push({ pts, hint, top: true }), bot = (pts, hint) => F.push({ pts, hint }), up = V(0, 1, 0);
+  top([T.A, T.B, T.R1, T.R0], V(0, 1, 1)); top([T.C, T.D, T.R0, T.R1], V(0, 1, -1)); bot([b.A, b.B, b.R1, b.R0], V(0, -1, 0)); bot([b.C, b.D, b.R0, b.R1], V(0, -1, 0));
+  bot([b.A, b.B, T.B, T.A], V(0, 0, 1)); bot([b.C, b.D, T.D, T.C], V(0, 0, -1));
+  if (hip) { top([T.B, T.C, T.R1], V(1, 1, 0)); top([T.D, T.A, T.R0], V(-1, 1, 0)); bot([b.B, b.C, b.R1], V(0, -1, 0)); bot([b.D, b.A, b.R0], V(0, -1, 0)); bot([b.B, b.C, T.C, T.B], V(1, 0, 0)); bot([b.D, b.A, T.A, T.D], V(-1, 0, 0)); }
+  else { bot([b.B, b.R1, T.R1, T.B], V(1, 0, 0)); bot([b.R1, b.C, T.C, T.R1], V(1, 0, 0)); bot([b.D, b.R0, T.R0, T.D], V(-1, 0, 0)); bot([b.R0, b.A, T.A, T.R0], V(-1, 0, 0)); }
+  const pos = [], nor = [], uv = [], acc = new Map(), keyOf = v => v.x.toFixed(3) + ',' + v.y.toFixed(3) + ',' + v.z.toFixed(3), tops = [];
+  for (const f of F) { let p = f.pts; const n = new THREE.Vector3().subVectors(p[1], p[0]).cross(new THREE.Vector3().subVectors(p[2], p[0])).normalize(); if (n.dot(f.hint) < 0) { p = [...p].reverse(); n.negate(); }
+    const e = new THREE.Vector3().crossVectors(up, n); if (e.lengthSq() < 1e-6) e.set(1, 0, 0); e.normalize(); const s = new THREE.Vector3().crossVectors(n, e);
+    for (let i = 1; i < p.length - 1; i++) for (const v of [p[0], p[i], p[i + 1]]) { pos.push(v.x, v.y, v.z); nor.push(n.x, n.y, n.z); uv.push(v.dot(e), v.dot(s)); if (f.top && smooth) { tops.push(pos.length / 3 - 1); const k = keyOf(v); acc.set(k, (acc.get(k) || V(0, 0, 0)).add(n)); } } }
+  if (smooth) for (const i of tops) { const v = V(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]), n = acc.get(keyOf(v)).clone().normalize(); nor[i * 3] = n.x; nor[i * 3 + 1] = n.y; nor[i * 3 + 2] = n.z; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); return { g, yr, tv, RL };
+}
+function scaleUV(g, s) { const u = g.attributes.uv; for (let i = 0; i < u.count; i++) u.setXY(i, u.getX(i) * s, u.getY(i) * s); return g; }
+
+// a chimney stack: its shaft, a drip course and a cap, a pot per flue
+function stack(bk, key, x, z, y0, y1, flues, alongZ = true) {
+  const a = .72, b = .4 + .36 * flues, sx = alongZ ? a : b, sz = alongZ ? b : a, s = box(sx, y1 - y0, sz, .5); s.translate(x, (y0 + y1) / 2, z); bk.add(key, s);
+  const dk = key.startsWith('w:') ? key : 'dress'; const c1 = box(sx + .14, .12, sz + .14); c1.translate(x, y1 - .42, z); bk.add(dk, c1); const c2 = box(sx + .1, .1, sz + .1); c2.translate(x, y1 + .05, z); bk.add(dk, c2);
+  for (let i = 0; i < flues; i++) { const o = (i - (flues - 1) / 2) * .36, p = new THREE.CylinderGeometry(.11, .15, SCALE.pot, 10); p.translate(alongZ ? x : x + o, y1 + .1 + SCALE.pot / 2, alongZ ? z + o : z); bk.add('pot', p); }
+}
+
+// ── a building from its plan ──
+// plan: { name, w, d, t, floors: [m], fin: {key, inset, plinth, quoins, dress, dressKey, sillKey}, paint, roof: {kind, pitch, hip, parapet, ov, ovg},
+//   chim: [{x, flues, gable}], open: {front, back, left, right}, strings, cornice, shop, hoist, sign }
+function building(P) {
+  const M = glMats(), bk = bucket(), { w, d, t } = P, h = P.floors.reduce((a, b) => a + b, 0), roof = P.roof, p = roof.pitch * RAD, tp = Math.tan(p), thatch = roof.kind === 'thatch';
+  const rt = thatch ? SCALE.thatchDepth : SCALE.slateDepth, tv = rt / Math.cos(p), di = d / 2 - t, park = .32;
+  const F = { fin: P.fin, paint: 'p:' + (P.paint || 'green'), t, r: P.r || rnd }; // P.r: the lot's stream (Session 835); without one, the page's shared rnd() as before
+  const basis = (u, n, x, z) => new THREE.Matrix4().makeBasis(u, new THREE.Vector3(0, 1, 0), n).setPosition(x, 0, z);
+  const MF = { front: basis(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 1), 0, d / 2), back: basis(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, -1), 0, -d / 2),
+    right: basis(new THREE.Vector3(0, 0, -1), new THREE.Vector3(1, 0, 0), w / 2, 0), left: basis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(-1, 0, 0), -w / 2, 0) };
+  const rect = (hw, hh) => [[-hw, 0], [hw, 0], [hw, hh], [-hw, hh]];
+  const gableTop = roof.hip ? rect(di, h) : roof.parapet ? [[-di, 0], [di, 0], [di, h + t * tp + tv + park], [0, h + d / 2 * tp + tv + park], [-di, h + t * tp + tv + park]] : [[-di, 0], [di, 0], [di, h + t * tp], [0, h + d / 2 * tp], [-di, h + t * tp]];
+  const floorsAt = P.floors.slice(0, -1).reduce((a, f) => (a.push((a.at(-1) || 0) + f), a), []);
+  for (const k of ['front', 'back']) face(bk, MF[k], { ...F, outline: rect(w / 2, h), open: P.open[k] || [], strings: P.strings ? floorsAt : [] });
+  for (const k of ['left', 'right']) face(bk, MF[k], { ...F, outline: gableTop, open: P.open[k] || [], strings: [] });
+  // the dark room behind every opening (P.interior, Session 852: left out when the rooms are built inside, rooms.js)
+  if (!P.interior) { const g = new THREE.BoxGeometry(w - 2 * t + .04, h - .02, d - 2 * t + .04); g.translate(0, h / 2, 0); bk.add('dark', g); }
+  // a footing under the ground line, so a building on a slope has no gap
+  { const g = box(w + .1, .8, d + .1); g.translate(0, -.42, 0); bk.add(P.fin.key === 'rubble' ? 'rubble' : 'dress', g); }
+  // quoins: dressed blocks wrapping each corner, long and short by turns
+  if (P.fin.quoins) for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (let k = 0, y = P.fin.plinth ? SCALE.plinth : .1; y < h - .2; k++, y += .34) {
+    const a = k % 2 ? .3 : .55, b2 = k % 2 ? .55 : .3, g = box(a, .3, b2); g.translate(sx * (w / 2 - a / 2 + .03), y + .15, sz * (d / 2 - b2 / 2 + .03)); bk.add(P.fin.dressKey || 'dress', g); }
+  // the eaves cornice of a town front
+  if (P.cornice) for (const sz of [-1, 1]) { const g = box(w + .06, .26, .26); g.translate(0, h - .13, sz * (d / 2 + .08)); bk.add(P.fin.dressKey || 'dress', g); }
+  // the roof
+  const ov = roof.ov ?? (thatch ? .45 : .28), D = d / 2 + ov, ye = h - ov * tp, L = roof.hip ? w / 2 + ov : roof.parapet ? w / 2 - t * .5 : w / 2 + (roof.ovg ?? .3);
+  const R = roofSolid(L, D, p, rt, roof.hip, ye, thatch); scaleUV(R.g, thatch ? .55 : .5); bk.add(thatch ? 'thatch' : 'slate', R.g);
+  const ridgeY = R.yr + R.tv;
+  if (thatch) { // the ridge: a roll, and a block-cut band with a scalloped lower edge down each slope, pinned with hazel liggers
+    const RLr = roof.hip ? R.RL : L - .05, roll = new THREE.CylinderGeometry(.34, .34, RLr * 2 + (roof.hip ? .6 : .2), 14); roll.rotateZ(Math.PI / 2); scaleUV(roll, 3); roll.translate(0, ridgeY - .08, 0); bk.add('thatch', roll);
+    for (const sz of [1, -1]) { const S = new THREE.Vector3(0, -Math.sin(p), sz * Math.cos(p)), N = new THREE.Vector3(0, Math.cos(p), sz * Math.sin(p)), X = new THREE.Vector3(-sz, 0, 0);
+      const len = RLr * 2 + (roof.hip ? .4 : 0), n = Math.max(2, Math.round(len / .55)), s = new THREE.Shape(); s.moveTo(-len / 2, 0); s.lineTo(len / 2, 0);
+      for (let i = n; i >= 0; i--) { const u = -len / 2 + len * i / n; s.lineTo(u, i % 2 ? .62 : .95); } s.lineTo(-len / 2, 0);
+      const g = new THREE.ExtrudeGeometry(s, { depth: .1, bevelEnabled: true, bevelThickness: .04, bevelSize: .04, bevelSegments: 2 }); worldUV(g, .55);
+      g.applyMatrix4(new THREE.Matrix4().makeBasis(X, S, N).setPosition(0, ridgeY - .12, 0)); bk.add('thatch', g);
+      for (const y of [.12, .5]) { const lg = new THREE.CylinderGeometry(.018, .018, len, 5); lg.rotateZ(Math.PI / 2); lg.translate(0, 0, 0); lg.applyMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(1, 0, 0), S, N).setPosition(0, ridgeY - .12, 0).multiply(new THREE.Matrix4().makeTranslation(0, y, .14))); bk.add('board', lg); } }
+  } else { // half-round clay ridge tiles, and on the hips; a cast-iron gutter and a downpipe
+    const rl = new THREE.CylinderGeometry(.13, .13, (roof.hip ? R.RL : L) * 2 + .1, 10, 1, false); rl.rotateZ(Math.PI / 2); rl.translate(0, ridgeY + .02, 0); bk.add('ridge', rl);
+    if (P.gutter !== false) for (const sz of [-1, 1]) { const gt = new THREE.CylinderGeometry(.075, .075, L * 2, 8); gt.rotateZ(Math.PI / 2); gt.translate(0, ye - .06, sz * (D - .03)); bk.add('iron', gt);
+      const dp = new THREE.CylinderGeometry(.045, .045, ye, 8); dp.translate(sz * (w / 2 - .25), ye / 2, sz * (d / 2 + .07)); bk.add('iron', dp); }
+  }
+  // the gable parapets: coping along the slopes and a kneeler at each foot
+  if (roof.parapet) for (const k of ['left', 'right']) { const Mf = MF[k], yTop = h + t * tp + tv + park, slope = (di) / Math.cos(p);
+    for (const su of [-1, 1]) { const g = box(slope + .2, .14, t + .12); g.rotateZ(-su * p); g.translate(su * di / 2, yTop + di * tp / 2 + .07, -t / 2); g.applyMatrix4(Mf); bk.add('dress', g);
+      const kn = box(t + .2, yTop - h + .3, .2 + t); kn.translate(su * (d / 2 - (t + .2) / 2 + .05), h + (yTop - h + .3) / 2, -t / 2); kn.applyMatrix4(Mf); bk.add('dress', kn); } }
+  // chimneys: on a gable (in the wall) or on the ridge
+  for (const c of P.chim || []) { const x = c.gable ? c.gable * (w / 2 - .36) : c.x, key = P.fin.key === 'rubble' ? 'rubble' : P.fin.stackKey || P.fin.key; stack(bk, key, x, 0, h - .6, ridgeY + (thatch ? 1.0 : .85), c.flues || 1, true); }
+  // the shopfront: pilasters, a fascia with the name, a cornice
+  if (P.shop) { const S = P.shop, Mf = MF.front, A = (k, w2, h2, d2, x, y, z) => { const g = box(w2, h2, d2, .5); g.translate(x, y, z); g.applyMatrix4(Mf); bk.add(k, g); };
+    for (const sx of [-1, 1]) { A('p:' + S.paint, .38, S.top, .16, sx * (S.w / 2 - .19), S.top / 2, .08); A('dress', .48, .2, .22, sx * (S.w / 2 - .19), .1, .11); A('p:' + S.paint, .44, .22, .2, sx * (S.w / 2 - .19), S.top - .55, .1); }
+    A('p:' + S.paint, S.w, .62, .14, 0, S.top + .26, .07); A('p:' + S.paint, S.w + .24, .14, .34, 0, S.top + .64, .17); A('iron', S.w + .2, .03, .3, 0, S.top + .72, .17);
+    bk.mats = bk.mats || {}; bk.mats.fascia = signMat(S.name, '#1d3226', '#e3c26a'); const fg = new THREE.PlaneGeometry(S.w - .9, .46); fg.translate(0, S.top + .26, .145); fg.applyMatrix4(Mf); bk.add('fascia', fg); }
+  // the hoist: a beam out of the gable over the loading doors, a pulley and a rope
+  if (P.hoist) { const Mf = MF[P.hoist.face], y = P.hoist.y, A = (k, g) => { g.applyMatrix4(Mf); bk.add(k, g); };
+    { const g = box(.26, .3, 1.9, .8); g.translate(0, y, .5); A('board', g); } { const g = box(1.2, .12, 1.1); g.rotateX(-.25); g.translate(0, y + .55, .7); A('slate', g); }
+    { const g = new THREE.TorusGeometry(.16, .04, 6, 16); g.rotateY(Math.PI / 2); g.translate(0, y - .3, 1.2); A('iron', g); } { const g = new THREE.CylinderGeometry(.018, .018, 4.2, 5); g.translate(0, y - .3 - 2.1, 1.36); A('board', g); } }
+  // a hanging trade sign on an iron bracket
+  if (P.sign) { const S = P.sign, Mf = MF.front, A = (k, g) => { g.applyMatrix4(Mf); bk.add(k, g); };
+    { const g = box(.05, .05, 1.15); g.translate(S.x, S.y, .58); A('iron', g); } { const g = box(.04, .5, .04); g.rotateX(.9); g.translate(S.x, S.y - .2, .2); A('iron', g); }
+    bk.mats = bk.mats || {}; bk.mats.harp = harpMat(); { const g = box(.06, .82, .66); g.translate(S.x, S.y - .5, .78); A('board', g); }
+    for (const sx of [1, -1]) { const g = new THREE.PlaneGeometry(.6, .76); g.rotateY(sx * Math.PI / 2); g.translate(S.x + sx * .032, S.y - .5, .78); A('harp', g); } }
+  const grp = finish(bk, P.name); grp.userData.plan = P; grp.userData.size = { w, d, eave: +h.toFixed(2), ridge: +(ridgeY).toFixed(2) };
+  // where to stand a person: before the first door of the front (or the face named)
+  const dface = P.doorFace || 'front', door = (P.open[dface] || []).find(o => /half|fan|transom|plank|shopdoor|cart/.test(o.kind));
+  if (door) { const v = new THREE.Vector3(door.x + .9, 0, .9).applyMatrix4(MF[dface]); grp.userData.door = v; }
+  return grp;
+}
+
+// ── the plans ──
+const FIN = {
+  lime: () => ({ key: 'w:lime', inset: .3, plinth: true, sillKey: 'w:lime', stackKey: 'w:lime' }),
+  render: c => ({ key: 'w:' + c, inset: .16, quoins: true, dress: false, uv: .42 }),
+  whiteTown: () => ({ key: 'w:lime', inset: .16, quoins: false, stackKey: 'w:lime' }),
+  stone: () => ({ key: 'rubble', inset: .18, quoins: true, dress: true, uv: .8 }),
+  ashlar: () => ({ key: 'ashlar', inset: .18, quoins: false, dress: true, uv: .32 }),
+};
+const win = (x, y, w, h, bars, o = {}) => ({ kind: 'win', x, y, w, h, bars, ...o });
+const PLANS = {
+  cottage: (o = {}) => ({ name: 'Cottage', w: 9.6, d: 5.4, t: SCALE.wall.cottage, floors: [SCALE.storey.cottage], fin: FIN.lime(), paint: o.paint || 'red',
+    roof: { kind: 'thatch', pitch: SCALE.pitch.thatch, hip: !!o.hip, ov: .45, ovg: .35 }, chim: o.hip ? [{ x: -1.7 }, { x: 2.9 }] : [{ x: -1.7 }, { gable: 1 }],
+    open: { front: [{ kind: 'half', x: -.6, y: 0, w: .95, h: 2.0 }, win(-3.2, .95, .78, 1.0, [2, 1]), win(1.5, .95, .78, 1.0, [2, 1]), win(3.4, .95, .78, 1.0, [2, 1])],
+      back: [{ kind: 'plank', x: 1.2, y: 0, w: .9, h: 1.95 }, win(-2.4, 1.0, .7, .9, [2, 1])], left: o.hip ? [] : [win(0, 2.9, .5, .6, [1, 1], { sash: false })] } }),
+  farmhouse: (o = {}) => ({ name: 'Farmhouse', w: 10.5, d: 6.2, t: SCALE.wall.house, floors: SCALE.storey.house, fin: o.fin || FIN.whiteTown(), paint: o.paint || 'green',
+    roof: { kind: 'slate', pitch: SCALE.pitch.slate + 2, parapet: true, ov: .28 }, chim: [{ gable: -1, flues: 2 }, { gable: 1, flues: 2 }],
+    open: { front: [{ kind: 'transom', x: 0, y: 0, w: 1.05, h: 2.5 }, win(-3.1, .85, .95, 1.5, [3, 2]), win(3.1, .85, .95, 1.5, [3, 2]), win(-3.1, 3.55, .9, 1.3, [3, 2]), win(0, 3.55, .9, 1.3, [3, 2]), win(3.1, 3.55, .9, 1.3, [3, 2])],
+      back: [{ kind: 'plank', x: -1.5, y: 0, w: .95, h: 2.05 }, win(2, 1.0, .8, 1.2, [2, 2]), win(-1.5, 3.6, .8, 1.1, [2, 2])] } }),
+  townhouse: (o = {}) => { const g = SCALE.storey.town; return { name: 'Townhouse', w: 6.4, d: 9, t: SCALE.wall.town, floors: g, fin: o.fin || FIN.render(o.color || 'ochre'), paint: o.paint || 'blue', strings: true, cornice: true,
+    roof: { kind: 'slate', pitch: SCALE.pitch.slate, parapet: true, ov: .25 }, chim: [{ gable: -1, flues: 4 }, { gable: 1, flues: 4 }],
+    open: { front: [{ kind: 'fan', x: o.doorX ?? -1.95, y: 0, w: 1.1, h: 2.95, arch: true, dress: true }, ...[0, 1.95].map(x => win((o.doorX ?? -1.95) < 0 ? x : -x, .75, .95, 1.85, [3, 2])),
+      ...[-1.95, 0, 1.95].map(x => win(x, g[0] + .4, 1.0, 2.15, [3, 3])), ...[-1.95, 0, 1.95].map(x => win(x, g[0] + g[1] + .35, .95, 1.4, [3, 1]))],
+      back: [{ kind: 'plank', x: 1.6, y: 0, w: .95, h: 2.1 }, win(-1.2, .9, .9, 1.6, [2, 2]), win(0, g[0] + .4, .9, 1.7, [2, 2]), win(0, g[0] + g[1] + .35, .9, 1.4, [2, 2])] } }; },
+  merchant: (o = {}) => { const g = SCALE.storey.shop; return { name: 'Merchant’s house and shop', w: 8.4, d: 9, t: SCALE.wall.town, floors: g, fin: o.fin || FIN.render(o.color || 'cream'), paint: o.paint || 'green', strings: true, cornice: true,
+    roof: { kind: 'slate', pitch: SCALE.pitch.slate, parapet: true, ov: .25 }, chim: [{ gable: -1, flues: 3 }, { gable: 1, flues: 3 }], shop: { w: 8.0, top: 2.9, paint: o.paint || 'green', name: o.trade || 'WOOL · LINEN · DRAPERY' },
+    sign: { x: -4.0, y: g[0] + .55 }, doorFace: 'front',
+    open: { front: [{ kind: 'shopwin', x: -1.05, y: .62, w: 4.6, h: 2.05, bars: [4, 2] }, { kind: 'shopdoor', x: 2.55, y: 0, w: 1.1, h: 2.65 }, ...[-2.9, -.95, .95, 2.9].map(x => win(x, g[0] + .4, .95, 1.95, [3, 3])), ...[-2.9, -.95, .95, 2.9].map(x => win(x, g[0] + g[1] + .35, .9, 1.35, [3, 1]))],
+      back: [{ kind: 'plank', x: -2.2, y: 0, w: 1.0, h: 2.1 }, win(1.5, .9, .9, 1.6, [2, 2]), win(1.5, g[0] + .4, .9, 1.7, [2, 2])] } }; },
+  warehouse: (o = {}) => { const g = SCALE.storey.store, ys = g.reduce((a, f) => (a.push((a.at(-1) ?? 0) + f), a), [0]); return { name: 'Warehouse', w: 12, d: 10, t: SCALE.wall.store, floors: g, fin: o.fin || FIN.stone(), paint: 'black',
+    roof: { kind: 'slate', pitch: SCALE.pitch.store, parapet: true, ov: .3 }, chim: [], hoist: { face: 'right', y: ys[4] + .75 }, doorFace: 'right',
+    open: { front: [0, 1, 2, 3].flatMap(s => [-4.4, -2.2, 0, 2.2, 4.4].map(x => win(x, ys[s] + (s ? .7 : 1.4), .8, 1.1, [2, 2], { sash: false }))),
+      back: [0, 1, 2, 3].flatMap(s => [-3.3, 0, 3.3].map(x => win(x, ys[s] + (s ? .7 : 1.4), .8, 1.1, [2, 2], { sash: false }))),
+      right: [{ kind: 'cart', x: 0, y: 0, w: 3.4, h: 4.1, arch: true }, ...[1, 2, 3].map(s => ({ kind: 'load', x: 0, y: ys[s] + .2, w: 1.5, h: 2.2 })), ...[0, 1, 2, 3].flatMap(s => [-2.9, 2.9].map(x => win(x, ys[s] + (s ? .7 : 1.4), .8, 1.1, [2, 2], { sash: false }))),
+        { kind: 'vent', x: 0, y: ys[4] + 1.6, w: .8, h: 1.3, arch: true }],
+      left: [0, 1, 2, 3].flatMap(s => [-2.9, 2.9].map(x => win(x, ys[s] + (s ? .7 : 1.4), .8, 1.1, [2, 2], { sash: false })))} }; },
+};
+// the Gatelands' lots (Session 835, Michael's A on #280: coloured towns). A town's lots are rendered in the earth colours,
+// with dressed quoins, string courses and a cornice; no two neighbours share a colour, as in Kinsale or Dingle, and the
+// door and sashes are painted in a colour that does not drown in the wall's. Cottages stay limewashed under thatch, farmhouses
+// white under slate, and the warehouse bare stone (the decision's text). s.kind: 'townhouse' | 'merchant' | 'warehouse' |
+// 'farmhouse' | 'cottage'; by default a town lot, one in four a merchant's house with a shop. Everything comes from streams
+// keyed by the street and the lot, the windows lit at night among them (plan.r). -> { plan, kind, colour, paint }
+export const GL_TOWN = ['ochre', 'rose', 'cream', 'sage', 'blue', 'oxblood'];
+const GL_CLASH = { blue: ['blue', 'teal'], oxblood: ['red'], rose: ['red'], sage: ['green', 'teal'], ochre: ['yellow'], cream: ['yellow'] };
+export function gatelandsLot(street, i, s = {}) {
+  let c = hashKey(`${street}:colour`) % GL_TOWN.length;
+  for (let j = 1; j <= i; j++) c = (c + 1 + Math.floor(stream(`${street}:colour:${j}`)() * (GL_TOWN.length - 1))) % GL_TOWN.length;
+  const r = stream(`${street}:lot:${i}`), kind = s.kind || (r() < .25 ? 'merchant' : 'townhouse'), colour = GL_TOWN[c];
+  const ok = Object.keys(PAINTS).filter(p => !(GL_CLASH[colour] || []).includes(p)), paint = ok[Math.floor(r() * ok.length)];
+  let plan;
+  if (kind === 'cottage') plan = PLANS.cottage({ hip: r() < .33, paint: Object.keys(PAINTS)[Math.floor(r() * 6)] });
+  else if (kind === 'farmhouse') plan = PLANS.farmhouse({ paint });
+  else if (kind === 'warehouse') plan = PLANS.warehouse({ fin: FIN.stone() });
+  else if (kind === 'merchant') plan = PLANS.merchant({ color: colour, paint, trade: s.trade });
+  else plan = PLANS.townhouse({ color: colour, paint, doorX: i % 2 ? 1.95 : -1.95 });
+  plan.r = stream(`${street}:windows:${i}`);
+  const town = kind === 'townhouse' || kind === 'merchant';
+  return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
+}
+export { SCALE, glMats, bucket as glBucket, finish as glFinish, box as glBox, face as glFace, building as gatelandsBuilding, PLANS as GL_PLANS, FIN as GL_FIN, win as glWin, PAINTS as GL_PAINTS };
+
 // ── the Markish hall (Session 819, a prototype for DECISION: the Mark's houses in the new kit) ──
 // OG-034 (kept): timber halls on stone footings, steep snow-shedding roofs of dark shingle, carved gables with crossed
 // bargeboards ending in beast heads, a porch on the gable end, few small windows. OG-033 (not kept) and today's game add the
@@ -289,9 +778,38 @@ export function markTextures() {
   TEX.shingle = texPair(256, (x, y) => { const rows = 8, row = Math.floor(y * rows), v = y * rows - row, cols = 6, xx = x * cols + (row % 2) * .5, col = Math.floor(xx), u = xx - col, r = idr(row * 17 + ((col % cols) + cols) % cols + 9);
     const butt = Math.sqrt(Math.max(0, 1 - Math.pow((u - .5) * 2, 2))) * .25, edge = v < butt * .6 || u < .04 || u > .96, g = tn(x * 2, y * 30, 16, 3);
     const k = .26 + .08 * r + .05 * g; return [edge ? 0 : .5 + .5 * v, ...(edge ? [.07, .06, .05] : [k * 1.02, k * .95, k * .86])]; }, 2.6);
-  // turf: a sod roof, grass over earth, worn thin in patches
-  TEX.turf = texPair(256, (x, y) => { const n = tfbm(x, y, 8, 5, 31), m = tfbm(x, y, 32, 3, 33), bare = n < .38;
-    return [n * .6 + m * .4, ...(bare ? [.33 + .08 * m, .27 + .06 * m, .18] : [.22 + .14 * n * m, .3 + .16 * n, .1 + .05 * m])]; }, 2.0);
+  // turf (Session 825, Michael on #277: "the green is too vibrant for the climate"): the sod as it stands most of a
+  // northern year, in tufts. 'dry': tawny dead grass and straw over olive, moss in the hollows, earth between the tufts.
+  // 'moss': a wet roof gone to dark moss, with straw tufts and pale lichen. Session 819's lawn green is gone.
+  const tuft = (x, y, s) => { const a = tfbm(x, y, 10, 3, s), b = tn(x, y, 22, s + 5), c = tfbm(x, y, 48, 2, s + 9); return { a, b, c, h: a * .55 + b * .3 + c * .15 }; };
+  const mix = (p, q, t) => p.map((v, i) => v + (q[i] - v) * Math.max(0, Math.min(1, t)));
+  TEX.turfDry = texPair(256, (x, y) => { const n = tfbm(x, y, 3, 4, 41), m = tfbm(x, y, 6, 3, 43), T = tuft(x, y, 47);
+    let c = mix([.44, .36, .22], [.53, .45, .3], n * 1.6 - .3); c = mix(c, [.35, .33, .2], (m - .5) * 3); c = mix(c, [.25, .26, .15], (.4 - T.h) * 4);
+    c = mix(c, [.2, .15, .1], (.22 - T.b * T.c) * 6); const k = .9 + .2 * T.c; return [T.h, c[0] * k, c[1] * k, c[2] * k]; }, 2.6);
+  TEX.turfMoss = texPair(256, (x, y) => { const n = tfbm(x, y, 3, 4, 51), m = tfbm(x, y, 12, 3, 53), T = tuft(x, y, 57);
+    let c = mix([.18, .21, .12], [.26, .28, .16], n * 1.5 - .25); c = mix(c, [.46, .4, .26], (T.h - .64) * 5); c = mix(c, [.55, .56, .47], (m - .72) * 7);
+    c = mix(c, [.13, .11, .08], (.2 - T.c * T.b) * 6); const k = .9 + .2 * T.c; return [T.h * .8 + m * .2, c[0] * k, c[1] * k, c[2] * k]; }, 2.0);
+  // the fringe at the eaves: blades hanging over the edge, cut out by alpha
+  { const N = 256, cv = document.createElement('canvas'); cv.width = N; cv.height = 64; const x = cv.getContext('2d'); let sd = 7; const rr = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 1100; i++) { const px = rr() * N, len = 8 + rr() ** 1.6 * 56, lean = (rr() - .5) * 14, t = rr(), col = t < .55 ? [140, 120, 80] : t < .85 ? [112, 98, 62] : [78, 74, 48];
+      x.strokeStyle = `rgb(${col.map(v => v * (.85 + .3 * rr()) | 0)})`; x.lineWidth = .6 + rr() * 1.1; for (const dx of [0, -N, N]) { x.beginPath(); x.moveTo(px + dx, 0); x.quadraticCurveTo(px + dx + lean * .3, len * .5, px + dx + lean, len); x.stroke(); } }
+    x.fillStyle = 'rgb(84,70,46)'; x.fillRect(0, 0, N, 5); const ft = new THREE.CanvasTexture(cv); ft.wrapS = ft.wrapT = THREE.RepeatWrapping; ft.anisotropy = 8; ft.colorSpace = THREE.SRGBColorSpace; TEX.fringe = { map: ft }; }
+}
+// the Mark's lots (Session 831, Michael's C on #277: two in three shingle, one turf, by lot). In every run of three lots one
+// is turf, which one by the street's seed, as Aurenne's mix; a hall of note (s.note, a list of lot indices: the hall at the
+// square, the lane's end) is never turf, and when the pick lands on one the turf moves to the next lot of the three that is
+// not one (so a run holding a hall of note can be all shingle; nothing else breaks the two in three). The turf is the poorer
+// house: a smaller, lower hall in the darker planks, set further back with more yard, rarely a porch or a chimney, carved
+// only when it is one of the larger. Each lot's options come from a stream keyed by the street and the lot alone.
+export function markLot(street, i, s = {}) {
+  const note = new Set(s.note || []), t = Math.floor(i / 3); let pick = t * 3 + hashKey(`${street}:triple:${t}`) % 3;
+  for (let k = 0; k < 3 && note.has(pick); k++) pick = t * 3 + (pick - t * 3 + 1) % 3;
+  const big = note.has(i), roof = !big && pick === i ? 'turf' : 'shingle', r = stream(`${street}:lot:${i}`), f = v => +v.toFixed(2);
+  let o;
+  if (big) o = { roof, note: true, w: f(8.4 + r() * 1.2), d: f(15 + r() * 3), porch: true, chimney: true, carve: true, wall: Math.floor(r() * 4), gap: f(3.5 + r() * 1.5), set: f(r() * .6) };
+  else if (roof === 'turf') { const w = f(5.6 + r() * 1.2); o = { roof, w, d: f(8.5 + r() * 2.5), porch: r() < .2, chimney: r() < .3, carve: w > 6.4 && r() < .35, wall: 1 + Math.floor(r() * 2), gap: f(3 + r() * 2.5), set: f(1.2 + r() * 1.8) }; }
+  else o = { roof, w: f(6.8 + r() * 1.6), d: f(11 + r() * 3.5), porch: r() < .55, chimney: r() < .65, carve: true, wall: Math.floor(r() * 4), gap: f(2.5 + r() * 1.5), set: f(r() * .8) };
+  return { o, r };
 }
 let MM = null;
 function markMats() {
@@ -299,12 +817,12 @@ function markMats() {
   const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .85 });
   const plank = c => { const m = mat('wood', { ns: 1.2 }); m.color.set(c).multiplyScalar(2.6); return m; };
   MM = { wall: [0x5a4430, 0x4a3826, 0x3e2e20, 0x66503a].map(plank), beam: mat('beam', { ns: 1.2, color: 0xa08068 }), stone: mat('stone', { ns: 1.4, color: 0xe0dcd2 }), shingle: mat('shingle', { ns: 1.5, rough: .8 }),
-    turf: mat('turf', { ns: 1.2, rough: 1 }), bark: std(0xd8d0c0, { rough: .9 }), door: plank(0x3a2a1c), dark: std(0x0b0908, { rough: 1 }), iron: new THREE.MeshStandardMaterial({ color: 0x1c1a18, roughness: .5, metalness: .6 }),
+    turf: { dry: mat('turfDry', { ns: 1.3, rough: 1 }), moss: mat('turfMoss', { ns: 1.1, rough: .95 }) }, fringe: new THREE.MeshStandardMaterial({ map: TEX.fringe.map, alphaTest: .5, side: THREE.DoubleSide, roughness: 1 }), bark: std(0xd8d0c0, { rough: .9 }), door: plank(0x3a2a1c), dark: std(0x0b0908, { rough: 1 }), iron: new THREE.MeshStandardMaterial({ color: 0x1c1a18, roughness: .5, metalness: .6 }),
     carve: mat('beam', { ns: 1.4, color: 0xc09070 }), glow: new THREE.MeshStandardMaterial({ color: 0x1a1008, emissive: new THREE.Color(1, .6, .28), emissiveIntensity: .5, roughness: .4 }) };
-  MM.shingle.side = THREE.DoubleSide; MM.turf.side = THREE.DoubleSide; return MM;
+  MM.shingle.side = THREE.DoubleSide; for (const m of Object.values(MM.turf)) m.side = THREE.DoubleSide; return MM;
 }
 export function markHall(o, r) {
-  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, turf = o.roof === 'turf', foot = .8, wh = turf ? 2.4 : 2.9, pitch = (turf ? 32 : 52) * Math.PI / 180, rise = Math.tan(pitch) * (w / 2 + .5);
+  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, turf = o.roof === 'turf', Turf = Mt.turf[o.turf || 'dry'], foot = .8, wh = turf ? 2.4 : 2.9, pitch = (turf ? 32 : 52) * Math.PI / 180, rise = Math.tan(pitch) * (w / 2 + .5);
   const wallM = Mt.wall[o.wall ?? Math.floor(r() * Mt.wall.length)];
   const add = (geo, m, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, uv = .5, slopeX) => { if (m.map) worldUV(geo, uv, { slopeX }); const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz, 'YXZ'); mesh.castShadow = m !== Mt.dark && m !== Mt.glow; mesh.receiveShadow = true; g.add(mesh); return mesh; };
   const box = (a, b, c) => new THREE.BoxGeometry(a, b, c);
@@ -329,11 +847,18 @@ export function markHall(o, r) {
   // the door: planks under a rounded head, iron strap hinges, a threshold of stone
   for (let i = 0; i < 5; i++) add(box(door.w / 5 - .01, door.h - .1, .06), Mt.door, -door.w / 2 + (i + .5) * door.w / 5, foot + (door.h - .1) / 2, d / 2 - .1, 0, 0, 0, .9);
   for (const y of [.5, 1.5]) add(box(door.w * .8, .06, .02), Mt.iron, -door.w * .1, foot + y, d / 2 - .06);
-  add(box(door.w + .5, .2, .7), Mt.stone, 0, .1 + foot - .2, d / 2 + .3, 0, 0, 0, .45);
+  // the threshold at the sill, and stone steps down from it to the ground, rises of foot / 5 (0.16 m; v2-scope §2's stairs are 0.18) and
+  // treads of 0.3, each a little wider than the one above (Session 859: the critic's door 0.8 m up with no step)
+  // with a porch the steps go down from the porch's stone floor, which is the threshold
+  const RISE = foot / 5, TREAD = .3, z1 = o.porch ? d / 2 + 2.15 : d / 2 + .6; if (!o.porch) add(box(door.w + .5, .2, .45), Mt.stone, 0, foot - .1, d / 2 + .15 + .225, 0, 0, 0, .45);
+  for (let k = 4; k >= 1; k--) { const n = 5 - k, z0 = z1 + (n - 1) * TREAD; add(box(door.w + .5 + n * .12, k * RISE, TREAD), Mt.stone, 0, k * RISE / 2, z0 + TREAD / 2, 0, 0, 0, .45); }
   // the roof: two slabs at the pitch, overhanging the gables; shingle, or turf over a birch-bark edge with a log holding it at the eaves
   const ov = .5, slope = (w / 2 + ov) / Math.cos(pitch), t = turf ? .32 : .12, ry0 = foot + wh - ov * Math.tan(pitch) + .05, len = d + (turf ? .8 : 1.2);
-  for (const sx of [-1, 1]) { const geo = box(slope, t, len); geo.translate(sx * slope / 2, t / 2, 0); add(geo, turf ? Mt.turf : Mt.shingle, sx * -(w / 2 + ov), ry0, 0, 0, 0, sx * pitch, turf ? .6 : .9, true).rotation.z = sx * pitch;
-    if (turf) { add(box(.04, .3, len), Mt.bark, sx * (w / 2 + ov + .02), ry0 + .05, 0, 0, 0, 0); add(new THREE.CylinderGeometry(.12, .12, len, 8).rotateX(Math.PI / 2), Mt.beam, sx * (w / 2 + ov - .05), ry0 + .22, 0, 0, 0, 0, .8); } }
+  for (const sx of [-1, 1]) { const geo = box(slope, t, len); geo.translate(sx * slope / 2, t / 2, 0); add(geo, turf ? Turf : Mt.shingle, sx * -(w / 2 + ov), ry0, 0, 0, 0, sx * pitch, turf ? .6 : .9, true).rotation.z = sx * pitch;
+    if (turf) { add(box(.04, .3, len), Mt.bark, sx * (w / 2 + ov + .02), ry0 + .05, 0, 0, 0, 0); add(new THREE.CylinderGeometry(.12, .12, len, 8).rotateX(Math.PI / 2), Mt.beam, sx * (w / 2 + ov - .05), ry0 + .22, 0, 0, 0, 0, .8);
+      // the grass hangs over the eaves, a little out from the bark, so the roof's edge is ragged and not a slab's
+      const fg = new THREE.PlaneGeometry(len + .1, .38), uv = fg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * (len + .1) / 2.2); fg.rotateY(sx * Math.PI / 2); fg.rotateZ(sx * .12);
+      const fm = new THREE.Mesh(fg, Mt.fringe); fm.position.set(sx * (w / 2 + ov + .07), ry0 + .12, 0); fm.castShadow = true; fm.receiveShadow = true; g.add(fm); } }
   const ridgeY = ry0 + (w / 2 + ov) * Math.tan(pitch);
   if (!turf) add(box(.22, .16, len + .05), Mt.beam, 0, ridgeY + .12, 0, 0, 0, 0, .8);
   // the gables' carving: crossed bargeboards along each verge, running past the ridge into beast heads (OG-034's carved gables)
@@ -346,10 +871,10 @@ export function markHall(o, r) {
       add(hg, Mt.carve, P.x, P.y + .05, z, sx > 0 ? 0 : Math.PI, 0, 0, .8); } }
   // the porch on the front gable: two carved posts and a little roof
   if (o.porch) { const pd = 1.8, pw = door.w + 1.4, ph = 2.5; for (const sx of [-1, 1]) add(new THREE.CylinderGeometry(.12, .14, ph, 8), Mt.beam, sx * pw / 2, foot + ph / 2 - .2, d / 2 + pd, 0, 0, 0, .8);
-    for (const sx of [-1, 1]) { const pl = (pw / 2 + .3) / Math.cos(pitch * .85), geo = box(pl, .1, pd + .4); geo.translate(sx * pl / 2, 0, 0); add(geo, turf ? Mt.turf : Mt.shingle, sx * -(pw / 2 + .3), foot + ph - .2, d / 2 + pd / 2 + .1, 0, 0, sx * pitch * .85, .9, true); }
+    for (const sx of [-1, 1]) { const pl = (pw / 2 + .3) / Math.cos(pitch * .85), geo = box(pl, .1, pd + .4); geo.translate(sx * pl / 2, 0, 0); add(geo, turf ? Turf : Mt.shingle, sx * -(pw / 2 + .3), foot + ph - .2, d / 2 + pd / 2 + .1, 0, 0, sx * pitch * .85, .9, true); }
     add(box(pw + .3, .25, .25), Mt.beam, 0, foot + ph - .1, d / 2 + pd, 0, 0, 0, .8); add(box(pw + .2, .2, pd + .5), Mt.stone, 0, foot - .1, d / 2 + pd / 2 + .1, 0, 0, 0, .45); }
   // a stone chimney through the roof's back slope, or a smoke louver on the ridge
   if (o.chimney) { const cz = -d * .25, ch = ridgeY + .8; add(box(.9, ch, .9), Mt.stone, -(w / 4), ch / 2, cz, 0, 0, 0, .45); add(box(1.05, .15, 1.05), Mt.stone, -(w / 4), ch + .07, cz, 0, 0, 0, .45); }
-  else { add(box(.7, .4, 1.2), Mt.beam, 0, ridgeY + .3, -d * .15, 0, 0, 0, .8); add(box(.9, .08, 1.4), turf ? Mt.turf : Mt.shingle, 0, ridgeY + .54, -d * .15, 0, 0, 0, .9); }
-  const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y };
+  else { add(box(.7, .4, 1.2), Mt.beam, 0, ridgeY + .3, -d * .15, 0, 0, 0, .8); add(box(.9, .08, 1.4), turf ? Turf : Mt.shingle, 0, ridgeY + .54, -d * .15, 0, 0, 0, .9); }
+  const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + 4 * TREAD };
 }
