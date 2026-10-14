@@ -18317,3 +18317,54 @@ Michael's other answers this run need nothing built: #312 (tanned sails and the 
 - **Pictures:** `aurenne-churches.jpg`, now the three ranks.
 ### Needs eyes
 - **Where a town ends and a village begins** is the generator's call once churches are placed in the game. The prototype only takes the rank it is given.
+
+## v80 — Session 890 — Card F11's third hull: Aurenne's caravel in the new kit (prototype only)
+The FREEZE (#297, card F2a) is still open, so this run keeps to the prototypes. The places this run's predecessors built are all answered, and the next of L6's hulls is Aurenne's. Michael's A on #306 gave each island one rig, and his A on #202 made Aurenne's the game's caravel: 17.5 by 5.0 m, draft 1.3, three lateen masts raked forward with the main tallest, a square stern under a high sterncastle, no forecastle. OG-004's Aurenne line was reread: "white and blue sails with a gold sun-star, painted hulls". Its catalogue row flags no conflict with the canon on the hulls; the sun-star, like the harp, is the board's and not the canon's, which gives the Compact's banners and guards blue and white (§1.3).
+
+`aurenneCaravel` in `ships.js` is built on the cutter's carvel method (Session 871), with these changes:
+- **The hull** is fuller than the cutter's, fine only at the bow, and carried aft to a square stern of six tenths of the beam. The stem is curved and raked: forward of amidships a strake's low points draw aft, so the forefoot rounds up into the stem, and the stem timber follows the planking's own curve to a head 0.4 m over the sheer. She is tallowed white below the water and oiled wood above, with the two top strakes in Aurenne's blue under a gilt wale, and the blue band runs across the transom.
+- **The sterncastle is a real deck.** The game's caravel (`85-world-sea.js`, Session 665) has three rails rising aft on its flat deck. Here the castle's deck is 2.15 m over the main deck over the last 4.6 m. Its walls rise from the sheer in blue boards with cream panels and a gilt rail, and a wall closes it over the transom. The forward bulkhead has a door 1.0 m wide and 1.95 m high and two windows. A companion ladder of seven treads rises 1.25 m forward of it on either side of the door, and the castle's rail is broken at their heads. There are two lanterns on the stern corners.
+- **The lateens.** Each mast is raked 4° forward and carries a yard slung a third of its length from its lower end, at 50° to 52°. The fore yard is 9.1 m from tack to peak in height, the main 13.9 m and the mizzen 7.3 m. The sail hangs from the yard to a tack under its lower end and a clew aft, bellied out by up to 0.5 m.
+  - **Each yard hangs on its mast's lee side**, the fore and the mizzen to port and the main to starboard. The main yard passes 9 cm from the foremast, and no sail comes within 0.3 m of a mast's centre.
+  - **The shrouds stand on the weather side only**, as on a lateen ship, because on the sail's side they ran through the cloth.
+  - The mizzen stands on the castle, and its peak and clew reach past the transom.
+- **The sails** are white cloth with seams, each with a gold sun-star of sixteen rays (`o.star`, on by default). A sail's UVs are its own plane about its incentre, so the star sits whole in the middle of each triangle at one size to the sail.
+- **The helm** is a wheel on the castle's deck, 1 m aft of its edge, with the rudder on the transom and its stock through the castle's deck. `o.tiller` puts a tiller there instead. #306's 3 A gave the wheel "from the cog up", and the caravel is the cog's size, so the wheel is the default and the question is asked.
+- **The deck:** a hatch between the main mast and the fore, a coil of rope and a bucket.
+- **The view:** `ships.html?ship=caravel`, with `quarter`, `side`, `deck` (from the castle by the wheel), `castle` (new: from the waist, aft to the bulkhead and its ladders) and `lap` (her stern). `&nostar` gives the plain sails and `&tiller` the tiller.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The castle was open over the transom.** The transom stops at the sheer and the castle's deck is 0.6 m above that, so the cabin looked out to sea through its back. It has an after wall now.
+- **The blue read black.** It was the kit's wood map tinted blue, so the brown grain dulled it. Blue is now a plain painted material.
+- **The rudder read as a blue wall,** 0.9 m deep and set out from the transom. It is oiled wood now, 0.7 m deep, and hung on the transom.
+- **The fore sheet hung 1.97 m over the walk,** led to the deck's edge. The sheets are now led to the rail's top.
+- **The check, three times:**
+  - The bow station at z = 8 lay forward of the raked forefoot, so its low point was outside the hull. Its rays "leaked" from there.
+  - The door's measure was inverted.
+  - The rail's ray passed 5 mm under the cap rail.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 29 of 29 pass.** The sloop's and the cutter's checks are unchanged, and nine are new:
+  - **The builds:** 4 keys, each the same twice. 31,300 triangles in 12 draws.
+  - **The size:** 17.5 by 5.0 m moulded, with the deck 1.0 m over the sea.
+  - **Closed:** of 1,080 rays from inside her below the deck, none gets out, the transom's included.
+  - **Carvel:** the planking is flush at every strake's edge, to the millimetre.
+  - **The walk:** 72 points, from the castle's ladders to where the deck narrows at the bow. The deck is under every one, nothing is over it and there is 0.84 m clear.
+  - **The rail:** 1.0 m over the deck at all 13 stanchions forward of the castle.
+  - **The sterncastle:**
+    - its deck is 2.15 m up, under every probe to the millimetre;
+    - the cabin has 2.09 m of headroom;
+    - the door is clear 2.7 m past the bulkhead (to the mizzen's foot);
+    - both ladders stand on the deck and reach the castle's edge;
+    - rays to either side and aft from 1.0 m over its deck meet its rail.
+  - **The lateens:** each yard is low forward and high aft. They are slung port, starboard and port, their feet are 2.26 m or more over their decks, and no sail comes within 0.3 m of a mast.
+  - **The plain sails and the tiller** leave the hull the same.
+  - **The page:** the quarter and castle views render with no page errors.
+- **Pictures:** `ships-caravel-quarter.jpg`, `-side`, `-lap`, `-deck`, `-castle` and `-quarter-nostar`.
+### Needs eyes
+- **The sails are a plane apiece.** Each lies in its yard's vertical plane, bellied to one side, so from ahead she looks thin. A lateen set on a reach swings its yard across the ship; that is the game's rig animation (`shipLateen`), not the prototype's.
+- **The castle's front is plain oak.** It reads dark against the blue sides. A painted bulkhead, or a carved rail across its head, would carry the blue round.
+- **The tallow** is hardly seen at her waterline from these angles.
+- **She is the player's paint.** A merchant's or a pirate's caravel takes its own colours in the game (`SHIP_LOOKS`); the prototype has only Aurenne's own.
+- **The cabin is empty.** L6's base below deck (a bed, chests, a map table, Aurenne's rugs and tiles from OG-004's cabin panel) is the room it was made to hold.
+- **Not in the game.** That waits for F2a and for card F11's parents.

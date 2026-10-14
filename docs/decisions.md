@@ -4,6 +4,38 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's caravel in the new kit: the sun-star, the sterncastle, wheel or tiller (look builder, Session 890) — DECISION #316
+**F11's third hull: Aurenne's caravel (look builder, Session 890).** Your A on #306 gave each island one rig, and Aurenne's is the game's caravel, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`aurenneCaravel`) and `ships.html?ship=caravel`. It is built to the game's caravel's numbers:
+- **The size:** 17.5 by 5.0 m, draft 1.3, with the deck 1.0 m over the sea.
+- **The hull:** carvel-planked (flush), with a curved, raked stem and a square stern. She is tallowed white below the water and oiled wood above, with the two top strakes in Aurenne's blue under a gilt wale (OG-004's "painted hulls").
+- **The sterncastle:** a real deck this time, 2.15 m over the main deck over her last 4.6 m. The game's caravel has only rails rising aft on a flat deck. Under it is a cabin with 2.09 m of headroom, entered by a door in the forward bulkhead, with two windows. A companion ladder rises on either side of the door. The castle's walls are blue with cream panels and a gilt rail, and it carries two stern lanterns.
+- **The rig:** three lateen masts raked forward, the main tallest. Each yard hangs on the lee side of its mast (the fore and the mizzen to port, the main to starboard), so no sail crosses another mast, and the shrouds stand on the weather side only. The sails' feet are 2.26 m or more over the deck they hang over.
+- **The helm:** a wheel on the castle's deck, the rudder on the transom.
+
+She is 31,300 triangles in 12 draws. No ray from inside her gets out below the deck. The walk from the castle's ladders to the bow has the deck under it all the way and 0.84 m clear, and the rail is 1.0 m over the deck.
+
+**1. The sun-star on the sails.** OG-004 draws Aurenne's sails "white and blue with a gold sun-star". The catalogue notes that, like the harp, the sun-star is not in the canon (the canon gives the Compact's banners and guards blue and white, which the sails and the hull keep).
+- **A. Keep it, as drawn** *(recommended)*: one gold mark names the island at a glance, as the harp does for the Gatelands.
+- **B. Plain white sails** (`&nostar`).
+- **C. Ask the quest writer for the Compact's own mark first.**
+
+**2. The sterncastle:**
+- **A. A raised deck with a cabin under it, as drawn** *(recommended)*: the caravel's silhouette, and a cabin for L6's base below deck to grow into.
+- **B. The game's rails rising aft on a flat deck**, with no cabin.
+
+**3. Wheel or tiller?** Your 3 A on #306 gave the tiller to the sloop and the cutter and the wheel "from the cog up". The caravel is the cog's size (17.5 m against 17).
+- **A. The wheel on the castle's deck, as drawn** *(recommended)*.
+- **B. A tiller on the castle's deck** (`&tiller`).
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-side.jpg)
+- [her stern and castle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-lap.jpg)
+- [the castle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-castle.jpg)
+- [her deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-deck.jpg)
+- [the plain sails](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-quarter-nostar.jpg)
+
+
 ## Answered
 ### The smugglers' lair: a sea cave with its own landing, or inland (look builder, Session 873) — DECISION #314
 **F8's fourth place: a smugglers' lair (look builder, Session 873).** It is the last of the three places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`smugglersLair`) and `places.html?place=lair`, from OG-121's "smugglers' and bandits' lairs: plank platforms in a cave, storerooms, escape routes". It is built to the person as a sea cave on the Gatelands' coast:
