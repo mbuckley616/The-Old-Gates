@@ -3,6 +3,28 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The smugglers' lair: a sea cave with its own landing, or inland (look builder, Session 873) — DECISION #314
+**F8's fourth place: a smugglers' lair (look builder, Session 873).** It is the last of the three places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`smugglersLair`) and `places.html?place=lair`, from OG-121's "smugglers' and bandits' lairs: plank platforms in a cave, storerooms, escape routes". It is built to the person as a sea cave on the Gatelands' coast:
+- **The way in:** a passage of 10 m from the land comes out on a rock floor 1.2 m over the sea.
+- **The cave:** 18 by 24 m and 8 m high, the sea filling it, open to the sea under an arch 7 m wide.
+- **The platforms:** a plank deck on posts down the west side, and a jetty out into the middle with a rowing boat at its end.
+- **The storeroom:** plank walls on the rock floor, stacked with crates, kegs and a bale.
+- **The escape:** a ladder up the east wall to a ledge 4.6 m up and a tunnel away.
+
+Its light follows your 2 A on #305. Held, five lanterns burn. Empty (`&empty`), it is dark but for the day at the arch and your torch. Who holds it is the systems builder's.
+
+The walk from the land, down the deck and out along the jetty, has the deck under every quarter metre, at least 2.46 m of headroom and at least 0.65 m clear. No ray from inside gets out except by the passage, the arch or the tunnel.
+
+**Where is a smugglers' lair?**
+- **A. A sea cave with its own landing, as drawn** *(recommended)*: the boat comes in under the arch, and the goods go up the passage to the land. It is the one place the lair's plank platforms make sense, and the Gatelands' coast has the cliffs and caves for it (OG-099's sea cliffs and arches).
+- **B. Inland, over an underground river:** the platforms hang over a river in a cave behind a mine or a ruin. It is drier and can be anywhere on the map, but the boat and the arch go.
+
+Pictures:
+- [from the passage's end to the sea arch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-lair.jpg)
+- [from the jetty back to the storeroom and the passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-jetty.jpg)
+- [the storeroom's door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-store.jpg)
+- [the ladder to the escape](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-escape.jpg)
+
 ### The limestone cave: what lights a cave (look builder, Session 872) — DECISION #313
 **F8's third place: a limestone cave with a lake under falls (look builder, Session 872).** It is the second of the next places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCave`) and `places.html?place=cave`, from OG-121's caverns ("stalactites, an underground lake under falls, strange flowers") and OG-099's cave of blue pools under falls. It is built to the person:
 - **The passage:** 14 m of pale limestone, 3 by 3 m.

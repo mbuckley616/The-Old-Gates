@@ -18098,3 +18098,41 @@ Asked as **DECISION #313**: what lights a cave. A, the day down its shaft and th
 - **Stalagmites and stalactites are smooth cones.** Limestone growths are lumpy and paired (a stalagmite under each stalactite's drip), and the pairing is not done.
 - **No hillside, no hidden entrance.** The cave sits in nothing, and OG-121's "hidden entrances" want a mouth behind falls or brush. That is card F3's land and the chunk scatter.
 - **The swallow hole's light** comes down at a fixed angle. In the game it would follow the sun, and at night there is only the flowers and your torch.
+
+## v80 — Session 873 — Card F8's fourth place: a smugglers' lair in a sea cave (prototype only)
+The last of the three places Michael named on #305 (3 A) is a smugglers' lair on plank platforms. The FREEZE (#297) holds, so it is a prototype. OG-121's row has "smugglers' and bandits' lairs: plank platforms in a cave, storerooms, escape routes" and flags nothing a lair touches. Who holds it is the systems builder's.
+
+`places.js` has a new `smugglersLair(o, r)`, a sea cave on the Gatelands' coast built on the shared rock:
+- **The way in from the land:** a passage 10 m long, 2.4 m wide and 2.6 m high, with its floor at 1.2 m over the sea. It comes out on a rock floor 3.5 m deep across the cave's near end.
+- **The cave:** 18 m across, 24 m long and 8 m high. The sea fills it, at 0 over a bed 3 m down, and it is open to the open sea under an arch 7 m wide and 4.5 m high in the far wall.
+- **The deck and the jetty:** a plank deck 3.6 m wide on two rows of posts down the west side, at the rock floor's height. From its far end a jetty 2.2 m wide runs out to the middle, its last pair of posts standing up as bollards. A rowing boat of 4.2 m with two thwarts and an oar is moored at its end.
+- **The storeroom:** plank walls 2.4 m high and a plank roof on the rock floor at the near west corner, 3.8 by 2.1 m. Its door, 1.0 by 2.0 m, faces the way in, and inside it are crates (some stacked), four kegs and a bale.
+- **The escape:** a ladder up the east wall from the rock floor to a ledge of rock 4.6 m up, and a tunnel 1.4 m wide and 2.2 m high running east from it.
+- **`o.held`** (default true): five lanterns burn, on the jetty's bollard, at the storeroom's door, by the ladder, at the passage's end and on the deck. Abandoned, there is none, and the brackets stay bare (#305, 2 A, as the mine).
+
+`places.html?place=lair` has four views: `lair` (default), from the passage's end to the sea arch; `jetty`, back from the jetty's end; `store`; and `escape`. `&empty` shows it abandoned. The page's background is a sky, so the arch and the mouth show day.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **A black block over the middle of the view.** It kept its size on screen when the camera moved, so it was not geometry: the sea at roughness 0.05 overflowed to NaN under the arch's spot, and the bloom spread it. The sea is at 0.2.
+- **Jagged gaps where the passage and the tunnel met the walls:** sawtooth slits showed the void through the wall's cut edge. Each tube now runs 0.5 m past a hole cut smaller than it, so the ragged edge is a rock lip inside the tube and nothing shows through.
+- **The storeroom filled the deck** and hung over the water in its first place. It moved to the rock floor. The walk's step from the floor onto the deck crossed open water until the room was made shallower and the walk kept to the floor.
+- **Gaps of 5 mm between the deck's planks** let three walk points fall through to the seabed. They are laid edge to edge now, as the mine's were (Session 857).
+- **A forest of posts:** the jetty's posts all stood 0.9 m up as bollards. Only the last pair does now.
+- **The check misjudged the arch:** it judged rays leaving by the arch 1 m outside the wall, where they had spread past it. It now judges them at the wall itself.
+
+Asked as **DECISION #314**: where a smugglers' lair is. A, a sea cave with its own landing, as drawn (recommended); B, inland over an underground river.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 31 of 31 pass**, with six new for the lair:
+  - **The builds:** 3 keys, each the same twice. 14,668 triangles in 11 meshes.
+  - **The walk:** 169 points every quarter metre from the land, across the rock floor, down the deck and out along the jetty. The deck is under every one at 0 m off, with 2.46 m of headroom or more and 0.65 m clear.
+  - **Closed:** of 1,200 rays from five points in the cave, none gets out except by the passage (1), the sea arch (28) or the escape tunnel (0).
+  - **The escape:** the ladder rises 3.4 m from the rock floor to the ledge, and the tunnel has 2.16 m of headroom.
+  - **The storeroom and the lanterns:** the door is 1.0 by 2.0 m and clear 4.2 m in. Held, 5 lanterns are lit; empty, 0.
+  - **The page:** the lair view renders with no page errors.
+- **Pictures, new:** `places-lair-lair.jpg`, `-jetty`, `-store` and `-escape`.
+### Needs eyes
+- **The boat is a half-shell.** The lathe hull reads as a dark bowl from most sides. A rowing boat from the ships' kit (`ships.js`'s lines builder at 4 m) would be better.
+- **The sea is still.** It has no swell in the cave and no surge at the arch. The game's water and its tide would move it.
+- **The deck has no rail** along its sea edge, which is right for a working landing but is a fall into 1.2 m of water. The combat page decides whether that is a hazard.
+- **The storeroom is a box.** A real one would be built against the rock with a lean-to roof, and its walls cut to the rock's line.
+- **None of the four places is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.

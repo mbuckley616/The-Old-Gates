@@ -12,6 +12,7 @@ import { stream } from './pieces.js';
 // ?place=cave (Session 872): the limestone cave with a lake under falls, places-cave-view.js
 if ((Q.get('place') || 'mine') === 'cairn') await import('./places-cairn-view.js');
 else if (Q.get('place') === 'cave') await import('./places-cave-view.js');
+else if (Q.get('place') === 'lair') await import('./places-lair-view.js') /* Session 873: the smugglers' lair */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);
