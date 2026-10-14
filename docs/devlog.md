@@ -17555,3 +17555,27 @@ The critic's run of 14 Oct (Slack, on PR #304) found that *the Mark hall's door 
 - **The critic's other two notes on the kit:**
   - The cottage's half-door shows a wall, not a room. That is DECISION #303's question (the room inside the street's own shell).
   - The Gatelands town storeys of 3.3 to 3.6 m break the foundation's 2.6 to 3.0 m. That is the next session.
+
+## v80 — Session 860 — The Gatelands town storeys brought to the foundation's 2.6 to 3.0 m (card F6, prototype only; the critic's note)
+The critic's run of 14 Oct also found that *the town storeys of 3.3–3.6 m break the foundation's 2.6–3.0*. `visual-foundation.md` §1 sets storeys at 2.6 to 3.0 m floor to floor, and its ratio test asks storey to person 1.45 to 1.7, which is 2.61 to 3.06 m on the 1.8 m person. The kit's `SCALE.storey` came with the concept artist's pieces (PR #281) and was folded into `pieces.js` in Session 834. It gave the ground floors more than that:
+- the townhouse 3.3 m;
+- the merchant's shop 3.6 m;
+- the warehouse 3.4 m;
+- the townhouse's first floor 3.1 m.
+
+I found no reason recorded for them in the devlog. Nothing asks for a piano nobile, and the foundation is Michael's approved spec, so this is a fix and not a question.
+
+`pieces.js`, `SCALE.storey`: the townhouse is now 3.0, 2.9 and 2.6; the merchant's 3.0, 2.9 and 2.6; and the warehouse 3.0, 2.8, 2.8 and 2.6. The cottage (2.7) and the farmhouse (2.9 and 2.7) were already inside the range. The eaves fall to match:
+- the townhouse and the merchant's from 9.0 and 9.2 m to 8.5 m;
+- the warehouse from 11.6 to 11.2 m, its hoist following its fourth floor.
+
+Every opening is placed from the storeys, so the doors, sashes, fanlight and shopfront move with them. The shopfront's door and fanlight fit under 3.0 m.
+
+`pieces.check.mjs` compares every plan with the sizes recorded in `pieces-gatelands.json`, so it failed on the three town plans as it should. The record is the page stats that `shoot-pieces.mjs` writes. Rerunning that script here retook every picture without people: the people's pack (`pack.json` and `pack.bin`) is not in the repository, and each shot logged its load error. So I kept the old pictures and the rest of the record, and wrote only the 30 plan entries' new triangles and heights into the JSON from the rerun.
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass**, on the updated record: Cottage 1,826, Townhouse 5,033 (was 5,081), Merchant's 4,426 (was 4,522), Warehouse 9,084 (was 9,132). Before the record was updated it failed on exactly those three plans, by their eaves and ridges.
+- **The lots:** the coloured towns hold (0 neighbours of 1,200 share a colour), 0 door paints clash, and a lot builds the same twice in 30 of 30.
+- **`rooms.check.mjs`: 9 of 9 pass.** The cottage room is built on the same kit, and the cottage's storey did not change.
+### Needs eyes
+- **The pictures `pieces-gatelands-*.jpg` still show the old, taller town storeys.** They need retaking by a session that has the people's pack, so the street keeps its people for scale. Until then the record's numbers and the pictures disagree on the three town plans' heights.
+- **The streets are lower:** a townhouse front is 0.5 m lower and its storeys at 2.9 to 3.0 m read squatter. Whether the town still reads as a town of note beside the cottages wants Michael's eye on the next pictures.

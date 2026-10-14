@@ -507,7 +507,7 @@ export function gatelandsHouse(o, r) {
 const SCALE = {
   person: 1.8, eye: 1.65, door: { h: 2.05, w: 1.0 }, step: .16, sill: .9, plinth: .45,
   wall: { cottage: .6, house: .5, town: .45, store: .7 },
-  storey: { cottage: 2.7, house: [2.9, 2.7], town: [3.3, 3.1, 2.6], shop: [3.6, 3.0, 2.6], store: [3.4, 2.8, 2.8, 2.6] },
+  storey: { cottage: 2.7, house: [2.9, 2.7], town: [3.0, 2.9, 2.6], shop: [3.0, 2.9, 2.6], store: [3.0, 2.8, 2.8, 2.6] }, /* floor to floor, visual-foundation §1's 2.6 to 3.0 (Session 860; the town's were 3.3 to 3.6) */
   pitch: { thatch: 50, slate: 36, store: 40 }, thatchDepth: .5, slateDepth: .14, pot: .5,
 };
 const RAD = Math.PI / 180;
