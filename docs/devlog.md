@@ -17511,7 +17511,7 @@ A new module, `docs/prototypes/levelup/ships.js`, makes `gatelandsSloop(o, r)` a
 `ships.html` has four views: `?view=quarter` (default) from off her starboard bow; `side` broadside; `deck` from the tiller forward; and `lap`, close on the strakes at the waterline. Add `&noharp` for the plain sail.
 
 **Fixed on the way, each found by the check or the pictures:**
-- **Unseen planking:** the strakes were wound inward, so their outer faces did not draw.
+- **Unseen planking:** the strakes were wound inward, so their outer faces would not have drawn. This one was caught by reading the winding before the first frame, not by the check.
 - **Barrel staves:** the wood's grain ran up her side, because the world-projected UVs followed the normal. The strakes now carry UVs along the hull.
 - **Open ends:** the half-breadth never reached zero at the stem and sternpost, so both ends were open, 0.36 to 0.42 m wide. The leak check's rays first got out there, once its reach was long enough to travel her length.
 - **Too wide:** the flare made her 4.58 m wide. It is now 4.4 m.
