@@ -243,6 +243,17 @@ P.coil = (B, o) => { const sp = B.spineAt(o.at), turns = o.turns || 4, N = Math.
   const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .45, side: THREE.DoubleSide }));
   m.rotation.set((o.tilt || 0) * DEG, (o.turn || 0) * DEG, (o.roll || 0) * DEG); m.position.copy(sp.p).add(V(0, sp.r * B.spineS[1] * .6 + (o.lift || 0), o.dz || 0)); B.bit(sp.bone, m); };
 
+// leafy fronds (Session 863): lobed leaves hung off a body's bones, as a leafy sea dragon wears its camouflage. `n` fronds
+// are spread down the chains named in `on`, each leaning out to one side or the other (`out`), back, and up or down (`spread`), seeded
+// by the genome; each is a sheet skinned to its bone, so it sways as the body moves. Lobes are notched into its two edges.
+const LEAF = [[0, 0], [.18, .32], [.42, .5], [.38, .22], [.62, .42], [.78, .2], [1, 0], [.78, -.2], [.62, -.42], [.38, -.22], [.42, -.5], [.18, -.32]];
+P.fronds = (B, o) => { const r = rng(B.g.seed + 21), names = (o.on || ['spine']).flatMap(c => c === 'spine' ? B.spineNames : c === 'head' ? ['head'] : (B.chains[c] || []));
+  for (let i = 0; i < o.n; i++) { const nm = names[Math.min(names.length - 1, Math.floor((i + .5) / o.n * names.length))], b = B.by[nm], side = i % 2 ? 1 : -1;
+    const d = V(side * (o.out ?? .7) * (.6 + .4 * r()), (r() - .5) * 2 * (o.spread ?? .6) + (o.lift || 0), -(o.back ?? .4) - .3 * r()).normalize(), a = d.clone().cross(V(1, 0, 0)).normalize(), L = o.len * (.7 + .6 * r()), W = o.w * (.8 + .4 * r());
+    const base = b.p.clone().add(V(side * (o.root || 0), 0, 0)), pts = LEAF.map(([u, v]) => base.clone().addScaledVector(d, u * L).addScaledVector(a, v * W)), tris = [];
+    for (let k = 1; k < pts.length - 1; k++) tris.push(0, k, k + 1); tris.push(0, pts.length - 1, 1);
+    const c0 = B.tone(o.tone || 'frond'), c1 = B.tone(o.tip || o.tone || 'frond'); B.sheets.push({ pts, tris, bones: pts.map(() => b.i), cols: LEAF.map(([u]) => c0.clone().lerp(c1, u)) }); } };
+
 // ── bits: small rigid meshes ──
 const MATS = new Map();
 function stdMat(c, o = {}) { const k = c.getHexString() + JSON.stringify(o); if (!MATS.has(k)) MATS.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .6, metalness: 0, flatShading: !!o.flat, emissive: o.emissive || 0x000000, emissiveIntensity: o.ei ?? 1 })); return MATS.get(k); }
@@ -1352,3 +1363,18 @@ Object.assign(PLANS, {
     ] }
 });
 SEA.push('pierwinkle');
+// ── Session 863: the kelpstrider (OG-016's kelp forests): a leafy seahorse. The body stands upright on the spine (hip low,
+// chest high), the neck bends the head forward, the tail curls forward under it, and leafy fronds hang off all of it ──
+Object.assign(PLANS, {
+  kelpstrider: { name: 'Kelpstrider', src: 'OG-016 (coastal: a leafy seahorse of the kelp forests)', gaits: ['swim', 'stand'], bl: .15, swimAxis: 'x', waveAmp: .06, water: .5, cell: .004, rough: .5, mottle: 1.8, wag: .15, pant: .02, neckNod: .04, finOpacity: .9,
+    palette: { coat: [.66, .54, .2], saddle: [.5, .38, .14], belly: [.8, .7, .36], dark: [.04, .04, .03], fin: [.8, .72, .4], frond: [.46, .54, .18], frondTip: [.7, .62, .24] },
+    parts: [
+      ['spine', { hip: [.13, -.012], chest: [.25, .012], n: 4, r: [.022, .03, .026], s: [.75, 1], arch: -.012 }],
+      ['neck', { len: .035, n: 2, rise: 75, curve: -90, r: [.02, .016] }],
+      ['head', { len: .085, r: .019, pitch: 35, muzzle: { len: 1, r: .0075, taper: .9 }, eyes: [{ f: .2, up: .45, out: .75, r: .0055, color: [.12, .08, .03] }] }],
+      ['tail', { len: .17, n: 6, r: [.02, .005], droop: 88, curl: -28 }],
+      ['fins', { list: [{ at: .45, off: [0, 0], dz: -.025, out: [0, 0, -1], back: [0, -1, 0], len: .035, h: .018, role: 'pec' }] }],
+      ['fronds', { on: ['head', 'neck', 'spine', 'tail'], n: 28, len: .1, w: .045, out: .35, spread: .9, back: .7, tip: 'frondTip' }]
+    ] }
+});
+SEA.push('kelpstrider');

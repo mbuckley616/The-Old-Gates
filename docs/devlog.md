@@ -17332,3 +17332,18 @@ It is one rigid mesh on a spine bone. `tilt`, `turn` and `roll` set it on the bo
 - **The mouth of the shell is the tube's open end.** It has no flared lip or operculum, and from the front the open ring shows beside the head.
 - **The coil is smooth.** A periwinkle's shell has fine growth lines across the whorls, which the vertex colours do not draw.
 - **The kelpstrider** (a leafy seahorse) still waits for a frond part.
+
+## v80 — Session 863 — Leafy fronds in the kit: the kelpstrider (backlog L3, prototype only)
+The kelpstrider was the last of OG-016's twenty sea animals still owed: a leafy seahorse of the kelp forests. It needed a part the kit lacked. This adds `fronds` to `creatures.js` and the plan, and the sea is now twenty-four. Every animal on OG-016 is now a plan. It is prototype only, under FREEZE #297.
+
+**The fronds.** They are lobed leaves hung off a body's bones. `n` of them are spread down the chains named in `on` (here the head, the neck, the spine and the tail), alternating sides. Each leans out (`out`), back (`back`) and up or down (`spread`), with its length, width and lean seeded by the genome. A frond is a twelve-point outline with two notches in each edge, coloured from the `frond` tone at its root to `frondTip` at its end. Each is a sheet skinned to its bone, so it sways as the body moves. The leaf's plane is set across the body's side, so the leaves face a side view rather than showing their edges. The first pictures had the leaves lying flat and seen edge-on.
+
+**Kelpstrider:** the body stands upright on four spine bones (the hip low, the chest high, a slight hollow in front). The neck turns the head forward through 90°, and the head has a long tube snout. The tail curls forward under it on six bones. It has a small fluttering fin on its back and twenty-eight fronds. It is yellow-olive, mottled, with green fronds yellowing to their tips. It is about 30 cm tall and swims upright at 0.15 of its length a second.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 809 checks pass** across 106 plans, with the sea check now counting twenty-four.
+- **The build:** the kelpstrider builds in 0.1 to 0.2 s, with 14 bones and 8,276 triangles of flesh, at a flesh cell of 0.004 for its thin snout. Its skin weights sum to one and its genome is 155 bytes.
+- **Pictures:** `creatures-kelpstrider.jpg` (side) and `creatures-kelpstrider-front.jpg`. A first pass with a banded coat drew vertical stripes on the upright body, like a melon, so the coat is mottled instead.
+### Needs eyes
+- **The fronds all lean back,** so the leaves stand along its back and tail like a crest. A leafy sea dragon also trails them from its belly and snout.
+- **The leaves are flat cards** with no veins and no transparency at their edges.
+- **The swim** is the kit's spine wave turned to the vertical plane. A seahorse swims by fluttering its back fin and holding its body still, so the wave may be too much.
