@@ -17109,3 +17109,26 @@ Neither pattern draws from the seeded stream, so every other plan builds as it d
 ### Needs eyes
 - **The badger head on** (`creatures-badger-front.jpg`, from `builder.html?plan=badger&view=front`): the white blaze and the black bands through the eyes read. The white cheeks are lost in the fur's shading, and the mask's edges are hard.
 - **The cow's patches are random.** A breed's own pattern (a belted cow, a white face) would be a mask on the body as the face mask is on the head.
+
+## v80 — Session 846 — The Gatelands' fifteen, all in the creature kit (backlog L3, prototype only)
+L3's second item is OG-009's fifteen animals of the Gatelands, the home island. Five were already plans: the Elderstag, the Crag Hawk and the Mire Snake (Sessions 772 to 775), and the River Otter and the Woodland Badger (the common set, Session 843). The other ten are new in `creatures.js`, and `GATELANDS` lists all fifteen. The catalogue's note says the sheet's Grove Turkey is a New World bird and out of register on an Irish island, and suggests a capercaillie, so that is what is built.
+- **Gatefen Boar:** the wild boar at 1.08, near black, with a crest of bristles down its back (the kit's spines part, ten of them in the saddle's colour).
+- **Redspine Fox:** the red fox redder, with its back darkened to a rust-black spine by the saddle's counter-shading. A first try with the kit's stripes drew bands across the body instead and was taken out.
+- **Great Heron:** its own plan. A small grey body high on thin wader legs (the bird preset with radii of 4 cm to 8 mm; the preset's default radii made trousers of them), a long S-curved neck of five bones that nods as it walks, and a straight yellow dagger of a beak.
+- **Hollowcat:** a wildcat on light canid legs. It has a round short-muzzled head, tall tufted ears, green-gold eyes, a thick blunt tail, and a tabby's stripes.
+- **Greenward Stoat:** the otter at 0.55, brown over cream.
+- **Marsh Frog:** the Bellthroat at 0.8, green with a pale vocal sac.
+- **River Pike:** the salmon's plan made long and narrow, with a flat duck-bill head, olive and heavily mottled.
+- **Stonecrawler:** a small four-legged sprawler with a long tail, black banded with blue.
+- **Capercaillie:** the hen at 1.45, black-green, with a red brow and a broader tail.
+- **Lantern Beetle:** six insect legs under a glowing shell (the kit's glow at a base of 0.7, gold), 5 cm long. The first try missed its footholds by 1.1 cm through every gait. The kit floors a leg's height at 10 cm when it paces a stride (`C.legH`), so a 2 cm leg was given a stride five times too long. The beetle is now written at ten times its size with `scale: .1`, as the post hare is written at a hare's size and scaled up, and its feet land exactly.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 378 checks pass**, with one new check that the Gatelands' fifteen are each a plan from OG-009 or the common set.
+  - The ten new plans build in 0.09 to 0.39 s, with 18 to 34 bones and 10,640 to 47,548 triangles.
+  - Every foot reaches its target through every gait, the feet are down for about each gait's duty (the heron's walk 0.69 of 0.68, the beetle's walk 0.71 of 0.68), and every genome is under 160 bytes.
+- **Speeds:** the boar trots at 2.5 m/s, the heron walks at 0.86, the frog hops at 0.98, the pike swims at 1.3 and the beetle walks at 0.19.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the ten, `creatures-gatelands.jpg` (the ten on one sheet) and `creatures-line.jpg` (47 plans), shot again.
+### Needs eyes
+- **The Hollowcat** reads a little like a small dog in profile. A cat's shorter, rounder skull, and a body carried lower at the shoulder, would be finer sculpting than the kit's parts give.
+- **The capercaillie** has no fanned display tail, which is the bird's famous pose. The raven's tail fan would serve, on a display gait still to write.
+- **The kit's 10 cm floor** on leg height is a trap for small animals. A plan smaller than a hare should be written large and scaled down, as the beetle is, until the floor is made relative.

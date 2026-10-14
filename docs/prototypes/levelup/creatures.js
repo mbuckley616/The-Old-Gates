@@ -952,3 +952,66 @@ Object.assign(PLANS, {
     ] }
 });
 export const LIVESTOCK = ['cow', 'sheep', 'goat', 'hen'];
+// ── Session 846: the Gatelands' fifteen (OG-009; backlog L3). Three were built (the Elderstag, the Crag Hawk, the Mire
+// Snake) and two are the common set's (the River Otter, the Woodland Badger); these are the other ten, the Grove Turkey
+// a capercaillie as the catalogue's note has it (a New World bird on an Irish island) ──
+Object.assign(PLANS, {
+  gatefenboar: re(PLANS.boar, { name: 'Gatefen Boar', src: 'OG-009 (roots up old ruins and exposes forgotten paths)', scale: 1.08, spines: 1,
+    palette: { coat: [.24, .2, .16], saddle: [.12, .1, .08], belly: [.32, .27, .22], dark: [.05, .04, .03], hoof: [.1, .08, .07], horn: [.9, .86, .76], skin: [.4, .3, .26] }, fur: { len: .06, layers: 10, sx: 90, sy: 24, droop: .3 },
+    parts: [...PLANS.boar.parts, ['spines', { n: 10, from: .35, to: 1.05, len: .09, r: .02, tone: 'saddle', taper: .3 }]] }),
+  redspinefox: re(PLANS.redfox, { name: 'Redspine Fox', src: 'OG-009 (follows settlements, eats crop scraps)', palette: { coat: [.66, .3, .1], saddle: [.32, .1, .04], belly: [.95, .92, .86], dark: [.07, .05, .04], pale: [.97, .95, .9] }, fur: PLANS.redfox.fur }),
+  heron: { name: 'Great Heron', src: 'OG-009 (wetlands), OG-084', gaits: ['walk', 'stand'], speedK: .7, neckNod: .16, fold: 1, wag: .01,
+    palette: { coat: [.62, .64, .66], saddle: [.48, .5, .54], belly: [.88, .88, .86], dark: [.08, .08, .09], skin: [.74, .62, .3], horn: [.82, .7, .3] },
+    fur: { len: .02, layers: 7, sx: 120, sy: 50, droop: .6 },
+    parts: [
+      ['spine', { hip: [.66, -.1], chest: [.7, .12], n: 3, r: [.075, .09, .07], s: [.8, 1.15], rump: .08, rumpDrop: .02, front: .04 }],
+      ['neck', { len: .48, n: 5, rise: 80, curve: -42, r: [.04, .022], fwd: -.02 }],
+      ['head', { len: .1, r: .026, pitch: 2, eyes: [{ f: .4, up: .3, out: .7, r: .006, color: [.95, .85, .2] }], beak: { len: .14, r: .011, up: 0, hook: 0 } }],
+      ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
+      ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
+    ] },
+  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand'], wag: .1, speedK: 1, neckNod: .02,
+    palette: { coat: [.5, .42, .32], saddle: [.24, .19, .14], belly: [.84, .78, .66], dark: [.06, .05, .04], pale: [.9, .86, .78] },
+    pattern: { kind: 'stripes', period: .07, tone: 'saddle' }, fur: { len: .022, layers: 8, sx: 300 },
+    parts: [
+      ['spine', { hip: [.32, -.22], chest: [.32, .17], n: 4, r: [.08, .075, .085], s: [.85, 1.05], rump: .07, front: .06, arch: .04 }],
+      ['neck', { len: .07, n: 1, rise: 30, r: [.07, .06] }],
+      ['head', { len: .13, r: .062, pitch: 6, s: [1.08, .95, .95], muzzle: { len: .8, r: .032, nose: 1, taper: .7 }, jaw: { len: .7, r: .024, drop: .5 }, eyes: [{ f: .48, up: .45, out: .5, r: .011, color: [.75, .8, .25] }], ears: { kind: 'cone', size: .075, f: .1, up: .95, out: .62, back: 5, splay: 12 } }],
+      ['tail', { len: .3, n: 4, r: [.04, .038], droop: 40, curl: -6 }],
+      ['legs', { at: 1, kind: 'canidFore', out: .05, drop: .03, r: [.045, .028, .02, .02], claws: { r: .003, len: .01 } }],
+      ['legs', { at: 0, kind: 'canidHind', out: .05, drop: .02, r: [.055, .032, .022, .02], claws: { r: .003, len: .01 } }]
+    ] },
+  stoat: re(PLANS.otter, { name: 'Greenward Stoat', src: 'OG-009 (rivers and fields, near stone walls)', scale: .55, rough: .45,
+    palette: { coat: [.5, .34, .2], saddle: [.42, .27, .15], belly: [.92, .88, .76], dark: [.05, .04, .03] }, fur: { len: .012, layers: 6, sx: 520 } }),
+  marshfrog: re(PLANS.bellthroat, { name: 'Marsh Frog', src: 'OG-009 (wetlands; its calls mark spring)', scale: .8,
+    palette: { coat: [.36, .5, .22], saddle: [.2, .3, .12], belly: [.86, .84, .66], dark: [.05, .05, .04], sac: [.7, .72, .6] } }),
+  riverpike: re(PLANS.riverjaw, { name: 'River Pike', src: 'OG-009 (deep rivers and lakes; a fishing target)', scale: .9, mottle: 2,
+    palette: { coat: [.4, .46, .24], saddle: [.2, .26, .14], belly: [.88, .86, .7], dark: [.05, .05, .04], fin: [.5, .38, .22] },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hip: [.8, -.28], chest: [.8, .22], r: [.06, .07, .065] }] : k === 'head' ? [k, { ...o, len: .24, s: [.6, .7, 1], muzzle: { ...o.muzzle, s: [.7, .5, 1], taper: .75 } }] : [k, o]) }),
+  stonecrawler: { name: 'Stonecrawler', src: 'OG-009 (a black-and-blue lizard of the dry-stone walls), OG-084', gaits: ['trot', 'walk', 'stand'], speedK: 1.4, wag: .1, fold: .5, rough: .4,
+    palette: { coat: [.1, .12, .16], saddle: [.06, .07, .1], belly: [.3, .42, .62], dark: [.03, .03, .04], skin: [.1, .12, .16], band: [.22, .38, .7] },
+    pattern: { kind: 'bands', period: .05, tone: 'band' },
+    parts: [
+      ['spine', { hip: [.06, -.1], chest: [.065, .08], n: 4, r: [.03, .034, .03], s: [1.3, .72], rump: .02, front: .02, tone: 'skin' }],
+      ['neck', { len: .03, n: 1, rise: 8, r: [.025, .022], s: [1.2, .8] }],
+      ['head', { len: .05, r: .02, pitch: 4, s: [1.2, .7, 1], muzzle: { len: 1, r: .014, s: [1.1, .7, 1] }, eyes: [{ f: .4, up: .5, out: .7, r: .004, color: [.8, .6, .1] }] }],
+      ['tail', { len: .22, n: 6, r: [.025, .006], droop: 0, curl: 4 }],
+      ['legs', { at: .95, kind: 'sprawl', out: .03, drop: .005, fan: 35, r: [.01, .009, .008, .007], claws: { r: .0015, len: .006 } }],
+      ['legs', { at: .05, kind: 'sprawl', out: .03, drop: .005, fan: -35, r: [.011, .009, .008, .007], claws: { r: .0015, len: .006 } }]
+    ] },
+  capercaillie: re(PLANS.hen, { name: 'Capercaillie', src: 'OG-009 (the Grove Turkey, as a capercaillie: catalogue note)', scale: 1.45, neckNod: .1,
+    palette: { coat: [.12, .13, .14], saddle: [.07, .08, .09], belly: [.14, .2, .16], dark: [.04, .04, .04], skin: [.5, .45, .4], horn: [.82, .78, .66], comb: [.78, .12, .08] },
+    parts: PLANS.hen.parts.map(([k, o]) => k === 'tail' ? [k, { ...o, len: .16, r: [.06, .05], droop: -30 }] : [k, o]) }),
+  // built at ten times its size and scaled down: the kit floors a leg's height at 10 cm when it paces a stride
+  lanternbeetle: { name: 'Lantern Beetle', src: 'OG-009 (glows near old trees and ruins; an ingredient)', gaits: ['walk', 'trot', 'stand'], scale: .1, speedK: 1, wag: 0, pant: 0, rough: .3, mottle: .3,
+    glow: { color: [1.6, 1.25, .35], base: .7, freq: 3, w: .02, all: 0 },
+    palette: { coat: [.16, .14, .08], skin: [.16, .14, .08], saddle: [.08, .07, .04], belly: [.6, .52, .2], dark: [.04, .03, .02] },
+    parts: [
+      ['spine', { hip: [0.18, -0.3], chest: [0.2, 0.2], n: 3, r: [0.16, 0.14, 0.11], s: [1.25, .62], rump: 0.12, front: 0.06, tone: 'skin' }],
+      ['head', { len: 0.12, r: 0.08, pitch: 10, s: [1.2, .7, 1], tone: 'skin', eyes: [{ f: .6, up: .3, out: .8, r: 0.022, color: [.05, .04, .03] }] }],
+      ['legs', { at: .9, kind: 'insect', out: 0.2, drop: 0.02, fan: 30, reach: .7, r: [0.03, 0.028, 0.022, 0.014] }],
+      ['legs', { at: .55, kind: 'insect', out: 0.21, drop: 0.02, fan: 0, reach: .7, r: [0.03, 0.028, 0.022, 0.014] }],
+      ['legs', { at: .2, kind: 'insect', out: 0.2, drop: 0.02, fan: -30, reach: .7, r: [0.03, 0.028, 0.022, 0.014] }]
+    ] }
+});
+export const GATELANDS = ['stag', 'gatefenboar', 'redspinefox', 'otter', 'heron', 'badger', 'hollowcat', 'stoat', 'craghawk', 'marshfrog', 'riverpike', 'stonecrawler', 'capercaillie', 'miresnake', 'lanternbeetle'];
