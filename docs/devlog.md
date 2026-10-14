@@ -17347,3 +17347,28 @@ The kelpstrider was the last of OG-016's twenty sea animals still owed: a leafy 
 - **The fronds all lean back,** so the leaves stand along its back and tail like a crest. A leafy sea dragon also trails them from its belly and snout.
 - **The leaves are flat cards** with no veins and no transparency at their edges.
 - **The swim** is the kit's spine wave turned to the vertical plane. A seahorse swims by fluttering its back fin and holding its body still, so the wave may be too much.
+
+## v80 — Session 864 — A moth's glass wings: the Glasswing Moth, the last of Aurenne's fifteen (backlog L3, prototype only)
+OG-030 draws the Glasswing Moth in oases and ruins, with crystalline wings, drawn to moonlight and flowering plants: a night ingredient. Session 848 left it owed, because the kit had no insect's wing. It is now a plan in `creatures.js`, so all fifteen of `AURENNE` are plans. It is prototype only, under FREEZE #297.
+
+**The wings** are the kit's fins (Session 774), with three small additions:
+- **Two outlines in `FIN`:** `fore`, pointed at the tip, and `hind`, rounded.
+- **A fin role, `wing`.** At rest it holds the wing half-raised, 0.28 rad, breathing. In the air it beats twice a stride, from 0.1 down to 0.9 rad up.
+- **A plan field, `finRough`,** for the sheets' roughness. The moth's is 0.08 against the default 0.5, so the wings shine like glass. At an opacity of 0.38 they are clear and faintly blue. The kit's per-vertex tint jitter on each sheet reads as facets.
+
+No other plan sets either field, so nothing else changes.
+
+**Flight** needed one change to the legs. Aloft, the kit tucks every foot up and back as a bird does. An insect's splayed legs (the presets with `yaw`) cannot reach that target: the first try missed by 7.9 cm, and pulling the feet in under the body still missed by 9.5 cm. Now an insect's legs only draw in a quarter of the way and hang a little below their standing reach. Every other soaring plan has bird legs, so none changes.
+
+**Glasswing Moth:** a cream, furry body (three spine bones, the abdomen tapering to a point), a round head with large dark eyes, and two thin antennae swept forward and up. It has six insect legs and four glass wings: forewings 0.42 by 0.72 of its own length and hindwings 0.36 by 0.5. It is built at ten times its size and scaled by 0.1, so it is about 6 cm long with a span near 15 cm. It walks, flies and stands. Its flesh cell is set to 0.01; without that, the thin legs drove its first build to 60,304 triangles.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 816 checks pass** across 107 plans, and Aurenne's check now asks for fifteen.
+- **The build:** the moth builds in 0.26 to 0.33 s, with 38 bones and 11,796 triangles. Its skin weights sum to one and its genome is 158 bytes.
+- **Gaits:** walking, its feet are down 0.71 of the stride against a duty of 0.68. Every foot reaches its target in all three gaits.
+- **Pictures:**
+  - `creatures-glasswingmoth.jpg` is at its true size.
+  - `-close-top.jpg` and `-close-soar.jpg` were shot at ten times its size. The first true-size shot showed the wings too small for a moth, so both pairs were made about 40% larger.
+### Needs eyes
+- **The wings are plain glass.** They have no veins, and the crystal is only the tint's facets. OG-030's wings "resonate with ambient magic", which a faint glow at night could carry; the kit's glow is for flesh, not sheets.
+- **In flight its legs hang** rather than fold, which is right for a moth but reads long in the close picture.
+- **The antennae are thin tapered horns,** not a moth's feathered ones.

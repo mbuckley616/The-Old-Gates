@@ -46,7 +46,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const mk = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.MARK || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the Mark's fifteen: each a plan, from OG-031 (${mk.length})`, mk.length === 15 && mk.every(c => c.ok && /OG-031/.test(c.src)), mk.filter(c => !c.ok || !/OG-031/.test(c.src)));
   const au = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.AURENNE || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
-  check(`Aurenne's fifteen: fourteen a plan from OG-030 (the Glasswing Moth owed) (${au.length})`, au.length === 14 && au.every(c => c.ok && /OG-030/.test(c.src)), au.filter(c => !c.ok || !/OG-030/.test(c.src)));
+  check(`Aurenne's fifteen: each a plan from OG-030 (${au.length})`, au.length === 15 && au.every(c => c.ok && /OG-030/.test(c.src)), au.filter(c => !c.ok || !/OG-030/.test(c.src)));
   // the strange beasts (Session 853): OG-040's fourteen, each a plan from that sheet
   const st = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.STRANGE || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the strange beasts: fourteen, each a plan from OG-040 (${st.length})`, st.length === 14 && st.every(c => c.ok && /OG-040/.test(c.src)), st.filter(c => !c.ok || !/OG-040/.test(c.src)));

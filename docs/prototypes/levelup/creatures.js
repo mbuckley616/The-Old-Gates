@@ -177,7 +177,9 @@ P.wings = (B, o) => {
 // fins (Session 774): each a thin sheet on a bone of its own, so the pose can flutter it. A fin is an outline in its own
 // plane (u back along the body, v out from it), scaled by len and h: 'tri' for a dorsal, pectoral, pelvic or anal fin,
 // 'fork' for a fish's tail (v up) or a whale's flukes (v sideways). It hangs off the spine at t, or off the tail's end.
-const FIN = { tri: [[-.15, 0], [.12, .75], [.3, 1], [.45, .8], [.62, .35], [.8, 0]], fork: [[0, .22], [.55, 1], [.42, .5], [.38, .15], [.5, 0], [.38, -.15], [.42, -.5], [.55, -1], [0, -.22]] };
+const FIN = { tri: [[-.15, 0], [.12, .75], [.3, 1], [.45, .8], [.62, .35], [.8, 0]],
+  // Session 864: a moth's wings, the forewing pointed at its tip and the hindwing rounded
+  fore: [[-.05, 0], [-.04, .5], [.06, .94], [.2, 1], [.36, .82], [.5, .52], [.56, .22], [.46, 0]], hind: [[0, 0], [.08, .55], [.28, .88], [.55, .82], [.74, .52], [.8, .2], [.6, 0]], fork: [[0, .22], [.55, 1], [.42, .5], [.38, .15], [.5, 0], [.38, -.15], [.42, -.5], [.55, -1], [0, -.22]] };
 P.fins = (B, o) => { for (const f of o.list) for (const side of f.pair ? [1, -1] : [0]) {
   const onTail = f.on === 'tail', sp = onTail ? null : B.spineAt(f.at), parent = onTail ? B.tailBone : sp.bone;
   const R = onTail ? 0 : sp.r, base = onTail ? B.tailEnd.clone() : sp.p.clone().add(V(side * R * B.spineS[0] * (f.off?.[0] ?? .9), R * B.spineS[1] * (f.off?.[1] ?? 0), f.dz || 0));
@@ -449,7 +451,7 @@ export function build(g) {
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
     for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
-  if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
+  if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: plan.finRough ?? .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
   if (B.tubes.length) { const m = new THREE.SkinnedMesh(tubeGeo(B, pal, plan.threadGlow || 1), plan.threadGlow ? new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 })); m.name = 'threads'; meshes.push(m); }
   for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75, ...(plan.wingOpacity < 1 ? { transparent: true, opacity: plan.wingOpacity, depthWrite: false } : {}) })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
@@ -567,7 +569,7 @@ export function pose(C, phase) {
   // a fish's wave (Session 774): from head to tail, growing toward the tail; a whale's runs in the vertical plane
   if (G.swim) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])], N = all.length, ax = C.plan.swimAxis === 'x' ? 'x' : 'y', A = C.plan.waveAmp ?? .22;
     all.forEach((nm, k) => { const u = k / (N - 1); C.byName[nm].rotation[ax] += A * (.08 + Math.pow(u, 1.6)) * Math.sin(tau * (ph - u * (C.plan.waveLen ?? .9))) / (k < spn.length ? 2 : 1); }); }
-  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * .22 * Math.sin(tau * ph * (G.swim ? 1 : .4))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
+  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * .22 * Math.sin(tau * ph * (G.swim ? 1 : .4))); else if (F.kind === 'wing') b.rotation.set(0, 0, (F.side || 1) * (G.flap ? .1 + .8 * Math.sin(tau * ph * 2) : .28 + .04 * Math.sin(tau * ph))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
   // radial arms: an octopus's ripple round the ring, a jellyfish's bell that beats and threads that trail it
   for (const Rr of B.radials) { const axis = V(-Math.sin(Rr.a), 0, Math.cos(Rr.a)), np = Rr.names.length;
     for (let j = 0; j < np - 1; j++) { const b = C.byName[Rr.names[j]]; let ang;
@@ -602,7 +604,8 @@ export function pose(C, phase) {
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
-    if (G.aloft) { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; }
+    // aloft, the feet tuck up and back; an insect's splayed legs only lift a little and hang (Session 864)
+    if (G.aloft) { if (L.yaw) { T.y += (C.plan.flyH || 0) - .1 * L.hR; T.x = lerp(T.x, L.rest[0].x, .25); } else { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; } }
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
     worst = Math.max(worst, solveLeg(C, L, T, fold));
   }
@@ -1378,3 +1381,22 @@ Object.assign(PLANS, {
     ] }
 });
 SEA.push('kelpstrider');
+// ── Session 864: the Glasswing Moth (OG-030: oases and ruins; crystalline wings, drawn to moonlight and flowers; a night
+// ingredient), the last of Aurenne's fifteen. An insect's six legs under a furry moth body, and four wings as sheets of
+// glass: clear, glossy and faintly blue, faceted by the kit's per-vertex tint. Held half-raised at rest; in the air they beat ──
+Object.assign(PLANS, {
+  glasswingmoth: { name: 'Glasswing Moth', src: 'OG-030 (oases and ruins; crystalline wings drawn to moonlight and flowering plants)', gaits: ['walk', 'soar', 'stand'], scale: .1, cell: .01, speedK: .8, flyH: .9, wag: 0, pant: 0, neckNod: .02, rough: .7, finOpacity: .38, finRough: .08,
+    palette: { coat: [.86, .82, .72], saddle: [.62, .56, .46], belly: [.92, .9, .84], dark: [.05, .05, .06], skin: [.7, .64, .54], horn: [.66, .6, .5], glass: [.8, .92, 1] },
+    fur: { len: .02, layers: 6, sx: 220, droop: .3 },
+    parts: [
+      ['spine', { hip: [.24, -.2], chest: [.25, .1], n: 3, r: [.06, .085, .075], rump: .2, rumpTaper: .35, front: .04 }],
+      ['head', { len: .08, r: .058, pitch: 15, eyes: [{ f: .55, up: .2, out: .78, r: .034, color: [.12, .16, .22] }], horns: { len: .3, r: .007, f: .4, up: .85, out: .35, turn: .12, rise: .8, back: -.6, spread: .5 } }],
+      ['legs', { at: .95, kind: 'insect', out: .07, drop: .03, fan: 35, reach: .45, r: [.014, .012, .009, .006] }],
+      ['legs', { at: .6, kind: 'insect', out: .075, drop: .03, fan: 0, reach: .5, r: [.014, .012, .009, .006] }],
+      ['legs', { at: .25, kind: 'insect', out: .07, drop: .03, fan: -35, reach: .45, r: [.014, .012, .009, .006] }],
+      ['fins', { list: [
+        { at: .9, kind: 'fore', off: [.6, .55], out: [1, .12, 0], back: [0, 0, -1], len: .42, h: .72, pair: 1, role: 'wing', tone: 'glass' },
+        { at: .6, kind: 'hind', off: [.6, .45], out: [1, .06, -.25], back: [0, 0, -1], len: .36, h: .5, pair: 1, role: 'wing', tone: 'glass' }] }]
+    ] }
+});
+AURENNE.push('glasswingmoth');
