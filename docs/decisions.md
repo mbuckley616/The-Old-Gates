@@ -4,6 +4,35 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelands galleon in the new kit: carvel or clinker, and its gun ports (look builder, Session 896) — DECISION #323
+**F11's fifth hull: the Gatelands galleon (look builder, Session 896).** It is the last of the game's five classes in the Gatelands' dress (OG-004's "galleon warship"). It is a prototype in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon`) and `ships.html?ship=galleon`. It is built to the game's galleon's numbers:
+- **The size:** 22 by 7.0 m, draft 1.5, with the deck 1.0 m over the sea.
+- **The hull:** carvel, with a little tumblehome, a long raked stem and a square stern with five windows. She is tarred below the water and oiled oak above, with the top strakes green under a cream wale.
+- **The rig:** fore and main square-rigged, each with a course and a topsail, green, with the harp on the main course. A gaff mizzen stands on the quarterdeck, and a spritsail hangs under the 6 m bowsprit. The courses' feet are 2.2 m over the deck.
+- **The castles:** as the cog's (#319), 2.15 m up.
+  - **The quarterdeck** covers her last 6 m. Under it is the great cabin, behind a door and two windows, with two ladders up, the wheel, and two stern lanterns.
+  - **The forecastle** covers her first 3.5 m, open beneath on two posts.
+- **The gun ports:** six a side, as closed green lids on the gun deck under the main deck. They are paint only: the guns and the gun deck are the systems builder's (your 7 A: cannon on the top ships only).
+
+She is 43,216 triangles in 10 draws. No ray from inside her gets out below the deck. The walk from the quarterdeck to the bow has the deck under it all the way, 2.09 m of headroom under the forecastle and 0.69 m clear.
+
+**1. The planking:**
+- **A. Carvel, as drawn** *(recommended)*: a ship of 22 m was not clinker-built, so the laps stay the mark of the Gatelands' small hulls. The cog (#319) is clinker.
+- **B. Clinker**, as the sloop and the cog, so that every Gatelands hull shows the laps.
+
+**2. The gun ports:**
+- **A. Closed lids, as drawn** *(recommended)*: they say "warship" at a glance and wait for the systems builder's guns.
+- **B. No ports.** The galleon is a merchant's great ship until guns are built.
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-side.jpg)
+- [her stern](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-lap.jpg)
+- [the deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-deck.jpg)
+- [the quarterdeck from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-castle.jpg)
+- [the forecastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-fore.jpg)
+
+
 ### Aurenne's tavern on a terrace over the sea: its house and its shade (look builder, Session 895) — DECISION #322
 **F9's sixth room: Aurenne's tavern on a terrace over the sea (look builder, Session 895).** It is the third of L9's three inns (OG-108: "an Aurenne tavern on a terrace over the sea"). It is built inside the kit's Roman house of Aurenne (`pieces.js`'s `aurenneHouse`, the tile kind, 9.6 by 8 m under a hipped pantile roof, with its arcade of four round arches across the front). It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneTavern`) and `rooms.html?room=tavern`.
 - **Inside:**

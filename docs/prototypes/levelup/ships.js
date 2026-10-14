@@ -438,3 +438,104 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
   return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: SF, mast: [0, MZ], hatch, sheerAt, keelAt, harp, wheel: true, cargo,
     castles: { aft: { z0: zs + .25, z1: ZA, y: CY, door, ladders }, fore: { z0: ZF, z1: zb - .2, y: CY, ladder: fladder, posts } } });
 }
+
+// gatelandsGalleon(o, r) (Session 896, card F11; the ladder's 3 A: the game's five classes each dressed by its island; OG-004's Gatelands
+//   "galleon warship"): the game's galleon (85-world-sea.js: L 22, W 7.0, draft 1.5, the sheer 0.5 m over the deck amidships rising 0.7
+//   to the bow and 1.25 to the stern, a long raked stem, a square stern of 0.62 of the beam; fore and main square-rigged with topsails,
+//   a gaff mizzen, a spritsail under the bowsprit; six gun ports a side; stern windows) in the Gatelands' dress: tarred below the water,
+//   oiled oak above, a green band under a cream wale, green sails, the harp on the main course (o.harp). She is carvel-built: no 22 m
+//   ship was clinker, and the sloop's laps stay the small hulls' mark (asked). The castles are real decks, 2.15 m over the main deck:
+//   the quarterdeck over her last 6 m, the great cabin under it lit by five stern windows, two ladders up, the wheel on it, the mizzen
+//   through it; the forecastle over her first 3.5 m, open beneath on two posts, a ladder up the middle. The gun ports are closed lids
+//   along the gun deck under the main deck, which is the systems builder's (the ports are paint, no guns).
+//   -> as markCutter, with castles ({ aft, fore } as the cog's), sails ([{ mast z, course foot y }]), ports, wheel: true.
+export function gatelandsGalleon(o = {}, r = stream('galleon')) {
+  const harp = o.harp !== false, M = mats(harp), { put, rod, finish } = kit(M);
+  const L = 22, W = 7.0, DRAFT = 1.5, DECK = 1.0, SHEER = 1.5, BOW = .7, STERN = 1.25, NS = 60, NSTR = 16, TH = .05, TRN = .62;
+  const zs = -L / 2, zb = L / 2, ZT = zs + .05;
+  const sheerAt = z => SHEER + BOW * Math.max(0, z / zb) ** 2 + STERN * Math.max(0, z / zs) ** 2;
+  const beamAt = z => { const t = Math.max(-1, Math.min(1, z / (zb - .05))); return t > 0 ? W / 2 / .987 /* the tumblehome takes the flare back: the widest section is then W */ * Math.max(0, 1 - t ** 2.0) ** .5 : W / 2 / .987 * (TRN + (1 - TRN) * Math.max(0, 1 - Math.abs(t) ** 2.4) ** .55); };
+  const keelAt = z => { const t = z / zb; return -DRAFT * (t > 0 ? 1 - .45 * t ** 3 : 1 - .2 * t * t); };
+  const sect = (z, u) => { const b = beamAt(z), k = keelAt(z), s = sheerAt(z), y = k + (s - k) * u; return [b * Math.sin(Math.PI / 2 * Math.min(1, u * 1.18)) ** .8 * (1 + .03 * Math.max(0, u - .8) / .2) * (1 - .06 * Math.max(0, u - .75) / .25) /* the tumblehome */, y]; };
+  const zr = (z, u) => z > 0 ? z * (1 - .16 * (1 - u) ** 1.6 * (z / zb) ** 6) : z;
+  const zAt = i => ZT + (zb - .05 - ZT) * i / NS;
+  const sections = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), pts = []; for (let k = 0; k <= 30; k++) pts.push(sect(z, k / 30).map(v => +v.toFixed(3))); sections.push({ z: +z.toFixed(3), pts }); }
+  const norm = (z, u) => { const a = sect(z, Math.max(0, u - .01)), b = sect(z, Math.min(1, u + .01)), dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [dy / l, -dx / l]; };
+  // carvel: tarred below the water, oiled oak above, the top two strakes green
+  const KR = 4; for (let s = 0; s < NSTR; s++) { const u0 = s / NSTR, u1 = (s + 1) / NSTR, outer = [], inner = [];
+    for (let i = 0; i <= NS; i++) { const z = zAt(i), ro = [], ri = []; for (let k = 0; k <= KR; k++) { const u = u0 + (u1 - u0) * k / KR, p = sect(z, u), n = norm(z, u); ro.push([p[0] + n[0] * TH / 2, p[1] + n[1] * TH / 2, zr(z, u)]); ri.push([p[0] - n[0] * TH / 2, p[1] - n[1] * TH / 2, zr(z, u)]); } outer.push(ro); inner.push(ri); }
+    const key = s >= NSTR - 2 ? 'green' : sect(0, (u0 + u1) / 2)[1] < .02 ? 'tar' : 'oak';
+    for (const side of [1, -1]) { const mir = rows => rows.map(row => row.map(([x, y, z]) => [x * side, y, z])); put(ribbon(mir(outer), side > 0), key, 0, 0, 0, 0, 0, 0, null); put(ribbon(mir(inner), side < 0), key, 0, 0, 0, 0, 0, 0, null); } }
+  // the transom, and five stern windows in it under the cream wale; two lanterns over it
+  { const pts = []; for (let k = 0; k <= 30; k++) { const [x, y] = sect(ZT, k / 30); pts.push(new THREE.Vector2(x + TH / 2, y)); } for (let k = 30; k >= 0; k--) { const [x, y] = sect(ZT, k / 30); pts.push(new THREE.Vector2(-x - TH / 2, y)); }
+    put(new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: .06, bevelEnabled: false }), 'oak', 0, 0, ZT - .06, 0, 0, 0, .6);
+    const wy = DECK + 1.25; for (let k = -2; k <= 2; k++) { put(new THREE.BoxGeometry(.5, .6, .03), 'dark', k * .72, wy, ZT - .075); put(new THREE.BoxGeometry(.62, .08, .05), 'cream', k * .72, wy + .34, ZT - .08); } put(new THREE.BoxGeometry(4.2, .1, .08), 'cream', 0, wy - .38, ZT - .08); }
+  // the keel; the stem following the planking's curve to a long head; the beak under the bowsprit
+  { const pts = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); pts.push([zr(z, 0), keelAt(z) - .06]); }
+    for (let k = 1; k <= 12; k++) { const u = k / 12; pts.push([zr(zb - .05, u) + .08 * u + .04, sect(zb - .05, u)[1] + (k === 12 ? .5 : 0)]); }
+    for (let i = 0; i + 1 < pts.length; i++) { const [z0, y0] = pts[i], [z1, y1] = pts[i + 1]; put(new THREE.BoxGeometry(.22, .26, Math.hypot(z1 - z0, y1 - y0) + .03), 'tar', 0, (y0 + y1) / 2, (z0 + z1) / 2, -Math.atan2(y1 - y0, z1 - z0)); } }
+  const SPL = 6.0, SP = [0, sheerAt(zb) + .4 + SPL * Math.sin(.28), zb + SPL * Math.cos(.28)]; rod([0, sheerAt(zb) - .1, zb - 2.0], SP, .14, .08, 'spar');
+  // the deck, the covering boards
+  const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
+  { const PW = .18; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
+      const z0 = zz[0] - (zz[0] < ZT + .1 ? .06 : 0), z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+    for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
+  // the cream wale under the green; six gun-port lids a side on the gun deck, closed
+  for (let i = 0; i + 2 <= NS; i += 2) { const za = zAt(i), zc = zAt(i + 2), u = (NSTR - 2) / NSTR; for (const e of [1, -1]) rod([e * (sect(za, u)[0] + .035), sect(za, u)[1], zr(za, u)], [e * (sect(zc, u)[0] + .035), sect(zc, u)[1], zr(zc, u)], .05, .05, 'cream'); }
+  const ports = []; for (const e of [1, -1]) for (let k = 0; k < 6; k++) { const z = -5.5 + k * 2.1, y = DECK - .45, u = (y - keelAt(z)) / (sheerAt(z) - keelAt(z)), p = sect(z, u), n = norm(z, u);
+    put(new THREE.BoxGeometry(.06, .5, .56).rotateZ(-e * Math.atan2(n[1], n[0]) * 0), 'green', e * (p[0] + n[0] * .04), y, z); put(new THREE.BoxGeometry(.03, .06, .56), 'iron', e * (p[0] + n[0] * .08), y + .18, z); ports.push([e, z, y]); }
+  // the castles, as the cog's: green boards from the sheer to 0.25 m over the castle deck, a cream band, a rail at 1.0 m
+  const CY = DECK + 2.15, cw = z => sect(z, 1)[0], ZA = zs + 6.0, ZF = zb - 3.5;
+  const castleSides = (z0, z1) => { const n = 18; for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= n; i++) { const z = z0 + (z1 - z0) * i / n; rows.push([[e * cw(z), sheerAt(z) - .1, z], [e * cw(z), CY + .25, z]]); }
+      put(ribbon(rows, e > 0), 'green', 0, 0, 0, 0, 0, 0, null); put(ribbon(rows.map(row => row.map(([x, y, z]) => [x - e * .05, y, z])), e < 0), 'green', 0, 0, 0, 0, 0, 0, null);
+      for (let i = 0; i < n; i++) { const za = z0 + (z1 - z0) * i / n, zc = z0 + (z1 - z0) * (i + 1) / n; rod([e * (cw(za) + .02), CY + .25, za], [e * (cw(zc) + .02), CY + .25, zc], .035, .035, 'cream'); }
+      const top = CY + 1.0, k = Math.max(2, Math.round((z1 - z0) / .8)); for (let i = 0; i <= k; i++) { const z = z0 + .15 + (z1 - z0 - .3) * i / k; if (cw(z) < .3) continue; put(new THREE.BoxGeometry(.08, top - CY - .25, .08), 'oak', e * (cw(z) - .04), (top + CY + .25) / 2, z); }
+      for (let i = 0; i < k; i++) { const za = z0 + .15 + (z1 - z0 - .3) * i / k, zc = z0 + .15 + (z1 - z0 - .3) * (i + 1) / k; if (cw(za) < .3 || cw(zc) < .3) continue; rod([e * (cw(za) - .04), top, za], [e * (cw(zc) - .04), top, zc], .045, .045, 'oak'); } }
+    const PW = .16; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= 60; i++) { const z = z0 + (z1 - z0) * i / 60; if (cw(z) - .05 >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
+      put(new THREE.BoxGeometry(PW, .06, zz[zz.length - 1] - zz[0] + .05), 'deck', x, CY - .03, (zz[0] + zz[zz.length - 1]) / 2, 0, 0, 0, .35); } };
+  castleSides(ZT, ZA); castleSides(ZF, zb - .3);
+  { const a = cw(ZT) - .04; put(new THREE.BoxGeometry(2 * cw(ZT) + .06, CY + .25 - sheerAt(ZT) + .1, .06), 'green', 0, (sheerAt(ZT) - .1 + CY + .25) / 2, ZT - .03); rod([-a, CY + 1.0, ZT + .15], [a, CY + 1.0, ZT + .15], .045, .045, 'oak');
+    for (let x = -a; x <= a + .01; x += a / 4) put(new THREE.BoxGeometry(.08, .75, .08), 'oak', x, CY + .625, ZT + .15);
+    for (const e of [1, -1]) { const x = e * (a - .15); rod([x, CY + 1.0, ZT + .15], [x, CY + 1.3, ZT + .15], .03, .03, 'iron'); put(new THREE.CylinderGeometry(.14, .11, .34, 8), 'cream', x, CY + 1.47, ZT + .15); } }
+  const edgeRail = (z, gaps, dz) => { const a = cw(z) - .04, xs = [-a, ...gaps.flat(), a], top = CY + 1.0; for (let i = 0; i < xs.length; i += 2) { const [x0, x1] = [xs[i], xs[i + 1]]; rod([x0, top, z + dz], [x1, top, z + dz], .045, .045, 'oak'); for (const x of [x0, x1]) put(new THREE.BoxGeometry(.08, top - CY, .08), 'oak', x, (top + CY) / 2, z + dz); }
+    put(new THREE.BoxGeometry(2 * a + .08, .12, .18), 'green', 0, CY - .06, z); };
+  const door = { x0: -.5, x1: .5, y1: DECK + 1.95 }, ladders = [-2.0, 2.0];
+  { const w = Math.min(cw(ZA), deckAt(ZA) + .05); for (const e of [1, -1]) put(new THREE.BoxGeometry(w - door.x1, CY - DECK, .08), 'oak', e * (door.x1 + (w - door.x1) / 2), (DECK + CY) / 2, ZA); put(new THREE.BoxGeometry(door.x1 - door.x0, CY - door.y1, .08), 'oak', 0, (door.y1 + CY) / 2, ZA);
+    for (const e of [1, -1]) put(new THREE.BoxGeometry(.6, .45, .02), 'dark', e * 1.2, DECK + 1.45, ZA + .05); put(new THREE.BoxGeometry(1.16, .1, .1), 'cream', 0, door.y1 + .05, ZA + .06);
+    for (const lx of ladders) { for (const e of [-1, 1]) rod([lx + e * .28, DECK, ZA + 1.25], [lx + e * .28, CY + .05, ZA + .02], .035, .035, 'oak'); for (let k = 1; k <= 7; k++) { const f = k / 8; put(new THREE.BoxGeometry(.56, .04, .2), 'oak', lx, DECK + (CY - DECK) * f, ZA + 1.25 * (1 - f)); } }
+    edgeRail(ZA, ladders.map(lx => [lx - .36, lx + .36]), -.05); }
+  const posts = [-2.0, 2.0], fladder = 0;
+  { for (const px of posts) put(new THREE.BoxGeometry(.18, CY - DECK - .12, .18), 'oak', px, (DECK + CY - .12) / 2, ZF + .1);
+    for (const e of [-1, 1]) rod([fladder + e * .28, DECK, ZF - 1.25], [fladder + e * .28, CY + .05, ZF - .02], .035, .035, 'oak'); for (let k = 1; k <= 7; k++) { const f = k / 8; put(new THREE.BoxGeometry(.56, .04, .2), 'oak', fladder, DECK + (CY - DECK) * f, ZF - 1.25 * (1 - f)); }
+    edgeRail(ZF, [[fladder - .36, fladder + .36]], .05); }
+  // the waist's rail
+  const rail = []; { const n = Math.round(L / .9); const top = z => Math.max(DECK + 1.0, sheerAt(z) + .12), inset = z => sect(z, 1)[0] - .06, ok = z => z > ZA + .3 && z < ZF - .3;
+    for (let k = 1; k < n; k++) { const z = zs + L * k / n; if (!ok(z)) continue; for (const e of [1, -1]) put(new THREE.BoxGeometry(.08, top(z) - DECK, .08), 'oak', e * Math.min(inset(z), deckAt(z) - .05), (top(z) + DECK) / 2, z); rail.push([+z.toFixed(2), +top(z).toFixed(3)]); }
+    for (let k = 1; k + 1 < n; k++) { const za = zs + L * k / n, zc = zs + L * (k + 1) / n; if (!ok(za) || !ok(zc)) continue; for (const e of [1, -1]) rod([e * Math.min(inset(za), deckAt(za) - .05), top(za), za], [e * Math.min(inset(zc), deckAt(zc) - .05), top(zc), zc], .045, .045, 'oak'); } }
+  // two hatches, one each side of the main mast
+  const hatches = [{ x0: -.7, x1: .7, z0: -3.2, z1: -1.6 }, { x0: -.7, x1: .7, z0: 1.2, z1: 2.6 }];
+  for (const h of hatches) { const hz = (h.z0 + h.z1) / 2, hw = h.x1 - h.x0 + .12, hd = h.z1 - h.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); } put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
+  // the square masts: course and topsail on each, a round top, the courses' feet 2.2 m over the deck,
+  // bellied forward; the main course bears the harp, the others plain cloth (their UVs take a corner of the sail's map)
+  const square = (mz, mh, cy, cw2, tw, foot, harpOn) => { rod([0, keelAt(mz) + .1, mz], [0, DECK + mh, mz], .24, .14, 'spar'); put(new THREE.CylinderGeometry(.55, .45, .45, 12), 'oak', 0, cy + .5, mz);
+    rod([-cw2 / 2, cy, mz + .2], [cw2 / 2, cy, mz + .2], .1, .08, 'spar'); rod([-tw / 2, DECK + mh - .5, mz + .16], [tw / 2, DECK + mh - .5, mz + .16], .07, .06, 'spar');
+    const sail = (w, top, bot, z, harpSail) => { const g = new THREE.PlaneGeometry(w - .3, top - bot - .1, 14, 12), P = g.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k) / (w / 2), y = P.getY(k) / ((top - bot) / 2); P.setZ(k, .6 * (1 - x * x) * (1 - .6 * y * y) + .1 * (1 - y) / 2); }
+      if (!harpSail) { const U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * .3, U.getY(k) * .3); } g.computeVertexNormals(); put(g, 'sail', 0, (top + bot) / 2 - .05, z, 0, 0, 0, null); };
+    sail(cw2, cy, foot, mz + .28, harpOn); sail(tw, DECK + mh - .5, cy + .8, mz + .24, false);
+    for (const e of [1, -1]) for (const dz of [-1.0, -.4, .2, .8]) { const z = mz + dz - .3; rod([0, cy + .4, mz], [e * (sect(z, 1)[0] + .05), (z < ZA ? CY + .2 : z > ZF ? CY + .2 : sheerAt(z) - .05), z], .014, .014, 'rope'); }
+    return { mz, foot }; };
+  const sails = [square(-.4, 13, DECK + 9.4, 9.0, 6.4, DECK + 2.2, harp), square(5.2, 10.5, DECK + 7.4, 7.4, 5.2, DECK + 2.2, false)];
+  rod([0, DECK + 13 * .72, -.4], [0, DECK + 10.5 * .72, 5.2], .025, .025, 'rope'); rod([0, DECK + 10.5 * .72, 5.2], SP, .025, .025, 'rope');
+  // the mizzen through the quarterdeck: a gaff sail with its boom 2.2 m over the quarterdeck, aft past the transom
+  const MZ = -8.0, MH = 9, BY = CY + 2.2, GT = CY + 6.2; rod([0, keelAt(MZ) + .1, MZ], [0, DECK + MH + 1.8, MZ], .17, .11, 'spar'); rod([0, BY, MZ - .2], [0, BY, ZT - 1.4], .08, .07, 'spar');
+  const PK = [0, GT + 3.2 * Math.sin(.55), MZ - 3.2 * Math.cos(.55)]; rod([0, GT, MZ - .2], PK, .07, .06, 'spar'); { const g = quadSail([0, BY + .1, MZ - .25], [0, BY + .1, ZT - 1.1], PK, [0, GT - .05, MZ - .25], .45), U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * .3, U.getY(k) * .3); put(g, 'sail', 0, 0, 0, 0, 0, 0, null); }
+  for (const e of [1, -1]) for (const dz of [-.5, .3]) { const z = MZ + dz; rod([0, DECK + MH, MZ], [e * (cw(z) - .05), CY + .2, z], .012, .012, 'rope'); }
+  // the spritsail on its yard under the bowsprit, a third of the way out
+  { const t = .4, sy = sheerAt(zb) + .4 + SPL * t * Math.sin(.28) - .25, sz = zb + SPL * t * Math.cos(.28); rod([-2.2, sy, sz], [2.2, sy, sz], .05, .05, 'spar'); const g = new THREE.PlaneGeometry(4.0, 1.8, 6, 4); const P = g.attributes.position; for (let k = 0; k < P.count; k++) P.setZ(k, .25 * (1 - (P.getX(k) / 2) ** 2)); g.computeVertexNormals(); { const U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * .3, U.getY(k) * .3); } put(g, 'sail', 0, sy - .95, sz + .1, 0, 0, 0, null); }
+  // the rudder on the transom, its head through the quarterdeck; the wheel on the quarterdeck
+  { const ry0 = keelAt(zs) - .05; put(new THREE.BoxGeometry(.14, sheerAt(ZT) - ry0, .9), 'oak', 0, (ry0 + sheerAt(ZT)) / 2, ZT - .5); rod([0, sheerAt(ZT) - .2, ZT - .2], [0, CY + .3, ZT - .2], .09, .09, 'oak');
+    const wz = ZA - 1.0, wy = CY + 1.15; put(new THREE.TorusGeometry(.66, .035, 6, 24), 'oak', 0, wy, wz); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; rod([0, wy, wz], [.82 * Math.cos(a), wy + .82 * Math.sin(a), wz], .022, .018, 'oak'); }
+    put(new THREE.CylinderGeometry(.07, .07, .3, 8).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), 'iron', 0, wy, wz - .12); put(new THREE.BoxGeometry(.18, wy - CY, .18), 'oak', 0, (wy + CY) / 2 - .05, wz - .3); }
+  return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: DECK + 2.2, mast: [0, -.4], hatch: hatches[0], hatches, sheerAt, keelAt, transom: ZT, carvel: true, harp, wheel: true, ports, sails, boom: { y: BY, z0: MZ - .2, z1: ZT - 1.4 },
+    castles: { aft: { z0: ZT, z1: ZA, y: CY, door, ladders }, fore: { z0: ZF, z1: zb - .3, y: CY, ladder: fladder, posts } } });
+}

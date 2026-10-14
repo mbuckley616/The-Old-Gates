@@ -18559,3 +18559,49 @@ The FREEZE (#297) holds. This is the last of L9's three inns (OG-108: "an Aurenn
 - **The quay and the sea are the page's.** They are a plain wall and a flat blue plane. The harbour itself is the world's (F3 and the sea).
 - **The vine is faceted icosahedra.** It reads at a distance and is coarse up close.
 - **The three inns are drawn** (#320, #321, #322). Their rooms come into the game with `buildInteriorFor` after F2a.
+
+## v80 — Session 896 — Card F11's fifth hull: the Gatelands galleon in the new kit (prototype only)
+The FREEZE (#297) holds. The galleon is the last of the game's five classes, and with it each class has one island's dress in the new kit: the sloop and the cog (Gatelands), the cutter (the Mark), the caravel (Aurenne) and now the galleon. OG-004's Gatelands row draws a "galleon warship". Its catalogue row warns that guns belong on the top hulls only (Michael's 7 A), and the galleon is the top hull. Still, the guns are rules, so the ports are drawn shut and the guns are left to the systems builder.
+
+`gatelandsGalleon` in `ships.js`, to the game's galleon (`85-world-sea.js`: 22 by 7.0 m, draft 1.5, the sheer 0.5 m over the deck amidships rising 0.7 to the bow and 1.25 to the stern, a long raked stem, a square stern of 0.62 of the beam):
+- **The hull** is carvel, by the caravel's method (Session 890), with sixteen strakes and a little tumblehome over the top quarter of the section. The curved stem runs to a head 0.5 m over the sheer, and the transom has five stern windows under a cream rail.
+  - **The dress** is the Gatelands': tarred below the water, oiled oak above, the top two strakes green under a cream wale.
+  - **Carvel, not clinker:** no 22 m ship was clinker-built. The laps stay the small hulls' mark, and this is asked (#323).
+  - **The beam:** with the caravel's scale the moulded beam came out 6.71 m, because the tumblehome trims the widest section. The scale is 0.987 here and the beam is 7.0 m.
+- **The rig:**
+  - **Fore and main** are square-rigged (at z 5.2 and −0.4, as the game's). Each has a course and a topsail on its yards, a round top and four shrouds a side. The courses' feet are 2.2 m over the deck.
+  - **The sails:** the main course bears the harp. The other sails take a plain corner of the same cloth map, so the harp is not repeated on every sail.
+  - **The mizzen** stands on the quarterdeck. Its gaff sail's boom is 2.2 m over the quarterdeck and runs out past the stern.
+  - **The spritsail** hangs on a yard under the 6 m bowsprit, a third of the way out (the game's rule of Session 332).
+- **The castles** are the cog's (Session 892), 2.15 m over the main deck.
+  - **The quarterdeck** covers her last 6 m. Under it is the great cabin behind a door, two windows and two ladders. The wheel stands 1 m aft of the castle's edge, with the mizzen 2 m behind it, and there are two lanterns on the taffrail.
+  - **The forecastle** covers her first 3.5 m, open beneath on two posts, with a ladder up the middle.
+- **The waist:** two hatches either side of the main mast, and twelve gun-port lids (six a side, 2.1 m apart) shut on the gun deck under the main deck, with an iron hinge strap over each.
+- **The view:** `ships.html?ship=galleon`, with the cog's views scaled to her size. `&noharp` gives the plain sails.
+
+**Fixed on the way, in the check:**
+- **Two rays "leaked" from the stern station.** They ran forward more than 18 m inside a 22 m hull and were counted as escaped. Her limit is 24 m.
+- **The flush check measured a gun-port lid** at the station z = 3. Its stations now sit between the lids.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 49 of 49 pass.** The earlier hulls' checks are unchanged, and ten are new:
+  - **The builds:** 4 keys, each the same twice. 43,216 triangles in 10 draws.
+  - **The size:** 22 by 7.0 m moulded, with the deck 1.0 m over the sea and 12 gun-port lids.
+  - **Closed:** of 1,260 rays from inside her below the deck, none gets out, the transom's included.
+  - **Carvel:** the planking is flush at every strake's edge (−0.001 to 0 m).
+  - **The walk:** 96 points, from the quarterdeck's ladders to the bow, 8 of them under the forecastle. The deck is under every one, with 2.09 m of headroom and 0.69 m clear. The courses' feet are 2.2 m up.
+  - **The waist's rail:** 1.0 m or more at all 13 stanchions.
+  - **The castles:**
+    - both decks are 2.15 m up, under every probe;
+    - the great cabin has 2.09 m of headroom;
+    - the door is clear 2.84 m past the bulkhead;
+    - the three ladders stand on the deck and reach their castles' edges;
+    - the rails are met.
+  - **The plain sails** leave the hull the same.
+  - **The pages:** the quarter and deck views render with no page errors.
+- **Pictures:** `ships-galleon-quarter.jpg`, `-side`, `-lap`, `-deck`, `-castle` and `-fore`.
+### Needs eyes
+- **The stern windows do not read.** They are dark panes on a transom in shade. Lit, with a gilt or carved frame, they would make the stern.
+- **The gaff and quad sails show their facets** (the cutter's do too), because they are drawn without shared normals.
+- **At 43,200 triangles** she is the heaviest hull. The sixteen strakes over sixty stations are most of it.
+- **Every class has one island's dress.** The other islands' dress for each class waits on #316, #319 and #323, which set the rules (sails, castles, planking).
+- **Not in the game.** That waits for F2a and card F11's parents.
