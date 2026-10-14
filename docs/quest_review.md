@@ -6,19 +6,40 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `c66473e` | run 16, from `64a92af`: Sessions 743–767. Finding 28 checked in the code word for word |
-| auto/systems | `1d3ba48` | run 16: Sessions 770, 776–779 (the night line's frame, the Makers' tools). Finding 29 |
-| auto/backlog | `c66473e` | run 16: level with main |
-| auto/producer | `7dfea6e` | run 16: Session 770's frame, as on auto/systems; Finding 29 covers it |
-| claude/bold-fermi-1wf6zu, claude/creature-bodyplans | `1244eca`, `357b361` | run 16: docs only. Session 771 writes the six great gates and their two paths into the canon, on this branch and not yet on main |
-| auto/critic, auto/wip-sitechest-load | `9266cd5`, `6b986b7` | run 16: behind main, or tests only |
+| main | `1379510` | run 17, from `c66473e`: Sessions 776–803 and 804–820 (the Makers' tools, their trials and claimants, the Waylamp, the woken householder, the guild's hand-back), F1. Findings 29 and the Makers' Things words checked in the code. Finding 30 |
+| auto/systems | `170241a` | run 17: Sessions 827–830, tests and the tag only |
+| auto/backlog, auto/producer, auto/wip-cloak-hang | `828885e`, `28a0473`, `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
+| auto/fable-f1-renderer | `026c76c` | run 17: merged into main (Session 822); no player-readable text but the settings sheet's *Renderer* row |
+| claude/v2-scope | `f712a74` | run 17: docs only (the 2.0 scope, Michael's 1 B, 2 A, 3 A; the third art round) |
+| auto/critic, auto/concept, auto/design, auto/ci-shards, auto/wip-sitechest-load | `a640295`, `1c55a50`, `3fbb26a`, `ef1c187`, `6b986b7` | run 17: behind main, or docs and tests only |
 | auto/proto-ship-hulls | `fab53f6` | unchanged since run 12 |
 | auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
 | auto/wip-moundsolid | `0ff2144` | unchanged since run 11 |
-| auto/concept, auto/design, auto/ci-shards | — | run 15: behind main, nothing ahead in `js/` or `index.html` |
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 17 — 14 Oct 2026
+
+About 210 player-readable strings read, all on main (`c66473e..1379510`); nothing a player reads is ahead of main on any branch. One finding.
+
+**main** (Sessions 776–820, F1). Nearly all of it is this desk's *Makers' Things*, both runs, approved on #263: the hermit's folder, the altars' verses, the six descriptions, the trials' lines (*It comes out of the stone the way a key comes out of a lock: all at once, after nothing.*; *At noon the cairn has no shadow, and the ring is only a ring.*), the Waylamp's innkeepers in four peoples, the claimants (the Crown's *the rolls never forget a thing they never saw*, the Compact's cog, the Prior's *la Navette*), and Corwin's word from Aldwyn. Checked against the draft, they are in word for word, *the Noon Ring* included. Finding 29's four night lines are in as written. The guild's hand-back (*I can’t do it.*) answers in four voices, and the Gatelander's *Better a thing set down than a thing dropped* is right. The menu lines (*Took the Gate-Blade from the stone by …*, *The Compact refitted the … as a cog.*, *Rented … ; the Waylamp's bearer is not charged.*) are plain and right. F1's settings row (*The renderer*) is menu text. The one line out of voice is the guild head's refusal of a second task, which every people says in the same Markish words: Finding 30.
+
+**Drafted:** *The Great Gates, I — the knot at the ring* (`docs/quest_drafts.md`), the first piece of the six great gates, which Michael put first on 13 Oct. It covers the act at a great gate on both paths: where it happens (the knot in the dark at the heart of the ring), cutting and binding with their lines by school, the gain and the cost as one tier of the school's spells, the undo and the way back to the ring, the lock at six bound, and the people's *Any news?* from one torn gate to five, with the three powers' word on each act. The act is asked as **DECISION #292** (A the knot, recommended; B the door; C the heart carried). Next run: the two artifacts' names and lines.
+
+### Finding 30 — main — the guild head turns down a second task in a Markman's words, whoever the head is
+
+**Where.** `83-world-generator.js`, `function offer(g,site)`, its first statement; and `87-world-quests.js`, `function cloakContract(site,p,fee)`, its first statement (grep `You still owe us`). The first is older; the second (Session 789) copies it, so both are found here.
+
+**Text.** `` `You still owe us: ${st.active.short}. ${progressLine(st.active)}.` ``
+
+**Why.** The guild head speaks in the people of the hall's town (`guildDef`, Session 254, quest review run 1, finding 1); every other line the head says, the hand-back beside it included, is written four times. This one is a Markman's: blunt, a debt, no honorific. An Aurennais head would not say it without *Master* and a clause, and a Gatelander would not refuse you without a proverb.
+
+**Replacement.** Add at the top level of `83-world-generator.js` (outside every function, so the later `87-world-quests.js` reaches it; no file declares `OWE_LINES` today):
+`const OWE_LINES={gatelander:(s,p)=>`You'll not plough two fields with the one ox. Yours is still on the board: ${s}. ${p}.`,markman:(s,p)=>`You still owe us: ${s}. ${p}.`,aurennais:(s,p)=>`Forgive me, Master; one contract is closed before the next is entered. Yours is still open: ${s}. ${p}.`,oldblood:(s,p)=>`Yours is not done: ${s}. ${p}.`};`
+In `offer`, the first statement becomes `if(st.active)return (OWE_LINES[gp]||OWE_LINES.markman)(st.active.short,progressLine(st.active));`. `offer` takes the head's people as a third argument: `offer(g,site,gp)`, called as `fn:()=>offer(g,site,gp)` in the topics getter, where `gp` is already in scope for `handBack`. In `cloakContract` the same line becomes `(OWE_LINES[p]||OWE_LINES.markman)(st.active.short,progressLine(st.active))` (`p` is the head's people there already).
+
 ---
 
 ## Run 16 — 13 Oct 2026
