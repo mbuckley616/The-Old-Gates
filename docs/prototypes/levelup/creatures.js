@@ -53,7 +53,7 @@ P.neck = (B, o) => {
   for (let k = 0; k < n; k++) { const a = (o.rise + (o.curve || 0) * (k + .5) / n) * DEG; pts.push(pts[k].clone().add(V(0, Math.sin(a), Math.cos(a)).multiplyScalar(len / n))); }
   const names = B.chain('neck', B.spineNames[B.spineNames.length - 1], pts.slice(0, n));
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'neck', tone: o.tone });
-  B.neckEnd = pts[n]; B.neckBone = names[n - 1];
+  B.neckEnd = pts[n]; B.neckBone = names[n - 1]; B.neckPts = pts; B.neckR = t => along(o.r, t); B.neckS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
 };
 // the head: a skull, a muzzle and a jaw; eyes, ears, horns and antlers are bits on it
 P.head = (B, o) => {
@@ -123,21 +123,22 @@ P.legs = (B, o) => {
     B.legs.push({ names, J, side, at: o.at, pre, hR, ik: pre.ik, yaw: !!pre.yaw, fan, wobble: o.wobble || 0 });
   }
 };
-// arms: hang from a socket (the shoulders, or a seam on the back), swing against the legs; no feet to plant
+// arms: hang from a socket (the shoulders, or a seam on the back), swing against the legs; no feet to plant.
+// Session 861: `s` flattens the flesh (a flipper is an arm squashed flat), and `stroke` beats it as a flipper does
 P.arms = (B, o) => {
   const sp = B.spineAt(o.at), len = o.len, d = (o.dir || [0, -1, .2]);
   for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, o.dz || 0)), dir = V(side * d[0], d[1], d[2]).normalize();
     const elbow = root.clone().addScaledVector(dir, len * .5), d2 = o.dir2 ? V(side * o.dir2[0], o.dir2[1], o.dir2[2]).normalize() : dir.clone().applyAxisAngle(V(1, 0, 0), -(o.bend || 30) * DEG).normalize(), wrist = elbow.clone().addScaledVector(d2, len * .42), hand = wrist.clone().addScaledVector(d2, len * .14);
     const tag = 'arm' + (B.arms.length / 2 | 0) + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, [root, elbow, wrist, hand]);
-    const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone });
+    const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone, s: o.s }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone, s: o.s }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone, s: o.s });
     if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone('dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
     // a pincer (Session 773): a swollen hand and two fingers, the fixed one longer
     if (o.chela) { const c = o.chela; B.meat(names[2], wrist.clone().addScaledVector(d2, -len * .04), hand, c.r, c.r * .8, { s: [1, .62, 1], tone: o.tone, group: tag + 'c' });
       const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
       B.bit(names[3], claw(c.r * .45, c.len * 1.15, B.tone(c.tone || 'dark'), hand.clone().add(V(-side * c.r * .35, 0, 0)), fx));
       B.bit(names[3], claw(c.r * .4, c.len, B.tone(c.tone || 'dark'), hand.clone().add(V(side * c.r * .35, c.r * .15, 0)), mv)); }
-    B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5 });
+    B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5, stroke: o.stroke || 0 });
   }
 };
 // wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh
@@ -176,7 +177,9 @@ P.wings = (B, o) => {
 // fins (Session 774): each a thin sheet on a bone of its own, so the pose can flutter it. A fin is an outline in its own
 // plane (u back along the body, v out from it), scaled by len and h: 'tri' for a dorsal, pectoral, pelvic or anal fin,
 // 'fork' for a fish's tail (v up) or a whale's flukes (v sideways). It hangs off the spine at t, or off the tail's end.
-const FIN = { tri: [[-.15, 0], [.12, .75], [.3, 1], [.45, .8], [.62, .35], [.8, 0]], fork: [[0, .22], [.55, 1], [.42, .5], [.38, .15], [.5, 0], [.38, -.15], [.42, -.5], [.55, -1], [0, -.22]] };
+const FIN = { tri: [[-.15, 0], [.12, .75], [.3, 1], [.45, .8], [.62, .35], [.8, 0]],
+  // Session 864: a moth's wings, the forewing pointed at its tip and the hindwing rounded
+  fore: [[-.05, 0], [-.04, .5], [.06, .94], [.2, 1], [.36, .82], [.5, .52], [.56, .22], [.46, 0]], hind: [[0, 0], [.08, .55], [.28, .88], [.55, .82], [.74, .52], [.8, .2], [.6, 0]], fork: [[0, .22], [.55, 1], [.42, .5], [.38, .15], [.5, 0], [.38, -.15], [.42, -.5], [.55, -1], [0, -.22]] };
 P.fins = (B, o) => { for (const f of o.list) for (const side of f.pair ? [1, -1] : [0]) {
   const onTail = f.on === 'tail', sp = onTail ? null : B.spineAt(f.at), parent = onTail ? B.tailBone : sp.bone;
   const R = onTail ? 0 : sp.r, base = onTail ? B.tailEnd.clone() : sp.p.clone().add(V(side * R * B.spineS[0] * (f.off?.[0] ?? .9), R * B.spineS[1] * (f.off?.[1] ?? 0), f.dz || 0));
@@ -226,6 +229,53 @@ P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) *
   const horn = new THREE.Mesh(new THREE.CylinderGeometry(o.len * .05, o.len * .07, o.len * .22, 10), stdMat(B.tone('leather'), { rough: .6 })); horn.position.copy(sp.p).add(V(0, Ry * 1.12, o.len * .42)); B.bit(sp.bone, horn); };
 P.spines = (B, o) => { for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
   B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), sp.p.clone().add(V(0, sp.r * B.spineS[1] * .85, 0)), V(0, 1, -.35).normalize())); } };
+
+// a coiled shell (Session 862): a tube wound round an axis, growing as it goes, so the whorls stack into a spire. At the
+// mouth the tube is widest; toward the apex it shrinks by `grow` a turn and rises. Spiral bands run along the whorls, pale at
+// the lip, darker in the sutures where one whorl sits on the last. It is rigid on the spine, tilted back over the foot.
+P.coil = (B, o) => { const sp = B.spineAt(o.at), turns = o.turns || 4, N = Math.round(turns * 40), M = 20, k = Math.log(o.grow || 1.9) / (Math.PI * 2), U = turns * Math.PI * 2;
+  const base = B.tone(o.tone || 'shell'), band = B.tone(o.band || 'band'), seam = B.tone('seam'), lip = B.tone('belly'), pos = [], col = [], idx = [];
+  for (let i = 0; i <= N; i++) { const u = i / N * U, g = Math.exp(-k * (U - u)), R = o.R * g, rho = o.r * g, h = o.spire * (1 - g), ca = Math.cos(u), sa = Math.sin(u);
+    for (let j = 0; j <= M; j++) { const a = j / M * Math.PI * 2, out = Math.cos(a), up = Math.sin(a);
+      pos.push((R + rho * out) * ca, h + rho * up * 1.1, (R + rho * out) * sa);
+      const suture = sstep(.55, .95, -up) * sstep(-.2, .6, -out), stripe = sstep(.55, .8, Math.cos(a * (o.bands || 3) + u * .15)), C = base.clone().lerp(band, stripe * .7).lerp(seam, suture * .6).lerp(lip, sstep(U - .5, U, u) * .7);
+      col.push(C.r, C.g, C.b); } }
+  for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) { const a = i * (M + 1) + j, b = a + M + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .45, side: THREE.DoubleSide }));
+  m.rotation.set((o.tilt || 0) * DEG, (o.turn || 0) * DEG, (o.roll || 0) * DEG); m.position.copy(sp.p).add(V(0, sp.r * B.spineS[1] * .6 + (o.lift || 0), o.dz || 0)); B.bit(sp.bone, m); };
+
+// leafy fronds (Session 863): lobed leaves hung off a body's bones, as a leafy sea dragon wears its camouflage. `n` fronds
+// are spread down the chains named in `on`, each leaning out to one side or the other (`out`), back, and up or down (`spread`), seeded
+// by the genome; each is a sheet skinned to its bone, so it sways as the body moves. Lobes are notched into its two edges.
+const LEAF = [[0, 0], [.18, .32], [.42, .5], [.38, .22], [.62, .42], [.78, .2], [1, 0], [.78, -.2], [.62, -.42], [.38, -.22], [.42, -.5], [.18, -.32]];
+P.fronds = (B, o) => { const r = rng(B.g.seed + 21), names = (o.on || ['spine']).flatMap(c => c === 'spine' ? B.spineNames : c === 'head' ? ['head'] : (B.chains[c] || []));
+  for (let i = 0; i < o.n; i++) { const nm = names[Math.min(names.length - 1, Math.floor((i + .5) / o.n * names.length))], b = B.by[nm], side = i % 2 ? 1 : -1;
+    const d = V(side * (o.out ?? .7) * (.6 + .4 * r()), (r() - .5) * 2 * (o.spread ?? .6) + (o.lift || 0), -(o.back ?? .4) - .3 * r()).normalize(), a = d.clone().cross(V(1, 0, 0)).normalize(), L = o.len * (.7 + .6 * r()), W = o.w * (.8 + .4 * r());
+    const base = b.p.clone().add(V(side * (o.root || 0), 0, 0)), pts = LEAF.map(([u, v]) => base.clone().addScaledVector(d, u * L).addScaledVector(a, v * W)), tris = [];
+    for (let k = 1; k < pts.length - 1; k++) tris.push(0, k, k + 1); tris.push(0, pts.length - 1, 1);
+    const c0 = B.tone(o.tone || 'frond'), c1 = B.tone(o.tip || o.tone || 'frond'); B.sheets.push({ pts, tris, bones: pts.map(() => b.i), cols: LEAF.map(([u]) => c0.clone().lerp(c1, u)) }); } };
+
+// packs (Session 867): what a beast of burden carries. Two panniers hang either side of the spine at `at`, over a canvas
+// blanket, joined by a strap across the back, with a bedroll lashed on top. All rigid on the spine bone, clear of the fur.
+P.packs = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl, L = o.len, W = o.w ?? L * .38, H = o.h ?? L * .7;
+  const box = (w, h, d, c, p, rough = .8) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 2, 2, 2), stdMat(c, { rough })); m.position.copy(p); B.bit(sp.bone, m); return m; };
+  const blanket = new THREE.CylinderGeometry(1, 1, L * 1.15, 24, 1, true, Math.PI / 2 - 1.25, 2.5); blanket.rotateZ(Math.PI / 2); blanket.rotateY(Math.PI / 2); blanket.scale(R * 1.04, Ry * 1.04, 1);
+  const bm = new THREE.Mesh(blanket, stdMat(B.tone('blanket'), { rough: .9 })); bm.material.side = THREE.DoubleSide; bm.position.copy(sp.p); B.bit(sp.bone, bm);
+  for (const sd of [1, -1]) { const p = sp.p.clone().add(V(sd * (R * 1.06 + W / 2), -Ry * .3 - H * .5, 0)); box(W, H, L, B.tone('pack'), p);
+    box(W * 1.04, H * .16, L * 1.02, B.tone('leather'), p.clone().add(V(0, H * .5, 0)), .6);
+    box(W * .1, Ry * .9 + H * .2, L * .12, B.tone('leather'), sp.p.clone().add(V(sd * R * .98, -Ry * .35, 0)), .6); }
+  box(R * 2.1, Ry * .08, L * .12, B.tone('leather'), sp.p.clone().add(V(0, Ry * 1.05, 0)), .6);
+  if (o.roll !== false) { const g = new THREE.CylinderGeometry(L * .16, L * .16, R * 2.2, 14); g.rotateZ(Math.PI / 2); const m = new THREE.Mesh(g, stdMat(B.tone('roll'), { rough: .9 })); m.position.copy(sp.p).add(V(0, Ry * 1.05 + L * .16, -L * .2)); B.bit(sp.bone, m); } };
+// harness (Session 867): a draught horse's padded collar round the base of its neck, or an ox's wooden yoke over its
+// neck with a bow under it. Rigid on the first neck bone, so the head moves free of it.
+P.harness = (B, o) => { const t = o.at ?? .2, np = B.neckPts, f = t * (np.length - 1), i = Math.min(np.length - 2, Math.floor(f)), c = np[i].clone().lerp(np[i + 1], f - i), d = np[i + 1].clone().sub(np[i]).normalize();
+  const fl = (B.plan.fur?.len || 0) * .8, k = o.fit ?? 1.1, rx = (B.neckR(t) * B.neckS[0] + fl) * k, ry = (B.neckR(t) * B.neckS[1] + fl) * k, q = new THREE.Quaternion().setFromUnitVectors(V(0, 0, 1), d), bone = B.chains.neck[i];
+  if (o.kind === 'collar') { const g = new THREE.TorusGeometry(1, .2, 12, 32); g.scale(rx, ry, rx); const m = new THREE.Mesh(g, stdMat(B.tone('leather'), { rough: .55 })); m.quaternion.copy(q); m.position.copy(c); B.bit(bone, m);
+    for (const sd of [1, -1]) { const h = new THREE.Mesh(new THREE.CylinderGeometry(rx * .06, rx * .06, ry * 2.1, 8), stdMat(B.tone('brass'), { rough: .35 })); h.quaternion.copy(q).multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 0, 1), sd * .08));
+      h.position.copy(c).add(V(sd * rx * 1.2, ry * .15, 0)); B.bit(bone, h); } }
+  else { const wb = new THREE.Mesh(new THREE.BoxGeometry(rx * 2 + o.over * 2, ry * .32, ry * .38), stdMat(B.tone('wood'), { rough: .75 })); wb.quaternion.copy(q); wb.position.copy(c).add(V(0, ry * .82, 0)); B.bit(bone, wb);
+    const g = new THREE.TorusGeometry(1, .05, 8, 24, Math.PI); g.rotateZ(Math.PI); g.scale(rx, ry * .95, rx); const bow = new THREE.Mesh(g, stdMat(B.tone('wood'), { rough: .75 })); bow.quaternion.copy(q); bow.position.copy(c).add(V(0, ry * .66, 0)); B.bit(bone, bow); } };
 
 // ── bits: small rigid meshes ──
 const MATS = new Map();
@@ -389,23 +439,24 @@ export const SLIDERS = { size: [.5, 3], leg: [.6, 1.6], bulk: [.7, 1.4], neck: [
 export function genome(plan, key, over = {}) {
   const seed = typeof key === 'number' ? key : hashKey(key), r = rng(seed), P0 = PLANS[plan], spread = P0.spread ?? .06;
   const sliders = {}, q = v => Math.round(v * 1000) / 1000; for (const k in SLIDERS) sliders[k] = q(1 + (r() - .5) * 2 * spread * (k === 'size' ? 1.5 : 1));
-  return { plan, seed, sliders: { ...sliders, ...(over.sliders || {}) }, tint: over.tint ?? q((r() - .5) * .1), light: over.light ?? q((r() - .5) * .14) };
+  const g = { plan, seed, sliders: { ...sliders, ...(over.sliders || {}) }, tint: over.tint ?? q((r() - .5) * .1), light: over.light ?? q((r() - .5) * .14) };
+  if (ISLES.includes(over.island)) g.island = over.island; return g;
 }
 // the saved genome (Session 807, B5): the envelope a person's has (people.js, toSaved), so one page and one loader (kit.js)
 // take both. A hand-edited genome is held to the sliders' ranges; a slider the kit does not know is dropped.
 const q3 = v => Math.round(v * 1000) / 1000;
-export function toSaved(g) { return { species: 'creature', v: 1, plan: g.plan, seed: g.seed, sliders: Object.fromEntries(Object.keys(SLIDERS).map(k => [k, q3(g.sliders?.[k] ?? 1)])), tint: q3(g.tint || 0), light: q3(g.light || 0) }; }
+export function toSaved(g) { return { species: 'creature', v: 1, plan: g.plan, seed: g.seed, sliders: Object.fromEntries(Object.keys(SLIDERS).map(k => [k, q3(g.sliders?.[k] ?? 1)])), tint: q3(g.tint || 0), light: q3(g.light || 0), ...(g.island ? { island: g.island } : {}) }; }
 export function fromSaved(J) {
   if (!J || J.species !== 'creature') throw new Error('not a creature genome'); if (J.v !== 1) throw new Error('creature genome version ' + J.v + ', the kit reads 1');
   if (!PLANS[J.plan]) throw new Error('no body plan called ' + J.plan); const g = genome(J.plan, J.seed ?? J.plan);
   for (const [k, [lo, hi]] of Object.entries(SLIDERS)) if (typeof J.sliders?.[k] === 'number') g.sliders[k] = q3(Math.max(lo, Math.min(hi, J.sliders[k])));
-  for (const k of ['tint', 'light']) if (typeof J[k] === 'number') g[k] = q3(Math.max(-.5, Math.min(.5, J[k]))); return g;
+  for (const k of ['tint', 'light']) if (typeof J[k] === 'number') g[k] = q3(Math.max(-.5, Math.min(.5, J[k]))); if (ISLES.includes(J.island)) g.island = J.island; return g;
 }
 
 // ── build: run the plan's parts, grow the flesh, bind it to the skeleton ──
 export function build(g) {
   const plan = PLANS[g.plan], t0 = performance.now(), pal = {};
-  for (const [k, c] of Object.entries(plan.palette)) { const C = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), hsl = {}; C.getHSL(hsl); C.setHSL((hsl.h + g.tint + 1) % 1, hsl.s, Math.max(0, Math.min(1, hsl.l * (1 + g.light)))); pal[k] = C; }
+  for (const [k, c] of Object.entries({ ...plan.palette, ...(COATS[g.island]?.[g.plan] || {}) })) { const C = new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), hsl = {}; C.getHSL(hsl); C.setHSL((hsl.h + g.tint + 1) % 1, hsl.s, Math.max(0, Math.min(1, hsl.l * (1 + g.light)))); pal[k] = C; }
   const sg = { ...g, sliders: { ...g.sliders, size: 1 } }; // parts build at size 1; the size slider scales the finished body
   const B = new Body(plan, sg); B.tone = t => pal[t] || pal.coat;
   for (const [part, o] of plan.parts) P[part](B, o);
@@ -422,7 +473,7 @@ export function build(g) {
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
     for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
-  if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
+  if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: plan.finRough ?? .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
   if (B.tubes.length) { const m = new THREE.SkinnedMesh(tubeGeo(B, pal, plan.threadGlow || 1), plan.threadGlow ? new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 })); m.name = 'threads'; meshes.push(m); }
   for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75, ...(plan.wingOpacity < 1 ? { transparent: true, opacity: plan.wingOpacity, depthWrite: false } : {}) })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
@@ -540,7 +591,7 @@ export function pose(C, phase) {
   // a fish's wave (Session 774): from head to tail, growing toward the tail; a whale's runs in the vertical plane
   if (G.swim) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])], N = all.length, ax = C.plan.swimAxis === 'x' ? 'x' : 'y', A = C.plan.waveAmp ?? .22;
     all.forEach((nm, k) => { const u = k / (N - 1); C.byName[nm].rotation[ax] += A * (.08 + Math.pow(u, 1.6)) * Math.sin(tau * (ph - u * (C.plan.waveLen ?? .9))) / (k < spn.length ? 2 : 1); }); }
-  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * .22 * Math.sin(tau * ph * (G.swim ? 1 : .4))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
+  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * .22 * Math.sin(tau * ph * (G.swim ? 1 : .4))); else if (F.kind === 'wing') b.rotation.set(0, 0, (F.side || 1) * (G.flap ? .1 + .8 * Math.sin(tau * ph * 2) : .28 + .04 * Math.sin(tau * ph))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
   // radial arms: an octopus's ripple round the ring, a jellyfish's bell that beats and threads that trail it
   for (const Rr of B.radials) { const axis = V(-Math.sin(Rr.a), 0, Math.cos(Rr.a)), np = Rr.names.length;
     for (let j = 0; j < np - 1; j++) { const b = C.byName[Rr.names[j]]; let ang;
@@ -551,7 +602,13 @@ export function pose(C, phase) {
   if (G.bell || (B.radials.length && C.plan.bellBone)) { const beat = Math.pow(Math.max(0, Math.sin(tau * ph)), 2), s = 1 - (G.bell ? .14 : .04) * beat; sp.scale.set(s, 1 + (1 - s) * .7, s); sp.position.y += (G.bell ? .03 : .01) * C.len / C.S * Math.sin(tau * ph - 1); }
   else if (G.ripple && B.radials.length) sp.position.y += .015 * C.len / C.S * Math.sin(tau * ph * 2);
   // arms swing against the legs; wings rest half-folded, breathing, or beat
-  for (const A of B.arms) { const s = A.swing * Math.sin(tau * ph + (A.side > 0 ? 0 : Math.PI) + A.phase); C.byName[A.names[0]].rotation.set(s, 0, 0); C.byName[A.names[1]].rotation.set(-Math.abs(s) * .6 - .2, 0, 0); C.byName[A.names[2]].rotation.set(.25 * Math.sin(tau * ph * 2 + A.side), 0, 0); }
+  // a flipper (Session 861) flies through the water: it beats down and up, sweeps back on the downstroke and feathers on the way up
+  for (const A of B.arms) if (A.stroke) { const sd = A.side, w = tau * ph * (G.swim ? 1 : .4) + A.phase, k = A.stroke * (G.swim ? 1 : .25);
+    const beat = Math.sin(w) * (Math.sin(w) > 0 ? .55 : 1);
+    C.byName[A.names[0]].rotation.set(.45 * k * Math.cos(w), sd * .35 * k * Math.cos(w), sd * k * beat);
+    C.byName[A.names[1]].rotation.set(0, sd * .15 * k * Math.cos(w - .5), sd * .25 * k * Math.sin(w - .6));
+    C.byName[A.names[2]].rotation.set(0, 0, sd * .2 * k * Math.sin(w - 1.2)); }
+  for (const A of B.arms) if (!A.stroke) { const s = A.swing * Math.sin(tau * ph + (A.side > 0 ? 0 : Math.PI) + A.phase); C.byName[A.names[0]].rotation.set(s, 0, 0); C.byName[A.names[1]].rotation.set(-Math.abs(s) * .6 - .2, 0, 0); C.byName[A.names[2]].rotation.set(.25 * Math.sin(tau * ph * 2 + A.side), 0, 0); }
   // a bird's wing folds in a Z against its side (humerus back, forearm forward, hand back), or beats: down hard, up folded a little
   for (const W of B.wings) if (W.feathered) { const fold = G.flap ? 0 : (C.plan.wingFold ?? 1), s = W.side, beat = G.flap ? Math.sin(tau * ph) : 0, up = G.flap ? Math.max(0, -Math.cos(tau * ph)) : 0;
     C.byName[W.arm[0]].rotation.set(.1 * fold, s * 1.2 * fold, s * (.55 * beat - .25 * fold));
@@ -569,7 +626,8 @@ export function pose(C, phase) {
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
-    if (G.aloft) { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; }
+    // aloft, the feet tuck up and back; an insect's splayed legs only lift a little and hang (Session 864)
+    if (G.aloft) { if (L.yaw) { T.y += (C.plan.flyH || 0) - .1 * L.hR; T.x = lerp(T.x, L.rest[0].x, .25); } else { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; } }
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
     worst = Math.max(worst, solveLeg(C, L, T, fold));
   }
@@ -904,6 +962,42 @@ Object.assign(PLANS, {
 });
 // the common set, for the page and the check
 export const COMMON = ['wolf', 'redfox', 'brownhare', 'raven', 'crow', 'boar', 'deer', 'badger', 'otter', 'trout'];
+// the common set and the farms' livestock by island (Sessions 865, 866; OG-084: "the shared base set that can be built once and recoloured"). A genome may
+// carry an island; its plan's palette then takes that island's coat over the plan's own. The plans are the Gatelands' (the
+// temperate middle); the Mark's coats run colder, greyer and paler, Aurenne's sandier and warmer, as animals' do with
+// climate. Only the coat changes: the same bones, the same flesh. The raven is black on every island.
+export const ISLES = ['gatelands', 'mark', 'aurenne'];
+export const COATS = {
+  mark: {
+    wolf: { coat: [.62, .6, .56], saddle: [.36, .35, .33], belly: [.9, .88, .84] },
+    redfox: { coat: [.7, .4, .22], saddle: [.32, .24, .2], belly: [.96, .94, .9] },
+    brownhare: { coat: [.62, .58, .52], saddle: [.48, .44, .38], belly: [.94, .92, .88] },
+    crow: { coat: [.48, .48, .5], belly: [.56, .56, .58], covert: [.45, .45, .48] },
+    boar: { coat: [.24, .22, .2], saddle: [.13, .12, .11], belly: [.34, .31, .28] },
+    deer: { coat: [.5, .42, .34], saddle: [.36, .3, .24], belly: [.88, .86, .8] },
+    badger: { coat: [.58, .57, .56], saddle: [.44, .43, .42] },
+    otter: { coat: [.24, .18, .13], saddle: [.17, .12, .09], belly: [.5, .44, .36] },
+    trout: { coat: [.5, .54, .52], saddle: [.24, .3, .32], belly: [.94, .94, .92], fin: [.4, .42, .4] },
+    // the farms' breeds (Session 866): a black hill cow, a dark brown fleece, a white goat, a grey speckled hen
+    cow: { coat: [.1, .08, .08], saddle: [.07, .06, .06], pale: [.12, .1, .09], belly: [.16, .13, .12] },
+    sheep: { coat: [.3, .22, .16], saddle: [.26, .19, .14], belly: [.24, .18, .13] },
+    goat: { coat: [.84, .82, .78], saddle: [.74, .72, .68], belly: [.9, .88, .84] },
+    hen: { coat: [.5, .48, .46], saddle: [.24, .23, .22], belly: [.62, .6, .58] } },
+  aurenne: {
+    wolf: { coat: [.64, .56, .46], saddle: [.42, .34, .26], belly: [.9, .86, .78] },
+    redfox: { coat: [.84, .62, .38], saddle: [.68, .48, .28], belly: [.97, .94, .88] },
+    brownhare: { coat: [.74, .62, .46], saddle: [.58, .46, .32], belly: [.94, .9, .82] },
+    crow: { coat: [.34, .22, .14], belly: [.36, .24, .16], covert: [.36, .25, .16], feather: [.16, .12, .1] },
+    boar: { coat: [.46, .36, .26], saddle: [.3, .22, .16], belly: [.56, .46, .36] },
+    deer: { coat: [.64, .5, .36], saddle: [.5, .38, .26], belly: [.94, .9, .82] },
+    badger: { coat: [.66, .64, .6], saddle: [.52, .5, .47] },
+    otter: { coat: [.42, .3, .2], saddle: [.32, .22, .14], belly: [.72, .62, .48] },
+    trout: { coat: [.64, .56, .32], saddle: [.42, .36, .18], belly: [.94, .88, .66], fin: [.54, .46, .28] },
+    // the farms' breeds (Session 866): a pale cream cow, a tan fleece, a black goat, a buff-gold hen
+    cow: { coat: [.84, .76, .62], saddle: [.74, .64, .5], pale: [.88, .82, .7], belly: [.92, .88, .8] },
+    sheep: { coat: [.82, .68, .5], saddle: [.74, .6, .42], belly: [.76, .62, .46] },
+    goat: { coat: [.16, .13, .12], saddle: [.09, .08, .07], belly: [.24, .2, .18] },
+    hen: { coat: [.86, .66, .36], saddle: [.7, .5, .24], belly: [.9, .74, .46] } } };
 // ── Session 844: livestock (backlog L3; OG-023 and OG-035, the farms): the cow, the sheep, the goat and the hen ──
 Object.assign(PLANS, {
   cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6, pattern: { kind: 'patches', size: .32, cut: .12, tone: 'pale' },
@@ -1294,3 +1388,82 @@ Object.assign(PLANS, {
     parts: [...PLANS.miresnake.parts.map(([k, o]) => k === 'head' ? [k, { ...o, jaw: { len: .9, r: .016, drop: .5 }, horns: { len: .05, r: .005, f: .2, up: .9, out: .5, turn: .3, rise: .3, back: 1, spread: .3 } }] : [k, o]), ['spines', { n: 16, from: .05, to: 1, len: .025, r: .005, tone: 'horn', taper: .3 }]] })
 });
 SEA.push('abyssalangler', 'stonefish', 'crimsonleviathan');
+// ── Session 861: the turtles of OG-016 and OG-084 (backlog L3). A sea turtle is the tortoise's low body under a flatter
+// shell, with flippers for legs: the front pair long and beating together, the rear pair short and steering. The maw turtle
+// is the same turtle at an island's size, with a reef growing on its back ──
+const seaTurtle = o => [
+  ['spine', { hip: [.35, -.45], chest: [.37, .4], n: 3, r: [.18, .2, .16], s: [2, .6], rump: .06, front: .06 }],
+  ['neck', { len: .2, n: 2, rise: 4, r: [.09, .07], fwd: .02 }],
+  ['head', { len: .21, r: .085, pitch: 6, muzzle: { len: 1, r: .062, taper: .72 }, jaw: { len: .85, r: .045, drop: .45 }, eyes: [{ f: .42, up: .35, out: .8, r: .017, color: [.06, .05, .04] }] }],
+  ['tail', { len: .12, n: 2, r: [.05, .015], droop: 8 }],
+  ['arms', { at: .92, out: .26, up: -.05, dz: .1, len: .64, r: [.06, .085, .05], s: [1, .3, 1], dir: [1, -.12, -.12], dir2: [.7, -.06, -.7], swing: 0, stroke: .6, tone: 'coat' }],
+  ['arms', { at: .06, out: .24, up: -.05, len: .3, r: [.05, .07, .045], s: [1, .3, 1], dir: [.7, -.1, -.7], dir2: [.35, -.02, -.94], swing: 0, stroke: .18, phase: Math.PI, tone: 'coat' }],
+  ['shell', { at: .5, lift: -.01, len: 1.05, w: .92, h: .26, scute: .2, rough: .45, ...o }]];
+Object.assign(PLANS, {
+  seaturtle: { name: 'Sea turtle', src: 'OG-084 (marine life: turtles), OG-016 (the coastal reefs)', gaits: ['swim', 'stand'], bl: .45, waveAmp: .015, cell: .016, water: 1.4, rough: .45, mottle: 1.4, wag: .02, pant: .02, neckNod: .02,
+    palette: { coat: [.44, .44, .32], saddle: [.3, .3, .2], belly: [.84, .78, .58], dark: [.05, .05, .04], shell: [.44, .32, .16], seam: [.2, .13, .06] },
+    pattern: { kind: 'patches', size: .03, cut: .4, tone: 'saddle' },
+    parts: seaTurtle({}) }
+});
+Object.assign(PLANS, {
+  mawturtle: re(PLANS.seaturtle, { name: 'Maw Turtle', src: 'OG-016 (deep and legendary: carries an ecosystem on its back)', scale: 11, bl: .08, mottle: 2.2, rough: .85, water: .62, cell: .016, pattern: null,
+    palette: { coat: [.34, .36, .32], saddle: [.24, .25, .22], belly: [.62, .6, .5], dark: [.04, .04, .04], shell: [.4, .4, .37], seam: [.2, .2, .18], moss: [.22, .34, .26], fern: [.18, .4, .26], bloom: [.92, .46, .38], bloom2: [.95, .78, .5] },
+    parts: seaTurtle({ h: .3, top: 'moss', rough: .9, garden: { ferns: 70, flowers: 90, size: .11 } }) })
+});
+SEA.push('seaturtle', 'mawturtle');
+// ── Session 862: the pierwinkle (OG-016's tide pools). A sea snail: a broad foot, a head with two eye stalks, and the coiled
+// shell. It creeps at a tenth of its length a second. The kelpstrider still waits for a leafy frond ──
+Object.assign(PLANS, {
+  pierwinkle: { name: 'Pierwinkle', src: 'OG-016 (coastal: a snail of the tide pools and the piers)', gaits: ['crawl', 'stand'], scale: .16, bl: .1, water: 1.1, rough: .35, mottle: 1, wag: 0, pant: 0, neckNod: .05,
+    palette: { coat: [.5, .44, .38], saddle: [.36, .3, .26], belly: [.92, .84, .7], dark: [.05, .04, .04], shell: [.4, .18, .34], seam: [.14, .07, .14], band: [.82, .66, .62] },
+    parts: [
+      ['spine', { hip: [.05, -.24], chest: [.06, .16], n: 4, r: [.04, .065, .06], s: [1.35, .55], rump: .1, rumpTaper: .4, front: .04 }],
+      ['neck', { len: .07, n: 1, rise: 30, r: [.045, .04] }],
+      ['head', { len: .08, r: .04, pitch: 30, stalks: { f: .55, up: 2.8, out: .7, r: .012, len: .1, color: [.05, .04, .04] } }],
+      ['coil', { at: .4, lift: .06, R: .1, r: .125, spire: .28, turns: 4, grow: 1.9, tilt: -60, turn: 180, bands: 3 }]
+    ] }
+});
+SEA.push('pierwinkle');
+// ── Session 863: the kelpstrider (OG-016's kelp forests): a leafy seahorse. The body stands upright on the spine (hip low,
+// chest high), the neck bends the head forward, the tail curls forward under it, and leafy fronds hang off all of it ──
+Object.assign(PLANS, {
+  kelpstrider: { name: 'Kelpstrider', src: 'OG-016 (coastal: a leafy seahorse of the kelp forests)', gaits: ['swim', 'stand'], bl: .15, swimAxis: 'x', waveAmp: .06, water: .5, cell: .004, rough: .5, mottle: 1.8, wag: .15, pant: .02, neckNod: .04, finOpacity: .9,
+    palette: { coat: [.66, .54, .2], saddle: [.5, .38, .14], belly: [.8, .7, .36], dark: [.04, .04, .03], fin: [.8, .72, .4], frond: [.46, .54, .18], frondTip: [.7, .62, .24] },
+    parts: [
+      ['spine', { hip: [.13, -.012], chest: [.25, .012], n: 4, r: [.022, .03, .026], s: [.75, 1], arch: -.012 }],
+      ['neck', { len: .035, n: 2, rise: 75, curve: -90, r: [.02, .016] }],
+      ['head', { len: .085, r: .019, pitch: 35, muzzle: { len: 1, r: .0075, taper: .9 }, eyes: [{ f: .2, up: .45, out: .75, r: .0055, color: [.12, .08, .03] }] }],
+      ['tail', { len: .17, n: 6, r: [.02, .005], droop: 88, curl: -28 }],
+      ['fins', { list: [{ at: .45, off: [0, 0], dz: -.025, out: [0, 0, -1], back: [0, -1, 0], len: .035, h: .018, role: 'pec' }] }],
+      ['fronds', { on: ['head', 'neck', 'spine', 'tail'], n: 28, len: .1, w: .045, out: .35, spread: .9, back: .7, tip: 'frondTip' }]
+    ] }
+});
+SEA.push('kelpstrider');
+// ── Session 864: the Glasswing Moth (OG-030: oases and ruins; crystalline wings, drawn to moonlight and flowers; a night
+// ingredient), the last of Aurenne's fifteen. An insect's six legs under a furry moth body, and four wings as sheets of
+// glass: clear, glossy and faintly blue, faceted by the kit's per-vertex tint. Held half-raised at rest; in the air they beat ──
+Object.assign(PLANS, {
+  glasswingmoth: { name: 'Glasswing Moth', src: 'OG-030 (oases and ruins; crystalline wings drawn to moonlight and flowering plants)', gaits: ['walk', 'soar', 'stand'], scale: .1, cell: .01, speedK: .8, flyH: .9, wag: 0, pant: 0, neckNod: .02, rough: .7, finOpacity: .38, finRough: .08,
+    palette: { coat: [.86, .82, .72], saddle: [.62, .56, .46], belly: [.92, .9, .84], dark: [.05, .05, .06], skin: [.7, .64, .54], horn: [.66, .6, .5], glass: [.8, .92, 1] },
+    fur: { len: .02, layers: 6, sx: 220, droop: .3 },
+    parts: [
+      ['spine', { hip: [.24, -.2], chest: [.25, .1], n: 3, r: [.06, .085, .075], rump: .2, rumpTaper: .35, front: .04 }],
+      ['head', { len: .08, r: .058, pitch: 15, eyes: [{ f: .55, up: .2, out: .78, r: .034, color: [.12, .16, .22] }], horns: { len: .3, r: .007, f: .4, up: .85, out: .35, turn: .12, rise: .8, back: -.6, spread: .5 } }],
+      ['legs', { at: .95, kind: 'insect', out: .07, drop: .03, fan: 35, reach: .45, r: [.014, .012, .009, .006] }],
+      ['legs', { at: .6, kind: 'insect', out: .075, drop: .03, fan: 0, reach: .5, r: [.014, .012, .009, .006] }],
+      ['legs', { at: .25, kind: 'insect', out: .07, drop: .03, fan: -35, reach: .45, r: [.014, .012, .009, .006] }],
+      ['fins', { list: [
+        { at: .9, kind: 'fore', off: [.6, .55], out: [1, .12, 0], back: [0, 0, -1], len: .42, h: .72, pair: 1, role: 'wing', tone: 'glass' },
+        { at: .6, kind: 'hind', off: [.6, .45], out: [1, .06, -.25], back: [0, 0, -1], len: .36, h: .5, pair: 1, role: 'wing', tone: 'glass' }] }]
+    ] }
+});
+AURENNE.push('glasswingmoth');
+// ── Session 867: harness and packs on the beasts of burden (OG-046's roads). The pack mule carries panniers and a bedroll,
+// the draught horse wears a collar with brass hames, the ox a yoke and bow; they are the same animals, with what they carry ──
+const GEAR = { blanket: [.46, .36, .22], pack: [.5, .42, .3], leather: [.3, .19, .1], roll: [.36, .32, .24], brass: [.72, .56, .26], wood: [.42, .3, .18] };
+Object.assign(PLANS, {
+  packmule: re(PLANS.mule, { name: 'Pack mule', src: 'OG-046 (beasts of burden: the mule with its packs)', scale: PLANS.mule.scale, palette: { ...PLANS.mule.palette, ...GEAR }, parts: [...PLANS.mule.parts, ['packs', { at: .55, len: .55 }]] }),
+  draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .1, fit: 1.4 }]] }),
+  yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
+});
+export const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];

@@ -18202,3 +18202,366 @@ A room may still be larger inside than its house is outside, as games do: the in
   - The tower's door is at the new height, 2.48 with its head, while the tower's rooms keep their old size (its stair climbs the 30 m its outside shows).
 - **Owed to F2b:** the gameplay ranges that now act in smaller rooms. A sleeper hears you at 2 m, the witness sees 6 m and E reaches 1.6, so in a 5 m cottage everything is within a sleeper's or a keeper's reach. At 6h a woken resident sees 2 or 3 of a cottage's 11 free spots, depending on which way they face.
 - **Not run here:** the suites outside the rooms; CI's twelve shards are their check.
+## v80 — Session 861 — Flippers in the kit: a sea turtle and the maw turtle (backlog L3, prototype only)
+Session 854 left the turtles owed from OG-016 and OG-084, because the kit had no flipper. Under FREEZE #297 this run works only in the prototypes, so this is the kit and two plans in `creatures.js`, and the sea is now twenty-two.
+
+**The flipper.** It is not a new part. It is the kit's arm with two small additions. `s` flattens the arm's flesh, the same per-axis scale the spine and tail already take, so a three-bone arm squashed to 0.3 of its height becomes a paddle. `stroke` makes the pose beat it as a turtle flies through water: down and up about the body's long axis, swept back on the downstroke, feathered on the way up. The upstroke is held to 0.55 of the downstroke so the flipper does not rise through the shell's edge. The swim gait beats it once a stride. Standing, it beats at a quarter of the swim's amplitude, a slow paddle. Arms with no `stroke` swing as before. Their flesh takes `s` only when a plan gives one, and no existing plan does, so nothing else changes.
+
+- **Sea turtle:** the tortoise's low body, widened (spine scaled 2 across, 0.6 high), under a flatter shell (1.05 m long, 0.92 wide, 0.26 high, scutes 0.2 m). It has a short neck and a blunt head. The front flippers are 0.64 m and beat together; the rear ones are 0.3 m, a half-stride behind, and mostly steer. The spine's wave is nearly off (0.015), so the shell stays still while the flippers work. Its hide is olive with darker patches and its shell red-brown. It swims at 0.45 body lengths a second.
+- **Maw Turtle:** OG-016's deep and legendary turtle that "carries an ecosystem on its back". It is the same turtle at 11 times the size, about 11.5 m of shell. The shell is a greyer, rougher stone, with the Mossback's garden on top: 70 tufts of green-blue weed and 90 coral-red and pale blooms. Its water line (0.62) puts the garden above the surface, so from a deck it is a reef island until it moves. It swims at 0.08 body lengths a second.
+
+Both set the flesh grid's cell to 0.016. Left to itself, the kit sizes the cell from the thinnest flesh, which is the flattened flipper (0.0095 m). The first build of the sea turtle came out at 106,876 triangles for that reason.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 799 checks pass** across 104 plans, with the sea check now counting twenty-two.
+  - The sea turtle builds in 0.62 s, with 25 bones and 26,168 triangles; the maw turtle in 0.53 s, with 25 bones and 26,340 triangles.
+  - Every skin weight sums to one, and both genomes are 153 and 155 bytes.
+- **Speeds:** the sea turtle swims at 0.75 m/s, and the maw turtle at 1.39.
+- **Pictures:** `creatures-seaturtle.jpg`, `creatures-mawturtle.jpg` and their `-bones` pictures. The first shots showed the front flipper raised through the shell's front edge and a pale band where the shell's rim overhung a narrow body. The flipper's root was moved forward and out, the upstroke shortened and the body widened, and the second shots show neither.
+### Needs eyes
+- **The flippers are flat paddles of even thickness.** A real turtle's front flipper is long and curved like a wing, with a scaled leading edge. A tapered outline would want a fin-like sheet with skin, which the kit does not have.
+- **The maw turtle's garden** is the Mossback's land garden recoloured as weed and coral. A reef wants kelp that streams and barnacled rock, and the shell has no rock lumps of its own.
+- **The bestiary's water plane** does not show in these stills, which matches the other swimmers' pictures.
+
+## v80 — Session 862 — A coiled shell in the kit: the pierwinkle (backlog L3, prototype only)
+The pierwinkle is OG-016's tide-pool snail, drawn there in purple beside the tidecrab. Session 856 left it owed because the kit had no coiled shell. This adds the part (`coil` in `creatures.js`) and the plan, and the sea is now twenty-three. It is prototype only, under FREEZE #297.
+
+**The coil.** A tube is wound round an axis and grows as it goes, so its whorls stack into a spire. Toward the apex it shrinks by `grow` each turn (1.9 here) and rises toward `spire`; at the mouth it is widest. The colours are vertex colours:
+- spiral bands run along the whorls (`bands`, three per round of the tube) in the plan's `band` tone;
+- the sutures, where one whorl sits on the last, are darkened;
+- the lip at the mouth is paled toward the belly.
+
+It is one rigid mesh on a spine bone. `tilt`, `turn` and `roll` set it on the body: here it leans back 60° over the foot, turned so the mouth faces down and back onto it. Four turns at 40 steps a turn by 20 round make 6,400 triangles.
+
+**Pierwinkle:** a broad flat foot on four spine bones that tapers to a point behind, a short neck, a head with two dark eye stalks (the Tidecrab's), and the shell. The shell is purple with pale pink bands and dark sutures. The snail is built at ten times its size and scaled by 0.16, so it is about 8 cm long. It creeps at a tenth of its length a second.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 804 checks pass** across 105 plans, with the sea check now counting twenty-three.
+- **The build:** the pierwinkle builds in 0.25 s, with 6 bones and 14,552 triangles; its skin weights sum to one and its genome is 156 bytes. A first build with three spine bones (5 in all) failed the kit's "more than five bones" check, so the foot has four.
+- **Pictures:**
+  - `creatures-pierwinkle.jpg` is at its true size beside the figure, a speck.
+  - `creatures-pierwinkle-close.jpg` (side) and `-close-front.jpg` were shot at ten times its size to show the shell. The first close shot had a plain shell, with the bands too faint against the purple; the bands were made pale and sharp.
+### Needs eyes
+- **The mouth of the shell is the tube's open end.** It has no flared lip or operculum, and from the front the open ring shows beside the head.
+- **The coil is smooth.** A periwinkle's shell has fine growth lines across the whorls, which the vertex colours do not draw.
+- **The kelpstrider** (a leafy seahorse) still waits for a frond part.
+
+## v80 — Session 863 — Leafy fronds in the kit: the kelpstrider (backlog L3, prototype only)
+The kelpstrider was the last of OG-016's twenty sea animals still owed: a leafy seahorse of the kelp forests. It needed a part the kit lacked. This adds `fronds` to `creatures.js` and the plan, and the sea is now twenty-four. Every animal on OG-016 is now a plan. It is prototype only, under FREEZE #297.
+
+**The fronds.** They are lobed leaves hung off a body's bones. `n` of them are spread down the chains named in `on` (here the head, the neck, the spine and the tail), alternating sides. Each leans out (`out`), back (`back`) and up or down (`spread`), with its length, width and lean seeded by the genome. A frond is a twelve-point outline with two notches in each edge, coloured from the `frond` tone at its root to `frondTip` at its end. Each is a sheet skinned to its bone, so it sways as the body moves. The leaf's plane is set across the body's side, so the leaves face a side view rather than showing their edges. The first pictures had the leaves lying flat and seen edge-on.
+
+**Kelpstrider:** the body stands upright on four spine bones (the hip low, the chest high, a slight hollow in front). The neck turns the head forward through 90°, and the head has a long tube snout. The tail curls forward under it on six bones. It has a small fluttering fin on its back and twenty-eight fronds. It is yellow-olive, mottled, with green fronds yellowing to their tips. It is about 30 cm tall and swims upright at 0.15 of its length a second.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 809 checks pass** across 106 plans, with the sea check now counting twenty-four.
+- **The build:** the kelpstrider builds in 0.1 to 0.2 s, with 14 bones and 8,276 triangles of flesh, at a flesh cell of 0.004 for its thin snout. Its skin weights sum to one and its genome is 155 bytes.
+- **Pictures:** `creatures-kelpstrider.jpg` (side) and `creatures-kelpstrider-front.jpg`. A first pass with a banded coat drew vertical stripes on the upright body, like a melon, so the coat is mottled instead.
+### Needs eyes
+- **The fronds all lean back,** so the leaves stand along its back and tail like a crest. A leafy sea dragon also trails them from its belly and snout.
+- **The leaves are flat cards** with no veins and no transparency at their edges.
+- **The swim** is the kit's spine wave turned to the vertical plane. A seahorse swims by fluttering its back fin and holding its body still, so the wave may be too much.
+
+## v80 — Session 864 — A moth's glass wings: the Glasswing Moth, the last of Aurenne's fifteen (backlog L3, prototype only)
+OG-030 draws the Glasswing Moth in oases and ruins, with crystalline wings, drawn to moonlight and flowering plants: a night ingredient. Session 848 left it owed, because the kit had no insect's wing. It is now a plan in `creatures.js`, so all fifteen of `AURENNE` are plans. It is prototype only, under FREEZE #297.
+
+**The wings** are the kit's fins (Session 774), with three small additions:
+- **Two outlines in `FIN`:** `fore`, pointed at the tip, and `hind`, rounded.
+- **A fin role, `wing`.** At rest it holds the wing half-raised, 0.28 rad, breathing. In the air it beats twice a stride, from 0.1 down to 0.9 rad up.
+- **A plan field, `finRough`,** for the sheets' roughness. The moth's is 0.08 against the default 0.5, so the wings shine like glass. At an opacity of 0.38 they are clear and faintly blue. The kit's per-vertex tint jitter on each sheet reads as facets.
+
+No other plan sets either field, so nothing else changes.
+
+**Flight** needed one change to the legs. Aloft, the kit tucks every foot up and back as a bird does. An insect's splayed legs (the presets with `yaw`) cannot reach that target: the first try missed by 7.9 cm, and pulling the feet in under the body still missed by 9.5 cm. Now an insect's legs only draw in a quarter of the way and hang a little below their standing reach. Every other soaring plan has bird legs, so none changes.
+
+**Glasswing Moth:** a cream, furry body (three spine bones, the abdomen tapering to a point), a round head with large dark eyes, and two thin antennae swept forward and up. It has six insect legs and four glass wings: forewings 0.42 by 0.72 of its own length and hindwings 0.36 by 0.5. It is built at ten times its size and scaled by 0.1, so it is about 6 cm long with a span near 15 cm. It walks, flies and stands. Its flesh cell is set to 0.01; without that, the thin legs drove its first build to 60,304 triangles.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 816 checks pass** across 107 plans, and Aurenne's check now asks for fifteen.
+- **The build:** the moth builds in 0.26 to 0.33 s, with 38 bones and 11,796 triangles. Its skin weights sum to one and its genome is 158 bytes.
+- **Gaits:** walking, its feet are down 0.71 of the stride against a duty of 0.68. Every foot reaches its target in all three gaits.
+- **Pictures:**
+  - `creatures-glasswingmoth.jpg` is at its true size.
+  - `-close-top.jpg` and `-close-soar.jpg` were shot at ten times its size. The first true-size shot showed the wings too small for a moth, so both pairs were made about 40% larger.
+### Needs eyes
+- **The wings are plain glass.** They have no veins, and the crystal is only the tint's facets. OG-030's wings "resonate with ambient magic", which a faint glow at night could carry; the kit's glow is for flesh, not sheets.
+- **In flight its legs hang** rather than fold, which is right for a moth but reads long in the close picture.
+- **The antennae are thin tapered horns,** not a moth's feathered ones.
+
+## v80 — Session 865 — The common set by island: one body, three coats (backlog L3, prototype only)
+OG-084 calls its ten animals of all islands "the shared base set that can be built once and recoloured". Session 843 built them once, and the recolouring was owed. It is prototype only, under FREEZE #297.
+
+**How.** A creature's genome may now carry an `island` (`gatelands`, `mark` or `aurenne`). When it does, the plan's palette takes that island's coat from `COATS` in `creatures.js` over its own. The bones and the flesh are the same. The ten plans are the Gatelands' coats, the temperate middle. The Mark's run colder, greyer and paler, and Aurenne's sandier and warmer, as animals' coats do with climate:
+- **The Mark:** a grey-white wolf; a cross fox with a dark saddle; a grey mountain hare; the hooded crow, grey-bodied with black wings; a near-black boar; a greyer deer, badger and otter; a silver sea-run trout.
+- **Aurenne:** a sandy, jackal-pale wolf; a pale sand-red fox; a sandy hare; a brown-necked crow; a paler boar and deer; a pale grey badger; a lighter otter; a golden trout.
+- **The raven** is black on every island and has no entry.
+
+**The saved genome.** `toSaved` writes the island only when a genome has one, so every saved genome before this reads and writes as it did. `fromSaved` takes the island back if it is one of the three and drops anything else.
+
+**The bestiary** reads `?isle=` in both its views. The check's `--sheet` now carries `--q` into the line shot, and a new `--sheet-only` skips the single shots.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 837 checks pass**, 21 of them new.
+  - Each common animal built for the Mark and for Aurenne has the same number of bones as its Gatelands build.
+  - Each recoloured one's mean vertex colour moved by 0.026 (the Markish boar, darker on dark) to 0.246 (the Markish wolf).
+  - The raven moved 0.
+  - The island survives `toSaved` → JSON → `fromSaved`. A genome with no island, or with `atlantis`, carries none.
+- **The crow:** the first Aurennais crow moved only 0.012, because its black flight feathers are sheets and the check reads the flesh. Its body was browned until it moved 0.053.
+- **Pictures:** `creatures-common-mark.jpg` and `creatures-common-aurenne.jpg`, the ten in a line beside the figure, against Session 843's `creatures-common.jpg`. The first Aurenne sheet had a bright orange deer and a yellow-green wolf, and both were toned down.
+### Needs eyes
+- **The line's per-animal hue jitter** (each genome's `tint`, ±0.05) still pulls the Aurennais deer toward red and the wolf toward olive, as it pulled the Gatelands' wolf olive in Session 843.
+- **Coat is all that changes.** A northern hare would also be bigger with shorter ears, and a desert fox would have larger ears. Those are slider changes the island could carry later.
+
+## v80 — Session 866 — The farms' breeds by island (backlog L3, prototype only)
+Session 844's livestock owed breeds by island. They now take the coat-by-island method of Session 865: four more entries per island in `COATS`, on the same bones. The Gatelands keep the plans' own breeds (the red-brown pied cow, the cream sheep, the brown goat, the red hen). It is prototype only, under FREEZE #297.
+- **The Mark:** a black hill cow (its patch tone set to black too, so it is solid), a dark brown fleece like the northern isles' short-tailed sheep, a white goat, and a grey speckled hen.
+- **Aurenne:** a pale cream cow (its patches a shade off its coat, faint), a tan fleece, a black goat, and a buff-gold hen.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 845 checks pass**, 8 of them new. The island check now runs over the common set and the livestock. Each breed keeps its Gatelands bones, and its mean vertex colour moved by 0.172 (the Markish hen) to 0.859 (the Markish sheep).
+- **Pictures:** `creatures-livestock-mark.jpg` and `creatures-livestock-aurenne.jpg`, against Session 844's `creatures-livestock.jpg`.
+### Needs eyes
+- **Breeds differ only in colour.** The Mark's shaggy hill cattle would want long hair (the yak's fur in Session 855), and Aurenne's cattle a zebu's hump. A breed could carry fur and parts as well as coat when the game wants it.
+- **The Aurennais cow** keeps a faint patch pattern in cream on cream, which reads as dappled. It may want none.
+
+## v80 — Session 867 — Harness and packs: the pack mule, the draught horse and the yoked ox (backlog L3, prototype only)
+Session 855's beasts of burden owed their harness and packs. What an animal wears is the bodies builder's; the wagons and carts they draw are props, and stay the look builder's. This adds two parts to `creatures.js` and three plans, `HARNESSED`. Each plan is a Session 855 animal with what it carries. It is prototype only, under FREEZE #297.
+
+- **`packs`:** two panniers, one hanging either side of the spine, over a canvas blanket draped like the saddle's. Each has a leather lid band and a leather hanger strap down the flank. A strap runs across the back, and a bedroll is lashed on top behind the panniers. Everything sits outside the fur, as the saddle does, and is rigid on the spine bone.
+- **`harness`:** placed at a point `at` along the neck's polyline and set square to the neck there, on that neck bone, so the head moves free of it.
+  - A `collar` is a padded leather ring with two brass hames.
+  - A `yoke` is a wooden beam across the top of the neck, overhanging by `over` each side, with a bow under the neck.
+  - `fit` scales both to the flesh.
+  - To place it, the neck now records its points, radii and squash (`B.neckPts`, `B.neckR`, `B.neckS`). Nothing reads them but the harness.
+- **The plans:**
+  - the pack mule, with packs at 0.55 of the spine;
+  - the draught horse, at 1.1 times the horse, with its collar at the neck's root at a fit of 1.4, because the neck's flesh blends into the chest there;
+  - the yoked ox, with its yoke at 0.7 of the neck, behind the horns.
+  - Six gear tones (`blanket`, `pack`, `leather`, `roll`, `brass`, `wood`) are shared by all three.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 873 checks pass** across 110 plans.
+  - The three build in 0.37 to 0.41 s, with 31 or 32 bones and 34,784 to 38,236 triangles.
+  - Their skin weights sum to one, and every foot reaches its target through every gait.
+- **Pictures:** `creatures-packmule.jpg`, `creatures-draughthorse.jpg`, `creatures-yokedox.jpg` and `creatures-yokedox-front.jpg`. Three faults were found and fixed in turn:
+  - The first collar sat inside the neck's flesh, and only a brass hame showed. It was moved to the polyline's root and fitted 1.4 times larger.
+  - The first yoke sat at the shoulder, with its bow drawn as a dark band. It was moved forward behind the horns.
+  - The yoke then floated a hand above the neck, so it was lowered to 0.82 of the neck's height.
+  - The panniers were lowered so their tops sit below the back.
+### Needs eyes
+- **The panniers are plain boxes.** Wicker or sacking would want a texture and softer corners.
+- **The collar** slopes back with the horse's neck, which is right. But it is thin where it meets the chest, and from the side it reads as a line.
+- **The ox's bow** is mostly inside the thick neck, so the yoke reads as a beam alone.
+- **Traces and reins** are not drawn. They run to the wagon, so they want the look builder's carts first.
+
+## v80 — Session 874 — Loose hair that falls from the head, and no seam down the back of it (B1, Michael's note on #272, prototype only)
+Michael kept the groomed hair on #272 with a note: some of the styles "aren't quite landing". The pictures showed which, and why. The loose style was the worst. Its strands walked down the skull to the nape, followed the neck in, then dropped as a straight curtain. From behind, the hair pinched to the width of the neck under the head, like a vase. Over the shoulders, the strands pushed out by the body stayed vertical and left stepped shelves. And every free style had a dark line of bare scalp down the back of the head. The parting sent every strand left or right of the midline by its side, so behind the crown the two halves pulled apart. This is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `buildHair`:
+- **The parting is only at the front.** A strand rooted forward of the crown still goes to its side. Behind it, the side pull grows smoothly from nothing at the midline, in proportion to how far the root sits from it. So the back of the head is covered across the middle. This changes the short and loose styles. The gathered styles (the braid, the braids, the tail, the bun) already walked to their gathering point and draw the same strands as before.
+- **Loose hair leaves the skull where it turns under.** It used to let go at a fixed height. Now a strand lets go where the surface under it starts to face down (its normal's y below −0.08), or 5 cm below a height drawn per strand, whichever comes first. From there it falls straight down, with a little spread to its side and never back in toward the head's axis. So it parts from the skull on a tangent and hangs as wide as the head.
+- **What fell is smoothed.** Eight passes along the fallen part, then cleared off the body once more by the same rule the walk uses (its layer height on the head, the clothes' clearance below the neck). A first try cleared it by the clothes' 2 cm on the head as well, and that drew a ledge round the skull. The strand's normal also blends from the skull's to the hanging one over eight steps, so the light has no seam where it lets go.
+- **Lengths vary more,** 0.7 to 1.15 of the style's length and a little shorter at the sides, so the ends are not cut on one line.
+- **Under the fur mantle, loose hair goes inside the collar.** The mantle's eleven fur shells stand 10 cm off the neck. Hair laid over that came back out below in a tangle (it did before this session too, as a block hung off the fur). Two tries at lifting it over the collar failed the same way. So, as the hood already tucks the hair in, a loose strand under a mantle ends where the collar takes it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 145 checks pass**, ten of them new. Every style but the two braids, with and without the mantle, is checked for **no bare seam down the back of the head**: points on the scalp's back midline above the occiput, with no strand over them within 4 mm.
+  - Now 0 of 88 points for every checked style. Before this session it was short 18 of 88 (20.5%) and loose 7 of 88 (8%).
+  - The two braids are not checked, because they part at the back as braids do (11% of the midline is bare).
+- No strand is under the skin or on the face, in any style.
+- The loose style is 244,408 triangles and builds in 2.0 s. With the mantle it is 192,290 triangles and 1.5 s, since the strands stop at the collar.
+- The gathered styles build the strands they built before. A first version drew one more random number per strand for every style. That moved every root and put a stripe across the tail and the bun; the number is now drawn for loose hair only.
+- **Pictures:** `builder-styles-back`, `-front` and `-mantle` were shot again. New: `builder-woman-loose.jpg` (from behind), `builder-woman-loose-side.jpg` and `builder-woman-loose-mantle.jpg`. `builder-woman-loose-before.jpg` is the same view on the old code.
+### Needs eyes
+- **The hairline** is still a hard edge, set high, and every style reads slicked back. The front of the scalp wants finer, shorter strands thinning out at the edge. That is the next refinement on #272's note, and with the brows ("still fugly"), the one that matters most at conversation distance.
+- **Loose ends** are still visible cards at the hem: the tips taper, but each strand is one flat card. Clumping strands into locks near the ends would read softer.
+- **Hair over the fur mantle**: the tuck is a choice, not a law. Hair worn out over the fur would need the fur's outer surface in the push-off map, as the cloak's map holds the skirt.
+
+## v80 — Session 875 — A hairline that thins onto the brow (B1, Michael's note on #272, prototype only)
+The second part of #272's note ("some of the hairstyles aren't quite landing"). Session 874's entry left the hairline owed. Seen from the front, every style started on a hard painted edge. The dark under-shell that keeps the scalp from showing through the strands was cut on one curve across the forehead, with ±2 mm of jitter. The strands rooted on that line were already full width. So each head wore a cap with a ruled brim. This is still under FREEZE #297, so it touches only the prototypes.
+
+What changed in `people.js`:
+- **The under-shell fades into the skin.** Over the forehead, the shell now runs from the skin's own colour at its edge to its full colour 1.4 cm in. The skin's colour reaches the shader as a uniform (`skinC`), so one program serves every person. The edge itself wanders with a low noise of ±4.5 mm, so the line is not one curve.
+  - A first try thinned the shell by discarding a stipple of 0.9 mm cells. At conversation distance it read as pixel noise, so it was dropped for the colour fade.
+- **Strands at the front edge are finer.** A strand rooted within 1.5 cm of the front hairline (measured on the rest body) has its card narrowed, smoothly, down to 0.35 of its width at the edge. Nothing new is drawn from the random stream, so every style keeps the strands it had.
+- **Not changed:** the temples and the sides. There the edge is where the root region's triangles stop, not the shader's curve, and it is still a mesh edge.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 157 checks pass**, twelve of them new: every style, with and without the mantle, checks that **the hairline thins**.
+  - Every style has 74 to 112 strands rooted within 0.75 cm of the front hairline.
+  - Those edge strands are 0.43 to 0.44 of the width of the strands behind the band.
+- The seam, skin and face checks of Session 874 all still pass. There are no page errors, which also covers the new shader.
+- **Pictures:** `builder-woman-face.jpg`, `builder-man-face.jpg` and `builder-styles-front.jpg` were shot again. The old face pictures are kept as `builder-hairline-before-woman.jpg` and `builder-hairline-before-man.jpg`.
+### Needs eyes
+- **The temples** still end on the root region's mesh edge, which shows on the man as a step at the side of the brow. A fade there needs a distance to the region's border per vertex, not the forehead's curve.
+- **The man's fade** reads a little like a receding hairline from straight on, since the colour fade starts at the shell's own edge. If it reads wrong in play, the fade could start 5 mm lower than the strands' roots.
+- **Every style still reads slicked back.** The strands lie 3 to 14 mm off the scalp, which gives no lift at the crown. More height there is the next refinement, together with the brows.
+
+## v80 — Session 876 — Brows combed up and out, finer and denser (B1, Michael's note on #272, prototype only)
+The last part of Michael's note on #272: "eyebrows look pretty fugly still". Session 824 had already drawn each brow as a shape filled with short hairs lying on the skin. Close up, three faults remained:
+- **An upright fan.** The hairs at the inner end, by the nose, were combed nearly straight up (on average 0.74 of vertical) and ran past the brow's top edge. Each brow started on a fan of spikes.
+- **Too few, too coarse.** There were 700 to 900 hairs a face, each card 0.28 to 0.46 mm wide, so the brow read as a scribble of dark and light strokes.
+- **A square start.** The inner end was cut square at the nose.
+
+This is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `buildBrows`:
+- **The head is combed up and out,** at about 50°, not near upright. A hair whose tip would pass the brow's upper edge by more than 0.8 mm is shortened to fit, down to a 1.5 mm minimum.
+- **The head starts sparse.** Over the first tenth of the brow, a root is kept with a chance that rises from 0.3 at the nose, so the brow fades in rather than starting on a cut.
+- **The hairs are finer and denser:**
+  - 1.8 times as many hairs, 1,200 to 1,360 a face;
+  - 0.20 to 0.34 mm wide, tapering to a fifth at the tip;
+  - 3.5 to 8 mm long;
+  - lying flatter (their tips 0.2 mm off the skin against 0.5);
+  - each a shade from 0.93 to 1.07 of the brow's colour, so they read as hairs of one brow.
+- **Their own random stream.** The brows draw from a stream of their own (`seed|brows`). The person's stream still moves on by the twelve numbers a hair that Session 824 took from it. The cloak is drawn after the brows from that stream, so every cloak folds exactly as before. The cloak checks read the same numbers as Session 839's: hems 13.0, 2.6 and 1.4 cm in, and folds 3.7, 4.7 and 5.5 cm deep.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 162 checks pass**, five of them new. On each of the five rolled genomes, the head's hairs are combed at 0.577 to 0.589 of vertical on average (Session 824's comb is about 0.74), and no hair passes the brow's top by more than 1.5 mm (0.9 to 1.1 mm).
+- Every brow hair's root is on the skin (1,204 to 1,359 of as many), and the tips lie 0.2 mm off it.
+- **Pictures:** the six `builder-brows-*.jpg` and the two face pictures were shot again. Session 824's brows are kept as `builder-brows-before-man.jpg` and `builder-brows-before-woman.jpg`.
+### Needs eyes
+- **Is this the brow Michael wanted?** His note gave no reference, so this is judged against real brows: a sparse head, a dense body and a thin tail. A thick, low Markish brow or a fine Aurennais arch is set by the people's ranges (`brow` thickness and arch, Session 826). That is the place to tune if a people's brows read wrong.
+- **The skin under the brow** is still only 20% darker, by the body's vertex colours. The face's vertices are too far apart for a finer shade there.
+- **Grey and white brows** for the old are not drawn. Brows take the hair's colour.
+
+## v80 — Session 877 — Hair roots on the skin, and some lift for loose hair (B1, Michael's note on #272, prototype only)
+Sessions 874 to 876 each left one owed item: every style read slicked back. Each strand of Session 804's hair kept one height over the scalp from root to end. Its root was put that far up as well, anywhere from 3 to 14 mm off the skin, so the strands at the hairline stood off the forehead. Over the crown, loose hair lay no deeper than a braid pulled tight. This is still under FREEZE #297, so it touches only the prototypes.
+
+What changed in `buildHair`:
+- **The root sits on the skin.** Every strand now starts 3 mm off the skin. It rises to its own layer height over its first 5 cm along a smooth step, so the hair builds depth back from the hairline. It does not start at full depth on it.
+  - A first try started at 1.5 mm. That left 51 to 110 strand points a head under the skin where the scalp curves, so it went back to the old minimum of 3 mm.
+  - A second try rose over 2.5 cm. From the front, that showed a rim at the hairline.
+- **Loose hair stands deeper.** Its layers now reach 2.3 cm (up to 2 cm over the root height), where they reached 1.4 cm. Short hair now reaches 1.2 cm, from 0.9. The gathered styles keep theirs, since hair pulled into a braid, a tail or a bun lies tight to the head.
+  - At 1.4 cm, loose hair stood 8.4 mm deep over the crown against a braid's 7.8 mm, too little to see. That is why the depth was raised.
+- No random number is added, so every style keeps its strands.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 175 checks pass**, thirteen of them new:
+  - **Every strand roots on the skin**, in every style with and without the mantle. The highest root is 3.2 to 3.4 mm off the skin; Session 804's reached 14 mm.
+  - **Loose hair stands higher over the crown than a pulled-back braid**: 10.9 mm against 7.8 mm, as the mean height of the strand points above the head's middle.
+- Every other hair check still passes: no seam, the hairline thins, and nothing is on the face. The braid, the tail, the bun and short hair each have one point under the skin, inside the 0.2% the check allows.
+- Loose hair is 247,384 triangles and builds in 2.1 s.
+- **Pictures:** `builder-styles-back`, `-front`, `-mantle` and the three `builder-woman-loose*` pictures were shot again.
+### Needs eyes
+- **The lift is modest.** Loose hair now has some body from the side and behind, and still lies close from the front. A centre parting would want the hair to rise from it. That needs the strands to leave the scalp at an angle, not only higher layers.
+- **Stray beard cards on the chest.** With the mantle off, the man rolled from `b7` shows a scatter of beard cards lying on his tunic below the jaw. The fur collar hides them, but bare-necked dress shows them. This was so before these sessions. It is the next bodies fix in the builder.
+
+## v80 — Session 878 — The beard stops at the tunic's collar (B3, a fix, prototype only)
+Session 877 found this. A bearded man in a tunic, with no fur mantle, had a scatter of beard cards lying on his chest below the jaw. The beard's region of skin runs down the throat to rest height 0.60. The tunic covers the body up to 0.63, and its shader cuts it at 0.612. So about 3 cm of throat grew beard under the cloth. Those hairs are cards up to 7 cm long that fall with gravity, and their tips came out through the tunic onto the chest. The fur mantle's collar had hidden this in every earlier picture. It is still under FREEZE #297, so it touches only the prototypes.
+
+The fix is in `makePerson`. When a tunic is worn, the beard's cards root only on triangles lying wholly above rest height 0.638 (`PACK.R.beardTunic`, made once). There are 1,602 of the 2,078 triangles. The same 520 cards are drawn from the same random stream, so the cloak drawn after the beard folds as it did. Without a tunic, the beard keeps the whole throat. The dark base shell under the beard is unchanged, since below the collar the tunic covers it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 176 checks pass**, one of them new: **a beard over a tunic stops at its collar.**
+  - The check builds the man rolled from `b7` with a beard of 0.8, in his tunic, with no mantle or cloak.
+  - It reads the collar's front from the tunic's mesh at its cut, then counts beard points more than 4 cm below it and within 12 cm of the midline.
+  - Session 877's code had 222 of 5,200 such points. This one has 0. The check was run on both to prove it tells them apart.
+- **Pictures:** `builder-beard-tunic.jpg` and `builder-beard-tunic-before.jpg`, the same man from three-quarters front, and `builder-man-face.jpg` shot again.
+### Needs eyes
+- **The beard's lower edge** now ends on the collar's line. A long beard would hang over the collar and onto the chest, as a beard of its own grown from the jaw. The beard length is one slider (`beard`, 2 to 7 cm), so a long-bearded Markman would want that drape built.
+
+## v80 — Session 886 — The temples thin out as the forehead does (B1, Michael's note on #272, prototype only)
+Session 875 left one owed item. The hairline at the front of the head fades and thins, but the temples and the sides above the ears did not. There, the edge was simply where the hair's root region (`scalpRoots`) stops on a mesh edge. The dark under-shell ended in a hard stepped outline, and the strands started at full width on it. It showed as a step at the side of the brow on the man, and as a blocky dark edge above the woman's ear under a bun. Session 875's note named what a fix needs: a distance to the region's border for each vertex, not the forehead's curve. This is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **A distance to the border, made once.** At load, the region's border is taken as the edges that only one of its triangles uses. Each vertex of the region gets its distance on the rest body to the nearest of those edges (`PACK.scalpEdge`), so every body reads the same numbers.
+- **The shell fades and comes down at the sides.** The scalp shell reads that distance as an attribute.
+  - From just behind the ear to the front of the temple, it fades from the skin's colour at the border to its own over 1.4 cm. The border wanders by ±3 mm of noise, as the forehead's does.
+  - There it also comes down onto the skin, to 0.8 mm off it at the border from 2.5 mm, so its faded edge is no longer a ledge seen side-on by the ear. The first try lowered the shell all round. That drew the region's jagged front edge across the forehead as a shade, so the lowering is kept to the sides.
+- **Strands at the sides are finer near the border.** Within 1.5 cm of the border, a strand's card narrows, down to 0.35 of its width at the edge, as at the front. The forehead keeps Session 875's measure. Nothing new is drawn from the random stream, so every style keeps its strands, and the cloak, drawn after the hair, folds as before.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 188 checks pass**, twelve of them new: in every style, with and without the mantle, **the temples thin**.
+  - 55 to 66 strands are rooted within 0.75 cm of the border at the temples.
+  - They are 0.44 to 0.46 of the width of the strands 1.5 cm in.
+  - Run against Session 878's `people.js`, all twelve fail. That code has no such measure, and its strands there were full width.
+- The front hairline's numbers are as Session 875 left them: 0.43 to 0.44, with 74 to 112 edge strands. The cloak's numbers are as Session 839 left them: hems 13.0, 2.6 and 1.4 cm in, and folds 3.7, 4.7 and 5.5 cm deep. There are no page errors, which also covers the shader's new attribute.
+- **Pictures:** `builder-temples-man.jpg` and `builder-temples-woman.jpg` are three-quarter close-ups of the upper head, without the mantle. `builder-temples-before-man.jpg` and `builder-temples-before-woman.jpg` are the same views on Session 878's code.
+### Needs eyes
+- **A faint pale line remains at the man's temple**, in front of the ear, where the shell's last millimetre meets the skin at a grazing angle. It is much less than the hard brown edge it replaces.
+- **Above the woman's ear under a bun** the shell now fades to skin, so the strip the gathered strands do not cover reads as bare skin, not as a dark block. If that reads as an undercut, the fix is strands there that lie down toward the ear before turning up to the bun, not the shell.
+- **The temples' notch is still the region's shape.** The man's hair still recedes at the corners of the brow. That is where `scalpRoots` puts the border (y 0.755 at the side), and a fuller hairline is a change to the region, which every style would follow.
+
+## v80 — Session 887 — The robe: one cloth to the ankles, wide sleeves and a rope cord (B2, prototype only)
+The next piece of the wardrobe kit in `character-builder.md` (B2: aprons, cloaks, hoods, **robes**, dresses, armour tiers). The kept clothing sheets draw it in several places:
+- OG-110's clergy and scholars in a brown habit;
+- OG-109's flowing robes for Aurenne;
+- OG-110's striped robe on an Aurennais man.
+It is built by the method Michael chose on #274 (*drapes hang, shells fit*), to his condition that no arm comes through the cloth. It is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`, `builder.js`'s label).
+
+What changed in `people.js`:
+- **The robe is a dress key, `robe` (a colour), with an optional `cord` colour.** Both are in `GARMENTS`, so they save, load and show on the page.
+  - `makePerson` wears it as the tunic and the long skirt in one cloth. No trousers, no belt and no cuffs show.
+  - The tunic ends at rest height 0.145, under the cord. At 0.12 its hem stood out over the skirt's top as a ledge at the back.
+- **Sleeves that widen to the cuff.** The tunic's shell is pushed out along the arm, from nothing above the elbow to 3 cm at the wrist.
+  - It is a shell skinned as the arm is, so the arm cannot come through it.
+  - It is drawn from both sides, so the open cuff shows its inside, not a hole.
+- **A fuller hem.** The skirt widens by up to 3.5 cm below rest height −0.35, so below the hands.
+- **The cord** (`buildCord`) is a twisted rope tube round the waist, built after the pose as the tabard is. It is fitted out of every point of the tunic and of the skirt's top within 2 cm of its height.
+  - The first fit read the tunic in one narrow band. The rope sank into the belly for 3 cm at the front in two pictures, and the check could not see it, because it read the same band.
+  - It is knotted a tenth of the way round toward the left hip. Two ends of 30 and 24 cm hang down the skirt's front, with a knot at each tip.
+
+**A fix to every long skirt.** The robe's check found what the pictures had hidden. In the builder's standing pose, the hands of anyone in a long skirt hang at the thigh, and their fingers were inside the skirt. Before the fix, 565 to 862 hand points were inside it in each of the robes, and every point of the woman's hands. This was so for every woman's long skirt since Session 770.
+- After the pose, a figure in a long skirt now lifts both arms out from the side, 0.03 rad at a time, until no hand point is inside it. The woman rolled from `skirt:f` needs 0.27 rad. The saved pose is not changed.
+- It is not done under a full-length cloak. The cloak is built around the arms where they are, and lifting them pushed a bulge into the woman's cloak. So the cloaks are exactly as before: hems 1.4, 2.6 and 13.0 cm in, and folds 4.7, 3.7 and 5.5 cm deep. Under the cloak, the hands still touch the skirt, out of sight.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 205 checks pass**, seventeen of them new. There are four robes: a man's brown habit, a woman's robe, an Aurennais man's pale robe with a red cord, and a habit under a hooded cloak. Each one:
+  - **is one cloth to the ankles with its cord**, with no trousers or belt showing, and saves and loads back;
+  - **has no arm through the sleeve**: 0 of 160 forearm points are outside it, measured against the posed shell's own normals. The sleeve stands 2.3 to 2.5 cm off the arm above the elbow and 4.9 to 5.1 cm at the cuff;
+  - **has no hand inside the skirt**: 0 of 653 to 1,486 points, measured radially in 2 cm bands about the skirt's middle. This is not checked under the hooded cloak, where 651 points still are;
+  - **has its cord riding over the cloth**: 0 of 66 to 79 waist points are outside it, and its ends hang 3.2 to 12 mm in front of the skirt;
+  - and under the cloak, **the cloak hangs clear**: 3.7 cm, with 0 points under it.
+- **A woman in a long skirt has no hand inside it** (0 of 797, the arms lifted 0.27 rad).
+- The tabard's check on the woman in a long skirt now counts 1,966 tested points. Her lifted arms left the tabard's width, so the floor of 2,000 was lowered to 1,500, and 0 points come out through the tabard, as before.
+- No page errors.
+- **Pictures:** `builder-robe-man.jpg`, `-back`, `-woman`, `-aurennais`, `-cuff` (from the side) and `-hooded`. `builder-tabard-woman.jpg` and `builder-cape-woman.jpg` were shot again, with her arms lifted clear of the skirt.
+### Needs eyes
+- **A cloak over the robe stands boxy** (`builder-robe-hooded.jpg`). The cloak's columns are pushed out round the wide sleeves as if they were the arms, so it hangs as a slab from the shoulders. The cloak should read the arm under the sleeve, not the sleeve. That is owed next for the robe.
+- **The arms lifted 0.27 rad** read as a figure standing a little open-armed. A pose that brings the hands forward onto the skirt, held there, would be the better answer once the clip library (B4) has a hands-clasped idle.
+- **Striped cloth** (OG-110's Aurennais robe) and a cowl that is the robe's own, not the cloak's hood, are not built.
+
+## v80 — Session 888 — The laced bodice, and the robe's sleeves under a cloak (B2, prototype only)
+The dress, B2's next piece after the robe. The kept sheets draw it for the Gatelands: OG-109's "laced bodices, long skirts" and OG-110's woman in a green laced gown. A gown here is three garments the builder already has, or now has:
+- a chemise, which is the tunic in linen;
+- a long skirt;
+- a laced bodice over them.
+The bodice is the new piece. It is still under FREEZE #297, so this touches only the prototypes (`people.js`, `builder.check.mjs`, `builder.js`'s label).
+
+What changed in `people.js`:
+- **The bodice** is a new garment colour, `bodice`, with an optional `lace` colour. Both save and load and show on the page.
+  - It is a shell off the tights' torso, standing 8 mm over the tunic, from the waist to a square neckline at rest height 0.485, with straps over the shoulders.
+  - Its neckline, straps, armholes and hem are cut in its shader on a region a little larger than the cut. The first try cut by the region's own triangles, and its neckline came out in square steps.
+  - It ends at rest height 0.14, under the belt. Ending at 0.11, it showed a ragged hem below the belt from behind, and the apron's waistband showed between the two in cream patches.
+  - It is open down the front, 1.7 cm wide from the waist to the neckline, so the chemise shows in the gap.
+- **The lacing** (`buildLacing`) is built after the pose from the posed bodice, as the robe's cord is.
+  - There are seven pairs of eyelets, 1.3 cm either side of the middle, each 3 mm off the shell along its normal. Twelve crossings run between them, with a bow of two loops and two tails at the top.
+  - Every point of the lacing is pushed to stand at least 4.5 mm in front of the shell under it. Laid straight between the eyelets, the crossings ran up to 1 cm behind the cloth where the bust curves away. The check caught it, and the picture hid it in the gap.
+
+**The robe under a cloak** (Session 887's owed item). The cloak's mask of what it must hang clear of (`wornMask`) now holds a robe's sleeves, as the tights' shell along the arms standing out by the robe's own push. Its numbers per vertex replace the old fixed 2.5 cm for a skirt. Built with and without the sleeves in the mask, the hooded habit comes out the same: 0 of 6,413 points of the body, the skirt or the sleeves out through the cloak. So the wide sleeves never came through it. The slab-like hang in `builder-robe-hooded.jpg` is the cloak's own look over any long dress (compare `builder-cloak-markman-front.jpg`), not the robe's. The mask stays, so the cloak's check now covers the sleeves.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 209 checks pass**, four of them new, and the robe-under-a-cloak check now covers the sleeves.
+- **Two gowns:** a woman in a green laced gown over a linen chemise, and a Gatelander woman in a madder bodice with pale lacing and an apron. Each has:
+  - **a laced bodice**: 14 eyelets and 12 crossings over 23 to 25 cm, with a bow. Every lace is in front of the cloth, the closest 1.4 and 2.3 mm. It saves and loads back.
+  - **no hand inside the long skirt**: 0 of 844 and 0 of 1,325 points. The arms are lifted 0.18 and 0.24 rad, by Session 887's rule.
+- **Pictures:** `builder-bodice-woman.jpg`, `-back`, `-close` (the lacing at twice the size) and `-gatelander`.
+### Needs eyes
+- **The belt line.** Belt, bodice hem, apron waistband and skirt top all meet within 5 cm there. On the Gatelander a little mottling of red and cream shows along the belt's lower edge.
+- **The neckline is square and plain.** OG-110's gown has a rounder neck and a chemise that gathers at it, and neither is built. The straps are the shell's width, 8 cm, where a real bodice's are narrower.
+- **No people rolls a bodice yet.** It is in the kit for the wardrobe matrix (OG-109 to OG-111) to place, by island and class. That placing is a design call for when that matrix is drawn up.
+
+## v80 — Session 889 — Cuffs with clean edges, and the Markmen's woven bands (B2 and L1, prototype only)
+Every picture since Session 770 with cuffs showed them ending in black, toothed steps. The cuff region (`PACK.R.cuffs`) was picked by whole triangles of the tights' shell at rest |x| 0.37 to 0.405, so both its edges were triangle edges. Its shader only cut the outer one at 0.4. OG-025, the Markmen's sheet Michael kept as "closer to the Nord look", draws woven red-and-blue bands at the cuffs (L1). This session does both. It is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`, `builder.js`'s label).
+
+What changed in `people.js`:
+- **Both edges are cut in the shader.** The region now runs from rest |x| 0.355 to 0.425, and the cuff is cut at 0.371 and 0.411, so neither edge is a triangle's.
+  - The first try cut it at 0.4 and kept small teeth past the edge. Those were not the cuff's. The forearm's bare skin starts on its own stepped edge (body triangles from 0.395, `PACK.R.bare`), and its holes showed just beyond the cuff. Running the cuff to 0.411 covers them.
+- **A woven band.** `cuffBand` is a second colour, filling the middle of the cuff's width with its edges stepped in a chevron round the arm, as a tablet weave is (`BAND`, in `clothMat`). It saves and loads, and shows on the page as "woven cuff band".
+- **The Markmen roll it.** 70% of them get red cuffs with a blue band, or blue with red. It is drawn last in `peopleGenome`, after the cape, so every earlier roll of a seed is as it was.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 211 checks pass**, two of them new:
+  - **the cuffs are cut in the shader at 0.371 and 0.411**, inside a region of 0.34 to 0.436 measured on the mesh, so neither edge is a triangle's step; a woven band saves and loads back;
+  - **the Markmen roll woven bands**, 7 of 12, and the other peoples none (0 of 3).
+- No page errors.
+- **Pictures:**
+  - `builder-cuffs-markman.jpg` is a Markman's band close up. `builder-cuffs-plain.jpg` is a plain cuff on this code, and `builder-cuffs-before.jpg` the same view on Session 888's code.
+  - `builder-peoples.jpg` was shot again: the Markmen now wear the bands, and the women's arms are lifted clear of their long skirts by Session 887's rule.
+### Needs eyes
+- **The chevron's scale and stepping.** It is one triangle wave round the arm, about 1 cm a step. It is read off the rest body's coordinates, not a true angle round the wrist, so on a thick arm the steps stretch a little.
+- **Where the cuff sits.** On a man in a short-sleeved tunic, the band is at the sleeve's end above the elbow, as the plain cuff always was. OG-025 draws the bands at the wrist on long sleeves. That waits on sleeve length becoming a choice in the wardrobe.
