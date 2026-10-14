@@ -9,8 +9,12 @@ fs.mkdirSync('tests/out', { recursive: true });
 async function shoot(look) {
   const g = await boot({ look }); const { page } = g;
   await g.intoWorld(); await g.settle('dunmore');
-  await page.evaluate(() => { forceTime(12); devWeather('clear'); });
+  // Session 832: clear sky is not bare ground. Snow that fell while the town loaded lies for a minute or more after the sky
+  // clears (it melts at about .014 a second here), and on CI (dfea40a) the old look's picture had it and the new one's not:
+  // grass (191,224,134) against (173,212,98), the sky the same. The cover is taken off and the ground repainted before both shots.
+  const cover = await page.evaluate(() => { forceTime(12); devWeather('clear'); const c = +WORLD.wx.cover.toFixed(3); WORLD.wx.cover = 0; snowRepaint(); return c; });
   await g.spin('clear', 120);
+  for (let k = 0; k < 20 && await page.evaluate(() => !!(WORLD.wx.coverQ && WORLD.wx.coverQ.length)); k++) await g.spin('clear', 60);
   const r = await page.evaluate(() => {
     const t = WORLD.siteAnywhere('dunmore'); px = t.x + 6; pz = t.z + 34; yaw = Math.atan2(-(t.x - px), -(t.z - pz)); pitch = -.06; thirdPerson = false;
     forceTime(12);
@@ -23,10 +27,14 @@ async function shoot(look) {
     const renderMs = +((performance.now() - t1) / 8).toFixed(1), calls = REN.info.render.calls, tris = REN.info.render.triangles;
     return { rev: THREE.REVISION, url: o.toDataURL(), at: [Math.round(px), Math.round(pz)], renderMs, calls, tris }; });
   // the frame's cost: the game's own meter over a few seconds of its own loop, standing still at the spot
+  // Session 830: the meter reports once two frames 500 ms apart have been drawn; a loaded runner draws one every few seconds, so
+  // 9 s could pass with no reading (CI's FLAKY on edda9f4; both looks read null here with two suites side by side). At least
+  // 9 s as before, then until it has read, up to 120 s.
   await page.evaluate(() => { perfToggle(); });
   await page.waitForTimeout(9000);
+  await page.waitForFunction(() => !!PERF.last, null, { timeout: 120000, polling: 500 }).catch(() => {});
   r.perf = await page.evaluate(() => { const p = PERF.last; perfToggle(); return p; });
-  r.errs = g.errs.slice();
+  r.errs = g.errs.slice(); r.cover = cover; r.coverLeft = await page.evaluate(() => [WORLD.wx.cover, (WORLD.wx.coverQ || []).length]);
   await g.close();
   return r;
 }
@@ -56,6 +64,7 @@ const diff = await page.evaluate(async ([a, b]) => {
 await g.close();
 console.log('  diff', JSON.stringify(diff));
 console.log('  render old', oldR.renderMs, 'ms,', oldR.calls, 'calls,', oldR.tris, 'triangles; new', newR.renderMs, 'ms,', newR.calls, 'calls,', newR.tris, 'triangles');
+console.log('  snow cover before the shots: old', oldR.cover, 'new', newR.cover, '; after:', JSON.stringify(oldR.coverLeft), JSON.stringify(newR.coverLeft));
 console.log('  perf old', JSON.stringify(oldR.perf));
 console.log('  perf new', JSON.stringify(newR.perf));
 // Session 822 measured 6.0 over the frame, most of it the grass's fine noise and a house or two the town built differently that run;
