@@ -33,7 +33,7 @@ const bbox = C => { C.root.updateMatrixWorld(true); C.meshes.forEach(m => m.comp
 
 if (VIEW === 'line') {
   // every plan, small to large, turned three-quarters to the camera, each with the measure behind its shoulder
-  const built = (Q.get('plans') ? Q.get('plans').split(',') : Object.keys(PLANS)).map((plan, i) => { const C = make(plan, plan + ':line:' + (+(Q.get('seed') || 0) + i)); pose(C, .15 + i * .23);
+  const built = (Q.get('plans') ? Q.get('plans').split(',') : Object.keys(PLANS)).map((plan, i) => { const C = make(plan, plan + ':line:' + (+(Q.get('seed') || 0) + i), Q.get('isle') ? { island: Q.get('isle') } : undefined); pose(C, .15 + i * .23);
     C.root.rotation.y = Math.PI / 2 - .3; return { C, h: bbox(C).max.y }; }).sort((a, b) => a.h - b.h);
   let x = 0; const placed = [];
   for (const { C } of built) { scene.add(C.root); const b = bbox(C), w = b.max.x - b.min.x; C.root.position.x = x - b.min.x; const f = figure(); f.position.set(x + w / 2 + .3, 0, b.min.z - .6); scene.add(f);
@@ -45,7 +45,7 @@ if (VIEW === 'line') {
 } else {
   const plan = PLANS[Q.get('plan')] ? Q.get('plan') : 'ironwolf';
   const turn = C => { C.root.rotation.y = -(C.plan.heading || 0) * Math.PI / 180; }; // a crab walks sideways: turn it so it goes up the floor
-  let C = make(plan, +(Q.get('seed') || 0) || plan + ':one'); turn(C); scene.add(C.root); live.push({ C });
+  let C = make(plan, +(Q.get('seed') || 0) || plan + ':one', Q.get('isle') ? { island: Q.get('isle') } : undefined); turn(C); scene.add(C.root); live.push({ C });
   // a swimmer's water: a still surface above it (Session 774)
   const water = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x3d6f86, transparent: true, opacity: .28, roughness: .1, side: THREE.DoubleSide, depthWrite: false })); water.rotation.x = -Math.PI / 2; scene.add(water);
   const wet = C => { water.visible = !!C.plan.water; water.position.y = (C.plan.water || 0) * C.S; }; wet(C);
