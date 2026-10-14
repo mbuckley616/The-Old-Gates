@@ -17105,7 +17105,7 @@ Neither pattern draws from the seeded stream, so every other plan builds as it d
   - **The cow is pied:** 41% of its hide is pale.
   - **The badger's face is white with its stripes:** 1.00% of its hide is white with the mask and 0.00% without it (its ears alone did not cross the line). 32% of the hide is black.
 - Every plan still builds, with its weights summing to one and its feet on their targets.
-- **Pictures:** `creatures-cow.jpg` and `creatures-badger.jpg` shot again, and the sheets `creatures-livestock.jpg` and `creatures-common.jpg` rebuilt.
+- **Pictures:** `creatures-cow.jpg` and `creatures-badger.jpg` shot again, `creatures-badger-front.jpg` new, and the sheets `creatures-livestock.jpg` and `creatures-common.jpg` rebuilt.
 ### Needs eyes
-- **The badger is pictured only from the side.** Head on, the blaze and the bands are what read, and the bestiary page has no front view of a single animal close up yet (`view=one` frames the side).
+- **The badger head on** (`creatures-badger-front.jpg`, from `builder.html?plan=badger&view=front`): the white blaze and the black bands through the eyes read. The white cheeks are lost in the fur's shading, and the mask's edges are hard.
 - **The cow's patches are random.** A breed's own pattern (a belted cow, a white face) would be a mask on the body as the face mask is on the head.
