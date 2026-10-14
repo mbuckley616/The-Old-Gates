@@ -35,7 +35,14 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       for (let i = 0; i < 12; i++) { const g = K.rollGenome(`${k}:${i}`, { people: k, g: i % 2 }), sx = g.g > .5 ? 'm' : 'f', st = K.statureOf(g), [a, b] = K.PEOPLES[k].body[sx].metres; hs[sx].push(st); br[sx].push(g.brow?.thick ?? -1); if (st < a - .02 || st > b + .02) rangeOK = false;
         bytes = Math.max(bytes, JSON.stringify(K.toSaved(g)).length); if (JSON.stringify(K.toSaved(K.fromSaved(K.toSaved(g)))) !== JSON.stringify(K.toSaved(g))) rangeOK = false; }
       const mean = a => +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3); out.peoples[k] = { men: mean(hs.m), women: mean(hs.f), rangeOK, bytes, browM: mean(br.m), browF: mean(br.f) }; }
+    // the beard under the cheek line (Session 840): within the eyes' width, its highest triangle against the lower lid
+    { const PK = await K.loadPack(), R = PK.rest, eye = Array.from(PK.G['helper-l-eye']), lid = Math.min(...eye.map(v => R[v * 3 + 1])), eyeX = [Math.min(...eye.map(v => R[v * 3])), Math.max(...eye.map(v => R[v * 3]))];
+      let top = -1, mtop = -1; const cy = (T, t) => (R[T[t] * 3 + 1] + R[T[t + 1] * 3 + 1] + R[T[t + 2] * 3 + 1]) / 3, cx = (T, t) => Math.abs(R[T[t] * 3] + R[T[t + 1] * 3] + R[T[t + 2] * 3]) / 3;
+      for (let t = 0; t < PK.R.beard.length; t += 3) if (cx(PK.R.beard, t) < eyeX[1] + .01) top = Math.max(top, cy(PK.R.beard, t));
+      for (let t = 0; t < PK.R.moust.length; t += 3) mtop = Math.max(mtop, cy(PK.R.moust, t));
+      out.beard = { lid: +lid.toFixed(4), top: +top.toFixed(4), gap: +(lid - top).toFixed(4), moustTop: +mtop.toFixed(4), baseTris: PK.R.beardBase.length / 3, tris: PK.R.beard.length / 3 }; }
     return out; });
+  check(`the beard stops under a cheek line: within the eyes' width ${(r.beard.gap * 100).toFixed(1)} cm under the lower lid, the moustache up to the nose (y ${r.beard.moustTop}), the dark base inside the hairs (${r.beard.baseTris} of ${r.beard.tris} triangles)`, r.beard.gap > .015 && r.beard.moustTop > .678 && r.beard.baseTris < r.beard.tris, r.beard);
   for (const x of r.roll) { check(`genome ${x.seed} (${x.style}) saves and loads back to itself (${x.bytes} bytes)`, x.same && x.bytes < 1000, x);
     check(`genome ${x.seed}: the same seed rolls the same genome`, x.again);
     check(`genome ${x.seed}: brows of ${x.brows.hairs} hairs, every root on the skin (${x.brows.roots} of ${x.brows.tried}), lying flat (tips ${(x.brows.lift * 1000).toFixed(1)} mm off it)`, x.brows.hairs > 500 && x.brows.roots === x.brows.tried && x.brows.lift < .003, x.brows); check(`genome ${x.seed}: a loaded genome builds the same body and hair, twice`, x.body); }

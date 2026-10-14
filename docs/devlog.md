@@ -16971,3 +16971,20 @@ What the cloak does now, in order, all round the neck's vertical axis:
 - **The shoulders** are still the shelf Session 805 made over the arm. The hang starts below them.
 - **Walking.** The cloak is still built once on the standing pose and is not skinned. Michael's condition, no arm through the cloth, is checked for that pose only. It has to be checked again through a walk once B4's clips move the arms (F4 and F10).
 - **The builder's light** is dark on dark cloth. The folds read in the side and back pictures, and barely in the Markman's brown.
+
+## v80 — Session 840 — The beard under a cheek line: no card under the eye or by the nose (B3, prototype only)
+Session 826's close-ups of one man of each people noted two strays under *Needs eyes*: a dark wedge under the Old Blood man's eye and a pale card by the Markman's nose. The face pictures show the cause. Session 770's beard was every face triangle under a flat line at y 0.705, on the unmorphed body. The eye's lower lid is at y 0.715, so the beard's top reached within a centimetre of it. Its dark base shell took a triangle of the lower lid, which was the wedge. Across the cheeks it ended in a hard, jagged edge that followed the triangles, so a full beard read as a slab pasted on up to the cheekbones (`builder-man-face.jpg` before this session). The pale card was a moustache card rooted on the nostril's wing.
+
+The fix is in `people.js`:
+- **A cheek line** (`beardLine`). The beard's top runs from the sideburn by the ear (y 0.712, 7 cm out from the middle) down to the corner of the mouth (y 0.675, 3.2 cm out), on a slight curve. Inside the eyes' width that puts it 2.5 cm under the lower lid. This is the line a real beard grows to, cheekbone to mouth.
+- **The base under the hairs.** The dark base shell is its own region now (`beardBase`), 8 mm inside the cheek line. The top edge of the beard is made of the hairs' roots, not a cut in a solid shell. That is 1,518 of the beard's 2,078 triangles.
+- **The moustache over the whole upper lip.** It runs up to the nose's base (y 0.684) in the middle and comes lower toward the nostril's wing (0.4 mm for each millimetre out, to 3.3 cm). With the beard's top lowered, the first try left the upper lip bare: the moustache's roots stopped at y 0.678, and its cards hang downward.
+
+Bearded men only change in their beards. Nothing else draws from the seeded stream in a new order, so every genome builds the same body, hair and brows as before.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all passed**, with one new check: the beard's highest triangle within the eyes' width is 2.5 cm under the lower lid, the moustache reaches y 0.684, and the dark base lies inside the hairs. Session 770's flat top would measure 1.0 cm and fail it.
+- **Pictures, shot again:** `builder-man-face.jpg`, `builder-woman-face.jpg` (unchanged, no beard) and the six brow close-ups. The wedge under the Old Blood man's eye and the card by the Markman's nose are gone, and the cheeks above the beard are clear.
+### Needs eyes
+- **The mouth.** In the full face, the lips show through a dark gap in the beard at the mouth. That is the old mouth cut (an ellipse round y 0.655), and this session did not change it.
+- **One line for every face.** Every beard follows the same cheek line. A Markman's beard that runs higher, or a trimmed Aurennais beard, is a genome number away and not set by `PEOPLES` yet.
+- **The forehead's pale smear** on the right of every face picture is the skin's shading under the builder's key light, not the beard. It was there before.

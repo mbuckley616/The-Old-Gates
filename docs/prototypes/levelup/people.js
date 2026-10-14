@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 
 let PACK = null;
+const beardLine = x => { const t = Math.max(0, Math.min(1, (Math.abs(x) - .032) / .038)); return .675 + .037 * t ** 1.3; };
 export async function loadPack(base = 'mh/') {
   const [ix, buf] = await Promise.all([fetch(base + 'pack.json').then(r => r.json()), fetch(base + (window.MH_BIN || 'pack.bin')).then(r => r.arrayBuffer())]);
   const N = ix.verts.n, rest = new Float32Array(buf, ix.verts.off, N * 3).slice();
@@ -26,8 +27,13 @@ export async function loadPack(base = 'mh/') {
     cuffs: sel(tri, (x, y) => Math.abs(x) > .37 && Math.abs(x) < .405),
     skirtShort: sel(G['helper-skirt'], (x, y) => y > -.24),
     skirtLong: sel(G['helper-skirt'], () => true),
-    beard: sel(G['body'], (x, y, z) => y > .6 && y < .705 && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
-    moust: sel(G['body'], (x, y, z) => y > .662 && y < .678 && z > .1 && Math.abs(x) < .034),
+    // the beard under a cheek line (Session 840): from the sideburn by the ear (y .712) down to the corner of the mouth
+    // (y .675), 2 to 3 cm under the eye (its lower lid is at y .715); Session 770's flat top at y .705 reached the lid
+    beard: sel(G['body'], (x, y, z) => y > .6 && y < beardLine(x) && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
+    beardBase: sel(G['body'], (x, y, z) => y > .6 && y < beardLine(x) - .008 && z > .02 && (Math.hypot(x / 1.1, y - .655) > .022 || y < .64) && !(y > .66 && y < .705 && Math.abs(x) < .018 && z > .15)),
+    // the moustache over the whole upper lip, up to the nose's base (y .684) in the middle and lower toward the nostril's
+    // wing, where a card stood out by the nose
+    moust: sel(G['body'], (x, y, z) => y > .662 && y < .684 - .4 * Math.max(0, Math.abs(x) - .01) && z > .1 && Math.abs(x) < .033),
     scalp: sel(G['body'], (x, y, z) => { const hl = .808 - .035 * (x / .075) ** 2; return y > .64 && Math.abs(x) < .115 && !(z > .015 && y < hl) && !(y < .77 && Math.abs(x) > .06 && z > -.035) && !(z > -.01 && y < .72) && !(y < .69 && z > -.06); }),
     // where hair roots: the old scalp plus the sides down to above the ears and the back down to the nape (Session 804),
     // so a style that lifts the hair up and back (a bun, a braid) does not bare the temples
@@ -591,7 +597,7 @@ export function makePerson(G, o = {}) {
     const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || m.name !== 'hair')); hairStats = H.stats;
     { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
     if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
-      push('beardBase', PACK.R.beard, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
+      push('beardBase', PACK.R.beardBase, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
       const bc = hairCards(P, PACK.R.beard, { n: 520, len: .02 + .05 * G.beard, seg: 4, width: .011, lift: .15, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: jawB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc, hug: true, surfs: [surfaceOf(P, PACK.R.beard, hc)] });
       bc.name = 'beard'; meshes.push(bc);
       const mc = hairCards(P, PACK.R.moust, { n: 110, len: .028, seg: 3, width: .009, lift: .2, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: headB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc });
