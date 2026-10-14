@@ -18368,3 +18368,54 @@ The FREEZE (#297, card F2a) is still open, so this run keeps to the prototypes. 
 - **She is the player's paint.** A merchant's or a pirate's caravel takes its own colours in the game (`SHIP_LOOKS`); the prototype has only Aurenne's own.
 - **The cabin is empty.** L6's base below deck (a bed, chests, a map table, Aurenne's rugs and tiles from OG-004's cabin panel) is the room it was made to hold.
 - **Not in the game.** That waits for F2a and for card F11's parents.
+
+## v80 — Session 891 — Card F9's third room: Aurenne's flat over a dyer's shop (prototype only)
+The FREEZE (#297) holds, so this run keeps to the prototypes. Card F9's rooms have the Gatelands cottage (Session 852) and the Mark's longhouse (Session 870), each inside its street's own shell as Michael's A on #303 asks. Aurenne's was owed. The backlog named "Aurenne's courtyard house next", but OG-115's courtyard house round a fountain needs a lot of about 14 by 14 m, and Aurenne's street lots (`aurenneLot`) are 6.4 to 9.6 by 6 to 8 m. No shell in the kit holds it, and making one is a new lot kind, which is Michael's call. The same panel draws "an urban apartment over a shop, a kitchen with hanging pots, a rooftop terrace", which the street's own two-storey flat-roofed house does hold. So this session builds that, and asks about the courtyard house (#318). OG-115 and OG-061 were reread. The catalogue's note on OG-115 ("cream plaster and tile in Aurenne") flags no conflict for it.
+
+**The shell.** `aurenneHouse` in `pieces.js` takes three new options and returns its openings. Every default build is unchanged, and `aurenne.check.mjs` passes as before.
+- **`o.interior`** leaves out the dark fill, the dark boxes behind the lattices, and the door's closed leaf and studs.
+- **`o.hatch`** cuts the roof slab in four round a hatch.
+- **It returns** its openings, the door's x, the walls' thickness, the storey's height, the floor and the top.
+
+**`aurenneHome` in `rooms.js`** is built inside a 9.0 by 7.6 m house of two storeys (3.0 and 2.6 m) with lattices upstairs and a pergola on the roof. The shop is laid out from the door's side, so the shell can be turned either way (`o.shell`).
+- **The shop.** The canon's Aurenne sells its dyes, so it is a dyer's.
+  - Limestone flags, with a dado of the kit's blue and white glazed tile to 1.0 m.
+  - Shelves of bolts in madder, indigo, saffron and weld on the far wall, broken at the side window. When the far wall is the east, the shelves stop clear of the stair.
+  - A cedar counter 0.96 m high before them, cloth laid on it, a brass oil lamp, and the shopkeeper's stool between.
+  - Lengths of dyed cloth hung from a pole on the near wall, three jars of dye by the door, and the door's leaf hung open against the front wall.
+- **The stair:** 16 risers of 0.186 m and goings of 0.26 m, in limestone along the back wall, to a landing in the corner. The stairwell opens from the fifth tread, so every tread has 2.02 m over it. The first try opened it a tread too late, which left 1.85 m.
+- **The flat:**
+  - Red tiles on a cedar floor carried by beams every 0.9 m, cut at the stairwell. There is a rail at 0.95 m round the well, and a tile dado to 0.6 m, under the sills.
+  - A divan 0.42 m high under the three lattice windows, with cushions in madder and saffron, a rug of OG-061's lozenges, and a low brass table with cups and a pot.
+  - A bed of 2.05 m with an indigo cover and a bolster, and a chest by the side window.
+  - The kitchen along the east wall: a masonry cooking bench 0.82 m high with a tiled top and two charcoal braziers (a pot on one), a rail of four copper pots, and a water jar.
+  - A brass lantern hangs from the ceiling's middle.
+- **The roof:**
+  - A steep stair of ten treads (rises of 0.236 m) goes up the back wall from beside the well into a hatch of 1.5 by 0.9 m.
+  - The hatch's west edge is the stair's head, so you step off onto the terrace. There is a low coaming round its other sides.
+  - Under the pergola there is a bench and a jar, and between two posts a line of dyed cloth hangs drying.
+- **The view:** `rooms.html?room=home`, with `shop` (the default), `stair`, `flat`, `kitchen`, `roof` and `outside`, and `&hour=` as the other rooms take it. The shop's lamp, the flat's lantern and a brazier give the light, the hemisphere's ground is warm for the plaster, and the exposure is raised indoors.
+
+**Fixed on the way, each found by the pictures or the check:**
+- The hung cloths were one-sided, so the drying line showed only its string. The dyed cloths are now double-sided.
+- Wooden nosings on the pale steps read as floating lines. The steps are plain limestone now.
+- The tile dado was at twice the kit's scale.
+- The headroom probe began inside a shelf. It now skips points over furniture, and steps 0.15 m across so it finds every beam.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 25 of 25 pass.** The cottage's and the longhouse's checks are unchanged, and nine are new:
+  - **The builds:** 4 keys, with the door west in some and east in others. The room is 5,698 to 6,058 triangles in 23 draws, in the house's 4,102. Each key builds the same twice.
+  - **Inside and apart:** every piece is inside the walls, and no two pieces on one floor are in each other.
+  - **The walks:** clear by 0.15 m on each floor: in at the door past the counter's end to the stair's foot, off the landing to the table, and to the roof stair.
+  - **The stair:** rises of 0.186 m and goings of 0.26 m, with 2.02 m or more over every tread. The well's rail is 0.95 m.
+  - **Headroom:** 2.58 m under the beams in the shop and 2.28 m upstairs.
+  - **A person fits:** the bed is 2.05 m, the divan 0.42 m, the low table 0.42 m, the counter 0.96 m, and the door 1.05 by 2.0 m.
+  - **The roof:** open sky over the roof stair's head, the terrace's parapet met all round at 0.6 m, and rises of 0.236 m on the roof stair.
+  - **The pages:** the shop and roof views render with no page errors.
+- **`aurenne.check.mjs`** and **`pieces.check.mjs`** pass as before, with the shell's new options off by default.
+- **Pictures:** `rooms-home-shop.jpg`, `-stair`, `-flat`, `-flat-night`, `-kitchen`, `-roof` and `-outside`.
+### Needs eyes
+- **The rooms are dark at noon.** The windows are small and deep, as the hot-country house has them. The light indoors comes mostly from the lamps at 1.4 exposure, and OG-141's light indoors (L12) would judge it.
+- **The stair is a solid mass.** From the shop it reads as a stepped wall, with no balustrade on its open side below the well.
+- **The cushions and bolts are boxes and cylinders.** Cloth with folds belongs to the bodies builder's drape method if it is wanted here.
+- **The courtyard house is not built.** That is #318.
+- **Not in the game.** `buildInteriorFor` takes this after F2a and card F9's parent.

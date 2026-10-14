@@ -4,6 +4,41 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's home as a room: the dyer's flat over a shop, and the courtyard house (look builder, Session 891) — DECISION #318
+**F9's third room: Aurenne's home (look builder, Session 891).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Aurennais street house from the kit (`pieces.js`'s `aurenneHouse`): two storeys, flat-roofed, 9.0 by 7.6 m, with cream plaster, lattice screens upstairs and a pergola on the roof. It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneHome`) and `rooms.html?room=home`. The brief is OG-115's Aurenne panel ("an urban apartment over a shop, a kitchen with hanging pots, a rooftop terrace") and OG-061's blue tile. The canon's Aurenne sells its dyes, so the shop is a dyer's.
+- **The shop (the ground floor):**
+  - limestone flags, and a dado of blue and white glazed tile to 1.0 m;
+  - bolts of madder, indigo, saffron and weld on shelves behind a counter 0.96 m high, with the shopkeeper's stool;
+  - lengths of dyed cloth hung from a pole, jars of dye by the door, and a brass oil lamp.
+- **The stair:** 16 masonry steps of 0.19 m along the back wall to a landing, with 2.02 m or more of headroom over every tread and a rail round the stairwell.
+- **The flat (upstairs):**
+  - red tiles on cedar beams, with a tile dado to 0.6 m;
+  - a divan under the lattice windows with cushions, a rug, and a low brass table;
+  - a bed and a chest;
+  - the kitchen: a masonry cooking bench with a tiled top and two charcoal braziers, a rail of copper pots, and a water jar;
+  - a brass lantern from the ceiling.
+- **The roof:** a steep stair goes up through a hatch to the terrace, which has its pergola, a bench, and a line of dyed cloth drying.
+
+The room is 5,698 to 6,058 triangles in 23 draws, in the house's 4,102 to 6,330. The walks are clear by 0.15 m on each floor. There are 2.58 m under the beams in the shop and 2.28 m upstairs.
+
+**1. The home's trade:**
+- **A. A dyer's shop with the family's flat over it, as drawn** *(recommended)*: the canon's dyes, and every colour in the house comes from the shop.
+- **B. The trade by the lot:** the generator picks a dyer, a potter, a spice seller or a scribe for each house, on the same plan.
+
+**2. OG-115's courtyard house round a fountain.** It is the panel's first picture. It needs a lot of about 14 by 14 m with rooms on two storeys round an arcaded court, and the street's lots are 6.4 to 9.6 by 6 to 8 m.
+- **A. Build it next as its own piece** *(recommended)*: a rich house for the better quarter, a new lot kind that the generator places, with its rooms built inside it like this one.
+- **B. Leave it:** Aurenne's homes are the street's houses, with flats over shops like this one.
+
+Pictures:
+- [the shop from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-shop.jpg)
+- [the stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-stair.jpg)
+- [the flat from the landing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-flat.jpg)
+- [the flat at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-flat-night.jpg)
+- [the kitchen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-kitchen.jpg)
+- [the roof terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-roof.jpg)
+- [the house from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-outside.jpg)
+
+
 ### Aurenne's caravel in the new kit: the sun-star, the sterncastle, wheel or tiller (look builder, Session 890) — DECISION #316
 **F11's third hull: Aurenne's caravel (look builder, Session 890).** Your A on #306 gave each island one rig, and Aurenne's is the game's caravel, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`aurenneCaravel`) and `ships.html?ship=caravel`. It is built to the game's caravel's numbers:
 - **The size:** 17.5 by 5.0 m, draft 1.3, with the deck 1.0 m over the sea.

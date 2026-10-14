@@ -107,12 +107,12 @@ export function aurenneHouse(o, r) {
   const yW = pl;
   put(wallGeo(w, H, front), wallK, 0, yW, d / 2 - T / 2); put(wallGeo(w, H, back), wallK, 0, yW, -d / 2 + T / 2, Math.PI);
   put(wallGeo(d - 2 * T + .02, H, side), wallK, w / 2 - T / 2, yW, 0, Math.PI / 2); put(wallGeo(d - 2 * T + .02, H, side), wallK, -w / 2 + T / 2, yW, 0, -Math.PI / 2);
-  put(box(w - 2 * T, H - .3, d - 2 * T), 'dark', 0, yW + (H - .3) / 2, 0);
+  if (!o.interior) put(box(w - 2 * T, H - .3, d - 2 * T), 'dark', 0, yW + (H - .3) / 2, 0);
   // the door: five cedar boards in its colour set back in the reveal under a half-round head, iron studs, a stone step, the tile frame round it
   for (const h of front.filter(h => h.door)) { const dz = d / 2 - T * .7, nb = 5, sh = h.h - h.w / 2;
-    for (let i = 0; i < nb; i++) put(box(h.w / nb - .012, sh + .02, .06), doorK, h.x - h.w / 2 + (i + .5) * h.w / nb, yW + sh / 2, dz);
-    put(new THREE.CylinderGeometry(h.w / 2, h.w / 2, .06, 14, 1, false, -Math.PI / 2, Math.PI), doorK, h.x, yW + sh, dz, 0, -Math.PI / 2);
-    for (let i = 0; i < 3; i++) for (let k = 0; k < 3; k++) put(new THREE.SphereGeometry(.025, 6, 4), 'iron', h.x - .3 + k * .3, yW + .45 + i * .55, dz + .04);
+    /* o.interior (Session 891, rooms.js): the room hangs its own leaf, open */ if (!o.interior) for (let i = 0; i < nb; i++) put(box(h.w / nb - .012, sh + .02, .06), doorK, h.x - h.w / 2 + (i + .5) * h.w / nb, yW + sh / 2, dz);
+    if (!o.interior) put(new THREE.CylinderGeometry(h.w / 2, h.w / 2, .06, 14, 1, false, -Math.PI / 2, Math.PI), doorK, h.x, yW + sh, dz, 0, -Math.PI / 2);
+    if (!o.interior) for (let i = 0; i < 3; i++) for (let k = 0; k < 3; k++) put(new THREE.SphereGeometry(.025, 6, 4), 'iron', h.x - .3 + k * .3, yW + .45 + i * .55, dz + .04);
     put(box(h.w + .3, .1, .42), 'stone', h.x, yW - .02, d / 2 + .12);
     const tz = d / 2 + .02, ts = .17, top = yW + h.h + .12;
     for (const sx of [-1, 1]) put(box(ts, top - yW - .05, .03), 'zellige', h.x + sx * (h.w / 2 + .17), yW + .05 + (top - yW - .05) / 2, tz);
@@ -121,7 +121,7 @@ export function aurenneHouse(o, r) {
   for (const [list, face] of [[front, 0], [back, 1]]) for (const h of list) { if (h.door) continue; const z = face ? -(d / 2) : d / 2, s = face ? -1 : 1, hx = h.x * s;
     put(box(h.w + .22, .08, .2), 'stone', hx, yW + h.y - .04, z + s * .05);
     if (h.up && o.lattice && !face) { const bw = h.w + .34, bh = h.h + .25, by = yW + h.y + bh / 2 - .12;
-      put(box(bw, bh, .4), 'dark', hx, by, z + s * .2);
+      if (!o.interior) put(box(bw, bh, .4), 'dark', hx, by, z + s * .2);
       for (let i = 0; i <= 7; i++) put(box(i % 7 ? .035 : .07, bh, .04), 'cedar', hx - bw / 2 + i * bw / 7, by, z + s * .42);
       for (let i = 1; i < 10; i++) put(box(bw, .035, .035), 'cedar', hx, by - bh / 2 + i * bh / 10, z + s * .43);
       put(box(bw + .12, .08, .56), 'cedar', hx, by + bh / 2 + .04, z + s * .22); put(box(bw + .08, .08, .52), 'cedar', hx, by - bh / 2 - .04, z + s * .22);
@@ -159,7 +159,9 @@ export function aurenneHouse(o, r) {
       depthOut = az + .4; }
   } else {
     // flat: a slab, a parapet with a rounded top, rainwater spouts through it, the terrace behind
-    put(box(w - .2, .14, d - .2), 'plinth', 0, top - .07, 0);
+    if (!o.hatch) put(box(w - .2, .14, d - .2), 'plinth', 0, top - .07, 0);
+    else { /* o.hatch {x0, x1, z0, z1} (Session 891): the slab in four pieces round a hatch to the terrace */ const q = o.hatch, X0 = -w / 2 + .1, X1 = w / 2 - .1, Z0 = -d / 2 + .1, Z1 = d / 2 - .1;
+      for (const [a0, a1, b0, b1] of [[X0, X1, q.z1, Z1], [X0, X1, Z0, q.z0], [X0, q.x0, q.z0, q.z1], [q.x1, X1, q.z0, q.z1]]) if (a1 - a0 > .01 && b1 - b0 > .01) put(box(a1 - a0, .14, b1 - b0), 'plinth', (a0 + a1) / 2, top - .07, (b0 + b1) / 2); }
     const ph = .62, pt = .26, cap = (len) => { const g = new THREE.CylinderGeometry(pt / 2, pt / 2, len, 10, 1, false, 0, Math.PI); g.rotateZ(Math.PI / 2); return g; };
     for (const sz of [1, -1]) { put(box(w + .04, ph - pt / 2, pt), wallK, 0, top + (ph - pt / 2) / 2 - .05, sz * (d / 2 - pt / 2 + .02)); put(cap(w + .04), wallK, 0, top + ph - pt / 2 - .05, sz * (d / 2 - pt / 2 + .02)); }
     for (const sx of [-1, 1]) { put(box(pt, ph - pt / 2, d - .2), wallK, sx * (w / 2 - pt / 2 + .02), top + (ph - pt / 2) / 2 - .05, 0); put(cap(d - .2), wallK, sx * (w / 2 - pt / 2 + .02), top + ph - pt / 2 - .05, 0, Math.PI / 2); }
@@ -198,7 +200,7 @@ export function aurenneHouse(o, r) {
         put(new THREE.IcosahedronGeometry(.045 + r() * .05, 0), r() < .55 ? 'bloom' : 'leaf', x, y, d / 2 + .1 + r() * .14, r() * 6, r() * 6); } } }
   // one mesh per material; the top it reports is the whole house's (pots, bushes and the cypress included), for whatever stands over or labels it
   const { group, tris, draws, roofTop: rt } = finish(); roofTop = rt;
-  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris, draws, kind: o.kind, front: depthOut };
+  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris, draws, kind: o.kind, front: depthOut, open: { front, back, side }, doorX: dx, T, fh, yW, top };
 }
 
 // a street's lots by Michael's mix: in every run of three lots one is Roman (which one, by the street's seed), two are flat.
