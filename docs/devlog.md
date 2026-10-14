@@ -16849,6 +16849,69 @@ Nothing in the game changed, so no suite was run. The checks were on the files:
 - **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
 - **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
 
+## v80 — Session 828 — A town's people were always drawn the same; the test counted who had walked in (backlog I, CI health)
+The merge of Session 817 found `townbarrels`' people hash unstable on the same code: Dunmore read two values, Portclare three, Cœur de Vie three over four runs, here and on CI. So the line was made a warning and the backlog asked the systems builder, after F1, to find what moves the draw. CLAUDE.md's S533 gotcha (an outcome that reads what had loaded) was the first suspect, through `dominantRegion` in `genSettlement`.
+
+It was not the draw. A probe rebuilt each of the five towns in place (`disposeSettlement`, then `genSettlement`) under different loaded states, and Droichead came back with 11 people where it had 13. The two missing were villagers from `S.residents`. Residents are not built with the town. `tickSettlements` streams them in, two a tick, within 70 units of the player, and removes them past 95, and each one that arrives is pushed onto `S.npcs`. The hash read `S.npcs`, so it counted whoever had streamed in by the time the suite read the town, and that depends on how many ticks a slow or busy runner fitted into `g.settle`'s waits. Who a town draws was never in question. Restricting `REGIONS` to the town's own cell changed nothing either; the culture is read from the region at the pad's centre, well inside the cell, for all five.
+
+The suite now hashes the people a town drew: its fixed townsfolk in order (the `S.npcs` that are not residents), then every resident in `S.residents`, whether streamed in or not. The line is a check again, with the five values read on main after F1 (`edda9f4`). Tests only; no game code changed.
+
+### Verified (headless Chromium)
+- **The probe, two runs side by side, the towns in opposite orders** (Dunmore first, or Droichead first): all five towns give the same drawn-people hash in both runs and again on a rebuild in place. Dunmore 715523239 (65 people), Carraig Mór 1906895553 (54), Cœur de Vie −459524478 (157), Portclare −1325179028 (37), Droichead −1790770419 (13). `S.npcs` held 23, 18, 34, 14 and 11 to 13 of them when the suite read it.
+- **`tests/townbarrels`, two runs side by side:** 21 of 21 checks pass in each, the five people checks among them.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed. The new hashes include every resident, so a change that moves who lives in these towns will now fail the check, as the S753 and S817 sessions intended.
+- Other suites read `S.npcs` too (`names`, `bornhere`, `twinsrebuild`, `townbio` and others). None of them compares a stored hash, but a suite that counts `S.npcs` reads the same moving list. None of them is on the FLAKY list today.
+
+## v80 — Session 829 — `dunwarm`'s light between frames: 21 or more (CI health, tests only)
+`dunwarm` went FLAKY on main's merge run of `c184194`, after Session 807's fix. The CI log cannot be read from a cloud session, so I ran the suite three times side by side here to load the machine as a runner is loaded. One of the three failed: *a light added between frames is counted (21) until the next sweep* read **22**. The frames drawn after it were 20, 20 and 20, and nothing compiled. The same run's haunted kill row also ended with 21 point lights in the scene between frames.
+
+So Session 807's own finding struck twice at once. A foe's light, added by a timer or an effect between two frames, was already waiting for the sweep when the suite added its own light. The check counted exactly 21, assuming the scene stood at 20 at that instant. What matters, and what Session 807 wrote the check to prove, is that no frame is drawn with a light outside the pool. The check now takes 21 or more between frames and still requires every frame after to be drawn with 20 and nothing compiled.
+
+### Verified (headless Chromium)
+- **Before the fix, three runs side by side:** two pass. One fails on `{"between":22,"after":[20,20,20],"compiled":0}`.
+- **After the fix, three runs side by side:** three pass. 70 foes of 13 kinds looked at, none compiling on sight. Each kill draws 20, 20 and 20 and compiles nothing. Between frames the scene holds 21, then draws `[20,20,20]`.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed.
+
+## v80 — Session 830 — `lookpair` waits for the frame meter's reading (CI health, tests only)
+**A correction first.** This run's two earlier entries were written as Sessions 827 and 828. PR #287 (`claude/art-round2-marks`, docs) already holds a Session 827, so before anything merged I renumbered them 828 and 829: the headings, the backlog's marks and the tests' comments. Their commits (`3137604`, `1b178ac`) keep the old numbers in their messages. Nothing was force-pushed.
+
+`lookpair`, F1's side-by-side suite, went FLAKY on main's merge run of `edda9f4`. I ran two copies side by side here, and both failed the same check, *both looks measured their frame*, with `{"old":null,"new":null}`. The game's PERF meter reports once two frames 500 ms apart have been drawn. Each copy was drawing one frame every 5.5 to 7.8 s at that spot, so a fixed 9 s wait could end with no reading at all. The suite now waits at least 9 s, as before, and then until `PERF.last` is set, polling every 500 ms for up to 120 s. A flaky test waits for what it needs. The pictures' checks were never in doubt: the mean difference was 6.4–6.5 of 255, and the flat regions were within 3 levels of each other.
+
+### Verified (headless Chromium)
+- **Before the fix, two runs side by side:** both fail *both looks measured their frame* (null and null). The other four checks pass: mean difference 6.54 and 6.42, worst region 3 levels, no page errors.
+- **After the fix, two runs side by side:** both pass, 5 of 5. The meter read 0.1–0.2 fps: frames of 6,033 and 7,266 ms on r128, and 5,517 and 7,783 ms on 0.170, at 1,526 and 1,560 calls. The timed renders took 4.4 s (r128) and 5.3–5.5 s (0.170) for 763 and 780 calls.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed. Under load, the frame costs this suite logs are those of a shared machine, not the look's. Session 822's alone-on-the-machine numbers stand.
+
+## v80 — Session 831 — `hourhitch` judges a frame against the run's own frames too (CI health, tests only)
+`hourhitch` was on Session 804's list and went FLAKY on `0f94602` (auto/producer, 13 Oct). No fix had reached it since. I ran two copies side by side here, and one failed the frame-time check: worst 12,098 ms against a cap of 10,606. That frame came at the second jump to noon, with no shader compiled and no program added (the count stayed at 2 from the first dusk to the end). The cap was 8 s or twice noon's worst, and noon's worst is the slowest of 12 frames read once, at the start. That run read 5.3 s there, while its ordinary steps ran 6.4–8.6 s, so a cap of twice 5.3 s was tighter than the machine. The stall this suite hunts (the critic's s158) was 20–24 s with ordinary frames of about 4 s.
+
+The cap is now the largest of 8 s, twice noon's worst, and twice the median of the judged steps' worst frames. On these runs that median is 7.2–7.4 s, so the cap is 14.4–14.8 s, and a 20–24 s stall would still fail it. The 4× noon clause and the two compile checks are unchanged: they are what catches a rebuild.
+
+### Verified (headless Chromium)
+- **Before the fix, two runs side by side:** one fails (`worst 12098, noon 5303, cap 10606`). The other passes (`worst 8683, noon 6321`). Both compile nothing after the first night and hold 27 lights throughout.
+- **After the fix, two runs side by side:** both pass, 6 of 6 checks each. Worst 9,269 ms (noon 6,299, median 7,404, cap 14,808) and 13,407 ms (noon 6,849, median 7,400, cap 14,800).
+- **The other limit, three runs side by side:** frames of 10–28 s, and all three were stopped by the runner's 15-minute limit before the checks. That is more load than one CI job carries, and it is not a result.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed.
+
+## v80 — Session 832 — `lookpair`: a clear sky is not bare ground (CI health, tests only)
+PR #288's CI on `dfea40a` failed `lookpair` in shard 6, this time on the pictures, not the meter that Session 830 fixed. The flat regions differed: grass (191,224,134) on r128 against (173,212,98) on 0.170, the road (218,232,162) against (203,211,124), with the sky and a lit wall the same in both. The mean difference was 18.1 and the old look's brightness 186.2 against 173.9. Earlier in the run, snow had fallen while the old look's town loaded. `devWeather('clear')` clears the sky, but the snow lying on the ground (`WX.cover`) melts at about .014 a second in the home province, and the suite spun only 120 ticks (2 s) before the picture. So the old look's shot had snow on the ground and the new one's did not. Which look gets it is the weather's roll.
+
+Both shots now take the cover off (`WORLD.wx.cover = 0`, `snowRepaint()`) and wait for the repaint queue to empty before the picture. The cover found and the cover left are logged.
+
+### Verified (headless Chromium)
+- **A probe in the old look at the suite's spot, with the grass read from the suite's box:** snow laid at .35, then a clear sky and 120 ticks, gives grass (195,226,142) with the cover still at .309. That is CI's (191,224,134) within a few levels. After the new steps the grass is (173,212,98), the clear-day value both looks agree on.
+- **`tests/lookpair`:** 5 of 5 pass. Cover 0 before both shots and 0 after, with an empty queue. Grass (173,211,98) against (173,212,98); worst region 4 levels.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed. Snow does lie on the ground for a minute after the sky clears, as Session 146 built it.
 ## v80 — Session 828 — The third and final round of concept art, catalogued, marked and written back (docs only)
 Michael dropped the last concept art into the Drive (*Concept Art Session 3*, 13 Oct 2026) and asked, in chat with Claude, for the intake. The folder holds 35 sheets with his own ids, OG-F001 to F035, in four groups: M5 to M10 (culture and faith), N1 to N8 (dungeons and exploration), O1 to O10 (gameplay) and P1 to P10b (the living world, ending in two takes on the final art direction). An unpacked copy was in his Downloads, and it matched the Drive file for file, so the thumbnails were made from the local originals and each row's link points to the original in the Drive.
 
