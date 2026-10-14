@@ -3,6 +3,9 @@
 // and index alone (the same key builds the same house, byte for byte); every house of 300 builds as a handful of meshes
 // (one per material), within a triangle budget, standing on its lot: nothing below the ground, nothing past the lot's sides
 // but its outside stair and a Roman roof's eaves, nothing taller than a three-storey house; the street page renders with no errors. --shots writes aurenne-street.jpg and aurenne-houses.jpg.
+// Session 832, the Church of the Weaver (aurenneChurch): 72 churches (six sizes, both domes, no tower to two, with and without
+// the corner domes) build in budget, standing on the ground, the same twice from one key, at true size against a person; the
+// glazed domes carry their own UVs; the square and the line-up render. --shots adds aurenne-church, -churches, -church-dome.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +27,14 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
     const b = new THREE.Box3().setFromObject(h.group), { w, d } = L.o, eave = L.o.kind === 'tile' ? .55 : .35, side = L.o.stair ? w / 2 + 1.0 : w / 2 + eave, frontMax = d / 2 + (L.o.arcade ? 2.9 : 1.0);
     out.houses.push({ kind: L.o.kind, two: L.o.two, dome: !!L.o.dome, arcade: !!L.o.arcade, stair: !!L.o.stair, tris: h.tris, draws: h.draws, below: +b.min.y.toFixed(3), sides: +Math.max(-b.min.x - side, b.max.x - (w / 2 + eave)).toFixed(3), front: +(b.max.z - frontMax).toFixed(3), back: +(-b.min.z - (d / 2 + eave + .15)).toFixed(3), roofTop: h.roofTop, top: +b.max.y.toFixed(2) });
     h.group.traverse(m => m.geometry && m.geometry.dispose()); h2.group.traverse(m => m.geometry && m.geometry.dispose()); }
-  out.page = window.__stats; return out; });
+  out.page = window.__stats;
+  // the churches: every size, dome, tower count and the corner domes
+  out.churches = []; out.chSame = 0;
+  for (const w of [12, 14, 16, 18, 20, 22]) for (const dome of ['blue', 'white']) for (const tower of [0, 1, 2]) for (const corners of [false, true]) { const o = { w, dome, tower, corners }, a = K.aurenneChurch(o, K.stream('ch:' + w + dome + tower + corners)), b = K.aurenneChurch(o, K.stream('ch:' + w + dome + tower + corners));
+    if (hash(a.group) === hash(b.group)) out.chSame++; const bx = new THREE.Box3().setFromObject(a.group); let ownUV = 0, glaze = 0; a.group.traverse(m => { if (m.isMesh && m.name === 'glaze') { glaze++; const u = m.geometry.attributes.uv.array; for (let i = 0; i < u.length; i += 2) ownUV = Math.max(ownUV, u[i]); } });
+    out.churches.push({ w, dome, tower, corners, tris: a.tris, draws: a.draws, below: +bx.min.y.toFixed(3), domeTop: +a.domeTop.toFixed(2), towerTop: +a.towerTop.toFixed(2), top: +a.roofTop.toFixed(2), doorW: a.door.w, doorH: a.door.h, glaze, maxU: +ownUV.toFixed(1), front: +(bx.max.z - a.front).toFixed(2) });
+    for (const g of [a, b]) g.group.traverse(m => m.geometry && m.geometry.dispose()); }
+  return out; });
 const badStreets = r.streets.filter(s => s.bad).length, roman = r.houses.filter(h => h.kind === 'tile').length;
 check(`Michael's mix: one Roman house in every run of three lots, on all of 40 streets (${r.streets.reduce((a, s) => a + s.roman, 0)} of 1,200 lots)`, badStreets === 0 && r.streets.every(s => s.roman === 10), { badStreets });
 check(`a lot's house comes from its street and index alone: ${r.same} of ${r.n} built twice are the same`, r.same === r.n);
@@ -37,6 +47,17 @@ check('every house keeps to its lot\'s width and depth (its outside stair, its a
 { const one = by(h => !h.two).map(h => h.top), two = by(h => h.two).map(h => h.top);
   check(`heights: one storey ${Math.min(...one).toFixed(1)} to ${Math.max(...one).toFixed(1)} m, two storeys ${Math.min(...two).toFixed(1)} to ${Math.max(...two).toFixed(1)} m to the top of anything on it; the top it reports is that top`, Math.max(...one) < 8 && Math.max(...two) < 11 && r.houses.every(h => Math.abs(h.top - h.roofTop) < .01)); }
 check(`the street page: ${r.page.houses.length} houses, kinds ${r.page.lotKinds.replace(/flat/g, 'F').replace(/tile/g, 'R')}, no page errors`, errs.length === 0 && r.page.houses.length === 12, errs.slice(0, 3));
+{ const C = r.churches, mm = f => [Math.min(...C.map(f)), Math.max(...C.map(f))], t = mm(c => c.tris), dr = mm(c => c.draws);
+  check(`72 churches build: ${t[0].toLocaleString()} to ${t[1].toLocaleString()} triangles, ${dr[0]} to ${dr[1]} meshes, one per material`, C.length === 72 && t[1] < 30000 && dr[1] <= 16, { tris: t, draws: dr });
+  check(`a church comes from its options and key alone: ${r.chSame} of 72 built twice are the same`, r.chSame === 72);
+  check('no church reaches below the ground, and nothing stands in front of its steps', C.every(c => c.below >= -0.001 && c.front <= .01), C.filter(c => c.below < -0.001 || c.front > .01).slice(0, 3));
+  const d = mm(c => c.domeTop), tw = C.filter(c => c.tower);
+  check(`at true size: the great door ${C[0].doorW} by ${C[0].doorH} m (a 1.8 m person is a third of it); the dome's top ${d[0]} to ${d[1]} m; every tower above its dome (${tw.filter(c => c.towerTop > c.domeTop).length} of ${tw.length})`, C[0].doorH >= 5 && d[0] > 14 && d[1] < 40 && tw.every(c => c.towerTop > c.domeTop));
+  const bl = C.filter(c => c.dome === 'blue');
+  check(`the glazed domes keep their own UVs, tiled around the dome (${bl.length} blue churches, up to ${Math.max(...bl.map(c => c.maxU))} repeats around); the limewashed ones have no glaze`, bl.every(c => c.glaze === 1 && c.maxU >= 20) && C.filter(c => c.dome === 'white').every(c => c.glaze === 0)); }
+for (const v of ['church', 'churches']) { const pg = await browser.newPage({ viewport: { width: 640, height: 360 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/aurenne.html?still&nopeople&w=640&h=360&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 });
+  const st = await pg.evaluate(() => window.__stats); check(`the ${v} page: ${st.churches.length} church${st.churches.length > 1 ? 'es' : ''} and ${st.houses.length} houses, no page errors`, e2.length === 0 && st.churches.length === (v === 'church' ? 1 : 3) && st.houses.length === (v === 'church' ? 8 : 0), e2.slice(0, 3)); await pg.close(); }
 await page.close();
-if (process.argv.includes('--shots')) for (const [name, q] of [['aurenne-street', ''], ['aurenne-houses', 'view=houses']]) console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=aurenne.html', '--name=' + name, ...(q ? ['--q=' + q] : [])]).toString().split('{')[0]);
+if (process.argv.includes('--shots')) for (const [name, q] of [['aurenne-street', ''], ['aurenne-houses', 'view=houses'], ['aurenne-church', 'view=church'], ['aurenne-churches', 'view=churches'], ['aurenne-church-dome', 'view=church&top']]) console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=aurenne.html', '--name=' + name, ...(q ? ['--q=' + q] : [])]).toString().split('{')[0]);
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

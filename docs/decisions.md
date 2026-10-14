@@ -4,6 +4,29 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's churches in the new kit: blue domes, white, or by rank? (look builder, Session 832) — DECISION #294
+Card F6 (buildings as pieces) has reached Aurenne's temples. The canon gives Aurenne "domes on the churches" under the Church of the Weaver (§1.3), and the concept art (OG-061, OG-043) draws them as a domed hall behind an arcade with a slender tower beside it. Session 832 builds one in the new kit, at true size (`aurenneChurch` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=church`):
+- **The hall:** a cube of lime-washed stone, 12 to 22 m a side, on a podium with three steps. It has tall arched windows with iron grilles and a band of blue-and-white glazed tile under the cornice.
+- **The dome:** a drum with twelve arched lights carries the great dome. On its top is the Weaver's sign, a gilt shuttle on a rod, leaning so that it does not read as a cross.
+- **The porch:** an arcade of five or seven round arches on columns runs across the front, with the great door, 2.6 by 5.2 m, behind it.
+- **The bell tower:** square, with an open belfry, a bell and a small dome. A town's church has one; the cathedral has two, and four small domes at the corners of its cube.
+
+The great dome stands 17 to 30 m and the towers 22 to 35 m. A church is 9,800 to 15,800 triangles in 10 or 11 draws.
+
+Pictures:
+- [the square, a town's church at its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/aurenne-church.jpg)
+- [three side by side: a town's church in blue, the same limewashed, a cathedral](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/aurenne-churches.jpg)
+- [the dome and the shuttle close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/aurenne-church-dome.jpg)
+
+What should the churches' domes be?
+- **A. Blue glaze on every church** (OG-061): every church, from a village's to the cathedral, under the blue tile. Wherever you are in Aurenne, the Church's domes read at once.
+- **B. Limewash on every church:** white domes like the walls, with colour only in the tile bands and the gilt. This is the calmer, Greek-island look, and the houses' blue domes would then outshine the Church's.
+- **C. By rank** *(recommended)*: blue glaze on the cathedral and on a town's church, limewash on a village's. Blue tile is the costly finish and the Compact is rich, so the blue marks where the Church's money and its Priors sit, and a village chapel stays plain.
+
+Recommendation: **C.** The rank is visible from a distance without a sign, which helps a player find the Prior. A is a fair second if he wants the blue everywhere.
+
+Not in this question: the inside (card F9), the Guest's bricked chapel under the cathedral (the quest writer's), and Aurenne's civic buildings, the Compact's counting house and the academy's white towers, which are the next sessions.
+
 ## Answered
 
 ### The Mark's turf roofs, redone: dry sod or dark moss? (look builder, Session 825) — DECISION #285

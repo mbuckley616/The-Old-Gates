@@ -17003,3 +17003,38 @@ Michael chose C on #277, the mix: two halls in three shingle and one turf, by lo
 - **At eye height the turf hall hides.** Set back and 3 to 4 m lower, it sits behind its shingle neighbours, so the lane picture shows little of it. From above, the rule reads. In a town that may be right, since the poorer houses are behind the street. If Michael wants the sod seen from the lane, the setback is the number to change.
 - **"Outlying" is not built.** The rule knows the halls of note, not how far a lot is from the town's heart, so a turf hall is as likely at the square as at the edge. When the generator places Mark towns in the game, it can pass the distance and bias the pick within each run of three.
 - **No people in these pictures.** The MakeHuman pack (`mh/`) is not in this checkout, so the lane has no Markmen for scale.
+
+## v80 — Session 832 — The Church of the Weaver, in the new kit (card F6, prototype only)
+Card F6's next item after the Mark's lots is Aurenne's temples. The canon (§1.3) gives Aurenne "domes on the churches", and its towns are under the Church of the Weaver's Priors. The concept art draws the churches as a domed hall behind an arcade with a slender tower beside it: OG-061, Aurenne's board, and OG-043's temple row. None existed in the new kit.
+
+`pieces.js` has `aurenneChurch(o, r)`, at true size:
+- **The hall:** a cube of lime-washed stone, 12 to 22 m a side and 0.8 m thick, on a podium with three steps down to the square. It has three tall arched windows on each side and on the back, each with a stone sill and an iron grille, and a dark room behind them. A band of the blue-and-white glazed tile runs under the cornice, and a parapet edges the flat roof.
+- **The dome:** a drum with twelve arched lights, then the dome in blue glaze or limewash (`o.dome`). On its top is the Weaver's sign, a gilt shuttle on a rod. The first shuttle sat level across the rod and read as a cross from the square, so it now sits on the rod's tip and leans 22°.
+- **The porch:** an arcade of five or seven round arches on turned columns, with an arch at each end. The great door stands behind it, 2.6 by 5.2 m: two leaves of cedar boards under a half-round head, framed in glazed tile.
+- **The bell tower** (`o.tower`, 0 to 2): a square shaft of 3.6 m with slit windows, an open belfry with a gilt bell, and a small dome.
+- **A cathedral** (`o.corners`) adds four small domes at the cube's corners and takes two towers.
+- A cypress in a pot stands either side of the steps.
+
+**Two changes to the shared kit.**
+- The house builder's piece helpers moved out into `aurKit()`, so the church and the houses use the same code: placing a piece, the wall with arched openings cut through, and one mesh per material. The houses are unchanged: 60 houses built by the old and the new code hash the same, positions and UVs.
+- A piece can now keep its own UVs (`userData.uvRep`). The great dome showed a stepped seam where the world projection switched axes across its curve. A glazed dome now tiles round its own lathe, with a whole number of repeats so it meets itself, and the tiles close in toward the top as real ones do. The houses' small domes still use the world projection; at their size the seam does not show.
+
+`aurenne.html?view=church` is a square: the church at its head, four of Aurenne's houses down each side and a fountain's basin. `&top` looks at the dome and the shuttle close up. `?view=churches` puts three side by side: a town's church in blue, the same limewashed, and a cathedral. `&dome=` forces either finish.
+
+Which finish the domes take is Michael's call, asked as **DECISION #294**: A blue on every church, B limewash on every church, C by rank (recommended: blue on the cathedral and a town's church, limewash on a village's).
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: all pass, with seven new checks.**
+  - **Builds:** 72 churches (six sizes, both domes, no tower to two, with and without the corner domes) are 9,816 to 15,808 triangles in 10 or 11 meshes, one per material.
+  - **The same key builds the same church:** 72 of 72.
+  - **On the ground:** none reaches below it, and nothing stands in front of the steps.
+  - **True size:** the great door is 2.6 by 5.2 m. The dome's top stands 16.8 to 29.7 m, and every tower rises above its dome (48 of 48).
+  - **The dome's UVs:** all 36 blue domes carry their own UVs, up to 51 repeats around. The limewashed churches have no glaze.
+  - **The pages:** the square (1 church, 8 houses) and the line-up (3 churches) render with no page errors.
+  - **The houses** still pass every earlier check, with the same numbers.
+- **`pieces.check.mjs` and `mark.check.mjs`** pass.
+- **Pictures, new:** `aurenne-church.jpg`, `aurenne-churches.jpg` and `aurenne-church-dome.jpg`.
+### Needs eyes
+- **The dome's glaze is a small square tile**, as the houses' is. OG-061's domes are smoother, so a larger tile or a ribbed dome may read better from far off.
+- **The fountain** in the square is a placeholder: a basin and a post.
+- **No people.** The MakeHuman pack is not in this checkout, so nobody stands on the square for scale. The 1.8 m post is in the line-up.
+- **Inside** is card F9's. The Guest's bricked chapel in a cellar under the capital's cathedral is the canon's, and it waits for the inside.
