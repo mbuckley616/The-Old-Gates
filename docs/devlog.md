@@ -16921,3 +16921,25 @@ Michael: 1 B, 2 A, 3 A. 2.0 is the look and the core loop. On the legacy zones: 
 
 ### Needs eyes
 - **The budgets are guesses.** 45 fps and 40 MB are a starting point, not measurements. F14 measures them on his laptop.
+
+## v80 — Session 830 — The team for 2.0 (docs and routines)
+After his 1 B on *What ships in 2.0?*, Michael asked whether the team fitted the work ahead. Claude drafted six changes on a review page (*Team for 2.0*), and he said "go, apply them all" and asked for the whole producer prompt to paste fresh.
+
+What changed:
+- **Two new routines,** created through the routines API, each with the Slack connection:
+  - **The bodies builder** (`trig_019QDt3noUHURJUYqfznyBiv`, every 3 hours at :15, auto/bodies, PR "Bodies sessions") makes everything with a skeleton: `16`, `32`, `34`, `54` and the builder pages. Its order: Michael's notes on #272 and #274, the builder's remaining items, backlog L's bodies, then the game once F4 merges.
+  - **QA and CI** (`trig_01Aozd8q37NmcvYkPMZiyM9o`, every 6 hours at :50, auto/qa, PR "QA sessions") owns `tests/`, the CI workflow and `docs/qa/`. Its order: the flaky suites, the whole suite under `--look=new`, the draw-call budgets, then CI time. It never edits game code; game bugs go to backlog I for the owner.
+- **Three routines re-pointed,** each keeping its schedule and Slack connection:
+  - **The look builder** makes places only: F6, then prototypes for F8, F9 and F11, then the game after F2a. Section H's old-style order is retired.
+  - **The systems builder** takes the core loop (skills and perks A, enemies by place, magic B, the double jump and air dash), then F2b after F2a and combat's resolver. Its prompt had still claimed F2's scale work, which is now the deep-work card F2a. CI health is QA's.
+  - **The designer** writes build sheets first (F2b's ranges, skills and perks, the double jump and air dash, enemies by place, magic B), then its proposals.
+- **The producer:** Claude built the whole new prompt from its current text; Michael pasted it. It adds the two new branches and how each merges: bodies on a card, QA once green without one. It keeps the deep-work queue fed for 2.0's cards, combat's resolver included, without a Start, since Michael approved them on 13 Oct. It also keeps two roadmap epics true and turns budget rises into blocker cards.
+- **CLAUDE.md:** the roles, the file split by builder, the two new room voices, and "deep-work session" where it said Fable (the routine has run on Opus since 13 Oct).
+- **The Studio Floor's files** (`~/.claude/fleet`) list the two new routines, with slow, normal and fast schedules.
+
+### Verified
+Each routine API call returned 200, and each routine read back its new prompt, its schedule and its Slack connection. The first runs fall at 03:29 (look builder), 04:45 (systems builder), 05:15 (bodies builder), 06:00 (designer) and 06:50 UTC (QA).
+
+### Needs eyes
+- **Usage over the next week:** the two new routines add up to about 24 Opus run-hours a day at these schedules. The Studio Floor shows it, and its pace controls can slow either one.
+- **The first bodies and QA runs:** check that they keep to their files.
