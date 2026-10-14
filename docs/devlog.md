@@ -19023,3 +19023,35 @@ The FREEZE (#297) holds. Michael answered all seven of this builder's open quest
 - **The rafters are cut square at the valleys.** Seen from the upper rooms, they end in steps along the corners.
 - **The night picture still has a pale sky** through the court. The page's night is the other rooms' night.
 - **Not in the game.** The generator placing it as a lot kind of the better quarter, and its rooms in `buildInteriorFor`, wait for F2a.
+
+## v80 — Session 900 — Card F11: the sloop in the Mark's dress (prototype only)
+The FREEZE (#297) holds. Michael answered #316 (the caravel's sun-star, castle and wheel), #319 (the cog's castles) and #323 (the galleon's carvel and closed ports) with A on 14 Oct. These were the rules the backlog waited on before the other islands' dress for each class. Each class had one island's dress: the sloop, cog and galleon the Gatelands', the cutter the Mark's, the caravel Aurenne's. This is the first of the rest: the game's sloop in the Mark's dress. OG-004's Mark row ("dragon prows, dark sails") and OG-028's "painted round" shields were reread. The Mark's dress is already set by #312 (tanned sails, a gilt beast's head) and by #323 (the small hulls stay clinker).
+
+What changed in `ships.js`:
+- **A dress, not a new hull.** `gatelandsSloop` takes `o.dress`; `'mark'` changes only the materials and the ornaments, and `markSloop(o, r)` is that call. Her sections, rail, deck, mast and sail are the Gatelands sloop's to the millimetre, so the game's one sloop stays one set of numbers.
+- **The Mark's materials** are the cutter's set (`cutterMats`), with the strakes keyed by height:
+  - red-brown below the waterline;
+  - tar-black above it and on the sheer strake, where the Gatelands' is green;
+  - the wale gilt, where the Gatelands' is cream.
+- **The sail:** square, in plain tanned cloths with no harp.
+- **The beast's head:** the cutter's gilt head, at 1.15 times its size, on the stem head 0.25 m over the sheer, with its eyes.
+- **The shields:** eighteen painted round shields of 0.38 m, nine a side every 0.8 m along the waist.
+  - They are deep blue or red, by turns, with a quarter in bone and an iron boss.
+  - They hang outboard of the sheer strake with their tops at the rail's cap, the way the Mark's "painted round" (OG-028) would hang on a ship of the free towns.
+  - They are a new ornament and asked (#330). Two options turn them and the head off: `o.shields` and `o.head`.
+- **The view:** `ships.html?ship=marksloop`, with the sloop's views (`lap` is close on her bow and its head) and `&nohead` and `&noshields`.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 53 of 53 pass.** The earlier hulls' checks are unchanged. One view is new on the page check, with no page errors, and three checks are new, over four keys:
+  - **The builds:** each the same twice, 29,426 triangles in 14 meshes. Her sections, rail and deck are identical to the Gatelands sloop's from the same key.
+  - **Closed, clinker and walkable:** none of 900 rays from inside her below the deck gets out. The laps stand 0.025 to 0.033 m out at every strake's lower edge at five stations. The walk down either side is clear at all 68 points.
+  - **The dress:**
+    - There is no harp.
+    - The head stands 1.18 m forward of the stem head, from 0.21 m over the sheer.
+    - The 18 shields stand 0.054 m outboard of the planking and 0.02 m under the rail's top.
+    - Without head and shields, the hull is the same and only those go.
+- **Pictures:** `ships-marksloop-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noshields`. The other hulls' pictures were shot again by `--shots` and left as they were in git (the same views).
+### Needs eyes
+- **The head stands proud of the stem.** The stem rises 0.35 m over the sheer and the head's neck sits on it. Seen close, the joint is a step where a carved stem would run on into the neck.
+- **The black hull reads as a mass in shade.** The laps show as thin pale lines in the sun (`-lap`) and are lost on the shaded side.
+- **The shields and the rigging:** the shrouds come down to the chainplates among the shields amidships, and nothing there is checked against a shield.
+- **Next in the line:** the cog and the galleon in the Mark's and Aurenne's dress, and the caravel and cutter in the others'.
