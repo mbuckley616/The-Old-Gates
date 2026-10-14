@@ -16887,3 +16887,34 @@ The old `brows` selection is removed from the pack's regions.
 - **Up close the hairs are plain dark strips** with no texture. At conversation distance they read as hair; nearer, a strand texture might help.
 - **Every brow has the same shape.** Per-people brows, such as the Markmen's heavier ones, the Old Blood's straighter ones and an old man's wilder ones, are a slider away (`G.brow`) and not set by `PEOPLES` yet.
 - **The hairstyles.** Michael's other note on #272, that *some of the hairstyles aren't quite landing*, is still to do. It needs his eye on which ones.
+
+## v80 — Session 825 — The Mark's turf, out of the lawn and into the climate (card F6, prototype only)
+Michael answered #277 with C, the mix: two halls in three shingle and one turf. He added: *I don't like the turf as it looks today though … the green is too vibrant for the climate it's going to be in.* Session 819's turf was a saturated lawn green with brown blotches, cut off square at the eaves, and in the lane it was the brightest thing in a cold picture.
+
+The turf is now painted two ways in `pieces.js` (`TEX.turfDry`, `TEX.turfMoss`). `markHall` takes `o.turf`, dry by default.
+- **Dry sod:** how a sod roof stands most of a northern year. It is tawny dead grass and straw in tufts over olive, with moss in the hollows and dark earth between the tufts. The tufts are about 15 cm across, from noise at three scales. The first try came out at a sixth of that and read as a print, and the second came out at half.
+- **Dark moss:** a wet roof gone over to dark olive moss, with straw tufts standing out of it and pale lichen.
+- **The eaves:** both have a fringe of grass hanging over them. It is one plane a side, 38 cm deep, cut out of a drawn texture of about 1,100 blades. It hangs a little out from the birch bark and partly over it, so the roof's edge is ragged rather than a slab's. It costs four triangles and one draw a hall.
+
+`mark.html` takes `?turf=dry|moss`, and a new `?view=roof` shows one turf hall close from the lane, with a shingle hall behind it.
+
+**Fixed on the way.** `mark.js` and `aurenne.js` set each person's position with a height of 0, which overrode the height `makePerson` gives to stand the feet on the ground. Every person on both pages stood sunk to the waist; Session 819's lane shows it. Both pages now keep the person's own height.
+
+Which turf it is is Michael's call, asked as **DECISION #285**: A dry (recommended), B moss, or C both by place.
+### Verified (headless Chromium)
+- **New `mark.check.mjs`: 9 of 9 pass.** It measures each texture's mean colour against Session 819's, whose formula the check keeps:
+
+| Turf | Saturation | Green over red | Mean RGB |
+|---|---|---|---|
+| Session 819 | 0.476 | +0.088 | (0.28, 0.37, 0.14) |
+| Dry | 0.298 | −0.060 | (0.40, 0.34, 0.22) |
+| Moss | 0.257 | +0.016 | (0.21, 0.23, 0.14) |
+
+- **The halls:** every hall builds. Shingle halls are 1,576 to 1,688 triangles in 9 draws; turf halls, either look, are 824 to 936 triangles in 10 draws, each with its fringe.
+- **Aurenne:** `aurenne.check.mjs --shots` passes, and its two pictures were shot again with the people standing on the ground.
+- **Pictures, shot again:** `mark-halls`, `mark-lane-mix`, `mark-lane-turf` and `mark-lane-shingle`, in the dry turf.
+- **Pictures, new:** `mark-roof-dry`, `mark-roof-moss` and `mark-lane-mix-moss`.
+### Needs eyes
+- **The tiling.** Close up, the tufts are a texture on a flat slab. A roof of real sod would bulge and slump, and that is geometry still owed.
+- **The fringe** repeats every 2.2 m along the eave, which shows on a long hall seen end-on.
+- **Snow.** Neither look has snow yet. The weather's `WX.cover` is meant to lay it once the halls are in the game.

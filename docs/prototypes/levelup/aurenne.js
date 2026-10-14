@@ -46,5 +46,5 @@ STATS.lotKinds = STAT.map(s => s.kind).join('');
 const comp = makeComposer(R, scene, cam, { bloom: .12, sat: 1.04, vig: .32, warm: [1.06, 1.0, .92], cool: [.96, .99, 1.04] });
 // Aurennais for scale, if the pack is there (python3 mh_pack.py); the street stands without them
 (Q.has('nopeople') ? Promise.reject('nopeople') : loadPack('mh/')).then(() => {
-  for (const [x, z, ry, s] of people) { const p = makePerson(rollGenome(s, { people: 'aurennais' })); p.root.position.set(x, 0, z); p.root.rotation.y = ry; scene.add(p.root); STATS.people = (STATS.people || 0) + 1; }
+  for (const [x, z, ry, s] of people) { const p = makePerson(rollGenome(s, { people: 'aurennais' })); p.root.position.set(x, p.root.position.y, z); p.root.rotation.y = ry; scene.add(p.root); STATS.people = (STATS.people || 0) + 1; }
 }).catch(() => { STATS.people = 0; }).finally(() => run(comp, cam));
