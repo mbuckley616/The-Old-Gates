@@ -17152,3 +17152,36 @@ The towers' shape is asked as **DECISION #296**: A round with pointed caps, as d
 - **The arcade is black.** It is cut through the front wall into the hall's dark, not a loggia with a back wall as the tithe house's is, so at noon it reads as a row of black doorways. A walk under it, with a lit wall behind, would read better; it costs a second wall and a ceiling.
 - **The observatory's slot** is small from the forecourt.
 - **The academy stands alone** on the page. Its courtyard and its quarter of the city come with the city plan.
+
+## v80 — Session 837 — The Makers' trials' props, begun: the Gate-Blade's stone and the Noon Ring's cairn (backlog L, prototype only)
+The systems builder built four of the Makers' trials on placeholders (Sessions 800 to 802) and has asked in every report since for the props: the blade's stone, the cloak's den, the bell's tidal wreck, the ring's cairn, the Shuttle's room and the Waylamp. They wait for the new kit, and the look builder's prompt lists them second after F6. With Aurenne's F6 list waiting on three answers, this session builds the two made of stone. Their descriptions are `unique-artifacts.md`'s.
+
+A new module, `docs/prototypes/levelup/props.js`, on the same rules as `pieces.js`: every shape comes from a stream keyed by the place, and one mesh per material. Its page is `trials.html`.
+- **`bladeStone`, An Chloch's** ("a blade in a standing stone outside a ruined gate, plainly visible"):
+  - **The stone:** a rough standing stone, 2.6 to 3.2 m. It is a subdivided box tapered to a rounded head and pushed about by smooth noise from its stream. It has ogham notches up its east edge and moss at its north foot.
+  - **The blade:** driven into the face at 1.15 m, slanting down 24°. The hilt and 0.68 m of steel stand out, and the point is a third of the way into the stone. The grip is at 1.47 m, where a standing person takes hold.
+  - **The ruined gate:** behind it, a fallen jamb of dressed stone, its lintel broken in two in the turf, and rubble.
+- **`ringCairn`, An Spéir's** ("on a peak's cairn, readable only at noon on a clear day"):
+  - **The cairn:** seven courses of rounded stones, about 40 in all, under a flat capstone. The ring lies in a pale hollow cut in the capstone at 1.77 m.
+  - **The pierced slab:** on the sunward side, set so the noon sun comes through its hole and lights the hollow round the ring. An hour either side, the spot falls 0.3 m away.
+
+**Fixed on the way, four things the pictures and the checks showed:**
+- **A mid-line comment.** A `//` comment I put mid-line commented out the rest of the line and its closing brace, so the page would not load. It is CLAUDE.md's own warning, about `js/`, and it holds here too. It is `/* */` now.
+- **The blade came out backwards,** point first. It is placed from the guard now.
+- **No noon light got through.** The first slab was 24 cm thick, and at a 40° sun the light dropped 20 cm across a 14 cm hole. The slab is 10 cm with its arrises and the hole 20 cm across, so a spot of about 12 cm gets through.
+- **The hollow hid the spot.** The spot fell on a near-black hollow, where it could not show. The hollow is cut in pale stone now.
+
+Both props are asked as **DECISION #298**, one letter for each:
+- **The blade:** A, in the standing stone's face as drawn (recommended), or B, down into a low boulder.
+- **The noon:** A, the pierced slab (recommended), or B, no slab.
+### Verified (headless Chromium)
+- **New `trials.check.mjs`: 9 of 9 pass.**
+  - **The blade's stone:** 20 stones from 20 keys are 1,856 triangles in 8 meshes and 2.61 to 3.19 m tall, each the same twice. The grip is 1.47 m up. Going from the pommel down the blade, the stone's face comes 0.82 to 0.87 m on, so the hilt and blade stand out and the rest is in the stone.
+  - **The cairn:** 8 cairns are 4,280 triangles in 4 meshes, each the same twice, the ring at 1.77 m. At noon the line from the ring to the sun is clear through the hole in 8 of 8, and the spot lands 0.02 m from the ring. An hour either side it lands 0.30 m off, outside the 0.13 m hollow.
+  - **The pages** render with no page errors.
+- **Pictures, new:** `trials-blade.jpg`, `-blade-close`, `-cairn`, `-cairn-close` (noon) and `-cairn-close-morning`.
+### Needs eyes
+- **The blade is a plain shape:** a flat steel shape, a box guard, a leather grip and a ball pommel. The Gate-Blade is a Maker's tool and deserves better, which is the weapon kit's job (the bodies builder's, with what is worn and carried).
+- **The ground** is the slice's rock texture tinted green, not F3's land.
+- **The sun's height** at noon is fixed at 40° in the prototype. In the game the slab must be set from the world's latitude and season, or the spot will wander.
+- **The rest of the props** (the den, the tidal wreck, the Shuttle's room, the Waylamp) are next.

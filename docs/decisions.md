@@ -4,6 +4,37 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Makers' trials' props: the blade's stone and the ring's cairn (look builder, Session 837) — DECISION #298
+The systems builder built four of the Makers' trials on placeholder props (Sessions 800 to 802) and asked for the props themselves. Session 837 builds the first two in the new kit (`docs/prototypes/levelup/props.js`; page `trials.html`). They follow `unique-artifacts.md`'s lines.
+- **The Gate-Blade's stone** (An Chloch; "a blade in a standing stone outside a ruined gate, plainly visible"):
+  - A rough standing stone, 2.6 to 3.2 m, with ogham notches up one edge and moss at its foot.
+  - The blade is driven into the stone's face at chest height, slanting down. Its grip is at 1.47 m, in reach of a standing person, and a third of the blade is in the stone.
+  - Behind it, the fallen jamb and broken lintel of the ruined gate.
+  - 1,856 triangles in 8 draws.
+- **The Noon Ring's cairn** (An Spéir; "on a peak's cairn, readable only at noon on a clear day"):
+  - A cairn of rounded stones under a flat capstone. The ring lies in a pale hollow cut in the capstone at 1.77 m, within reach.
+  - On the cairn's sunward side stands a thin upright slab pierced by a round hole. At noon the sun comes through it and lights the hollow round the ring; an hour either side, the spot falls 0.3 m away.
+  - 4,280 triangles in 4 draws.
+
+Pictures:
+- [the blade's stone](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-blade.jpg)
+- [the hilt close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-blade-close.jpg)
+- [the cairn](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-cairn.jpg)
+- [noon on the hollow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-cairn-close.jpg)
+- [the morning, for contrast](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-cairn-close-morning.jpg)
+
+Two questions, one letter each.
+
+1. How does the blade sit in its stone?
+- **A. Driven into the standing stone's face at chest height, as drawn** *(recommended)*: the stone stands up out of the land as the canon's "plainly visible" asks, and taking the blade is a pull out and down, at Might 30.
+- **B. Driven down into the top of a low boulder, hilt at the waist:** the Arthurian picture. It is instantly read as a sword in a stone, but it is lower and less visible from a road.
+
+2. How is the ring's noon shown?
+- **A. The pierced slab, as drawn** *(recommended)*: at noon a spot of sun falls on the ring's hollow, so the place itself shows why noon matters. The trial's rule (noon, a clear sky, Swiftness 30) stays as the systems builder built it.
+- **B. No slab:** the ring simply on the cairn's top. It is plainer, and the noon rule is told only by the hermit and the rumour.
+
+Not in this question: the cloak's den, the bell's tidal wreck, the Shuttle's room and the Waylamp (next sessions); solids for these props (their place in the game, after F2a).
+
 ### The Mages' academy's white towers: pointed caps, domes, or square? (look builder, Session 836) — DECISION #296
 The last of Aurenne's buildings that the canon names is "the academy's white towers" (§1.3), the Mages' academy. Session 836 builds it in the new kit at true size (`aurenneAcademy` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=academy`):
 - **The library:** a long hall of two storeys, 24 to 36 m. An arcade of round arches on columns runs along its front, with a band of glazed tile over it, tall arched windows above and a rounded parapet.
