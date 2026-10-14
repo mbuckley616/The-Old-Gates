@@ -6,7 +6,11 @@
 // ringCairn(o, r): An Spéir's trial, the Sundial Ring "on a peak's cairn, readable only at noon on a clear day". A cairn of
 //   rounded stones to 1.7 m under a flat capstone; the ring in a hollow cut in the capstone; on the cairn's south side (+z) an
 //   upright slab pierced by a round hole, set so that the noon sun through it falls on the hollow and nowhere else.
-// Both -> { group, tris, draws, top, grip | ring } (the grip's or the ring's place in the prop's own frame). One mesh per material.
+// waylamp(o, r) (Session 838): An Teallach's Waylamp, "passed from inn to inn", carried lit through five towns' inns. A hand
+//   lantern of 0.43 m to its ring: a square iron frame with horn panes, a pierced conical cap with a ring to carry it by, a brass plate
+//   on its door with the hearth's mark, a candle's flame inside. o.lit (default true): the horn glows and the flame burns;
+//   unlit (a crime put it out) the horn is dull and there is no flame. o.hook: the inn's iron bracket on a stone wall stub.
+// All -> { group, tris, draws, top, grip | ring | handle } (the grip's or the ring's place in the prop's own frame). One mesh per material.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV } from './common.js';
@@ -17,7 +21,8 @@ function mats() {
   if (PM) return PM;
   PM = { rock: mat('rock', { ns: 1.4, color: 0xb4b2a6, rough: .95 }), moss: mat('rock', { ns: 1.2, color: 0x7a8a5a, rough: 1 }), dressed: mat('ashlar', { ns: 1.0, color: 0xc8c2b2, rough: .9 }),
     steel: new THREE.MeshStandardMaterial({ color: 0xc4c8cc, roughness: .35, metalness: .45 }), iron: new THREE.MeshStandardMaterial({ color: 0x23211f, roughness: .5, metalness: .6 }),
-    gold: new THREE.MeshStandardMaterial({ color: 0xc8952e, roughness: .3, metalness: .85 }), leather: new THREE.MeshStandardMaterial({ color: 0x3a2618, roughness: .8 }), dark: new THREE.MeshStandardMaterial({ color: 0x0d0b09, roughness: 1 }) };
+    gold: new THREE.MeshStandardMaterial({ color: 0xc8952e, roughness: .3, metalness: .85 }), leather: new THREE.MeshStandardMaterial({ color: 0x3a2618, roughness: .8 }), horn: new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: .55, transparent: true, opacity: .82 }),
+    hornLit: new THREE.MeshStandardMaterial({ color: 0xd8a860, emissive: new THREE.Color(1, .62, .28), emissiveIntensity: 1.6, roughness: .5, transparent: true, opacity: .9 }), flame: new THREE.MeshStandardMaterial({ color: 0xffd090, emissive: new THREE.Color(1, .75, .4), emissiveIntensity: 4 }), brass: new THREE.MeshStandardMaterial({ color: 0xb08a3e, roughness: .4, metalness: .7 }), dark: new THREE.MeshStandardMaterial({ color: 0x0d0b09, roughness: 1 }) };
   return PM;
 }
 // a rough stone: a subdivided box (or ball) pushed about by smooth noise from the prop's stream, so the same key makes the same stone
@@ -72,4 +77,26 @@ export function ringCairn(o = {}, r = stream('cairn')) {
   const hole = new THREE.Path(); hole.absarc(0, hy, .1, 0, Math.PI * 2, true); s.holes.push(hole); const g = new THREE.ExtrudeGeometry(s, { depth: .07, bevelEnabled: true, bevelThickness: .015, bevelSize: .015, bevelSegments: 1, curveSegments: 20 });
   g.translate(0, 0, -.035); put(g, 'rock', 0, 0, sd, 0, 0, 0, .5);
   return finish({ ring, hole: [0, +hy.toFixed(3), sd], stones: n, sunAlt: +(alt * 180 / Math.PI).toFixed(1) });
+}
+
+export function waylamp(o = {}, r = stream('waylamp')) {
+  const { put, finish } = kit(), lit = o.lit !== false, s = .15, h = .24, y0 = o.hook ? 1.55 : 0;
+  // the base, the four corner posts, the horn panes between them (one of them the door, hinged on a post, with the brass plate)
+  put(new THREE.BoxGeometry(s + .03, .025, s + .03), 'iron', 0, y0 + .012, 0); put(new THREE.BoxGeometry(s + .03, .02, s + .03), 'iron', 0, y0 + h, 0);
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) put(new THREE.BoxGeometry(.012, h, .012), 'iron', sx * s / 2, y0 + h / 2, sz * s / 2);
+  for (let f = 0; f < 4; f++) { const a = f * Math.PI / 2; put(new THREE.PlaneGeometry(s - .01, h - .03), lit ? 'hornLit' : 'horn', Math.sin(a) * s / 2, y0 + h / 2, Math.cos(a) * s / 2, 0, a); put(new THREE.BoxGeometry(s, .008, .008), 'iron', Math.sin(a) * (s / 2 + .004), y0 + h * .5, Math.cos(a) * (s / 2 + .004), 0, a); }
+  // the brass plate on the door: a disc with the hearth's mark (three bars under a flame), raised a little
+  put(new THREE.CylinderGeometry(.03, .03, .004, 16).rotateX(Math.PI / 2), 'brass', 0, y0 + h * .72, s / 2 + .006);
+  for (let i = 0; i < 3; i++) put(new THREE.BoxGeometry(.03 - i * .006, .003, .003), 'iron', 0, y0 + h * .72 - .012 + i * .007, s / 2 + .009);
+  // the cap: a pierced cone (a ring of dark vents), a knob, a ring to carry it by
+  put(new THREE.ConeGeometry(s * .74, .09, 4, 1).rotateY(Math.PI / 4), 'iron', 0, y0 + h + .055, 0);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; put(new THREE.CircleGeometry(.006, 6), 'dark', Math.sin(a) * s * .38, y0 + h + .04, Math.cos(a) * s * .38, -.6, a); }
+  put(new THREE.SphereGeometry(.012, 8, 6), 'iron', 0, y0 + h + .105, 0); const handle = [0, +(y0 + h + .15).toFixed(3), 0]; put(new THREE.TorusGeometry(.035, .006, 6, 18), 'iron', 0, y0 + h + .15, 0);
+  // the candle and, lit, its flame
+  put(new THREE.CylinderGeometry(.018, .02, .09, 10), 'horn', 0, y0 + .07, 0);
+  if (lit) put(new THREE.SphereGeometry(.014, 10, 8).scale(1, 2.1, 1), 'flame', 0, y0 + .14, 0);
+  // the inn's bracket and a stub of its wall, if it hangs
+  if (o.hook) { put(rough(new THREE.BoxGeometry(1.2, 2.4, .5, 4, 8, 2), r, .02, 3), 'rock', 0, 1.2, -.42, 0, 0, 0, .5); put(new THREE.BoxGeometry(.03, .03, .36), 'iron', 0, y0 + h + .215, -.12); put(new THREE.BoxGeometry(.03, .26, .03), 'iron', 0, y0 + h + .1, -.24, -.7);
+    put(new THREE.TorusGeometry(.022, .005, 6, 12), 'iron', 0, y0 + h + .19, 0, 0, Math.PI / 2); }
+  return finish({ handle, lit, height: +(h + .185).toFixed(3) });
 }

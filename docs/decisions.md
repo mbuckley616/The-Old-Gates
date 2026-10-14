@@ -33,7 +33,11 @@ Two questions, one letter each.
 - **A. The pierced slab, as drawn** *(recommended)*: at noon a spot of sun falls on the ring's hollow, so the place itself shows why noon matters. The trial's rule (noon, a clear sky, Swiftness 30) stays as the systems builder built it.
 - **B. No slab:** the ring simply on the cairn's top. It is plainer, and the noon rule is told only by the hermit and the rumour.
 
-Not in this question: the cloak's den, the bell's tidal wreck, the Shuttle's room and the Waylamp (next sessions); solids for these props (their place in the game, after F2a).
+3. (Added by Session 838.) The Waylamp, An Teallach's ("passed from inn to inn"). A hand lantern of 0.43 m to its carrying ring: a square iron frame with horn panes, a pierced cap, a brass plate on its door with the hearth's mark, and a candle inside. Lit, the horn glows; put out by a crime, it is dull. It hangs on an iron bracket by the inn's wall. 620 to 1,152 triangles. [lit, on its bracket](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-lamp.jpg) · [put out](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-lamp-unlit.jpg)
+- **A. A horn lantern, as drawn** *(recommended)*: an innkeeper's lamp, plain enough to pass hand to hand, and its light is what you see change when a crime puts it out.
+- **B. An older thing:** a bronze oil lamp of the Makers' time in a cage, so it reads as one of the six tools, not a lantern off any inn's wall.
+
+Not in this question: the cloak's den, the bell's tidal wreck and the Shuttle's room (next sessions); solids for these props (their place in the game, after F2a).
 
 ### The Mages' academy's white towers: pointed caps, domes, or square? (look builder, Session 836) — DECISION #296
 The last of Aurenne's buildings that the canon names is "the academy's white towers" (§1.3), the Mages' academy. Session 836 builds it in the new kit at true size (`aurenneAcademy` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=academy`):

@@ -17185,3 +17185,27 @@ Both props are asked as **DECISION #298**, one letter for each:
 - **The ground** is the slice's rock texture tinted green, not F3's land.
 - **The sun's height** at noon is fixed at 40° in the prototype. In the game the slab must be set from the world's latitude and season, or the spot will wander.
 - **The rest of the props** (the den, the tidal wreck, the Shuttle's room, the Waylamp) are next.
+
+## v80 — Session 838 — The Waylamp (backlog L, prototype only)
+The third of the trials' props, and the smallest: An Teallach's Waylamp, "passed from inn to inn". You carry it lit through five towns' inns, and a crime puts it out for seven days (`unique-artifacts.md`; the systems builder built its rules in Sessions 783 to 784, on a placeholder).
+
+`props.js` has `waylamp(o, r)`. It is a hand lantern 0.43 m to its carrying ring:
+- **The body:** a square iron frame with horn panes on all four sides, an iron band round its middle, a base and a top plate.
+- **The door's plate:** a brass disc with the hearth's mark on it, three bars.
+- **The cap:** a four-sided cone pierced with eight vents, a knob, and the ring to carry it by.
+- **Inside:** a candle.
+- **Lit** (`o.lit`, the default), the horn glows and a flame burns. **Put out**, the horn is dull and there is no flame, so you can see the lamp go out.
+- **`o.hook`** hangs it on an inn's iron bracket, an arm and a brace, from a stub of stone wall. The first bracket stood 7 cm above the ring; the arm now carries a hook through it.
+
+`trials.html?view=lamp` shows it at dusk, lit on its bracket, with a put-out lamp on a table below and a candle's light on the wall. `&unlit` swaps the two.
+
+Asked as the third question of **DECISION #298**: A, a horn lantern as drawn (recommended), or B, an older bronze oil lamp of the Makers' time, so it reads as one of the six tools.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 12 of 12 pass**, with three new checks:
+  - **The four builds** (lit, lit on its bracket, put out, put out on its bracket) are 760, 1,152, 620 and 1,012 triangles in at most 7 meshes, each the same twice. The lamp is 0.425 m to its ring, and the ring is its top.
+  - **Lit**, the horn glows and a flame burns; **put out**, neither.
+  - **The lamp page** renders with no page errors.
+- **Pictures, new:** `trials-lamp.jpg` and `trials-lamp-unlit.jpg`.
+### Needs eyes
+- **Carried, it is the bodies builder's.** How the lamp sits in a hand, at the belt or in the first-person view is the viewmodel's (`16-viewmodel.js`) and the bodies builder's. This is the lamp itself and its bracket.
+- **The light it throws** in the game will come from F9's light indoors (OG-141). The point light on this page is only the picture's.
