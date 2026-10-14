@@ -17435,3 +17435,26 @@ Session 855's beasts of burden owed their harness and packs. What an animal wear
 - **The collar** slopes back with the horse's neck, which is right. But it is thin where it meets the chest, and from the side it reads as a line.
 - **The ox's bow** is mostly inside the thick neck, so the yoke reads as a beam alone.
 - **Traces and reins** are not drawn. They run to the wagon, so they want the look builder's carts first.
+
+## v80 — Session 874 — Loose hair that falls from the head, and no seam down the back of it (B1, Michael's note on #272, prototype only)
+Michael kept the groomed hair on #272 with a note: some of the styles "aren't quite landing". The pictures showed which, and why. The loose style was the worst. Its strands walked down the skull to the nape, followed the neck in, then dropped as a straight curtain. From behind, the hair pinched to the width of the neck under the head, like a vase. Over the shoulders, the strands pushed out by the body stayed vertical and left stepped shelves. And every free style had a dark line of bare scalp down the back of the head. The parting sent every strand left or right of the midline by its side, so behind the crown the two halves pulled apart. This is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `buildHair`:
+- **The parting is only at the front.** A strand rooted forward of the crown still goes to its side. Behind it, the side pull grows smoothly from nothing at the midline, in proportion to how far the root sits from it. So the back of the head is covered across the middle. This changes the short and loose styles. The gathered styles (the braid, the braids, the tail, the bun) already walked to their gathering point and draw the same strands as before.
+- **Loose hair leaves the skull where it turns under.** It used to let go at a fixed height. Now a strand lets go where the surface under it starts to face down (its normal's y below −0.08), or 5 cm below a height drawn per strand, whichever comes first. From there it falls straight down, with a little spread to its side and never back in toward the head's axis. So it parts from the skull on a tangent and hangs as wide as the head.
+- **What fell is smoothed.** Eight passes along the fallen part, then cleared off the body once more by the same rule the walk uses (its layer height on the head, the clothes' clearance below the neck). A first try cleared it by the clothes' 2 cm on the head as well, and that drew a ledge round the skull. The strand's normal also blends from the skull's to the hanging one over eight steps, so the light has no seam where it lets go.
+- **Lengths vary more,** 0.7 to 1.15 of the style's length and a little shorter at the sides, so the ends are not cut on one line.
+- **Under the fur mantle, loose hair goes inside the collar.** The mantle's eleven fur shells stand 10 cm off the neck. Hair laid over that came back out below in a tangle (it did before this session too, as a block hung off the fur). Two tries at lifting it over the collar failed the same way. So, as the hood already tucks the hair in, a loose strand under a mantle ends where the collar takes it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 145 checks pass**, ten of them new. Every style but the two braids, with and without the mantle, is checked for **no bare seam down the back of the head**: points on the scalp's back midline above the occiput, with no strand over them within 4 mm.
+  - Now 0 of 88 points for every checked style. Before this session it was short 18 of 88 (20.5%) and loose 7 of 88 (8%).
+  - The two braids are not checked, because they part at the back as braids do (11% of the midline is bare).
+- No strand is under the skin or on the face, in any style.
+- The loose style is 244,408 triangles and builds in 2.0 s. With the mantle it is 192,290 triangles and 1.5 s, since the strands stop at the collar.
+- The gathered styles build the strands they built before. A first version drew one more random number per strand for every style. That moved every root and put a stripe across the tail and the bun; the number is now drawn for loose hair only.
+- **Pictures:** `builder-styles-back`, `-front` and `-mantle` were shot again. New: `builder-woman-loose.jpg` (from behind), `builder-woman-loose-side.jpg` and `builder-woman-loose-mantle.jpg`. `builder-woman-loose-before.jpg` is the same view on the old code.
+### Needs eyes
+- **The hairline** is still a hard edge, set high, and every style reads slicked back. The front of the scalp wants finer, shorter strands thinning out at the edge. That is the next refinement on #272's note, and with the brows ("still fugly"), the one that matters most at conversation distance.
+- **Loose ends** are still visible cards at the hem: the tips taper, but each strand is one flat card. Clumping strands into locks near the ends would read softer.
+- **Hair over the fur mantle**: the tuck is a choice, not a law. Hair worn out over the fur would need the fur's outer surface in the push-off map, as the cloak's map holds the skirt.

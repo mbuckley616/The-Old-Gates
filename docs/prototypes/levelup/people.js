@@ -238,7 +238,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
   const R0 = PACK.rest, neckY0 = .6, S = surfGrid(P, PACK.G['body'], (x, y, z) => (y > neckY0 - .02) || (y > .25 && Math.abs(x) < .2));
   const bb = new THREE.Box3(); for (const v of scalpTris) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5); hc.y -= .02;
   // clear of the clothes: the tunic's layers, and the fur mantle's eleven shells over the shoulders
-  const D = G.dress || {}, neckY = heads['neck01'].y, clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .01 - q.y) / .02)); return .02 + k * k * (3 - 2 * k) * ((D.mantle && q.y > neckY - .3 ? .1 : D.tunic ? .045 : .02) - .02); };
+    const D = G.dress || {}, neckY = heads['neck01'].y, clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .01 - q.y) / .02)); return .02 + k * k * (3 - 2 * k) * ((D.mantle && q.y > neckY - .3 ? .1 : D.tunic ? .045 : .02) - .02); };
   const onHead = q => q.y > heads['neck01'].y + .03, faceZ = hc.z + .02, backZ = heads['neck01'].z - .04;
   // gathering points, on the surface
   const gp = d => { const e = S.extreme(hc, d.normalize(), p => p.y > heads['neck01'].y + .02); return { p: e.p.clone().addScaledVector(e.n, .012), n: e.n.clone() }; };
@@ -253,25 +253,47 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
     const p = A.clone().multiplyScalar(1 - u - v).addScaledVector(B, u).addScaledVector(C, v), side = Math.abs(p.x - hc.x) < .004 ? (rnd() < .5 ? -1 : 1) : Math.sign(p.x - hc.x);
     const off = .003 + thick * rnd() ** .7, g = gather.length === 2 ? gather[side < 0 ? 0 : 1] : gather[0];
     let q = p.clone(), e = S.near(q), n = e ? e.n.clone() : p.clone().sub(hc).normalize(); q.addScaledVector(n, off);
-    const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = L * (.75 + .4 * rnd());
+    // the parting (Session 874): only the strands rooted forward of the crown split to either side; behind it the side pull
+    // grows smoothly from nothing at the midline, so no seam of bare scalp runs down the back of the head
+    const sx = Math.max(-1, Math.min(1, (p.x - hc.x) / hr.x)), fore = Math.max(0, Math.min(1, (p.z - hc.z + .02) / .06)), sideW = .45 * (fore * side + (1 - fore) * sx);
+    const pts = [q.clone()], ns = [n.clone()], dir = new THREE.Vector3(), myL = L * (free ? (.7 + .45 * rnd()) * (1 - .22 * sx * sx) : .75 + .4 * rnd()), relY = free ? hc.y - .03 - .035 * rnd() : 0; let fell = -1, under = false, nRel = null;
     for (let l = 0; l < myL + (g ? 1 : 0); l += step) {
       let want;
       if (g) { want = g.p.clone().sub(q).normalize(); const front = Math.max(0, Math.min(1, (q.z - hc.z + .01) / .05)); want.z -= 1.4 * front; }
-      else { const back = Math.max(0, Math.min(1, (faceZ + .02 - q.z) / .1)); want = new THREE.Vector3(side * .45, -(.25 + .75 * back), -(1 - .55 * back)); if (free && q.y < hc.y - .03 && q.z < hc.z) want.set((p.x - hc.x) / hr.x * .25, -1, -.1); }
-      const stick = g || short || (free ? q.y > hc.y - .03 || q.z > hc.z : onHead(q)), hit = heightOver(S, q);
+      else { const back = Math.max(0, Math.min(1, (faceZ + .02 - q.z) / .1)); want = new THREE.Vector3(sideW, -(.25 + .75 * back), -(1 - .55 * back));
+        // loose hair leaves the skull where the skull turns under (its surface faces down), so it parts from it on a tangent and
+        // with no ledge; then it falls straight down with a little spread to the side, and never back in toward the head's axis,
+        // so it hangs as wide as the head and is not pinched in to the nape
+        if (free && q.z < hc.z && q.y < hc.y - .02 && (under || n.y < -.08 || q.y < relY - .05)) { under = true; if (fell < 0) { fell = pts.length - 1; nRel = n.clone(); } const ax = new THREE.Vector3(q.x - hc.x, 0, q.z - hc.z).normalize(); want.set(sx * .08, -1, 0);
+          const din = dir.x * ax.x + dir.z * ax.z; if (din < 0) { dir.x -= din * ax.x; dir.z -= din * ax.z; } } }
+      const stick = g || short || (free ? !under : onHead(q)), hit = heightOver(S, q);
       if (stick && hit) want.addScaledVector(hit.e.n, -want.dot(hit.e.n));
       want.normalize(); dir.lerp(want, l === 0 ? 1 : .5).normalize();
       const q2 = q.clone().addScaledVector(dir, step), h2 = heightOver(S, q2);
       if (h2) { const c = stick || onHead(q2) ? off : clearAt(q2) + off; if (stick || h2.h < c) q2.addScaledVector(h2.e.n, c - h2.h); n.copy(h2.e.n); }
-      if (!stick) n.set(q2.x, 0, q2.z - heads['neck01'].z).normalize();
+      if (!stick) { n.set(q2.x, 0, q2.z - heads['neck01'].z).normalize(); if (nRel) n.lerp(nRel, Math.max(0, 1 - (pts.length - fell) / 8)).normalize(); }
       if (!onHead(q2) && q2.z > backZ && Math.abs(q2.x) < .12) q2.z = backZ;
       pts.push(q2); ns.push(n.clone()); q = q2;
-      if (g && q.distanceTo(g.p) < .012) break; }
+      if (g && q.distanceTo(g.p) < .012) break;
+      // under the fur mantle loose hair is worn inside the collar (Session 874): the fur's eleven shells stand 10 cm off the neck,
+      // too thick for the hair to lie over without a tangle where it comes back out, so the strand ends where the collar takes it
+      if (free && D.mantle && under && q.y < neckY - .01) break; }
+    // what fell is smoothed, so the push-outs over the shoulders and the mantle leave a curve and not a stepped shelf, then cleared once more
+    if (fell > 0) { for (let it = 0; it < 8; it++) for (let i = fell + 1; i < pts.length - 1; i++) pts[i].lerp(pts[i - 1].clone().add(pts[i + 1]).multiplyScalar(.5), .5);
+      for (const q3 of pts.slice(fell + 1)) { const h3 = heightOver(S, q3), c = (onHead(q3) ? 0 : clearAt(q3)) + off; if (h3 && h3.h < c) q3.addScaledVector(h3.e.n, c - h3.h); } }
     strands.push({ pts, ns, w: (short ? .008 : free ? .008 : .011) * (.8 + .4 * rnd()), tip: free ? .85 : .5, v0: 0, v1: Math.min(1, pts.length * step / (g ? .35 : myL)) });
   }
   // the checks' numbers: strand points under the skin, and strand points lying on the face (by the rest place of the skin under them)
   let inside = 0, onFace = 0, pts = 0; for (const st of strands) for (const q of st.pts) { pts++; const hit = heightOver(S, q); if (!hit) continue; if (hit.h < -.001) inside++;
     const v = hit.e.v, x = R0[v * 3], y = R0[v * 3 + 1], z = R0[v * 3 + 2]; if (hit.h < .03 && z > .05 && y > .6 && y < .79 - .03 * (x / .075) ** 2 && Math.abs(x) < .07) onFace++; }
+  // Session 874's number, the seam: points down the back of the scalp's midline, above the occiput, with no strand over them within 4 mm
+  const SG = new Map(), sk = (x, y, z) => Math.floor(x / .01) + ',' + Math.floor(y / .01) + ',' + Math.floor(z / .01);
+  for (const st of strands) for (const q of st.pts) { const k = sk(q.x, q.y, q.z); if (!SG.has(k)) SG.set(k, []); SG.get(k).push(q); }
+  const nearStrand = (q, n) => { let bd = 1e9; const i = Math.floor(q.x / .01), j = Math.floor(q.y / .01), k = Math.floor(q.z / .01), d = new THREE.Vector3();
+    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) for (const w of SG.get((i + a) + ',' + (j + b) + ',' + (k + c)) || []) { d.copy(w).sub(q); const h = d.dot(n); if (h < -.004 || h > .02) continue; bd = Math.min(bd, d.addScaledVector(n, -h).lengthSq()); } return Math.sqrt(bd); };
+  let seamN = 0, seamBare = 0; for (let t = 0; t < scalpTris.length; t += 3) { A.fromArray(P, scalpTris[t] * 3); B.fromArray(P, scalpTris[t + 1] * 3); C.fromArray(P, scalpTris[t + 2] * 3);
+    const tn = B.clone().sub(A).cross(C.clone().sub(A)).normalize(); if (tn.dot(A.clone().sub(hc)) < 0) tn.negate();
+    for (const q of [A.clone().add(B).add(C).multiplyScalar(1 / 3), A.clone().add(B).multiplyScalar(.5), B.clone().add(C).multiplyScalar(.5), C.clone().add(A).multiplyScalar(.5)]) if (q.z < hc.z - .03 && Math.abs(q.x - hc.x) < .015 && q.y > hc.y - .02) { seamN++; if (nearStrand(q, tn) > .004) seamBare++; } }
   const cards = strandCards(strands, col, headB); cards.name = 'hair'; out.push(cards);
   // what the gathering makes
   const tie = new THREE.MeshStandardMaterial({ color: sRGB(.25, .17, .11), roughness: .7 }), lm = lockMat(col.clone().multiplyScalar(.95));
@@ -303,7 +325,7 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
         brush.push({ pts, ns, w: .007, v0: .5, v1: 1 }); }
       const bm = strandCards(brush, col, headB); bm.name = 'brush'; out.push(bm); }
   }
-  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, points: pts, inside, onFace, drapeMin: +drapeMin.toFixed(4) } };
+  return { meshes: out, stats: { style, strands: strands.length, gather: gather.length, points: pts, inside, onFace, drapeMin: +drapeMin.toFixed(4), seam: seamN ? +(seamBare / seamN).toFixed(3) : 0, seamN } };
 }
 
 // ── the cloak (Session 805, B2): cloth hung from the shoulders ──

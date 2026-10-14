@@ -55,6 +55,8 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: builds (${s.strands} strands, ${s.tris} triangles, ${s.ms} ms)`, s.strands > 500 && s.tris > 10000);
     check(`${k}: no strand under the skin (${s.inside} of ${s.points} points)`, s.inside <= s.points * .002, s.inside);
     check(`${k}: no strand on the face (${s.onFace} points)`, s.onFace <= s.points * .002, s.onFace);
+    // Session 874: no seam of bare scalp down the back of the head (two braids part there, as they should)
+    if (k.split('+')[0] !== 'braids') check(`${k}: no bare seam down the back of the head (${Math.round(s.seam * s.seamN)} of ${s.seamN} midline points with no strand over them)`, s.seamN > 40 && s.seam <= .02, s.seam);
     if (s.gather && k.split('+')[0] !== 'bun') check(`${k}: the braid or tail clears the body by its clothes (${(s.drapeMin * 100).toFixed(1)} cm)`, s.drapeMin > .015, s.drapeMin); }
   for (const [k, c] of Object.entries(r.cloaks)) { console.log(k, JSON.stringify(c));
     check(`${k}: saves and loads back with its dress (${c.bytes} bytes)`, c.saved && c.bytes < 1100);
@@ -110,7 +112,7 @@ if (shotArg) { const only = shotArg.split('=')[1];
   await shot('cloak-hood-woman', 'seed=styles&sex=f&view=full&turn=.4&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'up', cloakLen: .85, mantle: null, apron: [.8, .76, .66], bib: true }));
   await shot('cloak-markman', 'seed=b7&sex=m&view=full&turn=2.3&dress=' + dq({ cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], brooch: [.35, .35, .36], cloakLen: 1 }));
   await shot('apron-leather', 'seed=b7&sex=m&view=full&turn=.3&dress=' + dq({ apron: [.36, .25, .16], apronLeather: true, bib: true, mantle: null }));
-  for (const [n, q] of [['woman-braid', 'seed=styles&sex=f&style=braid&view=head&turn=-2.3'], ['woman-braids', 'seed=styles&sex=f&style=braids&view=head&turn=2.6'], ['woman-face', 'seed=styles&sex=f&style=bun&view=face'], ['man-face', 'seed=b7&sex=m&view=face']]) await shot(n, q);
+  for (const [n, q] of [['woman-braid', 'seed=styles&sex=f&style=braid&view=head&turn=-2.3'], ['woman-braids', 'seed=styles&sex=f&style=braids&view=head&turn=2.6'], ['woman-loose', 'seed=styles&sex=f&style=loose&view=head&turn=2.7&dress=' + dq({ mantle: null })], ['woman-loose-side', 'seed=styles&sex=f&style=loose&view=head&turn=1.5&dress=' + dq({ mantle: null })], ['woman-loose-mantle', 'seed=styles&sex=f&style=loose&view=head&turn=2.7'], ['woman-face', 'seed=styles&sex=f&style=bun&view=face'], ['man-face', 'seed=b7&sex=m&view=face']]) await shot(n, q);
   // the brows close (Session 824): the face view at twice the size, cut to the brow line
   await shot('brows-woman', 'seed=styles&sex=f&style=bun&view=face', 1920, 1440, false, [.25, .38, .5, .25]); await shot('brows-man', 'seed=b7&sex=m&view=face', 1920, 1440, false, [.25, .38, .5, .25]);
   for (const k of ['gatelander', 'markman', 'aurennais', 'oldblood']) await shot('brows-' + k, `seed=brows:${k}&sex=m&people=${k}&view=face&nomantle`, 1920, 1440, false, [.25, .38, .5, .25]);
