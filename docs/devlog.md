@@ -16916,6 +16916,8 @@ Nothing in the game changed, so no suite was run. The figures in the page were c
 - Dunmore draws 836 calls at noon on F1 (Session 822).
 - Portclare's square took 2.0 s a frame on the critic's 29 Sep run.
 
+### Michael's answers, the same night
+Michael: 1 B, 2 A, 3 A. 2.0 is the look and the core loop. On the legacy zones: “A, and honestly, if it's easier to just purge the legacy code / zones when ready, I'm cool with that. I was never very attached to that, they were moreso just placeholders to help with scaffolding for a main story.” He accepted the drafted cards, the F2 split and the budgets. The entry moved from Pending to Answered in `decisions.md`, and the page, backlog K and the foundation's pointer now read as approved. Owed by the producer: card F2a, F2b and F8 to F14 on the control room, and a roadmap epic for the core loop.
+
 ### Needs eyes
-- **Michael's answers to Q1 to Q3.** The cards F8 to F14 are drafts until then. Once he answers, the producer cards them on the control room and adds a roadmap epic.
 - **The budgets are guesses.** 45 fps and 40 MB are a starting point, not measurements. F14 measures them on his laptop.

@@ -1,6 +1,6 @@
 # The Old Gates 2.0: the scope
 
-*Claude, Session 829, 13 Oct 2026, asked by Michael in chat ("write up the 2.0 scope"). A proposal: the cards below are drafts until Michael approves them, and what 2.0 includes is his call (`decisions.md`, *What ships in 2.0?*). The look's brief is `visual-foundation.md`; this page is everything around it.*
+*Claude, Session 829, 13 Oct 2026, asked by Michael in chat ("write up the 2.0 scope"). **Approved the same night:** Michael's 1 B, 2 A and 3 A on *What ships in 2.0?* (`decisions.md`), so this page is the spec: 2.0 is the look and the core loop, the legacy zones go, and the cards F8 to F14, the split of F2 and the budgets stand. The look's brief is `visual-foundation.md`; this page is everything around it.*
 
 ## 1. What 2.0 is
 
@@ -12,7 +12,7 @@ It is done when all of these hold:
 3. Every body a player can see comes from the builder's genome: townsfolk, foes, animals and the player in first and third person.
 4. A save made before 2.0 loads into 2.0 and plays on.
 5. It runs at an agreed frame rate on Michael's laptop at the middle quality level, and the download stays under an agreed size (§5).
-6. The mechanics Michael puts in 2.0 (§4) are built and pass their suites.
+6. The core loop is built and passes its suites: combat's resolver, skills and perks (A), enemies by place, and magic B with its questline (Michael's 1 B).
 
 ## 2. What is planned: F1 to F7
 
@@ -51,7 +51,7 @@ People grow about 1.6 times; the world's distances and speeds do not (§1 of `vi
 | **F11. Ships and the sea** | look builder | F2a and F3 merged | The hull lines by island (L6, OG-004), decks and cabins at true size, sails and rigging, harbours and quays, the sea floor and its wrecks under F3's water | no |
 | **F12. Effects and weather** | look builder, systems for the corruption level | F3 merged | Spells by school (`64-spells.js`), fire, sparks and impacts by surface (OG-127), rain, snow and blizzard, footprints, weather on surfaces (OG-138), the gate storms, and **the corruption level 0 to 6** that §2 designs and no card owns: one number read by the grade, the sky, the clouds and the tree kit | no |
 | **F13. Old saves into 2.0** | systems builder | F2b and F10 merged | A save's look and people become genomes; positions inside rooms, saved in old units, map to the rooms at true size; a load test over saves made on the last 1.x build | no |
-| **F14. The cutover** | deep work | everything else in §1 | The full suite green under `--look=new`; the frame rate measured on Michael's laptop at each quality level; the download measured; the default flipped; r128, `05-compat.js`' shims and the old builders deleted; the legacy zones' code retired (§6, Q2); the mesh inspector and the control room's Meshes tab rebuilt from the new kit; `CLAUDE.md`'s code map updated | yes |
+| **F14. The cutover** | deep work | everything else in §1 | The full suite green under `--look=new`; the frame rate measured on Michael's laptop at each quality level; the download measured; the default flipped; r128, `05-compat.js`' shims and the old builders deleted; the legacy zones purged (§6, Q2: at the cutover, or sooner if easier, once Q7's old-zone path is in the world); the mesh inspector and the control room's Meshes tab rebuilt from the new kit; `CLAUDE.md`'s code map updated | yes |
 
 The mesh inspector rides along: every card that adds or renames a mesh adds it to `97-inspector.js` and republishes the Meshes tab, as now.
 
@@ -84,7 +84,9 @@ The look's brief names three quality levels but no numbers. Proposed, for Michae
 - **Download:** under 40 MB for a first load. three.js 0.170 is about 0.7 MB; the builder makes people and creatures in code, so only textures and sounds weigh.
 - **Draw calls:** under 1,000 in the busiest town view at the middle level (Dunmore draws 836 at noon on F1).
 
-## 6. Questions for Michael (filed in `decisions.md`)
+## 6. Questions for Michael, answered (13 Oct 2026)
+
+Michael: **1 B, 2 A, 3 A.** On the legacy zones: “A, and honestly, if it's easier to just purge the legacy code / zones when ready, I'm cool with that. I was never very attached to that, they were moreso just placeholders to help with scaffolding for a main story.” The options as they were asked:
 
 **Q1. What ships in 2.0?**
 - **A. The look only.** 2.0 is §1's checklist without item 6. Mechanics keep landing on main as they are built, before or after the cutover.
