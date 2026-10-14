@@ -217,3 +217,78 @@ export function gatelandsCairn(o = {}, r = stream('cairn')) {
   return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, floorAt, door: { x0: -HW, x1: HW, z: +ZD.toFixed(2), lintel: LP }, passage: { w: W, len: +(ZD - ZM).toFixed(2), lintel: LP },
     chamber: { y: FY, vault: +VAULT.toFixed(2) }, basins, kerb, carved, entrance: +ES.toFixed(2) };
 }
+
+// gatelandsCave(o, r) (Session 872, Michael's 3 A on #305, the second of the next places): a limestone cave with a lake under falls, OG-121's
+//   "natural caverns: stalactites, an underground lake under falls, strange flowers" and the Gatelands' "limestone caves", OG-099's cave of
+//   blue pools under falls. Built to the person, a metre a unit, +z the mouth:
+//   - the way in: a passage 14 m long, 3 m wide and 3 m high in pale limestone, from the mouth (z 0) to the chamber;
+//   - the chamber: 22 m across, 26 m long and 11 m high, its floor a shore along the east side and across the near end, the rest a lake
+//     whose bed falls to 3.4 m under its surface (0.45 m under the shore);
+//   - the falls: a stream comes in through a swallow hole in the roof at the far west corner, 2 m across under a shaft open to the sky, and
+//     falls 11 m into the lake; the day comes down the shaft with it;
+//   - stalactites from the roof, stalagmites and flowstone on the shore off the walk, and pale flowers that glow in the dark at the water's
+//     edge (o.flowers, default true);
+//   - the shelf: the shore's far end, a ledge beside the falls' pool, where the walk ends.
+//   -> { group, tris, draws, top, path, floor (the shore's height, 0), lake { x0, x1, z0, z1, y, deep }, falls { x, z, top, foot },
+//        shaft { x, z, r, top }, mouth { x0, x1, h }, flowers ([x, y, z]...) }
+let VM = null;
+function caveMats() {
+  if (VM) return VM; const M = mats();
+  VM = { ...M, lime: mat('rock', { ns: 1.5, color: 0xb8b4a8, rough: .9 }), limeWet: mat('rock', { ns: 1.6, color: 0x9a988e, rough: .4 }), bed: mat('rock', { ns: 1.2, color: 0x6a7a74, rough: .8 }),
+    drip: mat('rock', { ns: 1.0, color: 0xd8d2c0, rough: .6 }), lake: new THREE.MeshStandardMaterial({ color: 0x1a5a6a, roughness: .04, metalness: .1, transparent: true, opacity: .78, depthWrite: false }),
+    fall: new THREE.MeshStandardMaterial({ color: 0xd8eef4, emissive: new THREE.Color(.35, .5, .58), emissiveIntensity: .6, roughness: .2, transparent: true, opacity: .62, side: THREE.DoubleSide, depthWrite: false }),
+    foam: new THREE.MeshStandardMaterial({ color: 0xf0f6f8, roughness: .5, transparent: true, opacity: .8, depthWrite: false }),
+    petal: new THREE.MeshStandardMaterial({ color: 0xbfe6f0, emissive: new THREE.Color(.45, .8, 1), emissiveIntensity: 1.4, roughness: .5 }), stalk: new THREE.MeshStandardMaterial({ color: 0x4a6a5a, roughness: .8 }) };
+  VM.lime.side = VM.limeWet.side = THREE.DoubleSide; return VM;
+}
+export function gatelandsCave(o = {}, r = stream('cave')) {
+  const M = caveMats(), B = new Map(), flowersOn = o.flowers !== false;
+  const put = (geo, key, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(key)) B.set(key, []); B.get(key).push(g); };
+  const F = field(stream(String(o.key || 'cave') + ':rock'), .4), PL = 14, PW = 3, PH = 3, CW = 22, CL = 26, CH = 11, Z0 = -PL, Z1 = -PL - CL, LY = -.45, DEEP = 3.4;
+  const shore = { x0: CW / 2 - 4.2, nearZ: Z0 - 3.4, farZ: Z1 + 4.0 }, SX = -CW / 2 + 3.6, SZ = Z1 + 3.4, SR = 2.0;
+  // the passage: walls and roof, open at both ends and below; its floor a flat bed
+  put(rockBox(PW, PH, PL, 0, PH / 2, -PL / 2, .5, F, (c, n) => Math.abs(n.z) < .5 && n.y > -.5, y => y < .01), 'lime', 0, 0, 0, 0, 0, 0, .35);
+  put(new THREE.BoxGeometry(PW + .4, .3, PL), 'lime', 0, -.15, -PL / 2, 0, 0, 0, .4);
+  // the chamber: walls and roof; the near wall cut for the passage, the roof cut for the swallow hole; no floor (the shore and the bed are their own)
+  put(rockBox(CW, CH + 4, CL, 0, (CH - 4) / 2, (Z0 + Z1) / 2, .5, F, (c, n) => n.y > -.5 && !(n.z > .5 && Math.abs(c.x) < PW / 2 && c.y > 0 && c.y < PH) && !(n.y > .5 && Math.hypot(c.x - SX, c.z - SZ) < SR + .8), y => Math.abs(y + 4) < .01), 'lime', 0, 0, 0, 0, 0, 0, .3);
+  // the shaft up from the swallow hole to the sky, wet: a funnel from 3.2 m across at its foot, just under the roof and wider than the hole
+  // cut in it, to 2 m at the top, so nothing gets out between the roof and the shaft
+  { const H2 = 12.2, g = new THREE.CylinderGeometry(SR, SR + 1.2, H2, 20, 8, true), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const [dx, , dz] = F(P.getX(i) + SX, P.getY(i) + CH + 6, P.getZ(i) + SZ); P.setX(i, P.getX(i) + dx * .15); P.setZ(i, P.getZ(i) + dz * .15); }
+    g.computeVertexNormals(); put(g, 'limeWet', SX, CH - .3 + H2 / 2, SZ, 0, 0, 0, .4); }
+  // the floor: one grid over the chamber, the shore flat at 0 along the east side and the near end, falling under the lake to its bed
+  const inShore = (x, z) => x > shore.x0 || z > shore.nearZ || (z < shore.farZ && x > -1.2);
+  const lakeD = (x, z) => { const d = Math.min(shore.x0 - x, z < shore.farZ ? 9 : shore.nearZ - z, z < shore.farZ ? -1.2 - x : 9, x + CW / 2, z - Z1); return Math.max(0, Math.min(1, d / 3.2)); };
+  { const NX = 44, NZ = 52, pos = [], idx = []; for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = -CW / 2 - .8 + (CW + 1.6) * i / NX, z = Z0 + .8 - (CL + 1.6) * j / NZ; /* run under the walls, whose noise moves them 0.6 m */
+      let y = 0; if (!inShore(x, z)) { const t = lakeD(x, z); y = -.6 - (DEEP - .15) * t * t * (3 - 2 * t); } else y = -.02 + .04 * Math.sin(x * 3.1) * Math.sin(z * 2.7) * .3; pos.push(x, y, z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1; idx.push(a, b, c, b, d, c); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'bed', 0, 0, 0, 0, 0, 0, .3);
+    // the shore's own skin over the grid where it is dry, paler: the same grid's dry cells
+    const pos2 = []; for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const q = [[i, j], [i + 1, j], [i, j + 1], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => b * (NX + 1) + a);
+      if (q.every(k => pos[k * 3 + 1] > -.05)) for (const k of q) pos2.push(pos[k * 3], pos[k * 3 + 1] + .005, pos[k * 3 + 2]); }
+    const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(pos2, 3)); g2.computeVertexNormals(); put(g2, 'lime', 0, 0, 0, 0, 0, 0, .35); }
+  // the lake's surface
+  put(new THREE.PlaneGeometry(CW, CL).rotateX(-Math.PI / 2), 'lake', 0, LY, (Z0 + Z1) / 2, 0, 0, 0, .1);
+  // the falls: a sheet of water from the swallow hole's lip down to the lake, three ribbons a little apart, foam where it lands
+  const falls = { x: SX + .4, z: SZ, top: CH + 2, foot: LY };
+  for (let k = 0; k < 3; k++) { const g = new THREE.PlaneGeometry(1.1 - k * .2, falls.top - LY, 1, 12), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, .18 * Math.sin(P.getY(i) * .9 + k * 2));
+    g.computeVertexNormals(); put(g, 'fall', falls.x + (k - 1) * .35, (falls.top + LY) / 2, falls.z + (k - 1) * .2, 0, .5 + k * .5, 0, .3); }
+  for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2, g = new THREE.SphereGeometry(.35 + r() * .2, 8, 5); g.scale(1.3, .25, 1.3); put(g, 'foam', falls.x + Math.cos(a) * .7, LY + .03, falls.z + Math.sin(a) * .7); }
+  // stalactites from the roof (over the lake and the shore alike, all above 6 m), stalagmites and flowstone on the shore away from the walk
+  // and back from the water's edge, where the flowers are
+  for (let k = 0; k < 46; k++) { const x = -CW / 2 + 1 + r() * (CW - 2), z = Z0 - 1 - r() * (CL - 2); if (Math.hypot(x - SX, z - SZ) < SR + 1) continue; const L = .4 + r() ** 2 * 2.2, g = new THREE.ConeGeometry(.08 + L * .07, L, 7); g.rotateX(Math.PI);
+    put(g, 'drip', x, CH - .2 - L / 2 + F(x, CH, z)[1] * .3, z); }
+  const path = [[0, -.4], [0, Z0 - 1.2], [CW / 2 - 2.0, Z0 - 3.0], [CW / 2 - 2.0, shore.farZ - .8], [1.4, Z1 + 2.2], [-.4, Z1 + 2.2]];
+  const nearPath = (x, z) => { let m = 9; for (let s = 0; s + 1 < path.length; s++) { const [x0, z0] = path[s], [x1, z1] = path[s + 1], dx = x1 - x0, dz = z1 - z0, t = Math.max(0, Math.min(1, ((x - x0) * dx + (z - z0) * dz) / (dx * dx + dz * dz))); m = Math.min(m, Math.hypot(x - x0 - dx * t, z - z0 - dz * t)); } return m; };
+  for (let k = 0, n = 0; k < 80 && n < 16; k++) { const x = shore.x0 + 1.4 + r() * 2.6, z = Z0 - 2 - r() * (CL - 4); if (!inShore(x, z) || nearPath(x, z) < 1.1 || x > CW / 2 - .5) continue; n++;
+    const L = .3 + r() * 1.1, g = new THREE.ConeGeometry(.14 + L * .12, L, 8); put(g, 'drip', x, L / 2 - .02, z); }
+  // flowstone: pale rounded lobes down the east wall by the shore
+  for (let k = 0; k < 7; k++) { const z = Z0 - 3 - k * 3.2 - r(), g = new THREE.SphereGeometry(.9, 10, 8); g.scale(.5, 1.6, 1.2); put(g, 'drip', CW / 2 - .25, .9, z); }
+  // the strange flowers: pale blue, glowing, in clusters at the water's edge
+  const flowers = []; if (flowersOn) for (let c = 0; c < 6; c++) { const cz = Z0 - 3.5 - c * 3.8, cx = shore.x0 + .3; for (let k = 0; k < 7; k++) { const x = cx + r() * .6, z = cz + (r() - .5) * 1.2, h = .15 + r() * .25;
+      if (nearPath(x, z) < .5) continue; put(new THREE.CylinderGeometry(.008, .01, h, 4), 'stalk', x, h / 2, z); put(new THREE.SphereGeometry(.045, 7, 5).scale(1, .6, 1), 'petal', x, h + .02, z); flowers.push([+x.toFixed(2), +(h + .02).toFixed(2), +z.toFixed(2)]); } }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['lake', 'fall', 'foam', 'petal'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, floor: 0, lake: { x0: -CW / 2, x1: shore.x0, z0: shore.nearZ, z1: Z1, y: LY, deep: DEEP },
+    falls, shaft: { x: SX, z: SZ, r: SR, top: CH + 11.9, cut: SR + .8 }, mouth: { x0: -PW / 2, x1: PW / 2, h: PH }, flowers, chamber: { x0: -CW / 2, x1: CW / 2, z0: Z0, z1: Z1, h: CH } };
+}

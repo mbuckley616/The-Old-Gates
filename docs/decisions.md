@@ -3,6 +3,25 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The limestone cave: what lights a cave (look builder, Session 872) — DECISION #313
+**F8's third place: a limestone cave with a lake under falls (look builder, Session 872).** It is the second of the next places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCave`) and `places.html?place=cave`, from OG-121's caverns ("stalactites, an underground lake under falls, strange flowers") and OG-099's cave of blue pools under falls. It is built to the person:
+- **The passage:** 14 m of pale limestone, 3 by 3 m.
+- **The chamber:** 22 by 26 m and 11 m high. A shore runs along its east side and across the near end, and the rest is a lake 3.4 m deep.
+- **The falls:** a stream comes in through a swallow hole in the roof under a shaft open to the sky, and falls 11 m into the lake.
+- **The shore:** stalactites hang from the roof, with stalagmites and flowstone on the shore, and pale flowers at the water's edge.
+
+The walk from the mouth along the shore to the far shelf has a floor under every quarter metre, at least 2.79 m of headroom and at least 0.99 m clear. No ray from inside gets out except by the mouth or up the shaft.
+
+**What lights a cave?** Your answer for the mine (#305, 2 A) was that a worked-out mine is dark but for your torch. As drawn, this cave has two lights of its own.
+- **A. The day down the shaft, and the flowers glow, as drawn** *(recommended)*: the falls and their pool are lit from above, and the flowers glow pale blue along the shore. Where the cave is open to the sky, the day comes in, and the flowers are OG-121's "strange flowers", a small wrongness (OG-096). Away from both, it is your torch.
+- **B. Your torch alone:** no shaft of day (the falls come out of a dark slot), and the flowers do not glow. It is darker and closer, and the same rule as the mine.
+
+Pictures:
+- [from the passage's end across the lake to the falls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-lake.jpg)
+- [the east shore, the flowers and the stalagmites](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-shore.jpg)
+- [from the far shelf up the falls to the shaft](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-falls.jpg)
+- [up the passage from the mouth](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-passage.jpg)
+
 ### The Mark's cutter in the new kit: tanned or striped sails, and a beast's head on the stem (look builder, Session 871) — DECISION #312
 **F11's second hull: the Mark's cutter (look builder, Session 871).** Your A on #306 gave each island one rig, and the Mark's is the game's cutter, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`markCutter`) and `ships.html?ship=cutter`. It is built to the game's cutter's numbers:
 - **The size:** 14 by 4.0 m, draft 1.45, with the deck 1.0 m over the sea.

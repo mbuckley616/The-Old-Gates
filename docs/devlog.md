@@ -18061,3 +18061,40 @@ Asked as **DECISION #312**: the sails (A, tanned red-brown, recommended; B, red 
 - **The beast's head is a flat profile**, 0.2 m thick with a bevel. From ahead it is a plank. A carved head in the round is a later pass, and the bodies builder's beasts could lend it a skull.
 - **Below the deck she is empty.** OG-004's cabin in the Mark's dress (furs, lantern light) is L6's next slice, with the sloop's.
 - **The boom at 2.15 m** changes the game's sail plan: the main is 0.8 m shorter in the luff. Bringing her in should keep the area by lengthening the gaff, or accept the smaller main.
+
+## v80 — Session 872 — Card F8's third place: a limestone cave with a lake under falls (prototype only)
+The second of the places Michael named on #305 (3 A) is a limestone cave with a lake under falls. The FREEZE (#297) holds, so it is a prototype. I opened OG-121 and OG-099 and read their rows. OG-121's caverns have "stalactites, an underground lake under falls, strange flowers, hidden entrances", and its Gatelands panel has "limestone caves". OG-099's Mistveil Grottos are "a cave of blue pools and a bridge under waterfalls". Neither row flags anything a cave touches.
+
+`places.js` has a new `gatelandsCave(o, r)`, built to the person on the mine's shared rock (one noise field keyed by the place, amplitude 0.4 m):
+- **The passage:** 14 m from the mouth, 3 m wide and 3 m high in pale limestone, on a flat bed.
+- **The chamber:** 22 m across, 26 m long and 11 m high. Its walls run 4 m below the floor, so no slit opens where the floor meets them, and the near wall is cut for the passage.
+- **The floor:** one grid over the chamber, run 0.8 m under the walls. The shore is flat at 0 along the east side (4.2 m wide), across the near end (3.4 m) and at the far end east of the falls' pool, where the far shelf is. Elsewhere it falls in a smooth step over 3.2 m to the lake's bed, 3.4 m under the surface at 0.45 m below the shore. The dry cells carry a pale limestone skin.
+- **The falls:** a stream comes in through a swallow hole in the roof at the far west corner and falls 11 m to the lake, drawn as three wavering ribbons a little apart, with a ring of foam where it lands. Over the hole a wet funnel rises 12 m to the sky. It is 3.2 m across at its foot, just under the roof and wider than the hole cut in it, and 2 m at its top, so nothing gets out between the roof and the shaft.
+- **The dressing:** 46 stalactites up to 2.6 m long from the roof (their tips 8.2 m or more over the shore), 16 stalagmites and 7 lobes of flowstone on the shore kept 1.1 m off the walk and back from the water's edge.
+- **The flowers** (`o.flowers`, default true): six clusters of pale blue flowers that glow, at the water's edge along the shore.
+
+`places.html?place=cave` has four views: `lake` (default), from the passage's end across the lake to the falls; `shore`; `falls`, from the far shelf up the falls to the shaft; and `passage`. The light is the day down the shaft onto the pool, a cool glow off the white water, the flowers' own glow, and your torch.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The swallow hole was cut in the floor's side of the roof:** the roof's faces point up, and the first cut looked for faces pointing down.
+- **The falls landed in 0.15 m of water:** the lake's depth measured its distance to the far shelf with the wrong sign, so the far west corner stayed a shallow shelf.
+- **A stalagmite stood on a flower:** the stalagmites now keep 1.4 m back from the water's edge.
+- **The shaft's spot was too wide:** it painted straight-edged shapes of the funnel's shadow on the far wall. It is narrowed to the pool.
+- **The view from outside the mouth** showed the cave's back as a box, since it has no hillside round it. That view now stands just inside the mouth, as the mine's adit view does.
+
+Asked as **DECISION #313**: what lights a cave. A, the day down its shaft and the flowers' glow, as drawn (recommended); B, your torch alone, as the worked-out mine.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 25 of 25 pass**, with six new for the cave:
+  - **The builds:** 3 keys, each the same twice. 28,256 to 28,550 triangles in 9 meshes.
+  - **The walk:** 221 points every quarter metre from the mouth, along the east shore and across to the far shelf. The floor is −0.025 to 0 m under every one, 0.3 m or more over the water, with 2.79 m of headroom or more and 0.99 m clear.
+  - **Closed:** of 1,200 rays from five points in the chamber, none gets out except by the mouth (2 to 6 do) or up the shaft.
+  - **The lake:** 3.4 m deep in its middle. The falls land in 3.39 m of water, and a ray straight up from the pool reaches the sky.
+  - **The flowers:** 36 on the shore (the ground under them −0.025 to −0.007 m), within 0.89 m of the water.
+  - **The page:** the lake view renders with no page errors.
+- **Pictures, new:** `places-cave-lake.jpg`, `-shore`, `-falls` and `-passage`.
+### Needs eyes
+- **The lake's edge is a step.** The shore drops 0.6 m straight to the water along a line. Real limestone shores shelve, with rimstone pools at the edge (OG-099's blue pools), which would want a terraced edge.
+- **The falls are ribbons.** There is no spray, no mist and no motion. The game's water would animate them.
+- **Stalagmites and stalactites are smooth cones.** Limestone growths are lumpy and paired (a stalagmite under each stalactite's drip), and the pairing is not done.
+- **No hillside, no hidden entrance.** The cave sits in nothing, and OG-121's "hidden entrances" want a mouth behind falls or brush. That is card F3's land and the chunk scatter.
+- **The swallow hole's light** comes down at a fixed angle. In the game it would follow the sun, and at night there is only the flowers and your torch.

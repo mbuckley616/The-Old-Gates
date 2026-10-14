@@ -13,10 +13,10 @@ const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angl
 if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch(launch); let fails = 0;
 const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined ? '  ' + JSON.stringify(info) : '')); if (!ok) fails++; };
-for (const v of ['mine', 'shaft', 'face', 'mine&old', 'cairn&place=cairn', 'chamber&place=cairn']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+for (const v of ['mine', 'shaft', 'face', 'mine&old', 'cairn&place=cairn', 'chamber&place=cairn', 'lake&place=cave']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(`http://localhost:${port}/places.html?still&w=480&h=270&view=${v}`);
   await Promise.race([page.waitForFunction(() => window.__done, null, { timeout: 300000 }), new Promise(res => page.on('pageerror', res))]);
-  check(`the ${v.replace('&old', ', worked out,').replace('&place=cairn', ' (the cairn)')} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
+  check(`the ${v.replace('&old', ', worked out,').replace('&place=cairn', ' (the cairn)').replace('&place=cave', ' (the cave)')} view renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
 const page = await browser.newPage({ viewport: { width: 320, height: 180 } }); await page.goto(`http://localhost:${port}/places.html?still&w=320&h=180`); await page.waitForFunction(() => window.__done, null, { timeout: 300000 });
 const r = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./places.js'), S = await import('./pieces.js'), out = [];
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
@@ -77,6 +77,36 @@ check(`the cairn's walk, ${c[0].walkN} points from the approach to the back rece
 check(`closed: of ${c[0].rays} rays from inside, ${Math.max(...c.map(x => x.out))} get out but by the door (${mm(c, x => x.door).join(' to ')} by the door); the vault's capstone at ${c[0].vault} m`, c.every(x => x.out === 0), c.flatMap(x => x.esc).slice(0, 6));
 check(`the basins: ${c[0].basins}, one in each recess, empty (the dish ${mm(c.flatMap(x => x.basinsEmpty), v => v).join(' to ')} m over the floor at the middle)`, c.every(x => x.basins === 3 && x.basinsEmpty.every(v => v > .05 && v < .2)));
 check(`the carving: spirals with o.carved, none plain`, c.every(x => x.grooves && !x.plainGrooves));
+// the limestone cave (Session 872): 3 keys, each the same twice and in budget; the walk from the mouth along the shore to the far shelf with
+// a floor at the shore's height under every quarter metre, 0.3 m or more over the water, 2.1 m of headroom and 0.3 m clear; closed: of
+// 1,200 rays from inside, none gets out but by the mouth or up the shaft; the lake 2.5 m deep or more in its middle and the falls landing
+// in it; the day comes down the shaft onto the pool; the flowers on the shore at the water's edge.
+const V = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./places.js'), S = await import('./pieces.js'), out = [];
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+  for (let i = 0; i < 3; i++) { const key = 'cave:' + i, a = K.gatelandsCave({ key }, S.stream(key)), b = K.gatelandsCave({ key }, S.stream(key)); a.group.updateMatrixWorld(true);
+    const solid = []; a.group.traverse(m => { if (m.isMesh && !['lake', 'fall', 'foam', 'petal', 'stalk'].includes(m.name)) solid.push(m); });
+    const cast = (o, d) => { const h = new THREE.Raycaster(new THREE.Vector3(...o), new THREE.Vector3(...d).normalize(), 0, 80).intersectObjects(solid)[0]; return h ? { d: h.distance, y: h.point.y, m: h.object.name } : null; };
+    const walk = [], bad = []; for (let s = 0; s + 1 < a.path.length; s++) { const [x0, z0] = a.path[s], [x1, z1] = a.path[s + 1], L = Math.hypot(x1 - x0, z1 - z0), n = Math.ceil(L / .25), sx = (z1 - z0) / L, sz = -(x1 - x0) / L;
+      for (let k = 0; k <= n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n, fl = cast([x, 1, z], [0, -1, 0]), up = cast([x, .3, z], [0, 1, 0]);
+        const side = Math.min(...[1, 1.7].flatMap(y => [cast([x, y, z], [sx, 0, sz]), cast([x, y, z], [-sx, 0, -sz])].map(h => h ? h.d : 99)));
+        const w = { x: +x.toFixed(2), z: +z.toFixed(2), floor: fl ? +fl.y.toFixed(3) : -9, head: up ? +(up.y - (fl ? fl.y : 0)).toFixed(2) : 99, side: +side.toFixed(2) }; walk.push(w);
+        if (Math.abs(w.floor) > .08 || w.floor - a.lake.y < .3 || w.head < 2.1 || w.side < .3) bad.push(w); } }
+    let rays = 0, leak = 0, mouth = 0, shaft = 0; const leakAt = [], rr = S.stream('caverays' + i), C = a.chamber;
+    for (const [px, py, pz] of [[0, 2, -7], [6, 3, C.z0 - 6], [-4, 4, (C.z0 + C.z1) / 2], [8, 2, C.z1 + 3], [-2, 8, C.z1 + 6]]) for (let k = 0; k < 240; k++) { const u = rr() * 2 - 1, t = rr() * Math.PI * 2, d = [Math.sqrt(1 - u * u) * Math.cos(t), u, Math.sqrt(1 - u * u) * Math.sin(t)]; rays++;
+      if (cast([px, py, pz], d)) continue; const ty = (a.shaft.top - .5 - py) / d[1], tz = (0 - pz) / d[2];
+      if (d[1] > 0 && Math.hypot(px + d[0] * ty - a.shaft.x, pz + d[2] * ty - a.shaft.z) < a.shaft.r + .6) shaft++; else if (d[2] > 0 && Math.abs(px + d[0] * tz) < a.mouth.x1 + .6 && py + d[1] * tz < a.mouth.h + .6) mouth++; else { leak++; if (leakAt.length < 3) leakAt.push([px, py, pz, ...d.map(v => +v.toFixed(2))]); } }
+    const mid = cast([(a.lake.x0 + a.lake.x1) / 2, 2, (a.lake.z0 + a.lake.z1) / 2], [0, -1, 0]), deep = mid ? +(a.lake.y - mid.y).toFixed(2) : 0;
+    const foot = cast([a.falls.x, 2, a.falls.z], [0, -1, 0]), fallsIn = foot ? +(a.lake.y - foot.y).toFixed(2) : 0;
+    const sky = !cast([a.falls.x + .3, a.lake.y + .2, a.falls.z + .3], [0, 1, 0]);
+    const fl = a.flowers.map(([x, , z]) => { const g = cast([x + .03, 1, z + .03], [0, -1, 0]); return { y: g ? g.y : -9, edge: +(x - a.lake.x1).toFixed(2) }; });
+    out.push({ same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, walkN: walk.length, bad: bad.slice(0, 4), minHead: Math.min(...walk.map(w => w.head)), minSide: Math.min(...walk.map(w => w.side)), floors: [Math.min(...walk.map(w => w.floor)), Math.max(...walk.map(w => w.floor))],
+      rays, leak, mouth, shaft, leakAt, deep, fallsIn, sky, flowers: fl.length, flowerY: [+Math.min(...fl.map(f => f.y)).toFixed(3), +Math.max(...fl.map(f => f.y)).toFixed(3)], flowerEdge: Math.max(...fl.map(f => f.edge)) }); }
+  return out; });
+check(`the cave, 3 keys: ${mm(V, x => x.tris).join(' to ')} triangles in ${Math.max(...V.map(x => x.draws))} meshes; each the same twice`, V.every(x => x.same && x.tris < 60000 && x.draws <= 12));
+check(`the cave's walk, ${V[0].walkN} points from the mouth along the shore to the shelf: the floor ${mm(V, x => x.floors[0])[0]} to ${mm(V, x => x.floors[1])[1]} m, over the water by 0.3 m or more, ${Math.min(...V.map(x => x.minHead))} m of headroom, ${Math.min(...V.map(x => x.minSide))} m clear`, V.every(x => !x.bad.length), V.map(x => x.bad).filter(b => b.length).slice(0, 2));
+check(`the cave closed: of ${V[0].rays} rays from inside, ${Math.max(...V.map(x => x.leak))} get out but by the mouth (${mm(V, x => x.mouth).join(' to ')}) or up the shaft (${mm(V, x => x.shaft).join(' to ')})`, V.every(x => x.leak === 0), V.map(x => x.leakAt).filter(l => l.length).slice(0, 2));
+check(`the lake ${mm(V, x => x.deep).join(' to ')} m deep in its middle; the falls land in ${mm(V, x => x.fallsIn).join(' to ')} m of water; the day comes down the shaft onto the pool`, V.every(x => x.deep >= 2.5 && x.fallsIn >= .5 && x.sky));
+check(`the flowers: ${V[0].flowers} on the shore (ground ${mm(V, x => x.flowerY[0])[0]} to ${mm(V, x => x.flowerY[1])[1]} m), within ${Math.max(...V.map(x => x.flowerEdge))} m of the water`, V.every(x => x.flowers > 10 && x.flowerY[0] > -.05 && x.flowerY[1] < .05 && x.flowerEdge <= 1.0));
 await page.close();
-if (process.argv.includes('--shots')) for (const q of ['view=mine', 'view=gallery', 'view=face', 'view=adit', 'view=face&old', 'view=mine&old', 'place=cairn&view=cairn', 'place=cairn&view=door', 'place=cairn&view=passage', 'place=cairn&view=chamber', 'place=cairn&view=vault']) { const name = 'places-' + q.replace('place=cairn&view=', 'cairn-').replace('view=', '').replace('&', '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=places.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
+if (process.argv.includes('--shots')) for (const q of ['view=mine', 'view=gallery', 'view=face', 'view=adit', 'view=face&old', 'view=mine&old', 'place=cairn&view=cairn', 'place=cairn&view=door', 'place=cairn&view=passage', 'place=cairn&view=chamber', 'place=cairn&view=vault', 'place=cave&view=lake', 'place=cave&view=shore', 'place=cave&view=falls', 'place=cave&view=passage']) { const name = 'places-' + q.replace('place=cairn&view=', 'cairn-').replace('place=cave&view=', 'cave-').replace('view=', '').replace('&', '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=places.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);
