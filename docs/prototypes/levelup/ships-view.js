@@ -2,7 +2,7 @@
 // ?view=quarter (default): from off her starboard bow, the whole hull and its sail; ?view=side: broadside, the clinker strakes and the
 // sheer; ?view=deck: from the tiller forward along the deck, the rail at the hip; ?view=lap: close on the strakes at the waterline.
 // &noharp: the sail plain. &cam=x,y,z,tx,ty,tz puts the camera anywhere.
-// ?ship=cutter (Session 864): the Mark's cutter, the same views (lap is close on her stem and its head); &stripe: the striped sails;
+// ?ship=cutter (Session 871): the Mark's cutter, the same views (lap is close on her stem and its head); &stripe: the striped sails;
 // &nohead: no beast's head on the stem.
 import * as THREE from 'three';
 import { Q, W, H, STATS, GLSL_NOISE, makeRenderer, makeComposer, buildTextures, skyDome, clouds, run } from './common.js';

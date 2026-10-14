@@ -115,7 +115,7 @@ export function gatelandsSloop(o = {}, r = stream('sloop')) {
   return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: SF, mast: [0, MZ], hatch, sheerAt, keelAt, harp });
 }
 
-// markCutter(o, r) (Session 864, card F11; Michael's A on #306 keeps one rig to name each island, and the Mark's is the game's cutter, his
+// markCutter(o, r) (Session 871, card F11; Michael's A on #306 keeps one rig to name each island, and the Mark's is the game's cutter, his
 //   A on #202): the game's cutter (85-world-sea.js: L 14, W 4.0, draft 1.45, a plumb stem, a small transom, one tall mast stepped well
 //   forward with a gaff main and a topsail, a staysail to the stem and a jib on a bowsprit) dressed as the Mark's of OG-004 ("dragon prows,
 //   dark sails"): carvel-planked, flush and smooth, tarred black above a gilt line as the game's cutter is; the deck at 1.0 over the sea,

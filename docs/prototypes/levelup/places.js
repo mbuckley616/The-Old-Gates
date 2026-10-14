@@ -11,7 +11,7 @@
 //   - the working face: a rock ledge at the far end, the face cut square, the vein of silver-lead ore across it, broken ore at its foot,
 //     a pick and a basket, a lamp on a peg. Whoever holds the working is the systems builder's (OG-121's "a working site held by hostiles").
 //   o.worked (default true): the vein shows fresh pick marks and a heap, and the miners' lamps are lit; false, the face is old, the heap
-//   gone, and no lamp hangs anywhere (Michael's 2 A on DECISION #305, Session 861): the mine is dark but for your own torch.
+//   gone, and no lamp hangs anywhere (Michael's 2 A on DECISION #305, Session 868): the mine is dark but for your own torch.
 //   -> { group, tris, draws, top, path (the walk, [x, z] at floor height 0), sets (each { x0, x1, cap, foot }), lamps ([x, y, z]),
 //        void { x0, x1, z0, z1, floor, water }, rail (the gallery's open edge x), vein ([x, y, z] its middle), face (z of the face) }
 // All rock shares one noise field keyed by the place, so the adit's rock and the chamber's meet at the same points where they join.
@@ -127,7 +127,7 @@ export function markMine(o = {}, r = stream('mine')) {
   return finish({ path: pathPts, sets, lamps, worked, void: { x0: GX1, x1: CW / 2, z0: LZ, z1: FZ, floor: CBOT, water: CBOT + .6 }, rail: GX1 - .05, vein: [0, +band(0).toFixed(2), +fz(0, band(0)).toFixed(3)], face: FACE, adit: { w: 2 * PX - POST, cap: CAP, len: AL }, gallery: { x0: GX0, x1: GX1, w: GX1 - GX0 } });
 }
 
-// gatelandsCairn(o, r) (Session 862, Michael's 3 A on #305: the next place that is not a gate): the Gatelands' round cairn with its
+// gatelandsCairn(o, r) (Session 869, Michael's 3 A on #305: the next place that is not a gate): the Gatelands' round cairn with its
 //   passage, OG-121's "round cairns" (the Gatelands' panel). A mound of stones grassed over, 26 m across inside a kerb of laid boulders
 //   and 7 m high, the door (+z) in a dry-stone facade on a chord of the kerb, an entrance stone lying before it. Built to the person:
 //   - the passage: 10.3 m of upright slabs (orthostats) either side, 1.25 m clear between them, roofed with lintels 2.2 m over a floor

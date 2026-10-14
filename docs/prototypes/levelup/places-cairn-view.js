@@ -1,4 +1,4 @@
-// The Gatelands' round cairn (Session 862, card F8): places.js's gatelandsCairn on open ground under a soft grey-blue day.
+// The Gatelands' round cairn (Session 869, card F8): places.js's gatelandsCairn on open ground under a soft grey-blue day.
 // ?place=cairn&view=cairn (default): from the approach, off the door's east side; view=door: at the entrance stone, the door and the
 // spirals; view=passage: inside the door up the passage to the chamber, by your torch; view=chamber: from the chamber's mouth to the
 // back recess, its basin and its spirals; view=vault: looking up into the corbelling. &plain: no carving. &cam=x,y,z,tx,ty,tz.

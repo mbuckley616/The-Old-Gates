@@ -17926,7 +17926,7 @@ The kelpstrider (a leafy seahorse) and the pierwinkle (a snail) still wait. Each
 - **The angler's lure** is a pale ball. It is not lit (the kit's eyes are not emissive), so it will not glow in the dark water it is for.
 - **The crimson leviathan** is coarse at its size (8,748 triangles), as the Gate Leviathan is.
 
-## v80 — Session 861 — A worked-out mine is dark but for your torch (card F8, prototype only; Michael's 2 A on #305)
+## v80 — Session 868 — A worked-out mine is dark but for your torch (card F8, prototype only; Michael's 2 A on #305)
 Michael answered DECISION #305 on 14 Oct with the recommended set: the mine's levels stay as built (2.07 m clear), a working mine is lit by its miners' lamps and a worked-out one is dark but for your own torch, and the next places that are not gates are the Gatelands' round cairn, a limestone cave with a lake under falls, and a smugglers' lair, in that order. The FREEZE (#297, F2a) still holds, so this run works in the prototypes only. The first answer needs nothing built. This session makes the second.
 
 Session 857's `o.worked: false` took away the heap and the fresh pick marks but left all nine lamps burning, so a mine long abandoned was as bright as a working one. `places.js`, `markMine`: the lamp helper now builds a lamp only while the mine is worked. Worked out, its peg or bracket stays bare on the post, the kibble hangs dark in the shaft, and `lamps` comes back empty. A cart half full of ore at the stop-block also read wrong in a mine nobody works, so worked out the cart is empty.
@@ -17942,7 +17942,7 @@ Session 857's `o.worked: false` took away the heap and the fresh pick marks but 
 - **How dark is dark.** Nothing beyond the torch's 14 m shows: from the landing you cannot see the gallery or the face. That is the answer as asked, but a fight on the gallery by torchlight wants a playtest.
 - **The torch is a light at the hand.** The held torch, its flame and its flicker are the bodies builder's and the game's (`10-player.js`). The prototype only places a light where one would be.
 
-## v80 — Session 862 — Card F8's second place: the Gatelands' round cairn with its passage (prototype only)
+## v80 — Session 869 — Card F8's second place: the Gatelands' round cairn with its passage (prototype only)
 Michael's 3 A on #305 named the next places that are not gates: the Gatelands' round cairn with its passage, then a limestone cave with a lake under falls, then a smugglers' lair. The FREEZE (#297) holds, so this is a prototype. I opened OG-121 again and read its row. The Gatelands' panel draws "round cairns", and the row's one flag that touches them is burial: §3.1 gives the dead to the gates, so a cairn is an older or a refused custom, and who lies in one is the quest writer's to settle. So the basins are built empty, and the carving on the stones is asked.
 
 `places.js` has a new `gatelandsCairn(o, r)`, built to the person:
@@ -17952,7 +17952,7 @@ Michael's 3 A on #305 named the next places that are not gates: the Gatelands' r
 - **The passage:** 10.3 m long, the floor rising 0.8 m toward the chamber. Upright slabs line both sides, each a little out of true, with dark dry-stone packing behind them. Lintels 0.95 m deep cross it, each set 2.2 m over the floor at its inner edge.
 - **The chamber:** cruciform. The middle is about 3.8 m across under a corbelled vault of eight courses of nine slabs, each course 0.36 m high and stepping in 0.2 m, with a capstone at 5.98 m. There are three recesses, east, west and back, each 1.5 m wide and 1.6 m deep under its own capstone at 2.3 m. Each recess holds a shallow oval basin of stone, empty.
 - **`o.carved`** (default true): three spirals and a vertical groove pecked into the entrance stone's face, a triple spiral on the back recess's end stone, and four lozenges up one slab of the passage. `&plain` builds the cairn bare.
-- **The light:** nothing burns inside. The view gives you the torch the worked-out mine has (Session 861).
+- **The light:** nothing burns inside. The view gives you the torch the worked-out mine has (Session 868).
 
 `places.html?place=cairn` has five views: `view=cairn` (default) from the approach; `door`, at the entrance stone; `passage`, by torch up to the chamber; `chamber`, from its mouth to the back recess; and `vault`, looking up into the corbelling. `places-view.js` hands `place=cairn` to the new `places-cairn-view.js`, and the mine's views are unchanged.
 
@@ -17981,7 +17981,7 @@ Asked as **DECISION #309**: what is carved on its stones? A, spirals and lozenge
 - **No roof-box.** A slot over the door that lets the midwinter sunrise down the passage to the back recess would echo the trials' Noon Ring. It is not asked, and it is an idea for the quest writer before it is a build.
 - **Who lies here** is the quest writer's (OG-121's row, §3.1). The basins are empty until they say.
 
-## v80 — Session 863 — Card F9's second room: the Mark's longhouse, inside its own hall (prototype only)
+## v80 — Session 870 — Card F9's second room: the Mark's longhouse, inside its own hall (prototype only)
 Michael's A on #303 (14 Oct) put the rooms of 2.0 inside the street's own shell and kept the cottage's hearth-lobby plan. The FREEZE (#297) holds, so the next room is a prototype. The backlog's line names the Mark's longhouse next. I opened OG-115, whose Mark panel draws "a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat", and OG-025, whose longhall has a central fire. I read both rows: nothing in the Mark is whitewashed, and the homes are the League's free towns', not "clans'".
 
 `pieces.js`, `markHall`: a new `o.interior` leaves out what made the hall a dark box from outside: the black fill behind the door, the lit and dark panels behind the side windows, and the shut door. The stream's draws are kept in order, so every hall the street builds is unchanged, and `mark.check.mjs` passes as before. The hall now also returns its wall height, pitch, eave line, overhang, louver, door and window places, which a room needs.
@@ -18024,7 +18024,7 @@ Asked as **DECISION #311**: the longhouse's plan. A, one hall round the fire as 
 - **The larder is dark** by day, far from the fire. That is right for a longhouse, but the hams read only as shapes.
 - **No smoke:** the louver lets light down but no smoke goes up it.
 
-## v80 — Session 864 — Card F11's second hull: the Mark's cutter in the new kit (prototype only)
+## v80 — Session 871 — Card F11's second hull: the Mark's cutter in the new kit (prototype only)
 Michael's A on #306 (14 Oct) took all three recommendations: the board's square sail for the Gatelands so that one rig names each island, the harp, and a tiller on the small hulls. The FREEZE (#297) holds, so L6's next hull is a prototype. The Mark's rig is the game's cutter, from Michael's A on #202 (Session 665), and #306's question already named it as the Mark's. I opened OG-004 and read its row. The Mark's line there is "dragon prows, oars, dark sails", with the raiding longship's sail in red and black. The row's flags (guns on ordinary hulls, invented heraldry) do not touch a cutter.
 
 `ships.js` has a new `markCutter(o, r)` at the game's cutter's numbers (`85-world-sea.js`): 14 by 4.0 m, draft 1.45, with the deck 1.0 m over the sea.
@@ -18043,6 +18043,7 @@ Michael's A on #306 (14 Oct) took all three recommendations: the board's square 
 - **The check's centreline first measured the tiller**, at 0.78 m, as if it were the boom. It now stops forward of the tiller's sweep.
 
 Asked as **DECISION #312**: the sails (A, tanned red-brown, recommended; B, red and black on every hull) and the stem (A, the gilt beast's head, recommended; B, plain as today).
+**Correction, renumbered:** this run's four entries were first written as Sessions 861 to 864, numbered from this branch alone. The bodies builder had already used 861 to 867 on `auto/bodies`. They are now 868 to 871, in the devlog, the backlog, `decisions.md`, the prototypes' comments and the DECISION issues. The four commits already pushed keep the old numbers in their messages.
 ### Verified (headless Chromium)
 - **`ships.check.mjs`: 18 of 18 pass**, with nine new for the cutter:
   - **The builds:** 4 keys, each the same twice. 21,594 triangles in 9 meshes.

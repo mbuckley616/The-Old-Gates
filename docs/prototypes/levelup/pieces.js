@@ -771,7 +771,7 @@ export { SCALE, glMats, bucket as glBucket, finish as glFinish, box as glBox, fa
 // OG-034 (kept): timber halls on stone footings, steep snow-shedding roofs of dark shingle, carved gables with crossed
 // bargeboards ending in beast heads, a porch on the gable end, few small windows. OG-033 (not kept) and today's game add the
 // turf roof: a lower pitch, a roof of sod over birch bark. markHall(o, r): o.roof 'shingle' | 'turf', o.w (the gable's width),
-// o.d (its length), o.porch, o.chimney, o.wall (a stain), o.interior (Session 863: no dark fill behind the door and windows and no
+// o.d (its length), o.porch, o.chimney, o.wall (a stain), o.interior (Session 870: no dark fill behind the door and windows and no
 // shut door, for a room built inside, rooms.js's markLonghouse, which hangs the door open). One mesh per material, as Aurenne's.
 export function markTextures() {
   if (TEX.shingle) return;

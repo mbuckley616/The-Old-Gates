@@ -48,7 +48,7 @@ check(`clinker: at every strake's lower edge, at 9 stations, it stands ${mm(r, x
 check(`the walk down either side of the deck, ${r[0].walkN} points: the deck under every one, ${Math.min(...r.map(x => x.minHead))} m of headroom, ${Math.min(...r.map(x => x.minSide))} m clear`, r.every(x => !x.bad.length), r.map(x => x.bad).filter(b => b.length).slice(0, 2));
 check(`the rail at ${Math.min(...r.map(x => x.rail))} m or more over the deck at all ${r[0].railN} stanchions`, r.every(x => x.rail >= 1.0));
 check('the harp or the plain sail: the same hull', r.every(x => x.hullSame));
-// the Mark's cutter (Session 864): 4 keys, each the same twice; the game's cutter, 14 by 4.0 m, the deck 1.0 over the sea; closed below the
+// the Mark's cutter (Session 871): 4 keys, each the same twice; the game's cutter, 14 by 4.0 m, the deck 1.0 over the sea; closed below the
 // deck, the transom too; carvel (every strake flush with the one below, within 1 cm); the stem plumb; the walk down either side and, on
 // the centreline, 2.0 m or more under the boom; the rail 1.0 m over the deck; the striped sails and the head change nothing else.
 const C = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ships.js'), S = await import('./pieces.js'), out = [];

@@ -42,7 +42,7 @@ check(`a person fits: the box bed ${mm(r, x => x.bedIn).join(' to ')} m inside, 
   r.every(x => x.bedIn >= 1.85 && x.table >= .72 && x.table <= .78 && x.seats.every(s => s >= .4 && s <= .47) && x.doors.every(([w, h]) => w >= .75 && h >= 1.9) && x.front[1] >= 1.95));
 check('the fire burns in its hearth, in the recess in front of the hearth wall', r.every(x => x.fire));
 check(`in the morning the sun comes in through each kitchen window: ${[...new Set(r.flatMap(x => x.lit))].join(', ')} of 36 rays over the opening land inside the room (at noon the eave and the 0.6 m wall keep the high sun on the sill)`, r.every(x => x.lit.length && x.lit.every(n => n >= 6)));
-// the Markish longhouse (Session 863): 4 keys, each the same twice and in budget; every piece inside the walls and under the roof's lining;
+// the Markish longhouse (Session 870): 4 keys, each the same twice and in budget; every piece inside the walls and under the roof's lining;
 // no two pieces in each other; the way from the front door down the left of the hearth and through the partition clear by 0.15 m, with
 // 2.1 m or more under the tie beams; a person fits (benches 0.40 to 0.48 m high and 0.9 m deep or more, the bed 1.85 m or more, the
 // doors 1.9 m or more); the fire on its hearth, under the louver.

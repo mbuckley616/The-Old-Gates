@@ -3,8 +3,8 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The Mark's cutter in the new kit: tanned or striped sails, and a beast's head on the stem (look builder, Session 864) — DECISION #312
-**F11's second hull: the Mark's cutter (look builder, Session 864).** Your A on #306 gave each island one rig, and the Mark's is the game's cutter, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`markCutter`) and `ships.html?ship=cutter`. It is built to the game's cutter's numbers:
+### The Mark's cutter in the new kit: tanned or striped sails, and a beast's head on the stem (look builder, Session 871) — DECISION #312
+**F11's second hull: the Mark's cutter (look builder, Session 871).** Your A on #306 gave each island one rig, and the Mark's is the game's cutter, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`markCutter`) and `ships.html?ship=cutter`. It is built to the game's cutter's numbers:
 - **The size:** 14 by 4.0 m, draft 1.45, with the deck 1.0 m over the sea.
 - **The hull:** a plumb stem, a small transom and a cut-away forefoot. It is carvel-planked (flush), tarred black above a gilt line, red-brown below the water.
 - **The rig:** one tall mast well forward with a gaff main, a topsail, a staysail and a jib on a 4.2 m bowsprit.
@@ -30,8 +30,8 @@ Pictures:
 - [the stem and its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-lap.jpg)
 - [the striped sails](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-quarter-stripe.jpg)
 
-### The Mark's longhouse as a room: one hall round the fire, or rooms (look builder, Session 863) — DECISION #311
-**F9's second room: the Mark's longhouse (look builder, Session 863).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Mark's shingle hall from the kit (`pieces.js`'s `markHall`), 7.6 by 14 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markLonghouse`) and `rooms.html?room=longhouse`. The brief is OG-115's Mark panel ("a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat") and OG-025's longhall. Nothing is whitewashed, as the catalogue's note asks.
+### The Mark's longhouse as a room: one hall round the fire, or rooms (look builder, Session 870) — DECISION #311
+**F9's second room: the Mark's longhouse (look builder, Session 870).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Mark's shingle hall from the kit (`pieces.js`'s `markHall`), 7.6 by 14 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markLonghouse`) and `rooms.html?room=longhouse`. The brief is OG-115's Mark panel ("a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat") and OG-025's longhall. Nothing is whitewashed, as the catalogue's note asks.
 - **The hall:** a planked floor on the stone footing. Two rows of posts carry tie beams 3.1 m over the floor. Rafters and a board lining run under the shingle.
 - **The hearth:** a long hearth on the axis under the smoke louver, with a kerb of stones, a log fire and a cauldron on a tripod.
 - **The benches:** raised benches 0.45 m high and 1.1 m deep down both walls, laid with furs, to sit on by day and sleep on by night.
@@ -52,8 +52,8 @@ Pictures:
 - [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall-night.jpg)
 - [from the yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-outside.jpg)
 
-### The Gatelands' round cairn: what is carved on its stones (look builder, Session 862) — DECISION #309
-**F8's second place: the Gatelands' round cairn (look builder, Session 862).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
+### The Gatelands' round cairn: what is carved on its stones (look builder, Session 869) — DECISION #309
+**F8's second place: the Gatelands' round cairn (look builder, Session 869).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
 - **The mound:** a grassed mound of stones 26 m across and 7 m high, inside a kerb of 38 laid boulders. The door is in a dry-stone facade, and a long entrance stone lies before it.
 - **The passage:** 10.3 m of upright slabs either side, 1.25 m clear, under lintels 2.16 to 2.28 m over a floor that rises 0.8 m to the chamber.
 - **The chamber:** cruciform, with three recesses each holding an empty stone basin. It is roofed by a corbelled vault of eight courses, its capstone at 6 m.

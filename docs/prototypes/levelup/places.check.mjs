@@ -3,7 +3,7 @@
 // the floor; the walk from the mouth down the adit, across the landing, along the gallery and onto the ledge has a floor under it at
 // every quarter metre, 2.1 m of headroom and 0.3 m clear at the hip and the head; along the gallery the rail is on the open side and past
 // it the drop is 14 m or more to the sump; at the walk's end the vein is in reach (within 1.4 m, between 0.6 and 1.8 m up) and in sight;
-// worked out (o.worked false) the heap is gone and no lamp is lit (Session 861). --shots writes places-mine, -gallery, -face, -adit, -face-old and -mine-old (the shaft view, a hole lit by the kibble's lamp, renders but is not shot).
+// worked out (o.worked false) the heap is gone and no lamp is lit (Session 868). --shots writes places-mine, -gallery, -face, -adit, -face-old and -mine-old (the shaft view, a hole lit by the kibble's lamp, renders but is not shot).
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -48,7 +48,7 @@ check(`the gallery: the rail within ${Math.max(...r.map(x => x.rail))} m of the 
 check(`the working face: the vein ${mm(r, x => x.reach).join(' to ')} m from the walk's end, ${mm(r, x => x.veinY).join(' to ')} m up, the first thing the eye meets toward it`, r.every(x => x.reach <= 1.4 && x.veinY >= .6 && x.veinY <= 1.8 && x.seen === 'ore'), r.map(x => x.seen));
 check(`worked, the heap lies at the face's foot (${mm(r, x => x.heap).join(' to ')} of 40 points); worked out, it is gone (${Math.max(...r.map(x => x.heapOld))})`, r.every(x => x.heap >= 8 && x.heapOld === 0));
 check(`the light (#305, 2 A): worked, ${Math.min(...r.map(x => x.lamps))} lamps lit; worked out, ${Math.max(...r.map(x => x.oldLamps))} lamps and no lit horn anywhere`, r.every(x => x.lamps >= 6 && x.horn && x.oldLamps === 0 && !x.oldHorn));
-// the Gatelands' round cairn (Session 862): 3 keys, each the same twice and in budget; the passage 1.2 m clear or more under lintels of
+// the Gatelands' round cairn (Session 869): 3 keys, each the same twice and in budget; the passage 1.2 m clear or more under lintels of
 // 2.15 m or more over its rising floor; the walk from the approach round the entrance stone, in at the door and up to the back recess with
 // a floor under every quarter metre (within 8 cm of the floor's line), 2.1 m of headroom and 0.3 m clear; closed: of 1,200 rays from
 // inside, none gets out but through the door; three empty basins, one in each recess; carved, the spirals are there, and plain, none.

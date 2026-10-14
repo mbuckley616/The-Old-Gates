@@ -104,7 +104,7 @@ export function gatelandsCottage(o = {}, r = stream('cottage')) {
     door: { x: door.x, z: plan.d / 2, w: door.w, h: door.h }, doors: [{ x: HX, z: dB.z, w: dB.w, h: dB.h, wall: 'hearth' }, { x: PX, z: dE.z, w: dE.w, h: dE.h, wall: 'east' }], windows, table, seats, bed, boxes, under: under(0) };
 }
 
-// markLonghouse(o, r) (Session 863, Michael's A on #303: rooms inside the street's own shell; OG-115's Mark panel, OG-025's longhall): the
+// markLonghouse(o, r) (Session 870, Michael's A on #303: rooms inside the street's own shell; OG-115's Mark panel, OG-025's longhall): the
 //   Markish hall of pieces.js (shingle, 7.6 by 14 m, its smoke louver on the ridge, o.interior so its dark fills are left out) as a home
 //   round a central fire. Planked floor on the stone footing (0.8 m up, the porch's steps outside). Two rows of posts carry purlins and
 //   tie beams under the rafters, a board lining under the shingle. The long hearth on the hall's axis under the louver: a kerb of stones,

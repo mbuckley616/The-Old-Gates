@@ -2,7 +2,7 @@
 // ?view=kitchen (default): from the door lobby past the jamb wall to the hearth; ?view=table: from the hearth to the table under the
 // window and the box bed; ?view=dresser: the dresser and the back door; ?view=outside: the cottage from the lane, its windows by the hour.
 // &hour=morning | noon (default) | golden | night. &cam=x,y,z,tx,ty,tz puts the camera anywhere.
-// ?room=longhouse (Session 863): the Markish longhouse. view=hall (default): from inside the door down the hall past the fire;
+// ?room=longhouse (Session 870): the Markish longhouse. view=hall (default): from inside the door down the hall past the fire;
 // view=hearth: across the fire to the benches; view=larder: the larder and the workshop by the door; view=back: through the partition's
 // doorway into the family quarters; view=outside: the hall from its yard.
 import * as THREE from 'three';
