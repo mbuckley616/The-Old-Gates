@@ -18421,3 +18421,44 @@ The fix is one last pass at the end of `buildHang`. Every point of every column 
 ### Needs eyes
 - **The back of a cloak over mail** now follows the mail skirt's outline at the buttocks wherever a fold would have cut into it. In the picture it reads as cloth over a stiff skirt. Whether the fold there looks pinched is for a closer look.
 - This pass is a floor, not a drape. A cloak over plate, which stands further out and steps sharply, will want the folds laid against the outline at the height they end at, not the height they start at.
+
+## v80 — Session 904 — A round shield on the left fist (B2 and L7, prototype only)
+Session 897's Iron tier left the round shield owed: every tier of OG-019's heavy line carries one at the left side. OG-025's hold guards carry a painted round shield too, and OG-044's Compact guards a bronze one. A shield is a thing a body carries, so it is the bodies builder's. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`, and the labels in `builder.js`).
+
+What changed in `people.js`:
+- **The shield is a garment colour, `shield`**, with `shieldPaint` (a second colour, painted in opposite quarters), `shieldRim`, and two flags: `shieldTurn` (default 1 rad) and `shieldMetal` (default off). All of them save and load. The page shows them as "round shield", "shield quarters" and "shield rim".
+- **The shield** (`buildShield`) is 72 cm across:
+  - Seven boards make the board. Their seams and grain show a little through the paint, and the paint wears back to the wood in the last tenth of the radius.
+  - The face is dished 8 mm toward the centre. The back is flat, in bare wood.
+  - It has a rawhide rim, a 5.5 cm iron boss on a flange, and eight rivets.
+  - It takes the helm's colour for the iron where the person wears one.
+  - With `shieldMetal` the face is sheet metal (OG-044's bronze): no seams show, it has hammer dints, and it takes the light as the helm does.
+  - 7,744 triangles.
+- **How it is held.** It has a centre grip, held in the left fist with the arm hanging. The boss is centred on the middle finger's first joint. The face is turned 1 rad forward from the side, so it reads nearly face on from the front, as OG-019 draws it. The first try was turned 0.4 rad, and the shield read edge-on from the front. The wrist bone carries it, so it follows the arm.
+- **Laid outside everything.** It is built last. Its back is laid 5 mm outside the furthest point of whatever lies within its rim: the hand and forearm, the hip, a skirt, the mail, the tabard. Each garment's shell holds every point of the body, but only the points its triangles use are cloth, and the mail's points past its shader cuts are dropped.
+  - The first try counted every point of each shell. It held the board 3.5 cm off the arm, because of cloth that is not there. Lifting the arm 0.3 rad did not close that gap.
+  - If anything other than the arm is the furthest point, the left arm is lifted out from the side 0.03 rad at a time, as for a long skirt. None of the five people the check builds needed it.
+- **Not under a cloak or a cape.** A full cloak hangs over the arm that holds the shield. There it would sit 11.7 cm off the arm, outside the cloak. A shoulder cape stands 7.8 cm out over the board's top edge. So under either the shield is not built, and the genome keeps it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 227 checks pass**, six of them new. Five people carry a shield: a man in mail with a quartered shield, a woman in mail over a long skirt, a man in a tunic alone, a man under the Crown tabard, and an Aurennais man with a bronze shield. For each:
+  - **Nothing is inside the board, the rim or the boss.** This is read back off the shield where the wrist carries it, in the shield's own frame: 0 of 2,400 to 6,400 points near it. The nearest point is 5.0 mm behind its back.
+  - **The arm is on its back**: 0.0 mm off.
+  - **The rim is 48 to 69 cm off the ground.**
+  - It is carried by `wrist.L`, and it saves and loads back.
+- **A Markman under a fur-collared cloak** carries no shield on the arm, and the shield still saves and loads.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield.jpg` and `-shield-back`: the Iron tier with a madder-and-bone quartered shield, front and back.
+  - `builder-armour-shield-close.jpg`: the boss, the rim and the hand behind it.
+  - `builder-armour-shield-woman.jpg`: a woman in mail with a blue shield.
+  - `builder-armour-shield-crown.jpg`: under the Crown tabard, in crimson and gold.
+  - `builder-armour-shield-bronze.jpg`: an Aurennais with a bronze shield and helm.
+### Needs eyes
+- **The bronze face's hammer dints** are a regular pattern. Close up they read as a dotted texture, not as hand-beaten metal. Scattered dints from the seeded stream would be truer.
+- **The grip is not modelled.** The hand rests behind the board with its fingers half open, as in every pose. A fist closed round a bar wants the fingers' own pose.
+- **Owed:**
+  - The shield slung on the back by its strap, under a cloak or a cape.
+  - The crossed strap OG-019 draws over the chest.
+  - The shield held up in a fight. That waits on animation (B4).
+  - OG-028's island shields: the harp kite, the painted round and the sun-star hoplon. The round is this one.
