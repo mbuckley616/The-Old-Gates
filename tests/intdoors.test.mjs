@@ -7,7 +7,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 let all = [];
 for (const id of ['dunmore', 'portclare']) { await g.settle(id);
-  // S882 (card F2a): rooms are laid out in the kit's unit and built SCALE.ROOM_K (K) larger, so every door's leaf, gap, swing and the
+  // S896 (card F2a): rooms are laid out in the kit's unit and built SCALE.ROOM_K (K) larger, so every door's leaf, gap, swing and the
   // ceilings are the kit's numbers times K (the ceilings now 2.0 to 2.2 in the kit's unit, 2.9 to 3.2 m)
   const r = await page.evaluate((id) => { const K = SCALE.ROOM_K, S = WORLD.settle.get(id); const out = []; const v = new THREE.Vector3();
     const heads = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene).map(r => { r.root.updateMatrixWorld(true); r.B.head.getWorldPosition(v); return v.y - r.root.position.y; });

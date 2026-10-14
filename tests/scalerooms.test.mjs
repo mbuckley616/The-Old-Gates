@@ -1,4 +1,4 @@
-// The rooms at true size (card F2a, Session 882; docs/design/visual-foundation.md §1): a room is laid out in the furniture kit's old
+// The rooms at true size (card F2a, Session 896; docs/design/visual-foundation.md §1): a room is laid out in the furniture kit's old
 // unit (a man 1.233 tall) at its true footprint ÷ SCALE.ROOM_K, then scaled up by ROOM_K whole (scaleRoom), so its furniture,
 // doorways and stairs stand to a 1.78 m person as they stood to the old one, and the room is its true size: a cottage 4.6 to 6 m
 // across, an inn's hall 10 to 12, a church's nave 8 to 10 wide. In Dunmore's rooms, measured on what was built: the room's size,
@@ -33,7 +33,7 @@ for (const ty of types) {
     const out = fur.filter(s => s.x0 < -.05 || s.z0 < -.05 || s.x1 > W + .05 || s.z1 > D + .05).map(s => [s.x0, s.z0, s.x1, s.z1].map(v => +v.toFixed(2)));
     let over = []; for (let i = 0; i < fur.length; i++) for (let j = i + 1; j < fur.length; j++) { const a = fur[i], b = fur[j];
       if (Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) > .2 && Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0) > .2 && Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0) > .2) over.push([a, b].map(s => [s.x0, s.z0, s.x1, s.z1].map(v => +v.toFixed(1)))); }
-    const spawn = !intSolidAt(px, pz, .3, 0) && !intSolidAt(W / 2, D - Math.min(2.2, Math.max(1.75, D * .3)), .3, 0), way = !intSolidAt(W / 2, D - .7, .3, 0);
+    const spawn = !intSolidAt(px, pz, .3, 0) && !intSolidAt(W / 2, intArrivalZ(currentHouse), .3, 0), way = !intSolidAt(W / 2, D - .7, .3, 0);
     // the beds: a kit bed's length along its own z, measured on the baked mesh's box where the bed stands
     const beds = (INT_BEDS || []).length;
     return { W: +W.toFixed(2), D: +D.toFixed(2), entrance, ceil, doors, tables, out, over: over.slice(0, 4), nOver: over.length, spawn, way, beds, two: !!currentHouse.two };

@@ -18109,7 +18109,7 @@ It also measures the townsfolk's statures by people and sex, and opens the inspe
   - The distant copy of a house keeps the plain height, so a Mark house may step by up to 0.3 m as you come near.
 - **The trade signs hang 30 cm higher.**
 
-## v80 — Session 882 — F2a: rooms at true size (the deep-work session, card F2a)
+## v80 — Session 896 — F2a: rooms at true size (the deep-work session, card F2a)
 The fourth session of card F2a, item 4: interiors rebuilt at true size, without the ×1.8 footprint and the ×0.62 furniture heights. Before, `buildInteriorFor` made every room its house's footprint × 1.8 (and at least 8 across), in units where a man stood 1.23. To a 1.78 m eye, a 5 m cottage became a room 15 m across with knee-high tables.
 
 **How it is built now.** The furniture kit (`furnBuild`, `56-dungeon-build.js`, the man it was drawn for 1.28 tall) and every layout in `buildInteriorFor` were drawn in that old unit. Redrawing them all in metres is card F9's work (rooms dressed by nation). F2a keeps them and changes the scale the room is built at:

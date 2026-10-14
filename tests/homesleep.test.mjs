@@ -24,7 +24,7 @@ await enter(23.5);
 let s = await state();
 check('at 23h30 a home\'s resident is in, and asleep on their own bed (laid flat, over the bed)', s.has && s.asleep && s.rx === -1.57 && Math.abs(s.x - s.bed[0]) < .43 && s.z > s.bed[1] && s.z < s.bed[1] + 1.2 && s.y > .4, s);
 let w = await sweep();
-// S882 (card F2a): a cottage of true size (about 5 by 5.5 m) holds about a dozen free spots on the .7 grid beyond 2.3 m of the bed (it
+// S896 (card F2a): a cottage of true size (about 5 by 5.5 m) holds about a dozen free spots on the .7 grid beyond 2.3 m of the bed (it
 // held over thirty in the room 1.8 times too wide)
 check('asleep, they see no one anywhere in the room beyond two units of the bed', w.n >= 8 && w.seen === 0 && w.asleep, w);
 // the chest: opened by the player at it, unseen

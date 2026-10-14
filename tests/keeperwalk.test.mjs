@@ -21,8 +21,9 @@ for (const town of ['portclare', 'dunmore']) {
       jumpY = 0;
       // the game's own test at the floor: a solid a person can't step onto and doesn't pass under (a door's lintel is 1.6 up)
       const inside = (x, z) => intSolidAt(x, z, 0, 0);
-      // the counter: the solid a counter shop sets down at z 3.0, .4 deep
-      const ctr = INT_SOL.find(s => Math.abs((s.z0 + s.z1) / 2 - 3.0) < 1e-6 && Math.abs(s.z1 - s.z0 - .8) < 1e-6);
+      // the counter: the solid a counter shop sets down at z 3.0, .4 deep (S896, card F2a: in the kit's unit; the room is built
+      // SCALE.ROOM_K larger, so 4.33 and 1.16 deep in true metres)
+      const KR = SCALE.ROOM_K, ctr = INT_SOL.find(s => Math.abs((s.z0 + s.z1) / 2 - 3.0 * KR) < 1e-4 && Math.abs(s.z1 - s.z0 - .8 * KR) < 1e-4);
       const k0 = { x: K.position.x, z: K.position.z }; const start = inside(k0.x, k0.z);
       intAmbleStep(K, 1 / 60); const first = inside(K.position.x, K.position.z);
       let n = 0, inS = 0, inC = 0, front = 0, far = 0;

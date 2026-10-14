@@ -25,7 +25,7 @@ await page.evaluate(() => {
     const saved = INT_SOL.slice(); const kept = shut ? saved : saved.filter(s => !doorSol.has(s));
     INT_SOL.length = 0; for (const s of kept) INT_SOL.push(s);
     const solidAt = (x, z, y) => { const j = jumpY; jumpY = y; const r = intSolidAt(x, z, R); jumpY = j; return r; };
-    const sx = W / 2, sz = D - Math.min(2.2, Math.max(1.75, D * .3)); /* S882 (F2a): where goToInterior sets you down (1.75 in, in a cottage of true size) */ const y0 = footholdY(sx, sz, 0, 0);
+    const sx = W / 2, sz = D - Math.min(2.2, Math.max(1.75, D * .3)); /* S896 (F2a): where goToInterior sets you down (1.75 in, in a cottage of true size) */ const y0 = footholdY(sx, sz, 0, 0);
     const startBlocked = solidAt(sx, sz, y0);
     const seen = new Set(); const pts = []; const q = [[Math.round(sx / S), Math.round(sz / S), y0]];
     const key = (i, k, y) => i + ',' + k + ',' + Math.round(y * 20);
@@ -95,7 +95,7 @@ check('every person indoors is reached to talk to', rows.every(r => !r.miss.some
 check('every strongbox, chest and tower hoard is reached', rows.every(r => !r.miss.some(m => ['strongbox', 'chest', 'loot'].includes(m.what))), bad.map(r => [r.name, r.miss]));
 check('three keeps (and their cellars) and two towers were walked', rows.filter(r => r.type === 'castle').length >= 3 && rows.filter(r => r.type === 'tower').length >= 2, Object.keys(byType));
 check('a tower\'s hoard is on its top floor and reached by the spiral', rows.filter(r => r.type === 'tower').every(r => r.loot && r.top > 20), rows.filter(r => r.type === 'tower').map(r => [r.name, r.loot, r.top]));
-// S882 (card F2a): only an inn and a guild hall have a gallery now (a cottage or a shop of true size has no room for its stair)
+// S896 (card F2a): only an inn and a guild hall have a gallery now (a cottage or a shop of true size has no room for its stair)
 check('a two-floor room\'s upstairs is reached by its stair (an inn\'s or a guild hall\'s)', rows.filter(r => r.two && (r.type === 'inn' || r.type === 'guild_f' || r.type === 'guild_m')).every(r => r.top > 1.5 * SCALE_K), rows.filter(r => r.two).map(r => [r.name, r.top]));
 const hid = shut.filter(r => r.miss.length);
 console.log(`control: with the inner doors kept shut, ${hid.length} of ${shut.length} rooms with doors hide something (${hid.reduce((a, r) => a + r.miss.length, 0)} things)`);

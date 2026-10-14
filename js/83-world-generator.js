@@ -1308,7 +1308,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(stone){for(const sx of [-1,1])for(let k=0,y=0;k<4;k++){const bh2=h/4,bw2=k%2?.16:.24;Q(rb(bw2,bh2-.012,.2),jit(SS_,.07),sx*(w/2+bw2/2),y+bh2/2,.08);y+=bh2;}Q(rb(w+.6,.22,.22),jit(SS_,.05),0,h+.11,.09);}
     else{for(const sx of [-1,1])Q(rb(.12,h+.1,.14),jit(Wd.dark),sx*(w/2+.06),(h+.1)/2,.06);Q(rb(w+.5,.16,.16),jit(Wd.dark),0,h+.13,.07);}
     const Dr=K.bake(Q);Dr.position.set(W/2,0,D);Dr.rotation.y=Math.PI;Dr.userData.entrance=true;Dr.userData.leaf=[w,h];sc_.add(Dr);return {G,Dr,posts};}
-  // S882 (F2a) — a room built in the old unit (a man 1.233 tall), made true size: every object in it moves out from the room's
+  // S896 (F2a) — a room built in the old unit (a man 1.233 tall), made true size: every object in it moves out from the room's
   // corner by k and grows by k, except the people, who are built at their true height already and only move; the lights reach k
   // further; and every record the game keeps of the room (its solids, footholds, beds, doors, the people's boxes, the bed and the
   // stash, the chair, the hatch, the strongbox, the tower's chest, the room's size) is scaled with it, each record once.
@@ -1331,12 +1331,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     INT_BED_NATION=nationAt(house.doorX,house.doorZ); // S288 — the beds' wood
     furnFree();
     const two=!!house.two;
-    // S882 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
+    // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end
     // (scaleRoom). Before, every room was its footprint × 1.8 (at least 8 across) in units where a man stood 1.23, so a cottage
     // read 15 m across to a 1.78 m eye. A room may still be larger inside than its house outside, as games do: an inn's hall and a
     // church's nave keep their sizes in a small house (F6 grows those buildings). The ceilings are the old ones in the old unit
     // (2.9 to 3.2 m true), the furniture the kit's (F=.62 is the kit's squash of heights, true once scaled).
+    house._counterFront=null; /* S896 — set again by counter() below if this room has one */
     const KR=SCALE.ROOM_K,cl=(v,a,b)=>Math.max(a,Math.min(b,v)),hw=house.w||6,hd=house.d||5;
     const SHOP=['weapon','armor','potion','misc','shipwright','barber'].includes(type);
     let Wt=SHOP?cl(hw*1.2,type==='barber'?8:7,9):cl(hw,4.6,6),Dt=SHOP?cl(hd*1.3,7,8.5)+(type!=='barber'&&hd>=4.5?4.7:0):cl(hd+.5,4.5,6); /* a shop is its front room and, in a house 4.5 m deep or more (as before), behind the partition, the keeper's (4.7 m, 3.2 in the kit's unit) */
@@ -1352,7 +1353,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(type==='cabin'){W=7/KR;D=8/KR;ceil=2.0;}   /* a ship's cabin 7 by 8 m, the Guest's chapel 9 by 12 */
     if(type==='chapel'){W=9/KR;D=12/KR;ceil=3.4;}
     if(type==='tower'){W=9;D=9;ceil=31;}   /* the tower keeps its old size: its stair climbs 30 to the top its outside shows, and is not scaled (scaleRoom by 1) */
-    const gallery=two&&(type==='inn'||type==='guild_f'||type==='guild_m'); /* S882 — a cottage or a shop of true size has no room for a gallery and its stair; the upper floor is the inn's and the guilds' */
+    const gallery=two&&(type==='inn'||type==='guild_f'||type==='guild_m'); /* S896 — a cottage or a shop of true size has no room for a gallery and its stair; the upper floor is the inn's and the guilds' */
     const H=gallery?ceil*1.85:ceil;
     house.intW=W;house.intD=D;
     const sc_=new THREE.Scene();interiorScene=sc_;
@@ -1422,7 +1423,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // against the west wall (run = gy/0.62 for a ~32° climb). Both are
       // FOOTHOLDS, so the player actually walks up; the railing is solid
       // except at the stair head.
-      const guild=type==='guild_f'||type==='guild_m';const gy=ceil-.1,gd=Math.min(Math.max(D*.4,4.15),6),run=gy/.62,zs=gd+.6; /* S882 — deep enough for the rooms behind the corridor (4.15), the stair's foot inside an inn's hall of true size */
+      const guild=type==='guild_f'||type==='guild_m';const gy=ceil-.1,gd=Math.min(Math.max(D*.4,4.15),6),run=gy/.62,zs=gd+.6; /* S896 — deep enough for the rooms behind the corridor (4.15), the stair's foot inside an inn's hall of true size */
       // stair side varies by house: west or east wall
       const east=guild?false:galleryEast(house); /* S424 — one rule with the innkeeper's directions */const sx0=east?W-1.6:.1,sx1=east?W-.1:1.6,sxc=east?W-.85:.85;
       const deck=new THREE.Mesh(new THREE.BoxGeometry(W,.16,gd),tiled('plank',reg,W/2.2,gd/2.2));deck.position.set(W/2,gy-.08,gd/2);sc_.add(deck);
@@ -1440,7 +1441,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       boxRaw(east?W-1.6:1.6,gy*.5+.5,zs+run/2,.06,.06,run,beamC).rotation.x=Math.atan2(gy,run);
       // upstairs rooms: a corridor along the deck edge (1.8 deep), rooms behind
       // it, each with a doorway from the corridor.
-      const nRooms=Math.max(1,Math.floor(W/3.4)); /* S882 — 3.4 (4.9 m true; it was 4.5 in rooms 1.8 times too wide) */const corr=1.9,roomBack=gd-corr;
+      const nRooms=Math.max(1,Math.floor(W/3.4)); /* S896 — 3.4 (4.9 m true; it was 4.5 in rooms 1.8 times too wide) */const corr=1.9,roomBack=gd-corr;
       if(roomBack>2.2){
         for(let k=0;k<nRooms;k++){const xa=k*W/nRooms,xb=(k+1)*W/nRooms;partition(xa,roomBack,xb,roomBack,gy,ceil-.3,.5);if(k>0)partition(xa,0,xa,roomBack,gy,ceil-.3,null);}
       }
@@ -1455,7 +1456,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // ── trade furnishing ────────────────────────────────────────────────
     let npc={x:W/2,z:2.2,maxZ:Math.min(D*.55,4.5),paused:false}; /* S387 — behind the counter (z 2.6–3.4), not on its edge */
     // S289 — every shop's counter is the kit's panelled counter, bare (the bar without its tankards), its own small bake
-    const counter=()=>{const K=furnKit(),c=K.bake(K.counter(W*.5,FN,FSEED+5,true));c.position.set(W/2,0,3.0);c.userData.furn=true;sc_.add(c);furnSwap(c);solid(W/2,3.0,W*.25+.1,.4,1.05);};
+    const counter=()=>{const K=furnKit(),c=K.bake(K.counter(W*.5,FN,FSEED+5,true));c.position.set(W/2,0,3.0);c.userData.furn=true;sc_.add(c);furnSwap(c);solid(W/2,3.0,W*.25+.1,.4,1.05);house._counterFront=3.4*KR;}; /* S896 — its front edge in true metres, for the arrival spot (intArrivalZ) */
     // A finished table: thick plank top with a lip, aprons, turned legs, and benches if asked.
     const table=(x,z,w,d,benches)=>{
       box(x,.74,z,w,.09,d,0x6a4a2a);box(x,.79,z,w+.06,.03,d+.06,0x4a3018);
@@ -1475,7 +1476,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // S290 — the armourer on the kit (#46 A): three stands (plate, leather, mail) with helms, the kit's shields on the
       // east wall in front of the back room, a bench with leather, rivets and a mallet; one bake
       {const K=furnKit(),room=K.bake(K.armoury(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      {const A=furnKit().armouryAt(W,D);A.stands.forEach(x=>solid(x,1.6,.25,.25,1.8));solid(A.bench,1.6,.7,.3,.76);} /* S882 — the kit's places */
+      {const A=furnKit().armouryAt(W,D);A.stands.forEach(x=>solid(x,1.6,.25,.25,1.8));solid(A.bench,1.6,.7,.3,.76);} /* S896 — the kit's places */
       counter();
     } else if(type==='potion'){
       // S290 — the apothecary on the kit: three shelves of bright potions, herbs hung drying, the still (an iron cauldron
@@ -1495,7 +1496,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // the flames. The beds are still _intBed's (the rooms' beds are shared with shops and halls); the solids are the old ones.
       {const K=furnKit(),seed=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,11)%100000;
         const room=K.bake(K.inn(W,D,H,nationAt(house.doorX,house.doorZ),seed,true,galleryEast(house)));room.userData.furn=true;sc_.add(room);furnSwap(room);}
-      const IA=furnKit().innAt(W,D,galleryEast(house)); /* S882 (F2a) — the taproom's places, shared with the kit's layout */
+      const IA=furnKit().innAt(W,D,galleryEast(house)); /* S896 (F2a) — the taproom's places, shared with the kit's layout */
       solid(W/2,IA.cz,IA.L/2+.1,.45,1.15);
       {const hz=IA.hearth.z,hw=IA.hearth.w/2+.05,hx=IA.hearth.x;light(hx?hx-1.2:1.2,.8,hz,0xff6a20,1.5,7);solid(hx?hx-.35:.35,hz,.35,hw,1.3);}
       IA.tables.forEach(([x,z])=>{solid(x,z,.9,.5,.76);[-1,1].forEach(sd=>solid(x,z+sd*.9,.8,.2,.44));});
@@ -1507,7 +1508,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       {const K=furnKit(),room=K.bake(K.church(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       solid(W/2,1.6,1.2,.55,1.3);light(W/2,2.2,1.8,0xffc070,1.4,8);
       {const zs=[];for(let z=3;z<D-2;z+=Math.max(3,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);}
-      for(const x of furnKit().churchAt(W,D).colX)for(let z=5.5;z<D-3;z+=3.5)solid(x,z,.4,.4,H/F); /* S882 — between the pews and the walls in a nave of true size */ // S303 — the columns outside the pews (at W/2 ± 3 they stood in them)
+      for(const x of furnKit().churchAt(W,D).colX)for(let z=5.5;z<D-3;z+=3.5)solid(x,z,.4,.4,H/F); /* S896 — between the pews and the walls in a nave of true size */ // S303 — the columns outside the pews (at W/2 ± 3 they stood in them)
       npc={x:W/2,z:3.2,maxZ:3.6,paused:true};
     } else if(type==='castle'){
       // S291 — the keep's hall on the kit (#46 A): a stone dais with a runner and a carved throne, a long runner down the hall,
@@ -1567,7 +1568,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // the barber stands at the chair. One bake, the Session 505 prototype's pieces
       {const K=furnKit(),room=K.bake(K.barber(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       const BA=furnKit().barberAt(W,D),cx=BA.cx;solid(cx,1.35,.24,.26,1.2);INT_CHAIR={x:cx,z:1.35,house}; /* S561 — sit in it: openBarberChair */solid(BA.wash[0],BA.wash[1],.17,.17,.75);solid(BA.bench1[0],BA.bench1[1],.22,.47,.76);
-      solid(BA.dyer,1.0,.33,.33,.75);solid(BA.dyer+1.95,.8,.57,.25,.76);solid(BA.bench2[0],BA.bench2[1],.14,.82,.44); /* S882 — the kit's places (barberAt) */
+      solid(BA.dyer,1.0,.33,.33,.75);solid(BA.dyer+1.95,.8,.57,.25,.76);solid(BA.bench2[0],BA.bench2[1],.14,.82,.44); /* S896 — the kit's places (barberAt) */
       light(cx,1.9,1.6,0xffc880,1.1,6);light(BA.dyer+.8,1.6,1.4,0xffb070,.7,5);
       npc={x:cx+.75,z:1.3,maxZ:1.6,paused:true};
     } else if(type==='tower'){
@@ -1605,7 +1606,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else if(type==='cellar'){
       // S293 — the cellar on the kit: the barrels and crates (the stacked crate now on the others), a wine rack, a chest, a ladder
-      for(let k=0;k<Math.min(3,Math.floor((D-1.6)/.9));k++){_intBarrel(sc_,.7,.8+k*.9);}for(let k=0;k<2;k++){_intCrate(sc_,W-.8-k*.85,.25,.9,.5);}_intCrate(sc_,W-1.22,.5+.225,.9,.45); /* S882 — down the west wall and in the north-east corner of a cellar of true size */
+      for(let k=0;k<Math.min(3,Math.floor((D-1.6)/.9));k++){_intBarrel(sc_,.7,.8+k*.9);}for(let k=0;k<2;k++){_intCrate(sc_,W-.8-k*.85,.25,.9,.5);}_intCrate(sc_,W-1.22,.5+.225,.9,.45); /* S896 — down the west wall and in the north-east corner of a cellar of true size */
       {const K=furnKit(),room=K.bake(K.cellar(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       HATCH.x=W/2;HATCH.z=1.2;HATCH.y=0;HATCH.active=true;
       npc={x:-99,z:-99,maxZ:1,paused:true};
@@ -1618,7 +1619,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const port=new THREE.Mesh(new THREE.CircleGeometry(.32,12),new THREE.MeshBasicMaterial({color:0x7ac8ff}));port.position.set(W-.04,1.3,D*.6);port.rotation.y=-Math.PI/2;sc_.add(port);
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else { // home
-      const HA=furnKit().homeAt(W,D); /* S882 (F2a) — the cottage's places, shared with the kit's layout */
+      const HA=furnKit().homeAt(W,D); /* S896 (F2a) — the cottage's places, shared with the kit's layout */
       bedAt(HA.bed[0],HA.bed[1]+.2,0);INT_BEDS[INT_BEDS.length-1].cz=HA.bed[1];/* S752 — the kit's bed (K.home); the sleeper lies in it */if(!gallery)intBedPos={x:HA.bed[0],z:HA.bed[1]+.2};else intBedPos={x:W-1.2,z:1.2};
       // S286 — the home's furniture on the kit (#46 A): a box bed, the stone hearth, a table and two chairs with a candle, the
       // chest, two dressed shelves and a rag rug, by the nation's wood, baked to one mesh (and the flames); the old boxes' places
@@ -1641,9 +1642,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
         boxRaw(doorX,y1-.12,z0,1.3,.24,.22,0x3a2a18);
         intDoorAt(sc_,SOL,doorX,z0,y0,Math.PI/2,0x3a2a18);}; // v80 S143 — the back room gets a door
       const sideWall=(x0,z0,z1,y0,y1)=>{boxRaw(x0,(y0+y1)/2,(z0+z1)/2,.18,y1-y0,z1-z0,0x5a4630);SOL.push({x0:x0-.09,x1:x0+.09,z0,z1,y0,y1});};
-      if(SHOPS.includes(type)&&!gallery&&D>=7){ /* S882 — 7 in the rooms' old unit (a shop of true size is 7.5 to 8.5 deep with the keeper's room); it was 9 */
-        const z0=D-3.2,doorX=W*.3;partition(z0,0,W,doorX,0,ceil); /* S882 — the front room is 7 m deep at least, so the door's swing (1.34) clears the counter */
-        _intBed(sc_,W-.55,D-1.0,'S');bedAt(W-.55,D-1.0,0);solid(W-.55,D-1.0,.5,1.0,.5); /* S882 — the keeper's room of true size: the bed down the east wall, the table at its head, the way from the door to the shop clear */
+      if(SHOPS.includes(type)&&!gallery&&D>=7){ /* S896 — 7 in the rooms' old unit (a shop of true size is 7.5 to 8.5 deep with the keeper's room); it was 9 */
+        const z0=D-3.2,doorX=W*.3;partition(z0,0,W,doorX,0,ceil); /* S896 — the front room is 7 m deep at least, so the door's swing (1.34) clears the counter */
+        _intBed(sc_,W-.55,D-1.0,'S');bedAt(W-.55,D-1.0,0);solid(W-.55,D-1.0,.5,1.0,.5); /* S896 — the keeper's room of true size: the bed down the east wall, the table at its head, the way from the door to the shop clear */
         _intCrate(sc_,1.0,.25,D-.9,.5);_intCrate(sc_,1.55,.25,D-.9,.42);box(W-1.6,.68,D-1.6,.8,.06,.6,0x7a4818);box(W-1.6,.34,D-1.6,.08,.62,.08,0x5a3010);solid(W-1.6,D-1.6,.4,.3,.7);
         box(W*.62,.02,D-1.6,1.6,.03,1.4,[0x6a2a2a,0x2a3a5a,0x5a4a2a][(W|0)%3]);light(W*.6,1.4,D-1.6,0xffb070,.7,5);
         house._backRoom=true;
@@ -1665,15 +1666,15 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
           house._coaching=true;}
       }
     }catch(e){console.warn('interior variety',e);}
-    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:D-2.6; /* S882 — by the door, off the stair and the tables, in the rooms of true size */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:D-2.6; /* S896 — by the door, off the stair and the tables, in the rooms of true size */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
     // v80 S155 — a shop's strongbox in the back room (or behind the counter), a home's small chest: locked, and worth something
-    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?W-.45:(house._backRoom?W-.45:W-.6),bz=home?D-.6:(house._backRoom?D-2.75:D*.55),bry=home||house._backRoom?-Math.PI*.5:Math.PI; /* S882 — a home's in the south-east corner, the room's width from the bed (a sleeper hears 2 m); a shop's in the keeper's room against the east wall, just behind the partition and clear of its door's swing */
+    if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?W-.45:(house._backRoom?W-.45:W-.6),bz=home?D-.6:(house._backRoom?D-2.75:D*.55),bry=home||house._backRoom?-Math.PI*.5:Math.PI; /* S896 — a home's in the south-east corner, the room's width from the bed (a sleeper hears 2 m); a shop's in the keeper's room against the east wall, just behind the partition and clear of its door's swing */
       // S590 — the barber stands still at his chair facing into the room (+z), so his box goes where the 6-unit indoor witness and his
       // 120° cone cover every spot it opens from (1.6 round it): the wall-most free spot in front of him whose worst spot on that ring is
       // within 5.6 of him and 50° of his face (the critic, 6 Oct: at W−1, D×.55 it stood 6.8–8.5 from him and was picked unseen at noon).
       // Against the west wall when the room allows, nearer his chair in a wide one. No such spot: the old one.
       if(type==='barber'&&npc){const fr=(x,z)=>!SOL.some(q=>x+.32>q.x0-.1&&x-.32<q.x1+.1&&z+.32>q.z0-.1&&z-.32<q.z1+.1);
-        /* S882 (F2a) — the room is laid out in the kit's unit (÷ KR) and built KR larger: the witness's 6 m and the ring's 1.6 are true metres */
+        /* S896 (F2a) — the room is laid out in the kit's unit (÷ KR) and built KR larger: the witness's 6 m and the ring's 1.6 are true metres */
         const ok=(x,z)=>{for(let k=0;k<24;k++){const ux=x+Math.sin(k*Math.PI/12)*1.6/KR,uz=z+Math.cos(k*Math.PI/12)*1.6/KR;if(ux<.25||uz<.25||ux>W-.25||uz>D-.25)continue;
           const dx=ux-npc.x,dz=uz-npc.z,d=Math.hypot(dx,dz);if(d>5.6/KR||dz/d<Math.cos(50*Math.PI/180))return false;}return true;};
         found:for(let x=.62;x<=npc.x+.01;x+=.1)for(let z=npc.z+1.4/KR;z<D-1.6/KR;z+=.05)if(fr(x,z)&&ok(x,z)){bx=x;bz=z;bry=Math.PI*.5;break found;}}
@@ -1685,7 +1686,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // each beam's end. Everywhere: rounded beams .22 deep, joists every .5, and the entrance a plank door in a timber or stone frame.
     if(kitShell){const beams=[];for(let i=1;i<=(tower?0:nb);i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3))wins.push(z);
       shellFrame(sc_,{W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TALLZ,SOL,FOOTHOLDS});}
-    // S882 (F2a) — the room was laid out in the old unit; it stands at true size from here on (scaleRoom)
+    // S896 (F2a) — the room was laid out in the old unit; it stands at true size from here on (scaleRoom)
     const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;
     // keeper / resident — only if the schedule says they're indoors right now
     // (the same person you see in the street is the one behind the counter).

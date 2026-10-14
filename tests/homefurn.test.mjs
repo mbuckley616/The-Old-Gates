@@ -7,7 +7,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'home'); window._H = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(5000); await g.hide();
-// S882 (card F2a): a room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K); the cottage's places
+// S896 (card F2a): a room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K); the cottage's places
 // are the kit's (homeAt), and every place and height below is the kit's times K
 const r = await page.evaluate(() => { const sc = interiorScene, h = _H, W = h.intW, D = h.intD, K = SCALE.ROOM_K, A = furnKit().homeAt(W / K, D / K); const furn = sc.children.filter(o => o.userData.furn);
   let meshes = 0, lambertBoxes = 0; sc.traverse(o => { if (o.isMesh) { meshes++; if (o.geometry.type === 'BoxGeometry') lambertBoxes++; } });

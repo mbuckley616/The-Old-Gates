@@ -7,9 +7,12 @@ await g.intoWorld(); await g.settle('dunmore');
 const enter = async type => { await page.evaluate(() => { try { if (interiorScene) exitInterior(); } catch (e) {} }); await page.waitForTimeout(1500); await g.hide();
   const ok = await page.evaluate(type => { let h = null; for (const S of WORLD.settle.values()) { h = S.houses.find(x => x.type === type); if (h) break; } if (!h) return false; window._S = h; px = h.exitX; pz = h.exitZ; goToInterior(h); return true; }, type);
   if (ok) { await page.waitForTimeout(4000); await g.hide(); } return ok; };
-const look = () => page.evaluate(() => { const sc = interiorScene, W = _S.intW, D = _S.intD, furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
-  const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo && f.y < hi && x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1);
-  return { type: _S.type, W, D, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), meshes, counter: fh(W / 2, 3.0, .6, .7), forge: fh(1.2, 1.4, .7, .8), anvil: fh(W - 2.0, 1.6, .55, .65), tub: fh(W - 1.0, 3.2, .4, .46) }; });
+// S896 (card F2a): a shop is laid out in the furniture kit's unit and built SCALE.ROOM_K (1.444) larger, so the places and heights
+// below are the kit's (W and D ÷ KR), and the footholds are read back at true size; the tub stands at W − .75, 3.9 now, clear of
+// the counter's end in a shop of true size
+const look = () => page.evaluate(() => { const sc = interiorScene, KR = SCALE.ROOM_K, W = _S.intW / KR, D = _S.intD / KR, furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
+  const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y / KR > lo && f.y / KR < hi && x * KR > f.x0 && x * KR < f.x1 && z * KR > f.z0 && z * KR < f.z1);
+  return { type: _S.type, W, D, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), meshes, counter: fh(W / 2, 3.0, .6, .7), forge: fh(1.2, 1.4, .7, .8), anvil: fh(W - 2.0, 1.6, .55, .65), tub: fh(W - .75, 3.9, .4, .46) }; });
 check('Dunmore (or a town near it) has a smithy', await enter('weapon'));
 const sm = await look(); console.log(JSON.stringify(sm));
 check('the smithy is two bakes (the room with the forge\'s fire, and the counter), 10–45k triangles in all', sm.furn === 2 && sm.fire && sm.tris.reduce((a, b) => a + b, 0) > 10000 && sm.tris.reduce((a, b) => a + b, 0) < 45000, sm);
@@ -18,8 +21,9 @@ const fl = await page.evaluate(async () => { const f = interiorScene.children.fi
 check('the forge\'s coals flicker', fl > 1, fl);
 // the racks carry the weapon kit's pieces: the bake's colours include the kit's steel (grey or blue-grey, not the wood's
 // browns) on the east wall, in front of the back room's partition (the racks used to stand half in the back room)
-const steel = await page.evaluate(() => { const W = _S.intW, D = _S.intD, room = interiorScene.children.find(o => o.userData.fire), geo = room.children[0].geometry, P = geo.attributes.position.array, C = geo.attributes.color.array; let n = 0;
-  for (let i = 0; i < P.length; i += 3) if (P[i] > W - .5 && P[i + 1] > .3 && P[i + 2] > 3.5 && P[i + 2] < D - 3.2 && C[i + 2] > C[i] * .9 && C[i] > .2) n++; return n; });
+// (S896: the bake's vertices are in the kit's unit, the racks from z 2.6 by the counter's end to the partition)
+const steel = await page.evaluate(() => { const KR = SCALE.ROOM_K, W = _S.intW / KR, D = _S.intD / KR, room = interiorScene.children.find(o => o.userData.fire), geo = room.children[0].geometry, P = geo.attributes.position.array, C = geo.attributes.color.array; let n = 0;
+  for (let i = 0; i < P.length; i += 3) if (P[i] > W - .5 && P[i + 1] > .3 && P[i + 2] > 2.2 && P[i + 2] < (_S._backRoom ? D - 3.2 : D) && C[i + 2] > C[i] * .9 && C[i] > .2) n++; return n; });
 check('the racks on the east wall hold steel (the weapon kit baked in)', steel > 500, steel);
 const shot = await page.evaluate(() => { const sc = interiorScene, W = _S.intW, D = _S.intD, cv = REN.domElement, CW = cv.width, CH = cv.height, cam = new THREE.PerspectiveCamera(58, CW / CH, .05, 80);
   const c = document.createElement('canvas'); c.width = CW; c.height = CH / 2; const x = c.getContext('2d');
@@ -31,8 +35,8 @@ fs.writeFileSync('tests/out/smithy.png', Buffer.from(shot.split(',')[1], 'base64
 // the still and the bench solid; one picture of each
 const others = [], pics = [];
 for (const t of ['armor', 'potion', 'misc']) { if (!(await enter(t))) continue; const o = await look();
-  const x = await page.evaluate(() => { const W = _S.intW, D = _S.intD; let barrels = 0, crates = 0; interiorScene.traverse(m => { if (m.isMesh && INT_KIT_GEO.get('barrel') && m.geometry === INT_KIT_GEO.get('barrel').body) barrels++; });
-    return { stand: intSolidAt(1.6, 1.6, .1) || FOOTHOLDS.some(f => f.y > 1 && 1.6 > f.x0 && 1.6 < f.x1 && 1.6 > f.z0 && 1.6 < f.z1), still: FOOTHOLDS.some(f => f.y > .55 && f.y < .7 && W - 1.6 > f.x0 && W - 1.6 < f.x1 && 1.8 > f.z0 && 1.8 < f.z1), barrels }; });
+  const x = await page.evaluate(() => { const KR = SCALE.ROOM_K, W = _S.intW / KR, D = _S.intD / KR, A = furnKit().armouryAt(W, D); let barrels = 0, crates = 0; interiorScene.traverse(m => { if (m.isMesh && INT_KIT_GEO.get('barrel') && m.geometry === INT_KIT_GEO.get('barrel').body) barrels++; });
+    return { stand: _S.type !== 'armor' || A.stands.some(sx => intSolidAt(sx * KR, 1.6 * KR, .1)), still: FOOTHOLDS.some(f => f.y / KR > .55 && f.y / KR < .7 && (W - 1.6) * KR > f.x0 && (W - 1.6) * KR < f.x1 && 1.8 * KR > f.z0 && 1.8 * KR < f.z1), barrels }; });
   others.push({ type: t, furn: o.furn, tris: o.tris, fire: o.fire, counter: o.counter, meshes: o.meshes, ...x });
   pics.push(await page.evaluate(() => { const sc = interiorScene, W = _S.intW, D = _S.intD, cv = REN.domElement, cam = new THREE.PerspectiveCamera(62, cv.width / cv.height, .05, 80);
     cam.position.set(W * .5, 1.75, Math.min(D - 3.5, 4.6)); cam.lookAt(W * .5, .35, 1.3); sc.updateMatrixWorld(true); REN.render(sc, cam); const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); return o.toDataURL(); })); }

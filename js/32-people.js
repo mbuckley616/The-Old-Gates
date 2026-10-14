@@ -1205,7 +1205,7 @@ function ragdollFoe(e,tag,ground,solid){
 // the body turned on its left side facing +x and fitted to the mattress from its own skinned vertices, the head on the pillow, and
 // the quilt drawn up over it to the neck, draped on the body's shape (a height field over the bed, the cloth falling off the body
 // at about 50°), hanging over the sides and the foot. One mesh, 1,000-odd triangles, built once; personRise takes it away.
-const SLEEP_BED=(k=>({L:1.5*k,W:.86*k,TOP:.42*k,SIDE:.255*k}))(SCALE.ROOM_K); /* S882 (F2a) — the kit's bed as the rooms build it, at true size (×1.444) */const SLEEP_LID=[new THREE.SphereGeometry(.0178,10,6),new THREE.BoxGeometry(.03,.0016,.004)];
+const SLEEP_BED=(k=>({L:1.5*k,W:.86*k,TOP:.42*k,SIDE:.255*k}))(SCALE.ROOM_K); /* S896 (F2a) — the kit's bed as the rooms build it, at true size (×1.444) */const SLEEP_LID=[new THREE.SphereGeometry(.0178,10,6),new THREE.BoxGeometry(.03,.0016,.004)];
 function personSkinPts(rig){const mesh=rig.mesh,geo=rig.geoHi||mesh.geometry,sk=mesh.skeleton;rig.root.updateMatrixWorld(true);sk.update();
   const M=sk.boneMatrices,P=geo.attributes.position.array,SI=geo.attributes.skinIndex.array,SW=geo.attributes.skinWeight.array,E=mesh.matrixWorld.elements,n=P.length/3,out=new Float32Array(n*3);
   for(let i=0;i<n;i++){const x=P[i*3],y=P[i*3+1],z=P[i*3+2];let tx=0,ty=0,tz=0;

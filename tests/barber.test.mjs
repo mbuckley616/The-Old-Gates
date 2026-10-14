@@ -43,7 +43,7 @@ fs.mkdirSync('tests/out', { recursive: true }); fs.writeFileSync('tests/out/barb
 await g.hide();
 await page.evaluate(() => { forceTime(12); const h = _S; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(4000); await g.hide();
-// S882 (card F2a): the room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K), the barber's
+// S896 (card F2a): the room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K), the barber's
 // places shared with the kit (barberAt): every place and height here is the kit's, times K
 const room = await page.evaluate(() => { const sc_ = interiorScene, K = SCALE.ROOM_K, W = _S.intW, D = _S.intD, furn = sc_.children.filter(o => o.userData.furn), A = furnKit().barberAt(W / K, D / K), cx = A.cx * K;
   const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo * K && f.y < hi * K && x * K > f.x0 && x * K < f.x1 && z * K > f.z0 && z * K < f.z1);

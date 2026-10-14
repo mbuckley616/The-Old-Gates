@@ -4,7 +4,7 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
-// S882 (card F2a): the rooms are built at true size, their beds 1.444 times the kit's (SCALE.ROOM_K); the head's and the quilt's places
+// S896 (card F2a): the rooms are built at true size, their beds 1.444 times the kit's (SCALE.ROOM_K); the head's and the quilt's places
 // along the bed are re-measured by that factor
 const K = await page.evaluate(() => SCALE.ROOM_K);
 const [homes, gal] = await page.evaluate(() => { const hs = WORLD.settle.get('dunmore').houses.filter(x => x.type === 'home' && !x.ownedByPlayer && !x.shuttered); return [hs.length, 1]; });
@@ -49,7 +49,7 @@ for (const k of [...new Set([0, 2, 4, 6, 8, gal])].filter(k => k >= 0 && k < hom
     check('woken, they stand: the sleep pose off, the quilt out of the room, the lids gone', !up.asleep && !up.sleep && up.idle === 1 && up.rx === 0 && !up.cover && !up.inScene && !up.lids, up);
     await g.frames(5); }
   await leave(); }
-// S882 (card F2a): a cottage at true size (4.6 to 6 m) has no room for a gallery and its stair, so a two-storey home is its ground
+// S896 (card F2a): a cottage at true size (4.6 to 6 m) has no room for a gallery and its stair, so a two-storey home is its ground
 // floor, and its resident sleeps in the bed there (before, the gallery's bed, up on its floor); the upper floor is owed to card F9
 check(`a two-storey home's resident (home ${gal}, made so for the visit) sleeps in the ground floor's bed (no gallery in a cottage of true size)`, seen.some(s => s && s.gy === 0 && s.sleep && s.out === 0) && seen.every(s => !s || s.gy === 0), seen.map(s => s && s.gy));
 // 3. awake at 22h: no quilt, no lids, standing

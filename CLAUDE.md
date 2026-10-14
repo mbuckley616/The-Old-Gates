@@ -212,7 +212,7 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - What a chunk holds depends on what had loaded when it was built: the scatter skips stamps and roads registered so far, and `SETTLE` holds
   only the towns built so far. An outcome keyed by id (a herb's kind, a spawn) must read the hash and `getCell`, never `ch.treePts` or `SETTLE` (S533).
 - `dominantRegion(x,z)` (and `regionWeights`, `regionScalar`) read `REGIONS`, the loaded cells' regions only: near a cell's edge the biome at a fixed spot changes with what is loaded (6 of 14 lairs near the start, S701). An outcome keyed by a place reads its cell's and the eight neighbours' `c.regions` through `getCell` (`lairBiome`), never while a cell is being made.
-- Since F2a (Session 882) a generated room is laid out in the furniture kit's old unit (a man 1.233 tall) at its true size ÷
+- Since F2a (Session 896) a generated room is laid out in the furniture kit's old unit (a man 1.233 tall) at its true size ÷
   `SCALE.ROOM_K` (1.444), then `scaleRoom` scales it up whole at the end of `buildInteriorFor`, with every record of it (solids,
   footholds, beds, doors, the people's boxes). Inside the builder, numbers are in the old unit; anything that adds to a room after
   it is built (`onEnterInterior`, the crime and quest code) works in true metres, as do `house.intW/intD`. People are never scaled

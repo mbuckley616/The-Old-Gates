@@ -19,9 +19,9 @@ const shoot = views => page.evaluate(views => { const sc = interiorScene, W = _S
 fs.mkdirSync('tests/out', { recursive: true });
 check('a church is found', await enter('church'));
 const ch = await look(); console.log(JSON.stringify(ch));
-// S882 (card F2a): a nave of true size holds fewer pews (two or three rows a side), so the bake is lighter: 5k, not 10k, is its floor
+// S896 (card F2a): a nave of true size holds fewer pews (two or three rows a side), so the bake is lighter: 5k, not 10k, is its floor
 check('the church is one bake with the altar\'s candle flames, 5–60k triangles, and none of the old cylinder pillars', ch.furn === 1 && ch.fire && ch.tris[0] > 5000 && ch.tris[0] < 60000 && ch.cyl === 0, ch);
-// S882 (card F2a): a nave of true size (8 to 10 m) is laid out in the kit's unit at its size ÷ K and built K times larger
+// S896 (card F2a): a nave of true size (8 to 10 m) is laid out in the kit's unit at its size ÷ K and built K times larger
 // (SCALE.ROOM_K); the columns stand between the pews and the walls (churchAt), every place here the kit's times K
 const cs = await page.evaluate(() => { const K = SCALE.ROOM_K, W = _S.intW, D = _S.intD, A = furnKit().churchAt(W / K, D / K), pewOut = (.55 + A.pewL) * K, pewIn = .55 * K;
   return { altar: intSolidAt(W / 2, 1.6 * K, .1) || FOOTHOLDS.some(f => W / 2 > f.x0 && W / 2 < f.x1 && 1.6 * K > f.z0 && 1.6 * K < f.z1), pillar: intSolidAt(A.colX[0] * K, 5.5 * K, .1),
@@ -35,7 +35,7 @@ fs.writeFileSync('tests/out/church.png', Buffer.from(churchPic.split(',')[1], 'b
 check('a keep is found', await enter('castle'));
 const ca = await look(); console.log(JSON.stringify(ca));
 check('the keep\'s hall is one bake with the braziers\' flames, 10–80k triangles, and none of the old cylinder pillars or braziers', ca.furn === 1 && ca.fire && ca.tris[0] > 10000 && ca.tris[0] < 80000 && ca.cyl === 0, ca);
-// S882 (card F2a): the keep's hall keeps its old plan in the kit's unit, built SCALE.ROOM_K (K) larger: every place and height times K
+// S896 (card F2a): the keep's hall keeps its old plan in the kit's unit, built SCALE.ROOM_K (K) larger: every place and height times K
 const ks = await page.evaluate(() => { const K = SCALE.ROOM_K, W = _S.intW / K, D = _S.intD / K, z = D * .3, fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo * K && f.y < hi * K && x * K > f.x0 && x * K < f.x1 && z * K > f.z0 && z * K < f.z1);
   return { table: fh(W / 2, z, .4, .5), benches: fh(W / 2, z + 1.2, .2, .3) && fh(W / 2, z - 1.2, .2, .3), column: intSolidAt((W / 2 - 5) * K, 6 * K, .1), brazier: fh(W / 2 - 3, 5.2, .6, .75) }; });
 check('the long table and its benches are footholds, the columns solid, the braziers footholds', ks.table && ks.benches && ks.column && ks.brazier, ks);
