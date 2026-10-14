@@ -17473,3 +17473,101 @@ It also measures the townsfolk's statures by people and sex, and opens the inspe
   - the Mark's turf and shingle houses rise to clear their doors.
   - The distant copy of a house keeps the plain height, so a Mark house may step by up to 0.3 m as you come near.
 - **The trade signs hang 30 cm higher.**
+
+## v80 — Session 882 — F2a: rooms at true size (the deep-work session, card F2a)
+The fourth session of card F2a, item 4: interiors rebuilt at true size, without the ×1.8 footprint and the ×0.62 furniture heights. Before, `buildInteriorFor` made every room its house's footprint × 1.8 (and at least 8 across), in units where a man stood 1.23. To a 1.78 m eye, a 5 m cottage became a room 15 m across with knee-high tables.
+
+**How it is built now.** The furniture kit (`furnBuild`, `56-dungeon-build.js`, the man it was drawn for 1.28 tall) and every layout in `buildInteriorFor` were drawn in that old unit. Redrawing them all in metres is card F9's work (rooms dressed by nation). F2a keeps them and changes the scale the room is built at:
+- the room's **true size** is chosen in metres;
+- it is laid out in the old unit at that size ÷ `SCALE.ROOM_K` (1.444, the people's growth, 1.78 ÷ 1.233);
+- the finished room is scaled up by `ROOM_K` whole (`scaleRoom`).
+
+So a table, a doorway or a stair stands to a 1.78 m person exactly as it stood to the 1.23 m one, which read right, and the room is its true size. `scaleRoom` moves every object out from the room's corner and grows it by k. The people are the exception: they are built at their true heights already, so they only move. The lights reach k further. Every record the game keeps of a room is scaled with it, each record once:
+- the solids and the footholds;
+- the beds and the doors, with their solids and boxes;
+- the people's boxes, the bed's and the stash's places, the barber's chair, the hatch, the strongbox and the tower's chest;
+- the room's size.
+
+The keeper is placed after the scale, so laying a sleeper uses the scaled bed.
+
+**The sizes, in metres** (`visual-foundation.md` §1):
+| Room | Size |
+|---|---|
+| Cottage | 4.6 to 6 by 4.5 to 6 |
+| Shop | 7 to 9 wide, with the keeper's room behind its partition (3.8 m more deep) |
+| Barber | 8 to 9 by 7 to 8.5 |
+| Inn | a hall 10 to 12 by 11.7 to 13, the gallery's rooms over its north end |
+| Church | a nave 8 to 10 wide, 14 to 18 long |
+| Cellar | 6 to 8 by 5 to 7 |
+| Ship's cabin | 7 by 8 |
+| The Guest's chapel | 9 by 12 |
+
+A room may still be larger inside than its house is outside, as games do: the inn's hall and the church's nave stand in houses of 5 to 7 m, which F6 will grow.
+
+**Three kept their old rooms, scaled up by k:** the keep's hall (26 by 32 m), the guild halls (32 by 29 m, the dormitories behind the hall) and the tower. The tower is not scaled at all, because its stair climbs to the 30 m its outside shows. The ceilings are the old ones in the old unit, 2.9 to 3.2 m true.
+
+**The layouts that no longer fit were redrawn.** Each now shares its places with the solids (`homeAt`, `innAt`, `armouryAt`, `barberAt`, `churchAt` in the kit), so a table's solid stands where its mesh does:
+- **The cottage** (3.2 to 4.2 across in the kit's unit):
+  - the bed in the north-west corner, which has a solid now;
+  - the hearth on the east wall, sized to the room;
+  - the table a little north of the middle, with a chair at each end;
+  - the chest under shorter shelves on the north wall;
+  - the strongbox by the west wall near the door;
+  - a weaver's loom against the south wall, a farmer's sacks and a cooper's barrels in the south-east corner.
+- **The inn:**
+  - the bar under the gallery;
+  - the hearth on the wall the stair does not climb (it shared the east wall with the stair in half the inns);
+  - as many tables with benches as fit between them, clear of the door's way;
+  - the gallery at least 4.15 deep in the kit's unit, so its rooms behind the corridor are built: an upper room is 3.4 across in the kit's unit (it was 4.5), two rooms in a hall of true size;
+  - the cellar's hatch in the corner by the door.
+- **The smithy:** the racks down the east wall from the counter's end, the tub clear of the counter, the grindstone by the door.
+- **The armourer:** two or three stands by the shop's width.
+- **The barber:**
+  - the washstand on the chair's west;
+  - the stool on its east, and the barber stands there;
+  - the dyer's corner kept inside the east wall.
+- **The keeper's room behind a shop's partition:** the bed down the east wall, a small table at its head, the strongbox against the west wall, and the way from the door to the shop clear.
+- **The church:**
+  - the pews sized to the nave either side of the aisle;
+  - the columns between the pews and the walls (at ±4.1 they would have stood outside a nave of true size);
+  - the pulpit at the dais's corner.
+- **The cellar:** the barrels down the west wall, the crates in the north-east corner, the wine rack sized to the room.
+
+**What a player does in them:**
+- You arrive 1.75 m inside the door in a small room (it was 2.2, the middle of a 4.5 m cottage), still clear of the step that leads out.
+- Only inns and guild halls have galleries now. A two-storey cottage or shop of true size has no room for the stair, so its ground floor is all of it.
+- **A save made inside a room before F2a** holds a spot in the old, larger room. If that spot is off the floor or inside something now, the load stands you at the door (`goToInterior`); full migration is card F13.
+### Verified (headless Chromium) — work in progress, not yet merged into the card's branch
+This entry travels with the work on `auto/wip-fable-f2a-scale`, because the room suites are not all green yet. The next session finishes it and merges it into `auto/fable-f2a-scale`.
+- **`tests/scalerooms`** (new) walks ten of Dunmore's rooms. It checks:
+  - the room's size;
+  - the entrance's leaf, 2.17 m (1.2 of the person, the eye at .76 of it);
+  - every inner door, 2.11;
+  - the ceiling, 2.89 to 3.2 in a one-storey room;
+  - table tops at .63 to .68;
+  - nothing outside the walls, the furniture clear of itself, and the arrival spot and the door's way free.
+
+  It is green on the tree before this session's last edits; the last run is listed under *Needs eyes*.
+- **Green on rooms of true size:**
+  - armourlines-numbers, ashenburn, the barber's five (barber, barberbox, barberchair, barberfee, barberway);
+  - carraignight, coldhearth, guardsindoor, guildfurn, homefurn;
+  - innrooms, intdoors, intreach, sleeperpose and civicfurn.
+- **Re-measured, not loosened.** Each of these says so in a comment. The places are the kit's own (`homeAt`, `innAt`, `barberAt`, `churchAt`) times `SCALE.ROOM_K`, where a suite had hard-coded the old room's numbers:
+  - `barber`, `civicfurn`, `coldhearth`, `guildfurn`, `homefurn`, `intdoors` and `sleeperpose` (the bed is 1.444 times the kit's);
+  - `homesleep`: about a dozen free spots in a cottage, not thirty;
+  - `intreach`: you arrive 1.75 in, and only inns and guild halls have galleries.
+- **The after pictures:** `docs/prototypes/f2a/after-dunmore-noon.jpg` and `after-inn-room.jpg`, beside the before pair of Session 879.
+### Needs eyes
+- **Red on the last run, and owed:**
+  - `boxspots`: a shop's strongbox in the keeper's room is 2.75 from the nearest floor you can walk to, where it must be 1.6;
+  - `homesleep`: at 6h the woken resident sees none of the cottage's eleven spots, which depends on which way they face;
+  - `oddfurn`: the cellar's crates are now two on the floor and one on them, not three; and the chapel counts two box meshes;
+  - `locksight`: a foe in a shop with you, its sight lines;
+  - `chapel`: Aurenne's capital did not settle in time on a crowded run; to run alone.
+- **Not yet run on rooms of true size:** keeperwalk, penance, placesave, prices, qtybutton, questgold, shells, shipaim, shopfurn, shoprows, shopsight, shoresave, sleeperreach, stolenstack, theft, windows, witness, wokennight, and the full suite.
+- **For Michael:**
+  - Cottages are about a third of their old width and feel it. The inn's hall is 10 to 12 m.
+  - Shops are 7 to 9 m across, with the keeper's room behind them where the house is deep.
+  - The keep's hall and the guild halls kept their old plans at true size: 26 by 32 m and 32 by 29 m, grand and perhaps too large.
+  - Two-storey cottages and shops have no upstairs inside (F9).
+- **Owed to F2b:** the gameplay ranges that now act in smaller rooms. A sleeper hears you at 2 m, the witness sees 6 m and E reaches 1.6, so in a 5 m cottage everything is within a sleeper's or a keeper's reach.

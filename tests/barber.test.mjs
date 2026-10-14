@@ -43,14 +43,16 @@ fs.mkdirSync('tests/out', { recursive: true }); fs.writeFileSync('tests/out/barb
 await g.hide();
 await page.evaluate(() => { forceTime(12); const h = _S; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(4000); await g.hide();
-const room = await page.evaluate(() => { const sc_ = interiorScene, W = _S.intW, D = _S.intD, furn = sc_.children.filter(o => o.userData.furn), cx = W * .36;
-  const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo && f.y < hi && x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1);
-  return { W, D, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), chair: fh(cx, 1.35, .6, .8), vat: fh(W - 3.0, 1.0, .4, .5), bench: fh(.3, 2.6, .4, .5),
+// S882 (card F2a): the room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K), the barber's
+// places shared with the kit (barberAt): every place and height here is the kit's, times K
+const room = await page.evaluate(() => { const sc_ = interiorScene, K = SCALE.ROOM_K, W = _S.intW, D = _S.intD, furn = sc_.children.filter(o => o.userData.furn), A = furnKit().barberAt(W / K, D / K), cx = A.cx * K;
+  const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo * K && f.y < hi * K && x * K > f.x0 && x * K < f.x1 && z * K > f.z0 && z * K < f.z1);
+  return { W, D, K, cx, furn: furn.length, tris: furn.map(f => f.userData.tris), fire: furn.some(f => f.userData.fire), chair: fh(A.cx, 1.35, .6, .8), vat: fh(A.dyer, 1.0, .4, .5), bench: fh(A.bench1[0], A.bench1[1], .4, .5),
     npc: intNPCPos ? [+intNPCPos.x.toFixed(2), +intNPCPos.z.toFixed(2)] : null, npcMesh: !!intNPCMesh, doorClear: !intSolidAt(W / 2, D - 1.0, .1) && !intSolidAt(W / 2, D * .5, .1) }; });
 console.log(JSON.stringify(room));
 check('the room is one bake on the kit with no flames, 5–30k triangles', room.furn === 1 && !room.fire && room.tris[0] > 5000 && room.tris[0] < 30000, room);
 check('the chair, the vat and the bench stand where the bake puts them (footholds)', room.chair && room.vat && room.bench, room);
-check('the barber stands beside the chair, and the way in from the door is clear', room.npcMesh && room.npc && Math.abs(room.npc[0] - (room.W * .36 - .8)) < .6 && room.npc[1] < 2.4 && room.doorClear, room);
+check('the barber stands beside the chair, and the way in from the door is clear', room.npcMesh && room.npc && Math.abs(room.npc[0] - (room.cx + .75 * room.K)) < .6 * room.K && room.npc[1] < 2.4 * room.K && room.doorClear, room);
 // talking to the barber opens the keeper's dialogue, not the shop
 const talk = await page.evaluate(() => { px = intNPCPos.x + .6; pz = intNPCPos.z + .9; jumpY = 0; interact(); const d = document.getElementById('dlg') || document.getElementById('dialog');
   return { shop: !!shopOpen, dlg: !!(typeof dlgNPC !== 'undefined' && dlgNPC && dlgNPC.name), who: typeof dlgNPC !== 'undefined' && dlgNPC ? dlgNPC.name : null, keeper: _S.keeper }; });

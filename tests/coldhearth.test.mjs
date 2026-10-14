@@ -20,8 +20,8 @@ const read = () => page.evaluate(() => { const h = currentHouse, W = h._roomW ||
   const room = FURN_LIVE.filter(r => r.parent === interiorScene).sort((a, b) => (b.userData.tris || 0) - (a.userData.tris || 0))[0];
   // the room's lights are swept into its light pool (_sweepScenePool): the hearth's is the source at W-1.2, D*.4
   _sweepScenePool(interiorScene); const P = _LPS.get(interiorScene);
-  const src = P.src.find(v => Math.abs(v.pos.x - (W - 1.2)) < .05 && Math.abs(v.pos.z - D * .4) < .05);
-  const lightI = src ? src.mirror.intensity : null, pooled = P.pool.some(L => L.intensity > 0 && Math.abs(L.position.x - (W - 1.2)) < .05 && Math.abs(L.position.z - D * .4) < .05);
+  const src = P.src.find(v => Math.abs(v.pos.x - (W - 1.2 * SCALE.ROOM_K)) < .05 && Math.abs(v.pos.z - D * .4) < .05);
+  const lightI = src ? src.mirror.intensity : null, pooled = P.pool.some(L => L.intensity > 0 && Math.abs(L.position.x - (W - 1.2 * SCALE.ROOM_K)) < .05 && Math.abs(L.position.z - D * .4) < .05); /* S882 (F2a): 1.2 in from the wall in the kit's unit, the room built SCALE.ROOM_K larger */
   const hf = room && room.userData.hearthFire;
   return { found: !!room, hearthFire: hf ? { visible: hf.visible, tris: hf.geometry.index.count / 3 } : null, fireTris: room && room.userData.fire ? room.userData.fire.geometry.index.count / 3 : 0, lightI, pooled }; });
 const shoot = async (name) => { await page.evaluate(() => { const h = currentHouse, W = h._roomW || 10, D = h._roomD || 10; px = W - 3.6; pz = D * .4 + .6; yaw = -Math.PI / 2 - .2; pitch = -.12; });
