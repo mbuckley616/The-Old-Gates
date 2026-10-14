@@ -16761,6 +16761,16 @@ Two of Session 816's "needs eyes", on the design Michael chose (B on #259).
 - **The bougainvillea** is still a scatter of faceted blooms; leaf cards (the slice's `treeKit`) are the right tool, still owed.
 - **A note on routing:** Session 817's barrels were filed in section I, the systems builder's, though the critic named the look builder's barrel item (H). The systems branch had not touched them (it took the other two s597 findings, Sessions 798 and 799), so there is no overlap. Said here so the producer can route the next one.
 
+## v80 — Session 821 — `townbarrels` hashes the town's drawn people, not the residents who step out as you near (CI health, tests only)
+PR #273's CI went red on `headless (12)`: `townbarrels` failed on Dunmore's people check, with a hash of 1104956583 where Session 817 wrote −478191395. The list CI read had 25 people, and the two at its end were villagers standing at their houses. Locally the list was 23 and the check passed. Those two are residents. A town's resident steps out of her house once you are within 70 units, two a tick (`83-world-generator.js`), so how many have appeared when the test reads the town depends on how many frames ran during `g.settle`'s two seconds, and CI's runner is slower. The check means the people the generator draws (Session 817 promised a barrel that steps out of a wall draws nothing that would move them), so it now hashes every town NPC except those whose schedule is `resident`. The expected hashes are unchanged.
+
+The same commit merges main (Systems 797–814). The conflicts were the build tag (kept s625, the higher) and backlog I, where main's struck *exhausted blow* and *Border Road Bridge* lines were kept with Session 817's struck Droichead line.
+### Verified (headless Chromium)
+- **The failure, reproduced:** the old test with 900 world ticks after each town's `settle` (what a slow runner gives) fails all five towns' people checks.
+- **The fix:** the new test passes them all, with the same ticks and without them.
+- `townbarrels` passes on the merged tree, and `parsecheck` is clean.
+### Needs eyes
+Nothing to look at. The fault was in the test, not the game.
 ## v80 — Session 822 — F1, the renderer: three.js 0.170 behind a switch
 Card F1 of `docs/design/visual-foundation.md` §4, the first card of the new look (Michael's "Go with both of your recs", 12 Oct; Start given 13 Oct), run by the deep-work session under FREEZE #278. The game ran on three.js r128 from cdnjs. Every slice of the new look in `docs/prototypes/levelup/` runs on 0.170. F1 makes the same game run on 0.170 when switched on, with the old look whole and the default, so that F2 (scale) and F3 (the land) have one place where the version is chosen. No new art: the picture on 0.170 is meant to be today's.
 
@@ -16825,6 +16835,114 @@ Checked and left alone:
 - **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs. `looknew` reports whether it was fetched; from `file://` here it was not (`r128Fetched: false`). On Pages it would be one cached request at most.
 - **Not run under `--look=new`:** the rest of the suite (447 suites). The six world suites the card named pass. A full `--look=new` run in CI is a cheap follow-up once F2 starts building on the switch.
 
+## v80 — Session 823 — The hood up, made again: a cowl you cannot see through (B2, prototype only)
+Michael approved the wardrobe's method on #274 (A, 13 Oct), with one note: *take another look at the Hood though, it's semi-transparent.* Rendered from four sides, Session 805's hood had three faults:
+- **The face hole was too big.** The hood was the head's own points set out onto a ball, with a face hole cut in the shader that ran back to the ears. From the front you looked past the face into the hood and saw the sides of the head, which is what read as see-through.
+- **The ear showed.** The ear's folded points were pushed out with the rest and came through as a red lump at the side.
+- **It stopped at the skull.** The ball ended at the back of the head, so the nape and the hair showed under it from behind. Session 806 also noted that the crown's hair drew as skin.
+
+The hood is now a cowl built on its own (`buildHoodUp` in `people.js`):
+- **The dome** is a grid of 56 columns by 64 rows. It covers the head, the ears and whatever hair is left under it, and its radii are measured from the body: its front comes forward until every point of the head outside the opening is inside it, 8 mm clear.
+- **The drape** leaves the dome sooner behind than in front, so it falls down the nape instead of sitting on the neck as a ball. It joins the dome along a smooth curve, with no crease. Its hem lies on the body's own shoulders and upper back at each angle round the neck (smoothed), clear of the cloak, and higher over a fur mantle.
+- **The face opening** is a soft oval from the hairline to under the chin, with a slot below it to the throat where the cloak's brooch is. It is open in front only, so the sides and back of the hood are whole.
+- **The edge** has a rolled hem, 7.5 mm thick, that follows the opening.
+- **The inside** is shaded at 0.42 (a new `inner` option on `clothMat`), so the inside of the hood looks like the shadowed inside of cloth.
+- **The skinning** copies each point's weights from the nearest point of the body, so the head turns the hood with it.
+- **The hair** is tucked in while the hood is up. The cards are not built and the scalp's shell shows at the hairline, so no strand comes through the cloth. The genome keeps its style for when the hood is down.
+
+The new hood is 8,700 to 8,800 triangles with its hem, against Session 805's 3,000 or so; most of the extra triangles are the drape over the shoulders.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all passed**, including 24 new checks. A hood is put up on every hair style for every people. For each, the check counts every point of the head above the jaw (ears, scalp and hair) that lies outside the hood and away from the face opening. It finds 0 of between 7,131 and 7,265 points each time, the hair cards are gone, and the hem is on. Session 805's man in the short cloak with his hood up also has 0 of 7,193.
+- **On the way:** the first version of the new hood still let 2 to 15 points through, on the forehead just above the opening and at the side of the brow. The front radius is now measured from those points, and anything still outside widens the dome all round.
+- **The pictures:** `builder-cloak-hood.jpg` was shot again, and there are three new ones: `-side`, `-back`, and `-woman` (a woman at full length in a green cloak). `--shots=hood` retakes only the shots with that word in their name.
+### Needs eyes
+- **The shape.** The dome is rounder at the crown than a wool hood would fall. A point or a liripipe, and folds at the neck, would come from a cloth pass (#274's option B, not taken).
+- **The hair.** Under the hood, a woman's hair shows only as the scalp's shell at the hairline: there is no fringe, and no braid hangs out in front.
+- **The arms.** Michael's other condition on #274 is that the arms do not pass through the clothing. That is still to be checked through a walk, once B4's clips move the arms; the builder only poses them standing.
+- **The eyebrows.** In these pictures they are still the shell brows that Michael called "pretty fugly" (#272). That is the next session.
+
+## v80 — Session 824 — The eyebrows, drawn and filled with hairs (B1, prototype only)
+Michael approved the hair's method on #272 (A, 13 Oct), but added: *eyebrows look pretty fugly still*. Session 770's brows were a band of the skin's triangles, y 0.748 to 0.757 on the unmorphed face, 1.2 to 5.5 cm out from the middle, under three noise shells. That gave them four faults:
+- the ends were square and cut along the triangles' edges;
+- they were the same thickness from the head to the tail;
+- they read as a fuzzy block rather than as hairs;
+- they sat a little high over the eye.
+
+A brow is now a shape drawn on the unmorphed face (`browShape`), set from the eye's own centre (the helper's eye group):
+- **The head** starts at a third of the eye's distance from the middle. It is a little thinner than the body and rises into it.
+- **The arch** is two-thirds of the way out. The lower edge follows the orbit's rim, 12.5 mm over the eye's centre, rising toward the arch and dropping a little to the tail.
+- **The tail** thins to nothing, 1.6 times the eye's distance out.
+- **Thickness** is 6 mm for a man and 4.5 mm for a woman. Women's brows arch more. Both can be set from a genome's `brow: {thick, arch}`; nothing writes that yet.
+
+**The hairs** (`buildBrows`). The brow is filled with 700 to 800 hairs a face, fewer toward the tail. Each is 4 to 9 mm long and half a millimetre wide, in three segments that lift off the skin and lie back down. The comb follows how brows grow: up at the head, out and a little up along the body, out and down at the tail, and the upper hairs lie down over the lower. A root is placed on the unmorphed face and carried to the morphed one through the triangle it falls in, so the brow follows every face the sliders make. Hairs are skinned to the head bone.
+
+**The colour.** Brows are drawn a little darker than the hair on the head, and darker still for fair hair. The skin under the brow is shaded up to 20% darker, so the hairs read as one brow rather than a scatter.
+
+The old `brows` selection is removed from the pack's regions.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 110 checks pass.** The five new brow checks are one per rolled genome. Each brow set has 704 to 792 hairs, every root lands on the skin (792 of 792), and the tips stand 0.5 mm off it.
+- **Repeatable:** a genome that is loaded back builds the same body and hair twice, so the brows come from the seeded stream.
+- **Pictures:** `builder-woman-face.jpg` and `builder-man-face.jpg` were shot again, and the four hood pictures with them. Two new close-ups, `builder-brows-woman.jpg` and `builder-brows-man.jpg`, crop the face view at twice the size; `--shots=brows` retakes them.
+### Needs eyes
+- **Up close the hairs are plain dark strips** with no texture. At conversation distance they read as hair; nearer, a strand texture might help.
+- **Every brow has the same shape.** Per-people brows, such as the Markmen's heavier ones, the Old Blood's straighter ones and an old man's wilder ones, are a slider away (`G.brow`) and not set by `PEOPLES` yet.
+- **The hairstyles.** Michael's other note on #272, that *some of the hairstyles aren't quite landing*, is still to do. It needs his eye on which ones.
+
+## v80 — Session 825 — The Mark's turf, out of the lawn and into the climate (card F6, prototype only)
+Michael answered #277 with C, the mix: two halls in three shingle and one turf. He added: *I don't like the turf as it looks today though … the green is too vibrant for the climate it's going to be in.* Session 819's turf was a saturated lawn green with brown blotches, cut off square at the eaves, and in the lane it was the brightest thing in a cold picture.
+
+The turf is now painted two ways in `pieces.js` (`TEX.turfDry`, `TEX.turfMoss`). `markHall` takes `o.turf`, dry by default.
+- **Dry sod:** how a sod roof stands most of a northern year. It is tawny dead grass and straw in tufts over olive, with moss in the hollows and dark earth between the tufts. The tufts are about 15 cm across, from noise at three scales. The first try came out at a sixth of that and read as a print, and the second came out at half.
+- **Dark moss:** a wet roof gone over to dark olive moss, with straw tufts standing out of it and pale lichen.
+- **The eaves:** both have a fringe of grass hanging over them. It is one plane a side, 38 cm deep, cut out of a drawn texture of about 1,100 blades. It hangs a little out from the birch bark and partly over it, so the roof's edge is ragged rather than a slab's. It costs four triangles and one draw a hall.
+
+`mark.html` takes `?turf=dry|moss`, and a new `?view=roof` shows one turf hall close from the lane, with a shingle hall behind it.
+
+**Fixed on the way.** `mark.js` and `aurenne.js` set each person's position with a height of 0, which overrode the height `makePerson` gives to stand the feet on the ground. Every person on both pages stood sunk to the waist; Session 819's lane shows it. Both pages now keep the person's own height.
+
+Which turf it is is Michael's call, asked as **DECISION #285**: A dry (recommended), B moss, or C both by place.
+### Verified (headless Chromium)
+- **New `mark.check.mjs`: 9 of 9 pass.** It measures each texture's mean colour against Session 819's, whose formula the check keeps:
+
+| Turf | Saturation | Green over red | Mean RGB |
+|---|---|---|---|
+| Session 819 | 0.476 | +0.088 | (0.28, 0.37, 0.14) |
+| Dry | 0.298 | −0.060 | (0.40, 0.34, 0.22) |
+| Moss | 0.257 | +0.016 | (0.21, 0.23, 0.14) |
+
+- **The halls:** every hall builds. Shingle halls are 1,576 to 1,688 triangles in 9 draws; turf halls, either look, are 824 to 936 triangles in 10 draws, each with its fringe.
+- **Aurenne:** `aurenne.check.mjs --shots` passes, and its two pictures were shot again with the people standing on the ground.
+- **Pictures, shot again:** `mark-halls`, `mark-lane-mix`, `mark-lane-turf` and `mark-lane-shingle`, in the dry turf.
+- **Pictures, new:** `mark-roof-dry`, `mark-roof-moss` and `mark-lane-mix-moss`.
+### Needs eyes
+- **The tiling.** Close up, the tufts are a texture on a flat slab. A roof of real sod would bulge and slump, and that is geometry still owed.
+- **The fringe** repeats every 2.2 m along the eave, which shows on a long hall seen end-on.
+- **Snow.** Neither look has snow yet. The weather's `WX.cover` is meant to lay it once the halls are in the game.
+
+## v80 — Session 826 — Brows by people, and `?people=` on the builder page (B3, prototype only)
+#276's A (13 Oct) said *go on to the faces per people*. Session 824 left a hook for the brows, `G.brow = {thick, arch}`, that nothing set. Each people in `PEOPLES` now gives a range for each, for men and for women, and `peopleGenome` rolls inside them:
+
+| People | Men's thickness | Men's arch | Women's thickness | Women's arch |
+|---|---|---|---|---|
+| Markmen (heavy and straight) | 0.70–0.95 | 0.15–0.35 | 0.45–0.65 | 0.35–0.55 |
+| Aurennais (full, with a strong arch) | 0.60–0.85 | 0.40–0.60 | 0.45–0.65 | 0.60–0.85 |
+| Gatelanders | 0.50–0.75 | 0.30–0.50 | 0.35–0.55 | 0.50–0.75 |
+| The Old Blood (thin and level) | 0.30–0.50 | 0.10–0.30 | 0.20–0.40 | 0.20–0.40 |
+
+On thickness, 0 is a 3.5 mm brow and 1 is a 10 mm brow. The brow is rolled last, so every earlier roll from a seed (height, colours, dress) is the same as before.
+
+The saved genome carries it as `hair.brow: [thick, arch]`, and only when it is set, so older saves load as they did. The builder page has two new sliders, *brows* and *brow arch*.
+
+**Fixed on the way.** `builder.html?people=…` never finished loading. The page rolled its genome at load time, before MakeHuman's pack was in, and a people's genome measures the morphed body to find its height, so the roll threw. It reproduced on the committed code, before this session's change. The genome is now rolled once the pack has loaded.
+
+**Parked:** the cloak's hang and deeper folds (#274's A, next on B2's list). I tried two versions this run. Both pull the hem in toward the body's axis and turn each row's spare width into folds as deep as that width needs. The first pulled each point in on its own, and the hands pushed the cloth back out, which left a ledge across the back. The second held each column out to the body's widest point below it, then smoothed. Both left a crease down the middle of the back and a tear at the lower right, so neither is on this branch. The code is on `auto/wip-cloak-hang`, with the next idea in its commit: pull each column as one curve, and fold by moving whole columns.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all checks pass**, with one new one. Twelve rolled of each people give men's mean brow thicknesses of 0.822 for the Markmen, 0.701 for the Aurennais, 0.63 for the Gatelanders and 0.459 for the Old Blood, and in every people a man's brow is heavier than a woman's.
+- **Saving and loading:** every rolled genome saves and loads back byte for byte, with its brow.
+- **Pictures:** `--shots=brows` now also writes `builder-brows-gatelander.jpg`, `-markman`, `-aurennais` and `-oldblood`: one man of each, at the brow line, through the page's `?people=`.
+### Needs eyes
+- **Stray beard cards.** In these close-ups the beard's cards leave a stray dark wedge under the Old Blood man's eye and a pale card by the Markman's nose. That is the beard's and moustache's placement, which was there before this session and is not fixed here.
+- **The women's brows by people** are rolled but have no close-up of their own yet.
 ## v80 — Session 827 — The second round of concept art, written back (docs only)
 Michael asked, in chat with Claude, why the review sheet for the concept art still showed the second round as unreviewed when he had signed it off. He had. On 12 Oct 2026, between 23:24 and 23:25 UTC, he marked all sixteen sheets of *Concept Art Session 2* (OG-097 to OG-112, his OG-U2-001 to 016) KEEP on the review page. He left one note, on the Gatelands' and the Mark's maps (OG-101, OG-102): "Keep the shape of the island and the geography / regions. Anything that conflicts with Canon we can replace or repurpose." The marks stayed in the page's database (collection `reviews`). No session read them back, so `catalogue.csv` still said UNREVIEWED and nothing from those sheets reached the backlog. The look builder's wardrobe question (#274) had noted the clothing sheets OG-109 to OG-111 as "still waiting for your marks". The first round had a session to carry its marks (767). The second round's intake (771) ended at "they wait on his marks", and nothing was set to notice when they came.
 
@@ -16849,6 +16967,248 @@ Nothing in the game changed, so no suite was run. The checks were on the files:
 - **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
 - **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
 
+## v80 — Session 831 — The Mark's lot rules: one turf hall in three, and the turf on the poorer house (card F6, prototype only)
+Michael chose C on #277, the mix: two halls in three shingle and one turf, by lot. On #285 he chose the dry sod. What was left was the rule that says which lot gets which roof. Until now `mark.html`'s lane picked the turf lot inline from a hash, and every hall drew the same random sizes whatever its roof. The recommendation he accepted on #277 also said the turf goes on the poorer and outlying houses, and the halls of note keep the shingle and the carving. Nothing built that part.
+
+`pieces.js` now has `markLot(street, i, {note})`, beside Aurenne's `aurenneLot` and in the same shape. It returns the lot's options and the stream its hall is built from, both keyed by the street and the lot alone.
+- **The mix:** in every run of three lots one is turf, and the street's seed picks which, as in Aurenne.
+- **Halls of note:** `note` lists the lot indices that hold one (the hall at the square, the hall at the lane's end), and these are never turf. If the pick lands on one, the turf moves to the next lot of the three that is not a hall of note. A run of three can only lose its turf hall when all three lots are halls of note.
+- **The turf hall is the poorer house** (OG-034 draws the Mark's towns as the shingle halls, so the turf is the exception):
+  - It is smaller: 5.6 to 6.8 m wide and 8.5 to 11 m deep, against shingle's 6.8 to 8.4 by 11 to 14.5.
+  - It is lower: `markHall` already gives turf a 2.4 m wall and a 32° pitch.
+  - It is in the two darker planks.
+  - It is set 1.2 to 3 m back from the lane, with 3 to 5.5 m of yard beside it.
+  - It has a porch one time in five and a chimney about one in three, and it is carved only when it is one of the larger, about one in eleven.
+  - A shingle hall is always carved, has a porch about half the time and a chimney about two times in three.
+  - A hall of note is 8.4 to 9.6 by 15 to 18 m, with a porch, a chimney and the carving.
+
+`mark.html?view=lane` lays its eight lots out by `markLot`, with lot 3 (the far end on the left) a hall of note. `&street=<seed>` gives another lane, `&high` looks down on it from above, and `?mix=shingle|turf` still forces one roof everywhere.
+### Verified (headless Chromium)
+- **`mark.check.mjs`: 15 of 15 pass**, 6 of them new.
+  - **The mix:** on 40 streets of 30 lots, every run of three has exactly one turf hall (400 of 1,200).
+  - **Halls of note:** on 40 more streets, each with three halls of note at random lots, no hall of note is turf (0 of 120). No run of three loses its turf hall, out of 400.
+  - **The same key builds the same hall:** 300 of 300 lots, built twice, match on the options and on the geometry's hash.
+  - **What each kind measures, over 300 lots:**
+
+| Kind | Mean footprint | Porch | Chimney | Carved | Mean setback | Triangles |
+|---|---|---|---|---|---|---|
+| Turf | 60 m² | 28% | 27% | 8% | 2.0 m | 720 to 1,664 |
+| Shingle | 97 m² | 55% | 65% | 100% | 0.4 m | 1,472 to 1,688 |
+| Hall of note (12) | 149 m² | 100% | 100% | 100% | 0.2 m | 1,688 to 1,792 |
+
+  - **Budget:** every hall is at most 11 draws. Ridges stand 5.6 m (turf) to 11.3 m (a hall of note).
+  - **The lane page:** its roofs read S T S N S T S S, with no page errors.
+- **Pictures:** `mark-lane-mix.jpg` was shot again by the new rules. Two are new: `mark-lots-high.jpg` and `mark-lots-high-b.jpg`, the lane from above on two streets, where the lower, set-back sod roofs show between the shingle.
+### Needs eyes
+- **At eye height the turf hall hides.** Set back and 3 to 4 m lower, it sits behind its shingle neighbours, so the lane picture shows little of it. From above, the rule reads. In a town that may be right, since the poorer houses are behind the street. If Michael wants the sod seen from the lane, the setback is the number to change.
+- **"Outlying" is not built.** The rule knows the halls of note, not how far a lot is from the town's heart, so a turf hall is as likely at the square as at the edge. When the generator places Mark towns in the game, it can pass the distance and bias the pick within each run of three.
+- **No people in these pictures.** The MakeHuman pack (`mh/`) is not in this checkout, so the lane has no Markmen for scale.
+
+## v80 — Session 832 — The Church of the Weaver, in the new kit (card F6, prototype only)
+Card F6's next item after the Mark's lots is Aurenne's temples. The canon (§1.3) gives Aurenne "domes on the churches", and its towns are under the Church of the Weaver's Priors. The concept art draws the churches as a domed hall behind an arcade with a slender tower beside it: OG-061, Aurenne's board, and OG-043's temple row. None existed in the new kit.
+
+`pieces.js` has `aurenneChurch(o, r)`, at true size:
+- **The hall:** a cube of lime-washed stone, 12 to 22 m a side and 0.8 m thick, on a podium with three steps down to the square. It has three tall arched windows on each side and on the back, each with a stone sill and an iron grille, and a dark room behind them. A band of the blue-and-white glazed tile runs under the cornice, and a parapet edges the flat roof.
+- **The dome:** a drum with twelve arched lights, then the dome in blue glaze or limewash (`o.dome`). On its top is the Weaver's sign, a gilt shuttle on a rod. The first shuttle sat level across the rod and read as a cross from the square, so it now sits on the rod's tip and leans 22°.
+- **The porch:** an arcade of five or seven round arches on turned columns, with an arch at each end. The great door stands behind it, 2.6 by 5.2 m: two leaves of cedar boards under a half-round head, framed in glazed tile.
+- **The bell tower** (`o.tower`, 0 to 2): a square shaft of 3.6 m with slit windows, an open belfry with a gilt bell, and a small dome.
+- **A cathedral** (`o.corners`) adds four small domes at the cube's corners and takes two towers.
+- A cypress in a pot stands either side of the steps.
+
+**Two changes to the shared kit.**
+- The house builder's piece helpers moved out into `aurKit()`, so the church and the houses use the same code: placing a piece, the wall with arched openings cut through, and one mesh per material. The houses are unchanged: 60 houses built by the old and the new code hash the same, positions and UVs.
+- A piece can now keep its own UVs (`userData.uvRep`). The great dome showed a stepped seam where the world projection switched axes across its curve. A glazed dome now tiles round its own lathe, with a whole number of repeats so it meets itself, and the tiles close in toward the top as real ones do. The houses' small domes still use the world projection; at their size the seam does not show.
+
+`aurenne.html?view=church` is a square: the church at its head, four of Aurenne's houses down each side and a fountain's basin. `&top` looks at the dome and the shuttle close up. `?view=churches` puts three side by side: a town's church in blue, the same limewashed, and a cathedral. `&dome=` forces either finish.
+
+Which finish the domes take is Michael's call, asked as **DECISION #294**: A blue on every church, B limewash on every church, C by rank (recommended: blue on the cathedral and a town's church, limewash on a village's).
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: all pass, with seven new checks.**
+  - **Builds:** 72 churches (six sizes, both domes, no tower to two, with and without the corner domes) are 9,816 to 15,808 triangles in 10 or 11 meshes, one per material.
+  - **The same key builds the same church:** 72 of 72.
+  - **On the ground:** none reaches below it, and nothing stands in front of the steps.
+  - **True size:** the great door is 2.6 by 5.2 m. The dome's top stands 16.8 to 29.7 m, and every tower rises above its dome (48 of 48).
+  - **The dome's UVs:** all 36 blue domes carry their own UVs, up to 51 repeats around. The limewashed churches have no glaze.
+  - **The pages:** the square (1 church, 8 houses) and the line-up (3 churches) render with no page errors.
+  - **The houses** still pass every earlier check, with the same numbers.
+- **`pieces.check.mjs` and `mark.check.mjs`** pass.
+- **Pictures, new:** `aurenne-church.jpg`, `aurenne-churches.jpg` and `aurenne-church-dome.jpg`.
+### Needs eyes
+- **The dome's glaze is a small square tile**, as the houses' is. OG-061's domes are smoother, so a larger tile or a ribbed dome may read better from far off.
+- **The fountain** in the square is a placeholder: a basin and a post.
+- **No people.** The MakeHuman pack is not in this checkout, so nobody stands on the square for scale. The 1.8 m post is in the line-up.
+- **Inside** is card F9's. The Guest's bricked chapel in a cellar under the capital's cathedral is the canon's, and it waits for the inside.
+
+## v80 — Session 833 — The Compact's tithe house and the quay's warehouse (card F6, prototype only)
+The second half of F6's Aurenne item is the civic buildings. The canon (§1.3) puts the Compact's Factors over Aurenne's ports, says "every hull that passes is tithed", and gives the island "warehouses on every quay". So the port's two buildings came first. The academy's white towers, the third named building, are next.
+
+`pieces.js` has `aurenneCivic(o, r)`, on the same `aurKit()` as the houses and the church.
+- **The tithe house** (`kind: 'tithe'`, 18 to 26 m by 12 to 15):
+  - **The ground storey, 5.2 m:** a loggia of pointed arches on turned columns, 3.6 m deep under a cedar-beamed ceiling. Behind it is the counting room's front, with a door in each bay, and the middle arch is wider and opens on the carriage way's gates.
+  - **Between the storeys:** a band of glazed tile.
+  - **The Factor's floor, 4.6 m:** tall arched windows. The middle three have cedar lattice balconies on stone brackets, and the rest have sills and grilles. The sides and back have small windows below and tall ones above.
+  - **The roof:** a parapet of stepped merlons, and a lookout in the back corner with arched openings and its own merlons. From it a pole flies the Compact's banner, in the awning's madder-and-cream stripes.
+  - `o.crown = 'plain'` rounds the parapet off as the houses' are, for the question below.
+- **The warehouse** (`kind: 'warehouse'`, 18 to 30 m by 10 to 12, 7.4 m to the eaves):
+  - A row of tall arched doors on the quay, 3 by 4.3 m, a cart's width, with cedar leaves and a stone sill.
+  - Small high windows on every side, and a loading door over the middle doorway with a hoist beam, a pulley and a rope.
+  - A low gabled pantile roof at 20° on rafter ends, with the gables closed in wall.
+  - Crates and amphorae by the doors, placed by the lot's stream.
+
+`aurenne.html?view=quay` is a quay: a dressed-stone wall down to the water, bollards along its edge, and the tithe house between two warehouses, seen from the water. `?view=civic` shows the two front-on beside the post, and `&crown=plain` shows the other parapet.
+
+Which crown the tithe house takes is asked as **DECISION #295**: A stepped merlons (recommended), B a plain parapet.
+
+**Fixed on the way:** a church or house's `front` is the line nothing stands past. The check caught that the tithe house's balconies (0.9 m out) and the warehouse's crates (2 m out) stood past their first values, which are now 0.95 m and 2.05 m.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: all pass, with five new checks.**
+  - **The tithe house** at 10 sizes is 11,424 to 14,608 triangles in 10 meshes, 20.4 m to the banner's top.
+  - **The warehouse** at 8 sizes is 3,988 to 6,136 triangles in 9 or 10 meshes, 9.9 to 10.3 m to the ridge.
+  - **The same key builds the same building:** 18 of 18, built twice.
+  - **Every one stands on its lot:** on the ground, within its width and depth (a warehouse's eaves aside, 0.5 m), and nothing past its front.
+  - **The pages:** the quay (3 buildings) and the line-up (2) render with no page errors.
+  - The houses' and the churches' checks pass with the same numbers.
+- **`pieces.check.mjs`** passes.
+- **Pictures, new:** `aurenne-quay.jpg`, `aurenne-civic.jpg` and `aurenne-civic-plain.jpg`.
+### Needs eyes
+- **The water** on the quay page is a flat colour, not the slice's water. Ships and harbours are F11's.
+- **The banner** uses the awning's stripes. The Compact's colours are not in the canon, so they are a stand-in and the quest writer's to name.
+- **The tithe house's doors** behind the loggia are dark from the quay at noon. Whether the counting room should show light inside, by day or by lamp, is F9's.
+
+## v80 — Session 834 — The Gatelands kit folded into `pieces.js` (card F6, prototype only)
+The concept artist asked on 13 Oct for `pieces-gatelands.js` and `pieces.js` to become one kit. `pieces-gatelands.js` held two things: the concept run's Gatelands kit (`SCALE`, the materials, the bucket, the face with its openings cut through, the pieces, the roofs, the chimneys, `building` and the six `PLANS`, about 240 lines), and the scenes of its own page. The game will take the kit, not the page.
+
+The kit now lives in `pieces.js`, after the lane slice's `gatelandsHouse` and before the Mark's hall, moved as it was. Two things about its names changed:
+- Its `mats()` collided with Aurenne's, so it is `glMats()`.
+- Its generic names are exported with the island in them: `gatelandsBuilding`, `GL_PLANS`, `GL_FIN`, `glWin`, `glBucket`, `glFace`, `glFinish`, `glBox`, `glMats`. `SCALE` keeps its name.
+
+`pieces-gatelands.js` is now only its page's scenes (142 lines). It imports the kit under its old names, so the scene code is unchanged and `pieces-gatelands.html` works at the same address. `pieces.js` is one module for the three islands: Aurenne's houses, church and civic buildings, the Gatelands' lane house and plans, and the Mark's hall and lots.
+
+**One thing found on the way.** The kit lights about one window in seven from `common.js`'s shared `rnd()`. A plan's draw calls (11 or 12, whether it has a lit-window mesh) therefore depend on how many rolls came before it on the page. That is the co-op rule's case of a roll that should come from a stream keyed by the place. It is cosmetic, so this session left it alone to keep the move byte for byte; the Gatelands' lot rules (next) key it.
+
+The lane slice's house (`gatelandsHouse`, the approved lane of 12 Oct) and the concept run's cottage are still two builders of the same Gatelands cottage. Making the lane build from `GL_PLANS` would change an approved picture, so it waits until the plans go into the game.
+### Verified (headless Chromium)
+- **Byte for byte:** before the move, all eight of the page's shots (`shoot-pieces.mjs`: the street in three mixes, from above, the cottage, the town, the line-up and the kit) were taken at 640 px. After the move, all eight JPEGs are identical. The page's stats match too, except the port number in the missing people pack's error.
+- **`pieces.check.mjs`: all pass, with four new checks.**
+  - The six plans, built from `pieces.js`, match the line-up's recorded triangles and sizes in `pieces-gatelands.json`: cottage 1,826, hipped cottage 1,472, farmhouse 2,144, townhouse 5,081, merchant's house 4,522, warehouse 9,132.
+  - `pieces-gatelands.html`'s street, line-up and kit render from the folded kit with no page errors, apart from the people's missing pack.
+- **`aurenne.check.mjs` and `mark.check.mjs`** pass.
+### Needs eyes
+- Nothing to look at: the pictures are the same. The committed 1920 px pictures were not shot again.
+
+## v80 — Session 835 — The Gatelands' coloured towns, by lot (card F6, prototype only)
+Michael chose A on #280: coloured towns. The town walls are rendered in earth colours (ochre, rose, cream, sage, blue, oxblood) with dressed quoins, string courses and cornices; the cottages stay limewashed under thatch, and the warehouse is bare stone. The concept artist's street drew that as one hand-placed list. A town the generator lays out needs it as a rule a lot can answer from its street and its index, as Aurenne's and the Mark's already do.
+
+`pieces.js` has `gatelandsLot(street, i, {kind})`. It returns the lot's plan for `gatelandsBuilding`, with its colour and paint.
+- **Colour:** each lot steps on from its neighbour by one to five places round the six colours, by the lot's own seed. No two neighbours ever share a colour, and over a long street every colour comes up, as along a quay in Kinsale or Dingle.
+- **Paint:** the door and sash paint is drawn from the six paints, leaving out any that would drown in the wall (`GL_CLASH`): no blue or teal on a blue wall, no red on oxblood or rose, no green or teal on sage, no yellow on ochre or cream.
+- **Kind:** by default a town lot is a townhouse, one in four a merchant's house with a shop. `kind` asks for any plan, and the rest follow the decision: cottages limewashed under thatch (one in three hipped), farmhouses white under slate, warehouses bare stone. The townhouses' doors alternate sides.
+- **Lit windows:** each lot carries its own stream (`plan.r`), and the kit now lights its windows from it. This is the shared-roll problem Session 834 found. A plan built without one falls back to the page's `rnd()`, so the concept artist's three streets and the kit render as before.
+
+`pieces-gatelands.html?view=street&mix=lot` is the concept street's own layout, coloured lot by lot. `&street=<seed>` gives another town.
+
+**Fixed on the way.** My first version called the lot's stream wherever the kit lit a window. The kit page's wall stubs call `face()` with no plan and no stream, so that page threw, and the check's wait ran to its ten-minute timeout. The kit falls back to `rnd()` there. The check's page loads now end at once on a page error.
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass, with five new checks.**
+  - **Colours:** on 40 streets of 30 lots, no two neighbours share a colour (0 of 1,160 pairs), all six colours are used, and one lot in 4.2 is a merchant's house.
+  - **Paints:** none drowns in its wall (0 of 1,200).
+  - **By kind:** every town lot is rendered and under slate, every cottage limewashed under thatch, every farmhouse white under slate, every warehouse in rubble stone.
+  - **The same lot builds the same twice,** lit windows and draw calls included: 30 of 30.
+  - **The coloured street page** renders with no errors but the people's missing pack.
+- **Byte for byte:** all eight of the concept page's earlier shots (640 px) are identical to before this session.
+- **Pictures, new:** `pieces-gatelands-street-lot.jpg`, `-street-lot-b` (another town) and `-town-lot`, with their stats in `pieces-gatelands.json`.
+### Needs eyes
+- **The blue and the sage** read close in shade on a grey day. If a street shows them side by side too often, the step rule can skip one.
+- **The lots run on round the corner.** In the street page the right-hand row carries on from the left-hand row's last lot, which is a cottage, so the two rows' first houses are not compared with each other. A generator placing two sides of a street should key them as two streets.
+
+## v80 — Session 836 — The Mages' academy and its white towers (card F6, prototype only)
+The canon names three buildings for Aurenne beyond its houses: the Church's domes, the quays' warehouses, and "the academy's white towers" (§1.3), where the Mages' academy sits beside the Church. Sessions 832 and 833 built the first two. This one builds the academy, and with it Aurenne's list in F6 is done until Michael answers.
+
+`pieces.js` has `aurenneAcademy(o, r)`, on `aurKit()`.
+- **The library:** a hall of two storeys, 24 to 36 m long, 13 m deep and 10.5 m high.
+  - Its front: an arcade of round arches on turned columns, a band of glazed tile, then tall arched windows with sills and grilles.
+  - The sides and back have small windows below and tall ones above.
+  - A rounded parapet, as the houses have, so it does not read as the Compact's merlons.
+- **The towers** (`o.towers`, 2 or 3) rise out of the hall's back:
+  - Round shafts of 2.1 m radius, 2.6 m for the tallest, with staggered arched slits.
+  - A stone ring where they clear the roof, and a gallery on sixteen corbels behind a pierced parapet of little posts and a rail.
+  - Over the gallery, a lantern drum with six arched openings, and a pointed white cap with a gilt finial.
+- **The observatory:** the tallest tower (the middle of three, the last of two) has a white dome with a shutter slot instead of the cap.
+- **Its forecourt:** two cypresses at the arcade's ends and a stone bench under it.
+
+`aurenne.html?view=academy` shows it from its forecourt, with `&towers=2|3`.
+
+**Fixed before the picture.** The first shafts ran 3.2 m past their galleries and hid the lanterns inside them. A shaft now ends at its gallery's floor.
+
+The towers' shape is asked as **DECISION #296**: A round with pointed caps, as drawn (recommended); B domed caps in the Church's finish; C square, like the bell towers.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: all pass, with three new checks.**
+  - **Builds:** eight academies (24, 28, 32 and 36 m, two and three towers) are 14,040 to 19,710 triangles in at most 8 meshes. All eight build the same twice.
+  - **The towers** stand 32.95 to 40.48 m to their finials, the observatory's the tallest in every build, and every one at least twice the hall's height. Nothing is below the ground or past the front.
+  - **The page** renders its three towers with no page errors.
+  - The houses', churches' and civic buildings' checks pass as before.
+- **Picture, new:** `aurenne-academy.jpg`.
+### Needs eyes
+- **The arcade is black.** It is cut through the front wall into the hall's dark, not a loggia with a back wall as the tithe house's is, so at noon it reads as a row of black doorways. A walk under it, with a lit wall behind, would read better; it costs a second wall and a ceiling.
+- **The observatory's slot** is small from the forecourt.
+- **The academy stands alone** on the page. Its courtyard and its quarter of the city come with the city plan.
+
+## v80 — Session 837 — The Makers' trials' props, begun: the Gate-Blade's stone and the Noon Ring's cairn (backlog L, prototype only)
+The systems builder built four of the Makers' trials on placeholders (Sessions 800 to 802) and has asked in every report since for the props: the blade's stone, the cloak's den, the bell's tidal wreck, the ring's cairn, the Shuttle's room and the Waylamp. They wait for the new kit, and the look builder's prompt lists them second after F6. With Aurenne's F6 list waiting on three answers, this session builds the two made of stone. Their descriptions are `unique-artifacts.md`'s.
+
+A new module, `docs/prototypes/levelup/props.js`, on the same rules as `pieces.js`: every shape comes from a stream keyed by the place, and one mesh per material. Its page is `trials.html`.
+- **`bladeStone`, An Chloch's** ("a blade in a standing stone outside a ruined gate, plainly visible"):
+  - **The stone:** a rough standing stone, 2.6 to 3.2 m. It is a subdivided box tapered to a rounded head and pushed about by smooth noise from its stream. It has ogham notches up its east edge and moss at its north foot.
+  - **The blade:** driven into the face at 1.15 m, slanting down 24°. The hilt and 0.68 m of steel stand out, and the point is a third of the way into the stone. The grip is at 1.47 m, where a standing person takes hold.
+  - **The ruined gate:** behind it, a fallen jamb of dressed stone, its lintel broken in two in the turf, and rubble.
+- **`ringCairn`, An Spéir's** ("on a peak's cairn, readable only at noon on a clear day"):
+  - **The cairn:** seven courses of rounded stones, about 40 in all, under a flat capstone. The ring lies in a pale hollow cut in the capstone at 1.77 m.
+  - **The pierced slab:** on the sunward side, set so the noon sun comes through its hole and lights the hollow round the ring. An hour either side, the spot falls 0.3 m away.
+
+**Fixed on the way, four things the pictures and the checks showed:**
+- **A mid-line comment.** A `//` comment I put mid-line commented out the rest of the line and its closing brace, so the page would not load. It is CLAUDE.md's own warning, about `js/`, and it holds here too. It is `/* */` now.
+- **The blade came out backwards,** point first. It is placed from the guard now.
+- **No noon light got through.** The first slab was 24 cm thick, and at a 40° sun the light dropped 20 cm across a 14 cm hole. The slab is 10 cm with its arrises and the hole 20 cm across, so a spot of about 12 cm gets through.
+- **The hollow hid the spot.** The spot fell on a near-black hollow, where it could not show. The hollow is cut in pale stone now.
+
+Both props are asked as **DECISION #298**, one letter for each:
+- **The blade:** A, in the standing stone's face as drawn (recommended), or B, down into a low boulder.
+- **The noon:** A, the pierced slab (recommended), or B, no slab.
+### Verified (headless Chromium)
+- **New `trials.check.mjs`: 9 of 9 pass.**
+  - **The blade's stone:** 20 stones from 20 keys are 1,856 triangles in 8 meshes and 2.61 to 3.19 m tall, each the same twice. The grip is 1.47 m up. Going from the pommel down the blade, the stone's face comes 0.82 to 0.87 m on, so the hilt and blade stand out and the rest is in the stone.
+  - **The cairn:** 8 cairns are 4,280 triangles in 4 meshes, each the same twice, the ring at 1.77 m. At noon the line from the ring to the sun is clear through the hole in 8 of 8, and the spot lands 0.02 m from the ring. An hour either side it lands 0.30 m off, outside the 0.13 m hollow.
+  - **The pages** render with no page errors.
+- **Pictures, new:** `trials-blade.jpg`, `-blade-close`, `-cairn`, `-cairn-close` (noon) and `-cairn-close-morning`.
+### Needs eyes
+- **The blade is a plain shape:** a flat steel shape, a box guard, a leather grip and a ball pommel. The Gate-Blade is a Maker's tool and deserves better, which is the weapon kit's job (the bodies builder's, with what is worn and carried).
+- **The ground** is the slice's rock texture tinted green, not F3's land.
+- **The sun's height** at noon is fixed at 40° in the prototype. In the game the slab must be set from the world's latitude and season, or the spot will wander.
+- **The rest of the props** (the den, the tidal wreck, the Shuttle's room, the Waylamp) are next.
+
+## v80 — Session 838 — The Waylamp (backlog L, prototype only)
+The third of the trials' props, and the smallest: An Teallach's Waylamp, "passed from inn to inn". You carry it lit through five towns' inns, and a crime puts it out for seven days (`unique-artifacts.md`; the systems builder built its rules in Sessions 783 to 784, on a placeholder).
+
+`props.js` has `waylamp(o, r)`. It is a hand lantern 0.43 m to its carrying ring:
+- **The body:** a square iron frame with horn panes on all four sides, an iron band round its middle, a base and a top plate.
+- **The door's plate:** a brass disc with the hearth's mark on it, three bars.
+- **The cap:** a four-sided cone pierced with eight vents, a knob, and the ring to carry it by.
+- **Inside:** a candle.
+- **Lit** (`o.lit`, the default), the horn glows and a flame burns. **Put out**, the horn is dull and there is no flame, so you can see the lamp go out.
+- **`o.hook`** hangs it on an inn's iron bracket, an arm and a brace, from a stub of stone wall. The first bracket stood 7 cm above the ring; the arm now carries a hook through it.
+
+`trials.html?view=lamp` shows it at dusk, lit on its bracket, with a put-out lamp on a table below and a candle's light on the wall. `&unlit` swaps the two.
+
+Asked as the third question of **DECISION #298**: A, a horn lantern as drawn (recommended), or B, an older bronze oil lamp of the Makers' time, so it reads as one of the six tools.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 12 of 12 pass**, with three new checks:
+  - **The four builds** (lit, lit on its bracket, put out, put out on its bracket) are 760, 1,152, 620 and 1,012 triangles in at most 7 meshes, each the same twice. The lamp is 0.425 m to its ring, and the ring is its top.
+  - **Lit**, the horn glows and a flame burns; **put out**, neither.
+  - **The lamp page** renders with no page errors.
+- **Pictures, new:** `trials-lamp.jpg` and `trials-lamp-unlit.jpg`.
+### Needs eyes
+- **Carried, it is the bodies builder's.** How the lamp sits in a hand, at the belt or in the first-person view is the viewmodel's (`16-viewmodel.js`) and the bodies builder's. This is the lamp itself and its bracket.
+- **The light it throws** in the game will come from F9's light indoors (OG-141). The point light on this page is only the picture's.
 ## v80 — Session 828 — The third and final round of concept art, catalogued, marked and written back (docs only)
 Michael dropped the last concept art into the Drive (*Concept Art Session 3*, 13 Oct 2026) and asked, in chat with Claude, for the intake. The folder holds 35 sheets with his own ids, OG-F001 to F035, in four groups: M5 to M10 (culture and faith), N1 to N8 (dungeons and exploration), O1 to O10 (gameplay) and P1 to P10b (the living world, ending in two takes on the final art direction). An unpacked copy was in his Downloads, and it matched the Drive file for file, so the thumbnails were made from the local originals and each row's link points to the original in the Drive.
 
@@ -16944,6 +17304,281 @@ Each routine API call returned 200, and each routine read back its new prompt, i
 - **Usage over the next week:** the two new routines add up to about 24 Opus run-hours a day at these schedules. The Studio Floor shows it, and its pace controls can slow either one.
 - **The first bodies and QA runs:** check that they keep to their files.
 
+## v80 — Session 849 — The Drowned Bell's wreck on its tidal rock (backlog L, prototype only)
+The fourth of the Makers' trials' props. An Mhuir's bell lies in "a wreck on a rock that is above water only at low tide (hours 0–6 and 12–18)" (`unique-artifacts.md`). The systems builder's trial (Session 801, `87-world-quests.js`) keeps the sea level and moves the wreck instead: at high tide it sits 2.4 units lower (`BELL_HIGH_DY`), so only the mast shows; at low tide E within 2.6 of the bell takes it; taken, the beam is left with "a bright ring of wood where something hung for a long time". Its placeholder is a dodecahedron, a box hull, a cylinder mast and a cup. A FREEZE (#297, F2a) is open, so this is built in the prototype only.
+
+`props.js` has `tidalWreck(o, r)`. Its frame puts low water at y 0 and high water at `HW`, 2.4 m, the game's own range:
+- **The skerry:** a flattened dome of 16 by 10 m, its top pressed nearly flat above 0.6 so it reads as a wave-cut shelf awash at the ebb, 0.4 to 0.5 m up. Nine boulders round it and 26 patches of weed on it, all in a wet rock.
+- **The hull:** a small trader of 10 m, sunk a little into the rock and heeled 26° onto its low side. 13 pairs of frames: the low side's run to the gunwale and keep their planking (one plank in five gone); the high side's are broken off between a third and three-quarters up, planked only near the keel. A keel, and stem and stern posts broken low. About 70 strands of weed hang off the frames, all below the high-water line.
+- **The mast:** stepped amidships and broken off at 7 m. It is the only thing out of the sea at high water.
+- **The last beam:** a deck beam aft at 0.64 of the hull's depth, low enough that its high end stays under high water. It rests on a rib that still reaches it.
+- **The bell:** a lathe-turned ship's bell of 0.45 m in bronze gone green, with a crown loop, an iron strap and a clapper, hung plumb from the beam toward its high end. It hangs there and not mid-beam, because mid-beam put it at a standing person's knee.
+- **`o.taken`:** the bell, strap and clapper are gone, and a band of pale wood rings the beam where the strap was.
+
+`trials.html?view=wreck` shows it from a boat's height at low water. `&tide=high` raises the sea to 2.4 m. `&close` stands you in the hull at the bell, and `&taken` takes it. The page has its own sea for this (`main.js`'s water: two scales of waves, the sky in the fresnel and a sun glint), a sand floor at −3.2 m and the port's headland 330 m off. A new `&cam=x,y,z,tx,ty,tz` puts the camera anywhere on any view, which is how the hull was looked at from behind.
+
+**Fixed on the way, three things the pictures and the checks showed:**
+- **The rock went under.** The first rock was a box, which read as a plank. The second sank, because its flattening took the dome's top down below the sea.
+- **Wood stood out of the sea.** At high water the beam's high end and a bow rib stood up to 2.49 m. The hull now sits 0.18 m lower in its pocket and the beam lower in the hull, and the check finds no point within 0.1 m of the surface but the mast's.
+- **The bell hung too low.** Mid-beam it hung 0.56 m above the feet; toward the high end it hangs 0.85 m.
+
+Added to **DECISION #298** as its fourth question:
+- **A:** a plain trader's hull, as drawn.
+- **B** (recommended): the Compact's ship, since the Compact's rolls say the bell was "entered on a ship's manifest, and lost with the ship". The hull would be Aurennais, carvel with a lateen yard, built from L6's Aurenne hull when that exists.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 17 of 17 pass**, with five new checks over 12 keys:
+  - **The builds:** 11,934 to 12,246 triangles in 6 meshes, each the same twice.
+  - **High water:** no point but the mast's is within 0.1 m of the 2.4 m surface or above it, and the mast stands 4.53 to 4.62 m out.
+  - **Low water:** the bell's lip is 0.79 to 0.90 m up, clear of the sea, and its crown is 1.31 to 1.42 m, under high water.
+  - **The reach:** standing in the hull at 0.17 to 0.26 m (above the ebb), a person is 1.45 to 1.47 m across from the bell, inside the game's 2.6. The bell is 0.84 to 0.87 m above the feet.
+  - **Taken:** the bell is gone and the bright ring is there.
+  - **The page:** the wreck page renders with no page errors.
+- **Pictures, new:** `trials-wreck.jpg`, `-wreck-high`, `-wreck-close` and `-wreck-close-taken`. The seven older pictures were retaken by `--shots` and are unchanged in content.
+### Needs eyes
+- **The hull is generic.** A Gatelands, Mark or Aurenne dress waits on L6's hull line (question 4 on #298).
+- **The tide in the game moves the wreck, not the sea.** Built in the game, the rock should stay put and only the hull and bell sink, or the skerry will rise and fall with them. That is a note for the session that brings it in after F2a.
+- **Solids:** nothing of it is solid yet, in the prototype or the game.
+- **The weed** is flat blobs and strips. It reads from a boat but not from the hull.
+
+## v80 — Session 850 — The Wolf-Mother's Cloak in its den (backlog L, prototype only)
+The fifth of the Makers' trials' props. Michael's A on #270 settles the rule: the master wakes only when struck, and "sheathed" means not attacking. The approved draft (*The Makers' Things*, §6) gives the picture. *The master of the cave is lying on something grey that is not its own hide*; taken, *it lays its head down on the bare stone, and lets you go*. The FREEZE (#297) still holds, so this is a prototype only.
+
+`props.js` has `beastDen(o, r)`, the lair's last chamber:
+- **The chamber:** a dome of 10.4 by 9.2 m and 4.3 m high, pushed about by noise. It is wound to face inward, since a sphere seen from inside draws nothing. Its triangles are cut away in two places: the mouth (+z, low), which runs on as a tunnel of 2.5 m, and a small crack high in the roof.
+- **The floor:** a ring-built disc, rising a little to the walls.
+- **The nest,** against the back wall: a hollow scraped to the bare stone, as the draft's last line has it, with bracken heaped round its rim and 220 strands scattered over the rim. There are bones nearer the mouth: long bones, a rack of ribs, a skull and a stag's antler.
+- **The cloak,** spread in the hollow: a grey mantle, a half-disc of 1.35 m with folds pushed into it. It has a dark fur collar and a bronze clasp on its straight edge, which lies under where the master sleeps. Its pale hem curves out 0.55 m past the sleeper toward the mouth, and the hem is what the player takes hold of.
+- **The master:** a ghost ellipsoid of 2.6 by 1.4 m (`o.master` sets it; `o.ghost: false` hides it). The beast and its sleeping pose are the bodies builder's.
+
+`trials.html?view=den` looks from the mouth by torchlight, with a cold shaft of day down the crack onto the nest. `&close` stands you at the hem, and `&noghost` shows the nest bare.
+
+**Fixed on the way:**
+- **Inside out:** the dome and the tunnel drew nothing from inside until they were wound inward (and the tunnel's normals recomputed after its mirror).
+- **Upside down:** the cloak's half-disc faced the floor, so it was culled.
+- **The light missed:** the spot was placed by the dome's height alone, inside the rock.
+- **The nest was a fan:** a circle geometry is a fan from its centre, so the nest and the floor were cones that ignored their shape. Both are rings now; the check had found the cloak dipping under the nest at 2 points of 24.
+- **Too little headroom:** the nest sat against the wall at 2.55 m and was moved in.
+- **The wrong bed:** the first nest was all bracken. The draft's bare stone made the hollow stone.
+
+Added to **DECISION #298** as its fifth question: A, the crack in the roof, so the cloak is the one lit thing seen from the mouth (recommended); or B, no crack, torchlight only.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 23 of 23 pass**, with six new checks over 10 keys:
+  - **The builds:** 11,818 to 12,178 triangles in 9 meshes, each the same twice.
+  - **Headroom:** 3.02 to 3.92 m over the nest and 3.22 to 4.11 m over the sleeper.
+  - **The mouth:** from the chamber's middle at 1.2 m, a ray toward the mouth meets no wall all the way out the tunnel.
+  - **The path:** from the mouth to the hem, 0 of 21 points have anything over 0.3 m.
+  - **The cloak:** 0 of 24 sampled points lie under the nest's stone or bracken, and the hem is 0.55 m out past the sleeper.
+  - **The crack:** it is open from the nest to the sky in 10 of 10.
+  - **The page:** the den page renders with no page errors.
+- **Pictures, new:** `trials-den.jpg`, `-den-close` and `-den-empty`.
+### Needs eyes
+- **The cloak is a flat grey mantle,** not fur. How the Wolf-Mother's Cloak looks worn, and as a pelt, is the bodies builder's (what is worn). This is where it lies.
+- **The master's size** varies by biome (`lairBeast`): an ogre at Dunkeel, a bear or a wolf elsewhere. The nest is sized from `o.master`, and the game should pass the master's footprint.
+- **In the game,** the den's chamber is the cavern lair's master room (`lairFinish`). Bringing this in after F2a means its walls, solids and light go there, not as a separate room.
+
+## v80 — Session 851 — The Shuttle's room, the last of the trials' props (backlog L, prototype only)
+The sixth and last of the Makers' trials' props. An Fíodóir's Shuttle lies "in the deepest room of the gate nearest the home island's last unread sigil", and the approved draft puts it "on the floor before the sigil, as if put down a moment ago": *Something small and pale lies on the floor under the sigil, the shape of a boat, or a fish, or neither.* The systems builder's trial (Session 797) puts a pale spindle in the generator's farthest room. The gates' kit is card F5, a deep-work card, so this room is built to `visual-foundation.md` §2's numbers and language at the lesser gate's size OG-119 gives ("one arched room of about ten metres"), to take F5's pieces when they exist. The FREEZE (#297) still holds, so this is a prototype only.
+
+`props.js` has `shuttleRoom(o, r)`:
+- **The vault:** a pointed barrel vault of 10 m span, springing at 4.2 m and 9 m to its crown, 14 m long and 0.9 m thick. Each half is an arc struck from a centre inside the span, extruded the room's length.
+- **The end walls:** the far one is whole. The near one has the door, an arched slit of 3.2 by 6 m.
+- **The floor:** dark slabs of 2.5 m, four across, with joints, low in roughness so they read wet. §2 says never cobbles.
+- **The piers and script:** three pairs of engaged piers, each with a strip of amber script up its face to the springing.
+- **The sigil:** the unread one, on the far wall at 3.4 m. It is a glowing ring of 2.4 m with an inner ring and twelve strokes, and two columns of script beside it.
+- **The Shuttle:** 1.2 m out from the wall under the sigil, a little askew. A lathe of pale wood pointed at both ends and flattened, 0.32 m long, with its dark cavity, the pirn in it, and a thread end of 0.3 m lying from its eye across the slab ("a thread end in it that nothing will pull out").
+- **`o.taken`:** the floor is bare.
+
+The script is a canvas texture of amber strokes on black, drawn from its own stream (`gate-script`) so that making it once does not move the prop's own rolls. The kit's `put` now takes `uv: null` to keep a piece's own UVs: until then every piece's UVs were replaced by world-projected ones, and the script strips sampled their texture's black edge.
+
+`trials.html?view=shuttle` looks from the door by torchlight: the script and the sigil glow, and the page carries more bloom. `&close` stands you over the Shuttle, and `&taken` takes it.
+
+Added to **DECISION #298** as its sixth question:
+- **A** (recommended): the trial's room is built as this one room at the end of the gate, so the Shuttle always lies under a sigil in the same light.
+- **B:** the trial keeps the generator's deepest room, as Session 797 built it, and hangs the sigil on that room's end wall.
+
+All six props are now prototyped: the blade's stone, the ring's cairn, the Waylamp, the bell's wreck, the cloak's den and the Shuttle's room. Each waits on #298 and on F2a.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 29 of 29 pass**, with five new checks over 8 keys:
+  - **The builds:** 3,092 triangles in 7 meshes, each the same twice.
+  - **The room:** 10 m across, the vault 9 m, slabs of 2.5 m, the door 3.2 by 6 m.
+  - **The Shuttle:** 0.03 to 0.15 m to one side of the sigil's line and 1.15 to 1.27 m out from the wall. It is within 3 mm of the floor and 0.29 to 0.32 m long.
+  - **In sight:** from the door, at a standing eye, the sigil is in sight in 8 of 8 and the Shuttle in 8 of 8.
+  - **Taken:** the floor is bare.
+  - **The page:** the shuttle page renders with no page errors.
+- **Pictures, new:** `trials-shuttle.jpg`, `-shuttle-close` and `-shuttle-close-taken`.
+### Needs eyes
+- **Not F5's kit.** The room is the gates' language in one room, not F5's kit. The piers' script is a stand-in for the slice's glyph columns, and the walls are the slice's ashlar.
+- **From the door, the Shuttle is a few pixels** at 6.5 m. It is "small and pale" by the draft, and the first-sight line names it. A faint light on it would make it findable, if Michael wants that.
+- **The school:** this is a steady gate's amber. A failing gate (OG-120) would be cold blue, and which school's dress the home island's sigil gate wears is the generator's.
+
+## v80 — Session 852 — Card F9 begun: the Gatelands cottage as a room, inside its own shell (prototype only)
+With the trials' props done, this session takes the next item in the look builder's order: places for F9 (rooms) as prototypes in the new kit. It starts with L9's *Homes as rooms*, from OG-115 (M7, the island cutaways: "a rural cottage of whitewashed stone and thatch with hearth, box bed and shelves") and OG-141 (P5: daylight through windows at four times, the hearth, candles and lanterns; "a Gatelands cottage lit by its hearth and lanterns"). Both sheets were opened and their catalogue rows read. Neither row's canon flags touches the Gatelands cottage: OG-115's flag is the Mark's "clans", and OG-141's is its cobbled dungeon. The FREEZE (#297) still holds, so this is a prototype only.
+
+**The method: the room is built inside the very shell the street builds.** A new module, `docs/prototypes/levelup/rooms.js`, makes `gatelandsCottage(o, r)` from `pieces.js`'s `gatelandsBuilding` with the `GL_PLANS.cottage` plan. That is the house on the lanes: 9.6 by 5.4 m, walls 0.6 m thick, 2.7 m to the wall plate, thatch at 50°. One new flag, `plan.interior`, leaves out the dark box that otherwise fills every shell behind its windows (`pieces.js`, one line). The room's walls are the walls you saw from outside, at their thickness, with the same openings. The shell's black glass was made for a dark house, so inside the room it is swapped for a clear pane. At night you see the dresser through the window from the lane.
+
+**The plan is a hearth-lobby house.** The cottage plan already put its ridge stack at x = −1.7, off-centre beside the half-door at −0.6. That is the Irish hearth-lobby layout, so the room follows it:
+- **The lobby:** the front door opens into a lobby, screened from the fire by a jamb wall with a spy window.
+- **The hearth wall:** it stands at the stack and runs up to the roof's underside. It carries a breast 0.55 m proud with an open hearth cut into it, sooted at the back, under an oak lintel, with a hearthstone before it. In the hearth is a turf fire of seven sods on embers, and an iron crane from the cheek carrying a pot. A door through the hearth wall leads to the room below (west).
+- **The east partition:** deal boards, with a door at the front to the room above.
+- **The kitchen:** a painted dresser on the back wall with three shelves of delft (one plate in three blue) and three crocks. A box bed of deal stands against the east partition, 0.9 by 2.0 m, with its red curtain, a straw tick and a blanket. A table stands under the front window, with a candle on it and two stools, and a súgán chair sits at the fire. The floor is flagstones in courses of 0.55 to 0.9 m.
+- **The end rooms:** each has a bed and a chest, beaten earth underfoot, and a small grate in the east gable.
+- **The roof:** three oak couples with their collars, and two purlins a side, under the thatch. The lantern hangs from the kitchen's collar.
+
+`rooms.html` lights it at four hours, with the cottage's front facing south. `?view=kitchen|table|dresser|outside` and `&hour=morning|noon|golden|night` pick the view and the hour. The fire's light is always lit, the lantern from the golden hour, and the candle's flame burns on the table.
+
+**Fixed on the way:**
+- **The couples** came through the thatch, because each slope's rafter was tilted the wrong way.
+- **The fire** sat inside a solid soot block. It now sits in a real recess in the breast.
+- **The stools** stood in the way from the door round the jamb wall, and the table moved east.
+- **A chest** stood inside the east room's bed.
+- **The rafters' feet** reached 0.11 m into the back wall.
+
+**What the light check found:** the first check asked for the noon sun on the floor and failed, and it was right to fail. At 52° the thatch's eave and the 0.6 m wall keep the high sun on the deep sill, as in a real cottage. The page's first morning sun, 62° off the wall's face, was stopped by the reveal. The check now asks for the south-eastern morning sun.
+
+Asked as **DECISION #303**: *Rooms in the new kit: inside the street's own shell, and the cottage's plan* (two questions; recommended A and A).
+### Verified (headless Chromium)
+- **New `rooms.check.mjs`: 9 of 9 pass:**
+  - **The builds:** 6 keys, each the same twice. The room is 3,678 to 3,762 triangles in 18 meshes, on the shell's 1,814 in 10.
+  - **Inside the walls:** no piece is outside the shell's inner walls, and no point is over the roof's underside or through a wall.
+  - **No clashes:** no two pieces of furniture are in each other.
+  - **The way:** from the front door round the jamb wall to the hearthstone, nothing comes within 0.15 m.
+  - **A person fits:** the box bed is 1.93 m inside, the table 0.76 m, the seats 0.45 and 0.46 m, the inner doors 0.8 by 1.95 m and the front door 0.95 by 2.0 m.
+  - **The fire** burns in its recess.
+  - **Morning sun:** in the morning, 12 of 36 rays over each kitchen window's opening land inside the room.
+  - **The pages:** the kitchen and outside views render with no page errors.
+- **Pictures, new:** `rooms-kitchen.jpg` (noon), `-kitchen-morning`, `-kitchen-golden`, `-kitchen-night`, `-table`, `-dresser`, `-outside` and `-outside-night`.
+### Needs eyes
+- **The hemisphere light** stands in for the light bounced round the room, and it lights corners the windows could not reach. F9 in the game will want real bounce, or baked light per room.
+- **The night sky** on the page is the day's sky dome with the sun turned down, so `-outside-night` is dusk, not night.
+- **Michael's call:** whether the house you see from the lane is the one you walk into (question 1). It decides how F9 enters the game: today's interiors are separate rooms at their own coordinates (`buildInteriorFor`).
+- **Dressing:** plates, crocks and the curtain are simple shapes. OG-115's prop list (tableware, textiles, mirror and comb) is a later pass.
+
+## v80 — Session 857 — Card F8 begun: a Markish silver mine, built to the person (prototype only)
+The FREEZE (#297, F2a) is still open, so this run works in the prototypes only. Card F9's rooms wait on DECISION #303, and the trials' props on #298. This session therefore takes the next item in the look builder's order that waits on nothing: L10's *Places that are not gates* (card F8), from OG-121 (N3: "mines and quarries: timber galleries and walkways over a shaft, ore and gems, cave-ins, a working site held by hostiles"). I opened the sheet and read its catalogue row. Its canon flags are the crypts' dead, Aurenne's "Roman" ruins and the Mark's Gothic castle, and none of them touches a mine. The Mark is the island for it: the canon's Mark sells "iron and silver from the ranges", and OG-121's Mark panel has "mountain mines". Who holds the working is the systems builder's.
+
+A new module, `docs/prototypes/levelup/places.js`, makes `markMine(o, r)`. It is built to the person, one unit a metre:
+- **The adit:** a level 18 m into the hill, 3 by 3 m in the rock. Timber sets every 1.5 m hold it, each two posts and a cap with lagging boards over the cap. The way between the posts is 2.07 m and the cap is 2.3 m up. A tramway of 0.6 m gauge runs on sleepers from the mouth to a stop-block on the landing, and the cart stands there half full of ore.
+- **The stope:** the worked-out chamber the ore came out of. It is 12 m across and 16 m long, and 24 m high: 8 m over the adit's floor and 16 m below it, down to a sump of standing water.
+- **The landing:** a timber deck across the chamber's near end, on joists let into the rock and posts down to the sump. A windlass stands on two sills out over the shaft, with its drum, crank, rope and kibble. A ladder goes down the east wall from a gap in the rail.
+- **The gallery:** a walkway 1.4 m wide along the west wall, on beams let into the rock with a strut under each. Its rail runs along the open side.
+- **The working face:** at the far end, on a ledge of rock left standing, the face is cut square and wet. A vein of silver-lead ore crosses it in shards set into the face's own surface, dipping a little. There are pick marks along it, broken ore and spoil at its foot, a pick against it, a basket, and a lamp on a peg.
+- **The light:** nine lamps, the only light: three on the adit's sets, two on the landing's posts, two on the gallery, one at the face, and one let down in the kibble. A grey day comes in at the mouth.
+- **`o.worked: false`:** the face is long worked out. The heap and the fresh pick marks are gone.
+
+All the rock of a place moves by one noise field keyed by the place, so the adit's walls and the chamber's mouth, cut on the same half-metre cells, meet at the same points. The face has its own finer field, and the vein's shards are placed on that surface. The rock is a box seen from inside, smooth-shaded across its cells.
+
+`places.html` has five views: `?view=mine` (default) from the adit's last set out over the landing to the lit face; `gallery` halfway along the gallery with the drop beside you; `face` at arm's length from the vein; `adit` from the mouth; and `shaft`. Add `&old` for the face worked out, and `&cam` for any camera.
+
+**Fixed on the way, each found by the check or the pictures:**
+- **The adit's corner:** the walk cut across it, so it now leaves the adit straight before turning for the gallery.
+- **The planks** had 2 cm gaps that a ray fell through to the sump. They are laid edge to edge now.
+- **The ledge's edge** is rough, so it pulled back from the gallery's last plank. The gallery's deck now runs half a metre onto the ledge.
+- **The landing's posts** came 1.7 m up through the deck.
+- **The vein** was first a smooth metal ribbon, then a row of pale stones the size of fists. It is now small dark shards in the rock.
+- **The face** was a flat pasted rectangle until it was given its own rough surface.
+- **The first frames were black:** the lamps were at a candle's strength for 0.170's units.
+
+Asked as **DECISION #305**: *Places that are not gates: a Markish mine's measure, its light, and what comes next*. It has three questions: the levels' width (A as built, 2.07 m), what lights a mine (A, its miners' lamps while it is worked, and dark otherwise), and the next places (A: the Gatelands' round cairn, a limestone cave with a lake under falls, a smugglers' lair).
+### Verified (headless Chromium)
+- **New `places.check.mjs`: 9 of 9 pass:**
+  - **The builds:** 6 keys, each the same twice. 27,896 triangles in 14 meshes, with 9 lamps.
+  - **The sets:** 12 sets, the way 2.07 m between the posts at the hip, the cap 2.3 m up, the feet on the floor.
+  - **The walk:** 160 points every quarter metre, from the mouth down the adit, across the landing, along the gallery and onto the ledge. There is a floor under every point (−0.02 to +0.02 m), 2.3 m of headroom or more, and 0.44 m clear at the hip and the head.
+  - **The gallery:** the rail is within 0.61 m of the walk on the open side, at the hip and the knee. Past it the drop to the sump is 15.4 m.
+  - **The face:** the vein is 1.11 to 1.18 m from the walk's end, 1.06 to 1.19 m up, and is the first thing the eye meets toward it.
+  - **The heap:** worked, it lies at the face's foot (15 to 21 of 40 points). Worked out, it is gone (0).
+  - **The pages:** the mine, shaft and face views render with no page errors.
+- **Pictures, new:** `places-mine.jpg`, `-adit`, `-gallery`, `-face` and `-face-old`.
+### Needs eyes
+- **The shaft view is a hole:** 16 m down, lit by the one lamp in the kibble. It renders, but it is too dark for a picture, so it is not shot. Real bounce light, or a second lamp on the ladder, would show the shaft's walls.
+- **The timber is boxes:** the sets, rails and gallery have no wear or adze marks, and the planks' wood texture reads as tiles at this grain.
+- **No cave-ins, no gems:** OG-121's cave-ins and gems, and the lifts of OG-034's mining town, are later slices.
+- **Combat at 2.07 m** is #305's first question. The combat page's swings were made for open ground.
+- **In the game,** this becomes a kind of place for `52-dungeon-gen.js` after F2a, its walls and solids from the same boxes the check walks.
+
+## v80 — Session 858 — Card F11 begun: the Gatelands sloop, clinker-built, at the game's own size (prototype only)
+The FREEZE (#297) still holds. Session 857 left the places that are not gates waiting on #305, so this session takes the next item in the look builder's order that waits on nothing: L6's *hull line per island* (card F11), from OG-004 (J1: "Gatelands: clinker hulls, green sails with the harp, square rig"). I opened the sheet and read its row. Its canon flags are cannons on ordinary hulls, Aurenne's "crown jewel" and the invented heraldry (the lion and the wolf); the row's note says "the harp and the sun-star fill a gap". The game keeps its five classes, each dressed by its island (Michael's 3 A). The Mark's cutter and Aurenne's caravel already have hulls of their own in the game (Session 665), so the slice is the sloop, the Gatelands' own and the player's first.
+
+A new module, `docs/prototypes/levelup/ships.js`, makes `gatelandsSloop(o, r)` at the game's sloop's numbers (`85-world-sea.js`): 13 m by 4.4 m moulded, draft 1.05, the deck 1.0 m over the sea (`DECK_Y`).
+- **The lines:** the half-breadth falls to nothing at the stem and the sternpost, finer forward than aft. The keel's depth eases toward the ends. The sheer rises 0.75 m to the bow and 0.5 m to the stern. Each section has a round bilge and a little flare at the top. Toward the ends the low points draw in along the hull, so the keel is shorter than the sheer and the stem and sternpost rake out from it.
+- **The strakes:** ten a side, each a real plank 3.5 cm thick, tilted so that its lower edge stands 2.5 to 3.3 cm outside the strake below and its upper edge tucks under the next. That is the clinker lap, and it reads as a stepped shadow down her side. She is tarred to the waterline and oiled oak above. The sheer strake is green under a cream wale. The strakes carry their own UVs, so the grain runs along the hull.
+- **The deck:** fore-and-aft planks at 1.0 m, cut to the hull's half-breadth at that height, with a covering board along each side out to the planking. Amidships aft of the mast is a hatch with a 0.3 m coaming, and by the mast a coil of rope and a bucket.
+- **The rail:** stanchions every 0.9 m with a cap rail 1.0 m over the deck, higher where the sheer rises (scale-numbers-build.md's "waist height").
+- **The rig:** one mast, its yard at 9 m over the deck. The square sail is bellied forward and its foot is 2.2 m over the deck, so you walk under it. It is green with the harp, drawn on a canvas side on: the soundbox, the curved neck, the bowed forepillar and the strings. There are three shrouds a side, a forestay and a backstay, braces from the yardarms and sheets from the clews.
+- **The helm:** the rudder hangs on the raked sternpost and its tiller comes inboard.
+- **`o.harp: false`:** the sail is plain.
+
+`ships.html` has four views: `?view=quarter` (default) from off her starboard bow; `side` broadside; `deck` from the tiller forward; and `lap`, close on the strakes at the waterline. Add `&noharp` for the plain sail.
+
+**Fixed on the way, each found by the check or the pictures:**
+- **Unseen planking:** the strakes were wound inward, so their outer faces would not have drawn. This one was caught by reading the winding before the first frame, not by the check.
+- **Barrel staves:** the wood's grain ran up her side, because the world-projected UVs followed the normal. The strakes now carry UVs along the hull.
+- **Open ends:** the half-breadth never reached zero at the stem and sternpost, so both ends were open, 0.36 to 0.42 m wide. The leak check's rays first got out there, once its reach was long enough to travel her length.
+- **Too wide:** the flare made her 4.58 m wide. It is now 4.4 m.
+- **Gaps in the deck:** the deck planks had 8 mm gaps a ray fell through, and nothing closed the deck to the hull at its edge.
+- **A tub from the side:** her ends were vertical and her sheer flat, until she was given the rake and more sheer.
+
+Asked as **DECISION #306**, with three questions:
+- **The rig:** A, the board's square sail, so one rig names each island.
+- **The harp:** A, keep it as the Gatelands' mark; B, plain; C, ask the quest writer first.
+- **The helm:** A, a tiller on the small hulls and the wheel from the cog up.
+### Verified (headless Chromium)
+- **New `ships.check.mjs`: 9 of 9 pass:**
+  - **The builds:** 6 keys, each the same twice. 24,284 triangles in 9 meshes.
+  - **The size:** 13 m by 4.4 m moulded, the deck 1.0 m over the sea.
+  - **Closed below the deck:** 0 of 900 rays from 15 points inside her get out.
+  - **Clinker:** at every strake's lower edge, at 9 stations, it stands 0.025 to 0.033 m outside the strake below.
+  - **The walk:** 68 points down either side of the deck from the tiller to the bow. There is deck under every one, 3.52 m of headroom under the sail's foot, and 0.87 m clear.
+  - **The rail:** 1.0 m or more over the deck at all 13 stanchions.
+  - **The sail:** harp or plain, the hull is the same.
+  - **The pages:** the quarter and deck views render with no page errors.
+- **Pictures, new:** `ships-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noharp`.
+### Needs eyes
+- **No frames inside:** below the deck she has no ribs or floors, and the hold is not built. OG-004's below-deck base (bed, chests, map table, stations) is L6's next slice and the systems builder's rules.
+- **The sail does not set:** it is one bellied shape, with no reefs or furling, and does not answer the wind. The game's sails trim by the wind (`85-world-sea.js`), and bringing this in keeps that.
+- **The harp is drawn in five strokes.** A painted emblem, worn and sun-faded, is a later pass.
+- **The other two islands:** the Mark's and Aurenne's hulls in the new kit follow on the same lines builder, after #306.
+
+## v80 — Session 859 — The Mark's hall gets its steps (card F6, prototype only; the critic's note)
+The critic's run of 14 Oct (Slack, on PR #304) found that *the Mark hall's door sits 0.8 m up with no step*. They were right. `markHall` stands every hall on a stone footing 0.8 m high, the door's sill at its top. The threshold was a slab 0.2 m deep at the sill's height with nothing below it, so the way in was a 0.8 m climb. With a porch it was worse: the porch's stone floor ran 2.15 m out at the same height and ended in the same drop.
+
+`pieces.js`, `markHall`: stone steps now go down from the sill to the ground. There are five rises of 0.16 m (the footing's height over five; v2-scope §2's stairs are 0.18 a rise), four steps on treads of 0.3 m below the threshold, each step 0.12 m wider than the one above. A hall without a porch keeps its threshold slab at the sill and the steps go down from it. With a porch, the porch's floor is the threshold and the steps go down from its front edge, clear of the porch's posts. The hall now returns `sill`, `front` and `stairOut`.
+
+`mark.check.mjs` has a new check that would have caught it. For each of the six test halls (shingle and both turfs, with and without a porch), a ray is cast down every 2 cm from 0.6 m beyond the stair's foot to the door's line. It reads the profile underfoot and asks that no rise is over 0.18 m and that the profile ends at the sill.
+### Verified (headless Chromium)
+- **`mark.check.mjs`: all pass.** Before the change the suite passed as it was. With the new check and the first fix, it failed on the three porch halls (a rise of 0.8 m, at the porch floor's edge); with the second, it passes.
+- **The door:** the highest rise on every hall is 0.16 m, and the profile ends at the 0.8 m sill.
+- **The suite's other checks** are unchanged: the turf textures, the lot rules (0 of 120 halls of note in turf), and 300 lots' halls in budget (720 to 1,792 triangles, at most 11 draws).
+- **Picture, retaken:** `mark-halls.jpg` shows the steps on all four halls.
+### Needs eyes
+- **No handrail.** Five steps with no rail is right for a farm hall. A hall of note might want carved posts at the foot of its steps.
+- **The critic's other two notes on the kit:**
+  - The cottage's half-door shows a wall, not a room. That is DECISION #303's question (the room inside the street's own shell).
+  - The Gatelands town storeys of 3.3 to 3.6 m break the foundation's 2.6 to 3.0 m. That is the next session.
+
+## v80 — Session 860 — The Gatelands town storeys brought to the foundation's 2.6 to 3.0 m (card F6, prototype only; the critic's note)
+The critic's run of 14 Oct also found that *the town storeys of 3.3–3.6 m break the foundation's 2.6–3.0*. `visual-foundation.md` §1 sets storeys at 2.6 to 3.0 m floor to floor, and its ratio test asks storey to person 1.45 to 1.7, which is 2.61 to 3.06 m on the 1.8 m person. The kit's `SCALE.storey` came with the concept artist's pieces (PR #281) and was folded into `pieces.js` in Session 834. It gave the ground floors more than that:
+- the townhouse 3.3 m;
+- the merchant's shop 3.6 m;
+- the warehouse 3.4 m;
+- the townhouse's first floor 3.1 m.
+
+I found no reason recorded for them in the devlog. Nothing asks for a piano nobile, and the foundation is Michael's approved spec, so this is a fix and not a question.
+
+`pieces.js`, `SCALE.storey`: the townhouse is now 3.0, 2.9 and 2.6; the merchant's 3.0, 2.9 and 2.6; and the warehouse 3.0, 2.8, 2.8 and 2.6. The cottage (2.7) and the farmhouse (2.9 and 2.7) were already inside the range. The eaves fall to match:
+- the townhouse and the merchant's from 9.0 and 9.2 m to 8.5 m;
+- the warehouse from 11.6 to 11.2 m, its hoist following its fourth floor.
+
+Every opening is placed from the storeys, so the doors, sashes, fanlight and shopfront move with them. The shopfront's door and fanlight fit under 3.0 m.
+
+`pieces.check.mjs` compares every plan with the sizes recorded in `pieces-gatelands.json`, so it failed on the three town plans as it should. The record is the page stats that `shoot-pieces.mjs` writes. Rerunning that script here retook every picture without people: the people's pack (`pack.json` and `pack.bin`) is not in the repository, and each shot logged its load error. So I kept the old pictures and the rest of the record, and wrote only the 30 plan entries' new triangles and heights into the JSON from the rerun.
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass**, on the updated record: Cottage 1,826, Townhouse 5,033 (was 5,081), Merchant's 4,426 (was 4,522), Warehouse 9,084 (was 9,132). Before the record was updated it failed on exactly those three plans, by their eaves and ridges.
+- **The lots:** the coloured towns hold (0 neighbours of 1,200 share a colour), 0 door paints clash, and a lot builds the same twice in 30 of 30.
+- **`rooms.check.mjs`: 9 of 9 pass.** The cottage room is built on the same kit, and the cottage's storey did not change.
+### Needs eyes
+- **The pictures `pieces-gatelands-*.jpg` still show the old, taller town storeys.** They need retaking by a session that has the people's pack, so the street keeps its people for scale. Until then the record's numbers and the pictures disagree on the three town plans' heights.
+- **The streets are lower:** a townhouse front is 0.5 m lower and its storeys at 2.9 to 3.0 m read squatter. Whether the town still reads as a town of note beside the cottages wants Michael's eye on the next pictures.
 ## v80 — Session 839 — The cloak hangs in to the legs and falls in folds, and nothing comes through it (B2, prototype only; the bodies builder's first session)
 Michael's A on #274 (13 Oct) kept the wardrobe's method, *drapes hang, shells fit*, on one condition: *as long as this doesn't have the arms phasing through the clothing.* The proposal he approved promised the cloak "deeper folds and a hem that comes in to the legs". Session 805's cloak had neither. Its 34 columns fell from the shoulders and hung straight down from wherever the arms and hands pushed them. The back flared out behind the legs, and the folds were a 2.2 cm ripple you could not see. Session 826 tried twice to pull the hem in point by point and parked both tries (`auto/wip-cloak-hang`: a crease down the back, a tear at the lower right). Its note said the next try should pull each column as one curve and fold by moving whole columns. That is what this session does (`buildHang` in `people.js`).
 
