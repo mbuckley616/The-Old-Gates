@@ -1,4 +1,4 @@
-// The Gatelands' limestone cave with a lake under falls (Session 872, card F8; the hall rebuilt in Session 874): places.js's gatelandsCave.
+// The Gatelands' limestone cave with a lake under falls (Session 872, card F8; the hall rebuilt in Session 882): places.js's gatelandsCave.
 // Inside there is no lamp: the day comes down the shaft with the falls, the flowers and the rimstone pools glow at the water's edge, and your
 // torch is at your right hand (Michael's A on #313).
 // ?place=cave&view=lake (default): from the ledge where the passage comes out, over the hall to the falls; view=shore: from the ramp's foot

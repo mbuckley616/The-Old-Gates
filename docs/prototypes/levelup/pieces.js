@@ -215,7 +215,7 @@ export function aurenneLot(street, i) {
 // beside. At true size: a cube of lime-washed ashlar on a podium with steps, tall arched windows, a band of glazed tile
 // under the cornice; a drum with arched lights and the great dome on it, in blue glaze or limewash, and on its top the
 // Weaver's sign, a gilt shuttle; an arcaded porch across the front; a square bell tower with an open belfry and a little dome.
-// o.rank 'village' | 'town' | 'cathedral' (Michael's C on #294, Session 881: the dome by rank, a village's limewashed, a town's and the
+// o.rank 'village' | 'town' | 'cathedral' (Michael's C on #294, Session 885: the dome by rank, a village's limewashed, a town's and the
 // cathedral's in blue glaze; a church with corner domes is a cathedral unless told), o.dome 'blue' | 'white' (overrides the rank),
 // o.w (the cube, 12 to 22 m), o.tower 0 | 1 | 2, o.corners (four small domes at the cube's corners,
 // a cathedral's), o.wall (a wall colour index). aurenneChurch(o, r) -> { group, roofTop, tris, draws, kind: 'church', front }.

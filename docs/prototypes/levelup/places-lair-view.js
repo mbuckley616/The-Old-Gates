@@ -1,4 +1,4 @@
-// The smugglers' lair (Session 873, card F8; rebuilt in Session 879): places.js's smugglersLair, a sea cave lit by its lanterns and its
+// The smugglers' lair (Session 873, card F8; rebuilt in Session 883): places.js's smugglersLair, a sea cave lit by its lanterns and its
 // fire, the day coming in at the sea arch (Michael's A on #314: a sea cave with its own landing).
 // ?place=lair&view=lair (default): from the passage's end over the landing, the deck and the jetty to the arch; view=jetty: from the T-head
 // back over the sloop to the deck and the gallery; view=store: on the landing by the fire, the storeroom's door; view=escape: the ladder

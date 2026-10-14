@@ -18200,7 +18200,9 @@ Asked as **DECISION #314**: where a smugglers' lair is. A, a sea cave with its o
 - **The storeroom is a box.** A real one would be built against the rock with a lean-to roof, and its walls cut to the rock's line.
 - **None of the four places is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.
 
-## v80 — Session 878 — The limestone cave rebuilt at three times the measure, with its dressing (card F8, prototype only)
+## v80 — Session 882 — The limestone cave rebuilt at three times the measure, with its dressing (card F8, prototype only)
+*Renumbered:* this run's sessions were first committed as 878 to 881, but auto/bodies had already written its own Session 878 (the beard at the collar). They are 882 to 885 in the devlog, the backlog, decisions.md and the prototypes' comments. The commit messages and the first PR comments keep the old numbers.
+
 Michael answered A on #313: the day comes down the shaft and the flowers glow. He added a note: "I don't think this cave is expansive enough. This feels pretty underwhelming to me. I hope this isn't the scale we're going for in all of our dungeon interiors, especially Old Gates." His F2b answer (3 m cells) says the same of the gates, "extremely massive and cavernous", and allows a cave or a mine "a more typical size". The cave of Session 872 was too small even for that. It was a box of 22 by 26 by 11 m with flat walls, so the swallow hole showed as a ring in a flat ceiling, and it held nothing but cones. The FREEZE (#297) holds, so this is the prototype again. OG-121 and OG-099 were reread: OG-099 is "a cave of blue pools and a bridge under waterfalls", and the first build left out both the pools and the bridge.
 
 `gatelandsCave` in `places.js` is rewritten. The returned shape is the same, with `walkY`, `bridge`, `columns` and `pools` added:
@@ -18243,10 +18245,10 @@ Michael answered A on #313: the day comes down the shaft and the flowers glow. H
 - **The falls are still ribbons, and they burn white** under the shaft's spot. Moving water and spray are the game's.
 - **At 143,000 triangles** the cave is heavy for one room. The hall's 128 by 112 rings and the floor's 100 by 132 grid are most of it, and in the game a lower ring count at a distance would serve.
 
-## v80 — Session 879 — The smugglers' lair rebuilt as a sea cave with a ship in it (card F8, prototype only)
-Michael answered A on #314: a sea cave with its own landing, as drawn. He added: "Same comment as the other cave decision - the size here is pretty underwhelming, as is the lack of detail in general." The lair of Session 873 was an 18 by 24 by 8 m box with a deck, a jetty and a plank shed. This session gives it the measure and the life a smugglers' hold wants, on the same lofted rock as the cave (Session 878). The FREEZE (#297) holds, so this is the prototype again.
+## v80 — Session 883 — The smugglers' lair rebuilt as a sea cave with a ship in it (card F8, prototype only)
+Michael answered A on #314: a sea cave with its own landing, as drawn. He added: "Same comment as the other cave decision - the size here is pretty underwhelming, as is the lack of detail in general." The lair of Session 873 was an 18 by 24 by 8 m box with a deck, a jetty and a plank shed. This session gives it the measure and the life a smugglers' hold wants, on the same lofted rock as the cave (Session 882). The FREEZE (#297) holds, so this is the prototype again.
 
-- **One generator for both caves.** The hall's ring, its noise, its alcoves, `hw`, `roofY` and `inHall` moved out of `gatelandsCave` into `caveHall(rk, F, ph, P)`. The cave calls it with the same draws in the same order, and its lake view renders byte-identical to Session 878's picture. `loft()`'s cut now also gets each quad's ring and step.
+- **One generator for both caves.** The hall's ring, its noise, its alcoves, `hw`, `roofY` and `inHall` moved out of `gatelandsCave` into `caveHall(rk, F, ph, P)`. The cave calls it with the same draws in the same order, and its lake view renders byte-identical to Session 882's picture. `loft()`'s cut now also gets each quad's ring and step.
 - **The cave:** 52 m long, 26 m across at its ends and 38 m in its middle, its crown 13 to 19 m over the sea. The rings are five times closer at the two ends, because uniform rings made metre-wide facets where the domes close.
   - **The walls** are dark and wet below the high-water line (1.6 m). The line follows a ring step, because cutting by the faces' centres gave a sawtooth.
   - **The sea arch** in the far dome is 13 m wide and 8 m high, with the open sea and the sky beyond it.
@@ -18272,7 +18274,7 @@ Michael answered A on #314: a sea cave with its own landing, as drawn. He added:
   - **Closed:** of 1,440 rays from six points, none gets out except by the passage (1), the sea arch (25) or the escape tunnel (0).
   - **The escape:** the ladder rises 5 m from the rock (0 to 0.01 m off it) to the ledge (0 m off it), with 2.31 m of headroom in the tunnel.
   - **The storeroom and the lair held:** the door is 1 by 2 m and clear 1.34 m in. Held, 8 lanterns are lit and the sloop lies 0.4 m off the T-head. Empty, 0 lanterns and no sloop.
-  - **The cave (Session 878)** still passes unchanged at 142,828 to 143,282 triangles.
+  - **The cave (Session 882)** still passes unchanged at 142,828 to 143,282 triangles.
 - **Pictures:** `places-lair-lair.jpg`, `-jetty`, `-store`, `-escape`, `-deck` (new) and `-empty` (new).
 ### Needs eyes
 - **The arch burns white.** The day at the arch blooms into a bright blob in the lair and deck views. A real sea cave's mouth is bright, but the arch's own shape is lost in it. The bloom or the spot wants tuning per place.
@@ -18282,8 +18284,8 @@ Michael answered A on #314: a sea cave with its own landing, as drawn. He added:
 - **The sloop is the Gatelands' hull.** Smugglers on the Mark or in Aurenne would moor their own island's hull (the cutter, Session 871; Aurenne's line is not built).
 - **Neither cave is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.
 
-## v80 — Session 880 — The round cairn's passage widened and its chamber enlarged (card F8, prototype only)
-Michael answered A on #309: spirals and lozenges, as drawn. He added: "Let's be mindful of the size as well, passages look very narrow." The cairn of Session 869 was built to the real passage tombs (Newgrange's passage is about a metre wide). At 1.25 m clear with lintels at 2.2 m, it read as a squeeze, and a fight or a companion in it would be worse. With the caves (Sessions 878 and 879) this is the third of Michael's notes on size this run.
+## v80 — Session 884 — The round cairn's passage widened and its chamber enlarged (card F8, prototype only)
+Michael answered A on #309: spirals and lozenges, as drawn. He added: "Let's be mindful of the size as well, passages look very narrow." The cairn of Session 869 was built to the real passage tombs (Newgrange's passage is about a metre wide). At 1.25 m clear with lintels at 2.2 m, it read as a squeeze, and a fight or a companion in it would be worse. With the caves (Sessions 882 and 879) this is the third of Michael's notes on size this run.
 
 `gatelandsCairn` in `places.js` takes the change in three numbers and one scale:
 - **The passage** is 2.0 m clear between its slabs (it was 1.25 m), with its lintels 2.6 m over the floor (it was 2.2 m). The door and the lintel over it widen with it, and the facade rises to 3.9 m so the lintel slab sits under its top.
@@ -18304,7 +18306,7 @@ Michael answered A on #309: spirals and lozenges, as drawn. He added: "Let's be 
 - **Two metres is a judgement.** It lets two walk abreast and a sword swing, but the passage no longer reads as a squeeze between standing stones. If it is now too wide, `W` takes it back.
 - **The mound's texture** reads coarse at 30 m. The turf is the Mark's moss map, as in Session 869.
 
-## v80 — Session 881 — Aurenne's church domes by rank (card F6, prototype only)
+## v80 — Session 885 — Aurenne's church domes by rank (card F6, prototype only)
 Michael answered C on #294: the domes by rank. The cathedral and a town's church have blue glaze, and a village's is limewashed, so the blue marks where the Church's money and its Priors sit. Until now `aurenneChurch` took the dome's finish as a bare option (`o.dome`), so whoever placed a church chose it by hand.
 
 `aurenneChurch` in `pieces.js` now takes **`o.rank`**: `'village'`, `'town'` or `'cathedral'`. A church with corner domes is a cathedral unless told otherwise, and one with no rank is a town's. The dome follows the rank: a village's is limewashed, and a town's and the cathedral's are in blue glaze. `o.dome` still overrides it, so the 72-church sweep and `&dome=` on the page work as before. In `aurenne.html`, the churches line-up is now the three ranks side by side: a village's church (12 m, limewashed), a town's (14 m, blue) and the cathedral (20 m, two towers, corner domes, blue). The square's church is a town's.

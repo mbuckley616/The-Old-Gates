@@ -48,7 +48,7 @@ check(`the gallery: the rail within ${Math.max(...r.map(x => x.rail))} m of the 
 check(`the working face: the vein ${mm(r, x => x.reach).join(' to ')} m from the walk's end, ${mm(r, x => x.veinY).join(' to ')} m up, the first thing the eye meets toward it`, r.every(x => x.reach <= 1.4 && x.veinY >= .6 && x.veinY <= 1.8 && x.seen === 'ore'), r.map(x => x.seen));
 check(`worked, the heap lies at the face's foot (${mm(r, x => x.heap).join(' to ')} of 40 points); worked out, it is gone (${Math.max(...r.map(x => x.heapOld))})`, r.every(x => x.heap >= 8 && x.heapOld === 0));
 check(`the light (#305, 2 A): worked, ${Math.min(...r.map(x => x.lamps))} lamps lit; worked out, ${Math.max(...r.map(x => x.oldLamps))} lamps and no lit horn anywhere`, r.every(x => x.lamps >= 6 && x.horn && x.oldLamps === 0 && !x.oldHorn));
-// the Gatelands' round cairn (Session 869; widened in Session 880): 3 keys, each the same twice and in budget; the passage 1.9 m clear or
+// the Gatelands' round cairn (Session 869; widened in Session 884): 3 keys, each the same twice and in budget; the passage 1.9 m clear or
 // more under lintels of 2.5 m or more over its rising floor; the walk from the approach round the entrance stone, in at the door and up to the back recess with
 // a floor under every quarter metre (within 8 cm of the floor's line), 2.1 m of headroom and 0.3 m clear; closed: of 1,200 rays from
 // inside, none gets out but through the door; three empty basins, one in each recess; carved, the spirals are there, and plain, none.
@@ -77,7 +77,7 @@ check(`the cairn's walk, ${c[0].walkN} points from the approach to the back rece
 check(`closed: of ${c[0].rays} rays from inside, ${Math.max(...c.map(x => x.out))} get out but by the door (${mm(c, x => x.door).join(' to ')} by the door); the vault's capstone at ${c[0].vault} m`, c.every(x => x.out === 0), c.flatMap(x => x.esc).slice(0, 6));
 check(`the basins: ${c[0].basins}, one in each recess, empty (the dish ${mm(c.flatMap(x => x.basinsEmpty), v => v).join(' to ')} m over the floor at the middle)`, c.every(x => x.basins === 3 && x.basinsEmpty.every(v => v > .05 && v < .2)));
 check(`the carving: spirals with o.carved, none plain`, c.every(x => x.grooves && !x.plainGrooves));
-// the limestone cave (Session 872; the hall rebuilt in Session 874): 3 keys, each the same twice and in budget; the hall's measure (a ray
+// the limestone cave (Session 872; the hall rebuilt in Session 882): 3 keys, each the same twice and in budget; the hall's measure (a ray
 // each way from its middle); the walk from the mouth down the passage, over the ledge, down the ramp, along the shore and over the bridge
 // to the shelf, with the floor where walkY says under every quarter metre, 0.3 m or more over the water, 2.1 m of headroom and 0.3 m
 // clear at the hip and the head; closed: of 1,440 rays from inside, none gets out but by the mouth or up the shaft; the lake 2.5 m deep or
@@ -116,7 +116,7 @@ check(`the cave closed: of ${V[0].rays} rays from inside, ${Math.max(...V.map(x 
 check(`the lake ${mm(V, x => x.deep).join(' to ')} m deep in its middle; the falls land in ${mm(V, x => x.fallsIn).join(' to ')} m of water; the day comes down the shaft onto the pool`, V.every(x => x.deep >= 2.5 && x.fallsIn >= .5 && x.sky));
 check(`the bridge: its deck ${mm(V, x => x.bridgeDeck).join(' to ')} m up at its middle, ${mm(V, x => x.bridgeGap).join(' to ')} m of air under it over the water; the columns, ${V[0].colsN}, stand on the floor`, V.every(x => x.bridgeDeck > .6 && x.bridgeGap >= .6 && x.cols === x.colsN));
 check(`the flowers: ${mm(V, x => x.flowers).join(' to ')} by ${mm(V, x => x.pools).join(' to ')} rimstone pools, on the ground (${mm(V, x => x.flowerOff[0])[0]} to ${mm(V, x => x.flowerOff[1])[1]} m off it)`, V.every(x => x.flowers > 10 && x.flowerOff[0] > -.03 && x.flowerOff[1] < .03));
-// the smugglers' lair (Session 873; rebuilt in Session 879): 3 keys, each the same twice and in budget; the cave's measure; the walk from
+// the smugglers' lair (Session 873; rebuilt in Session 883): 3 keys, each the same twice and in budget; the cave's measure; the walk from
 // the land over the landing, down the deck under the gallery and out along the jetty to the T-head with the deck under every quarter metre,
 // 2.1 m of headroom and 0.3 m clear; closed: of 1,440 rays from inside none gets out but by the passage, the sea arch or the escape
 // tunnel; the ladder from the rock to the ledge and 2.0 m or more of headroom in the tunnel; the storeroom's door 0.9 by 1.9 m or more and

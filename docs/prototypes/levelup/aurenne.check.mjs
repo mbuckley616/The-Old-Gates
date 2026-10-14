@@ -34,7 +34,7 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
   out.page = window.__stats;
   // the churches: every size, dome, tower count and the corner domes
   out.churches = []; out.chSame = 0;
-  // by rank (Session 881, #294 C): the dome from the rank alone, and an o.dome still overrides it
+  // by rank (Session 885, #294 C): the dome from the rank alone, and an o.dome still overrides it
   out.ranks = ['village', 'town', 'cathedral'].map(rank => { let g = 0; K.aurenneChurch({ w: 14, rank, corners: rank === 'cathedral' }, K.stream('rank:' + rank)).group.traverse(m => { if (m.isMesh && m.name === 'glaze') g++; }); return g; });
   { let g = 0; K.aurenneChurch({ w: 14, rank: 'village', dome: 'blue' }, K.stream('rank:over')).group.traverse(m => { if (m.isMesh && m.name === 'glaze') g++; }); out.rankOver = g; }
   for (const w of [12, 14, 16, 18, 20, 22]) for (const dome of ['blue', 'white']) for (const tower of [0, 1, 2]) for (const corners of [false, true]) { const o = { w, dome, tower, corners }, a = K.aurenneChurch(o, K.stream('ch:' + w + dome + tower + corners)), b = K.aurenneChurch(o, K.stream('ch:' + w + dome + tower + corners));
