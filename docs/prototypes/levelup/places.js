@@ -20,6 +20,7 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 import { mat, worldUV } from './common.js';
 import { stream, markTextures } from './pieces.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { gatelandsSloop } from './ships.js';
 
 let PM = null;
 function mats() {
@@ -250,15 +251,35 @@ function caveMats() {
   VM.lime.side = VM.limeWet.side = VM.drip.side = THREE.DoubleSide; VM.skin = VM.lime; return VM;
 }
 // a tube lofted ring by ring: ring(i, j) gives the point of ring i (0..NS) at step j (0..NA-1, round the ring); inside winds it to face in.
-// keep(centroid) drops faces (a cut). Smooth normals, so a hall of rock reads as one surface.
+// keep(centroid, i, j) drops faces (a cut); i and j are the quad's ring and step. Smooth normals, so a hall of rock reads as one surface.
 function loft(NS, NA, ring, inside = true, keep = () => true) { const pos = [], idx = [];
   for (let i = 0; i <= NS; i++) for (let j = 0; j < NA; j++) pos.push(...ring(i, j));
   const c = new THREE.Vector3(); for (let i = 0; i < NS; i++) for (let j = 0; j < NA; j++) { const a = i * NA + j, b = i * NA + (j + 1) % NA, d = a + NA, e = b + NA;
-    for (const t of [[a, b, d], [b, e, d]]) { c.set(0, 0, 0); for (const k of t) c.x += pos[k * 3] / 3, c.y += pos[k * 3 + 1] / 3, c.z += pos[k * 3 + 2] / 3; if (!keep(c)) continue; idx.push(...(inside ? t : [t[0], t[2], t[1]])); } }
+    for (const t of [[a, b, d], [b, e, d]]) { c.set(0, 0, 0); for (const k of t) c.x += pos[k * 3] / 3, c.y += pos[k * 3 + 1] / 3, c.z += pos[k * 3 + 2] / 3; if (!keep(c, i, j)) continue; idx.push(...(inside ? t : [t[0], t[2], t[1]])); } }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
 // a lumpy lathe: a growth of limestone from radius r0 at its root to a point, bulging where the drip ran thicker
 function growth(r, L, r0, segs = 7, rings = 7, blunt = false) { const pts = [], w = r() * 6; for (let k = 0; k <= rings; k++) { const t = k / rings, base = blunt ? Math.sqrt(Math.max(0, 1 - t ** 2.4)) : Math.pow(1 - t, 1.25), rad = k === rings ? 0 : r0 * base * (1 + .3 * Math.sin(t * 11 + w) * (1 - t)); pts.push(new THREE.Vector2(Math.max(rad, .002), t * L)); }
   const g = new THREE.LatheGeometry(pts, segs); return g; }
+// caveHall(rk, F, ph, P) (Session 879, lifted out of gatelandsCave): a hall of rock lofted ring by ring along -z from P.Z0 for P.L, its half-width
+//   P.RX(s) and its crown P.RY(s) over P.CY, P.RLOW below it, the ends rounded over P.E of its length; the rock moved by noise at three sizes and
+//   nine alcoves and buttresses high on the side walls, the noise fading near the floor. -> the helpers its place builds with: ringAt(s, th),
+//   hw(z) (the half-width at y 0), roofY(x, z), inHall(x, y, z, margin), taper, amp, big.
+function caveHall(rk, F, ph, P) { const { Z0, L, CY, RLOW, RX, RY, E } = P;
+  const taper = s => s < E ? Math.sqrt(Math.max(0, 1 - ((E - s) / E) ** 2)) : s > 1 - E ? Math.sqrt(Math.max(0, 1 - ((s - 1 + E) / E) ** 2)) : 1;
+  const AL = Array.from({ length: 9 }, (_, k) => ({ s: .1 + .8 * (k + rk() * .8) / 9, th: k % 2 ? .25 + rk() * .7 : Math.PI - .25 - rk() * .7, d: (k % 3 === 2 ? -2.5 : 4 + rk() * 3.5), w: 5 + rk() * 5, a: .32 + rk() * .2 }));
+  const bump = (x, y, z) => { const s = (Z0 - z) / L, th = Math.atan2((y - CY) / (y > CY ? RY(Math.min(1, Math.max(0, s))) : RLOW), x / RX(Math.min(1, Math.max(0, s)))); let b = 0; for (const a of AL) { const dth = Math.atan2(Math.sin(th - a.th), Math.cos(th - a.th)); b += a.d * Math.exp(-(((s - a.s) * L / a.w) ** 2) - (dth / a.a) ** 2); } return b; };
+  const big = (x, y, z) => 4 * (Math.sin(x * .06 + ph[0]) * Math.sin(z * .075 + ph[1]) + .5 * Math.sin(y * .07 + z * .09 + ph[2])) + 1.2 * Math.sin(x * .2 + ph[3]) * Math.sin(z * .18 + ph[4]) * Math.sin(y * .22 + ph[5]) + .6 * Math.sin(x * .45 + ph[6]) * Math.sin(y * .5 + z * .41 + ph[7]) + bump(x, y, z);
+  const amp = y => .1 + .9 * Math.min(1, Math.max(0, (y - 3) / 8)) ** 2;
+  const ringBase = (s, th) => { const t = taper(s), sn = Math.sin(th); return [RX(s) * t * Math.cos(th), CY + (sn > 0 ? RY(s) : RLOW) * t * sn, Z0 - s * L]; };
+  const ringAt = (s, th) => { const [x, y, z] = ringBase(s, th), n = big(x, y, z) * amp(y) * taper(s), [fx, fy, fz] = F(x, y, z), k = amp(y) * .6 + .4; return [x + Math.cos(th) * n + fx * k, y + Math.sin(th) * n + fy * k, z + fz * k]; };
+  // the hall's half-width at the shore's height (no noise): where the ring crosses y 0
+  const hw = z => RX((Z0 - z) / L) * Math.sqrt(1 - (CY / RLOW) ** 2);
+  // the roof over (x, z): the ring's upper half where it passes over x (two steps of a fixed point)
+  const roofY = (x, z) => { const s = Math.min(1 - E, Math.max(E, (Z0 - z) / L)); let th = Math.acos(Math.max(-1, Math.min(1, x / RX(s)))); for (let k = 0; k < 2; k++) { const p = ringBase(s, th), n = big(...p) * amp(p[1]); th = Math.acos(Math.max(-1, Math.min(1, x / (RX(s) + n)))); }
+    return ringAt(s, th)[1]; };
+  const inHall = (x, y, z, m) => { const s = (Z0 - z) / L; if (s <= 0 || s >= 1) return false; const t = taper(s); if (t < .05) return false; const ry = y > CY ? RY(s) : RLOW, q = Math.hypot(x / (RX(s) * t), (y - CY) / (ry * t)); return q < 1 - m / (RX(s) * t); };
+  return { taper, ringBase, ringAt, hw, roofY, inHall, amp, big };
+}
 export function gatelandsCave(o = {}, r = stream('cave')) {
   const M = caveMats(), B = new Map(), flowersOn = o.flowers !== false;
   const put = (geo, key, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
@@ -267,22 +288,11 @@ export function gatelandsCave(o = {}, r = stream('cave')) {
     if (!B.has(key)) B.set(key, []); B.get(key).push(g); };
   const rk = stream(String(o.key || 'cave') + ':rock'), F = field(rk, .35), ph = Array.from({ length: 8 }, () => rk() * 9);
   const LH = 4.5, PL = 22, Z0 = -PL, L = 64, Z1 = Z0 - L, CY = 7, RLOW = 11, LY = -.9, DEEP = 4, E = 5 / L;
-  // the hall's ring: half-width rx(s), crown ry(s) over CY, the ends rounded over 5 m; the noise grows from 0.15 of itself at the floor to all of it 10 m up
-  const RX = s => 15 + 8 * Math.sin(Math.PI * s), RY = s => 9 + 10 * Math.sin(Math.PI * s), taper = s => s < E ? Math.sqrt(Math.max(0, 1 - ((E - s) / E) ** 2)) : s > 1 - E ? Math.sqrt(Math.max(0, 1 - ((s - 1 + E) / E) ** 2)) : 1;
-  const AL = Array.from({ length: 9 }, (_, k) => ({ s: .1 + .8 * (k + rk() * .8) / 9, th: k % 2 ? .25 + rk() * .7 : Math.PI - .25 - rk() * .7, d: (k % 3 === 2 ? -2.5 : 4 + rk() * 3.5), w: 5 + rk() * 5, a: .32 + rk() * .2 }));
-  const bump = (x, y, z) => { const s = (Z0 - z) / L, th = Math.atan2((y - CY) / (y > CY ? RY(Math.min(1, Math.max(0, s))) : RLOW), x / RX(Math.min(1, Math.max(0, s)))); let b = 0; for (const a of AL) { const dth = Math.atan2(Math.sin(th - a.th), Math.cos(th - a.th)); b += a.d * Math.exp(-(((s - a.s) * L / a.w) ** 2) - (dth / a.a) ** 2); } return b; };
-  const big = (x, y, z) => 4 * (Math.sin(x * .06 + ph[0]) * Math.sin(z * .075 + ph[1]) + .5 * Math.sin(y * .07 + z * .09 + ph[2])) + 1.2 * Math.sin(x * .2 + ph[3]) * Math.sin(z * .18 + ph[4]) * Math.sin(y * .22 + ph[5]) + .6 * Math.sin(x * .45 + ph[6]) * Math.sin(y * .5 + z * .41 + ph[7]) + bump(x, y, z);
-  const amp = y => .1 + .9 * Math.min(1, Math.max(0, (y - 3) / 8)) ** 2;
-  const NS = 128, NA = 112, ringBase = (s, th) => { const t = taper(s), sn = Math.sin(th); return [RX(s) * t * Math.cos(th), CY + (sn > 0 ? RY(s) : RLOW) * t * sn, Z0 - s * L]; };
-  const ringAt = (s, th) => { const [x, y, z] = ringBase(s, th), n = big(x, y, z) * amp(y) * taper(s), [fx, fy, fz] = F(x, y, z), k = amp(y) * .6 + .4; return [x + Math.cos(th) * n + fx * k, y + Math.sin(th) * n + fy * k, z + fz * k]; };
-  // the hall's half-width at the shore's height (no noise): where the ring crosses y 0
-  const hw = z => RX((Z0 - z) / L) * Math.sqrt(1 - (CY / RLOW) ** 2);
-  // the roof over (x, z): the ring's upper half where it passes over x (two steps of a fixed point)
-  const roofY = (x, z) => { const s = Math.min(1 - E, Math.max(E, (Z0 - z) / L)); let th = Math.acos(Math.max(-1, Math.min(1, x / RX(s)))); for (let k = 0; k < 2; k++) { const p = ringBase(s, th), n = big(...p) * amp(p[1]); th = Math.acos(Math.max(-1, Math.min(1, x / (RX(s) + n)))); }
-    return ringAt(s, th)[1]; };
+  // the hall (caveHall): half-width RX(s), crown RY(s) over CY, the ends rounded over 5 m
+  const RX = s => 15 + 8 * Math.sin(Math.PI * s), RY = s => 9 + 10 * Math.sin(Math.PI * s);
+  const NS = 128, NA = 112, { taper, ringAt, hw, roofY, inHall } = caveHall(rk, F, ph, { Z0, L, CY, RLOW, RX, RY, E });
   // the passage: its spine winds 2.5 m either side and runs on 6 m straight into the hall, where its faces inside the hall are dropped
   const SPX = z => z > Z0 ? 2.5 * Math.sin(Math.PI * z / PL) : 0, PRX = 2.4, PCY = LH + 1.6, PUP = 2.0, PLOW = 3.2;
-  const inHall = (x, y, z, m) => { const s = (Z0 - z) / L; if (s <= 0 || s >= 1) return false; const t = taper(s); if (t < .05) return false; const ry = y > CY ? RY(s) : RLOW, q = Math.hypot(x / (RX(s) * t), (y - CY) / (ry * t)); return q < 1 - m / (RX(s) * t); };
   const inPassage = (x, y, z, m) => z < 2 && z > Z0 - 6 && Math.hypot((x - SPX(z)) / (PRX - m), (y - PCY) / ((y > PCY ? PUP : PLOW) - m)) < 1;
   const shaftS = .84, shaftTh = Math.PI * 100 / 180, SP = ringAt(shaftS, shaftTh), SX = SP[0], SZ = SP[2], SR = 2.2, ROOFS = SP[1];
   const inShaft = (x, z, m) => Math.hypot(x - SX, z - SZ) < SR + .9 - m;
@@ -364,71 +374,149 @@ export function gatelandsCave(o = {}, r = stream('cave')) {
     falls, shaft: { x: SX, z: SZ, r: SR, top: shaftTop, cut: SR + .9 }, mouth: { x0: -PRX, x1: PRX, y0: LH, h: PUP + 1.6 }, flowers, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) },
     bridge: { x0: BX0, x1: BX1, z: ZB, deck: .8, under: +(under((BX0 + BX1) / 2)).toFixed(2) }, columns, pools };
 }
-// smugglersLair(o, r) (Session 873, Michael's 3 A on #305, the third of the next places): OG-121's "smugglers' and bandits' lairs: plank
-//   platforms in a cave, storerooms, escape routes", as a sea cave on the Gatelands' coast. Built to the person, +z the landward way in:
-//   - the way in from the land: a passage 10 m long, 2.4 m wide and 2.6 m high, coming out on a rock floor at the cave's near end, 1.2 m
-//     over the water;
-//   - the cave: 18 m across, 24 m long and 8 m high, the sea filling it (the surface at 0, the bed 3 m down), open to the sea at the far
-//     end under an arch 7 m wide and 4.5 m high;
-//   - the platforms: a plank deck 3.2 m wide on posts down the west side at the rock floor's height, a jetty out from it into the middle
-//     with a rowing boat moored at its end, and a storeroom of planks on the rock floor at the near west corner, its door facing the way
-//     in, stacked with crates, kegs and bales;
-//   - the escape: a ladder up the east wall from the rock floor to a ledge 4.6 m up and a tunnel 1.4 m wide and 2.2 m high away east;
-//   - o.held (default true): the lair is in use, its lanterns lit (as #305's 2 A has a worked mine lit); false, it is dark and bare.
-//   -> { group, tris, draws, top, path, deck (y), lamps, door, ladder { x, z, y0, y1 }, ledge (y), escape { y, x0 }, arch { w, h },
-//        room { x0, x1, z0, z1 } }
+// smugglersLair(o, r) (Session 873, Michael's 3 A on #305; rebuilt in Session 879 on his A on #314 and its note, "the size here is pretty
+//   underwhelming, as is the lack of detail in general"): OG-121's "smugglers' and bandits' lairs: plank platforms in a cave, storerooms,
+//   escape routes", as a sea cave on the Gatelands' coast with its own landing. Built to the person, +z the landward way in, the sea at y 0:
+//   - the way in from the land: a passage 18 m long that winds 2 m either side, 3.6 m wide and 2.9 m high, its floor at FY (1.2 m over the sea);
+//   - the cave: caveHall's lofted rock, 52 m long, 26 m across at its ends and 38 m in its middle, its crown 13 to 19 m over the sea; the
+//     walls dark and wet below the high-water line (1.6 m); open to the sea under an arch 13 m wide and 8 m high in the far dome;
+//   - the landing: a shelf of rock at FY across the near end, with a storeroom of planks under a lean-to roof against the west wall (its
+//     door facing the way in), a fire ring with a pot on a tripod and logs to sit on;
+//   - the deck: planks on posts down the west wall for 32 m at FY, cargo stacked against the rock (crates, kegs, bales, a coil of rope, a
+//     rack of oars), and over its near half a gallery 3.4 m up on its own posts, with a stair, a rail, two pallets to sleep on and a chest;
+//   - the jetty: out from the deck to a T-head in the middle of the cave; the Gatelands sloop (ships.js) moored along it, bow to the sea, and
+//     a rowing boat; a derrick on the T-head with its boom over the sloop's hatch and a net of cargo hanging from it;
+//   - the escape: a ladder up the east wall from the landing to a ledge 6.2 m up and a tunnel 1.6 m wide away east;
+//   - o.held (default true): the lair is in use, its lanterns lit and the fire burning (as #305's 2 A has a worked mine lit); false, dark,
+//     the fire cold, the sloop gone.
+//   -> { group, tris, draws, top, path, walkY, deck (FY), lamps, door, ladder { x, z, y0, y1 }, ledge, escape { y, x0, z, w, h, xPlane },
+//        arch { w, h, z }, mouth { x, w, y0, h }, room, held, chamber, passage, hall { width, height }, ship { x, z, L, W } | null }
 let LZ2 = null;
 function lairMats() {
   if (LZ2) return LZ2; const M = mats();
-  LZ2 = { ...M, cliff: mat('rock', { ns: 1.5, color: 0x6a6e6c, rough: .9 }), sea: new THREE.MeshStandardMaterial({ color: 0x14404a, roughness: .2 /* at .05 the spot's highlight on it overflows to NaN, which the bloom spreads */, metalness: .1, transparent: true, opacity: .8, depthWrite: false }),
+  LZ2 = { ...M, cliff: mat('rock', { ns: 1.5, color: 0x6a6e6c, rough: .9 }), cliffWet: mat('rock', { ns: 1.7, color: 0x363c3a, rough: .55 }), sea: new THREE.MeshStandardMaterial({ color: 0x14404a, roughness: .2 /* at .05 the spot's highlight on it overflows to NaN, which the bloom spreads */, metalness: .1, transparent: true, opacity: .8, depthWrite: false }),
     seabed: mat('rock', { ns: 1.0, color: 0x3a4a44, rough: .9 }), crate: mat('wood', { ns: .9, color: 0x9a7a52, rough: .85 }), keg: mat('wood', { ns: 1.0, color: 0x6a4a2a, rough: .7 }),
     bale: mat('thatch', { ns: .8, color: 0x8a7a5a, rough: 1 }), hull: mat('wood', { ns: .8, color: 0x5a4632, rough: .7 }) };
-  LZ2.cliff.side = THREE.DoubleSide; return LZ2;
+  LZ2.cliff.side = LZ2.cliffWet.side = LZ2.hull.side = THREE.DoubleSide; return LZ2;
 }
 export function smugglersLair(o = {}, r = stream('lair')) {
   const M = lairMats(), B = new Map(), held = o.held !== false;
   const put = (geo, key, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    if (!g.attributes.normal) g.computeVertexNormals();
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
     if (!B.has(key)) B.set(key, []); B.get(key).push(g); };
   const bx = (key, x0, x1, y0, y1, z0, z1) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-  const F = field(stream(String(o.key || 'lair') + ':rock'), .32), FY = 1.2, PL = 10, PW = 2.4, PH = 2.6, CW = 18, CL = 24, CH = 8, Z0 = -PL, Z1 = -PL - CL, AW = 7, AH = 4.5, LY = 4.6, TW = 1.4, TH2 = 2.2;
-  const RZ = Z0 - 3.5, DX = -CW / 2 + 3.6, ladder = { x: CW / 2 - .55, z: Z0 - 2.2, y0: FY, y1: LY };
-  // the passage from the land, its floor at the deck's height; it runs 0.5 m on into the cave past a hole cut smaller than it, so the
-  // wall's ragged edge is a lip inside the passage and leaves no gap (the escape tunnel the same)
-  put(rockBox(PW, PH, PL + .5, 0, FY + PH / 2, -(PL + .5) / 2, .5, F, (c, n) => Math.abs(n.z) < .5 && n.y > -.5, y => y < FY + .01), 'cliff', 0, 0, 0, 0, 0, 0, .35); bx('cliff', -PW / 2 - .2, PW / 2 + .2, FY - .3, FY, -PL, 0);
-  // the cave: walls and roof; the near wall cut for the passage, the far wall for the sea arch, the east wall for the escape tunnel at the ledge
-  put(rockBox(CW, CH + 4, CL, 0, (CH - 4) / 2, (Z0 + Z1) / 2, .5, F, (c, n) => n.y > -.5 && !(n.z > .5 && Math.abs(c.x) < PW / 2 - .3 && c.y > FY - .1 && c.y < FY + PH - .3) && !(n.z < -.5 && Math.abs(c.x) < AW / 2 && c.y < AH)
-    && !(n.x > .5 && Math.abs(c.z - ladder.z) < TW / 2 - .2 && c.y > LY - .1 && c.y < LY + TH2 - .25), y => Math.abs(y + 4) < .01), 'cliff', 0, 0, 0, 0, 0, 0, .3);
-  // the sea's bed, the rock floor at the near end (from the passage to the ladder), and the sea
-  bx('seabed', -CW / 2 - .8, CW / 2 + .8, -3.3, -3, Z1 - 1, Z0 + .8); bx('cliff', -CW / 2 - .8, CW / 2 + .8, -3, FY, RZ, Z0 + .8);
-  put(new THREE.PlaneGeometry(CW + 30, CL + 20).rotateX(-Math.PI / 2), 'sea', 0, 0, (Z0 + Z1) / 2 - 10, 0, 0, 0, .1);
-  // the deck down the west side on posts, and the jetty out into the middle from its far end
-  const deckZ1 = Z1 + 6, JZ = deckZ1 + 1.2, JX1 = 1.5, plank = (x0, x1, z0, z1, along) => { /* laid edge to edge, as the mine's: a gap is a hole a ray (or a foot) falls through */ if (along) for (let x = x0; x < x1 - .01; x += .26) bx('plank', x, Math.min(x + .262, x1), FY - .05, FY, z0, z1); else for (let z = z1; z > z0 + .01; z -= .26) bx('plank', x0, x1, FY - .05, FY, Math.max(z - .262, z0), z); };
-  plank(-CW / 2 - .3, DX, deckZ1, RZ, false); plank(DX, JX1, JZ - 1.1, JZ + 1.1, true);
-  for (let z = RZ - .4; z > deckZ1; z -= 2.2) for (const x of [-CW / 2 + .5, DX - .2]) { bx('timber', x - .12, x + .12, -3, FY - .05, z - .12, z + .12); bx('timber', -CW / 2, DX, FY - .25, FY - .05, z - .1, z + .1); }
-  for (let x = DX + .8; x < JX1; x += 2.0) for (const z of [JZ - 1.0, JZ + 1.0]) bx('timber', x - .12, x + .12, -3, x + 2.0 >= JX1 ? FY + .7 : FY - .05, z - .12, z + .12) /* the last pair stand up as bollards */;
-  for (let x = DX; x < JX1; x += 2.0) bx('timber', x, Math.min(x + 2, JX1), FY - .25, FY - .05, JZ - 1.1, JZ + 1.1);
-  // the rowing boat at the jetty's end: a hull of two curved sides and a transom, thwarts and oars; its painter to a bollard
-  { const bx0 = JX1 + 1.4, bz = JZ, L = 4.2, W2 = .75; const pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * L)); }
-    const g = new THREE.LatheGeometry(pts, 14, Math.PI / 2, Math.PI); g.rotateZ(Math.PI / 2); g.rotateX(Math.PI); g.scale(1, .55, 1); put(g, 'hull', bx0, .25, bz, 0, Math.PI / 2, 0, .5);
-    for (const dx of [-.8, .4]) bx('timber', bx0 + dx - .1, bx0 + dx + .1, .1, .15, bz - .7, bz + .7); put(new THREE.CylinderGeometry(.03, .03, 2.6, 6).rotateZ(Math.PI / 2), 'timber', bx0 - .2, .2, bz + .3, 0, .1); }
-  // the storeroom on the rock floor at the near west corner: plank walls to 2.4 m, its door facing the passage, crates, kegs and bales inside
-  const room = { x0: -CW / 2 + .4, x1: -CW / 2 + 4.2, z0: RZ + 1.0, z1: Z0 - .4 }, door = { x: room.x1, z: (room.z0 + room.z1) / 2, w: 1.0, h: 2.0 };
-  { const wall = (x0, x1, z0, z1, hole) => { const L = Math.hypot(x1 - x0, z1 - z0), s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(L, 0); s.lineTo(L, 2.4); s.lineTo(0, 2.4); s.lineTo(0, 0);
+  const rod = (key, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = A.add(Bv).multiplyScalar(.5); put(g, key, m.x, m.y, m.z); };
+  const rk = stream(String(o.key || 'lair') + ':rock'), F = field(rk, .32), ph = Array.from({ length: 8 }, () => rk() * 9);
+  const FY = 1.2, PL = 18, Z0 = -PL, L = 52, Z1 = Z0 - L, CY = 4, RLOW = 8, E = 3 / L, AW2 = 6.5, AH = 8, HW = 1.6, LY = 6.2;
+  const RX = s => 13 + 6 * Math.sin(Math.PI * s), RY = s => 9 + 6 * Math.sin(Math.PI * s);
+  const { ringAt, hw, roofY, inHall } = caveHall(rk, F, ph, { Z0, L, CY, RLOW, RX, RY, E });
+  // the way in: a winding tube at FY that ends 0.6 m past the near dome's tip, where the dome is cut for it a little smaller than the tube
+  const SPX = z => z > Z0 ? 2 * Math.sin(Math.PI * z / PL) : 0, PRX = 1.95, PCY = FY + 1.3, PUP = 1.6, PLOW = 2.4, PEND = Z0 - .6;
+  const inPassage = (x, y, z, m) => z < 2 && z > Z0 - 5 && Math.hypot((x - SPX(z)) / (PRX - m), (y - PCY) / ((y > PCY ? PUP : PLOW) - m)) < 1;
+  // the escape: a tube east from the ledge, starting 0.4 m inside the east wall where the wall is nearest across the tube's height
+  //   (of the places along the landing, the one where the wall's x varies least over the tube's height, so the tube does not stand out of an alcove)
+  const TRX = .95, TCY = LY + 1.1, TUP = 1.25, TLOW = 1.8, wallXs = z => [-TRX, 0, TRX].flatMap(dz => Array.from({ length: 61 }, (_, k) => ringAt((Z0 - z - dz) / L, -.9 + k * .03))).filter(p => p[1] > LY - .3 && p[1] < TCY + TUP + .3).map(p => p[0]);
+  const ZL = Array.from({ length: 9 }, (_, k) => Z0 - 8 - k * .5).map(z => { const xs = wallXs(z); return [z, Math.max(...xs) - Math.min(...xs)]; }).sort((a, b) => a[1] - b[1])[0][0];
+  // the east wall's x at (y, z), by bisection on the ring's angle; the tube's every ring is set off from it, so its mouth lies on the rock
+  const wallX = (y, z) => { const s = (Z0 - z) / L; let a = -1.3, b = 1.3; for (let k = 0; k < 24; k++) { const m = (a + b) / 2; if (ringAt(s, m)[1] < y) a = m; else b = m; } return ringAt(s, (a + b) / 2)[0]; }, XW = wallX(LY + .5, ZL), XL = XW - .4;
+  const inTunnel = (x, y, z, m) => x > XW - 3 && Math.hypot((z - ZL) / (TRX - m), (y - TCY) / ((y > TCY ? TUP : TLOW) - m)) < 1;
+  const inArch = (c, m) => (Z0 - c.z) / L > .86 && (c.x / (AW2 - m)) ** 2 + (c.y / (AH - m)) ** 2 < 1;
+  const keepHall = c => !inPassage(c.x, c.y, c.z, .4) && !inTunnel(c.x, c.y, c.z, .3) && !inArch(c, 0);
+  const sOf = u => u - .8 * Math.sin(2 * Math.PI * u) / (2 * Math.PI) /* rings five times closer at the ends, where the domes close */;
+  for (const wet of [true, false]) put(loft(104, 96, (i, j) => ringAt(sOf(i / 104), j / 96 * Math.PI * 2), true, (c, i, j) => keepHall(c) && (CY + RLOW * Math.sin((j + .5) / 96 * Math.PI * 2) < HW) === wet) /* the high-water line follows a ring step, not the faces' centres */, wet ? 'cliffWet' : 'cliff', 0, 0, 0, 0, 0, 0, .25);
+  put(loft(40, 30, (i, j) => { const z = -i / 40 * (PL + .6), th = j / 30 * Math.PI * 2, sn = Math.sin(th), x = SPX(z) + PRX * Math.cos(th), y = PCY + (sn > 0 ? PUP : PLOW) * sn, [fx, fy, fz] = F(x, y, z); return [x + fx, y + fy * .6, z + fz * (i && i < 40 ? 1 : 0)]; }, true), 'cliff', 0, 0, 0, 0, 0, 0, .35);
+  put(loft(24, 24, (i, j) => { const th = j / 24 * Math.PI * 2, sn = Math.sin(th), z = ZL + TRX * Math.cos(th), y = TCY + (sn > 0 ? TUP : TLOW) * sn, x = wallX(Math.max(y, LY - .2), z) - .3 + i / 24 * 10.5, [fx, fy, fz] = F(x, y, z); return [x + fx * (i && i < 24 ? 1 : 0), y + fy * .5, z + fz * .6]; }, true), 'cliff', 0, 0, 0, 0, 0, 0, .35);
+  for (const [z0, z1, xc, w, y] of [[0, -PL, null, 2.4, FY]]) { const pos = [], idx = []; for (let i = 0; i <= 36; i++) { const z = z0 + (z1 - z0) * i / 36; for (const s of [-w, -.8, .8, w]) pos.push(SPX(z) + s, y, z); } for (let i = 0; i < 36; i++) for (let j = 0; j < 3; j++) { const a = i * 4 + j; idx.push(a, a + 1, a + 4, a + 1, a + 5, a + 4); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'cliff', 0, 0, 0, 0, 0, 0, .35); }
+  const LX0 = Math.min(...[ZL - .5, ZL, ZL + .4].flatMap(z => [FY + .2, FY + 2, LY - .5].map(y => wallX(y, z)))) - .3; bx('cliff', LX0, XW + 10.5, LY - .3, LY, ZL - 1.3, ZL + 1.3);
+  { const sh = new THREE.Shape(); sh.moveTo(LX0, LY - .3); sh.lineTo(XW + 1.5, LY - .3); sh.lineTo(XW + 1.5, LY - 4.5); sh.lineTo(LX0, LY - .3); const g = mergeVertices(new THREE.ExtrudeGeometry(sh, { depth: 2.4, bevelEnabled: false, steps: 6 }).deleteAttribute('normal').deleteAttribute('uv')), P = g.attributes.position; /* a corbel of rock under the ledge, its foot in the wall */
+    for (let i = 0; i < P.count; i++) { const [dx, dy, dz] = F(P.getX(i) * 2, P.getY(i) * 2, P.getZ(i) * 2); P.setXYZ(i, P.getX(i) + dx * .5, P.getY(i) + (P.getY(i) < LY - .35 ? dy * .5 : 0), P.getZ(i) + dz * .4); } g.computeVertexNormals(); put(g, 'cliff', 0, 0, ZL - 1.2, 0, 0, 0, .35); }
+  { const g = new THREE.TorusGeometry(1, .42, 10, 36), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), a = Math.atan2(y, x), sx = PRX + .15, sy = Math.sin(a) > 0 ? PUP + .15 : PLOW, [fx, fy, fz] = F(x * 4, y * 4 + 9, z * 4); P.setXYZ(i, x * sx + fx * .9, y * sy + fy * .9, z * 1.3 + fz * .6); }
+    g.computeVertexNormals(); put(g, 'cliff', SPX(PEND), PCY, PEND + .1, 0, 0, 0, .35); }
+  // the floor: the landing shelf at FY across the near end, its edge ragged; the sea's bed below, shallower by the walls
+  const wob = x => .8 * Math.sin(x * .5 + ph[2]) + .4 * Math.sin(x * 1.3 + ph[3]), SHZ = Z0 - 7;
+  // (and a strip of rock 5 m wide along the east wall to Z0 - 14, where the ladder stands)
+  const floorY = (x, z) => { const e = Math.max(z - (SHZ + wob(x)), Math.min(z - (Z0 - 14 + .5 * wob(x)), x - (hw(z) - 5 + .4 * wob(z * 1.7)))); if (e > 0) return FY; const t = Math.min(1, -e / 2.5), side = Math.min(1, Math.max(0, (Math.abs(x) - (hw(z) - 6)) / 5)); return FY - (FY + 1.6) * Math.min(1, t * 1.6) - (1.9 - 1.6 * side) * Math.max(0, t * 1.6 - .6) / 1; };
+  { const X0 = -22, X1 = 22, NX = 88, NZ = 104, pos = [], idx = []; for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = X0 + (X1 - X0) * i / NX, z = Z0 - L * j / NZ, y = floorY(x, z); pos.push(x, y + (y > FY - .05 ? .01 * Math.sin(x * 3.1) * Math.sin(z * 2.7) : 0), z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1; idx.push(a, b, c, b, d, c); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'seabed', 0, 0, 0, 0, 0, 0, .3);
+    const pos2 = []; for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const q = [[i, j], [i + 1, j], [i, j + 1], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => b * (NX + 1) + a); if (q.every(k => pos[k * 3 + 1] > .05)) for (const k of q) pos2.push(pos[k * 3], pos[k * 3 + 1] + .005, pos[k * 3 + 2]); }
+    const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(pos2, 3)); g2.computeVertexNormals(); put(g2, 'cliff', 0, 0, 0, 0, 0, 0, .35); }
+  put(new THREE.PlaneGeometry(60, L + 80).rotateX(-Math.PI / 2), 'sea', 0, 0, Z0 - (L + 80) / 2 + 2, 0, 0, 0, .1);
+  // the deck down the west wall on posts, run 1 m into the rock; planks laid edge to edge, across it
+  const DW = 4.2, DZ0 = SHZ + 1.6, DZ1 = Z0 - 40, JZ = Z0 - 27, JW = 1.2, TX = 0, TH0 = JZ - 6, TH1 = JZ + 5;
+  const deckX = z => -hw(z) + DW;
+  for (let z = DZ0; z > DZ1 + .01; z -= .26) { const zc = z - .13; bx('plank', -hw(zc) - 1, deckX(zc), FY - .05, FY, Math.max(z - .262, DZ1), z); }
+  for (let z = DZ0 - .6; z > DZ1; z -= 2.2) { for (const x of [-hw(z) + .6, deckX(z) - .2]) bx('timber', x - .13, x + .13, -3.5, FY - .05, z - .13, z + .13); bx('timber', -hw(z) - .5, deckX(z), FY - .27, FY - .05, z - .1, z + .1); }
+  // the jetty's arm out to the T-head, and the T-head along z; the head's corner posts stand up as bollards
+  for (let x = deckX(JZ) - .3; x < TX - JW + .01; x += .26) bx('plank', x, Math.min(x + .262, TX - JW), FY - .05, FY, JZ - JW, JZ + JW);
+  for (let z = TH1; z > TH0 + .01; z -= .26) bx('plank', TX - JW, TX + JW, FY - .05, FY, Math.max(z - .262, TH0), z);
+  for (let x = deckX(JZ) + 1.5; x < TX - JW; x += 2.4) for (const z of [JZ - JW + .15, JZ + JW - .15]) bx('timber', x - .12, x + .12, -3.5, FY - .05, z - .12, z + .12);
+  for (let z = TH1 - .2; z > TH0; z -= 2.2) for (const x of [TX - JW + .15, TX + JW - .15]) { const end = z > TH1 - .5 || z - 2.2 <= TH0; bx('timber', x - .13, x + .13, -3.5, end ? FY + .7 : FY - .05, z - .13, z + .13); }
+  // the sloop alongside the T-head, bow to the sea; gone when the lair is abandoned
+  let ship = null; if (held) { const S = gatelandsSloop({ harp: false }, stream(String(o.key || 'lair') + ':sloop')), sx = TX + JW + .35 + 2.2; S.group.rotation.y = Math.PI; { const sail = S.group.getObjectByName('sail'), bb = new THREE.Box3().setFromObject(sail), n = sail.geometry.attributes.position.count / 3; S.group.remove(sail); S.tris -= n; /* furled on its yard in harbour */
+      const furl = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, bb.max.x - bb.min.x - .2, 10).rotateZ(Math.PI / 2), sail.material); furl.position.set((bb.min.x + bb.max.x) / 2, bb.max.y - .28, (bb.min.z + bb.max.z) / 2 - .05); furl.name = 'sail'; furl.castShadow = true; S.group.add(furl); S.tris += 40; } S.group.position.set(sx, 0, JZ - .5); ship = { x: sx, z: JZ - .5, L: 13, W: 4.4, group: S.group, tris: S.tris, draws: S.draws };
+    rod('rope', [TX + JW - .15, FY + .6, TH1 - .3], [sx - 1.6, 1.4, JZ - .5 + 5.4], .02); rod('rope', [TX + JW - .15, FY + .6, TH0 + .3], [sx - 1.4, 1.3, JZ - .5 - 5.6], .02); }
+  // the rowing boat off the T-head's west side: a lathe shell, a gunwale, thwarts and oars
+  { const bx0 = TX - JW - 1.2, bz = JZ - 3.8, BL = 4.2, W2 = .75, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
+    const g = new THREE.LatheGeometry(pts, 14, Math.PI / 2, Math.PI); g.rotateZ(Math.PI / 2); g.rotateX(Math.PI); g.scale(1, .55, 1); put(g, 'hull', bx0, .25, bz, 0, 0, 0, .5);
+    for (const s of [-1, 1]) { const gp = []; for (let k = 0; k <= 10; k++) { const t = k / 10; gp.push(new THREE.Vector3(bx0 + s * (Math.sin(Math.PI * t) ** .6 * W2 + .05), .26, bz + (t - .5) * BL)); } put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gp), 16, .035, 5), 'timber'); }
+    for (const dz of [-.8, .5]) bx('timber', bx0 - .7, bx0 + .7, .08, .13, bz + dz - .1, bz + dz + .1); rod('timber', [bx0 - .3, .18, bz - 1.4], [bx0 + .1, .2, bz + 1.3], .03); rod('rope', [bx0, .3, bz + 2.1], [TX - JW + .15, FY + .6, TH0 + .3], .015); }
+  // the derrick on the T-head: a mast, a boom out over the sloop's hatch, the fall and a net of cargo hanging from it
+  { const dx = TX, dz = JZ + 2.6, top = FY + 6, bend = [dx + 4.3, FY + 4.4, dz - 2.0]; rod('timber', [dx, FY, dz], [dx, top, dz], .14, 8); rod('timber', [dx + .1, FY + 1.2, dz], bend, .09); rod('rope', [dx, top, dz], bend, .018); rod('rope', bend, [bend[0], FY + 1.9, bend[2]], .02);
+    const n = new THREE.SphereGeometry(.65, 10, 8); n.scale(1, .85, 1); put(n, 'basket', bend[0], FY + 1.35, bend[2]); }
+  // the landing: a storeroom of planks with a lean-to roof against the west wall, its door facing the way in; inside, crates, kegs, a bale
+  const RZ0 = Z0 - 1.2, RZ1 = SHZ + 2.6, rx0 = -hw((RZ0 + RZ1) / 2) - .8, room = { x0: rx0, x1: rx0 + 5.2, z0: RZ1, z1: RZ0 }, door = { x: room.x1, z: (room.z0 + room.z1) / 2, w: 1.0, h: 2.0 };
+  { const wall = (x0, x1, z0, z1, h0, h1, hole) => { const Lw = Math.hypot(x1 - x0, z1 - z0), s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(Lw, 0); s.lineTo(Lw, h1); s.lineTo(0, h0); s.lineTo(0, 0);
       if (hole) { const p = new THREE.Path(), c = hole; p.moveTo(c - door.w / 2, 0); p.lineTo(c + door.w / 2, 0); p.lineTo(c + door.w / 2, door.h); p.lineTo(c - door.w / 2, door.h); p.lineTo(c - door.w / 2, 0); s.holes.push(p); }
       const g = new THREE.ExtrudeGeometry(s, { depth: .06, bevelEnabled: false }); put(g, 'plank', x0, FY, z0, 0, Math.atan2(x1 - x0, z1 - z0) - Math.PI / 2, 0, .7); };
-    wall(room.x1, room.x1, room.z1, room.z0, room.z1 - door.z); wall(room.x0, room.x1, room.z0, room.z0); wall(room.x0, room.x1, room.z1 + .06, room.z1 + .06); bx('plank', room.x0, room.x1 + .06, FY + 2.4, FY + 2.46, room.z0, room.z1 + .06);
-    for (let k = 0; k < 9; k++) { const s = .5 + r() * .25, x = room.x0 + .45 + (k % 3) * .8, z = room.z0 + .5 + Math.floor(k / 3) * .75; if (z > room.z1 - 1.1) continue; bx('crate', x - s / 2, x + s / 2, FY, FY + s, z - s / 2, z + s / 2); if (k % 2) bx('crate', x - s / 2 + .05, x + s / 2 - .05, FY + s, FY + s + .4, z - s / 2 + .05, z + s / 2 - .05); }
-    for (let k = 0; k < 4; k++) put(new THREE.CylinderGeometry(.22, .2, .6, 12), 'keg', room.x0 + .4 + k * .5, FY + .3, room.z1 - .45); put(new THREE.BoxGeometry(.9, .5, .6), 'bale', room.x1 - .7, FY + .25, room.z0 + .45); }
-  // the escape: a ladder up the east wall to a ledge of rock and the tunnel east from it
-  { for (const s of [-.25, .25]) bx('timber', ladder.x - .05, ladder.x + .05, FY, LY + 1.0, ladder.z + s - .04, ladder.z + s + .04); for (let y = FY + .3; y < LY; y += .3) put(new THREE.CylinderGeometry(.02, .02, .5, 6).rotateX(Math.PI / 2), 'timber', ladder.x, y, ladder.z);
-    bx('cliff', CW / 2 - 1.4, CW / 2 + .8, LY - .6, LY, ladder.z - 1.4, ladder.z + 1.4); put(rockBox(5.5, TH2, TW, CW / 2 + 2.25, LY + TH2 / 2, ladder.z, .4, F, (c, n) => Math.abs(n.x) < .5 && n.y > -.5, y => y < LY + .01), 'cliff', 0, 0, 0, 0, 0, 0, .35); bx('cliff', CW / 2 - .5, CW / 2 + 5, LY - .3, LY, ladder.z - TW / 2 - .2, ladder.z + TW / 2 + .2); }
-  // the lanterns, lit while the lair is held: on the jetty's bollards, at the storeroom's door, by the ladder and at the passage's end
+    const HB = 3.2, HF = 2.45; wall(room.x1, room.x1, room.z1, room.z0, HF, HF, room.z1 - door.z); wall(room.x0, room.x1, room.z0, room.z0, HB, HF); wall(room.x1, room.x0, room.z1 + .06, room.z1 + .06, HF, HB);
+    { const Lr = room.x1 + .5 - room.x0, ang = Math.atan2(HB - HF, Lr); for (let z = room.z1 + .3; z > room.z0 - .3; z -= .3) put(new THREE.BoxGeometry(Math.hypot(Lr, HB - HF) + .1, .05, .3), 'plank', (room.x0 + room.x1 + .5) / 2, FY + (HB + HF) / 2 + .06, z - .15, 0, 0, -ang); }
+    for (let k = 0; k < 12; k++) { const s = .5 + r() * .25, x = room.x0 + 1.2 + (k % 4) * .78, z = room.z0 + .5 + Math.floor(k / 4) * .8; if (z > room.z1 - 1.1 || x > room.x1 - 1.4) continue; bx('crate', x - s / 2, x + s / 2, FY, FY + s, z - s / 2, z + s / 2); if (k % 2) bx('crate', x - s / 2 + .05, x + s / 2 - .05, FY + s, FY + s + .4, z - s / 2 + .05, z + s / 2 - .05); }
+    for (let k = 0; k < 4; k++) put(new THREE.CylinderGeometry(.22, .2, .6, 12), 'keg', room.x0 + 1.4 + k * .5, FY + .3, room.z1 - .45); put(new THREE.BoxGeometry(.9, .5, .6), 'bale', room.x1 - .8, FY + .25, room.z0 + .45); }
+  // the fire on the landing: a ring of stones, the embers (or cold ash), a tripod and its pot, logs to sit on
+  const FX = 3.2, FZ = Z0 - 3.4; for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, g = new THREE.IcosahedronGeometry(.17 + r() * .06, 1); g.scale(1.2, .7, 1); put(g, 'spoil', FX + Math.cos(a) * .62, FY + .08, FZ + Math.sin(a) * .62); }
+  for (let k = 0; k < 5; k++) put(new THREE.CylinderGeometry(.05, .06, .9, 6).rotateZ(Math.PI / 2), held ? 'horn' : 'spoil', FX + (r() - .5) * .3, FY + .08, FZ + (r() - .5) * .3, 0, k * 1.2, 0);
+  for (const a of [0, 2.1, 4.2]) rod('iron', [FX + Math.cos(a) * .55, FY, FZ + Math.sin(a) * .55], [FX, FY + 1.3, FZ], .018); rod('iron', [FX, FY + 1.3, FZ], [FX, FY + .85, FZ], .008);
+  put(new THREE.SphereGeometry(.2, 12, 8, 0, Math.PI * 2, Math.PI / 2.4, Math.PI / 1.7), 'iron', FX, FY + .72, FZ);
+  for (const [dx, dz, a] of [[-1.6, .3, .3], [1.5, -.6, 1.9]]) put(new THREE.CylinderGeometry(.18, .2, 1.5, 9).rotateZ(Math.PI / 2), 'timber', FX + dx, FY + .18, FZ + dz, 0, a, 0);
+  // cargo against the rock along the deck: crates, kegs, bales, a coil of rope, a rack of oars
+  for (let z = DZ0 - 1.5, k = 0; z > DZ1 + 1; z -= 1.1 + r() * 1.4, k++) { const x = -hw(z) + .75, kind = k % 4;
+    if (kind === 0 || kind === 2) { const s = .55 + r() * .2; bx('crate', x - s / 2, x + s / 2, FY, FY + s, z - s / 2, z + s / 2); if (r() < .6) bx('crate', x - s / 2 + .04, x + s / 2 - .04, FY + s, FY + s * 1.8, z - s / 2 + .04, z + s / 2 - .04); }
+    else if (kind === 1) for (let q = 0; q < 2; q++) put(new THREE.CylinderGeometry(.24, .22, .66, 12), 'keg', x - .1, FY + .33, z + (q - .5) * .5); else put(new THREE.BoxGeometry(.6, .5, .9), 'bale', x - .05, FY + .25, z); }
+  put(new THREE.TorusGeometry(.32, .07, 6, 16).rotateX(Math.PI / 2).scale(1, 2.2, 1), 'rope', deckX(JZ - 3) - .7, FY + .16, JZ - 3);
+  { const ox = -hw(Z0 - 22) + .35, oz = Z0 - 22; for (let k = 0; k < 6; k++) rod('timber', [ox + .1, FY, oz - .9 + k * .36], [ox - .05, FY + 3.4, oz - .9 + k * .36], .03); bx('timber', ox - .3, ox + .3, FY + 2.6, FY + 2.68, oz - 1.1, oz + 1.1); }
+  // the gallery over the deck's near half: planks 3.4 m up on posts from the deck, a rail on the open side, a stair up, pallets and a chest
+  const GY = FY + 3.4, GZ0 = DZ0 - 1.5, GZ1 = DZ0 - 11.5, GW = 3.4, gx = z => -hw(z) + GW;
+  for (let z = GZ0; z > GZ1 + .01; z -= .26) { const zc = z - .13; bx('plank', -hw(zc) - 1, gx(zc), GY - .05, GY, Math.max(z - .262, GZ1), z); }
+  for (let z = GZ0 - .2; z > GZ1 - .1; z -= 2.5) { bx('timber', gx(z) - .3, gx(z) - .06, FY, GY - .05, z - .12, z + .12); bx('timber', -hw(z) - .5, gx(z), GY - .27, GY - .05, z - .1, z + .1); rod('timber', [gx(z) - .18, GY, z], [gx(z) - .18, GY + 1.0, z], .045); }
+  { const pts = []; for (let z = GZ0; z >= GZ1 - .01; z -= 1) pts.push(new THREE.Vector3(gx(z) - .18, GY + 1.0, z)); put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .04, 5), 'timber'); }
+  { const sz0 = GZ1 - 4.2, x0 = gx(GZ1) - 1.05; for (let k = 0; k < 17; k++) bx('plank', x0, x0 + .9, FY + (k + 1) * .2 - .05, FY + (k + 1) * .2, sz0 + k * .25, sz0 + k * .25 + .27); for (const s of [x0 - .05, x0 + .9]) rod('timber', [s + .03, FY, sz0], [s + .03, GY, GZ1], .05); }
+  for (const dz of [-2, -5.5]) { put(new RoundedBoxGeometry(.8, .18, 1.9, 2, .06), 'bale', -hw(GZ0 + dz) + .9, GY + .09, GZ0 + dz); }
+  bx('crate', -hw(GZ0 - 8.5) + .2, -hw(GZ0 - 8.5) + 1.0, GY, GY + .5, GZ0 - 8.9, GZ0 - 8.1);
+  // the escape: the ladder up the east wall from the landing to the ledge
+  const ladder = { x: Math.min(...[ZL - .5, ZL, ZL + .4].flatMap(z => [FY + .2, FY + 2, LY - .5].map(y => wallX(y, z)))) - .45, z: ZL - .1, y0: FY, y1: LY };
+  { for (const s of [-.25, .25]) bx('timber', ladder.x - .05, ladder.x + .05, FY, LY + 1.0, ladder.z + s - .04, ladder.z + s + .04); for (let y = FY + .3; y < LY; y += .3) put(new THREE.CylinderGeometry(.02, .02, .5, 6).rotateX(Math.PI / 2), 'timber', ladder.x, y, ladder.z); }
+  // rocks: blocks fallen on the shelf's edge and in the sea, some breaking the surface; a few short stalactites
+  const pathPts = [];
+  for (let k = 0, n = 0; k < 140 && n < 20; k++) { const x = (r() * 2 - 1) * 15, z = SHZ - 1 - r() * (L - 12), s = .7 + r() ** 2 * 2.4; if (Math.abs(x) > hw(z) - s * .5 || x < deckX(z) + s + .4 || (Math.abs(x - TX) < JW + s + 1 && z < TH1 + s && z > TH0 - s) || (ship && Math.abs(x - ship.x) < 2.2 + s + .3 && Math.abs(z - ship.z) < 7 + s) || (Math.abs(z - JZ) < JW + s && x < TX) || inArch({ x, y: 0, z }, -2)) continue; n++;
+    const g = mergeVertices(new THREE.IcosahedronGeometry(s * .6, 2).deleteAttribute('normal').deleteAttribute('uv')), P = g.attributes.position, sx = 1 + r() * .7, sy = .6 + r() * .5; for (let i = 0; i < P.count; i++) { const vx = P.getX(i), vy = P.getY(i), vz = P.getZ(i), [dx, dy, dz] = F(vx * 3 + x, vy * 3, vz * 3 + z); P.setXYZ(i, vx * sx + dx * .6 * s, vy * sy + dy * .4 * s, vz + dz * .6 * s); }
+    g.computeVertexNormals(); put(g, 'cliffWet', x, floorY(x, z) + s * .3, z, r() * .3, r() * 6, r() * .3, .35); }
+  for (let k = 0; k < 40; k++) { const x = (r() * 2 - 1) * 12, z = Z0 - 3 - r() * (L - 10), ry = roofY(x, z), Lg = .3 + r() ** 2 * 1.4; if (Math.abs(x) > hw(z) || ry - Lg < GY + 3) continue; const g = growth(r, Lg + .5, .08 + Lg * .08); g.rotateX(Math.PI); put(g, 'cliff', x, ry + .5, z); }
+  // the lanterns, lit while the lair is held: the passage's end, the storeroom's door, the ladder, the gallery, the deck, the T-head
   const lamps = []; const lamp = (x, y, z) => { put(new THREE.BoxGeometry(.04, .04, .3), 'iron', x, y + .25, z); if (!held) return; put(new THREE.BoxGeometry(.14, .2, .14), 'horn', x, y, z); put(new THREE.ConeGeometry(.1, .1, 4).rotateY(Math.PI / 4), 'iron', x, y + .15, z); lamps.push([x, y, z].map(v => +v.toFixed(2))); };
-  lamp(JX1 - .5 + .0, FY + 1.15, JZ + 1.0); lamp(room.x1 + .2, FY + 2.0, door.z - .8); lamp(ladder.x - .3, FY + 2.0, ladder.z + .9); lamp(PW / 2 - .2, FY + 1.9, Z0 - .3); lamp(DX - .3, FY + 2.0, (deckZ1 + RZ) / 2);
-  // the walk: in from the land, across the rock floor, down the deck, out along the jetty; and from the rock floor to the ladder's foot
-  const path = [[0, -.4], [0, Z0 - 1.5], [-3.4, RZ + .35], [DX - 1.8, RZ + .35], [DX - 1.8, JZ + .3], [JX1 - .6, JZ + .1]];
+  lamp(SPX(Z0 + .3) + PRX - .5, FY + 1.9, Z0 + .3); lamp(room.x1 + .2, FY + 2.1, door.z - .8); lamp(ladder.x - .3, FY + 2.0, ladder.z + .9); lamp(-hw(GZ0 - 5) + .4, GY + 1.7, GZ0 - 5);
+  lamp(deckX(JZ + 6) - .2, FY + 1.3, JZ + 6); lamp(deckX(DZ1 + 3) - .2, FY + 1.3, DZ1 + 3); lamp(TX - JW + .15, FY + 1.15, TH1 - .2); lamp(TX + JW - .15, FY + 1.15, TH0 + .2);
+  // the walk: in from the land, across the landing, down the deck under the gallery, out along the jetty to the T-head's far end
+  const path = []; for (let i = 0; i <= 9; i++) { const z = -i * 2; path.push([+SPX(z).toFixed(3), z]); }
+  path.push([0, Z0 - 1.5], [deckX(SHZ) - 1.4, SHZ + .8]); for (let z = SHZ - 1; z > JZ + .5; z -= 2) path.push([+(-hw(z) + 2.3).toFixed(3), z]);
+  path.push([-hw(JZ) + 2.3, JZ], [TX, JZ], [TX, TH0 + .7]);
+  const walkY = () => FY;
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'horn', 'sea'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
-  return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, deck: FY, lamps, door, ladder, ledge: LY, escape: { y: LY, x0: CW / 2, z: ladder.z, w: TW, h: TH2 }, arch: { w: AW, h: AH, z: Z1 },
-    room, held, chamber: { x0: -CW / 2, x1: CW / 2, z0: Z0, z1: Z1, h: CH }, passage: { w: PW, h: PH } };
+  const draws = group.children.length; if (ship) { ship.group.name = 'ship'; group.add(ship.group); tris += ship.tris; }
+  const zm = Z0 - L / 2;
+  return { group, tris: Math.round(tris), draws: draws + (ship ? ship.draws : 0), top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, walkY, deck: FY, lamps, door, ladder, ledge: LY,
+    escape: { y: LY, x0: XW, z: ZL, w: TRX * 2, h: TUP + 1.1, xPlane: XW + 10.5 }, arch: { w: AW2 * 2, h: AH, z: Z1 }, mouth: { x: SPX(0), w: PRX * 2, y0: FY, h: PUP + 1.3 }, room, held,
+    chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, passage: { w: PRX * 2, h: PUP + 1.3 }, gallery: { y: GY, z0: GZ0, z1: GZ1 }, fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W } };
 }

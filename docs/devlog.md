@@ -18242,3 +18242,42 @@ Michael answered A on #313: the day comes down the shaft and the flowers glow. H
 - **The rock texture smears** where `worldUV` changes axis on the passage's crown and on the curved hall. A triplanar rock material would fix it, and it belongs to the kit (`common.js`), not to this place.
 - **The falls are still ribbons, and they burn white** under the shaft's spot. Moving water and spray are the game's.
 - **At 143,000 triangles** the cave is heavy for one room. The hall's 128 by 112 rings and the floor's 100 by 132 grid are most of it, and in the game a lower ring count at a distance would serve.
+
+## v80 — Session 879 — The smugglers' lair rebuilt as a sea cave with a ship in it (card F8, prototype only)
+Michael answered A on #314: a sea cave with its own landing, as drawn. He added: "Same comment as the other cave decision - the size here is pretty underwhelming, as is the lack of detail in general." The lair of Session 873 was an 18 by 24 by 8 m box with a deck, a jetty and a plank shed. This session gives it the measure and the life a smugglers' hold wants, on the same lofted rock as the cave (Session 878). The FREEZE (#297) holds, so this is the prototype again.
+
+- **One generator for both caves.** The hall's ring, its noise, its alcoves, `hw`, `roofY` and `inHall` moved out of `gatelandsCave` into `caveHall(rk, F, ph, P)`. The cave calls it with the same draws in the same order, and its lake view renders byte-identical to Session 878's picture. `loft()`'s cut now also gets each quad's ring and step.
+- **The cave:** 52 m long, 26 m across at its ends and 38 m in its middle, its crown 13 to 19 m over the sea. The rings are five times closer at the two ends, because uniform rings made metre-wide facets where the domes close.
+  - **The walls** are dark and wet below the high-water line (1.6 m). The line follows a ring step, because cutting by the faces' centres gave a sawtooth.
+  - **The sea arch** in the far dome is 13 m wide and 8 m high, with the open sea and the sky beyond it.
+- **The way in** is a passage of 18 m that winds 2 m either side, 3.9 m wide and 2.9 m high. It ends 0.6 m past the near dome's tip, and a lumpy collar of rock covers the tube's rim, so its mouth reads as an arch in the rock rather than a pipe end.
+- **The landing:**
+  - a shelf of rock at 1.2 m across the near end, with a strip 5 m wide running on down the east wall;
+  - the storeroom against the west wall, 5.2 by 3.4 m, with a lean-to roof from 3.2 m at the rock down to 2.45 m at its front, its door facing the way in, holding crates, kegs and a bale (the "box" of Session 873's Needs eyes);
+  - a fire ring of ten stones with embers, an iron tripod and a pot, and two logs to sit on.
+- **The deck** runs 32 m down the west wall on posts, its edge following the wall. Cargo is stacked against the rock: crates (some double), pairs of kegs, bales, a coil of rope and a rack of oars. Over its near 10 m is a **gallery** 3.4 m up on its own posts, with a rail, a stair of 17 steps, two pallets to sleep on and a chest.
+- **The jetty** runs out from the deck to a T-head 11 m long in the middle of the cave. The **Gatelands sloop** (`ships.js`, Session 858) lies alongside, 0.4 m off, bow to the arch. Its square sail is furled on the yard: the set sail read as a green wall indoors. It has two mooring lines to the T-head's bollards. A rowing boat (the old lathe shell, with a gunwale now) lies off the T-head's west side, and a **derrick** on the T-head swings a net of cargo over the sloop.
+- **The escape:**
+  - **The ladder** rises 5 m from the east strip to a ledge.
+  - **The ledge** is carried on a corbel of rock, because the wall is undercut there and a bare slab floated.
+  - **The tunnel** runs east 1.9 m wide. It is set at the z along the landing where the wall is most even across its height. Each of its rings is set off from the wall's own x there, found by bisection on the ring's angle, because the first try stood 2 m out of the wall where the near dome curves in.
+- **`o.held` false:** no lantern lit, the fire cold ash, and the sloop gone.
+- **The view:** `places.html?place=lair` keeps `lair`, `jetty`, `store` and `escape` and adds `deck` (under the gallery). The light is eight lanterns, the fire (warm, casting shadows), and the day through the arch.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 37 of 37 pass.** The lair's five checks were rewritten for the new layout and one was added:
+  - **The builds:** 3 keys, each the same twice. 85,754 to 85,794 triangles in 24 draws, the sloop's among them. Abandoned: 61,591 in 14.
+  - **The cave's measure (new):** 52 m long, 37.1 to 38.1 m across 6 m up, and 17 to 20.4 m from the sea to the roof near its middle.
+  - **The walk:** 330 points every quarter metre from the land, over the landing, down the deck under the gallery and out to the T-head. The deck is under every one (−0.002 to 0.031 m), with 2.25 m of headroom and 0.31 m clear.
+  - **Closed:** of 1,440 rays from six points, none gets out except by the passage (1), the sea arch (25) or the escape tunnel (0).
+  - **The escape:** the ladder rises 5 m from the rock (0 to 0.01 m off it) to the ledge (0 m off it), with 2.31 m of headroom in the tunnel.
+  - **The storeroom and the lair held:** the door is 1 by 2 m and clear 1.34 m in. Held, 8 lanterns are lit and the sloop lies 0.4 m off the T-head. Empty, 0 lanterns and no sloop.
+  - **The cave (Session 878)** still passes unchanged at 142,828 to 143,282 triangles.
+- **Pictures:** `places-lair-lair.jpg`, `-jetty`, `-store`, `-escape`, `-deck` (new) and `-empty` (new).
+### Needs eyes
+- **The arch burns white.** The day at the arch blooms into a bright blob in the lair and deck views. A real sea cave's mouth is bright, but the arch's own shape is lost in it. The bloom or the spot wants tuning per place.
+- **The walk's 0.31 m clear** is the gallery's posts beside the deck's walk line. It passes, but it is tight for a fight on the deck, which is the combat page's to judge.
+- **The ledge is a block on a wedge.** It is plain beside the lofted rock.
+- **The planks' wood texture** reads as wavy stripes at this distance (the kit's `wood` map). The plank colour belongs to the kit.
+- **The sloop is the Gatelands' hull.** Smugglers on the Mark or in Aurenne would moor their own island's hull (the cutter, Session 871; Aurenne's line is not built).
+- **Neither cave is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.
