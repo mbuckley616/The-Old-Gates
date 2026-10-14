@@ -129,12 +129,12 @@ export function markMine(o = {}, r = stream('mine')) {
 }
 
 // gatelandsCairn(o, r) (Session 869, Michael's 3 A on #305: the next place that is not a gate): the Gatelands' round cairn with its
-//   passage, OG-121's "round cairns" (the Gatelands' panel). A mound of stones grassed over, 26 m across inside a kerb of laid boulders
-//   and 7 m high, the door (+z) in a dry-stone facade on a chord of the kerb, an entrance stone lying before it. Built to the person:
-//   - the passage: 10.3 m of upright slabs (orthostats) either side, 1.25 m clear between them, roofed with lintels 2.2 m over a floor
+//   passage, OG-121's "round cairns" (the Gatelands' panel). A mound of stones grassed over, 30 m across inside a kerb of laid boulders
+//   and 8.2 m high (26 and 7 until Session 880), the door (+z) in a dry-stone facade on a chord of the kerb, an entrance stone lying before it. Built to the person:
+//   - the passage: 11.8 m of upright slabs (orthostats) either side, 2.0 m clear between them (1.25 until Session 880), roofed with lintels 2.6 m over a floor
 //     that rises 0.8 m to the chamber, dry-stone packing behind the slabs;
-//   - the chamber: cruciform, a middle under a corbelled vault (eight courses of slabs each stepping in 0.2 m, a capstone at 6 m) and
-//     three recesses (east, west and back), each 1.5 m wide and 1.6 m deep under its own capstone at 2.3 m, a stone basin in each;
+//   - the chamber: cruciform, at 1.35 times its Session 869 plan: a middle under a corbelled vault (eight courses of slabs each stepping in
+//     0.27 m, a capstone at 6.5 m) and three recesses (east, west and back), each 2 m wide and 2.2 m deep under its own capstone at 2.8 m, a stone basin in each;
 //   - o.carved (default true): spirals pecked into the entrance stone's face and the back recess's end stone, lozenges on one slab of
 //     the passage. What lies in the basins, and who, is the quest writer's (§3.1 gives the dead to the gates): here they are empty.
 //   -> { group, tris, draws, top, path ([x, z], from the approach to the back recess), floorAt(z) (the floor's height on the walk),
@@ -162,9 +162,9 @@ export function gatelandsCairn(o = {}, r = stream('cairn')) {
   const put = (geo, key, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal', ...(uv === null ? ['uv'] : [])].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); if (uv !== null) worldUV(g, uv); /* null: the piece's own UVs (the mound's, from above) */
     if (!B.has(key)) B.set(key, []); B.get(key).push(g); };
-  const R = 13, HT = 7, HK = 1.0, FW = 4.2, ZD = Math.sqrt(R * R - FW * FW), ZM = 1.95, FY = .8, W = 1.25, HW = W / 2, LP = 2.2, LC = 2.3, T = .35;
+  const S = 1.35, R = 15, HT = 8.2, HK = 1.0, FW = 4.8, ZD = Math.sqrt(R * R - FW * FW), ZM = 1.95 * S, FY = .8, W = 2.0, HW = W / 2, LP = 2.6, LC = 2.8, T = .35; /* S: the chamber's scale (Session 880, Michael's note on #309: "passages look very narrow") */
   const floorAt = z => z >= ZD ? 0 : z <= ZM ? FY : FY * (ZD - z) / (ZD - ZM);
-  const facadeTop = x => { const a = Math.abs(x); return a < 2.6 ? 3.4 : a > FW ? HK : HK + (3.4 - HK) * (1 - (a - 2.6) / (FW - 2.6)) ** 1.5; };
+  const facadeTop = x => { const a = Math.abs(x); return a < 2.8 ? 3.9 : a > FW ? HK : HK + (3.9 - HK) * (1 - (a - 2.8) / (FW - 2.8)) ** 1.5; };
   // the mound: a grassed dome on a polar grid, its foot 1 m up on the kerb's line; at the door it is held back by the facade
   { const NR = 34, NS = 112, F = field(stream(String(o.key || 'cairn') + ':mound'), .22), pos = [], idx = [], at = [];
     for (let i = 0; i <= NR; i++) for (let j = 0; j < NS; j++) { const rr = R * (1 - i / NR), a = j / NS * Math.PI * 2; let x = Math.sin(a) * rr, z = Math.cos(a) * rr, h = HK + (HT - HK) * Math.sqrt(Math.max(0, 1 - (rr / R) ** 2));
@@ -178,12 +178,12 @@ export function gatelandsCairn(o = {}, r = stream('cairn')) {
   // the kerb: laid boulders on edge round the foot, a dry-stone wall behind them up to the mound's foot, both broken for the facade
   let kerb = 0; const A0 = Math.asin(FW / R);
   { const g = new THREE.CylinderGeometry(R - .25, R - .25, HK + .1, 120, 1, true, A0, Math.PI * 2 - 2 * A0); put(g, 'stone', 0, (HK + .1) / 2 - .05, 0, 0, 0, 0, 1.1);
-    const n = 44; for (let k = 0; k < n; k++) { const a = (k + .5) / n * Math.PI * 2; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < A0 + .03) continue; const L = 1.7 + r() * .25, h = .95 + r() * .3;
+    const n = Math.round(44 * R / 13); for (let k = 0; k < n; k++) { const a = (k + .5) / n * Math.PI * 2; if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < A0 + .03) continue; const L = 1.7 + r() * .25, h = .95 + r() * .3;
       const g2 = roughen(new RoundedBoxGeometry(L, h, .7, 3, .22), r, .08, 2.2); put(g2, 'boulder', Math.sin(a) * (R + .08), h / 2 - .08, Math.cos(a) * (R + .08), 0, a + Math.PI / 2, 0, .45); kerb++; } }
   // the facade: dry stone on the chord, its top falling to the kerb at either end, notched for the door; the lintel over the door
   { const pts = [[-FW, 0], [-HW, 0], [-HW, LP], [HW, LP], [HW, 0], [FW, 0]]; for (let k = 0; k <= 16; k++) { const x = FW - k / 16 * 2 * FW; pts.push([x, facadeTop(x)]); }
     const sh = new THREE.Shape(pts.map(([a, b]) => new THREE.Vector2(a, b))), g = new THREE.ExtrudeGeometry(sh, { depth: .7, bevelEnabled: false }); g.translate(0, 0, -.7); put(g, 'stone', 0, 0, ZD, 0, 0, 0, 1.1);
-    put(roughen(new THREE.BoxGeometry(2.7, .5, 1.0, 4, 2, 2), r, .04, 2), 'slab', 0, LP + .25, ZD - .4, 0, 0, 0, .5); }
+    put(roughen(new THREE.BoxGeometry(W + 1.5, .5, 1.0, 4, 2, 2), r, .04, 2), 'slab', 0, LP + .25, ZD - .4, 0, 0, 0, .5); }
   // the passage: slabs on edge either side, their feet below the floor and their heads at the lintels; packing behind, run on 0.7 m past
   // each end in the chamber so the runs of two walls close their corner (not into the passage); lintels across
   const slabsAlong = (x0, z0, x1, z1, top, foot, out, lean, e0 = .15, e1 = .15) => { const L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / 1.05)), ux = (x1 - x0) / L, uz = (z1 - z0) / L, nx = uz * out, nz = -ux * out, ry = Math.atan2(ux, uz);
@@ -194,15 +194,15 @@ export function gatelandsCairn(o = {}, r = stream('cairn')) {
   for (let z = ZD - .7; z > ZM - .1; z -= .82) { const zc = z - .45, under = floorAt(Math.max(zc - .45, ZM)) + LP; put(roughen(new THREE.BoxGeometry(W + 2 * T + .7, .4, .95, 3, 2, 2), r, .03, 2), 'slab', 0, under + .2 + .02, zc, 0, 0, 0, .5); }
   // the floor: the passage's slope and the chamber's level, beaten earth and flags
   { const L = ZD + .3 - ZM, ang = Math.atan2(FY, ZD - ZM); put(new THREE.BoxGeometry(W + .2, .2, L / Math.cos(ang) + .1), 'floorC', 0, FY / 2 - .1, (ZD + .3 + ZM) / 2 - .15, ang, 0, 0, .5);
-    put(new THREE.BoxGeometry(7.4, .2, 6.0), 'floorC', 0, FY - .1, -.75, 0, 0, 0, .5); }
+    put(new THREE.BoxGeometry(7.4 * S, .2, 6.0 * S), 'floorC', 0, FY - .1, -.75 * S, 0, 0, 0, .5); }
   // the chamber: cruciform, slabs round its outline; the recesses' capstones; the corbelled vault and its capstone
-  const ow = [[HW, ZM], [1.45, 1.55], [1.75, .75], [3.4, .75], [3.4, -.75], [1.75, -.75], [.75, -1.75], [.75, -3.4], [-.75, -3.4], [-.75, -1.75], [-1.75, -.75], [-3.4, -.75], [-3.4, .75], [-1.75, .75], [-1.45, 1.55], [-HW, ZM]];
+  const ow = [[HW, ZM], ...[[1.45, 1.55], [1.75, .75], [3.4, .75], [3.4, -.75], [1.75, -.75], [.75, -1.75], [.75, -3.4], [-.75, -3.4], [-.75, -1.75], [-1.75, -.75], [-3.4, -.75], [-3.4, .75], [-1.75, .75], [-1.45, 1.55]].map(([x, z]) => [x * S, z * S]), [-HW, ZM]];
   for (let k = 0; k + 1 < ow.length; k++) { const [x0, z0] = ow[k], [x1, z1] = ow[k + 1]; slabsAlong(x0, z0, x1, z1, () => FY + LC + .02, () => FY - .25, -1, 1, k ? .7 : .15, k + 2 < ow.length ? .7 : .15); }
-  const recess = [[2.6, 0, Math.PI / 2], [-2.6, 0, Math.PI / 2], [0, -2.6, 0]];
-  for (const [x, z, ry] of recess) put(roughen(new THREE.BoxGeometry(2.4, .4, 2.3, 3, 2, 3), r, .03, 2), 'slab', x, FY + LC + .2, z, 0, ry, 0, .5);
-  for (let c = 0; c < 8; c++) { const rin = 1.95 - c * .2, y = FY + LC + c * .36, n = 9; for (let k = 0; k < n; k++) { const a = (k + c * .5) / n * Math.PI * 2, len = 2 * (rin + .45) * Math.tan(Math.PI / n) + .12;
+  const recess = [[2.6 * S, 0, Math.PI / 2], [-2.6 * S, 0, Math.PI / 2], [0, -2.6 * S, 0]];
+  for (const [x, z, ry] of recess) put(roughen(new THREE.BoxGeometry(2.4 * S, .4, 2.3 * S, 3, 2, 3), r, .03, 2), 'slab', x, FY + LC + .2, z, 0, ry, 0, .5);
+  for (let c = 0; c < 8; c++) { const rin = (1.95 - c * .2) * S, y = FY + LC + c * .36, n = 9; for (let k = 0; k < n; k++) { const a = (k + c * .5) / n * Math.PI * 2, len = 2 * (rin + .45) * Math.tan(Math.PI / n) + .12;
     put(roughen(new THREE.BoxGeometry(len, .36, .95, 3, 1, 2), r, .025, 2.4), 'slab', Math.sin(a) * (rin + .47), y + .18, Math.cos(a) * (rin + .47), 0, a, 0, .5); } }
-  const VAULT = FY + LC + 8 * .36; put(roughen(new THREE.CylinderGeometry(.95, 1.0, .4, 10, 1), r, .03, 2), 'slab', 0, VAULT + .2, 0, 0, 0, 0, .5);
+  const VAULT = FY + LC + 8 * .36; put(roughen(new THREE.CylinderGeometry(.95 * S, 1.0 * S, .4, 10, 1), r, .03, 2), 'slab', 0, VAULT + .2, 0, 0, 0, 0, .5);
   // the basins: a shallow oval dish of stone in each recess, empty
   const basins = []; { const prof = [[0, 0], [.5, 0], [.56, .06], [.56, .24], [.5, .26], [.44, .2], [.3, .14], [0, .13]].map(([a, b]) => new THREE.Vector2(a, b));
     for (const [x, z, ry] of recess) { const bx = x * 1.08, bz = z * 1.08, g = roughen(new THREE.LatheGeometry(prof, 16), r, .015, 4); g.scale(1.25, 1, .85); put(g, 'boulder', bx, FY, bz, 0, ry, 0, .6); basins.push([+bx.toFixed(2), +(FY + .26).toFixed(2), +bz.toFixed(2)]); } }
@@ -210,13 +210,13 @@ export function gatelandsCairn(o = {}, r = stream('cairn')) {
   const ES = ZD + 2.4; put(roughen(new RoundedBoxGeometry(3.0, 1.2, .9, 4, .25), r, .03, 1.8), 'boulder', 0, .55, ES, 0, 0, 0, .45);
   if (carved) { for (const [x, y, rad, cw] of [[-.75, .62, .3, 1], [-.12, .6, .26, -1], [.6, .66, .32, 1]]) put(spiral(rad, 4, cw), 'groove', x, y, ES + .46);
     put(new THREE.BoxGeometry(.03, .85, .03), 'groove', .22, .6, ES + .47);
-    for (const [x, y, rad, cw] of [[-.26, 1.35, .22, 1], [.26, 1.35, .22, -1], [0, 1.78, .22, 1]]) put(spiral(rad, 3, cw), 'groove', x, FY + y - .4, -3.4 + .02, 0, 0, 0);
+    for (const [x, y, rad, cw] of [[-.26, 1.35, .22, 1], [.26, 1.35, .22, -1], [0, 1.78, .22, 1]]) put(spiral(rad, 3, cw), 'groove', x, FY + y - .4, -3.4 * S + .02, 0, 0, 0);
     for (let k = 0; k < 4; k++) { const d = new THREE.TorusGeometry(.16, .012, 3, 4); d.scale(1, 1.5, 1); put(d, 'groove', HW + .04, 1.0 + k * .38, ZD - 4.1, 0, Math.PI / 2, 0); } }
   // the walk: round the entrance stone's east end, in at the door, up the passage, across the chamber to the back recess's mouth
-  const path = [[3.0, ZD + 5], [3.0, ZD + 1.3], [0, ZD + .5], [0, ZM - .2], [0, -1.5]];
+  const path = [[3.0, ZD + 5], [3.0, ZD + 1.3], [0, ZD + .5], [0, ZM - .2], [.07, -1.5 * S]] /* off the vault's centre line, where a ray up meets the capstone's and the mound's fan centres edge-on */;
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'groove'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, floorAt, door: { x0: -HW, x1: HW, z: +ZD.toFixed(2), lintel: LP }, passage: { w: W, len: +(ZD - ZM).toFixed(2), lintel: LP },
-    chamber: { y: FY, vault: +VAULT.toFixed(2) }, basins, kerb, carved, entrance: +ES.toFixed(2) };
+    chamber: { y: FY, vault: +VAULT.toFixed(2), s: S, back: -3.4 * S }, basins, kerb, carved, entrance: +ES.toFixed(2) };
 }
 
 // gatelandsCave(o, r) (Session 872, rebuilt larger and fuller in Session 874 on Michael's note to #313, "not expansive enough… underwhelming"):

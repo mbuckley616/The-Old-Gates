@@ -18281,3 +18281,25 @@ Michael answered A on #314: a sea cave with its own landing, as drawn. He added:
 - **The planks' wood texture** reads as wavy stripes at this distance (the kit's `wood` map). The plank colour belongs to the kit.
 - **The sloop is the Gatelands' hull.** Smugglers on the Mark or in Aurenne would moor their own island's hull (the cutter, Session 871; Aurenne's line is not built).
 - **Neither cave is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.
+
+## v80 — Session 880 — The round cairn's passage widened and its chamber enlarged (card F8, prototype only)
+Michael answered A on #309: spirals and lozenges, as drawn. He added: "Let's be mindful of the size as well, passages look very narrow." The cairn of Session 869 was built to the real passage tombs (Newgrange's passage is about a metre wide). At 1.25 m clear with lintels at 2.2 m, it read as a squeeze, and a fight or a companion in it would be worse. With the caves (Sessions 878 and 879) this is the third of Michael's notes on size this run.
+
+`gatelandsCairn` in `places.js` takes the change in three numbers and one scale:
+- **The passage** is 2.0 m clear between its slabs (it was 1.25 m), with its lintels 2.6 m over the floor (it was 2.2 m). The door and the lintel over it widen with it, and the facade rises to 3.9 m so the lintel slab sits under its top.
+- **The chamber** is 1.35 times its Session 869 plan (`S`). The cruciform outline, the three recesses (now 2 m wide and 2.2 m deep), their capstones, the floor, the vault's courses (stepping 0.27 m) and the back stone's carving all scale with it. The recesses' capstones are at 2.8 m (they were 2.3 m), and the vault's capstone is at 6.5 m.
+- **The mound** is 30 m across and 8.2 m high (it was 26 m and 7 m), so the bigger chamber and its vault stay well inside it. The kerb takes 45 boulders: the count now follows the radius, because at 44 the bigger ring left gaps.
+- **The view:** the chamber view's camera and the outside view are set from the returned scale (`chamber.s`, `chamber.back`).
+
+**Fixed on the way:** one walk point straight under the vault's centre found no roof, though no ray leaked in the closed check. A probe 3 cm off the centre hits the capstone at 6.47 m: the ray met the capstone's and the mound's fan centres edge-on. The walk's chamber leg now runs 7 cm off the centre line, and the comment says why.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 37 of 37 pass.** The cairn's checks were raised to the new size:
+  - **The builds:** 3 keys, each the same twice. 48,716 triangles in 7 meshes, 45 kerbstones, 8.23 m high.
+  - **The passage (bounds raised from 1.2 and 2.15 m to 1.9 and 2.5 m):** 22 stations, 2 to 2.85 m clear at the hip, the lintels 2.55 to 2.68 m over the floor.
+  - **The walk:** 100 points from the approach to the back recess. The floor is on its line (0 to 0.02 m), with 2.54 m of headroom or more and 0.77 m clear.
+  - **Closed:** of 1,200 rays from inside, none gets out except by the door. The vault's capstone is at 6.48 m.
+  - **The basins and the carving:** 3 empty basins, and the spirals with `o.carved` and none without it, as before.
+- **Pictures:** `places-cairn-cairn.jpg`, `-door`, `-passage`, `-chamber` and `-vault`, at the same links.
+### Needs eyes
+- **Two metres is a judgement.** It lets two walk abreast and a sword swing, but the passage no longer reads as a squeeze between standing stones. If it is now too wide, `W` takes it back.
+- **The mound's texture** reads coarse at 30 m. The turf is the Mark's moss map, as in Session 869.

@@ -24,9 +24,9 @@ const d = C.door.z;
 let eye, at;
 if (VIEW === 'door') { eye = [1.6, 1.62, d + 5.2]; at = [0, 1.1, d - 1]; }
 else if (VIEW === 'passage') { eye = [.1, 1.62, d - .6]; at = [0, 1.7, -2]; }
-else if (VIEW === 'chamber') { eye = [.2, C.chamber.y + 1.62, 1.6]; at = [0, C.chamber.y + 1.0, -3.4]; }
+else if (VIEW === 'chamber') { eye = [.2, C.chamber.y + 1.62, 1.6 * C.chamber.s]; at = [0, C.chamber.y + 1.0, C.chamber.back]; }
 else if (VIEW === 'vault') { eye = [0, C.chamber.y + 1.5, .3]; at = [0, C.chamber.vault, -.6]; cam.fov = 80; }
-else { eye = [11, 3.2, d + 13]; at = [0, 2.4, 0]; }
+else { eye = [13, 3.4, d + 15]; at = [0, 2.8, 0]; }
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();

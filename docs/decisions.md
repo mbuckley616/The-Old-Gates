@@ -118,6 +118,8 @@ Pictures:
 - [the chamber, the back recess and its basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-chamber.jpg)
 - [the corbelled vault](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-vault.jpg)
 
+*Acted on, Session 880 (look builder):* Michael's A on #309 keeps the carving as drawn. On his note ("passages look very narrow"), the passage is now 2.0 m clear (it was 1.25 m) under lintels at 2.6 m. The cruciform chamber is 1.35 times its plan, with recesses 2 m wide and the vault's capstone at 6.5 m. The mound grew to 30 m across and 8.2 m high to hold them. The pictures are at the same links.
+
 ### The Gatelands sloop in the new kit: square sail or the game's rig, the harp, tiller or wheel (look builder, Session 858) — DECISION #306
 **F11 begun: the Gatelands sloop in the new kit (look builder, Session 858).** It is a prototype in `docs/prototypes/levelup/ships.js` and `ships.html`, from OG-004's Gatelands line ("clinker hulls, green sails with the harp, square rig"). It is built at the game's own sloop's size: 13 by 4.4 m, with the deck 1.0 m over the sea.
 - **The hull:** clinker-built, ten strakes a side, each strake lapped 2.5 to 3.3 cm outside the one below. She is tarred below the water and oiled oak above, with a green sheer strake under a cream wale. Her stem and sternpost are raked, and her sheer rises to both ends.
