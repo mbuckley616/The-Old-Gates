@@ -18262,3 +18262,42 @@ What changed in `people.js`:
 - **A faint pale line remains at the man's temple**, in front of the ear, where the shell's last millimetre meets the skin at a grazing angle. It is much less than the hard brown edge it replaces.
 - **Above the woman's ear under a bun** the shell now fades to skin, so the strip the gathered strands do not cover reads as bare skin, not as a dark block. If that reads as an undercut, the fix is strands there that lie down toward the ear before turning up to the bun, not the shell.
 - **The temples' notch is still the region's shape.** The man's hair still recedes at the corners of the brow. That is where `scalpRoots` puts the border (y 0.755 at the side), and a fuller hairline is a change to the region, which every style would follow.
+
+## v80 — Session 887 — The robe: one cloth to the ankles, wide sleeves and a rope cord (B2, prototype only)
+The next piece of the wardrobe kit in `character-builder.md` (B2: aprons, cloaks, hoods, **robes**, dresses, armour tiers). The kept clothing sheets draw it in several places:
+- OG-110's clergy and scholars in a brown habit;
+- OG-109's flowing robes for Aurenne;
+- OG-110's striped robe on an Aurennais man.
+It is built by the method Michael chose on #274 (*drapes hang, shells fit*), to his condition that no arm comes through the cloth. It is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`, `builder.js`'s label).
+
+What changed in `people.js`:
+- **The robe is a dress key, `robe` (a colour), with an optional `cord` colour.** Both are in `GARMENTS`, so they save, load and show on the page.
+  - `makePerson` wears it as the tunic and the long skirt in one cloth. No trousers, no belt and no cuffs show.
+  - The tunic ends at rest height 0.145, under the cord. At 0.12 its hem stood out over the skirt's top as a ledge at the back.
+- **Sleeves that widen to the cuff.** The tunic's shell is pushed out along the arm, from nothing above the elbow to 3 cm at the wrist.
+  - It is a shell skinned as the arm is, so the arm cannot come through it.
+  - It is drawn from both sides, so the open cuff shows its inside, not a hole.
+- **A fuller hem.** The skirt widens by up to 3.5 cm below rest height −0.35, so below the hands.
+- **The cord** (`buildCord`) is a twisted rope tube round the waist, built after the pose as the tabard is. It is fitted out of every point of the tunic and of the skirt's top within 2 cm of its height.
+  - The first fit read the tunic in one narrow band. The rope sank into the belly for 3 cm at the front in two pictures, and the check could not see it, because it read the same band.
+  - It is knotted a tenth of the way round toward the left hip. Two ends of 30 and 24 cm hang down the skirt's front, with a knot at each tip.
+
+**A fix to every long skirt.** The robe's check found what the pictures had hidden. In the builder's standing pose, the hands of anyone in a long skirt hang at the thigh, and their fingers were inside the skirt. Before the fix, 565 to 862 hand points were inside it in each of the robes, and every point of the woman's hands. This was so for every woman's long skirt since Session 770.
+- After the pose, a figure in a long skirt now lifts both arms out from the side, 0.03 rad at a time, until no hand point is inside it. The woman rolled from `skirt:f` needs 0.27 rad. The saved pose is not changed.
+- It is not done under a full-length cloak. The cloak is built around the arms where they are, and lifting them pushed a bulge into the woman's cloak. So the cloaks are exactly as before: hems 1.4, 2.6 and 13.0 cm in, and folds 4.7, 3.7 and 5.5 cm deep. Under the cloak, the hands still touch the skirt, out of sight.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 205 checks pass**, seventeen of them new. There are four robes: a man's brown habit, a woman's robe, an Aurennais man's pale robe with a red cord, and a habit under a hooded cloak. Each one:
+  - **is one cloth to the ankles with its cord**, with no trousers or belt showing, and saves and loads back;
+  - **has no arm through the sleeve**: 0 of 160 forearm points are outside it, measured against the posed shell's own normals. The sleeve stands 2.3 to 2.5 cm off the arm above the elbow and 4.9 to 5.1 cm at the cuff;
+  - **has no hand inside the skirt**: 0 of 653 to 1,486 points, measured radially in 2 cm bands about the skirt's middle. This is not checked under the hooded cloak, where 651 points still are;
+  - **has its cord riding over the cloth**: 0 of 66 to 79 waist points are outside it, and its ends hang 3.2 to 12 mm in front of the skirt;
+  - and under the cloak, **the cloak hangs clear**: 3.7 cm, with 0 points under it.
+- **A woman in a long skirt has no hand inside it** (0 of 797, the arms lifted 0.27 rad).
+- The tabard's check on the woman in a long skirt now counts 1,966 tested points. Her lifted arms left the tabard's width, so the floor of 2,000 was lowered to 1,500, and 0 points come out through the tabard, as before.
+- No page errors.
+- **Pictures:** `builder-robe-man.jpg`, `-back`, `-woman`, `-aurennais`, `-cuff` (from the side) and `-hooded`. `builder-tabard-woman.jpg` and `builder-cape-woman.jpg` were shot again, with her arms lifted clear of the skirt.
+### Needs eyes
+- **A cloak over the robe stands boxy** (`builder-robe-hooded.jpg`). The cloak's columns are pushed out round the wide sleeves as if they were the arms, so it hangs as a slab from the shoulders. The cloak should read the arm under the sleeve, not the sleeve. That is owed next for the robe.
+- **The arms lifted 0.27 rad** read as a figure standing a little open-armed. A pose that brings the hands forward onto the skirt, held there, would be the better answer once the clip library (B4) has a hands-clasped idle.
+- **Striped cloth** (OG-110's Aurennais robe) and a cowl that is the robe's own, not the cloak's hood, are not built.

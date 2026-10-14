@@ -691,7 +691,76 @@ function buildBrows(P, G, headB) {
 function browCover(S, x, y) { const ax = Math.abs(x); if (ax < S.x0 - .003 || ax > S.x1 + .003) return 0; const t = Math.max(0, Math.min(1, (ax - S.x0) / (S.x1 - S.x0))), q = S.at(t);
   const m = Math.min(y - q.low, q.low + q.h - y), e = Math.min(ax - S.x0, S.x1 - ax); return Math.max(0, Math.min(1, (m + .0015) / .003)) * Math.max(0, Math.min(1, (e + .002) / .004)); }
 
+// ── the robe's cord (Session 887): a rope round the waist, tied at the front to one side, its two ends hanging down the skirt
+// Built after the pose from the posed tunic and skirt, like the tabard: a ring over the tunic at the waist, pushed clear of
+// the furthest cloth in each direction, and two ends that follow the skirt's front down, with a knot at each tip.
+function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
+// the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
+// skirt's own middle, a hand point (rest x past .415) is inside if it is nearer that middle than the furthest of the skirt's points there
+function handsInSkirt(body, skirt, PP = posedBody(body)) {
+  const R0 = PACK.rest, SP = posedOf(skirt), sv = PACK.skirtV || (PACK.skirtV = [...new Set(PACK.R.skirtLong)]), B = new Map(), C = new Map(), band = y => Math.floor(y / .02), dir = (dx, dz) => Math.round((Math.atan2(dx, dz) / (Math.PI * 2) + 1) * 36) % 36;
+  for (const i of sv) { const b = band(SP[i * 3 + 1]); const c = C.get(b) || [0, 0, 0]; c[0] += SP[i * 3]; c[1] += SP[i * 3 + 2]; c[2]++; C.set(b, c); }
+  for (const i of sv) { const b = band(SP[i * 3 + 1]), c = C.get(b), dx = SP[i * 3] - c[0] / c[2], dz = SP[i * 3 + 2] - c[1] / c[2], k = b + ':' + dir(dx, dz); B.set(k, Math.max(B.get(k) || 0, Math.hypot(dx, dz))); }
+  const hands = PACK.handV || (PACK.handV = [...new Set(PACK.G['body'])].filter(i => Math.abs(R0[i * 3]) > .415));
+  let n = 0, bad = 0; for (const h of hands) { const b = band(PP[h * 3 + 1]), c = C.get(b); if (!c) continue; const dx = PP[h * 3] - c[0] / c[2], dz = PP[h * 3 + 2] - c[1] / c[2], R = B.get(b + ':' + dir(dx, dz)); if (!R) continue; n++; if (Math.hypot(dx, dz) < R - .003) bad++; }
+  return { n, bad };
+}
+// the robe's promises, on the posed body: no point of the hands inside the skirt, no point of the forearm out through its
+// sleeve, and how far the sleeve stands off the wrist at the cuff (the nearest cloth point over each, along its normal)
+function robeStats(body, meshes) {
+  const PP = posedBody(body), R0 = PACK.rest, out = {};
+  // the cloth's normals on the posed shell (the bind pose's turn with the arms), and only its points on the same side
+  const through = (verts, m, idx, sign, keep = () => true) => { const SP = posedOf(m), pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(SP, 3)); pg.setIndex(m.geometry.index); pg.computeVertexNormals();
+    const N = pg.attributes.normal.array, sv = [...new Set(idx)]; let bad = 0, gap = 0;
+    for (const h of verts) { let bd = 1e9, bs = -1; for (const i of sv) { if (!keep(i, h)) continue; const d = (SP[i * 3] - PP[h * 3]) ** 2 + (SP[i * 3 + 1] - PP[h * 3 + 1]) ** 2 + (SP[i * 3 + 2] - PP[h * 3 + 2]) ** 2; if (d < bd) { bd = d; bs = i; } }
+      const o = (PP[h * 3] - SP[bs * 3]) * N[bs * 3] + (PP[h * 3 + 1] - SP[bs * 3 + 1]) * N[bs * 3 + 1] + (PP[h * 3 + 2] - SP[bs * 3 + 2]) * N[bs * 3 + 2]; if (sign * o > .002) bad++; gap += -o; } return { n: verts.length, bad, gap: +(gap / verts.length).toFixed(4) }; };
+  const body0 = [...new Set(PACK.G['body'])], skirt = meshes.find(m => m.name === 'skirt'), tunic = meshes.find(m => m.name === 'tunic');
+  const fore = body0.filter(i => Math.abs(R0[i * 3]) > .3 && Math.abs(R0[i * 3]) < .385 && Math.abs(R0[i * 3 + 2]) < .06);
+  { const H = handsInSkirt(body, skirt); out.handsInSkirt = H.bad; out.handPts = H.n; }
+  const arm = (i, h) => Math.abs(R0[i * 3]) > .22 && R0[i * 3] * R0[h * 3] > 0, sl = through(fore, tunic, PACK.R.tunic, 1, arm); out.armThrough = sl.bad; out.forePts = sl.n;
+  // the sleeve's width: from its cloth at the cuff (rest .385 to .4) and above the elbow (.27 to .28) to the nearest skin of that arm
+  const TP = posedOf(tunic), tv = [...new Set(PACK.R.tunic)], armSkin = body0.filter(i => Math.abs(R0[i * 3]) > .22 && Math.abs(R0[i * 3]) < .4);
+  const off = (lo, hi) => { let t = 0, n = 0; for (const i of tv) { const x = Math.abs(R0[i * 3]); if (x < lo || x > hi) continue; let bd = 1e9; for (const h of armSkin) if (R0[h * 3] * R0[i * 3] > 0) bd = Math.min(bd, (TP[i * 3] - PP[h * 3]) ** 2 + (TP[i * 3 + 1] - PP[h * 3 + 1]) ** 2 + (TP[i * 3 + 2] - PP[h * 3 + 2]) ** 2); t += Math.sqrt(bd); n++; } return +(t / Math.max(1, n)).toFixed(4); };
+  out.cuffGap = off(.385, .4); out.upperGap = off(.27, .28);
+  return out;
+}
+function buildCord(G, body, meshes) {
+  const D = G.dress, tunic = meshes.find(m => m.name === 'tunic'), skirt = meshes.find(m => m.name === 'skirt'), R0 = PACK.rest, r = .0065;
+  const TP = posedOf(tunic), SP = posedOf(skirt), tv = [...new Set(PACK.R.tunic)], sv = [...new Set(PACK.R.skirtLong)];
+  // the waist: the tunic's points at rest height .155 to .18, their middle, and the furthest out in each of 48 directions
+  const ring = tv.filter(i => Math.abs(R0[i * 3 + 1] - .167) < .013 && Math.abs(R0[i * 3]) < .25); let cx = 0, cy = 0, cz = 0; for (const i of ring) { cx += TP[i * 3]; cy += TP[i * 3 + 1]; cz += TP[i * 3 + 2]; } cx /= ring.length; cy /= ring.length; cz /= ring.length;
+  const NA = 48, rad = new Float32Array(NA), ys = new Float32Array(NA).fill(cy);
+  // the skirt's top overlaps the tunic under the cord and stands further out in places, so its points there count too
+  // and every point of the tunic within 2 cm of the cord's height, not only the band it was found by, so it rides over the belly's bulge
+  const sRing = sv.filter(i => R0[i * 3 + 1] > .145 && Math.abs(SP[i * 3 + 1] - cy) < .02), tRing = tv.filter(i => R0[i * 3 + 1] > .1 && R0[i * 3 + 1] < .3 && Math.abs(R0[i * 3]) < .25 && Math.abs(TP[i * 3 + 1] - cy) < .02), pts = [...tRing.map(i => [TP, i]), ...sRing.map(i => [SP, i])];
+  for (const [A, i] of pts) { const dx = A[i * 3] - cx, dz = A[i * 3 + 2] - cz, a = Math.round(((Math.atan2(dx, dz) / (Math.PI * 2)) + 1) * NA) % NA, d = Math.hypot(dx, dz); if (d > rad[a]) { rad[a] = d; if (A === TP) ys[a] = A[i * 3 + 1]; } }
+  for (let a = 0; a < NA; a++) if (!rad[a]) rad[a] = Math.max(rad[(a + NA - 1) % NA], rad[(a + 1) % NA]);
+  const need = Float32Array.from(rad, v => v + r + .002); let R = need.slice(), Y = ys.slice();
+  for (let it = 0; it < 6; it++) { const a0 = R.slice(), y0 = Y.slice(); for (let a = 0; a < NA; a++) { const l = (a + NA - 1) % NA, q = (a + 1) % NA; R[a] = Math.max(need[a], (a0[l] + 2 * a0[a] + a0[q]) / 4); Y[a] = (y0[l] + 2 * y0[a] + y0[q]) / 4; } }
+  const at = a => new THREE.Vector3(cx + Math.sin(a / NA * Math.PI * 2) * R[a], Y[a], cz + Math.cos(a / NA * Math.PI * 2) * R[a]);
+  const line = []; for (let a = 0; a <= NA; a++) line.push(at(a % NA));
+  // the knot, a fifth of the way round from the front toward the left hip, and the two ends down the skirt's front from it
+  const kA = NA - Math.round(NA * .1), knot = at(kA), meshesOut = [], mat = lockMat(sRGB(...D.cord));
+  const add = (g, name) => { const m = new THREE.Mesh(g, mat); m.name = name; m.castShadow = m.receiveShadow = true; m.frustumCulled = false; meshesOut.push(m); };
+  add(tubeGeom(line, line.map(() => r), 8, 40), 'cord');
+  { const kg = new THREE.SphereGeometry(r * 1.9, 12, 8); kg.translate(knot.x, knot.y - r * .4, knot.z + r * .6); add(kg, 'cordKnot'); }
+  let endClear = 1, tested = 0;
+  for (const [dx, L] of [[-.011, .3], [.009, .24]]) { const pts = [], x = knot.x + dx; let z = knot.z + r;
+    for (let y = knot.y - r; y > knot.y - L; y -= .01) { let zf = -9; for (const i of sv) { if (Math.abs(SP[i * 3] - x) < .02 && Math.abs(SP[i * 3 + 1] - y) < .015 && SP[i * 3 + 2] > zf) zf = SP[i * 3 + 2]; }
+      for (const i of tv) { if (Math.abs(TP[i * 3] - x) < .02 && Math.abs(TP[i * 3 + 1] - y) < .015 && TP[i * 3 + 2] > zf) zf = TP[i * 3 + 2]; }
+      if (zf > -8) z = Math.max(zf + r + .003, z - .004); pts.push(new THREE.Vector3(x, y, z)); }
+    for (let it = 0; it < 3; it++) for (let k = 1; k < pts.length - 1; k++) pts[k].z = Math.max(pts[k].z, (pts[k - 1].z + pts[k + 1].z) / 2);
+    const rr = pts.map((_, k) => k >= pts.length - 3 ? r * 1.45 : r * .85); add(tubeGeom(pts, rr, 8, 40), 'cordEnd');
+    // the checks' number: how far each end lies in front of the cloth behind it
+    for (const q of pts) { let zf = -9; for (const i of sv) if (Math.abs(SP[i * 3] - q.x) < .008 && Math.abs(SP[i * 3 + 1] - q.y) < .008) zf = Math.max(zf, SP[i * 3 + 2]); if (zf > -8) { tested++; endClear = Math.min(endClear, q.z - zf - r); } } }
+  // and how far the ring stands off the tunic under it, and how many of the tunic's waist points it holds inside
+  let inside = 0; for (const [A, i] of pts) { const dx = A[i * 3] - cx, dz = A[i * 3 + 2] - cz, a = Math.round(((Math.atan2(dx, dz) / (Math.PI * 2)) + 1) * NA) % NA; if (Math.hypot(A[i * 3] - cx, A[i * 3 + 2] - cz) > R[a] - r) inside++; }
+  return { meshes: meshesOut, stats: { ringPts: pts.length, inside, endClear: +endClear.toFixed(4), tested, waist: +(2 * Math.PI * R.reduce((a, b) => a + b, 0) / NA).toFixed(3) } };
+}
 export function makePerson(G, o = {}) {
+  // the robe (Session 887, B2): one cloth from the shoulders to the ankles, worn as the tunic and the long skirt in the robe's
+  // colour, with sleeves that widen to the cuff and a fuller hem; a rope cord takes the belt's place, nothing under it shows
+  if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, cuffs: null, cord: R.cord || [.62, .55, .42] } }; }
   const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null, browStats = null;
   // the feet on the ground
   let minY = 1e9; for (let i = 1; i < P.length; i += 3) if (P[i] < minY) minY = P[i];
@@ -712,8 +781,11 @@ export function makePerson(G, o = {}) {
   const D = G.dress || {}, push = (k, idx, mat, d) => { const m = new THREE.SkinnedMesh(geomFor(P, idx, d), mat); m.name = k; meshes.push(m); return m; };
   if (D.trousers) push('trousers', PACK.R.trousers, clothMat(sRGB(...D.trousers), 'wool', { cut: [-.78, .1] }), .008);
   if (D.boots) push('boots', PACK.R.boots, clothMat(sRGB(...D.boots), 'leather', { cut: [-2, -.43, 9, .002] }), .02);
-  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.skirt ? .12 : -.02, .612, .4, .002] }), (x, y) => .013 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0));
-  if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01] }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)));
+  // a robe's tunic ends under the cord (rest .145), so its hem does not stand out over the skirt; its sleeves widen from above the elbow to 3 cm off the arm at the cuff: a shell skinned as the arm is, so the arm
+  // never comes through it, and seen from both sides, since its open cuff shows the inside
+  const sleeve = x => D.robe ? .03 * Math.max(0, Math.min(1, (Math.abs(x) - .24) / .16)) ** 1.5 : 0;
+  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}) }), (x, y) => .013 + sleeve(x) + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0));
+  if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01] }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
   if (D.belt) push('belt', PACK.R.belt, clothMat(sRGB(...D.belt), 'leather', { cut: [.135, .19, 9, .0005] }), .03);
   if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { cut: [-2, 2, .4] }), .02);
   if (D.apron) { const lea = !!D.apronLeather, am = clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [lea ? -.52 : -.42, .175, .155, .004] });
@@ -756,9 +828,17 @@ export function makePerson(G, o = {}) {
   byName['lowerarm01.L'].quaternion.copy(q(pose.elbow, 0, 0)); byName['lowerarm01.R'].quaternion.copy(q(pose.elbow, 0, 0));
   byName['head'].quaternion.copy(q(.04, pose.head, 0)); if (byName['jaw']) byName['jaw'].quaternion.copy(q(pose.jaw ?? -.12, 0, 0)); byName['spine05'].quaternion.copy(q(0, 0, pose.hip));
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
+  // a long skirt (and so a robe) stands out at the thigh, where the hands hang: the arms are lifted out from the side, three
+  // hundredths of a radian at a time, until no point of either hand is inside it (Session 887; the genome's pose is unchanged)
+  // Not under a full cloak: it hangs over the hands and is built round the arms where they are, so lifting them only lumps it
+  let lift = 0, skirtHands = null; const skM = D.skirt === 'long' && !(D.cloak && !D.cape) && meshes.find(m => m.name === 'skirt');
+  if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM); if (!skirtHands.bad || k === 10) break; lift += .03;
+    byName['upperarm01.L'].quaternion.copy(q(0, 0, -(pose.arm - lift))); byName['upperarm01.R'].quaternion.copy(q(0, 0, pose.arm - lift)); }
+  if (skirtHands) skirtHands.lift = +lift.toFixed(2);
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
+  let cordStats = null; if (D.cord) { root.updateMatrixWorld(true); const C = buildCord(G, body, meshes); for (const m of C.meshes) root.add(m); cordStats = C.stats; if (D.robe && o.robeStats !== false) Object.assign(cordStats, robeStats(body, meshes)); }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, hood: hoodStats, brows: browStats };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, skirtHands, hood: hoodStats, brows: browStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -781,7 +861,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
