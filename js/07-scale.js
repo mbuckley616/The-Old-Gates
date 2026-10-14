@@ -35,3 +35,7 @@ function personScale(g){
   const P=SCALE.PEOPLE[g&&g.people]||SCALE.PEOPLE.gatelander;
   return (g&&g.female?P.f/(.95*P.m):1)*P.m/SCALE.PERSON_MODEL;
 }
+// S882 (F2a) — the rooms' old unit. The interiors and the furniture kit (56-dungeon-build.js) were drawn for a man 1.233 tall: a
+// room is laid out in those units, at a footprint of its true size over ROOM_K, and then scaled up by ROOM_K as a whole
+// (buildInteriorFor's scaleRoom), so its furniture, doorways and stairs stand to a 1.78 m person as they stood to the old one.
+SCALE.ROOM_K=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;

@@ -542,8 +542,11 @@ function goToInterior(house){
     // (_RW/2, _D), which is what the compass uses for its bearing.
     house._roomW=_RW;
     house._roomD=house.intD||_D;
-    px=_RW/2; pz=house._roomD-2.2; yaw=0; pitch=0; velY=0; jumpY=0; onGround=true;
+    px=_RW/2; pz=house._roomD-Math.min(2.2,Math.max(1.75,house._roomD*.3)); yaw=0; /* S882 — 1.75 in from the door in a cottage of true size (it was 2.2, the middle of a 4.5 m room) */ pitch=0; velY=0; jumpY=0; onGround=true;
     if(window._pendingPos){const P=window._pendingPos;window._pendingPos=null;if(P.x!=null){px=P.x;pz=P.z;}if(P.yaw!=null)yaw=P.yaw;if(P.jumpY!=null)jumpY=P.jumpY;} // v80 — a load puts you where you stood
+    // S882 (F2a) — a save made inside a room before the rooms came to true size holds a spot in the old, larger room: off the floor
+    // or inside something now, it stands you at the door instead (full save migration is card F13)
+    if(String(house.id||'').startsWith('g_')&&(px<.3||pz<.3||px>_RW-.3||pz>house._roomD-.3||(typeof intSolidAt==='function'&&intSolidAt(px,pz,.3,jumpY)))){px=_RW/2;pz=house._roomD-Math.min(2.2,Math.max(1.75,house._roomD*.3));jumpY=0;}
     startMusic('shop');
     showMsg(`You enter ${house.name}.`,'#c8b880');
   });

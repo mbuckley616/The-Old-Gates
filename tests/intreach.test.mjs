@@ -7,6 +7,7 @@
 // where E would take it (1.6, within .9 of its height), a person where E would talk (2.2, within 1.2), the strongbox or
 // home chest at 1.6 from the floor, a tower's chest at 1.5 within 1.2.
 import { boot, check } from './lib/game.mjs';
+const SCALE_K = 1.4436; /* SCALE.ROOM_K (07-scale.js): a gallery's deck stands K times its old 1.5-odd */
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 // The towns: Portclare and Dunmore, and the first city of each register (a keep, a guild hall, a cathedral; the Mark's,
@@ -24,7 +25,7 @@ await page.evaluate(() => {
     const saved = INT_SOL.slice(); const kept = shut ? saved : saved.filter(s => !doorSol.has(s));
     INT_SOL.length = 0; for (const s of kept) INT_SOL.push(s);
     const solidAt = (x, z, y) => { const j = jumpY; jumpY = y; const r = intSolidAt(x, z, R); jumpY = j; return r; };
-    const sx = W / 2, sz = D - 2.2; const y0 = footholdY(sx, sz, 0, 0);
+    const sx = W / 2, sz = D - Math.min(2.2, Math.max(1.75, D * .3)); /* S882 (F2a): where goToInterior sets you down (1.75 in, in a cottage of true size) */ const y0 = footholdY(sx, sz, 0, 0);
     const startBlocked = solidAt(sx, sz, y0);
     const seen = new Set(); const pts = []; const q = [[Math.round(sx / S), Math.round(sz / S), y0]];
     const key = (i, k, y) => i + ',' + k + ',' + Math.round(y * 20);
@@ -94,7 +95,8 @@ check('every person indoors is reached to talk to', rows.every(r => !r.miss.some
 check('every strongbox, chest and tower hoard is reached', rows.every(r => !r.miss.some(m => ['strongbox', 'chest', 'loot'].includes(m.what))), bad.map(r => [r.name, r.miss]));
 check('three keeps (and their cellars) and two towers were walked', rows.filter(r => r.type === 'castle').length >= 3 && rows.filter(r => r.type === 'tower').length >= 2, Object.keys(byType));
 check('a tower\'s hoard is on its top floor and reached by the spiral', rows.filter(r => r.type === 'tower').every(r => r.loot && r.top > 20), rows.filter(r => r.type === 'tower').map(r => [r.name, r.loot, r.top]));
-check('a two-floor room\'s upstairs is reached by its stair', rows.filter(r => r.two && r.type !== 'church' && r.type !== 'castle').every(r => r.top > 1.5), rows.filter(r => r.two).map(r => [r.name, r.top]));
+// S882 (card F2a): only an inn and a guild hall have a gallery now (a cottage or a shop of true size has no room for its stair)
+check('a two-floor room\'s upstairs is reached by its stair (an inn\'s or a guild hall\'s)', rows.filter(r => r.two && (r.type === 'inn' || r.type === 'guild_f' || r.type === 'guild_m')).every(r => r.top > 1.5 * SCALE_K), rows.filter(r => r.two).map(r => [r.name, r.top]));
 const hid = shut.filter(r => r.miss.length);
 console.log(`control: with the inner doors kept shut, ${hid.length} of ${shut.length} rooms with doors hide something (${hid.reduce((a, r) => a + r.miss.length, 0)} things)`);
 check('control: with the inner doors shut, the walk is stopped by them (rooms behind doors are missed)', hid.length >= shut.length / 2, shut.map(r => [r.name, r.miss.length]));

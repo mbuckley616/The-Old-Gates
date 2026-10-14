@@ -287,7 +287,7 @@
   function barberFee(house){return innPrice(house);}
   function barberPay(house,changed){if(!changed)return 'free';const fee=barberFee(house);if(gold<fee)return 'poor';gold-=fee;if(typeof updateHUD==='function')updateHUD();
     if(typeof addLog==='function')addLog('✂',`Paid ${fee} gold at ${house.name||'the barber’s'}.`);return 'paid';}
-  function innRooms(house){const W=Math.max(8,Math.round((house.w||6)*1.8));return Math.max(1,Math.floor(W/4.5));}
+  function innRooms(house){const W=Math.max(10,Math.min(12,(house.w||6)*1.6))/SCALE.ROOM_K;return Math.max(1,Math.floor(W/3.4));} /* S882 (F2a) — as buildInteriorFor lays out the gallery's rooms: the hall's true width in the kit's unit, a room every 3.4 */
   // v80 S424 — the rooms stand in one row behind the gallery, room 0 at the west wall, and you come up the stair facing
   // their doors: from a west stair every door is on your right, the nearest room 0's; from an east stair on your left,
   // the nearest the last room's. The names count the doors from the stair head (were left and right in turn, from room 0).
