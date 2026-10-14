@@ -16860,3 +16860,30 @@ The new hood is 8,700 to 8,800 triangles with its hem, against Session 805's 3,0
 - **The hair.** Under the hood, a woman's hair shows only as the scalp's shell at the hairline: there is no fringe, and no braid hangs out in front.
 - **The arms.** Michael's other condition on #274 is that the arms do not pass through the clothing. That is still to be checked through a walk, once B4's clips move the arms; the builder only poses them standing.
 - **The eyebrows.** In these pictures they are still the shell brows that Michael called "pretty fugly" (#272). That is the next session.
+
+## v80 — Session 824 — The eyebrows, drawn and filled with hairs (B1, prototype only)
+Michael approved the hair's method on #272 (A, 13 Oct), but added: *eyebrows look pretty fugly still*. Session 770's brows were a band of the skin's triangles, y 0.748 to 0.757 on the unmorphed face, 1.2 to 5.5 cm out from the middle, under three noise shells. That gave them four faults:
+- the ends were square and cut along the triangles' edges;
+- they were the same thickness from the head to the tail;
+- they read as a fuzzy block rather than as hairs;
+- they sat a little high over the eye.
+
+A brow is now a shape drawn on the unmorphed face (`browShape`), set from the eye's own centre (the helper's eye group):
+- **The head** starts at a third of the eye's distance from the middle. It is a little thinner than the body and rises into it.
+- **The arch** is two-thirds of the way out. The lower edge follows the orbit's rim, 12.5 mm over the eye's centre, rising toward the arch and dropping a little to the tail.
+- **The tail** thins to nothing, 1.6 times the eye's distance out.
+- **Thickness** is 6 mm for a man and 4.5 mm for a woman. Women's brows arch more. Both can be set from a genome's `brow: {thick, arch}`; nothing writes that yet.
+
+**The hairs** (`buildBrows`). The brow is filled with 700 to 800 hairs a face, fewer toward the tail. Each is 4 to 9 mm long and half a millimetre wide, in three segments that lift off the skin and lie back down. The comb follows how brows grow: up at the head, out and a little up along the body, out and down at the tail, and the upper hairs lie down over the lower. A root is placed on the unmorphed face and carried to the morphed one through the triangle it falls in, so the brow follows every face the sliders make. Hairs are skinned to the head bone.
+
+**The colour.** Brows are drawn a little darker than the hair on the head, and darker still for fair hair. The skin under the brow is shaded up to 20% darker, so the hairs read as one brow rather than a scatter.
+
+The old `brows` selection is removed from the pack's regions.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 110 checks pass.** The five new brow checks are one per rolled genome. Each brow set has 704 to 792 hairs, every root lands on the skin (792 of 792), and the tips stand 0.5 mm off it.
+- **Repeatable:** a genome that is loaded back builds the same body and hair twice, so the brows come from the seeded stream.
+- **Pictures:** `builder-woman-face.jpg` and `builder-man-face.jpg` were shot again, and the four hood pictures with them. Two new close-ups, `builder-brows-woman.jpg` and `builder-brows-man.jpg`, crop the face view at twice the size; `--shots=brows` retakes them.
+### Needs eyes
+- **Up close the hairs are plain dark strips** with no texture. At conversation distance they read as hair; nearer, a strand texture might help.
+- **Every brow has the same shape.** Per-people brows, such as the Markmen's heavier ones, the Old Blood's straighter ones and an old man's wilder ones, are a slider away (`G.brow`) and not set by `PEOPLES` yet.
+- **The hairstyles.** Michael's other note on #272, that *some of the hairstyles aren't quite landing*, is still to do. It needs his eye on which ones.

@@ -36,7 +36,6 @@ export async function loadPack(base = 'mh/') {
     apron: sel(G['helper-skirt'], (x, y, z) => z > .015 && Math.abs(x) < .2 && y > -.6),
     apronBib: sel(tri, (x, y, z) => z > .03 && Math.abs(x) < .14 && y > .08 && y < .5),
     hood: sel(G['body'], (x, y, z) => y > .6 && !(z > .03 && (x / .06) ** 2 + ((y - .71) / .085) ** 2 < 1)),
-    brows: sel(G['body'], (x, y, z) => y > .748 && y < .757 && z > .1 && Math.abs(x) > .012 && Math.abs(x) < .055),
   };
   return PACK;
 }
@@ -425,8 +424,64 @@ function buildHoodUp(P, G, meshes) {
   return { meshes: [hood, hemM], stats: { tested, poke, tris: idx.length / 3 + rim.index.count / 3, rimPoints: sm.length, k: +(rx / (hs.x + .028)).toFixed(3), yHem: +yHem0.toFixed(3) } };
 }
 
+// ── the eyebrows (Session 824, Michael's note on #272: "eyebrows look pretty fugly still") ──
+// Session 770's brows were a band of the skin's triangles under three noise shells: square-ended blocks, the same
+// thickness end to end, a hand's width too high. Now a brow is drawn on the face as a shape (a head at the nose, an
+// arch two-thirds out, a tail that thins to nothing), set from the eye's own centre, and filled with short hairs
+// lying on the skin, combed as brows grow: up at the head, out along the body, out and down at the tail. The skin
+// under it is a shade darker so the hairs read as a brow and not as a scatter. Placed on the unmorphed face and carried
+// to the morphed one by the triangle each root falls in, so it follows every face the sliders make.
+const BROW_TRIS = () => PACK.browTris || (PACK.browTris = (() => { const R0 = PACK.rest, g = PACK.G['body'], out = [];
+  for (let t = 0; t < g.length; t += 3) { const a = g[t], b = g[t + 1], c = g[t + 2], cy = (R0[a * 3 + 1] + R0[b * 3 + 1] + R0[c * 3 + 1]) / 3, cz = (R0[a * 3 + 2] + R0[b * 3 + 2] + R0[c * 3 + 2]) / 3, cx = (R0[a * 3] + R0[b * 3] + R0[c * 3]) / 3;
+    if (cy < .72 || cy > .79 || cz < .06 || Math.abs(cx) > .085) continue;
+    const ux = R0[b * 3] - R0[a * 3], uy = R0[b * 3 + 1] - R0[a * 3 + 1], uz = R0[b * 3 + 2] - R0[a * 3 + 2], vx = R0[c * 3] - R0[a * 3], vy = R0[c * 3 + 1] - R0[a * 3 + 1], vz = R0[c * 3 + 2] - R0[a * 3 + 2];
+    const nz = ux * vy - uy * vx, nl = Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, nz); if (Math.abs(nz) / nl > .25) out.push(a, b, c); } return out; })());
+export function browShape(G) {
+  // in the unmorphed face's x and y: per side, t from the head (0) to the tail (1)
+  const R0 = PACK.rest, eye = side => { const L = [...new Set(PACK.G[`helper-${side}-eye`])]; let x = 0, y = 0; for (const i of L) { x += R0[i * 3]; y += R0[i * 3 + 1]; } return [Math.abs(x / L.length), y / L.length]; };
+  const [ex, ey] = eye('l'), man = (G.g ?? .5) > .5, b = G.brow || {}, thick = (b.thick ?? (man ? .62 : .42)), arch = (b.arch ?? (man ? .35 : .6));
+  const x0 = ex * .32, x1 = ex * 1.62, at = t => { const x = x0 + (x1 - x0) * t;
+    // the lower edge follows the orbit's rim: it rises from the head to the arch and drops a little to the tail
+    const low = ey + .0125 + .0035 * arch * Math.sin(Math.PI * Math.min(1, t / .7) * .5) - .004 * Math.max(0, (t - .7) / .3) ** 1.5 * (1 + arch);
+    const h = (.0035 + .0065 * thick) * (t < .15 ? .75 + 1.7 * t : 1 - .85 * Math.max(0, (t - .3) / .7) ** 1.3);
+    return { x, low, h }; };
+  return { x0, x1, at, ex, ey, thick, arch };
+}
+function buildBrows(P, G, headB) {
+  const R0 = PACK.rest, tris = BROW_TRIS(), S = browShape(G), out = { tried: 0, roots: 0, lift: 0 };
+  // where a point of the unmorphed face (x, y) lies: its triangle and weights, then the same on the morphed face
+  const locate = (x, y) => { for (let t = 0; t < tris.length; t += 3) { const a = tris[t], b = tris[t + 1], c = tris[t + 2], ax = R0[a * 3], ay = R0[a * 3 + 1], bx = R0[b * 3], by = R0[b * 3 + 1], cx = R0[c * 3], cy = R0[c * 3 + 1];
+      const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy); if (Math.abs(d) < 1e-12) continue; const u = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d, v = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d, w = 1 - u - v;
+      if (u < -1e-4 || v < -1e-4 || w < -1e-4) continue; const A = new THREE.Vector3().fromArray(P, a * 3), B = new THREE.Vector3().fromArray(P, b * 3), C = new THREE.Vector3().fromArray(P, c * 3);
+      return { p: A.clone().multiplyScalar(u).addScaledVector(B, v).addScaledVector(C, w), n: B.clone().sub(A).cross(C.clone().sub(A)).normalize() }; } return null; };
+  const pos = [], uv = [], idx = [], nor = [], col = sRGB(...G.hairCol).multiplyScalar(G.hairCol[0] > .6 ? .55 : .62);
+  const N = Math.round(260 + 220 * S.thick);
+  for (const sg of [-1, 1]) for (let k = 0; k < N; k++) {
+    // a root: along the brow by area (more at the head and the body than the tail), across it at random
+    const t = Math.min(1, RND() ** 1.15), q = S.at(t), a = RND(), x = q.x + (RND() - .5) * .002, y = q.low + q.h * a;
+    const L = locate(sg * x, y); out.tried++; if (!L) continue; out.roots++;
+    if (L.n.z < 0) L.n.negate();
+    // the comb: up at the head, out and a little up along the body, out and down at the tail; the upper row lies down over the lower
+    const up = t < .18 ? .95 - 2.8 * t : .45 - 1.1 * Math.max(0, t - .45) - .35 * a, dirW = new THREE.Vector3(sg * (t < .18 ? .35 + 3 * t : 1), up, 0).normalize();
+    dirW.applyAxisAngle(new THREE.Vector3(0, 0, 1), (RND() - .5) * .45);
+    const tan = dirW.clone().addScaledVector(L.n, -dirW.dot(L.n)).normalize(), len = (.004 + .005 * RND()) * (t < .15 ? .75 : 1), w0 = .00028 + .00018 * RND(), seg = 3;
+    const pts = [L.p.clone().addScaledVector(L.n, .0003)]; let lift = .28;
+    for (let s = 1; s <= seg; s++) { const d = tan.clone().addScaledVector(L.n, lift).normalize(); pts.push(pts[s - 1].clone().addScaledVector(d, len / seg)); lift -= .22; }
+    out.lift = Math.max(out.lift, pts[seg].clone().sub(pts[0]).dot(L.n));
+    const base = pos.length / 3; for (let s = 0; s <= seg; s++) { const side = tan.clone().cross(L.n).normalize(), w = w0 * (1 - .6 * s / seg);
+      pos.push(pts[s].x - side.x * w, pts[s].y - side.y * w, pts[s].z - side.z * w, pts[s].x + side.x * w, pts[s].y + side.y * w, pts[s].z + side.z * w); nor.push(L.n.x, L.n.y, L.n.z, L.n.x, L.n.y, L.n.z); uv.push(0, s / seg * .9, 1, s / seg * .9); if (s < seg) { const b0 = base + s * 2; idx.push(b0, b0 + 1, b0 + 2, b0 + 1, b0 + 3, b0 + 2); } } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+  const nV = pos.length / 3, si = new Uint16Array(nV * 4), sw = new Float32Array(nV * 4); for (let i = 0; i < nV; i++) { si[i * 4] = headB; sw[i * 4] = 1; } g.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
+  const m = new THREE.MeshStandardMaterial({ color: col, roughness: .7, side: THREE.DoubleSide }); m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n normal = normalize(vNormal); if (dot(normal, vViewPosition) < 0.) normal = -normal;'); };
+  const mesh = new THREE.SkinnedMesh(g, m); mesh.name = 'brows'; mesh.noCast = true;
+  return { mesh, stats: { hairs: idx.length / 18, tried: out.tried, roots: out.roots, lift: +out.lift.toFixed(4), tris: idx.length / 3 } };
+}
+// how much of a brow lies over a point of the unmorphed face (0 to 1), for the skin's shade
+function browCover(S, x, y) { const ax = Math.abs(x); if (ax < S.x0 - .003 || ax > S.x1 + .003) return 0; const t = Math.max(0, Math.min(1, (ax - S.x0) / (S.x1 - S.x0))), q = S.at(t);
+  const m = Math.min(y - q.low, q.low + q.h - y), e = Math.min(ax - S.x0, S.x1 - ax); return Math.max(0, Math.min(1, (m + .0015) / .003)) * Math.max(0, Math.min(1, (e + .002) / .004)); }
+
 export function makePerson(G, o = {}) {
-  const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null;
+  const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null, browStats = null;
   // the feet on the ground
   let minY = 1e9; for (let i = 1; i < P.length; i += 3) if (P[i] < minY) minY = P[i];
   // the skeleton, its joints read off the morphed body
@@ -437,9 +492,10 @@ export function makePerson(G, o = {}) {
   const skeleton = new THREE.Skeleton(bones), root = new THREE.Group(), meshes = [];
   const D0 = G.dress || {}, body = new THREE.SkinnedMesh(geomFor(P, D0.tunic ? (D0.trousers || D0.skirt === 'long' ? PACK.R.bare : PACK.R.bareLegs) : PACK.G.body), skinMat(sRGB(...G.skin)));
   // skin tones by region: lips and cheeks warmer, the brow a touch darker
-  { const col = new Float32Array(PACK.N * 3); for (let i = 0; i < PACK.N; i++) { const x = rest0[i * 3], y = rest0[i * 3 + 1], z = rest0[i * 3 + 2]; let r = 1, g = 1, b = 1;
+  { const col = new Float32Array(PACK.N * 3), BS = browShape(G); for (let i = 0; i < PACK.N; i++) { const x = rest0[i * 3], y = rest0[i * 3 + 1], z = rest0[i * 3 + 2]; let r = 1, g = 1, b = 1;
       const lip = Math.exp(-((x / .022) ** 2) - ((y - .655) / .009) ** 2) * (z > .13 ? 1 : 0), cheek = Math.exp(-(((Math.abs(x) - .05) / .025) ** 2) - ((y - .69) / .02) ** 2) * (z > .07 ? 1 : 0), nose = Math.exp(-((x / .02) ** 2) - ((y - .69) / .015) ** 2) * (z > .14 ? 1 : 0);
-      r += .12 * lip + .06 * cheek + .05 * nose; g -= .14 * lip + .05 * cheek + .04 * nose; b -= .1 * lip + .04 * cheek + .03 * nose; col[i * 3] = r; col[i * 3 + 1] = g; col[i * 3 + 2] = b; }
+      r += .12 * lip + .06 * cheek + .05 * nose; g -= .14 * lip + .05 * cheek + .04 * nose; b -= .1 * lip + .04 * cheek + .03 * nose;
+      if (G.hairCol && z > .08 && y > .72 && y < .79) { const w = browCover(BS, x, y) * .2; r *= 1 - w; g *= 1 - w * 1.1; b *= 1 - w * 1.2; } col[i * 3] = r; col[i * 3 + 1] = g; col[i * 3 + 2] = b; }
     body.geometry.setAttribute('color', new THREE.BufferAttribute(col, 3)); }
   meshes.push(body);
   const D = G.dress || {}, push = (k, idx, mat, d) => { const m = new THREE.SkinnedMesh(geomFor(P, idx, d), mat); m.name = k; meshes.push(m); return m; };
@@ -460,7 +516,7 @@ export function makePerson(G, o = {}) {
     const tuck = D.cloak && D.hood === 'up' ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
     // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline
     const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || m.name !== 'hair')); hairStats = H.stats;
-    for (let k = 0; k < 3; k++) push('brows' + k, PACK.R.brows, shellMat(sRGB(...G.hairCol).multiplyScalar(.5), k + 2, 5, { sx: 1400, sy: 300, solid: false }), .0015 + k * .0012);
+    { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
     if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
       push('beardBase', PACK.R.beard, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
       const bc = hairCards(P, PACK.R.beard, { n: 520, len: .02 + .05 * G.beard, seg: 4, width: .011, lift: .15, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: jawB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc, hug: true, surfs: [surfaceOf(P, PACK.R.beard, hc)] });
@@ -485,7 +541,7 @@ export function makePerson(G, o = {}) {
   byName['head'].quaternion.copy(q(.04, pose.head, 0)); if (byName['jaw']) byName['jaw'].quaternion.copy(q(pose.jaw ?? -.12, 0, 0)); byName['spine05'].quaternion.copy(q(0, 0, pose.hip));
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, hood: hoodStats };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, hood: hoodStats, brows: browStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
