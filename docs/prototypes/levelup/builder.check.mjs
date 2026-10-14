@@ -65,6 +65,8 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: no strand on the face (${s.onFace} points)`, s.onFace <= s.points * .002, s.onFace);
     // Session 875: the strands rooted at the front hairline are finer than those behind it, so the hair thins onto the brow
     check(`${k}: the hairline thins (${s.hairline.edge} strands within 0.75 cm of it at ${s.hairline.ratio} of the width behind)`, s.hairline.edge > 20 && s.hairline.ratio < .7, s.hairline);
+    // Session 879: and at the temples, where the root region stops on a mesh edge, by the root's distance to that edge
+    check(`${k}: the temples thin (${s.temples?.edge} strands within 0.75 cm of the region's edge at ${s.temples?.ratio} of the width 1.5 cm in)`, !!s.temples && s.temples.edge > 10 && s.temples.ratio < .7, s.temples);
     // Session 877: every root on the skin (3 mm, where Session 804's started up to 14 mm off it)
     check(`${k}: every strand roots on the skin (the highest ${(s.rootH * 1000).toFixed(1)} mm off it), the hair ${(s.crown * 1000).toFixed(1)} mm deep over the crown`, s.rootH < .0045, s.rootH);
     // Session 874: no seam of bare scalp down the back of the head (two braids part there, as they should)
@@ -107,6 +109,8 @@ if (shotArg) { const only = shotArg.split('=')[1];
   await shot('peoples', 'peoples', 2400, 900);
   await shot('styles-back', 'seed=styles&sex=f&sheet&ang=2.4&dist=1.5&y=-.2&nomantle');
   await shot('styles-front', 'seed=styles&sex=f&sheet&ang=.35&dist=1.5&y=-.1');
+  // the temples (Session 879): three-quarter heads, where the hair's root region stops on a mesh edge by the brow
+  for (const [n, q] of [['temples-man', 'seed=b7&sex=m&view=head&turn=.75'], ['temples-woman', 'seed=styles&sex=f&style=bun&view=head&turn=-.75']]) await shot(n, q + '&dress=' + encodeURIComponent('{"mantle":null}'), 2400, 1350, false, [.33, 0, .38, .42]);
   await shot('styles-mantle', 'seed=styles&sex=f&sheet&ang=2.4&dist=1.5&y=-.2');
   const dq = d => encodeURIComponent(JSON.stringify(d));
   await shot('cloak-front', 'seed=styles&sex=f&view=full&turn=.35&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'down', cloakLen: .75, mantle: null, apron: [.8, .76, .66], bib: true }));

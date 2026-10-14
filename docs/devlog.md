@@ -17605,3 +17605,25 @@ The fix is in `makePerson`. When a tunic is worn, the beard's cards root only on
 - **Pictures:** `builder-beard-tunic.jpg` and `builder-beard-tunic-before.jpg`, the same man from three-quarters front, and `builder-man-face.jpg` shot again.
 ### Needs eyes
 - **The beard's lower edge** now ends on the collar's line. A long beard would hang over the collar and onto the chest, as a beard of its own grown from the jaw. The beard length is one slider (`beard`, 2 to 7 cm), so a long-bearded Markman would want that drape built.
+
+## v80 — Session 886 — The temples thin out as the forehead does (B1, Michael's note on #272, prototype only)
+Session 875 left one owed item. The hairline at the front of the head fades and thins, but the temples and the sides above the ears did not. There, the edge was simply where the hair's root region (`scalpRoots`) stops on a mesh edge. The dark under-shell ended in a hard stepped outline, and the strands started at full width on it. It showed as a step at the side of the brow on the man, and as a blocky dark edge above the woman's ear under a bun. Session 875's note named what a fix needs: a distance to the region's border for each vertex, not the forehead's curve. This is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **A distance to the border, made once.** At load, the region's border is taken as the edges that only one of its triangles uses. Each vertex of the region gets its distance on the rest body to the nearest of those edges (`PACK.scalpEdge`), so every body reads the same numbers.
+- **The shell fades and comes down at the sides.** The scalp shell reads that distance as an attribute.
+  - From just behind the ear to the front of the temple, it fades from the skin's colour at the border to its own over 1.4 cm. The border wanders by ±3 mm of noise, as the forehead's does.
+  - There it also comes down onto the skin, to 0.8 mm off it at the border from 2.5 mm, so its faded edge is no longer a ledge seen side-on by the ear. The first try lowered the shell all round. That drew the region's jagged front edge across the forehead as a shade, so the lowering is kept to the sides.
+- **Strands at the sides are finer near the border.** Within 1.5 cm of the border, a strand's card narrows, down to 0.35 of its width at the edge, as at the front. The forehead keeps Session 875's measure. Nothing new is drawn from the random stream, so every style keeps its strands, and the cloak, drawn after the hair, folds as before.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 188 checks pass**, twelve of them new: in every style, with and without the mantle, **the temples thin**.
+  - 55 to 66 strands are rooted within 0.75 cm of the border at the temples.
+  - They are 0.44 to 0.46 of the width of the strands 1.5 cm in.
+  - Run against Session 878's `people.js`, all twelve fail. That code has no such measure, and its strands there were full width.
+- The front hairline's numbers are as Session 875 left them: 0.43 to 0.44, with 74 to 112 edge strands. The cloak's numbers are as Session 839 left them: hems 13.0, 2.6 and 1.4 cm in, and folds 3.7, 4.7 and 5.5 cm deep. There are no page errors, which also covers the shader's new attribute.
+- **Pictures:** `builder-temples-man.jpg` and `builder-temples-woman.jpg` are three-quarter close-ups of the upper head, without the mantle. `builder-temples-before-man.jpg` and `builder-temples-before-woman.jpg` are the same views on Session 878's code.
+### Needs eyes
+- **A faint pale line remains at the man's temple**, in front of the ear, where the shell's last millimetre meets the skin at a grazing angle. It is much less than the hard brown edge it replaces.
+- **Above the woman's ear under a bun** the shell now fades to skin, so the strip the gathered strands do not cover reads as bare skin, not as a dark block. If that reads as an undercut, the fix is strands there that lie down toward the ear before turning up to the bun, not the shell.
+- **The temples' notch is still the region's shape.** The man's hair still recedes at the corners of the brow. That is where `scalpRoots` puts the border (y 0.755 at the side), and a fuller hairline is a change to the region, which every style would follow.
