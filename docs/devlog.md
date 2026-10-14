@@ -17038,3 +17038,39 @@ Which finish the domes take is Michael's call, asked as **DECISION #294**: A blu
 - **The fountain** in the square is a placeholder: a basin and a post.
 - **No people.** The MakeHuman pack is not in this checkout, so nobody stands on the square for scale. The 1.8 m post is in the line-up.
 - **Inside** is card F9's. The Guest's bricked chapel in a cellar under the capital's cathedral is the canon's, and it waits for the inside.
+
+## v80 — Session 833 — The Compact's tithe house and the quay's warehouse (card F6, prototype only)
+The second half of F6's Aurenne item is the civic buildings. The canon (§1.3) puts the Compact's Factors over Aurenne's ports, says "every hull that passes is tithed", and gives the island "warehouses on every quay". So the port's two buildings came first. The academy's white towers, the third named building, are next.
+
+`pieces.js` has `aurenneCivic(o, r)`, on the same `aurKit()` as the houses and the church.
+- **The tithe house** (`kind: 'tithe'`, 18 to 26 m by 12 to 15):
+  - **The ground storey, 5.2 m:** a loggia of pointed arches on turned columns, 3.6 m deep under a cedar-beamed ceiling. Behind it is the counting room's front, with a door in each bay, and the middle arch is wider and opens on the carriage way's gates.
+  - **Between the storeys:** a band of glazed tile.
+  - **The Factor's floor, 4.6 m:** tall arched windows. The middle three have cedar lattice balconies on stone brackets, and the rest have sills and grilles. The sides and back have small windows below and tall ones above.
+  - **The roof:** a parapet of stepped merlons, and a lookout in the back corner with arched openings and its own merlons. From it a pole flies the Compact's banner, in the awning's madder-and-cream stripes.
+  - `o.crown = 'plain'` rounds the parapet off as the houses' are, for the question below.
+- **The warehouse** (`kind: 'warehouse'`, 18 to 30 m by 10 to 12, 7.4 m to the eaves):
+  - A row of tall arched doors on the quay, 3 by 4.3 m, a cart's width, with cedar leaves and a stone sill.
+  - Small high windows on every side, and a loading door over the middle doorway with a hoist beam, a pulley and a rope.
+  - A low gabled pantile roof at 20° on rafter ends, with the gables closed in wall.
+  - Crates and amphorae by the doors, placed by the lot's stream.
+
+`aurenne.html?view=quay` is a quay: a dressed-stone wall down to the water, bollards along its edge, and the tithe house between two warehouses, seen from the water. `?view=civic` shows the two front-on beside the post, and `&crown=plain` shows the other parapet.
+
+Which crown the tithe house takes is asked as **DECISION #295**: A stepped merlons (recommended), B a plain parapet.
+
+**Fixed on the way:** a church or house's `front` is the line nothing stands past. The check caught that the tithe house's balconies (0.9 m out) and the warehouse's crates (2 m out) stood past their first values, which are now 0.95 m and 2.05 m.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: all pass, with five new checks.**
+  - **The tithe house** at 10 sizes is 11,424 to 14,608 triangles in 10 meshes, 20.4 m to the banner's top.
+  - **The warehouse** at 8 sizes is 3,988 to 6,136 triangles in 9 or 10 meshes, 9.9 to 10.3 m to the ridge.
+  - **The same key builds the same building:** 18 of 18, built twice.
+  - **Every one stands on its lot:** on the ground, within its width and depth (a warehouse's eaves aside, 0.5 m), and nothing past its front.
+  - **The pages:** the quay (3 buildings) and the line-up (2) render with no page errors.
+  - The houses' and the churches' checks pass with the same numbers.
+- **`pieces.check.mjs`** passes.
+- **Pictures, new:** `aurenne-quay.jpg`, `aurenne-civic.jpg` and `aurenne-civic-plain.jpg`.
+### Needs eyes
+- **The water** on the quay page is a flat colour, not the slice's water. Ships and harbours are F11's.
+- **The banner** uses the awning's stripes. The Compact's colours are not in the canon, so they are a stand-in and the quest writer's to name.
+- **The tithe house's doors** behind the loggia are dark from the quay at noon. Whether the counting room should show light inside, by day or by lamp, is F9's.

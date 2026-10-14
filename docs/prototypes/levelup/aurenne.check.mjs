@@ -6,6 +6,8 @@
 // Session 832, the Church of the Weaver (aurenneChurch): 72 churches (six sizes, both domes, no tower to two, with and without
 // the corner domes) build in budget, standing on the ground, the same twice from one key, at true size against a person; the
 // glazed domes carry their own UVs; the square and the line-up render. --shots adds aurenne-church, -churches, -church-dome.
+// Session 833, the civic buildings (aurenneCivic): tithe houses and warehouses over their size ranges build in budget, on the
+// ground, within their width, the same twice; the quay and the line-up render. --shots adds aurenne-quay and aurenne-civic.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -34,6 +36,11 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
     if (hash(a.group) === hash(b.group)) out.chSame++; const bx = new THREE.Box3().setFromObject(a.group); let ownUV = 0, glaze = 0; a.group.traverse(m => { if (m.isMesh && m.name === 'glaze') { glaze++; const u = m.geometry.attributes.uv.array; for (let i = 0; i < u.length; i += 2) ownUV = Math.max(ownUV, u[i]); } });
     out.churches.push({ w, dome, tower, corners, tris: a.tris, draws: a.draws, below: +bx.min.y.toFixed(3), domeTop: +a.domeTop.toFixed(2), towerTop: +a.towerTop.toFixed(2), top: +a.roofTop.toFixed(2), doorW: a.door.w, doorH: a.door.h, glaze, maxU: +ownUV.toFixed(1), front: +(bx.max.z - a.front).toFixed(2) });
     for (const g of [a, b]) g.group.traverse(m => m.geometry && m.geometry.dispose()); }
+  out.civic = []; out.cvSame = 0;
+  const cases = []; for (const w of [18, 20, 22, 24, 26]) for (const d of [12, 15]) cases.push({ kind: 'tithe', w, d }); for (const w of [18, 22, 26, 30]) for (const d of [10, 12]) cases.push({ kind: 'warehouse', w, d });
+  cases.forEach((o, i) => { const a = K.aurenneCivic(o, K.stream('cv:' + i)), b = K.aurenneCivic(o, K.stream('cv:' + i)); if (hash(a.group) === hash(b.group)) out.cvSame++; const bx = new THREE.Box3().setFromObject(a.group);
+    out.civic.push({ ...o, tris: a.tris, draws: a.draws, below: +bx.min.y.toFixed(3), side: +(Math.max(-bx.min.x, bx.max.x) - o.w / 2).toFixed(2), back: +(-bx.min.z - o.d / 2).toFixed(2), front: +(bx.max.z - a.front).toFixed(2), top: +a.roofTop.toFixed(2) });
+    for (const g of [a, b]) g.group.traverse(m => m.geometry && m.geometry.dispose()); });
   return out; });
 const badStreets = r.streets.filter(s => s.bad).length, roman = r.houses.filter(h => h.kind === 'tile').length;
 check(`Michael's mix: one Roman house in every run of three lots, on all of 40 streets (${r.streets.reduce((a, s) => a + s.roman, 0)} of 1,200 lots)`, badStreets === 0 && r.streets.every(s => s.roman === 10), { badStreets });
@@ -55,9 +62,17 @@ check(`the street page: ${r.page.houses.length} houses, kinds ${r.page.lotKinds.
   check(`at true size: the great door ${C[0].doorW} by ${C[0].doorH} m (a 1.8 m person is a third of it); the dome's top ${d[0]} to ${d[1]} m; every tower above its dome (${tw.filter(c => c.towerTop > c.domeTop).length} of ${tw.length})`, C[0].doorH >= 5 && d[0] > 14 && d[1] < 40 && tw.every(c => c.towerTop > c.domeTop));
   const bl = C.filter(c => c.dome === 'blue');
   check(`the glazed domes keep their own UVs, tiled around the dome (${bl.length} blue churches, up to ${Math.max(...bl.map(c => c.maxU))} repeats around); the limewashed ones have no glaze`, bl.every(c => c.glaze === 1 && c.maxU >= 20) && C.filter(c => c.dome === 'white').every(c => c.glaze === 0)); }
+{ const C = r.civic, of = k => C.filter(c => c.kind === k), mm = (hs, f) => [Math.min(...hs.map(f)), Math.max(...hs.map(f))];
+  for (const k of ['tithe', 'warehouse']) { const hs = of(k), t = mm(hs, c => c.tris), dr = mm(hs, c => c.draws), tp = mm(hs, c => c.top);
+    check(`${k === 'tithe' ? 'the tithe house' : 'the warehouse'} (${hs.length} sizes): ${t[0].toLocaleString()} to ${t[1].toLocaleString()} triangles, ${dr[0]} to ${dr[1]} meshes, ${tp[0]} to ${tp[1]} m to its top`, t[1] < 20000 && dr[1] <= 14 && tp[1] < (k === 'tithe' ? 22 : 11), { tris: t, draws: dr, top: tp }); }
+  check(`a civic building comes from its options and key alone: ${r.cvSame} of ${C.length} built twice are the same`, r.cvSame === C.length);
+  check('every civic building stands on the ground, within its width (a warehouse\'s eaves aside, 0.6 m), its depth behind and its front before', C.every(c => c.below >= -0.001 && c.side <= .61 && c.back <= .61 && c.front <= .01), C.filter(c => c.below < -0.001 || c.side > .61 || c.back > .61 || c.front > .01).slice(0, 3)); }
+for (const v of ['quay', 'civic']) { const pg = await browser.newPage({ viewport: { width: 640, height: 360 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/aurenne.html?still&nopeople&w=640&h=360&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 });
+  const st = await pg.evaluate(() => window.__stats); check(`the ${v} page: ${st.civic.map(c => c.kind).join(', ')}, no page errors`, e2.length === 0 && st.civic.length === (v === 'quay' ? 3 : 2), e2.slice(0, 3)); await pg.close(); }
 for (const v of ['church', 'churches']) { const pg = await browser.newPage({ viewport: { width: 640, height: 360 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/aurenne.html?still&nopeople&w=640&h=360&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 });
   const st = await pg.evaluate(() => window.__stats); check(`the ${v} page: ${st.churches.length} church${st.churches.length > 1 ? 'es' : ''} and ${st.houses.length} houses, no page errors`, e2.length === 0 && st.churches.length === (v === 'church' ? 1 : 3) && st.houses.length === (v === 'church' ? 8 : 0), e2.slice(0, 3)); await pg.close(); }
 await page.close();
-if (process.argv.includes('--shots')) for (const [name, q] of [['aurenne-street', ''], ['aurenne-houses', 'view=houses'], ['aurenne-church', 'view=church'], ['aurenne-churches', 'view=churches'], ['aurenne-church-dome', 'view=church&top']]) console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=aurenne.html', '--name=' + name, ...(q ? ['--q=' + q] : [])]).toString().split('{')[0]);
+if (process.argv.includes('--shots')) for (const [name, q] of [['aurenne-street', ''], ['aurenne-houses', 'view=houses'], ['aurenne-church', 'view=church'], ['aurenne-churches', 'view=churches'], ['aurenne-church-dome', 'view=church&top'], ['aurenne-quay', 'view=quay'], ['aurenne-civic', 'view=civic']]) console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=aurenne.html', '--name=' + name, ...(q ? ['--q=' + q] : [])]).toString().split('{')[0]);
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

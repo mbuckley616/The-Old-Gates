@@ -4,6 +4,32 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's tithe house: stepped merlons or a plain parapet? (look builder, Session 833) — DECISION #295
+Card F6 has reached Aurenne's civic buildings. The canon (§1.3) puts Aurenne's ports under the Compact's Factors, says "every hull that passes is tithed", and gives the island "warehouses on every quay". OG-061 and OG-043 draw these buildings arcaded, tiled and flat-roofed. Session 833 builds two in the new kit at true size (`aurenneCivic` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=quay`):
+- **The tithe house** (18 to 26 m by 12 to 15, 9.8 m to the roof):
+  - The ground floor has a loggia of pointed arches on columns, with the counting room's doors behind it and the middle arch as the carriage way.
+  - Above a band of glazed tile is the Factor's floor: tall arched windows, three of them with cedar lattice balconies.
+  - The roof has a parapet of stepped merlons and a lookout to watch the hulls come in, flying the Compact's striped banner.
+  - 11,400 to 14,600 triangles in 10 draws.
+- **The warehouse** (18 to 30 m by 10 to 12):
+  - Plain lime walls with a row of tall arched cedar doors, 3 by 4.3 m, wide enough for a cart.
+  - Small high windows, and a loading door with a hoist beam over the middle door.
+  - A low pantile roof, and crates and amphorae on the quay.
+  - 4,000 to 6,100 triangles in 9 or 10 draws.
+
+Pictures:
+- [the quay: the tithe house between two warehouses, from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/aurenne-quay.jpg)
+- [front-on, with merlons](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/aurenne-civic.jpg)
+- [front-on, the plain parapet](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/aurenne-civic-plain.jpg)
+
+How should the Compact's tithe house be crowned?
+- **A. Stepped merlons** *(recommended)*: a parapet of small stepped battlements, as on the Moorish customs houses and souk gates. On a skyline of flat roofs and domes, it marks the building as the Compact's, the power that takes the tithe, at a glance.
+- **B. A plain rounded parapet**, as the houses have: the tithe house then reads as a large merchant's house, set apart only by its loggia, balconies and lookout.
+
+Either way the warehouse stays as drawn. Recommendation: **A.** The tithe house is where the player meets the Compact's law in every port, so it should look like an office of a power and not like a rich house. Precedent: the Aduana and the Lonja in Spanish ports, and the customs houses of Tunis and Alexandria.
+
+Not in this question: the inside (card F9), the academy's white towers (next), and the harbour itself (quays, cranes and ships are card F11).
+
 ### Aurenne's churches in the new kit: blue domes, white, or by rank? (look builder, Session 832) — DECISION #294
 Card F6 (buildings as pieces) has reached Aurenne's temples. The canon gives Aurenne "domes on the churches" under the Church of the Weaver (§1.3), and the concept art (OG-061, OG-043) draws them as a domed hall behind an arcade with a slender tower beside it. Session 832 builds one in the new kit, at true size (`aurenneChurch` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=church`):
 - **The hall:** a cube of lime-washed stone, 12 to 22 m a side, on a podium with three steps. It has tall arched windows with iron grilles and a band of blue-and-white glazed tile under the cornice.

@@ -3,9 +3,11 @@
 // the people's pack is there. ?view=street (default) | houses (each kind front-on beside the 1.8 m post); ?street=<seed>.
 // Session 832, the Church of the Weaver: ?view=church, a town's church at the head of its square, from the square (&top: its dome and finial close);
 // ?view=churches, three side by side (a town's with a blue dome, a town's limewashed, a cathedral); &dome=blue|white.
+// Session 833, the civic buildings: ?view=quay, the Compact's tithe house between two warehouses on a quay, from the water;
+// ?view=civic, the tithe house and a warehouse front-on beside the 1.8 m post; &crown=plain, the parapet without merlons.
 import * as THREE from 'three';
 import { Q, STILL, W, H, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run } from './common.js';
-import { aurenneHouse, aurenneLot, aurenneChurch, stream, aurenneTextures } from './pieces.js';
+import { aurenneHouse, aurenneLot, aurenneChurch, aurenneCivic, stream, aurenneTextures } from './pieces.js';
 import { loadPack, makePerson, rollGenome } from './people.js';
 
 const R = makeRenderer(.82), scene = new THREE.Scene(), VIEW = Q.get('view') || 'street', STREET = Q.get('street') || 'aurenne-street';
@@ -23,7 +25,28 @@ const people = []; // [x, z, ry, seed]
 
 const CH = STATS.churches = [], DOME = Q.get('dome');
 function church(o, key, x, z, ry) { const c = aurenneChurch(o, stream(key)); c.group.position.set(x, 0, z); c.group.rotation.y = ry; scene.add(c.group); CH.push({ w: o.w, dome: o.dome, tower: o.tower ?? 1, corners: !!o.corners, tris: c.tris, draws: c.draws, domeTop: +c.domeTop.toFixed(2), towerTop: +c.towerTop.toFixed(2), top: +c.roofTop.toFixed(2), door: c.door.h }); return c; }
-if (VIEW === 'church' || VIEW === 'churches') {
+const CV = STATS.civic = [], CROWN = Q.get('crown') || 'merlons';
+function civic(o, key, x, z, ry) { const c = aurenneCivic({ crown: CROWN, ...o }, stream(key)); c.group.position.set(x, 0, z); c.group.rotation.y = ry; scene.add(c.group); CV.push({ kind: c.kind, w: o.w, d: o.d, tris: c.tris, draws: c.draws, top: +c.roofTop.toFixed(2) }); return c; }
+if (VIEW === 'quay' || VIEW === 'civic') {
+  { const g = new THREE.PlaneGeometry(600, 300); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, ground); m.position.z = VIEW === 'quay' ? -142 : 0; m.receiveShadow = true; scene.add(m); }
+  if (VIEW === 'quay') {
+    // the quay: a wall of dressed stone down to the water, bollards along its edge, the buildings fronting it 6 m back
+    { const wm = mat('ashlar', { ns: 1.1, color: 0xd9c9a8, rough: .9 }), g = new THREE.BoxGeometry(600, 3.2, 1.2); worldUV(g, .5); const q = new THREE.Mesh(g, wm); q.position.set(0, -1.6, 7.4); q.receiveShadow = true; scene.add(q);
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(600, 300).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x1f4a5a, roughness: .15, metalness: .2 })); sea.position.set(0, -1.4, 158); scene.add(sea);
+      const bm = new THREE.MeshStandardMaterial({ color: 0x2a2724, roughness: .5, metalness: .4 }); for (let x = -40; x <= 40; x += 8) { const b = new THREE.Mesh(new THREE.CylinderGeometry(.18, .24, .7, 10), bm); b.position.set(x, .35, 6.4); b.castShadow = true; scene.add(b); } }
+    const t = civic({ kind: 'tithe', w: 22, d: 14 }, 'quay:tithe', 0, -7, 0);
+    civic({ kind: 'warehouse', w: 24, d: 11 }, 'quay:w0', -25.5, -5.5, 0); civic({ kind: 'warehouse', w: 20, d: 11 }, 'quay:w1', 23.5, -5.5, 0);
+    cam.fov = 50; cam.updateProjectionMatrix(); cam.position.set(-9, 2.2, 30); cam.lookAt(2, 6, -6);
+    sun.position.set(70, 80, 60); sun.target.position.set(0, 0, -6); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 400 }); sun.shadow.camera.updateProjectionMatrix();
+    people.push([-3, 3, .3, 'q:a'], [4, 1.5, 2.6, 'q:b'], [-14, 2.5, .8, 'q:c']);
+  } else {
+    let x = 0; [{ kind: 'tithe', w: 20, d: 13 }, { kind: 'warehouse', w: 22, d: 11 }].forEach((o, i) => { x += o.w / 2 + (i ? 6 : 0); civic(o, 'civic:' + i, x, 0, 0); x += o.w / 2; });
+    const mid = x / 2; { const m = new THREE.MeshStandardMaterial({ color: 0x5a4a3a, roughness: .8 }), post = new THREE.Group(); post.add(new THREE.Mesh(new THREE.BoxGeometry(.06, 1.8, .06).translate(0, .9, 0), m)); post.position.set(-1.5, 0, 9); scene.add(post); }
+    cam.fov = 28; cam.updateProjectionMatrix(); const dist = (x * .5 + 4) / Math.tan(14 * Math.PI / 180) / (W / H); cam.position.set(mid, 5, dist + 8); cam.lookAt(mid, 5.5, 0);
+    sun.position.set(mid + 50, 70, 80); sun.target.position.set(mid, 0, 0); Object.assign(sun.shadow.camera, { left: -x * .7, right: x * .7, top: 40, bottom: -40, near: 1, far: 400 }); sun.shadow.camera.updateProjectionMatrix();
+    people.push([2, 8, .3, 'cv:a'], [x - 6, 8.5, -.3, 'cv:b']);
+  }
+} else if (VIEW === 'church' || VIEW === 'churches') {
   { const g = new THREE.PlaneGeometry(600, 600); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, ground); m.receiveShadow = true; scene.add(m); }
   if (VIEW === 'church') {
     // the square: the church at its head, houses down both sides, a fountain's basin in the middle
