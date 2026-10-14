@@ -46,6 +46,10 @@ export async function loadPack(base = 'mh/') {
     hood: sel(G['body'], (x, y, z) => y > .6 && !(z > .03 && (x / .06) ** 2 + ((y - .71) / .085) ** 2 < 1)),
     // the laced bodice (Session 888): the torso off the tights; its neckline, straps and armholes are cut in its shader, so they are smooth
     bodice: sel(tri, (x, y) => Math.abs(x) < .21 && y > .11 && y < .65),
+    // the mail hauberk (Session 890, OG-019's Iron tier): its body and sleeves off the tights, to the elbow (rest |x| .313) and
+    // down under the belt; its skirt off the skirt shell, to a hand above the knee (rest y -.369); both edges cut in the shader
+    mailTop: sel(tri, (x, y) => y > .03 && y < .64 && Math.abs(x) < .34),
+    mailSkirt: sel(G['helper-skirt'], (x, y) => y > -.32),
   };
   // how far each vertex of the hair's root region lies from that region's border, on the rest body (Session 879): the edges
   // that only one of its triangles uses are the border, and a vertex's number is its distance to the nearest of them, so the
@@ -91,6 +95,29 @@ function clothMat(color, kind = 'wool', o = {}) {
     if (o.band) s.fragmentShader = 'uniform vec3 bandC;\n' + s.fragmentShader; };
   m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.inner || '') + (o.band ? 'band' : '');
   return m;
+}
+// mail (Session 890): rows of riveted rings drawn in the shader on the rest body's coordinates, each row offset by half a
+// ring, seen three ways as the cloth's weave is; the gaps between the rings and their holes are dark (the padding under them),
+// and where a pixel holds more than a ring or so the pattern gives way to its average, so it does not shimmer at a distance
+const RING = '165.', RINGS = `float ringAt(vec2 p){ p *= ${RING}; p.x += .5 * mod(floor(p.y), 2.); vec2 f = fract(p) - .5; float d = length(f * vec2(1., 1.3)), a = fwidth(d) + .02;
+  float r = smoothstep(.11 - a, .11 + a, d) * (1. - smoothstep(.52 - a, .52 + a, d)), h = clamp(.55 - f.y - .4 * f.x - d * .6, 0., 1.); return r * (.62 + .45 * h) + (1. - r) * .36; }
+float mailAt(vec3 p, vec3 n){ vec3 w = abs(normalize(n)); w = pow(w, vec3(4.)); w /= (w.x + w.y + w.z);
+  float m = ringAt(p.zy) * w.x + ringAt(p.xz) * w.y + ringAt(p.xy) * w.z, k = clamp(length(fwidth(p.xy * ${RING})) * 1.2 - .4, 0., 1.); return mix(m, .62, k); }`;
+function mailMat(color, o = {}) {
+  const m = new THREE.MeshStandardMaterial({ color, roughness: .45, metalness: .4, side: o.side ?? THREE.FrontSide });
+  m.onBeforeCompile = s => {
+    s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRN = normal; vB = aBase;');
+    s.fragmentShader = 'varying vec3 vB; varying vec3 vRN;\n' + RINGS + '\n' + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + 'float mR = mailAt(vB, vRN); vec4 diffuseColor = vec4( diffuse * mR, opacity );')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(.85, roughnessFactor, smoothstep(.2, .45, mR));'); };
+  m.customProgramCacheKey = () => 'mail' + JSON.stringify(o.cut || 0) + (o.hole || '');
+  return m;
+}
+// a shadow cut as the garment is, so the triangles past its cut edge cast none (Session 890: the mail's hem threw teeth onto the thighs)
+function cutDepth(o) {
+  const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+  m.onBeforeCompile = s => { s.vertexShader = 'attribute vec3 aBase; varying vec3 vB;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vB = aBase;');
+    s.fragmentShader = 'varying vec3 vB;\n' + s.fragmentShader.replace('void main() {', 'void main() {\n' + CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '')); };
+  m.customProgramCacheKey = () => 'cutDepth' + JSON.stringify(o.cut || 0) + (o.hole || ''); return m;
 }
 // fur and hair: stacked shells, each cut by noise so strands rise from the surface
 function shellMat(color, layer, layers, o = {}) {
@@ -434,6 +461,9 @@ function buildCloak(G, body, byName, rnd) {
 // and a robe's sleeves (Session 888): the tights' shell along the arms, standing out by the robe's own push, up to 4.6 cm at the cuff
 function wornMask(D) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
   if (D.skirt) { const sk = D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort; for (const v of sk) { m[v] = 2; m.off[v] = .025; } }
+  // mail (Session 890): its body off the tights, standing as the tunic does and 9 mm more, and its skirt off the skirt shell, by its own push and 6 to 8 mm more
+  if (D.mail && !D.robe) { for (const v of PACK.R.mailTop) { const y = R0[v * 3 + 1], ax = Math.abs(R0[v * 3]); if (ax > .3 || y < .06) continue; m[v] = 3; m.off[v] = .032 + (ax < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) : 0) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1)); }
+    for (const v of PACK.R.mailSkirt) { const y = R0[v * 3 + 1]; if (y < -.27) continue; m[v] = 2; m.off[v] = .03 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt === 'long' ? .006 : 0); } }
   if (D.robe) for (const v of PACK.R.tunic) { const ax = Math.abs(R0[v * 3]); if (ax > .22 && ax < .4) { m[v] = 3; m.off[v] = .016 + .03 * Math.max(0, Math.min(1, (ax - .24) / .16)) ** 1.5; } } return m; }
 function radialMap(PP, ax, az, y0, y1, B) {
   const NA = 90, NY = Math.ceil((y1 - y0) / .02) + 1, M = new Float32Array(NA * NY), n = PP.length / 3;
@@ -511,14 +541,17 @@ function buildTabard(G, body, byName) {
   // 3.5 cm off it), the skirt's shell under a skirt; each with how far its garment stands out
   const D = G.dress, PP = posedBody(body), n = PACK.N, B = new Uint8Array(n);
   for (const v of PACK.G['body']) B[v] = 1; if (D.tunic || D.trousers) for (const v of PACK.G['helper-tights']) B[v] = 2; if (D.skirt) for (const v of (D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort)) B[v] = 3;
+  // mail under it (Session 890): the tights stand for its body, 9 mm over the tunic, and the skirt's shell for its skirt
+  const mail = D.mail && !D.robe; if (mail) for (const v of PACK.R.mailSkirt) if (PACK.rest[v * 3 + 1] > -.27) B[v] = 4;
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const nY = neck.y, cx = neck.x, cz = neck.z;
   // the shoulders' half width at the armpit's height, and the tabard a little over half of it
   let sh = 0; for (let i = 0; i < n; i++) if (B[i] === 1 && Math.abs(PP[i * 3 + 1] - (nY - .16)) < .02) sh = Math.max(sh, Math.abs(PP[i * 3] - cx));
   let yb = 0, nb = 0; for (const v of PACK.R.belt) { yb += PP[v * 3 + 1]; nb++; } const yBelt = yb / nb;
   // the tunic's own push off the tights' shell, by height (makePerson's), read at the rest height of a posed point
   const tunicPush = (x, y) => { const yr = y - yBelt + .162; return .013 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - yr) / .2)) * (1 - .8 * Math.exp(-(((yr - .16) / .03) ** 2))) : 0) + .002; };
-  const OFF = (i, x, y) => B[i] === 2 ? (D.tunic ? tunicPush(x - cx, y) : .01) : B[i] === 3 ? .025 : 0;
-  const W = sh * .56, NC = 21, yHem = yBelt - .25 - .2 * (D.tabardLen ?? .5), step = .01, clr = (D.mantle ? .05 : D.tunic ? .022 : .012), hole = .068;
+  const ramp = (a, b, v) => Math.max(0, Math.min(1, (v - a) / (b - a))), mailOn = (y, yr = y - yBelt + .162) => yr > .06 && yr < .6 ? .009 + .012 * ramp(.2, .1, yr) : 0;
+  const OFF = (i, x, y) => B[i] === 2 ? (D.tunic ? tunicPush(x - cx, y) + (mail ? mailOn(y) : 0) : .01) : B[i] === 3 ? .025 : B[i] === 4 ? (yr => .027 + .012 * ramp(.14, -.16, yr) + .03 * ramp(-.14, 0, yr))(y - yBelt + .162) : 0;
+  const bz = mail ? .034 : .025, W = sh * .56, NC = 21, yHem = yBelt - .25 - .2 * (D.tabardLen ?? .5), step = .01, clr = (D.mantle ? .05 : D.tunic ? .022 : .012), hole = .068;
   const NY = Math.ceil((nY + .05 - yHem) / step) + 1, front = [], back = [], top = [], cols = [];
   // the body's outline per column: the furthest forward and back, and the top, of the points within 1.5 cm of its x
   for (let c = 0; c < NC; c++) { const x = cx - W + 2 * W * c / (NC - 1), F = new Float32Array(NY).fill(-9), Bk = new Float32Array(NY).fill(9), F1 = F.slice(), B1 = Bk.slice(), TF = F.slice(), TB = Bk.slice(); let yt = -9;
@@ -530,10 +563,10 @@ function buildTabard(G, body, byName) {
     // which stands 1.9 cm off it there, and under the belt's 3 cm, so the belt is worn over the tabard), the step in and out smoothed over 4 cm so the cloth does not crumple at it
     const ZF = new Float32Array(NY).fill(-9), ZB = new Float32Array(NY).fill(9), inB = new Uint8Array(NY); let zf = -9, zb = 9, last = NY;
     for (let j = 0; j < NY; j++) { const y = nY + .05 - j * step; if (y < yHem) { last = j; break; } inB[j] = D.belt && Math.abs(y - yBelt) < .028 && TF[j] > -8 ? 1 : 0;
-      if (inB[j]) { zf = Math.max(TF[j] + .025, F[j] + .0045, F1[j] + clr); zb = Math.min(TB[j] - .025, Bk[j] - .0045, B1[j] - clr); } else { zf = Math.max(zf, F[j] + clr); zb = Math.min(zb, Bk[j] - clr); } ZF[j] = zf; ZB[j] = zb; }
+      if (inB[j]) { zf = Math.max(TF[j] + bz, F[j] + .0045, F1[j] + clr); zb = Math.min(TB[j] - bz, Bk[j] - .0045, B1[j] - clr); } else { zf = Math.max(zf, F[j] + clr); zb = Math.min(zb, Bk[j] - clr); } ZF[j] = zf; ZB[j] = zb; }
     for (let it = 0; it < 3; it++) { const a = ZF.slice(), bb = ZB.slice(); for (let j = 2; j < last - 2; j++) { if (a[j] < -8 || a[j - 2] < -8) continue; ZF[j] = (a[j - 2] + a[j - 1] + a[j] + a[j + 1] + a[j + 2]) / 5; ZB[j] = (bb[j - 2] + bb[j - 1] + bb[j] + bb[j + 1] + bb[j + 2]) / 5;
-      if (!inB[j]) { ZF[j] = Math.max(ZF[j], F[j] + clr); ZB[j] = Math.min(ZB[j], Bk[j] - clr); } else { ZF[j] = Math.max(ZF[j], TF[j] + .025, F[j] + .0045, F1[j] + clr); ZB[j] = Math.min(ZB[j], TB[j] - .025, Bk[j] - .0045, B1[j] - clr); } } }
-    const floF = Float32Array.from(ZF, (_, j) => inB[j] ? Math.max(TF[j] + .025, F[j] + .0045, F1[j] + clr) : F[j] + clr), floB = Float32Array.from(ZB, (_, j) => inB[j] ? Math.min(TB[j] - .025, Bk[j] - .0045, B1[j] - clr) : Bk[j] - clr);
+      if (!inB[j]) { ZF[j] = Math.max(ZF[j], F[j] + clr); ZB[j] = Math.min(ZB[j], Bk[j] - clr); } else { ZF[j] = Math.max(ZF[j], TF[j] + bz, F[j] + .0045, F1[j] + clr); ZB[j] = Math.min(ZB[j], TB[j] - bz, Bk[j] - .0045, B1[j] - clr); } } }
+    const floF = Float32Array.from(ZF, (_, j) => inB[j] ? Math.max(TF[j] + bz, F[j] + .0045, F1[j] + clr) : F[j] + clr), floB = Float32Array.from(ZB, (_, j) => inB[j] ? Math.min(TB[j] - bz, Bk[j] - .0045, B1[j] - clr) : Bk[j] - clr);
     cols.push({ x, ZF, ZB, floF, floB, last, yf, yb }); }
   // smoothed across the columns too (each column's outline is read off its own few points, and was lumpy), never in
   // past what is under it
@@ -731,26 +764,98 @@ function buildLacing(G, meshes) {
 // ── the robe's cord (Session 887): a rope round the waist, tied at the front to one side, its two ends hanging down the skirt
 // Built after the pose from the posed tunic and skirt, like the tabard: a ring over the tunic at the waist, pushed clear of
 // the furthest cloth in each direction, and two ends that follow the skirt's front down, with a knot at each tip.
+// the kettle helm (Session 890; OG-019's Iron tier: mail and a kettle helm). A rigid iron hat carried by the head bone. Its dome
+// is fitted to the skull round a centre at the rim's height: in 72 directions round and 24 down, the furthest point of the head,
+// spread to its neighbours and smoothed, then 1.2 cm more (the hair's shell is 2.5 mm, the hair itself tucked as under a hood), so
+// it is as close as a hat beaten to the head and never inside it. (An ellipsoid grown until it cleared the occiput came out 31 cm
+// deep.) Its rim runs a little over the brows at the front, above the ears at the sides and 4.5 cm lower at the nape; a band
+// round the rim, and a brim 4.2 cm wide sloping 30 degrees down with a rolled edge. Its numbers: the head's nearest point to the
+// dome, and how many points of the face below the rim rise into the brim
+function buildHelm(P, G, heads, byName, hairPts = []) {
+  const R0 = PACK.rest, hv = PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6)), V = i => new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+  let by = 0, bn = 0; for (const i of hv) if (Math.abs(R0[i * 3]) < .05 && R0[i * 3 + 2] > .08 && R0[i * 3 + 1] > .785 && R0[i * 3 + 1] < .8) { by += P[i * 3 + 1]; bn++; } by /= bn;
+  const bb = new THREE.Box3(); for (const i of hv) if (R0[i * 3 + 1] > .755) bb.expandByPoint(V(i));
+  const c = bb.getCenter(new THREE.Vector3()), CL = .012, rimY = th => by - .004 - .012 * Math.sin(th) ** 2 - .045 * Math.max(0, -Math.cos(th)) ** 1.5; c.y = by - .045;
+  const thOf = (x, z) => Math.atan2(x - c.x, z - c.z), under = i => P[i * 3 + 1] > rimY(thOf(P[i * 3], P[i * 3 + 2])) - .004;
+  const NT = 72, NB = 24, PH = Math.PI * .75, M = new Float32Array(NT * NB), bin = (th, ph) => [((Math.round((th / (Math.PI * 2)) * NT) % NT) + NT) % NT, Math.max(0, Math.min(NB - 1, Math.round(ph / PH * (NB - 1))))];
+  const put = (p, extra) => { const d = p.clone().sub(c), r = d.length(), [a, b] = bin(Math.atan2(d.x, d.z), Math.acos(d.y / r)); M[b * NT + a] = Math.max(M[b * NT + a], r + extra); };
+  for (const i of hv) if (under(i)) put(V(i), 0);
+  // the hair left under it (tucked short) clears it by 4 mm: its points stand in for the head's, less the 1.2 cm
+  for (const p of hairPts) if (p.y > rimY(thOf(p.x, p.z)) - .004) put(p, .004 - CL);
+  // spread each bin's furthest point over its neighbours (so no point falls between two bins' surfaces), fill the empty bins from
+  // the nearest row above, then smooth four times, never below the spread value
+  const pass = (S, f) => { const O = new Float32Array(S.length); for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) O[b * NT + a] = f(a, b, (da, db) => S[Math.max(0, Math.min(NB - 1, b + db)) * NT + (a + da + NT) % NT]); return O; };
+  let S = pass(M, (a, b, at) => { let m = 0; for (let da = -3; da <= 3; da++) for (let db = -2; db <= 2; db++) m = Math.max(m, at(da, db)); return m; });
+  for (let b = 1; b < NB; b++) for (let a = 0; a < NT; a++) if (!S[b * NT + a]) S[b * NT + a] = S[(b - 1) * NT + a];
+  for (let b = NB - 2; b >= 0; b--) for (let a = 0; a < NT; a++) if (!S[b * NT + a]) S[b * NT + a] = S[(b + 1) * NT + a];
+  const floor = S; for (let k = 0; k < 4; k++) S = pass(S, (a, b, at) => { let t = 0; for (let da = -2; da <= 2; da++) for (let db = -1; db <= 1; db++) t += at(da, db); return Math.max(floor[b * NT + a], t / 15); });
+  const R = (th, ph) => { const u = ((th / (Math.PI * 2)) * NT % NT + NT) % NT, v = Math.max(0, Math.min(NB - 1.001, ph / PH * (NB - 1))), a = Math.floor(u), b = Math.floor(v), fu = u - a, fv = v - b, g = (aa, bb) => S[bb * NT + (aa % NT)];
+    return (g(a, b) * (1 - fu) + g(a + 1, b) * fu) * (1 - fv) + (g(a, b + 1) * (1 - fu) + g(a + 1, b + 1) * fu) * fv + CL; };
+  const at = (th, ph, off = 0) => { const r = R(th, ph) + off; return new THREE.Vector3(c.x + r * Math.sin(ph) * Math.sin(th), c.y + r * Math.cos(ph), c.z + r * Math.sin(ph) * Math.cos(th)); };
+  const phRim = th => { let lo = 0, hi = PH; for (let k = 0; k < 24; k++) { const m = (lo + hi) / 2; if (at(th, m).y > rimY(th)) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const NP = 14, W = .042, SL = Math.tan(30 * Math.PI / 180), pos = [], idx = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * Math.PI * 2));
+  const grid = (rows, f) => { const b0 = pos.length / 3; for (let j = 0; j < rows; j++) for (let t = 0; t <= NT; t++) { const p = f(t / NT * Math.PI * 2, j / (rows - 1), t); pos.push(p.x, p.y, p.z); }
+    for (let j = 0; j < rows - 1; j++) for (let t = 0; t < NT; t++) { const a = b0 + j * (NT + 1) + t, d = a + NT + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } };
+  // the dome, from the crown to the rim; the band, 1.5 cm proud by 2.5 mm; the brim, its top and its underside; the rolled edge
+  grid(NP, (th, t, k) => at(th, RIM[k] * Math.max(.002, t)));
+  grid(2, (th, t, k) => { if (t > .5) return at(th, RIM[k], .0025); let lo = 0, hi = RIM[k]; for (let n = 0; n < 20; n++) { const m = (lo + hi) / 2; if (at(th, m, .0025).y > rimY(th) + .015) lo = m; else hi = m; } return at(th, lo, .0025); });
+  const brimAt = (th, s, dy, k) => { const p = at(th, RIM[k], .0025), d = new THREE.Vector3(p.x - c.x, 0, p.z - c.z).normalize(); return p.addScaledVector(d, s * W).add(new THREE.Vector3(0, -s * W * SL + dy, 0)); };
+  grid(4, (th, t, k) => brimAt(th, t, 0, k)); grid(4, (th, t, k) => brimAt(th, 1 - t, -.003, k));
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const edge = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: NT }, (_, t) => brimAt(t / NT * Math.PI * 2, 1, -.0015, t)), true), NT * 2, .0035, 8, true);
+  const iron = new THREE.MeshStandardMaterial({ color: sRGB(...G.dress.helm), metalness: .5, roughness: .4, side: THREE.DoubleSide }), hm = new THREE.Group(); hm.name = 'helm';
+  const ext = new THREE.Box3(); for (let t = 0; t < NT; t++) ext.expandByPoint(at(t / NT * Math.PI * 2, RIM[t]));
+  // the numbers, before the pieces move to the head bone: the nearest point of the head under the dome, and the face under the brim
+  let hairOut = 0; for (const p of hairPts) { const d = p.clone().sub(c), r = d.length(); if (p.y > rimY(thOf(p.x, p.z)) && r > R(Math.atan2(d.x, d.z), Math.acos(d.y / r)) - .002) hairOut++; }
+  let gap = 1, face = 0, nf = 0; for (const i of hv) { const p = V(i), d = p.clone().sub(c), r = d.length(), th = Math.atan2(d.x, d.z);
+    if (under(i)) { gap = Math.min(gap, R(th, Math.acos(d.y / r)) - r); continue; } nf++;
+    const k = Math.round((th / (Math.PI * 2) * NT % NT + NT) % NT), r0 = at(th, RIM[k], .0025), rr = Math.hypot(r0.x - c.x, r0.z - c.z), rp = Math.hypot(d.x, d.z);
+    if (rp > rr && rp < rr + W && p.y > rimY(th) - (rp - rr) * SL - .005) face++; }
+  for (const geo of [g, edge]) { geo.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z); const m = new THREE.Mesh(geo, iron); m.castShadow = m.receiveShadow = true; hm.add(m); }
+  byName['head'].add(hm);
+  return { mesh: hm, stats: { gap: +gap.toFixed(4), face, facePts: nf, hairOut, hairPts: hairPts.length, tris: (idx.length + edge.index.count) / 3, width: +(ext.max.x - ext.min.x).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3) } };
+}
 function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
 // skirt's own middle, a hand point (rest x past .415) is inside if it is nearer that middle than the furthest of the skirt's points there
-function handsInSkirt(body, skirt, PP = posedBody(body)) {
-  const R0 = PACK.rest, SP = posedOf(skirt), sv = PACK.skirtV || (PACK.skirtV = [...new Set(PACK.R.skirtLong)]), B = new Map(), C = new Map(), band = y => Math.floor(y / .02), dir = (dx, dz) => Math.round((Math.atan2(dx, dz) / (Math.PI * 2) + 1) * 36) % 36;
+function handsInSkirt(body, skirt, PP = posedBody(body), sv0) {
+  const R0 = PACK.rest, SP = posedOf(skirt), sv = sv0 || PACK.skirtV || (PACK.skirtV = [...new Set(PACK.R.skirtLong)]), B = new Map(), C = new Map(), band = y => Math.floor(y / .02), dir = (dx, dz) => Math.round((Math.atan2(dx, dz) / (Math.PI * 2) + 1) * 36) % 36;
   for (const i of sv) { const b = band(SP[i * 3 + 1]); const c = C.get(b) || [0, 0, 0]; c[0] += SP[i * 3]; c[1] += SP[i * 3 + 2]; c[2]++; C.set(b, c); }
   for (const i of sv) { const b = band(SP[i * 3 + 1]), c = C.get(b), dx = SP[i * 3] - c[0] / c[2], dz = SP[i * 3 + 2] - c[1] / c[2], k = b + ':' + dir(dx, dz); B.set(k, Math.max(B.get(k) || 0, Math.hypot(dx, dz))); }
   const hands = PACK.handV || (PACK.handV = [...new Set(PACK.G['body'])].filter(i => Math.abs(R0[i * 3]) > .415));
   let n = 0, bad = 0; for (const h of hands) { const b = band(PP[h * 3 + 1]), c = C.get(b); if (!c) continue; const dx = PP[h * 3] - c[0] / c[2], dz = PP[h * 3 + 2] - c[1] / c[2], R = B.get(b + ':' + dir(dx, dz)); if (!R) continue; n++; if (Math.hypot(dx, dz) < R - .003) bad++; }
   return { n, bad };
 }
+// points of an inner surface (PP, posed) against a garment's posed shell: for each, the nearest of the shell's points (those keep
+// allows), and how far out along the shell's own normal there it stands; sign 1 counts those more than 2 mm outside (Session 887)
+function shellThrough(PP, verts, m, idx, sign, keep = () => true) { const SP = posedOf(m), pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(SP, 3)); pg.setIndex(m.geometry.index); pg.computeVertexNormals();
+    const N = pg.attributes.normal.array, sv = [...new Set(idx)]; let bad = 0, gap = 0;
+    for (const h of verts) { let bd = 1e9, bs = -1; for (const i of sv) { if (!keep(i, h)) continue; const d = (SP[i * 3] - PP[h * 3]) ** 2 + (SP[i * 3 + 1] - PP[h * 3 + 1]) ** 2 + (SP[i * 3 + 2] - PP[h * 3 + 2]) ** 2; if (d < bd) { bd = d; bs = i; } }
+      const o = (PP[h * 3] - SP[bs * 3]) * N[bs * 3] + (PP[h * 3 + 1] - SP[bs * 3 + 1]) * N[bs * 3 + 1] + (PP[h * 3 + 2] - SP[bs * 3 + 2]) * N[bs * 3 + 2]; if (sign * o > .002) bad++; gap += -o; } return { n: verts.length, bad, gap: +(gap / verts.length).toFixed(4) };
+}
+// the mail's promises, on the posed body (Session 890): no point of the upper arm out through its sleeve, none of the tunic out
+// through its body (but in the crease under the arm, where the arm's own skin folds both shells), none of the legs, the tunic's skirt or the trousers out of its skirt (radially, in 2 cm bands round its middle, as the hands are tested)
+const mailSkirtV = () => PACK.mailSkirtV || (PACK.mailSkirtV = [...new Set(PACK.R.mailSkirt)].filter(i => PACK.rest[i * 3 + 1] > -.26));
+function mailStats(body, meshes) {
+  const PP = posedBody(body), R0 = PACK.rest, out = {}, mail = meshes.find(m => m.name === 'mail'), ms = meshes.find(m => m.name === 'mailSkirt'), tunic = meshes.find(m => m.name === 'tunic');
+  const body0 = PACK.body0 || (PACK.body0 = [...new Set(PACK.G['body'])]), side = (i, h) => R0[i * 3] * R0[h * 3] >= 0;
+  const upper = body0.filter(i => { const ax = Math.abs(R0[i * 3]), y = R0[i * 3 + 1]; return ax > .2 && ax < .29 && y > .3 && y < .58; });
+  const a = shellThrough(PP, upper, mail, PACK.R.mailTop, 1, (i, h) => side(i, h) && Math.abs(R0[i * 3]) > .17); out.armOut = a.bad; out.armPts = a.n;
+  const tv = PACK.mailTunicV || (PACK.mailTunicV = [...new Set(PACK.R.tunic)].filter(i => { const ax = Math.abs(R0[i * 3]), y = R0[i * 3 + 1]; return ax < .28 && y > .16 && y < .56 && !(ax > .11 && y > .34); }));
+  const t = shellThrough(posedOf(tunic), tv, mail, PACK.R.mailTop, 1, side); out.tunicOut = t.bad; out.tunicPts = t.n;
+  const SP = posedOf(ms), sv = mailSkirtV(), C = new Map(), B = new Map(), band = y => Math.floor(y / .02), dir = (dx, dz) => Math.round((Math.atan2(dx, dz) / (Math.PI * 2) + 1) * 36) % 36;
+  for (const i of sv) { const b = band(SP[i * 3 + 1]), c = C.get(b) || [0, 0, 0]; c[0] += SP[i * 3]; c[1] += SP[i * 3 + 2]; c[2]++; C.set(b, c); }
+  for (const i of sv) { const b = band(SP[i * 3 + 1]), c = C.get(b), k = b + ':' + dir(SP[i * 3] - c[0] / c[2], SP[i * 3 + 2] - c[1] / c[2]); B.set(k, Math.max(B.get(k) || 0, Math.hypot(SP[i * 3] - c[0] / c[2], SP[i * 3 + 2] - c[1] / c[2]))); }
+  let n = 0, bad = 0; const test = (X, list) => { for (const h of list) { const b = band(X[h * 3 + 1]), c = C.get(b); if (!c || c[2] < 24) continue; const dx = X[h * 3] - c[0] / c[2], dz = X[h * 3 + 2] - c[1] / c[2], R = B.get(b + ':' + dir(dx, dz)); if (!R) continue; n++; if (Math.hypot(dx, dz) > R + .003) bad++; } };
+  test(PP, body0.filter(i => { const y = R0[i * 3 + 1]; return Math.abs(R0[i * 3]) < .2 && y > -.24 && y < .05; }));
+  for (const nm of ['trousers', 'skirt', 'tunic']) { const m = meshes.find(q => q.name === nm); if (!m) continue; const idx = [...new Set(m.geometry.index.array)].filter(i => { const y = R0[i * 3 + 1]; return Math.abs(R0[i * 3]) < .2 && y > -.24 && y < .05; }); test(posedOf(m), idx); }
+  out.legsOut = bad; out.legPts = n; return out;
+}
 // the robe's promises, on the posed body: no point of the hands inside the skirt, no point of the forearm out through its
 // sleeve, and how far the sleeve stands off the wrist at the cuff (the nearest cloth point over each, along its normal)
 function robeStats(body, meshes) {
   const PP = posedBody(body), R0 = PACK.rest, out = {};
-  // the cloth's normals on the posed shell (the bind pose's turn with the arms), and only its points on the same side
-  const through = (verts, m, idx, sign, keep = () => true) => { const SP = posedOf(m), pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(SP, 3)); pg.setIndex(m.geometry.index); pg.computeVertexNormals();
-    const N = pg.attributes.normal.array, sv = [...new Set(idx)]; let bad = 0, gap = 0;
-    for (const h of verts) { let bd = 1e9, bs = -1; for (const i of sv) { if (!keep(i, h)) continue; const d = (SP[i * 3] - PP[h * 3]) ** 2 + (SP[i * 3 + 1] - PP[h * 3 + 1]) ** 2 + (SP[i * 3 + 2] - PP[h * 3 + 2]) ** 2; if (d < bd) { bd = d; bs = i; } }
-      const o = (PP[h * 3] - SP[bs * 3]) * N[bs * 3] + (PP[h * 3 + 1] - SP[bs * 3 + 1]) * N[bs * 3 + 1] + (PP[h * 3 + 2] - SP[bs * 3 + 2]) * N[bs * 3 + 2]; if (sign * o > .002) bad++; gap += -o; } return { n: verts.length, bad, gap: +(gap / verts.length).toFixed(4) }; };
+  const through = (...a) => shellThrough(PP, ...a);
   const body0 = [...new Set(PACK.G['body'])], skirt = meshes.find(m => m.name === 'skirt'), tunic = meshes.find(m => m.name === 'tunic');
   const fore = body0.filter(i => Math.abs(R0[i * 3]) > .3 && Math.abs(R0[i * 3]) < .385 && Math.abs(R0[i * 3 + 2]) < .06);
   { const H = handsInSkirt(body, skirt); out.handsInSkirt = H.bad; out.handPts = H.n; }
@@ -798,6 +903,8 @@ export function makePerson(G, o = {}) {
   // the robe (Session 887, B2): one cloth from the shoulders to the ankles, worn as the tunic and the long skirt in the robe's
   // colour, with sleeves that widen to the cuff and a fuller hem; a rope cord takes the belt's place, nothing under it shows
   if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, cuffs: null, cord: R.cord || [.62, .55, .42] } }; }
+  // mail (Session 890) is worn over a padded coat, the tunic, and belted over: a man or woman in mail without either gets them
+  if (G.dress?.mail && !G.dress.robe) { const M = G.dress; G = { ...G, dress: { ...M, tunic: M.tunic || [.6, .54, .42], belt: M.belt || [.24, .16, .1] } }; }
   const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null, browStats = null;
   // the feet on the ground
   let minY = 1e9; for (let i = 1; i < P.length; i += 3) if (P[i] < minY) minY = P[i];
@@ -821,12 +928,20 @@ export function makePerson(G, o = {}) {
   // a robe's tunic ends under the cord (rest .145), so its hem does not stand out over the skirt; its sleeves widen from above the elbow to 3 cm off the arm at the cuff: a shell skinned as the arm is, so the arm
   // never comes through it, and seen from both sides, since its open cuff shows the inside
   const sleeve = x => D.robe ? .03 * Math.max(0, Math.min(1, (Math.abs(x) - .24) / .16)) ** 1.5 : 0;
-  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}) }), (x, y) => .013 + sleeve(x) + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0));
+  const tunicPush = (x, y) => .013 + sleeve(x) + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0);
+  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}) }), tunicPush);
   // a laced bodice over the chemise (Session 888; OG-110's green laced gown, OG-109's Gatelands bodices): 8 mm over the
   // tunic, ending under the belt (rest .14), open down the front between the eyelets, so the chemise shows in the gap; the lacing is built after the pose
   if (D.bodice) push('bodice', PACK.R.bodice, clothMat(sRGB(...D.bodice), 'wool', { cut: [.14, .62, .19, .002], hole: '(vB.z > .03 && abs(vB.x) < .0085 && vB.y > .2 && vB.y < .5) || (vB.y > .485 && (abs(vB.x) < .068 || abs(vB.x) > .148))', side: THREE.DoubleSide, inner: .5 }), (x, y) => .021 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0));
   if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01] }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
-  if (D.belt) push('belt', PACK.R.belt, clothMat(sRGB(...D.belt), 'leather', { cut: [.135, .19, 9, .0005] }), .03);
+  // the mail hauberk (Session 890; OG-019's Iron tier, mail to the knee under a belt): its body 9 mm over the tunic, its sleeves
+  // to the elbow (cut at rest |x| .3), its neck at the tunic's; its skirt off the skirt shell, 1.2 cm over a skirt's, from under the
+  // belt to above the knee. Both are shells skinned as the body is, so no arm or leg comes through them; the belt rides 8 mm out on the mail
+  const mail = D.mail && !D.robe;
+  if (mail) { const top = { cut: [.06, .6, .3, .003] }, skirt = { side: THREE.DoubleSide, cut: [-.27, .17, 9, .012] };
+    push('mail', PACK.R.mailTop, mailMat(sRGB(...D.mail), top), (x, y) => tunicPush(x, y) + .009 + .012 * Math.max(0, Math.min(1, (.2 - y) / .1))).customDepthMaterial = cutDepth(top);
+    push('mailSkirt', PACK.R.mailSkirt, mailMat(sRGB(...D.mail), skirt), (x, y) => .024 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt === 'long' ? .006 : 0)).customDepthMaterial = cutDepth(skirt); }
+  if (D.belt) push('belt', PACK.R.belt, clothMat(sRGB(...D.belt), 'leather', { cut: [.135, .19, 9, .0005] }), mail ? .038 : .03);
   if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { hole: 'abs(vB.x) < .371 || abs(vB.x) > .411', ...(D.cuffBand ? { band: sRGB(...D.cuffBand) } : {}) }), .02);
   if (D.apron) { const lea = !!D.apronLeather, am = clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [lea ? -.52 : -.42, .175, .155, .004] });
     push('apron', PACK.R.apron, am, (x, y) => .03 + .012 * Math.max(0, Math.min(1, (.1 - y) / .4))); if (D.bib) push('bib', PACK.R.apronBib, clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [.1, .46, .105, .003] }), .04); }
@@ -839,9 +954,9 @@ export function makePerson(G, o = {}) {
     // and at the sides comes down onto the skin toward that border (0.8 mm, from 2.5), so its faded edge is not a ledge seen side-on by the ear
     sm.geometry.setAttribute('aEdge', new THREE.BufferAttribute(PACK.scalpEdge, 1));
     const headB = ix.bones.findIndex(b => b.name === 'head'), bb = new THREE.Box3(); for (const v of scalp) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.004); hc.y -= .02; hr.y += .02;
-    const tuck = D.cloak && D.hood === 'up' ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
+    const tuck = D.cloak && D.hood === 'up' || D.helm ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
     // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline
-    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || m.name !== 'hair')); hairStats = H.stats;
+    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || D.helm && !(D.cloak && D.hood === 'up') || m.name !== 'hair')); hairStats = H.stats;
     { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
     if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
       push('beardBase', PACK.R.beardBase, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
@@ -861,6 +976,7 @@ export function makePerson(G, o = {}) {
   for (const side of ['l', 'r']) { const L = new Set(PACK.G[`helper-${side}-eye`]), c = new THREE.Vector3(); let r = 0; for (const i of L) c.add(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])); c.divideScalar(L.size); for (const i of L) r = Math.max(r, c.distanceTo(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])));
     const eg = new THREE.SphereGeometry(r * .8, 32, 24); eg.rotateY(-Math.PI / 2); const e = new THREE.Mesh(eg, new THREE.MeshPhysicalMaterial({ map: eyeTex, roughness: .08, clearcoat: 1 }));
     const head = byName['head']; head.updateWorldMatrix(true, false); e.position.copy(c).sub(heads['head']); e.position.z -= r * .12; head.add(e); }
+  let helmStats = null; if (D.helm) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } helmStats = buildHelm(P, G, heads, byName, hp).stats; }
   // pose: arms down from the A-pose, a slight bend at the elbow, weight on one leg, the head turned a little
   const q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
   const pose = Object.assign({ arm: .73, elbow: .62, head: 0, hip: 0 }, G.pose || {});
@@ -871,15 +987,18 @@ export function makePerson(G, o = {}) {
   // a long skirt (and so a robe) stands out at the thigh, where the hands hang: the arms are lifted out from the side, three
   // hundredths of a radian at a time, until no point of either hand is inside it (Session 887; the genome's pose is unchanged)
   // Not under a full cloak: it hangs over the hands and is built round the arms where they are, so lifting them only lumps it
-  let lift = 0, skirtHands = null; const skM = D.skirt === 'long' && !(D.cloak && !D.cape) && meshes.find(m => m.name === 'skirt');
-  if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM); if (!skirtHands.bad || k === 10) break; lift += .03;
+  // A mail skirt stands out further still, and is lifted clear of the same way (Session 890)
+  let lift = 0, skirtHands = null; const skM = !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt === 'long' && meshes.find(m => m.name === 'skirt'));
+  const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV() : undefined;
+  if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM, undefined, skV); if (!skirtHands.bad || k === 10) break; lift += .03;
     byName['upperarm01.L'].quaternion.copy(q(0, 0, -(pose.arm - lift))); byName['upperarm01.R'].quaternion.copy(q(0, 0, pose.arm - lift)); }
   if (skirtHands) skirtHands.lift = +lift.toFixed(2);
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
   let laceStats = null; if (D.bodice) { root.updateMatrixWorld(true); const L = buildLacing(G, meshes); for (const m of L.meshes) root.add(m); laceStats = L.stats; }
   let cordStats = null; if (D.cord) { root.updateMatrixWorld(true); const C = buildCord(G, body, meshes); for (const m of C.meshes) root.add(m); cordStats = C.stats; if (D.robe && o.robeStats !== false) Object.assign(cordStats, robeStats(body, meshes)); }
+  let mailSt = null; if (mail && o.mailStats !== false) { root.updateMatrixWorld(true); mailSt = mailStats(body, meshes); }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -902,7 +1021,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

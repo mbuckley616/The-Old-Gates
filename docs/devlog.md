@@ -18352,3 +18352,46 @@ What changed in `people.js`:
 ### Needs eyes
 - **The chevron's scale and stepping.** It is one triangle wave round the arm, about 1 cm a step. It is read off the rest body's coordinates, not a true angle round the wrist, so on a thick arm the steps stretch a little.
 - **Where the cuff sits.** On a man in a short-sleeved tunic, the band is at the sleeve's end above the elbow, as the plain cuff always was. OG-025 draws the bands at the wrist on long sleeves. That waits on sleeve length becoming a choice in the wardrobe.
+
+## v80 — Session 897 — The Iron tier: a mail hauberk and a kettle helm (B2, prototype only)
+Armour was the last piece owed in the wardrobe kit (B2 in `character-builder.md`: aprons, cloaks, hoods, robes, dresses, **armour tiers**). OG-019, the tier board Michael kept, draws the canon's ten tiers in three lines on one body. This session builds one tier of the heavy line, Iron, as the sheet draws it: mail to the knee under a belt, and a kettle helm. It follows the method Michael chose on #274 (*drapes hang, shells fit*), to his condition that no arm comes through. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`, and the labels in `builder.js`).
+
+What changed in `people.js`:
+- **Mail is a garment colour, `mail`.** Worn over the tunic as a padded coat, it gives the person a padded tunic and a belt when they have none. It saves and loads, and shows on the page as "mail hauberk".
+  - **Its body** is a shell off the tights, 9 mm over the tunic everywhere, and 2.1 cm over it below the belt, where it overlaps its own skirt. The sleeves are cut in the shader at rest |x| 0.3, which is the elbow (the elbow joint is at 0.313). Its neck is cut just under the tunic's, so the coat's collar shows.
+  - **Its skirt** is a shell off the skirt helper, from under the belt to rest y −0.27, a hand above the knee (the knee is at −0.369). It stands 2.4 to 6.6 cm off the skirt shell, most at the hip, where the tunic's front stands out furthest. Over a long skirt it is 6 mm more.
+  - The belt rides 3.8 cm out instead of 3 cm, on the mail.
+- **The rings** (`mailMat`) are drawn in the shader on the rest body's coordinates and seen three ways, as the cloth's weave is: rows of rings about 7 mm across, each row offset by half a ring, with dark gaps and holes. Their edges are antialiased with `fwidth`. Where a pixel holds more than about a ring, the pattern gives way to its average grey, so it does not shimmer at a distance. The gaps are rougher than the rings.
+- **Shadows cut like the garment.** Every garment's shadow was cast by its whole shell region, including the triangles its shader cuts away. On the mail's hem that threw a row of black teeth onto the thighs. The mail's two shells now cast through `cutDepth`, a depth material with the same cut. The older garments still cast their full regions; they were cut close enough that it did not show.
+- **The arms are lifted clear of the mail skirt**, by Session 887's rule for long skirts (`handsInSkirt` now takes the shell's own points): 0.15 to 0.3 rad. Under a full cloak they are not lifted, as before.
+- **The kettle helm** (`buildHelm`) is a rigid iron hat carried by the head bone. Its colour is `helm`, shown as "kettle helm".
+  - **The dome is fitted to the skull.** Round a centre at the rim's height, it takes the furthest point of the head in each of 72 × 24 directions, spreads it to its neighbours, smooths it four times without going below the spread, and adds 1.2 cm. The first try was an ellipsoid grown until it cleared the occiput. It came out 31 cm deep, a bowl on a stick.
+  - **The rim** sits a little over the brows at the front, above the ears at the sides (their tops are at rest y 0.765), and 4.5 cm lower at the nape.
+  - **A band** 1.5 cm high stands 2.5 mm proud round the rim. **The brim** is 4.2 cm wide and slopes 30 degrees down, with a rolled edge. 5,184 triangles in all.
+  - **The hair is tucked short** under it, as under a hood. Unlike under a hood, the short cards are kept, and the dome is fitted round them with 4 mm to spare. Fitted round the head alone, a woman's tucked hair showed through the crown as gold flecks.
+- **The tabard hangs over the mail.** `buildTabard` read the body, the tights and a skirt, but not the mail. In the first picture its front panel hung behind the mail skirt, and only a red lump showed through. Its outline now takes the mail's body and skirt by their own pushes, and its waist under the belt is 3.4 cm off the tights instead of 2.5.
+- **`shellThrough`**, the robe's test of points against a garment's posed shell, is now a function of its own. The mail's test (`mailStats`) uses it too.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 220 checks pass**, nine of them new. Four people are armoured: a man in mail and a helm, a woman in mail over a long skirt, a Markman under a fur-collared cloak, and a man under the Crown tabard. For each:
+  - **Nothing comes through the mail**, measured on the posed body against the posed shells:
+    - 0 of 348 upper-arm points are out through the sleeve.
+    - 0 of 524 tunic points are out through the body. The crease under the arm, where the arm's own skin folds both shells, is left out of this test. It held 2 to 16 points out by up to 8.7 mm before that region was dropped.
+    - 0 of 139 to 371 leg, trouser and skirt points are out of the mail skirt, measured radially in 2 cm bands. Bands with fewer than 24 of the skirt's points are not tested: 3 points at the skirt's top read 33 cm out against a centre skewed by a handful of points.
+  - **No hand is inside the mail skirt**: 0 of 606 to 975 points, with the arms lifted 0.15 to 0.3 rad.
+  - **The helm**: 20.5 to 22.7 cm wide and 23.3 to 26.2 cm deep. The head is 12.0 mm inside it at the nearest. No hair is through it (0 of about 27,800 card points). No point of the face rises into its brim (0 of about 4,080 below the rim).
+  - **The tabard over the mail**: 0 of 2,301 points through.
+  - Each saves and loads back.
+- **Owed, not checked: a cloak over mail.** 25 of 7,114 points of the mail are out through the Markman's cloak. They are at the back of the mail's skirt, at the buttocks, up to 1.7 cm out. The check prints the count and does not pass or fail on it. Raising the cloak's clearance (`clearAt`) did not move them, so they come from the folds, not from where the cloak lies on the back. A cloak over mail is the next thing owed.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-iron.jpg`, `-iron-back` and `-iron-woman`: the mail and helm, front and back, and on a woman over a long skirt.
+  - `builder-armour-helm.jpg`, `-helm-side` and `-helm-woman`: the helm close up.
+  - `builder-armour-crown.jpg`: mail under the Crown tabard.
+  - `builder-armour-markman.jpg`: under a fur-collared cloak.
+### Needs eyes
+- **The rings close up** read a little like sequins (`builder-armour-helm.jpg`). Real mail interlinks: each ring passes through four others, so it reads in diagonal ranks. A pattern with each ring's shading split where its neighbours cross over it would be truer. At play distance it reads as grey mail.
+- **The helm's iron is one smooth grey**: no hammer marks, no rivets, no comb.
+- **The face under the brim is bare.** OG-019's Iron tier may wear a mail coif under the helm; the thumbnail is too small to tell. A coif would also cover the tucked hair and the neck.
+- **Not yet in this tier:** the round shield and crossed belt that every tier of OG-019's heavy line carries. They are a prop and a strap, not a garment. The nine other tiers, and the light and robe lines, are owed. A shell and the ring shader will carry Bronze's scale and Steel's plate only so far: plate wants rigid pieces on the bones, as the helm is.
+- **Under a full cloak, the hands still rest inside the mail skirt**, out of sight, as they do in a long skirt.
