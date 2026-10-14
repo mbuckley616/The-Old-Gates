@@ -630,3 +630,76 @@ Build s597 is main at `c932e49`, merged into this branch. The devlog entries sin
 - I: the *Sailing playtest* block is all struck and could close (third run noted).
 - I: every s572 and s585 line is now struck, and the duplicates are gone. Session 753's clean-up held.
 - No proposals this run.
+
+## 2026-10-14 — The new look: F1's switch in today's game (Dunmore at noon and 22h, the inn, a gate), and the F6 prototypes: the Gatelands pieces, Aurenne's lane, the Mark's halls, the gate slice (build s627)
+
+Build s627 is main at `a7c312b`, merged into this branch. My last entry was a playtest, so this run reviews the new look. Devlog entries since then run from Session 771 to Session 830. `npm install` exits 0 and `export` passes 1/1. I made six boots of the game: three on the old look and three on `?look=new`. None threw a page error or a console error. I shot the prototype pages in `docs/prototypes/levelup/` at 1600×900, served over http as `shoot.mjs` serves them. The people's pack (`mh/`) is gitignored and absent from a fresh checkout. So every prototype page here drew without its townsfolk and logged one JSON error for the missing pack. Scale in the pages was judged from their own `__stats` and the code's numbers, not from a figure on screen. Cheats, all named: `settle()`, `forceTime`, `goToInterior` for the inn, `goToDungeon` for the gate, and the camera placed by hand.
+
+**The new look**
+
+*F1 in the game (`?look=new`): every skinned body is culled away.* This is the one real fault of the run, and it is in today's game, behind the Renderer setting. On three.js 0.170, Dunmore at noon in third person has no people in it. My own body is gone, and only the club floats where my hand would be. Five townsfolk stand 5.8 to 16 m off with `root.visible` true, and none of them is drawn (`critic/2026-10-14-newlook-dunmore-noon-no-bodies.jpg`). At 22h the guard that the old look shows by the lamp is reduced to his spear lying on the grass (`-oldlook-dunmore-22h.jpg` against `-newlook-dunmore-22h.jpg`).
+
+The cause, as far as I can measure it:
+- The scene holds 149 skinned meshes, all with `frustumCulled` true.
+- r128 culled a skinned mesh by its geometry's sphere. The game sets that sphere itself (`geo.boundingSphere.radius*=1.35`, `32-people.js`).
+- Since r151, three.js gives `SkinnedMesh` a sphere of its own, computed from the skinned vertices. For the game's people it comes out in world coordinates: centre (13552.5, 9.7, 25396.2), radius 0.6, for a mesh standing at (13552, 9, 25396). The frustum test then moves that sphere by the mesh's world matrix a second time, about 13 km away, so it fails.
+- With `frustumCulled=false` on every skinned mesh, the same frame draws 52 more calls (584 → 636), and the people and my body are back (`-newlook-dunmore-noon-culling-off.jpg`).
+
+Wolves and every other skinned rig share the path. `looknew` checks that the townsfolk's bone matrices change, not that they draw. Session 822's committed picture `docs/prototypes/f1/dunmore-noon-r170.png` has no one in it either, which nobody could tell from an empty square. The likely fix sits in `05-compat.js`, where the version is read: on 0.170, make `SkinnedMesh.prototype.computeBoundingSphere` copy the geometry's sphere. Filed in I. F2 builds on this switch now, so it matters soon.
+
+*F1 at night: the picture is not today's.* Session 822 matched the two looks at noon and named per-pixel Lambert as a risk. At night that risk is the whole frame:
+- Dunmore at 22h: mean brightness 43 on the old look and 64 on the new, a mean difference of 23 on 255, with 31% of pixels off by more than 24.
+- The wall beside the lamp is dark on r128 and glows ochre on 0.170. The moon's shadows across the green are gone on 0.170.
+- The inn at 22h: brightness 84 → 102, with 44% of pixels off by more than 24. The floor goes from brown to bright orange (`-oldlook-inn-22h.jpg`, `-newlook-inn-22h.jpg`).
+- A gate's floor with a carried lantern barely changes (mean difference 2.1).
+- On software GL the inn's frame took 5,065 ms to draw against 1,428 ms on r128, at the same 59 calls. Dunmore took 15.2 s against 11.7 s. These are software numbers and only the ratios mean anything, but 3.5× indoors is worth a GPU measurement before F3.
+
+I did not file this as a bug, because Session 822 foresaw it and F3 replaces the materials. But "the same game, looking the same" holds only by day.
+
+*The Gatelands' buildings as pieces* (the concept artist's `pieces-gatelands.html`; OG-070, OG-014). This is the best of the slices.
+- The town street reads at once as an Irish town. Four-storey terraces in ochre, rose, cream and sage, with quoins, string courses, downpipes and sash windows. The draper's harp sign is OG-070's own detail, and a high cross closes the view (`-pieces-gatelands-street.jpg`).
+- The cottages have the tarred plinth and the scalloped ridge.
+- Cost per plan: cottage 1,826 triangles in 11 calls; townhouse 5,081 in 11; warehouse 9,132 in 10.
+
+What is off:
+- *The half-door shows a wall, not a room.* On the street at noon, the open upper leaf of the cottage's half-door shows pale plaster where the dark room should be. The red lower leaf then reads as a whole door about 1.1 m tall in a niche, a child's door (`-pieces-gatelands-half-door.jpg`, from `?cam=cottage`). In the kit view, on a wall stub, the same piece is dark behind, as it should be. In the street the cottage's inside is open to light.
+- *Some storeys are higher than the foundation's table allows.* `SCALE.storey` gives the town ground floor 3.3 m, the shop 3.6 and the store 3.4. `visual-foundation.md` §1 says 2.6 to 3.0, and its ratio test (storey to person 1.45 to 1.7) would fail 3.3/1.8 = 1.83 and 3.6/1.8 = 2.0. A Georgian ground floor is tall in life, so this may be right, but then the table should say so before F2's test meets it.
+- *The surfaces.* The thatch is one saturated orange, with streaks stretched down the eaves, where OG-070's thatch is a weathered honey-brown. Seen from the high camera, the terraces' end gables are bare slabs of flat grey-green (`-pieces-gatelands-high.jpg`).
+
+*Aurenne's lane* (Sessions 816 and 820; OG-061, OG-044).
+- Session 820's limestone does its job: the paving now reads pale and warm. The zellige door frames and the cedar lattice boxes read well (`-aurenne-street.jpg`).
+- The bougainvillea is still the weak piece, as 816 and 820 both say. At the lane's near edge its blooms are fist-sized magenta polyhedra.
+- Against OG-061 the lane is a strip of single boxes on flat ground. The art's terraces, stacked domes, aqueduct and greenery are not there yet. That is the town plan, not the house piece.
+- The houses keep to the foundation: ground floor 3.0 and upper floor 2.6, door 2.0, one storey 4.45 m to the top, two storeys up to 9.3.
+
+*The Mark's halls* (Session 819, DECISION #277; OG-034).
+- The shingle hall with crossed beast-head bargeboards is right for OG-034, and it is the stronger of the two (`-mark-halls.jpg`).
+- The turf is green felt with rust patches, as 819 says. Its birch-bark eave edge reads as a bright cream plank (`-mark-lane-mix.jpg`).
+- *A scale fault.* The door stands on the 0.8 m footing, and its only threshold is one stone block whose top is at 0.8 m. There is no step, and the Gatelands kit uses `SCALE.step` 0.16. The porches likewise sit on a waist-high platform. The side windows' sills are at 2.1 m.
+- The footing's coursed blocks with pale joints read as a modern block wall, as 819 noted.
+
+*The gate slice* (Session 771; OG-037).
+- The tents at its foot finally make the size read. The two ring sigils and the glyph spine are OG-037's (`-gate-slice.jpg`).
+- What the art has and the slice lacks:
+  - *the arch.* OG-037's arches are round-headed stepped rings standing deep and proud of the hill, casting shadow; the slice's is a pointed lancet set nearly flush, so it reads as a cathedral door painted on a cliff;
+  - *the hill.* The art's hill is green ledges and moss; the slice's is one sheet of striated brown with its trees stuck out sideways on the face.
+
+*Frame counter.* The pieces page in live mode read *0 fps* after 25 s on software GL. That says nothing about a real GPU; I could judge no frame rate this run.
+
+**Needs eyes, reviewed**
+- *Session 822 (F1):*
+  - *"the two looks side by side on a real machine":* by day they match here too. At night they do not (above).
+  - *"Lambert per pixel":* confirmed, and larger than "a rounder pool": the whole inn floor changes colour.
+  - *The renderer row waiting for a reload:* not exercised.
+  - Missed by the entry: the culling.
+- *Session 816:* the plaster with no weathering, confirmed; the paving, since fixed by 820. *Session 820:* the bougainvillea, still faceted, agreed.
+- *Session 818:* the lane is the same picture; nothing to judge.
+- *Session 819:* the turf as felt, the plain sides, and the footing's stone all confirmed. On #277 I would add the doorstep (above) to whatever is chosen.
+- *Sessions 804, 805, 806, 815 (the builder, the wardrobe, the peoples):* not judged. Their pages need the `mh/` pack, which a fresh checkout does not have.
+- *Sessions 798 and 799 (my s597 findings), 817 (the barrels), 803, 787–802 (the trials and the claimants):* not played on a new-look run.
+- *Sessions 807–814:* tests only. *Sessions 827–830:* docs only.
+
+**Backlog notes** (not changed):
+- I: the *Sailing playtest* block is all struck and could close (fourth run noted).
+- K or QA: `looknew` should check that a person draws (a pixel or a call count), not only that their bones move. Today's culling passed it.
+- No proposals this run.

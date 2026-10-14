@@ -88,7 +88,8 @@ P.tail = (B, o) => {
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'tail', tone: o.tone });
   B.tailEnd = pts[n]; B.tailBone = names[n - 1];
   // a bird's tail: a fan of feathers off the last bone (Session 775)
-  if (o.fan) for (let i = 0; i < o.fan.n; i++) { const a = (i / (o.fan.n - 1) - .5) * o.fan.spread * DEG, d = V(Math.sin(a), -.08, -Math.cos(a)).normalize(); feather(B, pts[n].clone().add(V(0, .002 * i, 0)), d, V(Math.cos(a), 0, Math.sin(a)), o.fan.len * (1 - .12 * Math.abs(i / (o.fan.n - 1) - .5)), o.fan.len * .2, names[n - 1], 'feather', 'featherTip'); }
+  // `raise` (Session 853) stands the fan up from flat toward upright, a display (the Sunfan's)
+  if (o.fan) for (let i = 0; i < o.fan.n; i++) { const a = (i / (o.fan.n - 1) - .5) * o.fan.spread * DEG, X = V(1, 0, 0), up = (o.fan.raise || 0) * DEG, d = V(Math.sin(a), -.08, -Math.cos(a)).normalize().applyAxisAngle(X, up); feather(B, pts[n].clone().add(V(0, .002 * i, 0)), d, V(Math.cos(a), 0, Math.sin(a)).applyAxisAngle(X, up), o.fan.len * (1 - .12 * Math.abs(i / (o.fan.n - 1) - .5)), o.fan.len * .2, names[n - 1], 'feather', 'featherTip'); }
   if (o.sting) B.bit(names[n - 1], claw(o.sting.r, o.sting.len, B.tone('dark'), pts[n], pts[n].clone().sub(pts[n - 1]).normalize().applyAxisAngle(V(1, 0, 0), -.9)));
 };
 // legs, in pairs. A leg is its preset's joints in a frame of its own: x outward, y up as a fraction of the root's height,
@@ -346,6 +347,12 @@ function dressFlesh(geo, B, pal, plan) {
     if (pal.belly && coatW > 0) C.lerp(pal.belly, coatW * sstep(-.1, -.75, ny));
     if (pat?.kind === 'bands') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 6, y * 6, z * 2) * 1.2); if (b > .35) C.lerp(pal[pat.tone], .85 * coatW); }
     if (pat?.kind === 'stripes') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 3, y * 3, z) * 2.5); if (b > .55 && ny > -.2) C.lerp(pal[pat.tone], .7 * coatW); }
+    // patches (Session 845): a pied coat, where low-frequency noise crosses a threshold; the edge is a little ragged
+    if (pat?.kind === 'patches') { const q = PN.noise(x / pat.size, y / pat.size + 7.3, z / pat.size) + PN.noise(x * 9, y * 9, z * 9) * .08; if (q > (pat.cut ?? .1)) C.lerp(pal[pat.tone], (pat.amount ?? 1) * coatW); }
+    // a face mask (Session 845): on the head, between two distances out from its middle line, from the nose back over
+    // the eyes to the ears, a stripe of one tone, and the rest of the face another (the badger's black stripes on white)
+    if (plan.face && B.headFrame && B.by.head && (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum > .5) { const F = plan.face, H = B.headFrame, rel = V(x, y, z).sub(H.base), along = rel.dot(H.dir) / H.len, side = Math.abs(rel.x) / H.r, upw = rel.dot(H.up) / H.r;
+      if (along > (F.back ?? -.3) && upw > -.35) C.copy(pal[side > F.from && side < F.to ? F.stripe : F.ground]).multiplyScalar(.95 + .1 * PN.noise(x * 40, y * 40, z * 40)); }
     const mott = 1 + (PN.noise(x * 4.1, y * 4.1, z * 4.1) * .16 + PN.noise(x * 17, y * 17, z * 17) * .06) * (plan.mottle ?? 1); C.multiplyScalar(mott);
     col[v * 3] = C.r; col[v * 3 + 1] = C.g; col[v * 3 + 2] = C.b; fur[v] = furry;
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
@@ -417,7 +424,7 @@ export function build(g) {
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
   if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
   if (B.tubes.length) { const m = new THREE.SkinnedMesh(tubeGeo(B, pal, plan.threadGlow || 1), plan.threadGlow ? new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 })); m.name = 'threads'; meshes.push(m); }
-  for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75 })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
+  for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75, ...(plan.wingOpacity < 1 ? { transparent: true, opacity: plan.wingOpacity, depthWrite: false } : {}) })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
   for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = true; bones[b.i].add(obj); }
   rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
@@ -833,3 +840,457 @@ PLANS.skyraven.parts = flier({ eye: [.1, .08, .06], beak: .075, hook: .12, prima
 PLANS.craghawk.parts = flier({ eye: [.9, .75, .15], beak: .05, hook: .4, primary: 1.1 });
 // the post hare is the Snowleap Hare's body at five and a half times its size, saddled
 PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 }]];
+// ── Session 843: the common set (OG-084's "all islands": wolf, red fox, brown hare, raven, crow, wild boar, deer, badger,
+// otter, trout; backlog L3). Peaceful animals, the first the game has. Five are other plans at another size and colour;
+// the fox, the boar, the badger and the otter have parts of their own, from the kit's parts and leg presets ──
+const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, ...o, parts: o.parts || base.parts });
+Object.assign(PLANS, {
+  wolf: re(PLANS.ironwolf, { name: 'Grey wolf', src: 'OG-084 (all islands: wolf)', scale: .92, palette: { coat: [.5, .45, .38], saddle: [.24, .21, .18], belly: [.84, .8, .72], dark: [.06, .05, .05], horn: [.8, .76, .7] }, fur: { len: .032, layers: 9, sx: 260 } }),
+  redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand'], wag: .06, speedK: 1.1,
+    palette: { coat: [.72, .34, .12], saddle: [.55, .24, .08], belly: [.95, .92, .86], dark: [.08, .05, .04], pale: [.97, .95, .9] },
+    fur: { len: .028, layers: 8, sx: 320 },
+    parts: [
+      ['spine', { hip: [.36, -.24], chest: [.38, .19], n: 4, r: [.075, .07, .085], s: [.82, 1.1], rump: .07, front: .07, frontDrop: .02, arch: .02 }],
+      ['neck', { len: .14, n: 2, rise: 35, r: [.07, .055], fwd: .01 }],
+      ['head', { len: .2, r: .055, pitch: 10, s: [1, .92, 1.1], muzzle: { len: 1, r: .026, nose: 1, drop: .03, taper: .5 }, jaw: { len: .85, r: .02, drop: .55 }, eyes: [{ f: .4, up: .4, out: .55, r: .009, color: [.85, .55, .1] }], ears: { kind: 'cone', size: .09, f: .1, up: .9, out: .55, back: 8, splay: 14 } }],
+      ['tail', { len: .42, n: 4, r: [.06, .085, .05], droop: 30, curl: -4, s: [1, 1] }],
+      ['legs', { at: 1, kind: 'canidFore', out: .05, drop: .03, r: [.05, .028, .018, .016], claws: { r: .004, len: .012 } }],
+      ['legs', { at: 0, kind: 'canidHind', out: .05, drop: .02, r: [.06, .032, .02, .017], claws: { r: .004, len: .012 } }]
+    ] },
+  brownhare: re(PLANS.snowhare, { name: 'Brown hare', src: 'OG-084 (all islands: brown hare)', scale: 1.2, palette: { coat: [.56, .42, .28], saddle: [.4, .29, .18], belly: [.9, .86, .78], dark: [.08, .06, .05], pale: [.95, .94, .9] }, fur: { len: .02, layers: 8, sx: 380 }, parts: PLANS.snowhare.parts }),
+  raven: re(PLANS.skyraven, { name: 'Raven', src: 'OG-084 (all islands: raven)', scale: .9, palette: PLANS.skyraven.palette, fur: PLANS.skyraven.fur }),
+  crow: re(PLANS.skyraven, { name: 'Crow', src: 'OG-084 (all islands: crow)', scale: .72, gaits: ['walk', 'hop', 'soar', 'stand'],
+    palette: { coat: [.13, .13, .15], saddle: [.09, .09, .11], belly: [.16, .16, .18], dark: [.03, .03, .03], horn: [.06, .06, .07], skin: [.08, .08, .08], feather: [.12, .12, .14], featherTip: [.05, .05, .06], covert: [.15, .15, .18] }, fur: PLANS.skyraven.fur,
+    parts: flier({ eye: [.1, .08, .06], beak: .055, hook: .06, primary: .9 }) }),
+  boar: { name: 'Wild boar', src: 'OG-084 (all islands: wild boar), OG-009 (Gatefen Boar)', gaits: ['trot', 'walk', 'gallop', 'stand'], wag: .08, fold: .7, speedK: .9, rough: .7,
+    palette: { coat: [.3, .25, .2], saddle: [.18, .15, .12], belly: [.4, .34, .28], dark: [.06, .05, .04], hoof: [.1, .08, .07], horn: [.88, .84, .74], skin: [.42, .32, .28] },
+    fur: { len: .045, layers: 9, sx: 110, sy: 30, droop: .2 },
+    parts: [
+      ['spine', { hip: [.62, -.5], chest: [.7, .38], n: 4, r: [.24, .27, .3], s: [.82, 1.08], rump: .16, rumpDrop: .06, front: .2, frontDrop: .08, hump: { at: .85, up: .1, len: .35, r: .2 } }],
+      ['neck', { len: .16, n: 1, rise: -8, r: [.24, .2], fwd: .02 }],
+      ['head', { len: .46, r: .15, pitch: 32, s: [.9, 1, 1], muzzle: { len: 1, r: .075, taper: .7, drop: .02 }, jaw: { len: .82, r: .06, drop: .55 }, eyes: [{ f: .35, up: .45, out: .6, r: .011, color: [.12, .07, .04] }], ears: { kind: 'leaf', size: .07, f: .15, up: .9, out: .6, back: 15, splay: 40 },
+        horns: { len: .11, r: .014, f: .82, up: -.55, out: .5, turn: .5, rise: 1.1, spread: .1, back: -.3, out0: .1 } }],
+      ['tail', { len: .2, n: 2, r: [.04, .028], droop: 70 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .12, drop: .1, r: [.11, .065, .035, .036] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .12, drop: .07, r: [.14, .075, .036, .036] }]
+    ] },
+  deer: re(PLANS.stag, { name: 'Deer', src: 'OG-084 (all islands: deer), OG-014 (deer in the fields)', scale: .74,
+    palette: { coat: [.58, .38, .22], saddle: [.42, .27, .15], belly: [.9, .84, .72], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.7, .62, .48] }, fur: PLANS.stag.fur,
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: .5, depth: 1 } }] : [k, o]) }),
+  badger: { name: 'Badger', src: 'OG-084 (all islands: badger; Woodland Badger)', gaits: ['walk', 'trot', 'stand'], wag: .02, fold: .5, speedK: .7, rough: .7, face: { from: .28, to: .78, stripe: 'dark', ground: 'pale', back: -.45 },
+    palette: { coat: [.52, .5, .48], saddle: [.38, .37, .36], belly: [.12, .11, .11], dark: [.05, .05, .05], pale: [.92, .91, .88] },
+    fur: { len: .03, layers: 8, sx: 200, droop: .3 },
+    parts: [
+      ['spine', { hip: [.2, -.3], chest: [.22, .2], n: 4, r: [.13, .14, .12], s: [1.25, .8], rump: .09, rumpDrop: .03, front: .08 }],
+      ['neck', { len: .07, n: 1, rise: 5, r: [.1, .08] }],
+      ['head', { len: .18, r: .065, pitch: 12, s: [1, .85, 1], muzzle: { len: 1, r: .032, nose: 1, taper: .55, drop: .04 }, jaw: { len: .82, r: .025, drop: .5 }, eyes: [{ f: .42, up: .35, out: .55, r: .007, color: [.06, .04, .03] }], ears: { kind: 'round', size: .022, f: .15, up: .8, out: .75, tone: 'pale' } }],
+      ['tail', { len: .12, n: 1, r: [.04, .025], droop: 20 }],
+      ['legs', { at: 1, kind: 'plantFore', out: .1, drop: .05, r: [.06, .05, .045, .04], claws: { r: .006, len: .028 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .1, drop: .03, r: [.065, .05, .045, .04], claws: { r: .005, len: .02 } }]
+    ] },
+  otter: { name: 'Otter', src: 'OG-084 (all islands: otter; River Otter)', gaits: ['bound', 'walk', 'stand'], wag: .04, fold: .8, speedK: .9, rough: .3,
+    palette: { coat: [.32, .22, .14], saddle: [.24, .16, .1], belly: [.62, .52, .4], dark: [.05, .04, .03] },
+    fur: { len: .012, layers: 6, sx: 420 },
+    parts: [
+      ['spine', { hip: [.13, -.3], chest: [.14, .2], n: 5, r: [.07, .075, .07], s: [1.05, .95], rump: .05, front: .05, arch: .04 }],
+      ['neck', { len: .1, n: 2, rise: 18, r: [.062, .055] }],
+      ['head', { len: .13, r: .05, pitch: 4, s: [1.15, .85, 1], muzzle: { len: 1, r: .032, nose: 1, taper: .7 }, jaw: { len: .85, r: .024, drop: .45 }, eyes: [{ f: .45, up: .5, out: .6, r: .007, color: [.05, .03, .02] }], ears: { kind: 'round', size: .012, f: .2, up: .7, out: .85 } }],
+      ['tail', { len: .4, n: 5, r: [.06, .012], droop: 8, s: [1.15, .85] }],
+      ['legs', { at: 1, kind: 'plantFore', out: .06, drop: .02, r: [.032, .026, .024, .022], claws: { r: .003, len: .01 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .065, drop: .01, r: [.038, .03, .028, .026], claws: { r: .003, len: .01 } }]
+    ] },
+  trout: re(PLANS.riverjaw, { name: 'Trout', src: 'OG-084 (all islands: trout; Rock Trout)', scale: .48, mottle: 1.6,
+    palette: { coat: [.52, .5, .32], saddle: [.3, .32, .2], belly: [.9, .86, .74], dark: [.06, .05, .05], fin: [.42, .38, .26] } })
+});
+// the common set, for the page and the check
+export const COMMON = ['wolf', 'redfox', 'brownhare', 'raven', 'crow', 'boar', 'deer', 'badger', 'otter', 'trout'];
+// ── Session 844: livestock (backlog L3; OG-023 and OG-035, the farms): the cow, the sheep, the goat and the hen ──
+Object.assign(PLANS, {
+  cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6, pattern: { kind: 'patches', size: .32, cut: .12, tone: 'pale' },
+    palette: { coat: [.48, .3, .18], saddle: [.36, .21, .12], belly: [.86, .82, .74], dark: [.07, .05, .05], hoof: [.12, .1, .08], horn: [.86, .82, .72], skin: [.78, .55, .5], pale: [.9, .87, .8] },
+    fur: { len: .012, layers: 6, sx: 300 },
+    parts: [
+      ['spine', { hip: [1.3, -.72], chest: [1.32, .58], n: 4, r: [.36, .42, .38], s: [.9, 1.15], rump: .24, rumpDrop: .02, front: .22, frontDrop: .12 }],
+      ['neck', { len: .4, n: 2, rise: 10, r: [.3, .2], s: [.8, 1.25], fwd: .02 }],
+      ['head', { len: .56, r: .14, pitch: 48, s: [.95, 1, 1], muzzle: { len: 1, r: .1, nose: 1, taper: .9 }, jaw: { len: .85, r: .07, drop: .5 }, eyes: [{ f: .34, up: .45, out: .78, r: .02, color: [.06, .04, .03] }], ears: { kind: 'leaf', size: .08, f: .22, up: .5, out: 1.05, back: 70, splay: 85 },
+        horns: { len: .2, r: .024, f: .12, up: .95, out: .65, turn: .45, rise: .5, spread: .8, back: .1, out0: .3 } }],
+      ['tail', { len: .75, n: 3, r: [.07, .045], droop: 85 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .2, drop: .18, r: [.16, .09, .055, .06] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .2, drop: .1, r: [.2, .1, .055, .06] }]
+    ] },
+  sheep: { name: 'Sheep', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .9, wag: .04, fold: .6, rough: .9,
+    palette: { coat: [.86, .82, .72], saddle: [.8, .76, .66], belly: [.78, .74, .64], dark: [.1, .08, .07], hoof: [.1, .08, .07], skin: [.2, .17, .15] },
+    fur: { len: .07, layers: 11, sx: 90, sy: 40, droop: .15 },
+    parts: [
+      ['spine', { hip: [.62, -.38], chest: [.64, .32], n: 4, r: [.22, .25, .22], s: [1, 1.05], rump: .16, front: .12 }],
+      ['neck', { len: .2, n: 2, rise: 30, r: [.16, .1], fwd: .02 }],
+      ['head', { len: .26, r: .07, pitch: 40, tone: 'skin', muzzle: { len: 1, r: .045, nose: 1, taper: .8 }, eyes: [{ f: .4, up: .4, out: .75, r: .011, color: [.6, .5, .2] }], ears: { kind: 'leaf', size: .055, f: .2, up: .55, out: 1, back: 75, splay: 85, tone: 'skin' } }],
+      ['tail', { len: .2, n: 2, r: [.05, .035], droop: 80 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .1, drop: .1, r: [.08, .035, .022, .024] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .1, drop: .06, r: [.1, .04, .022, .024] }]
+    ] },
+  goat: { name: 'Goat', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'gallop', 'stand'], speedK: 1, wag: .1, neckNod: .06, rough: .6,
+    palette: { coat: [.6, .54, .46], saddle: [.4, .34, .28], belly: [.84, .8, .72], dark: [.08, .07, .06], hoof: [.12, .1, .08], horn: [.42, .38, .32] },
+    fur: { len: .03, layers: 8, sx: 160, droop: .4 },
+    parts: [
+      ['spine', { hip: [.62, -.36], chest: [.66, .3], n: 4, r: [.16, .18, .17], s: [.82, 1.12], rump: .1, rumpDrop: .03, front: .1, frontDrop: .05 }],
+      ['neck', { len: .26, n: 2, rise: 48, r: [.12, .08], fwd: .02 }],
+      ['head', { len: .27, r: .07, pitch: 38, muzzle: { len: 1, r: .04, nose: 1, taper: .75 }, jaw: { len: .85, r: .028, drop: .55 }, eyes: [{ f: .4, up: .45, out: .72, r: .012, color: [.75, .6, .2] }], ears: { kind: 'leaf', size: .06, f: .2, up: .55, out: .95, back: 50, splay: 75 },
+        horns: { len: .17, r: .026, f: .15, up: 1, out: .4, turn: .5, rise: .8, spread: .4, back: .8, out0: .15 } }],
+      ['tail', { len: .1, n: 1, r: [.03, .02], droop: -35 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .08, drop: .08, r: [.07, .032, .02, .022] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .08, drop: .05, r: [.09, .036, .02, .022] }]
+    ] },
+  hen: { name: 'Hen', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: 1.1, neckNod: .14, fold: 1.1, wag: .02,
+    palette: { coat: [.6, .36, .18], saddle: [.42, .22, .1], belly: [.7, .46, .26], dark: [.06, .05, .04], skin: [.88, .72, .3], horn: [.86, .72, .36], comb: [.78, .1, .08] },
+    fur: { len: .025, layers: 8, sx: 120, sy: 50, droop: .5 },
+    parts: [
+      ['spine', { hip: [.26, -.08], chest: [.28, .08], n: 3, r: [.085, .1, .085], s: [.85, 1.05], rump: .07, rumpDrop: -.05, front: .05, frontDrop: .01 }],
+      ['neck', { len: .12, n: 2, rise: 75, curve: -30, r: [.05, .03], fwd: -.01 }],
+      ['head', { len: .07, r: .028, pitch: 5, eyes: [{ f: .45, up: .3, out: .7, r: .006, color: [.85, .5, .1] }], beak: { len: .03, r: .01, up: -.1, hook: .3 }, ears: { kind: 'leaf', size: .022, f: .35, up: 1.05, out: .12, back: -10, splay: 0, tone: 'comb' } }],
+      ['tail', { len: .12, n: 2, r: [.05, .03], droop: -55 }],
+      ['legs', { at: .38, kind: 'bird', out: .04, drop: .05, r: [.032, .012, .008, .006], claws: { r: .003, len: .012 } }]
+    ] }
+});
+export const LIVESTOCK = ['cow', 'sheep', 'goat', 'hen'];
+// ── Session 846: the Gatelands' fifteen (OG-009; backlog L3). Three were built (the Elderstag, the Crag Hawk, the Mire
+// Snake) and two are the common set's (the River Otter, the Woodland Badger); these are the other ten, the Grove Turkey
+// a capercaillie as the catalogue's note has it (a New World bird on an Irish island) ──
+Object.assign(PLANS, {
+  gatefenboar: re(PLANS.boar, { name: 'Gatefen Boar', src: 'OG-009 (roots up old ruins and exposes forgotten paths)', scale: 1.08, spines: 1,
+    palette: { coat: [.24, .2, .16], saddle: [.12, .1, .08], belly: [.32, .27, .22], dark: [.05, .04, .03], hoof: [.1, .08, .07], horn: [.9, .86, .76], skin: [.4, .3, .26] }, fur: { len: .06, layers: 10, sx: 90, sy: 24, droop: .3 },
+    parts: [...PLANS.boar.parts, ['spines', { n: 10, from: .35, to: 1.05, len: .09, r: .02, tone: 'saddle', taper: .3 }]] }),
+  redspinefox: re(PLANS.redfox, { name: 'Redspine Fox', src: 'OG-009 (follows settlements, eats crop scraps)', palette: { coat: [.66, .3, .1], saddle: [.32, .1, .04], belly: [.95, .92, .86], dark: [.07, .05, .04], pale: [.97, .95, .9] }, fur: PLANS.redfox.fur }),
+  heron: { name: 'Great Heron', src: 'OG-009 (wetlands), OG-084', gaits: ['walk', 'stand'], speedK: .7, neckNod: .16, fold: 1, wag: .01,
+    palette: { coat: [.62, .64, .66], saddle: [.48, .5, .54], belly: [.88, .88, .86], dark: [.08, .08, .09], skin: [.74, .62, .3], horn: [.82, .7, .3] },
+    fur: { len: .02, layers: 7, sx: 120, sy: 50, droop: .6 },
+    parts: [
+      ['spine', { hip: [.66, -.1], chest: [.7, .12], n: 3, r: [.075, .09, .07], s: [.8, 1.15], rump: .08, rumpDrop: .02, front: .04 }],
+      ['neck', { len: .48, n: 5, rise: 80, curve: -42, r: [.04, .022], fwd: -.02 }],
+      ['head', { len: .1, r: .026, pitch: 2, eyes: [{ f: .4, up: .3, out: .7, r: .006, color: [.95, .85, .2] }], beak: { len: .14, r: .011, up: 0, hook: 0 } }],
+      ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
+      ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
+    ] },
+  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand'], wag: .1, speedK: 1, neckNod: .02,
+    palette: { coat: [.5, .42, .32], saddle: [.24, .19, .14], belly: [.84, .78, .66], dark: [.06, .05, .04], pale: [.9, .86, .78] },
+    pattern: { kind: 'stripes', period: .07, tone: 'saddle' }, fur: { len: .022, layers: 8, sx: 300 },
+    parts: [
+      ['spine', { hip: [.32, -.22], chest: [.32, .17], n: 4, r: [.08, .075, .085], s: [.85, 1.05], rump: .07, front: .06, arch: .04 }],
+      ['neck', { len: .07, n: 1, rise: 30, r: [.07, .06] }],
+      ['head', { len: .13, r: .062, pitch: 6, s: [1.08, .95, .95], muzzle: { len: .8, r: .032, nose: 1, taper: .7 }, jaw: { len: .7, r: .024, drop: .5 }, eyes: [{ f: .48, up: .45, out: .5, r: .011, color: [.75, .8, .25] }], ears: { kind: 'cone', size: .075, f: .1, up: .95, out: .62, back: 5, splay: 12 } }],
+      ['tail', { len: .3, n: 4, r: [.04, .038], droop: 40, curl: -6 }],
+      ['legs', { at: 1, kind: 'canidFore', out: .05, drop: .03, r: [.045, .028, .02, .02], claws: { r: .003, len: .01 } }],
+      ['legs', { at: 0, kind: 'canidHind', out: .05, drop: .02, r: [.055, .032, .022, .02], claws: { r: .003, len: .01 } }]
+    ] },
+  stoat: re(PLANS.otter, { name: 'Greenward Stoat', src: 'OG-009 (rivers and fields, near stone walls)', scale: .55, rough: .45,
+    palette: { coat: [.5, .34, .2], saddle: [.42, .27, .15], belly: [.92, .88, .76], dark: [.05, .04, .03] }, fur: { len: .012, layers: 6, sx: 520 } }),
+  marshfrog: re(PLANS.bellthroat, { name: 'Marsh Frog', src: 'OG-009 (wetlands; its calls mark spring)', scale: .8,
+    palette: { coat: [.36, .5, .22], saddle: [.2, .3, .12], belly: [.86, .84, .66], dark: [.05, .05, .04], sac: [.7, .72, .6] } }),
+  riverpike: re(PLANS.riverjaw, { name: 'River Pike', src: 'OG-009 (deep rivers and lakes; a fishing target)', scale: .9, mottle: 2,
+    palette: { coat: [.4, .46, .24], saddle: [.2, .26, .14], belly: [.88, .86, .7], dark: [.05, .05, .04], fin: [.5, .38, .22] },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hip: [.8, -.28], chest: [.8, .22], r: [.06, .07, .065] }] : k === 'head' ? [k, { ...o, len: .24, s: [.6, .7, 1], muzzle: { ...o.muzzle, s: [.7, .5, 1], taper: .75 } }] : [k, o]) }),
+  stonecrawler: { name: 'Stonecrawler', src: 'OG-009 (a black-and-blue lizard of the dry-stone walls), OG-084', gaits: ['trot', 'walk', 'stand'], speedK: 1.4, wag: .1, fold: .5, rough: .4,
+    palette: { coat: [.1, .12, .16], saddle: [.06, .07, .1], belly: [.3, .42, .62], dark: [.03, .03, .04], skin: [.1, .12, .16], band: [.22, .38, .7] },
+    pattern: { kind: 'bands', period: .05, tone: 'band' },
+    parts: [
+      ['spine', { hip: [.06, -.1], chest: [.065, .08], n: 4, r: [.03, .034, .03], s: [1.3, .72], rump: .02, front: .02, tone: 'skin' }],
+      ['neck', { len: .03, n: 1, rise: 8, r: [.025, .022], s: [1.2, .8] }],
+      ['head', { len: .05, r: .02, pitch: 4, s: [1.2, .7, 1], muzzle: { len: 1, r: .014, s: [1.1, .7, 1] }, eyes: [{ f: .4, up: .5, out: .7, r: .004, color: [.8, .6, .1] }] }],
+      ['tail', { len: .22, n: 6, r: [.025, .006], droop: 0, curl: 4 }],
+      ['legs', { at: .95, kind: 'sprawl', out: .03, drop: .005, fan: 35, r: [.01, .009, .008, .007], claws: { r: .0015, len: .006 } }],
+      ['legs', { at: .05, kind: 'sprawl', out: .03, drop: .005, fan: -35, r: [.011, .009, .008, .007], claws: { r: .0015, len: .006 } }]
+    ] },
+  capercaillie: re(PLANS.hen, { name: 'Capercaillie', src: 'OG-009 (the Grove Turkey, as a capercaillie: catalogue note)', scale: 1.45, neckNod: .1,
+    palette: { coat: [.12, .13, .14], saddle: [.07, .08, .09], belly: [.14, .2, .16], dark: [.04, .04, .04], skin: [.5, .45, .4], horn: [.82, .78, .66], comb: [.78, .12, .08] },
+    parts: PLANS.hen.parts.map(([k, o]) => k === 'tail' ? [k, { ...o, len: .16, r: [.06, .05], droop: -30 }] : [k, o]) }),
+  // built at ten times its size and scaled down: the kit floors a leg's height at 10 cm when it paces a stride
+  lanternbeetle: { name: 'Lantern Beetle', src: 'OG-009 (glows near old trees and ruins; an ingredient)', gaits: ['walk', 'trot', 'stand'], scale: .1, speedK: 1, wag: 0, pant: 0, rough: .3, mottle: .3,
+    glow: { color: [1.6, 1.25, .35], base: .7, freq: 3, w: .02, all: 0 },
+    palette: { coat: [.16, .14, .08], skin: [.16, .14, .08], saddle: [.08, .07, .04], belly: [.6, .52, .2], dark: [.04, .03, .02] },
+    parts: [
+      ['spine', { hip: [0.18, -0.3], chest: [0.2, 0.2], n: 3, r: [0.16, 0.14, 0.11], s: [1.25, .62], rump: 0.12, front: 0.06, tone: 'skin' }],
+      ['head', { len: 0.12, r: 0.08, pitch: 10, s: [1.2, .7, 1], tone: 'skin', eyes: [{ f: .6, up: .3, out: .8, r: 0.022, color: [.05, .04, .03] }] }],
+      ['legs', { at: .9, kind: 'insect', out: 0.2, drop: 0.02, fan: 30, reach: .7, r: [0.03, 0.028, 0.022, 0.014] }],
+      ['legs', { at: .55, kind: 'insect', out: 0.21, drop: 0.02, fan: 0, reach: .7, r: [0.03, 0.028, 0.022, 0.014] }],
+      ['legs', { at: .2, kind: 'insect', out: 0.2, drop: 0.02, fan: -30, reach: .7, r: [0.03, 0.028, 0.022, 0.014] }]
+    ] }
+});
+export const GATELANDS = ['stag', 'gatefenboar', 'redspinefox', 'otter', 'heron', 'badger', 'hollowcat', 'stoat', 'craghawk', 'marshfrog', 'riverpike', 'stonecrawler', 'capercaillie', 'miresnake', 'lanternbeetle'];
+// ── Session 847: the Mark's fifteen (OG-031; backlog L3). Five were built (the Frostreach Bear, the Skyraven, the Snowleap
+// Hare, the Riverjaw Salmon, and the Ironwolf, which is the sheet's Stonefang Wolf); these are the other ten ──
+const curled = { len: .42, r: .05, f: .15, up: .95, out: .55, turn: 1.7, rise: .05, spread: .35, back: .25, out0: .25 };
+Object.assign(PLANS, {
+  icehorn: re(PLANS.goat, { name: 'Icehorn', src: 'OG-031 (huge curled hollow horns that moan in the wind)', scale: 1.15, rough: .8,
+    palette: { coat: [.86, .84, .8], saddle: [.74, .72, .68], belly: [.9, .89, .86], dark: [.08, .07, .06], hoof: [.12, .1, .08], horn: [.62, .58, .5] }, fur: { len: .08, layers: 11, sx: 70, sy: 22, droop: .75 },
+    parts: PLANS.goat.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...curled, len: .5 } }] : [k, o]) }),
+  stormlynx: re(PLANS.hollowcat, { name: 'Stormlynx', src: 'OG-031 (high ridges; snowshoe paws, long ear tufts)', scale: 1.4,
+    palette: { coat: [.66, .64, .6], saddle: [.42, .4, .38], belly: [.9, .88, .84], dark: [.06, .05, .05], pale: [.92, .9, .86] }, fur: { len: .035, layers: 9, sx: 240 }, pattern: null,
+    parts: PLANS.hollowcat.parts.map(([k, o]) => k === 'tail' ? [k, { ...o, len: .1, r: [.04, .035] }] : k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .1 } }] : k === 'legs' ? [k, { ...o, r: o.r.map((x, i) => i === 3 ? x * 1.8 : x * 1.15) }] : [k, o]) }),
+  ironpineelk: re(PLANS.stag, { name: 'Ironpine Elk', src: 'OG-031 (dark, with sweeping antlers)', scale: 1.22,
+    palette: { coat: [.3, .22, .15], saddle: [.2, .14, .09], belly: [.5, .42, .32], dark: [.04, .03, .03], hoof: [.08, .07, .06], horn: [.62, .55, .42] }, fur: { len: .03, layers: 8, sx: 260, droop: .4 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.15, r: .036, depth: 2 } }] : [k, o]) }),
+  craghornram: re(PLANS.sheep, { name: 'Craghorn Ram', src: 'OG-031 (scales near-vertical rock)', speedK: 1.1, gaits: ['walk', 'trot', 'gallop', 'stand'],
+    palette: { coat: [.52, .44, .34], saddle: [.4, .33, .24], belly: [.84, .8, .72], dark: [.08, .07, .06], hoof: [.1, .08, .07], skin: [.46, .4, .32], horn: [.7, .64, .52] }, fur: { len: .025, layers: 8, sx: 200 },
+    parts: PLANS.sheep.parts.map(([k, o]) => k === 'head' ? [k, { ...o, tone: undefined, horns: curled }] : [k, o]) }),
+  glacialmarmot: { name: 'Glacial Marmot', src: 'OG-031 (alpine slopes; hibernates)', gaits: ['walk', 'bound', 'stand'], wag: .05, fold: .7, speedK: .8, rough: .7,
+    palette: { coat: [.56, .48, .38], saddle: [.42, .35, .27], belly: [.8, .72, .58], dark: [.06, .05, .04] }, fur: { len: .028, layers: 8, sx: 260, droop: .3 },
+    parts: [
+      ['spine', { hip: [.12, -.17], chest: [.13, .12], n: 3, r: [.1, .095, .08], s: [1.05, 1], rump: .08, front: .05, arch: .03 }],
+      ['neck', { len: .04, n: 1, rise: 20, r: [.07, .06] }],
+      ['head', { len: .1, r: .05, pitch: 8, muzzle: { len: .9, r: .03, nose: 1, taper: .8 }, eyes: [{ f: .45, up: .45, out: .6, r: .007, color: [.05, .04, .03] }], ears: { kind: 'round', size: .015, f: .2, up: .85, out: .75 } }],
+      ['tail', { len: .14, n: 2, r: [.035, .03], droop: 20 }],
+      ['legs', { at: 1, kind: 'plantFore', out: .06, drop: .02, r: [.036, .03, .028, .026], claws: { r: .003, len: .012 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .065, drop: .01, r: [.042, .034, .03, .028], claws: { r: .003, len: .01 } }]
+    ] },
+  stormshrike: re(PLANS.craghawk, { name: 'Stormshrike', src: 'OG-031 (a white falcon that stoops and hangs in the wind)', scale: .85, pattern: { kind: 'stripes', period: .022, tone: 'saddle' },
+    palette: { coat: [.9, .9, .9], saddle: [.48, .5, .54], belly: [.96, .96, .95], dark: [.04, .03, .03], horn: [.2, .2, .22], skin: [.86, .74, .25], feather: [.9, .9, .92], featherTip: [.25, .27, .3], covert: [.82, .83, .86] }, fur: PLANS.craghawk.fur }),
+  frostspinelizard: re(PLANS.stonecrawler, { name: 'Frostspine Lizard', src: 'OG-031 (rocky slopes; mineral-hardened scales that store sunlight)', scale: 1.7, pattern: null,
+    palette: { coat: [.46, .56, .62], saddle: [.32, .4, .46], belly: [.78, .84, .86], dark: [.05, .05, .06], skin: [.46, .56, .62], horn: [.7, .88, .98] },
+    parts: [...PLANS.stonecrawler.parts, ['spines', { n: 10, from: .05, to: 1, len: .02, r: .006, tone: 'horn', taper: .4 }]] }),
+  tundragrouse: re(PLANS.hen, { name: 'Tundra Grouse', src: 'OG-031 (highlands; flushes noisily from the snow)', scale: 1, mottle: 1.6,
+    palette: { coat: [.86, .84, .8], saddle: [.5, .4, .3], belly: [.95, .94, .92], dark: [.04, .04, .04], skin: [.9, .88, .84], horn: [.2, .18, .16], comb: [.82, .16, .1] } }),
+  icecrab: re(PLANS.tidecrab, { name: 'Icecrab', src: 'OG-031 (northern coasts; armoured, harvested for its meat)', scale: 1.35, heading: 90,
+    palette: { coat: [.72, .8, .86], skin: [.72, .8, .86], saddle: [.42, .52, .62], belly: [.9, .9, .88], dark: [.1, .1, .12] } }),
+  shatterback: re(PLANS.stormwhale, { name: 'Shatterback', src: 'OG-031 (a colossal slow armoured sea beast whose back sailors mistake for rocks)', scale: 1.5, swimAxis: 'x', waveAmp: .06, bl: .12, rough: .9, mottle: 2.2, spread: .03,
+    palette: { coat: [.36, .36, .34], saddle: [.26, .26, .25], belly: [.56, .55, .52], dark: [.06, .06, .06], fin: [.3, .3, .29], horn: [.44, .43, .4] },
+    parts: [...PLANS.stormwhale.parts, ['spines', { n: 14, from: .1, to: .95, len: .9, r: .45, tone: 'horn', taper: .6 }]] })
+});
+export const MARK = ['icehorn', 'bear', 'stormlynx', 'ironpineelk', 'skyraven', 'ironwolf', 'craghornram', 'glacialmarmot', 'stormshrike', 'snowhare', 'frostspinelizard', 'riverjaw', 'tundragrouse', 'icecrab', 'shatterback'];
+// ── Session 848: Aurenne's fifteen (OG-030; backlog L3). The Dunescorpion was built (Session 773); these are thirteen
+// more. The Glasswing Moth waits: crystal wings on an insect are a part the kit does not have ──
+const spiral = { ...curled, len: .62, r: .06, turn: 2.1 };
+Object.assign(PLANS, {
+  duneskimmer: re(PLANS.stag, { name: 'Duneskimmer', src: 'OG-030 (a gazelle with wide hooves for sand)', scale: .62,
+    palette: { coat: [.8, .62, .4], saddle: [.66, .48, .28], belly: [.96, .93, .86], dark: [.06, .05, .04], hoof: [.12, .1, .08], horn: [.2, .17, .14] }, fur: { len: .01, layers: 5, sx: 420 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: undefined, horns: { len: .32, r: .016, f: .12, up: .95, out: .3, turn: .35, rise: 1.1, spread: .2, back: .5, out0: .1 } }] : [k, o]) }),
+  sunspirelynx: re(PLANS.hollowcat, { name: 'Sunspire Lynx', src: 'OG-030 (caracal-like, long ears, a heat-shedding crest)', scale: 1.25, pattern: null,
+    palette: { coat: [.66, .52, .38], saddle: [.54, .4, .27], belly: [.94, .89, .8], dark: [.06, .04, .03], pale: [.95, .92, .86] }, fur: { len: .014, layers: 6, sx: 380 },
+    parts: [...PLANS.hollowcat.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .13, tone: 'dark' } }] : [k, o]), ['spines', { n: 8, from: .55, to: 1.05, len: .05, r: .012, tone: 'saddle', taper: .3 }]] }),
+  terraceram: re(PLANS.craghornram, { name: 'Terrace Ram', src: 'OG-030 (huge spiral horns; fights on terraced cliffs)', scale: 1.05,
+    palette: { coat: [.86, .78, .62], saddle: [.74, .64, .48], belly: [.94, .9, .82], dark: [.08, .07, .06], hoof: [.1, .08, .07], skin: [.7, .6, .46], horn: [.78, .72, .58] },
+    parts: PLANS.sheep.parts.map(([k, o]) => k === 'head' ? [k, { ...o, tone: undefined, horns: spiral }] : [k, o]) }),
+  saltspinemonitor: re(PLANS.frostspinelizard, { name: 'Saltspine Monitor', src: 'OG-030 (coasts; spines crusted with salt; aggressive)', scale: 4.2,
+    palette: { coat: [.42, .4, .34], saddle: [.3, .28, .24], belly: [.66, .62, .52], dark: [.05, .05, .05], skin: [.42, .4, .34], horn: [.94, .93, .9] } }),
+  oasishare: re(PLANS.brownhare, { name: 'Oasis Hare', src: 'OG-030 (deserts and oases; big ears)', scale: 1.05,
+    palette: { coat: [.82, .68, .5], saddle: [.68, .54, .38], belly: [.96, .94, .9], dark: [.08, .06, .05], pale: [.98, .97, .94] },
+    parts: PLANS.snowhare.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .12 } }] : [k, o]) }),
+  scarletibis: re(PLANS.heron, { name: 'Scarlet Ibis', src: 'OG-030 (coastal wetlands; a sign of a healthy marsh)', scale: .72,
+    palette: { coat: [.9, .2, .14], saddle: [.78, .14, .1], belly: [.95, .32, .24], dark: [.06, .04, .04], skin: [.86, .3, .22], horn: [.3, .12, .1] },
+    parts: PLANS.heron.parts.map(([k, o]) => k === 'head' ? [k, { ...o, beak: { len: .17, r: .01, up: -.05, hook: .55 } }] : [k, o]) }),
+  miragefox: re(PLANS.redfox, { name: 'Mirage Fox', src: 'OG-030 (fennec-like; scavenges ruins and caravan routes)', scale: .62,
+    palette: { coat: [.9, .78, .58], saddle: [.8, .66, .46], belly: [.98, .96, .92], dark: [.08, .06, .05], pale: [.98, .97, .94] }, fur: PLANS.redfox.fur,
+    parts: PLANS.redfox.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .15, out: .6 } }] : [k, o]) }),
+  cliffswift: re(PLANS.skyraven, { name: 'Cliffswift', src: 'OG-030 (coasts and sea stacks; swirling flocks)', scale: .42, gaits: ['soar', 'stand'], flyH: 1.6,
+    palette: { coat: [.2, .19, .2], saddle: [.12, .11, .12], belly: [.82, .8, .76], dark: [.03, .03, .03], horn: [.06, .06, .07], skin: [.12, .12, .12], feather: [.18, .17, .18], featherTip: [.07, .07, .08], covert: [.22, .21, .22] }, fur: PLANS.skyraven.fur,
+    parts: flier({ eye: [.1, .08, .06], beak: .02, hook: .1, primary: 1.4 }) }),
+  ambershellcrab: re(PLANS.tidecrab, { name: 'Amber Shellcrab', src: 'OG-030 (tide pools; shells prized for crafts and trade)', scale: .8, heading: 90,
+    palette: { coat: [.86, .52, .16], skin: [.86, .52, .16], saddle: [.6, .3, .08], belly: [.95, .86, .66], dark: [.12, .07, .04] } }),
+  cypressstalker: re(PLANS.heron, { name: 'Cypress Stalker', src: 'OG-030 (rivers and marshes; a violet heron whose plumage shifts with the light)', scale: 1.05,
+    palette: { coat: [.42, .3, .58], saddle: [.26, .18, .4], belly: [.62, .5, .74], dark: [.05, .04, .06], skin: [.56, .5, .3], horn: [.62, .56, .3] } }),
+  sandwyrm: re(PLANS.miresnake, { name: 'Sand Wyrm', src: 'OG-030 (a massive burrowing predator, known by its tracks and sand funnels)', scale: 14, pattern: { kind: 'bands', period: .2, tone: 'band' },
+    palette: { coat: [.7, .56, .38], saddle: [.52, .4, .26], belly: [.86, .78, .62], dark: [.08, .06, .04], band: [.56, .42, .26] } }),
+  sunbeakvulture: re(PLANS.craghawk, { name: 'Sunbeak Vulture', src: 'OG-030 (deserts and cliffs; carrion cleaner)', scale: 1.4, pattern: null,
+    palette: { coat: [.32, .24, .18], saddle: [.22, .16, .12], belly: [.46, .36, .28], dark: [.04, .03, .03], horn: [.86, .66, .22], skin: [.8, .62, .52], feather: [.28, .21, .16], featherTip: [.1, .07, .05], covert: [.38, .29, .22] }, fur: PLANS.craghawk.fur }),
+  spinedgekko: re(PLANS.frostspinelizard, { name: 'Spined Gekko', src: 'OG-030 (ruins; nocturnal, climbs walls)', scale: 1,
+    palette: { coat: [.66, .58, .42], saddle: [.5, .42, .28], belly: [.86, .8, .66], dark: [.05, .05, .04], skin: [.66, .58, .42], horn: [.42, .34, .22] } })
+});
+export const AURENNE = ['duneskimmer', 'sunspirelynx', 'terraceram', 'saltspinemonitor', 'oasishare', 'scarletibis', 'dunescorpion', 'miragefox', 'cliffswift', 'ambershellcrab', 'cypressstalker', 'sandwyrm', 'sunbeakvulture', 'spinedgekko'];
+// ── Session 853: OG-040's strange beasts (backlog L3), five an island, none of them gate-made. Six were built in Sessions
+// 773 to 775 (the Bellthroat, the Mossback, the Shatterhorn, the Stormplume, the Mineprowler, the Sailshell); these are
+// the other eight. A raised tail fan (the Sunfan's display) and see-through membrane wings (the Glasswing's) are the kit's
+// two new options; every older plan builds as it did ──
+Object.assign(PLANS, {
+  crownstag: re(PLANS.stag, { name: 'Crownstag', src: 'OG-040 (Gatelands: a forest monarch; antlers like living branches hung with moss)', scale: 1.3, rough: .8,
+    palette: { coat: [.36, .25, .16], saddle: [.22, .15, .09], belly: [.74, .66, .52], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.34, .38, .2] }, fur: { len: .03, layers: 8, sx: 260, droop: .35 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { len: 1.15, r: .04, f: .1, up: .85, out: .4, depth: 3 } }] : [k, o]) }),
+  lanternfox: re(PLANS.redfox, { name: 'Lanternfox', src: 'OG-040 (Gatelands: a black fox whose fur glows blue and silver at night)', scale: 1.05,
+    palette: { coat: [.07, .08, .11], saddle: [.03, .03, .05], belly: [.2, .22, .3], dark: [.02, .02, .03], pale: [.7, .78, .92] }, fur: PLANS.redfox.fur,
+    glow: { color: [.7, 1.5, 3.2], freq: 9, w: .06, all: .8 } }),
+  thornrunner: re(PLANS.redfox, { name: 'Thornrunner', src: 'OG-040 (Gatelands: a long-legged quilled omnivore of hills and farms; very fast)', scale: 1.45, speedK: 1.5,
+    palette: { coat: [.58, .36, .2], saddle: [.24, .14, .08], belly: [.88, .82, .7], dark: [.05, .04, .03], pale: [.92, .88, .78] }, fur: { len: .022, layers: 7, sx: 300 },
+    parts: [...PLANS.redfox.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hip: [.52, -.25], chest: [.55, .2] }] : [k, o]), ['spines', { n: 18, from: .15, to: 1.05, len: .17, r: .008, tone: 'pale', taper: .5 }]] }),
+  frostmane: { name: 'Frostmane', src: 'OG-040 (the Mark: a long-necked maned browser in small herds; a candidate pack beast)', gaits: ['walk', 'trot', 'stand'], speedK: .9, neckNod: .05, wag: .03, fold: .6, rough: .9,
+    palette: { coat: [.82, .8, .76], saddle: [.6, .58, .55], belly: [.9, .88, .84], dark: [.06, .05, .05], hoof: [.12, .1, .09] },
+    fur: { len: .075, layers: 11, sx: 110, sy: 28, droop: .55 },
+    parts: [
+      ['spine', { hip: [1.02, -.48], chest: [1.08, .38], n: 4, r: [.22, .23, .26], s: [.8, 1.15], rump: .16, rumpDrop: .04, front: .16, frontDrop: .06 }],
+      ['neck', { len: .85, n: 3, rise: 74, curve: -8, r: [.17, .11], s: [.85, 1.1] }],
+      ['head', { len: .3, r: .085, pitch: 38, muzzle: { len: 1, r: .055, nose: 1, taper: .75 }, jaw: { len: .85, r: .04, drop: .5 }, eyes: [{ f: .4, up: .35, out: .7, r: .018, color: [.08, .06, .05] }], ears: { kind: 'leaf', size: .1, f: .1, up: .9, out: .5, splay: 12, back: 5 } }],
+      ['tail', { len: .22, n: 2, r: [.06, .04], droop: 25 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .1, drop: .1, r: [.1, .055, .034, .036] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .1, drop: .07, r: [.13, .065, .036, .036] }]
+    ] },
+  glasswing: { name: 'Glasswing', src: 'OG-040 (the Mark: a gliding predator of cliffs and ridges, its wings translucent)', gaits: ['soar', 'walk', 'stand'], flyH: 2.2, wingFold: .3, wingOpacity: .5, wag: .06, neckNod: .06, fold: 1, rough: .45,
+    palette: { coat: [.7, .74, .78], saddle: [.46, .52, .58], belly: [.9, .92, .92], dark: [.05, .05, .06], horn: [.3, .32, .36], skin: [.5, .52, .56], membrane: [.72, .86, .96], membraneEdge: [.4, .54, .7] },
+    parts: [
+      ['spine', { hip: [.48, -.32], chest: [.5, .24], n: 3, r: [.09, .11, .1], s: [.82, 1], rump: .06, front: .06 }],
+      ['neck', { len: .3, n: 2, rise: 42, curve: -14, r: [.07, .05] }],
+      ['head', { len: .22, r: .052, pitch: 6, muzzle: { len: 1, r: .028, taper: .5 }, jaw: { len: .9, r: .02, drop: .5 }, eyes: [{ f: .42, up: .4, out: .62, r: .011, color: [.55, .85, 1] }], horns: { len: .14, r: .012, f: .2, up: .8, out: .4, turn: .2, rise: .3, back: 1, spread: .2 } }],
+      ['tail', { len: 1.1, n: 6, r: [.06, .008], droop: 8, curl: -1 }],
+      ['legs', { at: .35, kind: 'bird', out: .07, drop: .05, r: [.055, .025, .016, .012], claws: { r: .005, len: .03 } }],
+      ['wings', { at: .85, out: .07, up: .04, span: 3.4, fingers: 4, r: [.04, .03, .02], sag: .12 }]
+    ] },
+  stonejaw: { name: 'Stonejaw', src: 'OG-040 (the Mark: an armoured burrower with a shovel skull; digs through snow and rock)', gaits: ['walk', 'trot', 'stand'], speedK: .6, wag: .03, fold: .5, rough: .8,
+    palette: { coat: [.46, .42, .36], saddle: [.34, .31, .27], belly: [.66, .6, .5], dark: [.06, .05, .05], shell: [.5, .48, .44], seam: [.2, .19, .17], skin: [.46, .42, .36] },
+    parts: [
+      ['spine', { hip: [.32, -.42], chest: [.34, .32], n: 4, r: [.18, .2, .18], s: [1.2, .85], rump: .1, front: .08, tone: 'skin' }],
+      ['neck', { len: .1, n: 1, rise: -10, r: [.14, .12], s: [1.2, .85] }],
+      ['head', { len: .26, r: .11, pitch: 14, s: [1.3, .8, 1], muzzle: { len: 1, r: .1, s: [1.7, .42, 1], taper: 1 }, eyes: [{ f: .3, up: .55, out: .62, r: .009, color: [.1, .07, .05] }], ears: { kind: 'round', size: .025, f: .08, up: .7, out: .7 } }],
+      ['tail', { len: .3, n: 3, r: [.08, .02], droop: 20 }],
+      ['legs', { at: 1, kind: 'plantFore', out: .17, drop: .06, r: [.07, .06, .055, .05], claws: { r: .01, len: .07 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .17, drop: .04, r: [.08, .065, .055, .05], claws: { r: .008, len: .04 } }],
+      ['shell', { at: .5, lift: -.04, len: .95, w: .6, h: .3, scute: .09, rough: .85 }]
+    ] },
+  redcrest: { name: 'Redcrest', src: 'OG-040 (Aurenne: a feathered raptor-like predator of scrub and cliffs; hunts in packs)', gaits: ['walk', 'trot', 'stand'], speedK: 1.5, neckNod: .1, wag: .04, fold: 1.1, rough: .6,
+    palette: { coat: [.5, .27, .14], saddle: [.28, .14, .07], belly: [.84, .74, .58], dark: [.05, .04, .03], skin: [.42, .34, .24], horn: [.2, .16, .12], comb: [.82, .12, .07], feather: [.46, .22, .1], featherTip: [.14, .07, .04] },
+    pattern: { kind: 'stripes', period: .09, tone: 'saddle' }, fur: { len: .03, layers: 8, sx: 110, sy: 45, droop: .5 },
+    parts: [
+      ['spine', { hip: [.82, -.3], chest: [.86, .3], n: 3, r: [.16, .19, .15], s: [.8, 1.1], rump: .12, front: .08 }],
+      ['neck', { len: .4, n: 3, rise: 50, curve: -45, r: [.1, .065] }],
+      ['head', { len: .26, r: .06, pitch: 6, s: [.9, 1, 1], muzzle: { len: 1, r: .036, taper: .6 }, jaw: { len: .9, r: .026, drop: .5 }, eyes: [{ f: .4, up: .45, out: .6, r: .011, color: [.95, .6, .1] }], ears: { kind: 'leaf', size: .11, f: .3, up: 1, out: .15, back: 45, splay: 0, tone: 'comb' } }],
+      ['tail', { len: 1.05, n: 6, r: [.1, .02], droop: -4, curl: 1.5, fan: { n: 7, len: .3, spread: 34 } }],
+      ['arms', { at: .95, out: .1, up: -.04, len: .4, r: [.035, .026, .018], dir: [.35, -.55, .6], tone: 'coat', claws: { r: .004, len: .045 }, swing: .08 }],
+      ['legs', { at: .35, kind: 'bird', out: .09, drop: .08, r: [.1, .045, .026, .02], claws: { r: .008, len: .05 } }]
+    ] },
+  sunfan: re(PLANS.heron, { name: 'Sunfan', src: 'OG-040 (Aurenne: a long-legged bird of plains and oases with a radiant fan it displays)', scale: 1.15,
+    palette: { coat: [.86, .72, .44], saddle: [.72, .56, .3], belly: [.94, .88, .72], dark: [.06, .05, .04], skin: [.5, .32, .2], horn: [.4, .3, .18], comb: [.98, .68, .14], feather: [1, .74, .2], featherTip: [.92, .4, .08] },
+    parts: PLANS.heron.parts.map(([k, o]) => k === 'neck' ? [k, { ...o, len: .36 }] : k === 'head' ? [k, { ...o, beak: { len: .07, r: .012, up: -.05, hook: .2 }, ears: { kind: 'leaf', size: .045, f: .2, up: 1, out: .2, back: 35, splay: 8, tone: 'comb' } }] : k === 'tail' ? [k, { ...o, droop: -40, fan: { n: 15, len: .62, spread: 170, raise: 72 } }] : [k, o]) })
+});
+export const STRANGE = ['crownstag', 'mossback', 'bellthroat', 'lanternfox', 'thornrunner', 'shatterhorn', 'frostmane', 'glasswing', 'stonejaw', 'stormplume', 'redcrest', 'sunfan', 'mineprowler', 'sailshell'];
+// ── Session 854: the sea (OG-016's coastal and open-ocean bands, OG-084; backlog L3). The Tidecrab, the Storm Whale,
+// the giant octopus and the Shatterback were built; these are twelve more, and the gate eel and the Gate Leviathan are
+// a sea gate's antibodies, their seams lit as the Faolchú's are. The fish are the salmon's plan, the dolphin the whale's,
+// the moray the snake's, the jelly the wisp's; the rays, the squid and the seal have parts of their own ──
+Object.assign(PLANS, {
+  reefmoray: re(PLANS.miresnake, { name: 'Reef Moray', src: 'OG-016 (coastal: a reef moray)', scale: 1.1, water: 1.6, pattern: null, mottle: 2.2,
+    palette: { coat: [.4, .42, .16], saddle: [.24, .26, .1], belly: [.62, .6, .3], dark: [.05, .05, .04] },
+    parts: [
+      ['spine', { hip: [.09, -.5], chest: [.095, .3], n: 8, r: [.075, .09, .085], s: [.8, 1.15], rump: .02, front: .02 }],
+      ['head', { len: .17, r: .06, pitch: 0, s: [.85, 1.05, 1], muzzle: { len: 1, r: .042, taper: .7 }, jaw: { len: .92, r: .034, drop: .6 }, eyes: [{ f: .55, up: .55, out: .62, r: .009, color: [.85, .75, .2] }] }],
+      ['tail', { len: .75, n: 9, r: [.08, .01], s: [.55, 1.25], droop: 0 }]
+    ] }),
+  starweedray: { name: 'Starweed Ray', src: 'OG-016 (coastal: a starweed ray of the shallows)', gaits: ['swim', 'stand'], bl: .6, swimAxis: 'x', waveAmp: .08, water: 4, rough: .4, mottle: 1.4, wag: 0, pant: .02, finOpacity: 1,
+    palette: { coat: [.52, .45, .34], saddle: [.38, .31, .22], belly: [.92, .9, .84], dark: [.05, .05, .04], fin: [.46, .4, .3], pale: [.9, .86, .62] },
+    pattern: { kind: 'patches', size: .04, cut: .38, tone: 'pale' },
+    parts: [
+      ['spine', { hip: [.12, -.22], chest: [.12, .22], n: 4, r: [.08, .12, .07], s: [2.6, .35], rump: .02, front: .04 }],
+      ['head', { len: .06, r: .04, pitch: 0, s: [1.6, .5, 1], eyes: [{ f: .4, up: .95, out: .5, r: .008, color: [.7, .6, .2] }] }],
+      ['tail', { len: .6, n: 5, r: [.025, .004], droop: 0 }],
+      ['fins', { list: [{ at: .55, off: [.95, 0], out: [1, 0, 0], len: .42, h: .3, pair: 1, role: 'pec' }] }]
+    ] },
+  lanternjelly: re(PLANS.wisp, { name: 'Lantern Jelly', src: 'OG-016 (coastal: blooms on warm nights and draws fish and birds)', scale: .35, water: 7.5,
+    glow: { color: [1.5, 1.05, .35], base: .6, freq: 3, w: .02, all: .5 },
+    palette: { coat: [.92, .74, .42], belly: [.96, .86, .6], pale: [.96, .72, .46], thread: [1, .82, .46] } }),
+  coastaltuna: re(PLANS.riverjaw, { name: 'Coastal Tuna', src: 'OG-016 (open ocean: coastal tuna in fast schools)', scale: 1.5, bl: 1.6, mottle: .3,
+    palette: { coat: [.72, .76, .8], saddle: [.08, .12, .32], belly: [.92, .92, .92], dark: [.04, .04, .06], fin: [.2, .24, .42] },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.075, .1, .08], s: [.62, 1.12] }] : [k, o]) }),
+  skyskimmer: re(PLANS.riverjaw, { name: 'Skyskimmer', src: 'OG-016 (open ocean: a flying fish that glides on its fins)', scale: .45, mottle: .3,
+    palette: { coat: [.66, .72, .8], saddle: [.16, .28, .5], belly: [.92, .93, .94], dark: [.04, .04, .06], fin: [.55, .66, .82] }, finOpacity: .8,
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'fins' ? [k, { list: o.list.map(f => f.role === 'pec' ? { ...f, out: [1, .1, 0], len: .32, h: .26 } : f) }] : [k, o]) }),
+  reefshark: re(PLANS.riverjaw, { name: 'Reef Shark', src: 'OG-016 (open ocean: a reef shark)', scale: 2.6, bl: .9, mottle: .3,
+    palette: { coat: [.44, .48, .52], saddle: [.3, .34, .38], belly: [.9, .9, .88], dark: [.04, .04, .05], fin: [.36, .4, .44] },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'head' ? [k, { ...o, s: [.62, .78, 1], muzzle: { ...o.muzzle, taper: .45 } }] : k === 'fins' ? [k, { list: o.list.map((f, i) => i === 0 ? { ...f, len: .16, h: .16 } : f.role === 'pec' ? { ...f, len: .15, h: .14 } : f) }] : [k, o]) }),
+  stormswift: re(PLANS.stormwhale, { name: 'Stormswift', src: 'OG-016 (open ocean: rides the bow wave), OG-084 (dolphins)', scale: .17, bl: .9, waveAmp: .16, mottle: .4,
+    palette: { coat: [.46, .5, .56], saddle: [.24, .28, .34], belly: [.88, .88, .86], dark: [.04, .04, .05], fin: [.3, .34, .4] },
+    parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, len: 3.1, muzzle: { ...o.muzzle, r: .38, taper: .75 }, jaw: { ...o.jaw, r: .32 } }] : k === 'fins' ? [k, { list: o.list.map((f, i) => i === 1 ? { ...f, at: .45, len: 1.5, h: 1.7 } : f) }] : [k, o]) }),
+  driftersquid: { name: 'Drifter Squid', src: 'OG-016 (open ocean: a drifter squid)', gaits: ['drift', 'stand'], rough: .35, mottle: 1.6, wag: 0, pant: 0, water: 2.9, finOpacity: .95,
+    palette: { coat: [.66, .22, .22], saddle: [.42, .1, .12], belly: [.88, .62, .58], dark: [.05, .04, .04], fin: [.66, .26, .26], thread: [.7, .3, .3] },
+    parts: [
+      ['spine', { hip: [2.4, 0], chest: [1.4, 0], n: 3, r: [.05, .16, .14], s: [1, 1] }],
+      ['head', { len: .22, r: .12, pitch: 90, eyes: [{ f: .35, up: 0, out: .95, r: .03, color: [.9, .75, .3] }] }],
+      ['radial', { c: [0, 1.3, 0], parent: 'head', n: 8, ring: .07, len: .8, seg: 6, down: 80, curl: 1, r: [.035, .006], tag: 'arm' }],
+      ['radial', { c: [0, 1.3, 0], parent: 'head', n: 2, ring: .04, len: 1.6, seg: 7, down: 86, r: [.009, .004], thread: 1, rot: .25, tag: 'ten' }],
+      ['fins', { list: [{ at: .05, off: [.9, 0], out: [1, 0, 0], back: [0, -1, 0], len: .32, h: .2, pair: 1, role: 'pec' }] }]
+    ] },
+  seal: { name: 'Grey seal', src: 'OG-084 (marine life: seals), OG-016', gaits: ['swim', 'stand'], bl: .5, water: 2.2, rough: .3, mottle: 1.5, wag: 0, pant: .03, finOpacity: 1,
+    palette: { coat: [.44, .42, .4], saddle: [.28, .27, .26], belly: [.72, .7, .64], dark: [.04, .04, .04], fin: [.3, .28, .26] },
+    pattern: { kind: 'patches', size: .06, cut: .32, tone: 'saddle' },
+    parts: [
+      ['spine', { hip: [.3, -.6], chest: [.3, .35], n: 5, r: [.14, .2, .18], s: [1, .95], rump: .1, front: .08 }],
+      ['neck', { len: .12, n: 1, rise: 10, r: [.15, .12] }],
+      ['head', { len: .22, r: .09, pitch: 4, muzzle: { len: .9, r: .05, nose: 1, taper: .8 }, jaw: { len: .8, r: .03, drop: .5 }, eyes: [{ f: .5, up: .4, out: .6, r: .016, color: [.04, .03, .03] }] }],
+      ['tail', { len: .3, n: 2, r: [.1, .05], droop: 0 }],
+      ['fins', { list: [
+        { at: .85, off: [.85, -.6], out: [1, -.6, 0], back: [0, -.2, -1], len: .2, h: .18, pair: 1, role: 'pec' },
+        { on: 'tail', kind: 'fork', out: [1, 0, 0], len: .22, h: .22, role: 'caudal' }] }]
+    ] }
+});
+Object.assign(PLANS, {
+  sailfinray: re(PLANS.starweedray, { name: 'Sailfin Ray', src: 'OG-016 (open ocean: a great ray that glides in the deep channels)', scale: 3.2, bl: .4, pattern: null,
+    palette: { coat: [.12, .13, .16], saddle: [.06, .06, .08], belly: [.9, .9, .88], dark: [.03, .03, .04], fin: [.12, .13, .16] },
+    parts: PLANS.starweedray.parts.map(([k, o]) => k === 'fins' ? [k, { list: [{ ...o.list[0], len: .36, h: .46 }] }] : [k, o]) }),
+  blackcurrenteel: re(PLANS.reefmoray, { name: 'Blackcurrent Eel', src: 'OG-016 (deep: an eel that glows in the dark channels)', scale: 1.6,
+    palette: { coat: [.08, .09, .12], saddle: [.04, .05, .07], belly: [.16, .18, .24], dark: [.02, .02, .03] }, glow: { color: [.4, 1.2, 2.8], freq: 7, w: .04, all: .7 } }),
+  gateeel: re(PLANS.reefmoray, { name: 'Gate Eel', src: 'OG-016 (deep: drawn to the gates), a sea gate’s antibody (the Mouth, the Vault of the Tide)', scale: 3,
+    palette: { coat: [.16, .18, .2], saddle: [.08, .09, .1], belly: [.3, .3, .3], dark: [.03, .03, .03] }, glow: { color: [3.2, 1.6, .4], freq: 2.6, w: .035, all: .6 } }),
+  gateleviathan: re(PLANS.stormwhale, { name: 'The Gate Leviathan', src: 'OG-016 (said to move between the islands as the gates change), a sea gate’s antibody', scale: 1.8, bl: .15, mottle: 1.8,
+    palette: { coat: [.14, .16, .2], saddle: [.07, .08, .1], belly: [.36, .36, .38], dark: [.03, .03, .04], fin: [.12, .14, .18], horn: [.5, .62, .78] },
+    glow: { color: [3, 1.5, .4], freq: .35, w: .025, all: .55 },
+    parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 6, len: 3.2, r: .35, f: .15, up: 1, out: .5 } }] : [k, o]) })
+});
+export const SEA = ['tidecrab', 'reefmoray', 'starweedray', 'lanternjelly', 'coastaltuna', 'skyskimmer', 'stormwhale', 'stormswift', 'sailfinray', 'driftersquid', 'reefshark', 'octopus', 'seal', 'blackcurrenteel', 'gateeel', 'shatterback', 'gateleviathan'];
+// ── Session 855: beasts of burden (OG-046's roads; OG-077's post hare, built in Session 773; backlog L3). The horse is
+// its own plan and the mule and the donkey are the horse; the ox and the yak are the cow, the reindeer the stag, the
+// giant goat the goat with a saddle. OG-046's llama is the Frostmane (Session 853) and its cow is the livestock's ──
+Object.assign(PLANS, {
+  horse: { name: 'Horse', src: 'OG-046 (beasts of burden: the horse)', gaits: ['walk', 'trot', 'gallop', 'stand'], speedK: 1.1, wag: .06, neckNod: .08, rough: .5,
+    palette: { coat: [.34, .22, .14], saddle: [.24, .15, .09], belly: [.44, .3, .2], dark: [.04, .03, .03], hoof: [.1, .08, .07], mane: [.07, .05, .04] },
+    fur: { len: .01, layers: 5, sx: 420 },
+    parts: [
+      ['spine', { hip: [1.42, -.68], chest: [1.48, .52], n: 4, r: [.3, .3, .33], s: [.82, 1.12], rump: .22, rumpDrop: .05, front: .2, frontDrop: .1 }],
+      ['neck', { len: .75, n: 3, rise: 55, curve: -12, r: [.22, .12], s: [.7, 1.3], fwd: .04 }],
+      ['head', { len: .58, r: .12, pitch: 62, s: [.85, 1, 1], muzzle: { len: 1, r: .085, nose: 1, taper: .85 }, jaw: { len: .85, r: .06, drop: .5 }, eyes: [{ f: .3, up: .4, out: .8, r: .022, color: [.05, .04, .03] }], ears: { kind: 'leaf', size: .08, f: .08, up: .9, out: .5, splay: 10, back: 5 } }],
+      ['tail', { len: .7, n: 3, r: [.07, .06], droop: 75, tone: 'mane' }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .14, drop: .14, r: [.13, .07, .04, .045] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .14, drop: .08, r: [.17, .08, .042, .045] }]
+    ] },
+  ox: re(PLANS.cow, { name: 'Ox', src: 'OG-046 (beasts of burden: the ox)', scale: 1.15, pattern: null, speedK: .7,
+    palette: { coat: [.32, .21, .14], saddle: [.22, .14, .09], belly: [.56, .46, .36], dark: [.06, .04, .04], hoof: [.1, .08, .07], horn: [.84, .78, .64], skin: [.5, .36, .3] },
+    parts: PLANS.cow.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .42, r: .04, spread: 1 } }] : [k, o]) }),
+  yak: re(PLANS.cow, { name: 'Highland yak', src: 'OG-046 (beasts of burden: the highland yak)', scale: 1.05, pattern: null, speedK: .7,
+    palette: { coat: [.16, .12, .1], saddle: [.1, .08, .07], belly: [.22, .18, .15], dark: [.04, .03, .03], hoof: [.08, .07, .06], horn: [.78, .74, .66], skin: [.3, .24, .22] },
+    fur: { len: .14, layers: 12, sx: 80, sy: 18, droop: .75 },
+    parts: PLANS.cow.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hump: { at: .85, up: .22, len: .5, r: .3 } }] : k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .36, r: .034, turn: .7, rise: .9, spread: .9 } }] : [k, o]) }),
+  camel: { name: 'Camel', src: 'OG-046 (beasts of burden: the camel, the caravans)', gaits: ['walk', 'trot', 'stand'], speedK: .9, wag: .05, neckNod: .1, rough: .7,
+    palette: { coat: [.74, .58, .4], saddle: [.62, .46, .3], belly: [.84, .72, .56], dark: [.06, .05, .04], hoof: [.3, .24, .18] },
+    fur: { len: .02, layers: 7, sx: 260, droop: .3 },
+    parts: [
+      ['spine', { hip: [1.7, -.7], chest: [1.75, .55], n: 4, r: [.28, .3, .32], s: [.75, 1.1], rump: .2, front: .2, frontDrop: .12, hump: { at: .5, up: .26, len: .45, r: .34, sx: .7 } }],
+      ['neck', { len: 1.0, n: 4, rise: -15, curve: 120, r: [.2, .11], s: [.75, 1.2] }],
+      ['head', { len: .55, r: .11, pitch: 20, muzzle: { len: 1, r: .08, nose: 1, taper: .85 }, jaw: { len: .85, r: .055, drop: .5 }, eyes: [{ f: .32, up: .5, out: .75, r: .02, color: [.05, .04, .03] }], ears: { kind: 'round', size: .04, f: .08, up: .85, out: .6 } }],
+      ['tail', { len: .5, n: 2, r: [.05, .03], droop: 75 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .16, drop: .12, r: [.14, .07, .045, .07] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .16, drop: .08, r: [.16, .075, .045, .07] }]
+    ] },
+  reindeer: re(PLANS.stag, { name: 'Reindeer', src: 'OG-046 (beasts of burden: the reindeer, the Mark)', scale: .85,
+    palette: { coat: [.46, .4, .34], saddle: [.32, .27, .22], belly: [.86, .84, .8], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.7, .64, .52] }, fur: { len: .04, layers: 9, sx: 200, droop: .4 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { len: 1.1, r: .026, f: .1, up: .85, out: .3, depth: 3 } }] : [k, o]) })
+});
+Object.assign(PLANS, {
+  mule: re(PLANS.horse, { name: 'Mule', src: 'OG-046 (beasts of burden: the mule)', scale: .9,
+    palette: { coat: [.3, .22, .16], saddle: [.22, .16, .11], belly: [.62, .54, .46], dark: [.04, .03, .03], hoof: [.1, .08, .07], mane: [.1, .08, .06] },
+    parts: PLANS.horse.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .15, splay: 18 } }] : [k, o]) }),
+  donkey: re(PLANS.horse, { name: 'Donkey', src: 'OG-046 (beasts of burden: the donkey)', scale: .72, speedK: .9, fur: { len: .022, layers: 7, sx: 260, droop: .3 },
+    palette: { coat: [.5, .48, .46], saddle: [.4, .38, .36], belly: [.86, .84, .8], dark: [.04, .04, .04], hoof: [.1, .08, .07], mane: [.16, .15, .14] },
+    parts: PLANS.horse.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .18, splay: 22 } }] : [k, o]) }),
+  giantgoat: re(PLANS.goat, { name: 'Giant goat', src: 'OG-046 (beasts of burden: a giant goat, saddled)', scale: 2.1,
+    palette: { ...PLANS.goat.palette, blanket: [.2, .32, .5], leather: [.36, .22, .12] }, parts: [...PLANS.goat.parts, ['saddle', { at: .55, len: .24 }]] })
+});
+export const BURDEN = ['horse', 'mule', 'donkey', 'ox', 'camel', 'reindeer', 'yak', 'giantgoat', 'posthare'];
+// ── Session 856: three of OG-016's deep band (backlog L3). The angler and the stonefish are the salmon's plan with
+// another head and body; the crimson leviathan is the Mire Snake at a sea serpent's size. The kelpstrider and the
+// pierwinkle want parts the kit lacks (a leafy frond, a coiled shell) ──
+Object.assign(PLANS, {
+  abyssalangler: re(PLANS.riverjaw, { name: 'Abyssal Angler', src: 'OG-016 (deep: a lure of light over a mouth of teeth)', scale: 1.4, bl: .5, mottle: 1.8, rough: .55,
+    palette: { coat: [.12, .1, .1], saddle: [.07, .06, .06], belly: [.2, .17, .16], dark: [.03, .02, .02], fin: [.14, .12, .12] },
+    glow: { color: [.6, 1.6, 2.4], base: 0, freq: 10, w: .02, all: .25 },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.07, .11, .14], s: [.8, 1.05] }] : k === 'head' ? [k, { ...o, len: .26, r: .13, s: [1, .95, 1], muzzle: { len: .9, r: .1, s: [1.1, .8, 1], taper: .9 }, jaw: { len: 1, r: .085, drop: .9 }, eyes: [{ f: .35, up: .7, out: .5, r: .008, color: [.6, .7, .7] }],
+      stalks: { f: .35, up: 2.6, out: 0, r: .03, len: .2, color: [.7, 1, 1] }, fangs: { r: .006, len: .045, f: .9, up: -.2, out: .7 } }] : [k, o]) }),
+  stonefish: re(PLANS.riverjaw, { name: 'Stonefish', src: 'OG-016 (coastal: a stonefish that lies as a rock among rocks)', scale: .5, bl: .2, mottle: 3, rough: .95,
+    palette: { coat: [.42, .36, .3], saddle: [.3, .24, .2], belly: [.56, .46, .4], dark: [.05, .04, .04], fin: [.4, .32, .26], horn: [.5, .42, .34] },
+    parts: [...PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hip: [.2, -.15], chest: [.2, .18], r: [.09, .13, .12], s: [1.1, .9] }] : k === 'head' ? [k, { ...o, pitch: -8, s: [1.2, .85, 1], muzzle: { ...o.muzzle, s: [1.2, .7, 1], taper: .9 } }] : [k, o]), ['spines', { n: 9, from: .1, to: .9, len: .09, r: .012, tone: 'horn', taper: .3 }]] }),
+  crimsonleviathan: re(PLANS.miresnake, { name: 'Crimson Leviathan', src: 'OG-016 (deep: a great red serpent of the open sea)', scale: 22, water: .2, pattern: { kind: 'bands', period: .14, tone: 'band' }, mottle: 1.2,
+    palette: { coat: [.56, .1, .08], saddle: [.34, .05, .04], belly: [.86, .62, .44], dark: [.05, .03, .03], band: [.38, .06, .05], horn: [.86, .78, .62] },
+    parts: [...PLANS.miresnake.parts.map(([k, o]) => k === 'head' ? [k, { ...o, jaw: { len: .9, r: .016, drop: .5 }, horns: { len: .05, r: .005, f: .2, up: .9, out: .5, turn: .3, rise: .3, back: 1, spread: .3 } }] : [k, o]), ['spines', { n: 16, from: .05, to: 1, len: .025, r: .005, tone: 'horn', taper: .3 }]] })
+});
+SEA.push('abyssalangler', 'stonefish', 'crimsonleviathan');

@@ -17579,3 +17579,349 @@ Every opening is placed from the storeys, so the doors, sashes, fanlight and sho
 ### Needs eyes
 - **The pictures `pieces-gatelands-*.jpg` still show the old, taller town storeys.** They need retaking by a session that has the people's pack, so the street keeps its people for scale. Until then the record's numbers and the pictures disagree on the three town plans' heights.
 - **The streets are lower:** a townhouse front is 0.5 m lower and its storeys at 2.9 to 3.0 m read squatter. Whether the town still reads as a town of note beside the cottages wants Michael's eye on the next pictures.
+## v80 — Session 839 — The cloak hangs in to the legs and falls in folds, and nothing comes through it (B2, prototype only; the bodies builder's first session)
+Michael's A on #274 (13 Oct) kept the wardrobe's method, *drapes hang, shells fit*, on one condition: *as long as this doesn't have the arms phasing through the clothing.* The proposal he approved promised the cloak "deeper folds and a hem that comes in to the legs". Session 805's cloak had neither. Its 34 columns fell from the shoulders and hung straight down from wherever the arms and hands pushed them. The back flared out behind the legs, and the folds were a 2.2 cm ripple you could not see. Session 826 tried twice to pull the hem in point by point and parked both tries (`auto/wip-cloak-hang`: a crease down the back, a tear at the lower right). Its note said the next try should pull each column as one curve and fold by moving whole columns. That is what this session does (`buildHang` in `people.js`).
+
+This is the bodies builder's first run, under FREEZE #297 (F2a), so it touches only the prototypes. The builder's files on main were older than auto/backlog's, so the first commit carries Sessions 823, 824 and 826 (the hood, the brows, brows by people) over from auto/backlog byte for byte. The two branches will merge without a conflict.
+
+What the cloak does now, in order, all round the neck's vertical axis:
+- **The columns are put in order.** The shoulder line crossed itself at the spine: at the centre back, columns 26 to 30 swapped places from the shoulders down. It was hidden while every column stood at the same radius, and showed as the sheet turned inside out once they came in by different amounts. Each row is now untangled so its columns run round the body in order, at least a third of the mean spacing apart.
+- **A map of what is under the cloak.** For every 2 cm of height and 4° of angle it holds the furthest point of the body and, when a skirt is worn, of the skirt's fitting shell plus its push. The first version read every point in the pack, including MakeHuman's helper shells. The wide skirt helper made every side column look as if it touched the body down to the hem.
+- **The column comes in as one curve.** Below the last row where it lies on the body (the shoulder, the arm, the hand), it comes in 75% of the way to the widest thing below it, along a smooth step over 35 cm. It never comes in past anything lower down that would push it out again. How far each point comes in is worked out per column, then smoothed across the columns before anything moves. Without that, the columns over the spine's groove dropped in alone and creased the back.
+- **No sharp lobes.** Where the hand pushes the cloth out, the cloth rises to it and falls from it no faster than 1 cm out for 3 cm along the column, and only below the shoulders. A first try also spread this across the columns. It lifted the whole upper back and buried the braids, so it was taken out.
+- **The folds are whole columns.** They follow a wave about six columns long (5.5 to 6.5, from the seed) that wanders. Each fold is up to 3 to 5.5 cm deep, deeper on a longer cloak, and grows from nothing below the shoulders to its full depth at the hem. A fold's trough never comes in closer than the body allows, so on the arms it is shallow. The hem rises on a ridge and drops in a trough.
+- **More columns:** 56 instead of 34, so a fold is six columns wide rather than four facets. The cloaks are 7,700 to 15,400 triangles, against 4,620 to 9,240 before.
+
+**The tunic through the cloak, fixed on the way.** With the first map (the body alone), the Markman's tunic skirt came out through the back of his cloak at the hip. The skirt is cut from the skirt helper and pushed out from it, and the cloak was coming in to the body under it. The map now includes the skirt, and so does the new check.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all passed**, with six new checks (two on each of the three cloaks):
+  - **Nothing comes through the cloak.** Every point of the body (and of the skirt when one is worn) between the shoulders and the hem, inside the cloak's span, lies nearer the axis than the sheet at its angle and height. That is 0 of 5,898 points for the woman, 0 of 1,690 for the short cloak and 0 of 6,324 for the Markman. Before the skirt was in the map, the Markman's back failed this by eye while the body-only count read 0. The skirt is now counted.
+  - **The hang.** The Markman's long cloak comes in 13.0 cm at the hem from its widest. The short cloak comes in 2.6 cm. The woman's comes in 1.4 cm: her hands reach down to the hem, and her median column already rests 1.3 cm off her long skirt. A cloak passes if it comes in more than 2 cm or rests within 3 cm of what is under it.
+  - **The folds** are 3.7, 4.7 and 5.5 cm deep, and no column is crossed on any row.
+- The old cloak checks still pass. The closest the cloth comes to the body is 3.6 to 4.1 cm, with no point under it, and the brooch sits 13 to 16 cm from the neck.
+- **Pictures:** `builder-cloak-front`, `-back`, `-markman` and the four hood pictures were shot again. New: `builder-cloak-side.jpg`, `builder-cloak-markman-front.jpg`, and `builder-cloak-hang.jpg` (Session 805's cloak above this one, from the side, the back and the Markman's back).
+### Needs eyes
+- **The front edges** still hang as straight flaps beside the opening. A cloak's edge turns back and shows its lining, and that is not built.
+- **The woman's back** now flares a little at the hips, where the cloth falls over them. It reads as cloth over a body, but it is wider than a wool cloak would sit.
+- **The shoulders** are still the shelf Session 805 made over the arm. The hang starts below them.
+- **Walking.** The cloak is still built once on the standing pose and is not skinned. Michael's condition, no arm through the cloth, is checked for that pose only. It has to be checked again through a walk once B4's clips move the arms (F4 and F10).
+- **The builder's light** is dark on dark cloth. The folds read in the side and back pictures, and barely in the Markman's brown.
+
+## v80 — Session 840 — The beard under a cheek line: no card under the eye or by the nose (B3, prototype only)
+Session 826's close-ups of one man of each people noted two strays under *Needs eyes*: a dark wedge under the Old Blood man's eye and a pale card by the Markman's nose. The face pictures show the cause. Session 770's beard was every face triangle under a flat line at y 0.705, on the unmorphed body. The eye's lower lid is at y 0.715, so the beard's top reached within a centimetre of it. Its dark base shell took a triangle of the lower lid, which was the wedge. Across the cheeks it ended in a hard, jagged edge that followed the triangles, so a full beard read as a slab pasted on up to the cheekbones (`builder-man-face.jpg` before this session). The pale card was a moustache card rooted on the nostril's wing.
+
+The fix is in `people.js`:
+- **A cheek line** (`beardLine`). The beard's top runs from the sideburn by the ear (y 0.712, 7 cm out from the middle) down to the corner of the mouth (y 0.675, 3.2 cm out), on a slight curve. Inside the eyes' width that puts it 2.5 cm under the lower lid. This is the line a real beard grows to, cheekbone to mouth.
+- **The base under the hairs.** The dark base shell is its own region now (`beardBase`), 8 mm inside the cheek line. The top edge of the beard is made of the hairs' roots, not a cut in a solid shell. That is 1,518 of the beard's 2,078 triangles.
+- **The moustache over the whole upper lip.** It runs up to the nose's base (y 0.684) in the middle and comes lower toward the nostril's wing (0.4 mm for each millimetre out, to 3.3 cm). With the beard's top lowered, the first try left the upper lip bare: the moustache's roots stopped at y 0.678, and its cards hang downward.
+
+Bearded men only change in their beards. Nothing else draws from the seeded stream in a new order, so every genome builds the same body, hair and brows as before.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all passed**, with one new check: the beard's highest triangle within the eyes' width is 2.5 cm under the lower lid, the moustache reaches y 0.684, and the dark base lies inside the hairs. Session 770's flat top would measure 1.0 cm and fail it.
+- **Pictures, shot again:** `builder-man-face.jpg`, `builder-woman-face.jpg` (unchanged, no beard) and the six brow close-ups. The wedge under the Old Blood man's eye and the card by the Markman's nose are gone, and the cheeks above the beard are clear.
+### Needs eyes
+- **The mouth.** In the full face, the lips show through a dark gap in the beard at the mouth. That is the old mouth cut (an ellipse round y 0.655), and this session did not change it.
+- **One line for every face.** Every beard follows the same cheek line. A Markman's beard that runs higher, or a trimmed Aurennais beard, is a genome number away and not set by `PEOPLES` yet.
+- **The forehead's pale smear** on the right of every face picture is the skin's shading under the builder's key light, not the beard. It was there before.
+
+## v80 — Session 841 — The Gatelanders' shoulder cape, with an embroidered hem (B2, prototype only)
+B2's next piece in the plan Michael approved on #274 ("then do capes, hoods and the Crown tabard"). Both kept Gatelander sheets draw it. OG-059 shows short red shoulder capes held by round brass cloak pins, and OG-048 and OG-059 both show red embroidered borders. Their rows also ask that country folk carry more of the green and blue than the boards' red.
+
+A cape is the cloak cut another way, so it takes the cloak's whole method, including Session 839's hang and folds. `D.cape` (a new dress flag, saved only when set) changes three numbers in `buildCloak`:
+- **The length:** 24 to 38 cm of cloth below the shoulder line, set by `cloakLen`, so the hem falls between the upper arm and the elbow. In the check, the hems sit 32 and 39 cm under the neck.
+- **The wrap:** the front gap at the throat is 0.14 rad a side instead of 0.38. The cape wraps round the shoulders and meets at the brooch, rather than hanging as a back panel.
+- **The flare:** 1.55 instead of 1.12 to 1.52. A cape is a part-circle of cloth and falls over the arms in folds, 3.8 to 5.5 cm deep at the hem.
+
+**The embroidered hem** (`D.cloakHem`, a colour in the builder's garment list as *embroidered hem*) is a band over the last 3.5 cm of the sheet, laid 1.5 mm proud of it round the neck's axis so it never sinks into the cloth. It works on a long cloak too.
+
+**Who wears one:** Gatelanders who roll no cloak have an even chance of a cape, in madder, a darker red or moss (`capes` in `PEOPLES.gatelander`), with the people's brass brooch. Three in five capes have a hem in ochre, moss or sea blue. The roll comes after the brows, so every earlier roll of a seed is as it was. No other people rolls a cape.
+
+The builder page has a *cape* box beside *bib* and *leather apron*.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 131 checks pass.** Two new cloaks are checked: a woman's madder cape with an ochre hem, and a man's moss cape at full length. For each:
+  - the cape hangs clear of the body (closest 3.6 and 3.7 cm, no point under it);
+  - nothing comes through it (0 of 607 and 0 of 759 points; the through-check needs 300 points for a cape, against 1,000 for a cloak);
+  - it is cut to the elbows (hems 32 and 39 cm under the neck), the hem band is there only when asked for, and the brooch is 13 and 14 cm from the neck;
+  - each saves and loads back (796 and 773 bytes).
+- **The roll:** 7 of 40 rolled Gatelanders wear a cape, and none of 40 of each other people do.
+- **`kit.check.mjs`** still passes; the one genome format carries the new flag.
+- **Triangles:** a cape is 3,410 to 4,180, against 7,700 to 15,400 for a cloak.
+- **Pictures:** `builder-cape-woman.jpg`, `builder-cape-back.jpg`, `builder-cape-man.jpg`.
+### Needs eyes
+- **The shoulders** are the cloak's shelf, which shows more on a cape. A cape cut on the round would sit lower over the point of the shoulder.
+- **The front** opens wider below the brooch than OG-059's capes do, so the apron and the tunic show between the edges.
+- **The band is plain colour.** OG-048's borders are patterned, and the embroidery's pattern is a texture still owed.
+- **A hood on the cape** (OG-048's hooded capes) is not tried. The hood is built against the long cloak's hem.
+
+## v80 — Session 842 — The Crown's tabard, crimson and gold, belted over (B2, prototype only)
+The last piece named in the wardrobe plan Michael approved on #274 ("then do capes, hoods and the Crown tabard"). The kept Gatelander sheets draw the Crown's guards in it: OG-048 has a crimson cape and tabard with gold embroidery, and OG-059 a red-and-gold tabard. The canon gives the colours, *Crown crimson-and-gold* (§1.5, the mixing rules: national signage). It does not give an emblem. The catalogue notes that the device drawn on the sheets (a gold sun-cross) is the image generator's and that the emblem is a decision, so this tabard carries none.
+
+`buildTabard` in `people.js` hangs two panels on the posed body, front and back. They are joined over the shoulders, open at the sides, with a hole for the neck.
+- **The outline.** For each of 21 columns, the furthest point forward and back, and the top, of everything within 1.5 cm of the column's line: the body, and also the tights' shell under a tunic (with the tunic's own push at each height) and the skirt's shell under a skirt. The first version read the skin alone, and the tunic came through the tabard in green patches.
+- **The hang.** Each column falls straight below the furthest point above it, the chest or the belly. It is taken in at the belt and falls straight again to the hem. The step in and out at the belt is smoothed over 4 cm down the column, and the panel is smoothed across the columns, never in past what is under it. The first version crumpled at the belt and was lumpy over the chest.
+- **The belt is worn over it.** In the belt's band the cloth lies 2.5 cm off the tights' shell, or 4.5 mm over anything worn if that is further out. That is over the tunic (1.9 cm off the shell there) and under the belt (3 cm), so the belt shows clean across the tabard, as a guard wears it.
+- **The cut.** The tabard is 0.56 of the shoulders' half width each side of the middle (37 cm on the checked man, 27 cm on the woman). The hem is 25 to 45 cm under the belt, set by `tabardLen`, so it reaches the mid-thigh. The neck hole is 6.8 cm each side, dipping 7.5 cm in front and 3 cm behind.
+- **The colour.** The cloth is wool in the tabard's colour, with a 3 cm gold border round the sides, the hem and the neck. It is done in vertex colours, so it is one mesh and one draw.
+
+The dress takes `tabard` and `tabardTrim` (colours, in the builder's garment list) and `tabardLen`. No people rolls a tabard: it is a role's dress (the Crown's guards and officials), for the cast and the roles still owed in B3.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 135 checks pass**, with four new ones on two tabards: a man over a tunic, and a woman over a long skirt.
+  - **Nothing comes through.** No point of the body, the tunic's shell or the skirt's shell lies in front of the front panel or behind the back panel, inside the tabard's width between the shoulders and the hem: 0 of 2,907 and 0 of 4,065 points, with a 4 mm margin.
+  - **The cut.** They are 37 and 27 cm wide, with hems 91 and 81 cm under the neck. Both are belted, 4,864 and 4,816 triangles, and each saves and loads back (773 and 746 bytes).
+- **`kit.check.mjs`** passes.
+- **Pictures:** `builder-tabard-man.jpg`, `builder-tabard-back.jpg`, `builder-tabard-woman.jpg`.
+### Needs eyes
+- **The emblem.** The Crown's device is not in the canon, so the tabard is plain. If it should carry one, that is a call for Michael and the quest writer, not the builder.
+- **A cloak over the tabard** is not handled yet. The cloak's floor reads the body and the skirt, not the tabard, so a guard in both could show the tabard through the cloak's back.
+- **The kettle helm, the spear and mail under the tabard** are L7's armour and weapons, still to come.
+- **The panels are flat as boards** below the belt, and a wool tabard would swing. In the game that is the secondary motion's job (Session 267's swinging cloaks), on the new skeleton in F4.
+
+## v80 — Session 843 — The common animals, ten plans in the creature kit (backlog L3, prototype only)
+Backlog L3 calls wildlife the biggest gap: there are no peaceful land animals in the game today. Its first item is OG-084's ten animals of all islands, the shared fauna under each island's own: wolf, red fox, brown hare, raven, crow, wild boar, deer, badger, otter and trout. The bodies builder's order puts L3's animals first among the backlog's bodies, as genomes and plans in the kit. Each is now a plan in `creatures.js` (exported as `COMMON`), and the kit needed no new code.
+- **Five are other plans at another size and colour**, the way the post hare is the Snowleap Hare at 5.5 times its size:
+  - the grey wolf is the Ironwolf at 0.92, grey-brown over cream;
+  - the brown hare is the Snowleap Hare at 1.2, brown;
+  - the raven is the Skyraven at 0.9;
+  - the deer is the Elderstag at 0.74, red-brown, with antlers half as long and one branching less;
+  - the trout is the Riverjaw Salmon at 0.48, olive and spotted.
+  A helper, `re(base, o)`, carries a base plan's gaits and manners over.
+- **The crow** is the raven's flier at 0.72: greyer black, a straighter beak with less hook, and slightly shorter primaries. It walks first, where a raven hops.
+- **The red fox** is a light canid: a long bushy tail (thicker at the middle than at the root), tall pointed ears, a fine muzzle, white below and red above.
+- **The wild boar** is short ungulate legs under a deep chest with a low hump at the shoulders. It has a long wedge of a head, leaf ears and two small upturned tusks, written as `horns` with a short turn and a steep rise. Its coat is long, coarse and dark.
+- **The badger** is a low wide spine on plantigrade legs with digging claws: grey above, black beneath, small round pale ears.
+- **The otter** is a long, arched, low spine on short legs with a thick tapering tail. It bounds and walks.
+
+Each plan names its source in OG-084 (and OG-009 or OG-014 where they draw the same animal). A plan is about a dozen lines.
+
+**Fixed on the way.** The line-up picture (`creatures.check.mjs --shots`) now builds 33 plans before the page's load event, which took longer than Playwright's 30-second default for loading a page, so the shot threw. Its `goto` now has the same 15 minutes as the wait after it.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 261 checks pass**, including one new check: the common set is ten plans, each from OG-084.
+  - Every one of the ten builds from its parts in 0.1 to 0.7 s, with 18 to 32 bones and 17,500 to 48,964 triangles. The boar was 132,000 at first, because the mesher sizes its grid to the thinnest part (its 1.2 cm tail); a 4 cm tail brought it to 24,488.
+  - Every vertex's weights sum to one, and every foot reaches its target through every gait to the millimetre.
+  - The feet are down for about each gait's duty: the wolf's trot 0.45 of 0.45, and the boar's walk 0.56 of 0.68, inside the check's 0.2.
+  - Every genome is 149 to 154 bytes.
+- **Speeds by the Froude rule:** the fox trots at 1.9 m/s and the wolf at 2.6, the deer gallops at 4.5, the badger walks at 0.43 and the otter bounds at 1.25.
+- **`kit.check.mjs` and `builder.check.mjs`** still pass.
+- **Pictures:** `creatures-<plan>.jpg` for each of the ten, `creatures-common.jpg` (the ten on one sheet), and `creatures-line.jpg` (all 33 plans at true size), shot again.
+### Needs eyes
+- **The badger has no face.** Its black-and-white stripes are the animal's one mark, and the kit's patterns run along the body, not over the head. A head pattern is owed.
+- **The wolf reads olive** under the bestiary's grey sky. Its palette is grey-brown and may want to be greyer.
+- **"Recoloured by island"** (L3's wording) is not done. Each animal has one palette. The genome's tint shifts it, but no island's palette is written yet.
+- **None of them is in the game.** That waits for F4 to merge, then the wolves move over first (B5).
+
+## v80 — Session 844 — Livestock: the cow, the sheep, the goat and the hen (backlog L3, prototype only)
+L3's livestock item asks for chickens, goats, sheep, cows and bees on farms and in fields, from the two kept farm sheets, OG-023 and OG-035. The four with skeletons are now plans in `creatures.js` (exported as `LIVESTOCK`), made from the kit's parts with no new code:
+- **The cow:** a deep barrel of a body (spine radii 0.36 to 0.42 m) on ungulate legs, with a heavy neck. Its long head is carried low, with ears out sideways, short horns curving up and out, and a long tail with a tuft's weight. It is red-brown with a pale belly. A first try used the kit's stripes for patches and they came out as wavy bands, so the cow is plain until the kit has a patch pattern.
+- **The sheep:** a round body under a fleece 7 cm deep (11 shells of fur), with a bare dark face and ears out sideways, thin legs and a short tail.
+- **The goat:** a lighter, high-shouldered body with a rough coat. Its horns sweep back (shortened after the first picture, where they read as a single spike), its tail is cocked up, and it gallops.
+- **The hen:** the Stormplume's shape at a chicken's size. It has a round chest, a short S-curved neck, a small hooked beak, a red comb (the kit's ear bit, in the palette's new comb colour, set close to the middle), a cocked tail and yellow legs. It walks with the neck nodding.
+
+The cow came out at 125,000 triangles at first, from its thin tail, as the boar did in Session 843. A thicker tail brought it to 31,444. The grid is sized to the thinnest part, so a plan should keep its tail and legs above about 3 cm.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 296 checks pass**, with one new check that the livestock are four plans, each from the farm sheets.
+  - Each builds in 0.26 to 0.53 s, with 18 to 31 bones and 26,680 to 45,116 triangles.
+  - Every foot reaches its target through every gait, and the feet are down for about each gait's duty: the hen's walk 0.69 of 0.68, the cow's 0.54 of 0.68.
+  - Every genome is about 150 bytes.
+- **Speeds:** the cow walks at 1.2 m/s, the sheep at 0.96, the goat gallops at 3.9 and the hen walks at 0.77.
+- **Pictures:** `creatures-cow.jpg`, `-sheep`, `-goat`, `-hen`, `creatures-livestock.jpg` (the four on one sheet), and `creatures-line.jpg` (37 plans), shot again.
+### Needs eyes
+- **The cow's head** hangs low and long, so in profile it is a little tapir-like. Its horns barely show from the side.
+- **No patches or breeds.** A pied cow, a black-faced sheep, and breeds by island (the Mark's shaggy cattle and goats, Aurenne's) are patterns and palettes still to write.
+- **The bees** are not skeletal, so they are not this kit's.
+
+## v80 — Session 845 — Two coat patterns in the kit: a pied cow and the badger's face (backlog L3, prototype only)
+Sessions 843 and 844 each left a coat they could not draw, because the kit had only bands and stripes running along the body. The badger had no face, and its black-and-white stripes are the one mark everyone knows it by. The cow was plain brown, after the stripes came out as wavy bands. `dressFlesh` in `creatures.js` gains two patterns, read off the flesh at every vertex like the others:
+- **Patches** (`pattern: { kind: 'patches', size, cut, tone }`). Where a slow noise, one cycle per `size` metres of the body, crosses `cut`, the coat turns to the patch tone. A finer noise gives the edge a little raggedness. The cow takes white patches 0.32 m across, which is a pied cow.
+- **A face mask** (`face: { from, to, stripe, ground, back }`). On the head and jaw (where those bones carry more than half a vertex's weight), the distance out from the head's middle line is measured in the head's own radii. Between `from` and `to` the face takes the stripe tone, and elsewhere the ground tone, from the nose back past the ears and above the jaw's lower edge. The badger takes black stripes from 0.28 to 0.78 of its head's radius over white: the white blaze down the middle, the black bands through the eyes, white cheeks.
+
+Neither pattern draws from the seeded stream, so every other plan builds as it did.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 298 checks pass**, with two new ones read off the vertex colours:
+  - **The cow is pied:** 41% of its hide is pale.
+  - **The badger's face is white with its stripes:** 1.00% of its hide is white with the mask and 0.00% without it (its ears alone did not cross the line). 32% of the hide is black.
+- Every plan still builds, with its weights summing to one and its feet on their targets.
+- **Pictures:** `creatures-cow.jpg` and `creatures-badger.jpg` shot again, `creatures-badger-front.jpg` new, and the sheets `creatures-livestock.jpg` and `creatures-common.jpg` rebuilt.
+### Needs eyes
+- **The badger head on** (`creatures-badger-front.jpg`, from `builder.html?plan=badger&view=front`): the white blaze and the black bands through the eyes read. The white cheeks are lost in the fur's shading, and the mask's edges are hard.
+- **The cow's patches are random.** A breed's own pattern (a belted cow, a white face) would be a mask on the body as the face mask is on the head.
+
+## v80 — Session 846 — The Gatelands' fifteen, all in the creature kit (backlog L3, prototype only)
+L3's second item is OG-009's fifteen animals of the Gatelands, the home island. Five were already plans: the Elderstag, the Crag Hawk and the Mire Snake (Sessions 772 to 775), and the River Otter and the Woodland Badger (the common set, Session 843). The other ten are new in `creatures.js`, and `GATELANDS` lists all fifteen. The catalogue's note says the sheet's Grove Turkey is a New World bird and out of register on an Irish island, and suggests a capercaillie, so that is what is built.
+- **Gatefen Boar:** the wild boar at 1.08, near black, with a crest of bristles down its back (the kit's spines part, ten of them in the saddle's colour).
+- **Redspine Fox:** the red fox redder, with its back darkened to a rust-black spine by the saddle's counter-shading. A first try with the kit's stripes drew bands across the body instead and was taken out.
+- **Great Heron:** its own plan. A small grey body high on thin wader legs (the bird preset with radii of 4 cm to 8 mm; the preset's default radii made trousers of them), a long S-curved neck of five bones that nods as it walks, and a straight yellow dagger of a beak.
+- **Hollowcat:** a wildcat on light canid legs. It has a round short-muzzled head, tall tufted ears, green-gold eyes, a thick blunt tail, and a tabby's stripes.
+- **Greenward Stoat:** the otter at 0.55, brown over cream.
+- **Marsh Frog:** the Bellthroat at 0.8, green with a pale vocal sac.
+- **River Pike:** the salmon's plan made long and narrow, with a flat duck-bill head, olive and heavily mottled.
+- **Stonecrawler:** a small four-legged sprawler with a long tail, black banded with blue.
+- **Capercaillie:** the hen at 1.45, black-green, with a red brow and a broader tail.
+- **Lantern Beetle:** six insect legs under a glowing shell (the kit's glow at a base of 0.7, gold), 5 cm long. The first try missed its footholds by 1.1 cm through every gait. The kit floors a leg's height at 10 cm when it paces a stride (`C.legH`), so a 2 cm leg was given a stride five times too long. The beetle is now written at ten times its size with `scale: .1`, as the post hare is written at a hare's size and scaled up, and its feet land exactly.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 378 checks pass**, with one new check that the Gatelands' fifteen are each a plan from OG-009 or the common set.
+  - The ten new plans build in 0.09 to 0.39 s, with 18 to 34 bones and 10,640 to 47,548 triangles.
+  - Every foot reaches its target through every gait, the feet are down for about each gait's duty (the heron's walk 0.69 of 0.68, the beetle's walk 0.71 of 0.68), and every genome is under 160 bytes.
+- **Speeds:** the boar trots at 2.5 m/s, the heron walks at 0.86, the frog hops at 0.98, the pike swims at 1.3 and the beetle walks at 0.19.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the ten, `creatures-gatelands.jpg` (the ten on one sheet) and `creatures-line.jpg` (47 plans), shot again.
+### Needs eyes
+- **The Hollowcat** reads a little like a small dog in profile. A cat's shorter, rounder skull, and a body carried lower at the shoulder, would be finer sculpting than the kit's parts give.
+- **The capercaillie** has no fanned display tail, which is the bird's famous pose. The raven's tail fan would serve, on a display gait still to write.
+- **The kit's 10 cm floor** on leg height is a trap for small animals. A plan smaller than a hare should be written large and scaled down, as the beetle is, until the floor is made relative.
+
+## v80 — Session 847 — The Mark's fifteen, all in the creature kit (backlog L3, prototype only)
+L3's third item is OG-031's fifteen animals of the Mark. Five were already plans: the Frostreach Bear, the Skyraven, the Snowleap Hare, the Riverjaw Salmon, and the Ironwolf, whose source has always named the sheet's Stonefang Wolf. The other ten are new in `creatures.js`, and `MARK` lists all fifteen. The catalogue's note asks for the Stonefang Wolf and the Frostreach Bear to be reskins of the game's Snow Wolf and Cave Bear, which is how they will go in once F4 lands.
+- **Icehorn:** the goat at 1.15, in a long shaggy white coat (8 cm, hanging), with huge curled horns. One horn shape, `curled` (1.7 turns' worth of sweep, back and out), serves it and the ram.
+- **Stormlynx:** the Hollowcat at 1.4, grey and unstriped, with a short tail, taller ear tufts, and broad paws (the foot segments 1.8 times as thick: its snowshoes).
+- **Ironpine Elk:** the Elderstag at 1.22, dark, with longer, heavier antlers.
+- **Craghorn Ram:** the sheep in a short tawny coat instead of the fleece, with a furred face and the curled horns. It gallops.
+- **Glacial Marmot:** its own small plan, a fat round body low on short plantigrade legs, with a short tail, small round ears, and a thick coat.
+- **Stormshrike:** the Crag Hawk at 0.85, white barred with grey.
+- **Frostspine Lizard:** the Stonecrawler at 1.7, pale blue, with a row of pale crystal spines down its back.
+- **Tundra Grouse:** the hen in white mottled with brown.
+- **Icecrab:** the Tidecrab at 1.35, ice-blue and white. It walks sideways.
+- **Shatterback:** the Storm Whale at 1.5, stone grey and heavily mottled, with a ridge of fourteen rock-like spines down its back. It swims slower and with a shallower wave, a back sailors take for rocks.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 463 checks pass**, with one new check that the Mark's fifteen are each a plan from OG-031.
+  - The ten new plans build in 0.05 to 0.78 s, with 18 to 51 bones and 4,312 (the marmot) to 57,844 (the elk) triangles.
+  - Every foot reaches its target through every gait, the feet are down for about each gait's duty (the Icecrab's walk 0.71 of 0.68), and every genome is 152 to 160 bytes.
+- **Speeds:** the elk walks at 1.8 m/s, the Icehorn trots at 2.35, the marmot walks at 0.4 and the Shatterback swims at 2.85.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the ten, `creatures-mark.jpg` (the ten on one sheet) and `creatures-line.jpg` (57 plans), shot again.
+### Needs eyes
+- **The Stormlynx** reads as a shaggy dog more than a cat, like the Hollowcat it is drawn from. A cat's head is the kit's weak point.
+- **The marmot's head** is lost in its coat from the side.
+- **The Icehorn's horns do not moan.** The sound the sheet suggests is for the audio pass, not this kit.
+- **The Shatterback's back is spines, not plates.** A shell part over a swimmer (the tortoise's shell, made long) would carry the "mistaken for rocks" better.
+
+## v80 — Session 848 — Aurenne's fifteen, fourteen in the creature kit (backlog L3, prototype only)
+L3's fourth item is OG-030's fifteen animals of Aurenne, the warm island (Michael's Mediterranean and North African fusion). The Dunescorpion was built in Session 773. Thirteen more are new in `creatures.js`, and `AURENNE` lists the fourteen. The fifteenth, the Glasswing Moth, waits: crystal wings on an insect are a part the kit does not have (its wings are a bird's feathers or a dragon's membrane).
+- **Duneskimmer:** the Elderstag at 0.62 as a gazelle, sand and cream, with lyre horns in place of antlers.
+- **Sunspire Lynx:** the Hollowcat at 1.25 as a caracal, tawny and unstriped, with tall black-tipped ears and a low crest of spines down its shoulders (the sheet's heat-shedding crest).
+- **Terrace Ram:** the Craghorn Ram in cream, with bigger spiral horns (`spiral`, 2.1 turns' worth).
+- **Saltspine Monitor:** the Frostspine Lizard's parts at 4.2 (about 1.9 m), grey, with salt-white spines. The sheet marks it as aggressive.
+- **Oasis Hare:** the brown hare in sand, with ears half as long again.
+- **Scarlet Ibis** and **Cypress Stalker:** the Great Heron at 0.72 in scarlet with a down-curved bill, and at 1.05 in violet.
+- **Mirage Fox:** the red fox at 0.62 as a fennec, pale sand, with huge ears.
+- **Cliffswift:** a flier at 0.42, dark with a pale throat, with long primaries and a tiny beak. It only soars.
+- **Amber Shellcrab:** the Tidecrab at 0.8 in amber.
+- **Sand Wyrm:** the Mire Snake at 14 times its size (about 23 m), banded sand. It is a set piece known by its funnels.
+- **Sunbeak Vulture:** the Crag Hawk at 1.4, dark brown with a pale bare head and a gold beak.
+- **Spined Gekko:** the Frostspine Lizard in sand.
+
+**Fixed on the way.** The helper `re()` (Session 843) carried a base plan's gaits and manners but not its fur, its pattern or its glow. Every plan that did not set its own fur came out bald. That was this session's Terrace Ram and Oasis Hare, and, it turns out, Session 846's capercaillie and Session 847's Tundra Grouse, whose pictures showed smooth birds that read as feathered at a glance. `re()` now carries all three. No plan that set its own fur changes. The four have been shot again, and the Gatelands and Mark sheets rebuilt.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 565 checks pass** across 70 plans, with one new check that the fourteen are each a plan from OG-030.
+  - The thirteen new plans build in 0.05 to 0.62 s, with 18 to 51 bones and 8,868 (the Sand Wyrm) to 49,296 (the Duneskimmer) triangles.
+  - Every foot reaches its target through every gait, the feet are down for about each gait's duty, and every genome is 153 to 161 bytes.
+- **Speeds:** the monitor trots at 2.0 m/s, the hare bounds at 2.1, the ibis walks at 1.0 and the Sand Wyrm slithers at 2.1.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the thirteen, `creatures-aurenne.jpg` (the thirteen on one sheet), and `creatures-line.jpg` (70 plans), shot again. `creatures-capercaillie.jpg` and `creatures-tundragrouse.jpg` were shot again with their feathers.
+### Needs eyes
+- **The Oasis Hare reads pinkish** and the Terrace Ram a little green-cream under the bestiary's grey sky. Their sand and cream palettes want checking under a warm Aurennais light.
+- **The Glasswing Moth** is owed, with a wing part of its own.
+- **The Sand Wyrm** is the Mire Snake made huge. The sheet's funnels and its burrowing are behaviour and terrain, the systems builder's and the look builder's.
+
+## v80 — Session 853 — OG-040's strange beasts, all fourteen in the creature kit (backlog L3, prototype only)
+L3's next item is OG-040's strange beasts: five an island, the open world's "strange, not stock" (§10a), and mostly peaceful. Six were already plans: the Bellthroat, the Mossback, the Shatterhorn, the Stormplume, the Mineprowler and the Sailshell (Sessions 773 to 775). The other eight are new in `creatures.js`, and `STRANGE` lists all fourteen.
+- **Crownstag** (the Gatelands): the Elderstag at 1.3, darker, with moss-green antlers 1.15 m long that branch a third time, so they read as living branches.
+- **Lanternfox** (the Gatelands): the red fox in near-black, with blue-white veins of light through the coat. This is the kit's glow, written as cracks at nine cycles a metre, as the Faolchú's seams are.
+- **Thornrunner** (the Gatelands): the red fox at 1.45, set 1.4 times higher on its legs (a maned wolf's stance), tawny, with eighteen pale quills 17 cm long down its back. It gallops at 6.3 m/s, the fastest animal on the line after the Crownstag's 6.0.
+- **Frostmane** (the Mark): its own plan. A llama's long upright neck (three bones, 0.85 m), a small head with leaf ears, and a shaggy cream coat 7.5 cm deep that hangs. It is the sheet's candidate pack beast.
+- **Glasswing** (the Mark): its own plan. A slim grey body on bird legs with a 1.1 m tail, swept-back horns, and membrane wings spanning 3.4 m that are half see-through. It soars, walks and stands.
+- **Stonejaw** (the Mark): its own plan. A low burrower under a stone-grey shell of small plates, with a flat shovel snout (1.7 times as wide as it is long and less than half as high) and long digging claws on the forefeet.
+- **Redcrest** (Aurenne, hostile): its own plan. A feathered raptor on bird legs, its body level, a stiff 1.05 m tail ending in a fan of feathers, short clawed arms, rust-brown barred with darker stripes, and a red crest. It hunts in packs (rules: the systems builder's).
+- **Sunfan** (Aurenne): the Great Heron at 1.15, with a shorter neck, a gold crest and a fan of fifteen gold-to-flame feathers raised behind it.
+
+The kit has two new options, and neither changes an older plan:
+- **A tail fan can be raised** (`fan.raise`, in degrees). The fan turns about the body's side axis from flat toward upright, so a display stands up instead of spreading on the ground.
+- **A membrane wing can be see-through** (`wingOpacity` on the plan). The wing is drawn transparent, without writing depth.
+
+`creatures.check.mjs` takes `--sheet=NAME`, which shoots the listed plans side by side as `creatures-NAME.jpg`.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 633 checks pass** across 78 plans, with one new check that the fourteen strange beasts are each a plan from OG-040.
+  - The eight new plans build in 0.23 to 1.4 s, with 20 (the Sunfan) to 53 (the Glasswing) bones and 17,172 to 47,344 triangles.
+  - Every foot reaches its target through every gait.
+  - The feet are down for about each gait's duty: the Redcrest's trot is 0.46 of 0.45, and the Stonejaw's trot 0.34 of 0.45.
+  - Every genome is 150 to 155 bytes.
+- **Speeds:** the Frostmane walks at 1.4 m/s, the Stonejaw at 0.46, the Redcrest trots at 3.8 and the Glasswing soars at 5.0.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the eight, `creatures-strange.jpg` (the fourteen on one sheet), and `creatures-line.jpg` (all the plans), shot again.
+### Needs eyes
+- **The Glasswing's wings** read as a hang-glider's sail in the soaring picture: straight-edged and stiff. The sheet's wings are more like a dragonfly's.
+- **The Crownstag's moss** is only the antlers' colour. The sheet hangs moss and small plants from the antlers, and the kit cannot hang anything from a bit yet.
+- **The Stonejaw's shell** sits on it like a tortoise's. The sheet draws overlapping bands that bend with the back, a pangolin's or an armadillo's.
+- **The Sunfan's fan** stands behind the bird as a tail. The sheet's text calls it a crest. Raised behind the body, it reads as the sheet's picture does.
+- **None of them is in the game.** That waits for F4.
+
+## v80 — Session 854 — The sea, seventeen animals in the creature kit (backlog L3, prototype only)
+L3's next item is the sea, from OG-016's aquatic bestiary, with OG-084's seals and dolphins. Four were already plans: the Tidecrab, the Storm Whale, the giant octopus and the Shatterback. Thirteen more are new in `creatures.js`, and `SEA` lists all seventeen. Most of them are older plans at another size, or with a part changed; the rays, the squid and the seal have parts of their own. No kit code changed.
+- **Reef Moray:** the Mire Snake made thick and mottled, with a deep jaw and a tail flattened side to side.
+- **Starweed Ray:** a body 2.6 times as wide as it is deep, with a broad pectoral fin on each side that flutters as it swims. It has a whip tail and pale spots (the kit's patches).
+- **Sailfin Ray:** the starweed ray at 3.2, black over white, with taller, more pointed fins, as a manta has.
+- **Lantern Jelly:** the Wisp at 0.35, glowing gold, with its trailing threads.
+- **Coastal Tuna, Skyskimmer and Reef Shark:** the salmon's plan.
+  - The tuna is at 1.5, deep blue over silver.
+  - The skyskimmer is at 0.45, with pectoral fins grown into gliding wings.
+  - The shark is at 2.6, grey, with a pointed snout and a taller first dorsal fin.
+- **Stormswift** (the sheet's bow-wave rider, a dolphin): the Storm Whale at 0.17 (about 2.4 m), with a beak and a tall swept dorsal fin.
+- **Drifter Squid:** a mantle 1 m long, hanging head down, with eight arms and two long tentacles from below its eyes and a pair of fins at the top. It drifts on the jelly's beat.
+- **Grey seal:** a round body 1.4 m long, spotted, with fore flippers and a pair of hind flippers.
+- **Blackcurrent Eel:** the moray at 1.6, black, veined with blue light.
+- **Gate Eel and the Gate Leviathan:** a sea gate's antibodies (canon: monsters are the world's immune response).
+  - The Gate Eel is the moray at 3.
+  - The Gate Leviathan is the Storm Whale at 1.8, about 25 m long, with crystal shards at the brow.
+  - Both are dark, with seams of amber light, the colour the Faolchú's seams use.
+
+**Corrected on the way:** the Sailfin Ray first read `PLANS.starweedray` inside the same object literal that defined it. The module threw while it loaded, and the check's page waited out its five minutes. It is now built in a second block, after the Starweed Ray exists.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 699 checks pass** across 91 plans. One new check confirms that the seventeen sea animals are each a plan from OG-016, OG-084 or OG-031 (the Shatterback's sheet).
+  - The thirteen new plans build in 0.08 to 1.0 s, with 12 (the rays) to 139 (the jelly's threads) bones and 8,820 (the Gate Leviathan) to 37,036 (the seal) triangles.
+  - Every genome is 150 to 161 bytes.
+- **Speeds:** the tuna swims at 2.4 m/s, the shark at 2.25, the Stormswift at 2.2, the Gate Leviathan at 4.4, the seal at 0.9 and the jelly drifts at 0.07.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the thirteen, and `creatures-sea.jpg` (the seventeen on one sheet). `creatures-line.jpg` was not shot again this session, so it still shows 78 plans.
+### Needs eyes
+- **Fins and flukes seen edge on.** The whale's tail flukes, the seal's hind flippers and the squid's fins all lie in the plane the side view looks along, so the pictures barely show them.
+- **The Gate Leviathan's flesh is coarse.** At 25 m the flesh grid gives it only 8,820 triangles, and its glowing seams are broad blots.
+- **No turtles.** A sea turtle and the maw turtle want flippers that row, and the kit's legs walk.
+- **The deep band is unbuilt:** the kelpstrider, the stonefish, the pierwinkle, the abyssal angler and the crimson leviathan are still owed.
+
+## v80 — Session 855 — Beasts of burden: the horse, the mule, the donkey, the ox, the camel, the reindeer, the yak and a giant goat (backlog L3, prototype only)
+L3's next item is the beasts of burden that work OG-046's roads. The horse is a new plan in `creatures.js`, and the others are made from it or from older plans. `BURDEN` lists the eight with OG-077's post hare (Session 773). OG-046's other two animals are already in the kit: its llama is the Frostmane (Session 853) and its cow is the livestock's (Session 844). No kit code changed.
+- **The horse:** its own plan. A long barrel (spine radii 0.3 to 0.33 m) on ungulate legs, with a neck 0.75 m long that rises at 55°, curving forward. The long head is carried steeply (62°), with small upright ears and a dark tail. It is a bay.
+- **The mule and the donkey:** the horse at 0.9 and at 0.72, with ears half as long again and twice as long. The mule is dark brown. The donkey is grey with a pale belly and a rougher coat.
+- **The ox and the highland yak:** the cow at 1.15 and at 1.05.
+  - The ox is plain brown, with horns twice as long and spread wide.
+  - The yak is near black, in a coat 14 cm deep that hangs, with a hump over the shoulders and horns that curve up.
+- **The camel:** its own plan. Long legs with wide feet, a neck that starts level and curls up to 90°, a single hump narrowed to 0.7 of its width, and a long head with small round ears.
+- **The reindeer:** the Elderstag at 0.85, grey-brown with a pale belly, in a thicker coat, with taller antlers that branch a third time.
+- **The giant goat:** the goat at 2.1, with a saddle and a blue blanket. It is OG-046's mountain mount.
+
+The first pictures showed the horse and the ox too red under the bestiary's grey sky, and the camel's hump sat on its back like a separate pack. The coats were browned and the hump made lower, shorter and narrower, then all three were shot again.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 774 checks pass** across 99 plans. One new check confirms that the nine beasts of burden are each a plan from OG-046 or OG-077.
+  - The eight new plans build in 0.33 to 0.89 s, with 29 to 32 bones and 32,256 to 55,060 (the camel) triangles.
+  - Every foot reaches its target through every gait.
+  - The feet are down for about each gait's duty: the horse's walk 0.55 of 0.68, its gallop 0.28 of 0.34.
+  - Every genome is 147 to 156 bytes.
+- **Speeds:** the horse walks at 2.0 m/s, trots at 4.0 and gallops at 6.8. The donkey gallops at 4.5, the ox walks at 1.15 and the camel at 1.6.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the eight, and `creatures-burden.jpg` (the nine on one sheet).
+### Needs eyes
+- **The horse has no mane.** The kit's fur covers the whole coat at one length. A mane wants a fur length that varies along the neck's crest, which is a kit change still to make.
+- **The bay and the ox still lean red** under the grey test sky. A warm daylight may settle them, or they want browning again.
+- **No harness, packs or carts.** The saddle part is the only tack. Pack saddles, a yoke for the ox and the wagons (props, the look builder's) are owed.
+- **None of them is in the game.** That waits for F4.
+
+## v80 — Session 856 — Three of the deep: the abyssal angler, the stonefish and the crimson leviathan (backlog L3, prototype only)
+Session 854 left five of OG-016's sea animals owed. Three of them can be made from the kit's parts as they are, and they are now plans in `creatures.js`, added to `SEA` (now twenty). No kit code changed.
+- **Abyssal Angler:** the salmon's plan at 1.4 with a huge round head. It has a deep jaw that hangs open, fangs, small pale eyes, and a lure on a stalk over the brow (the Tidecrab's eye stalk, with a pale cyan bulb). Its black hide is veined with faint blue light.
+- **Stonefish:** the salmon's plan at 0.5, squat and broad, its head pitched down, heavily mottled, with nine stone-coloured dorsal spines.
+- **Crimson Leviathan:** the Mire Snake at 22, about 34 m. It is red over a pale belly with dark bands, with a row of sixteen pale spines and two small swept horns.
+
+The kelpstrider (a leafy seahorse) and the pierwinkle (a snail) still wait. Each needs a part the kit does not have: a leafy frond hung off the body, and a coiled shell.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 789 checks pass** across 102 plans, with the sea check now counting twenty.
+  - The three build in 0.26 to 0.59 s, with 18 or 19 bones and 8,748 (the leviathan) to 51,148 (the stonefish) triangles.
+  - Every genome is 155 to 162 bytes.
+- **Speeds:** the angler swims at 0.78 m/s, the stonefish at 0.09, and the leviathan slithers at 2.5.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the three. `creatures-sea.jpg` was shot again with all twenty.
+### Needs eyes
+- **The stonefish reads as a fish, not as a stone.** Its mottle is soft and its outline smooth. A rock's lumpiness would need a bumpier flesh than the kit grows.
+- **The angler's lure** is a pale ball. It is not lit (the kit's eyes are not emissive), so it will not glow in the dark water it is for.
+- **The crimson leviathan** is coarse at its size (8,748 triangles), as the Gate Leviathan is.
