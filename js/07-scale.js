@@ -39,3 +39,7 @@ function personScale(g){
 // room is laid out in those units, at a footprint of its true size over ROOM_K, and then scaled up by ROOM_K as a whole
 // (buildInteriorFor's scaleRoom), so its furniture, doorways and stairs stand to a 1.78 m person as they stood to the old one.
 SCALE.ROOM_K=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;
+// S905 (F2a) — the beasts Michael sized against a man (his A on #187: a Wolf's back at 56% of one, a Dire Wolf's 73%, the Cave
+// Bear's hump 88%) are drawn at their kinds' `play` size times this, so they stand to the 1.78 m man as they stood to the old
+// 1.233 one. Only the drawing: a foe's `size` (its hits and reach, card F2b's) is unchanged.
+SCALE.BEAST=SCALE.ROOM_K;
