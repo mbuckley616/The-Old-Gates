@@ -16900,3 +16900,15 @@ The cap is now the largest of 8 s, twice noon's worst, and twice the median of t
 - `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
 ### Needs eyes
 - Nothing in play: no game code changed.
+
+## v80 — Session 832 — `lookpair`: a clear sky is not bare ground (CI health, tests only)
+PR #288's CI on `dfea40a` failed `lookpair` in shard 6, this time on the pictures, not the meter that Session 830 fixed. The flat regions differed: grass (191,224,134) on r128 against (173,212,98) on 0.170, the road (218,232,162) against (203,211,124), with the sky and a lit wall the same in both. The mean difference was 18.1 and the old look's brightness 186.2 against 173.9. Earlier in the run, snow had fallen while the old look's town loaded. `devWeather('clear')` clears the sky, but the snow lying on the ground (`WX.cover`) melts at about .014 a second in the home province, and the suite spun only 120 ticks (2 s) before the picture. So the old look's shot had snow on the ground and the new one's did not. Which look gets it is the weather's roll.
+
+Both shots now take the cover off (`WORLD.wx.cover = 0`, `snowRepaint()`) and wait for the repaint queue to empty before the picture. The cover found and the cover left are logged.
+
+### Verified (headless Chromium)
+- **A probe in the old look at the suite's spot, with the grass read from the suite's box:** snow laid at .35, then a clear sky and 120 ticks, gives grass (195,226,142) with the cover still at .309. That is CI's (191,224,134) within a few levels. After the new steps the grass is (173,212,98), the clear-day value both looks agree on.
+- **`tests/lookpair`:** 5 of 5 pass. Cover 0 before both shots and 0 after, with an empty queue. Grass (173,211,98) against (173,212,98); worst region 4 levels.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed. Snow does lie on the ground for a minute after the sky clears, as Session 146 built it.
