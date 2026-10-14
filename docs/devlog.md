@@ -16848,3 +16848,32 @@ Nothing in the game changed, so no suite was run. The checks were on the files:
 - **OG-101 against OG-099.** The two sheets draw the home island differently. Michael's note is on OG-101, so the item reads it as the shape that leads, with OG-099's biomes dressing it. If he meant OG-099's island, that line changes.
 - **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
 - **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
+
+## v80 — Session 828 — The third and final round of concept art, catalogued (docs only)
+Michael dropped the last concept art into the Drive (*Concept Art Session 3*, 13 Oct 2026) and asked, in chat with Claude, for the intake. The folder holds 35 sheets with his own ids, OG-F001 to F035, in four groups: M5 to M10 (culture and faith), N1 to N8 (dungeons and exploration), O1 to O10 (gameplay) and P1 to P10b (the living world, ending in two takes on the final art direction). An unpacked copy was in his Downloads, and it matched the Drive file for file, so the thumbnails were made from the local originals and each row's link points to the original in the Drive.
+
+What changed:
+- **`docs/art/catalogue.csv`:** 35 rows, OG-113 to OG-147, in his order, each with his id at the head of its notes, a link to the original, size 1536 × 1024, and UNREVIEWED until he marks it. There are three new folders: `09_Dungeons_Exploration`, `10_Gameplay_Systems` and `11_Living_World_Atmosphere`; the M sheets join `08_Culture_Daily_Life`. Four agents read the full-size sheets against `lore_canon.md` and the design pages, one group each, to the house format. Recommendations: 27 KEEP and 8 MAYBE (OG-118, OG-120, OG-131, OG-132, OG-134, OG-136, OG-142, OG-146).
+- **`docs/art/thumbs/`:** OG-113 to OG-147 at 480 × 320, the size of the rest.
+- **`docs/art/review.html`:** the 35 cards, the three new folders in the folder filter, and the lede. Republished to the same artifact (version 3), where Michael's 112 earlier marks stay in its database.
+- **`docs/art/README.md`:** the third round, and the next id is OG-148.
+
+The folder's own catalogue marks every sheet "Keep (accepted in conversation)". Its README says that means only that Michael received a sheet well in the generator chat, not that it is canon, so the rows wait on his marks like the other rounds. Nothing goes to the backlog until he has marked them. This time the write-back is part of the same job (Session 827 found round two's marks sitting unread for a day).
+
+What the readers found, by group:
+- **Culture (M):** OG-113 is the closest match to the canon so far: the six gods, their signs and the Guest's empty niche are drawn as §4 has them. The sheets keep giving the Mark clans, a clan moot and lords, where the canon has the Captains' League with captains, reeves and the legal duel. OG-116 has Old Blood children inherit sigil tattoos and study the script, against §3.1's marks under the skin and the Withdrawal's ban on reading.
+- **Dungeons (N):** N2, N4 and N5 say outright that the gates break down into "underlying code": code-like grids and a Code Fragment item. That is the meta reading the canon keeps unsaid. N4 and N8 draw flagstone rooms and corridors for the gates, which `visual-foundation.md` §2 rules out. N7 has a brass diving suit where the canon has Water Breathing.
+- **Gameplay (O):** O2 draws magic B's five forms, riders and Mastery's true name almost word for word. O8 draws Skyrim-style skill trees and Conjuration, against the Morrowind book (A) and `magic.md`. O5 is platforming C, O6 is survival C (hunger), and O10 puts the compass top-centre, against #198's bottom-centre and the spell page Michael chose. O3's explosive bolt reads as gunpowder.
+- **Living world (P):** P4's map puts the islands in the wrong places. P3 gives the Mark and Aurenne autumn woods and Aurenne a snowy winter. P5's dungeon is the cobbled corridor Michael rejected, and P9's great gates stand free on lawns. P6 and P7 offer taming and companions, against his 12 A, and P7 and P10b draw the Aurennais fair-skinned. P9's altered skies are the world's corruption level made visible (card F3).
+
+### Verified
+Nothing in the game changed, so no suite was run. The checks were on the files:
+- The catalogue parses as 147 rows of 13 columns; ids OG-113 to OG-147 run unbroken.
+- The review page's data parses as 147 cards.
+- The publish confirmed version 3 with the 35 new thumbnails beside the 112 earlier ones.
+- The live page was not opened in a browser: the pane here is not signed in to claude.ai.
+
+### Needs eyes
+- **Michael's marks on the 35.** The To review filter shows them first.
+- **P10a against P10b, likely a decision.** P10a is darker, cooler and nearer realism, with the gates truly dark. P10b is warmer and more painterly, which fits the 12 Oct style answer for the world, but its gates glow orange. One reading takes P10b's world and P10a's gates.
+- **Once marked:** the kept sheets go into backlog L as round two's did, and the conflicts above go in as "the canon wins" lines.
