@@ -28,7 +28,7 @@ Which turf should the Mark's poorer halls have?
 Recommendation: **A.** It moves furthest from the lawn Michael objected to. The tawny roofs also make the one-in-three turf halls easy to pick out as the poorer houses. B is a fair second if he wants the street calmer.
 
 Michael: **Dry sod**. (13 Oct 2026)
-*Acted on:* dry sod is `markHall`'s default turf since Session 825 (`o.turf || 'dry'`), and every Mark picture on the branch shows it; the moss stays only as `?turf=moss` on `mark.html`. Next: the Mark's lot rules, two in three shingle by lot. Issue #285 closed.
+*Acted on:* dry sod is `markHall`'s default turf since Session 825 (`o.turf || 'dry'`), and every Mark picture on the branch shows it; the moss stays only as `?turf=moss` on `mark.html`. Next: the Mark's lot rules, two in three shingle by lot. Issue #285 closed. The lot rules built in Session 831 (`markLot` in `pieces.js`).
 
 ### The Gatelands' town walls in the new kit: coloured, white or stone? (the concept artist, 2026-10-13) — DECISION #280
 Card F6 builds the three islands' houses from pieces in the new look; the Gatelands come first. The prototype (`docs/prototypes/levelup/pieces-gatelands.html` on auto/concept, three.js 0.170) makes five plans from one kit in metres: cottage 1,826 triangles, farmhouse 2,144, townhouse 5,081, merchant's house and shop 4,522, warehouse 9,132; 10 to 14 draw calls each. Walls are 0.45 to 0.7 m thick with every opening cut through. In every option the cottages stay limewashed white under thatch and the towns have slate roofs. Full text and pictures: docs/concepts.md on auto/concept, and issue #280.

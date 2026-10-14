@@ -16966,3 +16966,40 @@ Nothing in the game changed, so no suite was run. The checks were on the files:
 - **OG-101 against OG-099.** The two sheets draw the home island differently. Michael's note is on OG-101, so the item reads it as the shape that leads, with OG-099's biomes dressing it. If he meant OG-099's island, that line changes.
 - **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
 - **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
+
+## v80 — Session 831 — The Mark's lot rules: one turf hall in three, and the turf on the poorer house (card F6, prototype only)
+Michael chose C on #277, the mix: two halls in three shingle and one turf, by lot. On #285 he chose the dry sod. What was left was the rule that says which lot gets which roof. Until now `mark.html`'s lane picked the turf lot inline from a hash, and every hall drew the same random sizes whatever its roof. The recommendation he accepted on #277 also said the turf goes on the poorer and outlying houses, and the halls of note keep the shingle and the carving. Nothing built that part.
+
+`pieces.js` now has `markLot(street, i, {note})`, beside Aurenne's `aurenneLot` and in the same shape. It returns the lot's options and the stream its hall is built from, both keyed by the street and the lot alone.
+- **The mix:** in every run of three lots one is turf, and the street's seed picks which, as in Aurenne.
+- **Halls of note:** `note` lists the lot indices that hold one (the hall at the square, the hall at the lane's end), and these are never turf. If the pick lands on one, the turf moves to the next lot of the three that is not a hall of note. A run of three can only lose its turf hall when all three lots are halls of note.
+- **The turf hall is the poorer house** (OG-034 draws the Mark's towns as the shingle halls, so the turf is the exception):
+  - It is smaller: 5.6 to 6.8 m wide and 8.5 to 11 m deep, against shingle's 6.8 to 8.4 by 11 to 14.5.
+  - It is lower: `markHall` already gives turf a 2.4 m wall and a 32° pitch.
+  - It is in the two darker planks.
+  - It is set 1.2 to 3 m back from the lane, with 3 to 5.5 m of yard beside it.
+  - It has a porch one time in five and a chimney about one in three, and it is carved only when it is one of the larger, about one in eleven.
+  - A shingle hall is always carved, has a porch about half the time and a chimney about two times in three.
+  - A hall of note is 8.4 to 9.6 by 15 to 18 m, with a porch, a chimney and the carving.
+
+`mark.html?view=lane` lays its eight lots out by `markLot`, with lot 3 (the far end on the left) a hall of note. `&street=<seed>` gives another lane, `&high` looks down on it from above, and `?mix=shingle|turf` still forces one roof everywhere.
+### Verified (headless Chromium)
+- **`mark.check.mjs`: 15 of 15 pass**, 6 of them new.
+  - **The mix:** on 40 streets of 30 lots, every run of three has exactly one turf hall (400 of 1,200).
+  - **Halls of note:** on 40 more streets, each with three halls of note at random lots, no hall of note is turf (0 of 120). No run of three loses its turf hall, out of 400.
+  - **The same key builds the same hall:** 300 of 300 lots, built twice, match on the options and on the geometry's hash.
+  - **What each kind measures, over 300 lots:**
+
+| Kind | Mean footprint | Porch | Chimney | Carved | Mean setback | Triangles |
+|---|---|---|---|---|---|---|
+| Turf | 60 m² | 28% | 27% | 8% | 2.0 m | 720 to 1,664 |
+| Shingle | 97 m² | 55% | 65% | 100% | 0.4 m | 1,472 to 1,688 |
+| Hall of note (12) | 149 m² | 100% | 100% | 100% | 0.2 m | 1,688 to 1,792 |
+
+  - **Budget:** every hall is at most 11 draws. Ridges stand 5.6 m (turf) to 11.3 m (a hall of note).
+  - **The lane page:** its roofs read S T S N S T S S, with no page errors.
+- **Pictures:** `mark-lane-mix.jpg` was shot again by the new rules. Two are new: `mark-lots-high.jpg` and `mark-lots-high-b.jpg`, the lane from above on two streets, where the lower, set-back sod roofs show between the shingle.
+### Needs eyes
+- **At eye height the turf hall hides.** Set back and 3 to 4 m lower, it sits behind its shingle neighbours, so the lane picture shows little of it. From above, the rule reads. In a town that may be right, since the poorer houses are behind the street. If Michael wants the sod seen from the lane, the setback is the number to change.
+- **"Outlying" is not built.** The rule knows the halls of note, not how far a lot is from the town's heart, so a turf hall is as likely at the square as at the edge. When the generator places Mark towns in the game, it can pass the distance and bias the pick within each run of three.
+- **No people in these pictures.** The MakeHuman pack (`mh/`) is not in this checkout, so the lane has no Markmen for scale.
