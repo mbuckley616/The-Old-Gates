@@ -4,6 +4,33 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Mark's inn as a hall of long tables: where guests sleep, and its size (look builder, Session 894) — DECISION #321
+**F9's fifth room: the Mark's inn, a hall of long tables (look builder, Session 894).** It is the second of L9's three inns (OG-108: "a Markish longhouse with long tables"). It is built inside the Mark's hall from the kit (`pieces.js`'s `markHall`, the shell of the longhouse room you passed on #311), widened to 10 by 18 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markAlehall`) and `rooms.html?room=alehall`.
+- **The frame:** the longhouse's: two rows of posts, tie beams 3.11 m over the floor, rafters, and a board lining.
+- **The hearth:** a long hearth of 4 m on the axis under the smoke louver, with a kerb of stones, logs and a cauldron on its tripod.
+- **The tables:** down both sides between the posts, a long table of 12.6 m with a loose bench on the aisle side. Behind the posts, against the walls, are the raised benches laid with furs. The guests sit on them to eat and sleep on them at night.
+- **The back:** the serving counter at 1.05 m across the hall, with kegs on a rack behind it and drinking horns on pegs.
+- **By the door:** a rack of spears and painted round shields (the Mark's soldiers for hire, canon §1.2), and a water barrel.
+- **The light:** three iron lamps hang from the tie beams.
+
+The room is 9,172 to 9,720 triangles in 15 draws, in the hall's 1,648. Both aisles from the door to the counter are clear by 0.15 m.
+
+**1. Where the guests sleep:**
+- **A. On the furred wall benches, as drawn** *(recommended)*: the hall's own custom, one room for eating and sleeping. In the game, renting a place is renting a bench.
+- **B. A row of box beds or a partitioned end** at the back for guests who pay more, with the counter moved forward.
+
+**2. Its size:**
+- **A. 10 by 18 m, as drawn** *(recommended)*: an inn's hall, bigger than a family's longhouse (7.6 by 14 m), with room for two long tables and an aisle either side of the fire.
+- **B. The longhouse's 7.6 by 14 m**, with one table down one side.
+
+Pictures:
+- [down the hall from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-hall.jpg)
+- [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-hall-night.jpg)
+- [along a long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-tables.jpg)
+- [the counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-counter.jpg)
+- [the hall from its yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-outside.jpg)
+
+
 ### The Gatelander inn as a room: its shell and its guest rooms (look builder, Session 893) — DECISION #320
 **F9's fourth room: the Gatelander inn round its hearth (look builder, Session 893).** L9 asks for three inns by island (OG-108: "a cosy Gatelander inn with a hearth, a Markish longhouse with long tables, an Aurenne tavern on a terrace over the sea"). Your A on #303 puts rooms inside the street's own shells. The kit has no inn yet, so this one is built inside the kit's farmhouse (`GL_PLANS.farmhouse`: 10.5 by 6.2 m, two storeys of 2.9 and 2.7 m, whitewashed under slate, a stack at each gable), with its front door left ajar. It is a prototype in `docs/prototypes/levelup/rooms.js` (`gatelandsInn`) and `rooms.html?room=inn`.
 - **The taproom:**

@@ -18496,3 +18496,34 @@ The FREEZE (#297) holds. L9 asks for three inns, one per island (OG-108: "a cosy
 - **The passage upstairs is dark at noon.** It has one back window and the lamp.
 - **The other two inns** (the Markish longhouse of long tables, the Aurennais terrace tavern) are next. The Mark's can be built in the longhouse's hall.
 - **Not in the game.** `buildInteriorFor` takes this after F2a.
+
+## v80 — Session 894 — Card F9's fifth room: the Mark's inn, a hall of long tables (prototype only)
+The FREEZE (#297) holds. This is the second of L9's three inns (OG-108: "a Markish longhouse with long tables"). The Mark's hall from the kit is already a room shell (`markHall` with `o.interior`, Session 870), so the inn is built inside it. A family's longhouse is 7.6 by 14 m. The inn's hall is widened to 10 by 18 m so that two long tables, an aisle either side of the fire and the wall benches all fit, and the size is asked (#321). OG-108 and OG-025's longhall were reread. OG-115's row notes "nothing whitewashed in the Mark" and "captains and free towns, not clans", and both hold.
+
+`markAlehall` in `rooms.js`:
+- **The frame:** the longhouse's. A plank floor on the footing, posts 1.25 m in from the walls every 2.75 m, purlins and tie beams 3.11 m over the floor, rafters every metre, and a board lining under the shingle.
+- **The hearth:** 4 m long on the axis under the louver (the longhouse's is 2.6 m). It has a kerb of stones, an ash bed, nine logs and their embers and flames, and a cauldron on its tripod.
+- **The long tables:** one down each side inside the posts, 12.6 m long and 0.76 m high, with legs every 1.5 m. A loose bench on the aisle side runs their length. Horns, wooden bowls and jugs lie along them by the key.
+- **The wall benches:** behind the posts down both long walls, 0.45 m high and 1.0 m deep, laid with furs in three colours. Guests eat facing the tables and sleep on them at night.
+- **The counter:** across the back, 1.05 m high, with a rack of seven kegs and their taps behind it and thirteen drinking horns on pegs over them.
+- **By the door:**
+  - on the left, a rack of spears with iron heads and three painted round shields with bosses (the Mark's "painted round" of OG-028, and its soldiers for hire, canon §1.2);
+  - on the right, a water barrel;
+  - the door's leaf hangs open.
+- **The lamps:** three iron bowls on chains, two from the tie beams over the tables and one over the aisle before the counter. The third was added once the first picture showed the counter's end in the dark.
+- **The view:** `rooms.html?room=alehall`, with `hall` (the default, from the door down the hall past the fire), `tables` (along the right table from its end), `counter` and `outside`, and `&hour=`. The louver's grey shaft of day, the fire and the lamps give the light, as in the longhouse. The longhouse's single-lamp light at golden hour and night is skipped here, because the alehall's lamps carry it. Leaving that in would have thrown on a missing lamp.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 40 of 40 pass.** The other rooms' checks are unchanged, and six are new:
+  - **The builds:** 4 keys, each the same twice. The room is 9,172 to 9,720 triangles in 15 draws, in the hall's 1,648 in 7.
+  - **Inside and apart:** every piece is inside the walls and under the lining, with no point through either, and none is in another.
+  - **The walks:** down either aisle from the door, clear by 0.15 m, to the counter on the left and to the far end of the right table, with 3.11 m under the tie beams.
+  - **A person fits:** the wall benches and loose benches are 0.45 m. There are two tables, each 0.76 m high and 12.6 m long, and the counter is 1.05 m.
+  - **The fire** is on its hearth, under the louver.
+  - **The page:** the hall view renders with no page errors.
+- **Pictures:** `rooms-alehall-hall.jpg`, `-hall-night`, `-tables`, `-counter` and `-outside`.
+### Needs eyes
+- **The far end is dark at noon.** The louver lights the hearth, and the hall's windows are small shuttered openings. The lamps carry the back.
+- **The horns read as cones.** They want a curve and a rim.
+- **The wall benches sit behind the posts,** so a guest on a bench has a post between them and the table every 2.75 m. Real halls had this. The tables could stand between the posts instead if it reads wrong in play.
+- **The outside is the longhouse's hall, larger.** It has no sign of being an inn: no shield over the door, no horses tied.
+- **Not in the game.** That waits for F2a.
