@@ -58,9 +58,12 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: no strand on the face (${s.onFace} points)`, s.onFace <= s.points * .002, s.onFace);
     // Session 875: the strands rooted at the front hairline are finer than those behind it, so the hair thins onto the brow
     check(`${k}: the hairline thins (${s.hairline.edge} strands within 0.75 cm of it at ${s.hairline.ratio} of the width behind)`, s.hairline.edge > 20 && s.hairline.ratio < .7, s.hairline);
+    // Session 877: every root on the skin (3 mm, where Session 804's started up to 14 mm off it)
+    check(`${k}: every strand roots on the skin (the highest ${(s.rootH * 1000).toFixed(1)} mm off it), the hair ${(s.crown * 1000).toFixed(1)} mm deep over the crown`, s.rootH < .0045, s.rootH);
     // Session 874: no seam of bare scalp down the back of the head (two braids part there, as they should)
     if (k.split('+')[0] !== 'braids') check(`${k}: no bare seam down the back of the head (${Math.round(s.seam * s.seamN)} of ${s.seamN} midline points with no strand over them)`, s.seamN > 40 && s.seam <= .02, s.seam);
     if (s.gather && k.split('+')[0] !== 'bun') check(`${k}: the braid or tail clears the body by its clothes (${(s.drapeMin * 100).toFixed(1)} cm)`, s.drapeMin > .015, s.drapeMin); }
+  check(`loose hair stands higher over the crown than a braid pulled back (${(r.styles.loose.crown * 1000).toFixed(1)} mm against ${(r.styles.braid.crown * 1000).toFixed(1)} mm)`, r.styles.loose.crown > r.styles.braid.crown + .002);
   for (const [k, c] of Object.entries(r.cloaks)) { console.log(k, JSON.stringify(c));
     check(`${k}: saves and loads back with its dress (${c.bytes} bytes)`, c.saved && c.bytes < 1100);
     if (c.columns) { check(`${k}: the cloak hangs clear of the body (closest ${(c.minClear * 100).toFixed(1)} cm, ${c.rows} rows of ${c.columns})`, c.minClear > .005 && c.under === 0, c);

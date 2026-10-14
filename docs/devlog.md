@@ -17506,3 +17506,25 @@ What changed in `buildBrows`:
 - **Is this the brow Michael wanted?** His note gave no reference, so this is judged against real brows: a sparse head, a dense body and a thin tail. A thick, low Markish brow or a fine Aurennais arch is set by the people's ranges (`brow` thickness and arch, Session 826). That is the place to tune if a people's brows read wrong.
 - **The skin under the brow** is still only 20% darker, by the body's vertex colours. The face's vertices are too far apart for a finer shade there.
 - **Grey and white brows** for the old are not drawn. Brows take the hair's colour.
+
+## v80 — Session 877 — Hair roots on the skin, and some lift for loose hair (B1, Michael's note on #272, prototype only)
+Sessions 874 to 876 each left one owed item: every style read slicked back. Each strand of Session 804's hair kept one height over the scalp from root to end. Its root was put that far up as well, anywhere from 3 to 14 mm off the skin, so the strands at the hairline stood off the forehead. Over the crown, loose hair lay no deeper than a braid pulled tight. This is still under FREEZE #297, so it touches only the prototypes.
+
+What changed in `buildHair`:
+- **The root sits on the skin.** Every strand now starts 3 mm off the skin. It rises to its own layer height over its first 5 cm along a smooth step, so the hair builds depth back from the hairline. It does not start at full depth on it.
+  - A first try started at 1.5 mm. That left 51 to 110 strand points a head under the skin where the scalp curves, so it went back to the old minimum of 3 mm.
+  - A second try rose over 2.5 cm. From the front, that showed a rim at the hairline.
+- **Loose hair stands deeper.** Its layers now reach 2.3 cm (up to 2 cm over the root height), where they reached 1.4 cm. Short hair now reaches 1.2 cm, from 0.9. The gathered styles keep theirs, since hair pulled into a braid, a tail or a bun lies tight to the head.
+  - At 1.4 cm, loose hair stood 8.4 mm deep over the crown against a braid's 7.8 mm, too little to see. That is why the depth was raised.
+- No random number is added, so every style keeps its strands.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 175 checks pass**, thirteen of them new:
+  - **Every strand roots on the skin**, in every style with and without the mantle. The highest root is 3.2 to 3.4 mm off the skin; Session 804's reached 14 mm.
+  - **Loose hair stands higher over the crown than a pulled-back braid**: 10.9 mm against 7.8 mm, as the mean height of the strand points above the head's middle.
+- Every other hair check still passes: no seam, the hairline thins, and nothing is on the face. The braid, the tail, the bun and short hair each have one point under the skin, inside the 0.2% the check allows.
+- Loose hair is 247,384 triangles and builds in 2.1 s.
+- **Pictures:** `builder-styles-back`, `-front`, `-mantle` and the three `builder-woman-loose*` pictures were shot again.
+### Needs eyes
+- **The lift is modest.** Loose hair now has some body from the side and behind, and still lies close from the front. A centre parting would want the hair to rise from it. That needs the strands to leave the scalp at an angle, not only higher layers.
+- **Stray beard cards on the chest.** With the mantle off, the man rolled from `b7` shows a scatter of beard cards lying on his tunic below the jaw. The fur collar hides them, but bare-necked dress shows them. This was so before these sessions. It is the next bodies fix in the builder.
