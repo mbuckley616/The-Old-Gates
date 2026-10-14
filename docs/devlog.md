@@ -16988,3 +16988,32 @@ Bearded men only change in their beards. Nothing else draws from the seeded stre
 - **The mouth.** In the full face, the lips show through a dark gap in the beard at the mouth. That is the old mouth cut (an ellipse round y 0.655), and this session did not change it.
 - **One line for every face.** Every beard follows the same cheek line. A Markman's beard that runs higher, or a trimmed Aurennais beard, is a genome number away and not set by `PEOPLES` yet.
 - **The forehead's pale smear** on the right of every face picture is the skin's shading under the builder's key light, not the beard. It was there before.
+
+## v80 — Session 841 — The Gatelanders' shoulder cape, with an embroidered hem (B2, prototype only)
+B2's next piece in the plan Michael approved on #274 ("then do capes, hoods and the Crown tabard"). Both kept Gatelander sheets draw it. OG-059 shows short red shoulder capes held by round brass cloak pins, and OG-048 and OG-059 both show red embroidered borders. Their rows also ask that country folk carry more of the green and blue than the boards' red.
+
+A cape is the cloak cut another way, so it takes the cloak's whole method, including Session 839's hang and folds. `D.cape` (a new dress flag, saved only when set) changes three numbers in `buildCloak`:
+- **The length:** 24 to 38 cm of cloth below the shoulder line, set by `cloakLen`, so the hem falls between the upper arm and the elbow. In the check, the hems sit 32 and 39 cm under the neck.
+- **The wrap:** the front gap at the throat is 0.14 rad a side instead of 0.38. The cape wraps round the shoulders and meets at the brooch, rather than hanging as a back panel.
+- **The flare:** 1.55 instead of 1.12 to 1.52. A cape is a part-circle of cloth and falls over the arms in folds, 3.8 to 5.5 cm deep at the hem.
+
+**The embroidered hem** (`D.cloakHem`, a colour in the builder's garment list as *embroidered hem*) is a band over the last 3.5 cm of the sheet, laid 1.5 mm proud of it round the neck's axis so it never sinks into the cloth. It works on a long cloak too.
+
+**Who wears one:** Gatelanders who roll no cloak have an even chance of a cape, in madder, a darker red or moss (`capes` in `PEOPLES.gatelander`), with the people's brass brooch. Three in five capes have a hem in ochre, moss or sea blue. The roll comes after the brows, so every earlier roll of a seed is as it was. No other people rolls a cape.
+
+The builder page has a *cape* box beside *bib* and *leather apron*.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 131 checks pass.** Two new cloaks are checked: a woman's madder cape with an ochre hem, and a man's moss cape at full length. For each:
+  - the cape hangs clear of the body (closest 3.6 and 3.7 cm, no point under it);
+  - nothing comes through it (0 of 607 and 0 of 759 points; the through-check needs 300 points for a cape, against 1,000 for a cloak);
+  - it is cut to the elbows (hems 32 and 39 cm under the neck), the hem band is there only when asked for, and the brooch is 13 and 14 cm from the neck;
+  - each saves and loads back (796 and 773 bytes).
+- **The roll:** 7 of 40 rolled Gatelanders wear a cape, and none of 40 of each other people do.
+- **`kit.check.mjs`** still passes; the one genome format carries the new flag.
+- **Triangles:** a cape is 3,410 to 4,180, against 7,700 to 15,400 for a cloak.
+- **Pictures:** `builder-cape-woman.jpg`, `builder-cape-back.jpg`, `builder-cape-man.jpg`.
+### Needs eyes
+- **The shoulders** are the cloak's shelf, which shows more on a cape. A cape cut on the round would sit lower over the point of the shoulder.
+- **The front** opens wider below the brooch than OG-059's capes do, so the apron and the tunic show between the edges.
+- **The band is plain colour.** OG-048's borders are patterned, and the embroidery's pattern is a texture still owed.
+- **A hood on the cape** (OG-048's hooded capes) is not tried. The hood is built against the long cloak's hem.

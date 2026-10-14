@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { skirtColor: 'skirt colour', cloakFur: 'fur collar' };
+const GLABEL = { skirtColor: 'skirt colour', cloakFur: 'fur collar', cloakHem: 'embroidered hem' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -132,9 +132,9 @@ function buildPanel() {
   { const sk = el('select', {}, el('option', { value: '', textContent: 'none' }), el('option', { value: 'short', textContent: 'short' }), el('option', { value: 'long', textContent: 'long' })); sk.value = D().skirt || ''; sk.onchange = () => { D().skirt = sk.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'skirt' }), sk, el('span'))); inputs.skirt = () => sk.value = D().skirt || ''; }
   h2('Cloak and apron'); { const hd = el('select', {}, ...['none', 'down', 'up'].map(v => el('option', { value: v, textContent: 'hood ' + v }))); hd.value = D().hood || 'none'; hd.onchange = () => { D().hood = hd.value === 'none' ? null : hd.value; schedule(); };
-    const bib = el('input', { type: 'checkbox', checked: !!D().bib, onchange: () => { D().bib = bib.checked; schedule(); } }), lea = el('input', { type: 'checkbox', checked: !!D().apronLeather, onchange: () => { D().apronLeather = lea.checked; schedule(); } });
-    panel.append(el('div', { className: 'bar' }, hd, el('label', {}, bib, ' bib'), el('label', {}, lea, ' leather apron')));
-    inputs.cloakFlags = () => { hd.value = D().hood || 'none'; bib.checked = !!D().bib; lea.checked = !!D().apronLeather; }; }
+    const bib = el('input', { type: 'checkbox', checked: !!D().bib, onchange: () => { D().bib = bib.checked; schedule(); } }), lea = el('input', { type: 'checkbox', checked: !!D().apronLeather, onchange: () => { D().apronLeather = lea.checked; schedule(); } }), cp = el('input', { type: 'checkbox', checked: !!D().cape, onchange: () => { D().cape = cp.checked; schedule(); } });
+    panel.append(el('div', { className: 'bar' }, hd, el('label', {}, bib, ' bib'), el('label', {}, lea, ' leather apron'), el('label', {}, cp, ' cape')));
+    inputs.cloakFlags = () => { hd.value = D().hood || 'none'; bib.checked = !!D().bib; lea.checked = !!D().apronLeather; cp.checked = !!D().cape; }; }
   slider('cloak length', () => D().cloakLen ?? .8, v => D().cloakLen = v, 0, 1, 'cloakLen');
   genomePanel(['full', 'head', 'face', 'side', 'back']);
 }
