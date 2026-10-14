@@ -11,7 +11,10 @@
 // Session 850, the cloak's den: 10 keys, in budget and the same twice; 3 m of headroom over the nest; the mouth open down its tunnel;
 // a clear floor from the mouth to the cloak; the cloak on the nest, never under it, its hem 0.4 to 0.9 m out past the sleeper; the
 // roof's crack open onto the nest.
-// --shots writes trials-blade, -blade-close, -cairn, -cairn-close, -cairn-close-morning, -lamp, -lamp-unlit, -wreck, -wreck-high, -wreck-close, -wreck-taken, -den, -den-close and -den-empty.
+// Session 851, the Shuttle's room: 8 keys, in budget and the same twice; a lesser gate's room (about 10 m across, the vault 8 m or more,
+// slabs of 2 to 3 m, a door of 3 m by 4 or more); the Shuttle under the sigil, on the floor, 0.28 to 0.36 m long; the sigil and the
+// Shuttle both in sight from the door; taken, the floor bare.
+// --shots writes trials-blade, -blade-close, -cairn, -cairn-close, -cairn-close-morning, -lamp, -lamp-unlit, -wreck, -wreck-high, -wreck-close, -wreck-taken, -den, -den-close, -den-empty, -shuttle, -shuttle-close and -shuttle-taken.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -21,7 +24,7 @@ const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angl
 if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch(launch); let fails = 0;
 const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined ? '  ' + JSON.stringify(info) : '')); if (!ok) fails++; };
-for (const v of ['blade', 'cairn', 'lamp', 'wreck', 'den']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+for (const v of ['blade', 'cairn', 'lamp', 'wreck', 'den', 'shuttle']) { const page = await browser.newPage({ viewport: { width: 480, height: 270 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(`http://localhost:${port}/trials.html?still&w=480&h=270&view=${v}`);
   await Promise.race([page.waitForFunction(() => window.__done, null, { timeout: 300000 }), new Promise(res => page.on('pageerror', res))]);
   check(`the ${v} page renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
@@ -53,6 +56,13 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
     const toCrack = new THREE.Vector3(...a.crack).sub(new THREE.Vector3(a.nest[0], a.nest[1] + .2, a.nest[2])), sky = ray([a.nest[0], a.nest[1] + .2, a.nest[2]], toCrack.toArray(), [cave]);
     out.dens.push({ same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, head: up ? +up.distance.toFixed(2) : 99, headM: upM ? +(upM.distance + .3).toFixed(2) : 99, mouth: mouth ? +mouth.distance.toFixed(2) : 99, path, under, n,
       out: +(a.hem - (a.master.z + a.master.wid / 2)).toFixed(2), crackClear: !sky || sky.distance > toCrack.length() - .3 }); }
+  out.rooms = []; for (let i = 0; i < 8; i++) { const a = K.shuttleRoom({}, S.stream('shuttle:' + i)), b = K.shuttleRoom({}, S.stream('shuttle:' + i)), t = K.shuttleRoom({ taken: true }, S.stream('shuttle:' + i)); a.group.updateMatrixWorld(true);
+    const pale = a.group.children.find(m => m.name === 'pale'), pb = new THREE.Box3().setFromObject(pale), others = a.group.children.filter(m => !['pale', 'thread', 'dark'].includes(m.name));
+    const eye = new THREE.Vector3(0, 1.62, a.door[2] - .3), see = p => { const d = new THREE.Vector3(...p).sub(eye), h = new THREE.Raycaster(eye, d.clone().normalize()).intersectObjects(others)[0]; return !h || h.distance > d.length() - .12; };
+    const floorHit = new THREE.Raycaster(new THREE.Vector3(a.shuttle[0] + .3, 1, a.shuttle[2]), new THREE.Vector3(0, -1, 0)).intersectObjects(others)[0];
+    out.rooms.push({ same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, span: a.span, crown: a.crown, slab: a.slab, doorW: a.doorW, doorH: a.doorH, len: +Math.max(pb.max.x - pb.min.x, pb.max.z - pb.min.z).toFixed(3),
+      dx: +Math.abs(a.shuttle[0] - a.sigil[0]).toFixed(2), dz: +(a.shuttle[2] - a.sigil[2]).toFixed(2), onFloor: +(pb.min.y - floorHit.point.y).toFixed(3), seeSigil: see(a.sigil), seeShuttle: see([a.shuttle[0], a.shuttle[1], a.shuttle[2]]),
+      bare: !t.group.children.some(m => m.name === 'pale') }); }
   return out; });
 const B = r.blades, C = r.cairns, mm = (xs, f) => [Math.min(...xs.map(f)), Math.max(...xs.map(f))];
 check(`the Gate-Blade's stone, 20 keys: ${mm(B, b => b.tris).join(' to ')} triangles, at most ${Math.max(...B.map(b => b.draws))} meshes, ${mm(B, b => b.h).join(' to ')} m tall; each the same twice`, B.every(b => b.same && b.tris < 8000 && b.draws <= 9 && b.h >= 2.6 && b.h <= 3.2));
@@ -74,6 +84,11 @@ check(`an hour either side it lands off the hollow: ${mm(C, c => Math.min(...c.o
   check(`the floor is clear from the mouth to the cloak's hem: ${Math.max(...D.map(d => d.path))} of 21 points have anything over 0.3 m`, D.every(d => d.path === 0));
   check(`the cloak lies on the nest: ${Math.max(...D.map(d => d.under))} of ${D[0].n} points under the nest's stone or bracken; its hem ${mm(D, d => d.out).join(' to ')} m out past the sleeper`, D.every(d => d.under === 0 && d.out >= .4 && d.out <= .9));
   check(`the roof's crack is open onto the nest in ${D.filter(d => d.crackClear).length} of 10`, D.every(d => d.crackClear)); }
+{ const Rm = r.rooms; check(`the Shuttle's room, 8 keys: ${mm(Rm, x => x.tris).join(' to ')} triangles in at most ${Math.max(...Rm.map(x => x.draws))} meshes, each the same twice`, Rm.every(x => x.same && x.tris < 20000 && x.draws <= 10));
+  check(`a lesser gate's room: ${Rm[0].span} m across, the vault ${Rm[0].crown} m, slabs of ${Rm[0].slab} m, the door ${Rm[0].doorW} by ${Rm[0].doorH} m`, Rm.every(x => x.span >= 9 && x.span <= 12 && x.crown >= 8 && x.slab >= 2 && x.slab <= 3 && x.doorW >= 3 && x.doorH >= 4));
+  check(`the Shuttle lies under the sigil: ${mm(Rm, x => x.dx).join(' to ')} m to one side, ${mm(Rm, x => x.dz).join(' to ')} m out from the wall, ${mm(Rm, x => x.onFloor).join(' to ')} m off the floor, ${mm(Rm, x => x.len).join(' to ')} m long`, Rm.every(x => x.dx < .3 && x.dz > .5 && x.dz < 1.6 && Math.abs(x.onFloor) < .02 && x.len >= .28 && x.len <= .36));
+  check(`from the door, at a standing eye, the sigil is in sight in ${Rm.filter(x => x.seeSigil).length} of 8 and the Shuttle in ${Rm.filter(x => x.seeShuttle).length} of 8`, Rm.every(x => x.seeSigil && x.seeShuttle));
+  check('taken, the floor under the sigil is bare', Rm.every(x => x.bare)); }
 await page.close();
-if (process.argv.includes('--shots')) for (const q of ['view=blade', 'view=blade&close', 'view=cairn', 'view=cairn&close', 'view=cairn&close&sun=morning', 'view=lamp', 'view=lamp&unlit', 'view=wreck', 'view=wreck&tide=high', 'view=wreck&close', 'view=wreck&close&taken', 'view=den', 'view=den&close', 'view=den&noghost']) { const name = 'trials-' + q.replace('view=', '').replace(/&(sun|tide)=/, '-').replace(/&/g, '-').replace('-noghost', '-empty'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=trials.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
+if (process.argv.includes('--shots')) for (const q of ['view=blade', 'view=blade&close', 'view=cairn', 'view=cairn&close', 'view=cairn&close&sun=morning', 'view=lamp', 'view=lamp&unlit', 'view=wreck', 'view=wreck&tide=high', 'view=wreck&close', 'view=wreck&close&taken', 'view=den', 'view=den&close', 'view=den&noghost', 'view=shuttle', 'view=shuttle&close', 'view=shuttle&close&taken']) { const name = 'trials-' + q.replace('view=', '').replace(/&(sun|tide)=/, '-').replace(/&/g, '-').replace('-noghost', '-empty'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=trials.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

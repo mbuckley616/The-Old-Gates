@@ -45,7 +45,13 @@ Two questions, one letter each.
 - **A. A crack in the roof, as drawn** *(recommended)*: a shaft of daylight falls on the nest, so from the mouth the grey cloak is the one lit thing in the cave.
 - **B. No crack:** the chamber is lit only by your torch. It is darker and closer, and you find the cloak only when you are near the master.
 
-Not in this question: the Shuttle's room (next session); solids for these props (their place in the game, after F2a).
+6. (Added by Session 851.) The Shuttle's room, An Fíodóir's (the Shuttle "lies on the floor before the sigil, as if put down a moment ago", the approved draft). The deepest room of a lesser gate, in `visual-foundation.md` §2's language at a lesser gate's size (OG-119, "one arched room of about ten metres"). It is a pointed barrel vault 10 m across and 9 m to the crown, 14 m long. The floor is dark slabs of 2.5 m. Engaged piers carry amber script up their faces. The unread sigil, a glowing ring of 2.4 m, is on the far wall with two columns of script beside it, and the door is an arched slit of 3.2 by 6 m. The Shuttle is a weaver's shuttle of pale wood, 0.32 m, with its pirn in the cavity and a thread end lying from its eye. It lies 1.2 m out from the wall under the sigil and is in sight from the door. 3,092 triangles in 7 draws. [from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-shuttle.jpg) · [the Shuttle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-shuttle-close.jpg) · [taken](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/trials-shuttle-close-taken.jpg)
+- **A. A room of the gate's own, as drawn** *(recommended)*: the trial's room is built as this one arched room at the end of the gate, whatever the generator lays before it, so the Shuttle always lies under a sigil in the same light.
+- **B. No room of its own:** the Shuttle lies in whatever room the generator makes deepest (the trial's rule today, Session 797), with the sigil hung on that room's end wall. This is cheaper, but the room varies and may be a corridor's end.
+
+The gates' own kit (card F5) is a deep-work card; this room is made to its numbers and would take F5's pieces once they exist.
+
+Not in this question: solids for these props (their place in the game, after F2a).
 
 ### The Mages' academy's white towers: pointed caps, domes, or square? (look builder, Session 836) — DECISION #296
 The last of Aurenne's buildings that the canon names is "the academy's white towers" (§1.3), the Mages' academy. Session 836 builds it in the new kit at true size (`aurenneAcademy` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=academy`):

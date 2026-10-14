@@ -5,11 +5,13 @@
 // over it, the mast alone above; &close: the bell from where a person stands in the hull; &taken: the beam with the bell gone.
 // ?view=den (Session 850): the Wolf-Mother's Cloak in its lair's last chamber, from the mouth by torchlight, a shaft of day down the
 // crack onto the nest, the master's place a ghost (&noghost hides it); &close: the cloak's hem at your feet.
+// ?view=shuttle (Session 851): the Shuttle's room, the deepest of a lesser gate, from its door by torchlight, the unread sigil on the
+// far wall and the Shuttle on the floor under it; &close: the Shuttle at your feet; &taken: the floor bare.
 // &cam=x,y,z,tx,ty,tz puts the camera anywhere (Session 839).
 // ?view=lamp (Session 838): the Waylamp on its inn's bracket at dusk, lit and (&unlit) put out, a candle's light from it.
 import * as THREE from 'three';
 import { Q, W, H, STATS, GLSL_NOISE, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run } from './common.js';
-import { bladeStone, ringCairn, waylamp, tidalWreck, beastDen } from './props.js';
+import { bladeStone, ringCairn, waylamp, tidalWreck, beastDen, shuttleRoom } from './props.js';
 import { stream } from './pieces.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'blade';
@@ -19,7 +21,7 @@ const noon = Q.get('sun') !== 'morning', alt = 40 * Math.PI / 180, SUN = noon ? 
 const sun = new THREE.DirectionalLight(new THREE.Color(1, .92, .8), 3.6); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -.0002; sun.shadow.normalBias = .02;
 scene.add(sun, sun.target, new THREE.HemisphereLight(new THREE.Color(.62, .72, .9), new THREE.Color(.34, .32, .24), 1.1));
 skyDome(scene, SUN); clouds(scene, SUN, { n: 8, d0: 1800, dw: 5000, y0: 300 });
-if (VIEW !== 'wreck' && VIEW !== 'den') { const g = new THREE.PlaneGeometry(400, 400); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, mat('rock', { ns: .7, color: 0x8a9a6a, rough: 1 })); m.receiveShadow = true; scene.add(m); }
+if (!['wreck', 'den', 'shuttle'].includes(VIEW)) { const g = new THREE.PlaneGeometry(400, 400); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, mat('rock', { ns: .7, color: 0x8a9a6a, rough: 1 })); m.receiveShadow = true; scene.add(m); }
 // the sea for the wreck (main.js's water, its waves and its sky in the fresnel), at low water (y 0) or high (the prop's HW)
 function sea(y) { const g = new THREE.PlaneGeometry(6000, 6000, 1, 1); g.rotateX(-Math.PI / 2);
   const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .20, .25), roughness: .08, transparent: true, opacity: .8, depthWrite: false });
@@ -51,6 +53,12 @@ if (VIEW === 'wreck') { const high = Q.get('tide') === 'high'; P = tidalWreck({ 
   { const c = new THREE.Vector3(...P.crack), sp = new THREE.SpotLight(new THREE.Color(.75, .85, 1), 60, 12, .32, .6, 1.4); sp.position.copy(c); sp.target.position.set(P.nest[0], 0, P.nest[2]); sp.castShadow = true; sp.shadow.mapSize.set(2048, 2048); scene.add(sp, sp.target); }
   const tp = Q.has('close') ? new THREE.Vector3(P.master.x + .9, 1.62, P.hem + 1.5) : new THREE.Vector3(.4, 1.6, 4.2); { const t = new THREE.PointLight(new THREE.Color(1, .62, .3), 40, 16, 1.5); t.position.copy(tp).add(new THREE.Vector3(.35, -.1, -.2)); scene.add(t); }
   if (Q.has('close')) { cam.fov = 45; cam.position.copy(tp); cam.lookAt(P.master.x, .2, P.hem - .3); } else { cam.fov = 55; cam.position.copy(tp); cam.lookAt(P.nest[0], .6, P.nest[2]); }
+} else if (VIEW === 'shuttle') { P = shuttleRoom({ taken: Q.has('taken') }, stream('shuttle:carrigbeg')); scene.add(P.group); window.__post.position.set(2.2, 0, P.shuttle[2] + 1.2);
+  sun.intensity = 0; scene.fog.color.setRGB(.02, .018, .016); scene.fog.density = .02; scene.children.filter(c => c.isHemisphereLight).forEach(h => h.intensity = .12);
+  { const g = new THREE.PointLight(new THREE.Color(1, .6, .25), 6, 9, 1.6); g.position.set(0, P.sigil[1], P.sigil[2] + .8); scene.add(g); }
+  for (const z of [-4.5, 0, 4.5]) for (const e of [-1, 1]) { const g = new THREE.PointLight(new THREE.Color(1, .62, .28), 1.2, 5, 1.8); g.position.set(e * 4.3, 2.4, z - 2.5); scene.add(g); }
+  const tp = Q.has('close') ? new THREE.Vector3(P.shuttle[0] + .6, 1.62, P.shuttle[2] + 1.1) : new THREE.Vector3(.5, 1.65, P.len / 2 - .6); { const t = new THREE.PointLight(new THREE.Color(1, .66, .36), 70, 18, 1.4); t.position.copy(tp).add(new THREE.Vector3(.35, -.15, -.2)); t.castShadow = true; scene.add(t); }
+  cam.fov = Q.has('close') ? 45 : 60; cam.position.copy(tp); if (Q.has('close')) cam.lookAt(P.shuttle[0], 0, P.shuttle[2] - .1); else cam.lookAt(0, 2.4, P.sigil[2]);
 } else if (VIEW === 'lamp') { const unlit = Q.has('unlit'); P = waylamp({ hook: true, lit: !unlit }, stream('waylamp:biafaira')); scene.add(P.group);
   const pair = waylamp({ lit: unlit }, stream('waylamp:pair')); pair.group.position.set(.55, 1.0, .25); scene.add(pair.group);
   { const t = new THREE.Mesh(new THREE.BoxGeometry(.9, .06, .5), mat('wood', { ns: 1, color: 0x8a6a4a })); t.position.set(.55, .97, .2); t.castShadow = t.receiveShadow = true; scene.add(t); const l = new THREE.Mesh(new THREE.BoxGeometry(.08, .94, .08), t.material); l.position.set(.55, .47, .2); scene.add(l); }
@@ -64,5 +72,5 @@ if (VIEW === 'wreck') { const high = Q.get('tide') === 'high'; P = tidalWreck({ 
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); } /* &cam=x,y,z,tx,ty,tz, any view from anywhere */
 cam.updateProjectionMatrix();
 sun.position.copy(SUN).multiplyScalar(40); sun.target.position.set(0, 0, 0); Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: .5, far: 100 }); sun.shadow.camera.updateProjectionMatrix();
-STATS.prop = { view: VIEW, tris: P.tris, draws: P.draws, top: P.top, grip: P.grip, ring: P.ring, hole: P.hole, handle: P.handle, lit: P.lit, bell: P.bell, stand: P.stand, mastTop: P.mastTop, HW: P.HW, master: P.master, hem: P.hem };
-run(makeComposer(R, scene, cam, { bloom: .12, sat: 1.0, vig: .3 }), cam);
+STATS.prop = { view: VIEW, tris: P.tris, draws: P.draws, top: P.top, grip: P.grip, ring: P.ring, hole: P.hole, handle: P.handle, lit: P.lit, bell: P.bell, stand: P.stand, mastTop: P.mastTop, HW: P.HW, master: P.master, hem: P.hem, sigil: P.sigil, shuttle: P.shuttle };
+run(makeComposer(R, scene, cam, { bloom: VIEW === 'shuttle' ? .5 : .12, sat: 1.0, vig: .3 }), cam);

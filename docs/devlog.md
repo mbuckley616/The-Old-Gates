@@ -17375,3 +17375,38 @@ Added to **DECISION #298** as its fifth question: A, the crack in the roof, so t
 - **The cloak is a flat grey mantle,** not fur. How the Wolf-Mother's Cloak looks worn, and as a pelt, is the bodies builder's (what is worn). This is where it lies.
 - **The master's size** varies by biome (`lairBeast`): an ogre at Dunkeel, a bear or a wolf elsewhere. The nest is sized from `o.master`, and the game should pass the master's footprint.
 - **In the game,** the den's chamber is the cavern lair's master room (`lairFinish`). Bringing this in after F2a means its walls, solids and light go there, not as a separate room.
+
+## v80 — Session 851 — The Shuttle's room, the last of the trials' props (backlog L, prototype only)
+The sixth and last of the Makers' trials' props. An Fíodóir's Shuttle lies "in the deepest room of the gate nearest the home island's last unread sigil", and the approved draft puts it "on the floor before the sigil, as if put down a moment ago": *Something small and pale lies on the floor under the sigil, the shape of a boat, or a fish, or neither.* The systems builder's trial (Session 797) puts a pale spindle in the generator's farthest room. The gates' kit is card F5, a deep-work card, so this room is built to `visual-foundation.md` §2's numbers and language at the lesser gate's size OG-119 gives ("one arched room of about ten metres"), to take F5's pieces when they exist. The FREEZE (#297) still holds, so this is a prototype only.
+
+`props.js` has `shuttleRoom(o, r)`:
+- **The vault:** a pointed barrel vault of 10 m span, springing at 4.2 m and 9 m to its crown, 14 m long and 0.9 m thick. Each half is an arc struck from a centre inside the span, extruded the room's length.
+- **The end walls:** the far one is whole. The near one has the door, an arched slit of 3.2 by 6 m.
+- **The floor:** dark slabs of 2.5 m, four across, with joints, low in roughness so they read wet. §2 says never cobbles.
+- **The piers and script:** three pairs of engaged piers, each with a strip of amber script up its face to the springing.
+- **The sigil:** the unread one, on the far wall at 3.4 m. It is a glowing ring of 2.4 m with an inner ring and twelve strokes, and two columns of script beside it.
+- **The Shuttle:** 1.2 m out from the wall under the sigil, a little askew. A lathe of pale wood pointed at both ends and flattened, 0.32 m long, with its dark cavity, the pirn in it, and a thread end of 0.3 m lying from its eye across the slab ("a thread end in it that nothing will pull out").
+- **`o.taken`:** the floor is bare.
+
+The script is a canvas texture of amber strokes on black, drawn from its own stream (`gate-script`) so that making it once does not move the prop's own rolls. The kit's `put` now takes `uv: null` to keep a piece's own UVs: until then every piece's UVs were replaced by world-projected ones, and the script strips sampled their texture's black edge.
+
+`trials.html?view=shuttle` looks from the door by torchlight: the script and the sigil glow, and the page carries more bloom. `&close` stands you over the Shuttle, and `&taken` takes it.
+
+Added to **DECISION #298** as its sixth question:
+- **A** (recommended): the trial's room is built as this one room at the end of the gate, so the Shuttle always lies under a sigil in the same light.
+- **B:** the trial keeps the generator's deepest room, as Session 797 built it, and hangs the sigil on that room's end wall.
+
+All six props are now prototyped: the blade's stone, the ring's cairn, the Waylamp, the bell's wreck, the cloak's den and the Shuttle's room. Each waits on #298 and on F2a.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 29 of 29 pass**, with five new checks over 8 keys:
+  - **The builds:** 3,092 triangles in 7 meshes, each the same twice.
+  - **The room:** 10 m across, the vault 9 m, slabs of 2.5 m, the door 3.2 by 6 m.
+  - **The Shuttle:** 0.03 to 0.15 m to one side of the sigil's line and 1.15 to 1.27 m out from the wall. It is within 3 mm of the floor and 0.29 to 0.32 m long.
+  - **In sight:** from the door, at a standing eye, the sigil is in sight in 8 of 8 and the Shuttle in 8 of 8.
+  - **Taken:** the floor is bare.
+  - **The page:** the shuttle page renders with no page errors.
+- **Pictures, new:** `trials-shuttle.jpg`, `-shuttle-close` and `-shuttle-close-taken`.
+### Needs eyes
+- **Not F5's kit.** The room is the gates' language in one room, not F5's kit. The piers' script is a stand-in for the slice's glyph columns, and the walls are the slice's ashlar.
+- **From the door, the Shuttle is a few pixels** at 6.5 m. It is "small and pale" by the draft, and the first-sight line names it. A faint light on it would make it findable, if Michael wants that.
+- **The school:** this is a steady gate's amber. A failing gate (OG-120) would be cold blue, and which school's dress the home island's sigil gate wears is the generator's.
