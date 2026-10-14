@@ -590,7 +590,7 @@
     let el=DIVE.ui;if(!el){el=document.createElement('div');if(!el.style)return;el.id='breath';el.style.cssText='position:fixed;left:50%;bottom:120px;transform:translateX(-50%);width:220px;height:10px;background:rgba(10,20,40,.7);border:1px solid #8ab;border-radius:5px;display:none;z-index:50';el.innerHTML='<div id="breath-fill" style="height:100%;width:100%;background:#7ac8ff;border-radius:4px"></div>';document.body.appendChild(el);DIVE.ui=el;}
     const show=DIVE.under||DIVE.breath<1;el.style.display=show?'block':'none';const f=el.firstChild;f.style.width=(DIVE.breath*100)+'%';f.style.background=DIVE.breath<.25?'#ff6060':'#7ac8ff';
   }
-  function cameraUnderwater(){return activeZoneId==='world'&&(jumpY+.92)<SEA_Y+.05&&worldH(px,pz)<SWIM_Y;}
+  function cameraUnderwater(){return activeZoneId==='world'&&(jumpY+(typeof _eyeHeightCur==='number'?_eyeHeightCur:SCALE.EYE_SWIM))<SEA_Y+.05&&worldH(px,pz)<SWIM_Y;}
 
   // ── sea-floor herbs ──
   function ensureSeaHerbs(){

@@ -751,7 +751,7 @@ function buildPerson(g,opts){
       if(p)mats[i].multiplyMatrices(p,b.matrix);else mats[i].copy(b.matrix);off.multiplyMatrices(mats[i],this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
   const root=new THREE.Group();root.add(mesh);
-  root.scale.setScalar(g.height*PW.BODY);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
+  root.scale.setScalar(g.height*PW.BODY*personScale(g)); /* S880 (F2a) — at the people's stature in metres (07-scale.js) */if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
   const rig={root,mesh,B,g,eyes,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
     geoHi:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:0};
   root.userData.rig=rig;PEOPLE_RIGS.add(rig);
@@ -1012,6 +1012,9 @@ function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.ne
 // through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
 // unit tall) the gait blends from the walk into this; back under PW.RUN.off.
 PW.RUN={STRIDE:.25*PW.LEGK,DUTY:.33,HIPS:PW.FOOT+PW.HIPJ+.288*PW.LEGK,BOB:.018*PW.LEGK,LIFT:.15*PW.LEGK,on:1.4,off:1.15};
+// S880 (F2a) — people grew 1.44 times (07-scale.js) and the world's speeds did not, so the pace at which one breaks into a run is
+// kept in metres a second: the thresholds are divided by the growth (1.4 and 1.15 of the old root scale, about 1.25 and 1.0 m/s)
+PW.RUN.on/=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;PW.RUN.off/=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;
 PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
 function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
   p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2))-(o.goblin?.06*PW.LEGK:0);

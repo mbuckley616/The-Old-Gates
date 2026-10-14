@@ -1,11 +1,11 @@
 # The Old Gates — working conventions
 
-A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 43 plain script
+A browser-based open-world RPG: one `index.html` of markup and CSS, and the game's code in `js/`, 44 plain script
 files that share one global scope (no modules, no bundler; a downloaded folder opens by double-clicking `index.html`).
 Michael designs and playtests; Claude implements. This file is what Claude reads first in every session.
 
 ## The files
-- `index.html` — the markup, the CSS, the build tag, the renderer's chooser and 43 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
+- `index.html` — the markup, the CSS, the build tag, the renderer's chooser and 44 `<script src="js/…">` tags (~1,170 lines). `js/NN-name.js` —
   the code, one file per area in load order (~46k lines in all; the biggest, `40-legacy-zones.js`, is 3,300). Deployed as-is: GitHub
   Pages serves the folder. The section "The split layout" below is the rule book; it was one inline script until Session 379,
   and the world was one 8,100-line IIFE until Session 484.
@@ -83,7 +83,11 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
   table, `--check` proves split-and-join is byte-identical); `scripts/join.py` reassembles the one-file build from
   `js/manifest.json`. `scripts/tag.py` is unchanged: the tag is markup.
 - **Code map by file** (load order; grep for the names, the numbers drift):
-  - `05-compat.js` the renderer's version: `THREE_LEGACY`, `SKINNED`, and on 0.170 the colour and light shims (Session 822).
+  - `05-compat.js` the renderer's version: `THREE_LEGACY`, `SKINNED`, and on 0.170 the colour and light shims (Session 822); the
+    skinned bodies culled by their geometry's sphere, as r128 did (Session 879).
+  - `07-scale.js` `SCALE` (card F2a, Session 880): one unit is one metre and people are the measure. The people's statures by people,
+    the eye (1.65 standing, 1.1 crouched), doors, storeys, stairs, furniture and rooms, in metres; `personScale(g)` is a body's root
+    scale. A builder that sizes a person, a door or a storey reads it here. The gameplay ranges (reach, sight, sneak, jumps) are F2b's.
   - `10-player.js` renderer boot (`REN`, `CAM`, `VM_SCENE`), player state (`px/pz/PHP`…), roll, posture, lock-on, sneak,
     bow, `ANIM_PARAMS`. `12-character.js` `ATTRS`, `ARCHETYPES`, level-up. `14-items.js` `EQ`, `BAG`, `MATERIALS`,
     `WEAPON_TYPES`, `BOOKS`, enchants, `makeItem`, loot tables. `16-viewmodel.js` first-person hands and weapons.

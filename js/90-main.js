@@ -428,7 +428,9 @@ function loop(now){
   // sneaking, EYE_STAND otherwise. Rate constant gives ~0.30s for ~95% complete.
   // Headbob amplitude halves while sneaking — completes the "stealth posture"
   // visual without needing a separate skeletal crouch animation.
-  const _eyeTarget = _sneaking ? EYE_CROUCH : EYE_STAND;
+  // S880 (F2a) — a swimmer's eye stays where the old eye put it over the water (SCALE.EYE_SWIM), not 1.65 above the swim floor
+  const _swimEye = activeZoneId==='world' && typeof WORLD!=='undefined' && WORLD.isSwimming();
+  const _eyeTarget = _swimEye ? SCALE.EYE_SWIM : _sneaking ? EYE_CROUCH : EYE_STAND;
   _eyeHeightCur += (_eyeTarget - _eyeHeightCur) * Math.min(1, dt * CROUCH_LERP_RATE);
   const _bobMult = _sneaking ? SNEAK_BOB_MULT : 1.0;
   const bob=moving?(lid==='overworld'?Math.sin(swT*4)*.008*_bobMult:Math.sin(swT*3.8)*.012*_bobMult):0;

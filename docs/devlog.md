@@ -17368,3 +17368,60 @@ The before half of F2a's picture pair is taken here, before anything is scaled: 
 - `lookpair` 1/1: the two looks' pictures of Dunmore match (mean difference 6.1 of 255), both measured their frame, no page errors.
 ### Needs eyes
 - On the new look, the townsfolk, the guards and your own body in third person should be back. Nothing else differs.
+
+## v80 — Session 880 — F2a: SCALE, and people at their true heights (the deep-work session, card F2a)
+The second session of card F2a. One unit is now one metre with people as the measure (`docs/design/visual-foundation.md` §1), in one table. `js/07-scale.js` is a new file, tag 07, between the renderer's version and the player. It holds `SCALE`, in metres:
+- the peoples' statures, a man's and a woman's middle (Michael's A on #276): Gatelanders 1.78 and 1.66, Markmen 1.91 and 1.78, Aurennais 1.80 and 1.68, the Old Blood 1.61 and 1.51;
+- the 1.8 m figure the ratios are measured against, and the eye, 1.65 standing and 1.1 crouched;
+- doors, the big door, the town gate, the storey, stairs, furniture heights, room sizes and ceilings;
+- the third-person camera and the swimmer's eye (below).
+
+`personScale(g)` gives a body's root scale from its people and sex. The layout rules are kept: the file loads before everything that reads it, and parsecheck passes over all 44 files and their concatenation.
+
+**People.** `buildPerson` (`32-people.js`) is the one place a body's size is set, and it now multiplies by `personScale(g)`. I measured the body on the skinned mesh in its idle pose: at genome height 1 and its old root scale, the top of the head stood at 1.233 over the feet, with the head bone at 1.001. The card's figure of 1.05 to 1.15 had been read off the head bone. So `SCALE.PERSON_MODEL` is 1.233, and a Gatelander man of height 1 now stands exactly 1.78, a Markman 1.91, an Aurennais 1.80 and one of the Old Blood 1.61. That is a growth of 1.444 times, not the 1.6 the brief guessed.
+
+The same path carries the rest:
+- townsfolk, guards, and every foe built on the people's body: bandits, cultists, skeletons, goblins at their .72 and kobolds, trolls and ogres at their kinds' sizes;
+- the player's third-person body (`54-thirdperson.js`, which builds at height 1 with your people).
+
+Creatures (wolves, bears, spiders, the kit's animals) keep their size in metres, as the card asks; none read plainly wrong at a glance, and the critic should look.
+
+One rule of motion had to follow, and it is not a speed. A person breaks into the run past `PW.RUN.on` *root-scales a second*. That threshold moved with the body, so a bandit chasing at 1.63 m/s walked. It is now divided by the growth, so the pace at which anyone breaks into a run stays the same in metres a second (about 1.25 m/s), and the world's speeds are unchanged.
+
+**The eye and the cameras.**
+- `EYE_STAND` and `EYE_CROUCH` read `SCALE`: 1.65 and 1.1, from 0.92 and 0.60.
+- The first-person viewmodel draws in its own scene and camera (`VM_SCENE`, `VM_CAM`), so its placement does not depend on the eye and nothing in it clips at the new height. It is unchanged.
+- The near plane stays at 0.05.
+- The third-person camera's distance, its range and its shoulder offset grew with the body: 2.75 (from 1.9), 1.3 to 4.6 (from 0.9 to 3.2) and 0.5 (from 0.34). Its caps indoors and in a gate's floors went to 2.2 and 2.45 (from 1.5 and 1.7). The wheel's choice is saved under a new key, `og_tp_m`, since the old value was at the old size.
+- A swimmer's eye stays where the old eye put it over the water (`SCALE.EYE_SWIM`, .92 over the swim floor, 0.57 above the sea): at 1.65 over a floor 0.35 under the sea, you would have trodden water with your shoulders out. `cameraUnderwater` reads the current eye, which comes to the same test.
+- In third person, a swimming body sinks so that the top of its head is a quarter metre over the sea. The water's depths, wading and the dive are F2b's.
+
+**Aim.** The crosshair finds a skinned body by capsules along its bones (S596). The head bone sits at the jaw, at .81 of the height, so from an eye at 1.65 the crosshair on a woman's face (head bone 1.35) passed over her. An end bone (the head, a hand, a foot) now carries its capsule on past the joint by .15 of the body's height. `talkaim` was red on this, and is green again.
+
+**Suites re-measured, not loosened** (each says so in a comment):
+- `people`: a person stood as tall as before; now they stand at their people's stature (Aoife 1.66, Brendan 1.72, Cathal 1.80) and within 1.55 to 1.95.
+- `goblins`: the kobold's scale was under .7; now under 1.01, and still under .75 of a bandit's.
+- `goblinbody`: the inspector's goblin is read over its people's stature, .543.
+- `foes`: unchanged. It went green again with the run threshold in metres a second.
+- **Not re-measured, because it was right:** a person's breadth by people. The world gave each people a stature and a breadth through `bodyScale` (`PEOPLES`, a Markman 1.08 tall and 1.1 broad), and that stature now comes from `SCALE`. Counting it twice made Markmen 2.13 m, so `bodyScale` keeps only the breadth over the stature (a Markman 1.02 broad).
+### Verified (headless Chromium)
+These ran on the working tree with Session 881's doors as well, which change no person.
+- **Statures on the skinned mesh, idle, at genome height 1:** Gatelander 1.780, Markman 1.910, Aurennais 1.800, Old Blood 1.610.
+- **Measured in three towns (`scaleratio`, next entry):**
+  - Gatelander women 1.58 to 1.70 and men 1.75 to 1.93;
+  - Markmen 1.79 to 1.97 and Markwomen 1.71 to 1.84;
+  - Aurennais women 1.63 to 1.79 and men 1.74 to 1.86.
+- **Green:**
+  - people 12/12, gait 7/7, bodies 8/8, foes 12/12, goblinbody 9/9, goblins 7/7, ogre, trolls;
+  - tpfists, tpguard, tpswing, tpweapons, fphands, camps and foeweapons;
+  - barberchair, coachseat, homesleep, sleeperreach, intnpcs, corpsebody, ragdoll;
+  - chasesight, witness, witnessrange, talkaim 7/7, lod, houses, signs;
+  - looknew 11/11 and lookpair;
+  - the world suites F1 ran under `--look=new`: walls, pois, q7world, snowrepaint.
+- **Red here, and owed to the rooms (Session 882):** `sleeperpose`. A 1.78 m sleeper does not fit the kit's bed, which is 1.5 long in rooms laid out for the old size.
+### Needs eyes
+- Everyone is about 1.44 times taller than yesterday. Walk Dunmore at noon and look at the townsfolk against the doors and the wells, and at a bandit and a troll in the open.
+- In third person the camera now sits 2.75 behind you. The wheel saves under a new key, so a distance you had set is forgotten once.
+- Swimming in third person, your body sinks to the shoulders. First person looks at the water as before.
+- The creatures were not resized: a wolf, a bear and a spider beside the taller people. The critic's eye, please.
+- Interiors are not yet at true size. Until Session 882 lands, rooms are as before around people who grew, so a 1.78 m sleeper overhangs the beds.
