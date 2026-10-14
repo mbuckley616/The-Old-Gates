@@ -16825,6 +16825,30 @@ Checked and left alone:
 - **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs. `looknew` reports whether it was fetched; from `file://` here it was not (`r128Fetched: false`). On Pages it would be one cached request at most.
 - **Not run under `--look=new`:** the rest of the suite (447 suites). The six world suites the card named pass. A full `--look=new` run in CI is a cheap follow-up once F2 starts building on the switch.
 
+## v80 — Session 827 — The second round of concept art, written back (docs only)
+Michael asked, in chat with Claude, why the review sheet for the concept art still showed the second round as unreviewed when he had signed it off. He had. On 12 Oct 2026, between 23:24 and 23:25 UTC, he marked all sixteen sheets of *Concept Art Session 2* (OG-097 to OG-112, his OG-U2-001 to 016) KEEP on the review page. He left one note, on the Gatelands' and the Mark's maps (OG-101, OG-102): "Keep the shape of the island and the geography / regions. Anything that conflicts with Canon we can replace or repurpose." The marks stayed in the page's database (collection `reviews`). No session read them back, so `catalogue.csv` still said UNREVIEWED and nothing from those sheets reached the backlog. The look builder's wardrobe question (#274) had noted the clothing sheets OG-109 to OG-111 as "still waiting for your marks". The first round had a session to carry its marks (767). The second round's intake (771) ended at "they wait on his marks", and nothing was set to notice when they came.
+
+What changed:
+- **`docs/art/catalogue.csv`:** the sixteen marks are in `review_status` (79 KEEP and 33 NO in all; none unreviewed), and Michael's note is at the end of OG-101's and OG-102's notes, in the form round one used ("Michael (review): …"). OG-107's notes held `(calDay, Session 498)` and two more commas unquoted, so a CSV reader split that row into fifteen columns. It is quoted now and every row has thirteen. No other field changed (checked by a word diff: sixteen status words, two notes, one re-quote).
+- **`docs/backlog.md`, section L:** the header records the second round and Michael's note. New items, each citing its sheets:
+  - **L1:** the wardrobe matrix (OG-109 to OG-111), for the builder's B2.
+  - **L5:** the six great gates (OG-105, pointing to `visual-foundation.md` §2 and backlog A); the islands' shapes and regions (OG-100 to OG-103), flagged as a reshaping of the world for a deep-work session, since today's islands are `rvSpines`' horseshoes; the Gatelands' country (OG-099), for F3; ruins at the scale of cliffs (OG-104); strange places (OG-106).
+  - **L8:** rare specimens and the field guide (OG-097), and the adventurer's kit (OG-098); OG-108's plates are folded into Cooking.
+  - **L9, new, culture and daily life:** festivals on the calendar (OG-107), three inns (OG-108), music and players by island (OG-112).
+  - The canon conflicts the catalogue already noted are carried as "dropped" or "the canon wins" lines: Oakheart, Hearthmoor, the Mark's jarls and clan holds, runic tattoos, the Hollowed Wastes.
+- **`docs/art/README.md`:** the second-round paragraph says the marks are in, and that OG-105's question was answered A.
+
+### Verified (headless Chromium)
+Nothing in the game changed, so no suite was run. The checks were on the files:
+- The catalogue parses as 112 rows of 13 columns. The review page's 112 documents in `reviews` agree with `review_status` on every row.
+- Every one of OG-097 to OG-112 is cited at least once in backlog L.
+- `backlog.md` keeps its CRLF endings (485 lines, all CRLF).
+
+### Needs eyes
+- **OG-101 against OG-099.** The two sheets draw the home island differently. Michael's note is on OG-101, so the item reads it as the shape that leads, with OG-099's biomes dressing it. If he meant OG-099's island, that line changes.
+- **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
+- **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
+
 ## v80 — Session 828 — A town's people were always drawn the same; the test counted who had walked in (backlog I, CI health)
 The merge of Session 817 found `townbarrels`' people hash unstable on the same code: Dunmore read two values, Portclare three, Cœur de Vie three over four runs, here and on CI. So the line was made a warning and the backlog asked the systems builder, after F1, to find what moves the draw. CLAUDE.md's S533 gotcha (an outcome that reads what had loaded) was the first suspect, through `dominantRegion` in `genSettlement`.
 
@@ -16876,26 +16900,3 @@ The cap is now the largest of 8 s, twice noon's worst, and twice the median of t
 - `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
 ### Needs eyes
 - Nothing in play: no game code changed.
-## v80 — Session 827 — The second round of concept art, written back (docs only)
-Michael asked, in chat with Claude, why the review sheet for the concept art still showed the second round as unreviewed when he had signed it off. He had. On 12 Oct 2026, between 23:24 and 23:25 UTC, he marked all sixteen sheets of *Concept Art Session 2* (OG-097 to OG-112, his OG-U2-001 to 016) KEEP on the review page. He left one note, on the Gatelands' and the Mark's maps (OG-101, OG-102): "Keep the shape of the island and the geography / regions. Anything that conflicts with Canon we can replace or repurpose." The marks stayed in the page's database (collection `reviews`). No session read them back, so `catalogue.csv` still said UNREVIEWED and nothing from those sheets reached the backlog. The look builder's wardrobe question (#274) had noted the clothing sheets OG-109 to OG-111 as "still waiting for your marks". The first round had a session to carry its marks (767). The second round's intake (771) ended at "they wait on his marks", and nothing was set to notice when they came.
-
-What changed:
-- **`docs/art/catalogue.csv`:** the sixteen marks are in `review_status` (79 KEEP and 33 NO in all; none unreviewed), and Michael's note is at the end of OG-101's and OG-102's notes, in the form round one used ("Michael (review): …"). OG-107's notes held `(calDay, Session 498)` and two more commas unquoted, so a CSV reader split that row into fifteen columns. It is quoted now and every row has thirteen. No other field changed (checked by a word diff: sixteen status words, two notes, one re-quote).
-- **`docs/backlog.md`, section L:** the header records the second round and Michael's note. New items, each citing its sheets:
-  - **L1:** the wardrobe matrix (OG-109 to OG-111), for the builder's B2.
-  - **L5:** the six great gates (OG-105, pointing to `visual-foundation.md` §2 and backlog A); the islands' shapes and regions (OG-100 to OG-103), flagged as a reshaping of the world for a deep-work session, since today's islands are `rvSpines`' horseshoes; the Gatelands' country (OG-099), for F3; ruins at the scale of cliffs (OG-104); strange places (OG-106).
-  - **L8:** rare specimens and the field guide (OG-097), and the adventurer's kit (OG-098); OG-108's plates are folded into Cooking.
-  - **L9, new, culture and daily life:** festivals on the calendar (OG-107), three inns (OG-108), music and players by island (OG-112).
-  - The canon conflicts the catalogue already noted are carried as "dropped" or "the canon wins" lines: Oakheart, Hearthmoor, the Mark's jarls and clan holds, runic tattoos, the Hollowed Wastes.
-- **`docs/art/README.md`:** the second-round paragraph says the marks are in, and that OG-105's question was answered A.
-
-### Verified (headless Chromium)
-Nothing in the game changed, so no suite was run. The checks were on the files:
-- The catalogue parses as 112 rows of 13 columns. The review page's 112 documents in `reviews` agree with `review_status` on every row.
-- Every one of OG-097 to OG-112 is cited at least once in backlog L.
-- `backlog.md` keeps its CRLF endings (485 lines, all CRLF).
-
-### Needs eyes
-- **OG-101 against OG-099.** The two sheets draw the home island differently. Michael's note is on OG-101, so the item reads it as the shape that leads, with OG-099's biomes dressing it. If he meant OG-099's island, that line changes.
-- **The islands' shapes are a big job.** The item reads "keep the shape of the island" as the land itself, so it reshapes the world (a deep-work session, like the rivers) rather than only restyling the map. If Michael meant only the world map's picture, it shrinks to `94-worldmap.js`.
-- **Owed by the process, not this session.** The review page's marks are read back only when someone asks. A session that adds images to the review page should leave a line for the producer to read `reviews` after Michael's marks land.
