@@ -6,6 +6,96 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### The Gatelands galleon in the new kit: carvel or clinker, and its gun ports (look builder, Session 896) — DECISION #323
+**F11's fifth hull: the Gatelands galleon (look builder, Session 896).** It is the last of the game's five classes in the Gatelands' dress (OG-004's "galleon warship"). It is a prototype in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon`) and `ships.html?ship=galleon`. It is built to the game's galleon's numbers:
+- **The size:** 22 by 7.0 m, draft 1.5, with the deck 1.0 m over the sea.
+- **The hull:** carvel, with a little tumblehome, a long raked stem and a square stern with five windows. She is tarred below the water and oiled oak above, with the top strakes green under a cream wale.
+- **The rig:** fore and main square-rigged, each with a course and a topsail, green, with the harp on the main course. A gaff mizzen stands on the quarterdeck, and a spritsail hangs under the 6 m bowsprit. The courses' feet are 2.2 m over the deck.
+- **The castles:** as the cog's (#319), 2.15 m up.
+  - **The quarterdeck** covers her last 6 m. Under it is the great cabin, behind a door and two windows, with two ladders up, the wheel, and two stern lanterns.
+  - **The forecastle** covers her first 3.5 m, open beneath on two posts.
+- **The gun ports:** six a side, as closed green lids on the gun deck under the main deck. They are paint only: the guns and the gun deck are the systems builder's (your 7 A: cannon on the top ships only).
+
+She is 43,216 triangles in 10 draws. No ray from inside her gets out below the deck. The walk from the quarterdeck to the bow has the deck under it all the way, 2.09 m of headroom under the forecastle and 0.69 m clear.
+
+**1. The planking:**
+- **A. Carvel, as drawn** *(recommended)*: a ship of 22 m was not clinker-built, so the laps stay the mark of the Gatelands' small hulls. The cog (#319) is clinker.
+- **B. Clinker**, as the sloop and the cog, so that every Gatelands hull shows the laps.
+
+**2. The gun ports:**
+- **A. Closed lids, as drawn** *(recommended)*: they say "warship" at a glance and wait for the systems builder's guns.
+- **B. No ports.** The galleon is a merchant's great ship until guns are built.
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-side.jpg)
+- [her stern](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-lap.jpg)
+- [the deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-deck.jpg)
+- [the quarterdeck from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-castle.jpg)
+- [the forecastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-fore.jpg)
+
+Michael: **A. 1 A, 2 A: carvel; closed port lids, as drawn** (14 Oct 2026, via the control room)
+
+### Aurenne's tavern on a terrace over the sea: its house and its shade (look builder, Session 895) — DECISION #322
+**F9's sixth room: Aurenne's tavern on a terrace over the sea (look builder, Session 895).** It is the third of L9's three inns (OG-108: "an Aurenne tavern on a terrace over the sea"). It is built inside the kit's Roman house of Aurenne (`pieces.js`'s `aurenneHouse`, the tile kind, 9.6 by 8 m under a hipped pantile roof, with its arcade of four round arches across the front). It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneTavern`) and `rooms.html?room=tavern`.
+- **Inside:**
+  - red tiles, the blue glazed dado, and cedar beams;
+  - the counter at 1.05 m, faced in glazed tile, with shelves of amphorae and blue jars behind it, broken round the back window;
+  - a rack of amphorae in a corner;
+  - the cooking bench with two braziers and copper pots;
+  - two small tables with stools by the side windows, and two brass lanterns.
+- **The loggia** under the arcade has two round tables.
+- **The terrace:**
+  - paved, 4 m out from the arcade to a parapet 0.62 m high on the quay wall, which drops 3.7 m to the water;
+  - three round tables with stools under a pergola of vines with grapes.
+
+The room and terrace are 10,448 to 10,928 triangles in 18 draws, in the house's 3,476. The walks in to the counter and out across the terrace are clear by 0.15 m.
+
+**1. The tavern's house:**
+- **A. The Roman house with its arcade, as drawn** *(recommended)*: the arcade makes the loggia and opens onto the terrace.
+- **B. A flat-roofed house**, with the terrace on its roof as well as before it (the flat's of Session 891).
+
+**2. The shade over the terrace:**
+- **A. A vine on a pergola, as drawn** *(recommended)*.
+- **B. The striped awning** that the kit's roof pergolas carry.
+
+Pictures:
+- [the terrace from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-terrace.jpg)
+- [the terrace at the golden hour](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-terrace-golden.jpg)
+- [under the vine, back to the arcade](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-pergola.jpg)
+- [the room and its counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-tap.jpg)
+- [the tavern from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-outside.jpg)
+
+Michael: **A. 1 A, 2 A: the Roman house; a vine on a pergola** (14 Oct 2026, via the control room)
+
+### The Mark's inn as a hall of long tables: where guests sleep, and its size (look builder, Session 894) — DECISION #321
+**F9's fifth room: the Mark's inn, a hall of long tables (look builder, Session 894).** It is the second of L9's three inns (OG-108: "a Markish longhouse with long tables"). It is built inside the Mark's hall from the kit (`pieces.js`'s `markHall`, the shell of the longhouse room you passed on #311), widened to 10 by 18 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markAlehall`) and `rooms.html?room=alehall`.
+- **The frame:** the longhouse's: two rows of posts, tie beams 3.11 m over the floor, rafters, and a board lining.
+- **The hearth:** a long hearth of 4 m on the axis under the smoke louver, with a kerb of stones, logs and a cauldron on its tripod.
+- **The tables:** down both sides between the posts, a long table of 12.6 m with a loose bench on the aisle side. Behind the posts, against the walls, are the raised benches laid with furs. The guests sit on them to eat and sleep on them at night.
+- **The back:** the serving counter at 1.05 m across the hall, with kegs on a rack behind it and drinking horns on pegs.
+- **By the door:** a rack of spears and painted round shields (the Mark's soldiers for hire, canon §1.2), and a water barrel.
+- **The light:** three iron lamps hang from the tie beams.
+
+The room is 9,172 to 9,720 triangles in 15 draws, in the hall's 1,648. Both aisles from the door to the counter are clear by 0.15 m.
+
+**1. Where the guests sleep:**
+- **A. On the furred wall benches, as drawn** *(recommended)*: the hall's own custom, one room for eating and sleeping. In the game, renting a place is renting a bench.
+- **B. A row of box beds or a partitioned end** at the back for guests who pay more, with the counter moved forward.
+
+**2. Its size:**
+- **A. 10 by 18 m, as drawn** *(recommended)*: an inn's hall, bigger than a family's longhouse (7.6 by 14 m), with room for two long tables and an aisle either side of the fire.
+- **B. The longhouse's 7.6 by 14 m**, with one table down one side.
+
+Pictures:
+- [down the hall from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-hall.jpg)
+- [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-hall-night.jpg)
+- [along a long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-tables.jpg)
+- [the counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-counter.jpg)
+- [the hall from its yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-outside.jpg)
+
+Michael: **A. 1 A, 2 A: wall benches; 10 by 18 m, as drawn** (14 Oct 2026, via the control room)
+
 ### The Gatelander inn as a room: its shell and its guest rooms (look builder, Session 893) — DECISION #320
 **F9's fourth room: the Gatelander inn round its hearth (look builder, Session 893).** L9 asks for three inns by island (OG-108: "a cosy Gatelander inn with a hearth, a Markish longhouse with long tables, an Aurenne tavern on a terrace over the sea"). Your A on #303 puts rooms inside the street's own shells. The kit has no inn yet, so this one is built inside the kit's farmhouse (`GL_PLANS.farmhouse`: 10.5 by 6.2 m, two storeys of 2.9 and 2.7 m, whitewashed under slate, a stack at each gable), with its front door left ajar. It is a prototype in `docs/prototypes/levelup/rooms.js` (`gatelandsInn`) and `rooms.html?room=inn`.
 - **The taproom:**
