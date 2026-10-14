@@ -17452,3 +17452,46 @@ Asked as **DECISION #303**: *Rooms in the new kit: inside the street's own shell
 - **The night sky** on the page is the day's sky dome with the sun turned down, so `-outside-night` is dusk, not night.
 - **Michael's call:** whether the house you see from the lane is the one you walk into (question 1). It decides how F9 enters the game: today's interiors are separate rooms at their own coordinates (`buildInteriorFor`).
 - **Dressing:** plates, crocks and the curtain are simple shapes. OG-115's prop list (tableware, textiles, mirror and comb) is a later pass.
+
+## v80 — Session 857 — Card F8 begun: a Markish silver mine, built to the person (prototype only)
+The FREEZE (#297, F2a) is still open, so this run works in the prototypes only. Card F9's rooms wait on DECISION #303, and the trials' props on #298. This session therefore takes the next item in the look builder's order that waits on nothing: L10's *Places that are not gates* (card F8), from OG-121 (N3: "mines and quarries: timber galleries and walkways over a shaft, ore and gems, cave-ins, a working site held by hostiles"). I opened the sheet and read its catalogue row. Its canon flags are the crypts' dead, Aurenne's "Roman" ruins and the Mark's Gothic castle, and none of them touches a mine. The Mark is the island for it: the canon's Mark sells "iron and silver from the ranges", and OG-121's Mark panel has "mountain mines". Who holds the working is the systems builder's.
+
+A new module, `docs/prototypes/levelup/places.js`, makes `markMine(o, r)`. It is built to the person, one unit a metre:
+- **The adit:** a level 18 m into the hill, 3 by 3 m in the rock. Timber sets every 1.5 m hold it, each two posts and a cap with lagging boards over the cap. The way between the posts is 2.07 m and the cap is 2.3 m up. A tramway of 0.6 m gauge runs on sleepers from the mouth to a stop-block on the landing, and the cart stands there half full of ore.
+- **The stope:** the worked-out chamber the ore came out of. It is 12 m across and 16 m long, and 24 m high: 8 m over the adit's floor and 16 m below it, down to a sump of standing water.
+- **The landing:** a timber deck across the chamber's near end, on joists let into the rock and posts down to the sump. A windlass stands on two sills out over the shaft, with its drum, crank, rope and kibble. A ladder goes down the east wall from a gap in the rail.
+- **The gallery:** a walkway 1.4 m wide along the west wall, on beams let into the rock with a strut under each. Its rail runs along the open side.
+- **The working face:** at the far end, on a ledge of rock left standing, the face is cut square and wet. A vein of silver-lead ore crosses it in shards set into the face's own surface, dipping a little. There are pick marks along it, broken ore and spoil at its foot, a pick against it, a basket, and a lamp on a peg.
+- **The light:** nine lamps, the only light: three on the adit's sets, two on the landing's posts, two on the gallery, one at the face, and one let down in the kibble. A grey day comes in at the mouth.
+- **`o.worked: false`:** the face is long worked out. The heap and the fresh pick marks are gone.
+
+All the rock of a place moves by one noise field keyed by the place, so the adit's walls and the chamber's mouth, cut on the same half-metre cells, meet at the same points. The face has its own finer field, and the vein's shards are placed on that surface. The rock is a box seen from inside, smooth-shaded across its cells.
+
+`places.html` has five views: `?view=mine` (default) from the adit's last set out over the landing to the lit face; `gallery` halfway along the gallery with the drop beside you; `face` at arm's length from the vein; `adit` from the mouth; and `shaft`. Add `&old` for the face worked out, and `&cam` for any camera.
+
+**Fixed on the way, each found by the check or the pictures:**
+- **The adit's corner:** the walk cut across it, so it now leaves the adit straight before turning for the gallery.
+- **The planks** had 2 cm gaps that a ray fell through to the sump. They are laid edge to edge now.
+- **The ledge's edge** is rough, so it pulled back from the gallery's last plank. The gallery's deck now runs half a metre onto the ledge.
+- **The landing's posts** came 1.7 m up through the deck.
+- **The vein** was first a smooth metal ribbon, then a row of pale stones the size of fists. It is now small dark shards in the rock.
+- **The face** was a flat pasted rectangle until it was given its own rough surface.
+- **The first frames were black:** the lamps were at a candle's strength for 0.170's units.
+
+Asked as **DECISION #305**: *Places that are not gates: a Markish mine's measure, its light, and what comes next*. It has three questions: the levels' width (A as built, 2.07 m), what lights a mine (A, its miners' lamps while it is worked, and dark otherwise), and the next places (A: the Gatelands' round cairn, a limestone cave with a lake under falls, a smugglers' lair).
+### Verified (headless Chromium)
+- **New `places.check.mjs`: 9 of 9 pass:**
+  - **The builds:** 6 keys, each the same twice. 27,896 triangles in 14 meshes, with 9 lamps.
+  - **The sets:** 12 sets, the way 2.07 m between the posts at the hip, the cap 2.3 m up, the feet on the floor.
+  - **The walk:** 160 points every quarter metre, from the mouth down the adit, across the landing, along the gallery and onto the ledge. There is a floor under every point (−0.02 to +0.02 m), 2.3 m of headroom or more, and 0.44 m clear at the hip and the head.
+  - **The gallery:** the rail is within 0.61 m of the walk on the open side, at the hip and the knee. Past it the drop to the sump is 15.4 m.
+  - **The face:** the vein is 1.11 to 1.18 m from the walk's end, 1.06 to 1.19 m up, and is the first thing the eye meets toward it.
+  - **The heap:** worked, it lies at the face's foot (15 to 21 of 40 points). Worked out, it is gone (0).
+  - **The pages:** the mine, shaft and face views render with no page errors.
+- **Pictures, new:** `places-mine.jpg`, `-adit`, `-gallery`, `-face` and `-face-old`.
+### Needs eyes
+- **The shaft view is a hole:** 16 m down, lit by the one lamp in the kibble. It renders, but it is too dark for a picture, so it is not shot. Real bounce light, or a second lamp on the ladder, would show the shaft's walls.
+- **The timber is boxes:** the sets, rails and gallery have no wear or adze marks, and the planks' wood texture reads as tiles at this grain.
+- **No cave-ins, no gems:** OG-121's cave-ins and gems, and the lifts of OG-034's mining town, are later slices.
+- **Combat at 2.07 m** is #305's first question. The combat page's swings were made for open ground.
+- **In the game,** this becomes a kind of place for `52-dungeon-gen.js` after F2a, its walls and solids from the same boxes the check walks.

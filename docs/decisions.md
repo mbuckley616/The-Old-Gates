@@ -3,6 +3,33 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Places that are not gates: a Markish mine's measure, its light, and what comes next (look builder, Session 857) — DECISION #305
+**F8 begun: a Markish silver mine as the first place that is not a gate (look builder, Session 857).** It is a prototype in `docs/prototypes/levelup/places.js` and `places.html`, built from OG-121 ("mines and quarries: timber galleries and walkways over a shaft, ore, a working site") and its Mark panel's "mountain mines". The canon's Mark sells "iron and silver from the ranges". It is built to the person, one unit a metre:
+- **The adit:** a level 18 m into the hill, held by timber sets every 1.5 m. The way between the posts is 2.07 m and the cap is 2.3 m up, with a tramway of 0.6 m gauge.
+- **The stope:** a worked-out chamber of 12 by 16 m, 24 m high, with a timber landing over it. On the landing are the tram's cart, a windlass with its kibble and a lamp let down into the dark, and a ladder to the sump 16 m below.
+- **The gallery:** 1.4 m wide along the west wall, with a rail on its open side.
+- **The working face:** a vein of silver-lead ore across a wet face, with broken ore, a pick and a basket.
+- **The light:** the lamps alone.
+
+**1. How wide are a mine's levels?**
+- **A (recommended):** as built, 2.07 m clear. That is a real mine's size and a person's measure (v2-scope §2). The fights are on the landing and the gallery, and in the stope.
+- **B:** 3 m clear, so that a fight in the level has room to swing. That is wider than any mine was, and the dungeon generator's corridors are already 2 to 4 m.
+
+**2. What lights a mine?**
+- **A (recommended):** a working mine, held or still worked, is lit by its miners' lamps, as shown. A worked-out or abandoned one (`o.worked` false) is dark but for your own torch.
+- **B:** lamps in every mine, worked or not.
+
+**3. The next places that are not gates.**
+- **A (recommended):** in this order: the Gatelands' round cairn with its passage, a limestone cave with a lake under falls, then a smugglers' lair on plank platforms. Each would be built on this module's shared rock (one noise field per place, so pieces meet where they join).
+- **B:** a different order, which Michael names.
+
+Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-mine.jpg (from the adit's last set: the landing, the gallery and the lit face)
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-adit.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-gallery.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-face.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-face-old.jpg
+
 ### Rooms in the new kit: inside the street's own shell, and the cottage's plan (look builder, Session 852) — DECISION #303
 Card F9 (rooms) is begun in the prototype (Session 852, `docs/prototypes/levelup/rooms.js`, page `rooms.html`). Its first room is the Gatelands cottage, from OG-115's cutaways and lit as OG-141 draws it. It is built inside the very cottage shell the street builds (`gatelandsBuilding`, 9.6 by 5.4 m, walls of 0.6 m, thatch at 50°), so its walls are the walls you saw from the lane, at their thickness, with the same windows. The plan follows the shell's own off-centre stack: a hearth-lobby house. The door opens into a lobby screened by a jamb wall; the open hearth with its crane, pot and turf fire faces the kitchen; a dresser of delft, a box bed, a table and a súgán chair stand in the kitchen; and there is a room at each end. 3,700 triangles in 18 draws on the shell's 1,814 in 10.
 
