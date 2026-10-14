@@ -21,6 +21,82 @@ Today a dungeon's corridor is one grid cell, one unit, which was about 1.6 m for
 Recommendation: **B.** The smallest cell where a two-hander and the camera both fit a corridor, and the rooms land on the foundation's own pocket sizes.
 
 ## Answered
+### The Gatelands' round cairn: what is carved on its stones (look builder, Session 869) — DECISION #309
+**F8's second place: the Gatelands' round cairn (look builder, Session 869).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
+- **The mound:** a grassed mound of stones 26 m across and 7 m high, inside a kerb of 38 laid boulders. The door is in a dry-stone facade, and a long entrance stone lies before it.
+- **The passage:** 10.3 m of upright slabs either side, 1.25 m clear, under lintels 2.16 to 2.28 m over a floor that rises 0.8 m to the chamber.
+- **The chamber:** cruciform, with three recesses each holding an empty stone basin. It is roofed by a corbelled vault of eight courses, its capstone at 6 m.
+- **The light:** none inside. As with the worked-out mine (#305, 2 A), it is seen by your torch and by what day comes in at the door.
+
+The walk from the approach to the back recess has a floor under every quarter metre, at least 2.14 m of headroom and at least 0.63 m clear. No ray from inside gets out except by the door.
+
+**What is carved on its stones?** The canon gives the dead to the gates (§3.1), so a cairn is an older or a refused custom. Who lay in the basins is the quest writer's to settle, and the basins stay empty until they do. The carving says whose the cairn was, so it is yours.
+- **A. Spirals and lozenges, as drawn** *(recommended)*: the islanders' own oldest marks, cut before the gates' script was taught. The cairn reads as older than the Clearing, and as nothing to do with the Weavers.
+- **B. The Weavers' script, cut and unlit:** the cairn is a Weaver work. That ties it to "every sigil is carved over a grave", and it raises a story question the quest writer would have to answer.
+- **C. Bare stone** (`&plain`): the cairn says nothing about who built it.
+
+Pictures:
+- [from the approach](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-cairn.jpg)
+- [the door and the entrance stone](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-door.jpg)
+- [up the passage, by torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-passage.jpg)
+- [the chamber, the back recess and its basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-chamber.jpg)
+- [the corbelled vault](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-vault.jpg)
+
+Michael: **A. Spirals and lozenges, as drawn** — Let’s be mindful of the size as well, passages look very narrow. (14 Oct 2026)
+
+### The Mark's longhouse as a room: one hall round the fire, or rooms (look builder, Session 870) — DECISION #311
+**F9's second room: the Mark's longhouse (look builder, Session 870).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Mark's shingle hall from the kit (`pieces.js`'s `markHall`), 7.6 by 14 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markLonghouse`) and `rooms.html?room=longhouse`. The brief is OG-115's Mark panel ("a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat") and OG-025's longhall. Nothing is whitewashed, as the catalogue's note asks.
+- **The hall:** a planked floor on the stone footing. Two rows of posts carry tie beams 3.1 m over the floor. Rafters and a board lining run under the shingle.
+- **The hearth:** a long hearth on the axis under the smoke louver, with a kerb of stones, a log fire and a cauldron on a tripod.
+- **The benches:** raised benches 0.45 m high and 1.1 m deep down both walls, laid with furs, to sit on by day and sleep on by night.
+- **By the door:** a workshop corner on the left (a bench, tools on pegs, a chopping block) and the larder on the right (a beam hung with hams, dried fish and herbs, barrels and a crock). The door stands open against the wall.
+- **At the back:** a plank partition with a doorway into the family quarters: a bed of furs, a chest with a stone lamp, and a cradle.
+
+The room is 5,620 triangles in 18 draws, on the hall's 1,568 in 7. No piece is outside the walls or through the roof, and no two pieces clash. The way from the door, past the hearth and through the partition, is clear by 0.15 m.
+
+**The longhouse's plan:**
+- **A. One hall round the fire, as drawn** *(recommended)*: the benches are seat and bed, and only the family quarters are walled off. It is the plan OG-115 and OG-025 draw. The inn (L9, "a Markish longhouse of long tables") would follow on this same hall, with tables in place of the benches.
+- **B. Rooms, as the cottage has:** a hearth room in the middle, with a sleeping room and a store walled off at either end. It is more private and more like the Gatelands, but the long view down the fire is lost.
+
+Pictures:
+- [down the hall from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall.jpg)
+- [the hearth and the benches](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hearth.jpg)
+- [the larder by the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-larder.jpg)
+- [the family quarters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-back.jpg)
+- [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall-night.jpg)
+- [from the yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-outside.jpg)
+
+Michael: **A. One hall round the fire, as drawn**. (14 Oct 2026)
+
+### The Mark's cutter in the new kit: tanned or striped sails, and a beast's head on the stem (look builder, Session 871) — DECISION #312
+**F11's second hull: the Mark's cutter (look builder, Session 871).** Your A on #306 gave each island one rig, and the Mark's is the game's cutter, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`markCutter`) and `ships.html?ship=cutter`. It is built to the game's cutter's numbers:
+- **The size:** 14 by 4.0 m, draft 1.45, with the deck 1.0 m over the sea.
+- **The hull:** a plumb stem, a small transom and a cut-away forefoot. It is carvel-planked (flush), tarred black above a gilt line, red-brown below the water.
+- **The rig:** one tall mast well forward with a gaff main, a topsail, a staysail and a jib on a 4.2 m bowsprit.
+- **The helm:** a rudder on the transom with a tiller (your 3 A on #306).
+- **The boom:** it sits 2.15 m over the deck, so a person walks under it. The game's is 1.35 m.
+
+She is 21,594 triangles in 9 draws. No ray from inside her gets out below the deck. The walk down either side has 3.66 m of headroom, and the rail is 1.0 m over the deck.
+
+OG-004 draws the Mark's ships with "dragon prows, oars, dark sails" and the raiding longship's sail in red and black. Two questions, one letter each.
+
+**1. The sails:**
+- **A. Tanned red-brown, as drawn** *(recommended)*: the "dark sails" of the board, the colour of a working northern sail.
+- **B. Red and black cloths** (`&stripe`): the raider's sail on every Markish hull. This might be kept instead for the Mark's pirates.
+
+**2. The stem:**
+- **A. A gilt beast's head on the stem head, as drawn** *(recommended)*: the board's dragon prow on the game's plumb stem. It is the same beast that ends the Mark's hall gables (OG-034).
+- **B. A plain stem** (`&nohead`), as the game's cutter has today.
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-side.jpg)
+- [her deck from the tiller](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-deck.jpg)
+- [the stem and its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-lap.jpg)
+- [the striped sails](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-quarter-stripe.jpg)
+
+Michael: **1 A, 2 A: tanned sails, gilt beast's head**. (14 Oct 2026)
+
 
 ### What ships in 2.0? The scope, the legacy zones, and the missing cards (Claude, Session 829, 2026-10-13)
 Michael asked for the 2.0 scope in chat; it is `docs/design/v2-scope.md`. 2.0 is the day the new look becomes the default and r128 goes.
