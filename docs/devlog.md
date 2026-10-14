@@ -17353,3 +17353,18 @@ The kelpstrider (a leafy seahorse) and the pierwinkle (a snail) still wait. Each
 - **The stonefish reads as a fish, not as a stone.** Its mottle is soft and its outline smooth. A rock's lumpiness would need a bumpier flesh than the kit grows.
 - **The angler's lure** is a pale ball. It is not lit (the kit's eyes are not emissive), so it will not glow in the dark water it is for.
 - **The crimson leviathan** is coarse at its size (8,748 triangles), as the Gate Leviathan is.
+
+## v80 — Session 879 — F2a begins: on the new look, people are drawn again (the deep-work session, card F2a)
+The first session of card F2a (the scale pass, `docs/design/v2-scope.md` §3), under FREEZE #297. The card puts one fault first, found by the critic on 14 Oct (backlog I, s627): on `?look=new` no person was drawn. three.js 0.170 gives a `SkinnedMesh` a bounding sphere of its own, computed once from the posed vertices through the bones' world matrices, so the sphere already sits in world coordinates (centre 13553.7, 9.7, 25405.6, radius 0.68, for a townsperson standing at exactly that spot); the frustum test then applies the mesh's world matrix a second time and puts the sphere some 30 km off. Every skinned body (townsfolk, guards, the player's own third-person body, wolves) was culled; only what they held showed. r128 culled them by the geometry's sphere in local space, which `32-people.js` already pads by 1.35 for a raised arm or a stride.
+
+`js/05-compat.js`, the one place the version is read, now gives 0.170 r128's behaviour: `SkinnedMesh.prototype.computeBoundingSphere` (and `computeBoundingBox`) copy the geometry's own. Nothing changes on the old look, where the patch never runs.
+
+`looknew` asserted that the townsfolk's bones move, which they did while nobody could see them. It now also stands 4 m from the nearest townsperson, looks at it, and asserts the mesh is inside the camera's frustum and that the scene draws one call more with it shown than hidden.
+
+The before half of F2a's picture pair is taken here, before anything is scaled: `tests/f2ashots.mjs <tag>` (not a suite) writes Dunmore's square at noon, from 9 m south of the middle looking north, and the inn's room from its door, to `docs/prototypes/f2a/<tag>-*.jpg`. `before-dunmore-noon.jpg` shows the trouble the card is about: the man by the well stands about as high as its roof's posts are tall, and the club fills a third of the screen from an eye at 0.92.
+### Verified (headless Chromium)
+- Before the fix, on 0.170 the nearest townsperson in Dunmore at noon, 4 m off and looked at: `Frustum.intersectsObject` false, its sphere's centre at (13553.7, 9.7, 25405.6). After: true, the centre 0.74 from the mesh's origin, radius 1.26.
+- `looknew` 11/11, the new check among them: inside the frustum, 854 draw calls with the person shown against 853 hidden.
+- `lookpair` 1/1: the two looks' pictures of Dunmore match (mean difference 6.1 of 255), both measured their frame, no page errors.
+### Needs eyes
+- On the new look, the townsfolk, the guards and your own body in third person should be back. Nothing else differs.
