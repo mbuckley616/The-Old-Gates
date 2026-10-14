@@ -17528,3 +17528,17 @@ What changed in `buildHair`:
 ### Needs eyes
 - **The lift is modest.** Loose hair now has some body from the side and behind, and still lies close from the front. A centre parting would want the hair to rise from it. That needs the strands to leave the scalp at an angle, not only higher layers.
 - **Stray beard cards on the chest.** With the mantle off, the man rolled from `b7` shows a scatter of beard cards lying on his tunic below the jaw. The fur collar hides them, but bare-necked dress shows them. This was so before these sessions. It is the next bodies fix in the builder.
+
+## v80 — Session 878 — The beard stops at the tunic's collar (B3, a fix, prototype only)
+Session 877 found this. A bearded man in a tunic, with no fur mantle, had a scatter of beard cards lying on his chest below the jaw. The beard's region of skin runs down the throat to rest height 0.60. The tunic covers the body up to 0.63, and its shader cuts it at 0.612. So about 3 cm of throat grew beard under the cloth. Those hairs are cards up to 7 cm long that fall with gravity, and their tips came out through the tunic onto the chest. The fur mantle's collar had hidden this in every earlier picture. It is still under FREEZE #297, so it touches only the prototypes.
+
+The fix is in `makePerson`. When a tunic is worn, the beard's cards root only on triangles lying wholly above rest height 0.638 (`PACK.R.beardTunic`, made once). There are 1,602 of the 2,078 triangles. The same 520 cards are drawn from the same random stream, so the cloak drawn after the beard folds as it did. Without a tunic, the beard keeps the whole throat. The dark base shell under the beard is unchanged, since below the collar the tunic covers it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 176 checks pass**, one of them new: **a beard over a tunic stops at its collar.**
+  - The check builds the man rolled from `b7` with a beard of 0.8, in his tunic, with no mantle or cloak.
+  - It reads the collar's front from the tunic's mesh at its cut, then counts beard points more than 4 cm below it and within 12 cm of the midline.
+  - Session 877's code had 222 of 5,200 such points. This one has 0. The check was run on both to prove it tells them apart.
+- **Pictures:** `builder-beard-tunic.jpg` and `builder-beard-tunic-before.jpg`, the same man from three-quarters front, and `builder-man-face.jpg` shot again.
+### Needs eyes
+- **The beard's lower edge** now ends on the collar's line. A long beard would hang over the collar and onto the chest, as a beard of its own grown from the jaw. The beard length is one slider (`beard`, 2 to 7 cm), so a long-bearded Markman would want that drape built.

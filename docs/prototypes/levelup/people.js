@@ -714,7 +714,9 @@ export function makePerson(G, o = {}) {
     { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
     if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
       push('beardBase', PACK.R.beardBase, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
-      const bc = hairCards(P, PACK.R.beard, { n: 520, len: .02 + .05 * G.beard, seg: 4, width: .011, lift: .15, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: jawB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc, hug: true, surfs: [surfaceOf(P, PACK.R.beard, hc)] });
+      // under a tunic the throat below its collar (rest y .63) grows no beard: those hairs came out through the cloth (Session 878)
+      const beardTris = D0.tunic ? (PACK.R.beardTunic || (PACK.R.beardTunic = (() => { const R = PACK.rest, B = PACK.R.beard, o = []; for (let t = 0; t < B.length; t += 3) if (Math.min(R[B[t] * 3 + 1], R[B[t + 1] * 3 + 1], R[B[t + 2] * 3 + 1]) > .638) o.push(B[t], B[t + 1], B[t + 2]); return o; })())) : PACK.R.beard;
+      const bc = hairCards(P, beardTris, { n: 520, len: .02 + .05 * G.beard, seg: 4, width: .011, lift: .15, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: jawB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc, hug: true, surfs: [surfaceOf(P, PACK.R.beard, hc)] }); bc.userData.roots = beardTris.length / 3;
       bc.name = 'beard'; meshes.push(bc);
       const mc = hairCards(P, PACK.R.moust, { n: 110, len: .028, seg: 3, width: .009, lift: .2, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: headB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc });
       mc.name = 'moust'; meshes.push(mc); } }
