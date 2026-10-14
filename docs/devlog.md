@@ -18395,3 +18395,29 @@ What changed in `people.js`:
 - **The face under the brim is bare.** OG-019's Iron tier may wear a mail coif under the helm; the thumbnail is too small to tell. A coif would also cover the tucked hair and the neck.
 - **Not yet in this tier:** the round shield and crossed belt that every tier of OG-019's heavy line carries. They are a prop and a strap, not a garment. The nine other tiers, and the light and robe lines, are owed. A shell and the ring shader will carry Bronze's scale and Steel's plate only so far: plate wants rigid pieces on the bones, as the helm is.
 - **Under a full cloak, the hands still rest inside the mail skirt**, out of sight, as they do in a long skirt.
+
+## v80 — Session 898 — A cloak hangs clear over mail (B2, prototype only)
+Session 897 left one thing owed: a cloak over mail. 25 of 7,114 points of the mail's skirt came out through the back of a Markman's fur-collared cloak, up to 1.7 cm. From behind they showed as pale patches of mail through the cloth (`builder-armour-markman-back-before.jpg`, shot on Session 897's code at 1200 × 900). It is still under FREEZE #297, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+Session 897 had tried raising the cloak's clearance where it lies on the body (`clearAt`), and the count did not move. So the points were not where the cloak lies on the back. They were where the folds are laid.
+- A fold's trough comes in by at most the room between the column and the body's outline (`floorAt`). The hem then rises on the ridge and drops in the trough (`q.y += .45 * d * s⁴`).
+- Over the mail skirt, which stands 4 to 7 cm out at the buttocks, the outline changes fast with height. A point that moved in at one height and then dropped a few millimetres ended up inside the outline at its new height.
+
+The fix is one last pass at the end of `buildHang`. Every point of every column below the shoulders is held at least 4 mm outside the outline of what the cloak hangs over: the body, a skirt's shell, a robe's sleeves and now the mail, read from `wornMask` as before. Points already outside it do not move.
+- Over mail it moves 548 of the cloak's points.
+- Over the hooded habit (Session 888) it moves 71, each by under 4 mm.
+- It moves none in the other cloak cases the check builds: the woman's cloak with the hood down, the short hooded cloak, and the fur-collared long cloak.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 221 checks pass.** The cloak over mail is a check again, where Session 897 only printed its count:
+  - **0 of 7,114 points of the mail and the body are out through the cloak.**
+  - **The habit under a hooded cloak** still passes: 0 of 6,413 points through, 3.7 cm clear.
+  - The other cloaks are unchanged, measured outside the check: 0 points moved, and the same hem-in and fold depths.
+- No page errors.
+- **Pictures:**
+  - `builder-armour-markman-back.jpg`: the Markman from behind, in a lighter cloak so the cloth reads. Nothing of the mail shows through.
+  - `builder-armour-markman-back-before.jpg`: the same view on Session 897's code.
+  - `builder-armour-markman.jpg` and `builder-robe-hooded.jpg` were shot again.
+### Needs eyes
+- **The back of a cloak over mail** now follows the mail skirt's outline at the buttocks wherever a fold would have cut into it. In the picture it reads as cloth over a stiff skirt. Whether the fold there looks pinched is for a closer look.
+- This pass is a floor, not a drape. A cloak over plate, which stands further out and steps sharply, will want the folds laid against the outline at the height they end at, not the height they start at.
