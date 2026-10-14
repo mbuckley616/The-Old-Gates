@@ -18376,7 +18376,7 @@ What changed in `people.js`:
 - **`builder.check.mjs`: all 220 checks pass**, nine of them new. Four people are armoured: a man in mail and a helm, a woman in mail over a long skirt, a Markman under a fur-collared cloak, and a man under the Crown tabard. For each:
   - **Nothing comes through the mail**, measured on the posed body against the posed shells:
     - 0 of 348 upper-arm points are out through the sleeve.
-    - 0 of 524 tunic points are out through the body. The crease under the arm, where the arm's own skin folds both shells, is left out of this test. It held 2 to 16 points out by up to 8.7 mm before that region was dropped.
+    - 0 of 524 tunic points are out through the body. The crease under the arm, where the arm's own skin folds both shells, is left out of this test. It held 2 to 14 points out by up to 8.7 mm before that region was dropped.
     - 0 of 139 to 371 leg, trouser and skirt points are out of the mail skirt, measured radially in 2 cm bands. Bands with fewer than 24 of the skirt's points are not tested: 3 points at the skirt's top read 33 cm out against a centre skewed by a handful of points.
   - **No hand is inside the mail skirt**: 0 of 606 to 975 points, with the arms lifted 0.15 to 0.3 rad.
   - **The helm**: 20.5 to 22.7 cm wide and 23.3 to 26.2 cm deep. The head is 12.0 mm inside it at the nearest. No hair is through it (0 of about 27,800 card points). No point of the face rises into its brim (0 of about 4,080 below the rim).
