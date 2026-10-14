@@ -85,11 +85,13 @@ The slice's 250 m nave is about a dozen meshes of merged stone plus about a hund
 ## 3. The order of work (backlog K)
 1. **The renderer:** three.js 0.170 behind a switch; the old look stays playable until the new one is whole.
 2. **The scale pass:** `SCALE`, the eye, the interiors at true size, the ratio test.
-3. **The land:** the vista slice's terrain shading, grass, trees, sky, water and post, streamed with the chunks at three quality levels.
+3. **The land:** the vista slice's terrain shading, grass, trees, sky, water and post, streamed with the chunks at three quality levels. The grade follows P10b (OG-147), the art direction Michael kept on 13 Oct over P10a (OG-146): warm, painterly and saturated, with the gates kept dark as §2 has them (backlog L12).
 4. **People:** the builder (`character-builder.md`), B1 to B6.
 5. **The gates:** the outside per school and condition; the inside as spaces; the generator's second scale.
 6. **Buildings as pieces:** the lane slice's kit across the three islands.
 7. **The cascade:** backlog L built in the new kit.
+
+*What surrounds these cards (the finish line of 2.0, the drafted cards F8 to F14, the split of F2, the mechanics and the budgets) is `v2-scope.md` (Session 829), approved by Michael the same night (1 B, 2 A, 3 A).*
 
 ## 4. The sessions, queued (Michael, 12 Oct 2026: "Go with both of your recs")
 Asked whether the next sessions were planned, Claude found the plan written but nothing queued. There was no Fable card on the control room and no roadmap epic, and the look builder was still building section H in the old style. Michael took both recommendations: queue the foundation as cards, and move the look builder to work that carries over until the renderer lands.

@@ -4,8 +4,49 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The great gates: what the player does at one, sealing or tearing (the quest writer, 2026-10-14) — DECISION #292
+You set the two paths (13 Oct, *The great gates' two paths* below): each great gate is torn open or sealed, any choice can be undone by going back, and the world is decided when all six match. Still open, as that entry says: **what the act itself is**, where in the gate it happens, and what undoing it asks. The draft *The Great Gates, I — the knot at the ring* (`docs/quest_drafts.md`, unapproved) writes A in full: every line of the act, both ways, the undo, the lock, and the people's talk as the gates are torn.
+- **A. The knot** *(recommended)*. At the far end of each great gate, in the dark at the heart of the great ring, the script of the whole gate is drawn into one knot. The player cuts it with the tearing artifact or binds it with the sealing one. Torn, each of that school's spells you hold is one tier deeper; sealed, one tier shallower; undoing swaps it back. Once you have reached a gate's ring, its door takes you straight back to it, so undoing never means clearing the realm again. The state lives in the world's save.
+- **B. The door.** The same act at the great gate's outer door, from outside, once the gate has been cleared once. Undoing is quicker, but the choice is made away from the place that gives it weight.
+- **C. The heart carried.** Tearing cuts the knot's heart-stone free and you carry it, so the power is in the stone; sealing puts it back. The world's fate would then sit in the character's bag (against the co-op rule that shared state lives in the world's save), and a stone can be dropped, sold or lost.
+
+Why A: the choice is made in the realm, in front of what it changes, and stays cheap to undo. It also squares the canon. The Compact's sealing *bricks a gate shut*, which §3.1 says would drown the world in its own dead; binding the knot keeps the gate working. The Church takes the credit anyway, and is wrong.
+
+### F2b — how wide is a dungeon's grid cell at true scale? (the designer, 2026-10-14) — DECISION #300
+Today a dungeon's corridor is one grid cell, one unit, which was about 1.6 m for the old 1.1 m person; at true scale the cell must grow. Its size sets every corridor's width, every room's size and how long a dungeon takes to walk (build sheet: `docs/design/scale-numbers-build.md`, the open number).
+- **A. 2 m.** Corridors 2 m, rooms 6 to 24 m: a crypt's squeeze, the third-person camera tight in a corridor; a spike plate jumped at a run.
+- **B. 2.5 m** *(recommended)*. Corridors 2.5 m, rooms 7.5 to 30 m, on the foundation's fighting pockets of 15 to 30 m; a claymore swings with 1.9 m clear; a plate needs a sprint; a massive dungeon is 135 m across, about 35 s at a jog.
+- **C. 3 m.** Corridors 3 m, rooms 9 to 36 m, near Skyrim's ruins; roomy, but walks 20% longer and the same foes sparser.
+
+Recommendation: **B.** The smallest cell where a two-hander and the camera both fit a corridor, and the rooms land on the foundation's own pocket sizes.
+
 ## Answered
 
+### What ships in 2.0? The scope, the legacy zones, and the missing cards (Claude, Session 829, 2026-10-13)
+Michael asked for the 2.0 scope in chat; it is `docs/design/v2-scope.md`. 2.0 is the day the new look becomes the default and r128 goes.
+F1 to F7 plan the look, but nothing yet says which mechanics must be done before the cutover, and these have no card: the places that are not gates,
+rooms, the player's own body and hands, ships and the sea, effects and the corruption level, old saves, and the cutover itself. F2 is also
+bigger than its card: every reach, sight range and jump height is tuned in units against a 1.1 m person. Three questions:
+
+**Q1. What ships in 2.0?**
+- **A. The look only.** Mechanics keep landing on main as they are built, before or after the cutover.
+- **B. The look and the core loop** *(recommended)*. 2.0 also waits on combat's resolver, skills and perks (A), enemies by place, and magic B with its
+  questline: the systems that decide how every fight and level feels. Survival, platforming's places, sailing's playtest items, the calendar and the
+  parchment panels keep landing on main as they are built.
+- **C. The look and everything decided.** Everything in the page's §4 is built before the cutover. This makes for the longest wait.
+
+**Q2. The legacy zones** (`40-legacy-zones.js`, `44-legacy-towns.js`, about 6,000 lines; the open world already plays Ashenmoor and Ironhaven):
+- **A. Retire them at the cutover** *(recommended)*, after Q7's old-zone path moves into the world.
+- **B. Rebuild them in the new kit.**
+
+**Q3. The drafted cards:** accept F8 to F14, the split of F2 into F2a (scale) and F2b (the gameplay numbers), and the budgets (45 fps at the middle
+level on Michael's laptop in Portclare's square, a first load under 40 MB, under 1,000 draw calls in the busiest town)?
+- **A. Yes, as drafted** *(recommended)*.
+- **B. Yes, with changes** (say which).
+
+Michael: **1 B, 2 A, 3 A** — the look and the core loop; on the legacy zones, “A, and honestly, if it's easier to just purge the legacy code / zones when ready, I'm cool with that. I was never very attached to that, they were moreso just placeholders to help with scaffolding for a main story.” He accepted the drafted cards, the F2 split and the budgets. (13 Oct 2026, in chat with Claude)
+
+*Acted, Session 829:* `v2-scope.md` now reads as the spec. 2.0 waits on the look (F1 to F14), combat's resolver, skills and perks (A), enemies by place, and magic B with its questline. The legacy zones are purged at the cutover, or sooner if that is easier, once Q7's old-zone path is in the world. For the producer: card F2a, F2b and F8 to F14 on the control room, and a roadmap epic for the core loop.
 ### The Mark's turf roofs, redone: dry sod or dark moss? (look builder, Session 825) — DECISION #285
 On #277 Michael chose the mix (two halls in three shingle, one in three turf), but said the turf "green is too vibrant for the climate" and asked for another swing. Session 825 (prototype only, `pieces.js`) drops the lawn green and paints the sod two ways. Both versions now have a fringe of grass hanging over the eaves, so the roof's edge is ragged rather than a hard slab.
 
