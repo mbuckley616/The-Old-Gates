@@ -17319,7 +17319,7 @@ The pierwinkle is OG-016's tide-pool snail, drawn there in purple beside the tid
 - the sutures, where one whorl sits on the last, are darkened;
 - the lip at the mouth is paled toward the belly.
 
-It is one rigid mesh on a spine bone. `tilt`, `turn` and `roll` set it on the body: here it leans back 60° over the foot, turned so the mouth faces down and back onto it. Four turns at 40 steps by 20 round make 3,200 triangles.
+It is one rigid mesh on a spine bone. `tilt`, `turn` and `roll` set it on the body: here it leans back 60° over the foot, turned so the mouth faces down and back onto it. Four turns at 40 steps a turn by 20 round make 6,400 triangles.
 
 **Pierwinkle:** a broad flat foot on four spine bones that tapers to a point behind, a short neck, a head with two dark eye stalks (the Tidecrab's), and the shell. The shell is purple with pale pink bands and dark sutures. The snail is built at ten times its size and scaled by 0.16, so it is about 8 cm long. It creeps at a tenth of its length a second.
 ### Verified (headless Chromium)
