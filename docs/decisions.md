@@ -6,6 +6,31 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### What ships in 2.0? The scope, the legacy zones, and the missing cards (Claude, Session 829, 2026-10-13)
+Michael asked for the 2.0 scope in chat; it is `docs/design/v2-scope.md`. 2.0 is the day the new look becomes the default and r128 goes.
+F1 to F7 plan the look, but nothing yet says which mechanics must be done before the cutover, and these have no card: the places that are not gates,
+rooms, the player's own body and hands, ships and the sea, effects and the corruption level, old saves, and the cutover itself. F2 is also
+bigger than its card: every reach, sight range and jump height is tuned in units against a 1.1 m person. Three questions:
+
+**Q1. What ships in 2.0?**
+- **A. The look only.** Mechanics keep landing on main as they are built, before or after the cutover.
+- **B. The look and the core loop** *(recommended)*. 2.0 also waits on combat's resolver, skills and perks (A), enemies by place, and magic B with its
+  questline: the systems that decide how every fight and level feels. Survival, platforming's places, sailing's playtest items, the calendar and the
+  parchment panels keep landing on main as they are built.
+- **C. The look and everything decided.** Everything in the page's §4 is built before the cutover. This makes for the longest wait.
+
+**Q2. The legacy zones** (`40-legacy-zones.js`, `44-legacy-towns.js`, about 6,000 lines; the open world already plays Ashenmoor and Ironhaven):
+- **A. Retire them at the cutover** *(recommended)*, after Q7's old-zone path moves into the world.
+- **B. Rebuild them in the new kit.**
+
+**Q3. The drafted cards:** accept F8 to F14, the split of F2 into F2a (scale) and F2b (the gameplay numbers), and the budgets (45 fps at the middle
+level on Michael's laptop in Portclare's square, a first load under 40 MB, under 1,000 draw calls in the busiest town)?
+- **A. Yes, as drafted** *(recommended)*.
+- **B. Yes, with changes** (say which).
+
+Michael: **1 B, 2 A, 3 A** — the look and the core loop; on the legacy zones, “A, and honestly, if it's easier to just purge the legacy code / zones when ready, I'm cool with that. I was never very attached to that, they were moreso just placeholders to help with scaffolding for a main story.” He accepted the drafted cards, the F2 split and the budgets. (13 Oct 2026, in chat with Claude)
+
+*Acted, Session 829:* `v2-scope.md` now reads as the spec. 2.0 waits on the look (F1 to F14), combat's resolver, skills and perks (A), enemies by place, and magic B with its questline. The legacy zones are purged at the cutover, or sooner if that is easier, once Q7's old-zone path is in the world. For the producer: card F2a, F2b and F8 to F14 on the control room, and a roadmap epic for the core loop.
 ### The Mark's turf roofs, redone: dry sod or dark moss? (look builder, Session 825) — DECISION #285
 On #277 Michael chose the mix (two halls in three shingle, one in three turf), but said the turf "green is too vibrant for the climate" and asked for another swing. Session 825 (prototype only, `pieces.js`) drops the lawn green and paints the sod two ways. Both versions now have a fringe of grass hanging over the eaves, so the roof's edge is ragged rather than a hard slab.
 

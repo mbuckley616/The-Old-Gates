@@ -91,6 +91,8 @@ The slice's 250 m nave is about a dozen meshes of merged stone plus about a hund
 6. **Buildings as pieces:** the lane slice's kit across the three islands.
 7. **The cascade:** backlog L built in the new kit.
 
+*What surrounds these cards (the finish line of 2.0, the drafted cards F8 to F14, the split of F2, the mechanics and the budgets) is `v2-scope.md` (Session 829), approved by Michael the same night (1 B, 2 A, 3 A).*
+
 ## 4. The sessions, queued (Michael, 12 Oct 2026: "Go with both of your recs")
 Asked whether the next sessions were planned, Claude found the plan written but nothing queued. There was no Fable card on the control room and no roadmap epic, and the look builder was still building section H in the old style. Michael took both recommendations: queue the foundation as cards, and move the look builder to work that carries over until the renderer lands.
 

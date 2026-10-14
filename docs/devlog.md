@@ -16887,3 +16887,37 @@ What changed:
 ### Needs eyes
 - **The double jump and air dash** are Michael's wish, not yet a design. The designer owes the numbers and how each is unlocked, and how they sit with platforming B's rule that timed jumps stay off the main quest's path.
 - **What is not taken from the art.** Each L10 to L12 item names the conflicts it leaves out (clans in the Mark, “code” in the gates, skill trees, hunger, climbing, taming, the islands misplaced on P4). If Michael wants one of those back, it is a decision, not a backlog edit.
+
+## v80 — Session 829 — The 2.0 scope, written up (docs only)
+Michael asked, in chat with Claude, while #289's checks ran: "write up the 2.0 scope". Earlier the same evening Claude had told him the cutover was not fully captured. F1 to F7 plan the look, but nothing says which mechanics 2.0 waits for, and several kinds of work have no card. This session writes that up as a design page and three questions. Nothing is built from it until he answers.
+
+What changed:
+- **`docs/design/v2-scope.md`, new.** Its sections:
+  - §1, 2.0 defined: the day `?look=new` becomes the default and r128 is deleted, with six conditions for done (the suite, every place, every body, old saves, budgets, the chosen mechanics).
+  - §2, F1 to F7's state.
+  - §3, what the plan is missing. F2 is bigger than its card: reach, E's 2.2 units, sight ranges, the platforming page's jump and mantle heights, the generator's 2 to 4 m corridors and ship decks are all tuned against a 1.1 m person. The page proposes splitting it into F2a (scale) and F2b (the gameplay numbers), and drafts seven cards: F8 places that are not gates, F9 rooms, F10 the player's body, F11 ships and the sea, F12 effects and the corruption level, F13 old saves, F14 the cutover.
+  - §4, every system Michael has chosen a design for, against what is built and what is owed.
+  - §5, proposed budgets.
+  - §6, the questions.
+  - §7, the order.
+- **`docs/decisions.md`:** *What ships in 2.0?* under Pending, for the producer to carry. Q1 asks what 2.0 waits for (A the look only, B the look and the core loop, recommended, or C everything decided). Q2 is the legacy zones (retire them at the cutover, recommended, or rebuild them). Q3 asks whether to accept the drafted cards, the F2 split and the budgets.
+- **`docs/backlog.md` K:** a line pointing to the page.
+- **`docs/design/visual-foundation.md`:** a line above §4 pointing to it.
+
+Two points in the page come from reading the code and the design pages:
+- **Platforming already planned a double jump.** It is one of the ways across a 4 to 5 unit gap. Michael's ask on OG-131 adds the air dash and makes both unlockable.
+- **Combat's resolver and F2b change the same reach and hit tables,** so the page orders the resolver first.
+
+### Verified
+Nothing in the game changed, so no suite was run. The figures in the page were checked against the repo:
+- 453 suites in `tests/`.
+- 6,055 lines in the two legacy files.
+- `vendor/three.r170.min.js` is 690,565 bytes.
+- Dunmore draws 836 calls at noon on F1 (Session 822).
+- Portclare's square took 2.0 s a frame on the critic's 29 Sep run.
+
+### Michael's answers, the same night
+Michael: 1 B, 2 A, 3 A. 2.0 is the look and the core loop. On the legacy zones: “A, and honestly, if it's easier to just purge the legacy code / zones when ready, I'm cool with that. I was never very attached to that, they were moreso just placeholders to help with scaffolding for a main story.” He accepted the drafted cards, the F2 split and the budgets. The entry moved from Pending to Answered in `decisions.md`, and the page, backlog K and the foundation's pointer now read as approved. Owed by the producer: card F2a, F2b and F8 to F14 on the control room, and a roadmap epic for the core loop.
+
+### Needs eyes
+- **The budgets are guesses.** 45 fps and 40 MB are a starting point, not measurements. F14 measures them on his laptop.
