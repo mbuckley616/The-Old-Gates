@@ -18331,3 +18331,24 @@ What changed in `people.js`:
 - **The belt line.** Belt, bodice hem, apron waistband and skirt top all meet within 5 cm there. On the Gatelander a little mottling of red and cream shows along the belt's lower edge.
 - **The neckline is square and plain.** OG-110's gown has a rounder neck and a chemise that gathers at it, and neither is built. The straps are the shell's width, 8 cm, where a real bodice's are narrower.
 - **No people rolls a bodice yet.** It is in the kit for the wardrobe matrix (OG-109 to OG-111) to place, by island and class. That placing is a design call for when that matrix is drawn up.
+
+## v80 — Session 889 — Cuffs with clean edges, and the Markmen's woven bands (B2 and L1, prototype only)
+Every picture since Session 770 with cuffs showed them ending in black, toothed steps. The cuff region (`PACK.R.cuffs`) was picked by whole triangles of the tights' shell at rest |x| 0.37 to 0.405, so both its edges were triangle edges. Its shader only cut the outer one at 0.4. OG-025, the Markmen's sheet Michael kept as "closer to the Nord look", draws woven red-and-blue bands at the cuffs (L1). This session does both. It is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`, `builder.js`'s label).
+
+What changed in `people.js`:
+- **Both edges are cut in the shader.** The region now runs from rest |x| 0.355 to 0.425, and the cuff is cut at 0.371 and 0.411, so neither edge is a triangle's.
+  - The first try cut it at 0.4 and kept small teeth past the edge. Those were not the cuff's. The forearm's bare skin starts on its own stepped edge (body triangles from 0.395, `PACK.R.bare`), and its holes showed just beyond the cuff. Running the cuff to 0.411 covers them.
+- **A woven band.** `cuffBand` is a second colour, filling the middle of the cuff's width with its edges stepped in a chevron round the arm, as a tablet weave is (`BAND`, in `clothMat`). It saves and loads, and shows on the page as "woven cuff band".
+- **The Markmen roll it.** 70% of them get red cuffs with a blue band, or blue with red. It is drawn last in `peopleGenome`, after the cape, so every earlier roll of a seed is as it was.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 211 checks pass**, two of them new:
+  - **the cuffs are cut in the shader at 0.371 and 0.411**, inside a region of 0.34 to 0.436 measured on the mesh, so neither edge is a triangle's step; a woven band saves and loads back;
+  - **the Markmen roll woven bands**, 7 of 12, and the other peoples none (0 of 3).
+- No page errors.
+- **Pictures:**
+  - `builder-cuffs-markman.jpg` is a Markman's band close up. `builder-cuffs-plain.jpg` is a plain cuff on this code, and `builder-cuffs-before.jpg` the same view on Session 888's code.
+  - `builder-peoples.jpg` was shot again: the Markmen now wear the bands, and the women's arms are lifted clear of their long skirts by Session 887's rule.
+### Needs eyes
+- **The chevron's scale and stepping.** It is one triangle wave round the arm, about 1 cm a step. It is read off the rest body's coordinates, not a true angle round the wrist, so on a thick arm the steps stretch a little.
+- **Where the cuff sits.** On a man in a short-sleeved tunic, the band is at the sleeve's end above the elbow, as the plain cuff always was. OG-025 draws the bands at the wrist on long sleeves. That waits on sleeve length becoming a choice in the wardrobe.

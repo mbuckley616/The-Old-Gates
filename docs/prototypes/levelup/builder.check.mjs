@@ -33,6 +33,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       const G0 = K.rollGenome('tabard:' + sex, { g: sex }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
       out.tabards[name] = { ...p.tabard, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), bytes: s1.length }; }
     { const G0 = K.rollGenome('skirt:f', { g: 0 }); out.skirtHands = K.makePerson({ ...G0, dress: { ...G0.dress, skirt: 'long', mantle: null } }).skirtHands; }
+    // the cuffs (Session 889): cut in the shader inside a wider region, and the Markmen's woven bands
+    { const G0 = K.rollGenome('cuffs:m', { g: 1, people: 'markman' }), mk = Array.from({ length: 12 }, (_, i) => K.rollGenome(`markman:${i}`, { people: 'markman', g: i % 2 }));
+      const g = { ...G0, dress: { ...G0.dress, cuffs: [.5, .14, .12], cuffBand: [.2, .28, .45], mantle: null } }, p = K.makePerson(g), cm = p.meshes.find(m => m.name === 'cuffs'), idx = cm.geometry.index.array, B = cm.geometry.attributes.aBase.array; let lo = 9, hi = 0;
+      for (const v of idx) { const x = Math.abs(B[v * 3]); lo = Math.min(lo, x); hi = Math.max(hi, x); } const s1 = JSON.stringify(K.toSaved(g));
+      out.cuffs = { lo: +lo.toFixed(3), hi: +hi.toFixed(3), band: !!g.dress.cuffBand, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), markmenBands: mk.filter(x => x.dress.cuffBand).length, others: ['gatelander', 'aurennais', 'oldblood'].map(k => K.rollGenome(k + ':0', { people: k })).filter(x => x.dress.cuffBand).length }; }
     // the laced bodice (Session 888): over a linen chemise and a long skirt, and over a man's tunic for the odd case
     out.bodices = {}; for (const [name, sex, people, dress] of [['woman, a green laced gown', 0, null, { tunic: [.86, .82, .72], bodice: [.24, .36, .2], skirt: 'long', skirtColor: [.24, .36, .2], mantle: null, cloak: null, apron: null }],
         ['a Gatelander woman, a madder bodice and an apron', 0, 'gatelander', { tunic: [.88, .84, .74], bodice: [.5, .16, .12], lace: [.85, .8, .7], skirt: 'long', apron: [.8, .76, .66], mantle: null, cloak: null }]]) {
@@ -67,6 +72,8 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   check(`the beard stops under a cheek line: within the eyes' width ${(r.beard.gap * 100).toFixed(1)} cm under the lower lid, the moustache up to the nose (y ${r.beard.moustTop}), the dark base inside the hairs (${r.beard.baseTris} of ${r.beard.tris} triangles)`, r.beard.gap > .015 && r.beard.moustTop > .678 && r.beard.baseTris < r.beard.tris, r.beard);
   check(`a beard over a tunic stops at its collar: no card on the chest, 4 cm under the collar's front (${r.beardTunic.below} of ${r.beardTunic.verts} points)`, r.beardTunic.below === 0 && r.beardTunic.verts > 1000, r.beardTunic);
   check(`a woman in a long skirt: no hand inside it (${r.skirtHands.bad} of ${r.skirtHands.n} points; the arms lifted ${r.skirtHands.lift} rad)`, r.skirtHands.bad === 0 && r.skirtHands.n > 300, r.skirtHands);
+  check(`the cuffs: both edges cut in the shader at rest |x| .371 and .411, inside a region from ${r.cuffs.lo} to ${r.cuffs.hi}, so neither is a triangle's step; a woven band saves and loads back`, r.cuffs.lo < .366 && r.cuffs.hi > .415 && r.cuffs.band && r.cuffs.saved, r.cuffs);
+  check(`the Markmen roll woven cuff bands (${r.cuffs.markmenBands} of 12), the other peoples not (${r.cuffs.others} of 3)`, r.cuffs.markmenBands >= 5 && r.cuffs.others === 0, r.cuffs);
   for (const [k, c] of Object.entries(r.bodices)) { console.log(k, JSON.stringify(c));
     check(`${k}: a laced bodice, ${c.eyelets} eyelets and ${c.crossings} crossings over ${(c.span * 100).toFixed(0)} cm and a bow, every lace in front of the cloth (closest ${(c.clear * 1000).toFixed(1)} mm); saved and loaded back`, c.bodice && c.laces === 16 && c.clear > 0 && c.span > .15 && c.saved, c);
     check(`${k}: no hand inside the long skirt (${c.hands?.bad} of ${c.hands?.n})`, c.hands && c.hands.bad === 0, c.hands); }
@@ -133,6 +140,10 @@ if (shotArg) { const only = shotArg.split('=')[1];
   await shot('styles-front', 'seed=styles&sex=f&sheet&ang=.35&dist=1.5&y=-.1');
   // the temples (Session 879): three-quarter heads, where the hair's root region stops on a mesh edge by the brow
   for (const [n, q] of [['temples-man', 'seed=b7&sex=m&view=head&turn=.75'], ['temples-woman', 'seed=styles&sex=f&style=bun&view=head&turn=-.75']]) await shot(n, q + '&dress=' + encodeURIComponent('{"mantle":null}'), 2400, 1350, false, [.33, 0, .38, .42]);
+  // the cuffs (Session 889): a Markman's woven band, close; and a plain cuff before and after
+  { const dq = d => encodeURIComponent(JSON.stringify(d));
+    await shot('cuffs-markman', 'seed=b7&sex=m&view=side&turn=.2&dress=' + dq({ cuffs: [.5, .14, .12], cuffBand: [.2, .28, .45], mantle: null, cloak: null }), 1920, 1440, false, [.38, .38, .3, .28]);
+    await shot('cuffs-plain', 'seed=b7&sex=m&view=side&turn=.2&dress=' + dq({ cuffs: [.2, .2, .22], mantle: null, cloak: null }), 1920, 1440, false, [.38, .38, .3, .28]); }
   // the laced bodice (Session 888)
   { const dq = d => encodeURIComponent(JSON.stringify(d)), gown = { tunic: [.86, .82, .72], bodice: [.24, .36, .2], skirt: 'long', skirtColor: [.24, .36, .2], mantle: null, cloak: null, apron: null };
     await shot('bodice-woman', 'seed=styles&sex=f&view=full&turn=.35&dress=' + dq(gown)); await shot('bodice-back', 'seed=styles&sex=f&view=full&turn=2.7&dress=' + dq(gown));
