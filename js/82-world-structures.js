@@ -1366,19 +1366,21 @@
   // Regional build styles. h = wall height, rise = roof pitch height,
   // thatch = thick rounded overhanging roof layer, twoStory = chance of
   // an upper floor with a jetty band, door = door colour.
+  // S881 (F2a) — a storey 2.6 to 3.0 floor to floor (SCALE.STOREY_MIN/MAX): the Irish 2.4 and the Anglo 2.5 rose to 2.6, the
+  // French, the stone town house and Aurenne's 3.1 and 3.3 came down to 3.0
   const STYLE={
     // whitewashed lime, dark stone footing, straw thatch, low and squat
-    irish:{wall:0xe6e0d0,wall2:0xd4ccb8,roof:0xb8925a,roof2:0x9a7844,plinth:0x565048,frame:0x3a2a1a,framed:false,h:2.4,rise:1.5,thatch:true,twoStory:0,door:0x2f5e3a},
+    irish:{wall:0xe6e0d0,wall2:0xd4ccb8,roof:0xb8925a,roof2:0x9a7844,plinth:0x565048,frame:0x3a2a1a,framed:false,h:2.6,rise:1.5,thatch:true,twoStory:0,door:0x2f5e3a},
     // cream plaster, dark half-timbering, steep slate, tall, jettied
-    french:{wall:0xdccfb0,wall2:0xc8ba98,roof:0x55596a,roof2:0x43475a,plinth:0x7a746a,frame:0x3e2c1c,framed:true,h:3.1,rise:2.3,thatch:false,twoStory:.55,door:0x5a3820},
+    french:{wall:0xdccfb0,wall2:0xc8ba98,roof:0x55596a,roof2:0x43475a,plinth:0x7a746a,frame:0x3e2c1c,framed:true,h:3.0,rise:2.3,thatch:false,twoStory:.55,door:0x5a3820},
     // grey rubble stone, dark timber, low shingle roofs, moss-dark
-    anglo:{wall:0x7f7666,wall2:0x6a6256,roof:0x3a3430,roof2:0x2c2824,plinth:0x4e4840,frame:0x221a12,framed:true,h:2.5,rise:1.15,thatch:false,twoStory:.15,door:0x3a2a1a},
+    anglo:{wall:0x7f7666,wall2:0x6a6256,roof:0x3a3430,roof2:0x2c2824,plinth:0x4e4840,frame:0x221a12,framed:true,h:2.6,rise:1.15,thatch:false,twoStory:.15,door:0x3a2a1a},
     // pale ashlar, terracotta tile, tall city blocks with cornice bands
-    stone:{wall:0xb9b3a4,wall2:0xa59f90,roof:0x9a5a3a,roof2:0x7e482e,plinth:0x8a857a,frame:0x6a655c,framed:false,h:3.3,rise:1.5,thatch:false,twoStory:.7,door:0x3e2a16},
+    stone:{wall:0xb9b3a4,wall2:0xa59f90,roof:0x9a5a3a,roof2:0x7e482e,plinth:0x8a857a,frame:0x6a655c,framed:false,h:3.0,rise:1.5,thatch:false,twoStory:.7,door:0x3e2a16},
     // the Mark: dark timber longhouses, dark shingle, steep; nothing decorative
     mark:{wall:0x4a3826,wall2:0x3a2c1e,roof:0x26221e,roof2:0x1c1815,plinth:0x55524c,frame:0x2a1a10,framed:false,h:2.6,rise:2.3,thatch:false,twoStory:.15,door:0x1a1612},
     // Aurenne: cream plaster, terracotta tile, low pitch, painted doors
-    aurenne:{wall:0xf0e4cc,wall2:0xe2d4b6,roof:0xb86a3a,roof2:0xa05a30,plinth:0x8a7a6a,frame:0x8a6a4a,framed:false,h:3.1,rise:.9,thatch:false,twoStory:.6,door:0x3a5a8a},
+    aurenne:{wall:0xf0e4cc,wall2:0xe2d4b6,roof:0xb86a3a,roof2:0xa05a30,plinth:0x8a7a6a,frame:0x8a6a4a,framed:false,h:3.0,rise:.9,thatch:false,twoStory:.6,door:0x3a5a8a},
     // Bavarian: cream render, dark timber, very steep roofs, painted shutters
     bavarian:{wall:0xf0e6d0,wall2:0xdccfb4,roof:0x5a3a2a,roof2:0x4a2e20,plinth:0x6a665e,frame:0x3a2412,framed:true,h:3.0,rise:2.9,thatch:false,twoStory:.75,door:0x7a2a1a},
     // garrison: same ashlar, slate roofs, squat
@@ -1429,39 +1431,45 @@
     garrison:[{slate:true}]};
   let _houseN=0;
   function houseKey(st){for(const k in STYLE)if(STYLE[k]===st)return k;return null;}
+  // S881 (F2a) — a house's wall height: its storeys, and never so low that the eaves' lip (a steep thatch, turf or shingle roof drops
+  // its edge well below the wall plate) comes down across the door's head. The Mark's steep roofs did, once the door was 2.05.
+  function houseWallH(st,d,opts,two){const H=(opts.h||st.h||2.6)+(two?SCALE.STOREY:0);if(two)return H;
+    const th_=!!(st.thatch||st.turf),ov=th_?.45:.55,rise=opts.rise||st.rise||1.6,sl=Math.atan2(rise,d/2),drop=ov*rise/(d/2)+(th_?.46:.14)/2/Math.cos(sl);
+    return Math.max(H,SCALE.DOOR_H+.14+.12+drop);}
   function buildingGeoHi(w,d,st0,r,opts,lo){
     const key=houseKey(st0)||opts.styleKey||'irish';const V=HOUSE_VARIANTS[key]||[{}];
     const r0=pRng((Math.round(w*7)*131+Math.round(d*7)*977+lo.wallHex+lo.roofHex*3+(_houseN++)*7919)>>>0);
     const st=Object.assign({},st0,V[Math.floor(r0()*V.length)%V.length]);if(key==='french'&&st.slate==null)st.slate=true;if(key==='bavarian'||key==='garrison')st.slate=true;
     const P=[];const c=x=>new THREE.Color(x);const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.06:j});};
-    const two=lo.two,H=(opts.h||st.h||2.6)+(two?2.2:0),pl=.3,fr=st.frame,dark=0x1e1a18;
+    const two=lo.two,SU=SCALE.STOREY,H=houseWallH(st,d,opts,two),pl=.3,fr=st.frame,dark=0x1e1a18,DW=SCALE.DOOR_W,DH=SCALE.DOOR_H; /* S881 (F2a): the upper storey and the door from SCALE (2.2, and a leaf .92 by 1.85, before) */
     const wallC=st0.wall===st.wall?lo.wallHex:c(st.wall).lerp(c(st.wall2||st.wall),r0()*.4).getHex();
     const stoneC=st.plinth;
     add(new THREE.BoxGeometry(w+.2,pl,d+.2),stoneC,0,pl/2,0,0,0,0,.1);
     for(let i=0;i<Math.floor((w+d)*1.6);i++){const t=r0(),side=r0()<.5;const x=side?(t-.5)*w:(r0()<.5?-1:1)*(w/2+.08),z=side?(r0()<.5?-1:1)*(d/2+.08):(t-.5)*d;const s=.16+r0()*.14;
-      add(SK.bumpy(SK.ball(s,6,4),.03,9,r0()*9),c(stoneC).multiplyScalar(.85+r0()*.3).getHex(),x,.12,z,0,r0()*3,0,.05);}
+      const sg=SK.bumpy(SK.ball(s,6,4),.03,9,r0()*9),sc=c(stoneC).multiplyScalar(.85+r0()*.3).getHex(),sr=r0()*3;if(z>0&&Math.abs(x)<DW/2+.25+s)continue; /* S881 — none on the doorstep (the same draws, so the rest of the house is unchanged) */
+      add(sg,sc,x,.12,z,0,sr,0,.05);}
     add(new THREE.BoxGeometry(w,H,d),wallC,0,pl+H/2,0,0,0,0,.05);
     // rubble-stone walls (Celtic and upland variants): stones proud of the face in rough courses
-    if(st.rubble)for(const fz of [1,-1])for(let y=pl+.25;y<pl+H-.2;y+=.42)for(let x=-w/2+.3+(Math.round(y*10)%2)*.25;x<w/2-.2;x+=.55+r0()*.2){if(fz>0&&Math.abs(x)<.75&&y<pl+2.1)continue;
+    if(st.rubble)for(const fz of [1,-1])for(let y=pl+.25;y<pl+H-.2;y+=.42)for(let x=-w/2+.3+(Math.round(y*10)%2)*.25;x<w/2-.2;x+=.55+r0()*.2){if(fz>0&&Math.abs(x)<DW/2+.25&&y<pl+DH+.25)continue;
       add(new THREE.BoxGeometry(.4+r0()*.16,.26+r0()*.08,.08),c(wallC).lerp(c(stoneC),.35).multiplyScalar(.68+r0()*.3).getHex(),x+(r0()-.5)*.08,y+(r0()-.5)*.05,fz*(d/2+.02),0,0,(r0()-.5)*.12,.06);}
     if(st.framed){for(const [sx,sz] of [[-1,-1],[1,-1],[-1,1],[1,1]])add(new THREE.BoxGeometry(.2,H,.2),fr,sx*w/2,pl+H/2,sz*d/2,0,0,0,.04);
-      for(const fz of [1,-1]){for(const y of [pl+.08,pl+H-.08,two?pl+H-2.3:null])if(y!=null)add(new THREE.BoxGeometry(w+.04,.16,.08),fr,0,y,fz*(d/2+.03),0,0,0,.04);
-        const n=Math.max(2,Math.round(w/1.1));for(let k=1;k<n;k++){const x=-w/2+k*w/n;if(Math.abs(x)<.7)continue;add(new THREE.BoxGeometry(.12,H,.07),fr,x,pl+H/2,fz*(d/2+.03),0,0,0,.04);}
+      for(const fz of [1,-1]){for(const y of [pl+.08,pl+H-.08,two?pl+H-SU-.1:null])if(y!=null)add(new THREE.BoxGeometry(w+.04,.16,.08),fr,0,y,fz*(d/2+.03),0,0,0,.04);
+        const n=Math.max(2,Math.round(w/1.1));for(let k=1;k<n;k++){const x=-w/2+k*w/n;if(Math.abs(x)<DW/2+.2)continue;add(new THREE.BoxGeometry(.12,H,.07),fr,x,pl+H/2,fz*(d/2+.03),0,0,0,.04);}
         for(const sx of [-1,1]){const hh=Math.min(H,2.2)*.9,L=Math.hypot(w/n,hh);add(new THREE.BoxGeometry(.1,L,.06),fr,sx*(w/2-w/n/2),pl+Math.min(H,2.2)*.5,fz*(d/2+.035),0,0,sx*fz*Math.atan2(w/n,hh),.04);}}}
-    if(two&&st.framed){add(new THREE.BoxGeometry(w+.5,.24,d+.5),fr,0,pl+H-2.25,0);for(let k=0;k<Math.round(w/.5);k++)add(new THREE.BoxGeometry(.12,.12,.3),fr,-w/2+.25+k*.5,pl+H-2.42,d/2+.15);}
+    if(two&&st.framed){add(new THREE.BoxGeometry(w+.5,.24,d+.5),fr,0,pl+H-SU-.05,0);for(let k=0;k<Math.round(w/.5);k++)add(new THREE.BoxGeometry(.12,.12,.3),fr,-w/2+.25+k*.5,pl+H-SU-.22,d/2+.15);}
     // the roof's numbers first: the windows are kept under its eaves (Michael: the Irish eaves covered the window heads)
     const rise=opts.rise||st.rise||1.6,thatch=!!(st.thatch||st.turf),over=thatch?.45:.55,run=d/2+over,slope=Math.atan2(rise,d/2),len=Math.hypot(run,rise*run/(d/2)),th=thatch?.46:.14;
     const yb=pl+H,eaveLow=yb-over*rise/(d/2)-th/2/Math.cos(slope);
     const win=(x,y,z,fz,wd,ht)=>{add(new THREE.BoxGeometry(wd,ht,.08),0x2a3038,x,y,z-fz*.06,0,0,0,0);add(new THREE.BoxGeometry(wd+.24,.1,.24),stoneC,x,y-ht/2-.05,z+fz*.04);add(new THREE.BoxGeometry(wd+.2,.12,.14),st.framed?fr:stoneC,x,y+ht/2+.06,z+fz*.02);
       add(new THREE.BoxGeometry(.05,ht,.06),fr,x,y,z-fz*.02);add(new THREE.BoxGeometry(wd,.05,.06),fr,x,y+.05,z-fz*.02);for(const s of [-1,1])add(new THREE.BoxGeometry(.06,ht,.1),fr,x+s*wd/2,y,z);
       if(st.shutter)for(const s of [-1,1])add(new THREE.BoxGeometry(wd/2,ht+.04,.05),st.shutter,x+s*(wd*.75+.06),y,z+fz*.03,0,s*fz*.25,0,.06);};
-    const wh=.78,wy=Math.min(pl+Math.min(H,st.h||2.6)*.58,(two?yb-2.2:eaveLow)-.22-wh/2-.06),nw=st.long?3:2;
-    for(let k=0;k<nw;k++){const x=(k-(nw-1)/2)*w/nw*1.05;if(Math.abs(x)<.8)continue;win(x,wy,d/2,1,.62,wh);}
-    win(0,wy,-d/2,-1,.62,wh);if(two)for(const x of [-w*.28,0,w*.28])win(x,Math.min(pl+H-1.1,eaveLow-.22-.35-.06),d/2+(st.framed?.25:0),1,.56,.7);
-    add(new THREE.BoxGeometry(1.2,2.05,.12),st.framed?fr:stoneC,0,pl+1.02,d/2+.01);add(new THREE.BoxGeometry(.92,1.85,.08),st.door||0x3e2a16,0,pl+.93,d/2-.02,0,0,0,.03);
-    for(let k=-2;k<=2;k++)add(new THREE.BoxGeometry(.02,1.8,.02),c(st.door||0x3e2a16).multiplyScalar(.7).getHex(),k*.18,pl+.93,d/2+.025,0,0,0,0);
-    for(const y of [.5,1.4])add(new THREE.BoxGeometry(.5,.05,.03),dark,-.18,pl+y,d/2+.03,0,0,0,0);add(SK.ball(.04,6,4),0x8a7a4a,.3,pl+.95,d/2+.05);
-    add(new THREE.BoxGeometry(1.4,.16,.55),stoneC,0,.08,d/2+.35,0,0,0,.08);
+    const wh=.78,wy=Math.min(pl+Math.min(H,st.h||2.6)*.58,(two?yb-SU:eaveLow)-.22-wh/2-.06),nw=st.long?3:2;
+    for(let k=0;k<nw;k++){const x=(k-(nw-1)/2)*w/nw*1.05;if(Math.abs(x)<DW/2+.3)continue;win(x,wy,d/2,1,.62,wh);}
+    win(0,wy,-d/2,-1,.62,wh);if(two)for(const x of [-w*.28,0,w*.28])win(x,Math.min(pl+H-SU/2,eaveLow-.22-.35-.06),d/2+(st.framed?.25:0),1,.56,.7);
+    add(new THREE.BoxGeometry(DW+.28,DH+.14,.12),st.framed?fr:stoneC,0,pl+(DH+.14)/2,d/2+.01);add(new THREE.BoxGeometry(DW,DH,.04),st.door||0x3e2a16,0,pl+DH/2+.005,d/2+.07,0,0,0,.03); /* S881 — the leaf proud of its surround (it sat inside it, and the surround read as the door) */
+    for(let k=-2;k<=2;k++)add(new THREE.BoxGeometry(.02,DH-.05,.02),c(st.door||0x3e2a16).multiplyScalar(.7).getHex(),k*DW/5,pl+DH/2+.005,d/2+.095,0,0,0,0);
+    for(const y of [.5,DH-.45])add(new THREE.BoxGeometry(DW*.55,.05,.03),dark,-DW*.2,pl+y,d/2+.1,0,0,0,0);add(SK.ball(.04,6,4),0x8a7a4a,DW*.33,pl+DH*.5,d/2+.12);
+    add(new THREE.BoxGeometry(DW+.5,.16,.55),stoneC,0,.08,d/2+.35,0,0,0,.08);
     const rc=st0.roof===st.roof?lo.roofHex:c(st.roof).lerp(c(st.roof2||st.roof),r0()*.4).getHex();
     const turfC=0x5a7a3a;
     for(const s of [1,-1]){const cz=s*(run/2),cy=yb+rise/2-(over/(d/2))*rise/2;
@@ -1491,13 +1499,13 @@
       for(let k=0;k<12;k++)add(SK.cyl(.08,.08,.8,6),0x7a5a3a,(x0+x1)/2+s*.1+(k%4)*.17*s-s*.3,pl+.1+Math.floor(k/4)*.15,lz+ld*.1,Math.PI/2,0,0,.1);}
     if(!opts.noYard&&r0()<.5){const x=(r0()<.5?1:-1)*(w/2-.6);for(let k=0;k<9;k++)add(SK.cyl(.08,.08,.7,6),0x7a5a3a,x+(k%3)*.17-.17,.1+Math.floor(k/3)*.15,d/2+.4,0,0,Math.PI/2,.1);}
     if(!opts.noYard&&r0()<.5)add(SK.lathe([[.001,0],[.25,0],[.28,.3],[.26,.6],[.001,.6]],10),0x6a4a2a,-w/2+.5,0,d/2+.45);
-    const g=mergeParts(P,HAO);g.userData.variant=key;g.userData.thatch=thatch;g.userData.winTop=wy+wh/2+.12;g.userData.eaveLow=eaveLow;g.userData.chimney=chTop;return g;}
+    const g=mergeParts(P,HAO);g.userData.variant=key;g.userData.thatch=thatch;g.userData.winTop=wy+wh/2+.12;g.userData.eaveLow=eaveLow;g.userData.chimney=chTop;g.userData.wallH=H;g.userData.storeys=two?2:1;return g;} /* S881 — the wall's height and storeys, for the house record (scaleratio) */
   function buildingGeo(w,d,st,r,opts){opts=opts||{};const lo=buildingGeoLo(w,d,st,r,opts);if(opts.plain)return lo;
     const hi=buildingGeoHi(w,d,st,r,opts,lo.userData.picks);hi.userData.lo=lo;return hi;}
   function buildingGeoLo(w,d,st,r,opts){
     const parts=[];const c=x=>new THREE.Color(x);
     const two=opts.twoStory!=null?opts.twoStory:(r()<(st.twoStory||0));
-    const H=(opts.h||st.h||2.6)+(two?2.2:0), plinthH=.22;
+    const SU=SCALE.STOREY,H=houseWallH(st,d,opts,two), plinthH=.22,DW=SCALE.DOOR_W,DH=SCALE.DOOR_H; /* S881 (F2a): from SCALE */
     const wallC=c(st.wall).lerp(c(st.wall2),r()*.6);
     // stone plinth, slightly wider
     parts.push({geo:new THREE.BoxGeometry(w+.12,plinthH+.3,d+.12),color:c(st.plinth),y:plinthH/2-.15,jitter:.10});
@@ -1510,8 +1518,8 @@
       parts.push({geo:new THREE.BoxGeometry(w+.02,.12,d+.02),color:fc,y:plinthH+H*.55,jitter:.04});
     }
     // jetty band between storeys
-    if(two){parts.push({geo:new THREE.BoxGeometry(w+.3,.22,d+.3),color:c(st.frame),y:plinthH+H-2.2,jitter:.04});
-      [-w*.28,w*.28].forEach(wx=>{parts.push({geo:new THREE.BoxGeometry(.6,.7,.08),color:c(0x2a2622),x:wx,y:plinthH+H-1.1,z:d/2+.02,jitter:0});});}
+    if(two){parts.push({geo:new THREE.BoxGeometry(w+.3,.22,d+.3),color:c(st.frame),y:plinthH+H-SU,jitter:.04});
+      [-w*.28,w*.28].forEach(wx=>{parts.push({geo:new THREE.BoxGeometry(.6,.7,.08),color:c(0x2a2622),x:wx,y:plinthH+H-SU/2,z:d/2+.02,jitter:0});});}
     // gable roof: a triangular prism along x (ridge along x), with eaves
     const rise=opts.rise||st.rise||1.6, over=st.thatch?.7:.45;
     const tri=new THREE.Shape();tri.moveTo(-(d/2+over),0);tri.lineTo(d/2+over,0);tri.lineTo(0,rise);tri.closePath();
@@ -1530,8 +1538,8 @@
     [-w*.28,w*.28].forEach(wx=>{parts.push({geo:new THREE.BoxGeometry(.6,.7,.08),color:winC,x:wx,y:plinthH+H*.6,z:d/2+.02,jitter:0});});
     parts.push({geo:new THREE.BoxGeometry(.6,.7,.08),color:winC,x:0,y:plinthH+H*.6,z:-d/2-.02,jitter:0});
     // door on the front face (+z)
-    parts.push({geo:new THREE.BoxGeometry(.9,1.7,.1),color:c(st.door||0x3e2a16),x:0,y:plinthH+.85,z:d/2+.03,jitter:.04});
-    parts.push({geo:new THREE.BoxGeometry(1.1,.14,.16),color:c(st.frame),x:0,y:plinthH+1.78,z:d/2+.04,jitter:0});
+    parts.push({geo:new THREE.BoxGeometry(DW,DH,.1),color:c(st.door||0x3e2a16),x:0,y:plinthH+DH/2,z:d/2+.03,jitter:.04});
+    parts.push({geo:new THREE.BoxGeometry(DW+.2,.14,.16),color:c(st.frame),x:0,y:plinthH+DH+.08,z:d/2+.04,jitter:0});
     const g=mergeParts(parts);g.userData.picks={wallHex:wallC.getHex(),roofHex:roofC.getHex(),two};return g;
   }
   // ── S195: churches and keeps in detail (H.5, Michael's A: buildings and structures, with a distant copy) ──

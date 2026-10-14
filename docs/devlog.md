@@ -17425,3 +17425,51 @@ These ran on the working tree with Session 881's doors as well, which change no 
 - Swimming in third person, your body sinks to the shoulders. First person looks at the water as before.
 - The creatures were not resized: a wolf, a bear and a spider beside the taller people. The critic's eye, please.
 - Interiors are not yet at true size. Until Session 882 lands, rooms are as before around people who grew, so a 1.78 m sleeper overhangs the beds.
+
+## v80 — Session 881 — F2a: doors and storeys from SCALE, and the ratio suite (the deep-work session, card F2a)
+The third session of card F2a. The card's ratios, on built meshes against a 1.8 m person, want three things: a door's height at 1.1 to 1.25 of the person, a storey at 1.45 to 1.7, and the eye at .75 to .85 of the door's height. Today's houses missed all three.
+- **The doors:** the leaf was .92 by 1.85, which is 1.03 of the person, and the eye reached .89 of it.
+- **The storeys:** a cottage's walls were 2.4 high and an upper storey 2.2, which is 1.33 and 1.22 of the person.
+- **The leaf itself was hidden.** It sat inside its own surround, so what a player saw as the door was the surround's dark box, 1.2 by 2.05.
+
+**The house builder** (`buildingGeoHi`, `buildingGeoLo` in `82-world-structures.js`, every style on all three islands) now reads `SCALE` and holds no free number for a door or a storey.
+- The leaf is `DOOR_W` by `DOOR_H`, 1.0 by 2.05, proud of a surround 1.28 by 2.19. The battens, the strap hinges and the ring follow its size.
+- The upper storey is `SCALE.STOREY`, 2.7, and the jetty, the rail and the upper windows move with it.
+- The styles' ground storeys sit inside 2.6 to 3.0:
+  - the Irish cottage rose from 2.4 to 2.6, and the Anglo house from 2.5 to 2.6;
+  - the French, the stone town house and Aurenne's came down from 3.1, 3.3 and 3.1 to 3.0;
+  - an inn's ground floor is `STOREY_MAX`, 3.0 (it was 3.2).
+- A steep roof's eaves now never come down across the door's head. `houseWallH` raises a one-storey wall until the eaves' lip clears the surround. The Mark's steep turf and shingle roofs did cross it once the door was 2.05, so its houses stand 2.82 to 3.04.
+- The rocks scattered along a house's foot no longer sit on the doorstep. The same random draws are made, so the rest of each house is unchanged.
+- The door's lantern hangs at `DOOR_H + .2`.
+- A trade sign hangs 0.3 higher, its board's foot at 1.87 over a 1.78 m head (it was 1.57).
+- Each house records its wall's height and storeys (`house.wallH`, `house.storeys`).
+
+Churches, keeps, the fort compounds and the town gates were not changed. The keep's gate (2.6) and a church's porch (2.8) already sit inside `SCALE`'s big door, and a town gate's opening is listed in `SCALE` (4.5) for F5 and F6, which rebuild those.
+
+**The mesh inspector** already stood a figure beside every piece: a Bandit at the left of the stage. That figure is now exactly `SCALE.PERSON`, 1.8 m: the yardstick, whatever the Bandit's genome rolls.
+
+**`tests/scaleratio`**, new. It checks that `SCALE` is the one table with the brief's numbers, and that the player's eye is its eye. Then it settles Dunmore and the nearest towns of the Mark and of Aurenne, and in each town:
+- it finds every house door by casting rays at the town's own meshes from a metre out, 12 cm either side of the middle. The leaf is the face met there, from where it starts to where the ray first meets something else;
+- it asserts every door at 1.1 to 1.25 of the person, and the eye at .75 to .85 of every door;
+- it asserts every storey at 1.45 to 1.7, from the wall's height the builder recorded over its storeys.
+
+It also measures the townsfolk's statures by people and sex, and opens the inspector on the Irish house to check the 1.8 m figure. The interiors' half of the suite comes with Session 882.
+### Verified (headless Chromium)
+- **`scaleratio` 15/15.** It measured 54 doors in Dunmore (the Gatelands), 60 in c3_5_s6 (the Mark) and 47 in c7_5_s5 (Aurenne). Every leaf reads 2.04 (the ray's 5 mm step under 2.05) or 2.18 to 2.19, which is 1.13 to 1.22 of the person. At 2.04 the eye stands at .81 of the door's height, and at 2.19 at .75.
+- **Storeys:** 2.66 to 2.94 in Dunmore, 2.82 to 3.04 in the Mark and 2.85 to 3.00 in Aurenne, which is 1.48 to 1.69 of the person.
+- **The first run's faults, fixed before this commit:**
+  - Four of Dunmore's doors read 1.92 to 2.01: a rock stood on the doorstep, now kept off it.
+  - The Mark's eaves came down across the door's head, now raised clear.
+  - Markmen stood 2.13 m, because the people's stature was counted twice; now `bodyScale` keeps only the breadth.
+- **The townsfolk** by people and sex (the same run): all between 1.58 and 1.97.
+- **The inspector:** the figure beside the Irish house is exactly 1.800.
+- **The suites of Session 880's list** passed with these doors in the tree: houses, signs, walls and pois, among them.
+### Needs eyes
+- **One door in six reads 2.18 rather than 2.04.** The ray meets the surround's head at the leaf's depth there. In a picture it should look the same, but check a few doors close to.
+- **Houses are a little different everywhere:**
+  - Irish and Anglo cottages are 20 cm and 10 cm taller, and French, stone and Aurennais houses 10 to 30 cm lower;
+  - upper storeys are 50 cm taller;
+  - the Mark's turf and shingle houses rise to clear their doors.
+  - The distant copy of a house keeps the plain height, so a Mark house may step by up to 0.3 m as you come near.
+- **The trade signs hang 30 cm higher.**

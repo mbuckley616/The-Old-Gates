@@ -224,7 +224,8 @@ function openInspector(){const I=INSPECTOR;if(I.open)return I;I.open=true;
     I.hemi=new THREE.HemisphereLight(0xbcd6ff,0x6b7a48,.6);I.scene.add(I.hemi);I.amb=new THREE.AmbientLight(0x90a0c0,.3);I.scene.add(I.amb);
     I.sun=new THREE.DirectionalLight(0xfff0d0,1.1);I.sun.castShadow=true;I.sun.shadow.mapSize.set(2048,2048);I.scene.add(I.sun);I.scene.add(I.sun.target);
     I.orbit={target:new THREE.Vector3(0,.8,0),dist:5,theta:.65,phi:1.2};
-    try{const f=buildFoe('Bandit',0,0);PEOPLE_RIGS.delete(f);pwApply(f,pwIdle(0,{holds:f.holds,gear:f.g.gear}));I.figure=f;}catch(e){I.figure=null;}}
+    try{const f=buildFoe('Bandit',0,0);PEOPLE_RIGS.delete(f);pwApply(f,pwIdle(0,{holds:f.holds,gear:f.g.gear}));
+      f.root.scale.setScalar(SCALE.PERSON*PW.BODY/SCALE.PERSON_MODEL);f.root.userData.yardstick=SCALE.PERSON;I.figure=f;}catch(e){I.figure=null;}} /* S881 (F2a) — the yardstick: exactly SCALE.PERSON, 1.8 m, beside every piece */
   if(!I.ui)inspBuildUI();
   I.canvasHome=REN.domElement.parentNode;I.ui.querySelector('#insp-stage').appendChild(REN.domElement);
   I.shadowWas=REN.shadowMap.enabled;REN.shadowMap.enabled=true;REN.shadowMap.needsUpdate=true;
