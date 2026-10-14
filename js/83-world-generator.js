@@ -1307,7 +1307,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     Q(SK.torus(.05,.008,4,12),I,w*.32,h*.52,.1);Q(SK.ball(.02,6,5),I,w*.32,h*.52+.05,.09);
     if(stone){for(const sx of [-1,1])for(let k=0,y=0;k<4;k++){const bh2=h/4,bw2=k%2?.16:.24;Q(rb(bw2,bh2-.012,.2),jit(SS_,.07),sx*(w/2+bw2/2),y+bh2/2,.08);y+=bh2;}Q(rb(w+.6,.22,.22),jit(SS_,.05),0,h+.11,.09);}
     else{for(const sx of [-1,1])Q(rb(.12,h+.1,.14),jit(Wd.dark),sx*(w/2+.06),(h+.1)/2,.06);Q(rb(w+.5,.16,.16),jit(Wd.dark),0,h+.13,.07);}
-    const Dr=K.bake(Q);Dr.position.set(W/2,0,D);Dr.rotation.y=Math.PI;Dr.userData.entrance=true;Dr.userData.leaf=[w,h];sc_.add(Dr);return {G,Dr,posts};}
+    const Dr=K.bake(Q);Dr.position.set(W/2,0,D);Dr.rotation.y=Math.PI;Dr.userData.entrance=true;Dr.userData.leaf=[w,h];if(type==='tower')Dr.scale.setScalar(SCALE.ROOM_K); /* S896 — the tower is not scaled (scaleRoom by 1), but its door is, to the 2.17 leaf of every other room */sc_.add(Dr);return {G,Dr,posts};}
   // S896 (F2a) — a room built in the old unit (a man 1.233 tall), made true size: every object in it moves out from the room's
   // corner by k and grows by k, except the people, who are built at their true height already and only move; the lights reach k
   // further; and every record the game keeps of the room (its solids, footholds, beds, doors, the people's boxes, the bed and the
@@ -1404,8 +1404,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const nb=Math.max(2,Math.round(D/3));if(!kitShell)for(let i=1;i<=nb;i++)boxRaw(W/2,H-.1,D*i/(nb+1),W,.16,.22,beamC);
     // windows: lit panes on both long walls
     // S331 (Michael's 2 on #53) — each pane set back on the wall behind a kit frame chosen by the room (winKind); one bake a room
-    const winY=Math.min(H-.6,1.35);const WK=furnKit(),WP=WK.Parts(),wKind=WK.winKind(type,false);let wi=0;
-    for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3)){[.03,W-.03].forEach(x=>{const west=x<1;const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,.95),windowMat(type,house));p.position.set(west?.006:W-.006,winY,z);p.rotation.y=west?Math.PI/2:-Math.PI/2;sc_.add(p);
+    const winY=H<1.95?H-.75:Math.min(H-.6,1.35); /* S896 — a cellar's 1.8 ceiling (2.6 m true) held the frame's head .04 above it */const WK=furnKit(),WP=WK.Parts(),wKind=WK.winKind(type,false);let wi=0;
+    for(let z=D*.3;z<Math.min(D*.9,D-1.05);z+=Math.max(3,D*.3)){[.03,W-.03].forEach(x=>{const west=x<1; /* S896 — not so near the end wall that the frame's shutters pass through it (a cabin of true size, 8 m) */const p=new THREE.Mesh(new THREE.PlaneGeometry(.9,.95),windowMat(type,house));p.position.set(west?.006:W-.006,winY,z);p.rotation.y=west?Math.PI/2:-Math.PI/2;sc_.add(p);
       WP.put(WK.windowFrame(wKind,.9,.95,FN,FSEED+wi++),west?0:W,z,west?Math.PI/2:-Math.PI/2,winY);light(west?.6:W-.6,winY,z,0xc8d0e0,.35,5);});}
     {const G=WK.bake(WP);G.userData.windows=wKind;sc_.add(G);}
     // the tall windows of a church or a keep's hall: a round-headed pane of lit glass in a stone frame (C), one bake for the lot
@@ -1507,7 +1507,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // book, pews with shaped ends and kneelers, an eight-sided pulpit with steps, columns with bases and capitals; one bake
       {const K=furnKit(),room=K.bake(K.church(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       solid(W/2,1.6,1.2,.55,1.3);light(W/2,2.2,1.8,0xffc070,1.4,8);
-      {const zs=[];for(let z=3;z<D-2;z+=Math.max(3,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);}
+      {const zs=[];for(let z=2.5;z<D-1.8;z+=Math.max(2.2,D/4))zs.push(z);tallWins(zs,3.4,.9,2.6,0xc89050);} /* S896 — three a side in a nave of true size (14 to 18 m), as in the old, longer one; from 3 by 3 it held two */
       for(const x of furnKit().churchAt(W,D).colX)for(let z=5.5;z<D-3;z+=3.5)solid(x,z,.4,.4,H/F); /* S896 — between the pews and the walls in a nave of true size */ // S303 — the columns outside the pews (at W/2 ± 3 they stood in them)
       npc={x:W/2,z:3.2,maxZ:3.6,paused:true};
     } else if(type==='castle'){
@@ -1684,7 +1684,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // corners and under each beam's ends (a short bracket where a window is within 1.2), knee braces, a sole plate and a wall
     // plate; Aurenne's close studding a post every 1.6. Stone and rubble rooms: a plinth course and three stepped corbels under
     // each beam's end. Everywhere: rounded beams .22 deep, joists every .5, and the entrance a plank door in a timber or stone frame.
-    if(kitShell){const beams=[];for(let i=1;i<=(tower?0:nb);i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<D*.9;z+=Math.max(3,D*.3))wins.push(z);
+    if(kitShell){const beams=[];for(let i=1;i<=(tower?0:nb);i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<Math.min(D*.9,D-1.05);z+=Math.max(3,D*.3))wins.push(z);
       shellFrame(sc_,{W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TALLZ,SOL,FOOTHOLDS});}
     // S896 (F2a) — the room was laid out in the old unit; it stands at true size from here on (scaleRoom)
     const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;
