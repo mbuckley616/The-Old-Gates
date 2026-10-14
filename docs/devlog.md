@@ -19079,3 +19079,41 @@ What changed in `ships.js`:
 ### Needs eyes
 - **She now reads as a smaller cutter.** That is the rule (one rig to an island), so what tells the two apart is her clinker, her shields and her size. The cutter is carvel, with no shields.
 - **The bowsprit runs back past the beast's head's neck**, as the cutter's does.
+
+## v80 — Session 902 — Card F11: the sloop in Aurenne's dress (prototype only)
+The FREEZE (#297) holds. The second of the sloop's other dresses, after the Mark's (Sessions 900 and 901). Everything about it is set by answers Michael has already given:
+- **#306:** one rig names the island, and Aurenne's is the lateen.
+- **#316:** the sun-star on Aurenne's sails.
+- **#323:** the laps stay the small hulls' mark.
+- **The colours:** those of Aurenne's caravel (Session 890), which Michael approved on #316.
+
+So nothing is asked. OG-004's Aurenne row ("lateen rigs under the sun-star") was reread.
+
+What changed in `ships.js`:
+- **`o.dress: 'aurenne'`** on `gatelandsSloop`, and `aurenneSloop(o, r)` is that call. The hull is the sloop's to the millimetre and clinker, in the caravel's colours:
+  - tallowed white below the water;
+  - oiled planking above;
+  - the sheer strake blue under a gilt wale.
+  - The materials are the caravel's set (`caravelMats`), with the sloop's keys mapped onto them.
+- **The rig:** the caravel's main lateen, at the sloop's size.
+  - The mast is raked 4° forward, at the sloop's station.
+  - The yard is slung 7.0 m over the deck at 50°, 5.4 m of it forward and 7.4 m aft, on the starboard side.
+  - The sail is white with the gold sun-star (`o.star`, default true).
+  - The tack is lashed at the stem head, and the clew is 2.5 m over the deck.
+  - There are three shrouds on the weather side, a halyard and a forestay.
+  - The sheet is led aft to the rail at z = −5.7, behind the end of the deck's walk. Led to −4.6 it would cross the walk under 2 m.
+- The tiller stays (#306's 3 A, a tiller on the small hulls).
+- **The view:** `ships.html?ship=aursloop`, with the sloop's views and `&nostar`.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 57 of 57 pass.** The earlier hulls' checks are unchanged. One view is new on the page check, with no page errors, and three checks are new, over four keys:
+  - **The builds:** each the same twice, 24,024 triangles in 11 meshes. Her lines, rail and deck are identical to the Gatelands sloop's.
+  - **Closed, clinker and walkable:** none of 900 rays gets out. The laps are 0.025 to 0.033 m. The walk is clear at all 68 points.
+  - **The dress:**
+    - the lateen rig, its yard low forward and high aft, slung to starboard;
+    - the sail's foot 2.5 m over the deck;
+    - the sun-star, with no harp, head or shields;
+    - without the star, the same hull.
+- **Pictures:** `ships-aursloop-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-nostar`.
+### Needs eyes
+- **The white bottom does not show.** At her draft it is all under the water in every picture. Heeled, it would.
+- **The sloop now has all three dresses.** The cog and the galleon next. A Mark cog under the gaff, or an Aurenne galleon under lateens, changes what those classes are, so they want a question first.
