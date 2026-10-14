@@ -31,10 +31,10 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     out.hoods = {}; for (const style of K.HAIR_STYLES) for (const k of Object.keys(K.PEOPLES)) { const G0 = K.rollGenome(`hood:${k}:${style}`, { people: k, g: style === 'short' ? 1 : 0 }), g = { ...G0, hair: { style, len: .8 }, dress: { ...G0.dress, cloak: [.4, .3, .2], hood: 'up' } }, p = K.makePerson(g);
       out.hoods[`${k}, ${style}`] = { ...p.hood, hairCards: !!p.meshes.find(m => m.name === 'hair'), hem: !!p.meshes.find(m => m.name === 'hoodHem') }; }
     // the four peoples: twelve of each, measured standing (crown to sole)
-    out.peoples = {}; for (const k of Object.keys(K.PEOPLES)) { const hs = { m: [], f: [] }; let rangeOK = true, bytes = 0;
-      for (let i = 0; i < 12; i++) { const g = K.rollGenome(`${k}:${i}`, { people: k, g: i % 2 }), sx = g.g > .5 ? 'm' : 'f', st = K.statureOf(g), [a, b] = K.PEOPLES[k].body[sx].metres; hs[sx].push(st); if (st < a - .02 || st > b + .02) rangeOK = false;
+    out.peoples = {}; for (const k of Object.keys(K.PEOPLES)) { const hs = { m: [], f: [] }, br = { m: [], f: [] }; let rangeOK = true, bytes = 0;
+      for (let i = 0; i < 12; i++) { const g = K.rollGenome(`${k}:${i}`, { people: k, g: i % 2 }), sx = g.g > .5 ? 'm' : 'f', st = K.statureOf(g), [a, b] = K.PEOPLES[k].body[sx].metres; hs[sx].push(st); br[sx].push(g.brow?.thick ?? -1); if (st < a - .02 || st > b + .02) rangeOK = false;
         bytes = Math.max(bytes, JSON.stringify(K.toSaved(g)).length); if (JSON.stringify(K.toSaved(K.fromSaved(K.toSaved(g)))) !== JSON.stringify(K.toSaved(g))) rangeOK = false; }
-      const mean = a => +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3); out.peoples[k] = { men: mean(hs.m), women: mean(hs.f), rangeOK, bytes }; }
+      const mean = a => +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(3); out.peoples[k] = { men: mean(hs.m), women: mean(hs.f), rangeOK, bytes, browM: mean(br.m), browF: mean(br.f) }; }
     return out; });
   for (const x of r.roll) { check(`genome ${x.seed} (${x.style}) saves and loads back to itself (${x.bytes} bytes)`, x.same && x.bytes < 1000, x);
     check(`genome ${x.seed}: the same seed rolls the same genome`, x.again);
@@ -53,6 +53,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   for (const [k, h] of Object.entries(r.hoods)) check(`hood up, ${k}: nothing of the head or its hair comes through (${h.poke} of ${h.tested} points), the hair tucked in, the hem on`, h.poke === 0 && h.tested > 1000 && !h.hairCards && h.hem, h);
   { const P = r.peoples; for (const [k, p] of Object.entries(P)) check(`${k}: twelve rolled stand inside the people's heights (men ${p.men} m, women ${p.women} m) and save back (${p.bytes} bytes)`, p.rangeOK && p.bytes < 1100, p);
     check(`the peoples stand in the canon's order: the Old Blood shortest, the Markmen tallest`, P.oldblood.men < P.gatelander.men && P.gatelander.men < P.markman.men && P.aurennais.men < P.markman.men && P.oldblood.women < P.gatelander.women && P.gatelander.women < P.markman.women);
+    check(`the brows by people: the Markmen's heaviest, the Old Blood's lightest, a man's heavier than a woman's (men ${Object.entries(P).map(([k, p]) => k + ' ' + p.browM).join(', ')})`, P.markman.browM > P.gatelander.browM && P.gatelander.browM > P.oldblood.browM && P.aurennais.browM > P.oldblood.browM && Object.values(P).every(p => p.browF > 0 && p.browM > p.browF));
     const all = Object.values(P).flatMap(p => [p.men, p.women]); check(`the heroic hybrid: the four peoples average about 1.75 m (${(all.reduce((a, b) => a + b) / all.length).toFixed(2)} m)`, Math.abs(all.reduce((a, b) => a + b) / all.length - 1.75) < .06); }
   // the page: a slider changes the person, the genome text follows, and loading a saved genome brings it back
   const ui = await page.evaluate(async () => { const B = window.__builder, before = JSON.stringify(B.genome), sliders = document.querySelectorAll('#panel input[type=range]');
@@ -86,5 +87,6 @@ if (shotArg) { const only = shotArg.split('=')[1];
   for (const [n, q] of [['woman-braid', 'seed=styles&sex=f&style=braid&view=head&turn=-2.3'], ['woman-braids', 'seed=styles&sex=f&style=braids&view=head&turn=2.6'], ['woman-face', 'seed=styles&sex=f&style=bun&view=face'], ['man-face', 'seed=b7&sex=m&view=face']]) await shot(n, q);
   // the brows close (Session 824): the face view at twice the size, cut to the brow line
   await shot('brows-woman', 'seed=styles&sex=f&style=bun&view=face', 1920, 1440, false, [.25, .38, .5, .25]); await shot('brows-man', 'seed=b7&sex=m&view=face', 1920, 1440, false, [.25, .38, .5, .25]);
+  for (const k of ['gatelander', 'markman', 'aurennais', 'oldblood']) await shot('brows-' + k, `seed=brows:${k}&sex=m&people=${k}&view=face&nomantle`, 1920, 1440, false, [.25, .38, .5, .25]);
 }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

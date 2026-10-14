@@ -34,7 +34,7 @@ const rollPerson = s => rollGenome(s, { g: Q.get('sex') === 'f' ? 0 : Q.get('sex
 let SP = 'human', G = null, CG = null, C = null;
 if (Q.get('g')) ({ species: SP, G } = readGenome(b64.dec(Q.get('g'))));
 else if (PLANS[Q.get('plan')]) { SP = 'creature'; G = cGenome(Q.get('plan'), Q.get('seed') || Q.get('plan') + ':builder'); }
-else G = rollPerson(Q.get('seed') || 'builder');
+else if (!Q.get('people')) G = rollPerson(Q.get('seed') || 'builder');
 if (SP === 'creature') { CG = G; G = null; }
 const locks = new Set();
 let person = null, view = Q.get('view') || (SP === 'creature' ? 'side' : 'full'), turn = Q.has('turn') ? +Q.get('turn') : 0, zoom = 1, dirty = true, gait = null;
@@ -124,6 +124,7 @@ function buildPanel() {
   h2('Hair'); { const st = el('select', {}, ...HAIR_STYLES.map(s => el('option', { value: s, textContent: s }))); st.value = G.hair?.style || 'short'; st.onchange = () => { G.hair = { ...(G.hair || {}), style: st.value }; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'style' }), st, el('span'))); inputs.style = () => st.value = G.hair?.style || 'short'; }
   slider('length', () => G.hair?.len ?? .3, v => G.hair = { ...(G.hair || {}), len: v }, 0, 1, 'hairLen'); slider('beard', () => G.beard || 0, v => G.beard = v, 0, 1, 'beard');
+  slider('brows', () => G.brow?.thick ?? ((G.g ?? .5) > .5 ? .62 : .42), v => G.brow = { arch: (G.g ?? .5) > .5 ? .35 : .6, ...(G.brow || {}), thick: v }, 0, 1, 'browThick'); slider('brow arch', () => G.brow?.arch ?? ((G.g ?? .5) > .5 ? .35 : .6), v => G.brow = { thick: (G.g ?? .5) > .5 ? .62 : .42, ...(G.brow || {}), arch: v }, 0, 1, 'browArch');
   h2('Dress'); const D = () => G.dress = G.dress || {};
   for (const k of GARMENTS) { const on = el('input', { type: 'checkbox', checked: !!D()[k], title: 'wear it' }); let last = D()[k] || [.3, .25, .2];
     on.onchange = () => { if (on.checked) D()[k] = last; else { last = D()[k] || last; D()[k] = null; } schedule(); }; on.sync = () => on.checked = !!D()[k];
@@ -188,7 +189,8 @@ function peoplesSheet() {
     p.root.position.x = (i++ - (n - 1) / 2) * gap + (keys.indexOf(k) - 1.5) * .35; p.root.rotation.y = (j - 1) * .12; scene.add(p.root); const bb = new THREE.Box3().expandByObject(p.meshes[0], true); out.push({ people: k, g: G1.g, h: +(bb.max.y - bb.min.y).toFixed(3) }); }
   cam.fov = 24; cam.aspect = W / H; cam.position.set(0, 1.2, ((n - 1) / 2 * gap + .75) / (Math.tan(12 * Math.PI / 180) * W / H)); cam.lookAt(0, .95, 0); cam.updateProjectionMatrix(); STATS.peoples = out;
 }
-(SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
+// a people's genome measures the morphed body for its height, so with ?people= it is rolled once the pack is in (Session 826)
+(SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
     if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; }

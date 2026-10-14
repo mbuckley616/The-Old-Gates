@@ -16918,3 +16918,28 @@ Which turf it is is Michael's call, asked as **DECISION #285**: A dry (recommend
 - **The tiling.** Close up, the tufts are a texture on a flat slab. A roof of real sod would bulge and slump, and that is geometry still owed.
 - **The fringe** repeats every 2.2 m along the eave, which shows on a long hall seen end-on.
 - **Snow.** Neither look has snow yet. The weather's `WX.cover` is meant to lay it once the halls are in the game.
+
+## v80 — Session 826 — Brows by people, and `?people=` on the builder page (B3, prototype only)
+#276's A (13 Oct) said *go on to the faces per people*. Session 824 left a hook for the brows, `G.brow = {thick, arch}`, that nothing set. Each people in `PEOPLES` now gives a range for each, for men and for women, and `peopleGenome` rolls inside them:
+
+| People | Men's thickness | Men's arch | Women's thickness | Women's arch |
+|---|---|---|---|---|
+| Markmen (heavy and straight) | 0.70–0.95 | 0.15–0.35 | 0.45–0.65 | 0.35–0.55 |
+| Aurennais (full, with a strong arch) | 0.60–0.85 | 0.40–0.60 | 0.45–0.65 | 0.60–0.85 |
+| Gatelanders | 0.50–0.75 | 0.30–0.50 | 0.35–0.55 | 0.50–0.75 |
+| The Old Blood (thin and level) | 0.30–0.50 | 0.10–0.30 | 0.20–0.40 | 0.20–0.40 |
+
+On thickness, 0 is a 3.5 mm brow and 1 is a 10 mm brow. The brow is rolled last, so every earlier roll from a seed (height, colours, dress) is the same as before.
+
+The saved genome carries it as `hair.brow: [thick, arch]`, and only when it is set, so older saves load as they did. The builder page has two new sliders, *brows* and *brow arch*.
+
+**Fixed on the way.** `builder.html?people=…` never finished loading. The page rolled its genome at load time, before MakeHuman's pack was in, and a people's genome measures the morphed body to find its height, so the roll threw. It reproduced on the committed code, before this session's change. The genome is now rolled once the pack has loaded.
+
+**Parked:** the cloak's hang and deeper folds (#274's A, next on B2's list). I tried two versions this run. Both pull the hem in toward the body's axis and turn each row's spare width into folds as deep as that width needs. The first pulled each point in on its own, and the hands pushed the cloth back out, which left a ledge across the back. The second held each column out to the body's widest point below it, then smoothed. Both left a crease down the middle of the back and a tear at the lower right, so neither is on this branch. The code is on `auto/wip-cloak-hang`, with the next idea in its commit: pull each column as one curve, and fold by moving whole columns.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all checks pass**, with one new one. Twelve rolled of each people give men's mean brow thicknesses of 0.822 for the Markmen, 0.701 for the Aurennais, 0.63 for the Gatelanders and 0.459 for the Old Blood, and in every people a man's brow is heavier than a woman's.
+- **Saving and loading:** every rolled genome saves and loads back byte for byte, with its brow.
+- **Pictures:** `--shots=brows` now also writes `builder-brows-gatelander.jpg`, `-markman`, `-aurennais` and `-oldblood`: one man of each, at the brow line, through the page's `?people=`.
+### Needs eyes
+- **Stray beard cards.** In these close-ups the beard's cards leave a stray dark wedge under the Old Blood man's eye and a pale card by the Markman's nose. That is the beard's and moustache's placement, which was there before this session and is not fixed here.
+- **The women's brows by people** are rolled but have no close-up of their own yet.
