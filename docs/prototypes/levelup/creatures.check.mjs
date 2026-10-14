@@ -32,6 +32,15 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   // the common set (Session 843): OG-084's ten animals of all islands, each a plan, each from that sheet
   const common = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.COMMON || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   const stock = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.LIVESTOCK || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
+  // the coats (Session 845): the cow pied, the badger's face white with its stripes, read off the vertex colours
+  const coats = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    for (const plan of ['cow', 'badger']) { const C = K.build(K.genome(plan, plan + ':check')), col = C.meshes[0].geometry.attributes.color, n = col.count; let pale = 0, dark = 0;
+      for (let v = 0; v < n; v++) { const l = .3 * col.getX(v) + .59 * col.getY(v) + .11 * col.getZ(v); if (l > .62) pale++; if (l < .1) dark++; } out[plan] = { n, pale: +(pale / n).toFixed(4), dark: +(dark / n).toFixed(3) }; }
+    { const F = K.PLANS.badger.face; delete K.PLANS.badger.face; const col = K.build(K.genome('badger', 'badger:check')).meshes[0].geometry.attributes.color; K.PLANS.badger.face = F; let pale = 0;
+      for (let v = 0; v < col.count; v++) if (.3 * col.getX(v) + .59 * col.getY(v) + .11 * col.getZ(v) > .62) pale++; out.badger.paleBare = +(pale / col.count).toFixed(4); }
+    return out; });
+  check(`the cow is pied (${(coats.cow.pale * 100).toFixed(0)}% of its hide pale)`, coats.cow.pale > .15 && coats.cow.pale < .6, coats.cow);
+  check(`the badger's face is white with its stripes (${(coats.badger.pale * 100).toFixed(2)}% of its hide white with the mask, ${(coats.badger.paleBare * 100).toFixed(2)}% without it)`, coats.badger.pale > 3 * coats.badger.paleBare + .003 && coats.badger.pale < .2, coats.badger);
   check(`the livestock: four animals, each a plan from the farm sheets (${stock.map(c => c.k).join(', ')})`, stock.length === 4 && stock.every(c => c.ok && /OG-0(23|35)/.test(c.src)), stock);
   check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }

@@ -17093,3 +17093,19 @@ The cow came out at 125,000 triangles at first, from its thin tail, as the boar 
 - **The cow's head** hangs low and long, so in profile it is a little tapir-like. Its horns barely show from the side.
 - **No patches or breeds.** A pied cow, a black-faced sheep, and breeds by island (the Mark's shaggy cattle and goats, Aurenne's) are patterns and palettes still to write.
 - **The bees** are not skeletal, so they are not this kit's.
+
+## v80 — Session 845 — Two coat patterns in the kit: a pied cow and the badger's face (backlog L3, prototype only)
+Sessions 843 and 844 each left a coat they could not draw, because the kit had only bands and stripes running along the body. The badger had no face, and its black-and-white stripes are the one mark everyone knows it by. The cow was plain brown, after the stripes came out as wavy bands. `dressFlesh` in `creatures.js` gains two patterns, read off the flesh at every vertex like the others:
+- **Patches** (`pattern: { kind: 'patches', size, cut, tone }`). Where a slow noise, one cycle per `size` metres of the body, crosses `cut`, the coat turns to the patch tone. A finer noise gives the edge a little raggedness. The cow takes white patches 0.32 m across, which is a pied cow.
+- **A face mask** (`face: { from, to, stripe, ground, back }`). On the head and jaw (where those bones carry more than half a vertex's weight), the distance out from the head's middle line is measured in the head's own radii. Between `from` and `to` the face takes the stripe tone, and elsewhere the ground tone, from the nose back past the ears and above the jaw's lower edge. The badger takes black stripes from 0.28 to 0.78 of its head's radius over white: the white blaze down the middle, the black bands through the eyes, white cheeks.
+
+Neither pattern draws from the seeded stream, so every other plan builds as it did.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 298 checks pass**, with two new ones read off the vertex colours:
+  - **The cow is pied:** 41% of its hide is pale.
+  - **The badger's face is white with its stripes:** 1.00% of its hide is white with the mask and 0.00% without it (its ears alone did not cross the line). 32% of the hide is black.
+- Every plan still builds, with its weights summing to one and its feet on their targets.
+- **Pictures:** `creatures-cow.jpg` and `creatures-badger.jpg` shot again, and the sheets `creatures-livestock.jpg` and `creatures-common.jpg` rebuilt.
+### Needs eyes
+- **The badger is pictured only from the side.** Head on, the blaze and the bands are what read, and the bestiary page has no front view of a single animal close up yet (`view=one` frames the side).
+- **The cow's patches are random.** A breed's own pattern (a belted cow, a white face) would be a mask on the body as the face mask is on the head.

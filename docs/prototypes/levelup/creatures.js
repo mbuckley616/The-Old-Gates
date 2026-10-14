@@ -346,6 +346,12 @@ function dressFlesh(geo, B, pal, plan) {
     if (pal.belly && coatW > 0) C.lerp(pal.belly, coatW * sstep(-.1, -.75, ny));
     if (pat?.kind === 'bands') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 6, y * 6, z * 2) * 1.2); if (b > .35) C.lerp(pal[pat.tone], .85 * coatW); }
     if (pat?.kind === 'stripes') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 3, y * 3, z) * 2.5); if (b > .55 && ny > -.2) C.lerp(pal[pat.tone], .7 * coatW); }
+    // patches (Session 845): a pied coat, where low-frequency noise crosses a threshold; the edge is a little ragged
+    if (pat?.kind === 'patches') { const q = PN.noise(x / pat.size, y / pat.size + 7.3, z / pat.size) + PN.noise(x * 9, y * 9, z * 9) * .08; if (q > (pat.cut ?? .1)) C.lerp(pal[pat.tone], (pat.amount ?? 1) * coatW); }
+    // a face mask (Session 845): on the head, between two distances out from its middle line, from the nose back over
+    // the eyes to the ears, a stripe of one tone, and the rest of the face another (the badger's black stripes on white)
+    if (plan.face && B.headFrame && B.by.head && (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum > .5) { const F = plan.face, H = B.headFrame, rel = V(x, y, z).sub(H.base), along = rel.dot(H.dir) / H.len, side = Math.abs(rel.x) / H.r, upw = rel.dot(H.up) / H.r;
+      if (along > (F.back ?? -.3) && upw > -.35) C.copy(pal[side > F.from && side < F.to ? F.stripe : F.ground]).multiplyScalar(.95 + .1 * PN.noise(x * 40, y * 40, z * 40)); }
     const mott = 1 + (PN.noise(x * 4.1, y * 4.1, z * 4.1) * .16 + PN.noise(x * 17, y * 17, z * 17) * .06) * (plan.mottle ?? 1); C.multiplyScalar(mott);
     col[v * 3] = C.r; col[v * 3 + 1] = C.g; col[v * 3 + 2] = C.b; fur[v] = furry;
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
@@ -870,7 +876,7 @@ Object.assign(PLANS, {
   deer: re(PLANS.stag, { name: 'Deer', src: 'OG-084 (all islands: deer), OG-014 (deer in the fields)', scale: .74,
     palette: { coat: [.58, .38, .22], saddle: [.42, .27, .15], belly: [.9, .84, .72], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.7, .62, .48] }, fur: PLANS.stag.fur,
     parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: .5, depth: 1 } }] : [k, o]) }),
-  badger: { name: 'Badger', src: 'OG-084 (all islands: badger; Woodland Badger)', gaits: ['walk', 'trot', 'stand'], wag: .02, fold: .5, speedK: .7, rough: .7,
+  badger: { name: 'Badger', src: 'OG-084 (all islands: badger; Woodland Badger)', gaits: ['walk', 'trot', 'stand'], wag: .02, fold: .5, speedK: .7, rough: .7, face: { from: .28, to: .78, stripe: 'dark', ground: 'pale', back: -.45 },
     palette: { coat: [.52, .5, .48], saddle: [.38, .37, .36], belly: [.12, .11, .11], dark: [.05, .05, .05], pale: [.92, .91, .88] },
     fur: { len: .03, layers: 8, sx: 200, droop: .3 },
     parts: [
@@ -899,8 +905,8 @@ Object.assign(PLANS, {
 export const COMMON = ['wolf', 'redfox', 'brownhare', 'raven', 'crow', 'boar', 'deer', 'badger', 'otter', 'trout'];
 // ── Session 844: livestock (backlog L3; OG-023 and OG-035, the farms): the cow, the sheep, the goat and the hen ──
 Object.assign(PLANS, {
-  cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6,
-    palette: { coat: [.48, .3, .18], saddle: [.36, .21, .12], belly: [.86, .82, .74], dark: [.07, .05, .05], hoof: [.12, .1, .08], horn: [.86, .82, .72], skin: [.78, .55, .5] },
+  cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6, pattern: { kind: 'patches', size: .32, cut: .12, tone: 'pale' },
+    palette: { coat: [.48, .3, .18], saddle: [.36, .21, .12], belly: [.86, .82, .74], dark: [.07, .05, .05], hoof: [.12, .1, .08], horn: [.86, .82, .72], skin: [.78, .55, .5], pale: [.9, .87, .8] },
     fur: { len: .012, layers: 6, sx: 300 },
     parts: [
       ['spine', { hip: [1.3, -.72], chest: [1.32, .58], n: 4, r: [.36, .42, .38], s: [.9, 1.15], rump: .24, rumpDrop: .02, front: .22, frontDrop: .12 }],
