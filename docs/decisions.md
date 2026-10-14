@@ -31,6 +31,28 @@ level on Michael's laptop in Portclare's square, a first load under 40 MB, under
 Michael: **1 B, 2 A, 3 A** — the look and the core loop; on the legacy zones, “A, and honestly, if it's easier to just purge the legacy code / zones when ready, I'm cool with that. I was never very attached to that, they were moreso just placeholders to help with scaffolding for a main story.” He accepted the drafted cards, the F2 split and the budgets. (13 Oct 2026, in chat with Claude)
 
 *Acted, Session 829:* `v2-scope.md` now reads as the spec. 2.0 waits on the look (F1 to F14), combat's resolver, skills and perks (A), enemies by place, and magic B with its questline. The legacy zones are purged at the cutover, or sooner if that is easier, once Q7's old-zone path is in the world. For the producer: card F2a, F2b and F8 to F14 on the control room, and a roadmap epic for the core loop.
+### The Mark's turf roofs, redone: dry sod or dark moss? (look builder, Session 825) — DECISION #285
+On #277 Michael chose the mix (two halls in three shingle, one in three turf), but said the turf "green is too vibrant for the climate" and asked for another swing. Session 825 (prototype only, `pieces.js`) drops the lawn green and paints the sod two ways. Both versions now have a fringe of grass hanging over the eaves, so the roof's edge is ragged rather than a hard slab.
+
+Measured on the texture, against Session 819's turf (mean saturation 0.48, greener than red by 0.09):
+- **Dry:** saturation 0.30, redder than green by 0.06.
+- **Moss:** saturation 0.26, green over red 0.02.
+
+Pictures:
+- [a lane, the mix, dry turf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-mix.jpg)
+- [a lane, the mix, moss turf](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-lane-mix-moss.jpg)
+- [a dry roof close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-roof-dry.jpg)
+- [a moss roof close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-roof-moss.jpg)
+- [the halls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/mark-halls.jpg)
+
+Which turf should the Mark's poorer halls have?
+- **A. Dry sod** *(recommended)*: tawny dead grass and straw in tufts over olive, with moss in the hollows and earth between. This is how a sod roof looks most of a northern year. It reads warm against the dark shingle and the grey stone, and it will take the weather's snow cover well.
+- **B. Dark moss:** a wet roof gone to dark olive moss, with straw tufts and pale lichen. It is the quieter of the two and close to the shingle in value, so a street of the mix reads more as one.
+- **C. Both, by place:** dry on the inland halls and moss on the coast, chosen by the hall's lot.
+
+Recommendation: **A.** It moves furthest from the lawn Michael objected to. The tawny roofs also make the one-in-three turf halls easy to pick out as the poorer houses. B is a fair second if he wants the street calmer.
+
+Michael: **Dry sod**. (13 Oct 2026)
 
 ### The Gatelands' town walls in the new kit: coloured, white or stone? (the concept artist, 2026-10-13) — DECISION #280
 Card F6 builds the three islands' houses from pieces in the new look; the Gatelands come first. The prototype (`docs/prototypes/levelup/pieces-gatelands.html` on auto/concept, three.js 0.170) makes five plans from one kit in metres: cottage 1,826 triangles, farmhouse 2,144, townhouse 5,081, merchant's house and shop 4,522, warehouse 9,132; 10 to 14 draw calls each. Walls are 0.45 to 0.7 m thick with every opening cut through. In every option the cottages stay limewashed white under thatch and the towns have slate roofs. Full text and pictures: docs/concepts.md on auto/concept, and issue #280.
