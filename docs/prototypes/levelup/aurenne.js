@@ -5,9 +5,10 @@
 // ?view=churches, three side by side (a town's with a blue dome, a town's limewashed, a cathedral); &dome=blue|white.
 // Session 833, the civic buildings: ?view=quay, the Compact's tithe house between two warehouses on a quay, from the water;
 // ?view=civic, the tithe house and a warehouse front-on beside the 1.8 m post; &crown=plain, the parapet without merlons.
+// Session 836: ?view=academy, the Mages' academy and its white towers from its forecourt; &towers=2|3.
 import * as THREE from 'three';
 import { Q, STILL, W, H, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run } from './common.js';
-import { aurenneHouse, aurenneLot, aurenneChurch, aurenneCivic, stream, aurenneTextures } from './pieces.js';
+import { aurenneHouse, aurenneLot, aurenneChurch, aurenneCivic, aurenneAcademy, stream, aurenneTextures } from './pieces.js';
 import { loadPack, makePerson, rollGenome } from './people.js';
 
 const R = makeRenderer(.82), scene = new THREE.Scene(), VIEW = Q.get('view') || 'street', STREET = Q.get('street') || 'aurenne-street';
@@ -27,7 +28,13 @@ const CH = STATS.churches = [], DOME = Q.get('dome');
 function church(o, key, x, z, ry) { const c = aurenneChurch(o, stream(key)); c.group.position.set(x, 0, z); c.group.rotation.y = ry; scene.add(c.group); CH.push({ w: o.w, dome: o.dome, tower: o.tower ?? 1, corners: !!o.corners, tris: c.tris, draws: c.draws, domeTop: +c.domeTop.toFixed(2), towerTop: +c.towerTop.toFixed(2), top: +c.roofTop.toFixed(2), door: c.door.h }); return c; }
 const CV = STATS.civic = [], CROWN = Q.get('crown') || 'merlons';
 function civic(o, key, x, z, ry) { const c = aurenneCivic({ crown: CROWN, ...o }, stream(key)); c.group.position.set(x, 0, z); c.group.rotation.y = ry; scene.add(c.group); CV.push({ kind: c.kind, w: o.w, d: o.d, tris: c.tris, draws: c.draws, top: +c.roofTop.toFixed(2) }); return c; }
-if (VIEW === 'quay' || VIEW === 'civic') {
+if (VIEW === 'academy') {
+  { const g = new THREE.PlaneGeometry(600, 600); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, ground); m.receiveShadow = true; scene.add(m); }
+  const a = aurenneAcademy({ w: 30, towers: +(Q.get('towers') || 3) }, stream('academy')); scene.add(a.group); STATS.academy = { tris: a.tris, draws: a.draws, top: +a.roofTop.toFixed(2), towers: a.towerTops };
+  cam.fov = 55; cam.updateProjectionMatrix(); cam.position.set(-8, 1.65, 36); cam.lookAt(0, 14, -2);
+  sun.position.set(60, 80, 70); sun.target.position.set(0, 0, 0); Object.assign(sun.shadow.camera, { left: -50, right: 50, top: 60, bottom: -50, near: 1, far: 400 }); sun.shadow.camera.updateProjectionMatrix();
+  people.push([-3, 14, .3, 'ac:a'], [4, 11, 2.6, 'ac:b']);
+} else if (VIEW === 'quay' || VIEW === 'civic') {
   { const g = new THREE.PlaneGeometry(600, 300); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, ground); m.position.z = VIEW === 'quay' ? -142 : 0; m.receiveShadow = true; scene.add(m); }
   if (VIEW === 'quay') {
     // the quay: a wall of dressed stone down to the water, bollards along its edge, the buildings fronting it 6 m back

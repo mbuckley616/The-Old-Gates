@@ -4,6 +4,25 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Mages' academy's white towers: pointed caps, domes, or square? (look builder, Session 836) — DECISION #296
+The last of Aurenne's buildings that the canon names is "the academy's white towers" (§1.3), the Mages' academy. Session 836 builds it in the new kit at true size (`aurenneAcademy` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=academy`):
+- **The library:** a long hall of two storeys, 24 to 36 m. An arcade of round arches on columns runs along its front, with a band of glazed tile over it, tall arched windows above and a rounded parapet.
+- **The towers:** two or three slender white round towers rise out of its back, 33 to 40 m. Each has arched slits up the shaft, a gallery on stone corbels behind a pierced parapet, a lantern of six arched openings, and a pointed white cap with a gilt finial.
+- **The observatory:** the tallest tower carries a white dome with its shutter slot.
+
+An academy is 14,000 to 19,700 triangles in at most 8 draws.
+
+Picture: [the academy from its forecourt](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/aurenne-academy.jpg)
+
+What should the academy's towers be?
+- **A. Round, with galleries and pointed white caps, as drawn** *(recommended)*: they read as the "white towers" from far off, and as different from the Church's square bell towers. The academy and the Church are rivals in the canon, and the skyline shows it.
+- **B. As A, but domed caps** in the Church's finish (whatever #294 decides): the city reads as one style, at the cost of the academy looking like a second church.
+- **C. Square towers like the Church's bell towers,** taller and white: the plainest, and the least like OG-061's minaret-like towers.
+
+Only A is pictured; B and C are each a small change to the same builder, and I will shoot them if wanted. Recommendation: **A.**
+
+Not in this question: inside (card F9); the academy's courtyard and its quarter (a later session, with the city plan).
+
 ### Aurenne's tithe house: stepped merlons or a plain parapet? (look builder, Session 833) — DECISION #295
 Card F6 has reached Aurenne's civic buildings. The canon (§1.3) puts Aurenne's ports under the Compact's Factors, says "every hull that passes is tithed", and gives the island "warehouses on every quay". OG-061 and OG-043 draw these buildings arcaded, tiled and flat-roofed. Session 833 builds two in the new kit at true size (`aurenneCivic` in `docs/prototypes/levelup/pieces.js`; page `aurenne.html?view=quay`):
 - **The tithe house** (18 to 26 m by 12 to 15, 9.8 m to the roof):

@@ -17120,3 +17120,35 @@ Michael chose A on #280: coloured towns. The town walls are rendered in earth co
 ### Needs eyes
 - **The blue and the sage** read close in shade on a grey day. If a street shows them side by side too often, the step rule can skip one.
 - **The lots run on round the corner.** In the street page the right-hand row carries on from the left-hand row's last lot, which is a cottage, so the two rows' first houses are not compared with each other. A generator placing two sides of a street should key them as two streets.
+
+## v80 — Session 836 — The Mages' academy and its white towers (card F6, prototype only)
+The canon names three buildings for Aurenne beyond its houses: the Church's domes, the quays' warehouses, and "the academy's white towers" (§1.3), where the Mages' academy sits beside the Church. Sessions 832 and 833 built the first two. This one builds the academy, and with it Aurenne's list in F6 is done until Michael answers.
+
+`pieces.js` has `aurenneAcademy(o, r)`, on `aurKit()`.
+- **The library:** a hall of two storeys, 24 to 36 m long, 13 m deep and 10.5 m high.
+  - Its front: an arcade of round arches on turned columns, a band of glazed tile, then tall arched windows with sills and grilles.
+  - The sides and back have small windows below and tall ones above.
+  - A rounded parapet, as the houses have, so it does not read as the Compact's merlons.
+- **The towers** (`o.towers`, 2 or 3) rise out of the hall's back:
+  - Round shafts of 2.1 m radius, 2.6 m for the tallest, with staggered arched slits.
+  - A stone ring where they clear the roof, and a gallery on sixteen corbels behind a pierced parapet of little posts and a rail.
+  - Over the gallery, a lantern drum with six arched openings, and a pointed white cap with a gilt finial.
+- **The observatory:** the tallest tower (the middle of three, the last of two) has a white dome with a shutter slot instead of the cap.
+- **Its forecourt:** two cypresses at the arcade's ends and a stone bench under it.
+
+`aurenne.html?view=academy` shows it from its forecourt, with `&towers=2|3`.
+
+**Fixed before the picture.** The first shafts ran 3.2 m past their galleries and hid the lanterns inside them. A shaft now ends at its gallery's floor.
+
+The towers' shape is asked as **DECISION #296**: A round with pointed caps, as drawn (recommended); B domed caps in the Church's finish; C square, like the bell towers.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: all pass, with three new checks.**
+  - **Builds:** eight academies (24, 28, 32 and 36 m, two and three towers) are 14,040 to 19,710 triangles in at most 8 meshes. All eight build the same twice.
+  - **The towers** stand 32.95 to 40.48 m to their finials, the observatory's the tallest in every build, and every one at least twice the hall's height. Nothing is below the ground or past the front.
+  - **The page** renders its three towers with no page errors.
+  - The houses', churches' and civic buildings' checks pass as before.
+- **Picture, new:** `aurenne-academy.jpg`.
+### Needs eyes
+- **The arcade is black.** It is cut through the front wall into the hall's dark, not a loggia with a back wall as the tithe house's is, so at noon it reads as a row of black doorways. A walk under it, with a lit wall behind, would read better; it costs a second wall and a ceiling.
+- **The observatory's slot** is small from the forecourt.
+- **The academy stands alone** on the page. Its courtyard and its quarter of the city come with the city plan.
