@@ -1229,3 +1229,51 @@ Object.assign(PLANS, {
     parts: PLANS.stormwhale.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 6, len: 3.2, r: .35, f: .15, up: 1, out: .5 } }] : [k, o]) })
 });
 export const SEA = ['tidecrab', 'reefmoray', 'starweedray', 'lanternjelly', 'coastaltuna', 'skyskimmer', 'stormwhale', 'stormswift', 'sailfinray', 'driftersquid', 'reefshark', 'octopus', 'seal', 'blackcurrenteel', 'gateeel', 'shatterback', 'gateleviathan'];
+// ── Session 855: beasts of burden (OG-046's roads; OG-077's post hare, built in Session 773; backlog L3). The horse is
+// its own plan and the mule and the donkey are the horse; the ox and the yak are the cow, the reindeer the stag, the
+// giant goat the goat with a saddle. OG-046's llama is the Frostmane (Session 853) and its cow is the livestock's ──
+Object.assign(PLANS, {
+  horse: { name: 'Horse', src: 'OG-046 (beasts of burden: the horse)', gaits: ['walk', 'trot', 'gallop', 'stand'], speedK: 1.1, wag: .06, neckNod: .08, rough: .5,
+    palette: { coat: [.34, .22, .14], saddle: [.24, .15, .09], belly: [.44, .3, .2], dark: [.04, .03, .03], hoof: [.1, .08, .07], mane: [.07, .05, .04] },
+    fur: { len: .01, layers: 5, sx: 420 },
+    parts: [
+      ['spine', { hip: [1.42, -.68], chest: [1.48, .52], n: 4, r: [.3, .3, .33], s: [.82, 1.12], rump: .22, rumpDrop: .05, front: .2, frontDrop: .1 }],
+      ['neck', { len: .75, n: 3, rise: 55, curve: -12, r: [.22, .12], s: [.7, 1.3], fwd: .04 }],
+      ['head', { len: .58, r: .12, pitch: 62, s: [.85, 1, 1], muzzle: { len: 1, r: .085, nose: 1, taper: .85 }, jaw: { len: .85, r: .06, drop: .5 }, eyes: [{ f: .3, up: .4, out: .8, r: .022, color: [.05, .04, .03] }], ears: { kind: 'leaf', size: .08, f: .08, up: .9, out: .5, splay: 10, back: 5 } }],
+      ['tail', { len: .7, n: 3, r: [.07, .06], droop: 75, tone: 'mane' }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .14, drop: .14, r: [.13, .07, .04, .045] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .14, drop: .08, r: [.17, .08, .042, .045] }]
+    ] },
+  ox: re(PLANS.cow, { name: 'Ox', src: 'OG-046 (beasts of burden: the ox)', scale: 1.15, pattern: null, speedK: .7,
+    palette: { coat: [.32, .21, .14], saddle: [.22, .14, .09], belly: [.56, .46, .36], dark: [.06, .04, .04], hoof: [.1, .08, .07], horn: [.84, .78, .64], skin: [.5, .36, .3] },
+    parts: PLANS.cow.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .42, r: .04, spread: 1 } }] : [k, o]) }),
+  yak: re(PLANS.cow, { name: 'Highland yak', src: 'OG-046 (beasts of burden: the highland yak)', scale: 1.05, pattern: null, speedK: .7,
+    palette: { coat: [.16, .12, .1], saddle: [.1, .08, .07], belly: [.22, .18, .15], dark: [.04, .03, .03], hoof: [.08, .07, .06], horn: [.78, .74, .66], skin: [.3, .24, .22] },
+    fur: { len: .14, layers: 12, sx: 80, sy: 18, droop: .75 },
+    parts: PLANS.cow.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hump: { at: .85, up: .22, len: .5, r: .3 } }] : k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .36, r: .034, turn: .7, rise: .9, spread: .9 } }] : [k, o]) }),
+  camel: { name: 'Camel', src: 'OG-046 (beasts of burden: the camel, the caravans)', gaits: ['walk', 'trot', 'stand'], speedK: .9, wag: .05, neckNod: .1, rough: .7,
+    palette: { coat: [.74, .58, .4], saddle: [.62, .46, .3], belly: [.84, .72, .56], dark: [.06, .05, .04], hoof: [.3, .24, .18] },
+    fur: { len: .02, layers: 7, sx: 260, droop: .3 },
+    parts: [
+      ['spine', { hip: [1.7, -.7], chest: [1.75, .55], n: 4, r: [.28, .3, .32], s: [.75, 1.1], rump: .2, front: .2, frontDrop: .12, hump: { at: .5, up: .26, len: .45, r: .34, sx: .7 } }],
+      ['neck', { len: 1.0, n: 4, rise: -15, curve: 120, r: [.2, .11], s: [.75, 1.2] }],
+      ['head', { len: .55, r: .11, pitch: 20, muzzle: { len: 1, r: .08, nose: 1, taper: .85 }, jaw: { len: .85, r: .055, drop: .5 }, eyes: [{ f: .32, up: .5, out: .75, r: .02, color: [.05, .04, .03] }], ears: { kind: 'round', size: .04, f: .08, up: .85, out: .6 } }],
+      ['tail', { len: .5, n: 2, r: [.05, .03], droop: 75 }],
+      ['legs', { at: 1, kind: 'ungulFore', out: .16, drop: .12, r: [.14, .07, .045, .07] }],
+      ['legs', { at: 0, kind: 'ungulHind', out: .16, drop: .08, r: [.16, .075, .045, .07] }]
+    ] },
+  reindeer: re(PLANS.stag, { name: 'Reindeer', src: 'OG-046 (beasts of burden: the reindeer, the Mark)', scale: .85,
+    palette: { coat: [.46, .4, .34], saddle: [.32, .27, .22], belly: [.86, .84, .8], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.7, .64, .52] }, fur: { len: .04, layers: 9, sx: 200, droop: .4 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { len: 1.1, r: .026, f: .1, up: .85, out: .3, depth: 3 } }] : [k, o]) })
+});
+Object.assign(PLANS, {
+  mule: re(PLANS.horse, { name: 'Mule', src: 'OG-046 (beasts of burden: the mule)', scale: .9,
+    palette: { coat: [.3, .22, .16], saddle: [.22, .16, .11], belly: [.62, .54, .46], dark: [.04, .03, .03], hoof: [.1, .08, .07], mane: [.1, .08, .06] },
+    parts: PLANS.horse.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .15, splay: 18 } }] : [k, o]) }),
+  donkey: re(PLANS.horse, { name: 'Donkey', src: 'OG-046 (beasts of burden: the donkey)', scale: .72, speedK: .9, fur: { len: .022, layers: 7, sx: 260, droop: .3 },
+    palette: { coat: [.5, .48, .46], saddle: [.4, .38, .36], belly: [.86, .84, .8], dark: [.04, .04, .04], hoof: [.1, .08, .07], mane: [.16, .15, .14] },
+    parts: PLANS.horse.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .18, splay: 22 } }] : [k, o]) }),
+  giantgoat: re(PLANS.goat, { name: 'Giant goat', src: 'OG-046 (beasts of burden: a giant goat, saddled)', scale: 2.1,
+    palette: { ...PLANS.goat.palette, blanket: [.2, .32, .5], leather: [.36, .22, .12] }, parts: [...PLANS.goat.parts, ['saddle', { at: .55, len: .24 }]] })
+});
+export const BURDEN = ['horse', 'mule', 'donkey', 'ox', 'camel', 'reindeer', 'yak', 'giantgoat', 'posthare'];

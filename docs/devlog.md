@@ -17246,3 +17246,29 @@ L3's next item is the sea, from OG-016's aquatic bestiary, with OG-084's seals a
 - **The Gate Leviathan's flesh is coarse.** At 25 m the flesh grid gives it only 8,820 triangles, and its glowing seams are broad blots.
 - **No turtles.** A sea turtle and the maw turtle want flippers that row, and the kit's legs walk.
 - **The deep band is unbuilt:** the kelpstrider, the stonefish, the pierwinkle, the abyssal angler and the crimson leviathan are still owed.
+
+## v80 — Session 855 — Beasts of burden: the horse, the mule, the donkey, the ox, the camel, the reindeer, the yak and a giant goat (backlog L3, prototype only)
+L3's next item is the beasts of burden that work OG-046's roads. The horse is a new plan in `creatures.js`, and the others are made from it or from older plans. `BURDEN` lists the eight with OG-077's post hare (Session 773). OG-046's other two animals are already in the kit: its llama is the Frostmane (Session 853) and its cow is the livestock's (Session 844). No kit code changed.
+- **The horse:** its own plan. A long barrel (spine radii 0.3 to 0.33 m) on ungulate legs, with a neck 0.75 m long that rises at 55°, curving forward. The long head is carried steeply (62°), with small upright ears and a dark tail. It is a bay.
+- **The mule and the donkey:** the horse at 0.9 and at 0.72, with ears half as long again and twice as long. The mule is dark brown. The donkey is grey with a pale belly and a rougher coat.
+- **The ox and the highland yak:** the cow at 1.15 and at 1.05.
+  - The ox is plain brown, with horns twice as long and spread wide.
+  - The yak is near black, in a coat 14 cm deep that hangs, with a hump over the shoulders and horns that curve up.
+- **The camel:** its own plan. Long legs with wide feet, a neck that starts level and curls up to 90°, a single hump narrowed to 0.7 of its width, and a long head with small round ears.
+- **The reindeer:** the Elderstag at 0.85, grey-brown with a pale belly, in a thicker coat, with taller antlers that branch a third time.
+- **The giant goat:** the goat at 2.1, with a saddle and a blue blanket. It is OG-046's mountain mount.
+
+The first pictures showed the horse and the ox too red under the bestiary's grey sky, and the camel's hump sat on its back like a separate pack. The coats were browned and the hump made lower, shorter and narrower, then all three were shot again.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 774 checks pass** across 99 plans. One new check confirms that the nine beasts of burden are each a plan from OG-046 or OG-077.
+  - The eight new plans build in 0.33 to 0.89 s, with 29 to 32 bones and 32,256 to 55,060 (the camel) triangles.
+  - Every foot reaches its target through every gait.
+  - The feet are down for about each gait's duty: the horse's walk 0.55 of 0.68, its gallop 0.28 of 0.34.
+  - Every genome is 147 to 156 bytes.
+- **Speeds:** the horse walks at 2.0 m/s, trots at 4.0 and gallops at 6.8. The donkey gallops at 4.5, the ox walks at 1.15 and the camel at 1.6.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the eight, and `creatures-burden.jpg` (the nine on one sheet).
+### Needs eyes
+- **The horse has no mane.** The kit's fur covers the whole coat at one length. A mane wants a fur length that varies along the neck's crest, which is a kit change still to make.
+- **The bay and the ox still lean red** under the grey test sky. A warm daylight may settle them, or they want browning again.
+- **No harness, packs or carts.** The saddle part is the only tack. Pack saddles, a yoke for the ox and the wagons (props, the look builder's) are owed.
+- **None of them is in the game.** That waits for F4.
