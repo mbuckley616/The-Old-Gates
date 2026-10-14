@@ -17478,3 +17478,31 @@ What changed in `people.js`:
 - **The temples** still end on the root region's mesh edge, which shows on the man as a step at the side of the brow. A fade there needs a distance to the region's border per vertex, not the forehead's curve.
 - **The man's fade** reads a little like a receding hairline from straight on, since the colour fade starts at the shell's own edge. If it reads wrong in play, the fade could start 5 mm lower than the strands' roots.
 - **Every style still reads slicked back.** The strands lie 3 to 14 mm off the scalp, which gives no lift at the crown. More height there is the next refinement, together with the brows.
+
+## v80 — Session 876 — Brows combed up and out, finer and denser (B1, Michael's note on #272, prototype only)
+The last part of Michael's note on #272: "eyebrows look pretty fugly still". Session 824 had already drawn each brow as a shape filled with short hairs lying on the skin. Close up, three faults remained:
+- **An upright fan.** The hairs at the inner end, by the nose, were combed nearly straight up (on average 0.74 of vertical) and ran past the brow's top edge. Each brow started on a fan of spikes.
+- **Too few, too coarse.** There were 700 to 900 hairs a face, each card 0.28 to 0.46 mm wide, so the brow read as a scribble of dark and light strokes.
+- **A square start.** The inner end was cut square at the nose.
+
+This is still under FREEZE #297, so it touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `buildBrows`:
+- **The head is combed up and out,** at about 50°, not near upright. A hair whose tip would pass the brow's upper edge by more than 0.8 mm is shortened to fit, down to a 1.5 mm minimum.
+- **The head starts sparse.** Over the first tenth of the brow, a root is kept with a chance that rises from 0.3 at the nose, so the brow fades in rather than starting on a cut.
+- **The hairs are finer and denser:**
+  - 1.8 times as many hairs, 1,200 to 1,360 a face;
+  - 0.20 to 0.34 mm wide, tapering to a fifth at the tip;
+  - 3.5 to 8 mm long;
+  - lying flatter (their tips 0.2 mm off the skin against 0.5);
+  - each a shade from 0.93 to 1.07 of the brow's colour, so they read as hairs of one brow.
+- **Their own random stream.** The brows draw from a stream of their own (`seed|brows`). The person's stream still moves on by the twelve numbers a hair that Session 824 took from it. The cloak is drawn after the brows from that stream, so every cloak folds exactly as before. The cloak checks read the same numbers as Session 839's: hems 13.0, 2.6 and 1.4 cm in, and folds 3.7, 4.7 and 5.5 cm deep.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 162 checks pass**, five of them new. On each of the five rolled genomes, the head's hairs are combed at 0.577 to 0.589 of vertical on average (Session 824's comb is about 0.74), and no hair passes the brow's top by more than 1.5 mm (0.9 to 1.1 mm).
+- Every brow hair's root is on the skin (1,204 to 1,359 of as many), and the tips lie 0.2 mm off it.
+- **Pictures:** the six `builder-brows-*.jpg` and the two face pictures were shot again. Session 824's brows are kept as `builder-brows-before-man.jpg` and `builder-brows-before-woman.jpg`.
+### Needs eyes
+- **Is this the brow Michael wanted?** His note gave no reference, so this is judged against real brows: a sparse head, a dense body and a thin tail. A thick, low Markish brow or a fine Aurennais arch is set by the people's ranges (`brow` thickness and arch, Session 826). That is the place to tune if a people's brows read wrong.
+- **The skin under the brow** is still only 20% darker, by the body's vertex colours. The face's vertices are too far apart for a finer shade there.
+- **Grey and white brows** for the old are not drawn. Brows take the hair's colour.

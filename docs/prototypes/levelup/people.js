@@ -629,33 +629,42 @@ export function browShape(G) {
   return { x0, x1, at, ex, ey, thick, arch };
 }
 function buildBrows(P, G, headB) {
-  const R0 = PACK.rest, tris = BROW_TRIS(), S = browShape(G), out = { tried: 0, roots: 0, lift: 0 };
+  const R0 = PACK.rest, tris = BROW_TRIS(), S = browShape(G), out = { tried: 0, roots: 0, lift: 0, headUp: 0, headN: 0, over: 0 };
   // where a point of the unmorphed face (x, y) lies: its triangle and weights, then the same on the morphed face
   const locate = (x, y) => { for (let t = 0; t < tris.length; t += 3) { const a = tris[t], b = tris[t + 1], c = tris[t + 2], ax = R0[a * 3], ay = R0[a * 3 + 1], bx = R0[b * 3], by = R0[b * 3 + 1], cx = R0[c * 3], cy = R0[c * 3 + 1];
       const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy); if (Math.abs(d) < 1e-12) continue; const u = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d, v = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d, w = 1 - u - v;
       if (u < -1e-4 || v < -1e-4 || w < -1e-4) continue; const A = new THREE.Vector3().fromArray(P, a * 3), B = new THREE.Vector3().fromArray(P, b * 3), C = new THREE.Vector3().fromArray(P, c * 3);
       return { p: A.clone().multiplyScalar(u).addScaledVector(B, v).addScaledVector(C, w), n: B.clone().sub(A).cross(C.clone().sub(A)).normalize() }; } return null; };
-  const pos = [], uv = [], idx = [], nor = [], col = sRGB(...G.hairCol).multiplyScalar(G.hairCol[0] > .6 ? .55 : .62);
-  const N = Math.round(260 + 220 * S.thick);
+  const pos = [], uv = [], idx = [], nor = [], cols = [], col = sRGB(...G.hairCol).multiplyScalar(G.hairCol[0] > .6 ? .55 : .62);
+  // Session 876: the brows draw from their own stream, and the person's stream is moved on by what Session 824's brows took
+  // from it (six numbers a hair), so the cloak, drawn after, folds as it did
+  const N0 = Math.round(260 + 220 * S.thick); for (let i = 0; i < N0 * 12; i++) RND();
+  const rb = seeded((G.seed ?? 'person') + '|brows'), N = Math.round(N0 * 1.8);
   for (const sg of [-1, 1]) for (let k = 0; k < N; k++) {
     // a root: along the brow by area (more at the head and the body than the tail), across it at random
-    const t = Math.min(1, RND() ** 1.15), q = S.at(t), a = RND(), x = q.x + (RND() - .5) * .002, y = q.low + q.h * a;
+    const t = Math.min(1, rb() ** 1.15), q = S.at(t), a = rb(), x = q.x + (rb() - .5) * .002, y = q.low + q.h * a;
+    // the head starts sparse, so the brow does not begin on a square-cut end at the nose (Session 876)
+    if (t < .1 && rb() > .3 + 7 * t) continue;
     const L = locate(sg * x, y); out.tried++; if (!L) continue; out.roots++;
     if (L.n.z < 0) L.n.negate();
-    // the comb: up at the head, out and a little up along the body, out and down at the tail; the upper row lies down over the lower
-    const up = t < .18 ? .95 - 2.8 * t : .45 - 1.1 * Math.max(0, t - .45) - .35 * a, dirW = new THREE.Vector3(sg * (t < .18 ? .35 + 3 * t : 1), up, 0).normalize();
-    dirW.applyAxisAngle(new THREE.Vector3(0, 0, 1), (RND() - .5) * .45);
-    const tan = dirW.clone().addScaledVector(L.n, -dirW.dot(L.n)).normalize(), len = (.004 + .005 * RND()) * (t < .15 ? .75 : 1), w0 = .00028 + .00018 * RND(), seg = 3;
-    const pts = [L.p.clone().addScaledVector(L.n, .0003)]; let lift = .28;
-    for (let s = 1; s <= seg; s++) { const d = tan.clone().addScaledVector(L.n, lift).normalize(); pts.push(pts[s - 1].clone().addScaledVector(d, len / seg)); lift -= .22; }
+    // the comb: up and out at the head (Session 876: about 50 degrees, where Session 824's stood near upright and fanned), out
+    // and a little up along the body, out and down at the tail; the upper row lies down over the lower
+    const up = t < .18 ? .7 - 1.3 * t : .45 - 1.1 * Math.max(0, t - .45) - .35 * a, dirW = new THREE.Vector3(sg * (t < .18 ? .55 + 2.5 * t : 1), up, 0).normalize();
+    dirW.applyAxisAngle(new THREE.Vector3(0, 0, 1), (rb() - .5) * .35);
+    // finer and shorter hairs, more of them, and none reaching more than a hair's breadth past the brow's upper edge
+    let len = (.0035 + .0045 * rb()) * (t < .15 ? .7 : 1); const room = q.low + q.h + .0008 - y; if (dirW.y > 0 && len * dirW.y > room) len = Math.max(.0015, room / dirW.y);
+    if (t < .18) { out.headUp += dirW.y; out.headN++; } out.over = Math.max(out.over, len * dirW.y - (q.low + q.h - y));
+    const tan = dirW.clone().addScaledVector(L.n, -dirW.dot(L.n)).normalize(), w0 = .0002 + .00014 * rb(), seg = 3, shade = .93 + .14 * rb();
+    const pts = [L.p.clone().addScaledVector(L.n, .0003)]; let lift = .2;
+    for (let s = 1; s <= seg; s++) { const d = tan.clone().addScaledVector(L.n, lift).normalize(); pts.push(pts[s - 1].clone().addScaledVector(d, len / seg)); lift -= .17; }
     out.lift = Math.max(out.lift, pts[seg].clone().sub(pts[0]).dot(L.n));
-    const base = pos.length / 3; for (let s = 0; s <= seg; s++) { const side = tan.clone().cross(L.n).normalize(), w = w0 * (1 - .6 * s / seg);
+    const base = pos.length / 3; for (let s = 0; s <= seg; s++) { const side = tan.clone().cross(L.n).normalize(), w = w0 * (1 - .8 * s / seg); cols.push(shade, shade, shade, shade, shade, shade);
       pos.push(pts[s].x - side.x * w, pts[s].y - side.y * w, pts[s].z - side.z * w, pts[s].x + side.x * w, pts[s].y + side.y * w, pts[s].z + side.z * w); nor.push(L.n.x, L.n.y, L.n.z, L.n.x, L.n.y, L.n.z); uv.push(0, s / seg * .9, 1, s / seg * .9); if (s < seg) { const b0 = base + s * 2; idx.push(b0, b0 + 1, b0 + 2, b0 + 1, b0 + 3, b0 + 2); } } }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx); g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
   const nV = pos.length / 3, si = new Uint16Array(nV * 4), sw = new Float32Array(nV * 4); for (let i = 0; i < nV; i++) { si[i * 4] = headB; sw[i * 4] = 1; } g.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
-  const m = new THREE.MeshStandardMaterial({ color: col, roughness: .7, side: THREE.DoubleSide }); m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n normal = normalize(vNormal); if (dot(normal, vViewPosition) < 0.) normal = -normal;'); };
+  const m = new THREE.MeshStandardMaterial({ color: col, roughness: .7, side: THREE.DoubleSide, vertexColors: true }); m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n normal = normalize(vNormal); if (dot(normal, vViewPosition) < 0.) normal = -normal;'); };
   const mesh = new THREE.SkinnedMesh(g, m); mesh.name = 'brows'; mesh.noCast = true;
-  return { mesh, stats: { hairs: idx.length / 18, tried: out.tried, roots: out.roots, lift: +out.lift.toFixed(4), tris: idx.length / 3 } };
+  return { mesh, stats: { hairs: idx.length / 18, tried: out.tried, roots: out.roots, lift: +out.lift.toFixed(4), headUp: +(out.headUp / Math.max(1, out.headN)).toFixed(3), over: +out.over.toFixed(4), tris: idx.length / 3 } };
 }
 // how much of a brow lies over a point of the unmorphed face (0 to 1), for the skin's shade
 function browCover(S, x, y) { const ax = Math.abs(x); if (ax < S.x0 - .003 || ax > S.x1 + .003) return 0; const t = Math.max(0, Math.min(1, (ax - S.x0) / (S.x1 - S.x0))), q = S.at(t);
