@@ -17132,3 +17132,27 @@ L3's second item is OG-009's fifteen animals of the Gatelands, the home island. 
 - **The Hollowcat** reads a little like a small dog in profile. A cat's shorter, rounder skull, and a body carried lower at the shoulder, would be finer sculpting than the kit's parts give.
 - **The capercaillie** has no fanned display tail, which is the bird's famous pose. The raven's tail fan would serve, on a display gait still to write.
 - **The kit's 10 cm floor** on leg height is a trap for small animals. A plan smaller than a hare should be written large and scaled down, as the beetle is, until the floor is made relative.
+
+## v80 — Session 847 — The Mark's fifteen, all in the creature kit (backlog L3, prototype only)
+L3's third item is OG-031's fifteen animals of the Mark. Five were already plans: the Frostreach Bear, the Skyraven, the Snowleap Hare, the Riverjaw Salmon, and the Ironwolf, whose source has always named the sheet's Stonefang Wolf. The other ten are new in `creatures.js`, and `MARK` lists all fifteen. The catalogue's note asks for the Stonefang Wolf and the Frostreach Bear to be reskins of the game's Snow Wolf and Cave Bear, which is how they will go in once F4 lands.
+- **Icehorn:** the goat at 1.15, in a long shaggy white coat (8 cm, hanging), with huge curled horns. One horn shape, `curled` (1.7 turns' worth of sweep, back and out), serves it and the ram.
+- **Stormlynx:** the Hollowcat at 1.4, grey and unstriped, with a short tail, taller ear tufts, and broad paws (the foot segments 1.8 times as thick: its snowshoes).
+- **Ironpine Elk:** the Elderstag at 1.22, dark, with longer, heavier antlers.
+- **Craghorn Ram:** the sheep in a short tawny coat instead of the fleece, with a furred face and the curled horns. It gallops.
+- **Glacial Marmot:** its own small plan, a fat round body low on short plantigrade legs, with a short tail, small round ears, and a thick coat.
+- **Stormshrike:** the Crag Hawk at 0.85, white barred with grey.
+- **Frostspine Lizard:** the Stonecrawler at 1.7, pale blue, with a row of pale crystal spines down its back.
+- **Tundra Grouse:** the hen in white mottled with brown.
+- **Icecrab:** the Tidecrab at 1.35, ice-blue and white. It walks sideways.
+- **Shatterback:** the Storm Whale at 1.5, stone grey and heavily mottled, with a ridge of fourteen rock-like spines down its back. It swims slower and with a shallower wave, a back sailors take for rocks.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 463 checks pass**, with one new check that the Mark's fifteen are each a plan from OG-031.
+  - The ten new plans build in 0.05 to 0.78 s, with 18 to 51 bones and 4,312 (the marmot) to 57,844 (the elk) triangles.
+  - Every foot reaches its target through every gait, the feet are down for about each gait's duty (the Icecrab's walk 0.71 of 0.68), and every genome is 152 to 160 bytes.
+- **Speeds:** the elk walks at 1.8 m/s, the Icehorn trots at 2.35, the marmot walks at 0.4 and the Shatterback swims at 2.85.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the ten, `creatures-mark.jpg` (the ten on one sheet) and `creatures-line.jpg` (57 plans), shot again.
+### Needs eyes
+- **The Stormlynx** reads as a shaggy dog more than a cat, like the Hollowcat it is drawn from. A cat's head is the kit's weak point.
+- **The marmot's head** is lost in its coat from the side.
+- **The Icehorn's horns do not moan.** The sound the sheet suggests is for the audio pass, not this kit.
+- **The Shatterback's back is spines, not plates.** A shell part over a swimmer (the tortoise's shell, made long) would carry the "mistaken for rocks" better.

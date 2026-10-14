@@ -1015,3 +1015,43 @@ Object.assign(PLANS, {
     ] }
 });
 export const GATELANDS = ['stag', 'gatefenboar', 'redspinefox', 'otter', 'heron', 'badger', 'hollowcat', 'stoat', 'craghawk', 'marshfrog', 'riverpike', 'stonecrawler', 'capercaillie', 'miresnake', 'lanternbeetle'];
+// ── Session 847: the Mark's fifteen (OG-031; backlog L3). Five were built (the Frostreach Bear, the Skyraven, the Snowleap
+// Hare, the Riverjaw Salmon, and the Ironwolf, which is the sheet's Stonefang Wolf); these are the other ten ──
+const curled = { len: .42, r: .05, f: .15, up: .95, out: .55, turn: 1.7, rise: .05, spread: .35, back: .25, out0: .25 };
+Object.assign(PLANS, {
+  icehorn: re(PLANS.goat, { name: 'Icehorn', src: 'OG-031 (huge curled hollow horns that moan in the wind)', scale: 1.15, rough: .8,
+    palette: { coat: [.86, .84, .8], saddle: [.74, .72, .68], belly: [.9, .89, .86], dark: [.08, .07, .06], hoof: [.12, .1, .08], horn: [.62, .58, .5] }, fur: { len: .08, layers: 11, sx: 70, sy: 22, droop: .75 },
+    parts: PLANS.goat.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...curled, len: .5 } }] : [k, o]) }),
+  stormlynx: re(PLANS.hollowcat, { name: 'Stormlynx', src: 'OG-031 (high ridges; snowshoe paws, long ear tufts)', scale: 1.4,
+    palette: { coat: [.66, .64, .6], saddle: [.42, .4, .38], belly: [.9, .88, .84], dark: [.06, .05, .05], pale: [.92, .9, .86] }, fur: { len: .035, layers: 9, sx: 240 }, pattern: null,
+    parts: PLANS.hollowcat.parts.map(([k, o]) => k === 'tail' ? [k, { ...o, len: .1, r: [.04, .035] }] : k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .1 } }] : k === 'legs' ? [k, { ...o, r: o.r.map((x, i) => i === 3 ? x * 1.8 : x * 1.15) }] : [k, o]) }),
+  ironpineelk: re(PLANS.stag, { name: 'Ironpine Elk', src: 'OG-031 (dark, with sweeping antlers)', scale: 1.22,
+    palette: { coat: [.3, .22, .15], saddle: [.2, .14, .09], belly: [.5, .42, .32], dark: [.04, .03, .03], hoof: [.08, .07, .06], horn: [.62, .55, .42] }, fur: { len: .03, layers: 8, sx: 260, droop: .4 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.15, r: .036, depth: 2 } }] : [k, o]) }),
+  craghornram: re(PLANS.sheep, { name: 'Craghorn Ram', src: 'OG-031 (scales near-vertical rock)', speedK: 1.1, gaits: ['walk', 'trot', 'gallop', 'stand'],
+    palette: { coat: [.52, .44, .34], saddle: [.4, .33, .24], belly: [.84, .8, .72], dark: [.08, .07, .06], hoof: [.1, .08, .07], skin: [.46, .4, .32], horn: [.7, .64, .52] }, fur: { len: .025, layers: 8, sx: 200 },
+    parts: PLANS.sheep.parts.map(([k, o]) => k === 'head' ? [k, { ...o, tone: undefined, horns: curled }] : [k, o]) }),
+  glacialmarmot: { name: 'Glacial Marmot', src: 'OG-031 (alpine slopes; hibernates)', gaits: ['walk', 'bound', 'stand'], wag: .05, fold: .7, speedK: .8, rough: .7,
+    palette: { coat: [.56, .48, .38], saddle: [.42, .35, .27], belly: [.8, .72, .58], dark: [.06, .05, .04] }, fur: { len: .028, layers: 8, sx: 260, droop: .3 },
+    parts: [
+      ['spine', { hip: [.12, -.17], chest: [.13, .12], n: 3, r: [.1, .095, .08], s: [1.05, 1], rump: .08, front: .05, arch: .03 }],
+      ['neck', { len: .04, n: 1, rise: 20, r: [.07, .06] }],
+      ['head', { len: .1, r: .05, pitch: 8, muzzle: { len: .9, r: .03, nose: 1, taper: .8 }, eyes: [{ f: .45, up: .45, out: .6, r: .007, color: [.05, .04, .03] }], ears: { kind: 'round', size: .015, f: .2, up: .85, out: .75 } }],
+      ['tail', { len: .14, n: 2, r: [.035, .03], droop: 20 }],
+      ['legs', { at: 1, kind: 'plantFore', out: .06, drop: .02, r: [.036, .03, .028, .026], claws: { r: .003, len: .012 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .065, drop: .01, r: [.042, .034, .03, .028], claws: { r: .003, len: .01 } }]
+    ] },
+  stormshrike: re(PLANS.craghawk, { name: 'Stormshrike', src: 'OG-031 (a white falcon that stoops and hangs in the wind)', scale: .85, pattern: { kind: 'stripes', period: .022, tone: 'saddle' },
+    palette: { coat: [.9, .9, .9], saddle: [.48, .5, .54], belly: [.96, .96, .95], dark: [.04, .03, .03], horn: [.2, .2, .22], skin: [.86, .74, .25], feather: [.9, .9, .92], featherTip: [.25, .27, .3], covert: [.82, .83, .86] }, fur: PLANS.craghawk.fur }),
+  frostspinelizard: re(PLANS.stonecrawler, { name: 'Frostspine Lizard', src: 'OG-031 (rocky slopes; mineral-hardened scales that store sunlight)', scale: 1.7, pattern: null,
+    palette: { coat: [.46, .56, .62], saddle: [.32, .4, .46], belly: [.78, .84, .86], dark: [.05, .05, .06], skin: [.46, .56, .62], horn: [.7, .88, .98] },
+    parts: [...PLANS.stonecrawler.parts, ['spines', { n: 10, from: .05, to: 1, len: .02, r: .006, tone: 'horn', taper: .4 }]] }),
+  tundragrouse: re(PLANS.hen, { name: 'Tundra Grouse', src: 'OG-031 (highlands; flushes noisily from the snow)', scale: 1, mottle: 1.6,
+    palette: { coat: [.86, .84, .8], saddle: [.5, .4, .3], belly: [.95, .94, .92], dark: [.04, .04, .04], skin: [.9, .88, .84], horn: [.2, .18, .16], comb: [.82, .16, .1] } }),
+  icecrab: re(PLANS.tidecrab, { name: 'Icecrab', src: 'OG-031 (northern coasts; armoured, harvested for its meat)', scale: 1.35, heading: 90,
+    palette: { coat: [.72, .8, .86], skin: [.72, .8, .86], saddle: [.42, .52, .62], belly: [.9, .9, .88], dark: [.1, .1, .12] } }),
+  shatterback: re(PLANS.stormwhale, { name: 'Shatterback', src: 'OG-031 (a colossal slow armoured sea beast whose back sailors mistake for rocks)', scale: 1.5, swimAxis: 'x', waveAmp: .06, bl: .12, rough: .9, mottle: 2.2, spread: .03,
+    palette: { coat: [.36, .36, .34], saddle: [.26, .26, .25], belly: [.56, .55, .52], dark: [.06, .06, .06], fin: [.3, .3, .29], horn: [.44, .43, .4] },
+    parts: [...PLANS.stormwhale.parts, ['spines', { n: 14, from: .1, to: .95, len: .9, r: .45, tone: 'horn', taper: .6 }]] })
+});
+export const MARK = ['icehorn', 'bear', 'stormlynx', 'ironpineelk', 'skyraven', 'ironwolf', 'craghornram', 'glacialmarmot', 'stormshrike', 'snowhare', 'frostspinelizard', 'riverjaw', 'tundragrouse', 'icecrab', 'shatterback'];
