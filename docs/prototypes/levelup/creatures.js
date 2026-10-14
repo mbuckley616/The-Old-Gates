@@ -228,6 +228,21 @@ P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) *
 P.spines = (B, o) => { for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
   B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), sp.p.clone().add(V(0, sp.r * B.spineS[1] * .85, 0)), V(0, 1, -.35).normalize())); } };
 
+// a coiled shell (Session 862): a tube wound round an axis, growing as it goes, so the whorls stack into a spire. At the
+// mouth the tube is widest; toward the apex it shrinks by `grow` a turn and rises. Spiral bands run along the whorls, pale at
+// the lip, darker in the sutures where one whorl sits on the last. It is rigid on the spine, tilted back over the foot.
+P.coil = (B, o) => { const sp = B.spineAt(o.at), turns = o.turns || 4, N = Math.round(turns * 40), M = 20, k = Math.log(o.grow || 1.9) / (Math.PI * 2), U = turns * Math.PI * 2;
+  const base = B.tone(o.tone || 'shell'), band = B.tone(o.band || 'band'), seam = B.tone('seam'), lip = B.tone('belly'), pos = [], col = [], idx = [];
+  for (let i = 0; i <= N; i++) { const u = i / N * U, g = Math.exp(-k * (U - u)), R = o.R * g, rho = o.r * g, h = o.spire * (1 - g), ca = Math.cos(u), sa = Math.sin(u);
+    for (let j = 0; j <= M; j++) { const a = j / M * Math.PI * 2, out = Math.cos(a), up = Math.sin(a);
+      pos.push((R + rho * out) * ca, h + rho * up * 1.1, (R + rho * out) * sa);
+      const suture = sstep(.55, .95, -up) * sstep(-.2, .6, -out), stripe = sstep(.55, .8, Math.cos(a * (o.bands || 3) + u * .15)), C = base.clone().lerp(band, stripe * .7).lerp(seam, suture * .6).lerp(lip, sstep(U - .5, U, u) * .7);
+      col.push(C.r, C.g, C.b); } }
+  for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) { const a = i * (M + 1) + j, b = a + M + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .45, side: THREE.DoubleSide }));
+  m.rotation.set((o.tilt || 0) * DEG, (o.turn || 0) * DEG, (o.roll || 0) * DEG); m.position.copy(sp.p).add(V(0, sp.r * B.spineS[1] * .6 + (o.lift || 0), o.dz || 0)); B.bit(sp.bone, m); };
+
 // ── bits: small rigid meshes ──
 const MATS = new Map();
 function stdMat(c, o = {}) { const k = c.getHexString() + JSON.stringify(o); if (!MATS.has(k)) MATS.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .6, metalness: 0, flatShading: !!o.flat, emissive: o.emissive || 0x000000, emissiveIntensity: o.ei ?? 1 })); return MATS.get(k); }
@@ -1324,3 +1339,16 @@ Object.assign(PLANS, {
     parts: seaTurtle({ h: .3, top: 'moss', rough: .9, garden: { ferns: 70, flowers: 90, size: .11 } }) })
 });
 SEA.push('seaturtle', 'mawturtle');
+// ── Session 862: the pierwinkle (OG-016's tide pools). A sea snail: a broad foot, a head with two eye stalks, and the coiled
+// shell. It creeps at a tenth of its length a second. The kelpstrider still waits for a leafy frond ──
+Object.assign(PLANS, {
+  pierwinkle: { name: 'Pierwinkle', src: 'OG-016 (coastal: a snail of the tide pools and the piers)', gaits: ['crawl', 'stand'], scale: .16, bl: .1, water: 1.1, rough: .35, mottle: 1, wag: 0, pant: 0, neckNod: .05,
+    palette: { coat: [.5, .44, .38], saddle: [.36, .3, .26], belly: [.92, .84, .7], dark: [.05, .04, .04], shell: [.4, .18, .34], seam: [.14, .07, .14], band: [.82, .66, .62] },
+    parts: [
+      ['spine', { hip: [.05, -.24], chest: [.06, .16], n: 4, r: [.04, .065, .06], s: [1.35, .55], rump: .1, rumpTaper: .4, front: .04 }],
+      ['neck', { len: .07, n: 1, rise: 30, r: [.045, .04] }],
+      ['head', { len: .08, r: .04, pitch: 30, stalks: { f: .55, up: 2.8, out: .7, r: .012, len: .1, color: [.05, .04, .04] } }],
+      ['coil', { at: .4, lift: .06, R: .1, r: .125, spire: .28, turns: 4, grow: 1.9, tilt: -60, turn: 180, bands: 3 }]
+    ] }
+});
+SEA.push('pierwinkle');

@@ -17310,3 +17310,25 @@ Both set the flesh grid's cell to 0.016. Left to itself, the kit sizes the cell 
 - **The flippers are flat paddles of even thickness.** A real turtle's front flipper is long and curved like a wing, with a scaled leading edge. A tapered outline would want a fin-like sheet with skin, which the kit does not have.
 - **The maw turtle's garden** is the Mossback's land garden recoloured as weed and coral. A reef wants kelp that streams and barnacled rock, and the shell has no rock lumps of its own.
 - **The bestiary's water plane** does not show in these stills, which matches the other swimmers' pictures.
+
+## v80 — Session 862 — A coiled shell in the kit: the pierwinkle (backlog L3, prototype only)
+The pierwinkle is OG-016's tide-pool snail, drawn there in purple beside the tidecrab. Session 856 left it owed because the kit had no coiled shell. This adds the part (`coil` in `creatures.js`) and the plan, and the sea is now twenty-three. It is prototype only, under FREEZE #297.
+
+**The coil.** A tube is wound round an axis and grows as it goes, so its whorls stack into a spire. Toward the apex it shrinks by `grow` each turn (1.9 here) and rises toward `spire`; at the mouth it is widest. The colours are vertex colours:
+- spiral bands run along the whorls (`bands`, three per round of the tube) in the plan's `band` tone;
+- the sutures, where one whorl sits on the last, are darkened;
+- the lip at the mouth is paled toward the belly.
+
+It is one rigid mesh on a spine bone. `tilt`, `turn` and `roll` set it on the body: here it leans back 60° over the foot, turned so the mouth faces down and back onto it. Four turns at 40 steps by 20 round make 3,200 triangles.
+
+**Pierwinkle:** a broad flat foot on four spine bones that tapers to a point behind, a short neck, a head with two dark eye stalks (the Tidecrab's), and the shell. The shell is purple with pale pink bands and dark sutures. The snail is built at ten times its size and scaled by 0.16, so it is about 8 cm long. It creeps at a tenth of its length a second.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 804 checks pass** across 105 plans, with the sea check now counting twenty-three.
+- **The build:** the pierwinkle builds in 0.25 s, with 6 bones and 14,552 triangles; its skin weights sum to one and its genome is 156 bytes. A first build with three spine bones (5 in all) failed the kit's "more than five bones" check, so the foot has four.
+- **Pictures:**
+  - `creatures-pierwinkle.jpg` is at its true size beside the figure, a speck.
+  - `creatures-pierwinkle-close.jpg` (side) and `-close-front.jpg` were shot at ten times its size to show the shell. The first close shot had a plain shell, with the bands too faint against the purple; the bands were made pale and sharp.
+### Needs eyes
+- **The mouth of the shell is the tube's open end.** It has no flared lip or operculum, and from the front the open ring shows beside the head.
+- **The coil is smooth.** A periwinkle's shell has fine growth lines across the whorls, which the vertex colours do not draw.
+- **The kelpstrider** (a leafy seahorse) still waits for a frond part.
