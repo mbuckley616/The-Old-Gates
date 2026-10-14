@@ -1,7 +1,7 @@
 // node docs/prototypes/levelup/builder.check.mjs [--shots] (Session 804): the human builder's promises, in the test Chromium.
 // A rolled genome saves and loads back to the same genome and the same body; the same genome builds the same hair; every
 // hair style builds, with no strand under the skin and none lying on the face, and its braids and tails clear of the
-// clothes; the page's controls change the person and save what they show. --shots writes builder-*.jpg.
+// clothes; the page's controls change the person and save what they show. --shots writes builder-*.jpg (--shots=hood only those named so).
 // Needs the people's pack: python3 docs/prototypes/levelup/mh_pack.py (generated, not committed).
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -26,7 +26,10 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     out.cloaks = {}; for (const [name, sex, dress] of [['woman, cloak and hood down, apron with bib', 0, { cloak: [.32, .38, .24], hood: 'down', apron: [.8, .76, .66], bib: true, mantle: null }], ['man, short cloak, hood up', 1, { cloak: [.45, .16, .12], hood: 'up', cloakLen: .3 }],
         ['man, fur-collared long cloak over the mantle', 1, { cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], cloakLen: 1 }], ['woman, leather apron', 0, { apron: [.36, .25, .16], apronLeather: true, bib: true }]]) {
       const G0 = K.rollGenome('cloak:' + sex, { g: sex }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g)), back = JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1))));
-      out.cloaks[name] = { ...(p.cloak || {}), meshes: p.root.children.length, saved: s1 === back, bytes: s1.length, hasApron: !!p.meshes.find(m => m.name === 'apron'), hasHood: !!p.meshes.find(m => m.name === 'hoodUp') || !!p.root.getObjectByName('hood'), wantsHood: !!dress.hood }; }
+      out.cloaks[name] = { ...(p.cloak || {}), meshes: p.root.children.length, saved: s1 === back, bytes: s1.length, hasApron: !!p.meshes.find(m => m.name === 'apron'), hasHood: !!p.meshes.find(m => m.name === 'hoodUp') || !!p.root.getObjectByName('hood'), wantsHood: !!dress.hood, hood: p.hood, hairCards: !!p.meshes.find(m => m.name === 'hair') }; }
+    // the hood up over every style and every people: nothing of the head or its hair comes through it (Session 823)
+    out.hoods = {}; for (const style of K.HAIR_STYLES) for (const k of Object.keys(K.PEOPLES)) { const G0 = K.rollGenome(`hood:${k}:${style}`, { people: k, g: style === 'short' ? 1 : 0 }), g = { ...G0, hair: { style, len: .8 }, dress: { ...G0.dress, cloak: [.4, .3, .2], hood: 'up' } }, p = K.makePerson(g);
+      out.hoods[`${k}, ${style}`] = { ...p.hood, hairCards: !!p.meshes.find(m => m.name === 'hair'), hem: !!p.meshes.find(m => m.name === 'hoodHem') }; }
     // the four peoples: twelve of each, measured standing (crown to sole)
     out.peoples = {}; for (const k of Object.keys(K.PEOPLES)) { const hs = { m: [], f: [] }; let rangeOK = true, bytes = 0;
       for (let i = 0; i < 12; i++) { const g = K.rollGenome(`${k}:${i}`, { people: k, g: i % 2 }), sx = g.g > .5 ? 'm' : 'f', st = K.statureOf(g), [a, b] = K.PEOPLES[k].body[sx].metres; hs[sx].push(st); if (st < a - .02 || st > b + .02) rangeOK = false;
@@ -44,7 +47,9 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: saves and loads back with its dress (${c.bytes} bytes)`, c.saved && c.bytes < 1100);
     if (c.columns) { check(`${k}: the cloak hangs clear of the body (closest ${(c.minClear * 100).toFixed(1)} cm, ${c.rows} rows of ${c.columns})`, c.minClear > .005 && c.under === 0, c);
       check(`${k}: the brooch pins it at the throat (${(c.brooch * 100).toFixed(0)} cm from the neck)`, c.brooch < .2, c.brooch); }
-    if (c.wantsHood) check(`${k}: the hood is there`, c.hasHood); if (k.includes('apron')) check(`${k}: the apron is there`, c.hasApron); }
+    if (c.wantsHood) check(`${k}: the hood is there`, c.hasHood);
+    if (c.hood) check(`${k}: nothing of the head comes through the hood (${c.hood.poke} of ${c.hood.tested} points, ${c.hood.tris} triangles)`, c.hood.poke === 0 && !c.hairCards, c.hood); if (k.includes('apron')) check(`${k}: the apron is there`, c.hasApron); }
+  for (const [k, h] of Object.entries(r.hoods)) check(`hood up, ${k}: nothing of the head or its hair comes through (${h.poke} of ${h.tested} points), the hair tucked in, the hem on`, h.poke === 0 && h.tested > 1000 && !h.hairCards && h.hem, h);
   { const P = r.peoples; for (const [k, p] of Object.entries(P)) check(`${k}: twelve rolled stand inside the people's heights (men ${p.men} m, women ${p.women} m) and save back (${p.bytes} bytes)`, p.rangeOK && p.bytes < 1100, p);
     check(`the peoples stand in the canon's order: the Old Blood shortest, the Markmen tallest`, P.oldblood.men < P.gatelander.men && P.gatelander.men < P.markman.men && P.aurennais.men < P.markman.men && P.oldblood.women < P.gatelander.women && P.gatelander.women < P.markman.women);
     const all = Object.values(P).flatMap(p => [p.men, p.women]); check(`the heroic hybrid: the four peoples average about 1.75 m (${(all.reduce((a, b) => a + b) / all.length).toFixed(2)} m)`, Math.abs(all.reduce((a, b) => a + b) / all.length - 1.75) < .06); }
@@ -56,8 +61,9 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   check(`the page: ${ui.sliders} sliders; moving height sets it (${ui.height}) and the genome text follows`, ui.sliders > 20 && ui.height === .95 && ui.textMatches, ui);
   check('the page: loading the saved genome brings the person back', ui.back);
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
-if (process.argv.includes('--shots')) {
-  const shot = async (name, q, w = 1920, h = 1080, panel = false) => { const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+const shotArg = process.argv.find(a => a.startsWith('--shots'));
+if (shotArg) { const only = shotArg.split('=')[1];
+  const shot = async (name, q, w = 1920, h = 1080, panel = false) => { if (only && !name.includes(only)) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
     const t0 = Date.now(); await page.goto(`http://localhost:${port}/builder.html?w=${w}&h=${h}&${panel ? '' : 'still&'}${q}`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 900000 });
     await page.evaluate(() => document.getElementById('note').style.display = 'none'); if (panel) await page.waitForTimeout(1500);
     const buf = panel ? await page.screenshot({ type: 'jpeg', quality: 88 }) : Buffer.from((await page.evaluate(() => document.querySelector('canvas').toDataURL('image/jpeg', .9))).split(',')[1], 'base64');
@@ -71,6 +77,9 @@ if (process.argv.includes('--shots')) {
   await shot('cloak-front', 'seed=styles&sex=f&view=full&turn=.35&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'down', cloakLen: .75, mantle: null, apron: [.8, .76, .66], bib: true }));
   await shot('cloak-back', 'seed=styles&sex=f&view=full&turn=2.6&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'down', cloakLen: .75, mantle: null, apron: [.8, .76, .66], bib: true }));
   await shot('cloak-hood', 'seed=b7&sex=m&view=head&turn=.5&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));
+  await shot('cloak-hood-side', 'seed=b7&sex=m&view=head&turn=1.57&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));
+  await shot('cloak-hood-back', 'seed=b7&sex=m&view=head&turn=2.6&dress=' + dq({ cloak: [.45, .16, .12], hood: 'up', cloakLen: .5, mantle: null }));
+  await shot('cloak-hood-woman', 'seed=styles&sex=f&view=full&turn=.4&dress=' + dq({ cloak: [.32, .38, .24], brooch: [.6, .45, .2], hood: 'up', cloakLen: .85, mantle: null, apron: [.8, .76, .66], bib: true }));
   await shot('cloak-markman', 'seed=b7&sex=m&view=full&turn=2.3&dress=' + dq({ cloak: [.25, .2, .16], cloakFur: [.5, .42, .32], brooch: [.35, .35, .36], cloakLen: 1 }));
   await shot('apron-leather', 'seed=b7&sex=m&view=full&turn=.3&dress=' + dq({ apron: [.36, .25, .16], apronLeather: true, bib: true, mantle: null }));
   for (const [n, q] of [['woman-braid', 'seed=styles&sex=f&style=braid&view=head&turn=-2.3'], ['woman-braids', 'seed=styles&sex=f&style=braids&view=head&turn=2.6'], ['woman-face', 'seed=styles&sex=f&style=bun&view=face'], ['man-face', 'seed=b7&sex=m&view=face']]) await shot(n, q);

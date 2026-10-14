@@ -64,8 +64,8 @@ function clothMat(color, kind = 'wool', o = {}) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? (kind === 'leather' ? .62 : .95), metalness: 0, side: o.side ?? THREE.FrontSide });
   m.onBeforeCompile = s => { s.uniforms.tW = { value: TEXW[kind] };
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vRN = normal; vB = aBase;');
-    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)}), opacity );`); };
-  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '');
+    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );`); };
+  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.inner || '');
   return m;
 }
 // fur and hair: stacked shells, each cut by noise so strands rise from the surface
@@ -354,8 +354,79 @@ function buildCloak(G, body, byName, rnd) {
   return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3) } };
 }
 
+// ── the hood up (Session 823, Michael's note on #274: "the hood is semi-transparent") ──
+// Session 805 set the head's own points out onto a ball: the face hole ran back to the ears, so the sides of the head
+// showed through it, the ear's folds came out as a red lump, and the ball stopped at the skull, the nape bare under it.
+// Now the hood is a cowl of its own: a dome round the head, the ears and the tucked hair, which falls to a hem lying on
+// the shoulders over the cloak. The face is cut out of it in front only, from the brow to the throat, edged with a
+// rolled hem, and its inside is shaded darker, so it reads as cloth with a thickness. It is skinned to the nearest
+// points of the body (the head's above, the neck's and shoulders' below), so it turns with the head.
+function buildHoodUp(P, G, meshes) {
+  const R0 = PACK.rest, body = PACK.G['body'], D = G.dress, pt = i => new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+  const box = f => { const b = new THREE.Box3(); for (const i of new Set(body)) if (f(R0[i * 3], R0[i * 3 + 1], R0[i * 3 + 2])) b.expandByPoint(pt(i)); return b; };
+  const head = box((x, y) => y > .66), brow = box((x, y, z) => z > .1 && y > .74 && y < .76), chin = box((x, y, z) => z > .08 && y < .66 && y > .6 && Math.abs(x) < .02);
+  const neck = box((x, y) => y > .58 && y < .62 && Math.abs(x) < .08), sh = box((x, y) => Math.abs(x) > .14 && Math.abs(x) < .19 && y > .4 && y < .62);
+  const c = head.getCenter(new THREE.Vector3()), hs = head.getSize(new THREE.Vector3()).multiplyScalar(.5), cn = neck.getCenter(new THREE.Vector3());
+  // the dome's radii: round the ears at the sides, over the hair on top and behind, open in front of the face
+  let rx = hs.x + .028, ryT = hs.y + .03, rzB = c.z - head.min.z + .04, rzF = hs.z * .85, ryB = c.y - chin.min.y;
+  // and round the hair, wherever it is not in the face's opening
+  const hairM = meshes.filter(m => m.name === 'hair' || m.name === 'scalp');
+  const yTop = brow.max.y + .022, yChin = chin.min.y - .012, ox = brow.max.x + .02, yM = (yTop + yChin) / 2, hy = (yTop - yChin) / 2;
+  // where the face is open: an oval from the brow to under the chin, and a slot below it to the throat
+  const openS = q => { const u = Math.abs(q.x - c.x), y = q.y, sO = ((u / ox) ** 2.6 + (Math.abs(y - yM) / hy) ** 2.6) ** (1 / 2.6); return y < yM ? Math.min(sO, u / (ox * .5)) : sO; };
+  { let k = 1; const v = new THREE.Vector3(); for (const m of hairM) { const a = m.geometry.attributes.position; for (let i = 0; i < a.count; i++) { v.fromBufferAttribute(a, i); if (v.z > c.z && openS(v) < 1.15) continue; v.sub(c); if (v.y < -ryB * .6) continue; k = Math.max(k, Math.hypot(v.x / rx, v.y / (v.y > 0 ? ryT : ryB), v.z / (v.z > 0 ? rzF : rzB)) + .02); } }
+    k = Math.min(k, 1.35); rx *= k; ryT *= k; rzB *= k; }
+  // in front, over the brow and round the cheeks, the dome comes forward until the head's points that are not in the opening are inside it, 8 mm clear
+  for (const i of new Set(body)) { if (R0[i * 3 + 1] < .6) continue; const q = pt(i), d = q.clone().sub(c); if (d.z <= 0 || d.y < -ryB * .5 || openS(q) < 1) continue;
+    const rest = 1 - (d.x / rx) ** 2 - (d.y / (d.y > 0 ? ryT : ryB)) ** 2; rzF = Math.max(rzF, rest > .05 ? (d.z + .008) / Math.sqrt(rest) : rzF); }
+  // and what is still outside (a point at the side of the brow, the scalp's edge) widens the dome all round
+  { let k = 1; const v = new THREE.Vector3(), fit = q => { if (q.z > c.z && openS(q) < 1) return; const d = q.clone().sub(c); if (d.y < -ryB * .5) return; k = Math.max(k, Math.hypot(d.x / rx, d.y / (d.y > 0 ? ryT : ryB), d.z / (d.z > 0 ? rzF : rzB)) * 1.01); };
+    for (const i of new Set(body)) if (R0[i * 3 + 1] > .6) fit(pt(i)); for (const m of hairM) { const a = m.geometry.attributes.position; for (let i = 0; i < a.count; i++) fit(v.fromBufferAttribute(a, i)); }
+    rx *= k; ryT *= k; rzF *= k; rzB *= k; }
+  // the hem lies on the shoulders and the upper back: at each angle round the neck, the body's height there, and clear of the cloak
+  const J = 56, I = 64, th0 = 2.05, pos = [], base = [], uv = [], idx = [];
+  const hx = (sh.max.x - cn.x) * .82, hzB = cn.z - sh.min.z + .01, hzF = sh.max.z - cn.z, clr = D.mantle ? .095 : .04;
+  const yAt = (x, z) => { let y = -1e9; for (const i of new Set(body)) { const ry = R0[i * 3 + 1]; if (ry < .3 || ry > .62) continue; if ((P[i * 3] - x) ** 2 + (P[i * 3 + 2] - z) ** 2 < .022 ** 2) y = Math.max(y, P[i * 3 + 1]); } return y; };
+  const yHem0 = sh.max.y + clr;
+  // the grid: J columns round the head (0 = the front), I rows from the crown to the hem
+  const dome = (ph, th) => { const sx = Math.sin(th) * Math.sin(ph), sy = Math.cos(th), sz = Math.sin(th) * Math.cos(ph), peak = .025 * Math.max(0, -sz * .7 + sy * .7) ** 3;
+    return new THREE.Vector3(c.x + sx * rx, c.y + sy * (sy > 0 ? ryT : ryB) + peak * .6, c.z + sz * (sz > 0 ? rzF : rzB) - peak); };
+  const hemXZ = ph => [cn.x + Math.sin(ph) * hx, cn.z + Math.cos(ph) * (Math.cos(ph) > 0 ? hzF : hzB)];
+  let hy0 = []; for (let j = 0; j < J; j++) { const [x, z] = hemXZ(j / J * Math.PI * 2), y = yAt(x, z); hy0.push(y > -1e8 ? Math.min(y + clr, yHem0) : yHem0); }
+  for (let it = 0; it < 4; it++) hy0 = hy0.map((y, j) => (hy0[(j + J - 1) % J] + 2 * y + hy0[(j + 1) % J]) / 4);
+  const hem = (ph, j) => { const [x, z] = hemXZ(ph); return new THREE.Vector3(x, hy0[j % J], z); };
+  // behind, the hood leaves the dome sooner and falls down the nape, so it does not sit on the neck as a ball
+  const at = (ph, v, j) => { const vd = .62, t0 = th0 - .5 * Math.max(0, -Math.cos(ph)) ** 1.5; if (v <= vd) return dome(ph, t0 * Math.sqrt(v / vd));
+    const a = dome(ph, t0), b = hem(ph, j), t = (v - vd) / (1 - vd), L = a.distanceTo(b), Ta = dome(ph, t0 + .01).sub(a).normalize().multiplyScalar(L * .9), Tb = b.clone().sub(a);
+    return a.clone().multiplyScalar(2 * t ** 3 - 3 * t * t + 1).addScaledVector(Ta, t ** 3 - 2 * t * t + t).addScaledVector(b, -2 * t ** 3 + 3 * t * t).addScaledVector(Tb, t ** 3 - t * t); };
+  const front = (q, ph) => Math.cos(ph) > 0 && q.z > c.z;
+  for (let i = 0; i <= I; i++) for (let j = 0; j <= J; j++) { const ph = j / J * Math.PI * 2, q = at(ph, i / I, j); pos.push(q.x, q.y, q.z); base.push(front(q, ph) ? openS(q) : 9, 0, Math.cos(ph)); uv.push(j / J, i / I); }
+  for (let i = 0; i < I; i++) for (let j = 0; j < J; j++) { const a = i * (J + 1) + j, b = a + J + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(base, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  // the rolled hem round the face: where each row crosses the opening's edge, up the left cheek and down the right
+  const left = [], right = []; for (let i = 0; i <= I; i++) { const row = []; for (let j = 0; j <= J; j++) { const k = (i * (J + 1) + j) * 3; row.push([base[k], new THREE.Vector3(pos[k], pos[k + 1], pos[k + 2])]); }
+    for (let j = 0; j < J; j++) { const [s0, p0] = row[j], [s1, p1] = row[j + 1]; if ((s0 < 1) !== (s1 < 1) && Math.min(s0, s1) < 9 && Math.max(s0, s1) < 9) { const q = p0.clone().lerp(p1, (1 - s0) / (s1 - s0)); (q.x > c.x ? right : left).push(q); } } }
+  const rimLine = [...left.reverse(), ...right].map(q => q.clone().add(new THREE.Vector3(c.x - q.x, 0, c.z - q.z).normalize().multiplyScalar(.004)));
+  const sm = rimLine.map((q, k) => k && k < rimLine.length - 1 ? q.clone().add(rimLine[k - 1]).add(rimLine[k + 1]).multiplyScalar(1 / 3) : q);
+  const rim = tubeGeom(sm, sm.map(() => .0075), 8);
+  // skin weights from the nearest point of the body
+  const cand = [...new Set(body)].filter(i => R0[i * 3 + 1] > .4);
+  const skin = geo => { const n = geo.attributes.position.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), v = new THREE.Vector3();
+    for (let i = 0; i < n; i++) { v.fromBufferAttribute(geo.attributes.position, i); let best = -1, bd = 1e9; for (const k of cand) { const d = (P[k * 3] - v.x) ** 2 + (P[k * 3 + 1] - v.y) ** 2 + (P[k * 3 + 2] - v.z) ** 2; if (d < bd) { bd = d; best = k; } }
+      for (let q = 0; q < 4; q++) { si[i * 4 + q] = PACK.skinIndex[best * 4 + q]; sw[i * 4 + q] = PACK.skinWeight[best * 4 + q]; } }
+    geo.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4)); return geo; };
+  if (!rim.attributes.aBase) rim.setAttribute('aBase', rim.attributes.position);
+  const col = sRGB(...D.cloak), hood = new THREE.SkinnedMesh(skin(g), clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 26, inner: .42, hole: 'vB.z > 0. && vB.x < 1.' })); hood.name = 'hoodUp';
+  const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem';
+  // what would show through: any point of the head, the ears or the scalp's hair outside the dome, away from the face's opening
+  let tested = 0, poke = 0; { const v = new THREE.Vector3(), test = q => { if (q.y < c.y - ryB * .5) return; tested++; if (q.z > c.z && openS(q) < 1) return;
+      const d = q.clone().sub(c); if (Math.hypot(d.x / rx, d.y / (d.y > 0 ? ryT : ryB), d.z / (d.z > 0 ? rzF : rzB)) >= 1) poke++; };
+    for (const i of new Set(body)) if (R0[i * 3 + 1] > .6) test(pt(i)); for (const m of hairM) { const a = m.geometry.attributes.position; for (let i = 0; i < a.count; i++) test(v.fromBufferAttribute(a, i)); } }
+  return { meshes: [hood, hemM], stats: { tested, poke, tris: idx.length / 3 + rim.index.count / 3, rimPoints: sm.length, k: +(rx / (hs.x + .028)).toFixed(3), yHem: +yHem0.toFixed(3) } };
+}
+
 export function makePerson(G, o = {}) {
-  const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null;
+  const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null;
   // the feet on the ground
   let minY = 1e9; for (let i = 1; i < P.length; i += 3) if (P[i] < minY) minY = P[i];
   // the skeleton, its joints read off the morphed body
@@ -380,18 +451,15 @@ export function makePerson(G, o = {}) {
   if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { cut: [-2, 2, .4] }), .02);
   if (D.apron) { const lea = !!D.apronLeather, am = clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [lea ? -.52 : -.42, .175, .155, .004] });
     push('apron', PACK.R.apron, am, (x, y) => .03 + .012 * Math.max(0, Math.min(1, (.1 - y) / .4))); if (D.bib) push('bib', PACK.R.apronBib, clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [.1, .46, .105, .003] }), .04); }
-  if (D.cloak && D.hood === 'up') { // a hood: the head's points set out onto a smooth shell round the head and hair, falling to the shoulders
-    const idx = PACK.R.hood, bb = new THREE.Box3(), v = new THREE.Vector3(); for (const i of idx) if (rest0[i * 3 + 1] > .66) bb.expandByPoint(v.fromArray(P, i * 3)); const c = bb.getCenter(new THREE.Vector3()), r = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.03); c.z -= .01; r.z += .02;
-    const g = geomFor(P, idx), pos = g.attributes.position.array, used = new Set(idx);
-    for (const i of used) { const d = v.fromArray(P, i * 3).sub(c), len = d.length(), u = d.clone().divideScalar(len), re = 1 / Math.hypot(u.x / r.x, u.y / r.y, u.z / r.z), out = c.clone().addScaledVector(u, Math.max(len + .03, re)); pos[i * 3] = out.x; pos[i * 3 + 1] = out.y; pos[i * 3 + 2] = out.z; }
-    g.computeVertexNormals(); const m = new THREE.SkinnedMesh(g, clothMat(sRGB(...D.cloak), 'wool', { side: THREE.DoubleSide, scale: 26, hole: '(vB.z > -.005 && pow(vB.x / .07, 2.) + pow((vB.y - .705) / .1, 2.) < 1.) || (vB.z > .02 && vB.y < .66)' })); m.name = 'hoodUp'; meshes.push(m); }
   // a fur mantle over the shoulders: eleven shells
   if (D.mantle) for (let k = 0; k < 11; k++) push('mantle' + k, PACK.R.mantle, shellMat(sRGB(...D.mantle), k, 11, { sx: 260, sy: 70, solid: k === 0 }), .036 + k * .0055);
   // hair: cards rooted on the hair shell (off the face), a layer of shell underneath so no scalp shows; brows; beard and moustache as short cards
   if (G.hairCol) { const scalp = PACK.R.scalpRoots;
     push('scalp', scalp, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true }), .0025);
     const headB = ix.bones.findIndex(b => b.name === 'head'), bb = new THREE.Box3(); for (const v of scalp) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.004); hc.y -= .02; hr.y += .02;
-    const H = buildHair(P, G, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes); hairStats = H.stats;
+    const tuck = D.cloak && D.hood === 'up' ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
+    // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline
+    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || m.name !== 'hair')); hairStats = H.stats;
     for (let k = 0; k < 3; k++) push('brows' + k, PACK.R.brows, shellMat(sRGB(...G.hairCol).multiplyScalar(.5), k + 2, 5, { sx: 1400, sy: 300, solid: false }), .0015 + k * .0012);
     if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
       push('beardBase', PACK.R.beard, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
@@ -399,6 +467,7 @@ export function makePerson(G, o = {}) {
       bc.name = 'beard'; meshes.push(bc);
       const mc = hairCards(P, PACK.R.moust, { n: 110, len: .028, seg: 3, width: .009, lift: .2, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: headB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc });
       mc.name = 'moust'; meshes.push(mc); } }
+  if (D.cloak && D.hood === 'up') { const H = buildHoodUp(P, G, meshes); meshes.push(...H.meshes); hoodStats = H.stats; }
   root.add(bones[0]); root.updateMatrixWorld(true);
   for (const m of meshes) { root.add(m); m.updateMatrixWorld(true); m.bind(skeleton); m.castShadow = !m.noCast; m.receiveShadow = true; m.frustumCulled = false; }
   // eyes: a white ball with an iris, set in the helper's sockets, carried by the head
@@ -416,7 +485,7 @@ export function makePerson(G, o = {}) {
   byName['head'].quaternion.copy(q(.04, pose.head, 0)); if (byName['jaw']) byName['jaw'].quaternion.copy(q(pose.jaw ?? -.12, 0, 0)); byName['spine05'].quaternion.copy(q(0, 0, pose.hip));
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, hood: hoodStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin

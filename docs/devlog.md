@@ -16834,3 +16834,29 @@ Checked and left alone:
 - **The renderer row in play waits for a reload** rather than reloading at once (above). If Michael wants it to reload and warn instead, that is a one-line change.
 - **The browser's look-ahead** may still fetch the inert r128 file in the new look. It never runs. `looknew` reports whether it was fetched; from `file://` here it was not (`r128Fetched: false`). On Pages it would be one cached request at most.
 - **Not run under `--look=new`:** the rest of the suite (447 suites). The six world suites the card named pass. A full `--look=new` run in CI is a cheap follow-up once F2 starts building on the switch.
+
+## v80 — Session 823 — The hood up, made again: a cowl you cannot see through (B2, prototype only)
+Michael approved the wardrobe's method on #274 (A, 13 Oct), with one note: *take another look at the Hood though, it's semi-transparent.* Rendered from four sides, Session 805's hood had three faults:
+- **The face hole was too big.** The hood was the head's own points set out onto a ball, with a face hole cut in the shader that ran back to the ears. From the front you looked past the face into the hood and saw the sides of the head, which is what read as see-through.
+- **The ear showed.** The ear's folded points were pushed out with the rest and came through as a red lump at the side.
+- **It stopped at the skull.** The ball ended at the back of the head, so the nape and the hair showed under it from behind. Session 806 also noted that the crown's hair drew as skin.
+
+The hood is now a cowl built on its own (`buildHoodUp` in `people.js`):
+- **The dome** is a grid of 56 columns by 64 rows. It covers the head, the ears and whatever hair is left under it, and its radii are measured from the body: its front comes forward until every point of the head outside the opening is inside it, 8 mm clear.
+- **The drape** leaves the dome sooner behind than in front, so it falls down the nape instead of sitting on the neck as a ball. It joins the dome along a smooth curve, with no crease. Its hem lies on the body's own shoulders and upper back at each angle round the neck (smoothed), clear of the cloak, and higher over a fur mantle.
+- **The face opening** is a soft oval from the hairline to under the chin, with a slot below it to the throat where the cloak's brooch is. It is open in front only, so the sides and back of the hood are whole.
+- **The edge** has a rolled hem, 7.5 mm thick, that follows the opening.
+- **The inside** is shaded at 0.42 (a new `inner` option on `clothMat`), so the inside of the hood looks like the shadowed inside of cloth.
+- **The skinning** copies each point's weights from the nearest point of the body, so the head turns the hood with it.
+- **The hair** is tucked in while the hood is up. The cards are not built and the scalp's shell shows at the hairline, so no strand comes through the cloth. The genome keeps its style for when the hood is down.
+
+The new hood is 8,700 to 8,800 triangles with its hem, against Session 805's 3,000 or so; most of the extra triangles are the drape over the shoulders.
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all passed**, including 24 new checks. A hood is put up on every hair style for every people. For each, the check counts every point of the head above the jaw (ears, scalp and hair) that lies outside the hood and away from the face opening. It finds 0 of between 7,131 and 7,265 points each time, the hair cards are gone, and the hem is on. Session 805's man in the short cloak with his hood up also has 0 of 7,193.
+- **On the way:** the first version of the new hood still let 2 to 15 points through, on the forehead just above the opening and at the side of the brow. The front radius is now measured from those points, and anything still outside widens the dome all round.
+- **The pictures:** `builder-cloak-hood.jpg` was shot again, and there are three new ones: `-side`, `-back`, and `-woman` (a woman at full length in a green cloak). `--shots=hood` retakes only the shots with that word in their name.
+### Needs eyes
+- **The shape.** The dome is rounder at the crown than a wool hood would fall. A point or a liripipe, and folds at the neck, would come from a cloth pass (#274's option B, not taken).
+- **The hair.** Under the hood, a woman's hair shows only as the scalp's shell at the hairline: there is no fringe, and no braid hangs out in front.
+- **The arms.** Michael's other condition on #274 is that the arms do not pass through the clothing. That is still to be checked through a walk, once B4's clips move the arms; the builder only poses them standing.
+- **The eyebrows.** In these pictures they are still the shell brows that Michael called "pretty fugly" (#272). That is the next session.
