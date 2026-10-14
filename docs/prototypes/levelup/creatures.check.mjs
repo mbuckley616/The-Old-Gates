@@ -29,10 +29,13 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     for (const [gait, q] of Object.entries(s.gaits)) { check(`${plan} ${gait}: every foot reaches its target through the stride (worst ${(q.footErr * 100).toFixed(1)} cm)`, q.footErr < .01, q.footErr);
       if (s.legs && q.duty < 1) check(`${plan} ${gait}: feet are down about the gait's duty (${q.down} of ${q.duty})`, Math.abs(q.down - q.duty) < .2, q); }
     check(`${plan}: the genome is a few hundred bytes (${s.genomeBytes})`, s.genomeBytes < 400); }
+  // the common set (Session 843): OG-084's ten animals of all islands, each a plan, each from that sheet
+  const common = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.COMMON || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
+  check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 if (process.argv.includes('--shots')) {
   const shot = async (name, q, w = 1920, h = 1080) => { const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
-    const t0 = Date.now(); await page.goto(`http://localhost:${port}/creatures.html?still&w=${w}&h=${h}&${q}`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 900000 });
+    const t0 = Date.now(); await page.goto(`http://localhost:${port}/creatures.html?still&w=${w}&h=${h}&${q}`, { timeout: 900000 }); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 900000 });
     await page.evaluate(() => document.getElementById('note').style.display = 'none'); const url = await page.evaluate(() => document.querySelector('canvas').toDataURL('image/jpeg', .9));
     fs.writeFileSync(path.join(here, 'creatures-' + name + '.jpg'), Buffer.from(url.split(',')[1], 'base64')); console.log('shot', name, ((Date.now() - t0) / 1000).toFixed(0) + 's', errs.slice(0, 3)); await page.close(); };
   const list = (arg('plans') || '').split(',').filter(Boolean);

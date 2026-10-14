@@ -17040,3 +17040,36 @@ The dress takes `tabard` and `tabardTrim` (colours, in the builder's garment lis
 - **A cloak over the tabard** is not handled yet. The cloak's floor reads the body and the skirt, not the tabard, so a guard in both could show the tabard through the cloak's back.
 - **The kettle helm, the spear and mail under the tabard** are L7's armour and weapons, still to come.
 - **The panels are flat as boards** below the belt, and a wool tabard would swing. In the game that is the secondary motion's job (Session 267's swinging cloaks), on the new skeleton in F4.
+
+## v80 — Session 843 — The common animals, ten plans in the creature kit (backlog L3, prototype only)
+Backlog L3 calls wildlife the biggest gap: there are no peaceful land animals in the game today. Its first item is OG-084's ten animals of all islands, the shared fauna under each island's own: wolf, red fox, brown hare, raven, crow, wild boar, deer, badger, otter and trout. The bodies builder's order puts L3's animals first among the backlog's bodies, as genomes and plans in the kit. Each is now a plan in `creatures.js` (exported as `COMMON`), and the kit needed no new code.
+- **Five are other plans at another size and colour**, the way the post hare is the Snowleap Hare at 5.5 times its size:
+  - the grey wolf is the Ironwolf at 0.92, grey-brown over cream;
+  - the brown hare is the Snowleap Hare at 1.2, brown;
+  - the raven is the Skyraven at 0.9;
+  - the deer is the Elderstag at 0.74, red-brown, with antlers half as long and one branching less;
+  - the trout is the Riverjaw Salmon at 0.48, olive and spotted.
+  A helper, `re(base, o)`, carries a base plan's gaits and manners over.
+- **The crow** is the raven's flier at 0.72: greyer black, a straighter beak with less hook, and slightly shorter primaries. It walks first, where a raven hops.
+- **The red fox** is a light canid: a long bushy tail (thicker at the middle than at the root), tall pointed ears, a fine muzzle, white below and red above.
+- **The wild boar** is short ungulate legs under a deep chest with a low hump at the shoulders. It has a long wedge of a head, leaf ears and two small upturned tusks, written as `horns` with a short turn and a steep rise. Its coat is long, coarse and dark.
+- **The badger** is a low wide spine on plantigrade legs with digging claws: grey above, black beneath, small round pale ears.
+- **The otter** is a long, arched, low spine on short legs with a thick tapering tail. It bounds and walks.
+
+Each plan names its source in OG-084 (and OG-009 or OG-014 where they draw the same animal). A plan is about a dozen lines.
+
+**Fixed on the way.** The line-up picture (`creatures.check.mjs --shots`) now builds 33 plans before the page's load event, which took longer than Playwright's 30-second default for loading a page, so the shot threw. Its `goto` now has the same 15 minutes as the wait after it.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 261 checks pass**, including one new check: the common set is ten plans, each from OG-084.
+  - Every one of the ten builds from its parts in 0.1 to 0.7 s, with 18 to 32 bones and 17,500 to 48,964 triangles. The boar was 132,000 at first, because the mesher sizes its grid to the thinnest part (its 1.2 cm tail); a 4 cm tail brought it to 24,488.
+  - Every vertex's weights sum to one, and every foot reaches its target through every gait to the millimetre.
+  - The feet are down for about each gait's duty: the wolf's trot 0.45 of 0.45, and the boar's walk 0.56 of 0.68, inside the check's 0.2.
+  - Every genome is 149 to 154 bytes.
+- **Speeds by the Froude rule:** the fox trots at 1.9 m/s and the wolf at 2.6, the deer gallops at 4.5, the badger walks at 0.43 and the otter bounds at 1.25.
+- **`kit.check.mjs` and `builder.check.mjs`** still pass.
+- **Pictures:** `creatures-<plan>.jpg` for each of the ten, `creatures-common.jpg` (the ten on one sheet), and `creatures-line.jpg` (all 33 plans at true size), shot again.
+### Needs eyes
+- **The badger has no face.** Its black-and-white stripes are the animal's one mark, and the kit's patterns run along the body, not over the head. A head pattern is owed.
+- **The wolf reads olive** under the bestiary's grey sky. Its palette is grey-brown and may want to be greyer.
+- **"Recoloured by island"** (L3's wording) is not done. Each animal has one palette. The genome's tint shifts it, but no island's palette is written yet.
+- **None of them is in the game.** That waits for F4 to merge, then the wolves move over first (B5).
