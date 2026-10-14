@@ -17156,3 +17156,30 @@ L3's third item is OG-031's fifteen animals of the Mark. Five were already plans
 - **The marmot's head** is lost in its coat from the side.
 - **The Icehorn's horns do not moan.** The sound the sheet suggests is for the audio pass, not this kit.
 - **The Shatterback's back is spines, not plates.** A shell part over a swimmer (the tortoise's shell, made long) would carry the "mistaken for rocks" better.
+
+## v80 — Session 848 — Aurenne's fifteen, fourteen in the creature kit (backlog L3, prototype only)
+L3's fourth item is OG-030's fifteen animals of Aurenne, the warm island (Michael's Mediterranean and North African fusion). The Dunescorpion was built in Session 773. Thirteen more are new in `creatures.js`, and `AURENNE` lists the fourteen. The fifteenth, the Glasswing Moth, waits: crystal wings on an insect are a part the kit does not have (its wings are a bird's feathers or a dragon's membrane).
+- **Duneskimmer:** the Elderstag at 0.62 as a gazelle, sand and cream, with lyre horns in place of antlers.
+- **Sunspire Lynx:** the Hollowcat at 1.25 as a caracal, tawny and unstriped, with tall black-tipped ears and a low crest of spines down its shoulders (the sheet's heat-shedding crest).
+- **Terrace Ram:** the Craghorn Ram in cream, with bigger spiral horns (`spiral`, 2.1 turns' worth).
+- **Saltspine Monitor:** the Frostspine Lizard at 4.2 (about 1.4 m), grey, with salt-white spines. The sheet marks it as aggressive.
+- **Oasis Hare:** the brown hare in sand, with ears half as long again.
+- **Scarlet Ibis** and **Cypress Stalker:** the Great Heron at 0.72 in scarlet with a down-curved bill, and at 1.05 in violet.
+- **Mirage Fox:** the red fox at 0.62 as a fennec, pale sand, with huge ears.
+- **Cliffswift:** a flier at 0.42, dark with a pale throat, with long primaries and a tiny beak. It only soars.
+- **Amber Shellcrab:** the Tidecrab at 0.8 in amber.
+- **Sand Wyrm:** the Mire Snake at 14 times its size (about 17 m), banded sand. It is a set piece known by its funnels.
+- **Sunbeak Vulture:** the Crag Hawk at 1.4, dark brown with a pale bare head and a gold beak.
+- **Spined Gekko:** the Frostspine Lizard in sand.
+
+**Fixed on the way.** The helper `re()` (Session 843) carried a base plan's gaits and manners but not its fur, its pattern or its glow. Every plan that did not set its own fur came out bald. That was this session's Terrace Ram and Oasis Hare, and, it turns out, Session 846's capercaillie and Session 847's Tundra Grouse, whose pictures showed smooth birds that read as feathered at a glance. `re()` now carries all three. No plan that set its own fur changes. The four have been shot again, and the Gatelands and Mark sheets rebuilt.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 565 checks pass** across 70 plans, with one new check that the fourteen are each a plan from OG-030.
+  - The thirteen new plans build in 0.05 to 0.62 s, with 18 to 51 bones and 8,868 (the Sand Wyrm) to 49,296 (the Duneskimmer) triangles.
+  - Every foot reaches its target through every gait, the feet are down for about each gait's duty, and every genome is 153 to 161 bytes.
+- **Speeds:** the monitor trots at 2.0 m/s, the hare bounds at 2.1, the ibis walks at 1.0 and the Sand Wyrm slithers at 2.1.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the thirteen, `creatures-aurenne.jpg` (the thirteen on one sheet), and `creatures-line.jpg` (70 plans), shot again. `creatures-capercaillie.jpg` and `creatures-tundragrouse.jpg` were shot again with their feathers.
+### Needs eyes
+- **The Oasis Hare reads pinkish** and the Terrace Ram a little green-cream under the bestiary's grey sky. Their sand and cream palettes want checking under a warm Aurennais light.
+- **The Glasswing Moth** is owed, with a wing part of its own.
+- **The Sand Wyrm** is the Mire Snake made huge. The sheet's funnels and its burrowing are behaviour and terrain, the systems builder's and the look builder's.

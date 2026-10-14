@@ -842,7 +842,7 @@ PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 
 // ── Session 843: the common set (OG-084's "all islands": wolf, red fox, brown hare, raven, crow, wild boar, deer, badger,
 // otter, trout; backlog L3). Peaceful animals, the first the game has. Five are other plans at another size and colour;
 // the fox, the boar, the badger and the otter have parts of their own, from the kit's parts and leg presets ──
-const re = (base, o) => ({ gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, ...o, parts: o.parts || base.parts });
+const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, ...o, parts: o.parts || base.parts });
 Object.assign(PLANS, {
   wolf: re(PLANS.ironwolf, { name: 'Grey wolf', src: 'OG-084 (all islands: wolf)', scale: .92, palette: { coat: [.5, .45, .38], saddle: [.24, .21, .18], belly: [.84, .8, .72], dark: [.06, .05, .05], horn: [.8, .76, .7] }, fur: { len: .032, layers: 9, sx: 260 } }),
   redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand'], wag: .06, speedK: 1.1,
@@ -1055,3 +1055,42 @@ Object.assign(PLANS, {
     parts: [...PLANS.stormwhale.parts, ['spines', { n: 14, from: .1, to: .95, len: .9, r: .45, tone: 'horn', taper: .6 }]] })
 });
 export const MARK = ['icehorn', 'bear', 'stormlynx', 'ironpineelk', 'skyraven', 'ironwolf', 'craghornram', 'glacialmarmot', 'stormshrike', 'snowhare', 'frostspinelizard', 'riverjaw', 'tundragrouse', 'icecrab', 'shatterback'];
+// ── Session 848: Aurenne's fifteen (OG-030; backlog L3). The Dunescorpion was built (Session 773); these are thirteen
+// more. The Glasswing Moth waits: crystal wings on an insect are a part the kit does not have ──
+const spiral = { ...curled, len: .62, r: .06, turn: 2.1 };
+Object.assign(PLANS, {
+  duneskimmer: re(PLANS.stag, { name: 'Duneskimmer', src: 'OG-030 (a gazelle with wide hooves for sand)', scale: .62,
+    palette: { coat: [.8, .62, .4], saddle: [.66, .48, .28], belly: [.96, .93, .86], dark: [.06, .05, .04], hoof: [.12, .1, .08], horn: [.2, .17, .14] }, fur: { len: .01, layers: 5, sx: 420 },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: undefined, horns: { len: .32, r: .016, f: .12, up: .95, out: .3, turn: .35, rise: 1.1, spread: .2, back: .5, out0: .1 } }] : [k, o]) }),
+  sunspirelynx: re(PLANS.hollowcat, { name: 'Sunspire Lynx', src: 'OG-030 (caracal-like, long ears, a heat-shedding crest)', scale: 1.25, pattern: null,
+    palette: { coat: [.66, .52, .38], saddle: [.54, .4, .27], belly: [.94, .89, .8], dark: [.06, .04, .03], pale: [.95, .92, .86] }, fur: { len: .014, layers: 6, sx: 380 },
+    parts: [...PLANS.hollowcat.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .13, tone: 'dark' } }] : [k, o]), ['spines', { n: 8, from: .55, to: 1.05, len: .05, r: .012, tone: 'saddle', taper: .3 }]] }),
+  terraceram: re(PLANS.craghornram, { name: 'Terrace Ram', src: 'OG-030 (huge spiral horns; fights on terraced cliffs)', scale: 1.05,
+    palette: { coat: [.86, .78, .62], saddle: [.74, .64, .48], belly: [.94, .9, .82], dark: [.08, .07, .06], hoof: [.1, .08, .07], skin: [.7, .6, .46], horn: [.78, .72, .58] },
+    parts: PLANS.sheep.parts.map(([k, o]) => k === 'head' ? [k, { ...o, tone: undefined, horns: spiral }] : [k, o]) }),
+  saltspinemonitor: re(PLANS.frostspinelizard, { name: 'Saltspine Monitor', src: 'OG-030 (coasts; spines crusted with salt; aggressive)', scale: 4.2,
+    palette: { coat: [.42, .4, .34], saddle: [.3, .28, .24], belly: [.66, .62, .52], dark: [.05, .05, .05], skin: [.42, .4, .34], horn: [.94, .93, .9] } }),
+  oasishare: re(PLANS.brownhare, { name: 'Oasis Hare', src: 'OG-030 (deserts and oases; big ears)', scale: 1.05,
+    palette: { coat: [.82, .68, .5], saddle: [.68, .54, .38], belly: [.96, .94, .9], dark: [.08, .06, .05], pale: [.98, .97, .94] },
+    parts: PLANS.snowhare.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .12 } }] : [k, o]) }),
+  scarletibis: re(PLANS.heron, { name: 'Scarlet Ibis', src: 'OG-030 (coastal wetlands; a sign of a healthy marsh)', scale: .72,
+    palette: { coat: [.9, .2, .14], saddle: [.78, .14, .1], belly: [.95, .32, .24], dark: [.06, .04, .04], skin: [.86, .3, .22], horn: [.3, .12, .1] },
+    parts: PLANS.heron.parts.map(([k, o]) => k === 'head' ? [k, { ...o, beak: { len: .17, r: .01, up: -.05, hook: .55 } }] : [k, o]) }),
+  miragefox: re(PLANS.redfox, { name: 'Mirage Fox', src: 'OG-030 (fennec-like; scavenges ruins and caravan routes)', scale: .62,
+    palette: { coat: [.9, .78, .58], saddle: [.8, .66, .46], belly: [.98, .96, .92], dark: [.08, .06, .05], pale: [.98, .97, .94] }, fur: PLANS.redfox.fur,
+    parts: PLANS.redfox.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .15, out: .6 } }] : [k, o]) }),
+  cliffswift: re(PLANS.skyraven, { name: 'Cliffswift', src: 'OG-030 (coasts and sea stacks; swirling flocks)', scale: .42, gaits: ['soar', 'stand'], flyH: 1.6,
+    palette: { coat: [.2, .19, .2], saddle: [.12, .11, .12], belly: [.82, .8, .76], dark: [.03, .03, .03], horn: [.06, .06, .07], skin: [.12, .12, .12], feather: [.18, .17, .18], featherTip: [.07, .07, .08], covert: [.22, .21, .22] }, fur: PLANS.skyraven.fur,
+    parts: flier({ eye: [.1, .08, .06], beak: .02, hook: .1, primary: 1.4 }) }),
+  ambershellcrab: re(PLANS.tidecrab, { name: 'Amber Shellcrab', src: 'OG-030 (tide pools; shells prized for crafts and trade)', scale: .8, heading: 90,
+    palette: { coat: [.86, .52, .16], skin: [.86, .52, .16], saddle: [.6, .3, .08], belly: [.95, .86, .66], dark: [.12, .07, .04] } }),
+  cypressstalker: re(PLANS.heron, { name: 'Cypress Stalker', src: 'OG-030 (rivers and marshes; a violet heron whose plumage shifts with the light)', scale: 1.05,
+    palette: { coat: [.42, .3, .58], saddle: [.26, .18, .4], belly: [.62, .5, .74], dark: [.05, .04, .06], skin: [.56, .5, .3], horn: [.62, .56, .3] } }),
+  sandwyrm: re(PLANS.miresnake, { name: 'Sand Wyrm', src: 'OG-030 (a massive burrowing predator, known by its tracks and sand funnels)', scale: 14, pattern: { kind: 'bands', period: .2, tone: 'band' },
+    palette: { coat: [.7, .56, .38], saddle: [.52, .4, .26], belly: [.86, .78, .62], dark: [.08, .06, .04], band: [.56, .42, .26] } }),
+  sunbeakvulture: re(PLANS.craghawk, { name: 'Sunbeak Vulture', src: 'OG-030 (deserts and cliffs; carrion cleaner)', scale: 1.4, pattern: null,
+    palette: { coat: [.32, .24, .18], saddle: [.22, .16, .12], belly: [.46, .36, .28], dark: [.04, .03, .03], horn: [.86, .66, .22], skin: [.8, .62, .52], feather: [.28, .21, .16], featherTip: [.1, .07, .05], covert: [.38, .29, .22] }, fur: PLANS.craghawk.fur }),
+  spinedgekko: re(PLANS.frostspinelizard, { name: 'Spined Gekko', src: 'OG-030 (ruins; nocturnal, climbs walls)', scale: 1,
+    palette: { coat: [.66, .58, .42], saddle: [.5, .42, .28], belly: [.86, .8, .66], dark: [.05, .05, .04], skin: [.66, .58, .42], horn: [.42, .34, .22] } })
+});
+export const AURENNE = ['duneskimmer', 'sunspirelynx', 'terraceram', 'saltspinemonitor', 'oasishare', 'scarletibis', 'dunescorpion', 'miragefox', 'cliffswift', 'ambershellcrab', 'cypressstalker', 'sandwyrm', 'sunbeakvulture', 'spinedgekko'];
