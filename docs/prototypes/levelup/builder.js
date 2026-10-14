@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { skirtColor: 'skirt colour', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim' };
+const GLABEL = { skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
