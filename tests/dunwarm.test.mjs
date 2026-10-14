@@ -40,13 +40,15 @@ for (const [theme, seed] of [['undead', 7], ['elemental', 9], ['haunted', 6]]) {
   lights.push([theme, l0, drawn.length ? Math.min(...drawn) : -1, drawn.length ? Math.max(...drawn) : -1, (await page.evaluate(() => __cs)) - c0, await nLights()]);
   console.log(theme, seed, 'foes', n);
 }
-// what CI read: a light added between two frames, as a timer would, is in the scene (21) until the next frame's sweep
+// what CI read: a light added between two frames, as a timer would, is in the scene (21) until the next frame's sweep.
+// Session 827: 21 or more. On a busy runner a foe's own light can already be waiting for the sweep when the suite adds its
+// one (22 in 1 run of 3 run side by side here); what must hold is that every frame is still drawn with the pool's 20.
 const between = await page.evaluate(() => { const L = new THREE.PointLight(0xffcc44, 1.2, 3); L.position.set(px, 1, pz); dScene.add(L); let n = 0; dScene.traverse(o => { if (o.isPointLight) n++; }); return n; });
 await drawnLights(); const c1 = await page.evaluate(() => __cs); await g.frames(3); const after = await drawnLights(); const c2 = await page.evaluate(() => __cs);
 console.log('a light added between frames: the scene holds', between, 'then draws', JSON.stringify(after), 'compiled', c2 - c1);
 console.log('foes looked at', seen, 'kinds', [...kinds].join(', '), 'compiled on sight', JSON.stringify(onSight), 'kill:', JSON.stringify(lights));
 check('every foe on both floors of three old gates comes into view with no shader compiled', seen > 60 && onSight.length === 0, { seen, kinds: kinds.size, onSight });
 check('a kill and its loot glow leave the point lights at the pool\'s 20 in every frame drawn after it, and compile nothing', lights.every(([, a, lo, hi, c]) => a === 20 && lo === 20 && hi === 20 && c === 0), lights);
-check('a light added between frames is counted (21) until the next sweep, and every frame is drawn with the pool\'s 20 (what CI read as a fault)', between === 21 && after.length > 0 && after.every(n => n === 20) && c2 === c1, { between, after, compiled: c2 - c1 });
+check('a light added between frames is counted (21, or more with a foe\'s own waiting) until the next sweep, and every frame is drawn with the pool\'s 20 (what CI read as a fault)', between >= 21 && after.length > 0 && after.every(n => n === 20) && c2 === c1, { between, after, compiled: c2 - c1 });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

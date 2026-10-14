@@ -16839,3 +16839,15 @@ The suite now hashes the people a town drew: its fixed townsfolk in order (the `
 ### Needs eyes
 - Nothing in play: no game code changed. The new hashes include every resident, so a change that moves who lives in these towns will now fail the check, as the S753 and S817 sessions intended.
 - Other suites read `S.npcs` too (`names`, `bornhere`, `twinsrebuild`, `townbio` and others). None of them compares a stored hash, but a suite that counts `S.npcs` reads the same moving list. None of them is on the FLAKY list today.
+
+## v80 — Session 828 — `dunwarm`'s light between frames: 21 or more (CI health, tests only)
+`dunwarm` went FLAKY on main's merge run of `c184194`, after Session 807's fix. The CI log cannot be read from a cloud session, so I ran the suite three times side by side here to load the machine as a runner is loaded. One of the three failed: *a light added between frames is counted (21) until the next sweep* read **22**. The frames drawn after it were 20, 20 and 20, and nothing compiled. The same run's haunted kill row also ended with 21 point lights in the scene between frames.
+
+So Session 807's own finding struck twice at once. A foe's light, added by a timer or an effect between two frames, was already waiting for the sweep when the suite added its own light. The check counted exactly 21, assuming the scene stood at 20 at that instant. What matters, and what Session 807 wrote the check to prove, is that no frame is drawn with a light outside the pool. The check now takes 21 or more between frames and still requires every frame after to be drawn with 20 and nothing compiled.
+
+### Verified (headless Chromium)
+- **Before the fix, three runs side by side:** two pass. One fails on `{"between":22,"after":[20,20,20],"compiled":0}`.
+- **After the fix, three runs side by side:** three pass. 70 foes of 13 kinds looked at, none compiling on sight. Each kill draws 20, 20 and 20 and compiles nothing. Between frames the scene holds 21, then draws `[20,20,20]`.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed.
