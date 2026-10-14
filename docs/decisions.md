@@ -3,6 +3,32 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Gatelands sloop in the new kit: square sail or the game's rig, the harp, tiller or wheel (look builder, Session 858) — DECISION #306
+**F11 begun: the Gatelands sloop in the new kit (look builder, Session 858).** It is a prototype in `docs/prototypes/levelup/ships.js` and `ships.html`, from OG-004's Gatelands line ("clinker hulls, green sails with the harp, square rig"). It is built at the game's own sloop's size: 13 by 4.4 m, with the deck 1.0 m over the sea.
+- **The hull:** clinker-built, ten strakes a side, each strake lapped 2.5 to 3.3 cm outside the one below. She is tarred below the water and oiled oak above, with a green sheer strake under a cream wale. Her stem and sternpost are raked, and her sheer rises to both ends.
+- **The deck and rail:** a deck of fore-and-aft planks with a hatch, and a rail 1.0 m over the deck all round.
+- **The rig and helm:** one mast with a square green sail bearing the harp, its foot 2.2 m over the deck. She is steered by a rudder and tiller.
+
+**1. The rig: the board's square sail, or the game's sloop rig?**
+- **A (recommended):** the square sail, as OG-004 draws the Gatelands. One rig names the island at a glance, as the Mark's cutter and Aurenne's lateens already do.
+- **B:** the game's gaff mainsail and jib (`85-world-sea.js`), in green.
+
+**2. The harp on the sail.** The catalogue notes that the harp "fills a gap": it is not in the canon.
+- **A (recommended):** keep it, as the Gatelands' mark on sails.
+- **B:** a plain green sail (`&noharp`).
+- **C:** ask the quest writer for the Gatelands' own mark first.
+
+**3. Tiller or wheel?**
+- **A (recommended):** a tiller on the small hulls (the sloop and the cutter), and the wheel from the cog up. The helm's `nearWheel` reads either.
+- **B:** the wheel on every hull, as today.
+
+Pictures:
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-quarter.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-side.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-deck.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-lap.jpg
+- https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-quarter-noharp.jpg
+
 ### Places that are not gates: a Markish mine's measure, its light, and what comes next (look builder, Session 857) — DECISION #305
 **F8 begun: a Markish silver mine as the first place that is not a gate (look builder, Session 857).** It is a prototype in `docs/prototypes/levelup/places.js` and `places.html`, built from OG-121 ("mines and quarries: timber galleries and walkways over a shaft, ore, a working site") and its Mark panel's "mountain mines". The canon's Mark sells "iron and silver from the ranges". It is built to the person, one unit a metre:
 - **The adit:** a level 18 m into the hill, held by timber sets every 1.5 m. The way between the posts is 2.07 m and the cap is 2.3 m up, with a tramway of 0.6 m gauge.

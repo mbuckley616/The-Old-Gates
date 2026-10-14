@@ -17495,3 +17495,46 @@ Asked as **DECISION #305**: *Places that are not gates: a Markish mine's measure
 - **No cave-ins, no gems:** OG-121's cave-ins and gems, and the lifts of OG-034's mining town, are later slices.
 - **Combat at 2.07 m** is #305's first question. The combat page's swings were made for open ground.
 - **In the game,** this becomes a kind of place for `52-dungeon-gen.js` after F2a, its walls and solids from the same boxes the check walks.
+
+## v80 — Session 858 — Card F11 begun: the Gatelands sloop, clinker-built, at the game's own size (prototype only)
+The FREEZE (#297) still holds. Session 857 left the places that are not gates waiting on #305, so this session takes the next item in the look builder's order that waits on nothing: L6's *hull line per island* (card F11), from OG-004 (J1: "Gatelands: clinker hulls, green sails with the harp, square rig"). I opened the sheet and read its row. Its canon flags are cannons on ordinary hulls, Aurenne's "crown jewel" and the invented heraldry (the lion and the wolf); the row's note says "the harp and the sun-star fill a gap". The game keeps its five classes, each dressed by its island (Michael's 3 A). The Mark's cutter and Aurenne's caravel already have hulls of their own in the game (Session 665), so the slice is the sloop, the Gatelands' own and the player's first.
+
+A new module, `docs/prototypes/levelup/ships.js`, makes `gatelandsSloop(o, r)` at the game's sloop's numbers (`85-world-sea.js`): 13 m by 4.4 m moulded, draft 1.05, the deck 1.0 m over the sea (`DECK_Y`).
+- **The lines:** the half-breadth falls to nothing at the stem and the sternpost, finer forward than aft. The keel's depth eases toward the ends. The sheer rises 0.75 m to the bow and 0.5 m to the stern. Each section has a round bilge and a little flare at the top. Toward the ends the low points draw in along the hull, so the keel is shorter than the sheer and the stem and sternpost rake out from it.
+- **The strakes:** ten a side, each a real plank 3.5 cm thick, tilted so that its lower edge stands 2.5 to 3.3 cm outside the strake below and its upper edge tucks under the next. That is the clinker lap, and it reads as a stepped shadow down her side. She is tarred to the waterline and oiled oak above. The sheer strake is green under a cream wale. The strakes carry their own UVs, so the grain runs along the hull.
+- **The deck:** fore-and-aft planks at 1.0 m, cut to the hull's half-breadth at that height, with a covering board along each side out to the planking. Amidships aft of the mast is a hatch with a 0.3 m coaming, and by the mast a coil of rope and a bucket.
+- **The rail:** stanchions every 0.9 m with a cap rail 1.0 m over the deck, higher where the sheer rises (scale-numbers-build.md's "waist height").
+- **The rig:** one mast, its yard at 9 m over the deck. The square sail is bellied forward and its foot is 2.2 m over the deck, so you walk under it. It is green with the harp, drawn on a canvas side on: the soundbox, the curved neck, the bowed forepillar and the strings. There are three shrouds a side, a forestay and a backstay, braces from the yardarms and sheets from the clews.
+- **The helm:** the rudder hangs on the raked sternpost and its tiller comes inboard.
+- **`o.harp: false`:** the sail is plain.
+
+`ships.html` has four views: `?view=quarter` (default) from off her starboard bow; `side` broadside; `deck` from the tiller forward; and `lap`, close on the strakes at the waterline. Add `&noharp` for the plain sail.
+
+**Fixed on the way, each found by the check or the pictures:**
+- **Unseen planking:** the strakes were wound inward, so their outer faces did not draw.
+- **Barrel staves:** the wood's grain ran up her side, because the world-projected UVs followed the normal. The strakes now carry UVs along the hull.
+- **Open ends:** the half-breadth never reached zero at the stem and sternpost, so both ends were open, 0.36 to 0.42 m wide. The leak check's rays first got out there, once its reach was long enough to travel her length.
+- **Too wide:** the flare made her 4.58 m wide. It is now 4.4 m.
+- **Gaps in the deck:** the deck planks had 8 mm gaps a ray fell through, and nothing closed the deck to the hull at its edge.
+- **A tub from the side:** her ends were vertical and her sheer flat, until she was given the rake and more sheer.
+
+Asked as **DECISION #306**, with three questions:
+- **The rig:** A, the board's square sail, so one rig names each island.
+- **The harp:** A, keep it as the Gatelands' mark; B, plain; C, ask the quest writer first.
+- **The helm:** A, a tiller on the small hulls and the wheel from the cog up.
+### Verified (headless Chromium)
+- **New `ships.check.mjs`: 9 of 9 pass:**
+  - **The builds:** 6 keys, each the same twice. 24,284 triangles in 9 meshes.
+  - **The size:** 13 m by 4.4 m moulded, the deck 1.0 m over the sea.
+  - **Closed below the deck:** 0 of 900 rays from 15 points inside her get out.
+  - **Clinker:** at every strake's lower edge, at 9 stations, it stands 0.025 to 0.033 m outside the strake below.
+  - **The walk:** 68 points down either side of the deck from the tiller to the bow. There is deck under every one, 3.52 m of headroom under the sail's foot, and 0.87 m clear.
+  - **The rail:** 1.0 m or more over the deck at all 13 stanchions.
+  - **The sail:** harp or plain, the hull is the same.
+  - **The pages:** the quarter and deck views render with no page errors.
+- **Pictures, new:** `ships-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noharp`.
+### Needs eyes
+- **No frames inside:** below the deck she has no ribs or floors, and the hold is not built. OG-004's below-deck base (bed, chests, map table, stations) is L6's next slice and the systems builder's rules.
+- **The sail does not set:** it is one bellied shape, with no reefs or furling, and does not answer the wind. The game's sails trim by the wind (`85-world-sea.js`), and bringing this in keeps that.
+- **The harp is drawn in five strokes.** A painted emblem, worn and sun-faded, is a later pass.
+- **The other two islands:** the Mark's and Aurenne's hulls in the new kit follow on the same lines builder, after #306.
