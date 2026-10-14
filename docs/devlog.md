@@ -18172,37 +18172,33 @@ A room may still be larger inside than its house is outside, as games do: the in
 - You arrive 1.75 m inside the door in a small room (it was 2.2, the middle of a 4.5 m cottage), still clear of the step that leads out.
 - Only inns and guild halls have galleries now. A two-storey cottage or shop of true size has no room for the stair, so its ground floor is all of it.
 - **A save made inside a room before F2a** holds a spot in the old, larger room. If that spot is off the floor or inside something now, the load stands you at the door (`goToInterior`); full migration is card F13.
-### Verified (headless Chromium) — work in progress, not yet merged into the card's branch
-This entry travels with the work on `auto/wip-fable-f2a-scale`, because the room suites are not all green yet. The next session finishes it and merges it into `auto/fable-f2a-scale`.
-- **`tests/scalerooms`** (new) walks ten of Dunmore's rooms. It checks:
-  - the room's size;
-  - the entrance's leaf, 2.17 m (1.2 of the person, the eye at .76 of it);
-  - every inner door, 2.11;
-  - the ceiling, 2.89 to 3.2 in a one-storey room;
-  - table tops at .63 to .68;
-  - nothing outside the walls, the furniture clear of itself, and the arrival spot and the door's way free.
-
-  It is green on the tree before this session's last edits; the last run is listed under *Needs eyes*.
-- **Green on rooms of true size:**
-  - armourlines-numbers, ashenburn, the barber's five (barber, barberbox, barberchair, barberfee, barberway);
-  - carraignight, coldhearth, guardsindoor, guildfurn, homefurn;
-  - innrooms, intdoors, intreach, sleeperpose and civicfurn.
-- **Re-measured, not loosened.** Each of these says so in a comment. The places are the kit's own (`homeAt`, `innAt`, `barberAt`, `churchAt`) times `SCALE.ROOM_K`, where a suite had hard-coded the old room's numbers:
+**Finished in a second run the same day.** The work began on `auto/wip-fable-f2a-scale` as "Session 882"; `auto/backlog` had taken 882 to 895 meanwhile, so it is Session 896 here and in the code's comments (a correction to Session 881's entry, which says the interiors' half of the ratio suite comes with Session 882). The run merged `origin/main` (the backlog kept both edits) and the WIP into the card's branch, and fixed what was still red:
+- **The arrival in a shallow shop.** A goods shop 7 m deep with no keeper's room put you 2.1 m in from the door, inside the counter's front (4.91 m from the back wall at true size). `intArrivalZ(house)` (`58-interiors-legacy.js`) is now the one place the arrival is worked out, for a fresh entry and for a save's spot that no longer fits: 1.75 to 2.2 in from the door as before, and at least .55 in front of a counter (`buildInteriorFor` keeps the counter's front edge, `house._counterFront`).
+- **The tower's door.** The tower keeps its old size, so its entrance was still the old unit's leaf, 1.72 m with its head, shorter than the man going through it. The door alone is now built at `SCALE.ROOM_K`, 2.48 with its head, as in every other room.
+- **The church's tall windows.** A nave of true size (14 to 18 m) held two round-headed windows a side from the old spacing (from 3, every 3); it now holds three, as the old longer nave did (from 2.5, every D/4 but at least 2.2).
+- **Window frames.** In a cellar (a 2.6 m ceiling) the frame's head stood .04 above the ceiling; the window sits lower when the ceiling is under 1.95 in the kit's unit. In a cabin of true size (8 m) the last window's open shutters passed through the end wall; a window keeps 1.05 from it, and the posts' window list follows.
+### Verified (headless Chromium)
+- **`tests/scalerooms`** (new) walks ten of Dunmore's rooms: the room's size, the entrance's leaf (2.17 m, 1.2 of a 1.8 m person, the eye at .76 of it), every inner door (2.11), the ceiling (2.89 to 3.2 in a one-storey room), table tops (.63 to .68), nothing outside the walls, the furniture clear of itself, and the arrival spot and the door's way free. Green, 45 checks: cottage 5 by 5.5, inn 11.2 by 12, the shops 7 to 8.4 wide and 7 to 12.5 deep, the barber 8 by 7, the church 8 by 14, the Fighters' Guild 33.2 by 31.8.
+- **Green on rooms of true size**, each run alone or four at a time on this branch: scalerooms, boxspots (124 boxes in Dunmore, Portclare, Ironhaven and Ashenmoor, every one reached from 0.71 to 0.75), oddfurn, homesleep, locksight, keeperwalk, shopfurn, shells, windows and falls (alone; it had crashed the browser on a crowded run). The WIP's run had made armourlines-numbers, ashenburn, the barber's five, carraignight, coldhearth, guardsindoor, guildfurn, homefurn, innrooms, intdoors, intreach, sleeperpose and civicfurn green.
+- **Under `--look=new`:** people (and peopleao), q7world, walls, pois, snowrepaint and hourhitch, the six world suites F1 ran, all green. hourhitch failed once while three other suites shared the four cores (a 9.5 s frame against a noon of 2.3 s) and passed run alone.
+- **Re-measured, not loosened**, each with a comment in the suite. The kit's places and heights times `SCALE.ROOM_K`, where a suite had hard-coded the old room's numbers:
   - `barber`, `civicfurn`, `coldhearth`, `guildfurn`, `homefurn`, `intdoors` and `sleeperpose` (the bed is 1.444 times the kit's);
   - `homesleep`: about a dozen free spots in a cottage, not thirty;
-  - `intreach`: you arrive 1.75 in, and only inns and guild halls have galleries.
+  - `intreach`: you arrive 1.75 in, and only inns and guild halls have galleries;
+  - `boxspots`: the walk to a box starts where the game stands you inside the front door (it started .8 from the far wall, in a cottage of true size a pocket between the bed, the table and the shelves), and an inner door is walked through, not round (a shop's strongbox is in the keeper's room behind the partition's door);
+  - `oddfurn`: the cellar's crates are two on the floor and one on them at .5 of the kit (.722); the chapel's bake is over 4,000 triangles with two rows of pews (it was over 5,000 in the longer room);
+  - `keeperwalk`: the counter's solid is found at 3.0 × 1.444 and .8 × 1.444 deep;
+  - `locksight`: you and the foe in the shop stand between the counter and the partition, which now stands 4.62 from the back wall;
+  - `shopfurn`: the footholds, the tub (at W − .75, 3.9 now) and the racks' steel read in the kit's unit;
+  - `shells`: the doors' heights, the corbels' band and the shell's triangles (1,000 up: a cottage a third as wide has fewer beams and posts).
 - **The after pictures:** `docs/prototypes/f2a/after-dunmore-noon.jpg` and `after-inn-room.jpg`, beside the before pair of Session 879.
+- **The full suite** runs on CI on this branch's head (twelve shards; a local run is ten hours on four cores). Its result is on PR #315.
 ### Needs eyes
-- **Red on the last run, and owed:**
-  - `boxspots`: a shop's strongbox in the keeper's room is 2.75 from the nearest floor you can walk to, where it must be 1.6;
-  - `homesleep`: at 6h the woken resident sees none of the cottage's eleven spots, which depends on which way they face;
-  - `oddfurn`: the cellar's crates are now two on the floor and one on them, not three; and the chapel counts two box meshes;
-  - `locksight`: a foe in a shop with you, its sight lines;
-  - `chapel`: Aurenne's capital did not settle in time on a crowded run; to run alone.
-- **Not yet run on rooms of true size:** keeperwalk, penance, placesave, prices, qtybutton, questgold, shells, shipaim, shopfurn, shoprows, shopsight, shoresave, sleeperreach, stolenstack, theft, windows, witness, wokennight, and the full suite.
 - **For Michael:**
   - Cottages are about a third of their old width and feel it. The inn's hall is 10 to 12 m.
   - Shops are 7 to 9 m across, with the keeper's room behind them where the house is deep.
   - The keep's hall and the guild halls kept their old plans at true size: 26 by 32 m and 32 by 29 m, grand and perhaps too large.
   - Two-storey cottages and shops have no upstairs inside (F9).
-- **Owed to F2b:** the gameplay ranges that now act in smaller rooms. A sleeper hears you at 2 m, the witness sees 6 m and E reaches 1.6, so in a 5 m cottage everything is within a sleeper's or a keeper's reach.
+  - The tower's door is at the new height, 2.48 with its head, while the tower's rooms keep their old size (its stair climbs the 30 m its outside shows).
+- **Owed to F2b:** the gameplay ranges that now act in smaller rooms. A sleeper hears you at 2 m, the witness sees 6 m and E reaches 1.6, so in a 5 m cottage everything is within a sleeper's or a keeper's reach. At 6h a woken resident sees 2 or 3 of a cottage's 11 free spots, depending on which way they face.
+- **Not run here:** the suites outside the rooms; CI's twelve shards are their check.
