@@ -46,7 +46,7 @@ export async function loadPack(base = 'mh/') {
     hood: sel(G['body'], (x, y, z) => y > .6 && !(z > .03 && (x / .06) ** 2 + ((y - .71) / .085) ** 2 < 1)),
     // the laced bodice (Session 888): the torso off the tights; its neckline, straps and armholes are cut in its shader, so they are smooth
     bodice: sel(tri, (x, y) => Math.abs(x) < .21 && y > .11 && y < .65),
-    // the mail hauberk (Session 890, OG-019's Iron tier): its body and sleeves off the tights, to the elbow (rest |x| .313) and
+    // the mail hauberk (Session 897, OG-019's Iron tier): its body and sleeves off the tights, to the elbow (rest |x| .313) and
     // down under the belt; its skirt off the skirt shell, to a hand above the knee (rest y -.369); both edges cut in the shader
     mailTop: sel(tri, (x, y) => y > .03 && y < .64 && Math.abs(x) < .34),
     mailSkirt: sel(G['helper-skirt'], (x, y) => y > -.32),
@@ -96,7 +96,7 @@ function clothMat(color, kind = 'wool', o = {}) {
   m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.inner || '') + (o.band ? 'band' : '');
   return m;
 }
-// mail (Session 890): rows of riveted rings drawn in the shader on the rest body's coordinates, each row offset by half a
+// mail (Session 897): rows of riveted rings drawn in the shader on the rest body's coordinates, each row offset by half a
 // ring, seen three ways as the cloth's weave is; the gaps between the rings and their holes are dark (the padding under them),
 // and where a pixel holds more than a ring or so the pattern gives way to its average, so it does not shimmer at a distance
 const RING = '165.', RINGS = `float ringAt(vec2 p){ p *= ${RING}; p.x += .5 * mod(floor(p.y), 2.); vec2 f = fract(p) - .5; float d = length(f * vec2(1., 1.3)), a = fwidth(d) + .02;
@@ -112,7 +112,7 @@ function mailMat(color, o = {}) {
   m.customProgramCacheKey = () => 'mail' + JSON.stringify(o.cut || 0) + (o.hole || '');
   return m;
 }
-// a shadow cut as the garment is, so the triangles past its cut edge cast none (Session 890: the mail's hem threw teeth onto the thighs)
+// a shadow cut as the garment is, so the triangles past its cut edge cast none (Session 897: the mail's hem threw teeth onto the thighs)
 function cutDepth(o) {
   const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
   m.onBeforeCompile = s => { s.vertexShader = 'attribute vec3 aBase; varying vec3 vB;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vB = aBase;');
@@ -461,7 +461,7 @@ function buildCloak(G, body, byName, rnd) {
 // and a robe's sleeves (Session 888): the tights' shell along the arms, standing out by the robe's own push, up to 4.6 cm at the cuff
 function wornMask(D) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
   if (D.skirt) { const sk = D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort; for (const v of sk) { m[v] = 2; m.off[v] = .025; } }
-  // mail (Session 890): its body off the tights, standing as the tunic does and 9 mm more, and its skirt off the skirt shell, by its own push and 6 to 8 mm more
+  // mail (Session 897): its body off the tights, standing as the tunic does and 9 mm more, and its skirt off the skirt shell, by its own push and 6 to 8 mm more
   if (D.mail && !D.robe) { for (const v of PACK.R.mailTop) { const y = R0[v * 3 + 1], ax = Math.abs(R0[v * 3]); if (ax > .3 || y < .06) continue; m[v] = 3; m.off[v] = .032 + (ax < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) : 0) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1)); }
     for (const v of PACK.R.mailSkirt) { const y = R0[v * 3 + 1]; if (y < -.27) continue; m[v] = 2; m.off[v] = .03 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt === 'long' ? .006 : 0); } }
   if (D.robe) for (const v of PACK.R.tunic) { const ax = Math.abs(R0[v * 3]); if (ax > .22 && ax < .4) { m[v] = 3; m.off[v] = .016 + .03 * Math.max(0, Math.min(1, (ax - .24) / .16)) ** 1.5; } } return m; }
@@ -544,7 +544,7 @@ function buildTabard(G, body, byName) {
   // 3.5 cm off it), the skirt's shell under a skirt; each with how far its garment stands out
   const D = G.dress, PP = posedBody(body), n = PACK.N, B = new Uint8Array(n);
   for (const v of PACK.G['body']) B[v] = 1; if (D.tunic || D.trousers) for (const v of PACK.G['helper-tights']) B[v] = 2; if (D.skirt) for (const v of (D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort)) B[v] = 3;
-  // mail under it (Session 890): the tights stand for its body, 9 mm over the tunic, and the skirt's shell for its skirt
+  // mail under it (Session 897): the tights stand for its body, 9 mm over the tunic, and the skirt's shell for its skirt
   const mail = D.mail && !D.robe; if (mail) for (const v of PACK.R.mailSkirt) if (PACK.rest[v * 3 + 1] > -.27) B[v] = 4;
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const nY = neck.y, cx = neck.x, cz = neck.z;
   // the shoulders' half width at the armpit's height, and the tabard a little over half of it
@@ -767,7 +767,7 @@ function buildLacing(G, meshes) {
 // ── the robe's cord (Session 887): a rope round the waist, tied at the front to one side, its two ends hanging down the skirt
 // Built after the pose from the posed tunic and skirt, like the tabard: a ring over the tunic at the waist, pushed clear of
 // the furthest cloth in each direction, and two ends that follow the skirt's front down, with a knot at each tip.
-// the kettle helm (Session 890; OG-019's Iron tier: mail and a kettle helm). A rigid iron hat carried by the head bone. Its dome
+// the kettle helm (Session 897; OG-019's Iron tier: mail and a kettle helm). A rigid iron hat carried by the head bone. Its dome
 // is fitted to the skull round a centre at the rim's height: in 72 directions round and 24 down, the furthest point of the head,
 // spread to its neighbours and smoothed, then 1.2 cm more (the hair's shell is 2.5 mm, the hair itself tucked as under a hood), so
 // it is as close as a hat beaten to the head and never inside it. (An ellipsoid grown until it cleared the occiput came out 31 cm
@@ -836,7 +836,7 @@ function shellThrough(PP, verts, m, idx, sign, keep = () => true) { const SP = p
     for (const h of verts) { let bd = 1e9, bs = -1; for (const i of sv) { if (!keep(i, h)) continue; const d = (SP[i * 3] - PP[h * 3]) ** 2 + (SP[i * 3 + 1] - PP[h * 3 + 1]) ** 2 + (SP[i * 3 + 2] - PP[h * 3 + 2]) ** 2; if (d < bd) { bd = d; bs = i; } }
       const o = (PP[h * 3] - SP[bs * 3]) * N[bs * 3] + (PP[h * 3 + 1] - SP[bs * 3 + 1]) * N[bs * 3 + 1] + (PP[h * 3 + 2] - SP[bs * 3 + 2]) * N[bs * 3 + 2]; if (sign * o > .002) bad++; gap += -o; } return { n: verts.length, bad, gap: +(gap / verts.length).toFixed(4) };
 }
-// the mail's promises, on the posed body (Session 890): no point of the upper arm out through its sleeve, none of the tunic out
+// the mail's promises, on the posed body (Session 897): no point of the upper arm out through its sleeve, none of the tunic out
 // through its body (but in the crease under the arm, where the arm's own skin folds both shells), none of the legs, the tunic's skirt or the trousers out of its skirt (radially, in 2 cm bands round its middle, as the hands are tested)
 const mailSkirtV = () => PACK.mailSkirtV || (PACK.mailSkirtV = [...new Set(PACK.R.mailSkirt)].filter(i => PACK.rest[i * 3 + 1] > -.26));
 function mailStats(body, meshes) {
@@ -906,7 +906,7 @@ export function makePerson(G, o = {}) {
   // the robe (Session 887, B2): one cloth from the shoulders to the ankles, worn as the tunic and the long skirt in the robe's
   // colour, with sleeves that widen to the cuff and a fuller hem; a rope cord takes the belt's place, nothing under it shows
   if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, cuffs: null, cord: R.cord || [.62, .55, .42] } }; }
-  // mail (Session 890) is worn over a padded coat, the tunic, and belted over: a man or woman in mail without either gets them
+  // mail (Session 897) is worn over a padded coat, the tunic, and belted over: a man or woman in mail without either gets them
   if (G.dress?.mail && !G.dress.robe) { const M = G.dress; G = { ...G, dress: { ...M, tunic: M.tunic || [.6, .54, .42], belt: M.belt || [.24, .16, .1] } }; }
   const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null, browStats = null;
   // the feet on the ground
@@ -937,7 +937,7 @@ export function makePerson(G, o = {}) {
   // tunic, ending under the belt (rest .14), open down the front between the eyelets, so the chemise shows in the gap; the lacing is built after the pose
   if (D.bodice) push('bodice', PACK.R.bodice, clothMat(sRGB(...D.bodice), 'wool', { cut: [.14, .62, .19, .002], hole: '(vB.z > .03 && abs(vB.x) < .0085 && vB.y > .2 && vB.y < .5) || (vB.y > .485 && (abs(vB.x) < .068 || abs(vB.x) > .148))', side: THREE.DoubleSide, inner: .5 }), (x, y) => .021 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0));
   if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01] }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
-  // the mail hauberk (Session 890; OG-019's Iron tier, mail to the knee under a belt): its body 9 mm over the tunic, its sleeves
+  // the mail hauberk (Session 897; OG-019's Iron tier, mail to the knee under a belt): its body 9 mm over the tunic, its sleeves
   // to the elbow (cut at rest |x| .3), its neck at the tunic's; its skirt off the skirt shell, 1.2 cm over a skirt's, from under the
   // belt to above the knee. Both are shells skinned as the body is, so no arm or leg comes through them; the belt rides 8 mm out on the mail
   const mail = D.mail && !D.robe;
@@ -990,7 +990,7 @@ export function makePerson(G, o = {}) {
   // a long skirt (and so a robe) stands out at the thigh, where the hands hang: the arms are lifted out from the side, three
   // hundredths of a radian at a time, until no point of either hand is inside it (Session 887; the genome's pose is unchanged)
   // Not under a full cloak: it hangs over the hands and is built round the arms where they are, so lifting them only lumps it
-  // A mail skirt stands out further still, and is lifted clear of the same way (Session 890)
+  // A mail skirt stands out further still, and is lifted clear of the same way (Session 897)
   let lift = 0, skirtHands = null; const skM = !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt === 'long' && meshes.find(m => m.name === 'skirt'));
   const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV() : undefined;
   if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM, undefined, skV); if (!skirtHands.bad || k === 10) break; lift += .03;
