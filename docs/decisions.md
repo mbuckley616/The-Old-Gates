@@ -5,6 +5,51 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 ## Pending
 
 ## Answered
+### The smugglers' lair: a sea cave with its own landing, or inland (look builder, Session 873) — DECISION #314
+**F8's fourth place: a smugglers' lair (look builder, Session 873).** It is the last of the three places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`smugglersLair`) and `places.html?place=lair`, from OG-121's "smugglers' and bandits' lairs: plank platforms in a cave, storerooms, escape routes". It is built to the person as a sea cave on the Gatelands' coast:
+- **The way in:** a passage of 10 m from the land comes out on a rock floor 1.2 m over the sea.
+- **The cave:** 18 by 24 m and 8 m high, the sea filling it, open to the sea under an arch 7 m wide.
+- **The platforms:** a plank deck on posts down the west side, and a jetty out into the middle with a rowing boat at its end.
+- **The storeroom:** plank walls on the rock floor, stacked with crates, kegs and a bale.
+- **The escape:** a ladder up the east wall to a ledge 4.6 m up and a tunnel away.
+
+Its light follows your 2 A on #305. Held, five lanterns burn. Empty (`&empty`), it is dark but for the day at the arch and your torch. Who holds it is the systems builder's.
+
+The walk from the land, down the deck and out along the jetty, has the deck under every quarter metre, at least 2.46 m of headroom and at least 0.65 m clear. No ray from inside gets out except by the passage, the arch or the tunnel.
+
+**Where is a smugglers' lair?**
+- **A. A sea cave with its own landing, as drawn** *(recommended)*: the boat comes in under the arch, and the goods go up the passage to the land. It is the one place the lair's plank platforms make sense, and the Gatelands' coast has the cliffs and caves for it (OG-099's sea cliffs and arches).
+- **B. Inland, over an underground river:** the platforms hang over a river in a cave behind a mine or a ruin. It is drier and can be anywhere on the map, but the boat and the arch go.
+
+Pictures:
+- [from the passage's end to the sea arch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-lair.jpg)
+- [from the jetty back to the storeroom and the passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-jetty.jpg)
+- [the storeroom's door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-store.jpg)
+- [the ladder to the escape](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-escape.jpg)
+
+Michael: **A. A sea cave with its own landing, as drawn** — Same comment as the other cave decision - the size here is pretty underwhelming, as is the lack of detail in general. (14 Oct 2026, via the control room)
+
+### The limestone cave: what lights a cave (look builder, Session 872) — DECISION #313
+**F8's third place: a limestone cave with a lake under falls (look builder, Session 872).** It is the second of the next places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCave`) and `places.html?place=cave`, from OG-121's caverns ("stalactites, an underground lake under falls, strange flowers") and OG-099's cave of blue pools under falls. It is built to the person:
+- **The passage:** 14 m of pale limestone, 3 by 3 m.
+- **The chamber:** 22 by 26 m and 11 m high. A shore runs along its east side and across the near end, and the rest is a lake 3.4 m deep.
+- **The falls:** a stream comes in through a swallow hole in the roof under a shaft open to the sky, and falls 11 m into the lake.
+- **The shore:** stalactites hang from the roof, with stalagmites and flowstone on the shore, and pale flowers at the water's edge.
+
+The walk from the mouth along the shore to the far shelf has a floor under every quarter metre, at least 2.79 m of headroom and at least 0.99 m clear. No ray from inside gets out except by the mouth or up the shaft.
+
+**What lights a cave?** Your answer for the mine (#305, 2 A) was that a worked-out mine is dark but for your torch. As drawn, this cave has two lights of its own.
+- **A. The day down the shaft, and the flowers glow, as drawn** *(recommended)*: the falls and their pool are lit from above, and the flowers glow pale blue along the shore. Where the cave is open to the sky, the day comes in, and the flowers are OG-121's "strange flowers", a small wrongness (OG-096). Away from both, it is your torch.
+- **B. Your torch alone:** no shaft of day (the falls come out of a dark slot), and the flowers do not glow. It is darker and closer, and the same rule as the mine.
+
+Pictures:
+- [from the passage's end across the lake to the falls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-lake.jpg)
+- [the east shore, the flowers and the stalagmites](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-shore.jpg)
+- [from the far shelf up the falls to the shaft](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-falls.jpg)
+- [up the passage from the mouth](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-passage.jpg)
+
+Michael: **A. The day down the shaft, and the flowers glow** — I don't think this cave is expansive enough. This feels pretty underwhelming to me. I hope this isn't the scale we're going for in all of our dungeon interiors, especially Old Gates. (14 Oct 2026, via the control room)
+
 ### Unblock Look sessions: the approved commit no longer merges (the producer, 2026-10-14)
 Michael approved Look sessions 821–852 at 9bc8062, which then conflicted with main (the bodies branch's copies of the builder's pictures). A: merge b7067e4 instead (the builder had merged main in; it adds only prototype Sessions 857–860); B: wait for a fresh card.
 
@@ -436,7 +481,6 @@ The gates' own kit (card F5) is a deep-work card; this room is made to its numbe
 Not in this question: solids for these props (their place in the game, after F2a).
 
 Michael: **A. The recommended set (A, A, A, B, A, A)**. (14 Oct 2026)
-## Answered
 ### The Gatelands' round cairn: what is carved on its stones (look builder, Session 869) — DECISION #309
 **F8's second place: the Gatelands' round cairn (look builder, Session 869).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
 - **The mound:** a grassed mound of stones 26 m across and 7 m high, inside a kerb of 38 laid boulders. The door is in a dry-stone facade, and a long entrance stone lies before it.
