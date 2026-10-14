@@ -4,6 +4,36 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelander inn as a room: its shell and its guest rooms (look builder, Session 893) — DECISION #320
+**F9's fourth room: the Gatelander inn round its hearth (look builder, Session 893).** L9 asks for three inns by island (OG-108: "a cosy Gatelander inn with a hearth, a Markish longhouse with long tables, an Aurenne tavern on a terrace over the sea"). Your A on #303 puts rooms inside the street's own shells. The kit has no inn yet, so this one is built inside the kit's farmhouse (`GL_PLANS.farmhouse`: 10.5 by 6.2 m, two storeys of 2.9 and 2.7 m, whitewashed under slate, a stack at each gable), with its front door left ajar. It is a prototype in `docs/prototypes/levelup/rooms.js` (`gatelandsInn`) and `rooms.html?room=inn`.
+- **The taproom:**
+  - flags, and the open hearth in the west gable under its stack, with a crane and a pot over a turf fire;
+  - a high-backed settle facing the fire, with two stools;
+  - the bar across the back wall, between the back window and the back door: an oak counter at 1.05 m, a rack of kegs behind it, a shelf of jugs, and a lantern over it;
+  - two tables with benches, and candles.
+- **The stair:** 16 risers of 0.178 m up the east gable wall to a landing, with 2.29 m or more of headroom over every tread and a rail round the stairwell.
+- **Upstairs:** a passage along the back wall from the landing, with three guest rooms off it behind deal partitions. Each room has a bed of 2 m, a chest, and a washstand with a jug and basin under its front window. A boarded ceiling is under the slate.
+
+The room is 4,392 to 4,560 triangles in 16 draws, in the farmhouse's 2,120. The walks from the door to the bar and to the stair, and off the landing into a room, are clear by 0.15 m. There are 2.43 m under the beams in the taproom and 2.42 m upstairs.
+
+**1. The inn's shell:**
+- **A. The farmhouse as a village inn, as drawn** *(recommended)*: a village's inn is a house that takes guests. A town's coaching inn, with a yard, a stable arch and more rooms, would be its own piece later.
+- **B. An inn shell of its own first:** a longer two-storey house with a sign bracket and a yard, before the inn is built further.
+
+**2. The guest rooms:**
+- **A. Three rooms off a passage, as drawn** *(recommended)*: a door to each, which fits the game's rented room.
+- **B. One loft of beds under the roof**, the older custom, shared.
+
+Pictures:
+- [the taproom from the bar's end](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-tap.jpg)
+- [the taproom at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-tap-night.jpg)
+- [the bar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-bar.jpg)
+- [the hearth](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-hearth.jpg)
+- [the passage upstairs](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-upstairs.jpg)
+- [a guest room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-chamber.jpg)
+- [the inn from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-outside.jpg)
+
+
 ### The Gatelands cog in the new kit: its castles (look builder, Session 892) — DECISION #319
 **F11's fourth hull: the Gatelands cog (look builder, Session 892).** Your A on the ship ladder kept the game's five classes, each dressed by its island, and OG-004 draws the Gatelands' "merchant cog". This prototype is in `docs/prototypes/levelup/ships.js` (`gatelandsCog`) and `ships.html?ship=cog`. It is built to the game's cog's numbers:
 - **The size:** 17 by 5.6 m, draft 1.25, with the deck 1.0 m over the sea.

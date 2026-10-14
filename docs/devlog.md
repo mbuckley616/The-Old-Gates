@@ -18459,3 +18459,40 @@ The FREEZE (#297) holds. L6's line has the sloop, the cutter and now the caravel
 - **The harp is drawn on the sail's forward face.** From the deck it is seen mirrored through the cloth, as a real painted sail would be.
 - **She is 40,900 triangles,** the heaviest hull yet. The strakes' rows (52 stations by 12 strakes by 7 rows, both faces and the lap's edge) are most of it, and a far LOD would drop the inner faces.
 - **Not in the game.** That waits for F2a and card F11's parents.
+
+## v80 — Session 893 — Card F9's fourth room: the Gatelander inn round its hearth (prototype only)
+The FREEZE (#297) holds. L9 asks for three inns, one per island (OG-108: "a cosy Gatelander inn with a hearth, a Markish longhouse with long tables, an Aurenne tavern on a terrace over the sea"). Michael's A on #303 builds rooms inside the street's own shells. The kit has no inn, and an inn's own shell is a new piece, which is his call (#320). So the first inn is built inside the kit's farmhouse (`GL_PLANS.farmhouse`), the nearest building a village would turn to guests: 10.5 by 6.2 m, walls of 0.5 m, storeys of 2.9 and 2.7 m, whitewashed under slate, with a stack at each gable. OG-108 was reread. Its catalogue row's note is on the dishes' real-world names, which this room does not name.
+
+**The shell** takes one new option in `pieces.js`: a transom door marked `ajar` leaves its leaf out, so the room hangs it open. Nothing else changes, and `pieces.check.mjs` passes as before.
+
+**`gatelandsInn` in `rooms.js`:**
+- **The taproom:**
+  - Flags in courses.
+  - The open hearth in the west gable under its stack: a breast 0.5 m proud, an opening of 1.6 by 1.3 m sooted at the back, an oak lintel and a hearthstone, with a turf fire, a crane and a pot (the cottage's hearth, Session 852, at an inn's width).
+  - A high-backed settle facing the fire (its seat at 0.44 m, its back 1.35 m), with a cushion and two stools beside it.
+  - The bar across the back wall, between the back window and the back door: an oak counter with a deal top at 1.05 m, a rack of four kegs behind it with their taps, a shelf of jugs, tankards on the counter, and a lantern from the beam.
+  - Two tables at 0.76 m, one with benches both sides and one with a bench on the hearth side, each with a candle.
+  - The front door's leaf hangs open against the front wall.
+- **The stair:** 16 oak risers of 0.178 m and goings of 0.25 m up the east gable wall to a landing in the back corner. The stairwell opens wherever a tread would have less than 2 m under the beams (not the slab), so every tread has 2.29 m or more. The first count was against the slab and left 1.90 m under a beam over the third tread.
+- **The upper floor:** deal boards on oak beams every 0.9 m (cut at the well), a rail at 1.01 m round the well (kept out of the gable wall, where it first ran 4 cm in), and a boarded ceiling with joists under the slate.
+- **The guest rooms:** a passage 1.2 m wide runs along the back wall from the landing, with a deal partition and a door of 0.8 by 1.95 m into each of three rooms. Each room has a bed of 2 m (a straw tick, a blanket and a bolster), a chest at its foot, and a washstand with a delft jug and basin under its own front window.
+- **The light:** the shell's lamplit panes are clear glass from inside, as its plain panes already were. Two of the inn's windows were opaque yellow from inside until this was fixed.
+- **The view:** `rooms.html?room=inn`, with `tap` (the default, from by the bar across to the hearth), `bar`, `hearth`, `upstairs` (the passage from the landing), `chamber` (the middle guest room from its door) and `outside`, and `&hour=` as the other rooms take it. The fire, the bar's lantern and a lamp in the passage give the light.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 34 of 34 pass.** The cottage's, the longhouse's and the Aurennais flat's checks are unchanged, and nine are new:
+  - **The builds:** 4 keys, each the same twice. The room is 4,392 to 4,560 triangles in 16 draws, in the farmhouse's 2,120 in 10.
+  - **Inside and apart:** every piece is inside the walls, and none is in another on its floor.
+  - **The walks:** clear by 0.15 m, in at the door to the bar, in at the door to the stair's foot, and off the landing down the passage into a room.
+  - **The stair:** rises of 0.178 m and goings of 0.25 m, with 2.29 m or more over every tread. The well's rail is 1.01 m.
+  - **Headroom**, away from the furniture: 2.43 m under the beams in the taproom and 2.42 m upstairs. The probe skips the partition's line, where a doorway's lintel is the door's height.
+  - **A person fits:** beds of 2 m, the settle at 0.44 m, stools and benches at 0.45 m, tables at 0.76 m, and the bar at 1.05 m. There are three rooms, the front door is 1.05 by 2.5 m and the room doors are 0.8 by 1.95 m.
+  - **The fire** is in its hearth.
+  - **The pages:** the taproom and passage views render with no page errors.
+- **`pieces.check.mjs`** passes as before.
+- **Pictures:** `rooms-inn-tap.jpg`, `-tap-night`, `-bar`, `-hearth`, `-upstairs`, `-chamber` and `-outside`.
+### Needs eyes
+- **It looks like a farmhouse from the lane.** There is no sign, no bench by the door and no yard. A sign bracket is in the kit (the merchant's harp sign) and could hang here if #320 keeps this shell.
+- **The settle hides the fire from the door.** That is what a settle is for, but the taproom's view had to move to the bar's end to show the hearth.
+- **The passage upstairs is dark at noon.** It has one back window and the lamp.
+- **The other two inns** (the Markish longhouse of long tables, the Aurennais terrace tavern) are next. The Mark's can be built in the longhouse's hall.
+- **Not in the game.** `buildInteriorFor` takes this after F2a.
