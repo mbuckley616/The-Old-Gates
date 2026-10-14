@@ -148,6 +148,14 @@ You set the two paths (13 Oct, *The great gates' two paths* below): each great g
 
 Why A: the choice is made in the realm, in front of what it changes, and stays cheap to undo. It also squares the canon. The Compact's sealing *bricks a gate shut*, which §3.1 says would drown the world in its own dead; binding the knot keeps the gate working. The Church takes the credit anyway, and is wrong.
 
+### F2b — how wide is a dungeon's grid cell at true scale? (the designer, 2026-10-14) — DECISION #300
+Today a dungeon's corridor is one grid cell, one unit, which was about 1.6 m for the old 1.1 m person; at true scale the cell must grow. Its size sets every corridor's width, every room's size and how long a dungeon takes to walk (build sheet: `docs/design/scale-numbers-build.md`, the open number).
+- **A. 2 m.** Corridors 2 m, rooms 6 to 24 m: a crypt's squeeze, the third-person camera tight in a corridor; a spike plate jumped at a run.
+- **B. 2.5 m** *(recommended)*. Corridors 2.5 m, rooms 7.5 to 30 m, on the foundation's fighting pockets of 15 to 30 m; a claymore swings with 1.9 m clear; a plate needs a sprint; a massive dungeon is 135 m across, about 35 s at a jog.
+- **C. 3 m.** Corridors 3 m, rooms 9 to 36 m, near Skyrim's ruins; roomy, but walks 20% longer and the same foes sparser.
+
+Recommendation: **B.** The smallest cell where a two-hander and the camera both fit a corridor, and the rooms land on the foundation's own pocket sizes.
+
 ## Answered
 
 ### What ships in 2.0? The scope, the legacy zones, and the missing cards (Claude, Session 829, 2026-10-13)
