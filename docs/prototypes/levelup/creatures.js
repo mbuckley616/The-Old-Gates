@@ -1277,3 +1277,20 @@ Object.assign(PLANS, {
     palette: { ...PLANS.goat.palette, blanket: [.2, .32, .5], leather: [.36, .22, .12] }, parts: [...PLANS.goat.parts, ['saddle', { at: .55, len: .24 }]] })
 });
 export const BURDEN = ['horse', 'mule', 'donkey', 'ox', 'camel', 'reindeer', 'yak', 'giantgoat', 'posthare'];
+// ── Session 856: three of OG-016's deep band (backlog L3). The angler and the stonefish are the salmon's plan with
+// another head and body; the crimson leviathan is the Mire Snake at a sea serpent's size. The kelpstrider and the
+// pierwinkle want parts the kit lacks (a leafy frond, a coiled shell) ──
+Object.assign(PLANS, {
+  abyssalangler: re(PLANS.riverjaw, { name: 'Abyssal Angler', src: 'OG-016 (deep: a lure of light over a mouth of teeth)', scale: 1.4, bl: .5, mottle: 1.8, rough: .55,
+    palette: { coat: [.12, .1, .1], saddle: [.07, .06, .06], belly: [.2, .17, .16], dark: [.03, .02, .02], fin: [.14, .12, .12] },
+    glow: { color: [.6, 1.6, 2.4], base: 0, freq: 10, w: .02, all: .25 },
+    parts: PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.07, .11, .14], s: [.8, 1.05] }] : k === 'head' ? [k, { ...o, len: .26, r: .13, s: [1, .95, 1], muzzle: { len: .9, r: .1, s: [1.1, .8, 1], taper: .9 }, jaw: { len: 1, r: .085, drop: .9 }, eyes: [{ f: .35, up: .7, out: .5, r: .008, color: [.6, .7, .7] }],
+      stalks: { f: .35, up: 2.6, out: 0, r: .03, len: .2, color: [.7, 1, 1] }, fangs: { r: .006, len: .045, f: .9, up: -.2, out: .7 } }] : [k, o]) }),
+  stonefish: re(PLANS.riverjaw, { name: 'Stonefish', src: 'OG-016 (coastal: a stonefish that lies as a rock among rocks)', scale: .5, bl: .2, mottle: 3, rough: .95,
+    palette: { coat: [.42, .36, .3], saddle: [.3, .24, .2], belly: [.56, .46, .4], dark: [.05, .04, .04], fin: [.4, .32, .26], horn: [.5, .42, .34] },
+    parts: [...PLANS.riverjaw.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hip: [.2, -.15], chest: [.2, .18], r: [.09, .13, .12], s: [1.1, .9] }] : k === 'head' ? [k, { ...o, pitch: -8, s: [1.2, .85, 1], muzzle: { ...o.muzzle, s: [1.2, .7, 1], taper: .9 } }] : [k, o]), ['spines', { n: 9, from: .1, to: .9, len: .09, r: .012, tone: 'horn', taper: .3 }]] }),
+  crimsonleviathan: re(PLANS.miresnake, { name: 'Crimson Leviathan', src: 'OG-016 (deep: a great red serpent of the open sea)', scale: 22, water: .2, pattern: { kind: 'bands', period: .14, tone: 'band' }, mottle: 1.2,
+    palette: { coat: [.56, .1, .08], saddle: [.34, .05, .04], belly: [.86, .62, .44], dark: [.05, .03, .03], band: [.38, .06, .05], horn: [.86, .78, .62] },
+    parts: [...PLANS.miresnake.parts.map(([k, o]) => k === 'head' ? [k, { ...o, jaw: { len: .9, r: .016, drop: .5 }, horns: { len: .05, r: .005, f: .2, up: .9, out: .5, turn: .3, rise: .3, back: 1, spread: .3 } }] : [k, o]), ['spines', { n: 16, from: .05, to: 1, len: .025, r: .005, tone: 'horn', taper: .3 }]] })
+});
+SEA.push('abyssalangler', 'stonefish', 'crimsonleviathan');

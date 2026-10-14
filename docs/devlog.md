@@ -17272,3 +17272,21 @@ The first pictures showed the horse and the ox too red under the bestiary's grey
 - **The bay and the ox still lean red** under the grey test sky. A warm daylight may settle them, or they want browning again.
 - **No harness, packs or carts.** The saddle part is the only tack. Pack saddles, a yoke for the ox and the wagons (props, the look builder's) are owed.
 - **None of them is in the game.** That waits for F4.
+
+## v80 — Session 856 — Three of the deep: the abyssal angler, the stonefish and the crimson leviathan (backlog L3, prototype only)
+Session 854 left five of OG-016's sea animals owed. Three of them can be made from the kit's parts as they are, and they are now plans in `creatures.js`, added to `SEA` (now twenty). No kit code changed.
+- **Abyssal Angler:** the salmon's plan at 1.4 with a huge round head. It has a deep jaw that hangs open, fangs, small pale eyes, and a lure on a stalk over the brow (the Tidecrab's eye stalk, with a pale cyan bulb). Its black hide is veined with faint blue light.
+- **Stonefish:** the salmon's plan at 0.5, squat and broad, its head pitched down, heavily mottled, with nine stone-coloured dorsal spines.
+- **Crimson Leviathan:** the Mire Snake at 22, about 34 m. It is red over a pale belly with dark bands, with a row of sixteen pale spines and two small swept horns.
+
+The kelpstrider (a leafy seahorse) and the pierwinkle (a snail) still wait. Each needs a part the kit does not have: a leafy frond hung off the body, and a coiled shell.
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 789 checks pass** across 102 plans, with the sea check now counting twenty.
+  - The three build in 0.26 to 0.59 s, with 18 or 19 bones and 8,748 (the leviathan) to 51,148 (the stonefish) triangles.
+  - Every genome is 155 to 162 bytes.
+- **Speeds:** the angler swims at 0.78 m/s, the stonefish at 0.09, and the leviathan slithers at 2.5.
+- **Pictures:** one `creatures-<plan>.jpg` for each of the three. `creatures-sea.jpg` was shot again with all twenty.
+### Needs eyes
+- **The stonefish reads as a fish, not as a stone.** Its mottle is soft and its outline smooth. A rock's lumpiness would need a bumpier flesh than the kit grows.
+- **The angler's lure** is a pale ball. It is not lit (the kit's eyes are not emissive), so it will not glow in the dark water it is for.
+- **The crimson leviathan** is coarse at its size (8,748 triangles), as the Gate Leviathan is.
