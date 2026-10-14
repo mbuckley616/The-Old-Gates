@@ -4,6 +4,33 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelands cog in the new kit: its castles (look builder, Session 892) — DECISION #319
+**F11's fourth hull: the Gatelands cog (look builder, Session 892).** Your A on the ship ladder kept the game's five classes, each dressed by its island, and OG-004 draws the Gatelands' "merchant cog". This prototype is in `docs/prototypes/levelup/ships.js` (`gatelandsCog`) and `ships.html?ship=cog`. It is built to the game's cog's numbers:
+- **The size:** 17 by 5.6 m, draft 1.25, with the deck 1.0 m over the sea.
+- **The hull:** the Gatelands' dress, as the sloop has it (your 1 A and 2 A on #306): clinker, tarred below the water, oiled oak above, and a green sheer strake under a cream wale. The body is a cog's: flat-floored, slab-sided and full to the ends, with a straight raked stem and sternpost and the rudder hung on the post.
+- **The rig:** one tall mast with a round top, and one great square sail, green with the harp, its foot 2.2 m over the deck.
+- **The castles:** real decks at both ends, 2.15 m over the main deck. The game's cog has only rails on posts over a flat deck.
+  - **The aftcastle** covers her last 3.8 m. Under it is a cabin (2.09 m of headroom) behind a bulkhead with a door and two windows. A ladder rises on either side of the door, and the wheel stands on the castle (your 3 A on #306: the wheel from the cog up).
+  - **The forecastle** covers her first 3.0 m. It is open beneath on two posts, so the walk to the bow passes under it with 2.09 m of headroom, and a ladder rises up its middle.
+  - Both are walled in green boards with a cream band and a rail at 1.0 m.
+- **The cargo:** a hatch aft of the mast, with barrels and crates along the sides.
+
+She is 40,916 triangles in 10 draws. No ray from inside her gets out below the deck, and every strake laps the one below by 2.4 to 3.3 cm. The walk from the aftcastle's ladders to the bow has the deck under it all the way and 0.67 m clear.
+
+**The castles:**
+- **A. Both as drawn** *(recommended)*: a cabin aft, and an open forecastle on posts. The cog's silhouette, high at both ends, reads at a glance.
+- **B. Both closed:** a second small cabin under the forecastle, for crew or stores (L6's crew), which loses the walk to the bow.
+- **C. The game's rails only**, with a flat deck end to end.
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-side.jpg)
+- [her stern](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-lap.jpg)
+- [the deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-deck.jpg)
+- [the aftcastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-castle.jpg)
+- [the forecastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-fore.jpg)
+
+
 ### Aurenne's home as a room: the dyer's flat over a shop, and the courtyard house (look builder, Session 891) — DECISION #318
 **F9's third room: Aurenne's home (look builder, Session 891).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Aurennais street house from the kit (`pieces.js`'s `aurenneHouse`): two storeys, flat-roofed, 9.0 by 7.6 m, with cream plaster, lattice screens upstairs and a pergola on the roof. It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneHome`) and `rooms.html?room=home`. The brief is OG-115's Aurenne panel ("an urban apartment over a shop, a kitchen with hanging pots, a rooftop terrace") and OG-061's blue tile. The canon's Aurenne sells its dyes, so the shop is a dyer's.
 - **The shop (the ground floor):**

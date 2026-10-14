@@ -18419,3 +18419,43 @@ The FREEZE (#297) holds, so this run keeps to the prototypes. Card F9's rooms ha
 - **The cushions and bolts are boxes and cylinders.** Cloth with folds belongs to the bodies builder's drape method if it is wanted here.
 - **The courtyard house is not built.** That is #318.
 - **Not in the game.** `buildInteriorFor` takes this after F2a and card F9's parent.
+
+## v80 — Session 892 — Card F11's fourth hull: the Gatelands cog in the new kit (prototype only)
+The FREEZE (#297) holds. L6's line has the sloop, the cutter and now the caravel (Session 890), and the cog is next. Michael's A on the ship ladder keeps the game's five classes, each dressed by its island, and OG-004's Gatelands row draws a "merchant cog", so this is the cog in the Gatelands' dress, the sloop's of #306. OG-004 was reread. Its catalogue row flags no conflict here (its guns on ordinary hulls are not built).
+
+`gatelandsCog` in `ships.js` is built to the game's cog (`85-world-sea.js`: 17 by 5.6 m, draft 1.25, the sheer 0.55 m over the deck amidships rising 0.85 to the bow and 0.9 to the stern, one tall mast with one great square sail at 8.2 m, castles at both ends).
+- **The hull** is clinker, by the sloop's method (Session 858): twelve strakes a side, each lapped 2.4 to 3.3 cm outside the one below. It is tarred below the water, oiled oak above, and the sheer strake is green under a cream wale. The body is a cog's, not the sloop's:
+  - the half-breadth holds most of the beam to a quarter of her length from either post;
+  - the section turns quickly at the bilge and stands nearly upright, so she is flat-floored and slab-sided;
+  - the stem and the sternpost are straight and raked, and a rudder 0.7 m deep hangs on the post.
+  
+  The beam came out 5.55 m with the sloop's scaling. The topsides' flare is smaller on this section, so the scale is 1.02 and the moulded beam is 5.6 m.
+- **The rig:** the mast is stepped 0.4 m forward of amidships, 10.5 m high, with a round fighting top. The yard is at 8.2 m and 7.4 m long. The sail is green with the harp (`o.harp`), bellied forward, its foot 2.2 m over the deck. There are four shrouds a side, a forestay to the stem head, a stay to the bowsprit (1.8 m), braces to the aftcastle's rail, and sheets.
+- **The castles** are real decks, as the caravel's is, 2.15 m over the main deck, walled from the sheer in green boards with a cream band at their head and a rail at 1.0 m on stanchions.
+  - **The aftcastle** covers her last 3.8 m. Its forward bulkhead has a door of 1.0 by 1.95 m, two windows and a cream lintel, with a companion ladder up either side and the rail broken at their heads. The cabin under it has 2.09 m of headroom. The wheel stands 1 m aft of the castle's edge, per #306's 3 A (the wheel from the cog up).
+  - **The forecastle** covers her first 3.0 m. It is open beneath, its edge carried on two posts, with a ladder up the middle. Its edge beam is 0.12 m deep so the walk to the bow keeps 2.03 m under it; at 0.16 m it would have left 1.99.
+- **The waist:** a cargo hatch of 1.2 by 1.8 m aft of the mast, and three barrels or crates a side against the rail (by the key).
+- **The view:** `ships.html?ship=cog`, with `quarter`, `side`, `deck` (from the aftcastle behind the wheel), `castle` (the aftcastle from the waist), `fore` (the forecastle from the waist) and `lap` (her stern). `&noharp` gives the plain sail.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 39 of 39 pass.** The earlier hulls' checks are unchanged, and ten are new:
+  - **The builds:** 4 keys, each the same twice. 40,880 to 40,916 triangles in 10 draws.
+  - **The size:** 17 by 5.6 m moulded, with the deck 1.0 m over the sea.
+  - **Closed:** of 900 rays from inside her below the deck, none gets out.
+  - **Clinker:** at every strake's lower edge, at 6 stations, it stands 0.024 to 0.033 m outside the strake below.
+  - **The walk:** 74 points, from the aftcastle's ladders to the bow, 4 of them under the forecastle. The deck is under every one, with 2.09 m of headroom and 0.67 m clear.
+  - **The waist's rail:** 1.0 m or more at all 11 stanchions.
+  - **The castles:**
+    - both decks are 2.15 m up, under every probe to the millimetre;
+    - the cabin has 2.09 m of headroom;
+    - the door is clear 3.26 m past the bulkhead;
+    - all three ladders stand on the deck and reach their castles' edges;
+    - rays to either side from 1.0 m over each castle's deck meet its rail.
+  - **The plain sail** leaves the hull the same.
+  - **The pages:** the quarter and fore views render with no page errors.
+- **Pictures:** `ships-cog-quarter.jpg`, `-side`, `-lap`, `-deck`, `-castle` and `-fore`.
+### Needs eyes
+- **The castles' green reads nearly black** in shade. It is the sloop's sheer-strake green over a much larger area. A lighter green or plain oak with a green band would be the fix, if wanted.
+- **The square sail is flat athwartships.** It reads edge-on from the side, as a square sail does; the game braces it round.
+- **The harp is drawn on the sail's forward face.** From the deck it is seen mirrored through the cloth, as a real painted sail would be.
+- **She is 40,900 triangles,** the heaviest hull yet. The strakes' rows (52 stations by 12 strakes by 7 rows, both faces and the lap's edge) are most of it, and a far LOD would drop the inner faces.
+- **Not in the game.** That waits for F2a and card F11's parents.
