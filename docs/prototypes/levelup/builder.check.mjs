@@ -33,11 +33,16 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       const G0 = K.rollGenome('tabard:' + sex, { g: sex }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
       out.tabards[name] = { ...p.tabard, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), bytes: s1.length }; }
     { const G0 = K.rollGenome('skirt:f', { g: 0 }); out.skirtHands = K.makePerson({ ...G0, dress: { ...G0.dress, skirt: 'long', mantle: null } }).skirtHands; }
+    // the laced bodice (Session 888): over a linen chemise and a long skirt, and over a man's tunic for the odd case
+    out.bodices = {}; for (const [name, sex, people, dress] of [['woman, a green laced gown', 0, null, { tunic: [.86, .82, .72], bodice: [.24, .36, .2], skirt: 'long', skirtColor: [.24, .36, .2], mantle: null, cloak: null, apron: null }],
+        ['a Gatelander woman, a madder bodice and an apron', 0, 'gatelander', { tunic: [.88, .84, .74], bodice: [.5, .16, .12], lace: [.85, .8, .7], skirt: 'long', apron: [.8, .76, .66], mantle: null, cloak: null }]]) {
+      const G0 = K.rollGenome('bodice:' + name, { g: sex, ...(people ? { people } : {}) }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
+      out.bodices[name] = { ...p.lacing, laces: p.root.children.filter(m => m.name === 'lacing').length, bodice: !!p.meshes.find(m => m.name === 'bodice'), hands: p.skirtHands, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) }; }
     // the robe (Session 887): one cloth to the ankles, wide sleeves, a cord; saved and loaded back
     out.robes = {}; for (const [name, sex, people, dress] of [['man, a brown habit', 1, null, { robe: [.36, .27, .18], cord: [.66, .6, .46], mantle: null }], ['woman, a robe', 0, null, { robe: [.24, .27, .32], mantle: null }],
         ['an Aurennais man, a pale robe', 1, 'aurennais', { robe: [.86, .81, .71], cord: [.55, .2, .14], cloak: null }], ['man, a habit under a hooded cloak', 1, null, { robe: [.36, .27, .18], cloak: [.36, .27, .18], hood: 'up', cloakLen: .9, mantle: null }]]) {
       const G0 = K.rollGenome('robe:' + name, { g: sex, ...(people ? { people } : {}) }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
-      out.robes[name] = { ...p.cord, names: p.root.children.map(m => m.name).filter(n => /cord|tunic|skirt|trousers|belt/.test(n)), saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), cloak: p.cloak ? { minClear: p.cloak.minClear, under: p.cloak.under } : null }; }
+      out.robes[name] = { ...p.cord, names: p.root.children.map(m => m.name).filter(n => /cord|tunic|skirt|trousers|belt/.test(n)), saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), cloak: p.cloak ? { minClear: p.cloak.minClear, under: p.cloak.under, through: p.cloak.through } : null }; }
     // the hood up over every style and every people: nothing of the head or its hair comes through it (Session 823)
     out.hoods = {}; for (const style of K.HAIR_STYLES) for (const k of Object.keys(K.PEOPLES)) { const G0 = K.rollGenome(`hood:${k}:${style}`, { people: k, g: style === 'short' ? 1 : 0 }), g = { ...G0, hair: { style, len: .8 }, dress: { ...G0.dress, cloak: [.4, .3, .2], hood: 'up' } }, p = K.makePerson(g);
       out.hoods[`${k}, ${style}`] = { ...p.hood, hairCards: !!p.meshes.find(m => m.name === 'hair'), hem: !!p.meshes.find(m => m.name === 'hoodHem') }; }
@@ -62,12 +67,15 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   check(`the beard stops under a cheek line: within the eyes' width ${(r.beard.gap * 100).toFixed(1)} cm under the lower lid, the moustache up to the nose (y ${r.beard.moustTop}), the dark base inside the hairs (${r.beard.baseTris} of ${r.beard.tris} triangles)`, r.beard.gap > .015 && r.beard.moustTop > .678 && r.beard.baseTris < r.beard.tris, r.beard);
   check(`a beard over a tunic stops at its collar: no card on the chest, 4 cm under the collar's front (${r.beardTunic.below} of ${r.beardTunic.verts} points)`, r.beardTunic.below === 0 && r.beardTunic.verts > 1000, r.beardTunic);
   check(`a woman in a long skirt: no hand inside it (${r.skirtHands.bad} of ${r.skirtHands.n} points; the arms lifted ${r.skirtHands.lift} rad)`, r.skirtHands.bad === 0 && r.skirtHands.n > 300, r.skirtHands);
+  for (const [k, c] of Object.entries(r.bodices)) { console.log(k, JSON.stringify(c));
+    check(`${k}: a laced bodice, ${c.eyelets} eyelets and ${c.crossings} crossings over ${(c.span * 100).toFixed(0)} cm and a bow, every lace in front of the cloth (closest ${(c.clear * 1000).toFixed(1)} mm); saved and loaded back`, c.bodice && c.laces === 16 && c.clear > 0 && c.span > .15 && c.saved, c);
+    check(`${k}: no hand inside the long skirt (${c.hands?.bad} of ${c.hands?.n})`, c.hands && c.hands.bad === 0, c.hands); }
   for (const [k, c] of Object.entries(r.robes)) { console.log(k, JSON.stringify(c));
     check(`${k}: the robe is one cloth to the ankles with a cord (${c.names.join(' ')}), saved and loaded back`, c.names.includes('tunic') && c.names.includes('skirt') && c.names.includes('cord') && !c.names.includes('trousers') && !c.names.includes('belt') && c.saved, c.names);
     check(`${k}: no arm through the sleeve (${c.armThrough} of ${c.forePts} forearm points outside it), the sleeve ${(c.upperGap * 100).toFixed(1)} cm off the arm above the elbow and ${(c.cuffGap * 100).toFixed(1)} cm at the cuff`, c.armThrough === 0 && c.forePts > 100 && c.cuffGap > c.upperGap + .015, c);
     if (!c.cloak) check(`${k}: no hand inside the skirt (${c.handsInSkirt} of ${c.handPts} points)`, c.handsInSkirt === 0 && c.handPts > 500, c.handsInSkirt);
     check(`${k}: the cord rides over the tunic (${c.inside} of ${c.ringPts} waist points outside it), its ends in front of the skirt (closest ${(c.endClear * 1000).toFixed(1)} mm)`, c.inside === 0 && c.ringPts > 20 && c.endClear > 0 && c.tested > 15, c);
-    if (c.cloak) check(`${k}: the cloak hangs clear over the robe (closest ${(c.cloak.minClear * 100).toFixed(1)} cm, ${c.cloak.under} points under it)`, c.cloak.under === 0 && c.cloak.minClear > .01, c.cloak); }
+    if (c.cloak) check(`${k}: the cloak hangs clear over the robe (closest ${(c.cloak.minClear * 100).toFixed(1)} cm, ${c.cloak.under} points under it), and nothing of the robe's wide sleeves comes out through it (${c.cloak.through.out} of ${c.cloak.through.tested})`, c.cloak.under === 0 && c.cloak.minClear > .01 && c.cloak.through.out === 0, c.cloak); }
   for (const x of r.roll) { check(`genome ${x.seed} (${x.style}) saves and loads back to itself (${x.bytes} bytes)`, x.same && x.bytes < 1000, x);
     check(`genome ${x.seed}: the same seed rolls the same genome`, x.again);
     check(`genome ${x.seed}: brows of ${x.brows.hairs} hairs, every root on the skin (${x.brows.roots} of ${x.brows.tried}), lying flat (tips ${(x.brows.lift * 1000).toFixed(1)} mm off it)`, x.brows.hairs > 500 && x.brows.roots === x.brows.tried && x.brows.lift < .003, x.brows); check(`genome ${x.seed}: the brow's head combed up and out, not upright (its hairs ${x.brows.headUp} of vertical on average), none past the brow's top by more than 1.5 mm (${(x.brows.over * 1000).toFixed(1)} mm)`, x.brows.headUp < .75 && x.brows.over < .0015, x.brows);
@@ -125,6 +133,11 @@ if (shotArg) { const only = shotArg.split('=')[1];
   await shot('styles-front', 'seed=styles&sex=f&sheet&ang=.35&dist=1.5&y=-.1');
   // the temples (Session 879): three-quarter heads, where the hair's root region stops on a mesh edge by the brow
   for (const [n, q] of [['temples-man', 'seed=b7&sex=m&view=head&turn=.75'], ['temples-woman', 'seed=styles&sex=f&style=bun&view=head&turn=-.75']]) await shot(n, q + '&dress=' + encodeURIComponent('{"mantle":null}'), 2400, 1350, false, [.33, 0, .38, .42]);
+  // the laced bodice (Session 888)
+  { const dq = d => encodeURIComponent(JSON.stringify(d)), gown = { tunic: [.86, .82, .72], bodice: [.24, .36, .2], skirt: 'long', skirtColor: [.24, .36, .2], mantle: null, cloak: null, apron: null };
+    await shot('bodice-woman', 'seed=styles&sex=f&view=full&turn=.35&dress=' + dq(gown)); await shot('bodice-back', 'seed=styles&sex=f&view=full&turn=2.7&dress=' + dq(gown));
+    await shot('bodice-close', 'seed=styles&sex=f&view=full&turn=.2&dress=' + dq(gown), 1920, 1440, false, [.36, .18, .28, .3]);
+    await shot('bodice-gatelander', 'people=gatelander&seed=bodice:g&sex=f&view=full&turn=-.4&dress=' + dq({ tunic: [.88, .84, .74], bodice: [.5, .16, .12], lace: [.85, .8, .7], skirt: 'long', apron: [.8, .76, .66], mantle: null, cloak: null })); }
   // the robe (Session 887)
   { const dq = d => encodeURIComponent(JSON.stringify(d)), habit = { robe: [.36, .27, .18], cord: [.66, .6, .46], mantle: null, cloak: null };
     await shot('robe-man', 'seed=b7&sex=m&view=full&turn=.45&dress=' + dq(habit)); await shot('robe-back', 'seed=b7&sex=m&view=full&turn=2.6&dress=' + dq(habit));

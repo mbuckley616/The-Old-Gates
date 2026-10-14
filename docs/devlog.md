@@ -18301,3 +18301,33 @@ What changed in `people.js`:
 - **A cloak over the robe stands boxy** (`builder-robe-hooded.jpg`). The cloak's columns are pushed out round the wide sleeves as if they were the arms, so it hangs as a slab from the shoulders. The cloak should read the arm under the sleeve, not the sleeve. That is owed next for the robe.
 - **The arms lifted 0.27 rad** read as a figure standing a little open-armed. A pose that brings the hands forward onto the skirt, held there, would be the better answer once the clip library (B4) has a hands-clasped idle.
 - **Striped cloth** (OG-110's Aurennais robe) and a cowl that is the robe's own, not the cloak's hood, are not built.
+
+## v80 — Session 888 — The laced bodice, and the robe's sleeves under a cloak (B2, prototype only)
+The dress, B2's next piece after the robe. The kept sheets draw it for the Gatelands: OG-109's "laced bodices, long skirts" and OG-110's woman in a green laced gown. A gown here is three garments the builder already has, or now has:
+- a chemise, which is the tunic in linen;
+- a long skirt;
+- a laced bodice over them.
+The bodice is the new piece. It is still under FREEZE #297, so this touches only the prototypes (`people.js`, `builder.check.mjs`, `builder.js`'s label).
+
+What changed in `people.js`:
+- **The bodice** is a new garment colour, `bodice`, with an optional `lace` colour. Both save and load and show on the page.
+  - It is a shell off the tights' torso, standing 8 mm over the tunic, from the waist to a square neckline at rest height 0.485, with straps over the shoulders.
+  - Its neckline, straps, armholes and hem are cut in its shader on a region a little larger than the cut. The first try cut by the region's own triangles, and its neckline came out in square steps.
+  - It ends at rest height 0.14, under the belt. Ending at 0.11, it showed a ragged hem below the belt from behind, and the apron's waistband showed between the two in cream patches.
+  - It is open down the front, 1.7 cm wide from the waist to the neckline, so the chemise shows in the gap.
+- **The lacing** (`buildLacing`) is built after the pose from the posed bodice, as the robe's cord is.
+  - There are seven pairs of eyelets, 1.3 cm either side of the middle, each 3 mm off the shell along its normal. Twelve crossings run between them, with a bow of two loops and two tails at the top.
+  - Every point of the lacing is pushed to stand at least 4.5 mm in front of the shell under it. Laid straight between the eyelets, the crossings ran up to 1 cm behind the cloth where the bust curves away. The check caught it, and the picture hid it in the gap.
+
+**The robe under a cloak** (Session 887's owed item). The cloak's mask of what it must hang clear of (`wornMask`) now holds a robe's sleeves, as the tights' shell along the arms standing out by the robe's own push. Its numbers per vertex replace the old fixed 2.5 cm for a skirt. Built with and without the sleeves in the mask, the hooded habit comes out the same: 0 of 6,413 points of the body, the skirt or the sleeves out through the cloak. So the wide sleeves never came through it. The slab-like hang in `builder-robe-hooded.jpg` is the cloak's own look over any long dress (compare `builder-cloak-markman-front.jpg`), not the robe's. The mask stays, so the cloak's check now covers the sleeves.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 209 checks pass**, four of them new, and the robe-under-a-cloak check now covers the sleeves.
+- **Two gowns:** a woman in a green laced gown over a linen chemise, and a Gatelander woman in a madder bodice with pale lacing and an apron. Each has:
+  - **a laced bodice**: 14 eyelets and 12 crossings over 23 to 25 cm, with a bow. Every lace is in front of the cloth, the closest 1.4 and 2.3 mm. It saves and loads back.
+  - **no hand inside the long skirt**: 0 of 844 and 0 of 1,325 points. The arms are lifted 0.18 and 0.24 rad, by Session 887's rule.
+- **Pictures:** `builder-bodice-woman.jpg`, `-back`, `-close` (the lacing at twice the size) and `-gatelander`.
+### Needs eyes
+- **The belt line.** Belt, bodice hem, apron waistband and skirt top all meet within 5 cm there. On the Gatelander a little mottling of red and cream shows along the belt's lower edge.
+- **The neckline is square and plain.** OG-110's gown has a rounder neck and a chemise that gathers at it, and neither is built. The straps are the shell's width, 8 cm, where a real bodice's are narrower.
+- **No people rolls a bodice yet.** It is in the kit for the wardrobe matrix (OG-109 to OG-111) to place, by island and class. That placing is a design call for when that matrix is drawn up.

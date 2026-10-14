@@ -42,6 +42,8 @@ export async function loadPack(base = 'mh/') {
     apron: sel(G['helper-skirt'], (x, y, z) => z > .015 && Math.abs(x) < .2 && y > -.6),
     apronBib: sel(tri, (x, y, z) => z > .03 && Math.abs(x) < .14 && y > .08 && y < .5),
     hood: sel(G['body'], (x, y, z) => y > .6 && !(z > .03 && (x / .06) ** 2 + ((y - .71) / .085) ** 2 < 1)),
+    // the laced bodice (Session 888): the torso off the tights; its neckline, straps and armholes are cut in its shader, so they are smooth
+    bodice: sel(tri, (x, y) => Math.abs(x) < .21 && y > .11 && y < .65),
   };
   // how far each vertex of the hair's root region lies from that region's border, on the rest body (Session 879): the edges
   // that only one of its triangles uses are the border, and a vertex's number is its distance to the nearest of them, so the
@@ -423,11 +425,13 @@ function buildCloak(G, body, byName, rnd) {
 // column can ask how far in it may come at any height (Session 839)
 // which points of the pack stand for what the person wears under the cloak: the body, and the skirt's fitting shell
 // when a skirt is worn (the short tunic's skirt is cut from it, and stands out of the body by up to 2.5 cm, plus its push)
-function wornMask(D) { const m = new Uint8Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
-  if (D.skirt) { const sk = D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort; for (const v of sk) m[v] = 2; } return m; }
+// and a robe's sleeves (Session 888): the tights' shell along the arms, standing out by the robe's own push, up to 4.6 cm at the cuff
+function wornMask(D) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
+  if (D.skirt) { const sk = D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort; for (const v of sk) { m[v] = 2; m.off[v] = .025; } }
+  if (D.robe) for (const v of PACK.R.tunic) { const ax = Math.abs(R0[v * 3]); if (ax > .22 && ax < .4) { m[v] = 3; m.off[v] = .016 + .03 * Math.max(0, Math.min(1, (ax - .24) / .16)) ** 1.5; } } return m; }
 function radialMap(PP, ax, az, y0, y1, B) {
   const NA = 90, NY = Math.ceil((y1 - y0) / .02) + 1, M = new Float32Array(NA * NY), n = PP.length / 3;
-  for (let i = 0; i < n; i++) { if (!B[i]) continue; const y = PP[i * 3 + 1]; if (y < y0 || y > y1) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, r = Math.hypot(dx, dz) + (B[i] === 2 ? .025 : 0);
+  for (let i = 0; i < n; i++) { if (!B[i]) continue; const y = PP[i * 3 + 1]; if (y < y0 || y > y1) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, r = Math.hypot(dx, dz) + B.off[i];
     const a = ((Math.round((Math.atan2(dx, -dz) + Math.PI) / (2 * Math.PI) * NA) % NA) + NA) % NA, j = Math.round((y - y0) / .02), o = j * NA + a; if (r > M[o]) M[o] = r; }
   const S = new Float32Array(M.length); for (let j = 0; j < NY; j++) for (let a = 0; a < NA; a++) { let m = 0; for (let d = -2; d <= 2; d++) for (let e = -1; e <= 1; e++) { const jj = j + e; if (jj < 0 || jj >= NY) continue; m = Math.max(m, M[jj * NA + (a + d + NA) % NA]); } S[j * NA + a] = m; }
   return (th, y) => { const j = Math.max(0, Math.min(NY - 1, Math.round((y - y0) / .02))), a = ((Math.round((th + Math.PI) / (2 * Math.PI) * NA) % NA) + NA) % NA; return S[j * NA + a]; };
@@ -485,7 +489,7 @@ function armsThrough(cols, R, PP, neck, BM) {
   let yHem = -1e9; for (const c of pol) yHem = Math.max(yHem, c[R - 1].y); const yTop = neck.y - .14, n = PP.length / 3, NB = Math.max(1, Math.ceil((yTop - yHem) / .01)), tab = [];
   for (let j = 0; j <= NB; j++) { const y = yTop - j * .01; tab.push(cols.map((_, k) => at(k, y))); }
   let tested = 0, out = 0;
-  for (let i = 0; i < n; i++) { if (!BM[i]) continue; const y = PP[i * 3 + 1]; if (y > yTop || y < yHem + .01) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, th = Math.atan2(dx, -dz), r = Math.hypot(dx, dz) + (BM[i] === 2 ? .025 : 0), row = tab[Math.round((yTop - y) / .01)];
+  for (let i = 0; i < n; i++) { if (!BM[i]) continue; const y = PP[i * 3 + 1]; if (y > yTop || y < yHem + .01) continue; const dx = PP[i * 3] - ax, dz = PP[i * 3 + 2] - az, th = Math.atan2(dx, -dz), r = Math.hypot(dx, dz) + BM.off[i], row = tab[Math.round((yTop - y) / .01)];
     if (th < row[1].th || th > row[K - 2].th) continue; let k = 1; while (k < K - 2 && row[k + 1].th < th) k++; const A = row[k], B = row[k + 1];
     const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))); tested++; if (r > A.r + (B.r - A.r) * t) out++; }
   return { tested, out };
@@ -691,6 +695,33 @@ function buildBrows(P, G, headB) {
 function browCover(S, x, y) { const ax = Math.abs(x); if (ax < S.x0 - .003 || ax > S.x1 + .003) return 0; const t = Math.max(0, Math.min(1, (ax - S.x0) / (S.x1 - S.x0))), q = S.at(t);
   const m = Math.min(y - q.low, q.low + q.h - y), e = Math.min(ax - S.x0, S.x1 - ax); return Math.max(0, Math.min(1, (m + .0015) / .003)) * Math.max(0, Math.min(1, (e + .002) / .004)); }
 
+// ── the bodice's lacing (Session 888): a cord crossing the front opening between seven pairs of eyelets, from the waist up
+// The eyelets are the bodice's own points nearest each rest place (1.3 cm either side of the middle), read on the posed
+// shell and lifted 3 mm off it along its normal; each crossing runs straight between them, bowed out a little over the gap.
+function buildLacing(G, meshes) {
+  const D = G.dress, bod = meshes.find(m => m.name === 'bodice'), R0 = PACK.rest, BP = posedOf(bod), pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(BP, 3)); pg.setIndex(bod.geometry.index); pg.computeVertexNormals();
+  const N = pg.attributes.normal.array, front = [...new Set(PACK.R.bodice)].filter(i => R0[i * 3 + 2] > .03 && Math.abs(R0[i * 3]) < .04 && R0[i * 3 + 1] > .18 && R0[i * 3 + 1] < .5);
+  const near = (x, y) => { let bd = 1e9, b = -1; for (const i of front) { const d = (R0[i * 3] - x) ** 2 + (R0[i * 3 + 1] - y) ** 2; if (d < bd) { bd = d; b = i; } } return b; };
+  const lift = (i, h) => new THREE.Vector3(BP[i * 3] + N[i * 3] * h, BP[i * 3 + 1] + N[i * 3 + 1] * h, BP[i * 3 + 2] + N[i * 3 + 2] * h);
+  const NE = 7, eye = []; for (let k = 0; k < NE; k++) { const y = .23 + (.45 - .23) * k / (NE - 1); eye.push([lift(near(-.013, y), .003), lift(near(.013, y), .003)]); }
+  const pts = [], mat = lockMat(sRGB(...(D.lace || [.25, .18, .12]))), out = [];
+  // every point of the lacing at least 4.5 mm in front of the shell under it (its nearest point, along that point's normal), so
+  // a crossing never runs behind the cloth where the bust curves away under it
+  const all = [...new Set(PACK.R.bodice)], out_ = q => { let bd = 1e9, b = -1; for (const i of all) { const d = (BP[i * 3] - q.x) ** 2 + (BP[i * 3 + 1] - q.y) ** 2 + (BP[i * 3 + 2] - q.z) ** 2; if (d < bd) { bd = d; b = i; } }
+    const h = (q.x - BP[b * 3]) * N[b * 3] + (q.y - BP[b * 3 + 1]) * N[b * 3 + 1] + (q.z - BP[b * 3 + 2]) * N[b * 3 + 2]; if (h < .0045) q.add(new THREE.Vector3(N[b * 3], N[b * 3 + 1], N[b * 3 + 2]).multiplyScalar(.0045 - h)); return q; };
+  const seg = (a, b) => { const line = []; for (let t = 0; t <= 8; t++) { const q = out_(a.clone().lerp(b, t / 8)); line.push(q); pts.push(q); } return line; };
+  for (let k = 0; k < NE - 1; k++) for (const [a, b] of [[eye[k][0], eye[k + 1][1]], [eye[k][1], eye[k + 1][0]]]) { const m = new THREE.Mesh(tubeGeom(seg(a, b), new Array(9).fill(.0022), 6, 30), mat); m.name = 'lacing'; out.push(m); }
+  // a bow at the top: two loops and two short tails
+  { const top = eye[NE - 1][0].clone().lerp(eye[NE - 1][1], .5); top.z += .003;
+    for (const sx of [-1, 1]) { const loop = []; for (let t = 0; t <= 12; t++) { const a = Math.PI * 2 * t / 12; loop.push(top.clone().add(new THREE.Vector3(sx * (.009 + .009 * Math.cos(a + Math.PI)) , .005 * Math.sin(a), .002 + .001 * Math.sin(a)))); }
+      const tail = [top.clone(), top.clone().add(new THREE.Vector3(sx * .006, -.025, .004)), top.clone().add(new THREE.Vector3(sx * .009, -.045, .003))];
+      for (const L of [loop, tail]) { for (let it = 0; it < 2; it++) for (const q of L) out_(q); const m = new THREE.Mesh(tubeGeom(L, new Array(L.length).fill(.002), 6), mat); m.name = 'lacing'; out.push(m); pts.push(...L); } } }
+  for (const m of out) { m.castShadow = m.receiveShadow = true; m.frustumCulled = false; }
+  // the checks' number: how far the lacing stands in front of the bodice under it (the nearest of its points, along that point's normal)
+  let clear = 1; for (const q of pts) { let bd = 1e9, b = -1; for (const i of all) { const d = (BP[i * 3] - q.x) ** 2 + (BP[i * 3 + 1] - q.y) ** 2 + (BP[i * 3 + 2] - q.z) ** 2; if (d < bd) { bd = d; b = i; } }
+    clear = Math.min(clear, (q.x - BP[b * 3]) * N[b * 3] + (q.y - BP[b * 3 + 1]) * N[b * 3 + 1] + (q.z - BP[b * 3 + 2]) * N[b * 3 + 2] - .0022); }
+  return { meshes: out, stats: { eyelets: NE * 2, crossings: (NE - 1) * 2, clear: +clear.toFixed(4), span: +(eye[NE - 1][0].y - eye[0][0].y).toFixed(3) } };
+}
 // ── the robe's cord (Session 887): a rope round the waist, tied at the front to one side, its two ends hanging down the skirt
 // Built after the pose from the posed tunic and skirt, like the tabard: a ring over the tunic at the waist, pushed clear of
 // the furthest cloth in each direction, and two ends that follow the skirt's front down, with a knot at each tip.
@@ -785,6 +816,9 @@ export function makePerson(G, o = {}) {
   // never comes through it, and seen from both sides, since its open cuff shows the inside
   const sleeve = x => D.robe ? .03 * Math.max(0, Math.min(1, (Math.abs(x) - .24) / .16)) ** 1.5 : 0;
   if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}) }), (x, y) => .013 + sleeve(x) + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0));
+  // a laced bodice over the chemise (Session 888; OG-110's green laced gown, OG-109's Gatelands bodices): 8 mm over the
+  // tunic, ending under the belt (rest .14), open down the front between the eyelets, so the chemise shows in the gap; the lacing is built after the pose
+  if (D.bodice) push('bodice', PACK.R.bodice, clothMat(sRGB(...D.bodice), 'wool', { cut: [.14, .62, .19, .002], hole: '(vB.z > .03 && abs(vB.x) < .0085 && vB.y > .2 && vB.y < .5) || (vB.y > .485 && (abs(vB.x) < .068 || abs(vB.x) > .148))', side: THREE.DoubleSide, inner: .5 }), (x, y) => .021 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * Math.exp(-(((y - .16) / .03) ** 2))) : 0));
   if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01] }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
   if (D.belt) push('belt', PACK.R.belt, clothMat(sRGB(...D.belt), 'leather', { cut: [.135, .19, 9, .0005] }), .03);
   if (D.cuffs) push('cuffs', PACK.R.cuffs, clothMat(sRGB(...D.cuffs), 'wool', { cut: [-2, 2, .4] }), .02);
@@ -836,9 +870,10 @@ export function makePerson(G, o = {}) {
     byName['upperarm01.L'].quaternion.copy(q(0, 0, -(pose.arm - lift))); byName['upperarm01.R'].quaternion.copy(q(0, 0, pose.arm - lift)); }
   if (skirtHands) skirtHands.lift = +lift.toFixed(2);
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
+  let laceStats = null; if (D.bodice) { root.updateMatrixWorld(true); const L = buildLacing(G, meshes); for (const m of L.meshes) root.add(m); laceStats = L.stats; }
   let cordStats = null; if (D.cord) { root.updateMatrixWorld(true); const C = buildCord(G, body, meshes); for (const m of C.meshes) root.add(m); cordStats = C.stats; if (D.robe && o.robeStats !== false) Object.assign(cordStats, robeStats(body, meshes)); }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, skirtHands, hood: hoodStats, brows: browStats };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -861,7 +896,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
