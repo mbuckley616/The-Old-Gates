@@ -18199,3 +18199,46 @@ Asked as **DECISION #314**: where a smugglers' lair is. A, a sea cave with its o
 - **The deck has no rail** along its sea edge, which is right for a working landing but is a fall into 1.2 m of water. The combat page decides whether that is a hazard.
 - **The storeroom is a box.** A real one would be built against the rock with a lean-to roof, and its walls cut to the rock's line.
 - **None of the four places is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.
+
+## v80 — Session 878 — The limestone cave rebuilt at three times the measure, with its dressing (card F8, prototype only)
+Michael answered A on #313: the day comes down the shaft and the flowers glow. He added a note: "I don't think this cave is expansive enough. This feels pretty underwhelming to me. I hope this isn't the scale we're going for in all of our dungeon interiors, especially Old Gates." His F2b answer (3 m cells) says the same of the gates, "extremely massive and cavernous", and allows a cave or a mine "a more typical size". The cave of Session 872 was too small even for that. It was a box of 22 by 26 by 11 m with flat walls, so the swallow hole showed as a ring in a flat ceiling, and it held nothing but cones. The FREEZE (#297) holds, so this is the prototype again. OG-121 and OG-099 were reread: OG-099 is "a cave of blue pools and a bridge under waterfalls", and the first build left out both the pools and the bridge.
+
+`gatelandsCave` in `places.js` is rewritten. The returned shape is the same, with `walkY`, `bridge`, `columns` and `pools` added:
+- **The hall is lofted ring by ring** (a new `loft()`). It is 64 m long. It is 30 m across at its ends and 46 m in the middle (35 m at the floor). Its crown is 16 m over the shore at the ends and 26 m in the middle, and both ends close in rounded domes. The rock is moved by noise at three sizes (4 m, 1.2 m and the place's own 0.35 m) and by nine alcoves and buttresses high on the side walls. The noise fades to a tenth near the floor, so the walls meet the floor cleanly and stay off the walk.
+- **The cuts are by test, not by hand.** The hall drops its faces that lie inside the passage's tube or under the shaft. The tube drops its faces that lie inside the hall. Each cut has a margin of 0.4 to 0.5 m, so the two shells overlap and no slit opens where they meet.
+- **The way in** is a passage of 22 m that winds 2.5 m either side. It is 4.4 m wide and 3.6 m high, and it comes out on a **ledge 4.5 m up** across the hall's near end, a balcony over the lake. A ramp of rock runs down the east wall to the shore at 1 in 4.4.
+- **The shore** is a band 11 m wide down the east side. It steps down to the lake in **three rimstone terraces** of 0.25 m and 1.4 m, their edges wavy, with **30 blue pools** in low lumpy dams on them (OG-099). The lake's bed is 4.2 m under the surface.
+- **A natural bridge** of lofted rock crosses the lake from the shore to a dry shelf on the west wall. Its deck arches 0.8 m, with 1.05 m of air between its underside and the water.
+- **The falls** come through a swallow hole in the far dome and fall about 20 m into the pool beyond the shelf, as five ribbons that spread as they fall, with foam and mist. The shaft's funnel now starts just under the roof, so it no longer hangs below the ceiling like a cap.
+- **The dressing:**
+  - five columns, floor to roof, waisted and fluted, two of them standing in the lake;
+  - stalactites in 34 clusters, lumpy rather than cones, every tip 3 m or more over the floor beneath it;
+  - stalagmites with blunt tops, under a third of the stalactites over dry ground and scattered on the shore;
+  - 16 flowstone curtains with V-shaped, scalloped hems, hung from the overhangs;
+  - 22 fallen blocks, made from noisy icosahedra (the rounded boxes read as luggage);
+  - the glowing flowers, now by the pools.
+- **The view:** `places.html?place=cave` keeps `lake` (now from the ledge, the reveal), `shore` (from the ramp's foot), `falls` (from the shelf) and `passage`, and adds `bridge`. The light is the day down the shaft (Michael's A), a wide cool bounce off the white water, the flowers, and your torch. The first pass was far too bright, more like day than a cave, and the ambient and the bounce were cut by half.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The lake's bed was face down.** The grid's winding was flipped in the rewrite, so the bed could not be seen from above and the rays passed through it.
+- **NaN in a curtain's hem.** A fractional power of −0.0 at the sheet's edge gave NaN.
+- **The black block came back** on the bridge view, the same glossy-water overflow under a strong spot that Session 873 met on the sea. The lake's roughness went from 0.04 to 0.16 and the pools' to 0.2.
+- **Flowers floated or sank** where the floor grid ran across a terrace's step. Flowers now go only on grid cells whose four corners lie on one terrace, and the terraces were widened from 0.8 m to 1.4 m so the cells fit.
+- **A column stood on the bridge's landing** once the shelf moved to keep the falls' pool deep. The column was moved.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 33 of 33 pass.** The cave's six checks were rewritten for the new shape and two were added:
+  - **The builds:** 3 keys, each the same twice. 142,828 to 143,282 triangles in 12 meshes (the bound is now 160,000 and 14).
+  - **The hall's measure (new):** 64 m long, 45.4 to 47.2 m across 8 m up, and 24.4 to 30.1 m from floor to roof at its middle.
+  - **The walk:** 426 points every quarter metre from the mouth, down the passage, over the ledge, down the ramp (it falls 4.5 m), along the shore and over the bridge to the shelf. The floor is within −0.042 to 0.027 m of `walkY` at every point, with 2.29 m of headroom or more and 0.84 m clear at the hip and the head.
+  - **Closed:** of 1,440 rays from six points, none gets out except by the mouth (4 to 7) or up the shaft (0 to 1).
+  - **The lake:** 4.2 m deep in its middle. The falls land in 0.92 to 2.93 m of water, and the pool sees the sky.
+  - **The bridge and the columns (new):** the deck is 0.8 m up at its middle, with 1.05 m of air over the water. All 5 columns stand on the floor.
+  - **The flowers:** 23 to 32 by 30 pools, each on the ground to 0.006 m.
+  - **The page:** the lake view renders with no page errors.
+- **Pictures:** `places-cave-lake.jpg`, `-shore`, `-falls`, `-bridge` (new) and `-passage`, at the same links as before.
+### Needs eyes
+- **Is this the measure?** At 64 by 46 by 26 m it is a great cavern, not a typical one. If Michael means caves to be this size as a rule, the lair (#314, next) and the mine follow. If not, `RX`, `RY` and `L` scale it down. The Old Gates' own size is card F5's (deep work).
+- **The terraces are still steps.** They are wavy in plan, but each edge is a 0.25 m drop on a 0.5 m grid. Real rimstone has a rounded lip, which the dams give only to the pools.
+- **The rock texture smears** where `worldUV` changes axis on the passage's crown and on the curved hall. A triplanar rock material would fix it, and it belongs to the kit (`common.js`), not to this place.
+- **The falls are still ribbons, and they burn white** under the shaft's spot. Moving water and spray are the game's.
+- **At 143,000 triangles** the cave is heavy for one room. The hall's 128 by 112 rings and the floor's 100 by 132 grid are most of it, and in the game a lower ring count at a distance would serve.
