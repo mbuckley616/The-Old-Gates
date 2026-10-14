@@ -16863,3 +16863,16 @@ So Session 807's own finding struck twice at once. A foe's light, added by a tim
 - `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
 ### Needs eyes
 - Nothing in play: no game code changed. Under load, the frame costs this suite logs are those of a shared machine, not the look's. Session 822's alone-on-the-machine numbers stand.
+
+## v80 — Session 831 — `hourhitch` judges a frame against the run's own frames too (CI health, tests only)
+`hourhitch` was on Session 804's list and went FLAKY on `0f94602` (auto/producer, 13 Oct). No fix had reached it since. I ran two copies side by side here, and one failed the frame-time check: worst 12,098 ms against a cap of 10,606. That frame came at the second jump to noon, with no shader compiled and no program added (the count stayed at 2 from the first dusk to the end). The cap was 8 s or twice noon's worst, and noon's worst is the slowest of 12 frames read once, at the start. That run read 5.3 s there, while its ordinary steps ran 6.4–8.6 s, so a cap of twice 5.3 s was tighter than the machine. The stall this suite hunts (the critic's s158) was 20–24 s with ordinary frames of about 4 s.
+
+The cap is now the largest of 8 s, twice noon's worst, and twice the median of the judged steps' worst frames. On these runs that median is 7.2–7.4 s, so the cap is 14.4–14.8 s, and a 20–24 s stall would still fail it. The 4× noon clause and the two compile checks are unchanged: they are what catches a rebuild.
+
+### Verified (headless Chromium)
+- **Before the fix, two runs side by side:** one fails (`worst 12098, noon 5303, cap 10606`). The other passes (`worst 8683, noon 6321`). Both compile nothing after the first night and hold 27 lights throughout.
+- **After the fix, two runs side by side:** both pass, 6 of 6 checks each. Worst 9,269 ms (noon 6,299, median 7,404, cap 14,808) and 13,407 ms (noon 6,849, median 7,400, cap 14,800).
+- **The other limit, three runs side by side:** frames of 10–28 s, and all three were stopped by the runner's 15-minute limit before the checks. That is more load than one CI job carries, and it is not a result.
+- `python3 scripts/parsecheck.py`: 43 files and their concatenation OK.
+### Needs eyes
+- Nothing in play: no game code changed.
