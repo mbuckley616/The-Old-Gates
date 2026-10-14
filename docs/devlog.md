@@ -17303,3 +17303,39 @@ Each routine API call returned 200, and each routine read back its new prompt, i
 ### Needs eyes
 - **Usage over the next week:** the two new routines add up to about 24 Opus run-hours a day at these schedules. The Studio Floor shows it, and its pace controls can slow either one.
 - **The first bodies and QA runs:** check that they keep to their files.
+
+## v80 — Session 849 — The Drowned Bell's wreck on its tidal rock (backlog L, prototype only)
+The fourth of the Makers' trials' props. An Mhuir's bell lies in "a wreck on a rock that is above water only at low tide (hours 0–6 and 12–18)" (`unique-artifacts.md`). The systems builder's trial (Session 801, `87-world-quests.js`) keeps the sea level and moves the wreck instead: at high tide it sits 2.4 units lower (`BELL_HIGH_DY`), so only the mast shows; at low tide E within 2.6 of the bell takes it; taken, the beam is left with "a bright ring of wood where something hung for a long time". Its placeholder is a dodecahedron, a box hull, a cylinder mast and a cup. A FREEZE (#297, F2a) is open, so this is built in the prototype only.
+
+`props.js` has `tidalWreck(o, r)`. Its frame puts low water at y 0 and high water at `HW`, 2.4 m, the game's own range:
+- **The skerry:** a flattened dome of 16 by 10 m, its top pressed nearly flat above 0.6 so it reads as a wave-cut shelf awash at the ebb, 0.4 to 0.5 m up. Nine boulders round it and 26 patches of weed on it, all in a wet rock.
+- **The hull:** a small trader of 10 m, sunk a little into the rock and heeled 26° onto its low side. 13 pairs of frames: the low side's run to the gunwale and keep their planking (one plank in five gone); the high side's are broken off between a third and three-quarters up, planked only near the keel. A keel, and stem and stern posts broken low. About 70 strands of weed hang off the frames, all below the high-water line.
+- **The mast:** stepped amidships and broken off at 7 m. It is the only thing out of the sea at high water.
+- **The last beam:** a deck beam aft at 0.64 of the hull's depth, low enough that its high end stays under high water. It rests on a rib that still reaches it.
+- **The bell:** a lathe-turned ship's bell of 0.45 m in bronze gone green, with a crown loop, an iron strap and a clapper, hung plumb from the beam toward its high end. It hangs there and not mid-beam, because mid-beam put it at a standing person's knee.
+- **`o.taken`:** the bell, strap and clapper are gone, and a band of pale wood rings the beam where the strap was.
+
+`trials.html?view=wreck` shows it from a boat's height at low water. `&tide=high` raises the sea to 2.4 m. `&close` stands you in the hull at the bell, and `&taken` takes it. The page has its own sea for this (`main.js`'s water: two scales of waves, the sky in the fresnel and a sun glint), a sand floor at −3.2 m and the port's headland 330 m off. A new `&cam=x,y,z,tx,ty,tz` puts the camera anywhere on any view, which is how the hull was looked at from behind.
+
+**Fixed on the way, three things the pictures and the checks showed:**
+- **The rock went under.** The first rock was a box, which read as a plank. The second sank, because its flattening took the dome's top down below the sea.
+- **Wood stood out of the sea.** At high water the beam's high end and a bow rib stood up to 2.49 m. The hull now sits 0.18 m lower in its pocket and the beam lower in the hull, and the check finds no point within 0.1 m of the surface but the mast's.
+- **The bell hung too low.** Mid-beam it hung 0.56 m above the feet; toward the high end it hangs 0.85 m.
+
+Added to **DECISION #298** as its fourth question:
+- **A:** a plain trader's hull, as drawn.
+- **B** (recommended): the Compact's ship, since the Compact's rolls say the bell was "entered on a ship's manifest, and lost with the ship". The hull would be Aurennais, carvel with a lateen yard, built from L6's Aurenne hull when that exists.
+### Verified (headless Chromium)
+- **`trials.check.mjs`: 17 of 17 pass**, with five new checks over 12 keys:
+  - **The builds:** 11,934 to 12,246 triangles in 6 meshes, each the same twice.
+  - **High water:** no point but the mast's is within 0.1 m of the 2.4 m surface or above it, and the mast stands 4.53 to 4.62 m out.
+  - **Low water:** the bell's lip is 0.79 to 0.90 m up, clear of the sea, and its crown is 1.31 to 1.42 m, under high water.
+  - **The reach:** standing in the hull at 0.17 to 0.26 m (above the ebb), a person is 1.45 to 1.47 m across from the bell, inside the game's 2.6. The bell is 0.84 to 0.87 m above the feet.
+  - **Taken:** the bell is gone and the bright ring is there.
+  - **The page:** the wreck page renders with no page errors.
+- **Pictures, new:** `trials-wreck.jpg`, `-wreck-high`, `-wreck-close` and `-wreck-close-taken`. The seven older pictures were retaken by `--shots` and are unchanged in content.
+### Needs eyes
+- **The hull is generic.** A Gatelands, Mark or Aurenne dress waits on L6's hull line (question 4 on #298).
+- **The tide in the game moves the wreck, not the sea.** Built in the game, the rock should stay put and only the hull and bell sink, or the skerry will rise and fall with them. That is a note for the session that brings it in after F2a.
+- **Solids:** nothing of it is solid yet, in the prototype or the game.
+- **The weed** is flat blobs and strips. It reads from a boat but not from the hull.

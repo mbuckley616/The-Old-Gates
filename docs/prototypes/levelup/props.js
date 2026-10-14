@@ -10,6 +10,12 @@
 //   lantern of 0.43 m to its ring: a square iron frame with horn panes, a pierced conical cap with a ring to carry it by, a brass plate
 //   on its door with the hearth's mark, a candle's flame inside. o.lit (default true): the horn glows and the flame burns;
 //   unlit (a crime put it out) the horn is dull and there is no flame. o.hook: the inn's iron bracket on a stone wall stub.
+// tidalWreck(o, r) (Session 839): An Mhuir's trial, the Drowned Bell, "a wreck on a rock that is above water only at low tide".
+//   y = 0 is low water and HW (2.4 m, the game's BELL_HIGH_DY) high water. A flat skerry awash at the ebb; on it a small trader's
+//   hull of 10 m, sunk a little into a pocket of the rock and heeled 26° onto its starboard side: the low side keeps its planking, the high side is bare ribs broken short; weed
+//   to the high-water line. The broken mast is the only thing that stands out of the sea at high water. The last deck beam aft
+//   carries the bell (a bronze ship's bell gone green, 0.45 m) on an iron strap, under water at high tide and in reach of a person
+//   standing in the hull at low. o.taken: no bell, a bright ring of wood on the beam where its strap was.
 // All -> { group, tris, draws, top, grip | ring | handle } (the grip's or the ring's place in the prop's own frame). One mesh per material.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -22,7 +28,9 @@ function mats() {
   PM = { rock: mat('rock', { ns: 1.4, color: 0xb4b2a6, rough: .95 }), moss: mat('rock', { ns: 1.2, color: 0x7a8a5a, rough: 1 }), dressed: mat('ashlar', { ns: 1.0, color: 0xc8c2b2, rough: .9 }),
     steel: new THREE.MeshStandardMaterial({ color: 0xc4c8cc, roughness: .35, metalness: .45 }), iron: new THREE.MeshStandardMaterial({ color: 0x23211f, roughness: .5, metalness: .6 }),
     gold: new THREE.MeshStandardMaterial({ color: 0xc8952e, roughness: .3, metalness: .85 }), leather: new THREE.MeshStandardMaterial({ color: 0x3a2618, roughness: .8 }), horn: new THREE.MeshStandardMaterial({ color: 0xc89a5a, roughness: .55, transparent: true, opacity: .82 }),
-    hornLit: new THREE.MeshStandardMaterial({ color: 0xd8a860, emissive: new THREE.Color(1, .62, .28), emissiveIntensity: 1.6, roughness: .5, transparent: true, opacity: .9 }), flame: new THREE.MeshStandardMaterial({ color: 0xffd090, emissive: new THREE.Color(1, .75, .4), emissiveIntensity: 4 }), brass: new THREE.MeshStandardMaterial({ color: 0xb08a3e, roughness: .4, metalness: .7 }), dark: new THREE.MeshStandardMaterial({ color: 0x0d0b09, roughness: 1 }) };
+    hornLit: new THREE.MeshStandardMaterial({ color: 0xd8a860, emissive: new THREE.Color(1, .62, .28), emissiveIntensity: 1.6, roughness: .5, transparent: true, opacity: .9 }), flame: new THREE.MeshStandardMaterial({ color: 0xffd090, emissive: new THREE.Color(1, .75, .4), emissiveIntensity: 4 }), brass: new THREE.MeshStandardMaterial({ color: 0xb08a3e, roughness: .4, metalness: .7 }), dark: new THREE.MeshStandardMaterial({ color: 0x0d0b09, roughness: 1 }),
+    wetRock: mat('rock', { ns: 1.6, color: 0x75726a, rough: .5 }), weed: new THREE.MeshStandardMaterial({ color: 0x3a3a1c, roughness: .6, side: THREE.DoubleSide }), wetWood: mat('wood', { ns: 1.2, color: 0x7a6650, rough: .55 }),
+    spar: mat('wood', { ns: 1.0, color: 0xb0a898, rough: .9 }), bronze: new THREE.MeshStandardMaterial({ color: 0x5f8a72, roughness: .55, metalness: .5 }), scar: mat('wood', { ns: .6, color: 0xd8bc8a, rough: .8 }) };
   return PM;
 }
 // a rough stone: a subdivided box (or ball) pushed about by smooth noise from the prop's stream, so the same key makes the same stone
@@ -99,4 +107,58 @@ export function waylamp(o = {}, r = stream('waylamp')) {
   if (o.hook) { put(rough(new THREE.BoxGeometry(1.2, 2.4, .5, 4, 8, 2), r, .02, 3), 'rock', 0, 1.2, -.42, 0, 0, 0, .5); put(new THREE.BoxGeometry(.03, .03, .36), 'iron', 0, y0 + h + .215, -.12); put(new THREE.BoxGeometry(.03, .26, .03), 'iron', 0, y0 + h + .1, -.24, -.7);
     put(new THREE.TorusGeometry(.022, .005, 6, 12), 'iron', 0, y0 + h + .19, 0, 0, Math.PI / 2); }
   return finish({ handle, lit, height: +(h + .185).toFixed(3) });
+}
+
+export function tidalWreck(o = {}, r = stream('wreck')) {
+  const { put, finish } = kit(), HW = 2.4, rockTop = .4 + r() * .1, L = 10, heel = .45, pitch = .04 + r() * .03, ry = (r() - .5) * .3;
+  // the skerry: a long flat rock awash at the ebb, ledges and boulders round it, dark and wet to well above its top, weed in its hollows
+  { const g = new THREE.SphereGeometry(1, 48, 20); g.scale(8, 2.2, 5); rough(g, r, .28, .55); const P = g.attributes.position;
+    /* a wave-cut top: above 0.6 the dome is pressed nearly flat, so its crown is 0.84 and the shelf round it shelves off gently */
+    for (let i = 0; i < P.count; i++) { const y = P.getY(i); if (y > .6) P.setY(i, .6 + (y - .6) * .15); } g.computeVertexNormals(); put(g, 'wetRock', 0, rockTop - .84, .4, 0, ry * .5, 0, .35); }
+  for (let i = 0; i < 9; i++) { const s = .4 + r() * .9, a = r() * 6.28, d = 5.5 + r() * 3; put(rough(new THREE.IcosahedronGeometry(s, 3), r, s * .22, 1.6), 'wetRock', Math.cos(a) * d * 1.3, rockTop - s * .75 + r() * .25, Math.sin(a) * d * .8, r(), r() * 6, 0, .4); }
+  for (let i = 0; i < 26; i++) { const g = rough(new THREE.SphereGeometry(.3 + r() * .35, 12, 6), r, .14, 4); g.scale(1.5, .1, 1); const a = r() * 6.28, d = 2 + r() * 5; put(g, 'weed', Math.cos(a) * d * 1.3, rockTop - .06 - (d > 5 ? (d - 5) * .25 : 0), Math.sin(a) * d * .75 + .4, 0, r() * 6); }
+  // the hull's frame: x along the keel, y up from it, z across; heeled onto +z (the low side), the bow (+x) a little up
+  const HM = new THREE.Matrix4().compose(new THREE.Vector3(0, rockTop - .06, .3), new THREE.Quaternion().setFromEuler(new THREE.Euler(heel, ry, pitch, 'YXZ')), new THREE.Vector3(1, 1, 1));
+  const hp = (geo, key) => { geo.applyMatrix4(HM); put(geo, key); }, at = (x, y, z) => new THREE.Vector3(x, y, z).applyMatrix4(HM);
+  const half = x => 1.9 * Math.sqrt(Math.max(0, 1 - (x / (L * .56)) ** 2)), depth = x => 1.55 + .25 * (x / (L / 2)) ** 2;
+  const sec = (x, th) => new THREE.Vector3(x, depth(x) * (1 - Math.cos(th)) ** .85, half(x) * Math.sin(th));
+  // the keel, and the stem and stern posts broken low
+  hp(new THREE.BoxGeometry(L, .2, .18).translate(0, .08, 0), 'wetWood');
+  for (const e of [1, -1]) { const c = new THREE.CatmullRomCurve3([new THREE.Vector3(e * L / 2, .08, 0), new THREE.Vector3(e * (L / 2 + .45), .5, 0), new THREE.Vector3(e * (L / 2 + .6), .75 + r() * .2, 0)]); hp(new THREE.TubeGeometry(c, 6, .1, 5), 'wetWood'); }
+  // the frames: pairs of ribs; the low side's run to the gunwale, the high side's are broken off between a third and five-sixths up
+  const NF = 13, fx = i => -L / 2 + .55 + i * (L - 1.1) / (NF - 1), tops = [];
+  for (let i = 0; i < NF; i++) { const x = fx(i), lowT = 1, highT = .3 + r() * .45; tops.push(highT);
+    for (const [sgn, tm] of [[1, lowT], [-1, highT]]) { if (sgn < 0 && r() < .12) continue; const pts = []; for (let k = 0; k <= 6; k++) pts.push(sec(x, sgn * tm * Math.PI / 2 * k / 6));
+      hp(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 8, .07, 5), 'wetWood'); } }
+  // the planking: strakes between the frames, the low side's mostly whole (one plank in five gone), the high side's only near the keel
+  const strake = (th0, th1, x0, x1) => { const a = sec(x0, th0), b = sec(x1, th0), c = sec(x0, th1), d = sec(x1, th1), mid = a.clone().add(b).add(c).add(d).multiplyScalar(.25);
+    const u = b.clone().sub(a), v = c.clone().sub(a), n = u.clone().cross(v).normalize(), len = u.length() + .06, w = v.length() * .92;
+    const g = new THREE.BoxGeometry(len, w, .045), m = new THREE.Matrix4().makeBasis(u.clone().normalize(), v.clone().normalize().sub(u.clone().normalize().multiplyScalar(v.clone().normalize().dot(u.clone().normalize()))).normalize(), n);
+    g.applyMatrix4(m); g.translate(mid.x, mid.y, mid.z); hp(g, 'wetWood'); };
+  const NS = 7; for (let s = 0; s < NS; s++) { const t0 = s / NS * Math.PI / 2, t1 = (s + 1) / NS * Math.PI / 2;
+    for (let i = 0; i < NF - 1; i++) { if (r() > .2) strake(t0, t1, fx(i), fx(i + 1)); if (s < 2 && r() > .35) strake(-t1, -t0, fx(i), fx(i + 1)); } }
+  // the mast: a stump stepped amidships, broken off at 7 m, the only thing out of the sea at high water; a shroud's rag of rope
+  const mx = .6, mastTop = at(mx, 7.1, 0); hp(new THREE.CylinderGeometry(.11, .17, 7, 8).translate(mx, 3.55, 0), 'spar');
+  { const g = new THREE.CylinderGeometry(.11, .11, .28, 8, 1, false, 0, Math.PI * 1.2); g.translate(mx, 7.1, 0); hp(g, 'spar'); }
+  // the last deck beam aft, from the low side's gunwale to a high-side rib that still reaches it; the bell hangs from its middle
+  const bx = fx(2), bth = Math.acos(1 - .64 ** (1 / .85)), beamA = sec(bx, bth), beamB = sec(bx, -bth); /* the beam at 0.64 of the depth: its high end stays under high water */
+  { const c = new THREE.CatmullRomCurve3([sec(bx, -Math.PI / 2 * .4), sec(bx, -bth * .85), beamB]); hp(new THREE.TubeGeometry(c, 5, .075, 5), 'wetWood'); }
+  const bq = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), beamA.clone().sub(beamB).normalize()), bmid = beamA.clone().add(beamB).multiplyScalar(.5);
+  { const g = new THREE.BoxGeometry(.16, .16, beamA.distanceTo(beamB) + .1); g.applyQuaternion(bq); g.translate(bmid.x, bmid.y, bmid.z); hp(g, 'wetWood'); }
+  const hp7 = beamA.clone().lerp(beamB, .72), hang = at(hp7.x, hp7.y - .08, hp7.z), /* hung toward the beam's high end, at a standing person's chest */ wq = new THREE.Quaternion().setFromRotationMatrix(HM).multiply(bq);
+  // weed hanging off the frames, the beam and the gunwale, everything below high water
+  for (let i = 0; i < 70; i++) { const fi = Math.floor(r() * NF), side = r() < .5 ? 1 : -1, t = side > 0 ? r() : r() * tops[fi], p = at(...sec(fx(fi), side * t * Math.PI / 2).toArray());
+    if (p.y > HW - .15) continue; const len = .15 + r() * .4; put(new THREE.PlaneGeometry(.05 + r() * .06, len).translate(0, -len / 2, 0), 'weed', p.x, p.y, p.z, (r() - .5) * .3, r() * 6.28); }
+  for (let i = 0; i < 6; i++) { const len = .2 + r() * .3; put(new THREE.PlaneGeometry(.06, len).translate(0, -len / 2, 0), 'weed', hang.x + (r() - .5) * .3, hang.y - .02, hang.z + (r() - .5) * 1.2, 0, r() * 6.28); }
+  // the bell: a ship's bell of bronze gone green, hung plumb from the beam on an iron strap, a clapper inside; or, taken, the ring
+  // of bright wood round the beam where the strap was
+  const BH = .45, strap = .1, bell = hang.clone().add(new THREE.Vector3(0, -strap - BH / 2, 0));
+  if (!o.taken) { const prof = [[0, .41], [.07, .405], [.095, .34], [.115, .2], [.15, .07], [.18, .015], [.19, 0], [.215, 0], [.222, .03], [.19, .08], [.15, .2], [.128, .33], [.115, .41], [.085, .44], [0, .45]].map(([a, b]) => new THREE.Vector2(a, b));
+    const g = new THREE.LatheGeometry(prof, 24); put(g, 'bronze', bell.x, bell.y - BH / 2, bell.z);
+    put(new THREE.TorusGeometry(.045, .014, 6, 14), 'bronze', hang.x, hang.y - strap + .02, hang.z); put(new THREE.BoxGeometry(.035, strap + .08, .02), 'iron', hang.x, hang.y - strap / 2 + .02, hang.z);
+    put(new THREE.CylinderGeometry(.012, .012, .3, 6), 'iron', bell.x, bell.y - .02, bell.z); put(new THREE.SphereGeometry(.04, 8, 6), 'iron', bell.x, bell.y - .17, bell.z); }
+  else { const g = new THREE.CylinderGeometry(.098, .098, .05, 12, 1, true).rotateX(Math.PI / 2); g.applyQuaternion(wq); g.translate(hang.x, hang.y + .08, hang.z); put(g, 'scar'); }
+  // where a person stands to reach it: on the low side's planking inside the hull, a metre aft of the beam's line
+  const sx = bx + .9, st = Math.asin(Math.min(1, .9 / half(sx))), stand = at(...sec(sx, st).toArray()).add(new THREE.Vector3(0, .05, 0));
+  return finish({ HW, rockTop: +rockTop.toFixed(2), bell: bell.toArray().map(v => +v.toFixed(3)), stand: stand.toArray().map(v => +v.toFixed(3)), mastTop: +mastTop.y.toFixed(2), taken: !!o.taken });
 }
