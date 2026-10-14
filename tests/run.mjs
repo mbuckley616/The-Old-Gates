@@ -1,5 +1,6 @@
 // Run every *.test.mjs in this folder, one browser each, and report. `node tests/run.mjs saves` runs one.
 // `node tests/run.mjs --shard=2/8` runs the second of eight shares (CI ran eight side by side from Session 254, twelve since Session 652).
+// `node tests/run.mjs --look=new` boots each suite on three.js 0.170 (Session 822).
 // `node tests/run.mjs --src=PATH` boots PATH instead of the repo's index.html (a split copy in a scratch folder, Session 368).
 import fs from 'fs'; import path from 'path'; import { spawnSync } from 'child_process'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -8,6 +9,9 @@ const shardArg = args.find(a => a.startsWith('--shard='));
 const only = args.find(a => !a.startsWith('--'));
 const srcArg = args.find(a => a.startsWith('--src='));
 if (srcArg) process.env.OG_SRC = path.resolve(srcArg.slice(6));
+// `--look=new` boots every suite on three.js 0.170 (`?look=new`, Session 822); the default is the old look, r128
+const lookArg = args.find(a => a.startsWith('--look='));
+if (lookArg) process.env.OG_LOOK = lookArg.slice(7);
 let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only || f.startsWith(only))).sort();
 // seconds each took on CI. Every suite refreshed from one run, the twelve shards of faa652b (auto/systems, 11 Oct), in
 // Session 745, when shard 3 was cancelled at 60:19: panelfocus took 530 s and stairrail 219 and were counted as 60, and
@@ -42,7 +46,7 @@ const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'ar
   jobids: 44, jobseed: 48, journal: 206, keep: 62, keepercone: 57, keeperwalk: 623, lairdoor: 78, lairgrade: 55, lairhoard: 72,
   lairload: 93, lairmaster: 58, lairname: 68, lairrumour: 47, lairtheme: 83, ledgerplural: 49, legacyfoes: 48, legacyhalls: 52,
   legacyshells: 47, legacyshops: 55, levelpanel: 48, livepick: 80, lockfair: 61, lockon: 91, lockpicks: 59, locks: 94,
-  locksight: 59, lockswitch: 45, lod: 235, lootpicks: 106, lootseed: 58, lvact: 51, mainmarks: 70, mainquest: 101, mainrun: 459,
+  locksight: 59, lockswitch: 45, lod: 235, looknew: 200, lookpair: 420, lootpicks: 106, lootseed: 58, lvact: 51, mainmarks: 70, mainquest: 101, mainrun: 459,
   mapnotes: 133, mapquests: 52, mapseals: 118, mapsharp: 74, masterslam: 59, metkey: 62, mimic: 46, mimicspots: 114,
   moundsolid: 52, mushrooms: 76, names: 54, netlook: 66, newelstair: 72, nightpick: 65, oddfurn: 51, ogre: 53, packshape: 61,
   panelfocus: 530, parryclock: 62, parrydeath: 53, pauseleaf: 157, penance: 88, people: 147, peopleao: 57, perf: 108,

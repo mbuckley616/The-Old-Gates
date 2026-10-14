@@ -9,6 +9,7 @@
 //   await g.intoWorld();             // new character -> Hearthwick, overlays dismissed
 //   await g.settle('dunmore');       // walk to a town and wait for it to build
 //   await g.spin('snow', 600);       // tick the world 600 frames at 1/60 under a weather
+//   boot({ look: 'new' })            // the same game on three.js 0.170 (Session 822); OG_LOOK=new does it for every suite
 //
 // The scene runs on software GL at a few frames a second, so anything timing-sensitive is driven
 // with spin() (deterministic ticks) rather than waitForTimeout.
@@ -58,14 +59,20 @@ export async function boot(opts = {}) {
   page.screenshot = (o = {}) => _shot({ timeout: 120000, ...o });
   const errs = [];
   page.on('pageerror', e => errs.push(e.message.slice(0, 200)));
+  // S822: the console's errors and warnings from the first line on (a suite may assert there are none)
+  const logs = [];
+  page.on('console', m => { const t = m.type(); if (t === 'error' || t === 'warning') logs.push(t + ': ' + m.text().slice(0, 200)); });
   // S646: indoors, E reaches a thing only with the crosshair on it. A suite that puts you beside one calls lookAtPt(x, y, z) in the
   // page: the eye goes where the loop would put it (px, jumpY + the eye height, pz) and turns to the point, as yaw and pitch do
   await page.addInitScript(() => { window.lookAtPt = (x, y, z) => { const ey = jumpY + (typeof _eyeHeightCur === 'number' ? _eyeHeightCur : 1.6);
     yaw = Math.atan2(-(x - px), -(z - pz)); pitch = Math.atan2(y - ey, Math.hypot(x - px, z - pz)); CAM.position.set(px, ey, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); }; });
-  await page.goto('file://' + file);
+  // S822: `boot({ look: 'new' })`, or OG_LOOK=new (run.mjs --look=new), boots on three.js 0.170 (vendor/three.r170.min.js, beside
+  // index.html, so it needs no swap); the default is the old look on tests/vendor's r128, as before
+  const look = opts.look || process.env.OG_LOOK || '';
+  await page.goto('file://' + file + (look ? '?look=' + look : ''));
   await page.waitForTimeout(4000);
 
-  const g = { page, browser, errs };
+  const g = { page, browser, errs, logs };
   g.hide = () => page.evaluate(() => {
     for (const id of ['intro-overlay', 'quest-popup']) { const e = document.getElementById(id); if (e) e.style.display = 'none'; }
     try { _introFadeActive = false; } catch (e) {}
