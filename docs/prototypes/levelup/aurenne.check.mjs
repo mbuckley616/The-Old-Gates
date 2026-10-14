@@ -34,6 +34,9 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
   out.page = window.__stats;
   // the churches: every size, dome, tower count and the corner domes
   out.churches = []; out.chSame = 0;
+  // by rank (Session 881, #294 C): the dome from the rank alone, and an o.dome still overrides it
+  out.ranks = ['village', 'town', 'cathedral'].map(rank => { let g = 0; K.aurenneChurch({ w: 14, rank, corners: rank === 'cathedral' }, K.stream('rank:' + rank)).group.traverse(m => { if (m.isMesh && m.name === 'glaze') g++; }); return g; });
+  { let g = 0; K.aurenneChurch({ w: 14, rank: 'village', dome: 'blue' }, K.stream('rank:over')).group.traverse(m => { if (m.isMesh && m.name === 'glaze') g++; }); out.rankOver = g; }
   for (const w of [12, 14, 16, 18, 20, 22]) for (const dome of ['blue', 'white']) for (const tower of [0, 1, 2]) for (const corners of [false, true]) { const o = { w, dome, tower, corners }, a = K.aurenneChurch(o, K.stream('ch:' + w + dome + tower + corners)), b = K.aurenneChurch(o, K.stream('ch:' + w + dome + tower + corners));
     if (hash(a.group) === hash(b.group)) out.chSame++; const bx = new THREE.Box3().setFromObject(a.group); let ownUV = 0, glaze = 0; a.group.traverse(m => { if (m.isMesh && m.name === 'glaze') { glaze++; const u = m.geometry.attributes.uv.array; for (let i = 0; i < u.length; i += 2) ownUV = Math.max(ownUV, u[i]); } });
     out.churches.push({ w, dome, tower, corners, tris: a.tris, draws: a.draws, below: +bx.min.y.toFixed(3), domeTop: +a.domeTop.toFixed(2), towerTop: +a.towerTop.toFixed(2), top: +a.roofTop.toFixed(2), doorW: a.door.w, doorH: a.door.h, glaze, maxU: +ownUV.toFixed(1), front: +(bx.max.z - a.front).toFixed(2) });
@@ -62,6 +65,7 @@ check('every house keeps to its lot\'s width and depth (its outside stair, its a
 check(`the street page: ${r.page.houses.length} houses, kinds ${r.page.lotKinds.replace(/flat/g, 'F').replace(/tile/g, 'R')}, no page errors`, errs.length === 0 && r.page.houses.length === 12, errs.slice(0, 3));
 { const C = r.churches, mm = f => [Math.min(...C.map(f)), Math.max(...C.map(f))], t = mm(c => c.tris), dr = mm(c => c.draws);
   check(`72 churches build: ${t[0].toLocaleString()} to ${t[1].toLocaleString()} triangles, ${dr[0]} to ${dr[1]} meshes, one per material`, C.length === 72 && t[1] < 30000 && dr[1] <= 16, { tris: t, draws: dr });
+  check(`by rank (#294 C): the village's dome limewashed (${r.ranks[0]} glazed meshes), the town's and the cathedral's in blue glaze (${r.ranks[1]}, ${r.ranks[2]}); o.dome overrides the rank (${r.rankOver})`, r.ranks[0] === 0 && r.ranks[1] === 1 && r.ranks[2] === 1 && r.rankOver === 1);
   check(`a church comes from its options and key alone: ${r.chSame} of 72 built twice are the same`, r.chSame === 72);
   check('no church reaches below the ground, and nothing stands in front of its steps', C.every(c => c.below >= -0.001 && c.front <= .01), C.filter(c => c.below < -0.001 || c.front > .01).slice(0, 3));
   const d = mm(c => c.domeTop), tw = C.filter(c => c.tower);

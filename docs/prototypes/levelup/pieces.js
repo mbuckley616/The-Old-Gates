@@ -215,10 +215,12 @@ export function aurenneLot(street, i) {
 // beside. At true size: a cube of lime-washed ashlar on a podium with steps, tall arched windows, a band of glazed tile
 // under the cornice; a drum with arched lights and the great dome on it, in blue glaze or limewash, and on its top the
 // Weaver's sign, a gilt shuttle; an arcaded porch across the front; a square bell tower with an open belfry and a little dome.
-// o.w (the cube, 12 to 22 m), o.dome 'blue' | 'white', o.tower 0 | 1 | 2, o.corners (four small domes at the cube's corners,
+// o.rank 'village' | 'town' | 'cathedral' (Michael's C on #294, Session 881: the dome by rank, a village's limewashed, a town's and the
+// cathedral's in blue glaze; a church with corner domes is a cathedral unless told), o.dome 'blue' | 'white' (overrides the rank),
+// o.w (the cube, 12 to 22 m), o.tower 0 | 1 | 2, o.corners (four small domes at the cube's corners,
 // a cathedral's), o.wall (a wall colour index). aurenneChurch(o, r) -> { group, roofTop, tris, draws, kind: 'church', front }.
 export function aurenneChurch(o, r) {
-  const { put, wallGeo, box, finish } = aurKit(), W = o.w || 14, D = W, T = .8, pl = .9, H = +(W * .72).toFixed(2), pd = 4.4, wallK = 'wall:' + (o.wall ?? 4), domeK = o.dome === 'white' ? wallK : 'glaze';
+  const { put, wallGeo, box, finish } = aurKit(), W = o.w || 14, D = W, T = .8, pl = .9, H = +(W * .72).toFixed(2), pd = 4.4, wallK = 'wall:' + (o.wall ?? 4), rank = o.rank || (o.corners ? 'cathedral' : 'town'), dome = o.dome || (rank === 'village' ? 'white' : 'blue'), domeK = dome === 'white' ? wallK : 'glaze';
   const lathe = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
   const domeUV = (g, rad) => { if (domeK === 'glaze') g.userData.uvRep = [Math.max(1, Math.round(2 * Math.PI * rad * UVS.glaze)), Math.max(1, Math.round(rad * 1.7 * UVS.glaze))]; return g; };
   // the podium the church and its porch stand on, and three steps down to the square

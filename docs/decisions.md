@@ -75,6 +75,8 @@ Pictures:
 - [the stem and its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-lap.jpg)
 - [the striped sails](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-quarter-stripe.jpg)
 
+*Acted on, Session 881 (look builder):* Michael's 1 A, 2 A on #312 are already `markCutter`'s defaults (tanned red-brown sails, `o.stripe` off; the gilt head, `o.head` on), so there is nothing to build. The striped sails stay only as `ships.html?ship=cutter&stripe`.
+
 ### The Mark's longhouse as a room: one hall round the fire, or rooms (look builder, Session 870) — DECISION #311
 **F9's second room: the Mark's longhouse (look builder, Session 870).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Mark's shingle hall from the kit (`pieces.js`'s `markHall`), 7.6 by 14 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markLonghouse`) and `rooms.html?room=longhouse`. The brief is OG-115's Mark panel ("a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat") and OG-025's longhall. Nothing is whitewashed, as the catalogue's note asks.
 - **The hall:** a planked floor on the stone footing. Two rows of posts carry tie beams 3.1 m over the floor. Rafters and a board lining run under the shingle.
@@ -96,6 +98,8 @@ Pictures:
 - [the family quarters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-back.jpg)
 - [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall-night.jpg)
 - [from the yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-outside.jpg)
+
+*Acted on, Session 881 (look builder):* Michael's A on #311 is the room as drawn (`rooms.js` `markLonghouse`). Nothing changes.
 
 ### The Gatelands' round cairn: what is carved on its stones (look builder, Session 869) — DECISION #309
 **F8's second place: the Gatelands' round cairn (look builder, Session 869).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
@@ -310,6 +314,8 @@ What should the churches' domes be?
 Recommendation: **C.** The rank is visible from a distance without a sign, which helps a player find the Prior. A is a fair second if he wants the blue everywhere.
 
 Not in this question: the inside (card F9), the Guest's bricked chapel under the cathedral (the quest writer's), and Aurenne's civic buildings, the Compact's counting house and the academy's white towers, which are the next sessions.
+*Acted on, Session 881 (look builder):* Michael's C on #294. `aurenneChurch` takes `o.rank` (village, town or cathedral). A village's dome is limewashed, and a town's and the cathedral's are in blue glaze; a church with corner domes is a cathedral unless told otherwise, and `o.dome` still overrides the rank. The line-up (`aurenne.html?view=churches`) is now a village's church, a town's and the cathedral, and the square's church is a town's. `aurenne.check.mjs` 28 of 28.
+
 ### The great gates: what the player does at one, sealing or tearing (the quest writer, 2026-10-14) — DECISION #292
 You set the two paths (13 Oct, *The great gates' two paths* below): each great gate is torn open or sealed, any choice can be undone by going back, and the world is decided when all six match. Still open, as that entry says: **what the act itself is**, where in the gate it happens, and what undoing it asks. The draft *The Great Gates, I — the knot at the ring* (`docs/quest_drafts.md`, unapproved) writes A in full: every line of the act, both ways, the undo, the lock, and the people's talk as the gates are torn.
 - **A. The knot** *(recommended)*. At the far end of each great gate, in the dark at the heart of the great ring, the script of the whole gate is drawn into one knot. The player cuts it with the tearing artifact or binds it with the sealing one. Torn, each of that school's spells you hold is one tier deeper; sealed, one tier shallower; undoing swaps it back. Once you have reached a gate's ring, its door takes you straight back to it, so undoing never means clearing the realm again. The state lives in the world's save.

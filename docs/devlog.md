@@ -18303,3 +18303,15 @@ Michael answered A on #309: spirals and lozenges, as drawn. He added: "Let's be 
 ### Needs eyes
 - **Two metres is a judgement.** It lets two walk abreast and a sword swing, but the passage no longer reads as a squeeze between standing stones. If it is now too wide, `W` takes it back.
 - **The mound's texture** reads coarse at 30 m. The turf is the Mark's moss map, as in Session 869.
+
+## v80 — Session 881 — Aurenne's church domes by rank (card F6, prototype only)
+Michael answered C on #294: the domes by rank. The cathedral and a town's church have blue glaze, and a village's is limewashed, so the blue marks where the Church's money and its Priors sit. Until now `aurenneChurch` took the dome's finish as a bare option (`o.dome`), so whoever placed a church chose it by hand.
+
+`aurenneChurch` in `pieces.js` now takes **`o.rank`**: `'village'`, `'town'` or `'cathedral'`. A church with corner domes is a cathedral unless told otherwise, and one with no rank is a town's. The dome follows the rank: a village's is limewashed, and a town's and the cathedral's are in blue glaze. `o.dome` still overrides it, so the 72-church sweep and `&dome=` on the page work as before. In `aurenne.html`, the churches line-up is now the three ranks side by side: a village's church (12 m, limewashed), a town's (14 m, blue) and the cathedral (20 m, two towers, corner domes, blue). The square's church is a town's.
+
+Michael's other answers this run need nothing built: #312 (tanned sails and the gilt head) is already `markCutter`'s default, and #311 (one hall round the fire) is the longhouse as drawn. Both are noted in `decisions.md`.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: 28 of 28 pass**, one new: by rank, the village's dome has 0 glazed meshes and the town's and the cathedral's have 1 each. A village's church given `o.dome: 'blue'` has 1. The 72-church sweep and both church pages pass as before.
+- **Pictures:** `aurenne-churches.jpg`, now the three ranks.
+### Needs eyes
+- **Where a town ends and a village begins** is the generator's call once churches are placed in the game. The prototype only takes the rank it is given.
