@@ -18421,3 +18421,116 @@ The fix is one last pass at the end of `buildHang`. Every point of every column 
 ### Needs eyes
 - **The back of a cloak over mail** now follows the mail skirt's outline at the buttocks wherever a fold would have cut into it. In the picture it reads as cloth over a stiff skirt. Whether the fold there looks pinched is for a closer look.
 - This pass is a floor, not a drape. A cloak over plate, which stands further out and steps sharply, will want the folds laid against the outline at the height they end at, not the height they start at.
+
+## v80 — Session 904 — A round shield on the left fist (B2 and L7, prototype only)
+Session 897's Iron tier left the round shield owed: every tier of OG-019's heavy line carries one at the left side. OG-025's hold guards carry a painted round shield too, and OG-044's Compact guards a bronze one. A shield is a thing a body carries, so it is the bodies builder's. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`, and the labels in `builder.js`).
+
+What changed in `people.js`:
+- **The shield is a garment colour, `shield`**, with `shieldPaint` (a second colour, painted in opposite quarters), `shieldRim`, and two flags: `shieldTurn` (default 1 rad) and `shieldMetal` (default off). All of them save and load. The page shows them as "round shield", "shield quarters" and "shield rim".
+- **The shield** (`buildShield`) is 72 cm across:
+  - Seven boards make the board. Their seams and grain show a little through the paint, and the paint wears back to the wood in the last tenth of the radius.
+  - The face is dished 8 mm toward the centre. The back is flat, in bare wood.
+  - It has a rawhide rim, a 5.5 cm iron boss on a flange, and eight rivets.
+  - It takes the helm's colour for the iron where the person wears one.
+  - With `shieldMetal` the face is sheet metal (OG-044's bronze): no seams show, it has hammer dints, and it takes the light as the helm does.
+  - 7,744 triangles.
+- **How it is held.** It has a centre grip, held in the left fist with the arm hanging. The boss is centred on the middle finger's first joint. The face is turned 1 rad forward from the side, so it reads nearly face on from the front, as OG-019 draws it. The first try was turned 0.4 rad, and the shield read edge-on from the front. The wrist bone carries it, so it follows the arm.
+- **Laid outside everything.** It is built last. Its back is laid 5 mm outside the furthest point of whatever lies within its rim: the hand and forearm, the hip, a skirt, the mail, the tabard. Each garment's shell holds every point of the body, but only the points its triangles use are cloth, and the mail's points past its shader cuts are dropped.
+  - The first try counted every point of each shell. It held the board 3.5 cm off the arm, because of cloth that is not there. Lifting the arm 0.3 rad did not close that gap.
+  - If anything other than the arm is the furthest point, the left arm is lifted out from the side 0.03 rad at a time, as for a long skirt. None of the five people the check builds needed it.
+- **Not under a cloak or a cape.** A full cloak hangs over the arm that holds the shield. There it would sit 11.7 cm off the arm, outside the cloak. A shoulder cape stands 7.8 cm out over the board's top edge. So under either the shield is not built, and the genome keeps it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 227 checks pass**, six of them new. Five people carry a shield: a man in mail with a quartered shield, a woman in mail over a long skirt, a man in a tunic alone, a man under the Crown tabard, and an Aurennais man with a bronze shield. For each:
+  - **Nothing is inside the board, the rim or the boss.** This is read back off the shield where the wrist carries it, in the shield's own frame: 0 of 2,400 to 6,400 points near it. The nearest point is 5.0 mm behind its back.
+  - **The arm is on its back**: 0.0 mm off.
+  - **The rim is 48 to 69 cm off the ground.**
+  - It is carried by `wrist.L`, and it saves and loads back.
+- **A Markman under a fur-collared cloak** carries no shield on the arm, and the shield still saves and loads.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield.jpg` and `-shield-back`: the Iron tier with a madder-and-bone quartered shield, front and back.
+  - `builder-armour-shield-close.jpg`: the boss, the rim and the hand behind it.
+  - `builder-armour-shield-woman.jpg`: a woman in mail with a blue shield.
+  - `builder-armour-shield-crown.jpg`: under the Crown tabard, in crimson and gold.
+  - `builder-armour-shield-bronze.jpg`: an Aurennais with a bronze shield and helm.
+### Needs eyes
+- **The bronze face's hammer dints** are a regular pattern. Close up they read as a dotted texture, not as hand-beaten metal. Scattered dints from the seeded stream would be truer.
+- **The grip is not modelled.** The hand rests behind the board with its fingers half open, as in every pose. A fist closed round a bar wants the fingers' own pose.
+- **Owed:**
+  - The shield slung on the back by its strap, under a cloak or a cape.
+  - The crossed strap OG-019 draws over the chest.
+  - The shield held up in a fight. That waits on animation (B4).
+  - OG-028's island shields: the harp kite, the painted round and the sun-star hoplon. The round is this one.
+
+## v80 — Session 905 — The shield slung on the back, its strap across the chest (B2, prototype only)
+Session 904 left two things owed:
+- **The shield under a cloak or a cape.** A cloak hangs over the arm that holds the shield. On the arm, the shield sat 11.7 cm off it, outside the cloak. A shoulder cape stands 7.8 cm out over the board's top edge. So under either the shield was not built.
+- **The crossed strap** that OG-019's heavy line draws over the chest.
+
+The two are one piece: a shield is carried on the back by its strap, the guige. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The shield's parts and placement are split.** `shieldParts` builds the shield, `shieldBack` lays its back off the clouds, and `shieldInside` reads the promise back off the shield where its bone carries it. `wornClouds` holds the person and their clothes as posed points, and `buildShield` (on the arm) now uses all four. On the arm it builds as Session 904 left it (its six checks pass unchanged).
+- **Slung** (`buildShieldBack`), under a cloak or a shoulder cape:
+  - The shield hangs on the back with its top 6 cm under the nape, leaning 0.12 rad with the back.
+  - Its back is laid 5 mm outside whatever lies within its rim. That is the back, the cloak and its fur collar or rolled hood, and the hair (a woman's braids hang inside it).
+  - The chest bone (`spine03`) carries it.
+- **The strap** is 3.5 cm of leather in the belt's colour. It leaves from under the board's top edge on the right, goes over the right shoulder, down across the chest to the left side at the waist, and round the left side back under the board.
+  - It is laid along rays from inside the body, about one a centimetre. At each one it rides 3.5 mm over the furthest point near the ray: within 3 cm for the body and its garments, and within 8 cm for a cloak, whose columns stand that far apart toward the hem.
+  - It is pulled taut, so no point sits below the line between its neighbours. Any dip narrower than 16 steps is closed.
+  - It leaves out the arms' skin and sleeves, so it passes between an arm and the side. It also leaves out the hair, the head and what the head carries, so it goes under long hair and stops at the neck. A cloak is kept, so over a cloak it goes over the cloak.
+  - It is not drawn under the board. "Under" is within the rim and less than 8 cm in front of its back. The first try counted the whole chest as under the board, since it is within the rim seen from behind, and trimmed the strap's front away.
+  - The first try's rays had no reach limit. Over the shoulder they found the helm's brim, and the strap looped up past the head.
+  - With a 3 cm search on the cloak, the strap showed in dashes across the left panel. Between the cloak's columns the rays found no cloth, so the strap dipped under it and rose again. The 8 cm search and the closing fixed it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 230 checks pass.** The owed case (no shield under a cloak) became four checks:
+  - a Markman in mail under a fur-collared cloak;
+  - a woman in a cloak with the hood down;
+  - a Gatelander woman in a shoulder cape;
+  - a man in a shoulder cape.
+- For each of the four:
+  - **The shield** is on the back, carried by `spine03`. Nothing is inside its board, rim or boss: 0 of 6,500 to 21,000 points near it. The nearest is 5.0 mm behind it.
+  - **The strap** is 1.75 to 2.15 m long, carried by `spine03`. Nothing comes through it: 0 of 97 to 192 points within 3 cm under it, measured along its own normal.
+  - **Through** means a point within the strap's width, a step along it, and less than 3 cm over its underside. A cloak's free panel further out, which the strap passes under, is not counted. Measured along a tilted axis at sharp turns, a first count had found such panels 10 to 16 cm away.
+  - Each saves and loads.
+- Session 904's six shield checks pass as before. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield-slung.jpg` and `-slung-back`: the Markman in mail under a light fur-collared cloak, front and back.
+  - `builder-armour-shield-slung-woman.jpg` and `-slung-woman-back`: a woman under a green cloak with the hood down.
+### Needs eyes
+- **The strap's way round the left side** is a level band at the waist. A guige worn this way would run on down to the hip under the arm. Over a cloak it shows as a level band across the left panel.
+- **Where the strap goes from over the cloak to under its left panel**, it passes under the panel's free edge. Whether that reads as cloth over a strap or as a cut is for a closer look.
+- The strap is a ribbon with no thickness and no buckle.
+- Under a cape, the strap rides over the cape where the cape hangs over the chest and shoulder.
+
+## v80 — Session 906 — The fist on the grip, and the bronze beaten by hand (B2, prototype only)
+Session 904 left two things for eyes on the shield in the hand:
+- **The hand rested open** behind the board, its fingers half curled as in every pose.
+- **The bronze face's hammer dints** were a regular pattern of sines, which read as a dotted cloth close up.
+
+This session refines both, as the shield was built. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The left hand closes into a fist** when it holds a shield. The four fingers' joints curl 1.15, 1.35 and 0.95 rad, and the thumb is left as it was.
+  - The boss is now centred on the middle of the four fingers' second joints, the middle of the fist. Before, it was centred on the middle finger's first joint.
+- **The grip.** An ash bar 19.4 cm long crosses the hole on the back of the board, standing on a cleat either side.
+  - The plan was to let the knuckles into the boss's hollow, up to a centimetre short of the dome's base. `shieldBack` now sets the hand's points inside the hole apart, and the readback (`shieldInside`) lets them in up to the dome's base.
+  - It does not happen in this pose. The forearm, which is thicker than the fist, still lays the board, and the fist's furthest knuckle stays 1.7 to 4.8 cm behind the board's back.
+  - So the bar sits at each fist's own depth, 8 mm behind its furthest knuckle (between 1.1 and 4.5 cm off the board), and the cleats are as tall as that.
+  - From behind, the fist reads closed on a bar (`builder-armour-shield-grip.jpg`).
+- **The bronze's dints** are 220 hammer blows placed by the seeded stream. Each is a soft hollow 5 to 17 pixels across, in a 512-pixel map, with a bright lip.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 230 checks pass**, unchanged in number. For the five shields in the hand:
+  - Nothing is inside the board, the rim or the boss's dome: 0 of 3,200 to 6,600 points.
+  - The nearest point behind the board is 5.0 to 6.7 mm from it.
+  - The fist's furthest knuckle in the hole is 1.7 to 4.8 cm behind the board's back.
+- The four slung shields pass as in Session 905. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield-grip.jpg` is new: the fist on the grip from behind.
+  - The shield pictures of Sessions 904 and 905 were shot again with the grip; the bronze shows its new dints.
+### Needs eyes
+- **The fist stands off the board** on its cleats, because the forearm lies along the board's back. A real centre grip is flush with the board, with the knuckles in the boss. That wants the wrist bent outward a little, so the fist leads the forearm into the hollow. That is a pose for B4.
+- Whether the dints read as beaten bronze at play distance.
