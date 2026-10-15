@@ -18504,3 +18504,33 @@ What changed in `people.js`:
 - **Where the strap goes from over the cloak to under its left panel**, it passes under the panel's free edge. Whether that reads as cloth over a strap or as a cut is for a closer look.
 - The strap is a ribbon with no thickness and no buckle.
 - Under a cape, the strap rides over the cape where the cape hangs over the chest and shoulder.
+
+## v80 — Session 906 — The fist on the grip, and the bronze beaten by hand (B2, prototype only)
+Session 904 left two things for eyes on the shield in the hand:
+- **The hand rested open** behind the board, its fingers half curled as in every pose.
+- **The bronze face's hammer dints** were a regular pattern of sines, which read as a dotted cloth close up.
+
+This session refines both, as the shield was built. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The left hand closes into a fist** when it holds a shield. The four fingers' joints curl 1.15, 1.35 and 0.95 rad, and the thumb is left as it was.
+  - The boss is now centred on the middle of the four fingers' second joints, the middle of the fist. Before, it was centred on the middle finger's first joint.
+- **The grip.** An ash bar 19.4 cm long crosses the hole on the back of the board, standing on a cleat either side.
+  - The plan was to let the knuckles into the boss's hollow, up to a centimetre short of the dome's base. `shieldBack` now sets the hand's points inside the hole apart, and the readback (`shieldInside`) lets them in up to the dome's base.
+  - It does not happen in this pose. The forearm, which is thicker than the fist, still lays the board, and the fist's furthest knuckle stays 1.7 to 4.8 cm behind the board's back.
+  - So the bar sits at each fist's own depth, 8 mm behind its furthest knuckle (between 1.1 and 4.5 cm off the board), and the cleats are as tall as that.
+  - From behind, the fist reads closed on a bar (`builder-armour-shield-grip.jpg`).
+- **The bronze's dints** are 220 hammer blows placed by the seeded stream. Each is a soft hollow 5 to 17 pixels across, in a 512-pixel map, with a bright lip.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 230 checks pass**, unchanged in number. For the five shields in the hand:
+  - Nothing is inside the board, the rim or the boss's dome: 0 of 3,200 to 6,600 points.
+  - The nearest point behind the board is 5.0 to 6.7 mm from it.
+  - The fist's furthest knuckle in the hole is 1.7 to 4.8 cm behind the board's back.
+- The four slung shields pass as in Session 905. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield-grip.jpg` is new: the fist on the grip from behind.
+  - The shield pictures of Sessions 904 and 905 were shot again with the grip; the bronze shows its new dints.
+### Needs eyes
+- **The fist stands off the board** on its cleats, because the forearm lies along the board's back. A real centre grip is flush with the board, with the knuckles in the boss. That wants the wrist bent outward a little, so the fist leads the forearm into the hollow. That is a pose for B4.
+- Whether the dints read as beaten bronze at play distance.

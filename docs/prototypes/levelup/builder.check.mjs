@@ -193,6 +193,7 @@ if (shotArg) { const only = shotArg.split('=')[1];
     const quartered = { ...iron, shield: [.5, .14, .12], shieldPaint: [.82, .78, .66] };
     await shot('armour-shield', 'seed=b7&sex=m&view=full&turn=.4&dress=' + dq(quartered)); await shot('armour-shield-back', 'seed=b7&sex=m&view=full&turn=2.2&dress=' + dq(quartered));
     await shot('armour-shield-close', 'seed=b7&sex=m&view=full&turn=.7&dress=' + dq(quartered), 1920, 1440, false, [.45, .3, .3, .35]);
+    await shot('armour-shield-grip', 'seed=b7&sex=m&view=full&turn=-2.3&dress=' + dq(quartered), 1920, 1440, false, [.3, .25, .4, .4]);
     await shot('armour-shield-woman', 'seed=styles&sex=f&view=full&turn=.5&dress=' + dq({ ...iron, skirt: 'long', apron: null, shield: [.2, .28, .45] }));
     await shot('armour-shield-crown', 'seed=b7&sex=m&view=full&turn=.35&dress=' + dq({ ...iron, tabard: [.55, .08, .08], tabardTrim: [.72, .55, .2], shield: [.55, .08, .08], shieldPaint: [.72, .55, .2] }));
     await shot('armour-shield-bronze', 'people=aurennais&seed=shield:a&sex=m&view=full&turn=.5&dress=' + dq({ helm: [.62, .45, .22], tunic: [.86, .81, .71], mantle: null, cloak: null, shield: [.62, .45, .22], shieldRim: [.6, .45, .22], shieldMetal: true }));

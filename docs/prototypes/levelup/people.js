@@ -825,9 +825,13 @@ function shieldTex(col, paint, wood, metal = false) {
     for (let k = 0; k < 14; k++) { x.strokeStyle = css(wood, v * (.8 + rnd() * .1)); x.lineWidth = .6 + rnd(); x.beginPath(); const gx = x0 + rnd() * 512 / 7; x.moveTo(gx, 0); for (let y = 0; y <= 512; y += 32) x.lineTo(gx + Math.sin(y / 60 + k) * 2.5, y); x.stroke(); }
     x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(x0 - 1, 0, 2, 512); }
   if (col) { const wood0 = x.getImageData(0, 0, 512, 512), d = wood0.data, ca = col, cb = paint || col, wm = (wood[0] + wood[1] + wood[2]) / 3;
+    // a metal face's dints (Session 906): 220 hammer blows at random from the seeded stream, each a soft hollow with a bright lip
+    let dint = null; if (metal) { const c2 = document.createElement('canvas'); c2.width = c2.height = 512; const y2 = c2.getContext('2d'); y2.fillStyle = '#c0c0c0'; y2.fillRect(0, 0, 512, 512);
+      for (let k = 0; k < 220; k++) { const px = rnd() * 512, py = rnd() * 512, r = 5 + rnd() * 12, gr = y2.createRadialGradient(px, py, 0, px, py, r); gr.addColorStop(0, 'rgba(0,0,0,.28)'); gr.addColorStop(.7, 'rgba(0,0,0,.06)'); gr.addColorStop(.86, 'rgba(255,255,255,.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); y2.fillStyle = gr; y2.fillRect(px - r, py - r, 2 * r, 2 * r); }
+      dint = y2.getImageData(0, 0, 512, 512).data; }
     for (let y = 0; y < 512; y++) for (let i = 0; i < 512; i++) { const k = (y * 512 + i) * 4, u = i / 256 - 1, v = y / 256 - 1, r = Math.hypot(u, v), q = paint && (u > 0) !== (v > 0) ? cb : ca;
       // the paint over the boards: the seams and the grain show through a little, and it is worn back to the wood at the rim; a metal face shows hammer dints instead
-      const g = metal ? 1 - .6 * Math.abs(Math.sin(u * 40 + Math.sin(v * 9) * 2) * Math.sin(v * 37 + u * 5)) ** 6 : (d[k] + d[k + 1] + d[k + 2]) / (3 * 255 * wm), wear = metal ? 0 : Math.max(0, Math.min(1, (r - .9) / .1)) * (.4 + .6 * Math.abs(Math.sin(i * .37 + y * .11)));
+      const g = metal ? dint[k] / 192 : (d[k] + d[k + 1] + d[k + 2]) / (3 * 255 * wm), wear = metal ? 0 : Math.max(0, Math.min(1, (r - .9) / .1)) * (.4 + .6 * Math.abs(Math.sin(i * .37 + y * .11)));
       for (let ch = 0; ch < 3; ch++) d[k + ch] = Math.round(255 * Math.max(0, Math.min(1, (q[ch] * (.75 + .25 * g)) * (1 - wear) + d[k + ch] / 255 * wear))); }
     x.putImageData(wood0, 0, 0); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
@@ -848,9 +852,9 @@ const eachPoint = (clouds, f) => { for (const { X, ids } of clouds) { const cnt 
 // the round shield (Session 904; OG-019's heavy line carries one at every tier, OG-025's hold guards a painted round and OG-044's
 // guards a bronze one). Seven boards under a painted face (quartered in a second colour if it has one), a rawhide rim and an iron
 // boss. Built in its own frame: x across, y up, z out of its face, its back at z 0, the face dished 8 mm toward the boss
-const SHIELD_R = .36;
-function shieldParts(D) {
-  const R = SHIELD_R, NT = 72, NR = 14, HOLE = .062, zF = r => .01 + .008 * (1 - (r / R) ** 2), pos = [], uv = [], idx = [], pos2 = [], uv2 = [], idx2 = [];
+const SHIELD_R = .36, SHIELD_HOLE = .062, SHIELD_DOME = .0275;
+function shieldParts(D, gripZ = -.011) {
+  const R = SHIELD_R, NT = 72, NR = 14, HOLE = SHIELD_HOLE, zF = r => .01 + .008 * (1 - (r / R) ** 2), pos = [], uv = [], idx = [], pos2 = [], uv2 = [], idx2 = [];
   for (let j = 0; j < NR; j++) for (let t = 0; t <= NT; t++) { const r = HOLE + (R - HOLE) * j / (NR - 1), a = t / NT * Math.PI * 2, x = r * Math.cos(a), y = r * Math.sin(a);
     pos.push(x, y, zF(r)); uv.push(x / R * .5 + .5, y / R * .5 + .5); pos2.push(x, y, 0); uv2.push(x / R * .5 + .5, y / R * .5 + .5); }
   for (let j = 0; j < NR - 1; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, b = a + NT + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); idx2.push(a, a + 1, b, a + 1, b + 1, b); }
@@ -866,23 +870,29 @@ function shieldParts(D) {
   const metal = new THREE.MeshStandardMaterial({ color: iron, metalness: .55, roughness: .38, side: THREE.DoubleSide }), boss = new THREE.Mesh(bg, metal);
   // the rim: rawhide stitched over the edge, and eight rivets round the boss's flange
   const rim = new THREE.Mesh(new THREE.TorusGeometry(R, .0072, 8, 120), new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.3, .21, .13])), roughness: .7 })); rim.position.z = .0055;
-  const sh = new THREE.Group(); sh.name = 'shield'; sh.add(face, backM, boss, rim);
+  // the grip: an ash bar across the hole on the back, where the fist closes on it, standing on a cleat either side of the hole (Session 906)
+  const ash = new THREE.MeshStandardMaterial({ color: sRGB(...woodC.map(v => v * .85)), roughness: .85 }), GL = HOLE * 2 + .07;
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(.011, .011, GL, 12), ash); grip.rotation.z = Math.PI / 2; grip.position.z = gripZ;
+  const sh = new THREE.Group(); sh.name = 'shield'; sh.add(face, backM, boss, rim, grip);
+  for (const s of [-1, 1]) { const h = -gripZ + .011, cl = new THREE.Mesh(new THREE.BoxGeometry(.024, .03, h), ash); cl.position.set(s * (GL / 2 - .012), 0, -h / 2); sh.add(cl); }
   for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, rv = new THREE.Mesh(new THREE.SphereGeometry(.0055, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), metal); rv.rotation.x = Math.PI / 2; rv.position.set(.077 * Math.cos(a), .077 * Math.sin(a), zF(.077) + .003); sh.add(rv); }
   sh.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   return sh;
 }
 // the furthest of the clouds' points along N within the shield's rim, round a centre (the arm's points apart, if asked)
-function shieldBack(clouds, C, N, armOf = () => false) {
-  let other = -1, arm = -1, n = 0;
-  eachPoint(clouds, (x, y, z, i) => { const dx = x - C.x, dy = y - C.y, dz = z - C.z, dd = dx * N.x + dy * N.y + dz * N.z;
-    if (dd < -.3 || Math.hypot(dx - N.x * dd, dy - N.y * dd, dz - N.z * dd) > SHIELD_R + .012) return; n++; if (i >= 0 && armOf(i)) arm = Math.max(arm, dd); else other = Math.max(other, dd); });
-  return { other, arm, n };
+// and the furthest of the hand's points that are inside the boss's hole, which do not count against the board (the fist goes into the boss)
+function shieldBack(clouds, C, N, armOf = () => false, handOf = () => false) {
+  let other = -1, arm = -1, hole = -1, n = 0;
+  eachPoint(clouds, (x, y, z, i) => { const dx = x - C.x, dy = y - C.y, dz = z - C.z, dd = dx * N.x + dy * N.y + dz * N.z, rr = Math.hypot(dx - N.x * dd, dy - N.y * dd, dz - N.z * dd);
+    if (dd < -.3 || rr > SHIELD_R + .012) return; n++; if (i >= 0 && handOf(i) && rr < SHIELD_HOLE - .008) { hole = Math.max(hole, dd); return; } if (i >= 0 && armOf(i)) arm = Math.max(arm, dd); else other = Math.max(other, dd); });
+  return { other, arm, hole, n };
 }
 // the promise, read back off the shield where its bone carries it: no point of the person or what they wear (or of the strap)
 // inside its board, its rim or its boss (in its own frame: within 7.4 cm in front of its back and 3 mm behind it, inside its rim)
 function shieldInside(sh, clouds, root) {
   root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), v = new THREE.Vector3(); let inside = 0, near = 1;
-  eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); if (Math.hypot(v.x, v.y) > SHIELD_R + .008 || v.z < -.05 || v.z > .074) return; near = Math.min(near, -v.z); if (v.z > -.003) inside++; });
+  // (within the boss's hole only the dome counts: a knuckle may go into its hollow up to its base, 2.75 cm in front of the back)
+  eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); const r = Math.hypot(v.x, v.y); if (r > SHIELD_R + .008 || v.z < -.05 || v.z > .074) return; if (r < SHIELD_HOLE - .004) { if (v.z > SHIELD_DOME - .002) inside++; return; } near = Math.min(near, -v.z); if (v.z > -.003) inside++; });
   return { inside, near: +near.toFixed(4) };
 }
 // held: a centre grip in the left fist with the arm hanging, so the shield hangs at the side with its face turned 1 rad forward
@@ -892,25 +902,30 @@ function shieldInside(sh, clouds, root) {
 // Its numbers: what is inside it read back off the wrist, the nearest point behind it, the arm's gap to its back, the lift
 function buildShield(G, body, byName, meshes, root) {
   const D = G.dress, R = SHIELD_R, TURN = D.shieldTurn ?? 1, CLEAR = .005, R0 = PACK.rest, q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
-  const wrist = byName['wrist.L'], elbow = byName['lowerarm01.L'], armOf = i => R0[i * 3] > .3;
+  const wrist = byName['wrist.L'], elbow = byName['lowerarm01.L'], armOf = i => R0[i * 3] > .3, handOf = i => R0[i * 3] > .415;
+  // the left hand closes on the grip (Session 906): the four fingers curled to a fist, the thumb as it was
+  for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const bn = byName[`finger${f}-${j}.L`]; if (bn) bn.quaternion.copy(q(0, 0, -[1.15, 1.35, .95][j - 1])); }
   let place = null, lift = 0;
   for (let k = 0; k <= 10; k++) {
     const clouds = wornClouds(body, meshes, root);
     const e = new THREE.Vector3().setFromMatrixPosition(elbow.matrixWorld), w = new THREE.Vector3().setFromMatrixPosition(wrist.matrixWorld), A = w.clone().sub(e).normalize();
     const O = new THREE.Vector3(1, 0, 0).addScaledVector(A, -A.x).normalize(), F = new THREE.Vector3().crossVectors(A, O); if (F.z < 0) F.negate();
     const N = O.clone().multiplyScalar(Math.cos(TURN)).addScaledVector(F, Math.sin(TURN)).normalize(), U = A.clone().negate(), S = new THREE.Vector3().crossVectors(U, N);
-    // the grip is at the knuckles: the boss is centred on the middle finger's first joint
-    const G0 = new THREE.Vector3().setFromMatrixPosition(byName['finger3-1.L'].matrixWorld), { other, arm, n } = shieldBack(clouds, G0, N, armOf);
-    place = { G0, N, U, S, back: Math.max(arm, other) + CLEAR, armGap: Math.max(0, other - arm), tested: n };
+    // the grip is in the fist: the boss is centred on the middle of the four fingers' second joints, and the knuckles go into its
+    // hollow, up to a centimetre short of the dome's base
+    const G0 = new THREE.Vector3(); for (let f = 2; f <= 5; f++) G0.add(new THREE.Vector3().setFromMatrixPosition(byName[`finger${f}-2.L`].matrixWorld)); G0.divideScalar(4);
+    const { other, arm, hole, n } = shieldBack(clouds, G0, N, armOf, handOf), back = Math.max(arm + CLEAR, other + CLEAR, hole - SHIELD_DOME + .01);
+    place = { G0, N, U, S, back, armGap: Math.max(0, other - arm), inHole: +(hole - back).toFixed(4), tested: n };
     if (other <= arm || k === 10) break;
     lift += .03; byName['upperarm01.L'].quaternion.multiply(q(0, 0, .03));
   }
-  const { G0, N, U, S, back } = place, sh = shieldParts(D);
+  // the grip at the fist's own depth: 8 mm behind its furthest knuckle (the forearm, thicker than the fist, holds the board off it)
+  const { G0, N, U, S, back } = place, sh = shieldParts(D, Math.max(-.045, Math.min(-.011, place.inHole - .008)));
   sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(G0).addScaledVector(N, back); root.add(sh); root.updateMatrixWorld(true); wrist.attach(sh);
   const { inside, near } = shieldInside(sh, wornClouds(body, meshes, root), root);
   let tris = 0; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
   let floor = 1e9; { const PP = posedBody(body); for (let i = 1; i < PP.length; i += 3) floor = Math.min(floor, PP[i]); } const low = G0.y - R * Math.abs(U.y) - .007 - floor;
-  return { mesh: sh, low, stats: { on: 'arm', armGap: +place.armGap.toFixed(4), clear: CLEAR, inside, near, tested: place.tested, lift: +lift.toFixed(2), turn: TURN, across: 2 * R, tris, faceDir: +Math.atan2(N.z, N.x).toFixed(3) } };
+  return { mesh: sh, low, stats: { on: 'arm', armGap: +place.armGap.toFixed(4), inHole: place.inHole, clear: CLEAR, inside, near, tested: place.tested, lift: +lift.toFixed(2), turn: TURN, across: 2 * R, tris, faceDir: +Math.atan2(N.z, N.x).toFixed(3) } };
 }
 // slung (Session 905): under a cloak, which hangs over the arm that would hold it, or a shoulder cape, which stands out over its top
 // edge, the shield is carried on the back by its strap (the guige), as OG-019's heavy line draws the strap crossed over the chest.
