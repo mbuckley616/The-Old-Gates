@@ -20921,3 +20921,26 @@ Corrections made during the session:
 - **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
+
+## v80 — Session 949 — A blow is a sixth of your health (deep work, card combat-resolver, Michael's B on #355)
+Session 940 built the attack table and the one resolver and stopped on DECISION #355: with armour as a share, how much of your health should an ordinary blow of your level's tier take, at a kit of your level? Michael chose **B, a sixth: six blows to fall**. It is the one constant `BLOW_SHARE` in `74-strikes.js`, and this session sets it.
+
+It is .17, not 1/6. At exactly a sixth the rounding left you on 1 health after the sixth blow at level 10 (235 health, blows of 39) and level 20 (385, blows of 64), so those levels fell to the seventh. At .17 every level from 1 to 20 falls to the sixth blow.
+
+Four suites asserted the old numbers and are re-measured to the new truth, none loosened:
+- `resolver`: the retune check is now 15–18% and exactly six blows to fall, at every level from 1 to 20 (it sampled six levels before).
+- `fistfight`: standing still, you fall at the sixth blow (6 of 6 landed, 10.9 s, 130 health), where it was about the tenth. It allows 5 to 7 for the Bandit's roll.
+- `cowards`: the Ogre's second-phase heavy goes through the table since Session 940 (2.2× its roll, its row and place, then your armour's share: 94 here), but the suite still expected 2.2× the bare roll (35). This was CI's one red shard on the PR (shard 3, failed twice). The suite now reads the same sum in the page.
+- `guardsindoor`: the step that swings at the guard refilled your health before each swing but not your posture. His blows between your swings, at a sixth, kept your posture broken, and a staggered player cannot swing (0 of 6 landed). It now fills posture too, as `fistfight` does. A wrong first guess that you had fallen was tried and reverted: you lose 85 of 130 in the 8 s before it.
+
+Two housekeeping changes:
+- **Renumbered.** main carries another Session 939 (the Fighters' Guild prototype, from auto/design). This card's first session is renumbered 940: its devlog heading and its 31 `S939` notes in `js/` and `tests/`, none of which were on main. The commit `41d27a0` still says 939.
+- **Restored screenshots.** Four screenshots under `docs/prototypes/` that the local test runs rewrote were committed by mistake and restored in the next commit.
+### Verified (headless Chromium)
+- **`resolver`: 25 of 25.** An ordinary blow lands at 16.8–17.4% of your health in the dungeon and the open world alike: 17 of 100 at level 1, 27 of 160 at 5, 40 of 235 at 10, 53 of 310 at 15 and 65 of 385 at 20. You fall to the sixth blow at every level from 1 to 20.
+- **The combat and damage batch: 54 suites, all green.** It ran three at a time: attrpromise, autosave, bladehit, captainguard, caravan, cargo, challenge, counters, cowards, dazed, dmgnums, duel, duelrhythm, dungeonchase, dunseed, falls, foeseed, fortunecaor, guardlevel1, guardplay, guardsindoor, herbhidden, herbparity, hptail, journal, lairmaster, lvact, masterslam, parryclock, parrydeath, pauseleaf, pirateram, poinames, posture, roll, rowebeats, rowelines, shiphull, shipwreck, siegeturn, slamdamage, spentguard, wardall, wardswift, warwords, yardplay, tells, attrdmg, fists, fistswing, spentblow, blacksail, posturefloor and tpfists.
+- **Two needed a re-run alone.** `guardsindoor` was green after the fix above. `falls` lost its browser mid-run under the three-at-once load and passed alone. `blacksail` failed once and passed on the runner's retry (flaky).
+- **The full suite runs on the PR's CI.**
+### Needs eyes
+- **Six blows, in a real fight.** A lone Bandit or Skeleton that you stand and trade with can now kill you, and a pack of three can do it in about two exchanges. Is that the pressure combat.md wanted, or does the open world's density need a look (F2b, enemies by place)?
+- **Posture.** A blow's posture drain is 1.5× its damage, so harder blows break your guard sooner too. `guardsindoor` showed a guard keeping a still player staggered. Worth feeling whether a held block now breaks too quickly against two foes.

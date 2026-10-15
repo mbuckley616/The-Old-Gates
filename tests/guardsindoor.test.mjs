@@ -85,17 +85,15 @@ await page.evaluate(() => { PHP = maxHP; const b = [...document.querySelectorAll
 await g.frames(3);
 const f0 = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); return e ? { name: e.displayName, hp: e.hp, inRoom: e.mesh && e.mesh.parent === interiorScene, inside: isInterior() } : null; });
 const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = PHP; let solidT = 0, minD = 99;
-  // S949 — a blow is a sixth of your health now (Michael's B on #355): eight seconds stood still would fell you, and a fallen
-  // player swings nothing in the next step, so the watch ends once he has taken half your health
-  for (let t = 0; t < 8 && PHP > maxHP * .5; t += 1 / 60) { WORLD.tickInterior(1 / 60, performance.now()); if (intSolidAt(e.x, e.z, .25, 0)) solidT++; minD = Math.min(minD, Math.hypot(e.x - px, e.z - pz)); }
-  dead = false;
+  for (let t = 0; t < 8; t += 1 / 60) { WORLD.tickInterior(1 / 60, performance.now()); if (intSolidAt(e.x, e.z, .25, 0)) solidT++; minD = Math.min(minD, Math.hypot(e.x - px, e.z - pz)); }
   return { lost: hp0 - PHP, minD: +minD.toFixed(2), solidFrames: solidT, y: +e.mesh.position.y.toFixed(2) }; });
 console.log('refused', JSON.stringify(d5), JSON.stringify(f0), JSON.stringify(fight));
 check('refuse indoors and he draws in the room: a Town Guard there, in the room’s scene', d5.open && f0 && f0.inside && f0.inRoom && f0.name === 'Town Guard', { d5, f0 });
 check('he closes and strikes, on the floor and never inside the furniture', fight.lost > 0 && fight.minD < 2.2 && fight.solidFrames === 0 && fight.y === 0, fight);
-// your blows land on him
+// your blows land on him (S949: health and posture filled before each swing, as `fistfight` does; at a sixth his blows in the
+// meantime broke your posture again and again, and a staggered player cannot swing)
 const hit = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = e.hp;
-  for (let k = 0; k < 6 && e.hp === hp0; k++) { PHP = maxHP; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); for (let w = 0; w < 60 && _pendingStrike; w++) await wait(250); await wait(100); } // S274 — wait for the blow to land: on a slow runner 700 ms was a third of the swing
+  for (let k = 0; k < 6 && e.hp === hp0; k++) { PHP = maxHP; PPOST.stagUntil = 0; PPOST.posture = PPOST.maxPosture; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); for (let w = 0; w < 60 && _pendingStrike; w++) await wait(250); await wait(100); } // S274 — wait for the blow to land: on a slow runner 700 ms was a third of the swing
   return { hp0, hp: e.hp }; });
 check('your blows land on him indoors', hit.hp < hit.hp0, hit);
 // at a fifth of health he offers the yield; the cells take you out of the room and to the morning
