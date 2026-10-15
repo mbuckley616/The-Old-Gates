@@ -19942,3 +19942,31 @@ Corrections made during the session:
 - **From the deck the harp is seen through the sail, reversed**, as on the sloop and the cog. The sail is one double-sided cloth.
 - **The course's yard is square across**, not braced round. Every square sail in the kit stands like this.
 - **Owed:** the cutter now has all three dresses. Next are the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's. How a three-masted lateen hull takes a square rig, or a square-rigged hull the gaff, is a question for Michael, with pictures.
+
+## v80 — Session 924 — Card F11: the caravel in the Gatelands' dress, three rigs for a question (prototype only)
+With the cutter done (Sessions 922 and 923), every class has a dress for each island where that island's rig fits the class. What is left is six hulls whose class rig is not their island's: the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's. Session 902 named this as a question. This session builds the picture for it, the caravel in the Gatelands' dress under three rigs, and asks **DECISION #347**. FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
+
+What is new in `ships.js`: `aurenneCaravel` takes `o.dress: 'gatelands'`, and `gatelandsCaravel(o, r)` is that.
+- **The hull:** the caravel's own lines and carvel planking, its castle, cabin, ladders and wheel, in the Gatelands' colours. It is tarred below the water and oak above. The top two strakes and the castle's walls are green, and the wale, the castle's panels and the lanterns' fittings are cream. The harp is on every sail.
+- **`o.rig`:**
+  - **`'redonda'`** (the default, option A): the fore and the main square, the mizzen kept the lateen it was on the castle. This is the *caravela redonda*.
+  - **`'square'`** (B): all three square, the mizzen's course over the castle deck.
+  - **`'lateen'`** (C): the three lateens as built.
+- **A square mast** stands upright with one yard: the fore's at 6.8 m over the deck and 6.4 m long, the main's at 8.2 m and 8 m long, and the mizzen's at 5.0 m over the castle and 4.8 m long. Each course hangs from its yard to a foot 2.2 m over its deck, bellied forward. Each mast has three shrouds a side, and braces and sheets lead aft to the rail.
+- **The stays:** with square masts forward, the mainstay runs from the main's head to the fore's, and the forestay from the fore's head to the bowsprit. The caravel's single stay from the main to the bowsprit would have cut through the fore course.
+- 31,796 triangles in 12 draws (redonda), 32,032 (square), 31,300 (lateen).
+
+The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` or `&rig=lateen`, and `&noharp`.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 75 of 75 pass** (69 after Session 923). Three views are new on the page check, one per rig, with no page errors. Three checks are new, over three keys in each of the three rigs:
+  - **The builds:** each the same twice, with the very sections, rail and castle of Aurenne's caravel. For each key, the planking is identical in all three rigs.
+  - **The hull:** closed (no ray of 1,080 gets out). The walk from the castle's ladders to the bow is clear at all 72 points. The cabin has 2.09 m of headroom, and the door is clear for 2.7 m.
+  - **The rigs:** redonda has two square masts and one lateen, square three and none, lateen none and three. Every sail's foot is 2.2 m or more over its deck, and no sail comes within 0.3 m of a mast that is not its own.
+- **Pictures:**
+  - redonda: `ships-glcaravel-quarter.jpg`, `-side` and `-deck`;
+  - all square: `ships-glcaravel-quarter-square.jpg` and `-side-square`;
+  - lateens: `ships-glcaravel-quarter-lateen.jpg` and `-side-lateen`.
+### Needs eyes
+- **The square courses are small beside the lateens they replace.** The caravel's masts are short, so a course reaches only from 2.2 m over the deck up to its yard. A topsail, or a deeper course, would bring the sail back, if #347 goes A or B.
+- **The green castle reads nearly black** in the shade, like the green strakes.
+- **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.

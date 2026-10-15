@@ -46,6 +46,36 @@ Pictures:
 - [the high cross](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cross.jpg)
 - [the beehive cells](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cells.jpg)
 
+### A hull in another island's dress: whose rig? (look builder, Session 924) — DECISION #347
+**F11: a hull in another island's dress, when its rig is not the island's (look builder, Session 924).** Your 3 A keeps the game's five classes, each dressed by its island, and #306 gives each island one rig: the Gatelands square, the Mark the gaff, Aurenne the lateen.
+- **Built so far:**
+  - the sloop in all three dresses;
+  - the cutter in all three (Sessions 922 and 923);
+  - the Gatelands cog and galleon;
+  - Aurenne's caravel.
+- **What is left:**
+  - the caravel in the Gatelands' and the Mark's dress;
+  - the cog and the galleon in the Mark's and Aurenne's dress.
+
+These classes have three masts, or the cog's one great square sail. So the question is how far the island's rig replaces the class's own. One answer covers all six.
+
+**The picture is the caravel in the Gatelands' dress**, a prototype in `docs/prototypes/levelup/ships.js` (`gatelandsCaravel`) at `ships.html?ship=glcaravel&rig=…`.
+- **The hull:** the caravel's own lines, castle and wheel, in the Gatelands' colours: tarred below the water, oak above, green top strakes and castle, cream fittings. The harp is on every sail.
+- **What changes between the options:** only the rig. The planking is identical in all three.
+
+**1. A hull whose class rig is not its island's:**
+- **A. The island's rig on the working masts, the class's own aft** *(recommended)*: the caravel's fore and main square, its mizzen kept a lateen on the castle. This is the *caravela redonda*, how the real caravels were re-rigged for long voyages, so it reads as both a caravel and a Gatelands ship.
+  - The same rule gives a Mark cog with one gaff main in place of the square sail, and a Mark galleon gaff-rigged on the mizzen and square forward, with tanned sails.
+  - It gives an Aurenne cog with one lateen, and an Aurenne galleon square forward with lateens on the main and the mizzen.
+  - The square courses carry less sail than the caravel's lateens did; they can be made deeper.
+- **B. The island's rig on every mast:** all three of the caravel's masts square. Each island's ships then read at a distance by rig alone, and the classes read only by hull and size.
+- **C. The class's own rig, the island's colours only:** the caravel keeps its three lateens, in green with the harp. The islands are told apart by colour and badge, and #306's one-rig-to-an-island holds only for the small hulls.
+
+Pictures:
+- A (redonda): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side.jpg), [deck](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-deck.jpg)
+- B (all square): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-square.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-square.jpg)
+- C (lateens): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-lateen.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-lateen.jpg)
+
 ## Answered
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line

@@ -337,8 +337,22 @@ function lateenSail(T, P, C, side, belly, n = 14) { const P3 = [], U = [], v = q
   const tri = (q) => { for (const [i, j] of q) { const p = at(i, j); P3.push(p.x, p.y, p.z); U.push((p.z - I.z) / S * side + .5, (p.y - I.y) / S + .5); } };
   for (let i = 0; i < n; i++) for (let j = 0; i + j < n; j++) { tri([[i, j], [i + 1, j], [i, j + 1]]); if (i + j + 1 < n) tri([[i + 1, j], [i + 1, j + 1], [i, j + 1]]); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P3, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.computeVertexNormals(); return g; }
+// o.dress 'gatelands' (Session 924, a prototype for DECISION: how a hull takes another island's rig): the caravel's own lines, carvel, its
+//   castle and wheel, in the Gatelands' colours (tarred below the water, oiled oak above, the top two strakes and the castle's walls green,
+//   the wale, the panels and the lanterns' fittings cream), the harp on the sails (o.harp, default true), and o.rig:
+//   'redonda' (default; A): the fore and the main square, each one course on an upright mast, the mizzen on the castle the lateen it was:
+//     the caravela redonda, how the caravels that sailed far were re-rigged;
+//   'square' (B): all three square, the mizzen's course over the castle deck;
+//   'lateen' (C): the caravel's three lateens as built, only the colours and the harp changed.
+//   A square mast carries one yard, its course from the yard to a foot 2.2 m over its deck, bellied forward; shrouds both sides; braces and
+//   sheets aft to the rail. The stays run from mast head to mast head and from the fore's head to the bowsprit, clear of the courses.
+//   gatelandsCaravel(o, r) is this.  -> as aurenneCaravel, with dress, rig, harp, and squares ([{ mast: [x, z], deck, yard (y), half, foot (y), top }]).
+let GVM = null;
+function glCaravelMats(harp) { if (GVM && GVM.harp === harp) return GVM.M; const C = mats(harp);
+  GVM = { harp, M: { ...C, tallow: C.tar, hull: C.oak, blue: C.green, paint: C.cream, gilt: C.cream, lamp: new THREE.MeshStandardMaterial({ color: 0xffd890, emissive: 0xffb050, emissiveIntensity: .8, roughness: .4 }) } }; return GVM.M; }
+export function gatelandsCaravel(o = {}, r = stream('glcaravel')) { return aurenneCaravel({ ...o, dress: 'gatelands' }, r); }
 export function aurenneCaravel(o = {}, r = stream('caravel')) {
-  const star = o.star !== false, wheel = !o.tiller, M = caravelMats(star), { put, rod, finish } = kit(M);
+  const GLD = o.dress === 'gatelands', RIG = GLD ? (['square', 'lateen'].includes(o.rig) ? o.rig : 'redonda') : 'lateen', harp = GLD && o.harp !== false, star = !GLD && o.star !== false, wheel = !o.tiller, M = GLD ? glCaravelMats(harp) : caravelMats(star), { put, rod, finish } = kit(M);
   const L = 17.5, W = 5.0, DRAFT = 1.3, DECK = 1.0, SHEER = 1.42, BOW = .5, STERN = 1.15, NS = 52, NSTR = 14, TH = .045, TRN = .6;
   const zs = -L / 2, zb = L / 2, ZT = zs + .05;
   const sheerAt = z => SHEER + BOW * Math.max(0, z / zb) ** 2 + STERN * Math.max(0, z / zs) ** 2;
@@ -410,8 +424,17 @@ export function aurenneCaravel(o = {}, r = stream('caravel')) {
   // the three lateens. Each mast raked forward 4°; its yard slung on the lee side at 52° to 50°, a third of its length forward of the
   // mast; the sail hangs from the yard to a tack under its lower end and a clew aft, the foot 2.2 m or more over its deck.
   // [mast z, the deck it stands on, the sling's height over that deck, the yard's angle, its length forward and aft of the sling, the clew's z, side]
-  const RAKE = 4 * Math.PI / 180, lateens = [];
-  for (const [mz, dy, sy, ang, fw, af, cz, side] of [[5.0, DECK, 6.4, 50, 5.1, 6.8, 1.6, -1], [.8, DECK, 8.6, 52, 7.6, 10.0, -3.6, 1], [-7.2, CY, 5.4, 50, 4.1, 5.4, -9.5, -1]]) {
+  const RAKE = 4 * Math.PI / 180, lateens = [], squares = [], SQ = RIG === 'square' ? [1, 1, 1] : RIG === 'redonda' ? [1, 1, 0] : [0, 0, 0];
+  // the square masts: [mast z, its deck, the yard's height over that deck, the yard's half-length, the brace's and the sheet's z on the rail]
+  for (const [k, mz, dy, yh, half, bz, shz] of [[0, 5.0, DECK, 6.8, 3.2, 2.6, 3.2], [1, .8, DECK, 8.2, 4.0, -2.2, -1.2], [2, -7.2, CY, 5.0, 2.4, ZT + .4, ZT + .5]]) { if (!SQ[k]) continue;
+    const YY = dy + yh, SF = dy + 2.2, top = YY + 1.2, rx = z => z < ZC ? cw(z) - .04 : sect(z, 1)[0] - .05, ry = z => z < ZC ? CY + 1.0 : Math.max(DECK + 1.0, sheerAt(z) + .12);
+    rod([0, keelAt(mz) + .1, mz], [0, top, mz], k === 1 ? .18 : .15, .1, 'spar'); rod([-half, YY, mz + .15], [half, YY, mz + .15], .08, .065, 'spar');
+    { const g = new THREE.PlaneGeometry(2 * half - .3, YY - SF - .1, 14, 12), Pp = g.attributes.position; for (let q = 0; q < Pp.count; q++) { const x = Pp.getX(q) / half, y = Pp.getY(q) / ((YY - SF) / 2); Pp.setZ(q, .5 * (1 - x * x) * (1 - .6 * y * y) + .1 * (1 - y) / 2); }
+      g.computeVertexNormals(); put(g, 'sail', 0, (YY + SF) / 2 - .05, mz + .23, 0, 0, 0, null); }
+    for (const e of [1, -1]) { for (const dz of [-.7, 0, .7]) { const z = Math.max(ZT + .3, mz + dz - .3); rod([0, top - .3, mz], [e * (z < ZC ? cw(z) : sect(z, 1)[0] + .05), z < ZC ? CY + .2 : sheerAt(z) - .05, z], .012, .012, 'rope'); }
+      rod([e * half, YY, mz + .15], [e * rx(bz), ry(bz), bz], .01, .01, 'rope') /* the brace */; rod([e * (half - .3), SF, mz + .3], [e * rx(shz), ry(shz), shz], .01, .01, 'rope') /* the sheet */; }
+    squares.push({ k, mast: [0, mz], deck: dy, yard: +YY.toFixed(2), half, foot: +SF.toFixed(2), top: +top.toFixed(2) }); }
+  for (const [k, mz, dy, sy, ang, fw, af, cz, side] of [[0, 5.0, DECK, 6.4, 50, 5.1, 6.8, 1.6, -1], [1, .8, DECK, 8.6, 52, 7.6, 10.0, -3.6, 1], [2, -7.2, CY, 5.4, 50, 4.1, 5.4, -9.5, -1]]) { if (SQ[k]) continue;
     const top = dy + sy + .8, xs = side * .3, mast = z => [0, mz + (z - (keelAt(mz) + .1)) * Math.tan(RAKE)];
     const S = [xs, dy + sy, mast(dy + sy)[1]], A = ang * Math.PI / 180, T = [xs, S[1] - fw * Math.sin(A), S[2] + fw * Math.cos(A)], P = [xs, S[1] + af * Math.sin(A), S[2] - af * Math.cos(A)], C = [xs, dy + 2.5, cz];
     rod([0, keelAt(mz) + .1, mz], [0, top, mast(top)[1]], mz > 0 && sy > 7 ? .18 : .15, .1, 'spar'); rod(T, P, .09, .06, 'spar');
@@ -422,8 +445,10 @@ export function aurenneCaravel(o = {}, r = stream('caravel')) {
     /* the halyard down the mast, and the shrouds on the weather side only */ rod([xs * .5, top - .1, mast(top)[1]], [0, dy + .4, mz - .3], .012, .012, 'rope');
     for (const dz of [-.8, 0, .8]) { const z = Math.max(ZT + .3, mz + dz - .3); rod([0, top - .3, mast(top - .3)[1]], [-side * (sect(z, 1)[0] + .05), z < ZC ? CY + .2 : sheerAt(z) - .05, z], .012, .012, 'rope'); }
     lateens.push({ mast: [0, mz], top: +top.toFixed(2), topZ: +mast(top)[1].toFixed(2), tack: T.map(v => +v.toFixed(2)), peak: P.map(v => +v.toFixed(2)), clew: C.map(v => +v.toFixed(2)), side, deck: dy }); }
-  // the forestay from the main's head to the bowsprit
-  rod([0, lateens[1].top - .2, lateens[1].topZ - .2 * Math.tan(RAKE)], SP, .014, .014, 'rope');
+  // the forestay from the main's head to the bowsprit; with square fore and main, the mainstay from the main's head to the fore's and the
+  // forestay from the fore's head to the bowsprit, clear of the courses
+  if (RIG === 'lateen') rod([0, lateens[1].top - .2, lateens[1].topZ - .2 * Math.tan(RAKE)], SP, .014, .014, 'rope');
+  else { const F = squares[0], Mn = squares[1]; rod([0, Mn.top - .2, Mn.mast[1]], [0, F.top - .2, F.mast[1]], .014, .014, 'rope'); rod([0, F.top - .2, F.mast[1]], SP, .014, .014, 'rope'); }
   // the rudder hung on the transom, its head through the castle's deck; the wheel on the castle's deck (or a tiller)
   { const ry0 = keelAt(zs) - .05, ry1 = CY + .35; put(new THREE.BoxGeometry(.12, sheerAt(ZT) - ry0, .7), 'hull', 0, (ry0 + sheerAt(ZT)) / 2, ZT - .45); rod([0, sheerAt(ZT) - .2, ZT - .2], [0, ry1, ZT - .2], .08, .08, 'oak');
     if (wheel) { const wz = ZC - 1.0, wy = CY + 1.15; put(new THREE.TorusGeometry(.62, .035, 6, 24), 'oak', 0, wy, wz); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; rod([0, wy, wz], [.78 * Math.cos(a), wy + .78 * Math.sin(a), wz], .022, .018, 'oak'); }
@@ -433,7 +458,7 @@ export function aurenneCaravel(o = {}, r = stream('caravel')) {
   for (const e of [1, -1]) { const x = e * (cw(ZT + .15) - .15), y = CY + 1.25; rod([x, CY + 1.0, ZT + .15], [x, y, ZT + .15], .03, .03, 'gilt'); put(new THREE.CylinderGeometry(.13, .1, .32, 8), 'lamp', x, y + .16, ZT + .15); put(new THREE.ConeGeometry(.16, .16, 8), 'gilt', x, y + .4, ZT + .15); }
   put(new THREE.TorusGeometry(.22, .05, 6, 18).rotateX(Math.PI / 2), 'rope', .45, DECK + .05, .2); put(new THREE.CylinderGeometry(.16, .13, .3, 12), 'oak', -.5, DECK + .15, -.1);
   return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, mast: [0, .8], hatch, sheerAt, keelAt, stem, transom: ZT, carvel: true, star, wheel,
-    castle: { z0: ZT, z1: ZC, y: CY, door, ladders }, lateens });
+    castle: { z0: ZT, z1: ZC, y: CY, door, ladders }, lateens, squares, dress: GLD ? 'gatelands' : 'aurenne', rig: RIG, harp });
 }
 
 // gatelandsCog(o, r) (Session 892, card F11; Michael's 3 A on DECISION #192/#306's ladder keeps the game's five classes, each dressed by
