@@ -38,10 +38,12 @@ for (let k = 0; k < 8; k++) {
   const row = [];
   for (const hr of IN_HOURS) {
     await page.evaluate(([k, hr]) => { forceTime(hr); const S = WORLD.settle.get('carraig_mor'); const hs = S.houses.filter(h => h.type === 'home' && !h.ownedByPlayer && !h.shuttered); const h = hs[k * 4]; window._h = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, [k, hr]);
-    await page.waitForTimeout(1500);
-    row.push(await page.evaluate(() => { if (!INT_BOX || !intNPCMesh) { exitInterior(); return null; } px = INT_BOX.x + .6; pz = INT_BOX.z - .6; jumpY = 0; let seen = false;
+    // wait for the fade's callback to have put us in this home, not for a fixed time: a late fade left INT_BOX the last room's
+    // while lid was still the overworld, and the room's coordinates outdoors made the world drop Carraig Mór (Session 947)
+    await page.waitForFunction(() => isInterior() && currentHouse === window._h, null, { timeout: 30000 });
+    row.push(await page.evaluate(() => { if (!isInterior() || currentHouse !== _h) throw new Error('not in the home'); if (!INT_BOX || !intNPCMesh) { exitInterior(); return null; } px = INT_BOX.x + .6; pz = INT_BOX.z - .6; jumpY = 0; let seen = false;
       for (let f = 0; f < 300; f++) { WORLD.tickInterior(1 / 60, performance.now()); if (f % 15 === 0 && WORLD.witnessOf(_h)) seen = true; } exitInterior(); return seen; }));
-    await page.waitForTimeout(800);
+    await page.waitForFunction(() => !isInterior() && lid === 'overworld', null, { timeout: 30000 });
   }
   homesIn.push(row);
 }
