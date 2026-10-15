@@ -19,7 +19,7 @@ for (const seed of SEEDS) {
   const live = await page.evaluate(() => { const h = CHESTS.find(c => /:hoard$/.test(c.id)); if (!h) return null; const fl = h.floor || 1; currentFloor = fl; jumpY = fl === 2 ? FLOOR2_Y : 0;
     const map = (fl === 2 && dMap2) ? dMap2 : dMap; const free = (c, r) => r >= 0 && r < dR && c >= 0 && c < dC && map[r][c] !== 0 && map[r][c] !== 4 && map[r][c] !== 5;
     for (const [i, j] of [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [-1, 1], [1, -1], [-1, -1]]) { const c = Math.round(h.x) + i * 2, r = Math.round(h.z) + j * 2; if (!free(c, r) || !free(Math.round(h.x) + i, Math.round(h.z) + j)) continue;
-      px = h.x + i * 1.5; pz = h.z + j * 1.5; yaw = Math.atan2(-(h.x - px), -(h.z - pz)); pitch = -.25; return { at: [i, j] }; }
+      px = h.x + i * 1.5; pz = h.z + j * 1.5; yaw = Math.atan2(-(h.x - px), -(h.z - pz)); pitch = -Math.atan2(SCALE.EYE_STAND - .3, 1.5); /* S905 (F2a): at the chest's middle from the 1.65 eye (−.73; it was −.25 from the old .92) */ return { at: [i, j] }; }
     return { at: null }; });
   if (live && live.at) { const trail = []; for (let f = 0; f < 3; f++) { await g.frames(1); trail.push(await page.evaluate(() => [+jumpY.toFixed(2), +velY.toFixed(2), onGround, currentFloor, lid])); } rows[rows.length - 1].trail = trail; rows[rows.length - 1].looked = await page.evaluate(() => { const h = CHESTS.find(c => /:hoard$/.test(c.id)); const lk = lookingAt(h); return lk ? true : { cam: +Math.hypot(CAM.position.x - px, CAM.position.z - pz).toFixed(2), camY: +CAM.position.y.toFixed(2), jumpY: +jumpY.toFixed(2), d: +Math.hypot(h.x - px, h.z - pz).toFixed(2), mesh: !!h.mesh, dead, invOpen, lootOpen, luOpen, dlgOpen, tp: typeof TP !== 'undefined' && !!TP.on, floor: currentFloor, hf: h.floor || 1 }; }); }
 }
@@ -30,7 +30,7 @@ check('every hoard stands on an open cell', ok.every(r => r.hoardOpen), ok);
 check('every hoard stands within three cells of its master', ok.every(r => r.d <= 4.3), ok.map(r => r.d));
 check('most hoards stand in a room (all eight cells round them open)', ok.filter(r => r.ring === 8).length >= 8, ok.map(r => r.ring));
 const looked = ok.filter(r => r.looked !== undefined);
-check('stood 1.5 off and looking at it, nearly level, the chest answers', looked.length >= 8 && looked.every(r => r.looked === true), looked.map(r => [r.seed, r.looked, r.looked === true ? null : r.trail]));
+check('stood 1.5 off and looking at it from the eye, the chest answers', looked.length >= 8 && looked.every(r => r.looked === true), looked.map(r => [r.seed, r.looked, r.looked === true ? null : r.trail]));
 console.log('old spot inside a wall on', ok.filter(r => r.oldInWall).length, 'of', ok.length);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
