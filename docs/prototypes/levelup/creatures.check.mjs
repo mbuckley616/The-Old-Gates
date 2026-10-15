@@ -98,6 +98,16 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const fr = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.FROST.map(k => { const C = K.build(K.genome(k, k + ':check')), h = C.meshes[0].material; let shards = 0; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.geometry.attributes.position.count >= 30 && o.material.flatShading) shards++; });
     return { k, school: C.plan.school, clear: h.transparent ? +h.opacity.toFixed(2) : 1, shards, tris: C.stats.tris }; }); });
   for (const t of fr) check(`${t.k}: a Frost Thing of Uisce in clear ice (opacity ${t.clear}) with ${t.shards} clusters of shards`, t.school === 'Uisce' && t.clear < 1 && t.shards >= 5, t);
+  // the frozen man's face (Session 968, Michael's B): the skeleton's skull inside his head, the ice thinned over the face's front only, and
+  // the skull wholly under the hide (no crown through the top of his head)
+  const ff = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('frostfolk', 'frostfolk:check')), h = C.meshes[0], a = h.geometry.attributes.aAlpha, P = h.geometry.attributes.position;
+    C.rig.updateMatrixWorld(true); let sk = null; const T = await import('three'), box = new T.Box3();
+    C.rig.traverse(o => { if (o.name === 'skull') { box.expandByObject(o); sk = true; } }); h.updateMatrixWorld(true);
+    let lo = 1, thin = 0, over = -9; const v = new T.Vector3(); for (let i = 0; i < P.count; i++) { if (a) { lo = Math.min(lo, a.getX(i)); if (a.getX(i) < .9) thin++; }
+      v.fromBufferAttribute(P, i).applyMatrix4(h.matrixWorld); if (v.x > box.min.x && v.x < box.max.x && v.z > box.min.z && v.z < box.max.z) over = Math.max(over, v.y); }
+    return { skull: !!sk, tris: C.B.skull?.tris, face: a ? +(lo * C.plan.clear).toFixed(2) : null, thinShare: a ? +(thin / P.count).toFixed(3) : null, skullTop: +box.max.y.toFixed(3), hideTop: +over.toFixed(3) }; });
+  check(`frostfolk: the skeleton's skull under the ice (${ff.tris} triangles), the face's ice at ${ff.face} over ${(ff.thinShare * 100).toFixed(1)}% of the hide, the skull's top ${ff.skullTop} under the hide's ${ff.hideTop}`,
+    ff.skull && ff.face !== null && ff.face < .5 && ff.thinShare > .005 && ff.thinShare < .08 && ff.skullTop < ff.hideTop, ff);
   // skin wings let light through (Session 959): every opaque membrane wing gives back a share of its colour, no feathered or clear one does
   const wlt = await page.evaluate(async () => { const K = await import('./creatures.js'), out = { lit: [], plain: [] };
     for (const k of Object.keys(K.PLANS)) { const P = K.PLANS[k]; if (!(P.parts || []).some(([n]) => n === 'wings')) continue; const C = K.build(K.genome(k, k + ':wl'));

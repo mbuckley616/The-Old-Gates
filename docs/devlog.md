@@ -21046,3 +21046,22 @@ Session 960 left the Winged Thing's wings half open at rest: seen from the front
 
 ### Needs eyes
 - **From the front the primaries still fan out sideways** from the folded wrist: the kit lays them outward from the hand, and the fold turns the bones, not the feathers. Folding the feathers themselves is a kit change for every bird, left for a session that can picture them all.
+
+## v80 — Session 968 — The frozen man's face (L4, prototype only)
+Michael took B on DECISION #362: the Frost Thing is a folk shape frozen (`frostfolk`), and Session 958 left its face a smooth lump. This session gives it a face, as that entry proposed: the skeleton's modelled skull (Session 942), seen through the ice. It refines the plan he chose, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`faceClear`, a new plan option: the ice thin over the face.** The hide carries a per-vertex opacity when a plan sets it. Over the head's front it falls from the plan's `clear` (0.88) to `faceClear` (0.4); the crown, the back of the head and the rest of the body keep the full frost. It covers 3.3% of the hide. The hide's shader multiplies its opacity by the vertex's share, and gets a program of its own only on a plan that asks for it.
+- **`skull` can take options now:** `k` scales it against the head and `tone` colours it. The frozen man's is at 0.85, in a drowned bone grey under the frost, with his pale eyes lit in its sockets, as the drowned skeleton's are.
+- **The head refitted to hold it:** the muzzle shortened to a man's face (0.42 of the head, 0.6 before), the head's radius 10.8 cm (9.5 before). The hide is 7,800 triangles and the skull 4,356.
+- **A correction made during the session:** at a skull of 0.9 its crown stood 9 mm out through the top of the head. The new check caught it; 0.85, with the wider head, leaves 4 mm of ice over it.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,063 checks pass** (1,062 before). The new check: the skull is in his head, the face's ice is at 0.4 over 0.5 to 8% of the hide (3.3%), and the skull's top (1.886 m) is under the hide's (1.890 m). His gaits pass as before: the feet down 0.69 of the walk and 0.46 of the trot.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-frostfolk-head.jpg` (new; the brow, the lit sockets, the nasal hole and the teeth under the ice), `creatures-frostfolk-front.jpg` (new; at play distance the skull reads as a face), and `creatures-frostfolk.jpg` and `creatures-frost.jpg` re-shot.
+
+### Needs eyes
+- **From the side** the face reads less: the grown hide still rounds out ahead of the skull, and the ice there is seen edge-on, so it looks thick.
+- **The skull grins.** It is the skeleton's own, with both rows of teeth. A drowned man's jaw might hang open instead.
+- **4 mm of ice over the crown** is a thin margin. A head slider at its low end could push the skull through, and the check reads only the seed it builds.

@@ -68,7 +68,7 @@ P.head = (B, o) => {
     B.meat('jaw', j, base.clone().addScaledVector(dir, len * o.jaw.len).addScaledVector(up, -r * o.jaw.drop), o.jaw.r * S, o.jaw.r * S * .55, { tone: o.tone }); }
   B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
-  if (o.skull) skullBits(B, o, S, base, dir, up);
+  if (o.skull) skullBits(B, o, S * (o.skull.k || 1), base, dir, up);
   else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
   if (o.ears) for (const sd of [1, -1]) B.bit('head', ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
   if (o.horns) for (const sd of [1, -1]) B.bit('head', horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
@@ -529,7 +529,7 @@ function bareGeo(B, o) { const gs = [];
 // weights are read as before. A socket holds a small lit eye when the plan's eyes are bright (the drowned skeleton's)
 function skullBits(B, o, S, base, dir, up) {
   const side = up.clone().cross(dir).normalize(), M = new THREE.Matrix4().makeBasis(side, up, dir).scale(V(S, S, S)).setPosition(base);
-  const boneM = stdMat(B.tone('coat'), { rough: .7 }), dark = stdMat(B.tone('dark'), { rough: .95 }), toothM = stdMat(B.tone('coat').clone().lerp(new THREE.Color(1, .97, .88), .4), { rough: .45 });
+  const bt = o.skull.tone || 'coat', boneM = stdMat(B.tone(bt), { rough: .7 }), dark = stdMat(B.tone('dark'), { rough: .95 }), toothM = stdMat(B.tone(bt).clone().lerp(new THREE.Color(1, .97, .88), .4), { rough: .45 });
   const L = (x, y, z) => V(x, y, z).applyMatrix4(M), ell = (h, c) => { const g = new THREE.SphereGeometry(1, 18, 12); g.scale(...h); g.translate(...c); return g; };
   const put = (bone, gs, m) => { const g = mergeGeometries(gs.map(q => { q.deleteAttribute('uv'); return q.applyMatrix4(M); })); g.computeVertexNormals(); const mesh = new THREE.Mesh(g, m); mesh.name = 'skull'; B.bit(bone, mesh); return g.index.count / 3; };
   const tube = (pts, r0, r1) => { const g = taperTube(pts.map(p => V(...p)), r0, r1, 8); return g; };
@@ -557,7 +557,7 @@ P.ribs = (B, o) => { const gs = [];
   B.ribs = o.n * 2; };
 function dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
-  const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n);
+  const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n), alpha = plan.faceClear ? new Float32Array(n).fill(1) : null;
   const wb = new Float32Array(B.bones.length), tones = Object.keys(pal), tw = new Float32Array(tones.length), toneI = Object.fromEntries(tones.map((t, i) => [t, i]));
   const kw = B.flesh.map(c => Math.max(.006, .32 * (c.ra + c.rb) / 2)), C = new THREE.Color(), D = new THREE.Color(), pat = plan.pattern, gl = plan.glow;
   for (let v = 0; v < n; v++) {
@@ -583,12 +583,17 @@ function dressFlesh(geo, B, pal, plan) {
       if (along > (F.back ?? -.3) && upw > -.35) C.copy(pal[side > F.from && side < F.to ? F.stripe : F.ground]).multiplyScalar(.95 + .1 * PN.noise(x * 40, y * 40, z * 40)); }
     const mott = 1 + (PN.noise(x * 4.1, y * 4.1, z * 4.1) * .16 + PN.noise(x * 17, y * 17, z * 17) * .06) * (plan.mottle ?? 1); C.multiplyScalar(mott);
     col[v * 3] = C.r; col[v * 3 + 1] = C.g; col[v * 3 + 2] = C.b; fur[v] = furry;
+    // the ice thin over the face (Session 968, the frozen man's): the hide's opacity falls from the plan's `clear` to `faceClear` over the
+    // head's front, so the skull under it shows; the crown and the back of the head keep the full frost
+    if (alpha && B.headFrame && B.by.head) { const H = B.headFrame, hs = (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum, rel = V(x, y, z).sub(H.base), fwd = rel.dot(H.dir) / H.len, upw = rel.dot(H.up) / H.r;
+      alpha[v] = lerp(1, plan.faceClear / plan.clear, sstep(.5, .85, hs) * sstep(.25, .5, fwd) * sstep(.9, .45, upw)); }
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
     if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) : 0;
       glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny))); }
   }
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setAttribute('aFur', new THREE.Float32BufferAttribute(fur, 1)); geo.setAttribute('aGlow', new THREE.Float32BufferAttribute(glow, 1));
+  if (alpha) geo.setAttribute('aAlpha', new THREE.Float32BufferAttribute(alpha, 1));
 }
 
 // ── materials: the hide, fur shells (cut by noise, as the people's mantles are), and the binding's glow ──
@@ -596,9 +601,10 @@ const GLOW_HEAD = 'attribute float aGlow; attribute float aFur; varying float vG
 function hideMat(o) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .85, metalness: 0, ...(o.opacity < 1 ? { transparent: true, opacity: o.opacity, depthWrite: false } : {}) });
   m.onBeforeCompile = s => { s.uniforms.uGlow = { value: new THREE.Color(...(o.glow || [0, 0, 0])) };
-    s.vertexShader = GLOW_HEAD + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;');
-    s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;'); };
-  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0) + (o.opacity < 1 ? 'c' : ''); return m;
+    s.vertexShader = GLOW_HEAD + (o.face ? 'attribute float aAlpha; varying float vAlpha;\n' : '') + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;' + (o.face ? ' vAlpha = aAlpha;' : ''));
+    s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + (o.face ? 'varying float vAlpha;\n' : '') + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;')
+      .replace('vec4 diffuseColor = vec4( diffuse, opacity );', o.face ? 'vec4 diffuseColor = vec4( diffuse, opacity * vAlpha );' : 'vec4 diffuseColor = vec4( diffuse, opacity );'); };
+  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0) + (o.opacity < 1 ? 'c' : '') + (o.face ? 'f' : ''); return m;
 }
 function furMat(o, layer, layers) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, side: THREE.DoubleSide, alphaTest: .5 });
@@ -648,7 +654,7 @@ export function build(g) {
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
   B.bones.forEach((b, i) => { if (b.parent) bones[b.parent.i].add(bones[i]); }); const rig = new THREE.Group(); rig.add(bones[0]); root.add(rig); rig.updateMatrixWorld(true);
   const skel = new THREE.Skeleton(bones), meshes = [];
-  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough, opacity: plan.clear })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
+  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough, opacity: plan.clear, face: !!plan.faceClear })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
     for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
@@ -1867,7 +1873,8 @@ export const SKELETONS = ['skeleton', 'drownedskeleton'];
 // an elemental with no folk shape under the ice. Two plans for Michael to choose between (DECISION, decisions.md):
 // A `frostshard`, the sheet's figure: the troll's hunched frame in clear blue ice, shards out of its crown and down its back, lit cold;
 // B `frostfolk`, a folk shape under the ice: a man's frame (the skeleton's) grown whole and frozen, frosted white over blue, head bowed,
-// shards breaking from his shoulders and crown, the eyes lit pale. The drowned of the Uisce halls, walking ──
+// shards breaking from his shoulders and crown, the eyes lit pale. The drowned of the Uisce halls, walking. Michael took B (DECISION #362);
+// Session 968 gave him a face: the skeleton's skull inside his head (`skull.k` .85, in bone grey), under ice thinned to `faceClear` ──
 Object.assign(PLANS, {
   frostshard: re(PLANS.troll, { name: 'Frost Thing (shards)', src: 'OG-018 (Uisce: a Frost Thing, a crystalline ice-shard figure, all spikes)', school: 'Uisce', from: 'troll', scale: .85, clear: .72, rough: .1, mottle: .6, pattern: undefined, finOpacity: 1,
     palette: { coat: [.6, .78, .92], saddle: [.45, .62, .8], belly: [.74, .86, .96], dark: [.04, .06, .1], horn: [.66, .86, 1], ice: [.72, .9, 1], skin: [.58, .74, .88] },
@@ -1875,12 +1882,12 @@ Object.assign(PLANS, {
     parts: [...PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: undefined, horns: undefined, brow: undefined, crystals: { n: 6, len: .42, r: .07, f: .3, up: .8, out: .3, rake: .4 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }]
       : k === 'arms' ? [k, { ...o, r: o.r.map(v => v * .8) }] : [k, o]),
       ['spines', { n: 10, from: .05, to: 1, len: .5, r: .08, tone: 'ice', taper: .3, crystal: 4, dorsal: 1 }]] }),
-  frostfolk: re(PLANS.skeleton, { name: 'Frost Thing (the frozen)', src: 'OG-018 (Uisce: a Frost Thing), with a folk shape under the ice (canon §9a)', school: 'Uisce', from: 'skeleton', clear: .88, rough: .25, mottle: 1.2, finOpacity: 1, speedK: .7, cell: .028,
-    palette: { coat: [.82, .88, .93], saddle: [.62, .74, .86], belly: [.88, .92, .96], dark: [.05, .07, .1], horn: [.7, .88, 1], ice: [.74, .9, 1], skin: [.8, .86, .92] },
+  frostfolk: re(PLANS.skeleton, { name: 'Frost Thing (the frozen)', src: 'OG-018 (Uisce: a Frost Thing), with a folk shape under the ice (canon §9a)', school: 'Uisce', from: 'skeleton', clear: .88, faceClear: .4, rough: .25, mottle: 1.2, finOpacity: 1, speedK: .7, cell: .028,
+    palette: { coat: [.82, .88, .93], saddle: [.62, .74, .86], belly: [.88, .92, .96], dark: [.05, .07, .1], horn: [.7, .88, 1], ice: [.74, .9, 1], skin: [.8, .86, .92], bone: [.56, .57, .5] },
     glow: { color: [.45, .95, 2], freq: 1.6, w: .02, all: .22 },
     parts: [
       ...PLANS.skeleton.parts.filter(([k]) => ['spine', 'neck', 'legs', 'arms'].includes(k)).map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.12, .125, .15], s: [1.15, .8] }] : k === 'neck' ? [k, { ...o, len: .16, r: [.055, .05] }] : k === 'arms' ? [k, { ...o, r: [.06, .05, .045], dir: [.1, -1, .12], bend: 22 }] : [k, o]),
-      ['head', { len: .22, r: .095, pitch: 12, s: [.9, 1.08, 1], muzzle: { len: .6, r: .06, taper: .8, drop: .3 }, jaw: { len: .6, r: .045, drop: .9 },
+      ['head', { len: .22, r: .108, pitch: 12, s: [.9, 1.08, 1], muzzle: { len: .42, r: .062, taper: .85, drop: .25 }, jaw: { len: .5, r: .048, drop: .85 }, skull: { k: .85, tone: 'bone' },
         eyes: [{ f: .55, up: .25, out: .42, r: .02, color: [.6, .92, 1] }], crystals: { n: 5, len: .16, r: .03, f: .2, up: .85, out: .25, rake: .5 } }],
       ['spines', { n: 6, from: .55, to: 1, len: .3, r: .05, tone: 'ice', taper: .2, crystal: 3, dorsal: 1 }]] })
 });
