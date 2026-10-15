@@ -1306,3 +1306,94 @@ export function gatelandsGuildHall(o = {}, r = stream('guild')) {
   return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors: [F0, F1], ceil: [F1 - .42, CEIL - .16], eave: EAVE,
     door: { x: door.x, z: plan.d / 2, w: door.w, h: door.h }, hearth: [hx + BD, 0, 0], fire, stair: { x0: SX0, x1: X, z0: LZ, z1: SZ0, rise: +rise.toFixed(4), going, n: N }, well, passage: -1.0 /* the dormitory's walk along the back, where the page hangs the upstairs light */, desk, board, table, benches, stands, rack, pell, grind, beds, paths, boxes, lamp, windows, w: plan.w, d: plan.d };
 }
+
+// ── the Gatelands temple (Session 946, card F9; OG-043's temple and shrine, the canon's §4.1: the Irish-register culture worships the
+// six makers by their work, and each has a temple with a statue and a boon). Built inside pieces.js's temple (GL_PLANS.temple: rubble
+// walls 0.75 m thick, 9.6 by 6 m, 3.8 m to the wall plate, slate at 50°, the door in the west gable, the statue under the east window).
+// o.god: 'hearth' (An Teallach, a lamp; the default, the god of towns), 'sea' (An Mhuir, a hull), 'sky' (An Spéir, the sundial),
+// 'beasts' (Na Beithígh, a wolf), 'stone' (An Chloch, a gate), 'weaver' (An Fíodóir, a shuttle): the icon the statue holds.
+// gatelandsTemple(o, r) -> { group, shell, room, tris, draws, inner, under(z), floor, eave, door, dais, plinth, statue {x, z, y0, y1,
+//   face, icon [x, y, z]}, altar {x0, x1, z0, z1, y}, pray [x, z] (where you kneel, the game's altar within 2.6 m), prickets, lamp, bullaun,
+//   benches, rags, ledge, paths, boxes, windows, w, d }
+export const TEMPLE_GODS = { hearth: 'a lamp', sea: 'a hull', sky: 'the sundial', beasts: 'a wolf', stone: 'a gate', weaver: 'a shuttle' };
+export function gatelandsTemple(o = {}, r = stream('temple')) {
+  const god = TEMPLE_GODS[o.god] ? o.god : 'hearth', plan = GL_PLANS.temple({ ajar: true }); plan.interior = true; plan.r = stream('temple-shell');
+  const shell = gatelandsBuilding(plan), F = forgeMats(), M = { ...mats(), grit: F.grit, water: F.water, steel: F.steel, sootstone: F.sootstone,
+    stat: mat('plaster', { ns: .5, color: 0xcfc8b6, rough: .85 }) /* carved limestone: smooth, not coursed */, altar: mat('stone', { ns: .8, color: 0x8a867c, rough: .9 }), wax: new THREE.MeshStandardMaterial({ color: 0xeee2c4, roughness: .6 }),
+    rag: mat('plaster', { ns: .3, color: 0xb8a070, rough: 1 }), bloom: new THREE.MeshStandardMaterial({ color: 0xd8b040, roughness: .8 }) }, B = new Map(), boxes = [];
+  const t = plan.t, h = plan.floors[0], X = plan.w / 2 - t, Z = plan.d / 2 - t, F0 = .04, p = plan.roof.pitch * Math.PI / 180, tp = Math.tan(p);
+  const under = z => h + (plan.d / 2 - Math.abs(z)) * tp - .03 /* the slate's underside */;
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1))); worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
+  // the floor: flags in courses down the nave
+  for (let z = -Z; z < Z - .05;) { const d = Math.min(Z - z, .5 + r() * .35); for (let x = -X; x < X - .05;) { const w = Math.min(X - x, .55 + r() * .5); put(new THREE.BoxGeometry(w - .02, F0, d - .02), 'flag', x + w / 2, F0 / 2 + (r() - .5) * .006, z + d / 2, (r() - .5) * .01, .7); x += w; } z += d; }
+  // the dais across the east end, one step up; the plinth on it under the east window, and the god's statue on that, facing the door
+  const dais = { x0: X - 1.7, x1: X, z0: -Z, z1: Z, y: F0 + .18 }; bx('altar', dais.x0, dais.x1, F0, dais.y, -Z, Z, 'dais'); bx('stat', dais.x0 - .03, dais.x0 + .05, dais.y - .04, dais.y + .005, -Z, Z);
+  const plinth = { x0: X - 1.0, x1: X - .2, z0: -.4, z1: .4, y: dais.y + .5 }; bx('stat', plinth.x0, plinth.x1, dais.y, plinth.y - .06, plinth.z0, plinth.z1, 'plinth'); bx('stat', plinth.x0 - .04, plinth.x1 + .04, plinth.y - .06, plinth.y, plinth.z0 - .04, plinth.z1 + .04);
+  const sx = (plinth.x0 + plinth.x1) / 2, y0 = plinth.y, SH = 2.05;
+  { // the figure: a robe turned on a lathe, flattened front to back; the hood over the head; the arms bent to hold the icon before the breast
+    const prof = [[.001, 0], [.36, 0], [.34, .25], [.28, .7], [.25, 1.05], [.27, 1.3], [.25, 1.5], [.16, 1.62], [.08, 1.66], [.001, 1.67]].map(([a, b]) => new THREE.Vector2(a, b * SH / 2.05));
+    const robe = new THREE.LatheGeometry(prof, 16); robe.scale(.78, 1, 1); put(robe, 'stat', sx, y0, 0);
+    put(new THREE.SphereGeometry(.12, 14, 10).scale(1, 1.2, 1), 'stat', sx - .02, y0 + SH * .86, 0); put(new THREE.SphereGeometry(.15, 14, 10, 0, Math.PI * 2, 0, Math.PI * .62).scale(1.05, 1.25, 1).rotateZ(.35), 'stat', sx + .02, y0 + SH * .865, 0);
+    const limb = (a, b, r0, r1) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(r1, r0, d.length(), 8);
+      g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize()))); g.translate(...A.clone().add(Bv).multiplyScalar(.5).toArray()); put(g, 'stat'); };
+    for (const s of [-1, 1]) { const S = [sx - .02, y0 + SH * .74, s * .22], E = [sx - .1, y0 + SH * .55, s * .23], Hn = [sx - .36, y0 + SH * .6, s * .08];
+      limb(S, E, .07, .06); limb(E, Hn, .06, .05); put(new THREE.SphereGeometry(.065, 8, 6), 'stat', ...E); put(new THREE.SphereGeometry(.055, 8, 6), 'stat', ...Hn); } }
+  const icon = [sx - .44, y0 + SH * .62, 0], [ix, iy, iz] = icon;
+  if (god === 'hearth') { const g = new THREE.CylinderGeometry(.1, .06, .06, 14); put(g, 'sootstone', ix, iy, iz); bx('sootstone', ix - .17, ix - .08, iy - .01, iy + .03, iz - .025, iz + .025);
+    put(new THREE.SphereGeometry(.025, 8, 6).scale(1, 2.4, 1), 'flame', ix - .15, iy + .08, iz); }
+  else if (god === 'sea') { const g = new THREE.SphereGeometry(.2, 14, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2).scale(.5, .9, 1.5); put(g, 'stat', ix, iy + .1, iz); bx('stat', ix - .1, ix + .1, iy + .085, iy + .1, iz - .27, iz + .27); bx('stat', ix - .005, ix + .005, iy + .06, iy + .34, iz - .005, iz + .005); }
+  else if (god === 'sky') { const g = new THREE.CylinderGeometry(.16, .16, .035, 20); put(g, 'stat', ix, iy + .1, iz, 0, .6, 0, Math.PI / 2); const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(.13, 0); s.lineTo(0, .11); s.lineTo(0, 0);
+    const gn = new THREE.ExtrudeGeometry(s, { depth: .015, bevelEnabled: false }); gn.rotateY(Math.PI / 2); put(gn, 'sootstone', ix - .02, iy + .08, iz - .06); }
+  else if (god === 'beasts') { put(new THREE.SphereGeometry(.09, 10, 8).scale(1.5, .9, .8), 'stat', ix + .02, iy + .04, iz); put(new THREE.SphereGeometry(.06, 10, 8), 'stat', ix - .1, iy + .14, iz); put(new THREE.ConeGeometry(.04, .16, 8), 'stat', ix - .2, iy + .12, iz, 0, .6, 0, Math.PI / 2) /* the long muzzle */;
+    for (const s of [-1, 1]) put(new THREE.ConeGeometry(.018, .05, 4), 'stat', ix - .07, iy + .2, iz + s * .03, 0, .6, s * .3, -.4); put(new THREE.CylinderGeometry(.025, .015, .2, 6), 'stat', ix + .15, iy - .02, iz + .06, 0, .6, .4, -.9) /* the tail */; }
+  else if (god === 'stone') { for (const s of [-1, 1]) bx('stat', ix - .04, ix + .04, iy - .1, iy + .2, iz + s * .1 - .035, iz + s * .1 + .035); bx('stat', ix - .05, ix + .05, iy + .2, iy + .27, iz - .17, iz + .17); }
+  else { for (const s of [-1, 1]) { const c = new THREE.ConeGeometry(.045, .2, 10); put(c, 'stat', ix, iy + .06, iz + s * .2, 0, .6, s * Math.PI / 2); } put(new THREE.CylinderGeometry(.045, .045, .2, 10), 'stat', ix, iy + .06, iz, 0, .6, Math.PI / 2); put(new THREE.CylinderGeometry(.03, .03, .14, 8), 'rag', ix - .03, iy + .06, iz, 0, .6, Math.PI / 2); }
+  boxes.push({ tag: 'statue', x0: sx - .5, x1: sx + .3, y0: y0, y1: y0 + SH, z0: -.36, z1: .36 });
+  // offerings at the statue's feet on the dais: bread, a bowl of grain, shells, marigolds
+  { const fx = plinth.x0 - .22; put(new THREE.SphereGeometry(.09, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.3, .8, 1), 'crock', fx, dais.y, -.3); put(new THREE.CylinderGeometry(.11, .07, .07, 12), 'crock', fx, dais.y + .035, .28); put(new THREE.SphereGeometry(.09, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, .35, 1), 'straw', fx, dais.y + .07, .28);
+    for (let k = 0; k < 5; k++) put(new THREE.SphereGeometry(.035, 6, 4).scale(1, .5, 1.3), 'linen', fx + (r() - .5) * .2, dais.y + .015, (r() - .5) * .25, r() * 3);
+    for (let k = 0; k < 7; k++) put(new THREE.SphereGeometry(.03, 6, 4), 'bloom', fx - .05 + (r() - .5) * .14, dais.y + .03, -.62 + (r() - .5) * .25);
+    boxes.push({ tag: 'offerings', x0: fx - .2, x1: fx + .14, y0: dais.y, y1: dais.y + .12, z0: -.75, z1: .4 }); }
+  // the altar before the dais: a slab on two stone ends, a red woven runner, candles, and the bowl the prayers' coins go in
+  const altar = { x0: dais.x0 - .65, x1: dais.x0 - .1, z0: -.75, z1: .75, y: F0 + .95 }; { const { x0, x1, z0, z1, y } = altar;
+    for (const zz of [z0 + .05, z1 - .3]) bx('altar', x0 + .05, x1 - .05, F0, y - .12, zz, zz + .25, 'altar'); bx('altar', x0, x1, y - .12, y, z0, z1, 'altar'); bx('wool', x0 + .14, x1 - .14, y, y + .006, z0 - .02, z1 + .02); bx('wool', x0 + .14, x1 - .14, y - .3, y, z1 + .006, z1 + .012); bx('wool', x0 + .14, x1 - .14, y - .3, y, z0 - .012, z0 - .006);
+    for (const zz of [z0 + .18, z0 + .42, z1 - .42, z1 - .18]) { const ch = .12 + r() * .1; put(new THREE.CylinderGeometry(.022, .024, ch, 8), 'wax', (x0 + x1) / 2 + .1, y + ch / 2, zz); put(new THREE.SphereGeometry(.014, 6, 5).scale(1, 2.2, 1), 'flame', (x0 + x1) / 2 + .1, y + ch + .03, zz); }
+    put(new THREE.CylinderGeometry(.1, .065, .06, 14), 'crock', x0 + .15, y + .03, 0); }
+  const pray = [altar.x0 - .75, 0];
+  // two iron prickets each side of the altar, a ring of candles on each
+  const prickets = []; for (const s of [-1, 1]) { const px = (altar.x0 + altar.x1) / 2, pz = s * 1.35; bx('iron', px - .2, px + .2, F0, F0 + .03, pz - .03, pz + .03); bx('iron', px - .03, px + .03, F0, F0 + .03, pz - .2, pz + .2); put(new THREE.CylinderGeometry(.015, .02, 1.15, 6), 'iron', px, F0 + .6, pz);
+    put(new THREE.CylinderGeometry(.2, .2, .02, 14), 'iron', px, F0 + 1.18, pz); for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2 + .3, ch = .08 + r() * .14, cx = px + Math.cos(a) * .14, cz = pz + Math.sin(a) * .14; put(new THREE.CylinderGeometry(.016, .018, ch, 6), 'wax', cx, F0 + 1.19 + ch / 2, cz); put(new THREE.SphereGeometry(.011, 5, 4).scale(1, 2.2, 1), 'flame', cx, F0 + 1.21 + ch, cz); }
+    boxes.push({ tag: 'pricket', x0: px - .22, x1: px + .22, y0: F0, y1: F0 + 1.45, z0: pz - .22, z1: pz + .22 }); prickets.push([px, F0 + 1.3, pz]); }
+  // stone benches along both side walls, between the slits, for the old and for vigils
+  const benches = []; for (const s of [-1, 1]) { const b = { x0: -2.6, x1: .6, z0: s > 0 ? Z - .42 : -Z, z1: s > 0 ? Z : -Z + .42, y: F0 + .45 }; bx('altar', b.x0, b.x1, F0, b.y - .08, b.z0 + (s > 0 ? .06 : 0), b.z1 - (s > 0 ? 0 : .06), 'bench'); bx('stat', b.x0, b.x1, b.y - .08, b.y, b.z0, b.z1); benches.push(b); }
+  // the bullaun by the door: a boulder with a hollow worn in it, holding rainwater, for the hands on the way in
+  const bullaun = { x: -X + .75, z: -1.45 }; { const { x, z } = bullaun, g = new THREE.DodecahedronGeometry(.36, 1); g.scale(1.1, .85, 1); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const y = P.getY(i); P.setY(i, y > .18 ? .18 + (y - .18) * .2 : y); } g.computeVertexNormals();
+    put(g, 'grit', x, .3, z, .4, .4); put(new THREE.CylinderGeometry(.13, .13, .01, 16), 'water', x, .49, z); boxes.push({ tag: 'bullaun', x0: x - .42, x1: x + .42, y0: 0, y1: .52, z0: z - .38, z1: z + .38 }); }
+  // the rag rail on the south wall by the door: strips of cloth tied on for a sickness, a journey, a child
+  const rags = { x0: -X + .45, x1: -2.75, z0: Z - .12, z1: Z, y: F0 + 1.7 }; { bx('oak', rags.x0, rags.x1, rags.y - .05, rags.y, rags.z0, rags.z1); for (const xx of [rags.x0 + .04, rags.x1 - .04]) bx('iron', xx - .01, xx + .01, rags.y - .05, rags.y + .04, Z - .02, Z);
+    for (let k = 0, x = rags.x0 + .05; x < rags.x1 - .04; k++, x += .07 + r() * .05) { const len = .25 + r() * .4, g = new THREE.PlaneGeometry(.04 + r() * .03, len); put(g, k % 4 === 0 ? 'wool' : k % 5 === 1 ? 'linen' : 'rag', x, rags.y - .05 - len / 2, Z - .07 + (r() - .5) * .02, Math.PI + (r() - .5) * .6 /* turned to face the room */, .6, 0, (r() - .5) * .12); }
+    boxes.push({ tag: 'rags', x0: rags.x0, x1: rags.x1, y0: rags.y - .7, y1: rags.y, z0: rags.z0, z1: Z }); }
+  // the ledge on the north wall between the slits: small clay lamps, a carved figure or two, coins, left for the god
+  const ledge = { x0: -.95, x1: 1.35, z0: -Z, z1: -Z + .22, y: F0 + 1.3 }; { bx('altar', ledge.x0, ledge.x1, ledge.y - .07, ledge.y, ledge.z0, ledge.z1, 'ledge'); bx('altar', ledge.x0 + .1, ledge.x0 + .2, ledge.y - .3, ledge.y - .07, -Z, -Z + .15); bx('altar', ledge.x1 - .2, ledge.x1 - .1, ledge.y - .3, ledge.y - .07, -Z, -Z + .15);
+    for (let x = ledge.x0 + .12; x < ledge.x1 - .1; x += .22 + r() * .12) { const k = Math.floor(r() * 3); if (k === 0) { put(new THREE.CylinderGeometry(.045, .03, .04, 10), 'crock', x, ledge.y + .02, -Z + .11); put(new THREE.SphereGeometry(.009, 5, 4).scale(1, 2.2, 1), 'flame', x - .04, ledge.y + .06, -Z + .11); }
+      else if (k === 1) { put(new THREE.CylinderGeometry(.03, .045, .16, 8), 'stat', x, ledge.y + .08, -Z + .1); put(new THREE.SphereGeometry(.03, 8, 6), 'stat', x, ledge.y + .19, -Z + .1); }
+      else for (let j = 0; j < 3; j++) put(new THREE.CylinderGeometry(.012, .012, .004, 8), 'steel', x + j * .02, ledge.y + .002 + j * .004, -Z + .1); } }
+  // the roof: four couples, each a pair of blades with a collar and a tie beam at the wall plate; a purlin either side; the lamp
+  const TB = h - .2, L2 = Z / Math.cos(p), CY = under(Z * .4); for (const x of [-2.6, -.8, 1.0, 2.8]) { for (const s of [-1, 1]) { const g = new THREE.BoxGeometry(.13, .18, L2 - .35); g.rotateX(s * p); put(g, 'oak', x, under(s * (Z / 2 + .1)) - .2, s * (Z / 2 + .1)); /* clear of the ridge and the wall's face */ }
+    bx('oak', x - .09, x + .09, TB, h - .02, -Z, Z); bx('oak', x - .07, x + .07, CY - .3, CY - .14, -Z * .4, Z * .4); }
+  for (const s of [-1, 1]) { const zz = s * Z * .55; put(new THREE.BoxGeometry(plan.w - 2 * t, .14, .16), 'oak', 0, under(zz) - .28, zz); }
+  const lamp = [1.0, TB - 1.0, 0]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .08, TB, -.005, .005); put(new THREE.CylinderGeometry(.16, .1, .08, 12), 'iron', ...lamp); put(new THREE.SphereGeometry(.07, 10, 6).scale(1, .4, 1), 'glow', lamp[0], lamp[1] + .04, lamp[2]);
+  for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; bx('iron', lamp[0] + Math.cos(a) * .14 - .004, lamp[0] + Math.cos(a) * .14 + .004, lamp[1], lamp[1] + .12, Math.sin(a) * .14 - .004, Math.sin(a) * .14 + .004); }
+  // the door's leaf, hung open against the gable inside, south of the doorway
+  const door = plan.open.left[0]; bx('paint', -X, -X + .06, F0, F0 + door.h - .1, door.w / 2 + .03, door.w / 2 + .03 + door.w, 'leaf');
+  // the windows are clear from inside
+  { const G = glMats().glass, Lt = glMats().lit; shell.traverse(m => { if (m.isMesh && (m.material === G || m.material === Lt)) { m.material = mats().pane; m.name = 'pane'; } }); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'glow', 'water'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const all = new THREE.Group(); all.add(shell, group);
+  const windows = Object.entries(plan.open).flatMap(([f, os]) => (os || []).filter(q => q.kind === 'win').map(q => ({ face: f, x: f === 'front' ? q.x : f === 'back' ? -q.x : plan.w / 2, z: f === 'front' ? plan.d / 2 : f === 'back' ? -plan.d / 2 : -q.x, y: q.y, w: q.w, h: q.h })));
+  const paths = [[[-X + .3, 0], [pray[0], 0]], [[-X + .3, 0], [-1.0, -.3], [-1.0, -Z + .7]], [[-X + .3, 0], [-1.6, .3], [-1.6, Z - .7]], [[pray[0], 0], [pray[0] - .2, -1.0], [ledge.x1 - .3, -Z + .65]]];
+  return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, under, floor: F0, eave: h, tieBeam: TB,
+    god, door: { x: -plan.w / 2, z: 0, w: door.w, h: door.h }, dais, plinth, statue: { x: sx, z: 0, y0, y1: y0 + SH, face: -1, icon }, altar, pray, prickets, lamp, bullaun, benches, rags, ledge, paths, boxes, windows, w: plan.w, d: plan.d };
+}

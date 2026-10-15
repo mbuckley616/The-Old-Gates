@@ -20506,3 +20506,50 @@ Corrections made during the session:
 - **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
+
+## v80 — Session 946 — Card F9's fifteenth room: the Gatelands temple (prototype only)
+The shrine is next on L5's list after the guildhall (939), which waits on #352. OG-043 draws the Gatelands temple as a small stone church with a statue inside. The canon (§4.1) says what it is for: the Irish-register culture worships the six makers by their work, and "six have temples … each with a statue and a boon in its domain". So this is a temple of one of the six gods. It is drawn for An Teallach, the Hearth, the god of towns, by default; `o.god` gives any of the six their icon (the hull, the sundial, the wolf, the gate, the lamp, the shuttle, from the canon's table). The Church of the Weaver is Aurenne's (the Compact), and the Guest has no shrine, so neither is drawn here. FREEZE #297 is closed and F2a has merged, but this is still a prototype under the run's order (rooms first, then into the game). It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The house** (`GL_PLANS.temple` in `pieces.js`) is the kit's first building with its door in a gable:
+- One high storey, 9.6 by 6 m, of bare rubble 0.75 m thick, 3.8 m to the wall plate, under slate at 50°. There is no chimney and no gutter.
+- A round-headed door 1.15 by 2.65 m stands in the west gable, under voussoirs. Each long wall has two round-headed slits, and the east gable has a round-headed window at 2.95 m, over the statue.
+- The gables first had the forge's parapets. At 0.75 m of wall their kneelers grew into battlements, so the temple's gables are plain under the slate's verge.
+- The plank door now takes `ajar` as the transom door does (Session 893), so the room can hang its own leaf, open.
+
+**The room** (`gatelandsTemple` in `rooms.js`):
+- **The dais** is one step of 0.18 m across the east end.
+- **The statue** stands on a plinth of 0.5 m on the dais, 2.05 m of carved limestone. It is a robe turned on a lathe, a hooded head, and arms bent to hold the god's icon before its breast, facing the door. Its head is under the east window's sill, so the window lights it from behind and above. The Hearth's lamp holds a real flame, with its own small light on the page.
+- **Offerings** lie at the statue's feet: bread, a bowl of grain, shells and marigolds.
+- **The altar** stands before the dais: a slab at 0.95 m on two stone ends, a red woven runner, four candles and the offering bowl. **The place of prayer** is 1.02 m before it, inside the game's 2.6 m prompt for a shrine's altar (`shrinePrompt`).
+- **Two iron prickets,** each with a ring of six candles, stand either side of the altar.
+- **Stone benches** run along both side walls at 0.45 m, for the old and for vigils.
+- **By the door, a bullaun:** a boulder with a hollow worn in it, holding rainwater for the hands on the way in. It is the Irish register's own holy-water stone.
+- **The rag rail** is on the south wall by the door, with strips of cloth tied on for a sickness, a journey or a child, as at a holy well.
+- **The ledge** on the north wall, between the slits, holds small clay lamps, carved figures and coins.
+- **The roof** has four couples, each with a collar and a tie beam, and a purlin either side. A ring lamp hangs on a chain over the nave, its foot 2.51 m over the floor.
+- 5,742 to 6,046 triangles in 19 draws, on the house's 4,488 in 7.
+
+The view: `rooms.html?room=temple`, with `view=nave` (from inside the door to the altar and the statue), `statue`, `door` (from the dais back to the door, the bullaun and the ledge), `ledge` and `outside`, and `&god=` for the other five.
+
+Corrections made during the session:
+- The roof's blades first ran 0.1 m through the slate at the ridge. They are now shortened, and set 0.2 m under the slate's underside.
+- The east window first sat at 2.75 m, 2 cm under the statue's head. It now sits at 2.95 m.
+- The statue was first in the kit's coursed `stone` texture and read as masonry. It is now smooth plaster-grey limestone.
+- One arm's upper half first pointed up behind the shoulder. The arms are now built limb by limb, between shoulder, elbow and hand.
+- The rags first faced the wall and were culled from inside. They now face the room.
+- The hull first read as a dish and the wolf as a cat. The hull is now deeper, with a deck board, and the wolf has a long muzzle and a tail.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 124 of 124 pass** (111 after Session 939). Eight views are new on the page check: the nave by day and by night, outside, and the statue holding each of the other five icons, all with no page errors. Five checks are new, over four keys and the six gods:
+  - **The builds:** 5,742 to 6,046 triangles in 19 meshes, each the same twice.
+  - **Inside the walls:** every piece inside the walls and under the slate, with 0 points through and 0 clashes.
+  - **The walks:** four walks clear by 0.15 m: the door to the place of prayer, to each bench, and round to the ledge.
+  - **A person fits:** the altar at 0.95 m, the benches at 0.45 m, the door 1.15 by 2.65 m, the lamp's foot at 2.51 m.
+  - **The statue:** on its plinth under the east window, facing the door, its head under the sill, and the icon held before it. The place of prayer is 1.02 m from the altar, with the statue over it.
+- **`pieces.check.mjs`: all pass** after the new plan and the plank door's `ajar`.
+- **Pictures:** `rooms-temple-nave.jpg`, `-statue`, `-door`, `-ledge`, `-outside` and `-nave-night`, and `rooms-temple-god-sea`, `-sky`, `-beasts`, `-stone` and `-weaver`.
+### Needs eyes
+- **The statue is a carved robe, not a body.** It is a lathe, a hooded head and four limbs, and it reads as a figure from the altar but not as a face. A better carving is the bodies builder's craft (a posed person turned to stone); the icon is what tells the gods apart.
+- **The icons are small and rough,** about 0.3 m in the statue's hands. The lamp, the gate and the sundial read. The hull still reads partly as a bowl from the front, and the wolf could be any beast.
+- **The windows are the kit's,** white frames with a fanlight spoke in the round heads. A temple's slits might be unglazed, or leaded.
+- **The inside walls are bare rubble,** as the forge's are. A limewashed temple would be brighter and closer to OG-043.
+- **Owed:** the Mark's and Aurenne's shrines (the canon's gods are the Gatelands'; what the Mark keeps is not written), the library in each nation's dress, and the guild halls once #352 is answered.
