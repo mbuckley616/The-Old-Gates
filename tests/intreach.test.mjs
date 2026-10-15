@@ -25,7 +25,7 @@ await page.evaluate(() => {
     const saved = INT_SOL.slice(); const kept = shut ? saved : saved.filter(s => !doorSol.has(s));
     INT_SOL.length = 0; for (const s of kept) INT_SOL.push(s);
     const solidAt = (x, z, y) => { const j = jumpY; jumpY = y; const r = intSolidAt(x, z, R); jumpY = j; return r; };
-    const sx = W / 2, sz = D - Math.min(2.2, Math.max(1.75, D * .3)); /* S896 (F2a): where goToInterior sets you down (1.75 in, in a cottage of true size) */ const y0 = footholdY(sx, sz, 0, 0);
+    const sx = W / 2, sz = intArrivalZ(h); /* S896 (F2a): where goToInterior sets you down (1.75 in, in a cottage of true size); S905: the game's own intArrivalZ, which stands you before a shallow shop's counter (S896's) where the copy here did not */ const y0 = footholdY(sx, sz, 0, 0);
     const startBlocked = solidAt(sx, sz, y0);
     const seen = new Set(); const pts = []; const q = [[Math.round(sx / S), Math.round(sz / S), y0]];
     const key = (i, k, y) => i + ',' + k + ',' + Math.round(y * 20);
