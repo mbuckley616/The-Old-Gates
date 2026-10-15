@@ -21014,3 +21014,27 @@ Still owed from the sheet's session 2: the attributes' ≤1% pass (Swiftness 2% 
 - **The pace.** #342 B's simulation expects level 10 at about 7 hours. Only play shows whether the first evening ends in a bed and a level.
 - **The bed's sheet** is the old two-column card grid with diamonds and − / +. #142 A's parchment sheet is the look builder's.
 - **The creator's skill row** sits under the attributes, a row of 23 chips. The creator is already long.
+
+## v80 — Session 953 — The attributes at ≤1% a point, and Speech's prices (skills and perks A, the rest of session 2)
+The build sheet's *The attributes at ≤1% a point* says every percentage an attribute gives is 1% a point or less, now that skills carry what the attributes used to. This session moves the ones that sit outside combat's resolver:
+- **Swiftness:** move 0.5% a point (2% before) (`90-main.js`).
+- **Fortune:** crit 0.5% a point (2%, `FORTUNE_CRIT_PCT`). Gold found 1% (5%, `rollGold`). The item drop chance 1% (2.5%, `lootDropChance`): the sheet does not name that one, but its rule covers it.
+- **Finesse:** the sprint's cost 1% a point (5%, `_finesseSprint`). Athletics now carries the sprint's cost.
+- **Charisma:** barter 0.5% a point (1%), its share still capped at a quarter. Quest gold 1% (2%, `questGold`), under the same rule.
+
+The cards (`ATTR_DEF`'s `gainDesc` and `gains`) and the hub's derived rows read the new numbers.
+
+**Speech's prices** (`60-shop.js`). `speechPct()` is 0.2% better prices a level, to 20% at 100. It is added to Charisma's share in `barterPct`, before the short cape's 2% at Aurenne's counters. An untrained Speech (5) is 1%.
+
+**Left for after combat's resolver (PR #356) merges.** These lines sit in the code that PR rewrites:
+- Resolve's block cost (−5% a point, in four places in `42`, `74` and `90`);
+- Finesse's parry milliseconds, which go to Guard (160 ms + 1 a level);
+- Armour's `def` × (0.75 + 0.5 × skill/100).
+
+Taking them now would be a merge conflict for the deep-work session. The resolver reads the skill multiplier, so they are a short session once it lands.
+### Verified (headless Chromium)
+- **`speechprice`** (new): Speech gives 1%, 10% and 20% at 5, 50 and 100. Charisma 10 adds 5%. At Charisma 60 and Speech 100 the total is 45%, because Charisma's own share stops at a quarter. Finesse 10 takes 10% off the sprint; Fortune 10 is 5% crit.
+- `fortunecard`, `questgold`, `fortify` and `cloaks` pass. The first three moved their bars to the new numbers: 110 world quest gold and 88 for a guild task of 80 at Charisma 10, a tenth more gold at Fortune 10, the sprint 3% cheaper at Finesse 3. The cape still adds its 2% on top (0.01 → 0.03 at Aurenne).
+### Needs eyes
+- **The barter's ceiling.** Charisma's quarter and Speech's fifth add to 45% better prices for a master talker at the cap. The sheet gives Speech 20% without saying whether the two share a ceiling. If counters feel too generous late on, a shared cap of 25% is the obvious lever. That is a number for Michael.
+- Movement and crits move less with their attributes now. A character who put points in Swiftness under the old rules runs a little slower than they did.

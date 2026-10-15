@@ -289,7 +289,7 @@ function _hasBuff(type){return ACTIVE_BUFFS.some(b=>b.type===type);}
 function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding',1))*_buffMult('physResist',1)*(_hasBuff('dmgBurst')?CAOR_RISK:1);}
 // S328 (Michael's A on #58) — Caor Dubh's risk: while its fury lasts you take a fifth more from everything. Fortune's
 // crit: 2% a point that a melee blow or an arrow lands for half again, on top of any stagger, riposte or backstab.
-const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.02,FORTUNE_CRIT_MULT=1.5;
+const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.005,FORTUNE_CRIT_MULT=1.5; /* S953 — Fortune's crit 0.5% a point (was 2%), the attributes at ≤1% */
 const RENEWAL_RATE=.5;
 function _fortuneCrit(e){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&(typeof foeRand==='function'?foeRand(e):Math.random())<c?FORTUNE_CRIT_MULT:1;} // S480 — on the struck foe's stream (co-op rules)
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
@@ -309,7 +309,7 @@ function _baseMaxStamina(){return maxStamina-ACTIVE_BUFFS.filter(b=>b.type==='ma
 // S323 — what the level-up card promises: Resolve +1% magic resist a point (the Faolchú's fire, the dungeon's bolts),
 // Finesse -5% sprint cost a point (to a quarter)
 function _magicResist(){return Math.max(.5,1-(ATTRS.resolve||0)*.01);}
-function _finesseSprint(){return Math.max(.25,1-attrEff('finesse')*.05);}
+function _finesseSprint(){return Math.max(.25,1-attrEff('finesse')*.01);} /* S953 — 1% a Finesse point (was 5%): Athletics carries the sprint's cost */
 // S341 — two buffs of one kind don't stack, and neither may cut the other short: the stronger is the one that counts,
 // and a weaker one that outlasts it waits underneath (`_under`, counting down all the while) and holds again when the
 // stronger ends. So Firemoss eaten under the Boon of the Arm no longer ends the boon, and a Shield cast under the Boon

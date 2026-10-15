@@ -202,12 +202,12 @@ let luSelected=[]; // which attrs picked this level-up
 const ATTR_DEF={
   might:      {label:'Might',      icon:'⚔',  actKey:'kills',           thresholds:[0,2,4,7,10],  gainDesc:'+1% melee damage, +5 carry weight',                   gains:{meleePct:1, carry:5},                  desc:'Strike harder. Carry more.'},
   fortitude:  {label:'Fortitude',  icon:'🛡',  actKey:'damageTaken',     thresholds:[0,50,120,220,350], gainDesc:'+10 max HP, +5 max stamina',                     gains:{maxHP:10,maxStamina:5},                desc:'Take more punishment. Bleed slower.'},
-  finesse:    {label:'Finesse',    icon:'🌀',  actKey:'parries',         thresholds:[0,2,4,7,10],  gainDesc:'+10ms parry window, -5% sprint cost, +1% ranged dmg, -1% sneak detection', gains:{parryMs:10,sprintCostPct:-5,rangedPct:1,sneakDetectPct:-1}, desc:'Parry tighter. Strike from afar. Move unseen.'},
-  swiftness:  {label:'Swiftness',  icon:'💨',  actKey:'sprintDist',      thresholds:[0,100,250,450,700],gainDesc:'+2% move speed, +1% attack speed',                gains:{movePct:2,atkSpdPct:1},                desc:'Run farther. Hit faster.'},
+  finesse:    {label:'Finesse',    icon:'🌀',  actKey:'parries',         thresholds:[0,2,4,7,10],  gainDesc:'+10ms parry window, -1% sprint cost, +1% ranged dmg, -1% sneak detection', gains:{parryMs:10,sprintCostPct:-1,rangedPct:1,sneakDetectPct:-1}, desc:'Parry tighter. Strike from afar. Move unseen.'},
+  swiftness:  {label:'Swiftness',  icon:'💨',  actKey:'sprintDist',      thresholds:[0,100,250,450,700],gainDesc:'+0.5% move speed, +1% attack speed',              gains:{movePct:.5,atkSpdPct:1},                desc:'Run farther. Hit faster.'},
   resolve:    {label:'Resolve',    icon:'✦',   actKey:'staminaDepleted', thresholds:[0,1,3,5,8],   gainDesc:'+0.3/s stam regen, -5% block cost, +1% magic resist', gains:{staminaRegen:.3,blockCostPct:-5,magicResistPct:1}, desc:'Outlast the long fight. Endure the unseen.'},
   intelligence:{label:'Intelligence',icon:'📖',actKey:'transactions',    thresholds:[0,3,6,10,15], gainDesc:'+10 max mana, +0.2/s mana regen, +1% spell power',  gains:{maxMana:10,manaRegen:.2,spellPct:1},   desc:'Read more. Cast harder. Mana flows.'},
-  charisma:   {label:'Charisma',   icon:'💬',  actKey:'npcTalks',        thresholds:[0,2,4,7,10],  gainDesc:'+1% barter, +2% quest reward gold, merchant access',gains:{barterPct:1,questGoldPct:2,merchantTier:1}, desc:'A silver tongue. Better deals all around.'},
-  fortune:    {label:'Fortune',    icon:'🍀',  actKey:'chestsOpened',    thresholds:[0,1,3,5,8],   gainDesc:'+2% crit chance, +5% gold found, +2.5% item drop chance', gains:{critPct:2,goldPct:5,dropPct:2.5},                  desc:'The world favors you. Crits and chests.'},
+  charisma:   {label:'Charisma',   icon:'💬',  actKey:'npcTalks',        thresholds:[0,2,4,7,10],  gainDesc:'+0.5% barter, +1% quest reward gold, merchant access',gains:{barterPct:.5,questGoldPct:1,merchantTier:1}, desc:'A silver tongue. Better deals all around.'},
+  fortune:    {label:'Fortune',    icon:'🍀',  actKey:'chestsOpened',    thresholds:[0,1,3,5,8],   gainDesc:'+0.5% crit chance, +1% gold found, +1% item drop chance', gains:{critPct:.5,goldPct:1,dropPct:1},                  desc:'The world favors you. Crits and chests.'},
 };
 
 function getMultiplier(attrKey){

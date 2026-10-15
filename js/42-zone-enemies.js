@@ -1538,7 +1538,7 @@ function tickZoneBalls(dt,sc){
 // Loot drop chance — based on fortune attribute and enemy difficulty (hp as proxy for rarity)
 // Base 35% chance, fortune adds up to +25%, harder enemies add up to +20%
 function lootDropChance(e){
-  const fortuneBonus=(ATTRS.fortune||0)*0.025; // +2.5% per fortune point, cap ~25% at 10
+  const fortuneBonus=(ATTRS.fortune||0)*0.01; // S953 — +1% per fortune point (was 2.5%), the attributes at ≤1%
   const hpRatio=Math.min(1,(e.maxHp||e.hp||20)/90); // scales 0→1 from weakest to golem
   const diffBonus=hpRatio*0.20;
   return Math.min(0.85,0.35+fortuneBonus+diffBonus);

@@ -993,7 +993,7 @@ function checkQuestProgress(event,data){
 
 // S340 — Charisma's +2% quest reward gold a point, on every quest's pay: the world's quests and faction services
 // (`qTurnIn`), the guild tasks and the two tutorial lines, as well as the legacy chain here. Only this one read it.
-function questGold(n){return Math.round((n||0)*(1+(ATTRS.charisma||0)*0.02));}
+function questGold(n){return Math.round((n||0)*(1+(ATTRS.charisma||0)*0.01));} /* S953 — 1% a Charisma point (was 2%), the attributes at ≤1% */
 function completeQuest(id){
   const qs=QS[id];const q=getQuest(id);
   if(!qs||qs.state!=='reward')return;

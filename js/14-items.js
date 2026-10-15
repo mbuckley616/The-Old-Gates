@@ -618,7 +618,7 @@ function canEquip(item){
 // v61c0: gold drop roll. Three knobs:
 //   - tier : 'barrel' | 'corpse' | 'chest' — scales the base range
 //   - level : current player level — adds a small flat bonus per level
-//   - fortune : ATTRS.fortune — multiplies total by 5% per point
+//   - fortune : ATTRS.fortune — multiplies total by 1% per point (5% until S953)
 //   - goldFind : `goldFind` buff multiplier (Goldenrod's herb passive, etc.)
 // Result is clamped to >=1 so a Fortune 0 / Level 1 player can't roll
 // 0 gold from a barrel and feel cheated. Pre-v61c0 ranges were
@@ -643,7 +643,7 @@ function rollGold(tier){
   const lv = (typeof level==='number') ? level : 1;
   const fortune = (typeof ATTRS!=='undefined' && ATTRS && ATTRS.fortune) ? ATTRS.fortune : 0;
   const lvAdd = Math.floor(lv * t.lvBonus);
-  const fortuneMult = 1 + fortune * 0.05;
+  const fortuneMult = 1 + fortune * 0.01; /* S953 — 1% a Fortune point (was 5%), the attributes at ≤1% */
   const buffMult = (typeof _buffMult==='function') ? _buffMult('goldFind', 1) : 1;
   return Math.max(1, Math.round((base + lvAdd) * fortuneMult * buffMult));
 }

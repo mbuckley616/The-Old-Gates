@@ -30,7 +30,7 @@ const r = await page.evaluate(() => {
 check('bare: every attribute reads 0 and the base numbers', r.bare.might === 0 && r.bare.int === 0 && r.bare.carry >= 50, r.bare);
 check('a Demonic amulet of Might (+3) carries 15 more, as 3 points of Might would', r.might.might === 3 && r.might.carry === r.bare.carry + 15, r.might);
 check('of Fortitude (+3): +30 max health, +15 max stamina', r.fort.fort === 3 && r.fort.hp === r.bare.hp + 30 && r.fort.st === r.bare.st + 15, { bare: r.bare, fort: r.fort });
-check('of Finesse (+3): the sprint costs 15% less and the pick chance rises 3 points (1% a Finesse point since S941)', r.fin.fin === 3 && Math.abs(r.fin.sprint - (r.bare.sprint - .15)) < 1e-9 && Math.abs(r.fin.pick - Math.min(.92, r.bare.pick + .03)) < 1e-9, { bare: r.bare, fin: r.fin });
+check('of Finesse (+3): the sprint costs 3% less (1% a point since S953) and the pick chance rises 3 points (1% a Finesse point since S941)', r.fin.fin === 3 && Math.abs(r.fin.sprint - (r.bare.sprint - .03)) < 1e-9 && Math.abs(r.fin.pick - Math.min(.92, r.bare.pick + .03)) < 1e-9, { bare: r.bare, fin: r.fin });
 check('of Swiftness (+3) and of Intellect (+3): the attribute reads 3; Intellect adds 30 max mana', r.swift.swift === 3 && r.int.int === 3 && r.int.mp === r.bare.mp + 30, { swift: r.swift, int: r.int });
 check('the hub shows the worn Intelligence (Spell DMG +3%, Max Mana Bonus +30); the points owned stay 0', r.grid.some(t => /Spell DMG\s*\+3%/.test(t)) && r.grid.some(t => /Max Mana Bonus\s*\+30/.test(t)) && r.baseInt === 0, r.grid);
 check('an Iron Sword still asks for the Blade you own (15, you have 14), and worn Might does not reach it', r.gate === false, r.gate);

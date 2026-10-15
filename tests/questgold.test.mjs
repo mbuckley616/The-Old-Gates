@@ -1,4 +1,4 @@
-// Charisma's quest gold (Session 340): +2% a point on every quest's pay. Only the legacy chain's `completeQuest` read it;
+// Charisma's quest gold (Session 340): +2% a point on every quest's pay (1% since Session 953, the attributes at ≤1%). Only the legacy chain's `completeQuest` read it;
 // the world's quests and faction services (`qTurnIn`), the guild tasks and the tutorial lines paid the bare sum.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -11,8 +11,8 @@ const w = await page.evaluate(() => {
   const base = getQuest(id).rewards.gold; const l0 = legacy(0), l10 = legacy(10);
   ATTRS.charisma = 0; return { a, b, id, base, l0, l10 };
 });
-check('a world quest of 100 pays 100 at Charisma 0 and 120 at 10, the XP unchanged', w.a.got === 100 && w.b.got === 120 && w.b.r === 120 && w.a.xp === w.b.xp, w);
-check('the legacy chain still pays its +2% a point', w.l0 === w.base && w.l10 === Math.round(w.base * 1.2), w);
+check('a world quest of 100 pays 100 at Charisma 0 and 110 at 10 (1% a point since S953), the XP unchanged', w.a.got === 100 && w.b.got === 110 && w.b.r === 110 && w.a.xp === w.b.xp, w);
+check('the legacy chain pays the same +1% a point', w.l0 === w.base && w.l10 === Math.round(w.base * 1.1), w);
 await g.settle('dunmore');
 const gh = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => (x.type === 'guild_f' || x.type === 'guild_m') && x.keeper); if (!h) return null;
   forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
@@ -25,7 +25,7 @@ if (gh) {
       const s = head.def.topics.find(t => t.label === "It's done.").fn(); return { got: gold - g0, s }; };
     const p0 = pay(0), p10 = pay(10); ATTRS.charisma = 0; return { head: true, p0, p10 };
   }, gh);
-  check('a guild task of 80 pays 80 at Charisma 0 and 96 at 10, and the head says so', r.head && r.p0.got === 80 && r.p10.got === 96 && /96 gold/.test(r.p10.s), r);
+  check('a guild task of 80 pays 80 at Charisma 0 and 88 at 10 (1% a point since S953), and the head says so', r.head && r.p0.got === 80 && r.p10.got === 88 && /88 gold/.test(r.p10.s), r);
 } else check('Dunmore has a guild hall to test in', false, gh);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

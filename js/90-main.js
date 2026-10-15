@@ -174,7 +174,7 @@ function loop(now){
     }
   }
   const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7*cloakSwimMult()*(.8+.5*skillT('athletics')):3.83+.37*skillT('athletics')) /* S941 — Athletics: the run 3.83 to 4.2, the swim ×0.8 to ×1.3 */*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
-  const swiftMult=1+(attrEff('swiftness')*0.02);
+  const swiftMult=1+(attrEff('swiftness')*0.005); /* S953 — the attributes at ≤1% a point (skills and perks A): Swiftness's move 0.5% (was 2%); Athletics carries the run */
   const sprintBuff=_buffMult('sprintSpeed',1)*_buffMult('swiftness',1); // S316 — the Boon of the Road (×1.25), read nowhere before
   // Encumbrance speed penalty: -50% when overloaded. Immobile zeros speed entirely.
   const _encSpeedMult = _encState==='immobile' ? 0 : _encState==='overloaded' ? 0.5 : 1.0;

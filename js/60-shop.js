@@ -822,8 +822,10 @@ function shopMul(){try{if(typeof WORLD==='undefined')return 1;
 // S339 (Michael's A on #61) — Charisma's barter, as its card says: 1% a point off what you pay and on what you're paid
 // at a counter, up to a quarter. A bought-back item keeps the price you were paid for it, so the two can't be played
 // against each other.
-const BARTER_PCT=.01,BARTER_MAX=.25;
-function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT))+(capeCounter()?.02:0);}
+// S953 — skills and perks A: Charisma 0.5% a point (was 1%), still to a quarter; Speech 0.2% a level on top, to 20%
+const BARTER_PCT=.005,BARTER_MAX=.25,SPEECH_PCT=.002,SPEECH_MAX=.2;
+function speechPct(){return Math.min(SPEECH_MAX,Math.max(0,(typeof skillLv==='function'?skillLv('speech'):0)*SPEECH_PCT));}
+function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT))+speechPct()+(capeCounter()?.02:0);}
 // S552 — which cloaks a counter sells (#148 B): the traveller's at any armourer or goods shop; the dark hood in towns and
 // cities; oilskin in ports; fur in the Mark; the short cape in Aurenne; the pilgrim's grey where the town has a church
 function cloaksFor(h){if(!h||(h.type!=='armor'&&h.type!=='misc'))return [];const out=['wool'];
