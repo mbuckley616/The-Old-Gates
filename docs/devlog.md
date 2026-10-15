@@ -20503,3 +20503,33 @@ What changed in `creatures.js`:
 - **Close up** it is still a skull of smooth ellipsoids: no temples hollowed, no cheek arch open under the bone, the teeth a tidy row. A sculpted skull, from image-to-3D or by hand, would be the next step if the skeletons get close-ups.
 - **The drowned skeleton's weed stain** does not reach the skull, which is a rigid piece in the plain bone tone. The weed on its head now roots under the skull and hangs from below it.
 - **The head tilts back a little** (the plan's 8° pitch), so the jaw juts. That is the plan's old head angle, not changed here.
+
+## v80 — Session 943 — Rags at the skeleton's hips: the first cloth on a creature (L4, prototype only)
+OG-041 draws its skeleton with rags at the hips. Session 934 owed them, as it owed the goblin's scrap-leather harness, because the kit had no cloth on a creature. This builds the rags; the plan is already drawn, so it asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`rags`, a new part:** a cord round the waist, rigid on the first spine bone, with `n` torn strips of cloth hanging from it.
+  - The seed skips a quarter of the strips, so there are gaps.
+  - Each strip is a sheet three points wide and five rows long. Its length varies by a third either way, and its foot is torn ragged.
+  - The strips flare 3.5 cm out as they fall, and darken toward the foot.
+- **How a strip moves:** its top is on the hip bone. Any strip off the middle hangs over a thigh, so it passes to that thigh's bone down its length (a smoothstep, up to 0.7 of the weight at the foot). It swings with the leg, and the leg does not walk through it.
+  - A first try put the lower half wholly on the thigh. The edge between the halves stretched to 2.2 times its length at the trot; a smooth blend at full weight still made 1.57. At 0.7 the worst is 1.27.
+- **`sheetGeo` takes a second bone:** a sheet's point may carry `blend: [bone, weight]`. The fins, weed and leaves are unchanged, each point on one bone.
+- **On the skeleton:** 11 places for strips, 30 cm long and 7.5 cm wide, in dirty linen, on a leather cord. The seed leaves 10 of them.
+  - The plan's sheets are opaque now (`finOpacity: 1`); the drowned skeleton keeps its 0.95.
+  - The drowned skeleton wears them too, in weed-dark cloth, 8 strips by its seed.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,007 checks pass** (1,006 before). The new check is on the skeleton's rags:
+  - 10 strips.
+  - Above the knees through every pose of the walk, the trot and the stand (lowest 0.55 m).
+  - No edge of them stretched past 1.27 times its length; the check's limit is 1.4.
+- The skeleton's gaits, skull and gear pass as before.
+- Pictures: `creatures-skeleton-front.jpg`, `creatures-skeleton-back.jpg` (new), `creatures-skeleton.jpg`, `creatures-drownedskeleton.jpg`, and `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **The cloth is dark** in the pictures: both faces share one normal, and it reads almost black where the sun is behind it.
+- **The strips are stiff:** they flare and swing with the thighs, but nothing simulates them.
+- **Owed:**
+  - The goblin's scrap-leather harness can now be built the same way: straps as sheets on the spine and the shoulders.
+  - The troll's lashed-on armour scraps can be built on `gear`.

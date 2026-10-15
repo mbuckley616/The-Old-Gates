@@ -326,6 +326,22 @@ P.fronds = (B, o) => { const r = rng(B.g.seed + 21), names = (o.on || ['spine'])
     for (let k = 1; k < pts.length - 1; k++) tris.push(0, k, k + 1); tris.push(0, pts.length - 1, 1);
     const c0 = B.tone(o.tone || 'frond'), c1 = B.tone(o.tip || o.tone || 'frond'); B.sheets.push({ pts, tris, bones: pts.map(() => b.i), cols: LEAF.map(([u]) => c0.clone().lerp(c1, u)) }); } };
 
+// rags (Session 943, OG-041's skeleton, "rags at the hips"): the first cloth on a creature. A cord round the waist on the first
+// spine bone, and `n` torn strips of cloth hanging from it, some missing, each `len` long give or take a third, its foot torn
+// ragged. A strip's top is on the hip bone; where it hangs over a thigh (any strip off the middle), it passes to that thigh's
+// bone down its length (smoothly, so no edge tears), so it swings forward and back with the leg and the leg never walks through it. `w` a strip's width, `rx`/`rz` the waist
+P.rags = (B, o) => { const r = rng(B.g.seed + 43), h = B.spinePts[0].clone().add(V(0, o.up || 0, o.dz || 0)), hip = B.by[B.spineNames[0]].i, S = B.S;
+  const thigh = sd => { const k = Object.keys(B.chains).find(c => new RegExp('^leg\\d' + (sd > 0 ? 'L' : 'R') + '_$').test(c)); return k ? B.by[B.chains[k][0]].i : hip; };
+  const c0 = B.tone(o.tone || 'cloth'), c1 = B.tone(o.tip || o.tone || 'cloth'); let strips = 0, low = 1e9;
+  for (let k = 0; k < o.n; k++) { if (r() < (o.gaps ?? .2)) continue; const th = (k + (r() - .5) * .5) / o.n * Math.PI * 2, at = (t, out) => V(Math.sin(t) * (o.rx * S + out), 0, Math.cos(t) * (o.rz * S + out));
+    const len = o.len * S * (.67 + .66 * r()), w = o.w * S * (.8 + .4 * r()), dt = w / (o.rx * S) / 2, x = Math.sin(th), bone = Math.abs(x) > .3 ? thigh(Math.sign(x)) : hip, ROWS = 4, pts = [], bones = [], blend = [], cols = [], tris = [];
+    for (let i = 0; i <= ROWS; i++) { const v = i / ROWS; for (let j = 0; j <= 2; j++) { const t = th + (j - 1) * dt * (1 + .25 * v), tear = i === ROWS ? (r() - .5) * .35 * len : 0, p = h.clone().add(at(t, .012 * S + .035 * S * v)).add(V(0, -v * len + tear, 0));
+      pts.push(p); bones.push(hip); blend.push([bone, bone === hip ? 0 : .7 * v * v * (3 - 2 * v)]); cols.push(c0.clone().lerp(c1, v).multiplyScalar(.85 + .3 * r())); low = Math.min(low, p.y); } }
+    for (let i = 0; i < ROWS; i++) for (let j = 0; j < 2; j++) { const a = i * 3 + j, b = a + 1, c = a + 3, d = c + 1; tris.push(a, c, b, b, c, d); }
+    B.sheets.push({ pts, tris, bones, blend, cols }); strips++; }
+  const g = new THREE.TorusGeometry(1, .06, 6, 28); g.rotateX(Math.PI / 2); g.scale(o.rx * S + .006, 1, o.rz * S + .006); const cord = new THREE.Mesh(g, stdMat(B.tone(o.cord || 'leather'), { rough: .8 })); cord.position.copy(h); cord.scale.y = .15; B.bit(B.spineNames[0], cord);
+  B.rags = { strips, low: +low.toFixed(3) }; };
+
 // packs (Session 867): what a beast of burden carries. Two panniers hang either side of the spine at `at`, over a canvas
 // blanket, joined by a strap across the back, with a bedroll lashed on top. All rigid on the spine bone, clear of the fur.
 P.packs = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl, L = o.len, W = o.w ?? L * .38, H = o.h ?? L * .7;
@@ -607,9 +623,9 @@ export function build(g) {
   return C;
 }
 // the wing's membrane: panels between neighbouring fingers and from the last finger back to the flank, skinned to both edges
-// fins and other sheets: each vertex rigid on its bone, both faces drawn
+// fins and other sheets: each vertex rigid on its bone, or shared with a second (`blend`: [bone, weight], the rags'), both faces drawn
 function sheetGeo(B, pal) { const pos = [], si = [], sw = [], col = [], ind = [];
-  for (const s of B.sheets) { const base = pos.length / 3, C0 = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); const C = s.cols ? s.cols[i] : C0, k = s.cols ? 1 : i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
+  for (const s of B.sheets) { const base = pos.length / 3, C0 = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); const bl = s.blend && s.blend[i]; if (bl && bl[1] > 0) { si.push(s.bones[i], bl[0], 0, 0); sw.push(1 - bl[1], bl[1], 0, 0); } else { si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); } const C = s.cols ? s.cols[i] : C0, k = s.cols ? 1 : i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(ind); g.computeVertexNormals(); return g; }
 // threads: a thin tube along each chain, each ring rigid on its segment's bone; a glowing thread's colour is HDR, for the bloom
 function tubeGeo(B, pal, glow) { const pos = [], si = [], sw = [], col = [], ind = [], RAD = 5;
@@ -1716,7 +1732,7 @@ export const GOBLINS = ['goblin'];
 Object.assign(PLANS, {
   skeleton: { name: 'Skeleton', src: 'OG-041 (skeleton: a notched sword and a round wooden shield, rags at the hips)', gaits: ['walk', 'trot', 'stand'], bare: { shaft: .3, knob: .48, vr: .34, vert: .045 },
     rough: .7, mottle: .9, speedK: .9, wag: 0, pant: 0, neckNod: .05, spread: .04,
-    palette: { coat: [.78, .73, .6], dark: [.05, .04, .03], wood: [.38, .27, .16], iron: [.36, .35, .33], leather: [.2, .14, .09] },
+    palette: { coat: [.78, .73, .6], dark: [.05, .04, .03], wood: [.38, .27, .16], iron: [.36, .35, .33], leather: [.2, .14, .09], cloth: [.36, .31, .24], clothTip: [.2, .17, .13] }, finOpacity: 1,
     parts: [
       ['spine', { hip: [.98, -.03], chest: [1.44, .01], n: 4, r: [.12, .13, .14], s: [1, 1], rump: 0, front: 0 }],
       ['neck', { len: .13, n: 1, rise: 80, r: [.06, .05], up: .02 }],
@@ -1727,7 +1743,8 @@ Object.assign(PLANS, {
       ['arms', { at: 1, out: .19, up: -.04, len: .7, r: [.055, .045, .04], dir: [.12, -1, .02], bend: 16, tone: 'coat', swing: .3 }],
       ['gear', { list: [
         { kind: 'sword', arm: 0, side: -1, len: .7, w: .05, rise: -40, splay: .1, notches: 5 },
-        { kind: 'shield', arm: 0, side: 1, r: .3, t: .03, face: [1, .8], off: .04, tone: 'wood', rim: 'iron', boss: 'iron' }] }]
+        { kind: 'shield', arm: 0, side: 1, r: .3, t: .03, face: [1, .8], off: .04, tone: 'wood', rim: 'iron', boss: 'iron' }] }],
+      ['rags', { n: 11, len: .3, w: .075, rx: .13, rz: .1, up: .03, gaps: .25, tone: 'cloth', tip: 'clothTip', cord: 'leather' }]
     ] }
 });
 // ── Session 935: OG-018's drowned skeleton, Uisce's (weed-hung, in a pair): the skeleton grey-green from the sea, its bones stained
@@ -1735,7 +1752,7 @@ Object.assign(PLANS, {
 // the sea's blue, its sword rusted and its shield waterlogged ──
 Object.assign(PLANS, {
   drownedskeleton: re(PLANS.skeleton, { name: 'Drowned Skeleton', src: 'OG-018 (Uisce: a drowned skeleton, weed-hung, in a pair)', school: 'Uisce', from: 'skeleton', bare: PLANS.skeleton.bare, speedK: .8, rough: .55, mottle: 1.6,
-    palette: { coat: [.6, .64, .56], weed: [.16, .3, .2], frond: [.18, .32, .16], frondTip: [.34, .42, .2], dark: [.04, .05, .06], wood: [.22, .24, .2], iron: [.34, .27, .2], leather: [.12, .12, .1] },
+    palette: { coat: [.6, .64, .56], weed: [.16, .3, .2], frond: [.18, .32, .16], frondTip: [.34, .42, .2], dark: [.04, .05, .06], wood: [.22, .24, .2], iron: [.34, .27, .2], leather: [.12, .12, .1], cloth: [.2, .26, .2], clothTip: [.1, .16, .12] },
     pattern: { kind: 'patches', tone: 'weed', size: .06, cut: 0, amount: .9 }, finOpacity: .95,
     parts: [...PLANS.skeleton.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, r: .02, color: [.35, .75, .95] })) }] : [k, o]),
       ['fronds', { on: ['head', 'neck', 'spine', 'arm0L_', 'arm0R_'], n: 36, len: .34, w: .04, out: .25, spread: .2, lift: -1.6, back: .15, tip: 'frondTip' }]] })
