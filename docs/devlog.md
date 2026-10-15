@@ -20985,3 +20985,28 @@ What changed in `creatures.js` (`FROST` lists the two):
 - **The frozen man's face** is a smooth lump. If Michael takes B, the next session gives it a face under the frost: the skeleton's modelled skull, perhaps, seen through the ice.
 - **The sheet's figure is all spikes.** The kit's shards are clusters of five-sided cones, so A is a troll with shards on it more than a body made of them.
 - **On `creatures-frost.jpg`** the frozen man stands at the left edge, half cut by the frame.
+
+## v80 — Session 959 — Skin wings let the light through (the creature kit, prototype only)
+Session 956 left the gargoyles' stone wings drawing near black from most angles, and the dragon's red membrane did the same. This fixes a fault in a body the bodies builder made, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+**What was wrong:**
+- The first guess was the wing shadowing itself. It was not: with the wing taking no shadow, the picture did not change.
+- The membrane's colour is half the hide's (0.069 mean, against 0.152).
+- Seen from the side away from the sun, a two-sided membrane's normal faces away from the light, so nothing lights it. That is right for an opaque sheet, but wing skin is thin, and the sun shows through it.
+
+**What changed in `creatures.js`:**
+- A skin wing now gives back a share of its own colour as light that has come through it. A line is added to the wing material's shader at build: emissive light of the vertex colour times `wingLight`, a plan option, 0.45 unless the plan says otherwise.
+- Feathered wings are unchanged, and so are clear ones (the glasswing's, under `wingOpacity` 1), which are seen through already.
+- The dragon and both gargoyles are the plans it touches.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,061 checks pass** (1,060 before). The new check covers the 13 winged plans:
+  - The 3 with skin wings carry the light-through term.
+  - The 10 feathered or clear ones do not.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-gargoyle-front.jpg` and `creatures-dragon-front.jpg` (new) show the membranes grey stone and dark red where they were black. `creatures-gargoyle.jpg`, `-fly.jpg`, `creatures-gaothgargoyle.jpg` and `creatures-dragon.jpg` re-shot.
+- A correction to the check as first written: every three.js material has a default `onBeforeCompile`, so asking whether one is set was always true. The check asks whether the material has its own.
+
+### Needs eyes
+- **The light through is even,** the same whether the sun is behind the wing or not. A wing with the sun behind it should glow at its thin edges and show its finger bones dark, which wants the sun's direction in the shader.
+- **In a dark gate hall** the 0.45 share will read as a faint glow of its own. If it does, `wingLight` is one number per plan, and the game's version should scale it by the light that reaches the wing.

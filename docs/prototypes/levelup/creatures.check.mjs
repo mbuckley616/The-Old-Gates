@@ -98,6 +98,12 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const fr = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.FROST.map(k => { const C = K.build(K.genome(k, k + ':check')), h = C.meshes[0].material; let shards = 0; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.geometry.attributes.position.count >= 30 && o.material.flatShading) shards++; });
     return { k, school: C.plan.school, clear: h.transparent ? +h.opacity.toFixed(2) : 1, shards, tris: C.stats.tris }; }); });
   for (const t of fr) check(`${t.k}: a Frost Thing of Uisce in clear ice (opacity ${t.clear}) with ${t.shards} clusters of shards`, t.school === 'Uisce' && t.clear < 1 && t.shards >= 5, t);
+  // skin wings let light through (Session 959): every opaque membrane wing gives back a share of its colour, no feathered or clear one does
+  const wlt = await page.evaluate(async () => { const K = await import('./creatures.js'), out = { lit: [], plain: [] };
+    for (const k of Object.keys(K.PLANS)) { const P = K.PLANS[k]; if (!(P.parts || []).some(([n]) => n === 'wings')) continue; const C = K.build(K.genome(k, k + ':wl'));
+      for (const m of C.meshes) if (m.name === 'wing') { const membrane = !C.B.wings[0].feathered && !(P.wingOpacity < 1); (membrane === Object.hasOwn(m.material, 'onBeforeCompile') ? out.lit : out.plain).push(k + (membrane ? '' : ' (feathered or clear)') + (membrane === Object.hasOwn(m.material, 'onBeforeCompile') ? '' : ' WRONG')); } }
+    return out; });
+  check(`skin wings let light through: ${[...new Set(wlt.lit)].length} winged plans right, none wrong`, wlt.plain.length === 0 && wlt.lit.length > 0, { wrong: [...new Set(wlt.plain)], right: [...new Set(wlt.lit)] });
   // the slimes' holes (Session 954, OG-041: "with holes through it"): a line down each hole's axis meets no hide, at rest or through a whole
   // crawl stride (each axis carried by its spine bone), while the same line moved two of the hole's radii toward the spine meets the body
   const ho = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
