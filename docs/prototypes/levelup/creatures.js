@@ -68,7 +68,8 @@ P.head = (B, o) => {
     B.meat('jaw', j, base.clone().addScaledVector(dir, len * o.jaw.len).addScaledVector(up, -r * o.jaw.drop), o.jaw.r * S, o.jaw.r * S * .55, { tone: o.tone }); }
   B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
-  for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
+  if (o.skull) skullBits(B, o, S, base, dir, up);
+  else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
   if (o.ears) for (const sd of [1, -1]) B.bit('head', ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
   if (o.horns) for (const sd of [1, -1]) B.bit('head', horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
   if (o.antlers) for (const sd of [1, -1]) B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
@@ -455,12 +456,35 @@ function bareGeo(B, o) { const gs = [];
   for (const f of B.flesh) { f.sm = (f.s[0] + f.s[1] + f.s[2]) / 3; const d = f.b.clone().sub(f.a), L = d.length(); if (L < 1e-4) continue;
     const q = new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize()), put = (g, at, sc) => { if (sc) g.scale(...sc); g.applyQuaternion(q); g.translate(at.x, at.y, at.z); gs.push(g); };
     const name = B.bones[f.bone].name;
-    if (name === 'head' || name === 'jaw') put(new THREE.CapsuleGeometry((f.ra + f.rb) / 2, L, 6, 14), f.a.clone().lerp(f.b, .5), [f.s[0], 1, f.s[1]]);
+    if (name === 'head' || name === 'jaw') { if (!B.skull) put(new THREE.CapsuleGeometry((f.ra + f.rb) / 2, L, 6, 14), f.a.clone().lerp(f.b, .5), [f.s[0], 1, f.s[1]]); }
     else if (/^(spine|neck|tail)/.test(f.group)) { const n = Math.max(1, Math.round(L / (o.vert ?? .05)));
       for (let k = 0; k < n; k++) { const t = (k + .5) / n, r = lerp(f.ra, f.rb, t) * (o.vr ?? .3); put(new THREE.CylinderGeometry(r, r * 1.1, L / n * .6, 10), f.a.clone().lerp(f.b, t)); } }
     else { const sh = o.shaft ?? .32, kn = o.knob ?? .5; put(new THREE.CylinderGeometry(f.rb * sh, f.ra * sh, L, 8), f.a.clone().lerp(f.b, .5));
       for (const [p, r] of [[f.a, f.ra], [f.b, f.rb]]) { const g = new THREE.SphereGeometry(r * kn, 10, 8); g.translate(p.x, p.y, p.z); gs.push(g); } } }
   const geo = mergeGeometries(gs.map(g => { g.deleteAttribute('uv'); return g; })); return { geo, grid: [0, 0, 0] }; }
+// a modelled skull (Session 942), for a bare head whose two capsules read soft and cartoonish: a cranium longer than it is wide, a
+// brow ridge over two dark sockets, cheekbones swept back to the ears, a face and an upper jaw under a dark nasal hole, a row of
+// upper teeth; and on the jaw bone a mandible, two branches from below the ears to the chin, with its own row. Built in the head's
+// frame in metres (x across, y up, z ahead, the neck's joint at 0) and scaled by the head's slider. The capsules stay, unseen, so the
+// weights are read as before. A socket holds a small lit eye when the plan's eyes are bright (the drowned skeleton's)
+function skullBits(B, o, S, base, dir, up) {
+  const side = up.clone().cross(dir).normalize(), M = new THREE.Matrix4().makeBasis(side, up, dir).scale(V(S, S, S)).setPosition(base);
+  const boneM = stdMat(B.tone('coat'), { rough: .7 }), dark = stdMat(B.tone('dark'), { rough: .95 }), toothM = stdMat(B.tone('coat').clone().lerp(new THREE.Color(1, .97, .88), .4), { rough: .45 });
+  const L = (x, y, z) => V(x, y, z).applyMatrix4(M), ell = (h, c) => { const g = new THREE.SphereGeometry(1, 18, 12); g.scale(...h); g.translate(...c); return g; };
+  const put = (bone, gs, m) => { const g = mergeGeometries(gs.map(q => { q.deleteAttribute('uv'); return q.applyMatrix4(M); })); g.computeVertexNormals(); const mesh = new THREE.Mesh(g, m); mesh.name = 'skull'; B.bit(bone, mesh); return g.index.count / 3; };
+  const tube = (pts, r0, r1) => { const g = taperTube(pts.map(p => V(...p)), r0, r1, 8); return g; };
+  const teeth = (cy, cz, rad, h, n = 10, span = 1.15) => { const gs = []; for (let k = 0; k < n; k++) { const a = -span + 2 * span * k / (n - 1), g = new THREE.BoxGeometry(.0068, h, .0055); g.rotateY(a); g.translate(Math.sin(a) * rad, cy, cz + Math.cos(a) * rad); gs.push(g); } return gs; };
+  const head = [ell([.07, .072, .094], [0, .062, .005]), ell([.054, .046, .056], [0, -.002, .05]), ell([.036, .021, .032], [0, -.04, .072]),
+    tube([[-.052, .029, .077], [-.028, .033, .086], [0, .03, .088], [.028, .033, .086], [.052, .029, .077]], .0075, .0075)];
+  for (const sd of [1, -1]) head.push(tube([[sd * .05, -.006, .08], [sd * .064, -.01, .05], [sd * .066, -.006, .014]], .01, .007));
+  let tris = put('head', head, boneM);
+  const holes = [ell([.019, .017, .009], [.031, .01, .087]), ell([.019, .017, .009], [-.031, .01, .087]), ell([.009, .013, .006], [0, -.022, .098])];
+  tris += put('head', holes, dark) + put('head', teeth(-.058, .075, .028, .012), toothM);
+  const jaw = [ell([.016, .012, .012], [0, -.088, .082])]; for (const sd of [1, -1]) jaw.push(tube([[sd * .058, -.012, .008], [sd * .055, -.05, .0], [sd * .051, -.078, .008], [sd * .038, -.086, .055], [sd * .012, -.09, .08]], .0095, .008));
+  tris += put('jaw', jaw, boneM) + put('jaw', teeth(-.072, .07, .025, .01), toothM);
+  const e = (o.eyes || [])[0]; if (e && Math.max(...e.color) > .2) for (const sd of [1, -1]) B.bit('head', eye(.0075 * S, e.color, L(sd * .031, .01, .095)));
+  B.skull = { tris: Math.round(tris), teeth: 20, top: +(.139 * S).toFixed(3) };
+}
 // ribs (Session 934): a cage of arcs off the spine, each from the spine round the side and forward toward a breastbone it stops short
 // of; `from`/`to` the stretch of the spine they cover, `w` the cage's half-width, `d` its depth ahead of the spine, `drop` how far a rib
 // falls on its way round. With `pelvis`, two flared blades of hip on the first spine bone
@@ -1696,7 +1720,7 @@ Object.assign(PLANS, {
     parts: [
       ['spine', { hip: [.98, -.03], chest: [1.44, .01], n: 4, r: [.12, .13, .14], s: [1, 1], rump: 0, front: 0 }],
       ['neck', { len: .13, n: 1, rise: 80, r: [.06, .05], up: .02 }],
-      ['head', { len: .2, r: .1, pitch: -8, s: [.85, 1.05, 1], muzzle: { len: .62, r: .06, taper: .85, drop: .45 }, jaw: { len: .62, r: .04, drop: 1.05 },
+      ['head', { len: .2, r: .1, pitch: -8, s: [.85, 1.05, 1], muzzle: { len: .62, r: .06, taper: .85, drop: .45 }, jaw: { len: .62, r: .04, drop: 1.05 }, skull: true,
         eyes: [{ f: .55, up: .2, out: .42, r: .028, color: [.02, .02, .02] }] }],
       ['ribs', { n: 7, from: .3, to: 1, w: .15, d: .1, drop: .1, r: .011, wrap: .8, pelvis: { r: .11, out: .09, up: .02 } }],
       ['legs', { at: 0, kind: 'plantHind', out: .1, drop: .02, r: [.08, .065, .05] }],

@@ -20474,3 +20474,32 @@ What changed in `people.js`:
   - Spanning it (a foot in the stirrup, the string drawn to the nut) and shooting it, which is B4's.
   - A bolt case at the belt.
   - Each make's carving or knotwork.
+
+## v80 — Session 942 — A truer skull for the skeleton (L4, prototype only)
+Session 934 left the skeleton's skull as two capsules, owed as "a truer skull". From the side it read as a cartoon snout, and the eyes sat inside the capsule, so the sockets did not show. This refines a plan already drawn from OG-041 and asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed in `creatures.js`:
+- **A head part may carry `skull`.** `skullBits` then models the skull as rigid pieces, in the head's frame in metres, scaled by the head's slider.
+  - **On the head bone:** a cranium longer than it is wide (14 by 19 cm, its crown 13.5 cm over the neck's joint) and a face that merges into it. Over the face: a brow ridge, two cheekbones swept back to the ears, an upper jaw, and ten upper teeth.
+  - **The holes:** two dark sockets and a dark nasal hole.
+  - **On the jaw bone:** a mandible, two branches from below the ears down to the chin, with ten teeth of its own, so it opens with the jaw.
+  - **The capsules stay, unseen.** The skin weights are read from them as before, and `bareGeo` no longer draws them.
+  - 4,356 triangles in five pieces. The hide drawn as bones drops from 6,324 to 4,224, so the whole skeleton costs about 2,250 more triangles than before.
+- **The eyes:** a plan whose eyes are bright gets a small lit eye at the front of each socket. So the drowned skeleton's sockets glow the sea's blue, and the dry skeleton's stay empty and dark.
+- **A closer view:** `creatures.html?view=one&cam=head` (front three-quarter) and `cam=headside` frame the head close (`bestiary.js`).
+- A first try had the face too small and ahead of the cranium, with a gap between them in profile, and a brow like a hat's brim. The face is now 11 cm wide, reaching back into the cranium, and the brow is thinner and set in.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,006 checks pass** (1,002 before). Four checks are new:
+  - Each skeleton has the five skull pieces, 20 teeth, and a crown 13.3 to 13.5 cm over the neck.
+  - The dry skeleton's sockets are dark (0 lit eyes) and the drowned one's are lit (2).
+- Its gaits, ribs and gear pass as before.
+- Pictures:
+  - `creatures-skeleton-skull.jpg` and `creatures-skeleton-skull-side.jpg` (close).
+  - `creatures-drownedskeleton-skull.jpg`.
+  - `creatures-skeleton.jpg`, `creatures-skeleton-front.jpg`, `creatures-drownedskeleton.jpg` and `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **Close up** it is still a skull of smooth ellipsoids: no temples hollowed, no cheek arch open under the bone, the teeth a tidy row. A sculpted skull, from image-to-3D or by hand, would be the next step if the skeletons get close-ups.
+- **The drowned skeleton's weed stain** does not reach the skull, which is a rigid piece in the plain bone tone. The weed on its head now roots under the skull and hangs from below it.
+- **The head tilts back a little** (the plan's 8° pitch), so the jaw juts. That is the plan's old head angle, not changed here.
