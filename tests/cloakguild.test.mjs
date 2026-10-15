@@ -25,7 +25,10 @@ const r = await page.evaluate(() => {
   out.voices = {}; for (const p in byP) { const T = topic(byP[p], 'The grey cloak.'); out.voices[p] = T && { say: T.response, follow: T.follow.map(f => f.label), not: T.follow[1].response }; }
   out.mine = labels(home);
   // another task owed: the contract waits
-  st.active = { id: 'guild_f:x:1', g: 'guild_f', kind: 'hunt', target: 'Wolf', need: 4, have: 0, gold: 60, short: 'Hunt 4 Wolves' }; out.owed = topic(home, 'The grey cloak.').follow[0].fn(); st.active = null;
+  // (quest review finding 30: the refusal in the head's own people, for the contract and for *Any work?* alike)
+  out.owed = {}; for (const p in byP) { st.active = { id: 'guild_f:x:1', g: 'guild_f', kind: 'hunt', target: 'Wolf', need: 4, have: 0, gold: 60, short: 'Hunt 4 Wolves' };
+    out.owed[p] = { cloak: topic(byP[p], 'The grey cloak.').follow[0].fn(), work: topic(byP[p], 'Any work?').fn() }; }
+  out.owed.oldblood = { cloak: OWE_LINES.oldblood('Hunt 4 Wolves', '0/4'), work: OWE_LINES.oldblood('Hunt 4 Wolves', '0/4') }; st.active = null;
   // taken
   out.take = topic(home, 'The grey cloak.').follow[0].fn(); const A = st.active; out.task = A && { id: A.id, kind: A.kind, gold: A.gold, short: A.short, x: A.x === P.x };
   out.afterTake = labels(home); out.notYet = topic(home, 'It’s done.') ? 'offered' : 'no';
@@ -39,7 +42,8 @@ const fill = (s) => s.replace('${lair}', r.lair).replace('${town}', r.town).repl
 const D = { gatelander: "That's no cloak you bought at a fair. And the master of ${lair} is still breathing", markman: 'Took that off a live one, aye? Thought so.', aurennais: "That cloak, Master, is from no loom I know", oldblood: 'Brat na Máthar. You walked in and walked out.' };
 for (const p of r.peoples) { const v = r.voices[p]; check(`a ${p} head asks *The grey cloak.*: *${v && v.say.slice(0, 90)}…*`, v && v.say.startsWith(fill(D[p])) && v.say.includes(String(r.fee)) && v.say.includes(r.town) && v.follow.join('|') === 'I’ll take the contract.|Not that one.' && !v.say.includes('${'), v); }
 check(`the fee is the beast contract's, fixed by the contract's id: ${r.fee}`, r.fee === r.fee2 && r.fee >= 100 && r.fee < 140 + 50 * 3, r);
-check(`with another task owed, the contract waits: *${r.owed}*`, /^You still owe us: Hunt 4 Wolves/.test(r.owed), r.owed);
+const OWED = { gatelander: "You'll not plough two fields with the one ox. Yours is still on the board: Hunt 4 Wolves. 0/4.", markman: 'You still owe us: Hunt 4 Wolves. 0/4.', aurennais: 'Forgive me, Master; one contract is closed before the next is entered. Yours is still open: Hunt 4 Wolves. 0/4.', oldblood: 'Yours is not done: Hunt 4 Wolves. 0/4.' };
+for (const p in OWED) { const o = r.owed[p]; check(`with another task owed, a ${p} head says *${o && o.cloak}* to the contract and to *Any work?*`, !!o && o.cloak === OWED[p] && o.work === OWED[p], o); }
 check(`taken: *${r.take}*; the task is *${r.task && r.task.short}* at ${r.fee}, the topic gone and the hand-back offered`, r.take === "Then it's on the board with your name beside it. Go gently in. It knows you." && r.task && r.task.kind === 'cloak' && r.task.gold === r.fee && r.task.x && !r.afterTake.includes('The grey cloak.') && r.afterTake.includes('I can’t do it.') && !r.afterTake.includes("It's done."), r);
 check(`the master dead: *It's done.* pays ${r.paid}: *${r.turn}*`, r.doneLabels.includes("It's done.") && /^Good work\. \d+ gold\./.test(r.turn) && r.paid === r.expect && r.active === null, r);
 check('no page errors', g.errs.length === 0, g.errs);

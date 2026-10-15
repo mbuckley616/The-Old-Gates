@@ -20241,3 +20241,13 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The square courses are small beside the lateens they replace.** The caravel's masts are short, so a course reaches only from 2.2 m over the deck up to its yard. A topsail, or a deeper course, would bring the sail back, if #347 goes A or B.
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
+
+## v80 — Session 940 — The guild head's *You still owe us* in four peoples (quest review run 17, Finding 30; a register fix)
+The quest review's Finding 30: a guild head asked for a second task while one is open answers in a Markman's words, *You still owe us: …*, whatever people the hall's town is. Every other line the head says is written four times. The finding is applied as written. `OWE_LINES` sits at the top level of `83-world-generator.js`, one line per people, each taking the task's short name and its progress. `offer(g,site,gp)` takes the head's people from the topics getter, where `gp` was already in scope for the hand-back. `cloakContract` in `87-world-quests.js` uses the same table with its `p`, and it can, because it runs only when a topic is chosen, long after both files have loaded. A people with no line falls back to the Markman's, which is the old text. The lord's *You still owe us* for Crown and League work (`87-world-quests.js`, the service topics) was not part of the finding and is unchanged.
+
+Two suites expected the Markman's words from a Gatelander head. `cloakguild` now checks all four lines, for the contract and for *Any work?* alike (the Old Blood's through the table, since no generated town is theirs). `handback` accepts any of the four.
+### Verified (headless Chromium)
+- `cloakguild` 12 of 12: the Gatelander, Markman and Aurennais heads each refuse in their own words, both to *The grey cloak.* and to *Any work?*, e.g. *You'll not plough two fields with the one ox. Yours is still on the board: Hunt 4 Wolves. 0/4.*; the Old Blood line reads *Yours is not done: Hunt 4 Wolves. 0/4.*
+- `handback`, `questgold`, `toldpages`, `turnin`, `datedguild`, `jobids`, `standingcount`, `blacksail` pass.
+### Needs eyes
+- Nothing to see but the words. A Gatelander hall's refusal is now a proverb and a sentence, longer than before.

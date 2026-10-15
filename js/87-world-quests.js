@@ -1175,7 +1175,7 @@ const giver=`${lord.title} ${lord.name}`;
     const say=CLOAK_GUILD.ask[p].replace('${lair}',P.name).replace('${town}',town).replace('${fee}',fee);
     return [{label:'The grey cloak.',response:say,follow:[{label:'I’ll take the contract.',quest:true,fn:()=>cloakContract(site,p,fee)},{label:'Not that one.',response:CLOAK_GUILD.not[p]}]}];}
   // the named action: the contract goes on the board as the Guild's active task (offer's own refusal while another is owed)
-  function cloakContract(site,p,fee){const st=gstate().guild_f;if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const P=artifactPlaces().wolf_cloak;
+  function cloakContract(site,p,fee){const st=gstate().guild_f;if(st.active)return (OWE_LINES[p]||OWE_LINES.markman)(st.active.short,progressLine(st.active));const P=artifactPlaces().wolf_cloak;
     const t={id:CLOAK_CONTRACT,g:'guild_f',kind:'cloak',x:P.x,z:P.z,gold:fee,desc:`The master of ${P.name}, the beast that slept on the grey cloak. Kill it.`,short:`The master of ${P.name}`};
     st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF.guild_f.name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return CLOAK_GUILD.take[p];}
   // S790 — services a claimant enters for a tool (the Crown's, the Compact's, the Church's): counted as served, but never past
