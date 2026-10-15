@@ -57,7 +57,7 @@ if (VIEW === 'academy') {
   { const g = new THREE.PlaneGeometry(600, 600); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, ground); m.receiveShadow = true; scene.add(m); }
   if (VIEW === 'church') {
     // the square: the church at its head, houses down both sides, a fountain's basin in the middle
-    const c = church({ w: 16, dome: DOME || 'blue', tower: 1 }, 'square:church', 0, -34, 0);
+    const c = church({ w: 16, rank: 'town', dome: DOME || undefined, tower: 1 }, 'square:church', 0, -34, 0);
     let i = 0; for (const side of [-1, 1]) { let z = -18; for (let k = 0; k < 4; k++) { const lot = aurenneLot('square', i++), { w, d } = lot.o; z += w / 2; place(lot, side * (13 + d / 2), z, side * Math.PI / 2 * -1); z += w / 2 + .2; } }
     { const m = new THREE.MeshStandardMaterial({ color: 0xe8dcc4, roughness: .8 }); const b = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.8, .7, 32), m); b.position.set(0, .35, -6); b.castShadow = b.receiveShadow = true; scene.add(b);
       const p = new THREE.Mesh(new THREE.CylinderGeometry(.3, .4, 1.8, 12), m); p.position.set(0, 1.2, -6); p.castShadow = true; scene.add(p); }
@@ -65,7 +65,7 @@ if (VIEW === 'academy') {
     sun.position.set(60, 80, 70); sun.target.position.set(0, 0, -20); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 400 }); sun.shadow.camera.updateProjectionMatrix();
     people.push([-2.4, -10, .3, 'sq:a'], [3, -16, 2.6, 'sq:b'], [-.8, -22, .1, 'sq:c']);
   } else {
-    const L = [{ w: 14, dome: DOME || 'blue', tower: 1 }, { w: 14, dome: DOME || 'white', tower: 1 }, { w: 20, dome: DOME || 'blue', tower: 2, corners: true }];
+    const L = [{ w: 12, rank: 'village', dome: DOME || undefined, tower: 1 }, { w: 14, rank: 'town', dome: DOME || undefined, tower: 1 }, { w: 20, rank: 'cathedral', dome: DOME || undefined, tower: 2, corners: true }] /* by rank (#294 C): a village's, a town's, the cathedral */;
     let x = 0; L.forEach((o, i) => { const half = o.w / 2 + 4.6 * (o.tower ? 1 : 0); x += half + (i ? 10 : 0); church(o, 'churches:' + i, x - (o.tower === 1 ? 2.3 : 0), 0, 0); x += half; });
     const mid = x / 2; { const m = new THREE.MeshStandardMaterial({ color: 0x5a4a3a, roughness: .8 }), post = new THREE.Group(); post.add(new THREE.Mesh(new THREE.BoxGeometry(.06, 1.8, .06).translate(0, .9, 0), m)); post.position.set(4, 0, 14); scene.add(post); }
     cam.fov = 30; cam.updateProjectionMatrix(); const dist = (x * .5 + 6) / Math.tan(15 * Math.PI / 180) / (W / H); cam.position.set(mid, 8, dist + 10); cam.lookAt(mid, 12, 0);
