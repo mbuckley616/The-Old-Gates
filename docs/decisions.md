@@ -122,6 +122,7 @@ Pictures:
 
 Michael: A — the cave's hall in ice, as drawn.
 Done, Session 914 (look builder): nothing to build; `markIceCave` stays a dress of `gatelandsCave`. Issue #331 closed by the producer.
+Michael: **The cave's hall in ice, as drawn** (A, on the control room). (14 Oct 2026)
 
 ### The Mark's sloop: shields on the rail? (look builder, Session 900) — DECISION #330
 **F11: the sloop in the Mark's dress (look builder, Session 900).** With #316, #319 and #323 answered, each class can now take the other islands' dress. This is the first: the game's sloop (13 by 4.4 m, the deck 1.0 m over the sea), in the very lines of the Gatelands sloop. It is a prototype in `docs/prototypes/levelup/ships.js` (`markSloop`, a dress of `gatelandsSloop`), at `ships.html?ship=marksloop`. It follows the Mark's dress you chose on #312 and #323:
@@ -146,7 +147,6 @@ Pictures:
 
 Michael: **A. Shields always hung, as drawn** (14 Oct 2026, via the control room)
 *Acted on, Session 907 (look builder):* nothing to build: `markSloop` hangs its twelve shields by default, as drawn. Issue #330 was closed by the producer.
-Michael: **The cave's hall in ice, as drawn** (A, on the control room). (14 Oct 2026)
 
 ### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
 You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
