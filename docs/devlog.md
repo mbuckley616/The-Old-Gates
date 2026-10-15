@@ -19764,3 +19764,19 @@ What changed in `creatures.js`:
   - its corrupted wolf is the Faolchú's kind, and its void spider would be a Scáth spider;
   - Tine and Solas have no corrupted animal on the sheet;
   - the game, after F4.
+
+## v80 — Session 925 — The frost bear's crown at its brow (L4, a fix to Session 919, prototype only)
+Session 919 left a note under Needs eyes: the Frost Wraith Bear's crown of ice shards sat at the back of its skull rather than the brow, so from the side it read as the front of the back's ridge. OG-088 draws the crown over the eyes. This is a refinement of a plan already built, so it asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`).
+
+What changed in `creatures.js`:
+- **`crystals` takes `rake`.** The Shatterhorn's crystal horns sweep back from the brow, each shard leaning back and stepping back from the one before. `rake` scales both, the lean and the step: 1, the default, is the Shatterhorn's sweep unchanged (the arithmetic is the same when it is 1), and toward 0 the shards stand up from where they grow.
+- **The frost bear's crown:** it now grows a fifth of the head further forward (at 34% of the head's length, where the skull meets the muzzle, against 20%), a little lower and closer together (up 0.8 and out 0.38 of the head's radius, against 0.9 and 0.45), 30 cm long against 34, and raked at 0.3. It stands up over the eyes as a crown of five shards a side, with clear air between it and the first of the back's eleven clusters.
+- **Triangles:** unchanged at 29,792; the shards are the same cones in new places.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 915 checks pass**, the same count as Session 919. The frost bear's four gaits put every foot on its target (0.0 cm worst), its skin weights sum to one, and its genome is 153 bytes.
+- The Shatterhorn and the Shatterback, the other two plans with crystal horns, take the default rake and build as before.
+- **Picture:** `creatures-frostbear.jpg` retaken; the crown stands above the brow, apart from the ridge on the back.
+### Needs eyes
+- **From the front** the crown's two halves are a V over the eyes; whether OG-088's crown wants a third shard on the midline is a matter of taste, and one more would cost 60 triangles.
+- **Owed, as before:** the stone troll (a troll in the kit first), the stag's mist (particles), the game (after F4).

@@ -315,11 +315,12 @@ function antler(o, S, c, p, side, r) {
   grow(V(), V(side * .55, .7, -.15).normalize(), L, o.r * S, o.depth ?? 2);
   const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); return m;
 }
-// crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040)
+// crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040). `rake` (Session 920) scales how far they
+// lean and step back: 1 the Shatterhorn's sweep, toward 0 a crown standing up from the brow
 function crystals(o, S, c, p, side, r) {
-  const geos = []; for (let i = 0; i < o.n; i++) { const L = o.len * S * (1 - .55 * i / o.n) * (.8 + r() * .3), g = new THREE.ConeGeometry(o.r * S * (1 - .4 * i / o.n), L, 5); g.translate(0, L / 2, 0);
-    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, V(side * (.35 + .5 * r()), .5 + .4 * r() - .25 * i / o.n, -.5 - .4 * i / o.n).normalize()));
-    g.translate(side * i * o.r * S * .6, -i * o.r * S * .3, -i * o.r * S * .9); geos.push(g.toNonIndexed()); }
+  const rk = o.rake ?? 1, geos = []; for (let i = 0; i < o.n; i++) { const L = o.len * S * (1 - .55 * i / o.n) * (.8 + r() * .3), g = new THREE.ConeGeometry(o.r * S * (1 - .4 * i / o.n), L, 5); g.translate(0, L / 2, 0);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, V(side * (.35 + .5 * r()), .5 + .4 * r() - .25 * i / o.n, (-.5 - .4 * i / o.n) * rk).normalize()));
+    g.translate(side * i * o.r * S * .6, -i * o.r * S * .3, -i * o.r * S * .9 * rk); geos.push(g.toNonIndexed()); }
   const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshPhysicalMaterial({ color: c, roughness: .15, metalness: 0, flatShading: true, emissive: c.clone().multiplyScalar(.25), clearcoat: 1, transparent: true, opacity: .92 })); m.position.copy(p); return m;
 }
 function beak(o, S, c, p, dir) { const g = new THREE.ConeGeometry(o.r * S, o.len * S, 8); g.scale(1, 1, .75); g.translate(0, o.len * S / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.setFromUnitVectors(UP, dir.clone().add(V(0, -(o.hook || .1), 0)).normalize()); return m; }
@@ -1481,7 +1482,7 @@ Object.assign(PLANS, {
   frostbear: re(PLANS.bear, { name: 'Frost Wraith Bear', src: 'OG-088 (corrupted: a frost wraith bear of blue ice)', school: 'Uisce', from: 'bear', scale: 1.1, rough: .35,
     palette: { coat: [.62, .74, .86], saddle: [.42, .56, .72], belly: [.8, .88, .94], dark: [.05, .07, .1], horn: [.62, .84, 1], ice: [.7, .9, 1] },
     fur: { len: .03, layers: 7, sx: 150, droop: .2 }, glow: { color: [.5, 1.1, 2.2], freq: 2, w: .03, all: .35, seam: { w: .05, y0: .9 } },
-    parts: [...PLANS.bear.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 5, len: .34, r: .05, f: .2, up: .9, out: .45 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }] : [k, o]),
+    parts: [...PLANS.bear.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 5, len: .3, r: .05, f: .34, up: .8, out: .38, rake: .3 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }] : [k, o]),
       ['spines', { n: 11, from: .1, to: 1, len: .36, r: .06, tone: 'ice', taper: .5, crystal: 3 }]] }),
   // Cloch: the blight boar, crystal spikes in its hide: a ridge of violet crystal from the withers to the rump, the tusks longer, the hide gone grey as stone
   blightboar: re(PLANS.boar, { name: 'Blight Boar', src: 'OG-088 (corrupted: a blight boar with crystal spikes in its hide)', school: 'Cloch', from: 'boar', scale: 1.15,
