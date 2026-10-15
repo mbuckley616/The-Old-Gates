@@ -480,8 +480,9 @@ export function smugglersLair(o = {}, r = stream('lair')) {
       const furl = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, bb.max.x - bb.min.x - .2, 10).rotateZ(Math.PI / 2), sail.material); furl.position.set((bb.min.x + bb.max.x) / 2, bb.max.y - .28, (bb.min.z + bb.max.z) / 2 - .05); furl.name = 'sail'; furl.castShadow = true; S.group.add(furl); S.tris += 40; } S.group.position.set(sx, 0, JZ - .5); ship = { x: sx, z: JZ - .5, L: 13, W: 4.4, group: S.group, tris: S.tris, draws: S.draws };
     rod('rope', [TX + JW - .15, FY + .6, TH1 - .3], [sx - 1.6, 1.4, JZ - .5 + 5.4], .02); rod('rope', [TX + JW - .15, FY + .6, TH0 + .3], [sx - 1.4, 1.3, JZ - .5 - 5.6], .02); }
   // the rowing boat off the T-head's west side: a lathe shell, a gunwale, thwarts and oars
-  { const bx0 = TX - JW - 1.2, bz = JZ - 3.8, BL = 4.2, W2 = .75, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
-    const g = new THREE.LatheGeometry(pts, 14, Math.PI / 2, Math.PI); g.rotateZ(Math.PI / 2); g.rotateX(Math.PI); g.scale(1, .55, 1); put(g, 'hull', bx0, .25, bz, 0, 0, 0, .5);
+  const boat = { x: TX - JW - 1.2, z: JZ - 3.8, L: 4.2 };
+  { const bx0 = boat.x, bz = boat.z, BL = boat.L, W2 = .75, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
+    const g = new THREE.LatheGeometry(pts, 14, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.scale(1, .55, 1); put(g, 'hull', bx0, .25, bz, 0, 0, 0, .5); /* the lathe's lower half, a bowl along z (Session 920: it was split along its length and turned across the boat) */
     for (const s of [-1, 1]) { const gp = []; for (let k = 0; k <= 10; k++) { const t = k / 10; gp.push(new THREE.Vector3(bx0 + s * (Math.sin(Math.PI * t) ** .6 * W2 + .05), .26, bz + (t - .5) * BL)); } put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gp), 16, .035, 5), 'timber'); }
     for (const dz of [-.8, .5]) bx('timber', bx0 - .7, bx0 + .7, .08, .13, bz + dz - .1, bz + dz + .1); rod('timber', [bx0 - .3, .18, bz - 1.4], [bx0 + .1, .2, bz + 1.3], .03); rod('rope', [bx0, .3, bz + 2.1], [TX - JW + .15, FY + .6, TH0 + .3], .015); }
   // the derrick on the T-head: a mast, a boom out over the sloop's hatch, the fall and a net of cargo hanging from it
@@ -539,7 +540,7 @@ export function smugglersLair(o = {}, r = stream('lair')) {
   const zm = Z0 - L / 2;
   return { group, tris: Math.round(tris), draws: draws + (ship ? ship.draws : 0), top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, walkY, deck: FY, lamps, door, ladder, ledge: LY,
     escape: { y: LY, x0: XW, z: ZL, w: TRX * 2, h: TUP + 1.1, xPlane: XW + 10.5 }, arch: { w: AW2 * 2, h: AH, z: Z1 }, mouth: { x: SPX(0), w: PRX * 2, y0: FY, h: PUP + 1.3 }, room, held,
-    chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, passage: { w: PRX * 2, h: PUP + 1.3 }, gallery: { y: GY, z0: GZ0, z1: GZ1 }, fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W } };
+    chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, passage: { w: PRX * 2, h: PUP + 1.3 }, gallery: { y: GY, z0: GZ0, z1: GZ1 }, fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, boat, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W } };
 }
 
 // aurenneAqueduct(o, r) (Session 907, card F8): a ruined aqueduct across a dry valley, OG-121's Aurenne panel ("aqueduct ruins") and

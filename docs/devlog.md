@@ -19696,3 +19696,21 @@ What changed in `people.js`:
 - **The star is painted, not raised.** Bronze hoplons often carry the sign in relief; a normal map would show it.
 - **The porpax and the antilabe** are plain: a band and a strap, with no cord loops round the inside of the rim.
 - **Owed:** the kite and the hoplon slung under a cloak.
+
+## v80 — Session 920 — The smugglers' lair's rowing boat, a bowl along its length (card F8, a fix to Session 883, prototype only)
+Session 914 found the grotto's skiff split along its length and turned it into a bowl. Its lathe had been copied from the smugglers' lair's rowing boat (Session 883), and 914 left the lair's boat to be looked at. It had the same fault, and worse. FREEZE #297 is still open, so this touches only the prototypes (`places.js`, `places.check.mjs`).
+
+**What was wrong.** The boat's shell was the half of a lathe turned twice (`rotateZ` then `rotateX`). That left the half-shell standing on its side and lying along x, across the boat: a trough 0.85 m deep in z, open to the south. The gunwales, the thwarts and the oars ran along z as they should. So from above there was no hull under the thwarts at all. It hid in the old pictures because the T-head's deck and the dark water cover that spot.
+
+**What changed in `places.js`:**
+- The shell is now the lathe's lower half, laid along z, as the skiff's is: `LatheGeometry(pts, 14, -π/2, π)` turned once about x. Its rim is at 0.25 m, under the gunwale at 0.26.
+- The boat's place is named once (`boat = { x, z, L }`) and returned with the lair, so the check can find it.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 62 of 62 pass** (61 after Session 914). The new check casts down through the boat at its middle and 1.7 m fore and aft, and in from either side 0.1 m up, on three keys.
+  - **Before the fix** it failed on all three keys: no ray met the hull anywhere.
+  - **After:** the bottom is 0.19 m under the water at the middle and 0.02 m over it near the ends. The sides are 0.75 m either side of the keel. All three keys give the same.
+- No page errors on the lair's views.
+- **Picture:** `places-lair-boat.jpg`, the boat off the T-head's west side, thwarts across, the oar inside it.
+### Needs eyes
+- The boat is a plain lathe bowl with no keel, stem or strakes. That is the same as the grotto's skiff. When the hull kit (card F11) makes a rowing boat, both should take it.
