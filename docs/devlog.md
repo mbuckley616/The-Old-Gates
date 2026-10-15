@@ -20594,3 +20594,267 @@ What changed in `creatures.js`:
 - **The chest plate** is under the hunched troll's chest, so it is mostly hidden from the front and the side. A plate on the upper back would show better.
 - **The shoulder plate** stands off the arm's root as a flap. It may read as a pauldron or as a fault.
 - **The plates are flat sheets:** no thickness, rivets or dents.
+## v80 — Session 929 — Card F9's eighth room: the Gatelands smithy (prototype only)
+FREEZE #297 is still open, so this run is the prototypes only. The hulls left on card F11 wait on DECISION #347, and the Makers' six props are built (Sessions 837 to 851), so the run took the next room on backlog L5's "interiors by nation": the smithy, in the Gatelands' dress first. OG-043's board was reread (its Gatelands blacksmith is a low stone building with the forge's glow in an open front; the catalogue flags only its invented "Sunhand order", which is not touched here), with OG-057 and OG-069 for Bram's tools: hammers, tongs, an anvil. Nothing new is asked: the room is built inside the street's own shell as #303 set, in the kit's rubble and slate. This touches only `docs/prototypes/levelup/` (`pieces.js`, `rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The building** (`GL_PLANS.forge` in `pieces.js`, the Gatelands kit):
+- 8.4 by 6.0 m, of bare rubble with dressed quoins and lintels, walls of 0.6 m, one storey of 3.2 m to the wall plate, slate at 38° between parapet gables. The forge's stack stands in the west gable.
+- A cart door 2.4 m wide and 2.6 m high in the front, wide enough for a horse to be led in to be shod. A cart door can now stand open (`open: true` on a `cart` opening): each leaf is swung back flat against the outer wall beside the opening, with its three straps. The warehouse's cart door is unchanged.
+- A window by the anvil in the front, one over the bench at the back, one in the east gable, and the harp trade sign on its bracket at the west corner.
+- 1,378 triangles in 10 draws.
+
+**The room** (`gatelandsForge` in `rooms.js`):
+- **The forge:** a hearth of stone 1.05 by 1.6 m and 0.78 m high against the west gable, with a sooted lip round its top, a bed of coals, and the fire in it. Over it a hood of sooted stone from 1.85 m, narrowing into the stack, with an iron edge on its front.
+- **The bellows:** the great bellows stand on a frame beside the hearth on the back side, two pear-shaped boards of elm with the leather between them in four folds, the nozzle into the hearth's flank. A rocking pole over them on its post, and a chain down from its end to a handle.
+- **The anvil** on an elm stump, its face at 0.82 m and its horn toward the door, 0.81 m out from the hearth. A hammer lies on the face and two pairs of tongs lean on the stump. The slack tub, a half barrel of water, stands between the hearth and the door, and the coal bin in the corner beyond it.
+- **The back wall:** a rack of tongs and hammers east of the bellows, and the bench under the back window, 0.9 m high, with a leg vice on its end.
+- **The east end:** the grindstone on its frame, the farrier's box, iron bars leaning on the gable, two rows of horseshoes on nails, and a tethering ring.
+- **The floor:** trodden cinders from the forge to the bench, flags in the shoeing bay inside the door.
+- **The roof:** open to three couples, each with a tie beam across at 2.96 m over the floor, and a purlin each side. A lantern hangs from the middle tie beam.
+- 5,366 to 5,438 triangles in 16 draws.
+
+The view: `rooms.html?room=forge`, with `view=forge` (from inside the door to the hearth and the anvil), `anvil` (from the anvil's side into the fire), `bench` (the bench, the rack and the bellows) and `outside`, and `&hour=` as for the other rooms.
+
+Corrections made during the session:
+- The bellows' leather was first one extrusion as wide as the boards. From the side it read as a copper drum. It is now four folds pulled in under the boards' edges, in a plain dark leather.
+- Coal lumps in the bin and the iron bars' tilted feet dipped up to 2 cm under the floor. Both are raised.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 62 of 62 pass** (54 after Session 899); `pieces.check.mjs` still passes whole, the kit having gained a plan and the open cart door. Two views are new on the page check, with no page errors. Six checks are new, over four keys:
+  - **The builds:** 5,366 to 5,438 triangles in 16 meshes, on the forge's 1,378 in 10; each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the slate (no point through), and no two pieces in each other.
+  - **The walks:** from the open door to the anvil's side, to the bench and to the grindstone, all clear by 0.15 m. There are 2.96 m under the tie beams.
+  - **A smith and a horse fit:** the anvil's face at 0.82 m, the bench at 0.9 m, the hearth at 0.78 m. The door is 2.4 by 2.6 m, and both its leaves are outside the wall.
+  - **The forge works:** the fire is on the hearth under the hood, and the hood's top is in the stack. The anvil is 0.81 m out from the hearth, and the slack tub 1.38 m from the anvil.
+  - **Daylight:** through each of the three windows, 12 of 18 rays land inside the room.
+- **Pictures:** `rooms-forge-forge.jpg`, `-anvil`, `-bench`, `-outside` and `-forge-night`.
+### Needs eyes
+- **The door is square-headed under a stone lintel.** Many Irish forges have a horseshoe-shaped surround round the door. That would be a carved piece on the front, if Michael wants it.
+- **The inner walls are the shell's rubble, as bright as its outside.** A forge's walls are black with smoke. A soot wash on the inner faces near the hearth would help, but the shell's wall is one slab, with one material on both faces.
+- **The fire's light is a point light at the hearth.** It has no sparks and no glow on the hood's underside.
+- **Owed:** the Mark's smithy (in a timber hall) and Aurenne's (in an arcade), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 930 — Card F9's ninth room: the Mark's smithy (prototype only)
+The smithy's second dress, after Session 929's Gatelands forge. OG-043 gives the Mark's blacksmith a timber hall with carved posts, and OG-025's longhall shows how the Mark builds one. So the room is built inside the Mark's hall of `pieces.js`, as the longhouse (Session 870) and the alehall (894) are: shingle, a smoke louver on the ridge, the porch and its steps, and the carved gable ends. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`markSmithy` in `rooms.js`, in a hall of 6.4 by 9 m):
+- **The floor** is the hall's stone footing, flagged. A smithy has no planks near its fire, where the longhouse and the alehall are planked.
+- **The forge stands free on the hall's axis under the louver,** so its smoke goes straight up and out, with no hood or chimney. That is how the Mark's halls already deal with smoke, and it is the second difference from the Gatelands forge, which stands against a gable under a hood.
+  - The forge itself is a waist-high block of stone (0.72 m) with a clay top, small fire-blackened stones round its rim, a bed of charcoal and the fire.
+- **At the forge's back stands the bellows shield,** an upright slab 0.6 m over the forge with the two nozzles through it. Behind the shield, the twin bag bellows lie on a low frame, one full and one emptied, so the blast never stops. A handle stands on each.
+- **Before the forge, the anvil:** a block on a great stump, its face at 0.8 m, with a small beak to one side. A hammer lies on it, and tongs lean on the stump. The quench tub stands at its right, 1.01 m away.
+- **The left wall:** the charcoal bin, the smith's tool chest with its lid up, and tongs and hammers on pegs between the windows.
+- **The right wall:** a bench 0.88 m high with a vice, and the whetstone on its frame in the back corner.
+- **The back wall:** spear shafts with their heads in a rack, and iron bars leaning by them. They are the Mark's trade in arms (§1.2's soldiers for hire).
+- **The frame** is the longhouse's: two rows of posts set clear of the forge, purlins, tie beams at 3.11 m over the floor, rafters, and a board lining under the shingle. An iron lamp hangs from the front tie beam.
+- **The door** is hung open against the front wall.
+- 6,652 to 6,760 triangles in 15 draws, in the hall's 1,488 in 7.
+
+The view: `rooms.html?room=smithy`, with `view=smithy` (from inside the door past the anvil to the forge under the louver), `bellows` (from behind the bellows over the shield toward the door), `bench` and `outside`. By day a grey shaft comes down from the louver, as in the longhouse.
+
+Corrections made during the session:
+- The bellows' boards were first drawn with their narrow ends away from the shield. They now point into it.
+- The two bags first touched and read as one shape. They are narrower now, with a gap between them.
+- The rim stones and the shield were first in the kit's stone texture and read pale as loaves beside the fire. They are now a plain fire-blackened slab.
+- The walk down the left side brushed the open door's leaf. It now goes straight in first.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 69 of 69 pass** (62 after Session 929). Two views are new on the page check, with no page errors. Five checks are new, over four keys:
+  - **The builds:** 6,652 to 6,760 triangles in 15 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the roof's lining (no point through), and no two in each other.
+  - **The walks:** from the door to the anvil, to the bench, and down the left side to the spear rack, all clear by 0.15 m. There are 3.11 m under the tie beams.
+  - **A smith fits:** the anvil at 0.8 m, the bench at 0.88 m, the forge at 0.72 m.
+  - **The forge works:** the fire is on the forge, 0.1 m from straight under the louver. The shield stands between the fire and the bellows and 0.3 m or more over the forge. The anvil is 0.85 m out from the forge, and the tub 1.01 m from the anvil.
+- **Pictures:** `rooms-smithy-smithy.jpg`, `-bellows`, `-bench`, `-outside` and `-smithy-night`.
+### Needs eyes
+- **The shield's fire-side face shows as a lit pale panel** from the door, because the fire's light is a point 0.3 m from it. A real fire would light it orange and uneven.
+- **The bench along the right wall is dark** by day. Only the wall's small window and the lamp light it.
+- **The anvil is small, as the Mark's block anvils were**, beside the Gatelands' horned anvil. If the two islands should share one anvil, the Gatelands' piece would serve both.
+- **Owed:** Aurenne's smithy (in an arcade, by OG-043), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 931 — Card F9's tenth room: Aurenne's smithy (prototype only)
+The smithy's third dress, after the Gatelands' forge (929) and the Mark's (930). OG-043 gives Aurenne's blacksmith "arcades, tilework" and a shop open to its street, so the room is built inside `pieces.js`'s Roman house: one storey of 3.0 m, 7.2 by 6.0 m, a hipped pantile roof, the arcade before its front, and the cypress at its door (#303's rule). Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`aurenneSmithy` in `rooms.js`):
+- **The forge** is in the back left corner, on a hearth of plastered masonry 0.8 m high with a band of glazed blue tile on its lip. A sooted plaster hood hangs over it from 1.9 m, with a copper edge, and narrows into a flue. The flue rises through the ceiling and the roof, 0.7 m clear of the pantile, to a tiled cap.
+  - The flue is the shell's only new opening. The Roman house has no chimney, and the hood needed one.
+  - The corner behind the forge is smoked black from the hearth to the joists.
+- **The bellows** are two goatskin bags on the floor at the hearth's right, with wooden mouths, the nozzles into the hearth's flank, and the apprentice's low stool. The goatskin bags are the third bellows of the three islands, after the Gatelands' great lever bellows and the Mark's twin bags behind a shield.
+- **The anvil**, a horned anvil on a block of limestone, stands 0.82 m out from the hearth, its face at 0.82 m. A stone quench trough stands against the left wall, 0.7 m from it.
+- **The right wall:** a rail of tongs and hammers, and the bench with a vice under it.
+- **The back wall:** charcoal in two baskets. Iron bars stand in the corner by the door.
+- **The floor:** limestone flags, with cinders trodden round the forge.
+- **The ceiling:** cedar joists under the stone ceiling, every 0.6 m, at 2.78 m over the floor, with a brass lamp hung from them.
+- **Under the arcade,** to the left of the door's walk: the stall of the smith's wares (a copper pot, a brass oil lamp, three blades, hinges). To the right, behind the cypress, a stone water trough for horses.
+- 2,872 triangles in 19 draws, in the house's 3,212 in 10.
+
+The view: `rooms.html?room=aursmithy`, with `view=shop` (from the doorway to the forge), `anvil`, `stall` (the wares from the street) and `outside`.
+
+Corrections made during the session:
+- The stall was first drawn right of the door, where the shell's cypress hides it from the street. It and the trough have swapped sides.
+- The fire's light was first strong enough to burn the plaster corner white. It is lower now, and the corner is sooted.
+- The anvil's block first touched the trough's lip. It is now 0.25 m further into the room.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 77 of 77 pass** (69 after Session 930). Two views are new on the page check, with no page errors. Six checks are new, over four keys (the shell's walls and doors by its own stream):
+  - **The builds:** each key the same twice, in budget.
+  - **Inside the walls:** every piece inside the walls and under the ceiling except the flue, which stays within 0.12 m of its own footprint. No two pieces are in each other.
+  - **The walks:** from the door to the anvil, to the bench and to the bellows' stool, all clear by 0.15 m. There are 2.78 m under the joists.
+  - **A smith fits:** the anvil at 0.82 m, the bench at 0.9 m, the hearth at 0.8 m.
+  - **The forge works:** the fire is on the hearth under the hood. The flue stands over the hearth and rises 0.7 m clear of the roof. The anvil is 0.82 m out from the hearth, and the trough 0.7 m from the anvil.
+  - **The arcade:** the stall and the horse trough stand under the arcade, 0.3 m or more clear of the door's walk.
+- **Pictures:** `rooms-aursmithy-shop.jpg`, `-anvil`, `-stall`, `-outside` and `-shop-night`.
+### Needs eyes
+- **Aurenne's smith stands at the anvil, as the others do.** Many smiths of the countries Aurenne draws on worked seated at a low anvil set in the floor. The standing anvil keeps the three islands' smithies alike for play.
+- **From the street the flue is hidden.** It is at the back corner, behind the arcade's front wall.
+- **The wares on the stall are few and small.** A rack of finished blades or hanging lamps would fill it, if wanted.
+- **Owed:** the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 936 — Card F9's eleventh room: the Gatelands apothecary (prototype only)
+The first of L5's alchemists, after the three smithies (929–931). OG-043 gives the Gatelands' alchemy shop as a cottage of herbs, potions and draughts. OG-133 gives the alchemist's room an alembic and a still, and brewing in four steps: prepare, combine in the mortar, heat and distil, bottle. So the room is built inside `pieces.js`'s Gatelands cottage, the street's own shell (Michael's A on #303). The shell is painted green, and a new hanging sign shows a gilt mortar and pestle: the trade sign's `device: 'mortar'` in place of the harp. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`, and the sign in `pieces.js`).
+
+**The room** (`gatelandsApothecary` in `rooms.js`):
+- **The customers' side.** The front door and the cottage's back door both open here. The open hearth is in the hearth wall, with a pot of decoctions on its crane and jugs on the breast's ledge, and a settle stands against the back wall.
+- **The counter** runs across the shop at 0.92 m, with a panelled front, the brass scales, the day book, bottles and a candle on it. The way behind it is a 0.65 m gap at the window end.
+- **Behind the counter, the four steps run in order round the workroom:**
+  - **Prepare:** the worktable at 0.86 m, with a chopping board and knife, herbs laid out, a sieve and a basket of roots. Over it, a drying rack of two poles hangs on cords from the roof, with bundles of herbs and heather hung from it. Their heads are 1.97 m over the floor.
+  - **Combine:** the stone mortar on its stump under the east front window, its lip at 0.86 m, the pestle in it.
+  - **Heat and distil:** the still at the east gable. A plastered furnace carries the copper pot, with its fire door glowing toward the room, and its flue rises against the gable into the plan's gable stack. On the pot sits the helm, and from the helm the copper arm falls 0.85 m into the worm tub. The worm's end comes out low on the tub's side over a jug.
+  - **Bottle:** the bottling bench along the back wall under its window, at 0.9 m. Under its top is a chest of 24 small drawers with brass knobs; on it, a funnel in a bottle, a jug and a row of corked bottles. Shelves of jars, crocks and bottles stand in two stacks either side of the window.
+  - A barrel of spirit for the tinctures stands in the back corner.
+- **The store,** through the hearth wall's door, has a floor of beaten earth. It holds shelves of crocks, three sacks against the hearth wall, herbs hung to dry from a pole along the room, and the apothecary's bed against the west gable.
+- 8,808 to 8,880 triangles in 18 draws, on the cottage's 1,854 in 12. The room's materials are folded to 18 draws by an alias table: one wood, one copper for the brass, one stone for the mortar and the flags, and so on. The first build came to 29.
+
+The view: `rooms.html?room=apothecary`, with `view=shop` (from inside the front door across the counter to the still), `still`, `bench`, `store` and `outside`.
+
+**A correction to the cottage (Session 852),** found by this room's stricter check and fixed in both rooms:
+- The chimney breast's upper part was a box of its full width up to 4.6 m. So at its front edge, where the thatch's underside is 3.3 m up, it stood through the roof. It now narrows into the stack as it rises.
+- The collars were 0.4 m too long at each end, which put their ends into the thatch. They now stop where their top meets the slopes.
+- The cottage's own check reads the roof's height at the ridge only, so it could not see either fault. The apothecary's check reads it at each point's own place.
+
+Corrections made during the session:
+- The cottage's back face runs mirrored: its back window is at x = +2.4 from inside, and its back door at x = −1.2, on the customers' side. The shelves were first one stack across that window. They are now two stacks either side of it, and the walks now start at the back door's true place.
+- The worm's drip was first drawn in the flame material and read as a spark. It is now glass.
+- The store's view first faced a blank wall. It now looks from inside the doorway to the bed and the sacks.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 85 of 85 pass** (77 after Session 931). Two views are new on the page check, with no page errors. Six checks are new, over four keys:
+  - **The builds:** 8,808 to 8,880 triangles in 18 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the thatch, read at each point's own z (0 points through, after the two corrections above; 126 and then 108 before them). No two pieces are in each other.
+  - **The walks:** six walks clear by 0.15 m: the front and back doors to the counter, behind the counter to the still and to the bench, and through the hearth wall both ways. The herbs hang 1.97 m or more over the floor.
+  - **A person fits:** the counter at 0.92 m, the bench at 0.9 m, the worktable at 0.86 m, the mortar's lip at 0.86 m.
+  - **The still works:** the pot on the furnace, the flue from its top against the gable, the arm falling from the helm into the tub, the worm's end over the jug.
+  - **The four steps:** all behind the counter, 0.47, 0.67 and 2.07 m apart in turn. The back window is between the shelves, over the bench.
+- **The cottage's own checks still pass** after its correction: 3,678 to 3,762 triangles in 18 meshes.
+- **Pictures:** `rooms-apothecary-shop.jpg`, `-still`, `-bench`, `-store`, `-outside` and `-shop-night`. `rooms-kitchen.jpg` is redrawn with the corrected breast.
+### Needs eyes
+- **The sign hangs low.** The board's foot is 1.2 m up, because the thatch's eave comes down to 2.2 m at the bracket's reach. It is clear of the door, but a tall walker along the wall would meet it.
+- **The store is dark by day.** Its only window is the small front one, since the back window lights the bench next door. The sacks read as a stack of gourds.
+- **The cottage's back door meets its hearth wall.** The door's west 0.25 m lies behind the hearth wall's end, in both the cottage and the apothecary. The cottage's plan places the door that way, and moving it is a change to the street's shell, left for its own session.
+- **Owed:** the Mark's and Aurenne's alchemists, then the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 937 — Card F9's twelfth room: the Mark's healer's hall (prototype only)
+The alchemist's second dress, after the Gatelands apothecary (936). OG-043's Mark alchemy shop is "a timber hall with carved posts", and OG-133 sets the four steps of the work. So the room is built inside `pieces.js`'s Mark's hall, as the smithy (930) and the longhouse (870) are: shingle, the smoke louver on the ridge, the porch, the carved gables, 6.4 by 9 m. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`markApothecary` in `rooms.js`):
+- **The floor and the frame.** The floor is planked on the hall's footing; there is no forge here to keep the boards away from. The frame is the longhouse's: two rows of posts, tie beams 3.11 m over the floor, rafters and a board lining.
+- **No counter.** Inside the door, right of the walk, stands a trade board on trestles at 0.84 m, with horn flasks, lidded boxes and herbs on it. A steelyard hangs over it on a cord from the purlin.
+- **The hearth** lies low and long on the hall's axis under the louver: a kerb of smoked stones round an ash bed, 1.1 by 1.7 m. It holds two fires.
+  - **Heat:** at the hearth's front, a cauldron of decoctions hangs from an iron tripod over the first fire.
+  - **Distil:** at its back, an iron pot sits on three stones over the second fire, under a wooden helm sealed to it with a ring of clay. From the helm a pipe falls into a hollowed log on two trestles. The log is packed with snow, so the Mark's cold does the cooling, where the Gatelands still has a worm tub. The pipe comes out of the log's far end over a soapstone jug.
+- **The four steps run round the hearth.** Prepare is the long table down the left wall at 0.86 m, with a chopping block, herbs and roots laid out, a basket and a wooden bowl. Combine is the stamp mortar between the table and the hearth: a hollowed stump with its lip at 0.7 m and a 1.25 m pestle standing in it. Distil is the still. Bottle is the bench down the right wall at 0.9 m, with a funnel and horn flasks. Over the bench, three shelves hold horn flasks, lidded boxes and soapstone jars.
+- **Herbs and heather** hang from both tie beams and from the left purlin over the table, 2.7 m or more over the floor.
+- **By the door,** a chest and two casks stand on the left. Across the back is the healer's bed of furs on a platform, with a cask in the corner.
+- 10,558 to 10,618 triangles in 19 draws, on the hall's 1,488 in 7.
+
+The view: `rooms.html?room=markapo`, with `view=hall` (from inside the door down the hall to the hearth), `still`, `table`, `bench` and `outside`. By day a grey shaft comes down from the louver, as in the smithy.
+
+Corrections made during the session:
+- The log's half-pipe was first turned open side down. It now opens to the sky with its ends closed.
+- The mortar first stood 0.12 m into the walk round the hearth's back, and the prepare station stood on a post. Both have moved.
+- The hearth's kerb stones were first in the kit's pale stone and read as loaves, as the smithy's rim did (930). They are now smoked soapstone.
+- The night view hung: the page's general lantern line read `C.lantern`, which this hall does not have (it hangs its own lamp). The line now skips this room, and the page check now also loads the hall at night, so the next such slip shows as a failure.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 94 of 94 pass** (85 after Session 936). Three views are new on the page check (the hall, outside, and the hall at night), with no page errors. Six checks are new, over four keys:
+  - **The builds:** 10,558 to 10,618 triangles in 19 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the lining; over the wall plate the lining runs onto the wall's top, by the smithy check's rule. 0 points through, and no two pieces in each other.
+  - **The walks:** five walks clear by 0.15 m: to the trade board's front, behind it to the hearth, down both aisles, and round the hearth's back to the bed. The herbs are 2.7 m or more over the floor, with 3.11 m under the tie beams.
+  - **A person fits:** the table at 0.86 m, the bench at 0.9 m, the board at 0.84 m, the mortar's lip at 0.7 m.
+  - **The still works:** both fires in the hearth within 0.7 m of under the louver; the cauldron and the pot over them; the pipe falling from the helm into the log; its end over the jug.
+  - **The four steps:** each station clear of the furniture, 1.86, 2.61 and 1.52 m apart in turn.
+- **Pictures:** `rooms-markapo-hall.jpg`, `-still`, `-table`, `-bench`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The hall is dark by day,** like the smithy. The two small windows a side and the louver's shaft light it, and the fires do the rest.
+- **Snow in a log is a guess at the Mark's way of cooling a still.** It reads plainly, but it wants melting snow carried in and water drained away, which nothing here shows.
+- **The planks' normal map ripples** under the fire's low light (the kit's plank texture, as in the longhouse).
+- **Owed:** Aurenne's alchemist (in tile and arcades, OG-043), then the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 938 — Card F9's thirteenth room: Aurenne's apothecary (prototype only)
+The alchemist's third dress, after the Gatelands apothecary (936) and the Mark's healer's hall (937), so the alchemist now has all three. OG-043 gives Aurenne's alchemy shop glassware and tilework, and OG-114 counts ceramics and glass among Aurenne's trades. So this still is a glass alembic, and the shop's wall is glazed jars. The room is built inside `pieces.js`'s Roman house with its arcade, as Aurenne's smithy is (931): one storey, 7.2 by 6.0 m, the cypress at its door. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`aurenneApothecary` in `rooms.js`):
+- **The counter** runs across the shop from the left wall, 0.95 m high. Its front is faced in blue-and-yellow tile and its top is marble. On it stand the brass scales with a box of weights, a row of phials, and a basket of dried rose. The way behind it is at its right end.
+- **On the customers' side,** a tiled bench under a rug stands by the front wall for those who wait, and a brass lamp hangs from the joists.
+- **The back wall of jars,** left of the back window: five cedar shelves up to 2.5 m, filled with albarelli (waisted jars glazed blue and white, with parchment tied over their mouths). The large jars are below, the small above.
+- **Behind the counter, the four steps:**
+  - **Prepare:** the worktable in the middle at 0.86 m, with a board and knife, roots and petals laid out, a brass sieve and a glass flask.
+  - **Combine:** a bronze mortar on a limestone block, its lip at 0.82 m.
+  - **Heat and distil:** a plastered furnace in the back right corner, its front tiled, its fire door glowing. On it sits the glass cucurbit, with the head over it and the beak falling 0.3 m to a glass receiver on a cedar stand. Over the furnace a plaster hood, edged in tile, narrows into a flue that rises through the ceiling and 0.7 m out through the roof to a pantile cap, as the smithy's does.
+  - **Bottle:** the bench down the right wall at 0.9 m, with a rack of twelve stoppered phials, a funnel in a flask and a bowl of corks. A shelf of small jars runs over it beyond the side window.
+- **Under the arcade,** left of the door's walk, a stall to the street of jars, baskets of petals and phials.
+- 16,456 triangles in 21 draws, on the house's 3,212 in 10.
+
+The view: `rooms.html?room=aurapo`, with `view=shop` (from inside the door over the counter to the wall of jars), `still`, `bench`, `stall` and `outside`.
+
+Corrections made during the session:
+- The jar wall first ran across the back wall's window at x = 0. It now stops 0.14 m short of it.
+- The shelf over the bench crossed the side window at z = 0. It now starts beyond it.
+- The page broke: its general fire light reads `C.fire`, and this room has only the furnace, with its own glow. The page now skips that light for this room. The page check loads this room by day and by night.
+- The first build took 23 draws. Folding near-duplicates brought it to 21: one bronze for the brass and the copper, one cedar, and the linen for the glaze's white.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 103 of 103 pass** (94 after Session 937). Three views are new on the page check (the shop by day and by night, and outside), with no page errors. Six checks are new, over four keys:
+  - **The builds:** 16,456 triangles in 21 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling except the flue, which stays within its own footprint above the roof. No two pieces are in each other.
+  - **The walks:** three walks clear by 0.15 m: the door to the counter, round the counter's end to the still, and along behind it to the jars.
+  - **A person fits:** the counter at 0.95 m, the table at 0.86 m, the bench at 0.9 m, the mortar's lip at 0.82 m.
+  - **The still works:** the cucurbit on the furnace, the head over it and under the hood, the beak falling to the receiver's mouth, and the flue over the furnace and 0.7 m out through the roof.
+  - **The four steps** are behind the counter, 1.3, 2.83 and 1.61 m apart in turn. The shelves are clear of the back and side windows. The stall is under the arcade and 0.3 m or more clear of the door's walk.
+- **Pictures:** `rooms-aurapo-shop.jpg`, `-still`, `-bench`, `-stall`, `-outside` and `-shop-night`.
+### Needs eyes
+- **The glass reads pale and milky** at 38% opacity. Real glass of the time was greener and thicker; the receiver's green liquid is the only colour in it.
+- **The hood hangs high,** 1.9 m over the floor, so that the alembic stands clear under it. A charcoal furnace this small might have had only a flue pipe.
+- **Combine to distil is the longest step,** 2.83 m, because the mortar stands at the counter's far end while the still is in the opposite corner.
+- **Owed:** the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 939 — Card F9's fourteenth room: the Gatelands Fighters' Guild (prototype only), and its house asked
+The guildhall is next on L5's list after the alchemists (936–938). In the game, a guild hall is the Fighters' or the Mages' Guild of a town: a two-storey hall with a steward at a desk and a notice board. The Fighters' has weapon racks, armour stands, a long table and a grindstone, and both have a dormitory of beds (Session 12's guilds, Session 292's furniture). OG-043 gives the guildhall as a "hall of trade, contracts and guild meetings". So this session draws the Fighters' Guild of a Gatelands town. It is built inside the kit's farmhouse, as the inn is (Michael's A on #320), its door ajar and painted red. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`gatelandsGuildHall` in `rooms.js`):
+- **The ground floor:**
+  - **The hearth** is in the west gable, as the inn's, with the guild's red banner hung from a rod on its breast.
+  - **The long table** of 2 m stands before the hearth, with a bench either side and tankards and a candle on it.
+  - **The steward's desk** faces the door at 0.78 m: an open ledger, an inkwell and a quill, and the steward's stool behind it.
+  - **The notice board** hangs on the back wall behind the desk, in sight from the door: an oak frame with eleven pinned notes.
+  - **The weapons' rack** runs along the back wall west of the window, holding swords hilt up, spears and axes.
+  - **Two armour stands** by the front wall each carry a mail shirt, a helm and a shield leaning at the foot.
+  - **In the east end** stand a pell (the practice post, scarred by blows) and the grindstone. The inn's stair of 16 risers climbs the east gable.
+- **Upstairs:** one dormitory under the boarded ceiling. Seven beds stand along the front wall, each with a chest at its foot, and the walk runs down the back under a rail of pegs hung with cloaks.
+- 4,933 to 5,101 triangles in 20 draws, on the farmhouse's 2,120 in 9.
+
+The view: `rooms.html?room=guild`, with `view=hall` (from inside the door to the desk and the board), `table`, `east`, `dorm` and `outside`.
+
+**Asked: DECISION #352, the guild halls' house.** A guild hall stands only in towns and cities, so whether the farmhouse should serve, as it does for the inn, is Michael's call. The options are A, the farmhouse as drawn (recommended: cheap, and the inn's shell); B, the merchant's house with the guild's name on its fascia; or C, a guild hall of its own built first. The Mages' Guild and the Mark's and Aurenne's halls wait on the answer.
+
+Corrections made during the session:
+- The armour stands' mail and helms were first drawn in the forge's polished steel. With nothing round them to mirror, they rendered black, so they are now a matte mail grey. They still read as cylinders under bowls; see below.
+- The cloaks on the dormitory's pegs were first half-cylinders and read as stray diagonal lines. They are now hanging cloths.
+- The page's night view hung, as the Mark's hall's did (937), on the general lantern line. This room is now excluded from it, and the page check loads the hall at night.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 111 of 111 pass** (103 after Session 938). Three views are new on the page check (the hall by day and by night, and the dormitory), with no page errors. Five checks are new, over four keys:
+  - **The builds:** 4,933 to 5,101 triangles in 20 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling, and no two in each other on a floor.
+  - **The walks:** five walks clear by 0.15 m on their own floors: the door to the desk, the stair's foot and the table; the back door to the desk's side; upstairs, down the dormitory.
+  - **A person fits:** the desk at 0.78 m, the table at 0.76 m, the benches at 0.45 m, seven beds 1.87 m inside, and the stair 0.178 by 0.25 m with 2.07 m clear over its foot.
+  - **The notice board** is on the wall behind the steward's desk, above it, and facing the door.
+- **Pictures:** `rooms-guild-hall.jpg`, `-table`, `-east`, `-dorm`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The armour stands are placeholders.** A tapered cylinder under two bowls reads like a cask with a hat. The bodies builder's mail hauberk and kettle helm (Session 897) are the right pieces to hang on these stands, which is theirs to make.
+- **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
+- **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
+- **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
