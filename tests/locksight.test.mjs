@@ -49,9 +49,12 @@ const room = await page.evaluate(() => {
   const h = currentHouse, W = h.intW, D = h.intD;
   out.doorsShut = (WORLD.intDoors || []).every(d => !d.open);
   // you stand in the shop facing the back wall; one foe is in the back room behind the partition, one in the shop
-  px = W * .75; pz = D - 5; jumpY = 0; yaw = Math.PI; // facing +z, towards the back
+  // S896 (card F2a): the shop is built SCALE.ROOM_K larger than the kit lays it out, so its partition stands 3.2 × 1.444 = 4.62
+  // from the back wall and the counter's front 4.91 from the door's wall: you stand between them, 1.9 before the partition
+  const KR = SCALE.ROOM_K;
+  px = W * .75; pz = D - 4.5 * KR; jumpY = 0; yaw = Math.PI; // facing +z, towards the back
   const mk = (x, z) => { const e = buildZoneEnemy(interiorScene, [], x, z, 'Bandit', null); if (!e.mesh.parent) interiorScene.add(e.mesh); e.locked = false; e.alert = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0; return e; };
-  const back = mk(W * .75, D - 1.8), front = mk(W * .75, D - 3.9);
+  const back = mk(W * .75, D - 1.8), front = mk(W * .75, D - 3.65 * KR);
   out.lineBack = WORLD.intSightLine(px, pz, back.x, back.z); out.lineFront = WORLD.intSightLine(px, pz, front.x, front.z);
   ZE = [back]; out.backLocked = toggleLock() === true; lockRelease();
   ZE = [front]; out.frontLocked = toggleLock() === true && LOCK.t === front; lockRelease();

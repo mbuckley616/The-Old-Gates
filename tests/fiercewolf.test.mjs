@@ -8,6 +8,9 @@ import fs from 'fs'; import path from 'path';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 const SIZES = { 'Wolf': 1.05, 'Snow Wolf': 1.15, 'Dire Wolf': 1.35, 'Ash Hound': 1.0, 'Cave Bear': 1.55 };
+// S905 (F2a): Michael's sizes are in the old unit, where a man stood 1.233; the game draws them times SCALE.BEAST (1.44), so each
+// beast stands to the 1.78 m man as it stood to the old one, and the shares of a man below are unchanged.
+const BEAST = await page.evaluate(() => SCALE.BEAST); const AT = n => +(SIZES[n] * BEAST).toFixed(2);
 const r = await page.evaluate(SIZES => {
   const grp = new THREE.Group(); WORLD.scene.add(grp);
   const box = o => { o.updateMatrixWorld(true); return new THREE.Box3().setFromObject(o); };
@@ -25,8 +28,8 @@ const r = await page.evaluate(SIZES => {
 }, SIZES);
 console.log(JSON.stringify(r));
 const K = r.kinds;
-check('each kind is built in play at Michael\'s size (A on #187), and WOLF_KINDS.play says the same', Object.keys(SIZES).every(n => K[n].scale === SIZES[n] && K[n].play === SIZES[n]), K);
-check('the inspector shows each at its size in play', Object.keys(SIZES).every(n => K[n].ins === SIZES[n]), Object.fromEntries(Object.entries(K).map(([n, v]) => [n, v.ins])));
+check('each kind is built in play at Michael\'s size (A on #187) times SCALE.BEAST, and WOLF_KINDS.play says his size', Object.keys(SIZES).every(n => K[n].scale === AT(n) && K[n].play === SIZES[n]), K);
+check('the inspector shows each at its size in play', Object.keys(SIZES).every(n => K[n].ins === AT(n)), Object.fromEntries(Object.entries(K).map(([n, v]) => [n, v.ins])));
 check('a Wolf\'s back stands at 50–62% of a man (was 38%), a Dire Wolf\'s at 66–80% (was 49%)', K.Wolf.back >= .5 && K.Wolf.back <= .62 && K['Dire Wolf'].back >= .66 && K['Dire Wolf'].back <= .8, { wolf: K.Wolf.back, dire: K['Dire Wolf'].back });
 check('the Cave Bear\'s hump stands clearly over the largest wolf (82–95% of a man, was 77%)', K['Cave Bear'].back >= .82 && K['Cave Bear'].back <= .95 && K['Cave Bear'].back > K['Dire Wolf'].back + .08, { bear: K['Cave Bear'].back });
 check('a wolf with the new head and hackles is 5.8–6.6k triangles (was 5.75k), its distant copy under 60% of that', ['Wolf', 'Snow Wolf', 'Dire Wolf', 'Ash Hound'].every(n => K[n].tris > 5800 && K[n].tris < 6600 && K[n].trisLo < K[n].tris * .6), Object.fromEntries(Object.entries(K).map(([n, v]) => [n, [v.tris, v.trisLo]])));

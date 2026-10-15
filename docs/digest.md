@@ -253,3 +253,13 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** F2a waits on Systems 827–832 (CI now running on be20097) and the look branch. Main's shard 6 (lookpair) stays red until Systems 830 lands.
 
 **Roadmap.** 239 of 303 stories done (230 of 283 yesterday); 2.0's new look has 1 of 15 cards done, F6, F8, F9 and F11 under way as prototypes.
+
+## 15 Oct 2026
+
+**Waiting on you.** Approve F2a, the scale pass (PR #315 at e82ad5c, CI green, merges cleanly; it ends the builders' freeze #297). Four decisions: #339 the sea grotto's ways in, #342 how fast the level comes, #345 the round tower's door, #347 whose rig on a hull in another island's dress.
+
+**Landed on main since yesterday.** Systems 827–832, five steadied tests (63d1506). Look 821–924, prototypes only: Aurenne's buildings, the mine, the sloop, the grotto, the abbey, the cutter and caravel in each island's dress (#284, #340). Bodies prototypes (the frost bear and more of the creature kit; 925–928, the trolls and slimes, land when CI finishes). QA's sessions (#310, #317, #334, #344). The F2b build sheet, concept round 3, quest drafts, the critic on the Makers' things (three bugs filed in I). Build s632.
+
+**Blocked.** Nothing open. The builders work in prototypes until F2a lands.
+
+**Roadmap.** 239 of 303 stories done (unchanged since yesterday); 2.0's new look has 1 of 15 cards done, F2a in review, F6, F8, F9 and F11 under way as prototypes. The skills build sheet is written (#342).

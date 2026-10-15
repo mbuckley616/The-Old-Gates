@@ -32,6 +32,21 @@ const p = await page.evaluate(() => {
 });
 check('Dunmore\'s townsfolk are skinned meshes that animate (their bone matrices change between frames)', p.rigs >= 5 && p.moved >= 3, p);
 check('the town draws', p.calls > 50 && p.tris > 10000, p);
+// S879 (F2a; the critic, 14 Oct): a townsperson must also be drawn, not only animated. On 0.170 a SkinnedMesh's own bounding sphere
+// came out in world coordinates and was moved again by the frustum test, so every body was culled. Stand 4 m off the nearest one,
+// look at it, and count the draw calls with it shown and hidden.
+const seen = await page.evaluate(() => {
+  const rigs = [...PEOPLE_RIGS].filter(r => r.mesh && r.mesh.isSkinnedMesh && r.root.parent && r.root.visible);
+  rigs.sort((a, b) => Math.hypot(a.root.position.x - px, a.root.position.z - pz) - Math.hypot(b.root.position.x - px, b.root.position.z - pz));
+  const r = rigs[0]; if (!r) return { none: true }; const q = r.root.position;
+  const ox = px, oz = pz; px = q.x + 4; pz = q.z; lookAtPt(q.x, q.y + .8, q.z);
+  const fr = new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(CAM.projectionMatrix, CAM.matrixWorldInverse));
+  const inFrustum = fr.intersectsObject(r.mesh);
+  const calls = () => { REN.render(scene, CAM); return REN.info.render.calls; };
+  const on = calls(); r.mesh.visible = false; const off = calls(); r.mesh.visible = true; px = ox; pz = oz;
+  return { inFrustum, on, off, sphere: r.mesh.boundingSphere && +r.mesh.boundingSphere.center.length().toFixed(2) };
+});
+check('a townsperson in view is drawn on the new look (inside the frustum, and one more draw call than with it hidden)', seen.inFrustum && seen.on > seen.off && seen.sphere < 5, seen);
 
 // a shadow: the sun's map is drawn, and a lit spot beside a house is brighter than its shadow
 const sh = await page.evaluate(() => { const L = []; WORLD.scene.traverse(o => { if (o.isDirectionalLight && o.castShadow) L.push(o); });

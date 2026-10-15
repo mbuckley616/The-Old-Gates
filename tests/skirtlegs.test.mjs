@@ -19,14 +19,19 @@ const r = await page.evaluate(KEYS => {
     // the skirt: the wall of the parts on the hips (first index the hips) below the hip joints; the legs: on a thigh or knee alone
     const skirt = [], leg = [];
     for (let i = 0; i < pa.count; i++) { const k = sI.getX(i); if (k === H && pa.getY(i) < jy - .03 && Math.hypot(pa.getX(i), pa.getZ(i)) > .1) skirt.push(i); /* its wall, not the cap's middle */ else if (legI.has(k) && sW.getX(i) > .999) leg.push(i); }
+    // S905 (F2a): the figure's root is scaled to its people's stature now (1.2 for a Gatelander woman, and the genome's own breadth
+    // on top); r128's boneTransform reads the bones' world matrices, so the posed point is in the world, with that scale in it, while hp
+    // is in the mesh's own frame. Both are read in the mesh's frame (inv), the body's own size, where the 2 cm bins and the limits
+    // below were set; before F2a the root's scale was about 1 and the two frames all but agreed
+    const bt = (i, v) => mesh.boneTransform(i, v).applyMatrix4(inv);
     let worst = 0, pokes = 0, frames = 0; const v = new THREE.Vector3(), hp = new THREE.Vector3(), inv = new THREE.Matrix4();
     for (let f = 0; f < 24; f++) {
       R.anim(f * .055, .055, 'walk'); R.obj.updateMatrixWorld(true); mesh.skeleton.update(); inv.copy(mesh.matrixWorld).invert();
       hp.setFromMatrixPosition(bones[H].matrixWorld).applyMatrix4(inv);
       // the skirt's envelope: max radius round the hips' axis in bins of height (2 cm) and bearing (24)
       const env = new Map(); let ylo = 1e9, yhi = -1e9;
-      for (const i of skirt) { mesh.boneTransform(i, v); const a = Math.atan2(v.x - hp.x, v.z - hp.z), rr = Math.hypot(v.x - hp.x, v.z - hp.z), key = Math.floor(v.y / .02) * 100 + Math.floor((a + Math.PI) / (Math.PI / 12)); env.set(key, Math.max(env.get(key) || 0, rr)); ylo = Math.min(ylo, v.y); yhi = Math.max(yhi, v.y); }
-      for (const i of leg) { mesh.boneTransform(i, v); if (v.y < ylo + .01 || v.y > yhi - .03) continue; const a = Math.atan2(v.x - hp.x, v.z - hp.z), rr = Math.hypot(v.x - hp.x, v.z - hp.z), key = Math.floor(v.y / .02) * 100 + Math.floor((a + Math.PI) / (Math.PI / 12));
+      for (const i of skirt) { bt(i, v); const a = Math.atan2(v.x - hp.x, v.z - hp.z), rr = Math.hypot(v.x - hp.x, v.z - hp.z), key = Math.floor(v.y / .02) * 100 + Math.floor((a + Math.PI) / (Math.PI / 12)); env.set(key, Math.max(env.get(key) || 0, rr)); ylo = Math.min(ylo, v.y); yhi = Math.max(yhi, v.y); }
+      for (const i of leg) { bt(i, v); if (v.y < ylo + .01 || v.y > yhi - .03) continue; const a = Math.atan2(v.x - hp.x, v.z - hp.z), rr = Math.hypot(v.x - hp.x, v.z - hp.z), key = Math.floor(v.y / .02) * 100 + Math.floor((a + Math.PI) / (Math.PI / 12));
         const e = env.get(key); if (e == null) continue; const over = rr - e; if (over > .008) { pokes++; worst = Math.max(worst, over); } }
       frames++;
     }

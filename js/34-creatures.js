@@ -345,7 +345,10 @@ function creatureRagdollStart(rig,push,opts){
   for(const r of RAGDOLLS)if(r.rig===rig)RAGDOLLS.delete(r);
   const top=rig.root.parent||rig.root;top.updateMatrixWorld(true);
   const O=top.getWorldPosition(new THREE.Vector3()),V=(x,y,z)=>new THREE.Vector3(x||0,y||0,z||0),W=b=>b.getWorldPosition(V());
-  const s=rig.root.getWorldScale(V()).y||1;
+  // S905 (F2a) — a beast drawn K times its tuned size (rig.drawK: the beasts of #187 drawn to the taller man, SCALE.BEAST) falls in
+  // its tuned size, its points and its size divided by K, and is drawn K times as large (R.K, in the ground and in creatureRagdollApply):
+  // the same fall it was tuned on (S632's falls), only larger. 1 for every other beast
+  const K=rig.drawK||1,s=(rig.root.getWorldScale(V()).y||1)/K;
   // an end point past a bone with no child: f of its own length on from its parent, in the bone's own frame
   const endOff=(b,f)=>{const p=W(b),q=W(b.parent);return b.worldToLocal(V().copy(p).addScaledVector(V().subVectors(p,q),f));};
   // the keel: the chest and the belly hang below the back, so the trunk is deeper than it is wide and does not rest on its belly
@@ -354,7 +357,7 @@ function creatureRagdollStart(rig,push,opts){
     ['chest',B.spine,V(0,-.11*bw,0)],['belly',B.hips,V(0,-.1*bw,.14)]];
   for(const K of ['L','R'])J.push(['sh'+K,B['sh'+K]],['el'+K,B['el'+K]],['wr'+K,B['wr'+K]],['pf'+K,B['pf'+K]],['pfE'+K,B['pf'+K],endOff(B['pf'+K],.6)],
     ['th'+K,B['th'+K]],['kn'+K,B['kn'+K]],['hk'+K,B['hk'+K]],['ph'+K,B['ph'+K]],['phE'+K,B['ph'+K],endOff(B['ph'+K],.6)]);
-  const I={},P=J.map(([n,b,off],i)=>{I[n]=i;const w=b.localToWorld(off?off.clone():V()).sub(O);return {p:w,q:w.clone(),b,off,sx:0,sz:0};});
+  const I={},P=J.map(([n,b,off],i)=>{I[n]=i;const w=b.localToWorld(off?off.clone():V()).sub(O).divideScalar(K);return {p:w,q:w.clone(),b,off,sx:0,sz:0};});
   const L=(a,b,min)=>min?[I[a],I[b],P[I[a]].p.distanceTo(P[I[b]].p)*min,1]:[I[a],I[b],P[I[a]].p.distanceTo(P[I[b]].p),0];
   const C=[['spine','neck'],['neck','head'],['head','nose'],['neck','nose'],['hips','tail1'],['tail1','tail2'],['tail2','tail3'],['tail3','tailE']].map(([a,b])=>L(a,b));
   for(const K of ['L','R'])[['sh','el'],['el','wr'],['wr','pf'],['pf','pfE'],['wr','pfE'],['th','kn'],['kn','hk'],['hk','ph'],['ph','phE'],['hk','phE']].forEach(([a,b])=>C.push(L(a+K,b+K)));
@@ -362,7 +365,7 @@ function creatureRagdollStart(rig,push,opts){
   for(let i=0;i<box.length;i++)for(let j=i+1;j<box.length;j++)C.push(L(box[i],box[j]));
   C.push(L('spine','head',.75),L('hips','tail2',.7)); // a minimum only: the neck turns, the tail swings
   const rad=J.map(([n])=>s*(n==='hips'||n==='spine'?.09*bw:n==='chest'||n==='belly'?.05:/^(sh|th)[LR]$/.test(n)?.01:n==='neck'?.08:n==='head'?.06:n==='nose'?.03:/^tail/.test(n)?.025:.028));
-  const R={rig,top,O,P,I,C,rad,s,ground:opts.ground,solid:opts.solid||null,acc:0,t:0,quiet:0,done:false,step:creatureRagdollStep,apply:creatureRagdollApply};
+  const R={rig,top,O,P,I,C,rad,s,K,ground:opts.ground,solid:opts.solid||null,acc:0,t:0,quiet:0,done:false,step:creatureRagdollStep,apply:creatureRagdollApply};
   const fwd=v=>v.subVectors(P[I.neck].p,P[I.hips].p).normalize();
   // each leg's joints, below its root (a leg swings in its own plane along the body; R.LEGS limits how far out or in it may stray)
   R.LEGS=[];for(const K of ['L','R'])for(const [r,...js] of [['sh','el','wr','pf','pfE'],['th','kn','hk','ph','phE']])R.LEGS.push([I[r+K],K==='L'?1:-1,js.map(j=>I[j+K])]);
@@ -373,7 +376,7 @@ function creatureRagdollStart(rig,push,opts){
   R.frame=q=>{const z=fwd(_crd1),x=_crd2.subVectors(P[I.thL].p,P[I.thR].p);x.addScaledVector(z,-x.dot(z)).normalize();
     return q.setFromRotationMatrix(_crdm.makeBasis(x,_crd3.crossVectors(z,x),z));};
   R.F0inv=R.frame(new THREE.Quaternion()).invert();R.hipsQ0=B.hips.getWorldQuaternion(new THREE.Quaternion());
-  R.hipsOff=W(B.hips).sub(O).sub(P[I.hips].p);
+  R.hipsOff=W(B.hips).sub(O).addScaledVector(P[I.hips].p,-K);
   R.AIM=[['spine','neck'],['neck','head'],['head','nose'],['tail1','tail2'],['tail2','tail3'],['tail3','tailE']];
   for(const K of ['L','R'])R.AIM.push(['sh'+K,'el'+K],['el'+K,'wr'+K],['wr'+K,'pf'+K],['pf'+K,'pfE'+K],['th'+K,'kn'+K],['kn'+K,'hk'+K],['hk'+K,'ph'+K],['ph'+K,'phE'+K]);
   R.AIM=R.AIM.map(([a,c])=>[I[a],I[c]]);
@@ -413,21 +416,21 @@ function creatureRagdollStep(R){
     const x=_crd1.subVectors(P[R.I.thL].p,P[R.I.thR].p);x.addScaledVector(f,-x.dot(f)).normalize();
     if(R.t<.8)for(const [r,sd,js] of R.LEGS){const rp=P[r].p;for(const j of js){const p=P[j].p,d=_crd2.subVectors(p,rp),l=d.length(),lat=d.dot(x)*sd,lim=.3*l;
       if(lat>lim)p.addScaledVector(x,-(lat-lim)*sd);else if(lat<-lim)p.addScaledVector(x,(-lim-lat)*sd);}}
-    for(let i=0;i<P.length;i++){const o=P[i],gy=R.ground(O.x+o.p.x,O.z+o.p.z)-O.y+R.rad[i];
+    for(let i=0;i<P.length;i++){const o=P[i],gy=(R.ground(O.x+o.p.x*R.K,O.z+o.p.z*R.K)-O.y)/R.K+R.rad[i];
       if(o.p.y<gy){o.p.y=gy;o.q.x=o.p.x-(o.p.x-o.q.x)*.55;o.q.z=o.p.z-(o.p.z-o.q.z)*.55;if(o.q.y<o.p.y)o.q.y=o.p.y;
         // S482: the people's floor grip (S466): a point on the ground creeping slower than RD_GRIP.floor a step is held where
         // the step began; without it one wolf death in eighty crept sideways on its raised foreleg past the four-second cap
         if(Math.abs(o.p.x-o.sx)+Math.abs(o.p.z-o.sz)<RD_GRIP.floor*R.s){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}}}
-    if(R.solid&&it>=8)for(const o of P)if(R.solid(O.x+o.p.x,O.z+o.p.z)&&!R.solid(O.x+o.sx,O.z+o.sz)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}
+    if(R.solid&&it>=8)for(const o of P)if(R.solid(O.x+o.p.x*R.K,O.z+o.p.z*R.K)&&!R.solid(O.x+o.sx*R.K,O.z+o.sz*R.K)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}
   }
 }
 function creatureRagdollApply(R){
   const {P,O}=R,B=R.rig.B;
   const d=R.frame(_crdq1).multiply(R.F0inv);
-  const hw=_crd1.copy(R.hipsOff).applyQuaternion(d).add(P[R.I.hips].p).add(O);B.hips.parent.updateMatrixWorld(true);
+  const hw=_crd1.copy(R.hipsOff).applyQuaternion(d).addScaledVector(P[R.I.hips].p,R.K).add(O);B.hips.parent.updateMatrixWorld(true);
   B.hips.position.copy(B.hips.parent.worldToLocal(hw));d.multiply(R.hipsQ0);B.hips.parent.getWorldQuaternion(_crdq2);B.hips.quaternion.copy(_crdq2.invert().multiply(d));B.hips.updateMatrixWorld(true);
   for(const [a,c] of R.AIM){const o=P[a],t=P[c],b=o.b;b.updateMatrixWorld(true);
-    const from=b.getWorldPosition(_crd1),cur=(t.b===b?b.localToWorld(_crd2.copy(t.off)):t.b.getWorldPosition(_crd2)).sub(from),want=_crd3.copy(t.p).add(O).sub(from);
+    const from=b.getWorldPosition(_crd1),cur=(t.b===b?b.localToWorld(_crd2.copy(t.off)):t.b.getWorldPosition(_crd2)).sub(from),want=_crd3.copy(t.p).multiplyScalar(R.K).add(O).sub(from);
     if(cur.lengthSq()<1e-8||want.lengthSq()<1e-8)continue;
     _crdq1.setFromUnitVectors(cur.normalize(),want.normalize());b.getWorldQuaternion(_crdq2);_crdq1.multiply(_crdq2);b.parent.getWorldQuaternion(_crdq2);b.quaternion.copy(_crdq2.invert().multiply(_crdq1));b.updateMatrixWorld(true);}
 }
@@ -454,7 +457,9 @@ function tickCreatures(dt,now){
     const spd=dt>0?d/dt:0;
     rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
     WG_LK=rig.k.legK||1;WG_L=wolfLegs(rig.k); // S262 — this kind's legs for the poses below (reset after the loop)
-    if(!rig.gallop&&rig.v/(s*WG_LK)>WG.GALLOP.on)rig.gallop=true;else if(rig.gallop&&rig.v/(s*WG_LK)<WG.GALLOP.back)rig.gallop=false;
+    // S905 (F2a) — a beast drawn larger (rig.drawK, SCALE.BEAST) breaks into a gallop at the pace it did at its tuned size, so a
+    // Dire Wolf still gallops at its chase; its paws stay planted (the phase below reads the size it is drawn at)
+    {const sg=s/(rig.drawK||1);if(!rig.gallop&&rig.v/(sg*WG_LK)>WG.GALLOP.on)rig.gallop=true;else if(rig.gallop&&rig.v/(sg*WG_LK)<WG.GALLOP.back)rig.gallop=false;}
     rig.phase=(rig.phase+d/(wgCycle(rig.w)*s*WG_LK))%1;
     const mode=rig.v>.06?(rig.gallop?'gallop':'trot'):'stand';const k=1-Math.exp(-dt/.12);
     for(const m in rig.w)rig.w[m]+=((m===mode?1:0)-rig.w[m])*k;

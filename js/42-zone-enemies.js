@@ -773,7 +773,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   }
   else if(zShapeExtra(type,d,g,mat,sc2,limbs)){}
   else if((d.shape==='wolf'||type==='Cave Bear')&&WOLF_KINDS[type]){ // v80 S166 (S223: and the Cave Bear, still a brute) — the wolf family on the shape kit: one skinned mesh, planted paws
-    wolfRig=buildWolf(type,sc2);g.add(wolfRig.root);
+    wolfRig=buildWolf(type,WOLF_KINDS[type].play?sc2*SCALE.BEAST:sc2);g.add(wolfRig.root);if(WOLF_KINDS[type].play)wolfRig.drawK=SCALE.BEAST; /* S905 (F2a) — the beasts of #187 drawn to the taller man (SCALE.BEAST); drawK, so their fall keeps its tuning */
     limbs.torso=wolfRig.mesh; // the wind-up's red and the parry's flash light this wolf's own material
     limbs.wolf=wolfRig;
   }
@@ -865,7 +865,8 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,baseName:type,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
-  if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*sc2;} // the bar over a person's head
+  if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*SCALE.ROOM_K*sc2;} // the bar over a person's head (S905: at the taller man's, F2a)
+  if(wolfRig&&wolfRig.k.play){hpBg.position.y=hpFg.position.y=1.1*sc2*SCALE.BEAST;} /* S905 (F2a) — over the back of a beast drawn to the taller man */
   if(wolfRig&&wolfRig.k.dragon){hpBg.position.y=hpFg.position.y=1.55*sc2*WOLF_KINDS.Dragon.world/2.88;} /* S546 — over its head at any size */
   // v80 S130 — captains hold a frontal guard (the Shieldbearer's mechanic: a power attack or a bash breaks it); the world's dragon breathes
   if(/Captain/.test(type)&&limbs.armL){try{attachShieldProp(g,limbs,limbs.person?1:sc2,'round');zoneE.shieldUp=true;limbs.shieldArmUpX=-1.15;limbs.shieldArmUpZ=limbs.person?-.5:.5;reraiseGuard(zoneE);}catch(err){}} // a person's left arm is on its +x side: across the body is -z

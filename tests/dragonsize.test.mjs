@@ -18,7 +18,9 @@ const r = await page.evaluate(() => {
 });
 console.log(JSON.stringify(r));
 check('the inspector builds the dragon at its world scale (4.5, Michael\'s B on #153)', r.insS === 4.5 && r.world === 4.5, r);
-check('the open world\'s dragon stands 3.6–3.8 tall, about three bandits as the world builds them (1.24)', r.zH >= 3.6 && r.zH <= 3.8 && r.ratio > 2.7, r);
+// S905 (F2a): a bandit is built at his true 1.76 now (was 1.24). The dragon keeps its metres, under the lair's 4.4 roof (the dungeons'
+// heights are card F2b's), and stands about twice a man, Michael's own words on #153 (it was three of the old, smaller bandits).
+check('the open world\'s dragon stands 3.6–3.8 tall, about twice a bandit as the world builds them (1.76)', r.zH >= 3.6 && r.zH <= 3.8 && r.ratio >= 1.9 && r.ratio <= 2.3, r);
 check('its health bar sits above its body', r.barY > r.zH, r);
 check('the inspector\'s dragon stands as tall as a dragon built for the open world (within 5%)', Math.abs(r.insH - r.zH) / r.zH < .05, r);
 

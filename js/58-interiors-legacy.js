@@ -70,6 +70,9 @@ function _intBarrel(sc,x,z){
   let b=INT_KIT_GEO.get('barrel');if(!b){const B=kitBarrel(.8,0x5a3810);b={body:B.body.geometry,bm:B.body.material,top:B.top.geometry,tm:B.top.material};INT_KIT_GEO.set('barrel',b);}
   const g=new THREE.Group();g.position.set(x,0,z);g.add(new THREE.Mesh(b.body,b.bm));const t=new THREE.Mesh(b.top,b.tm);t.position.y=.44-.024;g.add(t);sc.add(g);return g;
 }
+// S896 (F2a) — where a room stands you as you come in, on the line down its middle: 1.75 to 2.2 in from the door (z = the room's
+// depth), and in a shallow shop at least half a metre in front of the counter (buildInteriorFor keeps its front edge, true metres)
+function intArrivalZ(house){const D=house._roomD||house.intD||6;let z=D-Math.min(2.2,Math.max(1.75,D*.3));if(house._counterFront!=null)z=Math.max(z,Math.min(D-1.2,house._counterFront+.55));return z;}
 function _intCrate(sc,x,y,z,s=.38){
   const K=furnKit(),n=INT_BED_NATION||'gatelands',key='crate|'+n+'|'+s.toFixed(2);let geo=INT_KIT_GEO.get(key);
   if(!geo){geo=K.bake(K.crate(s,n,Math.round(s*100))).children[0].geometry;INT_KIT_GEO.set(key,geo);}
@@ -542,8 +545,11 @@ function goToInterior(house){
     // (_RW/2, _D), which is what the compass uses for its bearing.
     house._roomW=_RW;
     house._roomD=house.intD||_D;
-    px=_RW/2; pz=house._roomD-2.2; yaw=0; pitch=0; velY=0; jumpY=0; onGround=true;
+    px=_RW/2; pz=intArrivalZ(house); yaw=0; /* S896 — 1.75 in from the door in a cottage of true size (it was 2.2, the middle of a 4.5 m room) */ pitch=0; velY=0; jumpY=0; onGround=true;
     if(window._pendingPos){const P=window._pendingPos;window._pendingPos=null;if(P.x!=null){px=P.x;pz=P.z;}if(P.yaw!=null)yaw=P.yaw;if(P.jumpY!=null)jumpY=P.jumpY;} // v80 — a load puts you where you stood
+    // S896 (F2a) — a save made inside a room before the rooms came to true size holds a spot in the old, larger room: off the floor
+    // or inside something now, it stands you at the door instead (full save migration is card F13)
+    if(String(house.id||'').startsWith('g_')&&(px<.3||pz<.3||px>_RW-.3||pz>house._roomD-.3||(typeof intSolidAt==='function'&&intSolidAt(px,pz,.3,jumpY)))){px=_RW/2;pz=intArrivalZ(house);jumpY=0;}
     startMusic('shop');
     showMsg(`You enter ${house.name}.`,'#c8b880');
   });
