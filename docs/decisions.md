@@ -80,6 +80,20 @@ Pictures:
 - [the children's room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-children.jpg)
 - [the house from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-outside.jpg)
 - [the roof and the court from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-above.jpg)
+### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
+You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
+
+**1. Which town?**
+- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
+- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
+- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
+
+**2. What is in it?**
+- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
+- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
+- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
+
+Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
 
 ## Answered
 

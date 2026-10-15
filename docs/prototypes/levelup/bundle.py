@@ -47,4 +47,5 @@ build('creature.html', 'One creature', 'One creature walking: change the plan, t
 build('gatelands-pieces.html', 'Gatelands building pieces', 'The Gatelands’ buildings as pieces (F6): a town street running out to its cottages. ?mix=a|b|c, &cam=eye|high|cottage|town. Drag to look.', 'pieces-gatelands.js', True, '?view=street&mix=a')
 build('gatelands-plans.html', 'Gatelands plans in a row', 'Six Gatelands plans at true size, a person at each door. Drag to look.', 'pieces-gatelands.js', True, '?view=line')
 build('gatelands-kit.html', 'Gatelands pieces, one by one', 'The Gatelands pieces one by one beside a person. Drag to look.', 'pieces-gatelands.js', True, '?view=kit')
+build('gates-six.html', 'The six great gates', 'The six schools’ great gates (F5): one skeleton, the outer arch 100 m high, dressed by school. ?school=tine|uisce|cloch|scath|solas|gaoth &cam=wide|far|foot|scale. Drag to look.', 'gates.js', True, '?school=tine&cam=wide')
 print('ok')
