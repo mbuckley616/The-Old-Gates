@@ -1133,6 +1133,13 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
 // the little finger's knuckle to 9 cm over the first finger's, where the ball of the thumb is); then the four fingers close on it,
 // as far as they go before any point of the hand would come inside it
 const SPEAR_R = .013;
+// the heads by island (Session 918): the socket's and the blade's lengths, the socket's sides, the blade's half-width up its length
+// (t from 0 at the socket to 1 at the point), and the rings round the socket (where up it, and their metal)
+const spearW = (W, peak, neck) => t => W * (t < peak ? Math.sin(Math.PI / 2 * t / peak) ** .8 : ((1 - t) / (1 - peak)) ** .9) + neck * (1 - t);
+const SPEAR_HEADS = {
+  leaf: { sock: .09, blade: .18, facets: 14, w: t => .0235 * Math.sin(Math.PI * Math.min(1, t * 1.25) ** .8) * (1 - t * .15) + .007 * (1 - t), rings: [.2, .8], ring: [.62, .45, .22] },
+  winged: { sock: .1, blade: .24, facets: 8, w: spearW(.019, .3, .006), rings: [.15, .5, .85], ring: [.78, .78, .8], wings: true },
+  long: { sock: .13, blade: .28, facets: 12, w: spearW(.0145, .36, .005), rings: [.12, .3, .7, .88], ring: [.86, .68, .3] } };
 function fistGrip(body, byName, root, curl, hinge) {
   const R0 = PACK.rest, hand = PACK.handRV || (PACK.handRV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3] < -.39)), at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
   // the thumb's points (skinned more than half to its own bones) are left out: it is posed after, round the shaft
@@ -1173,13 +1180,23 @@ function buildSpear(G, body, byName, meshes, root, grip) {
   const LEN = Math.max(2.3, crown - floor + .45), A = grip.A, B = grip.C.clone().addScaledVector(A, (floor - grip.C.y) / A.y);
   const wood = new THREE.MeshStandardMaterial({ color: sRGB(...D.spear), roughness: .7 }), iron = new THREE.MeshStandardMaterial({ color: sRGB(...(D.helm || [.42, .43, .45])), metalness: .6, roughness: .35 });
   const sp = new THREE.Group(); sp.name = 'spear';
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(RS * .92, RS, LEN - .33, 14), wood); shaft.position.y = .06 + (LEN - .33) / 2; sp.add(shaft);
+  // the head by island (Session 918, OG-028's strip of spearheads): the Gatelands' leaf (Session 909's), its socket bound with two
+  // bronze rings; the Mark's winged head, a long lozenge over a faceted socket with a lug either side of it, its socket ringed with
+  // silver; Aurenne's long head, a narrow blade 28 cm long on a long socket banded in gold (the filigree's colour). The spear is as
+  // long as before: the shaft gives up what a longer head takes
+  const HD = SPEAR_HEADS[D.spearHead] ? D.spearHead : ({ markman: 'winged', aurennais: 'long' })[G.people] || 'leaf', K = SPEAR_HEADS[HD], top = LEN - K.blade, s0 = top - K.sock;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(RS * .92, RS, s0 - .06, 14), wood); shaft.position.y = .06 + (s0 - .06) / 2; sp.add(shaft);
   // the shoe on the butt, and the socket under the head
   const shoe = new THREE.Mesh(new THREE.CylinderGeometry(RS + .001, RS * .55, .06, 14), iron); shoe.position.y = .03; sp.add(shoe);
-  const sock = new THREE.Mesh(new THREE.CylinderGeometry(RS * .62, RS * .95, .09, 14), iron); sock.position.y = LEN - .27 + .045; sp.add(sock);
-  // the head: a lathe of four sides (a diamond in section) flattened to a quarter, so it is a blade with a midrib
-  const prof = []; for (let k = 0; k <= 16; k++) { const t = k / 16, w = .0235 * Math.sin(Math.PI * Math.min(1, t * 1.25) ** .8) * (1 - t * .15) + .007 * (1 - t); prof.push(new THREE.Vector2(Math.max(.0004, t < 1 ? w : .0004), t * .18)); }
-  const hg = new THREE.LatheGeometry(prof, 4); hg.scale(1, 1, .22); hg.computeVertexNormals(); const head = new THREE.Mesh(hg, iron); head.position.y = LEN - .18; head.rotation.y = Math.PI / 4; sp.add(head);
+  const sock = new THREE.Mesh(new THREE.CylinderGeometry(RS * .62, RS * .95, K.sock, K.facets), iron); sock.position.y = s0 + K.sock / 2; sp.add(sock);
+  const band = K.ring && new THREE.MeshStandardMaterial({ color: sRGB(...K.ring), metalness: .8, roughness: .3 });
+  for (const f of K.rings) { const r = RS * (.95 - .33 * f) + .0012, ring = new THREE.Mesh(new THREE.TorusGeometry(r, .0016, 6, 20), band); ring.rotation.x = Math.PI / 2; ring.position.y = s0 + K.sock * f; sp.add(ring); }
+  // the blade: a lathe of four sides (a diamond in section) flattened to a quarter, so it is a blade with a midrib
+  const prof = []; for (let k = 0; k <= 16; k++) { const t = k / 16, w = K.w(t); prof.push(new THREE.Vector2(Math.max(.0004, t < 1 ? w : .0004), t * K.blade)); }
+  const hg = new THREE.LatheGeometry(prof, 4); hg.scale(1, 1, .22); hg.computeVertexNormals(); const head = new THREE.Mesh(hg, iron); head.position.y = top; head.rotation.y = Math.PI / 4; sp.add(head);
+  // the Mark's lugs: a wing either side of the socket's top, in the blade's plane, 3.4 cm out from the shaft's line
+  if (K.wings) for (const sg of [-1, 1]) { const wg = new THREE.Mesh(new THREE.ConeGeometry(.009, .034, 4), iron); wg.scale.set(1, 1, .45); wg.rotation.z = -sg * Math.PI / 2;
+    const at = new THREE.Vector3(sg * (RS * .7 + .016), top - .014, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4); wg.position.copy(at); wg.rotation.y = Math.PI / 4; sp.add(wg); }
   sp.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   sp.position.copy(B); sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), A); root.add(sp); root.updateMatrixWorld(true);
   // what comes near the shaft: every cloud's points but the right hand's, by their distance to its axis over its length
@@ -1187,7 +1204,7 @@ function buildSpear(G, body, byName, meshes, root, grip) {
     if (i >= 0 && R0[i * 3] < -.39) { if (r < RS - .001) fist++; return; } clear = Math.min(clear, r - RS); });
   byName['wrist.R'].attach(sp);
   let tris = 0; sp.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
-  return { mesh: sp, stats: { clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
+  return { mesh: sp, stats: { head: HD, headLen: +(K.sock + K.blade).toFixed(3), headW: +(2 * Math.max(...prof.map(v => v.x))).toFixed(4), clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
 }
 function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
@@ -1420,7 +1437,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, shieldTurn: 1, shieldMetal: false, shieldShape: 'round' };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

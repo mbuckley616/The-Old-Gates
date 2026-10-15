@@ -19705,3 +19705,32 @@ What changed in `people.js`:
 ### Needs eyes
 - **The cloaks are seen for the first time as their colours.** The folds laid in Sessions 839 and 840 now show from the front, and some read as stiff and vertical where they were hidden in black before. That is the hang's work to answer, not this fix's.
 - **In the game,** the townsfolk's cloaks are built by `32-people.js`, not this kit, so this changes nothing there. When F4 carries the kit's cloak in, it carries the outward winding with it.
+
+## v80 — Session 918 — The spearhead by island (L7, prototype only)
+Session 909's spear carried one head for every people, a leaf. OG-028's strip of spearheads gives each island its own, and L7 owes "the head by island". The board draws them; this builds them, so it asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`SPEAR_HEADS`.** Each of the three heads has a socket and a blade length, a socket of so many sides, a blade's half-width up its length (`spearW`: a rise to its widest, then a taper to the point), and rings round the socket:
+  - **The Gatelands' leaf:** Session 909's, with the same 9 cm socket and 18 cm blade, 5.4 cm across. Its socket is bound with two bronze rings.
+  - **The Mark's winged head:** a 24 cm lozenge, 4.6 cm across at a third of its length, over an eight-sided socket ringed three times in silver. A lug stands either side of the socket's top in the blade's plane, 3.4 cm long: the board's "winged spear", which keeps a blow from running down the shaft.
+  - **Aurenne's long head:** a narrow blade 28 cm long and 3.5 cm across on a 13 cm socket, banded four times in gold, the filigree's colour.
+- **Which head:** each people gets its own (the Gatelanders the leaf, the Markmen the winged head, the Aurennais the long one), and `spearHead` in the dress chooses another. It is a dress flag, so it saves and loads.
+- **The spear is as long as before** (45 cm over its bearer, 2.3 m at the least). The shaft gives up what a longer head takes.
+- **Triangles:** the leaf spear is 776, the winged 1,008 and the long 1,248. The rings are most of the difference: 240 triangles each.
+
+What changed in `builder.js`:
+- **A view over the head, `view=over`.** It frames what is carried above the head, centred on the spear's head when there is one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 269 checks pass.** There are twelve new ones:
+  - every spear's head is checked against the one asked for (ten spears: four leaves, four winged and two long, one of the winged a Gatelander's by choice);
+  - two new spears, an Aurennais woman and the Gatelander with the Markish head, pass every grip check (the fist closed round the shaft, nothing of the hand inside it).
+- The spear's own promises hold for all ten:
+  - nothing else is within reach, the nearest 6.3 mm to 3.0 cm off;
+  - the head stands 45 to 64 cm over the crown.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** `builder-armour-spearhead-leaf.jpg`, `-winged.jpg` and `-long.jpg`, each over its bearer's head.
+### Needs eyes
+- **The decoration is rings, not work.** The board's knotwork, runes and filigree are each island's own, and here they are only a ring's metal. Pattern-welding on the Mark's blade and inlay on the socket would want a texture each.
+- **The iron takes the helm's colour,** as Session 909's did, so an Aurennais in a bronze helm carries a bronze head. Bronze is right for Aurenne's older pieces and wrong for a working blade. A blade's own metal would be a dress colour of its own.
+- **Owed:** the crossbow; the spear in a fight (B4).
