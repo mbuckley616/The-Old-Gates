@@ -20251,3 +20251,67 @@ Two suites expected the Markman's words from a Gatelander head. `cloakguild` now
 - `handback`, `questgold`, `toldpages`, `turnin`, `datedguild`, `jobids`, `standingcount`, `blacksail` pass.
 ### Needs eyes
 - Nothing to see but the words. A Gatelander hall's refusal is now a proverb and a sentence, longer than before.
+
+## v80 — Session 941 — Skills, the first session: 22 skills raised by use, and what they set (skills and perks A)
+Michael chose the Morrowind book for skills and perks (A, 27 Sep), with Oblivion Remastered's fixes. The designer's build sheet (`docs/design/skills-and-perks-build.md`, on auto/design, PR #343) turns it into numbers, and its open rate was answered B on #342 this morning. F2a has merged and FREEZE #297 is closed, so the core loop's first piece can go in. This is the sheet's first of three sessions: the skills table, the uses, the curve, the reads, the save and the migration. The level, the bed and the perks are untouched, so the level-up still runs on xp as before.
+
+**The table** (`12-character.js`). `SKILL_DEF` holds the sheet's 22 skills with their governing attributes. `SKILL_ARCH` holds each archetype's five majors and five minors, as the sheet's table has them. `skillsInit(arch, lv)` starts majors at 25, minors at 15 and the rest at 5; the creator calls it, and so does a load. `skillUse(id, weight, target)` is the one way a skill rises. It takes a use at most once a second for each skill and target, so thirty swings in ten seconds at one foe are ten uses. The next level costs `round(0.9 × L^1.2)` uses: 6 at 5, 43 at 25, 98 at 50, 223 at 99. A level gained says *Blade rises to 26.* on the message line, until the rising card (L11's interface list) exists. Skills stop at 100.
+
+**The uses**, wired where `lvAct` already counted something and at the new places:
+- **Blade, Blunt** (by the weapon's `wType`; a bow is Bow, fists Blunt): a melee hit on a foe that was already alert, in both resolvers. A riposte or finisher counts 3. A hit on an unaware foe teaches the weapon nothing; a backstab is Stealth 3.
+- **Bow**: an arrow on an alert foe, in both arrow paths. The sheet's ×2 past 30 m is owed: an arrow does not keep where it was loosed.
+- **Guard**: a hit taken on a held block 1, a bash on an alert foe 1, a perfect parry 3.
+- **Athletics**: every 10 m sprinted or swum. **Acrobatics**: a jump that lands more than 0.3 m higher than it left; a landing roll 1; a fall over 4 m lived through 2. The gap of 2 m is owed, since the loop does not know what a jump cleared.
+- **Armour**: a hit taken while wearing three or more pieces, at every site that counted damage taken (the strike resolvers, the zone foes, traps, the main loop's orbs and drains).
+- **The six schools**: a spell that hits an alert foe (a Mastery word 2), a heal with health lost, a buff cast.
+- **Stealth**: ten seconds sneaking inside a foe's sight range unseen (`canSeePlayer` marks the moment), and the backstab. **Locks**: a pin set 1, a lock opened 3. **Speech**: a sale or a purchase at any counter. **Alchemy**: a herb picked.
+- Cooking, Mining, Woodcutting, Smithing and Joinery have nothing to do yet. They wait on survival B. Speech's *a topic that moves favour* is owed with session 2.
+
+**The reads.** Each is at the place the thing is decided.
+- **Melee**: the roll × (0.6 + 0.8 × skill/100) × Might's 1% a point. The flat `level × 1.5` is gone from both resolvers.
+- **The bow**: the same multiplier, with its per-level floor gone.
+- **Spells**: power the same, from the school's skill, with `level × dmgLvl` gone; cost × (1.4 − 0.8 × skill/100). A heal's `level × healLvl` is gone too, the heal × the multiplier.
+- **The pick**: `pickChance` is 0.35 + 0.005 a Locks level + 1% a Finesse point, to 0.92. It was 7% a Finesse point and 1% a level.
+- **The gates**: `MATERIALS` asks `'skill'` at Iron 15, Steel 30, Mithril 45, Adamant 55, Obsidian 65, Draconic 75, Demonic 90, Cosmic 100. That means the weapon's own skill, through `reqHave`/`reqName`, which `canEquip`, the hub's tooltip and the load's check all read: *Requires Blade 30 (you have 29)*. Heavy armour asks Armour on the same gates. The light and robe lines keep Finesse and Intelligence on their old curve, and that is asked as **DECISION #354** (C recommended, as built). The quest reward's Iron Sword asks Blade 15.
+- **Movement**: the run 3.83 → 4.2, the swim ×0.8 → ×1.3, the sprint's cost −30%, all on Athletics. `JUMP_VEL` 5.5 → 6.6 on Acrobatics. These run from skill 5 to 100, so an untrained skill moves as today.
+- **Sight**: while you sneak, a foe's sight on you and a witness's range × (1 − 0.4 × Stealth/100).
+
+**The save** (`70-saves.js`). `skills`, `majors` and `minors` are top-level fields, so `ssSplitPayload` puts them in the character row, and no `worldState` key is added. A save made before skills is migrated once on load, from its archetype and level: majors 25 + 2 a level past the first, minors 15 + 1, both to 60, the rest 5, and the attributes left as they were. A level-12 Duelist comes back with Blade 47. That migration runs before the load's requirement check, so a weapon above the character's new skill is unequipped to the bag with the existing *Requirements tightened* toast. That is the sheet's "today's refusal is unchanged".
+
+**What a player feels.** A new character hits for 0.64 to 0.8 of the roll with the weapons the archetype trains. The flat level term is gone, so damage stops climbing with the level; it climbs with the skill. Spells cost more until their school is trained. Enemies still scale by level (Michael's C on #51) until enemies by place lands. The sheet expects that.
+
+The build sheet's suites `skillcurve`, `skilluse`, `skilldamage` and `skillgates` are one boot (`tests/skillcurve`, each check named for its suite), and `skillsave` and `skillmigrate` are the other (`tests/skillsave`). Six files would have cost CI six boots.
+
+**Fists** are not in the sheet's Blade or Blunt rows, so a punch takes no skill (×1) and teaches none. Without the level term a level-1 Bandit fight runs 11 to 16 punches, where `fistfight` wants 7 to 12. That number is Michael's, asked as **DECISION #357** (A recommended: fists as a Blunt weapon of 3 to 5). Until then, `fistfight` is red.
+
+A fault this session made and then fixed: `fireArrow` packs its roll for `arrowRawFor` with the level floor, and that floor had gone with the bow's damage line. Every arrow loosed threw a ReferenceError until the packed roll was mended (`lv: 0`, the Bow multiplier in `m`). `duelrhythm` found it.
+### Verified (headless Chromium)
+- `skillcurve` 17 of 17:
+  - The curve: 6, 43, 98, 223.
+  - A fresh Warrior: 5 skills at 25, 5 at 15, 12 at 5.
+  - Thirty uses in ten seconds at one target: 10, with Blade 5 → 6 and 4 toward the next level. Another target or skill counts the same second, and 100 is the top.
+  - Three real swings at an unaware Bandit land and teach Blade nothing; one at an alert Bandit is a use.
+  - A roll of 100 hits 64, 100 and 140 at Blade 5, 50 and 100, the same at levels 1 and 20.
+  - A Tine word of power 12 hits 8, 12 and 17. The pick is 0.375, 0.6 and 0.85.
+  - The run is ×1.081 from Athletics 5 to 100 (the sheet's ×1.097, inside 2%). The jump's apex is 0.78 and 1.14 m in the loop's fixed step, ×1.462 against 1.44.
+  - A Steel sword is refused at Blade 29 with *Requires Blade 30 (you have 29)* and held at 30. A Steel mace asks Blunt, and an Iron cuirass asks Armour 15.
+- `skillsave` 6 of 6:
+  - The character row carries all 22 skills, the majors and the minors; the world row carries none.
+  - The character row alone, into a fresh world, brings them back.
+  - A level-12 Duelist saved before skills comes back with Blade, Guard, Acrobatics, Athletics and Speech at 47, its minors at 26 and twelve skills at 5. Its attributes are unchanged, and 120 ticks run after with no page errors.
+- **The sweep.** Of the 99 suites that read damage, gates, picks, sneaking, movement, spells or the save, 48 ran here before the run's time was up. Three ran in parallel, so a slow suite could time out.
+  - Passed (40): `armourkit`, `barberbox`, `captainguard`, `challenge`, `cargo`, `backroomdoor`, `chasesight`, `coopsaves`, `counters`, `crime5`, `dateline`, `burglary`, `dmgnums`, `export`, `carraignight`, `cloaks`, `crime2`, `dungeonexit`, `fists`, `gateblade`, `deadkeys`, `guardsindoor`, `fishseed`, `foeseed`, `hoardmetal`, `jobfoereload`, `gait`, `fistswing`, `lairload`, `fortunecaor`, `guardlevel1`, `hearthcast`, `looknew`, `guardplay`, `herbstub`, `herbhidden`, `hitseed`, `mapnotes`, `homesleep`, `hptail`.
+  - Red, then fixed in their setup, not their bars (all pass now):
+    - `attrdmg` and `herbparity` took level 50 as "a big base"; they now take a roll of 200 at Blade 50.
+    - `armourlines-numbers` now expects the heavy line to ask Armour 45.
+    - `fortify` now expects Finesse's 1% a point on the pick (the sheet's), and an Iron Sword gated on Blade, which worn Might does not reach.
+  - `duelrhythm` found the arrow fault above, and passes.
+  - Still red: `fistfight`, waiting on #357.
+  - Red only under load, green alone: `attrpromise`, with Athletics pinned at 5, read 17.6 twice beside three other browsers and 14 and 7 alone. Why load moves it is not found; it is noted for QA in backlog K. `blacksail` failed twice under the same load, when the seat had not settled before the test read its lord, then passed alone. Main's code passed once under the same load.
+  - `diedload` ran past ten minutes under the parallel load and was not judged.
+  - Not run here: the other 51, which CI will run.
+### Needs eyes
+- **How a new character fights.** Hits are 0.64 to 0.8 of the roll until the weapon is trained, and spells cost up to 1.36 times as much. Enemies still grow with the level. Play the first hour with a Warrior and a Scholar.
+- **Skill-up lines** take the message line and can cover a combat line. The rising card is L11's.
+- **The run, swim and jump** move with Athletics and Acrobatics. Does Athletics 100 feel quick enough at 4.2?
+- **Owed in this item:** Bow's ×2 past 30 m, Acrobatics' gap, Speech's favour topics, Armour's `def` read and Speech's prices (with session 2's attribute pass), and the five land skills' uses with survival B.

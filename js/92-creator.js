@@ -701,6 +701,7 @@ function ccBegin(){
   const raw=(nameEl&&nameEl.value||'').trim();
   playerName = raw || 'Traveller';
   playerArchetype = _ccState.archetypeId;
+  skillsInit(playerArchetype,1); // S941 — the archetype's majors at 25, minors at 15, the rest at 5
   // Copy chosen attribute distribution into the live ATTRS.
   for(const k of Object.keys(_ccState.attrs)){
     ATTRS[k] = _ccState.attrs[k]||0;

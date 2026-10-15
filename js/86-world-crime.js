@@ -385,7 +385,7 @@
   const WIT_HEAR=2;
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house){
-    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(sneak)R*=.5; /* S552 — the dark hood */if(isNight())R*=.5;
+    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(sneak)R*=.5*(1-.4*skillLv('stealth')/100); /* S941 — Stealth */ /* S552 — the dark hood */if(isNight())R*=.5;
     if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
       if(sleeperNear()){wakeSleeper(intNPCMesh,true);return {name:currentHouse.keeper||'the resident'};} /* S739 — a sleeper sees nothing, and hears within two units */
       if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};

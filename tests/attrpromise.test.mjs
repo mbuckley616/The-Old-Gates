@@ -10,7 +10,7 @@ await g.intoWorld();
 await page.evaluate(() => { window._raf = window.requestAnimationFrame; window._rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
   window._t = performance.now(); window._step = (n) => { for (let i = 0; i < n; i++) { _t += 1000 / 60; loop(_t); } }; });
 const sprint = async (fin) => {
-  await page.evaluate((fin) => { window._keepF = ATTRS.finesse; ATTRS.finesse = fin; px = 13100; pz = 25450; jumpY = 0; yaw = 0; ACTIVE_BUFFS.length = 0; staminaCD = 0; stamina = 50; _step(5); window._r0 = stamina; _step(60); window._regen = stamina - _r0; stamina = 60; }, fin);
+  await page.evaluate((fin) => { window._keepF = ATTRS.finesse; ATTRS.finesse = fin; SKILLS.athletics = { lv: 5, p: 0 }; /* S941: Athletics untrained, so the sprint costs today's 14 */ px = 13100; pz = 25450; jumpY = 0; yaw = 0; ACTIVE_BUFFS.length = 0; staminaCD = 0; stamina = 50; _step(5); window._r0 = stamina; _step(60); window._regen = stamina - _r0; stamina = 60; }, fin);
   await page.keyboard.down('Shift'); await page.keyboard.down('w');
   // what the sprint drains is what it cost net, plus the regeneration measured standing still just before
   const used = await page.evaluate(() => { _step(1); const s0 = stamina; _step(60); return +(s0 - stamina + _regen).toFixed(2); });

@@ -441,7 +441,7 @@ const QUEST_DEFS=[
    objectives:[
      {type:'kill_in_dungeon', dungeonSeed:42, count:5, label:'Kill enemies in the Dungeon of Shadows'},
    ],
-   rewards:{gold:50, xp:120, items:[{name:'Iron Sword',ico:'⚔️',type:'equip',slot:'weapon',atk:[10,12],weaponShape:'sword',wType:'slash',weight:2,tier:3,material:'Iron',matCol:0xA8B0B8,matGuard:0x787880,reqAttr:'might',reqVal:5,buyPrice:36,sellMult:.45}]},
+   rewards:{gold:50, xp:120, items:[{name:'Iron Sword',ico:'⚔️',type:'equip',slot:'weapon',atk:[10,12],weaponShape:'sword',wType:'slash',weight:2,tier:3,material:'Iron',matCol:0xA8B0B8,matGuard:0x787880,reqAttr:'skill',reqVal:15,buyPrice:36,sellMult:.45}]},
    rewardSpeech:'You came back. Good. Iron sword — clean-forged, my own hammer on it. Keep it sharp.',
    readyText:"Five down in the Shadows. Skeletons mostly — the sound they make when they go is dry like splitting kindling. Back to the forge.",
    completeText:"Iron Sword from Bram. Clean-forged, his own hammer on it. Heavier than what I came in with — sits right. He pointed me at Edna in the south cottage. Said she's been sitting on something about the Shadows for thirty years.",

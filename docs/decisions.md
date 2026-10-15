@@ -4,6 +4,22 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Skills: how hard does a bare fist hit, with the level gone from damage? (the systems builder, Session 941) — DECISION #357
+The build sheet takes the flat `level × 1.5` out of every hit, so damage comes from the weapon and its skill. Session 941 built that. Fists roll 2 to 3, and the sheet's Blade and Blunt don't cover them, so a punch now takes no skill (×1). At level 1 the flat term had added 1 to that small roll, a third of a punch. `fistfight` (the critic's Bandit, Session 436) wants a Bandit punched to death in 7 to 12 blows. It now takes 11 to 16. A weapon is unaffected: a Wooden Sword at Blade 25 hits 0.8 of its 5–9.
+- **A.** *(recommended)* Fists hit as a Blunt weapon of their own: 3 to 5, on Blunt's multiplier, and a punch on an alert foe is a Blunt use. At Blunt 25 that is 2 to 4 a punch, about 9 to 12 for a Bandit, and it rises as you train.
+- **B.** Fists stay 2 to 3 at ×1, as built. A Bandit takes 11 to 16 punches; `fistfight`'s range moves to that.
+- **C.** A Hand-to-hand skill of its own (a 23rd), Morrowind's: the roll 2 to 3 on its multiplier, with a Might share. This needs a row in the sheet and its perks.
+
+Recommendation: **A.** A brawl stays about as long as the critic found right, and fists grow with a skill the archetypes already train, with no new row.
+
+### Skills: what gates the light and robe armour? (the systems builder, Session 941) — DECISION #354
+Skills and perks A's build sheet moves the tier gates from attributes to skills: a weapon asks its own skill (Iron 15, Steel 30 … Cosmic 100) and armour asks Armour. Session 941 built that for the weapons and the heavy line. The light line (hood, jerkin, bracers) asks Finesse and the robe line (cowl, robe, wraps) asks Intelligence today, on the old curve (Iron 5 … Cosmic 56), since Session 564. The sheet does not say whether they move too. The answer decides whether a mage in robes has to train Armour.
+- **A.** All armour asks Armour, on the skill gates. This is the sheet as written. A robed mage trains Armour by taking hits in three or more pieces.
+- **B.** The heavy line asks Armour, the light line Stealth and the robe line the wearer's best school, all on the skill gates.
+- **C.** *(recommended)* The heavy line asks Armour, and the light and robe lines keep their attribute and its curve (as built in Session 941). The lines stay what Session 564 made them, a choice of what you are rather than of what you trained, and the robe never pushes a mage toward taking hits.
+
+Recommendation: **C.** It is already built, and a mage or a scout never has to take hits to dress for what they are.
+
 ## Answered
 
 ### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342

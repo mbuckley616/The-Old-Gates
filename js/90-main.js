@@ -173,7 +173,7 @@ function loop(now){
       showMsg('Too heavy to run!','#dd8844');
     }
   }
-  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7*cloakSwimMult():3.83)*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
+  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7*cloakSwimMult()*(.8+.5*skillT('athletics')):3.83+.37*skillT('athletics')) /* S941 — Athletics: the run 3.83 to 4.2, the swim ×0.8 to ×1.3 */*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
   const swiftMult=1+(attrEff('swiftness')*0.02);
   const sprintBuff=_buffMult('sprintSpeed',1)*_buffMult('swiftness',1); // S316 — the Boon of the Road (×1.25), read nowhere before
   // Encumbrance speed penalty: -50% when overloaded. Immobile zeros speed entirely.
@@ -312,7 +312,7 @@ function loop(now){
   tickPlayerPosture(dt,performance.now()/1000); // S281
   const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1); /* S779 — the Gate-Blade drawn */
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1); /* S779 — the Gate-Blade drawn */
     stamina=Math.max(0,stamina-dt*sprintDrain);
     if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
     lvAct.sprintDist+=spd;
@@ -347,6 +347,8 @@ function loop(now){
   if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
   const moving=!!(mdx||mdz);
   _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
+  if(moving)athleticsStep(spd,sprinting); /* S941 — Athletics: ten metres sprinted or swum */
+  stealthTick(dt);
   // v62.7 — Forward lunge boost. If lungeT > 0 AND W is currently held, add an
   // extra forward-direction displacement on top of normal WASD motion. The
   // boost is forward-only (uses fwdX/fwdZ, not the normalized WASD vector) so
@@ -381,7 +383,7 @@ function loop(now){
   try{pushFromBodies();}catch(err){} /* S623 — foes and townsfolk are solid to you */
 
   // Jump physics
-  const GRAVITY=18,JUMP_VEL=5.5;
+  const GRAVITY=18,JUMP_VEL=5.5+1.1*skillT('acrobatics'); /* S941 — Acrobatics: 5.5 to 6.6 */
   // Determine context: dungeon lid starts with 'dyn_', interior with 'int_', overworld is 'overworld'
   const inDungeon=lid&&lid.startsWith('dyn_');
   const inOverworld=!inDungeon&&!isInterior();
@@ -389,7 +391,7 @@ function loop(now){
   const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,floorBaseY0):floorBaseY0; // v80 — footholds (stairs, galleries)
   if(onGround&&K['Space']){
     if(inOverworld) jumpY=activeTerrainH(px,pz);
-    velY=JUMP_VEL;onGround=false;sndJump();
+    velY=JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY;
   }
   if(!onGround){
     velY-=GRAVITY*dt;
@@ -1102,7 +1104,7 @@ function loop(now){
             sndPlayerHurt();
           }
           PHP=Math.max(0,PHP-finalDmg);hurtT=.4;
-          lvAct.damageTaken+=finalDmg;
+          lvAct.damageTaken+=finalDmg;armourUse();
           lastHitT=performance.now()/1000;
           if(PHP<=0&&!dead)playerDead();
           dScene.remove(fb);BALLS.splice(i,1);
@@ -1127,6 +1129,7 @@ function loop(now){
             // Dormant Gargoyle bonus (matches melee path: dormant enemies take 2×).
             if(e.dormant) dmg = Math.floor(dmg * 2);
             dmg = challengeDealt(dmg); /* S684 — the challenge */
+            if(e.alert)skillUse('bow',1,e); /* S941 — an arrow on an alert foe */
             e.hp = Math.max(0, e.hp - dmg);
             if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
             e.alert = true;
@@ -1408,7 +1411,7 @@ function loop(now){
           spawnDrainFX(dScene, T.x, T.z, e.x, e.z);
           sndDrain();
           showMsg(`${e.name} drains ${finalDrain} HP (heals ${healAmt})`, '#aa44cc');
-          lvAct.damageTaken += finalDrain;
+          lvAct.damageTaken += finalDrain;armourUse();
           lastHitT = performance.now()/1000;
           if(PHP <= 0 && !dead) playerDead();
         }

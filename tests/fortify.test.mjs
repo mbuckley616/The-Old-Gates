@@ -21,19 +21,19 @@ const r = await page.evaluate(() => {
   wear('fortify_int', 9); out.int = snap();
   renderHubAttrs(); out.grid = [...document.querySelectorAll('#derived-grid .derived-row')].map(d => d.textContent);
   out.baseInt = ATTRS.intelligence;
-  // a Might-gated sword still asks for the Might you own
-  const sword = makeItem(3, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false);
-  wear('fortify_might', 9); out.gate = canEquip(sword).ok;
+  // a gated sword still asks for what you own: since S941 (skills and perks A) an Iron Sword asks Blade 15, and no worn Might reaches it
+  const sword = makeItem(3, WEAPON_TYPES.find(t => t.type === 'Sword'), null, false); const kb = SKILLS.blade; SKILLS.blade = { lv: 14, p: 0 };
+  wear('fortify_might', 9); out.gate = canEquip(sword).ok; SKILLS.blade = kb;
   Object.assign(EQ, EQ0); invalidateArmorCache();
   return out;
 });
 check('bare: every attribute reads 0 and the base numbers', r.bare.might === 0 && r.bare.int === 0 && r.bare.carry >= 50, r.bare);
 check('a Demonic amulet of Might (+3) carries 15 more, as 3 points of Might would', r.might.might === 3 && r.might.carry === r.bare.carry + 15, r.might);
 check('of Fortitude (+3): +30 max health, +15 max stamina', r.fort.fort === 3 && r.fort.hp === r.bare.hp + 30 && r.fort.st === r.bare.st + 15, { bare: r.bare, fort: r.fort });
-check('of Finesse (+3): the sprint costs 15% less and the pick chance rises 21 points', r.fin.fin === 3 && Math.abs(r.fin.sprint - (r.bare.sprint - .15)) < 1e-9 && Math.abs(r.fin.pick - Math.min(.92, r.bare.pick + .21)) < 1e-9, { bare: r.bare, fin: r.fin });
+check('of Finesse (+3): the sprint costs 15% less and the pick chance rises 3 points (1% a Finesse point since S941)', r.fin.fin === 3 && Math.abs(r.fin.sprint - (r.bare.sprint - .15)) < 1e-9 && Math.abs(r.fin.pick - Math.min(.92, r.bare.pick + .03)) < 1e-9, { bare: r.bare, fin: r.fin });
 check('of Swiftness (+3) and of Intellect (+3): the attribute reads 3; Intellect adds 30 max mana', r.swift.swift === 3 && r.int.int === 3 && r.int.mp === r.bare.mp + 30, { swift: r.swift, int: r.int });
 check('the hub shows the worn Intelligence (Spell DMG +3%, Max Mana Bonus +30); the points owned stay 0', r.grid.some(t => /Spell DMG\s*\+3%/.test(t)) && r.grid.some(t => /Max Mana Bonus\s*\+30/.test(t)) && r.baseInt === 0, r.grid);
-check('an Iron Sword still asks for the Might you own (5), not the worn 3', r.gate === false, r.gate);
+check('an Iron Sword still asks for the Blade you own (15, you have 14), and worn Might does not reach it', r.gate === false, r.gate);
 // a night's sleep fills the bars to what you wear, not to the bare maximum (it stopped short of every worn bonus)
 const rest = await page.evaluate(async () => { const EQ0 = { ...EQ };
   EQ.amulet = makeItem(9, ARMOR_TYPES.find(t => t.type === 'Amulet'), ARMOR_ENCHANTS.find(e => e.id === 'fortify_fort'), true);

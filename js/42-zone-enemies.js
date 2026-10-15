@@ -910,8 +910,8 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
     if(hit&&!dead){const def2=_armour();const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(foeRand(a.from)*4));
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
-      if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
-      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
+      if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;armourUse();skillUse('guard',1,e);hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
+      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;armourUse();hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
 // S616 — a foe whose straight step is blocked (a barrel on a deck, a post, a trunk) slides along it: the step's one axis or
@@ -1410,7 +1410,7 @@ function tickZoneBalls(dt,sc){
         finalDmg = challengeTaken(finalDmg); /* S684 — the challenge (her fire never went through _warded) */
         PHP = Math.max(0, PHP-finalDmg);
         hurtT = .4;
-        lvAct.damageTaken += finalDmg;
+        lvAct.damageTaken += finalDmg;armourUse();
         lastHitT = performance.now()/1000;
         if(PHP<=0 && !dead) playerDead();
         sc.remove(fb); ZB.splice(i,1);
@@ -1446,6 +1446,7 @@ function tickZoneBalls(dt,sc){
           // Flat def subtraction (same shape as applyMeleeDamage)
           if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
           dmg = challengeDealt(dmg); /* S684 — the challenge */
+          if(e.alert)skillUse('bow',1,e); /* S941 — an arrow on an alert foe */
           e.hp = Math.max(0, e.hp - dmg);
           e.alert = true;
           if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
@@ -1780,9 +1781,11 @@ function _resolveZoneStrike(_isPow){
       const powerMult=_isPow?POWER_DMG_MULT:1.0;
       // v71 — Frontal shield block (see _resolveDungeonStrike for rationale).
       const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*shMult);
+      const _wasAlert=!!e.alert; /* S941 — the weapon's skill carries the damage; the flat level×1.5 is gone (skills and perks A) */
+      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo)))*skillMult(weaponSkill(w))*mightMult*meleeBuff*powerMult*shMult);
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
+      if(_wasAlert&&weaponSkill(w))skillUse(weaponSkill(w),(info.riposte||info.finisher)?3:1,e);else if(info.backstab)skillUse('stealth',3,e);
       e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg));e.alert=true;hit=true;alertPack(e,16);
       if(_isPow)sndPowerHit();else sndHitEnemy((typeof wType!=='undefined'?wType:(typeof wt!=='undefined'?wt:undefined)),((typeof physResistMult!=='undefined'&&physResistMult<.8)||(typeof resistMult!=='undefined'&&resistMult<.8)));
       // v61gj — Posture drain (same shape as the dungeon path). Skipped if the

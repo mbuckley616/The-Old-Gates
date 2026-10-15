@@ -9,7 +9,9 @@
 // Melee hits use applyMeleeDamage — simpler: buff mults → flat def → floor at 1, no resist (no elemental school).
 
 function applySpellDamage(e, sp, tier){
-  const baseDmg = spellMag(sp,tier) + Math.floor(foeRand(e)*10) + level*(sp.dmgLvl||3); // S480 — the spread on the struck foe's stream
+  const baseDmg = (spellMag(sp,tier) + Math.floor(foeRand(e)*10)) * (SKILL_DEF[sp.school]?skillMult(sp.school):1); // S480 — the spread on the struck foe's stream
+  /* S941 — the school's skill sets the power; the flat level term is gone (skills and perks A). A hit on an alert foe is a use. */
+  if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
   const resistMult = (e.resist && e.resist[sp.school] !== undefined) ? e.resist[sp.school] : 1.0;
   // Dormant enemies (Gargoyle statue form) take 2× damage — rewards the player for spotting and attacking first.
   const dormantMult = e.dormant ? 2.0 : 1.0;
@@ -148,7 +150,7 @@ function executeStrike(e, rawDmg, now){
     }
     sndParry();
     showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');
-    lvAct.parries++;
+    lvAct.parries++;skillUse('guard',3,e);
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
     // v61c7 — Parry stamina cost rebalanced. WAS rawDmg (100% — meaning a
@@ -176,8 +178,8 @@ function executeStrike(e, rawDmg, now){
     const reduction = _blockBoost(shieldBlock);
     const blockedDmg = Math.max(1, Math.round(rawDmg*(1-reduction)));
     const absorbed = rawDmg - blockedDmg;
-    const finalDmg = _warded(blockedDmg, e);
-    PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;
+    const finalDmg = _warded(blockedDmg, e);skillUse('guard',1,e);
+    PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;armourUse();
     // v61c7 — Held block stamina also scales with Resolve (was raw `absorbed`).
     // Held block stays MORE expensive than parry (because 0.65 absorbed beats
     // 0.20 parry baseline at any Resolve level), so perfect timing remains the
@@ -196,7 +198,7 @@ function executeStrike(e, rawDmg, now){
     // Unblocked hit — apply damage reduction buffs
     const finalDmg = _warded(rawDmg, e);
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
-    sndPlayerHurt(); lvAct.damageTaken += finalDmg;
+    sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
     playerPostureHit(rawDmg*1.5, now/1000, false); // S281
     e._lunge=.3; // v80 — every strike moves the body
@@ -297,7 +299,7 @@ function tickMasterSlam(e,dt,dist,now){
     const d=Math.hypot(px-e.x,pz-e.z);
     if(d>=SLAM_R){e._slamLast='clear';showMsg('The ground cracks where you stood.','#c8e88a');return false;}
     if(rollUntouchable(now/1000)){e._slamLast='rolled';showMsg('You roll through the blow.','#c8e88a');return false;}
-    const dmg=_warded(slamBlow(e),e);PHP=Math.max(0,PHP-dmg);hurtT=.5;lastHitT=now/1000;lvAct.damageTaken+=dmg;e._slamLast=dmg;
+    const dmg=_warded(slamBlow(e),e);PHP=Math.max(0,PHP-dmg);hurtT=.5;lastHitT=now/1000;lvAct.damageTaken+=dmg;armourUse();e._slamLast=dmg;
     if(typeof sndPlayerHurt==='function')sndPlayerHurt();updateHUD();
     showMsg(`${e.name} slams the ground under you: ${dmg}.`,'#ff6060');
     if(PHP<=0&&!dead)playerDead();

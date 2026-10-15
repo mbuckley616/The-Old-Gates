@@ -93,6 +93,69 @@ const STARTER_WEAPONS={
 
 // Activity counters — reset each level, drive multipliers
 let lvAct={kills:0,damageTaken:0,parries:0,sprintDist:0,staminaDepleted:0,transactions:0,npcTalks:0,chestsOpened:0};
+
+// ── SKILLS (Session 941: skills and perks A, Michael's Morrowind book; docs/design/skills-and-perks-build.md, its first session) ──
+// Twenty-two skills, 1 to 100, raised by use. A use is one thing done against resistance (a hit on an alert foe, a pin set,
+// ten metres sprinted), at most once a second for each skill and target, so a sleeping deer teaches nothing. The next level
+// costs 0.9 × L^1.2 uses: 6 at 5, 43 at 25, 98 at 50, 223 at 99. Five majors start at 25, five minors at 15, the rest at 5.
+// What a skill sets is read where the thing is decided: a weapon's damage × (0.6 + 0.8 × skill/100), a school's power the
+// same and its cost × (1.4 − 0.8 × skill/100), the pick's chance, the tier gates, the run, swim, sprint and jump, and the
+// sight on you while you sneak. The level and the bed still run on xp until the sheet's second session; the perks are
+// read from the skill in its third. Skills are the character's: `skills`, `majors`, `minors` ride the character row.
+const SKILL_DEF={
+  blade:{label:'Blade',attr:'might'},blunt:{label:'Blunt',attr:'might'},bow:{label:'Bow',attr:'finesse'},guard:{label:'Guard',attr:'resolve'},
+  athletics:{label:'Athletics',attr:'swiftness'},acrobatics:{label:'Acrobatics',attr:'swiftness'},armour:{label:'Armour',attr:'fortitude'},
+  tine:{label:'Tine',attr:'intelligence'},uisce:{label:'Uisce',attr:'resolve'},cloch:{label:'Cloch',attr:'resolve'},
+  scath:{label:'Scáth',attr:'resolve'},solas:{label:'Solas',attr:'intelligence'},gaoth:{label:'Gaoth',attr:'intelligence'},
+  stealth:{label:'Stealth',attr:'finesse'},locks:{label:'Locks',attr:'finesse'},speech:{label:'Speech',attr:'charisma'},
+  alchemy:{label:'Alchemy',attr:'intelligence'},cooking:{label:'Cooking',attr:'charisma'},mining:{label:'Mining',attr:'might'},
+  woodcutting:{label:'Woodcutting',attr:'fortitude'},smithing:{label:'Smithing',attr:'might'},joinery:{label:'Joinery',attr:'finesse'}};
+// the build sheet's table: each archetype's suggested majors and minors (the creator's one sheet lets you change them: session 2)
+const SKILL_ARCH={
+  warrior: {maj:['blunt','armour','guard','athletics','smithing'],min:['blade','bow','acrobatics','mining','woodcutting']},
+  sentinel:{maj:['guard','armour','blunt','speech','solas'],min:['blade','athletics','cloch','smithing','cooking']},
+  duelist: {maj:['blade','guard','acrobatics','athletics','speech'],min:['bow','stealth','armour','locks','gaoth']},
+  scout:   {maj:['bow','athletics','stealth','acrobatics','woodcutting'],min:['blade','locks','joinery','cooking','gaoth']},
+  monk:    {maj:['blunt','acrobatics','solas','uisce','athletics'],min:['guard','cloch','alchemy','cooking','speech']},
+  scholar: {maj:['tine','solas','alchemy','speech','scath'],min:['uisce','gaoth','cloch','locks','blunt']},
+  diplomat:{maj:['speech','blade','stealth','solas','locks'],min:['alchemy','athletics','scath','bow','cooking']},
+  vagrant: {maj:['stealth','locks','blade','athletics','acrobatics'],min:['speech','bow','scath','cooking','woodcutting']}};
+// the tier gates by material tier (Iron 15 … Cosmic 100): a weapon reads its own skill, heavy armour reads Armour
+const SKILL_GATE=[0,0,0,15,30,45,55,65,75,90,100];
+let SKILLS={},skillMajors=[],skillMinors=[];
+const SKILL_LAST=new Map();
+function skillCost(L){return Math.round(.9*Math.pow(Math.max(1,L),1.2));}
+// a fresh character's skills by archetype; `lv` > 1 is the one-time migration of a character saved before skills: majors at
+// 25 + 2 a level past the first, minors at 15 + 1, both to 60 (the build sheet's *The save*)
+function skillsInit(arch,lv){const A=SKILL_ARCH[arch]||SKILL_ARCH.warrior,past=Math.max(0,(lv||1)-1);skillMajors=A.maj.slice();skillMinors=A.min.slice();SKILLS={};
+  for(const id in SKILL_DEF)SKILLS[id]={lv:A.maj.includes(id)?Math.min(60,25+2*past):A.min.includes(id)?Math.min(60,15+past):5,p:0};return SKILLS;}
+function skillsReady(){if(!SKILLS.blade)skillsInit(playerArchetype,1);return SKILLS;}
+function skillLv(id){const s=skillsReady()[id];return s?s.lv:5;}
+// 0 at 5 (a skill never trained moves as today), 1 at 100: the movement's lines run on this
+function skillT(id){return Math.max(0,Math.min(1,(skillLv(id)-5)/95));}
+// ×0.64 at 5, ×1.0 at 50, ×1.4 at 100: a weapon's damage and a school's power
+function skillMult(id){return id?.6+.8*skillLv(id)/100:1;}
+// the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers: bare fists are neither, so a punch
+// takes no skill (×1) and teaches none
+function weaponSkill(w){if(!w)return null;if(w.weaponShape==='bow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}
+function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)return false;
+  const now=performance.now(),key=target==null?'':target;let m=SKILL_LAST.get(id);if(!m)SKILL_LAST.set(id,m=new Map());
+  const t=m.get(key);if(t!=null&&now-t<1000)return false;
+  if(m.size>64)for(const [k,v] of m)if(now-v>=1000)m.delete(k);
+  m.set(key,now);s.p+=(w||1);let up=false;
+  while(s.lv<100&&s.p>=skillCost(s.lv)){s.p-=skillCost(s.lv);s.lv++;up=true;}
+  if(s.lv>=100)s.p=0;
+  if(up&&typeof showMsg==='function')showMsg(`${SKILL_DEF[id].label} rises to ${s.lv}.`,'#c8b8e8');
+  return true;}
+// Armour: a hit taken while wearing three or more pieces
+function armourUse(){let n=0;for(const k of ['head','chest','hands','legs','feet'])if(EQ[k])n++;if(n>=3)skillUse('armour',1,'hit');}
+// Athletics: ten metres sprinted or swum; called by the loop with the frame's step while moving
+let _athDist=0;
+function athleticsStep(d,sprinting){const swim=typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming();if(!sprinting&&!swim)return;
+  _athDist+=d;if(_athDist>=10){_athDist-=10;skillUse('athletics',1,'run');}}
+// Stealth: ten seconds sneaking inside a foe's sight range, unseen (canSeePlayer marks the moment)
+let _stealthNearT=-1e9,_stealthAcc=0;
+function stealthTick(dt){if(!_sneaking||performance.now()-_stealthNearT>500)return;_stealthAcc+=dt;if(_stealthAcc>=10){_stealthAcc-=10;skillUse('stealth',1,'unseen');}}
 let luOpen=false; // level up screen open?
 let luSelected=[]; // which attrs picked this level-up
 

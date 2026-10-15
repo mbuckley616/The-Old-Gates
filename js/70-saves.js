@@ -345,6 +345,7 @@ function _buildSavePayload(){
     xp,level,xpNext,kills,gold,
     PHP,maxHP,mana,maxMana,stamina:Math.min(stamina,_baseMaxStamina()+effMaxStamina()-maxStamina),maxStamina:_baseMaxStamina(), // S325 — never a herb's borrowed stamina
     ATTRS:{...ATTRS}, lvAct:{...lvAct},
+    skills:JSON.parse(JSON.stringify(skillsReady())), majors:skillMajors.slice(), minors:skillMinors.slice(), /* S941 — the character's skills (character row) */
     EQ:Object.fromEntries(Object.entries(EQ).map(([k,v])=>[k,_serItem(v)])),
     BAG:BAG.map(_serItem),
     // v61d4 — Persist stash inventory. Same _serItem serialization as BAG.
@@ -400,6 +401,10 @@ function _applyLoadData(d,w){
   // mid-session and inheriting stale entries.
   if(d.pName) playerName=d.pName;
   if(d.pArch) playerArchetype=d.pArch;
+  /* S941 — skills (skills and perks A): a character saved before them is migrated once, from its archetype and level */
+  if(d.skills&&typeof d.skills==='object'){skillsInit(playerArchetype,1);for(const id in SKILLS){const s=d.skills[id];if(s&&typeof s.lv==='number')SKILLS[id]={lv:Math.max(1,Math.min(100,s.lv|0)),p:Math.max(0,+s.p||0)};}
+    if(Array.isArray(d.majors))skillMajors=d.majors.filter(k=>SKILL_DEF[k]);if(Array.isArray(d.minors))skillMinors=d.minors.filter(k=>SKILL_DEF[k]);}
+  else skillsInit(playerArchetype,level);
   metNPCs.clear();
   if(Array.isArray(d.mN)) d.mN.forEach(n=>metNPCs.add(n));
   // v54 migration: rings, amulets, and shields used to have defMult=0 and so saved items have no `def`.
@@ -580,7 +585,7 @@ function _applyLoadData(d,w){
   for(const slot of Object.keys(EQ)){
     const eq=EQ[slot];
     if(!eq||!eq.reqAttr||!eq.reqVal)continue;
-    const have=(typeof ATTRS!=='undefined'?ATTRS[eq.reqAttr]:0)||0;
+    const have=reqHave(eq); /* S941 — a skill or an attribute */
     if(have<eq.reqVal){
       _eqUnequipped.push(eq.name);
       BAG.push(eq);

@@ -109,14 +109,14 @@ function canCarry(item){return totalCarryWeight() + itemWeight(item) <= maxCarry
 const MATERIALS=[
   {tier:1,name:'Wooden',   blade:0x8B5E3C,guard:0x6B3E20,glow:null,        reqAttr:null,reqVal:0,  dropW:40},
   {tier:2,name:'Bronze',   blade:0xCD7F32,guard:0x9B5F12,glow:null,        reqAttr:null,reqVal:0,  dropW:28},
-  {tier:3,name:'Iron',     blade:0xA8B0B8,guard:0x787880,glow:null,        reqAttr:'might',reqVal:5, dropW:18},
-  {tier:4,name:'Steel',    blade:0xDDE8EC,guard:0xA0B0B8,glow:null,        reqAttr:'might',reqVal:10, dropW:10},
-  {tier:5,name:'Mithril',  blade:0x3A5DA8,guard:0x2A3D88,glow:0x4466cc,   reqAttr:'might',reqVal:16, dropW:4},
-  {tier:6,name:'Adamant',  blade:0x2D6A2D,guard:0x1D4A1D,glow:0x33aa33,   reqAttr:'might',reqVal:24, dropW:2.0},
-  {tier:7,name:'Obsidian', blade:0x1A1A1A,guard:0x0D0D0D,glow:0x440088,   reqAttr:'might',reqVal:32, dropW:1.0},
-  {tier:8,name:'Draconic', blade:0xCC2200,guard:0x881100,glow:0xff4400,   reqAttr:'might',reqVal:40, dropW:0.5},
-  {tier:9,name:'Demonic',  blade:0x8800CC,guard:0x550088,glow:0xcc00ff,   reqAttr:'might',reqVal:48, dropW:0.2},
-  {tier:10,name:'Cosmic',  blade:0x88EEFF,guard:0x44CCDD,glow:0x00ddff,   reqAttr:'might',reqVal:56, dropW:0.08},
+  {tier:3,name:'Iron',     blade:0xA8B0B8,guard:0x787880,glow:null,        reqAttr:'skill',reqVal:15, dropW:18},
+  {tier:4,name:'Steel',    blade:0xDDE8EC,guard:0xA0B0B8,glow:null,        reqAttr:'skill',reqVal:30, dropW:10},
+  {tier:5,name:'Mithril',  blade:0x3A5DA8,guard:0x2A3D88,glow:0x4466cc,   reqAttr:'skill',reqVal:45, dropW:4},
+  {tier:6,name:'Adamant',  blade:0x2D6A2D,guard:0x1D4A1D,glow:0x33aa33,   reqAttr:'skill',reqVal:55, dropW:2.0},
+  {tier:7,name:'Obsidian', blade:0x1A1A1A,guard:0x0D0D0D,glow:0x440088,   reqAttr:'skill',reqVal:65, dropW:1.0},
+  {tier:8,name:'Draconic', blade:0xCC2200,guard:0x881100,glow:0xff4400,   reqAttr:'skill',reqVal:75, dropW:0.5},
+  {tier:9,name:'Demonic',  blade:0x8800CC,guard:0x550088,glow:0xcc00ff,   reqAttr:'skill',reqVal:90, dropW:0.2},
+  {tier:10,name:'Cosmic',  blade:0x88EEFF,guard:0x44CCDD,glow:0x00ddff,   reqAttr:'skill',reqVal:100, dropW:0.08},
 ];
 
 // Weapon types — shape, slot, weight, base atk range multiplier
@@ -360,7 +360,7 @@ function lineType(line,slot){return ARMOR_LINE_TYPES.find(t=>t.line===line&&t.sl
 function armorTypeOf(it){if(!it||!it.slot)return null;if(it.line)return lineType(it.line,it.slot);
   if(it.shieldType==='shield')return ARMOR_TYPES.find(t=>t.type==='Buckler');return ARMOR_TYPES.find(t=>t.slot===it.slot)||null;}
 function armorPrice(t,typeObj){return Math.max(5,Math.round(TIER_VALUE[t]*(0.5+((typeObj.priceDefMult||typeObj.defMult)||0.3)*0.3)*(typeObj.priceMult||1)));}
-function armorReq(t,typeObj){return t>=3?{reqAttr:(typeObj&&typeObj.line&&ARMOR_LINES[typeObj.line].req)||'fortitude',reqVal:ARMOR_FORT_REQ[t]||0}:{reqAttr:null,reqVal:0};}
+function armorReq(t,typeObj){if(t<3)return {reqAttr:null,reqVal:0};const ln=typeObj&&typeObj.line;return ln?{reqAttr:ARMOR_LINES[ln].req,reqVal:ARMOR_FORT_REQ[t]||0}:{reqAttr:'armour',reqVal:SKILL_GATE[t]||0};} /* S941 — heavy armour reads the Armour skill (skills and perks A); the light and robe lines keep their attribute, asked in decisions.md */
 function linePieces(line){let n=0;for(const k in EQ){const it=EQ[k];if(it&&it.line===line)n++;}return n;}
 
 // ── BOOKS ────────────────────────────────────────────────────────
@@ -604,12 +604,15 @@ function makeItem(matTier, typeObj, enchant, isArmor){
   return item;
 }
 
+// S941 — what a requirement reads: 'skill' is the weapon's own skill (Blade, Blunt or Bow), a skill's id that skill, else an attribute
+function reqHave(it){if(it.reqAttr==='skill')return skillLv(weaponSkill(it));if(SKILL_DEF[it.reqAttr])return skillLv(it.reqAttr);return ATTRS[it.reqAttr]||0;}
+function reqName(it){if(it.reqAttr==='skill')return SKILL_DEF[weaponSkill(it)].label;if(SKILL_DEF[it.reqAttr])return SKILL_DEF[it.reqAttr].label;return (ATTR_DEF[it.reqAttr]&&ATTR_DEF[it.reqAttr].label)||it.reqAttr;}
 // Check if player can equip an item
 function canEquip(item){
   if(!item.reqAttr||!item.reqVal)return{ok:true};
-  const have=ATTRS[item.reqAttr]||0;
+  const have=reqHave(item);
   if(have>=item.reqVal)return{ok:true};
-  return{ok:false,msg:`Requires ${ATTR_DEF[item.reqAttr]?.label||item.reqAttr} ${item.reqVal} (you have ${have})`};
+  return{ok:false,msg:`Requires ${reqName(item)} ${item.reqVal} (you have ${have})`};
 }
 
 // v61c0: gold drop roll. Three knobs:

@@ -737,9 +737,9 @@ function showBagTooltip(idx,ev){
     }
     // Attribute requirement
     if(it.reqAttr&&it.reqVal>0){
-      const have=ATTRS[it.reqAttr]||0;
+      const have=reqHave(it);
       const met=have>=it.reqVal;
-      const reqLabel=ATTR_DEF[it.reqAttr]?.label||it.reqAttr;
+      const reqLabel=reqName(it);
       html+=`<div class="bt-row" style="color:${met?'#66aa44':'#cc4444'};font-size:9px">Requires ${reqLabel} ${it.reqVal}${met?'':" (you have "+have+")"}</div>`;
     }
     if(cur&&cur.name){html+='<div class="bt-cur">Equipped: '+cur.ico+' '+cur.name+'</div>';}

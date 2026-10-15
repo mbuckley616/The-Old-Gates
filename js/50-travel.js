@@ -360,7 +360,7 @@ function harvestHerb(h){
   if(typeof WORLD!=='undefined')WORLD.guild.onHarvest(h); // v80 S12
   const item={...h.def.item,qty:1,_typeKey:h.type};
   if(!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return;}
-  h.harvested=true;h.gl.intensity=0;
+  h.harvested=true;h.gl.intensity=0;skillUse('alchemy',1,h); /* S941 — a pick is an Alchemy use */
   {const u=h.g.userData;if(u&&u.picked){u.whole.visible=false;u.picked.visible=true;}else h.g.visible=false;} // S217 — a bush picked in the old zones stays, bare, as in the world
   if(h.def.respawn!=null)h.respawnT=h.def.respawn;
   bagAdd(item);

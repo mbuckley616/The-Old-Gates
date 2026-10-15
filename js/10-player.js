@@ -307,10 +307,13 @@ function fallTrack(dt){
   FALL.x=px;FALL.z=pz;
 }
 // called where the loop lands you; y is the ground you landed on. Returns the drop.
+let _jumpFrom=null; // S941 — the ground a jump left from (Acrobatics)
 function fallLand(y){
   const top=FALL.top;FALL.top=null;
   if(top==null||fallKey()!==FALL.key||Math.hypot(px-FALL.x,pz-FALL.z)>3)return 0;
   const drop=top-y;
+  if(_jumpFrom!=null&&drop<=FALL_FREE&&y>_jumpFrom+.3)skillUse('acrobatics',1,'jump'); /* S941 — a jump that lands higher than it left */
+  _jumpFrom=null;
   if(drop>FALL_FREE&&!dead){
     const dmg=Math.max(1,Math.round(maxHP*FALL_PER*(drop-FALL_FREE)));
     FALL.pend={dmg,drop,t:FALL_ROLL_WIN};
@@ -322,6 +325,7 @@ function fallLand(y){
 function fallSettle(rolled){
   const p=FALL.pend;FALL.pend=null;if(!p||dead)return;
   const dmg=rolled?Math.max(1,Math.round(p.dmg/2)):p.dmg;
+  {const aw=(rolled?1:0)+(p.drop>4?2:0);if(aw&&PHP-dmg>0)skillUse('acrobatics',aw,'fall');} /* S941 — a landing roll 1; a fall over 4 m lived through 2 */
   FALL.last={drop:+p.drop.toFixed(2),dmg,rolled};
   PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();
   showMsg(rolled?`You roll with the fall. ${dmg} damage.`:`A hard landing. ${dmg} damage.`,'#ff6060');
@@ -742,14 +746,16 @@ function canSeePlayer(e, dist, baseSightRadius){
   // Sight: requires distance AND forward cone. If combatYaw isn't set
   // (shouldn't happen post-spawn-init, but defensive), fall back to
   // omnidirectional at the sight radius.
-  if(dist >= sightRadius) return false;
+  if(dist >= sightRadius){ if(_sneaking&&dist<baseSightRadius) _stealthNearT=performance.now(); return false; } /* S941 — inside its range, unseen: Stealth */
   if(typeof e.combatYaw !== 'number') return true;
   const fX = Math.sin(e.combatYaw);
   const fZ = Math.cos(e.combatYaw);
   const dx = px - e.x, dz = pz - e.z;
   const nx = dx / dist, nz = dz / dist;
   const dot = fX * nx + fZ * nz;
-  return dot > VISION_CONE_COS;
+  if(dot > VISION_CONE_COS) return true;
+  if(_sneaking) _stealthNearT=performance.now();
+  return false;
 }
 // v63 — Crouch visuals. Eye height lowers from EYE_STAND (0.92) to EYE_CROUCH
 // (0.60) while sneaking, smoothed via exponential lerp at CROUCH_LERP_RATE.
@@ -770,7 +776,7 @@ function _sneakDetectMult(){
   if(!_sneaking) return 1.0;
   const fin = attrEff('finesse');
   const mult = SNEAK_DETECT_BASE - SNEAK_DETECT_PER_FINESSE * fin;
-  return Math.max(0.25, mult)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1)*(1-.03*(typeof linePieces==='function'?linePieces('light'):0)); // S552 — the dark hood; S564 — 3% a light piece worn
+  return Math.max(0.25, mult)*(1-.4*skillLv('stealth')/100)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1)*(1-.03*(typeof linePieces==='function'?linePieces('light'):0)); // S552 — the dark hood; S564 — 3% a light piece worn
 }
 // Toggle sneak. Called from the Ctrl keydown handler. No-ops if a modal
 // is open (handler-level guard handles that, but defensive here too).

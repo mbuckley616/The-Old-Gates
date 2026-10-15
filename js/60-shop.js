@@ -861,7 +861,7 @@ function buyItem(it){
   bagAdd(item);
   // v68 — if this was a bought-back item, remove it from the merchant overlay.
   if(it._boughtBack) _consumeBuyBack(it, _bundleQty);
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndBuyItem(it);
   showMsg(`Bought ${it.name} for ${_cost}🪙`,'#c8a84a');
   renderShop();
@@ -889,7 +889,7 @@ function sellItem(i,sp){
   // doesn't drop a 12-bundle into buy-back).
   _pushBuyBack({...it, qty:1}, finalSp);
   it.qty--;if(it.qty<=0)BAG.splice(i,1);
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndGoldJingle();
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${it.name} for ${finalSp}🪙${tithe?` (the Crown's twentieth, ${tithe})`:''}`,'#44ee44');
@@ -916,7 +916,7 @@ function _buyStackable(it, units, piecesPerUnit, unitPrice){
     return;
   }
   gold-=spent;
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndBuyItem(it);
   const totalPieces = piecesPerUnit>1 ? piecesPerUnit*bought : bought;
   showMsg(`Bought ${totalPieces}× ${it.name} for ${spent}🪙`,'#c8a84a');
@@ -937,7 +937,7 @@ function _sellStackable(it, bagIdx, units, unitPrice){
   _pushBuyBack({...live, qty:sellPieces}, unitPrice); // buy-back priced per piece
   live.qty-=sellPieces;
   if(live.qty<=0) BAG.splice(bagIdx,1);
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndGoldJingle();
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${sellPieces}× ${it.name} for ${gain}🪙`,'#44ee44');

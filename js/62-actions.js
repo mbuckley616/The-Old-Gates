@@ -37,6 +37,7 @@ function doBash(){
     const dist = Math.hypot(ex, ez);
     if(dist >= BASH_RANGE) continue;
     if((ex*fwdX + ez*fwdZ)/(dist||1) <= BASH_CONE_COS) continue;  // front cone only
+    if(e.alert)skillUse('guard',1,e); /* S941 — a bash is a Guard use */
     e.alert = true;
     // Shieldbearer with guard up — immune. Flag for a one-shot feedback toast.
     if(e.shieldUp){ anyGuard = true; continue; }
@@ -166,9 +167,11 @@ function _resolveDungeonStrike(_isPow){
       // rear cone) takes SHIELDBEARER_FRONT_BLOCK of the damage. shieldFrontMult
       // returns 1.0 for everything else and for flanking hits.
       const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1)*powerMult*shMult); // S322 — Firemoss and Caor Dubh underground too
+      const _wasAlert=!!e.alert; /* S941 — the weapon's skill carries the damage; the flat level×1.5 is gone (skills and perks A) */
+      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo)))*skillMult(weaponSkill(w))*mightMult*_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1)*powerMult*shMult); // S322 — Firemoss and Caor Dubh underground too
       const info=applyMeleeDamage(e, rawDmg);
       const dmg=info.dmg;
+      if(_wasAlert&&weaponSkill(w))skillUse(weaponSkill(w),(info.riposte||info.finisher)?3:1,e);else if(info.backstab)skillUse('stealth',3,e);
       e.hp=Math.max(0,e.hp-dmg);
       e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;
       e.alert=true;hit=true;
@@ -257,9 +260,8 @@ function fireArrow(strength){
   const drawMult = BOW_DAMAGE_MULT_MIN + (BOW_DAMAGE_MULT_MAX - BOW_DAMAGE_MULT_MIN) * strength;
   // Finesse — bow's primary attribute, mirrors Might’s melee scaling (ATTR_DMG_PER_POINT).
   const finesseMult = 1 + attrEff('finesse') * BOW_FINESSE_DMG;
-  // Per-level component (matches melee's level×1.5 floor).
-  const lvlFloor = Math.floor(level * 1.0);
-  const rawDmg = Math.max(1, Math.floor((bowRoll + arrowRoll + lvlFloor) * drawMult * finesseMult));
+  // S941 — the Bow skill carries the damage (skills and perks A); the per-level floor is gone.
+  const rawDmg = Math.max(1, Math.floor((bowRoll + arrowRoll) * skillMult('bow') * drawMult * finesseMult));
   // ── Resolve damage type ───────────────────────────────────────
   // Arrow overrides bow's wType (per lore: silver/broadhead arrows). Iron
   // arrows omit wType → falls through to bow's 'pierce'.
@@ -316,7 +318,7 @@ function fireArrow(strength){
     arrowDmg: rawDmg,
     // S480 — the roll's terms, so the hit rolls the spread on the struck foe's stream (arrowRawFor); arrowDmg is the roll
     // for a target with no id
-    roll: {bLo: bowLo, bHi: bowHi, aLo, aHi, lv: lvlFloor, m: drawMult * finesseMult},
+    roll: {bLo: bowLo, bHi: bowHi, aLo, aHi, lv: 0, m: skillMult('bow') * drawMult * finesseMult}, /* S941 — no level floor; the Bow skill in the multiplier */
     wType: wTypeResolved,
     // Carry source-bow ref for hit-message attribution (no need to retain
     // ammo ref — damage was already rolled).
@@ -450,10 +452,11 @@ function castSpell(){
   // Block re-cast while hand animation is in flight — prevents double-spawns and tangled state
   if(isCasting()){return;}
 
-  const actualCost=Math.round(spellCost(sp,tier)*_buffMult('spellCost',1));
+  const actualCost=Math.round(spellCost(sp,tier)*_buffMult('spellCost',1)*(SKILL_DEF[sp.school]?1.4-.8*skillLv(sp.school)/100:1)); /* S941 — the school's skill sets the cost */
   if(mana<actualCost){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
   if(spCd>0){showMsg('Cooling down...','#6688cc');return;}
   mana-=actualCost;_offenceS=playClockS; /* S408 */
+  if(sp.role==='buff'&&SKILL_DEF[sp.school])skillUse(sp.school,1,'cast'); /* S941 — a cast that does something */
   spCd=spellCooldown(sp,tier);
 
   const dispName=spellDisplayName(sp,tier);
@@ -573,7 +576,8 @@ function castSpell(){
     }
     // ── Heal spells (Leigheas) ───────────────────────────────────
     else if(sp.role==='heal'){
-      const heal=Math.round(spellHealMag(sp,tier)+level*(sp.healLvl||0));
+      const heal=Math.round(spellHealMag(sp,tier)*(SKILL_DEF[sp.school]?skillMult(sp.school):1)); /* S941 — the school's skill, not the level */
+      if(PHP<effMaxHP())skillUse(sp.school,1,'heal');
       PHP=Math.min(effMaxHP(),PHP+heal);
       const TIER_LIGHT=[2.5, 3.8, 5.5][tier-1];
       const TIER_RANGE=[5, 7, 9][tier-1];
