@@ -18634,3 +18634,37 @@ The fix is one last pass at the end of `buildHang`. Every point of every column 
 ### Needs eyes
 - **The back of a cloak over mail** now follows the mail skirt's outline at the buttocks wherever a fold would have cut into it. In the picture it reads as cloth over a stiff skirt. Whether the fold there looks pinched is for a closer look.
 - This pass is a floor, not a drape. A cloak over plate, which stands further out and steps sharply, will want the folds laid against the outline at the height they end at, not the height they start at.
+
+## v80 — Session 905 — F2a: the eleven suites CI found red (the deep-work session, card F2a)
+The producer sent card F2a back: PR #315's CI on fde9867 failed eleven suites twice across seven shards (barberbox, coachinn, dragonsize, fiercewolf, hoardspot, homesleep, intreach, keepercone, shells, skirtlegs, wraithfloat). Main was merged in first (the backlog's one line kept both edits). Nine failed here too; barberbox and homesleep passed here and are left to the next CI run. Each was either a place where F2a broke behaviour, fixed in the code, or a suite that measured in the old unit, re-measured to the new truth. None was loosened.
+
+**Fixed in the code.**
+- **The wolves and the Cave Bear** (`fiercewolf`). Michael's A on #187 set them as shares of a man: a Wolf's back at 56% of one, a Dire Wolf's 73%, the bear's hump 88%. With the man 1.44 times taller, a Wolf's back fell back to 38% of him, the size #187 rejected. They are now drawn at their `play` size times `SCALE.BEAST` (07-scale.js, equal to `ROOM_K`, 1.444): Wolf 1.52, Snow Wolf 1.66, Dire Wolf 1.95, Ash Hound 1.44, Cave Bear 2.24. That puts them at 54%, 59%, 71%, 51% and 86% of a 1.76 m bandit. Only the drawing changes. A foe's `size`, and so its hits and reach, is unchanged (F2b). At the larger size a dead Dire Wolf came to rest standing in 1 of 120 seeded falls, and hit the four-second cap once. Stretching the ragdoll's clock by √k made it worse (3 standing, 6 capped), because its damping is per step. So a drawn-larger beast's fall now runs at its tuned size (its points and size divided by `rig.drawK`, the ground and walls read at K times, the bones aimed K times as far). That is S632's tuned fall exactly: 0 of 120 standing and 0 capped for both kinds. `beastfall`, `ragdoll` and `ragdollsearch` pass. The Faolchú (a Dire Wolf × 1.45 with arms of its own), the horses and the dragon keep their sizes; see below.
+- **The health bars.** A person-bodied foe's bar stood at 1.3 × its scale, chest height on a 1.76 m man. It is now at 1.3 × `ROOM_K`. A beast of #187's bar is over its drawn back.
+- **A wraith's glide** (`wraithfloat`). Its hover of .24 ± .05 was in the old unit, so the robe's hem came to 4.6 cm off the ground on the taller body. The hover is now × `ROOM_K`: 13.5 cm clear at the bottom of the bob.
+- **The coaching inn's guests** (`coachinn`). `coachInnFolk` places them while the room is still in the kit's old unit, before `scaleRoom`. It tested with `intSolidAt`, whose step height (.62) is in metres. A table .47 high in the old unit was steppable there and stands .68 once scaled, so a traveller stood in it (Eilís, 2.6 cm inside a table's edge). The test now uses the heights the room will have.
+- **A person under the crosshair beats a door that is only near** (`personAimedIn`, 50-travel.js; the prompt in 90-main.js reads the same rule). The door's exit zone is 1.6 deep and 3.2 wide, in metres, and in a room of true size it reaches the people waiting by the door. E at the coaching inn's driver, from one step behind them, walked you out of the inn. A bed already won the same way (S650).
+
+**Re-measured** (the same claim, in the new unit):
+- `dragonsize`: the dragon keeps its metres, under the lair's 4.4 roof (the dungeons' heights are F2b's). It now stands 2.09 bandits tall, which is "about twice a man's height", Michael's own words on #153. The old test asked for more than 2.7, three of the old 1.24 bandits.
+- `fiercewolf`: the built scale is Michael's size × `SCALE.BEAST`; the shares of a man are unchanged.
+- `skirtlegs`: r128's `boneTransform` gives a world point, so on a root now scaled 1.2 every distance read 1.2 times larger. The legs and the skirt are now read in the mesh's own frame, where its 2 cm bins and 5 cm limit were set. Worst pokes are 4.5, 4.2 and 4.5 cm (limit 5), at 4.2 to 6.8 vertices a frame (limit 9).
+- `keepercone`: in a room of true size, 1.5 m east of the strongbox is across the counter, with no line of sight. The keeper now stands 1.5 m off on the first of sixteen bearings that has one.
+- `hoardspot`: "looking at it, nearly level" (pitch −.25) from the 1.65 eye passed over the chest. It now aims at the chest's middle (−.73).
+- `shells`: the suite re-ran the kit's window rule on the scaled room. That rule runs in the kit's unit, before scaling, so it found two windows a side in a cabin 8 m deep where one is built, and a post at 5.3 m read as standing in front of a window. It now reads the windows as built, and checks it found them.
+- `intreach`: the flood starts where the game sets you down (`intArrivalZ`, which stands you before a shallow shop's counter since S896), not at a copy of the old rule. Before, 22 shops started inside their counter.
+- `coachinn`: the player looks at the person they talk to (`lookAtPt` at 1.2 m). A level look from 1.65 m at one metre passes over the crown of a driver 1.66 m tall.
+
+**For F2b** (gameplay ranges left in the old unit, met here): the exit zone (1.6 × 3.2); `STEP_UP` and `PLAYER_H`, which `intSolidAt` reads in metres while rooms are laid out in the old unit; the lair's 4.4 roof under the dragon; and `talkTargetNow`, which indoors reads the world's townsfolk because `activeZoneId` stays `'world'` (it has done so before F2a). It never finds a guest in a room, so the crosshair's talk ring never shows indoors.
+
+### Verified (headless Chromium)
+- Each of the nine, run here: fiercewolf, dragonsize, wraithfloat, skirtlegs, keepercone, hoardspot, shells, intreach and coachinn, each green.
+- The ragdoll suites beside them (beastfall, ragdoll, ragdollsearch) green.
+- barberbox and homesleep green here as before.
+- parsecheck clean.
+- The full suite was started in four local shards at the push; CI on the push is the judge.
+
+### Needs eyes
+- **The wolves and the bear at 1.44 times their old size.** The Dire Wolf's back is 1.25 m and the bear's hump 1.5 m: the shares of a man Michael chose, in metres now.
+- **Left at their old size, against the taller people:** the Faolchú (its arms are built in the old unit; it is a boss, and resizing it is the bodies builder's) and the coach's horses (1.6, beside a coach that was not resized). The critic, please.
+- **The dragon** is now twice a man rather than three of the old ones.
