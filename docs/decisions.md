@@ -4,21 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
-You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
-
-**1. Which town?**
-- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
-- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
-- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
-
-**2. What is in it?**
-- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
-- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
-- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
-
-Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
-
 ## Answered
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
@@ -53,6 +38,82 @@ Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writ
 
 ### Quest draft approved: The Great Gates, I — the knot at the ring
 Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
+**F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.
+- **The bore:** 56 m long, winding 1.6 m either side, 3.6 m wide, with upright walls to 2.4 m under a round vault (4.2 m at the crown).
+- **The floor:** paved, with two cart ruts 1.4 m apart and a gutter down one side.
+- **The lamps:** clay lamps in plastered, arched niches every 6 m on alternate walls.
+- **The passing place:** midway, 6 m wide for 6 m, so that two carts can pass. It has a plastered dado under a band of blue glazed tile, a stone bench, the tally-keeper's table with a ledger, nine amphorae, and a shaft to the sky.
+- **The portals:** an arch in a plastered frame let into each cliff, rung in ashlar, with tiled spandrels and a blank tablet. Before them are the quay's paving and the dust road.
+- **Lit or dark:** `&dark` puts the lamps out, so you go by your torch.
+
+**1. What the tunnel is for:**
+- **A. A road** *(recommended)*: part of the road network, lit, kept and peaceful. It is a place to pass through, and it shows Aurenne's trade.
+- **B. A smugglers' run:** under the town, dark, held by people who should not be there. It is a place to fight through, like OG-121's lairs.
+- **C. Both:** the same bore, lit and kept in some towns, dark and taken in others (`o.used`).
+
+Pictures:
+- [the quay's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-quay.jpg)
+- [inside, by the lamps](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel.jpg)
+- [the passing place](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-passing.jpg)
+- [toward the inland portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-inland.jpg)
+- [the road's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-road.jpg)
+- [dark, by your torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel-dark.jpg)
+
+Michael: **A road** (A, on the control room). (14 Oct 2026)
+
+### Aurenne's ruined aqueduct: broken, or a way across? (look builder, Session 907) — DECISION #333
+**F8: Aurenne's first place, a ruined aqueduct (look builder, Session 907).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs", and OG-124 has "a ruined aqueduct". The catalogue's note asks that it be built in Aurenne's own plaster and tile, not the boards' Tuscan stone (canon §1.3). It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneAqueduct`), at `places.html?place=aqueduct`. The catacombs wait on the quest writer's answer about the dead (§3.1).
+- **The valley:** dry, 20 m deep, with a dry stream bed down its floor, pale rock, and cypresses on its shoulders.
+- **The arcade:** piers 2.2 m wide on a pitch of 8.2 m, with 6 m of clear span under each round arch.
+  - Two tiers where the valley is deep: 6 arches below and 10 above.
+  - One tier on the slopes, and a solid wall where the ground comes near the channel.
+  - The faces are cream lime plaster over a brick core, with the brick showing where patches have fallen.
+  - The arches are rung in pale ashlar on impost blocks, and a string course runs between the tiers.
+  - A band of blue glazed tile runs under the cornice on both faces.
+- **The channel:** 1.2 m wide inside, with walls 0.9 m high under copings, some of them gone. It is lined in red mortar, with a pale lime crust to 0.3 m where the water ran. It is dry and has no covers, so you walk along its bed from the terrace where it comes off the hill.
+- **The ruin:** the upper tier and the channel have fallen over two bays east of the middle. The pier between them is a stump on the lower tier, the broken ends are ragged, and the blocks lie heaped below. The walk ends at a drop of about 10 m to the lower tier, with the far run 11 m off.
+
+**1. The gap:**
+- **A. Broken, as drawn** *(recommended)*: the channel walk ends at the gap. The far side is reached from the valley, so the ruin is a view and a climb, not a bridge.
+- **B. A way across:** a plank bridge someone has laid over the gap, or the stump high enough to jump to. The walk then runs end to end.
+- **C. Whole:** no gap (`&whole`). This would be an aqueduct still standing, dry, for the roads and works of L5 rather than a ruin.
+
+Pictures:
+- [the valley and the two tiers](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct.jpg)
+- [down the channel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-channel.jpg)
+- [at the break](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-break.jpg)
+- [under the arches](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-under.jpg)
+- [off the west terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-end.jpg)
+- [whole, for comparison](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct-whole.jpg)
+
+Michael: **Broken, as drawn** (A, on the control room). (14 Oct 2026)
+
+### The Mark's ice cavern: the cave's hall in ice, or a glacier cave of its own? (look builder, Session 903) — DECISION #331
+**F8: the Mark's ice cavern (look builder, Session 903).** #305's three Gatelands places are done. The card's next part is the places by island, and OG-121's Mark panel has "ice caverns, snowed-in mouths". This first one is the limestone cave's hall (#313, rebuilt on your note in Session 882) dressed in the Mark's ice. It is a prototype in `docs/prototypes/levelup/places.js` (`markIceCave`, a dress of `gatelandsCave`), at `places.html?place=icecave`.
+- **The same space:** the same hall of 64 m, 45 m across and 24 to 30 m high, with the same winding passage, ledge, ramp, shore, natural bridge and shaft to the sky. Its rock is not moved.
+- **In ice:**
+  - blue-white glacier ice for walls, glassy where it is wet;
+  - icicles for stalactites;
+  - the lake frozen over;
+  - the falls frozen where they fell, a pillar of ice under the shaft;
+  - snow dusting the dry shore and drifted 9 m into the passage from the mouth, never more than 0.45 m deep on the walk;
+  - no flowers.
+- **The light:** your torch, and the day down the shaft, which the ice throws further than the limestone did.
+
+**1. The Mark's ice cavern:**
+- **A. The cave's hall in ice, as drawn** *(recommended)*: one hall, two islands' dress, as the ships take dresses. It is cheap, and it is proven by the cave's checks.
+- **B. Its own shape:** a glacier cave, a long blue tunnel under the ice with a ribbed, scalloped roof, meltwater channels and moulins. That is a new build and a different place.
+
+Pictures:
+- [the hall from the ledge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-lake.jpg)
+- [down the shore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-shore.jpg)
+- [the frozen falls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-falls.jpg)
+- [over the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-bridge.jpg)
+- [the snowed-in passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-passage.jpg)
+
+Michael: **The cave's hall in ice, as drawn** (A, on the control room). (14 Oct 2026)
 
 ### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
 You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
