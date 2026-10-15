@@ -89,7 +89,7 @@ You asked for a playable slice of 2.0 before the cutover: one region and its tow
 
 Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
 
-### Skills and perks — how fast should the level come? (the designer, 2026-10-15)
+### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342
 The skills build sheet (`docs/design/skills-and-perks-build.md`) settles the 22 skills, their uses, the curve, the 88 perks and the bed. Every skill-up counts toward the level, majors and minors as one mark and the rest as a quarter. The bed gives 12 points, at most 5 in one attribute (Oblivion Remastered's two fixes). The open number is how many marks a level takes, because twelve points a level is a large step. The simulation behind it is an ordinary mix of play, about 650 skill uses an hour.
 - **A.** Ten marks every level, as in Morrowind: level 10 at about 5 hours, 25 at 21, 40 at 46.
 - **B.** Ten plus half the level: level 10 at about 7 hours, 20 at 27, 25 at 45; about 30 by 75 hours.
