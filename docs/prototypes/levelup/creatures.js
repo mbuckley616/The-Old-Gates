@@ -1853,6 +1853,29 @@ Object.assign(PLANS, {
       ['fronds', { on: ['head', 'neck', 'spine', 'arm0L_', 'arm0R_'], n: 36, len: .34, w: .04, out: .25, spread: .2, lift: -1.6, back: .15, tip: 'frondTip' }]] })
 });
 export const SKELETONS = ['skeleton', 'drownedskeleton'];
+// ── Session 958: the Frost Thing, two ways (OG-018's Uisce row: "a crystalline ice-shard figure, all spikes"; canon §9a gives Uisce
+// "frost things", and says a steady gate makes "the shapes the local folklore had words for"). The catalogue flags the sheet's figure as
+// an elemental with no folk shape under the ice. Two plans for Michael to choose between (DECISION, decisions.md):
+// A `frostshard`, the sheet's figure: the troll's hunched frame in clear blue ice, shards out of its crown and down its back, lit cold;
+// B `frostfolk`, a folk shape under the ice: a man's frame (the skeleton's) grown whole and frozen, frosted white over blue, head bowed,
+// shards breaking from his shoulders and crown, the eyes lit pale. The drowned of the Uisce halls, walking ──
+Object.assign(PLANS, {
+  frostshard: re(PLANS.troll, { name: 'Frost Thing (shards)', src: 'OG-018 (Uisce: a Frost Thing, a crystalline ice-shard figure, all spikes)', school: 'Uisce', from: 'troll', scale: .85, clear: .72, rough: .1, mottle: .6, pattern: undefined, finOpacity: 1,
+    palette: { coat: [.6, .78, .92], saddle: [.45, .62, .8], belly: [.74, .86, .96], dark: [.04, .06, .1], horn: [.66, .86, 1], ice: [.72, .9, 1], skin: [.58, .74, .88] },
+    glow: { color: [.5, 1.1, 2.4], freq: 2.2, w: .03, all: .3 },
+    parts: [...PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: undefined, horns: undefined, brow: undefined, crystals: { n: 6, len: .42, r: .07, f: .3, up: .8, out: .3, rake: .4 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }]
+      : k === 'arms' ? [k, { ...o, r: o.r.map(v => v * .8) }] : [k, o]),
+      ['spines', { n: 10, from: .05, to: 1, len: .5, r: .08, tone: 'ice', taper: .3, crystal: 4, dorsal: 1 }]] }),
+  frostfolk: re(PLANS.skeleton, { name: 'Frost Thing (the frozen)', src: 'OG-018 (Uisce: a Frost Thing), with a folk shape under the ice (canon §9a)', school: 'Uisce', from: 'skeleton', clear: .88, rough: .25, mottle: 1.2, finOpacity: 1, speedK: .7, cell: .028,
+    palette: { coat: [.82, .88, .93], saddle: [.62, .74, .86], belly: [.88, .92, .96], dark: [.05, .07, .1], horn: [.7, .88, 1], ice: [.74, .9, 1], skin: [.8, .86, .92] },
+    glow: { color: [.45, .95, 2], freq: 1.6, w: .02, all: .22 },
+    parts: [
+      ...PLANS.skeleton.parts.filter(([k]) => ['spine', 'neck', 'legs', 'arms'].includes(k)).map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.12, .125, .15], s: [1.15, .8] }] : k === 'neck' ? [k, { ...o, len: .16, r: [.055, .05] }] : k === 'arms' ? [k, { ...o, r: [.06, .05, .045], dir: [.1, -1, .12], bend: 22 }] : [k, o]),
+      ['head', { len: .22, r: .095, pitch: 12, s: [.9, 1.08, 1], muzzle: { len: .6, r: .06, taper: .8, drop: .3 }, jaw: { len: .6, r: .045, drop: .9 },
+        eyes: [{ f: .55, up: .25, out: .42, r: .02, color: [.6, .92, 1] }], crystals: { n: 5, len: .16, r: .03, f: .2, up: .85, out: .25, rake: .5 } }],
+      ['spines', { n: 6, from: .55, to: 1, len: .3, r: .05, tone: 'ice', taper: .2, crystal: 3, dorsal: 1 }]] })
+});
+export const FROST = ['frostshard', 'frostfolk'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it

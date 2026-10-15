@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #ISSUE
+OG-018 draws Uisce's Frost Thing as "a crystalline ice-shard figure, all spikes". Canon §9a says a steady gate makes "the shapes the local folklore had words for", and the catalogue flags that the sheet's figure reads as an elemental, with no folk shape under the ice. Both are built as plans in the creature kit, for you to choose between.
+
+Which should the Frost Thing be?
+- **A. The sheet's shard figure** (`frostshard`): the troll's hunched frame in clear blue ice, with shards out of its crown and down its back, lit cold from inside. It is the drawing as drawn, but it has no folk shape: it is the gate's own thing.
+- **B. A folk shape frozen** (`frostfolk`, recommended): a man's frame, the skeleton's, grown whole and frozen. It is frosted white over blue, with its head bowed and shards breaking from its shoulders and crown, its eyes lit pale. These are the drowned of the Uisce halls, walking again in ice: the shape the shore's folk would have words for. The face is not finished; a choice of B makes it the next session's work.
+- **C. Both:** A where a gate failed suddenly (canon: "the stranger the failure, the stranger the shape") and B in a steady gate.
+
+Pictures: [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostshard.jpg), [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostfolk.jpg), [the two beside the skeleton and the troll](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frost.jpg).
+
 ## Answered
 
 ### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342

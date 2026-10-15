@@ -20957,3 +20957,31 @@ What changed in `creatures.js`:
 - **The head is a soft lump with horns.** A carved gargoyle's face (a snarl, deep-cut eyes) wants a sculpted head, as the skeleton's skull got in Session 942.
 - **Dormant:** the game's Gargoyle stands still until woken. The kit has no perched pose to hold it in, crouched on a ledge with its wings tight.
 - **The Gaoth gargoyle's "wind-swept" look** is only colour and proportion: nothing on it moves in the wind.
+
+## v80 — Session 958 — The Frost Thing, two ways (L4, prototype only), and a question
+OG-018 draws Uisce's Frost Thing as "a crystalline ice-shard figure, all spikes". Canon §9a says a steady gate makes "the shapes the local folklore had words for". The catalogue's note on the sheet says the figure reads as an elemental and "may need a folk shape under the ice". Whether it should is Michael's call, so this session builds both and asks (DECISION, `decisions.md`). Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js` (`FROST` lists the two):
+- **`frostshard`, option A (the sheet's figure):**
+  - The troll's hunched frame at 0.85 of its size, its arms a fifth thinner, in clear blue ice (0.72 opacity).
+  - A cold light runs through it.
+  - A crown of six shards, and ten clusters of four shards down its back.
+  - 12,676 triangles.
+- **`frostfolk`, option B (a folk shape frozen):**
+  - The skeleton's frame, a man's proportions, grown whole instead of drawn as bones.
+  - Frosted white over blue (0.88 opacity), its head bowed 12°, a crown of small shards, six clusters of shards breaking from the shoulders, the eyes lit pale.
+  - It walks slower than the skeleton.
+  - 7,756 triangles on a 2.8 cm grid.
+- **A correction made during the session:** the frozen man's head was first swallowed by its shoulders, a ghost in a sheet. Its trunk is thinner now and its neck longer. Its face is still unfinished.
+- **A gotcha:** the plans were first placed above `PLANS.skeleton` in the file. A plan built from another must come after it, or the module throws on load and the check page never finishes.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,062 checks pass** (1,042 before).
+  - Both plans' family checks pass. Every foot reaches its target through the walk, the trot and the stand, and their feet are down for 0.69 of the walk and 0.46 of the trot.
+  - A new check for each: an Uisce plan in clear ice with at least five clusters of shards (12 and 8).
+- Pictures: `creatures-frostshard.jpg`, `creatures-frostfolk.jpg` and `creatures-frost.jpg` (the two beside the skeleton and the troll).
+
+### Needs eyes
+- **The frozen man's face** is a smooth lump. If Michael takes B, the next session gives it a face under the frost: the skeleton's modelled skull, perhaps, seen through the ice.
+- **The sheet's figure is all spikes.** The kit's shards are clusters of five-sided cones, so A is a troll with shards on it more than a body made of them.
+- **On `creatures-frost.jpg`** the frozen man stands at the left edge, half cut by the frame.

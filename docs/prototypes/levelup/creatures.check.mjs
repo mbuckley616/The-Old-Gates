@@ -94,6 +94,10 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       out[k] = { school: C.plan.school, wings: C.B.wings.length, rest: +(rest.max.x - rest.min.x).toFixed(2), top: +rest.max.y.toFixed(2), crown: +crown.toFixed(2), open: +open.toFixed(2), len: +C.len.toFixed(2), behind: +(sh.z - rest.max.z).toFixed(2), tris: C.stats.tris }; }
     return out; });
   for (const [k, t] of Object.entries(ga)) check(`${k}: a gargoyle of ${t.school}, its ${t.wings} stone wings folded ${t.rest} m across at rest (its body ${t.len} m long), behind its shoulders, and ${t.open} m in flight`, t.wings === 2 && t.rest < t.len && t.behind >= -.05 && t.open > t.rest * 2, t);
+  // the Frost Thing's two options (Session 958, DECISION): both Uisce plans of clear ice with shards on them
+  const fr = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.FROST.map(k => { const C = K.build(K.genome(k, k + ':check')), h = C.meshes[0].material; let shards = 0; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.geometry.attributes.position.count >= 30 && o.material.flatShading) shards++; });
+    return { k, school: C.plan.school, clear: h.transparent ? +h.opacity.toFixed(2) : 1, shards, tris: C.stats.tris }; }); });
+  for (const t of fr) check(`${t.k}: a Frost Thing of Uisce in clear ice (opacity ${t.clear}) with ${t.shards} clusters of shards`, t.school === 'Uisce' && t.clear < 1 && t.shards >= 5, t);
   // the slimes' holes (Session 954, OG-041: "with holes through it"): a line down each hole's axis meets no hide, at rest or through a whole
   // crawl stride (each axis carried by its spine bone), while the same line moved two of the hole's radii toward the spine meets the body
   const ho = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
