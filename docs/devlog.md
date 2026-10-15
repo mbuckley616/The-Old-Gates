@@ -20198,3 +20198,40 @@ Corrections made during the session:
 - **The hood hangs high,** 1.9 m over the floor, so that the alembic stands clear under it. A charcoal furnace this small might have had only a flue pipe.
 - **Combine to distil is the longest step,** 2.83 m, because the mortar stands at the counter's far end while the still is in the opposite corner.
 - **Owed:** the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 939 — Card F9's fourteenth room: the Gatelands Fighters' Guild (prototype only), and its house asked
+The guildhall is next on L5's list after the alchemists (936–938). In the game, a guild hall is the Fighters' or the Mages' Guild of a town: a two-storey hall with a steward at a desk and a notice board. The Fighters' has weapon racks, armour stands, a long table and a grindstone, and both have a dormitory of beds (Session 12's guilds, Session 292's furniture). OG-043 gives the guildhall as a "hall of trade, contracts and guild meetings". So this session draws the Fighters' Guild of a Gatelands town. It is built inside the kit's farmhouse, as the inn is (Michael's A on #320), its door ajar and painted red. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`gatelandsGuildHall` in `rooms.js`):
+- **The ground floor:**
+  - **The hearth** is in the west gable, as the inn's, with the guild's red banner hung from a rod on its breast.
+  - **The long table** of 2 m stands before the hearth, with a bench either side and tankards and a candle on it.
+  - **The steward's desk** faces the door at 0.78 m: an open ledger, an inkwell and a quill, and the steward's stool behind it.
+  - **The notice board** hangs on the back wall behind the desk, in sight from the door: an oak frame with eleven pinned notes.
+  - **The weapons' rack** runs along the back wall west of the window, holding swords hilt up, spears and axes.
+  - **Two armour stands** by the front wall each carry a mail shirt, a helm and a shield leaning at the foot.
+  - **In the east end** stand a pell (the practice post, scarred by blows) and the grindstone. The inn's stair of 16 risers climbs the east gable.
+- **Upstairs:** one dormitory under the boarded ceiling. Seven beds stand along the front wall, each with a chest at its foot, and the walk runs down the back under a rail of pegs hung with cloaks.
+- 4,933 to 5,101 triangles in 20 draws, on the farmhouse's 2,120 in 9.
+
+The view: `rooms.html?room=guild`, with `view=hall` (from inside the door to the desk and the board), `table`, `east`, `dorm` and `outside`.
+
+**Asked: DECISION #352, the guild halls' house.** A guild hall stands only in towns and cities, so whether the farmhouse should serve, as it does for the inn, is Michael's call. The options are A, the farmhouse as drawn (recommended: cheap, and the inn's shell); B, the merchant's house with the guild's name on its fascia; or C, a guild hall of its own built first. The Mages' Guild and the Mark's and Aurenne's halls wait on the answer.
+
+Corrections made during the session:
+- The armour stands' mail and helms were first drawn in the forge's polished steel. With nothing round them to mirror, they rendered black, so they are now a matte mail grey. They still read as cylinders under bowls; see below.
+- The cloaks on the dormitory's pegs were first half-cylinders and read as stray diagonal lines. They are now hanging cloths.
+- The page's night view hung, as the Mark's hall's did (937), on the general lantern line. This room is now excluded from it, and the page check loads the hall at night.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 111 of 111 pass** (103 after Session 938). Three views are new on the page check (the hall by day and by night, and the dormitory), with no page errors. Five checks are new, over four keys:
+  - **The builds:** 4,933 to 5,101 triangles in 20 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling, and no two in each other on a floor.
+  - **The walks:** five walks clear by 0.15 m on their own floors: the door to the desk, the stair's foot and the table; the back door to the desk's side; upstairs, down the dormitory.
+  - **A person fits:** the desk at 0.78 m, the table at 0.76 m, the benches at 0.45 m, seven beds 1.87 m inside, and the stair 0.178 by 0.25 m with 2.07 m clear over its foot.
+  - **The notice board** is on the wall behind the steward's desk, above it, and facing the door.
+- **Pictures:** `rooms-guild-hall.jpg`, `-table`, `-east`, `-dorm`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The armour stands are placeholders.** A tapered cylinder under two bowls reads like a cask with a hat. The bodies builder's mail hauberk and kettle helm (Session 897) are the right pieces to hang on these stands, which is theirs to make.
+- **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
+- **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
+- **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
