@@ -21059,3 +21059,10 @@ CI on `1c9b2d2` had one red shard of fifteen, with `fortunecaor` failing twice. 
 - `fortunecaor` 5 of 5.
 ### Needs eyes
 - Nothing.
+
+## v80 — Session 959 — `levelpanel` re-measured to Charisma's 0.5% and 1% (a CI fix)
+CI on `1c9b2d2` also failed `levelpanel` twice (shard 14). Session 958's note on the PR said the other shards were green; shard 14 finished after it, so that was wrong. Session 953 put Charisma at 0.5% barter and 1% quest gold a point (`ATTR_DEF.charisma.gains`), the sheet's attributes at ≤1%. The suite still read *+4% barter* and *+8% quest reward gold* for a raise of 4. The panel now says +2% and +4%, and the suite reads those. The stock line's threshold is unchanged.
+### Verified (headless Chromium)
+- `levelpanel` passes.
+### Needs eyes
+- Nothing.

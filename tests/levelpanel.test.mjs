@@ -28,7 +28,8 @@ check('Might ×2 reads its carry weight', /\+2% melee damage/.test(r.lines.might
 check('Finesse reads its ranged damage', /\+1% ranged damage/.test(r.lines.finesse), r.lines.finesse);
 check('Resolve ×3 reads its block cost and magic resist', /-15% block cost/.test(r.lines.resolve) && /\+3% magic resist/.test(r.lines.resolve), r.lines.resolve);
 check('Intelligence reads its spell damage', /\+1% spell damage/.test(r.lines.intelligence), r.lines.intelligence);
-check('Charisma ×4 reads quest gold, and the better stock only when the raise reaches 5 points', /\+4% barter/.test(r.cha0) && /\+8% quest reward gold/.test(r.cha0) && !/tier above/.test(r.cha0) && /tier above/.test(r.cha2), { cha0: r.cha0, cha2: r.cha2 });
+// S953 (skills and perks A): Charisma's barter is 0.5% a point and its quest gold 1%, the attributes at ≤1%; Session 959 re-measured this line
+check('Charisma ×4 reads quest gold, and the better stock only when the raise reaches 5 points', /\+2% barter/.test(r.cha0) && /\+4% quest reward gold/.test(r.cha0) && !/tier above/.test(r.cha0) && /tier above/.test(r.cha2), { cha0: r.cha0, cha2: r.cha2 });
 check(`the health line counts what the level gives (${r.h0} → with ${r.fm} Fortitude points ${r.h1} → ${r.h2})`, /^❤ \+\d+ max HP$/.test(r.h0) && r.h1 !== r.h0 && r.h2 === r.h0 && !/restored/.test(r.h0), r);
 check(`and it is what confirming gives (${r.shown}, max HP +${r.gained})`, r.shown === `❤ +${r.gained} max HP` && r.gained === 40, r);
 check(`since Session 952 an archetype with Fortitude among its primaries (${r.tank}) gets no +1: the level's 10 alone (${r.tShown0}), and confirming gives it (+${r.tGained})`, !!r.tank && r.tShown0 === '❤ +10 max HP' && r.tGained === 10 && r.tShown === `❤ +${r.tGained} max HP`, r);
