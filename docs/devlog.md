@@ -21075,3 +21075,12 @@ Shard 9 of CI on `1c9b2d2` failed `attrpromise` and `barter` twice each. Both me
 - `attrpromise` and `barter` pass.
 ### Needs eyes
 - Nothing.
+
+## v80 — Session 961 — `lockpicks` and `shoprows` re-measured to the skills (a CI fix)
+Shard 11 of CI on `1c9b2d2` failed `lockpicks` twice. Run here, `shoprows` (shard 12 of the run before) failed too.
+- **`lockpicks`:** Session 953's Speech takes 0.2% a level off a price. At a Warrior's Speech of 5, the town's 12 became 11. The suite pins Speech at 0, so the price it reads is the town's.
+- **`shoprows`:** Session 941's own. The suite set every attribute to 0 so that some pieces would be locked, but weapons and heavy armour now ask for their skill. A Warrior's Blade 15 and Blunt 25 meet an Iron piece's 15, so nothing locked. Every skill goes to 1 as well, and the locked row reads *Requires Blade 15 (you have 1)*, which the check now allows.
+### Verified (headless Chromium)
+- `lockpicks` and `shoprows` pass.
+### Needs eyes
+- Nothing.
