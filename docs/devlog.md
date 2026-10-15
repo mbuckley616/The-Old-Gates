@@ -20125,3 +20125,39 @@ Corrections made during the session:
 - **The store is dark by day.** Its only window is the small front one, since the back window lights the bench next door. The sacks read as a stack of gourds.
 - **The cottage's back door meets its hearth wall.** The door's west 0.25 m lies behind the hearth wall's end, in both the cottage and the apothecary. The cottage's plan places the door that way, and moving it is a change to the street's shell, left for its own session.
 - **Owed:** the Mark's and Aurenne's alchemists, then the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 937 — Card F9's twelfth room: the Mark's healer's hall (prototype only)
+The alchemist's second dress, after the Gatelands apothecary (936). OG-043's Mark alchemy shop is "a timber hall with carved posts", and OG-133 sets the four steps of the work. So the room is built inside `pieces.js`'s Mark's hall, as the smithy (930) and the longhouse (870) are: shingle, the smoke louver on the ridge, the porch, the carved gables, 6.4 by 9 m. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`markApothecary` in `rooms.js`):
+- **The floor and the frame.** The floor is planked on the hall's footing; there is no forge here to keep the boards away from. The frame is the longhouse's: two rows of posts, tie beams 3.11 m over the floor, rafters and a board lining.
+- **No counter.** Inside the door, right of the walk, stands a trade board on trestles at 0.84 m, with horn flasks, lidded boxes and herbs on it. A steelyard hangs over it on a cord from the purlin.
+- **The hearth** lies low and long on the hall's axis under the louver: a kerb of smoked stones round an ash bed, 1.1 by 1.7 m. It holds two fires.
+  - **Heat:** at the hearth's front, a cauldron of decoctions hangs from an iron tripod over the first fire.
+  - **Distil:** at its back, an iron pot sits on three stones over the second fire, under a wooden helm sealed to it with a ring of clay. From the helm a pipe falls into a hollowed log on two trestles. The log is packed with snow, so the Mark's cold does the cooling, where the Gatelands still has a worm tub. The pipe comes out of the log's far end over a soapstone jug.
+- **The four steps run round the hearth.** Prepare is the long table down the left wall at 0.86 m, with a chopping block, herbs and roots laid out, a basket and a wooden bowl. Combine is the stamp mortar between the table and the hearth: a hollowed stump with its lip at 0.7 m and a 1.25 m pestle standing in it. Distil is the still. Bottle is the bench down the right wall at 0.9 m, with a funnel and horn flasks. Over the bench, three shelves hold horn flasks, lidded boxes and soapstone jars.
+- **Herbs and heather** hang from both tie beams and from the left purlin over the table, 2.7 m or more over the floor.
+- **By the door,** a chest and two casks stand on the left. Across the back is the healer's bed of furs on a platform, with a cask in the corner.
+- 10,558 to 10,618 triangles in 19 draws, on the hall's 1,488 in 7.
+
+The view: `rooms.html?room=markapo`, with `view=hall` (from inside the door down the hall to the hearth), `still`, `table`, `bench` and `outside`. By day a grey shaft comes down from the louver, as in the smithy.
+
+Corrections made during the session:
+- The log's half-pipe was first turned open side down. It now opens to the sky with its ends closed.
+- The mortar first stood 0.12 m into the walk round the hearth's back, and the prepare station stood on a post. Both have moved.
+- The hearth's kerb stones were first in the kit's pale stone and read as loaves, as the smithy's rim did (930). They are now smoked soapstone.
+- The night view hung: the page's general lantern line read `C.lantern`, which this hall does not have (it hangs its own lamp). The line now skips this room, and the page check now also loads the hall at night, so the next such slip shows as a failure.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 94 of 94 pass** (85 after Session 936). Three views are new on the page check (the hall, outside, and the hall at night), with no page errors. Six checks are new, over four keys:
+  - **The builds:** 10,558 to 10,618 triangles in 19 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the lining; over the wall plate the lining runs onto the wall's top, by the smithy check's rule. 0 points through, and no two pieces in each other.
+  - **The walks:** five walks clear by 0.15 m: to the trade board's front, behind it to the hearth, down both aisles, and round the hearth's back to the bed. The herbs are 2.7 m or more over the floor, with 3.11 m under the tie beams.
+  - **A person fits:** the table at 0.86 m, the bench at 0.9 m, the board at 0.84 m, the mortar's lip at 0.7 m.
+  - **The still works:** both fires in the hearth within 0.7 m of under the louver; the cauldron and the pot over them; the pipe falling from the helm into the log; its end over the jug.
+  - **The four steps:** each station clear of the furniture, 1.86, 2.61 and 1.52 m apart in turn.
+- **Pictures:** `rooms-markapo-hall.jpg`, `-still`, `-table`, `-bench`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The hall is dark by day,** like the smithy. The two small windows a side and the louver's shaft light it, and the fires do the rest.
+- **Snow in a log is a guess at the Mark's way of cooling a still.** It reads plainly, but it wants melting snow carried in and water drained away, which nothing here shows.
+- **The planks' normal map ripples** under the fire's low light (the kit's plank texture, as in the longhouse).
+- **Owed:** Aurenne's alchemist (in tile and arcades, OG-043), then the guildhall, the shrine and the library in each nation's dress.
