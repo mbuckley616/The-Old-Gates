@@ -19714,3 +19714,54 @@ Session 914 found the grotto's skiff split along its length and turned it into a
 - **Picture:** `places-lair-boat.jpg`, the boat off the T-head's west side, thwarts across, the oar inside it.
 ### Needs eyes
 - The boat is a plain lathe bowl with no keel, stem or strakes. That is the same as the grotto's skiff. When the hull kit (card F11) makes a rowing boat, both should take it.
+
+## v80 — Session 921 — Card F8: the Gatelands' monastic ruin (prototype only)
+OG-121's Gatelands panel lists "round cairns, monastic ruins and limestone caves". The cairn (Sessions 869 and 884) and the cave (872 and 882) are built. This is the monastic ruin, built after the island's own: a ring of dry stone round a green, a roofless church, a round tower, a ringed high cross and the brothers' beehive cells. I reread OG-121 and its row. Its flags concern the crypts' dead and Aurenne's "Roman" ruins, and neither touches this. The canon calls monasteries lore-neutral atmosphere (`lore_canon.md`, the fort catalogue), and the backlog's Gatelands target already names high crosses. No graves are built, since §3.1 gives the dead to the gates. Who the brothers were and why they left is the quest writer's. FREEZE #297 is still open, so this touches only the prototypes (`places.js`, `places-abbey-view.js`, `places-view.js`, `places.check.mjs`).
+
+What is new in `places.js`, `gatelandsAbbey(o, r)`. The green is level at y 0, the gate is on +z and the altar to the east (+x):
+- **The ground:** level inside the ring and for 3 m outside it, then falling away at 7 in 100, lumpy.
+- **The cashel:** a dry-stone ring 61.6 m across and 1.4 m thick, battered on both faces, its head 1.9 to 2.2 m up.
+  - It has fallen to 0.6 m in two breaches, and its stones lie spilled either side.
+  - A new helper, `ringWall`, builds any ring of dry stone from an angle to an angle with its head at h(a). The fallen cell uses it too.
+- **The gatehouse:** two round arches 2.6 m wide and 3.6 m high, 7 m apart, between side walls 4 m high. It is roofless and paved, with dressed stone at the arches.
+- **The church:**
+  - A nave of 12 by 6.4 m inside, with walls 0.9 m thick and 5 m high under gables of 9.4 m.
+  - A round-headed west door, 1.4 by 2.6 m.
+  - A chancel arch, 3 by 4.2 m, into a chancel of 5.5 by 4.4 m, with an east window over a block of stone for an altar.
+  - Splayed round-headed windows: two in the nave's south wall, one in its north wall, one in the chancel's south wall, and one high in the west gable.
+  - The walls are built by a new `wall(L, T, top, holes)`: a face drawn in its own plane with a ragged head and arched holes, then stood up. `dressArch` sets the dressed ring and jambs round the doors and arches.
+  - Roofless. The wall-heads are ragged, and the nave's south wall has fallen to about 1.3 m over 3.5 m, its stones in the grass outside.
+- **The round tower:**
+  - 26 m of shaft, 5.2 m across at its foot and 4.4 at its head, on a plinth, under a stone cone to 30.4 m.
+  - Its door is 3.2 m up, turned to face the church's west door, in a frame of jambs, lintel and sill. Three slits climb the shaft, and four windows sit under the cap.
+- **The high cross:** 4.5 m on a two-stepped base, its arms in a ring 1.32 m across, with raised panels on the shaft.
+- **The cells:**
+  - Three corbelled huts, 6 m across and 4 m high, built as two lathe shells, the inner one 4 m across and 3.3 m high. The door is cut through both shells and closed with jambs and a lintel stone.
+  - Two are whole, their doors (0.9 by 1.9 m) turned to the green. One has fallen to its lower courses, with its stones heaped inside.
+- **The rest:** the footings of a long range of 14 by 7 m, where the brothers ate, with a gap for its door; a yew in the green; ash trees outside the ring.
+- 73,420 triangles in 12 draws.
+
+The view: `places.html?place=abbey` goes to `places-abbey-view.js`. Its views are `abbey`, `gate`, `nave`, `tower`, `cross` and `cells`, under a low autumn sun in the south-west with a thin mist.
+
+Corrections made during the session:
+- The first picture was taken from the ground on the slope, so the ring hid everything but the tower. The fog was also too thick for a place 60 m across. The view now stands 7.5 m up the slope, and the fog is thinner.
+- The breach in the south wall was a smooth swoop. It is now ragged.
+- The cross was coursed like the walls. It is now one stone.
+- The tower's cap left a gap under its eave against the sky. The cap is now closed onto the shaft.
+- The tower's door sill was first measured from a point inside the shaft's own wall, and the check read the wall, not the sill. The returned door point is now on the sill's outer edge.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 70 of 70 pass** (62 after Session 920). One view is new on the page check (the ruin, no page errors), and seven checks are new, over three keys:
+  - **The builds:** 73,420 triangles in 12 draws, each key the same twice.
+  - **The walk:** 312 points from the slope below the gate, through the gatehouse, across the green, in at the west door, down the nave and through the chancel arch. There is ground under every one at -0.03 to 0.04 m off its own height, 2.6 m of headroom or more, and 0.7 m clear either side.
+  - **The ways in:** the west door is 1.4 by 2.6 m, the chancel arch 3 by 4.2 m, and both of the gatehouse's arches 2.6 by 3.6 m.
+  - **The church:** the nave is 12 by 6.4 m inside, with open sky over the nave and the chancel.
+  - **The ring:** of 720 rays out through it at the hip, 39 to 40 get through, every one at the gate or a breach, and the gate and both breaches are open.
+  - **The tower and the cross:** the tower is 30.4 m to its cap's point, and its door's sill is 3.2 m up. The cross is 4.49 m, open through its ring between the arms and solid through the ring's own stone.
+  - **The cells:** two whole, with doors of 0.9 by 1.9 m, 3.3 m from the floor to the corbelling, and a floor at 0. The fallen one is open to the sky.
+- **Pictures:** `places-abbey-abbey.jpg`, `-gate`, `-nave`, `-tower`, `-cross` and `-cells`. Whether the tower's door can be reached is asked as **DECISION #345**.
+### Needs eyes
+- **The turf reads dark** under the low sun. It is the kit's `turfMoss`, tinted to its lightest.
+- **The trees are clumps of rough balls.** The kit's `treeKit` was not used here; a yew and ash from it would read better.
+- **The tower's openings are boxes laid on a round shaft.** Their frames stand proud and their dark is a panel, not a hole, so they read from afar but not up close.
+- **The masonry is one coursed texture** on the church, the gatehouse and the tower alike. Real ones mix rubble walls with dressed quoins, and only the doors and arches carry dressing here.
+- **Owed:** carving on the cross's panels (the cairn's spirals, or what #309's answer allows); a grassed-over floor inside the cells; the quest writer's word on who the brothers were.

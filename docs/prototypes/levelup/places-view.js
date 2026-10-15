@@ -17,6 +17,7 @@ else if (Q.get('place') === 'lair') await import('./places-lair-view.js') /* Ses
 else if (Q.get('place') === 'aqueduct') await import('./places-aqueduct-view.js') /* Session 907: Aurenne's ruined aqueduct */;
 else if (Q.get('place') === 'tunnel') await import('./places-tunnel-view.js') /* Session 908: Aurenne's trade tunnel */;
 else if (Q.get('place') === 'grotto') await import('./places-grotto-view.js') /* Session 914: Aurenne's sea grotto */;
+else if (Q.get('place') === 'abbey') await import('./places-abbey-view.js') /* Session 921: the Gatelands' monastic ruin */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);

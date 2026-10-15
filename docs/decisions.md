@@ -40,6 +40,27 @@ You asked for a playable slice of 2.0 before the cutover: one region and its tow
 
 Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
 
+### The Gatelands' monastic ruin: the round tower's door (look builder, Session 921) — DECISION #345
+**F8: the Gatelands' monastic ruin (look builder, Session 921).** OG-121's Gatelands panel lists "round cairns, monastic ruins and limestone caves". The cairn and the cave are built. This is the monastic ruin, after the island's own. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsAbbey`), at `places.html?place=abbey`.
+- **The ring:** a dry-stone wall 62 m across and 2 m high, fallen in two breaches, with a roofless gatehouse of two round arches.
+- **The church:** a roofless nave of 12 by 6.4 m with gables of 9.4 m, a round-headed west door and a chancel arch, and a stone altar under the east window. Its south wall has fallen over 3.5 m.
+- **The round tower:** 30 m to the point of its stone cap. Its door is 3.2 m up, turned to the church's west door.
+- **The rest:** a ringed high cross of 4.5 m on a stepped base; three beehive cells (two whole, which you can walk into, and one fallen); the footings of a long range; a yew in the green.
+- **No graves** are built (§3.1). What the brothers were, and why they left, is the quest writer's.
+
+**1. The round tower's door, 3.2 m up, as the island's real ones are:**
+- **A. Out of reach, as drawn** *(recommended)*: the tower is a landmark. The place to explore is the green, the church and the cells.
+- **B. A way up:** a ladder to the door (rotted, or a rope left by someone), and floors and ladders inside up to the four windows under the cap, as a lookout over the land.
+- **C. Broken:** the tower stands to half its height (about 13 m), and its foot is broken open, so you can walk in and look up the shaft.
+
+Pictures:
+- [from the slope](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-abbey.jpg)
+- [up to the gate](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-gate.jpg)
+- [down the nave](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-nave.jpg)
+- [the tower and its door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-tower.jpg)
+- [the high cross](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cross.jpg)
+- [the beehive cells](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cells.jpg)
+
 ## Answered
 
 ### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
