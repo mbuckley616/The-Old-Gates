@@ -138,6 +138,8 @@ const LEG = {
   plantFore: { j: [[0, 1, 0], [0, .52, -.05], [0, .1, .02], [0, 0, .2]], ik: 0, r: [.16, .12, .1], tips: 'coat' },
   plantHind: { j: [[0, 1, 0], [0, .56, .13], [0, .1, -.06], [0, 0, .18]], ik: 0, r: [.18, .12, .1], tips: 'coat' },
   bird: { j: [[0, 1, 0], [0, .78, .14], [0, .42, -.12], [0, .04, .02], [0, 0, .14]], ik: 1, r: [.13, .07, .035, .025], tips: 'skin', bare: 1 },
+  // Session 960: a griffin's foreleg, an eagle's on a beast's frame: the canid's joints, the shank and foot bare scaled skin, thinner
+  talonFore: { j: [[0, 1, 0], [0, .6, -.13], [0, .24, -.04], [0, .07, .02], [0, 0, .08]], ik: 0, r: [.11, .06, .032, .03], tips: 'skin' },
   insect: { j: [[0, 1, 0], [.18, 1.06, 0], [.72, 1.42, 0], [1.3, .3, 0], [1.48, 0, 0]], ik: 1, yaw: 1, r: [.07, .06, .045, .025] },
   sprawl: { j: [[0, 1, 0], [.62, 1.05, .04], [.78, .14, .08], [.84, 0, .2]], ik: 0, yaw: 1, r: [.1, .08, .06] },
   // Session 773: a hare's hind leg (a long foot from the hock), and a frog's (folded in a Z, the foot longest of all)
@@ -154,7 +156,9 @@ P.legs = (B, o) => {
     const rr = o.r || pre.r.map(v => v * hR);
     for (let k = 0; k < J.length - 1; k++) B.meat(names[k], J[k], J[k + 1], along(rr, k / (J.length - 1)), along(rr, (k + 1) / (J.length - 1)), { group: tag, tone: k >= J.length - 2 && pre.tips ? pre.tips : (pre.bare ? 'skin' : o.tone) });
     if (o.claws) { const tip = J[J.length - 1], d = J[J.length - 1].clone().sub(J[J.length - 2]).normalize(); d.y = Math.min(d.y, -.3); d.normalize();
-      for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize())); }
+      for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize()));
+      // a hind toe (Session 960, the griffin's talons): a fourth claw from the back of the foot, pointing back and down
+      if (o.claws.back) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len * o.claws.back, B.tone('dark'), J[J.length - 2].clone().lerp(tip, .3).add(V(0, o.claws.r * .5, 0)), V(0, -.45, -1).normalize())); }
     // thorns (Session 929, OG-041's spider): short dark spines up every segment past the hip, on its upper and outer faces, raked
     // toward the foot. One merged mesh a segment, rigid on its bone; `per` is thorns a metre of leg
     if (o.thorns) { const r2 = rng(B.g.seed + 31 + B.legs.length), th = o.thorns;
@@ -1765,7 +1769,7 @@ Object.assign(PLANS, {
       ['neck', { len: .56, n: 2, rise: 62, curve: -14, r: [.24, .14] }],
       ['head', { len: .38, r: .14, pitch: 4, eyes: [{ f: .45, up: .35, out: .72, r: .028, color: [.95, .72, .18] }], beak: { len: .22, r: .07, up: -.12, hook: .45 } }],
       ['tail', { len: 1.05, n: 4, r: [.09, .045], droop: 38, curl: -5, fan: { n: 5, len: .34, spread: 32 } }],
-      ['legs', { at: 1, kind: 'canidFore', out: .16, drop: .08, r: [.14, .085, .06, .055], claws: { r: .022, len: .11 } }],
+      ['legs', { at: 1, kind: 'talonFore', out: .16, drop: .08, r: [.14, .07, .038, .036], claws: { r: .022, len: .14, back: .7 } }],
       ['legs', { at: 0, kind: 'canidHind', out: .16, drop: .06, r: [.18, .1, .07, .06], claws: { r: .016, len: .06 } }],
       ['wings', { at: .82, out: .2, up: .26, span: 3.4, r: [.085, .062, .042], feathers: { ns: 9, np: 10, len: .4, primary: 1.05 } }]
     ] }

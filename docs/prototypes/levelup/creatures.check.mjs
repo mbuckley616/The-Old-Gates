@@ -104,6 +104,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       for (const m of C.meshes) if (m.name === 'wing') { const membrane = !C.B.wings[0].feathered && !(P.wingOpacity < 1); (membrane === Object.hasOwn(m.material, 'onBeforeCompile') ? out.lit : out.plain).push(k + (membrane ? '' : ' (feathered or clear)') + (membrane === Object.hasOwn(m.material, 'onBeforeCompile') ? '' : ' WRONG')); } }
     return out; });
   check(`skin wings let light through: ${[...new Set(wlt.lit)].length} winged plans right, none wrong`, wlt.plain.length === 0 && wlt.lit.length > 0, { wrong: [...new Set(wlt.plain)], right: [...new Set(wlt.lit)] });
+  // the griffin's talons (Session 960): an eagle's foot on each foreleg, three claws forward and a hind toe, a cat's three on each hind foot
+  const tal = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('wingedthing', 'wingedthing:check')), n = {};
+    for (const L of C.B.legs) { const b = L.bones[L.bones.length - 1]; n[L.bones[0].name] = b.children.filter(o => o.isMesh).length; } return n; });
+  const tv = Object.entries(tal), fore = tv.filter(([k]) => /^leg0/.test(k)).map(([, v]) => v), hind = tv.filter(([k]) => !/^leg0/.test(k)).map(([, v]) => v);
+  check(`wingedthing: an eagle's talons on its forelegs (${fore.join(', ')} claws) and a cat's on its hind feet (${hind.join(', ')})`, fore.length === 2 && fore.every(v => v === 4) && hind.every(v => v === 3), tal);
   // the slimes' holes (Session 954, OG-041: "with holes through it"): a line down each hole's axis meets no hide, at rest or through a whole
   // crawl stride (each axis carried by its spine bone), while the same line moved two of the hole's radii toward the spine meets the body
   const ho = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};

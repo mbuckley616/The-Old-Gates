@@ -21010,3 +21010,25 @@ Session 956 left the gargoyles' stone wings drawing near black from most angles,
 ### Needs eyes
 - **The light through is even,** the same whether the sun is behind the wing or not. A wing with the sun behind it should glow at its thin edges and show its finger bones dark, which wants the sun's direction in the shader.
 - **In a dark gate hall** the 0.45 share will read as a faint glow of its own. If it does, `wingLight` is one number per plan, and the game's version should scale it by the light that reaches the wing.
+
+## v80 — Session 960 — The griffin's talons (L4, prototype only)
+Session 955 owed the Winged Thing an eagle's forefeet: it stood on a cat's four paws, and a griffin's front is an eagle's. No question: the sheet draws it so. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`talonFore`, a new leg preset:** an eagle's foreleg on a beast's frame.
+  - It has the canid foreleg's joints, so it walks with the rest of the body's gait.
+  - The shank and foot are thinner and drawn in bare scaled skin, the feathered coat stopping at the wrist.
+- **`claws.back`, a new option on a leg's claws:** a hind toe. It is a fourth claw from the back of the foot, pointing back and down, its length the given share of the others'.
+- **On the Winged Thing:** the forelegs are `talonFore`, with claws of 14 cm (11 before) and a hind toe of 0.7 of that. The hind legs keep the cat's paws. The hide is 9,336 triangles (9,532 before).
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,062 checks pass** (1,061 before).
+  - The Winged Thing's feet still reach their targets through the walk, the trot, the fly and the stand. They are down for 0.65 of the walk and 0.45 of the trot, as before.
+  - A new check: four claws on each forefoot and three on each hind foot.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-wingedthing.jpg` re-shot, and `creatures-wingedthing-front.jpg` (new), where the talons read best.
+
+### Needs eyes
+- **The talons are the kit's straight cones.** An eagle's are hooked, and they grip.
+- **The scaled shank is plain skin tone:** no scales are drawn on it.
+- **From the front, the wings at rest are half open.** The hawks' fold, carried to a body this size, does not lay them flat on the back.
