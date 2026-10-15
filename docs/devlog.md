@@ -21038,3 +21038,38 @@ Corrections made during the session:
 - **The sails stand 1.5 m off the tower,** which is generous. The real mills' run closer, about 1 m.
 - **The mill does not turn.** Turning the sails (o.angle by the clock and the wind) belongs in the game, with the wind of `WX`.
 - **Owed:** the rest of L5's works (a lighthouse, a shipyard, a toll gate, a watchtower, a ferry).
+
+## v80 — Session 960 — The guild hall, a piece of its own (card F6, prototype only)
+Michael answered #352 with C: a guild hall of its own, a wider hall open to the roof with a gallery to the dormitory, and the look builder makes the kit piece first. Session 939 had drawn the Fighters' Guild inside the farmhouse (10.5 by 6.2 m, a hall below and a dormitory above). This session builds the new house for it; the room inside follows. Nothing new is asked. It touches only `pieces.js`, `pieces-gatelands.js`, `shoot-pieces.mjs` and `pieces.check.mjs`.
+
+**The plan** (`GL_PLANS.guildhall`, `pieces.js`): rubble with dressed quoins and dressed openings, as the forge and the temple, under slate at 40° between parapet gables. 14.4 by 9.0 m outside, walls of 0.7 m, 6.4 m to the wall plate, 10.36 m to the ridge. The plan is laid out for the room it will hold:
+- **The hall** fills the west end (to x 2.6), open to the roof, its hearth in the west gable under a stack of two flues.
+- **The east end** is two storeys of 3.2 m: the steward's rooms below, the dormitory over them. It has no stack, so the dormitory's beds can stand heads to the east gable.
+- **The gallery** runs at the first floor (3.2 m) along the back wall of the hall, from the stair to the dormitory. Outside it shows as two tiers at the back: low windows under it, tall round-headed lights over it.
+- **The front:** a great round-headed door of 1.6 by 3.3 m in voussoirs, two tall round-headed lights of 1.05 by 3.7 m, one either side, and two storeys of sashes at the east end. The back has the cross-passage door opposite the great door. Each gable has a pair of lights: round-headed in the hall's, sashes on two floors in the east one.
+- **Two new trims** in `gatelandsBuilding`, there for any plan:
+  - `plaque`: a carved name panel in a dressed frame over the door, its letters fitted to the panel;
+  - `banner`: the guild's banner on an iron pole with a brace, hung across the street so it reads from along it, swallow-tailed, gilt-bordered, crossed swords for the Fighters, a star for the Mages.
+- `o.guild` picks the dress: `'fighters'` (red door and banner, *FIGHTERS’ GUILD*) or `'mages'` (blue, *MAGES’ GUILD*).
+- 9,873 triangles in 14 draws, beside the farmhouse's 2,144 in 10.
+
+The view: `pieces-gatelands.html?view=guild`, the hall on a flagged square with the farmhouse beside it for its size; `&cam=front|corner|back|door`, `&guild=mages`.
+
+Corrections made during the session:
+- The back's openings were first laid in x where the face runs in −x, putting the door under a hall light. The back is now laid out as seen from behind.
+- The name panel's letters ran off its ends. They are now measured and fitted.
+- The banner first hung west of the door and hid the panel from the corner. It now hangs east of the door, between the panel and the east light.
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass**, 4 checks new, over both guilds:
+  - **The builds:** 9,873 triangles in 14 draws each, 14.4 by 9.0 m, eaves 6.4 m, ridge 10.36 m. Each builds the same twice, its lit windows included (from a stream of its own).
+  - **The openings:** 0 clashes on a face, dressings and arch rings included; 0 into the quoins or the eaves.
+  - **The room's floors:** 0 openings of the hall's back cross the gallery's floor (±0.3 m), and 0 east-end sashes sit between the two floors.
+  - **The great door:** 1.6 by 3.3 m, its name panel 0.11 m clear of the arch's ring; the two guilds' banners and names differ.
+  - `view=guild` and `view=guild&guild=mages` render with no page errors, but the people's missing pack, as every view of the page.
+- The six plans of the line-up build as recorded, so the kit's other plans are unchanged. **`aurenne.check.mjs`** and **`rooms.check.mjs`** pass.
+- **Pictures:** `pieces-gatelands-guild.jpg`, `-guild-corner`, `-guild-back`, `-guild-door` and `-guild-mages`.
+### Needs eyes
+- **The rubble is a busy pattern** over so large a face. Ashlar (`GL_FIN.ashlar`) would read grander for a town's guild; the plan takes `o.fin`.
+- **The front reads as two buildings,** a chapel-like hall and a house at the east end. That is the plan's honesty about the dormitory, but a single row of tall lights would read as one hall.
+- **The banner is edge-on from in front.** Hung across the street, it reads from along the street and not from facing the door.
+- **Owed:** the Fighters' Guild rebuilt inside it (the hall open to the roof, the gallery, the dormitory, the steward's rooms), then the Mages' Guild in the same house, then the other islands' halls.
