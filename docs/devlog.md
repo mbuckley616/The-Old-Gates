@@ -21130,3 +21130,35 @@ Corrections made during the session:
 - **The dormitory has no hearth** (the east stack was taken off in Session 960 for the beds).
 - **Six beds where the farmhouse had seven.** The gallery could take two more under its high lights, if the guild wants beds in view of the hall.
 - **Owed:** the Mages' Guild in the same house (blue, the hall as a library and a casting floor), then the other islands' halls.
+
+## v80 — Session 962 — The Mages' Guild in the same hall (card F9, prototype only)
+Michael's C on #352 gave both guilds the new house: "The Mages' Guild and the other two islands' halls will follow the answer," and Session 939 had said the Mages' Guild would be the same house painted blue. Sessions 960 and 961 built the house and the Fighters' Guild inside it. This session gives the room its second dress. The game's Mages' Guild (S292, `83-world-generator.js`) sets the list: the steward's desk and the notice board, bookcases, potion shelves either side of the board, the still with its green light, a reading table of open books, and the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The room** (`gatelandsGuildHall({ guild: 'mages' })`): the same shell (blue door and banner, *MAGES’ GUILD* over the door) and the same bones: the trusses, the gallery, the stair, the partition and its doors, the dormitory and the steward's room. What changes:
+- **The hearth's device** is a blue shield with a gilt star of eight points, where the Fighters have red and crossed blades.
+- **The long table** is a reading table: four codices open on it, in leather, and the candle.
+- **The potion shelves either side of the board:** two open frames of four shelves of green phials, crocks and round flasks. One stands where the Fighters' rack is (west of the back door), the other east of the low window. Both are under the gallery.
+- **The still** stands by the front wall where the armour stood. It is a stone furnace with its fire, a green flask, a head of glazed crock, and a beak falling to a receiver on a stool. The page lights it green.
+- **A lectern** with a great book open on it stands on the practice floor, and **a round table** of scrolls and a candle where the grindstone was.
+- **Three presses of codices** stand along the gallery, in the bays between its high lights. Each is 2.2 m high, five shelves of the library's spines (the texture is now shared: `libSpines()`). This is where the hall's height pays.
+- The beds' blankets and the leaves are blue.
+- 11,533 to 11,981 triangles in 20 draws (the Fighters' 8,367 to 8,559).
+
+The view: `rooms.html?room=mages`, with every view of `room=guild`, and `view=still` (the still and the shelves from the hall).
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 150 of 150 pass** (146 after Session 961). Three views are new on the page check: the Mages' hall, the still and the gallery, all with no page errors.
+- **Both guilds, four keys each,** pass every check of Session 961: the same twice and in budget, inside the walls and under the lining, no clashes, the six walks, a person fits, the board behind the desk, the gallery.
+- **One check is new for the Mages':**
+  - the potion shelves stand either side of the board;
+  - the still is against the front wall, its receiver beside it;
+  - three presses stand on the gallery, none across one of its three high lights.
+- **Pictures:** `rooms-mages-hall.jpg`, `-table`, `-still`, `-gallery`, `-outside` and `-hall-night`.
+
+Corrections made during the session:
+- My first insert of the Mages' check landed in an earlier room's evaluation, where it failed to run.
+- The check first counted the east end's upper sashes among the gallery's high lights.
+### Needs eyes
+- **The still's green** is the game's (its light is `0x60ff80`), and the flasks glow a little. It may read as more magic than chemistry.
+- **The great book on the lectern is a pale slab** at this distance, with no text or binding to read.
+- **The gallery's presses darken it.** It might want a lamp of its own for the Mages, who read there.
+- **The Mark's and Aurenne's guild halls** each need a house, as the Gatelands' did. That is a question like #352, and is not asked yet.
