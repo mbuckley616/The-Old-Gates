@@ -17,7 +17,8 @@ let files = fs.readdirSync(here).filter(f => f.endsWith('.test.mjs') && (!only |
 // Session 745, when shard 3 was cancelled at 60:19: panelfocus took 530 s and stairrail 219 and were counted as 60, and
 // carraignight took 250 where 960 was guessed. (Earlier tables: Session 254's local run, CI's runs of 2 and 3 Oct in
 // Sessions 434 and 454.) yardpanel was cut off by the cancel and is counted 90; dunwarm (Session 746) is a guess from this machine. A suite
-// not listed counts as 60.
+// not listed counts as 60. scaleratio (Session 881) is CI's 567 s on 15 Oct (Session 905): counted as 60 it put twelve minutes too
+// many on one shard, which hit the job's hour on its last suite.
 const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'armourlines-numbers': 59, articles: 57, ashenburn: 77,
   ashwort: 50, attrdmg: 44, attrpromise: 48, autosave: 129, autumn: 104, backroomdoor: 247, backslot: 50, barber: 67,
   barberbox: 78, barberchair: 66, barberfee: 72, barberway: 58, barter: 59, bear: 47, beastfall: 78, beat: 126, bedaim: 79,
@@ -55,7 +56,7 @@ const SECS = { aimbubble: 68, armourfit: 60, armourkit: 52, armourlines: 70, 'ar
   questfoes: 108, questgold: 55, questtargets: 117, ragdoll: 75, ragdollsearch: 45, raisevarek: 48, reader: 272, register: 52,
   renewal: 219, restslip: 50, riverquay: 103, rivers: 70, riversail: 58, roadseed: 90, rocks: 57, roll: 50, rowebeats: 250,
   rowelines: 326, sackseed: 44, sailtrim: 67, saltwater: 182, savelabel: 66, savepic: 104, saveretry: 75, saves: 129,
-  saveui: 243, scorpion: 49, seahint: 49, seaseed: 47, seasonwx: 44, seawear: 76, secondary: 49, selltopic: 59,
+  saveui: 243, scaleratio: 570, scorpion: 49, seahint: 49, seaseed: 47, seasonwx: 44, seawear: 76, secondary: 49, selltopic: 59,
   settingsheet: 136, shark: 56, shells: 56, shipaim: 46, shiparchers: 60, shipdead: 59, shiphull: 59, shiphulls: 45, shiplog: 96,
   shipmoor: 67, shipnets: 77, ships: 52, shipwreck: 54, shipwright: 116, shipwrightvoice: 48, shoperrands: 113, shopfurn: 85,
   shophours: 82, shoprows: 56, shopsight: 240, shoreplaces: 81, shoresave: 83, siegeturn: 60, signposts: 63, signs: 64,

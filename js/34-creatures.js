@@ -457,7 +457,9 @@ function tickCreatures(dt,now){
     const spd=dt>0?d/dt:0;
     rig.v+=(spd-rig.v)*(1-Math.exp(-dt/.15));
     WG_LK=rig.k.legK||1;WG_L=wolfLegs(rig.k); // S262 — this kind's legs for the poses below (reset after the loop)
-    if(!rig.gallop&&rig.v/(s*WG_LK)>WG.GALLOP.on)rig.gallop=true;else if(rig.gallop&&rig.v/(s*WG_LK)<WG.GALLOP.back)rig.gallop=false;
+    // S905 (F2a) — a beast drawn larger (rig.drawK, SCALE.BEAST) breaks into a gallop at the pace it did at its tuned size, so a
+    // Dire Wolf still gallops at its chase; its paws stay planted (the phase below reads the size it is drawn at)
+    {const sg=s/(rig.drawK||1);if(!rig.gallop&&rig.v/(sg*WG_LK)>WG.GALLOP.on)rig.gallop=true;else if(rig.gallop&&rig.v/(sg*WG_LK)<WG.GALLOP.back)rig.gallop=false;}
     rig.phase=(rig.phase+d/(wgCycle(rig.w)*s*WG_LK))%1;
     const mode=rig.v>.06?(rig.gallop?'gallop':'trot'):'stand';const k=1-Math.exp(-dt/.12);
     for(const m in rig.w)rig.w[m]+=((m===mode?1:0)-rig.w[m])*k;

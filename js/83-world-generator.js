@@ -1675,7 +1675,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // Against the west wall when the room allows, nearer his chair in a wide one. No such spot: the old one.
       if(type==='barber'&&npc){const fr=(x,z)=>!SOL.some(q=>x+.32>q.x0-.1&&x-.32<q.x1+.1&&z+.32>q.z0-.1&&z-.32<q.z1+.1);
         /* S896 (F2a) — the room is laid out in the kit's unit (÷ KR) and built KR larger: the witness's 6 m and the ring's 1.6 are true metres */
-        const ok=(x,z)=>{for(let k=0;k<24;k++){const ux=x+Math.sin(k*Math.PI/12)*1.6/KR,uz=z+Math.cos(k*Math.PI/12)*1.6/KR;if(ux<.25||uz<.25||ux>W-.25||uz>D-.25)continue;
+        const wm=.28/KR,ok=(x,z)=>{for(let k=0;k<24;k++){const ux=Math.max(wm,Math.min(W-wm,x+Math.sin(k*Math.PI/12)*1.6/KR)),uz=Math.max(wm,Math.min(D-wm,z+Math.cos(k*Math.PI/12)*1.6/KR)); /* S905 — a point of the ring past a wall is tested where you would stand against it (it was skipped, and the spots nearer the box that way with it: a box 6.3 m from him passed in a room 7.8 deep), the wall's margin in true metres */
           const dx=ux-npc.x,dz=uz-npc.z,d=Math.hypot(dx,dz);if(d>5.6/KR||dz/d<Math.cos(50*Math.PI/180))return false;}return true;};
         found:for(let x=.62;x<=npc.x+.01;x+=.1)for(let z=npc.z+1.4/KR;z<D-1.6/KR;z+=.05)if(fr(x,z)&&ok(x,z)){bx=x;bz=z;bry=Math.PI*.5;break found;}}
       const bg=new THREE.Group();const shell=buildChestShell(bg,home?.45:.6,home?0x6a4a2c:0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=bry;sc_.add(bg);if(Math.abs(bry)===Math.PI*.5)solid(bx,bz,.28,.32,.5);else solid(bx,bz,.32,.28,.5);

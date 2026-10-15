@@ -18657,12 +18657,21 @@ The producer sent card F2a back: PR #315's CI on fde9867 failed eleven suites tw
 
 **For F2b** (gameplay ranges left in the old unit, met here): the exit zone (1.6 × 3.2); `STEP_UP` and `PLAYER_H`, which `intSolidAt` reads in metres while rooms are laid out in the old unit; the lair's 4.4 roof under the dragon; and `talkTargetNow`, which indoors reads the world's townsfolk because `activeZoneId` stays `'world'` (it has done so before F2a). It never finds a guest in a room, so the crosshair's talk ring never shows indoors.
 
+**Second CI round** (run 38659480828, on this session's first push). Eight of twelve shards were green. The other four:
+- **`wolves`**: a Dire Wolf drawn 1.44 times larger trotted at its chase pace, 2.4. The gallop's threshold is in body-lengths a second. It now reads the beast's tuned size (`rig.drawK`), so it gallops as before. Its paws stay planted, because the stride's phase still reads the size it is drawn at.
+- **`dungeonfoes`**: the wraith's glide window, .15 to .33, is re-measured × `ROOM_K` like `wraithfloat`'s.
+- **`backroomdoor`**: re-measured. In shops of true size, with the indoor sight range still 6, 0 to 3 floor spots by the doorway see the box through the open door (of 700 to 1,060), and 5 to 7 in all. The keeper's own sightings in the same suite are unchanged. The suite now allows at most three spots within 6 and under 1 in 100 in all. For F2b: the indoor sight range in metres.
+- **`barberbox`** (red on CI twice, green here, because CI's towns differ by load order). In a barber's 7.8 m deep, Cathal's at c5_9_s6, the box stood 6.1 m in front of him, and 7 of the 172 spots it opens from were past his 6 m. S590's placement checks a ring 1.6 round the box. It skipped any point of the ring past a wall, by a margin of .25 in the kit's unit, .36 once scaled, while you stand .3 from a wall. Skipping the point skipped the nearer spots in that direction with it. A ring point past a wall is now tested where you would stand against it, the margin in true metres. Reproduced here by setting a real barber's house 6 deep (CI's room): the box now stands at (1.76, 5.44), every one of 188 spots is seen, and the farthest is 5.51 m. The suite also bounds the far wall at .3, as it did the other three; the player is held there (90-main.js).
+- **Shard 10** failed nothing. It was cut at the job's hour on its last suite, because `scaleratio` (S881) took 567 s and the sharder counted it as 60. It is in `tests/run.mjs`'s table now.
+
 ### Verified (headless Chromium)
 - Each of the nine, run here: fiercewolf, dragonsize, wraithfloat, skirtlegs, keepercone, hoardspot, shells, intreach and coachinn, each green.
 - The ragdoll suites beside them (beastfall, ragdoll, ragdollsearch) green.
 - barberbox and homesleep green here as before.
+- wolves, dungeonfoes, backroomdoor, barberbox, barber and scalerooms green after the second round.
+- barberbox's own measurement on four barbers, CI's 7.8 m room among them: all seen.
 - parsecheck clean.
-- The full suite was started in four local shards at the push; CI on the push is the judge.
+- The local four-shard full run reached 223 suites before its two-hour limit. Its failures were dungeonfoes and backroomdoor (above), and autumn and dayseed. Those two touch no file of F2a's and were green on CI's shards; they are not this card's.
 
 ### Needs eyes
 - **The wolves and the bear at 1.44 times their old size.** The Dire Wolf's back is 1.25 m and the bear's hump 1.5 m: the shares of a man Michael chose, in metres now.
