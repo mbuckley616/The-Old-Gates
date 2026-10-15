@@ -21,6 +21,39 @@ Recommendation: **B, B.** Portclare holds the most answered prototypes and the b
 
 ## Answered
 
+### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Spire Held — a night on the roof at Caer Slige
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Back to Their Bread — the open ending's three descriptions
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: What the Stones Say — the sigil-lore books in the guilds
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Last Entry — Varek's list in the first gate, after the unbound ending
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: First Words — the townsperson's greeting, by who speaks and who listens
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Asked in Passing — six townsfolk's errands
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Asked in Passing, the second run — six more errands
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Under Another Flag — a town besieged, held and freed
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Aurennais Register — names, places, signs and talk
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Great Gates, I — the knot at the ring
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
 ### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
 You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
 

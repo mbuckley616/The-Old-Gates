@@ -2,11 +2,13 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
+Calls read to: 2026-10-14T14:34:11.594Z
+
 ---
 
 ## The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
 
-*Unapproved. Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
+*Approved by Michael, 14 Oct 2026.* *Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
 
 ### What the canon fixes
 
@@ -501,7 +503,7 @@ The Compact's ninth *after* line (grep `Cold-eyes always find their own`) reads:
 
 ## The Spire Held — a night on the roof at Caer Slige
 
-*Unapproved. Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
+*Approved by Michael, 14 Oct 2026.* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
 
 ### What the canon fixes, and where it is silent
 
@@ -673,7 +675,7 @@ Topics:
 
 ## Back to Their Bread — the open ending's three descriptions
 
-*Unapproved. Drafted 2 Oct 2026. Backlog A, consequence hooks: "someone says one of the three descriptions to you and goes back to their bread" in the open ending. Canon §11, the third path: "once in a long while someone says one of the three descriptions to the player and goes back to their bread; Varek is seen, at a distance, at fields." The build already ends that way (`ending('open')` sets `worldState.knowing`, saved and loaded since Session 242), and the ending screen promises it: "Once in a long while, someone will say one of the three descriptions to you, and go back to their bread." Nothing reads `knowing` yet. This draft is what reads it.*
+*Approved by Michael, 14 Oct 2026.* *Drafted 2 Oct 2026. Backlog A, consequence hooks: "someone says one of the three descriptions to you and goes back to their bread" in the open ending. Canon §11, the third path: "once in a long while someone says one of the three descriptions to the player and goes back to their bread; Varek is seen, at a distance, at fields." The build already ends that way (`ending('open')` sets `worldState.knowing`, saved and loaded since Session 242), and the ending screen promises it: "Once in a long while, someone will say one of the three descriptions to you, and go back to their bread." Nothing reads `knowing` yet. This draft is what reads it.*
 
 ### What the canon fixes, and where it is silent
 
@@ -751,7 +753,7 @@ The second line is the whole of it. He is seen; he is not spoken to. The open en
 
 ## What the Stones Say — the sigil-lore books in the guilds
 
-*Unapproved. Drafted 3 Oct 2026. Backlog A, Lore objects: the sigil-lore books in the guilds (the other half of the line *The Seventh Niche* took).*
+*Approved by Michael, 14 Oct 2026.* *Drafted 3 Oct 2026. Backlog A, Lore objects: the sigil-lore books in the guilds (the other half of the line *The Seventh Niche* took).*
 
 ### What the canon fixes, and where it is silent
 
@@ -937,7 +939,7 @@ A Markman's writing: short sentences, no honorifics, an oath on iron. Unsigned e
 
 ## The Last Entry — Varek's list in the first gate, after the unbound ending
 
-*Unapproved. Drafted 4 Oct 2026. Backlog A, consequence hooks: Varek's list found in the first gate after the unbound ending (canon §11).*
+*Approved by Michael, 14 Oct 2026.* *Drafted 4 Oct 2026. Backlog A, consequence hooks: Varek's list found in the first gate after the unbound ending (canon §11).*
 
 ### What the canon fixes, and where it is silent
 
@@ -1252,7 +1254,7 @@ Each feast's weekday follows from `dom` (`(dom-1)%7`, because a tale's first day
 
 ## First Words — the townsperson's greeting, by who speaks and who listens
 
-*Unapproved.* Owed to Michael's control-room note of 5 Oct (backlog A, *Dialogue still stiff, greetings too expository*): *"There's too much exposition when greeting you ('You're a markmen? those people kill bears at 10!') — should be more subtle intros, like 'Greetings, Markman.' Or 'What is it?'"* This draft rebuilds the generated townsperson's greeting. The named cast, the lords, the guild heads, the guards with a fine to read, Rowe and the feast days keep their own lines.
+*Approved by Michael, 14 Oct 2026.* Owed to Michael's control-room note of 5 Oct (backlog A, *Dialogue still stiff, greetings too expository*): *"There's too much exposition when greeting you ('You're a markmen? those people kill bears at 10!') — should be more subtle intros, like 'Greetings, Markman.' Or 'What is it?'"* This draft rebuilds the generated townsperson's greeting. The named cast, the lords, the guild heads, the guards with a fine to read, Rowe and the feast days keep their own lines.
 
 ### What is wrong now
 
@@ -2077,7 +2079,7 @@ The three ending rows and his answers to them are as built (*Break it. Let the w
 
 ## Asked in Passing — six townsfolk's errands
 
-*Unapproved.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
+*Approved by Michael, 14 Oct 2026.* The first piece of Michael's control-room note of 5 Oct (backlog A, *Questing, a big effort pass*): *"we also need to add probably 50–100 somewhat unique quests. We can probably generalize these and make it so that these can be recycled in different areas, but I want quests to be something far more likely to stumble upon / something that will incentivize players to talk to NPCs."* Today every town job comes from the lord (`townQuestFor`, `87-world-quests.js`: cull, retrieve, deliver, find, road) and every guild task from a guild head. The people in the street give nothing. This draft gives them six errands, each a template that recycles across every town, trade and people, each with a choice or a clock that the world remembers. Six templates × the twelve trades that can give them × four peoples × the towns they point at is the variety the note asks for; a second run can add six more on the same frame.
 
 ### What the canon fixes, and where it is silent
 
@@ -2385,7 +2387,7 @@ At 22:00 in the circle, a `showMsg`: *You settle in by the {fold}.* At 02:00 if 
 
 ## Asked in Passing, the second run — six more errands
 
-*Unapproved.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
+*Approved by Michael, 14 Oct 2026.* The second piece of Michael's 5 Oct note (*50–100 somewhat unique quests … far more likely to stumble upon … incentivize players to talk to NPCs*), on the first run's frame exactly: the same givers (generated townsfolk, one errand in five a game-week, `seededRng('errand', site.id+':'+def.name+':'+week)`), the same *hint* in the greeting and *ask* in the *you* folder, the same shared lines (*Not now*, *Not yet*, *Done, paid*), the same ids (`er:<site>:<giver name>:<n>`) and the same small pay (15–40 gold by tier and a point of the giver's town's favour). The first run's last section listed six ideas for this one. Two of them changed on the way: *a dog gone after a deer* needs a dog and a deer, and the game has neither (a new creature is the look builder's, and the errand is not worth one), so it is replaced by **a prayer carried to a shrine**, on the shrines that exist; and *a fish from a named lake* became a fish from the sea, because `catchFish` (`86-world-crime.js`) catches only from the sea's schools. Every errand here runs on machinery the game already has.
 
 The `sub` values: `cart`, `child`, `fish`, `rubbing`, `hedge`, `prayer`. Numbering continues from the first run.
 
@@ -2757,7 +2759,7 @@ The giver, by their people, to each:
 
 ## Under Another Flag — a town besieged, held and freed
 
-*Unapproved.* Backlog A's last open story item, *occupation effects from the canon*. The war is built (Sessions 129–440: `startWar`, `laySiege`, `occupy`, `liberate`, `tickSieges`, `87-world-quests.js`): a camp sits on the road for twelve days and the town falls; a garrison then holds the plaza until someone kills it. What is missing is everything a person in that town would say about it. Today a besieged or held town answers *Who runs things here?*, *What's the law here?* and *How's trade?* as if nothing had happened, the lord has one line and nothing to offer, and nobody outside the walls has heard. This draft gives the state its voice, gives the lord two jobs to hand out, lets the freed town remember who freed it, and writes down the patrols canon §12a names.
+*Approved by Michael, 14 Oct 2026.* Backlog A's last open story item, *occupation effects from the canon*. The war is built (Sessions 129–440: `startWar`, `laySiege`, `occupy`, `liberate`, `tickSieges`, `87-world-quests.js`): a camp sits on the road for twelve days and the town falls; a garrison then holds the plaza until someone kills it. What is missing is everything a person in that town would say about it. Today a besieged or held town answers *Who runs things here?*, *What's the law here?* and *How's trade?* as if nothing had happened, the lord has one line and nothing to offer, and nobody outside the walls has heard. This draft gives the state its voice, gives the lord two jobs to hand out, lets the freed town remember who freed it, and writes down the patrols canon §12a names.
 
 ### What the canon fixes, and where it is silent
 
@@ -2964,7 +2966,7 @@ The garrison does not only stand on the plaza. By day (6h–20h), two of its sol
 
 ## The Aurennais Register — names, places, signs and talk
 
-*Unapproved. Drafted 13 Oct 2026. Owed since Michael's answer of 12 Oct on Aurenne (`decisions.md`, *The concept art's first batch*, item 4; canon §1.3 and §2): the Norman register is dropped for Aurenne, and its names are *to be written by the quest writer*. Backlog J, *The world's tone*: "Owed for Aurenne: the quest writer's new name pools in its register (the code's `NAMES.french`, read by `PEOPLES.aurennais`)". This is not a quest. It is the bank every Aurennais name and place is drawn from, so it comes before any quest set there.*
+*Approved by Michael, 14 Oct 2026.* *Drafted 13 Oct 2026. Owed since Michael's answer of 12 Oct on Aurenne (`decisions.md`, *The concept art's first batch*, item 4; canon §1.3 and §2): the Norman register is dropped for Aurenne, and its names are *to be written by the quest writer*. Backlog J, *The world's tone*: "Owed for Aurenne: the quest writer's new name pools in its register (the code's `NAMES.french`, read by `PEOPLES.aurennais`)". This is not a quest. It is the bank every Aurennais name and place is drawn from, so it comes before any quest set there.*
 
 ### What the canon fixes, and where it is silent
 
@@ -3062,7 +3064,7 @@ The pool a townsperson draws from when no live rumour is due. In the Aurennais r
 
 ## The Great Gates, I — the knot at the ring
 
-*Unapproved.* The first piece of backlog A's *The six great gates: what clearing one means*, which Michael put ahead of every other story item on 13 Oct (the new look's card F5 needs it). This piece is **the act at a great gate on each path**: where in the gate it happens, what the player does, what they see and are told, how it is undone, how the six lock, and how the people's talk follows the world as it changes. The pieces still owed, one a run: the two artifacts' names and lines; each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it. The act itself is asked as **DECISION #292** (A, the knot, B, the door, C, the heart carried); this draft writes A, the recommendation, in full. Only §1 and §6 change under B or C.
+*Approved by Michael, 14 Oct 2026.* *Small fix, 15 Oct: the Church's word for the knot is* the Nodus*, not* le Nœud*, under the approved Aurennais register (see piece II).* The first piece of backlog A's *The six great gates: what clearing one means*, which Michael put ahead of every other story item on 13 Oct (the new look's card F5 needs it). This piece is **the act at a great gate on each path**: where in the gate it happens, what the player does, what they see and are told, how it is undone, how the six lock, and how the people's talk follows the world as it changes. The pieces still owed, one a run: the two artifacts' names and lines; each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it. The act itself is asked as **DECISION #292** (A, the knot, B, the door, C, the heart carried); this draft writes A, the recommendation, in full. Only §1 and §6 change under B or C.
 
 ### What the canon fixes, and where it is silent
 
@@ -3075,7 +3077,7 @@ The pool a townsperson draws from when no live rumour is due. In the Aurennais r
 - *No chosen-one prophecies* (Part I, §4.2). Nothing in a great gate is waiting for the player. The knot can be cut or bound by whoever reaches it with the tool, and the ring says nothing about who.
 - *Words of the deep tongue* (magic B, which 2.0 now carries, `v2-scope.md` §1): a sigil teaches a word, and a word has a tier. The gain and the cost below are written in tiers, so they hold under today's spells and under B's words alike.
 - *The far end: a ring 30 to 40 m high, dark at its heart* (`visual-foundation.md` §2, *Inside*). That is where the act happens.
-- *Silent, and chosen plainly:* what the act is done *to*. The canon's binding is a loom, the sigils are its seams, and the great gates are one per school. So at each great gate the script of the whole gate runs into **one knot**, in the dark at the heart of the ring: deep register *an tSnaidhm*, common *the knot*, the Herald's office *the binding point*, the Church *le Nœud*. Also silent: whether the knot has a guard. The draft leaves the realm's master to card F5 and the systems builder. Clearing a great gate means reaching its ring; the act comes after the fight, never during it.
+- *Silent, and chosen plainly:* what the act is done *to*. The canon's binding is a loom, the sigils are its seams, and the great gates are one per school. So at each great gate the script of the whole gate runs into **one knot**, in the dark at the heart of the ring: deep register *an tSnaidhm*, common *the knot*, the Herald's office *the binding point*, the Church *the Nodus*. Also silent: whether the knot has a guard. The draft leaves the realm's master to card F5 and the systems builder. Clearing a great gate means reaching its ring; the act comes after the fight, never during it.
 
 ### 1. The ring and the knot (the act's place)
 
@@ -3254,3 +3256,158 @@ The rumour pool's *Normal* lines become the *Any news?* pool's lasting default f
 - *No chosen one*: the knot answers anyone carrying the tool.
 - *§2's registers*: Gatelanders in proverbs and no bare yes (*there's no smoke without a fire*; *a field's not lost till the last row's cut*); Markmen in short sentences with no honorific; Aurennais with *Master*, qualifiers and clauses, never an oath; the Old Blood sparing and exact, with the older word (*the knot*, *the knife*).
 - *Silent, chosen plainly*: what the act is done to (a knot, the loom's own figure); that the realm's master is F5's; that the six-torn ending is not written until it is decided.
+
+---
+
+## The Great Gates, II — the knife and the needle
+
+*Unapproved. Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
+
+### What the canon fixes, and where it is silent
+
+- *Two artifacts, "akin to Sunder and Keening from Morrowind": the player must obtain one to tear a great gate open, and is later presented with one to seal them (perhaps both at once)* (§9a, Michael 13 Oct). So there is a pair, and they come by two different roads: the tearing one is *obtained*, so the player goes and gets it, and the sealing one is *presented*, so someone hands it over. The tearing one comes first.
+- *The knot is drawn tight past any fingers. It was not tied to be undone by hand* (piece I, approved). So the tools are what a hand needs to work a knot: **a knife** to cut it and **a needle** to draw the cut ends together and tie them. Piece I's Old Blood line, *the one who carries the knife*, already names the first.
+- *Varek needs the gates cleared* (Part I, *complicit without knowing it*). So the knife reaches the player by Varek's doing. *He keeps notes. Asks questions* (Part I, *his voice*). So he does not hand it over in person, and his note ends with a question.
+- *Aldwyn wants sealing* in Act II (Part I, Aldwyn's arc), comes *from an institution that no longer exists*, and *is Old Blood and has hidden it, and the mark on his wrist shows it* (§14, OG-053; *what that means for his hundred and fifty years is the quest writer's to write*). So Aldwyn is the one who presents the needle. That gives him an Act II beat and lets him show his wrist, and it does not explain his hundred and fifty years. That is left for his own draft. Giving him this scene adds a beat to a named character without changing what the canon says he is, so no decision is needed for it. If Michael would rather it were someone else, the hermit from *The Makers' Things* can speak the same scene, and only its first line changes.
+- *The Compact's sealing of gates would, over centuries, drown the world in its own residue* (§3.1). The needle is not the Compact's. Aldwyn says so, and the Church mistakes it for its own.
+- *No chosen-one prophecies* (Part I, §4.2). Neither tool waits for the player. The knife was buried by a man who could not use it, and the needle was kept for whoever would carry it. Nothing written on either one names who that is.
+- *The Withdrawal* (§3.1): the makers broke their order, forbade the reading, and scattered. *Silent:* what they made on the way out. **Chosen plainly:** two tools, one to undo the six knots if the window ever had to be shut by cutting, one to tie them fast again. The knife went into the deep and the needle stayed with the few who kept the knot's craft. Varek found the first. Aldwyn's house kept the second until there was no house left but him.
+- *Silent:* why Varek cannot use the knife himself. **Chosen plainly:** a great gate's antibodies rise first and thickest against whatever pulls hardest at the loom (Part I, *the central mystery*; §10a, *the antibodies rise against the player*), and after 250 years of reading nothing pulls harder than Varek. He gets no further than the door. He says it obliquely and Aldwyn half says it. Neither explains it. Piece IV, Varek's arcs, may build on this but cannot undo it.
+- *The Aurennais register* (approved 14 Oct): the Norman words are dropped for Aurenne and the Church speaks the common tongue with Latin and Greek roots. **Correction to piece I:** the Church's name for the knot, *le Nœud*, is out of register since that draft. It is **the Nodus**. That is the Church's word in this piece, and piece I takes it as a small fix.
+
+### 1. The names
+
+| | The knife | The needle |
+|---|---|---|
+| **Common** (the item, the log, the journal) | **the Loosing Knife** | **the Binding Needle** |
+| **Deep register** (Old Blood speakers, the card's second line) | *an Scian* (the knife) | *an tSnáthaid* (the needle) |
+| **Aldwyn**, scholarly | the severing instrument | the fastening instrument |
+| **The Church** (Aurennais) | the Unpicker | the Weaver's Needle (claimed, wrongly, as its own) |
+| **The League** (Markmen) | the knife | the needle |
+| **The Crown's Herald's office** | the Ashfeld knife (as entered in the rolls) | Aldwyn's needle |
+
+The Old Blood use the older word for a thing, and the older word is the plain one: *the knife* and *the needle*. Their names carry no titles. The common names are the plain verb of each, so a player reading the log never has to remember which tool does what.
+
+### 2. The Loosing Knife
+
+**The item card** (`makeItem`, type `misc`, a quest item: it cannot be sold, dropped, stashed or stolen, and is kept on death):
+- Name: *The Loosing Knife*
+- Second line: *an Scian*
+- Description: *A knife of grey stone, no longer than a hand and as thin as a leaf. The script on its blade runs one way only, toward the edge. It will not cut bread.*
+
+**How it is obtained.** It is set going the first time the player reaches a great gate's ring carrying neither tool. Piece I's line *It was not tied to be undone by hand* plays at the knot. The next time the player sleeps anywhere, a folded paper is in their pack when they wake. The log says *A paper you did not put there is folded in your pack.*, and the paper is a book item, *A note in a cramped hand*, read in the book reader:
+
+> You reached the ring of ${gate} and came away with your hands empty. I know the feeling. I have had it for two hundred years.
+>
+> At the Ashfeld, where the path in the grass ends, there is a flagstone. What you need is under it. I have stood on that stone every time I went there, because it was the one place I could be sure nobody would dig.
+>
+> I cannot carry it where you go. What it cuts stands between me and every ring, and it knows me. A woman called Orla Fenn got as far as the second hall of ${gate} in my time. She is on my list. You went further, and it let you. Why do you think that is?
+
+The paper is not signed. The map stars the end of the Ashfeld's path, the way a rubbing stars a gate. The journal's *Great gates* page gains the line *A note says something lies under a flagstone at the Ashfeld.*
+
+**At the flagstone** (the `.ob` prompt): *A flagstone at the end of the path — Press 'E' to lift it*
+
+**Lifted** (`showMsg`):
+> *Under the flagstone, wrapped in an oilcloth gone stiff with age, is a knife of grey stone. The grass round the stone is worn to earth in the shape of two feet.*
+
+Log: *Took the Loosing Knife from under the Ashfeld.* Journal: *The Loosing Knife. It cuts the knot at a great gate's ring.*
+
+**For an Old Blood player**, a second line, after 1.6 s:
+> *It is warm in your hand, the way a stone is warm with a sigil under it, though there is none.*
+
+**Away from a knot.** The knife is not a weapon and cannot be wielded. E with it at anything that is not a great knot falls through to that thing's own prompt. At a lesser gate's sigil, once per sigil:
+> *The knife does nothing here. It was made for six knots and no others.*
+
+### 3. The Binding Needle
+
+**The item card** (the same quest-item rules):
+- Name: *The Binding Needle*
+- Second line: *an tSnáthaid*
+- Description: *A needle of pale bone as long as a forearm, its eye wide enough to put a finger through. The script on it runs round and round and comes back to where it began.*
+
+**When it is presented.** Whichever comes first:
+1. the first time any knot is cut, or
+2. the second great ring reached with nothing cut.
+
+The next time the player enters a town after that, a Herald's runner finds them (`showMsg`):
+> *A Herald's runner falls in beside you, out of breath. "The Herald asks you to call on him at Ironhaven. He says it will keep, but not long."*
+
+Log: *The Herald has sent for you.* Journal: *Aldwyn asks to see you at Ironhaven.*
+
+**Aldwyn's scene** (his dialogue, a topic folder *The great anchor places* that appears once the runner has come; Aldwyn, the Royal Herald, Old Blood hidden, in the scholarly register: measured, exact, *anchor places*, never *old gates*):
+
+His opening line takes the form for whichever trigger fired:
+- After a cut: "You have been to the end of one of the great anchor places, and you cut what you found there. The sky over Ironhaven told me before the runner did."
+- After two rings left alone: "You have been to the end of two of the great anchor places and left them as they were. That is rarer than you would think. Most people who reach a thing like that do something to it."
+
+Topics:
+
+- **"How do you know about the knot?"**
+  "Because I was taught to tie it. Not that one; nobody living tied that one. But a knot is a knot. The house I was trained in kept two things against the day someone came to the end of a great anchor place with an edge. One of them, it seems, was not kept well enough."
+
+- **"Varek left me the knife."** (only with the knife)
+  "He would. He has wanted that edge used since before I was born, and he has never once been able to use it himself. Ask yourself why the anchor places let you through and not him. I have asked myself for a century and a half, and I like none of my answers."
+
+- **"What house?"**
+  "One that no longer exists. It was small at its largest, and at the end it was three old men and a cupboard. I am what is left of it, and this is what was in the cupboard."
+
+- **"What do you want from me?"**
+  "Very little, and that is the difficulty. I want you to carry this."
+  *(He sets a long bone needle on the desk between you.)*
+  "It is the knife's opposite. It does not undo the cut. It draws the cut ends together and ties them as they were first tied, and the anchor place goes on doing its work. The Compact bricks its gates shut and calls that sealing. This is not that. Please do not let the Prior explain the difference to you."
+  → the Binding Needle is added. Log: *Aldwyn gave you the Binding Needle.* Journal: *The Binding Needle. It binds the knot at a great gate's ring.*
+
+- **"What does it cost?"** (after the needle is given)
+  "I will not pretend it costs nothing. What the knife gave you, the needle takes back, and a little more. A knot tied by hand is tied with something of the hand. It is not a great deal. It is not nothing."
+
+- **"Your wrist."** (after the needle is given; the sleeve has ridden up as he set the needle down)
+  "Yes. I have kept my sleeves long in Ironhaven for a hundred and fifty years, and I find I am too old to mind who sees it now. Ask me about it another day. Not today."
+
+- **"Which should I do?"**
+  "I will not tell you. I have spent my life telling people what to do with the anchor places, and you have seen where that has left them. Go carefully. Come back and tell me what you chose. I keep a record, as you may imagine."
+
+**If the player already holds the needle** when the first knot is cut (they reached two rings first), the runner does not come again, and Aldwyn's opening the next time they meet is: "You found the knife as well. I had hoped he would take longer to think of you."
+
+### 4. Both at once
+
+Michael left open whether the two come together (*perhaps both at once*). Here they come apart: the knife first, the needle after a cut or after a second ring. That keeps §9a's order, where tearing is the first thing a player can do and sealing comes later as the choice they are presented with. A player who goes to the second ring before lifting the flagstone can hold the needle first. Either way, once both are held, piece I's three-way prompt (*Cut the knot. / Bind the knot. / Leave it.*) carries the choice.
+
+### 5. What people say of them
+
+**Old Blood townsfolk and the hermit**, once each, when the player carries a tool (a line put before their greeting):
+- The knife: "You carry the knife. Keep it out of the light."
+- The needle: "You carry the needle. That one was kept, not hidden."
+- Both: "You carry both. Most hands are only big enough for one."
+
+**The three powers** (a lord's topic *The knife from the Ashfeld?*, on any lord of that nation once the knife has been lifted; the Church's line is a Prior's):
+- The Crown (a Gatelander lord): "The Herald's office has a knife entered in its rolls as found at the Ashfeld, owner unknown. I'd leave it that way. A thing with no owner can't be taken off him, and the Crown takes a great deal off a great many people."
+- The League (a Markman captain or reeve): "Hear you've a knife that opens the great gates. Our law's plain. It's yours while you hold it. Hold it, then."
+- The Compact (an Aurennais Prior or Factor): "The Church has a word for the instrument you carry, Master. It is *the Unpicker*, and it is not used kindly. I would keep it under your coat in the capital. The Prior is courteous to everyone in the street, and remembers them afterwards."
+
+**The Church after a seal** (a Prior, once any knot is bound, replacing nothing):
+> "The Church gives thanks that a great gate has been sealed, Master, by the Weaver's Needle, which it is pleased to call its own. It has never held the thing, nor seen it. That has not, historically, stopped it."
+
+### 6. At the lock
+
+Piece I's lines stand. One line is added. At six bound, the knife's card gains the line *It has not cut anything since the sixth knot was tied, and it will not.* At six torn there is nothing to add, since the ending is not written (piece I, §6).
+
+### What in the code would carry it
+
+- **Items** (`14-items.js`, beside the Makers' tools): `makeItem` entries `looseKnife` and `bindNeedle`, type `misc`, `quest:true` (not sellable, droppable, stashable or stealable; kept on death, as the Gate-Blade is). Each has a name, a `sub` line (*an Scian*, *an tSnáthaid*) and a description. The six-bound line is a getter on the knife's `desc` that reads `worldState.greatGatesLocked`.
+- **Varek's note** (`14-items.js` `BOOKS`): `varekNote`, which takes `${gate}` from the first ring reached. It is written into the bag when the player wakes, by a named action `giveItem('varekNote')` inside `sleep()` (`60-shop.js`), when `worldState.greatGates.ev.ringFirst` is set, the knife has not been lifted, and the note has not been given.
+- **The flagstone**: on the legacy Ashfeld zone a prop and an `.ob` prompt at the path's end (`44-legacy-towns.js`, where the Ashfeld's props are, and `62-actions.js`'s prompt chain). In the generated world it goes at the home island's *field* (§9). The map star is a rubbing's star (`starGate`'s mechanism) set on the note's first reading.
+- **The runner** (`88-world-ticks.js`, the town line, entering a site): fires once after the first cut or two rings seen without a cut. `showMsg`, log, journal.
+- **Aldwyn's folder** (`22-dialogue.js`, `NPC_DEF.Aldwyn` topics; a `{label:'The great anchor places', folder:true, follow:[…]}` gated on `worldState.greatGates.ev.runner`). Each topic is gated as marked. *What do you want from me?* gives the needle through `giveItem('bindNeedle')`.
+- **Saved state**, by the co-op rules. The knife and the needle are the character's, so they live in the bag (the character row). Which events have fired is the world's: `worldState.greatGates.ev={ringFirst (the gate id), noteGiven, knifeLifted, runner, needleGiven}`, nested under `ev` so piece I's count of torn gates over the object's values never reads them, inside the one `greatGates` object piece I already adds to `_applyLoadData`'s list. No new `worldState` key.
+- **Talk**: the Old Blood pre-greeting lines go in `makeDef`'s greeting path (`83-world-generator.js`), keyed on `PEOPLES` `oldblood` and the bag. The lords' topic goes in `lordFor`'s `_extraFn` by nation, beside piece I's *The great gates?*.
+- **A test** for the builder: reach a ring with no tool, sleep, and the note is in the bag and names the gate; lift the flagstone and the knife is in the bag and the log reads *Took the Loosing Knife from under the Ashfeld.*; cut a knot, enter a town, and the runner comes; Aldwyn's folder opens and gives the needle; the knife cannot be sold or dropped; save and reload, and both tools and the `greatGates` flags survive, the tools in the character row and the flags in the world row.
+
+### Checked against the canon
+
+- *§9a*: one tool obtained (dug up), one presented (handed over), and they can be held together; nothing in this piece changes the act, the undo or the lock.
+- *Part I, Varek's voice*: he asks, and does not tell; he remembers a name (*Orla Fenn*) and keeps his list; he never says *player*. He does not sign the paper; his hand is enough.
+- *Part I, Aldwyn*: *anchor places*, never *old gates*; he wants sealing and says so only by what he hands over; he keeps a record. His wrist is shown and its meaning is left for his own draft.
+- *§3.1*: the needle keeps a gate working; the Compact's bricking is named as different, and the Church's claim is a character's error.
+- *§10a*: no line says the knife does harm. The worst anyone says of it is the Church's name for it, which the player has every reason to discount. The itch stays.
+- *No chosen one*: the knife was buried, the needle kept, and nothing on either names who carries it.
+- *§2's registers*: the Gatelander lord in indirection, protecting an owner who isn't named; the Markman in short sentences with *our law*; the Aurennais with *Master*, a clause and a courtesy that warns, and no oath; the Old Blood in one plain sentence each, with the old word, *the knife*.
