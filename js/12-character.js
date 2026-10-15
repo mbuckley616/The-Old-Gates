@@ -95,7 +95,7 @@ const STARTER_WEAPONS={
 let lvAct={kills:0,damageTaken:0,parries:0,sprintDist:0,staminaDepleted:0,transactions:0,npcTalks:0,chestsOpened:0};
 
 // ── SKILLS (Session 941: skills and perks A, Michael's Morrowind book; docs/design/skills-and-perks-build.md, its first session) ──
-// Twenty-two skills, 1 to 100, raised by use. A use is one thing done against resistance (a hit on an alert foe, a pin set,
+// Twenty-three skills (Hand-to-hand the 23rd since Session 950), 1 to 100, raised by use. A use is one thing done against resistance (a hit on an alert foe, a pin set,
 // ten metres sprinted), at most once a second for each skill and target, so a sleeping deer teaches nothing. The next level
 // costs 0.9 × L^1.2 uses: 6 at 5, 43 at 25, 98 at 50, 223 at 99. Five majors start at 25, five minors at 15, the rest at 5.
 // What a skill sets is read where the thing is decided: a weapon's damage × (0.6 + 0.8 × skill/100), a school's power the
@@ -103,7 +103,7 @@ let lvAct={kills:0,damageTaken:0,parries:0,sprintDist:0,staminaDepleted:0,transa
 // sight on you while you sneak. The level and the bed still run on xp until the sheet's second session; the perks are
 // read from the skill in its third. Skills are the character's: `skills`, `majors`, `minors` ride the character row.
 const SKILL_DEF={
-  blade:{label:'Blade',attr:'might'},blunt:{label:'Blunt',attr:'might'},bow:{label:'Bow',attr:'finesse'},guard:{label:'Guard',attr:'resolve'},
+  blade:{label:'Blade',attr:'might'},blunt:{label:'Blunt',attr:'might'},hand:{label:'Hand-to-hand',attr:'might'},bow:{label:'Bow',attr:'finesse'},guard:{label:'Guard',attr:'resolve'},
   athletics:{label:'Athletics',attr:'swiftness'},acrobatics:{label:'Acrobatics',attr:'swiftness'},armour:{label:'Armour',attr:'fortitude'},
   tine:{label:'Tine',attr:'intelligence'},uisce:{label:'Uisce',attr:'resolve'},cloch:{label:'Cloch',attr:'resolve'},
   scath:{label:'Scáth',attr:'resolve'},solas:{label:'Solas',attr:'intelligence'},gaoth:{label:'Gaoth',attr:'intelligence'},
@@ -135,9 +135,9 @@ function skillLv(id){const s=skillsReady()[id];return s?s.lv:5;}
 function skillT(id){return Math.max(0,Math.min(1,(skillLv(id)-5)/95));}
 // ×0.64 at 5, ×1.0 at 50, ×1.4 at 100: a weapon's damage and a school's power
 function skillMult(id){return id?.6+.8*skillLv(id)/100:1;}
-// the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers: bare fists are neither, so a punch
-// takes no skill (×1) and teaches none
-function weaponSkill(w){if(!w)return null;if(w.weaponShape==='bow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}
+// the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,
+// the 23rd skill (Michael's C on #357, Session 950): the fists' roll on its multiplier, a punch on an alert foe a use
+function weaponSkill(w){if(!w)return 'hand';if(w.weaponShape==='bow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}
 function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)return false;
   const now=performance.now(),key=target==null?'':target;let m=SKILL_LAST.get(id);if(!m)SKILL_LAST.set(id,m=new Map());
   const t=m.get(key);if(t!=null&&now-t<1000)return false;

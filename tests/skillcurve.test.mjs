@@ -1,4 +1,4 @@
-// Skills, the first session (Session 941; skills and perks A, docs/design/skills-and-perks-build.md, on auto/design): 22 skills
+// Skills, the first session (Session 941; skills and perks A, docs/design/skills-and-perks-build.md, on auto/design): 22 skills (23 with Hand-to-hand, Session 950)
 // raised by use, the curve 0.9 × L^1.2, the archetype's majors and minors, and the reads. The build sheet's suites `skillcurve`,
 // `skilluse`, `skilldamage` and `skillgates` are one boot here, each check named for its suite; `skillsave` holds the save and
 // the migration. Real swings through the loop's own tick at fixed 1/60 (the draw held off, as `dmgnums` does) at a Bandit in
@@ -12,8 +12,8 @@ const curve = await page.evaluate(() => ({ cost: [5, 25, 50, 99].map(skillCost),
   lv: Object.fromEntries(Object.keys(SKILL_DEF).map(k => [k, skillLv(k)])), maj: skillMajors.slice(), min: skillMinors.slice() }));
 check(`skillcurve: uses to the next level at 5, 25, 50, 99: ${curve.cost.join(', ')} (6, 43, 98, 223 ±1)`, [6, 43, 98, 223].every((v, i) => Math.abs(curve.cost[i] - v) <= 1), curve.cost);
 const lvs = Object.values(curve.lv);
-check(`skillcurve: 22 skills; a fresh ${curve.arch} has five majors at 25, five minors at 15 and twelve at 5`, curve.n === 22 && lvs.filter(v => v === 25).length === 5 && lvs.filter(v => v === 15).length === 5
-  && lvs.filter(v => v === 5).length === 12 && curve.maj.every(k => curve.lv[k] === 25) && curve.min.every(k => curve.lv[k] === 15), curve);
+check(`skillcurve: 23 skills; a fresh ${curve.arch} has five majors at 25, five minors at 15 and thirteen at 5`, curve.n === 23 && lvs.filter(v => v === 25).length === 5 && lvs.filter(v => v === 15).length === 5
+  && lvs.filter(v => v === 5).length === 13 && curve.maj.every(k => curve.lv[k] === 25) && curve.min.every(k => curve.lv[k] === 15), curve);
 
 // skilluse: once a second for each skill and target; ten uses carry Blade 5 to 6 and the next six to 7
 const use = await page.evaluate(() => {
@@ -64,6 +64,11 @@ const fight = await page.evaluate(() => {
     out.dmg = {};
     for (const lvl of [1, 20]) for (const b of [5, 50, 100]) { level = lvl; SKILLS.blade = { lv: b, p: 0 }; raw = []; _swing(e, keep); out.dmg[lvl + '/' + b] = raw[0]; }
     level = 1;
+    // Hand-to-hand (Session 950, Michael's C on #357): bare fists are the 23rd skill, the fists' roll on its multiplier
+    const fa = FISTS.atk.slice(), keepW = EQ.weapon; EQ.weapon = null; FISTS.atk[0] = FISTS.atk[1] = 100; buildViewmodel(); out.hand = {};
+    try { for (const h of [5, 50, 100]) { SKILLS.hand = { lv: h, p: 0 }; raw = []; _swing(e, keep); out.hand[h] = raw[0]; }
+      SKILLS.hand = { lv: 5, p: 0 }; uses.length = 0; SKILL_LAST.clear(); _swing(e, keep); out.handUse = uses.slice(); out.handP = SKILLS.hand.p;
+    } finally { FISTS.atk[0] = fa[0]; FISTS.atk[1] = fa[1]; EQ.weapon = keepW; buildViewmodel(); }
   } finally { applyMeleeDamage = _a; skillUse = _u; e.hp = 0; }
   return out; });
 check(`skilluse: three swings at an unaware Bandit land (${fight.unaware && fight.unaware.swings}) and teach Blade nothing (${fight.unaware && fight.unaware.blade})`, !fight.noSpot && fight.unaware.swings === 3 && fight.unaware.blade === 0, fight);
@@ -72,6 +77,9 @@ const D = fight.dmg || {};
 check(`skilldamage: a roll of 100 hits ${D['1/5']}, ${D['1/50']}, ${D['1/100']} at Blade 5, 50, 100 (×0.64, ×1.0, ×1.4)`, D['1/5'] === 64 && D['1/50'] === 100 && D['1/100'] === 140, D);
 check(`skilldamage: no level in it: at level 20 the same, ${D['20/5']}, ${D['20/50']}, ${D['20/100']}`, D['20/5'] === 64 && D['20/50'] === 100 && D['20/100'] === 140, D);
 
+const H = fight.hand || {};
+check(`skilldamage: a punch rolled at 100 hits ${H[5]}, ${H[50]}, ${H[100]} at Hand-to-hand 5, 50, 100 (×0.64, ×1.0, ×1.4)`, H[5] === 64 && H[50] === 100 && H[100] === 140, H);
+check(`skilluse: a punch at an alert foe is a Hand-to-hand use (${fight.handUse})`, Array.isArray(fight.handUse) && fight.handUse.join() === 'hand' && fight.handP === 1, fight);
 // the other reads: a school's power and cost, the pick, the run and the jump
 const reads = await page.evaluate(() => {
   const out = {}; for (const k in ATTRS) ATTRS[k] = 0;

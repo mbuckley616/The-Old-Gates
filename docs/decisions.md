@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Skills: how hard does a bare fist hit, with the level gone from damage? (the systems builder, Session 941) — DECISION #357
 The build sheet takes the flat `level × 1.5` out of every hit, so damage comes from the weapon and its skill. Session 941 built that. Fists roll 2 to 3, and the sheet's Blade and Blunt don't cover them, so a punch now takes no skill (×1). At level 1 the flat term had added 1 to that small roll, a third of a punch. `fistfight` (the critic's Bandit, Session 436) wants a Bandit punched to death in 7 to 12 blows. It now takes 11 to 16. A weapon is unaffected: a Wooden Sword at Blade 25 hits 0.8 of its 5–9.
 - **A.** *(recommended)* Fists hit as a Blunt weapon of their own: 3 to 5, on Blunt's multiplier, and a punch on an alert foe is a Blunt use. At Blunt 25 that is 2 to 4 a punch, about 9 to 12 for a Bandit, and it rises as you train.
@@ -11,6 +13,10 @@ The build sheet takes the flat `level × 1.5` out of every hit, so damage comes 
 - **C.** A Hand-to-hand skill of its own (a 23rd), Morrowind's: the roll 2 to 3 on its multiplier, with a Might share. This needs a row in the sheet and its perks.
 
 Recommendation: **A.** A brawl stays about as long as the critic found right, and fists grow with a skill the archetypes already train, with no new row.
+
+Michael: **C. A Hand-to-hand skill of its own**. (15 Oct 2026, on the control room) A 23rd skill with a Might share; the systems builder adds its row and perks.
+
+*Done, Session 950:* `hand` in `SKILL_DEF` (Might); bare fists hit their 2–3 on its multiplier and a punch on an alert foe is a use. Its row and four perks are in the build sheet. `fistfight`'s range follows the chosen design (see the devlog).
 
 ### Skills: what gates the light and robe armour? (the systems builder, Session 941) — DECISION #354
 Skills and perks A's build sheet moves the tier gates from attributes to skills: a weapon asks its own skill (Iron 15, Steel 30 … Cosmic 100) and armour asks Armour. Session 941 built that for the weapons and the heavy line. The light line (hood, jerkin, bracers) asks Finesse and the robe line (cowl, robe, wraps) asks Intelligence today, on the old curve (Iron 5 … Cosmic 56), since Session 564. The sheet does not say whether they move too. The answer decides whether a mage in robes has to train Armour.
@@ -20,7 +26,9 @@ Skills and perks A's build sheet moves the tier gates from attributes to skills:
 
 Recommendation: **C.** It is already built, and a mage or a scout never has to take hits to dress for what they are.
 
-## Answered
+Michael: **C. Heavy asks Armour; light and robe keep attributes**. (15 Oct 2026, on the control room) As built in Session 941.
+
+*Done:* nothing to change; Session 950 records it.
 
 ### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342
 The skills build sheet (`docs/design/skills-and-perks-build.md`) settles the 22 skills, their uses, the curve, the 88 perks and the bed. Every skill-up counts toward the level, majors and minors as one mark and the rest as a quarter. The bed gives 12 points, at most 5 in one attribute (Oblivion Remastered's two fixes). The open number is how many marks a level takes, because twelve points a level is a large step. The simulation behind it is an ordinary mix of play, about 650 skill uses an hour.

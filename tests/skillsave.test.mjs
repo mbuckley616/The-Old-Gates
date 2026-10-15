@@ -11,7 +11,7 @@ const r = await page.evaluate(() => {
   skillsInit('scout', 1); SKILLS.bow = { lv: 37, p: 12 }; SKILLS.cooking = { lv: 9, p: 3 }; SKILLS.locks = { lv: 61, p: 0 };
   const want = JSON.stringify(SKILLS);
   const d = JSON.parse(ssStringify(_buildSavePayload())); const rows = ssSplitPayload(d);
-  out.inC = !!rows.c.skills && Object.keys(rows.c.skills).length === 22 && rows.c.majors.join() === SKILL_ARCH.scout.maj.join() && rows.c.minors.join() === SKILL_ARCH.scout.min.join();
+  out.inC = !!rows.c.skills && Object.keys(rows.c.skills).length === 23 && rows.c.majors.join() === SKILL_ARCH.scout.maj.join() && rows.c.minors.join() === SKILL_ARCH.scout.min.join();
   out.inW = ['skills', 'majors', 'minors'].filter(k => k in rows.w);
   // the character alone, into a fresh world: a guest's load
   skillsInit('warrior', 1); _applyLoadData(JSON.parse(JSON.stringify(rows.c)), null);
@@ -22,14 +22,19 @@ const r = await page.evaluate(() => {
   skillsInit('warrior', 1); _applyLoadData(old, null);
   out.mig = Object.fromEntries(Object.keys(SKILL_DEF).map(k => [k, skillLv(k)])); out.attrs = { ...ATTRS }; out.arch = playerArchetype; out.migMaj = skillMajors.slice();
   out.oldAttrs = old.ATTRS;
+  // a row from Session 941, before Hand-to-hand: its 22 skills come back as saved, and Hand-to-hand starts at 5
+  const s941 = JSON.parse(JSON.stringify(rows.c)); delete s941.skills.hand;
+  skillsInit('warrior', 1); _applyLoadData(s941, null); out.s941 = { hand: SKILLS.hand, bow: SKILLS.bow.lv, locks: SKILLS.locks.lv, n: Object.keys(SKILLS).length };
   return out; });
-check('skillsave: the character row carries all 22 skills, the majors and the minors', r.inC, r);
+check('skillsave: the character row carries all 23 skills, the majors and the minors', r.inC, r);
 check(`skillsave: the world row carries none of them (${r.inW.join(', ') || 'none'})`, r.inW.length === 0, r.inW);
 check(`skillsave: the character row alone, into a fresh world, brings them back (Bow ${r.bow && r.bow.lv}, ${r.bow && r.bow.p} toward the next)`, r.back && r.maj.join() === 'bow,athletics,stealth,acrobatics,woodcutting', r);
+check(`skillsave: a row saved before Hand-to-hand loads with it at ${r.s941.hand && r.s941.hand.lv} and the rest as saved (Bow ${r.s941.bow}, Locks ${r.s941.locks})`,
+  r.s941.n === 23 && r.s941.hand.lv === 5 && r.s941.hand.p === 0 && r.s941.bow === 37 && r.s941.locks === 61, r.s941);
 const M = r.mig;
 check(`skillmigrate: a level-12 Duelist saved before skills: Blade ${M.blade}, Guard ${M.guard}, Speech ${M.speech} (47); Bow ${M.bow}, Locks ${M.locks} (26); Tine ${M.tine} (5)`,
   r.arch === 'duelist' && ['blade', 'guard', 'acrobatics', 'athletics', 'speech'].every(k => M[k] === 47) && ['bow', 'stealth', 'armour', 'locks', 'gaoth'].every(k => M[k] === 26)
-  && Object.keys(M).filter(k => M[k] === 5).length === 12, M);
+  && Object.keys(M).filter(k => M[k] === 5).length === 13, M);
 check('skillmigrate: the attributes are unchanged', JSON.stringify(r.attrs) === JSON.stringify(r.oldAttrs), { now: r.attrs, saved: r.oldAttrs });
 // the game plays on
 await g.spin(null, 120); await g.frames(3);

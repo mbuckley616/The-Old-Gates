@@ -20931,3 +20931,35 @@ Corrections made during the session:
 - **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
+
+## v80 — Session 950 — Hand-to-hand, the 23rd skill (Michael's C on #357), and the light and robe gates as built (#354 C)
+Session 941 took the level's flat `+1.5` out of every hit, and that left bare fists with no skill: a punch rolled the fists' 2 to 3 at ×1 and taught nothing. Michael answered #357 with C: a Hand-to-hand skill of its own, a 23rd, with a Might share, with the systems builder to add its row and perks. He answered #354 with C as well: the heavy line asks Armour, and the light and robe lines keep their attributes. Session 941 had already built that, so there is nothing to change for #354, and both entries move to Answered.
+
+**The skill** (`12-character.js`). `SKILL_DEF.hand` is *Hand-to-hand*, governed by Might, and sits after Blunt. `weaponSkill(null)`, the empty weapon hand, now gives `'hand'` (it gave nothing). Both melee resolvers already read `skillMult(weaponSkill(w))` and call `skillUse(weaponSkill(w), …)` on a hit on an alert foe, so a punch is now:
+- the fists' roll × (0.6 + 0.8 × Hand-to-hand/100) × Might's 1% a point;
+- a Hand-to-hand use, weighted 3 for a riposte or a finisher.
+
+As with every skill, an unaware foe teaches nothing. No archetype's suggested set takes Hand-to-hand, so it starts at 5. The creator's sheet (the build sheet's session 2) will let any character take it as a major or a minor. A save from Session 941 has 22 skills and loads with Hand-to-hand at 5, because the load starts from `skillsInit` and copies what the row has.
+
+**The sheet** (`docs/design/skills-and-perks-build.md`). Hand-to-hand gets a row in the 22 skills' table and four perks, following Blade's and Blunt's: what a fist can do that a blade cannot.
+- 25, *Hard knuckles*: a punch drains ×1.5 posture.
+- 50, *Throw*: a punch on a staggered foe knocks it down.
+- 75, *Catch the blade*: a perfect parry bare-handed knocks a one-handed weapon from the foe's grip.
+- 100, *Stone hand*: the fists roll 4 to 7.
+
+They are built with the first wave in the sheet's session 3.
+
+**What a player feels.** At Hand-to-hand 5 a punch is 2 or 3 × 0.64, and it floors to 1. A level-1 Bandit (25 health) now takes 22 to 25 punches over 9 to 10 seconds. At 100 a punch is 2 to 4 and the Bandit takes 8 to 12, which is the critic's brawl. `fistfight` measured 7 to 12 with the old level term. It now measures the chosen design at both ends: an untrained fist at 15 to 28, a master's at 7 to 12. The posture break and the Bandit's two blows at most hold at both. The bar for the master is the critic's own, not loosened.
+### Verified (headless Chromium)
+- `skillcurve` 19 of 19 (17 before):
+  - 23 skills; a fresh Warrior has five at 25, five at 15 and thirteen at 5.
+  - A punch rolled at 100 hits 64, 100 and 140 at Hand-to-hand 5, 50 and 100.
+  - A punch at an alert foe is one Hand-to-hand use, and nothing else.
+- `skillsave` 7 of 7:
+  - The character row carries all 23 skills.
+  - A row saved before Hand-to-hand loads it at 5, with the rest as saved (Bow 37, Locks 61).
+  - The migrated Duelist still has thirteen skills at 5.
+- `fistfight` 7 of 7. At Hand-to-hand 5: 25, 22 and 25 punches. At 100: 10, 12 and 8. Staggered for 46% to 57% of each fight; the Bandit lands 1 or 2 blows. The starting weapon kills it in 7 swings.
+- `fists` and `fistswing` pass. A punch at Hand-to-hand 5 lands for 1, and the starting weapon for 4. (`tpfists` was named in the same run and did not run; the runner reported 2 of 2.)
+### Needs eyes
+- **An untrained brawl is long.** Every punch at Hand-to-hand 5 does 1, so a Bandit is 25 punches and a tavern brawl at level 1 drags. That is C as written: the fists' 2 to 3 on a ×0.64 multiplier. If it reads too long in play, the lever is the fists' roll (`FISTS.atk`, 2 to 4) or a Monk's suggested set taking Hand-to-hand as a major (it would start at 25, where a punch is 1 or 2). Both are Michael's call.
