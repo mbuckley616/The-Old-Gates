@@ -4,7 +4,417 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
+**F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.
+- **The bore:** 56 m long, winding 1.6 m either side, 3.6 m wide, with upright walls to 2.4 m under a round vault (4.2 m at the crown).
+- **The floor:** paved, with two cart ruts 1.4 m apart and a gutter down one side.
+- **The lamps:** clay lamps in plastered, arched niches every 6 m on alternate walls.
+- **The passing place:** midway, 6 m wide for 6 m, so that two carts can pass. It has a plastered dado under a band of blue glazed tile, a stone bench, the tally-keeper's table with a ledger, nine amphorae, and a shaft to the sky.
+- **The portals:** an arch in a plastered frame let into each cliff, rung in ashlar, with tiled spandrels and a blank tablet. Before them are the quay's paving and the dust road.
+- **Lit or dark:** `&dark` puts the lamps out, so you go by your torch.
+
+**1. What the tunnel is for:**
+- **A. A road** *(recommended)*: part of the road network, lit, kept and peaceful. It is a place to pass through, and it shows Aurenne's trade.
+- **B. A smugglers' run:** under the town, dark, held by people who should not be there. It is a place to fight through, like OG-121's lairs.
+- **C. Both:** the same bore, lit and kept in some towns, dark and taken in others (`o.used`).
+
+Pictures:
+- [the quay's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-quay.jpg)
+- [inside, by the lamps](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel.jpg)
+- [the passing place](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-passing.jpg)
+- [toward the inland portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-inland.jpg)
+- [the road's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-road.jpg)
+- [dark, by your torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel-dark.jpg)
+
+### Aurenne's ruined aqueduct: broken, or a way across? (look builder, Session 907) — DECISION #333
+**F8: Aurenne's first place, a ruined aqueduct (look builder, Session 907).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs", and OG-124 has "a ruined aqueduct". The catalogue's note asks that it be built in Aurenne's own plaster and tile, not the boards' Tuscan stone (canon §1.3). It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneAqueduct`), at `places.html?place=aqueduct`. The catacombs wait on the quest writer's answer about the dead (§3.1).
+- **The valley:** dry, 20 m deep, with a dry stream bed down its floor, pale rock, and cypresses on its shoulders.
+- **The arcade:** piers 2.2 m wide on a pitch of 8.2 m, with 6 m of clear span under each round arch.
+  - Two tiers where the valley is deep: 6 arches below and 10 above.
+  - One tier on the slopes, and a solid wall where the ground comes near the channel.
+  - The faces are cream lime plaster over a brick core, with the brick showing where patches have fallen.
+  - The arches are rung in pale ashlar on impost blocks, and a string course runs between the tiers.
+  - A band of blue glazed tile runs under the cornice on both faces.
+- **The channel:** 1.2 m wide inside, with walls 0.9 m high under copings, some of them gone. It is lined in red mortar, with a pale lime crust to 0.3 m where the water ran. It is dry and has no covers, so you walk along its bed from the terrace where it comes off the hill.
+- **The ruin:** the upper tier and the channel have fallen over two bays east of the middle. The pier between them is a stump on the lower tier, the broken ends are ragged, and the blocks lie heaped below. The walk ends at a drop of about 10 m to the lower tier, with the far run 11 m off.
+
+**1. The gap:**
+- **A. Broken, as drawn** *(recommended)*: the channel walk ends at the gap. The far side is reached from the valley, so the ruin is a view and a climb, not a bridge.
+- **B. A way across:** a plank bridge someone has laid over the gap, or the stump high enough to jump to. The walk then runs end to end.
+- **C. Whole:** no gap (`&whole`). This would be an aqueduct still standing, dry, for the roads and works of L5 rather than a ruin.
+
+Pictures:
+- [the valley and the two tiers](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct.jpg)
+- [down the channel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-channel.jpg)
+- [at the break](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-break.jpg)
+- [under the arches](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-under.jpg)
+- [off the west terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-end.jpg)
+- [whole, for comparison](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct-whole.jpg)
+
+### The Mark's ice cavern: the cave's hall in ice, or a glacier cave of its own? (look builder, Session 903) — DECISION #331
+**F8: the Mark's ice cavern (look builder, Session 903).** #305's three Gatelands places are done. The card's next part is the places by island, and OG-121's Mark panel has "ice caverns, snowed-in mouths". This first one is the limestone cave's hall (#313, rebuilt on your note in Session 882) dressed in the Mark's ice. It is a prototype in `docs/prototypes/levelup/places.js` (`markIceCave`, a dress of `gatelandsCave`), at `places.html?place=icecave`.
+- **The same space:** the same hall of 64 m, 45 m across and 24 to 30 m high, with the same winding passage, ledge, ramp, shore, natural bridge and shaft to the sky. Its rock is not moved.
+- **In ice:**
+  - blue-white glacier ice for walls, glassy where it is wet;
+  - icicles for stalactites;
+  - the lake frozen over;
+  - the falls frozen where they fell, a pillar of ice under the shaft;
+  - snow dusting the dry shore and drifted 9 m into the passage from the mouth, never more than 0.45 m deep on the walk;
+  - no flowers.
+- **The light:** your torch, and the day down the shaft, which the ice throws further than the limestone did.
+
+**1. The Mark's ice cavern:**
+- **A. The cave's hall in ice, as drawn** *(recommended)*: one hall, two islands' dress, as the ships take dresses. It is cheap, and it is proven by the cave's checks.
+- **B. Its own shape:** a glacier cave, a long blue tunnel under the ice with a ribbed, scalloped roof, meltwater channels and moulins. That is a new build and a different place.
+
+Pictures:
+- [the hall from the ledge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-lake.jpg)
+- [down the shore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-shore.jpg)
+- [the frozen falls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-falls.jpg)
+- [over the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-bridge.jpg)
+- [the snowed-in passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-passage.jpg)
+
+### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
+You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
+
+**1. Which town?**
+- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
+- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
+- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
+
+**2. What is in it?**
+- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
+- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
+- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
+
+Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
+
 ## Answered
+
+### The Mark's sloop: shields on the rail? (look builder, Session 900) — DECISION #330
+**F11: the sloop in the Mark's dress (look builder, Session 900).** With #316, #319 and #323 answered, each class can now take the other islands' dress. This is the first: the game's sloop (13 by 4.4 m, the deck 1.0 m over the sea), in the very lines of the Gatelands sloop. It is a prototype in `docs/prototypes/levelup/ships.js` (`markSloop`, a dress of `gatelandsSloop`), at `ships.html?ship=marksloop`. It follows the Mark's dress you chose on #312 and #323:
+- **The hull:** clinker, as the small hulls stay, tarred black above a red-brown bottom, with the wale gilt.
+- **The rig:** the Mark's, the cutter's gaff (your A on #306: one rig names each island). She has a gaff main with its boom 2.15 m over the deck, a topsail, a staysail and a jib on a bowsprit, all in tanned red-brown cloths. Session 900 first drew her with a square sail and Session 901 corrected it.
+- **The head:** the cutter's gilt beast's head on the stem head.
+- **New, and asked:** twelve painted round shields hung outboard along the waist's rail, in deep blue, red and bone with an iron boss. They are the Mark's "painted round" of OG-028, and they show the Mark from any distance. They stand outboard of the planking and under the rail's top, and none hangs where the shrouds come down. The deck and the walk are as the sloop's.
+
+**1. The shields on the rail:**
+- **A. As drawn** *(recommended)*: always hung on the Mark's small hulls. They name the island at a glance, as OG-004 asks of a hull line.
+- **B. None:** the head and the black hull carry the Mark alone.
+- **C. A choice the player makes:** part of "making a ship yours" (L6, the systems builder's).
+
+Next in this line, unless you say otherwise: the cog and the galleon in the Mark's dress and in Aurenne's (black or blue and gilt, tanned or white sails, the head or the sun-star).
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-side.jpg)
+- [the bow and its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-lap.jpg)
+- [the deck from the tiller](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-deck.jpg)
+- [without the shields](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-quarter-noshields.jpg)
+
+Michael: **A. Shields always hung, as drawn** (14 Oct 2026, via the control room)
+*Acted on, Session 907 (look builder):* nothing to build: `markSloop` hangs its twelve shields by default, as drawn. Issue #330 was closed by the producer.
+### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
+You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
+
+**1. Which town?**
+- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
+- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
+- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
+
+**2. What is in it?**
+- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
+- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
+- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
+
+Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
+
+Michael: **A. Portclare, the town and its country (B, B)** — tapped on the control room. (14 Oct 2026)
+
+### Aurenne's courtyard house: its size and its roof (look builder, Session 899) — DECISION #329
+**F9's seventh room: Aurenne's courtyard house (look builder, Session 899).** Your A on #318 asked for OG-115's "two-storey courtyard house round a fountain with arcades and blue tile" next, as its own piece: a rich house for the better quarter, with its rooms built inside it. It is a prototype in `docs/prototypes/levelup/pieces.js` (`aurenneCourtyard`, the house) and `rooms.js` (`aurenneCourtyardHouse`, its rooms), at `rooms.html?room=court`.
+- **The house:** 15 by 15 m, two storeys, blank cream plaster to the street with one arched door in a frame of glazed tile, small barred windows below and four lattice screens above.
+- **The court:** its walls 7.2 m apart. A gallery runs round it on both floors: below, three round arches a side on piers with lathed stone columns; above, cedar columns and a turned balustrade. The open middle (4.4 m) has a fountain in a tiled octagonal basin and four orange trees in pots.
+- **The roof:** pantile, sloping in from a parapet on the outer walls to eaves over the upper gallery, so the rain falls into the court.
+- **Twelve rooms:**
+  - *ground floor:* a vestibule with tiled benches; a store of oil jars and sacks; OG-115's kitchen (three braziers, a rail of hanging copper pots, a bread oven); a dining room with a long table; a loom by the stair; the reception hall across the back, with divans on three walls, rugs, brass tables and a tile dado;
+  - *upstairs:* the bedroom (a bed, chests, a table with a mirror and a comb), a guest room, the children's room (two small beds, a toy chest, a rocking horse), a linen press, and a study (books, a lectern, a divan under the lattices).
+
+The rooms are 13,100 triangles in 20 draws, in the house's 28,400 in 14. The walks are clear by 0.15 m on both floors. Headroom is 2.7 m in the ground rooms, 2.73 m upstairs and 2.3 m over every tread of the stair.
+
+**1. The size and the court:**
+- **A. As drawn** *(recommended)*: 15 by 15 m, about two street lots, with a court 4.4 m open to the sky. It is a rich house that still fits among the street's houses.
+- **B. Larger:** 18 by 18 m, with about 7 m of open court and room for more trees, as OG-115's picture has. It fills a block.
+
+**2. The roof:**
+- **A. Pantile sloping into the court, as drawn** *(recommended)*: only the parapet shows from the street, and the court collects the rain.
+- **B. Flat roof terraces round the court**, like the street's flat houses, with a parapet over the gallery and a stair up to them.
+
+The generator placing it as a lot kind of the better quarter comes in the game, after F2a.
+
+Pictures:
+- [from the street door through the vestibule to the fountain](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-court.jpg)
+- [the upper gallery over the court](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-gallery.jpg)
+- [the gallery at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-gallery-night.jpg)
+- [the reception hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-hall.jpg)
+- [the kitchen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-kitchen.jpg)
+- [the bedroom](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-bedroom.jpg)
+- [the study](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-study.jpg)
+- [the children's room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-children.jpg)
+- [the house from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-outside.jpg)
+- [the roof and the court from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-court-above.jpg)
+
+Michael: **A. 1 A, 2 A: 15 by 15 m; pantile into the court, as drawn** (14 Oct 2026, via the control room)
+*Acted on, Session 907 (look builder):* nothing to build: `aurenneCourtyard` and `aurenneCourtyardHouse` stand as drawn. The generator placing it as a lot of the better quarter comes in the game, after F2a. Issue #329 was closed by the producer.
+Michael: **A. 15 by 15 m; pantile into the court, as drawn** (1 A, 2 A) — tapped on the control room. (14 Oct 2026)
+
+### The Mark's sloop: shields on the rail? (look builder, Session 900) — DECISION #330
+**F11: the sloop in the Mark's dress (look builder, Session 900).** With #316, #319 and #323 answered, each class can now take the other islands' dress. This is the first: the game's sloop (13 by 4.4 m, the deck 1.0 m over the sea), in the very lines of the Gatelands sloop. It is a prototype in `docs/prototypes/levelup/ships.js` (`markSloop`, a dress of `gatelandsSloop`), at `ships.html?ship=marksloop`. It follows the Mark's dress you chose on #312 and #323:
+- **The hull:** clinker, as the small hulls stay, tarred black above a red-brown bottom, with the wale gilt.
+- **The rig:** the Mark's, the cutter's gaff (your A on #306: one rig names each island). She has a gaff main with its boom 2.15 m over the deck, a topsail, a staysail and a jib on a bowsprit, all in tanned red-brown cloths. Session 900 first drew her with a square sail and Session 901 corrected it.
+- **The head:** the cutter's gilt beast's head on the stem head.
+- **New, and asked:** twelve painted round shields hung outboard along the waist's rail, in deep blue, red and bone with an iron boss. They are the Mark's "painted round" of OG-028, and they show the Mark from any distance. They stand outboard of the planking and under the rail's top, and none hangs where the shrouds come down. The deck and the walk are as the sloop's.
+
+**1. The shields on the rail:**
+- **A. As drawn** *(recommended)*: always hung on the Mark's small hulls. They name the island at a glance, as OG-004 asks of a hull line.
+- **B. None:** the head and the black hull carry the Mark alone.
+- **C. A choice the player makes:** part of "making a ship yours" (L6, the systems builder's).
+
+Next in this line, unless you say otherwise: the cog and the galleon in the Mark's dress and in Aurenne's (black or blue and gilt, tanned or white sails, the head or the sun-star).
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-side.jpg)
+- [the bow and its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-lap.jpg)
+- [the deck from the tiller](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-deck.jpg)
+- [without the shields](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-quarter-noshields.jpg)
+
+Michael: **A. Shields always hung, as drawn** — tapped on the control room. (14 Oct 2026)
+
+### The Gatelands galleon in the new kit: carvel or clinker, and its gun ports (look builder, Session 896) — DECISION #323
+**F11's fifth hull: the Gatelands galleon (look builder, Session 896).** It is the last of the game's five classes in the Gatelands' dress (OG-004's "galleon warship"). It is a prototype in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon`) and `ships.html?ship=galleon`. It is built to the game's galleon's numbers:
+- **The size:** 22 by 7.0 m, draft 1.5, with the deck 1.0 m over the sea.
+- **The hull:** carvel, with a little tumblehome, a long raked stem and a square stern with five windows. She is tarred below the water and oiled oak above, with the top strakes green under a cream wale.
+- **The rig:** fore and main square-rigged, each with a course and a topsail, green, with the harp on the main course. A gaff mizzen stands on the quarterdeck, and a spritsail hangs under the 6 m bowsprit. The courses' feet are 2.2 m over the deck.
+- **The castles:** as the cog's (#319), 2.15 m up.
+  - **The quarterdeck** covers her last 6 m. Under it is the great cabin, behind a door and two windows, with two ladders up, the wheel, and two stern lanterns.
+  - **The forecastle** covers her first 3.5 m, open beneath on two posts.
+- **The gun ports:** six a side, as closed green lids on the gun deck under the main deck. They are paint only: the guns and the gun deck are the systems builder's (your 7 A: cannon on the top ships only).
+
+She is 43,216 triangles in 10 draws. No ray from inside her gets out below the deck. The walk from the quarterdeck to the bow has the deck under it all the way, 2.09 m of headroom under the forecastle and 0.69 m clear.
+
+**1. The planking:**
+- **A. Carvel, as drawn** *(recommended)*: a ship of 22 m was not clinker-built, so the laps stay the mark of the Gatelands' small hulls. The cog (#319) is clinker.
+- **B. Clinker**, as the sloop and the cog, so that every Gatelands hull shows the laps.
+
+**2. The gun ports:**
+- **A. Closed lids, as drawn** *(recommended)*: they say "warship" at a glance and wait for the systems builder's guns.
+- **B. No ports.** The galleon is a merchant's great ship until guns are built.
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-side.jpg)
+- [her stern](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-lap.jpg)
+- [the deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-deck.jpg)
+- [the quarterdeck from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-castle.jpg)
+- [the forecastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-galleon-fore.jpg)
+
+Michael: **A. 1 A, 2 A: carvel; closed port lids, as drawn** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `gatelandsGalleon` is carvel with its twelve port lids shut, as drawn.
+
+### Aurenne's tavern on a terrace over the sea: its house and its shade (look builder, Session 895) — DECISION #322
+**F9's sixth room: Aurenne's tavern on a terrace over the sea (look builder, Session 895).** It is the third of L9's three inns (OG-108: "an Aurenne tavern on a terrace over the sea"). It is built inside the kit's Roman house of Aurenne (`pieces.js`'s `aurenneHouse`, the tile kind, 9.6 by 8 m under a hipped pantile roof, with its arcade of four round arches across the front). It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneTavern`) and `rooms.html?room=tavern`.
+- **Inside:**
+  - red tiles, the blue glazed dado, and cedar beams;
+  - the counter at 1.05 m, faced in glazed tile, with shelves of amphorae and blue jars behind it, broken round the back window;
+  - a rack of amphorae in a corner;
+  - the cooking bench with two braziers and copper pots;
+  - two small tables with stools by the side windows, and two brass lanterns.
+- **The loggia** under the arcade has two round tables.
+- **The terrace:**
+  - paved, 4 m out from the arcade to a parapet 0.62 m high on the quay wall, which drops 3.7 m to the water;
+  - three round tables with stools under a pergola of vines with grapes.
+
+The room and terrace are 10,448 to 10,928 triangles in 18 draws, in the house's 3,476. The walks in to the counter and out across the terrace are clear by 0.15 m.
+
+**1. The tavern's house:**
+- **A. The Roman house with its arcade, as drawn** *(recommended)*: the arcade makes the loggia and opens onto the terrace.
+- **B. A flat-roofed house**, with the terrace on its roof as well as before it (the flat's of Session 891).
+
+**2. The shade over the terrace:**
+- **A. A vine on a pergola, as drawn** *(recommended)*.
+- **B. The striped awning** that the kit's roof pergolas carry.
+
+Pictures:
+- [the terrace from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-terrace.jpg)
+- [the terrace at the golden hour](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-terrace-golden.jpg)
+- [under the vine, back to the arcade](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-pergola.jpg)
+- [the room and its counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-tap.jpg)
+- [the tavern from the water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-tavern-outside.jpg)
+
+Michael: **A. 1 A, 2 A: the Roman house; a vine on a pergola** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `aurenneTavern` stands in the Roman house under its vine pergola, as drawn.
+
+### The Mark's inn as a hall of long tables: where guests sleep, and its size (look builder, Session 894) — DECISION #321
+**F9's fifth room: the Mark's inn, a hall of long tables (look builder, Session 894).** It is the second of L9's three inns (OG-108: "a Markish longhouse with long tables"). It is built inside the Mark's hall from the kit (`pieces.js`'s `markHall`, the shell of the longhouse room you passed on #311), widened to 10 by 18 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markAlehall`) and `rooms.html?room=alehall`.
+- **The frame:** the longhouse's: two rows of posts, tie beams 3.11 m over the floor, rafters, and a board lining.
+- **The hearth:** a long hearth of 4 m on the axis under the smoke louver, with a kerb of stones, logs and a cauldron on its tripod.
+- **The tables:** down both sides between the posts, a long table of 12.6 m with a loose bench on the aisle side. Behind the posts, against the walls, are the raised benches laid with furs. The guests sit on them to eat and sleep on them at night.
+- **The back:** the serving counter at 1.05 m across the hall, with kegs on a rack behind it and drinking horns on pegs.
+- **By the door:** a rack of spears and painted round shields (the Mark's soldiers for hire, canon §1.2), and a water barrel.
+- **The light:** three iron lamps hang from the tie beams.
+
+The room is 9,172 to 9,720 triangles in 15 draws, in the hall's 1,648. Both aisles from the door to the counter are clear by 0.15 m.
+
+**1. Where the guests sleep:**
+- **A. On the furred wall benches, as drawn** *(recommended)*: the hall's own custom, one room for eating and sleeping. In the game, renting a place is renting a bench.
+- **B. A row of box beds or a partitioned end** at the back for guests who pay more, with the counter moved forward.
+
+**2. Its size:**
+- **A. 10 by 18 m, as drawn** *(recommended)*: an inn's hall, bigger than a family's longhouse (7.6 by 14 m), with room for two long tables and an aisle either side of the fire.
+- **B. The longhouse's 7.6 by 14 m**, with one table down one side.
+
+Pictures:
+- [down the hall from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-hall.jpg)
+- [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-hall-night.jpg)
+- [along a long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-tables.jpg)
+- [the counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-counter.jpg)
+- [the hall from its yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-alehall-outside.jpg)
+
+Michael: **A. 1 A, 2 A: wall benches; 10 by 18 m, as drawn** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `markAlehall` keeps its wall benches and its 10 by 18 m hall, as drawn.
+
+### The Gatelander inn as a room: its shell and its guest rooms (look builder, Session 893) — DECISION #320
+**F9's fourth room: the Gatelander inn round its hearth (look builder, Session 893).** L9 asks for three inns by island (OG-108: "a cosy Gatelander inn with a hearth, a Markish longhouse with long tables, an Aurenne tavern on a terrace over the sea"). Your A on #303 puts rooms inside the street's own shells. The kit has no inn yet, so this one is built inside the kit's farmhouse (`GL_PLANS.farmhouse`: 10.5 by 6.2 m, two storeys of 2.9 and 2.7 m, whitewashed under slate, a stack at each gable), with its front door left ajar. It is a prototype in `docs/prototypes/levelup/rooms.js` (`gatelandsInn`) and `rooms.html?room=inn`.
+- **The taproom:**
+  - flags, and the open hearth in the west gable under its stack, with a crane and a pot over a turf fire;
+  - a high-backed settle facing the fire, with two stools;
+  - the bar across the back wall, between the back window and the back door: an oak counter at 1.05 m, a rack of kegs behind it, a shelf of jugs, and a lantern over it;
+  - two tables with benches, and candles.
+- **The stair:** 16 risers of 0.178 m up the east gable wall to a landing, with 2.29 m or more of headroom over every tread and a rail round the stairwell.
+- **Upstairs:** a passage along the back wall from the landing, with three guest rooms off it behind deal partitions. Each room has a bed of 2 m, a chest, and a washstand with a jug and basin under its front window. A boarded ceiling is under the slate.
+
+The room is 4,392 to 4,560 triangles in 16 draws, in the farmhouse's 2,120. The walks from the door to the bar and to the stair, and off the landing into a room, are clear by 0.15 m. There are 2.43 m under the beams in the taproom and 2.42 m upstairs.
+
+**1. The inn's shell:**
+- **A. The farmhouse as a village inn, as drawn** *(recommended)*: a village's inn is a house that takes guests. A town's coaching inn, with a yard, a stable arch and more rooms, would be its own piece later.
+- **B. An inn shell of its own first:** a longer two-storey house with a sign bracket and a yard, before the inn is built further.
+
+**2. The guest rooms:**
+- **A. Three rooms off a passage, as drawn** *(recommended)*: a door to each, which fits the game's rented room.
+- **B. One loft of beds under the roof**, the older custom, shared.
+
+Pictures:
+- [the taproom from the bar's end](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-tap.jpg)
+- [the taproom at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-tap-night.jpg)
+- [the bar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-bar.jpg)
+- [the hearth](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-hearth.jpg)
+- [the passage upstairs](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-upstairs.jpg)
+- [a guest room](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-chamber.jpg)
+- [the inn from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-inn-outside.jpg)
+
+Michael: **A. 1 A, 2 A: farmhouse inn, three rooms off a passage** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `gatelandsInn` keeps the farmhouse shell and its three rooms off the passage, as drawn.
+
+### The Gatelands cog in the new kit: its castles (look builder, Session 892) — DECISION #319
+**F11's fourth hull: the Gatelands cog (look builder, Session 892).** Your A on the ship ladder kept the game's five classes, each dressed by its island, and OG-004 draws the Gatelands' "merchant cog". This prototype is in `docs/prototypes/levelup/ships.js` (`gatelandsCog`) and `ships.html?ship=cog`. It is built to the game's cog's numbers:
+- **The size:** 17 by 5.6 m, draft 1.25, with the deck 1.0 m over the sea.
+- **The hull:** the Gatelands' dress, as the sloop has it (your 1 A and 2 A on #306): clinker, tarred below the water, oiled oak above, and a green sheer strake under a cream wale. The body is a cog's: flat-floored, slab-sided and full to the ends, with a straight raked stem and sternpost and the rudder hung on the post.
+- **The rig:** one tall mast with a round top, and one great square sail, green with the harp, its foot 2.2 m over the deck.
+- **The castles:** real decks at both ends, 2.15 m over the main deck. The game's cog has only rails on posts over a flat deck.
+  - **The aftcastle** covers her last 3.8 m. Under it is a cabin (2.09 m of headroom) behind a bulkhead with a door and two windows. A ladder rises on either side of the door, and the wheel stands on the castle (your 3 A on #306: the wheel from the cog up).
+  - **The forecastle** covers her first 3.0 m. It is open beneath on two posts, so the walk to the bow passes under it with 2.09 m of headroom, and a ladder rises up its middle.
+  - Both are walled in green boards with a cream band and a rail at 1.0 m.
+- **The cargo:** a hatch aft of the mast, with barrels and crates along the sides.
+
+She is 40,916 triangles in 10 draws. No ray from inside her gets out below the deck, and every strake laps the one below by 2.4 to 3.3 cm. The walk from the aftcastle's ladders to the bow has the deck under it all the way and 0.67 m clear.
+
+**The castles:**
+- **A. Both as drawn** *(recommended)*: a cabin aft, and an open forecastle on posts. The cog's silhouette, high at both ends, reads at a glance.
+- **B. Both closed:** a second small cabin under the forecastle, for crew or stores (L6's crew), which loses the walk to the bow.
+- **C. The game's rails only**, with a flat deck end to end.
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-side.jpg)
+- [her stern](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-lap.jpg)
+- [the deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-deck.jpg)
+- [the aftcastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-castle.jpg)
+- [the forecastle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cog-fore.jpg)
+
+Michael: **A. Both as drawn: cabin aft, open forecastle on posts** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `gatelandsCog` keeps the cabin aft and the open forecastle on posts, as drawn.
+
+### Aurenne's home as a room: the dyer's flat over a shop, and the courtyard house (look builder, Session 891) — DECISION #318
+**F9's third room: Aurenne's home (look builder, Session 891).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Aurennais street house from the kit (`pieces.js`'s `aurenneHouse`): two storeys, flat-roofed, 9.0 by 7.6 m, with cream plaster, lattice screens upstairs and a pergola on the roof. It is a prototype in `docs/prototypes/levelup/rooms.js` (`aurenneHome`) and `rooms.html?room=home`. The brief is OG-115's Aurenne panel ("an urban apartment over a shop, a kitchen with hanging pots, a rooftop terrace") and OG-061's blue tile. The canon's Aurenne sells its dyes, so the shop is a dyer's.
+- **The shop (the ground floor):**
+  - limestone flags, and a dado of blue and white glazed tile to 1.0 m;
+  - bolts of madder, indigo, saffron and weld on shelves behind a counter 0.96 m high, with the shopkeeper's stool;
+  - lengths of dyed cloth hung from a pole, jars of dye by the door, and a brass oil lamp.
+- **The stair:** 16 masonry steps of 0.19 m along the back wall to a landing, with 2.02 m or more of headroom over every tread and a rail round the stairwell.
+- **The flat (upstairs):**
+  - red tiles on cedar beams, with a tile dado to 0.6 m;
+  - a divan under the lattice windows with cushions, a rug, and a low brass table;
+  - a bed and a chest;
+  - the kitchen: a masonry cooking bench with a tiled top and two charcoal braziers, a rail of copper pots, and a water jar;
+  - a brass lantern from the ceiling.
+- **The roof:** a steep stair goes up through a hatch to the terrace, which has its pergola, a bench, and a line of dyed cloth drying.
+
+The room is 5,698 to 6,058 triangles in 23 draws, in the house's 4,102 to 6,330. The walks are clear by 0.15 m on each floor. There are 2.58 m under the beams in the shop and 2.28 m upstairs.
+
+**1. The home's trade:**
+- **A. A dyer's shop with the family's flat over it, as drawn** *(recommended)*: the canon's dyes, and every colour in the house comes from the shop.
+- **B. The trade by the lot:** the generator picks a dyer, a potter, a spice seller or a scribe for each house, on the same plan.
+
+**2. OG-115's courtyard house round a fountain.** It is the panel's first picture. It needs a lot of about 14 by 14 m with rooms on two storeys round an arcaded court, and the street's lots are 6.4 to 9.6 by 6 to 8 m.
+- **A. Build it next as its own piece** *(recommended)*: a rich house for the better quarter, a new lot kind that the generator places, with its rooms built inside it like this one.
+- **B. Leave it:** Aurenne's homes are the street's houses, with flats over shops like this one.
+
+Pictures:
+- [the shop from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-shop.jpg)
+- [the stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-stair.jpg)
+- [the flat from the landing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-flat.jpg)
+- [the flat at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-flat-night.jpg)
+- [the kitchen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-kitchen.jpg)
+- [the roof terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-roof.jpg)
+- [the house from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-home-outside.jpg)
+
+Michael: **A. 1 A, 2 A: a dyer's shop; build the courtyard house next** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* 1 A keeps the dyer's shop. 2 A is built: `pieces.js`'s `aurenneCourtyard`, a house of 15 by 15 m round an arcaded court with a fountain, and `rooms.js`'s `aurenneCourtyardHouse`, its twelve rooms, at `rooms.html?room=court`. Its size and its roof are asked as DECISION #329 (see Pending).
+
+### Aurenne's caravel in the new kit: the sun-star, the sterncastle, wheel or tiller (look builder, Session 890) — DECISION #316
+**F11's third hull: Aurenne's caravel (look builder, Session 890).** Your A on #306 gave each island one rig, and Aurenne's is the game's caravel, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`aurenneCaravel`) and `ships.html?ship=caravel`. It is built to the game's caravel's numbers:
+- **The size:** 17.5 by 5.0 m, draft 1.3, with the deck 1.0 m over the sea.
+- **The hull:** carvel-planked (flush), with a curved, raked stem and a square stern. She is tallowed white below the water and oiled wood above, with the two top strakes in Aurenne's blue under a gilt wale (OG-004's "painted hulls").
+- **The sterncastle:** a real deck this time, 2.15 m over the main deck over her last 4.6 m. The game's caravel has only rails rising aft on a flat deck. Under it is a cabin with 2.09 m of headroom, entered by a door in the forward bulkhead, with two windows. A companion ladder rises on either side of the door. The castle's walls are blue with cream panels and a gilt rail, and it carries two stern lanterns.
+- **The rig:** three lateen masts raked forward, the main tallest. Each yard hangs on the lee side of its mast (the fore and the mizzen to port, the main to starboard), so no sail crosses another mast, and the shrouds stand on the weather side only. The sails' feet are 2.26 m or more over the deck they hang over.
+- **The helm:** a wheel on the castle's deck, the rudder on the transom.
+
+She is 31,300 triangles in 12 draws. No ray from inside her gets out below the deck. The walk from the castle's ladders to the bow has the deck under it all the way and 0.84 m clear, and the rail is 1.0 m over the deck.
+
+**1. The sun-star on the sails.** OG-004 draws Aurenne's sails "white and blue with a gold sun-star". The catalogue notes that, like the harp, the sun-star is not in the canon (the canon gives the Compact's banners and guards blue and white, which the sails and the hull keep).
+- **A. Keep it, as drawn** *(recommended)*: one gold mark names the island at a glance, as the harp does for the Gatelands.
+- **B. Plain white sails** (`&nostar`).
+- **C. Ask the quest writer for the Compact's own mark first.**
+
+**2. The sterncastle:**
+- **A. A raised deck with a cabin under it, as drawn** *(recommended)*: the caravel's silhouette, and a cabin for L6's base below deck to grow into.
+- **B. The game's rails rising aft on a flat deck**, with no cabin.
+
+**3. Wheel or tiller?** Your 3 A on #306 gave the tiller to the sloop and the cutter and the wheel "from the cog up". The caravel is the cog's size (17.5 m against 17).
+- **A. The wheel on the castle's deck, as drawn** *(recommended)*.
+- **B. A tiller on the castle's deck** (`&tiller`).
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-side.jpg)
+- [her stern and castle](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-lap.jpg)
+- [the castle from the waist](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-castle.jpg)
+- [her deck from the wheel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-deck.jpg)
+- [the plain sails](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-caravel-quarter-nostar.jpg)
+
+Michael: **A. 1 A, 2 A, 3 A: sun-star, castle with cabin, wheel** (14 Oct 2026, via the control room)
+*Acted on, Session 899 (look builder):* nothing to build: `aurenneCaravel` keeps the sun-star, the sterncastle with its cabin and the wheel, as drawn.
 ### The smugglers' lair: a sea cave with its own landing, or inland (look builder, Session 873) — DECISION #314
 **F8's fourth place: a smugglers' lair (look builder, Session 873).** It is the last of the three places you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`smugglersLair`) and `places.html?place=lair`, from OG-121's "smugglers' and bandits' lairs: plank platforms in a cave, storerooms, escape routes". It is built to the person as a sea cave on the Gatelands' coast:
 - **The way in:** a passage of 10 m from the land comes out on a rock floor 1.2 m over the sea.
@@ -27,6 +437,7 @@ Pictures:
 - [the storeroom's door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-store.jpg)
 - [the ladder to the escape](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-lair-escape.jpg)
 
+*Acted on, Session 883 (look builder):* Michael's A on #314 with his note ("the size here is pretty underwhelming, as is the lack of detail in general"). The setting stays a sea cave with its own landing. It is rebuilt on the limestone cave's lofted hall: 52 m long, 37 to 38 m across and 17 to 20 m to the roof, with a sea arch of 13 by 8 m in its far dome and its walls dark and wet below the high-water line. A winding way in of 18 m comes out on a landing with a storeroom under a lean-to roof and a fire with a pot. A deck runs 32 m down the west wall, stacked with cargo, with a gallery over it (a stair, pallets, a chest). A T-jetty holds the Gatelands sloop, its sail furled, and a rowing boat, with a derrick lifting a net of cargo. The ladder rises 5 m to a corbelled ledge and the escape tunnel. Abandoned, the lanterns are out, the fire is cold and the sloop is gone. The pictures are at the same links, and `view=deck` and `&empty` are new.
 Michael: **A. A sea cave with its own landing, as drawn** — Same comment as the other cave decision - the size here is pretty underwhelming, as is the lack of detail in general. (14 Oct 2026, via the control room)
 
 ### The limestone cave: what lights a cave (look builder, Session 872) — DECISION #313
@@ -48,6 +459,83 @@ Pictures:
 - [from the far shelf up the falls to the shaft](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-falls.jpg)
 - [up the passage from the mouth](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cave-passage.jpg)
 
+*Acted on, Session 882 (look builder):* Michael's A on #313 with his note ("not expansive enough… I hope this isn't the scale we're going for in all of our dungeon interiors, especially Old Gates"). The light stays as drawn. The cave is rebuilt at about three times the measure: a hall of 64 m, 45 to 47 m across and 24 to 30 m to the roof, whose walls are lofted ring by ring and moved by noise at three sizes, with alcoves high on the side walls. The passage winds 22 m and comes out on a ledge 4.5 m up, and a ramp runs down the east wall. There are rimstone terraces with 30 blue pools, a natural bridge to a shelf under falls of 20 m, five columns, and stalactites, stalagmites, curtains and fallen blocks. The pictures are at the same links, and `places.html?place=cave&view=bridge` is new. The Old Gates' own scale is card F5's and the F2b answer (3 m cells, "extremely massive and cavernous"). The smugglers' lair (#314) is next.
+
+### The Mark's cutter in the new kit: tanned or striped sails, and a beast's head on the stem (look builder, Session 871) — DECISION #312
+**F11's second hull: the Mark's cutter (look builder, Session 871).** Your A on #306 gave each island one rig, and the Mark's is the game's cutter, from your A on #202. This prototype is in `docs/prototypes/levelup/ships.js` (`markCutter`) and `ships.html?ship=cutter`. It is built to the game's cutter's numbers:
+- **The size:** 14 by 4.0 m, draft 1.45, with the deck 1.0 m over the sea.
+- **The hull:** a plumb stem, a small transom and a cut-away forefoot. It is carvel-planked (flush), tarred black above a gilt line, red-brown below the water.
+- **The rig:** one tall mast well forward with a gaff main, a topsail, a staysail and a jib on a 4.2 m bowsprit.
+- **The helm:** a rudder on the transom with a tiller (your 3 A on #306).
+- **The boom:** it sits 2.15 m over the deck, so a person walks under it. The game's is 1.35 m.
+
+She is 21,594 triangles in 9 draws. No ray from inside her gets out below the deck. The walk down either side has 3.66 m of headroom, and the rail is 1.0 m over the deck.
+
+OG-004 draws the Mark's ships with "dragon prows, oars, dark sails" and the raiding longship's sail in red and black. Two questions, one letter each.
+
+**1. The sails:**
+- **A. Tanned red-brown, as drawn** *(recommended)*: the "dark sails" of the board, the colour of a working northern sail.
+- **B. Red and black cloths** (`&stripe`): the raider's sail on every Markish hull. This might be kept instead for the Mark's pirates.
+
+**2. The stem:**
+- **A. A gilt beast's head on the stem head, as drawn** *(recommended)*: the board's dragon prow on the game's plumb stem. It is the same beast that ends the Mark's hall gables (OG-034).
+- **B. A plain stem** (`&nohead`), as the game's cutter has today.
+
+Pictures:
+- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-quarter.jpg)
+- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-side.jpg)
+- [her deck from the tiller](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-deck.jpg)
+- [the stem and its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-lap.jpg)
+- [the striped sails](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-cutter-quarter-stripe.jpg)
+
+*Acted on, Session 885 (look builder):* Michael's 1 A, 2 A on #312 are already `markCutter`'s defaults (tanned red-brown sails, `o.stripe` off; the gilt head, `o.head` on), so there is nothing to build. The striped sails stay only as `ships.html?ship=cutter&stripe`.
+
+### The Mark's longhouse as a room: one hall round the fire, or rooms (look builder, Session 870) — DECISION #311
+**F9's second room: the Mark's longhouse (look builder, Session 870).** Your A on #303 put the rooms of 2.0 inside the street's own shell, so this room is built inside the Mark's shingle hall from the kit (`pieces.js`'s `markHall`), 7.6 by 14 m. It is a prototype in `docs/prototypes/levelup/rooms.js` (`markLonghouse`) and `rooms.html?room=longhouse`. The brief is OG-115's Mark panel ("a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat") and OG-025's longhall. Nothing is whitewashed, as the catalogue's note asks.
+- **The hall:** a planked floor on the stone footing. Two rows of posts carry tie beams 3.1 m over the floor. Rafters and a board lining run under the shingle.
+- **The hearth:** a long hearth on the axis under the smoke louver, with a kerb of stones, a log fire and a cauldron on a tripod.
+- **The benches:** raised benches 0.45 m high and 1.1 m deep down both walls, laid with furs, to sit on by day and sleep on by night.
+- **By the door:** a workshop corner on the left (a bench, tools on pegs, a chopping block) and the larder on the right (a beam hung with hams, dried fish and herbs, barrels and a crock). The door stands open against the wall.
+- **At the back:** a plank partition with a doorway into the family quarters: a bed of furs, a chest with a stone lamp, and a cradle.
+
+The room is 5,620 triangles in 18 draws, on the hall's 1,568 in 7. No piece is outside the walls or through the roof, and no two pieces clash. The way from the door, past the hearth and through the partition, is clear by 0.15 m.
+
+**The longhouse's plan:**
+- **A. One hall round the fire, as drawn** *(recommended)*: the benches are seat and bed, and only the family quarters are walled off. It is the plan OG-115 and OG-025 draw. The inn (L9, "a Markish longhouse of long tables") would follow on this same hall, with tables in place of the benches.
+- **B. Rooms, as the cottage has:** a hearth room in the middle, with a sleeping room and a store walled off at either end. It is more private and more like the Gatelands, but the long view down the fire is lost.
+
+Pictures:
+- [down the hall from the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall.jpg)
+- [the hearth and the benches](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hearth.jpg)
+- [the larder by the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-larder.jpg)
+- [the family quarters](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-back.jpg)
+- [the hall at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-hall-night.jpg)
+- [from the yard](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-longhouse-outside.jpg)
+
+*Acted on, Session 885 (look builder):* Michael's A on #311 is the room as drawn (`rooms.js` `markLonghouse`). Nothing changes.
+
+### The Gatelands' round cairn: what is carved on its stones (look builder, Session 869) — DECISION #309
+**F8's second place: the Gatelands' round cairn (look builder, Session 869).** It is the next place you chose on #305 (3 A). It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsCairn`) and `places.html?place=cairn`, from OG-121's Gatelands panel ("round cairns"). It is built to the person:
+- **The mound:** a grassed mound of stones 26 m across and 7 m high, inside a kerb of 38 laid boulders. The door is in a dry-stone facade, and a long entrance stone lies before it.
+- **The passage:** 10.3 m of upright slabs either side, 1.25 m clear, under lintels 2.16 to 2.28 m over a floor that rises 0.8 m to the chamber.
+- **The chamber:** cruciform, with three recesses each holding an empty stone basin. It is roofed by a corbelled vault of eight courses, its capstone at 6 m.
+- **The light:** none inside. As with the worked-out mine (#305, 2 A), it is seen by your torch and by what day comes in at the door.
+
+The walk from the approach to the back recess has a floor under every quarter metre, at least 2.14 m of headroom and at least 0.63 m clear. No ray from inside gets out except by the door.
+
+**What is carved on its stones?** The canon gives the dead to the gates (§3.1), so a cairn is an older or a refused custom. Who lay in the basins is the quest writer's to settle, and the basins stay empty until they do. The carving says whose the cairn was, so it is yours.
+- **A. Spirals and lozenges, as drawn** *(recommended)*: the islanders' own oldest marks, cut before the gates' script was taught. The cairn reads as older than the Clearing, and as nothing to do with the Weavers.
+- **B. The Weavers' script, cut and unlit:** the cairn is a Weaver work. That ties it to "every sigil is carved over a grave", and it raises a story question the quest writer would have to answer.
+- **C. Bare stone** (`&plain`): the cairn says nothing about who built it.
+
+Pictures:
+- [from the approach](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-cairn.jpg)
+- [the door and the entrance stone](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-door.jpg)
+- [up the passage, by torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-passage.jpg)
+- [the chamber, the back recess and its basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-chamber.jpg)
+- [the corbelled vault](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-cairn-vault.jpg)
+
+*Acted on, Session 884 (look builder):* Michael's A on #309 keeps the carving as drawn. On his note ("passages look very narrow"), the passage is now 2.0 m clear (it was 1.25 m) under lintels at 2.6 m. The cruciform chamber is 1.35 times its plan, with recesses 2 m wide and the vault's capstone at 6.5 m. The mound grew to 30 m across and 8.2 m high to hold them. The pictures are at the same links.
 Michael: **A. The day down the shaft, and the flowers glow** — I don't think this cave is expansive enough. This feels pretty underwhelming to me. I hope this isn't the scale we're going for in all of our dungeon interiors, especially Old Gates. (14 Oct 2026, via the control room)
 
 ### Unblock Look sessions: the approved commit no longer merges (the producer, 2026-10-14)
@@ -245,6 +733,8 @@ What should the churches' domes be?
 Recommendation: **C.** The rank is visible from a distance without a sign, which helps a player find the Prior. A is a fair second if he wants the blue everywhere.
 
 Not in this question: the inside (card F9), the Guest's bricked chapel under the cathedral (the quest writer's), and Aurenne's civic buildings, the Compact's counting house and the academy's white towers, which are the next sessions.
+*Acted on, Session 885 (look builder):* Michael's C on #294. `aurenneChurch` takes `o.rank` (village, town or cathedral). A village's dome is limewashed, and a town's and the cathedral's are in blue glaze; a church with corner domes is a cathedral unless told otherwise, and `o.dome` still overrides the rank. The line-up (`aurenne.html?view=churches`) is now a village's church, a town's and the cathedral, and the square's church is a town's. `aurenne.check.mjs` 28 of 28.
+
 ### The great gates: what the player does at one, sealing or tearing (the quest writer, 2026-10-14) — DECISION #292
 You set the two paths (13 Oct, *The great gates' two paths* below): each great gate is torn open or sealed, any choice can be undone by going back, and the world is decided when all six match. Still open, as that entry says: **what the act itself is**, where in the gate it happens, and what undoing it asks. The draft *The Great Gates, I — the knot at the ring* (`docs/quest_drafts.md`, unapproved) writes A in full: every line of the act, both ways, the undo, the lock, and the people's talk as the gates are torn.
 - **A. The knot** *(recommended)*. At the far end of each great gate, in the dark at the heart of the great ring, the script of the whole gate is drawn into one knot. The player cuts it with the tearing artifact or binds it with the sealing one. Torn, each of that school's spells you hold is one tier deeper; sealed, one tier shallower; undoing swaps it back. Once you have reached a gate's ring, its door takes you straight back to it, so undoing never means clearing the realm again. The state lives in the world's save.

@@ -18202,6 +18202,622 @@ A room may still be larger inside than its house is outside, as games do: the in
   - The tower's door is at the new height, 2.48 with its head, while the tower's rooms keep their old size (its stair climbs the 30 m its outside shows).
 - **Owed to F2b:** the gameplay ranges that now act in smaller rooms. A sleeper hears you at 2 m, the witness sees 6 m and E reaches 1.6, so in a 5 m cottage everything is within a sleeper's or a keeper's reach. At 6h a woken resident sees 2 or 3 of a cottage's 11 free spots, depending on which way they face.
 - **Not run here:** the suites outside the rooms; CI's twelve shards are their check.
+## v80 — Session 868 — A worked-out mine is dark but for your torch (card F8, prototype only; Michael's 2 A on #305)
+Michael answered DECISION #305 on 14 Oct with the recommended set: the mine's levels stay as built (2.07 m clear), a working mine is lit by its miners' lamps and a worked-out one is dark but for your own torch, and the next places that are not gates are the Gatelands' round cairn, a limestone cave with a lake under falls, and a smugglers' lair, in that order. The FREEZE (#297, F2a) still holds, so this run works in the prototypes only. The first answer needs nothing built. This session makes the second.
+
+Session 857's `o.worked: false` took away the heap and the fresh pick marks but left all nine lamps burning, so a mine long abandoned was as bright as a working one. `places.js`, `markMine`: the lamp helper now builds a lamp only while the mine is worked. Worked out, its peg or bracket stays bare on the post, the kibble hangs dark in the shaft, and `lamps` comes back empty. A cart half full of ore at the stop-block also read wrong in a mine nobody works, so worked out the cart is empty.
+
+`places-view.js` gives you a torch when the mine is worked out: a warm point light of 14 m reach at the right hand, 0.35 m out and 0.25 m below the eye, casting shadows. The grey day at the mouth is unchanged. `&old` now means the whole mine worked out, not only its face.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 11 of 11 pass**, with two new:
+  - **The light:** worked, 9 lamps are lit; worked out, there are 0 lamps and no lit horn mesh in the place, on all 6 keys.
+  - **The worked-out mine view** renders with no page errors.
+- **The rest is unchanged:** 27,896 triangles in 14 meshes worked (25,992 in 12 worked out), the sets 2.07 m clear under a cap at 2.3 m, 160 walk points with a floor under each, the rail within 0.61 m and a drop of 15.4 m past it, the vein 1.11 to 1.18 m from the walk's end, and the heap 15 to 21 of 40 points worked and 0 worked out.
+- **Pictures:** `places-mine-old.jpg` is new: from the adit's last set, the torch lights the empty cart, the windlass and the landing's rail, and past them the stope is black. `places-face-old.jpg` was shot again by torchlight. The vein's shards catch the torch, so the ore still reads in the dark.
+### Needs eyes
+- **How dark is dark.** Nothing beyond the torch's 14 m shows: from the landing you cannot see the gallery or the face. That is the answer as asked, but a fight on the gallery by torchlight wants a playtest.
+- **The torch is a light at the hand.** The held torch, its flame and its flicker are the bodies builder's and the game's (`10-player.js`). The prototype only places a light where one would be.
+
+## v80 — Session 869 — Card F8's second place: the Gatelands' round cairn with its passage (prototype only)
+Michael's 3 A on #305 named the next places that are not gates: the Gatelands' round cairn with its passage, then a limestone cave with a lake under falls, then a smugglers' lair. The FREEZE (#297) holds, so this is a prototype. I opened OG-121 again and read its row. The Gatelands' panel draws "round cairns", and the row's one flag that touches them is burial: §3.1 gives the dead to the gates, so a cairn is an older or a refused custom, and who lies in one is the quest writer's to settle. So the basins are built empty, and the carving on the stones is asked.
+
+`places.js` has a new `gatelandsCairn(o, r)`, built to the person:
+- **The mound:** a grassed dome 26 m across and 7 m high on a polar grid, with its foot 1 m up at the kerb's line. It is moved by one noise field keyed by the place (the mine's `field`). The turf is the Mark kit's moss sod made green, with its UVs taken from above, so the texture does not seam where the slope turns.
+- **The kerb:** 38 rounded boulders laid on edge round the foot, with a dry-stone wall behind them up to the mound.
+- **The facade and the door:** where the door is, the mound is held back by a dry-stone facade on a chord of the kerb, 8.4 m wide and 3.4 m high over the door, falling to the kerb at either end. The mound's grid is pulled onto the chord inside the facade's thickness, and only the door is cut from it. The door is 1.25 m wide under a lintel at 2.2 m. A long entrance stone, 3 by 1.2 m, lies 2.4 m before it, and the way in goes round its east end.
+- **The passage:** 10.3 m long, the floor rising 0.8 m toward the chamber. Upright slabs line both sides, each a little out of true, with dark dry-stone packing behind them. Lintels 0.95 m deep cross it, each set 2.2 m over the floor at its inner edge.
+- **The chamber:** cruciform. The middle is about 3.8 m across under a corbelled vault of eight courses of nine slabs, each course 0.36 m high and stepping in 0.2 m, with a capstone at 5.98 m. There are three recesses, east, west and back, each 1.5 m wide and 1.6 m deep under its own capstone at 2.3 m. Each recess holds a shallow oval basin of stone, empty.
+- **`o.carved`** (default true): three spirals and a vertical groove pecked into the entrance stone's face, a triple spiral on the back recess's end stone, and four lozenges up one slab of the passage. `&plain` builds the cairn bare.
+- **The light:** nothing burns inside. The view gives you the torch the worked-out mine has (Session 868).
+
+`places.html?place=cairn` has five views: `view=cairn` (default) from the approach; `door`, at the entrance stone; `passage`, by torch up to the chamber; `chamber`, from its mouth to the back recess; and `vault`, looking up into the corbelling. `places-view.js` hands `place=cairn` to the new `places-cairn-view.js`, and the mine's views are unchanged.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The mound was wound inward:** it drew black and see-through, with the vault showing through it.
+- **The mound's texture seamed** in zigzags where the world UVs changed axis on the slope.
+- **A sliver of sky over the facade:** the first cut took away every triangle pulled onto the chord, including those above the facade's top. Only the door's are cut now.
+- **The stones were cubes:** the kerb and the entrance stone are rounded boxes now, and the facade is rubble (the kit's cobble) rather than coursed blocks.
+- **Light at the recesses' corners:** 4 of 1,200 rays got out at the east recess's outer corners, where the packing behind two walls did not meet. The packing now runs 0.7 m past each end in the chamber, but not into the passage, where the first try narrowed the way to 0.52 m.
+
+Asked as **DECISION #309**: what is carved on its stones? A, spirals and lozenges (the islanders' own oldest marks, older than the gates' script; recommended); B, the Weavers' script, cut and unlit; C, bare.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 19 of 19 pass**, with eight new for the cairn:
+  - **The builds:** 3 keys, each the same twice. 43,884 triangles in 7 meshes, with 38 kerbstones, 7 m high.
+  - **The passage:** at 20 stations it is 1.25 m clear between the slabs at the hip (to 1.95 m where a ray finds the packing between two slabs), and the lintels are 2.16 to 2.28 m over the floor.
+  - **The walk:** 90 points every quarter metre from the approach, round the entrance stone, in at the door and up to the back recess's mouth. Every point has a floor on its line (0 to 0.023 m off), 2.14 m of headroom or more, and 0.63 m clear at the hip and the head.
+  - **Closed:** of 1,200 rays from four points inside (the chamber, the east recess, under the vault and the passage), none gets out except by the door. 0 to 2 leave by the door.
+  - **The basins:** 3, one in each recess, empty. The dish is 0.13 m over the floor at its middle.
+  - **The carving:** the spirals are there when carved, and there are none with `&plain`.
+  - **The pages:** the cairn and chamber views render with no page errors.
+- **Pictures, new:** `places-cairn-cairn.jpg`, `-door`, `-passage`, `-chamber` and `-vault`.
+### Needs eyes
+- **The mound reads green and smooth.** A real cairn shows stones through its turf where it has slumped. The sides near the kerb also stretch the turf texture, because it is projected from above.
+- **The triangles go to the kerb.** 38 rounded boulders hold about half the 43,884 triangles. In the game they want fewer segments, or one shared boulder in a few sizes.
+- **The slabs are boxes with a little noise.** Real orthostats are unshaped: thin, uneven slabs with rounded tops.
+- **No roof-box.** A slot over the door that lets the midwinter sunrise down the passage to the back recess would echo the trials' Noon Ring. It is not asked, and it is an idea for the quest writer before it is a build.
+- **Who lies here** is the quest writer's (OG-121's row, §3.1). The basins are empty until they say.
+
+## v80 — Session 870 — Card F9's second room: the Mark's longhouse, inside its own hall (prototype only)
+Michael's A on #303 (14 Oct) put the rooms of 2.0 inside the street's own shell and kept the cottage's hearth-lobby plan. The FREEZE (#297) holds, so the next room is a prototype. The backlog's line names the Mark's longhouse next. I opened OG-115, whose Mark panel draws "a longhouse round a central fire with fur rugs, family quarters, a workshop corner, a storage larder hung with meat", and OG-025, whose longhall has a central fire. I read both rows: nothing in the Mark is whitewashed, and the homes are the League's free towns', not "clans'".
+
+`pieces.js`, `markHall`: a new `o.interior` leaves out what made the hall a dark box from outside: the black fill behind the door, the lit and dark panels behind the side windows, and the shut door. The stream's draws are kept in order, so every hall the street builds is unchanged, and `mark.check.mjs` passes as before. The hall now also returns its wall height, pitch, eave line, overhang, louver, door and window places, which a room needs.
+
+`rooms.js` has a new `markLonghouse(o, r)`, built inside a shingle hall of 7.6 by 14 m with a porch and a louver, no chimney:
+- **The floor:** planks on the stone footing, 0.84 m up. The porch's steps (Session 859) are outside.
+- **The frame:** two rows of posts 1.25 m in from the walls, the first pair on the partition's line. Purlins run along their heads and tie beams cross each pair at 3.1 m over the floor. Rafters every metre run from the ridge to the walls, with a board lining over them that runs out onto the wall plate, so no shingle shows inside.
+- **The hearth:** a long hearth on the axis under the louver, 1.1 by 2.6 m inside a kerb of stones. It holds an ash bed, six logs with embers and flames, and a cauldron on an iron tripod.
+- **The benches:** raised benches 0.45 m high and 1.1 m deep down both walls, laid with furs in three colours.
+- **By the door:** on the left, the workshop corner: a bench along the front wall, five tools on pegs and a chopping block with an axe. On the right, the larder: a beam on two posts hung with hams, dried fish and bunches of herbs, two barrels and a crock below. The door stands open, its leaf against the front wall.
+- **The family quarters:** behind a plank partition with a doorway 0.9 by 2.0 m. A bed of furs 2.1 m long, a chest with a stone oil lamp on it, and a cradle on rockers.
+- **The lamp:** an iron bowl of oil on a chain from a middle tie beam.
+
+`rooms.html?room=longhouse` has six views: `hall` (default), down the hall from the door; `hearth`; `larder`; `back`, in the family quarters; `outside`; and any of them `&hour=night`. The fire is the room's light. By day a grey shaft comes down from the louver onto the hearth, and the quarters have their lamp. Inside, the page renders at a brighter exposure than the cottage, 1.5 against 0.9, because the first pictures were black past the fire.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The door:** it was shut in the shell, so the walk began against it.
+- **The bed:** a post stood in the family bed, so the posts now start on the partition's line.
+- **The walk:** its crossing to the partition's doorway brushed the hearth's kerb. The hearth is now 2.6 m long, and the walk crosses 0.35 m in front of the partition.
+- **The door leaf and the cradle** each stood 2 to 7 cm into a wall.
+- **Shingle over the walls:** shingle showed between the lining and the wall plate until the lining was run out onto the plate.
+
+Asked as **DECISION #311**: the longhouse's plan. A, one hall round the fire as drawn, with the benches as seat and bed (recommended; the Markish inn follows on the same hall with tables); B, rooms as the cottage has.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 16 of 16 pass**, with seven new for the longhouse:
+  - **The builds:** 4 keys, each the same twice. The room is 5,620 triangles in 18 meshes, on the hall's 1,568 in 7.
+  - **Inside:** no piece is outside the walls or over the roof's lining, and no point of the room goes through a wall or the roof. The lining may run onto the wall plate.
+  - **No clashes:** no two of the 24 tagged pieces are in each other.
+  - **The walk:** from the front door, past the hearth on its left and through the partition, it is clear by 0.15 m, with 3.11 m under the tie beams.
+  - **A person fits:** the benches are 0.45 m high and 1.1 m deep, the bed 2.1 m, the front door 1.2 by 2.1 m and the partition's doorway 0.9 by 2.0 m.
+  - **The fire** is on its hearth, 0 m from under the louver.
+  - **The page:** the hall view renders with no page errors.
+- **The cottage's nine checks** are unchanged.
+- **`mark.check.mjs`: all pass** after the shell's change.
+- **Pictures, new:** `rooms-longhouse-hall.jpg`, `-hearth`, `-larder`, `-back`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The windows at night** show a pale sky. The test sky is not darkened by the hour, and the cottage's pictures share this.
+- **The furs and the beds are flat.** The furs are rippled planes and the bed is a box of fur. Heaped skins and a pillow would read better.
+- **No carving inside.** OG-025's halls have carved posts and a high seat, and the posts here are plain beams. A hall of note would want them.
+- **The larder is dark** by day, far from the fire. That is right for a longhouse, but the hams read only as shapes.
+- **No smoke:** the louver lets light down but no smoke goes up it.
+
+## v80 — Session 871 — Card F11's second hull: the Mark's cutter in the new kit (prototype only)
+Michael's A on #306 (14 Oct) took all three recommendations: the board's square sail for the Gatelands so that one rig names each island, the harp, and a tiller on the small hulls. The FREEZE (#297) holds, so L6's next hull is a prototype. The Mark's rig is the game's cutter, from Michael's A on #202 (Session 665), and #306's question already named it as the Mark's. I opened OG-004 and read its row. The Mark's line there is "dragon prows, oars, dark sails", with the raiding longship's sail in red and black. The row's flags (guns on ordinary hulls, invented heraldry) do not touch a cutter.
+
+`ships.js` has a new `markCutter(o, r)` at the game's cutter's numbers (`85-world-sea.js`): 14 by 4.0 m, draft 1.45, with the deck 1.0 m over the sea.
+- **The lines:** fine and hollow forward to a plumb stem, and the forefoot cut away (the keel rises 0.8 m toward the stem). The beam is carried aft to a transom a third of it wide. The sheer rises 0.45 m forward and 0.2 m aft from a low waist, 0.36 m over the deck.
+- **Carvel planking:** twelve strakes a side, laid edge to edge and flush, the planking 4 cm thick. It is red-brown below the waterline and tarred black above, with a gilt moulding along the sheer strake, as the game's cutter is (Session 665's black over a gilt line). A flat black transom closes the stern, with a gilt line across its head.
+- **The stem:** plumb, running from the forefoot to a head 0.45 m over the sheer. On it, with `o.head` (default), sits a gilt beast's head with an open jaw and dark eyes, 1.35 m high, made from a profile like the halls' bargeboard heads. A 4.2 m bowsprit runs out beside it.
+- **The deck and rail:** as the sloop has them, with fore-and-aft planks, a covering board, stanchions every 0.9 m and a cap rail at 1.0 m over the deck. There is a hatch aft of the mast.
+- **The rig:** the mast stepped 1.6 m forward of amidships, rising 10.8 m with a topmast to 13 m. The gaff main runs from a boom at 2.15 m over the deck to a gaff peaked up at 30°, with a topsail over it, a staysail to the stem head and a jib to the bowsprit's end, all bellied to leeward. There are three shrouds a side, the forestay, the topmast stay, two backstays and the mainsheet. The game's boom is at 1.35 m. It is raised here so a person walks under it, as the sloop's sail foot is at 2.2 m.
+- **The helm:** a rudder hung outboard on the transom, with its tiller in over the stern (#306, 3 A).
+- **`o.stripe`:** the sails in red and black cloths. Unstriped, they are tanned red-brown in cloths with reef bands.
+
+`ships.html?ship=cutter` has the sloop's views. `lap` is close on the stem and its head here. `&stripe` and `&nohead` show the options.
+
+**Fixed on the way:**
+- **The head read as a thin bent slab** in its first two passes. Its profile is now a neck curling forward into a head with a jaw.
+- **The check's centreline first measured the tiller**, at 0.78 m, as if it were the boom. It now stops forward of the tiller's sweep.
+
+Asked as **DECISION #312**: the sails (A, tanned red-brown, recommended; B, red and black on every hull) and the stem (A, the gilt beast's head, recommended; B, plain as today).
+**Correction, renumbered:** this run's four entries were first written as Sessions 861 to 864, numbered from this branch alone. The bodies builder had already used 861 to 867 on `auto/bodies`. They are now 868 to 871, in the devlog, the backlog, `decisions.md`, the prototypes' comments and the DECISION issues. The four commits already pushed keep the old numbers in their messages.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 18 of 18 pass**, with nine new for the cutter:
+  - **The builds:** 4 keys, each the same twice. 21,594 triangles in 9 meshes.
+  - **The size:** the game's cutter, 14 m by 4.0 m moulded, the deck 1.0 m over the sea.
+  - **Closed:** 0 of 1,260 rays from 21 points inside her below the deck get out, the transom and the stern's points included.
+  - **Carvel and plumb:** at every strake's edge, at 5 stations, the planking is flush (0 m), and the stem has 0 m of rake from forefoot to head.
+  - **The walk:** 76 points down either side, with the deck under every one, 3.66 m of headroom and 0.66 m clear. On the centreline from the mast to forward of the tiller there is 2.07 m under the boom.
+  - **The rail:** 1.0 m or more over the deck at all 15 stanchions.
+  - **The options:** the striped sails and no head leave the hull the same.
+  - **The pages:** the cutter's quarter and deck views render with no page errors.
+- **The sloop's nine checks** are unchanged.
+- **Pictures, new:** `ships-cutter-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-stripe`.
+### Needs eyes
+- **The sails are one shape each.** They do not set to the wind, and the jib and staysail are in shadow from the quarter view. The game trims its sails by the wind, and bringing her in keeps that.
+- **The beast's head is a flat profile**, 0.2 m thick with a bevel. From ahead it is a plank. A carved head in the round is a later pass, and the bodies builder's beasts could lend it a skull.
+- **Below the deck she is empty.** OG-004's cabin in the Mark's dress (furs, lantern light) is L6's next slice, with the sloop's.
+- **The boom at 2.15 m** changes the game's sail plan: the main is 0.8 m shorter in the luff. Bringing her in should keep the area by lengthening the gaff, or accept the smaller main.
+
+## v80 — Session 872 — Card F8's third place: a limestone cave with a lake under falls (prototype only)
+The second of the places Michael named on #305 (3 A) is a limestone cave with a lake under falls. The FREEZE (#297) holds, so it is a prototype. I opened OG-121 and OG-099 and read their rows. OG-121's caverns have "stalactites, an underground lake under falls, strange flowers, hidden entrances", and its Gatelands panel has "limestone caves". OG-099's Mistveil Grottos are "a cave of blue pools and a bridge under waterfalls". Neither row flags anything a cave touches.
+
+`places.js` has a new `gatelandsCave(o, r)`, built to the person on the mine's shared rock (one noise field keyed by the place, amplitude 0.4 m):
+- **The passage:** 14 m from the mouth, 3 m wide and 3 m high in pale limestone, on a flat bed.
+- **The chamber:** 22 m across, 26 m long and 11 m high. Its walls run 4 m below the floor, so no slit opens where the floor meets them, and the near wall is cut for the passage.
+- **The floor:** one grid over the chamber, run 0.8 m under the walls. The shore is flat at 0 along the east side (4.2 m wide), across the near end (3.4 m) and at the far end east of the falls' pool, where the far shelf is. Elsewhere it falls in a smooth step over 3.2 m to the lake's bed, 3.4 m under the surface at 0.45 m below the shore. The dry cells carry a pale limestone skin.
+- **The falls:** a stream comes in through a swallow hole in the roof at the far west corner and falls 11 m to the lake, drawn as three wavering ribbons a little apart, with a ring of foam where it lands. Over the hole a wet funnel rises 12 m to the sky. It is 3.2 m across at its foot, just under the roof and wider than the hole cut in it, and 2 m at its top, so nothing gets out between the roof and the shaft.
+- **The dressing:** 46 stalactites up to 2.6 m long from the roof (their tips 8.2 m or more over the shore), 16 stalagmites and 7 lobes of flowstone on the shore kept 1.1 m off the walk and back from the water's edge.
+- **The flowers** (`o.flowers`, default true): six clusters of pale blue flowers that glow, at the water's edge along the shore.
+
+`places.html?place=cave` has four views: `lake` (default), from the passage's end across the lake to the falls; `shore`; `falls`, from the far shelf up the falls to the shaft; and `passage`. The light is the day down the shaft onto the pool, a cool glow off the white water, the flowers' own glow, and your torch.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The swallow hole was cut in the floor's side of the roof:** the roof's faces point up, and the first cut looked for faces pointing down.
+- **The falls landed in 0.15 m of water:** the lake's depth measured its distance to the far shelf with the wrong sign, so the far west corner stayed a shallow shelf.
+- **A stalagmite stood on a flower:** the stalagmites now keep 1.4 m back from the water's edge.
+- **The shaft's spot was too wide:** it painted straight-edged shapes of the funnel's shadow on the far wall. It is narrowed to the pool.
+- **The view from outside the mouth** showed the cave's back as a box, since it has no hillside round it. That view now stands just inside the mouth, as the mine's adit view does.
+
+Asked as **DECISION #313**: what lights a cave. A, the day down its shaft and the flowers' glow, as drawn (recommended); B, your torch alone, as the worked-out mine.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 25 of 25 pass**, with six new for the cave:
+  - **The builds:** 3 keys, each the same twice. 28,256 to 28,550 triangles in 9 meshes.
+  - **The walk:** 221 points every quarter metre from the mouth, along the east shore and across to the far shelf. The floor is −0.025 to 0 m under every one, 0.3 m or more over the water, with 2.79 m of headroom or more and 0.99 m clear.
+  - **Closed:** of 1,200 rays from five points in the chamber, none gets out except by the mouth (2 to 6 do) or up the shaft.
+  - **The lake:** 3.4 m deep in its middle. The falls land in 3.39 m of water, and a ray straight up from the pool reaches the sky.
+  - **The flowers:** 36 on the shore (the ground under them −0.025 to −0.007 m), within 0.89 m of the water.
+  - **The page:** the lake view renders with no page errors.
+- **Pictures, new:** `places-cave-lake.jpg`, `-shore`, `-falls` and `-passage`.
+### Needs eyes
+- **The lake's edge is a step.** The shore drops 0.6 m straight to the water along a line. Real limestone shores shelve, with rimstone pools at the edge (OG-099's blue pools), which would want a terraced edge.
+- **The falls are ribbons.** There is no spray, no mist and no motion. The game's water would animate them.
+- **Stalagmites and stalactites are smooth cones.** Limestone growths are lumpy and paired (a stalagmite under each stalactite's drip), and the pairing is not done.
+- **No hillside, no hidden entrance.** The cave sits in nothing, and OG-121's "hidden entrances" want a mouth behind falls or brush. That is card F3's land and the chunk scatter.
+- **The swallow hole's light** comes down at a fixed angle. In the game it would follow the sun, and at night there is only the flowers and your torch.
+
+## v80 — Session 873 — Card F8's fourth place: a smugglers' lair in a sea cave (prototype only)
+The last of the three places Michael named on #305 (3 A) is a smugglers' lair on plank platforms. The FREEZE (#297) holds, so it is a prototype. OG-121's row has "smugglers' and bandits' lairs: plank platforms in a cave, storerooms, escape routes" and flags nothing a lair touches. Who holds it is the systems builder's.
+
+`places.js` has a new `smugglersLair(o, r)`, a sea cave on the Gatelands' coast built on the shared rock:
+- **The way in from the land:** a passage 10 m long, 2.4 m wide and 2.6 m high, with its floor at 1.2 m over the sea. It comes out on a rock floor 3.5 m deep across the cave's near end.
+- **The cave:** 18 m across, 24 m long and 8 m high. The sea fills it, at 0 over a bed 3 m down, and it is open to the open sea under an arch 7 m wide and 4.5 m high in the far wall.
+- **The deck and the jetty:** a plank deck 3.6 m wide on two rows of posts down the west side, at the rock floor's height. From its far end a jetty 2.2 m wide runs out to the middle, its last pair of posts standing up as bollards. A rowing boat of 4.2 m with two thwarts and an oar is moored at its end.
+- **The storeroom:** plank walls 2.4 m high and a plank roof on the rock floor at the near west corner, 3.8 by 2.1 m. Its door, 1.0 by 2.0 m, faces the way in, and inside it are crates (some stacked), four kegs and a bale.
+- **The escape:** a ladder up the east wall from the rock floor to a ledge of rock 4.6 m up, and a tunnel 1.4 m wide and 2.2 m high running east from it.
+- **`o.held`** (default true): five lanterns burn, on the jetty's bollard, at the storeroom's door, by the ladder, at the passage's end and on the deck. Abandoned, there is none, and the brackets stay bare (#305, 2 A, as the mine).
+
+`places.html?place=lair` has four views: `lair` (default), from the passage's end to the sea arch; `jetty`, back from the jetty's end; `store`; and `escape`. `&empty` shows it abandoned. The page's background is a sky, so the arch and the mouth show day.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **A black block over the middle of the view.** It kept its size on screen when the camera moved, so it was not geometry: the sea at roughness 0.05 overflowed to NaN under the arch's spot, and the bloom spread it. The sea is at 0.2.
+- **Jagged gaps where the passage and the tunnel met the walls:** sawtooth slits showed the void through the wall's cut edge. Each tube now runs 0.5 m past a hole cut smaller than it, so the ragged edge is a rock lip inside the tube and nothing shows through.
+- **The storeroom filled the deck** and hung over the water in its first place. It moved to the rock floor. The walk's step from the floor onto the deck crossed open water until the room was made shallower and the walk kept to the floor.
+- **Gaps of 5 mm between the deck's planks** let three walk points fall through to the seabed. They are laid edge to edge now, as the mine's were (Session 857).
+- **A forest of posts:** the jetty's posts all stood 0.9 m up as bollards. Only the last pair does now.
+- **The check misjudged the arch:** it judged rays leaving by the arch 1 m outside the wall, where they had spread past it. It now judges them at the wall itself.
+
+Asked as **DECISION #314**: where a smugglers' lair is. A, a sea cave with its own landing, as drawn (recommended); B, inland over an underground river.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 31 of 31 pass**, with six new for the lair:
+  - **The builds:** 3 keys, each the same twice. 14,668 triangles in 11 meshes.
+  - **The walk:** 169 points every quarter metre from the land, across the rock floor, down the deck and out along the jetty. The deck is under every one at 0 m off, with 2.46 m of headroom or more and 0.65 m clear.
+  - **Closed:** of 1,200 rays from five points in the cave, none gets out except by the passage (1), the sea arch (28) or the escape tunnel (0).
+  - **The escape:** the ladder rises 3.4 m from the rock floor to the ledge, and the tunnel has 2.16 m of headroom.
+  - **The storeroom and the lanterns:** the door is 1.0 by 2.0 m and clear 4.2 m in. Held, 5 lanterns are lit; empty, 0.
+  - **The page:** the lair view renders with no page errors.
+- **Pictures, new:** `places-lair-lair.jpg`, `-jetty`, `-store` and `-escape`.
+### Needs eyes
+- **The boat is a half-shell.** The lathe hull reads as a dark bowl from most sides. A rowing boat from the ships' kit (`ships.js`'s lines builder at 4 m) would be better.
+- **The sea is still.** It has no swell in the cave and no surge at the arch. The game's water and its tide would move it.
+- **The deck has no rail** along its sea edge, which is right for a working landing but is a fall into 1.2 m of water. The combat page decides whether that is a hazard.
+- **The storeroom is a box.** A real one would be built against the rock with a lean-to roof, and its walls cut to the rock's line.
+- **None of the four places is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.
+
+## v80 — Session 882 — The limestone cave rebuilt at three times the measure, with its dressing (card F8, prototype only)
+*Renumbered:* this run's sessions were first committed as 878 to 881, but auto/bodies had already written its own Session 878 (the beard at the collar). They are 882 to 885 in the devlog, the backlog, decisions.md and the prototypes' comments. The commit messages and the first PR comments keep the old numbers.
+
+Michael answered A on #313: the day comes down the shaft and the flowers glow. He added a note: "I don't think this cave is expansive enough. This feels pretty underwhelming to me. I hope this isn't the scale we're going for in all of our dungeon interiors, especially Old Gates." His F2b answer (3 m cells) says the same of the gates, "extremely massive and cavernous", and allows a cave or a mine "a more typical size". The cave of Session 872 was too small even for that. It was a box of 22 by 26 by 11 m with flat walls, so the swallow hole showed as a ring in a flat ceiling, and it held nothing but cones. The FREEZE (#297) holds, so this is the prototype again. OG-121 and OG-099 were reread: OG-099 is "a cave of blue pools and a bridge under waterfalls", and the first build left out both the pools and the bridge.
+
+`gatelandsCave` in `places.js` is rewritten. The returned shape is the same, with `walkY`, `bridge`, `columns` and `pools` added:
+- **The hall is lofted ring by ring** (a new `loft()`). It is 64 m long. It is 30 m across at its ends and 46 m in the middle (35 m at the floor). Its crown is 16 m over the shore at the ends and 26 m in the middle, and both ends close in rounded domes. The rock is moved by noise at three sizes (4 m, 1.2 m and the place's own 0.35 m) and by nine alcoves and buttresses high on the side walls. The noise fades to a tenth near the floor, so the walls meet the floor cleanly and stay off the walk.
+- **The cuts are by test, not by hand.** The hall drops its faces that lie inside the passage's tube or under the shaft. The tube drops its faces that lie inside the hall. Each cut has a margin of 0.4 to 0.5 m, so the two shells overlap and no slit opens where they meet.
+- **The way in** is a passage of 22 m that winds 2.5 m either side. It is 4.4 m wide and 3.6 m high, and it comes out on a **ledge 4.5 m up** across the hall's near end, a balcony over the lake. A ramp of rock runs down the east wall to the shore at 1 in 4.4.
+- **The shore** is a band 11 m wide down the east side. It steps down to the lake in **three rimstone terraces** of 0.25 m and 1.4 m, their edges wavy, with **30 blue pools** in low lumpy dams on them (OG-099). The lake's bed is 4.2 m under the surface.
+- **A natural bridge** of lofted rock crosses the lake from the shore to a dry shelf on the west wall. Its deck arches 0.8 m, with 1.05 m of air between its underside and the water.
+- **The falls** come through a swallow hole in the far dome and fall about 20 m into the pool beyond the shelf, as five ribbons that spread as they fall, with foam and mist. The shaft's funnel now starts just under the roof, so it no longer hangs below the ceiling like a cap.
+- **The dressing:**
+  - five columns, floor to roof, waisted and fluted, two of them standing in the lake;
+  - stalactites in 34 clusters, lumpy rather than cones, every tip 3 m or more over the floor beneath it;
+  - stalagmites with blunt tops, under a third of the stalactites over dry ground and scattered on the shore;
+  - 16 flowstone curtains with V-shaped, scalloped hems, hung from the overhangs;
+  - 22 fallen blocks, made from noisy icosahedra (the rounded boxes read as luggage);
+  - the glowing flowers, now by the pools.
+- **The view:** `places.html?place=cave` keeps `lake` (now from the ledge, the reveal), `shore` (from the ramp's foot), `falls` (from the shelf) and `passage`, and adds `bridge`. The light is the day down the shaft (Michael's A), a wide cool bounce off the white water, the flowers, and your torch. The first pass was far too bright, more like day than a cave, and the ambient and the bounce were cut by half.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The lake's bed was face down.** The grid's winding was flipped in the rewrite, so the bed could not be seen from above and the rays passed through it.
+- **NaN in a curtain's hem.** A fractional power of −0.0 at the sheet's edge gave NaN.
+- **The black block came back** on the bridge view, the same glossy-water overflow under a strong spot that Session 873 met on the sea. The lake's roughness went from 0.04 to 0.16 and the pools' to 0.2.
+- **Flowers floated or sank** where the floor grid ran across a terrace's step. Flowers now go only on grid cells whose four corners lie on one terrace, and the terraces were widened from 0.8 m to 1.4 m so the cells fit.
+- **A column stood on the bridge's landing** once the shelf moved to keep the falls' pool deep. The column was moved.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 33 of 33 pass.** The cave's six checks were rewritten for the new shape and two were added:
+  - **The builds:** 3 keys, each the same twice. 142,828 to 143,282 triangles in 12 meshes (the bound is now 160,000 and 14).
+  - **The hall's measure (new):** 64 m long, 45.4 to 47.2 m across 8 m up, and 24.4 to 30.1 m from floor to roof at its middle.
+  - **The walk:** 426 points every quarter metre from the mouth, down the passage, over the ledge, down the ramp (it falls 4.5 m), along the shore and over the bridge to the shelf. The floor is within −0.042 to 0.027 m of `walkY` at every point, with 2.29 m of headroom or more and 0.84 m clear at the hip and the head.
+  - **Closed:** of 1,440 rays from six points, none gets out except by the mouth (4 to 7) or up the shaft (0 to 1).
+  - **The lake:** 4.2 m deep in its middle. The falls land in 0.92 to 2.93 m of water, and the pool sees the sky.
+  - **The bridge and the columns (new):** the deck is 0.8 m up at its middle, with 1.05 m of air over the water. All 5 columns stand on the floor.
+  - **The flowers:** 23 to 32 by 30 pools, each on the ground to 0.006 m.
+  - **The page:** the lake view renders with no page errors.
+- **Pictures:** `places-cave-lake.jpg`, `-shore`, `-falls`, `-bridge` (new) and `-passage`, at the same links as before.
+### Needs eyes
+- **Is this the measure?** At 64 by 46 by 26 m it is a great cavern, not a typical one. If Michael means caves to be this size as a rule, the lair (#314, next) and the mine follow. If not, `RX`, `RY` and `L` scale it down. The Old Gates' own size is card F5's (deep work).
+- **The terraces are still steps.** They are wavy in plan, but each edge is a 0.25 m drop on a 0.5 m grid. Real rimstone has a rounded lip, which the dams give only to the pools.
+- **The rock texture smears** where `worldUV` changes axis on the passage's crown and on the curved hall. A triplanar rock material would fix it, and it belongs to the kit (`common.js`), not to this place.
+- **The falls are still ribbons, and they burn white** under the shaft's spot. Moving water and spray are the game's.
+- **At 143,000 triangles** the cave is heavy for one room. The hall's 128 by 112 rings and the floor's 100 by 132 grid are most of it, and in the game a lower ring count at a distance would serve.
+
+## v80 — Session 883 — The smugglers' lair rebuilt as a sea cave with a ship in it (card F8, prototype only)
+Michael answered A on #314: a sea cave with its own landing, as drawn. He added: "Same comment as the other cave decision - the size here is pretty underwhelming, as is the lack of detail in general." The lair of Session 873 was an 18 by 24 by 8 m box with a deck, a jetty and a plank shed. This session gives it the measure and the life a smugglers' hold wants, on the same lofted rock as the cave (Session 882). The FREEZE (#297) holds, so this is the prototype again.
+
+- **One generator for both caves.** The hall's ring, its noise, its alcoves, `hw`, `roofY` and `inHall` moved out of `gatelandsCave` into `caveHall(rk, F, ph, P)`. The cave calls it with the same draws in the same order, and its lake view renders byte-identical to Session 882's picture. `loft()`'s cut now also gets each quad's ring and step.
+- **The cave:** 52 m long, 26 m across at its ends and 38 m in its middle, its crown 13 to 19 m over the sea. The rings are five times closer at the two ends, because uniform rings made metre-wide facets where the domes close.
+  - **The walls** are dark and wet below the high-water line (1.6 m). The line follows a ring step, because cutting by the faces' centres gave a sawtooth.
+  - **The sea arch** in the far dome is 13 m wide and 8 m high, with the open sea and the sky beyond it.
+- **The way in** is a passage of 18 m that winds 2 m either side, 3.9 m wide and 2.9 m high. It ends 0.6 m past the near dome's tip, and a lumpy collar of rock covers the tube's rim, so its mouth reads as an arch in the rock rather than a pipe end.
+- **The landing:**
+  - a shelf of rock at 1.2 m across the near end, with a strip 5 m wide running on down the east wall;
+  - the storeroom against the west wall, 5.2 by 3.4 m, with a lean-to roof from 3.2 m at the rock down to 2.45 m at its front, its door facing the way in, holding crates, kegs and a bale (the "box" of Session 873's Needs eyes);
+  - a fire ring of ten stones with embers, an iron tripod and a pot, and two logs to sit on.
+- **The deck** runs 32 m down the west wall on posts, its edge following the wall. Cargo is stacked against the rock: crates (some double), pairs of kegs, bales, a coil of rope and a rack of oars. Over its near 10 m is a **gallery** 3.4 m up on its own posts, with a rail, a stair of 17 steps, two pallets to sleep on and a chest.
+- **The jetty** runs out from the deck to a T-head 11 m long in the middle of the cave. The **Gatelands sloop** (`ships.js`, Session 858) lies alongside, 0.4 m off, bow to the arch. Its square sail is furled on the yard: the set sail read as a green wall indoors. It has two mooring lines to the T-head's bollards. A rowing boat (the old lathe shell, with a gunwale now) lies off the T-head's west side, and a **derrick** on the T-head swings a net of cargo over the sloop.
+- **The escape:**
+  - **The ladder** rises 5 m from the east strip to a ledge.
+  - **The ledge** is carried on a corbel of rock, because the wall is undercut there and a bare slab floated.
+  - **The tunnel** runs east 1.9 m wide. It is set at the z along the landing where the wall is most even across its height. Each of its rings is set off from the wall's own x there, found by bisection on the ring's angle, because the first try stood 2 m out of the wall where the near dome curves in.
+- **`o.held` false:** no lantern lit, the fire cold ash, and the sloop gone.
+- **The view:** `places.html?place=lair` keeps `lair`, `jetty`, `store` and `escape` and adds `deck` (under the gallery). The light is eight lanterns, the fire (warm, casting shadows), and the day through the arch.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 37 of 37 pass.** The lair's five checks were rewritten for the new layout and one was added:
+  - **The builds:** 3 keys, each the same twice. 85,754 to 85,794 triangles in 24 draws, the sloop's among them. Abandoned: 61,591 in 14.
+  - **The cave's measure (new):** 52 m long, 37.1 to 38.1 m across 6 m up, and 17 to 20.4 m from the sea to the roof near its middle.
+  - **The walk:** 330 points every quarter metre from the land, over the landing, down the deck under the gallery and out to the T-head. The deck is under every one (−0.002 to 0.031 m), with 2.25 m of headroom and 0.31 m clear.
+  - **Closed:** of 1,440 rays from six points, none gets out except by the passage (1), the sea arch (25) or the escape tunnel (0).
+  - **The escape:** the ladder rises 5 m from the rock (0 to 0.01 m off it) to the ledge (0 m off it), with 2.31 m of headroom in the tunnel.
+  - **The storeroom and the lair held:** the door is 1 by 2 m and clear 1.34 m in. Held, 8 lanterns are lit and the sloop lies 0.4 m off the T-head. Empty, 0 lanterns and no sloop.
+  - **The cave (Session 882)** still passes unchanged at 142,828 to 143,282 triangles.
+- **Pictures:** `places-lair-lair.jpg`, `-jetty`, `-store`, `-escape`, `-deck` (new) and `-empty` (new).
+### Needs eyes
+- **The arch burns white.** The day at the arch blooms into a bright blob in the lair and deck views. A real sea cave's mouth is bright, but the arch's own shape is lost in it. The bloom or the spot wants tuning per place.
+- **The walk's 0.31 m clear** is the gallery's posts beside the deck's walk line. It passes, but it is tight for a fight on the deck, which is the combat page's to judge.
+- **The ledge is a block on a wedge.** It is plain beside the lofted rock.
+- **The planks' wood texture** reads as wavy stripes at this distance (the kit's `wood` map). The plank colour belongs to the kit.
+- **The sloop is the Gatelands' hull.** Smugglers on the Mark or in Aurenne would moor their own island's hull (the cutter, Session 871; Aurenne's line is not built).
+- **Neither cave is in the game.** That waits for F2a, and for `52-dungeon-gen.js` to take a place of this kind.
+
+## v80 — Session 884 — The round cairn's passage widened and its chamber enlarged (card F8, prototype only)
+Michael answered A on #309: spirals and lozenges, as drawn. He added: "Let's be mindful of the size as well, passages look very narrow." The cairn of Session 869 was built to the real passage tombs (Newgrange's passage is about a metre wide). At 1.25 m clear with lintels at 2.2 m, it read as a squeeze, and a fight or a companion in it would be worse. With the caves (Sessions 882 and 879) this is the third of Michael's notes on size this run.
+
+`gatelandsCairn` in `places.js` takes the change in three numbers and one scale:
+- **The passage** is 2.0 m clear between its slabs (it was 1.25 m), with its lintels 2.6 m over the floor (it was 2.2 m). The door and the lintel over it widen with it, and the facade rises to 3.9 m so the lintel slab sits under its top.
+- **The chamber** is 1.35 times its Session 869 plan (`S`). The cruciform outline, the three recesses (now 2 m wide and 2.2 m deep), their capstones, the floor, the vault's courses (stepping 0.27 m) and the back stone's carving all scale with it. The recesses' capstones are at 2.8 m (they were 2.3 m), and the vault's capstone is at 6.5 m.
+- **The mound** is 30 m across and 8.2 m high (it was 26 m and 7 m), so the bigger chamber and its vault stay well inside it. The kerb takes 45 boulders: the count now follows the radius, because at 44 the bigger ring left gaps.
+- **The view:** the chamber view's camera and the outside view are set from the returned scale (`chamber.s`, `chamber.back`).
+
+**Fixed on the way:** one walk point straight under the vault's centre found no roof, though no ray leaked in the closed check. A probe 3 cm off the centre hits the capstone at 6.47 m: the ray met the capstone's and the mound's fan centres edge-on. The walk's chamber leg now runs 7 cm off the centre line, and the comment says why.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 37 of 37 pass.** The cairn's checks were raised to the new size:
+  - **The builds:** 3 keys, each the same twice. 48,716 triangles in 7 meshes, 45 kerbstones, 8.23 m high.
+  - **The passage (bounds raised from 1.2 and 2.15 m to 1.9 and 2.5 m):** 22 stations, 2 to 2.85 m clear at the hip, the lintels 2.55 to 2.68 m over the floor.
+  - **The walk:** 100 points from the approach to the back recess. The floor is on its line (0 to 0.02 m), with 2.54 m of headroom or more and 0.77 m clear.
+  - **Closed:** of 1,200 rays from inside, none gets out except by the door. The vault's capstone is at 6.48 m.
+  - **The basins and the carving:** 3 empty basins, and the spirals with `o.carved` and none without it, as before.
+- **Pictures:** `places-cairn-cairn.jpg`, `-door`, `-passage`, `-chamber` and `-vault`, at the same links.
+### Needs eyes
+- **Two metres is a judgement.** It lets two walk abreast and a sword swing, but the passage no longer reads as a squeeze between standing stones. If it is now too wide, `W` takes it back.
+- **The mound's texture** reads coarse at 30 m. The turf is the Mark's moss map, as in Session 869.
+
+## v80 — Session 885 — Aurenne's church domes by rank (card F6, prototype only)
+Michael answered C on #294: the domes by rank. The cathedral and a town's church have blue glaze, and a village's is limewashed, so the blue marks where the Church's money and its Priors sit. Until now `aurenneChurch` took the dome's finish as a bare option (`o.dome`), so whoever placed a church chose it by hand.
+
+`aurenneChurch` in `pieces.js` now takes **`o.rank`**: `'village'`, `'town'` or `'cathedral'`. A church with corner domes is a cathedral unless told otherwise, and one with no rank is a town's. The dome follows the rank: a village's is limewashed, and a town's and the cathedral's are in blue glaze. `o.dome` still overrides it, so the 72-church sweep and `&dome=` on the page work as before. In `aurenne.html`, the churches line-up is now the three ranks side by side: a village's church (12 m, limewashed), a town's (14 m, blue) and the cathedral (20 m, two towers, corner domes, blue). The square's church is a town's.
+
+Michael's other answers this run need nothing built: #312 (tanned sails and the gilt head) is already `markCutter`'s default, and #311 (one hall round the fire) is the longhouse as drawn. Both are noted in `decisions.md`.
+### Verified (headless Chromium)
+- **`aurenne.check.mjs`: 28 of 28 pass**, one new: by rank, the village's dome has 0 glazed meshes and the town's and the cathedral's have 1 each. A village's church given `o.dome: 'blue'` has 1. The 72-church sweep and both church pages pass as before.
+- **Pictures:** `aurenne-churches.jpg`, now the three ranks.
+### Needs eyes
+- **Where a town ends and a village begins** is the generator's call once churches are placed in the game. The prototype only takes the rank it is given.
+
+## v80 — Session 890 — Card F11's third hull: Aurenne's caravel in the new kit (prototype only)
+The FREEZE (#297, card F2a) is still open, so this run keeps to the prototypes. The places this run's predecessors built are all answered, and the next of L6's hulls is Aurenne's. Michael's A on #306 gave each island one rig, and his A on #202 made Aurenne's the game's caravel: 17.5 by 5.0 m, draft 1.3, three lateen masts raked forward with the main tallest, a square stern under a high sterncastle, no forecastle. OG-004's Aurenne line was reread: "white and blue sails with a gold sun-star, painted hulls". Its catalogue row flags no conflict with the canon on the hulls; the sun-star, like the harp, is the board's and not the canon's, which gives the Compact's banners and guards blue and white (§1.3).
+
+`aurenneCaravel` in `ships.js` is built on the cutter's carvel method (Session 871), with these changes:
+- **The hull** is fuller than the cutter's, fine only at the bow, and carried aft to a square stern of six tenths of the beam. The stem is curved and raked: forward of amidships a strake's low points draw aft, so the forefoot rounds up into the stem, and the stem timber follows the planking's own curve to a head 0.4 m over the sheer. She is tallowed white below the water and oiled wood above, with the two top strakes in Aurenne's blue under a gilt wale, and the blue band runs across the transom.
+- **The sterncastle is a real deck.** The game's caravel (`85-world-sea.js`, Session 665) has three rails rising aft on its flat deck. Here the castle's deck is 2.15 m over the main deck over the last 4.6 m. Its walls rise from the sheer in blue boards with cream panels and a gilt rail, and a wall closes it over the transom. The forward bulkhead has a door 1.0 m wide and 1.95 m high and two windows. A companion ladder of seven treads rises 1.25 m forward of it on either side of the door, and the castle's rail is broken at their heads. There are two lanterns on the stern corners.
+- **The lateens.** Each mast is raked 4° forward and carries a yard slung a third of its length from its lower end, at 50° to 52°. The fore yard is 9.1 m from tack to peak in height, the main 13.9 m and the mizzen 7.3 m. The sail hangs from the yard to a tack under its lower end and a clew aft, bellied out by up to 0.5 m.
+  - **Each yard hangs on its mast's lee side**, the fore and the mizzen to port and the main to starboard. The main yard passes 9 cm from the foremast, and no sail comes within 0.3 m of a mast's centre.
+  - **The shrouds stand on the weather side only**, as on a lateen ship, because on the sail's side they ran through the cloth.
+  - The mizzen stands on the castle, and its peak and clew reach past the transom.
+- **The sails** are white cloth with seams, each with a gold sun-star of sixteen rays (`o.star`, on by default). A sail's UVs are its own plane about its incentre, so the star sits whole in the middle of each triangle at one size to the sail.
+- **The helm** is a wheel on the castle's deck, 1 m aft of its edge, with the rudder on the transom and its stock through the castle's deck. `o.tiller` puts a tiller there instead. #306's 3 A gave the wheel "from the cog up", and the caravel is the cog's size, so the wheel is the default and the question is asked.
+- **The deck:** a hatch between the main mast and the fore, a coil of rope and a bucket.
+- **The view:** `ships.html?ship=caravel`, with `quarter`, `side`, `deck` (from the castle by the wheel), `castle` (new: from the waist, aft to the bulkhead and its ladders) and `lap` (her stern). `&nostar` gives the plain sails and `&tiller` the tiller.
+
+**Fixed on the way, each found by the pictures or the check:**
+- **The castle was open over the transom.** The transom stops at the sheer and the castle's deck is 0.6 m above that, so the cabin looked out to sea through its back. It has an after wall now.
+- **The blue read black.** It was the kit's wood map tinted blue, so the brown grain dulled it. Blue is now a plain painted material.
+- **The rudder read as a blue wall,** 0.9 m deep and set out from the transom. It is oiled wood now, 0.7 m deep, and hung on the transom.
+- **The fore sheet hung 1.97 m over the walk,** led to the deck's edge. The sheets are now led to the rail's top.
+- **The check, three times:**
+  - The bow station at z = 8 lay forward of the raked forefoot, so its low point was outside the hull. Its rays "leaked" from there.
+  - The door's measure was inverted.
+  - The rail's ray passed 5 mm under the cap rail.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 29 of 29 pass.** The sloop's and the cutter's checks are unchanged, and nine are new:
+  - **The builds:** 4 keys, each the same twice. 31,300 triangles in 12 draws.
+  - **The size:** 17.5 by 5.0 m moulded, with the deck 1.0 m over the sea.
+  - **Closed:** of 1,080 rays from inside her below the deck, none gets out, the transom's included.
+  - **Carvel:** the planking is flush at every strake's edge, to the millimetre.
+  - **The walk:** 72 points, from the castle's ladders to where the deck narrows at the bow. The deck is under every one, nothing is over it and there is 0.84 m clear.
+  - **The rail:** 1.0 m over the deck at all 13 stanchions forward of the castle.
+  - **The sterncastle:**
+    - its deck is 2.15 m up, under every probe to the millimetre;
+    - the cabin has 2.09 m of headroom;
+    - the door is clear 2.7 m past the bulkhead (to the mizzen's foot);
+    - both ladders stand on the deck and reach the castle's edge;
+    - rays to either side and aft from 1.0 m over its deck meet its rail.
+  - **The lateens:** each yard is low forward and high aft. They are slung port, starboard and port, their feet are 2.26 m or more over their decks, and no sail comes within 0.3 m of a mast.
+  - **The plain sails and the tiller** leave the hull the same.
+  - **The page:** the quarter and castle views render with no page errors.
+- **Pictures:** `ships-caravel-quarter.jpg`, `-side`, `-lap`, `-deck`, `-castle` and `-quarter-nostar`.
+### Needs eyes
+- **The sails are a plane apiece.** Each lies in its yard's vertical plane, bellied to one side, so from ahead she looks thin. A lateen set on a reach swings its yard across the ship; that is the game's rig animation (`shipLateen`), not the prototype's.
+- **The castle's front is plain oak.** It reads dark against the blue sides. A painted bulkhead, or a carved rail across its head, would carry the blue round.
+- **The tallow** is hardly seen at her waterline from these angles.
+- **She is the player's paint.** A merchant's or a pirate's caravel takes its own colours in the game (`SHIP_LOOKS`); the prototype has only Aurenne's own.
+- **The cabin is empty.** L6's base below deck (a bed, chests, a map table, Aurenne's rugs and tiles from OG-004's cabin panel) is the room it was made to hold.
+- **Not in the game.** That waits for F2a and for card F11's parents.
+
+## v80 — Session 891 — Card F9's third room: Aurenne's flat over a dyer's shop (prototype only)
+The FREEZE (#297) holds, so this run keeps to the prototypes. Card F9's rooms have the Gatelands cottage (Session 852) and the Mark's longhouse (Session 870), each inside its street's own shell as Michael's A on #303 asks. Aurenne's was owed. The backlog named "Aurenne's courtyard house next", but OG-115's courtyard house round a fountain needs a lot of about 14 by 14 m, and Aurenne's street lots (`aurenneLot`) are 6.4 to 9.6 by 6 to 8 m. No shell in the kit holds it, and making one is a new lot kind, which is Michael's call. The same panel draws "an urban apartment over a shop, a kitchen with hanging pots, a rooftop terrace", which the street's own two-storey flat-roofed house does hold. So this session builds that, and asks about the courtyard house (#318). OG-115 and OG-061 were reread. The catalogue's note on OG-115 ("cream plaster and tile in Aurenne") flags no conflict for it.
+
+**The shell.** `aurenneHouse` in `pieces.js` takes three new options and returns its openings. Every default build is unchanged, and `aurenne.check.mjs` passes as before.
+- **`o.interior`** leaves out the dark fill, the dark boxes behind the lattices, and the door's closed leaf and studs.
+- **`o.hatch`** cuts the roof slab in four round a hatch.
+- **It returns** its openings, the door's x, the walls' thickness, the storey's height, the floor and the top.
+
+**`aurenneHome` in `rooms.js`** is built inside a 9.0 by 7.6 m house of two storeys (3.0 and 2.6 m) with lattices upstairs and a pergola on the roof. The shop is laid out from the door's side, so the shell can be turned either way (`o.shell`).
+- **The shop.** The canon's Aurenne sells its dyes, so it is a dyer's.
+  - Limestone flags, with a dado of the kit's blue and white glazed tile to 1.0 m.
+  - Shelves of bolts in madder, indigo, saffron and weld on the far wall, broken at the side window. When the far wall is the east, the shelves stop clear of the stair.
+  - A cedar counter 0.96 m high before them, cloth laid on it, a brass oil lamp, and the shopkeeper's stool between.
+  - Lengths of dyed cloth hung from a pole on the near wall, three jars of dye by the door, and the door's leaf hung open against the front wall.
+- **The stair:** 16 risers of 0.186 m and goings of 0.26 m, in limestone along the back wall, to a landing in the corner. The stairwell opens from the fifth tread, so every tread has 2.02 m over it. The first try opened it a tread too late, which left 1.85 m.
+- **The flat:**
+  - Red tiles on a cedar floor carried by beams every 0.9 m, cut at the stairwell. There is a rail at 0.95 m round the well, and a tile dado to 0.6 m, under the sills.
+  - A divan 0.42 m high under the three lattice windows, with cushions in madder and saffron, a rug of OG-061's lozenges, and a low brass table with cups and a pot.
+  - A bed of 2.05 m with an indigo cover and a bolster, and a chest by the side window.
+  - The kitchen along the east wall: a masonry cooking bench 0.82 m high with a tiled top and two charcoal braziers (a pot on one), a rail of four copper pots, and a water jar.
+  - A brass lantern hangs from the ceiling's middle.
+- **The roof:**
+  - A steep stair of ten treads (rises of 0.236 m) goes up the back wall from beside the well into a hatch of 1.5 by 0.9 m.
+  - The hatch's west edge is the stair's head, so you step off onto the terrace. There is a low coaming round its other sides.
+  - Under the pergola there is a bench and a jar, and between two posts a line of dyed cloth hangs drying.
+- **The view:** `rooms.html?room=home`, with `shop` (the default), `stair`, `flat`, `kitchen`, `roof` and `outside`, and `&hour=` as the other rooms take it. The shop's lamp, the flat's lantern and a brazier give the light, the hemisphere's ground is warm for the plaster, and the exposure is raised indoors.
+
+**Fixed on the way, each found by the pictures or the check:**
+- The hung cloths were one-sided, so the drying line showed only its string. The dyed cloths are now double-sided.
+- Wooden nosings on the pale steps read as floating lines. The steps are plain limestone now.
+- The tile dado was at twice the kit's scale.
+- The headroom probe began inside a shelf. It now skips points over furniture, and steps 0.15 m across so it finds every beam.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 25 of 25 pass.** The cottage's and the longhouse's checks are unchanged, and nine are new:
+  - **The builds:** 4 keys, with the door west in some and east in others. The room is 5,698 to 6,058 triangles in 23 draws, in the house's 4,102. Each key builds the same twice.
+  - **Inside and apart:** every piece is inside the walls, and no two pieces on one floor are in each other.
+  - **The walks:** clear by 0.15 m on each floor: in at the door past the counter's end to the stair's foot, off the landing to the table, and to the roof stair.
+  - **The stair:** rises of 0.186 m and goings of 0.26 m, with 2.02 m or more over every tread. The well's rail is 0.95 m.
+  - **Headroom:** 2.58 m under the beams in the shop and 2.28 m upstairs.
+  - **A person fits:** the bed is 2.05 m, the divan 0.42 m, the low table 0.42 m, the counter 0.96 m, and the door 1.05 by 2.0 m.
+  - **The roof:** open sky over the roof stair's head, the terrace's parapet met all round at 0.6 m, and rises of 0.236 m on the roof stair.
+  - **The pages:** the shop and roof views render with no page errors.
+- **`aurenne.check.mjs`** and **`pieces.check.mjs`** pass as before, with the shell's new options off by default.
+- **Pictures:** `rooms-home-shop.jpg`, `-stair`, `-flat`, `-flat-night`, `-kitchen`, `-roof` and `-outside`.
+### Needs eyes
+- **The rooms are dark at noon.** The windows are small and deep, as the hot-country house has them. The light indoors comes mostly from the lamps at 1.4 exposure, and OG-141's light indoors (L12) would judge it.
+- **The stair is a solid mass.** From the shop it reads as a stepped wall, with no balustrade on its open side below the well.
+- **The cushions and bolts are boxes and cylinders.** Cloth with folds belongs to the bodies builder's drape method if it is wanted here.
+- **The courtyard house is not built.** That is #318.
+- **Not in the game.** `buildInteriorFor` takes this after F2a and card F9's parent.
+
+## v80 — Session 892 — Card F11's fourth hull: the Gatelands cog in the new kit (prototype only)
+The FREEZE (#297) holds. L6's line has the sloop, the cutter and now the caravel (Session 890), and the cog is next. Michael's A on the ship ladder keeps the game's five classes, each dressed by its island, and OG-004's Gatelands row draws a "merchant cog", so this is the cog in the Gatelands' dress, the sloop's of #306. OG-004 was reread. Its catalogue row flags no conflict here (its guns on ordinary hulls are not built).
+
+`gatelandsCog` in `ships.js` is built to the game's cog (`85-world-sea.js`: 17 by 5.6 m, draft 1.25, the sheer 0.55 m over the deck amidships rising 0.85 to the bow and 0.9 to the stern, one tall mast with one great square sail at 8.2 m, castles at both ends).
+- **The hull** is clinker, by the sloop's method (Session 858): twelve strakes a side, each lapped 2.4 to 3.3 cm outside the one below. It is tarred below the water, oiled oak above, and the sheer strake is green under a cream wale. The body is a cog's, not the sloop's:
+  - the half-breadth holds most of the beam to a quarter of her length from either post;
+  - the section turns quickly at the bilge and stands nearly upright, so she is flat-floored and slab-sided;
+  - the stem and the sternpost are straight and raked, and a rudder 0.7 m deep hangs on the post.
+  
+  The beam came out 5.55 m with the sloop's scaling. The topsides' flare is smaller on this section, so the scale is 1.02 and the moulded beam is 5.6 m.
+- **The rig:** the mast is stepped 0.4 m forward of amidships, 10.5 m high, with a round fighting top. The yard is at 8.2 m and 7.4 m long. The sail is green with the harp (`o.harp`), bellied forward, its foot 2.2 m over the deck. There are four shrouds a side, a forestay to the stem head, a stay to the bowsprit (1.8 m), braces to the aftcastle's rail, and sheets.
+- **The castles** are real decks, as the caravel's is, 2.15 m over the main deck, walled from the sheer in green boards with a cream band at their head and a rail at 1.0 m on stanchions.
+  - **The aftcastle** covers her last 3.8 m. Its forward bulkhead has a door of 1.0 by 1.95 m, two windows and a cream lintel, with a companion ladder up either side and the rail broken at their heads. The cabin under it has 2.09 m of headroom. The wheel stands 1 m aft of the castle's edge, per #306's 3 A (the wheel from the cog up).
+  - **The forecastle** covers her first 3.0 m. It is open beneath, its edge carried on two posts, with a ladder up the middle. Its edge beam is 0.12 m deep so the walk to the bow keeps 2.03 m under it; at 0.16 m it would have left 1.99.
+- **The waist:** a cargo hatch of 1.2 by 1.8 m aft of the mast, and three barrels or crates a side against the rail (by the key).
+- **The view:** `ships.html?ship=cog`, with `quarter`, `side`, `deck` (from the aftcastle behind the wheel), `castle` (the aftcastle from the waist), `fore` (the forecastle from the waist) and `lap` (her stern). `&noharp` gives the plain sail.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 39 of 39 pass.** The earlier hulls' checks are unchanged, and ten are new:
+  - **The builds:** 4 keys, each the same twice. 40,880 to 40,916 triangles in 10 draws.
+  - **The size:** 17 by 5.6 m moulded, with the deck 1.0 m over the sea.
+  - **Closed:** of 900 rays from inside her below the deck, none gets out.
+  - **Clinker:** at every strake's lower edge, at 6 stations, it stands 0.024 to 0.033 m outside the strake below.
+  - **The walk:** 74 points, from the aftcastle's ladders to the bow, 4 of them under the forecastle. The deck is under every one, with 2.09 m of headroom and 0.67 m clear.
+  - **The waist's rail:** 1.0 m or more at all 11 stanchions.
+  - **The castles:**
+    - both decks are 2.15 m up, under every probe to the millimetre;
+    - the cabin has 2.09 m of headroom;
+    - the door is clear 3.26 m past the bulkhead;
+    - all three ladders stand on the deck and reach their castles' edges;
+    - rays to either side from 1.0 m over each castle's deck meet its rail.
+  - **The plain sail** leaves the hull the same.
+  - **The pages:** the quarter and fore views render with no page errors.
+- **Pictures:** `ships-cog-quarter.jpg`, `-side`, `-lap`, `-deck`, `-castle` and `-fore`.
+### Needs eyes
+- **The castles' green reads nearly black** in shade. It is the sloop's sheer-strake green over a much larger area. A lighter green or plain oak with a green band would be the fix, if wanted.
+- **The square sail is flat athwartships.** It reads edge-on from the side, as a square sail does; the game braces it round.
+- **The harp is drawn on the sail's forward face.** From the deck it is seen mirrored through the cloth, as a real painted sail would be.
+- **She is 40,900 triangles,** the heaviest hull yet. The strakes' rows (52 stations by 12 strakes by 7 rows, both faces and the lap's edge) are most of it, and a far LOD would drop the inner faces.
+- **Not in the game.** That waits for F2a and card F11's parents.
+
+## v80 — Session 893 — Card F9's fourth room: the Gatelander inn round its hearth (prototype only)
+The FREEZE (#297) holds. L9 asks for three inns, one per island (OG-108: "a cosy Gatelander inn with a hearth, a Markish longhouse with long tables, an Aurenne tavern on a terrace over the sea"). Michael's A on #303 builds rooms inside the street's own shells. The kit has no inn, and an inn's own shell is a new piece, which is his call (#320). So the first inn is built inside the kit's farmhouse (`GL_PLANS.farmhouse`), the nearest building a village would turn to guests: 10.5 by 6.2 m, walls of 0.5 m, storeys of 2.9 and 2.7 m, whitewashed under slate, with a stack at each gable. OG-108 was reread. Its catalogue row's note is on the dishes' real-world names, which this room does not name.
+
+**The shell** takes one new option in `pieces.js`: a transom door marked `ajar` leaves its leaf out, so the room hangs it open. Nothing else changes, and `pieces.check.mjs` passes as before.
+
+**`gatelandsInn` in `rooms.js`:**
+- **The taproom:**
+  - Flags in courses.
+  - The open hearth in the west gable under its stack: a breast 0.5 m proud, an opening of 1.6 by 1.3 m sooted at the back, an oak lintel and a hearthstone, with a turf fire, a crane and a pot (the cottage's hearth, Session 852, at an inn's width).
+  - A high-backed settle facing the fire (its seat at 0.44 m, its back 1.35 m), with a cushion and two stools beside it.
+  - The bar across the back wall, between the back window and the back door: an oak counter with a deal top at 1.05 m, a rack of four kegs behind it with their taps, a shelf of jugs, tankards on the counter, and a lantern from the beam.
+  - Two tables at 0.76 m, one with benches both sides and one with a bench on the hearth side, each with a candle.
+  - The front door's leaf hangs open against the front wall.
+- **The stair:** 16 oak risers of 0.178 m and goings of 0.25 m up the east gable wall to a landing in the back corner. The stairwell opens wherever a tread would have less than 2 m under the beams (not the slab), so every tread has 2.29 m or more. The first count was against the slab and left 1.90 m under a beam over the third tread.
+- **The upper floor:** deal boards on oak beams every 0.9 m (cut at the well), a rail at 1.01 m round the well (kept out of the gable wall, where it first ran 4 cm in), and a boarded ceiling with joists under the slate.
+- **The guest rooms:** a passage 1.2 m wide runs along the back wall from the landing, with a deal partition and a door of 0.8 by 1.95 m into each of three rooms. Each room has a bed of 2 m (a straw tick, a blanket and a bolster), a chest at its foot, and a washstand with a delft jug and basin under its own front window.
+- **The light:** the shell's lamplit panes are clear glass from inside, as its plain panes already were. Two of the inn's windows were opaque yellow from inside until this was fixed.
+- **The view:** `rooms.html?room=inn`, with `tap` (the default, from by the bar across to the hearth), `bar`, `hearth`, `upstairs` (the passage from the landing), `chamber` (the middle guest room from its door) and `outside`, and `&hour=` as the other rooms take it. The fire, the bar's lantern and a lamp in the passage give the light.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 34 of 34 pass.** The cottage's, the longhouse's and the Aurennais flat's checks are unchanged, and nine are new:
+  - **The builds:** 4 keys, each the same twice. The room is 4,392 to 4,560 triangles in 16 draws, in the farmhouse's 2,120 in 10.
+  - **Inside and apart:** every piece is inside the walls, and none is in another on its floor.
+  - **The walks:** clear by 0.15 m, in at the door to the bar, in at the door to the stair's foot, and off the landing down the passage into a room.
+  - **The stair:** rises of 0.178 m and goings of 0.25 m, with 2.29 m or more over every tread. The well's rail is 1.01 m.
+  - **Headroom**, away from the furniture: 2.43 m under the beams in the taproom and 2.42 m upstairs. The probe skips the partition's line, where a doorway's lintel is the door's height.
+  - **A person fits:** beds of 2 m, the settle at 0.44 m, stools and benches at 0.45 m, tables at 0.76 m, and the bar at 1.05 m. There are three rooms, the front door is 1.05 by 2.5 m and the room doors are 0.8 by 1.95 m.
+  - **The fire** is in its hearth.
+  - **The pages:** the taproom and passage views render with no page errors.
+- **`pieces.check.mjs`** passes as before.
+- **Pictures:** `rooms-inn-tap.jpg`, `-tap-night`, `-bar`, `-hearth`, `-upstairs`, `-chamber` and `-outside`.
+### Needs eyes
+- **It looks like a farmhouse from the lane.** There is no sign, no bench by the door and no yard. A sign bracket is in the kit (the merchant's harp sign) and could hang here if #320 keeps this shell.
+- **The settle hides the fire from the door.** That is what a settle is for, but the taproom's view had to move to the bar's end to show the hearth.
+- **The passage upstairs is dark at noon.** It has one back window and the lamp.
+- **The other two inns** (the Markish longhouse of long tables, the Aurennais terrace tavern) are next. The Mark's can be built in the longhouse's hall.
+- **Not in the game.** `buildInteriorFor` takes this after F2a.
+
+## v80 — Session 894 — Card F9's fifth room: the Mark's inn, a hall of long tables (prototype only)
+The FREEZE (#297) holds. This is the second of L9's three inns (OG-108: "a Markish longhouse with long tables"). The Mark's hall from the kit is already a room shell (`markHall` with `o.interior`, Session 870), so the inn is built inside it. A family's longhouse is 7.6 by 14 m. The inn's hall is widened to 10 by 18 m so that two long tables, an aisle either side of the fire and the wall benches all fit, and the size is asked (#321). OG-108 and OG-025's longhall were reread. OG-115's row notes "nothing whitewashed in the Mark" and "captains and free towns, not clans", and both hold.
+
+`markAlehall` in `rooms.js`:
+- **The frame:** the longhouse's. A plank floor on the footing, posts 1.25 m in from the walls every 2.75 m, purlins and tie beams 3.11 m over the floor, rafters every metre, and a board lining under the shingle.
+- **The hearth:** 4 m long on the axis under the louver (the longhouse's is 2.6 m). It has a kerb of stones, an ash bed, nine logs and their embers and flames, and a cauldron on its tripod.
+- **The long tables:** one down each side inside the posts, 12.6 m long and 0.76 m high, with legs every 1.5 m. A loose bench on the aisle side runs their length. Horns, wooden bowls and jugs lie along them by the key.
+- **The wall benches:** behind the posts down both long walls, 0.45 m high and 1.0 m deep, laid with furs in three colours. Guests eat facing the tables and sleep on them at night.
+- **The counter:** across the back, 1.05 m high, with a rack of seven kegs and their taps behind it and thirteen drinking horns on pegs over them.
+- **By the door:**
+  - on the left, a rack of spears with iron heads and three painted round shields with bosses (the Mark's "painted round" of OG-028, and its soldiers for hire, canon §1.2);
+  - on the right, a water barrel;
+  - the door's leaf hangs open.
+- **The lamps:** three iron bowls on chains, two from the tie beams over the tables and one over the aisle before the counter. The third was added once the first picture showed the counter's end in the dark.
+- **The view:** `rooms.html?room=alehall`, with `hall` (the default, from the door down the hall past the fire), `tables` (along the right table from its end), `counter` and `outside`, and `&hour=`. The louver's grey shaft of day, the fire and the lamps give the light, as in the longhouse. The longhouse's single-lamp light at golden hour and night is skipped here, because the alehall's lamps carry it. Leaving that in would have thrown on a missing lamp.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 40 of 40 pass.** The other rooms' checks are unchanged, and six are new:
+  - **The builds:** 4 keys, each the same twice. The room is 9,172 to 9,720 triangles in 15 draws, in the hall's 1,648 in 7.
+  - **Inside and apart:** every piece is inside the walls and under the lining, with no point through either, and none is in another.
+  - **The walks:** down either aisle from the door, clear by 0.15 m, to the counter on the left and to the far end of the right table, with 3.11 m under the tie beams.
+  - **A person fits:** the wall benches and loose benches are 0.45 m. There are two tables, each 0.76 m high and 12.6 m long, and the counter is 1.05 m.
+  - **The fire** is on its hearth, under the louver.
+  - **The page:** the hall view renders with no page errors.
+- **Pictures:** `rooms-alehall-hall.jpg`, `-hall-night`, `-tables`, `-counter` and `-outside`.
+### Needs eyes
+- **The far end is dark at noon.** The louver lights the hearth, and the hall's windows are small shuttered openings. The lamps carry the back.
+- **The horns read as cones.** They want a curve and a rim.
+- **The wall benches sit behind the posts,** so a guest on a bench has a post between them and the table every 2.75 m. Real halls had this. The tables could stand between the posts instead if it reads wrong in play.
+- **The outside is the longhouse's hall, larger.** It has no sign of being an inn: no shield over the door, no horses tied.
+- **Not in the game.** That waits for F2a.
+
+## v80 — Session 895 — Card F9's sixth room: Aurenne's tavern on a terrace over the sea (prototype only)
+The FREEZE (#297) holds. This is the last of L9's three inns (OG-108: "an Aurenne tavern on a terrace over the sea"). Aurenne's kit has the Roman house: the tile kind of `aurenneHouse`, 9.6 by 8 m, one storey of 3.0 m under a hipped pantile roof, with an arcade of four round arches on lathed columns across the front. That arcade is a loggia already, so the tavern is built inside that house and out onto a terrace beyond it. The house is asked (#322), with the flat-roofed kind the other choice. OG-108 and OG-061 were reread. The catalogue's note on OG-108 is on the dishes' names, and none are named here.
+
+`aurenneTavern` in `rooms.js`, inside `aurenneHouse({ kind: 'tile', arcade: true, interior: true, green: false })` (Session 891's `o.interior`; the cypress is left out because it would stand in the loggia):
+- **Inside:**
+  - Red tiles, the glazed dado to 1.0 m, broken at the door, and cedar beams every 1.1 m under the cornice's slab.
+  - The counter across the back, 1.05 m high, plastered and faced in zellige, with a cedar top and cups of wine. Behind it are two shelves of amphorae and blue and white jars, broken round the back window, which they first crossed.
+  - A cedar rack of four amphorae leaning in the back right corner.
+  - The cooking bench along the right wall, as in the flat (Session 891), with two braziers, a copper pot and a rail of three copper pans.
+  - Two small square tables by the side windows, with a stool either side, and two brass lanterns.
+  - The door's leaf hangs open.
+- **The loggia** under the arcade has two round tables, each with a stool at either side.
+- **The terrace** is paved in limestone from the arcade 4 m out.
+  - A plastered parapet 0.62 m high with a stone coping runs on three sides.
+  - Under the far edge a quay wall drops 3.7 m to the water. The page (`rooms-view.js`) stops the ground at the quay and lays the sea 3.2 m down.
+  - There are three round tables with a stool either side, under a pergola of cedar posts and beams with 160 vine leaves over it, clusters of grapes, and vines up the outer posts.
+- **The view:** `rooms.html?room=tavern`, with `terrace` (the default, from the door out through the arcade to the sea), `tap` (the room to the counter), `pergola` (from the parapet back to the arcade) and `outside` (from over the water), and `&hour=`. The lanterns and a brazier give the light inside.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 46 of 46 pass.** The other rooms' checks are unchanged, and six are new:
+  - **The builds:** 4 keys, each the same twice. The room and terrace are 10,448 to 10,928 triangles in 18 draws, in the house's 3,476 in 8.
+  - **Inside and apart:** the room's pieces are inside its walls, and none is in another, terrace and loggia included.
+  - **The walks:** clear by 0.15 m, in at the door to the counter, and out through the loggia and the arch beside the door across the terrace to the parapet. The column of the shell's arcade stands before the door, so the walk goes through the next arch.
+  - **A person fits:** seven tables at 0.74 m, stools at 0.46 m, the counter at 1.05 m, and 2.72 m under the beams.
+  - **The terrace:** walled round on its three open sides by a parapet of 0.62 m. The quay wall's face is under its edge and drops 3.73 m.
+  - **The page:** the terrace view renders with no page errors.
+- **Pictures:** `rooms-tavern-terrace.jpg`, `-terrace-golden`, `-pergola`, `-tap` and `-outside`.
+### Needs eyes
+- **A column stands in front of the door.** The shell's arcade has four arches, so its middle column is on the door's axis. An arcade of three or five arches would put an arch there. That is the shell's choice, and it changes every Roman house with an arcade.
+- **The quay and the sea are the page's.** They are a plain wall and a flat blue plane. The harbour itself is the world's (F3 and the sea).
+- **The vine is faceted icosahedra.** It reads at a distance and is coarse up close.
+- **The three inns are drawn** (#320, #321, #322). Their rooms come into the game with `buildInteriorFor` after F2a.
+
+## v80 — Session 896 — Card F11's fifth hull: the Gatelands galleon in the new kit (prototype only)
+The FREEZE (#297) holds. The galleon is the last of the game's five classes, and with it each class has one island's dress in the new kit: the sloop and the cog (Gatelands), the cutter (the Mark), the caravel (Aurenne) and now the galleon. OG-004's Gatelands row draws a "galleon warship". Its catalogue row warns that guns belong on the top hulls only (Michael's 7 A), and the galleon is the top hull. Still, the guns are rules, so the ports are drawn shut and the guns are left to the systems builder.
+
+`gatelandsGalleon` in `ships.js`, to the game's galleon (`85-world-sea.js`: 22 by 7.0 m, draft 1.5, the sheer 0.5 m over the deck amidships rising 0.7 to the bow and 1.25 to the stern, a long raked stem, a square stern of 0.62 of the beam):
+- **The hull** is carvel, by the caravel's method (Session 890), with sixteen strakes and a little tumblehome over the top quarter of the section. The curved stem runs to a head 0.5 m over the sheer, and the transom has five stern windows under a cream rail.
+  - **The dress** is the Gatelands': tarred below the water, oiled oak above, the top two strakes green under a cream wale.
+  - **Carvel, not clinker:** no 22 m ship was clinker-built. The laps stay the small hulls' mark, and this is asked (#323).
+  - **The beam:** with the caravel's scale the moulded beam came out 6.71 m, because the tumblehome trims the widest section. The scale is 0.987 here and the beam is 7.0 m.
+- **The rig:**
+  - **Fore and main** are square-rigged (at z 5.2 and −0.4, as the game's). Each has a course and a topsail on its yards, a round top and four shrouds a side. The courses' feet are 2.2 m over the deck.
+  - **The sails:** the main course bears the harp. The other sails take a plain corner of the same cloth map, so the harp is not repeated on every sail.
+  - **The mizzen** stands on the quarterdeck. Its gaff sail's boom is 2.2 m over the quarterdeck and runs out past the stern.
+  - **The spritsail** hangs on a yard under the 6 m bowsprit, a third of the way out (the game's rule of Session 332).
+- **The castles** are the cog's (Session 892), 2.15 m over the main deck.
+  - **The quarterdeck** covers her last 6 m. Under it is the great cabin behind a door, two windows and two ladders. The wheel stands 1 m aft of the castle's edge, with the mizzen 2 m behind it, and there are two lanterns on the taffrail.
+  - **The forecastle** covers her first 3.5 m, open beneath on two posts, with a ladder up the middle.
+- **The waist:** two hatches either side of the main mast, and twelve gun-port lids (six a side, 2.1 m apart) shut on the gun deck under the main deck, with an iron hinge strap over each.
+- **The view:** `ships.html?ship=galleon`, with the cog's views scaled to her size. `&noharp` gives the plain sails.
+
+**Fixed on the way, in the check:**
+- **Two rays "leaked" from the stern station.** They ran forward more than 18 m inside a 22 m hull and were counted as escaped. Her limit is 24 m.
+- **The flush check measured a gun-port lid** at the station z = 3. Its stations now sit between the lids.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 49 of 49 pass.** The earlier hulls' checks are unchanged, and ten are new:
+  - **The builds:** 4 keys, each the same twice. 43,216 triangles in 10 draws.
+  - **The size:** 22 by 7.0 m moulded, with the deck 1.0 m over the sea and 12 gun-port lids.
+  - **Closed:** of 1,260 rays from inside her below the deck, none gets out, the transom's included.
+  - **Carvel:** the planking is flush at every strake's edge (−0.001 to 0 m).
+  - **The walk:** 96 points, from the quarterdeck's ladders to the bow, 8 of them under the forecastle. The deck is under every one, with 2.09 m of headroom and 0.69 m clear. The courses' feet are 2.2 m up.
+  - **The waist's rail:** 1.0 m or more at all 13 stanchions.
+  - **The castles:**
+    - both decks are 2.15 m up, under every probe;
+    - the great cabin has 2.09 m of headroom;
+    - the door is clear 2.84 m past the bulkhead;
+    - the three ladders stand on the deck and reach their castles' edges;
+    - the rails are met.
+  - **The plain sails** leave the hull the same.
+  - **The pages:** the quarter and deck views render with no page errors.
+- **Pictures:** `ships-galleon-quarter.jpg`, `-side`, `-lap`, `-deck`, `-castle` and `-fore`.
+### Needs eyes
+- **The stern windows do not read.** They are dark panes on a transom in shade. Lit, with a gilt or carved frame, they would make the stern.
+- **The gaff and quad sails show their facets** (the cutter's do too), because they are drawn without shared normals.
+- **At 43,200 triangles** she is the heaviest hull. The sixteen strakes over sixty stations are most of it.
+- **Every class has one island's dress.** The other islands' dress for each class waits on #316, #319 and #323, which set the rules (sails, castles, planking).
+- **Not in the game.** That waits for F2a and card F11's parents.
 ## v80 — Session 861 — Flippers in the kit: a sea turtle and the maw turtle (backlog L3, prototype only)
 Session 854 left the turtles owed from OG-016 and OG-084, because the kit had no flipper. Under FREEZE #297 this run works only in the prototypes, so this is the kit and two plans in `creatures.js`, and the sea is now twenty-two.
 
@@ -18566,6 +19182,184 @@ What changed in `people.js`:
 - **The chevron's scale and stepping.** It is one triangle wave round the arm, about 1 cm a step. It is read off the rest body's coordinates, not a true angle round the wrist, so on a thick arm the steps stretch a little.
 - **Where the cuff sits.** On a man in a short-sleeved tunic, the band is at the sleeve's end above the elbow, as the plain cuff always was. OG-025 draws the bands at the wrist on long sleeves. That waits on sleeve length becoming a choice in the wardrobe.
 
+## v80 — Session 899 — Card F9's seventh room: Aurenne's courtyard house round a fountain (prototype only)
+The FREEZE (#297) holds. Michael answered all seven of this builder's open questions on 14 Oct, every one A. Six were "as drawn" (#316, #319, #320, #321, #322, #323), so there was nothing to build for them. #318's second part was "build the courtyard house next": OG-115's Aurenne panel leads with "a two-storey courtyard house round a fountain with arcades and blue tile", which the street's lots (6.4 to 9.6 by 6 to 8 m) cannot hold. So it is its own piece, a rich house for the better quarter, with its rooms built inside it as #303 set. OG-115 and OG-061 (the blue tile) were reread. The catalogue's notes on OG-115 flag only the Mark's "clans", which is not touched here.
+
+**The house** (`aurenneCourtyard` in `pieces.js`, on Aurenne's kit):
+- **The size:** 15 by 15 m, of two storeys (3.1 m to the upper floor).
+- **To the street:** blank cream plaster under a stone cornice, a string course at the upper floor, and one arched door of 1.3 by 2.6 m in a frame of glazed tile. There are small barred windows below and four cedar lattice screens above, as the street houses have. The house looks in, not out.
+- **The court:** its walls stand 3.6 m off the middle. Between them and a ring of columns 2.2 m off the middle runs a gallery on both floors:
+  - below, three round arches a side on piers, each with a lathed stone column on its court face, and a tiled kerb round the open court;
+  - above, cedar columns, a turned balustrade and the architrave the eaves rest on.
+  - The open court is 4.4 m across. It holds a fountain (an octagonal basin faced in glazed tile, a stone rim, a pedestal with a bowl and a jet) and four orange trees in pots.
+- **The roof:** one pantile roof in four slopes at 16°, from a parapet on the outer walls down to eaves over the upper gallery. The rain falls into the court. There are valleys of ridge tile at the corners, and cedar boards and rafters under it.
+  - The tiles first came out wound to face down and read dark brown from above. They are wound to face up now, and the boards under them face down.
+- **The plan:** four ranges round the court. The front range has the vestibule between two partitions. A masonry stair of 16 risers of 0.19 m climbs the west range's outer wall to a landing, and the upper floor is open over it where the head would meet it.
+- **For the checks** the shell returns its walls' footprints cut at their doors, and its piers, columns, balustrade, stair rail, fountain and trees, each with its floor (`solids`). It also returns its doors and its roof's underside as a function (`under(x, z)`).
+- The new materials (limestone paving, the upper floor's red tile, water, oranges) are added to the kit's Aurenne set, and no other piece reads them.
+
+**The rooms** (`aurenneCourtyardHouse` in `rooms.js`):
+- **Ground floor:**
+  - the vestibule, tiled to 1.2 m, with a tiled masonry bench down each side and the street door's leaf hung open;
+  - the store: seven oil jars down the street wall, sacks of grain and a chest;
+  - OG-115's kitchen: a cooking bench of three braziers with a tiled top, a rail of seven copper pots hung over it, a bread oven in the corner, a work table with a board and a bowl, a water jar, and three shelves of blue and white plates;
+  - the west range: the stair, a loom by the court wall with its weaver's bench, and two jars;
+  - the dining room: a long table of 3 m with two benches, and a sideboard of plates and copper jugs;
+  - across the back, the reception hall: divans on three walls with their cushions, two rugs, two brass tables with cups and a ewer, and a tile dado to 1.2 m broken at its doors.
+- **Upstairs:**
+  - the landing, with a chest and a rug;
+  - the bedroom across the back: a bed of 2.18 m with its headboard, a chest either side, a table with a brass mirror, a comb and a jug, a stool, a divan, a rug and a tile dado;
+  - the guest room;
+  - the children's room: two small beds of 1.78 m, a toy chest, and a rocking horse on a rug;
+  - a linen press of folded cloth;
+  - the study: shelves of books, a lectern with an open book, and a divan under the lattices with a brass table and a lamp.
+- **The lamps:** a lantern in every room, and four on brackets along each gallery.
+- **The view:** `rooms.html?room=court`. `court` is the default, from inside the street door through the vestibule and the arcade to the fountain and the hall's arch. The others are `gallery`, `hall`, `kitchen`, `bedroom`, `study`, `children`, `outside` and `above`, with `&hour=`.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 54 of 54 pass.** The other rooms' checks are unchanged. Two views are new on the page check (`court` and `gallery`, with no page errors), and six checks are new, over four keys (the shell's stream and its wall colour):
+  - **The builds:** each key is the same twice. The rooms are 13,052 to 13,088 triangles in 20 draws, in the house's 28,364 in 14.
+  - **Inside and apart:** every piece is inside the house and, upstairs, under the roof. None is in a wall, a pier, a column, the balustrade, the stair or the fountain, and none is in another.
+  - **The walks:** eleven on both floors, clear by 0.15 m. They go in at the street door, round both galleries, into every room, to the stair's foot and through the middle arch to the fountain.
+  - **The headroom:** 2.7 m in the ground rooms, 2.88 m in the gallery, 2.73 m upstairs, 2.41 m in the upper gallery, and 2.3 m over every tread.
+  - **A person fits:**
+    - the stair is 16 risers of 0.1925 m going 0.26 m;
+    - the tables are 0.76 m and the kitchen's work table 0.85 m;
+    - the seats are 0.45 m;
+    - the beds are 2.18 and 2.1 m, and the children's 1.78 m;
+    - the inner doors are 0.9 by 2.1 m and up, and the street door 1.3 by 2.6 m.
+  - **Open and roofed:** 144 of 144 rays down over the court reach it, and 616 of 616 over the ranges meet the roof or the walls' tops. The fountain is in the middle.
+- **Pictures:** `rooms-court-court.jpg`, `-gallery`, `-gallery-night`, `-hall`, `-kitchen`, `-bedroom`, `-study`, `-children`, `-outside` and `-above`.
+### Needs eyes
+- **The open court is small**: 4.4 m inside the columns on a house of 15 m. OG-115 draws a wider court with more planting. That is asked (#329).
+- **The upper floor's tile is dark.** It is the dyer's flat's material (Session 891), a deep red under lamplight.
+- **The kitchen's pots are open cylinders**, and the rocking horse is boxes.
+- **The rafters are cut square at the valleys.** Seen from the upper rooms, they end in steps along the corners.
+- **The night picture still has a pale sky** through the court. The page's night is the other rooms' night.
+- **Not in the game.** The generator placing it as a lot kind of the better quarter, and its rooms in `buildInteriorFor`, wait for F2a.
+
+## v80 — Session 900 — Card F11: the sloop in the Mark's dress (prototype only)
+The FREEZE (#297) holds. Michael answered #316 (the caravel's sun-star, castle and wheel), #319 (the cog's castles) and #323 (the galleon's carvel and closed ports) with A on 14 Oct. These were the rules the backlog waited on before the other islands' dress for each class. Each class had one island's dress: the sloop, cog and galleon the Gatelands', the cutter the Mark's, the caravel Aurenne's. This is the first of the rest: the game's sloop in the Mark's dress. OG-004's Mark row ("dragon prows, dark sails") and OG-028's "painted round" shields were reread. The Mark's dress is already set by #312 (tanned sails, a gilt beast's head) and by #323 (the small hulls stay clinker).
+
+What changed in `ships.js`:
+- **A dress, not a new hull.** `gatelandsSloop` takes `o.dress`; `'mark'` changes only the materials and the ornaments, and `markSloop(o, r)` is that call. Her sections, rail, deck, mast and sail are the Gatelands sloop's to the millimetre, so the game's one sloop stays one set of numbers.
+- **The Mark's materials** are the cutter's set (`cutterMats`), with the strakes keyed by height:
+  - red-brown below the waterline;
+  - tar-black above it and on the sheer strake, where the Gatelands' is green;
+  - the wale gilt, where the Gatelands' is cream.
+- **The sail:** square, in plain tanned cloths with no harp.
+- **The beast's head:** the cutter's gilt head, at 1.15 times its size, on the stem head 0.25 m over the sheer, with its eyes.
+- **The shields:** eighteen painted round shields of 0.38 m, nine a side every 0.8 m along the waist.
+  - They are deep blue or red, by turns, with a quarter in bone and an iron boss.
+  - They hang outboard of the sheer strake with their tops at the rail's cap, the way the Mark's "painted round" (OG-028) would hang on a ship of the free towns.
+  - They are a new ornament and asked (#330). Two options turn them and the head off: `o.shields` and `o.head`.
+- **The view:** `ships.html?ship=marksloop`, with the sloop's views (`lap` is close on her bow and its head) and `&nohead` and `&noshields`.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 53 of 53 pass.** The earlier hulls' checks are unchanged. One view is new on the page check, with no page errors, and three checks are new, over four keys:
+  - **The builds:** each the same twice, 29,426 triangles in 14 meshes. Her sections, rail and deck are identical to the Gatelands sloop's from the same key.
+  - **Closed, clinker and walkable:** none of 900 rays from inside her below the deck gets out. The laps stand 0.025 to 0.033 m out at every strake's lower edge at five stations. The walk down either side is clear at all 68 points.
+  - **The dress:**
+    - There is no harp.
+    - The head stands 1.18 m forward of the stem head, from 0.21 m over the sheer.
+    - The 18 shields stand 0.054 m outboard of the planking and 0.02 m under the rail's top.
+    - Without head and shields, the hull is the same and only those go.
+- **Pictures:** `ships-marksloop-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noshields`. The other hulls' pictures were shot again by `--shots` and left as they were in git (the same views).
+### Needs eyes
+- **The head stands proud of the stem.** The stem rises 0.35 m over the sheer and the head's neck sits on it. Seen close, the joint is a step where a carved stem would run on into the neck.
+- **The black hull reads as a mass in shade.** The laps show as thin pale lines in the sun (`-lap`) and are lost on the shaded side.
+- **The shields and the rigging:** the shrouds come down to the chainplates among the shields amidships, and nothing there is checked against a shield.
+- **Next in the line:** the cog and the galleon in the Mark's and Aurenne's dress, and the caravel and cutter in the others'.
+
+## v80 — Session 901 — The Mark's sloop takes the Mark's rig (card F11, a correction, prototype only)
+**A correction to Session 900.** That session dressed the game's sloop in the Mark's colours but left her the Gatelands' square sail. Michael's A on #306 is "one rig names the island at a glance, as the Mark's cutter and Aurenne's lateens already do": square for the Gatelands, the cutter's gaff for the Mark, lateens for Aurenne. A Mark hull under a square sail breaks that rule. It was caught on rereading #306 before Michael answered #330, and the question was corrected in the same run. The FREEZE (#297) holds.
+
+What changed in `ships.js`:
+- **The rig by dress.** `gatelandsSloop`'s square rig (mast, yard, sail, shrouds, stays, braces, sheets) is now built only for the Gatelands. Its code and output are unchanged, and the Gatelands sloop's checks pass as before.
+- **The Mark's gaff rig.** The Mark's dress builds the cutter's rig at the sloop's size:
+  - a mast of 10.5 m with a topmast, stepped at the sloop's station;
+  - a boom 2.15 m over the deck, running to 0.45 m past the sternpost;
+  - a gaff of 5.4 m peaked at 30°;
+  - a gaff main and topsail, a staysail to the stem head, and a jib on a bowsprit of 3.6 m;
+  - three shrouds a side, the forestay, the topmast stay, the backstays and the mainsheet.
+  - The sails are the cutter's tanned cloths.
+- **The shields clear the shrouds.** Every shield within 0.45 m of a shroud's foot is left off, so twelve hang where eighteen did, three either side of the shrouds on each side.
+- `#330` and its decisions entry now describe the gaff rig and twelve shields. Its options are unchanged.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 53 of 53 pass.** The Mark's dress check now also asks for:
+  - the gaff rig with its boom 2.1 m or more over the deck (2.15 m);
+  - every shield 0.45 m or more from a shroud's foot.
+- **The Mark's sloop** is 28,190 triangles in 14 meshes, each key the same twice. She keeps the Gatelands sloop's lines, rail and deck. She is closed (0 of 900 rays out), clinker (laps 0.025 to 0.033 m), and her walk is clear at all 68 points, under the boom too. The head stands 1.18 m forward of the stem head. The 12 shields stand 0.054 m outboard and 0.02 m under the rail's top.
+- **Pictures:** `ships-marksloop-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noshields`, shot again with the gaff rig.
+### Needs eyes
+- **She now reads as a smaller cutter.** That is the rule (one rig to an island), so what tells the two apart is her clinker, her shields and her size. The cutter is carvel, with no shields.
+- **The bowsprit runs back past the beast's head's neck**, as the cutter's does.
+
+## v80 — Session 902 — Card F11: the sloop in Aurenne's dress (prototype only)
+The FREEZE (#297) holds. The second of the sloop's other dresses, after the Mark's (Sessions 900 and 901). Everything about it is set by answers Michael has already given:
+- **#306:** one rig names the island, and Aurenne's is the lateen.
+- **#316:** the sun-star on Aurenne's sails.
+- **#323:** the laps stay the small hulls' mark.
+- **The colours:** those of Aurenne's caravel (Session 890), which Michael approved on #316.
+
+So nothing is asked. OG-004's Aurenne row ("lateen rigs under the sun-star") was reread.
+
+What changed in `ships.js`:
+- **`o.dress: 'aurenne'`** on `gatelandsSloop`, and `aurenneSloop(o, r)` is that call. The hull is the sloop's to the millimetre and clinker, in the caravel's colours:
+  - tallowed white below the water;
+  - oiled planking above;
+  - the sheer strake blue under a gilt wale.
+  - The materials are the caravel's set (`caravelMats`), with the sloop's keys mapped onto them.
+- **The rig:** the caravel's main lateen, at the sloop's size.
+  - The mast is raked 4° forward, at the sloop's station.
+  - The yard is slung 7.0 m over the deck at 50°, 5.4 m of it forward and 7.4 m aft, on the starboard side.
+  - The sail is white with the gold sun-star (`o.star`, default true).
+  - The tack is lashed at the stem head, and the clew is 2.5 m over the deck.
+  - There are three shrouds on the weather side, a halyard and a forestay.
+  - The sheet is led aft to the rail at z = −5.7, behind the end of the deck's walk. Led to −4.6 it would cross the walk under 2 m.
+- The tiller stays (#306's 3 A, a tiller on the small hulls).
+- **The view:** `ships.html?ship=aursloop`, with the sloop's views and `&nostar`.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 57 of 57 pass.** The earlier hulls' checks are unchanged. One view is new on the page check, with no page errors, and three checks are new, over four keys:
+  - **The builds:** each the same twice, 24,024 triangles in 11 meshes. Her lines, rail and deck are identical to the Gatelands sloop's.
+  - **Closed, clinker and walkable:** none of 900 rays gets out. The laps are 0.025 to 0.033 m. The walk is clear at all 68 points.
+  - **The dress:**
+    - the lateen rig, its yard low forward and high aft, slung to starboard;
+    - the sail's foot 2.5 m over the deck;
+    - the sun-star, with no harp, head or shields;
+    - without the star, the same hull.
+- **Pictures:** `ships-aursloop-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-nostar`.
+### Needs eyes
+- **The white bottom does not show.** At her draft it is all under the water in every picture. Heeled, it would.
+- **The sloop now has all three dresses.** The cog and the galleon next. A Mark cog under the gaff, or an Aurenne galleon under lateens, changes what those classes are, so they want a question first.
+
+## v80 — Session 903 — Card F8: the Mark's ice cavern, the cave's hall in ice (prototype only)
+The FREEZE (#297) holds. Michael's A on #305 set the Gatelands' three places first: the round cairn, the limestone cave and the smugglers' lair, all built and rebuilt to his notes. L10 then asks for places by island. OG-121's Mark panel has "mountain mines, ice caverns, snowed-in mouths". The mine was the first place (Session 857); this is the ice cavern. OG-121 was reread. Its row flags nothing about ice. The sloops took the other islands' dress this run without new hulls, so the cave takes the Mark's the same way, without a new hall. Whether it should have its own shape is asked (#331).
+
+What changed in `places.js`:
+- **`iceMats()`:** the cave's material keys in ice, so the same buckets dress either way:
+  - the rock is blue-white glacier ice (`lime`, `bed`), glassy where wet (`limeWet`);
+  - the drips are icicles and ice columns;
+  - the lake is a frozen sheet, opaque at 0.95;
+  - the falls are frozen, opaque at 0.88, with a faint glow;
+  - the foam and the rimstone pools are frozen white, and the mist is a thin ice fog;
+  - `snow` is new.
+  - The dry shore's skin is snow. With skin and bed in one ice, their 6 mm offset showed the terraces' edges as saw-teeth.
+- **`markIceCave(o, r)`** is `gatelandsCave` with `o.ice`. That takes the ice materials and turns the flowers off.
+  - The flowers' random draws are skipped with them, so the rimstone pools fall in other places. Against the limestone cave built from the same key without its flowers, the hall, the floor, the bridge, the columns, the pools and the walk match to the vertex.
+- **Snow at the mouth:** 46 low drifts along the passage's first 9 m, from its own stream (`<key>:snow`). They thin inward, are banked toward the walls, and lie on a sheet over the floor of the first 6 m.
+- **The view:** `places.html?place=icecave` goes to `places-cave-view.js` with its five views. There the fog is bluer, and the glow off the falls is wider and stronger (160 over 60 m, against 110 over 46).
+### Verified (headless Chromium)
+- **`places.check.mjs`: 37 of 37 pass**, counted from its output. The other places' checks are unchanged. *A correction:* Sessions 883 and 884 reported 37 of 37 for this suite, but it held 34 before this session. One view is new on the page check (the ice cavern's lake, no page errors), and two checks are new, over two keys:
+  - **The builds:** 145,989 to 146,248 triangles in 11 meshes, each key the same twice. The rock's four meshes (hall, passage and floor, wet rock, drips) hash the same as the limestone cave's from the same key, built without flowers. The path is the same, and `walkY` agrees at every point.
+  - **Ice, not rock:**
+    - the walls blue over red;
+    - the lake at 0.95 opacity and the falls at 0.88;
+    - no flowers and no petal mesh;
+    - 46 drifts, all within the passage's first 9 m, at most 0.39 m deep over the walk's line at its 46 points there.
+- **Pictures:** `places-icecave-lake.jpg`, `-shore`, `-falls`, `-bridge` and `-passage`.
+### Needs eyes
+- **Under the torch the snow reads warm**, close to sand, in the passage. The torch is orange (#313's A), and the snow is white. A cold fill at the mouth would set it right.
+- **It is the limestone hall's shape.** Ice caves are mostly tunnels under a glacier, ribbed and scalloped. This one is a karst hall in ice, which is the question (#331).
+- **The ice is not translucent.** The walls are a blue-white matte with a gloss. Light glowing through thin ice would want a shader of its own, and that belongs with card F3's materials.
 ## v80 — Session 897 — The Iron tier: a mail hauberk and a kettle helm (B2, prototype only)
 Armour was the last piece owed in the wardrobe kit (B2 in `character-builder.md`: aprons, cloaks, hoods, robes, dresses, **armour tiers**). OG-019, the tier board Michael kept, draws the canon's ten tiers in three lines on one body. This session builds one tier of the heavy line, Iron, as the sheet draws it: mail to the knee under a belt, and a kettle helm. It follows the method Michael chose on #274 (*drapes hang, shells fit*), to his condition that no arm comes through. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`, and the labels in `builder.js`).
 
@@ -18677,3 +19471,191 @@ The producer sent card F2a back: PR #315's CI on fde9867 failed eleven suites tw
 - **The wolves and the bear at 1.44 times their old size.** The Dire Wolf's back is 1.25 m and the bear's hump 1.5 m: the shares of a man Michael chose, in metres now.
 - **Left at their old size, against the taller people:** the Faolchú (its arms are built in the old unit; it is a boss, and resizing it is the bodies builder's) and the coach's horses (1.6, beside a coach that was not resized). The critic, please.
 - **The dragon** is now twice a man rather than three of the old ones.
+## v80 — Session 907 — Card F8: Aurenne's ruined aqueduct (prototype only)
+The FREEZE (#297) holds. Two answers came back first: Michael's A on #329 (Aurenne's courtyard house, 15 by 15 m with the pantile sloping into the court) and his A on #330 (the Mark's sloop keeps its shields). Both say "as drawn", so nothing was built for them. Their entries move to Answered in `docs/decisions.md`.
+
+Card F8's places by island continue. The Gatelands have their three, and the Mark has its mine and ice cavern (#331 waits). OG-121's Aurenne panel has "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs", and OG-124 has "a ruined aqueduct". I reread both images and their rows. OG-124's row flags its Aurenne as "Tuscan stone farms" where canon §1.3 wants cream plaster and tile, so the aqueduct is built in Aurenne's own dress, not the boards' stone. It is called the old aqueduct, never "Roman" (OG-121's note). The catacombs are burial, so they wait on the quest writer's answer about the dead (§3.1).
+
+What is new in `places.js`:
+- **`aurenneAqueduct(o, r)`:** the aqueduct along x, the valley along z, a metre a unit.
+- **The valley:** 20 m deep in dry turf, with a dry stream bed down its floor, low rocks on its sides, 22 cypresses on its shoulders, and a level terrace at either end.
+- **The arcade:** one outline of the elevation, extruded, with the arches cut as holes.
+  - The piers are 2.2 m wide on a pitch of 8.2 m, with 6 m of clear span under round arches.
+  - Where the ground is low enough the bay is open in a tier. That gives six arches below (springing 14.5 m under the bed, 3.0 m thick) and ten above (springing 6.5 m under it, 2.4 m thick). Nearer the ends the bays are solid wall.
+  - The faces are lime plaster, with brick showing in patches where it has fallen.
+  - The arches are rung in pale ashlar on impost blocks, a string course caps the lower tier, and a cornice carries the channel.
+  - A band of the blue glazed tile (`zellige`) runs under the cornice on both faces.
+- **The channel:** 1.2 m between walls of 0.55 m that stand 0.9 m over the bed under limestone copings, about one in seven of them gone. It is lined in red mortar, with a pale crust to 0.3 m where the water ran. It is dry and has no covers, so its bed is the walk: off the west terrace, in at the open mouth at x = −57, and east.
+- **The ruin (`o.broken`, default true):**
+  - The upper tier and the channel are down over the two bays either side of the pier at x 16.4.
+  - That pier is a stump 2.5 m tall on the string course, with loose blocks on its top.
+  - Both broken ends are ragged outlines: an arch's first voussoirs still spring from the last pier, and the channel's walls end unevenly.
+  - 46 blocks lie heaped on the string course and in the valley under the gap.
+  - `o.broken: false` stands it whole.
+- **A correction made during the session:** the first build's arch holes were wound clockwise, the same way as the outlines. three.js re-winds holes only when it has to flip the outline, so their side walls faced into the masonry. The pictures hid it, because a pier's far face looks like its near one, but the span rays went straight through. The holes are now counter-clockwise.
+- **The view:** `places.html?place=aqueduct` goes to `places-aqueduct-view.js`, under a high south-western sun. It has five views (`aqueduct`, `channel`, `break`, `under`, `end`) and `&whole`.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 45 of 45 pass**, counted from its output (37 before). One view is new on the page check (the aqueduct, no page errors), and seven checks are new, over three keys, broken and whole:
+  - **The builds:** each key the same twice. Broken, 76,190 to 76,670 triangles; whole, 61,614 to 62,214; at most 12 meshes. The valley's ground is 40,800 of those triangles.
+  - **The walk:** 288 points broken and 473 whole. There is a floor under every one at 0 to 0.02 m, open sky overhead, and 0.54 m clear either side.
+  - **The channel:** at 210 points, 1.16 m clear inside the lining (1.2 m between the walls). The walls stand 0.90 m bare or 1.05 m coped.
+  - **The arches:** 14 broken (six of them lower) and 16 whole. Every one is 6.0 m clear, with its crown 3.0 m over its springing.
+  - **The piers:** all 13 reach the ground, each with a face within 0.65 m of a probe 0.4 m over the ground.
+  - **The break:** the walk ends at x 10.2, over a fall of 10.6 to 11.2 m to the lower tier, with the far run's broken end 11.8 m off. Whole, the bed is under the eye at the same place.
+  - **The dress:** plaster, ashlar, tile, lining, crust, brick and copings are all present, and there is no water.
+- **Pictures:** `places-aqueduct-aqueduct.jpg`, `-channel`, `-break`, `-under`, `-end` and `-aqueduct-whole`. The gap is asked as **DECISION #333**: broken as drawn, a way across, or whole.
+### Needs eyes
+- **The ground's dry turf is spotty at a distance.** It is the Mark's `turfDry` tinted gold. Aurenne's hills want their own ground, with olive scrub and terraces (OG-124), and that belongs to card F3's materials.
+- **The brick patches are rectangles laid on the plaster**, not holes in it. They read as fallen render from a distance, and as tiles stuck on from close up.
+- **There is no way down from the terraces into the valley** beyond walking off the slope, and nothing marks the far side's run as reachable. That waits on #333.
+- **The cypresses are lathed spindles**, the plant kit's simplest form; the kit's own cypress comes with F3.
+
+## v80 — Session 908 — Card F8: Aurenne's trade tunnel (prototype only)
+The FREEZE (#297) holds. This is the second of Aurenne's places from OG-121's panel, after the aqueduct (907): its "trade tunnels". I reread OG-121 and its row. The row flags the Aurennais ruins' "Roman" name and the crypts' dead, and neither touches a tunnel. The canon's Aurenne is a trading island of ports, so the tunnel is a road for goods through a headland, from a town's quay to the road inland. Whether it is that or a smugglers' run is asked (#335).
+
+What is new in `places.js`:
+- **`aurenneTunnel(o, r)`:** the quay's portal at z 0 faces +z, and the bore runs 56 m to the inland portal at z −56. It winds 1.6 m either side and runs straight for its last metres at either end, so each portal looks down it.
+- **The bore:** one loft of its section along the line.
+  - The floor is flat and 3.6 m wide, the walls upright to 2.4 m under a round vault (4.2 m at the crown).
+  - The rock is pushed out from its line by up to 0.22 m by its own noise, never in, so the walk's width is a floor, not an average.
+  - It is paved in 2 m lengths of limestone along the line, with two cart ruts 1.4 m apart and a gutter down the west side.
+- **The lamps:** a plastered arched niche every 6 m on alternate walls, each with a dark back, a sill and a clay lamp. With `o.used` (default true) the lamps burn; with `o.used: false` they are out and you go by your torch.
+- **The passing place:** midway the bore widens to 6 m for 6 m, with 3 m ramps either side, so two carts can pass.
+  - Its walls are plastered to a dado under a band of blue glazed tile. The panels are turned to the bore's heading, because it curves most there.
+  - It holds a stone bench, the tally-keeper's cedar table with a ledger and a stool, nine amphorae against the east wall, and two lamps on brackets.
+  - A round shaft 1.2 m across rises through the rock to the sky. The vault is cut under it.
+- **The portals:**
+  - An arch in a plastered frame of 6.4 by 6.4 m, the opening a little wider than the bore's section.
+  - An ashlar ring and jambs on its face, tiled spandrels and a blank tablet. What the tablet says is the quest writer's.
+  - A cornice over it, let into a cliff face of 48 by 18 m.
+  - The quay's paving lies before one portal and the dust road before the other.
+- **Two corrections made during the session:**
+  - The cliff's cut test added its 8 m lift once per vertex, three times over, so the cut never happened and the cliff stood across both arches. It now adds the lift once.
+  - The first lamp spacing (7 m) left only five lamps, so it is now 6 m.
+- **The view:** `places.html?place=tunnel` goes to `places-tunnel-view.js`. It has five views (`quay`, `tunnel`, `passing`, `inland`, `road`) and `&dark`. The lamps are small point lights, with the day down the shaft and a soft fill under it.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 52 of 52 pass**, counted from its output (45 after Session 907). One view is new on the page check (the tunnel, no page errors), and six checks are new, over three keys:
+  - **The builds:** 22,642 triangles in 14 meshes, each key the same twice.
+  - **The walk:** 378 points from the quay through both portals to the road, with the paving under every one at 0.04 m, 4.18 m of headroom or more, and 1.57 m clear either side.
+  - **The bore:** at 75 points it is 3.65 to 6.16 m wide at 1 m (the ramps among them), with 4.22 to 5.57 m to the crown. The passing place is 5.88 m between its dados (6 m in the rock) and 5.46 m high or more.
+  - **Closed:** of 1,200 rays from six points inside, none gets out but by the quay's portal (6), the road's (11) or the shaft. The sky shows straight up the shaft.
+  - **The light:** lit, 10 lamps burn; dark, none and no flame.
+  - **The dress:** the tile, the ledger, the table, the amphorae, the plaster and the ashlar are all there.
+- **Pictures:** `places-tunnel-quay.jpg`, `-tunnel`, `-passing`, `-inland`, `-road` and `-tunnel-dark`.
+### Needs eyes
+- **A small octagonal rosette shows on the quay's cliff**, low and right of the portal. It looks like the rock texture's projection switching axes over a sharp bump in the cliff's noise. Smoothing that noise, or triplanar rock from F3, would clear it.
+- **The vault shows the projection's seams** as faint zig-zags along its length, as the limestone cave did. The same F3 fix would clear them.
+- **The inland portal faces north**, so at this sun it is in shade (`-road`). In the game the hour decides it.
+- **The headland above has no top:** the two cliffs are faces, and the rock between them is not built. A view from above would want the hill (F3's land).
+## v80 — Session 904 — A round shield on the left fist (B2 and L7, prototype only)
+Session 897's Iron tier left the round shield owed: every tier of OG-019's heavy line carries one at the left side. OG-025's hold guards carry a painted round shield too, and OG-044's Compact guards a bronze one. A shield is a thing a body carries, so it is the bodies builder's. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`, and the labels in `builder.js`).
+
+What changed in `people.js`:
+- **The shield is a garment colour, `shield`**, with `shieldPaint` (a second colour, painted in opposite quarters), `shieldRim`, and two flags: `shieldTurn` (default 1 rad) and `shieldMetal` (default off). All of them save and load. The page shows them as "round shield", "shield quarters" and "shield rim".
+- **The shield** (`buildShield`) is 72 cm across:
+  - Seven boards make the board. Their seams and grain show a little through the paint, and the paint wears back to the wood in the last tenth of the radius.
+  - The face is dished 8 mm toward the centre. The back is flat, in bare wood.
+  - It has a rawhide rim, a 5.5 cm iron boss on a flange, and eight rivets.
+  - It takes the helm's colour for the iron where the person wears one.
+  - With `shieldMetal` the face is sheet metal (OG-044's bronze): no seams show, it has hammer dints, and it takes the light as the helm does.
+  - 7,744 triangles.
+- **How it is held.** It has a centre grip, held in the left fist with the arm hanging. The boss is centred on the middle finger's first joint. The face is turned 1 rad forward from the side, so it reads nearly face on from the front, as OG-019 draws it. The first try was turned 0.4 rad, and the shield read edge-on from the front. The wrist bone carries it, so it follows the arm.
+- **Laid outside everything.** It is built last. Its back is laid 5 mm outside the furthest point of whatever lies within its rim: the hand and forearm, the hip, a skirt, the mail, the tabard. Each garment's shell holds every point of the body, but only the points its triangles use are cloth, and the mail's points past its shader cuts are dropped.
+  - The first try counted every point of each shell. It held the board 3.5 cm off the arm, because of cloth that is not there. Lifting the arm 0.3 rad did not close that gap.
+  - If anything other than the arm is the furthest point, the left arm is lifted out from the side 0.03 rad at a time, as for a long skirt. None of the five people the check builds needed it.
+- **Not under a cloak or a cape.** A full cloak hangs over the arm that holds the shield. There it would sit 11.7 cm off the arm, outside the cloak. A shoulder cape stands 7.8 cm out over the board's top edge. So under either the shield is not built, and the genome keeps it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 227 checks pass**, six of them new. Five people carry a shield: a man in mail with a quartered shield, a woman in mail over a long skirt, a man in a tunic alone, a man under the Crown tabard, and an Aurennais man with a bronze shield. For each:
+  - **Nothing is inside the board, the rim or the boss.** This is read back off the shield where the wrist carries it, in the shield's own frame: 0 of 2,400 to 6,400 points near it. The nearest point is 5.0 mm behind its back.
+  - **The arm is on its back**: 0.0 mm off.
+  - **The rim is 48 to 69 cm off the ground.**
+  - It is carried by `wrist.L`, and it saves and loads back.
+- **A Markman under a fur-collared cloak** carries no shield on the arm, and the shield still saves and loads.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield.jpg` and `-shield-back`: the Iron tier with a madder-and-bone quartered shield, front and back.
+  - `builder-armour-shield-close.jpg`: the boss, the rim and the hand behind it.
+  - `builder-armour-shield-woman.jpg`: a woman in mail with a blue shield.
+  - `builder-armour-shield-crown.jpg`: under the Crown tabard, in crimson and gold.
+  - `builder-armour-shield-bronze.jpg`: an Aurennais with a bronze shield and helm.
+### Needs eyes
+- **The bronze face's hammer dints** are a regular pattern. Close up they read as a dotted texture, not as hand-beaten metal. Scattered dints from the seeded stream would be truer.
+- **The grip is not modelled.** The hand rests behind the board with its fingers half open, as in every pose. A fist closed round a bar wants the fingers' own pose.
+- **Owed:**
+  - The shield slung on the back by its strap, under a cloak or a cape.
+  - The crossed strap OG-019 draws over the chest.
+  - The shield held up in a fight. That waits on animation (B4).
+  - OG-028's island shields: the harp kite, the painted round and the sun-star hoplon. The round is this one.
+
+## v80 — Session 905 — The shield slung on the back, its strap across the chest (B2, prototype only)
+Session 904 left two things owed:
+- **The shield under a cloak or a cape.** A cloak hangs over the arm that holds the shield. On the arm, the shield sat 11.7 cm off it, outside the cloak. A shoulder cape stands 7.8 cm out over the board's top edge. So under either the shield was not built.
+- **The crossed strap** that OG-019's heavy line draws over the chest.
+
+The two are one piece: a shield is carried on the back by its strap, the guige. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The shield's parts and placement are split.** `shieldParts` builds the shield, `shieldBack` lays its back off the clouds, and `shieldInside` reads the promise back off the shield where its bone carries it. `wornClouds` holds the person and their clothes as posed points, and `buildShield` (on the arm) now uses all four. On the arm it builds as Session 904 left it (its six checks pass unchanged).
+- **Slung** (`buildShieldBack`), under a cloak or a shoulder cape:
+  - The shield hangs on the back with its top 6 cm under the nape, leaning 0.12 rad with the back.
+  - Its back is laid 5 mm outside whatever lies within its rim. That is the back, the cloak and its fur collar or rolled hood, and the hair (a woman's braids hang inside it).
+  - The chest bone (`spine03`) carries it.
+- **The strap** is 3.5 cm of leather in the belt's colour. It leaves from under the board's top edge on the right, goes over the right shoulder, down across the chest to the left side at the waist, and round the left side back under the board.
+  - It is laid along rays from inside the body, about one a centimetre. At each one it rides 3.5 mm over the furthest point near the ray: within 3 cm for the body and its garments, and within 8 cm for a cloak, whose columns stand that far apart toward the hem.
+  - It is pulled taut, so no point sits below the line between its neighbours. Any dip narrower than 16 steps is closed.
+  - It leaves out the arms' skin and sleeves, so it passes between an arm and the side. It also leaves out the hair, the head and what the head carries, so it goes under long hair and stops at the neck. A cloak is kept, so over a cloak it goes over the cloak.
+  - It is not drawn under the board. "Under" is within the rim and less than 8 cm in front of its back. The first try counted the whole chest as under the board, since it is within the rim seen from behind, and trimmed the strap's front away.
+  - The first try's rays had no reach limit. Over the shoulder they found the helm's brim, and the strap looped up past the head.
+  - With a 3 cm search on the cloak, the strap showed in dashes across the left panel. Between the cloak's columns the rays found no cloth, so the strap dipped under it and rose again. The 8 cm search and the closing fixed it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 230 checks pass.** The owed case (no shield under a cloak) became four checks:
+  - a Markman in mail under a fur-collared cloak;
+  - a woman in a cloak with the hood down;
+  - a Gatelander woman in a shoulder cape;
+  - a man in a shoulder cape.
+- For each of the four:
+  - **The shield** is on the back, carried by `spine03`. Nothing is inside its board, rim or boss: 0 of 6,500 to 21,000 points near it. The nearest is 5.0 mm behind it.
+  - **The strap** is 1.75 to 2.15 m long, carried by `spine03`. Nothing comes through it: 0 of 97 to 192 points within 3 cm under it, measured along its own normal.
+  - **Through** means a point within the strap's width, a step along it, and less than 3 cm over its underside. A cloak's free panel further out, which the strap passes under, is not counted. Measured along a tilted axis at sharp turns, a first count had found such panels 10 to 16 cm away.
+  - Each saves and loads.
+- Session 904's six shield checks pass as before. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield-slung.jpg` and `-slung-back`: the Markman in mail under a light fur-collared cloak, front and back.
+  - `builder-armour-shield-slung-woman.jpg` and `-slung-woman-back`: a woman under a green cloak with the hood down.
+### Needs eyes
+- **The strap's way round the left side** is a level band at the waist. A guige worn this way would run on down to the hip under the arm. Over a cloak it shows as a level band across the left panel.
+- **Where the strap goes from over the cloak to under its left panel**, it passes under the panel's free edge. Whether that reads as cloth over a strap or as a cut is for a closer look.
+- The strap is a ribbon with no thickness and no buckle.
+- Under a cape, the strap rides over the cape where the cape hangs over the chest and shoulder.
+
+## v80 — Session 906 — The fist on the grip, and the bronze beaten by hand (B2, prototype only)
+Session 904 left two things for eyes on the shield in the hand:
+- **The hand rested open** behind the board, its fingers half curled as in every pose.
+- **The bronze face's hammer dints** were a regular pattern of sines, which read as a dotted cloth close up.
+
+This session refines both, as the shield was built. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The left hand closes into a fist** when it holds a shield. The four fingers' joints curl 1.15, 1.35 and 0.95 rad, and the thumb is left as it was.
+  - The boss is now centred on the middle of the four fingers' second joints, the middle of the fist. Before, it was centred on the middle finger's first joint.
+- **The grip.** An ash bar 19.4 cm long crosses the hole on the back of the board, standing on a cleat either side.
+  - The plan was to let the knuckles into the boss's hollow, up to a centimetre short of the dome's base. `shieldBack` now sets the hand's points inside the hole apart, and the readback (`shieldInside`) lets them in up to the dome's base.
+  - It does not happen in this pose. The forearm, which is thicker than the fist, still lays the board, and the fist's furthest knuckle stays 1.7 to 4.8 cm behind the board's back.
+  - So the bar sits at each fist's own depth, 8 mm behind its furthest knuckle (between 1.1 and 4.5 cm off the board), and the cleats are as tall as that.
+  - From behind, the fist reads closed on a bar (`builder-armour-shield-grip.jpg`).
+- **The bronze's dints** are 220 hammer blows placed by the seeded stream. Each is a soft hollow 5 to 17 pixels across, in a 512-pixel map, with a bright lip.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 230 checks pass**, unchanged in number. For the five shields in the hand:
+  - Nothing is inside the board, the rim or the boss's dome: 0 of 3,200 to 6,600 points.
+  - The nearest point behind the board is 5.0 to 6.7 mm from it.
+  - The fist's furthest knuckle in the hole is 1.7 to 4.8 cm behind the board's back.
+- The four slung shields pass as in Session 905. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-shield-grip.jpg` is new: the fist on the grip from behind.
+  - The shield pictures of Sessions 904 and 905 were shot again with the grip; the bronze shows its new dints.
+### Needs eyes
+- **The fist stands off the board** on its cleats, because the forearm lies along the board's back. A real centre grip is flush with the board, with the knuckles in the boss. That wants the wrist bent outward a little, so the fist leads the forearm into the hollow. That is a pose for B4.
+- Whether the dints read as beaten bronze at play distance.
