@@ -897,6 +897,20 @@ function shieldInside(sh, clouds, root) {
   eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); const r = Math.hypot(v.x, v.y); if (r > SHIELD_R + .008 || v.z < -.05 || v.z > .074) return; if (r < SHIELD_HOLE - .004) { if (v.z > SHIELD_DOME - .002) inside++; return; } near = Math.min(near, -v.z); if (v.z > -.003) inside++; });
   return { inside, near: +near.toFixed(4) };
 }
+// the fingers' hinge (Session 912): the knuckles' line, from the little finger's knuckle to the first finger's, in the metacarpals'
+// frame (every finger bone hangs off its metacarpal unturned, so one axis serves all twelve). The bones' own z, about which the
+// hand poses curl, is 36° off it in this skeleton: a curl about z is a curl and a sideways twist. A right hand closes turning
+// positively about the line, a left hand negatively (the lines are mirrored, the curls are not)
+function fistHinge(byName, root, side) {
+  root.updateMatrixWorld(true); const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
+  return at(`finger2-1.${side}`).sub(at(`finger5-1.${side}`)).normalize().applyQuaternion(byName[`metacarpal2.${side}`].getWorldQuaternion(new THREE.Quaternion()).invert());
+}
+// a fist closed on a grip (the shields', Session 906): the four fingers' joints bent 1.15, 1.35 and 0.95 rad about their hinge, the thumb as it was
+function closeFist(byName, root, side, k = 1) {
+  const h = fistHinge(byName, root, side), sg = side === 'R' ? 1 : -1;
+  for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.setFromAxisAngle(h, sg * k * [1.15, 1.35, .95][j - 1]); }
+  root.updateMatrixWorld(true);
+}
 // held: a centre grip in the left fist with the arm hanging, so the shield hangs at the side with its face turned 1 rad forward
 // from the side (OG-019 draws them nearly face on). A rigid piece carried by the left wrist. Its back is laid 5 mm outside the
 // furthest point of whatever lies within its rim (the hand and forearm on the grip, the hip, a skirt, mail, a tabard); where
@@ -906,7 +920,7 @@ function buildShield(G, body, byName, meshes, root) {
   const D = G.dress, R = SHIELD_R, TURN = D.shieldTurn ?? 1, CLEAR = .005, R0 = PACK.rest, q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
   const wrist = byName['wrist.L'], elbow = byName['lowerarm01.L'], armOf = i => R0[i * 3] > .3, handOf = i => R0[i * 3] > .415;
   // the left hand closes on the grip (Session 906): the four fingers curled to a fist, the thumb as it was
-  for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const bn = byName[`finger${f}-${j}.L`]; if (bn) bn.quaternion.copy(q(0, 0, -[1.15, 1.35, .95][j - 1])); }
+  closeFist(byName, root, 'L');
   let place = null, lift = 0;
   for (let k = 0; k <= 10; k++) {
     const clouds = wornClouds(body, meshes, root);
@@ -921,8 +935,8 @@ function buildShield(G, body, byName, meshes, root) {
     if (other <= arm || k === 10) break;
     lift += .03; byName['upperarm01.L'].quaternion.multiply(q(0, 0, .03));
   }
-  // the grip at the fist's own depth: 8 mm behind its furthest knuckle (the forearm, thicker than the fist, holds the board off it)
-  const { G0, N, U, S, back } = place, sh = shieldParts(D, Math.max(-.045, Math.min(-.011, place.inHole - .008)));
+  // the grip at the fist's own depth: 8 mm behind its furthest knuckle (the forearm, thicker than the fist, holds the board off it), up to 7 cm off the board (Session 912: 4.5 until the fist closed on its true hinge)
+  const { G0, N, U, S, back } = place, sh = shieldParts(D, Math.max(-.07, Math.min(-.011, place.inHole - .008)));
   sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(G0).addScaledVector(N, back); root.add(sh); root.updateMatrixWorld(true); wrist.attach(sh);
   const { inside, near } = shieldInside(sh, wornClouds(body, meshes, root), root);
   let tris = 0; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
@@ -1012,7 +1026,7 @@ function kiteInside(sh, clouds, root) {
 function buildKite(G, body, byName, meshes, root) {
   const D = G.dress, TURN = D.shieldTurn ?? 1, CLEAR = .005, R0 = PACK.rest, q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
   const wrist = byName['wrist.L'], elbow = byName['lowerarm01.L'], armOf = i => R0[i * 3] > .3;
-  for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const bn = byName[`finger${f}-${j}.L`]; if (bn) bn.quaternion.copy(q(0, 0, -[1.15, 1.35, .95][j - 1])); }
+  closeFist(byName, root, 'L');
   let place = null, lift = 0;
   for (let k = 0; k <= 12; k++) {
     const clouds = wornClouds(body, meshes, root);

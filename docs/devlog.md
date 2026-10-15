@@ -18699,3 +18699,28 @@ What changed in `people.js`:
   - the sun-star hoplon (Aurenne);
   - the Mark's painted round, as a design (it is the round shield with its quarters);
   - a control for the shape on the builder page (the flag is in the genome and the URL's `dress`).
+
+## v80 — Session 912 — The shield's fist on its true hinge (B2, a fix to Session 906, prototype only)
+Session 910 found that the fingers' curl about their bones' own z axis is 36° off the knuckles' hinge in this skeleton. The left fist that holds a shield (Session 906) curled the same way. It read closed in 906's picture from behind, but measured on the posed hand it was not a fist:
+- each fingertip's last joint swung 2.9 to 6.2 cm sideways along the knuckles' line;
+- it stayed 13.5 to 19.8 cm from the wrist.
+
+With the curl about the knuckles' line, the same angles give:
+- 2.4 cm of sideways drift at most;
+- the last joints 12.2 to 15.0 cm from the wrist.
+
+The fingers fold into the palm. FREEZE #297 is still open, so this touches only the prototypes (`people.js`).
+
+What changed in `people.js`:
+- **`fistHinge` and `closeFist`**, shared by the round shield and the kite. The hinge is the knuckles' line in the metacarpals' frame, as 910 found for the spear's hand. A right hand closes turning positively about it, a left hand negatively: the lines are mirrored, the curls are not. The bends are still 906's 1.15, 1.35 and 0.95 rad.
+- **The round shield's grip bar may now stand up to 7 cm off the board** (it was 4.5 cm). It stands at the fist's own depth, 8 mm behind its furthest knuckle. The closed fist is more compact, so its knuckles now sit 4.0 to 5.8 cm behind the board's back (they were 1.7 to 4.8). At the old limit the bar would have stood 1.3 cm short of the Crown man's fist.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 243 checks pass**, unchanged in number. The ten shields in the hand (five round, five kites) were all laid again round the closed fist:
+  - **The round shields:** nothing is inside the board, rim or boss (0 of 3,357 to 6,680 points near it). The nearest point is 5.0 mm behind it. The rims are 46 to 63 cm off the ground.
+  - **The kites:** 0 of 3,327 to 5,444 points within the outline. The nearest point is 5.0 mm behind it. The points are 21 to 38 cm off the ground.
+- The slung shields and the spears pass as before. `kit.check.mjs` passes. No page errors.
+- **Pictures:** the shields in the hand were shot again: `builder-armour-shield*.jpg` (not the slung ones), `builder-armour-kite*.jpg`, and the spear pictures that carry a shield (`builder-armour-spear.jpg`, `-crown`, `-bronze`). In `builder-armour-shield-grip.jpg` the fist is now closed round the bar.
+### Needs eyes
+- **The fist stands further off the board** (up to 5.8 cm), so on the round shield the cleats stand taller. The truer answer is still 906's: the wrist bent outward so the knuckles go into the boss, which waits on B4.
+- **The other hand poses** (the relaxed hands of every person, `q(0, 0, ±(.25 + .12 j))`) still curl about z. At those small angles the sideways twist is under a centimetre, and they read as relaxed. They are left as they are.
