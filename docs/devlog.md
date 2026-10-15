@@ -19885,3 +19885,29 @@ What changed in `creatures.js`:
   - its corrupted wolf is the Faolchú's kind, and its void spider would be a Scáth spider;
   - Tine and Solas have no corrupted animal on the sheet;
   - the game, after F4.
+
+## v80 — Session 922 — Card F11: the cutter in Aurenne's dress (prototype only)
+Backlog L6's hull line wants each of the game's five classes in each island's dress (OG-004; Michael's 3 A on the ladder). The sloop has all three dresses. The Gatelands has its sloop, cog and galleon, the Mark its cutter and sloop, and Aurenne its caravel and sloop. Session 902's note held back the cog and the galleon in the other dresses, because how a Mark cog carries the gaff, or an Aurenne galleon the lateen, is a question. A cutter has one mast, as a sloop has, so its Aurenne dress follows from rules already chosen, as the sloop's did, and nothing is asked: the lateen is Aurenne's one rig (#306), the sun-star is on the sail (#316's A), and a tiller steers the small hulls (#306's 3 A). FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
+
+What is new in `ships.js`: `markCutter` takes `o.dress: 'aurenne'`, and `aurenneCutter(o, r)` is that.
+- **The hull:** the cutter's own lines and carvel planking, unchanged: 14 by 4.0 m, a draft of 1.45, the deck at 1.0, a plumb stem and a transom. It is dressed in the caravel's colours: tallowed white below the water, oiled wood above, the top two strakes blue, and the gilt line along them. There is no beast's head, since the head is the Mark's (`o.head` defaults false here).
+- **The lateen:** on the cutter's mast at 1.6 m forward, raked 4° forward. It is the sloop's lateen re-cut for this hull: the yard at 50°, slung 7 m over the deck, 4.5 m of yard forward of the sling and 7.6 m aft, on the starboard side. The sail is white with the sun-star, its tack 3.5 m over the deck and its clew 2.5 m. The shrouds are on the weather side only, the halyard runs to the sling, the tack is made fast to the deck, and the sheet leads to the starboard quarter, aft of the walk.
+- **The jib:** the cutter keeps its bowsprit, with one jib from its end to just under the masthead and the clew 2.8 m over the deck. It is bellied to port, and it sits wholly above or forward of the lateen's yard. A lateen with headsails on a bowsprit is the polacre's and the mistico's rig, and it keeps the cutter from reading as a longer sloop. `o.jib: false` takes it off. The Mark's cutter's staysail is dropped: between stem and mast it would cross the lateen's tack.
+- **No boom.** Both sails are loose-footed, so nothing crosses the deck aft of the mast lower than the sail's foot.
+- 20,868 triangles in 11 draws, or 20,692 in 10 without the jib.
+
+The view: `ships.html?ship=aurcutter`, with the cutter's views (`quarter`, `side`, `deck`, and `lap` close on her bow), `&nostar` and `&nojib`.
+
+A correction made during the session: the jib's clew was first at 2.2 m over the deck, the Mark's cutter's height, and there the jib's leech came 0.09 m below the lateen's yard just aft of the tack. The clew is now at 2.8 m, which leaves 0.33 m.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 63 of 63 pass** (57 after Session 902). Two views are new on the page check (no page errors), and four checks are new, over four keys:
+  - **The builds:** 20,868 triangles in 11 meshes, each key the same twice. The cutter's very sections, rail and deck are the Mark's cutter's.
+  - **The hull and the walk:** of 1,260 rays from inside her, none gets out. The planking is carvel and flush. The walk down either side is clear at all 76 points, and nothing is within 2.0 m over the centreline aft of the mast.
+  - **The rig:** the yard is low forward and high aft, slung to starboard, and the sail's foot is 2.5 m over the deck. The jib is 0.33 m or more over the yard wherever the two overlap, bellied to port (its mesh no further to starboard than x 0), with its clew 2.8 m over the deck.
+  - **The dress:** tallow below, blue top strakes, the gilt line, no head and no boom, the sun-star. Without the star and the jib, the hull is the same.
+- **Pictures:** `ships-aurcutter-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-nojib`.
+### Needs eyes
+- **The bare stem head** stands 0.45 m over the sheer with nothing on it, where the Mark's cutter has its beast. From the bow it reads blunt. A carved finial or a gilt sun would answer it, if Michael wants one.
+- **The gilt line stops about a metre short of the stem and the transom**, as the Mark's cutter's does. It follows the rail's stanchions, which stop where the hull narrows.
+- **The jib's cloth is plain white**, with no star and no seams of its own. The lateen carries the star.
+- **Owed:** the cutter in the Gatelands' dress (the square sail on one mast, next); then the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's, all of which need a question first.

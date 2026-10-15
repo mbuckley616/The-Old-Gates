@@ -10,10 +10,11 @@
 // forecastle on its posts, lap close on her stern; &noharp.
 // ?ship=galleon (Session 896): the Gatelands galleon, the cog's views.
 // ?ship=aursloop (Session 902): the sloop in Aurenne's dress, the sloop's views (lap close on her bow); &nostar.
+// ?ship=aurcutter (Session 922): the cutter in Aurenne's dress, the cutter's views (lap close on her bow); &nostar, &nojib.
 // ?ship=marksloop (Session 900): the sloop in the Mark's dress, the sloop's views (lap is close on her bow and its head); &nohead, &noshields.
 import * as THREE from 'three';
 import { Q, W, H, STATS, GLSL_NOISE, makeRenderer, makeComposer, buildTextures, skyDome, clouds, run } from './common.js';
-import { gatelandsSloop, markSloop, aurenneSloop, markCutter, aurenneCaravel, gatelandsCog, gatelandsGalleon } from './ships.js';
+import { gatelandsSloop, markSloop, aurenneSloop, markCutter, aurenneCutter, aurenneCaravel, gatelandsCog, gatelandsGalleon } from './ships.js';
 import { stream } from './pieces.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'quarter'; buildTextures();
@@ -39,8 +40,8 @@ skyDome(scene, SUN); clouds(scene, SUN, { n: 8, d0: 1800, dw: 5000, y0: 300 });
         outgoingLight += vec3(1., .88, .66) * pow(max(dot(Rv, normalize(uSun)), 0.), 300.) * 6.;
         #include <opaque_fragment>`); };
   const sea = new THREE.Mesh(g, m); sea.renderOrder = 2; scene.add(sea); }
-const ASL = Q.get('ship') === 'aursloop', MSL = Q.get('ship') === 'marksloop', CUT = Q.get('ship') === 'cutter', CAR = Q.get('ship') === 'caravel', COG = Q.get('ship') === 'cog', GAL = Q.get('ship') === 'galleon', S = GAL ? gatelandsGalleon({ harp: !Q.has('noharp') }, stream('galleon:kilmore')) : COG ? gatelandsCog({ harp: !Q.has('noharp') }, stream('cog:kilmore')) : CAR ? aurenneCaravel({ star: !Q.has('nostar'), tiller: Q.has('tiller') }, stream('caravel:sabrine')) : CUT ? markCutter({ stripe: Q.has('stripe'), head: !Q.has('nohead') }, stream('cutter:skarvik')) : ASL ? aurenneSloop({ star: !Q.has('nostar') }, stream('sloop:sabrine')) : MSL ? markSloop({ head: !Q.has('nohead'), shields: !Q.has('noshields') }, stream('sloop:skarvik')) : gatelandsSloop({ harp: !Q.has('noharp') }, stream('sloop:kilmore')); scene.add(S.group);
-if (CUT) Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 17 });
+const ACU = Q.get('ship') === 'aurcutter', ASL = Q.get('ship') === 'aursloop', MSL = Q.get('ship') === 'marksloop', CUT = Q.get('ship') === 'cutter', CAR = Q.get('ship') === 'caravel', COG = Q.get('ship') === 'cog', GAL = Q.get('ship') === 'galleon', S = GAL ? gatelandsGalleon({ harp: !Q.has('noharp') }, stream('galleon:kilmore')) : COG ? gatelandsCog({ harp: !Q.has('noharp') }, stream('cog:kilmore')) : CAR ? aurenneCaravel({ star: !Q.has('nostar'), tiller: Q.has('tiller') }, stream('caravel:sabrine')) : ACU ? aurenneCutter({ star: !Q.has('nostar'), jib: !Q.has('nojib') }, stream('cutter:sabrine')) : CUT ? markCutter({ stripe: Q.has('stripe'), head: !Q.has('nohead') }, stream('cutter:skarvik')) : ASL ? aurenneSloop({ star: !Q.has('nostar') }, stream('sloop:sabrine')) : MSL ? markSloop({ head: !Q.has('nohead'), shields: !Q.has('noshields') }, stream('sloop:skarvik')) : gatelandsSloop({ harp: !Q.has('noharp') }, stream('sloop:kilmore')); scene.add(S.group);
+if (CUT || ACU) Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 17 });
 if (CAR || COG) Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 22, bottom: -5 });
 if (GAL) Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 24, bottom: -6 });
 let eye, at;
@@ -57,6 +58,8 @@ else if (CAR) { const CY = S.castle.y;
   else if (VIEW === 'castle') { eye = [-1.1, S.deck + 1.65, -.3]; at = [0, S.deck + 2.1, -6]; cam.fov = 66; cam.fov = 62; }
   else if (VIEW === 'lap') { eye = [8, 4.4, -15.5]; at = [0, 3.4, -7.6]; cam.fov = 45; }
   else { eye = [19, 7, 19.5]; at = [0, 6.4, .5]; } }
+else if (ACU) { if (VIEW === 'side') { eye = [22, 5.0, .5]; at = [0, 6.0, 0]; } else if (VIEW === 'deck') { eye = [.9, S.deck + 1.65, -5.2]; at = [-.2, S.deck + 1.8, 4]; cam.fov = 62; }
+  else if (VIEW === 'lap') { eye = [4.2, 3.0, 11.2]; at = [0, 2.6, 7.0]; cam.fov = 42; } else { eye = [16, 6.4, 17]; at = [0, 5.4, .5]; } }
 else if (VIEW === 'side') { eye = CUT ? [21, 4.2, .5] : [17, 3.2, .5]; at = CUT ? [0, 5.4, 0] : [0, 3.4, 0]; }
 else if (VIEW === 'deck') { eye = [.9, S.deck + 1.65, -5.2]; at = [-.2, S.deck + 1.6, 4]; cam.fov = 62; }
 else if (VIEW === 'lap') { if (CUT) { eye = [3.4, 2.6, 10.2]; at = [0, 2.2, 7.1]; cam.fov = 40; } else if (MSL || ASL) { eye = [3.6, 2.4, 9.6]; at = [0, 1.9, 6.0]; cam.fov = 40; } else { eye = [3.6, .6, 2.2]; at = [2.0, .35, 1.2]; cam.fov = 40; } }
@@ -64,5 +67,5 @@ else { eye = CUT ? [15, 5.6, 16] : [13, 5.2, 14]; at = CUT ? [0, 4.6, .5] : [0, 
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();
-STATS.ship = { ship: GAL ? 'galleon' : COG ? 'cog' : CAR ? 'caravel' : CUT ? 'cutter' : MSL ? 'marksloop' : ASL ? 'aursloop' : 'sloop', view: VIEW, tris: S.tris, draws: S.draws };
+STATS.ship = { ship: ACU ? 'aurcutter' : GAL ? 'galleon' : COG ? 'cog' : CAR ? 'caravel' : CUT ? 'cutter' : MSL ? 'marksloop' : ASL ? 'aursloop' : 'sloop', view: VIEW, tris: S.tris, draws: S.draws };
 run(makeComposer(R, scene, cam, { bloom: .12, sat: 1.05, vig: .28 }), cam);

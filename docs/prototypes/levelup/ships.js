@@ -169,6 +169,17 @@ export function gatelandsSloop(o = {}, r = stream('sloop')) {
 //   o.head (default true): a carved beast's head on the stem head, gilt, as the Mark's halls end their bargeboards (OG-034).
 //   o.stripe: the sails in red and black cloths (OG-004's raiding longship) instead of tanned red-brown.
 //   -> as gatelandsSloop, with boom ({ y, z0, z1 }), stem ([[y, z]...] the stem's line), transom (z), carvel: true.
+// o.dress 'aurenne' (Session 922; #306's one rig to an island, Aurenne's the lateen; #316's A, the sun-star; a tiller, #306's 3 A): the
+//   cutter's own lines and carvel planking, tallowed white below the water, oiled above, the top two strakes blue under the gilt line (the
+//   caravel's colours); no beast's head (o.head defaults false); one lateen on the mast raked 4° forward, its yard slung to starboard, white
+//   with the sun-star (o.star, default true), its foot 2.2 m or more over the deck; and the cutter's bowsprit kept, with one jib on it to the
+//   masthead, bellied to port and wholly above and forward of the lateen's yard (o.jib, default true; a lateen with headsails on a bowsprit
+//   is the polacre's and the mistico's rig). No boom: lateen and jib are loose-footed. aurenneCutter(o, r) is this.
+//   -> as markCutter, with boom null, rig 'lateen', lateen ({ tack, peak, clew, side, top, sling }), jib ({ head, tack, clew } or null), star.
+let ACM = null;
+function aurCutterMats(star) { if (ACM && ACM.star === star) return ACM.M; const C = caravelMats(star);
+  ACM = { star, M: { ...C, tar: C.hull, bottom: C.tallow, jib: new THREE.MeshStandardMaterial({ map: caravelSail(false), roughness: .9, side: THREE.DoubleSide }), iron: new THREE.MeshStandardMaterial({ color: 0x2c2a28, roughness: .5, metalness: .6 }) } }; return ACM.M; }
+export function aurenneCutter(o = {}, r = stream('aurcutter')) { return markCutter({ ...o, dress: 'aurenne' }, r); }
 let CM2 = null;
 function cutterSail(stripe) { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
   for (let i = 0; i < 8; i++) { x.fillStyle = stripe ? (i % 2 ? '#1c1a1a' : '#8a2a1e') : (i % 2 ? '#7a3826' : '#723422'); x.fillRect(i * 64, 0, 64, 512); }
@@ -187,7 +198,7 @@ function quadSail(a, b, c, d, belly, nu = 12, nv = 12) { const P = [], U = [], v
   for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) { const q = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j], [i + 1, j + 1], [i, j + 1]]; for (const [u, v] of q) { const p = at(u / nu, v / nv); P.push(p.x, p.y, p.z); U.push(u / nu, v / nv); } }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.computeVertexNormals(); return g; }
 export function markCutter(o = {}, r = stream('cutter')) {
-  const stripe = !!o.stripe, head = o.head !== false, M = cutterMats(stripe), { put, rod, finish } = kit(M);
+  const AURD = o.dress === 'aurenne', star = AURD && o.star !== false, stripe = !AURD && !!o.stripe, head = AURD ? !!o.head : o.head !== false, M = AURD ? aurCutterMats(star) : cutterMats(stripe), { put, rod, finish } = kit(M);
   const L = 14, W = 4.0, DRAFT = 1.45, DECK = 1.0, SHEER = 1.36, BOW = .45, STERN = .2, NS = 44, NSTR = 12, TH = .04, TRN = .32;
   const zs = -L / 2, zb = L / 2, ZT = zs + .05;
   const sheerAt = z => SHEER + BOW * Math.max(0, z / zb) ** 2 + STERN * Math.max(0, z / zs) ** 2;
@@ -201,7 +212,7 @@ export function markCutter(o = {}, r = stream('cutter')) {
   // carvel: the strakes laid edge to edge, flush, the planking TH thick; red-brown below the waterline, black above
   const KR = 4; for (let s = 0; s < NSTR; s++) { const u0 = s / NSTR, u1 = (s + 1) / NSTR, outer = [], inner = [];
     for (let i = 0; i <= NS; i++) { const z = zAt(i), ro = [], ri = []; for (let k = 0; k <= KR; k++) { const u = u0 + (u1 - u0) * k / KR, p = sect(z, u), n = norm(z, u); ro.push([p[0] + n[0] * TH / 2, p[1] + n[1] * TH / 2, z]); ri.push([p[0] - n[0] * TH / 2, p[1] - n[1] * TH / 2, z]); } outer.push(ro); inner.push(ri); }
-    const key = sect(0, (u0 + u1) / 2)[1] < .02 ? 'bottom' : 'tar';
+    const key = sect(0, (u0 + u1) / 2)[1] < .02 ? 'bottom' : AURD && s >= NSTR - 2 ? 'blue' : 'tar';
     for (const side of [1, -1]) { const mir = rows => rows.map(row => row.map(([x, y, z]) => [x * side, y, z])); put(ribbon(mir(outer), side > 0), key, 0, 0, 0, 0, 0, 0, null); put(ribbon(mir(inner), side < 0), key, 0, 0, 0, 0, 0, 0, null); } }
   // the transom: the stern's section closed by a flat board, black, the gilt line across its head
   { const pts = []; for (let k = 0; k <= 30; k++) { const [x, y] = sect(ZT, k / 30); pts.push(new THREE.Vector2(x + TH / 2, y)); } for (let k = 30; k >= 0; k--) { const [x, y] = sect(ZT, k / 30); pts.push(new THREE.Vector2(-x - TH / 2, y)); }
@@ -231,8 +242,22 @@ export function markCutter(o = {}, r = stream('cutter')) {
   const MZ = 1.6, hatch = { x0: -.55, x1: .55, z0: -1.6, z1: -.5 };
   { const hz = (hatch.z0 + hatch.z1) / 2, hw = hatch.x1 - hatch.x0 + .12, hd = hatch.z1 - hatch.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); }
     put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
+  // Aurenne's dress: the lateen on a mast raked forward, the yard slung to starboard, and the jib on the bowsprit above and forward of it
+  let lateen = null, jib = null, MH = 10.8, BY = DECK + 2.15, BZ1 = zs - .7;
+  if (AURD) { const RAKE = 4 * Math.PI / 180, sy = 7.0, ang = 50 * Math.PI / 180, fw = 4.5, af = 7.6, side = 1, xs = .3, top = DECK + sy + .8, kb = keelAt(MZ) + .1, mast = y => MZ + (y - kb) * Math.tan(RAKE);
+    const Sg = [xs, DECK + sy, mast(DECK + sy)], T = [xs, Sg[1] - fw * Math.sin(ang), Sg[2] + fw * Math.cos(ang)], P = [xs, Sg[1] + af * Math.sin(ang), Sg[2] - af * Math.cos(ang)], Cl = [xs, DECK + 2.5, -4.6];
+    rod([0, kb, MZ], [0, top, mast(top)], .17, .11, 'spar'); rod(T, P, .09, .055, 'spar'); put(lateenSail([T[0], T[1] - .05, T[2] - .15], [P[0], P[1] - .15, P[2] + .2], Cl, side, .55), 'sail', 0, 0, 0, 0, 0, 0, null);
+    rod([xs * .5, top - .1, mast(top)], Sg, .016, .016, 'rope') /* the halyard to the sling */; rod(T, [0, DECK + .05, T[2] + .3], .014, .014, 'rope') /* the tack to the deck */;
+    rod(Cl, [side * (sect(-6.0, 1)[0] - .08), Math.max(DECK + 1.0, sheerAt(-6.0) + .12), -6.0], .012, .012, 'rope') /* the sheet, led aft of the deck's walk */;
+    for (const dz of [-.8, 0, .8]) { const z = MZ + dz - .3; rod([0, top - .3, mast(top - .3)], [-side * (sect(z, 1)[0] + .05), sheerAt(z) - .05, z], .012, .012, 'rope'); } /* the shrouds on the weather side only */
+    rod([0, top - .2, mast(top - .2)], [0, sheerAt(zb) + .35, zb], .014, .014, 'rope') /* the forestay */;
+    if (o.jib !== false) { const JH = [0, top - .4, mast(top - .4) + .05], JT = [0, SP[1] - .05, SP[2] - .25], JC = [0, DECK + 2.8, zb - 1.0];
+      put(quadSail(JT, JC, JC, JH, -.32, 8, 8), 'jib', 0, 0, 0, 0, 0, 0, null); rod([0, top - .3, mast(top - .3)], SP, .014, .014, 'rope') /* the jib's stay */;
+      rod(JC, [-(sect(zb - 2.6, 1)[0] - .06), Math.max(DECK + 1.0, sheerAt(zb - 2.6) + .12), zb - 2.6], .01, .01, 'rope') /* its sheet to the port rail */; jib = { head: JH.map(v => +v.toFixed(2)), tack: JT.map(v => +v.toFixed(2)), clew: JC.map(v => +v.toFixed(2)) }; }
+    lateen = { tack: T.map(v => +v.toFixed(2)), peak: P.map(v => +v.toFixed(2)), clew: Cl, side, top: +top.toFixed(2), sling: Sg.map(v => +v.toFixed(2)), ang: 50, fw, af }; }
+  else {
   // the mast stepped well forward, its topmast; the boom at 2.15 over the deck to past the transom; the gaff peaked up at 30°
-  const MH = 10.8, BY = DECK + 2.15, BZ1 = zs - .7, GT = DECK + 8.4, GL = 6.0, GA = 30 * Math.PI / 180, PK = [0, GT + GL * Math.sin(GA), MZ - GL * Math.cos(GA)];
+  const GT = DECK + 8.4, GL = 6.0, GA = 30 * Math.PI / 180, PK = [0, GT + GL * Math.sin(GA), MZ - GL * Math.cos(GA)];
   rod([0, keelAt(MZ) + .1, MZ], [0, DECK + MH, MZ], .17, .11, 'spar'); rod([0, DECK + MH - .8, MZ], [0, DECK + MH + 2.2, MZ], .08, .06, 'spar');
   rod([0, BY, MZ - .2], [0, BY, BZ1], .08, .07, 'spar'); rod([0, GT, MZ - .2], PK, .07, .06, 'spar');
   // the sails: the gaff main from the boom to the gaff, the topsail over it, the staysail to the stem, the jib to the bowsprit's end
@@ -243,11 +268,12 @@ export function markCutter(o = {}, r = stream('cutter')) {
   // the standing rigging: three shrouds a side, the forestay to the stem head, the topmast stay to the bowsprit, the backstays
   for (const e of [1, -1]) for (const dz of [-.7, 0, .7]) { const z = MZ + dz - .3; rod([0, DECK + MH * .9, MZ], [e * (sect(z, 1)[0] + .05), sheerAt(z) - .05, z], .012, .012, 'rope'); }
   rod([0, DECK + MH * .76, MZ], [0, sheerAt(zb) + .35, zb], .014, .014, 'rope'); rod([0, DECK + MH * .86, MZ], SP, .014, .014, 'rope'); for (const e of [1, -1]) rod([0, DECK + MH, MZ], [e * (sect(zs + 1.5, 1)[0] - .05), sheerAt(zs + 1.5), zs + 1.5], .012, .012, 'rope');
-  rod([0, BY, BZ1 + .4], [0, sheerAt(ZT) + .05, ZT + .2], .012, .012, 'rope') /* the mainsheet */;
+  rod([0, BY, BZ1 + .4], [0, sheerAt(ZT) + .05, ZT + .2], .012, .012, 'rope') /* the mainsheet */; }
   // the rudder hung on the transom, outboard, and its tiller in over the stern
   { const ry0 = keelAt(zs) - .05, ry1 = sheerAt(ZT) + .1; put(new THREE.BoxGeometry(.1, ry1 - ry0, .7), 'tar', 0, (ry0 + ry1) / 2, ZT - .45); rod([0, ry1, ZT - .2], [0, DECK + .95, ZT + 1.9], .045, .035, 'oak'); }
   put(new THREE.TorusGeometry(.22, .05, 6, 18).rotateX(Math.PI / 2), 'rope', .4, DECK + .05, MZ - .6); put(new THREE.CylinderGeometry(.16, .13, .3, 12), 'oak', -.45, DECK + .15, MZ - .75);
-  return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: BY, boom: { y: BY, z0: MZ - .2, z1: BZ1 }, mast: [0, MZ], hatch, sheerAt, keelAt, stem, transom: ZT, carvel: true, head, stripe });
+  return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: AURD ? Math.min(lateen.tack[1], lateen.clew[1]) : BY, boom: AURD ? null : { y: BY, z0: MZ - .2, z1: BZ1 }, mast: [0, MZ], hatch, sheerAt, keelAt, stem, transom: ZT, carvel: true, head, stripe,
+    dress: AURD ? 'aurenne' : 'mark', rig: AURD ? 'lateen' : 'gaff', lateen, jib, star });
 }
 
 // aurenneCaravel(o, r) (Session 886, card F11; Michael's A on #306 keeps one rig to name each island, and Aurenne's is the game's caravel,
