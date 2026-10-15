@@ -20442,3 +20442,35 @@ OG-018 draws Uisce's hall with a drowned skeleton, weed-hung, among its antibodi
 ### Needs eyes
 - Whether the weed reads as weed at game range, or as green rags. It could be the sheet's "rags at the hips" too, if Michael likes it.
 - OG-018 draws them in a pair. Two seeds give two builds of the plan (size, tint); the pairing is the gate's placement, not the kit's.
+
+## v80 — Session 941 — The crossbow (L7, prototype only)
+L7's new kinds of weapon are the spear and the crossbow first (Michael's 6 A). The spear has been in the kit since Session 909; this is the crossbow. Each island has its own make by L7's rule (the Gatelands wood, bone and leather; the Mark stone and iron; Aurenne fine metal and carving), so this asks nothing new. FREEZE #297 is no longer open, but the bodies stay out of the game until F4, so this touches only the prototypes (`people.js`, `builder.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`buildCrossbow`: carried point down in the right fist.** The fist is the spear's (Sessions 909 to 912): the forearm forward, the knuckles plumb, the fingers closed round a round grip 26 mm thick. The tiller runs plumb through it. The butt rises to about the chest (1.38 to 1.59 m) and the prod and stirrup hang by the shin (34 to 55 cm off the ground). The prod spans fore and aft, turned 16° about the tiller so its back tip swings out from the thigh, and the bolt's face looks out from the body. It is unspanned: the string is braced across the tiller's top and there is no bolt.
+- **The tiller is one swept tube** (`sweepTube`, `tillerAt`). It is round in the fist, squared ahead of it to the prod, and deepens and drops toward the belly behind it into a stock 10 cm deep. The same section function builds the mesh and tests what is inside it.
+- **Its fittings:** a nut half sunk in the top, the bolt's groove, a long trigger lever under the belly ahead of the fingers, a bridle binding the prod on fore and aft, and an iron stirrup at the front.
+- **`CROSSBOWS`, the make by island**, chosen by the people or by `crossbowMake`:
+  - **The Gatelands:** a 66 cm yew prod lashed on with three turns of cord a side, a bone nut. 5,536 triangles.
+  - **The Mark:** a 60 cm iron prod, flatter, in an iron bridle, an iron nut. 5,056 triangles.
+  - **Aurenne:** a 64 cm lacquered prod of horn and sinew with pale horn tips, bound in gold, with gold ferrules at the grip and the heel, a bronze nut and stirrup. 5,856 triangles.
+- A full cloak is thrown back off the right shoulder for the crossbow as for the spear. A spear and a crossbow asked together give the spear.
+- `crossbow` (the tiller's wood) is a garment colour and `crossbowMake` a dress flag, so a genome saves and loads it; the page lists it as *crossbow tiller*.
+- A first try had the butt starting 8 cm above the grip's middle, where the thumb sits: 14 points of a hand inside it. The grip now runs to 11.5 cm. A first prod of 70 cm for Aurenne put its back tip 3.6 mm into a man's thigh; it is 64 cm now, and turned.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 279 checks pass** (269 before); `kit.check.mjs` passes.
+- Nine people carry it: each people's make, an Aurennais make in a Gatelander's hand, under mail with a shield, a woman in a long skirt, under a fur-collared cloak, in a robe, an Aurennais woman.
+  - In every one, the crossbow hangs on the right wrist and no point of the hand is inside it (0 of 1,709 to 1,741).
+  - Nothing else comes within 15 mm of it (15.3 to 31.4 mm).
+  - Its stirrup is 34 to 55 cm off the ground, and its bolt's face is turned out.
+  - It saves and loads back.
+- Pictures: `builder-armour-crossbow.jpg` (the Gatelands), `-mark.jpg` (in mail), `-aurenne.jpg`, `-grip.jpg` (close on the fist), `-cloak.jpg` (under a thrown-back cloak).
+
+### Needs eyes
+- **The carry:** the forearm is held forward, as the spear's is. For a crossbow, an arm hanging by the side with the weapon at the thigh might read more natural. That needs a second fist pose, which is B4's.
+- **The butt** reads slim from the side.
+- **Owed:**
+  - Spanning it (a foot in the stirrup, the string drawn to the nut) and shooting it, which is B4's.
+  - A bolt case at the belt.
+  - Each make's carving or knotwork.
