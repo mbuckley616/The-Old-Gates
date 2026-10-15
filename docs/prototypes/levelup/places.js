@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV } from './common.js';
-import { stream, markTextures, aurenneTextures } from './pieces.js';
+import { stream, markTextures, aurenneTextures, gatelandsBuilding, GL_PLANS } from './pieces.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { gatelandsSloop } from './ships.js';
 
@@ -1086,4 +1086,82 @@ export function gatelandsMill(o = {}, r = stream('mill')) {
     return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2) }; };
   return { ...finish(), tower: { r0, r1, h, rad }, hub: hub.toArray().map(v => +v.toFixed(3)), shaft: D.toArray(), sail: { len: SL, from: S0, width: SW, front: .3 }, tipLow: +tipLow.toFixed(2), doors, tail: [+wheel.x.toFixed(2), +wheel.z.toFixed(2)], capY, ground, wind, working,
     /* the sails' lattice outline at a turn th (the four of them): points along the stock and the outer bar, for the clearance checks */ sailPts: th => { const out = []; for (let k = 0; k < 4; k++) { const m = frameAt(th + k * Math.PI / 2); for (let s2 = S0; s2 <= SL + .001; s2 += (SL - S0) / 12) for (const x of [0, SW]) out.push(new THREE.Vector3(x, s2, .3).applyMatrix4(m)); } return out; } };
+}
+
+// ── the Gatelands' lighthouse (Session 963, card F8; L5's "roads and works", OG-046's lighthouses and beacons, OG-058's waystation
+// lighthouse). The Irish precedent is Hook Head: a squat round tower of limewashed rubble with two tarred bands, a corbelled gallery
+// and a lantern on its head, a keeper's house in a walled yard beside it. Built at true size on its headland, the sea to +z:
+//   - the headland: a promontory, a flat top of turf round the tower running on landward (to -z) as a neck, breaking at a ragged cliff that falls 14 m to the sea (the break 12.5 m out on the mean, 10.5 at the nearest);
+//     rocks along the break;
+//   - the tower: battered from 7.6 m across at the foot to 6.6 m at the gallery 20 m up, limewashed, on a tarred plinth, with two tarred
+//     bands; a round-headed door landward, 1.1 by 2.3 m, on a step; small windows up a spiral stair's turn;
+//   - the gallery: a stone deck on 24 corbels round the tower's head, 1 m wider than the tower, an iron railing of 1.05 m;
+//   - the lantern: a pedestal of stone, a glazed room of twelve sides (1.4 m round, 2.4 m high, its astragals painted red), the lamp
+//     and its lens inside, a copper dome gone green, a ventilator ball and a vane;
+//   - the keeper's house: the kit's cottage (GL_PLANS.cottage), landward, in a yard behind a low rubble wall; a path to the door.
+// o.lit (night): the lamp burns. -> { group, tris, draws, top, tower { r0, r1, h }, gallery { y, rOut, rail }, lantern { r, y0, y1 },
+//   focal [x, y, z] (the lamp, over the sea's face), door { x, z, w, h }, cottage { x, z, w, d, ry }, cliff (the break's distance from
+//   the tower in each direction, sampled), ground(x, z), sea }
+let LH = null;
+function lightMats() {
+  if (LH) return LH; const std = (c, ro = .9, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...o }), MI = millMats();
+  LH = { ...MI, rock: mat('rock', { ns: 1.1, color: 0x8c877c, rough: 1 }), rubble: mat('stone', { ns: 1.0, color: 0xc8c2b4, rough: .95 }), red: std(0x8a1e18, .6), copper: std(0x5f9a86, .55, { metalness: .3 }),
+    glass: std(0x1a2226, .05, { transparent: true, opacity: .35, depthWrite: false }), lens: std(0xe8f0f0, .05, { transparent: true, opacity: .55 }),
+    lamp: std(0x3a3020, .4, { emissive: 0xffd890, emissiveIntensity: 0 }), sea: std(0x274a58, .25, { metalness: .1 }) };
+  return LH;
+}
+export function gatelandsLighthouse(o = {}, r = stream('lighthouse')) {
+  const M = lightMats(), B = new Map(), V = (x, y) => new THREE.Vector2(x, y), lit = !!o.lit;
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  // the headland: flat within the break (11 m seaward, stretched landward), the cliff 14 m down to the sea
+  // (a promontory: the break is ragged by its bearing, and landward the neck runs on at the break's width)
+  const SEA = -14, BRK = 12.5, brk = a => BRK + 2.2 * Math.sin(3 * a + .4) + 1.2 * Math.sin(7 * a + 1.3) + .5 * Math.sin(13 * a), dist = (x, z) => { const zz = Math.max(0, z), a = Math.atan2(x, zz); return Math.hypot(x, zz) * BRK / brk(a); };
+  const ground = (x, z) => { const d = dist(x, z), n = .12 * Math.sin(x * .31 + z * .17) + .08 * Math.sin(x * .07 - z * .23);
+    return d < BRK ? n * Math.min(1, d / 6) : Math.max(SEA - 1, n - (d - BRK) * 7 - 1.5 * Math.sin(x * .9 + z * 1.3) * Math.min(1, d - BRK)); };
+  // the ground in two grids: a metre round the headland, three metres down the neck inland
+  for (const [S, X0, Z0, NX, NZ, sink] of [[1, -45, -45, 90, 90, 0], [3, -45, -141, 30, 33, .04] /* 3 m under the fine one, a little lower, so no crack shows at the seam */]) { const pos = [], idx = [], rockI = []; for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = X0 + i * S, z = Z0 + j * S; pos.push(x, ground(x, z) - sink, z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1, x = X0 + (i + .5) * S, z = Z0 + (j + .5) * S; (dist(x, z) < BRK + .5 ? idx : rockI).push(a, c, b, b, c, d); }
+    for (const [k, I] of [['turf', idx], ['rock', rockI]]) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(I); g.computeVertexNormals(); put(g.toNonIndexed(), k, 0, 0, 0, 0, 0, 0, .25); } }
+  { const g = new THREE.PlaneGeometry(400, 400); g.rotateX(-Math.PI / 2); put(g, 'sea', 0, SEA, 0); }
+  for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI - Math.PI / 2 + r() * .05, d = brk(a) + .2 + r() * .5, x = Math.sin(a) * d, z = Math.cos(a) * d, s = .5 + r() * .7;
+    put(new THREE.DodecahedronGeometry(s, 0), 'rock', x, ground(x, z) + s * .3, z, r() * 3, r() * 3, 0, .4); }
+  // the tower: battered, limewashed, on a tarred plinth, two tarred bands
+  const r0 = 3.8, r1 = 3.3, h = 20, rad = y => r0 + (r1 - r0) * y / h;
+  put(new THREE.LatheGeometry([V(.001, -1.2), V(r0 + .05, -1.2), V(r0, 0), V(r1, h), V(.001, h)], 48), 'lime');
+  put(new THREE.CylinderGeometry(rad(.6) + .02, r0 + .02, .6, 48, 1, true), 'tar', 0, .3, 0);
+  for (const [y0, y1] of [[7.0, 9.4], [13.2, 15.6]]) put(new THREE.CylinderGeometry(rad(y1) + .012, rad(y0) + .012, y1 - y0, 48, 1, true), 'tar', 0, (y0 + y1) / 2, 0);
+  const bat = Math.atan((r0 - r1) / h), hole = (a, y, w, ht, door) => { const ym = y + (ht - w / 2) / 2, rr = rad(ym) + .03, x = Math.sin(a) * rr, z = Math.cos(a) * rr, hy = y + ht - w / 2, hr = rad(hy) + .035;
+    put(new THREE.PlaneGeometry(w, ht - w / 2), 'dark', x, ym, z, -bat, a); put(new THREE.CircleGeometry(w / 2, 10, 0, Math.PI), 'dark', Math.sin(a) * hr, hy, Math.cos(a) * hr, -bat, a);
+    put(new THREE.RingGeometry(w / 2, w / 2 + .2, 10, 1, 0, Math.PI), 'dress', Math.sin(a) * (hr + .01), hy, Math.cos(a) * (hr + .01), -bat, a);
+    if (door) { put(new THREE.BoxGeometry(w * .94, ht - w / 2 - .02, .05), 'red', x - Math.sin(a) * .03, y + (ht - w / 2) / 2, z - Math.cos(a) * .03, 0, a); put(new THREE.BoxGeometry(w + .6, .16, .55), 'dress', Math.sin(a) * (rr + .2), .08, Math.cos(a) * (rr + .2), 0, a); } return { x: +x.toFixed(2), z: +z.toFixed(2), w, h: ht }; };
+  const door = hole(Math.PI, 0, 1.1, 2.3, true);
+  for (let f = 0; f < 6; f++) hole(Math.PI + .9 + f * 1.05, 3.2 + f * 2.7, .5, .9, false);
+  // the gallery: a stone deck on corbels, a railing; the lantern's pedestal, glazing, astragals, lamp and lens, dome, ball and vane
+  const GY = h + .3, GR = r1 + 1.0; put(new THREE.CylinderGeometry(GR, GR - .15, .3, 48), 'dress', 0, h + .15, 0);
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, d = r1 + .35; put(new THREE.BoxGeometry(.3, .55, .8), 'dress', Math.sin(a) * d, h - .27, Math.cos(a) * d, 0, a); }
+  const RAIL = 1.05; for (const y of [GY + .5, GY + RAIL]) put(new THREE.TorusGeometry(GR - .08, .03, 5, 48), 'iron', 0, y, 0, Math.PI / 2);
+  for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2; put(new THREE.CylinderGeometry(.022, .022, RAIL, 5), 'iron', Math.sin(a) * (GR - .08), GY + RAIL / 2, Math.cos(a) * (GR - .08)); }
+  const LR = 1.4, P0 = GY, P1 = GY + .9, L0 = P1, L1 = P1 + 2.4; put(new THREE.CylinderGeometry(1.65, 1.75, P1 - P0, 24), 'lime', 0, (P0 + P1) / 2, 0); put(new THREE.CylinderGeometry(1.7, 1.7, .1, 24), 'dress', 0, P1 - .05, 0);
+  put(new THREE.CylinderGeometry(LR, LR, L1 - L0, 12, 1, true), 'glass', 0, (L0 + L1) / 2, 0);
+  for (let k = 0; k < 12; k++) { const a = (k + .5) / 12 * Math.PI * 2, d = LR * Math.cos(Math.PI / 12); put(new THREE.BoxGeometry(.06, L1 - L0, .06), 'red', Math.sin(a) * d, (L0 + L1) / 2, Math.cos(a) * d, 0, a); }
+  for (const y of [L0 + .04, L0 + (L1 - L0) / 2, L1 - .04]) put(new THREE.CylinderGeometry(LR + .03, LR + .03, .07, 12, 1, true), 'red', 0, y, 0);
+  const FY = L0 + 1.1; put(new THREE.CylinderGeometry(.06, .08, 1.0, 8), 'iron', 0, L0 + .5, 0); put(new THREE.CylinderGeometry(.5, .5, .9, 16, 1, true), 'lens', 0, FY, 0); put(new THREE.SphereGeometry(.18, 12, 8), 'lamp', 0, FY, 0);
+  put(new THREE.SphereGeometry(LR + .12, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, .75, 1), 'copper', 0, L1, 0); put(new THREE.CylinderGeometry(LR + .2, LR + .2, .12, 24), 'copper', 0, L1, 0);
+  put(new THREE.SphereGeometry(.3, 12, 8), 'copper', 0, L1 + (LR + .12) * .75 + .2, 0); put(new THREE.CylinderGeometry(.03, .03, 1.2, 6), 'iron', 0, L1 + (LR + .12) * .75 + .9, 0); put(new THREE.BoxGeometry(.7, .25, .02), 'iron', .25, L1 + (LR + .12) * .75 + 1.3, 0, 0, .6);
+  // the keeper's house: the kit's cottage, landward, its front door to the tower's side; a yard wall of rubble round it and the tower's foot
+  const plan = GL_PLANS.cottage({ paint: 'red' }); plan.r = stream('lighthouse-cottage'); const cot = gatelandsBuilding(plan), CX = -2.5, CZ = -15, CRY = 0;
+  cot.position.set(CX, ground(CX, CZ) - .05, CZ); cot.rotation.y = CRY;
+  { const pts = []; for (let k = 0; k <= 44; k++) { const a = Math.PI * .45 + k / 44 * Math.PI * 1.1; pts.push([Math.sin(a) * 10 - 1, Math.cos(a) * 10 - 9.5]); }
+    for (let k = 0; k + 1 < pts.length; k++) { const [x0, z0] = pts[k], [x1, z1] = pts[k + 1], mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, L = Math.hypot(x1 - x0, z1 - z0);
+      put(new THREE.BoxGeometry(L + .05, 1.1 + r() * .15, .55), 'rubble', mx, ground(mx, mz) + .5, mz, 0, Math.atan2(x1 - x0, z1 - z0) + Math.PI / 2, 0, .7); } }
+  { const cd = cot.userData.door, ex = CX + cd.x, ez = CZ + cd.z - .3, sx = door.x, sz = door.z - .9, n = Math.round(Math.hypot(ex - sx, ez - sz) / .85), ang = Math.atan2(ex - sx, ez - sz);
+    for (let k = 0; k <= n; k++) { const x = sx + (ex - sx) * k / n, z = sz + (ez - sz) * k / n; put(new THREE.BoxGeometry(1.2, .06, .8), 'path', x + (r() - .5) * .08, ground(x, z) + .03, z, 0, ang + (r() - .5) * .08); } }
+  M.lamp.emissiveIntensity = lit ? 4 : 0;
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'sea', 'glass', 'lens'].includes(k); m.receiveShadow = k !== 'sea'; group.add(m); tris += g.attributes.position.count / 3; }
+  group.add(cot); tris += cot.userData.tris;
+  const cliff = []; for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; let d = 0; while (d < 60 && ground(Math.sin(a) * d, Math.cos(a) * d) > -1) d += .25; cliff.push(+d.toFixed(2)); }
+  return { group, tris: Math.round(tris), draws: group.children.length - 1 + cot.userData.calls, top: +(L1 + (LR + .12) * .75 + 1.5).toFixed(2), tower: { r0, r1, h }, gallery: { y: GY, rOut: GR, rail: RAIL, rIn: r1 }, lantern: { r: LR, y0: L0, y1: L1, pedestal: 1.75 },
+    focal: [0, FY, 0], door, cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: cot.userData.door }, cliff, ground, sea: SEA, lit };
 }

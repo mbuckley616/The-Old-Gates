@@ -21162,3 +21162,47 @@ Corrections made during the session:
 - **The great book on the lectern is a pale slab** at this distance, with no text or binding to read.
 - **The gallery's presses darken it.** It might want a lamp of its own for the Mages, who read there.
 - **The Mark's and Aurenne's guild halls** each need a house, as the Gatelands' did. That is a question like #352, and is not asked yet.
+
+## v80 — Session 963 — The Gatelands' lighthouse (card F8, prototype only)
+L5's "roads and works" (OG-046: "lighthouses and beacons"; OG-058's waystations list one too) has had the mine (857), the aqueduct (907) and the windmill (949). The lighthouse is next. The Gatelands' register is Irish, so the precedent is Hook Head, the old lighthouse on its promontory in Wexford: a squat round tower, limewashed, with two black bands, a gallery on corbels and a lantern on its head, and the keepers' houses in a walled yard. It is a work in the land, so it lives in `places.js` beside the mill, with its own view (`places-lighthouse-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`. The one import added to `places.js` is the kit's `gatelandsBuilding` and `GL_PLANS` from `pieces.js`.
+
+**The lighthouse** (`gatelandsLighthouse` in `places.js`, at true size, the sea to +z):
+- **The headland:** a promontory of turf over a ragged cliff that falls 14 m to the sea. The break is 12.5 m out on the mean, its line roughened by bearing, and runs on inland as a neck. Rocks lie along the break. The ground is two grids, a metre round the headland and three metres inland. The coarse one is tucked under the fine one so no crack shows at the seam.
+- **The tower:** limewashed rubble, battered from 7.6 m across at the foot to 6.6 m at the gallery 20 m up, on a tarred plinth, with two tarred bands.
+  - A round-headed red door of 1.1 by 2.3 m faces landward on a step.
+  - Six small windows climb the stair's turn.
+- **The gallery:** a stone deck 1 m wider than the tower on 24 corbels, and an iron railing of 1.05 m on 32 standards.
+- **The lantern:**
+  - a stone pedestal, and a glazed room of twelve sides, 1.4 m round and 2.4 m high, its astragals painted red;
+  - inside, the lamp on its column within a glass lens;
+  - a copper dome gone green, a ventilator ball, and a vane.
+  - With `o.lit`, the lamp burns. At night the page adds its light and a faint beam out to sea.
+- **The keeper's house:** the kit's thatched cottage (`GL_PLANS.cottage`), landward, its front to the tower. It stands in a yard behind a low rubble wall, and a flagged path runs from the tower's door to its door.
+- 26,516 triangles in 15 draws, and the cottage's 11. The lamp is 36.3 m over the sea and 26.2 m from the headland to the vane.
+
+The view: `places.html?place=lighthouse`, with `view=light` (from the landward neck), `sea` (from the water under the cliff), `gallery` (by the lantern) and `far` (from along the coast), plus `&night`.
+
+Corrections made during the session:
+- **The headland's shape.** It was first a round mound falling away on every side, which read as a cone from the sea. It is now a promontory with a near-vertical ragged cliff and a neck inland.
+- **The ground's triangles.** The ground first took 37,136 triangles, over the 30,000 budget. Two grids brought it to 26,516.
+- **The cliff's edge.** The check first found the tower 5.2 m from the cliff's break on its nearest bearing, under the 6 m asked. The headland was widened rather than the rule relaxed.
+- **The landward camera** first stood on the east cliff's edge, where the neck is narrower.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 82 of 82 pass** (76 after Session 949). Three views are new on the page check: the landward view, from the sea, and far by night, all with no page errors. Three checks are new, over three keys:
+  - **The builds:** 26,516 triangles in 15 meshes and the cottage's 11, each the same twice.
+  - **The gallery and the light:**
+    - the railing 1.05 m;
+    - a walk of 2.47 m round the lantern's pedestal;
+    - the lamp 36.3 m over the sea, seen from a deck 4 m up at 16.7 sea miles (2.08 (√H + √h));
+    - the lamp burns when lit.
+  - **The ground:**
+    - the tower 6.7 m back from the cliff's break seaward;
+    - its door landward on the flat;
+    - the keeper's house on the flat (its corners within 0.17 m), 8.7 m from the tower, its door toward it.
+- **Pictures:** `places-lighthouse-light.jpg`, `-sea`, `-gallery`, `-far` and `-night`.
+### Needs eyes
+- **The tower is plain above its door.** Hook Head's has a stair turret and buttressing at its foot, and a medieval tower's batter is steeper.
+- **The beam is a fixed cone.** A lighthouse in the game would turn it by the clock, and whether it turns at all (a fixed light or a flashing one) is a look call.
+- **The cliff is one rock colour and one grid's facets.** At sea level the grid's steps show.
+- **The yard wall is a plain arc** and stops short at the neck's edge.
+- **Owed:** the rest of L5's works (a shipyard, a toll gate, a watchtower, a ferry).
