@@ -177,11 +177,15 @@ function ssShot(){try{if(typeof REN==='undefined'||!REN||!scene||typeof CAM==='u
 function ssPic(key){const m=ssEntry(key);if(m&&!m.pic)return Promise.resolve(null);return ssGet(ssPicKey(key)).catch(()=>null);}
 function ssPutPic(key,url){if(!url||typeof url!=='string'||!/^data:image\/jpeg;base64,/.test(url)||url.length>200000)return Promise.resolve(false); /* a picture lost is never a save lost */
   return ssPut(ssPicKey(key),url).then(()=>{SS.cache[ssPicKey(key)]=url;return true;}).catch(()=>false);}
-function ssWrite(kind,slot,label){let meta,str,wstr,pic=null;
+// S951 — a write points Continue at itself only if nothing was loaded while it was in flight: a slow autosave that lands after
+// you load another save from the menu kept the save but pointed Continue back at the one you left (QA, 14 Oct). Every load
+// passes through _applyLoadData, which counts it.
+let _ssLoadGen=0;
+function ssWrite(kind,slot,label){let meta,str,wstr,pic=null;const lg=_ssLoadGen;
   return Promise.resolve().then(()=>{const r=_buildSaveRows();pic=ssShot(); /* S662 — the rows (and the place's name) are read before the picture, which takes 2–3 s on a slow GL and ran out the threshold's 3 s (SS_THRESHOLD) */ str=ssStringify(r.c);wstr=ssStringify(r.w);meta=ssMetaFrom(ssJoinPayload(r.c,r.w),kind,slot);meta.size=str.length+wstr.length;meta.v=SAVE_VERSION;
       const rows=()=>ssPut(ssWorldKey(meta.key),wstr).then(()=>ssPut(meta.key,str)); /* S658 — a write the store refuses once is tried once more on a fresh connection before the player is told it failed (main's first menu save failed so on CI, 8 Oct, and the next went through); the first refusal is kept in SS.retried */
       return rows().catch(e=>{SS.retried={ts:Date.now(),why:ssWhy(e),kind};console.warn('save: retrying once after',e);if(SS.db){try{SS.db.close();}catch(_){}SS.db=null;}return rows();}).then(()=>ssPutPic(meta.key,pic)).then(ok=>{if(ok){meta.pic=1;meta.picSize=pic.length;}else ssDel(ssPicKey(meta.key));});}) /* Session 456 — the world row first: a v3 character row with no world beside it is the failure the load names */
-    .then(()=>{SS.lastErr=null;SS.cache[meta.key]=str;SS.cache[ssWorldKey(meta.key)]=wstr;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();ssSetActive(meta.key);if(label!==false)showMsg(label||`💾 Saved — ${kind==='auto'?'autosave':'slot '+(slot+1)}.`,'#c8e88a');return meta;})
+    .then(()=>{SS.lastErr=null;SS.cache[meta.key]=str;SS.cache[ssWorldKey(meta.key)]=wstr;SS.idx=SS.idx.filter(e=>e.key!==meta.key);SS.idx.push(meta);ssSaveIndex();if(_ssLoadGen===lg)ssSetActive(meta.key);if(label!==false)showMsg(label||`💾 Saved — ${kind==='auto'?'autosave':'slot '+(slot+1)}.`,'#c8e88a');return meta;})
     .catch(e=>{const why=ssWhy(e);SS.lastErr={ts:Date.now(),why,kind};console.error('save',e);try{addLog('⚠',`Save failed (${kind==='auto'?'autosave':'slot '+(slot+1)}): ${why}`);}catch(_){}showMsg('⚠ Save failed — '+why,'#e88a8a');return null;});}
 function saveToSlot(n){return ssWrite('manual',n);}
 function ssAutosave(){const cid=ssCharId();const autos=SS.idx.filter(e=>e.charId===cid&&e.kind==='auto').sort((a,b)=>a.ts-b.ts);let slot=0;const used=new Set(autos.map(a=>a.slot));for(let i=0;i<SS_AUTO;i++){if(!used.has(i)){slot=i;break;}if(i===SS_AUTO-1)slot=autos[0].slot;}
@@ -385,6 +389,7 @@ function _buildSavePayload(){
 
 
 function _applyLoadData(d,w){
+  _ssLoadGen++; /* S951 — a write still in flight no longer points Continue at itself (ssWrite) */
   if(w)d=ssJoinPayload(d,w); /* Session 456 — the character row and the world row; one joined payload, or an old one-row save, is d alone */
   _castMin=null; /* S685 — a load starts the caster's count afresh, so a cast made after loading rolls as it did after the save (casterRand) */
   xp=d.xp||0; level=d.level||1; xpNext=d.xpNext||200;

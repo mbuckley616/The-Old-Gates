@@ -20963,3 +20963,18 @@ They are built with the first wave in the sheet's session 3.
 - `fists` and `fistswing` pass. A punch at Hand-to-hand 5 lands for 1, and the starting weapon for 4. (`tpfists` was named in the same run and did not run; the runner reported 2 of 2.)
 ### Needs eyes
 - **An untrained brawl is long.** Every punch at Hand-to-hand 5 does 1, so a Bandit is 25 punches and a tavern brawl at level 1 drags. That is C as written: the fists' 2 to 3 on a ×0.64 multiplier. If it reads too long in play, the lever is the fists' roll (`FISTS.atk`, 2 to 4) or a Monk's suggested set taking Hand-to-hand as a major (it would start at 25, where a punch is 1 or 2). Both are Michael's call.
+
+## v80 — Session 951 — A late autosave no longer re-points Continue (QA's routed save bug)
+QA found this on 14 Oct and the producer routed it here: `ssWrite` (`70-saves.js`) set the active key, the save Continue loads, whenever a write landed, whatever had happened while it was in flight. An autosave fires, the disk is slow, and you load another save from the menu. The autosave lands after the load and points Continue back at the save you had just left. The next Continue, or a reload of the page, puts you there. `coopsaves` went FLAKY on auto/backlog this way. QA's fix to the test waits for the writes; this fixes the game.
+
+**The fix.** A counter, `_ssLoadGen`, counts loads. `_applyLoadData` bumps it, since every load passes through it (the menu, Continue, the death screen's reload), and so does `ccBegin`, since a new character is a load of a kind. `ssWrite` notes the counter when it starts. When it lands, it points Continue at itself only if the counter has not moved. The save itself is always written, indexed and cached, so nothing is lost. It is in the list where you left it; it is just not where Continue goes. Two writes with no load between them behave as before: the later one is active.
+### Verified (headless Chromium)
+- **`latesave`** (new), 6 of 6. It fails its third check on the code before this session, so it reproduces the bug: Continue pointed at `…_auto_4`, the late autosave, not the slot just loaded.
+  - It saves slots 1 and 2, holds the store's put open, starts an autosave, and loads slot 1 from the menu (`_slotLoadClick`): gold 111, active slot 1.
+  - When the autosave lands, Continue still points at slot 1.
+  - The autosave is in the list with the 333 gold it saved.
+  - A save with nothing loaded while it is written still points Continue at itself.
+- `coopsaves` and `saveui` pass. `tpfists`, owed from Session 950, is in the PR comment.
+- A correction to Session 950's entry: `tests/run.mjs` takes one name, as a prefix, so `fists fistswing tpfists` ran the two suites whose names begin `fists`. `tpfists` runs here.
+### Needs eyes
+- Nothing to see in play. A player who loads from the menu while *Autosaved.* is still on its way finds Continue where they left it.

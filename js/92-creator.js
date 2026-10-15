@@ -702,6 +702,7 @@ function ccBegin(){
   playerName = raw || 'Traveller';
   playerArchetype = _ccState.archetypeId;
   skillsInit(playerArchetype,1); // S941 — the archetype's majors at 25, minors at 15, the rest at 5
+  _ssLoadGen++; // S951 — a new character, like a load: the last one's autosave still in flight keeps its save but not Continue
   // Copy chosen attribute distribution into the live ATTRS.
   for(const k of Object.keys(_ccState.attrs)){
     ATTRS[k] = _ccState.attrs[k]||0;
