@@ -1010,3 +1010,80 @@ export function gatelandsAbbey(o = {}, r = stream('abbey')) {
     tower: { x: TX, z: TZ, r: TR0, top: TH + 4.4, door: { sill: SILL, ry: TRY, x: TX + Math.cos(TRY) * (tr(SILL + .9) + .15), z: TZ - Math.sin(TRY) * (tr(SILL + .9) + .15) } } /* on the sill, at its outer edge */,
     cross: { x: CRX, z: CRZ, h: 4.49, ry: CRY, ring: 3.35 }, cells, cell: { r: CI, h: CHi, door: [CDW, CDH] } };
 }
+
+// ── the Gatelands' tower mill (Session 949, card F8; backlog L5's roads and works, OG-046's "farms and windmills"; OG-014's whitewashed
+// country). A tower mill of the south-east coast's kind, at true size, its door to +z:
+//   - the tower: rubble, limewashed, battered from 6 m across at the foot to 4.6 m at the curb 9 m up, a tarred plinth; two doors, front
+//     and back (so the miller can come and go whichever way the sails face), round-headed under dressed stone; four floors of small
+//     windows turning up the tower; a millstone worn out and leaned by the door, sacks of meal;
+//   - the cap: thatched, as the old Irish mills' were, an ogee of straw on a timber curb that turns on the tower's top;
+//   - the windshaft: out of the cap's front at 6° up, the hub 4.2 m out from the tower's axis;
+//   - the sails: four commons, each a stock 8.6 m from the hub, a lattice of bars on the trailing side 1.9 m wide from 1.6 m out, and
+//     its cloth: spread (o.working, the default) or furled along the stock (false: a still day, or a mill at rest);
+//   - the tail pole: from the cap's back down to a cart wheel on the ground, by which the miller turns the cap into the wind.
+// o.wind (the cap's turn, radians; 0 faces the sails to +z), o.angle (the sails' turn about the shaft). -> { group, tris, draws, top,
+//   tower { r0, r1, h }, hub [x, y, z], shaft [dx, dy, dz] (its unit direction), sail { len, from, width }, tipLow (the lowest tip over
+//   the ground at this angle), doors [{ x, z, w, h, face }], tail [x, z] (the wheel), ground(x, z) }
+let MI = null;
+function millMats() {
+  if (MI) return MI; markTextures(); const std = (c, ro = .9, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...o });
+  MI = { lime: mat('plaster', { ns: .8, color: 0xf0ece0, rough: .95 }), tar: std(0x161412, .7), dress: mat('ashlar', { ns: .9, color: 0xc8c2b2, rough: .9 }), thatch: mat('thatch', { ns: 1.0, color: 0xe6d098, rough: 1 }),
+    timber: mat('beam', { ns: 1.0, color: 0x6a5038, rough: .9 }), sailwood: mat('wood', { ns: .8, color: 0x8a6c4c, rough: .85 }), cloth: std(0xe6dcc4, .95, { side: THREE.DoubleSide }), door: mat('wood', { ns: .8, color: 0x2e5a48, rough: .7 }),
+    dark: std(0x0d0b09, 1), iron: std(0x2a2826, .5, { metalness: .6 }), grit: mat('rock', { ns: .8, color: 0xb0a690, rough: 1 }), sack: mat('plaster', { ns: .4, color: 0xc8b48c, rough: 1 }), turf: mat('turfMoss', { ns: .8, color: 0xeeffc4, rough: 1 }),
+    path: mat('cobble', { ns: 1.0, color: 0x9a9284, rough: .95 }) };
+  return MI;
+}
+export function gatelandsMill(o = {}, r = stream('mill')) {
+  const M = millMats(), B = new Map(), V = (x, y) => new THREE.Vector2(x, y), wind = o.wind ?? 0, ang = o.angle ?? .35, working = o.working !== false;
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const putM = (geo, k, m4, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a); g.applyMatrix4(m4); worldUV(g, uv); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  // the ground: a knoll, flat for 7 m round the tower and falling gently away; a path of stone to the front door
+  const ground = (x, z) => { const d = Math.hypot(x, z); return d < 7 ? 0 : -(d - 7) * .05 + .15 * Math.sin(x * .21 + z * .13) * Math.min(1, (d - 7) / 6); };
+  { const S = 1.5, N = 60, X0 = -45, pos = [], idx = []; for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) { const x = X0 + i * S, z = X0 + j * S; pos.push(x, ground(x, z), z); }
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'turf'); }
+  for (let z = 3.2; z < 30; z += .9) put(new THREE.BoxGeometry(1.4, .06, .86), 'path', (r() - .5) * .1, ground(0, z) + .02, z, 0, (r() - .5) * .08);
+  // the tower: a battered round of rubble, limewashed; the tar plinth; the doors and windows cut as dark reveals with dressed heads
+  const r0 = 3.0, r1 = 2.3, h = 9.0, rad = y => r0 + (r1 - r0) * y / h;
+  put(new THREE.LatheGeometry([V(.001, -.5), V(r0 + .05, -.5), V(r0, 0), V(r1, h), V(.001, h)], 40), 'lime');
+  put(new THREE.CylinderGeometry(rad(.5) + .02, r0 + .02, .5, 40, 1, true), 'tar', 0, .25, 0);
+  /* each opening laid on the wall's batter (leaning in by bat) and just proud of it, so its foot does not sink into the stone */
+  const bat = Math.atan((r0 - r1) / h), doors = [], hole = (a, y, w, ht, k) => { const ym = y + (ht - w / 2) / 2, rr = rad(ym) + .03, x = Math.sin(a) * rr, z = Math.cos(a) * rr, at = yy => [Math.sin(a) * (rad(yy) + .035), Math.cos(a) * (rad(yy) + .035)];
+    put(new THREE.PlaneGeometry(w, ht - w / 2), 'dark', x, ym, z, -bat, a); { const [hx, hz] = at(y + ht - w / 2); put(new THREE.CircleGeometry(w / 2, 10, 0, Math.PI), 'dark', hx, y + ht - w / 2, hz, -bat, a);
+      put(new THREE.RingGeometry(w / 2, w / 2 + .2, 10, 1, 0, Math.PI), 'dress', hx + Math.sin(a) * .01, y + ht - w / 2, hz + Math.cos(a) * .01, -bat, a); }
+    if (k) { put(new THREE.BoxGeometry(w * .94, ht - w / 2 - .02, .05), 'door', x - Math.sin(a) * .03, y + (ht - w / 2) / 2, z - Math.cos(a) * .03, 0, a); put(new THREE.BoxGeometry(w + .5, .16, .5), 'dress', Math.sin(a) * (rr + .15), .08, Math.cos(a) * (rr + .15), 0, a); doors.push({ x: +x.toFixed(2), z: +z.toFixed(2), w, h: ht, face: a }); } };
+  hole(0, 0, 1.05, 2.15, true); hole(Math.PI, 0, 1.05, 2.15, true);
+  for (let f = 0; f < 4; f++) { const y = 1.2 + f * 2.1, a0 = f * 1.1 + .6; for (let k = 0; k < 2; k++) hole(a0 + k * Math.PI, y, .55, .8, false); }
+  // the curb at the tower's head and the cap of thatch on it, an ogee to a finial
+  const capY = h + .25; put(new THREE.CylinderGeometry(r1 + .22, r1 + .22, .25, 40), 'timber', 0, h + .125, 0);
+  put(new THREE.LatheGeometry([V(.001, 0), V(r1 + .45, 0), V(r1 + .5, .25), V(r1 + .3, .9), V(1.6, 1.8), V(.7, 2.6), V(.3, 3.1), V(.001, 3.25)], 32), 'thatch', 0, capY, 0, 0, 0, 0, .55);
+  put(new THREE.CylinderGeometry(.08, .12, .8, 8), 'timber', 0, capY + 3.5, 0); put(new THREE.SphereGeometry(.16, 10, 8), 'timber', 0, capY + 3.95, 0);
+  // the windshaft out of the cap's front at 6° up; the hub; the four sails, each turned by ang + k·90° about the shaft
+  const tilt = .105, D = new THREE.Vector3(Math.sin(wind) * Math.cos(tilt), Math.sin(tilt), Math.cos(wind) * Math.cos(tilt)), HUBR = 4.2, hub = new THREE.Vector3(Math.sin(wind) * HUBR, capY + .9 + (HUBR - 1.0) * Math.tan(tilt), Math.cos(wind) * HUBR);
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), D), sh = new THREE.CylinderGeometry(.22, .26, HUBR - .6, 12); sh.rotateX(Math.PI / 2);
+  putM(sh, 'timber', new THREE.Matrix4().compose(hub.clone().addScaledVector(D, -(HUBR - .6) / 2 - .2), q, new THREE.Vector3(1, 1, 1))); { const c = new THREE.CylinderGeometry(.42, .42, .5, 14); c.rotateX(Math.PI / 2); putM(c, 'iron', new THREE.Matrix4().compose(hub, q, new THREE.Vector3(1, 1, 1))); }
+  const SL = 8.6, S0 = 1.6, SW = 1.9; let tipLow = 99;
+  const frameAt = th => new THREE.Matrix4().compose(hub, q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), th)), new THREE.Vector3(1, 1, 1));
+  for (let k = 0; k < 4; k++) { const th = ang + k * Math.PI / 2, rot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), th), base = new THREE.Matrix4().compose(hub, q.clone().multiply(rot), new THREE.Vector3(1, 1, 1));
+    const L = (g, k2) => putM(g, k2, base.clone()); const bxS = (w, h2, d, x, y, z) => { const g = new THREE.BoxGeometry(w, h2, d); g.translate(x, y, z); return g; };
+    // in the sail's own frame: the stock up +y from the hub, the lattice on its trailing side (+x), 0.15 in front of the hub's face
+    L(bxS(.24, SL, .2, 0, SL / 2, .25), 'sailwood');
+    for (let s = S0; s <= SL - .1; s += .55) L(bxS(SW, .06, .06, SW / 2, s, .3), 'sailwood'); L(bxS(.07, SL - S0, .07, SW, (SL + S0) / 2, .3), 'sailwood'); L(bxS(.05, SL - S0, .05, SW * .5, (SL + S0) / 2, .3), 'sailwood');
+    if (working) L(bxS(SW - .1, SL - S0 - .1, .01, SW / 2, (SL + S0) / 2, .36), 'cloth'); else { const g = new THREE.CylinderGeometry(.16, .16, SL - S0 - .3, 8); g.translate(.25, (SL + S0) / 2, .36); L(g, 'cloth'); }
+    for (const [x, y] of [[0, SL], [SW, SL]]) { const p = new THREE.Vector3(x, y, .3).applyMatrix4(base); tipLow = Math.min(tipLow, p.y - ground(p.x, p.z)); } }
+  // the tail pole from the cap's back down to a cart wheel on the ground, and its two braces
+  const back = new THREE.Vector3(-Math.sin(wind), 0, -Math.cos(wind)), top = new THREE.Vector3(0, capY + .6, 0).addScaledVector(back, r1 + .2), wheel = new THREE.Vector3(0, 0, 0).addScaledVector(back, 9.5); wheel.y = ground(wheel.x, wheel.z) + .55;
+  { const d = wheel.clone().sub(top), g = new THREE.CylinderGeometry(.11, .14, d.length(), 8); putM(g, 'timber', new THREE.Matrix4().compose(top.clone().add(wheel).multiplyScalar(.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()), new THREE.Vector3(1, 1, 1)));
+    for (const s of [-1, 1]) { const side = new THREE.Vector3(Math.cos(wind), 0, -Math.sin(wind)).multiplyScalar(s * 1.2), a = new THREE.Vector3(0, capY + .1, 0).addScaledVector(back, r1).add(side), b = top.clone().lerp(wheel, .45), dd = b.clone().sub(a), gg = new THREE.CylinderGeometry(.06, .06, dd.length(), 6);
+      putM(gg, 'timber', new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dd.normalize()), new THREE.Vector3(1, 1, 1))); }
+    const wg = new THREE.TorusGeometry(.5, .05, 6, 18); put(wg, 'timber', wheel.x, wheel.y, wheel.z, 0, wind + Math.PI / 2); for (let s = 0; s < 6; s++) put(new THREE.BoxGeometry(.04, 1.0, .04), 'timber', wheel.x, wheel.y, wheel.z, 0, wind + Math.PI / 2, s * Math.PI / 6); }
+  // by the front door: a worn millstone leaned on the wall, sacks of meal, a bench
+  { const a = .55, rr = rad(.6), st = new THREE.CylinderGeometry(.62, .62, .2, 22); put(st, 'grit', Math.sin(a) * (rr + .25), .62, Math.cos(a) * (rr + .25), Math.PI / 2 - .2, a, 0, .4);
+    for (let k = 0; k < 3; k++) { const b = -.42 - k * .14, d = rad(.3) + .35; put(new THREE.CapsuleGeometry(.24, .35, 3, 8).scale(1, 1, .8), 'sack', Math.sin(b) * d, .42 - (k === 2 ? .1 : 0), Math.cos(b) * d, 0, b, k === 2 ? 1.2 : 0); } }
+  const finish = () => { const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'turf'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+    return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2) }; };
+  return { ...finish(), tower: { r0, r1, h, rad }, hub: hub.toArray().map(v => +v.toFixed(3)), shaft: D.toArray(), sail: { len: SL, from: S0, width: SW, front: .3 }, tipLow: +tipLow.toFixed(2), doors, tail: [+wheel.x.toFixed(2), +wheel.z.toFixed(2)], capY, ground, wind, working,
+    /* the sails' lattice outline at a turn th (the four of them): points along the stock and the outer bar, for the clearance checks */ sailPts: th => { const out = []; for (let k = 0; k < 4; k++) { const m = frameAt(th + k * Math.PI / 2); for (let s2 = S0; s2 <= SL + .001; s2 += (SL - S0) / 12) for (const x of [0, SW]) out.push(new THREE.Vector3(x, s2, .3).applyMatrix4(m)); } return out; } };
+}

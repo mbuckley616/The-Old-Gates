@@ -20651,3 +20651,38 @@ Corrections made during the session:
 - **The loggia's floor is the hall's terracotta,** while the arcade outside is limestone. It might be stone.
 - **The armillary is small** for so large a hall, 1 m across.
 - **Owed:** the Gatelands' and the Mark's libraries (each needs a house: the Gatelands has none drawn for it, a question like #352), the Mark's shrine (its faith unwritten in the canon), and the guild halls once #352 is answered.
+
+## v80 — Session 949 — The Gatelands' tower mill (card F8, prototype only)
+L5's "roads and works" (OG-046: farms and windmills, shipyards, lighthouses, canals, toll gates, mines, aqueducts, ferries, watchtowers) has had only the mine (857) and the aqueduct (907). The windmill is the first of the rest. It is the Gatelands' tower mill of the south-east coast's kind: a whitewashed round tower with a thatched cap, which OG-014's whitewashed country asks for. It is a work in the land, not a house, so it lives in `places.js` beside the aqueduct and the abbey, with its own view (`places-mill-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The mill** (`gatelandsMill` in `places.js`, at true size, its front door to +z):
+- **The tower:** rubble, limewashed, battered from 6 m across at the foot to 4.6 m at the curb 9 m up, on a tarred plinth.
+  - Two round-headed doors, 1.05 by 2.15 m, under dressed heads, front and back, each with a step. The miller can come and go whichever way the sails face.
+  - Eight small windows turn up the tower over four floors. Each opening is laid on the wall's batter and stands just proud of it.
+- **The cap:** an ogee of thatch on a timber curb, with a finial. The old Irish mills were thatched so.
+- **The windshaft** comes out of the cap's front at 6° up. The hub is 4.2 m from the tower's axis.
+- **Four commons sails:** a stock 8.6 m from the hub, and a lattice 1.9 m wide on the trailing side from 1.6 m out.
+  - On a working day the cloth is spread over the lattice. With `&rest` (`o.working` false) it is furled along the stock and the bare lattice shows.
+- **The tail pole** runs from the cap's back down to a cart wheel 9.5 m behind the cap, braced either side. By it the miller turns the cap into the wind.
+- **At the door:** a worn-out millstone leaned on the wall, and three sacks of meal. A path of stone leads to the lane over a knoll that falls gently away.
+- 11,108 triangles in 14 draws; 19.2 m from the ground to a sail's tip.
+
+`o.wind` turns the cap and `o.angle` turns the sails. The builder also returns `sailPts(θ)`, the sails' outline at any turn, for the checks.
+
+The view: `places.html?place=mill`, with `view=mill` (from the lane), `sails` (under them by the door), `back` (the tail pole and its wheel) and `far`, plus `&rest`.
+
+Corrections made during the session:
+- The windows and doors were first cut as upright planes on the battered wall. Their feet sank into the stone and read as notched shapes. They now lean with the wall and stand 3.5 cm proud of it.
+- The thatch first read as brown wood. It is paler now, but see below.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 76 of 76 pass.** Three views are new on the page check: the mill, the sails, and the mill at rest, all with no page errors. Three checks are new, over three keys and three winds:
+  - **The builds:** 11,108 triangles in 14 meshes, each the same twice.
+  - **The sails at every turn** of a quarter, in 3° steps: they clear the ground by 1.76 m (asked 1.5) and the tower and its cap by 1.53 m (asked 0.3).
+  - **The rest of the mill:** the cap on its curb; the two doors 1.05 by 2.15 m, opposite each other; the tail's wheel 9.5 m out behind the cap, opposite the sails.
+- **Pictures:** `places-mill-mill.jpg`, `-sails`, `-back`, `-far` and `-mill-rest`.
+### Needs eyes
+- **The cap's thatch still reads orange-brown** under the kit's thatch texture, a shade darker than the cottages' roofs.
+- **The spread cloths are flat sheets** over the lattice, so the bars do not show through from the front. Real sailcloth sags between the bars and is often half-reefed.
+- **The sails stand 1.5 m off the tower,** which is generous. The real mills' run closer, about 1 m.
+- **The mill does not turn.** Turning the sails (o.angle by the clock and the wind) belongs in the game, with the wind of `WX`.
+- **Owed:** the rest of L5's works (a lighthouse, a shipyard, a toll gate, a watchtower, a ferry).
