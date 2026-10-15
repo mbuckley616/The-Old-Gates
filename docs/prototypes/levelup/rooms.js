@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV } from './common.js';
-import { stream, gatelandsBuilding, GL_PLANS, SCALE, glMats, markHall, aurenneHouse, aurenneCourtyard, aurenneTextures } from './pieces.js';
+import { stream, gatelandsBuilding, GL_PLANS, SCALE, glMats, markHall, aurenneHouse, aurenneCourtyard, aurenneTextures, aurenneChurch } from './pieces.js';
 
 let RM = null;
 function mats() {
@@ -1396,4 +1396,64 @@ export function gatelandsTemple(o = {}, r = stream('temple')) {
   const paths = [[[-X + .3, 0], [pray[0], 0]], [[-X + .3, 0], [-1.0, -.3], [-1.0, -Z + .7]], [[-X + .3, 0], [-1.6, .3], [-1.6, Z - .7]], [[pray[0], 0], [pray[0] - .2, -1.0], [ledge.x1 - .3, -Z + .65]]];
   return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, under, floor: F0, eave: h, tieBeam: TB,
     god, door: { x: -plan.w / 2, z: 0, w: door.w, h: door.h }, dais, plinth, statue: { x: sx, z: 0, y0, y1: y0 + SH, face: -1, icon }, altar, pray, prickets, lamp, bullaun, benches, rags, ledge, paths, boxes, windows, w: plan.w, d: plan.d };
+}
+
+// ── Aurenne's church (Session 947, card F9; OG-043's Aurenne temple, OG-061's domed hall; the canon's §1.3 and §3: the Church of the
+// Weaver, whose sign is the shuttle, and which blesses the dead into the gates). Built inside pieces.js's aurenneChurch (a town's: the
+// cube of 14 m, the drum and the blue dome) with o.interior: the ceiling open in an oculus into the drum, the dome painted inside.
+// The nave: a limestone floor with a roundel of tile under the dome; the bier of the dead under the oculus with its pall and four tall
+// candlesticks; cedar benches either side of the aisle by the door; the sanctuary raised at the back, the altar on it under the gilt
+// shuttle hung on chains, the lectern and its great book, a panel of tile behind; a ring of lamps under the dome; a tile dado round
+// the walls; the great door's leaves open inside. aurenneChurchHall(o, r) -> { group, shell, room, tris, draws, inner, floor, ceil,
+// oculus {r, y}, bier, sanctuary, altar, shuttle, lectern, benches, ring, door, paths, boxes, windows, w, d }
+export function aurenneChurchHall(o = {}, r = stream('church')) {
+  const C = aurenneChurch({ rank: 'town', w: 14, tower: 1, interior: true }, stream(o.shell || 'church-shell')), I = C.inner, shell = C.group;
+  const M = { ...homeMats(), gold: new THREE.MeshStandardMaterial({ color: 0xc8952e, roughness: .3, metalness: .75 }), wax: new THREE.MeshStandardMaterial({ color: 0xeee2c4, roughness: .6 }), flame: mats().flame, glow: mats().glow, linen: mats().linen,
+    marble: mat('plaster', { ns: .25, color: 0xf2eee6, rough: .3 }), iron: mats().iron }, B = new Map(), boxes = [];
+  const X = I.W / 2 - I.T, Z = I.D / 2 - I.T, F0 = I.pl, CEIL = I.top;
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1))); worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
+  const chain = (x, y0, y1, z) => bx('iron', x - .012, x + .012, y0, y1, z - .012, z + .012);
+  // the floor: limestone, and under the dome a roundel of tile in a ring of marble
+  bx('limestone', -X, X, F0, F0 + .03, -Z, Z); put(new THREE.CylinderGeometry(2.6, 2.6, .012, 40), 'marble', 0, F0 + .036, 0, 0, .5); put(new THREE.CylinderGeometry(2.3, 2.3, .014, 40), 'zellige', 0, F0 + .038, 0, 0, .9);
+  // the tile dado round the walls, 1.4 m high, broken at the great door
+  const dado = 1.4, dw = 1.3 + .45; for (const [x0, x1, z0, z1] of [[-X, X, -Z, -Z + .02], [-X, -X + .02, -Z, Z], [X - .02, X, -Z, Z], [-X, -dw, Z - .02, Z], [dw, X, Z - .02, Z]]) bx('zellige', x0, x1, F0, F0 + dado, z0, z1);
+  for (const [x0, x1, z0, z1] of [[-X, X, -Z, -Z + .05], [-X, -X + .05, -Z, Z], [X - .05, X, -Z, Z], [-X, -dw, Z - .05, Z], [dw, X, Z - .05, Z]]) bx('step', x0, x1, F0 + dado, F0 + dado + .06, z0, z1);
+  // the sanctuary at the back: a platform two steps up across the back wall, the altar on it, a panel of tile behind it under the middle window
+  const SY = F0 + .32, sanctuary = { x0: -4.2, x1: 4.2, z0: -Z, z1: -3.3, y: SY }; bx('step', sanctuary.x0, sanctuary.x1, F0, SY, -Z, sanctuary.z1, 'sanctuary'); bx('step', -2.4, 2.4, F0, F0 + .16, sanctuary.z1, sanctuary.z1 + .34, 'sanctuary');
+  bx('zellige', -2.3, 2.3, SY + dado, SY + 2.7, -Z, -Z + .03); for (const [x0, x1, y0, y1] of [[-2.4, 2.4, SY + 2.7, SY + 2.82], [-2.42, -2.3, SY + dado, SY + 2.82], [2.3, 2.42, SY + dado, SY + 2.82]]) bx('gold', x0, x1, y0, y1, -Z, -Z + .05);
+  const altar = { x0: -1.0, x1: 1.0, z0: -4.6, z1: -3.85, y: SY + 1.0 }; { const { x0, x1, z0, z1, y } = altar; bx('marble', x0 + .08, x1 - .08, SY, y - .1, z0 + .08, z1 - .08, 'altar'); bx('marble', x0, x1, y - .1, y, z0, z1, 'altar'); bx('zellige', x0 + .2, x1 - .2, SY + .15, y - .25, z1 - .07, z1 - .06);
+    bx('linen', x0 + .05, x1 - .05, y, y + .005, z0 + .05, z1 - .05); for (const xx of [x0 + .25, x1 - .25]) { put(new THREE.CylinderGeometry(.06, .09, .35, 10), 'gold', xx, y + .175, (z0 + z1) / 2); put(new THREE.CylinderGeometry(.03, .03, .3, 8), 'wax', xx, y + .5, (z0 + z1) / 2); put(new THREE.SphereGeometry(.018, 6, 5).scale(1, 2.2, 1), 'flame', xx, y + .69, (z0 + z1) / 2); }
+    bx('indigo', -.25, .25, y, y + .06, (z0 + z1) / 2 - .17, (z0 + z1) / 2 + .17); bx('saffron', -.24, .24, y + .06, y + .065, (z0 + z1) / 2 - .16, (z0 + z1) / 2 + .16); }
+  // the Weaver's sign: a gilt shuttle 2.2 m long hung level over the altar on two chains from the ceiling, a bobbin of gold thread in it
+  const shuttle = { x: 0, y: SY + 3.6, z: (altar.z0 + altar.z1) / 2, L: 2.2 }; { const { x, y, z, L } = shuttle, h = L / 2, g = new THREE.LatheGeometry([[.001, -h], [.06, -h * .82], [.17, -h * .4], [.2, 0], [.17, h * .4], [.06, h * .82], [.001, h]].map(([a, b]) => new THREE.Vector2(a, b)), 16);
+    g.scale(1, 1, .6); put(g, 'gold', x, y, z, 0, .6, 0, Math.PI / 2); put(new THREE.CylinderGeometry(.08, .08, .5, 12), 'saffron', x, y, z, 0, .6, 0, Math.PI / 2); for (const dx of [-.7, .7]) chain(x + dx, y + .1, CEIL, z); }
+  // the lectern on the sanctuary's left: a cedar post and a sloped desk with the great book open on it
+  const lectern = { x: -2.9, z: -3.95, y: SY + 1.12 }; { const { x, z, y } = lectern; bx('cedarD', x - .25, x + .25, SY, SY + .06, z - .25, z + .25, 'lectern'); put(new THREE.CylinderGeometry(.06, .08, 1.0, 8), 'cedarD', x, SY + .55, z);
+    const desk = put(new THREE.BoxGeometry(.6, .04, .45), 'cedarD', x, y - .02, z, 0, .6, -.35); const bk = put(new THREE.BoxGeometry(.5, .06, .36), 'linen', x, y + .03, z + .02, 0, .6, -.35); bx('madder', x - .02, x + .02, y + .02, y + .07, z - .19, z + .21); }
+  // the bier of the dead under the oculus: a marble slab on two trestles of cedar, a pall of indigo with a saffron border, a
+  // candlestick at each corner
+  const bier = { x0: -.45, x1: .45, z0: -1.05, z1: 1.05, y: F0 + .72 }; { const { x0, x1, z0, z1, y } = bier; for (const zz of [z0 + .2, z1 - .28]) { bx('cedarD', x0 + .05, x1 - .05, y - .2, y - .12, zz, zz + .08, 'bier'); for (const xx of [x0 + .07, x1 - .13]) bx('cedarD', xx, xx + .06, F0, y - .12, zz, zz + .08, 'bier'); }
+    bx('marble', x0, x1, y - .12, y, z0, z1, 'bier'); bx('indigo', x0 - .06, x1 + .06, y, y + .01, z0 + .1, z1 - .1); for (const s of [-1, 1]) { bx('indigo', s > 0 ? x1 + .05 : x0 - .06, s > 0 ? x1 + .06 : x0 - .05, y - .42, y + .01, z0 + .1, z1 - .1); bx('saffron', s > 0 ? x1 + .055 : x0 - .065, s > 0 ? x1 + .065 : x0 - .055, y - .44, y - .36, z0 + .1, z1 - .1); }
+    for (const [sx, sz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) { const cx = sx * .78, cz = sz * 1.3; put(new THREE.CylinderGeometry(.14, .17, .06, 12), 'gold', cx, F0 + .06, cz); put(new THREE.CylinderGeometry(.025, .035, 1.25, 8), 'gold', cx, F0 + .68, cz); put(new THREE.CylinderGeometry(.07, .03, .06, 10), 'gold', cx, F0 + 1.32, cz);
+      put(new THREE.CylinderGeometry(.03, .032, .26, 8), 'wax', cx, F0 + 1.48, cz); put(new THREE.SphereGeometry(.018, 6, 5).scale(1, 2.2, 1), 'flame', cx, F0 + 1.64, cz); boxes.push({ tag: 'candlestick', x0: cx - .17, x1: cx + .17, y0: F0, y1: F0 + 1.66, z0: cz - .17, z1: cz + .17 }); } }
+  // the ring of lamps under the dome: a bronze hoop on chains from the dome's crown, twelve lamps of glass with a flame in each
+  const ring = { y: F0 + 4.2, r: 1.7 }; { put(new THREE.TorusGeometry(ring.r, .04, 6, 36), 'gold', 0, ring.y, 0, 0, .6, Math.PI / 2); chain(0, ring.y + 1.2, I.crown - .05, 0);
+    for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 + .4, ex = Math.cos(a) * ring.r, ez = Math.sin(a) * ring.r, g = new THREE.CylinderGeometry(.008, .008, Math.hypot(ring.r, 1.2), 4); g.rotateZ(Math.atan2(ring.r, 1.2)); g.rotateY(-a); put(g, 'iron', ex / 2, ring.y + .6, ez / 2); }
+    for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, lx = Math.cos(a) * ring.r, lz = Math.sin(a) * ring.r; put(new THREE.CylinderGeometry(.06, .03, .12, 8), 'glow', lx, ring.y - .05, lz); } }
+  // cedar benches either side of the aisle, four rows, back from the door
+  const benches = []; for (let k = 0; k < 4; k++) { const z0 = 2.5 + k * .85; for (const [x0, x1] of [[-4.6, -1.0], [1.0, 4.6]]) { const b = { x0, x1, z0, z1: z0 + .38, y: F0 + .45 }; bx('cedar', x0, x1, b.y - .05, b.y, z0, b.z1, 'bench'); for (const xx of [x0 + .1, x1 - .16]) bx('cedar', xx, xx + .06, F0, b.y - .05, z0 + .04, b.z1 - .04);
+    bx('cedar', x0, x1, b.y + .3, b.y + .42, b.z1 - .04, b.z1); for (const xx of [x0 + .1, x1 - .16]) bx('cedar', xx, xx + .06, b.y, b.y + .42, b.z1 - .05, b.z1); benches.push(b); } }
+  // the ceiling lined in limewash round the oculus, a gilt ring at its edge; gilt stars over the dome's night blue
+  { const sq = new THREE.Shape(); sq.moveTo(-X, -Z); sq.lineTo(X, -Z); sq.lineTo(X, Z); sq.lineTo(-X, Z); sq.lineTo(-X, -Z); const hole = new THREE.Path(); hole.absarc(0, 0, I.Ri, 0, Math.PI * 2, true); sq.holes.push(hole);
+    const g = new THREE.ExtrudeGeometry(sq, { depth: .03, bevelEnabled: false, curveSegments: 36 }); g.rotateX(-Math.PI / 2); put(g, 'plaster', 0, CEIL - .03, 0, 0, .5); put(new THREE.TorusGeometry(I.Ri + .02, .07, 6, 36), 'gold', 0, CEIL - .06, 0, 0, .6, Math.PI / 2);
+    for (let k = 0; k < 70; k++) { const a = r() * Math.PI * 2, e = Math.asin(.12 + r() * .8), rr = (I.Ri - .04) * Math.cos(e), y = I.y0 + I.dh + (I.Ri - .04) * 1.12 * Math.sin(e); put(new THREE.OctahedronGeometry(.05 + r() * .04, 0), 'gold', Math.cos(a) * rr, y, Math.sin(a) * rr, r() * 3); } }
+  // the great door's two leaves, open inside against the front wall
+  const dW = C.door.w; for (const s of [-1, 1]) bx('cedarD', s > 0 ? dW / 2 + .02 : -dW / 2 - .02 - dW / 2, s > 0 ? dW / 2 + .02 + dW / 2 : -dW / 2 - .02, F0, F0 + C.door.h - dW / 2, Z - .1, Z - .02, 'leaf');
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const all = new THREE.Group(); all.add(shell, group);
+  const paths = [[[0, Z - .3], [0, bier.z1 + .5]], [[0, Z - .3], [0, 2.05], [2.0, 2.05], [2.0, -2.05], [0, sanctuary.z1 + .65]], [[0, Z - .3], [0, 2.05], [-2.0, 2.05], [-2.0, -2.05], [-.6, sanctuary.z1 + .65]], [[0, 2.05], [-4.9, 2.05]]];
+  return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: C.tris, shellCalls: C.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL, oculus: { r: I.Ri, y: I.y0, crown: I.crown },
+    bier, sanctuary, altar, shuttle, lectern, benches, ring, door: { x: 0, z: I.D / 2, w: C.door.w, h: C.door.h }, paths, boxes, w: I.W, d: I.D, front: C.front };
 }

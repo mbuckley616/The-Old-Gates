@@ -20553,3 +20553,50 @@ Corrections made during the session:
 - **The windows are the kit's,** white frames with a fanlight spoke in the round heads. A temple's slits might be unglazed, or leaded.
 - **The inside walls are bare rubble,** as the forge's are. A limewashed temple would be brighter and closer to OG-043.
 - **Owed:** the Mark's and Aurenne's shrines (the canon's gods are the Gatelands'; what the Mark keeps is not written), the library in each nation's dress, and the guild halls once #352 is answered.
+
+## v80 — Session 947 — Card F9's sixteenth room: inside Aurenne's church (prototype only)
+The shrine's second dress, after the Gatelands temple (946). Aurenne's faith is the Church of the Weaver (canon §1.3: the Compact's towns under the Church's Priors, "domes on the churches"; §3: the Church "blesses the dead *into* the gates"). Its church has stood outside since Session 832 (`aurenneChurch`: the cube, the drum, the blue dome on a town church by Michael's C on #294, the gilt shuttle on its top). This session builds its inside. OG-043's Aurenne temple and OG-061's domed hall set the look: limewash, tile and gold. Nothing new is asked. It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The shell** (`aurenneChurch` with `o.interior`, `pieces.js`): as with the other shells, a room is built inside the very building the street shows.
+- With `o.interior`, the church leaves out its dark fill and its door leaves.
+- The flat roof's two slabs become one slab of 0.4 m with a round oculus of 3.89 m radius in it, into the drum.
+- The drum is lined inside, facing in. Its twelve arched lights glow from within (a new `sky` material), with a gilt ring at the dome's foot.
+- The dome is painted inside in night blue (a new `heaven` material), its crown under the outer dome's.
+- Without `o.interior` the church is built exactly as before, and `aurenne.check.mjs` passes unchanged.
+- The builder now also returns its inner measures (`inner`: the walls, the ceiling, the oculus, the crown).
+
+**The room** (`aurenneChurchHall` in `rooms.js`, inside a town church of 14 m: a hall 12.4 m square, 10.1 m to the ceiling, 13.9 m to the dome's crown):
+- **The floor** is limestone. Under the dome lies a roundel of tile, 4.6 m across, in a ring of marble.
+- **The bier of the dead** stands at the centre under the oculus: a marble slab on two cedar trestles, a pall of indigo with a saffron border, and a tall gilt candlestick at each corner. This is the canon's blessing of the dead, given its place. No body lies on it.
+- **The sanctuary** is two steps of 0.16 m across the back. On it stand:
+  - the marble altar at 1.0 m, faced with a panel of tile, with two gilt candlesticks and a book bound in indigo and saffron;
+  - a panel of tile in a gilt frame on the wall behind, under the middle window;
+  - **the Weaver's sign over the altar:** a gilt shuttle 2.2 m long, hung level on two chains 2.6 m over the altar, with a bobbin of saffron thread in it;
+  - a cedar lectern on the left.
+- **A ring of twelve lamps,** 3.4 m across, hangs under the dome on a chain from its crown, 4.2 m over the floor.
+- **Four rows of cedar benches** with backs stand either side of a 2 m aisle, back from the door.
+- **A dado of tile,** 1.4 m high, runs round the walls under a limestone rail.
+- **The ceiling** is lined in limewash, with a gilt ring at the oculus. **Seventy gilt stars** are set in the dome's blue.
+- **The great door's leaves** stand open inside, against the front wall.
+- 4,916 triangles in 16 draws, on the church's 13,088 in 12.
+
+The view: `rooms.html?room=church`, with `view=nave` (from the door down the aisle past the bier to the altar under the shuttle), `dome` (up through the oculus), `sanctuary`, `back` and `outside`.
+
+Corrections made during the session:
+- The ceiling first showed the slab's bare ashlar underside, dark against the limewashed walls. It is now lined.
+- The dome's blue first read as a hole. The stars give it a surface.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 133 of 133 pass** (124 after Session 946). Four views are new on the page check: the nave by day and by night, the dome, and outside, all with no page errors. Five checks are new, over four keys:
+  - **The builds:** 4,916 triangles in 16 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling, or under the dome's crown inside the oculus. 0 points through, 0 clashes.
+  - **The walks:** four walks clear by 0.15 m: the aisle to the bier, round the bier either side to the sanctuary's step, and along the front row.
+  - **A person fits:** the altar 1.0 m over the sanctuary, the benches at 0.45 m, the steps 0.16 m, the great door 2.6 m wide.
+  - **The church's pieces:** the bier wholly under the oculus; the shuttle level over the altar and 2.6 m over it; the ring 4.2 m up and inside the oculus's line.
+- **`aurenne.check.mjs`** and **`pieces.check.mjs`**: all pass, so the church outside is unchanged.
+- **Pictures:** `rooms-church-nave.jpg`, `-dome`, `-sanctuary`, `-back`, `-outside` and `-nave-night`.
+### Needs eyes
+- **The square hall has no pendentives.** The round oculus is cut straight into a flat ceiling, as in a Roman hall with a lantern, not a true domed church. Squinches or pendentives, with the dome standing on the walls, would be truer and would be a new shell.
+- **The drum's lights glow but cast no daylight down.** The light inside comes from the side windows and the lamps.
+- **The bier is empty.** A shrouded body on it would say what the Church does with the dead more plainly. That is the bodies builder's to make, and perhaps a quest writer's question.
+- **The benches are a guess.** Many churches round the old Mediterranean had none. A standing nave, with benches only along the walls, would be more Aurennais.
+- **Owed:** the Mark's shrine (its faith is not written in the canon; a question first), the library in each nation's dress, and the guild halls once #352 is answered.

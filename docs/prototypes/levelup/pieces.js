@@ -60,7 +60,8 @@ function mats() {
     awning: mat('awning', { ns: .6, rough: .95 }), dark: std(0x0d0a08, { rough: 1 }), iron: std(0x1c1a18, { rough: .5, metal: .5 }), terra: std(0xa8582f, { rough: .85 }),
     gold: std(0xc8952e, { rough: .35, metal: .7 }), leaf: std(AUR.leaf, { rough: .9 }), leaf2: std(AUR.leaf2, { rough: .95 }), bloom: std(AUR.bloom, { rough: .8 }),
     /* the courtyard house's (Session 899) */ pave: mat('limestone', { ns: 1.0, rough: .8 }), floor: mat('flag', { ns: .7, color: 0xf0a078, rough: .7 }), orange: std(0xe07a1c, { rough: .6 }),
-    water: new THREE.MeshStandardMaterial({ color: 0x2f6f82, roughness: .05, metalness: .1, transparent: true, opacity: .78 }) };
+    water: new THREE.MeshStandardMaterial({ color: 0x2f6f82, roughness: .05, metalness: .1, transparent: true, opacity: .78 }),
+    /* the church's inside (Session 947): the dome painted night blue, its lights seen from within */ heaven: mat('plaster', { ns: .3, color: 0x2a3e72, rough: .95 }), sky: new THREE.MeshStandardMaterial({ color: 0xdfe8f0, emissive: new THREE.Color(.85, .9, 1), emissiveIntensity: 1.1, roughness: 1 }) };
   M.pantile.side = THREE.DoubleSide; M.awning.side = THREE.DoubleSide; return M;
 }
 const TEXTURED = new Set(['wall', 'stone', 'plinth', 'pantile', 'zellige', 'glaze', 'cedar', 'door', 'awning', 'pave', 'floor']);
@@ -358,7 +359,9 @@ export function aurenneCourtyard(o = {}, r = stream('courtyard')) {
 // o.rank 'village' | 'town' | 'cathedral' (Michael's C on #294, Session 885: the dome by rank, a village's limewashed, a town's and the
 // cathedral's in blue glaze; a church with corner domes is a cathedral unless told), o.dome 'blue' | 'white' (overrides the rank),
 // o.w (the cube, 12 to 22 m), o.tower 0 | 1 | 2, o.corners (four small domes at the cube's corners,
-// a cathedral's), o.wall (a wall colour index). aurenneChurch(o, r) -> { group, roofTop, tris, draws, kind: 'church', front }.
+// a cathedral's), o.wall (a wall colour index), o.interior (Session 947, rooms.js: no dark fill and no door leaves, the ceiling open in a
+// round oculus into the drum, which is lined inside with its lights glowing, under a dome painted inside).
+// aurenneChurch(o, r) -> { group, roofTop, tris, draws, kind: 'church', front, inner: {W, D, T, pl, H, top, R, Ri, y0, dh} }.
 export function aurenneChurch(o, r) {
   const { put, wallGeo, box, finish } = aurKit(), W = o.w || 14, D = W, T = .8, pl = .9, H = +(W * .72).toFixed(2), pd = 4.4, wallK = 'wall:' + (o.wall ?? 4), rank = o.rank || (o.corners ? 'cathedral' : 'town'), dome = o.dome || (rank === 'village' ? 'white' : 'blue'), domeK = dome === 'white' ? wallK : 'glaze';
   const lathe = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
@@ -371,25 +374,32 @@ export function aurenneChurch(o, r) {
   const door = { x: 0, y: 0, w: 2.6, h: 5.2, arch: 1, door: 1 }, fh = [door, { x: -W * .3, y: 3.2, w: Math.min(1.5, W * .08), h: H * .42, arch: 1 }, { x: W * .3, y: 3.2, w: Math.min(1.5, W * .08), h: H * .42, arch: 1 }];
   put(wallGeo(W, H, fh, T), wallK, 0, pl, D / 2 - T / 2); put(wallGeo(W, H, tall(3), T), wallK, 0, pl, -D / 2 + T / 2, Math.PI);
   for (const sx of [-1, 1]) put(wallGeo(D - 2 * T + .02, H, tall(3), T), wallK, sx * (W / 2 - T / 2), pl, 0, sx * Math.PI / 2);
-  put(box(W - 2 * T, H - .4, D - 2 * T), 'dark', 0, pl + (H - .4) / 2, 0);
+  if (!o.interior) put(box(W - 2 * T, H - .4, D - 2 * T), 'dark', 0, pl + (H - .4) / 2, 0);
   // stone sills, and an iron grille in each window
   for (let f = 0; f < 4; f++) { const ry = [0, Math.PI, Math.PI / 2, -Math.PI / 2][f], hs = f ? tall(3) : fh.slice(1), cz = f < 2 ? D / 2 : W / 2;
     for (const h of hs) { const c = Math.cos(ry), sn = Math.sin(ry), at = (lx, z) => [lx * c + z * sn, -lx * sn + z * c];
       const [sx2, sz2] = at(h.x, cz + .08); put(box(h.w + .3, .12, .3), 'stone', sx2, pl + h.y - .06, sz2, ry);
       for (let i = 1; i < 4; i++) { const [gx, gz] = at(h.x - h.w / 2 + i * h.w / 4, cz - T * .5); put(new THREE.CylinderGeometry(.025, .025, h.h - h.w / 2, 5), 'iron', gx, pl + h.y + (h.h - h.w / 2) / 2, gz, ry); } } }
   // the great door: two leaves of cedar boards under the half-round head, set in the reveal, a frame of glazed tile round it
-  { const dz = D / 2 - T * .6, sh = door.h - door.w / 2, doorK = 'door:' + (o.door ?? 3); for (let i = 0; i < 8; i++) put(box(door.w / 8 - .015, sh + .02, .08), doorK, -door.w / 2 + (i + .5) * door.w / 8, pl + sh / 2, dz);
-    put(new THREE.CylinderGeometry(door.w / 2, door.w / 2, .08, 18, 1, false, -Math.PI / 2, Math.PI), doorK, 0, pl + sh, dz, 0, -Math.PI / 2);
-    for (let i = 0; i < 4; i++) for (let k = 0; k < 2; k++) put(new THREE.SphereGeometry(.04, 6, 4), 'iron', (k ? 1 : -1) * door.w * .3, pl + .6 + i * .95, dz + .05);
+  { const dz = D / 2 - T * .6, sh = door.h - door.w / 2, doorK = 'door:' + (o.door ?? 3); if (!o.interior) for (let i = 0; i < 8; i++) put(box(door.w / 8 - .015, sh + .02, .08), doorK, -door.w / 2 + (i + .5) * door.w / 8, pl + sh / 2, dz);
+    if (!o.interior) put(new THREE.CylinderGeometry(door.w / 2, door.w / 2, .08, 18, 1, false, -Math.PI / 2, Math.PI), doorK, 0, pl + sh, dz, 0, -Math.PI / 2);
+    if (!o.interior) for (let i = 0; i < 4; i++) for (let k = 0; k < 2; k++) put(new THREE.SphereGeometry(.04, 6, 4), 'iron', (k ? 1 : -1) * door.w * .3, pl + .6 + i * .95, dz + .05);
     const ts = .3, top = pl + door.h + .2; for (const sx of [-1, 1]) put(box(ts, top - pl, .04), 'zellige', sx * (door.w / 2 + .3), pl + (top - pl) / 2, D / 2 + .02); put(box(door.w + .6 + ts, ts, .04), 'zellige', 0, top + ts / 2, D / 2 + .02); }
   // the band of glazed tile under the cornice, the cornice, the flat roof behind a parapet
   const top = pl + H; for (const [len, x, z, ry] of [[W, 0, D / 2 + .02, 0], [W, 0, -D / 2 - .02, Math.PI], [D, W / 2 + .02, 0, Math.PI / 2], [D, -W / 2 - .02, 0, -Math.PI / 2]]) put(box(len, .7, .04), 'zellige', x, top - 1.1, z, ry);
-  put(box(W + .6, .4, D + .6), 'stone', 0, top + .2, 0); put(box(W - .2, .2, D - .2), 'plinth', 0, top + .1, 0);
+  const R = W * .31, dh = R * .72, y0 = top + .4, nl = 12, Ri = R - .45;
+  if (!o.interior) { put(box(W + .6, .4, D + .6), 'stone', 0, top + .2, 0); put(box(W - .2, .2, D - .2), 'plinth', 0, top + .1, 0); }
+  else { const sq = new THREE.Shape(), hw = (W + .6) / 2; sq.moveTo(-hw, -hw); sq.lineTo(hw, -hw); sq.lineTo(hw, hw); sq.lineTo(-hw, hw); sq.lineTo(-hw, -hw); const hole = new THREE.Path(); hole.absarc(0, 0, Ri, 0, Math.PI * 2, true); sq.holes.push(hole);
+    const g = new THREE.ExtrudeGeometry(sq, { depth: .4, bevelEnabled: false, curveSegments: 36 }); g.rotateX(-Math.PI / 2); put(g, 'stone', 0, top, 0); }
   for (const sz of [1, -1]) put(box(W + .3, .8, .35), wallK, 0, top + .8, sz * (D / 2 + .1)); for (const sx of [-1, 1]) put(box(.35, .8, D - .4), wallK, sx * (W / 2 + .1), top + .8, 0);
   // the drum, its arched lights, the dome, the stone rings, and the Weaver's shuttle on a gilt rod
-  const R = W * .31, dh = R * .72, y0 = top + .4, nl = 12; put(new THREE.CylinderGeometry(R, R * 1.03, dh, 36, 1, true), wallK, 0, y0 + dh / 2, 0); put(new THREE.CylinderGeometry(R - .5, R - .5, dh, 24), 'dark', 0, y0 + dh / 2, 0);
+  put(new THREE.CylinderGeometry(R, R * 1.03, dh, 36, 1, true), wallK, 0, y0 + dh / 2, 0); if (!o.interior) put(new THREE.CylinderGeometry(R - .5, R - .5, dh, 24), 'dark', 0, y0 + dh / 2, 0);
+  // inside (o.interior): the drum lined from the ceiling's oculus up, facing in (a lathe drawn top to bottom), a ring under the dome,
+  // and the dome painted inside, its crown under the outer dome's
+  if (o.interior) { put(lathe([[Ri, dh], [Ri, -.4]], 36), wallK, 0, y0, 0); put(new THREE.TorusGeometry(Ri - .05, .1, 6, 36), 'gold', 0, y0 + dh, 0, 0, Math.PI / 2);
+    const pts = []; for (let i = 16; i >= 0; i--) { const a = i / 16 * Math.PI / 2; pts.push([Math.max(.001, Ri * Math.cos(a)), Ri * 1.12 * Math.sin(a)]); } put(lathe(pts, 36), 'heaven', 0, y0 + dh, 0); }
   { const lw = Math.min(1.1, 2 * Math.PI * R / nl * .38), lh = dh * .6, sh = new THREE.Shape(); sh.moveTo(-lw / 2, 0); sh.lineTo(lw / 2, 0); sh.lineTo(lw / 2, lh - lw / 2); sh.absarc(0, lh - lw / 2, lw / 2, 0, Math.PI, false); sh.lineTo(-lw / 2, 0);
-    for (let i = 0; i < nl; i++) { const a = (i + .5) / nl * Math.PI * 2; put(new THREE.ShapeGeometry(sh, 6), 'dark', Math.sin(a) * (R + .03), y0 + dh * .2, Math.cos(a) * (R + .03), a); put(box(lw + .2, .1, .25), 'stone', Math.sin(a) * (R + .06), y0 + dh * .2 - .05, Math.cos(a) * (R + .06), a); } }
+    for (let i = 0; i < nl; i++) { const a = (i + .5) / nl * Math.PI * 2; put(new THREE.ShapeGeometry(sh, 6), 'dark', Math.sin(a) * (R + .03), y0 + dh * .2, Math.cos(a) * (R + .03), a); if (o.interior) put(new THREE.ShapeGeometry(sh, 6), 'sky', Math.sin(a) * (Ri - .03), y0 + dh * .2, Math.cos(a) * (Ri - .03), a + Math.PI); put(box(lw + .2, .1, .25), 'stone', Math.sin(a) * (R + .06), y0 + dh * .2 - .05, Math.cos(a) * (R + .06), a); } }
   put(new THREE.TorusGeometry(R * 1.03, .14, 6, 36), 'stone', 0, y0 + .05, 0, 0, Math.PI / 2); put(new THREE.TorusGeometry(R * 1.02, .12, 6, 36), 'stone', 0, y0 + dh, 0, 0, Math.PI / 2);
   const dTop = y0 + dh + R * 1.12; { const pts = []; for (let i = 0; i <= 16; i++) { const a = i / 16 * Math.PI / 2; pts.push([Math.max(.001, R * Math.cos(a) * (1 + .05 * Math.sin(a * 2))), R * 1.12 * Math.sin(a)]); } put(domeUV(lathe(pts, 40), R), domeK, 0, y0 + dh, 0); }
   put(lathe([[.001, 0], [.45, 0], [.3, .35], [.18, .5], [.22, .7], [.001, .75]], 14), 'stone', 0, dTop - .05, 0);
@@ -424,7 +434,7 @@ export function aurenneChurch(o, r) {
     const g = lathe(cp, 12), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const k = 1 + .12 * Math.sin(P.getY(i) * 5 + Math.atan2(P.getZ(i), P.getX(i)) * 5 + r() * .5); P.setX(i, P.getX(i) * k); P.setZ(i, P.getZ(i) * k); } g.computeVertexNormals();
     put(g, 'leaf2', x, .3, z); put(lathe([[.001, 0], [.4, 0], [.5, .3], [.46, .55], [.001, .55]], 12), 'terra', x, 0, z); }
   const out = finish(); out.group.userData = { roofTop: out.roofTop, kind: 'church', domeTop: dTop, towerTop };
-  return { ...out, kind: 'church', front: front + 1.4, domeTop: dTop, towerTop, door };
+  return { ...out, kind: 'church', front: front + 1.4, domeTop: dTop, towerTop, door, inner: { W, D, T, pl, H, top, R, Ri, y0, dh, crown: y0 + dh + Ri * 1.12 } };
 }
 
 // ── Aurenne's civic buildings (Session 833, card F6). The canon (§1.3): the Compact's Factors over the houses' ports, "every
