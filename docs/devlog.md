@@ -19404,3 +19404,242 @@ What changed in `people.js`:
 ### Needs eyes
 - **The fist stands off the board** on its cleats, because the forearm lies along the board's back. A real centre grip is flush with the board, with the knuckles in the boss. That wants the wrist bent outward a little, so the fist leads the forearm into the hollow. That is a pose for B4.
 - Whether the dints read as beaten bronze at play distance.
+
+## v80 — Session 909 — The spear upright in the right fist (L7 and B2, prototype only)
+The last bodies run left a spear unfinished on `auto/wip-spear` (its commit calls it Session 907; that number went to the look builder's line, so this entry is the spear's). It held:
+- an ash shaft 2.3 m long with an iron shoe, a socket and a leaf-shaped head;
+- the right forearm turned forward, the fingers curled.
+
+The shaft ran through 158 of the hand's 436 points. There were no checks. The spear is one of the two new kinds of weapon (Michael's 6 A on OG-028), and the guards of OG-025 and OG-044 carry one. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+**What was wrong.** `buildSpear` read the posed body before it brought the bones' matrices up to date. So for anyone not in a long skirt, it measured the hand where it hung before the arm turned. A long skirt's arm-lift loop happened to refresh the matrices first. Then, once it was measured right:
+- **The fist was rolled wrong.** The palm faced down, and the knuckles ran across the shaft, not along it.
+- **The ball of the thumb** stood in the shaft's line 5 to 7 cm above the knuckles.
+
+What changed in `people.js`:
+- **The pose** (in `makePerson`):
+  - The forearm is turned forward, as before. Then it is rolled about itself until the first finger's knuckle stands over the little finger's.
+  - The wrist takes what the roll leaves: the hand runs level from the forearm, and its knuckles stand plumb. The wrist turns 0.33 to 0.38 rad.
+  - The four fingers curl as the shield's fist does (Session 906), from 1.24 times its curl down to 0.6 times. It stops at the tightest curl whose hole holds the shaft.
+  - All this happens after the arms are lifted clear of a long skirt. Before, a robe's lift moved the fist after the hole was found.
+- **The hole** (`fistHole`):
+  - It looks down the knuckles' line at the hand's points, from 3 cm under the little finger's knuckle to 9 cm over the first finger's. That band takes in the ball of the thumb.
+  - It looks for the widest empty circle that the hand closes round: points in at least six of eight sectors near its rim. The search covers 4 cm on a 2 mm grid.
+- **The spear** (`buildSpear`):
+  - It runs up the knuckles' line through the hole. That line is plumb, with a lean of 0 rad.
+  - Its length is 2.3 m or the bearer's height plus 45 cm, whichever is longer.
+  - Its shaft is 2.6 cm thick, or thinner (down to 2.2 cm) where a small hand's hole needs it.
+  - The wrist carries it.
+  - It is 296 triangles.
+- **A full cloak is thrown back off the right shoulder** when the right fist holds a spear, as a Markman frees his weapon arm.
+  - With the forearm held forward, the cloak had draped over it as a box with an open end (seen in this session's first picture).
+  - Now its columns run from 0.35 rad behind the right shoulder, round the back and the left, to the throat. The brooch sits on the cloak's front edge at the throat.
+  - A shoulder cape is unchanged, since it ends at the elbow.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 238 checks pass.** There are eight new ones, one per spear:
+  - a Markman in mail with a helm and a shield;
+  - a Markman under a fur-collared cloak;
+  - a Gatelander woman in a long skirt;
+  - a Gatelander in the Crown tabard;
+  - a Gatelander in a robe;
+  - a Gatelander woman in a shoulder cape;
+  - a man in a short cloak with the hood up;
+  - an Aurennais with a bronze shield.
+- For each of the eight:
+  - **No point of the hand is inside the shaft** (0 in every case).
+  - **The hole** is 25.4 to 34.2 mm across. The shaft is 26 mm, or 24 mm in the woman's smaller fist.
+  - **Nothing else of the person or what they wear** is within the shaft's reach. The nearest is 11.1 to 24.5 mm off.
+  - **The head** stands 45 to 61 cm over the crown.
+  - The spear is carried by `wrist.R`, and the person saves and loads.
+- With a shield in the left fist, nothing is inside the shield's board either.
+- The 230 checks that passed before still pass. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-spear.jpg`: a Markman in mail with a quartered shield and a spear.
+  - `builder-armour-spear-grip.jpg` and `-grip-in`: the fist on the shaft, from outside and from the body's side.
+  - `builder-armour-spear-cloak.jpg`: the cloak thrown back off the spear arm.
+  - `builder-armour-spear-crown.jpg`: the Crown tabard with shield and spear.
+  - `builder-armour-spear-bronze.jpg`: an Aurennais with a bronze shield and a spear.
+### Needs eyes
+- **The cloak thrown back** leaves the right shoulder and the right side of the back bare. Its edge shows as a dark line down behind the arm. A cloak thrown back would also lie in folds over the shoulder, and none are modelled.
+- **The thumb** is left as it was, so it lies along the shaft instead of over the first finger.
+- **The head is out of frame** in the full views (the frame is the person). Whether a 2.3 m spear reads at play distance is for a line-up.
+- **The cuff at the wrist.** With the forearm forward, the tunic's cut sleeve shows a ragged edge over the wrist (the tunic's own cut, already there before).
+- **Owed:**
+  - the spear in a fight, which waits on animation (B4);
+  - the head by island (OG-028's spearheads: the Mark's winged and hooked heads, Aurenne's broad leaf);
+  - knotwork or carving on the socket;
+  - the crossbow.
+- **A correction to Session 904:** its shield's rim "48 to 69 cm off the ground" was measured from every point of the pack, the helpers included. Read off the body alone, as the WIP commit changed it, the five shields in the hand have their rims 45 to 62 cm off the ground (the Aurennais's bronze 45 cm, the woman's 51 cm, the three men's 61 to 62 cm).
+
+## v80 — Session 910 — The spear's fist closes round the shaft (L7, a fix to Session 909, prototype only)
+**A correction to Session 909.** Its fist did not close round the shaft. Seen from the front, the four fingers stood straight up beside it, like a hand held up to stop someone. The checks passed anyway.
+
+**Why.** The fingers were curled about their bones' own z axis, as every hand pose in `people.js` does. In this skeleton that axis is 36° off the knuckles' line, which is the real hinge.
+- In the rest pose and in the shield's hanging fist, a turn about z still reads as a curl.
+- In 909, the wrist was turned so the knuckles stand plumb. There, z lies 36° along the hand, so the "curl" lifted the fingers up the shaft.
+- 909's hole search looked down the knuckles' line. Fingers stacked up that line fold into one ring in that view, so it found an enclosed hole that was not there.
+- From the side (`builder-armour-spear-grip.jpg`), the fingers seemed to wrap the shaft.
+
+What changed in `people.js`:
+- **The fingers' hinge is the knuckles' line** (from the little finger's knuckle to the first finger's). It is read in the metacarpals' frame, and every finger bone hangs off its metacarpal unturned, so one axis serves all twelve.
+- **The grip** (`fistGrip`, replacing `fistHole`):
+  - The palm's facing is found by which way the middle fingertip moves as the hand closes.
+  - With the fingers straight, the shaft (now always 2.6 cm) is laid in the palm's crease, 0.5 to 2.5 cm behind the knuckles. It sits as near the palm as the hand's points allow, 1 mm clear: 3.2 to 3.8 cm off the knuckles' bones.
+  - The thumb's points (skinned more than half to its own bones) are left out of that. Placed with the thumb, the shaft stood 3.4 to 3.9 cm out, which pushed the fingers into it before they had closed.
+- **The fingers close as a hand does:**
+  - First all three joints of a finger bend together, in the shield's fist's proportions, 0.04 rad at a time, until a point of that finger would come inside the shaft.
+  - Then the two outer joints go on alone, and then the last joint alone. Each stops a step short.
+  - So each finger wraps round the shaft. Closing every finger as one block stopped at the first touch, with the fingertips against the front of the shaft (bends of 0.45 to 0.6). Closing the root joint fully first made a claw (1.26, 0.07, 1.13).
+- **The thumb** is turned at its root through 33 trial turns (three axes, ±1 rad). It takes the turn that keeps it out of the shaft and brings it nearest round it.
+
+The shield's fist (Session 906) curls about the same z axis, so its fingers are off their hinge too. With the arm hanging it reads closed in its pictures, so it is left as it is and noted below.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 238 checks pass.** The eight spear checks are sharper than 909's. Each now asks for:
+  - no point of the hand inside the shaft, and none of the thumb's;
+  - the nearest finger point within 2 mm of the shaft's surface;
+  - each of the three joints bent more than 0.45 rad.
+- For the eight spears:
+  - The joints bend 0.70 to 0.78, 0.84 to 0.94 and 0.65 to 0.69 rad.
+  - The fingers touch the shaft: the nearest point is 0.3 to 0.5 mm into its skin tolerance, inside the 1 mm allowed.
+  - The thumb is 0.7 mm in to 1.2 mm off.
+  - Nothing else of the person is within 15.6 to 30.0 mm of the shaft.
+  - The wrist turns 0.33 to 0.38 rad.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** the six `builder-armour-spear*.jpg` were shot again with the closed fist.
+### Needs eyes
+- **The shield's left fist** (Session 906) curls about the bones' z, not the knuckles' line. It wants the same hinge. Its pictures read closed, so it was not touched.
+- **The thumb** lies along the shaft or against it. It does not cross over the first finger as a hard grip's does.
+
+## v80 — Session 911 — The Gatelands' kite with the harp (L7 and B2, prototype only)
+Session 904 left OG-028's island shields owed: the harp kite, the painted round and the sun-star hoplon. The painted round is the round shield already built. This session builds the Gatelands' kite: OG-028 draws it green with a gold harp, beside the heater and the round. Michael kept OG-028, and the kite is its own shield, so it needs no new question. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **A genome flag, `shieldShape`** (`'round'` by default, saved only when it is `'kite'`). With it, `buildKite` builds in place of `buildShield`.
+- **The shape** (`KITE`, `KITE_LINE`):
+  - A rounded top 48 cm across, the sides drawn in to a point 86 cm below it.
+  - The fist sits 30 cm under the top.
+  - It is bent round its bearer, its edges 4.5 cm behind its middle.
+  - `kiteR` gives the outline's distance from the fist along any ray, since the outline is seen whole from there.
+- **The parts** (`kiteParts`):
+  - Seven boards under a painted field, built on a polar grid out from the fist.
+  - A rawhide rim along the bend.
+  - No boss. A kite is held by enarmes: a leather strap the forearm goes through, 17 cm over the fist, and a grip strap the fist closes on. Each stands off the back to the arm's own depth and is riveted through the face, so four rivet heads show on the field.
+  - 4,088 triangles.
+- **The face** (`kiteTex`): the field, then the harp in the paint's colour, as the old Gaelic harp is drawn:
+  - the soundbox on the diagonal from its foot up to the left;
+  - the neck curving across the top;
+  - the forepillar bowed out on the right, down to the foot;
+  - eight strings, plumb between them.
+
+  Then a border of the same colour inside the rim, and the paint worn back to the wood at the rim. The first try put the soundbox upright and the pillar on the left. It read as a gold loop, not a harp.
+- **Held on the forearm, its point down** (`buildKite`). Its axis runs along the forearm and its face is turned 1 rad forward, as the round shield's is.
+  - Its back is laid 5 mm outside the furthest point within its outline, read at each point's own place on the bend (`kiteBack`).
+  - Where something other than the arm is that point, the arm is lifted out from the side 0.03 rad at a time.
+  - The wrist carries it, and `kiteInside` reads the promise back off it.
+- **Under a cloak** a kite is not built yet. The slung shield is laid for a round board, and the kite is owed there.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 243 checks pass.** There are five new ones:
+  - a Gatelander in a tunic;
+  - a Gatelander in mail and a helm;
+  - a Gatelander woman in a long skirt;
+  - a Gatelander in the Crown tabard with a kite and a spear;
+  - a Markman.
+- For each of the five:
+  - Nothing is inside the kite's boards or rim: 0 of 3,347 to 5,518 points within its outline.
+  - The arm lies on its back, 0.0 mm off. The nearest point is 5.0 mm behind it.
+  - The arm is lifted 0 to 0.06 rad.
+  - The point is 20 to 37 cm off the ground.
+  - Each saves and loads.
+- With the spear as well, the spear's own promises hold: nothing of the hand is inside the shaft, and nothing else is within 27 mm.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-kite.jpg` and `-back`: a Gatelander in a tunic, green field and gold harp.
+  - `builder-armour-kite-close.jpg`: the face.
+  - `builder-armour-kite-mail.jpg`: in mail and a helm, with a spear.
+  - `builder-armour-kite-woman.jpg`: a woman in a long skirt with a blue field.
+### Needs eyes
+- **The harp** is drawn in strokes on a 256 by 512 canvas. Close up its strings are a little soft, and its curves are a sketch of the emblem, not knotwork. OG-028's Celtic knotwork on the rim is not drawn.
+- **The kite's top** sits at the hip because the arm hangs. Carried for a fight, it is held higher with the elbow bent. That waits on B4.
+- **The enarmes** are plain straps with no buckles.
+- **Owed:**
+  - the kite slung on the back under a cloak;
+  - the sun-star hoplon (Aurenne);
+  - the Mark's painted round, as a design (it is the round shield with its quarters);
+  - a control for the shape on the builder page (the flag is in the genome and the URL's `dress`).
+
+## v80 — Session 912 — The shield's fist on its true hinge (B2, a fix to Session 906, prototype only)
+Session 910 found that the fingers' curl about their bones' own z axis is 36° off the knuckles' hinge in this skeleton. The left fist that holds a shield (Session 906) curled the same way. It read closed in 906's picture from behind, but measured on the posed hand it was not a fist:
+- each fingertip's last joint swung 2.9 to 6.2 cm sideways along the knuckles' line;
+- it stayed 13.5 to 19.8 cm from the wrist.
+
+With the curl about the knuckles' line, the same angles give:
+- 2.4 cm of sideways drift at most;
+- the last joints 12.2 to 15.0 cm from the wrist.
+
+The fingers fold into the palm. FREEZE #297 is still open, so this touches only the prototypes (`people.js`).
+
+What changed in `people.js`:
+- **`fistHinge` and `closeFist`**, shared by the round shield and the kite. The hinge is the knuckles' line in the metacarpals' frame, as 910 found for the spear's hand. A right hand closes turning positively about it, a left hand negatively: the lines are mirrored, the curls are not. The bends are still 906's 1.15, 1.35 and 0.95 rad.
+- **The round shield's grip bar may now stand up to 7 cm off the board** (it was 4.5 cm). It stands at the fist's own depth, 8 mm behind its furthest knuckle. The closed fist is more compact, so its knuckles now sit 4.0 to 5.8 cm behind the board's back (they were 1.7 to 4.8). At the old limit the bar would have stood 1.3 cm short of the Crown man's fist.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 243 checks pass**, unchanged in number. The ten shields in the hand (five round, five kites) were all laid again round the closed fist:
+  - **The round shields:** nothing is inside the board, rim or boss (0 of 3,357 to 6,680 points near it). The nearest point is 5.0 mm behind it. The rims are 46 to 63 cm off the ground.
+  - **The kites:** 0 of 3,327 to 5,444 points within the outline. The nearest point is 5.0 mm behind it. The points are 21 to 38 cm off the ground.
+- The slung shields and the spears pass as before. `kit.check.mjs` passes. No page errors.
+- **Pictures:** the shields in the hand were shot again: `builder-armour-shield*.jpg` (not the slung ones), `builder-armour-kite*.jpg`, and the spear pictures that carry a shield (`builder-armour-spear.jpg`, `-crown`, `-bronze`). In `builder-armour-shield-grip.jpg` the fist is now closed round the bar.
+### Needs eyes
+- **The fist stands further off the board** (up to 5.8 cm), so on the round shield the cleats stand taller. The truer answer is still 906's: the wrist bent outward so the knuckles go into the boss, which waits on B4.
+- **The other hand poses** (the relaxed hands of every person, `q(0, 0, ±(.25 + .12 j))`) still curl about z. At those small angles the sideways twist is under a centimetre, and they read as relaxed. They are left as they are.
+
+## v80 — Session 913 — The sun-star hoplon (L7 and B2, prototype only)
+OG-028's third island shield, after Session 904's painted round and Session 911's harp kite: Aurenne's hoplon with the sun-star. L1's Compact guards carry a round bronze shield and a spear. The hoplon is that shield as OG-028 draws it, so it needs no new question. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The kite's builder now takes a shape.** `KITE` and `HOPLON` each carry:
+  - an outline (`line`);
+  - a back surface (`z(u, v)`);
+  - a thickness;
+  - how far up the arm counts as the arm (`armX`).
+
+  `kiteR`, `kiteIn`, `kiteParts`, `kiteBack` and `kiteInside` read them. The kite builds as Session 911 left it: its five checks pass with the same numbers.
+- **`shieldShape: 'hoplon'`:**
+  - 90 cm across and dished 10 cm deep: its rim is 10 cm nearer the body than its middle.
+  - A rolled bronze lip 2.6 cm thick round the edge.
+  - It is held as a hoplite holds one: the forearm goes through a bronze band at its middle (the porpax), and the fist closes on a leather grip near the rim (the antilabe). So its middle sits 33 cm up the forearm from the fist, by the elbow, and the upper arm rests against it too. Points of the arm past rest x 0.2 count as the arm, against 0.3 for the kite.
+  - Its face is turned 0.4 rad forward from the side, against 1 rad for the round and the kite.
+    - At 1 rad, the dish's near rim crossed in front of the torso. The arm was lifted the full 0.36 rad allowed, and on the woman it still stood 12 cm off the board.
+    - At 0.6 rad, one of three still needed the full lift.
+    - At 0.4 rad, none needs any.
+- **The face** (`hoplonTex`):
+  - The round shield's face: a painted field, or bronze with its hammer dints (`shieldMetal`), worn back at the rim.
+  - Over it, the sun-star in the paint's colour: a disc and sixteen rays, long and short by turns.
+  - Gold if no paint is given.
+- 4,472 triangles.
+- Under a cloak a hoplon is not built yet, as for the kite.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 247 checks pass.** There are four new hoplons:
+  - an Aurennais in a tunic, blue with a white star;
+  - an Aurennais in bronze with a gold star, a bronze helm and a spear;
+  - an Aurennais woman;
+  - a Gatelander in mail.
+- For each of the four:
+  - Nothing is inside its boards or lip: 0 of 6,623 to 21,085 points within its outline.
+  - The arm lies on its back, 0.0 mm off, and is not lifted. The nearest point is 5.0 mm behind it.
+  - Its rim is 64 to 71 cm off the ground.
+  - Each saves and loads.
+- With the spear, the spear's promises hold too.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-hoplon.jpg` and `-back`: blue with a white sun-star.
+  - `builder-armour-hoplon-bronze.jpg`: bronze with a gold star, with a spear and a bronze helm.
+  - `builder-armour-hoplon-woman.jpg`: a woman in a long skirt.
+### Needs eyes
+- **It is carried high.** With the arm hanging, the centre grip puts the hoplon's middle at the elbow, so its top rim comes to the chin. That is how the grip works. Carried at rest it would be leaned on the leg or slung on the back, which waits on B4 and on the slung shields.
+- **The star is painted, not raised.** Bronze hoplons often carry the sign in relief; a normal map would show it.
+- **The porpax and the antilabe** are plain: a band and a strap, with no cord loops round the inside of the rim.
+- **Owed:** the kite and the hoplon slung under a cloak.
