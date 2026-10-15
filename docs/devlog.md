@@ -20600,3 +20600,54 @@ Corrections made during the session:
 - **The bier is empty.** A shrouded body on it would say what the Church does with the dead more plainly. That is the bodies builder's to make, and perhaps a quest writer's question.
 - **The benches are a guess.** Many churches round the old Mediterranean had none. A standing nave, with benches only along the walls, would be more Aurennais.
 - **Owed:** the Mark's shrine (its faith is not written in the canon; a question first), the library in each nation's dress, and the guild halls once #352 is answered.
+
+## v80 — Session 948 — Card F9's seventeenth room: Aurenne's library, in the academy's hall (prototype only)
+The library is next on L5's list after the shrines (946, 947). Aurenne's comes first because its house already stands. The canon (§1.3) puts the Mages' academy in Aurenne, "the academy's white towers", and its pride is "ledgers, learning, paper over oaths". Session 836 drew the academy as a long hall of two storeys (the library) behind an arcade, with three white towers rising out of its back (`aurenneAcademy`). OG-043's Aurenne library and academy give the dress: cedar, tile, lattice and brass. So the room is built inside that hall, and nothing new is asked. It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The shell** (`aurenneAcademy` with `o.interior`): the hall leaves out its dark fill. The builder now returns its inner measures, the arcade's arches and the three towers' feet (`inner.towers`: each centre and its radius at the foot, 2.23, 2.76 and 2.23 m). The towers' round shafts stand inside the hall's back. Without `o.interior` the academy is built as before, and `aurenne.check.mjs` passes unchanged.
+
+**The room** (`aurenneLibrary` in `rooms.js`, a hall of 28.8 by 11.8 m and 10.5 m high):
+- **The loggia and the screen.** The arcade's nine arches stay open to the street, as Session 836 drew them. A walk 2.5 m deep runs behind them, past the shell's stone bench. A cedar screen of star lattice, 3.3 m high, closes the reading hall off from it. It has three doorways of 1.5 by 2.5 m, the middle one on the middle arch, with lattice over each. The lattice is one transparent texture of eight-pointed stars, not geometry.
+- **The presses:** cedar cases 2.7 m high and 0.45 m deep, open to the room, with five shelves.
+  - On the side walls they stand between the low windows. On the back wall they stand between the windows and the towers' feet, so no press crosses a window.
+  - The shelves hold runs of codices, drawn as one painted texture of spines (leathers and dyed cloth, two gilt bands on each, the tops uneven), and racks of scrolls.
+  - A rolling ladder leans on the west presses.
+- **Window seats** with cushions of madder and indigo sit under the side windows that the presses leave free.
+- **Four long reading tables** of 3.6 m stand down the hall. Each has a bench either side, a rug under it, a brass lamp, open codices, and a scroll laid flat.
+- **Two copyists' desks** stand by the screen, sloped, each with an inkhorn, a quill, a half-written sheet and a stool.
+- **A brass armillary sphere** stands on a stone pedestal in the middle of the hall, under the observatory's tower: the meridian, the equator, the ecliptic, two colures and an axis.
+- **The towers' feet** are dadoed in tile to 1.3 m under a stone rail. The tile runs only on the arc that stands in the room.
+- **The ceiling** is crossed by painted cedar beams every 2.4 m. Each stops short of a tower it meets.
+- **Four brass lanterns** hang on chains over the tables.
+- 12,746 to 14,366 triangles in 19 draws, on the academy's 18,162 in 8.
+
+The view: `rooms.html?room=library`, with `view=hall` (from the middle doorway down the hall past the armillary), `presses`, `table`, `loggia` and `outside`.
+
+Corrections made during the session:
+- **The books.** The codices were first runs of plain coloured slabs, one colour per run, and read as blocks. They are now the spines texture.
+- **The budget.** The room first came to 31,118 triangles, over the budget of 30,000. Fewer, coarser scroll racks and the books' texture brought it to 14,366.
+- **The presses.** They were first solid boxes, which would have hidden their books. The books also faced out of the cases. The cases are now open, with a back, two ends, a top and a plinth, and the books sit inside.
+- **Into the towers.** The towers' tile bands first ran round the whole shaft, through the back wall. A press in each back corner of the side walls stood inside an end tower, which reaches within 0.17 m of the side wall. The ceiling's beams ran through the towers. The bands now cover only the arc in the room, the corner presses are gone, and each beam stops at the tower.
+- **The ladder's feet** first dipped 2 cm under the floor.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 141 of 141 pass** (133 after Session 947). Four views are new on the page check: the hall by day and by night, the loggia, and outside, all with no page errors. Four checks are new, over four keys:
+  - **The builds:** 12,746 to 14,366 triangles in 19 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling. 0 points inside a tower's foot, measured as a circle, not a box. 0 clashes, the shell's bench and the towers included.
+  - **The walks:** four walks clear by 0.15 m:
+    - in at an arch and through the screen to a table;
+    - along the loggia and in by the middle doorway to the armillary;
+    - between the tables to the back presses;
+    - down the west side to the ladder.
+  - **A person fits:**
+    - the tables at 0.76 m, the benches at 0.45 m, the desks at 0.85 m;
+    - the doorways 1.5 by 2.5 m, the top shelf at 1.84 m;
+    - the lanterns' feet 3.35 m up;
+    - no press across a window.
+- **`aurenne.check.mjs`** and **`pieces.check.mjs`**: all pass.
+- **Pictures:** `rooms-library-hall.jpg`, `-presses`, `-table`, `-loggia`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The hall is one storey of 10.5 m.** Session 836 called the academy two storeys, and the front's upper windows sit over a floor that is not built. A gallery at 5 m, with presses on it, would use the height. It would have to wind round the towers' feet, and it is the next slice if wanted.
+- **The rugs read as plain red.** At this scale the home's rug texture is stretched past its pattern.
+- **The loggia's floor is the hall's terracotta,** while the arcade outside is limestone. It might be stone.
+- **The armillary is small** for so large a hall, 1 m across.
+- **Owed:** the Gatelands' and the Mark's libraries (each needs a house: the Gatelands has none drawn for it, a question like #352), the Mark's shrine (its faith unwritten in the canon), and the guild halls once #352 is answered.

@@ -47,13 +47,16 @@
 // past the bier to the altar under the shuttle; view=dome: from beside the bier up into the drum and the dome; view=sanctuary: the
 // altar, the shuttle and the lectern from the sanctuary's step; view=back: from the sanctuary back over the bier to the door;
 // view=outside: the church from the square.
+// ?room=library (Session 948): Aurenne's library in the academy's hall. view=hall (default): from the middle doorway of the screen down
+// the hall past the armillary to the presses between the towers; view=presses: along the west presses and the ladder; view=table: a
+// reading table and its lamp; view=loggia: the arcade's walk behind the screen; view=outside: the academy from the street.
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run } from './common.js';
-import { gatelandsCottage, markLonghouse, aurenneHome, gatelandsInn, markAlehall, aurenneTavern, aurenneCourtyardHouse, gatelandsForge, markSmithy, aurenneSmithy, gatelandsApothecary, markApothecary, aurenneApothecary, gatelandsGuildHall, gatelandsTemple, aurenneChurchHall } from './rooms.js';
+import { gatelandsCottage, markLonghouse, aurenneHome, gatelandsInn, markAlehall, aurenneTavern, aurenneCourtyardHouse, gatelandsForge, markSmithy, aurenneSmithy, gatelandsApothecary, markApothecary, aurenneApothecary, gatelandsGuildHall, gatelandsTemple, aurenneChurchHall, aurenneLibrary } from './rooms.js';
 import { stream } from './pieces.js';
 
-const ROOM = Q.get('room') || 'cottage', ALE = ROOM === 'alehall', LONG = ROOM === 'longhouse' || ALE, HOME = ROOM === 'home', INN = ROOM === 'inn', TAV = ROOM === 'tavern', CRT = ROOM === 'court', FRG = ROOM === 'forge', SMI = ROOM === 'smithy', ASM = ROOM === 'aursmithy', APO = ROOM === 'apothecary', MAPO = ROOM === 'markapo', AAPO = ROOM === 'aurapo', GLD = ROOM === 'guild', TMP = ROOM === 'temple', CHU = ROOM === 'church', VIEW = Q.get('view') || (MAPO || GLD ? 'hall' : ASM || APO || AAPO ? 'shop' : FRG ? 'forge' : SMI ? 'smithy' : HOME ? 'shop' : INN ? 'tap' : ALE ? 'hall' : TAV ? 'terrace' : CRT ? 'court' : 'kitchen'), HOUR = Q.get('hour') || 'noon';
-const R = makeRenderer(CHU && VIEW !== 'outside' ? 1.3 : TMP && VIEW !== 'outside' ? 1.4 : GLD && VIEW !== 'outside' ? 1.35 : AAPO && !['outside', 'stall'].includes(VIEW) ? 1.3 : MAPO && VIEW !== 'outside' ? 1.4 : APO && VIEW !== 'outside' ? 1.3 : ASM && !['outside', 'stall'].includes(VIEW) ? 1.35 : (FRG || SMI) && VIEW !== 'outside' ? 1.3 : CRT && !['outside', 'above'].includes(VIEW) ? 1.25 : LONG && VIEW !== 'outside' ? 1.5 : (HOME || INN) && !['outside', 'roof'].includes(VIEW) ? 1.4 : TAV && VIEW === 'tap' ? 1.3 : .9), scene = new THREE.Scene(); buildTextures();
+const ROOM = Q.get('room') || 'cottage', ALE = ROOM === 'alehall', LONG = ROOM === 'longhouse' || ALE, HOME = ROOM === 'home', INN = ROOM === 'inn', TAV = ROOM === 'tavern', CRT = ROOM === 'court', FRG = ROOM === 'forge', SMI = ROOM === 'smithy', ASM = ROOM === 'aursmithy', APO = ROOM === 'apothecary', MAPO = ROOM === 'markapo', AAPO = ROOM === 'aurapo', GLD = ROOM === 'guild', TMP = ROOM === 'temple', CHU = ROOM === 'church', LIB = ROOM === 'library', VIEW = Q.get('view') || (MAPO || GLD ? 'hall' : ASM || APO || AAPO ? 'shop' : FRG ? 'forge' : SMI ? 'smithy' : HOME ? 'shop' : INN ? 'tap' : ALE ? 'hall' : TAV ? 'terrace' : CRT ? 'court' : 'kitchen'), HOUR = Q.get('hour') || 'noon';
+const R = makeRenderer(LIB && !['outside', 'loggia'].includes(VIEW) ? 1.3 : CHU && VIEW !== 'outside' ? 1.3 : TMP && VIEW !== 'outside' ? 1.4 : GLD && VIEW !== 'outside' ? 1.35 : AAPO && !['outside', 'stall'].includes(VIEW) ? 1.3 : MAPO && VIEW !== 'outside' ? 1.4 : APO && VIEW !== 'outside' ? 1.3 : ASM && !['outside', 'stall'].includes(VIEW) ? 1.35 : (FRG || SMI) && VIEW !== 'outside' ? 1.3 : CRT && !['outside', 'above'].includes(VIEW) ? 1.25 : LONG && VIEW !== 'outside' ? 1.5 : (HOME || INN) && !['outside', 'roof'].includes(VIEW) ? 1.4 : TAV && VIEW === 'tap' ? 1.3 : .9), scene = new THREE.Scene(); buildTextures();
 const cam = new THREE.PerspectiveCamera(62, W / H, .02, 30000);
 // the hours: the sun's direction (the cottage's front faces +z, south), its colour and strength, the sky's light, the fog
 const HOURS = { morning: { dir: [.5, .3, .82], c: [1, .82, .62], i: 3.2, sky: .5, fog: [.78, .8, .84] }, noon: { dir: [.15, .78, .6], c: [1, .96, .9], i: 3.6, sky: .7, fog: [.74, .8, .88] },
@@ -65,11 +68,14 @@ sun.position.copy(SUN).multiplyScalar(40); Object.assign(sun.shadow.camera, { le
 const sky = new THREE.HemisphereLight(new THREE.Color(.62, .72, .9), new THREE.Color(.34, .32, .24), Hh.sky * (VIEW === 'outside' ? 1.6 : .8)); scene.add(sky);
 skyDome(scene, SUN); if (HOUR !== 'night') clouds(scene, SUN, { n: 8, d0: 1800, dw: 5000, y0: 300 });
 { const g = TAV ? new THREE.PlaneGeometry(300, 160).translate(0, 70, 0) /* the ground stops at the quay, z = 10 */ : new THREE.PlaneGeometry(300, 300); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, mat('rock', { ns: .7, color: 0x7a8a5a, rough: 1 })); m.position.y = -.01; m.receiveShadow = true; scene.add(m); }
-const C = CHU ? aurenneChurchHall({}, stream('church:qasr')) : TMP ? gatelandsTemple({ god: Q.get('god') || 'hearth' }, stream('temple:kilbride')) : GLD ? gatelandsGuildHall({}, stream('guild:kilbride')) : AAPO ? aurenneApothecary({}, stream('aurapo:qasr')) : MAPO ? markApothecary({}, stream('markapo:skarvik')) : APO ? gatelandsApothecary({}, stream('apothecary:kilbride')) : ASM ? aurenneSmithy({}, stream('aursmithy:qasr')) : SMI ? markSmithy({}, stream('smithy:skarvik')) : FRG ? gatelandsForge({}, stream('forge:kilbride')) : CRT ? aurenneCourtyardHouse({}, stream('courtyard:qasr')) : TAV ? aurenneTavern({}, stream('tavern:qasr')) : ALE ? markAlehall({}, stream('alehall:skarvik')) : INN ? gatelandsInn({}, stream('inn:kilbride')) : HOME ? aurenneHome({ shell: Q.get('shell') || 'aurhome-shell' }, stream('aurhome:qasr')) : LONG ? markLonghouse({}, stream('longhouse:skarvik')) : gatelandsCottage({}, stream('cottage:kilbride')); scene.add(C.group);
+const C = LIB ? aurenneLibrary({}, stream('library:qasr')) : CHU ? aurenneChurchHall({}, stream('church:qasr')) : TMP ? gatelandsTemple({ god: Q.get('god') || 'hearth' }, stream('temple:kilbride')) : GLD ? gatelandsGuildHall({}, stream('guild:kilbride')) : AAPO ? aurenneApothecary({}, stream('aurapo:qasr')) : MAPO ? markApothecary({}, stream('markapo:skarvik')) : APO ? gatelandsApothecary({}, stream('apothecary:kilbride')) : ASM ? aurenneSmithy({}, stream('aursmithy:qasr')) : SMI ? markSmithy({}, stream('smithy:skarvik')) : FRG ? gatelandsForge({}, stream('forge:kilbride')) : CRT ? aurenneCourtyardHouse({}, stream('courtyard:qasr')) : TAV ? aurenneTavern({}, stream('tavern:qasr')) : ALE ? markAlehall({}, stream('alehall:skarvik')) : INN ? gatelandsInn({}, stream('inn:kilbride')) : HOME ? aurenneHome({ shell: Q.get('shell') || 'aurhome-shell' }, stream('aurhome:qasr')) : LONG ? markLonghouse({}, stream('longhouse:skarvik')) : gatelandsCottage({}, stream('cottage:kilbride')); scene.add(C.group);
 if (LONG) Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11 });
 if (ALE) Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13 });
+if (LIB) Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 18, bottom: -18 });
 if (CHU) Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13 });
 if (CRT) Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11 });
+// the library: the four lamps over the tables
+if (LIB) { for (const L of C.lamps) { const l = new THREE.PointLight(new THREE.Color(1, .72, .42), HOUR === 'night' ? 4 : 1.6, 8, 1.5); l.position.set(L[0], L[1] - .1, L[2]); scene.add(l); } sky.groundColor = new THREE.Color(.62, .5, .38); }
 // the church: the ring of lamps under the dome, the altar's candles, the bier's four
 if (CHU) { const l = new THREE.PointLight(new THREE.Color(1, .72, .42), HOUR === 'night' ? 9 : 4, 14, 1.4); l.position.set(0, C.ring.y - .2, 0); scene.add(l);
   const a = new THREE.PointLight(new THREE.Color(1, .68, .38), HOUR === 'night' ? 3 : 2, 6, 1.6); a.position.set(0, C.altar.y + .9, C.altar.z1 + .3); scene.add(a);
@@ -90,7 +96,7 @@ else if (CRT) { const up = ['gallery', 'bedroom', 'study', 'children'].includes(
   for (const L of near) { const q = new THREE.PointLight(new THREE.Color(1, .72, .42), HOUR === 'night' ? 4 : up ? 2.4 : 1.6, 7, 1.6); q.position.set(L[0], L[1] - .1, L[2]); scene.add(q); }
   if (!up) for (const b of C.braziers) { const f = new THREE.PointLight(new THREE.Color(1, .5, .2), 2.2, 4, 1.6); f.position.set(b[0], b[1] + .25, b[2] - .45); scene.add(f); }
   sky.groundColor = new THREE.Color(.6, .5, .38); }
-else if (TMP || CHU) {}
+else if (TMP || CHU || LIB) {}
 else if (INN || GLD) { const f = new THREE.PointLight(new THREE.Color(1, .55, .24), 9, 10, 1.6); f.position.set(C.fire[0] + .35, C.fire[1] + .2, C.fire[2]); f.castShadow = true; f.shadow.mapSize.set(1024, 1024); scene.add(f);
   const l = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 4 : 2, 7, 1.6); l.position.set(C.lamp[0], C.lamp[1] - .1, C.lamp[2]); scene.add(l);
   const u = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 2.5 : 1, 6, 1.6); u.position.set(-.5, C.floors[1] + 1.9, (C.passage + C.inner.z0) / 2); scene.add(u); }
@@ -120,9 +126,15 @@ if (ALE) for (const L of C.lamps) { const q = new THREE.PointLight(new THREE.Col
 if (LONG && !ALE) { const q = new THREE.PointLight(new THREE.Color(1, .66, .34), 3, 6, 1.6); q.position.set(C.lamp2[0], C.lamp2[1] + .08, C.lamp2[2] + .05); scene.add(q); }
 // the longhouse's louver lets a grey shaft of day down onto the hearth's smoke (none at night)
 if (LONG && HOUR !== 'night') { const l = new THREE.SpotLight(new THREE.Color(.8, .85, .95), 80 * Hh.sky, 14, .5, .9, 1.2); l.position.set(0, C.under(0) - .2, C.louver); l.target.position.set(0, C.floor, C.louver); scene.add(l, l.target); }
-if (!HOME && !INN && !ALE && !TAV && !CRT && !FRG && !SMI && !ASM && !MAPO && !AAPO && !GLD && !TMP && !CHU && (HOUR === 'night' || HOUR === 'golden')) { const L = LONG ? C.lamp : C.lantern, l = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 4 : 2, 7, 1.6); l.position.set(L[0], L[1] + (LONG ? .1 : -.1), L[2]); scene.add(l); }
+if (!HOME && !INN && !ALE && !TAV && !CRT && !FRG && !SMI && !ASM && !MAPO && !AAPO && !GLD && !TMP && !CHU && !LIB && (HOUR === 'night' || HOUR === 'golden')) { const L = LONG ? C.lamp : C.lantern, l = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 4 : 2, 7, 1.6); l.position.set(L[0], L[1] + (LONG ? .1 : -.1), L[2]); scene.add(l); }
 const inside = VIEW !== 'outside'; let eye, at;
-if (CHU) { const Z = C.inner.z1, X = C.inner.x1, F = C.floor + 1.62;
+if (LIB) { const Z = C.inner.z1, X = C.inner.x1, F = C.floor + 1.62;
+  if (VIEW === 'presses') { eye = [-11.6, F, 2.8]; at = [-X, C.floor + 1.2, -3.5]; cam.fov = 70; }
+  else if (VIEW === 'table') { eye = [2.4, F + .1, 1.2]; at = [5.6, C.floor + .8, -.6]; cam.fov = 66; }
+  else if (VIEW === 'loggia') { eye = [12.6, F, 4.7]; at = [-6, C.floor + 1.4, 4.2]; cam.fov = 66; }
+  else if (VIEW === 'outside') { eye = [16, 3, C.front + 20]; at = [0, 6, 0]; cam.fov = 50; }
+  else { eye = [0, F, C.screen.z + .3]; at = [0, C.floor + 2.0, -Z]; cam.fov = 76; } }
+else if (CHU) { const Z = C.inner.z1, X = C.inner.x1, F = C.floor + 1.62;
   if (VIEW === 'dome') { eye = [1.6, F, 1.8]; at = [-.3, C.oculus.y + 2.5, -.6]; cam.fov = 80; }
   else if (VIEW === 'sanctuary') { eye = [1.6, F, -1.6]; at = [-.6, C.altar.y + 1.3, -Z]; cam.fov = 70; }
   else if (VIEW === 'back') { eye = [-1.6, C.sanctuary.y + 1.62, C.sanctuary.z1 - .3]; at = [.3, C.floor + 1.2, Z]; cam.fov = 72; }

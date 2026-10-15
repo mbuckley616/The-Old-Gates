@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV } from './common.js';
-import { stream, gatelandsBuilding, GL_PLANS, SCALE, glMats, markHall, aurenneHouse, aurenneCourtyard, aurenneTextures, aurenneChurch } from './pieces.js';
+import { stream, gatelandsBuilding, GL_PLANS, SCALE, glMats, markHall, aurenneHouse, aurenneCourtyard, aurenneTextures, aurenneChurch, aurenneAcademy } from './pieces.js';
 
 let RM = null;
 function mats() {
@@ -1456,4 +1456,83 @@ export function aurenneChurchHall(o = {}, r = stream('church')) {
   const paths = [[[0, Z - .3], [0, bier.z1 + .5]], [[0, Z - .3], [0, 2.05], [2.0, 2.05], [2.0, -2.05], [0, sanctuary.z1 + .65]], [[0, Z - .3], [0, 2.05], [-2.0, 2.05], [-2.0, -2.05], [-.6, sanctuary.z1 + .65]], [[0, 2.05], [-4.9, 2.05]]];
   return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: C.tris, shellCalls: C.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL, oculus: { r: I.Ri, y: I.y0, crown: I.crown },
     bier, sanctuary, altar, shuttle, lectern, benches, ring, door: { x: 0, z: I.D / 2, w: C.door.w, h: C.door.h }, paths, boxes, w: I.W, d: I.D, front: C.front };
+}
+
+// ── Aurenne's library (Session 948, card F9; OG-043's Aurenne library and academy; the canon's §1.3: "the academy's white towers", the
+// Mages' academy in Aurenne, "ledgers, learning, paper over oaths"). Built inside pieces.js's aurenneAcademy (the long hall of 30 by 13 m,
+// 10.5 m high, its front an arcade of nine arches, three towers rising out of its back) with o.interior. The arches stay open: a loggia
+// runs behind them, and a cedar lattice screen with three doorways closes the reading hall off from it. In the hall: cedar presses of
+// codices and scrolls along the walls between the windows and the towers' round feet, a rolling ladder, four long reading tables
+// with benches and brass lamps, two copyists' sloped desks, a brass armillary sphere in the middle (the observatory over it), window
+// seats, rugs, painted beams across the ceiling, and a tile dado round the towers' feet.
+// aurenneLibrary(o, r) -> { group, shell, room, tris, draws, inner, floor, ceil, screen {z, doors: [x]}, presses, tables, desks,
+//   armillary, lamps, towers, ladder, paths, boxes, w, d }
+let LIBLAT = null, LIBSP = null;
+export function aurenneLibrary(o = {}, r = stream('library')) {
+  const A = aurenneAcademy({ w: 30, towers: 3, interior: true }, stream(o.shell || 'library-shell')), I = A.inner, shell = A.group;
+  if (!LIBLAT) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#8a5a36'; x.fillRect(0, 0, 128, 128); x.globalCompositeOperation = 'destination-out';
+    /* an eight-pointed star in each cell of the lattice, a small square at each crossing */ for (const [cx, cy] of [[32, 32], [96, 32], [32, 96], [96, 96]]) for (const a of [0, Math.PI / 4]) { x.save(); x.translate(cx, cy); x.rotate(a); x.fillRect(-15, -15, 30, 30); x.restore(); }
+    for (const [cx, cy] of [[0, 0], [64, 0], [128, 0], [0, 64], [64, 64], [128, 64], [0, 128], [64, 128], [128, 128]]) x.fillRect(cx - 7, cy - 7, 14, 14); LIBLAT = new THREE.CanvasTexture(c); LIBLAT.colorSpace = THREE.SRGBColorSpace; LIBLAT.wrapS = LIBLAT.wrapT = THREE.RepeatWrapping; }
+  if (!LIBSP) { /* a metre of spines: codices of every width in leathers and dyed cloth, two gilt bands on each, the tops uneven */ const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d'), q = stream('library-spines'), hues = ['#5a2a1c', '#6e3a22', '#3a2418', '#7a1e1a', '#26386e', '#2a4a3a', '#8a5a2a', '#4a2a3a', '#9a7a4a'];
+    x.fillStyle = '#140c08'; x.fillRect(0, 0, 512, 128); for (let u = 0; u < 512;) { const w = 10 + Math.floor(q() * 22), top = Math.floor(q() * 26); x.fillStyle = hues[Math.floor(q() * hues.length)]; x.fillRect(u + 1, top, w - 2, 128 - top);
+      x.fillStyle = 'rgba(214,170,80,.85)'; for (const y of [top + 14, 112]) x.fillRect(u + 2, y, w - 4, 3); x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(u + 2, top, 2, 128 - top); u += w; }
+    LIBSP = new THREE.CanvasTexture(c); LIBSP.colorSpace = THREE.SRGBColorSpace; LIBSP.wrapS = LIBSP.wrapT = THREE.RepeatWrapping; }
+  const H0 = homeMats(), M = { ...H0, gold: new THREE.MeshStandardMaterial({ color: 0xc8952e, roughness: .3, metalness: .75 }), flame: mats().flame, glow: mats().glow, linen: mats().linen, iron: mats().iron,
+    lattice: new THREE.MeshStandardMaterial({ map: LIBLAT, alphaTest: .5, side: THREE.DoubleSide, roughness: .7 }), vellum: mat('plaster', { ns: .2, color: 0xe6d8b4, rough: 1 }), spines: mat('wood', { ns: .5, color: 0x6a3a26, rough: .8 }), books: new THREE.MeshStandardMaterial({ map: LIBSP, roughness: .8 }), scroll: mat('plaster', { ns: .2, color: 0xd8c49a, rough: 1 }) },
+    B = new Map(), boxes = [], X = I.W / 2 - I.T, Z = I.D / 2 - I.T, F0 = I.pl, CEIL = I.pl + I.H;
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal', ...(key === 'lattice' ? ['uv'] : [])].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1))); if (key !== 'lattice') worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, tag) => { const g = put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, key === 'books' ? 1 : .6);
+    if (key === 'books') { const U = g.attributes.uv, P = g.attributes.position; for (let i = 0; i < U.count; i++) U.setY(i, (P.getY(i) - y0) / (y1 - y0)); } if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
+  // the shell's own pieces inside: the stone bench under the arcade and the towers' feet (their radius at the foot)
+  const Bn = I.bench; boxes.push({ tag: 'loggiabench', x0: Bn.x0, x1: Bn.x1, y0: F0, y1: Bn.y, z0: Bn.z0, z1: Bn.z1 }); for (const T of I.towers) boxes.push({ tag: 'tower', x0: T.x - T.r, x1: T.x + T.r, y0: F0, y1: CEIL, z0: -Z, z1: Math.min(T.z + T.r, Z) });
+  // the floor: terracotta tiles; rugs at the tables; the tile dado round each tower's foot
+  bx('tile', -X, X, F0, F0 + .03, -Z, Z); for (const T of I.towers) { /* only the arc that stands in the room, in front of the back wall */ const h = Math.acos(Math.min(1, (-Z - T.z) / (T.r + .05))) - .02; put(new THREE.CylinderGeometry(T.r + .02, T.r + .02, 1.3, 32, 1, true, -h, 2 * h), 'zellige', T.x, F0 + .65, T.z, 0, .9); put(new THREE.CylinderGeometry(T.r + .05, T.r + .05, .06, 32, 1, true, -h, 2 * h), 'step', T.x, F0 + 1.33, T.z); }
+  // the screen: a cedar frame and lattice from wall to wall behind the arcade, three doorways (the middle one on the arcade's middle arch)
+  const SZ = 3.4, SH = 3.3, doors = [-10, 0, 10], dw = 1.5; { let x0 = -X; for (const dx of [...doors, X + dw / 2]) { const x1 = Math.min(X, dx - dw / 2); if (x1 - x0 > .05) { const g = new THREE.PlaneGeometry(x1 - x0, SH - .5); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (x1 - x0) / .8, uv.getY(i) * (SH - .5) / .8); put(g, 'lattice', (x0 + x1) / 2, F0 + .5 + (SH - .5) / 2, SZ);
+        bx('cedarD', x0, x1, F0, F0 + .5, SZ - .05, SZ + .05, 'screen'); bx('cedarD', x0, x1, F0 + SH, F0 + SH + .12, SZ - .06, SZ + .06); } x0 = dx + dw / 2; }
+    for (const dx of doors) for (const s of [-1, 1]) bx('cedarD', dx + s * dw / 2 - .06, dx + s * dw / 2 + .06, F0, F0 + SH, SZ - .07, SZ + .07, 'screen');
+    for (const dx of doors) { bx('cedarD', dx - dw / 2, dx + dw / 2, F0 + 2.5, F0 + 2.62, SZ - .06, SZ + .06); const g = new THREE.PlaneGeometry(dw, SH - 2.62); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * dw / .8, uv.getY(i) * (SH - 2.62) / .8); put(g, 'lattice', dx, F0 + 2.62 + (SH - 2.62) / 2, SZ); } }
+  // the presses: cedar cases 2.7 m high and 0.45 deep, five shelves of codices and scroll racks, in the gaps the windows and the towers leave
+  const presses = [], side = [[-3.35, -.55], [.55, 3.25]] /* the end towers stand within a metre of the side walls: the corner by them is left bare */, back = [[-8.9, -6.15], [-5.15, -2.95], [2.95, 5.15], [6.15, 8.9]], PH = 2.7, PD = .45;
+  const press = (x0, x1, z0, z1, alongX) => { boxes.push({ tag: 'press', x0, x1, y0: F0, y1: F0 + PH, z0, z1 }); const len = alongX ? x1 - x0 : z1 - z0, face = alongX ? (z0 < 0 ? z1 : z0) : (x0 < 0 ? x1 : x0), dir = alongX ? (z0 < 0 ? -1 : 1) : (x0 < 0 ? -1 : 1);
+    /* the case: its back against the wall, two ends, a top and a plinth, open to the room */ if (alongX) { const bz = face + dir * PD; bx('cedarD', x0, x1, F0, F0 + PH, Math.min(bz, bz - dir * .04), Math.max(bz, bz - dir * .04)); for (const xx of [x0, x1 - .05]) bx('cedarD', xx, xx + .05, F0, F0 + PH, z0, z1); bx('cedarD', x0, x1, F0 + PH - .08, F0 + PH, z0, z1); bx('cedarD', x0, x1, F0, F0 + .1, z0, z1); }
+    else { const bxx = face + dir * PD; bx('cedarD', Math.min(bxx, bxx - dir * .04), Math.max(bxx, bxx - dir * .04), F0, F0 + PH, z0, z1); for (const zz of [z0, z1 - .05]) bx('cedarD', x0, x1, F0, F0 + PH, zz, zz + .05); bx('cedarD', x0, x1, F0 + PH - .08, F0 + PH, z0, z1); bx('cedarD', x0, x1, F0, F0 + .1, z0, z1); }
+    for (let k = 0; k < 6; k++) { const y = F0 + .12 + k * .43; if (k === 5) break; for (let u = .08; u < len - .12;) { const scrolls = r() < .18, w = scrolls ? .3 + r() * .2 : .5 + r() * .7, ht = .3 + r() * .06, key = 'books';
+        const a = (alongX ? x0 : z0) + u, b = Math.min(a + w, (alongX ? x1 : z1) - .06);
+        if (scrolls) for (let q = a + .05; q < b - .04; q += .09) for (let j = 0; j < 3; j++) { const g = new THREE.CylinderGeometry(.04, .04, PD - .1, 5); g.rotateX(Math.PI / 2); if (!alongX) g.rotateY(Math.PI / 2); put(g, 'scroll', alongX ? q : face + dir * .22, y + .05 + j * .085, alongX ? face + dir * .22 : q); }
+        else if (alongX) bx(key, a, b, y, y + ht, Math.min(face, face + dir * .38), Math.max(face, face + dir * .38)); else bx(key, Math.min(face, face + dir * .38), Math.max(face, face + dir * .38), y, y + ht, a, b);
+        u += w + .02; } if (alongX) bx('cedar', x0, x1, y - .03, y, Math.min(face, face + dir * .02), Math.max(face, face + dir * .02)); else bx('cedar', Math.min(face, face + dir * .02), Math.max(face, face + dir * .02), y - .03, y, z0, z1); }
+    presses.push({ x0, x1, z0, z1 }); };
+  for (const [z0, z1] of side) for (const sx of [-1, 1]) press(sx < 0 ? -X : X - PD, sx < 0 ? -X + PD : X, z0, z1, false);
+  for (const [x0, x1] of back) press(x0, x1, -Z, -Z + PD, true);
+  // the rolling ladder against the west presses
+  const ladder = { x: -X + PD + .25, z: -2.0 }; { const { x, z } = ladder; for (const dz of [-.22, .22]) put(new THREE.BoxGeometry(.05, 2.84, .06), 'cedar', x - .1, F0 + 1.45, z + dz, 0, .6, 0, .16); for (let k = 0; k < 9; k++) bx('cedar', x - .2 + k * .045 - .02, x - .2 + k * .045 + .02, F0 + .3 + k * .3, F0 + .33 + k * .3, z - .22, z + .22);
+    boxes.push({ tag: 'ladder', x0: -X + PD + .005 /* it leans on the press's face */, x1: x + .3, y0: F0, y1: F0 + 2.9, z0: z - .26, z1: z + .26 }); }
+  // window seats under the side walls' low windows (between the presses), a cushion on each
+  for (const sx of [-1, 1]) for (const [z0, z1] of [[-4.35, -3.5], [-.45, .45]]) { const x0 = sx < 0 ? -X : X - .5, x1 = sx < 0 ? -X + .5 : X; bx('step', x0, x1, F0, F0 + .4, z0, z1, 'seat'); bx(sx < 0 ? 'madder' : 'indigo', x0 + .03, x1 - .03, F0 + .4, F0 + .47, z0 + .03, z1 - .03); }
+  // four long reading tables with a bench either side, a rug under each, a brass lamp, codices open and a scroll weighted flat
+  const tables = [], lamps = []; for (const tx of [-10.5, -4.6, 4.6, 10.5]) { const t = { x0: tx - 1.8, x1: tx + 1.8, z0: -1.05, z1: -.05, y: F0 + .76 }; tables.push(t); bx('rug', t.x0 - .4, t.x1 + .4, F0 + .03, F0 + .04, t.z0 - 1.0, t.z1 + 1.0);
+    bx('cedar', t.x0, t.x1, t.y - .05, t.y, t.z0, t.z1, 'table'); for (const xx of [t.x0 + .1, t.x1 - .18]) for (const zz of [t.z0 + .08, t.z1 - .16]) bx('cedar', xx, xx + .08, F0, t.y - .05, zz, zz + .08);
+    for (const [bz0, bz1] of [[t.z0 - .55, t.z0 - .2], [t.z1 + .2, t.z1 + .55]]) { bx('cedar', t.x0 + .1, t.x1 - .1, F0 + .41, F0 + .45, bz0, bz1, 'bench'); for (const xx of [t.x0 + .2, t.x1 - .26]) bx('cedar', xx, xx + .06, F0, F0 + .41, bz0 + .03, bz1 - .03); }
+    for (let k = 0; k < 3; k++) { const cx = t.x0 + .6 + k * 1.2, cz = k % 2 ? t.z0 + .3 : t.z1 - .3; bx('vellum', cx - .22, cx + .22, t.y, t.y + .015, cz - .15, cz + .15); bx('spines', cx - .015, cx + .015, t.y, t.y + .03, cz - .16, cz + .16); }
+    { const g = new THREE.CylinderGeometry(.06, .06, .5, 10); g.rotateZ(Math.PI / 2); put(g, 'scroll', tx + .3, t.y + .06, (t.z0 + t.z1) / 2); bx('scroll', tx - .4, tx + .3, t.y, t.y + .006, t.z0 + .25, t.z1 - .25); }
+    put(new THREE.CylinderGeometry(.07, .09, .05, 10), 'gold', tx - .6, t.y + .025, (t.z0 + t.z1) / 2); put(new THREE.SphereGeometry(.06, 8, 6).scale(1.6, .7, 1), 'gold', tx - .6, t.y + .09, (t.z0 + t.z1) / 2); put(new THREE.SphereGeometry(.014, 6, 5).scale(1, 2.2, 1), 'flame', tx - .7, t.y + .14, (t.z0 + t.z1) / 2);
+    const L = [tx, F0 + 3.4, (t.z0 + t.z1) / 2]; lamps.push(L); bx('iron', tx - .01, tx + .01, L[1] + .25, CEIL, L[2] - .01, L[2] + .01); put(new THREE.CylinderGeometry(.16, .12, .4, 8), 'gold', L[0], L[1] + .1, L[2]); put(new THREE.CylinderGeometry(.13, .1, .3, 8), 'glow', L[0], L[1] + .08, L[2]); put(new THREE.ConeGeometry(.2, .2, 8), 'gold', L[0], L[1] + .4, L[2]); }
+  // two copyists' desks, sloped, by the screen: an inkhorn, a quill, a sheet half written, the codex it is copied from on a stand
+  const desks = []; for (const dx of [-6.8, 6.8]) { const d = { x0: dx - .5, x1: dx + .5, z0: 1.6, z1: 2.25, y: F0 + .85 }; desks.push(d); for (const xx of [d.x0 + .04, d.x1 - .1]) bx('cedarD', xx, xx + .06, F0, d.y, d.z0 + .05, d.z1 - .05, 'desk');
+    put(new THREE.BoxGeometry(1.0, .04, .7), 'cedarD', dx, d.y, (d.z0 + d.z1) / 2, 0, .6, -.25); put(new THREE.PlaneGeometry(.32, .44).rotateX(-Math.PI / 2 - .25), 'vellum', dx - .15, d.y + .03, (d.z0 + d.z1) / 2); put(new THREE.CylinderGeometry(.025, .03, .08, 8), 'iron', dx + .38, d.y + .1, d.z1 - .1);
+    put(new THREE.ConeGeometry(.01, .3, 4), 'linen', dx + .38, d.y + .22, d.z1 - .1, 0, .6, .25, .2); bx('cedarD', dx - .05, dx + .05, F0, F0 + .45, d.z1 + .25, d.z1 + .6, 'stool'); }
+  // the armillary sphere on its pedestal in the middle of the hall, its rings of brass: the meridian, the equator, the ecliptic, two colures
+  const armillary = { x: 0, z: .6, y: F0 + 1.55, r: .5 }; { const { x, z, y, r: ar } = armillary; put(new THREE.CylinderGeometry(.35, .45, .1, 16), 'step', x, F0 + .05, z); put(new THREE.CylinderGeometry(.1, .14, .85, 12), 'step', x, F0 + .5, z); put(new THREE.CylinderGeometry(.22, .18, .1, 16), 'gold', x, F0 + .97, z);
+    for (const [rx, ry, rz] of [[0, 0, 0], [Math.PI / 2, 0, 0], [Math.PI / 2, 0, .41], [0, Math.PI / 2, 0], [0, Math.PI / 4, 0]]) put(new THREE.TorusGeometry(ar, .015, 5, 40), 'gold', x, y, z, ry, .6, rx, rz);
+    put(new THREE.CylinderGeometry(.012, .012, ar * 2.4, 6), 'gold', x, y, z, 0, .6, 0, .41); put(new THREE.SphereGeometry(.08, 10, 8), 'terra', x, y, z); bx('gold', x - .04, x + .04, F0 + 1.0, y - ar, z - .04, z + .04); boxes.push({ tag: 'armillary', x0: x - .55, x1: x + .55, y0: F0, y1: y + .6, z0: z - .55, z1: z + .55 }); }
+  // the ceiling's painted beams across the hall
+  for (let x = -X + 1.2; x < X - .5; x += 2.4) { /* a beam stops short of a tower it meets */ let z0 = -Z; for (const T of I.towers) { const dx = Math.max(0, Math.abs(x - T.x) - .13); if (dx < T.r) z0 = Math.max(z0, T.z + Math.sqrt(T.r * T.r - dx * dx) + .03); }
+    bx('cedarD', x - .12, x + .12, CEIL - .3, CEIL, z0, Z); bx('indigo', x - .125, x + .125, CEIL - .2, CEIL - .14, z0, Z); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const all = new THREE.Group(); all.add(shell, group);
+  const arch = A.arches.find(x => x > 9), paths = [[[arch, Z + .3], [arch, Z - .4], [10, SZ + .5], [10, SZ - .5], [10, 1.0], [8.0, 1.0]], [[arch, Z - .4], [8.0, 4.4], [0, 4.4], [0, SZ - .5], [0, 1.4]], [[0, 1.4], [-2.3, 1.2], [-2.3, -2.2], [-7.5, -2.2]], [[-10, SZ - .5], [-10, 1.0], [-12.9, 1.0], [-12.9, -3.0]]];
+  return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: A.tris, shellCalls: A.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL,
+    screen: { z: SZ, doors, w: dw, h: 2.5 }, presses, tables, desks, armillary, lamps, towers: I.towers, ladder, paths, boxes, w: I.W, d: I.D, front: A.front };
 }
