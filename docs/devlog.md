@@ -20009,3 +20009,40 @@ Corrections made during the session:
 - **The inner walls are the shell's rubble, as bright as its outside.** A forge's walls are black with smoke. A soot wash on the inner faces near the hearth would help, but the shell's wall is one slab, with one material on both faces.
 - **The fire's light is a point light at the hearth.** It has no sparks and no glow on the hood's underside.
 - **Owed:** the Mark's smithy (in a timber hall) and Aurenne's (in an arcade), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 930 — Card F9's ninth room: the Mark's smithy (prototype only)
+The smithy's second dress, after Session 929's Gatelands forge. OG-043 gives the Mark's blacksmith a timber hall with carved posts, and OG-025's longhall shows how the Mark builds one. So the room is built inside the Mark's hall of `pieces.js`, as the longhouse (Session 870) and the alehall (894) are: shingle, a smoke louver on the ridge, the porch and its steps, and the carved gable ends. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`markSmithy` in `rooms.js`, in a hall of 6.4 by 9 m):
+- **The floor** is the hall's stone footing, flagged. A smithy has no planks near its fire, where the longhouse and the alehall are planked.
+- **The forge stands free on the hall's axis under the louver,** so its smoke goes straight up and out, with no hood or chimney. That is how the Mark's halls already deal with smoke, and it is the second difference from the Gatelands forge, which stands against a gable under a hood.
+  - The forge itself is a waist-high block of stone (0.72 m) with a clay top, small fire-blackened stones round its rim, a bed of charcoal and the fire.
+- **At the forge's back stands the bellows shield,** an upright slab 0.6 m over the forge with the two nozzles through it. Behind the shield, the twin bag bellows lie on a low frame, one full and one emptied, so the blast never stops. A handle stands on each.
+- **Before the forge, the anvil:** a block on a great stump, its face at 0.8 m, with a small beak to one side. A hammer lies on it, and tongs lean on the stump. The quench tub stands at its right, 1.01 m away.
+- **The left wall:** the charcoal bin, the smith's tool chest with its lid up, and tongs and hammers on pegs between the windows.
+- **The right wall:** a bench 0.88 m high with a vice, and the whetstone on its frame in the back corner.
+- **The back wall:** spear shafts with their heads in a rack, and iron bars leaning by them. They are the Mark's trade in arms (§1.2's soldiers for hire).
+- **The frame** is the longhouse's: two rows of posts set clear of the forge, purlins, tie beams at 3.11 m over the floor, rafters, and a board lining under the shingle. An iron lamp hangs from the front tie beam.
+- **The door** is hung open against the front wall.
+- 6,652 to 6,760 triangles in 15 draws, in the hall's 1,488 in 7.
+
+The view: `rooms.html?room=smithy`, with `view=smithy` (from inside the door past the anvil to the forge under the louver), `bellows` (from behind the bellows over the shield toward the door), `bench` and `outside`. By day a grey shaft comes down from the louver, as in the longhouse.
+
+Corrections made during the session:
+- The bellows' boards were first drawn with their narrow ends away from the shield. They now point into it.
+- The two bags first touched and read as one shape. They are narrower now, with a gap between them.
+- The rim stones and the shield were first in the kit's stone texture and read pale as loaves beside the fire. They are now a plain fire-blackened slab.
+- The walk down the left side brushed the open door's leaf. It now goes straight in first.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 69 of 69 pass** (62 after Session 929). Two views are new on the page check, with no page errors. Five checks are new, over four keys:
+  - **The builds:** 6,652 to 6,760 triangles in 15 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the roof's lining (no point through), and no two in each other.
+  - **The walks:** from the door to the anvil, to the bench, and down the left side to the spear rack, all clear by 0.15 m. There are 3.11 m under the tie beams.
+  - **A smith fits:** the anvil at 0.8 m, the bench at 0.88 m, the forge at 0.72 m.
+  - **The forge works:** the fire is on the forge, 0.1 m from straight under the louver. The shield stands between the fire and the bellows and 0.3 m or more over the forge. The anvil is 0.85 m out from the forge, and the tub 1.01 m from the anvil.
+- **Pictures:** `rooms-smithy-smithy.jpg`, `-bellows`, `-bench`, `-outside` and `-smithy-night`.
+### Needs eyes
+- **The shield's fire-side face shows as a lit pale panel** from the door, because the fire's light is a point 0.3 m from it. A real fire would light it orange and uneven.
+- **The bench along the right wall is dark** by day. Only the wall's small window and the lamp light it.
+- **The anvil is small, as the Mark's block anvils were**, beside the Gatelands' horned anvil. If the two islands should share one anvil, the Gatelands' piece would serve both.
+- **Owed:** Aurenne's smithy (in an arcade, by OG-043), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
