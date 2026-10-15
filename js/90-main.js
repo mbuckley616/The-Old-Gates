@@ -428,7 +428,9 @@ function loop(now){
   // sneaking, EYE_STAND otherwise. Rate constant gives ~0.30s for ~95% complete.
   // Headbob amplitude halves while sneaking — completes the "stealth posture"
   // visual without needing a separate skeletal crouch animation.
-  const _eyeTarget = _sneaking ? EYE_CROUCH : EYE_STAND;
+  // S880 (F2a) — a swimmer's eye stays where the old eye put it over the water (SCALE.EYE_SWIM), not 1.65 above the swim floor
+  const _swimEye = activeZoneId==='world' && typeof WORLD!=='undefined' && WORLD.isSwimming();
+  const _eyeTarget = _swimEye ? SCALE.EYE_SWIM : _sneaking ? EYE_CROUCH : EYE_STAND;
   _eyeHeightCur += (_eyeTarget - _eyeHeightCur) * Math.min(1, dt * CROUCH_LERP_RATE);
   const _bobMult = _sneaking ? SNEAK_BOB_MULT : 1.0;
   const bob=moving?(lid==='overworld'?Math.sin(swT*4)*.008*_bobMult:Math.sin(swT*3.8)*.012*_bobMult):0;
@@ -1020,7 +1022,7 @@ function loop(now){
     // v61d4 — added safehouse:8 to room-depth lookup so the exit threshold
     // resolves correctly indoors. Same fix applies in the interact handler.
     const _rd=(currentHouse&&(currentHouse._roomD||{weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22,safehouse:8}[currentHouse.type||'misc']))||9,_rw=(currentHouse&&currentHouse._roomW)||10;
-    const nearExit=pz>_rd-1.6&&Math.abs(px-_rw/2)<1.6&&jumpY<.6; // v80 S13 — at the door, on the ground floor
+    const nearExit=pz>_rd-1.6&&Math.abs(px-_rw/2)<1.6&&jumpY<.6&&!personAimedIn(); /* S905 — a person aimed at wins, as E's own rule */ // v80 S13 — at the door, on the ground floor
     // v61d4 — Stash + bed proximity prompts. Both check the live globals
     // set by buildInterior's safehouse branch; null in any other interior.
     const nearStash=stashAimed(); /* S656 — the prompt asks what E does */

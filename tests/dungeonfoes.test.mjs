@@ -32,6 +32,8 @@ for (const seed of [7, 12, 17, 23, 31]) { await page.evaluate(() => { level = 6;
       out[n] = { person: true, wraith: !!r.g.wraith, phantom: !!r.g.phantom, opacity: r.mesh.material.opacity, linked: r.e === e, isWraith: e.isWraith, lift: +r.root.position.y.toFixed(2), bob: +(e.mesh.position.y - e.baseY).toFixed(2), walk: r.w.walk }; }
     return Object.keys(out).length ? out : { none: true }; });
   if (gh.Wraith && gh.Phantom) break; }
-check('the dungeon\'s wraiths and phantoms are the robed, see-through wraith, gliding (Session 212)', !gh.none && Object.values(gh).every(v => v.person && v.wraith && v.linked && v.isWraith && v.opacity < .7 && v.lift > .15 && v.lift < .33 && Math.abs(v.bob) <= .125 && v.walk === 0) && (!gh.Phantom || (gh.Phantom.phantom && gh.Phantom.opacity === .5)), gh);
+// S905 (F2a): the glide is .24 ± .05 times SCALE.ROOM_K now, as high against the taller body as before (tickPeople)
+const RK = await page.evaluate(() => SCALE.ROOM_K);
+check('the dungeon\'s wraiths and phantoms are the robed, see-through wraith, gliding (Session 212)', !gh.none && Object.values(gh).every(v => v.person && v.wraith && v.linked && v.isWraith && v.opacity < .7 && v.lift > .15 * RK && v.lift < .33 * RK && Math.abs(v.bob) <= .125 && v.walk === 0) && (!gh.Phantom || (gh.Phantom.phantom && gh.Phantom.opacity === .5)), gh);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

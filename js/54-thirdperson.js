@@ -12,8 +12,8 @@ let thirdPerson=false,PLAYER_MODEL=null; // v80 S12 — V toggles third person
 // S244: the viewmodel's variants (0 the forehand diagonal, 1 the backhand diagonal, 2 the overhead chop) as the body's
 // (0 the flat cut, 1 the overhead chop, 2 the rising diagonal)
 const TP_SWING_OF=[0,2,1];
-const TP={rig:null,sig:'',dist:1.9,want:1.9,cur:1.9,phase:0,lastHP:null,hurtT:0,deadT:0,swingSeen:0,swMax:0,swVar:0,swPow:false,hidVM:false,near:0};
-try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=parseFloat(localStorage.getItem('og_tp_d'));if(d>0)TP.want=d;}catch(e){}
+const TP={rig:null,sig:'',dist:SCALE.TP_DIST,want:SCALE.TP_DIST,cur:SCALE.TP_DIST,phase:0,lastHP:null,hurtT:0,deadT:0,swingSeen:0,swMax:0,swVar:0,swPow:false,hidVM:false,near:0};
+try{const v=localStorage.getItem('og_tp');if(v==='1')thirdPerson=true;const d=parseFloat(localStorage.getItem('og_tp_m'));if(d>0)TP.want=Math.max(SCALE.TP_MIN,Math.min(SCALE.TP_MAX,d));}catch(e){}
 // ── the look (Session 127): worldState.look = {skin,hair,style,beard,tunic,breeches,boots}
 // Chosen in the creator; the rig, the first-person hands and the base garments read it.
 const LOOK_TUNICS=[0x6a5a44,0x5a2a20,0x2a3a6a,0x3a4a2a,0x6a4a1a,0x2a2a2a,0x7a6a5a,0x4a2a4a];
@@ -142,8 +142,8 @@ function tpFloorAt(x,z,fallback){if(isInterior())return .15;if(lid&&lid.startsWi
 function tpCamera(dt,camY){
   const fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);const cp=Math.cos(pitch),sp=Math.sin(pitch);
   const inD=lid&&lid.startsWith('dyn_'),inI=isInterior();
-  const maxD=inI?Math.min(TP.want,1.5):inD?Math.min(TP.want,1.7):TP.want;
-  const pivY=camY+.12,side=.34;
+  const maxD=inI?Math.min(TP.want,2.2):inD?Math.min(TP.want,2.45):TP.want; /* S880 (F2a): 1.5 and 1.7 at the old person's size, ×1.44 */
+  const pivY=camY+.12,side=SCALE.TP_SIDE;
   // shoulder first: slide right until blocked
   let sx=px,sz=pz,so=0;for(let s=.05;s<=side+1e-6;s+=.05){const tx=px+rx*s,tz=pz+rz*s;if(tpBlocked(tx,tz))break;so=s;sx=tx;sz=tz;}
   // then back along the view
@@ -313,6 +313,8 @@ function tpUpdate(dt,st){
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
+  /* S880 (F2a) — swimming, the body sinks to its shoulders: the head's top a quarter metre over the sea (SWIM_Y is 0.35 under it) */
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming())R.root.position.y=jumpY+.6-SCALE.PERSON_MODEL*(R.root.scale.y||1);
   {const cp=(typeof climbPose==='function')?climbPose():null;if(cp)R.root.rotation.y=cp.ry;} /* S743 — on a net the body faces the hull */
   // S154 — the stride follows the ground; S162 — and runs past PW.RUN.on heights a second, as the townsfolk do
   {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;const s=R.root.scale.x||1,v=dt>0?d/dt:0;
@@ -349,4 +351,4 @@ function tpShotFrom(hand,sc,aim){
   return {from,dir};
 }
 function tpToggle(){thirdPerson=!thirdPerson;TP.cur=0;try{localStorage.setItem('og_tp',thirdPerson?'1':'0');}catch(e){}showMsg(thirdPerson?'Third person — mouse wheel to zoom':'First person','#c8b880');}
-window.addEventListener('wheel',e=>{if(!thirdPerson||!started||dead)return;if(invOpen||shopOpen||lootOpen||stashOpen||hubOpen)return;if(typeof MAP!=='undefined'&&MAP.mode==='map')return;TP.want=Math.max(.9,Math.min(3.2,TP.want+(e.deltaY>0?.2:-.2)));try{localStorage.setItem('og_tp_d',String(TP.want));}catch(e2){}},{passive:true});
+window.addEventListener('wheel',e=>{if(!thirdPerson||!started||dead)return;if(invOpen||shopOpen||lootOpen||stashOpen||hubOpen)return;if(typeof MAP!=='undefined'&&MAP.mode==='map')return;TP.want=Math.max(SCALE.TP_MIN,Math.min(SCALE.TP_MAX,TP.want+(e.deltaY>0?.3:-.3)));try{localStorage.setItem('og_tp_m',String(TP.want));}catch(e2){}},{passive:true});

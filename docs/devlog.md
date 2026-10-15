@@ -17989,6 +17989,219 @@ The kelpstrider (a leafy seahorse) and the pierwinkle (a snail) still wait. Each
 - **The angler's lure** is a pale ball. It is not lit (the kit's eyes are not emissive), so it will not glow in the dark water it is for.
 - **The crimson leviathan** is coarse at its size (8,748 triangles), as the Gate Leviathan is.
 
+## v80 — Session 879 — F2a begins: on the new look, people are drawn again (the deep-work session, card F2a)
+The first session of card F2a (the scale pass, `docs/design/v2-scope.md` §3), under FREEZE #297. The card puts one fault first, found by the critic on 14 Oct (backlog I, s627): on `?look=new` no person was drawn. three.js 0.170 gives a `SkinnedMesh` a bounding sphere of its own, computed once from the posed vertices through the bones' world matrices, so the sphere already sits in world coordinates (centre 13553.7, 9.7, 25405.6, radius 0.68, for a townsperson standing at exactly that spot); the frustum test then applies the mesh's world matrix a second time and puts the sphere some 30 km off. Every skinned body (townsfolk, guards, the player's own third-person body, wolves) was culled; only what they held showed. r128 culled them by the geometry's sphere in local space, which `32-people.js` already pads by 1.35 for a raised arm or a stride.
+
+`js/05-compat.js`, the one place the version is read, now gives 0.170 r128's behaviour: `SkinnedMesh.prototype.computeBoundingSphere` (and `computeBoundingBox`) copy the geometry's own. Nothing changes on the old look, where the patch never runs.
+
+`looknew` asserted that the townsfolk's bones move, which they did while nobody could see them. It now also stands 4 m from the nearest townsperson, looks at it, and asserts the mesh is inside the camera's frustum and that the scene draws one call more with it shown than hidden.
+
+The before half of F2a's picture pair is taken here, before anything is scaled: `tests/f2ashots.mjs <tag>` (not a suite) writes Dunmore's square at noon, from 9 m south of the middle looking north, and the inn's room from its door, to `docs/prototypes/f2a/<tag>-*.jpg`. `before-dunmore-noon.jpg` shows the trouble the card is about: the man by the well stands about as high as its roof's posts are tall, and the club fills a third of the screen from an eye at 0.92.
+### Verified (headless Chromium)
+- Before the fix, on 0.170 the nearest townsperson in Dunmore at noon, 4 m off and looked at: `Frustum.intersectsObject` false, its sphere's centre at (13553.7, 9.7, 25405.6). After: true, the centre 0.74 from the mesh's origin, radius 1.26.
+- `looknew` 11/11, the new check among them: inside the frustum, 854 draw calls with the person shown against 853 hidden.
+- `lookpair` 1/1: the two looks' pictures of Dunmore match (mean difference 6.1 of 255), both measured their frame, no page errors.
+### Needs eyes
+- On the new look, the townsfolk, the guards and your own body in third person should be back. Nothing else differs.
+
+## v80 — Session 880 — F2a: SCALE, and people at their true heights (the deep-work session, card F2a)
+The second session of card F2a. One unit is now one metre with people as the measure (`docs/design/visual-foundation.md` §1), in one table. `js/07-scale.js` is a new file, tag 07, between the renderer's version and the player. It holds `SCALE`, in metres:
+- the peoples' statures, a man's and a woman's middle (Michael's A on #276): Gatelanders 1.78 and 1.66, Markmen 1.91 and 1.78, Aurennais 1.80 and 1.68, the Old Blood 1.61 and 1.51;
+- the 1.8 m figure the ratios are measured against, and the eye, 1.65 standing and 1.1 crouched;
+- doors, the big door, the town gate, the storey, stairs, furniture heights, room sizes and ceilings;
+- the third-person camera and the swimmer's eye (below).
+
+`personScale(g)` gives a body's root scale from its people and sex. The layout rules are kept: the file loads before everything that reads it, and parsecheck passes over all 44 files and their concatenation.
+
+**People.** `buildPerson` (`32-people.js`) is the one place a body's size is set, and it now multiplies by `personScale(g)`. I measured the body on the skinned mesh in its idle pose: at genome height 1 and its old root scale, the top of the head stood at 1.233 over the feet, with the head bone at 1.001. The card's figure of 1.05 to 1.15 had been read off the head bone. So `SCALE.PERSON_MODEL` is 1.233, and a Gatelander man of height 1 now stands exactly 1.78, a Markman 1.91, an Aurennais 1.80 and one of the Old Blood 1.61. That is a growth of 1.444 times, not the 1.6 the brief guessed.
+
+The same path carries the rest:
+- townsfolk, guards, and every foe built on the people's body: bandits, cultists, skeletons, goblins at their .72 and kobolds, trolls and ogres at their kinds' sizes;
+- the player's third-person body (`54-thirdperson.js`, which builds at height 1 with your people).
+
+Creatures (wolves, bears, spiders, the kit's animals) keep their size in metres, as the card asks; none read plainly wrong at a glance, and the critic should look.
+
+One rule of motion had to follow, and it is not a speed. A person breaks into the run past `PW.RUN.on` *root-scales a second*. That threshold moved with the body, so a bandit chasing at 1.63 m/s walked. It is now divided by the growth, so the pace at which anyone breaks into a run stays the same in metres a second (about 1.25 m/s), and the world's speeds are unchanged.
+
+**The eye and the cameras.**
+- `EYE_STAND` and `EYE_CROUCH` read `SCALE`: 1.65 and 1.1, from 0.92 and 0.60.
+- The first-person viewmodel draws in its own scene and camera (`VM_SCENE`, `VM_CAM`), so its placement does not depend on the eye and nothing in it clips at the new height. It is unchanged.
+- The near plane stays at 0.05.
+- The third-person camera's distance, its range and its shoulder offset grew with the body: 2.75 (from 1.9), 1.3 to 4.6 (from 0.9 to 3.2) and 0.5 (from 0.34). Its caps indoors and in a gate's floors went to 2.2 and 2.45 (from 1.5 and 1.7). The wheel's choice is saved under a new key, `og_tp_m`, since the old value was at the old size.
+- A swimmer's eye stays where the old eye put it over the water (`SCALE.EYE_SWIM`, .92 over the swim floor, 0.57 above the sea): at 1.65 over a floor 0.35 under the sea, you would have trodden water with your shoulders out. `cameraUnderwater` reads the current eye, which comes to the same test.
+- In third person, a swimming body sinks so that the top of its head is a quarter metre over the sea. The water's depths, wading and the dive are F2b's.
+
+**Aim.** The crosshair finds a skinned body by capsules along its bones (S596). The head bone sits at the jaw, at .81 of the height, so from an eye at 1.65 the crosshair on a woman's face (head bone 1.35) passed over her. An end bone (the head, a hand, a foot) now carries its capsule on past the joint by .15 of the body's height. `talkaim` was red on this, and is green again.
+
+**Suites re-measured, not loosened** (each says so in a comment):
+- `people`: a person stood as tall as before; now they stand at their people's stature (Aoife 1.66, Brendan 1.72, Cathal 1.80) and within 1.55 to 1.95.
+- `goblins`: the kobold's scale was under .7; now under 1.01, and still under .75 of a bandit's.
+- `goblinbody`: the inspector's goblin is read over its people's stature, .543.
+- `foes`: unchanged. It went green again with the run threshold in metres a second.
+- **Not re-measured, because it was right:** a person's breadth by people. The world gave each people a stature and a breadth through `bodyScale` (`PEOPLES`, a Markman 1.08 tall and 1.1 broad), and that stature now comes from `SCALE`. Counting it twice made Markmen 2.13 m, so `bodyScale` keeps only the breadth over the stature (a Markman 1.02 broad).
+### Verified (headless Chromium)
+These ran on the working tree with Session 881's doors as well, which change no person.
+- **Statures on the skinned mesh, idle, at genome height 1:** Gatelander 1.780, Markman 1.910, Aurennais 1.800, Old Blood 1.610.
+- **Measured in three towns (`scaleratio`, next entry):**
+  - Gatelander women 1.58 to 1.70 and men 1.75 to 1.93;
+  - Markmen 1.79 to 1.97 and Markwomen 1.71 to 1.84;
+  - Aurennais women 1.63 to 1.79 and men 1.74 to 1.86.
+- **Green:**
+  - people 12/12, gait 7/7, bodies 8/8, foes 12/12, goblinbody 9/9, goblins 7/7, ogre, trolls;
+  - tpfists, tpguard, tpswing, tpweapons, fphands, camps and foeweapons;
+  - barberchair, coachseat, homesleep, sleeperreach, intnpcs, corpsebody, ragdoll;
+  - chasesight, witness, witnessrange, talkaim 7/7, lod, houses, signs;
+  - looknew 11/11 and lookpair;
+  - the world suites F1 ran under `--look=new`: walls, pois, q7world, snowrepaint.
+- **Red here, and owed to the rooms (Session 882):** `sleeperpose`. A 1.78 m sleeper does not fit the kit's bed, which is 1.5 long in rooms laid out for the old size.
+### Needs eyes
+- Everyone is about 1.44 times taller than yesterday. Walk Dunmore at noon and look at the townsfolk against the doors and the wells, and at a bandit and a troll in the open.
+- In third person the camera now sits 2.75 behind you. The wheel saves under a new key, so a distance you had set is forgotten once.
+- Swimming in third person, your body sinks to the shoulders. First person looks at the water as before.
+- The creatures were not resized: a wolf, a bear and a spider beside the taller people. The critic's eye, please.
+- Interiors are not yet at true size. Until Session 882 lands, rooms are as before around people who grew, so a 1.78 m sleeper overhangs the beds.
+
+## v80 — Session 881 — F2a: doors and storeys from SCALE, and the ratio suite (the deep-work session, card F2a)
+The third session of card F2a. The card's ratios, on built meshes against a 1.8 m person, want three things: a door's height at 1.1 to 1.25 of the person, a storey at 1.45 to 1.7, and the eye at .75 to .85 of the door's height. Today's houses missed all three.
+- **The doors:** the leaf was .92 by 1.85, which is 1.03 of the person, and the eye reached .89 of it.
+- **The storeys:** a cottage's walls were 2.4 high and an upper storey 2.2, which is 1.33 and 1.22 of the person.
+- **The leaf itself was hidden.** It sat inside its own surround, so what a player saw as the door was the surround's dark box, 1.2 by 2.05.
+
+**The house builder** (`buildingGeoHi`, `buildingGeoLo` in `82-world-structures.js`, every style on all three islands) now reads `SCALE` and holds no free number for a door or a storey.
+- The leaf is `DOOR_W` by `DOOR_H`, 1.0 by 2.05, proud of a surround 1.28 by 2.19. The battens, the strap hinges and the ring follow its size.
+- The upper storey is `SCALE.STOREY`, 2.7, and the jetty, the rail and the upper windows move with it.
+- The styles' ground storeys sit inside 2.6 to 3.0:
+  - the Irish cottage rose from 2.4 to 2.6, and the Anglo house from 2.5 to 2.6;
+  - the French, the stone town house and Aurenne's came down from 3.1, 3.3 and 3.1 to 3.0;
+  - an inn's ground floor is `STOREY_MAX`, 3.0 (it was 3.2).
+- A steep roof's eaves now never come down across the door's head. `houseWallH` raises a one-storey wall until the eaves' lip clears the surround. The Mark's steep turf and shingle roofs did cross it once the door was 2.05, so its houses stand 2.82 to 3.04.
+- The rocks scattered along a house's foot no longer sit on the doorstep. The same random draws are made, so the rest of each house is unchanged.
+- The door's lantern hangs at `DOOR_H + .2`.
+- A trade sign hangs 0.3 higher, its board's foot at 1.87 over a 1.78 m head (it was 1.57).
+- Each house records its wall's height and storeys (`house.wallH`, `house.storeys`).
+
+Churches, keeps, the fort compounds and the town gates were not changed. The keep's gate (2.6) and a church's porch (2.8) already sit inside `SCALE`'s big door, and a town gate's opening is listed in `SCALE` (4.5) for F5 and F6, which rebuild those.
+
+**The mesh inspector** already stood a figure beside every piece: a Bandit at the left of the stage. That figure is now exactly `SCALE.PERSON`, 1.8 m: the yardstick, whatever the Bandit's genome rolls.
+
+**`tests/scaleratio`**, new. It checks that `SCALE` is the one table with the brief's numbers, and that the player's eye is its eye. Then it settles Dunmore and the nearest towns of the Mark and of Aurenne, and in each town:
+- it finds every house door by casting rays at the town's own meshes from a metre out, 12 cm either side of the middle. The leaf is the face met there, from where it starts to where the ray first meets something else;
+- it asserts every door at 1.1 to 1.25 of the person, and the eye at .75 to .85 of every door;
+- it asserts every storey at 1.45 to 1.7, from the wall's height the builder recorded over its storeys.
+
+It also measures the townsfolk's statures by people and sex, and opens the inspector on the Irish house to check the 1.8 m figure. The interiors' half of the suite comes with Session 882.
+### Verified (headless Chromium)
+- **`scaleratio` 15/15.** It measured 54 doors in Dunmore (the Gatelands), 60 in c3_5_s6 (the Mark) and 47 in c7_5_s5 (Aurenne). Every leaf reads 2.04 (the ray's 5 mm step under 2.05) or 2.18 to 2.19, which is 1.13 to 1.22 of the person. At 2.04 the eye stands at .81 of the door's height, and at 2.19 at .75.
+- **Storeys:** 2.66 to 2.94 in Dunmore, 2.82 to 3.04 in the Mark and 2.85 to 3.00 in Aurenne, which is 1.48 to 1.69 of the person.
+- **The first run's faults, fixed before this commit:**
+  - Four of Dunmore's doors read 1.92 to 2.01: a rock stood on the doorstep, now kept off it.
+  - The Mark's eaves came down across the door's head, now raised clear.
+  - Markmen stood 2.13 m, because the people's stature was counted twice; now `bodyScale` keeps only the breadth.
+- **The townsfolk** by people and sex (the same run): all between 1.58 and 1.97.
+- **The inspector:** the figure beside the Irish house is exactly 1.800.
+- **The suites of Session 880's list** passed with these doors in the tree: houses, signs, walls and pois, among them.
+### Needs eyes
+- **One door in six reads 2.18 rather than 2.04.** The ray meets the surround's head at the leaf's depth there. In a picture it should look the same, but check a few doors close to.
+- **Houses are a little different everywhere:**
+  - Irish and Anglo cottages are 20 cm and 10 cm taller, and French, stone and Aurennais houses 10 to 30 cm lower;
+  - upper storeys are 50 cm taller;
+  - the Mark's turf and shingle houses rise to clear their doors.
+  - The distant copy of a house keeps the plain height, so a Mark house may step by up to 0.3 m as you come near.
+- **The trade signs hang 30 cm higher.**
+
+## v80 — Session 896 — F2a: rooms at true size (the deep-work session, card F2a)
+The fourth session of card F2a, item 4: interiors rebuilt at true size, without the ×1.8 footprint and the ×0.62 furniture heights. Before, `buildInteriorFor` made every room its house's footprint × 1.8 (and at least 8 across), in units where a man stood 1.23. To a 1.78 m eye, a 5 m cottage became a room 15 m across with knee-high tables.
+
+**How it is built now.** The furniture kit (`furnBuild`, `56-dungeon-build.js`, the man it was drawn for 1.28 tall) and every layout in `buildInteriorFor` were drawn in that old unit. Redrawing them all in metres is card F9's work (rooms dressed by nation). F2a keeps them and changes the scale the room is built at:
+- the room's **true size** is chosen in metres;
+- it is laid out in the old unit at that size ÷ `SCALE.ROOM_K` (1.444, the people's growth, 1.78 ÷ 1.233);
+- the finished room is scaled up by `ROOM_K` whole (`scaleRoom`).
+
+So a table, a doorway or a stair stands to a 1.78 m person exactly as it stood to the 1.23 m one, which read right, and the room is its true size. `scaleRoom` moves every object out from the room's corner and grows it by k. The people are the exception: they are built at their true heights already, so they only move. The lights reach k further. Every record the game keeps of a room is scaled with it, each record once:
+- the solids and the footholds;
+- the beds and the doors, with their solids and boxes;
+- the people's boxes, the bed's and the stash's places, the barber's chair, the hatch, the strongbox and the tower's chest;
+- the room's size.
+
+The keeper is placed after the scale, so laying a sleeper uses the scaled bed.
+
+**The sizes, in metres** (`visual-foundation.md` §1):
+| Room | Size |
+|---|---|
+| Cottage | 4.6 to 6 by 4.5 to 6 |
+| Shop | 7 to 9 wide, with the keeper's room behind its partition (3.8 m more deep) |
+| Barber | 8 to 9 by 7 to 8.5 |
+| Inn | a hall 10 to 12 by 11.7 to 13, the gallery's rooms over its north end |
+| Church | a nave 8 to 10 wide, 14 to 18 long |
+| Cellar | 6 to 8 by 5 to 7 |
+| Ship's cabin | 7 by 8 |
+| The Guest's chapel | 9 by 12 |
+
+A room may still be larger inside than its house is outside, as games do: the inn's hall and the church's nave stand in houses of 5 to 7 m, which F6 will grow.
+
+**Three kept their old rooms, scaled up by k:** the keep's hall (26 by 32 m), the guild halls (32 by 29 m, the dormitories behind the hall) and the tower. The tower is not scaled at all, because its stair climbs to the 30 m its outside shows. The ceilings are the old ones in the old unit, 2.9 to 3.2 m true.
+
+**The layouts that no longer fit were redrawn.** Each now shares its places with the solids (`homeAt`, `innAt`, `armouryAt`, `barberAt`, `churchAt` in the kit), so a table's solid stands where its mesh does:
+- **The cottage** (3.2 to 4.2 across in the kit's unit):
+  - the bed in the north-west corner, which has a solid now;
+  - the hearth on the east wall, sized to the room;
+  - the table a little north of the middle, with a chair at each end;
+  - the chest under shorter shelves on the north wall;
+  - the strongbox by the west wall near the door;
+  - a weaver's loom against the south wall, a farmer's sacks and a cooper's barrels in the south-east corner.
+- **The inn:**
+  - the bar under the gallery;
+  - the hearth on the wall the stair does not climb (it shared the east wall with the stair in half the inns);
+  - as many tables with benches as fit between them, clear of the door's way;
+  - the gallery at least 4.15 deep in the kit's unit, so its rooms behind the corridor are built: an upper room is 3.4 across in the kit's unit (it was 4.5), two rooms in a hall of true size;
+  - the cellar's hatch in the corner by the door.
+- **The smithy:** the racks down the east wall from the counter's end, the tub clear of the counter, the grindstone by the door.
+- **The armourer:** two or three stands by the shop's width.
+- **The barber:**
+  - the washstand on the chair's west;
+  - the stool on its east, and the barber stands there;
+  - the dyer's corner kept inside the east wall.
+- **The keeper's room behind a shop's partition:** the bed down the east wall, a small table at its head, the strongbox against the west wall, and the way from the door to the shop clear.
+- **The church:**
+  - the pews sized to the nave either side of the aisle;
+  - the columns between the pews and the walls (at ±4.1 they would have stood outside a nave of true size);
+  - the pulpit at the dais's corner.
+- **The cellar:** the barrels down the west wall, the crates in the north-east corner, the wine rack sized to the room.
+
+**What a player does in them:**
+- You arrive 1.75 m inside the door in a small room (it was 2.2, the middle of a 4.5 m cottage), still clear of the step that leads out.
+- Only inns and guild halls have galleries now. A two-storey cottage or shop of true size has no room for the stair, so its ground floor is all of it.
+- **A save made inside a room before F2a** holds a spot in the old, larger room. If that spot is off the floor or inside something now, the load stands you at the door (`goToInterior`); full migration is card F13.
+**Finished in a second run the same day.** The work began on `auto/wip-fable-f2a-scale` as "Session 882"; `auto/backlog` had taken 882 to 895 meanwhile, so it is Session 896 here and in the code's comments (a correction to Session 881's entry, which says the interiors' half of the ratio suite comes with Session 882). The run merged `origin/main` (the backlog kept both edits) and the WIP into the card's branch, and fixed what was still red:
+- **The arrival in a shallow shop.** A goods shop 7 m deep with no keeper's room put you 2.1 m in from the door, inside the counter's front (4.91 m from the back wall at true size). `intArrivalZ(house)` (`58-interiors-legacy.js`) is now the one place the arrival is worked out, for a fresh entry and for a save's spot that no longer fits: 1.75 to 2.2 in from the door as before, and at least .55 in front of a counter (`buildInteriorFor` keeps the counter's front edge, `house._counterFront`).
+- **The tower's door.** The tower keeps its old size, so its entrance was still the old unit's leaf, 1.72 m with its head, shorter than the man going through it. The door alone is now built at `SCALE.ROOM_K`, 2.48 with its head, as in every other room.
+- **The church's tall windows.** A nave of true size (14 to 18 m) held two round-headed windows a side from the old spacing (from 3, every 3); it now holds three, as the old longer nave did (from 2.5, every D/4 but at least 2.2).
+- **Window frames.** In a cellar (a 2.6 m ceiling) the frame's head stood .04 above the ceiling; the window sits lower when the ceiling is under 1.95 in the kit's unit. In a cabin of true size (8 m) the last window's open shutters passed through the end wall; a window keeps 1.05 from it, and the posts' window list follows.
+### Verified (headless Chromium)
+- **`tests/scalerooms`** (new) walks ten of Dunmore's rooms: the room's size, the entrance's leaf (2.17 m, 1.2 of a 1.8 m person, the eye at .76 of it), every inner door (2.11), the ceiling (2.89 to 3.2 in a one-storey room), table tops (.63 to .68), nothing outside the walls, the furniture clear of itself, and the arrival spot and the door's way free. Green, 45 checks: cottage 5 by 5.5, inn 11.2 by 12, the shops 7 to 8.4 wide and 7 to 12.5 deep, the barber 8 by 7, the church 8 by 14, the Fighters' Guild 33.2 by 31.8.
+- **Green on rooms of true size**, each run alone or four at a time on this branch: scalerooms, boxspots (124 boxes in Dunmore, Portclare, Ironhaven and Ashenmoor, every one reached from 0.71 to 0.75), oddfurn, homesleep, locksight, keeperwalk, shopfurn, shells, windows and falls (alone; it had crashed the browser on a crowded run). The WIP's run had made armourlines-numbers, ashenburn, the barber's five, carraignight, coldhearth, guardsindoor, guildfurn, homefurn, innrooms, intdoors, intreach, sleeperpose and civicfurn green.
+- **Under `--look=new`:** people (and peopleao), q7world, walls, pois, snowrepaint and hourhitch, the six world suites F1 ran, all green. hourhitch failed once while three other suites shared the four cores (a 9.5 s frame against a noon of 2.3 s) and passed run alone.
+- **Re-measured, not loosened**, each with a comment in the suite. The kit's places and heights times `SCALE.ROOM_K`, where a suite had hard-coded the old room's numbers:
+  - `barber`, `civicfurn`, `coldhearth`, `guildfurn`, `homefurn`, `intdoors` and `sleeperpose` (the bed is 1.444 times the kit's);
+  - `homesleep`: about a dozen free spots in a cottage, not thirty;
+  - `intreach`: you arrive 1.75 in, and only inns and guild halls have galleries;
+  - `boxspots`: the walk to a box starts where the game stands you inside the front door (it started .8 from the far wall, in a cottage of true size a pocket between the bed, the table and the shelves), and an inner door is walked through, not round (a shop's strongbox is in the keeper's room behind the partition's door);
+  - `oddfurn`: the cellar's crates are two on the floor and one on them at .5 of the kit (.722); the chapel's bake is over 4,000 triangles with two rows of pews (it was over 5,000 in the longer room);
+  - `keeperwalk`: the counter's solid is found at 3.0 × 1.444 and .8 × 1.444 deep;
+  - `locksight`: you and the foe in the shop stand between the counter and the partition, which now stands 4.62 from the back wall;
+  - `shopfurn`: the footholds, the tub (at W − .75, 3.9 now) and the racks' steel read in the kit's unit;
+  - `shells`: the doors' heights, the corbels' band and the shell's triangles (1,000 up: a cottage a third as wide has fewer beams and posts).
+- **The after pictures:** `docs/prototypes/f2a/after-dunmore-noon.jpg` and `after-inn-room.jpg`, beside the before pair of Session 879.
+- **The full suite** runs on CI on this branch's head (twelve shards; a local run is ten hours on four cores). Its result is on PR #315.
+### Needs eyes
+- **For Michael:**
+  - Cottages are about a third of their old width and feel it. The inn's hall is 10 to 12 m.
+  - Shops are 7 to 9 m across, with the keeper's room behind them where the house is deep.
+  - The keep's hall and the guild halls kept their old plans at true size: 26 by 32 m and 32 by 29 m, grand and perhaps too large.
+  - Two-storey cottages and shops have no upstairs inside (F9).
+  - The tower's door is at the new height, 2.48 with its head, while the tower's rooms keep their old size (its stair climbs the 30 m its outside shows).
+- **Owed to F2b:** the gameplay ranges that now act in smaller rooms. A sleeper hears you at 2 m, the witness sees 6 m and E reaches 1.6, so in a 5 m cottage everything is within a sleeper's or a keeper's reach. At 6h a woken resident sees 2 or 3 of a cottage's 11 free spots, depending on which way they face.
+- **Not run here:** the suites outside the rooms; CI's twelve shards are their check.
 ## v80 — Session 868 — A worked-out mine is dark but for your torch (card F8, prototype only; Michael's 2 A on #305)
 Michael answered DECISION #305 on 14 Oct with the recommended set: the mine's levels stay as built (2.07 m clear), a working mine is lit by its miners' lamps and a worked-out one is dark but for your own torch, and the next places that are not gates are the Gatelands' round cairn, a limestone cave with a lake under falls, and a smugglers' lair, in that order. The FREEZE (#297, F2a) still holds, so this run works in the prototypes only. The first answer needs nothing built. This session makes the second.
 
@@ -19216,6 +19429,48 @@ The fix is one last pass at the end of `buildHang`. Every point of every column 
 - **The back of a cloak over mail** now follows the mail skirt's outline at the buttocks wherever a fold would have cut into it. In the picture it reads as cloth over a stiff skirt. Whether the fold there looks pinched is for a closer look.
 - This pass is a floor, not a drape. A cloak over plate, which stands further out and steps sharply, will want the folds laid against the outline at the height they end at, not the height they start at.
 
+## v80 — Session 905 — F2a: the eleven suites CI found red (the deep-work session, card F2a)
+The producer sent card F2a back: PR #315's CI on fde9867 failed eleven suites twice across seven shards (barberbox, coachinn, dragonsize, fiercewolf, hoardspot, homesleep, intreach, keepercone, shells, skirtlegs, wraithfloat). Main was merged in first (the backlog's one line kept both edits). Nine failed here too; barberbox and homesleep passed here and are left to the next CI run. Each was either a place where F2a broke behaviour, fixed in the code, or a suite that measured in the old unit, re-measured to the new truth. None was loosened.
+
+**Fixed in the code.**
+- **The wolves and the Cave Bear** (`fiercewolf`). Michael's A on #187 set them as shares of a man: a Wolf's back at 56% of one, a Dire Wolf's 73%, the bear's hump 88%. With the man 1.44 times taller, a Wolf's back fell back to 38% of him, the size #187 rejected. They are now drawn at their `play` size times `SCALE.BEAST` (07-scale.js, equal to `ROOM_K`, 1.444): Wolf 1.52, Snow Wolf 1.66, Dire Wolf 1.95, Ash Hound 1.44, Cave Bear 2.24. That puts them at 54%, 59%, 71%, 51% and 86% of a 1.76 m bandit. Only the drawing changes. A foe's `size`, and so its hits and reach, is unchanged (F2b). At the larger size a dead Dire Wolf came to rest standing in 1 of 120 seeded falls, and hit the four-second cap once. Stretching the ragdoll's clock by √k made it worse (3 standing, 6 capped), because its damping is per step. So a drawn-larger beast's fall now runs at its tuned size (its points and size divided by `rig.drawK`, the ground and walls read at K times, the bones aimed K times as far). That is S632's tuned fall exactly: 0 of 120 standing and 0 capped for both kinds. `beastfall`, `ragdoll` and `ragdollsearch` pass. The Faolchú (a Dire Wolf × 1.45 with arms of its own), the horses and the dragon keep their sizes; see below.
+- **The health bars.** A person-bodied foe's bar stood at 1.3 × its scale, chest height on a 1.76 m man. It is now at 1.3 × `ROOM_K`. A beast of #187's bar is over its drawn back.
+- **A wraith's glide** (`wraithfloat`). Its hover of .24 ± .05 was in the old unit, so the robe's hem came to 4.6 cm off the ground on the taller body. The hover is now × `ROOM_K`: 13.5 cm clear at the bottom of the bob.
+- **The coaching inn's guests** (`coachinn`). `coachInnFolk` places them while the room is still in the kit's old unit, before `scaleRoom`. It tested with `intSolidAt`, whose step height (.62) is in metres. A table .47 high in the old unit was steppable there and stands .68 once scaled, so a traveller stood in it (Eilís, 2.6 cm inside a table's edge). The test now uses the heights the room will have.
+- **A person under the crosshair beats a door that is only near** (`personAimedIn`, 50-travel.js; the prompt in 90-main.js reads the same rule). The door's exit zone is 1.6 deep and 3.2 wide, in metres, and in a room of true size it reaches the people waiting by the door. E at the coaching inn's driver, from one step behind them, walked you out of the inn. A bed already won the same way (S650).
+
+**Re-measured** (the same claim, in the new unit):
+- `dragonsize`: the dragon keeps its metres, under the lair's 4.4 roof (the dungeons' heights are F2b's). It now stands 2.09 bandits tall, which is "about twice a man's height", Michael's own words on #153. The old test asked for more than 2.7, three of the old 1.24 bandits.
+- `fiercewolf`: the built scale is Michael's size × `SCALE.BEAST`; the shares of a man are unchanged.
+- `skirtlegs`: r128's `boneTransform` gives a world point, so on a root now scaled 1.2 every distance read 1.2 times larger. The legs and the skirt are now read in the mesh's own frame, where its 2 cm bins and 5 cm limit were set. Worst pokes are 4.5, 4.2 and 4.5 cm (limit 5), at 4.2 to 6.8 vertices a frame (limit 9).
+- `keepercone`: in a room of true size, 1.5 m east of the strongbox is across the counter, with no line of sight. The keeper now stands 1.5 m off on the first of sixteen bearings that has one.
+- `hoardspot`: "looking at it, nearly level" (pitch −.25) from the 1.65 eye passed over the chest. It now aims at the chest's middle (−.73).
+- `shells`: the suite re-ran the kit's window rule on the scaled room. That rule runs in the kit's unit, before scaling, so it found two windows a side in a cabin 8 m deep where one is built, and a post at 5.3 m read as standing in front of a window. It now reads the windows as built, and checks it found them.
+- `intreach`: the flood starts where the game sets you down (`intArrivalZ`, which stands you before a shallow shop's counter since S896), not at a copy of the old rule. Before, 22 shops started inside their counter.
+- `coachinn`: the player looks at the person they talk to (`lookAtPt` at 1.2 m). A level look from 1.65 m at one metre passes over the crown of a driver 1.66 m tall.
+
+**For F2b** (gameplay ranges left in the old unit, met here): the exit zone (1.6 × 3.2); `STEP_UP` and `PLAYER_H`, which `intSolidAt` reads in metres while rooms are laid out in the old unit; the lair's 4.4 roof under the dragon; and `talkTargetNow`, which indoors reads the world's townsfolk because `activeZoneId` stays `'world'` (it has done so before F2a). It never finds a guest in a room, so the crosshair's talk ring never shows indoors.
+
+**Second CI round** (run 38659480828, on this session's first push). Eight of twelve shards were green. The other four:
+- **`wolves`**: a Dire Wolf drawn 1.44 times larger trotted at its chase pace, 2.4. The gallop's threshold is in body-lengths a second. It now reads the beast's tuned size (`rig.drawK`), so it gallops as before. Its paws stay planted, because the stride's phase still reads the size it is drawn at.
+- **`dungeonfoes`**: the wraith's glide window, .15 to .33, is re-measured × `ROOM_K` like `wraithfloat`'s.
+- **`backroomdoor`**: re-measured. In shops of true size, with the indoor sight range still 6, 0 to 3 floor spots by the doorway see the box through the open door (of 700 to 1,060), and 5 to 7 in all. The keeper's own sightings in the same suite are unchanged. The suite now allows at most three spots within 6 and under 1 in 100 in all. For F2b: the indoor sight range in metres.
+- **`barberbox`** (red on CI twice, green here, because CI's towns differ by load order). In a barber's 7.8 m deep, Cathal's at c5_9_s6, the box stood 6.1 m in front of him, and 7 of the 172 spots it opens from were past his 6 m. S590's placement checks a ring 1.6 round the box. It skipped any point of the ring past a wall, by a margin of .25 in the kit's unit, .36 once scaled, while you stand .3 from a wall. Skipping the point skipped the nearer spots in that direction with it. A ring point past a wall is now tested where you would stand against it, the margin in true metres. Reproduced here by setting a real barber's house 6 deep (CI's room): the box now stands at (1.76, 5.44), every one of 188 spots is seen, and the farthest is 5.51 m. The suite also bounds the far wall at .3, as it did the other three; the player is held there (90-main.js).
+- **Shard 10** failed nothing. It was cut at the job's hour on its last suite, because `scaleratio` (S881) took 567 s and the sharder counted it as 60. It is in `tests/run.mjs`'s table now.
+
+### Verified (headless Chromium)
+- Each of the nine, run here: fiercewolf, dragonsize, wraithfloat, skirtlegs, keepercone, hoardspot, shells, intreach and coachinn, each green.
+- The ragdoll suites beside them (beastfall, ragdoll, ragdollsearch) green.
+- barberbox and homesleep green here as before.
+- wolves, dungeonfoes, backroomdoor, barberbox, barber and scalerooms green after the second round.
+- barberbox's own measurement on four barbers, CI's 7.8 m room among them: all seen.
+- parsecheck clean.
+- The local four-shard full run reached 223 suites before its two-hour limit. Its failures were dungeonfoes and backroomdoor (above), and autumn and dayseed. Those two touch no file of F2a's and were green on CI's shards; they are not this card's.
+
+### Needs eyes
+- **The wolves and the bear at 1.44 times their old size.** The Dire Wolf's back is 1.25 m and the bear's hump 1.5 m: the shares of a man Michael chose, in metres now.
+- **Left at their old size, against the taller people:** the Faolchú (its arms are built in the old unit; it is a boss, and resizing it is the bodies builder's) and the coach's horses (1.6, beside a coach that was not resized). The critic, please.
+- **The dragon** is now twice a man rather than three of the old ones.
 ## v80 — Session 907 — Card F8: Aurenne's ruined aqueduct (prototype only)
 The FREEZE (#297) holds. Two answers came back first: Michael's A on #329 (Aurenne's courtyard house, 15 by 15 m with the pantile sloping into the court) and his A on #330 (the Mark's sloop keeps its shields). Both say "as drawn", so nothing was built for them. Their entries move to Answered in `docs/decisions.md`.
 
@@ -19765,6 +20020,22 @@ Corrections made during the session:
 - **The tower's openings are boxes laid on a round shaft.** Their frames stand proud and their dark is a panel, not a hole, so they read from afar but not up close.
 - **The masonry is one coursed texture** on the church, the gatehouse and the tower alike. Real ones mix rubble walls with dressed quoins, and only the doors and arches carry dressing here.
 - **Owed:** carving on the cross's panels (the cairn's spirals, or what #309's answer allows); a grassed-over floor inside the cells; the quest writer's word on who the brothers were.
+## v80 — Session 915 — F2a: CI's third round, one suite and the hour (the deep-work session, card F2a)
+Session 905 left PR #315 with main merged in (3748198) and CI's run 38675675725 still going. That run passed ten of twelve shards on all 377 suites they ran but one: `homesleep`, which failed twice in shard 2, as it had in the first round on fde9867, where it passed here and was left to CI. Shards 5 and 12 failed nothing. Each was cut at the job's hour on its last suite (`waylamp`, `wolfcloak`), with every suite before it green. Main was merged in again (7 commits, docs and prototypes only, nothing under `js/`, `index.html` or `tests/`).
+
+**`homesleep`, re-measured.** At 22h and at 6h the resident is awake, and the suite asks that they "see across the room as before". It sweeps the room's free spots more than 2.3 m from the bed and asks that at least one is seen. Indoors a person sees in a 120° cone about the way they face (S368), and the resident ambles. In the cottage 1.8 times too wide there were always spots in front of them. In a cottage of true size there are eleven, and a resident who has ambled to face a wall has none of them in front: CI read 0 of 11 at both hours, and this machine read 2 and 5. Nothing in the game is wrong; the snapshot was. The sweep now turns the awake resident to face the middle of the room first, and the claim is stronger than before: at least a third of the spots seen (7 of 11 at both hours here), not more than none. The asleep sweep is unchanged (they see nothing, whichever way they lie).
+
+**The hour.** The suites add up to 598 minutes on CI, about 50 a shard of twelve, against the job's 60. The sharder's table was refreshed in Session 745, and 34 suites since then were not in it at all and were counted as 60 s. Some had grown: renewal took 339 s where 219 was counted, hourhitch 391 for 286, reader 329 for 272, autosave 185 for 129, pauseleaf 248 for 157. So shard 12 planned 52 minutes and ran 59½. One suite's time also moves by a third between runs on the same code (scaleratio: 567 s on d9616ac's run, 357 s on this one). `tests/run.mjs`'s table is now this run's 377 times plus shard 12's from its suite headers; the 39 suites the run did not time (shard 5's, cut short) keep their old numbers. CI runs fourteen shards, not twelve (`.github/workflows/check.yml`, the matrix and `--shard=k/14`), which comes to 43 minutes a shard, as Session 652 went from eight to twelve. Not loosened: no suite is skipped and the job's limit stays 60.
+
+A correction: Session 905 has two entries, this card's and the bodies builder's shield (B2, prototype). Both were written the same night on different branches; the numbers are left as they are, and this entry is 915, one above the highest on main and the builders' branches.
+
+### Verified (headless Chromium)
+- `homesleep` here: all 14 checks green; awake at 22h and 6h, faced to the room, 7 of 11 spots seen each time; asleep, 0 of 11.
+- The new table run through the sharder: 455 suites, fourteen shards of 43 minutes each by the table.
+- parsecheck clean.
+
+### Needs eyes
+- Nothing a player sees. CI on this push is the test of the hour: if a shard still runs past 50 minutes, its suites' times are the next thing to read.
 ## v80 — Session 916 — The kite and the hoplon slung under a cloak (L7 and B2, prototype only)
 Sessions 911 and 913 left the kite and the hoplon off under a cloak, because the slung shield (Session 905) was laid for a round board only. A cloak hangs over the arm that would hold a shield, and a shoulder cape stands out over its top edge, so under either the shield goes on the back by its strap, as the round one does. This needs no new question: it is the round shield's rule, carried to the two shapes Michael already has. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`). (Session 915 was already taken on another branch, so this is 916.)
 

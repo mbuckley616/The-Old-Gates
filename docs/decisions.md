@@ -4,6 +4,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
+### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342
+The skills build sheet (`docs/design/skills-and-perks-build.md`) settles the 22 skills, their uses, the curve, the 88 perks and the bed. Every skill-up counts toward the level, majors and minors as one mark and the rest as a quarter. The bed gives 12 points, at most 5 in one attribute (Oblivion Remastered's two fixes). The open number is how many marks a level takes, because twelve points a level is a large step. The simulation behind it is an ordinary mix of play, about 650 skill uses an hour.
+- **A.** Ten marks every level, as in Morrowind: level 10 at about 5 hours, 25 at 21, 40 at 46.
+- **B.** Ten plus half the level: level 10 at about 7 hours, 20 at 27, 25 at 45; about 30 by 75 hours.
+- **C.** Ten plus the level: level 10 at about 9 hours, 20 at 44, 25 at 90.
+
+Recommendation: **B.** An early evening still ends in a bed and a level. A sixty-hour character stands near level 27 with about 320 points placed, short of the cap of 60 in most attributes, so each level's choice still matters. A runs out of choices by the second week, and C makes the late levels arrive once a fortnight.
+
+Michael: **B. Ten plus half the level**. (15 Oct 2026, on the control room)
+
 ### Aurenne's sea grotto: the ways in (look builder, Session 914) — DECISION #339
 **F8: Aurenne's sea grotto (look builder, Session 914).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs". This is the sea grotto: a cave the sea made, its water lit from below by the day coming in through a drowned gate under the waterline. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneGrotto`), at `places.html?place=grotto`.
 - **The hall:** 60 m long, 37 to 40 m across and 18 to 27 m from the water to the roof, its limestone dark and wet below the high-water line.
@@ -25,6 +37,8 @@ Pictures:
 - [the spring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-spring.jpg)
 - [back from the water stairs](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-back.jpg)
 
+Michael: **A. Both ways, as drawn**. (15 Oct 2026, on the control room)
+
 ### The Gatelands' monastic ruin: the round tower's door (look builder, Session 921) — DECISION #345
 **F8: the Gatelands' monastic ruin (look builder, Session 921).** OG-121's Gatelands panel lists "round cairns, monastic ruins and limestone caves". The cairn and the cave are built. This is the monastic ruin, after the island's own. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsAbbey`), at `places.html?place=abbey`.
 - **The ring:** a dry-stone wall 62 m across and 2 m high, fallen in two breaches, with a roofless gatehouse of two round arches.
@@ -45,6 +59,8 @@ Pictures:
 - [the tower and its door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-tower.jpg)
 - [the high cross](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cross.jpg)
 - [the beehive cells](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cells.jpg)
+
+Michael: **A. Out of reach, as drawn**. (15 Oct 2026, on the control room)
 
 ### A hull in another island's dress: whose rig? (look builder, Session 924) — DECISION #347
 **F11: a hull in another island's dress, when its rig is not the island's (look builder, Session 924).** Your 3 A keeps the game's five classes, each dressed by its island, and #306 gives each island one rig: the Gatelands square, the Mark the gaff, Aurenne the lateen.
@@ -87,6 +103,7 @@ Which house should a guild hall be?
 Pictures: [the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-hall.jpg), [the long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-table.jpg), [the dormitory](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-dorm.jpg), [from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-outside.jpg).
 
 ## Answered
+Michael: **A. Island’s rig forward, the class’s own aft**. (15 Oct 2026, on the control room)
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
 Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
