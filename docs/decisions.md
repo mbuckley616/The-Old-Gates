@@ -48,6 +48,39 @@ Pictures:
 
 ## Answered
 
+### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Spire Held — a night on the roof at Caer Slige
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Back to Their Bread — the open ending's three descriptions
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: What the Stones Say — the sigil-lore books in the guilds
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Last Entry — Varek's list in the first gate, after the unbound ending
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: First Words — the townsperson's greeting, by who speaks and who listens
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Asked in Passing — six townsfolk's errands
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Asked in Passing, the second run — six more errands
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: Under Another Flag — a town besieged, held and freed
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Aurennais Register — names, places, signs and talk
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Great Gates, I — the knot at the ring
+Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
 ### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
 **F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.
 - **The bore:** 56 m long, winding 1.6 m either side, 3.6 m wide, with upright walls to 2.4 m under a round vault (4.2 m at the crown).

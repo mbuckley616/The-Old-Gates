@@ -6,8 +6,10 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `1379510` | run 17, from `c66473e`: Sessions 776–803 and 804–820 (the Makers' tools, their trials and claimants, the Waylamp, the woken householder, the guild's hand-back), F1. Findings 29 and the Makers' Things words checked in the code. Finding 30 |
-| auto/systems | `170241a` | run 17: Sessions 827–830, tests and the tag only |
+| main | `2553a6d` | run 18: only the build tag (s627 → s632) since `1379510`; the Bodies, Look and Systems merges brought prototypes, tests and docs, no player-readable text in `js/`. Before that, run 17, from `c66473e`: Sessions 776–803 and 804–820 (the Makers' tools, their trials and claimants, the Waylamp, the woken householder, the guild's hand-back), F1. Findings 29 and the Makers' Things words checked in the code. Finding 30 |
+| auto/systems | `170241a` | run 17: Sessions 827–830, tests and the tag only; run 18: merged into main, nothing ahead |
+| auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `d9616ac`, `a5a4667` | run 18: Sessions 880–905 (F2a), 19 files in `js/`, measures and placement only; no added string a player reads |
+| auto/bodies, auto/wip-spear, claude/admiring-ride-s05yoi | `06ffec9`, `5a1b57d`, `326e8a2` | run 18: nothing ahead of main in `js/` or `index.html` |
 | auto/backlog, auto/producer, auto/wip-cloak-hang | `828885e`, `28a0473`, `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
 | auto/fable-f1-renderer | `026c76c` | run 17: merged into main (Session 822); no player-readable text but the settings sheet's *Renderer* row |
 | claude/v2-scope | `f712a74` | run 17: docs only (the 2.0 scope, Michael's 1 B, 2 A, 3 A; the third art round) |
@@ -18,6 +20,14 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 18 — 15 Oct 2026
+
+No player-readable string has changed since run 17. Main moved from `1379510` to `2553a6d` with the build tag alone in `index.html`, and the merged Bodies, Look and Systems sessions are prototypes, tests and docs. On the branches, F2a (`auto/fable-f2a-scale`, Sessions 880–905) changes nineteen files in `js/` for measures and placement and adds no line anyone reads. No findings.
+
+**Drafted:** *The Great Gates, II — the knife and the needle*. The Loosing Knife comes by Varek's unsigned note and lies under a flagstone at the Ashfeld. The Binding Needle is handed over by Aldwyn after the first cut. The draft also corrects piece I: the Church's knot is *the Nodus*, not *le Nœud*, under the approved Aurennais register.
+
 ---
 
 ## Run 17 — 14 Oct 2026
