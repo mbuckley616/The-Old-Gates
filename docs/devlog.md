@@ -21052,3 +21052,10 @@ The other reds on that run are not this fix's. `lockpicks` and `shoprows` are sh
 - `witnessrange` 10 of 10, the new Stealth 50 row among them.
 ### Needs eyes
 - Nothing to see. The arrow fault would have shown as a frozen fight against archers while blocking.
+
+## v80 — Session 958 — `fortunecaor` re-measured to Fortune's 0.5% a point (a CI fix)
+CI on `1c9b2d2` had one red shard of fifteen, with `fortunecaor` failing twice. Session 953 set Fortune's crit chance to 0.5% a point, as the skills sheet's attribute pass asks (it was 2%). The suite still placed its rolls at 2%. Its rolls are now at the new edges: Fortune 1 crits under 0.005 and not at 0.006, and Fortune 10 under 0.05 and not at 0.051. At Fortune 5 the rate over 4,000 blows must fall between 0.018 and 0.032, around 0.025. The Caor Dubh half is unchanged.
+### Verified (headless Chromium)
+- `fortunecaor` 5 of 5.
+### Needs eyes
+- Nothing.
