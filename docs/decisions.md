@@ -6,6 +6,57 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
+**F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.
+- **The bore:** 56 m long, winding 1.6 m either side, 3.6 m wide, with upright walls to 2.4 m under a round vault (4.2 m at the crown).
+- **The floor:** paved, with two cart ruts 1.4 m apart and a gutter down one side.
+- **The lamps:** clay lamps in plastered, arched niches every 6 m on alternate walls.
+- **The passing place:** midway, 6 m wide for 6 m, so that two carts can pass. It has a plastered dado under a band of blue glazed tile, a stone bench, the tally-keeper's table with a ledger, nine amphorae, and a shaft to the sky.
+- **The portals:** an arch in a plastered frame let into each cliff, rung in ashlar, with tiled spandrels and a blank tablet. Before them are the quay's paving and the dust road.
+- **Lit or dark:** `&dark` puts the lamps out, so you go by your torch.
+
+**1. What the tunnel is for:**
+- **A. A road** *(recommended)*: part of the road network, lit, kept and peaceful. It is a place to pass through, and it shows Aurenne's trade.
+- **B. A smugglers' run:** under the town, dark, held by people who should not be there. It is a place to fight through, like OG-121's lairs.
+- **C. Both:** the same bore, lit and kept in some towns, dark and taken in others (`o.used`).
+
+Pictures:
+- [the quay's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-quay.jpg)
+- [inside, by the lamps](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel.jpg)
+- [the passing place](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-passing.jpg)
+- [toward the inland portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-inland.jpg)
+- [the road's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-road.jpg)
+- [dark, by your torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel-dark.jpg)
+
+Michael: **A road** (A, on the control room). (14 Oct 2026)
+
+### Aurenne's ruined aqueduct: broken, or a way across? (look builder, Session 907) — DECISION #333
+**F8: Aurenne's first place, a ruined aqueduct (look builder, Session 907).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs", and OG-124 has "a ruined aqueduct". The catalogue's note asks that it be built in Aurenne's own plaster and tile, not the boards' Tuscan stone (canon §1.3). It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneAqueduct`), at `places.html?place=aqueduct`. The catacombs wait on the quest writer's answer about the dead (§3.1).
+- **The valley:** dry, 20 m deep, with a dry stream bed down its floor, pale rock, and cypresses on its shoulders.
+- **The arcade:** piers 2.2 m wide on a pitch of 8.2 m, with 6 m of clear span under each round arch.
+  - Two tiers where the valley is deep: 6 arches below and 10 above.
+  - One tier on the slopes, and a solid wall where the ground comes near the channel.
+  - The faces are cream lime plaster over a brick core, with the brick showing where patches have fallen.
+  - The arches are rung in pale ashlar on impost blocks, and a string course runs between the tiers.
+  - A band of blue glazed tile runs under the cornice on both faces.
+- **The channel:** 1.2 m wide inside, with walls 0.9 m high under copings, some of them gone. It is lined in red mortar, with a pale lime crust to 0.3 m where the water ran. It is dry and has no covers, so you walk along its bed from the terrace where it comes off the hill.
+- **The ruin:** the upper tier and the channel have fallen over two bays east of the middle. The pier between them is a stump on the lower tier, the broken ends are ragged, and the blocks lie heaped below. The walk ends at a drop of about 10 m to the lower tier, with the far run 11 m off.
+
+**1. The gap:**
+- **A. Broken, as drawn** *(recommended)*: the channel walk ends at the gap. The far side is reached from the valley, so the ruin is a view and a climb, not a bridge.
+- **B. A way across:** a plank bridge someone has laid over the gap, or the stump high enough to jump to. The walk then runs end to end.
+- **C. Whole:** no gap (`&whole`). This would be an aqueduct still standing, dry, for the roads and works of L5 rather than a ruin.
+
+Pictures:
+- [the valley and the two tiers](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct.jpg)
+- [down the channel](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-channel.jpg)
+- [at the break](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-break.jpg)
+- [under the arches](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-under.jpg)
+- [off the west terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-end.jpg)
+- [whole, for comparison](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct-whole.jpg)
+
+Michael: **Broken, as drawn** (A, on the control room). (14 Oct 2026)
+
 ### The Mark's ice cavern: the cave's hall in ice, or a glacier cave of its own? (look builder, Session 903) — DECISION #331
 **F8: the Mark's ice cavern (look builder, Session 903).** #305's three Gatelands places are done. The card's next part is the places by island, and OG-121's Mark panel has "ice caverns, snowed-in mouths". This first one is the limestone cave's hall (#313, rebuilt on your note in Session 882) dressed in the Mark's ice. It is a prototype in `docs/prototypes/levelup/places.js` (`markIceCave`, a dress of `gatelandsCave`), at `places.html?place=icecave`.
 - **The same space:** the same hall of 64 m, 45 m across and 24 to 30 m high, with the same winding passage, ledge, ramp, shore, natural bridge and shaft to the sky. Its rock is not moved.
