@@ -18724,3 +18724,52 @@ What changed in `people.js`:
 ### Needs eyes
 - **The fist stands further off the board** (up to 5.8 cm), so on the round shield the cleats stand taller. The truer answer is still 906's: the wrist bent outward so the knuckles go into the boss, which waits on B4.
 - **The other hand poses** (the relaxed hands of every person, `q(0, 0, ±(.25 + .12 j))`) still curl about z. At those small angles the sideways twist is under a centimetre, and they read as relaxed. They are left as they are.
+
+## v80 — Session 913 — The sun-star hoplon (L7 and B2, prototype only)
+OG-028's third island shield, after Session 904's painted round and Session 911's harp kite: Aurenne's hoplon with the sun-star. L1's Compact guards carry a round bronze shield and a spear. The hoplon is that shield as OG-028 draws it, so it needs no new question. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The kite's builder now takes a shape.** `KITE` and `HOPLON` each carry:
+  - an outline (`line`);
+  - a back surface (`z(u, v)`);
+  - a thickness;
+  - how far up the arm counts as the arm (`armX`).
+
+  `kiteR`, `kiteIn`, `kiteParts`, `kiteBack` and `kiteInside` read them. The kite builds as Session 911 left it: its five checks pass with the same numbers.
+- **`shieldShape: 'hoplon'`:**
+  - 90 cm across and dished 10 cm deep: its rim is 10 cm nearer the body than its middle.
+  - A rolled bronze lip 2.6 cm thick round the edge.
+  - It is held as a hoplite holds one: the forearm goes through a bronze band at its middle (the porpax), and the fist closes on a leather grip near the rim (the antilabe). So its middle sits 33 cm up the forearm from the fist, by the elbow, and the upper arm rests against it too. Points of the arm past rest x 0.2 count as the arm, against 0.3 for the kite.
+  - Its face is turned 0.4 rad forward from the side, against 1 rad for the round and the kite.
+    - At 1 rad, the dish's near rim crossed in front of the torso. The arm was lifted the full 0.36 rad allowed, and on the woman it still stood 12 cm off the board.
+    - At 0.6 rad, one of three still needed the full lift.
+    - At 0.4 rad, none needs any.
+- **The face** (`hoplonTex`):
+  - The round shield's face: a painted field, or bronze with its hammer dints (`shieldMetal`), worn back at the rim.
+  - Over it, the sun-star in the paint's colour: a disc and sixteen rays, long and short by turns.
+  - Gold if no paint is given.
+- 4,472 triangles.
+- Under a cloak a hoplon is not built yet, as for the kite.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 247 checks pass.** There are four new hoplons:
+  - an Aurennais in a tunic, blue with a white star;
+  - an Aurennais in bronze with a gold star, a bronze helm and a spear;
+  - an Aurennais woman;
+  - a Gatelander in mail.
+- For each of the four:
+  - Nothing is inside its boards or lip: 0 of 6,623 to 21,085 points within its outline.
+  - The arm lies on its back, 0.0 mm off, and is not lifted. The nearest point is 5.0 mm behind it.
+  - Its rim is 64 to 71 cm off the ground.
+  - Each saves and loads.
+- With the spear, the spear's promises hold too.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-hoplon.jpg` and `-back`: blue with a white sun-star.
+  - `builder-armour-hoplon-bronze.jpg`: bronze with a gold star, with a spear and a bronze helm.
+  - `builder-armour-hoplon-woman.jpg`: a woman in a long skirt.
+### Needs eyes
+- **It is carried high.** With the arm hanging, the centre grip puts the hoplon's middle at the elbow, so its top rim comes to the chin. That is how the grip works. Carried at rest it would be leaned on the leg or slung on the back, which waits on B4 and on the slung shields.
+- **The star is painted, not raised.** Bronze hoplons often carry the sign in relief; a normal map would show it.
+- **The porpax and the antilabe** are plain: a band and a strap, with no cord loops round the inside of the rim.
+- **Owed:** the kite and the hoplon slung under a cloak.

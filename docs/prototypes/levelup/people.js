@@ -950,18 +950,24 @@ function buildShield(G, body, byName, meshes, root) {
 // y up (the fist at 0), z out of its face, the back of its middle at z 0
 const KITE = { W: .24, TOP: .30, TIP: -.56, BEND: .045, T: .012 };
 const kiteZ = u => -KITE.BEND * (u / KITE.W) ** 2;
+// the hoplon (Session 913; OG-028's Aurennais shield, the sun-star on a round): 90 cm across and dished 10 cm deep, a bronze lip
+// round it; held as the Aurennais hold it, the forearm through a bronze band (the porpax) at its middle and the fist on a grip (the
+// antilabe) near its rim, so its middle is 33 cm up the forearm from the fist, by the elbow, and it rests on the upper arm too
+const HOPLON = { R: .45, MID: .33, DISH: .1, T: .014 };
 // the outline, round from the top: a half circle over the shoulders of the shield, then each side drawn in to the point
 const KITE_LINE = (() => { const { W, TOP, TIP } = KITE, yS = TOP - W, out = [];
   for (let k = 0; k <= 24; k++) { const a = Math.PI * k / 24; out.push([W * Math.cos(a), yS + W * Math.sin(a)]); }
   for (let k = 1; k <= 24; k++) { const t = k / 24; out.push([-W * (1 - t) ** .85 * (1 + .25 * t * (1 - t)), yS + (TIP - yS) * t]); }
   for (let k = 23; k >= 1; k--) { const t = k / 24; out.push([W * (1 - t) ** .85 * (1 + .25 * t * (1 - t)), yS + (TIP - yS) * t]); }
   return out; })();
+HOPLON.line = Array.from({ length: 96 }, (_, k) => [HOPLON.R * Math.cos(k / 96 * Math.PI * 2), HOPLON.MID + HOPLON.R * Math.sin(k / 96 * Math.PI * 2)]);
+HOPLON.z = (u, v) => -HOPLON.DISH * (u * u + (v - HOPLON.MID) ** 2) / HOPLON.R ** 2; KITE.line = KITE_LINE; KITE.z = u => kiteZ(u); KITE.name = 'kite'; HOPLON.name = 'hoplon'; KITE.armX = .3; HOPLON.armX = .2;
 // the outline's distance from the fist along a ray at angle a (the outline is seen whole from there, so one crossing)
-function kiteR(a) { const dx = Math.cos(a), dy = Math.sin(a), L = KITE_LINE; let best = 1e9;
+function kiteR(a, L = KITE_LINE) { const dx = Math.cos(a), dy = Math.sin(a); let best = 1e9;
   for (let k = 0; k < L.length; k++) { const [x1, y1] = L[k], [x2, y2] = L[(k + 1) % L.length], ex = x2 - x1, ey = y2 - y1, den = dx * ey - dy * ex; if (Math.abs(den) < 1e-9) continue;
     const t = (x1 * ey - y1 * ex) / den, s = (x1 * dy - y1 * dx) / den; if (t > 0 && s >= 0 && s <= 1) best = Math.min(best, t); }
   return best; }
-const kiteIn = (u, v, m = 0) => Math.hypot(u, v) < kiteR(Math.atan2(v, u)) + m;
+const kiteIn = (u, v, m = 0, H = KITE) => Math.hypot(u, v) < kiteR(Math.atan2(v, u), H.line) + m;
 function kiteTex(col, paint, wood) {
   const c = document.createElement('canvas'); c.width = 256; c.height = 512; const x = c.getContext('2d'), rnd = seeded('kite'), css = (k, v, a = 1) => `rgba(${k.map(t => Math.round(Math.max(0, Math.min(1, t * v)) * 255)).join(',')},${a})`;
   const { W, TOP, TIP } = KITE, px = u => (u / W * .5 + .5) * 256, py = v => (TOP - v) / (TOP - TIP) * 512;
@@ -987,24 +993,32 @@ function kiteTex(col, paint, wood) {
     x.beginPath(); KITE_LINE.forEach(([u, v], k) => k ? x.lineTo(px(u), py(v)) : x.moveTo(px(u), py(v))); x.closePath(); x.lineWidth = 9; x.strokeStyle = css(wood, .9, .55); x.stroke(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
-function kiteParts(D, gripZ = -.03) {
-  const { W, TOP, TIP, T } = KITE, NT = 64, NR = 10, pos = [], uv = [], idx = [], pos2 = [], idx2 = [], u0 = u => u / W * .5 + .5, v0 = v => (v - TIP) / (TOP - TIP);
-  for (let j = 0; j < NR; j++) for (let t = 0; t <= NT; t++) { const a = t / NT * Math.PI * 2, r = kiteR(a) * (j === 0 ? .002 : j / (NR - 1)), u = r * Math.cos(a), v = r * Math.sin(a);
-    pos.push(u, v, kiteZ(u) + T); uv.push(u0(u), v0(v)); pos2.push(u, v, kiteZ(u)); }
+// the hoplon's face: the round shield's (a painted field, or bronze with its hammer dints) and the sun-star over it, the sign of
+// Aurenne: a disc and sixteen rays, long and short by turns, in the paint's colour (gold if it has none)
+function hoplonTex(col, paint, wood, metal) {
+  const t = shieldTex(col, null, wood, metal), c = t.image, x = c.getContext('2d'), P = paint || [.86, .7, .3], css = `rgb(${P.map(v => Math.round(v * 255)).join(',')})`;
+  x.fillStyle = css; x.beginPath(); for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2 - Math.PI / 2, r = k % 2 ? 46 : (k % 4 ? 150 : 205); x.lineTo(256 + r * Math.cos(a), 256 + r * Math.sin(a)); } x.closePath(); x.fill();
+  x.beginPath(); x.arc(256, 256, 54, 0, 7); x.fill(); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 3; x.stroke(); t.needsUpdate = true; return t;
+}
+function kiteParts(D, gripZ = -.03, H = KITE) {
+  const hop = H === HOPLON, { W, TOP, TIP } = KITE, T = H.T, NT = 64, NR = 10, pos = [], uv = [], idx = [], pos2 = [], idx2 = [], u0 = u => hop ? u / H.R * .5 + .5 : u / W * .5 + .5, v0 = v => hop ? (v - H.MID) / H.R * .5 + .5 : (v - TIP) / (TOP - TIP);
+  for (let j = 0; j < NR; j++) for (let t = 0; t <= NT; t++) { const a = t / NT * Math.PI * 2, r = kiteR(a, H.line) * (j === 0 ? .002 : j / (NR - 1)), u = r * Math.cos(a), v = r * Math.sin(a);
+    pos.push(u, v, H.z(u, v) + T); uv.push(u0(u), v0(v)); pos2.push(u, v, H.z(u, v)); }
   for (let j = 0; j < NR - 1; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, b = a + NT + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); idx2.push(a, a + 1, b, a + 1, b + 1, b); }
   const geo = (p, i) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(i); g.computeVertexNormals(); return g; };
-  const woodC = [.46, .33, .2], face = new THREE.Mesh(geo(pos, idx), new THREE.MeshStandardMaterial({ map: kiteTex(D.shield, D.shieldPaint, woodC), roughness: .78 }));
+  const woodC = [.46, .33, .2], face = new THREE.Mesh(geo(pos, idx), hop ? new THREE.MeshStandardMaterial({ map: hoplonTex(D.shield, D.shieldPaint, woodC, !!D.shieldMetal), roughness: D.shieldMetal ? .36 : .7, metalness: D.shieldMetal ? .55 : 0 }) : new THREE.MeshStandardMaterial({ map: kiteTex(D.shield, D.shieldPaint, woodC), roughness: .78 }));
   const backM = new THREE.Mesh(geo(pos2, idx2), new THREE.MeshStandardMaterial({ map: kiteTex(null, null, woodC.map(v => v * .8)), roughness: .9 }));
-  // the rim: rawhide over the edge, following the bend
-  const line = []; for (let k = 0; k <= 96; k++) { const a = k / 96 * Math.PI * 2, r = kiteR(a), u = r * Math.cos(a), v = r * Math.sin(a); line.push(new THREE.Vector3(u, v, kiteZ(u) + T / 2)); }
-  const rim = new THREE.Mesh(tubeGeom(line, line.map(() => .0075), 6), new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.3, .21, .13])), roughness: .7 }));
+  // the rim: rawhide over the edge, following the bend (a hoplon's is its bronze lip, wider and rolled)
+  const line = []; for (let k = 0; k <= 96; k++) { const a = k / 96 * Math.PI * 2, r = kiteR(a, H.line), u = r * Math.cos(a), v = r * Math.sin(a); line.push(new THREE.Vector3(u, v, H.z(u, v) + T / 2)); }
+  const rim = new THREE.Mesh(tubeGeom(line, line.map(() => hop ? .013 : .0075), hop ? 8 : 6), hop ? new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 }) : new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.3, .21, .13])), roughness: .7 }));
   // the enarmes: a leather strap the forearm goes through, 17 cm over the fist, and a grip strap the fist closes on, each
   // riveted to the back at its two ends and standing off it to the arm's own depth (gripZ, behind the back)
   const lea = new THREE.MeshStandardMaterial({ color: sRGB(...woodC.map(v => v * .55)), roughness: .8 }), metal = new THREE.MeshStandardMaterial({ color: sRGB(...(D.helm || [.42, .43, .45])), metalness: .55, roughness: .38 });
   const sh = new THREE.Group(); sh.name = 'shield'; sh.add(face, backM, rim);
-  for (const [v, half, depth, wd] of [[.17, .07, gripZ - .03, .035], [0, .055, gripZ, .03]]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, u = -half + 2 * half * t; pts.push(new THREE.Vector3(u, v, kiteZ(u) + depth * Math.sin(Math.PI * t) ** .6)); }
-    const g = tubeGeom(pts, pts.map(() => wd / 2), 4); g.scale(1, 1, 1); const s = new THREE.Mesh(g, lea); s.scale.set(1, 1, 1); sh.add(s);
-    for (const u of [-half, half]) { const rv = new THREE.Mesh(new THREE.SphereGeometry(.006, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), metal); rv.rotation.x = Math.PI / 2; rv.position.set(u, v, kiteZ(u) + T + .001); sh.add(rv); } }
+  const bronze = new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 });
+  for (const [v, half, depth, wd, mat] of hop ? [[H.MID, .065, gripZ - .045, .04, bronze], [0, .05, gripZ, .025, lea]] : [[.17, .07, gripZ - .03, .035, lea], [0, .055, gripZ, .03, lea]]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, u = -half + 2 * half * t; pts.push(new THREE.Vector3(u, v, H.z(u, v) + depth * Math.sin(Math.PI * t) ** .6)); }
+    sh.add(new THREE.Mesh(tubeGeom(pts, pts.map(() => wd / 2), 4), mat));
+    for (const u of [-half, half]) { const rv = new THREE.Mesh(new THREE.SphereGeometry(.006, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), metal); rv.rotation.x = Math.PI / 2; rv.position.set(u, v, H.z(u, v) + T + .001); sh.add(rv); } }
   sh.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   return sh;
 }
@@ -1012,20 +1026,20 @@ function kiteParts(D, gripZ = -.03) {
 // top round it), its face turned 1 rad forward from the side as the round one's is. Its back is laid 5 mm outside the furthest
 // point of whatever lies within its outline, read at each point's own place on the bend; where something other than the arm is
 // that point, the arm is lifted out from the side 0.03 rad at a time
-function kiteBack(clouds, C, S, U, N, armOf) {
+function kiteBack(clouds, C, S, U, N, armOf, H = KITE) {
   let other = -1, arm = -1, n = 0, ow = null;
   eachPoint(clouds, (x, y, z, i) => { const dx = x - C.x, dy = y - C.y, dz = z - C.z, d = dx * N.x + dy * N.y + dz * N.z; if (d < -.3) return; const u = dx * S.x + dy * S.y + dz * S.z, v = dx * U.x + dy * U.y + dz * U.z;
-    if (!kiteIn(u, v, .012)) return; n++; const need = d - kiteZ(u); if (i >= 0 && armOf(i)) arm = Math.max(arm, need); else if (need > other) { other = need; ow = [u, v]; } });
+    if (!kiteIn(u, v, .012, H)) return; n++; const need = d - H.z(u, v); if (i >= 0 && armOf(i)) arm = Math.max(arm, need); else if (need > other) { other = need; ow = [u, v]; } });
   return { other, arm, n, ow };
 }
-function kiteInside(sh, clouds, root) {
+function kiteInside(sh, clouds, root, H = KITE) {
   root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), v = new THREE.Vector3(); let inside = 0, near = 1;
-  eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); if (!kiteIn(v.x, v.y, .008)) return; const h = v.z - kiteZ(v.x); if (h < -.05 || h > KITE.T + .012) return; near = Math.min(near, -h); if (h > -.003) inside++; });
+  eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); if (!kiteIn(v.x, v.y, .008, H)) return; const h = v.z - H.z(v.x, v.y); if (h < -.05 || h > H.T + .012) return; near = Math.min(near, -h); if (h > -.003) inside++; });
   return { inside, near: +near.toFixed(4) };
 }
 function buildKite(G, body, byName, meshes, root) {
-  const D = G.dress, TURN = D.shieldTurn ?? 1, CLEAR = .005, R0 = PACK.rest, q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
-  const wrist = byName['wrist.L'], elbow = byName['lowerarm01.L'], armOf = i => R0[i * 3] > .3;
+  const D = G.dress, TURN = D.shieldTurn ?? (D.shieldShape === 'hoplon' ? .4 : 1), CLEAR = .005, R0 = PACK.rest, q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
+  const H = D.shieldShape === 'hoplon' ? HOPLON : KITE, wrist = byName['wrist.L'], elbow = byName['lowerarm01.L'], armOf = i => R0[i * 3] > H.armX;
   closeFist(byName, root, 'L');
   let place = null, lift = 0;
   for (let k = 0; k <= 12; k++) {
@@ -1034,19 +1048,19 @@ function buildKite(G, body, byName, meshes, root) {
     const O = new THREE.Vector3(1, 0, 0).addScaledVector(A, -A.x).normalize(), F = new THREE.Vector3().crossVectors(A, O); if (F.z < 0) F.negate();
     const N = O.clone().multiplyScalar(Math.cos(TURN)).addScaledVector(F, Math.sin(TURN)).normalize(), U = A.clone().negate(), S = new THREE.Vector3().crossVectors(U, N);
     const G0 = new THREE.Vector3(); for (let f = 2; f <= 5; f++) G0.add(new THREE.Vector3().setFromMatrixPosition(byName[`finger${f}-2.L`].matrixWorld)); G0.divideScalar(4);
-    const { other, arm, n, ow } = kiteBack(clouds, G0, S, U, N, armOf), back = Math.max(arm + CLEAR, other + CLEAR);
+    const { other, arm, n, ow } = kiteBack(clouds, G0, S, U, N, armOf, H), back = Math.max(arm + CLEAR, other + CLEAR);
     place = { G0, N, U, S, back, arm, armGap: Math.max(0, other - arm), tested: n, ow };
     if (other <= arm || k === 12) break;
     lift += .03; byName['upperarm01.L'].quaternion.multiply(q(0, 0, .03));
   }
   // the straps stand off the back to the arm's own depth: the forearm's furthest point behind it, less a centimetre
-  const { G0, N, U, S, back } = place, sh = kiteParts(D, Math.max(-.07, Math.min(-.015, place.arm - back - .01)));
+  const { G0, N, U, S, back } = place, sh = kiteParts(D, Math.max(-.07, Math.min(-.015, place.arm - back - .01)), H);
   sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(G0).addScaledVector(N, back); root.add(sh); root.updateMatrixWorld(true); wrist.attach(sh);
-  const { inside, near } = kiteInside(sh, wornClouds(body, meshes, root), root);
+  const { inside, near } = kiteInside(sh, wornClouds(body, meshes, root), root, H);
   let tris = 0; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
   let floor = 1e9; { const PP = posedBody(body); for (const i of new Set(PACK.G['body'])) floor = Math.min(floor, PP[i * 3 + 1]); }
-  let low = 1e9; for (const [u, v] of KITE_LINE) low = Math.min(low, G0.y + S.y * u + U.y * v + N.y * (back + kiteZ(u)));
-  return { mesh: sh, low: low - floor, stats: { on: 'arm', shape: 'kite', armGap: +place.armGap.toFixed(4), clear: CLEAR, inside, near, tested: place.tested, lift: +lift.toFixed(2), turn: TURN, across: 2 * KITE.W, tall: +(KITE.TOP - KITE.TIP).toFixed(2), tris, faceDir: +Math.atan2(N.z, N.x).toFixed(3) } };
+  let low = 1e9; for (const [u, v] of H.line) low = Math.min(low, G0.y + S.y * u + U.y * v + N.y * (back + H.z(u, v)));
+  return { mesh: sh, low: low - floor, stats: { on: 'arm', shape: H.name, armGap: +place.armGap.toFixed(4), clear: CLEAR, inside, near, tested: place.tested, lift: +lift.toFixed(2), turn: TURN, across: H === HOPLON ? 2 * H.R : 2 * KITE.W, tall: H === HOPLON ? 2 * H.R : +(KITE.TOP - KITE.TIP).toFixed(2), tris, faceDir: +Math.atan2(N.z, N.x).toFixed(3) } };
 }
 // slung (Session 905): under a cloak, which hangs over the arm that would hold it, or a shoulder cape, which stands out over its top
 // edge, the shield is carried on the back by its strap (the guige), as OG-019's heavy line draws the strap crossed over the chest.
@@ -1371,9 +1385,9 @@ export function makePerson(G, o = {}) {
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
   // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
-  let shieldStats = null; if (D.shield && !D.cloak) { const S = (D.shieldShape === 'kite' ? buildKite : buildShield)(G, body, byName, meshes, root); shieldStats = { ...S.stats, bottom: +S.low.toFixed(3) }; }
-  // (a kite is not slung yet: under a cloak it is left off, Session 911)
-  else if (D.shield && D.shieldShape !== 'kite') shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
+  let shieldStats = null; if (D.shield && !D.cloak) { const S = (D.shieldShape === 'kite' || D.shieldShape === 'hoplon' ? buildKite : buildShield)(G, body, byName, meshes, root); shieldStats = { ...S.stats, bottom: +S.low.toFixed(3) }; }
+  // (a kite or a hoplon is not slung yet: under a cloak it is left off, Sessions 911 and 913)
+  else if (D.shield && !(D.shieldShape === 'kite' || D.shieldShape === 'hoplon')) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats };
 }
