@@ -20944,3 +20944,16 @@ Two housekeeping changes:
 ### Needs eyes
 - **Six blows, in a real fight.** A lone Bandit or Skeleton that you stand and trade with can now kill you, and a pack of three can do it in about two exchanges. Is that the pressure combat.md wanted, or does the open world's density need a look (F2b, enemies by place)?
 - **Posture.** A blow's posture drain is 1.5× its damage, so harder blows break your guard sooner too. `guardsindoor` showed a guard keeping a still player staggered. Worth feeling whether a held block now breaks too quickly against two foes.
+
+## v80 — Session 963 — dmgnums keeps its foe fresh for the blow from behind (deep work, card combat-resolver, CI red on PR #356)
+CI ran PR #356 at 9abf6eb and failed on one shard (headless 7, 31 of 32 suites passed). `dmgnums` failed twice there and passed on main. The check that failed was *from behind*: the fourth swing at the street Bandit came up as a red crit with the word *staggered*, not lilac with *from behind*.
+
+The cause is the resolver's posture, not the numbers. The suite swings four times at one Bandit: a plain blow, a miss, a blow with Flames, and then the blow from behind. Since Session 940 the resolver drains the row's posture on every blow, and the chain's third swing drains ×1.5. So the Flames swing can break the Bandit's guard. Whether the 1.5 s stagger is still running when the fourth swing lands depends on how much real time passes between the swings, and that is slower on CI than here. A blow at a staggered foe is a crit. `dmgNumKind` puts a crit's word ahead of *from behind*, as it should: a riposte on a broken guard is the bigger news.
+
+The game is right, so the suite changes. Before the swing from behind, it now refills the Bandit's posture, clears its stagger and resets the chain, so that check tests only what it names. No check was loosened and no game code changed.
+### Verified (headless Chromium)
+- **Reproduced:** with the stagger left running before the swing from behind (one line, then removed), the check fails exactly as CI's did: `dn crit`, `staggered`, 25.
+- **With the reset:** `dmgnums` passes 14 of 14 here, twice. The blow from behind reads `dn back`, *from behind*, 15. The same reset passes with a stagger and 1 posture set just before it.
+- `parsecheck` is clean. No `js/` file changed.
+### Needs eyes
+- Nothing new. Session 949's two notes still stand: six blows in a real fight, and how fast a held block breaks against two foes.
