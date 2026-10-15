@@ -58,11 +58,13 @@ function mats() {
     pantile: mat('pantile', { ns: 1.4, rough: .75 }), ridge: std(0x8a4428, { rough: .7 }), zellige: mat('zellige', { ns: .6, rough: .25 }), glaze: mat('glaze', { ns: .7, rough: .2 }),
     cedar: mat('wood', { ns: 1, color: 0xc89870 }), door: AUR.doors.map(c => { const m = mat('wood', { ns: .9 }); m.color.set(c).multiplyScalar(2.1); return m; }),
     awning: mat('awning', { ns: .6, rough: .95 }), dark: std(0x0d0a08, { rough: 1 }), iron: std(0x1c1a18, { rough: .5, metal: .5 }), terra: std(0xa8582f, { rough: .85 }),
-    gold: std(0xc8952e, { rough: .35, metal: .7 }), leaf: std(AUR.leaf, { rough: .9 }), leaf2: std(AUR.leaf2, { rough: .95 }), bloom: std(AUR.bloom, { rough: .8 }) };
+    gold: std(0xc8952e, { rough: .35, metal: .7 }), leaf: std(AUR.leaf, { rough: .9 }), leaf2: std(AUR.leaf2, { rough: .95 }), bloom: std(AUR.bloom, { rough: .8 }),
+    /* the courtyard house's (Session 899) */ pave: mat('limestone', { ns: 1.0, rough: .8 }), floor: mat('flag', { ns: .7, color: 0xf0a078, rough: .7 }), orange: std(0xe07a1c, { rough: .6 }),
+    water: new THREE.MeshStandardMaterial({ color: 0x2f6f82, roughness: .05, metalness: .1, transparent: true, opacity: .78 }) };
   M.pantile.side = THREE.DoubleSide; M.awning.side = THREE.DoubleSide; return M;
 }
-const TEXTURED = new Set(['wall', 'stone', 'plinth', 'pantile', 'zellige', 'glaze', 'cedar', 'door', 'awning']);
-const UVS = { wall: .42, stone: .45, plinth: .5, pantile: .96, zellige: 1.47, glaze: 1.2, cedar: .9, door: .9, awning: .5 };
+const TEXTURED = new Set(['wall', 'stone', 'plinth', 'pantile', 'zellige', 'glaze', 'cedar', 'door', 'awning', 'pave', 'floor']);
+const UVS = { wall: .42, stone: .45, plinth: .5, pantile: .96, zellige: 1.47, glaze: 1.2, cedar: .9, door: .9, awning: .5, pave: .55, floor: 1.1 };
 
 // the kit every Aurenne builder shares (lifted out of aurenneHouse in Session 832 for the church): put() places a piece (a
 // turn about y and a tilt, then a move), takes its UVs from where it lies and drops it in its material's bucket ('wall:2'
@@ -107,12 +109,12 @@ export function aurenneHouse(o, r) {
   const yW = pl;
   put(wallGeo(w, H, front), wallK, 0, yW, d / 2 - T / 2); put(wallGeo(w, H, back), wallK, 0, yW, -d / 2 + T / 2, Math.PI);
   put(wallGeo(d - 2 * T + .02, H, side), wallK, w / 2 - T / 2, yW, 0, Math.PI / 2); put(wallGeo(d - 2 * T + .02, H, side), wallK, -w / 2 + T / 2, yW, 0, -Math.PI / 2);
-  put(box(w - 2 * T, H - .3, d - 2 * T), 'dark', 0, yW + (H - .3) / 2, 0);
+  if (!o.interior) put(box(w - 2 * T, H - .3, d - 2 * T), 'dark', 0, yW + (H - .3) / 2, 0);
   // the door: five cedar boards in its colour set back in the reveal under a half-round head, iron studs, a stone step, the tile frame round it
   for (const h of front.filter(h => h.door)) { const dz = d / 2 - T * .7, nb = 5, sh = h.h - h.w / 2;
-    for (let i = 0; i < nb; i++) put(box(h.w / nb - .012, sh + .02, .06), doorK, h.x - h.w / 2 + (i + .5) * h.w / nb, yW + sh / 2, dz);
-    put(new THREE.CylinderGeometry(h.w / 2, h.w / 2, .06, 14, 1, false, -Math.PI / 2, Math.PI), doorK, h.x, yW + sh, dz, 0, -Math.PI / 2);
-    for (let i = 0; i < 3; i++) for (let k = 0; k < 3; k++) put(new THREE.SphereGeometry(.025, 6, 4), 'iron', h.x - .3 + k * .3, yW + .45 + i * .55, dz + .04);
+    /* o.interior (Session 891, rooms.js): the room hangs its own leaf, open */ if (!o.interior) for (let i = 0; i < nb; i++) put(box(h.w / nb - .012, sh + .02, .06), doorK, h.x - h.w / 2 + (i + .5) * h.w / nb, yW + sh / 2, dz);
+    if (!o.interior) put(new THREE.CylinderGeometry(h.w / 2, h.w / 2, .06, 14, 1, false, -Math.PI / 2, Math.PI), doorK, h.x, yW + sh, dz, 0, -Math.PI / 2);
+    if (!o.interior) for (let i = 0; i < 3; i++) for (let k = 0; k < 3; k++) put(new THREE.SphereGeometry(.025, 6, 4), 'iron', h.x - .3 + k * .3, yW + .45 + i * .55, dz + .04);
     put(box(h.w + .3, .1, .42), 'stone', h.x, yW - .02, d / 2 + .12);
     const tz = d / 2 + .02, ts = .17, top = yW + h.h + .12;
     for (const sx of [-1, 1]) put(box(ts, top - yW - .05, .03), 'zellige', h.x + sx * (h.w / 2 + .17), yW + .05 + (top - yW - .05) / 2, tz);
@@ -121,7 +123,7 @@ export function aurenneHouse(o, r) {
   for (const [list, face] of [[front, 0], [back, 1]]) for (const h of list) { if (h.door) continue; const z = face ? -(d / 2) : d / 2, s = face ? -1 : 1, hx = h.x * s;
     put(box(h.w + .22, .08, .2), 'stone', hx, yW + h.y - .04, z + s * .05);
     if (h.up && o.lattice && !face) { const bw = h.w + .34, bh = h.h + .25, by = yW + h.y + bh / 2 - .12;
-      put(box(bw, bh, .4), 'dark', hx, by, z + s * .2);
+      if (!o.interior) put(box(bw, bh, .4), 'dark', hx, by, z + s * .2);
       for (let i = 0; i <= 7; i++) put(box(i % 7 ? .035 : .07, bh, .04), 'cedar', hx - bw / 2 + i * bw / 7, by, z + s * .42);
       for (let i = 1; i < 10; i++) put(box(bw, .035, .035), 'cedar', hx, by - bh / 2 + i * bh / 10, z + s * .43);
       put(box(bw + .12, .08, .56), 'cedar', hx, by + bh / 2 + .04, z + s * .22); put(box(bw + .08, .08, .52), 'cedar', hx, by - bh / 2 - .04, z + s * .22);
@@ -159,7 +161,9 @@ export function aurenneHouse(o, r) {
       depthOut = az + .4; }
   } else {
     // flat: a slab, a parapet with a rounded top, rainwater spouts through it, the terrace behind
-    put(box(w - .2, .14, d - .2), 'plinth', 0, top - .07, 0);
+    if (!o.hatch) put(box(w - .2, .14, d - .2), 'plinth', 0, top - .07, 0);
+    else { /* o.hatch {x0, x1, z0, z1} (Session 891): the slab in four pieces round a hatch to the terrace */ const q = o.hatch, X0 = -w / 2 + .1, X1 = w / 2 - .1, Z0 = -d / 2 + .1, Z1 = d / 2 - .1;
+      for (const [a0, a1, b0, b1] of [[X0, X1, q.z1, Z1], [X0, X1, Z0, q.z0], [X0, q.x0, q.z0, q.z1], [q.x1, X1, q.z0, q.z1]]) if (a1 - a0 > .01 && b1 - b0 > .01) put(box(a1 - a0, .14, b1 - b0), 'plinth', (a0 + a1) / 2, top - .07, (b0 + b1) / 2); }
     const ph = .62, pt = .26, cap = (len) => { const g = new THREE.CylinderGeometry(pt / 2, pt / 2, len, 10, 1, false, 0, Math.PI); g.rotateZ(Math.PI / 2); return g; };
     for (const sz of [1, -1]) { put(box(w + .04, ph - pt / 2, pt), wallK, 0, top + (ph - pt / 2) / 2 - .05, sz * (d / 2 - pt / 2 + .02)); put(cap(w + .04), wallK, 0, top + ph - pt / 2 - .05, sz * (d / 2 - pt / 2 + .02)); }
     for (const sx of [-1, 1]) { put(box(pt, ph - pt / 2, d - .2), wallK, sx * (w / 2 - pt / 2 + .02), top + (ph - pt / 2) / 2 - .05, 0); put(cap(d - .2), wallK, sx * (w / 2 - pt / 2 + .02), top + ph - pt / 2 - .05, 0, Math.PI / 2); }
@@ -198,7 +202,7 @@ export function aurenneHouse(o, r) {
         put(new THREE.IcosahedronGeometry(.045 + r() * .05, 0), r() < .55 ? 'bloom' : 'leaf', x, y, d / 2 + .1 + r() * .14, r() * 6, r() * 6); } } }
   // one mesh per material; the top it reports is the whole house's (pots, bushes and the cypress included), for whatever stands over or labels it
   const { group, tris, draws, roofTop: rt } = finish(); roofTop = rt;
-  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris, draws, kind: o.kind, front: depthOut };
+  group.userData = { roofTop, kind: o.kind }; return { group, roofTop, tris, draws, kind: o.kind, front: depthOut, open: { front, back, side }, doorX: dx, T, fh, yW, top };
 }
 
 // a street's lots by Michael's mix: in every run of three lots one is Roman (which one, by the street's seed), two are flat.
@@ -210,15 +214,153 @@ export function aurenneLot(street, i) {
   return { o, r };
 }
 
+// ── Aurenne's courtyard house (Session 899, card F9; Michael's A on #318, 2: "build the courtyard house next" as its own piece, a
+// rich house for the better quarter, OG-115's "two-storey courtyard house round a fountain with arcades and blue tile", OG-061's
+// blue tile). A square of o.size (15 m) of blank plastered walls to the street, one arched door with a tile frame and lattice screens
+// upstairs; inside, four ranges of rooms two storeys high round a court. The court's walls stand C (3.6 m) off the middle; between
+// them and the ring of columns at Rg (2.2 m) runs a gallery on both floors, arched below on piers with lathed columns, a cedar
+// balustrade above. In the open court a fountain in a tiled basin and four orange trees in pots. One pantile roof slopes in from
+// a parapet on the outer walls to the gallery's eaves (the rain falls in the court). The front range holds the vestibule between
+// two rooms; a masonry stair of 16 risers climbs the west range's outer wall. Rooms (rooms.js) furnish it; the shell is the same
+// whether furnished or not, but for the street door's leaf, left off when o.interior.
+//   -> { group, tris, draws, roofTop, w, d, A (the outer walls' inner face), C, Rg, Ti, T, yW, F0, F1, SL, BM, yE, Yr(d), under(x, z),
+//        solids: [{tag, x0..z1, y0, y1, fl}] (walls between their doors, piers, the balustrade, the stair), doors: [{ax, c, at, w, h, fl}],
+//        stair, well, fountain, trees, front }
+export function aurenneCourtyard(o = {}, r = stream('courtyard')) {
+  const { put, wallGeo: wallG, box, finish } = aurKit(), S = o.size ?? 15, h = S / 2, T = .32, Ti = .24, C = 3.6, Rg = 2.2, pl = .24, yW = pl, F0 = yW + .02, F1 = yW + 3.1, SL = .2, BM = .18, A = h - T;
+  const wallK = 'wall:' + (o.wall ?? Math.floor(r() * AUR.walls.length)), doorK = 'door:' + (o.door ?? Math.floor(r() * AUR.doors.length));
+  const k = Math.tan(16 * Math.PI / 180), E0 = Rg - .35, yE = F1 + 2.35, Yr = d => yE + k * (d - E0), RT = .12, under = (x, z) => Yr(Math.max(Math.abs(x), Math.abs(z))) - RT - .12 /* the rafters */;
+  const solids = [], doors = [], fl = y => (y > F1 - .5 ? 1 : 0);
+  // a wall's footprint, cut at its doors (a hole that reaches the floor), for the room's checks
+  const foot = (ax, c, a0, a1, y0, ht, holes, t) => { const ds = holes.filter(q => q.door).map(q => [q.at - q.w / 2, q.at + q.w / 2]).sort((p, q) => p[0] - q[0]); let s = a0;
+    for (const q of holes.filter(q => q.door)) doors.push({ ax, c, at: q.at, w: q.w, h: q.h, fl: fl(y0) });
+    for (const [d0, d1] of [...ds, [a1, a1]]) { if (d0 - s > .01) solids.push(ax === 'z' ? { tag: 'wall', x0: s, x1: d0, z0: c - t / 2, z1: c + t / 2, y0, y1: y0 + ht, fl: fl(y0) } : { tag: 'wall', x0: c - t / 2, x1: c + t / 2, z0: s, z1: d0, y0, y1: y0 + ht, fl: fl(y0) }); s = d1; } };
+  // a wall along x at z (x0 to x1) and one along z at x (z0 to z1); a hole's `at` is its middle along the wall in the house's frame
+  const wallZ = (z, x0, x1, y0, ht, holes = [], t = Ti) => { const xc = (x0 + x1) / 2; put(wallG(x1 - x0, ht, holes.map(q => ({ ...q, x: q.at - xc })), t), wallK, xc, y0, z); foot('z', z, x0, x1, y0, ht, holes, t); };
+  const wallX = (x, z0, z1, y0, ht, holes = [], t = Ti) => { const zc = (z0 + z1) / 2; put(wallG(z1 - z0, ht, holes.map(q => ({ ...q, x: -(q.at - zc) })), t), wallK, x, y0, zc, Math.PI / 2); foot('x', x, z0, z1, y0, ht, holes, t); };
+  const H0 = F1 - yW, top = Yr(h) + .45, H1 = top - F1, Hc = Yr(C + Ti / 2) - RT - F1;
+  // ── the outer walls, by storey: the street door; small barred windows below (the house looks in, not out); arched windows above,
+  // latticed on the street
+  const door = { at: 0, y: 0, w: 1.3, h: 2.6, arch: 1, door: 1 }, upY = .75, win = (at, y, w, ht, arch = 1) => ({ at, y, w, h: ht, arch });
+  put(box(S + .16, pl, S + .16), 'plinth', 0, pl / 2, 0);
+  const outer = { front: [[door, win(-4.6, 1.5, .55, .75, 0), win(4.6, 1.5, .55, .75, 0)], [-4.6, -2.0, 2.0, 4.6].map(x => win(x, upY, .72, 1.25))],
+    back: [[-4.4, 4.4].map(x => win(x, 1.6, .55, .7, 0)), [-5.0, -2.2, 2.2, 5.0].map(x => win(x, upY, .66, 1.1))], side: [[win(0, 1.5, .55, .75, 0)], [-1.9, 1.9].map(z => win(z, upY, .66, 1.1))] };
+  for (const [s, F, Hs, st] of [[0, yW, H0, 0], [1, F1, H1, 1]]) {
+    wallZ(h - T / 2, -h, h, F, Hs, outer.front[s], T); wallZ(-(h - T / 2), -h, h, F, Hs, outer.back[s].map(q => ({ ...q, at: -q.at })), T);
+    for (const sx of [-1, 1]) wallX(sx * (h - T / 2), -A - .01, A + .01, F, Hs, outer.side[s], T); }
+  // the cornice: four bars round the top of the outer walls
+  const cornice = []; { const t2 = .5; for (const sz of [-1, 1]) cornice.push([0, sz * (h - t2 / 2 + .1), S + .2, t2]); for (const sx of [-1, 1]) cornice.push([sx * (h - t2 / 2 + .1), 0, t2, S + .2 - 2 * t2]); }
+  put(box(S + .3, .14, .24), 'stone', 0, F1 - .02, h + .07); /* a string course over the door */
+  // the street door: a tile frame, a stone step, its leaf of studded cedar boards (left off when the rooms hang it open)
+  { const sh2 = door.h - door.w / 2, dz = h - T * .7; if (!o.interior) { for (let i = 0; i < 6; i++) put(box(door.w / 6 - .012, sh2 + .02, .06), doorK, -door.w / 2 + (i + .5) * door.w / 6, yW + sh2 / 2, dz);
+      put(new THREE.CylinderGeometry(door.w / 2, door.w / 2, .06, 16, 1, false, -Math.PI / 2, Math.PI), doorK, 0, yW + sh2, dz, 0, -Math.PI / 2);
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) put(new THREE.SphereGeometry(.025, 6, 4), 'iron', -.45 + j * .3, yW + .4 + i * .5, dz + .04); }
+    put(box(door.w + .5, .12, .5), 'stone', 0, yW - .04, h + .2); const tz = h + .02, ts = .2, tp = yW + door.h + .14;
+    for (const sx of [-1, 1]) put(box(ts, tp - yW - .05, .03), 'zellige', sx * (door.w / 2 + .2), yW + .05 + (tp - yW - .05) / 2, tz); put(box(door.w + .4 + ts, ts, .03), 'zellige', 0, tp + ts / 2, tz); }
+  // windows: stone sills, iron bars below; lattice screens on brackets upstairs on the street; plain bars elsewhere
+  const sides = [[0, 0, 1], [0, 0, -1], [1, 0, 0], [-1, 0, 0]];
+  for (const [n, [nx, , nz]] of sides.entries()) { const list = n === 0 ? outer.front : n === 1 ? outer.back : outer.side;
+    for (const [s, F] of [[0, yW], [1, F1]]) for (const q of list[s]) { if (q.door) continue; const at = n === 1 ? -q.at : q.at, cx = nz ? at : nx * h, cz = nz ? nz * h : at, ry = nz ? 0 : Math.PI / 2;
+      put(box(q.w + .2, .08, .2), 'stone', cx + nx * .05, F + q.y - .04, cz + nz * .05, ry);
+      if (n === 0 && s === 1) { const bw = q.w + .34, bh = q.h + .25, by = F + q.y + bh / 2 - .12; for (let i = 0; i <= 7; i++) put(box(i % 7 ? .035 : .07, bh, .04), 'cedar', cx - bw / 2 + i * bw / 7, by, h + .42);
+        for (let i = 1; i < 10; i++) put(box(bw, .035, .035), 'cedar', cx, by - bh / 2 + i * bh / 10, h + .43); put(box(bw + .12, .08, .56), 'cedar', cx, by + bh / 2 + .04, h + .22); put(box(bw + .08, .08, .52), 'cedar', cx, by - bh / 2 - .04, h + .22);
+        for (const sx of [-1, 1]) put(box(.08, .32, .3), 'cedar', cx + sx * (bw / 2 - .08), by - bh / 2 - .22, h + .12); continue; }
+      const bh = q.h - (q.arch ? q.w / 2 : 0); for (let i = 0; i < 3; i++) { const off = -q.w / 3 + i * q.w / 3; put(new THREE.CylinderGeometry(.018, .018, bh, 5), 'iron', cx + (nz ? off : 0) - nx * .1, F + q.y + bh / 2, cz + (nz ? 0 : off) - nz * .1); } } }
+  // ── the court's walls, by storey. Ground: the vestibule's arch and the store's and kitchen's doors (front), the hall's wide arch and two
+  // low windows on the gallery (back), the stair hall's door (west), the dining room's door between two windows (east). Upstairs: a door
+  // into each room; the bedroom's and the east room's windows on the gallery.
+  const dr = (at, w = .9, ht = 2.2) => ({ at, y: 0, w, h: ht, arch: 1, door: 1 });
+  const CW = { front: [[dr(0, 1.3, 2.6), dr(-2.4), dr(2.4)], [dr(-2.4, .9, 2.1), dr(0, .9, 2.1), dr(2.4, .9, 2.1)]], back: [[dr(0, 1.6, 2.7), win(-2.2, .5, .9, 1.7), win(2.2, .5, .9, 1.7)], [dr(0, 1.1, 2.15), win(-2.2, .6, .8, 1.25), win(2.2, .6, .8, 1.25)]],
+    west: [[dr(2.6)], [dr(-2.6, .9, 2.1)]], east: [[dr(0, 1.1, 2.3), win(-1.9, .6, .8, 1.4), win(1.9, .6, .8, 1.4)], [dr(0, .9, 2.1), win(-1.9, .6, .8, 1.25), win(1.9, .6, .8, 1.25)]] };
+  for (const [s, F, Hs] of [[0, yW, H0], [1, F1, Hc]]) {
+    wallZ(C, -A, A, F, Hs, CW.front[s]); wallZ(-C, -A, A, F, Hs, CW.back[s]);
+    wallX(-C, -C + Ti / 2, C - Ti / 2, F, Hs, CW.west[s]); wallX(C, -C + Ti / 2, C - Ti / 2, F, Hs, CW.east[s]);
+    for (const sx of [-1, 1]) wallX(sx * 1.0, C + Ti / 2, A, F, Hs) /* the vestibule's walls, and over them the three front rooms' */; }
+  // ── the floors: limestone throughout the ground floor and the court; upstairs, red tile on cedar boards on beams, open over the stair
+  put(box(2 * A, F0 - yW, 2 * A), 'pave', 0, (yW + F0) / 2, 0);
+  const N = 16, rise = (F1 - F0) / N, going = .26, SX = [-A, -A + 1.0], Z0 = C - Ti / 2 - .3, LZ = Z0 - (N - 1) * going, LZ0 = LZ - 1.0, keep = Math.floor((F1 - SL - BM - 2.0 - F0) / rise);
+  const well = { x0: SX[0], x1: SX[1], z0: LZ0, z1: Z0 - keep * going };
+  const B = Rg - .13, rects = [[-A, A, B, A], [-A, A, -A, -B], [-A, -B, -B, B], [B, A, -B, B]], cut = (q, w2) => { const [x0, x1, z0, z1] = q; if (w2.x0 >= x1 || w2.x1 <= x0 || w2.z0 >= z1 || w2.z1 <= z0) return [q];
+    return [[x0, x1, z0, w2.z0], [x0, x1, w2.z1, z1], [x0, w2.x0, Math.max(z0, w2.z0), Math.min(z1, w2.z1)], [w2.x1, x1, Math.max(z0, w2.z0), Math.min(z1, w2.z1)]].filter(([a, b, c2, d2]) => b - a > .01 && d2 - c2 > .01); };
+  for (const q of rects.flatMap(q => cut(q, well))) { const [x0, x1, z0, z1] = q; put(box(x1 - x0, SL - .03, z1 - z0), 'cedar', (x0 + x1) / 2, F1 - SL / 2 - .015, (z0 + z1) / 2); put(box(x1 - x0, .03, z1 - z0), 'floor', (x0 + x1) / 2, F1 - .015, (z0 + z1) / 2); }
+  // the beams under it, across each range's short way (none over the gallery, which the boards span from the arcade to the wall)
+  const beams = [], yB = F1 - SL - BM / 2;
+  for (const sz of [-1, 1]) for (let x = -A + .45; x < A - .2; x += .9) { beams.push([x, sz]); put(box(.16, BM, A - C - Ti / 2), 'cedar', x, yB, sz * (C + Ti / 2 + A) / 2); }
+  for (const sx of [-1, 1]) for (let z = -C + .6; z < C - .3; z += .9) { const over = sx < 0 && z > well.z0 - .1 && z < well.z1 + .1, x0 = over ? well.x1 : sx * A, x1 = sx * (C + Ti / 2); put(box(Math.abs(x1 - x0), BM, .16), 'cedar', (x0 + x1) / 2, yB, z); }
+  // the stair: 15 masonry treads up the west wall from the front, a landing, the 16th riser onto the floor; a cedar rail round the well
+  for (let i = 1; i < N; i++) { const z1 = Z0 - (i - 1) * going, z0 = Z0 - i * going; put(box(1.0, i * rise, going), wallK, (SX[0] + SX[1]) / 2, F0 + i * rise / 2, (z0 + z1) / 2); put(box(1.02, .04, going + .02), 'stone', (SX[0] + SX[1]) / 2, F0 + i * rise + .0, (z0 + z1) / 2);
+    solids.push({ tag: 'stair', x0: SX[0], x1: SX[1], z0, z1, y0: F0, y1: F0 + i * rise, fl: 0 }); }
+  put(box(1.0, F1 - rise - F0, LZ - LZ0), wallK, (SX[0] + SX[1]) / 2, (F0 + F1 - rise) / 2, (LZ + LZ0) / 2); solids.push({ tag: 'stair', x0: SX[0], x1: SX[1], z0: LZ0, z1: LZ, y0: F0, y1: F1 - rise, fl: 0 });
+  { const rt = F1 + .95, rail = (x0, x1, z0, z1) => { const L = Math.max(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / .9)); for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n, z = z0 + (z1 - z0) * i / n; put(box(.08, rt - F1, .08), 'cedar', x, (F1 + rt) / 2, z); }
+      put(box(x1 - x0 + .1, .06, z1 - z0 + .1), 'cedar', (x0 + x1) / 2, rt + .03, (z0 + z1) / 2); for (const y of [.35, .65]) put(box(x1 - x0 + .04, .03, z1 - z0 + .04), 'cedar', (x0 + x1) / 2, F1 + y, (z0 + z1) / 2);
+      solids.push({ tag: 'rail', x0: x0 - .05, x1: x1 + .05, z0: z0 - .05, z1: z1 + .05, y0: F1, y1: rt + .06, fl: 1 }); };
+    rail(well.x1, well.x1, LZ, well.z1); rail(well.x0, well.x1, well.z1, well.z1); }
+  // ── the gallery. Ground: the arcade on the column ring, three round arches a side on piers, a lathed column on each pier's court
+  // face; a tiled kerb round the open court. Upstairs: cedar columns on the ring, the balustrade between them, the architrave the
+  // eaves rest on.
+  const n3 = 3, span = 2 * Rg / n3, At = .26, arcH = F1 - SL - yW, arch = [];
+  for (let i = 0; i < n3; i++) arch.push({ at: -Rg + (i + .5) * span, y: 0, w: span - .36, h: arcH - .4, arch: 1, door: 1 });
+  const n0 = solids.length; for (const sz of [-1, 1]) wallZ(sz * Rg, -Rg - At / 2, Rg + At / 2, yW, arcH, arch, At); for (const sx of [-1, 1]) wallX(sx * Rg, -Rg + At / 2, Rg - At / 2, yW, arcH, arch, At);
+  for (const q of solids.slice(n0)) q.tag = 'pier';
+  const colP = [[0, 0], [.17, 0], [.17, .12], [.12, .2], [.11, arcH - .55], [.14, arcH - .45], [.19, arcH - .36], [.19, arcH - .3], [0, arcH - .3]].map(([a, b]) => new THREE.Vector2(a, b));
+  const ring = []; for (let i = 0; i <= n3; i++) { const t = -Rg + i * span; for (const sz of [-1, 1]) ring.push([t, sz * Rg]); if (i > 0 && i < n3) for (const sx of [-1, 1]) ring.push([sx * Rg, t]); }
+  for (const [x, z] of ring) { const nx = Math.abs(x) >= Rg - .01 ? Math.sign(x) : 0, nz = Math.abs(z) >= Rg - .01 ? Math.sign(z) : 0, ox = Math.abs(nx) && Math.abs(nz) ? -nx * .12 : -nx * .12, oz = -nz * .12;
+    put(new THREE.LatheGeometry(colP, 12), 'stone', x + ox, yW, z + oz); }
+  for (const sz of [-1, 1]) put(box(2 * B, .14, .3), 'zellige', 0, F0 + .07, sz * (B - .15)); for (const sx of [-1, 1]) put(box(.3, .14, 2 * B - .6), 'zellige', sx * (B - .15), F0 + .07, 0);
+  const yA = yE - .22, colU = [[0, 0], [.1, 0], [.1, .08], [.075, .14], [.07, yA - F1 - .2], [.1, yA - F1 - .1], [.12, yA - F1], [0, yA - F1]].map(([a, b]) => new THREE.Vector2(a, b));
+  for (const [x, z] of ring) put(new THREE.LatheGeometry(colU, 10), 'cedar', x, F1, z);
+  for (const sz of [-1, 1]) put(box(2 * Rg + .26, .22, .22), 'cedar', 0, yA + .11, sz * Rg); for (const sx of [-1, 1]) put(box(.22, .22, 2 * Rg - .22), 'cedar', sx * Rg, yA + .11, 0);
+  { const bt = F1 + .95; for (const [nx, nz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { const along = (a0, a1) => nz ? [a0, a1, nz * Rg - .04, nz * Rg + .04] : [nx * Rg - .04, nx * Rg + .04, a0, a1];
+      for (let i = 0; i < n3; i++) { const a0 = -Rg + i * span + .12, a1 = -Rg + (i + 1) * span - .12, L = a1 - a0, [x0, x1, z0, z1] = along(a0, a1);
+        put(box(nz ? L : .1, .07, nz ? .1 : L), 'cedar', (x0 + x1) / 2, bt - .035, (z0 + z1) / 2); put(box(nz ? L : .08, .05, nz ? .08 : L), 'cedar', (x0 + x1) / 2, F1 + .1, (z0 + z1) / 2);
+        for (let a = a0 + .08; a < a1 - .04; a += .14) { const g = new THREE.LatheGeometry([[0, 0], [.025, 0], [.035, .2], [.02, .38], [.035, .58], [.025, .78], [0, .78]].map(([p, q]) => new THREE.Vector2(p, q)), 6); put(g, 'cedar', nz ? a : nx * Rg, F1 + .13, nz ? nz * Rg : a); }
+        solids.push({ tag: 'balustrade', x0: Math.min(x0, x1) - .05, x1: Math.max(x0, x1) + .05, z0: Math.min(z0, z1) - .05, z1: Math.max(z0, z1) + .05, y0: F1, y1: bt, fl: 1 }); } } }
+  for (const [x, z] of ring) solids.push({ tag: 'column', x0: x - .13, x1: x + .13, z0: z - .13, z1: z + .13, y0: F1, y1: yA, fl: 1 });
+  // ── the roof: four pantile slopes from the parapet down to the eaves over the gallery, valleys of ridge tile at the corners, cedar
+  // boards and rafters under it; a fascia at the eaves
+  { const yo = Yr(h), C4 = [[-h, h], [h, h], [h, -h], [-h, -h]].map(([x, z]) => new THREE.Vector3(x, yo, z)), I4 = [[-E0, E0], [E0, E0], [E0, -E0], [-E0, -E0]].map(([x, z]) => new THREE.Vector3(x, yE, z));
+    const plane = (pts, key, slopeX, down) => { const g = new THREE.BufferGeometry(), p = [], q = down ? [...pts].reverse() : pts; for (let i = 1; i < q.length - 1; i++) p.push(...q[0].toArray(), ...q[i].toArray(), ...q[i + 1].toArray());
+      g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.computeVertexNormals(); put(g, key, 0, 0, 0, 0, 0, 0, slopeX); };
+    const low = v => v.clone().add(new THREE.Vector3(0, -RT, 0));
+    for (let i = 0; i < 4; i++) { const j = (i + 1) % 4, sx = i % 2 === 1; plane([C4[i], C4[j], I4[j], I4[i]], 'pantile', sx) /* wound to face up */; plane([low(I4[i]), low(I4[j]), low(C4[j]), low(C4[i])], 'cedar', sx) /* wound as the tiles are, so it faces down */; }
+    const rod = (P, Q2, rad) => { const L = P.distanceTo(Q2), g = new THREE.CylinderGeometry(rad, rad, L, 8, 1); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), Q2.clone().sub(P).normalize())); g.translate(...P.clone().add(Q2).multiplyScalar(.5).toArray()); put(g, 'ridge'); };
+    for (let i = 0; i < 4; i++) rod(I4[i].clone().add(new THREE.Vector3(0, .03, 0)), C4[i].clone().add(new THREE.Vector3(0, .03, 0)), .09);
+    for (const sz of [-1, 1]) put(box(2 * E0 + .1, .2, .05), 'cedar', 0, yE - .1, sz * E0); for (const sx of [-1, 1]) put(box(.05, .2, 2 * E0 + .1), 'cedar', sx * E0, yE - .1, 0);
+    const th = Math.atan(k); for (const sz of [-1, 1]) for (let x = -h + .6; x < h - .3; x += .75) { const d0 = Math.max(E0, Math.abs(x) + .12), d1 = A; if (d1 - d0 < .2) continue; const L = (d1 - d0) / Math.cos(th), dm = (d0 + d1) / 2;
+      put(box(.08, .12, L), 'cedar', x, Yr(dm) - RT - .06, sz * dm, 0, -sz * th); }
+    for (const sx of [-1, 1]) for (let z = -h + .6; z < h - .3; z += .75) { const d0 = Math.max(E0, Math.abs(z) + .12), d1 = A; if (d1 - d0 < .2) continue; const L = (d1 - d0) / Math.cos(th), dm = (d0 + d1) / 2;
+      put(box(L, .12, .08), 'cedar', sx * dm, Yr(dm) - RT - .06, z, 0, 0, sx * th); } }
+  // the cornice round the top of the outer walls
+  for (const [x, z, a, b] of cornice) put(box(a, .14, b), 'stone', x, top + .07, z);
+  // ── the court: the fountain (an octagonal basin faced in tile, a stone rim, water, a lathed pedestal with a bowl and a jet), four
+  // orange trees in pots on the corners of the open court
+  const fountain = { r: .95, y: F0 + .48 };
+  { put(new THREE.CylinderGeometry(.95, .95, .42, 8), 'zellige', 0, F0 + .21, 0, Math.PI / 8); put(new THREE.TorusGeometry(.95, .07, 6, 8), 'stone', 0, F0 + .43, 0, Math.PI / 8, Math.PI / 2);
+    put(new THREE.CylinderGeometry(.88, .88, .02, 8), 'water', 0, F0 + .37, 0, Math.PI / 8);
+    put(new THREE.LatheGeometry([[0, 0], [.16, 0], [.12, .15], [.08, .7], [.12, .85], [.42, .95], [.44, 1.0], [.4, 1.0], [.1, .92], [0, .92]].map(([a, b]) => new THREE.Vector2(a, b)), 16), 'stone', 0, F0, 0);
+    put(new THREE.CylinderGeometry(.4, .4, .02, 16), 'water', 0, F0 + .97, 0); put(new THREE.CylinderGeometry(.015, .03, .4, 6), 'water', 0, F0 + 1.15, 0);
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, g = new THREE.TorusGeometry(.32, .012, 4, 10, Math.PI * .5); g.rotateY(-a); put(g, 'water', Math.cos(a) * .05, F0 + .72, Math.sin(a) * .05); }
+    solids.push({ tag: 'fountain', x0: -.96, x1: .96, z0: -.96, z1: .96, y0: F0, y1: F0 + 1.1, fl: 0 }); }
+  const trees = []; for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const x = sx * 1.4, z = sz * 1.4; trees.push([x, z]);
+    put(new THREE.LatheGeometry([[.001, 0], [.22, 0], [.3, .45], [.34, .5], [.001, .5]].map(([a, b]) => new THREE.Vector2(a, b)), 12), 'terra', x, F0, z);
+    put(new THREE.CylinderGeometry(.04, .06, 1.1, 6), 'cedar', x, F0 + .95, z); const g = new THREE.IcosahedronGeometry(.62, 2), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const f = 1 + .14 * Math.sin(P.getX(i) * 9 + P.getZ(i) * 7 + sx * 2) * Math.cos(P.getY(i) * 8 + sz); P.setXYZ(i, P.getX(i) * f, P.getY(i) * f * .9, P.getZ(i) * f); }
+    g.computeVertexNormals(); put(g, 'leaf', x, F0 + 1.95, z); for (let j = 0; j < 9; j++) { const a = r() * Math.PI * 2, b = (r() - .3) * 1.2; put(new THREE.SphereGeometry(.05, 6, 5), 'orange', x + Math.cos(a) * Math.cos(b) * .6, F0 + 1.95 + Math.sin(b) * .5, z + Math.sin(a) * Math.cos(b) * .6); }
+    solids.push({ tag: 'tree', x0: x - .34, x1: x + .34, z0: z - .34, z1: z + .34, y0: F0, y1: F0 + 2.6, fl: 0 }); }
+  const { group, tris, draws, roofTop } = finish(); group.userData = { roofTop, kind: 'courtyard' };
+  return { group, tris, draws, roofTop, kind: 'courtyard', w: S, d: S, A, C, Rg, Ti, T, yW, F0, F1, SL, BM, yE, yA, Yr, under, solids, doors, beams, stair: { x0: SX[0], x1: SX[1], z0: LZ, z1: Z0, rise: +rise.toFixed(4), going, n: N, landing: [LZ0, LZ] }, well, fountain, trees, front: h + .5, top };
+}
+
 // ── the Church of the Weaver (Session 832, card F6: Aurenne's temples). The canon (§1.3): "domes on the churches", the
 // Compact's towns under the Church's Priors; OG-061 and OG-043 draw them as a domed hall behind an arcade, a slender tower
 // beside. At true size: a cube of lime-washed ashlar on a podium with steps, tall arched windows, a band of glazed tile
 // under the cornice; a drum with arched lights and the great dome on it, in blue glaze or limewash, and on its top the
 // Weaver's sign, a gilt shuttle; an arcaded porch across the front; a square bell tower with an open belfry and a little dome.
-// o.w (the cube, 12 to 22 m), o.dome 'blue' | 'white', o.tower 0 | 1 | 2, o.corners (four small domes at the cube's corners,
+// o.rank 'village' | 'town' | 'cathedral' (Michael's C on #294, Session 885: the dome by rank, a village's limewashed, a town's and the
+// cathedral's in blue glaze; a church with corner domes is a cathedral unless told), o.dome 'blue' | 'white' (overrides the rank),
+// o.w (the cube, 12 to 22 m), o.tower 0 | 1 | 2, o.corners (four small domes at the cube's corners,
 // a cathedral's), o.wall (a wall colour index). aurenneChurch(o, r) -> { group, roofTop, tris, draws, kind: 'church', front }.
 export function aurenneChurch(o, r) {
-  const { put, wallGeo, box, finish } = aurKit(), W = o.w || 14, D = W, T = .8, pl = .9, H = +(W * .72).toFixed(2), pd = 4.4, wallK = 'wall:' + (o.wall ?? 4), domeK = o.dome === 'white' ? wallK : 'glaze';
+  const { put, wallGeo, box, finish } = aurKit(), W = o.w || 14, D = W, T = .8, pl = .9, H = +(W * .72).toFixed(2), pd = 4.4, wallK = 'wall:' + (o.wall ?? 4), rank = o.rank || (o.corners ? 'cathedral' : 'town'), dome = o.dome || (rank === 'village' ? 'white' : 'blue'), domeK = dome === 'white' ? wallK : 'glaze';
   const lathe = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
   const domeUV = (g, rad) => { if (domeK === 'glaze') g.userData.uvRep = [Math.max(1, Math.round(2 * Math.PI * rad * UVS.glaze)), Math.max(1, Math.round(rad * 1.7 * UVS.glaze))]; return g; };
   // the podium the church and its porch stand on, and three steps down to the square
@@ -599,7 +741,7 @@ function piece(add, op, F) {
       const g = box(op.w, top - op.y - hl - .02, .06, .9); g.translate(op.w / 2, 0, 0); g.rotateY(1.25); g.translate(l, op.y + hl + (top - op.y - hl) / 2, z0 - .02); add(F.paint, g);
       B('frame', op.w + .02, .05, .1, op.x, op.y + hl, z0 + .03); step(); break; }
     case 'plank': { leaf(op.paint || F.paint, l, r, op.y, spring); if (op.arch) glass(spring, 'glass'); for (const y of [.35, 1.6]) B('iron', op.w * .7, .05, .015, l + op.w * .35, op.y + y, z0 + .02); if (op.y < .3) step(); break; }
-    case 'transom': { const tr = .42; leaf(F.paint, l, r, op.y, top - tr); glass(top - tr); sash(top - tr, top, 3, 1); B('iron', .05, .05, .06, r - .16, op.y + 1.05, z0 + .03); step(); break; }
+    case 'transom': { const tr = .42; if (!op.ajar) /* Session 893: a room inside hangs its own leaf, open */ leaf(F.paint, l, r, op.y, top - tr); glass(top - tr); sash(top - tr, top, 3, 1); B('iron', .05, .05, .06, r - .16, op.y + 1.05, z0 + .03); step(); break; }
     case 'fan': { leaf(F.paint, l, r, op.y, spring); for (const y of [.5, 1.35]) B(F.paint, op.w - .2, .5, .03, op.x, op.y + y, z0 + .02); glass(spring, 'glass'); fan();
       const kn = new THREE.TorusGeometry(.07, .015, 6, 14); kn.translate(op.x, op.y + 1.55, z0 + .03); add('iron', kn); step(); break; }
     case 'cart': case 'load': { const mid = op.x; leaf('board', l, mid - .01, op.y, spring); leaf('board', mid + .01, r, op.y, spring); if (op.arch) { const s = outline({ ...op, y: spring - .001, h: top - spring + .001 }, new THREE.Shape()); const g = new THREE.ShapeGeometry(s, 12); g.translate(0, 0, z0 - .02); add('board', g); }
@@ -771,7 +913,8 @@ export { SCALE, glMats, bucket as glBucket, finish as glFinish, box as glBox, fa
 // OG-034 (kept): timber halls on stone footings, steep snow-shedding roofs of dark shingle, carved gables with crossed
 // bargeboards ending in beast heads, a porch on the gable end, few small windows. OG-033 (not kept) and today's game add the
 // turf roof: a lower pitch, a roof of sod over birch bark. markHall(o, r): o.roof 'shingle' | 'turf', o.w (the gable's width),
-// o.d (its length), o.porch, o.chimney, o.wall (a stain). One mesh per material, as Aurenne's.
+// o.d (its length), o.porch, o.chimney, o.wall (a stain), o.interior (Session 870: no dark fill behind the door and windows and no
+// shut door, for a room built inside, rooms.js's markLonghouse, which hangs the door open). One mesh per material, as Aurenne's.
 export function markTextures() {
   if (TEX.shingle) return;
   // shingle: rounded-butt wooden shingles in staggered courses, weathered grey-brown, each one a shade of its own
@@ -834,18 +977,17 @@ export function markHall(o, r) {
   { const s = gable(w); const h = new THREE.Path(); h.moveTo(-door.w / 2, 0); h.lineTo(door.w / 2, 0); h.lineTo(door.w / 2, door.h - .25); h.quadraticCurveTo(0, door.h + .12, -door.w / 2, door.h - .25); h.lineTo(-door.w / 2, 0); s.holes.push(h);
     const wnd = new THREE.Path(), wy = wh + .5; wnd.moveTo(-.3, wy); wnd.lineTo(.3, wy); wnd.lineTo(.3, wy + .45); wnd.lineTo(-.3, wy + .45); wnd.lineTo(-.3, wy); s.holes.push(wnd);
     const geo = new THREE.ExtrudeGeometry(s, { depth: .22, bevelEnabled: false }); add(geo, wallM, 0, foot, d / 2 - .22, 0, 0, 0, .9);
-    add(box(w - .5, wh - .1, .05), Mt.dark, 0, foot + (wh - .1) / 2, d / 2 - .3);
-    add(box(.5, .4, .04), Mt.glow, 0, foot + wy + .22, d / 2 - .26); }
+    if (!o.interior) { add(box(w - .5, wh - .1, .05), Mt.dark, 0, foot + (wh - .1) / 2, d / 2 - .3); add(box(.5, .4, .04), Mt.glow, 0, foot + wy + .22, d / 2 - .26); } }
   add(new THREE.ExtrudeGeometry(gable(w), { depth: .22, bevelEnabled: false }), wallM, 0, foot, -d / 2, 0, 0, 0, .9);
   for (const sx of [-1, 1]) { const s = new THREE.Shape([[-d / 2, 0], [d / 2, 0], [d / 2, wh], [-d / 2, wh]].map(([a, b]) => new THREE.Vector2(a, b)));
     const n = Math.max(1, Math.floor(d / 4)); for (let i = 0; i < n; i++) { const z = -d / 2 + (i + .5) * d / n, p = new THREE.Path(); p.moveTo(z - .3, 1.3); p.lineTo(z + .3, 1.3); p.lineTo(z + .3, 1.8); p.lineTo(z - .3, 1.8); p.lineTo(z - .3, 1.3); s.holes.push(p);
-      add(box(.04, .5, .6), r() < .4 ? Mt.glow : Mt.dark, sx * (w / 2 - .2), foot + 1.55, z); for (const k of [-1, 1]) add(box(.05, .58, .34), Mt.door, sx * (w / 2 + .06), foot + 1.55, z + k * .48, k * sx * .5); }
+      { const lit = r() < .4; if (!o.interior) add(box(.04, .5, .6), lit ? Mt.glow : Mt.dark, sx * (w / 2 - .2), foot + 1.55, z); } for (const k of [-1, 1]) add(box(.05, .58, .34), Mt.door, sx * (w / 2 + .06), foot + 1.55, z + k * .48, k * sx * .5); }
     add(new THREE.ExtrudeGeometry(s, { depth: .22, bevelEnabled: false }), wallM, sx * (w / 2 - .11), foot, 0, sx * Math.PI / 2 - Math.PI / 2 * sx + sx * Math.PI / 2, 0, 0, .9); }
   // the frame: corner posts, a sill and a wall plate, in dark beams
   for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) add(box(.3, wh + .1, .3), Mt.beam, sx * (w / 2 - .05), foot + wh / 2, sz * (d / 2 - .05), 0, 0, 0, .8);
   for (const sx of [-1, 1]) { add(box(.26, .26, d + .1), Mt.beam, sx * (w / 2 - .02), foot + wh - .05, 0, 0, 0, 0, .8); add(box(.26, .2, d + .1), Mt.beam, sx * (w / 2 - .02), foot + .1, 0, 0, 0, 0, .8); }
   // the door: planks under a rounded head, iron strap hinges, a threshold of stone
-  for (let i = 0; i < 5; i++) add(box(door.w / 5 - .01, door.h - .1, .06), Mt.door, -door.w / 2 + (i + .5) * door.w / 5, foot + (door.h - .1) / 2, d / 2 - .1, 0, 0, 0, .9);
+  if (!o.interior) for (let i = 0; i < 5; i++) add(box(door.w / 5 - .01, door.h - .1, .06), Mt.door, -door.w / 2 + (i + .5) * door.w / 5, foot + (door.h - .1) / 2, d / 2 - .1, 0, 0, 0, .9);
   for (const y of [.5, 1.5]) add(box(door.w * .8, .06, .02), Mt.iron, -door.w * .1, foot + y, d / 2 - .06);
   // the threshold at the sill, and stone steps down from it to the ground, rises of foot / 5 (0.16 m; v2-scope §2's stairs are 0.18) and
   // treads of 0.3, each a little wider than the one above (Session 859: the critic's door 0.8 m up with no step)
@@ -876,5 +1018,5 @@ export function markHall(o, r) {
   // a stone chimney through the roof's back slope, or a smoke louver on the ridge
   if (o.chimney) { const cz = -d * .25, ch = ridgeY + .8; add(box(.9, ch, .9), Mt.stone, -(w / 4), ch / 2, cz, 0, 0, 0, .45); add(box(1.05, .15, 1.05), Mt.stone, -(w / 4), ch + .07, cz, 0, 0, 0, .45); }
   else { add(box(.7, .4, 1.2), Mt.beam, 0, ridgeY + .3, -d * .15, 0, 0, 0, .8); add(box(.9, .08, 1.4), turf ? Turf : Mt.shingle, 0, ridgeY + .54, -d * .15, 0, 0, 0, .9); }
-  const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + 4 * TREAD };
+  const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + 4 * TREAD, wh, pitch, ry0, ov, louver: o.chimney ? null : -d * .15, door, windows: Array.from({ length: Math.max(1, Math.floor(d / 4)) }, (_, i) => -d / 2 + (i + .5) * d / Math.max(1, Math.floor(d / 4))) };
 }

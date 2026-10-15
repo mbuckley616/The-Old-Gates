@@ -2,12 +2,21 @@
 // ?view=mine (default): from the adit's last set out over the landing, the gallery along the west wall to the lit face;
 // ?view=gallery: on the gallery halfway, the rail and the drop beside you; ?view=shaft: from the gallery's head across and down past the kibble to
 // the sump; ?view=face: at the working face, the vein at arm's length; ?view=adit: from the mouth up the level, its sets and lamps.
-// &old: the face long worked out (o.worked false). &cam=x,y,z,tx,ty,tz puts the camera anywhere.
+// &old: the mine long worked out (o.worked false): no lamp lit, only your torch. &cam=x,y,z,tx,ty,tz puts the camera anywhere.
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, run } from './common.js';
 import { markMine } from './places.js';
 import { stream } from './pieces.js';
 
+// ?place=cairn (Session 869): the Gatelands' round cairn, places-cairn-view.js
+// ?place=cave (Session 872): the limestone cave with a lake under falls, places-cave-view.js
+// ?place=icecave (Session 903): the same hall in the Mark's ice, places-cave-view.js
+if ((Q.get('place') || 'mine') === 'cairn') await import('./places-cairn-view.js');
+else if (Q.get('place') === 'cave' || Q.get('place') === 'icecave') await import('./places-cave-view.js');
+else if (Q.get('place') === 'lair') await import('./places-lair-view.js') /* Session 873: the smugglers' lair */;
+else if (Q.get('place') === 'aqueduct') await import('./places-aqueduct-view.js') /* Session 907: Aurenne's ruined aqueduct */;
+else if (Q.get('place') === 'tunnel') await import('./places-tunnel-view.js') /* Session 908: Aurenne's trade tunnel */;
+else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);
 const cam = new THREE.PerspectiveCamera(62, W / H, .02, 400);
@@ -16,6 +25,8 @@ scene.add(new THREE.HemisphereLight(new THREE.Color(.35, .38, .45), new THREE.Co
 // the lamps: a small warm light in each, two of them casting shadows (the landing's and the face's); a grey day at the mouth
 M.lamps.forEach((p, i) => { const near = i === 0 || Math.abs(p[2] + 18.3) < .1; const l = new THREE.PointLight(new THREE.Color(1, .66, .34), near ? 40 : 22, near ? 18 : 12, 1.5);
   l.position.set(p[0], p[1] - .02, p[2]); if (near) { l.castShadow = true; l.shadow.mapSize.set(1024, 1024); l.shadow.bias = -.002; } scene.add(l); });
+// worked out (&old), no lamp is lit: the only light is your own torch, carried at the right hand a little below the eye (Session 868)
+if (!M.worked) { const t = new THREE.PointLight(new THREE.Color(1, .6, .28), 34, 14, 1.6); t.castShadow = true; t.shadow.mapSize.set(1024, 1024); t.shadow.bias = -.002; t.userData.torch = true; scene.add(t); }
 { const d = new THREE.SpotLight(new THREE.Color(.75, .82, .95), 30, 26, .5, .8, 1.2); d.position.set(0, 1.6, 2); d.target.position.set(0, .4, -8); scene.add(d, d.target); }
 let eye, at, g = M.gallery;
 if (VIEW === 'gallery') { eye = [(g.x0 + g.x1) / 2, 1.62, -24.2]; at = [-1, -2.2, -29.5]; }
@@ -26,5 +37,7 @@ else { eye = [0, 1.62, -17.5]; at = [-3.0, -.6, -31]; }
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();
-STATS.place = { view: VIEW, tris: M.tris, draws: M.draws, lamps: M.lamps.length };
+scene.traverse(o => { if (o.userData && o.userData.torch) { const rgt = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion), fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion); o.position.copy(cam.position).addScaledVector(rgt, .35).addScaledVector(fwd, .3).add(new THREE.Vector3(0, -.25, 0)); } });
+STATS.place = { view: VIEW, tris: M.tris, draws: M.draws, lamps: M.lamps.length, torch: !M.worked };
 run(makeComposer(R, scene, cam, { bloom: .2, sat: 1.0, vig: .4 }), cam);
+}
