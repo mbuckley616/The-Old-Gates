@@ -20506,3 +20506,11 @@ Corrections made during the session:
 - **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
+
+## v80 — Session 946 — bellwreck waits for its port's discovery (QA)
+The QA routine's first item with FREEZE #297 closed and F2a merged: the FLAKY suites whose test fixes were owed. `bellwreck` cost the most, two retries on 15 Oct (main's 69e0c91 and F2a's ce23dbe), each on the check *within forty units at high tide, A mast stands up out of the sea…, once*, whose list of things said held the mast's line and *Carrigcarra discovered · +50 XP*. The suite stands the player at the bell's port until the wreck is built, and stopped waiting the moment `BELL_WRECK` existed. The port itself is discovered by `tickDiscovery` (`js/83-world-generator.js`), which runs every half second over `SITES`, the loaded cells' sites only: on a slow runner the wreck could be built before the port's cell had loaded or the half second come round, and the toast then fired while the player stood by the mast, inside the window the check counts. The game is right (you are near the port); the test was waiting for the wrong thing. The wait now runs until the wreck is built and `discovered(P.port)` is true, and a check says the port was found before the wreck was visited. The mast check keeps its *once* and its single line: nothing was loosened.
+### Verified (headless Chromium)
+- `node tests/run.mjs bellwreck`: three runs green in a row (about 75 s each), every check passing; the new check *standing at the port, the port is discovered before the wreck is visited* true in each.
+- `node tests/run.mjs bellwreck --look=new`: green.
+### Needs eyes
+- Nothing for a playtest. CI is the proof: the row in `docs/qa/flaky.md` closes for good if `bellwreck` is not FLAKY on the next several runs that carry this.
