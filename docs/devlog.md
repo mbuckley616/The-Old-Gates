@@ -18534,3 +18534,70 @@ What changed in `people.js`:
 ### Needs eyes
 - **The fist stands off the board** on its cleats, because the forearm lies along the board's back. A real centre grip is flush with the board, with the knuckles in the boss. That wants the wrist bent outward a little, so the fist leads the forearm into the hollow. That is a pose for B4.
 - Whether the dints read as beaten bronze at play distance.
+
+## v80 — Session 909 — The spear upright in the right fist (L7 and B2, prototype only)
+The last bodies run left a spear unfinished on `auto/wip-spear` (its commit calls it Session 907; that number went to the look builder's line, so this entry is the spear's). It held:
+- an ash shaft 2.3 m long with an iron shoe, a socket and a leaf-shaped head;
+- the right forearm turned forward, the fingers curled.
+
+The shaft ran through 158 of the hand's 436 points. There were no checks. The spear is one of the two new kinds of weapon (Michael's 6 A on OG-028), and the guards of OG-025 and OG-044 carry one. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+**What was wrong.** `buildSpear` read the posed body before it brought the bones' matrices up to date. So for anyone not in a long skirt, it measured the hand where it hung before the arm turned. A long skirt's arm-lift loop happened to refresh the matrices first. Then, once it was measured right:
+- **The fist was rolled wrong.** The palm faced down, and the knuckles ran across the shaft, not along it.
+- **The ball of the thumb** stood in the shaft's line 5 to 7 cm above the knuckles.
+
+What changed in `people.js`:
+- **The pose** (in `makePerson`):
+  - The forearm is turned forward, as before. Then it is rolled about itself until the first finger's knuckle stands over the little finger's.
+  - The wrist takes what the roll leaves: the hand runs level from the forearm, and its knuckles stand plumb. The wrist turns 0.33 to 0.38 rad.
+  - The four fingers curl as the shield's fist does (Session 906), from 1.24 times its curl down to 0.6 times. It stops at the tightest curl whose hole holds the shaft.
+  - All this happens after the arms are lifted clear of a long skirt. Before, a robe's lift moved the fist after the hole was found.
+- **The hole** (`fistHole`):
+  - It looks down the knuckles' line at the hand's points, from 3 cm under the little finger's knuckle to 9 cm over the first finger's. That band takes in the ball of the thumb.
+  - It looks for the widest empty circle that the hand closes round: points in at least six of eight sectors near its rim. The search covers 4 cm on a 2 mm grid.
+- **The spear** (`buildSpear`):
+  - It runs up the knuckles' line through the hole. That line is plumb, with a lean of 0 rad.
+  - Its length is 2.3 m or the bearer's height plus 45 cm, whichever is longer.
+  - Its shaft is 2.6 cm thick, or thinner (down to 2.2 cm) where a small hand's hole needs it.
+  - The wrist carries it.
+  - It is 296 triangles.
+- **A full cloak is thrown back off the right shoulder** when the right fist holds a spear, as a Markman frees his weapon arm.
+  - With the forearm held forward, the cloak had draped over it as a box with an open end (seen in this session's first picture).
+  - Now its columns run from 0.35 rad behind the right shoulder, round the back and the left, to the throat. The brooch sits on the cloak's front edge at the throat.
+  - A shoulder cape is unchanged, since it ends at the elbow.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 238 checks pass.** There are eight new ones, one per spear:
+  - a Markman in mail with a helm and a shield;
+  - a Markman under a fur-collared cloak;
+  - a Gatelander woman in a long skirt;
+  - a Gatelander in the Crown tabard;
+  - a Gatelander in a robe;
+  - a Gatelander woman in a shoulder cape;
+  - a man in a short cloak with the hood up;
+  - an Aurennais with a bronze shield.
+- For each of the eight:
+  - **No point of the hand is inside the shaft** (0 in every case).
+  - **The hole** is 25.4 to 34.2 mm across. The shaft is 26 mm, or 24 mm in the woman's smaller fist.
+  - **Nothing else of the person or what they wear** is within the shaft's reach. The nearest is 11.1 to 24.5 mm off.
+  - **The head** stands 45 to 61 cm over the crown.
+  - The spear is carried by `wrist.R`, and the person saves and loads.
+- With a shield in the left fist, nothing is inside the shield's board either.
+- The 230 checks that passed before still pass. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-spear.jpg`: a Markman in mail with a quartered shield and a spear.
+  - `builder-armour-spear-grip.jpg` and `-grip-in`: the fist on the shaft, from outside and from the body's side.
+  - `builder-armour-spear-cloak.jpg`: the cloak thrown back off the spear arm.
+  - `builder-armour-spear-crown.jpg`: the Crown tabard with shield and spear.
+  - `builder-armour-spear-bronze.jpg`: an Aurennais with a bronze shield and a spear.
+### Needs eyes
+- **The cloak thrown back** leaves the right shoulder and the right side of the back bare. Its edge shows as a dark line down behind the arm. A cloak thrown back would also lie in folds over the shoulder, and none are modelled.
+- **The thumb** is left as it was, so it lies along the shaft instead of over the first finger.
+- **The head is out of frame** in the full views (the frame is the person). Whether a 2.3 m spear reads at play distance is for a line-up.
+- **The cuff at the wrist.** With the forearm forward, the tunic's cut sleeve shows a ragged edge over the wrist (the tunic's own cut, already there before).
+- **Owed:**
+  - the spear in a fight, which waits on animation (B4);
+  - the head by island (OG-028's spearheads: the Mark's winged and hooked heads, Aurenne's broad leaf);
+  - knotwork or carving on the socket;
+  - the crossbow.
+- **A correction to Session 904:** its shield's rim "48 to 69 cm off the ground" was measured from every point of the pack, the helpers included. Read off the body alone, as the WIP commit changed it, the five shields in the hand have their rims 45 to 62 cm off the ground (the Aurennais's bronze 45 cm, the woman's 51 cm, the three men's 61 to 62 cm).
