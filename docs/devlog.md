@@ -19734,3 +19734,33 @@ What changed in `builder.js`:
 - **The decoration is rings, not work.** The board's knotwork, runes and filigree are each island's own, and here they are only a ring's metal. Pattern-welding on the Mark's blade and inlay on the socket would want a texture each.
 - **The iron takes the helm's colour,** as Session 909's did, so an Aurennais in a bronze helm carries a bronze head. Bronze is right for Aurenne's older pieces and wrong for a working blade. A blade's own metal would be a dress colour of its own.
 - **Owed:** the crossbow; the spear in a fight (B4).
+
+## v80 — Session 919 — The corrupted, by school (L4, prototype only)
+Backlog L4's "corrupted animals by school" asks for OG-088's second row as shape changes, never recolours, each tagged with its school. The catalogue row maps it onto canon §9a: the frost bear for Uisce, the crystal boar and the stone troll for Cloch, the stag of shadows for Scáth, the dusk eagle for Gaoth. The sheet draws them, so this asks nothing new, and its "feeds on mana" lines are dropped as the catalogue says. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`spines` takes `crystal`.** Each spine becomes a cluster of glassy shards out of the hide, the Shatterhorn's crystal horns (`crystals`), leaning back and to either side by turns.
+- **`CORRUPTED`: four plans.** Each carries `school` and `from` (its familiar) and keeps its familiar's bones, so it walks as its familiar does:
+  - **The Frost Wraith Bear (Uisce):** the bear with its fur thinned to an iced coat, eleven clusters of ice shards down its back, a crown of shards at the head, and pale-blue light in its seams. 29,792 triangles, against the bear's 26,468.
+  - **The Blight Boar (Cloch):** the boar, 15% larger, its hide gone stone-grey, nine clusters of violet crystal from the withers to the rump, its tusks 70% longer, and violet light in its seams. 27,472, against 24,488.
+  - **The Stag of Shadows (Scáth):** the stag drawn gaunt, its body 18% thinner and 12% longer, its antlers half again as long with a third branching, dark as its hide, violet in its seams. 53,376, against 46,888.
+  - **The Dusk Eagle (Gaoth):** the Crag Hawk grown to a giant eagle (2.6 times). Its wings are a third wider, with six long primaries where the hawk has nine, so they fall open at the tips. It has a heavier hooked beak, a longer tail fan, violet feathers dark at their tips, and light in its seams. 26,116 triangles, against the hawk's 39,024: at its size the surface is meshed on a coarser grid.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 915 checks pass.** There are five new family checks:
+  - each corrupted plan comes from OG-088 and carries one of the six schools and a familiar;
+  - its parts differ from its familiar's, and its triangles differ by more than a tenth;
+  - the four cover four schools.
+- Every gait of the four passes the kit's own checks: skin weights sum to one, every foot reaches its target (0.0 cm worst), feet are down for the gait's duty, and the genome is under 400 bytes.
+- **Pictures:**
+  - `creatures-corrupted.jpg`: each familiar beside its corrupted self, by a man for scale.
+  - `creatures-frostbear.jpg`, `-blightboar.jpg`, `-shadowstag.jpg` and `-duskeagle.jpg`.
+### Needs eyes
+- **The frost bear's crown of shards** sits at the back of its skull rather than the brow, so from the side it reads as part of the back's ridge.
+- **The blight boar's hide** reads as black fur rather than stone; the crystals carry it.
+- **The stag's mist** (OG-088: its antlers breathe one) waits for particles in the kit.
+- **Owed:**
+  - OG-088's stone troll (Cloch) waits for a troll in the kit;
+  - its corrupted wolf is the Faolchú's kind, and its void spider would be a Scáth spider;
+  - Tine and Solas have no corrupted animal on the sheet;
+  - the game, after F4.
