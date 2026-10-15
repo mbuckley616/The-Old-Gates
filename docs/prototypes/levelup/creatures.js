@@ -227,8 +227,12 @@ P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) *
   const drape = (r, ry, len, th, c) => { const g = new THREE.CylinderGeometry(1, 1, len, 24, 1, true, Math.PI / 2 - th / 2, th); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI / 2); g.scale(r, ry, 1); const m = new THREE.Mesh(g, stdMat(c, { rough: .8 })); m.material.side = THREE.DoubleSide; m.position.copy(sp.p); return m; };
   B.bit(sp.bone, drape(R * 1.06, Ry * 1.06, o.len * 1.25, 2.3, B.tone('blanket'))); B.bit(sp.bone, drape(R * 1.09, Ry * 1.09, o.len, 1.6, B.tone('leather')));
   const horn = new THREE.Mesh(new THREE.CylinderGeometry(o.len * .05, o.len * .07, o.len * .22, 10), stdMat(B.tone('leather'), { rough: .6 })); horn.position.copy(sp.p).add(V(0, Ry * 1.12, o.len * .42)); B.bit(sp.bone, horn); };
+// or (Session 919, OG-088's corrupted row) `crystal`: each a cluster of glassy shards out of the hide (the Shatterhorn's crystal
+// horns), leaning back and to either side by turns, so the back bristles with them as the blight boar's and the frost bear's do
 P.spines = (B, o) => { for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
-  B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), sp.p.clone().add(V(0, sp.r * B.spineS[1] * .85, 0)), V(0, 1, -.35).normalize())); } };
+  const at = sp.p.clone().add(V(0, sp.r * B.spineS[1] * .85, 0));
+  if (o.crystal) { const sd = k % 2 ? 1 : -1; B.bit(sp.bone, crystals({ n: o.crystal, len: h, r: o.r }, 1, B.tone(o.tone || 'horn'), at.add(V(sd * sp.r * .25, 0, 0)), sd, rng(B.g.seed + 11 + k))); continue; }
+  B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), at, V(0, 1, -.35).normalize())); } };
 
 // a coiled shell (Session 862): a tube wound round an axis, growing as it goes, so the whorls stack into a spire. At the
 // mouth the tube is widest; toward the apex it shrinks by `grow` a turn and rises. Spiral bands run along the whorls, pale at
@@ -1467,3 +1471,37 @@ Object.assign(PLANS, {
   yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
 });
 export const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
+
+// ── Session 919: the corrupted (OG-088's second row; backlog L4, "corrupted animals by school"). A gate's antibodies wear
+// the animals of its country, and each is a change of shape, never a recolour: the gate's work shows in what grows out of it.
+// Each is tagged with its school (canon §9a) and keeps its familiar's bones, so it walks as its familiar does. OG-088's stone
+// troll waits for a troll in the kit; its corrupted wolf is the Faolchú's kind and its void spider a Scáth spider for later ──
+Object.assign(PLANS, {
+  // Uisce: the frost wraith bear, blue ice: its coat iced over and thin, shards of ice through its back and a crown of them at the brow, pale light in its seams
+  frostbear: re(PLANS.bear, { name: 'Frost Wraith Bear', src: 'OG-088 (corrupted: a frost wraith bear of blue ice)', school: 'Uisce', from: 'bear', scale: 1.1, rough: .35,
+    palette: { coat: [.62, .74, .86], saddle: [.42, .56, .72], belly: [.8, .88, .94], dark: [.05, .07, .1], horn: [.62, .84, 1], ice: [.7, .9, 1] },
+    fur: { len: .03, layers: 7, sx: 150, droop: .2 }, glow: { color: [.5, 1.1, 2.2], freq: 2, w: .03, all: .35, seam: { w: .05, y0: .9 } },
+    parts: [...PLANS.bear.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 5, len: .34, r: .05, f: .2, up: .9, out: .45 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }] : [k, o]),
+      ['spines', { n: 11, from: .1, to: 1, len: .36, r: .06, tone: 'ice', taper: .5, crystal: 3 }]] }),
+  // Cloch: the blight boar, crystal spikes in its hide: a ridge of violet crystal from the withers to the rump, the tusks longer, the hide gone grey as stone
+  blightboar: re(PLANS.boar, { name: 'Blight Boar', src: 'OG-088 (corrupted: a blight boar with crystal spikes in its hide)', school: 'Cloch', from: 'boar', scale: 1.15,
+    palette: { coat: [.26, .24, .24], saddle: [.16, .15, .16], belly: [.34, .32, .32], dark: [.05, .04, .05], hoof: [.1, .08, .07], horn: [.82, .78, .7], skin: [.36, .3, .3], crystal: [.62, .36, .9] },
+    glow: { color: [1.4, .5, 2.4], freq: 2.5, w: .025, all: .3 },
+    parts: [...PLANS.boar.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .19, r: .018 }, eyes: o.eyes.map(e => ({ ...e, color: [.8, .45, 1] })) }] : [k, o]),
+      ['spines', { n: 9, from: .25, to: 1.02, len: .3, r: .045, tone: 'crystal', taper: .35, crystal: 3 }]] }),
+  // Scáth: the stag of shadows: gaunt, its legs longer and its body drawn in, its antlers spread half again and as dark as its hide, violet in its seams (the mist its antlers breathe waits for the kit's particles)
+  shadowstag: re(PLANS.stag, { name: 'Stag of Shadows', src: 'OG-088 (corrupted: a stag of shadows whose antlers breathe a mist)', school: 'Scáth', from: 'stag', scale: 1.08,
+    palette: { coat: [.14, .12, .17], saddle: [.08, .07, .1], belly: [.24, .2, .28], dark: [.02, .02, .03], hoof: [.05, .04, .06], horn: [.16, .13, .2] },
+    fur: { len: .022, layers: 6, sx: 380, droop: .3 }, glow: { color: [1.3, .5, 2.6], freq: 1.6, w: .02, all: .45, seam: { w: .04, y0: .9 } },
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: o.r.map(v => v * .82), hip: [o.hip[0] * 1.12, o.hip[1]], chest: [o.chest[0] * 1.12, o.chest[1]] }]
+      : k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.45, r: .034, depth: 3 }, eyes: o.eyes.map(e => ({ ...e, color: [.75, .5, 1] })) }] : k === 'neck' ? [k, { ...o, r: o.r.map(v => v * .85) }] : [k, o]) }),
+  // Gaoth: the dusk eagle, its feathers draining to violet: the Crag Hawk grown to a giant eagle, its flight feathers dark at their tips, violet light in its seams
+  duskeagle: re(PLANS.craghawk, { name: 'Dusk Eagle', src: 'OG-088 (corrupted: a dusk eagle with draining violet feathers)', school: 'Gaoth', from: 'craghawk', scale: 2.6,
+    palette: { coat: [.26, .2, .32], saddle: [.16, .12, .22], belly: [.44, .36, .52], dark: [.03, .02, .04], horn: [.18, .16, .2], skin: [.5, .42, .2], feather: [.3, .22, .4], featherTip: [.08, .04, .14], covert: [.38, .3, .48] },
+    glow: { color: [1.2, .45, 2.2], freq: 3, w: .02, all: .3 },
+    // the shape: wings a third wider with longer primaries, too few of them to close (ragged, the light through their gaps), a heavier hooked beak, a longer tail fan
+    parts: PLANS.craghawk.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: o.span * 1.32, feathers: { ...o.feathers, np: 6, primary: 1.4 } }]
+      : k === 'head' ? [k, { ...o, beak: { ...o.beak, len: o.beak.len * 1.35, r: o.beak.r * 1.25, hook: .55 }, eyes: (o.eyes || []).map(e => ({ ...e, color: [.85, .5, 1] })) }]
+      : k === 'tail' ? [k, { ...o, fan: { ...o.fan, len: o.fan.len * 1.4, spread: 50 } }] : [k, o]) })
+});
+export const CORRUPTED = ['frostbear', 'blightboar', 'shadowstag', 'duskeagle'];

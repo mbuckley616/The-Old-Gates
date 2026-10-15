@@ -69,6 +69,9 @@ function frame() {
   const h = new THREE.Vector3(); person.byName['head'].getWorldPosition(h);
   cam.clearViewOffset(); if (view === 'face') { cam.fov = 18; cam.position.set(h.x + .22, h.y + .1, h.z + 1.25 / zoom); cam.lookAt(h.x, h.y + .05, h.z); }
   else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05, h.z); }
+  // over the head (Session 918): what is carried above it, a spear's head
+  else if (view === 'over') { const sp = person.root.getObjectByName('spear'), b = sp && new THREE.Box3().setFromObject(sp), t = b ? new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - .24, (b.min.z + b.max.z) / 2) : h.clone().setY(h.y + .45);
+    cam.fov = 22; cam.position.set(t.x + .05, t.y + .06, t.z + 1.5 / zoom); cam.lookAt(t); }
   else { cam.fov = 30; const top = h.y + .15; cam.position.set(.2, top * .55 + .1, (top * 1.9 + .6) / zoom); cam.lookAt(0, top * .5, 0); }
   cam.aspect = W / H; cam.updateProjectionMatrix();
 }

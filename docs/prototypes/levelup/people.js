@@ -432,14 +432,16 @@ function buildCloak(G, body, byName, rnd) {
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
-  for (let k = 0; k < K - 1; k++) for (let r = 0; r < R - 1; r++) { const a = k * R + r, b = a + R; idx.push(a, a + 1, b, b, a + 1, b + 1); }
+  // wound so its normals point out of the cloak (Session 917): the shadow's lookup is moved along the vertex normal (normalBias), and
+  // with them pointing in, the cloak's outside read its own shadow 2 cm behind it and went dark wherever the key light fell on it
+  for (let k = 0; k < K - 1; k++) for (let r = 0; r < R - 1; r++) { const a = k * R + r, b = a + R; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
   const cm = clothMat(sRGB(...D.cloak), D.cloakFur ? 'leather' : 'wool', { side: THREE.DoubleSide, scale: 26 }), cloak = new THREE.Mesh(g, cm); cloak.name = 'cloak'; out.push(cloak);
   // an embroidered hem (OG-048, OG-059: red embroidered borders): a band of its own colour over the last 3.5 cm of the
   // sheet, laid 1.5 mm proud of it round the neck's axis so it never sinks into the cloth
   if (D.cloakHem) { const nb = Math.min(R - 2, Math.round(.035 / .0105)), bp = [], bi = [];
     for (let k = 0; k < K; k++) for (let r = R - 1 - nb; r < R; r++) { const q = cols[k][r], dx = q.x - neck.x, dz = q.z - neck.z, l = Math.hypot(dx, dz) || 1; bp.push(q.x + dx / l * .0015, q.y - (r === R - 1 ? .001 : 0), q.z + dz / l * .0015); }
-    for (let k = 0; k < K - 1; k++) for (let r = 0; r < nb; r++) { const a = k * (nb + 1) + r, b = a + nb + 1; bi.push(a, a + 1, b, b, a + 1, b + 1); }
+    for (let k = 0; k < K - 1; k++) for (let r = 0; r < nb; r++) { const a = k * (nb + 1) + r, b = a + nb + 1; bi.push(a, b, a + 1, b, b + 1, a + 1); }
     const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setAttribute('aBase', new THREE.Float32BufferAttribute(bp, 3)); bg.setIndex(bi); bg.computeVertexNormals();
     const bm = new THREE.Mesh(bg, clothMat(sRGB(...D.cloakHem), 'wool', { side: THREE.DoubleSide, scale: 60 })); bm.name = 'cloakHem'; out.push(bm); }
   // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
@@ -1000,7 +1002,7 @@ function hoplonTex(col, paint, wood, metal) {
   x.fillStyle = css; x.beginPath(); for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2 - Math.PI / 2, r = k % 2 ? 46 : (k % 4 ? 150 : 205); x.lineTo(256 + r * Math.cos(a), 256 + r * Math.sin(a)); } x.closePath(); x.fill();
   x.beginPath(); x.arc(256, 256, 54, 0, 7); x.fill(); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 3; x.stroke(); t.needsUpdate = true; return t;
 }
-function kiteParts(D, gripZ = -.03, H = KITE) {
+function kiteParts(D, gripZ = -.03, H = KITE, flat = false) {
   const hop = H === HOPLON, { W, TOP, TIP } = KITE, T = H.T, NT = 64, NR = 10, pos = [], uv = [], idx = [], pos2 = [], idx2 = [], u0 = u => hop ? u / H.R * .5 + .5 : u / W * .5 + .5, v0 = v => hop ? (v - H.MID) / H.R * .5 + .5 : (v - TIP) / (TOP - TIP);
   for (let j = 0; j < NR; j++) for (let t = 0; t <= NT; t++) { const a = t / NT * Math.PI * 2, r = kiteR(a, H.line) * (j === 0 ? .002 : j / (NR - 1)), u = r * Math.cos(a), v = r * Math.sin(a);
     pos.push(u, v, H.z(u, v) + T); uv.push(u0(u), v0(v)); pos2.push(u, v, H.z(u, v)); }
@@ -1016,8 +1018,9 @@ function kiteParts(D, gripZ = -.03, H = KITE) {
   const lea = new THREE.MeshStandardMaterial({ color: sRGB(...woodC.map(v => v * .55)), roughness: .8 }), metal = new THREE.MeshStandardMaterial({ color: sRGB(...(D.helm || [.42, .43, .45])), metalness: .55, roughness: .38 });
   const sh = new THREE.Group(); sh.name = 'shield'; sh.add(face, backM, rim);
   const bronze = new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 });
-  for (const [v, half, depth, wd, mat] of hop ? [[H.MID, .065, gripZ - .045, .04, bronze], [0, .05, gripZ, .025, lea]] : [[.17, .07, gripZ - .03, .035, lea], [0, .055, gripZ, .03, lea]]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, u = -half + 2 * half * t; pts.push(new THREE.Vector3(u, v, H.z(u, v) + depth * Math.sin(Math.PI * t) ** .6)); }
-    sh.add(new THREE.Mesh(tubeGeom(pts, pts.map(() => wd / 2), 4), mat));
+  // slung on the back (Session 916) the straps lie slack and flat on the board's back, 2 mm proud of it, as nothing is through them
+  for (const [v, half, depth, wd, mat] of hop ? [[H.MID, .065, gripZ - .045, .04, bronze], [0, .05, gripZ, .025, lea]] : [[.17, .07, gripZ - .03, .035, lea], [0, .055, gripZ, .03, lea]]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, u = -half + 2 * half * t; pts.push(new THREE.Vector3(u, v, H.z(u, v) + (flat ? .002 : depth * Math.sin(Math.PI * t) ** .6))); }
+    sh.add(new THREE.Mesh(tubeGeom(pts, pts.map(() => flat ? .004 : wd / 2), 4), mat));
     for (const u of [-half, half]) { const rv = new THREE.Mesh(new THREE.SphereGeometry(.006, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), metal); rv.rotation.x = Math.PI / 2; rv.position.set(u, v, H.z(u, v) + T + .001); sh.add(rv); } }
   sh.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   return sh;
@@ -1070,12 +1073,15 @@ function buildKite(G, body, byName, meshes, root) {
 // left side under the arm (over the cloak where the cloak hangs over the arm), and goes back under the board's lower edge. It is
 // laid along rays from inside the body: at each step it rides 3.5 mm over the furthest point within 3 cm of its ray, and is pulled
 // taut, so it bridges hollows as a strap does. It is not drawn under the board
+// A kite or a hoplon (Session 916) is slung the same way, the kite point down, its top and the hoplon's rim 6 cm under the nape, its
+// back laid 5 mm outside whatever lies within its outline at each point's own place on its bend or dish (kiteBack), so the kite's
+// bend and the hoplon's dish wrap round the back; their enarmes, porpax and antilabe lie slack and flat on the board
 function buildShieldBack(G, body, byName, meshes, root, heads) {
-  const D = G.dress, R = SHIELD_R, CLEAR = .005, R0 = PACK.rest, chest = byName['spine03'] || byName['spine04'];
+  const D = G.dress, R = SHIELD_R, CLEAR = .005, R0 = PACK.rest, chest = byName['spine03'] || byName['spine04'], H = D.shieldShape === 'kite' ? KITE : D.shieldShape === 'hoplon' ? HOPLON : null;
   const clouds = wornClouds(body, meshes, root, true), neck = new THREE.Vector3().setFromMatrixPosition(byName['neck01'].matrixWorld);
   const lean = .12, N = new THREE.Vector3(0, Math.sin(lean), -Math.cos(lean)), U = new THREE.Vector3(0, Math.cos(lean), Math.sin(lean)), S = new THREE.Vector3().crossVectors(U, N);
-  const C0 = new THREE.Vector3(0, neck.y - .06 - R, neck.z), { other, n } = shieldBack(clouds, C0, N), back = other + CLEAR, C = C0.clone().addScaledVector(N, back);
-  const sh = shieldParts(D); sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(C); root.add(sh);
+  const top = H ? (H === HOPLON ? H.MID + H.R : KITE.TOP) : R, C0 = new THREE.Vector3(0, neck.y - .06 - top, neck.z), { other, n } = H ? kiteBack(clouds, C0, S, U, N, () => false, H) : shieldBack(clouds, C0, N), back = other + CLEAR, C = C0.clone().addScaledVector(N, back);
+  const sh = H ? kiteParts(D, 0, H, true) : shieldParts(D); sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(C); root.add(sh);
   // the strap: rays from inside the body, from the nape over the right shoulder (x -.1), down across the chest to the left hip, round
   // the left side and back. Its points are on every cloud but the arms' skin and sleeves (it passes between an arm and the side);
   // a cloak's points are kept, so over a cloak it goes over the cloak
@@ -1097,7 +1103,7 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
   for (let p = 0; p < 4; p++) for (let k = 1; k < rays.length - 1; k++) rays[k].far = Math.max(rays[k].far, (rays[k - 1].far + rays[k + 1].far) / 2 - .002);
   let pts = rays.map(r => r.c.clone().addScaledVector(r.d, r.far)), nrm = rays.map(r => r.d);
   // not under the board: the strap starts and ends at its rim (under it is within its rim and less than 8 cm in front of its back)
-  root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), under = p => { const v = p.clone().applyMatrix4(inv); return Math.hypot(v.x, v.y) < R - .02 && v.z < .001 && v.z > -.08; };
+  root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), under = p => { const v = p.clone().applyMatrix4(inv), z0 = H ? H.z(v.x, v.y) : 0; return (H ? kiteIn(v.x, v.y, -.02, H) : Math.hypot(v.x, v.y) < R - .02) && v.z < z0 + .001 && v.z > z0 - .08; };
   let a = 0, b = pts.length - 1; while (a < b && under(pts[a + 1])) a++; while (b > a && under(pts[b - 1])) b--; pts = pts.slice(a, b + 1); nrm = nrm.slice(a, b + 1);
   const pos = [], idx = []; for (let k = 0; k < pts.length; k++) { const t = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]).normalize(), side = new THREE.Vector3().crossVectors(t, nrm[k]).normalize();
     for (const s of [-1, 1]) { const p = pts[k].clone().addScaledVector(side, s * W); pos.push(p.x, p.y, p.z); } if (k) { const o = (k - 1) * 2; idx.push(o, o + 2, o + 1, o + 1, o + 2, o + 3); } }
@@ -1109,9 +1115,11 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
     eachPoint(strapClouds, (x, y, z) => { const dx = x - p0.x, dy = y - p0.y, dz = z - p0.z; if (Math.abs(dx * t.x + dy * t.y + dz * t.z) > .006 || Math.abs(dx * side.x + dy * side.y + dz * side.z) > W) return; const h = dx * d.x + dy * d.y + dz * d.z; if (h < -.03 || h > .03) return; tested++; if (h > -.001) { through++; worst = Math.max(worst, h); } }); }
   let len = 0; for (let k = 1; k < pts.length; k++) len += pts[k].distanceTo(pts[k - 1]);
   root.add(strap); chest.attach(sh); chest.attach(strap);
-  const { inside, near } = shieldInside(sh, clouds, root);
+  const { inside, near } = H ? kiteInside(sh, clouds, root, H) : shieldInside(sh, clouds, root);
   let tris = idx.length / 3; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
-  return { mesh: sh, stats: { on: 'back', inside, near, tested: n, across: 2 * R, tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
+  // a shape's lowest point (the kite's tip, the hoplon's rim) off the ground
+  let bottom; if (H) { let floor = 1e9; { const PP = posedBody(body); for (const i of new Set(PACK.G['body'])) floor = Math.min(floor, PP[i * 3 + 1]); } let low = 1e9; for (const [u, v] of H.line) low = Math.min(low, C.y + S.y * u + U.y * v + N.y * H.z(u, v)); bottom = +(low - floor).toFixed(3); }
+  return { mesh: sh, stats: { on: 'back', shape: H ? H.name : 'round', inside, near, tested: n, across: H === HOPLON ? 2 * H.R : H ? 2 * KITE.W : 2 * R, ...(H ? { tall: H === HOPLON ? 2 * H.R : +(KITE.TOP - KITE.TIP).toFixed(2), bottom } : {}), tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
 }
 // the spear (Sessions 907, 909 and 910; OG-025's hold guards and OG-044's Compact guards carry one, and it is one of the two new kinds
 // of weapon, Michael's 6 A). An ash shaft 2.2 to 2.6 cm thick (as the fist's hole allows) and 45 cm taller than its bearer (2.3 m at the least), an iron socket and a
@@ -1125,6 +1133,13 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
 // the little finger's knuckle to 9 cm over the first finger's, where the ball of the thumb is); then the four fingers close on it,
 // as far as they go before any point of the hand would come inside it
 const SPEAR_R = .013;
+// the heads by island (Session 918): the socket's and the blade's lengths, the socket's sides, the blade's half-width up its length
+// (t from 0 at the socket to 1 at the point), and the rings round the socket (where up it, and their metal)
+const spearW = (W, peak, neck) => t => W * (t < peak ? Math.sin(Math.PI / 2 * t / peak) ** .8 : ((1 - t) / (1 - peak)) ** .9) + neck * (1 - t);
+const SPEAR_HEADS = {
+  leaf: { sock: .09, blade: .18, facets: 14, w: t => .0235 * Math.sin(Math.PI * Math.min(1, t * 1.25) ** .8) * (1 - t * .15) + .007 * (1 - t), rings: [.2, .8], ring: [.62, .45, .22] },
+  winged: { sock: .1, blade: .24, facets: 8, w: spearW(.019, .3, .006), rings: [.15, .5, .85], ring: [.78, .78, .8], wings: true },
+  long: { sock: .13, blade: .28, facets: 12, w: spearW(.0145, .36, .005), rings: [.12, .3, .7, .88], ring: [.86, .68, .3] } };
 function fistGrip(body, byName, root, curl, hinge) {
   const R0 = PACK.rest, hand = PACK.handRV || (PACK.handRV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3] < -.39)), at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
   // the thumb's points (skinned more than half to its own bones) are left out: it is posed after, round the shaft
@@ -1165,13 +1180,23 @@ function buildSpear(G, body, byName, meshes, root, grip) {
   const LEN = Math.max(2.3, crown - floor + .45), A = grip.A, B = grip.C.clone().addScaledVector(A, (floor - grip.C.y) / A.y);
   const wood = new THREE.MeshStandardMaterial({ color: sRGB(...D.spear), roughness: .7 }), iron = new THREE.MeshStandardMaterial({ color: sRGB(...(D.helm || [.42, .43, .45])), metalness: .6, roughness: .35 });
   const sp = new THREE.Group(); sp.name = 'spear';
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(RS * .92, RS, LEN - .33, 14), wood); shaft.position.y = .06 + (LEN - .33) / 2; sp.add(shaft);
+  // the head by island (Session 918, OG-028's strip of spearheads): the Gatelands' leaf (Session 909's), its socket bound with two
+  // bronze rings; the Mark's winged head, a long lozenge over a faceted socket with a lug either side of it, its socket ringed with
+  // silver; Aurenne's long head, a narrow blade 28 cm long on a long socket banded in gold (the filigree's colour). The spear is as
+  // long as before: the shaft gives up what a longer head takes
+  const HD = SPEAR_HEADS[D.spearHead] ? D.spearHead : ({ markman: 'winged', aurennais: 'long' })[G.people] || 'leaf', K = SPEAR_HEADS[HD], top = LEN - K.blade, s0 = top - K.sock;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(RS * .92, RS, s0 - .06, 14), wood); shaft.position.y = .06 + (s0 - .06) / 2; sp.add(shaft);
   // the shoe on the butt, and the socket under the head
   const shoe = new THREE.Mesh(new THREE.CylinderGeometry(RS + .001, RS * .55, .06, 14), iron); shoe.position.y = .03; sp.add(shoe);
-  const sock = new THREE.Mesh(new THREE.CylinderGeometry(RS * .62, RS * .95, .09, 14), iron); sock.position.y = LEN - .27 + .045; sp.add(sock);
-  // the head: a lathe of four sides (a diamond in section) flattened to a quarter, so it is a blade with a midrib
-  const prof = []; for (let k = 0; k <= 16; k++) { const t = k / 16, w = .0235 * Math.sin(Math.PI * Math.min(1, t * 1.25) ** .8) * (1 - t * .15) + .007 * (1 - t); prof.push(new THREE.Vector2(Math.max(.0004, t < 1 ? w : .0004), t * .18)); }
-  const hg = new THREE.LatheGeometry(prof, 4); hg.scale(1, 1, .22); hg.computeVertexNormals(); const head = new THREE.Mesh(hg, iron); head.position.y = LEN - .18; head.rotation.y = Math.PI / 4; sp.add(head);
+  const sock = new THREE.Mesh(new THREE.CylinderGeometry(RS * .62, RS * .95, K.sock, K.facets), iron); sock.position.y = s0 + K.sock / 2; sp.add(sock);
+  const band = K.ring && new THREE.MeshStandardMaterial({ color: sRGB(...K.ring), metalness: .8, roughness: .3 });
+  for (const f of K.rings) { const r = RS * (.95 - .33 * f) + .0012, ring = new THREE.Mesh(new THREE.TorusGeometry(r, .0016, 6, 20), band); ring.rotation.x = Math.PI / 2; ring.position.y = s0 + K.sock * f; sp.add(ring); }
+  // the blade: a lathe of four sides (a diamond in section) flattened to a quarter, so it is a blade with a midrib
+  const prof = []; for (let k = 0; k <= 16; k++) { const t = k / 16, w = K.w(t); prof.push(new THREE.Vector2(Math.max(.0004, t < 1 ? w : .0004), t * K.blade)); }
+  const hg = new THREE.LatheGeometry(prof, 4); hg.scale(1, 1, .22); hg.computeVertexNormals(); const head = new THREE.Mesh(hg, iron); head.position.y = top; head.rotation.y = Math.PI / 4; sp.add(head);
+  // the Mark's lugs: a wing either side of the socket's top, in the blade's plane, 3.4 cm out from the shaft's line
+  if (K.wings) for (const sg of [-1, 1]) { const wg = new THREE.Mesh(new THREE.ConeGeometry(.009, .034, 4), iron); wg.scale.set(1, 1, .45); wg.rotation.z = -sg * Math.PI / 2;
+    const at = new THREE.Vector3(sg * (RS * .7 + .016), top - .014, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 4); wg.position.copy(at); wg.rotation.y = Math.PI / 4; sp.add(wg); }
   sp.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   sp.position.copy(B); sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), A); root.add(sp); root.updateMatrixWorld(true);
   // what comes near the shaft: every cloud's points but the right hand's, by their distance to its axis over its length
@@ -1179,7 +1204,7 @@ function buildSpear(G, body, byName, meshes, root, grip) {
     if (i >= 0 && R0[i * 3] < -.39) { if (r < RS - .001) fist++; return; } clear = Math.min(clear, r - RS); });
   byName['wrist.R'].attach(sp);
   let tris = 0; sp.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
-  return { mesh: sp, stats: { clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
+  return { mesh: sp, stats: { head: HD, headLen: +(K.sock + K.blade).toFixed(3), headW: +(2 * Math.max(...prof.map(v => v.x))).toFixed(4), clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
 }
 function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
@@ -1386,8 +1411,8 @@ export function makePerson(G, o = {}) {
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
   // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
   let shieldStats = null; if (D.shield && !D.cloak) { const S = (D.shieldShape === 'kite' || D.shieldShape === 'hoplon' ? buildKite : buildShield)(G, body, byName, meshes, root); shieldStats = { ...S.stats, bottom: +S.low.toFixed(3) }; }
-  // (a kite or a hoplon is not slung yet: under a cloak it is left off, Sessions 911 and 913)
-  else if (D.shield && !(D.shieldShape === 'kite' || D.shieldShape === 'hoplon')) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
+  // (a kite or a hoplon is slung too since Session 916; Sessions 911 and 913 left it off under a cloak)
+  else if (D.shield) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats };
 }
@@ -1412,7 +1437,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, shieldTurn: 1, shieldMetal: false, shieldShape: 'round' };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

@@ -25,21 +25,6 @@ Pictures:
 - [the spring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-spring.jpg)
 - [back from the water stairs](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-back.jpg)
 
-### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
-You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
-
-**1. Which town?**
-- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
-- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
-- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
-
-**2. What is in it?**
-- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
-- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
-- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
-
-Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
-
 ### The Gatelands' monastic ruin: the round tower's door (look builder, Session 921) — DECISION #345
 **F8: the Gatelands' monastic ruin (look builder, Session 921).** OG-121's Gatelands panel lists "round cairns, monastic ruins and limestone caves". The cairn and the cave are built. This is the monastic ruin, after the island's own. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsAbbey`), at `places.html?place=abbey`.
 - **The ring:** a dry-stone wall 62 m across and 2 m high, fallen in two breaches, with a roofless gatehouse of two round arches.
@@ -85,8 +70,6 @@ Pictures:
 - [the road's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-road.jpg)
 - [dark, by your torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel-dark.jpg)
 
-Michael: A, a road (control room, 14 Oct).
-Done, Session 914 (look builder): nothing to build; the tunnel stays as drawn, lit and kept (`o.used` defaults true). Issue #335 closed by the producer.
 Michael: **A road** (A, on the control room). (14 Oct 2026)
 
 ### Aurenne's ruined aqueduct: broken, or a way across? (look builder, Session 907) — DECISION #333
@@ -114,8 +97,6 @@ Pictures:
 - [off the west terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-end.jpg)
 - [whole, for comparison](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct-whole.jpg)
 
-Michael: A, broken as drawn (control room, 14 Oct).
-Done, Session 914 (look builder): nothing to build; `o.broken` stays the default. Issue #333 closed by the producer.
 Michael: **Broken, as drawn** (A, on the control room). (14 Oct 2026)
 
 ### The Mark's ice cavern: the cave's hall in ice, or a glacier cave of its own? (look builder, Session 903) — DECISION #331
@@ -141,33 +122,7 @@ Pictures:
 - [over the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-bridge.jpg)
 - [the snowed-in passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-passage.jpg)
 
-Michael: A — the cave's hall in ice, as drawn.
-Done, Session 914 (look builder): nothing to build; `markIceCave` stays a dress of `gatelandsCave`. Issue #331 closed by the producer.
 Michael: **The cave's hall in ice, as drawn** (A, on the control room). (14 Oct 2026)
-
-### The Mark's sloop: shields on the rail? (look builder, Session 900) — DECISION #330
-**F11: the sloop in the Mark's dress (look builder, Session 900).** With #316, #319 and #323 answered, each class can now take the other islands' dress. This is the first: the game's sloop (13 by 4.4 m, the deck 1.0 m over the sea), in the very lines of the Gatelands sloop. It is a prototype in `docs/prototypes/levelup/ships.js` (`markSloop`, a dress of `gatelandsSloop`), at `ships.html?ship=marksloop`. It follows the Mark's dress you chose on #312 and #323:
-- **The hull:** clinker, as the small hulls stay, tarred black above a red-brown bottom, with the wale gilt.
-- **The rig:** the Mark's, the cutter's gaff (your A on #306: one rig names each island). She has a gaff main with its boom 2.15 m over the deck, a topsail, a staysail and a jib on a bowsprit, all in tanned red-brown cloths. Session 900 first drew her with a square sail and Session 901 corrected it.
-- **The head:** the cutter's gilt beast's head on the stem head.
-- **New, and asked:** twelve painted round shields hung outboard along the waist's rail, in deep blue, red and bone with an iron boss. They are the Mark's "painted round" of OG-028, and they show the Mark from any distance. They stand outboard of the planking and under the rail's top, and none hangs where the shrouds come down. The deck and the walk are as the sloop's.
-
-**1. The shields on the rail:**
-- **A. As drawn** *(recommended)*: always hung on the Mark's small hulls. They name the island at a glance, as OG-004 asks of a hull line.
-- **B. None:** the head and the black hull carry the Mark alone.
-- **C. A choice the player makes:** part of "making a ship yours" (L6, the systems builder's).
-
-Next in this line, unless you say otherwise: the cog and the galleon in the Mark's dress and in Aurenne's (black or blue and gilt, tanned or white sails, the head or the sun-star).
-
-Pictures:
-- [from off her bow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-quarter.jpg)
-- [broadside](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-side.jpg)
-- [the bow and its head](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-lap.jpg)
-- [the deck from the tiller](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-deck.jpg)
-- [without the shields](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-marksloop-quarter-noshields.jpg)
-
-Michael: **A. Shields always hung, as drawn** (14 Oct 2026, via the control room)
-*Acted on, Session 907 (look builder):* nothing to build: `markSloop` hangs its twelve shields by default, as drawn. Issue #330 was closed by the producer.
 
 ### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
 You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
