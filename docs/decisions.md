@@ -4,6 +4,44 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's sea grotto: the ways in (look builder, Session 914) — DECISION #339
+**F8: Aurenne's sea grotto (look builder, Session 914).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs". This is the sea grotto: a cave the sea made, its water lit from below by the day coming in through a drowned gate under the waterline. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneGrotto`), at `places.html?place=grotto`.
+- **The hall:** 60 m long, 37 to 40 m across and 18 to 27 m from the water to the roof, its limestone dark and wet below the high-water line.
+- **The water:** blue, lit from under the sea. At the far end a low sea arch stands 3 m over the water and 6.4 m wide, over a drowned gate 16 m wide and 7 m deep.
+- **The stair:** a rock-cut way of 24 steps from a terrace on the cliff top, coming out through an arched frame of plaster, ashlar and blue tile onto a landing.
+- **The quay:** paved, 3.6 m wide, down the east wall for 33 m. It has an ashlar face, bollards and bronze rings, and water stairs at its end with a skiff tied to them.
+- **The spring:** on the landing, fresh water out of the rock into a tiled apse and an ashlar basin. What it is to anyone is the quest writer's.
+- **The beach:** a sand beach under the west wall, across the water, reached by swimming.
+
+**1. How you get in:**
+- **A. Both ways, as drawn** *(recommended)*: the stair from the cliff top on foot, or the arch from the sea by boat or swimming, ducking under.
+- **B. By sea only:** no stair. You come in under the arch, or dive through the drowned gate, as OG-125's sea caves are reached.
+- **C. By land only:** the arch closes to a crack. The light still comes through the gate under the water, and the sea way in is a dive.
+
+Pictures:
+- [from the landing to the arch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-grotto.jpg)
+- [down the stair from the terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-stair.jpg)
+- [along the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-quay.jpg)
+- [the spring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-spring.jpg)
+- [back from the water stairs](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-back.jpg)
+
+### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
+You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
+
+**1. Which town?**
+- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
+- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
+- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
+
+**2. What is in it?**
+- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
+- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
+- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
+
+Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
+
+## Answered
+
 ### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
 **F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.
 - **The bore:** 56 m long, winding 1.6 m either side, 3.6 m wide, with upright walls to 2.4 m under a round vault (4.2 m at the crown).
@@ -25,6 +63,9 @@ Pictures:
 - [toward the inland portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-inland.jpg)
 - [the road's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-road.jpg)
 - [dark, by your torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel-dark.jpg)
+
+Michael: A, a road (control room, 14 Oct).
+Done, Session 914 (look builder): nothing to build; the tunnel stays as drawn, lit and kept (`o.used` defaults true). Issue #335 closed by the producer.
 
 ### Aurenne's ruined aqueduct: broken, or a way across? (look builder, Session 907) — DECISION #333
 **F8: Aurenne's first place, a ruined aqueduct (look builder, Session 907).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs", and OG-124 has "a ruined aqueduct". The catalogue's note asks that it be built in Aurenne's own plaster and tile, not the boards' Tuscan stone (canon §1.3). It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneAqueduct`), at `places.html?place=aqueduct`. The catacombs wait on the quest writer's answer about the dead (§3.1).
@@ -51,6 +92,9 @@ Pictures:
 - [off the west terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-end.jpg)
 - [whole, for comparison](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-aqueduct-aqueduct-whole.jpg)
 
+Michael: A, broken as drawn (control room, 14 Oct).
+Done, Session 914 (look builder): nothing to build; `o.broken` stays the default. Issue #333 closed by the producer.
+
 ### The Mark's ice cavern: the cave's hall in ice, or a glacier cave of its own? (look builder, Session 903) — DECISION #331
 **F8: the Mark's ice cavern (look builder, Session 903).** #305's three Gatelands places are done. The card's next part is the places by island, and OG-121's Mark panel has "ice caverns, snowed-in mouths". This first one is the limestone cave's hall (#313, rebuilt on your note in Session 882) dressed in the Mark's ice. It is a prototype in `docs/prototypes/levelup/places.js` (`markIceCave`, a dress of `gatelandsCave`), at `places.html?place=icecave`.
 - **The same space:** the same hall of 64 m, 45 m across and 24 to 30 m high, with the same winding passage, ledge, ramp, shore, natural bridge and shaft to the sky. Its rock is not moved.
@@ -74,22 +118,8 @@ Pictures:
 - [over the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-bridge.jpg)
 - [the snowed-in passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-passage.jpg)
 
-### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
-You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
-
-**1. Which town?**
-- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
-- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
-- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
-
-**2. What is in it?**
-- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
-- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
-- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
-
-Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
-
-## Answered
+Michael: A — the cave's hall in ice, as drawn.
+Done, Session 914 (look builder): nothing to build; `markIceCave` stays a dress of `gatelandsCave`. Issue #331 closed by the producer.
 
 ### The Mark's sloop: shields on the rail? (look builder, Session 900) — DECISION #330
 **F11: the sloop in the Mark's dress (look builder, Session 900).** With #316, #319 and #323 answered, each class can now take the other islands' dress. This is the first: the game's sloop (13 by 4.4 m, the deck 1.0 m over the sea), in the very lines of the Gatelands sloop. It is a prototype in `docs/prototypes/levelup/ships.js` (`markSloop`, a dress of `gatelandsSloop`), at `ships.html?ship=marksloop`. It follows the Mark's dress you chose on #312 and #323:

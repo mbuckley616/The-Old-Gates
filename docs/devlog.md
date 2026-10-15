@@ -19404,3 +19404,57 @@ What changed in `people.js`:
 ### Needs eyes
 - **The fist stands off the board** on its cleats, because the forearm lies along the board's back. A real centre grip is flush with the board, with the knuckles in the boss. That wants the wrist bent outward a little, so the fist leads the forearm into the hollow. That is a pose for B4.
 - Whether the dints read as beaten bronze at play distance.
+
+## v80 — Session 914 — Card F8: Aurenne's sea grotto (prototype only)
+The FREEZE (#297) holds. Three answers came back first: Michael's A on #331 (the Mark's ice cavern is the cave's hall in ice), on #333 (the aqueduct stays broken) and on #335 (the trade tunnel is a road). All three say "as drawn", so nothing was built for them. Their entries move to Answered in `docs/decisions.md`.
+
+This is the last of OG-121's Aurenne places that does not wait on the quest writer: its "sea grottoes". I reread OG-121 and its row, and OG-125's row for sea caves. Neither flag touches a grotto: the "Roman" name and the crypts' dead are not in it, and no diving gear is drawn. The grotto is built after the kind the islands' south has, a cave the sea made whose water glows. The day comes in through a drowned gate under the waterline and lights the water from below, while the arch above the water is low.
+
+What is new in `places.js`:
+- **`aurenneGrotto(o, r)`:** the sea at y 0, and the grotto along −z, built on the cave's own `caveHall`.
+- **The stair:** a rock-cut way from a paved terrace under a cliff face, down 24 steps of 0.2 m on treads of 0.5 m. It is 2.6 m wide under a round vault, 3.7 m to the crown over the steps' noses, and level for its last 5 m.
+  - At both ends it passes through an arched frame of plaster in a block let into the rock. The frame has an ashlar ring and jambs, tile panels, a tile band and a cornice.
+  - The pick's noise pushes the rock out and never in, and it fades out where the frames stand.
+- **The hall:** 60 m long, 37 to 40 m across 6 m up, and 18 to 27 m from the water to the roof near its middle. Below the high-water line the limestone is dark and wet.
+- **The sea's ways in:** at the far end, a low arch 6.4 m wide and 3 m over the water, over a drowned gate 16 m wide and 7 m deep.
+  - Beyond the gate lies a plane of daylit sea, so the gate shows blue through the water, not the sky.
+  - The water is a blue that gives off its own light, broken into a net by a tiling texture of whole waves, over a pale sea floor.
+- **The landing and the quay:**
+  - The landing is paved across the near end at 1.2 m.
+  - The quay runs 33 m down the east wall and is 3.6 m wide. Its sea face is ashlar down under the water, and the face's top is the coping.
+  - Along the quay stand five bollards, with bronze rings on the face between them.
+  - At its end, seven water stairs go down into the sea, with a skiff tied to them.
+- **The spring:** at the landing's west end, against the rock.
+  - A plastered block with a niche cut through it: a concave apse tiled in the blue zellige under a plastered half-dome, in an ashlar ring.
+  - A bronze spout and a thread of water fall into an ashlar basin 2.4 by 1.3 m with its rim at 0.55 m. Benches stand either side.
+  - What the spring is to anyone is the quest writer's.
+- **The rest:** a beach of pale sand under the west wall across the water, 14 rocks breaking the surface, and short stalactites, none low over the walk.
+
+Corrections made during the session:
+- **The seabed was wound face down,** so it was invisible from above, and rays went through it. That accounted for 14 of the first run's leaks. It now faces up.
+- **The skiff's shell was split along its length instead of being a bowl.** Its lathe was copied from the smugglers' lair's rowing boat, which I have not checked; it may be the same there. The skiff is now the lathe's lower half, laid along z.
+- **The quay's paving slabs were turned about their centres** to follow the curving edge, which left wedge-shaped gaps where the edge bends fastest. They are now laid square behind the ashlar face's top, and the face follows the curve.
+- **The apse's tiled half-cylinder bulged out of the wall.** It is now turned into the wall and seen from inside, in a plaster block with the niche cut through it, not a solid slab.
+- **A dome lofted ring by ring closes to a point at its centre height, the hall's CY.** At 3 m that point lay inside the stair's opening, and the fan of large faces round it, kept because their centres fell outside the cut, covered the opening. The sight line up the stair failed on two of three keys.
+  - CY is now 5.2 m, with the hall's lower radius 11 m, so the water is as deep.
+  - The same fan at the far end held the arch's height anywhere between 2.2 and 5 m as the cut changed. The hall is now lofted in 208 rings, twice the cave's, which makes the fan about a metre across, so the arch's own cut decides its height.
+- The paving and the floor under it fought at the same height; the floor now lies 8 cm under the paving.
+- The terrace was blown out by a strong sun, now about half.
+- **The view:** `places.html?place=grotto` goes to `places-grotto-view.js`. It has five views (`grotto`, `stair`, `quay`, `spring`, `back`). The light comes from blue lights under the water along the hall, a broad blue spot coming up through the gate, a thin white one at the arch, and the day down the stair.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 61 of 61 pass**, counted from its output (52 after Session 908). One view is new on the page check (the grotto, no page errors), and eight checks are new, over three keys:
+  - **The builds:** 83,386 to 83,466 triangles in 16 meshes, each key the same twice.
+  - **The hall:** 60 m long, 37.3 to 40.1 m across 6 m up, 18.3 to 27 m from the water to the roof near its middle.
+  - **The walk:** 402 points from the terrace down the stair, to the spring and back, and down the quay to the water stairs. There is a floor under every one at 0 to 0.03 m off the walk's own height, 3.7 m of headroom or more, and 0.95 m clear either side.
+  - **The stair:** 72 risers over three keys, every one 0.2 m.
+  - **Closed:** of 1,440 rays from inside, none gets out but by the sea arch (4) or the drowned gate (18). The terrace is in sight from the landing straight up the stair.
+  - **The sea's ways in:** the arch is 2.95 to 3.05 m over the water at its middle and open. The gate is open at 1.5, 3 and 5 m down.
+  - **The quay:** 1.23 m from its paving to the water. The water stairs' last step is 0.2 m under the water, and the skiff floats at them with its bottom 0.18 m under.
+  - **The spring:** the basin's rim is 0.55 m over the landing, 1.55 m from the walk. The tile, plaster, ashlar, bronze, the spring's water, the sand and the skiff are all present.
+- **Pictures:** `places-grotto-grotto.jpg`, `-stair`, `-quay`, `-spring` and `-back`. How you get in (both ways, by sea only, or by land only) is asked as **DECISION #339**.
+### Needs eyes
+- **Whether the water glows enough, or too evenly.** In the grotto this is built after, the water is brightest near the gate and darkens toward the back. Here the emissive is even, and only the lights under it vary.
+- **The beach reads as a sandbar:** a flat top on a slope into the water.
+- **A dark notch high on the west wall** in the `grotto` view is one of `caveHall`'s alcoves, cut hard against the light.
+- **The quay's paving takes the limestone texture's warm colour**, which reads terracotta under the blue.
+- **The smugglers' lair's rowing boat (Session 883)** may have the same lengthwise split the skiff had. It is worth a look before it goes into the game.
