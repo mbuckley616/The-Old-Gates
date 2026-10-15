@@ -19643,3 +19643,124 @@ What changed in `people.js`:
 - **The star is painted, not raised.** Bronze hoplons often carry the sign in relief; a normal map would show it.
 - **The porpax and the antilabe** are plain: a band and a strap, with no cord loops round the inside of the rim.
 - **Owed:** the kite and the hoplon slung under a cloak.
+
+## v80 — Session 916 — The kite and the hoplon slung under a cloak (L7 and B2, prototype only)
+Sessions 911 and 913 left the kite and the hoplon off under a cloak, because the slung shield (Session 905) was laid for a round board only. A cloak hangs over the arm that would hold a shield, and a shoulder cape stands out over its top edge, so under either the shield goes on the back by its strap, as the round one does. This needs no new question: it is the round shield's rule, carried to the two shapes Michael already has. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`). (Session 915 was already taken on another branch, so this is 916.)
+
+What changed in `people.js`:
+- **`buildShieldBack` takes the shape.** For a kite or a hoplon it reads the shape's outline and back surface (`KITE`, `HOPLON`), as the held one does:
+  - The kite hangs point down. Its rounded top, and the hoplon's rim, sit 6 cm under the nape, as the round shield's rim does.
+  - Its back is laid 5 mm outside whatever lies within its outline, read at each point's own place on the bend or the dish (`kiteBack`, with no arm). So the kite's bend and the hoplon's 10 cm dish wrap round the back, their hollow side to the body.
+  - The guige is the round shield's: over the right shoulder, across the chest to the left hip and round the side. It is trimmed where it goes under the board, now by the shape's own outline (`kiteIn`) and its own back surface.
+  - The promise is read back off the chest bone with `kiteInside`: nothing of the person, the cloak or the hair inside the boards or the rim.
+- **`kiteParts(..., flat)`.** Slung, the enarmes, the porpax and the antilabe lie slack and flat on the board's back (4 mm straps, 2 mm proud), so they stay inside the 5 mm the board stands off. Held, they stand off to the arm's own depth as before.
+- **Triangles:** a slung kite with its strap is 4,446 to 4,472, and a slung hoplon is 4,856.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 252 checks pass.** There are five new ones:
+  - a Gatelander in a cloak with the hood down, a kite;
+  - a Gatelander woman in a shoulder cape, a kite;
+  - a Gatelander in mail and a helm under a cloak, the Crown's red kite;
+  - an Aurennais in a cloak, a blue hoplon;
+  - an Aurennais woman in a cape, a bronze hoplon.
+- For each of the five:
+  - It is carried by `spine03`, and so is its strap.
+  - Nothing is inside its boards or rim: 0 of 4,907 to 13,315 points within its outline. The nearest point is 5.0 mm behind it.
+  - The strap is 1.81 to 2.01 m long, with nothing through it (0 of 141 to 193 points within 3 cm under it).
+  - The kite's point is 49 to 70 cm off the ground, and the hoplon's rim 51 to 67 cm.
+  - Each saves and loads.
+- The nine round shields' checks pass with the same numbers as before. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-kite-slung.jpg` and `-back`: a Gatelander in a cloak, the harp on his back.
+  - `builder-armour-hoplon-slung.jpg` (in profile, the dish against the back) and `-back`.
+  - `builder-armour-hoplon-slung-woman.jpg`: the bronze hoplon over a cape.
+### Needs eyes
+- **The hoplon is big on the back.** At 90 cm it covers the back from the shoulders to the thighs, and its rim stands out past both arms. It is the size Session 913 built, and a hoplite did carry it so. A smaller Aurennais shield for travel would be a new choice, so it is not made here.
+- **The Aurennais man's full cloak hangs as a box** (it does so with no shield: a probe picture without one shows the same). Its front panels stand off his chest in flat slabs, and its hem is square. This is the cloak's own fault on his build, not the shield's, and it is owed to the cloak.
+- **The guige** is the round shield's line for all three shapes. On the kite it leaves from under the round top. A real kite's guige is often fixed higher, at the top's two shoulders.
+- **Owed:**
+  - the spearhead by island;
+  - the crossbow;
+  - the shield carried at the ready (B4).
+
+## v80 — Session 917 — The cloak's outside was in its own shadow (B2, a fix, prototype only)
+Session 916's pictures showed every cloak nearly black from the front: the Gatelander's green, the Aurennais' tan and the Markman's brown. The tunic, the apron and the skirt under them were lit by the same key light. Every committed cloak and cape picture since the cloak was built (Sessions 836 to 841) shows the same. Turning off the cloak's `receiveShadow` lit it, so the cloak was shadowing itself.
+
+The cause is the winding of the cloak's sheet. Its columns go round the neck and its rows go down. With the triangles wound `a, a+1, b`, `computeVertexNormals` gave normals pointing into the body: 0 to 1.7% of the points of five test cloaks pointed out. The material is double-sided, so the shading flips them on the face that is seen and the shading itself was right. But three.js moves a point's shadow lookup along the vertex normal before it reads the shadow map (`normalBias`, 0.02 in the builder). On the cloak's outside, that put the lookup 2 cm behind the cloak, inside its own shadow.
+
+What changed in `people.js`:
+- The cloak's sheet and its embroidered hem band are wound the other way (`a, b, a+1`), so their normals point out.
+- Nothing else reads these normals: the hang, the clearances and the strap all work on the columns' points.
+- The tabard's front panel was already wound outward, which is why it read lit. Its back panel faces away from the key light, so it is left as it is.
+
+**Correction to Session 916:** its note that the Aurennais man's full cloak "hangs as a box" was half this. Lit, the folds show and it reads as cloth. It still stands stiffly off his chest; that is the hang's own shape on a broad build, and stays owed.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 257 checks pass.** There are five new ones, one for each test cloak (a hood down, a hood up, a fur collar, a cape with an embroidered hem, a plain cape). Each checks that its normals point out of it, read round the vertical axis through its own middle:
+  - **Now:** 98.3 to 100% of the points, and 100% of the hem band's.
+  - **The same check on the old `people.js`:** all five fail, at 0 to 1.7%.
+  - The cloaks' other checks (the clearance from the body, nothing through it, the hang) pass with the same numbers.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** the 25 that show a cloak or a cape were shot again: `builder-cloak-*`, `builder-cape-*`, the slung shields, `builder-armour-markman*`, `builder-armour-spear-cloak` and `builder-robe-hooded`. The others are left as committed. Rendering is not byte-identical between runs, so a full re-shoot changes every file, and the hair pictures also pick up a horizon change from an earlier session.
+### Needs eyes
+- **The cloaks are seen for the first time as their colours.** The folds laid in Sessions 839 and 840 now show from the front, and some read as stiff and vertical where they were hidden in black before. That is the hang's work to answer, not this fix's.
+- **In the game,** the townsfolk's cloaks are built by `32-people.js`, not this kit, so this changes nothing there. When F4 carries the kit's cloak in, it carries the outward winding with it.
+
+## v80 — Session 918 — The spearhead by island (L7, prototype only)
+Session 909's spear carried one head for every people, a leaf. OG-028's strip of spearheads gives each island its own, and L7 owes "the head by island". The board draws them; this builds them, so it asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`SPEAR_HEADS`.** Each of the three heads has a socket and a blade length, a socket of so many sides, a blade's half-width up its length (`spearW`: a rise to its widest, then a taper to the point), and rings round the socket:
+  - **The Gatelands' leaf:** Session 909's, with the same 9 cm socket and 18 cm blade, 5.4 cm across. Its socket is bound with two bronze rings.
+  - **The Mark's winged head:** a 24 cm lozenge, 4.6 cm across at a third of its length, over an eight-sided socket ringed three times in silver. A lug stands either side of the socket's top in the blade's plane, 3.4 cm long: the board's "winged spear", which keeps a blow from running down the shaft.
+  - **Aurenne's long head:** a narrow blade 28 cm long and 3.5 cm across on a 13 cm socket, banded four times in gold, the filigree's colour.
+- **Which head:** each people gets its own (the Gatelanders the leaf, the Markmen the winged head, the Aurennais the long one), and `spearHead` in the dress chooses another. It is a dress flag, so it saves and loads.
+- **The spear is as long as before** (45 cm over its bearer, 2.3 m at the least). The shaft gives up what a longer head takes.
+- **Triangles:** the leaf spear is 776, the winged 1,008 and the long 1,248. The rings are most of the difference: 240 triangles each.
+
+What changed in `builder.js`:
+- **A view over the head, `view=over`.** It frames what is carried above the head, centred on the spear's head when there is one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 269 checks pass.** There are twelve new ones:
+  - every spear's head is checked against the one asked for (ten spears: four leaves, four winged and two long, one of the winged a Gatelander's by choice);
+  - two new spears, an Aurennais woman and the Gatelander with the Markish head, pass every grip check (the fist closed round the shaft, nothing of the hand inside it).
+- The spear's own promises hold for all ten:
+  - nothing else is within reach, the nearest 6.3 mm to 3.0 cm off;
+  - the head stands 45 to 64 cm over the crown.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** `builder-armour-spearhead-leaf.jpg`, `-winged.jpg` and `-long.jpg`, each over its bearer's head.
+### Needs eyes
+- **The decoration is rings, not work.** The board's knotwork, runes and filigree are each island's own, and here they are only a ring's metal. Pattern-welding on the Mark's blade and inlay on the socket would want a texture each.
+- **The iron takes the helm's colour,** as Session 909's did, so an Aurennais in a bronze helm carries a bronze head. Bronze is right for Aurenne's older pieces and wrong for a working blade. A blade's own metal would be a dress colour of its own.
+- **Owed:** the crossbow; the spear in a fight (B4).
+
+## v80 — Session 919 — The corrupted, by school (L4, prototype only)
+Backlog L4's "corrupted animals by school" asks for OG-088's second row as shape changes, never recolours, each tagged with its school. The catalogue row maps it onto canon §9a: the frost bear for Uisce, the crystal boar and the stone troll for Cloch, the stag of shadows for Scáth, the dusk eagle for Gaoth. The sheet draws them, so this asks nothing new, and its "feeds on mana" lines are dropped as the catalogue says. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`spines` takes `crystal`.** Each spine becomes a cluster of glassy shards out of the hide, the Shatterhorn's crystal horns (`crystals`), leaning back and to either side by turns.
+- **`CORRUPTED`: four plans.** Each carries `school` and `from` (its familiar) and keeps its familiar's bones, so it walks as its familiar does:
+  - **The Frost Wraith Bear (Uisce):** the bear with its fur thinned to an iced coat, eleven clusters of ice shards down its back, a crown of shards at the head, and pale-blue light in its seams. 29,792 triangles, against the bear's 26,468.
+  - **The Blight Boar (Cloch):** the boar, 15% larger, its hide gone stone-grey, nine clusters of violet crystal from the withers to the rump, its tusks 70% longer, and violet light in its seams. 27,472, against 24,488.
+  - **The Stag of Shadows (Scáth):** the stag drawn gaunt, its body 18% thinner and 12% longer, its antlers half again as long with a third branching, dark as its hide, violet in its seams. 53,376, against 46,888.
+  - **The Dusk Eagle (Gaoth):** the Crag Hawk grown to a giant eagle (2.6 times). Its wings are a third wider, with six long primaries where the hawk has nine, so they fall open at the tips. It has a heavier hooked beak, a longer tail fan, violet feathers dark at their tips, and light in its seams. 26,116 triangles, against the hawk's 39,024: at its size the surface is meshed on a coarser grid.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 915 checks pass.** There are five new family checks:
+  - each corrupted plan comes from OG-088 and carries one of the six schools and a familiar;
+  - its parts differ from its familiar's, and its triangles differ by more than a tenth;
+  - the four cover four schools.
+- Every gait of the four passes the kit's own checks: skin weights sum to one, every foot reaches its target (0.0 cm worst), feet are down for the gait's duty, and the genome is under 400 bytes.
+- **Pictures:**
+  - `creatures-corrupted.jpg`: each familiar beside its corrupted self, by a man for scale.
+  - `creatures-frostbear.jpg`, `-blightboar.jpg`, `-shadowstag.jpg` and `-duskeagle.jpg`.
+### Needs eyes
+- **The frost bear's crown of shards** sits at the back of its skull rather than the brow, so from the side it reads as part of the back's ridge.
+- **The blight boar's hide** reads as black fur rather than stone; the crystals carry it.
+- **The stag's mist** (OG-088: its antlers breathe one) waits for particles in the kit.
+- **Owed:**
+  - OG-088's stone troll (Cloch) waits for a troll in the kit;
+  - its corrupted wolf is the Faolchú's kind, and its void spider would be a Scáth spider;
+  - Tine and Solas have no corrupted animal on the sheet;
+  - the game, after F4.
