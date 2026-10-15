@@ -20083,3 +20083,45 @@ Corrections made during the session:
 - **From the street the flue is hidden.** It is at the back corner, behind the arcade's front wall.
 - **The wares on the stall are few and small.** A rack of finished blades or hanging lamps would fill it, if wanted.
 - **Owed:** the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 936 — Card F9's eleventh room: the Gatelands apothecary (prototype only)
+The first of L5's alchemists, after the three smithies (929–931). OG-043 gives the Gatelands' alchemy shop as a cottage of herbs, potions and draughts. OG-133 gives the alchemist's room an alembic and a still, and brewing in four steps: prepare, combine in the mortar, heat and distil, bottle. So the room is built inside `pieces.js`'s Gatelands cottage, the street's own shell (Michael's A on #303). The shell is painted green, and a new hanging sign shows a gilt mortar and pestle: the trade sign's `device: 'mortar'` in place of the harp. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`, and the sign in `pieces.js`).
+
+**The room** (`gatelandsApothecary` in `rooms.js`):
+- **The customers' side.** The front door and the cottage's back door both open here. The open hearth is in the hearth wall, with a pot of decoctions on its crane and jugs on the breast's ledge, and a settle stands against the back wall.
+- **The counter** runs across the shop at 0.92 m, with a panelled front, the brass scales, the day book, bottles and a candle on it. The way behind it is a 0.65 m gap at the window end.
+- **Behind the counter, the four steps run in order round the workroom:**
+  - **Prepare:** the worktable at 0.86 m, with a chopping board and knife, herbs laid out, a sieve and a basket of roots. Over it, a drying rack of two poles hangs on cords from the roof, with bundles of herbs and heather hung from it. Their heads are 1.97 m over the floor.
+  - **Combine:** the stone mortar on its stump under the east front window, its lip at 0.86 m, the pestle in it.
+  - **Heat and distil:** the still at the east gable. A plastered furnace carries the copper pot, with its fire door glowing toward the room, and its flue rises against the gable into the plan's gable stack. On the pot sits the helm, and from the helm the copper arm falls 0.85 m into the worm tub. The worm's end comes out low on the tub's side over a jug.
+  - **Bottle:** the bottling bench along the back wall under its window, at 0.9 m. Under its top is a chest of 24 small drawers with brass knobs; on it, a funnel in a bottle, a jug and a row of corked bottles. Shelves of jars, crocks and bottles stand in two stacks either side of the window.
+  - A barrel of spirit for the tinctures stands in the back corner.
+- **The store,** through the hearth wall's door, has a floor of beaten earth. It holds shelves of crocks, three sacks against the hearth wall, herbs hung to dry from a pole along the room, and the apothecary's bed against the west gable.
+- 8,808 to 8,880 triangles in 18 draws, on the cottage's 1,854 in 12. The room's materials are folded to 18 draws by an alias table: one wood, one copper for the brass, one stone for the mortar and the flags, and so on. The first build came to 29.
+
+The view: `rooms.html?room=apothecary`, with `view=shop` (from inside the front door across the counter to the still), `still`, `bench`, `store` and `outside`.
+
+**A correction to the cottage (Session 852),** found by this room's stricter check and fixed in both rooms:
+- The chimney breast's upper part was a box of its full width up to 4.6 m. So at its front edge, where the thatch's underside is 3.3 m up, it stood through the roof. It now narrows into the stack as it rises.
+- The collars were 0.4 m too long at each end, which put their ends into the thatch. They now stop where their top meets the slopes.
+- The cottage's own check reads the roof's height at the ridge only, so it could not see either fault. The apothecary's check reads it at each point's own place.
+
+Corrections made during the session:
+- The cottage's back face runs mirrored: its back window is at x = +2.4 from inside, and its back door at x = −1.2, on the customers' side. The shelves were first one stack across that window. They are now two stacks either side of it, and the walks now start at the back door's true place.
+- The worm's drip was first drawn in the flame material and read as a spark. It is now glass.
+- The store's view first faced a blank wall. It now looks from inside the doorway to the bed and the sacks.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 85 of 85 pass** (77 after Session 931). Two views are new on the page check, with no page errors. Six checks are new, over four keys:
+  - **The builds:** 8,808 to 8,880 triangles in 18 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the thatch, read at each point's own z (0 points through, after the two corrections above; 126 and then 108 before them). No two pieces are in each other.
+  - **The walks:** six walks clear by 0.15 m: the front and back doors to the counter, behind the counter to the still and to the bench, and through the hearth wall both ways. The herbs hang 1.97 m or more over the floor.
+  - **A person fits:** the counter at 0.92 m, the bench at 0.9 m, the worktable at 0.86 m, the mortar's lip at 0.86 m.
+  - **The still works:** the pot on the furnace, the flue from its top against the gable, the arm falling from the helm into the tub, the worm's end over the jug.
+  - **The four steps:** all behind the counter, 0.47, 0.67 and 2.07 m apart in turn. The back window is between the shelves, over the bench.
+- **The cottage's own checks still pass** after its correction: 3,678 to 3,762 triangles in 18 meshes.
+- **Pictures:** `rooms-apothecary-shop.jpg`, `-still`, `-bench`, `-store`, `-outside` and `-shop-night`. `rooms-kitchen.jpg` is redrawn with the corrected breast.
+### Needs eyes
+- **The sign hangs low.** The board's foot is 1.2 m up, because the thatch's eave comes down to 2.2 m at the bracket's reach. It is clear of the door, but a tall walker along the wall would meet it.
+- **The store is dark by day.** Its only window is the small front one, since the back window lights the bench next door. The sacks read as a stack of gourds.
+- **The cottage's back door meets its hearth wall.** The door's west 0.25 m lies behind the hearth wall's end, in both the cottage and the apothecary. The cottage's plan places the door that way, and moving it is a change to the street's shell, left for its own session.
+- **Owed:** the Mark's and Aurenne's alchemists, then the guildhall, the shrine and the library in each nation's dress.

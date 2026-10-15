@@ -54,7 +54,7 @@ export function gatelandsCottage(o = {}, r = stream('cottage')) {
   const hw = 1.6, hh = 1.25, hd = .5, hz = .25, dB = { z: -1.45, w: .8, h: 1.95 };
   crossWall(put, 'lime', HX, HT, -Z, Z, under, [{ z: dB.z, w: dB.w, y: 0, h: dB.h }]);
   // the breast proud of it by 0.55 m, the hearth a recess in it, sooted at the back, an oak lintel over, a hearthstone before it
-  const BD = .55, bxx = HX + HT / 2; { const bz0 = hz - hw / 2 - .35, bz1 = hz + hw / 2 + .35; bx('lime', bxx, bxx + BD, hh, under(0) - .4, bz0, bz1); bx('lime', bxx, bxx + BD, 0, hh, bz0, hz - hw / 2, 'breast'); bx('lime', bxx, bxx + BD, 0, hh, hz + hw / 2, bz1, 'breast');
+  const BD = .55, bxx = HX + HT / 2; { const bz0 = hz - hw / 2 - .35, bz1 = hz + hw / 2 + .35; /* the breast narrows up into the stack, so it stays under the thatch's slopes */ put(frustum([bxx, bxx + BD, bz0, bz1], hh, [bxx, bxx + BD, -.35, .35], under(0) - .4), 'lime', 0, 0, 0, 0, .42); bx('lime', bxx, bxx + BD, 0, hh, bz0, hz - hw / 2, 'breast'); bx('lime', bxx, bxx + BD, 0, hh, hz + hw / 2, bz1, 'breast');
     bx('soot', bxx, bxx + .02, 0, hh, hz - hw / 2, hz + hw / 2); bx('soot', bxx, bxx + BD, hh - .02, hh, hz - hw / 2, hz + hw / 2); bx('oak', bxx + BD - .3, bxx + BD + .08, hh, hh + .24, hz - hw / 2 - .25, hz + hw / 2 + .25); bx('flag', bxx + BD, bxx + BD + .8, 0, .07, hz - hw / 2, hz + hw / 2, 'hearthstone'); }
   // the fire: sods of turf on the hearth floor, embers between them; the crane from the cheek, a pot on its hook
   const fx = bxx + .25, fire = [fx + .05, .32, hz]; for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2, g = new THREE.BoxGeometry(.24, .1, .12); put(g, 'turf', fx + Math.cos(a) * .15, .06 + (i % 2) * .08, hz + Math.sin(a) * .22, a + 1.3); }
@@ -91,7 +91,7 @@ export function gatelandsCottage(o = {}, r = stream('cottage')) {
   // the roof's couples: pairs of oak blades up the slopes, a collar across, purlins along; the lantern hangs from the kitchen's collar
   const p = SCALE.pitch.thatch * Math.PI / 180, L2 = Z / Math.cos(p);
   for (const x of [-3.0, .4, 3.6]) { for (const s of [-1, 1]) { const g = new THREE.BoxGeometry(.14, .2, L2 - .2); g.rotateX(s * p); /* its foot stops on the wall's inner face */ /* the +z end down on the front slope, up on the back */ put(g, 'oak', x, under(s * Z / 2) - .16, s * Z / 2, 0); }
-    bx('oak', x - .07, x + .07, h + 1.35, h + 1.5, -Z + .02 + 1.3 / tp, Z - .02 - 1.3 / tp); }
+    /* the collar ends where its top meets the slopes' underside */ bx('oak', x - .07, x + .07, h + 1.35, h + 1.5, -Z + 1.74 / tp, Z - 1.74 / tp); }
   for (const f of [.35, .7]) for (const sz of [-1, 1]) { const zz = sz * Z * (1 - f), y = under(zz) - .2; put(new THREE.BoxGeometry(plan.w - 2 * t, .12, .12), 'oak', 0, y, zz); }
   const lantern = [.4, h + 1.0, 0]; { bx('iron', .39, .41, h + .9, h + 1.36, -.01, .01); put(new THREE.CylinderGeometry(.07, .08, .2, 6), 'glow', ...lantern); put(new THREE.ConeGeometry(.09, .1, 6), 'iron', lantern[0], lantern[1] + .15, lantern[2]); }
   // candles on the table
@@ -887,4 +887,141 @@ export function aurenneSmithy(o = {}, r = stream('aursmithy')) {
   const all = new THREE.Group(); all.add(sh.group, group);
   return { group: all, shell: sh.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: F0, ceil: CEIL, top: TOP,
     hearth: H, hood, flue, fire, anvil, trough, bench, bellows: bel, stall, arcade: { z0: d / 2, z1: AZ1 + .2 }, door: { x: sh.doorX, z: d / 2, w: 1.05, h: 2.0 }, paths, boxes, lamp, w, d };
+}
+
+// gatelandsApothecary(o, r) (Session 936, card F9; L5's interiors by nation, OG-043's Gatelands alchemy shop of herbs, potions and
+//   draughts, OG-133's alchemist's room and its four steps; Michael's A on #303): the Gatelands cottage of GL_PLANS, painted green, with
+//   a hanging sign of a mortar and pestle, as an apothecary's shop. The front door opens on the customers' side: the open hearth in the
+//   plan's stack with a pot of decoctions on its crane, a settle against the back wall, and the counter across the room with its scales.
+//   Behind the counter the four steps of the work, in order round the room: the worktable under a drying rack of herbs (prepare), the
+//   stone mortar on its stump under the east front window (combine), the still at the east gable (heat and distil: a copper pot on a
+//   plastered furnace whose flue goes into the gable's stack, its helm and arm down to a worm tub, a jug under the worm), and the
+//   bottling bench along the back wall, a chest of small drawers under it and shelves of jars and bottles over it (bottle). A barrel of
+//   spirit in the back corner. Through the hearth wall's door, the store: shelves of crocks, sacks and a barrel, herbs hung to dry, and
+//   the apothecary's bed. Flagged floor in the shop, beaten earth in the store; the cottage's couples and purlins under the thatch.
+//   -> { group, shell, room, tris, draws, inner, under(z), floor, hearth, fire, still {furnace, pot, helm, arm [a, b], tub, outlet, jug,
+//        flue}, counter, table, mortar, bench, stations [{step, x, z, y}], door, doors, paths, boxes, lantern, glow, windows, w, d, eave }
+let PM = null;
+function apoMats() {
+  if (PM) return PM; const F = forgeMats();
+  PM = { ...F, copper: new THREE.MeshStandardMaterial({ color: 0xb4683a, roughness: .32, metalness: .85 }), green: new THREE.MeshStandardMaterial({ color: 0x3e7a52, roughness: .08, transparent: true, opacity: .72 }),
+    herb: mat('thatch', { ns: .6, color: 0x6e7a3a, rough: 1 }), heath: mat('thatch', { ns: .6, color: 0x8a5a7e, rough: 1 }), rope: mat('thatch', { ns: .4, color: 0xa08a60, rough: 1 }) };
+  return PM;
+}
+export function gatelandsApothecary(o = {}, r = stream('apothecary')) {
+  const plan = GL_PLANS.cottage({ hip: false, paint: o.paint || 'green' }); plan.interior = true; plan.r = stream('apothecary-shell'); plan.sign = { x: .45, y: 2.1, device: 'mortar' };
+  const shell = gatelandsBuilding(plan), M = apoMats(), B = new Map(), boxes = [], t = plan.t, h = plan.floors[0], X = plan.w / 2 - t, Z = plan.d / 2 - t, tp = Math.tan(SCALE.pitch.thatch * Math.PI / 180), F0 = 0;
+  const under = z => h - .12 + (Z - Math.abs(z)) * tp - .1;
+  // the room's materials, folded to 18 draws: one wood for the oak and the elm, one copper for the brass, one stone for
+  // the mortar and the flags, the soot for the furnace's top and the tub's dark water, the earth for the turf, stoneware for the amber,
+  // the heather's dyed wool for the blanket and the day book's cover
+  const AL = { herb2: 'herb', brass: 'copper', wool: 'heath', elm: 'oak', rubble: 'flag', sootstone: 'soot', turf: 'earth', sack: 'rope', amber: 'crock', water: 'soot', delft: 'linen' };
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { key = AL[key] || key; const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1))); worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
+  // a round pipe from a to b
+  const pipe = (key, a, b, rad, seg = 8) => { const A = new THREE.Vector3(...a), D = new THREE.Vector3(...b).sub(A), g = new THREE.CylinderGeometry(rad, rad, D.length(), seg, 1, true);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), D.clone().normalize())); g.translate(A.x + D.x / 2, A.y + D.y / 2, A.z + D.z / 2); put(g, key); };
+  // a bundle of herbs hung by its stems from y: a cord, the tie, the heads spreading down
+  const bundle = (x, y, z, key, L = .3) => { put(new THREE.CylinderGeometry(.004, .004, .06, 3), 'rope', x, y - .03, z); put(new THREE.ConeGeometry(.055 + r() * .02, L, 6), key, x, y - .06 - L / 2, z, r() * 3, .5, 0, 0); };
+  // the floor: flags in the shop, laid in courses; beaten earth in the store beyond the hearth wall
+  const HX = -1.7, HT = .6, bxx = HX + HT / 2;
+  for (let z = -Z; z < Z - .05;) { const d = Math.min(Z - z, .55 + r() * .35); for (let x = bxx; x < X - .05;) { const w = Math.min(X - x, .6 + r() * .4); put(new THREE.BoxGeometry(w - .02, .06, d - .02), 'flag', x + w / 2, .03 + (r() - .5) * .006, z + d / 2, (r() - .5) * .01, .7); x += w; } z += d; }
+  bx('earth', -X, HX - HT / 2, 0, .04, -Z, Z);
+  // the hearth wall and the open hearth facing the shop, as the cottage's (Session 852): the breast, the lintel, the hearthstone, the turf fire
+  const hw = 1.6, hh = 1.25, hz = .25, dB = { z: -1.45, w: .8, h: 1.95 }, BD = .55;
+  crossWall(put, 'lime', HX, HT, -Z, Z, under, [{ z: dB.z, w: dB.w, y: 0, h: dB.h }]);
+  { const bz0 = hz - hw / 2 - .35, bz1 = hz + hw / 2 + .35; /* the breast narrows up into the stack, so it stays under the thatch's slopes */ put(frustum([bxx, bxx + BD, bz0, bz1], hh, [bxx, bxx + BD, -.35, .35], under(0) - .4), 'lime', 0, 0, 0, 0, .42); bx('lime', bxx, bxx + BD, 0, hh, bz0, hz - hw / 2, 'breast'); bx('lime', bxx, bxx + BD, 0, hh, hz + hw / 2, bz1, 'breast');
+    bx('soot', bxx, bxx + .02, 0, hh, hz - hw / 2, hz + hw / 2); bx('soot', bxx, bxx + BD, hh - .02, hh, hz - hw / 2, hz + hw / 2); bx('oak', bxx + BD - .3, bxx + BD + .08, hh, hh + .24, hz - hw / 2 - .25, hz + hw / 2 + .25); bx('flag', bxx + BD, bxx + BD + .8, 0, .07, hz - hw / 2, hz + hw / 2); }
+  const fx = bxx + .25, fire = [fx + .05, .32, hz]; for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; put(new THREE.BoxGeometry(.24, .1, .12), 'turf', fx + Math.cos(a) * .15, .06 + (i % 2) * .08, hz + Math.sin(a) * .22, a + 1.3); }
+  put(new THREE.SphereGeometry(.16, 10, 6).scale(1.2, .4, 1.4), 'ember', fx, .08, hz); for (let i = 0; i < 3; i++) put(new THREE.ConeGeometry(.06, .22 + i * .05, 7), 'flame', fx + (i - 1) * .04, .22, hz + (i - 1) * .09);
+  // the crane and its pot of decoctions over the fire; a ladle and a row of jugs on the breast's ledge
+  { const cx = bxx + .06, cz = hz - hw / 2 + .08; bx('iron', cx - .02, cx + .02, .2, 1.15, cz - .02, cz + .02); put(new THREE.BoxGeometry(.03, .03, .75), 'iron', cx + .02, 1.05, cz + .37); put(new THREE.CylinderGeometry(.008, .008, .4, 4), 'iron', cx + .02, .85, cz + .62);
+    put(new THREE.SphereGeometry(.17, 14, 10, 0, Math.PI * 2, .35, Math.PI - .35), 'iron', cx + .2, .55, cz + .62); put(new THREE.CircleGeometry(.15, 14).rotateX(-Math.PI / 2), 'herb2', cx + .2, .65, cz + .62); put(new THREE.TorusGeometry(.13, .008, 4, 14, Math.PI).rotateY(Math.PI / 2), 'iron', cx + .2, .7, cz + .62); }
+  for (let k = 0; k < 4; k++) put(new THREE.CylinderGeometry(.05, .06, .16 + (k % 2) * .05, 10), 'crock', bxx + BD - .12, hh + .32 + (k % 2) * .025, hz - .6 + k * .38);
+  // the settle on the customers' side, against the back wall
+  const settle = { x0: -.25, x1: .5, z0: -Z, z1: -Z + .45 }; bx('oak', settle.x0, settle.x1, .42, .46, settle.z0 + .05, settle.z1, 'settle'); bx('oak', settle.x0, settle.x1, 0, .42, settle.z1 - .05, settle.z1, 'settle'); bx('oak', settle.x0, settle.x1, .46, 1.15, settle.z0, settle.z0 + .05, 'settle');
+  for (const x of [settle.x0, settle.x1 - .05]) bx('oak', x, x + .05, 0, .7, settle.z0, settle.z1, 'settle');
+  // the counter across the shop: a panelled front, an oak top at 0.92 m, the way behind it at the window end (0.65 m); the scales, bottles,
+  // the day book and a candle on it
+  const counter = { x0: .6, x1: 1.15, z0: -.8, z1: 1.45, y: .92 }; { const { x0, x1, z0, z1, y } = counter; bx('paint', x0, x0 + .05, 0, y - .04, z0, z1, 'counter'); bx('paint', x0, x1, 0, y - .04, z0, z0 + .05, 'counter'); bx('paint', x0, x1, 0, y - .04, z1 - .05, z1, 'counter');
+    bx('oak', x0 - .04, x1, y - .04, y, z0, z1); bx('deal', x0 + .05, x1, .35, .38, z0 + .05, z1 - .05); for (let z = z0 + .3; z < z1 - .2; z += .45) bx('oak', x0 - .01, x0 + .01, .1, y - .14, z - .02, z + .02);
+    const sx = (x0 + x1) / 2, sz = .1; bx('oak', sx - .08, sx + .08, y, y + .03, sz - .08, sz + .08); bx('brass', sx - .01, sx + .01, y + .03, y + .38, sz - .01, sz + .01); bx('brass', sx - .008, sx + .008, y + .36, y + .38, sz - .2, sz + .2);
+    for (const s of [-1, 1]) { put(new THREE.CylinderGeometry(.075, .05, .02, 14), 'brass', sx, y + .14 + (s > 0 ? .01 : 0), sz + s * .2); for (const a of [0, 2.1, 4.2]) pipe('brass', [sx + Math.cos(a) * .06, y + .15, sz + s * .2 + Math.sin(a) * .06], [sx, y + .37, sz + s * .2], .002, 3); }
+    for (let k = 0; k < 4; k++) put(new THREE.CylinderGeometry(.03, .035, .14, 8), k % 2 ? 'green' : 'amber', sx + (k % 2) * .1 - .05, y + .07, .75 + Math.floor(k / 2) * .1);
+    bx('wool', sx - .12, sx + .12, y, y + .05, -.55, -.25); bx('linen', sx - .11, sx + .11, y + .05, y + .052, -.54, -.4);
+    put(new THREE.CylinderGeometry(.012, .014, .14, 8), 'linen', sx + .1, y + .07, 1.25); put(new THREE.SphereGeometry(.012, 6, 5).scale(1, 2, 1), 'flame', sx + .1, y + .155, 1.25); }
+  // PREPARE: the worktable in the middle of the workroom, a chopping board and knife, herbs laid out, a sieve, a basket of roots;
+  // over it a drying rack of two poles hung by cords from the roof, bundles hung from it (their heads 1.95 m or more over the floor)
+  const table = { x0: 1.9, x1: 2.9, z0: -.45, z1: .65, y: .86 }; { const { x0, x1, z0, z1, y } = table; bx('deal', x0, x1, y - .05, y, z0, z1, 'table'); for (const x of [x0 + .05, x1 - .1]) for (const z of [z0 + .05, z1 - .1]) bx('oak', x, x + .05, 0, y - .05, z, z + .05, 'table');
+    bx('oak', x0 + .05, x1 - .05, .12, .15, z0 + .05, z1 - .05); bx('oak', x0 + .1, x0 + .55, y, y + .03, z0 + .1, z0 + .4); bx('iron', x0 + .25, x0 + .45, y + .03, y + .035, z0 + .3, z0 + .33); bx('oak', x0 + .45, x0 + .55, y + .03, y + .045, z0 + .3, z0 + .33);
+    for (let k = 0; k < 6; k++) put(new THREE.ConeGeometry(.04, .32, 5).rotateZ(Math.PI / 2), k % 3 === 2 ? 'heath' : 'herb', x0 + .55 + r() * .3, y + .04, z0 + .55 + k * .07, r() * .4 - .2);
+    put(new THREE.CylinderGeometry(.16, .16, .07, 16, 1, true), 'deal', x1 - .25, y + .035, z0 + .25); put(new THREE.CircleGeometry(.15, 16).rotateX(-Math.PI / 2), 'iron', x1 - .25, y + .02, z0 + .25);
+    put(new THREE.CylinderGeometry(.17, .13, .16, 12, 1, true), 'rope', x1 - .25, y + .08, z1 - .25); for (let k = 0; k < 5; k++) put(new THREE.DodecahedronGeometry(.04, 0), 'crock', x1 - .25 + (r() - .5) * .15, y + .12, z1 - .25 + (r() - .5) * .15, r() * 3); }
+  const RACK = 2.35; { const x0 = 1.75, x1 = 3.05; for (const z of [-.2, .4]) { put(new THREE.CylinderGeometry(.02, .02, x1 - x0, 6).rotateZ(Math.PI / 2), 'oak', (x0 + x1) / 2, RACK, z);
+      for (const x of [x0 + .05, x1 - .05]) pipe('rope', [x, RACK, z], [x, under(z) - .06, z], .006, 3);
+      for (let x = x0 + .15; x < x1 - .1; x += .16 + r() * .05) bundle(x, RACK - .02, z, ['herb', 'herb2', 'heath'][Math.floor(r() * 3)], .2 + r() * .1); }
+    for (const x of [x0 + .1, x1 - .1]) bx('oak', x - .02, x + .02, RACK - .02, RACK + .02, -.25, .45); }
+  // COMBINE: the mortar on its stump under the east front window, the pestle in it, a bowl of seed beside it on the sill's ledge
+  const mortar = { x: 3.15, z: Z - .5, y: .86 }; { const { x, z, y } = mortar; put(new THREE.CylinderGeometry(.2, .23, .58, 12), 'elm', x, .29, z); put(new THREE.CylinderGeometry(.17, .14, .28, 14, 1, true), 'rubble', x, y - .14, z, 0, .4);
+    put(new THREE.CircleGeometry(.17, 14).rotateX(-Math.PI / 2), 'rubble', x, y, z); put(new THREE.CircleGeometry(.13, 14).rotateX(-Math.PI / 2), 'soot', x, y + .002, z); put(new THREE.CylinderGeometry(.028, .034, .38, 8), 'deal', x + .04, y + .12, z, 0, .6, .25, -.25);
+    boxes.push({ tag: 'mortar', x0: x - .23, x1: x + .23, y0: 0, y1: y, z0: z - .23, z1: z + .23 }); }
+  // HEAT AND DISTIL: the still at the east gable. A furnace of plastered stone (its fire door toward the room, glowing) carries the copper
+  // pot; its flue rises against the gable into the stack. On the pot the helm, and from the helm the arm falls to the worm tub (the coil
+  // inside, the water over it); the worm's end comes out low on the tub's side over a jug.
+  const furnace = { x0: 3.4, x1: X, z0: -.45, z1: .45, y: .72 }, still = { furnace }; { const { x0, x1, z0, z1, y } = furnace; bx('lime', x0, x1, 0, y - .06, z0, z1, 'furnace'); bx('sootstone', x0, x1, y - .06, y, z0, z1);
+    bx('soot', x0 - .005, x0 + .02, .12, .38, -.16, .16); bx('ember', x0 - .012, x0 + .02, .15, .32, -.12, .12); bx('iron', x0 - .02, x0, .1, .4, -.18, -.15); bx('iron', x0 - .02, x0, .1, .4, .15, .18); bx('iron', x0 - .02, x0, .38, .41, -.18, .18);
+    still.flue = { x0: 3.95, x1: X, z0: -.22, z1: .22, y0: y, y1: h - .25 }; bx('lime', 3.95, X, y, h - .25, -.22, .22, 'flue'); bx('soot', 3.94, 3.95, y, y + .5, -.18, .18);
+    const pot = still.pot = [3.66, y + .2, 0, .25]; put(new THREE.SphereGeometry(pot[3], 18, 12, 0, Math.PI * 2, 0, Math.PI * .78), 'copper', pot[0], pot[1], pot[2]); put(new THREE.CylinderGeometry(.08, .1, .1, 12, 1, true), 'copper', pot[0], pot[1] + .27, pot[2]);
+    const helm = still.helm = [pot[0], pot[1] + .45, pot[2]]; put(new THREE.SphereGeometry(.15, 14, 8), 'copper', ...helm); put(new THREE.ConeGeometry(.06, .1, 10), 'copper', helm[0], helm[1] + .17, helm[2]);
+    const tub = still.tub = { x: 3.75, z: 1.15, r: .3, y: .75 }, a0 = [helm[0], helm[1] + .02, helm[2] + .1], a1 = [tub.x, tub.y + .05, tub.z - .05]; still.arm = [a0, a1]; pipe('copper', a0, a1, .025, 10);
+    put(new THREE.CylinderGeometry(tub.r, tub.r * .9, tub.y, 16, 1, true), 'oak', tub.x, tub.y / 2, tub.z); put(new THREE.CylinderGeometry(tub.r * .9, tub.r * .9, .03, 16), 'oak', tub.x, .02, tub.z);
+    put(new THREE.CircleGeometry(tub.r - .02, 16).rotateX(-Math.PI / 2), 'water', tub.x, tub.y - .06, tub.z); for (const yy of [.12, tub.y - .1]) put(new THREE.TorusGeometry(tub.r + .005, .012, 4, 18).rotateX(Math.PI / 2), 'iron', tub.x, yy, tub.z);
+    put(new THREE.TorusGeometry(.17, .02, 6, 18).rotateX(Math.PI / 2), 'copper', tub.x, tub.y - .02, tub.z); boxes.push({ tag: 'tub', x0: tub.x - tub.r, x1: tub.x + tub.r, y0: 0, y1: tub.y, z0: tub.z - tub.r, z1: tub.z + tub.r });
+    const out = still.outlet = [tub.x - tub.r - .13, .3, tub.z]; pipe('copper', [tub.x - tub.r + .02, .32, tub.z], out, .015, 8); put(new THREE.CylinderGeometry(.006, .006, .08, 4), 'green', out[0], out[1] - .05, out[2]);
+    const jug = still.jug = { x: out[0], z: out[2], y: .22 }; put(new THREE.CylinderGeometry(.07, .09, .22, 12), 'crock', jug.x, .11, jug.z); put(new THREE.TorusGeometry(.05, .012, 4, 10, Math.PI).rotateY(Math.PI / 2), 'crock', jug.x + .08, .15, jug.z);
+    boxes.push({ tag: 'jug', x0: jug.x - .09, x1: jug.x + .09, y0: 0, y1: jug.y, z0: jug.z - .09, z1: jug.z + .09 }); }
+  // BOTTLE: the bottling bench along the back wall under its window (the back's window is at x = 2.4 from inside): a chest of small
+  // drawers under its top, a funnel, a jug, bottles filled and corked; two stacks of shelves of jars, crocks and bottles either side of
+  // the window
+  const bench = { x0: 1.4, x1: 3.35, z0: -Z, z1: -Z + .5, y: .9 }, win = { x0: 2.0, x1: 2.8 }; { const { x0, x1, z0, z1, y } = bench; bx('oak', x0, x1, 0, y - .04, z0, z1 - .02, 'bench'); bx('deal', x0 - .02, x1 + .02, y - .04, y, z0, z1);
+    for (let row = 0; row < 4; row++) for (let c = 0; c < 6; c++) { const dx = (x1 - x0) / 6, dy = (y - .14) / 4, xx = x0 + dx * c, yy = .08 + dy * row; bx('paint', xx + .015, xx + dx - .015, yy + .015, yy + dy - .015, z1 - .02, z1); bx('brass', xx + dx / 2 - .012, xx + dx / 2 + .012, yy + dy / 2 - .012, yy + dy / 2 + .012, z1, z1 + .02); }
+    put(new THREE.ConeGeometry(.08, .12, 12, 1, true).rotateX(Math.PI), 'copper', x0 + .5, y + .26, z0 + .3); put(new THREE.CylinderGeometry(.012, .012, .08, 6), 'copper', x0 + .5, y + .16, z0 + .3);
+    put(new THREE.CylinderGeometry(.04, .045, .16, 10), 'green', x0 + .5, y + .08, z0 + .3); put(new THREE.CylinderGeometry(.08, .1, .26, 12), 'crock', x0 + .25, y + .13, z0 + .3);
+    for (let k = 0; k < 7; k++) { const xx = x0 + 1.0 + k * .09; put(new THREE.CylinderGeometry(.032, .036, .15, 8), k % 3 === 1 ? 'amber' : 'green', xx, y + .075, z0 + .32); put(new THREE.CylinderGeometry(.012, .012, .03, 6), 'deal', xx, y + .17, z0 + .32); }
+    for (const [s0, s1] of [[x0, win.x0 - .05], [win.x1 + .05, x1]]) { for (let s = 0; s < 3; s++) { const sy = 1.25 + s * .38; bx('deal', s0, s1, sy - .025, sy, z0, z0 + .28); for (let k = 0, xx = s0 + .06; xx < s1 - .12; k++) { const big = (k + s) % 4 === 0, rr = big ? .07 : .04, hh2 = big ? .2 : .14 + (k % 2) * .04;
+          put(new THREE.CylinderGeometry(rr * .8, rr, hh2, big ? 12 : 8), big ? 'crock' : ['green', 'amber', 'green', 'delft'][(k + s) % 4], xx + rr, sy + hh2 / 2, z0 + .14); xx += rr * 2 + .03; } }
+      for (const xx of [s0, s1 - .03]) bx('deal', xx, xx + .03, y, 2.05, z0, z0 + .28); boxes.push({ tag: 'shelves', x0: s0, x1: s1, y0: y, y1: 2.05, z0, z1: z0 + .28 }); } }
+  // a barrel of spirit for the tinctures in the back corner, a tap and a cup on it
+  { const x = 3.85, z = -Z + .38, rb = .3; put(new THREE.CylinderGeometry(rb * .9, rb * .9, .8, 16).scale(1, 1, 1), 'oak', x, .4, z); put(new THREE.SphereGeometry(rb, 16, 8).scale(1, 1.25, 1), 'oak', x, .4, z);
+    for (const yy of [.12, .4, .68]) put(new THREE.TorusGeometry(rb * (yy === .4 ? 1.01 : .93), .012, 4, 18).rotateX(Math.PI / 2), 'iron', x, yy, z); bx('oak', x - rb - .06, x - rb + .02, .18, .22, z - .02, z + .02);
+    boxes.push({ tag: 'barrel', x0: x - rb, x1: x + rb, y0: 0, y1: .8, z0: z - rb, z1: z + rb }); }
+  // THE STORE beyond the hearth wall: shelves of crocks on the back wall, sacks and a barrel against the hearth wall, herbs hung to dry
+  // from a pole along the room, the apothecary's bed against the west gable
+  { const x0 = -X, x1 = -2.9, z0 = -Z, z1 = -Z + .38; for (const sy of [.05, .7, 1.35, 2.0]) bx('deal', x0, x1, sy, sy + .03, z0, z1); for (const xx of [x0, x1 - .04]) bx('deal', xx, xx + .04, 0, 2.03, z0, z1);
+    boxes.push({ tag: 'store', x0, x1, y0: 0, y1: 2.03, z0, z1 }); for (const sy of [.08, .73, 1.38]) for (let xx = x0 + .15; xx < x1 - .12; xx += .26) put(new THREE.CylinderGeometry(.08, .1, .24 + r() * .1, 10), 'crock', xx, sy + .15, z0 + .19); }
+  { const x0 = -2.65; for (const [sx, sy, sz] of [[-2.3, .27, .78], [-2.36, .27, 1.3], [-2.3, .7, 1.04]]) { put(new THREE.SphereGeometry(.2, 10, 8).scale(1, 1.3, .95), 'sack', sx, sy, sz, r()); put(new THREE.CylinderGeometry(.05, .08, .1, 8), 'sack', sx, sy + .28, sz); }
+    boxes.push({ tag: 'sacks', x0, x1: HX - HT / 2, y0: 0, y1: .95, z0: .55, z1: 1.55 }); }
+  { const Y = 2.38; put(new THREE.CylinderGeometry(.025, .025, 1.7, 6).rotateZ(Math.PI / 2), 'oak', -3.1, Y, -.45); for (const x of [-3.9, -2.3]) pipe('rope', [x, Y, -.45], [x, under(-.45) - .06, -.45], .006, 3);
+    for (let x = -3.85; x < -2.35; x += .14 + r() * .05) bundle(x, Y - .02, -.45, ['herb', 'herb2', 'heath'][Math.floor(r() * 3)], .22 + r() * .1); }
+  { const x0 = -X + .05, x1 = -X + .95, z0 = .05, z1 = 2.05; bx('oak', x0, x1, 0, .45, z0, z1, 'bed'); bx('wool', x0 + .05, x1 - .05, .45, .55, z0 + .05, z1 - .45); bx('linen', x0 + .05, x1 - .05, .45, .58, z1 - .42, z1 - .05); }
+  // the roof's couples, collars and purlins as the cottage's; the lantern from the shop's collar, over the customers' side
+  const p = SCALE.pitch.thatch * Math.PI / 180, L2 = Z / Math.cos(p);
+  for (const x of [-3.0, .4, 3.6]) { for (const s of [-1, 1]) { const g = new THREE.BoxGeometry(.14, .2, L2 - .2); g.rotateX(s * p); put(g, 'oak', x, under(s * Z / 2) - .16, s * Z / 2); }
+    /* the collar ends where its top meets the slopes' underside */ bx('oak', x - .07, x + .07, h + 1.35, h + 1.5, -Z + 1.74 / tp, Z - 1.74 / tp); }
+  for (const f of [.35, .7]) for (const sz of [-1, 1]) { const zz = sz * Z * (1 - f); put(new THREE.BoxGeometry(plan.w - 2 * t, .12, .12), 'oak', 0, under(zz) - .2, zz); }
+  const lantern = [.4, h + 1.0, 0]; bx('iron', .39, .41, h + .9, h + 1.36, -.01, .01); put(new THREE.CylinderGeometry(.07, .08, .2, 6), 'glow', ...lantern); put(new THREE.ConeGeometry(.09, .1, 6), 'iron', lantern[0], lantern[1] + .15, lantern[2]);
+  // the shell's glass is clear from inside
+  { const G = glMats().glass; shell.traverse(m => { if (m.isMesh && m.material === G) { m.material = mats().pane; m.name = 'pane'; } }); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow', 'green'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const all = new THREE.Group(); all.add(shell, group); const door = plan.open.front[0], back = plan.open.back.find(q => q.kind === 'plank');
+  const windows = Object.entries(plan.open).flatMap(([f, os]) => (os || []).filter(q => q.kind === 'win').map(q => ({ face: f, x: f === 'front' ? q.x : f === 'back' ? -q.x : 0, z: f === 'front' ? plan.d / 2 : f === 'back' ? -plan.d / 2 : 0, y: q.y, w: q.w, h: q.h })));
+  const bk = -back.x /* the back face's x runs the other way */, stations = [{ step: 'prepare', x: (table.x0 + table.x1) / 2, z: table.z1 + .4, y: table.y }, { step: 'combine', x: mortar.x - .5, z: mortar.z - .15, y: mortar.y },
+    { step: 'distil', x: furnace.x0 - .45, z: .85, y: furnace.y }, { step: 'bottle', x: 2.4, z: bench.z1 + .45, y: bench.y }];
+  // the walks: the front door to the counter; the back door (on the customers' side, x = -1.2 from inside) to the counter; behind the
+  // counter from its gap to the still, and on to the bottling bench; the hearth wall's door into the shop and into the store
+  const paths = [[[door.x, Z - .2], [-.3, .9], [.3, .3]], [[bk, -Z + .2], [-.6, -1.0], [.3, .3]], [[1.3, Z - .25], [1.45, .9], [2.4, 1.1], [3.0, .85]], [[1.45, .9], [1.45, -1.0], [2.4, -1.15]], [[-1.3, dB.z], [-.5, -1.3], [-.5, -.5]], [[-2.2, dB.z], [-2.3, -1.45], [-2.6, -.3]]];
+  return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, under, floor: F0,
+    hearth: [bxx + BD, 0, hz], fire, win, still, counter, table, mortar, bench, settle, stations, rack: RACK, door: { x: door.x, z: plan.d / 2, w: door.w, h: door.h }, back: { x: bk, w: back.w, h: back.h },
+    doors: [{ x: HX, z: dB.z, w: dB.w, h: dB.h }], paths, boxes, lantern, glow: [furnace.x0 - .1, .26, 0], windows, w: plan.w, d: plan.d, eave: h };
 }
