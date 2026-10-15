@@ -20046,3 +20046,40 @@ Corrections made during the session:
 - **The bench along the right wall is dark** by day. Only the wall's small window and the lamp light it.
 - **The anvil is small, as the Mark's block anvils were**, beside the Gatelands' horned anvil. If the two islands should share one anvil, the Gatelands' piece would serve both.
 - **Owed:** Aurenne's smithy (in an arcade, by OG-043), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 931 — Card F9's tenth room: Aurenne's smithy (prototype only)
+The smithy's third dress, after the Gatelands' forge (929) and the Mark's (930). OG-043 gives Aurenne's blacksmith "arcades, tilework" and a shop open to its street, so the room is built inside `pieces.js`'s Roman house: one storey of 3.0 m, 7.2 by 6.0 m, a hipped pantile roof, the arcade before its front, and the cypress at its door (#303's rule). Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`aurenneSmithy` in `rooms.js`):
+- **The forge** is in the back left corner, on a hearth of plastered masonry 0.8 m high with a band of glazed blue tile on its lip. A sooted plaster hood hangs over it from 1.9 m, with a copper edge, and narrows into a flue. The flue rises through the ceiling and the roof, 0.7 m clear of the pantile, to a tiled cap.
+  - The flue is the shell's only new opening. The Roman house has no chimney, and the hood needed one.
+  - The corner behind the forge is smoked black from the hearth to the joists.
+- **The bellows** are two goatskin bags on the floor at the hearth's right, with wooden mouths, the nozzles into the hearth's flank, and the apprentice's low stool. The goatskin bags are the third bellows of the three islands, after the Gatelands' great lever bellows and the Mark's twin bags behind a shield.
+- **The anvil**, a horned anvil on a block of limestone, stands 0.82 m out from the hearth, its face at 0.82 m. A stone quench trough stands against the left wall, 0.7 m from it.
+- **The right wall:** a rail of tongs and hammers, and the bench with a vice under it.
+- **The back wall:** charcoal in two baskets. Iron bars stand in the corner by the door.
+- **The floor:** limestone flags, with cinders trodden round the forge.
+- **The ceiling:** cedar joists under the stone ceiling, every 0.6 m, at 2.78 m over the floor, with a brass lamp hung from them.
+- **Under the arcade,** to the left of the door's walk: the stall of the smith's wares (a copper pot, a brass oil lamp, three blades, hinges). To the right, behind the cypress, a stone water trough for horses.
+- 2,872 triangles in 19 draws, in the house's 3,212 in 10.
+
+The view: `rooms.html?room=aursmithy`, with `view=shop` (from the doorway to the forge), `anvil`, `stall` (the wares from the street) and `outside`.
+
+Corrections made during the session:
+- The stall was first drawn right of the door, where the shell's cypress hides it from the street. It and the trough have swapped sides.
+- The fire's light was first strong enough to burn the plaster corner white. It is lower now, and the corner is sooted.
+- The anvil's block first touched the trough's lip. It is now 0.25 m further into the room.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 77 of 77 pass** (69 after Session 930). Two views are new on the page check, with no page errors. Six checks are new, over four keys (the shell's walls and doors by its own stream):
+  - **The builds:** each key the same twice, in budget.
+  - **Inside the walls:** every piece inside the walls and under the ceiling except the flue, which stays within 0.12 m of its own footprint. No two pieces are in each other.
+  - **The walks:** from the door to the anvil, to the bench and to the bellows' stool, all clear by 0.15 m. There are 2.78 m under the joists.
+  - **A smith fits:** the anvil at 0.82 m, the bench at 0.9 m, the hearth at 0.8 m.
+  - **The forge works:** the fire is on the hearth under the hood. The flue stands over the hearth and rises 0.7 m clear of the roof. The anvil is 0.82 m out from the hearth, and the trough 0.7 m from the anvil.
+  - **The arcade:** the stall and the horse trough stand under the arcade, 0.3 m or more clear of the door's walk.
+- **Pictures:** `rooms-aursmithy-shop.jpg`, `-anvil`, `-stall`, `-outside` and `-shop-night`.
+### Needs eyes
+- **Aurenne's smith stands at the anvil, as the others do.** Many smiths of the countries Aurenne draws on worked seated at a low anvil set in the floor. The standing anvil keeps the three islands' smithies alike for play.
+- **From the street the flue is hidden.** It is at the back corner, behind the arcade's front wall.
+- **The wares on the stall are few and small.** A rack of finished blades or hanging lamps would fill it, if wanted.
+- **Owed:** the alchemist, the guildhall, the shrine and the library in each nation's dress.
