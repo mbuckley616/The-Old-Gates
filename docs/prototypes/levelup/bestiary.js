@@ -53,7 +53,10 @@ if (VIEW === 'line') {
   const frame = () => { const b = bbox(C), size = b.getSize(new THREE.Vector3()), r = Math.max(size.x, size.y, size.z * .8);
     fz = b.min.z - C.root.position.z - .5; f.position.set(0, 0, C.root.position.z + fz);
     cam.fov = 30; cam.updateProjectionMatrix(); const cv = Q.get('cam') || 'side', d = r * 2.7 + .7;
-    const off = cv === 'front' ? new THREE.Vector3(d * .35, size.y * .45, d) : cv === 'top' ? new THREE.Vector3(d * .3, d * 1.1, d * .2) : new THREE.Vector3(d, b.min.y + size.y * .45 + .4, d * .12);
+    const off = cv === 'front' ? new THREE.Vector3(d * .35, size.y * .45, d) : cv === 'top' ? new THREE.Vector3(d * .3, d * 1.1, d * .2) : cv === 'back' ? new THREE.Vector3(d * .6, size.y * .3, -d * .8) : new THREE.Vector3(d, b.min.y + size.y * .45 + .4, d * .12);
+    // close on the head (Session 942): cam=head (front three-quarter) or cam=headside
+    if (cv === 'head' || cv === 'headside') { C.rig.updateMatrixWorld(true); const h = C.byName.head.getWorldPosition(new THREE.Vector3()).sub(C.root.position), hr = (C.B.headFrame?.len || .3) * 2.6; cam.fov = 24; cam.updateProjectionMatrix();
+      const look = h.clone().add(new THREE.Vector3(0, 0, hr * .25)); look.y += C.root.position.y; return { off: h.clone().add(cv === 'head' ? new THREE.Vector3(hr * 1.3, hr * .35, hr * 2.6) : new THREE.Vector3(hr * 2.9, hr * .2, hr * .3)), look }; }
     return { off, look: new THREE.Vector3(0, b.min.y + size.y * .4, (b.min.z - C.root.position.z) * .35) }; };
   pose(C, +(Q.get('phase') || .2)); let fz = 0, F = frame(); // framed in the pose it is shown in: a bird aloft is higher than one perched
   const place = () => { const p = C.root.position; cam.position.copy(p).add(F.off); cam.lookAt(p.x + F.look.x, F.look.y, p.z + F.look.z); sun.position.set(p.x + 25, 40, p.z + 30); sun.target.position.copy(p); };

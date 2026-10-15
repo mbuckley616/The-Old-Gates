@@ -411,7 +411,7 @@ function buildCloak(G, body, byName, rnd) {
   // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
   // with a spear in the right fist (Session 909) a full cloak is thrown back off the right shoulder, as a Markman frees his
   // weapon arm: it opens from the throat round to just behind the shoulder, so the forearm held forward is out of it
-  const thrown = !!D.spear && !cape, th0 = thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
+  const thrown = !!(D.spear || D.crossbow) && !cape, th0 = thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
     const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
@@ -1206,6 +1206,97 @@ function buildSpear(G, body, byName, meshes, root, grip) {
   let tris = 0; sp.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
   return { mesh: sp, stats: { head: HD, headLen: +(K.sock + K.blade).toFixed(3), headW: +(2 * Math.max(...prof.map(v => v.x))).toFixed(4), clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
 }
+// the crossbow (Session 941; L7, OG-028, Michael's 6 A: the spear and the crossbow first), carried point down in the right fist by
+// the wrist of its tiller, the stock plumb through the fist as the spear's shaft is, the butt up by the forearm and the prod and its
+// stirrup down by the shin, the prod spanning fore and aft so neither tip comes near the leg, the bolt's face turned out. Unspanned:
+// the string braced straight across the tiller's top, no bolt. The make by island (L7's rule): the Gatelands a yew prod lashed on
+// with cord and a bone nut; the Mark a short iron prod in an iron bridle; Aurenne a lacquered prod of horn and sinew with horn
+// tips, bound in gold. Built in its own frame: y along the tiller to the butt, the grip's middle at 0, x out of the bolt's face, z along the prod
+const CROSSBOWS = {
+  wood: { span: .66, bend: .05, prod: [.6, .4, .2], metal: false, bind: [.3, .2, .13], binds: 3, nut: [.86, .82, .72], stirrup: [.42, .43, .45] },
+  steel: { span: .6, bend: .035, prod: [.5, .51, .53], metal: true, bind: [.4, .41, .43], binds: 2, bindMetal: true, nut: [.5, .51, .53], stirrup: [.42, .43, .45] },
+  horn: { span: .64, bend: .055, prod: [.36, .13, .08], metal: false, tips: [.82, .74, .58], bind: [.86, .68, .3], binds: 2, bindMetal: true, nut: [.62, .45, .22], stirrup: [.62, .45, .22] } };
+// the tiller's section along its length: half its depth (a, out of the bolt's face), half its width (c), how square it is (e, 1 round),
+// and how far its middle drops toward the belly (o). Round in the fist; a squared fore-stock to the prod; the butt deepening and dropping
+const CB_FRONT = -.6, CB_BUTT = .31, CB_PROD = -.54;
+function tillerAt(y) { const L = (a, b, t) => a + (b - a) * Math.max(0, Math.min(1, t)), R = SPEAR_R;
+  if (y < -.075) { const t = (y - CB_FRONT) / .04; return { a: L(.019, .024, t), c: L(.016, .019, t), e: .45, o: 0 }; }
+  if (y < -.06) { const t = (y + .075) / .015; return { a: L(.024, R, t), c: L(.019, R, t), e: L(.45, 1, t), o: 0 }; }
+  if (y < .115) return { a: R, c: R, e: 1, o: 0 };
+  if (y < .13) { const t = (y - .115) / .015; return { a: L(R, .018, t), c: L(R, .017, t), e: L(1, .5, t), o: 0 }; }
+  const t = (y - .13) / (CB_BUTT - .13); return { a: L(.018, .05, t ** .8), c: L(.017, .026, t), e: .5, o: -.026 * t * t };
+}
+// a tube of superelliptic section swept along a path of frames: p the point, n and b the section's axes, a and c their half sizes
+function sweepTube(frames, S = 12) {
+  const pos = [], idx = [], n = frames.length;
+  for (const f of frames) for (let k = 0; k < S; k++) { const th = k / S * Math.PI * 2, cs = Math.cos(th), sn = Math.sin(th), u = f.a * Math.sign(cs) * Math.abs(cs) ** f.e, w = f.c * Math.sign(sn) * Math.abs(sn) ** f.e;
+    pos.push(f.p.x + f.n.x * u + f.b.x * w, f.p.y + f.n.y * u + f.b.y * w, f.p.z + f.n.z * u + f.b.z * w); }
+  for (let j = 0; j < n - 1; j++) for (let k = 0; k < S; k++) { const a = j * S + k, b = j * S + (k + 1) % S, c = a + S, d = b + S; idx.push(a, c, b, b, c, d); }
+  for (const [j, s] of [[0, -1], [n - 1, 1]]) { const ci = pos.length / 3, f = frames[j]; pos.push(f.p.x, f.p.y, f.p.z); for (let k = 0; k < S; k++) { const a = j * S + k, b = j * S + (k + 1) % S; if (s < 0) idx.push(ci, a, b); else idx.push(ci, b, a); } }
+  // wound outward when the path runs along b × n; else every triangle is turned over
+  const f0 = frames[0], dir = frames[1].p.clone().sub(f0.p); if (dir.dot(f0.b.clone().cross(f0.n)) < 0) for (let t = 0; t < idx.length; t += 3) { const q = idx[t + 1]; idx[t + 1] = idx[t + 2]; idx[t + 2] = q; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+function crossbowParts(D, make) {
+  const K = CROSSBOWS[make], X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1), parts = [];
+  const mat = (c, metal) => new THREE.MeshStandardMaterial({ color: sRGB(...c), metalness: metal ? .65 : 0, roughness: metal ? .35 : .65 });
+  const wood = mat(D.crossbow, false), dark = mat([.08, .06, .05], false);
+  // the tiller
+  const tf = []; for (let k = 0; k <= 90; k++) { const y = CB_FRONT + (CB_BUTT - CB_FRONT) * k / 90, s = tillerAt(y); tf.push({ p: new THREE.Vector3(s.o, y, 0), n: X, b: Z, a: s.a, c: s.c, e: s.e }); }
+  parts.push(new THREE.Mesh(sweepTube(tf, 16), wood));
+  const top = tillerAt(CB_PROD).a, px = top + .006;
+  // the prod: bowed, its tips swept 3.5 to 6 cm back toward the butt, thinning to them; seated across the tiller's top
+  const yAt = z => CB_PROD + K.bend * (2 * z / K.span) ** 2, pf = [];
+  for (let k = 0; k <= 32; k++) { const z = -K.span / 2 + K.span * k / 32, t = Math.abs(2 * z / K.span), dy = 4 * K.bend * z / K.span ** 2 * 2, tan = new THREE.Vector3(0, dy, 1).normalize(), b = new THREE.Vector3(0, 1, 0).addScaledVector(tan, -tan.y).normalize();
+    pf.push({ p: new THREE.Vector3(px, yAt(z), z), n: X, b, a: .016 - .006 * t, c: .014 - .0075 * t, e: .6 }); }
+  const prod = new THREE.Mesh(sweepTube(pf), mat(K.prod, K.metal)); parts.push(prod);
+  const tipY = yAt(K.span / 2);
+  if (K.tips) for (const s of [-1, 1]) { const tp = new THREE.Mesh(new THREE.CylinderGeometry(.0072, .0085, .05, 10), mat(K.tips, false)); tp.rotation.x = Math.PI / 2; tp.position.set(px, tipY - .002, s * (K.span / 2 - .022)); parts.push(tp); }
+  // the string, braced straight from nock to nock over the tiller's top, and its two nocks
+  const str = new THREE.Mesh(new THREE.CylinderGeometry(.0022, .0022, K.span - .02, 6), mat([.78, .72, .6], false)); str.rotation.x = Math.PI / 2; str.position.set(px, tipY - .004, 0); parts.push(str);
+  // the bridle: the prod bound to the tiller fore and aft of it (cord, or iron, or gold)
+  const bindM = mat(K.bind, K.bindMetal); for (let k = 0; k < K.binds; k++) for (const s of [-1, 1]) { const y = CB_PROD + s * (.024 + k * .011), sc = tillerAt(y);
+    const r = new THREE.Mesh(new THREE.TorusGeometry(1, .1, 6, 20), bindM); r.rotation.x = Math.PI / 2; r.scale.set(sc.a + .0025, sc.c + .0025, .025); r.position.set(sc.o, y, 0); parts.push(r); }
+  // the nut, half sunk in the tiller's top; the groove the bolt lies in; the long trigger lever under the belly, ahead of the fingers
+  const nut = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .03, 14), mat(K.nut, make !== 'wood')); nut.rotation.x = Math.PI / 2; nut.position.set(tillerAt(-.15).a, -.15, 0); parts.push(nut);
+  const gr = new THREE.Mesh(new THREE.BoxGeometry(.002, .33, .005), dark); gr.position.set(tillerAt(-.33).a + .0002, -.335, 0); parts.push(gr);
+  const lev = new THREE.Mesh(new THREE.BoxGeometry(.007, .075, .008), mat([.42, .43, .45], true)); lev.position.set(-tillerAt(-.12).a - .0045, -.115, 0); lev.rotation.z = .06; parts.push(lev);
+  // the stirrup at the front, for the foot when it is spanned
+  const st = new THREE.Mesh(new THREE.TorusGeometry(.05, .0055, 6, 24), mat(K.stirrup, true)); st.rotation.y = Math.PI / 2; st.scale.set(1, 1.3, 1); st.position.set(0, CB_FRONT - .052, 0); parts.push(st);
+  // a gold ferrule at the butt's heel and the grip's ends, for Aurenne's fine work
+  if (make === 'horn') for (const y of [-.07, .123, CB_BUTT - .012]) { const sc = tillerAt(y), r = new THREE.Mesh(new THREE.TorusGeometry(1, .12, 6, 20), bindM); r.rotation.x = Math.PI / 2; r.scale.set(sc.a + .002, sc.c + .002, .02); r.position.set(sc.o, y, 0); parts.push(r); }
+  return { parts, K, px, tipY };
+}
+// whether a point in the crossbow's frame is inside it (the tiller by its section, the prod as a bowed box, the stirrup by its box),
+// and how far outside the nearest of them it is
+function crossbowDist(K, px, x, y, z) {
+  let d = 1;
+  if (y >= CB_FRONT && y <= CB_BUTT) { const s = tillerAt(y), u = Math.abs(x - s.o) / s.a, w = Math.abs(z) / s.c, q = u ** (2 / s.e) + w ** (2 / s.e); d = Math.min(d, Math.min(s.a, s.c) * (q ** (s.e / 2) - 1)); }
+  if (Math.abs(z) <= K.span / 2) { const t = Math.abs(2 * z / K.span), yc = CB_PROD + K.bend * t * t; d = Math.min(d, Math.max(Math.abs(x - px) - (.016 - .006 * t), Math.abs(y - yc) - (.014 - .0075 * t))); }
+  d = Math.min(d, Math.max(Math.abs(x) - .006, Math.abs(y - (CB_FRONT - .052)) - .07, Math.abs(z) - .056));
+  return d;
+}
+function buildCrossbow(G, body, byName, meshes, root, grip) {
+  root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, PP = posedBody(body);
+  let floor = 1e9; for (const i of new Set(PACK.G['body'])) floor = Math.min(floor, PP[i * 3 + 1]);
+  const make = CROSSBOWS[D.crossbowMake] ? D.crossbowMake : ({ markman: 'steel', aurennais: 'horn' })[G.people] || 'wood', P = crossbowParts(D, make);
+  const cb = new THREE.Group(); cb.name = 'crossbow'; for (const m of P.parts) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; cb.add(m); }
+  // its frame in the world: y the fist's axis, z the body's forward made square to it (and turned), x out of the bolt's face, turned away from the body
+  // (turned 16° about the tiller, so the prod's back tip swings out from the thigh behind the fist)
+  const A = grip.A.clone().normalize(), F0 = new THREE.Vector3(0, 0, 1).addScaledVector(A, -A.z).normalize(), S0 = A.clone().cross(F0), sw = S0.x * Math.sign(grip.C.x) < 0 ? 1 : -1;
+  const F = F0.clone().multiplyScalar(Math.cos(.28)).addScaledVector(S0, sw * Math.sin(.28)), T = A.clone().cross(F);
+  if (T.x * grip.C.x < 0) T.negate(); const Zw = T.clone().cross(A);
+  cb.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(T, A, Zw)); cb.position.copy(grip.C); root.add(cb); root.updateMatrixWorld(true);
+  const inv = cb.matrixWorld.clone().invert(), v = new THREE.Vector3();
+  let clear = 1, fist = 0, handN = 0, low = 1e9;
+  eachPoint(wornClouds(body, meshes, root), (x, y, z, i) => { v.set(x, y, z).applyMatrix4(inv); if (v.y < CB_FRONT - .14 || v.y > CB_BUTT + .01 || Math.abs(v.z) > P.K.span / 2 + .01) return; const d = crossbowDist(P.K, P.px, v.x, v.y, v.z);
+    if (i >= 0 && R0[i * 3] < -.39) { handN++; if (d < -.001) fist++; return; } clear = Math.min(clear, d); });
+  cb.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position; for (let k = 0; k < a.count; k++) { v.fromBufferAttribute(a, k).applyMatrix4(m.matrixWorld); low = Math.min(low, v.y); } });
+  byName['wrist.R'].attach(cb);
+  let tris = 0; cb.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  const butt = new THREE.Vector3(0, CB_BUTT, 0).applyMatrix4(cb.matrixWorld), out = T.x * Math.sign(grip.C.x);
+  return { mesh: cb, stats: { make, span: P.K.span, len: +(CB_BUTT - CB_FRONT + .12).toFixed(3), clear: +clear.toFixed(4), fist, handPts: handN, low: +(low - floor).toFixed(3), butt: +(butt.y - floor).toFixed(3), out: +out.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, curl: grip.curl, gripPts: grip.n, tris } };
+}
 function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
 // skirt's own middle, a hand point (rest x past .415) is inside if it is nearer that middle than the furthest of the skirt's points there
@@ -1388,7 +1479,7 @@ export function makePerson(G, o = {}) {
   // itself so the knuckles stand one over another (the first finger's on top) and the shaft can run up and down through the fist;
   // the shaft is laid in the palm and the four fingers close on it (fistGrip). (The elbow's own x is not its hinge: 1.45 rad
   // about it swung the forearm round a cone, backward)
-  let spearGrip = null, wristFix = 0; if (D.spear) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
+  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
     const setWorld = Q => lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
     setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), new THREE.Vector3(-.12, -.2, 1).normalize()).multiply(wq())); root.updateMatrixWorld(true);
     const ax = at('wrist.R').sub(at('lowerarm01.R')).normalize(), flat = v => v.addScaledVector(ax, -v.dot(ax)).normalize(), kn = flat(at('finger2-1.R').sub(at('finger5-1.R'))), up = flat(new THREE.Vector3(0, 1, 0));
@@ -1414,7 +1505,9 @@ export function makePerson(G, o = {}) {
   // (a kite or a hoplon is slung too since Session 916; Sessions 911 and 913 left it off under a cloak)
   else if (D.shield) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats };
+  // a crossbow in the same fist (Session 941), when it holds no spear
+  let crossbowStats = null; if (D.crossbow && !D.spear) crossbowStats = { ...buildCrossbow(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -1437,7 +1530,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

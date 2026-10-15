@@ -20157,6 +20157,98 @@ What changed in `creatures.js`:
   - Tine and Solas have no corrupted animal on the sheet;
   - the game, after F4.
 
+## v80 — Session 925 — The frost bear's crown at its brow (L4, a fix to Session 919, prototype only)
+Session 919 left a note under Needs eyes: the Frost Wraith Bear's crown of ice shards sat at the back of its skull rather than the brow, so from the side it read as the front of the back's ridge. OG-088 draws the crown over the eyes. This is a refinement of a plan already built, so it asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`).
+
+What changed in `creatures.js`:
+- **`crystals` takes `rake`.** The Shatterhorn's crystal horns sweep back from the brow, each shard leaning back and stepping back from the one before. `rake` scales both, the lean and the step: 1, the default, is the Shatterhorn's sweep unchanged (the arithmetic is the same when it is 1), and toward 0 the shards stand up from where they grow.
+- **The frost bear's crown:** it now grows a fifth of the head further forward (at 34% of the head's length, where the skull meets the muzzle, against 20%), a little lower and closer together (up 0.8 and out 0.38 of the head's radius, against 0.9 and 0.45), 30 cm long against 34, and raked at 0.3. It stands up over the eyes as a crown of five shards a side, with clear air between it and the first of the back's eleven clusters.
+- **Triangles:** unchanged at 29,792; the shards are the same cones in new places.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 915 checks pass**, the same count as Session 919. The frost bear's four gaits put every foot on its target (0.0 cm worst), its skin weights sum to one, and its genome is 153 bytes.
+- The Shatterhorn and the Shatterback, the other two plans with crystal horns, take the default rake and build as before.
+- **Picture:** `creatures-frostbear.jpg` retaken; the crown stands above the brow, apart from the ridge on the back.
+### Needs eyes
+- **From the front** the crown's two halves are a V over the eyes; whether OG-088's crown wants a third shard on the midline is a matter of taste, and one more would cost 60 triangles.
+- **Owed, as before:** the stone troll (a troll in the kit first), the stag's mist (particles), the game (after F4).
+
+## v80 — Session 926 — The cave troll and the stone troll (L4, prototype only)
+Session 919 left OG-088's stone troll (Cloch) waiting for a troll in the kit, and backlog L4's "classic five" (OG-041) wants a cave troll whose hide grows moss. Both sheets draw the same beast: hunched and huge, a stone-grey hide with moss and lichen, a wide fanged mouth, long arms. The canon (§9a) puts cave trolls in Tine, Uisce and Cloch gates. The sheets draw it, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`troll`, the Cave Troll: the kit's first upright walker with hands.** Every creature so far walks on four or more legs, or is a bird. The troll stands on one leg pair (the plantigrade hind leg the bear uses), and the gait engine's biped walk and run carry it with no new code. Its spine rises steeply from the hips (1.25 m up) to a chest thrown forward over them (2.15 m up, 34 cm ahead), with a low shoulder hump. The head is slung in front on a short level neck, with a deep jaw, tusks from the lower jaw, small amber eyes and splayed ears. The arms are 1.5 m from the shoulder and hang to its knees, swinging against the legs. Its hide is stone grey with moss on what faces the sky. It stands 2.2 m to the crown, hunched; a man comes to its shoulder. 23 bones, 10,256 triangles.
+- **`stonetroll`, the Stone Troll (Cloch):** the troll 12% larger, its moss scoured off to bare grey stone. Seven slabs of rock grow through its back and four rock shards from its crown. Its arms are thicker (22%) and longer (5%), its hump higher, and it has violet in its cracks and eyes, the Blight Boar's colour for Cloch. 11,336 triangles. It joins `CORRUPTED`, which now lists five, two of them Cloch.
+- **Three small options for these, each off by default so every other plan builds as before:**
+  - `patches` takes `up`, which keeps the patches to what faces the sky (moss on stone);
+  - `crystals` takes `stone`, matte flat-shaded rock in place of glass;
+  - `spines` takes `dorsal`, which grows them out of the back square to the spine, not straight up. An upright body's back faces behind it, so straight up put the stone troll's slabs inside its chest.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 936 checks pass** (915 before). There are new checks for the two plans' gaits and family, and four for the troll's own promises:
+  - each is a biped with two arms, its head 2.22 m and 2.39 m up;
+  - through a whole stride of its walk the hands stay between the hips and the ground: 0.60 to 1.02 m for the troll, against hips at 1.24 m, and 0.66 to 1.11 m for the stone troll, against 1.34 m. The two hands pass up to 0.91 m and 0.97 m apart.
+- The first build swung the arms at 0.55 rad, and the hands came up past the hips (1.31 m against 1.21 m) to 1.41 m apart. The check caught it; the swing is now 0.28.
+- In every gait each foot reaches its target (0.0 cm worst), and feet are down for the gait's duty (0.69 of 0.68 walking, 0.46 of 0.45 running). Skin weights sum to one, and the genomes are 150 and 155 bytes.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `creatures-troll.jpg` and `creatures-stonetroll.jpg`, each walking past a man;
+  - `creatures-corrupted.jpg` retaken with the troll and the stone troll beside the other four pairs.
+### Needs eyes
+- **The head is the weak part.** At play distance it reads as a slung skull with a jaw and tusks. Close up there is no brow ridge or nose, and the head runs into the hump with no neck to speak of. OG-041's face (a wide fanged mouth, a heavy brow) wants a sculpted target, as the design doc's risks foresee for close views.
+- **The torso is a column from the side.** OG-041 draws a heavier gut and chest; the hip and chest radii can grow once the head reads.
+- **The rock slabs are cones,** blunter than the frost bear's ice but still points. "Fused with rock" may want slabs (boxes) more than spikes.
+- **Owed:**
+  - the troll's lashed-on armour scraps (OG-041), which wait for gear on a creature;
+  - OG-018's Tine troll (glowing cracks) and its pale Uisce troll, as recolours of this plan;
+  - the other four of the classic five;
+  - the game, after F4.
+
+## v80 — Session 927 — The trolls by school, and a brow (L4, prototype only)
+Session 926 left two things owed on the troll: OG-018's trolls of Tine and Uisce, which the sheet draws as the same beast in each school's colours, and a head with no brow, which ran into the hump. This does both. The sheets draw them, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`head` takes `brow`.** A capsule of flesh across the skull over the eyes, from one side to the other, grown into the head as one surface. The troll's is 7 cm thick, at 42% of the head's length and two thirds of its radius up. From the side the head now has a ledge over the eyes, and the skull reads apart from the hump behind it. It costs about 2,100 triangles (10,256 to 12,396): the grid meshes the ridge as finely as the rest.
+- **`tinetroll`, the Cave Troll of Tine:** basalt-dark, forge-orange light in its cracks (OG-018's "glowing cracks", in the Faolchú's colour of Tine's fire), and ember eyes.
+- **`uiscetroll`, the Cave Troll of Uisce:** drowned-pale, with dark weed in small patches over its hide, and eyes gone to the sea's blue. The first build's weed covered a third of the hide in large patches and read as camouflage. It is now smaller and sparser: patches of 12 cm, cut at 0.32.
+- **`TROLLS`** lists the four: the cave troll itself (OG-018's Cloch troll is the moss-backed one, OG-041's), Tine's, Uisce's, and the Stone Troll (Cloch, corrupted). Each of the three by school carries its `school` and `from: 'troll'`.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 957 checks pass** (936 before).
+  - The new plans' gaits and the family checks pass.
+  - A new check covers the trolls by school: four plans, covering Tine, Uisce and Cloch as canon §9a puts them, every one with a school drawn from the troll.
+  - The troll's own checks now run over all four. Heads are 2.13 to 2.39 m up. Through the walk the hands stay between the hips and the ground: the lowest 0.57 m, the highest 1.11 m, always under the hips.
+- Triangles by seed: 12,396 (the troll), 14,788 (Tine's), 13,140 (Uisce's), 13,652 (the Stone Troll). The spread is the genome's seeded sliders, not the dress.
+- In every gait each foot reaches its target (0.0 cm worst). No page errors.
+- **Pictures:**
+  - `creatures-trolls.jpg`: the four side by side with men for scale;
+  - `creatures-tinetroll.jpg` and `creatures-uiscetroll.jpg`;
+  - `creatures-troll.jpg`, `creatures-stonetroll.jpg` and `creatures-corrupted.jpg` retaken with the brow.
+### Needs eyes
+- **Uisce's weed is patches, not hanging weed.** OG-018 draws it hung off the troll. Strands would want the kit's fronds (the kelpstrider's), which cost a mesh of their own.
+- **The brow helps from the side; from the front** the face is still a jaw and two eyes. A nose and cheekbones would want a sculpted target.
+- **Owed, as before:** the armour scraps, the other four of the classic five, the game (after F4).
+
+## v80 — Session 928 — The slime and the magma slime (L4, prototype only)
+The third of OG-041's classic five: translucent pale green, arched like a wave, with bones and rubble suspended inside. OG-018 adds Tine's magma slime ("orange jelly with dark holes"), and canon §9a puts slimes in Uisce gates and the magma one in Tine's. The sheets draw both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A plan may be clear.** `clear` sets the hide's opacity. Under 1 the hide is drawn transparent and writes no depth, so what is inside shows through it. Every other plan is opaque as before.
+- **`inclusions`, a new part: what a clear body has swallowed.** Each is a rigid bit on the nearest spine bone, set by the seed inside the body (at most `depth` of the spine's radius out from its line, never through the skin). There are three kinds: `rubble` (a flat-faced stone), `bone` (a long bone with a knob at each end) and `skull` (a cranium with two eye holes).
+- **`slime`, the Slime:** six spine bones and nothing else, no legs and no head. Its body is a mound 1.3 m long and 0.85 m high, its crest rolled forward over a front lip like a wave about to break, its back trailing low. It heaves along at the crawl, 0.24 m a second, and breathes when it stands. Pale green at 0.55 opacity, glossy, with a skull, five bones and seven stones inside. 1,340 triangles for the hide and 13 small bits.
+- **`magmaslime`, the Magma Slime (Tine):** the slime molten, deep orange at 0.8 opacity, with forge-light in veins through it and a low glow over all of it. It carries eleven lumps of black clinker instead of bones. `SLIMES` lists the two.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 969 checks pass** (957 before).
+  - The new plans' gaits and family checks pass.
+  - A new check for each slime: its hide is clear (0.55 and 0.8), it holds at least eight things (13 and 11), and through a whole crawl stride every one stays inside the hide's bounds (0 out of 312 and 264 placings). The bounds are the hide's box, not its surface; the placing rule (inside half the spine's radius) is what keeps them under the skin.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** `creatures-slime.jpg` and `creatures-magmaslime.jpg`, each beside a man.
+### Needs eyes
+- **The holes through it** (OG-041 draws daylight through the slime) are not there. A hole wants the flesh cut by a subtracted capsule, which the surface nets could do, as a later part.
+- **The magma slime in daylight** reads as orange jelly more than molten rock. Its veins want a dark Tine hall to glow in.
+- **The bones are bright through the green.** At 0.55 the slime is clearer than OG-041's; a murkier slime is one number.
+- **Owed:** the skeleton, the goblin and the giant spider of the classic five. The first two are people's bodies more than creatures, and may belong in `people.js`. The game, after F4.
 ## v80 — Session 922 — Card F11: the cutter in Aurenne's dress (prototype only)
 Backlog L6's hull line wants each of the game's five classes in each island's dress (OG-004; Michael's 3 A on the ladder). The sloop has all three dresses. The Gatelands has its sloop, cog and galleon, the Mark its cutter and sloop, and Aurenne its caravel and sloop. Session 902's note held back the cog and the galleon in the other dresses, because how a Mark cog carries the gaff, or an Aurenne galleon the lateen, is a question. A cutter has one mast, as a sloop has, so its Aurenne dress follows from rules already chosen, as the sloop's did, and nothing is asked: the lateen is Aurenne's one rig (#306), the sun-star is on the sail (#316's A), and a tiller steers the small hulls (#306's 3 A). FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
 
@@ -20305,3 +20397,527 @@ Co-op rules: every window is the play clock against the two fighters' state, non
 - **The potion.** It works after 0.8 s with no sound or pose of drinking beyond the potion's old sound at the start. A drinking pose is the bodies builder's.
 - **The world's foes hit harder.** At level 1 a Bandit's blow went from about 5 to about 10 at a light kit, and from level 5 it no longer comes down to 1 point. #355 decides how hard.
 - **Owed:** #355's answer (one constant); the heavy and third columns (the six Opus sessions); reach in metres (F2b); magic's own resolver.
+## v80 — Session 932 — The giant spider's thorns and egg sacs (L4, prototype only)
+The last of OG-041's classic five that already stood in the kit: the giant spider (Session 772) had the sheet's pale bulbous abdomen, dark legs and cluster of red eyes, but not its thorny legs or its egg sacs. The sheet draws both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed in `creatures.js`:
+- **A leg may be thorny.** `thorns: { per, len, r, rake }` on a leg pair sets short dark spines up every segment past the hip, on the segment's upper and outer faces, each raked toward the foot and shorter toward the tip, placed by the seed. A segment's thorns are one merged mesh, rigid on its bone, so eight legs add 24 meshes, not 88.
+- **`eggs`, a new part: a clutch of egg sacs under a tail.** A spider's abdomen is the kit's tail, so the sacs sit along its underside toward the tip (`at`, the stretch of the tail; `drop`, how far down its girth; `spread`, how far round the sides). Each sac is a lumpy silk ball (noise on a sphere, a faint wrapped banding), merged per tail bone. `P.tail` now records its points and radii for parts after it.
+- **The spider wears both:** about 3.7 thorns a segment, 88 in all, 4 to 10 cm long; seven sacs of 9 to 15 cm in a tight clutch at the abdomen's tip, white silk against the pale hide. The bits are 880 triangles of thorns and 1,764 of sacs beside the hide's 84,528.
+- `bestiary.js` takes `?cam=back`, a low rear three-quarter view, to show the clutch.
+
+The `drop` is larger than the capsules suggest (1.4 of the tail's radius): the grown flesh blends its capsules outward, so at 1.0 the sacs sat inside the skin and showed only as white patches. A part placed before the flesh is grown cannot read the surface; if more parts need to sit on the skin, a pass after growth that pushes bits out to it would be the fix.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 971 checks pass** (969 before).
+  - Thorns on all 24 leg segments past the hip, 88 in all.
+  - Seven egg sacs, clear of the ground (lowest 0.20 m) and below the abdomen's tip in all 72 poses of the walk, the trot and the stand.
+  - The spider's gaits still pass: every foot to its target, the walk's feet down 0.71 of 0.68, the trot's 0.48 of 0.45.
+- Pictures: `creatures-spider.jpg` (side), `creatures-spider-back.jpg` (rear three-quarter, the clutch).
+
+### Needs eyes
+- Whether the sacs read as eggs carried, or should be left to the lair's webbing (a place, the look builder's) and taken off the spider.
+- The thorns at a distance: at game range they may read as fuzz; fewer and longer could suit the sheet better.
+- The spider's dark cephalothorax is mostly hidden by the pale abdomen's blend: an older look, not changed here.
+
+## v80 — Session 933 — The goblin, and gear in a creature's hands (L4, prototype only)
+The fourth of OG-041's classic five: a goblin, crouched, with long ears, a long spear and a round hide shield. Canon §9a makes goblins no gate's antibody but its occupiers, who hold a spent gate as a warren, so the plan is marked `occupier`, not given a school. The sheet draws all of it, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`gear`, a new part: things held in the hands.** It is the kit's first gear on a creature, and the troll's owed armour scraps can build on it. Each item is rigid on an arm bone, so it swings with the arm.
+  - **A spear** is gripped in the fist (the hand bone): a shaft with a flat iron leaf-blade and a leather binding under it. `len` is its length, `grip` the fraction of shaft behind the fist, `rise` the point's angle above level, ahead.
+  - **A round shield** is strapped across the forearm's middle (the forearm bone): a hide disc with a wooden rim, an iron boss and leather lacing round its edge, its face turned out by `face`.
+- **`goblin`, the Goblin:** the troll's plan (Session 926) at half scale and thin. It has the same hunched biped walk with the knees deep. The head is big for its body and slung forward, with a brow, a sharp drooping muzzle, small fangs, large yellow eyes and long cone ears swept out at 72°.
+  - Its hide is olive-brown, patched darker. Its head stands 0.98 m up and its hips 0.58 m.
+  - It carries a 1.9 m spear upright in its right fist and a 0.56 m hide shield on its left forearm. Its arms swing less than the troll's (0.22 against 0.28), so the spear's butt stays off the floor.
+  - 23 bones, 15,828 triangles of hide.
+- `GOBLINS` lists it.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 981 checks pass** (971 before).
+  - The goblin builds and walks: every foot reaches its target through the walk, the trot and the stand. The walk's feet are down 0.69 of 0.68 and the trot's 0.46 of 0.45.
+  - It carries the spear and the shield. They stay clear of the ground in all 72 poses of the three gaits (lowest 0.068 m).
+  - The spear's point stays above its head (2.16 m against 0.98 m), and the shield stays at least 0.4 m off its hip.
+  - A first try with the grip at 0.3 put the butt 11 cm into the floor at the forward swing; the grip at 0.2 and the gentler swing fixed it.
+- Pictures:
+  - `creatures-goblin.jpg` (side) and `creatures-goblin-front.jpg`.
+  - `creatures-classic.jpg`: the spider, the slime, the goblin and the troll in a row, each with the measure.
+
+### Needs eyes
+- **The goblin's colour:** olive-brown, between the sheet's tan and the usual green.
+- **Its height:** under a man's shoulder, crouched.
+- **The shield** faces out and forward from the forearm. In a fight it would come round to the front, which is a pose for the game's combat, not the kit.
+- **Owed:**
+  - The sheet's scrap-leather harness: straps on a creature need a way to lie on the grown skin.
+  - The skeleton, the last of the five: the kit's flesh is one smooth surface, so a body of bare bones needs a different hide.
+
+## v80 — Session 934 — The skeleton: a bare body (L4, prototype only)
+The last of OG-041's classic five: a skeleton with a notched sword and a round wooden shield. Canon §9a puts skeletons in Solas and Uisce gates. The kit grows one smooth skin over its capsules, and a skeleton has none, so this session gives the kit a second kind of hide. The sheet draws the skeleton, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A plan may be `bare`.** Instead of growing the flesh, `bareGeo` draws each capsule as the bone it stands for.
+  - A limb's capsule becomes a shaft with a knob at each end.
+  - The spine's, neck's and tail's capsules become a stack of vertebrae.
+  - The head's and jaw's capsules stay whole, as the skull.
+  - The pieces are skinned by the same `dressFlesh` as any hide, so each moves with its bone and every skin weight still sums to one.
+  - One catch: `capDist` reads a capsule's `sm`, which `growFlesh` sets. Without it every colour came out NaN, so the first picture was black. `bareGeo` now sets it too.
+- **`ribs`, a new part:** a cage of arcs off the spine (`n` a side), each running round the side and forward, stopping short of a breastbone. They are widest mid-cage and drop as they go. With `pelvis`, two flared hip blades sit on the first spine bone.
+- **`gear` takes a sword:** a flat blade narrowing to its point, its edges notched at rows the seed picks, with a crossguard, a leather grip in the fist and a pommel. A shield now takes its own `tone` and `rim`.
+- **`skeleton`, the Skeleton:** an upright biped with a man's proportions, its skull 1.66 m up.
+  - It has 14 ribs, dark eye sockets and a hinged jaw.
+  - It carries a 0.7 m notched sword in its right hand, point down and ahead, and a 0.3 m wooden shield rimmed in iron on its left forearm.
+  - 23 bones and 6,324 triangles, half the troll's hide.
+  - It walks with the troll's biped gait.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 991 checks pass** (981 before).
+  - The skeleton's gaits pass: every foot reaches its target, the walk's feet are down 0.69 of 0.68 and the trot's 0.46 of 0.45.
+  - It is bare, with 14 ribs.
+  - Its sword and shield stay clear of the ground in all 72 poses (lowest 0.107 m). The first try, with the point 55° down, put it 2.6 cm into the floor; 40° fixed it.
+- Pictures:
+  - `creatures-skeleton.jpg` (side) and `creatures-skeleton-front.jpg`.
+  - `creatures-classic.jpg` is re-shot with all five of OG-041 in a row: the spider, the slime, the skeleton, the goblin and the troll.
+
+### Needs eyes
+- **The skull** is two capsules and reads soft and cartoonish from the side: no brow ridge, no cheekbones, and the teeth are missing. A modelled skull is the next refinement.
+- **The bones** are uniform shafts, so the femur and the forearm differ only in size.
+- **Owed:**
+  - The rags at the hips: cloth on a creature, which the goblin's harness also waits for.
+  - OG-018's drowned skeleton (Uisce), as a recolour with weed.
+
+## v80 — Session 935 — The drowned skeleton (L4, prototype only)
+OG-018 draws Uisce's hall with a drowned skeleton, weed-hung, among its antibodies. It is one of the five new foes that sheet names (with the Magma Slime, Session 928). This is the skeleton of Session 934 out of the sea, and asks nothing new. FREEZE #297 is still open, so this touches only the prototypes.
+
+`drownedskeleton` is a recolour of `skeleton`, plus weed:
+- **The bones** are grey-green, blotched with dark weed (the patches pattern, 6 cm across).
+- **The weed:** 36 strands, 20 to 45 cm long, hang from its skull, neck, spine and both arms. They are the kelpstrider's fronds (Session 863) turned to hang down instead of streaming back. They are skinned, so they move with the bones they hang from.
+- **The eyes:** sockets lit the sea's pale blue.
+- **The gear:** the sword gone to rust-brown, the shield to black waterlogged wood. It walks a little slower than the dry skeleton (speed 0.8 against 0.9).
+- **The record:** `SKELETONS` lists both. The plan carries `school: 'Uisce'` and `from: 'skeleton'`.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,002 checks pass** (991 before).
+- The drowned skeleton builds and walks with the skeleton's bones: 23 bones, every foot to its target, the walk's feet down 0.69 of 0.68.
+- It is Uisce's skeleton and carries weed.
+- Its gear stays clear of the ground through every gait (lowest 0.15 m).
+- Pictures: `creatures-drownedskeleton.jpg`; `creatures-classic.jpg` re-shot with it beside the five.
+
+### Needs eyes
+- Whether the weed reads as weed at game range, or as green rags. It could be the sheet's "rags at the hips" too, if Michael likes it.
+- OG-018 draws them in a pair. Two seeds give two builds of the plan (size, tint); the pairing is the gate's placement, not the kit's.
+
+## v80 — Session 941 — The crossbow (L7, prototype only)
+L7's new kinds of weapon are the spear and the crossbow first (Michael's 6 A). The spear has been in the kit since Session 909; this is the crossbow. Each island has its own make by L7's rule (the Gatelands wood, bone and leather; the Mark stone and iron; Aurenne fine metal and carving), so this asks nothing new. FREEZE #297 is no longer open, but the bodies stay out of the game until F4, so this touches only the prototypes (`people.js`, `builder.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`buildCrossbow`: carried point down in the right fist.** The fist is the spear's (Sessions 909 to 912): the forearm forward, the knuckles plumb, the fingers closed round a round grip 26 mm thick. The tiller runs plumb through it. The butt rises to about the chest (1.38 to 1.59 m) and the prod and stirrup hang by the shin (34 to 55 cm off the ground). The prod spans fore and aft, turned 16° about the tiller so its back tip swings out from the thigh, and the bolt's face looks out from the body. It is unspanned: the string is braced across the tiller's top and there is no bolt.
+- **The tiller is one swept tube** (`sweepTube`, `tillerAt`). It is round in the fist, squared ahead of it to the prod, and deepens and drops toward the belly behind it into a stock 10 cm deep. The same section function builds the mesh and tests what is inside it.
+- **Its fittings:** a nut half sunk in the top, the bolt's groove, a long trigger lever under the belly ahead of the fingers, a bridle binding the prod on fore and aft, and an iron stirrup at the front.
+- **`CROSSBOWS`, the make by island**, chosen by the people or by `crossbowMake`:
+  - **The Gatelands:** a 66 cm yew prod lashed on with three turns of cord a side, a bone nut. 5,536 triangles.
+  - **The Mark:** a 60 cm iron prod, flatter, in an iron bridle, an iron nut. 5,056 triangles.
+  - **Aurenne:** a 64 cm lacquered prod of horn and sinew with pale horn tips, bound in gold, with gold ferrules at the grip and the heel, a bronze nut and stirrup. 5,856 triangles.
+- A full cloak is thrown back off the right shoulder for the crossbow as for the spear. A spear and a crossbow asked together give the spear.
+- `crossbow` (the tiller's wood) is a garment colour and `crossbowMake` a dress flag, so a genome saves and loads it; the page lists it as *crossbow tiller*.
+- A first try had the butt starting 8 cm above the grip's middle, where the thumb sits: 14 points of a hand inside it. The grip now runs to 11.5 cm. A first prod of 70 cm for Aurenne put its back tip 3.6 mm into a man's thigh; it is 64 cm now, and turned.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 279 checks pass** (269 before); `kit.check.mjs` passes.
+- Nine people carry it: each people's make, an Aurennais make in a Gatelander's hand, under mail with a shield, a woman in a long skirt, under a fur-collared cloak, in a robe, an Aurennais woman.
+  - In every one, the crossbow hangs on the right wrist and no point of the hand is inside it (0 of 1,709 to 1,741).
+  - Nothing else comes within 15 mm of it (15.3 to 31.4 mm).
+  - Its stirrup is 34 to 55 cm off the ground, and its bolt's face is turned out.
+  - It saves and loads back.
+- Pictures: `builder-armour-crossbow.jpg` (the Gatelands), `-mark.jpg` (in mail), `-aurenne.jpg`, `-grip.jpg` (close on the fist), `-cloak.jpg` (under a thrown-back cloak).
+
+### Needs eyes
+- **The carry:** the forearm is held forward, as the spear's is. For a crossbow, an arm hanging by the side with the weapon at the thigh might read more natural. That needs a second fist pose, which is B4's.
+- **The butt** reads slim from the side.
+- **Owed:**
+  - Spanning it (a foot in the stirrup, the string drawn to the nut) and shooting it, which is B4's.
+  - A bolt case at the belt.
+  - Each make's carving or knotwork.
+
+## v80 — Session 942 — A truer skull for the skeleton (L4, prototype only)
+Session 934 left the skeleton's skull as two capsules, owed as "a truer skull". From the side it read as a cartoon snout, and the eyes sat inside the capsule, so the sockets did not show. This refines a plan already drawn from OG-041 and asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed in `creatures.js`:
+- **A head part may carry `skull`.** `skullBits` then models the skull as rigid pieces, in the head's frame in metres, scaled by the head's slider.
+  - **On the head bone:** a cranium longer than it is wide (14 by 19 cm, its crown 13.5 cm over the neck's joint) and a face that merges into it. Over the face: a brow ridge, two cheekbones swept back to the ears, an upper jaw, and ten upper teeth.
+  - **The holes:** two dark sockets and a dark nasal hole.
+  - **On the jaw bone:** a mandible, two branches from below the ears down to the chin, with ten teeth of its own, so it opens with the jaw.
+  - **The capsules stay, unseen.** The skin weights are read from them as before, and `bareGeo` no longer draws them.
+  - 4,356 triangles in five pieces. The hide drawn as bones drops from 6,324 to 4,224, so the whole skeleton costs about 2,250 more triangles than before.
+- **The eyes:** a plan whose eyes are bright gets a small lit eye at the front of each socket. So the drowned skeleton's sockets glow the sea's blue, and the dry skeleton's stay empty and dark.
+- **A closer view:** `creatures.html?view=one&cam=head` (front three-quarter) and `cam=headside` frame the head close (`bestiary.js`).
+- A first try had the face too small and ahead of the cranium, with a gap between them in profile, and a brow like a hat's brim. The face is now 11 cm wide, reaching back into the cranium, and the brow is thinner and set in.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,006 checks pass** (1,002 before). Four checks are new:
+  - Each skeleton has the five skull pieces, 20 teeth, and a crown 13.3 to 13.5 cm over the neck.
+  - The dry skeleton's sockets are dark (0 lit eyes) and the drowned one's are lit (2).
+- Its gaits, ribs and gear pass as before.
+- Pictures:
+  - `creatures-skeleton-skull.jpg` and `creatures-skeleton-skull-side.jpg` (close).
+  - `creatures-drownedskeleton-skull.jpg`.
+  - `creatures-skeleton.jpg`, `creatures-skeleton-front.jpg`, `creatures-drownedskeleton.jpg` and `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **Close up** it is still a skull of smooth ellipsoids: no temples hollowed, no cheek arch open under the bone, the teeth a tidy row. A sculpted skull, from image-to-3D or by hand, would be the next step if the skeletons get close-ups.
+- **The drowned skeleton's weed stain** does not reach the skull, which is a rigid piece in the plain bone tone. The weed on its head now roots under the skull and hangs from below it.
+- **The head tilts back a little** (the plan's 8° pitch), so the jaw juts. That is the plan's old head angle, not changed here.
+
+## v80 — Session 943 — Rags at the skeleton's hips: the first cloth on a creature (L4, prototype only)
+OG-041 draws its skeleton with rags at the hips. Session 934 owed them, as it owed the goblin's scrap-leather harness, because the kit had no cloth on a creature. This builds the rags; the plan is already drawn, so it asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`rags`, a new part:** a cord round the waist, rigid on the first spine bone, with `n` torn strips of cloth hanging from it.
+  - The seed skips a quarter of the strips, so there are gaps.
+  - Each strip is a sheet three points wide and five rows long. Its length varies by a third either way, and its foot is torn ragged.
+  - The strips flare 3.5 cm out as they fall, and darken toward the foot.
+- **How a strip moves:** its top is on the hip bone. Any strip off the middle hangs over a thigh, so it passes to that thigh's bone down its length (a smoothstep, up to 0.7 of the weight at the foot). It swings with the leg, and the leg does not walk through it.
+  - A first try put the lower half wholly on the thigh. The edge between the halves stretched to 2.2 times its length at the trot; a smooth blend at full weight still made 1.57. At 0.7 the worst is 1.27.
+- **`sheetGeo` takes a second bone:** a sheet's point may carry `blend: [bone, weight]`. The fins, weed and leaves are unchanged, each point on one bone.
+- **On the skeleton:** 11 places for strips, 30 cm long and 7.5 cm wide, in dirty linen, on a leather cord. The seed leaves 10 of them.
+  - The plan's sheets are opaque now (`finOpacity: 1`); the drowned skeleton keeps its 0.95.
+  - The drowned skeleton wears them too, in weed-dark cloth, 8 strips by its seed.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,007 checks pass** (1,006 before). The new check is on the skeleton's rags:
+  - 10 strips.
+  - Above the knees through every pose of the walk, the trot and the stand (lowest 0.55 m).
+  - No edge of them stretched past 1.27 times its length; the check's limit is 1.4.
+- The skeleton's gaits, skull and gear pass as before.
+- Pictures: `creatures-skeleton-front.jpg`, `creatures-skeleton-back.jpg` (new), `creatures-skeleton.jpg`, `creatures-drownedskeleton.jpg`, and `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **The cloth is dark** in the pictures: both faces share one normal, and it reads almost black where the sun is behind it.
+- **The strips are stiff:** they flare and swing with the thighs, but nothing simulates them.
+- **Owed:**
+  - The goblin's scrap-leather harness can now be built the same way: straps as sheets on the spine and the shoulders.
+  - The troll's lashed-on armour scraps can be built on `gear`.
+
+## v80 — Session 944 — The goblin's scrap-leather harness: straps on grown skin (L4, prototype only)
+OG-041 draws its goblin in a scrap-leather harness. Session 933 owed it because nothing could lie on a creature's grown skin: the flesh is grown after the parts are laid, so a part cannot know where the surface will be. Session 943's rags hang free from a cord and did not need to know. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A part may lay something on the finished skin.** It pushes a function onto `B.after`, which `build` runs once the flesh is grown and its weights are read.
+- **`straps`, a new part: a harness laid on the skin.**
+  - Each strap is a path of (t, angle) pairs round the spine: t runs from the hip at 0 to the chest at 1, and angle 0 is the belly. It is drawn as a ribbon of a given width.
+  - Each point of the path finds the furthest skin point within 2.5 cm along the spine and 9° round it, and stands 7 mm outside it.
+  - Each point also takes that skin point's four bone weights, so the strap moves exactly as the skin under it does.
+  - `sheetGeo` takes a sheet's own per-point weights (`skin`) for this.
+  - (The name `harness` was the draught horse's collar of Session 867; a second `P.harness` silently replaced it on the first try, and the goblin built none.)
+- **On the goblin:**
+  - A belt round the hips, 10 cm wide (the goblin is built at the troll's size and halved, so 5 cm as it stands).
+  - A sash from the right shoulder across the chest to the left hip and round the back.
+  - A patch of pale hide on the right shoulder.
+  - 119 points in three straps.
+  - Its sheets are opaque.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,008 checks pass** (1,007 before).
+  - The goblin's three straps are laid on the skin at 119 points, none missed.
+  - Through every pose of the walk, the trot and the stand, each strap point's distance to the skin point under it stays within 0.83 to 1.16 of its distance at rest.
+- The goblin's gaits and gear pass as before.
+- Pictures: `creatures-goblin.jpg` re-shot; `creatures-goblin-front.jpg` re-shot; `creatures-goblin-back.jpg` (new).
+
+### Needs eyes
+- **At this range** the harness reads as a belt and a sash. The hide patch on the shoulder is small, and mostly hidden behind the shield arm from the front.
+- **The straps are flat ribbons:** no buckles, no stitching, no thickness at their edges.
+- **What's next:** the method could also strap the troll's lashed-on armour scraps (OG-041) and a beast's saddle girth.
+
+## v80 — Session 945 — The cave troll's lashed-on armour (L4, prototype only)
+OG-041 draws its cave troll with scraps of plate and hide tied on with rope. Session 926 owed them, and the straps of Session 944 can now lay them on its grown skin. The plan is already drawn, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **The OG-041 troll's straps:**
+  - A dented iron plate on its chest and a darker iron plate over its left shoulder.
+  - A sheet of rawhide across the small of its back.
+  - Three leather lashings: one round the chest, one from the left shoulder across to the right hip, and one over the hide.
+  - The lashings stand 1.2 cm further out (`lift`, new), so they lie over the plates.
+  - 102 points in six straps. The troll's palette gains iron, dark iron, leather and hide.
+- **Only the OG-041 troll wears it.** The stone troll, Tine's and Uisce's copied the troll's parts before the armour is added, so they keep their bare hides.
+- **A correction to Session 944:** a strap took the furthest skin point near its path from any skin. On the troll that was often an arm's root or the hump, so the straps stood out in flaps; the goblin's belt stood off toward its arm in the same way.
+  - Straps now take only skin carried mostly by a spine bone.
+  - Past the trunk's ends (over a shoulder, round the hips), where there is none, they fall back to any skin.
+  - The goblin's belt now hugs its waist. Its gap to the skin through the gaits is 0.89 to 1.09 of rest (it was 0.83 to 1.16).
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,010 checks pass** (1,008 before).
+  - The troll's six straps are laid at 102 points, none missed. Through every pose of the walk, the trot and the stand, each keeps 0.95 to 1.04 of its rest gap to the skin under it.
+  - The stone, Tine and Uisce trolls have no straps.
+  - The goblin's harness still passes, at 119 points.
+- Pictures:
+  - `creatures-troll.jpg` re-shot; `creatures-troll-front.jpg` and `creatures-troll-back.jpg` are new.
+  - The goblin's three pictures re-shot.
+  - `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **The chest plate** is under the hunched troll's chest, so it is mostly hidden from the front and the side. A plate on the upper back would show better.
+- **The shoulder plate** stands off the arm's root as a flap. It may read as a pauldron or as a fault.
+- **The plates are flat sheets:** no thickness, rivets or dents.
+## v80 — Session 929 — Card F9's eighth room: the Gatelands smithy (prototype only)
+FREEZE #297 is still open, so this run is the prototypes only. The hulls left on card F11 wait on DECISION #347, and the Makers' six props are built (Sessions 837 to 851), so the run took the next room on backlog L5's "interiors by nation": the smithy, in the Gatelands' dress first. OG-043's board was reread (its Gatelands blacksmith is a low stone building with the forge's glow in an open front; the catalogue flags only its invented "Sunhand order", which is not touched here), with OG-057 and OG-069 for Bram's tools: hammers, tongs, an anvil. Nothing new is asked: the room is built inside the street's own shell as #303 set, in the kit's rubble and slate. This touches only `docs/prototypes/levelup/` (`pieces.js`, `rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The building** (`GL_PLANS.forge` in `pieces.js`, the Gatelands kit):
+- 8.4 by 6.0 m, of bare rubble with dressed quoins and lintels, walls of 0.6 m, one storey of 3.2 m to the wall plate, slate at 38° between parapet gables. The forge's stack stands in the west gable.
+- A cart door 2.4 m wide and 2.6 m high in the front, wide enough for a horse to be led in to be shod. A cart door can now stand open (`open: true` on a `cart` opening): each leaf is swung back flat against the outer wall beside the opening, with its three straps. The warehouse's cart door is unchanged.
+- A window by the anvil in the front, one over the bench at the back, one in the east gable, and the harp trade sign on its bracket at the west corner.
+- 1,378 triangles in 10 draws.
+
+**The room** (`gatelandsForge` in `rooms.js`):
+- **The forge:** a hearth of stone 1.05 by 1.6 m and 0.78 m high against the west gable, with a sooted lip round its top, a bed of coals, and the fire in it. Over it a hood of sooted stone from 1.85 m, narrowing into the stack, with an iron edge on its front.
+- **The bellows:** the great bellows stand on a frame beside the hearth on the back side, two pear-shaped boards of elm with the leather between them in four folds, the nozzle into the hearth's flank. A rocking pole over them on its post, and a chain down from its end to a handle.
+- **The anvil** on an elm stump, its face at 0.82 m and its horn toward the door, 0.81 m out from the hearth. A hammer lies on the face and two pairs of tongs lean on the stump. The slack tub, a half barrel of water, stands between the hearth and the door, and the coal bin in the corner beyond it.
+- **The back wall:** a rack of tongs and hammers east of the bellows, and the bench under the back window, 0.9 m high, with a leg vice on its end.
+- **The east end:** the grindstone on its frame, the farrier's box, iron bars leaning on the gable, two rows of horseshoes on nails, and a tethering ring.
+- **The floor:** trodden cinders from the forge to the bench, flags in the shoeing bay inside the door.
+- **The roof:** open to three couples, each with a tie beam across at 2.96 m over the floor, and a purlin each side. A lantern hangs from the middle tie beam.
+- 5,366 to 5,438 triangles in 16 draws.
+
+The view: `rooms.html?room=forge`, with `view=forge` (from inside the door to the hearth and the anvil), `anvil` (from the anvil's side into the fire), `bench` (the bench, the rack and the bellows) and `outside`, and `&hour=` as for the other rooms.
+
+Corrections made during the session:
+- The bellows' leather was first one extrusion as wide as the boards. From the side it read as a copper drum. It is now four folds pulled in under the boards' edges, in a plain dark leather.
+- Coal lumps in the bin and the iron bars' tilted feet dipped up to 2 cm under the floor. Both are raised.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 62 of 62 pass** (54 after Session 899); `pieces.check.mjs` still passes whole, the kit having gained a plan and the open cart door. Two views are new on the page check, with no page errors. Six checks are new, over four keys:
+  - **The builds:** 5,366 to 5,438 triangles in 16 meshes, on the forge's 1,378 in 10; each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the slate (no point through), and no two pieces in each other.
+  - **The walks:** from the open door to the anvil's side, to the bench and to the grindstone, all clear by 0.15 m. There are 2.96 m under the tie beams.
+  - **A smith and a horse fit:** the anvil's face at 0.82 m, the bench at 0.9 m, the hearth at 0.78 m. The door is 2.4 by 2.6 m, and both its leaves are outside the wall.
+  - **The forge works:** the fire is on the hearth under the hood, and the hood's top is in the stack. The anvil is 0.81 m out from the hearth, and the slack tub 1.38 m from the anvil.
+  - **Daylight:** through each of the three windows, 12 of 18 rays land inside the room.
+- **Pictures:** `rooms-forge-forge.jpg`, `-anvil`, `-bench`, `-outside` and `-forge-night`.
+### Needs eyes
+- **The door is square-headed under a stone lintel.** Many Irish forges have a horseshoe-shaped surround round the door. That would be a carved piece on the front, if Michael wants it.
+- **The inner walls are the shell's rubble, as bright as its outside.** A forge's walls are black with smoke. A soot wash on the inner faces near the hearth would help, but the shell's wall is one slab, with one material on both faces.
+- **The fire's light is a point light at the hearth.** It has no sparks and no glow on the hood's underside.
+- **Owed:** the Mark's smithy (in a timber hall) and Aurenne's (in an arcade), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 930 — Card F9's ninth room: the Mark's smithy (prototype only)
+The smithy's second dress, after Session 929's Gatelands forge. OG-043 gives the Mark's blacksmith a timber hall with carved posts, and OG-025's longhall shows how the Mark builds one. So the room is built inside the Mark's hall of `pieces.js`, as the longhouse (Session 870) and the alehall (894) are: shingle, a smoke louver on the ridge, the porch and its steps, and the carved gable ends. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`markSmithy` in `rooms.js`, in a hall of 6.4 by 9 m):
+- **The floor** is the hall's stone footing, flagged. A smithy has no planks near its fire, where the longhouse and the alehall are planked.
+- **The forge stands free on the hall's axis under the louver,** so its smoke goes straight up and out, with no hood or chimney. That is how the Mark's halls already deal with smoke, and it is the second difference from the Gatelands forge, which stands against a gable under a hood.
+  - The forge itself is a waist-high block of stone (0.72 m) with a clay top, small fire-blackened stones round its rim, a bed of charcoal and the fire.
+- **At the forge's back stands the bellows shield,** an upright slab 0.6 m over the forge with the two nozzles through it. Behind the shield, the twin bag bellows lie on a low frame, one full and one emptied, so the blast never stops. A handle stands on each.
+- **Before the forge, the anvil:** a block on a great stump, its face at 0.8 m, with a small beak to one side. A hammer lies on it, and tongs lean on the stump. The quench tub stands at its right, 1.01 m away.
+- **The left wall:** the charcoal bin, the smith's tool chest with its lid up, and tongs and hammers on pegs between the windows.
+- **The right wall:** a bench 0.88 m high with a vice, and the whetstone on its frame in the back corner.
+- **The back wall:** spear shafts with their heads in a rack, and iron bars leaning by them. They are the Mark's trade in arms (§1.2's soldiers for hire).
+- **The frame** is the longhouse's: two rows of posts set clear of the forge, purlins, tie beams at 3.11 m over the floor, rafters, and a board lining under the shingle. An iron lamp hangs from the front tie beam.
+- **The door** is hung open against the front wall.
+- 6,652 to 6,760 triangles in 15 draws, in the hall's 1,488 in 7.
+
+The view: `rooms.html?room=smithy`, with `view=smithy` (from inside the door past the anvil to the forge under the louver), `bellows` (from behind the bellows over the shield toward the door), `bench` and `outside`. By day a grey shaft comes down from the louver, as in the longhouse.
+
+Corrections made during the session:
+- The bellows' boards were first drawn with their narrow ends away from the shield. They now point into it.
+- The two bags first touched and read as one shape. They are narrower now, with a gap between them.
+- The rim stones and the shield were first in the kit's stone texture and read pale as loaves beside the fire. They are now a plain fire-blackened slab.
+- The walk down the left side brushed the open door's leaf. It now goes straight in first.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 69 of 69 pass** (62 after Session 929). Two views are new on the page check, with no page errors. Five checks are new, over four keys:
+  - **The builds:** 6,652 to 6,760 triangles in 15 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the roof's lining (no point through), and no two in each other.
+  - **The walks:** from the door to the anvil, to the bench, and down the left side to the spear rack, all clear by 0.15 m. There are 3.11 m under the tie beams.
+  - **A smith fits:** the anvil at 0.8 m, the bench at 0.88 m, the forge at 0.72 m.
+  - **The forge works:** the fire is on the forge, 0.1 m from straight under the louver. The shield stands between the fire and the bellows and 0.3 m or more over the forge. The anvil is 0.85 m out from the forge, and the tub 1.01 m from the anvil.
+- **Pictures:** `rooms-smithy-smithy.jpg`, `-bellows`, `-bench`, `-outside` and `-smithy-night`.
+### Needs eyes
+- **The shield's fire-side face shows as a lit pale panel** from the door, because the fire's light is a point 0.3 m from it. A real fire would light it orange and uneven.
+- **The bench along the right wall is dark** by day. Only the wall's small window and the lamp light it.
+- **The anvil is small, as the Mark's block anvils were**, beside the Gatelands' horned anvil. If the two islands should share one anvil, the Gatelands' piece would serve both.
+- **Owed:** Aurenne's smithy (in an arcade, by OG-043), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 931 — Card F9's tenth room: Aurenne's smithy (prototype only)
+The smithy's third dress, after the Gatelands' forge (929) and the Mark's (930). OG-043 gives Aurenne's blacksmith "arcades, tilework" and a shop open to its street, so the room is built inside `pieces.js`'s Roman house: one storey of 3.0 m, 7.2 by 6.0 m, a hipped pantile roof, the arcade before its front, and the cypress at its door (#303's rule). Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`aurenneSmithy` in `rooms.js`):
+- **The forge** is in the back left corner, on a hearth of plastered masonry 0.8 m high with a band of glazed blue tile on its lip. A sooted plaster hood hangs over it from 1.9 m, with a copper edge, and narrows into a flue. The flue rises through the ceiling and the roof, 0.7 m clear of the pantile, to a tiled cap.
+  - The flue is the shell's only new opening. The Roman house has no chimney, and the hood needed one.
+  - The corner behind the forge is smoked black from the hearth to the joists.
+- **The bellows** are two goatskin bags on the floor at the hearth's right, with wooden mouths, the nozzles into the hearth's flank, and the apprentice's low stool. The goatskin bags are the third bellows of the three islands, after the Gatelands' great lever bellows and the Mark's twin bags behind a shield.
+- **The anvil**, a horned anvil on a block of limestone, stands 0.82 m out from the hearth, its face at 0.82 m. A stone quench trough stands against the left wall, 0.7 m from it.
+- **The right wall:** a rail of tongs and hammers, and the bench with a vice under it.
+- **The back wall:** charcoal in two baskets. Iron bars stand in the corner by the door.
+- **The floor:** limestone flags, with cinders trodden round the forge.
+- **The ceiling:** cedar joists under the stone ceiling, every 0.6 m, at 2.78 m over the floor, with a brass lamp hung from them.
+- **Under the arcade,** to the left of the door's walk: the stall of the smith's wares (a copper pot, a brass oil lamp, three blades, hinges). To the right, behind the cypress, a stone water trough for horses.
+- 2,872 triangles in 19 draws, in the house's 3,212 in 10.
+
+The view: `rooms.html?room=aursmithy`, with `view=shop` (from the doorway to the forge), `anvil`, `stall` (the wares from the street) and `outside`.
+
+Corrections made during the session:
+- The stall was first drawn right of the door, where the shell's cypress hides it from the street. It and the trough have swapped sides.
+- The fire's light was first strong enough to burn the plaster corner white. It is lower now, and the corner is sooted.
+- The anvil's block first touched the trough's lip. It is now 0.25 m further into the room.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 77 of 77 pass** (69 after Session 930). Two views are new on the page check, with no page errors. Six checks are new, over four keys (the shell's walls and doors by its own stream):
+  - **The builds:** each key the same twice, in budget.
+  - **Inside the walls:** every piece inside the walls and under the ceiling except the flue, which stays within 0.12 m of its own footprint. No two pieces are in each other.
+  - **The walks:** from the door to the anvil, to the bench and to the bellows' stool, all clear by 0.15 m. There are 2.78 m under the joists.
+  - **A smith fits:** the anvil at 0.82 m, the bench at 0.9 m, the hearth at 0.8 m.
+  - **The forge works:** the fire is on the hearth under the hood. The flue stands over the hearth and rises 0.7 m clear of the roof. The anvil is 0.82 m out from the hearth, and the trough 0.7 m from the anvil.
+  - **The arcade:** the stall and the horse trough stand under the arcade, 0.3 m or more clear of the door's walk.
+- **Pictures:** `rooms-aursmithy-shop.jpg`, `-anvil`, `-stall`, `-outside` and `-shop-night`.
+### Needs eyes
+- **Aurenne's smith stands at the anvil, as the others do.** Many smiths of the countries Aurenne draws on worked seated at a low anvil set in the floor. The standing anvil keeps the three islands' smithies alike for play.
+- **From the street the flue is hidden.** It is at the back corner, behind the arcade's front wall.
+- **The wares on the stall are few and small.** A rack of finished blades or hanging lamps would fill it, if wanted.
+- **Owed:** the alchemist, the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 936 — Card F9's eleventh room: the Gatelands apothecary (prototype only)
+The first of L5's alchemists, after the three smithies (929–931). OG-043 gives the Gatelands' alchemy shop as a cottage of herbs, potions and draughts. OG-133 gives the alchemist's room an alembic and a still, and brewing in four steps: prepare, combine in the mortar, heat and distil, bottle. So the room is built inside `pieces.js`'s Gatelands cottage, the street's own shell (Michael's A on #303). The shell is painted green, and a new hanging sign shows a gilt mortar and pestle: the trade sign's `device: 'mortar'` in place of the harp. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`, and the sign in `pieces.js`).
+
+**The room** (`gatelandsApothecary` in `rooms.js`):
+- **The customers' side.** The front door and the cottage's back door both open here. The open hearth is in the hearth wall, with a pot of decoctions on its crane and jugs on the breast's ledge, and a settle stands against the back wall.
+- **The counter** runs across the shop at 0.92 m, with a panelled front, the brass scales, the day book, bottles and a candle on it. The way behind it is a 0.65 m gap at the window end.
+- **Behind the counter, the four steps run in order round the workroom:**
+  - **Prepare:** the worktable at 0.86 m, with a chopping board and knife, herbs laid out, a sieve and a basket of roots. Over it, a drying rack of two poles hangs on cords from the roof, with bundles of herbs and heather hung from it. Their heads are 1.97 m over the floor.
+  - **Combine:** the stone mortar on its stump under the east front window, its lip at 0.86 m, the pestle in it.
+  - **Heat and distil:** the still at the east gable. A plastered furnace carries the copper pot, with its fire door glowing toward the room, and its flue rises against the gable into the plan's gable stack. On the pot sits the helm, and from the helm the copper arm falls 0.85 m into the worm tub. The worm's end comes out low on the tub's side over a jug.
+  - **Bottle:** the bottling bench along the back wall under its window, at 0.9 m. Under its top is a chest of 24 small drawers with brass knobs; on it, a funnel in a bottle, a jug and a row of corked bottles. Shelves of jars, crocks and bottles stand in two stacks either side of the window.
+  - A barrel of spirit for the tinctures stands in the back corner.
+- **The store,** through the hearth wall's door, has a floor of beaten earth. It holds shelves of crocks, three sacks against the hearth wall, herbs hung to dry from a pole along the room, and the apothecary's bed against the west gable.
+- 8,808 to 8,880 triangles in 18 draws, on the cottage's 1,854 in 12. The room's materials are folded to 18 draws by an alias table: one wood, one copper for the brass, one stone for the mortar and the flags, and so on. The first build came to 29.
+
+The view: `rooms.html?room=apothecary`, with `view=shop` (from inside the front door across the counter to the still), `still`, `bench`, `store` and `outside`.
+
+**A correction to the cottage (Session 852),** found by this room's stricter check and fixed in both rooms:
+- The chimney breast's upper part was a box of its full width up to 4.6 m. So at its front edge, where the thatch's underside is 3.3 m up, it stood through the roof. It now narrows into the stack as it rises.
+- The collars were 0.4 m too long at each end, which put their ends into the thatch. They now stop where their top meets the slopes.
+- The cottage's own check reads the roof's height at the ridge only, so it could not see either fault. The apothecary's check reads it at each point's own place.
+
+Corrections made during the session:
+- The cottage's back face runs mirrored: its back window is at x = +2.4 from inside, and its back door at x = −1.2, on the customers' side. The shelves were first one stack across that window. They are now two stacks either side of it, and the walks now start at the back door's true place.
+- The worm's drip was first drawn in the flame material and read as a spark. It is now glass.
+- The store's view first faced a blank wall. It now looks from inside the doorway to the bed and the sacks.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 85 of 85 pass** (77 after Session 931). Two views are new on the page check, with no page errors. Six checks are new, over four keys:
+  - **The builds:** 8,808 to 8,880 triangles in 18 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the thatch, read at each point's own z (0 points through, after the two corrections above; 126 and then 108 before them). No two pieces are in each other.
+  - **The walks:** six walks clear by 0.15 m: the front and back doors to the counter, behind the counter to the still and to the bench, and through the hearth wall both ways. The herbs hang 1.97 m or more over the floor.
+  - **A person fits:** the counter at 0.92 m, the bench at 0.9 m, the worktable at 0.86 m, the mortar's lip at 0.86 m.
+  - **The still works:** the pot on the furnace, the flue from its top against the gable, the arm falling from the helm into the tub, the worm's end over the jug.
+  - **The four steps:** all behind the counter, 0.47, 0.67 and 2.07 m apart in turn. The back window is between the shelves, over the bench.
+- **The cottage's own checks still pass** after its correction: 3,678 to 3,762 triangles in 18 meshes.
+- **Pictures:** `rooms-apothecary-shop.jpg`, `-still`, `-bench`, `-store`, `-outside` and `-shop-night`. `rooms-kitchen.jpg` is redrawn with the corrected breast.
+### Needs eyes
+- **The sign hangs low.** The board's foot is 1.2 m up, because the thatch's eave comes down to 2.2 m at the bracket's reach. It is clear of the door, but a tall walker along the wall would meet it.
+- **The store is dark by day.** Its only window is the small front one, since the back window lights the bench next door. The sacks read as a stack of gourds.
+- **The cottage's back door meets its hearth wall.** The door's west 0.25 m lies behind the hearth wall's end, in both the cottage and the apothecary. The cottage's plan places the door that way, and moving it is a change to the street's shell, left for its own session.
+- **Owed:** the Mark's and Aurenne's alchemists, then the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 937 — Card F9's twelfth room: the Mark's healer's hall (prototype only)
+The alchemist's second dress, after the Gatelands apothecary (936). OG-043's Mark alchemy shop is "a timber hall with carved posts", and OG-133 sets the four steps of the work. So the room is built inside `pieces.js`'s Mark's hall, as the smithy (930) and the longhouse (870) are: shingle, the smoke louver on the ridge, the porch, the carved gables, 6.4 by 9 m. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`markApothecary` in `rooms.js`):
+- **The floor and the frame.** The floor is planked on the hall's footing; there is no forge here to keep the boards away from. The frame is the longhouse's: two rows of posts, tie beams 3.11 m over the floor, rafters and a board lining.
+- **No counter.** Inside the door, right of the walk, stands a trade board on trestles at 0.84 m, with horn flasks, lidded boxes and herbs on it. A steelyard hangs over it on a cord from the purlin.
+- **The hearth** lies low and long on the hall's axis under the louver: a kerb of smoked stones round an ash bed, 1.1 by 1.7 m. It holds two fires.
+  - **Heat:** at the hearth's front, a cauldron of decoctions hangs from an iron tripod over the first fire.
+  - **Distil:** at its back, an iron pot sits on three stones over the second fire, under a wooden helm sealed to it with a ring of clay. From the helm a pipe falls into a hollowed log on two trestles. The log is packed with snow, so the Mark's cold does the cooling, where the Gatelands still has a worm tub. The pipe comes out of the log's far end over a soapstone jug.
+- **The four steps run round the hearth.** Prepare is the long table down the left wall at 0.86 m, with a chopping block, herbs and roots laid out, a basket and a wooden bowl. Combine is the stamp mortar between the table and the hearth: a hollowed stump with its lip at 0.7 m and a 1.25 m pestle standing in it. Distil is the still. Bottle is the bench down the right wall at 0.9 m, with a funnel and horn flasks. Over the bench, three shelves hold horn flasks, lidded boxes and soapstone jars.
+- **Herbs and heather** hang from both tie beams and from the left purlin over the table, 2.7 m or more over the floor.
+- **By the door,** a chest and two casks stand on the left. Across the back is the healer's bed of furs on a platform, with a cask in the corner.
+- 10,558 to 10,618 triangles in 19 draws, on the hall's 1,488 in 7.
+
+The view: `rooms.html?room=markapo`, with `view=hall` (from inside the door down the hall to the hearth), `still`, `table`, `bench` and `outside`. By day a grey shaft comes down from the louver, as in the smithy.
+
+Corrections made during the session:
+- The log's half-pipe was first turned open side down. It now opens to the sky with its ends closed.
+- The mortar first stood 0.12 m into the walk round the hearth's back, and the prepare station stood on a post. Both have moved.
+- The hearth's kerb stones were first in the kit's pale stone and read as loaves, as the smithy's rim did (930). They are now smoked soapstone.
+- The night view hung: the page's general lantern line read `C.lantern`, which this hall does not have (it hangs its own lamp). The line now skips this room, and the page check now also loads the hall at night, so the next such slip shows as a failure.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 94 of 94 pass** (85 after Session 936). Three views are new on the page check (the hall, outside, and the hall at night), with no page errors. Six checks are new, over four keys:
+  - **The builds:** 10,558 to 10,618 triangles in 19 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the lining; over the wall plate the lining runs onto the wall's top, by the smithy check's rule. 0 points through, and no two pieces in each other.
+  - **The walks:** five walks clear by 0.15 m: to the trade board's front, behind it to the hearth, down both aisles, and round the hearth's back to the bed. The herbs are 2.7 m or more over the floor, with 3.11 m under the tie beams.
+  - **A person fits:** the table at 0.86 m, the bench at 0.9 m, the board at 0.84 m, the mortar's lip at 0.7 m.
+  - **The still works:** both fires in the hearth within 0.7 m of under the louver; the cauldron and the pot over them; the pipe falling from the helm into the log; its end over the jug.
+  - **The four steps:** each station clear of the furniture, 1.86, 2.61 and 1.52 m apart in turn.
+- **Pictures:** `rooms-markapo-hall.jpg`, `-still`, `-table`, `-bench`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The hall is dark by day,** like the smithy. The two small windows a side and the louver's shaft light it, and the fires do the rest.
+- **Snow in a log is a guess at the Mark's way of cooling a still.** It reads plainly, but it wants melting snow carried in and water drained away, which nothing here shows.
+- **The planks' normal map ripples** under the fire's low light (the kit's plank texture, as in the longhouse).
+- **Owed:** Aurenne's alchemist (in tile and arcades, OG-043), then the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 938 — Card F9's thirteenth room: Aurenne's apothecary (prototype only)
+The alchemist's third dress, after the Gatelands apothecary (936) and the Mark's healer's hall (937), so the alchemist now has all three. OG-043 gives Aurenne's alchemy shop glassware and tilework, and OG-114 counts ceramics and glass among Aurenne's trades. So this still is a glass alembic, and the shop's wall is glazed jars. The room is built inside `pieces.js`'s Roman house with its arcade, as Aurenne's smithy is (931): one storey, 7.2 by 6.0 m, the cypress at its door. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`aurenneApothecary` in `rooms.js`):
+- **The counter** runs across the shop from the left wall, 0.95 m high. Its front is faced in blue-and-yellow tile and its top is marble. On it stand the brass scales with a box of weights, a row of phials, and a basket of dried rose. The way behind it is at its right end.
+- **On the customers' side,** a tiled bench under a rug stands by the front wall for those who wait, and a brass lamp hangs from the joists.
+- **The back wall of jars,** left of the back window: five cedar shelves up to 2.5 m, filled with albarelli (waisted jars glazed blue and white, with parchment tied over their mouths). The large jars are below, the small above.
+- **Behind the counter, the four steps:**
+  - **Prepare:** the worktable in the middle at 0.86 m, with a board and knife, roots and petals laid out, a brass sieve and a glass flask.
+  - **Combine:** a bronze mortar on a limestone block, its lip at 0.82 m.
+  - **Heat and distil:** a plastered furnace in the back right corner, its front tiled, its fire door glowing. On it sits the glass cucurbit, with the head over it and the beak falling 0.3 m to a glass receiver on a cedar stand. Over the furnace a plaster hood, edged in tile, narrows into a flue that rises through the ceiling and 0.7 m out through the roof to a pantile cap, as the smithy's does.
+  - **Bottle:** the bench down the right wall at 0.9 m, with a rack of twelve stoppered phials, a funnel in a flask and a bowl of corks. A shelf of small jars runs over it beyond the side window.
+- **Under the arcade,** left of the door's walk, a stall to the street of jars, baskets of petals and phials.
+- 16,456 triangles in 21 draws, on the house's 3,212 in 10.
+
+The view: `rooms.html?room=aurapo`, with `view=shop` (from inside the door over the counter to the wall of jars), `still`, `bench`, `stall` and `outside`.
+
+Corrections made during the session:
+- The jar wall first ran across the back wall's window at x = 0. It now stops 0.14 m short of it.
+- The shelf over the bench crossed the side window at z = 0. It now starts beyond it.
+- The page broke: its general fire light reads `C.fire`, and this room has only the furnace, with its own glow. The page now skips that light for this room. The page check loads this room by day and by night.
+- The first build took 23 draws. Folding near-duplicates brought it to 21: one bronze for the brass and the copper, one cedar, and the linen for the glaze's white.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 103 of 103 pass** (94 after Session 937). Three views are new on the page check (the shop by day and by night, and outside), with no page errors. Six checks are new, over four keys:
+  - **The builds:** 16,456 triangles in 21 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling except the flue, which stays within its own footprint above the roof. No two pieces are in each other.
+  - **The walks:** three walks clear by 0.15 m: the door to the counter, round the counter's end to the still, and along behind it to the jars.
+  - **A person fits:** the counter at 0.95 m, the table at 0.86 m, the bench at 0.9 m, the mortar's lip at 0.82 m.
+  - **The still works:** the cucurbit on the furnace, the head over it and under the hood, the beak falling to the receiver's mouth, and the flue over the furnace and 0.7 m out through the roof.
+  - **The four steps** are behind the counter, 1.3, 2.83 and 1.61 m apart in turn. The shelves are clear of the back and side windows. The stall is under the arcade and 0.3 m or more clear of the door's walk.
+- **Pictures:** `rooms-aurapo-shop.jpg`, `-still`, `-bench`, `-stall`, `-outside` and `-shop-night`.
+### Needs eyes
+- **The glass reads pale and milky** at 38% opacity. Real glass of the time was greener and thicker; the receiver's green liquid is the only colour in it.
+- **The hood hangs high,** 1.9 m over the floor, so that the alembic stands clear under it. A charcoal furnace this small might have had only a flue pipe.
+- **Combine to distil is the longest step,** 2.83 m, because the mortar stands at the counter's far end while the still is in the opposite corner.
+- **Owed:** the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 939 — Card F9's fourteenth room: the Gatelands Fighters' Guild (prototype only), and its house asked
+The guildhall is next on L5's list after the alchemists (936–938). In the game, a guild hall is the Fighters' or the Mages' Guild of a town: a two-storey hall with a steward at a desk and a notice board. The Fighters' has weapon racks, armour stands, a long table and a grindstone, and both have a dormitory of beds (Session 12's guilds, Session 292's furniture). OG-043 gives the guildhall as a "hall of trade, contracts and guild meetings". So this session draws the Fighters' Guild of a Gatelands town. It is built inside the kit's farmhouse, as the inn is (Michael's A on #320), its door ajar and painted red. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`gatelandsGuildHall` in `rooms.js`):
+- **The ground floor:**
+  - **The hearth** is in the west gable, as the inn's, with the guild's red banner hung from a rod on its breast.
+  - **The long table** of 2 m stands before the hearth, with a bench either side and tankards and a candle on it.
+  - **The steward's desk** faces the door at 0.78 m: an open ledger, an inkwell and a quill, and the steward's stool behind it.
+  - **The notice board** hangs on the back wall behind the desk, in sight from the door: an oak frame with eleven pinned notes.
+  - **The weapons' rack** runs along the back wall west of the window, holding swords hilt up, spears and axes.
+  - **Two armour stands** by the front wall each carry a mail shirt, a helm and a shield leaning at the foot.
+  - **In the east end** stand a pell (the practice post, scarred by blows) and the grindstone. The inn's stair of 16 risers climbs the east gable.
+- **Upstairs:** one dormitory under the boarded ceiling. Seven beds stand along the front wall, each with a chest at its foot, and the walk runs down the back under a rail of pegs hung with cloaks.
+- 4,933 to 5,101 triangles in 20 draws, on the farmhouse's 2,120 in 9.
+
+The view: `rooms.html?room=guild`, with `view=hall` (from inside the door to the desk and the board), `table`, `east`, `dorm` and `outside`.
+
+**Asked: DECISION #352, the guild halls' house.** A guild hall stands only in towns and cities, so whether the farmhouse should serve, as it does for the inn, is Michael's call. The options are A, the farmhouse as drawn (recommended: cheap, and the inn's shell); B, the merchant's house with the guild's name on its fascia; or C, a guild hall of its own built first. The Mages' Guild and the Mark's and Aurenne's halls wait on the answer.
+
+Corrections made during the session:
+- The armour stands' mail and helms were first drawn in the forge's polished steel. With nothing round them to mirror, they rendered black, so they are now a matte mail grey. They still read as cylinders under bowls; see below.
+- The cloaks on the dormitory's pegs were first half-cylinders and read as stray diagonal lines. They are now hanging cloths.
+- The page's night view hung, as the Mark's hall's did (937), on the general lantern line. This room is now excluded from it, and the page check loads the hall at night.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 111 of 111 pass** (103 after Session 938). Three views are new on the page check (the hall by day and by night, and the dormitory), with no page errors. Five checks are new, over four keys:
+  - **The builds:** 4,933 to 5,101 triangles in 20 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling, and no two in each other on a floor.
+  - **The walks:** five walks clear by 0.15 m on their own floors: the door to the desk, the stair's foot and the table; the back door to the desk's side; upstairs, down the dormitory.
+  - **A person fits:** the desk at 0.78 m, the table at 0.76 m, the benches at 0.45 m, seven beds 1.87 m inside, and the stair 0.178 by 0.25 m with 2.07 m clear over its foot.
+  - **The notice board** is on the wall behind the steward's desk, above it, and facing the door.
+- **Pictures:** `rooms-guild-hall.jpg`, `-table`, `-east`, `-dorm`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The armour stands are placeholders.** A tapered cylinder under two bowls reads like a cask with a hat. The bodies builder's mail hauberk and kettle helm (Session 897) are the right pieces to hang on these stands, which is theirs to make.
+- **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
+- **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
+- **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
