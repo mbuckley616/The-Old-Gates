@@ -19254,3 +19254,41 @@ What is new in `places.js`:
 - **The brick patches are rectangles laid on the plaster**, not holes in it. They read as fallen render from a distance, and as tiles stuck on from close up.
 - **There is no way down from the terraces into the valley** beyond walking off the slope, and nothing marks the far side's run as reachable. That waits on #333.
 - **The cypresses are lathed spindles**, the plant kit's simplest form; the kit's own cypress comes with F3.
+
+## v80 — Session 908 — Card F8: Aurenne's trade tunnel (prototype only)
+The FREEZE (#297) holds. This is the second of Aurenne's places from OG-121's panel, after the aqueduct (907): its "trade tunnels". I reread OG-121 and its row. The row flags the Aurennais ruins' "Roman" name and the crypts' dead, and neither touches a tunnel. The canon's Aurenne is a trading island of ports, so the tunnel is a road for goods through a headland, from a town's quay to the road inland. Whether it is that or a smugglers' run is asked (#335).
+
+What is new in `places.js`:
+- **`aurenneTunnel(o, r)`:** the quay's portal at z 0 faces +z, and the bore runs 56 m to the inland portal at z −56. It winds 1.6 m either side and runs straight for its last metres at either end, so each portal looks down it.
+- **The bore:** one loft of its section along the line.
+  - The floor is flat and 3.6 m wide, the walls upright to 2.4 m under a round vault (4.2 m at the crown).
+  - The rock is pushed out from its line by up to 0.22 m by its own noise, never in, so the walk's width is a floor, not an average.
+  - It is paved in 2 m lengths of limestone along the line, with two cart ruts 1.4 m apart and a gutter down the west side.
+- **The lamps:** a plastered arched niche every 6 m on alternate walls, each with a dark back, a sill and a clay lamp. With `o.used` (default true) the lamps burn; with `o.used: false` they are out and you go by your torch.
+- **The passing place:** midway the bore widens to 6 m for 6 m, with 3 m ramps either side, so two carts can pass.
+  - Its walls are plastered to a dado under a band of blue glazed tile. The panels are turned to the bore's heading, because it curves most there.
+  - It holds a stone bench, the tally-keeper's cedar table with a ledger and a stool, nine amphorae against the east wall, and two lamps on brackets.
+  - A round shaft 1.2 m across rises through the rock to the sky. The vault is cut under it.
+- **The portals:**
+  - An arch in a plastered frame of 6.4 by 6.4 m, the opening a little wider than the bore's section.
+  - An ashlar ring and jambs on its face, tiled spandrels and a blank tablet. What the tablet says is the quest writer's.
+  - A cornice over it, let into a cliff face of 48 by 18 m.
+  - The quay's paving lies before one portal and the dust road before the other.
+- **Two corrections made during the session:**
+  - The cliff's cut test added its 8 m lift once per vertex, three times over, so the cut never happened and the cliff stood across both arches. It now adds the lift once.
+  - The first lamp spacing (7 m) left only five lamps, so it is now 6 m.
+- **The view:** `places.html?place=tunnel` goes to `places-tunnel-view.js`. It has five views (`quay`, `tunnel`, `passing`, `inland`, `road`) and `&dark`. The lamps are small point lights, with the day down the shaft and a soft fill under it.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 52 of 52 pass**, counted from its output (45 after Session 907). One view is new on the page check (the tunnel, no page errors), and six checks are new, over three keys:
+  - **The builds:** 22,642 triangles in 14 meshes, each key the same twice.
+  - **The walk:** 378 points from the quay through both portals to the road, with the paving under every one at 0.04 m, 4.18 m of headroom or more, and 1.57 m clear either side.
+  - **The bore:** at 75 points it is 3.65 to 6.16 m wide at 1 m (the ramps among them), with 4.22 to 5.57 m to the crown. The passing place is 5.88 m between its dados (6 m in the rock) and 5.46 m high or more.
+  - **Closed:** of 1,200 rays from six points inside, none gets out but by the quay's portal (6), the road's (11) or the shaft. The sky shows straight up the shaft.
+  - **The light:** lit, 10 lamps burn; dark, none and no flame.
+  - **The dress:** the tile, the ledger, the table, the amphorae, the plaster and the ashlar are all there.
+- **Pictures:** `places-tunnel-quay.jpg`, `-tunnel`, `-passing`, `-inland`, `-road` and `-tunnel-dark`.
+### Needs eyes
+- **A small octagonal rosette shows on the quay's cliff**, low and right of the portal. It looks like the rock texture's projection switching axes over a sharp bump in the cliff's noise. Smoothing that noise, or triplanar rock from F3, would clear it.
+- **The vault shows the projection's seams** as faint zig-zags along its length, as the limestone cave did. The same F3 fix would clear them.
+- **The inland portal faces north**, so at this sun it is in shade (`-road`). In the game the hour decides it.
+- **The headland above has no top:** the two cliffs are faces, and the rock between them is not built. A view from above would want the hill (F3's land).

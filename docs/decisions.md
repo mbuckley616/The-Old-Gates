@@ -4,6 +4,28 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
+**F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.
+- **The bore:** 56 m long, winding 1.6 m either side, 3.6 m wide, with upright walls to 2.4 m under a round vault (4.2 m at the crown).
+- **The floor:** paved, with two cart ruts 1.4 m apart and a gutter down one side.
+- **The lamps:** clay lamps in plastered, arched niches every 6 m on alternate walls.
+- **The passing place:** midway, 6 m wide for 6 m, so that two carts can pass. It has a plastered dado under a band of blue glazed tile, a stone bench, the tally-keeper's table with a ledger, nine amphorae, and a shaft to the sky.
+- **The portals:** an arch in a plastered frame let into each cliff, rung in ashlar, with tiled spandrels and a blank tablet. Before them are the quay's paving and the dust road.
+- **Lit or dark:** `&dark` puts the lamps out, so you go by your torch.
+
+**1. What the tunnel is for:**
+- **A. A road** *(recommended)*: part of the road network, lit, kept and peaceful. It is a place to pass through, and it shows Aurenne's trade.
+- **B. A smugglers' run:** under the town, dark, held by people who should not be there. It is a place to fight through, like OG-121's lairs.
+- **C. Both:** the same bore, lit and kept in some towns, dark and taken in others (`o.used`).
+
+Pictures:
+- [the quay's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-quay.jpg)
+- [inside, by the lamps](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel.jpg)
+- [the passing place](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-passing.jpg)
+- [toward the inland portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-inland.jpg)
+- [the road's portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-road.jpg)
+- [dark, by your torch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-tunnel-tunnel-dark.jpg)
+
 ### Aurenne's ruined aqueduct: broken, or a way across? (look builder, Session 907) — DECISION #333
 **F8: Aurenne's first place, a ruined aqueduct (look builder, Session 907).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs", and OG-124 has "a ruined aqueduct". The catalogue's note asks that it be built in Aurenne's own plaster and tile, not the boards' Tuscan stone (canon §1.3). It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneAqueduct`), at `places.html?place=aqueduct`. The catacombs wait on the quest writer's answer about the dead (§3.1).
 - **The valley:** dry, 20 m deep, with a dry stream bed down its floor, pale rock, and cypresses on its shoulders.
