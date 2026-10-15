@@ -1761,7 +1761,7 @@ export const SLIMES = ['slime', 'magmaslime'];
 // feathered wings off the shoulders, a long tail ending in a fan of feathers. Pale storm-grey, barred darker, the beak and talons horn.
 // It walks and trots on the ground and flies with the flap; nothing of it is new to the kit ──
 Object.assign(PLANS, {
-  wingedthing: { name: 'Winged Thing', src: 'OG-018 (Gaoth: a feathered griffin-like beast)', school: 'Gaoth', gaits: ['walk', 'trot', 'fly', 'stand'], speedK: 1.1, flyH: 1.4, cell: .05, finOpacity: 1, wingFold: 1, fold: 1.1, wag: .08, neckNod: .06, rough: .6, spread: .04,
+  wingedthing: { name: 'Winged Thing', src: 'OG-018 (Gaoth: a feathered griffin-like beast)', school: 'Gaoth', gaits: ['walk', 'trot', 'fly', 'stand'], speedK: 1.1, flyH: 1.4, cell: .05, finOpacity: 1, wingFold: 1.2, fold: 1.1, wag: .08, neckNod: .06, rough: .6, spread: .04,
     palette: { coat: [.66, .68, .7], saddle: [.42, .45, .5], belly: [.86, .86, .84], dark: [.05, .05, .06], horn: [.6, .52, .34], skin: [.5, .43, .28], feather: [.6, .63, .68], featherTip: [.18, .2, .26], covert: [.78, .8, .82] },
     pattern: { kind: 'stripes', period: .06, tone: 'saddle' }, fur: { len: .03, layers: 6, sx: 150, sy: 60 },
     parts: [

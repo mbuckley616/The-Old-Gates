@@ -21032,3 +21032,17 @@ What changed in `creatures.js`:
 - **The talons are the kit's straight cones.** An eagle's are hooked, and they grip.
 - **The scaled shank is plain skin tone:** no scales are drawn on it.
 - **From the front, the wings at rest are half open.** The hawks' fold, carried to a body this size, does not lay them flat on the back.
+
+## v80 — Session 961 — The griffin folds its wings (L4, prototype only)
+Session 960 left the Winged Thing's wings half open at rest: seen from the front they stood out from its shoulders. This refines its own plan, so it asks nothing. Only `creatures.js` is touched (one number).
+
+**What changed:**
+- The plan's `wingFold` is 1.2, up from 1. That is how far the hawks' fold turns each of the wing's three bones at rest.
+- At 1 the fold was sized for a crow's wing on a crow's body. On a griffin, with the wing's root out on its flanks, it left the wrists out to the sides.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,062 checks pass.** The Winged Thing's wing check passes with its wingtips 0.53 m apart folded (1.76 m before) and up to 5.71 m in flight, as before. Its gaits pass as before.
+- Pictures: `creatures-wingedthing.jpg` (the wings now lie flat along its back), `-front.jpg` and `-fly.jpg` re-shot.
+
+### Needs eyes
+- **From the front the primaries still fan out sideways** from the folded wrist: the kit lays them outward from the hand, and the fold turns the bones, not the feathers. Folding the feathers themselves is a kit change for every bird, left for a session that can picture them all.
