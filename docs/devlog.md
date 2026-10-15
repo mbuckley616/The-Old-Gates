@@ -21066,3 +21066,12 @@ CI on `1c9b2d2` also failed `levelpanel` twice (shard 14). Session 958's note on
 - `levelpanel` passes.
 ### Needs eyes
 - Nothing.
+
+## v80 — Session 960 — `attrpromise` and `barter` re-measured to Session 953's Finesse and Charisma (a CI fix)
+Shard 9 of CI on `1c9b2d2` failed `attrpromise` and `barter` twice each. Both measure Session 953's attribute pass, which is the sheet's attributes at ≤1%.
+- **`attrpromise`:** Finesse takes 1% a point off the sprint now, not 5%, and Athletics carries the rest. Finesse 10 sprints at 12.6 a second, ×0.9 of 14. The suite expected half, and now expects ×0.9.
+- **`barter`:** Charisma is 0.5% a point to a quarter, and Speech adds 0.2% a level on top. A Warrior's Speech of 5 had added 1% to every number. The suite pins Speech at 0, so Charisma is measured alone. Charisma 10 is now 5% off and 5% more paid. The quarter's cap is reached at 50, so the cap check moves from Charisma 40 to 60. The hub's Barter row reads 4% at Charisma 7 (3.5 rounded) and 25% at 60.
+### Verified (headless Chromium)
+- `attrpromise` and `barter` pass.
+### Needs eyes
+- Nothing.

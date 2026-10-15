@@ -20,7 +20,8 @@ const sprint = async (fin) => {
 const sp = { f0: await sprint(0), f10: await sprint(10) };
 await page.evaluate(() => { window.requestAnimationFrame = _raf; REN.render = _rr; _raf(loop); });
 console.log(' ', JSON.stringify(sp));
-check('Finesse 10: the sprint costs half (−5% a point): 14 → 7 a second', Math.abs(sp.f0 - 14) < .3 && Math.abs(sp.f10 / sp.f0 - .5) < .03, sp);
+// S953 (skills and perks A): Finesse 1% a point off the sprint (was 5%), Athletics carries the rest
+check('Finesse 10: the sprint costs 10% less (−1% a point): 14 → 12.6 a second', Math.abs(sp.f0 - 14) < .3 && Math.abs(sp.f10 / sp.f0 - .9) < .03, sp);
 
 await enterDungeon(page, { theme: 'ruins', seed: 11, interior: 'cave', size: 'medium' });
 const d = await page.evaluate(() => {
