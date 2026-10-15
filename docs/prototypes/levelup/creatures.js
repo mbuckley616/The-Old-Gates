@@ -95,13 +95,24 @@ P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
     else { const g = new THREE.SphereGeometry(sz * .5, 14, 10); g.scale(.8, .85, 1); m = new THREE.Mesh(g, stdMat(B.tone('bone'), { rough: .7 }));
       for (const e of [1, -1]) { const h = ball(sz * .12, B.tone('dark'), V(e * sz * .16, sz * .06, sz * .42)); m.add(h); } }
     m.position.copy(p); m.rotation.set(r() * 6.3, r() * 6.3, r() * 6.3); B.bit(sp.bone, m); } };
+// egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
+// its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
+// they cover, `drop` how far down its girth they sit (1 is the skin's underside)
+P.eggs = (B, o) => { const r = rng(B.g.seed + 41), pts = B.tailPts, n = pts.length - 1, by = {};
+  for (let k = 0; k < o.n; k++) { const t = lerp(o.at[0], o.at[1], (k + .5 + (r() - .5) * .6) / o.n), f = t * n, i = Math.min(n - 1, Math.floor(f)), c = pts[i].clone().lerp(pts[i + 1], f - i);
+    const R = B.tailR(t), a = (r() - .5) * 2 * (o.spread ?? .6), rad = o.r * (.75 + .5 * r()), g = new THREE.SphereGeometry(rad, 14, 10), q = g.attributes.position;
+    for (let v = 0; v < q.count; v++) { const x = q.getX(v), y = q.getY(v), z = q.getZ(v), w = 1 + .12 * PN.noise(x / rad * 1.7 + k * 7.1, y / rad * 1.7, z / rad * 1.7) + .05 * Math.sin(8 * Math.atan2(y, x) + 3 * z / rad); q.setXYZ(v, x * w, y * w * .9, z * w); }
+    g.computeVertexNormals(); const p = c.add(V(Math.sin(a) * R * B.tailS[0] * (o.drop ?? .9), -Math.cos(a) * R * B.tailS[1] * (o.drop ?? .9), 0)); g.translate(p.x, p.y, p.z);
+    (by[i] = by[i] || []).push(g.toNonIndexed()); }
+  for (const [i, gs] of Object.entries(by)) { const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone('silk'), { rough: .95 })); m.name = 'eggs'; B.bit(B.chains.tail[i], m); }
+  B.eggs = o.n; };
 // the tail: from the rump, n bones, starting at `droop` degrees below level and bending by `curl` a bone
 P.tail = (B, o) => {
   const len = o.len * B.g.sliders.tail, n = o.n || 3, p0 = B.back.clone().add(V(0, o.up || 0, 0)), pts = [p0];
   for (let k = 0; k < n; k++) { const a = (-(o.droop || 0) + (o.curl || 0) * k) * DEG; pts.push(pts[k].clone().add(V(0, Math.sin(a), -Math.cos(a)).multiplyScalar(len / n))); }
   const names = B.chain('tail', B.spineNames[0], pts.slice(0, n));
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'tail', tone: o.tone });
-  B.tailEnd = pts[n]; B.tailBone = names[n - 1];
+  B.tailEnd = pts[n]; B.tailBone = names[n - 1]; B.tailPts = pts; B.tailR = t => along(o.r, t); B.tailS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
   // a bird's tail: a fan of feathers off the last bone (Session 775)
   // `raise` (Session 853) stands the fan up from flat toward upright, a display (the Sunfan's)
   if (o.fan) for (let i = 0; i < o.fan.n; i++) { const a = (i / (o.fan.n - 1) - .5) * o.fan.spread * DEG, X = V(1, 0, 0), up = (o.fan.raise || 0) * DEG, d = V(Math.sin(a), -.08, -Math.cos(a)).normalize().applyAxisAngle(X, up); feather(B, pts[n].clone().add(V(0, .002 * i, 0)), d, V(Math.cos(a), 0, Math.sin(a)).applyAxisAngle(X, up), o.fan.len * (1 - .12 * Math.abs(i / (o.fan.n - 1) - .5)), o.fan.len * .2, names[n - 1], 'feather', 'featherTip'); }
@@ -135,6 +146,16 @@ P.legs = (B, o) => {
     for (let k = 0; k < J.length - 1; k++) B.meat(names[k], J[k], J[k + 1], along(rr, k / (J.length - 1)), along(rr, (k + 1) / (J.length - 1)), { group: tag, tone: k >= J.length - 2 && pre.tips ? pre.tips : (pre.bare ? 'skin' : o.tone) });
     if (o.claws) { const tip = J[J.length - 1], d = J[J.length - 1].clone().sub(J[J.length - 2]).normalize(); d.y = Math.min(d.y, -.3); d.normalize();
       for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize())); }
+    // thorns (Session 929, OG-041's spider): short dark spines up every segment past the hip, on its upper and outer faces, raked
+    // toward the foot. One merged mesh a segment, rigid on its bone; `per` is thorns a metre of leg
+    if (o.thorns) { const r2 = rng(B.g.seed + 31 + B.legs.length), th = o.thorns;
+      for (let k = 1; k < J.length - 1; k++) { const a = J[k], d = J[k + 1].clone().sub(a), Ls = d.length(), gs = []; d.normalize();
+        const out = u.clone().add(V(0, .8, 0)); out.addScaledVector(d, -out.dot(d)).normalize();
+        const n = Math.max(1, Math.round(Ls * th.per));
+        for (let i = 0; i < n; i++) { const t = (i + .5 + (r2() - .5) * .5) / n, rad = along(rr, (k + t) / (J.length - 1)) * B.g.sliders.bulk, o2 = out.clone().applyAxisAngle(d, (r2() - .5) * 1.6);
+          const len = th.len * (.7 + .6 * r2()) * (1 - .35 * (k - 1) / Math.max(1, J.length - 3)), g = new THREE.ConeGeometry(th.r, len, 5); g.translate(0, len / 2, 0);
+          g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, o2.clone().addScaledVector(d, th.rake ?? .7).normalize())); const p = a.clone().addScaledVector(d, Ls * t).addScaledVector(o2, rad * .85); g.translate(p.x, p.y, p.z); gs.push(g.toNonIndexed()); }
+        const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone(th.tone || 'dark'), { rough: .45 })); m.name = 'thorns'; B.bit(names[k], m); B.thorns = (B.thorns || 0) + n; } }
     B.legs.push({ names, J, side, at: o.at, pre, hR, ik: pre.ik, yaw: !!pre.yaw, fan, wobble: o.wobble || 0 });
   }
 };
@@ -754,15 +775,16 @@ export const PLANS = {
       ['spines', { n: 9, from: .05, to: 1, len: .14, r: .02, taper: .5 }]
     ] },
   spider: { name: 'Giant spider', src: 'OG-041, OG-088', gaits: ['walk', 'trot', 'stand'], speedK: 1.4, wag: .02, rough: .55, mottle: .6,
-    palette: { coat: [.12, .1, .09], pale: [.76, .73, .63], dark: [.03, .02, .02], skin: [.12, .1, .09] },
+    palette: { coat: [.12, .1, .09], pale: [.76, .73, .63], dark: [.03, .02, .02], skin: [.12, .1, .09], silk: [.95, .94, .9] },
     parts: [
       ['spine', { hip: [.62, -.12], chest: [.62, .26], n: 3, r: [.17, .2, .17], s: [1.1, .62], rump: .02, front: .1, tone: 'skin' }],
       ['head', { len: .16, r: .1, pitch: 10, s: [1.1, .7, 1], tone: 'skin', eyes: [{ f: .65, up: .7, out: .3, r: .02, color: [.85, .05, .03] }, { f: .55, up: .85, out: .55, r: .014, color: [.85, .05, .03] }, { f: .45, up: .95, out: .2, r: .012, color: [.85, .05, .03] }], fangs: { r: .02, len: .1, f: .95, up: -.4, out: .3 } }],
       ['tail', { len: .85, n: 2, r: [.32, .42, .2], droop: -20, s: [1, .85], tone: 'pale' }],
-      ['legs', { at: 1, kind: 'insect', out: .12, drop: -.02, fan: 55, reach: 1.25, r: [.05, .045, .035, .02] }],
-      ['legs', { at: .72, kind: 'insect', out: .14, drop: -.02, fan: 20, reach: 1.15, r: [.05, .045, .035, .02] }],
-      ['legs', { at: .42, kind: 'insect', out: .14, drop: -.02, fan: -18, reach: 1.1, r: [.05, .045, .035, .02] }],
-      ['legs', { at: .12, kind: 'insect', out: .12, drop: -.02, fan: -50, reach: 1.25, r: [.05, .045, .035, .02] }]
+      ['eggs', { n: 7, r: .12, at: [.62, .98], drop: 1.4, spread: .5 }],
+      ['legs', { at: 1, kind: 'insect', out: .12, drop: -.02, fan: 55, reach: 1.25, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }],
+      ['legs', { at: .72, kind: 'insect', out: .14, drop: -.02, fan: 20, reach: 1.15, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }],
+      ['legs', { at: .42, kind: 'insect', out: .14, drop: -.02, fan: -18, reach: 1.1, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }],
+      ['legs', { at: .12, kind: 'insect', out: .12, drop: -.02, fan: -50, reach: 1.25, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }]
     ] },
   stormplume: { name: 'Stormplume', src: 'OG-040 (flightless bird, the Mark)', gaits: ['walk', 'trot', 'stand'], speedK: 1.2, neckNod: .12, fold: 1.2,
     palette: { coat: [.34, .38, .44], saddle: [.17, .19, .23], belly: [.74, .74, .72], dark: [.08, .07, .06], skin: [.56, .48, .3], horn: [.66, .58, .36] },

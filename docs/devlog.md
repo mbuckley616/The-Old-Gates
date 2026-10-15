@@ -20062,3 +20062,26 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The square courses are small beside the lateens they replace.** The caravel's masts are short, so a course reaches only from 2.2 m over the deck up to its yard. A topsail, or a deeper course, would bring the sail back, if #347 goes A or B.
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
+
+## v80 — Session 932 — The giant spider's thorns and egg sacs (L4, prototype only)
+The last of OG-041's classic five that already stood in the kit: the giant spider (Session 772) had the sheet's pale bulbous abdomen, dark legs and cluster of red eyes, but not its thorny legs or its egg sacs. The sheet draws both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed in `creatures.js`:
+- **A leg may be thorny.** `thorns: { per, len, r, rake }` on a leg pair sets short dark spines up every segment past the hip, on the segment's upper and outer faces, each raked toward the foot and shorter toward the tip, placed by the seed. A segment's thorns are one merged mesh, rigid on its bone, so eight legs add 24 meshes, not 88.
+- **`eggs`, a new part: a clutch of egg sacs under a tail.** A spider's abdomen is the kit's tail, so the sacs sit along its underside toward the tip (`at`, the stretch of the tail; `drop`, how far down its girth; `spread`, how far round the sides). Each sac is a lumpy silk ball (noise on a sphere, a faint wrapped banding), merged per tail bone. `P.tail` now records its points and radii for parts after it.
+- **The spider wears both:** about 3.7 thorns a segment, 88 in all, 4 to 10 cm long; seven sacs of 9 to 15 cm in a tight clutch at the abdomen's tip, white silk against the pale hide. The bits are 880 triangles of thorns and 1,764 of sacs beside the hide's 84,528.
+- `bestiary.js` takes `?cam=back`, a low rear three-quarter view, to show the clutch.
+
+The `drop` is larger than the capsules suggest (1.4 of the tail's radius): the grown flesh blends its capsules outward, so at 1.0 the sacs sat inside the skin and showed only as white patches. A part placed before the flesh is grown cannot read the surface; if more parts need to sit on the skin, a pass after growth that pushes bits out to it would be the fix.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 971 checks pass** (969 before).
+  - Thorns on all 24 leg segments past the hip, 88 in all.
+  - Seven egg sacs, clear of the ground (lowest 0.20 m) and below the abdomen's tip in all 72 poses of the walk, the trot and the stand.
+  - The spider's gaits still pass: every foot to its target, the walk's feet down 0.71 of 0.68, the trot's 0.48 of 0.45.
+- Pictures: `creatures-spider.jpg` (side), `creatures-spider-back.jpg` (rear three-quarter, the clutch).
+
+### Needs eyes
+- Whether the sacs read as eggs carried, or should be left to the lair's webbing (a place, the look builder's) and taken off the spider.
+- The thorns at a distance: at game range they may read as fuzz; fewer and longer could suit the sheet better.
+- The spider's dark cephalothorax is mostly hidden by the pale abdomen's blend: an older look, not changed here.

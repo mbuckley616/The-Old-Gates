@@ -83,6 +83,17 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   for (const [k, t] of Object.entries(tr)) {
     check(`${k}: an upright biped with two arms (${t.legs} legs, ${t.arms} arms), its head ${t.head} m up`, t.legs === 2 && t.arms === 2 && t.hands === 2 && t.head > 2 && t.head < 3.4, t);
     check(`${k}: through its walk the hands swing between the hips and the ground (${t.lo} to ${t.hi} m, the hips at ${t.hip} m; ${t.swing} m apart at most)`, t.lo > .1 && t.hi < t.hip && t.swing > .15, t); }
+  // the giant spider (Session 929, OG-041): thorns up every leg segment past the hip, and a clutch of egg sacs under the abdomen's tip
+  // that hang clear of the ground and below the abdomen's line through a whole stride of every gait
+  const sp = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('spider', 'spider:check')), P = new C.rig.position.constructor(), Box = new (await import('three')).Box3();
+    const thorns = [], eggs = []; C.rig.traverse(o => { if (o.name === 'thorns') thorns.push(o); if (o.name === 'eggs') eggs.push(o); });
+    const segs = C.B.legs.reduce((n, L) => n + L.J.length - 2, 0), tailEnd = C.byName[C.B.tailBone]; let low = 1e9, above = 0, n = 0;
+    for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); tailEnd.getWorldPosition(P); const ty = P.y;
+      for (const e of eggs) { Box.setFromObject(e); low = Math.min(low, Box.min.y); n++; if ((Box.min.y + Box.max.y) / 2 > ty) above++; } } }
+    const tt = thorns.reduce((t, m) => t + m.geometry.attributes.position.count / 3, 0), et = eggs.reduce((t, m) => t + m.geometry.attributes.position.count / 3, 0);
+    return { thorns: C.B.thorns, thornTris: tt, eggTris: et, meshes: thorns.length, segs, sacs: C.B.eggs, eggMeshes: eggs.length, low: +low.toFixed(3), above, n, tris: C.stats.tris }; });
+  check(`spider: thorns on every leg segment past the hip (${sp.thorns} thorns on ${sp.meshes} of ${sp.segs} segments)`, sp.meshes === sp.segs && sp.thorns >= 3 * sp.segs, sp);
+  check(`spider: ${sp.sacs} egg sacs under its abdomen, clear of the ground (lowest ${sp.low} m) and below the abdomen's tip through every gait (${sp.above} of ${sp.n} above)`, sp.sacs >= 5 && sp.eggMeshes >= 1 && sp.low > .03 && sp.above === 0, sp);
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));
