@@ -703,3 +703,49 @@ What is off:
 - I: the *Sailing playtest* block is all struck and could close (fourth run noted).
 - K or QA: `looknew` should check that a person draws (a pixel or a call count), not only that their bones move. Today's culling passed it.
 - No proposals this run.
+
+## 2026-10-15 — The Makers' things from a level-one Warrior's side: the hermit's folder at Hermit's Camp, the Gate-Blade's stone at Dunmore Tower, the Crown's claim at Coeur de Vie and a sale under licence, the Waylamp at Biafaira by day and at midnight, its first trim at Stirhoros (build s632)
+
+Build s632 is main at `a8ba060`, merged into this branch. My last entry reviewed the new look, so this run is a playtest. Devlog entries since then run from Session 831 to Session 919. All but four of them are prototype-only or tests-only, so today's game has barely changed since s627. I played the part of it no run had touched: the six tools of Sessions 780 to 802. `npm install` exits 0 and `export` passes 1/1. I made four boots on the old look, with no page errors and nothing logged as an error. The character was a fresh level-one Warrior: Might 3, 0 gold, empty bag. Cheats, all named: `settle()` and a teleport to within 60 units of a place; `forceTime`; Might set to 30 for the second pull at the stone; an Iron Dagger put in the bag to have something to sell.
+
+**What I did.**
+- Asked Dáire, the hermit at Hermit's Camp, the nearest camp to Dunmore, *Did the makers leave anything behind?*
+- Walked in to the Gate-Blade's stone at Dunmore Tower from 60 units out, and pulled at it with Might 3, then with Might 30.
+- Took the blade to Tadhg, the lord at Coeur de Vie, and kept it under licence. Then sold a dagger, tried to sell the blade, and tried to sell the licence.
+- Went to Biafaira at 13h for the Waylamp, took it down from The Wandering Anchor, and had it trimmed at The Salt Gate in Stirhoros, 1,110 units off.
+- On a second boot, walked up to the same inn at 23h30 under a clear sky and asked for a bed with no money.
+
+**What was wrong.**
+1. *The lamp's sight line says "broad day" at midnight.* Biafaira, a clear sky, 0h02. Walking to within 20 units of The Wandering Anchor's door put up *A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.* The door it means is dark: no lamp hangs there, no light falls on the step, and there is no rain (`critic/2026-10-15-waylamp-door-at-0h.jpg`). `tickWaylamp` (`87-world-quests.js`) has one line for every hour and every weather, and since it is said only once a character, a player who first arrives at night or in sun loses the only good one. To see it again: `settle` the lamp's town, `forceTime(23.5)`, clear weather, walk to `lampFirstInn(site)`'s door. Filed in I. The quest writer owes a night line and a dry one, or the line's two halves keyed to the hour and the weather.
+2. *The stone is taller than the person who has to pull it.* The placeholder slab is 2.1 m high, and the hilt sits on top of it, from 2.0 to 2.42 m. At 1.2 units, where the prompt *Press 'E' to take hold of the hilt* appears, the eye at 1.6 m sees a grey wall filling the frame, and the hilt is out of the picture above it (`-blade-stone-at-the-prompt.jpg`). From 14 units the hilt is a sliver no wider than the crosshair (`-blade-stone-14-units.jpg`). `visual-foundation.md` puts people at 1.6 to 1.9 m, and the draft's blade stands *to a hand’s breadth below its guard*, so the grip should sit at about waist to chest height. Session 802 says the prop is owed. Until it comes, a slab of about 1.1 m would make the placeholder right. Filed in I as a small one, since it is in today's game.
+3. *The Crown's claim is drawn as small talk.* In Tadhg's list, *The blade from the stone.* is grey (`-coeur-de-vie-lord-blade-topic.jpg`), while *I’m looking for work.*, *Serve the Crown.* and *What does Coeur de Vie need…* are outlined in gold as quest topics. The topic carries no `quest:true`, though its own *I’ll keep it.* does, and the Waylamp's *The lamp.* does. It is the one thing this lord has to say to someone who walks in carrying the Crown's relic. Filed in I.
+4. *Small, not filed.*
+   - The sale reads *Sold Iron Dagger for 20🪙 (the Crown's twentieth, 1)* and pays 19 (Session 787's open point). That is fine as chrome.
+   - The buy-back is pushed at `finalSp` before the twentieth (`sellItem`, `60-shop.js`). So buying the dagger back would cost 20 for a dagger that paid 19. One coin in twenty, and I did not see the buy-back row on screen.
+
+**What worked.**
+- *The hermit's folder* is the best piece of writing I have met in the game's talk. Dáire is Old Blood, and his greeting is *Sit. You have been walking since before you woke.* All six entries are present now that every trial is built, each with a way from his camp. *The Stone’s?* sends you north-east to Dunmore Tower, and the stone is there. *And the seventh?*: *The Guest has none. You do not leave a tool for a guest. You leave the door off the latch.*
+- *The stone's three lines.* At Might 3, *You might as well pull at the hill. The stone does not move.* is logged with 🗝, and the Journal keeps *The Gate-Blade — Dunmore Tower. Might 30.*
+- *The taking.* At 30, *It comes out of the stone the way a key comes out of a lock: all at once, after nothing.*, the hilt goes, and the log names the gate. The blade is an Adamant longsword, 24–29, that needs Might 24 to wield. Equipping it says *Equipped The Gate-Blade!*
+- *The Crown's offer.* The lord gives both roads in one speech, and *I'll not choose for you. Whoever chooses for another carries both loads.* is in the voice. The licence is dated *Hearthday, the 1st of Reaping, in the 27th year of the Peace*, with my name in it. Afterwards the topic becomes *The licence.* The blade and the licence both refuse the counter (*cannot be sold*).
+- *The Waylamp's trial.* Niall at The Wandering Anchor tells the lamp's history in one breath. Taking it down gives *A lamp's like a name: easy carried, hard lit again.* In Stirhoros its Aurennais innkeeper Guillaume trims it with *That is 1 house entered, and 4 remaining.* Neither town is counted twice.
+- *A bed with no money.* *A purse is like a well: you’ll not draw from it what isn’t in it.*
+
+**What reads oddly.**
+- *The lamp cannot be found from the road.* Of the hermit's six entries, five give a direction. The Hearth's says only *It goes from inn to inn…*. The lamp's own rumour is told only within one cell of Biafaira, which is 9,700 units from the start on the far west of the home island. A player who asks the hermit about the lantern has nothing to walk towards. It may be deliberate (the lamp moves when given back to an inn), but the hermit could still say where it hangs today, as he does for the cloak's lair.
+- *Where the stone stands.* It is 8.0 units from the gate's door, but inside the ruined gatehouse's walls (`-blade-stone-from-yard.jpg`). From the yard the slab stands against the tower's grey face in the same grey, and reads as a second door. The draft's *outside a ruined gate, plainly visible from its road* is not what is built. The nearest solids are 3.5 units off on four bearings, and the walls 16 to 21 units off. A wider search ring, or one that starts outside the compound's wall, would put it where a passer-by sees it.
+
+**Needs eyes, reviewed**
+- *Session 802 (the stone):* "8 units off the door reads as outside a ruined gate, plainly visible from its road": no, it is in the yard (above). "Whether the slab reads as a standing stone": it reads as a dressed block taller than a man.
+- *Session 796 (the hermit):* superseded by Sessions 797 to 802. All six entries are back and all are reachable.
+- *Session 792 (the hermit as Old Blood):* his camp is a Gatelands one, and Old Blood reads right there. I did not see a camp in the Mark.
+- *Session 783 (the lamp):*
+  - "The lamp has no look": confirmed, by day and at night. Nothing hangs over the door, and nothing shows in the hand.
+  - The town name *Biafaira* still reads as from no people: with a Gatelander innkeeper under a sign named *The Wandering Anchor*.
+- *Session 784 (the lamp held):* not judged. I did not carry the lamp to five towns.
+- *Session 787 (the claimant):* the sale line's full price before the twentieth reads well enough. The cargo question is Michael's.
+- *Sessions 831 to 919:* prototype pages, tests or docs. I did not judge them on a playtest run. The next run is a new-look run and starts there.
+
+**Backlog notes** (not changed):
+- I: *s627 — on the new look no person is drawn* is still open on s632. `05-compat.js` has no `SkinnedMesh` bounding-sphere shim yet. Every F-card prototype since is built outside the game's renderer, so nothing has tripped on it, but F2 will.
+- No proposals this run.

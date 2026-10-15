@@ -4,6 +4,78 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Aurenne's sea grotto: the ways in (look builder, Session 914) — DECISION #339
+**F8: Aurenne's sea grotto (look builder, Session 914).** OG-121's Aurenne panel lists "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs". This is the sea grotto: a cave the sea made, its water lit from below by the day coming in through a drowned gate under the waterline. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneGrotto`), at `places.html?place=grotto`.
+- **The hall:** 60 m long, 37 to 40 m across and 18 to 27 m from the water to the roof, its limestone dark and wet below the high-water line.
+- **The water:** blue, lit from under the sea. At the far end a low sea arch stands 3 m over the water and 6.4 m wide, over a drowned gate 16 m wide and 7 m deep.
+- **The stair:** a rock-cut way of 24 steps from a terrace on the cliff top, coming out through an arched frame of plaster, ashlar and blue tile onto a landing.
+- **The quay:** paved, 3.6 m wide, down the east wall for 33 m. It has an ashlar face, bollards and bronze rings, and water stairs at its end with a skiff tied to them.
+- **The spring:** on the landing, fresh water out of the rock into a tiled apse and an ashlar basin. What it is to anyone is the quest writer's.
+- **The beach:** a sand beach under the west wall, across the water, reached by swimming.
+
+**1. How you get in:**
+- **A. Both ways, as drawn** *(recommended)*: the stair from the cliff top on foot, or the arch from the sea by boat or swimming, ducking under.
+- **B. By sea only:** no stair. You come in under the arch, or dive through the drowned gate, as OG-125's sea caves are reached.
+- **C. By land only:** the arch closes to a crack. The light still comes through the gate under the water, and the sea way in is a dive.
+
+Pictures:
+- [from the landing to the arch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-grotto.jpg)
+- [down the stair from the terrace](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-stair.jpg)
+- [along the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-quay.jpg)
+- [the spring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-spring.jpg)
+- [back from the water stairs](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-grotto-back.jpg)
+
+### The Gatelands' monastic ruin: the round tower's door (look builder, Session 921) — DECISION #345
+**F8: the Gatelands' monastic ruin (look builder, Session 921).** OG-121's Gatelands panel lists "round cairns, monastic ruins and limestone caves". The cairn and the cave are built. This is the monastic ruin, after the island's own. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsAbbey`), at `places.html?place=abbey`.
+- **The ring:** a dry-stone wall 62 m across and 2 m high, fallen in two breaches, with a roofless gatehouse of two round arches.
+- **The church:** a roofless nave of 12 by 6.4 m with gables of 9.4 m, a round-headed west door and a chancel arch, and a stone altar under the east window. Its south wall has fallen over 3.5 m.
+- **The round tower:** 30 m to the point of its stone cap. Its door is 3.2 m up, turned to the church's west door.
+- **The rest:** a ringed high cross of 4.5 m on a stepped base; three beehive cells (two whole, which you can walk into, and one fallen); the footings of a long range; a yew in the green.
+- **No graves** are built (§3.1). What the brothers were, and why they left, is the quest writer's.
+
+**1. The round tower's door, 3.2 m up, as the island's real ones are:**
+- **A. Out of reach, as drawn** *(recommended)*: the tower is a landmark. The place to explore is the green, the church and the cells.
+- **B. A way up:** a ladder to the door (rotted, or a rope left by someone), and floors and ladders inside up to the four windows under the cap, as a lookout over the land.
+- **C. Broken:** the tower stands to half its height (about 13 m), and its foot is broken open, so you can walk in and look up the shaft.
+
+Pictures:
+- [from the slope](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-abbey.jpg)
+- [up to the gate](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-gate.jpg)
+- [down the nave](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-nave.jpg)
+- [the tower and its door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-tower.jpg)
+- [the high cross](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cross.jpg)
+- [the beehive cells](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-abbey-cells.jpg)
+
+### A hull in another island's dress: whose rig? (look builder, Session 924) — DECISION #347
+**F11: a hull in another island's dress, when its rig is not the island's (look builder, Session 924).** Your 3 A keeps the game's five classes, each dressed by its island, and #306 gives each island one rig: the Gatelands square, the Mark the gaff, Aurenne the lateen.
+- **Built so far:**
+  - the sloop in all three dresses;
+  - the cutter in all three (Sessions 922 and 923);
+  - the Gatelands cog and galleon;
+  - Aurenne's caravel.
+- **What is left:**
+  - the caravel in the Gatelands' and the Mark's dress;
+  - the cog and the galleon in the Mark's and Aurenne's dress.
+
+These classes have three masts, or the cog's one great square sail. So the question is how far the island's rig replaces the class's own. One answer covers all six.
+
+**The picture is the caravel in the Gatelands' dress**, a prototype in `docs/prototypes/levelup/ships.js` (`gatelandsCaravel`) at `ships.html?ship=glcaravel&rig=…`.
+- **The hull:** the caravel's own lines, castle and wheel, in the Gatelands' colours: tarred below the water, oak above, green top strakes and castle, cream fittings. The harp is on every sail.
+- **What changes between the options:** only the rig. The planking is identical in all three.
+
+**1. A hull whose class rig is not its island's:**
+- **A. The island's rig on the working masts, the class's own aft** *(recommended)*: the caravel's fore and main square, its mizzen kept a lateen on the castle. This is the *caravela redonda*, how the real caravels were re-rigged for long voyages, so it reads as both a caravel and a Gatelands ship.
+  - The same rule gives a Mark cog with one gaff main in place of the square sail, and a Mark galleon gaff-rigged on the mizzen and square forward, with tanned sails.
+  - It gives an Aurenne cog with one lateen, and an Aurenne galleon square forward with lateens on the main and the mizzen.
+  - The square courses carry less sail than the caravel's lateens did; they can be made deeper.
+- **B. The island's rig on every mast:** all three of the caravel's masts square. Each island's ships then read at a distance by rig alone, and the classes read only by hull and size.
+- **C. The class's own rig, the island's colours only:** the caravel keeps its three lateens, in green with the harp. The islands are told apart by colour and badge, and #306's one-rig-to-an-island holds only for the small hulls.
+
+Pictures:
+- A (redonda): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side.jpg), [deck](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-deck.jpg)
+- B (all square): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-square.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-square.jpg)
+- C (lateens): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-lateen.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-lateen.jpg)
+
 ## Answered
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
