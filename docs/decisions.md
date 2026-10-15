@@ -6,6 +6,53 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Combat's resolver: how hard an ordinary blow lands, now that armour takes a share (the deep-work session, Session 939) — DECISION #355
+The attack table and the one resolver are built (`auto/fable-combat-resolver`). Armour now takes a share of every blow on you, as #181 B said: damage × 50 / (50 + armour), where it took half a point per point. That put the cliff between 20 and 40 armour.
+
+The card's retune is built: an ordinary blow of your level's tier, against a heavy kit of your level, lands at 10% of your health at levels 1 to 20, in the dungeon and in the open world. So you fall to the tenth unguarded blow. combat.md's B says a common enemy "dies in four to six hits and takes three to five of yours". If that means you fall to three to five blows, a tenth is outside it.
+
+What an ordinary blow does today:
+- **In the dungeon:** 24% at level 1 (you fall to 4 blows), 10% at level 5, and 1 point from level 10.
+- **In the open world:** 5.5% at level 1, then 1 point.
+
+Whatever you choose, the open world's foes now hit as hard as the dungeon's at the same tier.
+
+- **A.** A tenth, as built: ten unguarded blows to fall at every level. A pack of three takes about three exchanges.
+- **B.** A sixth *(recommended)*: six unguarded blows to fall, about eight through a held block. One foe can kill you if you stand and trade, and a pack of three in two exchanges. The roll, parry and block keep you standing.
+- **C.** A quarter: four blows to fall. This is the middle of combat.md's three to five, and today's dungeon at level 1. With the open world's packs it reads closer to a Souls game than to Dragonwilds.
+
+Recommendation: **B.** At a tenth, a single foe is something you can stand and swap blows with, and that is the click-and-swing combat.md set out to end. At a quarter, a pack punishes every misread. Whichever you choose, it is one constant (`BLOW_SHARE`, `74-strikes.js`), and the rest of the build is unchanged.
+Michael: **B. A sixth: six blows to fall**. (15 Oct 2026, on the control room) The deep-work session sets BLOW_SHARE and finishes PR #356.
+
+### Skills: how hard does a bare fist hit, with the level gone from damage? (the systems builder, Session 941) — DECISION #357
+The build sheet takes the flat `level × 1.5` out of every hit, so damage comes from the weapon and its skill. Session 941 built that. Fists roll 2 to 3, and the sheet's Blade and Blunt don't cover them, so a punch now takes no skill (×1). At level 1 the flat term had added 1 to that small roll, a third of a punch. `fistfight` (the critic's Bandit, Session 436) wants a Bandit punched to death in 7 to 12 blows. It now takes 11 to 16. A weapon is unaffected: a Wooden Sword at Blade 25 hits 0.8 of its 5–9.
+- **A.** *(recommended)* Fists hit as a Blunt weapon of their own: 3 to 5, on Blunt's multiplier, and a punch on an alert foe is a Blunt use. At Blunt 25 that is 2 to 4 a punch, about 9 to 12 for a Bandit, and it rises as you train.
+- **B.** Fists stay 2 to 3 at ×1, as built. A Bandit takes 11 to 16 punches; `fistfight`'s range moves to that.
+- **C.** A Hand-to-hand skill of its own (a 23rd), Morrowind's: the roll 2 to 3 on its multiplier, with a Might share. This needs a row in the sheet and its perks.
+
+Recommendation: **A.** A brawl stays about as long as the critic found right, and fists grow with a skill the archetypes already train, with no new row.
+Michael: **C. A Hand-to-hand skill of its own**. (15 Oct 2026, on the control room) A 23rd skill with a Might share; the systems builder adds its row and perks.
+
+### Skills: what gates the light and robe armour? (the systems builder, Session 941) — DECISION #354
+Skills and perks A's build sheet moves the tier gates from attributes to skills: a weapon asks its own skill (Iron 15, Steel 30 … Cosmic 100) and armour asks Armour. Session 941 built that for the weapons and the heavy line. The light line (hood, jerkin, bracers) asks Finesse and the robe line (cowl, robe, wraps) asks Intelligence today, on the old curve (Iron 5 … Cosmic 56), since Session 564. The sheet does not say whether they move too. The answer decides whether a mage in robes has to train Armour.
+- **A.** All armour asks Armour, on the skill gates. This is the sheet as written. A robed mage trains Armour by taking hits in three or more pieces.
+- **B.** The heavy line asks Armour, the light line Stealth and the robe line the wearer's best school, all on the skill gates.
+- **C.** *(recommended)* The heavy line asks Armour, and the light and robe lines keep their attribute and its curve (as built in Session 941). The lines stay what Session 564 made them, a choice of what you are rather than of what you trained, and the robe never pushes a mage toward taking hits.
+
+Recommendation: **C.** It is already built, and a mage or a scout never has to take hits to dress for what they are.
+Michael: **C. Heavy asks Armour; light and robe keep attributes**. (15 Oct 2026, on the control room) As built in Session 941.
+
+### The guild halls: which house? (look builder, Session 939) — DECISION #352
+F9's first guild hall is the game's Fighters' Guild in a Gatelands town, drawn inside the kit's farmhouse as the inn was (#320 A). On the ground floor are the steward's desk facing the door, with the notice board behind it, a long table by the hearth with the guild's red banner on its breast, a rack of swords, spears and axes, two armour stands, a practice post and a grindstone. Upstairs is one dormitory of seven beds. It comes to 5,000 triangles in 20 draws. The Mages' Guild and the other two islands' halls will follow the answer.
+
+Which house should a guild hall be?
+- **A. The farmhouse, as drawn** (recommended). It is the inn's shell: one hall below and the dormitory above, with the Mages' Guild in the same house painted blue. It is cheap, and it matches the inn.
+- **B. The merchant's house.** A three-storey town house with the guild's name on its shop fascia: the hall below, the dormitory and the master's room above. It looks more like a town building, but it is narrower inside (8.4 by 9 m).
+- **C. A guild hall of its own.** A new piece for the kit first: a wider hall open to the roof, with a gallery to the dormitory. It reads best as a building of note, and it costs a session or two before the rooms.
+
+Pictures: [the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-hall.jpg), [the long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-table.jpg), [the dormitory](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-dorm.jpg), [from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-outside.jpg).
+Michael: **C. A guild hall of its own**. (15 Oct 2026, on the control room) The look builder makes the new kit piece first: a wider hall open to the roof with a gallery to the dormitory.
+
 ### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342
 The skills build sheet (`docs/design/skills-and-perks-build.md`) settles the 22 skills, their uses, the curve, the 88 perks and the bed. Every skill-up counts toward the level, majors and minors as one mark and the rest as a quarter. The bed gives 12 points, at most 5 in one attribute (Oblivion Remastered's two fixes). The open number is how many marks a level takes, because twelve points a level is a large step. The simulation behind it is an ordinary mix of play, about 650 skill uses an hour.
 - **A.** Ten marks every level, as in Morrowind: level 10 at about 5 hours, 25 at 21, 40 at 46.
@@ -92,17 +139,6 @@ Pictures:
 - B (all square): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-square.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-square.jpg)
 - C (lateens): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-lateen.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-lateen.jpg)
 
-### The guild halls: which house? (look builder, Session 939) — DECISION #352
-F9's first guild hall is the game's Fighters' Guild in a Gatelands town, drawn inside the kit's farmhouse as the inn was (#320 A). On the ground floor are the steward's desk facing the door, with the notice board behind it, a long table by the hearth with the guild's red banner on its breast, a rack of swords, spears and axes, two armour stands, a practice post and a grindstone. Upstairs is one dormitory of seven beds. It comes to 5,000 triangles in 20 draws. The Mages' Guild and the other two islands' halls will follow the answer.
-
-Which house should a guild hall be?
-- **A. The farmhouse, as drawn** (recommended). It is the inn's shell: one hall below and the dormitory above, with the Mages' Guild in the same house painted blue. It is cheap, and it matches the inn.
-- **B. The merchant's house.** A three-storey town house with the guild's name on its shop fascia: the hall below, the dormitory and the master's room above. It looks more like a town building, but it is narrower inside (8.4 by 9 m).
-- **C. A guild hall of its own.** A new piece for the kit first: a wider hall open to the roof, with a gallery to the dormitory. It reads best as a building of note, and it costs a session or two before the rooms.
-
-Pictures: [the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-hall.jpg), [the long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-table.jpg), [the dormitory](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-dorm.jpg), [from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-outside.jpg).
-
-## Answered
 Michael: **A. Island’s rig forward, the class’s own aft**. (15 Oct 2026, on the control room)
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
