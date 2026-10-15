@@ -18601,3 +18601,43 @@ What changed in `people.js`:
   - knotwork or carving on the socket;
   - the crossbow.
 - **A correction to Session 904:** its shield's rim "48 to 69 cm off the ground" was measured from every point of the pack, the helpers included. Read off the body alone, as the WIP commit changed it, the five shields in the hand have their rims 45 to 62 cm off the ground (the Aurennais's bronze 45 cm, the woman's 51 cm, the three men's 61 to 62 cm).
+
+## v80 — Session 910 — The spear's fist closes round the shaft (L7, a fix to Session 909, prototype only)
+**A correction to Session 909.** Its fist did not close round the shaft. Seen from the front, the four fingers stood straight up beside it, like a hand held up to stop someone. The checks passed anyway.
+
+**Why.** The fingers were curled about their bones' own z axis, as every hand pose in `people.js` does. In this skeleton that axis is 36° off the knuckles' line, which is the real hinge.
+- In the rest pose and in the shield's hanging fist, a turn about z still reads as a curl.
+- In 909, the wrist was turned so the knuckles stand plumb. There, z lies 36° along the hand, so the "curl" lifted the fingers up the shaft.
+- 909's hole search looked down the knuckles' line. Fingers stacked up that line fold into one ring in that view, so it found an enclosed hole that was not there.
+- From the side (`builder-armour-spear-grip.jpg`), the fingers seemed to wrap the shaft.
+
+What changed in `people.js`:
+- **The fingers' hinge is the knuckles' line** (from the little finger's knuckle to the first finger's). It is read in the metacarpals' frame, and every finger bone hangs off its metacarpal unturned, so one axis serves all twelve.
+- **The grip** (`fistGrip`, replacing `fistHole`):
+  - The palm's facing is found by which way the middle fingertip moves as the hand closes.
+  - With the fingers straight, the shaft (now always 2.6 cm) is laid in the palm's crease, 0.5 to 2.5 cm behind the knuckles. It sits as near the palm as the hand's points allow, 1 mm clear: 3.2 to 3.8 cm off the knuckles' bones.
+  - The thumb's points (skinned more than half to its own bones) are left out of that. Placed with the thumb, the shaft stood 3.4 to 3.9 cm out, which pushed the fingers into it before they had closed.
+- **The fingers close as a hand does:**
+  - First all three joints of a finger bend together, in the shield's fist's proportions, 0.04 rad at a time, until a point of that finger would come inside the shaft.
+  - Then the two outer joints go on alone, and then the last joint alone. Each stops a step short.
+  - So each finger wraps round the shaft. Closing every finger as one block stopped at the first touch, with the fingertips against the front of the shaft (bends of 0.45 to 0.6). Closing the root joint fully first made a claw (1.26, 0.07, 1.13).
+- **The thumb** is turned at its root through 33 trial turns (three axes, ±1 rad). It takes the turn that keeps it out of the shaft and brings it nearest round it.
+
+The shield's fist (Session 906) curls about the same z axis, so its fingers are off their hinge too. With the arm hanging it reads closed in its pictures, so it is left as it is and noted below.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 238 checks pass.** The eight spear checks are sharper than 909's. Each now asks for:
+  - no point of the hand inside the shaft, and none of the thumb's;
+  - the nearest finger point within 2 mm of the shaft's surface;
+  - each of the three joints bent more than 0.45 rad.
+- For the eight spears:
+  - The joints bend 0.70 to 0.78, 0.84 to 0.94 and 0.65 to 0.69 rad.
+  - The fingers touch the shaft: the nearest point is 0.3 to 0.5 mm into its skin tolerance, inside the 1 mm allowed.
+  - The thumb is 0.7 mm in to 1.2 mm off.
+  - Nothing else of the person is within 15.6 to 30.0 mm of the shaft.
+  - The wrist turns 0.33 to 0.38 rad.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** the six `builder-armour-spear*.jpg` were shot again with the closed fist.
+### Needs eyes
+- **The shield's left fist** (Session 906) curls about the bones' z, not the knuckles' line. It wants the same hinge. Its pictures read closed, so it was not touched.
+- **The thumb** lies along the shaft or against it. It does not cross over the first finger as a hard grip's does.

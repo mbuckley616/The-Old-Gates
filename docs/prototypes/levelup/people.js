@@ -980,30 +980,54 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
   let tris = idx.length / 3; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
   return { mesh: sh, stats: { on: 'back', inside, near, tested: n, across: 2 * R, tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
 }
-// the spear (Sessions 907 and 909; OG-025's hold guards and OG-044's Compact guards carry one, and it is one of the two new kinds
+// the spear (Sessions 907, 909 and 910; OG-025's hold guards and OG-044's Compact guards carry one, and it is one of the two new kinds
 // of weapon, Michael's 6 A). An ash shaft 2.2 to 2.6 cm thick (as the fist's hole allows) and 45 cm taller than its bearer (2.3 m at the least), an iron socket and a
 // leaf-shaped head 18 cm long with a midrib, and an iron shoe on the butt. Held upright in the right fist, its butt on the ground:
 // the forearm points forward, rolled so the knuckles stand one over another, and the four fingers close round the shaft
-// (spearGrip, in makePerson's pose). The shaft goes up through the fist's hole along the line of the knuckles. Carried by the
+// (fistGrip, in makePerson's pose). The shaft runs up the line of the knuckles, through the fist. Carried by the
 // right wrist. Its numbers: the nearest point of the person or what they wear to the shaft (the right hand apart), how many of
 // the hand's points are inside the shaft, the hole's own radius, how far the head stands over the crown
-// The hole: the hand's points between the first and last knuckle, seen down the knuckles' line, and the widest empty circle among
-// them that they close round (points in at least six of eight sectors within 2 cm of its rim), searched 4 cm about the middle
-// of the four fingers' first and last joints, on a 2 mm grid
-function fistHole(body, byName, root) {
-  root.updateMatrixWorld(true); const R0 = PACK.rest, PP = posedBody(body), hand = PACK.handRV || (PACK.handRV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3] < -.39));
-  const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), k2 = at('finger2-1.R'), k5 = at('finger5-1.R'), A = k2.clone().sub(k5).normalize();
-  const U = new THREE.Vector3(1, 0, 0).cross(A); if (U.lengthSq() < .01) U.set(0, 0, 1).cross(A); U.normalize(); const V = A.clone().cross(U);
-  const C0 = new THREE.Vector3(); for (let f = 2; f <= 5; f++) for (const j of [1, 3]) C0.add(at(`finger${f}-${j}.R`)); C0.divideScalar(8);
-  const lo = Math.min(k5.dot(A), k2.dot(A)) - .03, hi = Math.max(k5.dot(A), k2.dot(A)) + .09, pts = [];
-  for (const i of hand) { const x = PP[i * 3] - C0.x, y = PP[i * 3 + 1] - C0.y, z = PP[i * 3 + 2] - C0.z, t = x * A.x + y * A.y + z * A.z; if (t + C0.dot(A) < lo || t + C0.dot(A) > hi) continue; pts.push([x * U.x + y * U.y + z * U.z, x * V.x + y * V.y + z * V.z]); }
-  let best = { r: -1, u: 0, v: 0 };
-  for (let u = -.04; u <= .04001; u += .002) for (let v = -.04; v <= .04001; v += .002) { let r = 1; for (const [a, b] of pts) r = Math.min(r, Math.hypot(a - u, b - v)); if (r <= best.r) continue;
-    const sec = new Set(); for (const [a, b] of pts) { const d = Math.hypot(a - u, b - v); if (d < r + .02) sec.add(Math.floor((Math.atan2(b - v, a - u) + Math.PI) / (Math.PI / 4)) & 7); } if (sec.size >= 6) best = { r, u, v }; }
-  return { A, C: C0.clone().addScaledVector(U, best.u).addScaledVector(V, best.v), r: best.r, n: pts.length };
+// The grip (fistGrip): the shaft is laid in the palm's crease at the fingers' roots, running along the knuckles' line, as near
+// the palm as the hand's points allow (with the fingers straight, none of them within its radius and a millimetre, from 3 cm under
+// the little finger's knuckle to 9 cm over the first finger's, where the ball of the thumb is); then the four fingers close on it,
+// as far as they go before any point of the hand would come inside it
+const SPEAR_R = .013;
+function fistGrip(body, byName, root, curl, hinge) {
+  const R0 = PACK.rest, hand = PACK.handRV || (PACK.handRV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3] < -.39)), at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
+  // the thumb's points (skinned more than half to its own bones) are left out: it is posed after, round the shaft
+  const tb = new Set(PACK.ix.bones.map((b, k) => /^finger1-\d\.R$/.test(b.name) ? k : -1).filter(k => k >= 0)), SW = PACK.skinWeight, SI = PACK.skinIndex;
+  const thumb = PACK.thumbRV || (PACK.thumbRV = new Set(hand.filter(i => { let w = 0; for (let c = 0; c < 4; c++) if (tb.has(SI[i * 4 + c])) w += SW[i * 4 + c]; return w > .5; }))), palmHand = hand.filter(i => !thumb.has(i));
+  curl(0); root.updateMatrixWorld(true); let PP = posedBody(body);
+  const k2 = at('finger2-1.R'), k5 = at('finger5-1.R'), A = k2.clone().sub(k5).normalize(), M = k2.clone().add(k5).multiplyScalar(.5), L = M.clone().sub(at('wrist.R')); L.addScaledVector(A, -L.dot(A)).normalize();
+  // which way the palm faces: the way the middle finger's tip goes as it closes
+  const tip = () => { root.updateMatrixWorld(true); return at('finger3-3.R'); }, t0 = tip(); curl(.5); const P = A.clone().cross(L).normalize(); if (tip().sub(t0).dot(P) < 0) P.negate(); curl(0); root.updateMatrixWorld(true);
+  const lo = k5.dot(A) - .03, hi = k2.dot(A) + .09, pts = [];
+  for (const i of palmHand) { const x = PP[i * 3] - M.x, y = PP[i * 3 + 1] - M.y, z = PP[i * 3 + 2] - M.z, t = x * A.x + y * A.y + z * A.z; if (t + M.dot(A) < lo || t + M.dot(A) > hi) continue; pts.push([x * L.x + y * L.y + z * L.z, x * P.x + y * P.y + z * P.z]); }
+  let best = null; for (let u = -.025; u <= -.00499; u += .0025) for (let v = 0; v <= .08001; v += .001) { let r = 1; for (const [a, b] of pts) r = Math.min(r, Math.hypot(a - u, b - v)); if (r >= SPEAR_R + .001) { if (!best || v < best.v) best = { u, v }; break; } }
+  const C = M.clone().addScaledVector(L, best.u).addScaledVector(P, best.v);
+  // close the fingers on it as a hand closes: each finger's three joints bend together (in the shield's fist's proportions) until a
+  // point of the finger would come inside the shaft; then the two outer joints go on bending together, then the last alone, each
+  // 0.04 rad at a time and stopping a step short of the shaft, so the finger wraps round it rather than butting into it
+  const v = new THREE.Vector3(), w = new THREE.Vector3(), radial = i => { body.getVertexPosition(i, v); w.copy(v).sub(C); return w.addScaledVector(A, -w.dot(A)).length() - SPEAR_R; };
+  const fv = PACK.fingerRV || (PACK.fingerRV = (() => { const o = {}; for (let f = 2; f <= 5; f++) { const bs = new Set([1, 2, 3].map(k => PACK.ix.bones.findIndex(b => b.name === `finger${f}-${k}.R`)));
+      o[f] = hand.filter(i => { let wt = 0; for (let c = 0; c < 4; c++) if (bs.has(SI[i * 4 + c])) wt += SW[i * 4 + c]; return wt > .3; }); } return o; })());
+  const RATIO = [1.15, 1.35, .95], MAXJ = [1.6, 1.8, 1.3]; curl(0); root.updateMatrixWorld(true);
+  for (let f = 2; f <= 5; f++) { const bs = [1, 2, 3].map(j => byName[`finger${f}-${j}.R`]), ang = [0, 0, 0], set = () => { bs.forEach((b, k) => b.quaternion.setFromAxisAngle(hinge, ang[k])); bs[0].updateMatrixWorld(true); };
+    for (const from of [0, 1, 2]) { const step = RATIO.map((r, k) => k >= from ? .04 * r / RATIO[from] : 0);
+      for (let n = 0; n < 60; n++) { const prev = ang.slice(); for (let k = 0; k < 3; k++) ang[k] = Math.min(MAXJ[k], ang[k] + step[k]); set(); if (ang.every((a, k) => a === prev[k]) || fv[f].some(i => radial(i) < -.0005)) { ang.splice(0, 3, ...prev); set(); break; } } } }
+  const inside = () => { root.updateMatrixWorld(true); PP = posedBody(body); let n = 0, gap = 1;
+    for (const i of hand) { if (thumb.has(i)) continue; w.set(PP[i * 3], PP[i * 3 + 1], PP[i * 3 + 2]).sub(C); const r = w.addScaledVector(A, -w.dot(A)).length(); if (r < SPEAR_R - .001) n++; else gap = Math.min(gap, r - SPEAR_R); } return { n, gap }; };
+  const got = inside(), bends = [1, 2, 3].map(j => { let t = 0; for (let f = 2; f <= 5; f++) t += 2 * Math.acos(Math.min(1, Math.abs(byName[`finger${f}-${j}.R`].quaternion.w))); return +(t / 4).toFixed(2); });
+  // the thumb: turned at its root, of the turns that keep it out of the shaft, the one that brings it nearest round it
+  const t1 = byName['finger1-1.R'], q0 = t1.quaternion.clone(), thumbGap = () => { root.updateMatrixWorld(true); PP = posedBody(body); let n = 0, g = 1; const w = new THREE.Vector3();
+    for (const i of thumb) { w.set(PP[i * 3], PP[i * 3 + 1], PP[i * 3 + 2]).sub(C); const r = w.addScaledVector(A, -w.dot(A)).length() - SPEAR_R; if (r < -.001) n++; g = Math.min(g, r); } return { n, g }; };
+  let tq = null, tg = null; for (const ax of [[1, 0, 0], [0, 1, 0], [0, 0, 1]]) for (let a = -1; a <= 1.001; a += .2) { t1.quaternion.copy(q0).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...ax), a)); const c = thumbGap();
+    if (c.n === 0 && (!tg || c.g < tg.g)) { tg = c; tq = t1.quaternion.clone(); } }
+  if (tq) t1.quaternion.copy(tq); else t1.quaternion.copy(q0); const tf = thumbGap(); got.th = tf.n; got.tgap = tf.g;
+  return { A, C, curl: bends, gap: +got.gap.toFixed(4), thumbIn: got.th, thumbGap: +got.tgap.toFixed(4), palm: +best.v.toFixed(4), n: pts.length };
 }
 function buildSpear(G, body, byName, meshes, root, grip) {
-  root.updateMatrixWorld(true); const D = G.dress, RS = Math.max(.011, Math.min(.013, grip.r - .0005)), R0 = PACK.rest, PP = posedBody(body);
+  root.updateMatrixWorld(true); const D = G.dress, RS = SPEAR_R, R0 = PACK.rest, PP = posedBody(body);
   let floor = 1e9, crown = -1e9; for (const i of new Set(PACK.G['body'])) { floor = Math.min(floor, PP[i * 3 + 1]); crown = Math.max(crown, PP[i * 3 + 1]); }
   const LEN = Math.max(2.3, crown - floor + .45), A = grip.A, B = grip.C.clone().addScaledVector(A, (floor - grip.C.y) / A.y);
   const wood = new THREE.MeshStandardMaterial({ color: sRGB(...D.spear), roughness: .7 }), iron = new THREE.MeshStandardMaterial({ color: sRGB(...(D.helm || [.42, .43, .45])), metalness: .6, roughness: .35 });
@@ -1022,7 +1046,7 @@ function buildSpear(G, body, byName, meshes, root, grip) {
     if (i >= 0 && R0[i * 3] < -.39) { if (r < RS - .001) fist++; return; } clear = Math.min(clear, r - RS); });
   byName['wrist.R'].attach(sp);
   let tris = 0; sp.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
-  return { mesh: sp, stats: { clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), hole: +grip.r.toFixed(4), holePts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
+  return { mesh: sp, stats: { clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
 }
 function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
@@ -1202,10 +1226,10 @@ export function makePerson(G, o = {}) {
   if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM, undefined, skV); if (!skirtHands.bad || k === 10) break; lift += .03;
     byName['upperarm01.L'].quaternion.copy(q(0, 0, -(pose.arm - lift))); byName['upperarm01.R'].quaternion.copy(q(0, 0, pose.arm - lift)); }
   if (skirtHands) skirtHands.lift = +lift.toFixed(2);
-  // a spear in the right fist (Sessions 907 and 909), after the arms are lifted clear of a long skirt: the forearm turned to point forward and a little down, then rolled about
+  // a spear in the right fist (Sessions 907, 909 and 910), after the arms are lifted clear of a long skirt: the forearm turned to point forward and a little down, then rolled about
   // itself so the knuckles stand one over another (the first finger's on top) and the shaft can run up and down through the fist;
-  // the four fingers curl as the shield's fist does (Session 906), opened a step at a time until the hole they close round
-  // holds the shaft (fistHole). (The elbow's own x is not its hinge: 1.45 rad about it swung the forearm round a cone, backward)
+  // the shaft is laid in the palm and the four fingers close on it (fistGrip). (The elbow's own x is not its hinge: 1.45 rad
+  // about it swung the forearm round a cone, backward)
   let spearGrip = null, wristFix = 0; if (D.spear) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
     const setWorld = Q => lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
     setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), new THREE.Vector3(-.12, -.2, 1).normalize()).multiply(wq())); root.updateMatrixWorld(true);
@@ -1216,9 +1240,11 @@ export function makePerson(G, o = {}) {
     const mid = at('finger3-1.R').add(at('finger4-1.R')).multiplyScalar(.5), cur = frame(mid.sub(at('wrist.R')), at('finger2-1.R').sub(at('finger5-1.R'))), tgt = frame(new THREE.Vector3(ax.x, 0, ax.z), new THREE.Vector3(0, 1, 0));
     const fix = new THREE.Quaternion().setFromRotationMatrix(tgt.multiply(cur.transpose())); wristFix = +(2 * Math.acos(Math.min(1, Math.abs(fix.w)))).toFixed(3);
     wr.quaternion.copy(wr.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(fix.multiply(wr.getWorldQuaternion(new THREE.Quaternion()))));
-    for (const s of [1.24, 1.16, 1.08, 1, .92, .84, .76, .68, .6]) { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.copy(q(0, 0, s * [1.15, 1.35, .95][j - 1])); }
-      const h = fistHole(body, byName, root); h.curl = s; if (!spearGrip || h.r > spearGrip.r) spearGrip = h; if (h.r >= .0135) { spearGrip = h; break; } }
-    const s = spearGrip.curl; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.copy(q(0, 0, s * [1.15, 1.35, .95][j - 1])); } }
+    // the fingers' hinge is the knuckles' line, not the bones' own z (36° off it in this skeleton: about z the curled fingers rose
+    // up the shaft instead of closing round it). Every finger bone hangs off its metacarpal unturned, so one axis serves them all
+    root.updateMatrixWorld(true); const hinge = at('finger2-1.R').sub(at('finger5-1.R')).normalize().applyQuaternion(byName['metacarpal2.R'].getWorldQuaternion(new THREE.Quaternion()).invert());
+    const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
+    spearGrip = fistGrip(body, byName, root, curl, hinge); }
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
   let laceStats = null; if (D.bodice) { root.updateMatrixWorld(true); const L = buildLacing(G, meshes); for (const m of L.meshes) root.add(m); laceStats = L.stats; }
   let cordStats = null; if (D.cord) { root.updateMatrixWorld(true); const C = buildCord(G, body, meshes); for (const m of C.meshes) root.add(m); cordStats = C.stats; if (D.robe && o.robeStats !== false) Object.assign(cordStats, robeStats(body, meshes)); }
