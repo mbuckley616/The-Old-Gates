@@ -751,7 +751,7 @@ function buildPerson(g,opts){
       if(p)mats[i].multiplyMatrices(p,b.matrix);else mats[i].copy(b.matrix);off.multiplyMatrices(mats[i],this.boneInverses[i]);off.toArray(this.boneMatrices,i*16);}
       if(this.boneTexture)this.boneTexture.needsUpdate=true;};}
   const root=new THREE.Group();root.add(mesh);
-  root.scale.setScalar(g.height*PW.BODY);if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
+  root.scale.setScalar(g.height*PW.BODY*personScale(g)); /* S880 (F2a) — at the people's stature in metres (07-scale.js) */if(g.bodyScale)root.scale.multiply(new THREE.Vector3(g.bodyScale[0],g.bodyScale[1],g.bodyScale[2]));
   const rig={root,mesh,B,g,eyes,w:{idle:1,walk:0,run:0,wave:0},phase:g.phase%1,v:0,run:false,lx:null,lz:null,lastNear:99,wavedAt:-1e9,holds:!!g.gear,tris,
     geoHi:geo,geoLo:lo?lo.geo:null,trisLo:lo?lo.tris:tris,lod:0};
   root.userData.rig=rig;PEOPLE_RIGS.add(rig);
@@ -1012,6 +1012,9 @@ function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.ne
 // through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
 // unit tall) the gait blends from the walk into this; back under PW.RUN.off.
 PW.RUN={STRIDE:.25*PW.LEGK,DUTY:.33,HIPS:PW.FOOT+PW.HIPJ+.288*PW.LEGK,BOB:.018*PW.LEGK,LIFT:.15*PW.LEGK,on:1.4,off:1.15};
+// S880 (F2a) — people grew 1.44 times (07-scale.js) and the world's speeds did not, so the pace at which one breaks into a run is
+// kept in metres a second: the thresholds are divided by the growth (1.4 and 1.15 of the old root scale, about 1.25 and 1.0 m/s)
+PW.RUN.on/=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;PW.RUN.off/=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;
 PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
 function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
   p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2))-(o.goblin?.06*PW.LEGK:0);
@@ -1202,7 +1205,7 @@ function ragdollFoe(e,tag,ground,solid){
 // the body turned on its left side facing +x and fitted to the mattress from its own skinned vertices, the head on the pillow, and
 // the quilt drawn up over it to the neck, draped on the body's shape (a height field over the bed, the cloth falling off the body
 // at about 50°), hanging over the sides and the foot. One mesh, 1,000-odd triangles, built once; personRise takes it away.
-const SLEEP_BED={L:1.5,W:.86,TOP:.42,SIDE:.255};const SLEEP_LID=[new THREE.SphereGeometry(.0178,10,6),new THREE.BoxGeometry(.03,.0016,.004)];
+const SLEEP_BED=(k=>({L:1.5*k,W:.86*k,TOP:.42*k,SIDE:.255*k}))(SCALE.ROOM_K); /* S896 (F2a) — the kit's bed as the rooms build it, at true size (×1.444) */const SLEEP_LID=[new THREE.SphereGeometry(.0178,10,6),new THREE.BoxGeometry(.03,.0016,.004)];
 function personSkinPts(rig){const mesh=rig.mesh,geo=rig.geoHi||mesh.geometry,sk=mesh.skeleton;rig.root.updateMatrixWorld(true);sk.update();
   const M=sk.boneMatrices,P=geo.attributes.position.array,SI=geo.attributes.skinIndex.array,SW=geo.attributes.skinWeight.array,E=mesh.matrixWorld.elements,n=P.length/3,out=new Float32Array(n*3);
   for(let i=0;i<n;i++){const x=P[i*3],y=P[i*3+1],z=P[i*3+2];let tx=0,ty=0,tz=0;
@@ -1274,7 +1277,7 @@ function tickPeople(dt,now){
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
     if(rig.sleep)mode='sleep'; // S752 — asleep in bed (personLie)
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
-    if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
+    if(rig.g.wraith){mode='idle';root.position.y=(.24+.05*Math.sin(now*.0021+rig.g.phase))*SCALE.ROOM_K;} // a wraith takes no steps: it glides, a little off the ground (S905, F2a: as high against its taller body as before)
     const t=now/1000*rig.g.tempo+rig.g.phase;
     {const P=pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig));pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];}
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod&&!rig.sleep)peopleSwing(rig,dt); // S267; a sleeper's hair and cloak lie still (S752)

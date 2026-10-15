@@ -42,7 +42,8 @@ const folk = await page.evaluate(() => WORLD.intNpcs.map(n => ({ name: n.def.nam
 console.log(JSON.stringify(folk));
 check('the driver and one or two travellers wait in the common room, none of them in the furniture', folk.filter(f => f.role === 'Coach Driver').length === 1 && folk.filter(f => f.role === 'Traveller').length >= 1 && folk.length <= 3 && folk.every(f => !f.inSolid), folk);
 await page.evaluate(() => { const d = WORLD.intNpcs.find(n => n.def.role === 'Coach Driver'); window._drv = d; d.walk = false; d.wt = 99; px = d.g.position.x; pz = d.g.position.z + 1.0; jumpY = 0; if (intNPCMesh) { intNPCPos = { x: -99, z: -99 }; } });
-await g.frames(2); await page.evaluate(() => { px = _drv.g.position.x; pz = _drv.g.position.z + 1.0; jumpY = 0; }); await page.keyboard.press('e'); await g.frames(2);
+// S905 (F2a): from the 1.65 eye a level look at 1.0 passes over the crown of a driver 1.66 tall; you look at who you talk to
+await g.frames(2); await page.evaluate(() => { px = _drv.g.position.x; pz = _drv.g.position.z + 1.0; jumpY = 0; lookAtPt(_drv.g.position.x, 1.2, _drv.g.position.z); }); await page.keyboard.press('e'); await g.frames(2);
 const drv = await page.evaluate(() => ({ open: dlgOpen, name: document.getElementById('dlg-name').textContent, choices: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim()) }));
 console.log(JSON.stringify(drv));
 check('E by the driver talks to them: when the coach leaves, and the road', drv.open && drv.name === folk.find(f => f.role === 'Coach Driver').name && drv.choices.some(c => /coach leave/.test(c)) && drv.choices.some(c => /road/.test(c)), drv);
@@ -54,7 +55,7 @@ await g.frames(3); await page.keyboard.press('e'); await page.waitForTimeout(300
 const folk2 = await page.evaluate(() => WORLD.intNpcs.map(n => n.def.name));
 check('the same people on a second visit the same day', folk2.join() === folk.map(f => f.name).join(), { first: folk.map(f => f.name), second: folk2 });
 // talk to the keeper
-await page.evaluate(() => { px = intNPCPos.x; pz = intNPCPos.z + 1.2; jumpY = 0; });
+await page.evaluate(() => { px = intNPCPos.x; pz = intNPCPos.z + 1.2; jumpY = 0; lookAtPt(intNPCPos.x, 1.2, intNPCPos.z); });
 await g.frames(2); await page.keyboard.press('e'); await g.frames(2);
 const talk = await page.evaluate(() => ({ open: dlgOpen, name: document.getElementById('dlg-name').textContent, role: document.getElementById('dlg-role').textContent, choices: [...document.querySelectorAll('#dlg-choices > *')].map(x => x.textContent.trim()) }));
 console.log(JSON.stringify(talk));
@@ -63,7 +64,7 @@ const pick = (re) => page.evaluate((src) => { const b = [...document.querySelect
 await pick('coach come through'); await g.frames(2);
 const board = await page.evaluate(() => document.getElementById('dlg-text').textContent);
 await page.evaluate(() => { try { closeDialog(); } catch (e) {} }); await page.keyboard.press('Escape');
-await page.evaluate(() => { px = intNPCPos.x; pz = intNPCPos.z + 1.2; jumpY = 0; }); await g.frames(2); await page.keyboard.press('e'); await g.frames(2);
+await page.evaluate(() => { px = intNPCPos.x; pz = intNPCPos.z + 1.2; jumpY = 0; lookAtPt(intNPCPos.x, 1.2, intNPCPos.z); }); await g.frames(2); await page.keyboard.press('e'); await g.frames(2);
 await pick('bed for the night'); await g.frames(2);
 const offer = await page.evaluate(() => document.getElementById('dlg-text').textContent);
 const g0 = await page.evaluate(() => { gold = Math.max(gold, 100); return gold; });

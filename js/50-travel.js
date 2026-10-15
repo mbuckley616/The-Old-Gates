@@ -1076,6 +1076,9 @@ function fortCotNear(){
 // S798 — the room's keeper or resident answers E wherever the prompt says so (within 3.2 with the crosshair on them, 90-main.js's
 // nearKeeper), and within 2.2 as before without aiming. E reached only 2.2, so from 2.2 to 3.2 the prompt promised what E did not.
 function keeperAimed(){return !!(intNPCMesh&&Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<3.2&&Math.abs(jumpY)<1.2&&aimAt({g:intNPCMesh},3.6));}
+// S905 (F2a) — a person under the crosshair (the keeper, or a guest within talking reach) wins over a door that is only near, as a
+// bed does (S650): in a room of true size the door's 1.6 by 3.2 reaches the people waiting by it (the coaching inn's driver)
+function personAimedIn(){return keeperAimed()||!!(typeof INT_NPCS!=='undefined'&&INT_NPCS.some(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<2.2&&Math.abs(jumpY-n.g.position.y)<1.2&&aimAt(n,3.6)));}
 function keeperInReach(){return !!(intNPCMesh&&Math.abs(jumpY)<1.2&&(Math.hypot(px-intNPCPos.x,pz-intNPCPos.z)<2.2||keeperAimed()));}
 function interact(){
   if(lid==='overworld'){
@@ -1260,7 +1263,7 @@ function interact(){
     // v61d4 — added safehouse:8.
     const _intDx={weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22,safehouse:8};
     const _roomD=currentHouse?(currentHouse._roomD||_intDx[currentHouse.type||'misc']||9):9; // v80 S10 — generated rooms carry their depth
-    if(pz>_roomD-1.6&&Math.abs(px-((currentHouse&&currentHouse._roomW)||10)/2)<1.6&&jumpY<.6){exitInterior();return;} // v80 S13 — the door, not the whole back wall
+    if(pz>_roomD-1.6&&Math.abs(px-((currentHouse&&currentHouse._roomW)||10)/2)<1.6&&jumpY<.6&&!personAimedIn()){exitInterior();return;} // v80 S13 — the door, not the whole back wall
     if(typeof WORLD!=='undefined'&&WORLD.interiorTalk())return; // v80 S12 — guild members
     { // v80 S10 — any bed: rest (and take a banked level)
       if(typeof WORLD!=='undefined'&&WORLD.hatchInteract())return; // v80 — cellar hatch

@@ -25,7 +25,7 @@ for (const s of shops.slice(0, 6)) {
     K.rotation.y = 0; // his sway is ±.08 about facing into the room; measured at its centre and at both ends below
     let n = 0, seen = 0, seenSway = 0, far = 0;
     for (let r = .5; r <= 1.55; r += .15) for (let a = 0; a < 24; a++) { const x = X.x + Math.sin(a / 24 * Math.PI * 2) * r, z = X.z + Math.cos(a / 24 * Math.PI * 2) * r;
-      if (intSolidAt(x, z, .3, 0) || x < .3 || z < .3 || x > (h._roomW || 99) - .3) continue; px = x; pz = z; lookAtPt(X.x, .3, X.z);
+      if (intSolidAt(x, z, .3, 0) || x < .3 || z < .3 || x > (h._roomW || 99) - .3 || z > (h._roomD || 99) - .3) continue; /* S905: the far wall too; the player is held .3 inside all four (90-main.js), and in a room of true size 7.8 deep the ring reaches it */ px = x; pz = z; lookAtPt(X.x, .3, X.z);
       if (!WORLD.boxPrompt()) continue; n++; far = Math.max(far, Math.hypot(x - K.position.x, z - K.position.z));
       if (WORLD.witnessOf(h)) seen++;
       K.rotation.y = .08; const a1 = !!WORLD.witnessOf(h); K.rotation.y = -.08; const a2 = !!WORLD.witnessOf(h); K.rotation.y = 0; if (a1 && a2) seenSway++; }

@@ -7,10 +7,12 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'home'); window._H = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(5000); await g.hide();
-const r = await page.evaluate(() => { const sc = interiorScene, h = _H, W = h.intW, D = h.intD; const furn = sc.children.filter(o => o.userData.furn);
+// S896 (card F2a): a room is laid out in the kit's unit at its true size ÷ K and built K times larger (SCALE.ROOM_K); the cottage's places
+// are the kit's (homeAt), and every place and height below is the kit's times K
+const r = await page.evaluate(() => { const sc = interiorScene, h = _H, W = h.intW, D = h.intD, K = SCALE.ROOM_K, A = furnKit().homeAt(W / K, D / K); const furn = sc.children.filter(o => o.userData.furn);
   let meshes = 0, lambertBoxes = 0; sc.traverse(o => { if (o.isMesh) { meshes++; if (o.geometry.type === 'BoxGeometry') lambertBoxes++; } });
   const f = furn[0], tris = f ? f.userData.tris : 0, parts = f ? f.children.length : 0;
-  return { W, D, furn: furn.length, parts, tris, fire: !!(f && f.userData.fire), meshes, boxes: lambertBoxes, bed: INT_BEDS.length && INT_BEDS[0].owner, table: FOOTHOLDS.some(f => f.y > .4 && f.y < .5 && W / 2 > f.x0 && W / 2 < f.x1 && D * .5 > f.z0 && D * .5 < f.z1), hearth: intSolidAt(W - .3, D * .4, .1), clear: !intSolidAt(W / 2, D * .5 + 1.4, .1), box: !!WORLD.intBox }; });
+  return { W, D, furn: furn.length, parts, tris, fire: !!(f && f.userData.fire), meshes, boxes: lambertBoxes, bed: INT_BEDS.length && INT_BEDS[0].owner, table: FOOTHOLDS.some(f => f.y > .4 * K && f.y < .5 * K && A.table[0] * K > f.x0 && A.table[0] * K < f.x1 && A.table[1] * K > f.z0 && A.table[1] * K < f.z1), hearth: intSolidAt(W - .3 * K, A.hearth.z * K, .1), clear: !intSolidAt(A.table[0] * K, (A.table[1] + .65) * K, .1), box: !!WORLD.intBox }; });
 console.log(JSON.stringify(r));
 check('the home has one baked furniture group: the wood and stone, and the flames', r.furn === 1 && r.parts === 2 && r.fire, r);
 check('the furniture is 8–25k triangles', r.tris > 8000 && r.tris < 25000, r.tris);
@@ -34,15 +36,17 @@ await page.evaluate(() => { try { exitInterior(); } catch (e) {} });
 await page.waitForTimeout(2500); await g.hide();
 await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(x => x.type === 'inn'); window._I = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(5000); await g.hide();
-const inn = await page.evaluate(() => { const sc = interiorScene, W = _I.intW, D = _I.intD, furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
-  const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo && f.y < hi && x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1);
-  const T = [[3.4, D * .42], [3.4, D * .66], [W - 3.4, D * .7], [W / 2, D * .6]];
+// the taproom's places are the kit's too (innAt): the bar under the gallery, the hearth on the wall the stair does not climb, as many
+// tables as the hall holds between them (two in a hall of true size)
+const inn = await page.evaluate(() => { const sc = interiorScene, W = _I.intW, D = _I.intD, K = SCALE.ROOM_K, IA = furnKit().innAt(W / K, D / K, WORLD.galleryEast ? WORLD.galleryEast(_I) : galleryEast(_I)), furn = sc.children.filter(o => o.userData.furn); let meshes = 0; sc.traverse(o => { if (o.isMesh) meshes++; });
+  const fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo * K && f.y < hi * K && x * K > f.x0 && x * K < f.x1 && z * K > f.z0 && z * K < f.z1);
+  const T = IA.tables;
   const bedGeos = new Set(INT_BED_GEO.values()); let kitBeds = 0, oldBeds = 0; sc.traverse(o => { if (o.isMesh && bedGeos.has(o.geometry)) kitBeds++; if (o.isMesh && o.geometry.type === 'BoxGeometry' && Math.abs(o.geometry.parameters.depth - 1.95) < 1e-6) oldBeds++; });
   const big = furn.reduce((a, f) => !a || f.userData.tris > a.userData.tris ? f : a, null);
-  return { kitBeds, oldBeds, W, D, two: !!_I.two, furn: furn.length, chests: furn.filter(f => f !== big).length, parts: big ? big.children.length : 0, tris: big ? big.userData.tris : 0, meshes, beds: INT_BEDS.length, bar: fh(W / 2, 2.2, .65, .75), hearth: intSolidAt(W - .3, D * .5, .1), tables: T.filter(([x, z]) => fh(x, z, .4, .5) && fh(x, z + .9, .2, .3) && fh(x, z - .9, .2, .3)).length }; });
+  return { kitBeds, oldBeds, W, D, two: !!_I.two, furn: furn.length, chests: furn.filter(f => f !== big).length, parts: big ? big.children.length : 0, tris: big ? big.userData.tris : 0, meshes, beds: INT_BEDS.length, bar: fh(W / K / 2, IA.cz, .65, .75), hearth: intSolidAt(IA.hearth.x ? W - .3 * K : .3 * K, IA.hearth.z * K, .1), nT: T.length, tables: T.filter(([x, z]) => fh(x, z, .4, .5) && fh(x, z + .9, .2, .3) && fh(x, z - .9, .2, .3)).length }; });
 console.log(JSON.stringify(inn));
 check('the inn has one baked furniture group, the wood and stone and the flames, 15–40k triangles (and in a two-storey inn the gallery\'s chest, Session 293)', inn.furn === 1 + (inn.two ? 1 : 0) && inn.parts === 2 && inn.tris > 15000 && inn.tris < 40000, inn);
-check('the bar and the four tables with their benches are footholds as before, the hearth solid, the beds all there', inn.bar && inn.tables === 4 && inn.hearth && inn.beds >= 1, inn);
+check('the bar and every table the hall holds (two or more) with their benches are footholds, the hearth solid, the beds all there', inn.bar && inn.tables >= 2 && inn.tables === inn.nT && inn.hearth && inn.beds >= 1, inn);
 check('every bed in the inn is the kit\'s box bed (Session 288), one shared mesh a bed, none of the old boxes', inn.kitBeds === inn.beds && inn.oldBeds === 0, { kit: inn.kitBeds, beds: inn.beds, old: inn.oldBeds });
 const shot2 = await page.evaluate(() => { const sc = interiorScene, W = _I.intW, D = _I.intD, cv = REN.domElement, CW = cv.width, CH = cv.height, cam = new THREE.PerspectiveCamera(58, CW / CH, .05, 80);
   const c = document.createElement('canvas'); c.width = CW; c.height = CH / 2; const x = c.getContext('2d');

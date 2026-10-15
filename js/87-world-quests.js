@@ -1777,7 +1777,11 @@ const giver=`${lord.title} ${lord.name}`;
     if(before){C.u=.5;C.state='stop';C.stopT=0;C.resumeDir=S.dir;C.dir=S.dir;C.holdTo=S.at+SEAT_HOLD;}}
   // S238 — the coach's other half (Michael, issue #24: B): the driver and a traveller or two wait in the common room while
   // the inn is open. Who they are is steady for a day (the road's key and the day); they wander the floor like guild members.
-  function coachInnFolk(house,sc_,W,D){
+  function coachInnFolk(house,sc_,W,D,k){
+    // S905 (F2a) — the room is laid out in the old unit and scaled by k (SCALE.ROOM_K) after (buildInteriorFor's scaleRoom), but
+    // intSolidAt's step and head heights are the player's in metres: a table .47 high here stands .68 once scaled, over the step,
+    // so it is tested at the heights it will have
+    k=k||1;const solidK=(x,z,R)=>INT_SOL.some(s=>!(s.y1!=null&&s.y1*k<=STEP_UP)&&!(s.y0!=null&&s.y0*k>=PLAYER_H)&&x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R);
     if(!npcInsideNow(house))return;const key=house.coachInn;const rt=coaches()[key];if(!rt)return;
     const A=siteAnywhere(rt.a),B=siteAnywhere(rt.b);const C=COACHES.get(key);
     const hk=String(key).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,17);const r=rngFor((hk+innDay())%100003,innDay()%7919);
@@ -1792,7 +1796,7 @@ const giver=`${lord.title} ${lord.name}`;
       folk.push({name:fresh(),role:'Traveller',ico:'\u{1F9F3}',greeting:L.trav,
         topics:[{label:'Where are you headed?',response:`${dest?dest.name:'The next town'}. ${why}`},{label:'Farewell.',bye:true}]});}
     folk.forEach((def,k)=>{const g=buildNPCMesh({role:'villager',name:def.name,bCol:k?0x4a4038:0x3a2a20,sCol:pick(r,P.skin)},{nation:nationAt(house.doorX,house.doorZ),key:'coach_'+key});
-      let x=W/2,z=D*.7;for(let t=0;t<40;t++){const cx=2.5+r()*(W-5),cz=Math.max(5.5,D*.5)+r()*(D*.5-2.5);if(!intSolidAt(cx,cz,.45,0)&&!INT_NPCS.some(o=>Math.hypot(o.g.position.x-cx,o.g.position.z-cz)<1.2)){x=cx;z=cz;break;}}g.position.set(x,0,z);g.rotation.y=r()*Math.PI*2;sc_.add(g);
+      let x=W/2,z=D*.7;for(let t=0;t<40;t++){const cx=2.5+r()*(W-5),cz=Math.max(5.5,D*.5)+r()*(D*.5-2.5);if(!solidK(cx,cz,.45)&&!INT_NPCS.some(o=>Math.hypot(o.g.position.x-cx,o.g.position.z-cz)<1.2)){x=cx;z=cz;break;}}g.position.set(x,0,z);g.rotation.y=r()*Math.PI*2;sc_.add(g);
       INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:2,x1:W-2,z0:Math.max(5,D*.5),z1:D-2}});});
   }
   // S261 — the road coach on the kit (Michael's A on Session 230, as shown): a rounded panelled body on a lower frame,

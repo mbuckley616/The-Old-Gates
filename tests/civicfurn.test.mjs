@@ -19,19 +19,25 @@ const shoot = views => page.evaluate(views => { const sc = interiorScene, W = _S
 fs.mkdirSync('tests/out', { recursive: true });
 check('a church is found', await enter('church'));
 const ch = await look(); console.log(JSON.stringify(ch));
-check('the church is one bake with the altar\'s candle flames, 10–60k triangles, and none of the old cylinder pillars', ch.furn === 1 && ch.fire && ch.tris[0] > 10000 && ch.tris[0] < 60000 && ch.cyl === 0, ch);
-const cs = await page.evaluate(() => { const W = _S.intW, D = _S.intD; return { altar: intSolidAt(W / 2, 1.6, .1) || FOOTHOLDS.some(f => W / 2 > f.x0 && W / 2 < f.x1 && 1.6 > f.z0 && 1.6 < f.z1), pillar: intSolidAt(W / 2 - 4.1, 5.5, .1), inPew: intSolidAt(W / 2 - 3, 8, .1) || intSolidAt(W / 2 + 3, 8, .1),
-  cols: INT_SOL.filter(q => q.y1 > 2.5 && q.x1 - q.x0 < 1 && q.z1 - q.z0 < 1).map(q => [+(((q.x0 + q.x1) / 2) - W / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), W, D }; });
+// S896 (card F2a): a nave of true size holds fewer pews (two or three rows a side), so the bake is lighter: 5k, not 10k, is its floor
+check('the church is one bake with the altar\'s candle flames, 5–60k triangles, and none of the old cylinder pillars', ch.furn === 1 && ch.fire && ch.tris[0] > 5000 && ch.tris[0] < 60000 && ch.cyl === 0, ch);
+// S896 (card F2a): a nave of true size (8 to 10 m) is laid out in the kit's unit at its size ÷ K and built K times larger
+// (SCALE.ROOM_K); the columns stand between the pews and the walls (churchAt), every place here the kit's times K
+const cs = await page.evaluate(() => { const K = SCALE.ROOM_K, W = _S.intW, D = _S.intD, A = furnKit().churchAt(W / K, D / K), pewOut = (.55 + A.pewL) * K, pewIn = .55 * K;
+  return { altar: intSolidAt(W / 2, 1.6 * K, .1) || FOOTHOLDS.some(f => W / 2 > f.x0 && W / 2 < f.x1 && 1.6 * K > f.z0 && 1.6 * K < f.z1), pillar: intSolidAt(A.colX[0] * K, 5.5 * K, .1),
+    inPew: intSolidAt(W / 2 - (pewIn + pewOut) / 2, 6.1 * K, .1) || intSolidAt(W / 2 + (pewIn + pewOut) / 2, 6.1 * K, .1), pewOut, K,
+    cols: INT_SOL.filter(q => q.y1 > 2.5 && q.x1 - q.x0 < 1.3 && q.z1 - q.z0 < 1.3).map(q => [+(((q.x0 + q.x1) / 2) - W / 2).toFixed(2), +((q.z0 + q.z1) / 2).toFixed(2)]), W, D }; });
 console.log(JSON.stringify(cs));
-check('the altar is solid, and the columns too (Session 303: at W/2 ± 4.1 from z 5.5)', cs.altar && cs.pillar, cs);
-check('no column stands in the pews (they run W/2 ± .9–3.5; Session 291 put the columns at ± 3) or on the dais (to z 4.1)', !cs.inPew && cs.cols.length >= 4 && cs.cols.every(([dx, z]) => Math.abs(dx) - .4 > 3.5 && z > 4.1), cs.cols);
+check('the altar is solid, and the columns too (between the pews and the walls, from z 5.5 in the kit\'s unit)', cs.altar && cs.pillar, cs);
+check('no column stands in the pews (they run W/2 ± .55 to .55 + their length, in the kit\'s unit) or on the dais (to z 4.1)', !cs.inPew && cs.cols.length >= 4 && cs.cols.every(([dx, z]) => Math.abs(dx) - .4 * cs.K > cs.pewOut - .01 && z > 4.1 * cs.K), cs.cols);
 const churchPic = await shoot(['[W/2, 1.5, D-2.2, W/2, .6, 1.6]', '[W/2+1.2, 1.1, 5.6, W/2-2.2, .5, 1.4]']);
 fs.writeFileSync('tests/out/church.png', Buffer.from(churchPic.split(',')[1], 'base64'));
 check('a keep is found', await enter('castle'));
 const ca = await look(); console.log(JSON.stringify(ca));
 check('the keep\'s hall is one bake with the braziers\' flames, 10–80k triangles, and none of the old cylinder pillars or braziers', ca.furn === 1 && ca.fire && ca.tris[0] > 10000 && ca.tris[0] < 80000 && ca.cyl === 0, ca);
-const ks = await page.evaluate(() => { const W = _S.intW, D = _S.intD, z = D * .3, fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo && f.y < hi && x > f.x0 && x < f.x1 && z > f.z0 && z < f.z1);
-  return { table: fh(W / 2, z, .4, .5), benches: fh(W / 2, z + 1.2, .2, .3) && fh(W / 2, z - 1.2, .2, .3), column: intSolidAt(W / 2 - 5, 6, .1), brazier: fh(W / 2 - 3, 5.2, .6, .75) }; });
+// S896 (card F2a): the keep's hall keeps its old plan in the kit's unit, built SCALE.ROOM_K (K) larger: every place and height times K
+const ks = await page.evaluate(() => { const K = SCALE.ROOM_K, W = _S.intW / K, D = _S.intD / K, z = D * .3, fh = (x, z, lo, hi) => FOOTHOLDS.some(f => f.y > lo * K && f.y < hi * K && x * K > f.x0 && x * K < f.x1 && z * K > f.z0 && z * K < f.z1);
+  return { table: fh(W / 2, z, .4, .5), benches: fh(W / 2, z + 1.2, .2, .3) && fh(W / 2, z - 1.2, .2, .3), column: intSolidAt((W / 2 - 5) * K, 6 * K, .1), brazier: fh(W / 2 - 3, 5.2, .6, .75) }; });
 check('the long table and its benches are footholds, the columns solid, the braziers footholds', ks.table && ks.benches && ks.column && ks.brazier, ks);
 const hallPic = await shoot(['[W/2, 2.2, D-2.5, W/2, .8, 1.6]', '[W/2+3.8, 1.3, D*.3+3.2, W/2-1, .4, D*.3-.4]']);
 fs.writeFileSync('tests/out/hall.png', Buffer.from(hallPic.split(',')[1], 'base64'));
