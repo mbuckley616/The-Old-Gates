@@ -21093,3 +21093,23 @@ What changed in `creatures.js`:
 - **On the pale floor the mist reads as violet smoke.** In Scáth's violet dark it may vanish, or need to glow; `mist.tone` and `alpha` are per plan.
 - **The puffs rise in the head's frame,** so a lowered head tips its mist forward. The game's version should rise in the world's up.
 - **When it runs, the mist trails along with the stag** rather than being left behind it: the puffs are on the head bone.
+
+## v80 — Session 970 — The griffin's talons hook (L4, prototype only)
+Session 960 gave the Winged Thing an eagle's forefeet and left a note: "the talons are the kit's straight cones; an eagle's are hooked, and they grip." The sheet draws them hooked, so this asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed:
+- **`claw()` takes a `hook`, and `claws.hook` passes it from a leg.** A hooked claw is a cone of six rings instead of one, bent into an arch: its middle is raised `hook` / 2 of its length, at right angles to the claw and away from the ground, and its root and tip stay where a straight claw's are. A claw with no hook is built as before.
+- **A first try made during the session:** carrying the tip toward the ground instead put the planted foot's talons 6 cm into the floor. The arch curls them over onto their points without reaching any deeper.
+- **On the Winged Thing:** `hook: .45` on the forelegs' four claws, the hind toe included. The cat's hind paws keep straight claws.
+- **The bestiary has a new view, `cam=foot`:** close on a forefoot, low, from the front and a little to the side, as `cam=head` is for the head.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,065 checks pass** (1,064 before).
+  - The new check: 8 forefoot claws, each bowed 0.13 to 0.15 of its length off the line from root to tip, and each tip at 1.00 of its length from the root, as a straight claw's is. The hind claws stay straight (a bow of 0).
+  - Its gaits pass as before: the feet down 0.65 of the walk and 0.45 of the trot.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-wingedthing-foot.jpg` (new), and `creatures-wingedthing.jpg` and `-front.jpg` re-shot.
+
+### Needs eyes
+- **The talons do not grip:** the toes are the claws themselves, so there is no scaled toe for a talon to hang from. An eagle's foot is toes first, which wants a toe chain in the kit.
+- **They are still black cones,** glossy and smooth. A talon is horn, darker at the tip.

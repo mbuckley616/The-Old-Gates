@@ -105,6 +105,16 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return { puffs: P.count, tips, onHead: m.parent === C.byName.head, shadow: m.castShadow, moved: +moved.toFixed(3), same, amax: +amax.toFixed(2), others: Object.keys(K.PLANS).filter(k => k !== 'shadowstag' && K.PLANS[k].parts.some(([, o]) => o.antlers?.mist)).length }; });
   check(`shadowstag: its antlers breathe a mist, ${sm.puffs} puffs from ${sm.tips} tines on the head bone, no shadow, moving ${sm.moved} m through the stride and the same at the same phase`,
     sm.onHead && !sm.shadow && sm.tips >= 10 && sm.moved > .05 && sm.same === 0 && sm.amax > 0 && sm.amax <= .2 && sm.others === 0, sm);
+  // the griffin's hooked talons (Session 970): each forefoot claw bows off the line from its root to its tip (an arch), and its tip reaches
+  // no lower than a straight claw's would
+  const tl = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), C = K.build(K.genome('wingedthing', 'wingedthing:check')), out = [];
+    for (const L of C.B.legs) { const foot = L.bones[L.bones.length - 1]; for (const m of foot.children) { if (!m.isMesh || m.geometry.type !== 'ConeGeometry') continue; const P = m.geometry.attributes.position, h = m.geometry.parameters.height, r = m.geometry.parameters.radius;
+      let tip = null, tipY = 1e9; const v = new T.Vector3(); for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); if (!tip || v.lengthSq() > tip.lengthSq()) tip = v.clone(); }
+      const u = tip.clone().normalize(); let bow = 0; for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); bow = Math.max(bow, v.clone().sub(u.clone().multiplyScalar(v.dot(u))).length() - r); }
+      out.push({ fore: L.at > 0, bow: +(bow / h).toFixed(2), reach: +(tip.length() / h).toFixed(2) }); } }
+    return out; });
+  const tf = tl.filter(t => t.fore);
+  check(`wingedthing: ${tf.length} hooked talons on its forefeet, each bowed ${Math.min(...tf.map(t => t.bow))} to ${Math.max(...tf.map(t => t.bow))} of its length, its tip where a straight claw's is`, tf.length === 8 && tf.every(t => t.bow > .1 && Math.abs(t.reach - 1) < .02), tl);
   // the frozen man's face (Session 968, Michael's B): the skeleton's skull inside his head, the ice thinned over the face's front only, and
   // the skull wholly under the hide (no crown through the top of his head)
   const ff = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('frostfolk', 'frostfolk:check')), h = C.meshes[0], a = h.geometry.attributes.aAlpha, P = h.geometry.attributes.position;

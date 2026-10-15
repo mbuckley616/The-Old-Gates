@@ -158,9 +158,9 @@ P.legs = (B, o) => {
     const rr = o.r || pre.r.map(v => v * hR);
     for (let k = 0; k < J.length - 1; k++) B.meat(names[k], J[k], J[k + 1], along(rr, k / (J.length - 1)), along(rr, (k + 1) / (J.length - 1)), { group: tag, tone: k >= J.length - 2 && pre.tips ? pre.tips : (pre.bare ? 'skin' : o.tone) });
     if (o.claws) { const tip = J[J.length - 1], d = J[J.length - 1].clone().sub(J[J.length - 2]).normalize(); d.y = Math.min(d.y, -.3); d.normalize();
-      for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize()));
+      for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize(), o.claws.hook));
       // a hind toe (Session 960, the griffin's talons): a fourth claw from the back of the foot, pointing back and down
-      if (o.claws.back) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len * o.claws.back, B.tone('dark'), J[J.length - 2].clone().lerp(tip, .3).add(V(0, o.claws.r * .5, 0)), V(0, -.45, -1).normalize())); }
+      if (o.claws.back) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len * o.claws.back, B.tone('dark'), J[J.length - 2].clone().lerp(tip, .3).add(V(0, o.claws.r * .5, 0)), V(0, -.45, -1).normalize(), o.claws.hook)); }
     // thorns (Session 929, OG-041's spider): short dark spines up every segment past the hip, on its upper and outer faces, raked
     // toward the foot. One merged mesh a segment, rigid on its bone; `per` is thorns a metre of leg
     if (o.thorns) { const r2 = rng(B.g.seed + 31 + B.legs.length), th = o.thorns;
@@ -408,7 +408,14 @@ const MATS = new Map();
 function stdMat(c, o = {}) { const k = c.getHexString() + JSON.stringify(o); if (!MATS.has(k)) MATS.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .6, metalness: 0, flatShading: !!o.flat, emissive: o.emissive || 0x000000, emissiveIntensity: o.ei ?? 1 })); return MATS.get(k); }
 function ball(r, c, p, rough = .5) { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), stdMat(c, { rough })); m.position.copy(p); return m; }
 function eye(r, color, p) { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), new THREE.MeshPhysicalMaterial({ color: new THREE.Color().setRGB(...color, THREE.SRGBColorSpace), roughness: .05, clearcoat: 1, emissive: new THREE.Color().setRGB(...color, THREE.SRGBColorSpace).multiplyScalar(.12) })); m.position.copy(p); return m; }
-function claw(r, len, c, p, dir) { const g = new THREE.ConeGeometry(r, len, 7); g.translate(0, len / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.setFromUnitVectors(UP, dir.clone().normalize()); return m; }
+// a claw: a cone along `dir`. With `hook` (Session 970, the griffin's talons) it arches: its middle raised `hook` / 2 of its length
+// away from the ground, at right angles to the claw, and its root and tip where a straight claw's are, so it curls down onto the point
+// without reaching any deeper. An eagle's talon, not a straight spike
+function claw(r, len, c, p, dir, hook = 0) { const g = new THREE.ConeGeometry(r, len, 7, hook ? 6 : 1); g.translate(0, len / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p);
+  const d = dir.clone().normalize(); if (!hook) { m.quaternion.setFromUnitVectors(UP, d); return m; }
+  const b = V(0, -1, 0).addScaledVector(d, d.y), P = g.attributes.position, q = new THREE.Quaternion().setFromUnitVectors(UP, d), v = V(0, 0, 0); if (b.lengthSq() < 1e-4) b.set(0, 0, -1); b.normalize();
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); const t = v.y / len; v.applyQuaternion(q).addScaledVector(b, hook * len * 2 * (t * t - t)); P.setXYZ(i, v.x, v.y, v.z); }
+  g.computeVertexNormals(); return m; }
 // a tube along points, tapering from r0 to r1 (horns, antler beams and tines)
 function taperTube(pts, r0, r1, radial = 8) {
   const curve = new THREE.CatmullRomCurve3(pts), seg = Math.max(4, pts.length * 4), g = new THREE.TubeGeometry(curve, seg, 1, radial, false), pos = g.attributes.position, fr = curve.computeFrenetFrames(seg, false);
@@ -1798,7 +1805,7 @@ Object.assign(PLANS, {
       ['neck', { len: .56, n: 2, rise: 62, curve: -14, r: [.24, .14] }],
       ['head', { len: .38, r: .14, pitch: 4, eyes: [{ f: .45, up: .35, out: .72, r: .028, color: [.95, .72, .18] }], beak: { len: .22, r: .07, up: -.12, hook: .45 } }],
       ['tail', { len: 1.05, n: 4, r: [.09, .045], droop: 38, curl: -5, fan: { n: 5, len: .34, spread: 32 } }],
-      ['legs', { at: 1, kind: 'talonFore', out: .16, drop: .08, r: [.14, .07, .038, .036], claws: { r: .022, len: .14, back: .7 } }],
+      ['legs', { at: 1, kind: 'talonFore', out: .16, drop: .08, r: [.14, .07, .038, .036], claws: { r: .022, len: .14, back: .7, hook: .45 } }],
       ['legs', { at: 0, kind: 'canidHind', out: .16, drop: .06, r: [.18, .1, .07, .06], claws: { r: .016, len: .06 } }],
       ['wings', { at: .82, out: .2, up: .26, span: 3.4, r: [.085, .062, .042], feathers: { ns: 9, np: 10, len: .4, primary: 1.05 } }]
     ] }
