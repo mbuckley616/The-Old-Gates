@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV } from './common.js';
-import { stream, markTextures } from './pieces.js';
+import { stream, markTextures, aurenneTextures } from './pieces.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { gatelandsSloop } from './ships.js';
 
@@ -540,4 +540,109 @@ export function smugglersLair(o = {}, r = stream('lair')) {
   return { group, tris: Math.round(tris), draws: draws + (ship ? ship.draws : 0), top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, walkY, deck: FY, lamps, door, ladder, ledge: LY,
     escape: { y: LY, x0: XW, z: ZL, w: TRX * 2, h: TUP + 1.1, xPlane: XW + 10.5 }, arch: { w: AW2 * 2, h: AH, z: Z1 }, mouth: { x: SPX(0), w: PRX * 2, y0: FY, h: PUP + 1.3 }, room, held,
     chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, passage: { w: PRX * 2, h: PUP + 1.3 }, gallery: { y: GY, z0: GZ0, z1: GZ1 }, fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W } };
+}
+
+// aurenneAqueduct(o, r) (Session 907, card F8): a ruined aqueduct across a dry valley, OG-121's Aurenne panel ("aqueduct ruins") and
+//   OG-124's "a ruined aqueduct", in Aurenne's own plaster and tile and not the boards' Tuscan stone (the row's note; canon §1.3). Built to
+//   the person, a metre a unit; the aqueduct runs along x, the valley along z, its floor 20 m under the channel:
+//   - the arcade: piers of 2.2 m on a pitch of 8.2 m, 6 m clear between them under round arches; two tiers where the valley is deep (the
+//     lower 3.0 m thick, springing 14.5 m under the channel's bed, the upper 2.4 m thick, springing 6.5 m under it), one where it is not,
+//     and a solid wall where the ground comes within 7.5 m of the bed. The faces are lime plaster over a brick core, fallen in patches; the
+//     arches are rung in ashlar on impost blocks; a string course caps the lower tier, a cornice carries the channel, and a band of blue
+//     glazed tile runs under the cornice on both faces;
+//   - the channel: 1.2 m wide inside between walls of 0.55 m that stand 0.9 m over its bed, coped in slabs (some gone), lined in red
+//     mortar and crusted pale to 0.3 m with the lime the water left; it is dry, and its covers are gone, so it is the walk;
+//   - the ruin (o.broken, default true): the upper tier and the channel fallen over two bays east of the middle, the pier between them a
+//     stump on the lower tier, the broken ends ragged, their blocks heaped in the valley under the gap; whole (false), it runs on across;
+//   - the land: the valley in dry turf with a dry stream bed down its floor, pale rock, cypresses on its shoulders, a level terrace at
+//     either end where the channel comes off the hill.
+//   -> { group, tris, draws, top, path ([x, z], the walk at y 0: off the west terrace, in at the channel's open end, east to the break or,
+//        whole, to the east end), ground(x, z), piers ([x, foot]), bays ([{ x0, x1, lower, upper }]), arch { pitch, pier, span, r, lowSpring,
+//        upSpring, deck }, channel { w, wall, top, x0, x1 }, gap ({ x0, x1 } or null), broken }
+let AQ = null;
+function aqueductMats() {
+  if (AQ) return AQ; aurenneTextures(); markTextures(); const std = (c, ro = .85) => new THREE.MeshStandardMaterial({ color: c, roughness: ro });
+  AQ = { plaster: mat('plaster', { ns: .7, color: 0xe4d4b2, rough: .95 }), ashlar: mat('ashlar', { ns: .9, color: 0xfff6e2, rough: .9 }), cope: mat('limestone', { ns: 1.0, color: 0xf6ecd8, rough: .85 }), brick: mat('stone', { ns: 1.2, color: 0xb88a6c, rough: .95 }),
+    lining: mat('plaster', { ns: .6, color: 0xb88a76, rough: .9 }), sinter: mat('plaster', { ns: .9, color: 0xf2ead6, rough: .8 }), zellige: mat('zellige', { ns: .6, rough: .3 }),
+    ground: mat('turfDry', { ns: .4, color: 0xfff4cc, rough: 1 }), rock: mat('rock', { ns: 1.4, color: 0xcabca2, rough: .95 }), bed: mat('rock', { ns: 1.0, color: 0xb0a48c, rough: 1 }),
+    leaf: std(0x2c4424, .9), bark: std(0x5a4632, .95) };
+  return AQ;
+}
+export function aurenneAqueduct(o = {}, r = stream('aqueduct')) {
+  const M = aqueductMats(), B = new Map(), broken = o.broken !== false, key = String(o.key || 'aqueduct');
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', ...(uv === null ? ['uv'] : [])].includes(a)) g.deleteAttribute(a);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); if (uv !== null) worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const PITCH = 8.2, PIER = 2.2, SPAN = PITCH - PIER, RAD = SPAN / 2, DECK = -1, LS = -14.5, US = -6.5, TIER = -10.5, SC = .35, DL = 3.0, DU = 2.4, HV = 54, DEEP = 20, NP = 6;
+  const CW = 1.2, WT = .55, WH = .9, CX = 57, G0 = 62;
+  // the ground: the valley's section along x, a dry stream bed at its floor; noise off the aqueduct's line, none within 6 m of it
+  const F = field(stream(key + ':land'), .5), sec = x => { const a = Math.abs(x); return (a < HV ? -DEEP * (1 - (x / HV) ** 2) : 0) - .7 * Math.max(0, 1 - (x / 2.4) ** 2) + Math.max(0, a - G0) * .22; };
+  const ground = (x, z) => { const w = Math.min(1, Math.max(0, (Math.abs(z) - 6) / 10)); return sec(x) + (w ? F(x, 0, z)[1] * w * 1.6 : 0); };
+  { const X0 = -85, Z0 = -60, NX = 170, NZ = 120, pos = [], idx = [];
+    for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = X0 + i, z = Z0 + j; pos.push(x, ground(x, z), z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'ground', 0, 0, 0, 0, 0, 0, .55); }
+  // the stream bed: gravel down the floor, dry
+  put(new THREE.BoxGeometry(2.6, .1, 120), 'bed', 0, sec(0) + .02, 0, 0, 0, 0, .4);
+  // the bays: which tiers open in each, by the highest ground under it
+  const piers = [], bays = []; for (let k = -NP; k <= NP; k++) piers.push([k * PITCH, +sec(k * PITCH).toFixed(2)]);
+  for (let k = 0; k + 1 < piers.length; k++) { const x0 = piers[k][0] + PIER / 2, x1 = piers[k + 1][0] - PIER / 2; let hi = -99; for (let s = 0; s <= 12; s++) hi = Math.max(hi, sec(x0 + (x1 - x0) * s / 12));
+    bays.push({ x0: +x0.toFixed(2), x1: +x1.toFixed(2), lower: hi <= LS - 1, upper: hi <= US - 1, hi }); }
+  const GAP = broken ? { p: 7, x0: piers[7][0] + PIER / 2, x1: piers[9][0] - PIER / 2 } : null /* the bays either side of the pier at x 16.4 */;
+  const inGap = x => GAP && x > GAP.x0 - .01 && x < GAP.x1 + .01;
+  const arc = (path, cx, ys, back) => { for (let s = 0; s <= 24; s++) { const a = back ? s / 24 * Math.PI : Math.PI - s / 24 * Math.PI; path.push(new THREE.Vector2(cx + Math.cos(a) * RAD * (back ? 1 : 1), ys + Math.sin(a) * RAD)); } };
+  const hole = (x0, x1, ys, foot) => { const h = [new THREE.Vector2(x0, foot(x0)), new THREE.Vector2(x0, ys)]; arc(h, (x0 + x1) / 2, ys, false); h.push(new THREE.Vector2(x1, foot(x1)));
+    for (let s = 11; s >= 1; s--) { const x = x0 + (x1 - x0) * s / 12; h.push(new THREE.Vector2(x, foot(x))); } return new THREE.Path(h.reverse()); }; /* counter-clockwise: the outlines are clockwise, and three.js re-winds holes only when it flips the outline */
+  const extrude = (outline, holes, depth, k) => { const sh = new THREE.Shape(outline); sh.holes.push(...holes); const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false, curveSegments: 24 }); g.translate(0, 0, -depth / 2); put(g, k, 0, 0, 0, 0, 0, 0, .42); };
+  const ring = (cx, ys, depth, k = 'ashlar') => { const sh = new THREE.Shape(), T = .55; sh.absarc(0, 0, RAD + T, 0, Math.PI, false); sh.absarc(0, 0, RAD, Math.PI, 0, true); const g = new THREE.ExtrudeGeometry(sh, { depth: depth + .08, bevelEnabled: false, curveSegments: 24 }); g.translate(cx, ys, -(depth + .08) / 2); put(g, k, 0, 0, 0, 0, 0, 0, .5);
+    for (const e of [-1, 1]) put(new THREE.BoxGeometry(PIER * .5 + .25, .32, depth + .1), k, cx + e * (RAD + PIER * .25 - .12), ys - .16); };
+  // the lower tier: from under the ground to the string course, wherever the ground falls below it
+  const lowX = HV * Math.sqrt(1 - (TIER + .6) / -DEEP) - .01, foot = x => sec(x) - .6;
+  { const out = [new THREE.Vector2(-lowX, TIER), new THREE.Vector2(lowX, TIER)]; for (let s = 1; s < 60; s++) { const x = lowX - 2 * lowX * s / 60; out.push(new THREE.Vector2(x, Math.min(TIER - .05, foot(x)))); }
+    extrude(out, bays.filter(b => b.lower).map(b => hole(b.x0, b.x1, LS, x => sec(x) - .3)), DL, 'plaster');
+    for (const b of bays) if (b.lower) ring((b.x0 + b.x1) / 2, LS, DL);
+    put(new THREE.BoxGeometry(2 * lowX, SC, DL + .3), 'ashlar', 0, TIER + SC / 2); }
+  // the upper tier: from the string course (or the ground) to the channel's bed; broken, it is two walls with ragged ends at the gap
+  const upFoot = x => Math.min(DECK - .6, Math.max(TIER, foot(x))), upHole = x => Math.max(TIER + SC, sec(x) - .3), XE = 53.2;
+  const upper = (xa, xb, jagW, jagE) => { const out = []; if (jagW) out.push(...jagW); else out.push(new THREE.Vector2(xa, upFoot(xa)), new THREE.Vector2(xa, DECK));
+    if (jagE) out.push(...jagE); else out.push(new THREE.Vector2(xb, DECK), new THREE.Vector2(xb, upFoot(xb)));
+    const xe = out[out.length - 1].x, xw = out[0].x; for (let s = 1; s < 80; s++) { const x = xe - (xe - xw) * s / 80; out.push(new THREE.Vector2(x, upFoot(x))); } /* along the foot from where the outline's east side comes down */
+    const hs = bays.filter(b => b.upper && b.x0 > xa && b.x1 < xb); extrude(out, hs.map(b => hole(b.x0, b.x1, US, upHole)), DU, 'plaster'); for (const b of hs) ring((b.x0 + b.x1) / 2, US, DU);
+    put(new THREE.BoxGeometry(xb - xa - (jagE ? 1.6 : 0) - (jagW ? 1.6 : 0), .3, DU + .4), 'ashlar', (xa + xb) / 2 + (jagW ? .8 : 0) - (jagE ? .8 : 0), DECK - .15);
+    for (const e of [-1, 1]) put(new THREE.BoxGeometry(xb - xa - (jagE ? 2.2 : 0) - (jagW ? 2.2 : 0), .42, .05), 'zellige', (xa + xb) / 2 + (jagW ? 1.1 : 0) - (jagE ? 1.1 : 0), DECK - .55, e * (DU / 2 + .02)); };
+  const V = (x, y) => new THREE.Vector2(x, y);
+  if (!GAP) upper(-XE, XE);
+  else { const a = GAP.x0, b = GAP.x1, ft = upFoot(a);
+    upper(-XE, a + 1.7, null, [V(a + 1.7, DECK), V(a + 1.1, DECK - 1.2), V(a + 1.6, DECK - 2.0), V(a + .6, DECK - 3.0), V(a, DECK - 4.0), V(a, ft)]);
+    upper(b - 1.7, XE, [V(b, ft), V(b, DECK - 4.0), V(b - .6, DECK - 3.0), V(b - 1.6, DECK - 2.0), V(b - 1.1, DECK - 1.2), V(b - 1.7, DECK)], null);
+    // the stump of the pier between: standing 2.5 m over the string course, its top broken
+    const px = piers[GAP.p + 1][0]; put(roughen(new THREE.BoxGeometry(PIER, 2.5, DU, 3, 4, 3), r, .05, 1.6), 'plaster', px, TIER + SC + 1.25);
+    for (let k = 0; k < 4; k++) put(roughen(new RoundedBoxGeometry(.7 + r() * .4, .4 + r() * .2, .6 + r() * .3, 2, .08), r, .04, 2), 'cope', px - .6 + r() * 1.2, TIER + SC + 2.6 + r() * .2, -.8 + r() * 1.6, 0, r() * 3, (r() - .5) * .4); }
+  // the brick core where the plaster has fallen: patches on the piers' faces, both sides, above head height and below
+  for (const [x] of piers) for (const e of [-1, 1]) for (let k = 0; k < 2; k++) { if (inGap(x) && k) continue; const y = (k ? US - 3 : LS + 2) + (r() - .5) * 3, th = x => (y < TIER ? DL : DU) / 2;
+    if (y < sec(x) + .5) continue; put(new THREE.BoxGeometry(.6 + r() * 1.0, .5 + r() * 1.3, .03), 'brick', x + (r() - .5) * .8, y, e * (th(x) + .015)); }
+  // the channel: its bed on the cornice, two walls with copings (a few gone), the red lining and the pale crust inside; broken, it stops
+  // ragged either side of the gap; at the ends it runs on the terraces to its open mouths at x = -57 and 57
+  const runs = GAP ? [[-CX, GAP.x0 + 1.5], [GAP.x1 - 1.5, CX]] : [[-CX, CX]], WZ = CW / 2 + WT / 2;
+  for (const [x0, x1] of runs) { const L = x1 - x0, mx = (x0 + x1) / 2;
+    put(new THREE.BoxGeometry(L, 1.0, CW + 2 * WT), 'plaster', mx, DECK + .5); put(new THREE.BoxGeometry(L, .02, CW), 'lining', mx, .01);
+    for (const e of [-1, 1]) { const cut = GAP ? (x0 < 0 ? [0, e < 0 ? .5 : 0] : [e < 0 ? 0 : .4, 0]) : [0, 0], wx0 = x0 + cut[0], wx1 = x1 - cut[1], wl = wx1 - wx0, wm = (wx0 + wx1) / 2;
+      put(new THREE.BoxGeometry(wl, WH, WT), 'plaster', wm, WH / 2, e * WZ); put(new THREE.BoxGeometry(wl, WH - .3, .02), 'lining', wm, .3 + (WH - .3) / 2, e * (CW / 2 - .01));
+      put(new THREE.BoxGeometry(wl, .3, .025), 'sinter', wm, .15, e * (CW / 2 - .0125));
+      for (let x = wx0; x < wx1 - .2; x += 1.2) { if (r() < .14) continue; const l = Math.min(1.18, wx1 - x); put(new THREE.BoxGeometry(l, .15, WT + .12), 'cope', x + l / 2, WH + .075, e * WZ, 0, 0, (r() - .5) * .02); } } }
+  // the fallen: the gap's masonry heaped under it on the string course and in the valley, and coping stones about the foot of the piers
+  if (GAP) { for (let k = 0; k < 46; k++) { const x = GAP.x0 + r() * (GAP.x1 - GAP.x0), onTier = k < 10, z = onTier ? (r() - .5) * (DL - .8) : (r() > .5 ? 1 : -1) * (DL / 2 + .4 + r() * 6), y = onTier ? TIER + SC : ground(x, z), s = .5 + r() * .7;
+      put(roughen(new RoundedBoxGeometry(s * 1.4, s * .7, s, 2, .1), r, .05, 1.8), k % 3 ? 'cope' : 'plaster', x, y + s * .3, z, r() * .4, r() * 3, r() * .4); } }
+  for (let k = 0; k < 14; k++) { const [px] = piers[Math.floor(r() * piers.length)], z = (r() > .5 ? 1 : -1) * (2.2 + r() * 3), x = px + (r() - .5) * 4; put(roughen(new THREE.BoxGeometry(1.1, .15, .65, 2, 1, 2), r, .02, 2), 'cope', x, ground(x, z) + .05, z, (r() - .5) * .3, r() * 3, 0); }
+  // the land's dress: rock breaking through on the valley's sides, cypresses on its shoulders
+  for (let k = 0; k < 40; k++) { const x = (r() - .5) * 150, z = (r() > .5 ? 1 : -1) * (9 + r() * 48), s = .5 + r() * 1.1; if (Math.abs(x) < 4 || Math.abs(x) > HV - 4) continue; /* on the valley's sides, off the stream bed and the terraces */
+    const g = roughen(new THREE.IcosahedronGeometry(s, 2), r, s * .16, 1.4); g.scale(1.3, .6, 1); put(g, 'rock', x, ground(x, z) - s * .15, z, 0, r() * 3, 0, .3); }
+  const cyp = []; for (let k = 0; k < 60 && cyp.length < 22; k++) { const x = (r() > .5 ? 1 : -1) * (40 + r() * 42), z = (r() - .5) * 110; if (Math.abs(z) < 9 || cyp.some(([a, b]) => Math.hypot(a - x, b - z) < 3)) continue; cyp.push([x, z]);
+    const h = 8 + r() * 5, w = .8 + r() * .35, prof = []; for (let s = 0; s <= 10; s++) { const t = s / 10; prof.push(new THREE.Vector2(w * Math.sin(Math.PI * Math.min(1, t * 1.15) ** .7) * (1 - t * .25) + .02, t * h)); }
+    const y = ground(x, z); put(new THREE.LatheGeometry(prof, 9), 'leaf', x, y + .6, z, 0, r() * 3, 0); put(new THREE.CylinderGeometry(.12, .16, 1.2, 6), 'bark', x, y + .5, z); }
+  // the walk: off the west terrace, in at the channel's open end, east along its bed to the break (or across, whole)
+  const path = [[-61, 0], [-CX + .3, 0], [GAP ? GAP.x0 + .9 : CX - .5, 0]];
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['ground', 'bed'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, ground, piers, bays: bays.map(({ hi, ...b }) => b),
+    arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, lowSpring: LS, upSpring: US, tier: TIER + SC, deck: DECK }, channel: { w: CW, wall: WT, top: WH, x0: -CX, x1: CX }, gap: GAP ? { x0: +GAP.x0.toFixed(2), x1: +GAP.x1.toFixed(2), stump: piers[GAP.p + 1][0] } : null, broken };
 }

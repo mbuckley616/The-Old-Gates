@@ -19215,3 +19215,42 @@ The fix is one last pass at the end of `buildHang`. Every point of every column 
 ### Needs eyes
 - **The back of a cloak over mail** now follows the mail skirt's outline at the buttocks wherever a fold would have cut into it. In the picture it reads as cloth over a stiff skirt. Whether the fold there looks pinched is for a closer look.
 - This pass is a floor, not a drape. A cloak over plate, which stands further out and steps sharply, will want the folds laid against the outline at the height they end at, not the height they start at.
+
+## v80 — Session 907 — Card F8: Aurenne's ruined aqueduct (prototype only)
+The FREEZE (#297) holds. Two answers came back first: Michael's A on #329 (Aurenne's courtyard house, 15 by 15 m with the pantile sloping into the court) and his A on #330 (the Mark's sloop keeps its shields). Both say "as drawn", so nothing was built for them. Their entries move to Answered in `docs/decisions.md`.
+
+Card F8's places by island continue. The Gatelands have their three, and the Mark has its mine and ice cavern (#331 waits). OG-121's Aurenne panel has "aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs", and OG-124 has "a ruined aqueduct". I reread both images and their rows. OG-124's row flags its Aurenne as "Tuscan stone farms" where canon §1.3 wants cream plaster and tile, so the aqueduct is built in Aurenne's own dress, not the boards' stone. It is called the old aqueduct, never "Roman" (OG-121's note). The catacombs are burial, so they wait on the quest writer's answer about the dead (§3.1).
+
+What is new in `places.js`:
+- **`aurenneAqueduct(o, r)`:** the aqueduct along x, the valley along z, a metre a unit.
+- **The valley:** 20 m deep in dry turf, with a dry stream bed down its floor, low rocks on its sides, 22 cypresses on its shoulders, and a level terrace at either end.
+- **The arcade:** one outline of the elevation, extruded, with the arches cut as holes.
+  - The piers are 2.2 m wide on a pitch of 8.2 m, with 6 m of clear span under round arches.
+  - Where the ground is low enough the bay is open in a tier. That gives six arches below (springing 14.5 m under the bed, 3.0 m thick) and ten above (springing 6.5 m under it, 2.4 m thick). Nearer the ends the bays are solid wall.
+  - The faces are lime plaster, with brick showing in patches where it has fallen.
+  - The arches are rung in pale ashlar on impost blocks, a string course caps the lower tier, and a cornice carries the channel.
+  - A band of the blue glazed tile (`zellige`) runs under the cornice on both faces.
+- **The channel:** 1.2 m between walls of 0.55 m that stand 0.9 m over the bed under limestone copings, about one in seven of them gone. It is lined in red mortar, with a pale crust to 0.3 m where the water ran. It is dry and has no covers, so its bed is the walk: off the west terrace, in at the open mouth at x = −57, and east.
+- **The ruin (`o.broken`, default true):**
+  - The upper tier and the channel are down over the two bays either side of the pier at x 16.4.
+  - That pier is a stump 2.5 m tall on the string course, with loose blocks on its top.
+  - Both broken ends are ragged outlines: an arch's first voussoirs still spring from the last pier, and the channel's walls end unevenly.
+  - 46 blocks lie heaped on the string course and in the valley under the gap.
+  - `o.broken: false` stands it whole.
+- **A correction made during the session:** the first build's arch holes were wound clockwise, the same way as the outlines. three.js re-winds holes only when it has to flip the outline, so their side walls faced into the masonry. The pictures hid it, because a pier's far face looks like its near one, but the span rays went straight through. The holes are now counter-clockwise.
+- **The view:** `places.html?place=aqueduct` goes to `places-aqueduct-view.js`, under a high south-western sun. It has five views (`aqueduct`, `channel`, `break`, `under`, `end`) and `&whole`.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 45 of 45 pass**, counted from its output (37 before). One view is new on the page check (the aqueduct, no page errors), and seven checks are new, over three keys, broken and whole:
+  - **The builds:** each key the same twice. Broken, 76,190 to 76,670 triangles; whole, 61,614 to 62,214; at most 12 meshes. The valley's ground is 40,800 of those triangles.
+  - **The walk:** 288 points broken and 473 whole. There is a floor under every one at 0 to 0.02 m, open sky overhead, and 0.54 m clear either side.
+  - **The channel:** at 210 points, 1.16 m clear inside the lining (1.2 m between the walls). The walls stand 0.90 m bare or 1.05 m coped.
+  - **The arches:** 14 broken (six of them lower) and 16 whole. Every one is 6.0 m clear, with its crown 3.0 m over its springing.
+  - **The piers:** all 13 reach the ground, each with a face within 0.65 m of a probe 0.4 m over the ground.
+  - **The break:** the walk ends at x 10.2, over a fall of 10.6 to 11.2 m to the lower tier, with the far run's broken end 11.8 m off. Whole, the bed is under the eye at the same place.
+  - **The dress:** plaster, ashlar, tile, lining, crust, brick and copings are all present, and there is no water.
+- **Pictures:** `places-aqueduct-aqueduct.jpg`, `-channel`, `-break`, `-under`, `-end` and `-aqueduct-whole`. The gap is asked as **DECISION #333**: broken as drawn, a way across, or whole.
+### Needs eyes
+- **The ground's dry turf is spotty at a distance.** It is the Mark's `turfDry` tinted gold. Aurenne's hills want their own ground, with olive scrub and terraces (OG-124), and that belongs to card F3's materials.
+- **The brick patches are rectangles laid on the plaster**, not holes in it. They read as fallen render from a distance, and as tiles stuck on from close up.
+- **There is no way down from the terraces into the valley** beyond walking off the slope, and nothing marks the far side's run as reachable. That waits on #333.
+- **The cypresses are lathed spindles**, the plant kit's simplest form; the kit's own cypress comes with F3.

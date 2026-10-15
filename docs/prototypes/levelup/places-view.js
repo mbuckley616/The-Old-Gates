@@ -14,6 +14,7 @@ import { stream } from './pieces.js';
 if ((Q.get('place') || 'mine') === 'cairn') await import('./places-cairn-view.js');
 else if (Q.get('place') === 'cave' || Q.get('place') === 'icecave') await import('./places-cave-view.js');
 else if (Q.get('place') === 'lair') await import('./places-lair-view.js') /* Session 873: the smugglers' lair */;
+else if (Q.get('place') === 'aqueduct') await import('./places-aqueduct-view.js') /* Session 907: Aurenne's ruined aqueduct */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);
