@@ -20161,3 +20161,40 @@ Corrections made during the session:
 - **Snow in a log is a guess at the Mark's way of cooling a still.** It reads plainly, but it wants melting snow carried in and water drained away, which nothing here shows.
 - **The planks' normal map ripples** under the fire's low light (the kit's plank texture, as in the longhouse).
 - **Owed:** Aurenne's alchemist (in tile and arcades, OG-043), then the guildhall, the shrine and the library in each nation's dress.
+
+## v80 — Session 938 — Card F9's thirteenth room: Aurenne's apothecary (prototype only)
+The alchemist's third dress, after the Gatelands apothecary (936) and the Mark's healer's hall (937), so the alchemist now has all three. OG-043 gives Aurenne's alchemy shop glassware and tilework, and OG-114 counts ceramics and glass among Aurenne's trades. So this still is a glass alembic, and the shop's wall is glazed jars. The room is built inside `pieces.js`'s Roman house with its arcade, as Aurenne's smithy is (931): one storey, 7.2 by 6.0 m, the cypress at its door. Nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The room** (`aurenneApothecary` in `rooms.js`):
+- **The counter** runs across the shop from the left wall, 0.95 m high. Its front is faced in blue-and-yellow tile and its top is marble. On it stand the brass scales with a box of weights, a row of phials, and a basket of dried rose. The way behind it is at its right end.
+- **On the customers' side,** a tiled bench under a rug stands by the front wall for those who wait, and a brass lamp hangs from the joists.
+- **The back wall of jars,** left of the back window: five cedar shelves up to 2.5 m, filled with albarelli (waisted jars glazed blue and white, with parchment tied over their mouths). The large jars are below, the small above.
+- **Behind the counter, the four steps:**
+  - **Prepare:** the worktable in the middle at 0.86 m, with a board and knife, roots and petals laid out, a brass sieve and a glass flask.
+  - **Combine:** a bronze mortar on a limestone block, its lip at 0.82 m.
+  - **Heat and distil:** a plastered furnace in the back right corner, its front tiled, its fire door glowing. On it sits the glass cucurbit, with the head over it and the beak falling 0.3 m to a glass receiver on a cedar stand. Over the furnace a plaster hood, edged in tile, narrows into a flue that rises through the ceiling and 0.7 m out through the roof to a pantile cap, as the smithy's does.
+  - **Bottle:** the bench down the right wall at 0.9 m, with a rack of twelve stoppered phials, a funnel in a flask and a bowl of corks. A shelf of small jars runs over it beyond the side window.
+- **Under the arcade,** left of the door's walk, a stall to the street of jars, baskets of petals and phials.
+- 16,456 triangles in 21 draws, on the house's 3,212 in 10.
+
+The view: `rooms.html?room=aurapo`, with `view=shop` (from inside the door over the counter to the wall of jars), `still`, `bench`, `stall` and `outside`.
+
+Corrections made during the session:
+- The jar wall first ran across the back wall's window at x = 0. It now stops 0.14 m short of it.
+- The shelf over the bench crossed the side window at z = 0. It now starts beyond it.
+- The page broke: its general fire light reads `C.fire`, and this room has only the furnace, with its own glow. The page now skips that light for this room. The page check loads this room by day and by night.
+- The first build took 23 draws. Folding near-duplicates brought it to 21: one bronze for the brass and the copper, one cedar, and the linen for the glaze's white.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 103 of 103 pass** (94 after Session 937). Three views are new on the page check (the shop by day and by night, and outside), with no page errors. Six checks are new, over four keys:
+  - **The builds:** 16,456 triangles in 21 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling except the flue, which stays within its own footprint above the roof. No two pieces are in each other.
+  - **The walks:** three walks clear by 0.15 m: the door to the counter, round the counter's end to the still, and along behind it to the jars.
+  - **A person fits:** the counter at 0.95 m, the table at 0.86 m, the bench at 0.9 m, the mortar's lip at 0.82 m.
+  - **The still works:** the cucurbit on the furnace, the head over it and under the hood, the beak falling to the receiver's mouth, and the flue over the furnace and 0.7 m out through the roof.
+  - **The four steps** are behind the counter, 1.3, 2.83 and 1.61 m apart in turn. The shelves are clear of the back and side windows. The stall is under the arcade and 0.3 m or more clear of the door's walk.
+- **Pictures:** `rooms-aurapo-shop.jpg`, `-still`, `-bench`, `-stall`, `-outside` and `-shop-night`.
+### Needs eyes
+- **The glass reads pale and milky** at 38% opacity. Real glass of the time was greener and thicker; the receiver's green liquid is the only colour in it.
+- **The hood hangs high,** 1.9 m over the floor, so that the alembic stands clear under it. A charcoal furnace this small might have had only a flue pipe.
+- **Combine to distil is the longest step,** 2.83 m, because the mortar stands at the counter's far end while the still is in the opposite corner.
+- **Owed:** the guildhall, the shrine and the library in each nation's dress.
