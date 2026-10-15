@@ -36,9 +36,10 @@
 // ?room=aurapo (Session 938): Aurenne's apothecary. view=shop (default): from inside the door over the counter to the wall of jars;
 // view=still: from the counter's end to the alembic on its furnace; view=bench: the phials; view=stall: the arcade's stall from the
 // street; view=outside.
-// ?room=guild (Session 939): the Gatelands Fighters' Guild. view=hall (default): from inside the door to the steward's desk and the
-// notice board; view=table: the long table and the hearth with its banner; view=east: the pell, the grindstone and the stair; view=dorm:
-// the dormitory upstairs from the landing; view=outside.
+// ?room=guild (Session 939; in the kit's guild hall since Session 961): the Gatelands Fighters' Guild. view=hall (default): from inside
+// the great door to the steward's desk, the notice board and the gallery over them; view=table: the long table and the hearth with its
+// shield; view=east: the practice floor, the stair and the partition; view=roof: up into the trusses; view=gallery: along the gallery
+// over the hall; view=dorm: the dormitory from its door; view=steward: the steward's room from its door; view=outside.
 // ?room=temple (Session 946): a Gatelands temple of one of the six gods (&god=hearth (default) | sea | sky | beasts | stone | weaver).
 // view=nave (default): from inside the door down the nave to the altar and the statue; view=statue: the god and its icon from before
 // the altar; view=door: from the dais back to the door, the bullaun and the rags; view=ledge: the benches and the ledge of offerings;
@@ -97,7 +98,11 @@ else if (CRT) { const up = ['gallery', 'bedroom', 'study', 'children'].includes(
   if (!up) for (const b of C.braziers) { const f = new THREE.PointLight(new THREE.Color(1, .5, .2), 2.2, 4, 1.6); f.position.set(b[0], b[1] + .25, b[2] - .45); scene.add(f); }
   sky.groundColor = new THREE.Color(.6, .5, .38); }
 else if (TMP || CHU || LIB) {}
-else if (INN || GLD) { const f = new THREE.PointLight(new THREE.Color(1, .55, .24), 9, 10, 1.6); f.position.set(C.fire[0] + .35, C.fire[1] + .2, C.fire[2]); f.castShadow = true; f.shadow.mapSize.set(1024, 1024); scene.add(f);
+else if (GLD) { const f = new THREE.PointLight(new THREE.Color(1, .55, .24), 12, 12, 1.6); f.position.set(C.fire[0] + .35, C.fire[1] + .2, C.fire[2]); f.castShadow = true; f.shadow.mapSize.set(1024, 1024); scene.add(f);
+  const l = new THREE.PointLight(new THREE.Color(1, .72, .42), HOUR === 'night' ? 7 : 3, 13, 1.4); l.position.set(C.lamp[0], C.lamp[1] + .1, C.lamp[2]); scene.add(l);
+  const u = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 3 : 1.4, 7, 1.6); u.position.set(...C.dormLamp); u.position.x += .3; scene.add(u);
+  const s = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 2 : .9, 6, 1.6); s.position.set(C.stTable.x0 + .6, C.floors[0] + 2.2, 0); scene.add(s); }
+else if (INN) { const f = new THREE.PointLight(new THREE.Color(1, .55, .24), 9, 10, 1.6); f.position.set(C.fire[0] + .35, C.fire[1] + .2, C.fire[2]); f.castShadow = true; f.shadow.mapSize.set(1024, 1024); scene.add(f);
   const l = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 4 : 2, 7, 1.6); l.position.set(C.lamp[0], C.lamp[1] - .1, C.lamp[2]); scene.add(l);
   const u = new THREE.PointLight(new THREE.Color(1, .7, .4), HOUR === 'night' ? 2.5 : 1, 6, 1.6); u.position.set(-.5, C.floors[1] + 1.9, (C.passage + C.inner.z0) / 2); scene.add(u); }
 else { const f = new THREE.PointLight(new THREE.Color(1, .55, .24), LONG ? 14 : 7, LONG ? 13 : 9, 1.6); f.position.set(C.fire[0] + (LONG ? 0 : .35), C.fire[1] + (LONG ? .45 : .2), C.fire[2]); if (LONG) { f.intensity = HOUR === 'night' ? 36 : 30; f.distance = 16; } f.castShadow = true; f.shadow.mapSize.set(1024, 1024); scene.add(f); }
@@ -146,12 +151,15 @@ else if (TMP) { const Z = C.inner.z1, X = C.inner.x1, F = C.floor + 1.62, S = C.
   else if (VIEW === 'ledge') { eye = [-2.6, F, .9]; at = [.4, C.floor + 1.0, -Z]; cam.fov = 72; }
   else if (VIEW === 'outside') { eye = [-C.w / 2 - 9, 1.7, 5.5]; at = [0, 2.8, 0]; cam.fov = 45; }
   else { eye = [-X + .25, F, .25]; at = [S.x, S.y0 + .8, 0]; cam.fov = 66; } }
-else if (GLD) { const Z = C.inner.z1, X = C.inner.x1, [F0, F1] = C.floors;
-  if (VIEW === 'table') { eye = [-.3, F0 + 1.62, 1.9]; at = [-X, F0 + .9, .2]; cam.fov = 70; }
-  else if (VIEW === 'east') { eye = [-.4, F0 + 1.62, .9]; at = [X, F0 + 1.0, -.6]; cam.fov = 70; }
-  else if (VIEW === 'dorm') { eye = [3.3, F1 + 1.62, -1.9]; at = [-X, F1 + .4, 1.2]; cam.fov = 72; }
-  else if (VIEW === 'outside') { eye = [5.5, 1.7, C.d / 2 + 10]; at = [0, 2.6, 0]; cam.fov = 45; }
-  else { eye = [C.door.x + .2, F0 + 1.62, Z - .2]; at = [-.2, F0 + 1.3, -Z]; cam.fov = 70; } }
+else if (GLD) { const Z = C.inner.z1, X = C.inner.x1, [F0, F1] = C.floors, P = C.part;
+  if (VIEW === 'table') { eye = [-1.0, F0 + 1.62, 2.4]; at = [-X, F0 + 1.3, .3]; cam.fov = 72; }
+  else if (VIEW === 'east') { eye = [-3.4, F0 + 1.62, 1.9]; at = [P.x0, F0 + 2.3, -.8]; cam.fov = 74; }
+  else if (VIEW === 'roof') { eye = [-5.2, F0 + 1.62, 2.6]; at = [0, 7.6, -.3]; cam.fov = 74; }
+  else if (VIEW === 'gallery') { eye = [-X + .5, F1 + 1.62, C.gallery.z0 + .7]; at = [P.x0, F1 - .4, 1.4]; cam.fov = 74; }
+  else if (VIEW === 'dorm') { eye = [P.x1 + .4, F1 + 1.62, (C.doors.dorm.z0 + C.doors.dorm.z1) / 2]; at = [X, F1 + .3, 2.2]; cam.fov = 72; }
+  else if (VIEW === 'steward') { eye = [P.x1 + .45, F0 + 1.62, (C.doors.steward.z0 + C.doors.steward.z1) / 2]; at = [X, F0 + .8, -1.2]; cam.fov = 72; }
+  else if (VIEW === 'outside') { eye = [6.0, 1.7, C.d / 2 + 13]; at = [0, 3.4, 0]; cam.fov = 48; }
+  else { eye = [C.door.x + .3, F0 + 1.62, Z - .3]; at = [-1.1, F0 + 2.0, -Z]; cam.fov = 74; } }
 else if (AAPO) { const Z = C.inner.z1, X = C.inner.x1, F = C.floor + 1.62, Fu = C.furnace;
   if (VIEW === 'still') { eye = [1.9, F, .9]; at = [Fu.x0 + .3, C.floor + 1.0, Fu.z0 + .4]; cam.fov = 66; }
   else if (VIEW === 'bench') { eye = [.9, F, -1.0]; at = [X, C.floor + 1.0, .5]; cam.fov = 70; }

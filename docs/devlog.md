@@ -21073,3 +21073,60 @@ Corrections made during the session:
 - **The front reads as two buildings,** a chapel-like hall and a house at the east end. That is the plan's honesty about the dormitory, but a single row of tall lights would read as one hall.
 - **The banner is edge-on from in front.** Hung across the street, it reads from along the street and not from facing the door.
 - **Owed:** the Fighters' Guild rebuilt inside it (the hall open to the roof, the gallery, the dormitory, the steward's rooms), then the Mages' Guild in the same house, then the other islands' halls.
+
+## v80 — Session 961 — The Fighters' Guild in its own hall (card F9, prototype only)
+Session 960 built the guild hall Michael asked for on #352 (C). This session moves the Fighters' Guild of Session 939 out of the farmhouse and into it. Everything the game's guild hall has is kept: the steward at the desk, the notice board, the racks, the armour stands, the long table, the grindstone and the beds. It is laid out again round what the new house gives: a hall open to the roof, and a gallery to the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The room** (`gatelandsGuildHall`, inside `GL_PLANS.guildhall` with its great door open):
+- **The hall** (9.4 by 7.6 m, open to 10.1 m at the ridge):
+  - **The roof:** three arch-braced collar trusses on stone corbels and wall posts, each brace a round arch springing at 5.6 m and meeting under its collar at 8.4 m. Above them are purlins, a ridge beam and wall plates under a boarded lining. The trusses stand at x −3.9, −1.3 and 1.3, the only places clear of both the front's tall lights and the back's high ones.
+  - **The hearth** is in the west gable. Its limewashed breast rises as a flue to the lining, and the guild's red shield hangs on it over two crossed blades.
+  - **The long table** with its benches stands before the hearth.
+  - **The steward's desk** faces the great door, with its ledger, inkwell and quill. The notice board hangs behind it on the back wall, under the gallery.
+  - **The weapons' rack** stands under the gallery, west of the back door.
+  - **The two armour stands** stand by the front wall, between the great door and the east light.
+  - **The practice floor** has the pell, with the grindstone by the gallery.
+  - **A wheel of eight candles** hangs on its crown from the middle collar, 4.3 m over the floor.
+- **The gallery** runs the back wall at the first floor (3.2 m) on a bressummer and three posts, 1.35 m deep. It has a rail of balusters over the hall and a bench under the high lights.
+- **The stair** of sixteen risers (0.197 by 0.27 m) rises along the partition from the front, with a raking rail and a newel. Its head lands on the gallery's east end, and the dormitory's door opens there in the partition.
+- **The dormitory** is over the steward's room, open to the roof. Six beds stand with their heads to the east gable, each with a chest at its foot. The aisle runs along the partition, and a lamp hangs on a bracket.
+- **The steward's room** is under the dormitory, through a door in the partition by the stair's foot. It holds a table with the guild's books and a chair, a press against the partition, and the iron-bound strongbox under the east gable between its windows.
+- The doors' leaves stand open: the great door's against the front wall, and the partition's two flat against its east face.
+- 8,367 to 8,559 triangles in 20 draws, on the hall's 9,849 in 13. The farmhouse's room was about 5,000 in 20.
+
+The view: `rooms.html?room=guild`, with `view=hall` (from the great door to the desk, the board and the gallery), `table`, `east`, `roof` (up into the trusses), `gallery`, `dorm`, `steward` and `outside`.
+
+Corrections made during the session:
+- **The trusses.** They were first set every 2.35 m from the gable. Their corbels then landed in a back high light and a front tall light. They now stand in the three bays clear of both, and spring above the front lights' heads.
+- **Through the slate.** The purlins' outer top edges first stood 4 cm through the slate, and the rafters' feet stood past the wall's face. Both are now cut to the slope.
+- **The draw budget.** The wheel's candles had a wax material of their own, which made 21 draws. They take the linen's now.
+- **A slip in the check, mine.** Raising the room's draw limit by a replace-all also tightened Aurenne's smithy's and apothecary's limits from 22 to 20, and turned the apothecary (21 draws) red. Both lines are restored from HEAD.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 146 of 146 pass** (141 after Session 948). Four views are new on the page check: the gallery, the roof, the steward's room and outside, all with no page errors. The Fighters' Guild's checks are rewritten for the new house, six over four keys:
+  - **The builds:** 8,367 to 8,559 triangles in 20 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the roof's lining, measured against the slope at each point. 0 points through and 0 clashes on a floor.
+  - **The walks:** six walks clear by 0.15 m, and each crosses the partition only at a door:
+    - the great door to the desk;
+    - the great door past the stands and the stair's foot into the steward's room to its table;
+    - the back door to the long table;
+    - the great door to the hearth;
+    - the stair's head along the gallery;
+    - the dormitory's door down its aisle.
+  - **A person fits:**
+    - the desk at 0.78 m, the table at 0.76 m, the benches at 0.45 m;
+    - six beds 1.87 m inside;
+    - the stair 0.197 by 0.27 m, with 5.08 m clear over every tread;
+    - the partition's doors 0.85 by 2.05 m and 0.8 by 2.0 m.
+  - **The board:** behind the desk and over it.
+  - **The gallery:**
+    - the rail 1.01 m over its floor;
+    - the stair's head at the gallery's floor and edge;
+    - the dormitory's door off the gallery's end;
+    - the hall open to the roof on three trusses, with no piece of the hall's floor above 3.5 m.
+- **Pictures:** `rooms-guild-hall.jpg`, `-table`, `-east`, `-roof`, `-gallery`, `-dorm`, `-steward`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The hall's walls are bare rubble inside,** as the forge's and the temple's are. A guild of means might limewash them, as the partition is.
+- **The night view is barely darker than noon.** The page's night lowers the sky's light, and the chandelier and the fire carry the room.
+- **The dormitory has no hearth** (the east stack was taken off in Session 960 for the beds).
+- **Six beds where the farmhouse had seven.** The gallery could take two more under its high lights, if the guild wants beds in view of the hall.
+- **Owed:** the Mages' Guild in the same house (blue, the hall as a library and a casting floor), then the other islands' halls.
