@@ -20150,3 +20150,24 @@ What changed in `creatures.js`:
 - **Owed:**
   - The rags at the hips: cloth on a creature, which the goblin's harness also waits for.
   - OG-018's drowned skeleton (Uisce), as a recolour with weed.
+
+## v80 — Session 935 — The drowned skeleton (L4, prototype only)
+OG-018 draws Uisce's hall with a drowned skeleton, weed-hung, among its antibodies. It is one of the five new foes that sheet names (with the Magma Slime, Session 928). This is the skeleton of Session 934 out of the sea, and asks nothing new. FREEZE #297 is still open, so this touches only the prototypes.
+
+`drownedskeleton` is a recolour of `skeleton`, plus weed:
+- **The bones** are grey-green, blotched with dark weed (the patches pattern, 6 cm across).
+- **The weed:** 36 strands, 20 to 45 cm long, hang from its skull, neck, spine and both arms. They are the kelpstrider's fronds (Session 863) turned to hang down instead of streaming back. They are skinned, so they move with the bones they hang from.
+- **The eyes:** sockets lit the sea's pale blue.
+- **The gear:** the sword gone to rust-brown, the shield to black waterlogged wood. It walks a little slower than the dry skeleton (speed 0.8 against 0.9).
+- **The record:** `SKELETONS` lists both. The plan carries `school: 'Uisce'` and `from: 'skeleton'`.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,002 checks pass** (991 before).
+- The drowned skeleton builds and walks with the skeleton's bones: 23 bones, every foot to its target, the walk's feet down 0.69 of 0.68.
+- It is Uisce's skeleton and carries weed.
+- Its gear stays clear of the ground through every gait (lowest 0.15 m).
+- Pictures: `creatures-drownedskeleton.jpg`; `creatures-classic.jpg` re-shot with it beside the five.
+
+### Needs eyes
+- Whether the weed reads as weed at game range, or as green rags. It could be the sheet's "rags at the hips" too, if Michael likes it.
+- OG-018 draws them in a pair. Two seeds give two builds of the plan (size, tint); the pairing is the gate's placement, not the kit's.

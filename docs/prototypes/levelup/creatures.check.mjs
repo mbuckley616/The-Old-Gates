@@ -115,10 +115,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       const flesh = K.build(K.genome('troll', 'troll:check')).stats.tris; let low = 1e9, head = 0;
       for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
         for (const o of items) { box.setFromObject(o); low = Math.min(low, box.min.y - C.root.position.y); } C.byName.head.getWorldPosition(P); head = Math.max(head, P.y - C.root.position.y); } }
-      out[k] = { bare: !!C.plan.bare, tris: C.stats.tris, troll: flesh, ribs: C.B.ribs, gear: C.B.gear, low: +low.toFixed(3), head: +head.toFixed(2) }; }
+      out[k] = { school: C.plan.school || '', from: C.plan.from || '', weed: C.meshes.some(m => m.name === 'fins'), bare: !!C.plan.bare, tris: C.stats.tris, troll: flesh, ribs: C.B.ribs, gear: C.B.gear, low: +low.toFixed(3), head: +head.toFixed(2) }; }
     return out; });
   for (const [k, t] of Object.entries(sk)) {
     check(`${k}: a bare body, bones and not a hide (${t.tris} triangles against the troll's ${t.troll}), ${t.ribs} ribs, its skull ${t.head} m up`, t.bare && t.tris < t.troll && t.ribs >= 10 && t.head > 1.4 && t.head < 1.85, t);
+    if (t.school) check(`${k}: the ${t.from} of ${t.school}, weed-hung (OG-018)`, t.from === 'skeleton' && t.school === 'Uisce' && t.weed, t);
     check(`${k}: carries ${(t.gear || []).join(' and ')}, clear of the ground through every gait (lowest ${t.low} m)`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.low > .02, t); }
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });

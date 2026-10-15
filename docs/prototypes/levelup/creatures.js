@@ -1706,4 +1706,14 @@ Object.assign(PLANS, {
         { kind: 'shield', arm: 0, side: 1, r: .3, t: .03, face: [1, .8], off: .04, tone: 'wood', rim: 'iron', boss: 'iron' }] }]
     ] }
 });
-export const SKELETONS = ['skeleton'];
+// ── Session 935: OG-018's drowned skeleton, Uisce's (weed-hung, in a pair): the skeleton grey-green from the sea, its bones stained
+// with weed, strands of it hanging from its skull, spine and arms (the kelpstrider's fronds, Session 863, hung down), its sockets lit
+// the sea's blue, its sword rusted and its shield waterlogged ──
+Object.assign(PLANS, {
+  drownedskeleton: re(PLANS.skeleton, { name: 'Drowned Skeleton', src: 'OG-018 (Uisce: a drowned skeleton, weed-hung, in a pair)', school: 'Uisce', from: 'skeleton', bare: PLANS.skeleton.bare, speedK: .8, rough: .55, mottle: 1.6,
+    palette: { coat: [.6, .64, .56], weed: [.16, .3, .2], frond: [.18, .32, .16], frondTip: [.34, .42, .2], dark: [.04, .05, .06], wood: [.22, .24, .2], iron: [.34, .27, .2], leather: [.12, .12, .1] },
+    pattern: { kind: 'patches', tone: 'weed', size: .06, cut: 0, amount: .9 }, finOpacity: .95,
+    parts: [...PLANS.skeleton.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, r: .02, color: [.35, .75, .95] })) }] : [k, o]),
+      ['fronds', { on: ['head', 'neck', 'spine', 'arm0L_', 'arm0R_'], n: 36, len: .34, w: .04, out: .25, spread: .2, lift: -1.6, back: .15, tip: 'frondTip' }]] })
+});
+export const SKELETONS = ['skeleton', 'drownedskeleton'];
