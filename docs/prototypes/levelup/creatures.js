@@ -78,6 +78,8 @@ P.head = (B, o) => {
   if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit('head', m); B.sac = m; }
   if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit('head', claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
     B.bit('head', eye(o.stalks.r, o.stalks.color, p)); }
+  // a brow (Session 927): a ridge of flesh across the skull over the eyes, grown into the head as one surface (the troll's)
+  if (o.brow) B.meat('head', at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
   if (o.fangs) for (const sd of [1, -1]) B.bit('head', claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
 // the tail: from the rump, n bones, starting at `droop` degrees below level and bending by `curl` a bone
@@ -1522,7 +1524,7 @@ Object.assign(PLANS, {
       ['spine', { hip: [1.25, -.08], chest: [2.15, .26], n: 4, r: [.3, .4, .4], s: [1.2, 1], arch: .04, rump: .1, front: .08, frontDrop: .04, hump: { at: .85, up: .1, len: .3, r: .28 } }],
       ['neck', { len: .26, n: 1, rise: 0, r: [.2, .14], fwd: .12, up: -.02 }],
       ['head', { len: .42, r: .22, pitch: 10, s: [1.2, 1.05, 1], muzzle: { len: .88, r: .13, taper: .8, nose: 1, drop: .1 }, jaw: { len: .96, r: .14, drop: 1 },
-        eyes: [{ f: .4, up: .45, out: .5, r: .022, color: [.75, .5, .12] }], ears: { kind: 'cone', size: .07, f: .12, up: .55, out: .95, back: 20, splay: 70, tone: 'skin' },
+        brow: { f: .42, up: .66, out: .5, r: .07 }, eyes: [{ f: .4, up: .45, out: .5, r: .022, color: [.75, .5, .12] }], ears: { kind: 'cone', size: .07, f: .12, up: .55, out: .95, back: 20, splay: 70, tone: 'skin' },
         horns: { len: .17, r: .03, f: .86, up: -.8, out: .6, turn: .4, rise: 1.2, spread: .15, back: -.2, out0: .1 } }],
       ['legs', { at: 0, kind: 'plantHind', out: .28, drop: .08, r: [.22, .17, .14], claws: { r: .02, len: .06 } }],
       ['arms', { at: 1, out: .5, up: -.1, len: 1.5, r: [.15, .13, .12], dir: [.25, -1, .05], bend: 18, tone: 'coat', claws: { r: .02, len: .09 }, swing: .28 }]
@@ -1540,3 +1542,17 @@ Object.assign(PLANS, {
       ['spines', { n: 7, from: .1, to: 1, len: .28, r: .16, tone: 'rock', taper: .3, crystal: 2, stone: 1, dorsal: 1 }]] })
 });
 export const CORRUPTED = ['frostbear', 'blightboar', 'shadowstag', 'duskeagle', 'stonetroll'];
+// ── Session 927: OG-018's trolls of the gates, the cave troll as each school's antibody wears it: recolours of one plan, as the
+// sheet draws them (and the Cloch troll is the moss-backed troll itself). Tine's is basalt with forge-light in its cracks;
+// Uisce's is drowned-pale, weed in its folds, its eyes gone to the sea's blue ──
+Object.assign(PLANS, {
+  tinetroll: re(PLANS.troll, { name: 'Cave Troll of Tine', src: 'OG-018 (Tine: a cave troll with glowing cracks)', school: 'Tine', from: 'troll', pattern: undefined, mottle: 2,
+    palette: { coat: [.17, .15, .14], saddle: [.12, .11, .1], belly: [.22, .19, .17], dark: [.04, .03, .03], horn: [.4, .36, .3], skin: [.15, .13, .12] },
+    glow: { color: [3.2, .8, .18], freq: 1.6, w: .016, all: .4 },
+    parts: PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [1, .45, .1] })) }] : [k, o]) }),
+  uiscetroll: re(PLANS.troll, { name: 'Cave Troll of Uisce', src: 'OG-018 (Uisce: a pale cave troll of the drowned halls)', school: 'Uisce', from: 'troll', rough: .6,
+    palette: { coat: [.66, .7, .7], saddle: [.56, .62, .63], belly: [.74, .77, .76], weed: [.16, .3, .24], dark: [.05, .06, .07], horn: [.7, .72, .66], skin: [.6, .64, .64] },
+    pattern: { kind: 'patches', tone: 'weed', size: .12, cut: .32, amount: .7 },
+    parts: PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.45, .75, .9] })) }] : [k, o]) })
+});
+export const TROLLS = ['troll', 'tinetroll', 'uiscetroll', 'stonetroll'];

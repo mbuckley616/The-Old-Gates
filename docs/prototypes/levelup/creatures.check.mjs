@@ -61,7 +61,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   // the troll (Session 926): the kit's first upright walker with hands. It stands on one leg pair, a man and a half tall, and
   // through a whole stride of its walk its hands swing between its hips and the ground, never into it
   const tr = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
-    for (const k of ['troll', 'stonetroll']) { const C = K.build(K.genome(k, k + ':check')), P = new C.rig.position.constructor(), hands = C.bones.filter(b => /^arm0[LR]_/.test(b.name)).filter((b, i, a) => !b.children.some(c => a.includes(c)));
+    for (const k of K.TROLLS) { const C = K.build(K.genome(k, k + ':check')), P = new C.rig.position.constructor(), hands = C.bones.filter(b => /^arm0[LR]_/.test(b.name)).filter((b, i, a) => !b.children.some(c => a.includes(c)));
       C.gait = 'walk'; let lo = 1e9, hi = -1e9, top = 0, swing = 0;
       for (let i = 0; i < 48; i++) { K.pose(C, i / 48); C.rig.updateMatrixWorld(true); const z = [];
         for (const h of hands) { h.getWorldPosition(P); C.rig.worldToLocal(P); const y = P.y * C.S; lo = Math.min(lo, y); hi = Math.max(hi, y); z.push(P.z * C.S); }
@@ -69,6 +69,9 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       C.rig.updateMatrixWorld(true); C.byName.head.getWorldPosition(P); C.rig.worldToLocal(P); top = P.y * C.S;
       out[k] = { legs: C.B.legs.length, arms: C.B.arms.length, hands: hands.length, head: +top.toFixed(2), hip: +(C.legH * C.S).toFixed(2), lo: +lo.toFixed(2), hi: +hi.toFixed(2), swing: +swing.toFixed(2), tris: C.stats.tris }; }
     return out; });
+  // OG-018's trolls by school (Session 927): one plan recoloured, so the same bones and the same build, a different hide
+  const ts = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.TROLLS.map(k => ({ k, school: K.PLANS[k].school || '', from: K.PLANS[k].from || '', src: K.PLANS[k].src })); });
+  check(`the trolls by school: ${ts.map(t => t.k + (t.school ? ' (' + t.school + ')' : '')).join(', ')}; Tine, Uisce and Cloch, as canon §9a puts them`, ts.length === 4 && ['Tine', 'Uisce', 'Cloch'].every(sc => ts.some(t => t.school === sc)) && ts.filter(t => t.school).every(t => t.from === 'troll'), ts);
   for (const [k, t] of Object.entries(tr)) {
     check(`${k}: an upright biped with two arms (${t.legs} legs, ${t.arms} arms), its head ${t.head} m up`, t.legs === 2 && t.arms === 2 && t.hands === 2 && t.head > 2 && t.head < 3.4, t);
     check(`${k}: through its walk the hands swing between the hips and the ground (${t.lo} to ${t.hi} m, the hips at ${t.hip} m; ${t.swing} m apart at most)`, t.lo > .1 && t.hi < t.hip && t.swing > .15, t); }

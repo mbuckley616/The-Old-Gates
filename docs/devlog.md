@@ -19811,3 +19811,28 @@ What changed in `creatures.js`:
   - OG-018's Tine troll (glowing cracks) and its pale Uisce troll, as recolours of this plan;
   - the other four of the classic five;
   - the game, after F4.
+
+## v80 — Session 927 — The trolls by school, and a brow (L4, prototype only)
+Session 926 left two things owed on the troll: OG-018's trolls of Tine and Uisce, which the sheet draws as the same beast in each school's colours, and a head with no brow, which ran into the hump. This does both. The sheets draw them, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`head` takes `brow`.** A capsule of flesh across the skull over the eyes, from one side to the other, grown into the head as one surface. The troll's is 7 cm thick, at 42% of the head's length and two thirds of its radius up. From the side the head now has a ledge over the eyes, and the skull reads apart from the hump behind it. It costs about 2,100 triangles (10,256 to 12,396): the grid meshes the ridge as finely as the rest.
+- **`tinetroll`, the Cave Troll of Tine:** basalt-dark, forge-orange light in its cracks (OG-018's "glowing cracks", in the Faolchú's colour of Tine's fire), and ember eyes.
+- **`uiscetroll`, the Cave Troll of Uisce:** drowned-pale, with dark weed in small patches over its hide, and eyes gone to the sea's blue. The first build's weed covered a third of the hide in large patches and read as camouflage. It is now smaller and sparser: patches of 12 cm, cut at 0.32.
+- **`TROLLS`** lists the four: the cave troll itself (OG-018's Cloch troll is the moss-backed one, OG-041's), Tine's, Uisce's, and the Stone Troll (Cloch, corrupted). Each of the three by school carries its `school` and `from: 'troll'`.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 957 checks pass** (936 before).
+  - The new plans' gaits and the family checks pass.
+  - A new check covers the trolls by school: four plans, covering Tine, Uisce and Cloch as canon §9a puts them, every one with a school drawn from the troll.
+  - The troll's own checks now run over all four. Heads are 2.13 to 2.39 m up. Through the walk the hands stay between the hips and the ground: the lowest 0.57 m, the highest 1.11 m, always under the hips.
+- Triangles by seed: 12,396 (the troll), 14,788 (Tine's), 13,140 (Uisce's), 13,652 (the Stone Troll). The spread is the genome's seeded sliders, not the dress.
+- In every gait each foot reaches its target (0.0 cm worst). No page errors.
+- **Pictures:**
+  - `creatures-trolls.jpg`: the four side by side with men for scale;
+  - `creatures-tinetroll.jpg` and `creatures-uiscetroll.jpg`;
+  - `creatures-troll.jpg`, `creatures-stonetroll.jpg` and `creatures-corrupted.jpg` retaken with the brow.
+### Needs eyes
+- **Uisce's weed is patches, not hanging weed.** OG-018 draws it hung off the troll. Strands would want the kit's fronds (the kelpstrider's), which cost a mesh of their own.
+- **The brow helps from the side; from the front** the face is still a jaw and two eyes. A nose and cheekbones would want a sculpted target.
+- **Owed, as before:** the armour scraps, the other four of the classic five, the game (after F4).
