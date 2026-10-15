@@ -82,6 +82,19 @@ P.head = (B, o) => {
   if (o.brow) B.meat('head', at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
   if (o.fangs) for (const sd of [1, -1]) B.bit('head', claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
+// inclusions (Session 928): what a clear body has swallowed, seen through it (the slime's bones and rubble). Each is a rigid
+// bit on the nearest spine bone, placed from the seed inside the body (never out of it): `rubble` a flat-faced stone,
+// `bone` a long bone with its two knobs, `skull` a cranium with its eye holes
+P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
+  for (const [kind, n] of Object.entries(o.n)) for (let k = 0; k < n; k++) {
+    const t = .08 + .84 * r(), sp = B.spineAt(t), a = r() * Math.PI * 2, d = Math.sqrt(r()) * sp.r * (o.depth ?? .5), p = sp.p.clone().add(V(Math.cos(a) * d * B.spineS[0], Math.sin(a) * d * B.spineS[1] * .8, (r() - .5) * sp.r * .4)), sz = o.size * (.7 + .6 * r());
+    let m;
+    if (kind === 'rubble') { m = new THREE.Mesh(new THREE.DodecahedronGeometry(sz * .5, 0), stdMat(B.tone('rubble'), { rough: .95, flat: true })); m.scale.set(1, .6 + .4 * r(), .8 + .4 * r()); }
+    else if (kind === 'bone') { const L = sz * 2.4, g = new THREE.CylinderGeometry(sz * .09, sz * .09, L, 7); for (const e of [1, -1]) { const k2 = new THREE.SphereGeometry(sz * .17, 8, 6); k2.translate(0, e * L / 2, 0); g.copy(mergeGeometries([g.toNonIndexed(), k2.toNonIndexed()])); }
+      m = new THREE.Mesh(g, stdMat(B.tone('bone'), { rough: .7 })); }
+    else { const g = new THREE.SphereGeometry(sz * .5, 14, 10); g.scale(.8, .85, 1); m = new THREE.Mesh(g, stdMat(B.tone('bone'), { rough: .7 }));
+      for (const e of [1, -1]) { const h = ball(sz * .12, B.tone('dark'), V(e * sz * .16, sz * .06, sz * .42)); m.add(h); } }
+    m.position.copy(p); m.rotation.set(r() * 6.3, r() * 6.3, r() * 6.3); B.bit(sp.bone, m); } };
 // the tail: from the rump, n bones, starting at `droop` degrees below level and bending by `curl` a bone
 P.tail = (B, o) => {
   const len = o.len * B.g.sliders.tail, n = o.n || 3, p0 = B.back.clone().add(V(0, o.up || 0, 0)), pts = [p0];
@@ -426,11 +439,11 @@ function dressFlesh(geo, B, pal, plan) {
 // ── materials: the hide, fur shells (cut by noise, as the people's mantles are), and the binding's glow ──
 const GLOW_HEAD = 'attribute float aGlow; attribute float aFur; varying float vGlow; varying float vFur; varying vec3 vRP;\n';
 function hideMat(o) {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .85, metalness: 0 });
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .85, metalness: 0, ...(o.opacity < 1 ? { transparent: true, opacity: o.opacity, depthWrite: false } : {}) });
   m.onBeforeCompile = s => { s.uniforms.uGlow = { value: new THREE.Color(...(o.glow || [0, 0, 0])) };
     s.vertexShader = GLOW_HEAD + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;');
     s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;'); };
-  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0); return m;
+  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0) + (o.opacity < 1 ? 'c' : ''); return m;
 }
 function furMat(o, layer, layers) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, side: THREE.DoubleSide, alphaTest: .5 });
@@ -479,7 +492,7 @@ export function build(g) {
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
   B.bones.forEach((b, i) => { if (b.parent) bones[b.parent.i].add(bones[i]); }); const rig = new THREE.Group(); rig.add(bones[0]); root.add(rig); rig.updateMatrixWorld(true);
   const skel = new THREE.Skeleton(bones), meshes = [];
-  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
+  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough, opacity: plan.clear })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
     for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
@@ -1556,3 +1569,22 @@ Object.assign(PLANS, {
     parts: PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.45, .75, .9] })) }] : [k, o]) })
 });
 export const TROLLS = ['troll', 'tinetroll', 'uiscetroll', 'stonetroll'];
+// ── Session 928: the slime (OG-041: translucent pale green, arched like a wave, bones and rubble suspended inside; canon §9a
+// puts slimes in Uisce gates, a magma one in Tine's). No legs and no head: a body that heaves along (the crawl, paced in body
+// lengths), its crest rolled forward over its front like a wave about to break, clear enough to see what it has taken in ──
+Object.assign(PLANS, {
+  slime: { name: 'Slime', src: 'OG-041 (slime: translucent pale green, arched like a wave, bones and rubble suspended inside)', gaits: ['crawl', 'stand'], bl: .12, clear: .55, rough: .12, mottle: .5, wag: 0, pant: .05,
+    palette: { coat: [.62, .78, .5], saddle: [.7, .84, .56], belly: [.45, .6, .36], bone: [.82, .78, .66], rubble: [.42, .4, .36], dark: [.08, .07, .06] },
+    parts: [
+      ['spine', { hip: [.32, -.55], chest: [.62, .3], n: 6, r: [.36, .52, .5, .3], s: [1.25, 1.05], arch: .14, rump: .3, rumpDrop: .2, rumpTaper: .7, front: .32, frontDrop: .42, frontTaper: .55 }],
+      ['inclusions', { n: { skull: 1, bone: 5, rubble: 7 }, size: .16, depth: .55 }]
+    ] }
+});
+Object.assign(PLANS, {
+  // Tine's (OG-018: "orange jelly with dark holes"): molten, less clear, lit from inside, carrying clinker instead of bones
+  magmaslime: re(PLANS.slime, { name: 'Magma Slime', src: 'OG-018 (Tine: a magma slime, orange jelly with dark holes)', school: 'Tine', from: 'slime', clear: .8, rough: .3, mottle: 1.4, bl: .1,
+    palette: { coat: [.6, .17, .03], saddle: [.32, .08, .02], belly: [.85, .36, .06], bone: [.3, .24, .2], rubble: [.08, .07, .06], dark: [.04, .03, .03] },
+    glow: { color: [2.6, .7, .12], freq: 2.4, w: .06, all: .7, base: .2 },
+    parts: PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { rubble: 11 } }] : [k, o]) })
+});
+export const SLIMES = ['slime', 'magmaslime'];

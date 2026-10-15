@@ -19836,3 +19836,24 @@ What changed in `creatures.js`:
 - **Uisce's weed is patches, not hanging weed.** OG-018 draws it hung off the troll. Strands would want the kit's fronds (the kelpstrider's), which cost a mesh of their own.
 - **The brow helps from the side; from the front** the face is still a jaw and two eyes. A nose and cheekbones would want a sculpted target.
 - **Owed, as before:** the armour scraps, the other four of the classic five, the game (after F4).
+
+## v80 — Session 928 — The slime and the magma slime (L4, prototype only)
+The third of OG-041's classic five: translucent pale green, arched like a wave, with bones and rubble suspended inside. OG-018 adds Tine's magma slime ("orange jelly with dark holes"), and canon §9a puts slimes in Uisce gates and the magma one in Tine's. The sheets draw both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A plan may be clear.** `clear` sets the hide's opacity. Under 1 the hide is drawn transparent and writes no depth, so what is inside shows through it. Every other plan is opaque as before.
+- **`inclusions`, a new part: what a clear body has swallowed.** Each is a rigid bit on the nearest spine bone, set by the seed inside the body (at most `depth` of the spine's radius out from its line, never through the skin). There are three kinds: `rubble` (a flat-faced stone), `bone` (a long bone with a knob at each end) and `skull` (a cranium with two eye holes).
+- **`slime`, the Slime:** six spine bones and nothing else, no legs and no head. Its body is a mound 1.3 m long and 0.85 m high, its crest rolled forward over a front lip like a wave about to break, its back trailing low. It heaves along at the crawl, 0.24 m a second, and breathes when it stands. Pale green at 0.55 opacity, glossy, with a skull, five bones and seven stones inside. 1,340 triangles for the hide and 13 small bits.
+- **`magmaslime`, the Magma Slime (Tine):** the slime molten, deep orange at 0.8 opacity, with forge-light in veins through it and a low glow over all of it. It carries eleven lumps of black clinker instead of bones. `SLIMES` lists the two.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 969 checks pass** (957 before).
+  - The new plans' gaits and family checks pass.
+  - A new check for each slime: its hide is clear (0.55 and 0.8), it holds at least eight things (13 and 11), and through a whole crawl stride every one stays inside the hide's bounds (0 out of 312 and 264 placings). The bounds are the hide's box, not its surface; the placing rule (inside half the spine's radius) is what keeps them under the skin.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** `creatures-slime.jpg` and `creatures-magmaslime.jpg`, each beside a man.
+### Needs eyes
+- **The holes through it** (OG-041 draws daylight through the slime) are not there. A hole wants the flesh cut by a subtracted capsule, which the surface nets could do, as a later part.
+- **The magma slime in daylight** reads as orange jelly more than molten rock. Its veins want a dark Tine hall to glow in.
+- **The bones are bright through the green.** At 0.55 the slime is clearer than OG-041's; a murkier slime is one number.
+- **Owed:** the skeleton, the goblin and the giant spider of the classic five. The first two are people's bodies more than creatures, and may belong in `people.js`. The game, after F4.

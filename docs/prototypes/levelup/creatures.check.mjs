@@ -72,6 +72,14 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   // OG-018's trolls by school (Session 927): one plan recoloured, so the same bones and the same build, a different hide
   const ts = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.TROLLS.map(k => ({ k, school: K.PLANS[k].school || '', from: K.PLANS[k].from || '', src: K.PLANS[k].src })); });
   check(`the trolls by school: ${ts.map(t => t.k + (t.school ? ' (' + t.school + ')' : '')).join(', ')}; Tine, Uisce and Cloch, as canon §9a puts them`, ts.length === 4 && ['Tine', 'Uisce', 'Cloch'].every(sc => ts.some(t => t.school === sc)) && ts.filter(t => t.school).every(t => t.from === 'troll'), ts);
+  // the slimes (Session 928): a clear hide, and everything they have swallowed inside it, through a whole stride of the crawl
+  const sl = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    for (const k of K.SLIMES) { const C = K.build(K.genome(k, k + ':check')), hide = C.meshes[0]; hide.geometry.computeBoundingBox(); const box = hide.geometry.boundingBox.clone();
+      const bits = []; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.parent?.isBone) bits.push(o); }); C.gait = 'crawl'; let out_ = 0; const P = new C.rig.position.constructor();
+      for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); for (const b of bits) { b.getWorldPosition(P); C.rig.worldToLocal(P); if (!box.containsPoint(P)) out_++; } }
+      out[k] = { clear: hide.material.transparent ? +hide.material.opacity.toFixed(2) : 1, bits: bits.length, out: out_, tris: C.stats.tris, school: C.plan.school || '' }; }
+    return out; });
+  for (const [k, t] of Object.entries(sl)) check(`${k}: a clear body (opacity ${t.clear}) holding ${t.bits} swallowed things, every one inside it through the crawl (${t.out} out)${t.school ? '; ' + t.school + "'s" : ''}`, t.clear < 1 && t.bits >= 8 && t.out === 0, t);
   for (const [k, t] of Object.entries(tr)) {
     check(`${k}: an upright biped with two arms (${t.legs} legs, ${t.arms} arms), its head ${t.head} m up`, t.legs === 2 && t.arms === 2 && t.hands === 2 && t.head > 2 && t.head < 3.4, t);
     check(`${k}: through its walk the hands swing between the hips and the ground (${t.lo} to ${t.hi} m, the hips at ${t.hip} m; ${t.swing} m apart at most)`, t.lo > .1 && t.hi < t.hip && t.swing > .15, t); }
