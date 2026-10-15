@@ -20157,6 +20157,98 @@ What changed in `creatures.js`:
   - Tine and Solas have no corrupted animal on the sheet;
   - the game, after F4.
 
+## v80 — Session 925 — The frost bear's crown at its brow (L4, a fix to Session 919, prototype only)
+Session 919 left a note under Needs eyes: the Frost Wraith Bear's crown of ice shards sat at the back of its skull rather than the brow, so from the side it read as the front of the back's ridge. OG-088 draws the crown over the eyes. This is a refinement of a plan already built, so it asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`).
+
+What changed in `creatures.js`:
+- **`crystals` takes `rake`.** The Shatterhorn's crystal horns sweep back from the brow, each shard leaning back and stepping back from the one before. `rake` scales both, the lean and the step: 1, the default, is the Shatterhorn's sweep unchanged (the arithmetic is the same when it is 1), and toward 0 the shards stand up from where they grow.
+- **The frost bear's crown:** it now grows a fifth of the head further forward (at 34% of the head's length, where the skull meets the muzzle, against 20%), a little lower and closer together (up 0.8 and out 0.38 of the head's radius, against 0.9 and 0.45), 30 cm long against 34, and raked at 0.3. It stands up over the eyes as a crown of five shards a side, with clear air between it and the first of the back's eleven clusters.
+- **Triangles:** unchanged at 29,792; the shards are the same cones in new places.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 915 checks pass**, the same count as Session 919. The frost bear's four gaits put every foot on its target (0.0 cm worst), its skin weights sum to one, and its genome is 153 bytes.
+- The Shatterhorn and the Shatterback, the other two plans with crystal horns, take the default rake and build as before.
+- **Picture:** `creatures-frostbear.jpg` retaken; the crown stands above the brow, apart from the ridge on the back.
+### Needs eyes
+- **From the front** the crown's two halves are a V over the eyes; whether OG-088's crown wants a third shard on the midline is a matter of taste, and one more would cost 60 triangles.
+- **Owed, as before:** the stone troll (a troll in the kit first), the stag's mist (particles), the game (after F4).
+
+## v80 — Session 926 — The cave troll and the stone troll (L4, prototype only)
+Session 919 left OG-088's stone troll (Cloch) waiting for a troll in the kit, and backlog L4's "classic five" (OG-041) wants a cave troll whose hide grows moss. Both sheets draw the same beast: hunched and huge, a stone-grey hide with moss and lichen, a wide fanged mouth, long arms. The canon (§9a) puts cave trolls in Tine, Uisce and Cloch gates. The sheets draw it, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`troll`, the Cave Troll: the kit's first upright walker with hands.** Every creature so far walks on four or more legs, or is a bird. The troll stands on one leg pair (the plantigrade hind leg the bear uses), and the gait engine's biped walk and run carry it with no new code. Its spine rises steeply from the hips (1.25 m up) to a chest thrown forward over them (2.15 m up, 34 cm ahead), with a low shoulder hump. The head is slung in front on a short level neck, with a deep jaw, tusks from the lower jaw, small amber eyes and splayed ears. The arms are 1.5 m from the shoulder and hang to its knees, swinging against the legs. Its hide is stone grey with moss on what faces the sky. It stands 2.2 m to the crown, hunched; a man comes to its shoulder. 23 bones, 10,256 triangles.
+- **`stonetroll`, the Stone Troll (Cloch):** the troll 12% larger, its moss scoured off to bare grey stone. Seven slabs of rock grow through its back and four rock shards from its crown. Its arms are thicker (22%) and longer (5%), its hump higher, and it has violet in its cracks and eyes, the Blight Boar's colour for Cloch. 11,336 triangles. It joins `CORRUPTED`, which now lists five, two of them Cloch.
+- **Three small options for these, each off by default so every other plan builds as before:**
+  - `patches` takes `up`, which keeps the patches to what faces the sky (moss on stone);
+  - `crystals` takes `stone`, matte flat-shaded rock in place of glass;
+  - `spines` takes `dorsal`, which grows them out of the back square to the spine, not straight up. An upright body's back faces behind it, so straight up put the stone troll's slabs inside its chest.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 936 checks pass** (915 before). There are new checks for the two plans' gaits and family, and four for the troll's own promises:
+  - each is a biped with two arms, its head 2.22 m and 2.39 m up;
+  - through a whole stride of its walk the hands stay between the hips and the ground: 0.60 to 1.02 m for the troll, against hips at 1.24 m, and 0.66 to 1.11 m for the stone troll, against 1.34 m. The two hands pass up to 0.91 m and 0.97 m apart.
+- The first build swung the arms at 0.55 rad, and the hands came up past the hips (1.31 m against 1.21 m) to 1.41 m apart. The check caught it; the swing is now 0.28.
+- In every gait each foot reaches its target (0.0 cm worst), and feet are down for the gait's duty (0.69 of 0.68 walking, 0.46 of 0.45 running). Skin weights sum to one, and the genomes are 150 and 155 bytes.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `creatures-troll.jpg` and `creatures-stonetroll.jpg`, each walking past a man;
+  - `creatures-corrupted.jpg` retaken with the troll and the stone troll beside the other four pairs.
+### Needs eyes
+- **The head is the weak part.** At play distance it reads as a slung skull with a jaw and tusks. Close up there is no brow ridge or nose, and the head runs into the hump with no neck to speak of. OG-041's face (a wide fanged mouth, a heavy brow) wants a sculpted target, as the design doc's risks foresee for close views.
+- **The torso is a column from the side.** OG-041 draws a heavier gut and chest; the hip and chest radii can grow once the head reads.
+- **The rock slabs are cones,** blunter than the frost bear's ice but still points. "Fused with rock" may want slabs (boxes) more than spikes.
+- **Owed:**
+  - the troll's lashed-on armour scraps (OG-041), which wait for gear on a creature;
+  - OG-018's Tine troll (glowing cracks) and its pale Uisce troll, as recolours of this plan;
+  - the other four of the classic five;
+  - the game, after F4.
+
+## v80 — Session 927 — The trolls by school, and a brow (L4, prototype only)
+Session 926 left two things owed on the troll: OG-018's trolls of Tine and Uisce, which the sheet draws as the same beast in each school's colours, and a head with no brow, which ran into the hump. This does both. The sheets draw them, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`head` takes `brow`.** A capsule of flesh across the skull over the eyes, from one side to the other, grown into the head as one surface. The troll's is 7 cm thick, at 42% of the head's length and two thirds of its radius up. From the side the head now has a ledge over the eyes, and the skull reads apart from the hump behind it. It costs about 2,100 triangles (10,256 to 12,396): the grid meshes the ridge as finely as the rest.
+- **`tinetroll`, the Cave Troll of Tine:** basalt-dark, forge-orange light in its cracks (OG-018's "glowing cracks", in the Faolchú's colour of Tine's fire), and ember eyes.
+- **`uiscetroll`, the Cave Troll of Uisce:** drowned-pale, with dark weed in small patches over its hide, and eyes gone to the sea's blue. The first build's weed covered a third of the hide in large patches and read as camouflage. It is now smaller and sparser: patches of 12 cm, cut at 0.32.
+- **`TROLLS`** lists the four: the cave troll itself (OG-018's Cloch troll is the moss-backed one, OG-041's), Tine's, Uisce's, and the Stone Troll (Cloch, corrupted). Each of the three by school carries its `school` and `from: 'troll'`.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 957 checks pass** (936 before).
+  - The new plans' gaits and the family checks pass.
+  - A new check covers the trolls by school: four plans, covering Tine, Uisce and Cloch as canon §9a puts them, every one with a school drawn from the troll.
+  - The troll's own checks now run over all four. Heads are 2.13 to 2.39 m up. Through the walk the hands stay between the hips and the ground: the lowest 0.57 m, the highest 1.11 m, always under the hips.
+- Triangles by seed: 12,396 (the troll), 14,788 (Tine's), 13,140 (Uisce's), 13,652 (the Stone Troll). The spread is the genome's seeded sliders, not the dress.
+- In every gait each foot reaches its target (0.0 cm worst). No page errors.
+- **Pictures:**
+  - `creatures-trolls.jpg`: the four side by side with men for scale;
+  - `creatures-tinetroll.jpg` and `creatures-uiscetroll.jpg`;
+  - `creatures-troll.jpg`, `creatures-stonetroll.jpg` and `creatures-corrupted.jpg` retaken with the brow.
+### Needs eyes
+- **Uisce's weed is patches, not hanging weed.** OG-018 draws it hung off the troll. Strands would want the kit's fronds (the kelpstrider's), which cost a mesh of their own.
+- **The brow helps from the side; from the front** the face is still a jaw and two eyes. A nose and cheekbones would want a sculpted target.
+- **Owed, as before:** the armour scraps, the other four of the classic five, the game (after F4).
+
+## v80 — Session 928 — The slime and the magma slime (L4, prototype only)
+The third of OG-041's classic five: translucent pale green, arched like a wave, with bones and rubble suspended inside. OG-018 adds Tine's magma slime ("orange jelly with dark holes"), and canon §9a puts slimes in Uisce gates and the magma one in Tine's. The sheets draw both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A plan may be clear.** `clear` sets the hide's opacity. Under 1 the hide is drawn transparent and writes no depth, so what is inside shows through it. Every other plan is opaque as before.
+- **`inclusions`, a new part: what a clear body has swallowed.** Each is a rigid bit on the nearest spine bone, set by the seed inside the body (at most `depth` of the spine's radius out from its line, never through the skin). There are three kinds: `rubble` (a flat-faced stone), `bone` (a long bone with a knob at each end) and `skull` (a cranium with two eye holes).
+- **`slime`, the Slime:** six spine bones and nothing else, no legs and no head. Its body is a mound 1.3 m long and 0.85 m high, its crest rolled forward over a front lip like a wave about to break, its back trailing low. It heaves along at the crawl, 0.24 m a second, and breathes when it stands. Pale green at 0.55 opacity, glossy, with a skull, five bones and seven stones inside. 1,340 triangles for the hide and 13 small bits.
+- **`magmaslime`, the Magma Slime (Tine):** the slime molten, deep orange at 0.8 opacity, with forge-light in veins through it and a low glow over all of it. It carries eleven lumps of black clinker instead of bones. `SLIMES` lists the two.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 969 checks pass** (957 before).
+  - The new plans' gaits and family checks pass.
+  - A new check for each slime: its hide is clear (0.55 and 0.8), it holds at least eight things (13 and 11), and through a whole crawl stride every one stays inside the hide's bounds (0 out of 312 and 264 placings). The bounds are the hide's box, not its surface; the placing rule (inside half the spine's radius) is what keeps them under the skin.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** `creatures-slime.jpg` and `creatures-magmaslime.jpg`, each beside a man.
+### Needs eyes
+- **The holes through it** (OG-041 draws daylight through the slime) are not there. A hole wants the flesh cut by a subtracted capsule, which the surface nets could do, as a later part.
+- **The magma slime in daylight** reads as orange jelly more than molten rock. Its veins want a dark Tine hall to glow in.
+- **The bones are bright through the green.** At 0.55 the slime is clearer than OG-041's; a murkier slime is one number.
+- **Owed:** the skeleton, the goblin and the giant spider of the classic five. The first two are people's bodies more than creatures, and may belong in `people.js`. The game, after F4.
 ## v80 — Session 922 — Card F11: the cutter in Aurenne's dress (prototype only)
 Backlog L6's hull line wants each of the game's five classes in each island's dress (OG-004; Michael's 3 A on the ladder). The sloop has all three dresses. The Gatelands has its sloop, cog and galleon, the Mark its cutter and sloop, and Aurenne its caravel and sloop. Session 902's note held back the cog and the galleon in the other dresses, because how a Mark cog carries the gaff, or an Aurenne galleon the lateen, is a question. A cutter has one mast, as a sloop has, so its Aurenne dress follows from rules already chosen, as the sloop's did, and nothing is asked: the lateen is Aurenne's one rig (#306), the sun-star is on the sail (#316's A), and a tiller steers the small hulls (#306's 3 A). FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
 
@@ -20242,6 +20334,266 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
 
+## v80 — Session 932 — The giant spider's thorns and egg sacs (L4, prototype only)
+The last of OG-041's classic five that already stood in the kit: the giant spider (Session 772) had the sheet's pale bulbous abdomen, dark legs and cluster of red eyes, but not its thorny legs or its egg sacs. The sheet draws both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed in `creatures.js`:
+- **A leg may be thorny.** `thorns: { per, len, r, rake }` on a leg pair sets short dark spines up every segment past the hip, on the segment's upper and outer faces, each raked toward the foot and shorter toward the tip, placed by the seed. A segment's thorns are one merged mesh, rigid on its bone, so eight legs add 24 meshes, not 88.
+- **`eggs`, a new part: a clutch of egg sacs under a tail.** A spider's abdomen is the kit's tail, so the sacs sit along its underside toward the tip (`at`, the stretch of the tail; `drop`, how far down its girth; `spread`, how far round the sides). Each sac is a lumpy silk ball (noise on a sphere, a faint wrapped banding), merged per tail bone. `P.tail` now records its points and radii for parts after it.
+- **The spider wears both:** about 3.7 thorns a segment, 88 in all, 4 to 10 cm long; seven sacs of 9 to 15 cm in a tight clutch at the abdomen's tip, white silk against the pale hide. The bits are 880 triangles of thorns and 1,764 of sacs beside the hide's 84,528.
+- `bestiary.js` takes `?cam=back`, a low rear three-quarter view, to show the clutch.
+
+The `drop` is larger than the capsules suggest (1.4 of the tail's radius): the grown flesh blends its capsules outward, so at 1.0 the sacs sat inside the skin and showed only as white patches. A part placed before the flesh is grown cannot read the surface; if more parts need to sit on the skin, a pass after growth that pushes bits out to it would be the fix.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 971 checks pass** (969 before).
+  - Thorns on all 24 leg segments past the hip, 88 in all.
+  - Seven egg sacs, clear of the ground (lowest 0.20 m) and below the abdomen's tip in all 72 poses of the walk, the trot and the stand.
+  - The spider's gaits still pass: every foot to its target, the walk's feet down 0.71 of 0.68, the trot's 0.48 of 0.45.
+- Pictures: `creatures-spider.jpg` (side), `creatures-spider-back.jpg` (rear three-quarter, the clutch).
+
+### Needs eyes
+- Whether the sacs read as eggs carried, or should be left to the lair's webbing (a place, the look builder's) and taken off the spider.
+- The thorns at a distance: at game range they may read as fuzz; fewer and longer could suit the sheet better.
+- The spider's dark cephalothorax is mostly hidden by the pale abdomen's blend: an older look, not changed here.
+
+## v80 — Session 933 — The goblin, and gear in a creature's hands (L4, prototype only)
+The fourth of OG-041's classic five: a goblin, crouched, with long ears, a long spear and a round hide shield. Canon §9a makes goblins no gate's antibody but its occupiers, who hold a spent gate as a warren, so the plan is marked `occupier`, not given a school. The sheet draws all of it, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`gear`, a new part: things held in the hands.** It is the kit's first gear on a creature, and the troll's owed armour scraps can build on it. Each item is rigid on an arm bone, so it swings with the arm.
+  - **A spear** is gripped in the fist (the hand bone): a shaft with a flat iron leaf-blade and a leather binding under it. `len` is its length, `grip` the fraction of shaft behind the fist, `rise` the point's angle above level, ahead.
+  - **A round shield** is strapped across the forearm's middle (the forearm bone): a hide disc with a wooden rim, an iron boss and leather lacing round its edge, its face turned out by `face`.
+- **`goblin`, the Goblin:** the troll's plan (Session 926) at half scale and thin. It has the same hunched biped walk with the knees deep. The head is big for its body and slung forward, with a brow, a sharp drooping muzzle, small fangs, large yellow eyes and long cone ears swept out at 72°.
+  - Its hide is olive-brown, patched darker. Its head stands 0.98 m up and its hips 0.58 m.
+  - It carries a 1.9 m spear upright in its right fist and a 0.56 m hide shield on its left forearm. Its arms swing less than the troll's (0.22 against 0.28), so the spear's butt stays off the floor.
+  - 23 bones, 15,828 triangles of hide.
+- `GOBLINS` lists it.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 981 checks pass** (971 before).
+  - The goblin builds and walks: every foot reaches its target through the walk, the trot and the stand. The walk's feet are down 0.69 of 0.68 and the trot's 0.46 of 0.45.
+  - It carries the spear and the shield. They stay clear of the ground in all 72 poses of the three gaits (lowest 0.068 m).
+  - The spear's point stays above its head (2.16 m against 0.98 m), and the shield stays at least 0.4 m off its hip.
+  - A first try with the grip at 0.3 put the butt 11 cm into the floor at the forward swing; the grip at 0.2 and the gentler swing fixed it.
+- Pictures:
+  - `creatures-goblin.jpg` (side) and `creatures-goblin-front.jpg`.
+  - `creatures-classic.jpg`: the spider, the slime, the goblin and the troll in a row, each with the measure.
+
+### Needs eyes
+- **The goblin's colour:** olive-brown, between the sheet's tan and the usual green.
+- **Its height:** under a man's shoulder, crouched.
+- **The shield** faces out and forward from the forearm. In a fight it would come round to the front, which is a pose for the game's combat, not the kit.
+- **Owed:**
+  - The sheet's scrap-leather harness: straps on a creature need a way to lie on the grown skin.
+  - The skeleton, the last of the five: the kit's flesh is one smooth surface, so a body of bare bones needs a different hide.
+
+## v80 — Session 934 — The skeleton: a bare body (L4, prototype only)
+The last of OG-041's classic five: a skeleton with a notched sword and a round wooden shield. Canon §9a puts skeletons in Solas and Uisce gates. The kit grows one smooth skin over its capsules, and a skeleton has none, so this session gives the kit a second kind of hide. The sheet draws the skeleton, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A plan may be `bare`.** Instead of growing the flesh, `bareGeo` draws each capsule as the bone it stands for.
+  - A limb's capsule becomes a shaft with a knob at each end.
+  - The spine's, neck's and tail's capsules become a stack of vertebrae.
+  - The head's and jaw's capsules stay whole, as the skull.
+  - The pieces are skinned by the same `dressFlesh` as any hide, so each moves with its bone and every skin weight still sums to one.
+  - One catch: `capDist` reads a capsule's `sm`, which `growFlesh` sets. Without it every colour came out NaN, so the first picture was black. `bareGeo` now sets it too.
+- **`ribs`, a new part:** a cage of arcs off the spine (`n` a side), each running round the side and forward, stopping short of a breastbone. They are widest mid-cage and drop as they go. With `pelvis`, two flared hip blades sit on the first spine bone.
+- **`gear` takes a sword:** a flat blade narrowing to its point, its edges notched at rows the seed picks, with a crossguard, a leather grip in the fist and a pommel. A shield now takes its own `tone` and `rim`.
+- **`skeleton`, the Skeleton:** an upright biped with a man's proportions, its skull 1.66 m up.
+  - It has 14 ribs, dark eye sockets and a hinged jaw.
+  - It carries a 0.7 m notched sword in its right hand, point down and ahead, and a 0.3 m wooden shield rimmed in iron on its left forearm.
+  - 23 bones and 6,324 triangles, half the troll's hide.
+  - It walks with the troll's biped gait.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 991 checks pass** (981 before).
+  - The skeleton's gaits pass: every foot reaches its target, the walk's feet are down 0.69 of 0.68 and the trot's 0.46 of 0.45.
+  - It is bare, with 14 ribs.
+  - Its sword and shield stay clear of the ground in all 72 poses (lowest 0.107 m). The first try, with the point 55° down, put it 2.6 cm into the floor; 40° fixed it.
+- Pictures:
+  - `creatures-skeleton.jpg` (side) and `creatures-skeleton-front.jpg`.
+  - `creatures-classic.jpg` is re-shot with all five of OG-041 in a row: the spider, the slime, the skeleton, the goblin and the troll.
+
+### Needs eyes
+- **The skull** is two capsules and reads soft and cartoonish from the side: no brow ridge, no cheekbones, and the teeth are missing. A modelled skull is the next refinement.
+- **The bones** are uniform shafts, so the femur and the forearm differ only in size.
+- **Owed:**
+  - The rags at the hips: cloth on a creature, which the goblin's harness also waits for.
+  - OG-018's drowned skeleton (Uisce), as a recolour with weed.
+
+## v80 — Session 935 — The drowned skeleton (L4, prototype only)
+OG-018 draws Uisce's hall with a drowned skeleton, weed-hung, among its antibodies. It is one of the five new foes that sheet names (with the Magma Slime, Session 928). This is the skeleton of Session 934 out of the sea, and asks nothing new. FREEZE #297 is still open, so this touches only the prototypes.
+
+`drownedskeleton` is a recolour of `skeleton`, plus weed:
+- **The bones** are grey-green, blotched with dark weed (the patches pattern, 6 cm across).
+- **The weed:** 36 strands, 20 to 45 cm long, hang from its skull, neck, spine and both arms. They are the kelpstrider's fronds (Session 863) turned to hang down instead of streaming back. They are skinned, so they move with the bones they hang from.
+- **The eyes:** sockets lit the sea's pale blue.
+- **The gear:** the sword gone to rust-brown, the shield to black waterlogged wood. It walks a little slower than the dry skeleton (speed 0.8 against 0.9).
+- **The record:** `SKELETONS` lists both. The plan carries `school: 'Uisce'` and `from: 'skeleton'`.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,002 checks pass** (991 before).
+- The drowned skeleton builds and walks with the skeleton's bones: 23 bones, every foot to its target, the walk's feet down 0.69 of 0.68.
+- It is Uisce's skeleton and carries weed.
+- Its gear stays clear of the ground through every gait (lowest 0.15 m).
+- Pictures: `creatures-drownedskeleton.jpg`; `creatures-classic.jpg` re-shot with it beside the five.
+
+### Needs eyes
+- Whether the weed reads as weed at game range, or as green rags. It could be the sheet's "rags at the hips" too, if Michael likes it.
+- OG-018 draws them in a pair. Two seeds give two builds of the plan (size, tint); the pairing is the gate's placement, not the kit's.
+
+## v80 — Session 941 — The crossbow (L7, prototype only)
+L7's new kinds of weapon are the spear and the crossbow first (Michael's 6 A). The spear has been in the kit since Session 909; this is the crossbow. Each island has its own make by L7's rule (the Gatelands wood, bone and leather; the Mark stone and iron; Aurenne fine metal and carving), so this asks nothing new. FREEZE #297 is no longer open, but the bodies stay out of the game until F4, so this touches only the prototypes (`people.js`, `builder.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`buildCrossbow`: carried point down in the right fist.** The fist is the spear's (Sessions 909 to 912): the forearm forward, the knuckles plumb, the fingers closed round a round grip 26 mm thick. The tiller runs plumb through it. The butt rises to about the chest (1.38 to 1.59 m) and the prod and stirrup hang by the shin (34 to 55 cm off the ground). The prod spans fore and aft, turned 16° about the tiller so its back tip swings out from the thigh, and the bolt's face looks out from the body. It is unspanned: the string is braced across the tiller's top and there is no bolt.
+- **The tiller is one swept tube** (`sweepTube`, `tillerAt`). It is round in the fist, squared ahead of it to the prod, and deepens and drops toward the belly behind it into a stock 10 cm deep. The same section function builds the mesh and tests what is inside it.
+- **Its fittings:** a nut half sunk in the top, the bolt's groove, a long trigger lever under the belly ahead of the fingers, a bridle binding the prod on fore and aft, and an iron stirrup at the front.
+- **`CROSSBOWS`, the make by island**, chosen by the people or by `crossbowMake`:
+  - **The Gatelands:** a 66 cm yew prod lashed on with three turns of cord a side, a bone nut. 5,536 triangles.
+  - **The Mark:** a 60 cm iron prod, flatter, in an iron bridle, an iron nut. 5,056 triangles.
+  - **Aurenne:** a 64 cm lacquered prod of horn and sinew with pale horn tips, bound in gold, with gold ferrules at the grip and the heel, a bronze nut and stirrup. 5,856 triangles.
+- A full cloak is thrown back off the right shoulder for the crossbow as for the spear. A spear and a crossbow asked together give the spear.
+- `crossbow` (the tiller's wood) is a garment colour and `crossbowMake` a dress flag, so a genome saves and loads it; the page lists it as *crossbow tiller*.
+- A first try had the butt starting 8 cm above the grip's middle, where the thumb sits: 14 points of a hand inside it. The grip now runs to 11.5 cm. A first prod of 70 cm for Aurenne put its back tip 3.6 mm into a man's thigh; it is 64 cm now, and turned.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 279 checks pass** (269 before); `kit.check.mjs` passes.
+- Nine people carry it: each people's make, an Aurennais make in a Gatelander's hand, under mail with a shield, a woman in a long skirt, under a fur-collared cloak, in a robe, an Aurennais woman.
+  - In every one, the crossbow hangs on the right wrist and no point of the hand is inside it (0 of 1,709 to 1,741).
+  - Nothing else comes within 15 mm of it (15.3 to 31.4 mm).
+  - Its stirrup is 34 to 55 cm off the ground, and its bolt's face is turned out.
+  - It saves and loads back.
+- Pictures: `builder-armour-crossbow.jpg` (the Gatelands), `-mark.jpg` (in mail), `-aurenne.jpg`, `-grip.jpg` (close on the fist), `-cloak.jpg` (under a thrown-back cloak).
+
+### Needs eyes
+- **The carry:** the forearm is held forward, as the spear's is. For a crossbow, an arm hanging by the side with the weapon at the thigh might read more natural. That needs a second fist pose, which is B4's.
+- **The butt** reads slim from the side.
+- **Owed:**
+  - Spanning it (a foot in the stirrup, the string drawn to the nut) and shooting it, which is B4's.
+  - A bolt case at the belt.
+  - Each make's carving or knotwork.
+
+## v80 — Session 942 — A truer skull for the skeleton (L4, prototype only)
+Session 934 left the skeleton's skull as two capsules, owed as "a truer skull". From the side it read as a cartoon snout, and the eyes sat inside the capsule, so the sockets did not show. This refines a plan already drawn from OG-041 and asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed in `creatures.js`:
+- **A head part may carry `skull`.** `skullBits` then models the skull as rigid pieces, in the head's frame in metres, scaled by the head's slider.
+  - **On the head bone:** a cranium longer than it is wide (14 by 19 cm, its crown 13.5 cm over the neck's joint) and a face that merges into it. Over the face: a brow ridge, two cheekbones swept back to the ears, an upper jaw, and ten upper teeth.
+  - **The holes:** two dark sockets and a dark nasal hole.
+  - **On the jaw bone:** a mandible, two branches from below the ears down to the chin, with ten teeth of its own, so it opens with the jaw.
+  - **The capsules stay, unseen.** The skin weights are read from them as before, and `bareGeo` no longer draws them.
+  - 4,356 triangles in five pieces. The hide drawn as bones drops from 6,324 to 4,224, so the whole skeleton costs about 2,250 more triangles than before.
+- **The eyes:** a plan whose eyes are bright gets a small lit eye at the front of each socket. So the drowned skeleton's sockets glow the sea's blue, and the dry skeleton's stay empty and dark.
+- **A closer view:** `creatures.html?view=one&cam=head` (front three-quarter) and `cam=headside` frame the head close (`bestiary.js`).
+- A first try had the face too small and ahead of the cranium, with a gap between them in profile, and a brow like a hat's brim. The face is now 11 cm wide, reaching back into the cranium, and the brow is thinner and set in.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,006 checks pass** (1,002 before). Four checks are new:
+  - Each skeleton has the five skull pieces, 20 teeth, and a crown 13.3 to 13.5 cm over the neck.
+  - The dry skeleton's sockets are dark (0 lit eyes) and the drowned one's are lit (2).
+- Its gaits, ribs and gear pass as before.
+- Pictures:
+  - `creatures-skeleton-skull.jpg` and `creatures-skeleton-skull-side.jpg` (close).
+  - `creatures-drownedskeleton-skull.jpg`.
+  - `creatures-skeleton.jpg`, `creatures-skeleton-front.jpg`, `creatures-drownedskeleton.jpg` and `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **Close up** it is still a skull of smooth ellipsoids: no temples hollowed, no cheek arch open under the bone, the teeth a tidy row. A sculpted skull, from image-to-3D or by hand, would be the next step if the skeletons get close-ups.
+- **The drowned skeleton's weed stain** does not reach the skull, which is a rigid piece in the plain bone tone. The weed on its head now roots under the skull and hangs from below it.
+- **The head tilts back a little** (the plan's 8° pitch), so the jaw juts. That is the plan's old head angle, not changed here.
+
+## v80 — Session 943 — Rags at the skeleton's hips: the first cloth on a creature (L4, prototype only)
+OG-041 draws its skeleton with rags at the hips. Session 934 owed them, as it owed the goblin's scrap-leather harness, because the kit had no cloth on a creature. This builds the rags; the plan is already drawn, so it asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`rags`, a new part:** a cord round the waist, rigid on the first spine bone, with `n` torn strips of cloth hanging from it.
+  - The seed skips a quarter of the strips, so there are gaps.
+  - Each strip is a sheet three points wide and five rows long. Its length varies by a third either way, and its foot is torn ragged.
+  - The strips flare 3.5 cm out as they fall, and darken toward the foot.
+- **How a strip moves:** its top is on the hip bone. Any strip off the middle hangs over a thigh, so it passes to that thigh's bone down its length (a smoothstep, up to 0.7 of the weight at the foot). It swings with the leg, and the leg does not walk through it.
+  - A first try put the lower half wholly on the thigh. The edge between the halves stretched to 2.2 times its length at the trot; a smooth blend at full weight still made 1.57. At 0.7 the worst is 1.27.
+- **`sheetGeo` takes a second bone:** a sheet's point may carry `blend: [bone, weight]`. The fins, weed and leaves are unchanged, each point on one bone.
+- **On the skeleton:** 11 places for strips, 30 cm long and 7.5 cm wide, in dirty linen, on a leather cord. The seed leaves 10 of them.
+  - The plan's sheets are opaque now (`finOpacity: 1`); the drowned skeleton keeps its 0.95.
+  - The drowned skeleton wears them too, in weed-dark cloth, 8 strips by its seed.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,007 checks pass** (1,006 before). The new check is on the skeleton's rags:
+  - 10 strips.
+  - Above the knees through every pose of the walk, the trot and the stand (lowest 0.55 m).
+  - No edge of them stretched past 1.27 times its length; the check's limit is 1.4.
+- The skeleton's gaits, skull and gear pass as before.
+- Pictures: `creatures-skeleton-front.jpg`, `creatures-skeleton-back.jpg` (new), `creatures-skeleton.jpg`, `creatures-drownedskeleton.jpg`, and `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **The cloth is dark** in the pictures: both faces share one normal, and it reads almost black where the sun is behind it.
+- **The strips are stiff:** they flare and swing with the thighs, but nothing simulates them.
+- **Owed:**
+  - The goblin's scrap-leather harness can now be built the same way: straps as sheets on the spine and the shoulders.
+  - The troll's lashed-on armour scraps can be built on `gear`.
+
+## v80 — Session 944 — The goblin's scrap-leather harness: straps on grown skin (L4, prototype only)
+OG-041 draws its goblin in a scrap-leather harness. Session 933 owed it because nothing could lie on a creature's grown skin: the flesh is grown after the parts are laid, so a part cannot know where the surface will be. Session 943's rags hang free from a cord and did not need to know. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A part may lay something on the finished skin.** It pushes a function onto `B.after`, which `build` runs once the flesh is grown and its weights are read.
+- **`straps`, a new part: a harness laid on the skin.**
+  - Each strap is a path of (t, angle) pairs round the spine: t runs from the hip at 0 to the chest at 1, and angle 0 is the belly. It is drawn as a ribbon of a given width.
+  - Each point of the path finds the furthest skin point within 2.5 cm along the spine and 9° round it, and stands 7 mm outside it.
+  - Each point also takes that skin point's four bone weights, so the strap moves exactly as the skin under it does.
+  - `sheetGeo` takes a sheet's own per-point weights (`skin`) for this.
+  - (The name `harness` was the draught horse's collar of Session 867; a second `P.harness` silently replaced it on the first try, and the goblin built none.)
+- **On the goblin:**
+  - A belt round the hips, 10 cm wide (the goblin is built at the troll's size and halved, so 5 cm as it stands).
+  - A sash from the right shoulder across the chest to the left hip and round the back.
+  - A patch of pale hide on the right shoulder.
+  - 119 points in three straps.
+  - Its sheets are opaque.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,008 checks pass** (1,007 before).
+  - The goblin's three straps are laid on the skin at 119 points, none missed.
+  - Through every pose of the walk, the trot and the stand, each strap point's distance to the skin point under it stays within 0.83 to 1.16 of its distance at rest.
+- The goblin's gaits and gear pass as before.
+- Pictures: `creatures-goblin.jpg` re-shot; `creatures-goblin-front.jpg` re-shot; `creatures-goblin-back.jpg` (new).
+
+### Needs eyes
+- **At this range** the harness reads as a belt and a sash. The hide patch on the shoulder is small, and mostly hidden behind the shield arm from the front.
+- **The straps are flat ribbons:** no buckles, no stitching, no thickness at their edges.
+- **What's next:** the method could also strap the troll's lashed-on armour scraps (OG-041) and a beast's saddle girth.
+
+## v80 — Session 945 — The cave troll's lashed-on armour (L4, prototype only)
+OG-041 draws its cave troll with scraps of plate and hide tied on with rope. Session 926 owed them, and the straps of Session 944 can now lay them on its grown skin. The plan is already drawn, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **The OG-041 troll's straps:**
+  - A dented iron plate on its chest and a darker iron plate over its left shoulder.
+  - A sheet of rawhide across the small of its back.
+  - Three leather lashings: one round the chest, one from the left shoulder across to the right hip, and one over the hide.
+  - The lashings stand 1.2 cm further out (`lift`, new), so they lie over the plates.
+  - 102 points in six straps. The troll's palette gains iron, dark iron, leather and hide.
+- **Only the OG-041 troll wears it.** The stone troll, Tine's and Uisce's copied the troll's parts before the armour is added, so they keep their bare hides.
+- **A correction to Session 944:** a strap took the furthest skin point near its path from any skin. On the troll that was often an arm's root or the hump, so the straps stood out in flaps; the goblin's belt stood off toward its arm in the same way.
+  - Straps now take only skin carried mostly by a spine bone.
+  - Past the trunk's ends (over a shoulder, round the hips), where there is none, they fall back to any skin.
+  - The goblin's belt now hugs its waist. Its gap to the skin through the gaits is 0.89 to 1.09 of rest (it was 0.83 to 1.16).
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,010 checks pass** (1,008 before).
+  - The troll's six straps are laid at 102 points, none missed. Through every pose of the walk, the trot and the stand, each keeps 0.95 to 1.04 of its rest gap to the skin under it.
+  - The stone, Tine and Uisce trolls have no straps.
+  - The goblin's harness still passes, at 119 points.
+- Pictures:
+  - `creatures-troll.jpg` re-shot; `creatures-troll-front.jpg` and `creatures-troll-back.jpg` are new.
+  - The goblin's three pictures re-shot.
+  - `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **The chest plate** is under the hunched troll's chest, so it is mostly hidden from the front and the side. A plate on the upper back would show better.
+- **The shoulder plate** stands off the arm's root as a flap. It may read as a pauldron or as a fault.
+- **The plates are flat sheets:** no thickness, rivets or dents.
 ## v80 — Session 929 — Card F9's eighth room: the Gatelands smithy (prototype only)
 FREEZE #297 is still open, so this run is the prototypes only. The hulls left on card F11 wait on DECISION #347, and the Makers' six props are built (Sessions 837 to 851), so the run took the next room on backlog L5's "interiors by nation": the smithy, in the Gatelands' dress first. OG-043's board was reread (its Gatelands blacksmith is a low stone building with the forge's glow in an open front; the catalogue flags only its invented "Sunhand order", which is not touched here), with OG-057 and OG-069 for Bram's tools: hammers, tongs, an anvil. Nothing new is asked: the room is built inside the street's own shell as #303 set, in the kit's rubble and slate. This touches only `docs/prototypes/levelup/` (`pieces.js`, `rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
 
