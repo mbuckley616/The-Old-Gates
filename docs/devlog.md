@@ -20976,7 +20976,7 @@ What changed in `creatures.js` (`FROST` lists the two):
 - **A gotcha:** the plans were first placed above `PLANS.skeleton` in the file. A plan built from another must come after it, or the module throws on load and the check page never finishes.
 
 ### Verified (headless Chromium)
-- **`creatures.check.mjs`: all 1,062 checks pass** (1,042 before).
+- **`creatures.check.mjs`: all 1,060 checks pass** (1,042 before).
   - Both plans' family checks pass. Every foot reaches its target through the walk, the trot and the stand, and their feet are down for 0.69 of the walk and 0.46 of the trot.
   - A new check for each: an Uisce plan in clear ice with at least five clusters of shards (12 and 8).
 - Pictures: `creatures-frostshard.jpg`, `creatures-frostfolk.jpg` and `creatures-frost.jpg` (the two beside the skeleton and the troll).

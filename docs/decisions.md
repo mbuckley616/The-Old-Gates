@@ -4,7 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #ISSUE
+### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #362
 OG-018 draws Uisce's Frost Thing as "a crystalline ice-shard figure, all spikes". Canon §9a says a steady gate makes "the shapes the local folklore had words for", and the catalogue flags that the sheet's figure reads as an elemental, with no folk shape under the ice. Both are built as plans in the creature kit, for you to choose between.
 
 Which should the Frost Thing be?
