@@ -57,7 +57,21 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       out.push({ k, ok: !!P && !!F, src: P?.src || '', school: P?.school, from: P?.from, parts: !!F && JSON.stringify(P.parts) !== JSON.stringify(F.parts), tris: P && tri(k), base: F && tri(P.from) }); } return out; });
   for (const c of cor) check(`${c.k}: a corrupted ${c.from} of ${c.school}, from OG-088; a change of shape (its parts differ from the ${c.from}'s; ${c.tris} triangles against ${c.base})`,
     c.ok && /OG-088/.test(c.src) && ['Tine', 'Uisce', 'Cloch', 'Scáth', 'Solas', 'Gaoth'].includes(c.school) && c.parts && Math.abs(c.tris - c.base) > .1 * c.base, c);
-  check(`the corrupted: four schools' animals so far (${cor.map(c => c.k).join(', ')})`, cor.length === 4 && new Set(cor.map(c => c.school)).size === 4, cor.map(c => c.school));
+  check(`the corrupted: four schools' animals so far (${cor.map(c => c.k).join(', ')})`, cor.length === 5 && new Set(cor.map(c => c.school)).size === 4, cor.map(c => c.school));
+  // the troll (Session 926): the kit's first upright walker with hands. It stands on one leg pair, a man and a half tall, and
+  // through a whole stride of its walk its hands swing between its hips and the ground, never into it
+  const tr = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    for (const k of ['troll', 'stonetroll']) { const C = K.build(K.genome(k, k + ':check')), P = new C.rig.position.constructor(), hands = C.bones.filter(b => /^arm0[LR]_/.test(b.name)).filter((b, i, a) => !b.children.some(c => a.includes(c)));
+      C.gait = 'walk'; let lo = 1e9, hi = -1e9, top = 0, swing = 0;
+      for (let i = 0; i < 48; i++) { K.pose(C, i / 48); C.rig.updateMatrixWorld(true); const z = [];
+        for (const h of hands) { h.getWorldPosition(P); C.rig.worldToLocal(P); const y = P.y * C.S; lo = Math.min(lo, y); hi = Math.max(hi, y); z.push(P.z * C.S); }
+        swing = Math.max(swing, Math.abs(z[0] - z[1])); }
+      C.rig.updateMatrixWorld(true); C.byName.head.getWorldPosition(P); C.rig.worldToLocal(P); top = P.y * C.S;
+      out[k] = { legs: C.B.legs.length, arms: C.B.arms.length, hands: hands.length, head: +top.toFixed(2), hip: +(C.legH * C.S).toFixed(2), lo: +lo.toFixed(2), hi: +hi.toFixed(2), swing: +swing.toFixed(2), tris: C.stats.tris }; }
+    return out; });
+  for (const [k, t] of Object.entries(tr)) {
+    check(`${k}: an upright biped with two arms (${t.legs} legs, ${t.arms} arms), its head ${t.head} m up`, t.legs === 2 && t.arms === 2 && t.hands === 2 && t.head > 2 && t.head < 3.4, t);
+    check(`${k}: through its walk the hands swing between the hips and the ground (${t.lo} to ${t.hi} m, the hips at ${t.hip} m; ${t.swing} m apart at most)`, t.lo > .1 && t.hi < t.hip && t.swing > .15, t); }
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));

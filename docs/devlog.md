@@ -19780,3 +19780,34 @@ What changed in `creatures.js`:
 ### Needs eyes
 - **From the front** the crown's two halves are a V over the eyes; whether OG-088's crown wants a third shard on the midline is a matter of taste, and one more would cost 60 triangles.
 - **Owed, as before:** the stone troll (a troll in the kit first), the stag's mist (particles), the game (after F4).
+
+## v80 — Session 926 — The cave troll and the stone troll (L4, prototype only)
+Session 919 left OG-088's stone troll (Cloch) waiting for a troll in the kit, and backlog L4's "classic five" (OG-041) wants a cave troll whose hide grows moss. Both sheets draw the same beast: hunched and huge, a stone-grey hide with moss and lichen, a wide fanged mouth, long arms. The canon (§9a) puts cave trolls in Tine, Uisce and Cloch gates. The sheets draw it, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`troll`, the Cave Troll: the kit's first upright walker with hands.** Every creature so far walks on four or more legs, or is a bird. The troll stands on one leg pair (the plantigrade hind leg the bear uses), and the gait engine's biped walk and run carry it with no new code. Its spine rises steeply from the hips (1.25 m up) to a chest thrown forward over them (2.15 m up, 34 cm ahead), with a low shoulder hump. The head is slung in front on a short level neck, with a deep jaw, tusks from the lower jaw, small amber eyes and splayed ears. The arms are 1.5 m from the shoulder and hang to its knees, swinging against the legs. Its hide is stone grey with moss on what faces the sky. It stands 2.2 m to the crown, hunched; a man comes to its shoulder. 23 bones, 10,256 triangles.
+- **`stonetroll`, the Stone Troll (Cloch):** the troll 12% larger, its moss scoured off to bare grey stone. Seven slabs of rock grow through its back and four rock shards from its crown. Its arms are thicker (22%) and longer (5%), its hump higher, and it has violet in its cracks and eyes, the Blight Boar's colour for Cloch. 11,336 triangles. It joins `CORRUPTED`, which now lists five, two of them Cloch.
+- **Three small options for these, each off by default so every other plan builds as before:**
+  - `patches` takes `up`, which keeps the patches to what faces the sky (moss on stone);
+  - `crystals` takes `stone`, matte flat-shaded rock in place of glass;
+  - `spines` takes `dorsal`, which grows them out of the back square to the spine, not straight up. An upright body's back faces behind it, so straight up put the stone troll's slabs inside its chest.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 936 checks pass** (915 before). There are new checks for the two plans' gaits and family, and four for the troll's own promises:
+  - each is a biped with two arms, its head 2.22 m and 2.39 m up;
+  - through a whole stride of its walk the hands stay between the hips and the ground: 0.60 to 1.02 m for the troll, against hips at 1.24 m, and 0.66 to 1.11 m for the stone troll, against 1.34 m. The two hands pass up to 0.91 m and 0.97 m apart.
+- The first build swung the arms at 0.55 rad, and the hands came up past the hips (1.31 m against 1.21 m) to 1.41 m apart. The check caught it; the swing is now 0.28.
+- In every gait each foot reaches its target (0.0 cm worst), and feet are down for the gait's duty (0.69 of 0.68 walking, 0.46 of 0.45 running). Skin weights sum to one, and the genomes are 150 and 155 bytes.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `creatures-troll.jpg` and `creatures-stonetroll.jpg`, each walking past a man;
+  - `creatures-corrupted.jpg` retaken with the troll and the stone troll beside the other four pairs.
+### Needs eyes
+- **The head is the weak part.** At play distance it reads as a slung skull with a jaw and tusks. Close up there is no brow ridge or nose, and the head runs into the hump with no neck to speak of. OG-041's face (a wide fanged mouth, a heavy brow) wants a sculpted target, as the design doc's risks foresee for close views.
+- **The torso is a column from the side.** OG-041 draws a heavier gut and chest; the hip and chest radii can grow once the head reads.
+- **The rock slabs are cones,** blunter than the frost bear's ice but still points. "Fused with rock" may want slabs (boxes) more than spikes.
+- **Owed:**
+  - the troll's lashed-on armour scraps (OG-041), which wait for gear on a creature;
+  - OG-018's Tine troll (glowing cracks) and its pale Uisce troll, as recolours of this plan;
+  - the other four of the classic five;
+  - the game, after F4.

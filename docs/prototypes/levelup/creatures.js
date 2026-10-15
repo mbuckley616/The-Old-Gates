@@ -229,9 +229,11 @@ P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) *
   const horn = new THREE.Mesh(new THREE.CylinderGeometry(o.len * .05, o.len * .07, o.len * .22, 10), stdMat(B.tone('leather'), { rough: .6 })); horn.position.copy(sp.p).add(V(0, Ry * 1.12, o.len * .42)); B.bit(sp.bone, horn); };
 // or (Session 919, OG-088's corrupted row) `crystal`: each a cluster of glassy shards out of the hide (the Shatterhorn's crystal
 // horns), leaning back and to either side by turns, so the back bristles with them as the blight boar's and the frost bear's do
-P.spines = (B, o) => { for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
-  const at = sp.p.clone().add(V(0, sp.r * B.spineS[1] * .85, 0));
-  if (o.crystal) { const sd = k % 2 ? 1 : -1; B.bit(sp.bone, crystals({ n: o.crystal, len: h, r: o.r }, 1, B.tone(o.tone || 'horn'), at.add(V(sd * sp.r * .25, 0, 0)), sd, rng(B.g.seed + 11 + k))); continue; }
+// `dorsal` (Session 926): out of the back, square to the spine, not straight up (an upright body's back faces behind it)
+P.spines = (B, o) => { const sd0 = B.spinePts[B.spinePts.length - 1].clone().sub(B.spinePts[0]).normalize(), dors = o.dorsal ? UP.clone().addScaledVector(sd0, -sd0.y).normalize() : UP;
+  for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
+  const at = sp.p.clone().addScaledVector(dors, sp.r * (o.dorsal ? B.spineS[0] * .7 + B.spineS[1] * .3 : B.spineS[1]) * .85);
+  if (o.crystal) { const sd = k % 2 ? 1 : -1; B.bit(sp.bone, crystals({ n: o.crystal, len: h, r: o.r, stone: o.stone }, 1, B.tone(o.tone || 'horn'), at.add(V(sd * sp.r * .25, 0, 0)), sd, rng(B.g.seed + 11 + k))); continue; }
   B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), at, V(0, 1, -.35).normalize())); } };
 
 // a coiled shell (Session 862): a tube wound round an axis, growing as it goes, so the whorls stack into a spire. At the
@@ -316,12 +318,12 @@ function antler(o, S, c, p, side, r) {
   const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); return m;
 }
 // crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040). `rake` (Session 920) scales how far they
-// lean and step back: 1 the Shatterhorn's sweep, toward 0 a crown standing up from the brow
+// lean and step back: 1 the Shatterhorn's sweep, toward 0 a crown standing up from the brow. `stone` (Session 926): matte rock, not glass
 function crystals(o, S, c, p, side, r) {
   const rk = o.rake ?? 1, geos = []; for (let i = 0; i < o.n; i++) { const L = o.len * S * (1 - .55 * i / o.n) * (.8 + r() * .3), g = new THREE.ConeGeometry(o.r * S * (1 - .4 * i / o.n), L, 5); g.translate(0, L / 2, 0);
     g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, V(side * (.35 + .5 * r()), .5 + .4 * r() - .25 * i / o.n, (-.5 - .4 * i / o.n) * rk).normalize()));
     g.translate(side * i * o.r * S * .6, -i * o.r * S * .3, -i * o.r * S * .9 * rk); geos.push(g.toNonIndexed()); }
-  const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshPhysicalMaterial({ color: c, roughness: .15, metalness: 0, flatShading: true, emissive: c.clone().multiplyScalar(.25), clearcoat: 1, transparent: true, opacity: .92 })); m.position.copy(p); return m;
+  const m = new THREE.Mesh(mergeGeometries(geos), o.stone ? stdMat(c, { rough: .95, flat: true }) : new THREE.MeshPhysicalMaterial({ color: c, roughness: .15, metalness: 0, flatShading: true, emissive: c.clone().multiplyScalar(.25), clearcoat: 1, transparent: true, opacity: .92 })); m.position.copy(p); return m;
 }
 function beak(o, S, c, p, dir) { const g = new THREE.ConeGeometry(o.r * S, o.len * S, 8); g.scale(1, 1, .75); g.translate(0, o.len * S / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.setFromUnitVectors(UP, dir.clone().add(V(0, -(o.hook || .1), 0)).normalize()); return m; }
 
@@ -402,8 +404,9 @@ function dressFlesh(geo, B, pal, plan) {
     if (pal.belly && coatW > 0) C.lerp(pal.belly, coatW * sstep(-.1, -.75, ny));
     if (pat?.kind === 'bands') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 6, y * 6, z * 2) * 1.2); if (b > .35) C.lerp(pal[pat.tone], .85 * coatW); }
     if (pat?.kind === 'stripes') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 3, y * 3, z) * 2.5); if (b > .55 && ny > -.2) C.lerp(pal[pat.tone], .7 * coatW); }
-    // patches (Session 845): a pied coat, where low-frequency noise crosses a threshold; the edge is a little ragged
-    if (pat?.kind === 'patches') { const q = PN.noise(x / pat.size, y / pat.size + 7.3, z / pat.size) + PN.noise(x * 9, y * 9, z * 9) * .08; if (q > (pat.cut ?? .1)) C.lerp(pal[pat.tone], (pat.amount ?? 1) * coatW); }
+    // patches (Session 845): a pied coat, where low-frequency noise crosses a threshold; the edge is a little ragged.
+    // `up` (Session 926) keeps them to what faces the sky, as moss grows on stone (the troll's)
+    if (pat?.kind === 'patches') { const q = PN.noise(x / pat.size, y / pat.size + 7.3, z / pat.size) + PN.noise(x * 9, y * 9, z * 9) * .08; if (q > (pat.cut ?? .1)) C.lerp(pal[pat.tone], (pat.amount ?? 1) * coatW * (pat.up === undefined ? 1 : sstep(pat.up, pat.up + .35, ny))); }
     // a face mask (Session 845): on the head, between two distances out from its middle line, from the nose back over
     // the eyes to the ears, a stripe of one tone, and the rest of the face another (the badger's black stripes on white)
     if (plan.face && B.headFrame && B.by.head && (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum > .5) { const F = plan.face, H = B.headFrame, rel = V(x, y, z).sub(H.base), along = rel.dot(H.dir) / H.len, side = Math.abs(rel.x) / H.r, upw = rel.dot(H.up) / H.r;
@@ -1476,7 +1479,7 @@ export const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
 // ── Session 919: the corrupted (OG-088's second row; backlog L4, "corrupted animals by school"). A gate's antibodies wear
 // the animals of its country, and each is a change of shape, never a recolour: the gate's work shows in what grows out of it.
 // Each is tagged with its school (canon §9a) and keeps its familiar's bones, so it walks as its familiar does. OG-088's stone
-// troll waits for a troll in the kit; its corrupted wolf is the Faolchú's kind and its void spider a Scáth spider for later ──
+// troll came with the troll (Session 926, below); its corrupted wolf is the Faolchú's kind and its void spider a Scáth spider for later ──
 Object.assign(PLANS, {
   // Uisce: the frost wraith bear, blue ice: its coat iced over and thin, shards of ice through its back and a crown of them at the brow, pale light in its seams
   frostbear: re(PLANS.bear, { name: 'Frost Wraith Bear', src: 'OG-088 (corrupted: a frost wraith bear of blue ice)', school: 'Uisce', from: 'bear', scale: 1.1, rough: .35,
@@ -1505,4 +1508,35 @@ Object.assign(PLANS, {
       : k === 'head' ? [k, { ...o, beak: { ...o.beak, len: o.beak.len * 1.35, r: o.beak.r * 1.25, hook: .55 }, eyes: (o.eyes || []).map(e => ({ ...e, color: [.85, .5, 1] })) }]
       : k === 'tail' ? [k, { ...o, fan: { ...o.fan, len: o.fan.len * 1.4, spread: 50 } }] : [k, o]) })
 });
-export const CORRUPTED = ['frostbear', 'blightboar', 'shadowstag', 'duskeagle'];
+// ── Session 926: the troll (OG-041's cave troll, OG-088's mossy river troll; canon §9a puts cave trolls in Tine, Uisce and
+// Cloch gates). The kit's first upright walker with hands: a hunched biped, the hips over its feet and the chest thrown forward
+// over them, a shoulder hump, the head slung low in front, and arms long enough to reach its knees. One leg pair walks it (the
+// gait engine's biped walk); the arms swing against the legs. Its hide is grey as stone with moss on what faces the sky.
+// The scraps of armour lashed on (OG-041) wait for gear on a creature; the Tine and Uisce trolls of OG-018 are its recolours ──
+Object.assign(PLANS, {
+  troll: { name: 'Cave Troll', src: 'OG-041 (cave troll: hunched and huge, a stone-grey hide with moss and lichen, a wide fanged mouth), OG-088 (a mossy river troll)', gaits: ['walk', 'trot', 'stand'],
+    rough: .9, mottle: 1.6, speedK: .8, wag: 0, pant: .04, neckNod: .05,
+    palette: { coat: [.4, .4, .37], saddle: [.33, .34, .3], belly: [.5, .48, .44], moss: [.25, .33, .12], dark: [.06, .05, .05], horn: [.76, .7, .56], skin: [.36, .35, .32] },
+    pattern: { kind: 'patches', tone: 'moss', size: .22, cut: .02, amount: .9, up: .15 },
+    parts: [
+      ['spine', { hip: [1.25, -.08], chest: [2.15, .26], n: 4, r: [.3, .4, .4], s: [1.2, 1], arch: .04, rump: .1, front: .08, frontDrop: .04, hump: { at: .85, up: .1, len: .3, r: .28 } }],
+      ['neck', { len: .26, n: 1, rise: 0, r: [.2, .14], fwd: .12, up: -.02 }],
+      ['head', { len: .42, r: .22, pitch: 10, s: [1.2, 1.05, 1], muzzle: { len: .88, r: .13, taper: .8, nose: 1, drop: .1 }, jaw: { len: .96, r: .14, drop: 1 },
+        eyes: [{ f: .4, up: .45, out: .5, r: .022, color: [.75, .5, .12] }], ears: { kind: 'cone', size: .07, f: .12, up: .55, out: .95, back: 20, splay: 70, tone: 'skin' },
+        horns: { len: .17, r: .03, f: .86, up: -.8, out: .6, turn: .4, rise: 1.2, spread: .15, back: -.2, out0: .1 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .28, drop: .08, r: [.22, .17, .14], claws: { r: .02, len: .06 } }],
+      ['arms', { at: 1, out: .5, up: -.1, len: 1.5, r: [.15, .13, .12], dir: [.25, -1, .05], bend: 18, tone: 'coat', claws: { r: .02, len: .09 }, swing: .28 }]
+    ] }
+});
+Object.assign(PLANS, {
+  // Cloch: the stone troll, fused with rock: the troll grown heavier, its hide gone to bare grey stone with the moss scoured off,
+  // slabs of rock through its back and shoulders and on its crown, its arms thicker, violet in its cracks
+  stonetroll: re(PLANS.troll, { name: 'Stone Troll', src: 'OG-088 (corrupted: a stone troll fused with rock)', school: 'Cloch', from: 'troll', scale: 1.12, rough: .95, mottle: 2.4, pattern: undefined,
+    palette: { coat: [.48, .46, .44], saddle: [.4, .39, .37], belly: [.54, .52, .5], rock: [.56, .53, .49], dark: [.05, .04, .05], horn: [.5, .48, .45], skin: [.32, .31, .3] },
+    glow: { color: [1.3, .45, 2.2], freq: 1.4, w: .012, all: .35 },
+    parts: [...PLANS.troll.parts.map(([k, o]) => k === 'arms' ? [k, { ...o, r: o.r.map(v => v * 1.22), len: o.len * 1.05 }]
+      : k === 'head' ? [k, { ...o, crystals: { n: 4, len: .2, r: .06, f: .3, up: .85, out: .4, rake: .5, stone: 1 }, eyes: o.eyes.map(e => ({ ...e, color: [.8, .45, 1] })) }]
+      : k === 'spine' ? [k, { ...o, hump: { ...o.hump, up: .22, r: .38 } }] : [k, o]),
+      ['spines', { n: 7, from: .1, to: 1, len: .28, r: .16, tone: 'rock', taper: .3, crystal: 2, stone: 1, dorsal: 1 }]] })
+});
+export const CORRUPTED = ['frostbear', 'blightboar', 'shadowstag', 'duskeagle', 'stonetroll'];
