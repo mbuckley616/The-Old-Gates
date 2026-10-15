@@ -23,7 +23,7 @@ retry"), cleared by Sessions 797–814.
 - Shard times, 12 shards (8 runs): the slowest shard took 57.6–59.6 min in every run, 0.4 to 2.4 min under the hour; the fastest 38.7–46.3.
   Shards 4 and 6 are the slowest in six of eight runs, shard 5 the fastest in five. Long suites: placesave 489–617 s, mainrun 415, renewal 269, panelfocus 270.
 - F2a's Session 915 already does the rebalance this ledger owed: fourteen shards (`check.yml`) and `run.mjs`'s table refreshed from CI's times.
-  Its run's shards took 36.3–53.3 min, the longest 6 min under the 12-shard runs' best. When #315 merges, QA's rebalance item is done; the next
+  Its run's shards took 36.3–53.3 min, the longest 4.3 min under the best 12-shard run's longest (57.6). When #315 merges, QA's rebalance item is done; the next
   read checks the 14-shard spread across several runs, not one.
 
 ## CI, 14 Oct 18:55 to 15 Oct 00:55 (read 00:55)
