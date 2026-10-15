@@ -818,6 +818,166 @@ function buildHelm(P, G, heads, byName, hairPts = []) {
   byName['head'].add(hm);
   return { mesh: hm, stats: { gap: +gap.toFixed(4), face, facePts: nf, hairOut, hairPts: hairPts.length, tris: (idx.length + edge.index.count) / 3, width: +(ext.max.x - ext.min.x).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3) } };
 }
+function shieldTex(col, paint, wood, metal = false) {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'), rnd = seeded('shield'), css = (k, v) => `rgb(${k.map(t => Math.round(Math.max(0, Math.min(1, t * v)) * 255)).join(',')})`;
+  for (let b = 0; b < 7; b++) { const x0 = b * 512 / 7, v = .9 + rnd() * .16; x.fillStyle = css(wood, v); x.fillRect(x0, 0, 512 / 7 + 1, 512);
+    // the grain, and the seam between two boards
+    for (let k = 0; k < 14; k++) { x.strokeStyle = css(wood, v * (.8 + rnd() * .1)); x.lineWidth = .6 + rnd(); x.beginPath(); const gx = x0 + rnd() * 512 / 7; x.moveTo(gx, 0); for (let y = 0; y <= 512; y += 32) x.lineTo(gx + Math.sin(y / 60 + k) * 2.5, y); x.stroke(); }
+    x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(x0 - 1, 0, 2, 512); }
+  if (col) { const wood0 = x.getImageData(0, 0, 512, 512), d = wood0.data, ca = col, cb = paint || col, wm = (wood[0] + wood[1] + wood[2]) / 3;
+    // a metal face's dints (Session 906): 220 hammer blows at random from the seeded stream, each a soft hollow with a bright lip
+    let dint = null; if (metal) { const c2 = document.createElement('canvas'); c2.width = c2.height = 512; const y2 = c2.getContext('2d'); y2.fillStyle = '#c0c0c0'; y2.fillRect(0, 0, 512, 512);
+      for (let k = 0; k < 220; k++) { const px = rnd() * 512, py = rnd() * 512, r = 5 + rnd() * 12, gr = y2.createRadialGradient(px, py, 0, px, py, r); gr.addColorStop(0, 'rgba(0,0,0,.28)'); gr.addColorStop(.7, 'rgba(0,0,0,.06)'); gr.addColorStop(.86, 'rgba(255,255,255,.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); y2.fillStyle = gr; y2.fillRect(px - r, py - r, 2 * r, 2 * r); }
+      dint = y2.getImageData(0, 0, 512, 512).data; }
+    for (let y = 0; y < 512; y++) for (let i = 0; i < 512; i++) { const k = (y * 512 + i) * 4, u = i / 256 - 1, v = y / 256 - 1, r = Math.hypot(u, v), q = paint && (u > 0) !== (v > 0) ? cb : ca;
+      // the paint over the boards: the seams and the grain show through a little, and it is worn back to the wood at the rim; a metal face shows hammer dints instead
+      const g = metal ? dint[k] / 192 : (d[k] + d[k + 1] + d[k + 2]) / (3 * 255 * wm), wear = metal ? 0 : Math.max(0, Math.min(1, (r - .9) / .1)) * (.4 + .6 * Math.abs(Math.sin(i * .37 + y * .11)));
+      for (let ch = 0; ch < 3; ch++) d[k + ch] = Math.round(255 * Math.max(0, Math.min(1, (q[ch] * (.75 + .25 * g)) * (1 - wear) + d[k + ch] / 255 * wear))); }
+    x.putImageData(wood0, 0, 0); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+// what a person and their clothes are, posed, as clouds of points: the body, each garment's shell, and the pieces built after the pose
+// (a cloak, a tabard, a cord). A garment's shell holds every point of the body, but only those its triangles use are cloth (less
+// what its shader cuts: the mail's sleeves past the elbow, its skirt below the knee); a skinned cloud keeps its points' rest index,
+// so an arm is known. The hair is left out unless asked for
+function wornClouds(body, meshes, root, hair = false) {
+  const R0 = PACK.rest, clouds = []; root.updateMatrixWorld(true);
+  for (const m of meshes) if (m.isSkinnedMesh && !/^(beard|moust|brows|scalp)/.test(m.name) && (hair || m.name !== 'hair')) { const X = m === body ? posedBody(m) : posedOf(m);
+    const used = m.userData.used || (m.userData.used = m === body ? [...new Set(PACK.G['body'])] : m.name === 'hair' ? null : [...new Set(m.geometry.index.array)].filter(v => m.name === 'mail' ? Math.abs(R0[v * 3]) < .3 : m.name === 'mailSkirt' ? R0[v * 3 + 1] > -.27 : true));
+    clouds.push({ X, ids: used }); }
+  root.traverse(m => { if (!m.isMesh || m.isSkinnedMesh || m.userData.shield) return; const a = m.geometry.attributes.position, v = new THREE.Vector3(), o = new Float32Array(a.count * 3); for (let i = 0; i < a.count; i++) { v.fromBufferAttribute(a, i).applyMatrix4(m.matrixWorld); o[i * 3] = v.x; o[i * 3 + 1] = v.y; o[i * 3 + 2] = v.z; } clouds.push({ X: o, ids: null }); });
+  return clouds;
+}
+const eachPoint = (clouds, f) => { for (const { X, ids } of clouds) { const cnt = ids ? ids.length : X.length / 3; for (let k = 0; k < cnt; k++) { const i = ids ? ids[k] : k; f(X[i * 3], X[i * 3 + 1], X[i * 3 + 2], ids ? i : -1); } } };
+// the round shield (Session 904; OG-019's heavy line carries one at every tier, OG-025's hold guards a painted round and OG-044's
+// guards a bronze one). Seven boards under a painted face (quartered in a second colour if it has one), a rawhide rim and an iron
+// boss. Built in its own frame: x across, y up, z out of its face, its back at z 0, the face dished 8 mm toward the boss
+const SHIELD_R = .36, SHIELD_HOLE = .062, SHIELD_DOME = .0275;
+function shieldParts(D, gripZ = -.011) {
+  const R = SHIELD_R, NT = 72, NR = 14, HOLE = SHIELD_HOLE, zF = r => .01 + .008 * (1 - (r / R) ** 2), pos = [], uv = [], idx = [], pos2 = [], uv2 = [], idx2 = [];
+  for (let j = 0; j < NR; j++) for (let t = 0; t <= NT; t++) { const r = HOLE + (R - HOLE) * j / (NR - 1), a = t / NT * Math.PI * 2, x = r * Math.cos(a), y = r * Math.sin(a);
+    pos.push(x, y, zF(r)); uv.push(x / R * .5 + .5, y / R * .5 + .5); pos2.push(x, y, 0); uv2.push(x / R * .5 + .5, y / R * .5 + .5); }
+  for (let j = 0; j < NR - 1; j++) for (let t = 0; t < NT; t++) { const a = j * (NT + 1) + t, b = a + NT + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); idx2.push(a, a + 1, b, a + 1, b + 1, b); }
+  const geo = (p, u, i) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(u, 2)); g.setIndex(i); g.computeVertexNormals(); return g; };
+  const woodC = [.46, .33, .2], iron = sRGB(...(D.helm || [.42, .43, .45]));
+  // a bronze face (OG-044's Compact guards): sheet metal beaten over the boards, so no seam shows and it takes the light as the helm does
+  const face = new THREE.Mesh(geo(pos, uv, idx), new THREE.MeshStandardMaterial({ map: shieldTex(D.shield, D.shieldPaint, woodC, !!D.shieldMetal), roughness: D.shieldMetal ? .36 : .78, metalness: D.shieldMetal ? .55 : 0 }));
+  const backM = new THREE.Mesh(geo(pos2, uv2, idx2), new THREE.MeshStandardMaterial({ map: shieldTex(null, null, woodC.map(v => v * .8)), roughness: .9 }));
+  // the boss: a flange nailed over the hole, and a dome 5.5 cm proud of the face
+  const prof = [new THREE.Vector2(.092, zF(.092) + .0005), new THREE.Vector2(.09, zF(.09) + .003), new THREE.Vector2(.064, zF(.064) + .004)];
+  for (let k = 0; k <= 12; k++) { const p = k / 12 * Math.PI / 2; prof.push(new THREE.Vector2(.058 * Math.cos(p) + .0001, zF(.06) + .012 + .045 * Math.sin(p))); }
+  const bg = new THREE.LatheGeometry(prof, 40); bg.rotateX(Math.PI / 2); bg.computeVertexNormals();
+  const metal = new THREE.MeshStandardMaterial({ color: iron, metalness: .55, roughness: .38, side: THREE.DoubleSide }), boss = new THREE.Mesh(bg, metal);
+  // the rim: rawhide stitched over the edge, and eight rivets round the boss's flange
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R, .0072, 8, 120), new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.3, .21, .13])), roughness: .7 })); rim.position.z = .0055;
+  // the grip: an ash bar across the hole on the back, where the fist closes on it, standing on a cleat either side of the hole (Session 906)
+  const ash = new THREE.MeshStandardMaterial({ color: sRGB(...woodC.map(v => v * .85)), roughness: .85 }), GL = HOLE * 2 + .07;
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(.011, .011, GL, 12), ash); grip.rotation.z = Math.PI / 2; grip.position.z = gripZ;
+  const sh = new THREE.Group(); sh.name = 'shield'; sh.add(face, backM, boss, rim, grip);
+  for (const s of [-1, 1]) { const h = -gripZ + .011, cl = new THREE.Mesh(new THREE.BoxGeometry(.024, .03, h), ash); cl.position.set(s * (GL / 2 - .012), 0, -h / 2); sh.add(cl); }
+  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, rv = new THREE.Mesh(new THREE.SphereGeometry(.0055, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), metal); rv.rotation.x = Math.PI / 2; rv.position.set(.077 * Math.cos(a), .077 * Math.sin(a), zF(.077) + .003); sh.add(rv); }
+  sh.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
+  return sh;
+}
+// the furthest of the clouds' points along N within the shield's rim, round a centre (the arm's points apart, if asked)
+// and the furthest of the hand's points that are inside the boss's hole, which do not count against the board (the fist goes into the boss)
+function shieldBack(clouds, C, N, armOf = () => false, handOf = () => false) {
+  let other = -1, arm = -1, hole = -1, n = 0;
+  eachPoint(clouds, (x, y, z, i) => { const dx = x - C.x, dy = y - C.y, dz = z - C.z, dd = dx * N.x + dy * N.y + dz * N.z, rr = Math.hypot(dx - N.x * dd, dy - N.y * dd, dz - N.z * dd);
+    if (dd < -.3 || rr > SHIELD_R + .012) return; n++; if (i >= 0 && handOf(i) && rr < SHIELD_HOLE - .008) { hole = Math.max(hole, dd); return; } if (i >= 0 && armOf(i)) arm = Math.max(arm, dd); else other = Math.max(other, dd); });
+  return { other, arm, hole, n };
+}
+// the promise, read back off the shield where its bone carries it: no point of the person or what they wear (or of the strap)
+// inside its board, its rim or its boss (in its own frame: within 7.4 cm in front of its back and 3 mm behind it, inside its rim)
+function shieldInside(sh, clouds, root) {
+  root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), v = new THREE.Vector3(); let inside = 0, near = 1;
+  // (within the boss's hole only the dome counts: a knuckle may go into its hollow up to its base, 2.75 cm in front of the back)
+  eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); const r = Math.hypot(v.x, v.y); if (r > SHIELD_R + .008 || v.z < -.05 || v.z > .074) return; if (r < SHIELD_HOLE - .004) { if (v.z > SHIELD_DOME - .002) inside++; return; } near = Math.min(near, -v.z); if (v.z > -.003) inside++; });
+  return { inside, near: +near.toFixed(4) };
+}
+// held: a centre grip in the left fist with the arm hanging, so the shield hangs at the side with its face turned 1 rad forward
+// from the side (OG-019 draws them nearly face on). A rigid piece carried by the left wrist. Its back is laid 5 mm outside the
+// furthest point of whatever lies within its rim (the hand and forearm on the grip, the hip, a skirt, mail, a tabard); where
+// something other than the arm is that point, the arm is lifted out from the side 0.03 rad at a time, as for a long skirt.
+// Its numbers: what is inside it read back off the wrist, the nearest point behind it, the arm's gap to its back, the lift
+function buildShield(G, body, byName, meshes, root) {
+  const D = G.dress, R = SHIELD_R, TURN = D.shieldTurn ?? 1, CLEAR = .005, R0 = PACK.rest, q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
+  const wrist = byName['wrist.L'], elbow = byName['lowerarm01.L'], armOf = i => R0[i * 3] > .3, handOf = i => R0[i * 3] > .415;
+  // the left hand closes on the grip (Session 906): the four fingers curled to a fist, the thumb as it was
+  for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const bn = byName[`finger${f}-${j}.L`]; if (bn) bn.quaternion.copy(q(0, 0, -[1.15, 1.35, .95][j - 1])); }
+  let place = null, lift = 0;
+  for (let k = 0; k <= 10; k++) {
+    const clouds = wornClouds(body, meshes, root);
+    const e = new THREE.Vector3().setFromMatrixPosition(elbow.matrixWorld), w = new THREE.Vector3().setFromMatrixPosition(wrist.matrixWorld), A = w.clone().sub(e).normalize();
+    const O = new THREE.Vector3(1, 0, 0).addScaledVector(A, -A.x).normalize(), F = new THREE.Vector3().crossVectors(A, O); if (F.z < 0) F.negate();
+    const N = O.clone().multiplyScalar(Math.cos(TURN)).addScaledVector(F, Math.sin(TURN)).normalize(), U = A.clone().negate(), S = new THREE.Vector3().crossVectors(U, N);
+    // the grip is in the fist: the boss is centred on the middle of the four fingers' second joints, and the knuckles go into its
+    // hollow, up to a centimetre short of the dome's base
+    const G0 = new THREE.Vector3(); for (let f = 2; f <= 5; f++) G0.add(new THREE.Vector3().setFromMatrixPosition(byName[`finger${f}-2.L`].matrixWorld)); G0.divideScalar(4);
+    const { other, arm, hole, n } = shieldBack(clouds, G0, N, armOf, handOf), back = Math.max(arm + CLEAR, other + CLEAR, hole - SHIELD_DOME + .01);
+    place = { G0, N, U, S, back, armGap: Math.max(0, other - arm), inHole: +(hole - back).toFixed(4), tested: n };
+    if (other <= arm || k === 10) break;
+    lift += .03; byName['upperarm01.L'].quaternion.multiply(q(0, 0, .03));
+  }
+  // the grip at the fist's own depth: 8 mm behind its furthest knuckle (the forearm, thicker than the fist, holds the board off it)
+  const { G0, N, U, S, back } = place, sh = shieldParts(D, Math.max(-.045, Math.min(-.011, place.inHole - .008)));
+  sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(G0).addScaledVector(N, back); root.add(sh); root.updateMatrixWorld(true); wrist.attach(sh);
+  const { inside, near } = shieldInside(sh, wornClouds(body, meshes, root), root);
+  let tris = 0; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  let floor = 1e9; { const PP = posedBody(body); for (let i = 1; i < PP.length; i += 3) floor = Math.min(floor, PP[i]); } const low = G0.y - R * Math.abs(U.y) - .007 - floor;
+  return { mesh: sh, low, stats: { on: 'arm', armGap: +place.armGap.toFixed(4), inHole: place.inHole, clear: CLEAR, inside, near, tested: place.tested, lift: +lift.toFixed(2), turn: TURN, across: 2 * R, tris, faceDir: +Math.atan2(N.z, N.x).toFixed(3) } };
+}
+// slung (Session 905): under a cloak, which hangs over the arm that would hold it, or a shoulder cape, which stands out over its top
+// edge, the shield is carried on the back by its strap (the guige), as OG-019's heavy line draws the strap crossed over the chest.
+// The shield hangs with its top 6 cm under the nape, leaning with the back, its own back laid 5 mm outside whatever lies within
+// its rim (the back, the cloak and its hood, the hair). A rigid piece carried by the chest bone. The strap, 3.5 cm of leather,
+// leaves from under its top edge on the right, goes over the right shoulder, down across the chest to the left hip and round the
+// left side under the arm (over the cloak where the cloak hangs over the arm), and goes back under the board's lower edge. It is
+// laid along rays from inside the body: at each step it rides 3.5 mm over the furthest point within 3 cm of its ray, and is pulled
+// taut, so it bridges hollows as a strap does. It is not drawn under the board
+function buildShieldBack(G, body, byName, meshes, root, heads) {
+  const D = G.dress, R = SHIELD_R, CLEAR = .005, R0 = PACK.rest, chest = byName['spine03'] || byName['spine04'];
+  const clouds = wornClouds(body, meshes, root, true), neck = new THREE.Vector3().setFromMatrixPosition(byName['neck01'].matrixWorld);
+  const lean = .12, N = new THREE.Vector3(0, Math.sin(lean), -Math.cos(lean)), U = new THREE.Vector3(0, Math.cos(lean), Math.sin(lean)), S = new THREE.Vector3().crossVectors(U, N);
+  const C0 = new THREE.Vector3(0, neck.y - .06 - R, neck.z), { other, n } = shieldBack(clouds, C0, N), back = other + CLEAR, C = C0.clone().addScaledVector(N, back);
+  const sh = shieldParts(D); sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(C); root.add(sh);
+  // the strap: rays from inside the body, from the nape over the right shoulder (x -.1), down across the chest to the left hip, round
+  // the left side and back. Its points are on every cloud but the arms' skin and sleeves (it passes between an arm and the side);
+  // a cloak's points are kept, so over a cloak it goes over the cloak
+  // nor the hair, the head or what the head carries (the strap goes under long hair, and stops at the neck)
+  const armSkin = i => Math.abs(R0[i * 3]) > .2 && R0[i * 3 + 1] < .6, strapClouds = wornClouds(body, meshes, root).map(c => c.ids ? { X: c.X, ids: c.ids.filter(i => !armSkin(i)) } : { X: c.X.filter((_, k) => c.X[k - k % 3 + 1] < neck.y + .03), ids: null });
+  const hip = new THREE.Vector3().setFromMatrixPosition((byName['pelvis.L'] || byName['spine01']).matrixWorld), sY = neck.y - .02, wY = hip.y + .12, zc = neck.z + .02;
+  const guide = []; const add = (c, d) => guide.push({ c, d: d.normalize() });
+  for (let k = 0; k <= 8; k++) { const t = k / 8, ph = -1.25 + t * 2.5; add(new THREE.Vector3(-.14, sY - .12, zc), new THREE.Vector3(0, Math.cos(ph), Math.sin(ph))); }
+  for (let k = 1; k <= 12; k++) { const t = k / 12; add(new THREE.Vector3(-.14 + .23 * t, sY - .12 - (sY - .12 - wY) * t, zc), new THREE.Vector3(.6 * t * t, .45 * (1 - t), 1)); }
+  for (let k = 1; k <= 12; k++) { const a = k / 12 * Math.PI; add(new THREE.Vector3(.04, wY, zc), new THREE.Vector3(Math.sin(a) * .9 + .6 * Math.cos(a) * 0, 0, Math.cos(a))); }
+  // densify the guide to about a centimetre a step along the body, then find each ray's surface (within 3 cm of it)
+  const rays = []; for (let k = 0; k < guide.length - 1; k++) for (let s = 0; s < 6; s++) { const t = s / 6; rays.push({ c: guide[k].c.clone().lerp(guide[k + 1].c, t), d: guide[k].d.clone().lerp(guide[k + 1].d, t).normalize() }); } rays.push(guide[guide.length - 1]);
+  const W = .0175, OFF = .0035;
+  // a cloak's columns stand up to 8 cm apart toward the hem, so its points count within 8 cm of a ray, the body's within 3 cm
+  for (const r of rays) { let far = 0; eachPoint(strapClouds, (x, y, z, i) => { const dx = x - r.c.x, dy = y - r.c.y, dz = z - r.c.z, dd = dx * r.d.x + dy * r.d.y + dz * r.d.z; if (dd <= 0 || dd > .45) return; if (Math.hypot(dx - r.d.x * dd, dy - r.d.y * dd, dz - r.d.z * dd) < (i < 0 ? .08 : .03) && dd > far) far = dd; }); r.far = far + OFF; }
+  // and no dip narrower than 16 steps: each point at least the lower of the highest on either side within 8 (a closing)
+  { const f0 = rays.map(r => r.far); for (let k = 0; k < rays.length; k++) { let L = 0, Rr = 0; for (let j = 1; j <= 8; j++) { if (k - j >= 0) L = Math.max(L, f0[k - j]); if (k + j < rays.length) Rr = Math.max(Rr, f0[k + j]); } rays[k].far = Math.max(f0[k], Math.min(L, Rr) - .004); } }
+  // taut: a strap bridges a hollow, so no point sits below the line between its neighbours (four passes)
+  for (let p = 0; p < 4; p++) for (let k = 1; k < rays.length - 1; k++) rays[k].far = Math.max(rays[k].far, (rays[k - 1].far + rays[k + 1].far) / 2 - .002);
+  let pts = rays.map(r => r.c.clone().addScaledVector(r.d, r.far)), nrm = rays.map(r => r.d);
+  // not under the board: the strap starts and ends at its rim (under it is within its rim and less than 8 cm in front of its back)
+  root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), under = p => { const v = p.clone().applyMatrix4(inv); return Math.hypot(v.x, v.y) < R - .02 && v.z < .001 && v.z > -.08; };
+  let a = 0, b = pts.length - 1; while (a < b && under(pts[a + 1])) a++; while (b > a && under(pts[b - 1])) b--; pts = pts.slice(a, b + 1); nrm = nrm.slice(a, b + 1);
+  const pos = [], idx = []; for (let k = 0; k < pts.length; k++) { const t = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]).normalize(), side = new THREE.Vector3().crossVectors(t, nrm[k]).normalize();
+    for (const s of [-1, 1]) { const p = pts[k].clone().addScaledVector(side, s * W); pos.push(p.x, p.y, p.z); } if (k) { const o = (k - 1) * 2; idx.push(o, o + 2, o + 1, o + 1, o + 2, o + 3); } }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setIndex(idx); sg.computeVertexNormals(); sg.setAttribute('aBase', sg.attributes.position);
+  const strap = new THREE.Mesh(sg, clothMat(sRGB(...(D.belt || [.3, .2, .13])), 'leather', { side: THREE.DoubleSide })); strap.name = 'guige'; strap.castShadow = strap.receiveShadow = true; strap.userData.shield = true; sh.userData.strap = strap;
+  // the strap's promise: no point of what it lies on comes up through it: within its width and a step along it, none less than 3 cm
+  // over its underside, measured along its own normal (a cloak's free panel further out, which it passes under, is not through it)
+  let through = 0, tested = 0, worst = 0; for (let k = 0; k < pts.length; k++) { const d = nrm[k], t0 = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]), t = t0.addScaledVector(d, -t0.dot(d)).normalize(), side = new THREE.Vector3().crossVectors(t, d).normalize(), p0 = pts[k];
+    eachPoint(strapClouds, (x, y, z) => { const dx = x - p0.x, dy = y - p0.y, dz = z - p0.z; if (Math.abs(dx * t.x + dy * t.y + dz * t.z) > .006 || Math.abs(dx * side.x + dy * side.y + dz * side.z) > W) return; const h = dx * d.x + dy * d.y + dz * d.z; if (h < -.03 || h > .03) return; tested++; if (h > -.001) { through++; worst = Math.max(worst, h); } }); }
+  let len = 0; for (let k = 1; k < pts.length; k++) len += pts[k].distanceTo(pts[k - 1]);
+  root.add(strap); chest.attach(sh); chest.attach(strap);
+  const { inside, near } = shieldInside(sh, clouds, root);
+  let tris = idx.length / 3; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  return { mesh: sh, stats: { on: 'back', inside, near, tested: n, across: 2 * R, tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
+}
 function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
 // skirt's own middle, a hand point (rest x past .415) is inside if it is nearer that middle than the furthest of the skirt's points there
@@ -1001,7 +1161,11 @@ export function makePerson(G, o = {}) {
   let cordStats = null; if (D.cord) { root.updateMatrixWorld(true); const C = buildCord(G, body, meshes); for (const m of C.meshes) root.add(m); cordStats = C.stats; if (D.robe && o.robeStats !== false) Object.assign(cordStats, robeStats(body, meshes)); }
   let mailSt = null; if (mail && o.mailStats !== false) { root.updateMatrixWorld(true); mailSt = mailStats(body, meshes); }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt };
+  // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
+  // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
+  let shieldStats = null; if (D.shield && !D.cloak) { const S = buildShield(G, body, byName, meshes, root); shieldStats = { ...S.stats, bottom: +S.low.toFixed(3) }; }
+  else if (D.shield) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -1024,7 +1188,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, shieldTurn: 1, shieldMetal: false };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
