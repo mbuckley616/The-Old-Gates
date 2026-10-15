@@ -345,16 +345,21 @@ P.rags = (B, o) => { const r = rng(B.g.seed + 43), h = B.spinePts[0].clone().add
 // straps (Session 944, OG-041's goblin, "a scrap-leather harness"): a harness laid on the grown skin. Each strap is a path of
 // (t, angle) pairs round the spine (t along it, hip 0 to chest 1; angle 0 the belly, 90 its left), drawn as a ribbon `w` wide. It is
 // laid after the flesh is grown: each of its points stands 7 mm outside the furthest of the skin's points near it (within 2.5 cm
-// along the spine and 9° round it) and takes that skin point's bone weights, so it moves as the skin under it does
+// along the spine and 9° round it) and takes that skin point's bone weights, so it moves as the skin under it does. `lift` stands a
+// strap further out, over another (a lashing over a plate, Session 945)
 P.straps = (B, o) => { (B.after ||= []).push(geo => {
   const pos = geo.attributes.position, SI = geo.attributes.skinIndex, SW = geo.attributes.skinWeight, n = pos.count, out = [];
+  // only the trunk's skin where there is any: points carried mostly by a spine bone (an arm's root, the neck or a thigh would pull a
+  // strap out to them); past the trunk's ends (over a shoulder, round the hips) any skin
+  const spineI = new Set(B.spineNames.map(nm => B.by[nm].i)), onTrunk = new Uint8Array(n); for (let i = 0; i < n; i++) { let bw = -1, bi = -1; for (let c = 0; c < 4; c++) { const w = SW.getComponent(i, c); if (w > bw) { bw = w; bi = SI.getComponent(i, c); } } onTrunk[i] = spineI.has(bi) ? 1 : 0; }
   const X = V(1, 0, 0), frame = t => { const a = B.spineAt(t - .03).p, b = B.spineAt(t + .03).p, ax = b.clone().sub(a).normalize(); return { p: B.spineAt(t).p, ax, belly: X.clone().cross(ax).normalize(), side: X }; };
-  const surf = (t, deg) => { const F = frame(t), th = deg * DEG, dir = F.belly.clone().multiplyScalar(Math.cos(th)).addScaledVector(F.side, Math.sin(th)), v = V(0, 0, 0); let best = -1, R = 0;
-    for (let i = 0; i < n; i++) { v.fromBufferAttribute(pos, i).sub(F.p); const along = v.dot(F.ax); if (Math.abs(along) > .025) continue; v.addScaledVector(F.ax, -along); const r = v.length(); if (r < 1e-4 || v.dot(dir) / r < Math.cos(9 * DEG)) continue; if (r > R) { R = r; best = i; } }
-    return best < 0 ? null : { p: F.p.clone().addScaledVector(dir, R + .007), n: dir, src: best }; };
+  const surf = (t, deg, lift = 0, any = false) => { const F = frame(t), th = deg * DEG, dir = F.belly.clone().multiplyScalar(Math.cos(th)).addScaledVector(F.side, Math.sin(th)), v = V(0, 0, 0); let best = -1, R = 0;
+    for (let i = 0; i < n; i++) { if (!any && !onTrunk[i]) continue; v.fromBufferAttribute(pos, i).sub(F.p); const along = v.dot(F.ax); if (Math.abs(along) > .025) continue; v.addScaledVector(F.ax, -along); const r = v.length(); if (r < 1e-4 || v.dot(dir) / r < Math.cos(9 * DEG)) continue; if (r > R) { R = r; best = i; } }
+    if (best < 0 && !any) return surf(t, deg, lift, true);
+    return best < 0 ? null : { p: F.p.clone().addScaledVector(dir, R + .007 + lift), n: dir, src: best }; };
   let laid = 0, miss = 0;
   for (const st of o.straps) { const cc = B.tone(st.tone || o.tone || 'leather'), pts = [], bones = [], skin = [], cols = [], tris = [], line = [];
-    for (let k = 0; k < st.path.length - 1; k++) { const [t0, a0] = st.path[k], [t1, a1] = st.path[k + 1], N = st.steps || 10; for (let j = 0; j < N + (k === st.path.length - 2 ? 1 : 0); j++) { const u = j / N, q = surf(lerp(t0, t1, u), lerp(a0, a1, u)); if (q) line.push(q); else miss++; } }
+    for (let k = 0; k < st.path.length - 1; k++) { const [t0, a0] = st.path[k], [t1, a1] = st.path[k + 1], N = st.steps || 10; for (let j = 0; j < N + (k === st.path.length - 2 ? 1 : 0); j++) { const u = j / N, q = surf(lerp(t0, t1, u), lerp(a0, a1, u), st.lift || 0); if (q) line.push(q); else miss++; } }
     for (let k = 0; k < line.length; k++) { const q = line[k], T = line[Math.min(line.length - 1, k + 1)].p.clone().sub(line[Math.max(0, k - 1)].p).normalize(), wd = q.n.clone().cross(T).normalize(), w = (st.w || o.w) / 2;
       for (const sd of [-1, 1]) { pts.push(q.p.clone().addScaledVector(wd, sd * w)); bones.push(SI.getX(q.src)); skin.push({ i: [SI.getX(q.src), SI.getY(q.src), SI.getZ(q.src), SI.getW(q.src)], w: [SW.getX(q.src), SW.getY(q.src), SW.getZ(q.src), SW.getW(q.src)] }); cols.push(cc.clone().multiplyScalar(.8 + .4 * ((k * 7 + (sd + 1) * 3) % 5) / 5)); }
       out.push({ v: pts.length - 2, src: q.src, off: .007 }); }
@@ -1784,3 +1789,15 @@ Object.assign(PLANS, {
       ['fronds', { on: ['head', 'neck', 'spine', 'arm0L_', 'arm0R_'], n: 36, len: .34, w: .04, out: .25, spread: .2, lift: -1.6, back: .15, tip: 'frondTip' }]] })
 });
 export const SKELETONS = ['skeleton', 'drownedskeleton'];
+// ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
+// goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
+// back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
+// (the stone troll, Tine's and Uisce's) copied its parts before this, and keep their bare hides ──
+Object.assign(PLANS.troll.palette, { iron: [.3, .29, .28], ironDark: [.22, .2, .19], leather: [.24, .17, .11], hide: [.5, .4, .28] });
+PLANS.troll.parts.push(['straps', { w: .08, tone: 'leather', straps: [
+  { path: [[.6, -28], [.84, -28]], w: .34, steps: 6, tone: 'iron' },
+  { path: [[.94, 62], [.94, 118]], w: .3, steps: 8, tone: 'ironDark' },
+  { path: [[.42, 160], [.42, 200]], w: .4, steps: 6, tone: 'hide' },
+  { path: [[.74, 0], [.74, 90], [.74, 180], [.74, 270], [.74, 360]], closed: true, steps: 12, lift: .012 },
+  { path: [[.98, 90], [.66, 10], [.34, -60]], steps: 10, lift: .012 },
+  { path: [[.36, 140], [.36, 220]], steps: 8, lift: .012 }] }]);

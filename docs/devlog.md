@@ -20563,3 +20563,34 @@ What changed in `creatures.js`:
 - **At this range** the harness reads as a belt and a sash. The hide patch on the shoulder is small, and mostly hidden behind the shield arm from the front.
 - **The straps are flat ribbons:** no buckles, no stitching, no thickness at their edges.
 - **What's next:** the method could also strap the troll's lashed-on armour scraps (OG-041) and a beast's saddle girth.
+
+## v80 — Session 945 — The cave troll's lashed-on armour (L4, prototype only)
+OG-041 draws its cave troll with scraps of plate and hide tied on with rope. Session 926 owed them, and the straps of Session 944 can now lay them on its grown skin. The plan is already drawn, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **The OG-041 troll's straps:**
+  - A dented iron plate on its chest and a darker iron plate over its left shoulder.
+  - A sheet of rawhide across the small of its back.
+  - Three leather lashings: one round the chest, one from the left shoulder across to the right hip, and one over the hide.
+  - The lashings stand 1.2 cm further out (`lift`, new), so they lie over the plates.
+  - 102 points in six straps. The troll's palette gains iron, dark iron, leather and hide.
+- **Only the OG-041 troll wears it.** The stone troll, Tine's and Uisce's copied the troll's parts before the armour is added, so they keep their bare hides.
+- **A correction to Session 944:** a strap took the furthest skin point near its path from any skin. On the troll that was often an arm's root or the hump, so the straps stood out in flaps; the goblin's belt stood off toward its arm in the same way.
+  - Straps now take only skin carried mostly by a spine bone.
+  - Past the trunk's ends (over a shoulder, round the hips), where there is none, they fall back to any skin.
+  - The goblin's belt now hugs its waist. Its gap to the skin through the gaits is 0.89 to 1.09 of rest (it was 0.83 to 1.16).
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,010 checks pass** (1,008 before).
+  - The troll's six straps are laid at 102 points, none missed. Through every pose of the walk, the trot and the stand, each keeps 0.95 to 1.04 of its rest gap to the skin under it.
+  - The stone, Tine and Uisce trolls have no straps.
+  - The goblin's harness still passes, at 119 points.
+- Pictures:
+  - `creatures-troll.jpg` re-shot; `creatures-troll-front.jpg` and `creatures-troll-back.jpg` are new.
+  - The goblin's three pictures re-shot.
+  - `creatures-classic.jpg` re-shot.
+
+### Needs eyes
+- **The chest plate** is under the hunched troll's chest, so it is mostly hidden from the front and the side. A plate on the upper back would show better.
+- **The shoulder plate** stands off the arm's root as a flap. It may read as a pauldron or as a fault.
+- **The plates are flat sheets:** no thickness, rivets or dents.

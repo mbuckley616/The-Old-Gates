@@ -109,6 +109,15 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
         const sh = new T.Vector3(); items.shield.getWorldPosition(sh); const hp = new T.Vector3(); C.byName.spine0.getWorldPosition(hp); sep = Math.min(sep, Math.hypot(sh.x - hp.x, sh.z - hp.z)); } }
       out[k] = { gear: C.B.gear, head: +head.toFixed(2), hip: +hip.toFixed(2), low: +low.toFixed(3), top: +top.toFixed(2), sep: +sep.toFixed(2), legs: C.B.legs.length, arms: C.B.arms.length, tris: C.stats.tris, harness: C.B.harness && { straps: C.B.harness.straps, miss: C.B.harness.miss, pts: HL.length, rMin: +rMin.toFixed(2), rMax: +rMax.toFixed(2) } }; }
     return out; });
+  // the cave troll's lashed-on armour (Session 945): straps laid on its skin, as the goblin's harness; the trolls built from it keep bare hides
+  const ta = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of ['troll', 'stonetroll', 'tinetroll', 'uiscetroll']) { const C = K.build(K.genome(k, k + ':check')), hide = C.meshes.find(m => m.name === 'hide'), fins = C.meshes.find(m => m.name === 'fins'), HL = C.B.harness?.laid || [], hv = new T.Vector3(), fv = new T.Vector3();
+      const gap = () => HL.map(q => { hide.getVertexPosition(q.src, hv); fins.getVertexPosition(q.v, fv); return hv.distanceTo(fv); }), rest0 = HL.length ? gap() : []; let rMin = 9, rMax = 0;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); if (rest0.length) gap().forEach((d, j) => { const r = d / rest0[j]; rMin = Math.min(rMin, r); rMax = Math.max(rMax, r); }); } }
+      out[k] = C.B.harness ? { straps: C.B.harness.straps, miss: C.B.harness.miss, pts: HL.length, rMin: +rMin.toFixed(2), rMax: +rMax.toFixed(2) } : null; }
+    return out; });
+  check(`troll: lashed-on armour (OG-041): ${ta.troll?.straps} plates and lashings laid on its grown skin at ${ta.troll?.pts} points (${ta.troll?.miss} missed), each staying with the skin under it through every gait (its gap ${ta.troll?.rMin} to ${ta.troll?.rMax} of its rest)`, ta.troll && ta.troll.straps === 6 && ta.troll.miss === 0 && ta.troll.pts > 80 && ta.troll.rMin > .6 && ta.troll.rMax < 1.6, ta.troll);
+  check('the trolls built from it (stone, Tine, Uisce) keep their bare hides', !ta.stonetroll && !ta.tinetroll && !ta.uiscetroll, ta);
   for (const [k, t] of Object.entries(gb)) {
     check(`${k}: a scrap-leather harness (OG-041): ${t.harness?.straps} straps laid on the grown skin at ${t.harness?.pts} points (${t.harness?.miss} missed), each staying with the skin under it through every gait (its gap ${t.harness?.rMin} to ${t.harness?.rMax} of its rest)`, t.harness && t.harness.straps === 3 && t.harness.miss === 0 && t.harness.pts > 60 && t.harness.rMin > .6 && t.harness.rMax < 1.6, t.harness);
     check(`${k}: a crouched biped about a goblin's height (head ${t.head} m up; ${t.legs} legs, ${t.arms} arms)`, t.legs === 2 && t.arms === 2 && t.head > .8 && t.head < 1.4, t);
