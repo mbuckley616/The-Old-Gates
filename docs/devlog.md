@@ -21039,8 +21039,10 @@ Corrections made during the session:
 - **The mill does not turn.** Turning the sails (o.angle by the clock and the wind) belongs in the game, with the wind of `WX`.
 - **Owed:** the rest of L5's works (a lighthouse, a shipyard, a toll gate, a watchtower, a ferry).
 
-## v80 — Session 960 — The guild hall, a piece of its own (card F6, prototype only)
+## v80 — Session 964 — The guild hall, a piece of its own (card F6, prototype only)
 Michael answered #352 with C: a guild hall of its own, a wider hall open to the roof with a gallery to the dormitory, and the look builder makes the kit piece first. Session 939 had drawn the Fighters' Guild inside the farmhouse (10.5 by 6.2 m, a hall below and a dormitory above). This session builds the new house for it; the room inside follows. Nothing new is asked. It touches only `pieces.js`, `pieces-gatelands.js`, `shoot-pieces.mjs` and `pieces.check.mjs`.
+
+*Numbering:* this run's four sessions were first numbered 960 to 963, one above the highest on any branch when the run began (959). By the run's end, the bodies builder had written 960 and 961, the systems builder 960, and the combat deep work 963. They are renumbered 964 to 967 here, in their headings, the backlog, decisions.md and the prototypes' comments. The commits and the PR's comments keep the first numbers.
 
 **The plan** (`GL_PLANS.guildhall`, `pieces.js`): rubble with dressed quoins and dressed openings, as the forge and the temple, under slate at 40° between parapet gables. 14.4 by 9.0 m outside, walls of 0.7 m, 6.4 m to the wall plate, 10.36 m to the ridge. The plan is laid out for the room it will hold:
 - **The hall** fills the west end (to x 2.6), open to the roof, its hearth in the west gable under a stack of two flues.
@@ -21074,8 +21076,8 @@ Corrections made during the session:
 - **The banner is edge-on from in front.** Hung across the street, it reads from along the street and not from facing the door.
 - **Owed:** the Fighters' Guild rebuilt inside it (the hall open to the roof, the gallery, the dormitory, the steward's rooms), then the Mages' Guild in the same house, then the other islands' halls.
 
-## v80 — Session 961 — The Fighters' Guild in its own hall (card F9, prototype only)
-Session 960 built the guild hall Michael asked for on #352 (C). This session moves the Fighters' Guild of Session 939 out of the farmhouse and into it. Everything the game's guild hall has is kept: the steward at the desk, the notice board, the racks, the armour stands, the long table, the grindstone and the beds. It is laid out again round what the new house gives: a hall open to the roof, and a gallery to the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+## v80 — Session 965 — The Fighters' Guild in its own hall (card F9, prototype only)
+Session 964 built the guild hall Michael asked for on #352 (C). This session moves the Fighters' Guild of Session 939 out of the farmhouse and into it. Everything the game's guild hall has is kept: the steward at the desk, the notice board, the racks, the armour stands, the long table, the grindstone and the beds. It is laid out again round what the new house gives: a hall open to the roof, and a gallery to the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
 
 **The room** (`gatelandsGuildHall`, inside `GL_PLANS.guildhall` with its great door open):
 - **The hall** (9.4 by 7.6 m, open to 10.1 m at the ridge):
@@ -21127,12 +21129,12 @@ Corrections made during the session:
 ### Needs eyes
 - **The hall's walls are bare rubble inside,** as the forge's and the temple's are. A guild of means might limewash them, as the partition is.
 - **The night view is barely darker than noon.** The page's night lowers the sky's light, and the chandelier and the fire carry the room.
-- **The dormitory has no hearth** (the east stack was taken off in Session 960 for the beds).
+- **The dormitory has no hearth** (the east stack was taken off in Session 964 for the beds).
 - **Six beds where the farmhouse had seven.** The gallery could take two more under its high lights, if the guild wants beds in view of the hall.
 - **Owed:** the Mages' Guild in the same house (blue, the hall as a library and a casting floor), then the other islands' halls.
 
-## v80 — Session 962 — The Mages' Guild in the same hall (card F9, prototype only)
-Michael's C on #352 gave both guilds the new house: "The Mages' Guild and the other two islands' halls will follow the answer," and Session 939 had said the Mages' Guild would be the same house painted blue. Sessions 960 and 961 built the house and the Fighters' Guild inside it. This session gives the room its second dress. The game's Mages' Guild (S292, `83-world-generator.js`) sets the list: the steward's desk and the notice board, bookcases, potion shelves either side of the board, the still with its green light, a reading table of open books, and the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+## v80 — Session 966 — The Mages' Guild in the same hall (card F9, prototype only)
+Michael's C on #352 gave both guilds the new house: "The Mages' Guild and the other two islands' halls will follow the answer," and Session 939 had said the Mages' Guild would be the same house painted blue. Sessions 964 and 965 built the house and the Fighters' Guild inside it. This session gives the room its second dress. The game's Mages' Guild (S292, `83-world-generator.js`) sets the list: the steward's desk and the notice board, bookcases, potion shelves either side of the board, the still with its green light, a reading table of open books, and the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
 
 **The room** (`gatelandsGuildHall({ guild: 'mages' })`): the same shell (blue door and banner, *MAGES’ GUILD* over the door) and the same bones: the trusses, the gallery, the stair, the partition and its doors, the dormitory and the steward's room. What changes:
 - **The hearth's device** is a blue shield with a gilt star of eight points, where the Fighters have red and crossed blades.
@@ -21146,8 +21148,8 @@ Michael's C on #352 gave both guilds the new house: "The Mages' Guild and the ot
 
 The view: `rooms.html?room=mages`, with every view of `room=guild`, and `view=still` (the still and the shelves from the hall).
 ### Verified (headless Chromium)
-- **`rooms.check.mjs`: 150 of 150 pass** (146 after Session 961). Three views are new on the page check: the Mages' hall, the still and the gallery, all with no page errors.
-- **Both guilds, four keys each,** pass every check of Session 961: the same twice and in budget, inside the walls and under the lining, no clashes, the six walks, a person fits, the board behind the desk, the gallery.
+- **`rooms.check.mjs`: 150 of 150 pass** (146 after Session 965). Three views are new on the page check: the Mages' hall, the still and the gallery, all with no page errors.
+- **Both guilds, four keys each,** pass every check of Session 965: the same twice and in budget, inside the walls and under the lining, no clashes, the six walks, a person fits, the board behind the desk, the gallery.
 - **One check is new for the Mages':**
   - the potion shelves stand either side of the board;
   - the still is against the front wall, its receiver beside it;
@@ -21163,7 +21165,7 @@ Corrections made during the session:
 - **The gallery's presses darken it.** It might want a lamp of its own for the Mages, who read there.
 - **The Mark's and Aurenne's guild halls** each need a house, as the Gatelands' did. That is a question like #352, and is not asked yet.
 
-## v80 — Session 963 — The Gatelands' lighthouse (card F8, prototype only)
+## v80 — Session 967 — The Gatelands' lighthouse (card F8, prototype only)
 L5's "roads and works" (OG-046: "lighthouses and beacons"; OG-058's waystations list one too) has had the mine (857), the aqueduct (907) and the windmill (949). The lighthouse is next. The Gatelands' register is Irish, so the precedent is Hook Head, the old lighthouse on its promontory in Wexford: a squat round tower, limewashed, with two black bands, a gallery on corbels and a lantern on its head, and the keepers' houses in a walled yard. It is a work in the land, so it lives in `places.js` beside the mill, with its own view (`places-lighthouse-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`. The one import added to `places.js` is the kit's `gatelandsBuilding` and `GL_PLANS` from `pieces.js`.
 
 **The lighthouse** (`gatelandsLighthouse` in `places.js`, at true size, the sea to +z):

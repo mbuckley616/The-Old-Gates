@@ -1,5 +1,5 @@
 // node docs/prototypes/levelup/rooms.check.mjs [--shots] (Session 852): rooms.js's rooms in the test Chromium (the forge since Session 929,
-// the apothecary since Session 936, the Mark's healer's hall since 937, Aurenne's apothecary since 938, the Fighters' Guild since 939 (in its own hall since 961, the Mages' Guild there since 962), the Gatelands temple since 946, Aurenne's church since 947, Aurenne's library since 948).
+// the apothecary since Session 936, the Mark's healer's hall since 937, Aurenne's apothecary since 938, the Fighters' Guild since 939 (in its own hall since 965, the Mages' Guild there since 966), the Gatelands temple since 946, Aurenne's church since 947, Aurenne's library since 948).
 // 6 keys, each the same twice and in budget; every piece of furniture inside the shell's inner walls, under the roof, and clear of
 // the others; the way from the front door round the jamb wall to the hearthstone clear by 0.15 m; a person fits (the box bed 1.85 m
 // or more inside, the table 0.72 to 0.78 m, seats 0.40 to 0.47 m, the inner doors 1.9 m or more); the fire in its hearth; and in the
@@ -400,7 +400,7 @@ check(`Aurenne's apothecary: the three walks clear by 0.15 m (${Math.max(...AA.m
 check(`Aurenne's apothecary: a person fits: the counter at ${AA[0].counter} m, the table at ${AA[0].table} m, the bench at ${AA[0].bench} m, the mortar's lip at ${AA[0].mortar} m`, AA.every(x => x.counter >= .9 && x.counter <= 1.0 && x.table >= .8 && x.table <= .9 && x.bench >= .85 && x.bench <= .95 && x.mortar >= .75 && x.mortar <= .9));
 check(`Aurenne's apothecary: the still works: the cucurbit on the furnace, the head over it under the hood, the beak falling to the receiver's mouth, the flue over the furnace and ${Math.min(...AA.map(x => x.above))} m out through the roof`, AA.every(x => Object.values(x.works).every(Boolean)), AA[0].works);
 check(`Aurenne's apothecary: the four steps behind the counter, ${AA[0].steps.join(', ')} m apart in turn; the shelves clear of the back and side windows; the stall under the arcade, clear of the door's walk by 0.3 m`, AA.every(x => x.behind && x.steps.every(d => d <= 3) && x.wins && x.walkClear && x.under));
-// the Gatelands Fighters' Guild (Session 939; in the kit's guild hall since Session 961, Michael's C on #352): 4 keys, each the same
+// the Gatelands Fighters' Guild (Session 939; in the kit's guild hall since Session 965, Michael's C on #352): 4 keys, each the same
 // twice and in budget; every piece inside the walls and under the roof's lining, none in another on its floor; the walks (the great
 // door to the desk, past the stands and the stair's foot to the steward's room and its table, the back door to the long table's end,
 // the great door to the hearth; upstairs from the stair's head along the gallery, and in at the dormitory's door down its aisle) clear

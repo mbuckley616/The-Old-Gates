@@ -1088,7 +1088,7 @@ export function gatelandsMill(o = {}, r = stream('mill')) {
     /* the sails' lattice outline at a turn th (the four of them): points along the stock and the outer bar, for the clearance checks */ sailPts: th => { const out = []; for (let k = 0; k < 4; k++) { const m = frameAt(th + k * Math.PI / 2); for (let s2 = S0; s2 <= SL + .001; s2 += (SL - S0) / 12) for (const x of [0, SW]) out.push(new THREE.Vector3(x, s2, .3).applyMatrix4(m)); } return out; } };
 }
 
-// ── the Gatelands' lighthouse (Session 963, card F8; L5's "roads and works", OG-046's lighthouses and beacons, OG-058's waystation
+// ── the Gatelands' lighthouse (Session 967, card F8; L5's "roads and works", OG-046's lighthouses and beacons, OG-058's waystation
 // lighthouse). The Irish precedent is Hook Head: a squat round tower of limewashed rubble with two tarred bands, a corbelled gallery
 // and a lantern on its head, a keeper's house in a walled yard beside it. Built at true size on its headland, the sea to +z:
 //   - the headland: a promontory, a flat top of turf round the tower running on landward (to -z) as a neck, breaking at a ragged cliff that falls 14 m to the sea (the break 12.5 m out on the mean, 10.5 at the nearest);

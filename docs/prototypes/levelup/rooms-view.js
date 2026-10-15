@@ -36,11 +36,11 @@
 // ?room=aurapo (Session 938): Aurenne's apothecary. view=shop (default): from inside the door over the counter to the wall of jars;
 // view=still: from the counter's end to the alembic on its furnace; view=bench: the phials; view=stall: the arcade's stall from the
 // street; view=outside.
-// ?room=guild (Session 939; in the kit's guild hall since Session 961): the Gatelands Fighters' Guild. view=hall (default): from inside
+// ?room=guild (Session 939; in the kit's guild hall since Session 965): the Gatelands Fighters' Guild. view=hall (default): from inside
 // the great door to the steward's desk, the notice board and the gallery over them; view=table: the long table and the hearth with its
 // shield; view=east: the practice floor, the stair and the partition; view=roof: up into the trusses; view=gallery: along the gallery
 // over the hall; view=dorm: the dormitory from its door; view=steward: the steward's room from its door; view=outside.
-// ?room=mages (Session 962): the Mages' Guild in the same house, the same views; view=still: the still and the potion shelves.
+// ?room=mages (Session 966): the Mages' Guild in the same house, the same views; view=still: the still and the potion shelves.
 // ?room=temple (Session 946): a Gatelands temple of one of the six gods (&god=hearth (default) | sea | sky | beasts | stone | weaver).
 // view=nave (default): from inside the door down the nave to the altar and the statue; view=statue: the god and its icon from before
 // the altar; view=door: from the dais back to the door, the bullaun and the rags; view=ledge: the benches and the ledge of offerings;

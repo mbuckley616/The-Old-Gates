@@ -1,4 +1,4 @@
-// The Gatelands' lighthouse (Session 963, card F8): places.js's gatelandsLighthouse on its headland over the sea.
+// The Gatelands' lighthouse (Session 967, card F8): places.js's gatelandsLighthouse on its headland over the sea.
 // ?place=lighthouse&view=light (default): from the landward path, the house, the yard and the tower; view=sea: from the water under the
 // cliff; view=gallery: on the gallery by the lantern; view=far: the headland from along the coast. &night: the lamp lit under a night sky.
 // &cam=x,y,z,tx,ty,tz.

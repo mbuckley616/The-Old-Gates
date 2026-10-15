@@ -1228,7 +1228,7 @@ export function aurenneApothecary(o = {}, r = stream('aurapo')) {
 
 // gatelandsGuildHall(o, r) (Session 939, card F9; L5's guildhall by nation, OG-043's guildhall "hall of trade, contracts and guild
 //   meetings"; the game's Fighters' Guild hall, S12 and S292: a steward at the desk, the notice board, the weapon racks, armour stands,
-//   the long table with benches, a grindstone, a dormitory of beds). Since Session 961 (Michael's C on #352) it stands in the kit's own
+//   the long table with benches, a grindstone, a dormitory of beds). Since Session 965 (Michael's C on #352) it stands in the kit's own
 //   guild hall (GL_PLANS.guildhall: 14.4 by 9.0 m, walls of 0.7 m, 6.4 m to the wall plate, slate at 40°), its great door open:
 //   the hall in the west end, open to the roof on three arch-braced collar trusses, purlins and a boarded lining; the hearth in the west
 //   gable with the guild's red shield on its breast, the long table and its benches before it; the steward's desk facing the great door
@@ -1238,7 +1238,7 @@ export function aurenneApothecary(o = {}, r = stream('aurapo')) {
 //   runs the hall's back wall at the first floor (3.2 m) with a rail over the hall and a bench under its high lights, and opens at its
 //   east end into the dormitory: six beds heads to the east gable, a chest at each foot, the aisle along the partition. Under the
 //   dormitory, through a door by the stair's foot, the steward's room: a table and the guild's books, a press, the strongbox.
-//   o.guild 'mages' (Session 962; the game's Mages' Guild of S292: bookcases, potion shelves either side of the board, the still, a
+//   o.guild 'mages' (Session 966; the game's Mages' Guild of S292: bookcases, potion shelves either side of the board, the still, a
 //   reading table of open books): the same house and the same bones in blue, its banner a gilt star; the long table a reading table of
 //   open codices; potion shelves where the rack and its pair stand, either side of the board; the still on its furnace by the front
 //   wall where the armour stood, its green light; a lectern with a great book on the practice floor, a round table of scrolls by the
@@ -1551,7 +1551,7 @@ export function aurenneChurchHall(o = {}, r = stream('church')) {
 // aurenneLibrary(o, r) -> { group, shell, room, tris, draws, inner, floor, ceil, screen {z, doors: [x]}, presses, tables, desks,
 //   armillary, lamps, towers, ladder, paths, boxes, w, d }
 let LIBLAT = null, LIBSP = null;
-// a metre of spines for a press's shelves (Session 948; shared with the Mages' Guild since Session 962)
+// a metre of spines for a press's shelves (Session 948; shared with the Mages' Guild since Session 966)
 function libSpines() {
   if (!LIBSP) { /* a metre of spines: codices of every width in leathers and dyed cloth, two gilt bands on each, the tops uneven */ const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d'), q = stream('library-spines'), hues = ['#5a2a1c', '#6e3a22', '#3a2418', '#7a1e1a', '#26386e', '#2a4a3a', '#8a5a2a', '#4a2a3a', '#9a7a4a'];
     x.fillStyle = '#140c08'; x.fillRect(0, 0, 512, 128); for (let u = 0; u < 512;) { const w = 10 + Math.floor(q() * 22), top = Math.floor(q() * 26); x.fillStyle = hues[Math.floor(q() * hues.length)]; x.fillRect(u + 1, top, w - 2, 128 - top);

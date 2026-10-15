@@ -330,7 +330,7 @@ const Mi = await page.evaluate(async () => { const K = await import('./places.js
 check(`the tower mill, 3 keys and winds: ${mm(Mi, x => x.tris).join(' to ')} triangles in ${Math.max(...Mi.map(x => x.draws))} meshes, ${Mi[0].top} m to the finial; each the same twice`, Mi.every(x => x.same && x.tris < 30000 && x.draws <= 20));
 check(`the tower mill: at every turn the sails clear the ground by ${Math.min(...Mi.map(x => x.low))} m (1.5) and the tower and cap by ${Math.min(...Mi.map(x => x.near))} m (0.3)`, Mi.every(x => x.low >= 1.5 && x.near >= .3));
 check(`the tower mill: the cap on the curb; two doors ${Mi[0].doors.map(d => d[0] + ' by ' + d[1]).join(' and ')} m, front and back; the tail's wheel ${Mi[0].td} m out behind the cap, opposite the sails`, Mi.every(x => x.cap && x.doors.length === 2 && x.doors.every(d => d[0] >= 1.0 && d[1] >= 2.1) && Math.abs(Math.abs(x.doors[0][2] - x.doors[1][2]) - Math.PI) < .01 && x.behind > .99 && x.td > 8));
-// the Gatelands' lighthouse (Session 963): 3 keys, each the same twice and in budget (the cottage is the kit's, counted apart); the
+// the Gatelands' lighthouse (Session 967): 3 keys, each the same twice and in budget (the cottage is the kit's, counted apart); the
 // gallery's railing 1.0 m or more, and a walk of 0.6 m or more round the lantern's pedestal; the lamp's height over the sea, and the
 // range it is seen at from a deck 4 m up (2.08 (√H + √h) sea miles); the tower 6 m or more back from the cliff's break seaward; its door
 // landward on the flat; the keeper's house on the flat (its corners within 0.35 m), 3 m or more from the tower, its door toward it.

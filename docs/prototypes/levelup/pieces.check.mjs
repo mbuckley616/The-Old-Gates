@@ -7,7 +7,7 @@
 // Session 835, the Gatelands' lots (gatelandsLot, Michael's A on #280): on 40 streets of 30 lots no two neighbours share a
 // colour and every colour of the six is used; no door paint drowns in its wall; cottages limewashed under thatch, farmhouses
 // white, warehouses bare stone, town lots under slate; a lot builds the same twice, its lit windows included.
-// Session 960: the guild hall (Michael's C on #352), its own piece, in two guilds' dress.
+// Session 964: the guild hall (Michael's C on #352), its own piece, in two guilds' dress.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -56,7 +56,7 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   const K2 = L.kinds, all = (k, f) => K2[k].every(f);
   check(`by kind: town lots rendered in colour under slate, cottages limewashed under thatch, farmhouses white under slate, warehouses bare stone`, all('townhouse', h => h.fin !== 'w:lime' && h.roof === 'slate') && all('merchant', h => h.fin !== 'w:lime' && h.roof === 'slate') && all('cottage', h => h.fin === 'w:lime' && h.roof === 'thatch') && all('farmhouse', h => h.fin === 'w:lime' && h.roof === 'slate') && all('warehouse', h => h.fin === 'rubble'), Object.fromEntries(Object.entries(K2).map(([k, v]) => [k, v[0]])));
   check(`a lot builds the same twice, its lit windows included: ${L.same} of ${L.n}`, L.same === L.n); }
-// Session 960, the guild hall (Michael's C on #352): a piece of its own, the Fighters' and the Mages' dress; each builds the same twice
+// Session 964, the guild hall (Michael's C on #352): a piece of its own, the Fighters' and the Mages' dress; each builds the same twice
 // and in budget, at its sizes; on every face the openings stand clear of each other (dressings included), of the corners' quoins and of the
 // eaves; the great door is a door of note; and the openings keep to the floors the room will have (the gallery at the first floor at the
 // back, the east end's two storeys): no opening of the hall's back crosses the gallery's floor, and the east end's upper sashes sit above it.

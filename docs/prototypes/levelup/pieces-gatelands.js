@@ -9,7 +9,7 @@
 // &mix=lot (Session 835): the same street's lots coloured by gatelandsLot (Michael's A on #280), &street=<seed>.
 // ?view=line: the six plans in a row with a person at each door and a plaque of its sizes and triangles.
 // ?view=kit: the pieces one by one on a flagged floor, each on a wall stub, beside a 1.8 m person.
-// ?view=guild (Session 960): the guild hall beside the farmhouse, &cam=front|corner|back|door, &guild=mages.
+// ?view=guild (Session 964): the guild hall beside the farmhouse, &cam=front|corner|back|door, &guild=mages.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
@@ -125,7 +125,7 @@ if (VIEW === 'kit') {
   cam.position.set(0, 12.5, 23); cam.lookAt(0, 0.6, -5); cam.fov = 58; cam.updateProjectionMatrix();
 }
 if (VIEW === 'guild') {
-  // the guild hall (Session 960, Michael's C on #352) on a flagged square, the farmhouse that drew the first guild beside it for its size;
+  // the guild hall (Session 964, Michael's C on #352) on a flagged square, the farmhouse that drew the first guild beside it for its size;
   // &guild=mages for the Mages' Guild; &cam=front (default) | corner | back | door
   flat('flag', 40, 24, 3, 4, .01, 1.3); const P = PLANS.guildhall({ guild: Q.get('guild') || 'fighters' }), g = building(P); put(g, 0, 0, 0);
   const F = building(PLANS.farmhouse({})); put(F, 15.2, -1.4, 0); personAt(g, .2, .5, Math.PI * .9); personAt(F, 0, .3, Math.PI);
