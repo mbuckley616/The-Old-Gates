@@ -20522,3 +20522,12 @@ The QA routine's first item with FREEZE #297 closed and F2a merged: the FLAKY su
 - `--look=new`: see the PR comment (run beside this commit).
 ### Needs eyes
 - Nothing for a playtest. The game's fade still carries a timer, which is fine for a player; any other suite that paces `goToInterior` with a fixed wait has the same exposure (`grep -l "goToInterior" tests/` for the next QA run).
+
+## v80 — Session 948 — coopsaves waits for the game's own saves to land (QA)
+`coopsaves` went FLAKY once (run 38653460071, 14 Oct): *the old save loads to the same state* loaded the first character (gold 777, level 7) instead of the hand-written v2 save (gold 4242, level 9). Step 2 Continues the first character and lets it run 12 s; step 3 writes the old one-row save, calls `ssSetActive('oldone_manual_2')` and reloads. `ssWrite` (`js/70-saves.js`) sets the active key in its `.then`, when the write lands, so a save from step 2 still in flight landed after step 3's call and pointed Continue back at the first character. The test waited for nothing between the two. It now wraps `ssWrite` before clicking Continue to count the writes in flight, holds the autosave off (`SS.lastAuto`) once the character is hidden, and waits for the count to reach 0 before step 3. No check changed. The game's half, that a late autosave can re-point Continue after you load another save from the menu, was already filed in backlog I for the systems builder.
+Correction to Session 947: its *Verified* left the new look's run to the PR comment; `carraignight --look=new` passed, every check.
+### Verified (headless Chromium)
+- `node tests/run.mjs coopsaves`: three runs green in a row; the old save loads with gold 4242, level 9, `oldone`, clock 800.15.
+- `--look=new`: green.
+### Needs eyes
+- Nothing for a playtest.
