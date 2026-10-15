@@ -98,6 +98,13 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const fr = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.FROST.map(k => { const C = K.build(K.genome(k, k + ':check')), h = C.meshes[0].material; let shards = 0; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.geometry.attributes.position.count >= 30 && o.material.flatShading) shards++; });
     return { k, school: C.plan.school, clear: h.transparent ? +h.opacity.toFixed(2) : 1, shards, tris: C.stats.tris }; }); });
   for (const t of fr) check(`${t.k}: a Frost Thing of Uisce in clear ice (opacity ${t.clear}) with ${t.shards} clusters of shards`, t.school === 'Uisce' && t.clear < 1 && t.shards >= 5, t);
+  // the stag of shadows' mist (Session 969, OG-088): puffs from every tine's tip, no shadow, rising through the stride and the same at the same phase
+  const sm = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('shadowstag', 'shadowstag:check')), m = C.mist, P = m.geometry.attributes.position, A = m.geometry.attributes.aAlpha;
+    const snap = ph => { K.pose(C, ph); return Array.from(P.array); }, a = snap(.1), b = snap(.35), a2 = snap(.1); let moved = 0, same = 0, up = 0; for (let i = 0; i < a.length; i++) { moved = Math.max(moved, Math.abs(a[i] - b[i])); same = Math.max(same, Math.abs(a[i] - a2[i])); }
+    const tips = m.userData.q.length / (m.userData.o.per); let amax = 0; for (let i = 0; i < A.count; i++) amax = Math.max(amax, A.getX(i));
+    return { puffs: P.count, tips, onHead: m.parent === C.byName.head, shadow: m.castShadow, moved: +moved.toFixed(3), same, amax: +amax.toFixed(2), others: Object.keys(K.PLANS).filter(k => k !== 'shadowstag' && K.PLANS[k].parts.some(([, o]) => o.antlers?.mist)).length }; });
+  check(`shadowstag: its antlers breathe a mist, ${sm.puffs} puffs from ${sm.tips} tines on the head bone, no shadow, moving ${sm.moved} m through the stride and the same at the same phase`,
+    sm.onHead && !sm.shadow && sm.tips >= 10 && sm.moved > .05 && sm.same === 0 && sm.amax > 0 && sm.amax <= .2 && sm.others === 0, sm);
   // the frozen man's face (Session 968, Michael's B): the skeleton's skull inside his head, the ice thinned over the face's front only, and
   // the skull wholly under the hide (no crown through the top of his head)
   const ff = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('frostfolk', 'frostfolk:check')), h = C.meshes[0], a = h.geometry.attributes.aAlpha, P = h.geometry.attributes.position;

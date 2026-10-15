@@ -21065,3 +21065,31 @@ What changed in `creatures.js`:
 - **From the side** the face reads less: the grown hide still rounds out ahead of the skull, and the ice there is seen edge-on, so it looks thick.
 - **The skull grins.** It is the skeleton's own, with both rows of teeth. A drowned man's jaw might hang open instead.
 - **4 mm of ice over the crown** is a thin margin. A head slider at its low end could push the skull through, and the check reads only the seed it builds.
+
+## v80 — Session 969 — The stag of shadows breathes its mist (L4, prototype only)
+OG-088 draws Scáth's corrupted stag as "a stag of shadows whose antlers breathe a mist". Session 919 built the stag gaunt, dark and violet in its seams, and left the mist "for the kit's particles", which did not exist. The sheet already draws it, so this asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`antler()` keeps its tines' tips:** the end of every branch it grows, in the body's rest frame.
+- **`antlers.mist`, a new option, and the kit's first particles (`mistPoints`, `mistTick`):**
+  - From each tip, `per` puffs rise `rise` metres in the head's frame, drift back by `drift`, and grow from `r0` to `r1`.
+  - Each fades in quickly and out slowly, its opacity at most `alpha`.
+  - They are one `THREE.Points` on the head bone, drawn as soft discs in the plan's `mist` tone, after the body, with no depth write and no shadow.
+- **Timing:** each puff's age is the stride's phase times `rate` plus its own offset. So `pose()` moves them with the gait, the mist loops with the stride, and a still picture is the same every time, with nothing random at draw time.
+- **The stag of shadows:** 7 puffs on each of its 56 tines (392 points), rising 45 cm, swelling from 8 to 40 cm, at 0.2 opacity, in a dusk violet (0.46, 0.34, 0.62). The hide is unchanged (53,376 triangles).
+- **A first try made during the session:** 4 puffs a tine at 20 cm read as a scatter of dots. More, larger and fainter puffs merge into a haze.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,064 checks pass** (1,063 before). The new check covers the stag:
+  - 392 puffs from 56 tines, on the head bone, casting no shadow.
+  - They move 0.27 m between two phases of the stride and are identical at the same phase twice.
+  - Their opacity peaks at 0.2.
+  - No other plan carries a mist.
+  - The stag, the deer and the Elderstag (whose antlers it reads from) pass their gaits as before.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-shadowstag.jpg` (re-shot, from the side), `creatures-shadowstag-front.jpg` (new; a plume off each antler) and `creatures-corrupted.jpg` (re-shot).
+
+### Needs eyes
+- **On the pale floor the mist reads as violet smoke.** In Scáth's violet dark it may vanish, or need to glow; `mist.tone` and `alpha` are per plan.
+- **The puffs rise in the head's frame,** so a lowered head tips its mist forward. The game's version should rise in the world's up.
+- **When it runs, the mist trails along with the stag** rather than being left behind it: the puffs are on the head bone.

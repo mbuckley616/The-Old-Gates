@@ -72,7 +72,9 @@ P.head = (B, o) => {
   else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
   if (o.ears) for (const sd of [1, -1]) B.bit('head', ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
   if (o.horns) for (const sd of [1, -1]) B.bit('head', horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
-  if (o.antlers) for (const sd of [1, -1]) B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
+  if (o.antlers) for (const sd of [1, -1]) { const m = B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
+    if (o.antlers.mist) (B.mistTips ||= []).push(...m.userData.tips); }
+  if (o.antlers?.mist) B.mist = { ...o.antlers.mist, tips: B.mistTips, color: B.tone(o.antlers.mist.tone || 'mist') };
   if (o.crystals) for (const sd of [1, -1]) B.bit('head', crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
   if (o.beak) B.bit('head', beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
   // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties
@@ -427,14 +429,32 @@ function horn(o, S, c, p, side) {
 }
 // antlers: a beam that sweeps up and back, with tines along it that branch forward and up
 function antler(o, S, c, p, side, r) {
-  const geos = [], L = o.len * S;
+  const geos = [], tips = [], L = o.len * S;
   const grow = (start, dir, len, rad, depth) => { const pts = [start.clone()]; let d = dir.clone(); const n = 5;
     for (let i = 1; i <= n; i++) { d.add(V(0, .08, -.04)).add(V((r() - .5) * .25, (r() - .5) * .15, (r() - .5) * .25)).normalize(); pts.push(pts[i - 1].clone().addScaledVector(d, len / n)); }
-    geos.push(taperTube(pts, rad, rad * .3, 7));
+    geos.push(taperTube(pts, rad, rad * .3, 7)); tips.push(pts[n].clone());
     if (depth > 0) for (let i = 1; i < n; i++) if (r() < (depth > 1 ? .75 : .45)) { const td = V(side * (r() - .3) * .6, .8, .55 + r() * .4).normalize(); grow(pts[i], td, len * (.32 + r() * .2), rad * .55, depth - 1); } };
   grow(V(), V(side * .55, .7, -.15).normalize(), L, o.r * S, o.depth ?? 2);
-  const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); return m;
+  const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); m.userData.tips = tips.map(t => t.add(p)); return m;
 }
+// a mist the antlers breathe (Session 969, OG-088's stag of shadows): from each tine's tip `per` puffs rise, swell and fade, each one
+// `life` of a stride behind the last, so the whole mist loops with the gait and a still picture is the same every time. The puffs are
+// points on the head bone, soft discs of the plan's `mist` tone drawn after the body (no depth write, no shadow); they rise `rise`
+// metres in the head's frame, drift back by `drift` and grow from `r0` to `r1`, their opacity `alpha` at the most
+function mistPoints(o, seed) { const r = rng(seed + 31), per = o.per ?? 5, n = o.tips.length * per, pos = new Float32Array(n * 3), size = new Float32Array(n), alpha = new Float32Array(n), q = [];
+  o.tips.forEach((t, i) => { for (let k = 0; k < per; k++) q.push({ t, off: (k + r() * .5) / per, dx: (r() - .5) * .6, dz: (r() - .5) * .6, sp: .8 + .4 * r() }); });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aSize', new THREE.BufferAttribute(size, 1)); g.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+  const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uColor: { value: o.color }, uH: { value: 720 }, uS: { value: 1 } },
+    vertexShader: 'attribute float aSize; attribute float aAlpha; uniform float uH; uniform float uS; varying float vA;\nvoid main(){ vec4 mv = modelViewMatrix * vec4(position, 1.); gl_Position = projectionMatrix * mv; gl_PointSize = aSize * uS * projectionMatrix[1][1] * uH * .5 / -mv.z; vA = aAlpha; }',
+    fragmentShader: 'uniform vec3 uColor; varying float vA;\nvoid main(){ vec2 d = gl_PointCoord - .5; float e = 1. - smoothstep(.1, .5, length(d)); if (e <= 0.) discard; gl_FragColor = vec4(uColor, vA * e); }' });
+  const pts = new THREE.Points(g, m); pts.name = 'mist'; pts.frustumCulled = false; pts.renderOrder = 2; pts.userData = { o, q };
+  pts.onBeforeRender = R => { m.uniforms.uH.value = R.getDrawingBufferSize(new THREE.Vector2()).y; };
+  mistTick(pts, 0); return pts; }
+function mistTick(pts, ph) { const { o, q } = pts.userData, g = pts.geometry, P = g.attributes.position, S = g.attributes.aSize, A = g.attributes.aAlpha, rate = o.rate ?? 2;
+  q.forEach((u, i) => { const a = (ph * rate + u.off) % 1, rise = (o.rise ?? .35) * a * u.sp;
+    P.setXYZ(i, u.t.x + u.dx * rise * .5, u.t.y + rise, u.t.z - (o.drift ?? .15) * a + u.dz * rise * .5);
+    S.setX(i, lerp(o.r0 ?? .05, o.r1 ?? .22, Math.sqrt(a))); A.setX(i, (o.alpha ?? .35) * sstep(0, .15, a) * (1 - sstep(.45, 1, a))); });
+  P.needsUpdate = S.needsUpdate = A.needsUpdate = true; }
 // crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040). `rake` (Session 920) scales how far they
 // lean and step back: 1 the Shatterhorn's sweep, toward 0 a crown standing up from the brow. `stone` (Session 926): matte rock, not glass
 function crystals(o, S, c, p, side, r) {
@@ -667,14 +687,16 @@ export function build(g) {
     const wl = w.feathered || plan.wingOpacity < 1 ? 0 : plan.wingLight ?? .45; if (wl) m.material.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n\ttotalEmissiveRadiance += vColor.rgb * ' + wl.toFixed(3) + ';'); };
     meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
-  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = true; bones[b.i].add(obj); }
+  if (B.mist) B.mistObj = B.bit('head', mistPoints(B.mist, g.seed));
+  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = !obj.isPoints; bones[b.i].add(obj); }
   rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
   const C = { g, plan, B, root, rig, bones, byName: Object.fromEntries(bones.map(b => [b.name, b])), skel, meshes, phase: 0, gait: plan.gaits[0], stats: { bones: bones.length, tris: geo.index.count / 3, verts: geo.attributes.position.count, grid: grid.join('x'), cell: +cell.toFixed(3), ms: Math.round(performance.now() - t0) } };
   for (const L of B.legs) { L.bones = L.names.map(n => C.byName[n]); L.restLocal = L.bones[0].position.clone(); L.rest = L.J.map(p => p.clone()); L.dirs = L.J.slice(1).map((p, k) => p.clone().sub(L.J[k]).normalize()); L.lens = L.J.slice(1).map((p, k) => p.distanceTo(L.J[k]));
     // the knee's side of the line from the solved chain's root to its end: the way this leg bends
     const a = L.J[L.ik], b = L.J[L.ik + 2], u = b.clone().sub(a).normalize(), kn = L.J[L.ik + 1].clone().sub(a); L.pole = kn.sub(u.clone().multiplyScalar(kn.dot(u))).normalize(); if (!isFinite(L.pole.x) || L.pole.lengthSq() < .5) L.pole = V(0, 0, 1); }
   { let z0 = 1e9, z1 = -1e9; for (const f of B.flesh) for (const p of [f.a, f.b]) { z0 = Math.min(z0, p.z - f.ra); z1 = Math.max(z1, p.z + f.rb); } C.len = (z1 - z0) * g.sliders.size * (plan.scale || 1); } // its length, nose to tail, in world metres
-  C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3; C.S = g.sliders.size * (plan.scale || 1); C.air = {}; C.sac = B.sac;
+  C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3; C.S = g.sliders.size * (plan.scale || 1); C.air = {}; C.sac = B.sac; C.mist = B.mistObj;
+  if (C.mist) C.mist.material.uniforms.uS.value = C.S;
   const hd = (plan.heading || 0) * DEG; C.dir = V(Math.sin(hd), 0, Math.cos(hd)); // the way it walks in its own frame: a crab goes sideways
   return C;
 }
@@ -763,6 +785,7 @@ const liftAt = (air, ph) => { for (const a of air) { let u = (ph - a.start + 1) 
 // pose the creature at a phase of its gait; returns the worst foot error (metres) for the test
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
+  if (C.mist) mistTick(C.mist, ph);
   for (const b of C.bones) b.quaternion.identity();
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
@@ -1681,12 +1704,12 @@ Object.assign(PLANS, {
     glow: { color: [1.4, .5, 2.4], freq: 2.5, w: .025, all: .3 },
     parts: [...PLANS.boar.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .19, r: .018 }, eyes: o.eyes.map(e => ({ ...e, color: [.8, .45, 1] })) }] : [k, o]),
       ['spines', { n: 9, from: .25, to: 1.02, len: .3, r: .045, tone: 'crystal', taper: .35, crystal: 3 }]] }),
-  // Scáth: the stag of shadows: gaunt, its legs longer and its body drawn in, its antlers spread half again and as dark as its hide, violet in its seams (the mist its antlers breathe waits for the kit's particles)
+  // Scáth: the stag of shadows: gaunt, its legs longer and its body drawn in, its antlers spread half again and as dark as its hide, violet in its seams; its antlers breathe a violet mist from every tine (Session 969, `antlers.mist`)
   shadowstag: re(PLANS.stag, { name: 'Stag of Shadows', src: 'OG-088 (corrupted: a stag of shadows whose antlers breathe a mist)', school: 'Scáth', from: 'stag', scale: 1.08,
-    palette: { coat: [.14, .12, .17], saddle: [.08, .07, .1], belly: [.24, .2, .28], dark: [.02, .02, .03], hoof: [.05, .04, .06], horn: [.16, .13, .2] },
+    palette: { coat: [.14, .12, .17], saddle: [.08, .07, .1], belly: [.24, .2, .28], dark: [.02, .02, .03], hoof: [.05, .04, .06], horn: [.16, .13, .2], mist: [.46, .34, .62] },
     fur: { len: .022, layers: 6, sx: 380, droop: .3 }, glow: { color: [1.3, .5, 2.6], freq: 1.6, w: .02, all: .45, seam: { w: .04, y0: .9 } },
     parts: PLANS.stag.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: o.r.map(v => v * .82), hip: [o.hip[0] * 1.12, o.hip[1]], chest: [o.chest[0] * 1.12, o.chest[1]] }]
-      : k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.45, r: .034, depth: 3 }, eyes: o.eyes.map(e => ({ ...e, color: [.75, .5, 1] })) }] : k === 'neck' ? [k, { ...o, r: o.r.map(v => v * .85) }] : [k, o]) }),
+      : k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.45, r: .034, depth: 3, mist: { per: 7, rate: 2, rise: .45, drift: .22, r0: .08, r1: .4, alpha: .2 } }, eyes: o.eyes.map(e => ({ ...e, color: [.75, .5, 1] })) }] : k === 'neck' ? [k, { ...o, r: o.r.map(v => v * .85) }] : [k, o]) }),
   // Gaoth: the dusk eagle, its feathers draining to violet: the Crag Hawk grown to a giant eagle, its flight feathers dark at their tips, violet light in its seams
   duskeagle: re(PLANS.craghawk, { name: 'Dusk Eagle', src: 'OG-088 (corrupted: a dusk eagle with draining violet feathers)', school: 'Gaoth', from: 'craghawk', scale: 2.6,
     palette: { coat: [.26, .2, .32], saddle: [.16, .12, .22], belly: [.44, .36, .52], dark: [.03, .02, .04], horn: [.18, .16, .2], skin: [.5, .42, .2], feather: [.3, .22, .4], featherTip: [.08, .04, .14], covert: [.38, .3, .48] },
