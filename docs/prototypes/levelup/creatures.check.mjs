@@ -57,7 +57,91 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       out.push({ k, ok: !!P && !!F, src: P?.src || '', school: P?.school, from: P?.from, parts: !!F && JSON.stringify(P.parts) !== JSON.stringify(F.parts), tris: P && tri(k), base: F && tri(P.from) }); } return out; });
   for (const c of cor) check(`${c.k}: a corrupted ${c.from} of ${c.school}, from OG-088; a change of shape (its parts differ from the ${c.from}'s; ${c.tris} triangles against ${c.base})`,
     c.ok && /OG-088/.test(c.src) && ['Tine', 'Uisce', 'Cloch', 'Scáth', 'Solas', 'Gaoth'].includes(c.school) && c.parts && Math.abs(c.tris - c.base) > .1 * c.base, c);
-  check(`the corrupted: four schools' animals so far (${cor.map(c => c.k).join(', ')})`, cor.length === 4 && new Set(cor.map(c => c.school)).size === 4, cor.map(c => c.school));
+  check(`the corrupted: four schools' animals so far (${cor.map(c => c.k).join(', ')})`, cor.length === 5 && new Set(cor.map(c => c.school)).size === 4, cor.map(c => c.school));
+  // the troll (Session 926): the kit's first upright walker with hands. It stands on one leg pair, a man and a half tall, and
+  // through a whole stride of its walk its hands swing between its hips and the ground, never into it
+  const tr = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    for (const k of K.TROLLS) { const C = K.build(K.genome(k, k + ':check')), P = new C.rig.position.constructor(), hands = C.bones.filter(b => /^arm0[LR]_/.test(b.name)).filter((b, i, a) => !b.children.some(c => a.includes(c)));
+      C.gait = 'walk'; let lo = 1e9, hi = -1e9, top = 0, swing = 0;
+      for (let i = 0; i < 48; i++) { K.pose(C, i / 48); C.rig.updateMatrixWorld(true); const z = [];
+        for (const h of hands) { h.getWorldPosition(P); C.rig.worldToLocal(P); const y = P.y * C.S; lo = Math.min(lo, y); hi = Math.max(hi, y); z.push(P.z * C.S); }
+        swing = Math.max(swing, Math.abs(z[0] - z[1])); }
+      C.rig.updateMatrixWorld(true); C.byName.head.getWorldPosition(P); C.rig.worldToLocal(P); top = P.y * C.S;
+      out[k] = { legs: C.B.legs.length, arms: C.B.arms.length, hands: hands.length, head: +top.toFixed(2), hip: +(C.legH * C.S).toFixed(2), lo: +lo.toFixed(2), hi: +hi.toFixed(2), swing: +swing.toFixed(2), tris: C.stats.tris }; }
+    return out; });
+  // OG-018's trolls by school (Session 927): one plan recoloured, so the same bones and the same build, a different hide
+  const ts = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.TROLLS.map(k => ({ k, school: K.PLANS[k].school || '', from: K.PLANS[k].from || '', src: K.PLANS[k].src })); });
+  check(`the trolls by school: ${ts.map(t => t.k + (t.school ? ' (' + t.school + ')' : '')).join(', ')}; Tine, Uisce and Cloch, as canon §9a puts them`, ts.length === 4 && ['Tine', 'Uisce', 'Cloch'].every(sc => ts.some(t => t.school === sc)) && ts.filter(t => t.school).every(t => t.from === 'troll'), ts);
+  // the slimes (Session 928): a clear hide, and everything they have swallowed inside it, through a whole stride of the crawl
+  const sl = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    for (const k of K.SLIMES) { const C = K.build(K.genome(k, k + ':check')), hide = C.meshes[0]; hide.geometry.computeBoundingBox(); const box = hide.geometry.boundingBox.clone();
+      const bits = []; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.parent?.isBone) bits.push(o); }); C.gait = 'crawl'; let out_ = 0; const P = new C.rig.position.constructor();
+      for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); for (const b of bits) { b.getWorldPosition(P); C.rig.worldToLocal(P); if (!box.containsPoint(P)) out_++; } }
+      out[k] = { clear: hide.material.transparent ? +hide.material.opacity.toFixed(2) : 1, bits: bits.length, out: out_, tris: C.stats.tris, school: C.plan.school || '' }; }
+    return out; });
+  for (const [k, t] of Object.entries(sl)) check(`${k}: a clear body (opacity ${t.clear}) holding ${t.bits} swallowed things, every one inside it through the crawl (${t.out} out)${t.school ? '; ' + t.school + "'s" : ''}`, t.clear < 1 && t.bits >= 8 && t.out === 0, t);
+  for (const [k, t] of Object.entries(tr)) {
+    check(`${k}: an upright biped with two arms (${t.legs} legs, ${t.arms} arms), its head ${t.head} m up`, t.legs === 2 && t.arms === 2 && t.hands === 2 && t.head > 2 && t.head < 3.4, t);
+    check(`${k}: through its walk the hands swing between the hips and the ground (${t.lo} to ${t.hi} m, the hips at ${t.hip} m; ${t.swing} m apart at most)`, t.lo > .1 && t.hi < t.hip && t.swing > .15, t); }
+  // the giant spider (Session 929, OG-041): thorns up every leg segment past the hip, and a clutch of egg sacs under the abdomen's tip
+  // that hang clear of the ground and below the abdomen's line through a whole stride of every gait
+  const sp = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('spider', 'spider:check')), P = new C.rig.position.constructor(), Box = new (await import('three')).Box3();
+    const thorns = [], eggs = []; C.rig.traverse(o => { if (o.name === 'thorns') thorns.push(o); if (o.name === 'eggs') eggs.push(o); });
+    const segs = C.B.legs.reduce((n, L) => n + L.J.length - 2, 0), tailEnd = C.byName[C.B.tailBone]; let low = 1e9, above = 0, n = 0;
+    for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); tailEnd.getWorldPosition(P); const ty = P.y;
+      for (const e of eggs) { Box.setFromObject(e); low = Math.min(low, Box.min.y); n++; if ((Box.min.y + Box.max.y) / 2 > ty) above++; } } }
+    const tt = thorns.reduce((t, m) => t + m.geometry.attributes.position.count / 3, 0), et = eggs.reduce((t, m) => t + m.geometry.attributes.position.count / 3, 0);
+    return { thorns: C.B.thorns, thornTris: tt, eggTris: et, meshes: thorns.length, segs, sacs: C.B.eggs, eggMeshes: eggs.length, low: +low.toFixed(3), above, n, tris: C.stats.tris }; });
+  check(`spider: thorns on every leg segment past the hip (${sp.thorns} thorns on ${sp.meshes} of ${sp.segs} segments)`, sp.meshes === sp.segs && sp.thorns >= 3 * sp.segs, sp);
+  check(`spider: ${sp.sacs} egg sacs under its abdomen, clear of the ground (lowest ${sp.low} m) and below the abdomen's tip through every gait (${sp.above} of ${sp.n} above)`, sp.sacs >= 5 && sp.eggMeshes >= 1 && sp.low > .03 && sp.above === 0, sp);
+  // the goblin (Session 933, OG-041): the troll's frame at half its height, and the kit's first gear: a spear in the right fist and a
+  // hide shield on the left forearm, which swing with the arms and never touch the ground or pass into the body through any gait
+  const gb = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.GOBLINS) { const C = K.build(K.genome(k, k + ':check')), P = new T.Vector3(), box = new T.Box3(), items = {}; C.rig.traverse(o => { if (o.name === 'spear' || o.name === 'shield') items[o.name] = o; });
+      const hip = C.legH * C.S; let low = 1e9, top = 0, head = 0, sep = 1e9;
+      // the harness (Session 944): each strap point against the skin point it was laid on, rest and posed
+      const hide = C.meshes.find(m => m.name === 'hide'), fins = C.meshes.find(m => m.name === 'fins'), HL = C.B.harness?.laid || [], hv = new T.Vector3(), fv = new T.Vector3();
+      const gap = () => HL.map(q => { hide.getVertexPosition(q.src, hv); fins.getVertexPosition(q.v, fv); return hv.distanceTo(fv); }), rest0 = HL.length && fins ? gap() : []; let rMin = 9, rMax = 0;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
+        if (rest0.length) gap().forEach((d, j) => { const r = d / rest0[j]; rMin = Math.min(rMin, r); rMax = Math.max(rMax, r); });
+        for (const o of Object.values(items)) { box.setFromObject(o); C.rig.localToWorld(P.set(0, 0, 0)); low = Math.min(low, box.min.y - C.root.position.y); }
+        box.setFromObject(items.spear); top = Math.max(top, box.max.y - C.root.position.y); C.byName.head.getWorldPosition(P); head = Math.max(head, P.y - C.root.position.y);
+        const sh = new T.Vector3(); items.shield.getWorldPosition(sh); const hp = new T.Vector3(); C.byName.spine0.getWorldPosition(hp); sep = Math.min(sep, Math.hypot(sh.x - hp.x, sh.z - hp.z)); } }
+      out[k] = { gear: C.B.gear, head: +head.toFixed(2), hip: +hip.toFixed(2), low: +low.toFixed(3), top: +top.toFixed(2), sep: +sep.toFixed(2), legs: C.B.legs.length, arms: C.B.arms.length, tris: C.stats.tris, harness: C.B.harness && { straps: C.B.harness.straps, miss: C.B.harness.miss, pts: HL.length, rMin: +rMin.toFixed(2), rMax: +rMax.toFixed(2) } }; }
+    return out; });
+  // the cave troll's lashed-on armour (Session 945): straps laid on its skin, as the goblin's harness; the trolls built from it keep bare hides
+  const ta = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of ['troll', 'stonetroll', 'tinetroll', 'uiscetroll']) { const C = K.build(K.genome(k, k + ':check')), hide = C.meshes.find(m => m.name === 'hide'), fins = C.meshes.find(m => m.name === 'fins'), HL = C.B.harness?.laid || [], hv = new T.Vector3(), fv = new T.Vector3();
+      const gap = () => HL.map(q => { hide.getVertexPosition(q.src, hv); fins.getVertexPosition(q.v, fv); return hv.distanceTo(fv); }), rest0 = HL.length ? gap() : []; let rMin = 9, rMax = 0;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); if (rest0.length) gap().forEach((d, j) => { const r = d / rest0[j]; rMin = Math.min(rMin, r); rMax = Math.max(rMax, r); }); } }
+      out[k] = C.B.harness ? { straps: C.B.harness.straps, miss: C.B.harness.miss, pts: HL.length, rMin: +rMin.toFixed(2), rMax: +rMax.toFixed(2) } : null; }
+    return out; });
+  check(`troll: lashed-on armour (OG-041): ${ta.troll?.straps} plates and lashings laid on its grown skin at ${ta.troll?.pts} points (${ta.troll?.miss} missed), each staying with the skin under it through every gait (its gap ${ta.troll?.rMin} to ${ta.troll?.rMax} of its rest)`, ta.troll && ta.troll.straps === 6 && ta.troll.miss === 0 && ta.troll.pts > 80 && ta.troll.rMin > .6 && ta.troll.rMax < 1.6, ta.troll);
+  check('the trolls built from it (stone, Tine, Uisce) keep their bare hides', !ta.stonetroll && !ta.tinetroll && !ta.uiscetroll, ta);
+  for (const [k, t] of Object.entries(gb)) {
+    check(`${k}: a scrap-leather harness (OG-041): ${t.harness?.straps} straps laid on the grown skin at ${t.harness?.pts} points (${t.harness?.miss} missed), each staying with the skin under it through every gait (its gap ${t.harness?.rMin} to ${t.harness?.rMax} of its rest)`, t.harness && t.harness.straps === 3 && t.harness.miss === 0 && t.harness.pts > 60 && t.harness.rMin > .6 && t.harness.rMax < 1.6, t.harness);
+    check(`${k}: a crouched biped about a goblin's height (head ${t.head} m up; ${t.legs} legs, ${t.arms} arms)`, t.legs === 2 && t.arms === 2 && t.head > .8 && t.head < 1.4, t);
+    check(`${k}: carries ${t.gear.join(' and ')}, clear of the ground through every gait (lowest ${t.low} m), the spear's point above its head (${t.top} m), the shield off its hip (${t.sep} m)`, t.gear.includes('spear') && t.gear.includes('shield') && t.low > .02 && t.top > t.head + .3 && t.sep > .2, t); }
+  // the skeleton (Session 934, OG-041): the kit's first bare body, its capsules drawn as bones, with ribs and a pelvis; it stands a man's
+  // height, and its sword and shield stay clear of the ground through every gait
+  const sk = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.SKELETONS) { const C = K.build(K.genome(k, k + ':check')), P = new T.Vector3(), box = new T.Box3(), items = []; C.rig.traverse(o => { if (o.name === 'sword' || o.name === 'shield') items.push(o); });
+      const flesh = K.build(K.genome('troll', 'troll:check')).stats.tris; let low = 1e9, head = 0;
+      // the rags (Session 943): on the dry skeleton the sheets are its rags alone; how low they hang and how far any edge stretches as the thighs swing
+      const fins = C.meshes.find(m => m.name === 'fins'), rest = fins && !C.plan.school ? fins.geometry.attributes.position : null, ix = rest && fins.geometry.index.array; let ragLow = 1e9, stretch = 0; const va = new T.Vector3(), vb = new T.Vector3();
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
+        if (rest) { for (let v = 0; v < rest.count; v++) { fins.getVertexPosition(v, va); va.applyMatrix4(fins.matrixWorld); ragLow = Math.min(ragLow, va.y - C.root.position.y); }
+          for (let t = 0; t < ix.length; t += 3) for (const [a, b] of [[ix[t], ix[t + 1]], [ix[t + 1], ix[t + 2]]]) { fins.getVertexPosition(a, va); fins.getVertexPosition(b, vb); const L0 = Math.hypot(rest.getX(a) - rest.getX(b), rest.getY(a) - rest.getY(b), rest.getZ(a) - rest.getZ(b)); if (L0 > .005) stretch = Math.max(stretch, va.distanceTo(vb) / L0); } }
+        for (const o of items) { box.setFromObject(o); low = Math.min(low, box.min.y - C.root.position.y); } C.byName.head.getWorldPosition(P); head = Math.max(head, P.y - C.root.position.y); } }
+      out[k] = { school: C.plan.school || '', from: C.plan.from || '', weed: C.meshes.some(m => m.name === 'fins'), bare: !!C.plan.bare, tris: C.stats.tris, troll: flesh, ribs: C.B.ribs, gear: C.B.gear, low: +low.toFixed(3), head: +head.toFixed(2), skull: C.B.skull || null, rags: C.B.rags || null, ragLow: rest ? +ragLow.toFixed(3) : null, stretch: +stretch.toFixed(2), skullMeshes: C.rig.children.length >= 0 && (() => { let n = 0; C.rig.traverse(o => { if (o.name === 'skull') n++; }); return n; })(), lit: (() => { let n = 0; C.rig.traverse(o => { if (o.isMesh && o.material?.clearcoat === 1) n++; }); return n; })() }; }
+    return out; });
+  for (const [k, t] of Object.entries(sk)) {
+    check(`${k}: a bare body, bones and not a hide (${t.tris} triangles against the troll's ${t.troll}), ${t.ribs} ribs, its skull ${t.head} m up`, t.bare && t.tris < t.troll && t.ribs >= 10 && t.head > 1.4 && t.head < 1.85, t);
+    check(`${k}: a modelled skull (Session 942): cranium, brow, cheekbones, face and sockets on the head bone and a mandible on the jaw (${t.skullMeshes} pieces, ${t.skull?.tris} triangles), ${t.skull?.teeth} teeth, its crown ${t.skull?.top} m over the neck`, t.skull && t.skullMeshes === 5 && t.skull.teeth === 20 && t.skull.tris > 2000 && t.skull.tris < 12000 && t.skull.top > .11 && t.skull.top < .17, t.skull);
+    if (!t.school) check(`${k}: rags at the hips (OG-041): ${t.rags?.strips} torn strips on a cord, clear of the knees through every gait (lowest ${t.ragLow} m), no edge stretched past ${t.stretch} times its length as the thighs swing`, t.rags && t.rags.strips >= 6 && t.ragLow > .35 && t.stretch < 1.4, { rags: t.rags, ragLow: t.ragLow, stretch: t.stretch });
+    check(`${k}: ${t.school ? 'its sockets lit (' + t.lit + ' eyes)' : 'its sockets empty and dark'}`, t.school ? t.lit === 2 : t.lit === 0, { lit: t.lit });
+    if (t.school) check(`${k}: the ${t.from} of ${t.school}, weed-hung (OG-018)`, t.from === 'skeleton' && t.school === 'Uisce' && t.weed, t);
+    check(`${k}: carries ${(t.gear || []).join(' and ')}, clear of the ground through every gait (lowest ${t.low} m)`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.low > .02, t); }
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));

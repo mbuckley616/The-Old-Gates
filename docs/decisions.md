@@ -108,6 +108,17 @@ Pictures:
 - B (all square): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-square.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-square.jpg)
 - C (lateens): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-lateen.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-lateen.jpg)
 
+### The guild halls: which house? (look builder, Session 939) — DECISION #352
+F9's first guild hall is the game's Fighters' Guild in a Gatelands town, drawn inside the kit's farmhouse as the inn was (#320 A). On the ground floor are the steward's desk facing the door, with the notice board behind it, a long table by the hearth with the guild's red banner on its breast, a rack of swords, spears and axes, two armour stands, a practice post and a grindstone. Upstairs is one dormitory of seven beds. It comes to 5,000 triangles in 20 draws. The Mages' Guild and the other two islands' halls will follow the answer.
+
+Which house should a guild hall be?
+- **A. The farmhouse, as drawn** (recommended). It is the inn's shell: one hall below and the dormitory above, with the Mages' Guild in the same house painted blue. It is cheap, and it matches the inn.
+- **B. The merchant's house.** A three-storey town house with the guild's name on its shop fascia: the hall below, the dormitory and the master's room above. It looks more like a town building, but it is narrower inside (8.4 by 9 m).
+- **C. A guild hall of its own.** A new piece for the kit first: a wider hall open to the roof, with a gallery to the dormitory. It reads best as a building of note, and it costs a session or two before the rooms.
+
+Pictures: [the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-hall.jpg), [the long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-table.jpg), [the dormitory](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-dorm.jpg), [from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-outside.jpg).
+
+## Answered
 Michael: **A. Island’s rig forward, the class’s own aft**. (15 Oct 2026, on the control room)
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line

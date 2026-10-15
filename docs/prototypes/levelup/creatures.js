@@ -68,7 +68,8 @@ P.head = (B, o) => {
     B.meat('jaw', j, base.clone().addScaledVector(dir, len * o.jaw.len).addScaledVector(up, -r * o.jaw.drop), o.jaw.r * S, o.jaw.r * S * .55, { tone: o.tone }); }
   B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
-  for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
+  if (o.skull) skullBits(B, o, S, base, dir, up);
+  else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
   if (o.ears) for (const sd of [1, -1]) B.bit('head', ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
   if (o.horns) for (const sd of [1, -1]) B.bit('head', horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
   if (o.antlers) for (const sd of [1, -1]) B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
@@ -78,15 +79,41 @@ P.head = (B, o) => {
   if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit('head', m); B.sac = m; }
   if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit('head', claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
     B.bit('head', eye(o.stalks.r, o.stalks.color, p)); }
+  // a brow (Session 927): a ridge of flesh across the skull over the eyes, grown into the head as one surface (the troll's)
+  if (o.brow) B.meat('head', at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
   if (o.fangs) for (const sd of [1, -1]) B.bit('head', claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
+// inclusions (Session 928): what a clear body has swallowed, seen through it (the slime's bones and rubble). Each is a rigid
+// bit on the nearest spine bone, placed from the seed inside the body (never out of it): `rubble` a flat-faced stone,
+// `bone` a long bone with its two knobs, `skull` a cranium with its eye holes
+P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
+  for (const [kind, n] of Object.entries(o.n)) for (let k = 0; k < n; k++) {
+    const t = .08 + .84 * r(), sp = B.spineAt(t), a = r() * Math.PI * 2, d = Math.sqrt(r()) * sp.r * (o.depth ?? .5), p = sp.p.clone().add(V(Math.cos(a) * d * B.spineS[0], Math.sin(a) * d * B.spineS[1] * .8, (r() - .5) * sp.r * .4)), sz = o.size * (.7 + .6 * r());
+    let m;
+    if (kind === 'rubble') { m = new THREE.Mesh(new THREE.DodecahedronGeometry(sz * .5, 0), stdMat(B.tone('rubble'), { rough: .95, flat: true })); m.scale.set(1, .6 + .4 * r(), .8 + .4 * r()); }
+    else if (kind === 'bone') { const L = sz * 2.4, g = new THREE.CylinderGeometry(sz * .09, sz * .09, L, 7); for (const e of [1, -1]) { const k2 = new THREE.SphereGeometry(sz * .17, 8, 6); k2.translate(0, e * L / 2, 0); g.copy(mergeGeometries([g.toNonIndexed(), k2.toNonIndexed()])); }
+      m = new THREE.Mesh(g, stdMat(B.tone('bone'), { rough: .7 })); }
+    else { const g = new THREE.SphereGeometry(sz * .5, 14, 10); g.scale(.8, .85, 1); m = new THREE.Mesh(g, stdMat(B.tone('bone'), { rough: .7 }));
+      for (const e of [1, -1]) { const h = ball(sz * .12, B.tone('dark'), V(e * sz * .16, sz * .06, sz * .42)); m.add(h); } }
+    m.position.copy(p); m.rotation.set(r() * 6.3, r() * 6.3, r() * 6.3); B.bit(sp.bone, m); } };
+// egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
+// its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
+// they cover, `drop` how far down its girth they sit (1 is the skin's underside)
+P.eggs = (B, o) => { const r = rng(B.g.seed + 41), pts = B.tailPts, n = pts.length - 1, by = {};
+  for (let k = 0; k < o.n; k++) { const t = lerp(o.at[0], o.at[1], (k + .5 + (r() - .5) * .6) / o.n), f = t * n, i = Math.min(n - 1, Math.floor(f)), c = pts[i].clone().lerp(pts[i + 1], f - i);
+    const R = B.tailR(t), a = (r() - .5) * 2 * (o.spread ?? .6), rad = o.r * (.75 + .5 * r()), g = new THREE.SphereGeometry(rad, 14, 10), q = g.attributes.position;
+    for (let v = 0; v < q.count; v++) { const x = q.getX(v), y = q.getY(v), z = q.getZ(v), w = 1 + .12 * PN.noise(x / rad * 1.7 + k * 7.1, y / rad * 1.7, z / rad * 1.7) + .05 * Math.sin(8 * Math.atan2(y, x) + 3 * z / rad); q.setXYZ(v, x * w, y * w * .9, z * w); }
+    g.computeVertexNormals(); const p = c.add(V(Math.sin(a) * R * B.tailS[0] * (o.drop ?? .9), -Math.cos(a) * R * B.tailS[1] * (o.drop ?? .9), 0)); g.translate(p.x, p.y, p.z);
+    (by[i] = by[i] || []).push(g.toNonIndexed()); }
+  for (const [i, gs] of Object.entries(by)) { const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone('silk'), { rough: .95 })); m.name = 'eggs'; B.bit(B.chains.tail[i], m); }
+  B.eggs = o.n; };
 // the tail: from the rump, n bones, starting at `droop` degrees below level and bending by `curl` a bone
 P.tail = (B, o) => {
   const len = o.len * B.g.sliders.tail, n = o.n || 3, p0 = B.back.clone().add(V(0, o.up || 0, 0)), pts = [p0];
   for (let k = 0; k < n; k++) { const a = (-(o.droop || 0) + (o.curl || 0) * k) * DEG; pts.push(pts[k].clone().add(V(0, Math.sin(a), -Math.cos(a)).multiplyScalar(len / n))); }
   const names = B.chain('tail', B.spineNames[0], pts.slice(0, n));
   for (let k = 0; k < n; k++) B.meat(names[k], pts[k], pts[k + 1], along(o.r, k / n), along(o.r, (k + 1) / n), { s: [o.s?.[0] ?? 1, o.s?.[1] ?? 1, 1], group: 'tail', tone: o.tone });
-  B.tailEnd = pts[n]; B.tailBone = names[n - 1];
+  B.tailEnd = pts[n]; B.tailBone = names[n - 1]; B.tailPts = pts; B.tailR = t => along(o.r, t); B.tailS = [o.s?.[0] ?? 1, o.s?.[1] ?? 1];
   // a bird's tail: a fan of feathers off the last bone (Session 775)
   // `raise` (Session 853) stands the fan up from flat toward upright, a display (the Sunfan's)
   if (o.fan) for (let i = 0; i < o.fan.n; i++) { const a = (i / (o.fan.n - 1) - .5) * o.fan.spread * DEG, X = V(1, 0, 0), up = (o.fan.raise || 0) * DEG, d = V(Math.sin(a), -.08, -Math.cos(a)).normalize().applyAxisAngle(X, up); feather(B, pts[n].clone().add(V(0, .002 * i, 0)), d, V(Math.cos(a), 0, Math.sin(a)).applyAxisAngle(X, up), o.fan.len * (1 - .12 * Math.abs(i / (o.fan.n - 1) - .5)), o.fan.len * .2, names[n - 1], 'feather', 'featherTip'); }
@@ -120,6 +147,16 @@ P.legs = (B, o) => {
     for (let k = 0; k < J.length - 1; k++) B.meat(names[k], J[k], J[k + 1], along(rr, k / (J.length - 1)), along(rr, (k + 1) / (J.length - 1)), { group: tag, tone: k >= J.length - 2 && pre.tips ? pre.tips : (pre.bare ? 'skin' : o.tone) });
     if (o.claws) { const tip = J[J.length - 1], d = J[J.length - 1].clone().sub(J[J.length - 2]).normalize(); d.y = Math.min(d.y, -.3); d.normalize();
       for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize())); }
+    // thorns (Session 929, OG-041's spider): short dark spines up every segment past the hip, on its upper and outer faces, raked
+    // toward the foot. One merged mesh a segment, rigid on its bone; `per` is thorns a metre of leg
+    if (o.thorns) { const r2 = rng(B.g.seed + 31 + B.legs.length), th = o.thorns;
+      for (let k = 1; k < J.length - 1; k++) { const a = J[k], d = J[k + 1].clone().sub(a), Ls = d.length(), gs = []; d.normalize();
+        const out = u.clone().add(V(0, .8, 0)); out.addScaledVector(d, -out.dot(d)).normalize();
+        const n = Math.max(1, Math.round(Ls * th.per));
+        for (let i = 0; i < n; i++) { const t = (i + .5 + (r2() - .5) * .5) / n, rad = along(rr, (k + t) / (J.length - 1)) * B.g.sliders.bulk, o2 = out.clone().applyAxisAngle(d, (r2() - .5) * 1.6);
+          const len = th.len * (.7 + .6 * r2()) * (1 - .35 * (k - 1) / Math.max(1, J.length - 3)), g = new THREE.ConeGeometry(th.r, len, 5); g.translate(0, len / 2, 0);
+          g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, o2.clone().addScaledVector(d, th.rake ?? .7).normalize())); const p = a.clone().addScaledVector(d, Ls * t).addScaledVector(o2, rad * .85); g.translate(p.x, p.y, p.z); gs.push(g.toNonIndexed()); }
+        const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone(th.tone || 'dark'), { rough: .45 })); m.name = 'thorns'; B.bit(names[k], m); B.thorns = (B.thorns || 0) + n; } }
     B.legs.push({ names, J, side, at: o.at, pre, hR, ik: pre.ik, yaw: !!pre.yaw, fan, wobble: o.wobble || 0 });
   }
 };
@@ -141,6 +178,33 @@ P.arms = (B, o) => {
     B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5, stroke: o.stroke || 0 });
   }
 };
+// gear in the hands (Session 933, OG-041's goblin): a spear gripped in a fist and a round shield strapped to a forearm, rigid on their
+// bones, so they swing with the arm. `arm` is the arm pair, `side` 1 the left, -1 the right. A spear: `len`, `grip` (the fraction of
+// the shaft behind the fist), `rise` (degrees the point stands above level, ahead), `head` its blade's length. A shield: `r`, strapped
+// across the forearm's middle, its face turned out by `face` (x outward, z ahead), with a rim and a boss
+P.gear = (B, o) => { for (const it of o.list) { const names = B.chains['arm' + (it.arm || 0) + (it.side > 0 ? 'L' : 'R') + '_']; if (!names) continue; const at = n => B.by[n].p;
+  if (it.kind === 'spear') { const fist = at(names[2]).clone().lerp(at(names[3]), .7), a = (it.rise ?? 60) * DEG, ax = V(it.side * (it.splay || 0), Math.sin(a), Math.cos(a)).normalize(), L = it.len;
+    const g = new THREE.CylinderGeometry(it.r, it.r * 1.15, L, 7); g.translate(0, L / 2, 0); const shaft = new THREE.Mesh(g, stdMat(B.tone('wood'), { rough: .8 }));
+    const hg = new THREE.ConeGeometry(it.r * 2.8, it.head, 4); hg.scale(1, 1, .3); hg.translate(0, L + it.head / 2 - it.r, 0); shaft.add(new THREE.Mesh(hg, stdMat(B.tone('iron'), { rough: .45, flat: true })));
+    const wg = new THREE.CylinderGeometry(it.r * 1.5, it.r * 1.5, it.head * .35, 7); wg.translate(0, L - it.head * .1, 0); shaft.add(new THREE.Mesh(wg, stdMat(B.tone('leather'), { rough: .9 })));
+    shaft.position.copy(fist).addScaledVector(ax, -L * it.grip); shaft.quaternion.setFromUnitVectors(UP, ax); shaft.name = 'spear'; B.bit(names[3], shaft); B.gear = [...(B.gear || []), 'spear']; }
+  if (it.kind === 'shield') { const e = at(names[1]), w = at(names[2]), arm = w.clone().sub(e).normalize(), n = V(it.side * (it.face?.[0] ?? 1), 0, it.face?.[1] ?? 0); n.addScaledVector(arm, -n.dot(arm)).normalize();
+    const c = e.clone().lerp(w, .5).addScaledVector(n, (it.off ?? .1) + it.t / 2), sh = new THREE.Group();
+    const disc = new THREE.CylinderGeometry(it.r, it.r * .96, it.t, 28); sh.add(new THREE.Mesh(disc, stdMat(B.tone(it.tone || 'hide'), { rough: .9 })));
+    const rim = new THREE.TorusGeometry(it.r, it.t * .7, 6, 28); rim.rotateX(Math.PI / 2); sh.add(new THREE.Mesh(rim, stdMat(B.tone(it.rim || 'wood'), { rough: .8 })));
+    const boss = new THREE.SphereGeometry(it.r * .2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2); boss.translate(0, it.t / 2, 0); sh.add(new THREE.Mesh(boss, stdMat(B.tone(it.boss || 'iron'), { rough: .5 })));
+    for (let k = 0; k < (it.lace || 0); k++) { const a = k / it.lace * Math.PI * 2, lg = new THREE.BoxGeometry(it.r * .06, it.t * 1.6, it.r * .16); lg.translate(Math.cos(a) * it.r * .86, 0, Math.sin(a) * it.r * .86); sh.add(new THREE.Mesh(lg, stdMat(B.tone('leather'), { rough: .9 }))); }
+    sh.position.copy(c); sh.quaternion.setFromUnitVectors(UP, n); sh.name = 'shield'; B.bit(names[1], sh); B.gear = [...(B.gear || []), 'shield']; }
+  // a sword (Session 934, the skeleton's): a flat blade narrowing to its point, its edges notched by the seed, a crossguard, a grip
+  // in the fist and a pommel; `len` the blade, `rise` the point's angle above level, ahead (below it if negative)
+  if (it.kind === 'sword') { const fist = at(names[2]).clone().lerp(at(names[3]), .7), a = (it.rise ?? -60) * DEG, ax = V(it.side * (it.splay || 0), Math.sin(a), Math.cos(a)).normalize(), L = it.len, w = it.w, r = rng(B.g.seed + 51), sw = new THREE.Group();
+    const bg = new THREE.BoxGeometry(w, L, w * .16, 1, 16, 1), q = bg.attributes.position, nicks = new Set(Array.from({ length: it.notches || 0 }, () => Math.floor(r() * 26) - 13));
+    for (let v = 0; v < q.count; v++) { const y = q.getY(v) / L + .5, x = q.getX(v), row = Math.round((y - .5) * 16 * 1.6), nick = nicks.has(row * Math.sign(x)) && y < .9 ? .55 : 1; q.setX(v, x * (1 - .55 * y ** 2) * (y > .9 ? (1 - y) / .1 : 1) * nick); }
+    bg.computeVertexNormals(); bg.translate(0, L / 2 + w * .5, 0); sw.add(new THREE.Mesh(bg, stdMat(B.tone('iron'), { rough: .55, flat: true })));
+    const cg = new THREE.BoxGeometry(w * 3.2, w * .35, w * .45); cg.translate(0, w * .3, 0); sw.add(new THREE.Mesh(cg, stdMat(B.tone('iron'), { rough: .6 })));
+    const gg = new THREE.CylinderGeometry(w * .22, w * .22, w * 2.4, 7); gg.translate(0, -w * 1.1, 0); sw.add(new THREE.Mesh(gg, stdMat(B.tone('leather'), { rough: .9 })));
+    const pg = new THREE.SphereGeometry(w * .38, 10, 8); pg.translate(0, -w * 2.4, 0); sw.add(new THREE.Mesh(pg, stdMat(B.tone('iron'), { rough: .6 })));
+    sw.position.copy(fist).addScaledVector(ax, w * 1.1); sw.quaternion.setFromUnitVectors(UP, ax); sw.name = 'sword'; B.bit(names[3], sw); B.gear = [...(B.gear || []), 'sword']; } } };
 // wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh
 // a feather (Session 775): a tapered card from its root along dir, its width across in the wing's plane; the tip darker
 function feather(B, root, dir, across, len, w, bone, tone, tip) {
@@ -229,9 +293,11 @@ P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) *
   const horn = new THREE.Mesh(new THREE.CylinderGeometry(o.len * .05, o.len * .07, o.len * .22, 10), stdMat(B.tone('leather'), { rough: .6 })); horn.position.copy(sp.p).add(V(0, Ry * 1.12, o.len * .42)); B.bit(sp.bone, horn); };
 // or (Session 919, OG-088's corrupted row) `crystal`: each a cluster of glassy shards out of the hide (the Shatterhorn's crystal
 // horns), leaning back and to either side by turns, so the back bristles with them as the blight boar's and the frost bear's do
-P.spines = (B, o) => { for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
-  const at = sp.p.clone().add(V(0, sp.r * B.spineS[1] * .85, 0));
-  if (o.crystal) { const sd = k % 2 ? 1 : -1; B.bit(sp.bone, crystals({ n: o.crystal, len: h, r: o.r }, 1, B.tone(o.tone || 'horn'), at.add(V(sd * sp.r * .25, 0, 0)), sd, rng(B.g.seed + 11 + k))); continue; }
+// `dorsal` (Session 926): out of the back, square to the spine, not straight up (an upright body's back faces behind it)
+P.spines = (B, o) => { const sd0 = B.spinePts[B.spinePts.length - 1].clone().sub(B.spinePts[0]).normalize(), dors = o.dorsal ? UP.clone().addScaledVector(sd0, -sd0.y).normalize() : UP;
+  for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
+  const at = sp.p.clone().addScaledVector(dors, sp.r * (o.dorsal ? B.spineS[0] * .7 + B.spineS[1] * .3 : B.spineS[1]) * .85);
+  if (o.crystal) { const sd = k % 2 ? 1 : -1; B.bit(sp.bone, crystals({ n: o.crystal, len: h, r: o.r, stone: o.stone }, 1, B.tone(o.tone || 'horn'), at.add(V(sd * sp.r * .25, 0, 0)), sd, rng(B.g.seed + 11 + k))); continue; }
   B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), at, V(0, 1, -.35).normalize())); } };
 
 // a coiled shell (Session 862): a tube wound round an axis, growing as it goes, so the whorls stack into a spire. At the
@@ -259,6 +325,48 @@ P.fronds = (B, o) => { const r = rng(B.g.seed + 21), names = (o.on || ['spine'])
     const base = b.p.clone().add(V(side * (o.root || 0), 0, 0)), pts = LEAF.map(([u, v]) => base.clone().addScaledVector(d, u * L).addScaledVector(a, v * W)), tris = [];
     for (let k = 1; k < pts.length - 1; k++) tris.push(0, k, k + 1); tris.push(0, pts.length - 1, 1);
     const c0 = B.tone(o.tone || 'frond'), c1 = B.tone(o.tip || o.tone || 'frond'); B.sheets.push({ pts, tris, bones: pts.map(() => b.i), cols: LEAF.map(([u]) => c0.clone().lerp(c1, u)) }); } };
+
+// rags (Session 943, OG-041's skeleton, "rags at the hips"): the first cloth on a creature. A cord round the waist on the first
+// spine bone, and `n` torn strips of cloth hanging from it, some missing, each `len` long give or take a third, its foot torn
+// ragged. A strip's top is on the hip bone; where it hangs over a thigh (any strip off the middle), it passes to that thigh's
+// bone down its length (smoothly, so no edge tears), so it swings forward and back with the leg and the leg never walks through it. `w` a strip's width, `rx`/`rz` the waist
+P.rags = (B, o) => { const r = rng(B.g.seed + 43), h = B.spinePts[0].clone().add(V(0, o.up || 0, o.dz || 0)), hip = B.by[B.spineNames[0]].i, S = B.S;
+  const thigh = sd => { const k = Object.keys(B.chains).find(c => new RegExp('^leg\\d' + (sd > 0 ? 'L' : 'R') + '_$').test(c)); return k ? B.by[B.chains[k][0]].i : hip; };
+  const c0 = B.tone(o.tone || 'cloth'), c1 = B.tone(o.tip || o.tone || 'cloth'); let strips = 0, low = 1e9;
+  for (let k = 0; k < o.n; k++) { if (r() < (o.gaps ?? .2)) continue; const th = (k + (r() - .5) * .5) / o.n * Math.PI * 2, at = (t, out) => V(Math.sin(t) * (o.rx * S + out), 0, Math.cos(t) * (o.rz * S + out));
+    const len = o.len * S * (.67 + .66 * r()), w = o.w * S * (.8 + .4 * r()), dt = w / (o.rx * S) / 2, x = Math.sin(th), bone = Math.abs(x) > .3 ? thigh(Math.sign(x)) : hip, ROWS = 4, pts = [], bones = [], blend = [], cols = [], tris = [];
+    for (let i = 0; i <= ROWS; i++) { const v = i / ROWS; for (let j = 0; j <= 2; j++) { const t = th + (j - 1) * dt * (1 + .25 * v), tear = i === ROWS ? (r() - .5) * .35 * len : 0, p = h.clone().add(at(t, .012 * S + .035 * S * v)).add(V(0, -v * len + tear, 0));
+      pts.push(p); bones.push(hip); blend.push([bone, bone === hip ? 0 : .7 * v * v * (3 - 2 * v)]); cols.push(c0.clone().lerp(c1, v).multiplyScalar(.85 + .3 * r())); low = Math.min(low, p.y); } }
+    for (let i = 0; i < ROWS; i++) for (let j = 0; j < 2; j++) { const a = i * 3 + j, b = a + 1, c = a + 3, d = c + 1; tris.push(a, c, b, b, c, d); }
+    B.sheets.push({ pts, tris, bones, blend, cols }); strips++; }
+  const g = new THREE.TorusGeometry(1, .06, 6, 28); g.rotateX(Math.PI / 2); g.scale(o.rx * S + .006, 1, o.rz * S + .006); const cord = new THREE.Mesh(g, stdMat(B.tone(o.cord || 'leather'), { rough: .8 })); cord.position.copy(h); cord.scale.y = .15; B.bit(B.spineNames[0], cord);
+  B.rags = { strips, low: +low.toFixed(3) }; };
+
+// straps (Session 944, OG-041's goblin, "a scrap-leather harness"): a harness laid on the grown skin. Each strap is a path of
+// (t, angle) pairs round the spine (t along it, hip 0 to chest 1; angle 0 the belly, 90 its left), drawn as a ribbon `w` wide. It is
+// laid after the flesh is grown: each of its points stands 7 mm outside the furthest of the skin's points near it (within 2.5 cm
+// along the spine and 9° round it) and takes that skin point's bone weights, so it moves as the skin under it does. `lift` stands a
+// strap further out, over another (a lashing over a plate, Session 945)
+P.straps = (B, o) => { (B.after ||= []).push(geo => {
+  const pos = geo.attributes.position, SI = geo.attributes.skinIndex, SW = geo.attributes.skinWeight, n = pos.count, out = [];
+  // only the trunk's skin where there is any: points carried mostly by a spine bone (an arm's root, the neck or a thigh would pull a
+  // strap out to them); past the trunk's ends (over a shoulder, round the hips) any skin
+  const spineI = new Set(B.spineNames.map(nm => B.by[nm].i)), onTrunk = new Uint8Array(n); for (let i = 0; i < n; i++) { let bw = -1, bi = -1; for (let c = 0; c < 4; c++) { const w = SW.getComponent(i, c); if (w > bw) { bw = w; bi = SI.getComponent(i, c); } } onTrunk[i] = spineI.has(bi) ? 1 : 0; }
+  const X = V(1, 0, 0), frame = t => { const a = B.spineAt(t - .03).p, b = B.spineAt(t + .03).p, ax = b.clone().sub(a).normalize(); return { p: B.spineAt(t).p, ax, belly: X.clone().cross(ax).normalize(), side: X }; };
+  const surf = (t, deg, lift = 0, any = false) => { const F = frame(t), th = deg * DEG, dir = F.belly.clone().multiplyScalar(Math.cos(th)).addScaledVector(F.side, Math.sin(th)), v = V(0, 0, 0); let best = -1, R = 0;
+    for (let i = 0; i < n; i++) { if (!any && !onTrunk[i]) continue; v.fromBufferAttribute(pos, i).sub(F.p); const along = v.dot(F.ax); if (Math.abs(along) > .025) continue; v.addScaledVector(F.ax, -along); const r = v.length(); if (r < 1e-4 || v.dot(dir) / r < Math.cos(9 * DEG)) continue; if (r > R) { R = r; best = i; } }
+    if (best < 0 && !any) return surf(t, deg, lift, true);
+    return best < 0 ? null : { p: F.p.clone().addScaledVector(dir, R + .007 + lift), n: dir, src: best }; };
+  let laid = 0, miss = 0;
+  for (const st of o.straps) { const cc = B.tone(st.tone || o.tone || 'leather'), pts = [], bones = [], skin = [], cols = [], tris = [], line = [];
+    for (let k = 0; k < st.path.length - 1; k++) { const [t0, a0] = st.path[k], [t1, a1] = st.path[k + 1], N = st.steps || 10; for (let j = 0; j < N + (k === st.path.length - 2 ? 1 : 0); j++) { const u = j / N, q = surf(lerp(t0, t1, u), lerp(a0, a1, u), st.lift || 0); if (q) line.push(q); else miss++; } }
+    for (let k = 0; k < line.length; k++) { const q = line[k], T = line[Math.min(line.length - 1, k + 1)].p.clone().sub(line[Math.max(0, k - 1)].p).normalize(), wd = q.n.clone().cross(T).normalize(), w = (st.w || o.w) / 2;
+      for (const sd of [-1, 1]) { pts.push(q.p.clone().addScaledVector(wd, sd * w)); bones.push(SI.getX(q.src)); skin.push({ i: [SI.getX(q.src), SI.getY(q.src), SI.getZ(q.src), SI.getW(q.src)], w: [SW.getX(q.src), SW.getY(q.src), SW.getZ(q.src), SW.getW(q.src)] }); cols.push(cc.clone().multiplyScalar(.8 + .4 * ((k * 7 + (sd + 1) * 3) % 5) / 5)); }
+      out.push({ v: pts.length - 2, src: q.src, off: .007 }); }
+    for (let k = 0; k < line.length - 1; k++) { const a = k * 2; tris.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    if (st.closed && line.length > 2) { const a = (line.length - 1) * 2; tris.push(a, 0, a + 1, a + 1, 0, 1); }
+    B.sheets.push({ pts, tris, bones, skin, cols }); laid++; }
+  B.harness = { straps: laid, miss, laid: out }; }); };
 
 // packs (Session 867): what a beast of burden carries. Two panniers hang either side of the spine at `at`, over a canvas
 // blanket, joined by a strap across the back, with a bedroll lashed on top. All rigid on the spine bone, clear of the fur.
@@ -315,12 +423,13 @@ function antler(o, S, c, p, side, r) {
   grow(V(), V(side * .55, .7, -.15).normalize(), L, o.r * S, o.depth ?? 2);
   const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); return m;
 }
-// crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040)
+// crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040). `rake` (Session 920) scales how far they
+// lean and step back: 1 the Shatterhorn's sweep, toward 0 a crown standing up from the brow. `stone` (Session 926): matte rock, not glass
 function crystals(o, S, c, p, side, r) {
-  const geos = []; for (let i = 0; i < o.n; i++) { const L = o.len * S * (1 - .55 * i / o.n) * (.8 + r() * .3), g = new THREE.ConeGeometry(o.r * S * (1 - .4 * i / o.n), L, 5); g.translate(0, L / 2, 0);
-    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, V(side * (.35 + .5 * r()), .5 + .4 * r() - .25 * i / o.n, -.5 - .4 * i / o.n).normalize()));
-    g.translate(side * i * o.r * S * .6, -i * o.r * S * .3, -i * o.r * S * .9); geos.push(g.toNonIndexed()); }
-  const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshPhysicalMaterial({ color: c, roughness: .15, metalness: 0, flatShading: true, emissive: c.clone().multiplyScalar(.25), clearcoat: 1, transparent: true, opacity: .92 })); m.position.copy(p); return m;
+  const rk = o.rake ?? 1, geos = []; for (let i = 0; i < o.n; i++) { const L = o.len * S * (1 - .55 * i / o.n) * (.8 + r() * .3), g = new THREE.ConeGeometry(o.r * S * (1 - .4 * i / o.n), L, 5); g.translate(0, L / 2, 0);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, V(side * (.35 + .5 * r()), .5 + .4 * r() - .25 * i / o.n, (-.5 - .4 * i / o.n) * rk).normalize()));
+    g.translate(side * i * o.r * S * .6, -i * o.r * S * .3, -i * o.r * S * .9 * rk); geos.push(g.toNonIndexed()); }
+  const m = new THREE.Mesh(mergeGeometries(geos), o.stone ? stdMat(c, { rough: .95, flat: true }) : new THREE.MeshPhysicalMaterial({ color: c, roughness: .15, metalness: 0, flatShading: true, emissive: c.clone().multiplyScalar(.25), clearcoat: 1, transparent: true, opacity: .92 })); m.position.copy(p); return m;
 }
 function beak(o, S, c, p, dir) { const g = new THREE.ConeGeometry(o.r * S, o.len * S, 8); g.scale(1, 1, .75); g.translate(0, o.len * S / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.setFromUnitVectors(UP, dir.clone().add(V(0, -(o.hook || .1), 0)).normalize()); return m; }
 
@@ -382,6 +491,52 @@ function growFlesh(flesh, o) {
 
 // skin weights, tone and the fur and glow masks, read off the flesh at every vertex
 const FURRY = new Set(['coat', 'pale', 'mane']);
+// a bare body (Session 934, the skeleton): no grown skin. Each capsule of flesh is drawn as the bone it stands for: a limb's as a
+// shaft with a knob at each end, the spine's, neck's and tail's as a stack of vertebrae, the head's and jaw's whole, as the skull.
+// The pieces are skinned as a hide is (dressFlesh), so a bone's shape moves with its bone
+function bareGeo(B, o) { const gs = [];
+  for (const f of B.flesh) { f.sm = (f.s[0] + f.s[1] + f.s[2]) / 3; const d = f.b.clone().sub(f.a), L = d.length(); if (L < 1e-4) continue;
+    const q = new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize()), put = (g, at, sc) => { if (sc) g.scale(...sc); g.applyQuaternion(q); g.translate(at.x, at.y, at.z); gs.push(g); };
+    const name = B.bones[f.bone].name;
+    if (name === 'head' || name === 'jaw') { if (!B.skull) put(new THREE.CapsuleGeometry((f.ra + f.rb) / 2, L, 6, 14), f.a.clone().lerp(f.b, .5), [f.s[0], 1, f.s[1]]); }
+    else if (/^(spine|neck|tail)/.test(f.group)) { const n = Math.max(1, Math.round(L / (o.vert ?? .05)));
+      for (let k = 0; k < n; k++) { const t = (k + .5) / n, r = lerp(f.ra, f.rb, t) * (o.vr ?? .3); put(new THREE.CylinderGeometry(r, r * 1.1, L / n * .6, 10), f.a.clone().lerp(f.b, t)); } }
+    else { const sh = o.shaft ?? .32, kn = o.knob ?? .5; put(new THREE.CylinderGeometry(f.rb * sh, f.ra * sh, L, 8), f.a.clone().lerp(f.b, .5));
+      for (const [p, r] of [[f.a, f.ra], [f.b, f.rb]]) { const g = new THREE.SphereGeometry(r * kn, 10, 8); g.translate(p.x, p.y, p.z); gs.push(g); } } }
+  const geo = mergeGeometries(gs.map(g => { g.deleteAttribute('uv'); return g; })); return { geo, grid: [0, 0, 0] }; }
+// a modelled skull (Session 942), for a bare head whose two capsules read soft and cartoonish: a cranium longer than it is wide, a
+// brow ridge over two dark sockets, cheekbones swept back to the ears, a face and an upper jaw under a dark nasal hole, a row of
+// upper teeth; and on the jaw bone a mandible, two branches from below the ears to the chin, with its own row. Built in the head's
+// frame in metres (x across, y up, z ahead, the neck's joint at 0) and scaled by the head's slider. The capsules stay, unseen, so the
+// weights are read as before. A socket holds a small lit eye when the plan's eyes are bright (the drowned skeleton's)
+function skullBits(B, o, S, base, dir, up) {
+  const side = up.clone().cross(dir).normalize(), M = new THREE.Matrix4().makeBasis(side, up, dir).scale(V(S, S, S)).setPosition(base);
+  const boneM = stdMat(B.tone('coat'), { rough: .7 }), dark = stdMat(B.tone('dark'), { rough: .95 }), toothM = stdMat(B.tone('coat').clone().lerp(new THREE.Color(1, .97, .88), .4), { rough: .45 });
+  const L = (x, y, z) => V(x, y, z).applyMatrix4(M), ell = (h, c) => { const g = new THREE.SphereGeometry(1, 18, 12); g.scale(...h); g.translate(...c); return g; };
+  const put = (bone, gs, m) => { const g = mergeGeometries(gs.map(q => { q.deleteAttribute('uv'); return q.applyMatrix4(M); })); g.computeVertexNormals(); const mesh = new THREE.Mesh(g, m); mesh.name = 'skull'; B.bit(bone, mesh); return g.index.count / 3; };
+  const tube = (pts, r0, r1) => { const g = taperTube(pts.map(p => V(...p)), r0, r1, 8); return g; };
+  const teeth = (cy, cz, rad, h, n = 10, span = 1.15) => { const gs = []; for (let k = 0; k < n; k++) { const a = -span + 2 * span * k / (n - 1), g = new THREE.BoxGeometry(.0068, h, .0055); g.rotateY(a); g.translate(Math.sin(a) * rad, cy, cz + Math.cos(a) * rad); gs.push(g); } return gs; };
+  const head = [ell([.07, .072, .094], [0, .062, .005]), ell([.054, .046, .056], [0, -.002, .05]), ell([.036, .021, .032], [0, -.04, .072]),
+    tube([[-.052, .029, .077], [-.028, .033, .086], [0, .03, .088], [.028, .033, .086], [.052, .029, .077]], .0075, .0075)];
+  for (const sd of [1, -1]) head.push(tube([[sd * .05, -.006, .08], [sd * .064, -.01, .05], [sd * .066, -.006, .014]], .01, .007));
+  let tris = put('head', head, boneM);
+  const holes = [ell([.019, .017, .009], [.031, .01, .087]), ell([.019, .017, .009], [-.031, .01, .087]), ell([.009, .013, .006], [0, -.022, .098])];
+  tris += put('head', holes, dark) + put('head', teeth(-.058, .075, .028, .012), toothM);
+  const jaw = [ell([.016, .012, .012], [0, -.088, .082])]; for (const sd of [1, -1]) jaw.push(tube([[sd * .058, -.012, .008], [sd * .055, -.05, .0], [sd * .051, -.078, .008], [sd * .038, -.086, .055], [sd * .012, -.09, .08]], .0095, .008));
+  tris += put('jaw', jaw, boneM) + put('jaw', teeth(-.072, .07, .025, .01), toothM);
+  const e = (o.eyes || [])[0]; if (e && Math.max(...e.color) > .2) for (const sd of [1, -1]) B.bit('head', eye(.0075 * S, e.color, L(sd * .031, .01, .095)));
+  B.skull = { tris: Math.round(tris), teeth: 20, top: +(.139 * S).toFixed(3) };
+}
+// ribs (Session 934): a cage of arcs off the spine, each from the spine round the side and forward toward a breastbone it stops short
+// of; `from`/`to` the stretch of the spine they cover, `w` the cage's half-width, `d` its depth ahead of the spine, `drop` how far a rib
+// falls on its way round. With `pelvis`, two flared blades of hip on the first spine bone
+P.ribs = (B, o) => { const gs = [];
+  for (let i = 0; i < o.n; i++) { const u = i / (o.n - 1), sp = B.spineAt(lerp(o.from, o.to, u)), k = Math.sin(Math.PI * (.25 + .75 * u)), W = o.w * k, D = o.d * (.6 + .4 * k), c = sp.p.clone().add(V(0, 0, D));
+    for (const sd of [1, -1]) { const pts = []; for (let j = 0; j <= 8; j++) { const t = j / 8, th = t * Math.PI * (o.wrap ?? .82); pts.push(c.clone().add(V(sd * W * Math.sin(th), -o.drop * t, -D * Math.cos(th)))); }
+      gs.push(taperTube(pts, o.r, o.r * .7, 6)); } }
+  const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone('coat'), { rough: .7 })); m.name = 'ribs'; B.bit(B.spineAt((o.from + o.to) / 2).bone, m);
+  if (o.pelvis) { const h = B.spinePts[0], P0 = o.pelvis; for (const sd of [1, -1]) { const g = new THREE.SphereGeometry(P0.r, 14, 10); g.scale(1, 1.1, .3); g.rotateY(sd * .9); g.translate(h.x + sd * P0.out, h.y + P0.up, h.z); B.bit(B.spineNames[0], new THREE.Mesh(g, stdMat(B.tone('coat'), { rough: .7 }))); } }
+  B.ribs = o.n * 2; };
 function dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n);
@@ -401,8 +556,9 @@ function dressFlesh(geo, B, pal, plan) {
     if (pal.belly && coatW > 0) C.lerp(pal.belly, coatW * sstep(-.1, -.75, ny));
     if (pat?.kind === 'bands') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 6, y * 6, z * 2) * 1.2); if (b > .35) C.lerp(pal[pat.tone], .85 * coatW); }
     if (pat?.kind === 'stripes') { const b = Math.sin(z * Math.PI * 2 / pat.period + PN.noise(x * 3, y * 3, z) * 2.5); if (b > .55 && ny > -.2) C.lerp(pal[pat.tone], .7 * coatW); }
-    // patches (Session 845): a pied coat, where low-frequency noise crosses a threshold; the edge is a little ragged
-    if (pat?.kind === 'patches') { const q = PN.noise(x / pat.size, y / pat.size + 7.3, z / pat.size) + PN.noise(x * 9, y * 9, z * 9) * .08; if (q > (pat.cut ?? .1)) C.lerp(pal[pat.tone], (pat.amount ?? 1) * coatW); }
+    // patches (Session 845): a pied coat, where low-frequency noise crosses a threshold; the edge is a little ragged.
+    // `up` (Session 926) keeps them to what faces the sky, as moss grows on stone (the troll's)
+    if (pat?.kind === 'patches') { const q = PN.noise(x / pat.size, y / pat.size + 7.3, z / pat.size) + PN.noise(x * 9, y * 9, z * 9) * .08; if (q > (pat.cut ?? .1)) C.lerp(pal[pat.tone], (pat.amount ?? 1) * coatW * (pat.up === undefined ? 1 : sstep(pat.up, pat.up + .35, ny))); }
     // a face mask (Session 845): on the head, between two distances out from its middle line, from the nose back over
     // the eyes to the ears, a stripe of one tone, and the rest of the face another (the badger's black stripes on white)
     if (plan.face && B.headFrame && B.by.head && (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum > .5) { const F = plan.face, H = B.headFrame, rel = V(x, y, z).sub(H.base), along = rel.dot(H.dir) / H.len, side = Math.abs(rel.x) / H.r, upw = rel.dot(H.up) / H.r;
@@ -420,11 +576,11 @@ function dressFlesh(geo, B, pal, plan) {
 // ── materials: the hide, fur shells (cut by noise, as the people's mantles are), and the binding's glow ──
 const GLOW_HEAD = 'attribute float aGlow; attribute float aFur; varying float vGlow; varying float vFur; varying vec3 vRP;\n';
 function hideMat(o) {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .85, metalness: 0 });
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .85, metalness: 0, ...(o.opacity < 1 ? { transparent: true, opacity: o.opacity, depthWrite: false } : {}) });
   m.onBeforeCompile = s => { s.uniforms.uGlow = { value: new THREE.Color(...(o.glow || [0, 0, 0])) };
     s.vertexShader = GLOW_HEAD + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;');
     s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;'); };
-  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0); return m;
+  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0) + (o.opacity < 1 ? 'c' : ''); return m;
 }
 function furMat(o, layer, layers) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, side: THREE.DoubleSide, alphaTest: .5 });
@@ -467,13 +623,14 @@ export function build(g) {
   const minR = Math.min(...B.flesh.map(c => Math.min(c.ra, c.rb) * Math.min(...c.s)));
   const ext = B.flesh.reduce((m, c) => Math.max(m, Math.abs(c.a.z), Math.abs(c.b.z), Math.abs(c.a.x), Math.abs(c.b.x), c.a.y, c.b.y), 0) * 2;
   const cell = plan.cell ?? Math.max(minR * .7, ext / 240), blend = plan.blend ?? Math.max(cell * 1.2, .25 * minR);
-  const { geo, grid } = growFlesh(B.flesh, { cell, blend });
+  const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend });
   dressFlesh(geo, B, pal, plan);
+  for (const f of B.after || []) f(geo); // what is laid on the grown skin (a harness, Session 944)
   // the skeleton
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
   B.bones.forEach((b, i) => { if (b.parent) bones[b.parent.i].add(bones[i]); }); const rig = new THREE.Group(); rig.add(bones[0]); root.add(rig); rig.updateMatrixWorld(true);
   const skel = new THREE.Skeleton(bones), meshes = [];
-  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
+  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough, opacity: plan.clear })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
     for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
@@ -493,9 +650,9 @@ export function build(g) {
   return C;
 }
 // the wing's membrane: panels between neighbouring fingers and from the last finger back to the flank, skinned to both edges
-// fins and other sheets: each vertex rigid on its bone, both faces drawn
+// fins and other sheets: each vertex rigid on its bone, or shared with a second (`blend`: [bone, weight], the rags'), both faces drawn
 function sheetGeo(B, pal) { const pos = [], si = [], sw = [], col = [], ind = [];
-  for (const s of B.sheets) { const base = pos.length / 3, C0 = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); const C = s.cols ? s.cols[i] : C0, k = s.cols ? 1 : i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
+  for (const s of B.sheets) { const base = pos.length / 3, C0 = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); const bl = s.blend && s.blend[i], sk = s.skin && s.skin[i]; if (sk) { si.push(...sk.i); sw.push(...sk.w); } else if (bl && bl[1] > 0) { si.push(s.bones[i], bl[0], 0, 0); sw.push(1 - bl[1], bl[1], 0, 0); } else { si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); } const C = s.cols ? s.cols[i] : C0, k = s.cols ? 1 : i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(ind); g.computeVertexNormals(); return g; }
 // threads: a thin tube along each chain, each ring rigid on its segment's bone; a glowing thread's colour is HDR, for the bloom
 function tubeGeo(B, pal, glow) { const pos = [], si = [], sw = [], col = [], ind = [], RAD = 5;
@@ -735,15 +892,16 @@ export const PLANS = {
       ['spines', { n: 9, from: .05, to: 1, len: .14, r: .02, taper: .5 }]
     ] },
   spider: { name: 'Giant spider', src: 'OG-041, OG-088', gaits: ['walk', 'trot', 'stand'], speedK: 1.4, wag: .02, rough: .55, mottle: .6,
-    palette: { coat: [.12, .1, .09], pale: [.76, .73, .63], dark: [.03, .02, .02], skin: [.12, .1, .09] },
+    palette: { coat: [.12, .1, .09], pale: [.76, .73, .63], dark: [.03, .02, .02], skin: [.12, .1, .09], silk: [.95, .94, .9] },
     parts: [
       ['spine', { hip: [.62, -.12], chest: [.62, .26], n: 3, r: [.17, .2, .17], s: [1.1, .62], rump: .02, front: .1, tone: 'skin' }],
       ['head', { len: .16, r: .1, pitch: 10, s: [1.1, .7, 1], tone: 'skin', eyes: [{ f: .65, up: .7, out: .3, r: .02, color: [.85, .05, .03] }, { f: .55, up: .85, out: .55, r: .014, color: [.85, .05, .03] }, { f: .45, up: .95, out: .2, r: .012, color: [.85, .05, .03] }], fangs: { r: .02, len: .1, f: .95, up: -.4, out: .3 } }],
       ['tail', { len: .85, n: 2, r: [.32, .42, .2], droop: -20, s: [1, .85], tone: 'pale' }],
-      ['legs', { at: 1, kind: 'insect', out: .12, drop: -.02, fan: 55, reach: 1.25, r: [.05, .045, .035, .02] }],
-      ['legs', { at: .72, kind: 'insect', out: .14, drop: -.02, fan: 20, reach: 1.15, r: [.05, .045, .035, .02] }],
-      ['legs', { at: .42, kind: 'insect', out: .14, drop: -.02, fan: -18, reach: 1.1, r: [.05, .045, .035, .02] }],
-      ['legs', { at: .12, kind: 'insect', out: .12, drop: -.02, fan: -50, reach: 1.25, r: [.05, .045, .035, .02] }]
+      ['eggs', { n: 7, r: .12, at: [.62, .98], drop: 1.4, spread: .5 }],
+      ['legs', { at: 1, kind: 'insect', out: .12, drop: -.02, fan: 55, reach: 1.25, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }],
+      ['legs', { at: .72, kind: 'insect', out: .14, drop: -.02, fan: 20, reach: 1.15, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }],
+      ['legs', { at: .42, kind: 'insect', out: .14, drop: -.02, fan: -18, reach: 1.1, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }],
+      ['legs', { at: .12, kind: 'insect', out: .12, drop: -.02, fan: -50, reach: 1.25, r: [.05, .045, .035, .02], thorns: { per: 7, len: .085, r: .016 } }]
     ] },
   stormplume: { name: 'Stormplume', src: 'OG-040 (flightless bird, the Mark)', gaits: ['walk', 'trot', 'stand'], speedK: 1.2, neckNod: .12, fold: 1.2,
     palette: { coat: [.34, .38, .44], saddle: [.17, .19, .23], belly: [.74, .74, .72], dark: [.08, .07, .06], skin: [.56, .48, .3], horn: [.66, .58, .36] },
@@ -1475,13 +1633,13 @@ export const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
 // ── Session 919: the corrupted (OG-088's second row; backlog L4, "corrupted animals by school"). A gate's antibodies wear
 // the animals of its country, and each is a change of shape, never a recolour: the gate's work shows in what grows out of it.
 // Each is tagged with its school (canon §9a) and keeps its familiar's bones, so it walks as its familiar does. OG-088's stone
-// troll waits for a troll in the kit; its corrupted wolf is the Faolchú's kind and its void spider a Scáth spider for later ──
+// troll came with the troll (Session 926, below); its corrupted wolf is the Faolchú's kind and its void spider a Scáth spider for later ──
 Object.assign(PLANS, {
   // Uisce: the frost wraith bear, blue ice: its coat iced over and thin, shards of ice through its back and a crown of them at the brow, pale light in its seams
   frostbear: re(PLANS.bear, { name: 'Frost Wraith Bear', src: 'OG-088 (corrupted: a frost wraith bear of blue ice)', school: 'Uisce', from: 'bear', scale: 1.1, rough: .35,
     palette: { coat: [.62, .74, .86], saddle: [.42, .56, .72], belly: [.8, .88, .94], dark: [.05, .07, .1], horn: [.62, .84, 1], ice: [.7, .9, 1] },
     fur: { len: .03, layers: 7, sx: 150, droop: .2 }, glow: { color: [.5, 1.1, 2.2], freq: 2, w: .03, all: .35, seam: { w: .05, y0: .9 } },
-    parts: [...PLANS.bear.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 5, len: .34, r: .05, f: .2, up: .9, out: .45 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }] : [k, o]),
+    parts: [...PLANS.bear.parts.map(([k, o]) => k === 'head' ? [k, { ...o, crystals: { n: 5, len: .3, r: .05, f: .34, up: .8, out: .38, rake: .3 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }] : [k, o]),
       ['spines', { n: 11, from: .1, to: 1, len: .36, r: .06, tone: 'ice', taper: .5, crystal: 3 }]] }),
   // Cloch: the blight boar, crystal spikes in its hide: a ridge of violet crystal from the withers to the rump, the tusks longer, the hide gone grey as stone
   blightboar: re(PLANS.boar, { name: 'Blight Boar', src: 'OG-088 (corrupted: a blight boar with crystal spikes in its hide)', school: 'Cloch', from: 'boar', scale: 1.15,
@@ -1504,4 +1662,142 @@ Object.assign(PLANS, {
       : k === 'head' ? [k, { ...o, beak: { ...o.beak, len: o.beak.len * 1.35, r: o.beak.r * 1.25, hook: .55 }, eyes: (o.eyes || []).map(e => ({ ...e, color: [.85, .5, 1] })) }]
       : k === 'tail' ? [k, { ...o, fan: { ...o.fan, len: o.fan.len * 1.4, spread: 50 } }] : [k, o]) })
 });
-export const CORRUPTED = ['frostbear', 'blightboar', 'shadowstag', 'duskeagle'];
+// ── Session 926: the troll (OG-041's cave troll, OG-088's mossy river troll; canon §9a puts cave trolls in Tine, Uisce and
+// Cloch gates). The kit's first upright walker with hands: a hunched biped, the hips over its feet and the chest thrown forward
+// over them, a shoulder hump, the head slung low in front, and arms long enough to reach its knees. One leg pair walks it (the
+// gait engine's biped walk); the arms swing against the legs. Its hide is grey as stone with moss on what faces the sky.
+// The scraps of armour lashed on (OG-041) wait for gear on a creature; the Tine and Uisce trolls of OG-018 are its recolours ──
+Object.assign(PLANS, {
+  troll: { name: 'Cave Troll', src: 'OG-041 (cave troll: hunched and huge, a stone-grey hide with moss and lichen, a wide fanged mouth), OG-088 (a mossy river troll)', gaits: ['walk', 'trot', 'stand'],
+    rough: .9, mottle: 1.6, speedK: .8, wag: 0, pant: .04, neckNod: .05,
+    palette: { coat: [.4, .4, .37], saddle: [.33, .34, .3], belly: [.5, .48, .44], moss: [.25, .33, .12], dark: [.06, .05, .05], horn: [.76, .7, .56], skin: [.36, .35, .32] },
+    pattern: { kind: 'patches', tone: 'moss', size: .22, cut: .02, amount: .9, up: .15 },
+    parts: [
+      ['spine', { hip: [1.25, -.08], chest: [2.15, .26], n: 4, r: [.3, .4, .4], s: [1.2, 1], arch: .04, rump: .1, front: .08, frontDrop: .04, hump: { at: .85, up: .1, len: .3, r: .28 } }],
+      ['neck', { len: .26, n: 1, rise: 0, r: [.2, .14], fwd: .12, up: -.02 }],
+      ['head', { len: .42, r: .22, pitch: 10, s: [1.2, 1.05, 1], muzzle: { len: .88, r: .13, taper: .8, nose: 1, drop: .1 }, jaw: { len: .96, r: .14, drop: 1 },
+        brow: { f: .42, up: .66, out: .5, r: .07 }, eyes: [{ f: .4, up: .45, out: .5, r: .022, color: [.75, .5, .12] }], ears: { kind: 'cone', size: .07, f: .12, up: .55, out: .95, back: 20, splay: 70, tone: 'skin' },
+        horns: { len: .17, r: .03, f: .86, up: -.8, out: .6, turn: .4, rise: 1.2, spread: .15, back: -.2, out0: .1 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .28, drop: .08, r: [.22, .17, .14], claws: { r: .02, len: .06 } }],
+      ['arms', { at: 1, out: .5, up: -.1, len: 1.5, r: [.15, .13, .12], dir: [.25, -1, .05], bend: 18, tone: 'coat', claws: { r: .02, len: .09 }, swing: .28 }]
+    ] }
+});
+Object.assign(PLANS, {
+  // Cloch: the stone troll, fused with rock: the troll grown heavier, its hide gone to bare grey stone with the moss scoured off,
+  // slabs of rock through its back and shoulders and on its crown, its arms thicker, violet in its cracks
+  stonetroll: re(PLANS.troll, { name: 'Stone Troll', src: 'OG-088 (corrupted: a stone troll fused with rock)', school: 'Cloch', from: 'troll', scale: 1.12, rough: .95, mottle: 2.4, pattern: undefined,
+    palette: { coat: [.48, .46, .44], saddle: [.4, .39, .37], belly: [.54, .52, .5], rock: [.56, .53, .49], dark: [.05, .04, .05], horn: [.5, .48, .45], skin: [.32, .31, .3] },
+    glow: { color: [1.3, .45, 2.2], freq: 1.4, w: .012, all: .35 },
+    parts: [...PLANS.troll.parts.map(([k, o]) => k === 'arms' ? [k, { ...o, r: o.r.map(v => v * 1.22), len: o.len * 1.05 }]
+      : k === 'head' ? [k, { ...o, crystals: { n: 4, len: .2, r: .06, f: .3, up: .85, out: .4, rake: .5, stone: 1 }, eyes: o.eyes.map(e => ({ ...e, color: [.8, .45, 1] })) }]
+      : k === 'spine' ? [k, { ...o, hump: { ...o.hump, up: .22, r: .38 } }] : [k, o]),
+      ['spines', { n: 7, from: .1, to: 1, len: .28, r: .16, tone: 'rock', taper: .3, crystal: 2, stone: 1, dorsal: 1 }]] })
+});
+export const CORRUPTED = ['frostbear', 'blightboar', 'shadowstag', 'duskeagle', 'stonetroll'];
+// ── Session 927: OG-018's trolls of the gates, the cave troll as each school's antibody wears it: recolours of one plan, as the
+// sheet draws them (and the Cloch troll is the moss-backed troll itself). Tine's is basalt with forge-light in its cracks;
+// Uisce's is drowned-pale, weed in its folds, its eyes gone to the sea's blue ──
+Object.assign(PLANS, {
+  tinetroll: re(PLANS.troll, { name: 'Cave Troll of Tine', src: 'OG-018 (Tine: a cave troll with glowing cracks)', school: 'Tine', from: 'troll', pattern: undefined, mottle: 2,
+    palette: { coat: [.17, .15, .14], saddle: [.12, .11, .1], belly: [.22, .19, .17], dark: [.04, .03, .03], horn: [.4, .36, .3], skin: [.15, .13, .12] },
+    glow: { color: [3.2, .8, .18], freq: 1.6, w: .016, all: .4 },
+    parts: PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [1, .45, .1] })) }] : [k, o]) }),
+  uiscetroll: re(PLANS.troll, { name: 'Cave Troll of Uisce', src: 'OG-018 (Uisce: a pale cave troll of the drowned halls)', school: 'Uisce', from: 'troll', rough: .6,
+    palette: { coat: [.66, .7, .7], saddle: [.56, .62, .63], belly: [.74, .77, .76], weed: [.16, .3, .24], dark: [.05, .06, .07], horn: [.7, .72, .66], skin: [.6, .64, .64] },
+    pattern: { kind: 'patches', tone: 'weed', size: .12, cut: .32, amount: .7 },
+    parts: PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.45, .75, .9] })) }] : [k, o]) })
+});
+export const TROLLS = ['troll', 'tinetroll', 'uiscetroll', 'stonetroll'];
+// ── Session 928: the slime (OG-041: translucent pale green, arched like a wave, bones and rubble suspended inside; canon §9a
+// puts slimes in Uisce gates, a magma one in Tine's). No legs and no head: a body that heaves along (the crawl, paced in body
+// lengths), its crest rolled forward over its front like a wave about to break, clear enough to see what it has taken in ──
+Object.assign(PLANS, {
+  slime: { name: 'Slime', src: 'OG-041 (slime: translucent pale green, arched like a wave, bones and rubble suspended inside)', gaits: ['crawl', 'stand'], bl: .12, clear: .55, rough: .12, mottle: .5, wag: 0, pant: .05,
+    palette: { coat: [.62, .78, .5], saddle: [.7, .84, .56], belly: [.45, .6, .36], bone: [.82, .78, .66], rubble: [.42, .4, .36], dark: [.08, .07, .06] },
+    parts: [
+      ['spine', { hip: [.32, -.55], chest: [.62, .3], n: 6, r: [.36, .52, .5, .3], s: [1.25, 1.05], arch: .14, rump: .3, rumpDrop: .2, rumpTaper: .7, front: .32, frontDrop: .42, frontTaper: .55 }],
+      ['inclusions', { n: { skull: 1, bone: 5, rubble: 7 }, size: .16, depth: .55 }]
+    ] }
+});
+Object.assign(PLANS, {
+  // Tine's (OG-018: "orange jelly with dark holes"): molten, less clear, lit from inside, carrying clinker instead of bones
+  magmaslime: re(PLANS.slime, { name: 'Magma Slime', src: 'OG-018 (Tine: a magma slime, orange jelly with dark holes)', school: 'Tine', from: 'slime', clear: .8, rough: .3, mottle: 1.4, bl: .1,
+    palette: { coat: [.6, .17, .03], saddle: [.32, .08, .02], belly: [.85, .36, .06], bone: [.3, .24, .2], rubble: [.08, .07, .06], dark: [.04, .03, .03] },
+    glow: { color: [2.6, .7, .12], freq: 2.4, w: .06, all: .7, base: .2 },
+    parts: PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { rubble: 11 } }] : [k, o]) })
+});
+export const SLIMES = ['slime', 'magmaslime'];
+// ── Session 933: the goblin (OG-041: crouched, long ears, a long spear and a round hide shield). Canon §9a makes goblins no gate's
+// antibody but a gate's occupiers: they hold a spent gate as a warren. The troll's frame, half its height and thin: the same
+// hunched biped walk, the knees deep, the head big for the body and slung forward, ears long and swept out, the eyes large and
+// yellow; it carries a spear in its right fist and a hide shield on its left forearm (the kit's first gear). The sheet's harness of
+// scrap leather waits for straps on a creature ──
+Object.assign(PLANS, {
+  goblin: re(PLANS.troll, { name: 'Goblin', src: 'OG-041 (goblin: crouched, long ears, a long spear and a round hide shield, a scrap-leather harness)', occupier: 1, from: 'troll', scale: .5, finOpacity: 1,
+    rough: .7, mottle: 1.1, speedK: 1.15, pant: .05, neckNod: .07, spread: .07,
+    palette: { coat: [.44, .37, .25], saddle: [.33, .28, .18], belly: [.54, .46, .33], dark: [.06, .05, .04], horn: [.62, .56, .42], skin: [.46, .38, .27],
+      wood: [.36, .26, .15], iron: [.32, .31, .3], hide: [.56, .43, .29], leather: [.22, .15, .09] },
+    pattern: { kind: 'patches', tone: 'saddle', size: .3, cut: .25, amount: .5 },
+    parts: [
+      ['spine', { hip: [1.3, -.06], chest: [2.05, .3], n: 4, r: [.21, .24, .25], s: [1.15, .95], arch: .06, rump: .08, front: .05, frontDrop: .03, hump: { at: .85, up: .06, len: .24, r: .17 } }],
+      ['neck', { len: .26, n: 1, rise: 10, r: [.11, .1], fwd: .08, up: 0 }],
+      ['head', { len: .5, r: .27, pitch: 6, s: [1.1, 1, 1], muzzle: { len: .9, r: .12, taper: .5, nose: 1, drop: .22 }, jaw: { len: .88, r: .12, drop: .8 },
+        brow: { f: .5, up: .62, out: .45, r: .06 }, eyes: [{ f: .52, up: .42, out: .48, r: .055, color: [.9, .75, .15] }],
+        ears: { kind: 'cone', size: .5, f: .2, up: .5, out: .95, back: 25, splay: 72, tone: 'skin' }, fangs: { r: .02, len: .07, f: .9, up: -.75, out: .35 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .22, drop: .06, r: [.15, .1, .09], claws: { r: .015, len: .06 } }],
+      ['arms', { at: 1, out: .32, up: -.08, len: 1.25, r: [.085, .075, .07], dir: [.3, -1, .15], bend: 30, tone: 'coat', claws: { r: .014, len: .07 }, swing: .22 }],
+      ['gear', { list: [
+        { kind: 'spear', arm: 0, side: -1, len: 3.8, r: .03, head: .4, grip: .2, rise: 72, splay: .05 },
+        { kind: 'shield', arm: 0, side: 1, r: .56, t: .05, face: [1, .7], off: .1, lace: 8, boss: 'iron' }] }],
+      ['straps', { w: .1, tone: 'leather', straps: [
+        { path: [[.12, 0], [.12, 90], [.12, 180], [.12, 270], [.12, 360]], closed: true, steps: 12 },
+        { path: [[.92, -75], [.55, 0], [.18, 70], [.18, 110], [.55, 180], [.92, 255], [1, 280]], w: .09, steps: 10 },
+        { path: [[.97, -120], [.97, -60]], w: .2, steps: 8, tone: 'hide' }] }]
+    ] })
+});
+export const GOBLINS = ['goblin'];
+// ── Session 934: the skeleton (OG-041: a notched sword and a round wooden shield, rags at the hips; canon §9a puts skeletons in Solas
+// and Uisce gates, so OG-018's drowned skeleton is the next to follow). The kit's first bare body: an upright biped with a man's
+// proportions whose capsules are drawn as bones (`bare`), a cage of ribs and a pelvis on its spine, a skull with dark sockets and a
+// hinged jaw. It walks as the troll does, upright; the sheet's rags wait for cloth on a creature ──
+Object.assign(PLANS, {
+  skeleton: { name: 'Skeleton', src: 'OG-041 (skeleton: a notched sword and a round wooden shield, rags at the hips)', gaits: ['walk', 'trot', 'stand'], bare: { shaft: .3, knob: .48, vr: .34, vert: .045 },
+    rough: .7, mottle: .9, speedK: .9, wag: 0, pant: 0, neckNod: .05, spread: .04,
+    palette: { coat: [.78, .73, .6], dark: [.05, .04, .03], wood: [.38, .27, .16], iron: [.36, .35, .33], leather: [.2, .14, .09], cloth: [.36, .31, .24], clothTip: [.2, .17, .13] }, finOpacity: 1,
+    parts: [
+      ['spine', { hip: [.98, -.03], chest: [1.44, .01], n: 4, r: [.12, .13, .14], s: [1, 1], rump: 0, front: 0 }],
+      ['neck', { len: .13, n: 1, rise: 80, r: [.06, .05], up: .02 }],
+      ['head', { len: .2, r: .1, pitch: -8, s: [.85, 1.05, 1], muzzle: { len: .62, r: .06, taper: .85, drop: .45 }, jaw: { len: .62, r: .04, drop: 1.05 }, skull: true,
+        eyes: [{ f: .55, up: .2, out: .42, r: .028, color: [.02, .02, .02] }] }],
+      ['ribs', { n: 7, from: .3, to: 1, w: .15, d: .1, drop: .1, r: .011, wrap: .8, pelvis: { r: .11, out: .09, up: .02 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .1, drop: .02, r: [.08, .065, .05] }],
+      ['arms', { at: 1, out: .19, up: -.04, len: .7, r: [.055, .045, .04], dir: [.12, -1, .02], bend: 16, tone: 'coat', swing: .3 }],
+      ['gear', { list: [
+        { kind: 'sword', arm: 0, side: -1, len: .7, w: .05, rise: -40, splay: .1, notches: 5 },
+        { kind: 'shield', arm: 0, side: 1, r: .3, t: .03, face: [1, .8], off: .04, tone: 'wood', rim: 'iron', boss: 'iron' }] }],
+      ['rags', { n: 11, len: .3, w: .075, rx: .13, rz: .1, up: .03, gaps: .25, tone: 'cloth', tip: 'clothTip', cord: 'leather' }]
+    ] }
+});
+// ── Session 935: OG-018's drowned skeleton, Uisce's (weed-hung, in a pair): the skeleton grey-green from the sea, its bones stained
+// with weed, strands of it hanging from its skull, spine and arms (the kelpstrider's fronds, Session 863, hung down), its sockets lit
+// the sea's blue, its sword rusted and its shield waterlogged ──
+Object.assign(PLANS, {
+  drownedskeleton: re(PLANS.skeleton, { name: 'Drowned Skeleton', src: 'OG-018 (Uisce: a drowned skeleton, weed-hung, in a pair)', school: 'Uisce', from: 'skeleton', bare: PLANS.skeleton.bare, speedK: .8, rough: .55, mottle: 1.6,
+    palette: { coat: [.6, .64, .56], weed: [.16, .3, .2], frond: [.18, .32, .16], frondTip: [.34, .42, .2], dark: [.04, .05, .06], wood: [.22, .24, .2], iron: [.34, .27, .2], leather: [.12, .12, .1], cloth: [.2, .26, .2], clothTip: [.1, .16, .12] },
+    pattern: { kind: 'patches', tone: 'weed', size: .06, cut: 0, amount: .9 }, finOpacity: .95,
+    parts: [...PLANS.skeleton.parts.map(([k, o]) => k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, r: .02, color: [.35, .75, .95] })) }] : [k, o]),
+      ['fronds', { on: ['head', 'neck', 'spine', 'arm0L_', 'arm0R_'], n: 36, len: .34, w: .04, out: .25, spread: .2, lift: -1.6, back: .15, tip: 'frondTip' }]] })
+});
+export const SKELETONS = ['skeleton', 'drownedskeleton'];
+// ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
+// goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
+// back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
+// (the stone troll, Tine's and Uisce's) copied its parts before this, and keep their bare hides ──
+Object.assign(PLANS.troll.palette, { iron: [.3, .29, .28], ironDark: [.22, .2, .19], leather: [.24, .17, .11], hide: [.5, .4, .28] });
+PLANS.troll.parts.push(['straps', { w: .08, tone: 'leather', straps: [
+  { path: [[.6, -28], [.84, -28]], w: .34, steps: 6, tone: 'iron' },
+  { path: [[.94, 62], [.94, 118]], w: .3, steps: 8, tone: 'ironDark' },
+  { path: [[.42, 160], [.42, 200]], w: .4, steps: 6, tone: 'hide' },
+  { path: [[.74, 0], [.74, 90], [.74, 180], [.74, 270], [.74, 360]], closed: true, steps: 12, lift: .012 },
+  { path: [[.98, 90], [.66, 10], [.34, -60]], steps: 10, lift: .012 },
+  { path: [[.36, 140], [.36, 220]], steps: 8, lift: .012 }] }]);
