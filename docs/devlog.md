@@ -21038,3 +21038,17 @@ Taking them now would be a merge conflict for the deep-work session. The resolve
 ### Needs eyes
 - **The barter's ceiling.** Charisma's quarter and Speech's fifth add to 45% better prices for a master talker at the cap. The sheet gives Speech 20% without saying whether the two share a ceiling. If counters feel too generous late on, a shared cap of 25% is the obvious lever. That is a number for Michael.
 - Movement and crits move less with their attributes now. A character who put points in Swiftness under the old rules runs a little slower than they did.
+
+## v80 — Session 957 — Two faults of Session 941's on CI: a blocked arrow threw, and `witnessrange` measured Stealth (a CI fix)
+CI on PR #353 (head `9e6edf3`) failed `wardall` and `witnessrange` twice each. Both are Session 941's.
+
+**`wardall`** found a fault in play. Session 941 added a Guard use where a zone archer's arrow lands on a held block (`tickZoneArrows`, `42-zone-enemies.js`) and keyed it on `e`. That loop's thing is the arrow `a`, and no `e` exists there, so every arrow taken on a block threw a ReferenceError. The use is now keyed on the arrow. The other three Guard sites (the parry, the blocked blow in `74-strikes.js`, the bash) do have their foe as `e`.
+
+**`witnessrange`** measured a sneaking witness's reach at 6 units. Since Session 941 that is 6 × (1 − 0.4 × Stealth/100), and a Warrior's Stealth of 5 makes it 5.88, so the 5.9 row went unseen. The suite now pins Stealth at 0 for its rows, which are an untrained sneak, and adds one at Stealth 50: 4.8 (4.7 seen, 4.9 not).
+
+The other reds on that run are not this fix's. `lockpicks` and `shoprows` are shop prices, which fits Session 953's Speech prices. `levelpanel` is Session 952's level sheet. They are left to their sessions.
+### Verified (headless Chromium)
+- `wardall` passes (it threw `e is not defined` before the fix).
+- `witnessrange` 10 of 10, the new Stealth 50 row among them.
+### Needs eyes
+- Nothing to see. The arrow fault would have shown as a frozen fight against archers while blocking.
