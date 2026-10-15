@@ -20085,3 +20085,34 @@ The `drop` is larger than the capsules suggest (1.4 of the tail's radius): the g
 - Whether the sacs read as eggs carried, or should be left to the lair's webbing (a place, the look builder's) and taken off the spider.
 - The thorns at a distance: at game range they may read as fuzz; fewer and longer could suit the sheet better.
 - The spider's dark cephalothorax is mostly hidden by the pale abdomen's blend: an older look, not changed here.
+
+## v80 — Session 933 — The goblin, and gear in a creature's hands (L4, prototype only)
+The fourth of OG-041's classic five: a goblin, crouched, with long ears, a long spear and a round hide shield. Canon §9a makes goblins no gate's antibody but its occupiers, who hold a spent gate as a warren, so the plan is marked `occupier`, not given a school. The sheet draws all of it, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`gear`, a new part: things held in the hands.** It is the kit's first gear on a creature, and the troll's owed armour scraps can build on it. Each item is rigid on an arm bone, so it swings with the arm.
+  - **A spear** is gripped in the fist (the hand bone): a shaft with a flat iron leaf-blade and a leather binding under it. `len` is its length, `grip` the fraction of shaft behind the fist, `rise` the point's angle above level, ahead.
+  - **A round shield** is strapped across the forearm's middle (the forearm bone): a hide disc with a wooden rim, an iron boss and leather lacing round its edge, its face turned out by `face`.
+- **`goblin`, the Goblin:** the troll's plan (Session 926) at half scale and thin. It has the same hunched biped walk with the knees deep. The head is big for its body and slung forward, with a brow, a sharp drooping muzzle, small fangs, large yellow eyes and long cone ears swept out at 72°.
+  - Its hide is olive-brown, patched darker. Its head stands 0.98 m up and its hips 0.58 m.
+  - It carries a 1.9 m spear upright in its right fist and a 0.56 m hide shield on its left forearm. Its arms swing less than the troll's (0.22 against 0.28), so the spear's butt stays off the floor.
+  - 23 bones, 15,828 triangles of hide.
+- `GOBLINS` lists it.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 981 checks pass** (971 before).
+  - The goblin builds and walks: every foot reaches its target through the walk, the trot and the stand. The walk's feet are down 0.69 of 0.68 and the trot's 0.46 of 0.45.
+  - It carries the spear and the shield. They stay clear of the ground in all 72 poses of the three gaits (lowest 0.068 m).
+  - The spear's point stays above its head (2.16 m against 0.98 m), and the shield stays at least 0.4 m off its hip.
+  - A first try with the grip at 0.3 put the butt 11 cm into the floor at the forward swing; the grip at 0.2 and the gentler swing fixed it.
+- Pictures:
+  - `creatures-goblin.jpg` (side) and `creatures-goblin-front.jpg`.
+  - `creatures-classic.jpg`: the spider, the slime, the goblin and the troll in a row, each with the measure.
+
+### Needs eyes
+- **The goblin's colour:** olive-brown, between the sheet's tan and the usual green.
+- **Its height:** under a man's shoulder, crouched.
+- **The shield** faces out and forward from the forearm. In a fight it would come round to the front, which is a pose for the game's combat, not the kit.
+- **Owed:**
+  - The sheet's scrap-leather harness: straps on a creature need a way to lie on the grown skin.
+  - The skeleton, the last of the five: the kit's flesh is one smooth surface, so a body of bare bones needs a different hide.

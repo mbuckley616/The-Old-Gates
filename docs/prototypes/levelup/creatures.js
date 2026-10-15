@@ -177,6 +177,23 @@ P.arms = (B, o) => {
     B.arms.push({ names, side, phase: o.phase || 0, swing: o.swing ?? .5, stroke: o.stroke || 0 });
   }
 };
+// gear in the hands (Session 933, OG-041's goblin): a spear gripped in a fist and a round shield strapped to a forearm, rigid on their
+// bones, so they swing with the arm. `arm` is the arm pair, `side` 1 the left, -1 the right. A spear: `len`, `grip` (the fraction of
+// the shaft behind the fist), `rise` (degrees the point stands above level, ahead), `head` its blade's length. A shield: `r`, strapped
+// across the forearm's middle, its face turned out by `face` (x outward, z ahead), with a rim and a boss
+P.gear = (B, o) => { for (const it of o.list) { const names = B.chains['arm' + (it.arm || 0) + (it.side > 0 ? 'L' : 'R') + '_']; if (!names) continue; const at = n => B.by[n].p;
+  if (it.kind === 'spear') { const fist = at(names[2]).clone().lerp(at(names[3]), .7), a = (it.rise ?? 60) * DEG, ax = V(it.side * (it.splay || 0), Math.sin(a), Math.cos(a)).normalize(), L = it.len;
+    const g = new THREE.CylinderGeometry(it.r, it.r * 1.15, L, 7); g.translate(0, L / 2, 0); const shaft = new THREE.Mesh(g, stdMat(B.tone('wood'), { rough: .8 }));
+    const hg = new THREE.ConeGeometry(it.r * 2.8, it.head, 4); hg.scale(1, 1, .3); hg.translate(0, L + it.head / 2 - it.r, 0); shaft.add(new THREE.Mesh(hg, stdMat(B.tone('iron'), { rough: .45, flat: true })));
+    const wg = new THREE.CylinderGeometry(it.r * 1.5, it.r * 1.5, it.head * .35, 7); wg.translate(0, L - it.head * .1, 0); shaft.add(new THREE.Mesh(wg, stdMat(B.tone('leather'), { rough: .9 })));
+    shaft.position.copy(fist).addScaledVector(ax, -L * it.grip); shaft.quaternion.setFromUnitVectors(UP, ax); shaft.name = 'spear'; B.bit(names[3], shaft); B.gear = [...(B.gear || []), 'spear']; }
+  if (it.kind === 'shield') { const e = at(names[1]), w = at(names[2]), arm = w.clone().sub(e).normalize(), n = V(it.side * (it.face?.[0] ?? 1), 0, it.face?.[1] ?? 0); n.addScaledVector(arm, -n.dot(arm)).normalize();
+    const c = e.clone().lerp(w, .5).addScaledVector(n, (it.off ?? .1) + it.t / 2), sh = new THREE.Group();
+    const disc = new THREE.CylinderGeometry(it.r, it.r * .96, it.t, 28); sh.add(new THREE.Mesh(disc, stdMat(B.tone('hide'), { rough: .9 })));
+    const rim = new THREE.TorusGeometry(it.r, it.t * .7, 6, 28); rim.rotateX(Math.PI / 2); sh.add(new THREE.Mesh(rim, stdMat(B.tone('wood'), { rough: .8 })));
+    const boss = new THREE.SphereGeometry(it.r * .2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2); boss.translate(0, it.t / 2, 0); sh.add(new THREE.Mesh(boss, stdMat(B.tone(it.boss || 'iron'), { rough: .5 })));
+    for (let k = 0; k < (it.lace || 0); k++) { const a = k / it.lace * Math.PI * 2, lg = new THREE.BoxGeometry(it.r * .06, it.t * 1.6, it.r * .16); lg.translate(Math.cos(a) * it.r * .86, 0, Math.sin(a) * it.r * .86); sh.add(new THREE.Mesh(lg, stdMat(B.tone('leather'), { rough: .9 }))); }
+    sh.position.copy(c); sh.quaternion.setFromUnitVectors(UP, n); sh.name = 'shield'; B.bit(names[1], sh); B.gear = [...(B.gear || []), 'shield']; } } };
 // wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh
 // a feather (Session 775): a tapered card from its root along dir, its width across in the wing's plane; the tip darker
 function feather(B, root, dir, across, len, w, bone, tone, tip) {
@@ -1610,3 +1627,28 @@ Object.assign(PLANS, {
     parts: PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { rubble: 11 } }] : [k, o]) })
 });
 export const SLIMES = ['slime', 'magmaslime'];
+// ── Session 933: the goblin (OG-041: crouched, long ears, a long spear and a round hide shield). Canon §9a makes goblins no gate's
+// antibody but a gate's occupiers: they hold a spent gate as a warren. The troll's frame, half its height and thin: the same
+// hunched biped walk, the knees deep, the head big for the body and slung forward, ears long and swept out, the eyes large and
+// yellow; it carries a spear in its right fist and a hide shield on its left forearm (the kit's first gear). The sheet's harness of
+// scrap leather waits for straps on a creature ──
+Object.assign(PLANS, {
+  goblin: re(PLANS.troll, { name: 'Goblin', src: 'OG-041 (goblin: crouched, long ears, a long spear and a round hide shield, a scrap-leather harness)', occupier: 1, from: 'troll', scale: .5,
+    rough: .7, mottle: 1.1, speedK: 1.15, pant: .05, neckNod: .07, spread: .07,
+    palette: { coat: [.44, .37, .25], saddle: [.33, .28, .18], belly: [.54, .46, .33], dark: [.06, .05, .04], horn: [.62, .56, .42], skin: [.46, .38, .27],
+      wood: [.36, .26, .15], iron: [.32, .31, .3], hide: [.56, .43, .29], leather: [.22, .15, .09] },
+    pattern: { kind: 'patches', tone: 'saddle', size: .3, cut: .25, amount: .5 },
+    parts: [
+      ['spine', { hip: [1.3, -.06], chest: [2.05, .3], n: 4, r: [.21, .24, .25], s: [1.15, .95], arch: .06, rump: .08, front: .05, frontDrop: .03, hump: { at: .85, up: .06, len: .24, r: .17 } }],
+      ['neck', { len: .26, n: 1, rise: 10, r: [.11, .1], fwd: .08, up: 0 }],
+      ['head', { len: .5, r: .27, pitch: 6, s: [1.1, 1, 1], muzzle: { len: .9, r: .12, taper: .5, nose: 1, drop: .22 }, jaw: { len: .88, r: .12, drop: .8 },
+        brow: { f: .5, up: .62, out: .45, r: .06 }, eyes: [{ f: .52, up: .42, out: .48, r: .055, color: [.9, .75, .15] }],
+        ears: { kind: 'cone', size: .5, f: .2, up: .5, out: .95, back: 25, splay: 72, tone: 'skin' }, fangs: { r: .02, len: .07, f: .9, up: -.75, out: .35 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .22, drop: .06, r: [.15, .1, .09], claws: { r: .015, len: .06 } }],
+      ['arms', { at: 1, out: .32, up: -.08, len: 1.25, r: [.085, .075, .07], dir: [.3, -1, .15], bend: 30, tone: 'coat', claws: { r: .014, len: .07 }, swing: .22 }],
+      ['gear', { list: [
+        { kind: 'spear', arm: 0, side: -1, len: 3.8, r: .03, head: .4, grip: .2, rise: 72, splay: .05 },
+        { kind: 'shield', arm: 0, side: 1, r: .56, t: .05, face: [1, .7], off: .1, lace: 8, boss: 'iron' }] }]
+    ] })
+});
+export const GOBLINS = ['goblin'];

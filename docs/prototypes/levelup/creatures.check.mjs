@@ -94,6 +94,20 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return { thorns: C.B.thorns, thornTris: tt, eggTris: et, meshes: thorns.length, segs, sacs: C.B.eggs, eggMeshes: eggs.length, low: +low.toFixed(3), above, n, tris: C.stats.tris }; });
   check(`spider: thorns on every leg segment past the hip (${sp.thorns} thorns on ${sp.meshes} of ${sp.segs} segments)`, sp.meshes === sp.segs && sp.thorns >= 3 * sp.segs, sp);
   check(`spider: ${sp.sacs} egg sacs under its abdomen, clear of the ground (lowest ${sp.low} m) and below the abdomen's tip through every gait (${sp.above} of ${sp.n} above)`, sp.sacs >= 5 && sp.eggMeshes >= 1 && sp.low > .03 && sp.above === 0, sp);
+  // the goblin (Session 933, OG-041): the troll's frame at half its height, and the kit's first gear: a spear in the right fist and a
+  // hide shield on the left forearm, which swing with the arms and never touch the ground or pass into the body through any gait
+  const gb = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.GOBLINS) { const C = K.build(K.genome(k, k + ':check')), P = new T.Vector3(), box = new T.Box3(), items = {}; C.rig.traverse(o => { if (o.name === 'spear' || o.name === 'shield') items[o.name] = o; });
+      const hip = C.legH * C.S; let low = 1e9, top = 0, head = 0, sep = 1e9;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
+        for (const o of Object.values(items)) { box.setFromObject(o); C.rig.localToWorld(P.set(0, 0, 0)); low = Math.min(low, box.min.y - C.root.position.y); }
+        box.setFromObject(items.spear); top = Math.max(top, box.max.y - C.root.position.y); C.byName.head.getWorldPosition(P); head = Math.max(head, P.y - C.root.position.y);
+        const sh = new T.Vector3(); items.shield.getWorldPosition(sh); const hp = new T.Vector3(); C.byName.spine0.getWorldPosition(hp); sep = Math.min(sep, Math.hypot(sh.x - hp.x, sh.z - hp.z)); } }
+      out[k] = { gear: C.B.gear, head: +head.toFixed(2), hip: +hip.toFixed(2), low: +low.toFixed(3), top: +top.toFixed(2), sep: +sep.toFixed(2), legs: C.B.legs.length, arms: C.B.arms.length, tris: C.stats.tris }; }
+    return out; });
+  for (const [k, t] of Object.entries(gb)) {
+    check(`${k}: a crouched biped about a goblin's height (head ${t.head} m up; ${t.legs} legs, ${t.arms} arms)`, t.legs === 2 && t.arms === 2 && t.head > .8 && t.head < 1.4, t);
+    check(`${k}: carries ${t.gear.join(' and ')}, clear of the ground through every gait (lowest ${t.low} m), the spear's point above its head (${t.top} m), the shield off its hip (${t.sep} m)`, t.gear.includes('spear') && t.gear.includes('shield') && t.low > .02 && t.top > t.head + .3 && t.sep > .2, t); }
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));
