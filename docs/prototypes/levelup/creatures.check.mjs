@@ -86,6 +86,14 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     const body = C.len;
     return { school: C.plan.school, legs: C.B.legs.length, wings: C.B.wings.filter(w => w.feathered).length, folded: +folded.toFixed(2), open: +open.toFixed(2), body: +body.toFixed(2) }; });
   check(`wingedthing: Gaoth's griffin, ${wt.legs} legs and ${wt.wings} feathered wings, the wingtips ${wt.folded} m apart folded and up to ${wt.open} m in flight (its body ${wt.body} m long)`, wt.school === 'Gaoth' && wt.legs === 4 && wt.wings === 2 && wt.open > wt.body * 1.5 && wt.folded < wt.open * .6, wt);
+  // the gargoyles (Session 956, OG-018's Cloch and Gaoth rows): stone wings folded close down the back at rest (`wingRest`), every wing bone
+  // behind the shoulder and inside a width less than its body's length, and spread wide when it flies
+  const ga = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
+    for (const k of K.GARGOYLES) { const C = K.build(K.genome(k, k + ':check')), pts = () => { C.rig.updateMatrixWorld(true); const b = new T.Box3(); C.rig.traverse(o => { if (o.isBone && /^wing/.test(o.name)) b.expandByPoint(o.getWorldPosition(new T.Vector3())); }); return b; };
+      C.gait = 'stand'; K.pose(C, 0); const rest = pts(), sh = C.byName.wingL0.getWorldPosition(new T.Vector3()), crown = C.byName.head.getWorldPosition(new T.Vector3()).y; C.gait = 'fly'; let open = 0; for (let i = 0; i < 12; i++) { K.pose(C, i / 12); const b = pts(); open = Math.max(open, b.max.x - b.min.x); }
+      out[k] = { school: C.plan.school, wings: C.B.wings.length, rest: +(rest.max.x - rest.min.x).toFixed(2), top: +rest.max.y.toFixed(2), crown: +crown.toFixed(2), open: +open.toFixed(2), len: +C.len.toFixed(2), behind: +(sh.z - rest.max.z).toFixed(2), tris: C.stats.tris }; }
+    return out; });
+  for (const [k, t] of Object.entries(ga)) check(`${k}: a gargoyle of ${t.school}, its ${t.wings} stone wings folded ${t.rest} m across at rest (its body ${t.len} m long), behind its shoulders, and ${t.open} m in flight`, t.wings === 2 && t.rest < t.len && t.behind >= -.05 && t.open > t.rest * 2, t);
   // the slimes' holes (Session 954, OG-041: "with holes through it"): a line down each hole's axis meets no hide, at rest or through a whole
   // crawl stride (each axis carried by its spine bone), while the same line moved two of the hole's radii toward the spine meets the body
   const ho = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};

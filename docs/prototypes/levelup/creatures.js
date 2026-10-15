@@ -790,6 +790,11 @@ export function pose(C, phase) {
     C.byName[W.arm[1]].rotation.set(0, -s * (2.5 * fold + .35 * up), -s * .15 * beat);
     C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat); }
   for (const W of B.wings) if (!W.feathered) { const flap = G.flap ? Math.sin(tau * ph) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
+    // an upright body's wings at rest (Session 956, the gargoyle's): the fold above lays a level back's wings along it, which on an
+    // upright one spreads them flat over its head. `wingRest` gives the arm's three bones their rest turns instead (x, then y and z
+    // mirrored by side), and the fingers a spread between them
+    if (!G.flap && C.plan.wingRest) { const R = C.plan.wingRest; for (let k = 0; k < 3; k++) C.byName[W.arm[k]].rotation.set(R[k][0], W.side * R[k][1], W.side * R[k][2] + W.side * .02 * Math.sin(tau * ph * .5));
+      W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * (R[3] ?? .2), 0)); continue; }
     C.byName[W.arm[0]].rotation.set(-.15 * fold, -W.side * .7 * fold, W.side * (.5 * flap - .35 * fold + .03 * Math.sin(tau * ph * .5)));
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
@@ -1789,6 +1794,32 @@ Object.assign(PLANS, {
     ] })
 });
 export const GOBLINS = ['goblin'];
+// ── Session 956: the gargoyle (OG-018: a stone Gargoyle in Cloch's row, a wind-swept one in Gaoth's; canon §9a puts gargoyles in both,
+// and the game's dormant Gargoyle is the foe it would replace). The goblin's crouched frame at five eighths of the troll's height, made of
+// stone: no ears, a heavy brow, horns swept back from it, fangs, a long tail, a ridge of stone spines down the back and bat's wings of
+// stone skin off the shoulders. It walks and trots crouched and beats its wings in `fly`. Gaoth's is the same body weathered pale by
+// the wind, its moss scoured off, its horns laid flatter and its wings a quarter wider ──
+Object.assign(PLANS, {
+  gargoyle: re(PLANS.goblin, { name: 'Gargoyle', src: 'OG-018 (Cloch: a stone Gargoyle)', school: 'Cloch', from: 'goblin', occupier: undefined, scale: .62, gaits: ['walk', 'trot', 'fly', 'stand'],
+    rough: .95, mottle: 2.2, speedK: .9, wag: .1, pant: 0, neckNod: .04, spread: .05, wingRest: [[.4, .9, 0], [0, 0, -1.6], [0, .5, .6], .2], fold: .7, finOpacity: 1, cell: .06,
+    palette: { coat: [.44, .43, .41], saddle: [.36, .35, .34], belly: [.5, .49, .46], moss: [.24, .3, .14], dark: [.05, .05, .05], horn: [.36, .35, .33], skin: [.4, .39, .37], rock: [.47, .45, .42], membrane: [.38, .37, .35], membraneEdge: [.25, .24, .23] },
+    pattern: { kind: 'patches', tone: 'moss', size: .2, cut: .1, amount: .5, up: .2 },
+    parts: [
+      ...PLANS.goblin.parts.filter(([k]) => !['gear', 'straps', 'head'].includes(k)),
+      ['head', { len: .48, r: .26, pitch: 8, s: [1.1, 1, 1], muzzle: { len: .85, r: .13, taper: .6, nose: 1, drop: .15 }, jaw: { len: .85, r: .12, drop: .9 },
+        brow: { f: .5, up: .66, out: .5, r: .08 }, eyes: [{ f: .52, up: .42, out: .48, r: .04, color: [.5, .48, .44] }], fangs: { r: .022, len: .08, f: .9, up: -.75, out: .35 },
+        horns: { len: .45, r: .075, f: .15, up: .75, out: .5, turn: .3, rise: .8, back: .6, spread: .2 } }],
+      ['tail', { len: 1.5, n: 5, r: [.11, .03], droop: 30, curl: 5 }],
+      ['wings', { at: .85, out: .25, up: .3, span: 3.5, fingers: 4, r: [.08, .06, .04], sag: .2, tone: 'membrane' }],
+      ['spines', { n: 8, from: .1, to: 1, len: .14, r: .06, tone: 'rock', taper: .4, stone: 1, dorsal: 1 }]
+    ] })
+});
+Object.assign(PLANS, {
+  gaothgargoyle: re(PLANS.gargoyle, { name: 'Gargoyle of Gaoth', src: 'OG-018 (Gaoth: a wind-swept Gargoyle)', school: 'Gaoth', from: 'gargoyle', scale: .62, rough: .8, mottle: 1.4, pattern: undefined, wingRest: PLANS.gargoyle.wingRest, cell: .06, spread: .05,
+    palette: { coat: [.66, .66, .64], saddle: [.56, .57, .56], belly: [.74, .74, .71], dark: [.06, .06, .07], horn: [.52, .52, .5], skin: [.6, .6, .58], rock: [.68, .68, .66], membrane: [.6, .61, .6], membraneEdge: [.42, .43, .44] },
+    parts: PLANS.gargoyle.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: o.span * 1.25 }] : k === 'head' ? [k, { ...o, horns: { ...o.horns, back: 1.1, rise: .3, len: o.horns.len * 1.15 } }] : [k, o]) })
+});
+export const GARGOYLES = ['gargoyle', 'gaothgargoyle'];
 // ── Session 934: the skeleton (OG-041: a notched sword and a round wooden shield, rags at the hips; canon §9a puts skeletons in Solas
 // and Uisce gates, so OG-018's drowned skeleton is the next to follow). The kit's first bare body: an upright biped with a man's
 // proportions whose capsules are drawn as bones (`bare`), a cage of ribs and a pelvis on its spine, a skull with dark sockets and a

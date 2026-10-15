@@ -20921,3 +20921,39 @@ Corrections made during the session:
 - **The fly gait holds it on the ground** with its wings beating, as the dragon's does. A griffin aloft needs the aloft gaits the hawks use, which carry no legs.
 - **Folded,** one long primary on each side still trails a little behind the hips.
 - **Its feathers are the fur shells barred,** and close up they read as a pelt.
+
+## v80 — Session 956 — The gargoyles of Cloch and Gaoth (L4, prototype only)
+OG-018 draws a stone Gargoyle in Cloch's row and a wind-swept one in Gaoth's. Canon §9a puts gargoyles in both schools, and the game has a dormant Gargoyle foe that the kit's plan would one day replace. The kit had no gargoyle. The sheet draws both and the catalogue flags nothing on them, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`gargoyle`, the Gargoyle (Cloch).** It is the goblin's crouched biped at 0.62 of the troll's height, 1.65 m long, built of stone:
+  - no ears, a heavy brow, horns swept back from it, fangs;
+  - a tail of 1.5 m in the troll's measure;
+  - a ridge of eight stone spines down the back;
+  - bat's wings of stone skin off the shoulders, 3.5 m across;
+  - grey stone with moss in patches, its eyes dull stone.
+  - It walks and trots crouched and beats its wings in `fly`. 58 bones; 6,824 triangles on a 6 cm grid, against 44,552 on the grid the kit picks from its thinnest capsule.
+- **`gaothgargoyle`, the Gargoyle of Gaoth:** the same body weathered pale by the wind, its moss scoured off, its horns laid flatter and a fifth longer, its wings a quarter wider. 7,316 triangles. `GARGOYLES` lists the two.
+- **`wingRest`, a new plan option: an upright body's wings at rest.**
+  - The kit folded the dragon's wings along its level back. On an upright body that spread them flat over its head like a canopy.
+  - `wingRest` gives the wing arm's three bones their rest turns, mirrored by side, and the fingers a spread between them.
+  - The values were found by a search over 6,144 sets: the narrowest fold that keeps every wing bone behind the shoulder, off the ground, and less than 0.9 m above the wing's root.
+  - The wings now fold up and back behind the shoulders, as a gargoyle on a cornice holds them.
+  - Two earlier tries failed. The first hung the wings to the ground behind it but fanned them out sideways. The second wrapped them round the front of its body.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,042 checks pass** (1,022 before). Both plans' family checks pass:
+  - Every foot reaches its target through the walk, the trot, the fly and the stand.
+  - Their feet are down for 0.69 of the walk, against a duty of 0.68, and 0.46 of the trot, against 0.45.
+  - The weights sum to one.
+- **A new check for each:** at rest, every wing bone lies behind the shoulder and within a width less than the body's length (1.22 m and 1.71 m, against 1.65 m and 1.79 m). Through a wingbeat they spread to 4.7 m and 6.22 m.
+- `kit.check.mjs` passes.
+- Pictures:
+  - `creatures-gargoyle.jpg` (side, beside a man), `creatures-gargoyle-front.jpg` and `creatures-gargoyle-fly.jpg` (the wings spread).
+  - `creatures-gaothgargoyle.jpg`.
+
+### Needs eyes
+- **The wings' stone skin reads near black** from most angles, because both faces of the membrane share one normal. The dragon's does the same.
+- **The head is a soft lump with horns.** A carved gargoyle's face (a snarl, deep-cut eyes) wants a sculpted head, as the skeleton's skull got in Session 942.
+- **Dormant:** the game's Gargoyle stands still until woken. The kit has no perched pose to hold it in, crouched on a ledge with its wings tight.
+- **The Gaoth gargoyle's "wind-swept" look** is only colour and proportion: nothing on it moves in the wind.
