@@ -642,3 +642,99 @@ export function aurenneCourtyardHouse(o = {}, r = stream('courtyard')) {
   return { group: all, shell: sh.group, room: group, sh, tris: Math.round(tris), draws: group.children.length, shellTris: sh.tris, shellCalls: sh.draws, rooms, boxes, paths, lamps, braziers, tables, seats, beds, floors: FL, ceil0: CEIL0,
     door: { x: 0, z: sh.d / 2, w: 1.3, h: 2.6 }, w: sh.w, d: sh.d };
 }
+
+// gatelandsForge(o, r) (Session 929, card F9; L5's interiors by nation, OG-043's Gatelands blacksmith; Michael's A on #303: rooms inside
+//   the street's own shell): the kit's forge (GL_PLANS.forge: 8.4 by 6.0 m of bare rubble, walls of 0.6 m, 3.2 m to the wall plate, slate,
+//   the stack in the west gable, the cart door standing open) as a working smithy. Against the west gable, the forge: a raised hearth of
+//   stone 0.78 m high, a bed of coals on it, a sooted hood over it narrowing into the stack. Beside it on the back side, the great
+//   bellows on their frame, the nozzle into the hearth's flank, worked by a rocking pole and a chain with a handle. The anvil on an
+//   elm stump 1.2 m out from the hearth, the slack tub of water and the coal bin either side of the hearth's front. Tongs and hammers on a
+//   rack along the back wall; the bench under the back window with a leg vice; the grindstone and the farrier's box at the east end;
+//   iron bars leaning on the gable, horseshoes on nails, a tethering ring. Cinders underfoot by the fire, flags in the shoeing bay
+//   inside the door. The roof open to its couples and tie beams, a lantern from the middle one.
+//   -> { group, shell, room, tris, draws, inner, under(z), floor, tieBeam, hearth {x0, x1, z0, z1, y}, hood, fire, anvil {x, z, y}, tub,
+//        bench {y}, door, paths, boxes, lantern, windows, w, d }
+let FM = null;
+function forgeMats() {
+  if (FM) return FM; const M = mats();
+  FM = { ...M, rubble: glMats().rubble, sootstone: mat('stone', { ns: 1.0, color: 0x5a544c }), cinder: mat('rock', { ns: .9, color: 0x3e3a36, rough: 1 }), coal: new THREE.MeshStandardMaterial({ color: 0x111113, roughness: .55, metalness: .1 }),
+    steel: new THREE.MeshStandardMaterial({ color: 0x5c5e62, roughness: .3, metalness: .85 }), leather: new THREE.MeshStandardMaterial({ color: 0x24170f, roughness: .75 }), elm: mat('beam', { ns: 1.2, color: 0x7a6048 }),
+    water: new THREE.MeshStandardMaterial({ color: 0x14201f, roughness: .05, metalness: .1 }), grit: mat('rock', { ns: .8, color: 0xb0a690, rough: 1 }) };
+  return FM;
+}
+// a solid whose bottom is the rectangle b [x0, x1, z0, z1] at y0 and whose top is t at y1 (the hood)
+function frustum(b, y0, t, y1) { const g = new THREE.BoxGeometry(1, 1, 1).toNonIndexed(), P = g.attributes.position;
+  for (let i = 0; i < P.count; i++) { const top = P.getY(i) > 0, R = top ? t : b, u = P.getX(i) + .5, w = P.getZ(i) + .5; P.setXYZ(i, R[0] + (R[1] - R[0]) * u, top ? y1 : y0, R[2] + (R[3] - R[2]) * w); }
+  g.computeVertexNormals(); return g; }
+export function gatelandsForge(o = {}, r = stream('forge')) {
+  const plan = GL_PLANS.forge({}); plan.interior = true; plan.r = stream('forge-shell');
+  const shell = gatelandsBuilding(plan), M = forgeMats(), B = new Map(), boxes = [], t = plan.t, h = plan.floors[0], X = plan.w / 2 - t, Z = plan.d / 2 - t, F0 = .04, p = (SCALE.pitch.slate + 2) * Math.PI / 180, tp = Math.tan(p);
+  const under = z => h + (plan.d / 2 - Math.abs(z)) * tp - .03 /* the slate's underside */;
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1))); worldUV(g, uv); if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
+  // the floor: trodden cinders from the forge to the bench, flags in the shoeing bay inside the door (x > 0.2)
+  const BAY = .2; bx('cinder', -X, BAY, 0, F0, -Z, Z);
+  for (let z = -Z; z < Z - .05;) { const d = Math.min(Z - z, .5 + r() * .35); for (let x = BAY; x < X - .05;) { const w = Math.min(X - x, .55 + r() * .45); put(new THREE.BoxGeometry(w - .02, F0, d - .02), 'flag', x + w / 2, F0 / 2 + (r() - .5) * .006, z + d / 2, (r() - .5) * .01, .7); x += w; } z += d; }
+  // the forge: a hearth of stone against the gable, a lip round its top, a bed of coals and the fire in it, the tuyère in its back flank
+  const hearth = { x0: -X, x1: -X + 1.05, z0: -.8, z1: .8, y: .78 }; bx('rubble', hearth.x0, hearth.x1, 0, hearth.y - .06, hearth.z0, hearth.z1, 'hearth');
+  bx('sootstone', hearth.x0, hearth.x1, hearth.y - .06, hearth.y, hearth.z0, hearth.z0 + .12); bx('sootstone', hearth.x0, hearth.x1, hearth.y - .06, hearth.y, hearth.z1 - .12, hearth.z1); bx('sootstone', hearth.x1 - .12, hearth.x1, hearth.y - .06, hearth.y, hearth.z0 + .12, hearth.z1 - .12);
+  bx('coal', hearth.x0, hearth.x1 - .12, hearth.y - .1, hearth.y - .04, hearth.z0 + .12, hearth.z1 - .12);
+  const fire = [hearth.x0 + .5, hearth.y + .04, -.15]; for (let i = 0; i < 16; i++) { const a = r() * Math.PI * 2, d = .2 + r() * .3; put(new THREE.DodecahedronGeometry(.05 + r() * .03, 0), 'coal', fire[0] + Math.cos(a) * d, hearth.y - .02, fire[2] + Math.sin(a) * d * 1.2, r() * 3); }
+  put(new THREE.SphereGeometry(.2, 12, 6).scale(1.1, .35, 1.3), 'ember', fire[0], hearth.y - .03, fire[2]); for (let i = 0; i < 3; i++) put(new THREE.ConeGeometry(.05, .16 + i * .05, 7), 'flame', fire[0] + (i - 1) * .06, hearth.y + .07, fire[2] + (i - 1) * .07);
+  // the hood: from 1.85 m over the hearth's front up into the stack in the gable (the shell's stack stands in the wall from 2.6 m)
+  const hood = { y0: 1.85, y1: h - .55 }; put(frustum([hearth.x0, hearth.x1 + .05, hearth.z0 - .1, hearth.z1 + .1], hood.y0, [-X, -X + .4, -.36, .36], hood.y1), 'sootstone', 0, 0, 0, 0, .5);
+  bx('soot', hearth.x0 + .02, hearth.x1 - .05, hood.y0 - .01, hood.y0, hearth.z0 - .05, hearth.z1 + .05); bx('iron', hearth.x1 - .02, hearth.x1 + .08, hood.y0 - .08, hood.y0, hearth.z0 - .12, hearth.z1 + .12);
+  // the great bellows beside the hearth on the back side, on a frame: two boards and the leather between, the nozzle into the hearth's
+  // flank; a rocking pole over them on a post, a chain down from its end to a handle
+  const bel = { x0: hearth.x0 + .05, x1: hearth.x0 + .95, z0: -Z + .05, z1: hearth.z0 - .05 }; { const bxm = (bel.x0 + bel.x1) / 2, bz0 = bel.z0 + .05, bz1 = bel.z1 - .25;
+    for (const x of [bel.x0, bel.x1 - .06]) for (const z of [bel.z0, bel.z1 - .3]) bx('oak', x, x + .06, 0, .9, z, z + .06); bx('oak', bel.x0, bel.x1, .84, .9, bel.z0, bel.z1 - .24); boxes.push({ tag: 'bellows', x0: bel.x0, x1: bel.x1, y0: 0, y1: 1.4, z0: bel.z0, z1: bel.z1 });
+    const s = new THREE.Shape(); s.moveTo(-.38, 0); s.lineTo(.38, 0); s.quadraticCurveTo(.42, (bz1 - bz0) * .7, .1, bz1 - bz0); s.lineTo(-.1, bz1 - bz0); s.quadraticCurveTo(-.42, (bz1 - bz0) * .7, -.38, 0);
+    const board = y => { const g = new THREE.ExtrudeGeometry(s, { depth: .05, bevelEnabled: false }); g.rotateX(Math.PI / 2); put(g, 'elm', bxm, y, bz0); };
+    board(.97); board(1.32); /* the leather between the boards in four folds, pulled in under the boards' edges */ for (let j = 0; j < 4; j++) { const y = 1.27 - j * .075, k = j % 2 ? .7 : .88, lea = new THREE.ExtrudeGeometry(s, { depth: .075, bevelEnabled: false }); lea.scale(k, k, 1); lea.rotateX(Math.PI / 2); put(lea, 'leather', bxm, y, bz0 + (1 - k) * (bz1 - bz0) * .3); }
+    const nz = new THREE.CylinderGeometry(.03, .06, .5, 8); put(nz, 'iron', bxm, .86, bz1 + .2, 0, .6, Math.PI / 2 - .5); }
+  const pole = { x: hearth.x1 + .55, y: 2.0, z: -Z + .5 }; bx('oak', hearth.x0 + .35, hearth.x0 + .47, 0, pole.y - .05, -Z + .02, -Z + .14, 'bellows'); put(new THREE.BoxGeometry(pole.x - hearth.x0 + .1, .08, .08), 'oak', (hearth.x0 + .3 + pole.x) / 2, pole.y, -Z + .3, 0, .6, 0, -.05);
+  bx('iron', pole.x - .2, pole.x - .19, 1.45, pole.y - .02, -Z + .29, -Z + .31); put(new THREE.CylinderGeometry(.02, .02, .22, 6), 'oak', pole.x - .2, 1.45, -Z + .3, 0, .6, Math.PI / 2);
+  // the anvil on its stump: 1.2 m out from the hearth's front, its horn toward the door; the face at 0.82 m
+  const anvil = { x: hearth.x1 + .9, z: .05, y: .82 }; { const { x, z, y } = anvil; put(new THREE.CylinderGeometry(.27, .3, .5, 12), 'elm', x, .25, z); bx('steel', x - .14, x + .14, .5, .58, z - .22, z + .22); bx('steel', x - .07, x + .07, .58, .7, z - .14, z + .14);
+    bx('steel', x - .09, x + .09, .7, y, z - .26, z + .18); const horn = new THREE.ConeGeometry(.07, .3, 10); horn.rotateX(Math.PI / 2); horn.scale(1, .8, 1); put(horn, 'steel', x, y - .05, z + .33); bx('steel', x - .09, x + .09, y - .12, y - .02, z - .34, z - .26);
+    boxes.push({ tag: 'anvil', x0: x - .3, x1: x + .3, y0: 0, y1: y, z0: z - .34, z1: z + .48 });
+    /* a hammer laid on the face and the tongs leaning on the stump */ bx('oak', x - .015, x + .015, y + .01, y + .04, z - .05, z + .27); bx('iron', x - .04, x + .04, y, y + .06, z - .1, z - .02);
+    put(new THREE.BoxGeometry(.02, .62, .02), 'iron', x + .28, .3, z - .1, 0, .6, 0, -.25); put(new THREE.BoxGeometry(.02, .62, .02), 'iron', x + .28, .3, z - .06, 0, .6, 0, -.2); }
+  // the slack tub (a half barrel of water) at the hearth's door side, the coal bin in the corner beyond it
+  const tub = { x: hearth.x1 + .32, z: 1.3, r: .32 }; put(new THREE.CylinderGeometry(tub.r, tub.r * .9, .6, 16, 1, true), 'oak', tub.x, .3, tub.z); put(new THREE.CylinderGeometry(tub.r * .9, tub.r * .9, .03, 16), 'oak', tub.x, .02, tub.z);
+  put(new THREE.CircleGeometry(tub.r - .02, 16).rotateX(-Math.PI / 2), 'water', tub.x, .55, tub.z); for (const y of [.1, .5]) put(new THREE.TorusGeometry(tub.r + .005, .012, 4, 18).rotateX(Math.PI / 2), 'iron', tub.x, y, tub.z);
+  boxes.push({ tag: 'tub', x0: tub.x - tub.r, x1: tub.x + tub.r, y0: 0, y1: .6, z0: tub.z - tub.r, z1: tub.z + tub.r });
+  const bin = { x0: -X, x1: -X + .75, z0: hearth.z1 + .25, z1: Z }; { const { x0, x1, z0, z1 } = bin; bx('oak', x0, x1, 0, .45, z0, z0 + .05, 'bin'); bx('oak', x1 - .05, x1, 0, .45, z0, z1, 'bin');
+    for (let i = 0; i < 26; i++) put(new THREE.DodecahedronGeometry(.06 + r() * .05, 0), 'coal', x0 + .1 + r() * (x1 - x0 - .2), .13 + r() * .3 * (1 - Math.abs(r() - .5)), z0 + .15 + r() * (z1 - z0 - .25), r() * 3);
+    bx('coal', x0, x1 - .05, 0, .22, z0 + .05, z1); }
+  // the tool rack along the back wall east of the bellows: a rail on two brackets, tongs and hammers hung from it
+  { const x0 = bel.x1 + .5, x1 = x0 + 1.6, y = 1.75; bx('oak', x0, x1, y, y + .08, -Z, -Z + .1, 'rack'); for (const x of [x0 + .05, x1 - .1]) bx('iron', x, x + .05, y - .3, y, -Z, -Z + .06);
+    for (let k = 0, x = x0 + .2; x < x1 - .12; x += .19, k++) { if (k % 3 === 2) { bx('oak', x - .015, x + .015, y - .42, y, -Z + .1, -Z + .13); bx('iron', x - .05, x + .05, y - .48, y - .4, -Z + .08, -Z + .16); }
+      else { const L = .5 + (k % 2) * .12; put(new THREE.BoxGeometry(.015, L, .015), 'iron', x - .02, y - L / 2 + .02, -Z + .12, 0, .6, 0, .05); put(new THREE.BoxGeometry(.015, L, .015), 'iron', x + .02, y - L / 2 + .02, -Z + .12, 0, .6, 0, -.05); } } }
+  // the bench under the back window, a leg vice on its end
+  const bench = { x0: .1, x1: 2.5, z0: -Z, z1: -Z + .65, y: .9 }; { const { x0, x1, z0, z1, y } = bench; bx('oak', x0, x1, y - .08, y, z0, z1, 'bench'); for (const x of [x0 + .05, x1 - .12]) for (const z of [z0 + .04, z1 - .1]) bx('oak', x, x + .07, 0, y - .08, z, z + .07);
+    bx('oak', x0 + .05, x1 - .05, .15, .19, z0 + .05, z1 - .05); bx('iron', x1 - .35, x1 - .15, y, y + .14, z1 - .05, z1 + .05); bx('iron', x1 - .29, x1 - .21, 0, y + .14, z1 + .05, z1 + .11, 'vice'); bx('iron', x1 - .45, x1 - .05, y + .08, y + .1, z1 + .12, z1 + .14);
+    for (let k = 0; k < 5; k++) bx(k % 2 ? 'iron' : 'oak', x0 + .3 + k * .35, x0 + .5 + k * .35, y, y + .03, z0 + .2, z0 + .35); }
+  // the east end: the grindstone on its frame, the farrier's box, iron bars against the gable, horseshoes on nails, a tethering ring
+  const grind = { x: X - .55, z: -1.3 }; { const { x, z } = grind; for (const dz of [-.22, .22]) { bx('oak', x - .3, x + .3, .1, .16, z + dz - .03, z + dz + .03); bx('oak', x - .03, x + .03, 0, .7, z + dz - .03, z + dz + .03); }
+    bx('oak', x - .3, x - .24, 0, .16, z - .25, z + .25); bx('oak', x + .24, x + .3, 0, .16, z - .25, z + .25); const st = new THREE.CylinderGeometry(.4, .4, .12, 24); st.rotateX(Math.PI / 2); put(st, 'grit', x, .74, z, 0, .4); bx('iron', x - .015, x + .015, .72, .76, z - .3, z + .3);
+    bx('iron', x - .01, x + .01, .58, .76, z + .3, z + .32); boxes.push({ tag: 'grind', x0: x - .4, x1: x + .4, y0: 0, y1: 1.14, z0: z - .32, z1: z + .32 }); }
+  bx('oak', X - .7, X - .1, 0, .35, Z - .55, Z - .1, 'farrier'); bx('oak', X - .42, X - .38, .35, .55, Z - .55, Z - .1); bx('oak', X - .42, X - .38, .52, .56, Z - .55, Z - .1);
+  for (let i = 0; i < 7; i++) put(new THREE.BoxGeometry(.03, 2.1, .03), 'iron', X - .1 - i * .015, 1.07, .7 + i * .09, 0, .6, -.1 - i * .01, 0); boxes.push({ tag: 'stock', x0: X - .32, x1: X, y0: 0, y1: 2.1, z0: .65, z1: 1.35 });
+  for (let k = 0; k < 8; k++) { const zz = -2.1 + (k % 4) * .2, y = 1.65 + Math.floor(k / 4) * .24; put(new THREE.TorusGeometry(.065, .012, 4, 12, Math.PI * 1.5), 'iron', X - .02, y, zz, Math.PI / 2, .6, 0, Math.PI * .75); }
+  put(new THREE.TorusGeometry(.07, .012, 6, 14).rotateY(Math.PI / 2), 'iron', X - .03, 1.25, 1.75);
+  // the roof: three couples, each with a tie beam across at the wall plate; a purlin either side; the lantern from the middle tie beam
+  const TB = h - .2, L2 = Z / Math.cos(p); for (const x of [-1.6, .6, 2.6]) { for (const s of [-1, 1]) { /* each blade from the ridge to its foot on the wall's inner face */ const g = new THREE.BoxGeometry(.12, .16, L2 - .1); g.rotateX(s * p); put(g, 'oak', x, under(s * Z / 2) - .12, s * Z / 2); }
+    bx('oak', x - .08, x + .08, TB, h - .02, -Z, Z); }
+  for (const s of [-1, 1]) { const zz = s * Z * .5; put(new THREE.BoxGeometry(plan.w - 2 * t, .12, .14), 'oak', 0, under(zz) - .25, zz); }
+  const lantern = [.6, TB - .7, .5]; bx('iron', .595, .605, lantern[1] + .12, TB, .495, .505); put(new THREE.CylinderGeometry(.07, .08, .2, 6), 'glow', ...lantern); put(new THREE.ConeGeometry(.09, .1, 6), 'iron', lantern[0], lantern[1] + .15, lantern[2]);
+  // the windows are clear from inside
+  { const G = glMats().glass, Lt = glMats().lit; shell.traverse(m => { if (m.isMesh && (m.material === G || m.material === Lt)) { m.material = mats().pane; m.name = 'pane'; } }); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow', 'water'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const all = new THREE.Group(); all.add(shell, group); const door = plan.open.front[0];
+  const windows = Object.entries(plan.open).flatMap(([f, os]) => (os || []).filter(q => q.kind === 'win').map(q => ({ face: f, x: f === 'front' ? q.x : f === 'back' ? -q.x : plan.w / 2, z: f === 'front' ? plan.d / 2 : f === 'back' ? -plan.d / 2 : -q.x, y: q.y, w: q.w, h: q.h })));
+  const paths = [[[door.x, Z - .2], [door.x, .9], [anvil.x + .75, anvil.z]], [[door.x, Z - .2], [door.x, bench.z1 + .4]], [[door.x, Z - .2], [grind.x - .7, -.3], [grind.x - .7, grind.z]]];
+  return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, under, floor: F0, tieBeam: TB,
+    hearth, hood, fire, anvil, tub, bench, bellows: bel, grind, door: { x: door.x, z: plan.d / 2, w: door.w, h: door.h }, paths, boxes, lantern, windows, w: plan.w, d: plan.d, eave: h };
+}

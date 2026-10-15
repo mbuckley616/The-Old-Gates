@@ -19970,3 +19970,42 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The square courses are small beside the lateens they replace.** The caravel's masts are short, so a course reaches only from 2.2 m over the deck up to its yard. A topsail, or a deeper course, would bring the sail back, if #347 goes A or B.
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
+
+## v80 — Session 929 — Card F9's eighth room: the Gatelands smithy (prototype only)
+FREEZE #297 is still open, so this run is the prototypes only. The hulls left on card F11 wait on DECISION #347, and the Makers' six props are built (Sessions 837 to 851), so the run took the next room on backlog L5's "interiors by nation": the smithy, in the Gatelands' dress first. OG-043's board was reread (its Gatelands blacksmith is a low stone building with the forge's glow in an open front; the catalogue flags only its invented "Sunhand order", which is not touched here), with OG-057 and OG-069 for Bram's tools: hammers, tongs, an anvil. Nothing new is asked: the room is built inside the street's own shell as #303 set, in the kit's rubble and slate. This touches only `docs/prototypes/levelup/` (`pieces.js`, `rooms.js`, `rooms-view.js`, `rooms.check.mjs`).
+
+**The building** (`GL_PLANS.forge` in `pieces.js`, the Gatelands kit):
+- 8.4 by 6.0 m, of bare rubble with dressed quoins and lintels, walls of 0.6 m, one storey of 3.2 m to the wall plate, slate at 38° between parapet gables. The forge's stack stands in the west gable.
+- A cart door 2.4 m wide and 2.6 m high in the front, wide enough for a horse to be led in to be shod. A cart door can now stand open (`open: true` on a `cart` opening): each leaf is swung back flat against the outer wall beside the opening, with its three straps. The warehouse's cart door is unchanged.
+- A window by the anvil in the front, one over the bench at the back, one in the east gable, and the harp trade sign on its bracket at the west corner.
+- 1,378 triangles in 10 draws.
+
+**The room** (`gatelandsForge` in `rooms.js`):
+- **The forge:** a hearth of stone 1.05 by 1.6 m and 0.78 m high against the west gable, with a sooted lip round its top, a bed of coals, and the fire in it. Over it a hood of sooted stone from 1.85 m, narrowing into the stack, with an iron edge on its front.
+- **The bellows:** the great bellows stand on a frame beside the hearth on the back side, two pear-shaped boards of elm with the leather between them in four folds, the nozzle into the hearth's flank. A rocking pole over them on its post, and a chain down from its end to a handle.
+- **The anvil** on an elm stump, its face at 0.82 m and its horn toward the door, 0.81 m out from the hearth. A hammer lies on the face and two pairs of tongs lean on the stump. The slack tub, a half barrel of water, stands between the hearth and the door, and the coal bin in the corner beyond it.
+- **The back wall:** a rack of tongs and hammers east of the bellows, and the bench under the back window, 0.9 m high, with a leg vice on its end.
+- **The east end:** the grindstone on its frame, the farrier's box, iron bars leaning on the gable, two rows of horseshoes on nails, and a tethering ring.
+- **The floor:** trodden cinders from the forge to the bench, flags in the shoeing bay inside the door.
+- **The roof:** open to three couples, each with a tie beam across at 2.96 m over the floor, and a purlin each side. A lantern hangs from the middle tie beam.
+- 5,366 to 5,438 triangles in 16 draws.
+
+The view: `rooms.html?room=forge`, with `view=forge` (from inside the door to the hearth and the anvil), `anvil` (from the anvil's side into the fire), `bench` (the bench, the rack and the bellows) and `outside`, and `&hour=` as for the other rooms.
+
+Corrections made during the session:
+- The bellows' leather was first one extrusion as wide as the boards. From the side it read as a copper drum. It is now four folds pulled in under the boards' edges, in a plain dark leather.
+- Coal lumps in the bin and the iron bars' tilted feet dipped up to 2 cm under the floor. Both are raised.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 62 of 62 pass** (54 after Session 899); `pieces.check.mjs` still passes whole, the kit having gained a plan and the open cart door. Two views are new on the page check, with no page errors. Six checks are new, over four keys:
+  - **The builds:** 5,366 to 5,438 triangles in 16 meshes, on the forge's 1,378 in 10; each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the slate (no point through), and no two pieces in each other.
+  - **The walks:** from the open door to the anvil's side, to the bench and to the grindstone, all clear by 0.15 m. There are 2.96 m under the tie beams.
+  - **A smith and a horse fit:** the anvil's face at 0.82 m, the bench at 0.9 m, the hearth at 0.78 m. The door is 2.4 by 2.6 m, and both its leaves are outside the wall.
+  - **The forge works:** the fire is on the hearth under the hood, and the hood's top is in the stack. The anvil is 0.81 m out from the hearth, and the slack tub 1.38 m from the anvil.
+  - **Daylight:** through each of the three windows, 12 of 18 rays land inside the room.
+- **Pictures:** `rooms-forge-forge.jpg`, `-anvil`, `-bench`, `-outside` and `-forge-night`.
+### Needs eyes
+- **The door is square-headed under a stone lintel.** Many Irish forges have a horseshoe-shaped surround round the door. That would be a carved piece on the front, if Michael wants it.
+- **The inner walls are the shell's rubble, as bright as its outside.** A forge's walls are black with smoke. A soot wash on the inner faces near the hearth would help, but the shell's wall is one slab, with one material on both faces.
+- **The fire's light is a point light at the hearth.** It has no sparks and no glow on the hood's underside.
+- **Owed:** the Mark's smithy (in a timber hall) and Aurenne's (in an arcade), then the alchemist, the guildhall, the shrine and the library in each nation's dress.
