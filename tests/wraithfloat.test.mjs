@@ -16,8 +16,9 @@ const r = await page.evaluate(() => {
     // the hem's tongues: the lowest vertices round the robe, by bearing (24), and how much their depths differ
     let lowY = 1e9; const bins = new Array(24).fill(1e9); for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); lowY = Math.min(lowY, y); const b = Math.floor((Math.atan2(pa.getX(i), pa.getZ(i)) + Math.PI) / (Math.PI / 12)) % 24; if (Math.hypot(pa.getX(i), pa.getZ(i)) > .12) bins[b] = Math.min(bins[b], y); }
     const fin = bins.filter(v => v < lowY + .3), spread = Math.max(...fin) - Math.min(...fin);
-    // in play a wraith glides at .24 ± .05 above the ground (tickPeople); its lowest bind point, scaled, at the bob's lowest
-    const hover = rig.g.wraith ? .24 - .05 : 0, minClear = lowY * rig.root.scale.y + hover;
+    // in play a wraith glides at .24 ± .05 above the ground (tickPeople), times SCALE.ROOM_K since F2a made its body 1.44 times
+    // taller (S905); its lowest bind point, scaled, at the bob's lowest
+    const hover = rig.g.wraith ? (.24 - .05) * SCALE.ROOM_K : 0, minClear = lowY * rig.root.scale.y + hover;
     WORLD.scene.remove(rig.root);
     out[type] = { onLeg, spread: +spread.toFixed(3), clear: +minClear.toFixed(3), tris: (mesh.geometry.index ? mesh.geometry.index.count : pa.count) / 3 };
   }

@@ -1277,7 +1277,7 @@ function tickPeople(dt,now){
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
     if(rig.sleep)mode='sleep'; // S752 — asleep in bed (personLie)
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
-    if(rig.g.wraith){mode='idle';root.position.y=.24+.05*Math.sin(now*.0021+rig.g.phase);} // a wraith takes no steps: it glides, a little off the ground
+    if(rig.g.wraith){mode='idle';root.position.y=(.24+.05*Math.sin(now*.0021+rig.g.phase))*SCALE.ROOM_K;} // a wraith takes no steps: it glides, a little off the ground (S905, F2a: as high against its taller body as before)
     const t=now/1000*rig.g.tempo+rig.g.phase;
     {const P=pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig));pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];}
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod&&!rig.sleep)peopleSwing(rig,dt); // S267; a sleeper's hair and cloak lie still (S752)
