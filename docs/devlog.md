@@ -19643,3 +19643,42 @@ What changed in `people.js`:
 - **The star is painted, not raised.** Bronze hoplons often carry the sign in relief; a normal map would show it.
 - **The porpax and the antilabe** are plain: a band and a strap, with no cord loops round the inside of the rim.
 - **Owed:** the kite and the hoplon slung under a cloak.
+
+## v80 — Session 916 — The kite and the hoplon slung under a cloak (L7 and B2, prototype only)
+Sessions 911 and 913 left the kite and the hoplon off under a cloak, because the slung shield (Session 905) was laid for a round board only. A cloak hangs over the arm that would hold a shield, and a shoulder cape stands out over its top edge, so under either the shield goes on the back by its strap, as the round one does. This needs no new question: it is the round shield's rule, carried to the two shapes Michael already has. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`). (Session 915 was already taken on another branch, so this is 916.)
+
+What changed in `people.js`:
+- **`buildShieldBack` takes the shape.** For a kite or a hoplon it reads the shape's outline and back surface (`KITE`, `HOPLON`), as the held one does:
+  - The kite hangs point down. Its rounded top, and the hoplon's rim, sit 6 cm under the nape, as the round shield's rim does.
+  - Its back is laid 5 mm outside whatever lies within its outline, read at each point's own place on the bend or the dish (`kiteBack`, with no arm). So the kite's bend and the hoplon's 10 cm dish wrap round the back, their hollow side to the body.
+  - The guige is the round shield's: over the right shoulder, across the chest to the left hip and round the side. It is trimmed where it goes under the board, now by the shape's own outline (`kiteIn`) and its own back surface.
+  - The promise is read back off the chest bone with `kiteInside`: nothing of the person, the cloak or the hair inside the boards or the rim.
+- **`kiteParts(..., flat)`.** Slung, the enarmes, the porpax and the antilabe lie slack and flat on the board's back (4 mm straps, 2 mm proud), so they stay inside the 5 mm the board stands off. Held, they stand off to the arm's own depth as before.
+- **Triangles:** a slung kite with its strap is 4,446 to 4,472, and a slung hoplon is 4,856.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 252 checks pass.** There are five new ones:
+  - a Gatelander in a cloak with the hood down, a kite;
+  - a Gatelander woman in a shoulder cape, a kite;
+  - a Gatelander in mail and a helm under a cloak, the Crown's red kite;
+  - an Aurennais in a cloak, a blue hoplon;
+  - an Aurennais woman in a cape, a bronze hoplon.
+- For each of the five:
+  - It is carried by `spine03`, and so is its strap.
+  - Nothing is inside its boards or rim: 0 of 4,907 to 13,315 points within its outline. The nearest point is 5.0 mm behind it.
+  - The strap is 1.81 to 2.01 m long, with nothing through it (0 of 141 to 193 points within 3 cm under it).
+  - The kite's point is 49 to 70 cm off the ground, and the hoplon's rim 51 to 67 cm.
+  - Each saves and loads.
+- The nine round shields' checks pass with the same numbers as before. `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-kite-slung.jpg` and `-back`: a Gatelander in a cloak, the harp on his back.
+  - `builder-armour-hoplon-slung.jpg` (in profile, the dish against the back) and `-back`.
+  - `builder-armour-hoplon-slung-woman.jpg`: the bronze hoplon over a cape.
+### Needs eyes
+- **The hoplon is big on the back.** At 90 cm it covers the back from the shoulders to the thighs, and its rim stands out past both arms. It is the size Session 913 built, and a hoplite did carry it so. A smaller Aurennais shield for travel would be a new choice, so it is not made here.
+- **The Aurennais man's full cloak hangs as a box** (it does so with no shield: a probe picture without one shows the same). Its front panels stand off his chest in flat slabs, and its hem is square. This is the cloak's own fault on his build, not the shield's, and it is owed to the cloak.
+- **The guige** is the round shield's line for all three shapes. On the kite it leaves from under the round top. A real kite's guige is often fixed higher, at the top's two shoulders.
+- **Owed:**
+  - the spearhead by island;
+  - the crossbow;
+  - the shield carried at the ready (B4).

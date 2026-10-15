@@ -1000,7 +1000,7 @@ function hoplonTex(col, paint, wood, metal) {
   x.fillStyle = css; x.beginPath(); for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2 - Math.PI / 2, r = k % 2 ? 46 : (k % 4 ? 150 : 205); x.lineTo(256 + r * Math.cos(a), 256 + r * Math.sin(a)); } x.closePath(); x.fill();
   x.beginPath(); x.arc(256, 256, 54, 0, 7); x.fill(); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 3; x.stroke(); t.needsUpdate = true; return t;
 }
-function kiteParts(D, gripZ = -.03, H = KITE) {
+function kiteParts(D, gripZ = -.03, H = KITE, flat = false) {
   const hop = H === HOPLON, { W, TOP, TIP } = KITE, T = H.T, NT = 64, NR = 10, pos = [], uv = [], idx = [], pos2 = [], idx2 = [], u0 = u => hop ? u / H.R * .5 + .5 : u / W * .5 + .5, v0 = v => hop ? (v - H.MID) / H.R * .5 + .5 : (v - TIP) / (TOP - TIP);
   for (let j = 0; j < NR; j++) for (let t = 0; t <= NT; t++) { const a = t / NT * Math.PI * 2, r = kiteR(a, H.line) * (j === 0 ? .002 : j / (NR - 1)), u = r * Math.cos(a), v = r * Math.sin(a);
     pos.push(u, v, H.z(u, v) + T); uv.push(u0(u), v0(v)); pos2.push(u, v, H.z(u, v)); }
@@ -1016,8 +1016,9 @@ function kiteParts(D, gripZ = -.03, H = KITE) {
   const lea = new THREE.MeshStandardMaterial({ color: sRGB(...woodC.map(v => v * .55)), roughness: .8 }), metal = new THREE.MeshStandardMaterial({ color: sRGB(...(D.helm || [.42, .43, .45])), metalness: .55, roughness: .38 });
   const sh = new THREE.Group(); sh.name = 'shield'; sh.add(face, backM, rim);
   const bronze = new THREE.MeshStandardMaterial({ color: sRGB(...(D.shieldRim || [.62, .45, .22])), metalness: .55, roughness: .38 });
-  for (const [v, half, depth, wd, mat] of hop ? [[H.MID, .065, gripZ - .045, .04, bronze], [0, .05, gripZ, .025, lea]] : [[.17, .07, gripZ - .03, .035, lea], [0, .055, gripZ, .03, lea]]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, u = -half + 2 * half * t; pts.push(new THREE.Vector3(u, v, H.z(u, v) + depth * Math.sin(Math.PI * t) ** .6)); }
-    sh.add(new THREE.Mesh(tubeGeom(pts, pts.map(() => wd / 2), 4), mat));
+  // slung on the back (Session 916) the straps lie slack and flat on the board's back, 2 mm proud of it, as nothing is through them
+  for (const [v, half, depth, wd, mat] of hop ? [[H.MID, .065, gripZ - .045, .04, bronze], [0, .05, gripZ, .025, lea]] : [[.17, .07, gripZ - .03, .035, lea], [0, .055, gripZ, .03, lea]]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, u = -half + 2 * half * t; pts.push(new THREE.Vector3(u, v, H.z(u, v) + (flat ? .002 : depth * Math.sin(Math.PI * t) ** .6))); }
+    sh.add(new THREE.Mesh(tubeGeom(pts, pts.map(() => flat ? .004 : wd / 2), 4), mat));
     for (const u of [-half, half]) { const rv = new THREE.Mesh(new THREE.SphereGeometry(.006, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), metal); rv.rotation.x = Math.PI / 2; rv.position.set(u, v, H.z(u, v) + T + .001); sh.add(rv); } }
   sh.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   return sh;
@@ -1070,12 +1071,15 @@ function buildKite(G, body, byName, meshes, root) {
 // left side under the arm (over the cloak where the cloak hangs over the arm), and goes back under the board's lower edge. It is
 // laid along rays from inside the body: at each step it rides 3.5 mm over the furthest point within 3 cm of its ray, and is pulled
 // taut, so it bridges hollows as a strap does. It is not drawn under the board
+// A kite or a hoplon (Session 916) is slung the same way, the kite point down, its top and the hoplon's rim 6 cm under the nape, its
+// back laid 5 mm outside whatever lies within its outline at each point's own place on its bend or dish (kiteBack), so the kite's
+// bend and the hoplon's dish wrap round the back; their enarmes, porpax and antilabe lie slack and flat on the board
 function buildShieldBack(G, body, byName, meshes, root, heads) {
-  const D = G.dress, R = SHIELD_R, CLEAR = .005, R0 = PACK.rest, chest = byName['spine03'] || byName['spine04'];
+  const D = G.dress, R = SHIELD_R, CLEAR = .005, R0 = PACK.rest, chest = byName['spine03'] || byName['spine04'], H = D.shieldShape === 'kite' ? KITE : D.shieldShape === 'hoplon' ? HOPLON : null;
   const clouds = wornClouds(body, meshes, root, true), neck = new THREE.Vector3().setFromMatrixPosition(byName['neck01'].matrixWorld);
   const lean = .12, N = new THREE.Vector3(0, Math.sin(lean), -Math.cos(lean)), U = new THREE.Vector3(0, Math.cos(lean), Math.sin(lean)), S = new THREE.Vector3().crossVectors(U, N);
-  const C0 = new THREE.Vector3(0, neck.y - .06 - R, neck.z), { other, n } = shieldBack(clouds, C0, N), back = other + CLEAR, C = C0.clone().addScaledVector(N, back);
-  const sh = shieldParts(D); sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(C); root.add(sh);
+  const top = H ? (H === HOPLON ? H.MID + H.R : KITE.TOP) : R, C0 = new THREE.Vector3(0, neck.y - .06 - top, neck.z), { other, n } = H ? kiteBack(clouds, C0, S, U, N, () => false, H) : shieldBack(clouds, C0, N), back = other + CLEAR, C = C0.clone().addScaledVector(N, back);
+  const sh = H ? kiteParts(D, 0, H, true) : shieldParts(D); sh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(S, U, N)); sh.position.copy(C); root.add(sh);
   // the strap: rays from inside the body, from the nape over the right shoulder (x -.1), down across the chest to the left hip, round
   // the left side and back. Its points are on every cloud but the arms' skin and sleeves (it passes between an arm and the side);
   // a cloak's points are kept, so over a cloak it goes over the cloak
@@ -1097,7 +1101,7 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
   for (let p = 0; p < 4; p++) for (let k = 1; k < rays.length - 1; k++) rays[k].far = Math.max(rays[k].far, (rays[k - 1].far + rays[k + 1].far) / 2 - .002);
   let pts = rays.map(r => r.c.clone().addScaledVector(r.d, r.far)), nrm = rays.map(r => r.d);
   // not under the board: the strap starts and ends at its rim (under it is within its rim and less than 8 cm in front of its back)
-  root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), under = p => { const v = p.clone().applyMatrix4(inv); return Math.hypot(v.x, v.y) < R - .02 && v.z < .001 && v.z > -.08; };
+  root.updateMatrixWorld(true); const inv = sh.matrixWorld.clone().invert(), under = p => { const v = p.clone().applyMatrix4(inv), z0 = H ? H.z(v.x, v.y) : 0; return (H ? kiteIn(v.x, v.y, -.02, H) : Math.hypot(v.x, v.y) < R - .02) && v.z < z0 + .001 && v.z > z0 - .08; };
   let a = 0, b = pts.length - 1; while (a < b && under(pts[a + 1])) a++; while (b > a && under(pts[b - 1])) b--; pts = pts.slice(a, b + 1); nrm = nrm.slice(a, b + 1);
   const pos = [], idx = []; for (let k = 0; k < pts.length; k++) { const t = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]).normalize(), side = new THREE.Vector3().crossVectors(t, nrm[k]).normalize();
     for (const s of [-1, 1]) { const p = pts[k].clone().addScaledVector(side, s * W); pos.push(p.x, p.y, p.z); } if (k) { const o = (k - 1) * 2; idx.push(o, o + 2, o + 1, o + 1, o + 2, o + 3); } }
@@ -1109,9 +1113,11 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
     eachPoint(strapClouds, (x, y, z) => { const dx = x - p0.x, dy = y - p0.y, dz = z - p0.z; if (Math.abs(dx * t.x + dy * t.y + dz * t.z) > .006 || Math.abs(dx * side.x + dy * side.y + dz * side.z) > W) return; const h = dx * d.x + dy * d.y + dz * d.z; if (h < -.03 || h > .03) return; tested++; if (h > -.001) { through++; worst = Math.max(worst, h); } }); }
   let len = 0; for (let k = 1; k < pts.length; k++) len += pts[k].distanceTo(pts[k - 1]);
   root.add(strap); chest.attach(sh); chest.attach(strap);
-  const { inside, near } = shieldInside(sh, clouds, root);
+  const { inside, near } = H ? kiteInside(sh, clouds, root, H) : shieldInside(sh, clouds, root);
   let tris = idx.length / 3; sh.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
-  return { mesh: sh, stats: { on: 'back', inside, near, tested: n, across: 2 * R, tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
+  // a shape's lowest point (the kite's tip, the hoplon's rim) off the ground
+  let bottom; if (H) { let floor = 1e9; { const PP = posedBody(body); for (const i of new Set(PACK.G['body'])) floor = Math.min(floor, PP[i * 3 + 1]); } let low = 1e9; for (const [u, v] of H.line) low = Math.min(low, C.y + S.y * u + U.y * v + N.y * H.z(u, v)); bottom = +(low - floor).toFixed(3); }
+  return { mesh: sh, stats: { on: 'back', shape: H ? H.name : 'round', inside, near, tested: n, across: H === HOPLON ? 2 * H.R : H ? 2 * KITE.W : 2 * R, ...(H ? { tall: H === HOPLON ? 2 * H.R : +(KITE.TOP - KITE.TIP).toFixed(2), bottom } : {}), tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
 }
 // the spear (Sessions 907, 909 and 910; OG-025's hold guards and OG-044's Compact guards carry one, and it is one of the two new kinds
 // of weapon, Michael's 6 A). An ash shaft 2.2 to 2.6 cm thick (as the fist's hole allows) and 45 cm taller than its bearer (2.3 m at the least), an iron socket and a
@@ -1386,8 +1392,8 @@ export function makePerson(G, o = {}) {
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
   // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
   let shieldStats = null; if (D.shield && !D.cloak) { const S = (D.shieldShape === 'kite' || D.shieldShape === 'hoplon' ? buildKite : buildShield)(G, body, byName, meshes, root); shieldStats = { ...S.stats, bottom: +S.low.toFixed(3) }; }
-  // (a kite or a hoplon is not slung yet: under a cloak it is left off, Sessions 911 and 913)
-  else if (D.shield && !(D.shieldShape === 'kite' || D.shieldShape === 'hoplon')) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
+  // (a kite or a hoplon is slung too since Session 916; Sessions 911 and 913 left it off under a cloak)
+  else if (D.shield) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats };
 }
