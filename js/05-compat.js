@@ -28,4 +28,13 @@ if(!THREE_LEGACY){
     THREE.PointLight=class PointLight extends PL{constructor(c,i,d,decay=1){super(c,i,d,decay);}};
     THREE.SpotLight=class SpotLight extends SL{constructor(c,i,d,a,p,decay=1){super(c,i,d,a,p,decay);}};
     THREE.WebGLRenderer=class WebGLRenderer extends WR{constructor(o){super(o);this.outputColorSpace=THREE.LinearSRGBColorSpace;}};}
+  // S879 (F2a; the critic, 14 Oct): 0.170 gives a SkinnedMesh its own bounding sphere, computed once from the posed vertices through
+  // the bones' world matrices, so it is already in world coordinates; the frustum test then applies matrixWorld a second time and
+  // every townsperson at x, z ≈ 13,000–25,000 was culled. r128 culled them by the geometry's sphere in local space, which the
+  // builders already pad for a raised arm or a stride (32-people.js, ×1.35): do the same.
+  {const SM=THREE.SkinnedMesh.prototype;
+    SM.computeBoundingSphere=function(){const g=this.geometry;if(!g.boundingSphere)g.computeBoundingSphere();
+      if(!this.boundingSphere)this.boundingSphere=new THREE.Sphere();this.boundingSphere.copy(g.boundingSphere);return this.boundingSphere;};
+    SM.computeBoundingBox=function(){const g=this.geometry;if(!g.boundingBox)g.computeBoundingBox();
+      if(!this.boundingBox)this.boundingBox=new THREE.Box3();this.boundingBox.copy(g.boundingBox);return this.boundingBox;};}
 }

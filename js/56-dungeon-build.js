@@ -406,10 +406,12 @@ function furnBuild(THREE, SK) {
   function smithy(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
     p.put(forge(H, n, s + 1), 1.2, 1.4, 0);
     p.put(anvil(n, s + 2), W - 2.0, 1.6, .3);
-    p.put(tub(n, s + 3), W - 1.0, 3.2, 0);
+    p.put(tub(n, s + 3), W - .75, 3.9, 0); /* S896 — clear of the counter's end in a shop of true size */
     const R = [['sword', 'longsword', 'claymore'], ['axe', 'greataxe', 'warhammer'], ['mace', 'flail', 'greatclub'], ['cutlass', 'dagger', 'sword']];
-    for (let k = 0; k < 4; k++) p.put(rack(n, s + 10 + k, R[k]), W - .1, Math.min(4.1 + k * .95, D - 3.8 - (3 - k) * .95), -Math.PI / 2);
-    p.put(grindstone(n, s + 4), 2.6, D - 2.4, 0);
+    /* S896 (F2a) — in a shop of true size the racks run down the east wall from the counter's end, as many as fit, and the
+       grindstone stands by the door on the west */
+    for (let k = 0; k < 4; k++) { const z = 2.6 + k * .95; if (z < (D >= 7 ? D - 3.25 - .5 : D - .7)) p.put(rack(n, s + 10 + k, R[k]), W - .1, z, -Math.PI / 2); } /* not past the keeper's room's partition */
+    p.put(grindstone(n, s + 4), .75, D - 1.3, 0);
     if (typeof wpnBuild === 'function') for (const q of wpnBuild('dagger', false, null)) p(q.geo, 0xffffff, W / 2 - 1.2, .72, 3.0, 0, .3, Math.PI / 2);
     return p; }
   // ── S290: the armourer, the apothecary and the general goods (the shops' kit, Michael's A on #46) ──
@@ -482,11 +484,13 @@ function furnBuild(THREE, SK) {
     p(SK.cyl(.06, .09, .1, 8), c, 0, .48, 0); p(SK.torus(.06, .012, 4, 10), 0x6a5a3a, 0, .47, 0, Math.PI / 2);
     p(SK.bumpy(SK.cone(.1, .1, 8), .01, 13, 2), c, 0, .56, 0);
     return p; }
+  // S896 (F2a) — the stands and the bench along the north wall, as many stands as the shop's width holds (shared with the solids)
+  function armouryAt(W, D) { const k = W >= 5.6 ? 3 : 2, bench = W - 1.05; return { stands: [...Array(k).keys()].map(i => .85 + i * Math.min(1.6, (bench - 1.6) / Math.max(1, k - .5))), bench, zEnd: D >= 7.5 ? D - 3.2 : D - 1.2 }; }
   function armoury(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
-    ['plate', 'leather', 'mail'].forEach((k, i) => p.put(armourStand(k, n, s + i), 1.6 + i * 1.6, 1.6, 0));
-    const zEnd = D >= 9 ? D - 3.2 : D - 1.2;
-    [0x7a2020, 0x203a6a, 0x6a5a20, 0x2a4a2a].forEach((c, k) => { const z = 3.8 + k * .75; if (z < zEnd - .35) p.put(wallShield(['round', 'kite', 'round', 'kite'][k], c, s + 5 + k), W - .02, z, -Math.PI / 2, 1.0); });
-    p.put(armourBench(n, s + 9), W - 1.6, 1.6, 0);
+    const A = armouryAt(W, D);
+    A.stands.forEach((x, i) => p.put(armourStand(['plate', 'leather', 'mail'][i], n, s + i), x, 1.6, 0));
+    [0x7a2020, 0x203a6a, 0x6a5a20, 0x2a4a2a].forEach((c, k) => { const z = 2.6 + k * .75; if (z < A.zEnd - .35) p.put(wallShield(['round', 'kite', 'round', 'kite'][k], c, s + 5 + k), W - .02, z, -Math.PI / 2, 1.0); });
+    p.put(armourBench(n, s + 9), A.bench, 1.6, 0);
     return p; }
   function apothecary(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
     [.62, .99, 1.36].forEach((y, i) => p.put(shelf(W - 1.6, n, s + i, 'potions'), W / 2, 0, 0, y));
@@ -498,9 +502,9 @@ function furnBuild(THREE, SK) {
   function goods(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
     for (let k = 0; k < 3; k++) p.put(crate(.5, n, s + k), 1.0 + k * .9, 1.0, (k - 1) * .15);
     p.put(crate(.45, n, s + 3), 1.45, 1.0, .3, .5);
-    for (let k = 0; k < 3; k++) p.put(sack(s + 4 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), W - 1.0 - k * .8, D - 3.9, k * .7);
+    for (let k = 0; k < 3; k++) p.put(sack(s + 4 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), W - .6 - k * .65, D - 3.9, k * .7); /* S896 — east of the partition door's swing */
     [.62, 1.05].forEach((y, i) => p.put(shelf(W - 2, n, s + 8 + i, 'mixed'), W / 2, 0, 0, y));
-    p.put(scales(s + 11), W / 2 + 1.4, 3.0, 0, .69);
+    p.put(scales(s + 11), W / 2 + Math.min(1.4, W * .25 - .3), 3.0, 0, .69);
     return p; }
   // ── S512: the barber and dyer (Michael's B on #144), from the Session 505 prototype ──
   const BRASS = 0xc8a048, LINEN = 0xe4dccb, STEEL = 0xb8c0c4, PLUSH = 0x6a2a1e;
@@ -558,16 +562,20 @@ function furnBuild(THREE, SK) {
   // the room (the back wall at z 0, the door at z D): the chair facing the mirror on the back wall, the washstand at its
   // right hand, a stool and a bench by the west wall for those waiting, the barber-surgeon's bench, a shelf of jars beside the
   // mirror, the dyer's corner along the back wall to the east
-  function barber(W, D, H, n, seed) { const p = Parts(), s = seed || 1, cx = W * .36;
+  // S896 (F2a) — the barber's places in a shop of true size (shared with buildInteriorFor's solids): the chair a third of the way
+  // across with the washstand on its west, the dyer's corner on the east wall's north end, the bench of razors and the waiting
+  // bench down the west wall one after the other
+  function barberAt(W, D) { const cx = Math.max(1.5, W * .3); return { cx, wash: [cx - .72, .7], dyer: W - 3.0, stool: [cx + .85, 2.3], bench1: [.3, 2.25], bench2: [.35, Math.max(3.6, D * .6)], shelf: [Math.max(.6, cx - 1.1), 1.1] }; }
+  function barber(W, D, H, n, seed) { const p = Parts(), s = seed || 1, A = barberAt(W, D), cx = A.cx;
     p.put(rug(.95, .75, n, s + 1), cx, 1.45, 0);
     p.put(barberChair(n, s + 2), cx, 1.35, Math.PI);
     p.put(barberMirror(n, s + 3), cx, 0, 0, .95);
-    p.put(washstand(n, s + 4), cx + .75, .7, 0);
-    p.put(stool(n, s + 5), cx - .9, 2.4, 0);
-    p.put(barberBench(n, s + 6), .3, 2.6, Math.PI / 2);
-    p.put(dyerCorner(n, s + 7), W - 3.0, 1.0, 0);
-    p.put(shelf(1.4, n, s + 8, 'potions'), cx - 1.45, 0, 0, 1.05);
-    p.put(bench(1.6, n, s + 9), .35, D * .6, Math.PI / 2);
+    p.put(washstand(n, s + 4), A.wash[0], A.wash[1], 0);
+    p.put(stool(n, s + 5), A.stool[0], A.stool[1], 0);
+    p.put(barberBench(n, s + 6), A.bench1[0], A.bench1[1], Math.PI / 2);
+    p.put(dyerCorner(n, s + 7), A.dyer, 1.0, 0);
+    p.put(shelf(A.shelf[1], n, s + 8, 'potions'), A.shelf[0], 0, 0, 1.05);
+    p.put(bench(1.6, n, s + 9), A.bench2[0], A.bench2[1], Math.PI / 2);
     return p; }
   // ── S291: the church and the keep's hall (Michael's A on #46: "the church, keep and guild halls in the same kit") ──
   // S303: the church's columns at W/2 ± 4.1 from z 5.5, between the pews' ends (W/2 ± 3.5) and the walls, clear of the dais
@@ -649,12 +657,17 @@ function furnBuild(THREE, SK) {
     p(SK.rbox(w, .012, d, .004, 1), 0xb89838, 0, .008, 0); p(SK.rbox(w - .2, .014, d - .2, .004, 1), col, 0, .01, 0);
     p(SK.rbox(w - .34, .016, d - .34, .004, 1), new THREE.Color(col).multiplyScalar(.8), 0, .011, 0);
     return p; }
+  // S896 (F2a) — a nave of true size (8 to 10 m wide, so 5.5 to 6.9 here): the pews either side of a central aisle, the columns
+  // between the pews and the walls, the pulpit at the dais's corner (shared with buildInteriorFor's solids)
+  function churchAt(W, D) { const pewL = Math.min(2.6, W / 2 - 1.4), off = .55 + pewL / 2, col = W / 2 - .4;
+    return { pewL, pewX: [W / 2 - off, W / 2 + off], pew0: 4.9, pewStep: 1.2, colX: [W / 2 - col, W / 2 + col], pulpit: Math.min(W - 2.2, W / 2 + W * .28 + .55) }; }
   function church(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
     p.put(dais(W - 2, 3.0, .25, s), W / 2, 2.6, 0);
     p.put(altar(n, s + 1), W / 2, 1.6, 0, .25);
-    for (let z = 5, k = 0; z < D - 2.5; z += 1.5, k++) for (const x of [W / 2 - 2.2, W / 2 + 2.2]) p.put(pew(2.6, n, s + 10 + k * 2 + (x > W / 2 ? 1 : 0)), x, z, 0);
-    p.put(pulpit(n, s + 3), W - 2.2, 3.6, 0);
-    for (const x of [W / 2 - 4.1, W / 2 + 4.1]) for (let z = 5.5, k = 0; z < D - 3; z += 4, k++) p.put(column(H, .3, s + 20 + k * 4), x, z, 0);
+    const A = churchAt(W, D);
+    for (let z = A.pew0, k = 0; z < D - 2.3; z += A.pewStep, k++) for (const x of A.pewX) p.put(pew(A.pewL, n, s + 10 + k * 2 + (x > W / 2 ? 1 : 0)), x, z, 0);
+    p.put(pulpit(n, s + 3), A.pulpit, 3.6, 0);
+    for (const x of A.colX) for (let z = 5.5, k = 0; z < D - 3; z += 3.5, k++) p.put(column(H, .3, s + 20 + k * 4), x, z, 0);
     return p; }
   function hall(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
     p.put(dais(W * .55, 3.6, .37, s), W / 2, 3.2, 0);
@@ -740,8 +753,8 @@ function furnBuild(THREE, SK) {
     for (const [x, y, z] of list) p(SK.rbox(.45 + (r() - .5) * .1, .22, .3 + (r() - .5) * .08, .04, 1), jit(ST, r, .1), x, y, z, (r() - .5) * .15, (r() - .5) * .5, (r() - .5) * .15);
     return p; }
   function cellar(W, D, H, n, seed) { const p = Parts(), s = seed || 1;
-    p.put(wineRack(3.2, n, s), W - .02, D * .6, -Math.PI / 2);
-    p.put(chest(n, s + 1), W / 2, D - 1.4, Math.PI);
+    p.put(wineRack(Math.min(3.2, D - 1.8), n, s), W - .02, Math.max(D * .6, 1.6 + Math.min(3.2, D - 1.8) / 2), -Math.PI / 2); /* S896 — sized to the cellar of true size */
+    p.put(chest(n, s + 1), W / 2, D - .6, Math.PI);
     p.put(ladder(2.0, n, s + 2), W / 2, .52, 0);
     return p; }
   function cabin(W, D, H, n, seed) { const p = Parts(), s = seed || 1, r = rng(s + 7);
@@ -781,25 +794,38 @@ function furnBuild(THREE, SK) {
     G.userData.tris = body.geometry.index.count / 3 + (fire ? fire.geometry.index.count / 3 : 0); G.userData.fire = fire; G.userData.hearthFire = hf; return G; }
 
   // ── the two rooms, at the places buildInteriorFor puts today's boxes (W×D room, ceiling H, x east, z south, door at z=D) ──
-  function home(W, D, H, n, seed, cold) { const p = Parts(), s = seed || 1;
-    p.put(bed(n, s + 1), 1.2, 1.2, 0);
-    { const h = hearth(1.8, H, n, s + 2, cold); p.put(h, W, D * .4, -Math.PI / 2); if (h.unlit) { p.hearth = Parts(); p.hearth.put(h.unlit, W, D * .4, -Math.PI / 2); } }
-    p.put(table(1.5, .9, n, s + 3), W / 2, D * .5, 0);
-    p.put(chair(n, s + 4), W / 2 - 1.0, D * .5, Math.PI / 2 + .12); p.put(chair(n, s + 5), W / 2 + 1.0, D * .5, -Math.PI / 2 - .2);
-    { const q = Parts(); candle(q, 0, .46, 0); q(bowl(.08), 0x9a7050, .3, .46, .12); tankard(q, -.25, .46, -.15, 0x7a6a4a); p.put(q, W / 2, D * .5, 0); }
-    p.put(chest(n, s + 6), W / 2 + 2.2, 1.0, 0);
-    p.put(shelf(2.2, n, s + 7), 2.6, 0, 0, .68); p.put(shelf(2.2, n, s + 8), 2.6, 0, 0, 1.05);
-    p.put(rug(.85, .55, n, s + 9), W / 2, D * .5 + .05, 0);
+  // S896 (F2a) — laid out for a cottage of true size (5 to 6.5 m by 4.5 to 6, so 3.5 to 4.5 by 3.1 to 4.2 here, in the kit's unit):
+  // the bed in the north-west corner, the hearth on the east wall, the table and its two chairs at its ends a little north of the middle (the spot you arrive at is south of it), the chest under
+  // the shelves on the north wall; the door's way (the south wall's middle) kept clear. HOME_AT is where buildInteriorFor puts
+  // the solids, the bed's place and the light, from the same numbers.
+  function homeAt(W, D) { const hb = Math.min(1.8, D * .45), tx = W * .5 + .05, tz = D * .42;
+    return { bed: [.5, .8], hearth: { w: hb, z: D * .4 }, table: [tx, tz, 1.1, .7], chairs: [[tx - .78, tz, Math.PI / 2 + .12], [tx + .78, tz, -Math.PI / 2 - .2]], chest: [W * .5 + .5, .3], shelf: [W * .5 + .5, 1.2], rug: [tx, tz + .05] }; }
+  function home(W, D, H, n, seed, cold) { const p = Parts(), s = seed || 1, A = homeAt(W, D);
+    p.put(bed(n, s + 1), A.bed[0], A.bed[1], 0);
+    { const h = hearth(A.hearth.w, H, n, s + 2, cold); p.put(h, W, A.hearth.z, -Math.PI / 2); if (h.unlit) { p.hearth = Parts(); p.hearth.put(h.unlit, W, A.hearth.z, -Math.PI / 2); } }
+    const [tx, tz, tw, td] = A.table; p.put(table(tw, td, n, s + 3), tx, tz, 0);
+    A.chairs.forEach(([x, z, ry], i) => p.put(chair(n, s + 4 + i), x, z, ry));
+    { const q = Parts(); candle(q, 0, .46, 0); q(bowl(.08), 0x9a7050, .25, .46, .1); tankard(q, -.22, .46, -.12, 0x7a6a4a); p.put(q, tx, tz, 0); }
+    p.put(chest(n, s + 6), A.chest[0], A.chest[1], 0);
+    p.put(shelf(A.shelf[1], n, s + 7), A.shelf[0], 0, 0, .68); p.put(shelf(A.shelf[1], n, s + 8), A.shelf[0], 0, 0, 1.05);
+    p.put(rug(.7, .45, n, s + 9), A.rug[0], A.rug[1], 0);
     return p; }
-  function inn(W, D, H, n, seed, gallery) { const p = Parts(), s = seed || 1, L = W * .55;
-    p.put(counter(L, n, s + 1), W / 2, 2.2, 0);
+  // S896 (F2a) — the taproom laid out for an inn's hall of true size (10 to 12 m by 11.7 to 13, so 6.9 to 8.3 by 8.1 to 9 here):
+  // the bar under the gallery, the hearth on the wall the stair does not climb, and as many tables with their benches as fit
+  // between the stair and the hearth, clear of the door's way. INN_AT is shared with buildInteriorFor's solids.
+  function innAt(W, D, east) { const L = Math.min(W * .55, 5.5), gd = Math.min(Math.max(D * .4, 4.15), 6), z0 = gd + .45, z1 = D - 1.05;
+    const xa = east ? .9 : 1.9, xb = east ? W - 1.9 : W - .9, cols = Math.max(1, Math.floor((xb - xa + .5) / 2.3)), rows = Math.max(1, Math.floor((z1 - z0) / 2.35));
+    const T = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const x = cols > 1 ? xa + .9 + c * (xb - xa - 1.8) / (cols - 1) : (xa + xb) / 2, z = z0 + 1.1 + r * 2.35;
+      if (z > D - 1.6 && Math.abs(x - W / 2) < 1.6) continue; T.push([x, z]); }
+    return { L, cz: 2.0, hearth: { x: east ? 0 : W, ry: east ? Math.PI / 2 : -Math.PI / 2, z: Math.max(gd + 1.2, D * .55), w: Math.min(2.2, D * .32) }, tables: T }; }
+  function inn(W, D, H, n, seed, gallery, east) { const p = Parts(), s = seed || 1, A = innAt(W, D, east), L = A.L;
+    p.put(counter(L, n, s + 1), W / 2, A.cz, 0);
     p.put(dresser(L, n, s + 2), W / 2, .02, 0);
-    p.put(cask(n, s + 3), W / 2 - L / 2 + .45, 1.1, Math.PI / 2 + Math.PI / 2 * 0); p.put(cask(n, s + 4), W / 2 + L / 2 - .45, 1.1, 0);
-    p.put(hearth(2.2, H, n, s + 5), W, D * .5, -Math.PI / 2);
-    const T = [[3.4, D * .42], [3.4, D * .66], [W - 3.4, D * .7], [W / 2, D * .6]];
-    T.forEach(([x, z], i) => { p.put(table(1.8, 1.0, n, s + 10 + i), x, z, 0); for (const sd of [-1, 1]) p.put(bench(1.6, n, s + 20 + i * 2 + sd), x, z + sd * .9, 0);
+    p.put(cask(n, s + 3), W / 2 - L / 2 + .45, 1.0, 0); p.put(cask(n, s + 4), W / 2 + L / 2 - .45, 1.0, 0);
+    p.put(hearth(A.hearth.w, H, n, s + 5), A.hearth.x, A.hearth.z, A.hearth.ry);
+    A.tables.forEach(([x, z], i) => { p.put(table(1.8, 1.0, n, s + 10 + i), x, z, 0); for (const sd of [-1, 1]) p.put(bench(1.6, n, s + 20 + i * 2 + sd), x, z + sd * .9, 0);
       const q = Parts(); tankard(q, -.4, .46, .1, 0x8a8478); tankard(q, .3, .46, -.15, 0x7a6a4a); if (i % 2 === 0) candle(q, 0, .46, 0); else q(bowl(.09), 0x9a7050, .05, .46, .05); p.put(q, x, z, 0); });
-    for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, 2.2 + .72, 0);
+    for (let k = 0; k < 3; k++) p.put(stool(n, s + 30 + k), W / 2 - L * .3 + k * L * .3, A.cz + .72, 0);
     if (!gallery) { p.put(bed(n, s + 40), 1.2, D - 2.0, 0); p.put(bed(n, s + 41), W - 1.2, D - 2.0, 0); }
     return p; }
   // ── S331 — the windows (Michael's 2 on #53, by the room): local, the wall at z=0 and the room towards +z, the opening
@@ -846,7 +872,7 @@ function furnBuild(THREE, SK) {
   const WIN_LEAD = { inn: 1, barber: 1, weapon: 1, armor: 1, potion: 1, misc: 1, shipwright: 1, guild_f: 1, guild_m: 1, chapel: 1, church: 1, castle: 1 };
   function winKind(type, tall) { return tall && (type === 'church' || type === 'castle') ? 'C' : WIN_LEAD[type] ? 'A' : 'B'; }
   function windowFrame(kind, w, h, n, seed) { return kind === 'C' ? winArch(w, h, seed) : kind === 'A' ? winLead(w, h, n, seed) : winShutter(w, h, n, seed); }
-  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, inn, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, barberChair, washstand, barberMirror, barberBench, basinSign, dyerCorner, barber, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
+  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, homeAt, inn, innAt, armouryAt, barberAt, churchAt, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, barberChair, washstand, barberMirror, barberBench, basinSign, dyerCorner, barber, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
 }
 
 let _FURN = null;

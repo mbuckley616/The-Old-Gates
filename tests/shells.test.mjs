@@ -23,28 +23,35 @@ const r = await page.evaluate(() => { const out = {};
     let doorAt = null; if (door) { const bb = new THREE.Box3().setFromObject(door); doorAt = [+((bb.min.x + bb.max.x) / 2 - W / 2).toFixed(2), +(bb.min.z - D).toFixed(2), +bb.max.y.toFixed(2)]; }
     const posts = INT_SOL.filter(q => q.post), others = INT_SOL.filter(q => !q.post);
     const clash = posts.filter(p => others.some(q => q.x0 < p.x1 && q.x1 > p.x0 && q.z0 < p.z1 && q.z1 > p.z0)).length;
-    const wins = []; for (let z = D * .3; z < D * .9; z += Math.max(3, D * .3)) wins.push(z);
+    // S905 (F2a): the windows as built, not the kit's rule re-run on the scaled room (the rule runs in the kit's units, before the room is
+    // scaled by ROOM_K: a cabin 8 deep has one window a side, at 2.4, where the rule on 8 gave two, and a post at 5.3 read as in front of one)
+    const wins = []; sc.traverse(o => { if (o.isMesh && o.geometry.type === 'PlaneGeometry' && o.geometry.parameters.width === .9 && o.geometry.parameters.height === .95) { const v = o.getWorldPosition(new THREE.Vector3()); if (v.x < 1 || v.x > W - 1) wins.push(v.z); } });
     const inWin = posts.filter(p => (p.x0 < 1 || p.x1 > W - 1) && p.z0 > .5 && p.z1 < D - .5 && wins.some(z => Math.abs((p.z0 + p.z1) / 2 - z) < .6)).length;
     const tall = []; sc.traverse(o => { if (o.isMesh && o.geometry.type === 'ShapeGeometry') tall.push(o.position); });
-    let corbelClash = 0; if (shell && tall.length) shell.traverse(m => { if (!m.isMesh) return; const pos = m.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); const x = v.x, y = v.y, z = v.z; if ((x < .45 || x > W - .45) && y > H - 1 && y < H - .35 && tall.some(p => Math.abs(p.z - z) < .6)) corbelClash++; } });
+    let corbelClash = 0; if (shell && tall.length) shell.traverse(m => { if (!m.isMesh) return; const pos = m.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); const x = v.x, y = v.y, z = v.z; const KC = SCALE.ROOM_K; if ((x < .45 * KC || x > W - .45 * KC) && y > H - 1 * KC && y < H - .35 * KC && tall.some(p => Math.abs(p.z - z) < .6 * KC)) corbelClash++; } });
     let beamBand = 0; if (shell && H > 12) shell.traverse(m => { if (!m.isMesh) return; const pos = m.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); if (v.y > H - .9 && v.y < H - .3) beamBand++; } });
     let foot = null; if (H > 12) { const wm = sc.children.find(o => o.userData.shaded), cc = wm.geometry.attributes.color, pp = wm.geometry.attributes.position; let lo = 1, n1 = 0; for (let i = 0; i < pp.count; i++) { const y = pp.getY(i) + H / 2; if (y < 1) n1++; if (y < .05) lo = Math.min(lo, cc.getX(i)); } foot = { rows: n1, lo: +lo.toFixed(2) }; }
     const doorway = posts.filter(p => p.z1 > D - .5 && Math.abs((p.x0 + p.x1) / 2 - W / 2) < 1.0).length;
     out[t + '-' + style] = { W, D, H: +H.toFixed(2), tris: shell && shell.userData.tris, doorTris: door && door.userData.tris, posts: posts.length, corbelClash, stone: shell && shell.userData.shell.stone,
-      clash, inWin, doorway, inside, doorAt, oldDoor, oldBeams, shaded, ceilTex, beamBand, foot }; }
+      clash, inWin, wins: wins.length, doorway, inside, doorAt, oldDoor, oldBeams, shaded, ceilTex, beamBand, foot }; }
   return out; });
 console.log(JSON.stringify(r));
 const kit = Object.keys(r);
 check('every generated room has the kit shell and the plank door, and no box door or box beams (the church and the keep\'s hall since Session 344)', kit.every(k => r[k].tris > 0 && r[k].doorTris > 0 && !r[k].oldDoor && r[k].oldBeams === 0), Object.fromEntries(kit.map(k => [k, [r[k].tris, r[k].doorTris, r[k].oldDoor, r[k].oldBeams]])));
 check('the tower (31 high, its top floor at 30) is a stone room with the kit shell but no beam or corbel in its top room, and its tall walls keep the shading at the foot', r['tower-stone'].stone && r['tower-stone'].H > 30 && r['tower-stone'].beamBand === 0 && r['tower-stone'].foot && r['tower-stone'].foot.rows >= 8 && r['tower-stone'].foot.lo < .7, r['tower-stone']);
-check('the church and the keep\'s hall are stone rooms with the larger door (2.3 tall with its head)', ['church-irish', 'castle-stone'].every(k => r[k].stone && r[k].doorAt[2] > 2.4 && r[k].doorAt[2] < 2.7), [r['church-irish'], r['castle-stone']]);
+// S896 (card F2a): the rooms are built SCALE.ROOM_K (1.444) larger than the kit lays them out, so the kit's door heights, the
+// corbels' band and the windows' spacing below are the kit's times KR (the tower's door too, though its room is not scaled)
+const KR = await page.evaluate(() => SCALE.ROOM_K);
+check('the church and the keep\'s hall are stone rooms with the larger door (2.3 tall with its head in the kit, 3.6 at true size)', ['church-irish', 'castle-stone'].every(k => r[k].stone && r[k].doorAt[2] > 2.4 * KR && r[k].doorAt[2] < 2.7 * KR), [r['church-irish'], r['castle-stone']]);
 check('the four walls are shaded in their vertex colours and the ceiling is boarded', kit.every(k => r[k].shaded === 4 && r[k].ceilTex), Object.fromEntries(kit.map(k => [k, [r[k].shaded, r[k].ceilTex]])));
 const plaster = kit.filter(k => !r[k].stone), stone = kit.filter(k => r[k].stone);
 check('plastered rooms stand on posts (Aurenne\'s close-studded ones on more); stone and rubble rooms have none', plaster.every(k => r[k].posts >= 4) && stone.every(k => r[k].posts === 0) && r['home-french'].posts > r['home-irish'].posts && stone.length >= 4, Object.fromEntries(kit.map(k => [k, r[k].posts])));
+check('the windows are found where they are built (at least one on each side wall of a house and a cabin)', r['home-irish'].wins >= 2 && r['cabin-irish'].wins >= 2, Object.fromEntries(kit.map(k => [k, r[k].wins])));
 check('no post stands in anything solid, in front of a window or in the entrance', kit.every(k => r[k].clash === 0 && r[k].inWin === 0 && r[k].doorway === 0), Object.fromEntries(kit.map(k => [k, [r[k].clash, r[k].inWin, r[k].doorway]])));
 check('in the church and the keep\'s hall no corbel sits over a tall window', r['church-irish'].corbelClash === 0 && r['castle-stone'].corbelClash === 0, [r['church-irish'].corbelClash, r['castle-stone'].corbelClash]);
-check('the shell lies inside the walls and under the ceiling; the door is centred on the south wall, 1.5 tall with its head', kit.every(k => r[k].inside && Math.abs(r[k].doorAt[0]) < .05 && r[k].doorAt[1] > -.3 && r[k].doorAt[1] < 0 && (r[k].doorAt[2] > 1.55 && r[k].doorAt[2] < 1.75 || /church|castle/.test(k))), Object.fromEntries(kit.map(k => [k, [r[k].inside, r[k].doorAt]])));
-check('the shell costs 2–25k triangles a room and the door under 3k', kit.every(k => r[k].tris > 2000 && r[k].tris < 25000 && r[k].doorTris < 3000), Object.fromEntries(kit.map(k => [k, [r[k].tris, r[k].doorTris]])));
+check('the shell lies inside the walls and under the ceiling; the door is centred on the south wall, 1.5 tall with its head in the kit (2.2 to 2.5 at true size)', kit.every(k => r[k].inside && Math.abs(r[k].doorAt[0]) < .05 && r[k].doorAt[1] > -.3 && r[k].doorAt[1] < 0 && (r[k].doorAt[2] > 1.55 * KR && r[k].doorAt[2] < 1.75 * KR || /church|castle/.test(k))), Object.fromEntries(kit.map(k => [k, [r[k].inside, r[k].doorAt]])));
+// (S896: a cottage of true size is about a third as wide as the room 1.8 times too big, so it has fewer beams and posts: 1.4k up)
+check('the shell costs 1–25k triangles a room and the door under 3k', kit.every(k => r[k].tris > 1000 && r[k].tris < 25000 && r[k].doorTris < 3000), Object.fromEntries(kit.map(k => [k, [r[k].tris, r[k].doorTris]])));
 
 // a post is a solid: walking along the west wall of a home stops at it
 const walk = await page.evaluate(() => { const house = { id: 'g_shellwalk_1', type: 'home', w: 7, d: 5, doorX: px, doorZ: pz, style: 'irish', reg: 'irish' };

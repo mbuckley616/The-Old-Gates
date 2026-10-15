@@ -20,7 +20,7 @@ const r = await page.evaluate(() => {
   const gob = [0, 1, 2, 3].map(k => measure('Goblin', k)), sling = measure('Goblin Slinger', 0), band = [0, 1, 2].map(k => measure('Bandit', k));
   const others = ['Bandit', 'Ghoul', 'Kobold', 'Cultist'].map(t => { const rig = buildFoe(t, 3, 3); PEOPLE_RIGS.delete(rig); return { t, goblin: !!pwOpts(rig).goblin, armK: rig.g.armK || 1 }; });
   openInspector(); const e = INSPECTOR.entries.find(x => x.key === 'people/foes-on-the-body/goblin'); INSPECTOR.select(e.id);
-  const insScale = +INSPECTOR.built.get(e.id).obj.scale.y.toFixed(3); closeInspector();
+  const ib = INSPECTOR.built.get(e.id).obj, insScale = +(ib.scale.y / personScale(ib.userData.rig ? ib.userData.rig.g : {})).toFixed(3); /* S880: over the people's stature (07-scale.js), which every body now carries */ closeInspector();
   return { gob, sling, band, others, insScale };
 });
 console.log(JSON.stringify(r));

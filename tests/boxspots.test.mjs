@@ -30,10 +30,15 @@ for (const id of TOWNS) { await g.settle(id);
       // 3. walkable from the door: flood a 0.1 grid from inside the front door
       const st = .1, nx = Math.ceil(W / st), nz = Math.ceil(D / st), seen = new Uint8Array(nx * nz), q = [];
       // walking on the floor only: anything standing on it blocks, even what the game lets you step up onto
-      const B = INT_SOL.filter(o => (o.y1 == null || o.y1 > .05) && (o.y0 == null || o.y0 < 1.0)), R = .3;
+      // S896 (card F2a): an inner door is walked through, not round (E opens it); a shop's strongbox of true size stands in the
+      // keeper's room behind the partition's door, which this flood read as a wall
+      const doorSol = new Set(INT_DOORS.map(d => d.sol));
+      const B = INT_SOL.filter(o => !doorSol.has(o) && (o.y1 == null || o.y1 > .05) && (o.y0 == null || o.y0 < 1.0)), R = .3;
       const free = (i, k) => { if (i < 0 || k < 0 || i >= nx || k >= nz) return false; const x = i * st, z = k * st;
         for (const o of B) if (x > o.x0 - R && x < o.x1 + R && z > o.z0 - R && z < o.z1 + R) return false; return true; };
-      let si = Math.round(W / 2 / st), sk = Math.round(.8 / st);
+      // S896 (card F2a): from the spot the game stands you on inside the front door (goToInterior: W/2, 1.75 to 2.2 in from z = D);
+      // it was .8 from the far wall, which in a cottage of true size is a pocket between the bed, the table and the shelves
+      let si = Math.round(W / 2 / st), sk = Math.round((D - Math.min(2.2, Math.max(1.75, D * .3))) / st);
       for (let t = 0; t < 40 && !free(si, sk); t++) sk++;
       if (free(si, sk)) { seen[sk * nx + si] = 1; q.push(si, sk); }
       let reach = 1e9;
