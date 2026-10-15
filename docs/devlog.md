@@ -19911,3 +19911,34 @@ A correction made during the session: the jib's clew was first at 2.2 m over the
 - **The gilt line stops about a metre short of the stem and the transom**, as the Mark's cutter's does. It follows the rail's stanchions, which stop where the hull narrows.
 - **The jib's cloth is plain white**, with no star and no seams of its own. The lateen carries the star.
 - **Owed:** the cutter in the Gatelands' dress (the square sail on one mast, next); then the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's, all of which need a question first.
+
+## v80 — Session 923 — Card F11: the cutter in the Gatelands' dress (prototype only)
+The cutter's second dress, after Session 922's Aurenne. On one mast, the Gatelands' rig is the square sail of #306, as the sloop's is, with the harp (#306's 2 A) and a tiller (3 A), so again nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
+
+What is new in `ships.js`: `markCutter` takes `o.dress: 'gatelands'`, and `gatelandsCutter(o, r)` is that.
+- **The hull:** the cutter's own lines and carvel planking (14 by 4.0 m), in the sloop's colours. It is tarred below the water, oiled oak above, with the cream line along the top strakes and an oak transom. There is no head.
+  - The top two strakes are green, where the sloop has one. The cutter's sheer is 0.36 m over its deck against the sloop's 0.42, and its twelve strakes are narrower, so a single green strake read in the first pictures as a dark line, not a band.
+- **The course:** one square sail, green with the harp, on a yard 7 m long and 8.4 m over the deck, its foot 2.2 m over the deck, as the sloop's. It has three shrouds a side, braces to the quarters and sheets to the rail.
+- **The jib:** the cutter keeps its bowsprit, with one plain green jib on a stay from the masthead to the bowsprit's end, bellied to port. Its head is set far enough down the stay that the whole sail stands 0.61 m forward of the course's belly.
+  - The forestay runs to the stem head under the jib's foot.
+  - The topmast stays bare: a square topsail on it would come down across the forestay.
+- **No boom.**
+- 21,176 triangles in 11 draws.
+
+The view: `ships.html?ship=glcutter`, with the cutter's views, `&noharp` and `&nojib`.
+
+Corrections made during the session:
+- The backstays first came from the topmast's head. There they passed 0.29 m from the walk at its aft end, against a rule of 0.3. They now come from the masthead, as the Mark's cutter's do.
+- The jib's head was 0.22 m forward of the course. It now sits lower down its stay.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 69 of 69 pass** (63 after Session 922). Two views are new on the page check (no page errors), and four checks are new, over four keys:
+  - **The builds:** 21,176 triangles in 11 meshes, each key the same twice, with the very sections, rail and deck of the Mark's cutter.
+  - **The hull and the walk:** closed (no ray of 1,260 gets out), and carvel and flush. The walk down either side is clear at all 76 points, and nothing is within 2.0 m over the centreline aft of the mast.
+  - **The rig:** the square course on its yard 8.4 m over the deck, its foot 2.2 m over the deck. The jib is 0.61 m forward of the course, bellied to port, with its clew 2.6 m over the deck.
+  - **The dress:** the bottom in the tar's colour, the green strakes, the cream line and the harp. There is no head and no boom. Without the harp and the jib, the hull is the same.
+- **Pictures:** `ships-glcutter-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noharp`.
+### Needs eyes
+- **The green strakes still read dark** under the rail's shadow. The sloop's green is this one, and it reads the same there.
+- **From the deck the harp is seen through the sail, reversed**, as on the sloop and the cog. The sail is one double-sided cloth.
+- **The course's yard is square across**, not braced round. Every square sail in the kit stands like this.
+- **Owed:** the cutter now has all three dresses. Next are the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's. How a three-masted lateen hull takes a square rig, or a square-rigged hull the gaff, is a question for Michael, with pictures.
