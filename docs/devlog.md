@@ -19898,3 +19898,20 @@ What changed in `people.js`:
 - **The star is painted, not raised.** Bronze hoplons often carry the sign in relief; a normal map would show it.
 - **The porpax and the antilabe** are plain: a band and a strap, with no cord loops round the inside of the rim.
 - **Owed:** the kite and the hoplon slung under a cloak.
+
+## v80 — Session 915 — F2a: CI's third round, one suite and the hour (the deep-work session, card F2a)
+Session 905 left PR #315 with main merged in (3748198) and CI's run 38675675725 still going. That run passed ten of twelve shards on all 377 suites they ran but one: `homesleep`, which failed twice in shard 2, as it had in the first round on fde9867, where it passed here and was left to CI. Shards 5 and 12 failed nothing. Each was cut at the job's hour on its last suite (`waylamp`, `wolfcloak`), with every suite before it green. Main was merged in again (7 commits, docs and prototypes only, nothing under `js/`, `index.html` or `tests/`).
+
+**`homesleep`, re-measured.** At 22h and at 6h the resident is awake, and the suite asks that they "see across the room as before". It sweeps the room's free spots more than 2.3 m from the bed and asks that at least one is seen. Indoors a person sees in a 120° cone about the way they face (S368), and the resident ambles. In the cottage 1.8 times too wide there were always spots in front of them. In a cottage of true size there are eleven, and a resident who has ambled to face a wall has none of them in front: CI read 0 of 11 at both hours, and this machine read 2 and 5. Nothing in the game is wrong; the snapshot was. The sweep now turns the awake resident to face the middle of the room first, and the claim is stronger than before: at least a third of the spots seen (7 of 11 at both hours here), not more than none. The asleep sweep is unchanged (they see nothing, whichever way they lie).
+
+**The hour.** The suites add up to 598 minutes on CI, about 50 a shard of twelve, against the job's 60. The sharder's table was refreshed in Session 745, and 34 suites since then were not in it at all and were counted as 60 s. Some had grown: renewal took 339 s where 219 was counted, hourhitch 391 for 286, reader 329 for 272, autosave 185 for 129, pauseleaf 248 for 157. So shard 12 planned 52 minutes and ran 59½. One suite's time also moves by a third between runs on the same code (scaleratio: 567 s on d9616ac's run, 357 s on this one). `tests/run.mjs`'s table is now this run's 377 times plus shard 12's from its suite headers; the 39 suites the run did not time (shard 5's, cut short) keep their old numbers. CI runs fourteen shards, not twelve (`.github/workflows/check.yml`, the matrix and `--shard=k/14`), which comes to 43 minutes a shard, as Session 652 went from eight to twelve. Not loosened: no suite is skipped and the job's limit stays 60.
+
+A correction: Session 905 has two entries, this card's and the bodies builder's shield (B2, prototype). Both were written the same night on different branches; the numbers are left as they are, and this entry is 915, one above the highest on main and the builders' branches.
+
+### Verified (headless Chromium)
+- `homesleep` here: all 14 checks green; awake at 22h and 6h, faced to the room, 7 of 11 spots seen each time; asleep, 0 of 11.
+- The new table run through the sharder: 455 suites, fourteen shards of 43 minutes each by the table.
+- parsecheck clean.
+
+### Needs eyes
+- Nothing a player sees. CI on this push is the test of the hour: if a shard still runs past 50 minutes, its suites' times are the next thing to read.

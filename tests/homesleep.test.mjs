@@ -12,11 +12,15 @@ const state = () => page.evaluate(() => { const m = intNPCMesh; const b = INT_BE
   return { has: !!m, asleep: !!(m && m.userData.asleep), rx: m ? +m.rotation.x.toFixed(2) : null, x: m ? +m.position.x.toFixed(2) : null, z: m ? +m.position.z.toFixed(2) : null,
     y: m ? +m.position.y.toFixed(2) : null, bed: b ? [b.x, b.z] : null, hour: +gameHour().toFixed(2) }; });
 // a still sweep of the room: the player at points across it, facing the sleeper, walking; is anyone a witness?
-const sweep = () => page.evaluate(() => { const b = INT_BEDS.find(b => b.owner === 'home'); const W = _h._roomW || 9, D = _h._roomD || 10; let seen = 0, n = 0, near = 0;
+// S915 (card F2a): `face` turns an awake resident to the room's middle first. Indoors a person sees in a 120° cone, and in a
+// cottage of true size one who has ambled to face a wall has none of the dozen spots in it (CI's run 38675675725: 0 of 11 at 22h
+// and at 6h; 2 and 5 here); the room 1.8 times too wide always had some in front of them. Faced so, 7 of 11 here: at least a third
+const sweep = (face) => page.evaluate((face) => { const b = INT_BEDS.find(b => b.owner === 'home'); const W = _h._roomW || 9, D = _h._roomD || 10; let seen = 0, n = 0, near = 0;
+  if (face) { const m = intNPCMesh; m.rotation.y = Math.atan2(W / 2 - m.position.x, D / 2 - m.position.z); }
   const sn = _sneaking; _sneaking = false;
   for (let x = .8; x < W - .5; x += .7) for (let z = .8; z < D - .5; z += .7) { if (intSolidAt(x, z, .25, 0)) continue; if (Math.hypot(x - b.x, z - b.z) < 2.3) { near++; continue; }
     px = x; pz = z; n++; if (WORLD.witnessOf(_h)) seen++; }
-  _sneaking = sn; return { n, seen, near, asleep: !!intNPCMesh.userData.asleep }; });
+  _sneaking = sn; return { n, seen, near, asleep: !!intNPCMesh.userData.asleep }; }, !!face);
 
 // 1. at 23h30 the resident is on the bed, flat, and the room can be crossed unseen
 // (S752: the body is centred in the bed by its own shape, curled on its side, so x is within the bed's half-width, .43, not on its listed x)
@@ -54,8 +58,8 @@ check('E beside the bed (2.1 off) wakes the sleeper', talk.a && talk.d < 2.2 && 
 await page.evaluate(() => { try { closeDialog(); } catch (e) {} }); await leave();
 // 5. awake hours: 22h and 6h they are up and see as before; at 23h a resident awake at 22h goes to bed
 for (const hr of [22, 6]) { await enter(hr);
-  const r = await state(); const sw = await sweep();
-  check(`at ${hr}h the resident is in and awake, and sees across the room as before`, r.has && !r.asleep && r.rx === 0 && sw.seen > 0, { r, sw });
+  const r = await state(); const sw = await sweep(true);
+  check(`at ${hr}h the resident is in and awake, and sees across the room as before`, r.has && !r.asleep && r.rx === 0 && sw.n >= 8 && sw.seen * 3 >= sw.n, { r, sw });
   await leave(); }
 await enter(22.98);
 const bed = await page.evaluate(() => { const a = !!intNPCMesh.userData.asleep; px = INT_BOX.x + .6; pz = INT_BOX.z - .6; forceTime(23.02); WORLD.tickInterior(1 / 60, performance.now()); return { a, b: !!intNPCMesh.userData.asleep, h: gameHour() }; });
