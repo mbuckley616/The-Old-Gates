@@ -480,8 +480,9 @@ export function smugglersLair(o = {}, r = stream('lair')) {
       const furl = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, bb.max.x - bb.min.x - .2, 10).rotateZ(Math.PI / 2), sail.material); furl.position.set((bb.min.x + bb.max.x) / 2, bb.max.y - .28, (bb.min.z + bb.max.z) / 2 - .05); furl.name = 'sail'; furl.castShadow = true; S.group.add(furl); S.tris += 40; } S.group.position.set(sx, 0, JZ - .5); ship = { x: sx, z: JZ - .5, L: 13, W: 4.4, group: S.group, tris: S.tris, draws: S.draws };
     rod('rope', [TX + JW - .15, FY + .6, TH1 - .3], [sx - 1.6, 1.4, JZ - .5 + 5.4], .02); rod('rope', [TX + JW - .15, FY + .6, TH0 + .3], [sx - 1.4, 1.3, JZ - .5 - 5.6], .02); }
   // the rowing boat off the T-head's west side: a lathe shell, a gunwale, thwarts and oars
-  { const bx0 = TX - JW - 1.2, bz = JZ - 3.8, BL = 4.2, W2 = .75, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
-    const g = new THREE.LatheGeometry(pts, 14, Math.PI / 2, Math.PI); g.rotateZ(Math.PI / 2); g.rotateX(Math.PI); g.scale(1, .55, 1); put(g, 'hull', bx0, .25, bz, 0, 0, 0, .5);
+  const boat = { x: TX - JW - 1.2, z: JZ - 3.8, L: 4.2 };
+  { const bx0 = boat.x, bz = boat.z, BL = boat.L, W2 = .75, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
+    const g = new THREE.LatheGeometry(pts, 14, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.scale(1, .55, 1); put(g, 'hull', bx0, .25, bz, 0, 0, 0, .5); /* the lathe's lower half, a bowl along z (Session 920: it was split along its length and turned across the boat) */
     for (const s of [-1, 1]) { const gp = []; for (let k = 0; k <= 10; k++) { const t = k / 10; gp.push(new THREE.Vector3(bx0 + s * (Math.sin(Math.PI * t) ** .6 * W2 + .05), .26, bz + (t - .5) * BL)); } put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gp), 16, .035, 5), 'timber'); }
     for (const dz of [-.8, .5]) bx('timber', bx0 - .7, bx0 + .7, .08, .13, bz + dz - .1, bz + dz + .1); rod('timber', [bx0 - .3, .18, bz - 1.4], [bx0 + .1, .2, bz + 1.3], .03); rod('rope', [bx0, .3, bz + 2.1], [TX - JW + .15, FY + .6, TH0 + .3], .015); }
   // the derrick on the T-head: a mast, a boom out over the sloop's hatch, the fall and a net of cargo hanging from it
@@ -539,7 +540,7 @@ export function smugglersLair(o = {}, r = stream('lair')) {
   const zm = Z0 - L / 2;
   return { group, tris: Math.round(tris), draws: draws + (ship ? ship.draws : 0), top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, walkY, deck: FY, lamps, door, ladder, ledge: LY,
     escape: { y: LY, x0: XW, z: ZL, w: TRX * 2, h: TUP + 1.1, xPlane: XW + 10.5 }, arch: { w: AW2 * 2, h: AH, z: Z1 }, mouth: { x: SPX(0), w: PRX * 2, y0: FY, h: PUP + 1.3 }, room, held,
-    chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, passage: { w: PRX * 2, h: PUP + 1.3 }, gallery: { y: GY, z0: GZ0, z1: GZ1 }, fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W } };
+    chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, passage: { w: PRX * 2, h: PUP + 1.3 }, gallery: { y: GY, z0: GZ0, z1: GZ1 }, fire: { x: FX, z: FZ }, jetty: { x1: TX + JW, z: JZ, z0: TH0, z1: TH1 }, boat, ship: ship && { x: ship.x, z: ship.z, L: ship.L, W: ship.W } };
 }
 
 // aurenneAqueduct(o, r) (Session 907, card F8): a ruined aqueduct across a dry valley, OG-121's Aurenne panel ("aqueduct ruins") and
@@ -729,4 +730,283 @@ export function aurenneTunnel(o = {}, r = stream('tunnel')) {
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'rut', 'gutter'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, xc, half, lamps, used, mouths: [{ z: 0, w: 2 * H0, h: S + H0 }, { z: -L, w: 2 * H0, h: S + H0 }],
     shaft: SH, passing: { z0: PZ + 3, z1: PZ - 3, half: H1 }, crown: S + H0, L };
+}
+
+// aurenneGrotto(o, r) (Session 914, card F8): a sea grotto on Aurenne's coast, the last of OG-121's Aurenne panel that does not wait on the
+//   quest writer ("aqueduct ruins, sea grottoes, trade tunnels, harbour catacombs"). A cave the sea made, its water lit from under the sea:
+//   the day comes in through a drowned gate under the waterline and makes the water glow, while the arch above the water is low. Built to
+//   the person, a metre a unit; the sea at y 0, the grotto along -z:
+//   - the stair: a rock-cut way from a terrace on the cliff top (+z) down 24 steps of 0.2 m on treads of 0.5 m, 2.6 m wide under a round
+//     vault (3.7 m to its crown over the line of the steps), level for its last 5 m, coming out through an arched frame of plaster and ashlar
+//     with a band of blue glazed tile onto the landing;
+//   - the grotto: one lofted hall on the cave's own caveHall, 60 m long, 37 to 40 m across 6 m up and 18 to 27 m from the water to the roof
+//     near its middle, its limestone dark and wet below the high-water line; a low sea arch in the far end, 6.4 m wide and 3 m over the
+//     water, over a drowned gate 16 m wide and 7 m deep, through which the light comes. The hall is lofted in 208 rings, twice the cave's,
+//     because a dome closes to a point at its centre height and the fan of faces round that point would otherwise cover the stair's
+//     opening at the near end and the arch's top at the far one;
+//   - the landing across the near end at 1.2 m, and the quay: a cut ledge 3.6 m wide down the east wall for 33 m, paved, its sea face in
+//     ashlar, bollards and bronze rings along it, water stairs at its end and a skiff tied to them;
+//   - the spring: an apse of plaster on the landing's west end against the rock, tiled inside, a bronze spout and a basin of ashlar, fresh
+//     water out of the rock in a place of salt; benches either side. What it is to anyone is the quest writer's;
+//   - a beach of pale sand under the west wall across the water, reached by swimming; rocks breaking the surface; a few short stalactites.
+//   -> { group, tris, draws, top, path ([x, z]), walkY(x, z), quay { y, x(z), z0, z1, w }, stair { z0, z1, n, rise, run, top }, mouth (the
+//        stair's top { z, w, h, y }), arch { w, h, z }, gate { w, d }, chamber { x0, x1, z0, z1, h }, spring { x, y, z }, skiff { x, z },
+//        glow ([x, y, z], where the view puts its lights under the water), beach { z0, z1 } }
+let GR = null;
+function grottoMats() {
+  if (GR) return GR; aurenneTextures(); const std = (c, ro = .85, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...o });
+  GR = { rock: mat('rock', { ns: 1.5, color: 0xcabca0, rough: .92 }), rockWet: mat('rock', { ns: 1.7, color: 0x5a6462, rough: .4 }), pave: mat('limestone', { ns: 1.0, rough: .8 }),
+    plaster: mat('plaster', { ns: .6, color: 0xeee0c4, rough: .95 }), ashlar: mat('ashlar', { ns: .9, color: 0xfff6e2, rough: .9 }), zellige: mat('zellige', { ns: .6, rough: .3 }),
+    sand: mat('plaster', { ns: .4, color: 0xe2d6b8, rough: 1 }), seabed: mat('rock', { ns: 1.0, color: 0xa8c0c0, rough: .9 }), bronze: std(0x5a7a5e, .45, { metalness: .6 }),
+    hull: mat('wood', { ns: .8, color: 0x3c6a8a, rough: .7 }), timber: mat('beam', { ns: 1.0, color: 0x8a6c4c, rough: .9 }), rope: std(0x8a7650, .95),
+    sea: new THREE.MeshStandardMaterial({ color: 0x125c9c, emissive: new THREE.Color(.03, .26, .68), emissiveIntensity: .62, roughness: .2, metalness: .1, transparent: true, opacity: .84, depthWrite: false }),
+    spring: new THREE.MeshStandardMaterial({ color: 0x6aa8b0, roughness: .1, transparent: true, opacity: .7, depthWrite: false }),
+    fall: new THREE.MeshStandardMaterial({ color: 0xdff0f4, emissive: new THREE.Color(.2, .3, .34), roughness: .2, transparent: true, opacity: .55, side: THREE.DoubleSide, depthWrite: false }) };
+  { const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), im = x.createImageData(N, N), T = Math.PI * 2 / N, rr = stream('grotto:sea');
+    const W = Array.from({ length: 7 }, () => [1 + Math.floor(rr() * 5), Math.floor(rr() * 7) - 3, rr() * 6]); /* whole waves across the tile, so it repeats without a seam */
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let v = 0; for (const [a, b, p] of W) v += Math.sin((i * a + j * b) * T + p) + Math.sin((i * b - j * a) * T + p * 1.7); const c2 = 1 - Math.min(1, Math.abs(v) / 2.2), l = .55 + .45 * c2 ** 3, k = (j * N + i) * 4;
+      im.data[k] = 255 * l; im.data[k + 1] = 255 * l; im.data[k + 2] = 255 * l; im.data[k + 3] = 255; }
+    x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; GR.sea.emissiveMap = t; GR.sea.emissiveIntensity = .78; } /* the light off the sea floor, broken by the swell into a net */
+  GR.deep = new THREE.MeshBasicMaterial({ color: new THREE.Color(.12, .5, .95) }) /* the daylit sea outside the drowned gate, seen through it */;
+  GR.rock.side = GR.rockWet.side = GR.hull.side = THREE.DoubleSide; return GR;
+}
+export function aurenneGrotto(o = {}, r = stream('grotto')) {
+  const M = grottoMats(), B = new Map(), key = String(o.key || 'grotto');
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const bx = (k, x0, x1, y0, y1, z0, z1, uv) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, 0, 0, uv);
+  const sm = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+  const rk = stream(key + ':rock'), F = field(rk, .3), ph = Array.from({ length: 8 }, () => rk() * 9);
+  // the stair: level from the terrace to z -3, 24 steps down to z -15, level on to the hall
+  const QY = 1.2, NST = 24, RISE = .2, RUN = .5, TOPY = QY + NST * RISE, SZ0 = -3, SZ1 = SZ0 - NST * RUN, PH = 1.3, PW2 = 2.4, MZ = 3;
+  const line = z => z >= SZ0 ? TOPY : z <= SZ1 ? QY : TOPY - (SZ0 - z) / RUN * RISE /* the steps' noses */;
+  const stepY = z => z >= SZ0 ? TOPY : z <= SZ1 ? QY : TOPY - Math.min(NST, Math.ceil((SZ0 - z) / RUN)) * RISE;
+  const PL = 20, Z0 = -PL, L = 60, Z1 = Z0 - L, CY = 5.2, RLOW = 11, E = 3 / L, HW = 1.0 /* the dome closes to a point at CY, which must stand above the stair's opening */;
+  const RX = s => 13 + 6 * Math.sin(Math.PI * s), RY = s => 10 + 8 * Math.sin(Math.PI * s);
+  const { ringAt, hw, roofY } = caveHall(rk, F, ph, { Z0, L, CY, RLOW, RX, RY, E });
+  const AW = 3.2, AH = 3.0, GW = 8, GD = 7, PEND = Z0 - .6;
+  const inPassage = (x, y, z, m) => z > Z0 - 4 && Math.abs(x) < PH - m && y > QY - 1.5 && y < QY + PW2 + Math.sqrt(Math.max(0, (PH - m) ** 2 - x * x));
+  const inArch = (c, m) => (Z0 - c.z) / L > .86 && (c.y >= 0 ? (c.x / (AW - m)) ** 2 + (c.y / (AH - m)) ** 2 : (c.x / (GW - m)) ** 2 + (c.y / (GD - m)) ** 2) < 1;
+  const sOf = u => u - .8 * Math.sin(2 * Math.PI * u) / (2 * Math.PI);
+  for (const wet of [true, false]) put(loft(208, 96, (i, j) => ringAt(sOf(i / 208), j / 96 * Math.PI * 2), true, (c, i, j) => !inPassage(c.x, c.y, c.z, .4) && !inArch(c, 0) && (CY + RLOW * Math.sin((j + .5) / 96 * Math.PI * 2) < HW) === wet), wet ? 'rockWet' : 'rock', 0, 0, 0, 0, 0, 0, .25);
+  // the stair's bore: a loft of its section down the line, the floor 0.25 m under the noses, the rock pushed out by the pick, never in
+  { const NS = Math.round((MZ - PEND) / .25), nF = 6, nW = 8, nV = 20, NA = 2 * nF + 2 * nW + nV;
+    const ring = (i, j) => { const z = MZ - i * (MZ - PEND) / NS, b = line(z) - .25, h = PH; let u, y, nu, ny;
+      if (j < nF) { u = -h + 2 * h * j / nF; y = b; nu = 0; ny = -1; }
+      else if (j < nF + nW) { u = h; y = b + (PW2 + .25) * (j - nF) / nW; nu = 1; ny = 0; }
+      else if (j < nF + nW + nV) { const a = (j - nF - nW) / nV * Math.PI; u = Math.cos(a) * h; y = b + PW2 + .25 + Math.sin(a) * h; nu = Math.cos(a); ny = Math.sin(a); }
+      else if (j < nF + 2 * nW + nV) { u = -h; y = b + (PW2 + .25) * (1 - (j - nF - nW - nV) / nW); nu = -1; ny = 0; }
+      else { u = -h + 2 * h * (j - nF - 2 * nW - nV) / nF; y = b; nu = 0; ny = -1; }
+      const d = y > b + .05 ? Math.min(.2, Math.abs(F(u, y, z)[0]) * 1.4 + .02) * sm((MZ - z) / 1.2) * sm((z - PEND) / 1.2) : 0 /* none where the frames stand */; return [u + nu * d, y + ny * d, z]; };
+    put(loft(NS, NA, ring, true), 'rock', 0, 0, 0, 0, 0, 0, .35); }
+  // the steps, and the paving of the level runs at either end
+  for (let k = 1; k <= NST; k++) { const z1 = SZ0 - (k - 1) * RUN, z0 = SZ0 - k * RUN, top = TOPY - k * RISE; bx('pave', -PH + .01, PH - .01, line(z0) - .3, top, z0, z1 + (k > 1 ? 0 : 0), .6); }
+  for (let z = MZ; z > SZ0 + .01; z -= 1.5) bx('pave', -PH + .01, PH - .01, TOPY - .3, TOPY, Math.max(z - 1.5, SZ0), z, .6);
+  for (let z = SZ1; z > PEND - .01; z -= 1.4) bx('pave', -PH + .01, PH - .01, QY - .3, QY, Math.max(z - 1.4, PEND), z, .6);
+  // the frames: an arch round the bore's section at either end, plaster in a block let into the rock, an ashlar ring, a band of tile
+  const arch = (w, h0, rr, n = 20) => { const p = [new THREE.Vector2(w, -.1), new THREE.Vector2(w, h0)]; for (let s = 1; s < n; s++) { const a = s / n * Math.PI; p.push(new THREE.Vector2(Math.cos(a) * rr, h0 + Math.sin(a) * rr)); } p.push(new THREE.Vector2(-w, h0), new THREE.Vector2(-w, -.1)); return p; };
+  for (const [fz, fy, ry, depth] of [[PEND, QY, Math.PI, .75], [MZ, TOPY, 0, .7]]) { const W2 = PH + .05, OW = 2.2, OH = 5.0;
+    const sh = new THREE.Shape([new THREE.Vector2(-OW, -.25), new THREE.Vector2(OW, -.25), new THREE.Vector2(OW, OH), new THREE.Vector2(-OW, OH)]); sh.holes.push(new THREE.Path(arch(W2, PW2, W2))); const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false, curveSegments: 20 }); g.translate(0, 0, -depth + .02); put(g, 'plaster', 0, fy, fz, 0, ry, 0, .45);
+    const rg = new THREE.Shape(); rg.absarc(0, 0, W2 + .42, 0, Math.PI, false); rg.absarc(0, 0, W2, Math.PI, 0, true); const rgg = new THREE.ExtrudeGeometry(rg, { depth: .1, bevelEnabled: false, curveSegments: 20 }); rgg.translate(0, PW2, .02); put(rgg, 'ashlar', 0, fy, fz, 0, ry);
+    const fo = ry ? -1 : 1; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(.22, PW2, .1), 'ashlar', e * (W2 + .11), fy + PW2 / 2, fz + fo * .07); put(new THREE.BoxGeometry(.5, .9, .02), 'zellige', e * 1.75, fy + 3.2, fz + fo * .03); }
+    put(new THREE.BoxGeometry(4.4, .24, .02), 'zellige', 0, fy + 4.35, fz + fo * .03); put(new THREE.BoxGeometry(4.8, .22, .4), 'ashlar', 0, fy + OH + .11, fz - fo * .15); }
+  // the cliff over the terrace, its face never behind the frame's plane, and the terrace before it
+  { const cg = new THREE.PlaneGeometry(36, 16, 48, 20).toNonIndexed(), P = cg.attributes.position.array, CF = field(stream(key + ':cliff'), .9), kept = [];
+    for (let i = 0; i < P.length; i += 9) { let cx = 0, cy = 0; for (let k = 0; k < 3; k++) { cx += P[i + k * 3] / 3; cy += P[i + k * 3 + 1] / 3; } cy += 7.6; if (Math.abs(cx) < 2.1 && cy < 4.95) continue; for (let k = 0; k < 9; k++) kept.push(P[i + k]); }
+    for (let i = 0; i < kept.length; i += 3) { const x = kept[i], y = kept[i + 1] + 7.6, d = Math.max(0, Math.max(Math.abs(x) - 2.2, y - 5.2)); kept[i + 1] = y + TOPY - .2; kept[i + 2] = -.68 + Math.min(1, d / 3) * Math.max(.1, .7 + CF(x, y, 0)[2] * 1.2); }
+    const cgeo = new THREE.BufferGeometry(); cgeo.setAttribute('position', new THREE.Float32BufferAttribute(kept, 3)); const mg = mergeVertices(cgeo, 1e-4); mg.computeVertexNormals(); put(mg, 'rock', 0, 0, MZ, 0, 0, 0, .3);
+    bx('pave', -9, 9, TOPY - .4, TOPY, MZ, MZ + 8, .6); }
+  // the floor: the landing across the near end at QY (its sea edge rock), the quay down the east wall (its edge cut straight), the sea's bed
+  const wob = x => .8 * Math.sin(x * .5 + ph[2]) + .4 * Math.sin(x * 1.3 + ph[3]), SHZ = Z0 - 7, QW = 3.6, QZ1 = Z0 - 40, QX = z => hw(z) - QW, BZ0 = Z0 - 24, BZ1 = Z0 - 36;
+  const beachT = (x, z) => sm((z - BZ1) / 2) * sm((BZ0 - z) / 2) * sm((x + hw(z) - 8) / -2);
+  const land = (x, z) => Math.max(z - SHZ, z > QZ1 ? x - QX(z) : -99) /* both edges cut straight and faced in ashlar */;
+  const floorY = (x, z) => { const e = land(x, z); if (e > 0) return QY - .08 /* under the paving */; const s = (Z0 - z) / L;
+    let y = -5 + .6 * Math.sin(x * .3 + ph[4]) * Math.sin(z * .21 + ph[5]); y = Math.min(y, -5 - 2 * sm((s - .8) / .12));
+    y = y + (-2.2 - y) * (1 - sm((x + hw(z) - 1) / 6)) * (1 - sm((s - .8) / .1)); const b = beachT(x, z); y = y + (.7 - .32 * (x + hw(z)) - y) * b;
+    const t = Math.min(1, -e / 1.2); return QY + (y - QY) * Math.min(1, t * 1.4); };
+  { const X0 = -24, X1 = 24, NX = 96, NZ = 120, pos = []; for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = X0 + (X1 - X0) * i / NX, z = Z0 - L * j / NZ; pos.push(x, floorY(x, z), z); }
+    const tri = { rock: [], sand: [], seabed: [] };
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1;
+      for (const t of [[a, b, c], [b, d, c]]) { const ys = t.map(k => pos[k * 3 + 1]), cx = t.reduce((s, k) => s + pos[k * 3], 0) / 3, cz = t.reduce((s, k) => s + pos[k * 3 + 2], 0) / 3;
+        const k = ys.every(y => y > QY - .09) ? 'rock' : beachT(cx, cz) > .3 && Math.max(...ys) > -1.2 ? 'sand' : 'seabed'; for (const v of t) tri[k].push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]); } }
+    for (const k of Object.keys(tri)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(tri[k], 3)); const m = mergeVertices(g, 1e-4); m.computeVertexNormals(); put(m, k, 0, 0, 0, 0, 0, 0, .3); } }
+  put(new THREE.PlaneGeometry(64, L + 90).rotateX(-Math.PI / 2), 'sea', 0, 0, Z0 - (L + 90) / 2 + 1, 0, 0, 0, .07);
+  put(new THREE.PlaneGeometry(60, 16), 'deep', 0, -8.05, Z1 - 8); put(new THREE.PlaneGeometry(60, 30).rotateX(-Math.PI / 2), 'deep', 0, -16, Z1 + 6) /* the open sea beyond the gate, and its floor */;
+  // the quay: paving in lengths of 1.2 m, its sea face in ashlar down under the water, a coping on the edge; bollards and rings
+  for (let z = SHZ + 1.5; z > QZ1 + .01; z -= 1.2) { const z0 = Math.max(z - 1.2, QZ1), zm = (z + z0) / 2, x0 = QX(zm), ry = Math.atan2(QX(z0) - QX(z), z0 - z);
+    const xp = Math.max(QX(z), QX(z0)) + .2; bx('pave', xp, QX(zm) + QW + 1.2, QY - .27, QY + .03, z0, z + .005, .6) /* square, behind the face's top, which follows the edge */;
+    put(new THREE.BoxGeometry(.5, QY + 3, z - z0 + .01), 'ashlar', x0 + .2, (QY - 3) / 2 + .03, zm, 0, ry, 0, .5); }
+  // the landing: paved across the near end, its sea edge faced in ashlar like the quay's
+  for (let z = Z0 + .5; z > SHZ + .01; z -= 1.2) { const z0 = Math.max(z - 1.2, SHZ); bx('pave', -18, QX(SHZ) + .01, QY - .3, QY, z0, z, .6); }
+  bx('ashlar', -18, QX(SHZ) + .2, QY - 3, QY + .03, SHZ - .5, SHZ + .02, .5);
+  const bollards = []; for (let z = SHZ - 1, k = 0; z > QZ1 + 1; z -= 6, k++) { const x = QX(z) + .45; put(new THREE.CylinderGeometry(.16, .2, .55, 10), 'ashlar', x, QY + .3, z); bollards.push([+x.toFixed(2), +z.toFixed(2)]);
+    put(new THREE.TorusGeometry(.12, .02, 6, 12).rotateY(Math.PI / 2), 'bronze', QX(z - 3) - .07, QY - .5, z - 3); }
+  // the water stairs at the quay's end: six steps down along -z into the sea
+  const WS = []; for (let k = 1; k <= 7; k++) { const top = QY - k * .2, z1 = QZ1 - (k - 1) * .4, z0 = z1 - .4, x0 = QX(QZ1); bx('ashlar', x0 + .2, x0 + QW + 1.2, -2.5, top, z0, z1, .5); WS.push(top); }
+  // the skiff, tied at the water stairs: a lathe shell, its gunwale, two thwarts and the oars
+  const skiff = { x: QX(QZ1) - 1.25, z: QZ1 - 1.4 };
+  { const BL = 4.4, W2 = .78, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
+    const g = new THREE.LatheGeometry(pts, 14, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.scale(1, .55, 1); put(g, 'hull', skiff.x, .28, skiff.z, 0, 0, 0, .5); /* the lathe's lower half, a bowl along z */
+    for (const s of [-1, 1]) { const gp = []; for (let k = 0; k <= 10; k++) { const t = k / 10; gp.push(new THREE.Vector3(skiff.x + s * (Math.sin(Math.PI * t) ** .6 * W2 + .05), .29, skiff.z + (t - .5) * BL)); } put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gp), 16, .035, 5), 'timber'); }
+    for (const dz of [-.8, .6]) bx('timber', skiff.x - .72, skiff.x + .72, .1, .15, skiff.z + dz - .1, skiff.z + dz + .1);
+    for (const s of [-1, 1]) { const g2 = new THREE.CylinderGeometry(.03, .03, 2.6, 6); g2.rotateX(Math.PI / 2); g2.rotateY(s * .12); put(g2, 'timber', skiff.x + s * .3, .2, skiff.z + .1); }
+    const a = new THREE.Vector3(skiff.x, .32, skiff.z + 2.1), b = new THREE.Vector3(QX(QZ1) + .45, QY - .2, QZ1 - .2), d = b.clone().sub(a), rg = new THREE.CylinderGeometry(.015, .015, d.length(), 5); rg.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = a.add(b).multiplyScalar(.5); put(rg, 'rope', m.x, m.y, m.z); }
+  // the spring on the landing's west end: the west wall's x over the apse's height, the apse stood in front of the nearest of it
+  const wallX = (y, z) => { const s = (Z0 - z) / L; let a = Math.PI - 1.3, b = Math.PI + 1.3; for (let k = 0; k < 24; k++) { const m = (a + b) / 2; if (ringAt(s, m)[1] > y) a = m; else b = m; } return ringAt(s, (a + b) / 2)[0]; };
+  const SZ = Z0 - 3.6, SXw = Math.max(...[-1.6, 0, 1.6].flatMap(dz => [QY + .2, QY + 1.5, QY + 3, QY + 3.8].map(y => wallX(y, SZ + dz)))), SX = SXw + .35, AR = 1.15, AHt = 2.4;
+  { const sh = new THREE.Shape([new THREE.Vector2(-1.75, -.2), new THREE.Vector2(1.75, -.2), new THREE.Vector2(1.75, AHt + AR + .6), new THREE.Vector2(-1.75, AHt + AR + .6)]); sh.holes.push(new THREE.Path(arch(AR, AHt, AR)));
+    const sg = new THREE.ExtrudeGeometry(sh, { depth: 1.56, bevelEnabled: false, curveSegments: 20 }); sg.translate(0, 0, -1.5); put(sg, 'plaster', SX, QY, SZ, 0, Math.PI / 2, 0, .45); /* the back, the niche cut through it, run into the rock */
+    const ap = new THREE.CylinderGeometry(AR, AR, AHt, 20, 1, true, Math.PI, Math.PI); ap.scale(1, 1, -1); ap.deleteAttribute('normal'); put(ap, 'zellige', SX + .06, QY + AHt / 2, SZ, 0, 0, 0, .6); /* the niche's hollow, into the wall, seen from inside */
+    const dm = new THREE.SphereGeometry(AR, 20, 8, -Math.PI / 2, Math.PI, 0, Math.PI / 2); dm.scale(1, 1, -1); dm.deleteAttribute('normal'); put(dm, 'plaster', SX + .06, QY + AHt, SZ, 0, 0, 0, .45);
+    for (const e of [-1, 1]) { put(new THREE.BoxGeometry(.4, AHt + AR + .5, .5), 'plaster', SX + .25, QY + (AHt + AR + .5) / 2 - .1, SZ + e * (AR + .25), 0, 0, 0, .45); put(new THREE.BoxGeometry(.5, .2, .6), 'ashlar', SX + .3, QY + AHt, SZ + e * (AR + .25)); }
+    const rg = new THREE.Shape(); rg.absarc(0, 0, AR + .38, 0, Math.PI, false); rg.absarc(0, 0, AR, Math.PI, 0, true); const rgg = new THREE.ExtrudeGeometry(rg, { depth: .12, bevelEnabled: false, curveSegments: 20 }); put(rgg, 'ashlar', SX + .44, QY + AHt, SZ, 0, Math.PI / 2, 0);
+    put(new THREE.BoxGeometry(.6, .3, 3.4), 'ashlar', SX + .3, QY + AHt + AR + .55, SZ); }
+  const BW = 2.4, BD = 1.3, BH = .55, bx0 = SX + .5; for (const [x0, x1, z0, z1] of [[bx0, bx0 + BD, SZ - BW / 2, SZ - BW / 2 + .2], [bx0, bx0 + BD, SZ + BW / 2 - .2, SZ + BW / 2], [bx0 + BD - .2, bx0 + BD, SZ - BW / 2, SZ + BW / 2]]) bx('ashlar', x0, x1, QY, QY + BH, z0, z1, .5);
+  bx('ashlar', bx0, bx0 + BD, QY, QY + .08, SZ - BW / 2, SZ + BW / 2, .5); bx('spring', bx0 - .02, bx0 + BD - .2, QY + .08, QY + BH - .08, SZ - BW / 2 + .2, SZ + BW / 2 - .2);
+  { const sp = new THREE.CylinderGeometry(.035, .05, .5, 8); sp.rotateZ(Math.PI / 2 - .2); put(sp, 'bronze', SX - AR + .55 + .2, QY + 1.6, SZ); put(new THREE.PlaneGeometry(.06, 1.08).rotateY(Math.PI / 2), 'fall', SX - AR + .55 + .47, QY + 1.02, SZ); }
+  for (const e of [-1, 1]) bx('ashlar', SX + .1, SX + .55, QY, QY + .45, SZ + e * 2.6 - .9, SZ + e * 2.6 + .9, .5);
+  // rocks breaking the surface under the west wall, and blocks fallen near the arch; a few short stalactites, none low over the quay
+  for (let k = 0, n = 0; k < 120 && n < 14; k++) { const z = Z0 - 9 - r() * (L - 14), x = -hw(z) + 1 + r() * 7, s = .6 + r() ** 2 * 2.2; if (beachT(x, z) > .05 || x > -hw(z) + 8 || x > QX(z) - s - 2) continue; n++;
+    const g = mergeVertices(new THREE.IcosahedronGeometry(s * .6, 2).deleteAttribute('normal').deleteAttribute('uv')), P = g.attributes.position, sx = 1 + r() * .7, sy = .6 + r() * .5; for (let i = 0; i < P.count; i++) { const vx = P.getX(i), vy = P.getY(i), vz = P.getZ(i), [dx, dy, dz] = F(vx * 3 + x, vy * 3, vz * 3 + z); P.setXYZ(i, vx * sx + dx * .6 * s, vy * sy + dy * .4 * s, vz + dz * .6 * s); }
+    g.computeVertexNormals(); put(g, 'rockWet', x, floorY(x, z) + s * .5 + .3, z, r() * .3, r() * 6, r() * .3, .35); }
+  for (let k = 0; k < 40; k++) { const x = (r() * 2 - 1) * 12, z = Z0 - 3 - r() * (L - 10), ry = roofY(x, z), Lg = .3 + r() ** 2 * 1.2; if (Math.abs(x) > hw(z) - 1 || ry - Lg < QY + 6) continue; const g = growth(r, Lg + .5, .08 + Lg * .08); g.rotateX(Math.PI); put(g, 'rock', x, ry + .5, z); }
+  // the walk: off the terrace, down the stair, onto the landing; to the spring and back; down the quay to the water stairs' head
+  const walkY = (x, z) => z > PEND ? stepY(z) : QY;
+  const path = [[0, MZ + 3.1], [0, Z0 - 1.4], [bx0 + BD + .9, SZ], [0, Z0 - 2.4], [QX(SHZ) + 1.8, SHZ]]; for (let z = SHZ - 2; z > QZ1 + .3; z -= 2) path.push([+(QX(z) + 1.8).toFixed(3), z]); path.push([QX(QZ1) + 1.8, QZ1 + .2]);
+  const glow = []; for (let k = 0; k < 5; k++) { const z = Z0 - 10 - k * 10; glow.push([+(QX(z) / 2 - 3).toFixed(2), -.4, z]); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['sea', 'spring', 'fall'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, walkY, glow, bollards, waterStairs: WS,
+    quay: { y: QY, x: QX, z0: SHZ, z1: QZ1, w: QW }, stair: { z0: SZ0, z1: SZ1, n: NST, rise: RISE, run: RUN, top: TOPY }, mouth: { z: MZ, w: 2 * PH, h: PW2 + PH, y: TOPY },
+    arch: { w: 2 * AW, h: AH, z: Z1 }, gate: { w: 2 * GW, d: GD }, chamber: { x0: -RX(.5), x1: RX(.5), z0: Z0, z1: Z1, h: CY + RY(.5) }, spring: { x: bx0 + BD / 2, y: QY + BH, z: SZ }, skiff, beach: { z0: BZ0, z1: BZ1 } };
+}
+
+// gatelandsAbbey(o, r) (Session 921, card F8): a monastic ruin, OG-121's Gatelands panel ("round cairns, monastic ruins and limestone
+//   caves"), after the island's own: a ring of dry stone round a green, a roofless church, a round tower and a ringed high cross, the
+//   brothers' beehive cells. What the brothers were, and why they left, is the quest writer's; no grave is built (§3.1). A metre a unit,
+//   the green level at y 0, the gate on +z, the church's altar to the east (+x):
+//   - the cashel: a dry-stone ring 61.6 m across, 1.4 m thick, battered, 2.0 to 2.2 m high, fallen to 0.6 m in two breaches with its
+//     stones spilled either side; the gatehouse: two round arches 2.6 m wide and 3.6 m high, 7 m apart, between side walls, paved;
+//   - the church: a nave 12 by 6.4 m inside, walls 0.9 m thick and 5 m high under gables of 9.4 m, a round-headed west door 1.4 by 2.6 m,
+//     a chancel arch 3 by 4.2 m into a chancel 5.5 by 4.4 m with an east window over a stone altar; roofless, its wall-heads ragged, the
+//     nave's south wall fallen to 1.3 m over 3.5 m and its stones lying in the grass; dressed stone at the doors and the arch;
+//   - the round tower: 26 m of shaft, 5.2 m across at its foot and 4.4 at its head, under a stone cone to 30.4 m; its door 3.2 m up,
+//     facing the church's west door, slits up the shaft and four windows under the cap;
+//   - the high cross: 4.5 m, ringed, on a stepped base, in the green before the church;
+//   - the cells: three corbelled stone huts, 6 m across and 4 m high, two whole with a door of 0.9 by 1.9 m under a lintel, one fallen to
+//     its lower courses; the footings of a long range (14 by 7 m) where the brothers ate; a yew in the green, ash trees outside.
+//   -> { group, tris, draws, top, path ([x, z], the walk at ground height: up to the gate, across the green to the west door, down the
+//        nave and through the chancel arch), ground(x, z), cashel { r0, r1, gate, breaches ([a]) }, church { nave, chancel, door, arch, z },
+//        tower { x, z, door { x, z, sill, ry }, top }, cross { x, z, h }, cells ([{ x, z, ry, whole }]), gatehouse { z0, z1, w, h } }
+let AB = null;
+function abbeyMats() {
+  if (AB) return AB; markTextures(); const std = (c, ro = .9) => new THREE.MeshStandardMaterial({ color: c, roughness: ro });
+  AB = { turf: mat('turfMoss', { ns: .8, color: 0xeeffc4, rough: 1 }), dry: mat('cobble', { ns: 1.4, color: 0xa8a498, rough: .95 }), rubble: mat('lichen', { ns: 1.2, color: 0xc4bfb0, rough: .95 }),
+    dress: mat('ashlar', { ns: .9, color: 0xc8c2b2, rough: .9 }), tower: mat('lichen', { ns: 1.1, color: 0xd0cbbd, rough: .95 }), cross: mat('rock', { ns: 1.0, color: 0xb8b4a6, rough: .95 }),
+    flag: mat('flag', { ns: 1.0, color: 0x9c998e, rough: .95 }), boulder: mat('rock', { ns: 1.5, color: 0x9c9a8e, rough: .95 }), dark: std(0x0b0a09, 1), leaf: std(0x2e4224), yew: std(0x1c2a18), bark: std(0x4a3c2e, .95) };
+  AB.dry.side = THREE.DoubleSide; return AB;
+}
+export function gatelandsAbbey(o = {}, r = stream('abbey')) {
+  const M = abbeyMats(), B = new Map(), key = String(o.key || 'abbey'), V = (x, y) => new THREE.Vector2(x, y);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const ph = Array.from({ length: 12 }, () => r() * 9), rag = (u, s = 1) => s * (.12 * Math.sin(u * 2.3 + ph[0]) + .08 * Math.sin(u * 5.1 + ph[1]) + .05 * Math.sin(u * 11.7 + ph[2]));
+  const R0 = 29.4, R1 = 30.8, FLAT = 34;
+  // the ground: the green level inside the ring and for 3 m outside it, then falling away and lumpy
+  const F = field(stream(key + ':land'), .5), ground = (x, z) => { const d = Math.hypot(x, z); if (d <= FLAT) return 0; const w = Math.min(1, (d - FLAT) / 8); return -(d - FLAT) * .07 + F(x, 0, z)[1] * w * 1.2; };
+  { const S = 1.25, N = 120, X0 = -75, pos = [], idx = [];
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) { const x = X0 + i * S, z = X0 + j * S; pos.push(x, ground(x, z), z); }
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'turf', 0, 0, 0, 0, 0, 0, .5); }
+  // a ring of dry stone about (cx, cz) from angle a0 to a1 (a 0 is +z, a pi/2 is +x), its faces battered, its head at h(a)
+  const ringWall = (cx, cz, ro, ri, a0, a1, h, k, bat = .3, y0 = -.6) => { const N = Math.max(8, Math.ceil((a1 - a0) * ro / .5)), pos = [], P = (rr, a, y) => [cx + Math.sin(a) * rr, y, cz + Math.cos(a) * rr];
+    const ring = []; for (let i = 0; i <= N; i++) { const a = a0 + (a1 - a0) * i / N, j = .05 * Math.sin(a * ro * 1.7 + ph[3]) + .04 * Math.sin(a * ro * 4.3 + ph[4]), hh = h(a); ring.push([P(ro + j, a, y0), P(ro - bat + j, a, hh), P(ri + bat * .5 - j, a, hh), P(ri - j, a, y0)]); }
+    const tri = (a, b, c) => pos.push(...a, ...b, ...c), quad = (a, b, c, d) => { tri(a, b, c); tri(a, c, d); };
+    for (let i = 0; i < N; i++) { const [ob, ot, it, ib] = ring[i], [OB, OT, IT, IB] = ring[i + 1]; quad(ob, OB, OT, ot); quad(ot, OT, IT, it); quad(ib, it, IT, IB); }
+    if (a1 - a0 < Math.PI * 2 - 1e-6) for (const e of [ring[0], ring[N]]) quad(...e);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .55); };
+  // a wall of rubble: its face in the local (u, y) plane, u from 0 to L, its head top(u), extruded T thick about z, at (x, z) turned ry
+  // (ry 0 runs it along +x, ry -pi/2 along +z); holes are paths in (u, y)
+  const archHole = (uc, w, sill, spring) => { const h = [V(uc - w / 2, sill), V(uc + w / 2, sill)]; for (let s = 0; s <= 16; s++) { const a = s / 16 * Math.PI; h.push(V(uc + Math.cos(a) * w / 2, spring + Math.sin(a) * w / 2)); } return new THREE.Path(h); };
+  const wall = (L, T, top, holes, k, x, z, ry, y0 = -.4) => { const pts = [V(0, y0), V(L, y0)], n = Math.max(2, Math.ceil(L / .3)); for (let s = n; s >= 0; s--) { const u = L * s / n; pts.push(V(u, top(u))); }
+    const sh = new THREE.Shape(pts); sh.holes.push(...holes); const g = new THREE.ExtrudeGeometry(sh, { depth: T, bevelEnabled: false, curveSegments: 16 }); g.translate(0, 0, -T / 2); put(g, k, x, 0, z, 0, ry, 0, .8); };
+  // dressed stone round an arched opening: the ring and the jambs, a little proud of the wall either side
+  const dressArch = (x, z, ry, w, sill, spring, T) => { const sh = new THREE.Shape(), R = w / 2; sh.absarc(0, spring, R + .28, 0, Math.PI, false); sh.absarc(0, spring, R, Math.PI, 0, true);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: T + .06, bevelEnabled: false, curveSegments: 16 }); g.translate(0, 0, -(T + .06) / 2); put(g, 'dress', x, 0, z, 0, ry, 0, .5);
+    for (const e of [-1, 1]) { const j = new THREE.BoxGeometry(.28, spring - sill, T + .06); j.translate(e * (R + .14), (sill + spring) / 2, 0); put(j, 'dress', x, 0, z, 0, ry, 0, .5); } };
+  const stone = (x, y, z, s, k = 'rubble') => put(roughen(new RoundedBoxGeometry(s * (1 + r() * .6), s * (.5 + r() * .3), s * (.7 + r() * .4), 2, s * .12), r, s * .06, 2), k, x, y + s * .2, z, (r() - .5) * .5, r() * 3, (r() - .5) * .5);
+  // the cashel and its gate: a gap of the gatehouse's width at a 0; two breaches where it has fallen
+  const GW = 2.0, GT = .9, GZ0 = 27, GZ1 = 34, GA = Math.asin((GW + GT) / ((R0 + R1) / 2)), BR = [1.9 + r() * .3, 4.2 + r() * .3];
+  const cashelH = a => 2.05 + .1 * Math.sin(a * 23 + ph[5]) + .07 * Math.sin(a * 61 + ph[6]) - BR.reduce((s, b) => s + 1.5 * Math.sqrt(Math.max(0, 1 - Math.abs(a - b) / .075)), 0);
+  ringWall(0, 0, R1, R0, GA, Math.PI * 2 - GA, cashelH, 'dry', .35);
+  for (const b of BR) for (let k = 0; k < 16; k++) { const a = b + (r() - .5) * .12, d = (r() > .5 ? R1 + .4 + r() * 2.6 : R0 - .4 - r() * 2.6); stone(Math.sin(a) * d, 0, Math.cos(a) * d, .35 + r() * .3, 'dry'); }
+  // the gatehouse: side walls along z, an arched wall at either end, paved between
+  for (const e of [-1, 1]) wall(GZ1 - GZ0, GT, u => 3.9 + rag(u + e * 3), [], 'rubble', e * (GW + GT / 2), GZ0, -Math.PI / 2);
+  const GAW = 2.6, GSP = 2.3; for (const z of [GZ0 + GT / 2, GZ1 - GT / 2]) { wall(2 * GW, GT, u => 4.5 + .5 * (1 - Math.abs(u - GW) / GW) + rag(u + z, .6), [archHole(GW, GAW, 0, GSP)], 'rubble', -GW, z, 0); dressArch(0, z, 0, GAW, 0, GSP, GT); }
+  put(new THREE.BoxGeometry(2 * GW, .1, GZ1 - GZ0), 'flag', 0, -.03, (GZ0 + GZ1) / 2, 0, 0, 0, .5);
+  // the church: the nave from NX0 to NX1 inside, the chancel from NX1 + T to CX1, about z ZC
+  const T = .9, ZC = -10, NX0 = -10, NX1 = 2, NW = 3.2, NH = 5.0, NP = 9.4, CX0 = NX1 + T, CX1 = 8.4, CW = 2.2, CH = 4.0, CP = 6.8, BRK = [6, 9.5];
+  const DW = 1.4, DSP = 1.9, AW = 3.0, ASP = 2.7;
+  const gable = (w, h, p, s) => u => h + (p - h) * (1 - Math.abs(u - w) / w) + rag(u * 1.3 + s, .7);
+  wall(NX1 - NX0 + 2 * T, T, u => NH + rag(u), [archHole(6.5, .45, 2.4, 3.2)], 'rubble', NX0 - T, ZC - NW - T / 2, 0) /* the north wall, one window */;
+  wall(NX1 - NX0 + 2 * T, T, u => NH + rag(u + 4) - (u > BRK[0] && u < BRK[1] ? Math.sin(Math.PI * (u - BRK[0]) / (BRK[1] - BRK[0])) ** .4 * (NH - 1.3 + rag(u * 3.1 + 2, 2.2)) : 0), [archHole(3.0, .45, 2.4, 3.2), archHole(11.5, .45, 2.4, 3.2)], 'rubble', NX0 - T, ZC + NW + T / 2, 0) /* the south wall, its breach */;
+  wall(2 * NW, T, gable(NW, NH, NP, 1), [archHole(NW, DW, 0, DSP), archHole(NW, .35, 5.8, 6.5)], 'rubble', NX0 - T / 2, ZC - NW, -Math.PI / 2) /* the west gable and its door */;
+  dressArch(NX0 - T / 2, ZC, -Math.PI / 2, DW, 0, DSP, T);
+  wall(2 * NW, T, gable(NW, NH, NP, 2), [archHole(NW, AW, 0, ASP)], 'rubble', NX1 + T / 2, ZC - NW, -Math.PI / 2) /* the chancel arch */;
+  dressArch(NX1 + T / 2, ZC, -Math.PI / 2, AW, 0, ASP, T);
+  for (const e of [-1, 1]) wall(CX1 - CX0 + T, T, u => CH + rag(u + e * 7), e > 0 ? [archHole(3.0, .4, 1.8, 2.6)] : [], 'rubble', CX0, ZC + e * (CW + T / 2), 0);
+  wall(2 * CW, T, gable(CW, CH, CP, 3), [archHole(CW, .4, 1.7, 3.0)], 'rubble', CX1 + T / 2, ZC - CW, -Math.PI / 2) /* the east gable and its window */;
+  put(new RoundedBoxGeometry(1.0, .95, 1.8, 2, .04), 'dress', CX1 - .6, .47, ZC) /* the altar, a block of stone */;
+  for (let k = 0; k < 14; k++) { const x = NX0 - T + BRK[0] + r() * (BRK[1] - BRK[0]), z = ZC + NW + T + .4 + r() * 2.6; stone(x, 0, z, .3 + r() * .25); }
+  for (let k = 0; k < 6; k++) stone(NX0 + 2 + r() * 9, 0, ZC + NW - .4 - r() * .6, .25 + r() * .2) /* a few inside, by the wall */;
+  // the round tower, its door turned to the church's west door
+  const TX = -17, TZ = -19, TH = 26, TR0 = 2.6, TR1 = 2.2, tr = y => TR0 + (TR1 - TR0) * Math.max(0, y) / TH, SILL = 3.2, TRY = Math.atan2(-(ZC - TZ), (NX0 - T) - TX);
+  { const prof = []; for (let y = -.5; y <= TH + .01; y += 1) prof.push(V(tr(y), y)); put(new THREE.LatheGeometry(prof, 44), 'tower', TX, 0, TZ, 0, 0, 0, .8);
+    put(new THREE.CylinderGeometry(TR0 + .22, TR0 + .3, .9, 44), 'tower', TX, .05, TZ);
+    const cap = [V(TR1 - .05, TH - .3), V(TR1 + .1, TH - .05), V(TR1 + .1, TH + .2)]; /* closed under its eave, onto the shaft */ for (let s = 1; s <= 10; s++) { const t = s / 10; cap.push(V((TR1 + .02) * (1 - t) ** 1.15, TH + .2 + 4.2 * t)); } put(new THREE.LatheGeometry(cap, 44), 'tower', TX, 0, TZ, 0, 0, 0, .45);
+    const at = (ry, d, lz) => [TX + Math.cos(ry) * d + Math.sin(ry) * lz, TZ - Math.sin(ry) * d + Math.cos(ry) * lz];
+    const opening = (ry, y, w, h) => { const d = tr(y + h / 2); for (const e of [-1, 1]) { const [x, z] = at(ry, d, e * (w / 2 + .12)); put(new THREE.BoxGeometry(.4, h, .24), 'dress', x, y + h / 2, z, 0, ry); }
+      for (const [yy, hh] of [[y - .1, .2], [y + h + .2, .4]]) { const [x, z] = at(ry, d, 0); put(new THREE.BoxGeometry(.4, hh, w + .48), 'dress', x, yy, z, 0, ry); }
+      const [x, z] = at(ry, d - .05, 0); put(new THREE.BoxGeometry(.3, h, w), 'dark', x, y + h / 2, z, 0, ry); };
+    opening(TRY, SILL, .8, 1.8); opening(TRY + 2.2, 8.5, .22, .7); opening(TRY - 2.0, 13.5, .22, .7); opening(TRY + .9, 18.5, .22, .7);
+    for (let q = 0; q < 4; q++) opening(TRY + .4 + q * Math.PI / 2, TH - 2.4, .42, 1.0); }
+  // the high cross: a stepped base, the shaft, the arms in their ring, a capstone
+  const CRX = -12, CRZ = 4, CRY = .35;
+  { const P = (g, y, k = 'cross') => { g.translate(0, y, 0); put(g, k, CRX, 0, CRZ, 0, CRY, 0, .5); };
+    P(new THREE.BoxGeometry(1.9, .5, 1.5), .2, 'boulder'); P(new THREE.BoxGeometry(1.35, .5, 1.0), .65, 'boulder'); P(new THREE.BoxGeometry(.85, .3, .55), 1.05);
+    P(new THREE.BoxGeometry(.5, 2.7, .3), 2.55); P(new THREE.BoxGeometry(1.9, .42, .3), 3.35); P(new THREE.BoxGeometry(.46, .55, .28), 4.12); P(new THREE.BoxGeometry(.56, .1, .34), 4.44);
+    const sh = new THREE.Shape(); sh.absarc(0, 0, .66, 0, Math.PI * 2, false); const hole = new THREE.Path(); hole.absarc(0, 0, .48, 0, Math.PI * 2, true); sh.holes.push(hole);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: .22, bevelEnabled: false, curveSegments: 28 }); g.translate(0, 0, -.11); P(g, 3.35);
+    for (const s of [-1, 1]) for (const y of [1.6, 2.4]) P(new THREE.BoxGeometry(.36, .62, .03).translate(0, 0, s * .16), y) /* the panels, raised on both faces */; }
+  // the cells: two corbelled huts whole, their doors to the green, and one fallen to its lower courses
+  const cells = [{ x: 15, z: -13 }, { x: 20, z: -3 }, { x: 15, z: 9, fallen: true }].map(c => ({ ...c, ry: Math.atan2(-c.x, -c.z), whole: !c.fallen }));
+  const CO = 3.0, CHo = 4.0, CI = 2.0, CHi = 3.3, CDW = .9, CDH = 1.9;
+  for (const c of cells) {
+    if (c.whole) { const shell = (R, H, y0, inner) => { const p = []; for (let s = 0; s <= 18; s++) { const y = y0 + (H - y0) * s / 18; p.push(V(s === 18 ? 0 : R * Math.sqrt(Math.max(0, 1 - Math.max(0, y / H) ** 1.8)), y)); } if (inner) p.reverse();
+          const g = new THREE.LatheGeometry(p, 64).toNonIndexed(), P = g.attributes.position.array, N = g.attributes.normal.array, kp = [], kn = [];
+          for (let i = 0; i < P.length; i += 9) { const cx = (P[i] + P[i + 3] + P[i + 6]) / 3, cy = (P[i + 1] + P[i + 4] + P[i + 7]) / 3, cz = (P[i + 2] + P[i + 5] + P[i + 8]) / 3; if (cz > 0 && Math.abs(cx) < .62 && cy < CDH + .15) continue; kp.push(...P.slice(i, i + 9)); kn.push(...N.slice(i, i + 9)); }
+          const o2 = new THREE.BufferGeometry(); o2.setAttribute('position', new THREE.Float32BufferAttribute(kp, 3)); o2.setAttribute('normal', new THREE.Float32BufferAttribute(kn, 3)); return o2; };
+        put(shell(CO, CHo, -.4, false), 'dry', c.x, 0, c.z, 0, c.ry, 0, .55); put(shell(CI, CHi, 0, true), 'dry', c.x, 0, c.z, 0, c.ry, 0, .55);
+        for (const e of [-1, 1]) put(new THREE.BoxGeometry(.45, CDH + .4, 1.7).translate(e * (CDW / 2 + .225), (CDH - .4) / 2, 2.3), 'dry', c.x, 0, c.z, 0, c.ry, 0, .55);
+        put(new THREE.BoxGeometry(2.0, .42, 1.7).translate(0, CDH + .21, 2.3), 'boulder', c.x, 0, c.z, 0, c.ry, 0, .55); }
+    else { ringWall(c.x, c.z, CO, CI, c.ry + .2, c.ry + Math.PI * 2 - .2, a => 1.0 + .35 * Math.sin(a * 3 + ph[7]) + .15 * Math.sin(a * 7 + ph[8]), 'dry', .25, -.4);
+      for (let k = 0; k < 18; k++) { const a = r() * Math.PI * 2, d = r() * 1.6; stone(c.x + Math.sin(a) * d, .05 + (1.6 - d) * .3, c.z + Math.cos(a) * d, .3 + r() * .25, 'dry'); } } }
+  // the long range's footings, where the brothers ate: low walls, a door gap on the north
+  { const x0 = -22, x1 = -8, z0 = 12, z1 = 19, t = .75, low = s => u => .55 + .3 * Math.sin(u * 1.7 + s) + rag(u + s, .8);
+    wall(x1 - x0, t, low(1), [], 'rubble', x0, z1, 0); wall(5, t, low(2), [], 'rubble', x0, z0, 0); wall(x1 - x0 - 6.4, t, low(3), [], 'rubble', x0 + 6.4, z0, 0);
+    for (const x of [x0 + t / 2, x1 - t / 2]) wall(z1 - z0 - t, t, low(x), [], 'rubble', x, z0 + t / 2, -Math.PI / 2); }
+  // the trees: a yew in the green, ash outside the ring
+  const tree = (x, z, h, w, k) => { const y = ground(x, z); put(new THREE.CylinderGeometry(w * .1, w * .14, h * .5, 7), 'bark', x, y + h * .25, z); for (let q = 0; q < 4; q++) { const s = w * (.55 + r() * .25), g = roughen(new THREE.IcosahedronGeometry(s, 2), r, s * .14, 1.3); g.scale(1, .8, 1); put(g, k, x + (r() - .5) * w * .7, y + h * .55 + r() * h * .3, z + (r() - .5) * w * .7, 0, r() * 3, 0, .4); } };
+  tree(7, 15, 7, 3.4, 'yew'); for (const [x, z] of [[-40, 8], [38, -22], [-30, -42], [44, 18]]) tree(x, z, 10 + r() * 3, 3.2, 'leaf');
+  // the walk: up to the gate, through it, across the green to the west door, down the nave and through the chancel arch
+  const path = [[0, 42], [0, 24], [NX0 - T - 4, ZC], [NX0 + .5, ZC], [CX0 - .45, ZC], [CX1 - 2, ZC]];
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'turf'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), path, ground,
+    cashel: { r0: R0, r1: R1, gate: GA, breaches: BR }, gatehouse: { z0: GZ0, z1: GZ1, w: GAW, h: GSP + GAW / 2 },
+    church: { z: ZC, nave: { x0: NX0, x1: NX1, w: 2 * NW, h: NH }, chancel: { x0: CX0, x1: CX1, w: 2 * CW }, door: { x: NX0 - T / 2, w: DW, h: DSP + DW / 2 }, arch: { x: NX1 + T / 2, w: AW, h: ASP + AW / 2 } },
+    tower: { x: TX, z: TZ, r: TR0, top: TH + 4.4, door: { sill: SILL, ry: TRY, x: TX + Math.cos(TRY) * (tr(SILL + .9) + .15), z: TZ - Math.sin(TRY) * (tr(SILL + .9) + .15) } } /* on the sill, at its outer edge */,
+    cross: { x: CRX, z: CRZ, h: 4.49, ry: CRY, ring: 3.35 }, cells, cell: { r: CI, h: CHi, door: [CDW, CDH] } };
 }
