@@ -20888,3 +20888,36 @@ What changed in `creatures.js`:
 - **Triangles:** the slimes cost almost five times what they did. A crowd of slimes wants the coarser grid as its far level of detail, where the holes can close.
 - **The magma slime's holes** show the floor through orange glass. OG-018 calls them "dark holes", which in a dark Tine hall they will be, but not in daylight.
 - **The holes are round tunnels.** OG-041's are ragged, and wider at their mouths than inside.
+
+## v80 — Session 955 — The Winged Thing: Gaoth's griffin (L4, prototype only)
+OG-018 draws Gaoth's foes as the Wisp, a wind-swept Gargoyle and the Winged Thing, "a feathered griffin-like beast". Canon §9a gives Gaoth "wisps, Gargoyle, something winged", and Gaoth is the school with no foes in the game. The Wisp was built in Session 783. The sheet draws the griffin and the catalogue flags nothing on it, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+**`wingedthing`, the Winged Thing (Gaoth):**
+- **Built from the kit's existing parts; no code is new.**
+  - A big cat's body on four legs, 1.1 m at the shoulder and 2.7 m from beak to tail.
+  - An eagle's head with a hooked beak on a short, steep neck.
+  - The hawks' feathered wings, 3.4 m across, set on the shoulders.
+  - A long tail ending in a fan of five feathers.
+- **Colour:** pale storm-grey barred darker, with a lighter belly. The flight feathers darken to their tips, and the beak and claws are dull horn.
+- **Gaits:** it walks, trots and stands. In `fly` it raises its wings over its back as the sheet draws it.
+- **Size:** 39 bones. The hide is 9,532 triangles on a 5 cm grid; the grid the kit picks from the thinnest leg gave 26,296.
+
+Corrections made during the session:
+- The wings were first 4.2 m across. Folded, their primaries reached a metre past the tail. They are now 3.4 m.
+- The first neck left the head sunk on the chest. It is now 0.56 m long and rises at 62°.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,022 checks pass** (1,012 before). The plan's family checks pass:
+  - Every foot reaches its target through the walk, the trot, the fly and the stand.
+  - Its feet are down for 0.65 of the walk, against a duty of 0.68, and 0.45 of the trot, against 0.45.
+  - The weights sum to one, and the genome is 156 bytes.
+- **A new check:** it is a Gaoth plan on four legs with two feathered wings.
+  - Its wingtips are 1.76 m apart folded and up to 5.71 m apart through a wingbeat.
+  - That is more than half again its 2.71 m length.
+- Pictures: `creatures-wingedthing.jpg` (walking, beside a man) and `creatures-wingedthing-fly.jpg` (the wings raised).
+
+### Needs eyes
+- **Its forefeet are a cat's,** with long claws. A griffin's are an eagle's talons, which want a bird's foot on a quadruped's foreleg, a leg preset the kit does not have.
+- **The fly gait holds it on the ground** with its wings beating, as the dragon's does. A griffin aloft needs the aloft gaits the hawks use, which carry no legs.
+- **Folded,** one long primary on each side still trails a little behind the hips.
+- **Its feathers are the fur shells barred,** and close up they read as a pelt.

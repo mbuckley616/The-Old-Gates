@@ -1742,6 +1742,24 @@ Object.assign(PLANS, {
     parts: PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { rubble: 11 } }] : [k, o]) })
 });
 export const SLIMES = ['slime', 'magmaslime'];
+// ── Session 955: the Winged Thing (OG-018's Gaoth row: "a feathered griffin-like beast"; canon §9a gives Gaoth "wisps, Gargoyle,
+// something winged", and the Wisp is Session 783's). A big cat's body on four legs, an eagle's head and hooked beak on a short neck,
+// feathered wings off the shoulders, a long tail ending in a fan of feathers. Pale storm-grey, barred darker, the beak and talons horn.
+// It walks and trots on the ground and flies with the flap; nothing of it is new to the kit ──
+Object.assign(PLANS, {
+  wingedthing: { name: 'Winged Thing', src: 'OG-018 (Gaoth: a feathered griffin-like beast)', school: 'Gaoth', gaits: ['walk', 'trot', 'fly', 'stand'], speedK: 1.1, flyH: 1.4, cell: .05, finOpacity: 1, wingFold: 1, fold: 1.1, wag: .08, neckNod: .06, rough: .6, spread: .04,
+    palette: { coat: [.66, .68, .7], saddle: [.42, .45, .5], belly: [.86, .86, .84], dark: [.05, .05, .06], horn: [.6, .52, .34], skin: [.5, .43, .28], feather: [.6, .63, .68], featherTip: [.18, .2, .26], covert: [.78, .8, .82] },
+    pattern: { kind: 'stripes', period: .06, tone: 'saddle' }, fur: { len: .03, layers: 6, sx: 150, sy: 60 },
+    parts: [
+      ['spine', { hip: [1.02, -.68], chest: [1.12, .5], n: 4, r: [.27, .3, .34], s: [.82, 1.05], rump: .18, front: .24, frontDrop: .06, arch: .06 }],
+      ['neck', { len: .56, n: 2, rise: 62, curve: -14, r: [.24, .14] }],
+      ['head', { len: .38, r: .14, pitch: 4, eyes: [{ f: .45, up: .35, out: .72, r: .028, color: [.95, .72, .18] }], beak: { len: .22, r: .07, up: -.12, hook: .45 } }],
+      ['tail', { len: 1.05, n: 4, r: [.09, .045], droop: 38, curl: -5, fan: { n: 5, len: .34, spread: 32 } }],
+      ['legs', { at: 1, kind: 'canidFore', out: .16, drop: .08, r: [.14, .085, .06, .055], claws: { r: .022, len: .11 } }],
+      ['legs', { at: 0, kind: 'canidHind', out: .16, drop: .06, r: [.18, .1, .07, .06], claws: { r: .016, len: .06 } }],
+      ['wings', { at: .82, out: .2, up: .26, span: 3.4, r: [.085, .062, .042], feathers: { ns: 9, np: 10, len: .4, primary: 1.05 } }]
+    ] }
+});
 // ── Session 933: the goblin (OG-041: crouched, long ears, a long spear and a round hide shield). Canon §9a makes goblins no gate's
 // antibody but a gate's occupiers: they hold a spent gate as a warren. The troll's frame, half its height and thin: the same
 // hunched biped walk, the knees deep, the head big for the body and slung forward, ears long and swept out, the eyes large and

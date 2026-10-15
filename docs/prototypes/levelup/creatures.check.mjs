@@ -80,6 +80,12 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       out[k] = { clear: hide.material.transparent ? +hide.material.opacity.toFixed(2) : 1, bits: bits.length, out: out_, tris: C.stats.tris, school: C.plan.school || '' }; }
     return out; });
   for (const [k, t] of Object.entries(sl)) check(`${k}: a clear body (opacity ${t.clear}) holding ${t.bits} swallowed things, every one inside it through the crawl (${t.out} out)${t.school ? '; ' + t.school + "'s" : ''}`, t.clear < 1 && t.bits >= 8 && t.out === 0, t);
+  // the Winged Thing (Session 955, OG-018's Gaoth row): a Gaoth plan on four legs with two feathered wings, which in flight spread wider than half again its length
+  const wt = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('wingedthing', 'wingedthing:check')), T = await import('three'), span = () => { C.rig.updateMatrixWorld(true); const b = new T.Box3(); for (const m of C.meshes) if (m.name === 'fins') { m.geometry.computeBoundingBox(); } C.rig.traverse(o => { if (o.isBone && /^wing[LR]3$/.test(o.name)) b.expandByPoint(o.getWorldPosition(new T.Vector3())); }); return b.max.x - b.min.x; };
+    C.gait = 'stand'; K.pose(C, 0); const folded = span(); C.gait = 'fly'; let open = 0; for (let i = 0; i < 12; i++) { K.pose(C, i / 12); open = Math.max(open, span()); }
+    const body = C.len;
+    return { school: C.plan.school, legs: C.B.legs.length, wings: C.B.wings.filter(w => w.feathered).length, folded: +folded.toFixed(2), open: +open.toFixed(2), body: +body.toFixed(2) }; });
+  check(`wingedthing: Gaoth's griffin, ${wt.legs} legs and ${wt.wings} feathered wings, the wingtips ${wt.folded} m apart folded and up to ${wt.open} m in flight (its body ${wt.body} m long)`, wt.school === 'Gaoth' && wt.legs === 4 && wt.wings === 2 && wt.open > wt.body * 1.5 && wt.folded < wt.open * .6, wt);
   // the slimes' holes (Session 954, OG-041: "with holes through it"): a line down each hole's axis meets no hide, at rest or through a whole
   // crawl stride (each axis carried by its spine bone), while the same line moved two of the hole's radii toward the spine meets the body
   const ho = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
