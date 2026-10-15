@@ -27,6 +27,256 @@ function applySpellDamage(e, sp, tier){
   return {dmg, resistMult, defPierced};
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// S939 — the attack table and one resolver (combat, Michael's B: its deep-work session; v2-scope.md §4)
+// ═══════════════════════════════════════════════════════════════════════
+// Every blow in a fight reads a row here: yours by the weapon in your hand, a foe's by its family. A row is one attack:
+//   tell      seconds of wind-up before the blow lands (yours: click to impact; a foe's: its wind-up pose and glow)
+//   strike    seconds from the blow landing to the end of the commitment (yours; a foe's lands the frame its tell ends)
+//   recovery  seconds after that, the last third of your swing, the only part a roll or a block can cut short
+//   reach     units, centre to centre (today's numbers; F2b re-measures them hull to hull in metres)
+//   arc       degrees, the whole cone the blow lands in
+//   dmg       a multiplier on the blow's roll; posture: yours, what the swing drains from the foe's posture;
+//             a foe's, the multiple of its blow that drains yours unguarded (a held block drains ×1)
+//   blockable, parryable  whether a raised guard takes a share, and a raised guard in time parries it
+//   heavy, third  the columns for the heavy attack and the family's third move (combat.md's six Opus sessions fill them)
+// The light rows are today's numbers. A swing's times are today's: 0.55 s at a sword's weight, ×(0.67 + 0.11 × weight)
+// between ×0.72 and ×1.40, its impact at 0.55 of the swing and its recovery the last third. A power attack keeps its own
+// (powerDur, POWER_DMG_MULT, POSTURE_DRAIN_POWER) until the heavy column is filled. The cone is cos .45 either side of
+// the facing, which is 126.5° whole (the old comments said 117°; the number never changed).
+const WEAPON_ATTACKS={
+  Fists:    {tell:.236,strike:.050,recovery:.143,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Dagger:   {tell:.253,strike:.054,recovery:.153,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Sword:    {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Scimitar: {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Bow:      {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Longsword:{tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Mace:     {tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  GreatClub:{tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:12,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Flail:    {tell:.369,strike:.078,recovery:.224,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Claymore: {tell:.402,strike:.085,recovery:.244,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:3,blockable:true,parryable:false,heavy:null,third:null},
+  GreatAxe: {tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:2,blockable:true,parryable:false,heavy:null,third:null},
+  WarHammer:{tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:18,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  // a sent cast, one more row when magic's resolver comes (magic.md: words of the deep tongue); nothing reads it yet
+  Cast:     {placeholder:true,tell:null,strike:null,recovery:null,reach:null,arc:null,dmg:null,posture:null,cleave:null,blockable:false,parryable:false,heavy:null,third:null},
+};
+// against a boss your reach is 3.0 (the Faolchú's size); F2b makes it the boss's hull plus the weapon's reach
+const REACH_VS_BOSS=3.0;
+const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',bow:'Bow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
+function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS[WSHAPE_TO_ROW[w.weaponShape]]||WEAPON_ATTACKS.Sword;}
+// The foes, a row per family built today. Each has one attack, its light one, from today's numbers: a tell by kind
+// (S282's 0.45–0.9 s; a kind not named takes the family's 0.61), a blow in a 1.6-unit, 90° arc about the way it faced
+// at the wind-up (S275), a troll's sweep 2.4 and 140°, a boss's bite its own reach. Recovery is the dungeon's 1.0 s;
+// the open world's kinds keep their own pace (their `atk`). The blow's roll is the foe's own (foeBlowRaw).
+const FOE_ROW=(o)=>Object.assign({tell:TELL_DEFAULT,tells:{},strike:0,recovery:1.0,reach:1.6,arc:90,dmg:1,posture:1.5,blockable:true,parryable:true,heavy:null,third:null},o);
+const FOE_ATTACKS={
+  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57}}),
+  beast:    FOE_ROW({}),
+  spider:   FOE_ROW({tells:{Spider:.51}}),
+  brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80}}),
+  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},reach:2.4,arc:140}),
+  slime:    FOE_ROW({tells:{Slime:.54,'Small Slime':.54}}),
+  elemental:FOE_ROW({tells:{'Fire Elemental':.65}}),
+  wraith:   FOE_ROW({tells:{Phantom:.54,Wraith:.57}}),
+  mimic:    FOE_ROW({tells:{Mimic:.57}}),
+  shark:    FOE_ROW({}),
+  boss:     FOE_ROW({}), // the tell is the boss's own (bossDef.telegraphBase by phase), the reach its biteRange
+  slam:     FOE_ROW({tell:.9,reach:3,arc:360,blockable:false,parryable:false}), // the cavern master's (S404, S617): its blow is a share of your health
+};
+// every kind's tell by name, as Session 282 kept them (telegraphDuration and tests/tells read it)
+const TELEGRAPH_BY_NAME=Object.assign({},...Object.values(FOE_ATTACKS).map(r=>r.tells));
+const FOE_FAMILY_OF={Skeleton:'humanoid',Goblin:'humanoid','Kobold Thief':'humanoid',Shieldbearer:'humanoid',Bandit:'humanoid',
+  Golem:'brute',Gargoyle:'brute','Cave Bear':'brute',Ogre:'brute',Phantom:'wraith',Slime:'slime','Small Slime':'slime',
+  'Fire Elemental':'elemental',Mimic:'mimic',Spider:'spider','Shore Wisp':'spider',Shark:'shark'};
+const FOE_SHAPE_FAMILY={humanoid:'humanoid',wolf:'beast',spider:'spider',brute:'brute',shark:'shark'};
+function foeFamily(e){
+  if(!e)return 'humanoid';
+  if(/Troll/.test(e.baseType||e.name||''))return 'troll';
+  if(e.isBoss)return 'boss';
+  if(e.isWraith)return 'wraith';
+  return FOE_FAMILY_OF[e.baseType||e.baseName]||FOE_SHAPE_FAMILY[e.shape]||'humanoid';
+}
+function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
+// ── Armour as a share (decision #181 B, held for this table): every blow on you is × 50 / (50 + armour), so 50 armour
+// halves it and nothing reaches 1 by armour alone. It replaces the flat half a point a point that put the cliff between
+// 20 and 40 armour (S610). Retuned so an ordinary blow of your level's tier, at a heavy kit of your level, lands near
+// BLOW_SHARE of your health: the reference player has 100 + 15 a level of health and wears the heavy kit of the
+// material the loot reaches at their level (tier 1 + 0.4 a level), helmet to boots and a buckler. The ordinary blow is
+// today's at level 1, a Skeleton's in a normal dungeon (15 × 2.0) and a Bandit's in the open world (7); a foe's own roll
+// is scaled from that, so every kind keeps its place against the others. The slam stays a share of your health (S617).
+const ARMOUR_K=50,BLOW_SHARE=.10,BLOW_ORDINARY={dungeon:30,world:7},KIT_PIECES=['Helmet','Cuirass','Gauntlets','Greaves','Boots','Buckler'];
+function armourShare(d,arm){const a=Math.max(0,arm==null?_armour():arm);return d*ARMOUR_K/(ARMOUR_K+a);}
+function hpRef(L){return 100+15*(Math.max(1,L)-1);}
+function kitTier(L){return Math.min(10,Math.max(1,Math.floor(1+Math.max(1,L)*.4)));}
+function kitRef(L){const b=TIER_BASE_DEF[kitTier(L)];return KIT_PIECES.reduce((a,t)=>{const T=ARMOR_TYPES.find(x=>x.type===t);return a+(T?Math.max(1,Math.round(b*T.defMult)):0);},0);}
+// the blow before armour that lands at BLOW_SHARE of the reference health at level L
+function blowRef(L){return BLOW_SHARE*hpRef(L)*(ARMOUR_K+kitRef(L))/ARMOUR_K;}
+// a foe's roll before armour, as each place rolled it (the open world's kinds carry dmg, the dungeon's a dmgMult on 10–20)
+function foeBlowRaw(e){return typeof e.dmg==='number'?e.dmg+Math.floor(foeRand(e)*4):(10+Math.floor(foeRand(e)*11))*(e.dmgMult||1);}
+function foePlaceK(e){return blowRef(1)/(typeof e.dmg==='number'?BLOW_ORDINARY.world:BLOW_ORDINARY.dungeon);}
+// the blow that reaches you: the roll, the row's multiplier, the place's scale, then your armour's share
+function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(armourShare((raw==null?foeBlowRaw(e):raw)*r.dmg*foePlaceK(e),arm)));}
+
+// ── The one resolver for your swing (S939). The dungeon, the open world and the legacy zones each had their own
+// (_resolveDungeonStrike, _resolveZoneStrike), the same rules written twice; both are now this. At the swing's impact
+// it gathers the foes in reach and in the arc of the weapon's row (a boss at REACH_VS_BOSS), nearest first, up to the
+// row's cleave; a power blow breaks a raised shield without damage (S485: not when swung spent), every other blow runs
+// the damage chain, applyMeleeDamage (riposte, finisher, stagger, backstab, armour), posture, the rune's rider and
+// the kill. The third light swing of a chain lands ×1.3 and drains ×1.5 posture (COMMIT, the light chain).
+function strikeFoes(){return isOverworldZone()?ZE:ENEMIES;}
+function strikeCandidate(e){
+  if(!e||e.dead||e.locked)return false;
+  if(!isOverworldZone()&&(e.floor!==currentFloor||e.disguised))return false;
+  return true;
+}
+// The damage chain, one function a skills build can swap: the weapon's roll on the struck foe's stream, today's flat
+// level × 1.5, Might's 1% a point, the melee buffs, the power blow's ×1.8, a shield's front, the row and the chain.
+function meleeDamageChain(e,o){
+  const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];
+  const mightMult=1+(attrEff('might')*ATTR_DMG_PER_POINT);
+  const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1); // S322 — Firemoss and Caor Dubh everywhere
+  const powerMult=o.isPow?POWER_DMG_MULT:1.0;
+  return Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*o.shMult*o.row.dmg*o.chainDmg);
+}
+function staggerFlash(e){
+  const body=enemyBodyMesh(e),m=body&&body.material;
+  if(m&&m.emissive){m.emissive.setHex(0xffaa00);setTimeout(()=>{if(m&&m.emissive)m.emissive.setHex(0);},220);}
+}
+function resolvePlayerStrike(_isPow){
+  sndSwing();
+  const inW=isOverworldZone(),row=weaponAttack(EQ.weapon);
+  const third=!_isPow&&SWING&&SWING.chain===3;
+  const chainDmg=third?COMMIT.chainDmg:1,chainPost=third?COMMIT.chainPosture:1;
+  const _cleaveCap=(EQ.weapon&&EQ.weapon.cleaveTargets)||row.cleave||CLEAVE_DEFAULT;
+  const cosArc=Math.cos(row.arc*Math.PI/360);
+  const _candidates=[];
+  strikeFoes().forEach(e=>{
+    if(!strikeCandidate(e))return;
+    const ex=e.x-px,ez=e.z-pz,dist=Math.sqrt(ex*ex+ez*ez);
+    const reach=e.isBoss?REACH_VS_BOSS:row.reach;
+    if(dist<reach&&(ex*fwdX+ez*fwdZ)/(dist||1)>cosArc)_candidates.push({e,dist});
+  });
+  _candidates.sort((a,b)=>a.dist-b.dist);
+  if(!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc)WORLD.strikeNpc(fwdX,fwdZ); // S157 — assault
+  const out=[];
+  let _hitsLanded=0;
+  for(const _c of _candidates){
+    if(_hitsLanded>=_cleaveCap)break;
+    const e=_c.e;
+    _hitsLanded++;
+    // v65 — a power blow on a raised shield: pure stagger, no damage, the guard down. S485 — a power attack swung on too
+    // little stamina (_exhaustedStrike) does not break the guard (Michael's A on #131): it lands as a guarded hit.
+    const _spent=_isPow&&e.shieldUp&&!riposteOpen(e)&&_exhaustedStrike;
+    if(_isPow&&e.shieldUp&&!riposteOpen(e)&&!_spent){
+      if(typeof e.posture==='number'&&!isStaggered(e)){
+        applyPostureDamage(e,(e.maxPosture||999),performance.now()/1000);
+        staggered.push({e,t:POSTURE_BREAK_STUN});
+        staggerFlash(e);
+      }
+      e.shieldUp=false;dropShieldGuard(e);e.alert=true;
+      sndPowerHit();
+      showMsg(`💥 ${e.name}'s guard breaks!`,'#ffcc66');
+      out.push({e,guardBroke:true});
+      continue;
+    }
+    // v71 — a Shieldbearer's front takes SHIELDBEARER_FRONT_BLOCK of the blow (shieldFrontMult is 1 for the rest)
+    const shMult=riposteOpen(e)?1:shieldFrontMult(e);
+    const rawDmg=meleeDamageChain(e,{isPow:_isPow,shMult,row,chainDmg});
+    const info=applyMeleeDamage(e,rawDmg);
+    const dmg=info.dmg;
+    e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg)); // a dazed beast (S634) takes double
+    if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
+    e.alert=true;if(inW)alertPack(e,16);
+    if(_isPow)sndPowerHit();else sndHitEnemy(info.wType,info.resistMult<.8);
+    // v61gj — posture: the row's drain (8, ×postureMult on the two-handers), a power blow's POSTURE_DRAIN_POWER × the
+    // weapon's postureMult, the chain's third ×1.5; skipped on a kill or a foe already staggered
+    if(e.hp>0&&typeof e.posture==='number'&&!isStaggered(e)){
+      const pm=(EQ.weapon&&EQ.weapon.postureMult)||1;
+      const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost; // S485 — a spent power blow on a guard drains as the guarded hit it is
+      if(applyPostureDamage(e,drain,performance.now()/1000)){
+        staggered.push({e,t:POSTURE_BREAK_STUN});staggerFlash(e);
+        showMsg(`💥 ${e.name} staggered!`,'#ffcc66');
+      }
+    }
+    const _guardTag=(shMult<1.0)?' (GUARDED)':'';
+    const _killTag=`${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
+    dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A) */
+    const kill=()=>{if(inW)killZoneEnemy(e,activeZoneId==='forest'?forestScene:ironhavenScene,_killTag);else killE(e,_killTag);};
+    if(e.hp<=0)kill();
+    else{
+      const enc=applyWeaponEnchant(dmg,e);
+      dmgNumRider(e,enc);
+      if(e.hp<=0)kill();
+      else if(_spent)showMsg('Too spent to break the guard.','#ff9944');
+    }
+    out.push({e,dmg,info,third});
+  }
+  document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
+  setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
+  return out;
+}
+// ── Commitment (combat B): during a swing's wind-up and strike you move at ×0.35 and turn at most 90° a second; only
+// the recovery, the last third, cancels into a roll or a block. Light swings chain: three in a row, the third ×1.3 damage
+// and ×1.5 posture, the chain lost after 0.4 s idle (from the end of the last swing to the start of the next). A potion
+// takes 0.8 s at walking pace and works when it is down. Every time is on the play clock (playClockS), against the
+// swing's own start, so a dropped frame changes nothing and a host could run it.
+const COMMIT={move:.35,turnDeg:90,chainIdle:.4,chainDmg:1.3,chainPosture:1.5,drinkS:.8,drinkMove:.5};
+let SWING=null,CHAIN={n:0,endG:-1e9},DRINK=null;
+// a swing begins: its times from the weapon's row (a power blow keeps powerDur), scaled by what a buff does to its pace
+function beginSwing(isPow,resolveFn){
+  const row=weaponAttack(EQ.weapon),buff=_buffMult('atkSpeed',1);
+  const total=isPow?ANIM_PARAMS.swing.powerDur*_weaponSwingFactor():(row.tell+row.strike+row.recovery)/buff;
+  const k=isPow?total/(row.tell+row.strike+row.recovery):1/buff;
+  let chain=0;
+  if(!isPow){chain=(CHAIN.n>0&&CHAIN.n<3&&playClockS-CHAIN.endG<=COMMIT.chainIdle)?CHAIN.n+1:1;CHAIN.n=chain;}else CHAIN.n=0;
+  SWING={t0:playClockS,tell:row.tell*k,strike:row.strike*k,recovery:row.recovery*k,total,isPow:!!isPow,chain};
+  _commitYaw=yaw; // a turn made before the click is yours; the clamp holds from here
+  CHAIN.endG=playClockS+total;
+  swingT=total;
+  sndWhoosh(); // v69.1 — the whoosh at the swing's start; the contact and the hit at impact (_pendingStrike)
+  _pendingStrike={resolveFn,isPow:!!isPow,fired:false};_swingStartS=performance.now()/1000;_offenceS=playClockS;
+  return SWING;
+}
+function swingPhase(nowG){
+  if(!SWING)return null;
+  const t=(nowG==null?playClockS:nowG)-SWING.t0;
+  if(t<0||t>=SWING.total){return null;}
+  return t<SWING.tell?'tell':t<SWING.tell+SWING.strike?'strike':'recovery';
+}
+function swingCommitted(nowG){const p=swingPhase(nowG);return p==='tell'||p==='strike';}
+// a roll or a block in the recovery cuts the swing short (its hit has landed); in the wind-up or the strike it is refused
+function swingCancel(){if(!SWING)return;SWING=null;swingT=Math.min(swingT,.001);if(_pendingStrike&&!_pendingStrike.fired)_pendingStrike=null;}
+// the right button: the guard goes up, unless a swing is committed (its recovery it cuts short)
+function raiseGuard(){
+  if(swingCommitted())return false;
+  swingCancel();
+  blocking=true;lastBlockAttemptT=performance.now()/1000;lastBlockAttemptG=playClockS;
+  return true;
+}
+function commitMoveMult(){return swingCommitted()?COMMIT.move:DRINK?COMMIT.drinkMove:1;}
+// the turn this frame, held to 90° a second while committed: the view's yaw is pulled back toward last frame's
+let _commitYaw=null;
+function commitTurn(dt){
+  if(swingCommitted()&&_commitYaw!=null){
+    const max=COMMIT.turnDeg*Math.PI/180*dt;let d=yaw-_commitYaw;d=Math.atan2(Math.sin(d),Math.cos(d));
+    if(Math.abs(d)>max)yaw=_commitYaw+Math.sign(d)*max;
+  }
+  _commitYaw=yaw;
+}
+// a potion: out of the bag now, into you when the 0.8 s are up (tickDrink in the loop)
+function startDrink(apply,name){
+  if(DRINK)return false;
+  DRINK={t0:playClockS,apply,name};
+  try{sndUsePotion();}catch(err){}
+  return true;
+}
+function tickDrink(){
+  if(!DRINK)return;
+  if(dead){DRINK=null;return;}
+  if(playClockS-DRINK.t0<COMMIT.drinkS)return;
+  const d=DRINK;DRINK=null;d.apply();
+}
+
 function applyMeleeDamage(e, rawDmg){
   if(_exhaustedStrike)rawDmg=Math.max(1,Math.floor(rawDmg*.45)); // v80 S9 — exhausted swings land soft
   const effDef = e.def || 0;
@@ -68,11 +318,11 @@ function applyMeleeDamage(e, rawDmg){
 // S275 — an enemy's blow lands in an arc about the way it faced when it wound up (combatYaw, frozen at the wind-up):
 // 1.6 units and 90° for most, 2.4 units and 140° for a troll's sweep, a boss's own reach where it has one. Before, it
 // hit anyone within 1.4 units (1.3 in a dungeon) whichever way it faced.
-const STRIKE_ARC={reach:1.6,deg:90},STRIKE_SWEEP={reach:2.4,deg:140};
+// S939 — the reach and the arc are the family's row in the attack table (FOE_ATTACKS).
 function strikeArc(e){
-  if(/Troll/.test(e.baseType||e.name||''))return STRIKE_SWEEP;
-  if(e.isBoss&&e.bossDef&&e.bossDef.biteRange)return {reach:Math.max(STRIKE_ARC.reach,e.bossDef.biteRange),deg:STRIKE_ARC.deg};
-  return STRIKE_ARC;
+  const r=foeAttack(e);
+  if(e.isBoss&&e.bossDef&&e.bossDef.biteRange)return {reach:Math.max(r.reach,e.bossDef.biteRange),deg:r.arc};
+  return {reach:r.reach,deg:r.arc};
 }
 function strikeReaches(e,arc){
   arc=arc||strikeArc(e);
@@ -117,7 +367,8 @@ function executeStrike(e, rawDmg, now){
   // which has been dead code since v61c6 because the parry branch always ate first).
   const _parryWindow = PARRY_WINDOW_BASE + attrEff('finesse') * PARRY_WINDOW_FINESSE;
   const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow;
-  if(blocking && _justRaisedBlock){
+  const _row = foeAttack(e); // S939 — the blow's row: whether a guard takes it, whether it parries, what it drains from your posture
+  if(blocking && _justRaisedBlock && _row.parryable){
     // PERFECT PARRY — block raised within the timing window before the hit landed
     hurtT = 0;
     sndParry(); blockFlashT = 0.55; blockFlashCol = '#ffd700';
@@ -161,7 +412,7 @@ function executeStrike(e, rawDmg, now){
     const parryStamCost = Math.max(1, Math.round(rawDmg * 0.20 * _resolveMult));
     stamina = Math.max(0, stamina - parryStamCost);
     if(stamina===0){ staminaCD = 2; lvAct.staminaDepleted++; }
-  } else if(blocking || (now/1000 - lastHitT < 0.5 && now/1000 - lastBlockAttemptT < 0.5)){
+  } else if(_row.blockable && (blocking || (now/1000 - lastHitT < 0.5 && now/1000 - lastBlockAttemptT < 0.5))){
     // HELD BLOCK — partial damage reduction. v61gj-a2 expanded this branch from
     // "recently-pressed block (within 0.5s of a hit)" to ALSO cover "currently
     // holding block but missed the parry window." Pre-v61gj-a2 this branch was
@@ -198,7 +449,7 @@ function executeStrike(e, rawDmg, now){
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;
     lastHitT = now/1000;
-    playerPostureHit(rawDmg*1.5, now/1000, false); // S281
+    playerPostureHit(rawDmg*_row.posture, now/1000, false); // S281; S939 — the row's multiple (1.5 for every family today)
     e._lunge=.3; // v80 — every strike moves the body
     if(PHP<=0 && !dead) playerDead();
   }
@@ -220,15 +471,12 @@ function executeDungeonStrike(e, now){
   // attacks from this revealed mimic are normal melee.
   if(e._burstNext){
     e._burstNext = false;
-    const def2 = _armour();
-    const burstRaw = Math.max(1, Math.round((14 + level * 1.0) * (e.dmgMult||1.0)));
-    const burstDmg = Math.max(1, burstRaw - Math.floor(def2 * 0.3));
-    executeStrike(e, burstDmg, now);
+    // S939 — the pounce rolls (14 + level) on its multiplier where a blow rolls 10–20, and armour takes its share as of any blow
+    executeStrike(e, foeBlow(e, (14 + level * 1.0) * (e.dmgMult||1.0)), now);
     return;
   }
-  const def2 = _armour();
-  const rawDmg = Math.max(1, Math.round((10 + Math.floor(foeRand(e)*11) - Math.floor(def2*.5)) * (e.dmgMult||1.0)));
-  executeStrike(e, rawDmg, now);
+  executeStrike(e, foeBlow(e), now); // S939 — the blow from the attack table, armour as a share
+
 }
 
 // v61d5 — Mimic E-press reveal. Replaces the v61c-era proximity landmine.
@@ -449,9 +697,12 @@ function enemyHpScale(){
   const lv = (typeof level!=='undefined'?level:1) || 1;
   return Math.min(3.0, 1 + (lv - 1) * 0.15);
 }
+// S939 — a foe's blow grows with your level as the reference blow does (blowRef), so that with armour as a share an
+// ordinary blow at your level's kit stays near BLOW_SHARE of your health. It was +8% a level to ×2.0 at level 13, against
+// armour taken off flat: by level 10 a kit of your level took the whole of an ordinary blow (S610).
 function enemyDmgScale(){
   const lv = (typeof level!=='undefined'?level:1) || 1;
-  return Math.min(2.0, 1 + (lv - 1) * 0.08);
+  return blowRef(lv)/blowRef(1);
 }
 
 // Pick a variant key (or null) for an enemy about to spawn. Rarest (highest minLevel) checked first.

@@ -58,7 +58,7 @@ const e2e = await page.evaluate(() => {
   e.telegraphMax = .5; e.telegraphT = .001; e.atkCd = 0; e.spd = 0;
   PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0; PPOST.broke = false; PHP = maxHP; blocking = false; ROLL = null; lastHitT = -99; lastBlockAttemptT = -99; lastBlockAttemptG = -99;
   const keep = ZE; ZE = [e]; const rnd = Math.random; Math.random = () => 0;
-  const def2 = Object.values(EQ).reduce((a, v) => a + (v && v.def ? v.def : 0), 0), raw = Math.max(1, e.dmg - Math.floor(def2 * .5));
+  const raw = foeBlow(e, e.dmg); /* S939 — the blow from the attack table, armour as a share (the roll pinned at 0) */
   try { tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); } finally { ZE = keep; Math.random = rnd; }
   const hp = maxHP - PHP, post = PPOST.maxPosture - PPOST.posture; PHP = maxHP; WORLD.scene.remove(e.mesh);
   PPOST.posture = PPOST.maxPosture;

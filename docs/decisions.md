@@ -4,6 +4,23 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Combat's resolver: how hard an ordinary blow lands, now that armour takes a share (the deep-work session, Session 939) — DECISION #355
+The attack table and the one resolver are built (`auto/fable-combat-resolver`). Armour now takes a share of every blow on you, as #181 B said: damage × 50 / (50 + armour), where it took half a point per point. That put the cliff between 20 and 40 armour.
+
+The card's retune is built: an ordinary blow of your level's tier, against a heavy kit of your level, lands at 10% of your health at levels 1 to 20, in the dungeon and in the open world. So you fall to the tenth unguarded blow. combat.md's B says a common enemy "dies in four to six hits and takes three to five of yours". If that means you fall to three to five blows, a tenth is outside it.
+
+What an ordinary blow does today:
+- **In the dungeon:** 24% at level 1 (you fall to 4 blows), 10% at level 5, and 1 point from level 10.
+- **In the open world:** 5.5% at level 1, then 1 point.
+
+Whatever you choose, the open world's foes now hit as hard as the dungeon's at the same tier.
+
+- **A.** A tenth, as built: ten unguarded blows to fall at every level. A pack of three takes about three exchanges.
+- **B.** A sixth *(recommended)*: six unguarded blows to fall, about eight through a held block. One foe can kill you if you stand and trade, and a pack of three in two exchanges. The roll, parry and block keep you standing.
+- **C.** A quarter: four blows to fall. This is the middle of combat.md's three to five, and today's dungeon at level 1. With the open world's packs it reads closer to a Souls game than to Dragonwilds.
+
+Recommendation: **B.** At a tenth, a single foe is something you can stand and swap blows with, and that is the click-and-swing combat.md set out to end. At a quarter, a pack punishes every misread. Whichever you choose, it is one constant (`BLOW_SHARE`, `74-strikes.js`), and the rest of the build is unchanged.
+
 ## Answered
 
 ### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342

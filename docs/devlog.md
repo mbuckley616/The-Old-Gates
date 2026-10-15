@@ -20241,3 +20241,67 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The square courses are small beside the lateens they replace.** The caravel's masts are short, so a course reaches only from 2.2 m over the deck up to its yard. A topsail, or a deeper course, would bring the sail back, if #347 goes A or B.
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
+
+## v80 — Session 939 — Combat's resolver: the attack table and one resolver (deep work, card combat-resolver)
+The card was combat B's deep-work session (Michael's B, 28 Sep; v2-scope.md §4 and §7, after F2a and before F2b): one attack table and one resolver for the dungeon and the open world, plus commitment, the light chain, a potion's time, and armour as a share (#181 B).
+
+**The problem.** There were two resolvers for your swing, `_resolveDungeonStrike` (62) and `_resolveZoneStrike` (42). They were the same rules written twice, with small drifts: the dungeon's never doubled a blow on a dazed beast or woke its pack, and the world's never redrew the bar at the hit. A foe's blow had two free formulas:
+- the dungeon's: 10–20 × its multiplier, less half your armour;
+- the world's: its `dmg` + 0–3, less half your armour.
+
+**The table** is in `74-strikes.js`, so no script tag moved. `WEAPON_ATTACKS` has a row per weapon class, plus Fists, Bow, and a placeholder row for a sent cast (magic.md). `FOE_ATTACKS` has a row per family: humanoid, beast, spider, brute, troll, slime, elemental, wraith, mimic, shark, boss, and the master's slam. Each row carries tell, strike and recovery in seconds; reach in today's units; arc in degrees; a damage multiplier; posture; blockable and parryable; and empty `heavy` and `third` columns for combat.md's move-set sessions.
+
+Every number is today's:
+- **Your swings.** 0.55 s × the weight's factor, the impact at 0.55, the last third the recovery. A sword is 0.303 + 0.064 + 0.183 s.
+- **Posture and cleave.** Posture is 8 × postureMult, so 12, 14 and 18 on the two-handers; cleave is the type's own.
+- **Reach and the cone.** Reach is 2.2, and 3.0 against a boss (`REACH_VS_BOSS`). The cone is the old cos .45, which is 126.5° whole. The old comments said 117°; the number never changed.
+- **The foes.** Their tells are S282's by kind (`TELEGRAPH_BY_NAME` is now built from the rows, and 14-items.js reads it). Their blow lands in 1.6 units and 90°, a troll's in 2.4 and 140°, a boss's within its biteRange. Recovery is 1.0 s in the dungeon, and the world's kinds keep their own `atk`.
+- **Families.** `foeFamily(e)` finds the family from the kind's name, then its shape, then the troll and boss rules that `strikeArc` used.
+
+**One resolver.** `resolvePlayerStrike` serves both places, and the two old names are one-line callers (tests wrap them). It does:
+- reach and arc from the row, nearest first, up to the cleave;
+- the power blow that breaks a raised shield (S485's spent swing kept);
+- the damage chain in one swappable function, `meleeDamageChain`, which still reads Might and the flat level × 1.5 for the skills build to replace;
+- `applyMeleeDamage` (riposte, finisher, stagger, backstab), posture, the rune's rider and the kill.
+
+The hit sound now gets the weapon's damage type and the resist. Before, it was passed two names that were never in scope, so it always played the plain hit.
+
+**A foe's blow** goes through `foeBlow(e)`. It takes the foe's own roll, × the row's multiplier, × a scale for its place, then your armour's share. `executeStrike` reads the row for whether the blow parries or blocks and what it drains from your posture. The world's arrows and the lair beast's charge and heavy blow (85) go through the share too. The mimic's pounce keeps its (14 + level) roll. Magic (the orbs, the Faolchú's fire, the drain) keeps its own sums, since magic's resolver is out of this card.
+
+**Armour as a share.** Every blow on you is × 50 / (50 + armour). The retune follows the card:
+- **Target.** An ordinary blow of your level's tier, against a heavy kit of your level's material, lands at `BLOW_SHARE` (a tenth) of a reference health.
+- **The reference player.** 100 + 15 a level of health. The kit is helmet to boots plus a buckler, at the tier the loot reaches (1 + 0.4 a level): 7 armour at level 1, 18 at 5, 41 at 10, 146 at 20.
+- **The level curve.** `enemyDmgScale` was +8% a level, capped at ×2 at level 13. It is now the reference blow's growth, ×3.75 at 10 and ×13.2 at 20.
+- **The places.** Today's level-1 ordinary blow was a Skeleton's 30 in the dungeon and a Bandit's 7 in the world. Both are scaled to the same reference, so the world's foes now hit as hard as the dungeon's at a tier. They had hit about a quarter as hard.
+- **The slam** stays S617's share of your health.
+
+A tenth means falling to the tenth unguarded blow. If combat.md's "takes three to five of yours" means three to five blows to fall, that is outside it, so the session asks **DECISION #355** (A a tenth as built, B a sixth (recommended), C a quarter). Whichever is chosen, it is the one constant `BLOW_SHARE`.
+
+**Commitment** runs on the play clock, against the swing's own start (`SWING`, set by `beginSwing`, which both attack paths now call):
+- **In the wind-up and the strike** you move at ×0.35, and `commitTurn` holds your turn to 90° a second. A turn made before the click is yours: the facing is taken at the swing's start. That came from `captainguard`, which turns you behind a captain and swings in one frame.
+- **Roll and guard.** `startRoll` and the right button (`raiseGuard`, out of 92's handler so a test can call it) are refused then. In the recovery they cut the swing short.
+- **The light chain** is three swings in a row, each begun within 0.4 s of the last one's end. The third lands ×1.3 on the damage before armour and drains ×1.5 posture. A power blow breaks the chain.
+- **A potion** (heal, mana, stamina, or a tonic) leaves the bag at once and works after 0.8 s (`startDrink`/`tickDrink`). You walk at ×0.5 with no sprint and cannot swing; one at a time.
+
+Co-op rules: every window is the play clock against the two fighters' state, none is under 150 ms, damage rolls stay on the struck foe's stream (`foeRand`), and foes target through `targetOf` as before.
+### Verified (headless Chromium)
+- **`resolver` (new): 25 of 25.**
+  - **The table.** Every weapon row keeps today's swing length (within 2 ms), impact (0.55) and recovery (a third), and today's posture and cleave. Every row has all the columns, and the cast row is a placeholder. The families come out right, with 15 tells by kind.
+  - **The same Bandit in the dungeon and the open world.** Hit (2 and 2), miss at 2.3, miss at 70° off, hit at 60°. Guarded 1 and 1; a power blow breaks the guard for 0. Riposte 8 and 8; finisher 10 and 10.
+  - **Its blow in both places.** Unguarded 15 and 15, held block 10 and 10, parry 0 and 0 with the riposte open.
+  - **Commitment.** A sword's phases are 0.303, 0.064 and 0.183 s. Move is ×0.35, ×0.35 and ×1 by phase. Roll and guard are refused in the wind-up and strike, and both cancel in the recovery. A 1-rad flick turns 0.157 rad in 0.1 s, against 1 rad free.
+  - **The pace through the game's own loop.** 3.83 free against 1.341 committed, which is ×0.350.
+  - **The chain.** It goes 1, 2, 3, 1, 2; a power blow is 0; then 1. The third lands 5 against the first's 4, and drains 12 posture against 8.
+  - **The potion.** Nothing at 0.79 s, +30 at 0.81 s; ×0.5 pace, no swing, no second potion.
+  - **Armour.** Shares of 11, 6 and 4 at 0, 40 and 100 armour; a dungeon blow at 40 armour takes 6 as the share says.
+  - **The retune.** 10.0%, 10.0%, 10.0%, 10.2%, 10.0% and 9.9% of the reference health at levels 1, 3, 5, 10, 15 and 20, in both places.
+- **Re-measured to the new truth (none loosened):**
+  - `posture`: the Bandit's blow is `foeBlow(e, e.dmg)`, and the drain is still exactly 1.5× it.
+  - `herbparity`: Ferrous Guard's +8 armour is now its share of the arrow, 47 against 41, exact; the swing before the roll is let go, since the roll is refused while it is committed.
+  - `fistfight`: standing still, the rhythm is unchanged (12 or more blows a 30 s). You now fall at about the tenth blow, where you used to outlast 30 s. Punches to kill a Bandit are 6–11, where they were 7–12: every third punch lands ×1.3.
+- **Green unchanged:** counters, tells, roll, attrdmg, fists, fistswing, spentguard, spentblow, challenge, dazed, blacksail, duelrhythm, dunseed, foeseed, fortunecaor, guardlevel1, guardplay, guardsindoor, herbhidden, hptail, lvact, parrydeath, posturefloor, and the rest of the batch listed in the PR. `captainguard`, `dmgnums`, `fistfight`, `herbparity` and `posture` green on a re-run after the fixes above (`dmgnums` had failed once under three suites at once, before them, and passed three times since). The full suite runs on the PR's CI.
+### Needs eyes
+- **The new weight.** Swinging, you slow to a third of your pace and cannot whip round. Does it read as weight, or as the game holding you? The lock-on still turns you to the foe, at 90° a second while committed.
+- **The potion.** It works after 0.8 s with no sound or pose of drinking beyond the potion's old sound at the start. A drinking pose is the bodies builder's.
+- **The world's foes hit harder.** At level 1 a Bandit's blow went from about 5 to about 10 at a light kit, and from level 5 it no longer comes down to 1 point. #355 decides how hard.
+- **Owed:** #355's answer (one constant); the heavy and third columns (the six Opus sessions); reach in metres (F2b); magic's own resolver.
