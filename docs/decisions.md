@@ -4,22 +4,32 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
-You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
-
-**1. Which town?**
-- **A. Dunmore:** the walled crossroads town nearest the start, 65 people, 836 draw calls measured; the cairn as its place; no sea.
-- **B. Portclare** *(recommended)*: the port, the critic's worst frame (so the slice proves the 45 fps budget there), the most answered prototypes, the smugglers' sea cave on its coast, the Gatelands hulls at its quay.
-- **C. A Markish town:** the silver mine is the best place to fight, but the cold land grade is unbuilt and the town is across the strait.
-
-**2. What is in it?**
-- **A. The town:** the land for its region (F3), townsfolk from the genome (F4), every lot from the island's kit (F6), the inn as a room, the resolver; your old body; no ship. About 17 sessions, around 24 Oct.
-- **B. The town and its country** *(recommended)*: A, plus the region's foes from the genome, three rooms, one place that is not a gate (F8), the fort and farms on the road. An evening: town, road, lair, bed. About 25 sessions, around 28 Oct.
-- **C. Everything that sails:** B, plus your own body from the genome (F10) and the sloop sailable from the quay. About 35 sessions, around 6 Nov; it pulls F10's freeze forward and delays the gates (F5) by about four days.
-
-Recommendation: **B, B.** Portclare holds the most answered prototypes and the budget's hardest spot, and tier B is the smallest slice with a whole evening in it without pulling F10 or F11 ahead of their parents.
-
 ## Answered
+
+### The Mark's ice cavern: the cave's hall in ice, or a glacier cave of its own? (look builder, Session 903) — DECISION #331
+**F8: the Mark's ice cavern (look builder, Session 903).** #305's three Gatelands places are done. The card's next part is the places by island, and OG-121's Mark panel has "ice caverns, snowed-in mouths". This first one is the limestone cave's hall (#313, rebuilt on your note in Session 882) dressed in the Mark's ice. It is a prototype in `docs/prototypes/levelup/places.js` (`markIceCave`, a dress of `gatelandsCave`), at `places.html?place=icecave`.
+- **The same space:** the same hall of 64 m, 45 m across and 24 to 30 m high, with the same winding passage, ledge, ramp, shore, natural bridge and shaft to the sky. Its rock is not moved.
+- **In ice:**
+  - blue-white glacier ice for walls, glassy where it is wet;
+  - icicles for stalactites;
+  - the lake frozen over;
+  - the falls frozen where they fell, a pillar of ice under the shaft;
+  - snow dusting the dry shore and drifted 9 m into the passage from the mouth, never more than 0.45 m deep on the walk;
+  - no flowers.
+- **The light:** your torch, and the day down the shaft, which the ice throws further than the limestone did.
+
+**1. The Mark's ice cavern:**
+- **A. The cave's hall in ice, as drawn** *(recommended)*: one hall, two islands' dress, as the ships take dresses. It is cheap, and it is proven by the cave's checks.
+- **B. Its own shape:** a glacier cave, a long blue tunnel under the ice with a ribbed, scalloped roof, meltwater channels and moulins. That is a new build and a different place.
+
+Pictures:
+- [the hall from the ledge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-lake.jpg)
+- [down the shore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-shore.jpg)
+- [the frozen falls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-falls.jpg)
+- [over the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-bridge.jpg)
+- [the snowed-in passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-icecave-passage.jpg)
+
+Michael: **The cave's hall in ice, as drawn** (A, on the control room). (14 Oct 2026)
 
 ### The 2.0 vertical slice — which town, and what is in it? (the designer, 2026-10-14)
 You asked for a playable slice of 2.0 before the cutover: one region and its town in the new look, plus combat's resolver (`docs/design/vertical-slice.md`). It is built only from F-card pieces in 2.0's order, reached by `?look=new&slice=1` with a start at the town's gate and play fenced to its nine cells, and it keeps its own saves. Answer both questions, e.g. "B, B".
