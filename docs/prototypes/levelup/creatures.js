@@ -189,11 +189,21 @@ P.gear = (B, o) => { for (const it of o.list) { const names = B.chains['arm' + (
     shaft.position.copy(fist).addScaledVector(ax, -L * it.grip); shaft.quaternion.setFromUnitVectors(UP, ax); shaft.name = 'spear'; B.bit(names[3], shaft); B.gear = [...(B.gear || []), 'spear']; }
   if (it.kind === 'shield') { const e = at(names[1]), w = at(names[2]), arm = w.clone().sub(e).normalize(), n = V(it.side * (it.face?.[0] ?? 1), 0, it.face?.[1] ?? 0); n.addScaledVector(arm, -n.dot(arm)).normalize();
     const c = e.clone().lerp(w, .5).addScaledVector(n, (it.off ?? .1) + it.t / 2), sh = new THREE.Group();
-    const disc = new THREE.CylinderGeometry(it.r, it.r * .96, it.t, 28); sh.add(new THREE.Mesh(disc, stdMat(B.tone('hide'), { rough: .9 })));
-    const rim = new THREE.TorusGeometry(it.r, it.t * .7, 6, 28); rim.rotateX(Math.PI / 2); sh.add(new THREE.Mesh(rim, stdMat(B.tone('wood'), { rough: .8 })));
+    const disc = new THREE.CylinderGeometry(it.r, it.r * .96, it.t, 28); sh.add(new THREE.Mesh(disc, stdMat(B.tone(it.tone || 'hide'), { rough: .9 })));
+    const rim = new THREE.TorusGeometry(it.r, it.t * .7, 6, 28); rim.rotateX(Math.PI / 2); sh.add(new THREE.Mesh(rim, stdMat(B.tone(it.rim || 'wood'), { rough: .8 })));
     const boss = new THREE.SphereGeometry(it.r * .2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2); boss.translate(0, it.t / 2, 0); sh.add(new THREE.Mesh(boss, stdMat(B.tone(it.boss || 'iron'), { rough: .5 })));
     for (let k = 0; k < (it.lace || 0); k++) { const a = k / it.lace * Math.PI * 2, lg = new THREE.BoxGeometry(it.r * .06, it.t * 1.6, it.r * .16); lg.translate(Math.cos(a) * it.r * .86, 0, Math.sin(a) * it.r * .86); sh.add(new THREE.Mesh(lg, stdMat(B.tone('leather'), { rough: .9 }))); }
-    sh.position.copy(c); sh.quaternion.setFromUnitVectors(UP, n); sh.name = 'shield'; B.bit(names[1], sh); B.gear = [...(B.gear || []), 'shield']; } } };
+    sh.position.copy(c); sh.quaternion.setFromUnitVectors(UP, n); sh.name = 'shield'; B.bit(names[1], sh); B.gear = [...(B.gear || []), 'shield']; }
+  // a sword (Session 934, the skeleton's): a flat blade narrowing to its point, its edges notched by the seed, a crossguard, a grip
+  // in the fist and a pommel; `len` the blade, `rise` the point's angle above level, ahead (below it if negative)
+  if (it.kind === 'sword') { const fist = at(names[2]).clone().lerp(at(names[3]), .7), a = (it.rise ?? -60) * DEG, ax = V(it.side * (it.splay || 0), Math.sin(a), Math.cos(a)).normalize(), L = it.len, w = it.w, r = rng(B.g.seed + 51), sw = new THREE.Group();
+    const bg = new THREE.BoxGeometry(w, L, w * .16, 1, 16, 1), q = bg.attributes.position, nicks = new Set(Array.from({ length: it.notches || 0 }, () => Math.floor(r() * 26) - 13));
+    for (let v = 0; v < q.count; v++) { const y = q.getY(v) / L + .5, x = q.getX(v), row = Math.round((y - .5) * 16 * 1.6), nick = nicks.has(row * Math.sign(x)) && y < .9 ? .55 : 1; q.setX(v, x * (1 - .55 * y ** 2) * (y > .9 ? (1 - y) / .1 : 1) * nick); }
+    bg.computeVertexNormals(); bg.translate(0, L / 2 + w * .5, 0); sw.add(new THREE.Mesh(bg, stdMat(B.tone('iron'), { rough: .55, flat: true })));
+    const cg = new THREE.BoxGeometry(w * 3.2, w * .35, w * .45); cg.translate(0, w * .3, 0); sw.add(new THREE.Mesh(cg, stdMat(B.tone('iron'), { rough: .6 })));
+    const gg = new THREE.CylinderGeometry(w * .22, w * .22, w * 2.4, 7); gg.translate(0, -w * 1.1, 0); sw.add(new THREE.Mesh(gg, stdMat(B.tone('leather'), { rough: .9 })));
+    const pg = new THREE.SphereGeometry(w * .38, 10, 8); pg.translate(0, -w * 2.4, 0); sw.add(new THREE.Mesh(pg, stdMat(B.tone('iron'), { rough: .6 })));
+    sw.position.copy(fist).addScaledVector(ax, w * 1.1); sw.quaternion.setFromUnitVectors(UP, ax); sw.name = 'sword'; B.bit(names[3], sw); B.gear = [...(B.gear || []), 'sword']; } } };
 // wings: an arm (humerus, forearm) and a fan of two-bone fingers; the membrane between them is its own skinned mesh
 // a feather (Session 775): a tapered card from its root along dir, its width across in the wing's plane; the tip darker
 function feather(B, root, dir, across, len, w, bone, tone, tip) {
@@ -438,6 +448,29 @@ function growFlesh(flesh, o) {
 
 // skin weights, tone and the fur and glow masks, read off the flesh at every vertex
 const FURRY = new Set(['coat', 'pale', 'mane']);
+// a bare body (Session 934, the skeleton): no grown skin. Each capsule of flesh is drawn as the bone it stands for: a limb's as a
+// shaft with a knob at each end, the spine's, neck's and tail's as a stack of vertebrae, the head's and jaw's whole, as the skull.
+// The pieces are skinned as a hide is (dressFlesh), so a bone's shape moves with its bone
+function bareGeo(B, o) { const gs = [];
+  for (const f of B.flesh) { f.sm = (f.s[0] + f.s[1] + f.s[2]) / 3; const d = f.b.clone().sub(f.a), L = d.length(); if (L < 1e-4) continue;
+    const q = new THREE.Quaternion().setFromUnitVectors(UP, d.clone().normalize()), put = (g, at, sc) => { if (sc) g.scale(...sc); g.applyQuaternion(q); g.translate(at.x, at.y, at.z); gs.push(g); };
+    const name = B.bones[f.bone].name;
+    if (name === 'head' || name === 'jaw') put(new THREE.CapsuleGeometry((f.ra + f.rb) / 2, L, 6, 14), f.a.clone().lerp(f.b, .5), [f.s[0], 1, f.s[1]]);
+    else if (/^(spine|neck|tail)/.test(f.group)) { const n = Math.max(1, Math.round(L / (o.vert ?? .05)));
+      for (let k = 0; k < n; k++) { const t = (k + .5) / n, r = lerp(f.ra, f.rb, t) * (o.vr ?? .3); put(new THREE.CylinderGeometry(r, r * 1.1, L / n * .6, 10), f.a.clone().lerp(f.b, t)); } }
+    else { const sh = o.shaft ?? .32, kn = o.knob ?? .5; put(new THREE.CylinderGeometry(f.rb * sh, f.ra * sh, L, 8), f.a.clone().lerp(f.b, .5));
+      for (const [p, r] of [[f.a, f.ra], [f.b, f.rb]]) { const g = new THREE.SphereGeometry(r * kn, 10, 8); g.translate(p.x, p.y, p.z); gs.push(g); } } }
+  const geo = mergeGeometries(gs.map(g => { g.deleteAttribute('uv'); return g; })); return { geo, grid: [0, 0, 0] }; }
+// ribs (Session 934): a cage of arcs off the spine, each from the spine round the side and forward toward a breastbone it stops short
+// of; `from`/`to` the stretch of the spine they cover, `w` the cage's half-width, `d` its depth ahead of the spine, `drop` how far a rib
+// falls on its way round. With `pelvis`, two flared blades of hip on the first spine bone
+P.ribs = (B, o) => { const gs = [];
+  for (let i = 0; i < o.n; i++) { const u = i / (o.n - 1), sp = B.spineAt(lerp(o.from, o.to, u)), k = Math.sin(Math.PI * (.25 + .75 * u)), W = o.w * k, D = o.d * (.6 + .4 * k), c = sp.p.clone().add(V(0, 0, D));
+    for (const sd of [1, -1]) { const pts = []; for (let j = 0; j <= 8; j++) { const t = j / 8, th = t * Math.PI * (o.wrap ?? .82); pts.push(c.clone().add(V(sd * W * Math.sin(th), -o.drop * t, -D * Math.cos(th)))); }
+      gs.push(taperTube(pts, o.r, o.r * .7, 6)); } }
+  const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone('coat'), { rough: .7 })); m.name = 'ribs'; B.bit(B.spineAt((o.from + o.to) / 2).bone, m);
+  if (o.pelvis) { const h = B.spinePts[0], P0 = o.pelvis; for (const sd of [1, -1]) { const g = new THREE.SphereGeometry(P0.r, 14, 10); g.scale(1, 1.1, .3); g.rotateY(sd * .9); g.translate(h.x + sd * P0.out, h.y + P0.up, h.z); B.bit(B.spineNames[0], new THREE.Mesh(g, stdMat(B.tone('coat'), { rough: .7 }))); } }
+  B.ribs = o.n * 2; };
 function dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
   const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n);
@@ -524,7 +557,7 @@ export function build(g) {
   const minR = Math.min(...B.flesh.map(c => Math.min(c.ra, c.rb) * Math.min(...c.s)));
   const ext = B.flesh.reduce((m, c) => Math.max(m, Math.abs(c.a.z), Math.abs(c.b.z), Math.abs(c.a.x), Math.abs(c.b.x), c.a.y, c.b.y), 0) * 2;
   const cell = plan.cell ?? Math.max(minR * .7, ext / 240), blend = plan.blend ?? Math.max(cell * 1.2, .25 * minR);
-  const { geo, grid } = growFlesh(B.flesh, { cell, blend });
+  const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend });
   dressFlesh(geo, B, pal, plan);
   // the skeleton
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
@@ -1652,3 +1685,25 @@ Object.assign(PLANS, {
     ] })
 });
 export const GOBLINS = ['goblin'];
+// ── Session 934: the skeleton (OG-041: a notched sword and a round wooden shield, rags at the hips; canon §9a puts skeletons in Solas
+// and Uisce gates, so OG-018's drowned skeleton is the next to follow). The kit's first bare body: an upright biped with a man's
+// proportions whose capsules are drawn as bones (`bare`), a cage of ribs and a pelvis on its spine, a skull with dark sockets and a
+// hinged jaw. It walks as the troll does, upright; the sheet's rags wait for cloth on a creature ──
+Object.assign(PLANS, {
+  skeleton: { name: 'Skeleton', src: 'OG-041 (skeleton: a notched sword and a round wooden shield, rags at the hips)', gaits: ['walk', 'trot', 'stand'], bare: { shaft: .3, knob: .48, vr: .34, vert: .045 },
+    rough: .7, mottle: .9, speedK: .9, wag: 0, pant: 0, neckNod: .05, spread: .04,
+    palette: { coat: [.78, .73, .6], dark: [.05, .04, .03], wood: [.38, .27, .16], iron: [.36, .35, .33], leather: [.2, .14, .09] },
+    parts: [
+      ['spine', { hip: [.98, -.03], chest: [1.44, .01], n: 4, r: [.12, .13, .14], s: [1, 1], rump: 0, front: 0 }],
+      ['neck', { len: .13, n: 1, rise: 80, r: [.06, .05], up: .02 }],
+      ['head', { len: .2, r: .1, pitch: -8, s: [.85, 1.05, 1], muzzle: { len: .62, r: .06, taper: .85, drop: .45 }, jaw: { len: .62, r: .04, drop: 1.05 },
+        eyes: [{ f: .55, up: .2, out: .42, r: .028, color: [.02, .02, .02] }] }],
+      ['ribs', { n: 7, from: .3, to: 1, w: .15, d: .1, drop: .1, r: .011, wrap: .8, pelvis: { r: .11, out: .09, up: .02 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .1, drop: .02, r: [.08, .065, .05] }],
+      ['arms', { at: 1, out: .19, up: -.04, len: .7, r: [.055, .045, .04], dir: [.12, -1, .02], bend: 16, tone: 'coat', swing: .3 }],
+      ['gear', { list: [
+        { kind: 'sword', arm: 0, side: -1, len: .7, w: .05, rise: -40, splay: .1, notches: 5 },
+        { kind: 'shield', arm: 0, side: 1, r: .3, t: .03, face: [1, .8], off: .04, tone: 'wood', rim: 'iron', boss: 'iron' }] }]
+    ] }
+});
+export const SKELETONS = ['skeleton'];

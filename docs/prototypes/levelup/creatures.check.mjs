@@ -108,6 +108,18 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   for (const [k, t] of Object.entries(gb)) {
     check(`${k}: a crouched biped about a goblin's height (head ${t.head} m up; ${t.legs} legs, ${t.arms} arms)`, t.legs === 2 && t.arms === 2 && t.head > .8 && t.head < 1.4, t);
     check(`${k}: carries ${t.gear.join(' and ')}, clear of the ground through every gait (lowest ${t.low} m), the spear's point above its head (${t.top} m), the shield off its hip (${t.sep} m)`, t.gear.includes('spear') && t.gear.includes('shield') && t.low > .02 && t.top > t.head + .3 && t.sep > .2, t); }
+  // the skeleton (Session 934, OG-041): the kit's first bare body, its capsules drawn as bones, with ribs and a pelvis; it stands a man's
+  // height, and its sword and shield stay clear of the ground through every gait
+  const sk = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.SKELETONS) { const C = K.build(K.genome(k, k + ':check')), P = new T.Vector3(), box = new T.Box3(), items = []; C.rig.traverse(o => { if (o.name === 'sword' || o.name === 'shield') items.push(o); });
+      const flesh = K.build(K.genome('troll', 'troll:check')).stats.tris; let low = 1e9, head = 0;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
+        for (const o of items) { box.setFromObject(o); low = Math.min(low, box.min.y - C.root.position.y); } C.byName.head.getWorldPosition(P); head = Math.max(head, P.y - C.root.position.y); } }
+      out[k] = { bare: !!C.plan.bare, tris: C.stats.tris, troll: flesh, ribs: C.B.ribs, gear: C.B.gear, low: +low.toFixed(3), head: +head.toFixed(2) }; }
+    return out; });
+  for (const [k, t] of Object.entries(sk)) {
+    check(`${k}: a bare body, bones and not a hide (${t.tris} triangles against the troll's ${t.troll}), ${t.ribs} ribs, its skull ${t.head} m up`, t.bare && t.tris < t.troll && t.ribs >= 10 && t.head > 1.4 && t.head < 1.85, t);
+    check(`${k}: carries ${(t.gear || []).join(' and ')}, clear of the ground through every gait (lowest ${t.low} m)`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.low > .02, t); }
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));

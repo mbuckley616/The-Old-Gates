@@ -20116,3 +20116,37 @@ What changed in `creatures.js`:
 - **Owed:**
   - The sheet's scrap-leather harness: straps on a creature need a way to lie on the grown skin.
   - The skeleton, the last of the five: the kit's flesh is one smooth surface, so a body of bare bones needs a different hide.
+
+## v80 — Session 934 — The skeleton: a bare body (L4, prototype only)
+The last of OG-041's classic five: a skeleton with a notched sword and a round wooden shield. Canon §9a puts skeletons in Solas and Uisce gates. The kit grows one smooth skin over its capsules, and a skeleton has none, so this session gives the kit a second kind of hide. The sheet draws the skeleton, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A plan may be `bare`.** Instead of growing the flesh, `bareGeo` draws each capsule as the bone it stands for.
+  - A limb's capsule becomes a shaft with a knob at each end.
+  - The spine's, neck's and tail's capsules become a stack of vertebrae.
+  - The head's and jaw's capsules stay whole, as the skull.
+  - The pieces are skinned by the same `dressFlesh` as any hide, so each moves with its bone and every skin weight still sums to one.
+  - One catch: `capDist` reads a capsule's `sm`, which `growFlesh` sets. Without it every colour came out NaN, so the first picture was black. `bareGeo` now sets it too.
+- **`ribs`, a new part:** a cage of arcs off the spine (`n` a side), each running round the side and forward, stopping short of a breastbone. They are widest mid-cage and drop as they go. With `pelvis`, two flared hip blades sit on the first spine bone.
+- **`gear` takes a sword:** a flat blade narrowing to its point, its edges notched at rows the seed picks, with a crossguard, a leather grip in the fist and a pommel. A shield now takes its own `tone` and `rim`.
+- **`skeleton`, the Skeleton:** an upright biped with a man's proportions, its skull 1.66 m up.
+  - It has 14 ribs, dark eye sockets and a hinged jaw.
+  - It carries a 0.7 m notched sword in its right hand, point down and ahead, and a 0.3 m wooden shield rimmed in iron on its left forearm.
+  - 23 bones and 6,324 triangles, half the troll's hide.
+  - It walks with the troll's biped gait.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 991 checks pass** (981 before).
+  - The skeleton's gaits pass: every foot reaches its target, the walk's feet are down 0.69 of 0.68 and the trot's 0.46 of 0.45.
+  - It is bare, with 14 ribs.
+  - Its sword and shield stay clear of the ground in all 72 poses (lowest 0.107 m). The first try, with the point 55° down, put it 2.6 cm into the floor; 40° fixed it.
+- Pictures:
+  - `creatures-skeleton.jpg` (side) and `creatures-skeleton-front.jpg`.
+  - `creatures-classic.jpg` is re-shot with all five of OG-041 in a row: the spider, the slime, the skeleton, the goblin and the troll.
+
+### Needs eyes
+- **The skull** is two capsules and reads soft and cartoonish from the side: no brow ridge, no cheekbones, and the teeth are missing. A modelled skull is the next refinement.
+- **The bones** are uniform shafts, so the femur and the forearm differ only in size.
+- **Owed:**
+  - The rags at the hips: cloth on a creature, which the goblin's harness also waits for.
+  - OG-018's drowned skeleton (Uisce), as a recolour with weed.
