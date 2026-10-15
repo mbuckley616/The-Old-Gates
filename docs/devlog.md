@@ -18641,3 +18641,61 @@ The shield's fist (Session 906) curls about the same z axis, so its fingers are 
 ### Needs eyes
 - **The shield's left fist** (Session 906) curls about the bones' z, not the knuckles' line. It wants the same hinge. Its pictures read closed, so it was not touched.
 - **The thumb** lies along the shaft or against it. It does not cross over the first finger as a hard grip's does.
+
+## v80 — Session 911 — The Gatelands' kite with the harp (L7 and B2, prototype only)
+Session 904 left OG-028's island shields owed: the harp kite, the painted round and the sun-star hoplon. The painted round is the round shield already built. This session builds the Gatelands' kite: OG-028 draws it green with a gold harp, beside the heater and the round. Michael kept OG-028, and the kite is its own shield, so it needs no new question. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **A genome flag, `shieldShape`** (`'round'` by default, saved only when it is `'kite'`). With it, `buildKite` builds in place of `buildShield`.
+- **The shape** (`KITE`, `KITE_LINE`):
+  - A rounded top 48 cm across, the sides drawn in to a point 86 cm below it.
+  - The fist sits 30 cm under the top.
+  - It is bent round its bearer, its edges 4.5 cm behind its middle.
+  - `kiteR` gives the outline's distance from the fist along any ray, since the outline is seen whole from there.
+- **The parts** (`kiteParts`):
+  - Seven boards under a painted field, built on a polar grid out from the fist.
+  - A rawhide rim along the bend.
+  - No boss. A kite is held by enarmes: a leather strap the forearm goes through, 17 cm over the fist, and a grip strap the fist closes on. Each stands off the back to the arm's own depth and is riveted through the face, so four rivet heads show on the field.
+  - 4,088 triangles.
+- **The face** (`kiteTex`): the field, then the harp in the paint's colour, as the old Gaelic harp is drawn:
+  - the soundbox on the diagonal from its foot up to the left;
+  - the neck curving across the top;
+  - the forepillar bowed out on the right, down to the foot;
+  - eight strings, plumb between them.
+
+  Then a border of the same colour inside the rim, and the paint worn back to the wood at the rim. The first try put the soundbox upright and the pillar on the left. It read as a gold loop, not a harp.
+- **Held on the forearm, its point down** (`buildKite`). Its axis runs along the forearm and its face is turned 1 rad forward, as the round shield's is.
+  - Its back is laid 5 mm outside the furthest point within its outline, read at each point's own place on the bend (`kiteBack`).
+  - Where something other than the arm is that point, the arm is lifted out from the side 0.03 rad at a time.
+  - The wrist carries it, and `kiteInside` reads the promise back off it.
+- **Under a cloak** a kite is not built yet. The slung shield is laid for a round board, and the kite is owed there.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 243 checks pass.** There are five new ones:
+  - a Gatelander in a tunic;
+  - a Gatelander in mail and a helm;
+  - a Gatelander woman in a long skirt;
+  - a Gatelander in the Crown tabard with a kite and a spear;
+  - a Markman.
+- For each of the five:
+  - Nothing is inside the kite's boards or rim: 0 of 3,347 to 5,518 points within its outline.
+  - The arm lies on its back, 0.0 mm off. The nearest point is 5.0 mm behind it.
+  - The arm is lifted 0 to 0.06 rad.
+  - The point is 20 to 37 cm off the ground.
+  - Each saves and loads.
+- With the spear as well, the spear's own promises hold: nothing of the hand is inside the shaft, and nothing else is within 27 mm.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:**
+  - `builder-armour-kite.jpg` and `-back`: a Gatelander in a tunic, green field and gold harp.
+  - `builder-armour-kite-close.jpg`: the face.
+  - `builder-armour-kite-mail.jpg`: in mail and a helm, with a spear.
+  - `builder-armour-kite-woman.jpg`: a woman in a long skirt with a blue field.
+### Needs eyes
+- **The harp** is drawn in strokes on a 256 by 512 canvas. Close up its strings are a little soft, and its curves are a sketch of the emblem, not knotwork. OG-028's Celtic knotwork on the rim is not drawn.
+- **The kite's top** sits at the hip because the arm hangs. Carried for a fight, it is held higher with the elbow bent. That waits on B4.
+- **The enarmes** are plain straps with no buckles.
+- **Owed:**
+  - the kite slung on the back under a cloak;
+  - the sun-star hoplon (Aurenne);
+  - the Mark's painted round, as a design (it is the round shield with its quarters);
+  - a control for the shape on the builder page (the flag is in the genome and the URL's `dress`).
