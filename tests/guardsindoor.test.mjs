@@ -85,7 +85,10 @@ await page.evaluate(() => { PHP = maxHP; const b = [...document.querySelectorAll
 await g.frames(3);
 const f0 = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); return e ? { name: e.displayName, hp: e.hp, inRoom: e.mesh && e.mesh.parent === interiorScene, inside: isInterior() } : null; });
 const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = PHP; let solidT = 0, minD = 99;
-  for (let t = 0; t < 8; t += 1 / 60) { WORLD.tickInterior(1 / 60, performance.now()); if (intSolidAt(e.x, e.z, .25, 0)) solidT++; minD = Math.min(minD, Math.hypot(e.x - px, e.z - pz)); }
+  // S949 — a blow is a sixth of your health now (Michael's B on #355): eight seconds stood still would fell you, and a fallen
+  // player swings nothing in the next step, so the watch ends once he has taken half your health
+  for (let t = 0; t < 8 && PHP > maxHP * .5; t += 1 / 60) { WORLD.tickInterior(1 / 60, performance.now()); if (intSolidAt(e.x, e.z, .25, 0)) solidT++; minD = Math.min(minD, Math.hypot(e.x - px, e.z - pz)); }
+  dead = false;
   return { lost: hp0 - PHP, minD: +minD.toFixed(2), solidFrames: solidT, y: +e.mesh.position.y.toFixed(2) }; });
 console.log('refused', JSON.stringify(d5), JSON.stringify(f0), JSON.stringify(fight));
 check('refuse indoors and he draws in the room: a Town Guard there, in the room’s scene', d5.open && f0 && f0.inside && f0.inRoom && f0.name === 'Town Guard', { d5, f0 });

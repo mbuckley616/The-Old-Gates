@@ -20334,7 +20334,7 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
 
-## v80 — Session 939 — Combat's resolver: the attack table and one resolver (deep work, card combat-resolver)
+## v80 — Session 940 — Combat's resolver: the attack table and one resolver (deep work, card combat-resolver)
 The card was combat B's deep-work session (Michael's B, 28 Sep; v2-scope.md §4 and §7, after F2a and before F2b): one attack table and one resolver for the dungeon and the open world, plus commitment, the light chain, a potion's time, and armour as a share (#181 B).
 
 **The problem.** There were two resolvers for your swing, `_resolveDungeonStrike` (62) and `_resolveZoneStrike` (42). They were the same rules written twice, with small drifts: the dungeon's never doubled a blow on a dazed beast or woke its pack, and the world's never redrew the bar at the hit. A foe's blow had two free formulas:

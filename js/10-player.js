@@ -260,7 +260,7 @@ function startRoll(nowS,keys){
   const K=keys||{};
   if(!ROLL&&!dead&&started&&!onGround)FALL.qAt=FALL.clock; // S429 — pressed in the air: rolled on landing if it is within FALL_ROLL_WIN
   if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
-  if(typeof swingCommitted==='function'&&swingCommitted())return false; // S939 — a swing's wind-up and strike are committed; its recovery cancels into the roll
+  if(typeof swingCommitted==='function'&&swingCommitted())return false; // S940 — a swing's wind-up and strike are committed; its recovery cancels into the roll
   if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
   if(typeof spellLevitating==='function'&&spellLevitating())return false;
   const enc=encumbranceState();if(enc==='immobile')return false;

@@ -277,7 +277,7 @@ function _enterGame(){
         showMsg('Draw released.','#aaa');
         return;
       }
-      if(!raiseGuard())return; // S939 — no guard in a swing's wind-up or strike; in its recovery the block cuts it short
+      if(!raiseGuard())return; // S940 — no guard in a swing's wind-up or strike; in its recovery the block cuts it short
       // v62 — Starting a block cancels any in-progress power charge. Block
       // and power-attack are mutually exclusive states; without this, holding
       // LMB then tapping RMB would leave powerCharging true with no LMB held.

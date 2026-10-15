@@ -908,7 +908,7 @@ function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.h
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.m.position.set(a.x,a.y,a.z);
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
-    if(hit&&!dead){const raw=foeBlow(a.from,a.dmg+Math.floor(foeRand(a.from)*4)); /* S939 — armour as a share, as of every blow */
+    if(hit&&!dead){const raw=foeBlow(a.from,a.dmg+Math.floor(foeRand(a.from)*4)); /* S940 — armour as a share, as of every blow */
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
       if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
@@ -1228,7 +1228,7 @@ function tickZoneEnemies(dt,now,sc){
           sndFaolchuBite();
         }
         if(strikeReaches(e)){
-          executeStrike(e, foeBlow(e), now); // S939 — the blow from the attack table, armour as a share
+          executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
         } else {
           sndSwing();
         }
@@ -1718,6 +1718,6 @@ function attackZoneEnemies(isPower, _isDeferred){
     atkCd=.5*(1-attrEff('swiftness')*0.01)*(_isPow?POWER_ATK_CD_MULT:1)*_swFactor*(_exhaustedStrike?1.3:1);
     stamina=Math.max(0,stamina-_stamCost(_stCost));
   }
-  beginSwing(_isPow,_resolveZoneStrike); // S939 — the swing's times from the attack table; the hit at its impact
+  beginSwing(_isPow,_resolveZoneStrike); // S940 — the swing's times from the attack table; the hit at its impact
 }
-function _resolveZoneStrike(_isPow){return resolvePlayerStrike(_isPow);} // S939 — the one resolver (74-strikes.js)
+function _resolveZoneStrike(_isPow){return resolvePlayerStrike(_isPow);} // S940 — the one resolver (74-strikes.js)

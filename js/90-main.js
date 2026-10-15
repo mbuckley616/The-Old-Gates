@@ -158,7 +158,7 @@ function loop(now){
     }
   }
   tickLock(dt);
-  commitTurn(dt); /* S939 — while a swing is committed you turn at most 90° a second */
+  commitTurn(dt); /* S940 — while a swing is committed you turn at most 90° a second */
   tickDrink();
   fwdX=-Math.sin(yaw);fwdZ=-Math.cos(yaw);rgtX=Math.cos(yaw);rgtZ=-Math.sin(yaw);
 
@@ -167,7 +167,7 @@ function loop(now){
   // sneaking is a deliberate stealth posture).
   const _canSprint = _encState!=='overloaded' && _encState!=='immobile' && !_sneaking;
   const _sprintAttempt = K['ShiftLeft']&&stamina>0&&staminaCD<=0&&(K['KeyW']||K['ArrowUp']);
-  const sprinting = _sprintAttempt && _canSprint && !DRINK; /* S939 — a potion is drunk at walking pace */
+  const sprinting = _sprintAttempt && _canSprint && !DRINK; /* S940 — a potion is drunk at walking pace */
   // Feedback: if player tries to sprint but is too encumbered, show message (throttled to once per 2s).
   if(_sprintAttempt && !_canSprint){
     if(!window._lastEncMsg || performance.now()-window._lastEncMsg > 2000){

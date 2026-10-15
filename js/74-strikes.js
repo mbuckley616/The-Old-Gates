@@ -28,7 +28,7 @@ function applySpellDamage(e, sp, tier){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// S939 — the attack table and one resolver (combat, Michael's B: its deep-work session; v2-scope.md §4)
+// S940 — the attack table and one resolver (combat, Michael's B: its deep-work session; v2-scope.md §4)
 // ═══════════════════════════════════════════════════════════════════════
 // Every blow in a fight reads a row here: yours by the weapon in your hand, a foe's by its family. A row is one attack:
 //   tell      seconds of wind-up before the blow lands (yours: click to impact; a foe's: its wind-up pose and glow)
@@ -104,7 +104,9 @@ function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
 // material the loot reaches at their level (tier 1 + 0.4 a level), helmet to boots and a buckler. The ordinary blow is
 // today's at level 1, a Skeleton's in a normal dungeon (15 × 2.0) and a Bandit's in the open world (7); a foe's own roll
 // is scaled from that, so every kind keeps its place against the others. The slam stays a share of your health (S617).
-const ARMOUR_K=50,BLOW_SHARE=.10,BLOW_ORDINARY={dungeon:30,world:7},KIT_PIECES=['Helmet','Cuirass','Gauntlets','Greaves','Boots','Buckler'];
+// BLOW_SHARE is a sixth, Michael's B on DECISION #355 (S949): six unguarded blows to fall, about eight through a held block.
+// It is .17, not 1/6: at exactly a sixth the rounding left 1 health after the sixth blow at levels 10 and 20.
+const ARMOUR_K=50,BLOW_SHARE=.17,BLOW_ORDINARY={dungeon:30,world:7},KIT_PIECES=['Helmet','Cuirass','Gauntlets','Greaves','Boots','Buckler'];
 function armourShare(d,arm){const a=Math.max(0,arm==null?_armour():arm);return d*ARMOUR_K/(ARMOUR_K+a);}
 function hpRef(L){return 100+15*(Math.max(1,L)-1);}
 function kitTier(L){return Math.min(10,Math.max(1,Math.floor(1+Math.max(1,L)*.4)));}
@@ -117,7 +119,7 @@ function foePlaceK(e){return blowRef(1)/(typeof e.dmg==='number'?BLOW_ORDINARY.w
 // the blow that reaches you: the roll, the row's multiplier, the place's scale, then your armour's share
 function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(armourShare((raw==null?foeBlowRaw(e):raw)*r.dmg*foePlaceK(e),arm)));}
 
-// ── The one resolver for your swing (S939). The dungeon, the open world and the legacy zones each had their own
+// ── The one resolver for your swing (S940). The dungeon, the open world and the legacy zones each had their own
 // (_resolveDungeonStrike, _resolveZoneStrike), the same rules written twice; both are now this. At the swing's impact
 // it gathers the foes in reach and in the arc of the weapon's row (a boss at REACH_VS_BOSS), nearest first, up to the
 // row's cleave; a power blow breaks a raised shield without damage (S485: not when swung spent), every other blow runs
@@ -318,7 +320,7 @@ function applyMeleeDamage(e, rawDmg){
 // S275 — an enemy's blow lands in an arc about the way it faced when it wound up (combatYaw, frozen at the wind-up):
 // 1.6 units and 90° for most, 2.4 units and 140° for a troll's sweep, a boss's own reach where it has one. Before, it
 // hit anyone within 1.4 units (1.3 in a dungeon) whichever way it faced.
-// S939 — the reach and the arc are the family's row in the attack table (FOE_ATTACKS).
+// S940 — the reach and the arc are the family's row in the attack table (FOE_ATTACKS).
 function strikeArc(e){
   const r=foeAttack(e);
   if(e.isBoss&&e.bossDef&&e.bossDef.biteRange)return {reach:Math.max(r.reach,e.bossDef.biteRange),deg:r.arc};
@@ -367,7 +369,7 @@ function executeStrike(e, rawDmg, now){
   // which has been dead code since v61c6 because the parry branch always ate first).
   const _parryWindow = PARRY_WINDOW_BASE + attrEff('finesse') * PARRY_WINDOW_FINESSE;
   const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow;
-  const _row = foeAttack(e); // S939 — the blow's row: whether a guard takes it, whether it parries, what it drains from your posture
+  const _row = foeAttack(e); // S940 — the blow's row: whether a guard takes it, whether it parries, what it drains from your posture
   if(blocking && _justRaisedBlock && _row.parryable){
     // PERFECT PARRY — block raised within the timing window before the hit landed
     hurtT = 0;
@@ -449,7 +451,7 @@ function executeStrike(e, rawDmg, now){
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;
     lastHitT = now/1000;
-    playerPostureHit(rawDmg*_row.posture, now/1000, false); // S281; S939 — the row's multiple (1.5 for every family today)
+    playerPostureHit(rawDmg*_row.posture, now/1000, false); // S281; S940 — the row's multiple (1.5 for every family today)
     e._lunge=.3; // v80 — every strike moves the body
     if(PHP<=0 && !dead) playerDead();
   }
@@ -471,11 +473,11 @@ function executeDungeonStrike(e, now){
   // attacks from this revealed mimic are normal melee.
   if(e._burstNext){
     e._burstNext = false;
-    // S939 — the pounce rolls (14 + level) on its multiplier where a blow rolls 10–20, and armour takes its share as of any blow
+    // S940 — the pounce rolls (14 + level) on its multiplier where a blow rolls 10–20, and armour takes its share as of any blow
     executeStrike(e, foeBlow(e, (14 + level * 1.0) * (e.dmgMult||1.0)), now);
     return;
   }
-  executeStrike(e, foeBlow(e), now); // S939 — the blow from the attack table, armour as a share
+  executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
 
 }
 
@@ -697,7 +699,7 @@ function enemyHpScale(){
   const lv = (typeof level!=='undefined'?level:1) || 1;
   return Math.min(3.0, 1 + (lv - 1) * 0.15);
 }
-// S939 — a foe's blow grows with your level as the reference blow does (blowRef), so that with armour as a share an
+// S940 — a foe's blow grows with your level as the reference blow does (blowRef), so that with armour as a share an
 // ordinary blow at your level's kit stays near BLOW_SHARE of your health. It was +8% a level to ×2.0 at level 13, against
 // armour taken off flat: by level 10 a kit of your level took the whole of an ordinary blow (S610).
 function enemyDmgScale(){

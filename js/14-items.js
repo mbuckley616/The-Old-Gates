@@ -197,8 +197,8 @@ function weaponDamageType(w){
 // (0.24 → 0.45, 0.55 → 0.90), so the order is kept: the kobold is still the quickest, the golem the slowest. The tell
 // is read from the body now: the shared wind-up pose (e._wind, Session 130) runs the whole tell, and the red glow
 // comes only in its last 0.15 s (TELL_GLOW_S).
-// S939 — the tells by kind live in the attack table now (FOE_ATTACKS, 74-strikes.js), and TELEGRAPH_BY_NAME is built there from it.
-const TELL_MIN=.45,TELL_DEFAULT=.61,TELL_GLOW_S=.15; /* S939 — TELL_DEFAULT is the families' tell in the attack table */
+// S940 — the tells by kind live in the attack table now (FOE_ATTACKS, 74-strikes.js), and TELEGRAPH_BY_NAME is built there from it.
+const TELL_MIN=.45,TELL_DEFAULT=.61,TELL_GLOW_S=.15; /* S940 — TELL_DEFAULT is the families' tell in the attack table */
 function telegraphDuration(e){
   if(!e) return TELL_DEFAULT;
   return TELEGRAPH_BY_NAME[e.baseType] ?? TELEGRAPH_BY_NAME[e.name] ?? foeAttack(e).tell;

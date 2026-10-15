@@ -63,7 +63,7 @@ function doBash(){
 }
 function attack(isPower, _isDeferred){
   if(playerStaggered(performance.now()/1000))return; // S281
-  if(DRINK&&!_isDeferred)return; // S939 — no swing while you drink
+  if(DRINK&&!_isDeferred)return; // S940 — no swing while you drink
   if(isOverworldZone()){attackZoneEnemies(isPower, _isDeferred);return;}
   // v62 — Power attack: hold LMB past POWER_CHARGE_THRESHOLD before release.
   // Requires a weapon equipped (bare-hand is the fallback path; no power
@@ -89,11 +89,11 @@ function attack(isPower, _isDeferred){
     atkCd=.5*(1-attrEff('swiftness')*0.01)*(_isPow?POWER_ATK_CD_MULT:1)*_swFactor;
     stamina=Math.max(0,stamina-_stamCost(_stCost));
   }
-  // S939 — the swing's times from the weapon's row in the attack table (74-strikes.js), the whoosh now and the hit at
+  // S940 — the swing's times from the weapon's row in the attack table (74-strikes.js), the whoosh now and the hit at
   // its impact (v66.1, _pendingStrike); the chain and the commitment start here
   beginSwing(_isPow,_resolveDungeonStrike);
 }
-function _resolveDungeonStrike(_isPow){return resolvePlayerStrike(_isPow);} // S939 — the one resolver (74-strikes.js)
+function _resolveDungeonStrike(_isPow){return resolvePlayerStrike(_isPow);} // S940 — the one resolver (74-strikes.js)
 // v64 — fireArrow: spawn an arrow projectile and consume one from EQ.ammo.
 //
 // Routing: rides the existing BALLS[] (dungeon) / ZB[] (zone) projectile
@@ -681,7 +681,7 @@ function useItem(i){
   // v61x: potions with an `effect` field use the buff system (regen, warding, swiftness).
   // Tier-aware: a lower-tier potion doesn't overwrite a higher-tier active buff — instead
   // the potion is NOT consumed and the player gets a message. Equal or higher tier replaces.
-  // S939 — a potion takes 0.8 s at walking pace (combat B's commitment): it leaves the bag now and works when it is down
+  // S940 — a potion takes 0.8 s at walking pace (combat B's commitment): it leaves the bag now and works when it is down
   // (startDrink, tickDrink in 74-strikes.js). One at a time; a tonic a stronger one already outranks is refused untouched.
   if(it.type==='potion'&&(it.effect||it.heal||it.mana||it.stam)&&DRINK){showMsg('You are still drinking.','#cc8844');return;}
   if(it.type==='potion' && it.effect){

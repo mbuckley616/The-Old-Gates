@@ -16,9 +16,9 @@ const w = await page.evaluate(() => {
   // an archer's 30-point arrow
   const arrow = () => { Math.random = () => 0; PHP = maxHP; const a = { x: px + fwdX * 4, z: pz + fwdZ * 4, dmg: 30, name: 'Bandit Archer' };
     ZARROWS.length = 0; fireZoneArrow(a, WORLD.scene); for (let i = 0; i < 60 && ZARROWS.length; i++) tickZoneArrows(1 / 60, performance.now()); Math.random = rnd; return maxHP - PHP; };
-  ACTIVE_BUFFS.length = 0; out.arrow = arrow(); guard(); out.arrowGuard = arrow(); out.armour = [_armour() - 8, _armour()]; out.k = foePlaceK({ dmg: 30 }); /* S939 — armour as a share */
+  ACTIVE_BUFFS.length = 0; out.arrow = arrow(); guard(); out.arrowGuard = arrow(); out.armour = [_armour() - 8, _armour()]; out.k = foePlaceK({ dmg: 30 }); /* S940 — armour as a share */
   // a swing and a roll: what they cost
-  const swing = () => { atkCd = 0; stamina = 100; attack(false); atkCd = 0; SWING = null; return 100 - stamina; }; /* S939 — the swing let go, so the roll after it is not refused by its commitment */
+  const swing = () => { atkCd = 0; stamina = 100; attack(false); atkCd = 0; SWING = null; return 100 - stamina; }; /* S940 — the swing let go, so the roll after it is not refused by its commitment */
   const roll = () => { ROLL = null; stamina = 100; startRoll(performance.now() / 1000, {}); ROLL = null; return 100 - stamina; };
   ACTIVE_BUFFS.length = 0; out.swing = swing(); out.roll = roll(); fern(); out.swingFern = swing(); out.rollFern = roll();
   // a Bandit who has seen you, eight units off: with the veil he forgets you and does not see you again
@@ -30,7 +30,7 @@ const w = await page.evaluate(() => {
   ACTIVE_BUFFS.length = 0; out.alertAfter = watch(30);
   ZE.splice(ZE.indexOf(e), 1); WORLD.scene.remove(e.mesh); PHP = maxHP; return out; });
 console.log(' ', JSON.stringify(w));
-// S939 — armour takes a share of an arrow (× 50/(50 + armour), decision #181 B) where it took half a point a point
+// S940 — armour takes a share of an arrow (× 50/(50 + armour), decision #181 B) where it took half a point a point
 const share = a => Math.max(1, Math.round(30 * w.k * 50 / (50 + a)));
 check('Ferrous Guard: +8 armour against an archer\'s arrow in the open world (its share: × 50/(50 + armour))', w.arrow === share(w.armour[0]) && w.arrowGuard === share(w.armour[1]) && w.arrowGuard < w.arrow, w);
 check('Mist Fern: a swing costs a fifth less', w.swing > 0 && Math.abs(w.swingFern / w.swing - .8) < .01, w);
