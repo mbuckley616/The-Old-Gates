@@ -20514,3 +20514,11 @@ The QA routine's first item with FREEZE #297 closed and F2a merged: the FLAKY su
 - `node tests/run.mjs bellwreck --look=new`: green.
 ### Needs eyes
 - Nothing for a playtest. CI is the proof: the row in `docs/qa/flaky.md` closes for good if `bellwreck` is not FLAKY on the next several runs that carry this.
+
+## v80 — Session 947 — carraignight waits for the door, not the clock (QA)
+`carraignight` went FLAKY once on 15 Oct (run 38695728480, shard 11): the street half passed, then the indoor loop threw at its first `page.evaluate` with `WORLD.settle.get('carraig_mor')` undefined, several homes in. The loop went into eight homes at eight hours each, paced by fixed waits: 1.5 s after `goToInterior`, 0.8 s after `exitInterior`. Both moves happen only in `doFade`'s callback, a 440 ms `setTimeout` (`js/20-quests.js`), which a loaded runner can fire late. When it did, the next step found the last room's `INT_BOX` still set with `lid` still the overworld, put the player at room coordinates (0 to the room's width) in the open world, and the next `WORLD.tick` dropped Carraig Mór as thousands of units away. The game was right to; the test had moved the player there. The loop now waits for `isInterior()` and `currentHouse` being this home after going in, and for `lid==='overworld'` after coming out, and throws rather than moving the player to `INT_BOX` when not indoors. The checks and their hours are unchanged.
+### Verified (headless Chromium)
+- `node tests/run.mjs carraignight`: three runs green in a row, about 3.5 min each. Indoors, seen by hour in the three runs: 23h30, 1h, 3h and 4h30 0/8 each time (the check); 21h30 2, 1, 4 of 8; 5h30 5, 3, 2 of 8.
+- `--look=new`: see the PR comment (run beside this commit).
+### Needs eyes
+- Nothing for a playtest. The game's fade still carries a timer, which is fine for a player; any other suite that paces `goToInterior` with a fixed wait has the same exposure (`grep -l "goToInterior" tests/` for the next QA run).
