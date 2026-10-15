@@ -6,6 +6,10 @@ import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ dpr: 2 }); const { page } = g;
 await g.intoWorld();
+// a retrieve job needs a gate within 700 of Dunmore loaded, a deliver job a town within 900; until then townQuestFor gives the road
+// job for both, and there is no letter to report (Session 949: FLAKY on 15 Oct). Wait for them, as a player walking up would.
+await page.waitForFunction(() => { const d = WORLD.siteAnywhere('dunmore'); const k = f => { const q = townQuestFor(d, f, true); return q && q.kind; };
+  return k('retrieve') === 'retrieve' && k('deliver') === 'deliver'; }, null, { timeout: 120000, polling: 500 });
 const took = await page.evaluate(() => {
   const d = WORLD.siteAnywhere('dunmore'); const qs = [];
   for (const k of ['cull', 'retrieve', 'deliver', 'find']) { const q = townQuestFor(d, k, true); if (q) { q.id = q.id + ':' + k; qAdd(q); qs.push(q); } }

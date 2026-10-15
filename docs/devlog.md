@@ -20531,3 +20531,10 @@ Correction to Session 947: its *Verified* left the new look's run to the PR comm
 - `--look=new`: green.
 ### Needs eyes
 - Nothing for a playtest.
+
+## v80 — Session 949 — mapseals waits for Dunmore's gate and neighbour (QA)
+`mapseals` went FLAKY once (run 38669829055, 15 Oct): *the map marks what the compass marks, four of Dunmore's jobs, one waiting to be reported* found no job waiting to be reported, because the first try's four jobs were a cull, two road jobs and a find. The suite asks `townQuestFor(dunmore, kind, true)` for a retrieve and a deliver right after `intoWorld`; `townQuestFor` (`js/87-world-quests.js`) builds a retrieve only when `nearDoors(site,700)` finds a gate and a deliver only when `nearSites(site,900)` finds a town with a pad, and falls back to the road job otherwise. Both read what has loaded, so on a slow runner neither was there yet. The suite now waits, polling every half second for up to two minutes, until both kinds come back as asked, then takes its four jobs as before. No check changed. The game's half (a seeded job can come out a different kind on a reload, against the S533 rule) is already in backlog I for the systems builder.
+### Verified (headless Chromium)
+- `node tests/run.mjs mapseals`: three runs green in a row; `--look=new` green.
+### Needs eyes
+- Nothing for a playtest.
