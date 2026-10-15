@@ -342,6 +342,27 @@ P.rags = (B, o) => { const r = rng(B.g.seed + 43), h = B.spinePts[0].clone().add
   const g = new THREE.TorusGeometry(1, .06, 6, 28); g.rotateX(Math.PI / 2); g.scale(o.rx * S + .006, 1, o.rz * S + .006); const cord = new THREE.Mesh(g, stdMat(B.tone(o.cord || 'leather'), { rough: .8 })); cord.position.copy(h); cord.scale.y = .15; B.bit(B.spineNames[0], cord);
   B.rags = { strips, low: +low.toFixed(3) }; };
 
+// straps (Session 944, OG-041's goblin, "a scrap-leather harness"): a harness laid on the grown skin. Each strap is a path of
+// (t, angle) pairs round the spine (t along it, hip 0 to chest 1; angle 0 the belly, 90 its left), drawn as a ribbon `w` wide. It is
+// laid after the flesh is grown: each of its points stands 7 mm outside the furthest of the skin's points near it (within 2.5 cm
+// along the spine and 9° round it) and takes that skin point's bone weights, so it moves as the skin under it does
+P.straps = (B, o) => { (B.after ||= []).push(geo => {
+  const pos = geo.attributes.position, SI = geo.attributes.skinIndex, SW = geo.attributes.skinWeight, n = pos.count, out = [];
+  const X = V(1, 0, 0), frame = t => { const a = B.spineAt(t - .03).p, b = B.spineAt(t + .03).p, ax = b.clone().sub(a).normalize(); return { p: B.spineAt(t).p, ax, belly: X.clone().cross(ax).normalize(), side: X }; };
+  const surf = (t, deg) => { const F = frame(t), th = deg * DEG, dir = F.belly.clone().multiplyScalar(Math.cos(th)).addScaledVector(F.side, Math.sin(th)), v = V(0, 0, 0); let best = -1, R = 0;
+    for (let i = 0; i < n; i++) { v.fromBufferAttribute(pos, i).sub(F.p); const along = v.dot(F.ax); if (Math.abs(along) > .025) continue; v.addScaledVector(F.ax, -along); const r = v.length(); if (r < 1e-4 || v.dot(dir) / r < Math.cos(9 * DEG)) continue; if (r > R) { R = r; best = i; } }
+    return best < 0 ? null : { p: F.p.clone().addScaledVector(dir, R + .007), n: dir, src: best }; };
+  let laid = 0, miss = 0;
+  for (const st of o.straps) { const cc = B.tone(st.tone || o.tone || 'leather'), pts = [], bones = [], skin = [], cols = [], tris = [], line = [];
+    for (let k = 0; k < st.path.length - 1; k++) { const [t0, a0] = st.path[k], [t1, a1] = st.path[k + 1], N = st.steps || 10; for (let j = 0; j < N + (k === st.path.length - 2 ? 1 : 0); j++) { const u = j / N, q = surf(lerp(t0, t1, u), lerp(a0, a1, u)); if (q) line.push(q); else miss++; } }
+    for (let k = 0; k < line.length; k++) { const q = line[k], T = line[Math.min(line.length - 1, k + 1)].p.clone().sub(line[Math.max(0, k - 1)].p).normalize(), wd = q.n.clone().cross(T).normalize(), w = (st.w || o.w) / 2;
+      for (const sd of [-1, 1]) { pts.push(q.p.clone().addScaledVector(wd, sd * w)); bones.push(SI.getX(q.src)); skin.push({ i: [SI.getX(q.src), SI.getY(q.src), SI.getZ(q.src), SI.getW(q.src)], w: [SW.getX(q.src), SW.getY(q.src), SW.getZ(q.src), SW.getW(q.src)] }); cols.push(cc.clone().multiplyScalar(.8 + .4 * ((k * 7 + (sd + 1) * 3) % 5) / 5)); }
+      out.push({ v: pts.length - 2, src: q.src, off: .007 }); }
+    for (let k = 0; k < line.length - 1; k++) { const a = k * 2; tris.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    if (st.closed && line.length > 2) { const a = (line.length - 1) * 2; tris.push(a, 0, a + 1, a + 1, 0, 1); }
+    B.sheets.push({ pts, tris, bones, skin, cols }); laid++; }
+  B.harness = { straps: laid, miss, laid: out }; }); };
+
 // packs (Session 867): what a beast of burden carries. Two panniers hang either side of the spine at `at`, over a canvas
 // blanket, joined by a strap across the back, with a bedroll lashed on top. All rigid on the spine bone, clear of the fur.
 P.packs = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl, L = o.len, W = o.w ?? L * .38, H = o.h ?? L * .7;
@@ -599,6 +620,7 @@ export function build(g) {
   const cell = plan.cell ?? Math.max(minR * .7, ext / 240), blend = plan.blend ?? Math.max(cell * 1.2, .25 * minR);
   const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend });
   dressFlesh(geo, B, pal, plan);
+  for (const f of B.after || []) f(geo); // what is laid on the grown skin (a harness, Session 944)
   // the skeleton
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
   B.bones.forEach((b, i) => { if (b.parent) bones[b.parent.i].add(bones[i]); }); const rig = new THREE.Group(); rig.add(bones[0]); root.add(rig); rig.updateMatrixWorld(true);
@@ -625,7 +647,7 @@ export function build(g) {
 // the wing's membrane: panels between neighbouring fingers and from the last finger back to the flank, skinned to both edges
 // fins and other sheets: each vertex rigid on its bone, or shared with a second (`blend`: [bone, weight], the rags'), both faces drawn
 function sheetGeo(B, pal) { const pos = [], si = [], sw = [], col = [], ind = [];
-  for (const s of B.sheets) { const base = pos.length / 3, C0 = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); const bl = s.blend && s.blend[i]; if (bl && bl[1] > 0) { si.push(s.bones[i], bl[0], 0, 0); sw.push(1 - bl[1], bl[1], 0, 0); } else { si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); } const C = s.cols ? s.cols[i] : C0, k = s.cols ? 1 : i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
+  for (const s of B.sheets) { const base = pos.length / 3, C0 = pal[s.tone] || pal.coat; s.pts.forEach((p, i) => { pos.push(p.x, p.y, p.z); const bl = s.blend && s.blend[i], sk = s.skin && s.skin[i]; if (sk) { si.push(...sk.i); sw.push(...sk.w); } else if (bl && bl[1] > 0) { si.push(s.bones[i], bl[0], 0, 0); sw.push(1 - bl[1], bl[1], 0, 0); } else { si.push(s.bones[i], 0, 0, 0); sw.push(1, 0, 0, 0); } const C = s.cols ? s.cols[i] : C0, k = s.cols ? 1 : i ? .85 + .3 * ((i * 37) % 7) / 7 : 1.15; col.push(C.r * k, C.g * k, C.b * k); }); for (const t of s.tris) ind.push(base + t); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(ind); g.computeVertexNormals(); return g; }
 // threads: a thin tube along each chain, each ring rigid on its segment's bone; a glowing thread's colour is HDR, for the bloom
 function tubeGeo(B, pal, glow) { const pos = [], si = [], sw = [], col = [], ind = [], RAD = 5;
@@ -1706,7 +1728,7 @@ export const SLIMES = ['slime', 'magmaslime'];
 // yellow; it carries a spear in its right fist and a hide shield on its left forearm (the kit's first gear). The sheet's harness of
 // scrap leather waits for straps on a creature ──
 Object.assign(PLANS, {
-  goblin: re(PLANS.troll, { name: 'Goblin', src: 'OG-041 (goblin: crouched, long ears, a long spear and a round hide shield, a scrap-leather harness)', occupier: 1, from: 'troll', scale: .5,
+  goblin: re(PLANS.troll, { name: 'Goblin', src: 'OG-041 (goblin: crouched, long ears, a long spear and a round hide shield, a scrap-leather harness)', occupier: 1, from: 'troll', scale: .5, finOpacity: 1,
     rough: .7, mottle: 1.1, speedK: 1.15, pant: .05, neckNod: .07, spread: .07,
     palette: { coat: [.44, .37, .25], saddle: [.33, .28, .18], belly: [.54, .46, .33], dark: [.06, .05, .04], horn: [.62, .56, .42], skin: [.46, .38, .27],
       wood: [.36, .26, .15], iron: [.32, .31, .3], hide: [.56, .43, .29], leather: [.22, .15, .09] },
@@ -1721,7 +1743,11 @@ Object.assign(PLANS, {
       ['arms', { at: 1, out: .32, up: -.08, len: 1.25, r: [.085, .075, .07], dir: [.3, -1, .15], bend: 30, tone: 'coat', claws: { r: .014, len: .07 }, swing: .22 }],
       ['gear', { list: [
         { kind: 'spear', arm: 0, side: -1, len: 3.8, r: .03, head: .4, grip: .2, rise: 72, splay: .05 },
-        { kind: 'shield', arm: 0, side: 1, r: .56, t: .05, face: [1, .7], off: .1, lace: 8, boss: 'iron' }] }]
+        { kind: 'shield', arm: 0, side: 1, r: .56, t: .05, face: [1, .7], off: .1, lace: 8, boss: 'iron' }] }],
+      ['straps', { w: .1, tone: 'leather', straps: [
+        { path: [[.12, 0], [.12, 90], [.12, 180], [.12, 270], [.12, 360]], closed: true, steps: 12 },
+        { path: [[.92, -75], [.55, 0], [.18, 70], [.18, 110], [.55, 180], [.92, 255], [1, 280]], w: .09, steps: 10 },
+        { path: [[.97, -120], [.97, -60]], w: .2, steps: 8, tone: 'hide' }] }]
     ] })
 });
 export const GOBLINS = ['goblin'];

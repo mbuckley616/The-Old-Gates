@@ -99,13 +99,18 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const gb = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
     for (const k of K.GOBLINS) { const C = K.build(K.genome(k, k + ':check')), P = new T.Vector3(), box = new T.Box3(), items = {}; C.rig.traverse(o => { if (o.name === 'spear' || o.name === 'shield') items[o.name] = o; });
       const hip = C.legH * C.S; let low = 1e9, top = 0, head = 0, sep = 1e9;
+      // the harness (Session 944): each strap point against the skin point it was laid on, rest and posed
+      const hide = C.meshes.find(m => m.name === 'hide'), fins = C.meshes.find(m => m.name === 'fins'), HL = C.B.harness?.laid || [], hv = new T.Vector3(), fv = new T.Vector3();
+      const gap = () => HL.map(q => { hide.getVertexPosition(q.src, hv); fins.getVertexPosition(q.v, fv); return hv.distanceTo(fv); }), rest0 = HL.length && fins ? gap() : []; let rMin = 9, rMax = 0;
       for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
+        if (rest0.length) gap().forEach((d, j) => { const r = d / rest0[j]; rMin = Math.min(rMin, r); rMax = Math.max(rMax, r); });
         for (const o of Object.values(items)) { box.setFromObject(o); C.rig.localToWorld(P.set(0, 0, 0)); low = Math.min(low, box.min.y - C.root.position.y); }
         box.setFromObject(items.spear); top = Math.max(top, box.max.y - C.root.position.y); C.byName.head.getWorldPosition(P); head = Math.max(head, P.y - C.root.position.y);
         const sh = new T.Vector3(); items.shield.getWorldPosition(sh); const hp = new T.Vector3(); C.byName.spine0.getWorldPosition(hp); sep = Math.min(sep, Math.hypot(sh.x - hp.x, sh.z - hp.z)); } }
-      out[k] = { gear: C.B.gear, head: +head.toFixed(2), hip: +hip.toFixed(2), low: +low.toFixed(3), top: +top.toFixed(2), sep: +sep.toFixed(2), legs: C.B.legs.length, arms: C.B.arms.length, tris: C.stats.tris }; }
+      out[k] = { gear: C.B.gear, head: +head.toFixed(2), hip: +hip.toFixed(2), low: +low.toFixed(3), top: +top.toFixed(2), sep: +sep.toFixed(2), legs: C.B.legs.length, arms: C.B.arms.length, tris: C.stats.tris, harness: C.B.harness && { straps: C.B.harness.straps, miss: C.B.harness.miss, pts: HL.length, rMin: +rMin.toFixed(2), rMax: +rMax.toFixed(2) } }; }
     return out; });
   for (const [k, t] of Object.entries(gb)) {
+    check(`${k}: a scrap-leather harness (OG-041): ${t.harness?.straps} straps laid on the grown skin at ${t.harness?.pts} points (${t.harness?.miss} missed), each staying with the skin under it through every gait (its gap ${t.harness?.rMin} to ${t.harness?.rMax} of its rest)`, t.harness && t.harness.straps === 3 && t.harness.miss === 0 && t.harness.pts > 60 && t.harness.rMin > .6 && t.harness.rMax < 1.6, t.harness);
     check(`${k}: a crouched biped about a goblin's height (head ${t.head} m up; ${t.legs} legs, ${t.arms} arms)`, t.legs === 2 && t.arms === 2 && t.head > .8 && t.head < 1.4, t);
     check(`${k}: carries ${t.gear.join(' and ')}, clear of the ground through every gait (lowest ${t.low} m), the spear's point above its head (${t.top} m), the shield off its hip (${t.sep} m)`, t.gear.includes('spear') && t.gear.includes('shield') && t.low > .02 && t.top > t.head + .3 && t.sep > .2, t); }
   // the skeleton (Session 934, OG-041): the kit's first bare body, its capsules drawn as bones, with ribs and a pelvis; it stands a man's

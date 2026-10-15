@@ -20533,3 +20533,33 @@ What changed in `creatures.js`:
 - **Owed:**
   - The goblin's scrap-leather harness can now be built the same way: straps as sheets on the spine and the shoulders.
   - The troll's lashed-on armour scraps can be built on `gear`.
+
+## v80 — Session 944 — The goblin's scrap-leather harness: straps on grown skin (L4, prototype only)
+OG-041 draws its goblin in a scrap-leather harness. Session 933 owed it because nothing could lie on a creature's grown skin: the flesh is grown after the parts are laid, so a part cannot know where the surface will be. Session 943's rags hang free from a cord and did not need to know. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A part may lay something on the finished skin.** It pushes a function onto `B.after`, which `build` runs once the flesh is grown and its weights are read.
+- **`straps`, a new part: a harness laid on the skin.**
+  - Each strap is a path of (t, angle) pairs round the spine: t runs from the hip at 0 to the chest at 1, and angle 0 is the belly. It is drawn as a ribbon of a given width.
+  - Each point of the path finds the furthest skin point within 2.5 cm along the spine and 9° round it, and stands 7 mm outside it.
+  - Each point also takes that skin point's four bone weights, so the strap moves exactly as the skin under it does.
+  - `sheetGeo` takes a sheet's own per-point weights (`skin`) for this.
+  - (The name `harness` was the draught horse's collar of Session 867; a second `P.harness` silently replaced it on the first try, and the goblin built none.)
+- **On the goblin:**
+  - A belt round the hips, 10 cm wide (the goblin is built at the troll's size and halved, so 5 cm as it stands).
+  - A sash from the right shoulder across the chest to the left hip and round the back.
+  - A patch of pale hide on the right shoulder.
+  - 119 points in three straps.
+  - Its sheets are opaque.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,008 checks pass** (1,007 before).
+  - The goblin's three straps are laid on the skin at 119 points, none missed.
+  - Through every pose of the walk, the trot and the stand, each strap point's distance to the skin point under it stays within 0.83 to 1.16 of its distance at rest.
+- The goblin's gaits and gear pass as before.
+- Pictures: `creatures-goblin.jpg` re-shot; `creatures-goblin-front.jpg` re-shot; `creatures-goblin-back.jpg` (new).
+
+### Needs eyes
+- **At this range** the harness reads as a belt and a sash. The hide patch on the shoulder is small, and mostly hidden behind the shield arm from the front.
+- **The straps are flat ribbons:** no buckles, no stitching, no thickness at their edges.
+- **What's next:** the method could also strap the troll's lashed-on armour scraps (OG-041) and a beast's saddle girth.
