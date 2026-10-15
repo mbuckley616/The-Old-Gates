@@ -19682,3 +19682,26 @@ What changed in `people.js`:
   - the spearhead by island;
   - the crossbow;
   - the shield carried at the ready (B4).
+
+## v80 — Session 917 — The cloak's outside was in its own shadow (B2, a fix, prototype only)
+Session 916's pictures showed every cloak nearly black from the front: the Gatelander's green, the Aurennais' tan and the Markman's brown. The tunic, the apron and the skirt under them were lit by the same key light. Every committed cloak and cape picture since the cloak was built (Sessions 836 to 841) shows the same. Turning off the cloak's `receiveShadow` lit it, so the cloak was shadowing itself.
+
+The cause is the winding of the cloak's sheet. Its columns go round the neck and its rows go down. With the triangles wound `a, a+1, b`, `computeVertexNormals` gave normals pointing into the body: 0 to 1.7% of the points of five test cloaks pointed out. The material is double-sided, so the shading flips them on the face that is seen and the shading itself was right. But three.js moves a point's shadow lookup along the vertex normal before it reads the shadow map (`normalBias`, 0.02 in the builder). On the cloak's outside, that put the lookup 2 cm behind the cloak, inside its own shadow.
+
+What changed in `people.js`:
+- The cloak's sheet and its embroidered hem band are wound the other way (`a, b, a+1`), so their normals point out.
+- Nothing else reads these normals: the hang, the clearances and the strap all work on the columns' points.
+- The tabard's front panel was already wound outward, which is why it read lit. Its back panel faces away from the key light, so it is left as it is.
+
+**Correction to Session 916:** its note that the Aurennais man's full cloak "hangs as a box" was half this. Lit, the folds show and it reads as cloth. It still stands stiffly off his chest; that is the hang's own shape on a broad build, and stays owed.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 257 checks pass.** There are five new ones, one for each test cloak (a hood down, a hood up, a fur collar, a cape with an embroidered hem, a plain cape). Each checks that its normals point out of it, read round the vertical axis through its own middle:
+  - **Now:** 98.3 to 100% of the points, and 100% of the hem band's.
+  - **The same check on the old `people.js`:** all five fail, at 0 to 1.7%.
+  - The cloaks' other checks (the clearance from the body, nothing through it, the hang) pass with the same numbers.
+- `kit.check.mjs` passes. No page errors.
+- **Pictures:** the 25 that show a cloak or a cape were shot again: `builder-cloak-*`, `builder-cape-*`, the slung shields, `builder-armour-markman*`, `builder-armour-spear-cloak` and `builder-robe-hooded`. The others are left as committed. Rendering is not byte-identical between runs, so a full re-shoot changes every file, and the hair pictures also pick up a horizon change from an earlier session.
+### Needs eyes
+- **The cloaks are seen for the first time as their colours.** The folds laid in Sessions 839 and 840 now show from the front, and some read as stiff and vertical where they were hidden in black before. That is the hang's work to answer, not this fix's.
+- **In the game,** the townsfolk's cloaks are built by `32-people.js`, not this kit, so this changes nothing there. When F4 carries the kit's cloak in, it carries the outward winding with it.

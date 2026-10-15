@@ -432,14 +432,16 @@ function buildCloak(G, body, byName, rnd) {
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
-  for (let k = 0; k < K - 1; k++) for (let r = 0; r < R - 1; r++) { const a = k * R + r, b = a + R; idx.push(a, a + 1, b, b, a + 1, b + 1); }
+  // wound so its normals point out of the cloak (Session 917): the shadow's lookup is moved along the vertex normal (normalBias), and
+  // with them pointing in, the cloak's outside read its own shadow 2 cm behind it and went dark wherever the key light fell on it
+  for (let k = 0; k < K - 1; k++) for (let r = 0; r < R - 1; r++) { const a = k * R + r, b = a + R; idx.push(a, b, a + 1, b, b + 1, a + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
   const cm = clothMat(sRGB(...D.cloak), D.cloakFur ? 'leather' : 'wool', { side: THREE.DoubleSide, scale: 26 }), cloak = new THREE.Mesh(g, cm); cloak.name = 'cloak'; out.push(cloak);
   // an embroidered hem (OG-048, OG-059: red embroidered borders): a band of its own colour over the last 3.5 cm of the
   // sheet, laid 1.5 mm proud of it round the neck's axis so it never sinks into the cloth
   if (D.cloakHem) { const nb = Math.min(R - 2, Math.round(.035 / .0105)), bp = [], bi = [];
     for (let k = 0; k < K; k++) for (let r = R - 1 - nb; r < R; r++) { const q = cols[k][r], dx = q.x - neck.x, dz = q.z - neck.z, l = Math.hypot(dx, dz) || 1; bp.push(q.x + dx / l * .0015, q.y - (r === R - 1 ? .001 : 0), q.z + dz / l * .0015); }
-    for (let k = 0; k < K - 1; k++) for (let r = 0; r < nb; r++) { const a = k * (nb + 1) + r, b = a + nb + 1; bi.push(a, a + 1, b, b, a + 1, b + 1); }
+    for (let k = 0; k < K - 1; k++) for (let r = 0; r < nb; r++) { const a = k * (nb + 1) + r, b = a + nb + 1; bi.push(a, b, a + 1, b, b + 1, a + 1); }
     const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(bp, 3)); bg.setAttribute('aBase', new THREE.Float32BufferAttribute(bp, 3)); bg.setIndex(bi); bg.computeVertexNormals();
     const bm = new THREE.Mesh(bg, clothMat(sRGB(...D.cloakHem), 'wool', { side: THREE.DoubleSide, scale: 60 })); bm.name = 'cloakHem'; out.push(bm); }
   // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
