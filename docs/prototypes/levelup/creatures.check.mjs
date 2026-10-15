@@ -80,6 +80,19 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       out[k] = { clear: hide.material.transparent ? +hide.material.opacity.toFixed(2) : 1, bits: bits.length, out: out_, tris: C.stats.tris, school: C.plan.school || '' }; }
     return out; });
   for (const [k, t] of Object.entries(sl)) check(`${k}: a clear body (opacity ${t.clear}) holding ${t.bits} swallowed things, every one inside it through the crawl (${t.out} out)${t.school ? '; ' + t.school + "'s" : ''}`, t.clear < 1 && t.bits >= 8 && t.out === 0, t);
+  // the slimes' holes (Session 954, OG-041: "with holes through it"): a line down each hole's axis meets no hide, at rest or through a whole
+  // crawl stride (each axis carried by its spine bone), while the same line moved two of the hole's radii toward the spine meets the body
+  const ho = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
+    for (const k of K.SLIMES) { const C = K.build(K.genome(k, k + ':check')), hide = C.meshes[0], side = hide.material.side; hide.material.side = T.DoubleSide; C.gait = 'crawl'; K.pose(C, 0); C.rig.updateMatrixWorld(true);
+      const H = (C.B.holes || []).map(h => { const M = C.byName[h.bone].matrixWorld.clone().invert(), w = p => C.rig.localToWorld(p.clone()); return { r: h.ra, c: w(h.c).applyMatrix4(M), e: w(h.c.clone().add(h.d)).applyMatrix4(M), up: w(h.c.clone().add(new T.Vector3(0, h.ra * 2.2 * (h.up > .4 ? -1 : 1), 0))).applyMatrix4(M), bone: C.byName[h.bone] }; });
+      const rc = new T.Raycaster(); let through = 0, lines = 0, body = 0;
+      for (let i = 0; i <= 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
+        for (const h of H) { const c = h.c.clone().applyMatrix4(h.bone.matrixWorld), d = h.e.clone().applyMatrix4(h.bone.matrixWorld).sub(c).normalize(), u = h.up.clone().applyMatrix4(h.bone.matrixWorld);
+          rc.set(c.clone().addScaledVector(d, -3), d); rc.far = 6; lines++; if (!rc.intersectObject(hide).length) through++;
+          rc.set(u.clone().addScaledVector(d, -3), d); if (rc.intersectObject(hide).length) { body++; h.n = (h.n || 0) + 1; } } }
+      hide.material.side = side; out[k] = { holes: H.length, lines, through, body, each: H.map(h => h.n || 0), tris: C.stats.tris }; }
+    return out; });
+  for (const [k, t] of Object.entries(ho)) check(`${k}: ${t.holes} holes clean through it, at rest and through the crawl (${t.through} of ${t.lines} lines clear, ${t.body} of ${t.lines} lines beside them in the body)`, t.holes >= 3 && t.through === t.lines && t.body === t.lines, t);
   for (const [k, t] of Object.entries(tr)) {
     check(`${k}: an upright biped with two arms (${t.legs} legs, ${t.arms} arms), its head ${t.head} m up`, t.legs === 2 && t.arms === 2 && t.hands === 2 && t.head > 2 && t.head < 3.4, t);
     check(`${k}: through its walk the hands swing between the hips and the ground (${t.lo} to ${t.hi} m, the hips at ${t.hip} m; ${t.swing} m apart at most)`, t.lo > .1 && t.hi < t.hip && t.swing > .15, t); }

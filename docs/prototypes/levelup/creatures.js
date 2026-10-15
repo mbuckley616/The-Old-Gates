@@ -88,7 +88,8 @@ P.head = (B, o) => {
 // `bone` a long bone with its two knobs, `skull` a cranium with its eye holes
 P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
   for (const [kind, n] of Object.entries(o.n)) for (let k = 0; k < n; k++) {
-    const t = .08 + .84 * r(), sp = B.spineAt(t), a = r() * Math.PI * 2, d = Math.sqrt(r()) * sp.r * (o.depth ?? .5), p = sp.p.clone().add(V(Math.cos(a) * d * B.spineS[0], Math.sin(a) * d * B.spineS[1] * .8, (r() - .5) * sp.r * .4)), sz = o.size * (.7 + .6 * r());
+    let t, sp, p, sz; for (let tries = 0; tries < 16; tries++) { t = .08 + .84 * r(); sp = B.spineAt(t); const a = r() * Math.PI * 2, d = Math.sqrt(r()) * sp.r * (o.depth ?? .5); p = sp.p.clone().add(V(Math.cos(a) * d * B.spineS[0], Math.sin(a) * d * B.spineS[1] * .8, (r() - .5) * sp.r * .4)); sz = o.size * (.7 + .6 * r());
+      if (!(B.holes || []).some(h => capDist(h, p.x, p.y, p.z) < sz * .7)) break; } // never hung in a hole (Session 954)
     let m;
     if (kind === 'rubble') { m = new THREE.Mesh(new THREE.DodecahedronGeometry(sz * .5, 0), stdMat(B.tone('rubble'), { rough: .95, flat: true })); m.scale.set(1, .6 + .4 * r(), .8 + .4 * r()); }
     else if (kind === 'bone') { const L = sz * 2.4, g = new THREE.CylinderGeometry(sz * .09, sz * .09, L, 7); for (const e of [1, -1]) { const k2 = new THREE.SphereGeometry(sz * .17, 8, 6); k2.translate(0, e * L / 2, 0); g.copy(mergeGeometries([g.toNonIndexed(), k2.toNonIndexed()])); }
@@ -96,6 +97,13 @@ P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
     else { const g = new THREE.SphereGeometry(sz * .5, 14, 10); g.scale(.8, .85, 1); m = new THREE.Mesh(g, stdMat(B.tone('bone'), { rough: .7 }));
       for (const e of [1, -1]) { const h = ball(sz * .12, B.tone('dark'), V(e * sz * .16, sz * .06, sz * .42)); m.add(h); } }
     m.position.copy(p); m.rotation.set(r() * 6.3, r() * 6.3, r() * 6.3); B.bit(sp.bone, m); } };
+// holes (Session 954, OG-041's slime: "with holes through it"): tunnels cut clean through the flesh, so daylight shows through the body.
+// Each is a capsule across the body from flank to flank, `at` along the spine, `up` its height off the spine's line in the spine's
+// radius there, `r` its radius, `tilt` degrees from level (its left end raised). The flesh grows as before and then is cut where a hole
+// is (growFlesh); what a clear body holds keeps out of them (inclusions come after this part)
+P.holes = (B, o) => { B.holes = B.holes || [];
+  for (const h of o.list) { const sp = B.spineAt(h.at), c = sp.p.clone().add(V(0, h.up * sp.r * B.spineS[1], 0)), w = sp.r * B.spineS[0] * 2.2, tl = (h.tilt || 0) * DEG, d = V(Math.cos(tl), Math.sin(tl), Math.sin((h.yaw || 0) * DEG)).normalize();
+    B.holes.push({ a: c.clone().addScaledVector(d, -w), b: c.clone().addScaledVector(d, w), ra: h.r, rb: h.r, s: [1, 1, 1], sm: 1, c, d, up: h.up, bone: sp.bone }); } };
 // egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
 // its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
 // they cover, `drop` how far down its girth they sit (1 is the skin's underside)
@@ -461,6 +469,12 @@ function growFlesh(flesh, o) {
       let d = 1e9; for (const c of caps) { const e = capDist(c, x, y, z); if (e < d) d = e; }
       if (d < pad) F[idx(i, j, l)] += Math.exp(-d / k); } } }
   }
+  // holes (Session 954): the field is cut to nothing inside a hole and eased back over a cell and a half outside it, so its wall is smooth
+  for (const h of o.holes || []) { const e = cell * 1.5, R = h.ra + e;
+    const i0 = Math.max(0, Math.floor((Math.min(h.a.x, h.b.x) - R - mn.x) / cell)), i1 = Math.min(nx - 1, Math.ceil((Math.max(h.a.x, h.b.x) + R - mn.x) / cell));
+    const j0 = Math.max(0, Math.floor((Math.min(h.a.y, h.b.y) - R - mn.y) / cell)), j1 = Math.min(ny - 1, Math.ceil((Math.max(h.a.y, h.b.y) + R - mn.y) / cell));
+    const l0 = Math.max(0, Math.floor((Math.min(h.a.z, h.b.z) - R - mn.z) / cell)), l1 = Math.min(nz - 1, Math.ceil((Math.max(h.a.z, h.b.z) + R - mn.z) / cell));
+    for (let l = l0; l <= l1; l++) for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const q = idx(i, j, l); if (F[q] > 0) F[q] *= sstep(0, e, capDist(h, mn.x + i * cell, mn.y + j * cell, mn.z + l * cell)); } }
   // surface nets: a vertex in every cell the surface crosses, at the mean of its edge crossings; a quad across every crossed edge
   const L = v => Math.log(Math.max(v, 1e-9)), cellV = new Int32Array(nx * ny * nz).fill(-1), pos = [];
   const CO = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]], ED = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
@@ -623,7 +637,7 @@ export function build(g) {
   const minR = Math.min(...B.flesh.map(c => Math.min(c.ra, c.rb) * Math.min(...c.s)));
   const ext = B.flesh.reduce((m, c) => Math.max(m, Math.abs(c.a.z), Math.abs(c.b.z), Math.abs(c.a.x), Math.abs(c.b.x), c.a.y, c.b.y), 0) * 2;
   const cell = plan.cell ?? Math.max(minR * .7, ext / 240), blend = plan.blend ?? Math.max(cell * 1.2, .25 * minR);
-  const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend });
+  const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend, holes: B.holes });
   dressFlesh(geo, B, pal, plan);
   for (const f of B.after || []) f(geo); // what is laid on the grown skin (a harness, Session 944)
   // the skeleton
@@ -1712,16 +1726,17 @@ export const TROLLS = ['troll', 'tinetroll', 'uiscetroll', 'stonetroll'];
 // puts slimes in Uisce gates, a magma one in Tine's). No legs and no head: a body that heaves along (the crawl, paced in body
 // lengths), its crest rolled forward over its front like a wave about to break, clear enough to see what it has taken in ──
 Object.assign(PLANS, {
-  slime: { name: 'Slime', src: 'OG-041 (slime: translucent pale green, arched like a wave, bones and rubble suspended inside)', gaits: ['crawl', 'stand'], bl: .12, clear: .55, rough: .12, mottle: .5, wag: 0, pant: .05,
+  slime: { name: 'Slime', src: 'OG-041 (slime: translucent pale green, arched like a wave, bones and rubble suspended inside)', gaits: ['crawl', 'stand'], bl: .12, clear: .55, cell: .06, blend: .14, rough: .12, mottle: .5, wag: 0, pant: .05,
     palette: { coat: [.62, .78, .5], saddle: [.7, .84, .56], belly: [.45, .6, .36], bone: [.82, .78, .66], rubble: [.42, .4, .36], dark: [.08, .07, .06] },
     parts: [
       ['spine', { hip: [.32, -.55], chest: [.62, .3], n: 6, r: [.36, .52, .5, .3], s: [1.25, 1.05], arch: .14, rump: .3, rumpDrop: .2, rumpTaper: .7, front: .32, frontDrop: .42, frontTaper: .55 }],
+      ['holes', { list: [{ at: .66, up: .22, r: .12, tilt: 5 }, { at: .3, up: -.1, r: .085, tilt: -4 }, { at: .14, up: .3, r: .06 }] }],
       ['inclusions', { n: { skull: 1, bone: 5, rubble: 7 }, size: .16, depth: .55 }]
     ] }
 });
 Object.assign(PLANS, {
   // Tine's (OG-018: "orange jelly with dark holes"): molten, less clear, lit from inside, carrying clinker instead of bones
-  magmaslime: re(PLANS.slime, { name: 'Magma Slime', src: 'OG-018 (Tine: a magma slime, orange jelly with dark holes)', school: 'Tine', from: 'slime', clear: .8, rough: .3, mottle: 1.4, bl: .1,
+  magmaslime: re(PLANS.slime, { name: 'Magma Slime', src: 'OG-018 (Tine: a magma slime, orange jelly with dark holes)', school: 'Tine', from: 'slime', clear: .8, cell: .06, blend: .14, rough: .3, mottle: 1.4, bl: .1,
     palette: { coat: [.6, .17, .03], saddle: [.32, .08, .02], belly: [.85, .36, .06], bone: [.3, .24, .2], rubble: [.08, .07, .06], dark: [.04, .03, .03] },
     glow: { color: [2.6, .7, .12], freq: 2.4, w: .06, all: .7, base: .2 },
     parts: PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { rubble: 11 } }] : [k, o]) })

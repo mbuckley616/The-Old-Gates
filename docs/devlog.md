@@ -20858,3 +20858,33 @@ Corrections made during the session:
 - **The east end is bare** beyond the pell and the grindstone. A sparring ring marked on the floor, or a straw target, could fill it.
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
+
+## v80 — Session 954 — Holes through the slime (L4, prototype only)
+OG-041 draws its slime with holes through it, so daylight shows through the body. Session 928 owed them because the kit could only add flesh, never take it away. The sheet draws them, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`holes`, a new part.** Each hole is a capsule laid across the body from flank to flank. It is placed by `at` along the spine and `up`, its height off the spine's line in the spine's radius there, with a radius and an optional tilt.
+- **`growFlesh` cuts them.** The flesh's field is grown as before, then multiplied to nothing inside each hole and eased back to full over a cell and a half outside it, so the hole's wall is smooth. A body with no holes is grown exactly as before.
+- **Swallowed things keep out of the holes.** `inclusions` now runs after `holes`, and it re-rolls any bone, skull or stone that would hang in a hole (up to 16 tries, from the same seed).
+- **On both slimes:**
+  - A hole 12 cm across under the crest at the front.
+  - One of 8.5 cm low in the middle.
+  - A small one of 6 cm high at the back.
+- **The slimes' grid is finer, so the holes come out at the size asked.**
+  - The grid was sized to the slime's thinnest capsule, 11.5 cm a cell, coarser than the holes. A first try left the 6 cm hole as a wide bite, and a tilted one notched the crest in two.
+  - Both slimes are now meshed at 6 cm, with the blend pinned at the old 14 cm so the mound keeps its shape.
+  - The slime is 6,492 triangles (1,340 before) and the magma slime 6,244.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,012 checks pass** (1,010 before). The two new checks are on the holes, one for each slime:
+  - Each slime has three holes.
+  - At rest and through 24 poses of a crawl stride, a line down each hole's axis meets no hide: 75 of 75 lines clear. Each axis is carried by its own spine bone.
+  - The same line moved two of the hole's radii toward the spine meets the body every time, 75 of 75. So each hole is a hole in the body, not a gap beside it.
+- The slimes' swallowed things still stay inside the hide through the crawl.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-slime.jpg` and `creatures-magmaslime.jpg` re-shot. `creatures-classic.jpg` re-shot, with the drowned skeleton among the five.
+
+### Needs eyes
+- **Triangles:** the slimes cost almost five times what they did. A crowd of slimes wants the coarser grid as its far level of detail, where the holes can close.
+- **The magma slime's holes** show the floor through orange glass. OG-018 calls them "dark holes", which in a dark Tine hall they will be, but not in daylight.
+- **The holes are round tunnels.** OG-041's are ragged, and wider at their mouths than inside.
