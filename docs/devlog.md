@@ -19405,6 +19405,59 @@ What changed in `people.js`:
 - **The fist stands off the board** on its cleats, because the forearm lies along the board's back. A real centre grip is flush with the board, with the knuckles in the boss. That wants the wrist bent outward a little, so the fist leads the forearm into the hollow. That is a pose for B4.
 - Whether the dints read as beaten bronze at play distance.
 
+## v80 — Session 914 — Card F8: Aurenne's sea grotto (prototype only)
+The FREEZE (#297) holds. Three answers came back first: Michael's A on #331 (the Mark's ice cavern is the cave's hall in ice), on #333 (the aqueduct stays broken) and on #335 (the trade tunnel is a road). All three say "as drawn", so nothing was built for them. Their entries move to Answered in `docs/decisions.md`.
+
+This is the last of OG-121's Aurenne places that does not wait on the quest writer: its "sea grottoes". I reread OG-121 and its row, and OG-125's row for sea caves. Neither flag touches a grotto: the "Roman" name and the crypts' dead are not in it, and no diving gear is drawn. The grotto is built after the kind the islands' south has, a cave the sea made whose water glows. The day comes in through a drowned gate under the waterline and lights the water from below, while the arch above the water is low.
+
+What is new in `places.js`:
+- **`aurenneGrotto(o, r)`:** the sea at y 0, and the grotto along −z, built on the cave's own `caveHall`.
+- **The stair:** a rock-cut way from a paved terrace under a cliff face, down 24 steps of 0.2 m on treads of 0.5 m. It is 2.6 m wide under a round vault, 3.7 m to the crown over the steps' noses, and level for its last 5 m.
+  - At both ends it passes through an arched frame of plaster in a block let into the rock. The frame has an ashlar ring and jambs, tile panels, a tile band and a cornice.
+  - The pick's noise pushes the rock out and never in, and it fades out where the frames stand.
+- **The hall:** 60 m long, 37 to 40 m across 6 m up, and 18 to 27 m from the water to the roof near its middle. Below the high-water line the limestone is dark and wet.
+- **The sea's ways in:** at the far end, a low arch 6.4 m wide and 3 m over the water, over a drowned gate 16 m wide and 7 m deep.
+  - Beyond the gate lies a plane of daylit sea, so the gate shows blue through the water, not the sky.
+  - The water is a blue that gives off its own light, broken into a net by a tiling texture of whole waves, over a pale sea floor.
+- **The landing and the quay:**
+  - The landing is paved across the near end at 1.2 m.
+  - The quay runs 33 m down the east wall and is 3.6 m wide. Its sea face is ashlar down under the water, and the face's top is the coping.
+  - Along the quay stand five bollards, with bronze rings on the face between them.
+  - At its end, seven water stairs go down into the sea, with a skiff tied to them.
+- **The spring:** at the landing's west end, against the rock.
+  - A plastered block with a niche cut through it: a concave apse tiled in the blue zellige under a plastered half-dome, in an ashlar ring.
+  - A bronze spout and a thread of water fall into an ashlar basin 2.4 by 1.3 m with its rim at 0.55 m. Benches stand either side.
+  - What the spring is to anyone is the quest writer's.
+- **The rest:** a beach of pale sand under the west wall across the water, 14 rocks breaking the surface, and short stalactites, none low over the walk.
+
+Corrections made during the session:
+- **The seabed was wound face down,** so it was invisible from above, and rays went through it. That accounted for 14 of the first run's leaks. It now faces up.
+- **The skiff's shell was split along its length instead of being a bowl.** Its lathe was copied from the smugglers' lair's rowing boat, which I have not checked; it may be the same there. The skiff is now the lathe's lower half, laid along z.
+- **The quay's paving slabs were turned about their centres** to follow the curving edge, which left wedge-shaped gaps where the edge bends fastest. They are now laid square behind the ashlar face's top, and the face follows the curve.
+- **The apse's tiled half-cylinder bulged out of the wall.** It is now turned into the wall and seen from inside, in a plaster block with the niche cut through it, not a solid slab.
+- **A dome lofted ring by ring closes to a point at its centre height, the hall's CY.** At 3 m that point lay inside the stair's opening, and the fan of large faces round it, kept because their centres fell outside the cut, covered the opening. The sight line up the stair failed on two of three keys.
+  - CY is now 5.2 m, with the hall's lower radius 11 m, so the water is as deep.
+  - The same fan at the far end held the arch's height anywhere between 2.2 and 5 m as the cut changed. The hall is now lofted in 208 rings, twice the cave's, which makes the fan about a metre across, so the arch's own cut decides its height.
+- The paving and the floor under it fought at the same height; the floor now lies 8 cm under the paving.
+- The terrace was blown out by a strong sun, now about half.
+- **The view:** `places.html?place=grotto` goes to `places-grotto-view.js`. It has five views (`grotto`, `stair`, `quay`, `spring`, `back`). The light comes from blue lights under the water along the hall, a broad blue spot coming up through the gate, a thin white one at the arch, and the day down the stair.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 61 of 61 pass**, counted from its output (52 after Session 908). One view is new on the page check (the grotto, no page errors), and eight checks are new, over three keys:
+  - **The builds:** 83,386 to 83,466 triangles in 16 meshes, each key the same twice.
+  - **The hall:** 60 m long, 37.3 to 40.1 m across 6 m up, 18.3 to 27 m from the water to the roof near its middle.
+  - **The walk:** 402 points from the terrace down the stair, to the spring and back, and down the quay to the water stairs. There is a floor under every one at 0 to 0.03 m off the walk's own height, 3.7 m of headroom or more, and 0.95 m clear either side.
+  - **The stair:** 72 risers over three keys, every one 0.2 m.
+  - **Closed:** of 1,440 rays from inside, none gets out but by the sea arch (4) or the drowned gate (18). The terrace is in sight from the landing straight up the stair.
+  - **The sea's ways in:** the arch is 2.95 to 3.05 m over the water at its middle and open. The gate is open at 1.5, 3 and 5 m down.
+  - **The quay:** 1.23 m from its paving to the water. The water stairs' last step is 0.2 m under the water, and the skiff floats at them with its bottom 0.18 m under.
+  - **The spring:** the basin's rim is 0.55 m over the landing, 1.55 m from the walk. The tile, plaster, ashlar, bronze, the spring's water, the sand and the skiff are all present.
+- **Pictures:** `places-grotto-grotto.jpg`, `-stair`, `-quay`, `-spring` and `-back`. How you get in (both ways, by sea only, or by land only) is asked as **DECISION #339**.
+### Needs eyes
+- **Whether the water glows enough, or too evenly.** In the grotto this is built after, the water is brightest near the gate and darkens toward the back. Here the emissive is even, and only the lights under it vary.
+- **The beach reads as a sandbar:** a flat top on a slope into the water.
+- **A dark notch high on the west wall** in the `grotto` view is one of `caveHall`'s alcoves, cut hard against the light.
+- **The quay's paving takes the limestone texture's warm colour**, which reads terracotta under the blue.
+- **The smugglers' lair's rowing boat (Session 883)** may have the same lengthwise split the skiff had. It is worth a look before it goes into the game.
 ## v80 — Session 909 — The spear upright in the right fist (L7 and B2, prototype only)
 The last bodies run left a spear unfinished on `auto/wip-spear` (its commit calls it Session 907; that number went to the look builder's line, so this entry is the spear's). It held:
 - an ash shaft 2.3 m long with an iron shoe, a socket and a leaf-shaped head;
@@ -19644,6 +19697,74 @@ What changed in `people.js`:
 - **The porpax and the antilabe** are plain: a band and a strap, with no cord loops round the inside of the rim.
 - **Owed:** the kite and the hoplon slung under a cloak.
 
+## v80 — Session 920 — The smugglers' lair's rowing boat, a bowl along its length (card F8, a fix to Session 883, prototype only)
+Session 914 found the grotto's skiff split along its length and turned it into a bowl. Its lathe had been copied from the smugglers' lair's rowing boat (Session 883), and 914 left the lair's boat to be looked at. It had the same fault, and worse. FREEZE #297 is still open, so this touches only the prototypes (`places.js`, `places.check.mjs`).
+
+**What was wrong.** The boat's shell was the half of a lathe turned twice (`rotateZ` then `rotateX`). That left the half-shell standing on its side and lying along x, across the boat: a trough 0.85 m deep in z, open to the south. The gunwales, the thwarts and the oars ran along z as they should. So from above there was no hull under the thwarts at all. It hid in the old pictures because the T-head's deck and the dark water cover that spot.
+
+**What changed in `places.js`:**
+- The shell is now the lathe's lower half, laid along z, as the skiff's is: `LatheGeometry(pts, 14, -π/2, π)` turned once about x. Its rim is at 0.25 m, under the gunwale at 0.26.
+- The boat's place is named once (`boat = { x, z, L }`) and returned with the lair, so the check can find it.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 62 of 62 pass** (61 after Session 914). The new check casts down through the boat at its middle and 1.7 m fore and aft, and in from either side 0.1 m up, on three keys.
+  - **Before the fix** it failed on all three keys: no ray met the hull anywhere.
+  - **After:** the bottom is 0.19 m under the water at the middle and 0.02 m over it near the ends. The sides are 0.75 m either side of the keel. All three keys give the same.
+- No page errors on the lair's views.
+- **Picture:** `places-lair-boat.jpg`, the boat off the T-head's west side, thwarts across, the oar inside it.
+### Needs eyes
+- The boat is a plain lathe bowl with no keel, stem or strakes. That is the same as the grotto's skiff. When the hull kit (card F11) makes a rowing boat, both should take it.
+
+## v80 — Session 921 — Card F8: the Gatelands' monastic ruin (prototype only)
+OG-121's Gatelands panel lists "round cairns, monastic ruins and limestone caves". The cairn (Sessions 869 and 884) and the cave (872 and 882) are built. This is the monastic ruin, built after the island's own: a ring of dry stone round a green, a roofless church, a round tower, a ringed high cross and the brothers' beehive cells. I reread OG-121 and its row. Its flags concern the crypts' dead and Aurenne's "Roman" ruins, and neither touches this. The canon calls monasteries lore-neutral atmosphere (`lore_canon.md`, the fort catalogue), and the backlog's Gatelands target already names high crosses. No graves are built, since §3.1 gives the dead to the gates. Who the brothers were and why they left is the quest writer's. FREEZE #297 is still open, so this touches only the prototypes (`places.js`, `places-abbey-view.js`, `places-view.js`, `places.check.mjs`).
+
+What is new in `places.js`, `gatelandsAbbey(o, r)`. The green is level at y 0, the gate is on +z and the altar to the east (+x):
+- **The ground:** level inside the ring and for 3 m outside it, then falling away at 7 in 100, lumpy.
+- **The cashel:** a dry-stone ring 61.6 m across and 1.4 m thick, battered on both faces, its head 1.9 to 2.2 m up.
+  - It has fallen to 0.6 m in two breaches, and its stones lie spilled either side.
+  - A new helper, `ringWall`, builds any ring of dry stone from an angle to an angle with its head at h(a). The fallen cell uses it too.
+- **The gatehouse:** two round arches 2.6 m wide and 3.6 m high, 7 m apart, between side walls 4 m high. It is roofless and paved, with dressed stone at the arches.
+- **The church:**
+  - A nave of 12 by 6.4 m inside, with walls 0.9 m thick and 5 m high under gables of 9.4 m.
+  - A round-headed west door, 1.4 by 2.6 m.
+  - A chancel arch, 3 by 4.2 m, into a chancel of 5.5 by 4.4 m, with an east window over a block of stone for an altar.
+  - Splayed round-headed windows: two in the nave's south wall, one in its north wall, one in the chancel's south wall, and one high in the west gable.
+  - The walls are built by a new `wall(L, T, top, holes)`: a face drawn in its own plane with a ragged head and arched holes, then stood up. `dressArch` sets the dressed ring and jambs round the doors and arches.
+  - Roofless. The wall-heads are ragged, and the nave's south wall has fallen to about 1.3 m over 3.5 m, its stones in the grass outside.
+- **The round tower:**
+  - 26 m of shaft, 5.2 m across at its foot and 4.4 at its head, on a plinth, under a stone cone to 30.4 m.
+  - Its door is 3.2 m up, turned to face the church's west door, in a frame of jambs, lintel and sill. Three slits climb the shaft, and four windows sit under the cap.
+- **The high cross:** 4.5 m on a two-stepped base, its arms in a ring 1.32 m across, with raised panels on the shaft.
+- **The cells:**
+  - Three corbelled huts, 6 m across and 4 m high, built as two lathe shells, the inner one 4 m across and 3.3 m high. The door is cut through both shells and closed with jambs and a lintel stone.
+  - Two are whole, their doors (0.9 by 1.9 m) turned to the green. One has fallen to its lower courses, with its stones heaped inside.
+- **The rest:** the footings of a long range of 14 by 7 m, where the brothers ate, with a gap for its door; a yew in the green; ash trees outside the ring.
+- 73,420 triangles in 12 draws.
+
+The view: `places.html?place=abbey` goes to `places-abbey-view.js`. Its views are `abbey`, `gate`, `nave`, `tower`, `cross` and `cells`, under a low autumn sun in the south-west with a thin mist.
+
+Corrections made during the session:
+- The first picture was taken from the ground on the slope, so the ring hid everything but the tower. The fog was also too thick for a place 60 m across. The view now stands 7.5 m up the slope, and the fog is thinner.
+- The breach in the south wall was a smooth swoop. It is now ragged.
+- The cross was coursed like the walls. It is now one stone.
+- The tower's cap left a gap under its eave against the sky. The cap is now closed onto the shaft.
+- The tower's door sill was first measured from a point inside the shaft's own wall, and the check read the wall, not the sill. The returned door point is now on the sill's outer edge.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 70 of 70 pass** (62 after Session 920). One view is new on the page check (the ruin, no page errors), and seven checks are new, over three keys:
+  - **The builds:** 73,420 triangles in 12 draws, each key the same twice.
+  - **The walk:** 312 points from the slope below the gate, through the gatehouse, across the green, in at the west door, down the nave and through the chancel arch. There is ground under every one at -0.03 to 0.04 m off its own height, 2.6 m of headroom or more, and 0.7 m clear either side.
+  - **The ways in:** the west door is 1.4 by 2.6 m, the chancel arch 3 by 4.2 m, and both of the gatehouse's arches 2.6 by 3.6 m.
+  - **The church:** the nave is 12 by 6.4 m inside, with open sky over the nave and the chancel.
+  - **The ring:** of 720 rays out through it at the hip, 39 to 40 get through, every one at the gate or a breach, and the gate and both breaches are open.
+  - **The tower and the cross:** the tower is 30.4 m to its cap's point, and its door's sill is 3.2 m up. The cross is 4.49 m, open through its ring between the arms and solid through the ring's own stone.
+  - **The cells:** two whole, with doors of 0.9 by 1.9 m, 3.3 m from the floor to the corbelling, and a floor at 0. The fallen one is open to the sky.
+- **Pictures:** `places-abbey-abbey.jpg`, `-gate`, `-nave`, `-tower`, `-cross` and `-cells`. Whether the tower's door can be reached is asked as **DECISION #345**.
+### Needs eyes
+- **The turf reads dark** under the low sun. It is the kit's `turfMoss`, tinted to its lightest.
+- **The trees are clumps of rough balls.** The kit's `treeKit` was not used here; a yew and ash from it would read better.
+- **The tower's openings are boxes laid on a round shaft.** Their frames stand proud and their dark is a panel, not a hole, so they read from afar but not up close.
+- **The masonry is one coursed texture** on the church, the gatehouse and the tower alike. Real ones mix rubble walls with dressed quoins, and only the doors and arches carry dressing here.
+- **Owed:** carving on the cross's panels (the cairn's spirals, or what #309's answer allows); a grassed-over floor inside the cells; the quest writer's word on who the brothers were.
 ## v80 — Session 916 — The kite and the hoplon slung under a cloak (L7 and B2, prototype only)
 Sessions 911 and 913 left the kite and the hoplon off under a cloak, because the slung shield (Session 905) was laid for a round board only. A cloak hangs over the arm that would hold a shield, and a shoulder cape stands out over its top edge, so under either the shield goes on the back by its strap, as the round one does. This needs no new question: it is the round shield's rule, carried to the two shapes Michael already has. FREEZE #297 is still open, so this touches only the prototypes (`people.js`, `builder.check.mjs`). (Session 915 was already taken on another branch, so this is 916.)
 
@@ -19764,3 +19885,88 @@ What changed in `creatures.js`:
   - its corrupted wolf is the Faolchú's kind, and its void spider would be a Scáth spider;
   - Tine and Solas have no corrupted animal on the sheet;
   - the game, after F4.
+
+## v80 — Session 922 — Card F11: the cutter in Aurenne's dress (prototype only)
+Backlog L6's hull line wants each of the game's five classes in each island's dress (OG-004; Michael's 3 A on the ladder). The sloop has all three dresses. The Gatelands has its sloop, cog and galleon, the Mark its cutter and sloop, and Aurenne its caravel and sloop. Session 902's note held back the cog and the galleon in the other dresses, because how a Mark cog carries the gaff, or an Aurenne galleon the lateen, is a question. A cutter has one mast, as a sloop has, so its Aurenne dress follows from rules already chosen, as the sloop's did, and nothing is asked: the lateen is Aurenne's one rig (#306), the sun-star is on the sail (#316's A), and a tiller steers the small hulls (#306's 3 A). FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
+
+What is new in `ships.js`: `markCutter` takes `o.dress: 'aurenne'`, and `aurenneCutter(o, r)` is that.
+- **The hull:** the cutter's own lines and carvel planking, unchanged: 14 by 4.0 m, a draft of 1.45, the deck at 1.0, a plumb stem and a transom. It is dressed in the caravel's colours: tallowed white below the water, oiled wood above, the top two strakes blue, and the gilt line along them. There is no beast's head, since the head is the Mark's (`o.head` defaults false here).
+- **The lateen:** on the cutter's mast at 1.6 m forward, raked 4° forward. It is the sloop's lateen re-cut for this hull: the yard at 50°, slung 7 m over the deck, 4.5 m of yard forward of the sling and 7.6 m aft, on the starboard side. The sail is white with the sun-star, its tack 3.5 m over the deck and its clew 2.5 m. The shrouds are on the weather side only, the halyard runs to the sling, the tack is made fast to the deck, and the sheet leads to the starboard quarter, aft of the walk.
+- **The jib:** the cutter keeps its bowsprit, with one jib from its end to just under the masthead and the clew 2.8 m over the deck. It is bellied to port, and it sits wholly above or forward of the lateen's yard. A lateen with headsails on a bowsprit is the polacre's and the mistico's rig, and it keeps the cutter from reading as a longer sloop. `o.jib: false` takes it off. The Mark's cutter's staysail is dropped: between stem and mast it would cross the lateen's tack.
+- **No boom.** Both sails are loose-footed, so nothing crosses the deck aft of the mast lower than the sail's foot.
+- 20,868 triangles in 11 draws, or 20,692 in 10 without the jib.
+
+The view: `ships.html?ship=aurcutter`, with the cutter's views (`quarter`, `side`, `deck`, and `lap` close on her bow), `&nostar` and `&nojib`.
+
+A correction made during the session: the jib's clew was first at 2.2 m over the deck, the Mark's cutter's height, and there the jib's leech came 0.09 m below the lateen's yard just aft of the tack. The clew is now at 2.8 m, which leaves 0.33 m.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 63 of 63 pass** (57 after Session 902). Two views are new on the page check (no page errors), and four checks are new, over four keys:
+  - **The builds:** 20,868 triangles in 11 meshes, each key the same twice. The cutter's very sections, rail and deck are the Mark's cutter's.
+  - **The hull and the walk:** of 1,260 rays from inside her, none gets out. The planking is carvel and flush. The walk down either side is clear at all 76 points, and nothing is within 2.0 m over the centreline aft of the mast.
+  - **The rig:** the yard is low forward and high aft, slung to starboard, and the sail's foot is 2.5 m over the deck. The jib is 0.33 m or more over the yard wherever the two overlap, bellied to port (its mesh no further to starboard than x 0), with its clew 2.8 m over the deck.
+  - **The dress:** tallow below, blue top strakes, the gilt line, no head and no boom, the sun-star. Without the star and the jib, the hull is the same.
+- **Pictures:** `ships-aurcutter-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-nojib`.
+### Needs eyes
+- **The bare stem head** stands 0.45 m over the sheer with nothing on it, where the Mark's cutter has its beast. From the bow it reads blunt. A carved finial or a gilt sun would answer it, if Michael wants one.
+- **The gilt line stops about a metre short of the stem and the transom**, as the Mark's cutter's does. It follows the rail's stanchions, which stop where the hull narrows.
+- **The jib's cloth is plain white**, with no star and no seams of its own. The lateen carries the star.
+- **Owed:** the cutter in the Gatelands' dress (the square sail on one mast, next); then the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's, all of which need a question first.
+
+## v80 — Session 923 — Card F11: the cutter in the Gatelands' dress (prototype only)
+The cutter's second dress, after Session 922's Aurenne. On one mast, the Gatelands' rig is the square sail of #306, as the sloop's is, with the harp (#306's 2 A) and a tiller (3 A), so again nothing new is asked. FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
+
+What is new in `ships.js`: `markCutter` takes `o.dress: 'gatelands'`, and `gatelandsCutter(o, r)` is that.
+- **The hull:** the cutter's own lines and carvel planking (14 by 4.0 m), in the sloop's colours. It is tarred below the water, oiled oak above, with the cream line along the top strakes and an oak transom. There is no head.
+  - The top two strakes are green, where the sloop has one. The cutter's sheer is 0.36 m over its deck against the sloop's 0.42, and its twelve strakes are narrower, so a single green strake read in the first pictures as a dark line, not a band.
+- **The course:** one square sail, green with the harp, on a yard 7 m long and 8.4 m over the deck, its foot 2.2 m over the deck, as the sloop's. It has three shrouds a side, braces to the quarters and sheets to the rail.
+- **The jib:** the cutter keeps its bowsprit, with one plain green jib on a stay from the masthead to the bowsprit's end, bellied to port. Its head is set far enough down the stay that the whole sail stands 0.61 m forward of the course's belly.
+  - The forestay runs to the stem head under the jib's foot.
+  - The topmast stays bare: a square topsail on it would come down across the forestay.
+- **No boom.**
+- 21,176 triangles in 11 draws.
+
+The view: `ships.html?ship=glcutter`, with the cutter's views, `&noharp` and `&nojib`.
+
+Corrections made during the session:
+- The backstays first came from the topmast's head. There they passed 0.29 m from the walk at its aft end, against a rule of 0.3. They now come from the masthead, as the Mark's cutter's do.
+- The jib's head was 0.22 m forward of the course. It now sits lower down its stay.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 69 of 69 pass** (63 after Session 922). Two views are new on the page check (no page errors), and four checks are new, over four keys:
+  - **The builds:** 21,176 triangles in 11 meshes, each key the same twice, with the very sections, rail and deck of the Mark's cutter.
+  - **The hull and the walk:** closed (no ray of 1,260 gets out), and carvel and flush. The walk down either side is clear at all 76 points, and nothing is within 2.0 m over the centreline aft of the mast.
+  - **The rig:** the square course on its yard 8.4 m over the deck, its foot 2.2 m over the deck. The jib is 0.61 m forward of the course, bellied to port, with its clew 2.6 m over the deck.
+  - **The dress:** the bottom in the tar's colour, the green strakes, the cream line and the harp. There is no head and no boom. Without the harp and the jib, the hull is the same.
+- **Pictures:** `ships-glcutter-quarter.jpg`, `-side`, `-deck`, `-lap` and `-quarter-noharp`.
+### Needs eyes
+- **The green strakes still read dark** under the rail's shadow. The sloop's green is this one, and it reads the same there.
+- **From the deck the harp is seen through the sail, reversed**, as on the sloop and the cog. The sail is one double-sided cloth.
+- **The course's yard is square across**, not braced round. Every square sail in the kit stands like this.
+- **Owed:** the cutter now has all three dresses. Next are the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's. How a three-masted lateen hull takes a square rig, or a square-rigged hull the gaff, is a question for Michael, with pictures.
+
+## v80 — Session 924 — Card F11: the caravel in the Gatelands' dress, three rigs for a question (prototype only)
+With the cutter done (Sessions 922 and 923), every class has a dress for each island where that island's rig fits the class. What is left is six hulls whose class rig is not their island's: the caravel in the Gatelands' and the Mark's dress, and the cog and the galleon in the Mark's and Aurenne's. Session 902 named this as a question. This session builds the picture for it, the caravel in the Gatelands' dress under three rigs, and asks **DECISION #347**. FREEZE #297 is still open, so this touches only the prototypes (`ships.js`, `ships-view.js`, `ships.check.mjs`).
+
+What is new in `ships.js`: `aurenneCaravel` takes `o.dress: 'gatelands'`, and `gatelandsCaravel(o, r)` is that.
+- **The hull:** the caravel's own lines and carvel planking, its castle, cabin, ladders and wheel, in the Gatelands' colours. It is tarred below the water and oak above. The top two strakes and the castle's walls are green, and the wale, the castle's panels and the lanterns' fittings are cream. The harp is on every sail.
+- **`o.rig`:**
+  - **`'redonda'`** (the default, option A): the fore and the main square, the mizzen kept the lateen it was on the castle. This is the *caravela redonda*.
+  - **`'square'`** (B): all three square, the mizzen's course over the castle deck.
+  - **`'lateen'`** (C): the three lateens as built.
+- **A square mast** stands upright with one yard: the fore's at 6.8 m over the deck and 6.4 m long, the main's at 8.2 m and 8 m long, and the mizzen's at 5.0 m over the castle and 4.8 m long. Each course hangs from its yard to a foot 2.2 m over its deck, bellied forward. Each mast has three shrouds a side, and braces and sheets lead aft to the rail.
+- **The stays:** with square masts forward, the mainstay runs from the main's head to the fore's, and the forestay from the fore's head to the bowsprit. The caravel's single stay from the main to the bowsprit would have cut through the fore course.
+- 31,796 triangles in 12 draws (redonda), 32,032 (square), 31,300 (lateen).
+
+The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` or `&rig=lateen`, and `&noharp`.
+### Verified (headless Chromium)
+- **`ships.check.mjs`: 75 of 75 pass** (69 after Session 923). Three views are new on the page check, one per rig, with no page errors. Three checks are new, over three keys in each of the three rigs:
+  - **The builds:** each the same twice, with the very sections, rail and castle of Aurenne's caravel. For each key, the planking is identical in all three rigs.
+  - **The hull:** closed (no ray of 1,080 gets out). The walk from the castle's ladders to the bow is clear at all 72 points. The cabin has 2.09 m of headroom, and the door is clear for 2.7 m.
+  - **The rigs:** redonda has two square masts and one lateen, square three and none, lateen none and three. Every sail's foot is 2.2 m or more over its deck, and no sail comes within 0.3 m of a mast that is not its own.
+- **Pictures:**
+  - redonda: `ships-glcaravel-quarter.jpg`, `-side` and `-deck`;
+  - all square: `ships-glcaravel-quarter-square.jpg` and `-side-square`;
+  - lateens: `ships-glcaravel-quarter-lateen.jpg` and `-side-lateen`.
+### Needs eyes
+- **The square courses are small beside the lateens they replace.** The caravel's masts are short, so a course reaches only from 2.2 m over the deck up to its yard. A topsail, or a deeper course, would bring the sail back, if #347 goes A or B.
+- **The green castle reads nearly black** in the shade, like the green strakes.
+- **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
