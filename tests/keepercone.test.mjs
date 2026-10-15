@@ -31,7 +31,10 @@ check('face on they see you, back turned they do not; past six units in front, s
 
 // the theft itself: taken with the keeper's back turned, no fine; turned to you, the fine
 const theft = await page.evaluate(() => { const X = WORLD.intBox, K = intNPCMesh, site = window._S.site; px = X.x; pz = X.z + .8; jumpY = 0; lookAtPt(X.x, .3, X.z);
-  K.position.x = px + 1.5; K.position.z = pz; K.rotation.y = Math.atan2(K.position.x - px, K.position.z - pz);
+  /* S905 (F2a): the room is its true size now and 1.5 east of the box is across the counter, with no line to you; the keeper is
+     stood 1.5 off where there is one, the first of sixteen bearings from the east */
+  let kx = px + 1.5, kz = pz; for (let a = 0; a < 16; a++) { const x = px + Math.cos(a / 16 * Math.PI * 2) * 1.5, z = pz + Math.sin(a / 16 * Math.PI * 2) * 1.5; if (WORLD.intSightLine(x, z, px, pz) && !intSolidAt(x, z, .3, 0)) { kx = x; kz = z; break; } }
+  K.position.x = kx; K.position.z = kz; K.rotation.y = Math.atan2(K.position.x - px, K.position.z - pz);
   const b0 = WORLD.bountyAt(site); const gold0 = gold; X.open = true; WORLD.boxInteract(); const away = { took: gold - gold0, fined: WORLD.bountyAt(site) - b0 };
   // the box refills for the second go
   delete worldState.boxes[X.id];

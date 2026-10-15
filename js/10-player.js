@@ -756,8 +756,9 @@ function canSeePlayer(e, dist, baseSightRadius){
 // Rate ≈ 10 gives ~95% completion in 0.30s (weighted-but-responsive transition).
 // Headbob is halved while sneaking via SNEAK_BOB_MULT — subtler movement
 // completes the body-state visual without needing skeletal animation.
-const EYE_STAND = 0.92;               // standing eye height (legacy EYE_HEIGHT)
-const EYE_CROUCH = 0.60;              // crouched eye height (~35% drop)
+// S880 (F2a): in metres, from SCALE (07-scale.js); they were 0.92 and 0.60 when a person stood 1.1 high
+const EYE_STAND = SCALE.EYE_STAND;    // standing eye height, 1.65
+const EYE_CROUCH = SCALE.EYE_CROUCH;  // crouched eye height, 1.1
 const CROUCH_LERP_RATE = 10;          // exponential lerp k for camera height
 const SNEAK_BOB_MULT = 0.5;           // headbob amplitude multiplier while sneaking
 let _sneaking = false;                // sneak state — toggled by Ctrl

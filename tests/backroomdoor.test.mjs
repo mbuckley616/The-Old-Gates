@@ -74,7 +74,10 @@ check('opening the door never hides you better than shutting it', ok.every(r => 
 check('the open measure is the witness rule: seen only when within 6, facing and a clear line all hold', ok.every(r => r.open.seen <= r.open.all3 + 1e-9), ok.map(r => [r.name, r.open.seen, r.open.all3]));
 for (const r of ok) console.log(`  ${r.name}: shop floor spots with a clear line to the box, door open ${r.floor.clear} of ${r.floor.pts} (${r.floor.clear6} within 6); control at the doorway open ${JSON.stringify(r.ctlOpen)} shut ${JSON.stringify(r.ctlShut)}`);
 check('the measure can see: a keeper facing the open doorway sees a thief just inside it, and not once it is shut', ok.every(r => r.ctlOpen.line && r.ctlOpen.seen && !r.ctlShut.open && !r.ctlShut.line && !r.ctlShut.seen), ok.map(r => [r.name, r.ctlOpen, r.ctlShut]));
-check('with the door open, no spot of the shop floor within 6 of a thief at the box has a clear line to it (a few far corners do, at most 1 in 200)', ok.every(r => r.floor.pts > 50 && r.floor.clear6 === 0 && r.floor.clear / r.floor.pts < .005), ok.map(r => [r.name, r.floor]));
+// S905 (F2a): the shops are their true size now and the indoor sight range is still 6 (F2b's to set in metres), so the 6 reaches
+// further into the shop than it did: of 700 to 1,060 spots, 0 to 3 by the doorway within 6 see the box, and 5 to 7 in all (13 shops, 4
+// towns). The keeper's own sightings over the amble, checked above, are unchanged; this is the floor's geometry, re-measured
+check('with the door open, at most three spots of the shop floor within 6 of a thief at the box have a clear line to it (by the doorway), and under 1 in 100 in all', ok.every(r => r.floor.pts > 50 && r.floor.clear6 <= 3 && r.floor.clear / r.floor.pts < .01), ok.map(r => [r.name, r.floor]));
 check('a longer pick is never less likely to be seen', ok.every(r => r.open.picks.every((v, j) => j === 0 || v >= r.open.picks[j - 1])), ok.map(r => r.open.picks));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

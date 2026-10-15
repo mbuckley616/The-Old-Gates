@@ -90,13 +90,15 @@ const hem = await page.evaluate(() => { const out = [];
   return out; });
 check('the hem ring hugs the skirt front and back (tunic and dress)', hem.every(h => h.ratio < .85), hem);
 // the legs (Session 187, playtest s162: the legs read short): the hip joint at 43% of the height or more (it was 37%), and a
-// person as tall as before (the figure is scaled back by PW.BODY), so doors, bars and the camera are unchanged
+// person as tall as before (the figure is scaled back by PW.BODY), so doors, bars and the camera are unchanged.
+// Re-measured in Session 880 (card F2a): a person now stands at their people's stature in metres (07-scale.js, personScale):
+// 1.225 of the genome's height in the bind pose before, that times personScale now (a Gatelander man at height 1 is 1.77)
 const legs = await page.evaluate(() => { const out = [];
   for (const n of ['Aoife', 'Brendan', 'Cathal']) { const gn = personGenome({ name: n, role: 'villager' }, { key: 'legtest' }); gn.hat = 'none'; gn.style = 'buzz';
     const r = buildPerson(gn, { noLod: true }); PEOPLE_RIGS.delete(r); r.mesh.geometry.computeBoundingBox(); const top = r.mesh.geometry.boundingBox.max.y;
-    out.push({ n, hip: +((PW.HIPS - PW.HIPJ) / top).toFixed(3), tall: +(top * r.root.scale.y).toFixed(3), was: +(gn.height * 1.225).toFixed(3) }); r.mesh.geometry.dispose(); }
+    out.push({ n, hip: +((PW.HIPS - PW.HIPJ) / top).toFixed(3), tall: +(top * r.root.scale.y).toFixed(3), want: +(gn.height * 1.225 * personScale(gn)).toFixed(3), people: gn.people, female: gn.female }); r.mesh.geometry.dispose(); }
   return out; });
-check('the legs are longer (hip joint at 43%+ of the height) and a person is as tall as before', legs.every(l => l.hip >= .43 && Math.abs(l.tall - l.was) / l.was < .02), legs);
+check('the legs are longer (hip joint at 43%+ of the height) and a person stands at their people\'s stature (1.6 to 1.9 m here)', legs.every(l => l.hip >= .43 && Math.abs(l.tall - l.want) / l.want < .02 && l.tall > 1.55 && l.tall < 1.95), legs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
 

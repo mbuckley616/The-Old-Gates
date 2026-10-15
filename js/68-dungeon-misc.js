@@ -24,8 +24,13 @@ function aimAt(obj,reach){const m=obj&&(obj.mesh||obj.g||obj.group||obj.obj);if(
 // against capsules along the body's bones, as bodyAimed does for a corpse; the bones are found once and kept on obj.
 function skinAimed(obj,m,near,far){if(obj._aimBones===undefined||obj._aimM!==m||(obj._aimBones&&obj._aimBones.length&&!obj._aimBones[0].parent)){obj._aimM=m;obj._aimR=null;let sk=false;const bones=[];m.traverse(o=>{if(o.isSkinnedMesh)sk=true;if(o.isBone)bones.push(o);});obj._aimBones=sk?bones:null;}
   const bones=obj._aimBones;if(!bones||!bones.length||!m.visible)return false;m.updateMatrixWorld(true);
-  if(obj._aimR==null){_baBox.makeEmpty();for(const b of bones)_baBox.expandByPoint(b.getWorldPosition(_baA));obj._aimR=Math.max(.16,Math.min(.6,_baBox.getSize(_baA).length()*.13));}
-  const o=CAM.position;for(const b of bones){b.getWorldPosition(_baA);if(b.parent&&b.parent.isBone)b.parent.getWorldPosition(_baB);else _baB.copy(_baA);if(_raySegHit(o,_laDir,_baB,_baA,obj._aimR,near,far))return true;}
+  if(obj._aimR==null){_baBox.makeEmpty();for(const b of bones)_baBox.expandByPoint(b.getWorldPosition(_baA));obj._aimR=Math.max(.16,Math.min(.6,_baBox.getSize(_baA).length()*.13));
+    obj._aimX=_baBox.getSize(_baA).y*.15;obj._aimEnd=bones.map(b=>!b.children.some(c=>c.isBone));}
+  // S880 (F2a) — an end bone (the head, a hand, a foot) carries its capsule on past the joint by .15 of the body's height: the head
+  // bone sits at the jaw, and from an eye at 1.65 the crosshair on a face passed over a woman's head bone (1.35) out of reach
+  const o=CAM.position;for(let i=0;i<bones.length;i++){const b=bones[i];b.getWorldPosition(_baA);if(b.parent&&b.parent.isBone)b.parent.getWorldPosition(_baB);else _baB.copy(_baA);
+    if(obj._aimEnd&&obj._aimEnd[i]&&obj._aimX){const L=_baA.distanceTo(_baB);if(L>1e-4)_baA.addScaledVector(_baA.clone().sub(_baB),obj._aimX/L);}
+    if(_raySegHit(o,_laDir,_baB,_baA,obj._aimR,near,far))return true;}
   return false;}
 // S417 — a corpse is searched anywhere on its body, not at one spot over the kill point (Michael, 1 Oct). The crosshair
 // ray is tested against capsules along the dead body's bones and against any plain meshes it has, within reach of the

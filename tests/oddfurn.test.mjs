@@ -17,9 +17,14 @@ const r = await page.evaluate(() => { const out = {}, pics = [];
     cam.position.set(V[0], V[1], V[2]); cam.lookAt(V[3], V[4], V[5]); REN.render(sc, cam); const o = document.createElement('canvas'); o.width = cv.width / 2; o.height = cv.height / 2; o.getContext('2d').drawImage(cv, 0, 0, o.width, o.height); pics.push(o.toDataURL()); }
   window._pics = pics; return out; });
 console.log(JSON.stringify(r));
-check('the cellar is one bake with the kit barrels and crates, no cylinders left (the kit barrels\' lids aside), the crates on the floor (three) and one on them at .5', r.cellar.furn === 1 && r.cellar.cyl === 0 && r.cellar.crates.filter(y => y === 0).length === 3 && r.cellar.crates.includes(.5), r.cellar);
+// S896 (card F2a): a cellar of true size (6 to 8 by 5 to 7 m) holds two crates on the floor in its north-east corner and one on
+// them; the room is built 1.444 (SCALE.ROOM_K) larger than the kit lays it out, so the stacked crate sits on the .5 crates' tops at .722
+const KR = await page.evaluate(() => SCALE.ROOM_K);
+check('the cellar is one bake with the kit barrels and crates, no cylinders left (the kit barrels\' lids aside), the crates on the floor (two) and one on them at .5 of the kit (.722 at true size)', r.cellar.furn === 1 && r.cellar.cyl === 0 && r.cellar.crates.filter(y => y === 0).length === 2 && r.cellar.crates.some(y => Math.abs(y - .5 * KR) < .002), r.cellar);
 check('the cabin is one bake beside the bunk and the stash chest, no cylinders left', r.cabin.furn === 1 && r.cabin.cyl === 0, r.cabin);
-check('the chapel is one bake, no cylinders left', r.chapel.furn === 1 && r.chapel.cyl === 0 && r.chapel.tris[0] > 5000, r.chapel);
+// S896 (card F2a): the Guest's chapel of true size (9 by 12 m) has two rows of pews, fewer than the room 1.8 times too long held,
+// so the bake is about 4,200 triangles (it was over 5,000)
+check('the chapel is one bake, no cylinders left', r.chapel.furn === 1 && r.chapel.cyl === 0 && r.chapel.tris[0] > 4000, r.chapel);
 // the wizard's tower (Session 294): the helix, the post, the rail and the chest one bake; the chest and its glow on the floor
 // at 30 (they were F-scaled to 18.8, inside the shaft); the post solid the whole height
 const tw = await page.evaluate(() => { const house = { id: 'test_tower', type: 'tower', w: 6, d: 6, doorX: px, doorZ: pz, style: 'stone', reg: 'irish' };
