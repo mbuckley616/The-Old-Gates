@@ -247,14 +247,20 @@ function _hubVitals(){try{const s=(id,v,m,n)=>{const b=document.getElementById(i
 let _hubVitalsT=null;
 function openHub(tab){_hubVitals();if(!_hubVitalsT)_hubVitalsT=setInterval(()=>{if(!hubOpen){clearInterval(_hubVitalsT);_hubVitalsT=null;return;}_hubVitals();},200);_releasePointerLockForMenu();hubOpen=true;blocking=false;document.getElementById('hub').style.display='flex';hubTab(tab||'inv');}
 function closeHub(){hubOpen=false;document.getElementById('hub').style.display='none';hideBagTooltip();setQuickDestroy(false);G.focus();}
+// S952 — the Skills tab, plain markup until the parchment kit (#142 A): the level's marks, then 23 rows, majors first
+function renderHubSkills(){const head=document.getElementById('skill-head'),box=document.getElementById('skill-rows');if(!box)return;
+  if(head)head.innerHTML=`Level <b>${level}</b> · marks <b>${+levelMarks.toFixed(2)}</b> of ${marksNeeded()} to the next${levelReady()?' — <span style="color:#ffd700">rest in a bed</span>':''}. A major's or minor's rise is a mark, any other a quarter.`;
+  const S=skillsReady(),tag=id=>skillMajors.includes(id)?'major':skillMinors.includes(id)?'minor':'',rank=id=>skillMajors.includes(id)?0:skillMinors.includes(id)?1:2;
+  box.innerHTML=Object.keys(SKILL_DEF).sort((a,b)=>rank(a)-rank(b)).map(id=>{const s=S[id]||{lv:5,p:0},need=s.lv>=100?1:skillCost(s.lv),a=ATTR_DEF[SKILL_DEF[id].attr];
+    return `<div class="sk-row" data-skill="${id}"><span class="sk-tag">${tag(id)}</span><span class="sk-name">${SKILL_DEF[id].label}</span><span class="sk-gov">${a?a.label:''}</span><span class="sk-lv">${s.lv}</span><div class="sk-bar"><div style="width:${s.lv>=100?100:Math.min(100,s.p/need*100)}%"></div></div></div>`;}).join('');}
 function hubTab(name){sndTabSwitch();
-  const tabs=['inv','magic','attrs','quests','journal','log','map'];
+  const tabs=['inv','magic','attrs','quests','journal','log','map','skills']; /* S952 — Skills last, so the others keep their places */
   if(tabs.includes(name))hubLastTab=name;
   document.querySelectorAll('.hub-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
   document.querySelectorAll('.hub-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('hpanel-'+name).classList.add('active');
   if(name==='inv')renderHubInv();if(name==='magic')renderHubMagic();
-  if(name==='attrs')renderHubAttrs();if(name==='quests')renderQuestLog();if(name==='journal')renderJournal();if(name==='log')renderLog();
+  if(name==='attrs')renderHubAttrs();if(name==='skills')renderHubSkills();if(name==='quests')renderQuestLog();if(name==='journal')renderJournal();if(name==='log')renderLog();
   if(name==='map'){wmInit();wmSyncZone();if(typeof WORLD!=='undefined'){if(activeZoneId==='world')WORLD.openMap();else WORLD.closeMap();}} // v80 — world map takes over the pane in the streamed world
 }
 function slotTierColor(it){
@@ -937,7 +943,7 @@ function renderHubAttrs(){
   document.getElementById('vr-mp').textContent=(0.8+(level-1)*0.15+attrEff('intelligence')*0.2).toFixed(1)+'/sec'; /* v80 S334 — the main loop's rate: Intelligence, as its card says (it read Resolve) */
   document.getElementById('vr-st').textContent=(3+(level-1)*0.4+ATTRS.resolve*0.3).toFixed(1)+'/sec';
   const rows=document.getElementById('attr-rows');rows.innerHTML='';
-  Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const mult=getMultiplier(key);const actVal=lvAct[def.actKey]||0;const t=def.thresholds;const curThresh=t[mult-1]||0;const nextThresh=t[mult]||t[t.length-1];const prog=nextThresh>curThresh?Math.min(1,(actVal-curThresh)/(nextThresh-curThresh)):1;const mc=['','lu-mult-1','lu-mult-2','lu-mult-3','lu-mult-4','lu-mult-5'][mult];const row=document.createElement('div');row.className='attr-row';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${ATTRS[key]}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${prog*100}%"></div></div><span class="attr-act-label">${actVal}</span><span class="attr-mult-badge ${mc}">×${mult}</span>`;rows.appendChild(row);});
+  Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const pts=ATTRS[key]||0,rose=luRose(key),n=rose.reduce((a,r)=>a+r[1],0);const row=document.createElement('div');row.className='attr-row';row.title=rose.length?rose.map(([id,v])=>`${SKILL_DEF[id].label} +${v}`).join(', ')+' this level':'nothing rose under it this level';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${pts}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${Math.min(1,pts/ATTR_CAP)*100}%"></div></div><span class="attr-act-label">${n?'+'+n:''}</span><span class="attr-mult-badge">/${ATTR_CAP}</span>`;rows.appendChild(row);}); /* S952 — the attribute to its cap of 60, and the skill-ups under it this level (the action multipliers are gone) */
   const dg=document.getElementById('derived-grid');dg.innerHTML='';
   [['Melee DMG','+'+Math.round(attrEff('might')*ATTR_DMG_PER_POINT*100)+'%'],['Ranged DMG','+'+Math.round(attrEff('finesse')*ATTR_DMG_PER_POINT*100)+'%'],['Spell DMG','+'+Math.round(attrEff('intelligence')*ATTR_DMG_PER_POINT*100)+'%'],['Move Speed','+'+attrEff('swiftness')*2+'%'],['Atk Speed','+'+attrEff('swiftness')*1+'%'],['Crit Chance','+'+ATTRS.fortune*2+'%'],['Gold Found','+'+(ATTRS.fortune||0)*5+'%'],['Item Drop','+'+(ATTRS.fortune||0)*2.5+'%'],['Max Mana Bonus','+'+attrEff('intelligence')*10],['Barter Bonus','+'+Math.round(barterPct()*100)+'%']].forEach(([l,v])=>{const d=document.createElement('div');d.className='derived-row';d.innerHTML=l+'<span>'+v+'</span>';dg.appendChild(d);});
   // v80 — Standing: who you are to the world

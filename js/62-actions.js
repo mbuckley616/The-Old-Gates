@@ -415,12 +415,12 @@ function killE(e,tag=''){
 // v80 S9 — experience banks; the level is taken when you sleep (inn, home, camp bedroll, fort cot).
 let _lvlReadyShown=false;
 function chkLvl(){
-  try{const b=document.getElementById('lvready');if(b)b.style.display=(xp>=xpNext)?'inline-block':'none';}catch(e){}
-  if(xp>=xpNext&&!_lvlReadyShown){_lvlReadyShown=true;showMsg('You feel ready to advance — find a bed and rest.','#e8d8a0');addLog('✨','Ready to level. Rest in a bed.');}
+  try{const b=document.getElementById('lvready');if(b)b.style.display=levelReady()?'inline-block':'none';}catch(e){} /* S952 — the level comes on skill marks, not xp */
+  if(levelReady()&&!_lvlReadyShown){_lvlReadyShown=true;showMsg('You feel ready to advance — find a bed and rest.','#e8d8a0');addLog('✨','Ready to level. Rest in a bed.');}
 }
 function takeLevelIfReady(){
-  if(xp<xpNext||luOpen)return false;
-  xp-=xpNext;level++;xpNext=Math.floor(xpNext*1.4);maxStamina+=10;stamina=Math.min(stamina+10,maxStamina);_lvlReadyShown=false;try{const b=document.getElementById('lvready');if(b)b.style.display=(xp>=xpNext)?'inline-block':'none';}catch(e){}
+  if(!levelReady()||luOpen)return false;
+  levelMarks=Math.max(0,levelMarks-marksNeeded(level));level++;maxStamina+=10;stamina=Math.min(stamina+10,maxStamina);_lvlReadyShown=false;try{const b=document.getElementById('lvready');if(b)b.style.display=levelReady()?'inline-block':'none';}catch(e){}
   sndLevelUp();openLevelUp();return true;
 }
 // S685 — the caster's own rolls (co-op rules): an Impression's wild chance, its pattern and a scatter's swing draw from a
@@ -908,7 +908,7 @@ function updateHUD(){
   {const tl=document.getElementById('hbt');if(tl)tl.style.width=(hpTailStep(PHP/emHP,performance.now())*100)+'%';}
   document.getElementById('mb').style.width=(mana/emMana*100)+'%';document.getElementById('mv').textContent=Math.floor(mana);
   document.getElementById('stb').style.width=(stamina/emSt*100)+'%';
-  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=xp;document.getElementById('xn').textContent=xpNext;document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
+  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=+levelMarks.toFixed(2);document.getElementById('xn').textContent=marksNeeded(); /* S952 — the level's marks */document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
   // Active buffs line
   const buffEl=document.getElementById('buff-bar');
   if(buffEl){

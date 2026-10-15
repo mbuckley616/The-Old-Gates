@@ -129,6 +129,9 @@ function skillCost(L){return Math.round(.9*Math.pow(Math.max(1,L),1.2));}
 // 25 + 2 a level past the first, minors at 15 + 1, both to 60 (the build sheet's *The save*)
 function skillsInit(arch,lv){const A=SKILL_ARCH[arch]||SKILL_ARCH.warrior,past=Math.max(0,(lv||1)-1);skillMajors=A.maj.slice();skillMinors=A.min.slice();SKILLS={};
   for(const id in SKILL_DEF)SKILLS[id]={lv:A.maj.includes(id)?Math.min(60,25+2*past):A.min.includes(id)?Math.min(60,15+past):5,p:0};return SKILLS;}
+// S952 — the creator's sheet: five majors at 25, five minors at 15, the rest at 5, as the player chose them
+function skillsChoose(maj,min){skillMajors=maj.slice(0,5);skillMinors=min.filter(k=>!maj.includes(k)).slice(0,5);SKILLS={};
+  for(const id in SKILL_DEF)SKILLS[id]={lv:skillMajors.includes(id)?25:skillMinors.includes(id)?15:5,p:0};return SKILLS;}
 function skillsReady(){if(!SKILLS.blade)skillsInit(playerArchetype,1);return SKILLS;}
 function skillLv(id){const s=skillsReady()[id];return s?s.lv:5;}
 // 0 at 5 (a skill never trained moves as today), 1 at 100: the movement's lines run on this
@@ -142,11 +145,39 @@ function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)re
   const now=performance.now(),key=target==null?'':target;let m=SKILL_LAST.get(id);if(!m)SKILL_LAST.set(id,m=new Map());
   const t=m.get(key);if(t!=null&&now-t<1000)return false;
   if(m.size>64)for(const [k,v] of m)if(now-v>=1000)m.delete(k);
-  m.set(key,now);s.p+=(w||1);let up=false;
-  while(s.lv<100&&s.p>=skillCost(s.lv)){s.p-=skillCost(s.lv);s.lv++;up=true;}
+  m.set(key,now);s.p+=(w||1)*(typeof _buffMult==='function'?_buffMult('xpBoost',1):1);let up=0;
+  while(s.lv<100&&s.p>=skillCost(s.lv)){s.p-=skillCost(s.lv);s.lv++;up++;}
   if(s.lv>=100)s.p=0;
-  if(up&&typeof showMsg==='function')showMsg(`${SKILL_DEF[id].label} rises to ${s.lv}.`,'#c8b8e8');
+  if(up){skillMark(id,up);if(typeof showMsg==='function')showMsg(`${SKILL_DEF[id].label} rises to ${s.lv}.`,'#c8b8e8');}
   return true;}
+// ── THE LEVEL ON MARKS (Session 952: the build sheet's second session; Michael's B on #342) ──
+// Every skill-up counts toward the level: a major's or a minor's is a mark, any other skill's a quarter, so levelling by
+// alchemy is never wasted. A level takes ten marks plus half the level you stand at (10.5 at level 1, 15 at 10, 20 at 20).
+// Kills and quests no longer pay the level (their xp is counted and read by nothing that levels). At a bed the level is
+// taken and you place 12 points, at most 5 in one attribute, each attribute to 60 (Oblivion Remastered's two fixes); the
+// sheet pre-lights them in proportion to what rose under each attribute this level, and any point can be moved.
+const LEVEL_PTS=12,LEVEL_ROW_MAX=5,ATTR_CAP=60;
+let levelMarks=0,levelUps={},luPts={};
+function marksNeeded(L){return 10+(L==null?level:L)/2;}
+function levelReady(){return levelMarks>=marksNeeded()-1e-9;}
+function skillMark(id,n){levelMarks+=n*((skillMajors.includes(id)||skillMinors.includes(id))?1:.25);levelUps[id]=(levelUps[id]||0)+n;
+  if(typeof chkLvl==='function')chkLvl();}
+// what rose under an attribute this level: [[skill, levels], …], most first
+function luRose(attr){return Object.keys(levelUps).filter(id=>SKILL_DEF[id]&&SKILL_DEF[id].attr===attr&&levelUps[id]>0).sort((a,b)=>levelUps[b]-levelUps[a]).map(id=>[id,levelUps[id]]);}
+function luRoom(k){return Math.max(0,Math.min(LEVEL_ROW_MAX,ATTR_CAP-(ATTRS[k]||0)));}
+function luTotal(){let n=0;for(const k in luPts)n+=luPts[k]||0;return n;}
+// the points the bed asks you to place: 12, unless the caps leave less room than that
+function luNeed(){let r=0;for(const k in ATTR_DEF)r+=luRoom(k);return Math.min(LEVEL_PTS,r);}
+// the pre-lit placement: the 12 in proportion to the skill-ups under each attribute (largest remainder), inside the caps
+function luPrelit(){const by={};let T=0;for(const k in ATTR_DEF){by[k]=luRose(k).reduce((a,r)=>a+r[1],0);T+=by[k];}
+  const out={};for(const k in ATTR_DEF)out[k]=0;if(!T)return out;
+  let left=luNeed();const want={};for(const k in ATTR_DEF)want[k]=LEVEL_PTS*by[k]/T;
+  for(const k in ATTR_DEF){const n=Math.min(Math.floor(want[k]),luRoom(k),left);out[k]=n;left-=n;}
+  const order=Object.keys(ATTR_DEF).filter(k=>by[k]>0).sort((a,b)=>(want[b]-Math.floor(want[b]))-(want[a]-Math.floor(want[a]))||by[b]-by[a]);
+  for(let pass=0;pass<LEVEL_PTS&&left>0;pass++){let moved=false;for(const k of order){if(left<=0)break;if(out[k]<luRoom(k)){out[k]++;left--;moved=true;}}if(!moved)break;}
+  return out;}
+function luAdd(key,d){if(!ATTR_DEF[key])return false;const v=(luPts[key]||0)+d;if(v<0||v>luRoom(key))return false;if(d>0&&luTotal()>=luNeed())return false;
+  luPts[key]=v;luRender();return true;}
 // Armour: a hit taken while wearing three or more pieces
 function armourUse(){let n=0;for(const k of ['head','chest','hands','legs','feet'])if(EQ[k])n++;if(n>=3)skillUse('armour',1,'hit');}
 // Athletics: ten metres sprinted or swum; called by the loop with the frame's step while moving
@@ -199,53 +230,39 @@ function applyAttrGains(){
 function openLevelUp(){
   _releasePointerLockForMenu();
   sndLevelUp();
-  luOpen=true;luSelected=[];
+  luOpen=true;luSelected=[];luPts=luPrelit();
   document.getElementById('lu-lv').textContent=level;
-  document.getElementById('lu-count').textContent='0';
-  document.getElementById('lu-confirm').disabled=true;
-  // v61av: surface the archetype primary bonus that confirmLevelUp will
-  // apply on top of the action-multiplier picks. Fires regardless of which
-  // 3 attributes the player ticks below — Option A: archetype identity is
-  // destiny, you grow into it whether you mean to or not. Showing it here
-  // (rather than only retroactively in the level-up log) closes the
-  // "did that bonus actually fire?" feedback gap.
+  const sub=document.getElementById('lu-sub');if(sub)sub.innerHTML=`LEVEL <span id="lu-lv">${level}</span> — Place ${luNeed()} points, at most ${LEVEL_ROW_MAX} in one attribute`;
   const _luBonusEl=document.getElementById('lu-arch-bonus');
-  if(_luBonusEl){
-    const _arch=ARCHETYPES.find(a=>a.id===playerArchetype);
-    if(_arch && _arch.primaries && _arch.primaries.length){
-      const labels=_arch.primaries.map(k=>ATTR_DEF[k]?.label||k).join(' · ');
-      _luBonusEl.classList.remove('lu-arch-empty');
-      _luBonusEl.innerHTML=`★ <span class="lu-arch-name">${_arch.icon} ${_arch.label}</span> bonus: +1 to ${labels}`;
-    } else {
-      // No archetype (legacy save before character creator) — hide entirely.
-      _luBonusEl.classList.add('lu-arch-empty');
-      _luBonusEl.innerHTML='';
-    }
-  }
-  // Build attr cards
-  luHPGain();
-  const container=document.getElementById('lu-attrs');
+  if(_luBonusEl){_luBonusEl.classList.add('lu-arch-empty');_luBonusEl.innerHTML='';} /* S952 — the archetype's +1 to three primaries goes: the majors carry the archetype now */
+  luRender();
+  document.getElementById('lu').style.display='flex';
+}
+// S952 — one card an attribute: its five diamonds (the points you may place in it), what rose under it this level, and − / +
+function luRender(){const container=document.getElementById('lu-attrs');if(!container)return;
   container.innerHTML='';
   Object.keys(ATTR_DEF).forEach(key=>{
-    const def=ATTR_DEF[key];
-    const mult=getMultiplier(key);
-    const cur=ATTRS[key];
-    const actVal=lvAct[def.actKey]||0;
-    const multClass='lu-mult-'+mult;
-    const multLabel=['','×1','×2','×3','×4','×5'][mult];
+    const def=ATTR_DEF[key],n=luPts[key]||0,room=luRoom(key),cur=ATTRS[key]||0;
+    const rose=luRose(key),roseTxt=rose.length?rose.map(([id,v])=>`${SKILL_DEF[id].label} +${v}`).join(', ')+' this level':'nothing rose under it';
+    let dia='';for(let i=0;i<LEVEL_ROW_MAX;i++)dia+=`<span class="lu-dia${i<n?' on':''}${i>=room?' shut':''}">◆</span>`;
     const card=document.createElement('div');
-    card.className='lu-attr';card.dataset.key=key;
+    card.className='lu-attr'+(n>0?' selected':'');card.dataset.key=key;
     card.innerHTML=`
       <div class="lu-attr-top">
         <span class="lu-attr-name">${def.icon} ${def.label}</span>
-        <span class="lu-attr-mult ${multClass}">${multLabel}</span>
+        <span class="lu-attr-dias">${dia}</span>
       </div>
-      <div class="lu-attr-gain">${gainLines(key,mult)}</div>
-      <div class="lu-attr-cur">Current: ${cur} pts &nbsp;·&nbsp; Activity: ${actVal}</div>`;
-    card.onclick=()=>toggleAttr(key);
+      <div class="lu-attr-rose">${roseTxt}</div>
+      <div class="lu-attr-gain">${n?gainLines(key,n):gainLines(key,1)+' a point'}</div>
+      <div class="lu-attr-cur"><button class="lu-pt" data-d="-1"${n<=0?' disabled':''}>−</button> ${cur}${n?` → <b>${cur+n}</b>`:''} of ${ATTR_CAP} <button class="lu-pt" data-d="1"${(n>=room||luTotal()>=luNeed())?' disabled':''}>+</button></div>`;
+    card.querySelectorAll('.lu-pt').forEach(b=>b.onclick=(ev)=>{ev.stopPropagation();luAdd(key,+b.dataset.d);});
+    card.onclick=()=>luAdd(key,1);
     container.appendChild(card);
   });
-  document.getElementById('lu').style.display='flex';
+  const c=document.getElementById('lu-count');if(c)c.textContent=luTotal();
+  const pk=document.getElementById('lu-picks');if(pk)pk.innerHTML=`Placed: <span id="lu-count">${luTotal()}</span> / ${luNeed()}`;
+  const ok=document.getElementById('lu-confirm');if(ok)ok.disabled=luTotal()!==luNeed();
+  luHPGain();
 }
 
 function gainLines(key,mult){
@@ -278,72 +295,32 @@ function gainLines(key,mult){
   return lines.join(' &nbsp;·&nbsp; ');
 }
 
-function toggleAttr(key){
-  if(luSelected.includes(key)){
-    luSelected=luSelected.filter(k=>k!==key);
-  } else {
-    if(luSelected.length>=3)return;
-    luSelected.push(key);
-  }
-  // Update card states
-  document.querySelectorAll('.lu-attr').forEach(card=>{
-    const k=card.dataset.key;
-    card.classList.toggle('selected',luSelected.includes(k));
-    card.classList.toggle('disabled',luSelected.length>=3&&!luSelected.includes(k));
-  });
-  document.getElementById('lu-count').textContent=luSelected.length;
-  document.getElementById('lu-confirm').disabled=luSelected.length<3;
-  luHPGain();
-}
-// S531 — the health the level gives, as confirmLevelUp gives it: 10 every level, and Fortitude's 10 a point from the
-// picks and the archetype's +1 (was a static "+10 HP restored")
+// S952 — a click on a card places a point there (the old pick-three's name, kept for anything that still calls it)
+function toggleAttr(key){return luAdd(key,1);}
+// the health the level gives, as confirmLevelUp gives it: 10 every level, and Fortitude's 10 a point placed
 function luHPGain(){const el=document.getElementById('lu-hpgain');if(!el)return;
-  const hp=ATTR_DEF.fortitude.gains.maxHP,arch=ARCHETYPES.find(a=>a.id===playerArchetype);
-  const n=10+(luSelected.includes('fortitude')?hp*getMultiplier('fortitude'):0)+(arch&&arch.primaries&&arch.primaries.includes('fortitude')?hp:0);
+  const n=10+ATTR_DEF.fortitude.gains.maxHP*(luPts.fortitude||0);
   el.textContent=`❤ +${n} max HP`;}
 
 function confirmLevelUp(){
-  luSelected.forEach(key=>{
-    const def=ATTR_DEF[key];
-    const mult=getMultiplier(key);
-    ATTRS[key]+=mult;
-    // Apply stat changes
-    const g=def.gains;
-    if(g.maxHP){maxHP+=g.maxHP*mult;PHP=Math.min(PHP+g.maxHP*mult,effMaxHP());}
-    if(g.maxStamina){maxStamina+=g.maxStamina*mult;stamina=Math.min(stamina+g.maxStamina*mult,maxStamina);}
-    if(g.maxMana){maxMana+=g.maxMana*mult;mana=Math.min(mana+g.maxMana*mult,maxMana);}
+  if(luTotal()!==luNeed())return false;
+  const placed=[];
+  Object.keys(ATTR_DEF).forEach(key=>{
+    const n=luPts[key]||0;if(!n)return;
+    const g=ATTR_DEF[key].gains;
+    ATTRS[key]=(ATTRS[key]||0)+n;placed.push(ATTR_DEF[key].label+' +'+n);
+    if(g.maxHP){maxHP+=g.maxHP*n;PHP=Math.min(PHP+g.maxHP*n,effMaxHP());}
+    if(g.maxStamina){maxStamina+=g.maxStamina*n;stamina=Math.min(stamina+g.maxStamina*n,maxStamina);}
+    if(g.maxMana){maxMana+=g.maxMana*n;mana=Math.min(mana+g.maxMana*n,maxMana);}
   });
-  // v61au: archetype primary bonus. Each archetype names 3 "primary"
-  // attributes (the things the character is naturally gifted at) — these
-  // get a flat +1 on level-up, on top of any action-driven multiplier from
-  // luSelected above. Stat patches (HP/stam/mana) for the +1 also apply,
-  // so a Warrior leveling up gets +1 Fortitude → +10 max HP +5 max stamina
-  // every level even if they didn't pick Fortitude as a level-up choice.
-  // Doesn't double-dip: if a primary attr is already in luSelected, the
-  // mult-based gains above ran, and this just adds another +1 below.
-  const arch = ARCHETYPES.find(a=>a.id===playerArchetype);
-  if(arch && arch.primaries){
-    arch.primaries.forEach(key=>{
-      const def=ATTR_DEF[key];
-      if(!def)return;
-      ATTRS[key]+=1;
-      const g=def.gains||{};
-      if(g.maxHP){maxHP+=g.maxHP;PHP=Math.min(PHP+g.maxHP,effMaxHP());}
-      if(g.maxStamina){maxStamina+=g.maxStamina;stamina=Math.min(stamina+g.maxStamina,maxStamina);}
-      if(g.maxMana){maxMana+=g.maxMana;mana=Math.min(mana+g.maxMana,maxMana);}
-    });
-  }
-  // Base HP gain per level
+  // the level's own +10 health (its +10 stamina is given in takeLevelIfReady)
   maxHP+=10;PHP=Math.min(PHP+10,effMaxHP());
-  // Reset activity counters
-  // Log the level-up
-  const _archStr = arch ? ` · ${arch.label} +1 [${arch.primaries.map(k=>ATTR_DEF[k]?.label.slice(0,3)).join('·')}]` : '';
-  const attrSummary=luSelected.map(k=>ATTR_DEF[k].label+' ×'+getMultiplier(k)).join(', ');
-  addLog('↑','Level Up! → '+attrSummary+_archStr);
+  addLog('↑','Level Up! → '+(placed.join(', ')||'no points to place'));
   lvAct={kills:0,damageTaken:0,parries:0,sprintDist:0,staminaDepleted:0,transactions:0,npcTalks:0,chestsOpened:0};
-  luOpen=false;luSelected=[];
+  levelUps={};luPts={};luOpen=false;luSelected=[];
   document.getElementById('lu').style.display='none';
   checkPartialSpells();
   showMsg('Level '+level+' — attributes upgraded!','#ffd700');
   updateHUD();
+  return true;
 }

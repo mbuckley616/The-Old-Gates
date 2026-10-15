@@ -20978,3 +20978,39 @@ QA found this on 14 Oct and the producer routed it here: `ssWrite` (`70-saves.js
 - A correction to Session 950's entry: `tests/run.mjs` takes one name, as a prefix, so `fists fistswing tpfists` ran the two suites whose names begin `fists`. `tpfists` runs here.
 ### Needs eyes
 - Nothing to see in play. A player who loads from the menu while *Autosaved.* is still on its way finds Continue where they left it.
+
+## v80 — Session 952 — The level on marks, the bed's 12 points, the creator's majors and minors, and the Skills tab (skills and perks A, the sheet's second session)
+This is the build sheet's second session (`docs/design/skills-and-perks-build.md`), on Michael's B for #342: ten marks plus half the level. Session 941 put in the skills, and the level still ran on xp from kills and quests. Now it runs on the skills.
+
+**The marks** (`12-character.js`). `skillUse` counts the levels a skill gains and hands them to `skillMark`. A major's or a minor's rise is one mark, and any other skill's is a quarter. That is Oblivion Remastered's first fix: levelling by alchemy is never wasted. `levelUps` keeps this level's rises by skill for the bed. A level takes `marksNeeded(L)` = 10 + L/2: 10.5 at level 1, 15 at 10, 20 at 20. `chkLvl` and `takeLevelIfReady` (`62-actions.js`) read `levelReady()`, and the bed carries the surplus over. The sleep slip's *the level* line reads the same. Kills and quests still count `xp`, but nothing levels on it now. The HUD's *XP 0/200* reads *Marks 0/10.5*. The `xpBoost` buff (Caorthann Vigour, ×1.2) now multiplies skill uses, as the sheet says. The sheet's +25% is that herb's own 1.2 for now.
+
+**The bed's 12 points.** `openLevelUp` shows eight cards. Each has:
+- five diamonds, the points you may place in that row;
+- *what rose under it*, for example *Blade +3 this level*;
+- the gains, and − and + buttons.
+
+Clicking a card places a point. `luPrelit` pre-lights the 12 in proportion to the rises under each attribute, by largest remainder, inside the caps. A player who reads nothing gets Morrowind's answer, and any point can be moved. A sixth point in one row is refused, and so is a point past 60 (`ATTR_CAP`). Confirm waits until all 12 are placed, or fewer when the caps leave less room. Each point gives its attribute's gains as before: Fortitude 10 health and 5 stamina, Intelligence 10 mana. The level adds its own +10 health and +10 stamina. The archetype's automatic +1 to three primaries is gone, because the majors carry the archetype now. `getMultiplier` and the activity counters are no longer read by the bed or the hub. `lvAct` is still counted and saved, and is dropped in a later pass. The hub's Attributes rows show each attribute out of 60 and the rises under it this level, where they showed a multiplier.
+
+**The creator.** A *Your skills* row lists all 23 skills. The archetype suggests its five majors and five minors from the sheet's table. A click moves a skill from none to major to minor and back. `ccBegin` starts the chosen ones at 25 and 15 and the rest at 5 (`skillsChoose`). If a set is left short, it is filled from the archetype's suggestions.
+
+**The Skills tab.** The hub's last tab is *🎯 Skills*, placed last so the other tabs keep their order. At the top it shows the level, the marks and what a mark is. Below are 23 rows, majors first: the skill, the attribute that governs it, its level and a bar to the next. It is plain markup until the look builder puts it on the parchment kit (#142 A). The four perks per row come with the perks in session 3.
+
+**The save.** `levelMarks` and `levelUps` are top-level fields in the character's row. A save from before marks keeps its banked xp as marks in proportion: a level-4 character with half its xp banked comes back with 6 of 12.
+
+Still owed from the sheet's session 2: the attributes' ≤1% pass (Swiftness 2% → 0.5%, Fortune's crit and gold, `BOW_FINESSE_DMG`), Armour's `def` × (0.75 + 0.5 × skill/100), and Speech's prices. That is the next session.
+### Verified (headless Chromium)
+- **`levelmarks`** (new, the sheet's `levelmarks` and `levelsheet` in one boot), 17 of 17:
+  - A level takes 10.5, 15 and 20 marks at levels 1, 10 and 20.
+  - Ten major and minor rises are 10 marks, not yet a level. The eleventh banks it, and the bed takes it to level 2 with 0.5 carried.
+  - The rises were Blade 3, Guard 2, Armour 2, Bow 2 and Stealth 2. The sheet pre-lights Might 3, Resolve 2, Fortitude 2 and Finesse 5: 12 by largest remainder. Might's card reads *Blade +3 this level*.
+  - A sixth point in one row is refused. Confirm is refused and its button disabled until all 12 are placed, and a thirteenth is refused.
+  - Fortitude 5, Might 5 and Finesse 2 confirmed give exactly those, nothing else, and *❤ +60 max HP*: +60 health and +35 stamina.
+  - Forty rises outside the majors and minors are 10 of 11 marks, and four more bank the level.
+  - An attribute at 58 has room for 2.
+  - The Skills tab has 23 rows with the majors first. The save carries the marks and this level's rises.
+  - An old save banks 6 of 12. The creator suggests the Scout's set, and a click moves a skill. No page errors.
+- `levelpanel`, `stonecress`, `restslip`, `lvact`, `skillcurve`, `skillsave`, `creator`, `mainrun`: see the PR comment. `levelpanel` now asks for 12 points placed, and an archetype whose primaries include Fortitude gets the level's 10 alone. `stonecress` and `restslip` set the marks where they set `xp = xpNext`.
+### Needs eyes
+- **The pace.** #342 B's simulation expects level 10 at about 7 hours. Only play shows whether the first evening ends in a bed and a level.
+- **The bed's sheet** is the old two-column card grid with diamonds and − / +. #142 A's parchment sheet is the look builder's.
+- **The creator's skill row** sits under the attributes, a row of 23 chips. The creator is already long.
