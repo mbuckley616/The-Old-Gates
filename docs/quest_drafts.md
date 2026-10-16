@@ -8,7 +8,7 @@ Calls read to: 2026-10-14T14:34:11.594Z
 
 ## The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
 
-*Approved by Michael, 14 Oct 2026.* *Built in part, Session 976 (16 Oct), on auto/quests-build: the book (on the Mages' Guild's counter rather than a shelf, and a rare library roll) and the priests' topic, word for word. The niche waits on the look builder's recess (backlog A).* *Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
+*Approved by Michael, 14 Oct 2026.* *Built in part, Session 979 (16 Oct), on auto/quests-build: the book (on the Mages' Guild's counter rather than a shelf, and a rare library roll) and the priests' topic, word for word. The niche waits on the look builder's recess (backlog A).* *Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
 
 ### What the canon fixes
 

@@ -7,7 +7,8 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | Branch | Reviewed to | Note |
 |---|---|---|
 | main | `2ae3239` | run 19: F2a merged (Sessions 880–905, read on its branch in run 18) and the tags; no new string a player reads. Before that, run 18 to `2553a6d`, run 17 from `c66473e` (the Makers' tools, F1; Findings 29 and 30) |
-| auto/systems | `e360f8f` | run 19: Sessions 940–975 (skills by use, perks, the attributes at their cap, the level's marks); Finding 30 is in as written; Finding 31 |
+| auto/systems | `72929ad` | run 19: Sessions 940–978 (skills by use, perks, the attributes at their cap, the level's marks; S978's one *Shrine of …* a god); Finding 30 is in as written; Finding 31 |
+| auto/fable-combat-resolver | `15f78f9` | run 19: Sessions 939–963 (the attack table and one resolver); menu and combat text only, clean |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
 | auto/bodies, auto/wip-spear, claude/admiring-ride-s05yoi, auto/qa, auto/critic, auto/concept, auto/design | `9769708`, `5a1b57d`, `326e8a2`, `d07d7c0`, `f22f09a`, `d6d953e`, `1330b70` | run 19: nothing ahead of main in `js/` or `index.html` (prototypes, tests and docs) |
 | auto/backlog, auto/producer, auto/wip-cloak-hang | `828885e`, `28a0473`, `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
@@ -24,9 +25,11 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 ## Run 19 — 16 Oct 2026
 
-About 120 player-readable strings read, nearly all on auto/systems (Sessions 940–975, skills by use and the first perks); main has nothing new but F2a, read on its branch last run. One finding.
+About 130 player-readable strings read, nearly all on auto/systems (Sessions 940–978, skills by use and the first perks) and the combat resolver; main has nothing new but F2a, read on its branch last run. One finding.
 
-**auto/systems.** Finding 30 is in as written, the four guild heads' *Yours is still on the board* and the rest, in `offer` and `cloakContract`. The rest is menu text and is plain: the 23 skills' names (*Scáth* and the other schools keep the Old Blood words), the perks (*Draw cut*, *Cat’s fall*, *Swallow’s turn*, *Second skin*), *… rises to …*, the level panel's *nothing rose under it this level*, the creator's *majors 3 of 5*, the traps' *The blade catches you*, and the fine's log line *Talked the fine at … down to …*. The one gap is where the player's *Talk it down. (Speech)* meets the guard: the fine halves and the halt opens again on its first line, so the guard who has just given way says *Halt. There’s a fine of 6 gold on you* as if the player had said nothing. That is Finding 31.
+**auto/systems.** Finding 30 is in as written, the four guild heads' *Yours is still on the board* and the rest, in `offer` and `cloakContract`. The rest is menu text and is plain: the 23 skills' names (*Scáth* and the other schools keep the Old Blood words), the perks (*Draw cut*, *Cat’s fall*, *Swallow’s turn*, *Second skin*), *… rises to …*, the level panel's *nothing rose under it this level*, the creator's *majors 3 of 5*, the traps' *The blade catches you*, and the fine's log line *Talked the fine at … down to …*. The one gap is where the player's *Talk it down. (Speech)* meets the guard: the fine halves and the halt opens again on its first line, so the guard who has just given way says *Halt. There’s a fine of 6 gold on you* as if the player had said nothing. That is Finding 31. Session 978 names one shrine a god's and leaves the rest their own names, which adds no line.
+
+**auto/fable-combat-resolver** (Sessions 939–963): combat's flat lines (*You are still drinking.*, *…'s guard breaks!*, *… bowls you over*, *…'s heavy blow: …*) are combat talk and UI, plain. Clean.
 
 ### Finding 31 — auto/systems — the guard gives way on the fine and says nothing about it
 
