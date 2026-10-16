@@ -61,6 +61,7 @@ Which should the Frost Thing be?
 - **C. Both:** A where a gate failed suddenly (canon: "the stranger the failure, the stranger the shape") and B in a steady gate.
 
 Pictures: [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostshard.jpg), [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostfolk.jpg), [the two beside the skeleton and the troll](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frost.jpg).
+Michael: **B. A folk shape frozen** (15 Oct 2026, on the control room; issue #362). Session 968 gave him the face: the skeleton's modelled skull inside his head, seen through ice thinned to 0.4 over the face.
 
 Michael: **B. A folk shape frozen**. (15 Oct 2026, on the control room)
 
