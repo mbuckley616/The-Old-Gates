@@ -21631,3 +21631,22 @@ Corrections made during the session:
 - **The tower is solid.** There is no room over the arch for the toll-keeper's men, and no stair.
 - **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
 - **Owed:** the rest of L5's works (a shipyard, a ferry).
+
+## v80 — Session 983 — Folded wings wrap the flank (L4 and L3, prototype only)
+Session 974 left this in its notes: "seen from the side, the griffin's folded wing is a thin dark line. The feathers are flat cards and it lies on its back edge-on. A bird's folded wing wraps down the flank, which would want the cards to roll as well as turn." It is a fault in bodies the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **Each quill remembers its card's face** (`n`, the feather's line crossed with its width) when the wing is built, for the hand's primaries, the forearm's secondaries and the humerus's coverts.
+- **`stowQuills` rolls each quill about its own line** after it has turned it back along the body. The roll takes the card's face from wherever the turn left it to face out from the body and a little up, worked out in the frame of the spine bone the wing hangs from. How far up is the third number in `QUILL_LIE`: the coverts 58 degrees (they sit on the back), the secondaries 44 to 38, the primaries 34 to 28 (lowest, most upright on the flank). The roll takes the nearer of the two faces, since the cards are drawn on both sides. The feathers' lines do not move, so Session 974's numbers hold, and an open wing is left as built.
+- No bones and no triangles are added.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,093 checks pass** (1,084 before). The nine new checks are one per feathered flier (the skyraven, the Crag Hawk, the raven, the crow, the Stormshrike, the Cliffswift, the Sunbeak Vulture, the Dusk Eagle and the Winged Thing): at rest, every folded card's face is tipped at most 58 to 59.1 degrees up from facing straight out, and 38.7 to 40.4 on average. Against the previous commit's `creatures.js` (with only the face recorded) the same checks fail at 85.6 to 88.3 worst and 83.1 to 84.2 on average: flat on the back, edge-on from the side.
+  - The feathers still lie within 7.4 to 8.8 degrees of the body's line at rest, and are not turned at all in flight.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-wingedthing.jpg` (from the side) against `creatures-wingedthing-side-before.jpg` (new, the previous commit's): the dark line is now a pale storm-grey wing laid over the flank. The nine fliers' pictures and the three `-folded.jpg` views from above were re-shot.
+
+### Needs eyes
+- **The folded wing reads as one smooth sheet.** At 28 to 58 degrees the cards overlap closely, so the separate rows show only at the tips. A slight step between rows would read as feathers.
+- **The cards are still turned and rolled at their roots, not slid.** The primaries do not tuck under the secondaries (Session 974's note stands).
+- **The Dusk Eagle's six ragged primaries** still close as neatly as a whole wing.

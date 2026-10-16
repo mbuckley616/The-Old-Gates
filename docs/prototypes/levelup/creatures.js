@@ -234,11 +234,11 @@ P.wings = (B, o) => {
     const back = V(0, -.02, -1), up = V(0, 1, 0);
     // each flight feather hangs on a bone of its own at its root (Session 974), so a folded wing can turn it back along the body,
     // as a bird's ligaments do; its covert rides on the same bone. `kind` is the row: c on the humerus, s the forearm, p the hand
-    const quills = [], quill = (par, p, d, kind, t) => { const n = tag + 'q' + quills.length; B.bone(n, par, p); quills.push({ name: n, d: d.clone(), kind, t }); return n; };
-    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(), q = quill(arm[1], p, d, 's', t); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, q, 'feather', 'featherTip');
+    const quills = [], quill = (par, p, d, kind, t, ac) => { const n = tag + 'q' + quills.length; B.bone(n, par, p); quills.push({ name: n, d: d.clone(), n: d.clone().cross(ac).normalize(), kind, t }); return n; };
+    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(), q = quill(arm[1], p, d, 's', t, V(side, 0, 0)); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, q, 'feather', 'featherTip');
       feather(B, p.clone().add(V(0, .004 * span, .01 * span)), d, V(side, 0, 0), span * F.len * .34, span * .065, q, 'covert', 'feather'); }
-    for (let i = 0; i < 3; i++) { const p = root.clone().lerp(elbow, .3 + .3 * i); feather(B, p, back, V(side, 0, 0), span * F.len * .5, span * .07, quill(arm[0], p, back, 'c', i / 2), 'covert', 'feather'); }
-    for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize(), q = quill(arm[2], p, d, 'p', t);
+    for (let i = 0; i < 3; i++) { const p = root.clone().lerp(elbow, .3 + .3 * i); feather(B, p, back, V(side, 0, 0), span * F.len * .5, span * .07, quill(arm[0], p, back, 'c', i / 2, V(side, 0, 0)), 'covert', 'feather'); }
+    for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize(), q = quill(arm[2], p, d, 'p', t, ac);
       feather(B, p, d, ac, span * F.len * (.7 + .3 * t) * (F.primary || 1), span * .06, q, 'feather', 'featherTip');
       if (i < F.np - 2) feather(B, p.clone().add(V(0, .004 * span, .008 * span)), d, ac, span * F.len * .4, span * .055, q, 'covert', 'feather'); }
     B.wings.push({ side, arm, fingers: [], feathered: true, quills }); } return; }
@@ -799,14 +799,20 @@ const liftAt = (air, ph) => { for (const a of air) { let u = (ph - a.start + 1) 
 // a folded wing's flight feathers turned back along the body (Session 974): each quill's bone is turned, in the frame of the spine
 // bone the wing hangs from, from where the folded arm has carried it to lie back and a little down, the hand's primaries outermost and
 // lowest, so the rows stack as a bird's do instead of fanning out from the wrist. `k` is how far (0 open, 1 stowed)
-const QUILL_LIE = { p: t => [.01 + .04 * t, -.05 - .07 * t], s: t => [.02 + .03 * t, -.03 - .03 * t], c: t => [.01 + .01 * t, -.01] };
-const _qS = new THREE.Quaternion(), _qP = new THREE.Quaternion(), _qD = new THREE.Quaternion(), _qI = new THREE.Quaternion(), _vN = new THREE.Vector3(), _vT = new THREE.Vector3();
+// Each quill is also rolled about its own line (Session 983) so the card leans out and down over the flank, as a folded wing wraps the
+// body, instead of lying flat on the back and showing its edge from the side: the third number is how far the card's face is tipped
+// up from facing straight out, in degrees, the coverts flattest (on the back), the primaries most upright (lowest on the flank)
+const QUILL_LIE = { p: t => [.01 + .04 * t, -.05 - .07 * t, 34 - 6 * t], s: t => [.02 + .03 * t, -.03 - .03 * t, 44 - 6 * t], c: t => [.01 + .01 * t, -.01, 58] };
+const _qS = new THREE.Quaternion(), _qP = new THREE.Quaternion(), _qD = new THREE.Quaternion(), _qI = new THREE.Quaternion(), _qR = new THREE.Quaternion(), _vN = new THREE.Vector3(), _vT = new THREE.Vector3(), _vF = new THREE.Vector3();
 function stowQuills(C, W, k) {
   if (!k) { for (const f of W.quills) C.byName[f.name].quaternion.identity(); return; }
   const arm0 = C.byName[W.arm[0]]; C.byName[W.arm[2]].updateWorldMatrix(true, false); arm0.parent.getWorldQuaternion(_qS).invert();
   const rel = {}; for (const nm of W.arm) rel[nm] = C.byName[nm].getWorldQuaternion(new THREE.Quaternion()).premultiply(_qS);
-  for (const f of W.quills) { const b = C.byName[f.name], qp = rel[b.parent.name], [out, down] = QUILL_LIE[f.kind](f.t);
+  for (const f of W.quills) {
+    const b = C.byName[f.name], qp = rel[b.parent.name], [out, down, tip] = QUILL_LIE[f.kind](f.t), e = tip * Math.PI / 180;
     _vN.copy(f.d).applyQuaternion(qp); _vT.set(W.side * out, down, -1).normalize(); _qD.setFromUnitVectors(_vN, _vT);
+    _vN.copy(f.n).applyQuaternion(qp).applyQuaternion(_qD); _vF.set(W.side * Math.cos(e), Math.sin(e), 0).addScaledVector(_vT, -_vT.dot(_vF)).normalize();
+    if (_vN.dot(_vF) < 0) _vF.negate(); _qD.premultiply(_qR.setFromUnitVectors(_vN, _vF));
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);

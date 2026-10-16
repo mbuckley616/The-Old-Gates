@@ -91,14 +91,19 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const qu = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {}, q = new T.Quaternion(), qr = new T.Quaternion(), v = new T.Vector3(), back = new T.Vector3(0, 0, -1);
     for (const k of Object.keys(K.PLANS)) { const C0 = K.build(K.genome(k, k + ':check')); if (!C0.B.wings.some(w => w.feathered)) continue;
       const rest = C0.plan.gaits.find(g => !K.GAITS[g].flap), fly = C0.plan.gaits.find(g => K.GAITS[g].flap), ws = C0.B.wings.filter(w => w.feathered);
-      const worst = (C, stow) => { C.rig.updateMatrixWorld(true); C.rig.getWorldQuaternion(qr).invert(); let a = 0, n = 0, off = 0;
+      const worst = (C, stow) => { C.rig.updateMatrixWorld(true); C.rig.getWorldQuaternion(qr).invert(); let a = 0, n = 0, off = 0, eMax = 0, eSum = 0;
         for (const W of ws) for (const f of W.quills) { const b = C.byName[f.name]; n++; if (!stow) { off = Math.max(off, b.quaternion.angleTo(new T.Quaternion())); b.quaternion.identity(); b.updateMatrixWorld(true); }
-          v.copy(f.d).applyQuaternion(b.getWorldQuaternion(q).premultiply(qr)); a = Math.max(a, v.angleTo(back) * 180 / Math.PI); } return { a: +a.toFixed(1), n, off }; };
+          v.copy(f.d).applyQuaternion(b.getWorldQuaternion(q).premultiply(qr)); a = Math.max(a, v.angleTo(back) * 180 / Math.PI);
+          v.copy(f.n).applyQuaternion(q); const e = Math.asin(Math.min(1, Math.abs(v.y))) * 180 / Math.PI; eMax = Math.max(eMax, e); eSum += e; }
+        return { a: +a.toFixed(1), n, off, face: +eMax.toFixed(1), faceMean: +(eSum / n).toFixed(1) }; };
       const r = {}; if (rest) { C0.gait = rest; K.pose(C0, .2); r.stowed = worst(C0, true); K.pose(C0, .2); r.rigid = worst(C0, false); }
       if (fly) { C0.gait = fly; let off = 0; for (let i = 0; i < 6; i++) { K.pose(C0, i / 6); for (const W of ws) for (const f of W.quills) off = Math.max(off, C0.byName[f.name].quaternion.angleTo(new T.Quaternion())); } r.openOff = +off.toFixed(4); }
       r.quills = ws.reduce((s, W) => s + W.quills.length, 0); r.tris = C0.stats.tris; out[k] = r; }
     return out; });
-  for (const [k, r] of Object.entries(qu)) { if (r.stowed) check(`${k}: its ${r.quills} folded flight feathers lie back along the body, the worst ${r.stowed.a} degrees off its line (${r.rigid.a} on the arm alone)`, r.quills >= 20 && r.stowed.a < 25 && r.stowed.a < r.rigid.a, r);
+  for (const [k, r] of Object.entries(qu)) { if (r.stowed) { check(`${k}: its ${r.quills} folded flight feathers lie back along the body, the worst ${r.stowed.a} degrees off its line (${r.rigid.a} on the arm alone)`, r.quills >= 20 && r.stowed.a < 25 && r.stowed.a < r.rigid.a, r);
+      // and rolled to lean down over the flank (Session 983): each card's face tipped no more than 62 degrees up from facing straight out,
+      // so the folded wing shows its face from the side; flat on the back, as before the roll, the faces were tipped near 90
+      check(`${k}: its folded feathers lean down over the flank, faces tipped at most ${r.stowed.face} degrees from facing out (${r.stowed.faceMean} on average)`, r.stowed.face < 62 && r.stowed.faceMean < 50, r.stowed); }
     if (r.openOff !== undefined) check(`${k}: its feathers open as built in flight (turned at most ${r.openOff} rad)`, r.openOff < 1e-6, r); }
   // the gargoyles (Session 956, OG-018's Cloch and Gaoth rows): stone wings folded close down the back at rest (`wingRest`), every wing bone
   // behind the shoulder and inside a width less than its body's length, and spread wide when it flies
