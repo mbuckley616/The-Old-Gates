@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The HUD in the new look</title>
+<!-- The approved HUD (DECISION #198, A) over the new renderer's scenes, in three frames. Serve docs/prototypes/ (not this
+     folder alone): the parchment kit and its fonts are read from ../hud/ and ../ui/. ?scene=lane|hall &frame=metal|carved|bare -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<link href="../hud/kit.css" rel="stylesheet">
+<link href="./hud.css" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+</script>
+</head>
+<body>
+<div id="note">The approved HUD over the new look (render slice). ?scene=lane|hall &amp;frame=metal|carved|bare. Drag to look.</div>
+<script type="module" src="./hud.js"></script>
+</body>
+</html>

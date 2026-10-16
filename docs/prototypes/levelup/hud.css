@@ -1,0 +1,107 @@
+/* The HUD in the new look (concept, 15 Oct 2026). The approved HUD's pieces (docs/prototypes/hud/src.html, DECISION #198 A)
+   laid on a 1280×720 layer that is scaled to the window, over the slices' renderer; then three frames for its metal:
+   .f-metal  the kit as approved (iron plates, bronze rims, paper slips)
+   .f-carved P10b's ornate frames (OG-147): cast bronze with scrolls at the corners, finials on the compass, a knotwork ring
+   .f-bare   no plates: the bars, the compass and the ledger stand on a soft shade, and the picture runs to the edges */
+html, body { margin: 0; height: 100%; background: #0d1014; overflow: hidden; padding: 0; }
+canvas { display: block; width: 100vw; height: 100vh; }
+#note { position: fixed; left: 12px; top: 10px; color: #f3ead6; font: 13px/1.4 system-ui, sans-serif; text-shadow: 0 1px 2px #000; pointer-events: none; z-index: 20; }
+#hud { position: fixed; left: 0; top: 0; width: 1280px; height: 720px; pointer-events: none; z-index: 10; font-family: var(--body); }
+#hud svg.ico { width: 1em; height: 1em; }
+
+/* ── the approved pieces (copied from hud/src.html; positions in the 1280×720 layer) ── */
+.band{position:absolute;left:340px;bottom:24px;width:600px;height:46px;border-radius:8px;background:linear-gradient(#251f15,#0d0a07);
+  box-shadow:inset 0 1px 4px #000,0 0 0 2px var(--bronze-lo),0 0 0 3px var(--bronze),0 0 0 4px #0a0806,0 3px 12px rgba(0,0,0,.6);z-index:3}
+.band .in{position:absolute;inset:0;overflow:hidden;border-radius:8px}
+.band .cd{position:absolute;top:3px;transform:translateX(-50%);font:16px var(--display);color:#d8c290;letter-spacing:.04em}
+.band .cd.big{font-size:21px;top:0;color:#e8b050}
+.band .tk{position:absolute;top:4px;width:1px;height:7px;background:#8a7450;transform:translateX(-.5px)}
+.band .tk.h{height:4px;background:#5a4a32}
+.band::before{content:"";position:absolute;left:50%;top:-9px;border:7px solid transparent;border-top-color:var(--bronze-hi);transform:translateX(-50%);z-index:5;filter:drop-shadow(0 1px 1px #000)}
+.band::after{content:"";position:absolute;left:12px;right:12px;top:24px;height:1px;background:linear-gradient(90deg,transparent,rgba(160,122,56,.45) 15%,rgba(160,122,56,.45) 85%,transparent)}
+.mk{position:absolute;top:22px;width:24px;height:24px;margin-left:-12px;border-radius:50%;display:grid;place-items:center;font-size:17px;color:var(--ink);
+  background:radial-gradient(circle at 50% 38%,#f2e4bc,#d4b97e 75%);box-shadow:0 0 0 1.5px var(--bronze),0 0 0 2.5px #0a0806,0 1px 3px rgba(0,0,0,.7);z-index:2}
+.mk.q{box-shadow:0 0 0 2px var(--rubric),0 0 0 3px #0a0806,0 1px 3px rgba(0,0,0,.7);color:var(--rubric)}
+.mk.far{opacity:.82;transform:scale(.86)}
+.mk .ct{position:absolute;right:-9px;top:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--rubric);color:#f6e6c0;font:11px/15px var(--body);text-align:center;box-shadow:0 0 0 1px #0a0806}
+.mk .chev{position:absolute;top:5px;font:13px var(--body);color:var(--bronze-hi)}
+.lbl{position:absolute;left:640px;bottom:82px;transform:translateX(-50%);padding:5px 22px 6px;white-space:nowrap;z-index:3}
+.lbl .r{display:flex;gap:9px;align-items:center;font:16px var(--body);color:var(--ink);line-height:1.3}
+.lbl .r svg{font-size:15px;color:var(--rubric)}
+.lbl .r b{font:600 16px var(--body);color:var(--rubric)}
+.lbl .r i{font:italic 15px var(--fell);color:var(--ink-soft)}
+.lbl .r .d{margin-left:auto;padding-left:14px;font:15px var(--body);color:var(--ink-soft)}
+.sunr{position:absolute;left:958px;bottom:20px;width:54px;height:54px;font-size:28px;color:#f0c860;z-index:3}
+.vit{left:18px;bottom:20px;width:306px;height:100px;padding:12px 12px;display:flex;gap:8px;align-items:center}
+.vit .roundel{width:48px;height:48px;font-size:26px;flex:none}
+.vit .bars{flex:1;display:flex;flex-direction:column;gap:6px;padding-left:4px}
+.vit .br{display:grid;grid-template-columns:13px 1fr 56px;gap:6px;align-items:center}
+.vit .br svg{font-size:13px}
+.vit .br .v{font:13px var(--body);color:#e6d4a8;text-align:right;text-shadow:0 1px 2px #000}
+.vit .lv{display:flex;justify-content:space-between;font-size:12px;opacity:.85}
+.hbar .tail{background:linear-gradient(#f4e2c0,#c8a878)!important;opacity:.85}
+.hbar .tail::after{display:none}
+.xpbar{height:3px;border-radius:2px;background:#0b0906;box-shadow:0 0 0 1px rgba(90,64,24,.8);margin-top:1px;overflow:hidden}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#a07a38,#e8c070)}
+.ledger{position:absolute;left:18px;bottom:134px;width:430px;display:flex;flex-direction:column;gap:6px;z-index:3}
+.ln{position:relative;align-self:flex-start;padding:5px 16px 5px 12px;font:15px var(--body);color:var(--ink);display:flex;gap:9px;align-items:center;isolation:isolate}
+.ln::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:3px;background:linear-gradient(#ecdcb2,#d8bf88);filter:url(#deckle-s);box-shadow:0 2px 5px rgba(0,0,0,.55)}
+.ln svg{font-size:16px;color:var(--rubric)}
+.ln b{font-weight:600;color:var(--rubric)}
+.dn{position:absolute;transform:translate(-50%,-100%);text-align:center;z-index:4;font:500 30px/1 var(--body);font-variant-numeric:lining-nums tabular-nums;color:#f6ecd4;
+  -webkit-text-stroke:5px #1a0f06;paint-order:stroke fill;text-shadow:0 2px 6px rgba(0,0,0,.6);letter-spacing:.02em}
+.dn .sm{display:block;font:italic 15px/1.1 var(--fell);-webkit-text-stroke:3px #1a0f06;letter-spacing:0;margin-top:1px}
+.dn.weak{color:#f2c25a;font-size:36px}
+.dn.fire{color:#ff9a3c;font-size:23px}
+.dn svg{font-size:.8em;vertical-align:-.08em;stroke:#1a0f06;stroke-width:5;paint-order:stroke}
+.foe{position:absolute;left:640px;top:384px;transform:translateX(-50%);text-align:center;z-index:3}
+.foe .nm{font:15px var(--display);color:#f0e2c0;letter-spacing:.06em;text-shadow:0 1px 3px #000,0 0 6px #000}
+.foe .hbar{width:180px;height:8px;margin:3px auto 0}
+.mini{position:absolute;right:30px;top:30px;width:150px;height:150px;border-radius:50%;background-size:cover;background-position:center;filter:sepia(.45) saturate(.85) contrast(1.05);box-shadow:inset 0 0 18px rgba(40,20,5,.7);z-index:3}
+.mini .me{position:absolute;left:50%;top:50%;width:0;height:0;margin:-9px 0 0 -6px;border:6px solid transparent;border-bottom:16px solid #f6ecd4;filter:drop-shadow(0 0 1.5px #000) drop-shadow(0 0 1px #000)}
+.miniring{position:absolute;right:24px;top:24px;width:162px;height:162px;border-radius:50%;box-shadow:0 0 0 5px var(--bronze),0 0 0 6px #0a0806,inset 0 0 0 1px var(--bronze-lo),0 4px 12px rgba(0,0,0,.6);z-index:4}
+.miniring b{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font:14px var(--display);color:#f0d8a0;background:radial-gradient(#3a3124,#15110b);border:2px solid var(--bronze);width:24px;height:24px;border-radius:50%;display:grid;place-items:center}
+.prompt{top:392px}
+.orn{position:absolute;display:none;z-index:6;overflow:visible}
+
+/* ── B: carved (P10b's ornate frames) ── */
+.f-carved .orn{display:block}
+.f-carved .plate{border:0;border-radius:3px;background:
+  url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><path d='M0 14 Q7 4 14 14 T28 14 M0 14 Q7 24 14 14 T28 14' fill='none' stroke='%23a07a38' stroke-opacity='.16' stroke-width='1.2'/></svg>"),
+  linear-gradient(#2a241a,#120e09);
+  box-shadow:inset 0 0 0 2px #0a0806,inset 0 0 0 3px var(--bronze-lo),inset 0 0 0 5px var(--bronze),inset 0 0 0 6px var(--bronze-hi),inset 0 0 0 7px #0a0806,inset 0 2px 10px rgba(0,0,0,.8),0 0 0 1px #0a0806,0 4px 14px rgba(0,0,0,.7)}
+.f-carved .vit{padding:14px 16px}
+.f-carved .roundel{border:3px solid var(--bronze);outline:2px dotted var(--bronze-hi);outline-offset:1px}
+.f-carved .band{border-radius:4px;box-shadow:inset 0 1px 4px #000,0 0 0 2px #0a0806,0 0 0 3px var(--bronze-lo),0 0 0 5px var(--bronze),0 0 0 6px var(--bronze-hi),0 0 0 7px #0a0806,0 4px 14px rgba(0,0,0,.7)}
+.f-carved .band .in{border-radius:4px}
+.f-carved .band::before{display:none}
+.f-carved .miniring{box-shadow:none}
+.f-carved .ln::before{box-shadow:inset 3px 0 0 var(--gilt),0 2px 5px rgba(0,0,0,.55)}
+.f-carved .sunr{left:966px}
+
+/* ── C: bare (no plates) ── */
+.f-bare .plate{background:radial-gradient(ellipse 62% 70% at 42% 55%,rgba(8,6,4,.55),rgba(8,6,4,.25) 60%,transparent 78%);border:0;box-shadow:none}
+.f-bare .roundel{background:radial-gradient(circle,rgba(12,10,7,.55),rgba(12,10,7,.2));border:1px solid rgba(216,180,106,.7);box-shadow:0 1px 4px rgba(0,0,0,.5);color:#f0dcaa;text-shadow:0 1px 2px #000}
+.f-bare .roundel.dim{color:#a08a60}
+.f-bare .hbar{height:7px;background:rgba(5,4,3,.55);box-shadow:0 0 0 1px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.5)}
+.f-bare .hbar i::after{height:2px}
+.f-bare .xpbar{background:rgba(5,4,3,.5);box-shadow:none}
+.f-bare .band{background:linear-gradient(90deg,transparent,rgba(8,6,4,.5) 16%,rgba(8,6,4,.5) 84%,transparent);box-shadow:none;border-radius:0}
+.f-bare .band::before{border-top-color:#f0dcaa}
+.f-bare .band .cd{color:#f0e2c0;text-shadow:0 1px 2px #000,0 0 5px #000}
+.f-bare .band .cd.big{color:#f2c25a}
+.f-bare .band .tk{background:rgba(240,226,192,.65)}
+.f-bare .mk{background:radial-gradient(circle,rgba(12,10,7,.6),rgba(12,10,7,.35));color:#f0e2c0;box-shadow:0 0 0 1.5px rgba(240,220,170,.8),0 1px 3px rgba(0,0,0,.7)}
+.f-bare .mk.q{color:#f2b49a;box-shadow:0 0 0 1.5px #d06a4a,0 1px 3px rgba(0,0,0,.7)}
+.f-bare .lbl::before{background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(8,6,4,.62),rgba(8,6,4,0) 92%);filter:none}
+.f-bare .lbl .r, .f-bare .lbl .r i, .f-bare .lbl .r .d{color:#f0e2c0;text-shadow:0 1px 2px #000}
+.f-bare .lbl .r b{color:#f2c25a}
+.f-bare .lbl .r svg{color:#f2c25a}
+.f-bare .ln{color:#f0e2c0;text-shadow:0 1px 2px #000,0 0 4px #000}
+.f-bare .ln::before{background:linear-gradient(90deg,rgba(8,6,4,.62),rgba(8,6,4,.4) 70%,rgba(8,6,4,0));filter:none;box-shadow:none}
+.f-bare .ln b{color:#f2c25a}
+.f-bare .ln svg{color:#f2c25a}
+.f-bare .miniring{box-shadow:0 0 0 1px rgba(240,220,170,.75),0 2px 8px rgba(0,0,0,.5)}
+.f-bare .mini{-webkit-mask:radial-gradient(circle,#000 88%,transparent 100%);mask:radial-gradient(circle,#000 88%,transparent 100%)}
+.f-bare .miniring b{background:none;border:0;color:#f0e2c0;text-shadow:0 1px 2px #000}
+.f-bare .sunr{background:none;border:0;box-shadow:none;color:#f2c25a;filter:drop-shadow(0 1px 2px #000)}
