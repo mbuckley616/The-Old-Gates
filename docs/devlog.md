@@ -21813,3 +21813,74 @@ Corrections made during the session:
 - **The calved blocks are rounded boxes.** Real ones have fresh blue faces where they broke.
 - **The tunnel is straight.** It ends in a dark plane at 18 m that the `throat` view looks straight at. Joining it to the ice cavern's passage, which winds, is for whoever places the two together.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), the smuggler's cove (Aurenne), and the camps on the roads.
+
+## v80 — Session 1007 — Aurenne's smuggler's cove (card F8, prototype only)
+The next of OG-124's places off the road: the Aurenne panel's "smuggler's cove". Session 873 built a smugglers' lair as a Gatelands sea cave, which Michael took on #314. This is the open-air kind, and it is Aurenne's. The canon makes piracy and the run past the Compact's tithe the coast's other trade (§1). The precedents are three places:
+- the calas of the Balearics, a narrow inlet between white limestone cliffs with a beach at its head;
+- Malta's Wied il-Għasri, where a stair is cut down the cliff to the water;
+- the fjord of Furore on the Amalfi coast, where fishermen's boathouses are cut into the cliff's foot behind plastered fronts.
+
+It is dressed in Aurenne's own way (canon §1.3): cream plaster, limestone dressings and doors painted blue. It is `aurenneCove` in `places.js`, with its own view (`places-cove-view.js`, dispatched from `places-view.js`). Nothing new is asked: who runs what through the cove, and whether the Compact's tithe-men know of it, are the quest writer's and the systems builder's. No people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, the sea to +z, y 0 the sea):
+- **The inlet:** 14 m across at its head, opening to 38 m at its mouth 75 m out. Its cliffs stand 20 m over the sea within 2.2 m, their edge wandering by up to half a metre. The plateau runs on either side to the coast at about 82 m, where the cliffs turn away.
+- **The beach:** sand 15 m long, 1.35 m over the sea at the head, under the water 6.5 m out. The sea floor beyond falls to 6 m, deepest down the middle.
+- **The boathouses:** three in the west cliff's foot.
+  - Each is a plastered front 4.4 m wide and 4.2 m high under a cope, standing 0.8 m out from the rock and 1.7 m deep.
+  - Each has a round-headed door 3 m wide and 3 m high in dressed jambs, its leaves painted blue, and a barred window over it.
+  - The middle one stands open on the dark. The third has a slip of slabs at 1 in 7 into the sea.
+- **The cargo:** 13 bales, amphorae and casks before the boathouses.
+- **The stair:** 105 steps up the east cliff from the beach to the top.
+  - The risers are 0.18 m on 0.3 m treads, with a landing of 1.2 m every 18 steps.
+  - Each step is cut into the rock behind and built out over the water on a wall of ashlar.
+  - Its tread is 1.4 m clear at the foot and wider as it climbs, where the rock behind it lies further back.
+  - A plastered parapet, coped, runs along each flight on the open side. It follows the flight's own heading, since the stair drifts outward with the inlet as it climbs.
+  - The last step is at the top's own height.
+- **The lookout:** a plastered hut 3.2 m square on the east top near the mouth, 4 m back from the edge. Its blue door faces landward and its window faces the sea; `&night` lights a lamp in it.
+- **The boats:**
+  - a rowing boat drawn up on the sand;
+  - another lying at the slip's foot;
+  - with `o.ship` (the default), Aurenne's sloop (Session 858's line, `aurenneSloop`) at anchor mid-inlet, its sail down.
+- 24,869 triangles in 16 meshes, and 48,697 in 26 with the sloop.
+
+The view: `places.html?place=cove`, with `view=cove` (on the sand by the boat, out along the inlet), `houses` (the boathouses from the stair's foot), `stair` (on the stair at its third landing, up the flight), `top` (by the lookout, down the inlet) and `far` (from the sea off the mouth). Add `&night` for dusk with the lamp lit, and `&noship` for no sloop.
+
+Corrections made during the session:
+- **The beach.** It was first 10 m long and read as a ledge, not a cala. It is now 15 m long.
+- **The stair's wall.** It was first plastered, which made a 20 m sheet of plaster along the cliff. It is now ashlar, and the parapet is plaster.
+- **The parapet.**
+  - It was first a block on each step, which stair-stepped like a row of posts. Then it was a sloped wall along each flight, set along z.
+  - The check found that wall standing on the treads: the stair drifts up to 1.3 m outward over a flight as the inlet widens, so a wall along z was 0.65 m inside the stair at one end. At those points the check read a tread 1.09 m too high, headroom gone, and the parapet missing at the hip at 28 of 105 steps.
+  - Each flight's wall now runs along the flight's own heading.
+- **The boathouses' fronts.** They were first 0.6 m deep against the cliff's foot, and the cliff's wander brought the rock forward through the first door. They now stand 0.8 m out and 1.7 m deep.
+- **The look.**
+  - The sand was first `cobble`, and read as paving. It is now plaster-smooth sand.
+  - The rowing boat's hull was single-sided, so it drew black, and is now double-sided.
+  - The sun first lit the stair's cliff and left the boathouses in shade. It now lights the boathouses.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 158 of 158 pass** (151 after Session 1006). Two views are new on the page check, the cove and the boathouses, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 24,869 triangles in 16 meshes without the sloop (48,697 in 26 with it).
+  - **The stair:**
+    - 105 steps, risers 0.174 to 0.18 m, treads 0.3 m, and a landing at every 18th;
+    - a tread under every step within 0.000 m, and 2.2 m clear over every step;
+    - the parapet at the hip within 0.6 m at all 105;
+    - the last step at 20.02 m, with the top's ground beside it at 19.87 to 20.02 m.
+  - **The boathouses:**
+    - three, doors 3 by 3 m, and each front's foot on the sand;
+    - a ray at the door meets the leaf (or, at the middle one, the dark);
+    - rays at each front's top corners meet plaster, never rock;
+    - the third's slip goes 1.22 m into the sea.
+  - **The cliffs and the beach:**
+    - the cliffs are 18.5 m or more over the water or the sand within 4 m, on both sides, every 4 m from the head to 70 m out;
+    - the beach is 1.27 m dry at the head, and the water's edge is 6.5 m out.
+  - **The sloop and the lookout:**
+    - the sloop's keel is 5.54 m over the bed and its hull 9.4 m off the cliffs;
+    - the lookout stands 4.0 to 4.4 m back from the cliff's edge, its window to the sea clear for 30 m.
+- **Pictures:** `places-cove-cove.jpg`, `-houses`, `-stair`, `-top`, `-far` and `-night`.
+### Needs eyes
+- **The cliffs are plain walls** of one height with a sharp top edge. A cala's cliffs are undercut at the waterline, with notches, fallen blocks and pine clinging on. None of that is drawn, and the inlet reads as a cut.
+- **The plateau is bare.** Its turf is one texture, with no maquis, pine, wall or path to the lookout, and the stair's head meets it with no landing of its own.
+- **The boathouses are fronts only.** Their open door shows a dark plane. A room behind (a vault in the rock with a boat on the slip) would be a place of its own.
+- **The stair's wall reads dark** where the sun is off it.
+- **The sloop is the kit's sloop at anchor with its sail down** (Session 858 for the hull line; #347 for the rest of Aurenne's hulls). The rowing boats are the lair's lathe shell.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), and the camps on the roads.

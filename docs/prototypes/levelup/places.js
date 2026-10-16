@@ -20,7 +20,7 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 import { mat, worldUV, puffTex } from './common.js';
 import { stream, markTextures, aurenneTextures, gatelandsBuilding, GL_PLANS, markHall } from './pieces.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { gatelandsSloop } from './ships.js';
+import { gatelandsSloop, aurenneSloop } from './ships.js';
 
 let PM = null;
 function mats() {
@@ -2057,4 +2057,97 @@ export function markIceMouth(o = {}, r = stream('icemouth')) {
   return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2),
     mouth: { w: MW, h: MH, spring: SPR, depth: TL, throat: { w: TW, h: TH }, z0: Z0, hwAt, roofAt: ROOF, floorAt }, faceZ, iceTop, ground, lean: LEAN,
     stream: { x: SX, y: waterY }, moraine: { r: MR, gap: GAP }, cairn, boulders: boulders.length, blocks, icicles, crevasses };
+}
+
+// ── Aurenne's smuggler's cove (Session 1007, card F8; OG-124's Aurenne panel, "a smuggler's cove"; OG-121's "smugglers' lairs"). Piracy and
+// the run past the Compact's tithe are the coast's other trade (canon §1). The precedent is the calas of the Balearics and Malta's Wied
+// il-Għasri, and the fjord of Furore on the Amalfi coast: a narrow inlet between white limestone cliffs, a shingle beach at its head, the
+// fishermen's boathouses cut into the cliff's foot behind plastered fronts, a stair cut half into the cliff and built out half on a wall,
+// a lookout's hut on the top with a window to the sea. In Aurenne's own dress: cream plaster, limestone dressings, doors painted blue.
+// Built at true size, the sea to +z, y 0 the sea:
+//   - the inlet: 14 m across at its head, opening to 38 m at its mouth 75 m out, between cliffs that stand 20 m over the sea within 2.2 m;
+//     the plateau runs on either side to the coast, where the cliffs turn away east and west;
+//   - the beach: sand 15 m long from 1.35 m over the sea at the inlet's head, under the water 6 m out; the sea floor falling to 6 m;
+//   - the boathouses: three in the west cliff's foot, each a plastered front 4.4 m wide and 4.2 m high under a cope, a round-headed door
+//     3 m wide and 3 m high painted blue, the middle one open on the dark; a barred window over each; the third's slip runs into the sea;
+//   - the stair: up the east cliff from the beach to the top, 0.18 m risers on 0.3 m treads, a landing every 18, a parapet on the open side;
+//   - the lookout: a plastered hut on the east top near the mouth, its door landward, its window to the sea; o.lit, a lamp burns in it;
+//   - the boats: a rowing boat drawn up on the shingle, another at the third slip; o.ship (the default), Aurenne's sloop at anchor in the inlet;
+//   - the cargo: bales, amphorae and casks on the beach before the boathouses.
+// -> { group, tris, draws, top, W(z), coast(x), plateau, ground(x, z), sea, steps [{ x, z, y, w }], stairTop, houses [{ x, z, w, h, door { w, h }, open }],
+//   slip { z, foot }, boats [{ x, z, y }], cargo [{ x, z, y }], lookout { x, z, y, w, door, win }, ship { x, z, draft }, lit }
+export function aurenneCove(o = {}, r = stream('cove')) {
+  const A = aqueductMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const M = { plaster: A.plaster, cope: A.cope, ashlar: mat('ashlar', { ns: .9, color: 0xe8dcc4, rough: .9 }), ground: A.ground, rock: mat('rock', { ns: 1.3, color: 0xe2d8c2, rough: .95 }), bed: mat('rock', { ns: .8, color: 0xd8ccae, rough: 1 }),
+    shingle: mat('plaster', { ns: 1.1, color: 0xeadfc6, rough: 1 }), dark: std(0x0b0907, 1), door: std(0x2f6aa0, .7), iron: std(0x2a2826, .5, { metalness: .6 }), hull: Object.assign(mat('wood', { ns: .8, color: 0x7aa4b8, rough: .85 }), { side: THREE.DoubleSide }),
+    wood: mat('wood', { ns: .9, color: 0x8a6c4c, rough: .9 }), bale: mat('plaster', { ns: .9, color: 0xb8a078, rough: 1 }), clay: std(0xb0603c, .85), lamp: std(0x3a3020, .4, { emissive: 0xffc070, emissiveIntensity: 0 }),
+    sea: new THREE.MeshStandardMaterial({ color: 0x2aa0a8, roughness: .12, metalness: .1, transparent: true, opacity: .78, depthWrite: false }) };
+  const B = new Map(), key = String(o.key || 'cove'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), lit = !!o.lit;
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: the inlet's half-width W(z), its head at z -9, the coast at about z 82; D is how far into the land a point is (negative in the sea)
+  const PT = 20, CW = 2.2, HEAD = -9, W = z => 7 + 12 * sm((z + 5) / 75), coast = x => 82 + 6 * Math.sin(x * .03 + ph[0]) + 3 * Math.sin(x * .11 + ph[1]);
+  const D = (x, z) => Math.min(Math.max(Math.abs(x) - W(z), HEAD - z), coast(x) - z) + .35 * Math.sin(z * .9 + ph[2]) + .2 * Math.sin(z * 2.3 + x * .4 + ph[3]);
+  const BZ = 6, bed = (x, z) => { const bz = z < BZ ? .15 + (BZ - z) * .08 : Math.max(-6, .15 - (z - BZ) * .35); return bz - (z > BZ ? .6 * Math.max(0, 1 - (x / W(z)) ** 2) * sm((z - BZ) / 4) : 0); };
+  const ground = (x, z) => { const d = D(x, z); if (d <= 0) return bed(x, Math.max(z, HEAD)); const t = sm(d / CW), top = PT + .5 * Math.sin(x * .05 + ph[4]) * Math.sin(z * .04 + ph[5]) + .02 * Math.min(Math.max(0, d - CW), 40);
+    return bed(x, Math.max(Math.min(z, coast(x)), HEAD)) * (1 - t) + top * t; };
+  { const xs = [], zs = []; for (let x = -90; x < -24; x += 4) xs.push(x); for (let x = -24; x < 24; x += .9) xs.push(x); for (let x = 24; x <= 90; x += 4) xs.push(x);
+    for (let z = -40; z < -12; z += 3) zs.push(z); for (let z = -12; z < 92; z += 1) zs.push(z); for (let z = 92; z <= 140; z += 6) zs.push(z);
+    const P = zs.map(z => xs.map(x => [x, ground(x, z), z])), out = { ground: [], rock: [], shingle: [], bed: [] };
+    for (let j = 0; j + 1 < zs.length; j++) for (let i = 0; i + 1 < xs.length; i++) { const a = P[j][i], b = P[j][i + 1], c = P[j + 1][i], d = P[j + 1][i + 1], cx = (a[0] + d[0]) / 2, cz = (a[2] + d[2]) / 2, dd = D(cx, cz);
+      const sl = Math.max(Math.abs(b[1] - a[1]) / (b[0] - a[0]), Math.abs(c[1] - a[1]) / (c[2] - a[2]), Math.abs(d[1] - c[1]) / (d[0] - c[0]));
+      const k = sl > .9 ? 'rock' : dd > 0 ? 'ground' : cz < BZ + 1.5 && Math.max(a[1], d[1]) > -.4 ? 'shingle' : 'bed'; out[k].push(...a, ...c, ...b, ...b, ...c, ...d); }
+    for (const k in out) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out[k], 3)); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, k === 'ground' ? 1.2 : .3); } }
+  { const g = new THREE.PlaneGeometry(400, 330); g.rotateX(-Math.PI / 2); put(g, 'sea', 0, 0, 155); }
+  // the boathouses: plastered fronts in the west cliff's foot, facing +x across the beach
+  const houses = []; for (const [i, z] of [[0, -4.4], [1, 0.4], [2, 5.2]]) { const x = -W(z) + .8, gy = Math.max(ground(x + .3, z), .15), HW = 4.4, HH = 4.2, DW = 3, DH = 3, open = i === 1;
+    put(new THREE.BoxGeometry(1.7, HH + 1, HW), 'plaster', x - .85, gy + (HH - 1) / 2, z); put(new THREE.BoxGeometry(1.9, .22, HW + .3), 'cope', x - .8, gy + HH + .11, z); /* the front stands 0.8 m out from the cliff's foot and 1.7 m deep, so the rock's wander stays behind it */
+    const sh = new THREE.Shape(), hw = DW / 2; sh.moveTo(-hw, 0); sh.lineTo(hw, 0); sh.lineTo(hw, DH - hw); sh.absarc(0, DH - hw, hw, 0, Math.PI, false); sh.lineTo(-hw, 0);
+    { const g = new THREE.ShapeGeometry(sh, 12); g.rotateY(Math.PI / 2); put(g, 'dark', x + .02, gy, z); }
+    { const g = new THREE.RingGeometry(hw, hw + .28, 12, 1, 0, Math.PI); g.rotateY(Math.PI / 2); put(g, 'cope', x + .03, gy + DH - hw, z); }
+    for (const s of [-1, 1]) put(new THREE.BoxGeometry(.3, DH - hw, .28), 'cope', x - .1, gy + (DH - hw) / 2, z + s * (hw + .14));
+    if (open) { for (const s of [-1, 1]) put(new THREE.BoxGeometry(.08, DH - hw - .05, hw), 'door', x + .04 + hw / 2 * .9, gy + (DH - hw) / 2, z + s * (hw + .05), 0, s * 1.35); }
+    else { put(new THREE.BoxGeometry(.08, DH - hw - .02, DW - .04), 'door', x + .06, gy + (DH - hw) / 2, z); const g = new THREE.CircleGeometry(hw - .02, 12, 0, Math.PI); g.rotateY(Math.PI / 2); put(g, 'door', x + .1, gy + DH - hw, z); }
+    put(new THREE.PlaneGeometry(.9, .6).rotateY(Math.PI / 2), 'dark', x + .02, gy + DH + .55, z); for (let b = -1; b <= 1; b++) put(new THREE.BoxGeometry(.03, .6, .03), 'iron', x + .06, gy + DH + .55, z + b * .25);
+    houses.push({ x: +x.toFixed(2), z, w: HW, h: HH, gy: +gy.toFixed(2), door: { w: DW, h: DH }, open }); }
+  // the third's slip: slabs from its sill down into the sea at 1 in 7
+  const slip = { z: 5.2, x0: houses[2].x, foot: 0 }; { const z = slip.z; let y = houses[2].gy, x = houses[2].x + .5; while (y > -1.1) { put(new THREE.BoxGeometry(1.0, .25, 2.8), 'cope', x, y - .12, z, 0, 0, Math.atan(1 / 7)); x += 1; y -= 1 / 7; } slip.foot = +y.toFixed(2); slip.x1 = +x.toFixed(2); }
+  // the stair: up the east cliff from the beach, treads 1.4 m clear of the parapet's inner face, cut into the rock behind; a landing every 18
+  const steps = []; { let z = -6.2, y = Math.max(ground(W(-6.2) - .85, -6.2), .2); let n = 0; while (y < PT - .05) { const rise = Math.min(.18, PT + .02 - y); y += rise; n++;
+      const run = n % 18 === 0 ? 1.2 : .3, wx = W(z + run / 2), x0 = wx - 1.55, x1 = wx + 2.6, zc = z + run / 2;
+      put(new THREE.BoxGeometry(x1 - x0, y - bed(wx - 1, zc) + .5, run + .01), 'ashlar', (x0 + x1) / 2, (y + bed(wx - 1, zc) - .5) / 2, zc, 0, 0, 0, .5);
+      steps.push({ x: +(wx - .85).toFixed(3), z: +zc.toFixed(3), y: +y.toFixed(3), w: +(x1 - x0).toFixed(2), x0: +(x0 + .25).toFixed(3), run, rise: +rise.toFixed(3) }); z += run; } }
+  // the parapet: one sloped wall along each flight and a level one along each landing, 0.95 m over the nosings, coped
+  { let f0 = 0; for (let i = 0; i <= steps.length; i++) { const end = i === steps.length || steps[i].run > .5; if (!end) continue; const seg = steps.slice(f0, i);
+      if (seg.length) { const a = seg[0], b = seg[seg.length - 1], za = a.z - .15, zb = b.z + .15, ya = a.y - a.rise, yb = b.y, xa = a.x0 - .125 - .15 * (b.x0 - a.x0) / Math.max(.3, b.z - a.z), xb = b.x0 - .125 + .15 * (b.x0 - a.x0) / Math.max(.3, b.z - a.z);
+        /* along the flight's own heading: the stair follows the inlet's side as it widens, so a flight drifts outward as it climbs */
+        const hz = Math.hypot(zb - za, xb - xa), L = Math.hypot(hz, yb - ya), pitch = Math.atan2(yb - ya, hz), yaw = Math.atan2(xb - xa, zb - za), xm = (xa + xb) / 2, zm = (za + zb) / 2;
+        put(new THREE.BoxGeometry(.25, 1.25, L + .1), 'plaster', xm, (ya + yb) / 2 + .45, zm, -pitch, yaw); put(new THREE.BoxGeometry(.33, .07, L + .12), 'cope', xm, (ya + yb) / 2 + 1.1, zm, -pitch, yaw); }
+      if (i < steps.length) { const l = steps[i]; put(new THREE.BoxGeometry(.25, 1.0, l.run + .02), 'plaster', l.x0 - .125, l.y + .45, l.z); put(new THREE.BoxGeometry(.33, .07, l.run + .04), 'cope', l.x0 - .125, l.y + .98, l.z); }
+      f0 = i + 1; } }
+  const st = steps[steps.length - 1], stairTop = { x: st.x, z: st.z, y: st.y };
+  // the lookout: a plastered hut on the east top near the mouth, its door landward (+x), its window to the sea (+z) with the lamp in it
+  const LZ = 62, LX = W(LZ) + CW + 6, LY = ground(LX, LZ), LW = 3.2, LH = 2.7, look = { x: +LX.toFixed(2), z: LZ, y: +LY.toFixed(2), w: LW };
+  { const yb = Math.min(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([u, v]) => ground(LX + u * LW / 2, LZ + v * LW / 2))) - .2; put(new THREE.BoxGeometry(LW, LH + (LY - yb), LW), 'plaster', LX, yb + (LH + LY - yb) / 2, LZ);
+    put(new THREE.BoxGeometry(LW + .2, .2, LW + .2), 'cope', LX, LY + LH + .1, LZ); put(new THREE.BoxGeometry(.06, 1.9, .85), 'door', LX + LW / 2 + .02, LY + .95, LZ);
+    put(new THREE.PlaneGeometry(.7, .8), 'dark', LX, LY + 1.5, LZ + LW / 2 + .02); put(new THREE.SphereGeometry(.12, 10, 8), 'lamp', LX, LY + 1.35, LZ + LW / 2 - .05);
+    look.door = { x: +(LX + LW / 2).toFixed(2), w: .85, h: 1.9 }; look.win = { x: LX, y: +(LY + 1.5).toFixed(2), z: LZ + LW / 2 }; }
+  M.lamp.emissiveIntensity = lit ? 5 : 0;
+  // the boats: a rowing boat drawn up on the shingle, another lying at the slip's foot; a lathe bowl along z, its gunwale, two thwarts
+  const boats = []; const boat = (bx, bz, by, ry) => { const BL = 4.0, W2 = .72, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
+    const g = new THREE.LatheGeometry(pts, 14, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.scale(1, .55, 1); g.rotateY(ry); put(g, 'hull', bx, by + .45, bz, 0, 0, 0, .5);
+    for (const t of [-.6, .5]) { const tg = new THREE.BoxGeometry(1.3, .05, .22); tg.rotateY(ry); put(tg, 'wood', bx + Math.sin(ry) * t, by + .35, bz + Math.cos(ry) * t); } boats.push({ x: +bx.toFixed(2), z: +bz.toFixed(2), y: +by.toFixed(2) }); };
+  { const bx = 1.2, bz = -1.5; boat(bx, bz, Math.max(ground(bx, bz - 1.6), ground(bx, bz + 1.6), ground(bx, bz)) - .03, .25); }
+  boat(slip.x1 + 1.6, slip.z + .4, -.12, 1.45);
+  // the cargo before the boathouses: bales, amphorae and casks, each set on the shingle
+  const cargo = []; for (let k = 0; k < 13; k++) { const z = -6.4 + k * .75 + (F() - .5) * .3, x = -W(z) + 2.4 + F() * 1.8, gy = ground(x, z), kind = k % 3;
+    if (kind === 0) put(new THREE.BoxGeometry(.8, .55, .55), 'bale', x, gy + .275, z, 0, F() * .6); else if (kind === 1) { const pts = [[.02, 0], [.16, .1], [.22, .35], [.2, .6], [.08, .75], [.07, .85], [.1, .88]].map(([u, v]) => new THREE.Vector2(u, v)); put(new THREE.LatheGeometry(pts, 10), 'clay', x, gy, z); }
+    else put(new THREE.CylinderGeometry(.3, .3, .8, 12), 'wood', x, gy + .4, z); cargo.push({ x: +x.toFixed(2), z: +z.toFixed(2), y: +gy.toFixed(3), kind }); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['sea', 'dark', 'ground', 'bed', 'shingle'].includes(k); m.receiveShadow = !['sea', 'dark'].includes(k); group.add(m); tris += g.attributes.position.count / 3; }
+  let draws = group.children.length, ship = null;
+  if (o.ship !== false) { const S = aurenneSloop({}, stream(key + ':sloop')); const sail = S.group.getObjectByName('sail'); if (sail) { S.tris -= sail.geometry.attributes.position.count / 3; S.group.remove(sail); S.draws--; } /* at anchor: the sail is down */
+    S.group.position.set(-1.5, 0, 40); S.group.rotation.y = .12; group.add(S.group); tris += S.tris; draws += S.draws; ship = { x: -1.5, z: 40, L: 13, W: 4.4, draft: 1.05 }; }
+  return { group, tris: Math.round(tris), draws, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), W, coast, plateau: PT, cliff: CW, ground, bed, D, sea: 0, steps, stairTop, houses, slip, boats, cargo, lookout: look, ship, lit };
 }
