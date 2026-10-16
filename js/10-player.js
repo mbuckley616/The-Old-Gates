@@ -258,6 +258,7 @@ let ROLL=null;
 function rollUntouchable(nowS){if(nowS<FINISHER_SAFE_UNTIL)return true;if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
 function startRoll(nowS,keys){
   const K=keys||{};
+  if(!ROLL&&!onGround&&airDashStart(K))return true; /* S1011 — Swallow's turn: Q in the air is the air dash while it is unspent */
   if(!ROLL&&!dead&&started&&!onGround)FALL.qAt=FALL.clock; // S429 — pressed in the air: rolled on landing if it is within FALL_ROLL_WIN
   if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
   if(typeof swingCommitted==='function'&&swingCommitted())return false; // S940 — a swing's wind-up and strike are committed; its recovery cancels into the roll
@@ -293,7 +294,7 @@ function tickRoll(nowS){
 // the time in the air to where you land. The blow waits FALL_ROLL_WIN after landing: a roll begun in that window (or
 // pressed in the air that long before) halves it. The clock is the loop's dt, so a dropped frame changes nothing.
 // A change of place (a door, a zone, a dungeon) or a jump of more than 3 units in a frame (travel) starts the count again.
-// Water and Levitate are not landings. Acrobatics' Cat's fall and Éan's Wingless wait for the skills build.
+// Water and Levitate are not landings. Acrobatics' Cat's fall is fallFree() (S977); Éan's Wingless waits for magic B.
 const FALL_FREE=4,FALL_PER=.06,FALL_ROLL_WIN=.2;
 const FALL={top:null,key:'',x:0,z:0,clock:0,qAt:-9,pend:null,last:null};
 function fallKey(){return lid+'|'+activeZoneId+'|'+(isInterior()&&currentHouse?currentHouse.id:'');}
@@ -308,21 +309,111 @@ function fallTrack(dt){
   FALL.x=px;FALL.z=pz;
 }
 // called where the loop lands you; y is the ground you landed on. Returns the drop.
+let _jumpFrom=null; // S941 — the ground a jump left from (Acrobatics)
 function fallLand(y){
   const top=FALL.top;FALL.top=null;
   if(top==null||fallKey()!==FALL.key||Math.hypot(px-FALL.x,pz-FALL.z)>3)return 0;
   const drop=top-y;
-  if(drop>FALL_FREE&&!dead){
-    const dmg=Math.max(1,Math.round(maxHP*FALL_PER*(drop-FALL_FREE)));
+  if(_jumpFrom!=null&&drop<=fallFree()&&y>_jumpFrom+.3)skillUse('acrobatics',1,'jump'); /* S941 — a jump that lands higher than it left */
+  _jumpFrom=null;
+  const free=fallFree(); /* S977 — Cat's fall (Acrobatics 50) */
+  if(drop>free&&!dead){
+    const dmg=Math.max(1,Math.round(maxHP*FALL_PER*(drop-free)));
     FALL.pend={dmg,drop,t:FALL_ROLL_WIN};
-    landShake=Math.min(.3,.06+.02*(drop-FALL_FREE));
+    landShake=Math.min(.3,.06+.02*(drop-free));
+    if(FALL.clock-AIRDASH.endAt<=FALL_ROLL_WIN||AIRDASH.soft){AIRDASH.soft=false;fallSettle(true);return drop;} /* S1011 — a dash that ended within 0.2 s of landing, or began within 0.2 s of it (airDashStart), is the landing roll */
     if(FALL.clock-FALL.qAt<=FALL_ROLL_WIN&&typeof window!=='undefined'&&window._K)startRoll(performance.now()/1000,window._K);
   }
   return drop;
 }
+// S1009 — Second step, Acrobatics 75: the double jump (docs/design/double-jump-and-dash-build.md, its session 1). A fresh
+// press of Space in the air sets the rise to 4.5 m/s (set, not added), once a flight, for 12 stamina; a held Space never
+// fires it, and it comes back on landing. Carrying over 70% the rise is 3.2, immobile none; never swimming, levitating or
+// staggered; too winded (under 12, or in staminaCD) the bar flashes. It does not reset the fall's count: fallTrack keeps
+// the flight's top. The air-speed cap the sheet asks beside it is DECISION #370's and waits.
+const AIRSTEP={used:false,up:false},AIRSTEP_V=4.5,AIRSTEP_V_HEAVY=3.2,AIRSTEP_STAM=12;
+function airStepTick(K){
+  if(onGround){AIRSTEP.used=false;AIRSTEP.up=false;AIRDASH.used=false;AIRDASH.soft=false;return false;}
+  if(!K['Space']){AIRSTEP.up=true;return false;}
+  if(!AIRSTEP.up||AIRSTEP.used)return false;
+  AIRSTEP.up=false;
+  if(!perk('acrobatics',75)||dead||!started||playerStaggered(performance.now()/1000))return false;
+  if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
+  if(typeof spellLevitating==='function'&&spellLevitating())return false;
+  if(encumbranceState()==='immobile')return false;
+  if(stamina<AIRSTEP_STAM||staminaCD>0){flashStamina();return false;}
+  stamina=Math.max(0,stamina-_stamCost(AIRSTEP_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
+  AIRSTEP.used=true;velY=totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT?AIRSTEP_V_HEAVY:AIRSTEP_V;
+  try{sndJump();}catch(err){}
+  return true;
+}
+// S1011 — Swallow's turn, Acrobatics 100: the air dash (the same sheet, its session 2). Q in the air while it is unspent
+// carries you 3.0 m level in 0.2 s, toward the held keys or straight on; the fall pauses and starts again from rest. Once
+// a flight, for 20 stamina; none over 70% of your carry, immobile, swimming, levitating or staggered. Spent, Q buffers the
+// landing roll as before. It stops at a solid as the walk does (the loop moves it through the walk's own collision), has no
+// untouchable window and no strike, and adds no height. A dash that ends within 0.2 s of landing counts as the landing roll
+// and halves the fall. Its clock is performance.now(), as the roll's, so a dropped frame changes neither its length nor its
+// time; the loop's dt is capped at 0.05, so no frame of it moves more than 0.75 m and fallTrack's 3 m travel rule holds.
+const AIRDASH={used:false,t0:null,dx:0,dz:0,done:0,endAt:-9,soft:false},AIRDASH_DIST=3.0,AIRDASH_DUR=.2,AIRDASH_STAM=20;
+function airDashStart(K){
+  if(AIRDASH.used||AIRDASH.t0!=null||!perk('acrobatics',100)||dead||!started)return false;
+  const nowS=performance.now()/1000;if(playerStaggered(nowS))return false;
+  if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
+  if(typeof spellLevitating==='function'&&spellLevitating())return false;
+  if(encumbranceState()==='immobile'||totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT)return false;
+  if(stamina<AIRDASH_STAM||staminaCD>0){flashStamina();return false;}
+  const k=K||{};let mx=0,mz=0;
+  if(k['KeyW']||k['ArrowUp']){mx+=fwdX;mz+=fwdZ;}
+  if(k['KeyS']||k['ArrowDown']){mx-=fwdX;mz-=fwdZ;}
+  if(k['KeyA']){mx-=rgtX;mz-=rgtZ;}
+  if(k['KeyD']){mx+=rgtX;mz+=rgtZ;}
+  if(!mx&&!mz){mx=fwdX;mz=fwdZ;}
+  const l=Math.hypot(mx,mz)||1;
+  stamina=Math.max(0,stamina-_stamCost(AIRDASH_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
+  /* the sheet's "one key": Q pressed to soften a fall still softens it. A dash begun within 0.2 s of where you would have
+     landed holds you up 0.2 s and then drops you from rest, so its end is never that near the ground; it counts as the roll */
+  const gy=dashGroundY(),dn=Math.max(0,-velY),h=jumpY-gy;
+  const soft=gy!=null&&h>=0&&(Math.sqrt(dn*dn+36*h)-dn)/18<=FALL_ROLL_WIN;
+  Object.assign(AIRDASH,{used:true,t0:nowS,dx:mx/l,dz:mz/l,done:0,soft});velY=0;
+  try{sndJump();}catch(err){}
+  return true;
+}
+function airDashing(){return AIRDASH.t0!=null;}
+// the ground under you, as the loop's landing reads it
+function dashGroundY(){const dun=lid&&lid.startsWith('dyn_');
+  if(dun||isInterior()){const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);return footholdY(px,pz,jumpY,b);}
+  return activeTerrainH(px,pz);}
+// the dash's move this frame, {dx,dz,p}, or null; it ends at its 3 m, or on landing
+function tickAirDash(nowS){
+  if(AIRDASH.t0==null)return null;
+  if(onGround||dead){AIRDASH.t0=null;AIRDASH.endAt=FALL.clock;return null;}
+  const p=Math.min(1,Math.max(0,(nowS-AIRDASH.t0)/AIRDASH_DUR)),want=AIRDASH_DIST*p,step=want-AIRDASH.done;AIRDASH.done=want;
+  if(p>=1){AIRDASH.t0=null;AIRDASH.endAt=FALL.clock;}
+  return {dx:AIRDASH.dx*step,dz:AIRDASH.dz*step,p};
+}
+// S1009 — the head stops at the ceiling (the same sheet): a rise ends where the top of the head, SCALE.PERSON over the feet,
+// meets the room's ceiling (`_roomH` for a generated room, `_ceilH` for the old ones), the dungeon's floor height, or the
+// underside of a foothold or a solid over you (an inn's gallery, the floor above). Outdoors nothing is over you yet.
+// y is the feet before this frame's rise: what is over the head there is the ceiling.
+const HEAD_H=SCALE.PERSON;
+function headCeil(x,z,y){
+  const intr=isInterior();let c=1e9;
+  if(intr){const h=currentHouse&&(currentHouse._roomH||currentHouse._ceilH);if(h)c=h;}
+  else if(lid&&lid.startsWith('dyn_'))c=(currentFloor===2?FLOOR2_Y:0)+FLOOR_HEIGHT;
+  else return c;
+  const head=y+HEAD_H-.02;
+  for(const f of FOOTHOLDS){if(f.kind==='spiral'||x<f.x0||x>f.x1||z<f.z0||z>f.z1)continue;
+    if(f.hole&&x>f.hole.x0&&x<f.hole.x1&&z>f.hole.z0&&z<f.hole.z1)continue;
+    if(f.holes&&f.holes.some(h=>x>h.x0&&x<h.x1&&z>h.z0&&z<h.z1))continue;
+    let fy=f.y;if(f.axis){const t=f.axis==='x'?(x-f.x0)/(f.x1-f.x0):(z-f.z0)/(f.z1-f.z0);fy=f.y0+(f.y1-f.y0)*Math.max(0,Math.min(1,t));}
+    const u=fy-.16;if(u>=head&&u<c)c=u;}
+  if(intr)for(const s of (INT_SOL||[]))if(s.y0!=null&&s.y0>=head&&s.y0<c&&x>=s.x0&&x<=s.x1&&z>=s.z0&&z<=s.z1)c=s.y0;
+  return c;
+}
 function fallSettle(rolled){
   const p=FALL.pend;FALL.pend=null;if(!p||dead)return;
   const dmg=rolled?Math.max(1,Math.round(p.dmg/2)):p.dmg;
+  {const aw=(rolled?1:0)+(p.drop>4?2:0);if(aw&&PHP-dmg>0)skillUse('acrobatics',aw,'fall');} /* S941 — a landing roll 1; a fall over 4 m lived through 2 */
   FALL.last={drop:+p.drop.toFixed(2),dmg,rolled};
   PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();
   showMsg(rolled?`You roll with the fall. ${dmg} damage.`:`A hard landing. ${dmg} damage.`,'#ff6060');
@@ -660,11 +751,11 @@ function applyBackstab(e){
   // Weapon type — daggers are the dedicated backstab weapon. We check
   // weaponShape (the authoritative field; pierce-type covers daggers but
   // could theoretically apply to future spears, so shape is the right gate).
-  if(EQ.weapon && EQ.weapon.weaponShape === 'dagger') return BACKSTAB_DAGGER_MULT;
+  if(EQ.weapon && EQ.weapon.weaponShape === 'dagger') return BACKSTAB_DAGGER_MULT * shadowHandMult(); /* S1001 — Shadow's hand */
   // Non-dagger weapon (or bare hand) — the other-weapon bonus still applies
   // to reward positioning on swords/maces. Bare hand (no EQ.weapon) still
   // counts — you snuck up on them, you get the bonus.
-  return BACKSTAB_OTHER_MULT;
+  return BACKSTAB_OTHER_MULT * shadowHandMult();
 }
 // v71 — Shieldbearer frontal block. A raised guard (shieldUp:true) reduces
 // FRONTAL melee damage to this fraction until the guard is broken. Flanking /
@@ -743,14 +834,16 @@ function canSeePlayer(e, dist, baseSightRadius){
   // Sight: requires distance AND forward cone. If combatYaw isn't set
   // (shouldn't happen post-spawn-init, but defensive), fall back to
   // omnidirectional at the sight radius.
-  if(dist >= sightRadius) return false;
+  if(dist >= sightRadius){ if(_sneaking&&dist<baseSightRadius) _stealthNearT=performance.now(); return false; } /* S941 — inside its range, unseen: Stealth */
   if(typeof e.combatYaw !== 'number') return true;
   const fX = Math.sin(e.combatYaw);
   const fZ = Math.cos(e.combatYaw);
   const dx = px - e.x, dz = pz - e.z;
   const nx = dx / dist, nz = dz / dist;
   const dot = fX * nx + fZ * nz;
-  return dot > VISION_CONE_COS;
+  if(dot > VISION_CONE_COS) return true;
+  if(_sneaking) _stealthNearT=performance.now();
+  return false;
 }
 // v63 — Crouch visuals. Eye height lowers from EYE_STAND (0.92) to EYE_CROUCH
 // (0.60) while sneaking, smoothed via exponential lerp at CROUCH_LERP_RATE.
@@ -771,7 +864,7 @@ function _sneakDetectMult(){
   if(!_sneaking) return 1.0;
   const fin = attrEff('finesse');
   const mult = SNEAK_DETECT_BASE - SNEAK_DETECT_PER_FINESSE * fin;
-  return Math.max(0.25, mult)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1)*(1-.03*(typeof linePieces==='function'?linePieces('light'):0)); // S552 — the dark hood; S564 — 3% a light piece worn
+  return inTheDarkMult()*Math.max(0.25, mult)*(1-.4*skillLv('stealth')/100)*((typeof cloakOn==='function'&&cloakOn('hood'))?.95:1)*(1-.03*(typeof linePieces==='function'?linePieces('light'):0)); // S552 — the dark hood; S564 — 3% a light piece worn
 }
 // Toggle sneak. Called from the Ctrl keydown handler. No-ops if a modal
 // is open (handler-level guard handles that, but defensive here too).
@@ -1001,7 +1094,7 @@ function tickArrowMotion(arrow, dt, isOW){
   ud.life -= dt;
   if(ud.life <= 0) return 'expired';
   // Apply gravity to vy (in-place; vy on the userData is the live velocity).
-  ud.vy = (ud.vy || 0) - ARROW_GRAVITY * dt;
+  ud.vy = (ud.vy || 0) - arrowGravity(arrow) * dt; /* S982 — Long eye halves it past 50 m */
   // Sub-step motion to catch fast arrows through thin walls. ARROW_SPEED 28
   // × dt 0.016 ≈ 0.45u per frame; tile walls are 1.0u thick so single-step
   // is normally fine, but a 60fps drop or a fast-moving arrow could tunnel.

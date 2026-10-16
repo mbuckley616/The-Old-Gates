@@ -9,7 +9,9 @@
 // Melee hits use applyMeleeDamage — simpler: buff mults → flat def → floor at 1, no resist (no elemental school).
 
 function applySpellDamage(e, sp, tier){
-  const baseDmg = spellMag(sp,tier) + Math.floor(foeRand(e)*10) + level*(sp.dmgLvl||3); // S480 — the spread on the struck foe's stream
+  const baseDmg = (spellMag(sp,tier) + Math.floor(foeRand(e)*10)) * (SKILL_DEF[sp.school]?skillMult(sp.school):1); // S480 — the spread on the struck foe's stream
+  /* S941 — the school's skill sets the power; the flat level term is gone (skills and perks A). A hit on an alert foe is a use. */
+  if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
   const resistMult = (e.resist && e.resist[sp.school] !== undefined) ? e.resist[sp.school] : 1.0;
   // Dormant enemies (Gargoyle statue form) take 2× damage — rewards the player for spotting and attacking first.
   const dormantMult = e.dormant ? 2.0 : 1.0;
@@ -138,7 +140,8 @@ function meleeDamageChain(e,o){
   const mightMult=1+(attrEff('might')*ATTR_DMG_PER_POINT);
   const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1); // S322 — Firemoss and Caor Dubh everywhere
   const powerMult=o.isPow?POWER_DMG_MULT:1.0;
-  return Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*o.shMult*o.row.dmg*o.chainDmg);
+  // S941 — the weapon's skill carries the damage, ×0.64 at 5 to ×1.4 at 100; the flat level × 1.5 is gone (skills and perks A)
+  return Math.floor((lo+Math.floor(foeRand(e)*(hi-lo)))*skillMult(weaponSkill(w))*mightMult*meleeBuff*powerMult*o.shMult*o.row.dmg*o.chainDmg);
 }
 function staggerFlash(e){
   const body=enemyBodyMesh(e),m=body&&body.material;
@@ -183,9 +186,11 @@ function resolvePlayerStrike(_isPow){
     }
     // v71 — a Shieldbearer's front takes SHIELDBEARER_FRONT_BLOCK of the blow (shieldFrontMult is 1 for the rest)
     const shMult=riposteOpen(e)?1:shieldFrontMult(e);
+    const _wasAlert=!!e.alert; /* S941 — a hit on a foe already alert is a use of the weapon's skill */
     const rawDmg=meleeDamageChain(e,{isPow:_isPow,shMult,row,chainDmg});
     const info=applyMeleeDamage(e,rawDmg);
     const dmg=info.dmg;
+    {const ws=weaponSkill(EQ.weapon);if(_wasAlert&&ws)skillUse(ws,(info.riposte||info.finisher)?3:1,e);else if(info.backstab)skillUse('stealth',3,e);}
     e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg)); // a dazed beast (S634) takes double
     if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
     e.alert=true;if(inW)alertPack(e,16);
@@ -401,7 +406,7 @@ function executeStrike(e, rawDmg, now){
     }
     sndParry();
     showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');
-    lvAct.parries++;
+    lvAct.parries++;skillUse('guard',3,e);
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
     // v61c7 — Parry stamina cost rebalanced. WAS rawDmg (100% — meaning a
@@ -429,8 +434,8 @@ function executeStrike(e, rawDmg, now){
     const reduction = _blockBoost(shieldBlock);
     const blockedDmg = Math.max(1, Math.round(rawDmg*(1-reduction)));
     const absorbed = rawDmg - blockedDmg;
-    const finalDmg = _warded(blockedDmg, e);
-    PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;
+    const finalDmg = _warded(blockedDmg, e);skillUse('guard',1,e);
+    PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;armourUse();
     // v61c7 — Held block stamina also scales with Resolve (was raw `absorbed`).
     // Held block stays MORE expensive than parry (because 0.65 absorbed beats
     // 0.20 parry baseline at any Resolve level), so perfect timing remains the
@@ -449,7 +454,7 @@ function executeStrike(e, rawDmg, now){
     // Unblocked hit — apply damage reduction buffs
     const finalDmg = _warded(rawDmg, e);
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
-    sndPlayerHurt(); lvAct.damageTaken += finalDmg;
+    sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
     playerPostureHit(rawDmg*_row.posture, now/1000, false); // S281; S940 — the row's multiple (1.5 for every family today)
     e._lunge=.3; // v80 — every strike moves the body
@@ -547,7 +552,7 @@ function tickMasterSlam(e,dt,dist,now){
     const d=Math.hypot(px-e.x,pz-e.z);
     if(d>=SLAM_R){e._slamLast='clear';showMsg('The ground cracks where you stood.','#c8e88a');return false;}
     if(rollUntouchable(now/1000)){e._slamLast='rolled';showMsg('You roll through the blow.','#c8e88a');return false;}
-    const dmg=_warded(slamBlow(e),e);PHP=Math.max(0,PHP-dmg);hurtT=.5;lastHitT=now/1000;lvAct.damageTaken+=dmg;e._slamLast=dmg;
+    const dmg=_warded(slamBlow(e),e);PHP=Math.max(0,PHP-dmg);hurtT=.5;lastHitT=now/1000;lvAct.damageTaken+=dmg;armourUse();e._slamLast=dmg;
     if(typeof sndPlayerHurt==='function')sndPlayerHurt();updateHUD();
     showMsg(`${e.name} slams the ground under you: ${dmg}.`,'#ff6060');
     if(PHP<=0&&!dead)playerDead();

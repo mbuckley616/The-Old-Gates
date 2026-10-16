@@ -386,7 +386,7 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
   q('#rs-marks').innerHTML=REST_MARKS.map(([h,t],i)=>{const on=restMarkMin(h)===min;return `<button type="button" data-h="${h}" style="background:${on?'rgba(122,31,16,.1)':'none'};border:1px solid ${on?'#7a1f10':'#a89060'};border-radius:2px;font:13px Georgia,serif;color:${on?'#7a1f10':'#3a2c18'};cursor:pointer;padding:2px 8px;font-variant:small-caps"><span style="font-size:10px;color:#8a7050">${i+1}</span> ${t} <small style="font-style:italic;color:#8a7050">${restClock(h).replace(':00','')}</small></button>`;}).join('');
   q('#rs-marks').querySelectorAll('button').forEach(b=>b.onclick=()=>{restSlip.min=restMarkMin(+b.dataset.h);restSlipDraw();});
   const nowM=worldState.gameTimeMinutes||0,abs=worldState.gameTimeAbsMinutes||0,endTod=(nowM+min)%1440,endDay=gameDateLine(abs+min,endTod,'day');
-  const at=`<b>${restClock(endTod/60)}</b>, ${endDay}`,ready=xp>=xpNext,row=(ic,txt,r,col)=>`<div style="display:flex;gap:10px;align-items:baseline${col?';color:'+col:''}"><span style="width:16px;text-align:center;color:#9a7020">${ic}</span><span style="flex:1">${txt}</span><span style="font-style:italic;font-size:12px;color:#8a7050">${r||''}</span></div>`;
+  const at=`<b>${restClock(endTod/60)}</b>, ${endDay}`,ready=levelReady(),row=(ic,txt,r,col)=>`<div style="display:flex;gap:10px;align-items:baseline${col?';color:'+col:''}"><span style="width:16px;text-align:center;color:#9a7020">${ic}</span><span style="flex:1">${txt}</span><span style="font-style:italic;font-size:12px;color:#8a7050">${r||''}</span></div>`;
   let out='';
   if(sleep){const p=restPreview(min/60),v=(l,a,b,m)=>a>=b&&a>=m?`<span style="font-variant:small-caps">${l}</span> full`:`<span style="font-variant:small-caps">${l}</span> <s style="color:#8a7050">${Math.round(a)}</s> ${Math.round(b)} <span style="color:#8a7050">of ${Math.round(m)}</span>`;
     out=row('☀',`You wake at ${at}.`,min>=360?'a full night':'a short sleep')+
@@ -822,8 +822,10 @@ function shopMul(){try{if(typeof WORLD==='undefined')return 1;
 // S339 (Michael's A on #61) — Charisma's barter, as its card says: 1% a point off what you pay and on what you're paid
 // at a counter, up to a quarter. A bought-back item keeps the price you were paid for it, so the two can't be played
 // against each other.
-const BARTER_PCT=.01,BARTER_MAX=.25;
-function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT))+(capeCounter()?.02:0);}
+// S953 — skills and perks A: Charisma 0.5% a point (was 1%), still to a quarter; Speech 0.2% a level on top, to 20%
+const BARTER_PCT=.005,BARTER_MAX=.25,SPEECH_PCT=.002,SPEECH_MAX=.2;
+function speechPct(){return Math.min(SPEECH_MAX,Math.max(0,(typeof skillLv==='function'?skillLv('speech'):0)*SPEECH_PCT));}
+function barterPct(){return Math.min(BARTER_MAX,Math.max(0,(ATTRS.charisma||0)*BARTER_PCT))+speechPct()+(perk('speech',25)?.05:0)+(capeCounter()?.02:0);} /* S973 — Haggle, Speech 25 */
 // S552 — which cloaks a counter sells (#148 B): the traveller's at any armourer or goods shop; the dark hood in towns and
 // cities; oilskin in ports; fur in the Mark; the short cape in Aurenne; the pilgrim's grey where the town has a church
 function cloaksFor(h){if(!h||(h.type!=='armor'&&h.type!=='misc'))return [];const out=['wool'];
@@ -861,7 +863,7 @@ function buyItem(it){
   bagAdd(item);
   // v68 — if this was a bought-back item, remove it from the merchant overlay.
   if(it._boughtBack) _consumeBuyBack(it, _bundleQty);
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndBuyItem(it);
   showMsg(`Bought ${it.name} for ${_cost}🪙`,'#c8a84a');
   renderShop();
@@ -889,7 +891,7 @@ function sellItem(i,sp){
   // doesn't drop a 12-bundle into buy-back).
   _pushBuyBack({...it, qty:1}, finalSp);
   it.qty--;if(it.qty<=0)BAG.splice(i,1);
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndGoldJingle();
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${it.name} for ${finalSp}🪙${tithe?` (the Crown's twentieth, ${tithe})`:''}`,'#44ee44');
@@ -916,7 +918,7 @@ function _buyStackable(it, units, piecesPerUnit, unitPrice){
     return;
   }
   gold-=spent;
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndBuyItem(it);
   const totalPieces = piecesPerUnit>1 ? piecesPerUnit*bought : bought;
   showMsg(`Bought ${totalPieces}× ${it.name} for ${spent}🪙`,'#c8a84a');
@@ -937,7 +939,7 @@ function _sellStackable(it, bagIdx, units, unitPrice){
   _pushBuyBack({...live, qty:sellPieces}, unitPrice); // buy-back priced per piece
   live.qty-=sellPieces;
   if(live.qty<=0) BAG.splice(bagIdx,1);
-  lvAct.transactions++;
+  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
   sndGoldJingle();
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${sellPieces}× ${it.name} for ${gain}🪙`,'#44ee44');

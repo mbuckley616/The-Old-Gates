@@ -37,6 +37,7 @@ function doBash(){
     const dist = Math.hypot(ex, ez);
     if(dist >= BASH_RANGE) continue;
     if((ex*fwdX + ez*fwdZ)/(dist||1) <= BASH_CONE_COS) continue;  // front cone only
+    if(e.alert)skillUse('guard',1,e); /* S941 — a bash is a Guard use */
     e.alert = true;
     // Shieldbearer with guard up — immune. Flag for a one-shot feedback toast.
     if(e.shieldUp){ anyGuard = true; continue; }
@@ -138,9 +139,8 @@ function fireArrow(strength){
   const drawMult = BOW_DAMAGE_MULT_MIN + (BOW_DAMAGE_MULT_MAX - BOW_DAMAGE_MULT_MIN) * strength;
   // Finesse — bow's primary attribute, mirrors Might’s melee scaling (ATTR_DMG_PER_POINT).
   const finesseMult = 1 + attrEff('finesse') * BOW_FINESSE_DMG;
-  // Per-level component (matches melee's level×1.5 floor).
-  const lvlFloor = Math.floor(level * 1.0);
-  const rawDmg = Math.max(1, Math.floor((bowRoll + arrowRoll + lvlFloor) * drawMult * finesseMult));
+  // S941 — the Bow skill carries the damage (skills and perks A); the per-level floor is gone.
+  const rawDmg = Math.max(1, Math.floor((bowRoll + arrowRoll) * skillMult('bow') * drawMult * finesseMult));
   // ── Resolve damage type ───────────────────────────────────────
   // Arrow overrides bow's wType (per lore: silver/broadhead arrows). Iron
   // arrows omit wType → falls through to bow's 'pierce'.
@@ -197,11 +197,14 @@ function fireArrow(strength){
     arrowDmg: rawDmg,
     // S480 — the roll's terms, so the hit rolls the spread on the struck foe's stream (arrowRawFor); arrowDmg is the roll
     // for a target with no id
-    roll: {bLo: bowLo, bHi: bowHi, aLo, aHi, lv: lvlFloor, m: drawMult * finesseMult},
+    roll: {bLo: bowLo, bHi: bowHi, aLo, aHi, lv: 0, m: skillMult('bow') * drawMult * finesseMult}, /* S941 — no level floor; the Bow skill in the multiplier */
     wType: wTypeResolved,
     // Carry source-bow ref for hit-message attribution (no need to retain
     // ammo ref — damage was already rolled).
     bowName: bow.name,
+    // S982 — Long eye measures the flight from here; Through is a full draw at Bow 100
+    longEye: perk('bow',75), x0: arrowGroup.position.x, z0: arrowGroup.position.z,
+    through: perk('bow',100) && strength >= 1,
   };
   sc.add(arrowGroup);
   if(isOW) ZB.push(arrowGroup); else BALLS.push(arrowGroup);
@@ -294,12 +297,12 @@ function killE(e,tag=''){
 // v80 S9 — experience banks; the level is taken when you sleep (inn, home, camp bedroll, fort cot).
 let _lvlReadyShown=false;
 function chkLvl(){
-  try{const b=document.getElementById('lvready');if(b)b.style.display=(xp>=xpNext)?'inline-block':'none';}catch(e){}
-  if(xp>=xpNext&&!_lvlReadyShown){_lvlReadyShown=true;showMsg('You feel ready to advance — find a bed and rest.','#e8d8a0');addLog('✨','Ready to level. Rest in a bed.');}
+  try{const b=document.getElementById('lvready');if(b)b.style.display=levelReady()?'inline-block':'none';}catch(e){} /* S952 — the level comes on skill marks, not xp */
+  if(levelReady()&&!_lvlReadyShown){_lvlReadyShown=true;showMsg('You feel ready to advance — find a bed and rest.','#e8d8a0');addLog('✨','Ready to level. Rest in a bed.');}
 }
 function takeLevelIfReady(){
-  if(xp<xpNext||luOpen)return false;
-  xp-=xpNext;level++;xpNext=Math.floor(xpNext*1.4);maxStamina+=10;stamina=Math.min(stamina+10,maxStamina);_lvlReadyShown=false;try{const b=document.getElementById('lvready');if(b)b.style.display=(xp>=xpNext)?'inline-block':'none';}catch(e){}
+  if(!levelReady()||luOpen)return false;
+  levelMarks=Math.max(0,levelMarks-marksNeeded(level));level++;maxStamina+=10;stamina=Math.min(stamina+10,maxStamina);_lvlReadyShown=false;try{const b=document.getElementById('lvready');if(b)b.style.display=levelReady()?'inline-block':'none';}catch(e){}
   sndLevelUp();openLevelUp();return true;
 }
 // S685 — the caster's own rolls (co-op rules): an Impression's wild chance, its pattern and a scatter's swing draw from a
@@ -331,10 +334,11 @@ function castSpell(){
   // Block re-cast while hand animation is in flight — prevents double-spawns and tangled state
   if(isCasting()){return;}
 
-  const actualCost=Math.round(spellCost(sp,tier)*_buffMult('spellCost',1));
+  const actualCost=Math.round(spellCost(sp,tier)*_buffMult('spellCost',1)*(SKILL_DEF[sp.school]?1.4-.8*skillLv(sp.school)/100:1)); /* S941 — the school's skill sets the cost */
   if(mana<actualCost){showMsg(`Not enough mana! (need ${actualCost})`,'#6688cc');return;}
   if(spCd>0){showMsg('Cooling down...','#6688cc');return;}
   mana-=actualCost;_offenceS=playClockS; /* S408 */
+  if(sp.role==='buff'&&SKILL_DEF[sp.school])skillUse(sp.school,1,'cast'); /* S941 — a cast that does something */
   spCd=spellCooldown(sp,tier);
 
   const dispName=spellDisplayName(sp,tier);
@@ -454,7 +458,8 @@ function castSpell(){
     }
     // ── Heal spells (Leigheas) ───────────────────────────────────
     else if(sp.role==='heal'){
-      const heal=Math.round(spellHealMag(sp,tier)+level*(sp.healLvl||0));
+      const heal=Math.round(spellHealMag(sp,tier)*(SKILL_DEF[sp.school]?skillMult(sp.school):1)); /* S941 — the school's skill, not the level */
+      if(PHP<effMaxHP())skillUse(sp.school,1,'heal');
       PHP=Math.min(effMaxHP(),PHP+heal);
       const TIER_LIGHT=[2.5, 3.8, 5.5][tier-1];
       const TIER_RANGE=[5, 7, 9][tier-1];
@@ -789,7 +794,7 @@ function updateHUD(){
   {const tl=document.getElementById('hbt');if(tl)tl.style.width=(hpTailStep(PHP/emHP,performance.now())*100)+'%';}
   document.getElementById('mb').style.width=(mana/emMana*100)+'%';document.getElementById('mv').textContent=Math.floor(mana);
   document.getElementById('stb').style.width=(stamina/emSt*100)+'%';
-  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=xp;document.getElementById('xn').textContent=xpNext;document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
+  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=+levelMarks.toFixed(2);document.getElementById('xn').textContent=marksNeeded(); /* S952 — the level's marks */document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
   // Active buffs line
   const buffEl=document.getElementById('buff-bar');
   if(buffEl){

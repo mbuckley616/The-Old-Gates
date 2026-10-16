@@ -223,19 +223,53 @@
   const TOWN_KINDS=['cull','retrieve','deliver','find','road'];
   // S457 — the lord's own job and a faction's service at the same seat are kept apart: the job in hand is the open quest
   // from this site that is not a service, and a service asks for a fresh one (`fresh`) to dress in its own words
+  // S985 — a lord's job reads the world's own data for its gates and towns, never what has loaded (the S533 rule): the kind it
+  // rolled, and which gate or town it names, come out the same in every game. A gate's place here is where the world draws it:
+  // a generated gate at its own x and z, a home fort on the straight line of its road at its fortAt, a home gate by its anchor.
+  // The loaded cell nudges each a little off roads and pads; the job still sends you to the real door once it is placed.
+  function fixedDoorSpot(e){
+    const fd=e.kind==='fort_door'&&HOME_ROAD_DEFS.find(d=>d.fort===e.seed);
+    if(fd){const a=siteAnywhere(fd.a),b=siteAnywhere(fd.b);if(a&&b){const u=fd.fortAt==null?.5:fd.fortAt;return {x:a.x+(b.x-a.x)*u,z:a.z+(b.z-a.z)*u};}}
+    if(e.zone==='gen')return {x:e.x,z:e.z};
+    const an=ZONE_ANCHOR[e.zone]||ZONE_ANCHOR.overworld,ids={forest:['thorngate','la_porte_grise'],ironhaven:['ironhaven']}[e.zone]||['ashenmoor'];
+    const ss=ids.map(siteAnywhere);if(ss.some(t=>!t))return null;
+    const ax=ss.reduce((v,t)=>v+t.x,0)/ss.length+(e.zone==='forest'?40:0),az=ss.reduce((v,t)=>v+t.z,0)/ss.length;
+    return {x:ax+(e.x-an.local)*an.scale,z:az+(e.z-an.local)*an.scale};}
+  function doorsNearFixed(site,maxD){const [ci,cj]=cellOf(site.x,site.z),out=[];
+    for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const k=cellKey(i,j);
+      for(const e of getCell(i,j).doors){if(e.wet||e.cell!==k)continue;const p=fixedDoorSpot(e);if(!p)continue;const d=Math.hypot(p.x-site.x,p.z-site.z);if(d<maxD)out.push({e,p,d});}}
+    return out.sort((a,b)=>a.d-b.d||a.e.seed-b.e.seed);}
+  function sitesNearFixed(site,maxD){const [ci,cj]=cellOf(site.x,site.z),out=[];
+    for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;
+      for(const t of getCell(i,j).sites)if(t.id!==site.id&&t.pad>0&&Math.hypot(t.x-site.x,t.z-site.z)<maxD)out.push(t);}
+    return out.sort((a,b)=>Math.hypot(a.x-site.x,a.z-site.z)-Math.hypot(b.x-site.x,b.z-site.z)||(a.id<b.id?-1:1));}
+  // S1002 — the road job's road, from the cell's own data (QA's note, S533's rule): every road that ends at a settlement is in
+  // its own cell's `roadDefs` (the tree, the extras and the border roads; the home cell's are HOME_ROAD_DEFS), so the first of
+  // them is the same whatever has loaded, where `ROADS.find` read the loaded roads only. Its line is `buildRoad`'s spline, the
+  // same bends seeded by the road itself (S619), worked out here without building it (`roadfixed` proves the two the same).
+  function siteCellFixed(site){if(typeof site.cell==='string'){const m=site.cell.split(',');return getCell(+m[0],+m[1]);}const [i,j]=cellOf(site.x,site.z);return getCell(i,j);}
+  function roadOutFixed(site){const c=siteCellFixed(site);return c.roadDefs.find(d=>d.via!=='spur'&&(d.a===site.id||d.b===site.id))||null;}
+  function roadLineFixed(def,c){const by=id=>(c&&c.sites.find(t=>t.id===id))||siteAnywhere(id);const A=SITE[def.a]||by(def.a),B=SITE[def.b]||by(def.b);if(!A||!B)return null;
+    const hi=HOME_ROAD_DEFS.indexOf(def);const ri=hi>=0?hi+1:1000+String(def.a+'|'+def.b+'|'+(def.via||'')).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%50000;
+    const dx=B.x-A.x,dz=B.z-A.z,L=Math.hypot(dx,dz),nx=-dz/L,nz=dx/L,ctrl=[{x:A.x,z:A.z}];
+    for(let k=1;k<=3;k++){const t=k/4,off=(_smoothNoise(ri*37+k*11,ri*5,SEED+40,1)-.5)*2*L*.11;ctrl.push({x:A.x+dx*t+nx*off,z:A.z+dz*t+nz*off});}
+    ctrl.push({x:B.x,z:B.z});const pts=[],n=ctrl.length;
+    for(let i=0;i<n-1;i++){const p0=ctrl[Math.max(0,i-1)],p1=ctrl[i],p2=ctrl[i+1],p3=ctrl[Math.min(n-1,i+2)];const steps=Math.max(2,Math.round(Math.hypot(p2.x-p1.x,p2.z-p1.z)/6));
+      for(let sI=0;sI<steps;sI++)pts.push(catmull(p0,p1,p2,p3,sI/steps));}
+    pts.push({x:B.x,z:B.z});return pts;}
   function townQuestFor(site,force,fresh,key){
     const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
     const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */
     const lord=lordFor(site);const r=seededRng('tq',key||id);const [ci,cj]=cellOf(site.x,site.z);const c=getCell(ci,cj); /* S678 — the job's kind, place and pay roll on its own id (a faction's service on the service's), not Math.random */
     const kind=force||TOWN_KINDS[Math.floor(r()*TOWN_KINDS.length)];const tier=Math.floor(level/3);const reward=40+tier*30+Math.floor(r()*30);
 const giver=`${lord.title} ${lord.name}`;
-    const biome=dominantRegion(site.x,site.z).r.biome;
+    const biome=lairBiome(site); /* S985 — the cells' regions, not the loaded ones (S701) */
     if(kind==='cull'){const t=({tundra:'Snow Wolf',fen:'Bog Crawler',swamp:'Bog Crawler',dunes:'Sand Scorpion',wasteland:'Ash Hound',moor:'Kobold',forest:'Wolf',autumn:'Boar'}[biome])||'Wolf';const n=4+tier;return {id,giver,giverSite:site.id,title:`${plural(2,t)} at ${site.name}`,desc:`${lord.name}: "${plural(2,t)} have been at the flocks. Kill ${n} of them within sight of the walls and the ${site.kind} will pay."`,objective:`Kill ${n} ${plural(n,t)} near ${site.name}`,kind,data:{target:t,need:n,have:0,x:site.x,z:site.z,radius:520},reward};}
-    if(kind==='retrieve'){const doors=nearDoors(site,700,false);const e=doors[Math.floor(r()*Math.min(3,doors.length))];if(e){const p=dungeonWorldPos[e.seed]||{x:e.x,z:e.z};const item=pick(r,["my mother's ring","the parish silver","the reeve's seal","a bolt of dyed cloth","the old survey"]);return {id,giver,giverSite:site.id,title:`${item.charAt(0).toUpperCase()+item.slice(1)}`,desc:`${lord.name}: "Thieves took ${item} and ran for ${e.canonicalName||'an old gate'}, ${compassWord(p.x-site.x,p.z-site.z)} of here. It'll be dropped by the door — they never carry far. Bring it back."`,objective:`Recover ${item} near ${e.canonicalName||'the old gate'}`,kind,data:{x:p.x+7,z:p.z+5,got:false,item},reward:reward+20};}}
-    if(kind==='deliver'){const others=nearSites(site,900).filter(t=>t.pad>=45&&t.kind!=='portal');const t=others[Math.floor(r()*Math.min(4,others.length))];if(t){const tl=lordFor(t);return {id,giver,giverSite:site.id,title:`A letter for ${tl.title} ${tl.name}`,desc:`${lord.name}: "Carry this to ${tl.title} ${tl.name} at ${t.name}, ${compassWord(t.x-site.x,t.z-site.z)} of here. Put it in their hand, no one else's."`,objective:`Deliver the letter to ${tl.title} ${tl.name} at ${t.name}`,kind,data:{siteId:t.id,who:tl.name,x:t.x,z:t.z,done:false},reward};}}
-    if(kind==='find'){const bedsAll=beds.filter(b=>Math.hypot(b.x-site.x,b.z-site.z)<700);const names=NAMES[site.reg||'irish']||NAMES.irish;const who=pick(r,r()<.5?names.m:names.f);const spot=bedsAll[0]?{x:bedsAll[0].x,z:bedsAll[0].z}:{x:site.x+Math.cos(r()*6.28)*380,z:site.z+Math.sin(r()*6.28)*380};return {id,giver,giverSite:site.id,title:`Where is ${who}?`,desc:`${lord.name}: "${who} went out ${compassWord(spot.x-site.x,spot.z-site.z)} three days ago and hasn't come back. Find them — there's a camp out that way — and send them home."`,objective:`Find ${who} ${compassWord(spot.x-site.x,spot.z-site.z)} of ${site.name}`,kind,data:{who,x:spot.x,z:spot.z,found:false,spawned:false},reward};}
+    if(kind==='retrieve'){const doors=doorsNearFixed(site,700);const de=doors[Math.floor(r()*Math.min(3,doors.length))];if(de){const e=de.e,p=dungeonWorldPos[e.seed]||de.p;const item=pick(r,["my mother's ring","the parish silver","the reeve's seal","a bolt of dyed cloth","the old survey"]);return {id,giver,giverSite:site.id,title:`${item.charAt(0).toUpperCase()+item.slice(1)}`,desc:`${lord.name}: "Thieves took ${item} and ran for ${e.canonicalName||'an old gate'}, ${compassWord(p.x-site.x,p.z-site.z)} of here. It'll be dropped by the door — they never carry far. Bring it back."`,objective:`Recover ${item} near ${e.canonicalName||'the old gate'}`,kind,data:{x:p.x+7,z:p.z+5,got:false,item,seed:e.seed,fixed:!dungeonWorldPos[e.seed]},reward:reward+20};}}
+    if(kind==='deliver'){const others=sitesNearFixed(site,900).filter(t=>t.pad>=45&&t.kind!=='portal');const t=others[Math.floor(r()*Math.min(4,others.length))];if(t){const tl=lordFor(t);return {id,giver,giverSite:site.id,title:`A letter for ${tl.title} ${tl.name}`,desc:`${lord.name}: "Carry this to ${tl.title} ${tl.name} at ${t.name}, ${compassWord(t.x-site.x,t.z-site.z)} of here. Put it in their hand, no one else's."`,objective:`Deliver the letter to ${tl.title} ${tl.name} at ${t.name}`,kind,data:{siteId:t.id,who:tl.name,x:t.x,z:t.z,done:false},reward};}}
+    if(kind==='find'){const bedsAll=beds.filter(b=>Math.hypot(b.x-site.x,b.z-site.z)<700).sort((a,b)=>Math.hypot(a.x-site.x,a.z-site.z)-Math.hypot(b.x-site.x,b.z-site.z)||a.x-b.x||a.z-b.z); /* S1002 — the nearest camp, not the first loaded */const names=NAMES[site.reg||'irish']||NAMES.irish;const who=pick(r,r()<.5?names.m:names.f);const spot=bedsAll[0]?{x:bedsAll[0].x,z:bedsAll[0].z}:{x:site.x+Math.cos(r()*6.28)*380,z:site.z+Math.sin(r()*6.28)*380};return {id,giver,giverSite:site.id,title:`Where is ${who}?`,desc:`${lord.name}: "${who} went out ${compassWord(spot.x-site.x,spot.z-site.z)} three days ago and hasn't come back. Find them — there's a camp out that way — and send them home."`,objective:`Find ${who} ${compassWord(spot.x-site.x,spot.z-site.z)} of ${site.name}`,kind,data:{who,x:spot.x,z:spot.z,found:false,spawned:false},reward};}
     // road: a bandit camp on the nearest road out
-    const rd=ROADS.find(rr=>rr.def.a===site.id||rr.def.b===site.id);const q=rd?rd.pts[Math.min(rd.pts.length-1,Math.floor(rd.pts.length*.5))]:{x:site.x+300,z:site.z};return {id,giver,giverSite:site.id,title:`The road out of ${site.name}`,desc:`${lord.name}: "Bandits have made a camp on the road, ${compassWord(q.x-site.x,q.z-site.z)} of here. Carts won't come. Clear it."`,objective:`Clear the bandit camp on the road ${compassWord(q.x-site.x,q.z-site.z)} of ${site.name}`,kind:'road',data:{x:q.x,z:q.z,count:3+tier,have:0,spawned:false},reward:reward+30};
+    const rdef=roadOutFixed(site),rpts=rdef&&roadLineFixed(rdef,siteCellFixed(site));const q=rpts?rpts[Math.min(rpts.length-1,Math.floor(rpts.length*.5))]:{x:site.x+300,z:site.z}; /* S1002 — from the cell's data, not ROADS */return {id,giver,giverSite:site.id,title:`The road out of ${site.name}`,desc:`${lord.name}: "Bandits have made a camp on the road, ${compassWord(q.x-site.x,q.z-site.z)} of here. Carts won't come. Clear it."`,objective:`Clear the bandit camp on the road ${compassWord(q.x-site.x,q.z-site.z)} of ${site.name}`,kind:'road',data:{x:q.x,z:q.z,count:3+tier,have:0,spawned:false,ra:rdef?rdef.a:null,rb:rdef?rdef.b:null},reward:reward+30};
   }
   function lordTopics(site){
     const _st=TS(site),_lp=nationOf(...cellOf(site.x,site.z)).people;
@@ -250,7 +284,7 @@ const giver=`${lord.title} ${lord.name}`;
   function qOnKill(e,ctx){
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='cull'&&ctx==='zone'&&e.name===q.data.target&&Math.hypot(e.x-q.data.x,e.z-q.data.z)<q.data.radius){q.data.have++;if(q.data.have>=q.data.need)qComplete(q);}
-      if(q.kind==='road'&&e._questTag===q.id){q.data.have++;if(q.data.have>=q.data.count){qComplete(q);const rd=ROADS.find(rr=>rr.def.a===q.giverSite||rr.def.b===q.giverSite);if(rd)markRoadCleared(rd.def.a,rd.def.b);}}
+      if(q.kind==='road'&&e._questTag===q.id){q.data.have++;if(q.data.have>=q.data.count){qComplete(q);if(q.data.ra)markRoadCleared(q.data.ra,q.data.rb);else{const rd=ROADS.find(rr=>rr.def.a===q.giverSite||rr.def.b===q.giverSite);if(rd)markRoadCleared(rd.def.a,rd.def.b);}}} /* S1002 — the job's own road; a job saved before it, the first loaded as before */
     }
   }
   function qOnTalk(def){
@@ -262,6 +296,8 @@ const giver=`${lord.title} ${lord.name}`;
   }
   function qTick(){
     for(const q of qActive()){if(q.done)continue;
+      if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
+        if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
       if(q.kind==='find'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<200){q.data.spawned=true;const site=siteAnywhere(q.giverSite);const def=makeDef(site,site.reg||'irish',Math.random,'Villager',q.data.who,{x:q.data.x+1.5,z:q.data.z,bCol:0x4a3a2a,sCol:0xd4a878,keepName:true,topics:q.data.topics||[{label:'People are looking for you.',response:"Are they. I only meant to sit a while."}]});def._lost=true;if(q.rival){def.people='markman';def.sCol=0xf0dcc8;def.hairCol=0xd8c8a0;def.bCol=0x2a2a30;def.role=({crown:'Warden',league:'Reeve',compact:'Factor'})[q.faction]||def.role;Object.defineProperty(def,'greeting',{configurable:true,value:["Aye. Thought it'd be you. Sit, if you're stopping — I'm not getting up yet."]});Object.defineProperty(def,'topics',{configurable:true,get(){return [...(q.data.topics||[]),{label:'Farewell.',bye:true}];}});} /* S461 — Finding 10: her rank, her own greeting, her own topic */const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(q.data.x+1.5,worldH(q.data.x+1.5,q.data.z),q.data.z);q._npc=n;}
       if(q.kind==='road'&&!q.data.spawned&&Math.hypot(px-q.data.x,pz-q.data.z)<180){q.data.spawned=true;const pr=seededRng('place',q.id);for(let k=0;k<q.data.count;k++){const a=pr()*Math.PI*2;const ex=q.data.x+Math.cos(a)*8,ez=q.data.z+Math.sin(a)*8;const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,q.enemy||(k===0&&level>=5?'Bandit Captain':'Bandit'),null)),q.id+':foe:'+k); /* S504 — keyed by the job (co-op rules) */e._questTag=q.id;if(q.enemyName){e.name=q.enemyName;e.displayName=q.enemyName;}e.alert=false;e.homeX=q.data.x;e.homeZ=q.data.z;ZONES.world.enemies.push(e);}
@@ -444,7 +480,7 @@ const giver=`${lord.title} ${lord.name}`;
     const god=godOf(site);parts.push({geo:new THREE.TorusGeometry(5.2,.3,6,24),color:c(0xe0d8c8),y:5.35,rx:Math.PI/2},{geo:new THREE.CylinderGeometry(.9,1.1,1.1,10),color:c(0xd0c8b8),y:1.45},{geo:new THREE.BoxGeometry(1.6,.12,1.0),color:c(0xe8e0d0),y:2.05});
     const m=poiLod(group,shrineGeoHi(),mergeParts(parts),cx,y,cz); // S204 — fluted columns, bases and capitals, a moulded altar
     const flame=new THREE.Mesh(new THREE.ConeGeometry(.22,.6,6),new THREE.MeshBasicMaterial({color:0xfff0b0}));flame.position.set(cx,y+2.45,cz);flame.userData.noBake=true;group.add(flame);const l=regLight(0xfff0c0,1.4,12,site.id);l.position.set(cx,y+2.8,cz);
-    sol.push({cx,cz,rx:.6,rz:.6});S.altar={x:cx,z:cz};S.god=god;site.name=`Shrine of ${god.name}`;
+    sol.push({cx,cz,rx:.6,rz:.6});S.altar={x:cx,z:cz};S.god=god;if(godShrineOwner(god)===site.id)site.name=`Shrine of ${god.name}`;
     { // the steps and the floor are footholds: two rings, then the dais
       ZONES.world.platforms.push({x0:cx-7.4,x1:cx+7.4,z0:cz-7.4,z1:cz+7.4,y:y+.5,shrine:site.id},{x0:cx-6.4,x1:cx+6.4,z0:cz-6.4,z1:cz+6.4,y:y+.9,shrine:site.id});
       const dome=new THREE.Mesh(new THREE.SphereGeometry(5.6,20,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshLambertMaterial({color:god.tint,side:THREE.DoubleSide}));dome.position.set(cx,y+5.4,cz);dome.castShadow=true;dome.userData.noBake=true;group.add(dome);S._domeSep=true;}
@@ -454,6 +490,12 @@ const giver=`${lord.title} ${lord.name}`;
   // S338 (Michael's A on #60) — the Boon of Renewal: health, stamina and mana each come back half a point a second while
   // it lasts (a Mild tonic's rate, over the boon's whole span); the main loop reads it beside the regen tonics
   const GODS=[{key:'muir',name:'An Mhuir',en:'the Sea',boon:{type:'swiftness',mult:1.25,label:'the Boon of the Road'},tint:0x7a9ab0},{key:'speir',name:'An Spéir',en:'the Sky',boon:{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},tint:0xa8b8d0},{key:'beithigh',name:'Na Beithígh',en:'the Beasts',boon:{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},tint:0x8a7a5a},{key:'cloch',name:'An Chloch',en:'the Stone',boon:{type:'warding',mult:.75,label:'the Boon of Stone'},tint:0x8a8478},{key:'teallach',name:'An Teallach',en:'the Hearth',boon:{type:'spellCost',mult:.7,label:'the Boon of the Mind'},tint:0xb8946a},{key:'fiodoir',name:'An Fíodóir',en:'the Weaver',boon:null,tint:0xc8b8d8}];
+  // S978 — one shrine bears its god's name: the first of that god's shrines in the grid's order, the same whatever has loaded.
+  // Any other keeps the unique name the naming pass gave it (uniqueSiteNames, S756); its god is still in its prayer and dome.
+  // Two built cells had made two *Shrine of Na Beithígh* (QA, 15 Oct, `bridgenames`).
+  let GOD_SHRINE=null;
+  function godShrineOwner(god){if(!GOD_SHRINE){GOD_SHRINE=new Map();for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j).sites.forEach(t=>{if(t.kind!=='shrine')return;const n=godOf(t).name;if(!GOD_SHRINE.has(n))GOD_SHRINE.set(n,t.id);});}
+    return GOD_SHRINE.get(god.name);}
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
   function shrinePrompt(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
@@ -1122,8 +1164,8 @@ const giver=`${lord.title} ${lord.name}`;
     return CROWN_BLADE.keep;}
   function crownBladeTopics(site){if(!site||site.id!==FACTIONS.crown.seat)return [];const S=artifactState('gate_blade');if(!S||S.yielded||!artifactCarried('gate_blade'))return [];
     const give={label:'Give it to the Crown.',quest:true,fn:()=>crownGiveBlade()||CROWN_BLADE.not};
-    if(S.licence)return [{label:'The licence.',response:CROWN_BLADE.lic,follow:[give]}];
-    return [{label:'The blade from the stone.',response:CROWN_BLADE.ask,follow:[give,{label:'I’ll keep it.',quest:true,fn:()=>crownLicenseBlade()||CROWN_BLADE.not},{label:'Not now.',response:CROWN_BLADE.not}]}];}
+    if(S.licence)return [{label:'The licence.',quest:true,response:CROWN_BLADE.lic,follow:[give]}];
+    return [{label:'The blade from the stone.',quest:true,response:CROWN_BLADE.ask,follow:[give,{label:'I’ll keep it.',quest:true,fn:()=>crownLicenseBlade()||CROWN_BLADE.not},{label:'Not now.',response:CROWN_BLADE.not}]}];}
   // S788 — the Drowned Bell's claimant, the Compact (the page's Sea row; the approved draft's words): any Factor in Aurenne (the
   // lord of an Aurennais town or port) asks while the bell is on you and not given up. *Give it to the Compact.*: below Factor,
   // and the Compact open to you, the rank of Factor (its second); at Factor or above, a service counted; sworn to another power
@@ -1175,7 +1217,7 @@ const giver=`${lord.title} ${lord.name}`;
     const say=CLOAK_GUILD.ask[p].replace('${lair}',P.name).replace('${town}',town).replace('${fee}',fee);
     return [{label:'The grey cloak.',response:say,follow:[{label:'I’ll take the contract.',quest:true,fn:()=>cloakContract(site,p,fee)},{label:'Not that one.',response:CLOAK_GUILD.not[p]}]}];}
   // the named action: the contract goes on the board as the Guild's active task (offer's own refusal while another is owed)
-  function cloakContract(site,p,fee){const st=gstate().guild_f;if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const P=artifactPlaces().wolf_cloak;
+  function cloakContract(site,p,fee){const st=gstate().guild_f;if(st.active)return (OWE_LINES[p]||OWE_LINES.markman)(st.active.short,progressLine(st.active));const P=artifactPlaces().wolf_cloak;
     const t={id:CLOAK_CONTRACT,g:'guild_f',kind:'cloak',x:P.x,z:P.z,gold:fee,desc:`The master of ${P.name}, the beast that slept on the grey cloak. Kill it.`,short:`The master of ${P.name}`};
     st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF.guild_f.name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return CLOAK_GUILD.take[p];}
   // S790 — services a claimant enters for a tool (the Crown's, the Compact's, the Church's): counted as served, but never past
@@ -1254,9 +1296,9 @@ const giver=`${lord.title} ${lord.name}`;
   function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
     if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
   // S802 — the Gate-Blade's trial (the page's Stone row; the approved draft's first run, §5): the blade stands in a standing stone
-  // outside its ruined gate (artifactPlaces().gate_blade, picked from the seed in Session 776). The stone stands 8 to 18 units
-  // from the gate's door on open ground, the first spot clear of every solid along bearings taken in an order seeded by the
-  // gate (bladeStoneSpot), found once the gate's cell is loaded and its compound built. The first time you come within ten
+  // outside its ruined gate (artifactPlaces().gate_blade, picked from the seed in Session 776). The stone stands outside the
+  // compound's gate on open ground (S993; it was 8 to 18 units from the door, inside the ring), the first spot clear of every solid
+  // (bladeStoneSpot), found once the gate's cell is loaded and its compound built. The first time you come within ten
   // units, the draft's line, once (the character's: stats.bladeSeen). E within 1.8 takes hold of the hilt: Might 30, the base
   // plus at most 2 from gear (artifactTry); short of it, one of the draft's three lines by how short, each logged with 🗝, costing
   // nothing and kept for the Journal. Taken, the stone stays, and E at it says what is left. The stone and the hilt are a
@@ -1266,19 +1308,23 @@ const giver=`${lord.title} ${lord.name}`;
     take:'It comes out of the stone the way a key comes out of a lock: all at once, after nothing.',
     after:'An empty slot in a standing stone. Looked at end on, it is the shape of a key.'};
   const BLADE_REACH=1.8;let BLADE_STONE=null,_bladeT=0;
-  function bladeStoneSpot(P){const r=seededRng('bladestone',P.door);const a0=r()*Math.PI*2;
-    for(let d=8;d<=18;d+=2)for(let k=0;k<12;k++){const a=a0+k/12*Math.PI*2,x=P.x+Math.cos(a)*d,z=P.z+Math.sin(a)*d;let ok=worldH(x,z)>SEA_Y+.5;
+  // S993 — the critic's s632: the stone stood 8 to 18 from the gate's keep door, inside the compound's ring (radius 27 round the
+  // door's 4 m south, its gate on +z). The draft puts it *outside a ruined gate, plainly visible from its road*: it now stands
+  // 31 to 41 from the ring's centre, on bearings fanned out from the compound's gate (never square on it, where the spur runs),
+  // clear of every solid, nearest the gate first. Nothing read depends on what has loaded but the compound's own walls. Read from where the gate is built (dungeonWorldPos).
+  function bladeStoneSpot(P){const W=(typeof dungeonWorldPos!=='undefined'&&dungeonWorldPos[P.door])||P;const cx=W.x,cz=W.z+4;
+    for(let d=31;d<=41;d+=2)for(let k=1;k<=16;k++){const a=Math.PI/2+(k%2?1:-1)*(.12+Math.ceil(k/2)*.12),x=cx+Math.cos(a)*d,z=cz+Math.sin(a)*d;let ok=worldH(x,z)>SEA_Y+.5;
       for(let q=0;q<8&&ok;q++)if(solidAt(x+Math.cos(q/8*Math.PI*2)*1.4,z+Math.sin(q/8*Math.PI*2)*1.4)||solidAt(x,z))ok=false;
       if(ok)return {x,z,y:worldH(x,z)};}
     return null;}
   function bladeStoneBuild(P){const sp=bladeStoneSpot(P);if(!sp)return null;const g=new THREE.Group();
-    const stone=new THREE.Mesh(new THREE.BoxGeometry(.95,2.1,.62),new THREE.MeshLambertMaterial({color:0x7d7a72}));stone.position.y=.95;stone.rotation.z=.04;g.add(stone);
+    const stone=new THREE.Mesh(new THREE.BoxGeometry(.95,1.1,.62),new THREE.MeshLambertMaterial({color:0x7d7a72}));stone.position.y=.5; /* S993 — 1.1 m, the critic's s632: the hilt at waist to chest, not over the eye */stone.rotation.z=.04;g.add(stone);
     const hilt=new THREE.Group();const iron=new THREE.MeshLambertMaterial({color:0x6c7078,emissive:0x101216}),leather=new THREE.MeshLambertMaterial({color:0x3a2616});
     const blade=new THREE.Mesh(new THREE.BoxGeometry(.06,.12,.012),iron);blade.position.y=.06;hilt.add(blade);
     const guard=new THREE.Mesh(new THREE.BoxGeometry(.32,.04,.05),iron);guard.position.y=.14;hilt.add(guard);
     const grip=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.24,6),leather);grip.position.y=.28;hilt.add(grip);
     const pommel=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6),iron);pommel.position.y=.42;hilt.add(pommel);
-    hilt.position.y=2.0;g.add(hilt);g.position.set(sp.x,sp.y-.05,sp.z);g.rotation.y=Math.atan2(P.x-sp.x,P.z-sp.z);sc.add(g);
+    hilt.position.y=1.0;g.add(hilt);g.position.set(sp.x,sp.y-.05,sp.z);g.rotation.y=Math.atan2(P.x-sp.x,P.z-sp.z);sc.add(g);
     return {x:sp.x,z:sp.z,door:P.door,name:P.name,mesh:g,hilt};}
   function bladeStoneDrop(){if(BLADE_STONE&&BLADE_STONE.mesh&&BLADE_STONE.mesh.parent)BLADE_STONE.mesh.parent.remove(BLADE_STONE.mesh);BLADE_STONE=null;}
   // once a second from the loop: the stone is built while the gate's cell is loaded and you are within 300 units; the first sight
@@ -1429,7 +1475,11 @@ const giver=`${lord.title} ${lord.name}`;
   let _wlampT=0;function tickWaylamp(force){const t=performance.now();if(!force&&t-_wlampT<1000)return;_wlampT=t;const S=lampState(),now=worldState.gameTimeAbsMinutes||0;
     if(S&&S.outUntil&&now>=S.outUntil){delete S.outUntil;if(typeof addLog==='function')addLog('🏮','The Waylamp is lit again. Nobody lit it.');}
     if(!S&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const st=worldState.stats||(worldState.stats={});if(st.lampSeen)return;const H=lampHome();const h=H&&lampFirstInn(H.site);
-      if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.','#e8c890');}}}
+      if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20&&lampDaySight()){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day.'+(lampInRain()?' The rain does not seem to reach it.':''),'#e8c890');}}}
+  // S1000 — the critic's s632: the sight line's two halves keyed to the hour and the weather. By night a lamp over an inn's
+  // door is nothing strange, so the first sight waits for the day; the rain's half is said only while it rains (or storms).
+  function lampDaySight(){return !(typeof isNight==='function'&&isNight());}
+  function lampInRain(){return WX.type==='rain'||WX.type==='storm';}
   // S781 — Michael's 2A on #263: the cloak from a corpse. Its master is the lair cavern's beast, the one that sleeps on it (the
   // draft, *The Makers' Things*: the cavern's master, worldState.masters[seed], not the beasts at the mouth, which Session 777's
   // drain read). Killed before the cloak was taken, the cloak lies in the hoard; killed while the cloak is yours, it goes thin.
@@ -1447,9 +1497,48 @@ const giver=`${lord.title} ${lord.name}`;
     for(const L of [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)])for(const it of L)if(it&&it.artifact==='wolf_cloak')halfCloak(it);
     if(EQ.back&&EQ.back.artifact==='wolf_cloak')artifactSay('The cloak is lighter on your shoulders. Something has gone out of it.');return true;}
   function artifactSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's *slain!* or the witness's line, which would cover it (the words only: the outcome is already written) */
+  // S992 — the Wolf-Mother's Cloak in its den (the approved draft, *The Makers' Things* §6; Michael's A on #270): the master of
+  // the cloak's lair sleeps on it, and wakes only when struck (a blow, an arrow or a spell: its health or its posture down), never
+  // by sight or sound. Struck once, it is awake for good (worldState.masters[seed].woke, the world row). The cloak lies under it,
+  // its hem toward the way in; within reach of the hem, and not attacking (no swing, no draw: "weapon sheathed", #270 2A), E
+  // reaches for it at Resolve 30 (artifactTry: the base, plus at most 2 from gear). Short of that it costs nothing and wakes
+  // nothing. Taken, the master goes on sleeping and lets you go. The first time you come within seven units of the sleeping
+  // master with a clear line, the draft's line, once (the character's: worldState.stats.cloakSeen). The cloak is a placeholder,
+  // a flat grey mantle; the den's prop and the master's sleeping pose are owed (H).
+  let CLOAK_DEN=null;
+  const CLOAK_SAY={seen:'The master of the cave is lying on something grey that is not its own hide.',
+    fail:'You put out your hand, and take it back. Not yet.',
+    take:'It lifts its head and looks at you for a long time. Then it lays its head down on the bare stone, and lets you go.'};
+  function cloakDenLay(portal,e){CLOAK_DEN=null;try{const P=artifactPlaces().wolf_cloak;if(!P||!portal||portal.seed==null||portal.seed!==cloakSeed()||cloakMasterDead())return null;
+    if(!e||e.dead||!e.master||ENEMIES.indexOf(e)<0)return null;const rec=(worldState.masters||{})[portal.seed];if(rec&&rec.woke)return null;
+    const S=artifactState('wolf_cloak');if(S&&S.half)return null;e.cloakSleep=true;e.alert=false;
+    const fl=e.floor||1,ex=(typeof dEntranceX!=='undefined')?dEntranceX:e.x,ez=(typeof dEntranceZ!=='undefined')?dEntranceZ:e.z;
+    let dx=ex-e.x,dz=ez-e.z;const dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;
+    let hx=e.x+dx*1.2,hz=e.z+dz*1.2;if(dSolid(hx,hz)){hx=e.x+dx*.6;hz=e.z+dz*.6;}
+    let mesh=null;if(!S){const g=new THREE.Group();const cl=new THREE.Mesh(new THREE.BoxGeometry(1.5,.03,1.9),new THREE.MeshLambertMaterial({color:0x8c8a86,emissive:0x141414}));
+      cl.position.set(0,0,.25);g.add(cl);g.position.set(e.x,(fl===2?FLOOR2_Y:0)+.02,e.z);g.rotation.y=Math.atan2(dx,dz);dScene.add(g);mesh=g;}
+    CLOAK_DEN={e,seed:portal.seed,floor:fl,mesh,name:P.name,hx,hz};return CLOAK_DEN;}catch(err){console.warn('cloakDenLay',err);return null;}}
+  // the dungeon's frame asks this of each foe first: true holds a sleeping master still for the frame; a strike wakes it for good
+  function cloakSleepTick(e){if(!e.cloakSleep)return false;
+    if(e.hp<e.maxHp||(typeof e.posture==='number'&&typeof e.maxPosture==='number'&&e.posture<e.maxPosture)){e.cloakSleep=false;e.alert=true;
+      const L=CLOAK_DEN,rec=L&&(worldState.masters||{})[L.seed];if(rec&&typeof rec==='object')rec.woke=true;return false;}
+    e.alert=false;if(e.mesh)e.mesh.position.set(e.x,e.baseY,e.z);if(e.el)e.el.position.set(e.x,.8,e.z);return true;}
+  function cloakHandsStill(){return !(swingT>0||_bowDrawing||powerCharging||powerSwingDelayT>0);}
+  function cloakDenNear(){const L=CLOAK_DEN;return !!(L&&L.mesh&&L.e&&!L.e.dead&&L.e.cloakSleep&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.hx,pz-L.hz)<1.5&&cloakHandsStill());}
+  // the first sight of it, once (called from the dungeon's frame)
+  function cloakDenTick(){const L=CLOAK_DEN;if(L&&L.mesh&&L.e&&L.e.dead){if(L.mesh.parent)L.mesh.parent.remove(L.mesh);L.mesh=null;return false;} /* killed asleep: the cloak goes to the hoard (S781) */
+    if(!L||!L.mesh||!L.e||L.e.dead||!L.e.cloakSleep||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;const st=worldState.stats||(worldState.stats={});
+    if(st.cloakSeen)return false;const d=Math.hypot(px-L.e.x,pz-L.e.z);if(d>7)return false;
+    for(let t=.15;t<.9;t+=.15)if(dSolid(px+(L.e.x-px)*t,pz+(L.e.z-pz)*t))return false;st.cloakSeen=1;showMsg(CLOAK_SAY.seen,'#c8c0a8');return true;}
+  // E at it: the named action is artifactTry (takeArtifact), with the draft's log line
+  function cloakDenTake(){const L=CLOAK_DEN;if(!L)return null;const c=artifactTry('wolf_cloak',`Took the Wolf-Mother's Cloak from under the master of ${L.name}. It lives.`);
+    if(c.gone){if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);L.mesh=null;return c;}
+    if(!c.ok){showMsg(CLOAK_SAY.fail,'#c8c0a8');return c;}
+    showMsg(CLOAK_SAY.take,'#c8c0a8');if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);L.mesh=null;if(typeof updateHUD==='function')updateHUD();return c;}
   // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
   function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
     if(id==='drowned_bell'&&p)return {id,text:`The Drowned Bell — in the wreck on the rock off ${p.coast}. At low tide.`}; /* S801 — the draft's line (second run, §1) */
+    if(id==='wolf_cloak'&&p)return {id,text:`The Wolf-Mother's Cloak — in the den at ${p.name}. Resolve 30.`}; /* S992 — the draft's line (first run, §4) */
     return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}
   // faction quests ride the town-quest generator, flavoured and counted
   function factionTopics(site){

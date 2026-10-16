@@ -6,6 +6,10 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// S941 (skills and perks A): the weapon's skill carries the damage and the flat level × 1.5 is gone. Every skill is set to 50
+// (×1.0, no perk above 50), so the blows are big enough for the guard, the riposte and the finisher to be told apart.
+// Fists roll 3 here, and the Bandit's armour takes a 3 to 1, where the old level term made it 2; Hand-to-hand 100 (×1.4) gives the 4 the suite was written for.
+await page.evaluate(() => { for (const k in SKILLS) SKILLS[k] = { lv: 50, p: 0 }; SKILLS.hand = { lv: 100, p: 0 }; });
 
 // ── the table: every weapon's light swing keeps today's times (0.55 s × the weight's factor, impact at 0.55, the last third recovery)
 const tbl = await page.evaluate(() => {
@@ -125,8 +129,8 @@ const ch = await page.evaluate(() => {
     e.locked = false; e.spd = 0; e.atkCd = 1e9; e.rng = null; e.hp = e.maxHp = 1000; e.def = 0; e.resist = {}; e.combatYaw = Math.atan2(px - e.x, pz - e.z); if (typeof e.posture !== 'number') initPosture(e); e.posture = e.maxPosture = 1000;
     SWING = { t0: playClockS, tell: .3, strike: .06, recovery: .18, total: .55, isPow: false, chain }; _swingStartS = -1e9; ZE = [e];
     try { resolvePlayerStrike(false); } finally { ZE = keepZ; } const r = { lost: 1000 - e.hp, post: 1000 - e.posture }; WORLD.scene.remove(e.mesh); SWING = null; return r; };
-  const raw = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0])) + Math.floor(level * 1.5)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1));
-  const raw3 = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0])) + Math.floor(level * 1.5)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1) * 1.3);
+  const raw = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1));
+  const raw3 = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1) * 1.3);
   out.first = blow(1); out.third = blow(3); out.want = { first: challengeDealt(Math.max(1, raw)), third: challengeDealt(Math.max(1, raw3)) };
   Math.random = rnd; Object.assign(EQ, EQk); return out;
 });

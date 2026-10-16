@@ -14,6 +14,15 @@ What should Steady be?
 - **B. Steady without a sway**: a full draw costs no stamina for its first 3 s. Same name, a different perk; the bow stays as easy to aim as now.
 - **C. Leave it** until the bodies builder's bow draw and the new look's aim (F-cards) are in, and decide then.
 
+### Enemies by place, asked again now that skills have landed: which place is how dangerous? (systems builder, Session 992) — DECISION #373
+On #51 (29 Sep) you answered **C, not yet**: keep foes growing with your level until the skills sessions land. They have (Sessions 940–982: skills by use, the level on marks, the first perks), and 2.0 waits on enemies by place (your 1 B on the scope). Today every foe still grows with your level: health ×(1 + 0.15 a level, to ×3 at 14), and its blow with the reference blow (combat's resolver, PR #356, which keeps an ordinary blow near the same share of your health at your level's kit). Under skills by use that is Oblivion's failure: a character who levels by alchemy and locks meets wolves built for a fighter. And with friends in your world there is no one level to scale to.
+
+The tier would replace the level in `enemyHpScale` and `enemyDmgScale` (and in the rare variants' chance), read from where the foe stands. The build waits for the resolver to merge, since it rewrites the same two functions.
+- **A. A tier for each region, plus the dungeon floor** *(recommended, as on #51)*. Home's regions are authored: the coast, Ashen, Bealach and Royale tier 1; Deepwood, the Foothills and Greywood tier 2; the Wastes tier 3. The far islands take a tier from their biome: tundra, swamp and wasteland 3, the rest 2. Each dungeon floor below the first adds one, to a cap of 4. A tier is worth what the level curve gives today at levels 1, 6, 11 and 16 (health ×1, 1.75, 2.5, 3; the blow as the resolver's reference blow at those levels). A gate's school does not change its tier.
+- **B. Rings by distance from Ashenmoor**: tier 1 near the start, one more every ~600 units, the far islands 3–4. No authoring, but a forest can be tier 1 at one edge and tier 2 at the other.
+- **C. A, and the level still counts for a little**: the tier as in A, times 1 + 2% a level past the tier's own (to ×1.3), so an easy place stays a little worth fighting late. Friends in one world would meet slightly different foes.
+
+A keeps a region's danger readable (the Wastes are dangerous, the coast is not), and is one Opus session once the resolver is on main.
 Michael: **Build a sway, then Steady**. (16 Oct 2026, on the control room)
 
 ### The double jump and the air dash — should speed in the air be capped? (the designer, 2026-10-16) — DECISION #370
@@ -23,6 +32,17 @@ The build sheet (`docs/design/double-jump-and-dash-build.md`) sets *Second step*
 - **C.** Capped at 4.7, with Haste lifting it to 6 for its 20 s: one more answer to a gap, and a Haste-shaped hole in the table (7.3 m).
 
 Recommendation: **A.** Each perk opens its own step, and a place built for the double jump reads the same to a Scout and a Warrior.
+### Hearing, No mark and Word given: build the rule each takes away, or other perks? (systems builder, Session 1001) — DECISION #376
+The build sheet's last three perks of the hand and the word each change a rule the game does not have, as Steady (#369) did for the bow. Session 1001 built Stealth 100 (*Shadow's hand*, a backstab ×1.5) and left these three off; the Skills tab shows them as *not yet in the game*.
+
+- **Hearing (Speech 75): "a person at favour −1 still talks".** Nobody refuses to talk at any favour today: a keeper refuses trade for five days after a crime they saw, and that is all.
+- **No mark (Locks 100): "a picked town lock is never found".** A picked lock is a crime only if someone sees the pick (Session 327). Nobody finds it afterwards.
+- **Word given (Speech 100): "once a day a guard takes your word for a trespass".** There is no trespass: being inside after hours is not a crime (the crime system's design, 26 Sep). The nearest thing is the lock crime (25 gold, −1 favour).
+
+What should the three be?
+- **A. Build the rule each perk takes away, then the perk** (recommended for No mark and Word given). *No mark*: a picked shop lock unseen is found by its keeper at the next opening: −1 favour in that town, no fine (nobody knows whose hand it was); No mark stops it. *Word given*: once a day, a guard's halt for a fine that is only lock crimes is waived at your word (*Word given.*), and the fine is cleared. *Hearing*: at favour −1 or worse a townsperson gives a greeting and no topics but trade; Hearing opens them again at −1 (not below). Hearing needs a brush-off line in each people's voice from the quest writer.
+- **B. Different perks, same names**, with no new rule: *Hearing*, +1 favour the first time you talk to each person in a town (once per town a day); *No mark*, a witness to a pick sees *someone*, and the fine is halved; *Word given*, *Talk it down* works twice in each town.
+- **C. Leave them** until 2.0's other systems work is in, and decide then.
 
 Michael: **Cap air speed at 4.7 m/s for everyone**. (16 Oct 2026, on the control room)
 
@@ -90,6 +110,11 @@ The build sheet takes the flat `level × 1.5` out of every hit, so damage comes 
 - **C.** A Hand-to-hand skill of its own (a 23rd), Morrowind's: the roll 2 to 3 on its multiplier, with a Might share. This needs a row in the sheet and its perks.
 
 Recommendation: **A.** A brawl stays about as long as the critic found right, and fists grow with a skill the archetypes already train, with no new row.
+
+Michael: **C. A Hand-to-hand skill of its own**. (15 Oct 2026, on the control room) A 23rd skill with a Might share; the systems builder adds its row and perks.
+
+*Done, Session 950:* `hand` in `SKILL_DEF` (Might); bare fists hit their 2–3 on its multiplier and a punch on an alert foe is a use. Its row and four perks are in the build sheet. `fistfight`'s range follows the chosen design (see the devlog).
+
 Michael: **C. A Hand-to-hand skill of its own**. (15 Oct 2026, on the control room) A 23rd skill with a Might share; the systems builder adds its row and perks.
 
 ### Skills: what gates the light and robe armour? (the systems builder, Session 941) — DECISION #354
@@ -99,6 +124,10 @@ Skills and perks A's build sheet moves the tier gates from attributes to skills:
 - **C.** *(recommended)* The heavy line asks Armour, and the light and robe lines keep their attribute and its curve (as built in Session 941). The lines stay what Session 564 made them, a choice of what you are rather than of what you trained, and the robe never pushes a mage toward taking hits.
 
 Recommendation: **C.** It is already built, and a mage or a scout never has to take hits to dress for what they are.
+
+Michael: **C. Heavy asks Armour; light and robe keep attributes**. (15 Oct 2026, on the control room) As built in Session 941.
+
+*Done:* nothing to change; Session 950 records it.
 Michael: **C. Heavy asks Armour; light and robe keep attributes**. (15 Oct 2026, on the control room) As built in Session 941.
 
 ### The guild halls: which house? (look builder, Session 939) — DECISION #352

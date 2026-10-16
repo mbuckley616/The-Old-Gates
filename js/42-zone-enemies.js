@@ -891,7 +891,11 @@ function prewarmFoes(sc,cam){
   const lights=[];tmp.traverse(o=>{if(o.isLight)lights.push(o);});for(const l of lights)if(l.parent)l.parent.remove(l);
   tmp.traverse(o=>{o.frustumCulled=false;});
   if(typeof WORLD!=='undefined'&&sc===WORLD.scene)try{WORLD.sweepLights();}catch(e){} /* the world's tick folds stray lights into its pool of 24; before the first tick there are more, and every program would be keyed to that count */
-  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}sc.remove(tmp);
+  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}
+  /* S988 — compile() leaves out the shadow pass's depth materials, and on three.js 0.170 a foe casting a shadow keys one of its
+     own (QA's foewarm on the new look): one drawn frame with the shadow map forced makes it here, behind the loading fade */
+  if(REN.shadowMap&&REN.shadowMap.enabled){const nu=REN.shadowMap.needsUpdate;try{REN.shadowMap.needsUpdate=true;REN.render(sc,cam);}catch(e){}REN.shadowMap.needsUpdate=nu;}
+  sc.remove(tmp);
   const inTmp=r=>{for(let a=r&&r.root;a;a=a.parent)if(a===tmp)return true;return false;};
   for(const r of [...WOLF_RIGS])if(inTmp(r))WOLF_RIGS.delete(r);
   for(const r of [...PEOPLE_RIGS])if(inTmp(r))PEOPLE_RIGS.delete(r);
@@ -910,8 +914,8 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
     if(hit&&!dead){const raw=foeBlow(a.from,a.dmg+Math.floor(foeRand(a.from)*4)); /* S940 — armour as a share, as of every blow */
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
-      if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
-      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
+      if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;armourUse();skillUse('guard',1,a); /* S941 fix — the arrow, not a foe: there is no e here */hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
+      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;armourUse();hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
 // S616 — a foe whose straight step is blocked (a barrel on a deck, a post, a trunk) slides along it: the step's one axis or
@@ -1408,7 +1412,7 @@ function tickZoneBalls(dt,sc){
         finalDmg = challengeTaken(finalDmg); /* S684 — the challenge (her fire never went through _warded) */
         PHP = Math.max(0, PHP-finalDmg);
         hurtT = .4;
-        lvAct.damageTaken += finalDmg;
+        lvAct.damageTaken += finalDmg;armourUse();
         lastHitT = performance.now()/1000;
         if(PHP<=0 && !dead) playerDead();
         sc.remove(fb); ZB.splice(i,1);
@@ -1427,9 +1431,10 @@ function tickZoneBalls(dt,sc){
     if(fb.userData.isArrow){
       let arrowHit = false;
       ZE.forEach(e=>{
-        if(arrowHit || e.dead || e.locked) return;
+        if(arrowHit || e.dead || e.locked || fb.userData.passed===e) return;
         if(Math.hypot(fb.position.x-e.x, fb.position.z-e.z) < ARROW_HIT_RADIUS){
           arrowHit = true;
+          const _thru = arrowPasses(fb.userData, e); /* S982 — Through: the arrow flies on past this one */
           // Reach into the arrow's pre-rolled rawDmg and route through the
           // resist pipeline. wType is stamped on the arrow at fire time
           // (typically 'pierce'; silver/broadhead arrows override).
@@ -1444,6 +1449,7 @@ function tickZoneBalls(dt,sc){
           // Flat def subtraction (same shape as applyMeleeDamage)
           if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
           dmg = challengeDealt(dmg); /* S684 — the challenge */
+          if(e.alert)skillUse('bow',1,e); /* S941 — an arrow on an alert foe */
           e.hp = Math.max(0, e.hp - dmg);
           e.alert = true;
           if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
@@ -1471,14 +1477,14 @@ function tickZoneBalls(dt,sc){
             const _killTag = ` (ARROW)${dmgTag(tagInfo, e)}`;
             if(typeof killZoneEnemy === 'function') killZoneEnemy(e, sc, _killTag);
             else { e.dead = true; }
-            sc.remove(fb); ZB.splice(i,1);
+            if(!_thru){ sc.remove(fb); ZB.splice(i,1); }
           } else {
             // v64.2 — Stick the arrow into the enemy body. The body mesh
             // becomes the arrow's parent so it follows movement/rotation.
             // The arrow stays in ZB (not removed from the array) so its
             // stuckLife counts down on subsequent frames via tickArrowMotion.
             const body = enemyBodyMesh(e);
-            _stickArrowToEnemy(fb, body, sc);
+            if(!_thru) _stickArrowToEnemy(fb, body, sc);
           }
         }
       });
@@ -1535,7 +1541,7 @@ function tickZoneBalls(dt,sc){
 // Loot drop chance — based on fortune attribute and enemy difficulty (hp as proxy for rarity)
 // Base 35% chance, fortune adds up to +25%, harder enemies add up to +20%
 function lootDropChance(e){
-  const fortuneBonus=(ATTRS.fortune||0)*0.025; // +2.5% per fortune point, cap ~25% at 10
+  const fortuneBonus=(ATTRS.fortune||0)*0.01; // S953 — +1% per fortune point (was 2.5%), the attributes at ≤1%
   const hpRatio=Math.min(1,(e.maxHp||e.hp||20)/90); // scales 0→1 from weakest to golem
   const diffBonus=hpRatio*0.20;
   return Math.min(0.85,0.35+fortuneBonus+diffBonus);
