@@ -19,12 +19,15 @@ check(`the bell's wreck lies off ${place.coast}, a home-island port, ${place.off
 const rumour = await page.evaluate(() => { const P = artifactPlaces().drowned_bell; const r = liveRumours(siteAnywhere(P.port)); return r.some(x => x.startsWith(`There's a wreck on the rock off ${P.coast} that only shows at the ebb.`)); });
 check(`at ${place.coast}, a rumour of the wreck`, rumour, rumour);
 
-// go there; the wreck is built within 400 units
+// go there; the wreck is built within 400 units. Wait for the port's own discovery too (its cell loaded, tickDiscovery's half-second
+// come round), or its *discovered · +50 XP* toast lands among the mast's lines below (Session 946: FLAKY twice on 15 Oct)
 await page.evaluate(() => { const P = artifactPlaces().drowned_bell; const t = siteAnywhere(P.port); px = t.x; pz = t.z; });
-let W = null;
-for (let k = 0; k < 40 && !W; k++) { await page.waitForTimeout(1500);
-  W = await page.evaluate(() => { const P = artifactPlaces().drowned_bell; const t = siteAnywhere(P.port); px = t.x; pz = t.z; tickBellWreck(true); return BELL_WRECK ? { x: BELL_WRECK.x, z: BELL_WRECK.z } : null; }); }
+let W = null, portFound = false;
+for (let k = 0; k < 40 && !(W && portFound); k++) { await page.waitForTimeout(1500);
+  ({ W, portFound } = await page.evaluate(() => { const P = artifactPlaces().drowned_bell; const t = siteAnywhere(P.port); px = t.x; pz = t.z; tickBellWreck(true);
+    return { W: BELL_WRECK ? { x: BELL_WRECK.x, z: BELL_WRECK.z } : null, portFound: discovered(P.port) }; })); }
 check('the wreck is built near its port', !!W, W);
+check('standing at the port, the port is discovered before the wreck is visited', portFound, portFound);
 
 await page.evaluate(() => { window._said = []; const sm = showMsg, sl = showMsgLong; showMsg = function (t) { window._said.push(t); return sm.apply(this, arguments); };
   showMsgLong = function (t) { window._said.push(t); return sl.apply(this, arguments); };
