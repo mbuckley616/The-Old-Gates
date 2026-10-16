@@ -21735,3 +21735,152 @@ Corrections made during the session:
 - **The chute has no lining and no side boards.** Real ones were often three logs, or planked, and iced to run faster. This one is two bare logs.
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 1005 — The critic's two faults on s639: the mill's sails and the guild's banner (cards F8 and F6, prototype only)
+The critic's run on s639 found two faults of scale in the look builder's prototypes, and the last run named them as next. Both are small, and both are fixed here. Nothing new is asked, and nothing outside the prototype folder is touched.
+
+**The tower mill's sails came within 1.76 m of the ground,** 1.5 m in front of its door, so a man of the foundation's 1.9 m walking to the door was clipped. Session 949's check held the sails to 1.5 m, which was the wrong bound: it had been set by the sails' own geometry, not by the person. Two ways to fix it were weighed: shorter sails or a taller tower. The sails stay at 8.6 m, which is what makes the mill read as a working mill from the road. The tower now stands 9.6 m to the curb (it was 9.0), and that lifts the hub by 0.6 m. The four floors of windows still fit under the curb, and the cap, tail pole and wheel follow the tower's height, as they did before. The check's bound is now 2.1 m, a 1.9 m man and a hand's clearance.
+
+**The Fighters' Guild's banner hid the last letter of its name panel** from the street to the east, which the critic read as *FIGHTERS’ GUIL*. The banner hung on a pole 1.7 m out at x -0.1, just past the panel's right end (the panel runs from -3.45 to -0.55). The cloth hangs flat across the street, between 0.65 and 1.6 m out from the wall. So from any view east of square-on, its projection slid left over the panel. It now hangs at x 2.6, where the hall meets the two-storey east end, between the hall's east light and the east end's sashes. This is still by the door, and it marks where the hall stops. `pieces.check.mjs` now works out the banner's shadow on the wall from every bearing within 55° of square-on. The check fails if it ever reaches the panel's frame.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 143 of 143 pass.**
+  - **The tower mill**, over 3 keys and 3 winds at every turn of a quarter, in 3° steps: the sails clear the ground by **2.36 m** (was 1.76; the bound is now 2.1), and the tower and cap by 1.53 m.
+  - It has 11,108 triangles in 14 meshes, and is 19.82 m to the finial.
+  - The doors and tail checks are unchanged.
+- **`pieces.check.mjs`: 20 of 20 pass.**
+  - The guild hall's banners (both guilds) are **0.66 m** clear of the name panel's frame from every bearing within 55° of square-on.
+  - The great door is 1.6 by 3.3 m under the panel, as before.
+  - Each guild hall still comes to 9,873 triangles in 14 draws.
+- **Pictures, retaken:**
+  - the mill: `places-mill-mill.jpg`, `-sails`, `-far`, `-back` and `-mill-rest`;
+  - the guild hall: `pieces-gatelands-guild.jpg`, `-guild-corner` and `-guild-mages`.
+  - The corner view now reads *FIGHTERS’ GUILD* in full, with the banner beyond the hall's east light.
+### Needs eyes
+- **The mill is now a little taller and slimmer.** It stands 9.6 m on a 6 m foot, 1.6 times its width (1.5 before). Whether it still reads as a squat Irish tower mill wants a look.
+- **The banner now stands 4.6 m from the door.** If it should hang at the door itself, the other answer is a pole on the door's west side. There the hall's west light is 2.4 m off, and from the west the banner would cover the light, not the panel.
+- **The game has neither piece yet.** Both are prototype pieces, so nothing in the game changes.
+
+## v80 — Session 1006 — The Mark's ice cave mouth (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "ice cave mouth". It is also OG-121's "snowed-in mouths". Session 903 built the ice cavern's inside, and Michael took it as drawn on #331. This is its outside, where the passage comes out of the ice. The precedents are the glacier caves of Breiðamerkurjökull and the snouts of the Norwegian outlet glaciers. The glacier ends in a face of ice banded grey with the grit it carried. Its meltwater has cut a tunnel out under the face, which glows blue a few metres in and then goes dark. The stream runs out over a gravel plain (the sandur) through a gap it has cut in the ridge of boulders the ice left when it stood further out (the terminal moraine). Blocks calved off the face lie at its foot. It is `markIceMouth` in `places.js`, with its own view (`places-icemouth-view.js`, dispatched from `places-view.js`). Nothing new is asked: what the cave leads to is the ice cavern's, and who knows the way is the quest writer's. It touches only the prototype folder.
+
+**The place** (at true size, the ice to -z, the stream flowing out to +z, y 0 the tunnel's floor at the mouth):
+- **The valley:** rock walls rise from 26 m either side of the stream to 34 m, with snow on their shelves. The sandur falls 1 in 25 away from the ice.
+- **The face:** it runs from x -44 to 44 and wanders ±2.5 m.
+  - It is 17 to 20 m high and leans out 1.5 m at its head.
+  - It is fluted by vertical runnels where the melt runs, and none of them reach its foot or the mouth's sill.
+  - Grey bands of grit run across it in wavy strips 0.25 to 0.55 m deep, broken where the arch is cut.
+- **The mouth:** an arch 8 m wide, upright to 2.4 m and 5.6 m to its crown, under a lip of clear ice.
+  - It narrows over 18 m to a throat 6 m wide and 4.6 m high.
+  - The ice is clear for the first 6 m, deep blue to 12 m and dark beyond. The tunnel goes on into the dark past the throat.
+  - The tunnel's floor is the sandur's gravel, rising 1 in 25 inward.
+  - 44 icicles hang from the lip and the first metres of the roof, each placed only where its tip leaves 2.1 m clear.
+- **The stream:** out of the dark along the tunnel's east side, then over the sandur in a channel 0.45 m deep, with stones in its bed, meandering ±3.2 m.
+- **The moraine:** a ridge of gravel 2.6 m high in an arc 26 m out, with boulders 0.7 to 3.5 m across over its crest and flanks. It is cut about 6 m wide where the stream goes through, and a cairn of six stones stands on the crest beside the gap.
+- **The ice's back:** a snowfield rising 1 in 4 for 24 m and then gently, with eight crevasses across the flow.
+- **The calved blocks:** 9 to 11 at the foot of the face, kept off the way in and the stream.
+- 32,116 to 32,660 triangles in 12 meshes.
+
+The view: `places.html?place=icemouth`, with `view=mouth` (on the sandur 20 m out by the stream), `inside` (in the tunnel at the blue, looking out), `throat` (at the mouth, looking in to the dark), `moraine` (from the crest by the cairn) and `far` (high over the sandur).
+
+Corrections made during the session:
+- **The face.** It was first drawn flat-shaded, with a 0.2 m jitter on a 0.8 m grid, and read as crumpled foil. Its grit bands were whole quads of a darker ice and read as broken bricks. The face, the ground and the snowfield are now shaded smooth across their grids (`smoothGrid`, new in this function). The fine jitter is gone, and runnels now give the face its relief. The bands are now strips of their own laid 6 cm proud of the face.
+- **The gravel.** It was first the `rock` texture at a dark grey and read as brown earth. On `cobble` it read as paving. It is now `rock` again, lighter (0xd2cec6). The snow patches drawn on the sandur were cut whole from the 3 m grid and read as pixels from above, so they are gone. Snow lies on the valley's walls only.
+- **The valley.** Its walls first rose to 26 m while the ice rose inward for 40 m, so the snowfield stood over the rock with a hard edge. The walls now rise to 34 m, and the ice rises steeply for its first 24 m only.
+- **The budget.** The first build came to 46,524 triangles. The ground's fine band is now 1.0 m (was 0.8), and the boulders are unsubdivided dodecahedra. That brought it to 32,000.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 151 of 151 pass** (143 after Session 1005). Two views are new on the page check, the mouth and the inside, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 32,116 to 32,660 triangles in 12 meshes.
+  - **The tunnel**, at 17 metres from the mouth to the throat:
+    - its walls are met at the hip 0.16 m inside to 0.13 m outside the arch's half-width;
+    - its roof (icicles aside) is 0.18 m under to 0.18 m over the arch's crown.
+  - **The walk in**, from 14 m out on the sandur, beside the stream, to the throat:
+    - there is ground under all 61 half-metres, and none of it is water;
+    - nothing stands in the way at the hip or the head;
+    - the 44 icicles' tips are 2.57 to 5.24 m over the floor.
+  - **The face:** rays at 6 m up across it every 2 m meet ice or grit at all 20, within 0.96 m of its line, and it is 17.03 to 20.07 m high from x -25 to 25.
+  - **The stream:**
+    - its water falls the whole way out;
+    - it is met from above at all 153 half-metres from the dark to 60 m out, through the moraine's gap;
+    - its banks are dry 2.4 m either side.
+  - **The moraine:** 2.13 m or more over the sandur at its crest on 20 bearings outside the gap.
+  - **The calved blocks:** 9 to 11 of them, all off the way in and the stream, each sunk into the gravel. The cairn stands 1.68 to 1.69 m tall on the crest.
+- **Pictures:** `places-icemouth-mouth.jpg`, `-inside`, `-throat`, `-moraine` and `-far`.
+### Needs eyes
+- **The face reads as a wall of grey stone** more than ice in the sandur views. The `rock` texture's veins show through the ice's colour, and nothing passes light. Real glacier ice is white at the surface and blue in its cracks and under the overhang. A shader that lets light through, as the bodies builder's skin wings do (Session 959), would serve it better than a colour.
+- **The grit bands are too even and too dark.** Real bands fold and pinch out; these run level across the whole face.
+- **The icicles read black** against the bright lip in the mouth's views, because they are lit from behind. They would be better a little emissive, or fewer.
+- **The calved blocks are rounded boxes.** Real ones have fresh blue faces where they broke.
+- **The tunnel is straight.** It ends in a dark plane at 18 m that the `throat` view looks straight at. Joining it to the ice cavern's passage, which winds, is for whoever places the two together.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), the smuggler's cove (Aurenne), and the camps on the roads.
+
+## v80 — Session 1007 — Aurenne's smuggler's cove (card F8, prototype only)
+The next of OG-124's places off the road: the Aurenne panel's "smuggler's cove". Session 873 built a smugglers' lair as a Gatelands sea cave, which Michael took on #314. This is the open-air kind, and it is Aurenne's. The canon makes piracy and the run past the Compact's tithe the coast's other trade (§1). The precedents are three places:
+- the calas of the Balearics, a narrow inlet between white limestone cliffs with a beach at its head;
+- Malta's Wied il-Għasri, where a stair is cut down the cliff to the water;
+- the fjord of Furore on the Amalfi coast, where fishermen's boathouses are cut into the cliff's foot behind plastered fronts.
+
+It is dressed in Aurenne's own way (canon §1.3): cream plaster, limestone dressings and doors painted blue. It is `aurenneCove` in `places.js`, with its own view (`places-cove-view.js`, dispatched from `places-view.js`). Nothing new is asked: who runs what through the cove, and whether the Compact's tithe-men know of it, are the quest writer's and the systems builder's. No people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, the sea to +z, y 0 the sea):
+- **The inlet:** 14 m across at its head, opening to 38 m at its mouth 75 m out. Its cliffs stand 20 m over the sea within 2.2 m, their edge wandering by up to half a metre. The plateau runs on either side to the coast at about 82 m, where the cliffs turn away.
+- **The beach:** sand 15 m long, 1.35 m over the sea at the head, under the water 6.5 m out. The sea floor beyond falls to 6 m, deepest down the middle.
+- **The boathouses:** three in the west cliff's foot.
+  - Each is a plastered front 4.4 m wide and 4.2 m high under a cope, standing 0.8 m out from the rock and 1.7 m deep.
+  - Each has a round-headed door 3 m wide and 3 m high in dressed jambs, its leaves painted blue, and a barred window over it.
+  - The middle one stands open on the dark. The third has a slip of slabs at 1 in 7 into the sea.
+- **The cargo:** 13 bales, amphorae and casks before the boathouses.
+- **The stair:** 105 steps up the east cliff from the beach to the top.
+  - The risers are 0.18 m on 0.3 m treads, with a landing of 1.2 m every 18 steps.
+  - Each step is cut into the rock behind and built out over the water on a wall of ashlar.
+  - Its tread is 1.4 m clear at the foot and wider as it climbs, where the rock behind it lies further back.
+  - A plastered parapet, coped, runs along each flight on the open side. It follows the flight's own heading, since the stair drifts outward with the inlet as it climbs.
+  - The last step is at the top's own height.
+- **The lookout:** a plastered hut 3.2 m square on the east top near the mouth, 4 m back from the edge. Its blue door faces landward and its window faces the sea; `&night` lights a lamp in it.
+- **The boats:**
+  - a rowing boat drawn up on the sand;
+  - another lying at the slip's foot;
+  - with `o.ship` (the default), Aurenne's sloop (Session 858's line, `aurenneSloop`) at anchor mid-inlet, its sail down.
+- 24,869 triangles in 16 meshes, and 48,697 in 26 with the sloop.
+
+The view: `places.html?place=cove`, with `view=cove` (on the sand by the boat, out along the inlet), `houses` (the boathouses from the stair's foot), `stair` (on the stair at its third landing, up the flight), `top` (by the lookout, down the inlet) and `far` (from the sea off the mouth). Add `&night` for dusk with the lamp lit, and `&noship` for no sloop.
+
+Corrections made during the session:
+- **The beach.** It was first 10 m long and read as a ledge, not a cala. It is now 15 m long.
+- **The stair's wall.** It was first plastered, which made a 20 m sheet of plaster along the cliff. It is now ashlar, and the parapet is plaster.
+- **The parapet.**
+  - It was first a block on each step, which stair-stepped like a row of posts. Then it was a sloped wall along each flight, set along z.
+  - The check found that wall standing on the treads: the stair drifts up to 1.3 m outward over a flight as the inlet widens, so a wall along z was 0.65 m inside the stair at one end. At those points the check read a tread 1.09 m too high, headroom gone, and the parapet missing at the hip at 28 of 105 steps.
+  - Each flight's wall now runs along the flight's own heading.
+- **The boathouses' fronts.** They were first 0.6 m deep against the cliff's foot, and the cliff's wander brought the rock forward through the first door. They now stand 0.8 m out and 1.7 m deep.
+- **The look.**
+  - The sand was first `cobble`, and read as paving. It is now plaster-smooth sand.
+  - The rowing boat's hull was single-sided, so it drew black, and is now double-sided.
+  - The sun first lit the stair's cliff and left the boathouses in shade. It now lights the boathouses.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 158 of 158 pass** (151 after Session 1006). Two views are new on the page check, the cove and the boathouses, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 24,869 triangles in 16 meshes without the sloop (48,697 in 26 with it).
+  - **The stair:**
+    - 105 steps, risers 0.174 to 0.18 m, treads 0.3 m, and a landing at every 18th;
+    - a tread under every step within 0.000 m, and 2.2 m clear over every step;
+    - the parapet at the hip within 0.6 m at all 105;
+    - the last step at 20.02 m, with the top's ground beside it at 19.87 to 20.02 m.
+  - **The boathouses:**
+    - three, doors 3 by 3 m, and each front's foot on the sand;
+    - a ray at the door meets the leaf (or, at the middle one, the dark);
+    - rays at each front's top corners meet plaster, never rock;
+    - the third's slip goes 1.22 m into the sea.
+  - **The cliffs and the beach:**
+    - the cliffs are 18.5 m or more over the water or the sand within 4 m, on both sides, every 4 m from the head to 70 m out;
+    - the beach is 1.27 m dry at the head, and the water's edge is 6.5 m out.
+  - **The sloop and the lookout:**
+    - the sloop's keel is 5.54 m over the bed and its hull 9.4 m off the cliffs;
+    - the lookout stands 4.0 to 4.4 m back from the cliff's edge, its window to the sea clear for 30 m.
+- **Pictures:** `places-cove-cove.jpg`, `-houses`, `-stair`, `-top`, `-far` and `-night`.
+### Needs eyes
+- **The cliffs are plain walls** of one height with a sharp top edge. A cala's cliffs are undercut at the waterline, with notches, fallen blocks and pine clinging on. None of that is drawn, and the inlet reads as a cut.
+- **The plateau is bare.** Its turf is one texture, with no maquis, pine, wall or path to the lookout, and the stair's head meets it with no landing of its own.
+- **The boathouses are fronts only.** Their open door shows a dark plane. A room behind (a vault in the rock with a boat on the slip) would be a place of its own.
+- **The stair's wall reads dark** where the sun is off it.
+- **The sloop is the kit's sloop at anchor with its sail down** (Session 858 for the hull line; #347 for the rest of Aurenne's hulls). The rowing boats are the lair's lathe shell.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), and the camps on the roads.
