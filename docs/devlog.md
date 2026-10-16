@@ -21558,3 +21558,180 @@ Corrections made during the session:
 - **The heather is low-poly blobs.** The bog cotton heads are a little large.
 - **Peat cut on a bog is a quest writer's and a systems builder's question too:** turf as fuel, a cutter's right to a bank. Nothing of that is drawn.
 - **Off the road (OG-124) still lacks:** the shepherd's hut, the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 997 — The Gatelands' abandoned shepherd's hut (card F8, prototype only)
+The next of OG-124's places off the road: the Gatelands panel's "abandoned shepherd's hut", built with OG-014's dry-stone walls and OG-077's foxglove. The precedent is the booley huts on Slievemore in Achill and the shielings of the Highlands. These were summer huts on the hill pasture, lived in while the flock grazed high and left when the custom died. They had a single room of dry stone with a gable hearth, a stone fold beside them, a spring above, and often a rowan planted at the door. It is `gatelandsShepherdHut` in `places.js`, with its own view (`places-shepherd-view.js`, dispatched from `places-view.js`). Nothing new is asked: whose hut it was and why it was left are the quest writer's, and no sheep or people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, y 0 the hut's floor, the hill rising to -z at about 1 in 7, the door downhill to +z):
+- **The hut:** 6.0 by 4.2 m of dry stone 0.6 m thick, to eaves of 1.9 m, on a levelled stance cut into the slope.
+  - The walls are built in lengths of about half a metre, each with its own ragged head.
+  - The west gable stands to its apex at 3.6 m, with a stub of chimney under a cap slab.
+  - The east gable has fallen. A stepped stump stands over the back corner, and 70 stones lie heaped on both sides of the end wall.
+  - The door is 0.85 by 1.8 m under a slab lintel. The window is 0.45 by 0.5 m with a lintel of its own.
+  - A hearthstone with two hobs sits at the west gable.
+- **The roof, fallen in:**
+  - Two rafters have slid down, their feet on the floor and their heads still on the wall-heads, read from the walls' own records.
+  - The ridge pole lies on the floor among seven heaps of rotted thatch.
+  - Nettles grow in the corners and at the door.
+- **The fold:** a round pen of dry stone 8.4 m across, its walls 1.07 m high and coped with stones set on edge to about 1.35 m.
+  - The gate faces the hut, 1.37 m clear between two standing posts.
+  - The wattle hurdle that closed it lies against the wall beside it.
+  - On the downhill side a breach 1.7 m wide has tumbled to the knee, its stones spilled outside.
+- **Round about:**
+  - A rowan stands by the door with its berries.
+  - Above the hut is a spring: a kerb of 14 stones, a lining, the water 0.35 m down, and a slab hood on its uphill side. The turf is let down inside the lining so the water shows.
+  - A worn track runs from the door to the fold's gate. It is a ribbon five vertices wide laid over the turf, not the turf's own quads, which stepped.
+  - About 90 clumps of bracken have gone rust, and 30 foxgloves have gone to seed.
+- 30,920 to 31,436 triangles in 18 meshes.
+
+The view: `places.html?place=shepherd`, with `view=hut` (from the track below), `inside` (by the hearth, toward the door), `fold` (from outside the breach), `spring` (below the spring) and `far` (from high over the hill).
+
+Corrections made during the session:
+- **The walls.** They first used the `lichen` texture, which read as brick coursing. They are on `cobble` now (the voronoi stone the abbey's dry walls use). The lintels first rendered black on `slab`, and are on `rock` now.
+- **The track.** It was first the terrain's own quads chosen by distance to the line, which drew a staircase. It is a ribbon now, and was widened to five vertices across when the check found the hummocks poking through a two-vertex one.
+- **The budget.** The first build came to 40,068 triangles. The terrain grid is now in bands (0.5 m round the place, 2 m beyond, 10 m at the edge), which brought it to 31,000.
+- **The spring.** It first sat on unbroken turf, with the water hidden under the grass. The turf now drops inside the lining.
+- **The check found three faults:**
+  - The ridge pole's west end lay on the hearthstone, and in one key its east end lay on the fallen gable's heap. The pole now runs from x -1.5 to 1.2, and the heap keeps to within 0.8 m of the end wall inside.
+  - The fold's coping first ran three stones a length, which read as battlements. It is now a stone every 0.2 m, with one in twelve missing.
+  - The fallen rafters' feet stood 2 cm over the stance, whose floor is at -0.02. They now rest on it.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 128 of 128 pass** (119 after Session 991). Two views are new on the page check, the hut and the inside, both with no page errors. Seven checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 30,920 to 31,436 triangles in 18 meshes.
+  - **The hut's walls:** rays from the room's middle at the hip, every 5°, all meet stone, except those that leave through the whole thickness of the doorway, which go out onto the hill. The floor reads -0.02 m wherever it is sampled, every 0.25 m.
+  - **The door:** 0.848 m wide and 1.80 m to its lintel. Every ray up from the room at 1.7 m finds open sky.
+  - **The gables:** the west one stands to 3.83 m (the cap over a 3.6 m apex); the east one has fallen to 1.48 to 1.60 m, under its 1.9 m eaves.
+  - **The fallen timbers:** every end of the two rafters and the ridge pole rests on the floor or the wall-head under it, 0.000 m off.
+  - **The fold:**
+    - its wall is met at the knee on 94 rays, within its thickness;
+    - it stands 1.36 to 1.37 m over the pen's floor at the median, and no lower than 1.03 m where a coping stone is gone;
+    - the gate is 1.37 m clear and every ray through it leaves;
+    - the breach is down to 0.43 to 0.49 m.
+  - **The spring and the track:** the water is 0.35 m under the ground and inside its lining. The track is found on the turf at all 30 points along its line.
+- **Pictures:** `places-shepherd-hut.jpg`, `-inside`, `-fold`, `-spring` and `-far`.
+### Needs eyes
+- **The rowan reads as a parasol.** Its limbs all leave one point at the top of a bare trunk. A rowan is small, often multi-stemmed, with an oval crown. The leaf is low-poly blobs.
+- **The bracken reads as orange stars** from above. From the track it is closer to bracken, but it wants more fronds and a duller rust.
+- **Inside, the walls are dark** under a grey afternoon, and the timbers read nearly black against them.
+- **The stone is one texture throughout.** A dry wall's courses, its throughs and its batter (the wall leaning in as it rises) are not drawn; the walls are plumb boxes.
+- **The hill is one smooth slope** with low hummocks. No outcrop, no stream below, no other walls running off over the hill. A real booley stood among a dozen such huts. One is drawn.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 998 — The Mark's hunting cabin (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "smoking hunting cabin in snow pines". OG-025's carved gables and steep snow roofs give the dress. The precedent is the Norwegian jakthytte and the outbuildings of a fäbod:
+- a laft cabin of logs notched over each other at the corners, their ends running on past the corner;
+- a sill on corner stones, and a low turf roof that holds the snow;
+- the crossed barge boards (vindski) at each gable;
+- a stabbur beside it: a small store on posts, each post capped with a flat stone the mice cannot climb past, its steps stopped short of the door.
+
+The cabin is lived in this time, unlike the shepherd's hut: the chimney smokes and the window is lit. It is `markHuntingCabin` in `places.js`, with its own view (`places-cabin-view.js`, dispatched from `places-view.js`). Nothing new is asked: whose cabin it is is the quest writer's, and no people or animals are drawn. It touches only the prototype folder.
+
+**The place** (at true size, y 0 the snow at the cabin, the door's gable to +z):
+- **The cabin:** log centres 3.8 by 4.6 m.
+  - The side walls have 11 courses of logs 0.26 m thick, 0.21 m apart, to eaves at 2.48 m. The gable walls run half a course out of phase, so the two walls cross at every corner.
+  - The logs run 0.3 m past each corner, their cut ends showing.
+  - The gables close upward in shortening logs to a ridge at 3.6 m.
+  - 61 wall logs stand on six corner and middle stones.
+  - The door is 0.85 by 1.85 m between frame posts, with a plank leaf shut. Antlers hang on the gable over it.
+  - A lit window of 0.6 by 0.45 m, with a glazing bar, is cut into the east wall.
+- **The roof:** boards, 0.12 m of turf and 0.25 m of snow, at 27°.
+  - It runs out 0.75 m over the side walls, 1.0 m over the door (a porch's shelter) and 0.5 m at the back.
+  - Crossed barge boards stand at both gables.
+- **The chimney:** a dry-stone stack up through the west slope, with snow banked round its foot and a cap slab. Nine puffs of smoke rise from it and lean away downwind.
+- **The stabbur:** a log store 2.0 by 1.8 m, its floor 1.02 m over the snow.
+  - It stands on four posts, each with a flat rat stone twice its width.
+  - It has a door of its own, a turf and snow roof, and log gables.
+  - Its three stone steps stop 0.44 m short of it.
+- **The yard:**
+  - 328 pieces of split wood in two rows under the west eaves.
+  - A chopping block with the axe in it.
+  - A hide laced on its frame of poles.
+  - Snowshoes leaning by the door.
+- **The paths:** trodden ribbons, banked with 0.12 m of thrown snow on both sides. They run to the woodpile, to the store's steps, and away through the trees.
+- **The forest:** 74 spruce from 11 m out, 8 to 17 m tall, in seven tiers each, with snow on most tiers.
+- 36,441 to 36,516 triangles in 17 meshes, and nine smoke sprites.
+
+The view: `places.html?place=cabin`, with `view=cabin` (from the path in the clearing), `store` (by the stabbur's steps), `corner` (close on the laft at the north-east corner, the lit window), `yard` (from the chopping block across the woodpile) and `far` (over the trees).
+
+Corrections made during the session:
+- **The window.** Its frame was first a solid board box 0.24 m deep, which buried the lit pane. The frame is now four boards round an open light.
+- **The spruce.** They first had five tiers, each with a full ring of snow, and read as stacked lampshades. They now have seven tiers, with smaller caps, set a little off-centre and missing from one tier in five.
+- **The woodpile.** It was first triangular prisms of one size, which bristled. The pieces are now four- or five-sided and of varied size.
+- **The paths.** They were first a trough carved into the snow. The terrain's 0.5 to 2 m grid could not hold a trough 0.55 m wide, so its chords covered the ribbon at 35 of 40 points. The snow is now level and the paths are banked: the thrown snow lies in two ribbons beside the trodden one.
+- **The check found three faults:**
+  - The banks crossed the other paths' trodden snow by the door, where all three paths meet. The banks now start 1.1 m out.
+  - One bank in two keys was wound face-down, so it was invisible from above. The ribbon's winding test read only its first vertex's normal; it now reads the sum of them all.
+  - The chimney stood 0.49 m over the snow banked round it. It is now 1.0 m over the roof at its edge, and 0.74 m over the bank.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 136 of 136 pass** (128 after Session 997). Two views are new on the page check, the cabin and the store, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 36,441 to 36,516 triangles in 17 meshes, 61 wall logs and 74 spruce.
+  - **The walls:** rays from the room's middle, every 5° at 0.6, 1.2, 1.8 and 2.3 m, meet log, board, the door's leaf or the window's light at all 288. Rays every 5 cm up each of the four corners, to the eaves, find a log at every height.
+  - **The door and the roof:**
+    - the doorway is 0.846 m wide and 1.923 m clear over the floor, with its leaf away;
+    - all 324 points looked down on over the roof find snow;
+    - the roof is over the door.
+  - **The chimney:** 0.74 m over the roof at it, every puff of smoke above it.
+  - **The stabbur:** its floor is 1.02 m over the snow and its steps stop 0.443 m short of it.
+  - **The yard and the forest:**
+    - none of the 328 pieces of wood is out from under the eaves;
+    - the nearest spruce stands 11.32 to 12.1 m out, none on a path;
+    - the paths are found trodden at all 30 points past the door's first 1.6 m;
+    - their banks stand 0.073 to 0.083 m over them at the least.
+- **Pictures:** `places-cabin-cabin.jpg`, `-store`, `-corner`, `-yard` and `-far`.
+### Needs eyes
+- **The cabin reads nearly black** against a low south-west sun, in every view but the lit window. The log texture is the beam's, dark and smooth. Laft logs are usually adzed flat on the inner and outer faces, and weather silver-grey; neither is drawn.
+- **The corner stones and the stabbur's steps** are the `stone` coursed texture, and read as blocks.
+- **The hide is one flat shape**, and the snowshoes are thin hoops.
+- **The spruce are still stylised cones.** From above (`far`) the nearest trees fill the frame.
+- **The smoke is nine soft puffs in a curve.** It does not move in a still picture; in the game it would want to drift.
+- **Nothing says who hunts from here,** or whether the cabin is a lead, a shelter to sleep in, or a merchant's. That is the quest writer's and the systems builder's.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 999 — The Mark's abandoned logging camp (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "abandoned logging camp". The precedent is the winter fellings of Norway and Sweden before the railways. Trees were cut while the ground was frozen and sledged down to a deck. A timber chute (tømmerrenne) carried them down the slope onto a river's ice, to go down with the thaw. The men slept in a gapahuk, a lean-to of logs open to its fire. This camp was left mid-season: the deck is still stacked, a log is still chained to its sledge, and one length of the chute has come off its trestles. It is `markLoggingCamp` in `places.js`, with its own view (`places-logging-view.js`, dispatched from `places-view.js`). Nothing new is asked: why it was left is the quest writer's, and no people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, the slope falling to +z at 1 in 4.5 to the river's bank at z 26, the ice from 28 to 40 at y -6.3, the far bank rising beyond):
+- **The felling:** 50 stumps 0.44 to 0.68 m high, each with a cap of snow on its cut top. They are spaced 1.6 m apart or more, clear of the chute, the deck and the shelter. An axe is left in one. Spruce stand round the felling, with a few left standing inside it.
+- **The deck:** two skids across the slope, levelled together. 18 logs 5 m long sit on them in rows of 6, 5, 4 and 3, each in the hollow between the two below.
+- **The chute:** two logs side by side, a trough 0.3 m wide, in lengths of 5 m.
+  - It runs from the deck's foot 42 m down to 0.96 m over the ice, at one grade.
+  - It stands on trestles every 2.5 m, each of two splayed legs and a bar, with a brace where they stand over 1 m.
+  - One length (z 14 to 19) has come off. Its two trestles lie over in the snow, and its two logs lie askew beside the gap.
+- **The gapahuk:** 3.2 by 2.4 m, its back wall of logs 1 m high, its sides rising to 2.1 m at the open front, under a roof of poles, boards and snow.
+  - Inside is a bed of spruce boughs.
+  - Before it is a fire ring with the charred brands of the last fire and snow fallen into it.
+- **The sledge:** two runners turned up at the front and two bunks, with a log chained on them.
+- 32,832 to 33,000 triangles in 13 meshes, and 80 spruce.
+
+The view: `places.html?place=logging`, with `view=camp` (from the felling's top, down the chute to the ice), `chute` (beside the gap and the fallen length), `deck` (under the deck's end), `shelter` (before the gapahuk) and `far` (from the ice, up the slope).
+
+Corrections made during the session:
+- **The budget.** The first build came to 48,149 triangles. The terrain's fine band is now 0.75 m, not 0.5, which brought it to 33,000.
+- **The lean-to's side walls.** They were first written so that every course ran the full depth, through the roof's rising underside. A course above the back wall now starts where the roof clears it.
+- **The check found three faults:**
+  - The gap was declared as z 11 to 16, but the lengths start every 5 m from -11, so the one skipped was 14 to 19. The chute stood across half the declared gap, and the fallen trestle was one that held nothing. The gap is now 14 to 19, both of its trestles lie over, and the fallen length lies beside it.
+  - Each skid was levelled on its own, so one stood 0.04 to 0.09 m under the bottom row. Both are now levelled to the highest ground under either.
+  - The check's ray onto the first stump met the axe left in it. It now looks past the axe.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 143 of 143 pass** (136 after Session 998). Two views are new on the page check, the camp and the shelter, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 32,832 to 33,000 triangles in 13 meshes, 50 stumps and 80 spruce.
+  - **The chute:**
+    - its trough is found at 37 metres of its line, within 0.003 m of one grade;
+    - nothing stands in the gap;
+    - all 34 trestle bars sit 0.014 to 0.018 m under its logs;
+    - its foot is 0.96 m over the ice.
+  - **The deck:** each of the 18 logs rests on the two below it, or on the skid, within 0.02 m.
+  - **The stumps:** 0.44 to 0.68 m over the snow at their edges, with snow on every top.
+  - **The gapahuk and the sledge:**
+    - the gapahuk is met at the hip at the back and both sides, and open at the front;
+    - it has 2.02 m of headroom under the front and snow on its roof;
+    - the sledge's runners are 0.004 to 0.006 m off the snow.
+- **Pictures:** `places-logging-camp.jpg`, `-chute`, `-deck`, `-shelter` and `-far`.
+### Needs eyes
+- **The stumps and the logs read nearly black** against the snow, which is the same trouble as the cabin's. A fresh cut is pale and a winter-old one grey; only the cut ends show it.
+- **The skids are level,** so on the slope one end of each stands clear of the snow, which reads as resting on air. They want blocking under them.
+- **The fallen trestles are two sticks each.** A real one would lie as a frame.
+- **The ice is a flat plane** with a sheen, with no snow on it, no pressure ridges, and no logs lying out on it waiting for the thaw.
+- **The chute has no lining and no side boards.** Real ones were often three logs, or planked, and iced to run faster. This one is two bare logs.
+- **Nothing tells why the camp was left.** That is the quest writer's.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
