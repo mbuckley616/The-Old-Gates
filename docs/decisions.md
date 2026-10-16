@@ -23,6 +23,18 @@ Recommendation: **B.** At a tenth, a single foe is something you can stand and s
 
 ## Answered
 
+### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #362
+OG-018 draws Uisce's Frost Thing as "a crystalline ice-shard figure, all spikes". Canon §9a says a steady gate makes "the shapes the local folklore had words for", and the catalogue flags that the sheet's figure reads as an elemental, with no folk shape under the ice. Both are built as plans in the creature kit, for you to choose between.
+
+Which should the Frost Thing be?
+- **A. The sheet's shard figure** (`frostshard`): the troll's hunched frame in clear blue ice, with shards out of its crown and down its back, lit cold from inside. It is the drawing as drawn, but it has no folk shape: it is the gate's own thing.
+- **B. A folk shape frozen** (`frostfolk`, recommended): a man's frame, the skeleton's, grown whole and frozen. It is frosted white over blue, with its head bowed and shards breaking from its shoulders and crown, its eyes lit pale. These are the drowned of the Uisce halls, walking again in ice: the shape the shore's folk would have words for. The face is not finished; a choice of B makes it the next session's work.
+- **C. Both:** A where a gate failed suddenly (canon: "the stranger the failure, the stranger the shape") and B in a steady gate.
+
+Pictures: [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostshard.jpg), [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostfolk.jpg), [the two beside the skeleton and the troll](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frost.jpg).
+
+Michael: **B. A folk shape frozen**. (15 Oct 2026, on the control room)
+
 ### Combat's resolver: how hard an ordinary blow lands, now that armour takes a share (the deep-work session, Session 939) — DECISION #355
 The attack table and the one resolver are built (`auto/fable-combat-resolver`). Armour now takes a share of every blow on you, as #181 B said: damage × 50 / (50 + armour), where it took half a point per point. That put the cliff between 20 and 40 armour.
 
@@ -69,6 +81,9 @@ Which house should a guild hall be?
 
 Pictures: [the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-hall.jpg), [the long table](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-table.jpg), [the dormitory](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-dorm.jpg), [from the lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/rooms-guild-outside.jpg).
 Michael: **C. A guild hall of its own**. (15 Oct 2026, on the control room) The look builder makes the new kit piece first: a wider hall open to the roof with a gallery to the dormitory.
+*Done, Session 964 (the piece):* `GL_PLANS.guildhall` in `pieces.js`, 14.4 by 9.0 m, the hall open to the roof with the gallery's floor kept clear along the back, the dormitory's two storeys at the east end, a great door under a carved name panel and the guild's banner; `pieces-gatelands.html?view=guild`. The rooms inside it are next.
+*Done, Session 965 (the Fighters' Guild inside it):* `gatelandsGuildHall` rebuilt in the new hall: open to three arch-braced trusses, the stair along the partition to the gallery, the dormitory of six beds off its end over the steward's room. The Mages' Guild in the same house is next.
+*Done, Session 966:* the Mages' Guild in the same house (`o.guild: 'mages'`), the game's furniture for it in blue.
 
 ### Skills and perks — how fast should the level come? (the designer, 2026-10-15) — DECISION #342
 The skills build sheet (`docs/design/skills-and-perks-build.md`) settles the 22 skills, their uses, the curve, the 88 perks and the bed. Every skill-up counts toward the level, majors and minors as one mark and the rest as a quarter. The bed gives 12 points, at most 5 in one attribute (Oblivion Remastered's two fixes). The open number is how many marks a level takes, because twelve points a level is a large step. The simulation behind it is an ordinary mix of play, about 650 skill uses an hour.

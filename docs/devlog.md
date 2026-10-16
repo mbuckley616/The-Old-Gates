@@ -20957,3 +20957,485 @@ The game is right, so the suite changes. Before the swing from behind, it now re
 - `parsecheck` is clean. No `js/` file changed.
 ### Needs eyes
 - Nothing new. Session 949's two notes still stand: six blows in a real fight, and how fast a held block breaks against two foes.
+## v80 — Session 946 — Card F9's fifteenth room: the Gatelands temple (prototype only)
+The shrine is next on L5's list after the guildhall (939), which waits on #352. OG-043 draws the Gatelands temple as a small stone church with a statue inside. The canon (§4.1) says what it is for: the Irish-register culture worships the six makers by their work, and "six have temples … each with a statue and a boon in its domain". So this is a temple of one of the six gods. It is drawn for An Teallach, the Hearth, the god of towns, by default; `o.god` gives any of the six their icon (the hull, the sundial, the wolf, the gate, the lamp, the shuttle, from the canon's table). The Church of the Weaver is Aurenne's (the Compact), and the Guest has no shrine, so neither is drawn here. FREEZE #297 is closed and F2a has merged, but this is still a prototype under the run's order (rooms first, then into the game). It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The house** (`GL_PLANS.temple` in `pieces.js`) is the kit's first building with its door in a gable:
+- One high storey, 9.6 by 6 m, of bare rubble 0.75 m thick, 3.8 m to the wall plate, under slate at 50°. There is no chimney and no gutter.
+- A round-headed door 1.15 by 2.65 m stands in the west gable, under voussoirs. Each long wall has two round-headed slits, and the east gable has a round-headed window at 2.95 m, over the statue.
+- The gables first had the forge's parapets. At 0.75 m of wall their kneelers grew into battlements, so the temple's gables are plain under the slate's verge.
+- The plank door now takes `ajar` as the transom door does (Session 893), so the room can hang its own leaf, open.
+
+**The room** (`gatelandsTemple` in `rooms.js`):
+- **The dais** is one step of 0.18 m across the east end.
+- **The statue** stands on a plinth of 0.5 m on the dais, 2.05 m of carved limestone. It is a robe turned on a lathe, a hooded head, and arms bent to hold the god's icon before its breast, facing the door. Its head is under the east window's sill, so the window lights it from behind and above. The Hearth's lamp holds a real flame, with its own small light on the page.
+- **Offerings** lie at the statue's feet: bread, a bowl of grain, shells and marigolds.
+- **The altar** stands before the dais: a slab at 0.95 m on two stone ends, a red woven runner, four candles and the offering bowl. **The place of prayer** is 1.02 m before it, inside the game's 2.6 m prompt for a shrine's altar (`shrinePrompt`).
+- **Two iron prickets,** each with a ring of six candles, stand either side of the altar.
+- **Stone benches** run along both side walls at 0.45 m, for the old and for vigils.
+- **By the door, a bullaun:** a boulder with a hollow worn in it, holding rainwater for the hands on the way in. It is the Irish register's own holy-water stone.
+- **The rag rail** is on the south wall by the door, with strips of cloth tied on for a sickness, a journey or a child, as at a holy well.
+- **The ledge** on the north wall, between the slits, holds small clay lamps, carved figures and coins.
+- **The roof** has four couples, each with a collar and a tie beam, and a purlin either side. A ring lamp hangs on a chain over the nave, its foot 2.51 m over the floor.
+- 5,742 to 6,046 triangles in 19 draws, on the house's 4,488 in 7.
+
+The view: `rooms.html?room=temple`, with `view=nave` (from inside the door to the altar and the statue), `statue`, `door` (from the dais back to the door, the bullaun and the ledge), `ledge` and `outside`, and `&god=` for the other five.
+
+Corrections made during the session:
+- The roof's blades first ran 0.1 m through the slate at the ridge. They are now shortened, and set 0.2 m under the slate's underside.
+- The east window first sat at 2.75 m, 2 cm under the statue's head. It now sits at 2.95 m.
+- The statue was first in the kit's coursed `stone` texture and read as masonry. It is now smooth plaster-grey limestone.
+- One arm's upper half first pointed up behind the shoulder. The arms are now built limb by limb, between shoulder, elbow and hand.
+- The rags first faced the wall and were culled from inside. They now face the room.
+- The hull first read as a dish and the wolf as a cat. The hull is now deeper, with a deck board, and the wolf has a long muzzle and a tail.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 124 of 124 pass** (111 after Session 939). Eight views are new on the page check: the nave by day and by night, outside, and the statue holding each of the other five icons, all with no page errors. Five checks are new, over four keys and the six gods:
+  - **The builds:** 5,742 to 6,046 triangles in 19 meshes, each the same twice.
+  - **Inside the walls:** every piece inside the walls and under the slate, with 0 points through and 0 clashes.
+  - **The walks:** four walks clear by 0.15 m: the door to the place of prayer, to each bench, and round to the ledge.
+  - **A person fits:** the altar at 0.95 m, the benches at 0.45 m, the door 1.15 by 2.65 m, the lamp's foot at 2.51 m.
+  - **The statue:** on its plinth under the east window, facing the door, its head under the sill, and the icon held before it. The place of prayer is 1.02 m from the altar, with the statue over it.
+- **`pieces.check.mjs`: all pass** after the new plan and the plank door's `ajar`.
+- **Pictures:** `rooms-temple-nave.jpg`, `-statue`, `-door`, `-ledge`, `-outside` and `-nave-night`, and `rooms-temple-god-sea`, `-sky`, `-beasts`, `-stone` and `-weaver`.
+### Needs eyes
+- **The statue is a carved robe, not a body.** It is a lathe, a hooded head and four limbs, and it reads as a figure from the altar but not as a face. A better carving is the bodies builder's craft (a posed person turned to stone); the icon is what tells the gods apart.
+- **The icons are small and rough,** about 0.3 m in the statue's hands. The lamp, the gate and the sundial read. The hull still reads partly as a bowl from the front, and the wolf could be any beast.
+- **The windows are the kit's,** white frames with a fanlight spoke in the round heads. A temple's slits might be unglazed, or leaded.
+- **The inside walls are bare rubble,** as the forge's are. A limewashed temple would be brighter and closer to OG-043.
+- **Owed:** the Mark's and Aurenne's shrines (the canon's gods are the Gatelands'; what the Mark keeps is not written), the library in each nation's dress, and the guild halls once #352 is answered.
+
+## v80 — Session 947 — Card F9's sixteenth room: inside Aurenne's church (prototype only)
+The shrine's second dress, after the Gatelands temple (946). Aurenne's faith is the Church of the Weaver (canon §1.3: the Compact's towns under the Church's Priors, "domes on the churches"; §3: the Church "blesses the dead *into* the gates"). Its church has stood outside since Session 832 (`aurenneChurch`: the cube, the drum, the blue dome on a town church by Michael's C on #294, the gilt shuttle on its top). This session builds its inside. OG-043's Aurenne temple and OG-061's domed hall set the look: limewash, tile and gold. Nothing new is asked. It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The shell** (`aurenneChurch` with `o.interior`, `pieces.js`): as with the other shells, a room is built inside the very building the street shows.
+- With `o.interior`, the church leaves out its dark fill and its door leaves.
+- The flat roof's two slabs become one slab of 0.4 m with a round oculus of 3.89 m radius in it, into the drum.
+- The drum is lined inside, facing in. Its twelve arched lights glow from within (a new `sky` material), with a gilt ring at the dome's foot.
+- The dome is painted inside in night blue (a new `heaven` material), its crown under the outer dome's.
+- Without `o.interior` the church is built exactly as before, and `aurenne.check.mjs` passes unchanged.
+- The builder now also returns its inner measures (`inner`: the walls, the ceiling, the oculus, the crown).
+
+**The room** (`aurenneChurchHall` in `rooms.js`, inside a town church of 14 m: a hall 12.4 m square, 10.1 m to the ceiling, 13.9 m to the dome's crown):
+- **The floor** is limestone. Under the dome lies a roundel of tile, 4.6 m across, in a ring of marble.
+- **The bier of the dead** stands at the centre under the oculus: a marble slab on two cedar trestles, a pall of indigo with a saffron border, and a tall gilt candlestick at each corner. This is the canon's blessing of the dead, given its place. No body lies on it.
+- **The sanctuary** is two steps of 0.16 m across the back. On it stand:
+  - the marble altar at 1.0 m, faced with a panel of tile, with two gilt candlesticks and a book bound in indigo and saffron;
+  - a panel of tile in a gilt frame on the wall behind, under the middle window;
+  - **the Weaver's sign over the altar:** a gilt shuttle 2.2 m long, hung level on two chains 2.6 m over the altar, with a bobbin of saffron thread in it;
+  - a cedar lectern on the left.
+- **A ring of twelve lamps,** 3.4 m across, hangs under the dome on a chain from its crown, 4.2 m over the floor.
+- **Four rows of cedar benches** with backs stand either side of a 2 m aisle, back from the door.
+- **A dado of tile,** 1.4 m high, runs round the walls under a limestone rail.
+- **The ceiling** is lined in limewash, with a gilt ring at the oculus. **Seventy gilt stars** are set in the dome's blue.
+- **The great door's leaves** stand open inside, against the front wall.
+- 4,916 triangles in 16 draws, on the church's 13,088 in 12.
+
+The view: `rooms.html?room=church`, with `view=nave` (from the door down the aisle past the bier to the altar under the shuttle), `dome` (up through the oculus), `sanctuary`, `back` and `outside`.
+
+Corrections made during the session:
+- The ceiling first showed the slab's bare ashlar underside, dark against the limewashed walls. It is now lined.
+- The dome's blue first read as a hole. The stars give it a surface.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 133 of 133 pass** (124 after Session 946). Four views are new on the page check: the nave by day and by night, the dome, and outside, all with no page errors. Five checks are new, over four keys:
+  - **The builds:** 4,916 triangles in 16 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling, or under the dome's crown inside the oculus. 0 points through, 0 clashes.
+  - **The walks:** four walks clear by 0.15 m: the aisle to the bier, round the bier either side to the sanctuary's step, and along the front row.
+  - **A person fits:** the altar 1.0 m over the sanctuary, the benches at 0.45 m, the steps 0.16 m, the great door 2.6 m wide.
+  - **The church's pieces:** the bier wholly under the oculus; the shuttle level over the altar and 2.6 m over it; the ring 4.2 m up and inside the oculus's line.
+- **`aurenne.check.mjs`** and **`pieces.check.mjs`**: all pass, so the church outside is unchanged.
+- **Pictures:** `rooms-church-nave.jpg`, `-dome`, `-sanctuary`, `-back`, `-outside` and `-nave-night`.
+### Needs eyes
+- **The square hall has no pendentives.** The round oculus is cut straight into a flat ceiling, as in a Roman hall with a lantern, not a true domed church. Squinches or pendentives, with the dome standing on the walls, would be truer and would be a new shell.
+- **The drum's lights glow but cast no daylight down.** The light inside comes from the side windows and the lamps.
+- **The bier is empty.** A shrouded body on it would say what the Church does with the dead more plainly. That is the bodies builder's to make, and perhaps a quest writer's question.
+- **The benches are a guess.** Many churches round the old Mediterranean had none. A standing nave, with benches only along the walls, would be more Aurennais.
+- **Owed:** the Mark's shrine (its faith is not written in the canon; a question first), the library in each nation's dress, and the guild halls once #352 is answered.
+
+## v80 — Session 948 — Card F9's seventeenth room: Aurenne's library, in the academy's hall (prototype only)
+The library is next on L5's list after the shrines (946, 947). Aurenne's comes first because its house already stands. The canon (§1.3) puts the Mages' academy in Aurenne, "the academy's white towers", and its pride is "ledgers, learning, paper over oaths". Session 836 drew the academy as a long hall of two storeys (the library) behind an arcade, with three white towers rising out of its back (`aurenneAcademy`). OG-043's Aurenne library and academy give the dress: cedar, tile, lattice and brass. So the room is built inside that hall, and nothing new is asked. It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The shell** (`aurenneAcademy` with `o.interior`): the hall leaves out its dark fill. The builder now returns its inner measures, the arcade's arches and the three towers' feet (`inner.towers`: each centre and its radius at the foot, 2.23, 2.76 and 2.23 m). The towers' round shafts stand inside the hall's back. Without `o.interior` the academy is built as before, and `aurenne.check.mjs` passes unchanged.
+
+**The room** (`aurenneLibrary` in `rooms.js`, a hall of 28.8 by 11.8 m and 10.5 m high):
+- **The loggia and the screen.** The arcade's nine arches stay open to the street, as Session 836 drew them. A walk 2.5 m deep runs behind them, past the shell's stone bench. A cedar screen of star lattice, 3.3 m high, closes the reading hall off from it. It has three doorways of 1.5 by 2.5 m, the middle one on the middle arch, with lattice over each. The lattice is one transparent texture of eight-pointed stars, not geometry.
+- **The presses:** cedar cases 2.7 m high and 0.45 m deep, open to the room, with five shelves.
+  - On the side walls they stand between the low windows. On the back wall they stand between the windows and the towers' feet, so no press crosses a window.
+  - The shelves hold runs of codices, drawn as one painted texture of spines (leathers and dyed cloth, two gilt bands on each, the tops uneven), and racks of scrolls.
+  - A rolling ladder leans on the west presses.
+- **Window seats** with cushions of madder and indigo sit under the side windows that the presses leave free.
+- **Four long reading tables** of 3.6 m stand down the hall. Each has a bench either side, a rug under it, a brass lamp, open codices, and a scroll laid flat.
+- **Two copyists' desks** stand by the screen, sloped, each with an inkhorn, a quill, a half-written sheet and a stool.
+- **A brass armillary sphere** stands on a stone pedestal in the middle of the hall, under the observatory's tower: the meridian, the equator, the ecliptic, two colures and an axis.
+- **The towers' feet** are dadoed in tile to 1.3 m under a stone rail. The tile runs only on the arc that stands in the room.
+- **The ceiling** is crossed by painted cedar beams every 2.4 m. Each stops short of a tower it meets.
+- **Four brass lanterns** hang on chains over the tables.
+- 12,746 to 14,366 triangles in 19 draws, on the academy's 18,162 in 8.
+
+The view: `rooms.html?room=library`, with `view=hall` (from the middle doorway down the hall past the armillary), `presses`, `table`, `loggia` and `outside`.
+
+Corrections made during the session:
+- **The books.** The codices were first runs of plain coloured slabs, one colour per run, and read as blocks. They are now the spines texture.
+- **The budget.** The room first came to 31,118 triangles, over the budget of 30,000. Fewer, coarser scroll racks and the books' texture brought it to 14,366.
+- **The presses.** They were first solid boxes, which would have hidden their books. The books also faced out of the cases. The cases are now open, with a back, two ends, a top and a plinth, and the books sit inside.
+- **Into the towers.** The towers' tile bands first ran round the whole shaft, through the back wall. A press in each back corner of the side walls stood inside an end tower, which reaches within 0.17 m of the side wall. The ceiling's beams ran through the towers. The bands now cover only the arc in the room, the corner presses are gone, and each beam stops at the tower.
+- **The ladder's feet** first dipped 2 cm under the floor.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 141 of 141 pass** (133 after Session 947). Four views are new on the page check: the hall by day and by night, the loggia, and outside, all with no page errors. Four checks are new, over four keys:
+  - **The builds:** 12,746 to 14,366 triangles in 19 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the ceiling. 0 points inside a tower's foot, measured as a circle, not a box. 0 clashes, the shell's bench and the towers included.
+  - **The walks:** four walks clear by 0.15 m:
+    - in at an arch and through the screen to a table;
+    - along the loggia and in by the middle doorway to the armillary;
+    - between the tables to the back presses;
+    - down the west side to the ladder.
+  - **A person fits:**
+    - the tables at 0.76 m, the benches at 0.45 m, the desks at 0.85 m;
+    - the doorways 1.5 by 2.5 m, the top shelf at 1.84 m;
+    - the lanterns' feet 3.35 m up;
+    - no press across a window.
+- **`aurenne.check.mjs`** and **`pieces.check.mjs`**: all pass.
+- **Pictures:** `rooms-library-hall.jpg`, `-presses`, `-table`, `-loggia`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The hall is one storey of 10.5 m.** Session 836 called the academy two storeys, and the front's upper windows sit over a floor that is not built. A gallery at 5 m, with presses on it, would use the height. It would have to wind round the towers' feet, and it is the next slice if wanted.
+- **The rugs read as plain red.** At this scale the home's rug texture is stretched past its pattern.
+- **The loggia's floor is the hall's terracotta,** while the arcade outside is limestone. It might be stone.
+- **The armillary is small** for so large a hall, 1 m across.
+- **Owed:** the Gatelands' and the Mark's libraries (each needs a house: the Gatelands has none drawn for it, a question like #352), the Mark's shrine (its faith unwritten in the canon), and the guild halls once #352 is answered.
+
+## v80 — Session 949 — The Gatelands' tower mill (card F8, prototype only)
+L5's "roads and works" (OG-046: farms and windmills, shipyards, lighthouses, canals, toll gates, mines, aqueducts, ferries, watchtowers) has had only the mine (857) and the aqueduct (907). The windmill is the first of the rest. It is the Gatelands' tower mill of the south-east coast's kind: a whitewashed round tower with a thatched cap, which OG-014's whitewashed country asks for. It is a work in the land, not a house, so it lives in `places.js` beside the aqueduct and the abbey, with its own view (`places-mill-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The mill** (`gatelandsMill` in `places.js`, at true size, its front door to +z):
+- **The tower:** rubble, limewashed, battered from 6 m across at the foot to 4.6 m at the curb 9 m up, on a tarred plinth.
+  - Two round-headed doors, 1.05 by 2.15 m, under dressed heads, front and back, each with a step. The miller can come and go whichever way the sails face.
+  - Eight small windows turn up the tower over four floors. Each opening is laid on the wall's batter and stands just proud of it.
+- **The cap:** an ogee of thatch on a timber curb, with a finial. The old Irish mills were thatched so.
+- **The windshaft** comes out of the cap's front at 6° up. The hub is 4.2 m from the tower's axis.
+- **Four commons sails:** a stock 8.6 m from the hub, and a lattice 1.9 m wide on the trailing side from 1.6 m out.
+  - On a working day the cloth is spread over the lattice. With `&rest` (`o.working` false) it is furled along the stock and the bare lattice shows.
+- **The tail pole** runs from the cap's back down to a cart wheel 9.5 m behind the cap, braced either side. By it the miller turns the cap into the wind.
+- **At the door:** a worn-out millstone leaned on the wall, and three sacks of meal. A path of stone leads to the lane over a knoll that falls gently away.
+- 11,108 triangles in 14 draws; 19.2 m from the ground to a sail's tip.
+
+`o.wind` turns the cap and `o.angle` turns the sails. The builder also returns `sailPts(θ)`, the sails' outline at any turn, for the checks.
+
+The view: `places.html?place=mill`, with `view=mill` (from the lane), `sails` (under them by the door), `back` (the tail pole and its wheel) and `far`, plus `&rest`.
+
+Corrections made during the session:
+- The windows and doors were first cut as upright planes on the battered wall. Their feet sank into the stone and read as notched shapes. They now lean with the wall and stand 3.5 cm proud of it.
+- The thatch first read as brown wood. It is paler now, but see below.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 76 of 76 pass.** Three views are new on the page check: the mill, the sails, and the mill at rest, all with no page errors. Three checks are new, over three keys and three winds:
+  - **The builds:** 11,108 triangles in 14 meshes, each the same twice.
+  - **The sails at every turn** of a quarter, in 3° steps: they clear the ground by 1.76 m (asked 1.5) and the tower and its cap by 1.53 m (asked 0.3).
+  - **The rest of the mill:** the cap on its curb; the two doors 1.05 by 2.15 m, opposite each other; the tail's wheel 9.5 m out behind the cap, opposite the sails.
+- **Pictures:** `places-mill-mill.jpg`, `-sails`, `-back`, `-far` and `-mill-rest`.
+### Needs eyes
+- **The cap's thatch still reads orange-brown** under the kit's thatch texture, a shade darker than the cottages' roofs.
+- **The spread cloths are flat sheets** over the lattice, so the bars do not show through from the front. Real sailcloth sags between the bars and is often half-reefed.
+- **The sails stand 1.5 m off the tower,** which is generous. The real mills' run closer, about 1 m.
+- **The mill does not turn.** Turning the sails (o.angle by the clock and the wind) belongs in the game, with the wind of `WX`.
+- **Owed:** the rest of L5's works (a lighthouse, a shipyard, a toll gate, a watchtower, a ferry).
+
+## v80 — Session 964 — The guild hall, a piece of its own (card F6, prototype only)
+Michael answered #352 with C: a guild hall of its own, a wider hall open to the roof with a gallery to the dormitory, and the look builder makes the kit piece first. Session 939 had drawn the Fighters' Guild inside the farmhouse (10.5 by 6.2 m, a hall below and a dormitory above). This session builds the new house for it; the room inside follows. Nothing new is asked. It touches only `pieces.js`, `pieces-gatelands.js`, `shoot-pieces.mjs` and `pieces.check.mjs`.
+
+*Numbering:* this run's four sessions were first numbered 960 to 963, one above the highest on any branch when the run began (959). By the run's end, the bodies builder had written 960 and 961, the systems builder 960, and the combat deep work 963. They are renumbered 964 to 967 here, in their headings, the backlog, decisions.md and the prototypes' comments. The commits and the PR's comments keep the first numbers.
+
+**The plan** (`GL_PLANS.guildhall`, `pieces.js`): rubble with dressed quoins and dressed openings, as the forge and the temple, under slate at 40° between parapet gables. 14.4 by 9.0 m outside, walls of 0.7 m, 6.4 m to the wall plate, 10.36 m to the ridge. The plan is laid out for the room it will hold:
+- **The hall** fills the west end (to x 2.6), open to the roof, its hearth in the west gable under a stack of two flues.
+- **The east end** is two storeys of 3.2 m: the steward's rooms below, the dormitory over them. It has no stack, so the dormitory's beds can stand heads to the east gable.
+- **The gallery** runs at the first floor (3.2 m) along the back wall of the hall, from the stair to the dormitory. Outside it shows as two tiers at the back: low windows under it, tall round-headed lights over it.
+- **The front:** a great round-headed door of 1.6 by 3.3 m in voussoirs, two tall round-headed lights of 1.05 by 3.7 m, one either side, and two storeys of sashes at the east end. The back has the cross-passage door opposite the great door. Each gable has a pair of lights: round-headed in the hall's, sashes on two floors in the east one.
+- **Two new trims** in `gatelandsBuilding`, there for any plan:
+  - `plaque`: a carved name panel in a dressed frame over the door, its letters fitted to the panel;
+  - `banner`: the guild's banner on an iron pole with a brace, hung across the street so it reads from along it, swallow-tailed, gilt-bordered, crossed swords for the Fighters, a star for the Mages.
+- `o.guild` picks the dress: `'fighters'` (red door and banner, *FIGHTERS’ GUILD*) or `'mages'` (blue, *MAGES’ GUILD*).
+- 9,873 triangles in 14 draws, beside the farmhouse's 2,144 in 10.
+
+The view: `pieces-gatelands.html?view=guild`, the hall on a flagged square with the farmhouse beside it for its size; `&cam=front|corner|back|door`, `&guild=mages`.
+
+Corrections made during the session:
+- The back's openings were first laid in x where the face runs in −x, putting the door under a hall light. The back is now laid out as seen from behind.
+- The name panel's letters ran off its ends. They are now measured and fitted.
+- The banner first hung west of the door and hid the panel from the corner. It now hangs east of the door, between the panel and the east light.
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass**, 4 checks new, over both guilds:
+  - **The builds:** 9,873 triangles in 14 draws each, 14.4 by 9.0 m, eaves 6.4 m, ridge 10.36 m. Each builds the same twice, its lit windows included (from a stream of its own).
+  - **The openings:** 0 clashes on a face, dressings and arch rings included; 0 into the quoins or the eaves.
+  - **The room's floors:** 0 openings of the hall's back cross the gallery's floor (±0.3 m), and 0 east-end sashes sit between the two floors.
+  - **The great door:** 1.6 by 3.3 m, its name panel 0.11 m clear of the arch's ring; the two guilds' banners and names differ.
+  - `view=guild` and `view=guild&guild=mages` render with no page errors, but the people's missing pack, as every view of the page.
+- The six plans of the line-up build as recorded, so the kit's other plans are unchanged. **`aurenne.check.mjs`** and **`rooms.check.mjs`** pass.
+- **Pictures:** `pieces-gatelands-guild.jpg`, `-guild-corner`, `-guild-back`, `-guild-door` and `-guild-mages`.
+### Needs eyes
+- **The rubble is a busy pattern** over so large a face. Ashlar (`GL_FIN.ashlar`) would read grander for a town's guild; the plan takes `o.fin`.
+- **The front reads as two buildings,** a chapel-like hall and a house at the east end. That is the plan's honesty about the dormitory, but a single row of tall lights would read as one hall.
+- **The banner is edge-on from in front.** Hung across the street, it reads from along the street and not from facing the door.
+- **Owed:** the Fighters' Guild rebuilt inside it (the hall open to the roof, the gallery, the dormitory, the steward's rooms), then the Mages' Guild in the same house, then the other islands' halls.
+
+## v80 — Session 965 — The Fighters' Guild in its own hall (card F9, prototype only)
+Session 964 built the guild hall Michael asked for on #352 (C). This session moves the Fighters' Guild of Session 939 out of the farmhouse and into it. Everything the game's guild hall has is kept: the steward at the desk, the notice board, the racks, the armour stands, the long table, the grindstone and the beds. It is laid out again round what the new house gives: a hall open to the roof, and a gallery to the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The room** (`gatelandsGuildHall`, inside `GL_PLANS.guildhall` with its great door open):
+- **The hall** (9.4 by 7.6 m, open to 10.1 m at the ridge):
+  - **The roof:** three arch-braced collar trusses on stone corbels and wall posts, each brace a round arch springing at 5.6 m and meeting under its collar at 8.4 m. Above them are purlins, a ridge beam and wall plates under a boarded lining. The trusses stand at x −3.9, −1.3 and 1.3, the only places clear of both the front's tall lights and the back's high ones.
+  - **The hearth** is in the west gable. Its limewashed breast rises as a flue to the lining, and the guild's red shield hangs on it over two crossed blades.
+  - **The long table** with its benches stands before the hearth.
+  - **The steward's desk** faces the great door, with its ledger, inkwell and quill. The notice board hangs behind it on the back wall, under the gallery.
+  - **The weapons' rack** stands under the gallery, west of the back door.
+  - **The two armour stands** stand by the front wall, between the great door and the east light.
+  - **The practice floor** has the pell, with the grindstone by the gallery.
+  - **A wheel of eight candles** hangs on its crown from the middle collar, 4.3 m over the floor.
+- **The gallery** runs the back wall at the first floor (3.2 m) on a bressummer and three posts, 1.35 m deep. It has a rail of balusters over the hall and a bench under the high lights.
+- **The stair** of sixteen risers (0.197 by 0.27 m) rises along the partition from the front, with a raking rail and a newel. Its head lands on the gallery's east end, and the dormitory's door opens there in the partition.
+- **The dormitory** is over the steward's room, open to the roof. Six beds stand with their heads to the east gable, each with a chest at its foot. The aisle runs along the partition, and a lamp hangs on a bracket.
+- **The steward's room** is under the dormitory, through a door in the partition by the stair's foot. It holds a table with the guild's books and a chair, a press against the partition, and the iron-bound strongbox under the east gable between its windows.
+- The doors' leaves stand open: the great door's against the front wall, and the partition's two flat against its east face.
+- 8,367 to 8,559 triangles in 20 draws, on the hall's 9,849 in 13. The farmhouse's room was about 5,000 in 20.
+
+The view: `rooms.html?room=guild`, with `view=hall` (from the great door to the desk, the board and the gallery), `table`, `east`, `roof` (up into the trusses), `gallery`, `dorm`, `steward` and `outside`.
+
+Corrections made during the session:
+- **The trusses.** They were first set every 2.35 m from the gable. Their corbels then landed in a back high light and a front tall light. They now stand in the three bays clear of both, and spring above the front lights' heads.
+- **Through the slate.** The purlins' outer top edges first stood 4 cm through the slate, and the rafters' feet stood past the wall's face. Both are now cut to the slope.
+- **The draw budget.** The wheel's candles had a wax material of their own, which made 21 draws. They take the linen's now.
+- **A slip in the check, mine.** Raising the room's draw limit by a replace-all also tightened Aurenne's smithy's and apothecary's limits from 22 to 20, and turned the apothecary (21 draws) red. Both lines are restored from HEAD.
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 146 of 146 pass** (141 after Session 948). Four views are new on the page check: the gallery, the roof, the steward's room and outside, all with no page errors. The Fighters' Guild's checks are rewritten for the new house, six over four keys:
+  - **The builds:** 8,367 to 8,559 triangles in 20 meshes, each key the same twice.
+  - **Inside the walls:** every piece inside the walls and under the roof's lining, measured against the slope at each point. 0 points through and 0 clashes on a floor.
+  - **The walks:** six walks clear by 0.15 m, and each crosses the partition only at a door:
+    - the great door to the desk;
+    - the great door past the stands and the stair's foot into the steward's room to its table;
+    - the back door to the long table;
+    - the great door to the hearth;
+    - the stair's head along the gallery;
+    - the dormitory's door down its aisle.
+  - **A person fits:**
+    - the desk at 0.78 m, the table at 0.76 m, the benches at 0.45 m;
+    - six beds 1.87 m inside;
+    - the stair 0.197 by 0.27 m, with 5.08 m clear over every tread;
+    - the partition's doors 0.85 by 2.05 m and 0.8 by 2.0 m.
+  - **The board:** behind the desk and over it.
+  - **The gallery:**
+    - the rail 1.01 m over its floor;
+    - the stair's head at the gallery's floor and edge;
+    - the dormitory's door off the gallery's end;
+    - the hall open to the roof on three trusses, with no piece of the hall's floor above 3.5 m.
+- **Pictures:** `rooms-guild-hall.jpg`, `-table`, `-east`, `-roof`, `-gallery`, `-dorm`, `-steward`, `-outside` and `-hall-night`.
+### Needs eyes
+- **The hall's walls are bare rubble inside,** as the forge's and the temple's are. A guild of means might limewash them, as the partition is.
+- **The night view is barely darker than noon.** The page's night lowers the sky's light, and the chandelier and the fire carry the room.
+- **The dormitory has no hearth** (the east stack was taken off in Session 964 for the beds).
+- **Six beds where the farmhouse had seven.** The gallery could take two more under its high lights, if the guild wants beds in view of the hall.
+- **Owed:** the Mages' Guild in the same house (blue, the hall as a library and a casting floor), then the other islands' halls.
+
+## v80 — Session 966 — The Mages' Guild in the same hall (card F9, prototype only)
+Michael's C on #352 gave both guilds the new house: "The Mages' Guild and the other two islands' halls will follow the answer," and Session 939 had said the Mages' Guild would be the same house painted blue. Sessions 964 and 965 built the house and the Fighters' Guild inside it. This session gives the room its second dress. The game's Mages' Guild (S292, `83-world-generator.js`) sets the list: the steward's desk and the notice board, bookcases, potion shelves either side of the board, the still with its green light, a reading table of open books, and the dormitory. Nothing new is asked. It touches only `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
+
+**The room** (`gatelandsGuildHall({ guild: 'mages' })`): the same shell (blue door and banner, *MAGES’ GUILD* over the door) and the same bones: the trusses, the gallery, the stair, the partition and its doors, the dormitory and the steward's room. What changes:
+- **The hearth's device** is a blue shield with a gilt star of eight points, where the Fighters have red and crossed blades.
+- **The long table** is a reading table: four codices open on it, in leather, and the candle.
+- **The potion shelves either side of the board:** two open frames of four shelves of green phials, crocks and round flasks. One stands where the Fighters' rack is (west of the back door), the other east of the low window. Both are under the gallery.
+- **The still** stands by the front wall where the armour stood. It is a stone furnace with its fire, a green flask, a head of glazed crock, and a beak falling to a receiver on a stool. The page lights it green.
+- **A lectern** with a great book open on it stands on the practice floor, and **a round table** of scrolls and a candle where the grindstone was.
+- **Three presses of codices** stand along the gallery, in the bays between its high lights. Each is 2.2 m high, five shelves of the library's spines (the texture is now shared: `libSpines()`). This is where the hall's height pays.
+- The beds' blankets and the leaves are blue.
+- 11,533 to 11,981 triangles in 20 draws (the Fighters' 8,367 to 8,559).
+
+The view: `rooms.html?room=mages`, with every view of `room=guild`, and `view=still` (the still and the shelves from the hall).
+### Verified (headless Chromium)
+- **`rooms.check.mjs`: 150 of 150 pass** (146 after Session 965). Three views are new on the page check: the Mages' hall, the still and the gallery, all with no page errors.
+- **Both guilds, four keys each,** pass every check of Session 965: the same twice and in budget, inside the walls and under the lining, no clashes, the six walks, a person fits, the board behind the desk, the gallery.
+- **One check is new for the Mages':**
+  - the potion shelves stand either side of the board;
+  - the still is against the front wall, its receiver beside it;
+  - three presses stand on the gallery, none across one of its three high lights.
+- **Pictures:** `rooms-mages-hall.jpg`, `-table`, `-still`, `-gallery`, `-outside` and `-hall-night`.
+
+Corrections made during the session:
+- My first insert of the Mages' check landed in an earlier room's evaluation, where it failed to run.
+- The check first counted the east end's upper sashes among the gallery's high lights.
+### Needs eyes
+- **The still's green** is the game's (its light is `0x60ff80`), and the flasks glow a little. It may read as more magic than chemistry.
+- **The great book on the lectern is a pale slab** at this distance, with no text or binding to read.
+- **The gallery's presses darken it.** It might want a lamp of its own for the Mages, who read there.
+- **The Mark's and Aurenne's guild halls** each need a house, as the Gatelands' did. That is a question like #352, and is not asked yet.
+
+## v80 — Session 967 — The Gatelands' lighthouse (card F8, prototype only)
+L5's "roads and works" (OG-046: "lighthouses and beacons"; OG-058's waystations list one too) has had the mine (857), the aqueduct (907) and the windmill (949). The lighthouse is next. The Gatelands' register is Irish, so the precedent is Hook Head, the old lighthouse on its promontory in Wexford: a squat round tower, limewashed, with two black bands, a gallery on corbels and a lantern on its head, and the keepers' houses in a walled yard. It is a work in the land, so it lives in `places.js` beside the mill, with its own view (`places-lighthouse-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`. The one import added to `places.js` is the kit's `gatelandsBuilding` and `GL_PLANS` from `pieces.js`.
+
+**The lighthouse** (`gatelandsLighthouse` in `places.js`, at true size, the sea to +z):
+- **The headland:** a promontory of turf over a ragged cliff that falls 14 m to the sea. The break is 12.5 m out on the mean, its line roughened by bearing, and runs on inland as a neck. Rocks lie along the break. The ground is two grids, a metre round the headland and three metres inland. The coarse one is tucked under the fine one so no crack shows at the seam.
+- **The tower:** limewashed rubble, battered from 7.6 m across at the foot to 6.6 m at the gallery 20 m up, on a tarred plinth, with two tarred bands.
+  - A round-headed red door of 1.1 by 2.3 m faces landward on a step.
+  - Six small windows climb the stair's turn.
+- **The gallery:** a stone deck 1 m wider than the tower on 24 corbels, and an iron railing of 1.05 m on 32 standards.
+- **The lantern:**
+  - a stone pedestal, and a glazed room of twelve sides, 1.4 m round and 2.4 m high, its astragals painted red;
+  - inside, the lamp on its column within a glass lens;
+  - a copper dome gone green, a ventilator ball, and a vane.
+  - With `o.lit`, the lamp burns. At night the page adds its light and a faint beam out to sea.
+- **The keeper's house:** the kit's thatched cottage (`GL_PLANS.cottage`), landward, its front to the tower. It stands in a yard behind a low rubble wall, and a flagged path runs from the tower's door to its door.
+- 26,516 triangles in 15 draws, and the cottage's 11. The lamp is 36.3 m over the sea and 26.2 m from the headland to the vane.
+
+The view: `places.html?place=lighthouse`, with `view=light` (from the landward neck), `sea` (from the water under the cliff), `gallery` (by the lantern) and `far` (from along the coast), plus `&night`.
+
+Corrections made during the session:
+- **The headland's shape.** It was first a round mound falling away on every side, which read as a cone from the sea. It is now a promontory with a near-vertical ragged cliff and a neck inland.
+- **The ground's triangles.** The ground first took 37,136 triangles, over the 30,000 budget. Two grids brought it to 26,516.
+- **The cliff's edge.** The check first found the tower 5.2 m from the cliff's break on its nearest bearing, under the 6 m asked. The headland was widened rather than the rule relaxed.
+- **The landward camera** first stood on the east cliff's edge, where the neck is narrower.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 82 of 82 pass** (76 after Session 949). Three views are new on the page check: the landward view, from the sea, and far by night, all with no page errors. Three checks are new, over three keys:
+  - **The builds:** 26,516 triangles in 15 meshes and the cottage's 11, each the same twice.
+  - **The gallery and the light:**
+    - the railing 1.05 m;
+    - a walk of 2.47 m round the lantern's pedestal;
+    - the lamp 36.3 m over the sea, seen from a deck 4 m up at 16.7 sea miles (2.08 (√H + √h));
+    - the lamp burns when lit.
+  - **The ground:**
+    - the tower 6.7 m back from the cliff's break seaward;
+    - its door landward on the flat;
+    - the keeper's house on the flat (its corners within 0.17 m), 8.7 m from the tower, its door toward it.
+- **Pictures:** `places-lighthouse-light.jpg`, `-sea`, `-gallery`, `-far` and `-night`.
+### Needs eyes
+- **The tower is plain above its door.** Hook Head's has a stair turret and buttressing at its foot, and a medieval tower's batter is steeper.
+- **The beam is a fixed cone.** A lighthouse in the game would turn it by the clock, and whether it turns at all (a fixed light or a flashing one) is a look call.
+- **The cliff is one rock colour and one grid's facets.** At sea level the grid's steps show.
+- **The yard wall is a plain arc** and stops short at the neck's edge.
+- **Owed:** the rest of L5's works (a shipyard, a toll gate, a watchtower, a ferry).
+## v80 — Session 946 — bellwreck waits for its port's discovery (QA)
+The QA routine's first item with FREEZE #297 closed and F2a merged: the FLAKY suites whose test fixes were owed. `bellwreck` cost the most, two retries on 15 Oct (main's 69e0c91 and F2a's ce23dbe), each on the check *within forty units at high tide, A mast stands up out of the sea…, once*, whose list of things said held the mast's line and *Carrigcarra discovered · +50 XP*. The suite stands the player at the bell's port until the wreck is built, and stopped waiting the moment `BELL_WRECK` existed. The port itself is discovered by `tickDiscovery` (`js/83-world-generator.js`), which runs every half second over `SITES`, the loaded cells' sites only: on a slow runner the wreck could be built before the port's cell had loaded or the half second come round, and the toast then fired while the player stood by the mast, inside the window the check counts. The game is right (you are near the port); the test was waiting for the wrong thing. The wait now runs until the wreck is built and `discovered(P.port)` is true, and a check says the port was found before the wreck was visited. The mast check keeps its *once* and its single line: nothing was loosened.
+### Verified (headless Chromium)
+- `node tests/run.mjs bellwreck`: three runs green in a row (about 75 s each), every check passing; the new check *standing at the port, the port is discovered before the wreck is visited* true in each.
+- `node tests/run.mjs bellwreck --look=new`: green.
+### Needs eyes
+- Nothing for a playtest. CI is the proof: the row in `docs/qa/flaky.md` closes for good if `bellwreck` is not FLAKY on the next several runs that carry this.
+
+## v80 — Session 947 — carraignight waits for the door, not the clock (QA)
+`carraignight` went FLAKY once on 15 Oct (run 38695728480, shard 11): the street half passed, then the indoor loop threw at its first `page.evaluate` with `WORLD.settle.get('carraig_mor')` undefined, several homes in. The loop went into eight homes at eight hours each, paced by fixed waits: 1.5 s after `goToInterior`, 0.8 s after `exitInterior`. Both moves happen only in `doFade`'s callback, a 440 ms `setTimeout` (`js/20-quests.js`), which a loaded runner can fire late. When it did, the next step found the last room's `INT_BOX` still set with `lid` still the overworld, put the player at room coordinates (0 to the room's width) in the open world, and the next `WORLD.tick` dropped Carraig Mór as thousands of units away. The game was right to; the test had moved the player there. The loop now waits for `isInterior()` and `currentHouse` being this home after going in, and for `lid==='overworld'` after coming out, and throws rather than moving the player to `INT_BOX` when not indoors. The checks and their hours are unchanged.
+### Verified (headless Chromium)
+- `node tests/run.mjs carraignight`: three runs green in a row, about 3.5 min each. Indoors, seen by hour in the three runs: 23h30, 1h, 3h and 4h30 0/8 each time (the check); 21h30 2, 1, 4 of 8; 5h30 5, 3, 2 of 8.
+- `--look=new`: see the PR comment (run beside this commit).
+### Needs eyes
+- Nothing for a playtest. The game's fade still carries a timer, which is fine for a player; any other suite that paces `goToInterior` with a fixed wait has the same exposure (`grep -l "goToInterior" tests/` for the next QA run).
+
+## v80 — Session 948 — coopsaves waits for the game's own saves to land (QA)
+`coopsaves` went FLAKY once (run 38653460071, 14 Oct): *the old save loads to the same state* loaded the first character (gold 777, level 7) instead of the hand-written v2 save (gold 4242, level 9). Step 2 Continues the first character and lets it run 12 s; step 3 writes the old one-row save, calls `ssSetActive('oldone_manual_2')` and reloads. `ssWrite` (`js/70-saves.js`) sets the active key in its `.then`, when the write lands, so a save from step 2 still in flight landed after step 3's call and pointed Continue back at the first character. The test waited for nothing between the two. It now wraps `ssWrite` before clicking Continue to count the writes in flight, holds the autosave off (`SS.lastAuto`) once the character is hidden, and waits for the count to reach 0 before step 3. No check changed. The game's half, that a late autosave can re-point Continue after you load another save from the menu, was already filed in backlog I for the systems builder.
+Correction to Session 947: its *Verified* left the new look's run to the PR comment; `carraignight --look=new` passed, every check.
+### Verified (headless Chromium)
+- `node tests/run.mjs coopsaves`: three runs green in a row; the old save loads with gold 4242, level 9, `oldone`, clock 800.15.
+- `--look=new`: green.
+### Needs eyes
+- Nothing for a playtest.
+
+## v80 — Session 949 — mapseals waits for Dunmore's gate and neighbour (QA)
+`mapseals` went FLAKY once (run 38669829055, 15 Oct): *the map marks what the compass marks, four of Dunmore's jobs, one waiting to be reported* found no job waiting to be reported, because the first try's four jobs were a cull, two road jobs and a find. The suite asks `townQuestFor(dunmore, kind, true)` for a retrieve and a deliver right after `intoWorld`; `townQuestFor` (`js/87-world-quests.js`) builds a retrieve only when `nearDoors(site,700)` finds a gate and a deliver only when `nearSites(site,900)` finds a town with a pad, and falls back to the road job otherwise. Both read what has loaded, so on a slow runner neither was there yet. The suite now waits, polling every half second for up to two minutes, until both kinds come back as asked, then takes its four jobs as before. No check changed. The game's half (a seeded job can come out a different kind on a reload, against the S533 rule) is already in backlog I for the systems builder.
+### Verified (headless Chromium)
+- `node tests/run.mjs mapseals`: three runs green in a row; `--look=new` green.
+### Needs eyes
+- Nothing for a playtest.
+
+## v80 — Session 971 — Aurenne's coastal watchtower (card F8, prototype only)
+L5's "roads and works" (OG-046: "watchtowers and forts") has had the mine (857), the aqueduct (907), the windmill (949) and the lighthouse (967). OG-124's Aurenne panel draws "a coastal watchtower", and the canon gives it a reason: piracy is the Mark's undeclared war, and the Compact's tithe-ships are its favourite prey. So the Compact keeps a chain of towers along its coast, each in sight of the next. The precedent is the Genoese and Saracen towers of the Tyrrhenian coast and the borj of the Maghreb, which fits Aurenne's Mediterranean and North African register: a round tower on a scarp, its door high up, a stair that stops short of the door, a parapet on corbels, a beacon on the roof. It is dressed in Aurenne's own materials (§1.3, and the catalogue's note on OG-124 against Tuscan stone): cream lime plaster, limestone dressings and a band of blue tile. It lives in `places.js` beside the lighthouse, with its own view (`places-watchtower-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The tower** (`aurenneWatchtower` in `places.js`, at true size, the sea to +z):
+- **The point:** dry turf over a rock edge that falls 11 m to the sea, the break 13 m out on the mean and ragged by bearing. Rocks lie along it, and two cypresses stand inland.
+- **The scarp and the drum:** a scarp battered from 10 m across at the foot to 8.4 m at a limestone cordon 4 m up. Above it a near-upright drum rises to the terrace at 12.3 m, with six slit windows.
+- **The parapet:** under it, a band of blue tile. Twenty limestone corbels of three courses carry it 0.65 m out, the gaps between them dark: the machicolations, for dropping stones on whoever is at the door. It stands 1.05 m over the terrace, with ten loopholes.
+- **The door and the stair:**
+  - the door is round-headed, 1.0 by 2.1 m, in limestone jambs and a ring, its sill 5.4 m up on the landward side;
+  - a solid masonry stair of 27 risers of 0.2 m on 0.3 m treads climbs beside the tower to a landing pier 1.1 m short of the wall;
+  - a gangway of four planks crosses the gap. With `o.drawn` it is taken in, the gap stands open and the blue leaf is shut;
+  - while the gangway is down, the door stands open.
+- **The terrace:** paved in limestone. The stair's head is in a small hut of 1.5 m under a little dome. The beacon is an iron basket on three legs on a stone plinth, loaded with faggots; `o.lit` lights it.
+- **Inland:** a flagged path from the stair's foot, and the cistern's wellhead.
+- 20,408 triangles in 13 draws.
+
+The view: `places.html?place=watchtower`, with `view=tower` (from the path inland), `door` (on the landing), `roof` (on the terrace by the beacon), `sea` (from the water under the point) and `far` (from along the coast), plus `&drawn` and `&night`.
+
+Corrections made during the session:
+- **The inland camera** first stood past the edge of the point's neck, which is 26 m wide, and looked up a cliff.
+- **The door's leaf.** It sat 3 cm behind its own dark reveal and never showed. It is now in front of the reveal, and only when the gangway is drawn.
+- **The leaf's colour.** The kit's wood texture rendered it black. It is plain blue paint now; I did not find out why.
+- **The headland's size.** The first check found the tower 4.75 m from the break on its nearest seaward bearing, under the 5 m asked. The point was widened (the break from 12 to 13 m) rather than the rule relaxed.
+- **A slip in the check, mine.** Its first ray for the gangway fell exactly on the seam between two planks.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 90 of 90 pass** (82 after Session 967). Three views are new on the page check, all with no page errors: the tower, the landing with the gangway drawn, and the roof by night. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 30,000 triangles and 20 draws.
+  - **The stair:**
+    - each of its 26 steps found by a ray within 0.02 m of its height: 0.2 m rises on 0.3 m treads, 2R + T 0.7;
+    - the landing at the sill;
+    - the flight's foot on the ground.
+  - **The door:**
+    - the landing 1.09 m short of the wall at the sill;
+    - the gangway across the gap at the sill;
+    - drawn in, a drop of 4.05 m under the gap.
+  - **The terrace:**
+    - the parapet 1.05 m;
+    - a walk of 0.8 m or more past the hut and past the beacon, the two clear of each other;
+    - the eye 23.35 m over the sea sees a tower like it 34.5 km off;
+    - lit, the beacon burns.
+  - **The cliff:** the tower 5 m or more back from the break seaward.
+- **Pictures:** `places-watchtower-tower.jpg`, `-door`, `-roof`, `-sea`, `-far`, `-drawn` and `-night`.
+### Needs eyes
+- **The stair is a plain block of plaster.** A real one would have a low parapet on its open side, and often a break of its own, a drawbridge over a pit at its foot.
+- **The machicolations are painted, not open.** Their gaps are a dark ring under the parapet, and nothing passes through them.
+- **The tower has no inside.** The door opens on dark. A guardroom over a cistern, with the stair in the wall's thickness, would be a room for F9.
+- **The point's neck has straight sides** and reads as a wall from the coast, as the lighthouse's does.
+- **The faggots read black against the sky** from the terrace.
+- **Owed:** the rest of L5's works (a shipyard, a toll gate, a ferry).
+
+## v80 — Session 972 — The Gatelands' toll bridge (card F8, prototype only)
+L5's "roads and works" asks for toll gates (OG-046), and the Gatelands' own list asks for stone bridges (OG-014). The Irish precedent puts the two together: the old bridges of the Nore and the Boyne were tolled at a gate tower on one bank. So this is a crossing: a rubble bridge of three arches over a river, a gate tower on the north bank with the road through it, and the toll beyond it, a bar, a board of the tolls and the toll-keeper's cottage. It lives in `places.js` beside the lighthouse, with its own view (`places-tollbridge-view.js`, dispatched from `places-view.js`). It reuses the lighthouse's rubble, dressings and water, and the kit's cottage. Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+*A correction to Session 971:* its comments in `places.js`, `places.check.mjs` and the views first said Session 968, from before the run counted every branch. They now say 971.
+
+**The crossing** (`gatelandsTollBridge` in `places.js`, at true size, the road along z, the river along x):
+- **The river:** a channel 18 m across between steep turf banks, its water 3.4 m down and its bed 4.6 m down.
+- **The bridge:** 28 m from bank to bank, one rubble face in (z, y) with its arches cut from below, extruded across.
+  - Three round arches of 5.6 m stand on piers of 1.4 m, springing 0.5 m over the water, each with a dressed voussoir ring on both faces.
+  - The piers have pointed cutwaters upstream and down, capped in stone at the springing.
+  - The deck is humped from the banks to 0.9 m over them at the middle. The way is cobbled, 3.4 m wide, between rubble parapets of 0.95 m under a dressed cope that follows the hump.
+- **The gate tower** on the north bank: rubble with long-and-short dressed quoins, 5.8 by 5 m and 9 m high.
+  - The road passes through it under a round arch of 3 by 4.7 m with a dressed ring at each face, and its two leaves stand open against the passage's walls.
+  - A box machicolation on three corbels hangs over the arch on the bridge's side, there to drop stones on whoever will not pay.
+  - It has slits, and the Irish stepped merlons on all four sides.
+- **The toll,** past the tower:
+  - a red bar across the road on a post with an iron counterweight, a stump on the other side to rest it on; `o.open` raises it;
+  - a whitewashed board of the tolls on two posts;
+  - the toll-keeper's cottage, the kit's `GL_PLANS.cottage` painted green, along the road with its door to it.
+- 21,192 triangles in 12 meshes, and the cottage's 12.
+
+The view: `places.html?place=tollbridge`, with `view=bridge` (from the south bank downstream), `deck` (on the crown, toward the tower), `toll` (by the cottage, back toward the bar), `river` (low on the water under the arches) and `far` (from upstream), plus `&open`.
+
+Corrections made during the session:
+- **The rings and the cutwaters.** They first faced the wrong way on one face of the bridge.
+- **The walk's ray, mine.** In the check it first took the shut bar for the floor. The walk is now made with the bar raised.
+- **Sampling the slope, mine.** The check first read the 2 cm seams between the strips of cobbles as a 6 cm lip. It now samples on each strip's middle.
+- **The doorstep.** The cottage's door was asked to be 1 m off the road. Its step reaches to 0.6 m, which is right, and the check asks 0.3.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 96 of 96 pass** (90 after Session 971). Two views are new on the page check: the bridge, and the toll with the bar open, both with no page errors. Four checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 30,000 triangles.
+  - **The arches:**
+    - each crown found by a ray from the water within 0.05 m of its height (found at 0.00);
+    - the spans 5.57 m at the springing;
+    - 3.3 m of headroom over the water.
+  - **The way,** walked from bank to bank and through the tower on three lines:
+    - its floor within 0.002 m of the deck;
+    - the steepest slope 0.121, under 1 in 7.5;
+    - 3.4 m between the parapets, the parapets 1.06 m over the way;
+    - 4.04 m of headroom under the tower's arch.
+  - **The toll:**
+    - the bar shut across the road, and clear of it when raised;
+    - the cottage on the flat (corners within 0.21 m), its doorstep 0.6 m off the road.
+- **Pictures:** `places-tollbridge-bridge.jpg`, `-deck`, `-toll`, `-river`, `-far` and `-open`.
+### Needs eyes
+- **The rubble texture is large and busy** over the bridge's long faces. It reads as blockwork more than river rubble.
+- **The banks are bare turf** cut steeply to the water. There are no reeds, no stones at the foot of the piers and no current.
+- **The merlons' step is slight.** The Irish stepped crenellation is sharper, often in two steps.
+- **The tower is solid.** There is no room over the arch for the toll-keeper's men, and no stair.
+- **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
+- **Owed:** the rest of L5's works (a shipyard, a ferry).

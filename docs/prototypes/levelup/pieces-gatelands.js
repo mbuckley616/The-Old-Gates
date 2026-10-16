@@ -9,6 +9,7 @@
 // &mix=lot (Session 835): the same street's lots coloured by gatelandsLot (Michael's A on #280), &street=<seed>.
 // ?view=line: the six plans in a row with a person at each door and a plaque of its sizes and triangles.
 // ?view=kit: the pieces one by one on a flagged floor, each on a wall stub, beside a 1.8 m person.
+// ?view=guild (Session 964): the guild hall beside the farmhouse, &cam=front|corner|back|door, &guild=mages.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
@@ -16,7 +17,7 @@ import { Q, W, H, STATS, rnd, fbm, sstep, makeRenderer, makeComposer, buildTextu
 // the kit itself is in pieces.js since Session 834; this file is its page
 import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot } from './pieces.js';
 
-const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || 'eye', STREET = Q.get('street') || 'gatelands-street';
+const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : 'eye'), STREET = Q.get('street') || 'gatelands-street';
 
 
 // ═══════════════════════════════ the scenes ═══════════════════════════════
@@ -122,6 +123,15 @@ if (VIEW === 'kit') {
   small[2].w = 7.5; small[2].open.front = [{ kind: 'transom', x: -1.6, y: 0, w: 1.05, h: 2.5 }, win(1.6, .85, .95, 1.5, [3, 2]), win(-1.6, 3.55, .9, 1.3, [3, 2]), win(1.6, 3.55, .9, 1.3, [3, 2])];
   small.forEach((P, i) => { const g = building(P), x = -10.5 + i * 10.5; put(g, x, -18, 0); plaques.push([x, -13.4, { name: P.name, tris: g.userData.tris, calls: g.userData.calls, size: g.userData.size }]); if (i === 0) personAt(g, .3, 0, Math.PI); });
   cam.position.set(0, 12.5, 23); cam.lookAt(0, 0.6, -5); cam.fov = 58; cam.updateProjectionMatrix();
+}
+if (VIEW === 'guild') {
+  // the guild hall (Session 964, Michael's C on #352) on a flagged square, the farmhouse that drew the first guild beside it for its size;
+  // &guild=mages for the Mages' Guild; &cam=front (default) | corner | back | door
+  flat('flag', 40, 24, 3, 4, .01, 1.3); const P = PLANS.guildhall({ guild: Q.get('guild') || 'fighters' }), g = building(P); put(g, 0, 0, 0);
+  const F = building(PLANS.farmhouse({})); put(F, 15.2, -1.4, 0); personAt(g, .2, .5, Math.PI * .9); personAt(F, 0, .3, Math.PI);
+  plaques.push([-7.5, 7.0, g.userData], [15.2, 5.2, F.userData]);
+  const C = { front: [[1.5, 1.65, 26], [1.5, 4.6, 0]], corner: [[-17, 3.2, 17], [0, 4.2, 0]], back: [[9, 2.4, -21], [-1, 4.4, 0]], door: [[-6.6, 1.65, 9.0], [-1.6, 3.7, 3.6]] }[CAMQ] || [[1.5, 1.65, 26], [1.5, 4.6, 0]];
+  cam.position.set(...C[0]); cam.lookAt(...C[1]);
 }
 STATS.plans = BUILT; STATS.view = VIEW; STATS.mix = MIX;
 

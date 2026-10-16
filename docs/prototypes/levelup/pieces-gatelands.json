@@ -664,5 +664,140 @@
   "errs": [
    "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:42535/people.js:9:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:42535/people.js:9:21)"
   ]
+ },
+ "guild": {
+  "secs": 8,
+  "puffs": 1131,
+  "plans": {
+   "Guild hall": {
+    "tris": 9873,
+    "calls": 14,
+    "w": 14.4,
+    "d": 9,
+    "eave": 6.4,
+    "ridge": 10.36
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "guild",
+  "mix": "a",
+  "errs": [
+   "SyntaxError: Unexpected end of JSON input"
+  ]
+ },
+ "guild-corner": {
+  "secs": 5,
+  "puffs": 1131,
+  "plans": {
+   "Guild hall": {
+    "tris": 9873,
+    "calls": 14,
+    "w": 14.4,
+    "d": 9,
+    "eave": 6.4,
+    "ridge": 10.36
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "guild",
+  "mix": "a",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:45521/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:45521/people.js:10:21)"
+  ]
+ },
+ "guild-back": {
+  "secs": 5,
+  "puffs": 1131,
+  "plans": {
+   "Guild hall": {
+    "tris": 9873,
+    "calls": 14,
+    "w": 14.4,
+    "d": 9,
+    "eave": 6.4,
+    "ridge": 10.36
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "guild",
+  "mix": "a",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:45521/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:45521/people.js:10:21)"
+  ]
+ },
+ "guild-door": {
+  "secs": 6,
+  "puffs": 1131,
+  "plans": {
+   "Guild hall": {
+    "tris": 9873,
+    "calls": 14,
+    "w": 14.4,
+    "d": 9,
+    "eave": 6.4,
+    "ridge": 10.36
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "guild",
+  "mix": "a",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:45521/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:45521/people.js:10:21)"
+  ]
+ },
+ "guild-mages": {
+  "secs": 6,
+  "puffs": 1131,
+  "plans": {
+   "Guild hall": {
+    "tris": 9873,
+    "calls": 14,
+    "w": 14.4,
+    "d": 9,
+    "eave": 6.4,
+    "ridge": 10.36
+   },
+   "Farmhouse": {
+    "tris": 2144,
+    "calls": 10,
+    "w": 10.5,
+    "d": 6.2,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "guild",
+  "mix": "a",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:45521/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:45521/people.js:10:21)"
+  ]
  }
 }
