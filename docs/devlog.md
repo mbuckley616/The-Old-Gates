@@ -22297,3 +22297,47 @@ Corrections made during the session:
 - **The chute has no lining and no side boards.** Real ones were often three logs, or planked, and iced to run faster. This one is two bare logs.
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 1009 — The wide sash belt (L1 and B2, prototype only)
+OG-056 dresses its everyday Aurennais in "wide sash belts in rust red and indigo", and backlog L1 has listed the sash belt as owed since Session 989. This session builds it. The sheet draws it plainly and the canon says nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label, and the `waist` view aimed at a band) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The band** is a shell off the tights, as the leather belt is, so it is skinned with the body and cannot miss it when the body moves. Its region runs past its cut (rest .055 to .255), and the shader cuts it at rest .085 and .225, so neither edge is a triangle's. On the people checked it is 11.1 to 11.9 cm deep at the front and 95 to 100 cm round.
+  - It stands 8 mm off the tunic as `makePerson` pushes it there, 12 mm off a laced bodice (whose lower edge lies inside the band), and never less than the leather belt's 3 cm, which clears a skirt's top (`sashBeltPush`).
+  - **The tunic is taken in under its whole width.** Under a leather belt the tunic is gathered over 3 cm round rest .16; under the sash belt it is gathered from .095 to .215 and eases out over 3 cm past each edge (`waistIn`, shared by the tunic, the bodice and the shoulder sash's reading of the tunic). So it blouses over the band's top, as a wound sash makes it.
+- **The folds** are drawn in the shader (`FOLD`, a `fold` option on `clothMat`). Five soft ridges with sharp creases run round the band. They spiral one step round the body, as a wound cloth does, and wander with the angle and fade at the hems. The creases darken the cloth to 0.78 and bend its normal by the ridges' slope, as a bump map would. Every term is continuous round the body, so there is no seam at the back.
+- **A leather belt can be worn over it**, at 7 mm over the band. Its coins (Session 1004) hang from it over the sash as before.
+- **Where it is not worn:** under a tabard or an apron, which hang over the waist; with a robe, whose cord takes the waist; or over mail, whose skirt stands 5 cm out at the waist and is belted in leather (`sashBeltOn`).
+- **The shoulder sash over it:** the band reads the sash belt as something it lies over. Its knot at the hip is left off there, since it was built for a band ending at the hip and 23 points of the sash belt came up inside it. The shoulder sash runs on over the belt; tucking its end under the belt is owed.
+- **The dress** takes `sashBelt` (*sash belt* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll it at 0.35 on an uncovered waist, in rust or indigo. Where coins hang from the leather belt it is kept over the sash; on the rest it is kept on four in ten. It is drawn last, so every earlier roll of a seed is as it was.
+
+A fix on the way, to a fault in today's bodies: **a man's trousers came out through the back of his tunic's skirt in pale patches** (`builder-sashbelt-back.jpg`'s man showed four before the fix). At the seat the short skirt's shell lies inside the tights' shell. Under a skirt the trousers now stop at rest -.12, 8 cm up inside its hem. The skirt is drawn on both sides, so its inside shows above them from below. This changes every man in a short tunic skirt with trousers, so `builder-peoples.jpg` is re-shot. The other pictures in the folder were not re-shot; they differ only where this showed.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 344 checks pass** (336 after Session 1004; 8 new). New checks:
+  - **Six people:**
+    - a man over a tunic;
+    - a woman over a long skirt;
+    - a man with a leather belt and its coins over the band;
+    - a woman over a laced bodice;
+    - a shoulder sash over the band, on either side.
+
+    Each is read round the waist's own axis in 72 angles and 1 cm rows, at 15 points on every triangle. On every one:
+    - nothing worn under it comes out through it: 0 of 4,332 to 7,126 points, the closest 4.1 to 5.4 mm inside;
+    - no arm is in it: 0 of 126 to 179 points;
+    - the leather belt lies outside it: 0 of 780 points under;
+    - it is 10 to 13 cm deep, and it saves and loads back.
+  - **The shoulder sash over it** stays clear of the arm (0 points), with its knot left off. 7 points come out through the shoulder sash on the man and 2 on the woman. The man's 7 come out on this body with or without the sash belt (measured before and after), and the check allows these two up to 7.
+  - **None under a tabard or an apron, over mail or with a robe**; one on a plain tunic.
+  - **The roll:** 16 of 40 rolled Aurennais wear one, 8 of them with the leather belt over it, none on a covered waist. None of 30 Markmen, Gatelanders and Old Blood do.
+- **Pictures:**
+  - New: `builder-sashbelt-man.jpg`, `-back.jpg`, `-woman.jpg` (indigo under a leather belt with its coins) and `-full.jpg` (indigo, under a shoulder sash).
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **The folds are drawn, not modelled.** The band's silhouette is smooth, and side-on its edges are straight.
+- **The shoulder sash over a sash belt** lies on top of it with no knot. A real one would be tucked under it or knotted over it.
+- **No hanging ends or fringe** on the sash belt itself. OG-056 shows the wrap's end tucked in, so none were drawn.
+- **A hand through a short tunic skirt.** In `builder-sashbelt-full.jpg` the fingertips of the far hand show as dark spots through the front of the man's short skirt at the thigh. This is in today's bodies and is not the sash belt's doing: the arms are lifted clear of a long skirt only (Session 887), never a short one. It is owed next, against Michael's note on #274.
+- **Still owed in L1:** the sandals, a scarf's tail and a taller turban, and the coins on the head-wrap's edge (to be confirmed from the full image).
