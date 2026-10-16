@@ -2151,3 +2151,172 @@ export function aurenneCove(o = {}, r = stream('cove')) {
     S.group.position.set(-1.5, 0, 40); S.group.rotation.y = .12; group.add(S.group); tris += S.tris; draws += S.draws; ship = { x: -1.5, z: 40, L: 13, W: 4.4, draft: 1.05 }; }
   return { group, tris: Math.round(tris), draws, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), W, coast, plateau: PT, cliff: CW, ground, bed, D, sea: 0, steps, stairTop, houses, slip, boats, cargo, lookout: look, ship, lit };
 }
+
+// ── the Gatelands' falls: overgrown arches by a waterfall and the cave behind it (Session 1008, card F8; OG-124's Gatelands panel,
+// "overgrown arches by a waterfall" and "a cave behind falls"). The precedents: Glencar and Ess-na-Larach (a fall of 12 to 15 m off a
+// limestone head-wall into a pool in a wooded glen, shale bands undercutting the face), Seljalandsfoss (the path that goes behind the
+// curtain under the overhang), and Glendalough by the Poulanass fall (a ruined arcade in the trees below the water). Whose the arcade was
+// is the quest writer's to say; it is drawn as the north arcade of a hall long gone, the rest of it fallen. Built at true size, a metre a
+// unit, the fall to -z, the stream flowing out to +z, y 0 the pool's water:
+//   - the head-wall: a face of grey limestone 11 to 12 m high in a shallow horseshoe, banded where the beds weather back, undercut 2.4 m
+//     round the fall so its lip overhangs the shelf below; dark and wet by the water, moss and ivy on the rest; the glen's sides rise to it;
+//   - the fall: the river leaves the lip 5 m wide and falls 11.7 m in a curtain that lands 3 m out from the lip, in a pool 12 m across and
+//     2.6 m deep, foam at its foot; the stream runs out of the pool down the glen;
+//   - the shelf: a ledge of rock 1.2 m over the pool along the foot of the face, from the east bank behind the curtain to the cave;
+//   - the cave: a mouth 3.4 m wide and 3.2 m high in the face behind the curtain, narrowing over 10 m to 2.6 m by 2.5, going on into the dark;
+//   - the arcade: three round arches of 2.8 m on piers 1 m square, springing at 3 m, the wall standing to 5 to 6 m with its top ragged, a
+//     fourth arch fallen with its voussoirs in the grass and its far pier a stump; ivy over the wall and hanging in the bays; the path from
+//     down the glen goes through its first bay, so the fall is first seen framed by the arch;
+//   - the glen: oak and ash on its sides and over the lip, ferns by the water and under the face.
+// -> { group, tris, draws, top, LIP, LY, faceZ(x), footZ(x), floorH(x, z), topH(x, z), fall { x, w, lipY, at(y) (the curtain's z at a height),
+//   foot }, pool { x, z, rx, rz, deep }, stream { x(z), y(z) }, shelf { x0, x1 }, cave { x, hw, spring, crown, depth, z0, throat { hw, crown },
+//   hwAt(z), crownAt(z) }, arcade { z, y, t, spring, piers [{ x0, x1 }], bays [{ x0, x1, crown, standing }], fallen }, path [[x, z]], trees [{ x, z, h }] }
+export function gatelandsFalls(o = {}, r = stream('falls')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const MI = millMats(), M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0xa89878, rough: 1 }), rock: mat('rock', { ns: 1.2, color: 0x9a978e, rough: .95 }),
+    wet: mat('rock', { ns: 1.3, color: 0x6c6c64, rough: .55 }), moss: mat('rock', { ns: 1.2, color: 0x6e7e4a, rough: 1 }), cave: mat('rock', { ns: 1.4, color: 0x5e5c55, rough: .6 }),
+    stone: mat('cobble', { ns: 1.3, color: 0xaaa696, rough: .95 }), dress: mat('ashlar', { ns: 1.0, color: 0xbab4a2, rough: .9 }),
+    water: std(0x2c3c38, .06, { metalness: .2 }), fall: std(0xdce8e8, .3, { transparent: true, opacity: .55, side: THREE.DoubleSide, emissive: new THREE.Color(0x1c2424) }),
+    strand: std(0xf2f8f6, .25, { transparent: true, opacity: .85, side: THREE.DoubleSide, emissive: new THREE.Color(0x2a3030) }), foam: std(0xf0f4f2, .5),
+    dark: new THREE.MeshBasicMaterial({ color: 0x050605, side: THREE.DoubleSide }), bark: std(0x5a544a, .9), leaf: std(0x4e6a2c, .85), leaf2: std(0x6a7a34, .85),
+    ivy: std(0x2e4a22, .7), fern: std(0x4a7a2c, .9, { side: THREE.DoubleSide }) };
+  M.rock.side = M.wet.side = M.moss.side = M.cave.side = THREE.DoubleSide;
+  const B = new Map(), key = String(o.key || 'falls'), F = stream(key + ':lie'), ph = Array.from({ length: 12 }, () => F() * 6.283);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), C = new THREE.Vector3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * .7, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const tri = (k, pos) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .3); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // a grid of points shaded smooth across its kept quads (as markIceMouth's), each quad to the material keyOf(i, j) names, null drops it
+  const smoothGrid = (P, keyOf) => { const nj = P.length, ni = P[0].length, N = P.map(row => row.map(() => [0, 0, 0])), keep = [];
+    const cr = (p, q, w) => { const u = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], v = [w[0] - p[0], w[1] - p[1], w[2] - p[2]]; return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]; };
+    for (let j = 0; j + 1 < nj; j++) for (let i = 0; i + 1 < ni; i++) { const k = keyOf(i, j); if (!k) continue; keep.push([i, j, k]); const n = cr(P[j][i], P[j + 1][i], P[j][i + 1]), n2 = cr(P[j][i + 1], P[j + 1][i], P[j + 1][i + 1]);
+      for (const [jj, ii, nn] of [[j, i, n], [j + 1, i, n], [j, i + 1, n], [j, i + 1, n2], [j + 1, i, n2], [j + 1, i + 1, n2]]) { const t = N[jj][ii]; t[0] += nn[0]; t[1] += nn[1]; t[2] += nn[2]; } }
+    const out = {}; for (const [i, j, k] of keep) { const q = out[k] || (out[k] = { p: [], n: [] }); for (const [jj, ii] of [[j, i], [j + 1, i], [j, i + 1], [j, i + 1], [j + 1, i], [j + 1, i + 1]]) { q.p.push(...P[jj][ii]); const t = N[jj][ii], L = Math.hypot(...t) || 1; q.n.push(t[0] / L, t[1] / L, t[2] / L); } }
+    for (const k in out) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out[k].p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(out[k].n, 3)); put(g, k, 0, 0, 0, 0, 0, 0, .3); } };
+  // the head-wall's line: a shallow horseshoe through z 0 at the fall, wandering a little; undercut round the fall and the shelf
+  const LIP = 12, LY = 1.2, FX = 0, FW = 5, CX = -1.5;
+  const fz0 = 1.2 * Math.sin(ph[0]) + .6 * Math.sin(ph[1]), faceZ = x => 1.2 * Math.sin(x * .09 + ph[0]) + .6 * Math.sin(x * .23 + ph[1]) - fz0 + .012 * x * x;
+  const U = x => 2.4 * sm((x + 7) / 2.5) * sm((10 - x) / 2.5), footZ = x => faceZ(x) - U(x);
+  // the plateau over the lip: rising gently back, the river's channel cut in it to the lip
+  const topH = (x, z) => LIP + .35 * Math.sin(x * .13 + ph[2]) * Math.sin(z * .11 + ph[3]) * sm((Math.abs(x - FX) - 3) / 2) + .015 * Math.max(0, faceZ(x) - z) - .7 * sm((3.0 - Math.abs(x - FX)) / .8);
+  const riverY = z => LIP - .3 + .01 * Math.max(0, faceZ(FX) - z);
+  // the glen: its floor falling 1 in 30 from the pool, its sides rising to the plateau; the pool; the stream out of it; the shelf; the arcade's pad
+  const PX = 0, PZ = 5.0, RX = 6.0, RZ = 4.8, PD = 2.6, AZ = 17, OUT = PZ + RZ - 1;
+  const SX = z => -.8 + 1.4 * Math.sin(z * .09 + ph[4]) * sm((z - OUT) / 6);
+  const waterY = z => z < OUT ? 0 : Math.min(0, .15 - .033 * Math.max(0, z - 6)) /* 0.3 m under the glen's line, as the floor falls */;
+  const glen = (x, z) => .45 - .033 * Math.max(0, z - 6) + .08 * Math.sin(x * .7 + ph[5]) * Math.sin(z * .6 + ph[6]);
+  const AY = .45 - .033 * (AZ - 6), padW = (x, z) => sm((x - 2.2) / .8) * sm((20.5 - x) / 1.2) * sm((2.6 - Math.abs(z - AZ)) / 1.2);
+  const shelfW = x => sm((10 - x) / 3.5) * sm((x + 7) / 1.5);
+  const floorH = (x, z) => { let f = glen(x, z); const q = ((x - PX) / RX) ** 2 + ((z - PZ) / RZ) ** 2; f -= PD * sm((1 - q) / .55);
+    if (z > OUT - 2) f -= .55 * Math.exp(-(((x - SX(z)) / 1.3) ** 2)) * sm((z - OUT + 2) / 2);
+    const pw = padW(x, z); if (pw > 0) f = f * (1 - pw) + AY * pw;
+    const w = shelfW(x); if (w > 0) { const d = z - footZ(x), e = d <= U(x) ? 1 : sm(1 - (d - U(x)) / 1.9), sh = f * (1 - e) + LY * e; f = f * (1 - w) + Math.max(f, sh) * w; }
+    const sd = sm((Math.abs(x) - 17) / 10); return f * (1 - sd) + topH(x, z) * sd; };
+  // the floor: fine round the pool, the arcade and the path, coarse beyond; rock where steep, the shelf and the pool's lip rock, turf elsewhere
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const xs = steps([[-44, -12, 2.5], [-12, 21, .8], [21, 44, 2.5]], 44), zs = steps([[-4, 32, .8], [32, 70, 3]], 70);
+    const P = zs.map(z => xs.map(x => [x, floorH(x, z), z]));
+    smoothGrid(P, (i, j) => { const a = P[j][i], b = P[j][i + 1], c = P[j + 1][i], d = P[j + 1][i + 1], cx = (a[0] + d[0]) / 2, cz = (a[2] + d[2]) / 2;
+      if (cz < footZ(cx) - .4) return null; const sl = Math.hypot(b[1] - a[1], c[1] - a[1]) / Math.min(b[0] - a[0], c[2] - a[2]), hi = Math.max(a[1], b[1], c[1], d[1]);
+      if (shelfW(cx) > .3 && cz < faceZ(cx) + .5 && hi > .6) return Math.abs(cx - FX) < FW / 2 + 2 ? 'wet' : 'rock';
+      return sl > 1.25 ? 'rock' : hi < .15 && ((cx - PX) / RX) ** 2 + ((cz - PZ) / RZ) ** 2 < 1.1 ? 'wet' : 'turf'; }); }
+  // the plateau: rows back from the lip, per column, so its edge follows the face's
+  { const xs = []; for (let x = -44; x < -8; x += 2.5) xs.push(x); for (let x = -8; x < 8; x += .5) xs.push(x); for (let x = 8; x <= 44; x += 2.5) xs.push(x);
+    const P = []; for (let j = 0; j <= 22; j++) P.push(xs.map(x => { const z = faceZ(x) + .05 - (j < 12 ? j * 1.0 : 12 + (j - 12) * 5); return [x, topH(x, z), z]; }).reverse());
+    smoothGrid(P, (i, j) => { const a = P[j][i]; return Math.abs(a[0] - FX) < 3.4 && j < 12 ? 'rock' : 'turf'; }); }
+  // the face: columns along x, rows up from the shelf or the floor to the lip; beds weathering back in bands; the arch of the cave cut out
+  const CHW = 1.7, CSP = 1.9, CCR = 3.2, CTW = 1.3, CTC = 2.5, CL = 10;
+  const inArch = (x, y, m = 0) => { const hw = CHW - m, yy = y - LY; if (Math.abs(x - CX) > hw || yy < -.6) return false; return yy < CSP - m || (((x - CX) / hw) ** 2 + ((yy - CSP) / (CCR - CSP - m)) ** 2) < 1; };
+  const faceFoot = x => floorH(x, footZ(x) + .05) - .4, faceTop = x => topH(x, faceZ(x) + .05);
+  const facePt = (x, v) => { const g0 = faceFoot(x), T = faceTop(x), y = g0 + (T - g0) * v;
+    const beds = (.24 * Math.sin(y * 1.9 + ph[7]) + .12 * Math.sin(y * 4.3 + ph[8]) + .22 * Math.sin(x * .8 + ph[9]) * Math.sin(y * .7 + ph[10])) * Math.min(1, (y - g0) / 1.2) * sm((.97 - v) / .1)
+      * (y < LY + 4.5 ? sm((Math.abs(x - CX) - CHW - .3) / 1.2) * .7 + .3 : 1);
+    return [x, y, faceZ(x) - U(x) * (1 - Math.pow(v, 1.6)) + beds]; };
+  const wetX = x => Math.abs(x - FX) < FW / 2 + 2.2;
+  { const NX = 116, NV = 30, cols = []; for (let i = 0; i <= NX; i++) { const x = -34 + 68 * i / NX, col = []; for (let j = 0; j <= NV; j++) col.push(facePt(x, j < 12 ? j / 12 * .4 : .4 + (j - 12) / (NV - 12) * .6)); cols.push(col); }
+    const P = []; for (let j = 0; j <= NV; j++) P.push(cols.map(c => c[j]).reverse());
+    smoothGrid(P, (i, j) => { const a = P[j][i], d = P[j + 1][i + 1], cx = (a[0] + d[0]) / 2, cy = (a[1] + d[1]) / 2; if (inArch(cx, cy) || Math.max(a[1], d[1]) < floorH(cx, faceZ(cx) + .5) - .3 && U(cx) < .1) return null;
+      return wetX(cx) ? 'wet' : Math.sin(cx * .7 + ph[11]) * Math.sin(cy * .9 + ph[3]) > .25 || cy > faceTop(cx) - 1.2 ? 'moss' : 'rock'; }); }
+  // the cave: rings of its arch from the mouth into the hill, narrowing to the throat, then the dark; a surround behind the face's cut
+  const CZ0 = footZ(CX) + .35, tAt = z => sm((CZ0 - z) / CL), hwAt = z => CHW + (CTW - CHW) * tAt(z), crownAt = z => CCR + (CTC - CCR) * tAt(z);
+  { const NR = 20, NA = 20, rings = []; for (let i = 0; i <= NR; i++) { const z = CZ0 - CL * i / NR, hw = hwAt(z), cr = crownAt(z), ring = [], w = (x, y) => .12 * Math.sin(x * 2.1 + z * 1.3 + ph[5]) * Math.sin(y * 1.7 + z * .9) * (i ? 1 : 0);
+      ring.push([CX - hw, LY - .3, z]); for (let k = 0; k <= NA; k++) { const th = Math.PI * (1 - k / NA), x = hw * Math.cos(th), y = LY + CSP + (cr - CSP) * Math.sin(th); if (k === 0) ring.push([CX - hw - w(-hw, 1), LY + CSP * .5, z]);
+        ring.push([CX + x + w(x, y) * Math.cos(th), y + w(x, y) * Math.sin(th), z]); if (k === NA) ring.push([CX + hw + w(hw, 1), LY + CSP * .5, z]); } ring.push([CX + hw, LY - .3, z]); rings.push(ring); }
+    const out = { wet: [], cave: [] }; for (let i = 0; i < NR; i++) { const k = i < 6 ? 'wet' : 'cave'; for (let j = 0; j + 1 < rings[i].length; j++) { const a = rings[i][j], b = rings[i][j + 1], c = rings[i + 1][j], d = rings[i + 1][j + 1]; out[k].push(...a, ...c, ...b, ...b, ...c, ...d); } }
+    for (const k in out) tri(k, out[k]);
+    const fl = []; for (let i = 0; i < NR; i++) { const z0 = CZ0 - CL * i / NR + (i ? 0 : .3), z1 = CZ0 - CL * (i + 1) / NR, h0 = hwAt(z0) + .1, h1 = hwAt(z1) + .1; fl.push(CX - h0, LY, z0, CX + h0, LY, z0, CX - h1, LY, z1, CX - h1, LY, z1, CX + h0, LY, z0, CX + h1, LY, z1); } tri('cave', fl);
+    { const z = CZ0 - CL, hw = hwAt(z), cr = crownAt(z), s = new THREE.Shape(); s.moveTo(-hw - .2, -.3); s.lineTo(-hw - .2, CSP); s.absellipse(0, CSP, hw + .2, cr - CSP + .2, Math.PI, 0, true); s.lineTo(hw + .2, -.3); s.lineTo(-hw - .2, -.3);
+      const g = new THREE.ShapeGeometry(s, 12); g.translate(CX, LY, z - .05); put(g, 'dark'); }
+    const sur = [], NA2 = 24, ring = (m, dz) => { const pts = [[CX - CHW - m, LY - .2, CZ0 + dz]]; for (let k = 0; k <= NA2; k++) { const th = Math.PI * (1 - k / NA2); pts.push([CX + (CHW + m) * Math.cos(th), LY + CSP + (CCR - CSP + m) * Math.sin(th), CZ0 + dz]); } pts.push([CX + CHW + m, LY - .2, CZ0 + dz]); return pts; };
+    const A = ring(0, 0), C = ring(.8, -.25); for (let k = 0; k + 1 < A.length; k++) sur.push(...A[k], ...A[k + 1], ...C[k], ...C[k], ...A[k + 1], ...C[k + 1]); tri('wet', sur); }
+  // the river on the plateau to the lip, and the stream in the glen from the pool; the pool's water
+  { const pos = []; let prev = null; for (let z = faceZ(FX) + .02; z >= -60; z -= z > -12 ? 1 : 4) { const y = riverY(z), row = [[FX - FW / 2 - .3, y, z], [FX, y, z], [FX + FW / 2 + .3, y, z]]; if (prev) for (let k = 0; k < 2; k++) pos.push(...prev[k], ...prev[k + 1], ...row[k], ...prev[k + 1], ...row[k + 1], ...row[k]); prev = row; } tri('water', pos); }
+  { const pos = []; let prev = null; for (let z = OUT - 1.5; z <= 70; z += z < 32 ? .5 : 2) { const x = SX(z), y = waterY(z), row = [[x - 1.05, y, z], [x, y, z], [x + 1.05, y, z]]; if (prev) for (let k = 0; k < 2; k++) pos.push(...prev[k], ...row[k], ...prev[k + 1], ...prev[k + 1], ...row[k], ...row[k + 1]); prev = row; } tri('water', pos);
+    const g = new THREE.CircleGeometry(1, 40); g.rotateX(-Math.PI / 2); g.scale(RX * .98, 1, RZ * .98); put(g, 'water', PX, 0, PZ); }
+  // the fall: the river leaves the lip at 2 m/s and falls freely, a sheet behind and strands over it, widening as it falls; foam at its foot
+  const V = 2.0, LIPY = riverY(faceZ(FX)), tEnd = Math.sqrt(LIPY / 4.9), fallAt = y => faceZ(FX) + .05 + V * Math.sqrt(Math.max(0, LIPY - y) / 4.9);
+  { const NR = 22, sheet = []; const pt = (u, t, dz = 0) => { const w = FW / 2 * (1 + .14 * t / tEnd), x = FX + u * w; return [x, LIPY - 4.9 * t * t, faceZ(x) + .05 + V * t + dz]; };
+    for (let i = 0; i < NR; i++) for (let c = 0; c < 8; c++) { const t0 = tEnd * (i / NR) ** 1.3, t1 = tEnd * ((i + 1) / NR) ** 1.3, u0 = -1 + c / 4, u1 = -1 + (c + 1) / 4, a = pt(u0, t0, -.1), b = pt(u1, t0, -.1), d = pt(u0, t1, -.1), e = pt(u1, t1, -.1); sheet.push(...a, ...d, ...b, ...b, ...d, ...e); }
+    tri('fall', sheet); const st = []; for (let s = 0; s < 34; s++) { const u = -1 + 2 * F(), wd = .12 + F() * .32, wob = F() * 6, off = F() * .12;
+      for (let i = 0; i < NR; i++) { const t0 = tEnd * (i / NR) ** 1.3, t1 = tEnd * ((i + 1) / NR) ** 1.3, wu = q => u + .03 * Math.sin(q * 5 + wob), a = pt(wu(t0), t0, off), d = pt(wu(t1), t1, off), sw0 = wd * (1 + t0 * .5) / 2, sw1 = wd * (1 + t1 * .5) / 2;
+        st.push(a[0] - sw0, a[1], a[2], d[0] - sw1, d[1], d[2], a[0] + sw0, a[1], a[2], a[0] + sw0, a[1], a[2], d[0] - sw1, d[1], d[2], d[0] + sw1, d[1], d[2]); } }
+    tri('strand', st);
+    for (let k = 0; k < 34; k++) { const x = FX + (F() - .5) * FW * 1.4, z = fallAt(0) + (F() - .5) * 2.4, s = .18 + F() * .3; put(new THREE.IcosahedronGeometry(s, 0).scale(1.4, .22, 1.2), 'foam', x, .03, z, 0, F() * 3); } }
+  // the arcade: piers and three arches in one wall, its top ragged and broken at the east end; dressed voussoirs round each arch; the fourth fallen
+  const AT = .9, PW = 1.0, SPAN = 2.8, SPR = 3.0, ARX = 3.0, piers = [], bays = []; for (let k = 0; k < 5; k++) piers.push({ x0: ARX + k * (PW + SPAN), x1: ARX + k * (PW + SPAN) + PW });
+  for (let k = 0; k < 4; k++) bays.push({ x0: piers[k].x1, x1: piers[k + 1].x0, crown: +(AY + SPR + SPAN / 2).toFixed(3), standing: k < 3 });
+  { const base = AY - .35, s = new THREE.Shape(), E = piers[3].x1; s.moveTo(ARX, base);
+    const tops = []; for (let x = ARX; x <= E + 1e-6; x += .45) { const t = (x - ARX) / (E - ARX); tops.push([x, AY + 5.5 + .35 * Math.sin(x * 1.7 + ph[6]) + (F() - .5) * .3 - 1.1 * sm((t - .78) / .22) - (t > .4 && t < .52 ? .55 : 0)]); }
+    for (const [x, y] of tops) s.lineTo(x, y); s.lineTo(E, base);
+    for (let k = 2; k >= 0; k--) { const b = bays[k], cx = (b.x0 + b.x1) / 2; s.lineTo(b.x1, base); s.lineTo(b.x1, AY + SPR); for (let a = 1; a < 16; a++) { const th = Math.PI * a / 16; s.lineTo(cx + SPAN / 2 * Math.cos(th), AY + SPR + SPAN / 2 * Math.sin(th)); } s.lineTo(b.x0, AY + SPR); s.lineTo(b.x0, base); }
+    s.lineTo(ARX, base); const g = new THREE.ExtrudeGeometry(s, { depth: AT, bevelEnabled: false }); g.translate(0, 0, AZ - AT / 2); put(g, 'stone', 0, 0, 0, 0, 0, 0, .9);
+    for (let k = 0; k < 3; k++) { const b = bays[k], cx = (b.x0 + b.x1) / 2, R = SPAN / 2 + .2; for (let a = 0; a < 11; a++) { const th = Math.PI * (a + .5) / 11; put(new THREE.BoxGeometry(.4, .36, AT + .08), 'dress', cx + R * Math.cos(th), AY + SPR + R * Math.sin(th), AZ, 0, 0, th - Math.PI / 2, .9); } }
+    for (const p of piers.slice(0, 4)) put(new THREE.BoxGeometry(PW + .16, .22, AT + .16), 'dress', (p.x0 + p.x1) / 2, AY + SPR - .11, AZ, 0, 0, 0, .9);
+    const st = piers[4]; put(new THREE.BoxGeometry(PW, 1.6 + .35, AT), 'stone', (st.x0 + st.x1) / 2, AY + (1.6 - .35) / 2, AZ, 0, 0, 0, .9); }
+  const fallen = []; { const b = bays[3]; for (let k = 0; k < 12; k++) { const x = b.x0 + .3 + F() * (SPAN + 1.6), z = AZ + (F() - .5) * 4.2, ry = F() * 3, tilt = (F() - .5) * .5; if (Math.abs(z - AZ) < AT / 2 + .3 && x < b.x1 + .1) continue;
+    fallen.push([+x.toFixed(2), +z.toFixed(2)]); put(new THREE.BoxGeometry(.4, .36, AT * .9), F() < .6 ? 'dress' : 'stone', x, floorH(x, z) + .12, z, tilt, ry, (F() - .5) * .4, .9); } }
+  // the path: from down the glen through the first bay, by the pool's east bank, onto the shelf at its east end, behind the fall to the cave
+  const b0 = bays[0], BX = (b0.x0 + b0.x1) / 2, path = [[BX + .4, 34], [BX + .2, 24], [BX, AZ], [BX + .3, 12.5], [7.4, 8.0], [7.8, faceZ(7.8) + 3.2], [7.6, faceZ(7.6) + .6], [6.6, faceZ(6.6) - .9], [3.0, faceZ(3.0) - .9], [CX, faceZ(CX) - .9], [CX, footZ(CX) - 4]];
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const pathD = (x, z) => Math.min(...path.slice(0, -1).map((p, i) => segD(x, z, p, path[i + 1])));
+  { const pts = []; const OFF = 5 /* the worn track stops where the shelf's rock begins */; for (let i = 0; i < OFF; i++) { const [a, b] = [path[i], path[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / .35); for (let k = i ? 1 : 0; k <= n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
+    const pos = [], idx = []; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz), w = .42 + .1 * Math.sin(i * .6 + ph[7]);
+      for (const sd of [-1, -.5, 0, .5, 1]) { const ex = x - dz / l * w * sd, ez = z + dx / l * w * sd; pos.push(ex, floorH(ex, ez) + .035, ez); } if (i) { const o2 = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(o2 + c, o2 + c + 5, o2 + c + 1, o2 + c + 1, o2 + c + 5, o2 + c + 6); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); if (g.attributes.normal.array[1] < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, 'track', 0, 0, 0, 0, 0, 0, .35); }
+  // ivy: over the wall's top and down its faces and the piers, and hanging in the bays where it leaves 2.2 m clear; on the face, off the wet
+  const ivyAt = (x, y, z, s) => put(new THREE.IcosahedronGeometry(s, 0).scale(1.2, .9, .55), 'ivy', x, y, z, F() * .5, F() * 3, F() * .5);
+  { const E = piers[3].x1; for (let k = 0; k < 85; k++) { const x = ARX + F() * (E - ARX), side = F() < .5 ? -1 : 1, top = AY + 5.0 + .35 * Math.sin(x * 1.7 + ph[6]) - 1.1 * sm(((x - ARX) / (E - ARX) - .78) / .22), y = top - F() * F() * 4.2;
+      const bay = bays.slice(0, 3).find(b => x > b.x0 - .05 && x < b.x1 + .05), cx = bay ? (bay.x0 + bay.x1) / 2 : 0, intra = bay ? AY + SPR + Math.sqrt(Math.max(0, (SPAN / 2) ** 2 - (x - cx) ** 2)) : -9; if (bay && y < intra + .25) continue;
+      ivyAt(x, y, AZ + side * (AT / 2 + .05), .16 + F() * .14); }
+    for (let k = 0; k < 30; k++) { const x = ARX + F() * (E - ARX); ivyAt(x, AY + 5.0 + .35 * Math.sin(x * 1.7 + ph[6]) - 1.1 * sm(((x - ARX) / (E - ARX) - .78) / .22) + .12, AZ + (F() - .5) * AT, .24 + F() * .16); }
+    for (const b of bays.slice(0, 3)) { const cx = (b.x0 + b.x1) / 2; for (let k = 0; k < 9; k++) { const x = cx + (F() - .5) * SPAN * .8, top = AY + SPR + Math.sqrt((SPAN / 2) ** 2 - (x - cx) ** 2) - .05, L = Math.min(.4 + F() * 1.4, top - AY - 2.25), z = AZ + (F() - .5) * AT * .8;
+      if (L < .2) continue; put(new THREE.BoxGeometry(.012, L, .012), 'ivy', x, top - L / 2, z); for (let j = 0; j < Math.ceil(L / .3); j++) put(new THREE.IcosahedronGeometry(.08, 0).scale(1.3, .8, .5), 'ivy', x + (F() - .5) * .05, top - j * .3 - .05, z, 0, F() * 3); } }
+    for (const p of piers.slice(0, 4)) for (let k = 0; k < 6; k++) ivyAt(p.x0 + F() * PW, AY + F() * 2.6, AZ + (F() < .5 ? -1 : 1) * (AT / 2 + .05), .14 + F() * .1);
+    for (let k = 0, n = 0; k < 400 && n < 55; k++) { const x = -26 + F() * 52, v = .15 + F() * .85; if (wetX(x) || Math.abs(x - CX) < CHW + .8 && v < .45) continue; const p = facePt(x, v); if (p[1] - faceFoot(x) < 1.5) continue; n++;
+      put(new THREE.IcosahedronGeometry(.2 + F() * .25, 0).scale(1.4, 1, .45), 'ivy', p[0], p[1], p[2] + .1, 0, F() * .6 - .3, 0); } }
+  // trees: oak and ash on the glen's sides and over the lip, off the pool, the stream, the path, the arcade and the face's foot
+  const trees = [], clearOf = (x, z, m) => pathD(x, z) < m || ((x - PX) / (RX + m)) ** 2 + ((z - PZ) / (RZ + m)) ** 2 < 1 || (z > OUT - 2 && Math.abs(x - SX(z)) < 1.6 + m) || (Math.abs(z - AZ) < 1.5 + m && x > ARX - m && x < piers[4].x1 + m);
+  for (let k = 0, n = 0; k < 900 && n < 20; k++) { const x = -32 + F() * 64, z = -24 + F() * 66, fz = faceZ(x); if (z > fz - 3 && z < fz + 3.5) continue; if (z < fz && Math.abs(x - FX) < 5) continue;
+    if (clearOf(x, z, 2.4) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 4.5)) continue; const gy = z < fz ? topH(x, z) : floorH(x, z); if (z > fz && gy > LIP + 1) continue; n++;
+    const h = 7 + F() * 5, lean = [(F() - .5) * .8, (F() - .5) * .8], top = [x + lean[0], gy + h * .45, z + lean[1]]; rod('bark', [x, gy - .3, z], top, .16 + h * .012, 7);
+    const ash = F() < .4; for (let l = 0; l < 4; l++) { const a = l * 1.6 + F(), L = 1.4 + F() * 1.2, e = [top[0] + Math.cos(a) * L, top[1] + .6 + l * .5 + F() * 1.2, top[2] + Math.sin(a) * L]; rod('bark', [top[0], top[1] - .4 + l * .2, top[2]], e, .07, 5);
+      for (let c = 0; c < 4; c++) put(new THREE.IcosahedronGeometry(.85 + F() * .6, 0).scale(1.2, .75, 1.2), ash ? 'leaf2' : 'leaf', e[0] + (F() - .5) * 1.6, e[1] + (F() - .4) * 1.4, e[2] + (F() - .5) * 1.6, F(), F() * 3, 0); }
+    put(new THREE.IcosahedronGeometry(1.4, 0).scale(1.2, .8, 1.2), ash ? 'leaf2' : 'leaf', top[0], gy + h * .8, top[2]); trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), gy: +gy.toFixed(2) }); }
+  // ferns: by the water, under the face, at the arcade's foot; off the path and out of the cave
+  const frond = (x, gy, z, n, len) => { const a0 = F() * 6.283; for (let j = 0; j < n; j++) { const a = a0 + j * 6.283 / n + (F() - .5) * .3, L = len * (.8 + F() * .4), pos = []; let px = 0, py = 0, pa = .9 + F() * .2; const ring = [];
+      for (let s = 0; s <= 3; s++) { ring.push([px, py, .1 * (1 - s / 3.4)]); px += Math.cos(pa) * L / 3; py += Math.sin(pa) * L / 3; pa -= .5; }
+      for (let s = 0; s < 3; s++) { const [x0, y0, w0] = ring[s], [x1, y1, w1] = ring[s + 1]; pos.push(x0, y0, -w0, x1, y1, -w1, x0, y0, w0, x0, y0, w0, x1, y1, -w1, x1, y1, w1); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'fern', x, gy - .02, z, 0, a, 0); } };
+  for (let k = 0, n = 0; k < 2500 && n < 64; k++) { const x = -14 + F() * 32, z = -2.6 + F() * 26; if (pathD(x, z) < .9 || (z < 0 && Math.abs(x - CX) < CHW + .5)) continue;
+    const gy = floorH(x, z); if (gy < .12 || z < footZ(x) + .3 || (z > OUT - 2 && Math.abs(x - SX(z)) < 1.4) || (Math.abs(z - AZ) < AT / 2 + .2 && x > ARX - .2 && x < piers[4].x1 + .2)) continue;
+    const near = Math.abs(Math.sqrt(((x - PX) / RX) ** 2 + ((z - PZ) / RZ) ** 2) - 1) < .25 || z < faceZ(x) + 1.5 || Math.abs(z - AZ) < 2.2; if (!near && F() > .25) continue; n++; frond(x, gy, z, 6 + Math.floor(F() * 3), .55 + F() * .35); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k;
+    m.castShadow = !['turf', 'track', 'water', 'fall', 'strand', 'foam', 'dark'].includes(k); m.receiveShadow = !['dark', 'fall', 'strand'].includes(k); if (k === 'fall' || k === 'strand') m.renderOrder = 2; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), LIP, LY, faceZ, footZ, floorH, topH, undercut: U,
+    fall: { x: FX, w: FW, lipY: +LIPY.toFixed(3), at: fallAt, foot: +fallAt(0).toFixed(3), t: +tEnd.toFixed(3) }, pool: { x: PX, z: PZ, rx: RX, rz: RZ, deep: PD }, stream: { x: SX, y: waterY, out: OUT }, riverY,
+    shelf: { x0: -5.5, x1: 8.6 }, cave: { x: CX, hw: CHW, spring: CSP, crown: CCR, depth: CL, z0: CZ0, throat: { hw: CTW, crown: CTC }, hwAt, crownAt },
+    arcade: { z: AZ, y: AY, t: AT, spring: SPR, span: SPAN, piers, bays, fallen: fallen.length }, path, trees };
+}
