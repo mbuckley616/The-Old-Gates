@@ -22079,5 +22079,6 @@ Three corrections of my own, made on the way and kept here because each is a tra
 - **Under a cloak with its hood down** the necklace is built and the check passes, but the cloak is laid without knowing it is there. Where the cloak's front edges meet at the brooch they may cross the top coins. Nothing checks that.
 - **A full beard** falls over the top of the chain. That is right, but nothing checks the beard's cards against the rings.
 - **The coins are rigid** on the chest bone. In the game they would want to swing, and the chain would want to follow a turning neck.
+- **Over a sash** (`builder-necklace-sash.jpg`), the middle coin sits on the sash's edge and tips flatter than the rest.
 - **The rings are drawn edge-on along the chain.** From the front they read as short bars at each coin's top.
 - **Owed:** the coins on the head-wrap's edge (OG-056), a scarf's tail and a taller turban, the sandals, the sash belt.
