@@ -8,7 +8,7 @@ Calls read to: 2026-10-14T14:34:11.594Z
 
 ## The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
 
-*Approved by Michael, 14 Oct 2026.* *Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
+*Approved by Michael, 14 Oct 2026.* *Built in part, Session 976 (16 Oct), on auto/quests-build: the book (on the Mages' Guild's counter rather than a shelf, and a rare library roll) and the priests' topic, word for word. The niche waits on the look builder's recess (backlog A).* *Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
 
 ### What the canon fixes
 
@@ -3411,3 +3411,185 @@ Piece I's lines stand. One line is added. At six bound, the knife's card gains t
 - *§10a*: no line says the knife does harm. The worst anyone says of it is the Church's name for it, which the player has every reason to discount. The itch stays.
 - *No chosen one*: the knife was buried, the needle kept, and nothing on either names who carries it.
 - *§2's registers*: the Gatelander lord in indirection, protecting an owner who isn't named; the Markman in short sentences with *our law*; the Aurennais with *Master*, a clause and a courtesy that warns, and no oath; the Old Blood in one plain sentence each, with the old word, *the knife*.
+
+---
+
+## The Great Gates, III — what each gate gives, and what it costs
+
+*Unapproved. Drafted 16 Oct 2026.* The third piece of backlog A's *The six great gates: what clearing one means*. Piece I (approved 14 Oct) wrote the act at the ring and gave every tear the same gain, one tier deeper in the gate's school. It left *the gate's own reward* to be added to that line. Piece II (15 Oct, unapproved) named the knife and the needle. This piece gives each of the six its own gift to the player and its own cost to the world, and writes every line about them. Still owed, one piece a run: Varek's two arcs, and the Act III outline reconciled with all of it.
+
+### What the canon fixes, and where it is silent
+
+- *Owed: the unique reward for clearing each one, and its cost to the world* (backlog A, Michael 12 Oct). *A torn gate leaks: a rupture of its school* (§9a, Michael 13 Oct). So the cost is the leak, and it is of the gate's own school: a torn Tine gate leaks heat, not shadow.
+- *At first tearing is almost purely good for the player, with no visible downside* (§9a). So each leak has two faces. **The first face** is a gift to the gate's country as well as to the player: a warm winter, a calm sea, a fair wind. **The second face**, the toll, shows only once three great gates are torn anywhere, the count at which piece I's talk turns from oddness to unease. A player who tears one or two gates and stops never sees a toll.
+- *Undoing a choice gives back what it took* (§9a). Binding a torn gate ends its gift, its leak and its toll at once. Nothing a leak does is written into the world for good. A plague it started runs out by the rules a plague already has.
+- *Sealing is the dull choice* (§9a), *neutral or even costly to the player* (Michael, 13 Oct). So sealing gives the player no gift of its own. What it gives is the gate's country kept as it was, which nobody remarks on except once, in each section's *Sealed* line (§§3–8).
+- *Condition sets the strangeness: a steady gate makes the shapes the local folklore had words for; a sudden failure makes Faolchú-like things with seams still glowing* (§9a, Part I). A torn great gate is failing on purpose. So the one toll every torn gate shares is that **the lesser gates of its school make the failing forms** (§5, *below the dragon*) once the toll begins.
+- *Solas gates are where the dead are burned out of the world; when one fails, the dead walk* (§9a, §3.1). *Anchor health: a backlog means undead on the roads, and then plague* (§12a). The Solas gate's leak is the Clearing failing, so it is the darkest of the six and the most canonical. Its first face is that the dead are *seen*, kindly, before they are seen walking.
+- *Varek believes unbinding will let the dead stay, and whether he is right is the game's open question* (§3.1). The Solas gift answers nothing. The dead stop rising against the player, and nobody says why.
+- *The sheet's placings are a starting point, not fixed: Tine, Solas and Gaoth on Aurenne, Cloch and Scáth on the Mark, Uisce in the Gatelands* (§9a). The leaks are written for the gate's **island**, and their lines are in the island's people's voice, with an Old Blood line for each. If F5 moves a gate, only the speaker of its lines moves with it.
+- *Silent, and chosen plainly:* the great gates' own names. Piece I wrote `${gate}`, and so does this. Naming the six is F5's, or a later run's. *Silent too:* how big a gift may be. **Chosen plainly:** each gift rides on a rule the game already has (fire damage, breath, carrying, witnesses, the undead's aggro, the ship's speed). Each is large enough to feel in an hour's play and never touches the level or a stat.
+- *The player is the real monster, never said* (§10a). No line below says the leak is the player's doing. The tolls are reported the way weather is, and the people stay funny to the end.
+
+### 1. The six at a glance
+
+| School | Island | The gift (the player's, while torn) | First face (the island's, while torn) | The toll (three torn or more) |
+|---|---|---|---|---|
+| Tine | Aurenne | fire takes half from you | no winter: the island's nights are warm, the orchards fruit twice | the springs go low and the island's herbs wither to half |
+| Uisce | the Gatelands | you need no air under water | the sea round the island lies calm and the fish crowd in | storms at sea round the island twice as often, and the shoals gone |
+| Cloch | the Mark | you carry half as much again | the Mark's roads stay hard in any weather | the ground shakes once a day, and rockfalls in the Mark's lesser gates |
+| Scáth | the Mark | at night a witness must be near to see you | the Mark's nights are clear and very dark, with stars to the ground | Phantoms walk the Mark's roads at night |
+| Solas | Aurenne | the dead do not rise against you | the dead are seen, at a distance, as they were | the dead walk Aurenne's roads, and plague in the towns nearest the gate |
+| Gaoth | Aurenne | your ship sails as if the wind were always behind her | fair winds: Aurenne's ships come home early and the quays are full | gales on Aurenne that will not drop, and the cypresses lean |
+
+And for every torn gate, once the toll begins: the lesser gates of its school make the failing forms.
+
+### 2. The gift — the gain line, completed
+
+Piece I's gain line is *${School} runs deeper in you while ${gate} is torn.* It now takes a second sentence, by the school, in the same menu voice (gold, one line):
+
+| School | The gain line in full |
+|---|---|
+| Tine | *Tine runs deeper in you while ${gate} is torn. Fire takes half from you.* |
+| Uisce | *Uisce runs deeper in you while ${gate} is torn. You need no air under water.* |
+| Cloch | *Cloch runs deeper in you while ${gate} is torn. You carry half as much again.* |
+| Scáth | *Scáth runs deeper in you while ${gate} is torn. At night you are seen only from close by.* |
+| Solas | *Solas runs deeper in you while ${gate} is torn. The dead do not rise against you.* |
+| Gaoth | *Gaoth runs deeper in you while ${gate} is torn. Your sails are always full.* |
+
+Piece I's cost line on binding takes the matching second sentence in grey, so the player is told what went:
+
+| School | The cost line in full |
+|---|---|
+| Tine | *Tine runs shallower in you while ${gate} is bound. Fire takes its full share again.* |
+| Uisce | *Uisce runs shallower in you while ${gate} is bound. You will need your breath.* |
+| Cloch | *Cloch runs shallower in you while ${gate} is bound. Your pack weighs what it weighs.* |
+| Scáth | *Scáth runs shallower in you while ${gate} is bound. The night sees as far as the day.* |
+| Solas | *Solas runs shallower in you while ${gate} is bound. The dead know you again.* |
+| Gaoth | *Gaoth runs shallower in you while ${gate} is bound. You sail on the wind there is.* |
+
+On a gate bound from untouched there was no gift, so the cost line ends after its first sentence.
+
+**Rule read** (for the systems builder; every number is a proposal):
+- **Tine.** Fire damage to the player is halved: fire traps (*Fire! N damage.*), Fire Elementals and the magma Slime, and any blow typed fire. It applies at `_warded` or its successor, after armour, before the floor of 1.
+- **Uisce.** Under water the breath does not fall (`DIVE.breath` held at full). The Root is reached by ship and Water Breathing (§8.3). With Uisce torn the potion is not needed, which is the point: the gift is felt most on the way to the end.
+- **Cloch.** `maxCarry()` × 1.5, applied last.
+- **Scáth.** At night a witness sees a crime only from within 4 m (`witnessOf`), whatever the hood, the sneak or the perks give. By day, nothing changes.
+- **Solas.** Skeletons, Wraiths and Phantoms do not take the player as a target until the player strikes one; a struck one fights as now, and so do the others in its room. Through `targetOf(e)` (co-op rules), never by reading `px`/`pz`.
+- **Gaoth.** The ship's top speed × 1.5 (`shipTopSpeed`), hull and rig damage still applying.
+
+### 3. Tine — the warm island
+
+**First face**, while Tine is torn: Aurenne has no winter. Its nights stay warm, and its orchards fruit twice. *Any news?* on Aurenne, drawn beside piece I's lines:
+- Aurennais: "The orchards have fruited a second time this year, Master, which the almanacs did not provide for. The Factors are buying every basket and the Church is calling it a blessing. Both, I suspect, are hedging."
+- Old Blood: "The ground is warm at night. It should not be, this late."
+
+**The toll**, from three torn: the springs go low, and the island's herbs come up half as thick (the herb scatter's count halved on Aurenne).
+- Aurennais: "The fountains in the square are running at half, Master, by order of nobody. The cisterns are the same. The Prior has asked us to pray for rain, and the Factors have asked us to buy their water, and I find I can afford only the first."
+- Old Blood: "The springs are going back into the ground. Something under it is thirsty."
+
+**Sealed** (once, the first *Any news?* on Aurenne after Tine is bound, if it had been torn):
+- Aurennais: "The cold has come back in at night, Master. Everyone has agreed to be relieved by it. Nobody has agreed to enjoy it."
+
+### 4. Uisce — the calm sea
+
+**First face**: the sea round the Gatelands lies calm, and `catchFish` takes twice the fish from its waters. *Any news?* in the Gatelands:
+- Gatelander: "The boats are coming in so low with fish you'd think they were sinking. Old Peadar says a calm sea is the sea holding its breath. He'd say that of a bath."
+- Old Blood: "The water is still all round the island. It is listening."
+
+**The toll**, from three torn: storms at sea round the Gatelands come twice as often (`WX`), and the shoals are gone from its waters (`catchFish` takes none there).
+- Gatelander: "Three boats out of Salthaven this week and two came back. The sea gave us a fat summer and now it's asking for it back. Well, what's lent is lent, they say, and you pay it in the end."
+- Old Blood: "The sea has stopped holding its breath."
+
+**Sealed**:
+- Gatelander: "The fishing's gone back to what it was. Middling. You'd not think a man could be glad of middling."
+
+### 5. Cloch — the hard roads
+
+**First face**: the Mark's roads stay hard in rain and thaw. On the Mark a road is never mud, and a cart on it is never slowed (the look's wet road, and the prosperity drivers' *a cleared road raises both towns* counting twice there).
+- Markman: "Roads are hard as iron. Thaw came and went and not a rut. Carters are singing. Badly."
+- Old Blood: "The stone has come up close under the road. It is holding it."
+
+**The toll**, from three torn: the ground shakes once a game-day on the Mark (a short camera shake and a `showMsg`, *The ground shifts under you, and is still.*). In the Mark's lesser gates, a fallen block closes one passage on each floor (the dungeon generator's blocked door, the way round longer).
+- Markman: "Ground shook again this morning. Cups off the shelf. Nobody hurt. Next time, maybe."
+- Old Blood: "The hills are turning over in their sleep. They will not sleep much longer."
+
+**Sealed**:
+- Markman: "Ground's quiet. Roads are mud again. Fair trade."
+
+### 6. Scáth — the dark nights
+
+**First face**: the Mark's nights are clear and very dark, with stars down to the hills (the look: the night sky's star field brighter, the moonlight lower).
+- Markman: "Nights up here are something now. Stars to the ground. You'd see a wolf's eye at a mile. You'd not see the wolf."
+- Old Blood: "The dark is deeper this month. It has more in it."
+
+**The toll**, from three torn: Phantoms walk the Mark's roads at night, one or two to a road between towns, gone at dawn (the road spawns, at night only, from a seeded stream keyed by the road and the night: `seededRng('scath', roadId+':'+day)`).
+- Markman: "Lost a carter on the Black Moor road. Not lost. Found him. Wouldn't say what he saw. Travel by day."
+- Old Blood: "Things walk in the dark now that used to keep still in it."
+
+**Sealed**:
+- Markman: "Nights are just nights again. Dark. Cold. Good."
+
+### 7. Solas — the dead seen, and the dead walking
+
+**First face**: on Aurenne the dead are seen. Talk only, and the most unsettling talk the first face has. Nothing appears on screen.
+- Aurennais: "My aunt has been seeing my grandmother in the garden, Master, at the far end, by the lemon tree, where she used to sit. My aunt is a sensible woman and has been seeing her every evening. The Church has called it grief, and has been very kind about it, and has asked her to stop."
+- Old Blood: "The dead are standing a little way off. They do that when the door will not take them."
+
+**The toll**, from three torn: the dead walk Aurenne's roads at night (Skeletons and Wraiths, a road spawn as Scáth's, keyed `'solas'`). The towns nearest the Solas gate go to plague by the rule a plague already has: a torn Solas gate counts as a gate left uncleared, whatever has been cleared in it.
+- Aurennais: "The Church has stopped calling it grief, Master. It has started calling it a sickness. The dead on the roads it has not yet found a word for, and it is looking very hard."
+- Old Blood: "The door is open and the dead are walking out of it. They do not know where to go. Neither do we."
+
+**Sealed**:
+- Aurennais: "My aunt has not seen my grandmother this week, Master. She says she is glad. She has been sitting by the lemon tree every evening, all the same."
+
+### 8. Gaoth — the fair wind
+
+**First face**: Aurenne has fair winds. Its ships come home early, and the price of every imported good on the island falls a little (the shop price's prosperity term, a point up for Aurenne's ports while Gaoth is torn).
+- Aurennais: "The wind has been at our backs since the month began, Master, in both directions, which the navigators assure me is not possible. The ships come home three days early. The Compact has taken it as a sign of its own good management."
+- Old Blood: "The wind has somewhere to be. It is in a hurry to get there."
+
+**The toll**, from three torn: gales on Aurenne that will not drop (`WX` windy on the island and the trees' sway at its strongest), and the cypresses lean all one way (piece I's *two torn* line comes true on Aurenne, the look's tree kit bent).
+- Aurennais: "The cypresses on the terraces are lying down, Master. Not fallen. Lying down, all the one way, like dogs at a door. Nobody has sailed in a week. The quays are full of ships that came home early and cannot leave."
+- Old Blood: "The air is going out through the gate faster than it comes in."
+
+**Sealed**:
+- Aurennais: "The wind has gone back to blowing against us half the time, Master. The ships are late again. The Compact has taken that as a sign of nothing at all."
+
+### 9. The toll every torn gate shares
+
+From three torn, the lesser gates of each torn school make the failing forms: the same antibody, with extra limbs and broken anatomy, glowing only at its seams (§5, *below the dragon*; the bodies builder's failing forms). One foe in three in a lesser gate of that school is a failing form. When the gate is bound, the next lesser gate generated is steady again. A floor already built keeps its foes until it is left.
+
+A guild head's line, the first time the player asks *Any work?* after the toll begins (all four peoples; `${School}` is the torn school with the most lesser gates on the speaker's island):
+- Gatelander: "Mind how you go in the old gates. The ${School} ones have gone strange, and strange is a word I don't use lightly, having a brother-in-law."
+- Markman: "The ${School} gates are bad now. Extra arms on things. Pay's up. So's the dying."
+- Aurennais: "I should tell you, Master, that the ${School} gates are producing things the Guild's bestiary does not contain. The contracts now carry a clause for it. You may wish to read the clause."
+- Old Blood: "The ${School} gates are failing. What comes out of them is unfinished."
+
+### 10. The one line at the ring
+
+At the moment of the tear, nothing changes from piece I: the act's lines, then the gain line in full. The toll is never announced. The first time the count of torn gates reaches three, there is one line in the log and nothing on screen, in the manner of the Guest's chapel's *It saw you*:
+> *Somewhere, something gave.*
+
+### What in the code would carry it
+
+- **State.** Nothing new. Every gift, face and toll reads piece I's `worldState.greatGates` (torn or sealed by school) and its count of torn gates. The toll's first-time log line is one flag, `worldState.greatGates.ev.toll`, nested under piece II's `ev` so piece I's count never reads it. The sealed lines' *once* is `ev.sealSaid[school]`. No new `worldState` key.
+- **The gifts** (the systems builder, `GATE_GIFT` read through one function, `gateGift(school)`, true while that school's gate is torn): Tine in `_warded` (`50-travel.js`) for fire-typed sources; Uisce in the dive's breath (`85-world-sea.js`, `DIVE`); Cloch in `maxCarry()` (`14-items.js`); Scáth in `witnessOf` (`86-world-crime.js`), at night only; Solas in `targetOf(e)` for the three undead kinds; Gaoth in `shipTopSpeed` (`86-world-crime.js`). Each is read at the moment it applies and never written into the player's numbers, so binding needs no bookkeeping and a save never holds a borrowed gift.
+- **The faces and the tolls** (the systems builder for the rules; the look builder for the sky, the stars and the trees, read from the same flags):
+  - Tine: the herb scatter on Aurenne halved, keyed by the herb's hash (the scatter's own rule, S533), never by `ch.treePts`.
+  - Uisce: `catchFish` ×2 or ×0 in the Gatelands' waters; `WX`'s storm chance at sea ×2 there.
+  - Cloch: the Mark's road wetness off (the look); the tremor as a daily `showMsg` and a camera shake (`88-world-ticks.js`, the day line); a blocked passage per floor in the Mark's lesser gates (`makeDungeon`, `52-dungeon-gen.js`, from the dungeon's own seed).
+  - Scáth and Solas: night road spawns from `seededRng(school, roadId+':'+day)`, by the co-op rules. Solas's plague: the plague driver (`87-world-quests.js`, *a gate left uncleared too long*) treats the torn Solas gate as uncleared.
+  - Gaoth: the price term on Aurenne's ports; `WX` windy on Aurenne; the tree kit's lean (F12's corruption reads already bend the crowns).
+  - The failing forms: one foe in three of a torn school's lesser gate, from the dungeon's seed, once the bodies builder's failing forms exist. Until then this toll is words only (the guild head's line) and the rest stands.
+- **The lines.** `GATE_LEAK={tine:{gift,cost,first:{aurennais,oldblood},toll:{…},sealed:{aurennais}},…}` beside piece I's `KNOT_LINES` in `87-world-quests.js`. The face and toll lines join `liveRumours(site)` on the gate's island, beside piece I's `GATE_TALK` (both pools draw, one line a time). The guild head's line goes in `guildDef`'s `offer` (`83-world-generator.js`), once, under `ev.guildSaid`.
+- **A test** for the builder: tear Tine and a fire trap's hit is halved and the gain line ends *Fire takes half from you.*; bind it and the hit is whole and the cost line ends *Fire takes its full share again.*; tear Uisce and the breath holds under water for a game-minute; tear Cloch, Scáth and Solas (three torn) and the log reads *Somewhere, something gave.* once, a Markman's *Any news?* can say *Ground shook again this morning*, an Aurennais town near the Solas gate can take the plague, a lesser Cloch gate's floor has a blocked passage; bind Solas and the toll lines for Solas leave the pool, its sealed line plays once, and the plague runs out by its own rule; save and reload with three torn, and the gifts and tolls read the same.
+
+### Checked against the canon
+
+- *§9a*: each gate leaks its own school; tearing is good at first and its cost shows later; binding gives back what tearing took, and the world with it.
+- *§3.1 and §12a*: the Solas leak is the Clearing failing, said by nobody: the dead seen, then walking, then plague by the rule the world already has. Whether Varek is right that the dead would stay is not answered; the dead in this piece are lost, not freed, and nobody says which.
+- *§5*: the failing forms are the shared toll, below the dragon. **Left for later:** canon would allow a dragon where a great gate is torn worst. This piece adds none. It is a card for the bodies builder and a line for a later piece if Michael wants it.
+- *§10a*: the first faces are pleasures, and every toll is told as weather by people who stay kind and funny (*having a brother-in-law*; *I find I can afford only the first*). Nobody names the traveller.
+- *§2's registers*: Gatelanders in proverbs and no bare yes (*what's lent is lent*; *a calm sea is the sea holding its breath*); Markmen short, no honorific; Aurennais with *Master*, clauses and qualifiers, no oath; the Old Blood one exact sentence each, with the older word for the thing (*the door* for the gate, *unfinished* for the failing forms).
+- *No chosen one*: the gifts come with the tear to whoever cut the knot, and stop when it is bound.

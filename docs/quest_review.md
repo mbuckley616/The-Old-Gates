@@ -6,20 +6,40 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `2553a6d` | run 18: only the build tag (s627 → s632) since `1379510`; the Bodies, Look and Systems merges brought prototypes, tests and docs, no player-readable text in `js/`. Before that, run 17, from `c66473e`: Sessions 776–803 and 804–820 (the Makers' tools, their trials and claimants, the Waylamp, the woken householder, the guild's hand-back), F1. Findings 29 and the Makers' Things words checked in the code. Finding 30 |
-| auto/systems | `170241a` | run 17: Sessions 827–830, tests and the tag only; run 18: merged into main, nothing ahead |
-| auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `d9616ac`, `a5a4667` | run 18: Sessions 880–905 (F2a), 19 files in `js/`, measures and placement only; no added string a player reads |
-| auto/bodies, auto/wip-spear, claude/admiring-ride-s05yoi | `06ffec9`, `5a1b57d`, `326e8a2` | run 18: nothing ahead of main in `js/` or `index.html` |
+| main | `2ae3239` | run 19: F2a merged (Sessions 880–905, read on its branch in run 18) and the tags; no new string a player reads. Before that, run 18 to `2553a6d`, run 17 from `c66473e` (the Makers' tools, F1; Findings 29 and 30) |
+| auto/systems | `e360f8f` | run 19: Sessions 940–975 (skills by use, perks, the attributes at their cap, the level's marks); Finding 30 is in as written; Finding 31 |
+| auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
+| auto/bodies, auto/wip-spear, claude/admiring-ride-s05yoi, auto/qa, auto/critic, auto/concept, auto/design | `9769708`, `5a1b57d`, `326e8a2`, `d07d7c0`, `f22f09a`, `d6d953e`, `1330b70` | run 19: nothing ahead of main in `js/` or `index.html` (prototypes, tests and docs) |
 | auto/backlog, auto/producer, auto/wip-cloak-hang | `828885e`, `28a0473`, `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
 | auto/fable-f1-renderer | `026c76c` | run 17: merged into main (Session 822); no player-readable text but the settings sheet's *Renderer* row |
 | claude/v2-scope | `f712a74` | run 17: docs only (the 2.0 scope, Michael's 1 B, 2 A, 3 A; the third art round) |
-| auto/critic, auto/concept, auto/design, auto/ci-shards, auto/wip-sitechest-load | `a640295`, `1c55a50`, `3fbb26a`, `ef1c187`, `6b986b7` | run 17: behind main, or docs and tests only |
+| auto/ci-shards, auto/wip-sitechest-load | `ef1c187`, `6b986b7` | run 19: no merge base with main now; unchanged since run 17 |
 | auto/proto-ship-hulls | `fab53f6` | unchanged since run 12 |
 | auto/proto-armour-lines, auto/proto-dungeon-traps, auto/proto-old-gates, auto/proto-dungeon-stairs, auto/proto-dungeon-wide, auto/proto-fort-layouts | `67487fc`, `261d0ce`, `8ce95be`, `b4ef176`, `8001604`, `36508b0` | unchanged since run 10 |
 | auto/wip-moundsolid | `0ff2144` | unchanged since run 11 |
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 19 — 16 Oct 2026
+
+About 120 player-readable strings read, nearly all on auto/systems (Sessions 940–975, skills by use and the first perks); main has nothing new but F2a, read on its branch last run. One finding.
+
+**auto/systems.** Finding 30 is in as written, the four guild heads' *Yours is still on the board* and the rest, in `offer` and `cloakContract`. The rest is menu text and is plain: the 23 skills' names (*Scáth* and the other schools keep the Old Blood words), the perks (*Draw cut*, *Cat’s fall*, *Swallow’s turn*, *Second skin*), *… rises to …*, the level panel's *nothing rose under it this level*, the creator's *majors 3 of 5*, the traps' *The blade catches you*, and the fine's log line *Talked the fine at … down to …*. The one gap is where the player's *Talk it down. (Speech)* meets the guard: the fine halves and the halt opens again on its first line, so the guard who has just given way says *Halt. There’s a fine of 6 gold on you* as if the player had said nothing. That is Finding 31.
+
+### Finding 31 — auto/systems — the guard gives way on the fine and says nothing about it
+
+**Where.** `86-world-crime.js`: `talkDownTopic(S,c,reopen)`, which halves the fine through `talkDownFine` and reopens the halt; and `confront(n,S,c)` and `confrontIndoor(s,S,c)`, whose greeting is `L.greet(fine,S.site.name)+feastFineLine(S,c)`.
+
+**Text.** The reopened halt's greeting, e.g. `` `Halt. There’s a fine of ${f} gold on you in ${t}. Pay it, or I draw.` `` straight after the fine was talked down.
+
+**Why.** The perk's rule is right; the guard's voice is missing. Every other turn at the halt (pay, poor, refuse, yield, the feast day) has a line in each people's voice. Here the guard has just been argued down by half and greets the player as a stranger. An Aurennais guard would put terms to it, a Gatelander would give way with a proverb, and a Markman would give way grudgingly, briefly.
+
+**Replacement.** Add beside `YIELD_LINES` in `86-world-crime.js`:
+`const TALKED_LINES={gatelander:f=>`A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: ${f} gold, and we’ll say no more about it.`,markman:f=>`Aye, all right. Half. ${f} gold, and don’t make me sorry.`,aurennais:f=>`You argue it well, Master. The town will accept half, on these terms: ${f} gold, and the matter closed.`,oldblood:f=>`Half, then. ${f} gold.`};`
+In `talkDownTopic`'s `fn`, after `talkDownFine` succeeds, set `c.talkedNow=1`. In `confront` and `confrontIndoor`, the greeting becomes `c.talkedNow?(TALKED_LINES[peopleOfSite(S.site)]||TALKED_LINES.markman)(fine):L.greet(fine,S.site.name)+feastFineLine(S,c)`, and `c.talkedNow` is cleared (`delete c.talkedNow`) as the dialog opens, so the next halt in that town greets as before. The topics, the fine and the log line are unchanged.
+
 ---
 
 ## Run 18 — 15 Oct 2026
