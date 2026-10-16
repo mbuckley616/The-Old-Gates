@@ -21341,3 +21341,62 @@ Corrections made during the session:
 - **The tower is solid.** There is no room over the arch for the toll-keeper's men, and no stair.
 - **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
 - **Owed:** the rest of L5's works (a shipyard, a ferry).
+
+## v80 — Session 980 — The Mark's rope ferry (card F8, prototype only)
+L5's "roads and works" (OG-046) owed a shipyard and a ferry after Session 972's toll bridge. OG-046 lists "river port and ferry" among its works, and the Mark is the island with "a river valley at its heart" (OG-102) and no place built yet in `places.js` since the mine and the ice cave. So this is a crossing on a Markish river too wide to bridge cheaply: the Norse *ferjested*, a flat hauled across by hand along a rope, with a bell on the far bank to call the ferryman over. It lives in `places.js` beside the toll bridge, with its own view (`places-ferry-view.js`, dispatched from `places-view.js`). It reuses the lighthouse's materials and the kit's Markish hall (`markHall`, now imported into `places.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The crossing** (`markFerry` in `places.js`, at true size, the river along x and flowing to +x, the road along z, the ferryman's bank at +z):
+- **The river:** 40 m across at the water, its bed 2.4 m down. The banks are turf over a shingle strand rising 1.2 m. The valley climbs gently beyond them, and boulders lie along the strand.
+- **The road:** gravel, cut down through each bank to its landing at 1 in 8.
+- **The landings:** a timber stage on piles at each bank, 2.4 m wide and 8.5 m long, running 6 m out into water 2.4 m deep, its deck 0.55 m over the water. It has a rail on its downstream side, and the end pair of piles stands on as bollards.
+- **The rope:** a hawser between two snubbing posts, one up each bank. It is 1.75 m over the water at the posts and sags 0.35 m to the middle. It runs along the flat's upstream side, so it never crosses the way.
+- **The flat:**
+  - a tarred scow 9 by 3.2 m, its pram ends raked up, its deck 0.5 m over the water, 0.35 m drawn, with rails 1 m high down both sides;
+  - a hinged apron at each end: the one at a landing lowered onto the stage, the other raised as a gate;
+  - two forks on the upstream side, each carrying the rope on an iron roller under a timber keeper, at hand height (0.9 to 1 m over the deck);
+  - a pole stowed along the downstream rail.
+- **The ferryman's house:** the kit's Markish hall, turf-roofed (5.8 by 8.4 m), beside the road on the near bank, its gable door and steps to the road.
+- **The bell:** on the far bank by the road, a bronze bell in a gallows frame under a little shingle hood, its mouth 2 m up and its pull at 1.15 m.
+- `o.at` puts the flat at the near landing (the default), mid-river or the far landing.
+- Birches stand on both banks.
+- 29,374 triangles in 17 meshes, and the hall's 10.
+
+The view: `places.html?place=ferry`, with `view=ferry` (from the near bank upstream), `deck` (on the flat toward the far landing), `bell` (by the bell, back across to the house), `river` (low on the water downstream) and `far` (from high on the far bank), plus `&at=mid` or `&at=far`.
+
+Corrections made during the session:
+- **The water.** It first used the lighthouse's sea, a saturated blue. A river's is now its own grey-green.
+- **The ground's edge.** The ground first stopped at x ±48 m while the water ran on to the horizon. It now reaches ±72 m, coarser past 30 m, and the water stops with it.
+- **Three slips in the check, mine.**
+  - Its ray for the flat's deck fell on the seam between two planks, the same slip as Session 972's.
+  - Its walk sampled at exact quarter metres, which is where the stage's boards (laid every 0.25 m with 2 cm between) have their gaps, so every ray fell through to the strand. The walk now samples on each board's middle.
+  - Its mid-river aprons were cast against the near build's meshes.
+- **The house's footing.** The hall's back corner stands 0.62 m up its 0.8 m stone course on the rising bank. The check first asked 0.6. It now asks that the ground stays 0.1 m under the sill, which is what matters.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 104 of 104 pass** (96 after Session 972). Two views are new on the page check: the ferry, and the deck mid-river, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 30,000 triangles and 20 meshes.
+  - **The flat,** at all three stations:
+    - its deck found 0.50 m over the water;
+    - its keel found 0.35 m under;
+    - clear of the bed by 1.98 m or more.
+  - **The rope:**
+    - found 0.038 m over each roller (its radius is 0.035), a keeper 0.12 m over it;
+    - 0.9 to 0.99 m over the deck at the forks;
+    - 1.37 m or more over the water, found by rays every 2 m across;
+    - 0.62 m outside the stage.
+  - **The way,** 375 points on three lines from the road down the cut, along the stage, over the lowered apron and the length of the deck:
+    - a floor under every one;
+    - no step over 0.06 m;
+    - the steepest metre 0.127, under 1 in 7.5;
+    - nothing overhead.
+  - **The aprons:** at a landing the far one raised across the deck's end, 4.5 m from the middle; mid-river both raised.
+  - **The bell and the house:**
+    - the bell's mouth 2 m up and its pull 1.15 m up, its frame 1.36 m off the road;
+    - the hall's corners' ground from 0.22 m under to 0.62 m over its foot, its steps 0.8 m off the road.
+- **Pictures:** `places-ferry-ferry.jpg`, `-deck`, `-bell`, `-river`, `-far` and `-mid` (from the far bank, with the flat halfway over).
+### Needs eyes
+- **The flat has no ferryman.** People are the bodies builder's. Whether ringing the bell brings him, and what the crossing costs, are the systems builder's and Michael's.
+- **The water is flat and still.** There is no current, no wake at the flat's upstream side and no wet line on the piles.
+- **The valley's skyline is a bare ridge.** The banks want the Mark's own trees (pine and spruce among the birches) and a range behind them.
+- **The birches are the lathe crowns of the older places.** They read as poplars more than birches.
+- **The raised apron reads as a dark board** from across the water.
+- **Owed:** the last of L5's works, a shipyard.

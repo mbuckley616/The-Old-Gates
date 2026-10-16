@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV } from './common.js';
-import { stream, markTextures, aurenneTextures, gatelandsBuilding, GL_PLANS } from './pieces.js';
+import { stream, markTextures, aurenneTextures, gatelandsBuilding, GL_PLANS, markHall } from './pieces.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { gatelandsSloop } from './ships.js';
 
@@ -1326,4 +1326,93 @@ export function gatelandsTollBridge(o = {}, r = stream('tollbridge')) {
   group.add(cot); tris += cot.userData.tris;
   return { group, tris: Math.round(tris), draws: group.children.length - 1 + cot.userData.calls, top: TH + .96, deck, road: ROAD, parapet: .95, arches, tower: { z0: TZ0, z1: TZ1, w: TW, h: TH, passage: { w: PW, h: PH } }, bar: { z: BZ, y: BY, open },
     cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: cot.userData.door }, ground, water: WATER, bed: BED };
+}
+
+// ── the Mark's rope ferry (Session 980, card F8; L5's "roads and works", OG-046's "river port and ferry"; the Mark's "river valley at
+// its heart", OG-102). Where a road meets a river too wide to bridge cheaply, a ferry: the Norse ferjested, a flat hauled across by hand
+// along a rope, with a bell on the far bank to call the ferryman over. Built at true size, the river along x (flowing to +x), the road along z,
+// the ferryman's bank at +z:
+//   - the river: 40 m across at the water, its bed 2.4 m down, banks of turf over a shingle strand rising 1.2 m; the road, gravel, cut
+//     down through each bank to its landing at 1 in 8;
+//   - the landings: a timber stage on piles at each bank, 2.4 m wide and 8.5 m long, running 6 m out into water 2.4 m deep, its deck
+//     0.55 m over the water; a rail on its downstream side, bollards at its end;
+//   - the rope: a hawser between two snubbing posts on the banks, 1.75 m over the water at the posts and sagging 0.35 m to the middle,
+//     along the flat's upstream side, so it never crosses the way;
+//   - the flat: a tarred scow 9 by 3.2 m, its pram ends raked up, its deck 0.5 m over the water and 0.35 m drawn; rails 1 m high down both
+//     sides; a hinged apron at each end, the one at a landing lowered onto the stage and the other raised as a gate; two forks on the
+//     upstream side carrying the rope on rollers at hand height; a pole stowed along the downstream rail;
+//   - the ferryman's house: the kit's Markish hall (markHall), turf-roofed, beside the road on the near bank, its door and steps to the road;
+//   - the bell: on the far bank beside the road, a bronze bell in a gallows frame under a little shingle hood, its pull at hand.
+// o.at: 'near' (default; the flat at the ferryman's landing), 'mid' (halfway over) or 'far' (at the bell's landing).
+// -> { group, tris, draws, top, water, bed, half, stage { x, z0, z1, top } (the near one; the far is its mirror in z), flat { z, L, W, deck,
+//   bottom, forks [{ z, top }] , aprons { near, far } ('down' or 'up') }, rope(z), ropeX, bell { x, z, mouth, pull, frame }, house { x, z, ry,
+//   w, d, sill, stairOut }, road, grade(az), ground(x, z) }
+export function markFerry(o = {}, r = stream('ferry')) {
+  const L0 = lightMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const M = { ...L0, water: std(0x3c5452, .18, { metalness: .15 }), hull: L0.tar, plank: mat('wood', { ns: .9, color: 0x9a8c78, rough: .9 }), deck: mat('wood', { ns: .9, color: 0x8a7c66, rough: .9 }), pile: mat('beam', { ns: 1.0, color: 0x4a3c30, rough: .95 }),
+    rope: std(0x8a7650, .95), bronze: std(0x8a6a34, .4, { metalness: .7 }), shingle: mat('shingle', { ns: 1.5, rough: .8 }), bark: std(0xd8d0c0, .9), leaf: std(0x7c8a40, .95), strand: mat('rock', { ns: .8, color: 0x9a948a, rough: 1 }) };
+  M.shingle.side = THREE.DoubleSide;
+  const B = new Map(), at = ['mid', 'far'].includes(o.at) ? o.at : 'near';
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  // the land: the river's bed, the strand and the banks, the valley rising beyond; the road's strip cut down to its landing at 1 in 8
+  const BED = -2.4, HW = 20, BANK = 1.2, ROAD = 1.6, SD = .55, S0 = HW - 6, S1 = HW + 2.5, sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  const nat = (x, z) => { const az = Math.abs(z), d = az - HW - 3, y = az < HW ? BED * (1 - sm((az - HW + 6) / 6)) : az < HW + 3 ? BANK * sm((az - HW) / 3) : BANK + .04 * d + .0022 * d * d;
+    const n = .14 * Math.sin(x * .21 + z * .13) + .09 * Math.sin(x * .05 - z * .27) + .35 * Math.sin(x * .045 + 1.3) * sm((az - HW - 3) / 10); return y + n * (az > HW ? 1 : .4); };
+  const grade = az => SD - .05 + Math.max(0, az - (S1 - .5)) / 8, ground = (x, z) => { const m = sm((Math.abs(x) - ROAD - .3) / 2.5), c = Math.min(nat(0, z), grade(Math.abs(z))); return c + (nat(x, z) - c) * m; };
+  { const xs = []; for (let x = -72; x < -30; x += 3) xs.push(x); for (let x = -30; x < -6; x += 1.5) xs.push(x); for (let x = -6; x < 6; x += .5) xs.push(x); for (let x = 6; x < 30; x += 1.5) xs.push(x); for (let x = 30; x <= 72; x += 3) xs.push(x);
+    const NZ = 124, Z0 = -62, pos = [], I = { turf: [], strand: [] }, NX = xs.length;
+    for (let j = 0; j <= NZ; j++) for (const x of xs) { const z = Z0 + j; pos.push(x, ground(x, z), z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX - 1; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, y = (pos[a * 3 + 1] + pos[d * 3 + 1]) / 2; (y < .35 ? I.strand : I.turf).push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g.toNonIndexed(), k, 0, 0, 0, 0, 0, 0, .25); } }
+  { const g = new THREE.PlaneGeometry(144, 2 * HW + 5); g.rotateX(-Math.PI / 2); put(g, 'water', 0, 0, 0); }
+  // the road down each bank: strips of gravel on the cut, from the stage's foot up out of the valley
+  for (const s of [1, -1]) for (let az = S1 - .5; az < 61; az += .9) { const a0 = az, a1 = az + .9, y0 = ground(0, s * a0), y1 = ground(0, s * a1), sl = (y1 - y0) / .9;
+    put(new THREE.BoxGeometry(2 * ROAD, .06, .9 * Math.hypot(1, sl) + .02), 'grit', (r() - .5) * .04, (y0 + y1) / 2 + .03, s * (a0 + .45), s * -Math.atan(sl), (r() - .5) * .02); }
+  // the stages: deck boards across, three stringers, piles in pairs to the bed (the end pair standing on as bollards), a rail downstream
+  for (const s of [1, -1]) { for (let az = S0; az < S1 - .01; az += .25) put(new THREE.BoxGeometry(2.4, .06, .23), 'deck', 0, SD - .03, s * (az + .125), 0, (r() - .5) * .01, 0, .6);
+    for (const x of [-1, 0, 1]) put(new THREE.BoxGeometry(.16, .22, S1 - S0), 'pile', x, SD - .17, s * (S0 + S1) / 2);
+    put(new THREE.BoxGeometry(2.6, .24, .2), 'pile', 0, SD - .15, s * (S0 + .1));
+    for (const az of [S0 + .2, S0 + 2.2, S0 + 4.2, S0 + 6.2]) for (const x of [-1.1, 1.1]) { const yb = ground(x, s * az) - .4, yt = az === S0 + .2 ? SD + .55 : SD - .06; put(new THREE.CylinderGeometry(.13, .14, yt - yb, 8), 'pile', x, (yt + yb) / 2, s * az, 0, 0, 0, .6); }
+    for (let az = S0 + 1.2; az <= S1 - .2; az += 1.6) put(new THREE.BoxGeometry(.09, 1.0, .09), 'timber', 1.15, SD + .5, s * az); put(new THREE.BoxGeometry(.08, .08, S1 - S0 - 1.2), 'timber', 1.15, SD + 1.0, s * (S0 + S1 + 1) / 2); put(new THREE.BoxGeometry(.06, .06, S1 - S0 - 1.2), 'timber', 1.15, SD + .55, s * (S0 + S1 + 1) / 2); }
+  // the rope: a hawser between the snubbing posts, taut but for a sag of 0.35 m, along the upstream side
+  const RX = -1.85, ZP = HW + 4.5, RT = 1.75, SAG = .35, rope = z => RT - SAG * (1 - (z / ZP) ** 2);
+  { const pts = []; for (let k = 0; k <= 40; k++) { const z = -ZP + k * 2 * ZP / 40; pts.push(new THREE.Vector3(RX, rope(z), z)); } put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 80, .035, 6), 'rope');
+    for (const s of [1, -1]) { const z = s * ZP, yb = ground(RX, z) - .5; put(new THREE.CylinderGeometry(.18, .2, RT + .3 - yb, 10), 'pile', RX, (RT + .3 + yb) / 2, z, 0, 0, 0, .6); put(new THREE.CylinderGeometry(.21, .21, .08, 10), 'timber', RX, RT + .33, z);
+      for (let k = 0; k < 3; k++) { const t = new THREE.TorusGeometry(.2, .035, 6, 14); t.rotateX(Math.PI / 2); put(t, 'rope', RX, RT - .06 + k * .07, z); } } }
+  // the flat: the hull a raked profile in (z, y) extruded across x; deck planks fore and aft; bulwarks; rails; the aprons; the forks
+  const L = 9, FW = 3.2, DK = .5, BOT = -.35, AL = 1.3, zc = at === 'mid' ? 0 : (at === 'near' ? 1 : -1) * (S0 - .1 - L / 2);
+  { const s = new THREE.Shape(); s.moveTo(-L / 2, DK - .06); s.lineTo(L / 2, DK - .06); s.lineTo(L / 2, .05); s.lineTo(L / 2 - 1.4, BOT); s.lineTo(-L / 2 + 1.4, BOT); s.lineTo(-L / 2, .05); s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: FW, bevelEnabled: false }); g.rotateY(Math.PI / 2); g.translate(-FW / 2, 0, zc); put(g, 'hull', 0, 0, 0, 0, 0, 0, .6); }
+  for (let k = 0; k < 10; k++) put(new THREE.BoxGeometry(.29, .06, L - .06), 'plank', -1.35 + k * .3, DK - .03, zc, 0, 0, 0, .6);
+  for (const sx of [-1, 1]) { put(new THREE.BoxGeometry(.08, .26, L), 'hull', sx * (FW / 2 - .04), DK + .07, zc);
+    for (let k = 0; k < 6; k++) put(new THREE.BoxGeometry(.08, 1.0, .08), 'timber', sx * 1.5, DK + .5, zc - L / 2 + .6 + k * (L - 1.2) / 5); put(new THREE.BoxGeometry(.1, .08, L - 1.1), 'timber', sx * 1.5, DK + 1.0, zc); put(new THREE.BoxGeometry(.06, .06, L - 1.1), 'timber', sx * 1.5, DK + .55, zc); }
+  { const g = new THREE.CylinderGeometry(.035, .035, 5.2, 6); g.rotateX(Math.PI / 2); put(g, 'sailwood', 1.42, DK + .75, zc); }
+  const aprons = {}; for (const e of [1, -1]) { const ze = zc + e * L / 2, side = Math.sign(ze) === 1 ? 'near' : 'far', lands = at !== 'mid' && (at === 'near') === (e === 1) && side === at;
+    aprons[e === 1 ? 'pz' : 'nz'] = lands ? 'down' : 'up';
+    if (lands) { const tip = SD + .06, sl = Math.atan2(tip - DK, AL); put(new THREE.BoxGeometry(2.4, .06, AL), 'plank', 0, (DK + tip) / 2 - .03, ze + e * AL / 2, e * -sl); for (const x of [-1.05, 1.05]) put(new THREE.BoxGeometry(.1, .1, AL), 'pile', x, (DK + tip) / 2 - .09, ze + e * AL / 2, e * -sl); }
+    else { put(new THREE.BoxGeometry(2.4, AL, .06), 'plank', 0, DK + AL / 2, ze + e * .03); for (const x of [-1.05, 1.05]) put(new THREE.BoxGeometry(.1, AL, .1), 'pile', x, DK + AL / 2, ze + e * .1); }
+    for (const x of [-1.25, 1.25]) { const c = new THREE.CylinderGeometry(.06, .06, .14, 8); c.rotateZ(Math.PI / 2); put(c, 'iron', x, DK, ze); } }
+  const forks = []; for (const fz of [zc - L / 2 + 1.6, zc + L / 2 - 1.6]) { const ry = rope(fz), top = ry - .035; forks.push({ z: +fz.toFixed(3), top: +top.toFixed(3) });
+    put(new THREE.BoxGeometry(.12, ry + .3 - (DK - .06), .14), 'timber', -1.66, (ry + .3 + DK - .06) / 2, fz); for (const y of [top - .08, ry + .2]) put(new THREE.BoxGeometry(.32, .08, .12), 'timber', -1.82, y - .04 + (y > ry ? 0 : -.04), fz);
+    const rl = new THREE.CylinderGeometry(.07, .07, .2, 10); rl.rotateZ(Math.PI / 2); put(rl, 'iron', RX, top - .07, fz); }
+  // the bell on the far bank: a gallows frame under a shingle hood, the bell in a yoke, its pull at hand
+  const BX = 3.7, BZ = -(HW + 6), gy = ground(BX, BZ), MOUTH = gy + 2.0, PULL = gy + 1.15;
+  { for (const dx of [-.65, .65]) put(new THREE.BoxGeometry(.18, 2.9, .18), 'timber', BX + dx, gy + 1.3, BZ); put(new THREE.BoxGeometry(1.7, .2, .22), 'timber', BX, gy + 2.85, BZ);
+    for (const sz of [-1, 1]) put(new THREE.BoxGeometry(1.9, .05, .75), 'shingle', BX, gy + 3.1, BZ + sz * .3, sz * .55, 0, 0, .9);
+    const V = (a, b) => new THREE.Vector2(a, b); put(new THREE.LatheGeometry([V(.001, .42), V(.09, .41), V(.12, .32), V(.14, .14), V(.2, .03), V(.23, 0), V(.21, 0)], 16), 'bronze', BX, MOUTH, BZ);
+    put(new THREE.BoxGeometry(.3, .1, .12), 'timber', BX, MOUTH + .47, BZ); put(new THREE.SphereGeometry(.05, 8, 6), 'iron', BX, MOUTH + .04, BZ);
+    put(new THREE.CylinderGeometry(.015, .015, MOUTH - PULL, 5), 'rope', BX + .16, (MOUTH + PULL) / 2, BZ); put(new THREE.SphereGeometry(.05, 6, 4), 'rope', BX + .16, PULL, BZ); }
+  // the strand's boulders and the birches of the banks, kept off the road and the landings
+  for (let k = 0; k < 26; k++) { const s = k % 2 ? 1 : -1, x = (r() < .5 ? -1 : 1) * (5 + r() * 40), z = s * (HW - .5 + r() * 2.5), q = .3 + r() * .7, g = new THREE.IcosahedronGeometry(q, 0); g.scale(1, .6, 1.2); put(g, 'rock', x, ground(x, z) + q * .2, z, 0, r() * 6, 0, .6); }
+  for (let k = 0; k < 14; k++) { const s = k % 2 ? 1 : -1, x = (r() < .5 ? -1 : 1) * (10 + r() * 34), z = s * (HW + 5 + r() * 26), h = 6 + r() * 4, gy2 = ground(x, z), V = (a, b) => new THREE.Vector2(a, b);
+    put(new THREE.CylinderGeometry(.09, .15, h * .55, 6), 'bark', x, gy2 + h * .27, z, 0, 0, (r() - .5) * .1); put(new THREE.LatheGeometry([V(.001, 0), V(1.0, h * .12), V(1.35, h * .32), V(.9, h * .5), V(.001, h * .62)], 9), 'leaf', x, gy2 + h * .38, z, 0, r() * 6); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'strand', 'water'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  // the ferryman's house: the kit's hall, turf-roofed, its gable door and steps to the road
+  const H = markHall({ roof: 'turf', turf: 'dry', w: 5.8, d: 8.4, porch: false, chimney: true, carve: false, wall: 1 }, stream('ferry-house:' + (o.key || ''))), HRY = -Math.PI / 2, HX = ROAD + .8 + H.stairOut, HZ = HW + 11;
+  const hy = ground(ROAD + .8, HZ); H.group.position.set(HX, hy, HZ); H.group.rotation.y = HRY; group.add(H.group); tris += H.tris;
+  return { group, tris: Math.round(tris), draws: group.children.length - 1 + H.draws, own: group.children.length - 1, top: +(gy + 3.2).toFixed(2), water: 0, bed: BED, half: HW, road: ROAD, grade, ground, nat,
+    stage: { x: 1.2, z0: S0, z1: S1, top: SD }, flat: { z: zc, L, W: FW, deck: DK, bottom: BOT, forks, aprons: { near: aprons.pz, far: aprons.nz }, at }, rope, ropeX: RX, ropePosts: ZP,
+    bell: { x: BX, z: BZ, mouth: +(MOUTH - gy).toFixed(2), pull: +(PULL - gy).toFixed(2), frame: BX - .74 }, house: { x: HX, z: HZ, y: hy, ry: HRY, w: 5.8, d: 8.4, sill: H.sill, stairOut: H.stairOut } };
 }
