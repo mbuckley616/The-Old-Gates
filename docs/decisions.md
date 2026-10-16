@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Steady (Bow 25): build an aim sway for it to remove, or another perk? (systems builder, Session 982) — DECISION #369
+The build sheet's Bow 25 perk, *Steady*, is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly where the crosshair is for as long as you hold it, and only the stamina drain (8 a second) limits the hold. So there is nothing for Steady to take away. Session 982 built the Bow's other three perks (Quick nock, Long eye, Through) and left Steady off; the Skills tab shows it as *not yet in the game*.
+
+What should Steady be?
+- **A. Build a sway, then Steady** (recommended). A full draw held past 1 s starts to drift: the arrow leaves up to 2° off the crosshair, growing over the next 2 s, with a small visible wobble of the bow. Steady holds the aim true for the first 3 s of a full draw. The bow gains a skill in the hold, which is what Skyrim's and Oblivion's archery have, and the perk reads as written. The 1 s, 2° and 2 s are mine to tune in playtest.
+- **B. Steady without a sway**: a full draw costs no stamina for its first 3 s. Same name, a different perk; the bow stays as easy to aim as now.
+- **C. Leave it** until the bodies builder's bow draw and the new look's aim (F-cards) are in, and decide then.
+
 ## Answered
 
 ### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #362

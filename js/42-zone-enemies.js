@@ -1429,9 +1429,10 @@ function tickZoneBalls(dt,sc){
     if(fb.userData.isArrow){
       let arrowHit = false;
       ZE.forEach(e=>{
-        if(arrowHit || e.dead || e.locked) return;
+        if(arrowHit || e.dead || e.locked || fb.userData.passed===e) return;
         if(Math.hypot(fb.position.x-e.x, fb.position.z-e.z) < ARROW_HIT_RADIUS){
           arrowHit = true;
+          const _thru = arrowPasses(fb.userData, e); /* S982 — Through: the arrow flies on past this one */
           // Reach into the arrow's pre-rolled rawDmg and route through the
           // resist pipeline. wType is stamped on the arrow at fire time
           // (typically 'pierce'; silver/broadhead arrows override).
@@ -1474,14 +1475,14 @@ function tickZoneBalls(dt,sc){
             const _killTag = ` (ARROW)${dmgTag(tagInfo, e)}`;
             if(typeof killZoneEnemy === 'function') killZoneEnemy(e, sc, _killTag);
             else { e.dead = true; }
-            sc.remove(fb); ZB.splice(i,1);
+            if(!_thru){ sc.remove(fb); ZB.splice(i,1); }
           } else {
             // v64.2 — Stick the arrow into the enemy body. The body mesh
             // becomes the arrow's parent so it follows movement/rotation.
             // The arrow stays in ZB (not removed from the array) so its
             // stuckLife counts down on subsequent frames via tickArrowMotion.
             const body = enemyBodyMesh(e);
-            _stickArrowToEnemy(fb, body, sc);
+            if(!_thru) _stickArrowToEnemy(fb, body, sc);
           }
         }
       });

@@ -1007,7 +1007,7 @@ function tickArrowMotion(arrow, dt, isOW){
   ud.life -= dt;
   if(ud.life <= 0) return 'expired';
   // Apply gravity to vy (in-place; vy on the userData is the live velocity).
-  ud.vy = (ud.vy || 0) - ARROW_GRAVITY * dt;
+  ud.vy = (ud.vy || 0) - arrowGravity(arrow) * dt; /* S982 — Long eye halves it past 50 m */
   // Sub-step motion to catch fast arrows through thin walls. ARROW_SPEED 28
   // × dt 0.016 ≈ 0.45u per frame; tile walls are 1.0u thick so single-step
   // is normally fine, but a 60fps drop or a fast-moving arrow could tunnel.

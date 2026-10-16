@@ -21651,3 +21651,22 @@ Corrections made during the session:
 - **The tower is solid.** There is no room over the arch for the toll-keeper's men, and no stair.
 - **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
 - **Owed:** the rest of L5's works (a shipyard, a ferry).
+
+## v80 — Session 982 — The Bow's perks: Quick nock, Long eye and Through (skills and perks A, session 3, part 4)
+The fourth part of the sheet's first wave of perks. The Arms perks were left for combat's resolver (PR #356), but the bow is not in it: the resolver's diff touches no line of the draw, the flight or the arrow's hit. So the Bow's perks go in now. Three go live in `PERK_LIVE`, and the Skills tab lights them. Each is one small function in `12-character.js`, read where the thing is decided.
+- **Bow 50, *Quick nock*.** The draw fills 30% faster: `bowDrawRate()` is 1/0.7, so a full draw (`BOW_DRAW_MAX`, 1.1 s) takes 0.77 s. The loop's draw tick (`90-main.js`) reads it. The stamina drain is per second of holding, as before.
+- **Bow 75, *Long eye*.** An arrow that has flown 50 m on the level falls at half the gravity from there. `fireArrow` marks the arrow with the perk and its starting point; `tickArrowMotion` asks `arrowGravity(arrow)` for each frame's pull.
+- **Bow 100, *Through*.** A full-draw arrow goes on past the first foe it strikes and can strike one more. `fireArrow` marks it when the draw is full and the perk held. At both hit sites (the zones' `tickZoneBalls` and the dungeon's arrow branch in the loop), `arrowPasses` decides whether this hit is the one it passes through. If so, the arrow neither sticks nor is removed, and it skips that foe from then on. The second foe it meets takes it as before. The damage is rolled on each foe's own stream (`arrowRawFor`), so the second hit is its own roll.
+
+**Not built, and why.** *Steady* (Bow 25) is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly at the crosshair for as long as you hold it, and only the stamina drain limits the hold. A sway is a new rule with numbers a player feels, so it is asked as **DECISION #369**: A, build a sway (a held full draw drifts after 1 s) and Steady with it (recommended); B, Steady as three seconds of the hold free of stamina; C, wait for the bodies builder's draw and the new look's aim. Steady shows on the tab as not yet in the game.
+### Verified (headless Chromium)
+- **`perkbow`** (new), 8 of 8:
+  - Quick nock: on the game's own loop, an empty draw to a full one takes 65 frames at Bow 49 and 45 at 50. The perks built are Quick nock, Long eye and Through, and not Steady.
+  - Long eye: an arrow fired level, 40 m over 70 m of open ground, through `tickArrowMotion` alone. To 45 m it falls 5.281 m at Bow 74 and at 75 alike. By the end of its flight (61.6 m, its 2.2 s life) it has fallen 9.753 m at 74 and 9.587 at 75. Its fall speed is −8.8 and −8.0: the half gravity from 1.79 s, as the sum says.
+  - Through: three Bandits in a line, 4, 7 and 10 units ahead, one arrow each time. At Bow 99 a full draw stops in the first. At 100 a full draw strikes the first, flies on, and sticks in the second; the third is untouched. A draw at 0.8 at Bow 100 stops in the first. No page errors.
+  - `--look=new`: green.
+- `hitseed`, `tpshots`, `attrdmg`, `duelrhythm`, `shiparchers`, `perkhand`, `perkbody`, `perkfall` and `skillsave` pass.
+### Needs eyes
+- **Long eye barely shows.** An arrow lives 2.2 s (`ARROW_LIFE`), so a full draw flies 61.6 m and the perk acts only over its last 11.6 m: 0.17 m less drop. The sheet's 50 m was written for a longer flight. If Michael wants the perk to be felt, the lever is the arrow's life or the 50 m, and that is his number. F2b's table of ranges in metres is the natural place to settle it.
+- **Through** sends the arrow on with no new sound or mark on the first foe. Whether a pass-through wants a sound of its own is for the ear.
+- **Quick nock** also speeds the bow's draw on the viewmodel and the third-person body, which read the same clock.

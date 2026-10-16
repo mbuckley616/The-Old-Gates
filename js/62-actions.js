@@ -323,6 +323,9 @@ function fireArrow(strength){
     // Carry source-bow ref for hit-message attribution (no need to retain
     // ammo ref — damage was already rolled).
     bowName: bow.name,
+    // S982 — Long eye measures the flight from here; Through is a full draw at Bow 100
+    longEye: perk('bow',75), x0: arrowGroup.position.x, z0: arrowGroup.position.z,
+    through: perk('bow',100) && strength >= 1,
   };
   sc.add(arrowGroup);
   if(isOW) ZB.push(arrowGroup); else BALLS.push(arrowGroup);

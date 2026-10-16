@@ -201,7 +201,7 @@ function loop(now){
   // path during drawing, but a save/load mid-draw or hurt-cancel could leave
   // a stale state).
   if(_bowDrawing){
-    _bowDrawT += dt;
+    _bowDrawT += dt * bowDrawRate(); /* S982 — Quick nock */
     // Stamina drain — continuous, so the player can't infinitely hold a draw.
     // Tunable via BOW_STAM_DRAIN_PER_SEC; current 8/sec means a full-tier
     // 1 player can hold a max draw for ~6 seconds before running dry.
@@ -1120,9 +1120,10 @@ function loop(now){
       if(fb.userData.isArrow){
         let arrowHit = false;
         ENEMIES.forEach(e=>{
-          if(arrowHit || e.dead || e.floor!==currentFloor || e.disguised) return;
+          if(arrowHit || e.dead || e.floor!==currentFloor || e.disguised || fb.userData.passed===e) return;
           if(Math.hypot(fb.position.x-e.x, fb.position.z-e.z) < ARROW_HIT_RADIUS){
             arrowHit = true;
+            const _thru = arrowPasses(fb.userData, e); /* S982 — Through: the arrow flies on past this one */
             const wt = fb.userData.wType || 'pierce';
             const resistMult = (e.resist && typeof e.resist[wt]==='number') ? e.resist[wt] : 1.0;
             let dmg = Math.max(1, Math.floor(arrowRawFor(fb.userData, e) * resistMult * _fortuneCrit(e)));
@@ -1150,14 +1151,14 @@ function loop(now){
             dmgNum(e,dmg,tagInfo); /* S761 — #198 A */
             if(e.hp<=0){
               killE(e, ` (ARROW)${dmgTag(tagInfo, e)}`);
-              dScene.remove(fb); BALLS.splice(i,1);
+              if(!_thru){ dScene.remove(fb); BALLS.splice(i,1); }
             } else {
               // v64.2 — Stick arrow into enemy body (parent to body mesh).
               // Arrow stays in BALLS so stuckLife ticks down via
               // tickArrowMotion. On enemy death, the body mesh despawn
               // will pull the arrow with it (despawn-with-corpse).
               const body = enemyBodyMesh(e);
-              _stickArrowToEnemy(fb, body, dScene);
+              if(!_thru) _stickArrowToEnemy(fb, body, dScene);
             }
           }
         });
