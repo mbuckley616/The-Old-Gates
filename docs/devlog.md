@@ -21145,3 +21145,30 @@ The build sheet's third session (`docs/design/skills-and-perks-build.md`) is the
 - **Feel for it** is a soft gold halo on the worked pin. Whether it is too faint, or too much of a cheat, only the lock in hand shows.
 - **Talk it down** closes the guard's talk and opens it again on the new fine. It is a quick blink, not a line from the guard. If the quest writer wants a word from him, `talkDownTopic` returns it.
 - The perk line on the Skills tab is plain markup, ten pixels high, until the parchment kit (#142 A, the look builder's).
+
+## v80 — Session 974 — Stealth's and Athletics' perks (skills and perks A, session 3, part 2)
+The second part of the sheet's first wave of perks: the body's, outside combat's resolver. Seven perks go live in `PERK_LIVE`, and the Skills tab lights them. Each is one small function in `12-character.js`, read where the thing is decided.
+- **Stealth 25, *Soft step*.** You sneak at walking speed (`sneakMoveMult()`: ×1, not ×0.7). The loop's `_sneakMoveMult` reads it.
+- **Stealth 50, *In the dark*.** Sneaking out of light, sight on you is ×0.75 on top of everything else. The sheet does not say what *out of light* is. The game has one dark rule today: the witnesses' night halving, in the open. So `outOfLight()` is night, in the open world, not indoors. It applies to a witness's reach (`witnessOf`) and to a foe's sight (`_sneakDetectMult`). A lit room or a torch-lit dungeon is not dark here, because nothing in the game says so yet. When a light rule arrives, it belongs in `outOfLight()`.
+- **Stealth 75, *Light foot*.** A spike plate does not spring under you while you sneak or sprint (`lightFootNow()`, in `tickDungeonTraps`). The loop now leaves the frame's sprint in `_sprintNow`. The sheet's *crumbling floors* do not exist in the dungeons yet. When they do, they read the same function.
+- **Athletics 25, *Swimmer*.** You swim at the run's speed, 3.83 to 4.2 with the skill (`swimSpeed()`). Before, it was 1.7 × the cloak's drag × Athletics' 0.8 to 1.3.
+- **Athletics 50, *Long breath*.** Three times the air underwater: 120 s, not 40 (`breathSecs()`). The sea's dive tick in `85-world-sea.js` reads it. That is a one-call change in the look builder's file: the breath is a rule, not a shape.
+- **Athletics 75, *Road legs*.** No sprint cost on a road (`roadLegsNow()`): within the road's half-width (2.6), outdoors in the world.
+- **Athletics 100, *Tireless*.** A sprint that empties your stamina no longer starts the 2 s pause before it comes back.
+
+*Shadow's hand* (Stealth 100, a backstab +50%) is a hit, and waits for the resolver with the Arms perks and Armour's.
+### Verified (headless Chromium)
+- **`perkbody`** (new), 12 of 12:
+  - Soft step: sneaking moves ×0.7 at Stealth 24 and ×1 at 25.
+  - Swimmer: the swim is 1.53 at Athletics 24 and 3.908 at 25, which is the run's 3.908.
+  - Long breath: 40 s of air at 24, 120 at 50.
+  - Road legs: on a road near Dunmore at 75, not at 74, not 8 units off the road. On the game's own loop with Shift and W held for ten frames, stamina 8 → 8.72 on the road at 75, and 8 → 6.78 off it at 74.
+  - In the dark: sneaking at 23h in the open, Stealth 50 takes ×0.75 more off sight than 49, with Stealth's own 0.4% a level divided out. At 13h it takes nothing.
+  - Tireless: emptied by a sprint, the pause is 1.97 s at Athletics 99 and 0 at 100.
+  - Light foot: at Stealth 75 the plate stays armed when you sneak or sprint onto it, and springs at a walk. At 74, sneaking springs it.
+  - No page errors.
+- The suites that touch the sneak, the swim, the dive, traps and the sprint pass (listed in the PR comment).
+### Needs eyes
+- **Tireless** lets a sprint run stamina to nothing and pick it up again on the next frame. Holding Shift then gives a stuttering sprint at the edge of empty, not a stop. Play will show whether that reads as *tireless* or as a fault. A short floor (sprint only above 5 stamina) would be the lever, and that is a number for Michael.
+- **In the dark** only bites at night outdoors. Michael may want dungeons, cellars and unlit rooms to count. That needs a light rule, which the game does not have.
+- **Swimmer** at 25 more than doubles the swim. A Scout or a Duelist, majoring in Athletics, starts with it.

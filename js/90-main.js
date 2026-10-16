@@ -173,7 +173,7 @@ function loop(now){
       showMsg('Too heavy to run!','#dd8844');
     }
   }
-  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7*cloakSwimMult()*(.8+.5*skillT('athletics')):3.83+.37*skillT('athletics')) /* S941 — Athletics: the run 3.83 to 4.2, the swim ×0.8 to ×1.3 */*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
+  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?swimSpeed():3.83+.37*skillT('athletics')) /* S941 — Athletics: the run 3.83 to 4.2, the swim ×0.8 to ×1.3 */*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
   const swiftMult=1+(attrEff('swiftness')*0.005); /* S953 — the attributes at ≤1% a point (skills and perks A): Swiftness's move 0.5% (was 2%); Athletics carries the run */
   const sprintBuff=_buffMult('sprintSpeed',1)*_buffMult('swiftness',1); // S316 — the Boon of the Road (×1.25), read nowhere before
   // Encumbrance speed penalty: -50% when overloaded. Immobile zeros speed entirely.
@@ -308,15 +308,16 @@ function loop(now){
   // v63 — Sneak movement multiplier. When _sneaking is true, player moves
   // at SNEAK_MOVE_MULT (0.7×) of normal. Sprint is suppressed while sneaking
   // (the modal commitment is intentional — Ctrl is a state, not modifier).
-  const _sneakMoveMult = _sneaking ? SNEAK_MOVE_MULT : 1.0;
+  const _sneakMoveMult = sneakMoveMult(); /* S974 — Soft step (Stealth 25) */
   tickPlayerPosture(dt,performance.now()/1000); // S281
   const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1); /* S779 — the Gate-Blade drawn */
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1); /* S779 — the Gate-Blade drawn; S974 — Road legs (Athletics 75) */
     stamina=Math.max(0,stamina-dt*sprintDrain);
-    if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
+    if(stamina===0){staminaCD=perk('athletics',100)?0:2;lvAct.staminaDepleted++;} /* S974 — Tireless (Athletics 100): no pause after a sprint */
     lvAct.sprintDist+=spd;
   }
+  _sprintNow=!!sprinting; /* S974 — Light foot reads it */
   // Blocking stamina drain (in dungeons and outdoor zones, not shops)
   if(blocking&&!isInterior()){
     const hasShield=EQ.offhand&&EQ.offhand.shieldType==='shield';

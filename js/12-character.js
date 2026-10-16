@@ -154,8 +154,25 @@ const PERK_DEF={
   stealth:[['Soft step','sneak at walking speed'],['In the dark','sight on you −25% more out of light'],['Light foot','plates and crumbling floors don’t trigger while sneaking or sprinting'],['Shadow’s hand','a backstab does +50%']],
   locks:[['Feel for it','the pin you work glows faintly at the shear'],['Sure hand','a snapped pick keeps the set pins'],['Quiet work','picking halves a witness’s range'],['No mark','a picked town lock is never found']],
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
-const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50']);
+const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50',
+  'stealth:25','stealth:50','stealth:75','athletics:25','athletics:50','athletics:75','athletics:100']); /* S974 — Stealth's three and Athletics' four */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
+// S974 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.
+function sneakMoveMult(){return _sneaking?(perk('stealth',25)?1:SNEAK_MOVE_MULT):1;}
+// Swimmer (Athletics 25): swim at the run's speed; without it the swim is 1.7, the cloak's drag, Athletics ×0.8 to ×1.3
+function swimSpeed(){return perk('athletics',25)?3.83+.37*skillT('athletics'):1.7*cloakSwimMult()*(.8+.5*skillT('athletics'));}
+// Long breath (Athletics 50): three times the air underwater (BREATH_S is the sea's, 85-world-sea.js)
+function breathSecs(){return BREATH_S*(perk('athletics',50)?3:1);}
+// Road legs (Athletics 75): no sprint cost on a road, outdoors in the world, within the road's half-width
+function roadLegsNow(){if(!perk('athletics',75)||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||typeof roadInfo!=='function')return false;
+  const q=roadInfo(px,pz);return !!q&&q.d<ROAD_HALF;}
+// In the dark (Stealth 50): sneaking out of light, sight on you × 0.75 more. Out of light is the game's one dark rule today,
+// the night in the open (the witnesses' night halving); a foe's sight, which has no night rule, takes the same 0.75 then.
+function outOfLight(){return activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&typeof isNight==='function'&&isNight();}
+function inTheDarkMult(){return _sneaking&&perk('stealth',50)&&outOfLight()?.75:1;}
+// Light foot (Stealth 75): a spike plate does not trigger while you sneak or sprint (`_sprintNow`, set by the loop)
+let _sprintNow=false;
+function lightFootNow(){return perk('stealth',75)&&(_sneaking||_sprintNow);}
 // ×0.64 at 5, ×1.0 at 50, ×1.4 at 100: a weapon's damage and a school's power
 function skillMult(id){return id?.6+.8*skillLv(id)/100:1;}
 // the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,
