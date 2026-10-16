@@ -22597,3 +22597,56 @@ Corrections made during the session:
 - **The stair's wall reads dark** where the sun is off it.
 - **The sloop is the kit's sloop at anchor with its sail down** (Session 858 for the hull line; #347 for the rest of Aurenne's hulls). The rowing boats are the lair's lathe shell.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), and the camps on the roads.
+
+## v80 — Session 1012 — The Gatelands' falls: the overgrown arches and the cave behind the water (card F8, prototype only)
+This is the last of OG-124's Gatelands places off the road. The Gatelands panel names "overgrown arches by a waterfall" and "a cave behind falls" as two finds; they are drawn here as one place, because the panel's picture puts them together and because a ruin seen through its arch is a good way to come upon a fall. There are three precedents:
+- Glencar and Ess-na-Larach: a fall of 12 to 15 m off a limestone head-wall into a pool in a wooded glen, where the shale beds weather back and undercut the face;
+- Seljalandsfoss: the path that goes behind the curtain under the overhang;
+- Glendalough below the Poulanass fall: ruined stone in the trees below the water.
+
+It is `gatelandsFalls` in `places.js`, with its own view (`places-falls-view.js`, dispatched from `places-view.js`). Whose hall the arcade belonged to, and what is in the cave, are the quest writer's to say. Nothing new is asked, and only the prototype folder is touched.
+
+**The place** (at true size, the fall to -z, the stream to +z, y 0 the pool's water):
+- **The head-wall:** a shallow horseshoe of grey limestone 11 to 12 m from the shelf to the lip. Its beds weather back in bands, and it is undercut 2.4 m round the fall, so the lip overhangs the shelf. The rock is dark and wet by the water, with moss and ivy elsewhere. The glen's sides rise to the plateau at 12 m.
+- **The fall:** the river runs in a channel 0.3 m under its banks to the lip and leaves it 5 m wide at 2 m/s. It falls freely 11.7 m and lands 3.1 m out from the lip in a curtain that widens by a seventh as it falls. The curtain is a sheet with 34 strands over it, with foam at its foot.
+- **The pool:** 12 by 9.6 m and 2.6 m deep. The stream runs out of it down the glen, 0.3 m under the glen's line.
+- **The shelf:** rock 1.2 m over the pool along the face's foot, from the east bank, under the overhang and behind the curtain, to the cave.
+- **The cave:** a round-headed mouth 3.4 m wide and 3.2 m high in the face behind the water. It narrows over 10 m to 2.6 by 2.5 m, and goes on into the dark. Its first 3 m are wet.
+- **The arcade:** three round arches of 2.8 m on piers 1 m square, springing at 3 m with dressed imposts and voussoirs. The wall stands to 5 to 6 m with a ragged top, broken down at its east end. The fourth arch has fallen: 6 to 10 of its voussoirs lie in the grass, and its far pier is a stump of 1.6 m. Ivy grows over the wall's top and faces and hangs in the bays, always leaving 2.2 m clear. The path from down the glen passes through the first bay, so the fall is first seen framed by the arch.
+- **The glen:** 20 oak and ash on its sides and over the lip, ferns by the water, under the face and at the arcade's foot, and a worn track as far as the shelf's rock.
+- 37,957 to 38,491 triangles in 18 meshes.
+
+The view: `places.html?place=falls`, with `view=arches` (on the path below the arcade, the fall in its first bay), `falls` (from the pool's east bank), `behind` (on the shelf behind the curtain, looking out through the water), `cave` (at the cave's mouth, in to the dark; a weak light stands in for the daylight thrown off the pool) and `far` (high over the glen).
+
+Corrections made during the session:
+- **The budget.** The first build came to 48,235 triangles. Most of the excess was foam, ivy and leaf cut at detail 1. The foam is now cut at detail 0, the ivy clumps are smaller and fewer, there are 20 trees with four clusters to a limb, and the floor's fine band is 0.8 m. That brought it to 38,000.
+- **The look.**
+  - The wet rock was first near black and glossy, and read as plastic. It is lighter now, and less smooth.
+  - The ivy was first in clumps up to half a metre, and read as green boulders stuck to the wall. It is now in clumps of 0.16 to 0.3 m.
+  - The glen's sides were rock wherever they were steeper than 1 in 1.25, which made them read as grey ramps from above. They are now rock only past 1 in 0.8.
+  - The cave view was black. It now has the bounce light described above.
+- **The walk.**
+  - The path first came onto the shelf at x 9. There the horseshoe brings the face forward, and the check found the walker's hip in the rock and a step of 1.2 m.
+  - It now comes onto the shelf at x 7.6, placed from the face's own line.
+  - The shelf's front edge now falls over 1.9 m (it was 0.6), so the climb onto it has no step over 0.26 m.
+- **The stream.** It first fell 1 in 28.6 while the glen fell 1 in 30, so by 50 m out its water was 0.1 m over its bed, and the check found the bed through it. The water now keeps 0.3 m under the glen's line.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 167 of 167 pass** (158 after Session 1007). Two views are new on the page check, the arches and behind the fall, both with no page errors. Seven checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 37,957 to 38,491 triangles in 18 meshes and 20 trees.
+  - **The walk,** 105 half-metres, from down the glen, through the first bay, by the pool and onto the shelf, behind the curtain and 4 m into the cave:
+    - there is ground under every half-metre, and none of it is water;
+    - no step is over 0.26 m;
+    - headroom is 2.88 m or more, with 1.07 m or more clear at the hip and the head.
+  - **Behind the fall,** at 36 points: the curtain is 3.37 to 4.53 m out at the hip and the head, the first thing met, and the wet rock of the overhang is over.
+  - **The curtain:** it is met at 10 heights within 0.15 m of its line. Its foot is in the water, 2.08 to 2.2 m deep, and the river is in its channel at the lip, its banks 0.3 m over it.
+  - **The cave,** at 57 half-metres: its walls are within 0.11 m of its half-width at the hip, its roof within 0.12 m of its crown, and the dark is at its end.
+  - **The arcade:** its three bays are open at the hip and the head, 2.99 m or more clear under the hanging ivy, with the crowns where drawn and piers either side. The fourth bay has no arch, and 6 to 10 voussoirs lie in the grass.
+  - **The stream and the trees:** the stream is met on its line at 51 metres, with its banks dry 2.6 m either side, and every tree is 3.06 m or more off the path.
+- **Pictures:** `places-falls-arches.jpg`, `-falls`, `-behind`, `-cave` and `-far`.
+### Needs eyes
+- **The curtain is a sheet and strands with no motion and no spray.** A fall this size throws mist over the pool and wets the shelf. Moving water wants a shader of its own; it would serve the cove's surf and the ice mouth's stream as well.
+- **The arcade's stone is the cobble texture,** the shepherd's hut's dry stone. A hall's arcade would be coursed rubble, which the kit does not have.
+- **The ivy is clumps.** Real ivy climbs in sheets from the ground and hangs in falls of leaf, not beads on a thread.
+- **The glen's sides are smooth slopes of turf and rock.** They have no outcrops or fallen trees, and no undergrowth beyond the ferns.
+- **The cave goes 10 m and ends in a dark plane,** as the ice mouth's did. Joining it to the limestone cave (Session 872), whose lake lies under falls of its own, is for whoever places the two together.
+- **Off the road (OG-124) still lacks the camps on the roads.**
