@@ -21,6 +21,13 @@ The tier would replace the level in `enemyHpScale` and `enemyDmgScale` (and in t
 - **C. A, and the level still counts for a little**: the tier as in A, times 1 + 2% a level past the tier's own (to ×1.3), so an easy place stays a little worth fighting late. Friends in one world would meet slightly different foes.
 
 A keeps a region's danger readable (the Wastes are dangerous, the coast is not), and is one Opus session once the resolver is on main.
+### The double jump and the air dash — should speed in the air be capped? (the designer, 2026-10-16) — DECISION #370
+The build sheet (`docs/design/double-jump-and-dash-build.md`) sets *Second step* at Acrobatics 75 (a second press of Space sets the rise to 4.5 m/s: apex 1.77 m, about 5 m of gap, 12 stamina) and *Swallow's turn* at 100 (Q in the air: 3.0 m level in 0.2 s, 20 stamina), each once a flight, and builds the places to a table of steps. The table works only if a gap's length depends on Acrobatics alone, and today you fly at full ground speed: at Athletics 100 and Swiftness 40 an untrained jump clears 3.8 m and the double jump 7.4 m.
+- **A.** Capped at 4.7 m/s in the air for everyone, the sprint of untrained legs: anyone clears 2.9 m, the double jump about 5, the dash 6.5 to 8, for every character.
+- **B.** No cap, as today: places built to the fastest legs, so a slow character misses the 3 m steps and a fast one double-jumps the dash's gaps.
+- **C.** Capped at 4.7, with Haste lifting it to 6 for its 20 s: one more answer to a gap, and a Haste-shaped hole in the table (7.3 m).
+
+Recommendation: **A.** Each perk opens its own step, and a place built for the double jump reads the same to a Scout and a Warrior.
 
 ## Answered
 
