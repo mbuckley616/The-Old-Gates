@@ -22825,3 +22825,24 @@ What changed in `buildSash`:
 - **The band comes out below the belt at the back of the hip** where the loop turns. A twist of the band shows there, since the loop's turn is only 1.5 cm under the belt's edge.
 - **The sash under the belt is only drawn in, never cut away.** It lies 1.5 mm inside the belt, so it can show at a grazing angle.
 - **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image of OG-056).
+
+## v80 — Session 1020 — Turns over the turban's crown (L1 and B2, prototype only)
+Session 1017's turban left its top as a smooth dome of the crown cloth above the last of its turns, where OG-044's turbans are wound to the top. That entry named the fix under *Needs eyes*: turns crossing over the crown. This is that fix, a refinement of something already built, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `buildWrap`, on a turban only:
+- **Three turns cross over the crown.** Each comes from under the upper turns on one side, goes over the top, and goes down under them on the other. They lie in planes 0.35, -0.5 and 1.45 rad off the front-to-back line, so they cross near the top. Each starts at 0.6 to 0.66 of the way from the wrap's edge to the top, under the highest turns.
+- **Their shape.** They are 1.6 to 1.7 cm rolls on the same raised and swelled dome, flattened wider than the turns (2.4 times along the dome, 0.45 out from it). Each is a slightly different shade of the cloth.
+- **Cost.** They add 2,400 triangles: the turban is 18,672 where it was 16,272. It now stands 14.4 and 13.2 cm over the brow line (12.6 and 11.2 before).
+- **The stats** count them as `cross`, apart from the ten `turns`.
+
+A first try with two turns half as wide read as straps over a bare dome. Three wider ones cover it from the front.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 375 checks pass.** The turban's checks now also require 3 turns over the crown.
+- **On both heads,** the head is still 16 mm under the cloth and 0 hair points come through. It clears the brows by 17.4 and 19.3 mm.
+- **Pictures:** re-shot `builder-turban-man.jpg`, `-side.jpg`, `-back.jpg`, `-woman.jpg`, `-full.jpg` and `builder-tail-turban.jpg`.
+
+### Needs eyes
+- **From behind and above,** the crown cloth still shows in the gaps between the crossing turns, and their flattened edges catch the light as fins.
+- **From the front** the top reads as wound, most clearly in saffron on the woman.
+- **A turban wound by hand** has one long cloth whose turns run into each other. These are separate rolls laid on the dome, with no ends.
