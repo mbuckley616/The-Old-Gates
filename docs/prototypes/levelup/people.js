@@ -1882,8 +1882,9 @@ export function makePerson(G, o = {}) {
   // hundredths of a radian at a time, until no point of either hand is inside it (Session 887; the genome's pose is unchanged)
   // Not under a full cloak: it hangs over the hands and is built round the arms where they are, so lifting them only lumps it
   // A mail skirt stands out further still, and is lifted clear of the same way (Session 897)
-  let lift = 0, skirtHands = null; const skM = !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt === 'long' && meshes.find(m => m.name === 'skirt'));
-  const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV() : undefined;
+  // A short skirt too (Session 1011): the hands hang beside its lower half, and fingertips showed through its front at the thigh
+  let lift = 0, skirtHands = null; const skM = !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
+  const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV() : skM && D.skirt === 'short' ? PACK.skirtShortV || (PACK.skirtShortV = [...new Set(PACK.R.skirtShort)].filter(i => PACK.rest[i * 3 + 1] > -.2)) : undefined;
   if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM, undefined, skV); if (!skirtHands.bad || k === 10) break; lift += .03;
     byName['upperarm01.L'].quaternion.copy(q(0, 0, -(pose.arm - lift))); byName['upperarm01.R'].quaternion.copy(q(0, 0, pose.arm - lift)); }
   if (skirtHands) skirtHands.lift = +lift.toFixed(2);
