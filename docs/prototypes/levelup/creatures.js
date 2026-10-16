@@ -241,7 +241,7 @@ P.wings = (B, o) => {
     for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize(), q = quill(arm[2], p, d, 'p', t, ac);
       feather(B, p, d, ac, span * F.len * (.7 + .3 * t) * (F.primary || 1), span * .06, q, 'feather', 'featherTip');
       if (i < F.np - 2) feather(B, p.clone().add(V(0, .004 * span, .008 * span)), d, ac, span * F.len * .4, span * .055, q, 'covert', 'feather'); }
-    B.wings.push({ side, arm, fingers: [], feathered: true, quills }); } return; }
+    B.wings.push({ side, arm, fingers: [], feathered: true, quills, ragged: F.ragged || 0 }); } return; }
   for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), X = V(side, 0, 0);
     const elbow = root.clone().add(V(side * span * .2, span * .16, -span * .05)), wrist = elbow.clone().add(V(side * span * .26, -span * .04, span * .04));
@@ -801,7 +801,9 @@ const liftAt = (air, ph) => { for (const a of air) { let u = (ph - a.start + 1) 
 // lowest, so the rows stack as a bird's do instead of fanning out from the wrist. `k` is how far (0 open, 1 stowed)
 // Each quill is also rolled about its own line (Session 983) so the card leans out and down over the flank, as a folded wing wraps the
 // body, instead of lying flat on the back and showing its edge from the side: the third number is how far the card's face is tipped
-// up from facing straight out, in degrees, the coverts flattest (on the back), the primaries most upright (lowest on the flank)
+// up from facing straight out, in degrees, the coverts flattest (on the back), the primaries most upright (lowest on the flank).
+// A wing whose primaries are too few to close (`feathers.ragged`, Session 984) fans them further down the flank, the outermost lowest,
+// so their tips stand apart with the light between them instead of stacking into one blade
 const QUILL_LIE = { p: t => [.01 + .04 * t, -.05 - .07 * t, 34 - 6 * t], s: t => [.02 + .03 * t, -.03 - .03 * t, 44 - 6 * t], c: t => [.01 + .01 * t, -.01, 58] };
 const _qS = new THREE.Quaternion(), _qP = new THREE.Quaternion(), _qD = new THREE.Quaternion(), _qI = new THREE.Quaternion(), _qR = new THREE.Quaternion(), _vN = new THREE.Vector3(), _vT = new THREE.Vector3(), _vF = new THREE.Vector3();
 function stowQuills(C, W, k) {
@@ -810,7 +812,7 @@ function stowQuills(C, W, k) {
   const rel = {}; for (const nm of W.arm) rel[nm] = C.byName[nm].getWorldQuaternion(new THREE.Quaternion()).premultiply(_qS);
   for (const f of W.quills) {
     const b = C.byName[f.name], qp = rel[b.parent.name], [out, down, tip] = QUILL_LIE[f.kind](f.t), e = tip * Math.PI / 180;
-    _vN.copy(f.d).applyQuaternion(qp); _vT.set(W.side * out, down, -1).normalize(); _qD.setFromUnitVectors(_vN, _vT);
+    _vN.copy(f.d).applyQuaternion(qp); _vT.set(W.side * out, down - (f.kind === 'p' ? W.ragged * f.t : 0), -1).normalize(); _qD.setFromUnitVectors(_vN, _vT);
     _vN.copy(f.n).applyQuaternion(qp).applyQuaternion(_qD); _vF.set(W.side * Math.cos(e), Math.sin(e), 0).addScaledVector(_vT, -_vT.dot(_vF)).normalize();
     if (_vN.dot(_vF) < 0) _vF.negate(); _qD.premultiply(_qR.setFromUnitVectors(_vN, _vF));
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
@@ -1747,7 +1749,7 @@ Object.assign(PLANS, {
     palette: { coat: [.26, .2, .32], saddle: [.16, .12, .22], belly: [.44, .36, .52], dark: [.03, .02, .04], horn: [.18, .16, .2], skin: [.5, .42, .2], feather: [.3, .22, .4], featherTip: [.08, .04, .14], covert: [.38, .3, .48] },
     glow: { color: [1.2, .45, 2.2], freq: 3, w: .02, all: .3 },
     // the shape: wings a third wider with longer primaries, too few of them to close (ragged, the light through their gaps), a heavier hooked beak, a longer tail fan
-    parts: PLANS.craghawk.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: o.span * 1.32, feathers: { ...o.feathers, np: 6, primary: 1.4 } }]
+    parts: PLANS.craghawk.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: o.span * 1.32, feathers: { ...o.feathers, np: 6, primary: 1.4, ragged: .24 } }]
       : k === 'head' ? [k, { ...o, beak: { ...o.beak, len: o.beak.len * 1.35, r: o.beak.r * 1.25, hook: .55 }, eyes: (o.eyes || []).map(e => ({ ...e, color: [.85, .5, 1] })) }]
       : k === 'tail' ? [k, { ...o, fan: { ...o.fan, len: o.fan.len * 1.4, spread: 50 } }] : [k, o]) })
 });

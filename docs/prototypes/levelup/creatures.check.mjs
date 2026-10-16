@@ -98,12 +98,24 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
         return { a: +a.toFixed(1), n, off, face: +eMax.toFixed(1), faceMean: +(eSum / n).toFixed(1) }; };
       const r = {}; if (rest) { C0.gait = rest; K.pose(C0, .2); r.stowed = worst(C0, true); K.pose(C0, .2); r.rigid = worst(C0, false); }
       if (fly) { C0.gait = fly; let off = 0; for (let i = 0; i < 6; i++) { K.pose(C0, i / 6); for (const W of ws) for (const f of W.quills) off = Math.max(off, C0.byName[f.name].quaternion.angleTo(new T.Quaternion())); } r.openOff = +off.toFixed(4); }
+      // the primaries' fan at rest (Session 984): the least angle between neighbours' lines, the wing's ragged share
+      if (rest) { C0.gait = rest; K.pose(C0, .2); C0.rig.updateMatrixWorld(true); C0.rig.getWorldQuaternion(qr).invert(); let step = 9;
+        for (const W of ws) { const ps = W.quills.filter(f => f.kind === 'p').map(f => f.d.clone().applyQuaternion(C0.byName[f.name].getWorldQuaternion(q).premultiply(qr)));
+          for (let i = 1; i < ps.length; i++) step = Math.min(step, ps[i].angleTo(ps[i - 1]) * 180 / Math.PI); } r.fan = { step: +step.toFixed(2), ragged: ws[0].ragged };
+        // the two folded wings mirror each other: every feather's line and face, the left's against the right's reflected across the body,
+        // in the frame of the spine bone they hang from (the body's own roll and sway through the stride are not the wings')
+        let mir = 0; const [WL, WR] = ws, qs = C0.byName[WL.arm[0]].parent.getWorldQuaternion(new T.Quaternion()).invert(), rq = f => C0.byName[f.name].getWorldQuaternion(new T.Quaternion()).premultiply(qs);
+        if (WR) WL.quills.forEach((f, i) => { const g = WR.quills[i], ql = rq(f), qrr = rq(g);
+          for (const key of ['d', 'n']) { const a = f[key].clone().applyQuaternion(ql), b = g[key].clone().applyQuaternion(qrr); b.x = -b.x; mir = Math.max(mir, Math.min(a.angleTo(b), a.angleTo(b.negate())) * 180 / Math.PI); } });
+        r.mirror = +mir.toFixed(3); }
       r.quills = ws.reduce((s, W) => s + W.quills.length, 0); r.tris = C0.stats.tris; out[k] = r; }
     return out; });
   for (const [k, r] of Object.entries(qu)) { if (r.stowed) { check(`${k}: its ${r.quills} folded flight feathers lie back along the body, the worst ${r.stowed.a} degrees off its line (${r.rigid.a} on the arm alone)`, r.quills >= 20 && r.stowed.a < 25 && r.stowed.a < r.rigid.a, r);
       // and rolled to lean down over the flank (Session 983): each card's face tipped no more than 62 degrees up from facing straight out,
       // so the folded wing shows its face from the side; flat on the back, as before the roll, the faces were tipped near 90
       check(`${k}: its folded feathers lean down over the flank, faces tipped at most ${r.stowed.face} degrees from facing out (${r.stowed.faceMean} on average)`, r.stowed.face < 62 && r.stowed.faceMean < 50, r.stowed); }
+    if (r.mirror !== undefined) check(`${k}: its two folded wings mirror each other, every feather within ${r.mirror} degrees`, r.mirror < .5, r.mirror);
+    if (r.fan) check(r.fan.ragged ? `${k}: its few primaries stand apart when folded, at least ${r.fan.step} degrees between neighbours` : `${k}: its folded primaries stack close (${r.fan.step} degrees between neighbours at least)`, r.fan.ragged ? r.fan.step >= 2.4 : r.fan.step < 2.4, r.fan);
     if (r.openOff !== undefined) check(`${k}: its feathers open as built in flight (turned at most ${r.openOff} rad)`, r.openOff < 1e-6, r); }
   // the gargoyles (Session 956, OG-018's Cloch and Gaoth rows): stone wings folded close down the back at rest (`wingRest`), every wing bone
   // behind the shoulder and inside a width less than its body's length, and spread wide when it flies

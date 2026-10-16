@@ -21650,3 +21650,24 @@ What changed in `creatures.js`:
 - **The folded wing reads as one smooth sheet.** At 28 to 58 degrees the cards overlap closely, so the separate rows show only at the tips. A slight step between rows would read as feathers.
 - **The cards are still turned and rolled at their roots, not slid.** The primaries do not tuck under the secondaries (Session 974's note stands).
 - **The Dusk Eagle's six ragged primaries** still close as neatly as a whole wing.
+
+## v80 — Session 984 — The Dusk Eagle's ragged wing stays ragged (L4, prototype only)
+Session 974 left this in its notes: "the Dusk Eagle's six ragged primaries fold as neatly as a whole wing. Its sheet says they are too few to close; a gap between them at rest would keep that look." OG-088 draws the corrupted eagle with its wing worn to a few long fingers, and the plan already gives it six primaries 1.4 times as long where the Crag Hawk has nine. Once folded, the quills laid all six into one blade. This is a fault in a body the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A wing's feathers take `ragged`** (in radians, near enough: how far the outermost primary is lowered against the innermost). A wing record carries it, and `stowQuills` lowers each primary in turn by that share of its place in the row. The hand's feathers then fan down the flank, the outermost lowest, and their tips stand apart. Session 983's roll then lays each card's face over the flank as before.
+- **The Dusk Eagle's wing has `ragged: .24`**, about 13 degrees from first primary to last. No other plan sets it, so every other bird folds as before.
+- No bones or triangles are added.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,111 checks pass** (1,093 before). The 18 new checks:
+  - **The fan, for each of the nine feathered fliers:** the Dusk Eagle's folded primaries are at least 3.23 degrees apart, neighbour to neighbour. With `ragged: 0` the same eagle measured 0.91 degrees, and the hawks, ravens, crows, shrike, swift and vulture stack at 0.57 degrees, the griffin at 0.51.
+  - **The mirror, for each of the nine:** the two folded wings are reflections of each other, to 0.000 degrees on every feather's line and face, in the frame of the spine bone they hang from. Measured in the rig's frame they differ by up to 4 degrees on the walking birds, because the body rolls through the stride.
+  - The Dusk Eagle's worst feather now lies 20.2 degrees off the body's line at rest (8.1 before), inside the 25 that Session 974 set. Its faces are tipped at most 59.1 degrees, and 40.1 on average.
+- `kit.check.mjs` passes.
+- **Pictures:** `creatures-duskeagle-perched.jpg` is new, a side view standing, with the six tips apart against the sky. `creatures-duskeagle-folded.jpg` and `creatures-craghawk-folded.jpg` were re-shot standing, from above.
+- **Correction to Sessions 974 and 983:** their `-folded.jpg` views of the Crag Hawk and the Dusk Eagle were taken in the plan's first gait, which for both birds is `soar`, so they showed open wings. They are now shot with `gait=stand`. The Winged Thing's view was right, since its first gait is a walk.
+
+### Needs eyes
+- **The view from above** (`cam=top` is offset to one side) makes the far wing look splayed beside the near one, though the wings measure as mirror images. A plain top-down camera would settle what the folded silhouette reads as.
+- **Whether 13 degrees reads as worn or as untidy.** The tips part only over their last fifth, where the cards narrow.
