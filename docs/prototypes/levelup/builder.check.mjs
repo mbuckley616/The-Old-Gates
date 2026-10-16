@@ -57,7 +57,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       let w = 0, f = 0; for (let i = 0; i < 40; i++) { const G = K.rollGenome('aur:' + i, { people: 'aurennais' }); if (G.dress.earrings) { w++; if (G.g < .5) f++; } }
       { const M0 = K.rollGenome('ear:1', { g: 1, people: 'aurennais' }), Kit = await import('./kit.js'); out.earManG = Kit.saveGenome('human', { ...M0, beard: 0, dress: { ...M0.dress, earrings: [.7, .45, .22], wrap: null, cloak: null, hood: null } }); }
       out.earRoll = { n: 40, w, f, others: ['markman', 'gatelander', 'oldblood'].flatMap(k => Array.from({ length: 10 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.earrings).length }; }
-    // the knot and its ends (Session 992) can be left off: the band alone, as Session 990 made it
+    // the knot and its ends (Session 996) can be left off: the band alone, as Session 990 made it
     { const G0 = K.rollGenome('sash:1', { g: 1, people: 'aurennais' }), p = K.makePerson({ ...G0, dress: { ...G0.dress, sash: [.2, .26, .5], cloak: null, mantle: null, sashKnot: false } }); out.sashBare = { knot: p.sash.knot, tris: p.sash.tris }; }
     { const G0 = K.rollGenome('skirt:f', { g: 0 }); out.skirtHands = K.makePerson({ ...G0, dress: { ...G0.dress, skirt: 'long', mantle: null } }).skirtHands; }
     // the cuffs (Session 889): cut in the shader inside a wider region, and the Markmen's woven bands

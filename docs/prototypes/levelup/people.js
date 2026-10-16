@@ -687,7 +687,7 @@ function buildSash(G, body, byName) {
     idx.push(base, base + 1, base + 2, base + 2, base + 1, base + 3); } };
   const bw = .014, mw = .011; strip(-W / 2, -W / 2 + bw, edge); strip(-W / 2 + bw, W / 2 - bw, field); strip(W / 2 - bw, W / 2, edge); if (D.sashPrint !== false) blocks(-mw, mw);
   const bandTris = idx.length / 3;
-  // the knot and its two hanging ends (Session 992, OG-056's sashes knotted at the hip): the knot sits on the band where it turns,
+  // the knot and its two hanging ends (Session 996, OG-056's sashes knotted at the hip): the knot sits on the band where it turns,
   // a little to the front of the hip's side, and the two ends hang straight down from under it, pushed out only where what they
   // hang over (the thigh, the tunic's skirt, a long skirt) stands further out than the line above. They read everything the
   // band does, the thigh below the hip included, which the loop leaves out
@@ -743,7 +743,7 @@ function buildSash(G, body, byName) {
   for (let t2 = 0; t2 < NT * 2; t2++) for (let k2 = 0; k2 <= 2 * (NS - 1); k2++) { const t = t2 / 2, s = (k2 / (2 * (NS - 1)) - .5) * W, t0 = Math.floor(t), V = t === t0 ? vert(t0, s) : vert(t0, s).add(vert(t0 + 1, s)).multiplyScalar(.5), Nn = NS0[t0 % NT];
     for (const v of arm) { const dx = PP[v * 3] - V.x, dy = PP[v * 3 + 1] - V.y, dz = PP[v * 3 + 2] - V.z; if (Math.abs(dx) > .05 || Math.abs(dy) > .05 || Math.abs(dz) > .05) continue; const along = dx * Nn.x + dy * Nn.y + dz * Nn.z;
       if (along < -.04 || along > .006 || Math.hypot(dx - Nn.x * along, dy - Nn.y * along, dz - Nn.z * along) > .012) continue; if (!inArm[v]) { inArm[v] = 1; armIn++; } } }
-  // the knot and the ends (Session 992): nothing comes out through the knot (a point of what it lies over, pushed out by its own
+  // the knot and the ends (Session 996): nothing comes out through the knot (a point of what it lies over, pushed out by its own
   // stand-off, inside the lump), nor through an end (as the band is read, along O at every half row and half line across), and no
   // point of an arm is in the knot or within 1.2 cm of an end's line and from 4 cm under it to 6 mm over it
   let kn = null; if (knot) { const { kc, kr, At, Tt, On, O, ends } = knot, inK = (x, y, z, pad) => { const dx = x - kc.x, dy = y - kc.y, dz = z - kc.z;
@@ -1725,7 +1725,7 @@ export function makePerson(G, o = {}) {
     spearGrip = fistGrip(body, byName, root, curl, hinge); }
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
   // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band.
-  // Its knot's hanging ends (Session 992) fall over the front of the thigh, where the relaxed hand lies: then the arm is swung back
+  // Its knot's hanging ends (Session 996) fall over the front of the thigh, where the relaxed hand lies: then the arm is swung back
   // from the shoulder, as far again at most, until the hand hangs at the thigh's side behind them
   let sashStats = null; if (D.sash) { const hipArm = byName[D.sashSide === 'R' ? 'upperarm01.L' : 'upperarm01.R'], sg = D.sashSide === 'R' ? 1 : -1; let T, lift = 0, swing = 0;
     const back = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion())), .03);

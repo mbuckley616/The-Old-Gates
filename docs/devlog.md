@@ -21818,8 +21818,8 @@ Corrections made during the session:
 - **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
 - **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
 
-## v80 — Session 992 — The sash's knot and hanging ends (L1 and B2, prototype only)
-Session 989 left the sash's hip end as "a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang." OG-056 draws the Aurennais' sashes knotted at the hip with long ends falling over the thigh. This finishes a piece the kit already makes and the sheet already shows, so it asks nothing. It touches only the prototypes (`people.js`, `builder.check.mjs`).
+## v80 — Session 996 — The sash's knot and hanging ends (L1 and B2, prototype only)
+Session 989 left the sash's hip end as "a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang." OG-056 draws the Aurennais' sashes knotted at the hip with long ends falling over the thigh. This finishes a piece the kit already makes and the sheet already shows, so it asks nothing. It touches only the prototypes (`people.js`, `builder.check.mjs`). (Numbered 996: this entry was first committed as 992, which the systems builder had taken in the meantime.)
 
 What changed in `people.js`:
 - **The knot.** It sits on the band where the loop turns, 15 cm round from the loop's lowest point toward the front, so it lies on the front of the hip rather than its side. It is a lump 8 cm across the band, 6.8 cm along it and 4.4 cm deep, slightly irregular, with its inner face 3 mm over the band. A ring round its middle is in the border's colour, so it reads as cloth bound round on itself. It has 280 triangles.
@@ -21867,7 +21867,7 @@ What changed in `people.js`:
 - **The roll.** The Aurennais roll a wrap at 0.45 for women and 0.3 for men, never under a raised hood. The colours are saffron, madder, teal, indigo or undyed, and half the wraps have an edge in sand, cream or madder. It is drawn after the sash, last in `peopleGenome`, so every earlier roll of a seed is as it was. No other people rolls one.
 
 ### Verified (headless Chromium)
-- **`builder.check.mjs`: all 305 checks pass** (299 after Session 992). The six new checks:
+- **`builder.check.mjs`: all 305 checks pass** (299 after Session 996). The six new checks:
   - **A woman with braids under a saffron wrap, and a bearded man in teal:**
     - the head stays at least 16.0 mm under the cloth;
     - none of the 27,774 and 27,862 tucked hair points comes out;
