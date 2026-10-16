@@ -63,6 +63,9 @@ const street = await page.evaluate(() => {
     // from behind: a backstab rises as one
     DMG_NUMS.length = 0; document.getElementById('dmgnums').textContent = ''; e.combatYaw = 0; e.alert = false; e.ry = 0; if (e.mesh) e.mesh.rotation.y = 0;
     out.behindTest = typeof isPlayerBehind === 'function';
+    // a fresh foe for it (S963): the three blows before it drain its posture (the resolver's row and the chain's third ×1.5), and how
+    // much the regen gives back between them is the runner's wall clock; a broken guard is a crit, whose word wins over *from behind*
+    if (typeof e.maxPosture === 'number') e.posture = e.maxPosture; e._finUntil = 0; staggered = staggered.filter(s => s.e !== e); CHAIN.n = 0;
     // behind it, facing it
     px = e.x - Math.sin(0) * 1.3; pz = e.z - Math.cos(0) * 1.3; const k2 = () => { keep(); e.alert = false; e.combatYaw = 0; };
     out.isBehind = isPlayerBehind(e); _swing(e, k2); out.back = _nums();
