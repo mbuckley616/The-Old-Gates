@@ -22179,3 +22179,18 @@ Corrections made during the session:
 - **The chute has no lining and no side boards.** Real ones were often three logs, or planked, and iced to run faster. This one is two bare logs.
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 1008 — The new look's 11 s stall at a jump of the clock: not reproduced, and not the game's JavaScript (QA's `hourhitch`, backlog B)
+QA's Session 992 found `hourhitch` red twice on the new look, run alone: the jump to 21h gave one frame of 11.2 s, then 11.5 s, against a median of 3.2–3.5 s, with nothing compiled, and a probe put a 9.1 s synchronous `REN.render` on the first dusk. It was filed for the systems builder. QA's run predates Session 988, whose prewarm draws one frame with the shadow map forced, so the first question was whether that had moved the cost. It had not: neither tree stalls here.
+
+The suite was run three times alone in a 4-core container on the new look: this branch twice (one of them the probe below), and QA's own commit (77bb4b0a) once, through `--src`. Over 32 jumps of the clock no frame went over 1.8× its run's median. The worst was 8.2 s at 6h on QA's commit (median 4.75 s); on this branch 5.1 s at 21h (median 4.5 s). Every check passed each time.
+
+The probe (a scratch script, not a suite) wrapped `REN.render` and the shadow map's render in timers and ran the CPU profiler over each step's 12 frames, through two rounds of the six jumps. The game's JavaScript is not where a frame goes. A render call is 15–67 ms of script, the shadow pass 3–25 ms of that, and the viewmodel's second render 0–4 ms. A step's 12 frames take 40–55 s of wall time, and the main thread is idle for all but 1–1.5 s of them. The rest of a 3–5 s frame is the software rasterizer's, in the GPU process, which the page cannot see. The busiest script is the scene graph's `traverse` and `updateMatrixWorld` and the terrain's height reads, 30–90 ms a step each. A *synchronous* 9 s `REN.render` is then a GL call that blocked on that queue, not three.js doing work.
+
+So there is nothing in the game to change for it. It stays open in backlog B, rewritten for QA with these numbers: if it comes back, a step's `REN.render` time logged beside its frame time says whether it is the game or the rasterizer. The same pass struck a copy of the foes' prewarm item that the merge had left in B; Session 988 fixed it, and its line in I was already struck.
+### Verified (headless Chromium)
+- `hourhitch --look=new`, alone, this branch: 6 of 6. Worst judged frame 5.1 s, median 4.5 s, noon 3.4 s. 0 shaders compiled, 43 programs throughout, 27 lights.
+- The same on QA's commit 77bb4b0a: 6 of 6, worst 8.2 s at 6h, median 4.75 s, 42 programs.
+- Probe, 12 jumps (18h, 23h, 12h, 6h, 21h and 12h, twice): every `REN.render` 15–67 ms, no frame over 2× its step's others. CPU samples per step: idle 37–54 s, program 0.3–0.4 s, garbage collection 0.05–0.4 s.
+### Needs eyes
+- On Michael's laptop, with a real GPU: whether a sleep or a wait into the night hitches at all. The headless numbers say the game's script is not where a long frame would come from.
