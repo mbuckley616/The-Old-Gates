@@ -21760,3 +21760,56 @@ The critic's run on s639 found two faults of scale in the look builder's prototy
 - **The mill is now a little taller and slimmer.** It stands 9.6 m on a 6 m foot, 1.6 times its width (1.5 before). Whether it still reads as a squat Irish tower mill wants a look.
 - **The banner now stands 4.6 m from the door.** If it should hang at the door itself, the other answer is a pole on the door's west side. There the hall's west light is 2.4 m off, and from the west the banner would cover the light, not the panel.
 - **The game has neither piece yet.** Both are prototype pieces, so nothing in the game changes.
+
+## v80 — Session 1006 — The Mark's ice cave mouth (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "ice cave mouth". It is also OG-121's "snowed-in mouths". Session 903 built the ice cavern's inside, and Michael took it as drawn on #331. This is its outside, where the passage comes out of the ice. The precedents are the glacier caves of Breiðamerkurjökull and the snouts of the Norwegian outlet glaciers. The glacier ends in a face of ice banded grey with the grit it carried. Its meltwater has cut a tunnel out under the face, which glows blue a few metres in and then goes dark. The stream runs out over a gravel plain (the sandur) through a gap it has cut in the ridge of boulders the ice left when it stood further out (the terminal moraine). Blocks calved off the face lie at its foot. It is `markIceMouth` in `places.js`, with its own view (`places-icemouth-view.js`, dispatched from `places-view.js`). Nothing new is asked: what the cave leads to is the ice cavern's, and who knows the way is the quest writer's. It touches only the prototype folder.
+
+**The place** (at true size, the ice to -z, the stream flowing out to +z, y 0 the tunnel's floor at the mouth):
+- **The valley:** rock walls rise from 26 m either side of the stream to 34 m, with snow on their shelves. The sandur falls 1 in 25 away from the ice.
+- **The face:** it runs from x -44 to 44 and wanders ±2.5 m.
+  - It is 17 to 20 m high and leans out 1.5 m at its head.
+  - It is fluted by vertical runnels where the melt runs, and none of them reach its foot or the mouth's sill.
+  - Grey bands of grit run across it in wavy strips 0.25 to 0.55 m deep, broken where the arch is cut.
+- **The mouth:** an arch 8 m wide, upright to 2.4 m and 5.6 m to its crown, under a lip of clear ice.
+  - It narrows over 18 m to a throat 6 m wide and 4.6 m high.
+  - The ice is clear for the first 6 m, deep blue to 12 m and dark beyond. The tunnel goes on into the dark past the throat.
+  - The tunnel's floor is the sandur's gravel, rising 1 in 25 inward.
+  - 44 icicles hang from the lip and the first metres of the roof, each placed only where its tip leaves 2.1 m clear.
+- **The stream:** out of the dark along the tunnel's east side, then over the sandur in a channel 0.45 m deep, with stones in its bed, meandering ±3.2 m.
+- **The moraine:** a ridge of gravel 2.6 m high in an arc 26 m out, with boulders 0.7 to 3.5 m across over its crest and flanks. It is cut about 6 m wide where the stream goes through, and a cairn of six stones stands on the crest beside the gap.
+- **The ice's back:** a snowfield rising 1 in 4 for 24 m and then gently, with eight crevasses across the flow.
+- **The calved blocks:** 9 to 11 at the foot of the face, kept off the way in and the stream.
+- 32,116 to 32,660 triangles in 12 meshes.
+
+The view: `places.html?place=icemouth`, with `view=mouth` (on the sandur 20 m out by the stream), `inside` (in the tunnel at the blue, looking out), `throat` (at the mouth, looking in to the dark), `moraine` (from the crest by the cairn) and `far` (high over the sandur).
+
+Corrections made during the session:
+- **The face.** It was first drawn flat-shaded, with a 0.2 m jitter on a 0.8 m grid, and read as crumpled foil. Its grit bands were whole quads of a darker ice and read as broken bricks. The face, the ground and the snowfield are now shaded smooth across their grids (`smoothGrid`, new in this function). The fine jitter is gone, and runnels now give the face its relief. The bands are now strips of their own laid 6 cm proud of the face.
+- **The gravel.** It was first the `rock` texture at a dark grey and read as brown earth. On `cobble` it read as paving. It is now `rock` again, lighter (0xd2cec6). The snow patches drawn on the sandur were cut whole from the 3 m grid and read as pixels from above, so they are gone. Snow lies on the valley's walls only.
+- **The valley.** Its walls first rose to 26 m while the ice rose inward for 40 m, so the snowfield stood over the rock with a hard edge. The walls now rise to 34 m, and the ice rises steeply for its first 24 m only.
+- **The budget.** The first build came to 46,524 triangles. The ground's fine band is now 1.0 m (was 0.8), and the boulders are unsubdivided dodecahedra. That brought it to 32,000.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 151 of 151 pass** (143 after Session 1005). Two views are new on the page check, the mouth and the inside, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 32,116 to 32,660 triangles in 12 meshes.
+  - **The tunnel**, at 17 metres from the mouth to the throat:
+    - its walls are met at the hip 0.16 m inside to 0.13 m outside the arch's half-width;
+    - its roof (icicles aside) is 0.18 m under to 0.18 m over the arch's crown.
+  - **The walk in**, from 14 m out on the sandur, beside the stream, to the throat:
+    - there is ground under all 61 half-metres, and none of it is water;
+    - nothing stands in the way at the hip or the head;
+    - the 44 icicles' tips are 2.57 to 5.24 m over the floor.
+  - **The face:** rays at 6 m up across it every 2 m meet ice or grit at all 20, within 0.96 m of its line, and it is 17.03 to 20.07 m high from x -25 to 25.
+  - **The stream:**
+    - its water falls the whole way out;
+    - it is met from above at all 153 half-metres from the dark to 60 m out, through the moraine's gap;
+    - its banks are dry 2.4 m either side.
+  - **The moraine:** 2.13 m or more over the sandur at its crest on 20 bearings outside the gap.
+  - **The calved blocks:** 9 to 11 of them, all off the way in and the stream, each sunk into the gravel. The cairn stands 1.68 to 1.69 m tall on the crest.
+- **Pictures:** `places-icemouth-mouth.jpg`, `-inside`, `-throat`, `-moraine` and `-far`.
+### Needs eyes
+- **The face reads as a wall of grey stone** more than ice in the sandur views. The `rock` texture's veins show through the ice's colour, and nothing passes light. Real glacier ice is white at the surface and blue in its cracks and under the overhang. A shader that lets light through, as the bodies builder's skin wings do (Session 959), would serve it better than a colour.
+- **The grit bands are too even and too dark.** Real bands fold and pinch out; these run level across the whole face.
+- **The icicles read black** against the bright lip in the mouth's views, because they are lit from behind. They would be better a little emissive, or fewer.
+- **The calved blocks are rounded boxes.** Real ones have fresh blue faces where they broke.
+- **The tunnel is straight.** It ends in a dark plane at 18 m that the `throat` view looks straight at. Joining it to the ice cavern's passage, which winds, is for whoever places the two together.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), the smuggler's cove (Aurenne), and the camps on the roads.
