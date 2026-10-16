@@ -1461,7 +1461,11 @@ const giver=`${lord.title} ${lord.name}`;
   let _wlampT=0;function tickWaylamp(force){const t=performance.now();if(!force&&t-_wlampT<1000)return;_wlampT=t;const S=lampState(),now=worldState.gameTimeAbsMinutes||0;
     if(S&&S.outUntil&&now>=S.outUntil){delete S.outUntil;if(typeof addLog==='function')addLog('🏮','The Waylamp is lit again. Nobody lit it.');}
     if(!S&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){const st=worldState.stats||(worldState.stats={});if(st.lampSeen)return;const H=lampHome();const h=H&&lampFirstInn(H.site);
-      if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.','#e8c890');}}}
+      if(h&&Math.hypot(px-h.doorX,pz-h.doorZ)<20&&lampDaySight()){st.lampSeen=1;showMsgLong('A lamp burns over the inn’s door in broad day.'+(lampInRain()?' The rain does not seem to reach it.':''),'#e8c890');}}}
+  // S1000 — the critic's s632: the sight line's two halves keyed to the hour and the weather. By night a lamp over an inn's
+  // door is nothing strange, so the first sight waits for the day; the rain's half is said only while it rains (or storms).
+  function lampDaySight(){return !(typeof isNight==='function'&&isNight());}
+  function lampInRain(){return WX.type==='rain'||WX.type==='storm';}
   // S781 — Michael's 2A on #263: the cloak from a corpse. Its master is the lair cavern's beast, the one that sleeps on it (the
   // draft, *The Makers' Things*: the cavern's master, worldState.masters[seed], not the beasts at the mouth, which Session 777's
   // drain read). Killed before the cloak was taken, the cloak lies in the hoard; killed while the cloak is yours, it goes thin.
