@@ -22616,3 +22616,38 @@ What changed in `people.js`: the lift reads the short skirt as it reads the long
 - **The arms stand out further.** At 0.3 rad a man's hands hang a hand's breadth off his thighs, which reads a little stiff, like a man about to draw. Bending the wrists in, or the hands turned to the thigh, would let them hang closer; that is the animation work in B4.
 - **A dark mark on the skirt beside the right hand** in `builder-shortskirt-front.jpg` is the hand's shadow on the cloth, not a hand through it (0 points inside). It is speckled by the shadow map's resolution.
 - **Under a full cloak** nothing is lifted, as for the long skirt, since the cloak is built round the arms where they hang.
+## v80 — Session 1015 — The Aurennais sandals (L1 and B2, prototype only)
+OG-056 puts all eight of its everyday Aurennais in "leather sandals with ankle straps", and backlog L1 has listed the sandals as owed since Session 994. This session builds them. The sheet draws them plainly and the canon says nothing against them, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (a `feet` view) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The bare foot.** Under boots the body is not drawn below the knee: the boots are a shell off the tights' helper. With sandals the body's own skin is drawn below rest y -.6 (`PACK.R.feet`, MakeHuman's foot with its toes), and trousers stop at rest -.665, above the ankle, where they otherwise run to -.78 inside the boot.
+- **The straps** are a leather shell 2.5 mm off that skin, so they are skinned with the foot and bend with it. They are cut in the shader on the rest body (`SANDAL_KEEP`), across the foot from its middle line at rest |x| .222:
+  - an ankle strap 1.6 cm wide round the narrowest of the ankle;
+  - a strap 1.7 cm wide over the ball of the foot, behind the toes;
+  - a strap down the instep between the two;
+  - one up the back of the heel.
+  
+  The shadow is cut the same way (`cutDepth`). The straps cost no triangles of their own beyond the foot's shell.
+- **The soles** (`buildSoles`): for each foot, the posed body's points along its bottom (rest y under -.795, 726 a foot) are taken as an outline in the ground plane (a convex hull), set out 4 mm. That is made a slab 1.4 cm deep, 1 cm under the foot's lowest point and 4 mm up its sides, in a darker shade of the straps' leather. It is rigid and carried by the foot bone that stands over it: 120 triangles a sole.
+- **The person stands on the soles.** The ground was read off the lowest point of the whole morphed pack, which is the tights' helper under the boot, 2.6 cm below the bare foot. With sandals the ground is the soles' underside. Without that, the soles stood 2.6 cm off the ground (the first run of the new check measured 0.0259 to 0.0265 m). **A note for later:** any bare foot stands 2.6 cm high the same way, and the game's bodies will want the ground read off what is worn on the feet.
+- **The dress** takes `sandals` (the leather's colour; it saves and loads), worn in place of boots.
+- **The roll.** The Aurennais roll sandals at 0.7 in place of their boots, in the boots' leather: 23 of 40 do. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls them. The sheet shows all eight in sandals; boots stay on the rest for the roads and the ships.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 363 checks pass** (353 after Session 1014; 10 new). `kit.check.mjs` passes.
+- **The new checks**, on three people: an Aurennais man in trousers, an Aurennais woman in a long skirt, and a Gatelander in a short tunic skirt without trousers. On each:
+  - each foot has its sole, and 0 of its 726 bottom points fall outside the outline. The nearest is 3.7 to 3.8 mm in from the edge. The soles are 22.9 to 27.8 cm long;
+  - both soles stand at 0 m, on the ground, carried by `foot.L` and `foot.R`;
+  - the straps are drawn and the boots are not;
+  - the soles are 240 triangles the pair;
+  - it saves and loads back with `sandals` in the save.
+- **The roll:** 23 of 40 rolled Aurennais wear sandals, none with boots as well. None of 30 Markmen, Gatelanders and Old Blood wear them.
+- **Pictures:**
+  - New: `builder-sandals-man.jpg` (in trousers, the feet close), `-back.jpg` (the heel strap), `-woman.jpg` (under a long skirt) and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`, whose Aurennais now roll sandals.
+
+### Needs eyes
+- **The straps are drawn on the skin,** not modelled. Seen close and side-on they have no thickness.
+- **The sole is a slab** with a straight wall and no toe spring. It is rigid on the foot bone, so when the toes bend in a walk (B4) it will not bend with them. A sole skinned to the toe bones is owed with the walk.
+- **The sole's outline is a convex hull,** so the arch is filled straight across, as a cut leather sole is. The toes reach 3.7 mm from its front edge.
+- **Still owed in L1:** a scarf's tail and a taller turban, and the coins on the head-wrap's edge (to be confirmed from the full image).
