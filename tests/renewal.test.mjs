@@ -11,13 +11,9 @@ const site = await page.evaluate(() => {
 });
 check('there is a shrine of An Spéir', !!site, site);
 const id = site.id;
-await page.evaluate(() => WORLD.devUnlockAll());
-for (let k = 0; k < 24; k++) {
-  await page.evaluate((t) => { if (Math.hypot(px - t.x, pz - t.z) > 40) { px = t.x; pz = t.z + 4; } }, site);
-  await page.waitForTimeout(2500);
-  if (await page.evaluate((id) => !!WORLD.settle.get(id), id)) break;
-}
-await page.waitForTimeout(2000); await g.hide();
+// Session 1006: the shrine is its cell's sixth site and stood after 42 s alone; this suite's own 60 s loop gave up first. It
+// waits on the harness's settle, which runs the world's job queue and polls for the site itself.
+check('the shrine is built', await g.settle(id), id);
 const pray = await page.evaluate((id) => {
   const S = WORLD.settle.get(id); px = S.altar.x; pz = S.altar.z + 1.5;
   ACTIVE_BUFFS.length = 0; const ok = WORLD.shipInteract();
