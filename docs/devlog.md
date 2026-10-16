@@ -20890,3 +20890,28 @@ Correction to Session 947: its *Verified* left the new look's run to the PR comm
 - `node tests/run.mjs mapseals`: three runs green in a row; `--look=new` green.
 ### Needs eyes
 - Nothing for a playtest.
+
+## v80 — Session 971 — enterDungeon waits for the camera to reach the floor (QA)
+The QA run of 16 Oct 00:52 read the CI runs since 18:51: three red, none of them a flake. Main's e7ae8d9 failed `bellwreck` twice on code from before
+Session 946's fix (main has carried it since #360). auto/systems' 1c9b2d2 failed six suites twice with the same numbers both tries (`attrpromise`, `barter`,
+`fortunecaor`, `lockpicks`, `levelpanel`, `shoprows`), all reading the attribute rules that branch changes, and the combat resolver's 15f78f9 failed
+`guardsindoor` twice (the guard's hp 48 before and after a blow indoors); each is its own branch's to carry, and `docs/qa/flaky.md` says so with the numbers.
+The one FLAKY in those runs was `looknew` on auto/systems shard 11: *a dungeon floor builds and draws, its foes in it* read 0 draw calls with the floor
+built (44 shell pieces, 28 foes), then passed on the retry.
+
+The cause is the shared helper, not the new look. `goToDungeon` sets `px/pz` to the floor's start, but only the main loop moves `CAM` there
+(`js/90-main.js`). `enterDungeon` (`tests/lib/dungeonshot.mjs`) waited for the zone, the new scene and then 1.5 s; when no loop frame ran in that time,
+which on 0.170 means the first frame of a new floor was still compiling its materials on software GL, the camera still stood at the world's x, z of
+13,000 or more and the render culled the whole floor. Measured here: the same floor from the player's spot drew 304 calls, from x, z 15,000 drew 0.
+The helper now also waits, up to 40 double frames, until the camera stands within 30 of the player. It waits for the state the check needs, not longer.
+Every one of the 34 suites that enter a gate through the helper gets the same wait; in the usual case the condition holds at once and adds nothing.
+
+### Verified (headless Chromium)
+- `looknew` three runs green, no retry: the dungeon check drew 322, 310 and 300 calls (CI's red read 0).
+- With the helper changed, old look, once each, all green: `dungeon` 55 s, `dungeonchase` 44, `dungeonexit` 105, `dungeonfoes` 60, `dungeonpace` 52,
+  `schoolroster`, `locksight`, `trapseed`.
+- A probe (not committed): after `enterDungeon`, CAM at (2, 11) and the player at (2, 11); 304 calls from there, 0 with the camera moved to 15,000.
+
+### Needs eyes
+Nothing for a playtest: a test-only change, no build tag bump. The six auto/systems suites are the systems builder's to re-measure or answer with the
+rules, and `guardsindoor` the combat resolver card's; the QA Slack post names both.
