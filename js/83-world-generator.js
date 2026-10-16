@@ -1687,7 +1687,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitShell){const beams=[];for(let i=1;i<=(tower?0:nb);i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<Math.min(D*.9,D-1.05);z+=Math.max(3,D*.3))wins.push(z);
       shellFrame(sc_,{W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TALLZ,SOL,FOOTHOLDS});}
     // S896 (F2a) — the room was laid out in the old unit; it stands at true size from here on (scaleRoom)
-    const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;
+    const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;house._roomH=H*KS; /* S1009 — the room's true height, floor to ceiling: the head stops there (headCeil) */
     // keeper / resident — only if the schedule says they're indoors right now
     // (the same person you see in the street is the one behind the counter).
     if(npcInsideNow(house)){

@@ -157,6 +157,7 @@ const PERK_DEF={
 const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50',
   'stealth:25','stealth:50','stealth:75','stealth:100','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
   'acrobatics:50','armour:25', /* S977 — Cat's fall and Fitted */
+  'acrobatics:75', /* S1009 — Second step, the double jump (airStepTick, 10-player.js) */
   'bow:50','bow:75','bow:100']); /* S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
 // S976 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.

@@ -22194,3 +22194,29 @@ So there is nothing in the game to change for it. It stays open in backlog B, re
 - Probe, 12 jumps (18h, 23h, 12h, 6h, 21h and 12h, twice): every `REN.render` 15–67 ms, no frame over 2× its step's others. CPU samples per step: idle 37–54 s, program 0.3–0.4 s, garbage collection 0.05–0.4 s.
 ### Needs eyes
 - On Michael's laptop, with a real GPU: whether a sleep or a wait into the night hitches at all. The headless numbers say the game's script is not where a long frame would come from.
+
+## v80 — Session 1009 — Second step, the double jump at Acrobatics 75; the head stops at the ceiling; a jump's height no longer depends on the frame rate (the double-jump sheet's session 1, less #370's cap)
+The designer's build sheet (`docs/design/double-jump-and-dash-build.md`, merged in #371) gives the systems builder its first session now: the step, the air-speed cap, the head clamp and the fall rule. One of the four is its open number. The cap, 4.7 m/s in the air for everyone, is DECISION #370 and still waits on Michael. The other three are settled by the sheet, so they are built here and the cap is left out.
+
+- **Second step** (Acrobatics 75, `airStepTick` in `10-player.js`, called by the loop before the ground's jump). A fresh press of Space in the air sets the rise to 4.5 m/s. It is set, not added, so a quick double tap does not stack. The step works once a flight and comes back on landing. It costs 12 stamina, and the first jump stays free. A held Space never fires it: Space must be let go in the air before the press counts. Over 70% of your carry the rise is 3.2; immobile, swimming, levitating or staggered, there is none. Too winded (under 12, or in `staminaCD`), the stamina bar flashes, as the roll's does. The perk goes live in `PERK_LIVE`, so the Skills tab lights it.
+- **The head stops at the ceiling** (`headCeil`). A rise ends where the top of the head, `SCALE.PERSON` (1.8 m) over the feet, meets a ceiling. The ceiling is the room's own height, the dungeon floor's, or the underside of a foothold or solid over you (an inn's gallery, the floor above). A generated room now records its true height as `house._roomH` after `scaleRoom`: 2.89 m for a plain cottage, 3.18 for stone. Before, nothing recorded it, and the third-person camera still guesses by type as it did. This holds for every jump, not only the step. So at Acrobatics 100 a single jump (1.21 m) in a 2.89 m cottage now stops 0.12 m short of where it went, which was through the ceiling. Outdoors nothing is over you yet, until the heights card.
+- **The fall's count.** The sheet asks that a step pressed near the ground never resets a fall. `fallTrack` already keeps the flight's top, so nothing changed, and the suite proves it.
+- **A jump's height is the same at any frame rate.** The loop took gravity off `velY` first and then moved `jumpY`, which loses velY × dt/2 of every rise: a 0.84 m jump peaked at 0.79 at 60 fps and about 0.70 at 20. It now integrates the flight exactly, as the dropped-frame rule asks: 0.840 m at both. That raises every jump by 0.05 m at 60 fps, to the height the platforming page and the skills sheet were written to.
+- **Found and fixed by the suite before it shipped.** With the step called after the ground's jump, a flight that ended with Space let go left the press armed. A jump pressed on the very frame of landing then fired the step at take-off, a 1.77 m leap from the ground. The tick now runs first, so a landing always resets it.
+
+Not built, and owed: the air-speed cap and its `aircap` suite (#370); the dash, the sheet's session 2; the tuck and lean (the bodies builder's, with F10); and the one line the first time each is held, the quest writer's words.
+### Verified (headless Chromium)
+- **`airstep`**, new, 12 of 12 (the sheet's `airstep`, `headroom` and `airfall` in one). It is driven through the game's own loop at fixed 1/60 steps with the draw held off:
+  - Nothing at Acrobatics 74: the one jump, 1.102 m.
+  - At 75 a fresh press at the top rises to 1.666 m (the sheet's 1.66), and at 100 to 1.770 (1.77), each at a rise of 4.5 m/s and a cost of 12 stamina.
+  - Without the press, at 75 the jump is the one jump, 1.106 m. With Space held through the flight at 100, 1.21 m and no step.
+  - A third press after the step changes the rise by gravity's −0.3 m/s alone. At 11 stamina, nothing.
+  - A jump at Acrobatics 5 peaks at 0.840 m at 20 fps (steps of 50 ms) and at 60.
+  - A 12 m drop with the step pressed 1 m up is counted as 12.00 m.
+  - In a Dunmore cottage, 2.887 m to the ceiling, from a clear spot: the double jump's head stops at 2.887 m, and an untrained jump peaks with the head at 2.64.
+  - In a dungeon, 3.2 m to the ceiling: the double jump's top is 1.40 m (3.2 − 1.8).
+- `airstep --look=new` 12 of 12. `falls`, `perkfall`, `roll`, `lockon` and `skillcurve` pass (skillcurve's jump ratio is now exactly 1.44).
+### Needs eyes
+- **How the step feels.** It is a set rise with no new pose until the bodies builder's tuck. Without #370's cap, a sprinter double-jumps farther than the sheet's table: up to 7.4 m at Athletics 100 and Swiftness 40.
+- **The ceiling in old rooms.** The legacy interiors keep their own low ceilings (a shop's 2.3 m), so their jumps are now capped at 0.5 m.
+- **Every jump is 0.05 m higher at 60 fps.** No place is built to the old height.

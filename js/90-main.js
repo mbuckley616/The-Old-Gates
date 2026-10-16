@@ -390,13 +390,16 @@ function loop(now){
   const inOverworld=!inDungeon&&!isInterior();
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
   const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,floorBaseY0):floorBaseY0; // v80 — footholds (stairs, galleries)
+  airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
     if(inOverworld) jumpY=activeTerrainH(px,pz);
     velY=JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY;
   }
   if(!onGround){
-    velY-=GRAVITY*dt;
-    jumpY+=velY*dt;
+    /* S1009 — the flight is integrated exactly, so its height is the same at any frame rate (the dropped-frame rule); it was
+       velY first and then jumpY, which lost velY×dt/2 of every rise (0.05 of a jump at 60 fps, 0.16 at 20) */
+    const _y0=jumpY;jumpY+=velY*dt-GRAVITY*dt*dt/2;velY-=GRAVITY*dt;
+    if(velY>0||jumpY>_y0){const hc=headCeil(px,pz,_y0);if(jumpY+HEAD_H>hc){jumpY=Math.max(_y0,hc-HEAD_H);velY=Math.min(velY,0);}} /* S1009 — the head stops at the ceiling */
     // Flat floor clamp for dungeons and interiors (not terrain-following overworld)
     if((inDungeon||isInterior())&&jumpY<=floorBaseY){jumpY=floorBaseY;velY=0;onGround=true;sndLand();landShake=0.06;fallLand(jumpY);}
   }

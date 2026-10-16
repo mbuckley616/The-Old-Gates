@@ -323,6 +323,46 @@ function fallLand(y){
   }
   return drop;
 }
+// S1009 — Second step, Acrobatics 75: the double jump (docs/design/double-jump-and-dash-build.md, its session 1). A fresh
+// press of Space in the air sets the rise to 4.5 m/s (set, not added), once a flight, for 12 stamina; a held Space never
+// fires it, and it comes back on landing. Carrying over 70% the rise is 3.2, immobile none; never swimming, levitating or
+// staggered; too winded (under 12, or in staminaCD) the bar flashes. It does not reset the fall's count: fallTrack keeps
+// the flight's top. The air-speed cap the sheet asks beside it is DECISION #370's and waits.
+const AIRSTEP={used:false,up:false},AIRSTEP_V=4.5,AIRSTEP_V_HEAVY=3.2,AIRSTEP_STAM=12;
+function airStepTick(K){
+  if(onGround){AIRSTEP.used=false;AIRSTEP.up=false;return false;}
+  if(!K['Space']){AIRSTEP.up=true;return false;}
+  if(!AIRSTEP.up||AIRSTEP.used)return false;
+  AIRSTEP.up=false;
+  if(!perk('acrobatics',75)||dead||!started||playerStaggered(performance.now()/1000))return false;
+  if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
+  if(typeof spellLevitating==='function'&&spellLevitating())return false;
+  if(encumbranceState()==='immobile')return false;
+  if(stamina<AIRSTEP_STAM||staminaCD>0){flashStamina();return false;}
+  stamina=Math.max(0,stamina-_stamCost(AIRSTEP_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
+  AIRSTEP.used=true;velY=totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT?AIRSTEP_V_HEAVY:AIRSTEP_V;
+  try{sndJump();}catch(err){}
+  return true;
+}
+// S1009 — the head stops at the ceiling (the same sheet): a rise ends where the top of the head, SCALE.PERSON over the feet,
+// meets the room's ceiling (`_roomH` for a generated room, `_ceilH` for the old ones), the dungeon's floor height, or the
+// underside of a foothold or a solid over you (an inn's gallery, the floor above). Outdoors nothing is over you yet.
+// y is the feet before this frame's rise: what is over the head there is the ceiling.
+const HEAD_H=SCALE.PERSON;
+function headCeil(x,z,y){
+  const intr=isInterior();let c=1e9;
+  if(intr){const h=currentHouse&&(currentHouse._roomH||currentHouse._ceilH);if(h)c=h;}
+  else if(lid&&lid.startsWith('dyn_'))c=(currentFloor===2?FLOOR2_Y:0)+FLOOR_HEIGHT;
+  else return c;
+  const head=y+HEAD_H-.02;
+  for(const f of FOOTHOLDS){if(f.kind==='spiral'||x<f.x0||x>f.x1||z<f.z0||z>f.z1)continue;
+    if(f.hole&&x>f.hole.x0&&x<f.hole.x1&&z>f.hole.z0&&z<f.hole.z1)continue;
+    if(f.holes&&f.holes.some(h=>x>h.x0&&x<h.x1&&z>h.z0&&z<h.z1))continue;
+    let fy=f.y;if(f.axis){const t=f.axis==='x'?(x-f.x0)/(f.x1-f.x0):(z-f.z0)/(f.z1-f.z0);fy=f.y0+(f.y1-f.y0)*Math.max(0,Math.min(1,t));}
+    const u=fy-.16;if(u>=head&&u<c)c=u;}
+  if(intr)for(const s of (INT_SOL||[]))if(s.y0!=null&&s.y0>=head&&s.y0<c&&x>=s.x0&&x<=s.x1&&z>=s.z0&&z<=s.z1)c=s.y0;
+  return c;
+}
 function fallSettle(rolled){
   const p=FALL.pend;FALL.pend=null;if(!p||dead)return;
   const dmg=rolled?Math.max(1,Math.round(p.dmg/2)):p.dmg;
