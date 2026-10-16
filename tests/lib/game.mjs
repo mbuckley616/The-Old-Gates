@@ -85,14 +85,24 @@ export async function boot(opts = {}) {
     await page.evaluate(() => goToZone('world', 13100, 25450, 0, 'x')); await page.waitForTimeout(9000); await g.hide();
   };
   g.keepAlive = () => { const t = setInterval(() => page.evaluate(() => { PHP = maxHP; }).catch(() => {}), 800); return () => clearInterval(t); };
+  // Session 1006: it waited 24 polls (60 s) and then went on as if the town stood. A cell builds on the world's job queue,
+  // at most two jobs a frame (`runJobs`, 81-world-cells.js), so on software GL a load is counted in frames, not seconds:
+  // shrine c6_8_p1, its cell's sixth site, stood after 42 s with one boot running and not after 180 s with six, so `renewal`
+  // and `dayseed` read no shrine on 16 Oct. Each poll now also runs the queue the game has laid out (the same jobs in the
+  // same order, only more of them per frame), and polls until the site is in SETTLE, up to SETTLE_MS (180 s by default); a
+  // site that never builds says so in the log and returns false, so the suite's own check names the fault.
   g.settle = async (id) => {
     await page.evaluate(() => WORLD.devUnlockAll());
-    for (let k = 0; k < 24; k++) {
+    const until = Date.now() + (+process.env.SETTLE_MS || 180000); let built = false;
+    while (!built && Date.now() < until) {
       await page.waitForTimeout(2500);
       await page.evaluate((id) => { const t = WORLD.siteAnywhere(id); if (Math.hypot(px - t.x, pz - t.z) > 40) { px = t.x; pz = t.z + 4; } }, id);
-      if (await page.evaluate((id) => !!WORLD.settle.get(id), id)) break;
+      await page.evaluate(() => { const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs(); });
+      built = await page.evaluate((id) => !!WORLD.settle.get(id), id);
     }
+    if (!built) console.log(`  settle: ${id} not built after ${Math.round((+process.env.SETTLE_MS || 180000) / 1000)} s`);
     await page.waitForTimeout(2000); await g.hide();
+    return built;
   };
   g.spin = (weather, frames) => page.evaluate(([w, n]) => {
     if (w) { const wx = WORLD.wx; wx.type = w; wx.next = w; wx.k = 1; }
