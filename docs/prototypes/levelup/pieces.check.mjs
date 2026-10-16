@@ -7,6 +7,7 @@
 // Session 835, the Gatelands' lots (gatelandsLot, Michael's A on #280): on 40 streets of 30 lots no two neighbours share a
 // colour and every colour of the six is used; no door paint drowns in its wall; cottages limewashed under thatch, farmhouses
 // white, warehouses bare stone, town lots under slate; a lot builds the same twice, its lit windows included.
+// Session 964: the guild hall (Michael's C on #352), its own piece, in two guilds' dress.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -55,8 +56,29 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   const K2 = L.kinds, all = (k, f) => K2[k].every(f);
   check(`by kind: town lots rendered in colour under slate, cottages limewashed under thatch, farmhouses white under slate, warehouses bare stone`, all('townhouse', h => h.fin !== 'w:lime' && h.roof === 'slate') && all('merchant', h => h.fin !== 'w:lime' && h.roof === 'slate') && all('cottage', h => h.fin === 'w:lime' && h.roof === 'thatch') && all('farmhouse', h => h.fin === 'w:lime' && h.roof === 'slate') && all('warehouse', h => h.fin === 'rubble'), Object.fromEntries(Object.entries(K2).map(([k, v]) => [k, v[0]])));
   check(`a lot builds the same twice, its lit windows included: ${L.same} of ${L.n}`, L.same === L.n); }
+// Session 964, the guild hall (Michael's C on #352): a piece of its own, the Fighters' and the Mages' dress; each builds the same twice
+// and in budget, at its sizes; on every face the openings stand clear of each other (dressings included), of the corners' quoins and of the
+// eaves; the great door is a door of note; and the openings keep to the floors the room will have (the gallery at the first floor at the
+// back, the east end's two storeys): no opening of the hall's back crosses the gallery's floor, and the east end's upper sashes sit above it.
+{ const G = await page.evaluate(async () => { const K = await import('./pieces.js'), out = [];
+    const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+    for (const guild of ['fighters', 'mages']) { const mk = () => Object.assign(K.GL_PLANS.guildhall({ guild }), { r: K.stream('guildhall:' + guild) }), P = mk(), a = K.gatelandsBuilding(P), b = K.gatelandsBuilding(mk()), u = a.userData, h = P.floors[0] + P.floors[1], F1 = P.floors[0];
+      const ring = op => op.arch || op.dress ? .34 : .2, span = op => [op.x - op.w / 2 - ring(op), op.x + op.w / 2 + ring(op), op.y, op.y + op.h + (op.arch ? .34 : .3)], clash = [], out2 = [], gallery = [], upper = [];
+      for (const [f, os] of Object.entries(P.open)) { const half = (f === 'front' || f === 'back' ? P.w : P.d) / 2 - .55;
+        os.forEach((o, i) => { const [l, r, b, t] = span(o); if (o.x - o.w / 2 < -half || o.x + o.w / 2 > half || o.y + o.h > h - .25) out2.push([f, i]);
+          os.forEach((q, j) => { if (j <= i) return; const [l2, r2, b2, t2] = span(q); if (Math.min(r, r2) - Math.max(l, l2) > .02 && Math.min(t, t2) - Math.max(b, b2) > .02) clash.push([f, i, j]); });
+          const x = f === 'back' ? -o.x : f === 'front' ? o.x : null; if (f === 'back' && x < P.hallX && o.y < F1 + .3 && o.y + o.h > F1 - .3) gallery.push([f, i]);
+          if ((f === 'front' || f === 'back') && x >= P.hallX && o.y > 1 && o.y < F1 + .2) upper.push([f, i]); }); }
+      const door = P.open.front.find(o => o.kind === 'plank');
+      out.push({ guild, tris: u.tris, calls: u.calls, size: u.size, same: hash(a) === hash(b), clash, out: out2, gallery, upper, door: [door.w, door.h], plaque: P.plaque.y - (door.y + door.h + .34), text: P.plaque.text, banner: P.banner.colour });
+      for (const g of [a, b]) g.traverse(m => m.geometry && m.geometry.dispose()); }
+    return out; });
+  check(`the guild hall, a piece of its own (#352 C): ${G.map(g => `${g.guild} ${g.tris.toLocaleString()} triangles in ${g.calls} draws`).join(', ')}; ${G[0].size.w} by ${G[0].size.d} m, eaves ${G[0].size.eave} m, ridge ${G[0].size.ridge} m; each the same twice`, G.every(g => g.same && g.tris < 15000 && g.calls <= 16 && g.size.w === 14.4 && g.size.d === 9 && g.size.eave === 6.4));
+  check(`the guild hall's openings: ${G[0].clash.length} clashes on a face, dressings included; ${G[0].out.length} into the quoins or the eaves`, G.every(g => !g.clash.length && !g.out.length), G.map(g => [g.clash, g.out]));
+  check(`the guild hall keeps the room's floors: ${G[0].gallery.length} openings of the hall's back across the gallery's floor, ${G[0].upper.length} east-end sashes between the floors`, G.every(g => !g.gallery.length && !g.upper.length), G.map(g => [g.gallery, g.upper]));
+  check(`the guild hall's great door ${G[0].door.join(' by ')} m under its name panel (${G[0].text}, ${G[1].text}), clear of the arch's ring by ${G[0].plaque.toFixed(2)} m; the banners ${G.map(g => g.banner).join(' and ')}`, G.every(g => g.door[0] >= 1.5 && g.door[1] >= 3 && g.plaque >= 0) && G[0].banner !== G[1].banner && G[0].text !== G[1].text); }
 await page.close();
-for (const v of ['street', 'street&mix=lot', 'line', 'kit']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`);
   // a page error ends the wait at once (an error in the scene's module never sets __err)
   await Promise.race([pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 }), new Promise(res => pg.on('pageerror', e => { if (!/json|JSON/.test(String(e))) res(); }))]);
