@@ -1506,3 +1506,120 @@ export function gatelandsShipyard(o = {}, r = stream('shipyard')) {
   return { group, tris: Math.round(tris), own, draws: own + sl.draws, sloopTris: sl.tris, slope: SL, way, ways: { x: WX, z0: WZ0, z1: WZ1 }, blocks, hull: { matrix: HM, y: HY, z: HZ, keelLow: +Math.min(...blocks.map(b => b.top)).toFixed(3) },
     staging: { x: STX, y: STY, z0: SZ0, z1: SZ1 }, quay: { x0: QX0, x1: QX1, z0: QZ0, z1: QZ1, top: LAND }, sloop: { x: SLX, z: SLZ, W: S.W, L: S.L, deck: S.deck }, pit: { x: PX, z: PZ, w: PW, l: PL }, ground };
 }
+
+// ── the Gatelands' peat-cutting camp (Session 991, card F8; OG-124's "a peat-cutting camp", off the road on the home island, with
+// OG-014's bogland and OG-099's fens). A family's turf bank on a raised bog, as the hand-cut banks of Connemara and the Bog of Allen were
+// worked with the sleán: the face cut down in two spits, the sods thrown up onto the bank to dry, spread first and then footed on end,
+// the dry turf built into a rick by the bog road for the cart, and a cutters' bothy of sods under thatch with a fire at its door.
+// Built at true size, a metre a unit, y 0 the bog's surface, the face along x at z 0 with the cutaway to +z:
+//   - the bank: the face cut down about 1.3 m in two spits (a bench 0.8 m down and 0.45 m wide), 36 m along, its west end cut steep and its
+//     east end ramped at about 1 in 5 for the barrow; the cutaway's floor wet, black water standing in its hollows but none
+//     within 2 m of the face, where the cutter stands, the last
+//     generation's bank slumped and heathered 12 to 16 m out;
+//   - on the bank: the newest sods spread in rows to skin, older ones footed in sixes (five on end, one across), a turf barrow
+//     half loaded, a creel, the sleán stood in the bank by the lip;
+//   - by the road: a gravel bog road along z -18, the rick of dry turf beside it, the bothy (3.6 by 2.8 m of sod walls 1.5 m high,
+//     a thatched roof held by ropes weighted with stones, a low door to the road), the fire on a ring of stones with a crane and kettle.
+//   Heather and bog cotton on the uncut bog. Who cuts here is the quest writer's; nobody is drawn (people are the bodies builder's).
+// -> { group, tris, draws, own, ground, bank { x0, x1, lip (z), bench (y), benchZ, floor (y about), water }, spread [[x, z]],
+//   footings [{ x, z, feet: [[x, y, z]] }], slean { x, z, tip, top }, rick { x, z, l, w, h }, hut { x, z, w, d, wall, door: { x, w, h } },
+//   fire { x, z, kettle (its bottom's y), embers (y) }, road { z, w } }
+export function gatelandsPeatCamp(o = {}, r = stream('peat')) {
+  const MI = millMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const M = { ...MI, bog: mat('turfDry', { ns: 1.2, color: 0xc8b8a0, rough: 1 }), peat: mat('plaster', { ns: 1.4, color: 0x5a4030, rough: 1 }), floor: mat('plaster', { ns: 1.2, color: 0x46362a, rough: .7 }),
+    water: std(0x2e2824, .12), sodWet: mat('plaster', { ns: 1.5, color: 0x4e3a2c, rough: .85 }), sod: mat('plaster', { ns: 1.5, color: 0x6e543e, rough: 1 }), sodDry: mat('plaster', { ns: 1.5, color: 0x7a5e46, rough: 1 }),
+    grit: mat('rock', { ns: .8, color: 0x84765e, rough: 1 }),
+    heather: std(0x4c3a40, 1), ling: std(0x5a5a34, 1), cotton: std(0xf2f0e8, .9), stone: mat('rock', { ns: 1.0, color: 0x8a867c, rough: 1 }), wall: mat('turfDry', { ns: 1.2, color: 0xb0a088, rough: 1 }),
+    ember: std(0x2a1408, .6, { emissive: new THREE.Color(1, .4, .12), emissiveIntensity: 2.2 }), rope: std(0x8a7650, .95), basket: mat('thatch', { ns: .8, color: 0x8a7046, rough: 1 }), ash: mat('wood', { ns: .8, color: 0xb89a74, rough: .8 }), thatch: mat('thatch', { ns: 1.2, color: 0x9a8a66, rough: 1 }) };
+  const B = new Map(), key = String(o.key || 'peat'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), C = new THREE.Vector3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: the raised bog in low hummocks, kept flatter along the road and under the bothy; the cut stepped down from the lip at z 0
+  const CX = 18, RZ = -18, RW = 2.6, HX = 9, HZ = -24, HW = 3.6, HD = 2.8, BENCH = -.8, BZ = .45, WL = -1.45;
+  const hum = (x, z) => .07 * Math.sin(x * .9 + ph[0]) * Math.sin(z * .8 + ph[1]) + .05 * Math.sin(x * 2.1 + z * 1.6 + ph[2]) + .04 * Math.sin(x * .17 - z * .23 + ph[3]);
+  const calm = (x, z) => Math.max(sm(1 - (Math.abs(z - RZ) - RW / 2) / 1.5), sm(1 - Math.max(Math.abs(x - HX) - HW / 2 - .4, Math.abs(z - HZ) - HD / 2 - .4) / 1.5));
+  const bog = (x, z) => hum(x, z) * (1 - .85 * calm(x, z)) * (1 - sm((Math.abs(x) - 31) / 5)) * (1 - sm((-z - 31) / 5)) * (1 - sm((z - 25) / 5)) /* flat at the patch's edge, where the bands meet it */;
+  const mx = x => x >= 0 ? 1 - sm((x - CX) / 8) : 1 - sm((-x - CX) / 3), wz = z => z <= 0 ? 0 : z < 12 ? 1 : 1 - sm((z - 12) / 4);
+  const cutY = (x, z) => z < BZ ? BENCH : -1.5 + .08 + .05 * Math.sin(x * .55 + ph[4]) * Math.sin(z * .7 + ph[5]) + .05 * Math.sin(x * .23 - z * .41 + ph[6]) + .03 * Math.sin(x * 1.3 + z * .9 + ph[7]) + (1 - sm(z - 2)) * .14 /* the cutter's ground at the face's foot, dry for 2 m out */;
+  const ground = (x, z) => { const m = mx(x) * wz(z), b = bog(x, z); return b + (cutY(x, z) - b) * m; };
+  { const xs = [], zs = []; for (let x = -36; x < -24; x += 2) xs.push(x); for (let x = -24; x < 24; x += .8) xs.push(+x.toFixed(2)); for (let x = 24; x <= 36; x += 2) xs.push(x);
+    for (let z = -36; z < -20; z += 1.5) zs.push(z); for (let z = -20; z < -3; z += .85) zs.push(+z.toFixed(2)); for (let z = -3; z < -.1; z += .3) zs.push(+z.toFixed(2));
+    zs.push(-.005, .005, .15, .3, BZ - .006, BZ + .006); for (let z = .7; z < 12; z += .5) zs.push(z); for (let z = 12; z < 18; z += .6) zs.push(+z.toFixed(2)); for (let z = 18; z <= 30; z += 2) zs.push(z);
+    const NX = xs.length, pos = [], I = { bog: [], peat: [], floor: [] }; for (const z of zs) for (const x of xs) pos.push(x, ground(x, z), z);
+    for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < NX - 1; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, ys = [a, b, c, d].map(q => pos[q * 3 + 1]), dy = Math.max(...ys) - Math.min(...ys), run = Math.min(xs[i + 1] - xs[i], zs[j + 1] - zs[j]);
+      const z = (zs[j] + zs[j + 1]) / 2, x = (xs[i] + xs[i + 1]) / 2, cut = mx(x) * wz(z), y = ys.reduce((s, v) => s + v) / 4;
+      (dy / run > 3 || (z > 0 && z < BZ && cut > .9) ? I.peat : cut > .5 && z < 12 && y < -.4 ? I.floor : I.bog).push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); g = g.toNonIndexed(); if (k === 'peat') g.computeVertexNormals() /* the face flat-shaded: its edges are not smoothed into the bog */; put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the bog beyond, out to the fog: four flat bands round the patch
+  for (const [w, d, x, z] of [[1200, 600, 0, -336], [1200, 600, 0, 330], [600, 66, -336, -3], [600, 66, 336, -3]]) { const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); put(g, 'bog', x, 0, z, 0, 0, 0, .35); }
+  // the water standing in the cutaway's hollows
+  { const g = new THREE.PlaneGeometry(2 * CX + 3, 13 - BZ + .005); g.rotateX(-Math.PI / 2); put(g, 'water', .5, WL, (13 + BZ - .005) / 2); }
+  // a sod: 0.3 long, 0.11 square, the sleán's cut
+  const SL = .3, SW = .11, sod = (k, x, y, z, rx, ry, rz) => put(new THREE.BoxGeometry(SW, SL, SW), k, x, y, z, rx, ry, rz, 2.2);
+  // spread: the newest sods in rows on the bank to skin over, lying flat along x, the row's gaps where the barrow went
+  const spread = []; for (let row = 0; row < 9; row++) { const z = -1.25 - row * .42; for (let x = -16; x < 3; x += SL + .06) { if (F() < .12) continue; const xx = x + (F() - .5) * .05, zz = z + (F() - .5) * .08;
+    sod('sodWet', xx, bog(xx, zz) + SW / 2 + .005, zz, 0, (F() - .5) * .25, Math.PI / 2); spread.push([+xx.toFixed(3), +zz.toFixed(3)]); } }
+  // footed: four on end leaning in, their tops touching, one laid across; in rows behind the spread and east of it
+  const footings = [], TILT = .3, RB = .12, RC = RB - SL / 2 * Math.sin(TILT); const foot = (cx, cz) => { const a0 = F() * 6.283, feet = [];
+    for (let k = 0; k < 5; k++) { const a = a0 + k * Math.PI * 2 / 5 + (F() - .5) * .2, bx = cx - RB * Math.sin(a), bz = cz - RB * Math.cos(a), gy = bog(bx, bz), y = gy + SL / 2 * Math.cos(TILT) + SW / 2 * Math.sin(TILT) - .005;
+      sod('sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, 0); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); }
+    const top = Math.max(...feet.map(f => f[1])) + SL * Math.cos(TILT) - .02; sod('sod', cx, top + SW / 2, cz, 0, a0 + .5, Math.PI / 2) /* laid across the tops, sat down among them */; footings.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), feet, top: +top.toFixed(3) }); };
+  for (let z = -6; z > -11.5; z -= 1.15) for (let x = -15.5; x < 15.5; x += 1.25) if (F() > .3) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
+  for (let z = -1.6; z > -4.8; z -= 1.1) for (let x = 5; x < 15.5; x += 1.2) if (F() > .2) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
+  // the sleán: an ash shaft stood in the bank by the lip, its blade and its wing in the peat
+  const SX = -3.2 + (F() - .5), SZ = -.42, slTilt = .22, slY = bog(SX, SZ), SH = 1.05, BL = .3, tipY = slY - .2;
+  { const dir = new THREE.Vector3(0, Math.cos(slTilt), -Math.sin(slTilt)), tip = new THREE.Vector3(SX, tipY, SZ), bh = tip.clone().addScaledVector(dir, BL), top = bh.clone().addScaledVector(dir, SH);
+    put(new THREE.BoxGeometry(.13, BL, .012), 'iron', SX, (tipY + bh.y) / 2, SZ - BL / 2 * Math.sin(slTilt), slTilt); put(new THREE.BoxGeometry(.012, BL * .8, .1), 'iron', SX + .065, (tipY + bh.y) / 2 + .03, SZ - BL / 2 * Math.sin(slTilt) - .05, slTilt);
+    rod('ash', bh.toArray(), top.toArray(), .02); put(new THREE.BoxGeometry(.2, .035, .035), 'ash', top.x, top.y, top.z, slTilt); }
+  const slean = { x: +SX.toFixed(3), z: SZ, tip: +tipY.toFixed(3), top: +(tipY + (BL + SH) * Math.cos(slTilt)).toFixed(3), ground: +slY.toFixed(3) };
+  // the turf barrow: a slatted bed with its front board, one plank wheel, the handles and the legs; half a load of wet sods on it
+  { const bx = 5.6, bz = -1.9, ry = .3 + (F() - .5) * .2, gy = bog(bx, bz), c = Math.cos(ry), s = Math.sin(ry), P = (u, v, h) => [bx + u * c + v * s, gy + h, bz - u * s + v * c];
+    const bed = .5; for (let k = 0; k < 6; k++) put(new THREE.BoxGeometry(.11, .025, 1.05), 'ash', ...P(-.3 + k * .12, 0, bed), 0, ry);
+    put(new THREE.BoxGeometry(.72, .45, .03), 'ash', ...P(0, .6, bed + .2), -.5, ry); for (const u of [-.38, .38]) rod('ash', P(u * .75, .72, .28), P(u, -1.2, .58), .025);
+    const w = new THREE.CylinderGeometry(.27, .27, .05, 14); w.rotateZ(Math.PI / 2); put(w, 'ash', ...P(0, .78, .27), 0, ry); for (const u of [-.3, .3]) rod('ash', P(u, -.5, 0), P(u, -.5, bed), .025);
+    for (let k = 0; k < 10; k++) sod('sodWet', ...P(-.24 + (k % 5) * .12, -.2 + Math.floor(k / 5) * .32, bed + .07), Math.PI / 2, ry, 0); }
+  // a creel by the footings
+  { const g = new THREE.CylinderGeometry(.26, .2, .42, 14, 1, true); put(g, 'basket', 3.4, bog(3.4, -6.3) + .21, -6.3); put(new THREE.CircleGeometry(.2, 14).rotateX(-Math.PI / 2), 'basket', 3.4, bog(3.4, -6.3) + .01, -6.3); }
+  // the bog road: gravel on the bog, a hand's breadth proud, its edges sunk
+  for (let x = -36; x < 22; x += 1) { const y = Math.max(bog(x, RZ - 1), bog(x, RZ + 1), bog(x + 1, RZ)) + .04; put(new THREE.BoxGeometry(1.02, .14, RW), 'grit', x + .5, y - .03, RZ + (F() - .5) * .04, 0, (F() - .5) * .01); }
+  // the rick: dry turf built into a long clamp by the road, battered sides and a rounded back, its outside laid in courses
+  const RKX = -3, RKZ = RZ - 2.6, RL = 4.2, RWd = 1.5, RH = 1.4;
+  { const s = new THREE.Shape(); s.moveTo(-RWd / 2, 0); s.lineTo(RWd / 2, 0); s.lineTo(RWd / 2 - .22, RH * .78); s.quadraticCurveTo(0, RH * 1.06, -RWd / 2 + .22, RH * .78); s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: RL, bevelEnabled: false, curveSegments: 6 }); g.translate(0, 0, -RL / 2); g.rotateY(Math.PI / 2); put(g, 'sodDry', RKX, bog(RKX, RKZ) - .05, RKZ, 0, 0, 0, 2.2);
+    const ry0 = bog(RKX, RKZ) - .05; for (let c = 0; c < 7; c++) { const y = ry0 + .06 + c * .11, inset = .22 * (c * .11) / (RH * .78); for (const sz of [-1, 1]) for (let x = -RL / 2 + .17; x < RL / 2 - .1; x += .31)
+      sod('sodDry', RKX + x + (F() - .5) * .03, y, RKZ + sz * (RWd / 2 - inset + .02), Math.PI / 2, 0, Math.PI / 2 + (F() - .5) * .08); } }
+  // the bothy: sod walls on the road's north side, the door to the road; gables of sod, a thatched roof roped down with hanging stones
+  const WT = .5, WH = 1.5, DW = .78, DH = 1.42, hy = Math.min(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => bog(HX + a * HW / 2, HZ + b * HD / 2))) - .04;
+  { const wall = (w, h, d, x, y, z) => put(new THREE.BoxGeometry(w, h, d), 'wall', x, y, z, 0, 0, 0, .8);
+    wall(HW, WH, WT, HX, hy + WH / 2, HZ - HD / 2 + WT / 2); const side = (HW - DW) / 2; for (const sx of [-1, 1]) wall(side, WH, WT, HX + sx * (DW / 2 + side / 2), hy + WH / 2, HZ + HD / 2 - WT / 2);
+    wall(DW, WH - DH, WT, HX, hy + DH + (WH - DH) / 2, HZ + HD / 2 - WT / 2); put(new THREE.BoxGeometry(DW + .5, .1, WT + .04), 'timber', HX, hy + DH + .05, HZ + HD / 2 - WT / 2);
+    for (const sx of [-1, 1]) { wall(WT, WH, HD - 2 * WT, HX + sx * (HW / 2 - WT / 2), hy + WH / 2, HZ);
+      const s = new THREE.Shape(); s.moveTo(-HD / 2, 0); s.lineTo(HD / 2, 0); s.lineTo(0, 1.25); s.closePath(); const g = new THREE.ExtrudeGeometry(s, { depth: WT, bevelEnabled: false }); g.translate(0, 0, -WT / 2); g.rotateY(Math.PI / 2); put(g, 'wall', HX + sx * (HW / 2 - WT / 2), hy + WH, HZ, 0, 0, 0, .8); }
+    put(new THREE.BoxGeometry(HW - 2 * WT, .04, HD - 2 * WT), 'floor', HX, hy + .02, HZ);
+    const pitch = Math.atan2(1.25, HD / 2), slope = Math.hypot(1.25, HD / 2) + .45; for (const sz of [-1, 1]) { put(new THREE.BoxGeometry(HW + .5, .32, slope), 'thatch', HX, hy + WH + 1.25 / 2 - .08, HZ + sz * (HD / 4 + .12), sz * pitch, 0, 0, .8); }
+    put(new THREE.CylinderGeometry(.14, .14, HW + .5, 8).rotateZ(Math.PI / 2), 'thatch', HX, hy + WH + 1.25 + .08, HZ);
+    for (const dx of [-1.2, -.4, .4, 1.2]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12 * 2 - 1, zz = t * (HD / 2 + .3), yy = hy + WH + 1.25 + .2 - Math.abs(t) * 1.4; pts.push(new THREE.Vector3(HX + dx, yy, HZ + zz)); }
+      put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .018, 5), 'rope'); for (const sz of [-1, 1]) { const st = new THREE.IcosahedronGeometry(.13, 0); st.scale(1, 1.2, .8); rod('rope', [HX + dx, hy + WH + .05, HZ + sz * (HD / 2 + .3)], [HX + dx, hy + WH - .45, HZ + sz * (HD / 2 + .32)], .012); put(st, 'stone', HX + dx, hy + WH - .55, HZ + sz * (HD / 2 + .34)); } } }
+  const hut = { x: HX, z: HZ, y: +hy.toFixed(3), w: HW, d: HD, wall: WT, wallH: WH, ridge: +(WH + 1.25).toFixed(2), door: { x: HX, z: HZ + HD / 2, w: DW, h: DH } };
+  // the fire before the door: a ring of stones, embers on the ash, a crane of two forked sticks and a bar, the kettle on its hook
+  const FX = HX + 2.4, FZ = HZ + HD / 2 + 1.7, fy = bog(FX, FZ);
+  for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283 + F() * .3, st = new THREE.IcosahedronGeometry(.11 + F() * .05, 0); st.scale(1.2, .7, 1); put(st, 'stone', FX + .42 * Math.cos(a), fy + .05, FZ + .42 * Math.sin(a), 0, F() * 3); }
+  { const e = new THREE.CylinderGeometry(.3, .34, .06, 12); put(e, 'ember', FX, fy + .03, FZ); for (let k = 0; k < 5; k++) { const a = k * 1.25; rod('timber', [FX + .32 * Math.cos(a), fy + .05, FZ + .32 * Math.sin(a)], [FX + .02 * Math.cos(a), fy + .16, FZ + .02 * Math.sin(a)], .035); } }
+  const CH = 1.05; for (const sx of [-1, 1]) { rod('timber', [FX + sx * .62, fy - .15, FZ], [FX + sx * .6, fy + CH + .12, FZ], .028); rod('timber', [FX + sx * .6, fy + CH - .05, FZ], [FX + sx * .68, fy + CH + .14, FZ], .02); }
+  rod('timber', [FX - .75, fy + CH, FZ], [FX + .75, fy + CH, FZ], .025); rod('iron', [FX, fy + CH, FZ], [FX, fy + .72, FZ], .008);
+  const V = (a, b) => new THREE.Vector2(a, b), KB = fy + .38; put(new THREE.LatheGeometry([V(.001, 0), V(.12, .01), V(.16, .08), V(.16, .2), V(.1, .3), V(.06, .32), V(.001, .33)], 14), 'iron', FX, KB, FZ);
+  rod('iron', [FX - .12, KB + .26, FZ], [FX, fy + .72, FZ], .006); rod('iron', [FX + .12, KB + .26, FZ], [FX, fy + .72, FZ], .006);
+  const fire = { x: +FX.toFixed(3), z: +FZ.toFixed(3), kettle: +KB.toFixed(3), embers: +(fy + .06).toFixed(3) };
+  // heather and bog cotton on the uncut bog, off the road, the bank's working strip, the rick and the bothy
+  const clear = (x, z) => mx(x) * (z > -12.2 && z < 16.5 ? 1 : 0) > .02 || Math.abs(z - RZ) < RW / 2 + .3 || (Math.abs(x - RKX) < RL / 2 + .5 && Math.abs(z - RKZ) < RWd / 2 + .5) || (Math.abs(x - HX - 1) < 4 && z > HZ - 2 && z < FZ + 1.2) || (z > -1 && z < 17 && mx(x) > 0);
+  for (let k = 0, n = 0; k < 1500 && n < 240; k++) { const x = -34 + F() * 68, z = -34 + F() * 62; if (clear(x, z)) continue; n++; const s = .14 + F() * .2, g = new THREE.IcosahedronGeometry(s, 0); g.scale(1.3, .55, 1.3); put(g, n % 3 ? 'heather' : 'ling', x, bog(x, z) + s * .3, z, 0, F() * 6); }
+  for (let k = 0, n = 0; k < 900 && n < 110; k++) { const x = -30 + F() * 60, z = -30 + F() * 56; if (clear(x, z)) continue; n++; const h = .25 + F() * .15, gy = bog(x, z);
+    put(new THREE.BoxGeometry(.008, h, .008), 'ling', x, gy + h / 2, z); put(new THREE.IcosahedronGeometry(.04, 0).scale(1, 1.3, 1), 'cotton', x, gy + h + .03, z); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['bog', 'floor', 'water', 'peat', 'ember'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +(hy + WH + 1.4).toFixed(2), ground, bog,
+    bank: { x0: -CX, x1: CX, lip: 0, bench: BENCH, benchZ: BZ, floorZ: [BZ, 12], water: WL }, spread, footings, slean, rick: { x: RKX, z: RKZ, l: RL, w: RWd, h: RH, y: +(bog(RKX, RKZ) - .05).toFixed(3) }, hut, fire, road: { z: RZ, w: RW } };
+}
