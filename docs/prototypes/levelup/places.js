@@ -1861,3 +1861,90 @@ export function markHuntingCabin(o = {}, r = stream('cabin')) {
     cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, R, step: STEP, y0: Y0, logs, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS } },
     roof, chimney: { x: CX, z: CZ, w: CW, top: CTOP }, smoke: smoke.map(s => s.slice(0, 3)), store, pile, trees, paths: PATHS };
 }
+// markLoggingCamp(o, r) (Session 999, card F8; OG-124's Mark panel, "an abandoned logging camp"): a winter felling on a slope above a frozen
+// river, after the Norwegian and Swedish forest drives: the trees cut in winter, sledged to a deck, sent down a timber chute to the river's ice
+// to go with the thaw. This one was left mid-season. At true size, a metre a unit, the slope falling to +z at about 1 in 4.5 to the river:
+//   - the felling: 50 stumps cut flat at the height a man swings, snow on each, an axe left in one; spruce standing round it;
+//   - the deck: two skids across the slope and 18 logs of 5 m stacked on them in four rows, each on the two below;
+//   - the chute: a trough of two logs side by side on trestles, from the deck's foot 40 m down to the ice, at one grade; one length has
+//     fallen from its trestle, which lies over, and lies in the snow beside the gap;
+//   - the gapahuk: a lean-to of logs open to the south, its bed of spruce boughs, a cold fire ring before it with the last brands in it;
+//   - a log sledge, its runners turned up at the front, a log still chained on its bunks.
+// -> { group, tris, draws, own, ground, chute { x, z0, z1, y0, y1, grade, gap [z0, z1], trestles }, deck { logs [{ x0, x1, y, z, row }], R, skid },
+//      stumps [{ x, z, h, r }], shelter { x, z, w, d, back, front }, sledge { x, z, runners [[x, z]] }, river { z0, z1, y }, trees }
+export function markLoggingCamp(o = {}, r = stream('logging')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); markTextures();
+  const M = { snow: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }), ice: std(0xb8cad6, .15, { metalness: .1 }), log: mat('beam', { ns: 1.2, color: 0x9a7c5c, rough: .9 }), end: std(0xa88a66, .9),
+    grey: mat('beam', { ns: 1.2, color: 0x8a8278, rough: .95 }), board: mat('wood', { ns: .9, color: 0x6a5a4a, rough: .9 }), stone: mat('rock', { ns: 1.0, color: 0x8a8680, rough: 1 }), char: std(0x1a1614, 1),
+    bark: std(0x4a3a30, .95), needle: std(0x2a3a2a, .9), bough: std(0x36482e, .95), iron: std(0x2a2826, .5, { metalness: .6 }), wood: std(0xb89a72, .85) };
+  const B = new Map(), key = String(o.key || 'logging'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 7) => { const A = new THREE.Vector3(...a), C = new THREE.Vector3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: the slope at 1 in 4.5 down to the river's bank at z 26, the ice level from 28 to 40 at y RY, the far bank rising beyond
+  const S = .22, RZ0 = 28, RZ1 = 40, RY = -6.3;
+  const drift = (x, z) => .14 * Math.sin(x * .29 + ph[0]) * Math.sin(z * .31 + ph[1]) + .07 * Math.sin(x * .8 + z * .6 + ph[2]);
+  const ground = (x, z) => { const slope = -S * Math.min(z, 26) - 2.5 * sm((z - 25) / 3); const far = 2.2 * sm((z - RZ1 - 1) / 6) + .5 * sm((z - RZ1 - 6) / 8) * (z - RZ1 - 6) * .3; return (z < RZ0 - .5 ? slope + drift(x, z) * sm((RZ0 - 1 - z) / 2) : z > RZ1 + .5 ? RY + .1 + far + drift(x, z) * sm((z - RZ1 - 1) / 2) : RY - .2); };
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const xs = steps([[-80, -30, 10], [-30, -20, 2], [-20, 16, .75], [16, 30, 2], [30, 80, 10]], 80), zs = steps([[-80, -30, 10], [-30, -18, 2], [-18, 29, .75], [29, 50, 2], [50, 80, 10]], 80);
+    const NX = xs.length, pos = []; for (const z of zs) for (const x of xs) pos.push(x, ground(x, z), z); const idx = [];
+    for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < NX - 1; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g.toNonIndexed(), 'snow', 0, 0, 0, 0, 0, 0, .3);
+    const ice = new THREE.PlaneGeometry(160, RZ1 - RZ0 + 1); ice.rotateX(-Math.PI / 2); put(ice, 'ice', 0, RY, (RZ0 + RZ1) / 2); }
+  // a log along an axis with its cut ends
+  const log = (k, a, b, rad) => { rod(k, a, b, rad, 9); const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]).normalize(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), d);
+    for (const [p, s] of [[a, -1], [b, 1]]) { const c = new THREE.CircleGeometry(rad * .97, 9); c.applyQuaternion(q); const n = d.clone().multiplyScalar(s * .002); c.translate(p[0] + n.x, p[1] + n.y, p[2] + n.z); put(s < 0 ? flip(c) : c, 'end'); } } /* the far end's disc faces along the log, the near end's is turned back */;
+  const flip = g => { g = g.index ? g.toNonIndexed() : g; const P = g.attributes.position.array; for (let i = 0; i < P.length; i += 9) for (let j = 0; j < 3; j++) { const t = P[i + 3 + j]; P[i + 3 + j] = P[i + 6 + j]; P[i + 6 + j] = t; } g.deleteAttribute('normal'); g.computeVertexNormals(); return g; };
+  // the chute: its line from the deck's foot to over the ice, at one grade; two logs side by side in lengths of 5 m on trestles every 2.5 m
+  const CX = -6, CZ0 = -11, CZ1 = 31, CY0 = ground(CX, CZ0) + .45, CY1 = RY + .9, grade = (CY0 - CY1) / (CZ1 - CZ0), cy = z => CY0 - grade * (z - CZ0), CR = .15, CS = .13;
+  const GAP = [14, 19] /* one 5 m length, from a joint to a joint */, trestles = [];
+  for (let z = CZ0; z < CZ1 - .01; z += 5) { const z1 = Math.min(z + 5, CZ1); if (z >= GAP[0] && z < GAP[1]) continue; for (const s of [-1, 1]) log('grey', [CX + s * CS, cy(z) + CR, z], [CX + s * CS, cy(z1) + CR, z1], CR); }
+  for (let z = CZ0 + 1.25; z < CZ1; z += 2.5) { const gy = Math.min(ground(CX - .7, z), ground(CX + .7, z)), top = cy(z), fallen = z > GAP[0] && z < GAP[1];
+    if (fallen) { for (const s of [-1, 1]) rod('grey', [CX + s * .6, ground(CX + s * .6, z) + .1, z], [CX + s * .3 + 1.1, ground(CX + 1.4, z) + .12, z + .5 * s], .08); continue; }
+    const legBot = gy - .25; for (const s of [-1, 1]) rod('grey', [CX + s * .7, legBot, z], [CX + s * .32, top - .02, z], .07); rod('grey', [CX - .45, top - .08, z], [CX + .45, top - .08, z], .08);
+    if (top - gy > 1.0) rod('grey', [CX - .62, gy + .35, z], [CX + .62, gy + .35, z], .05); trestles.push({ z: +z.toFixed(2), top: +top.toFixed(3) }); }
+  // the fallen length: off its trestles and down in the snow beside the gap, askew
+  { const a = [CX + 1.7, 0, GAP[0] + .4], b = [CX + 2.6, 0, GAP[1] - .2]; a[1] = ground(a[0], a[2]) + CR - .04; b[1] = ground(b[0], b[2]) + CR - .04; log('grey', a, b, CR); const a2 = [a[0] + .5, ground(a[0] + .5, a[2] + .3) + CR - .04, a[2] + .3], b2 = [b[0] + .2, ground(b[0] + .2, b[2] + .4) + CR - .04, b[2] + .4]; log('grey', a2, b2, CR); }
+  // the deck: two skids across the slope, the logs on them in rows of 6, 5, 4, 3, each on the two below
+  const DX = 6, DZ = -9, LR = .17, LL = 5, deck = [], sk = [];
+  { const gy = Math.max(ground(DX - 2.5, DZ - 1), ground(DX + 2.5, DZ - 1), ground(DX - 2.5, DZ + 1), ground(DX + 2.5, DZ + 1)); const skY = gy + .05;
+    const skH = Math.max(...[-1.6, 1.6].flatMap(sx => [ground(DX + sx, DZ - 1.6), ground(DX + sx, DZ + 1.6)])) + .12 /* both skids levelled to the highest ground under them */;
+    for (const sx of [-1.6, 1.6]) { log('log', [DX + sx, skH, DZ - 1.6], [DX + sx, skH, DZ + 1.6], .14); sk.push(skH + .14); }
+    const base = Math.max(...sk) + LR; for (let row = 0, n = 6; n >= 3; row++, n--) for (let k = 0; k < n; k++) { const z = DZ + (k - (n - 1) / 2) * 2 * LR, y = base + row * LR * Math.sqrt(3);
+      log('log', [DX - LL / 2 + (F() - .5) * .3, y, z], [DX + LL / 2 + (F() - .5) * .3, y, z], LR); deck.push({ y: +y.toFixed(4), z: +z.toFixed(4), row }); } }
+  // the felling: stumps cut flat, snow on each, an axe left in one
+  const clearOf = (x, z) => Math.abs(x - CX) < 1.8 || (Math.abs(x - DX) < 3.4 && Math.abs(z - DZ) < 2.6) || Math.hypot(x - 11, z - 4) < 4 || Math.hypot(x - 2, z + 4) < 2.6;
+  const stumps = []; for (let k = 0, n = 0; k < 1200 && n < 50; k++) { const x = -18 + F() * 34, z = -16 + F() * 38; if (clearOf(x, z) || stumps.some(s => Math.hypot(s.x - x, s.z - z) < 1.6)) continue; n++;
+    const rr = .18 + F() * .14, h = .45 + F() * .25, gl = Math.min(...[[-1, 0], [1, 0], [0, -1], [0, 1]].map(([a, b]) => ground(x + a * rr, z + b * rr))), gh = Math.max(...[[-1, 0], [1, 0], [0, -1], [0, 1]].map(([a, b]) => ground(x + a * rr, z + b * rr)));
+    put(new THREE.CylinderGeometry(rr, rr * 1.15, h + (gh - gl) + .1, 9), 'log', x, (gl - .1 + gh + h) / 2, z); const top = gh + h; put(new THREE.CircleGeometry(rr * .97, 9).rotateX(-Math.PI / 2), 'end', x, top + .002, z);
+    const cap = new THREE.SphereGeometry(rr * .92, 9, 3, 0, 6.283, 0, Math.PI / 2); cap.scale(1, .3, 1); put(cap, 'snow', x, top, z); stumps.push({ x: +x.toFixed(2), z: +z.toFixed(2), r: +rr.toFixed(3), top: +top.toFixed(3) }); }
+  { const s = stumps[0]; rod('wood', [s.x + .02, s.top + .05, s.z], [s.x + .5, s.top + .35, s.z + .2], .02, 6); put(new THREE.BoxGeometry(.04, .14, .11), 'iron', s.x, s.top + .04, s.z, 0, -.38, .52); }
+  // the gapahuk: a back wall of logs 1 m high, the sides rising to 2.1 m at the open front, a roof of poles, boards and snow, a bed of boughs
+  const SX = 11, SZ = 4, SW = 3.2, SD = 2.4, BK = 1.0, FR = 2.1, LR2 = .11; const sy = Math.max(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => ground(SX + a * SW / 2, SZ + b * SD / 2))) - .15;
+  { for (let y = sy + LR2; y < sy + BK; y += LR2 * 1.8) log('grey', [SX - SW / 2 - .2, y, SZ - SD / 2], [SX + SW / 2 + .2, y, SZ - SD / 2], LR2);
+    for (const s of [-1, 1]) for (let y = sy + LR2 + LR2 * .9; y < sy + FR - .25; y += LR2 * 1.8) { const zb = SZ - SD / 2 + Math.max(0, (y + LR2 - sy - BK) / (FR - BK)) * SD /* where the roof's underside clears this course */; if (zb > SZ + SD / 2 - .4) break; log('grey', [SX + s * SW / 2, y, zb - .05], [SX + s * SW / 2, y, SZ + SD / 2 + .15], LR2); }
+    const pitch = Math.atan2(FR - BK, SD), rl = Math.hypot(FR - BK, SD) + .7, rcy = sy + (BK + FR) / 2 + .14, rcz = SZ + .1;
+    for (const [k, th, off] of [['grey', .1, 0], ['board', .05, .08], ['snow', .22, .2]]) put(k === 'snow' ? new RoundedBoxGeometry(SW + .7, th, rl + .05, 2, .07) : new THREE.BoxGeometry(SW + .6, th, rl), k, SX, rcy + off * Math.cos(pitch), rcz - off * Math.sin(pitch), -pitch, 0, 0, .5);
+    for (let k = 0; k < 9; k++) { const g = new THREE.ConeGeometry(.5, 1.3, 5); g.rotateX(Math.PI / 2); g.scale(1, .18, 1); put(g, 'bough', SX - 1.1 + (k % 3) * 1.1, sy + .2 + Math.floor(k / 3) * .02, SZ - .6 + Math.floor(k / 3) * .55, 0, (F() - .5) * .6); }
+    const FX = SX, FZ = SZ + SD / 2 + 1.4, fy = ground(FX, FZ); for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283, st = new THREE.IcosahedronGeometry(.13, 0); st.scale(1.2, .7, 1); put(st, 'stone', FX + .45 * Math.cos(a), fy + .04, FZ + .45 * Math.sin(a), 0, F() * 3); }
+    put(new THREE.CylinderGeometry(.32, .36, .05, 10), 'char', FX, fy + .02, FZ); for (let k = 0; k < 3; k++) rod('char', [FX + .3 * Math.cos(k * 2.1), fy + .06, FZ + .3 * Math.sin(k * 2.1)], [FX - .1 * Math.cos(k * 2.1), fy + .1, FZ - .1 * Math.sin(k * 2.1)], .045);
+    put(new THREE.SphereGeometry(.4, 9, 3, 0, 6.283, 0, Math.PI / 2).scale(1, .15, 1), 'snow', FX + .05, fy + .05, FZ + .05) /* snow fallen in the cold fire */; }
+  const shelter = { x: SX, z: SZ, w: SW, d: SD, y: +sy.toFixed(3), back: BK, front: FR };
+  // the sledge: two runners turned up at the front, two bunks, a log chained on them
+  const GX = 2, GZ = -4, runners = []; { const gy = (x, z) => ground(x, z); for (const s of [-1, 1]) { const x = GX + s * .45, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10, z = GZ - 1.4 + t * 2.8, up = t > .8 ? Math.pow((t - .8) / .2, 2) * .35 : 0; pts.push(new THREE.Vector3(x, gy(x, z) + .05 + up, z - (t > .8 ? up * .4 : 0))); runners.push([+x.toFixed(2), +z.toFixed(2)]); }
+      put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, .05, 6), 'board'); }
+    for (const dz of [-.8, .6]) { const y = Math.max(gy(GX - .45, GZ + dz), gy(GX + .45, GZ + dz)) + .3; put(new THREE.BoxGeometry(1.15, .12, .14), 'board', GX, y, GZ + dz); for (const s of [-1, 1]) rod('board', [GX + s * .45, gy(GX + s * .45, GZ + dz) + .08, GZ + dz], [GX + s * .45, y, GZ + dz], .035, 5); }
+    const ly = Math.max(gy(GX, GZ - .8), gy(GX, GZ + .6)) + .36 + .2; log('log', [GX, ly, GZ - 2.6], [GX, ly - .1, GZ + 2.2], .2); for (const dz of [-.8, .6]) { const ring = new THREE.TorusGeometry(.24, .015, 4, 14); ring.rotateY(Math.PI / 2); put(ring, 'iron', GX, ly - .02, GZ + dz + .12); } }
+  // the forest round the felling: spruce, and a few left standing in it
+  const trees = []; for (let k = 0, n = 0; k < 1400 && n < 80; k++) { const x = -45 + F() * 90, z = -45 + F() * 72; if ((x > -21 && x < 19 && z > -19 && z < 25) && F() > .04) continue; if (z > RZ0 - 3 && z < RZ1 + 2) continue; if (clearOf(x, z) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 2.6) || stumps.some(s => Math.hypot(s.x - x, s.z - z) < 1.5)) continue; n++;
+    const h = 9 + F() * 9, gy = ground(x, z), w = h * (.21 + F() * .05); rod('bark', [x, gy - .3, z], [x, gy + h * .35, z], h * .016, 6);
+    for (let t = 0; t < 7; t++) { const f = t / 7, y0 = gy + h * (.16 + f * .76), th = h * (.26 - f * .05), rw = w * (1 - f * .8) * (.9 + F() * .2); put(new THREE.ConeGeometry(rw, th, 8, 1, true), 'needle', x, y0 + th / 2, z, 0, F() * 3);
+      if (F() < .8) put(new THREE.ConeGeometry(rw * .62, th * .36, 7, 1, true), 'snow', x + (F() - .5) * rw * .2, y0 + th * .7 + .02, z + (F() - .5) * rw * .2, 0, F() * 3); } trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2) }); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['ice'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, ground,
+    chute: { x: CX, z0: CZ0, z1: CZ1, y0: +CY0.toFixed(3), y1: +CY1.toFixed(3), grade: +grade.toFixed(4), gap: GAP, trestles, R: CR, S: CS }, deck: { x: DX, z: DZ, logs: deck, R: LR, skid: +Math.max(...sk).toFixed(3) },
+    stumps, shelter, sledge: { x: GX, z: GZ, runners }, river: { z0: RZ0, z1: RZ1, y: RY }, trees };
+}

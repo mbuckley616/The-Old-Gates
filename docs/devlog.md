@@ -21617,3 +21617,52 @@ Corrections made during the session:
 - **The smoke is nine soft puffs in a curve.** It does not move in a still picture; in the game it would want to drift.
 - **Nothing says who hunts from here,** or whether the cabin is a lead, a shelter to sleep in, or a merchant's. That is the quest writer's and the systems builder's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 999 — The Mark's abandoned logging camp (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "abandoned logging camp". The precedent is the winter fellings of Norway and Sweden before the railways. Trees were cut while the ground was frozen and sledged down to a deck. A timber chute (tømmerrenne) carried them down the slope onto a river's ice, to go down with the thaw. The men slept in a gapahuk, a lean-to of logs open to its fire. This camp was left mid-season: the deck is still stacked, a log is still chained to its sledge, and one length of the chute has come off its trestles. It is `markLoggingCamp` in `places.js`, with its own view (`places-logging-view.js`, dispatched from `places-view.js`). Nothing new is asked: why it was left is the quest writer's, and no people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, the slope falling to +z at 1 in 4.5 to the river's bank at z 26, the ice from 28 to 40 at y -6.3, the far bank rising beyond):
+- **The felling:** 50 stumps 0.44 to 0.68 m high, each with a cap of snow on its cut top. They are spaced 1.6 m apart or more, clear of the chute, the deck and the shelter. An axe is left in one. Spruce stand round the felling, with a few left standing inside it.
+- **The deck:** two skids across the slope, levelled together. 18 logs 5 m long sit on them in rows of 6, 5, 4 and 3, each in the hollow between the two below.
+- **The chute:** two logs side by side, a trough 0.3 m wide, in lengths of 5 m.
+  - It runs from the deck's foot 42 m down to 0.96 m over the ice, at one grade.
+  - It stands on trestles every 2.5 m, each of two splayed legs and a bar, with a brace where they stand over 1 m.
+  - One length (z 14 to 19) has come off. Its two trestles lie over in the snow, and its two logs lie askew beside the gap.
+- **The gapahuk:** 3.2 by 2.4 m, its back wall of logs 1 m high, its sides rising to 2.1 m at the open front, under a roof of poles, boards and snow.
+  - Inside is a bed of spruce boughs.
+  - Before it is a fire ring with the charred brands of the last fire and snow fallen into it.
+- **The sledge:** two runners turned up at the front and two bunks, with a log chained on them.
+- 32,832 to 33,000 triangles in 13 meshes, and 80 spruce.
+
+The view: `places.html?place=logging`, with `view=camp` (from the felling's top, down the chute to the ice), `chute` (beside the gap and the fallen length), `deck` (under the deck's end), `shelter` (before the gapahuk) and `far` (from the ice, up the slope).
+
+Corrections made during the session:
+- **The budget.** The first build came to 48,149 triangles. The terrain's fine band is now 0.75 m, not 0.5, which brought it to 33,000.
+- **The lean-to's side walls.** They were first written so that every course ran the full depth, through the roof's rising underside. A course above the back wall now starts where the roof clears it.
+- **The check found three faults:**
+  - The gap was declared as z 11 to 16, but the lengths start every 5 m from -11, so the one skipped was 14 to 19. The chute stood across half the declared gap, and the fallen trestle was one that held nothing. The gap is now 14 to 19, both of its trestles lie over, and the fallen length lies beside it.
+  - Each skid was levelled on its own, so one stood 0.04 to 0.09 m under the bottom row. Both are now levelled to the highest ground under either.
+  - The check's ray onto the first stump met the axe left in it. It now looks past the axe.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 143 of 143 pass** (136 after Session 998). Two views are new on the page check, the camp and the shelter, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 32,832 to 33,000 triangles in 13 meshes, 50 stumps and 80 spruce.
+  - **The chute:**
+    - its trough is found at 37 metres of its line, within 0.003 m of one grade;
+    - nothing stands in the gap;
+    - all 34 trestle bars sit 0.014 to 0.018 m under its logs;
+    - its foot is 0.96 m over the ice.
+  - **The deck:** each of the 18 logs rests on the two below it, or on the skid, within 0.02 m.
+  - **The stumps:** 0.44 to 0.68 m over the snow at their edges, with snow on every top.
+  - **The gapahuk and the sledge:**
+    - the gapahuk is met at the hip at the back and both sides, and open at the front;
+    - it has 2.02 m of headroom under the front and snow on its roof;
+    - the sledge's runners are 0.004 to 0.006 m off the snow.
+- **Pictures:** `places-logging-camp.jpg`, `-chute`, `-deck`, `-shelter` and `-far`.
+### Needs eyes
+- **The stumps and the logs read nearly black** against the snow, which is the same trouble as the cabin's. A fresh cut is pale and a winter-old one grey; only the cut ends show it.
+- **The skids are level,** so on the slope one end of each stands clear of the snow, which reads as resting on air. They want blocking under them.
+- **The fallen trestles are two sticks each.** A real one would lie as a frame.
+- **The ice is a flat plane** with a sheen, with no snow on it, no pressure ridges, and no logs lying out on it waiting for the thaw.
+- **The chute has no lining and no side boards.** Real ones were often three logs, or planked, and iced to run faster. This one is two bare logs.
+- **Nothing tells why the camp was left.** That is the quest writer's.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
