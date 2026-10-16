@@ -863,17 +863,23 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   let by = 0, bn = 0; for (const i of hv) if (Math.abs(R0[i * 3]) < .05 && R0[i * 3 + 2] > .08 && R0[i * 3 + 1] > .785 && R0[i * 3 + 1] < .8) { by += P[i * 3 + 1]; bn++; } by /= bn;
   const bb = new THREE.Box3(); for (const i of hv) if (R0[i * 3 + 1] > .755) bb.expandByPoint(V(i));
   const c = bb.getCenter(new THREE.Vector3()), CL = .016, rimY = th => by - .012 - .025 * Math.sin(th) ** 2 - .11 * Math.max(0, -Math.cos(th)) ** 1.5; c.y = by - .07;
-  const { NT, R, at, phRim, thOf, under } = headDome(P, hv, c, rimY, hairPts, CL), TAU = Math.PI * 2;
+  const { NT, R, at: at0, phRim, thOf, under } = headDome(P, hv, c, rimY, hairPts, CL), TAU = Math.PI * 2;
+  // the taller turban (Session 1017, L1; OG-044's and OG-093's men): the same dome, raised and swelled, and five more turns wound up it.
+  // Above the brow line the dome is stretched up by 0.8, and from 2 cm over the edge it stands out from the centre, by 15 per cent at 8 cm; both only move the cloth outward, so the head and the hair stay under it, and the edge itself is not moved
+  const tb = !!D.turban, yS = by - .01, at = !tb ? at0 : (th, ph, off = 0) => { const p = at0(th, ph, off), h = Math.max(0, Math.min(1, (p.y - rimY(th) - .02) / .06)), s = 1 + .15 * h * h * (3 - 2 * h);
+    p.x = c.x + (p.x - c.x) * s; p.z = c.z + (p.z - c.z) * s; if (p.y > yS) p.y = yS + (p.y - yS) * 1.8; return p; };
+  const topY = at(0, 0).y;
   const NP = 14, pos = [], col = [], idx = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * .82))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
   // the crown, from the top to the edge (its seam, and the turns', at the back), a shade lighter than the turns so the rolls read against it
   { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(1.06); for (let j = 0; j < NP; j++) for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, p = at(th, PH_(th) * Math.max(.002, j / (NP - 1))); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); }
     for (let j = 0; j < NP - 1; j++) for (let t = 0; t < NT; t++) { const a = b0 + j * (NT + 1) + t, d = a + NT + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
   // the turns: [over the edge at the front, at the back, the roll's radius]; the polar angle where the dome is at that height, by halving
-  const TURNS = [[.007, .007, .0085], [.03, .016, .0105], [.018, .042, .011], [.05, .036, .0105], [.04, .07, .01]], SIDES = 10, rolls = [];
+  // a turban's five more are thicker, and their heights are shares of the way from the edge to the top, so they cross higher at the front
+  const TURNS = [[.007, .007, .0085], [.03, .016, .0105], [.018, .042, .011], [.05, .036, .0105], [.04, .07, .01], ...(tb ? [[.44, .34, .0135, 1], [.36, .52, .014, 1], [.62, .5, .0135, 1], [.54, .7, .013, 1], [.78, .66, .012, 1]] : [])], SIDES = 10, rolls = [];
   const phAt = (th, y) => { let lo = 0, hi = PH_(th); for (let k = 0; k < 22; k++) { const m = (lo + hi) / 2; if (at(th, m).y > y) lo = m; else hi = m; } return (lo + hi) / 2; };
-  TURNS.forEach(([yf, yb, rad], k) => { const line = [], rr = [];
-    for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, w = (1 + Math.cos(th)) / 2, r = rad * (1 + .14 * Math.sin(3 * th + k * 1.7));
-      line.push(at(th, phAt(th, rimY(th) + yf * w + yb * (1 - w)), r * .4)); rr.push(r); }
+  TURNS.forEach(([yf, yb, rad, share], k) => { const line = [], rr = [];
+    for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, w = (1 + Math.cos(th)) / 2, r = rad * (1 + .14 * Math.sin(3 * th + k * 1.7)), f = yf * w + yb * (1 - w);
+      line.push(at(th, phAt(th, rimY(th) + (share ? f * (topY - rimY(th)) : f)), r * .4)); rr.push(r); }
     line[NT] = line[0].clone(); const g2 = tubeGeom(line, rr, SIDES), b0 = pos.length / 3, a2 = g2.attributes.position.array;
     // flattened onto the head: a band of cloth, wide along the dome and thin out from it
     for (let s2 = 0; s2 <= NT; s2++) { const L = line[s2], n = L.clone().sub(c).normalize(); for (let q = 0; q <= SIDES; q++) { const o = (s2 * (SIDES + 1) + q) * 3, ox = a2[o] - L.x, oy = a2[o + 1] - L.y, oz = a2[o + 2] - L.z, dn = ox * n.x + oy * n.y + oz * n.z;
@@ -889,7 +895,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const ext = new THREE.Box3(); for (let i = 0; i < pos.length; i += 3) ext.expandByPoint(new THREE.Vector3(pos[i], pos[i + 1], pos[i + 2]));
   g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 34 }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'wrap'; mesh.castShadow = mesh.receiveShadow = true; byName['head'].add(mesh);
-  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), border: !!D.wrapBorder } };
+  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb } };
 }
 
 // ── hoop earrings (Session 995, L1; OG-044 and OG-056: the Aurennais' coin and hoop jewellery) ──
@@ -2004,7 +2010,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -2039,7 +2045,7 @@ export const PEOPLES = {
     body: { m: { metres: [1.74, 1.86], muscle: [.5, .66], weight: [.32, .46] }, f: { metres: [1.62, 1.74], muscle: [.42, .56], weight: [.34, .48] } },
     skin: [[.74, .56, .42], [.64, .46, .33], [.52, .36, .25], [.4, .27, .19], [.31, .21, .15]], hair: [[.1, .07, .06], [.16, .11, .08], [.22, .15, .1]], eyes: [[.3, .2, .12], [.22, .15, .1], [.35, .28, .16]],
     styles: { m: { short: 7, tail: 1 }, f: { braids: 3, braid: 2, bun: 3, loose: 1 } },
-    wool: [[.86, .81, .71], [.9, .86, .78], [.25, .35, .55], [.74, .55, .25], [.8, .78, .74]], cloak: .1, brooch: [.7, .55, .25], apron: [.1, 0], mantle: 0, sash: .45, wrap: [.45, .3], earrings: [.6, .25], necklace: [.35, .12], beltCoins: .25, sashBelt: .35, sandals: .7, brow: { m: { thick: [.6, .85], arch: [.4, .6] }, f: { thick: [.45, .65], arch: [.6, .85] } } },
+    wool: [[.86, .81, .71], [.9, .86, .78], [.25, .35, .55], [.74, .55, .25], [.8, .78, .74]], cloak: .1, brooch: [.7, .55, .25], apron: [.1, 0], mantle: 0, sash: .45, wrap: [.45, .3], turban: [.2, .85], earrings: [.6, .25], necklace: [.35, .12], beltCoins: .25, sashBelt: .35, sandals: .7, brow: { m: { thick: [.6, .85], arch: [.4, .6] }, f: { thick: [.45, .65], arch: [.6, .85] } } },
   oldblood: { name: 'the Old Blood', race: { caucasian: [.75, .95], african: [0, .05], asian: [.05, .25] },
     body: { m: { metres: [1.56, 1.66], muscle: [.4, .54], weight: [.28, .4] }, f: { metres: [1.46, 1.56], muscle: [.36, .5], weight: [.3, .42] } },
     skin: [[.82, .78, .76], [.78, .74, .72], [.85, .81, .79]], hair: [[.05, .05, .06], [.08, .07, .08], [.11, .1, .11]], eyes: [[.66, .68, .7], [.58, .6, .63]],
@@ -2083,6 +2089,9 @@ export function peopleGenome(rnd, people, g, o = {}) {
   if (P.sashBelt && !D.tabard && !D.apron && rnd() < P.sashBelt) { D.sashBelt = pick([[.55, .22, .12], [.17, .2, .4]]); if (!D.beltCoins && rnd() > .4) D.belt = null; }
   // sandals in place of boots (Session 1015, OG-056's leather sandals with ankle straps), in the boots' leather, drawn last for the same reason
   if (P.sandals && D.boots && rnd() < P.sandals) { D.sandals = D.boots; D.boots = null; }
+  // the head-wrap wound up into a taller turban (Session 1017, OG-044's and OG-093's men; OG-109's and OG-111's turbans), mostly on the
+  // men, drawn last for the same reason
+  if (P.turban && D.wrap && rnd() < P.turban[sx === 'f' ? 0 : 1]) D.turban = true;
   return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)

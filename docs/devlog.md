@@ -22704,3 +22704,36 @@ Corrections made during the session:
 - **The glen's sides are smooth slopes of turf and rock.** They have no outcrops or fallen trees, and no undergrowth beyond the ferns.
 - **The cave goes 10 m and ends in a dark plane,** as the ice mouth's did. Joining it to the limestone cave (Session 872), whose lake lies under falls of its own, is for whoever places the two together.
 - **Off the road (OG-124) still lacks the camps on the roads.**
+
+## v80 — Session 1017 — The taller turban (L1 and B2, prototype only)
+Backlog L1 has owed "a taller turban" since Session 994 built the Aurennais head-wrap. OG-044 draws most of its Aurennais men in round, pale turbans that stand well above the head, and OG-093's sailors, OG-109's wardrobe matrix and OG-111's headwear row all have them; Session 994's wrap is a close cap over the skull, 6 cm over the brow line. This session winds the wrap up into a turban. The sheets draw it plainly and nothing in the canon is against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`. FREEZE #381 (F3, the land) is open, so nothing in `js/` was touched.
+
+What changed in `people.js` (`buildWrap`):
+- **A `turban` flag on the head-wrap** (it saves and loads; off by default, so every saved wrap is as it was). It is the same wrap on the same fitted dome, with two changes when it is on.
+- **The dome is raised and swelled.** Above the brow line the dome is stretched up by 0.8. From 2 cm over the wrap's edge, it stands out from the head's centre, by up to 15 per cent at 8 cm. Both only move the cloth outward, so the head and the tucked hair stay under it as before, and the edge round the brow, ears and nape does not move. The swell starts 2 cm up because a first try started it at the edge, and a pale ledge of the crown cloth showed under the turns over the ears.
+- **Five more turns** are wound above the wrap's five, 1.2 to 1.4 cm thick (the wrap's are 0.85 to 1.1). Their heights are set as shares of the way from the edge to the top of the dome (0.34 to 0.78), so they follow the dome whatever the head. Like the wrap's, each runs higher at the front or the back than the one under it, so the turns cross over the brow and at the nape.
+- **The roll.** An Aurennais who rolls a head-wrap winds it as a turban at 0.85 if a man and 0.2 if a woman. This is drawn after the sandals, so every earlier roll of a seed is as it was. Of 40 Aurennais, 13 wear wraps and 4 of those are turbans (3 on men). No other people rolls it.
+
+In `builder.js`: a *head-wrap wound up as a turban* checkbox under the dress, and a `zoom` URL parameter. The head view looks 4 cm higher on a turban, because its top was cut off in the frame.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 368 checks pass** (363 after Session 1015; 5 new). `kit.check.mjs` passes.
+- **The new checks**, on Session 994's two heads (a bearded man in white, a woman with braids in saffron with a madder edge), each with the plain wrap and with the turban:
+  - the head is 16 mm under the cloth at the nearest point, and 0 of 27,862 and 27,774 hair points come through;
+  - it clears the brows by 17.4 and 19.3 mm and comes 12.8 cm down at the nape, the same as the wrap;
+  - it has 10 turns and 16,272 triangles (the wrap has 9,072);
+  - it stands 12.6 and 11.2 cm over the brow line, where the plain wrap stands 6.6 and 5.8;
+  - it is 26.4 and 24.6 cm wide, where the wrap is 23.6 and 22.5;
+  - it saves and loads back with `"turban":true`.
+- **The roll check:** 4 of 13 wraps are turbans, 3 of them on men; none without a wrap; none among 30 of the other peoples.
+- **The wrap's own checks** now set `turban: false`, since `wrap:1`'s man rolls a turban under the new roll. The plain wrap's numbers are unchanged.
+- **Pictures:**
+  - New: `builder-turban-man.jpg`, `-side.jpg` (in profile), `-back.jpg`, `-woman.jpg` and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **The top is a smooth dome** of the crown cloth above the last turn. It reads as the cap many turbans are wound round, but OG-044's are wound to the top. A crossing turn over the crown would close it.
+- **The gaps between the turns** show the lighter crown cloth beneath, as thin pale lines. This is most visible from the back. It reads as folds at play distance and as gaps close up.
+- **The underside of the lowest turn** catches the light behind the ears. Session 994's plain wrap does the same; it shows more on white cloth.
+- **It is rigid on the head bone**, as the wrap is: it has no weight and does not sway.
+- **Still owed in L1:** the scarf's tail (a wrap's end hanging to the shoulder), the coins on the head-wrap's edge, and a shoulder sash's end tucked under the sash belt.
