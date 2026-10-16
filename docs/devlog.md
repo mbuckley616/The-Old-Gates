@@ -20915,3 +20915,22 @@ Every one of the 34 suites that enter a gate through the helper gets the same wa
 ### Needs eyes
 Nothing for a playtest: a test-only change, no build tag bump. The six auto/systems suites are the systems builder's to re-measure or answer with the
 rules, and `guardsindoor` the combat resolver card's; the QA Slack post names both.
+
+## v80 — Session 972 — The new look's suite, shards 3 to 6 (QA)
+Session 972 carries on the ledger `docs/qa/looknew.md` from 15 Oct, run by shard of 14 under `node tests/run.mjs --look=new` on auto/qa at Session 971
+(main 148d635), two shards side by side on a 4-core container. `panelfocus`, red on 15 Oct at the 900 s cap with two shards sharing the cores, ran alone
+first. No test changed in this session: every red below fails the same way on its retry, and none of them is the test's to fix.
+
+### Verified (headless Chromium)
+- `panelfocus` alone, new look: passed, 437 s (CI's old look takes 270–546 s). The 15 Oct red was load, not the look.
+- Shards 3 and 4, 01:13–01:57 UTC: 62 of 62 pass (the longest were mainrun 614 s, placesave 482, dunwarm 324). Shards 1 to 4 now stand at 124 of 124.
+- Shards 5 and 6, 01:58–02:49 UTC: 64 of 66 pass. Two are red twice:
+  - `foewarm`: *raising every foe kind compiles no shader and adds no program* read 2 compiles and one new program (41→42, 42→43) after the prewarm ran
+    (33 kinds, 17 programs). This is the game's: on 0.170 the prewarm leaves one foe program to the first draw. Filed in backlog I for the systems builder
+    (`42-zone-enemies.js`, `prewarmFoes`).
+  - `hourhitch`: the worst frame after a change of hour was 12.6 and 13.8 s against the 8 s cap (noon 2.8 and 2.2 s), 896 s with the retry. Not
+    classified: two shards shared the cores, so this needs a run alone in both looks before anyone is named.
+
+### Needs eyes
+Shards 7 to 14 are owed, then `hourhitch` alone. The foe hitch on the new look is a real-GPU question too: one program compiled on a foe's first draw
+costs a few ms on Michael's laptop, against seconds headless.
