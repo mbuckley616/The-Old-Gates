@@ -1,4 +1,4 @@
-// The perks, first wave: Acrobatics' Cat's fall and Armour's Fitted (Session 975; skills and perks A, the build sheet's
+// The perks, first wave: Acrobatics' Cat's fall and Armour's Fitted (Session 977; skills and perks A, the build sheet's
 // third session). Cat's fall (Acrobatics 50): a fall is free to 8 m, not 4 (the sheet's `perkranks`: 4 → 8 m at 49 and 50).
 // Fitted (Armour 25): the five worn pieces (head, chest, hands, legs, feet) weigh half; a shield, a weapon and the bag do not.
 import { boot, check } from './lib/game.mjs';

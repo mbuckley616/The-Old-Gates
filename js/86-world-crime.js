@@ -385,7 +385,7 @@
   const WIT_HEAR=2;
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
   function witnessOf(house,picking){const quiet=!!picking&&perk('locks',75); /* S973 — Quiet work (Locks 75): a pick is seen from half as far */
-    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(quiet)R*=.5;if(sneak)R*=.5*(1-.4*skillLv('stealth')/100)*inTheDarkMult(); /* S941 — Stealth; S974 — In the dark (Stealth 50) */ /* S552 — the dark hood */if(isNight())R*=.5;
+    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(quiet)R*=.5;if(sneak)R*=.5*(1-.4*skillLv('stealth')/100)*inTheDarkMult(); /* S941 — Stealth; S976 — In the dark (Stealth 50) */ /* S552 — the dark hood */if(isNight())R*=.5;
     if(typeof isInterior==='function'&&isInterior()){const inR=quiet?3:6; // indoors: whoever is in the room with you, facing you, and can see you
       if(sleeperNear()){wakeSleeper(intNPCMesh,true);return {name:currentHouse.keeper||'the resident'};} /* S739 — a sleeper sees nothing, and hears within two units */
       if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};

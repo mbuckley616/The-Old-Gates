@@ -308,16 +308,16 @@ function loop(now){
   // v63 — Sneak movement multiplier. When _sneaking is true, player moves
   // at SNEAK_MOVE_MULT (0.7×) of normal. Sprint is suppressed while sneaking
   // (the modal commitment is intentional — Ctrl is a state, not modifier).
-  const _sneakMoveMult = sneakMoveMult(); /* S974 — Soft step (Stealth 25) */
+  const _sneakMoveMult = sneakMoveMult(); /* S976 — Soft step (Stealth 25) */
   tickPlayerPosture(dt,performance.now()/1000); // S281
   const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1); /* S779 — the Gate-Blade drawn; S974 — Road legs (Athletics 75) */
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1); /* S779 — the Gate-Blade drawn; S976 — Road legs (Athletics 75) */
     stamina=Math.max(0,stamina-dt*sprintDrain);
-    if(stamina===0){staminaCD=perk('athletics',100)?0:2;lvAct.staminaDepleted++;} /* S974 — Tireless (Athletics 100): no pause after a sprint */
+    if(stamina===0){staminaCD=perk('athletics',100)?0:2;lvAct.staminaDepleted++;} /* S976 — Tireless (Athletics 100): no pause after a sprint */
     lvAct.sprintDist+=spd;
   }
-  _sprintNow=!!sprinting; /* S974 — Light foot reads it */
+  _sprintNow=!!sprinting; /* S976 — Light foot reads it */
   // Blocking stamina drain (in dungeons and outdoor zones, not shops)
   if(blocking&&!isInterior()){
     const hasShield=EQ.offhand&&EQ.offhand.shieldType==='shield';

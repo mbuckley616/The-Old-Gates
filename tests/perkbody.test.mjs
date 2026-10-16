@@ -1,4 +1,4 @@
-// The perks, first wave: Stealth and Athletics (Session 974; skills and perks A, the build sheet's third session). Built:
+// The perks, first wave: Stealth and Athletics (Session 976; skills and perks A, the build sheet's third session). Built:
 // Stealth's Soft step (25, sneak at walking speed), In the dark (50, sight on you ×0.75 more out of light) and Light foot
 // (75, a spike plate does not trigger while you sneak or sprint); Athletics' Swimmer (25, swim at run speed), Long breath
 // (50, three times the air), Road legs (75, no sprint cost on a road) and Tireless (100, no pause after a sprint).

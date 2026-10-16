@@ -155,10 +155,10 @@ const PERK_DEF={
   locks:[['Feel for it','the pin you work glows faintly at the shear'],['Sure hand','a snapped pick keeps the set pins'],['Quiet work','picking halves a witness’s range'],['No mark','a picked town lock is never found']],
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
 const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50',
-  'stealth:25','stealth:50','stealth:75','athletics:25','athletics:50','athletics:75','athletics:100', /* S974 — Stealth's three and Athletics' four */
-  'acrobatics:50','armour:25']); /* S975 — Cat's fall and Fitted */
+  'stealth:25','stealth:50','stealth:75','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
+  'acrobatics:50','armour:25']); /* S977 — Cat's fall and Fitted */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
-// S974 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.
+// S976 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.
 function sneakMoveMult(){return _sneaking?(perk('stealth',25)?1:SNEAK_MOVE_MULT):1;}
 // Swimmer (Athletics 25): swim at the run's speed; without it the swim is 1.7, the cloak's drag, Athletics ×0.8 to ×1.3
 function swimSpeed(){return perk('athletics',25)?3.83+.37*skillT('athletics'):1.7*cloakSwimMult()*(.8+.5*skillT('athletics'));}
@@ -173,7 +173,7 @@ function outOfLight(){return activeZoneId==='world'&&!(typeof isInterior==='func
 function inTheDarkMult(){return _sneaking&&perk('stealth',50)&&outOfLight()?.75:1;}
 // Light foot (Stealth 75): a spike plate does not trigger while you sneak or sprint (`_sprintNow`, set by the loop)
 let _sprintNow=false;
-// S975 — Cat's fall (Acrobatics 50): a fall is free to 8 m, not FALL_FREE's 4 (10-player.js)
+// S977 — Cat's fall (Acrobatics 50): a fall is free to 8 m, not FALL_FREE's 4 (10-player.js)
 function fallFree(){return perk('acrobatics',50)?8:FALL_FREE;}
 function lightFootNow(){return perk('stealth',75)&&(_sneaking||_sprintNow);}
 // ×0.64 at 5, ×1.0 at 50, ×1.4 at 100: a weapon's damage and a school's power

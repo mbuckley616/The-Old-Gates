@@ -21146,7 +21146,7 @@ The build sheet's third session (`docs/design/skills-and-perks-build.md`) is the
 - **Talk it down** closes the guard's talk and opens it again on the new fine. It is a quick blink, not a line from the guard. If the quest writer wants a word from him, `talkDownTopic` returns it.
 - The perk line on the Skills tab is plain markup, ten pixels high, until the parchment kit (#142 A, the look builder's).
 
-## v80 — Session 974 — Stealth's and Athletics' perks (skills and perks A, session 3, part 2)
+## v80 — Session 976 — Stealth's and Athletics' perks (skills and perks A, session 3, part 2)
 The second part of the sheet's first wave of perks: the body's, outside combat's resolver. Seven perks go live in `PERK_LIVE`, and the Skills tab lights them. Each is one small function in `12-character.js`, read where the thing is decided.
 - **Stealth 25, *Soft step*.** You sneak at walking speed (`sneakMoveMult()`: ×1, not ×0.7). The loop's `_sneakMoveMult` reads it.
 - **Stealth 50, *In the dark*.** Sneaking out of light, sight on you is ×0.75 on top of everything else. The sheet does not say what *out of light* is. The game has one dark rule today: the witnesses' night halving, in the open. So `outOfLight()` is night, in the open world, not indoors. It applies to a witness's reach (`witnessOf`) and to a foe's sight (`_sneakDetectMult`). A lit room or a torch-lit dungeon is not dark here, because nothing in the game says so yet. When a light rule arrives, it belongs in `outOfLight()`.
@@ -21173,7 +21173,7 @@ The second part of the sheet's first wave of perks: the body's, outside combat's
 - **In the dark** only bites at night outdoors. Michael may want dungeons, cellars and unlit rooms to count. That needs a light rule, which the game does not have.
 - **Swimmer** at 25 more than doubles the swim. A Scout or a Duelist, majoring in Athletics, starts with it.
 
-## v80 — Session 975 — Cat's fall and Fitted (skills and perks A, session 3, part 3)
+## v80 — Session 977 — Cat's fall and Fitted (skills and perks A, session 3, part 3)
 Two more of the sheet's first wave, both in code that combat's resolver (PR #356) leaves alone:
 - **Acrobatics 50, *Cat's fall*.** A fall is free to 8 m, not 4 (`fallFree()`). Session 429's `fallLand` reads it for the blow, the landing shake and the Acrobatics use for a jump that lands higher than it left. The 6% of your health a metre past the free height is unchanged. The sheet moved Cat's fall from the platforming page's 75 to 50, and its `perkranks` suite measures 4 → 8 m at 49 and 50; this follows the sheet.
 - **Armour 25, *Fitted*.** The five worn pieces weigh half: head, chest, hands, legs and feet (`ARMOUR_SLOTS`, the same five that make an Armour use). A shield, the weapon, rings and the cloak weigh as before. `equipWeight` carries it, so the burden, the overload and the roll's heavy line all feel it.
@@ -21187,3 +21187,17 @@ Two more of the sheet's first wave, both in code that combat's resolver (PR #356
 - `falls`, `beastfall`, `fortify`, `roll`, `perkbody`, `perkhand`, `armourlines-numbers` and `skillsave` pass.
 ### Needs eyes
 - **Fitted at 25** is early. A Warrior or a Sentinel majors in Armour and starts at 25, so plate weighs half from the first minute. The sheet puts it there. Play will show whether the heavy line's burden, which the armour lines were balanced on (S564), still bites.
+
+## v80 — Session 978 — One shrine bears its god's name (QA's `bridgenames` note, backlog I)
+QA found *no two named places share a name* failing at random on CI: once two shrines of one god had both built, two places read *Shrine of Na Beithígh*. The naming pass (`uniqueSiteNames`, Session 756) makes every shrine's name unique when the world is laid out. Then `buildShrine` overwrote it with *Shrine of* its god when the cell built, and six gods are shared among more shrines than that. Whether two names collided depended on which cells the walk had built, which is why the suite was flaky and not red.
+
+Now `godShrineOwner(god)` (`87-world-quests.js`) gives each god's name to one shrine: the first of its shrines in the grid's order, read once from every cell's sites. That is the same in every game and whatever has loaded. Any other shrine of that god keeps the name the pass gave it, from its culture's bank in the shrine's form (*Shrine of Heifialos*). Its god is unchanged: the altar's prayer, the dome's tint, the boon and the god's day still read `S.god`. No new words. QA left open whether the canon wants another form for a second shrine of one god (*… at <place>*). That is the quest writer's call, and `buildShrine` is the one line to change.
+### Verified (headless Chromium)
+- **`shrinenames`** (new), 6 of 6:
+  - Six gods have shrines, and each god's name goes to the first of its shrines in the grid's order.
+  - An Chloch has two shrines, `c0_0_i0` and `c5_0_i1`. The second is built first, which under the old code would have taken the god's name. It stays *Shrine of Heifialos*, with An Chloch as its god. The first then builds as *Shrine of An Chloch*.
+  - Across all twelve by twelve cells no two named places share a name. No page errors.
+- `bridgenames`, `poinames`, `pois`, `poipreview`, `renewal`, `calendar`, `dayseed`, `townbio` and `makertools` pass.
+**A correction to numbering.** This run numbered its sessions from 973 at its start, and the bodies builder took 974 and 975 on its own branch meanwhile. So the Stealth and Athletics perks are Session 976 (pushed as *Session 974*, commit `c0f71e78`), Cat's fall and Fitted are Session 977 (pushed as *Session 975*, `e360f8f4`), and this is 978. The entries, the code comments and the tests carry the new numbers; the two commit messages and their PR comments keep the old ones.
+### Needs eyes
+- A player who knew a shrine as *Shrine of An Chloch* in an old save may find it under its other name, if it was not the first. Saves key shrines by id, so nothing is lost but the label.

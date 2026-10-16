@@ -444,7 +444,7 @@ const giver=`${lord.title} ${lord.name}`;
     const god=godOf(site);parts.push({geo:new THREE.TorusGeometry(5.2,.3,6,24),color:c(0xe0d8c8),y:5.35,rx:Math.PI/2},{geo:new THREE.CylinderGeometry(.9,1.1,1.1,10),color:c(0xd0c8b8),y:1.45},{geo:new THREE.BoxGeometry(1.6,.12,1.0),color:c(0xe8e0d0),y:2.05});
     const m=poiLod(group,shrineGeoHi(),mergeParts(parts),cx,y,cz); // S204 — fluted columns, bases and capitals, a moulded altar
     const flame=new THREE.Mesh(new THREE.ConeGeometry(.22,.6,6),new THREE.MeshBasicMaterial({color:0xfff0b0}));flame.position.set(cx,y+2.45,cz);flame.userData.noBake=true;group.add(flame);const l=regLight(0xfff0c0,1.4,12,site.id);l.position.set(cx,y+2.8,cz);
-    sol.push({cx,cz,rx:.6,rz:.6});S.altar={x:cx,z:cz};S.god=god;site.name=`Shrine of ${god.name}`;
+    sol.push({cx,cz,rx:.6,rz:.6});S.altar={x:cx,z:cz};S.god=god;if(godShrineOwner(god)===site.id)site.name=`Shrine of ${god.name}`;
     { // the steps and the floor are footholds: two rings, then the dais
       ZONES.world.platforms.push({x0:cx-7.4,x1:cx+7.4,z0:cz-7.4,z1:cz+7.4,y:y+.5,shrine:site.id},{x0:cx-6.4,x1:cx+6.4,z0:cz-6.4,z1:cz+6.4,y:y+.9,shrine:site.id});
       const dome=new THREE.Mesh(new THREE.SphereGeometry(5.6,20,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshLambertMaterial({color:god.tint,side:THREE.DoubleSide}));dome.position.set(cx,y+5.4,cz);dome.castShadow=true;dome.userData.noBake=true;group.add(dome);S._domeSep=true;}
@@ -454,6 +454,12 @@ const giver=`${lord.title} ${lord.name}`;
   // S338 (Michael's A on #60) — the Boon of Renewal: health, stamina and mana each come back half a point a second while
   // it lasts (a Mild tonic's rate, over the boon's whole span); the main loop reads it beside the regen tonics
   const GODS=[{key:'muir',name:'An Mhuir',en:'the Sea',boon:{type:'swiftness',mult:1.25,label:'the Boon of the Road'},tint:0x7a9ab0},{key:'speir',name:'An Spéir',en:'the Sky',boon:{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},tint:0xa8b8d0},{key:'beithigh',name:'Na Beithígh',en:'the Beasts',boon:{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},tint:0x8a7a5a},{key:'cloch',name:'An Chloch',en:'the Stone',boon:{type:'warding',mult:.75,label:'the Boon of Stone'},tint:0x8a8478},{key:'teallach',name:'An Teallach',en:'the Hearth',boon:{type:'spellCost',mult:.7,label:'the Boon of the Mind'},tint:0xb8946a},{key:'fiodoir',name:'An Fíodóir',en:'the Weaver',boon:null,tint:0xc8b8d8}];
+  // S978 — one shrine bears its god's name: the first of that god's shrines in the grid's order, the same whatever has loaded.
+  // Any other keeps the unique name the naming pass gave it (uniqueSiteNames, S756); its god is still in its prayer and dome.
+  // Two built cells had made two *Shrine of Na Beithígh* (QA, 15 Oct, `bridgenames`).
+  let GOD_SHRINE=null;
+  function godShrineOwner(god){if(!GOD_SHRINE){GOD_SHRINE=new Map();for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j).sites.forEach(t=>{if(t.kind!=='shrine')return;const n=godOf(t).name;if(!GOD_SHRINE.has(n))GOD_SHRINE.set(n,t.id);});}
+    return GOD_SHRINE.get(god.name);}
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
   function shrinePrompt(){for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
