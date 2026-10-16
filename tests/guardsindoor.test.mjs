@@ -84,12 +84,15 @@ stop();
 await page.evaluate(() => { PHP = maxHP; const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /not pay/.test(x.textContent)); if (b) b.click(); });
 await g.frames(3);
 const f0 = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); return e ? { name: e.displayName, hp: e.hp, inRoom: e.mesh && e.mesh.parent === interiorScene, inside: isInterior() } : null; });
-const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = PHP; let solidT = 0, minD = 99;
-  for (let t = 0; t < 8; t += 1 / 60) { WORLD.tickInterior(1 / 60, performance.now()); if (intSolidAt(e.x, e.z, .25, 0)) solidT++; minD = Math.min(minD, Math.hypot(e.x - px, e.z - pz)); }
-  return { lost: hp0 - PHP, minD: +minD.toFixed(2), solidFrames: solidT, y: +e.mesh.position.y.toFixed(2) }; });
+// (S988: health filled every tick and his blows summed. He paces his blows on the wall clock, so a slow runner's eight
+// seconds held more of them, and at S940's retune, a tenth of your health a blow, they took you under a fifth: the yield
+// opened here, its dialog paused the loop, and none of your swings below could land)
+const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); let lost = 0, solidT = 0, minD = 99;
+  for (let t = 0; t < 8; t += 1 / 60) { PHP = maxHP; WORLD.tickInterior(1 / 60, performance.now()); lost += maxHP - PHP; if (intSolidAt(e.x, e.z, .25, 0)) solidT++; minD = Math.min(minD, Math.hypot(e.x - px, e.z - pz)); }
+  PHP = maxHP; return { lost, dlg: dlgOpen, minD: +minD.toFixed(2), solidFrames: solidT, y: +e.mesh.position.y.toFixed(2) }; });
 console.log('refused', JSON.stringify(d5), JSON.stringify(f0), JSON.stringify(fight));
 check('refuse indoors and he draws in the room: a Town Guard there, in the room’s scene', d5.open && f0 && f0.inside && f0.inRoom && f0.name === 'Town Guard', { d5, f0 });
-check('he closes and strikes, on the floor and never inside the furniture', fight.lost > 0 && fight.minD < 2.2 && fight.solidFrames === 0 && fight.y === 0, fight);
+check('he closes and strikes, on the floor and never inside the furniture', fight.lost > 0 && !fight.dlg && fight.minD < 2.2 && fight.solidFrames === 0 && fight.y === 0, fight);
 // your blows land on him (S949: health and posture filled before each swing, as `fistfight` does; at a sixth his blows in the
 // meantime broke your posture again and again, and a staggered player cannot swing)
 const hit = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const e = ZONES.world.enemies.find(e => e._guard && e._indoor && !e.dead); const hp0 = e.hp;
