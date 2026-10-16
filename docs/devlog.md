@@ -21700,3 +21700,17 @@ What changed in `people.js`:
 - **Over a cloak or a bib** it is not handled, so it is not rolled with either.
 - **The men's arm lift** (0.18 radians, about 10 degrees) holds the right hand a little off the hip. A broader-hipped man may need more; the lift stops at 0.3.
 - **The print** is borders only. OG-056's block-printed field would want a pattern in the shader, as the woven cuff band has.
+
+## v80 — Session 990 — The sash's printed field (L1 and B2, prototype only)
+Session 989 left the sash with borders only, and said OG-056's sashes are block-printed. This adds the print. It touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **A row of printed blocks down the middle of the field.** They are 2.2 cm wide and 2.5 cm long (two steps of the loop), with two steps between, in the border's colour. Each block is its own pair of triangles, so its edges stay sharp in vertex colours, and it lies 0.8 mm out from the band along the surface's normal, so it never fights the field for depth. A band carries 72 blocks, which add 144 triangles (1,008 in all).
+- The dress takes `sashPrint` (on by default); `false` gives the plain band.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 292 checks pass** (289 before). The three new checks find 72 blocks (144 triangles over the plain band's 864) on each of the three sashes. The Session 989 checks pass as before: nothing comes through, no arm is through, and the arm lifts are unchanged.
+- **Pictures:** `builder-sash-man.jpg`, `builder-sash-back.jpg`, `builder-sash-woman.jpg` and `builder-peoples.jpg` were re-shot.
+
+### Needs eyes
+- **One motif.** The print is a single row of squares. OG-056's borders show richer block prints, and a lozenge or a stepped motif would want the band in finer steps or a pattern in the shader.
