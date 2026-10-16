@@ -22765,3 +22765,44 @@ Corrections made during the session:
 - **Nobody tends it.** The colliers are the bodies builder's, and the camp's people are the quest writer's to name.
 - **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
 - **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
+
+## v80 — Session 1021 — The Gatelands' merchants' halt (card F8, prototype only)
+The freeze for F3 (#381) is still open, so this run kept to the prototypes. Backlog L10's *Off the road* (OG-124) still had four camps on the roads; the charcoal burners' came first (Session 1016), and this session builds the merchants'. OG-124's panel 4 shows it as covered waggons drawn up under trees with a fire. It is `gatelandsMerchantCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=merchants`.
+
+The precedents are the carriers' tilt waggons of the old roads, which stood the night on a green by water rather than pay for an inn's yard, and the drovers' stances on the Highland roads: a green by a ford, a fire, the beasts on a line. The chapman's trestle under a canvas fly at a fair green is the third. The halt is built at true size on a green that rises at 1 in 20 from a road, with a stream crossing the road:
+- **Two tilt waggons:** each bed is 3.6 by 1.4 m, on wheels of 0.72 m behind and 0.52 m before, twelve and ten spokes with iron tyres. Five hoops carry a canvas tilt to 2.8 m at the crown, and the shafts rest on the grass ahead. The first is drawn up along the road with sacks and crates in its bed; the second is turned in behind the fire. Each wheel is set on the ground under it, so the axles follow the slope.
+- **The stall:** a canvas fly is laced along the first waggon's tilt and carried 3 m out on two poles, each guyed to a peg at 45 degrees away from the way in. Under it are two trestles, one of cloth bolts in madder, woad and weld in two courses, one of five crocks and jugs and a small iron-bound chest. A lantern hangs on the right pole.
+- **The fire:** a ring of stones and embers, a crane of two forked irons and a bar, a pot on its hook, two seat logs, and a thin smoke.
+- **The tent:** a ridge tent 2.6 by 2.2 m with walls of 0.45 m and its ridge at 1.95 m. Its door faces the fire with the flaps tied back, and a bedroll and a chest are inside. The door's guy is a bridle to two pegs, so the way in is clear.
+- **The line:** a picket rope between two posts, 1.3 m at the posts, with hay and two buckets under it and a bale of fodder. The beasts are the bodies builder's.
+- **The goods:** four casks, five wool bales in rope bands (one laid across two) and three crates, stacked by the second waggon.
+- **The stream:** water 0.18 to 0.3 m deep in a gravel bed, 0.5 m or more under its banks. The road goes through it at a ford 0.19 m deep. Six stepping stones cross 2.6 m upstream of the road, and the west bank is eased to 1 in 4 at a watering place where the path comes down.
+- **Round it:** a thorn hedge along the road's far side with gaps, nine ash on the green's edge and seven alder by the water. Trodden paths run from the road into the stall, round the first waggon to the fire and the tent, and to the line and the water.
+- **The size:** 35,800 to 36,200 triangles in 20 meshes.
+
+The views are `camp` (from the road), `stall`, `fire`, `ford` and `far`, and `&dusk` gives the evening with the lantern and the fire lit.
+
+Corrections made during the session:
+- **Meshes.** The first build came to 22 meshes. The stepping stones and the fire's ring now share the stream bed's gravel, and the hedge shares the trees' leaf, which gives 20.
+- **The stream** first read as a black road from above, because its water was nearly black. It is now a grey-green that reads as water. Its strip is also wider than the channel, so no bare bed shows at the edges.
+- **The hay** first read as pumpkins under the thatch texture. It is now a plain straw colour. The collar on the bale read as a tyre and was taken off.
+- **The path to the tent** first came at the door from inside the tent: a sign was wrong, and the check found canvas over the walker's head. The door's single guy also crossed the way in at hip height, so it is now a bridle to two pegs.
+- **The top bale** first sat over the gap between two rows. It now lies across the two in the front row. The check's single ray fell through the gap between them, so it now casts three rays.
+- **The way down to the water** was a 1-in-2 bank, with steps of 0.3 m. The west bank is eased where the path comes down, and the worst step is now 0.17 m.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 185 of 185 pass** (176 after Session 1016). Nine checks are new. The halt's `camp` view and its `fire` view at dusk render with no page errors, and seven checks run over three keys:
+  - **The builds:** each key builds the same twice, with 35,768 to 36,208 triangles in 20 meshes and 16 trees. The waggons' 8 wheels are −0.002 to 0.001 m off the ground.
+  - **The stall:** there are 2.23 m or more under the fly before the tables and 2.32 m behind them. The fly is within 0.004 m of its poles' tops and 0.11 m off the tilt, and its pegs are within 0.03 m of the ground.
+  - **The tables:** their feet are within 0.002 m of the ground, and all 14 goods sit on a board (0 m).
+  - **The walk:** 85 half-metres from the road into the stall (3 under the fly), to the fire, into the tent (4 inside) and down to the water. There is ground under each, no step is over 0.17 m, and there is 0.69 m or more clear at the hip and the head (inside the tent, at the hip only). Nothing is over the head below 2.0 m (1.75 m in the tent).
+  - **The tent, the fire and the line:** the tent's door is 1.39 m wide at the hip, with 1.9 m to its ridge. The fire is 3.38 m off the paths, with the pot 0.27 m over the embers. The picket rope is 1.17 to 1.18 m over the ground at its lowest.
+  - **The stream:** it is 0.5 m or more under its banks and 0.18 to 0.3 m deep, with the road 0.19 m under it at the ford. The stepping stones' tops are 0.10 to 0.15 m over the water, with gaps of 0.26 m at most, and the end ones are 0.6 m or less from dry land.
+  - **The stack:** all 12 stacked goods are on the ground or on the one under them (within 0.02 m).
+- **Pictures:** `places-merchants-camp.jpg`, `-stall`, `-fire`, `-ford`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **Nobody keeps it.** The carriers, their beasts on the line and what they sell (and at what price) belong to the bodies builder, the quest writer and the systems builder.
+- **The tent's tied-back flaps** read as thin spikes at its door corners from some bearings. They want a rolled flap instead.
+- **The smoke and the stream are still,** the same want as the charcoal camp's and the falls': a moving-air and moving-water shader.
+- **The ash and alder are the kit's blob trees,** and the hedge is lumps of leaf.
+- **Still open in OG-124:** the hunters', pilgrims' and abandoned expedition's camps, and the small mysteries.
