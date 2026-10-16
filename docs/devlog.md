@@ -21693,3 +21693,15 @@ The job's words and its target still name the real door once it is placed (`dung
 ### Needs eyes
 - **A town's jobs change once, for every player.** A town that used to give road jobs before its neighbours loaded now gives the retrieve or the deliver its id rolled. A cull's beast can differ near a biome's edge. Jobs already in a save are kept as they were given.
 - **A home fort's choice reads its road's straight line.** A fort near the 700 edge can be counted in or out against where it actually stands, by up to about 175 m. It is the same in every game, which is the rule; the job still sends you to the real door.
+
+## v80 — Session 984 — The guard gives way in his people's voice (quest review Finding 31)
+The quest review (run 19, on `auto/quests`) found the one gap in Session 973's *Talk it down*. The fine halves and the halt opens again on its first line, so the guard who has just been argued down by half says *Halt. There’s a fine of 38 gold on you* as if the player had said nothing. Every other turn at the halt has a line in each people's voice. Applied as the review writes it, in `86-world-crime.js`:
+- `TALKED_LINES` beside `YIELD_LINES`, its four lines word for word.
+- `talkDownTopic`'s `fn` sets `c.talkedNow` once `talkDownFine` succeeds.
+- `confront` and `confrontIndoor` open on the people's line when it is set. `talkedGreet` clears it as the dialog opens, so the next halt in that town greets as before.
+
+The one difference in form: the review's ternary is a small function, `talkedGreet`, so that both halts share it and the flag is cleared in one place. The topics, the fine and the log line are unchanged.
+### Verified (headless Chromium)
+- `perkhand`, extended, 16 of 16. At Dunmore (Gatelander), Speech 50: the fine goes 75 → 38. The reopened halt says *A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: 38 gold, and we’ll say no more about it.*, with no *Halt*. The next halt there, indoors, greets as before (*Stand a moment. There’s a fine of 38 gold owed in Dunmore…*), and the flag is gone.
+### Needs eyes
+- Nothing for a playtest beyond reading the four lines in their towns.

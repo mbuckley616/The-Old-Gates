@@ -1,6 +1,6 @@
 // The perks, first wave: the hand and the word (Session 973; skills and perks A, the build sheet's third session). A perk
 // is read from its skill at 25, 50, 75 and 100. Built here: Locks' Feel for it (25), Sure hand (50) and Quiet work (75),
-// Speech's Haggle (25) and Talk it down (50); the Skills tab shows each skill's four, lit when held.
+// Speech's Haggle (25) and Talk it down (50), the guard giving way in his people's voice (Session 984, quest review Finding 31); the Skills tab shows each skill's four, lit when held.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -42,8 +42,9 @@ const r = await page.evaluate(async () => {
   set('speech', 50); confront(n, S, c); out.halt50 = labels();
   const btn = [...document.querySelectorAll('#dlg-choices > button')].find(b => /Talk it down/.test(b.textContent)); if (btn) btn.click();
   await new Promise(res => setTimeout(res, 300));
-  out.fine = c.bounty; out.halt2 = labels(); try { closeDialog(); } catch (e) {}
-  confrontIndoor({ npc: n }, S, c); out.indoor2 = labels(); try { closeDialog(); } catch (e) {}
+  const say = () => (document.getElementById('dlg-text') || {}).textContent || '';
+  out.fine = c.bounty; out.halt2 = labels(); out.said2 = say(); out.people = peopleOfSite(S.site); out.want2 = TALKED_LINES[out.people](38); try { closeDialog(); } catch (e) {}
+  confrontIndoor({ npc: n }, S, c); out.indoor2 = labels(); out.saidIn = say(); out.talkedNow = !!c.talkedNow; try { closeDialog(); } catch (e) {}
   delete C[S.site.id];
   // the Skills tab: four perks under Locks; at Locks 50 two are lit; Speech's 75 and 100 are marked not yet built
   set('locks', 50); set('speech', 50); openHub('skills');
@@ -61,6 +62,8 @@ check(`Quiet work: at Locks 75 a pick is seen to 6 units, not 8; a walk past sti
 check(`at Locks 74 the pick is seen at 8 (${JSON.stringify(q74)})`, q74 && q74[2][1], r.quiet);
 check(`Talk it down is offered at Speech 50 (${r.halt50 && r.halt50.length} choices), not 49`, r.halt50.some(l => /Talk it down/.test(l)) && !r.halt49.some(l => /Talk it down/.test(l)), r);
 check(`it halves the fine, 75 → ${r.fine}, and the halt reopens on it`, r.fine === 38 && r.halt2.some(l => /\(38 gold\)/.test(l)), r);
+check(`the guard gives way in his people's voice (${r.people}): "${r.said2}"`, r.said2.includes(r.want2) && !/Halt/.test(r.said2), { said2: r.said2, want2: r.want2 });
+check(`and the next halt in that town greets as before: "${r.saidIn.slice(0, 60)}…"`, !r.saidIn.includes(r.want2) && /38/.test(r.saidIn) && !r.talkedNow, { saidIn: r.saidIn });
 check('once in a town: it is not offered again, in the street or indoors', !r.halt2.some(l => /Talk it down/.test(l)) && !r.indoor2.some(l => /Talk it down/.test(l)), r);
 check(`the Skills tab: Locks shows four perks, two lit at 50 (${r.tabLocks.map(p => p.t + (p.held ? '*' : '')).join(', ')})`, r.tabLocks.length === 4 && r.tabLocks.filter(p => p.held).length === 2, r.tabLocks);
 check(`Speech 75 and 100 are marked not yet in the game`, r.tabSpeech[2].later && r.tabSpeech[3].later && !r.tabSpeech[0].later, r.tabSpeech);

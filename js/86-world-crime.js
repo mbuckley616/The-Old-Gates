@@ -535,6 +535,7 @@
       poor:'You have not got it. Find it.',
       pay:'It is paid.',
       refuse:'Then the blade.'}};
+  const TALKED_LINES={gatelander:f=>`A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: ${f} gold, and we’ll say no more about it.`,markman:f=>`Aye, all right. Half. ${f} gold, and don’t make me sorry.`,aurennais:f=>`You argue it well, Master. The town will accept half, on these terms: ${f} gold, and the matter closed.`,oldblood:f=>`Half, then. ${f} gold.`}; /* S984 — quest review Finding 31: the guard gives way in his people's voice */
   const YIELD_LINES={
     gatelander:{greet:d=>`A bent knee mends faster than a broken head. ${d} gold, or a night in the cells.`,
       poor:'You haven’t got it. Then it’s the cells, or the sword again, and I’d not choose the sword.',
@@ -554,16 +555,17 @@
       cells:'Come. The cells are quiet.'}};
   // S550 — on the feast day a fine was halved, the guard says so after the halt (the Old Blood keep no watch: the Gatelander line)
   function feastFineLine(S,c){if(!c||c.feast!==dayNow()||typeof FEAST_FINE==='undefined')return '';return ' '+(FEAST_FINE[peopleOfSite(S.site)]||FEAST_FINE.gatelander);}
+  function talkedGreet(S,c,fine){if(!c||!c.talkedNow)return '';delete c.talkedNow;return (TALKED_LINES[peopleOfSite(S.site)]||TALKED_LINES.markman)(fine);}
   function haltLines(S){return HALT_LINES[peopleOfSite(S.site)]||HALT_LINES.markman;}
   function yieldLines(S){return YIELD_LINES[peopleOfSite(S.site)]||YIELD_LINES.markman;}
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
       ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
       ...talkDownTopic(S,c,()=>confront(n,S,c)),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
@@ -572,7 +574,7 @@
   function talkDownFine(S,c){if(!c||c.talked||c.bounty<=0||!perk('speech',50))return false;c.bounty=Math.ceil(c.bounty/2);c.talked=1;
     if(typeof addLog==='function')addLog('⚖',`Talked the fine at ${S.site.name} down to ${c.bounty} gold.`);return true;}
   function talkDownTopic(S,c,reopen){if(!c||c.talked||!perk('speech',50))return [];
-    return [{label:'Talk it down. (Speech)',quest:true,fn:()=>{if(!talkDownFine(S,c))return '';showMsg(`The fine is halved: ${c.bounty} gold.`,'#c8e88a');
+    return [{label:'Talk it down. (Speech)',quest:true,fn:()=>{if(!talkDownFine(S,c))return '';c.talkedNow=1;showMsg(`The fine is halved: ${c.bounty} gold.`,'#c8e88a');
       setTimeout(()=>{try{closeDialog();}catch(e){}reopen();},60);return '';}}];}
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
