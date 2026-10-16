@@ -21861,3 +21861,46 @@ The critic found two things wrong with the Gate-Blade's stone (Session 802). It 
 - `bladestone --look=new` green; `gateblade`, `bladekey`, `makershermit` and `crownclaim` pass.
 ### Needs eyes
 - **Plainly visible from its road.** The stone is 4 m off the gate's axis at least, by the spur's mouth. Whether it reads as *the stone by the gate* from the road, or is lost against the curtain wall behind it, is for a playtest, and the prop is the look builder's.
+## v80 — Session 991 — The Gatelands' peat-cutting camp (card F8, prototype only)
+The first of OG-124's places off the road that L5 and L10 had not yet built: the Gatelands panel's "peat-cutting camp" (OG-124, with OG-014's bogland and OG-099's fens). The precedent is a family's hand-cut turf bank on a raised bog, as in Connemara and the Bog of Allen: the face cut with the sleán in two spits, the sods thrown up onto the bank to dry, first spread and then footed on end, the dry turf built into a rick by the bog road to wait for the cart, and a cutters' bothy of sods under thatch with a fire at its door. It is `gatelandsPeatCamp` in `places.js`, with its own view (`places-peat-view.js`, dispatched from `places-view.js`). Nothing new is asked: who cuts here, and whether the camp is worked or left, is the quest writer's, and no people are drawn. It touches only the prototype folder.
+
+**The camp** (at true size, y 0 the bog's surface, the face along x at z 0 and the cutaway to +z):
+- **The bank:** a face 36 m long, cut down about 1.3 m in two spits: a bench 0.8 m down and 0.45 m wide, then the floor. Its west end is cut steep and its east end ramps up at about 1 in 5 for the barrow. The face is flat-shaded peat, so its edge is not smoothed into the bog.
+- **The cutaway:** a wet floor with black water in its hollows, dry for 2 m out from the face where the cutter stands. The last generation's bank lies slumped and heathered 12 to 16 m out.
+- **On the bank:** the newest sods spread in nine rows to skin over, and older ones footed in sixes (five on end leaning in, one laid across), about 110 footings. There is a turf barrow half loaded, a creel, and the sleán standing in the bank by the lip.
+- **By the road:** a gravel bog road, a rick of dry turf beside it (4.2 by 1.5 by 1.4 m, its outside laid in courses), and the bothy: 3.6 by 2.8 m of sod walls 1.5 m high, a thatched roof held down by four ropes with stones hanging at the eaves, and a low door to the road. The fire burns on a ring of stones before it, with a crane of two forked sticks and a kettle on its hook.
+- **The bog:** heather and bog cotton on the uncut ground. The ground goes flat at the patch's edge, where four bands carry it out into the mist.
+- 39,000 to 39,800 triangles in 20 meshes.
+
+The view: `places.html?place=peat`, with `view=camp` (from the bog road), `bank` (on the cutaway's floor at the face), `spread` (on the bank among the footings), `hut` (by the fire) and `far` (from high over the cutaway).
+
+Corrections made during the session:
+- **The sky.** It first rendered black: the camera's far plane (3,000) was inside the sky dome (26,000).
+- **The fire.** It first stood on the road's edge. The bothy moved 1.6 m north.
+- **The face.** It first read black. Its normals had been smoothed with the bog's at the lip, and the peat was too dark under the rock texture. The face is now flat-shaded, and the peat, the floor and the sods are on the plaster texture in their own browns.
+- **The footings.** They first carried their top sod 3 cm over four leaners and read as little figures in hats. They are now five leaners with the sixth sat down among their tops.
+- **The edge.** Gaps showed white at the patch's edge where the hummocks dipped under the outer bands. The hummocks now fade to flat there.
+- **The check found two faults.** Water stood at the face's foot (8 to 26 samples in the first 1.5 m), and the floor's depth ran wider than the comment claimed. The floor is now lifted 0.14 m for 2 m out from the face, and the check's ranges are the ones designed.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 119 of 119 pass** (111 after Session 981). Two views are new on the page check, the camp and the hut, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 39,016 to 39,784 triangles in 20 meshes, 108 to 115 footings and 414 to 436 sods spread.
+  - **The bank, at 105 points:**
+    - the lip on the bog;
+    - the bench 0.68 to 0.92 m down (the hummocks) and 0.445 m wide;
+    - the floor 1.11 to 1.49 m down;
+    - the face the peat's and upright to 0.004 m.
+  - **The water:** over 19 to 20% of the floor, none in the first 1.5 m from the face, none on the bank.
+  - **The sods:** every footed sod's foot within 0.025 m of the bog; every spread sod found lying on it, its top 0.10 to 0.14 m up.
+  - **The sleán:** its blade 0.19 to 0.20 m into the bog, its grip 1.12 m up.
+  - **The bothy and the fire:**
+    - the door 0.78 m wide and 1.42 m high, with 1.8 m of room behind it;
+    - the kettle 0.32 m over the embers;
+    - the fire 1.6 m off the road.
+- **Pictures:** `places-peat-camp.jpg`, `-bank`, `-spread`, `-hut` and `-far`.
+### Needs eyes
+- **The footings read as a field of small cones** from the bank. That is roughly right, but real ones are looser and more ragged.
+- **The pools are smooth ellipses of black water,** with no rushes or sphagnum at their edges.
+- **The bothy's roof is two smooth slabs of thatch.** Its sod walls are the turf texture, not coursed sods. There is no smoke and no interior.
+- **The heather is low-poly blobs.** The bog cotton heads are a little large.
+- **Peat cut on a bog is a quest writer's and a systems builder's question too:** turf as fuel, a cutter's right to a bank. Nothing of that is drawn.
+- **Off the road (OG-124) still lacks:** the shepherd's hut, the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
