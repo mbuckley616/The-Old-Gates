@@ -86,7 +86,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `hoardmetal` | 2/14 | pass | pass | 49 |  |
 | `hoardspot` | 5/14 | pass | pass | 81 |  |
 | `honesttown` | 3/14 | pass | pass | 43 |  |
-| `hourhitch` | 5/14 | pass | **red** | 896 | Red twice: *no frame after a change of hour over 4× the worst noon frame (never over 8 s)* read a worst frame of 12.6 and 13.8 s against noon 2.8 and 2.2 s, nothing set aside; 896 s with the retry, two shards sharing four cores. Not yet classified (load or a new-look compile at the change of hour): owed a run alone, both looks, next QA run. |
+| `hourhitch` | 5/14 | pass | **red** | 896 | Red twice in shard 5 under load: a worst frame of 12.6 and 13.8 s against noon's 2.8 and 2.2 s. **Classified, Session 992**: run alone, the new look is red twice at the same step, the jump to 21h, at 11.2 and 11.5 s, with 0 shaders compiled, 42 programs before and after, and the steps' median 3.2–3.5 s. The old look, alone in the same container, passed 3 of 3 (worst 3.0–7.2 s). The game's: filed in backlog I (*On the new look one jump of the clock stalls the frame for 11 s with nothing compiled*), for the systems builder or the F card that owns the new look. The suite now also logs each step's buffer and texture uploads. |
 | `housebuy` | 4/14 | pass | pass | 54 |  |
 | `houses` | 6/14 | pass | pass | 58 |  |
 | `hptail` | 2/14 | pass | pass | 65 |  |
