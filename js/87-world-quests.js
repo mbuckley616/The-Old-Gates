@@ -1958,6 +1958,26 @@ const giver=`${lord.title} ${lord.name}`;
   function guestChapelHouse(){if(_guestCap!==undefined)return _guestCap;_guestCap=null;
     for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){if(!isLandCell(i,j)||nationKeyOf(i,j)!=='aurenne')continue;const city=getCell(i,j).sites.find(t=>t.kind==='city');if(city){_guestCap=city;return city;}}
     return null;}
+  // S979 — the priest's *Who is the Guest?* (the approved draft, *The Seventh Niche*, §3): at any church once The Seventh Niche
+  // is read or the chapel found, in the priest's people's voice; each before-answer names the city whose cathedral hides it
+  const GUEST_PRIEST={
+    aurennais:{ask:'Who is the Guest?',say:'The Guest is a mistake of the old culture, Master: a word for weather, or for grief, which the carvers made into a figure because they made a figure of everything. That is the Church’s position, and it is settled. I would not advise you to go looking for it unsettled.',
+      follow:'Then why brick up its chapel?',then:'Because a mistake given a statue is still a mistake, and a statue invites a certain kind of visitor. The chapel lies under the cathedral at ${cap}, closed by the Prior’s order. I tell you where it is so that you are in no doubt about where you are not permitted to go.',
+      after:'You have been below. I can see it on you, Master. I will not ask what you found there. The Church has no clause for it.'},
+    gatelander:{ask:'Who is the Guest?',say:'The Church says it’s a mistake the old people made, and the Church has more books than I have. But my grandmother set seven cups on the dresser and filled six, and she never once said the seventh was for nobody.',
+      follow:'Then who was it for?',then:'Ask a shut door who it’s shut against and you’ll get the same answer from it as from me. They bricked up its chapel under the cathedral at ${cap}. A thing you brick up is a thing you’re not done with.',
+      after:'You went down. Well. What’s seen can’t be unseen, my mother used to say, and she said it about smaller things than that. Weaver keep you.'},
+    markman:{ask:'Who is the Guest?',say:'Church says it’s a mistake. Old carvers’ mistake. That’s the word I’m given.',
+      follow:'And your own word?',then:'Same word. I’d not bet a knife on it. Chapel’s under the cathedral at ${cap}, bricked up. I wouldn’t go.',
+      after:'You went. Aye, I can see it. Don’t tell me.'},
+    oldblood:{ask:'Who is the Guest?',say:'An tAoi. The guest. My mother set no cup for it, and would not say why.',
+      follow:'The Church says it was a mistake.',then:'The Church says so. The Church bricked its chapel at ${cap}. We did not ask them to. We did not ask them not to.',
+      after:'You went below. Sit a while before you walk. The cold goes, mostly.'}};
+  function guestTopics(site,def){const v=vstate();if(!(booksRead.has('seventh_niche')||v.chapel))return [];
+    const p=(def&&GUEST_PRIEST[def.people])?def.people:(site&&GUEST_PRIEST[peopleOfSite(site)])?peopleOfSite(site):'gatelander',L=GUEST_PRIEST[p];
+    if(v.chapel)return [{label:L.ask,response:L.after}];
+    const cap=guestChapelHouse()?guestChapelHouse().name:'the capital';
+    return [{label:L.ask,folder:true,response:L.say,follow:[{label:L.follow,response:L.then.replace('${cap}',cap)}]}];}
   function isGuestCathedral(house){if(house.type!=='church')return false;const cap=guestChapelHouse();return !!cap&&house.siteId===cap.id;}
   function guestPrompt(){if(!currentHouse||currentHouse.type!=='chapel')return null;if(Math.hypot(px-currentHouse.intW/2,pz-2.2)<1.8)return "Press 'E' to pray";return null;}
   function guestInteract(){if(!guestPrompt())return false;
