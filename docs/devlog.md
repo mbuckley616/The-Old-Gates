@@ -22298,7 +22298,8 @@ Corrections made during the session:
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
 
-## v80 — Session 1009 — The wide sash belt (L1 and B2, prototype only)
+## v80 — Session 1010 — The wide sash belt (L1 and B2, prototype only)
+(First committed as 1009, which the systems builder had taken in the same hour; renumbered.)
 OG-056 dresses its everyday Aurennais in "wide sash belts in rust red and indigo", and backlog L1 has listed the sash belt as owed since Session 989. This session builds it. The sheet draws it plainly and the canon says nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label, and the `waist` view aimed at a band) and `builder.check.mjs`.
 
 What changed in `people.js`:

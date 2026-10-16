@@ -23,7 +23,7 @@ export async function loadPack(base = 'mh/') {
     trousers: sel(tri, (x, y) => y < .12 && y > -.8),
     boots: sel(tri, (x, y) => y < -.38),
     belt: sel(tri, (x, y) => y > .11 && y < .22 && Math.abs(x) < .2),
-    // the wide sash belt (Session 1009, OG-056): the region runs past its cut (rest .085 to .225) so neither edge is a triangle's
+    // the wide sash belt (Session 1010, OG-056): the region runs past its cut (rest .085 to .225) so neither edge is a triangle's
     sashBelt: sel(tri, (x, y) => y > .055 && y < .255 && Math.abs(x) < .2),
     mantle: sel(tri, (x, y, z) => y > .4 && y < .61 && Math.abs(x) < .26),
     // the cuffs: a band 4 cm wide at the sleeve's end, cut in the shader (Session 889); the region is wider, so neither edge is a
@@ -88,7 +88,7 @@ const CUT = (c) => c ? `if (vB.y < ${c[0].toFixed(3)} + (fract(sin(dot(vB.xz, ve
 // a woven band through the middle of the cuff (Session 889; OG-025's woven red-and-blue cuff bands): across the cuff's width
 // (rest |x| .371 to .411) the band's colour fills the middle, its edges stepped in a chevron round the wrist, as a tablet weave is
 const BAND = `{ float t = (abs(vB.x) - .371) / .04, w = abs(fract((vB.z + .7 * vB.y) * 95.) - .5) * 2.; if (abs(t - .5) < .14 + .12 * w) diffuseColor.rgb = bandC * triTex(tW, 60.); }`;
-// folds round a wound band (Session 1009, the sash belt): soft ridges and sharp creases running round the body, n of them across
+// folds round a wound band (Session 1010, the sash belt): soft ridges and sharp creases running round the body, n of them across
 // the band's width (rest y lo to hi), wandering with the angle round the waist so they are not ruled lines. Drawn in the shader:
 // the band's colour darkens into each crease and its normal is bent by the ridges' slope, as a bump map bends it
 const FOLD = f => `float foldH(vec3 p){ float a = atan(p.x, p.z), t = (p.y - ${f.lo.toFixed(3)}) / ${(f.hi - f.lo).toFixed(3)};
@@ -706,7 +706,7 @@ function buildSash(G, body, byName) {
   // a little to the front of the hip's side, and the two ends hang straight down from under it, pushed out only where what they
   // hang over (the thigh, the tunic's skirt, a long skirt) stands further out than the line above. They read everything the
   // band does, the thigh below the hip included, which the loop leaves out
-  // over a sash belt (Session 1009) the knot is left off: the sash runs on over the belt's band, its end tucked in under it, owed
+  // over a sash belt (Session 1010) the knot is left off: the sash runs on over the belt's band, its end tucked in under it, owed
   let knot = null; if (D.sashKnot !== false && !sashBeltOn(D)) {
     const gridAll = new Map(); for (let q = 0; q < NP; q++) { const b = q * ST, k = key(SP[b], SP[b + 1], SP[b + 2]); let L = gridAll.get(k); if (!L) gridAll.set(k, L = []); L.push(q); }
     // the turn: the loop's lowest point, then 15 cm round it toward the front
@@ -1669,7 +1669,7 @@ function buildCrossbow(G, body, byName, meshes, root, grip) {
   const butt = new THREE.Vector3(0, CB_BUTT, 0).applyMatrix4(cb.matrixWorld), out = T.x * Math.sign(grip.C.x);
   return { mesh: cb, stats: { make, span: P.K.span, len: +(CB_BUTT - CB_FRONT + .12).toFixed(3), clear: +clear.toFixed(4), fist, handPts: handN, low: +(low - floor).toFixed(3), butt: +(butt.y - floor).toFixed(3), out: +out.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, curl: grip.curl, gripPts: grip.n, tris } };
 }
-// the sash belt's promises (Session 1009), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
+// the sash belt's promises (Session 1010), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
 // angles and 1 cm rows, nothing worn under it (the tunic, a skirt, a bodice, mail, the body) stands out past its inside, no point of
 // an arm is within it, and a leather belt worn over it lies outside it
 function sashBeltStats(meshes) {
@@ -1775,7 +1775,7 @@ function buildCord(G, body, meshes) {
   return { meshes: meshesOut, stats: { ringPts: pts.length, inside, endClear: +endClear.toFixed(4), tested, waist: +(2 * Math.PI * R.reduce((a, b) => a + b, 0) / NA).toFixed(3) } };
 }
 // how far the tunic is taken in at the waist (0 to 1, by rest y): under a leather belt over 3 cm round its middle (rest .16), under a
-// sash belt (Session 1009) over the band's whole width (rest .085 to .225), easing out over 3 cm past either edge
+// sash belt (Session 1010) over the band's whole width (rest .085 to .225), easing out over 3 cm past either edge
 function waistIn(D, y) { return sashBeltOn(D) ? Math.exp(-((Math.max(0, Math.abs(y - .155) - .06) / .03) ** 2)) : Math.exp(-(((y - .16) / .03) ** 2)); }
 // the sash belt is worn on a tunic or a skirt, never under a robe (its cord takes the waist), a tabard or an apron (which hang over it),
 // nor over mail, whose skirt stands 5 cm out at the waist and is belted in leather
@@ -1808,7 +1808,7 @@ export function makePerson(G, o = {}) {
     body.geometry.setAttribute('color', new THREE.BufferAttribute(col, 3)); }
   meshes.push(body);
   const D = G.dress || {}, push = (k, idx, mat, d) => { const m = new THREE.SkinnedMesh(geomFor(P, idx, d), mat); m.name = k; meshes.push(m); return m; };
-  // under a skirt (a man's tunic skirt, from rest .17 to -.2) the trousers stop 8 cm up inside its hem (Session 1009): at the seat the
+  // under a skirt (a man's tunic skirt, from rest .17 to -.2) the trousers stop 8 cm up inside its hem (Session 1010): at the seat the
   // skirt's shell lies inside the tights' and the trousers came out through it in patches; the skirt is drawn both sides, so its inside shows above them
   if (D.trousers) push('trousers', PACK.R.trousers, clothMat(sRGB(...D.trousers), 'wool', { cut: [-.78, D.skirt ? -.12 : .1] }), .008);
   if (D.boots) push('boots', PACK.R.boots, clothMat(sRGB(...D.boots), 'leather', { cut: [-2, -.43, 9, .002] }), .02);
@@ -1828,7 +1828,7 @@ export function makePerson(G, o = {}) {
   if (mail) { const top = { cut: [.06, .6, .3, .003] }, skirt = { side: THREE.DoubleSide, cut: [-.27, .17, 9, .012] };
     push('mail', PACK.R.mailTop, mailMat(sRGB(...D.mail), top), (x, y) => tunicPush(x, y) + .009 + .012 * Math.max(0, Math.min(1, (.2 - y) / .1))).customDepthMaterial = cutDepth(top);
     push('mailSkirt', PACK.R.mailSkirt, mailMat(sRGB(...D.mail), skirt), (x, y) => .024 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt === 'long' ? .006 : 0)).customDepthMaterial = cutDepth(skirt); }
-  // the wide sash belt (Session 1009; OG-056's "wide sash belts in rust red and indigo"): a band of cloth 14 cm wide wound round
+  // the wide sash belt (Session 1010; OG-056's "wide sash belts in rust red and indigo"): a band of cloth 14 cm wide wound round
   // the waist over the tunic, which is taken in under its whole width, its folds drawn in the shader; a leather belt is worn over it
   if (sashBeltOn(D)) push('sashBelt', PACK.R.sashBelt, clothMat(sRGB(...D.sashBelt), 'wool', { cut: [.085, .225, 9, .0008], scale: 30, fold: { lo: .085, hi: .225, n: 5 } }), (x, y) => sashBeltPush(D, x, y));
   if (D.belt) push('belt', PACK.R.belt, clothMat(sRGB(...D.belt), 'leather', { cut: [.135, .19, 9, .0005] }), sashBeltOn(D) ? (x, y) => sashBeltPush(D, x, y) + .007 : mail ? .038 : .03);
@@ -2031,7 +2031,7 @@ export function peopleGenome(rnd, people, g, o = {}) {
   if (P.necklace && rnd() < P.necklace[sx === 'f' ? 0 : 1]) D.necklace = D.earrings || pick([[.85, .66, .3], [.7, .45, .22]]);
   // coins on the belt (Session 1004, OG-056's tooled belt with hanging coins), drawn last for the same reason, in the metal already worn
   if (P.beltCoins && D.belt && !D.tabard && !D.apron && rnd() < P.beltCoins) D.beltCoins = D.necklace || D.earrings || pick([[.85, .66, .3], [.7, .45, .22]]);
-  // the wide sash belt (Session 1009, OG-056: rust red and indigo), on an uncovered waist, drawn last for the same reason; the leather
+  // the wide sash belt (Session 1010, OG-056: rust red and indigo), on an uncovered waist, drawn last for the same reason; the leather
   // belt stays over it where coins hang from it, and on four in ten of the rest
   if (P.sashBelt && !D.tabard && !D.apron && rnd() < P.sashBelt) { D.sashBelt = pick([[.55, .22, .12], [.17, .2, .4]]); if (!D.beltCoins && rnd() > .4) D.belt = null; }
   return G;
