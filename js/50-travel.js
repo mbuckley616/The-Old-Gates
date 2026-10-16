@@ -1313,6 +1313,7 @@ function interact(){
     return;
   }
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
+  if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
   // Sigil touch — floor 2 only, closer range than most interactables
   const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<1.5);
   if(nearSig){touchSigil(nearSig);return;}

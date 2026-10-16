@@ -1209,6 +1209,7 @@ function loop(now){
       // out of detection range still recovers cleanly while off-screen.
       if(typeof e.posture!=='number') initPosture(e);
       tickPostureRegen(e, dt, now);
+      if(e.cloakSleep&&typeof cloakSleepTick==='function'&&cloakSleepTick(e))return; /* S992 — the cloak's master sleeps until struck (#270 1A) */
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
@@ -1480,6 +1481,7 @@ function loop(now){
     // Drive the ambient hum based on closest-sigil proximity
     if(typeof updateSigilHum==='function')updateSigilHum(maxSigilProx);
     if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
+    if(typeof cloakDenTick==='function')cloakDenTick(); /* S992 — the cloak's den, seen the first time */
     const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
     // interact prompt
     const nearCorpsePrompt=CORPSES.find(c=>c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
@@ -1504,6 +1506,7 @@ function loop(now){
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
     }
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
+    else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
     else if(nearSigilPrompt){
       const sp2=SPELLS.find(s=>s.id===nearSigilPrompt.spellId);
       iprEl.textContent=`Press 'E' — Touch the sigil of ${sp2?sp2.nameIr:'?'}`;

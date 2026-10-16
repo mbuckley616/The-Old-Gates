@@ -21828,3 +21828,26 @@ Corrections made during the session:
 - **The quay's rubble texture is the toll bridge's**, large and regular, and its bollards are iron where a small yard would use timber.
 - **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
 - **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
+
+## v80 — Session 992 — The Wolf-Mother's Cloak in its den: the last of the Makers' trials (Michael's A on #270)
+The Makers' six tools could all be had but one. The cloak came only off its master's corpse (Session 781), half its worth; the approved draft (*The Makers' Things* §6) has the master of the cloak's lair *asleep on it*, and you take it from under the living beast at Resolve 30. Two rules were missing, and Michael's A on #270 settled both: the master wakes only when struck, and "weapon sheathed" means not attacking. Built in `87-world-quests.js`, beside the Shuttle's room, with one call from `goToDungeon` and three from the loop and `interact`:
+- **The sleeper.** `cloakDenLay` runs after `lairFinish` in the cloak's cavern (`cloakSeed`), while its master lives and has never been woken. The master is marked `cloakSleep`. The dungeon's frame asks `cloakSleepTick(e)` of each foe before its sight check: a sleeping master is held still and unalert, whatever the player does beside it, so the cavern's other beasts are still the fight or the sneak on the way in. A strike wakes it (its health or its posture below full: a blow, an arrow or a spell), and the world remembers (`worldState.masters[seed].woke`, the world row), so it is awake on every later visit.
+- **The cloak** lies under it, its hem 1.2 m out toward the way in. It is a placeholder, a flat grey mantle; the den's prop (Session 850's prototype) and the sleeping pose are owed (H). Until then the master sleeps in its standing pose, as a dormant Gargoyle does, which #270 allowed for.
+- **The words**, the draft's, word for word. The first time you come within seven units of the sleeping master with a clear line (the foes' own line test), *The master of the cave is lying on something grey that is not its own hide.*, once (the character's `stats.cloakSeen`). Within 1.5 of the hem, and not swinging, charging, or drawing a bow, *Press 'E' to take the grey cloak from under it*. Below Resolve 30 (the base plus at most 2 from gear, `artifactTry`), *You put out your hand, and take it back. Not yet.*: nothing taken, nothing woken, the try kept. At 30, *It lifts its head and looks at you for a long time. Then it lays its head down on the bare stone, and lets you go.*, and the log reads *Took the Wolf-Mother's Cloak from under the master of ${lair}. It lives.* The cloak is whole, so Session 777's drain on the nearest town and Session 789's Guild claim follow as before. The master sleeps on.
+- **The Journal's** *Things not yet yours* now has the draft's own line for the cloak: *The Wolf-Mother's Cloak — in the den at ${lair}. Resolve 30.*
+- Killed in its sleep, the master's death goes the corpse's way (Session 781), and the placeholder leaves the floor.
+
+**Asked, not built: enemies by place (DECISION #373).** Michael's answer on #51 was *not yet, until the skills sessions land*. They have, and 2.0 waits on it, so the question is asked again with the same recommendation (A: a tier per region plus the dungeon floor). The build waits for combat's resolver to merge, since both rewrite `enemyHpScale` and `enemyDmgScale`.
+### Verified (headless Chromium)
+- **`cloakden`** (new), 15 of 15, in the real cavern (Dunkeel's Lair, an Ogre master on floor 2), driven by the game's loop:
+  - The master sleeps on the cloak, the hem 1.2 m out on open floor. From 6.5 units with a clear line, the draft's line once; nothing more at 4.
+  - Ninety frames 1.6 m from it: not alert, moved 0, your health lost 0.
+  - The prompt reads as the draft's at the hem, and not while a bow is drawn or a swing is in the air.
+  - Resolve 29: the draft's failing line, nothing taken or logged, the master still asleep ten frames later, the try kept; the Journal's line as drafted.
+  - Resolve 30: the draft's words and log line; the cloak whole and unique in the bag; the town pays 0.6 a day; the master asleep thirty frames on, and no prompt.
+  - A second visit: asleep, nothing under it. Struck (5 health): awake and alert, and `woke` written. A third visit: awake as any master. Another cavern's master is never laid down. No page errors.
+- `cloakden --look=new`: green. `cloakcorpse`, `wolfcloak`, `lairmaster`, `makertools`, `cloakguild` and `hoardspot` pass.
+### Needs eyes
+- **A sleeping master standing up.** Until the bodies builder's sleeping pose, the Ogre stands still over the grey slab. It reads as a statue more than a sleeper.
+- **Reach for the hem.** 1.5 m round a point 1.2 m in front of the master. Whether that feels like "within reach of the master" from every side of a large beast is for play; from behind it, there is no prompt.
+- **The cavern's way in.** The cloak's master sleeps, but its cavern's other beasts do not: the trial is Resolve at the end of an ordinary fight or sneak, as #270's A says.

@@ -12,6 +12,16 @@ What should Steady be?
 - **B. Steady without a sway**: a full draw costs no stamina for its first 3 s. Same name, a different perk; the bow stays as easy to aim as now.
 - **C. Leave it** until the bodies builder's bow draw and the new look's aim (F-cards) are in, and decide then.
 
+### Enemies by place, asked again now that skills have landed: which place is how dangerous? (systems builder, Session 992) — DECISION #373
+On #51 (29 Sep) you answered **C, not yet**: keep foes growing with your level until the skills sessions land. They have (Sessions 940–982: skills by use, the level on marks, the first perks), and 2.0 waits on enemies by place (your 1 B on the scope). Today every foe still grows with your level: health ×(1 + 0.15 a level, to ×3 at 14), and its blow with the reference blow (combat's resolver, PR #356, which keeps an ordinary blow near the same share of your health at your level's kit). Under skills by use that is Oblivion's failure: a character who levels by alchemy and locks meets wolves built for a fighter. And with friends in your world there is no one level to scale to.
+
+The tier would replace the level in `enemyHpScale` and `enemyDmgScale` (and in the rare variants' chance), read from where the foe stands. The build waits for the resolver to merge, since it rewrites the same two functions.
+- **A. A tier for each region, plus the dungeon floor** *(recommended, as on #51)*. Home's regions are authored: the coast, Ashen, Bealach and Royale tier 1; Deepwood, the Foothills and Greywood tier 2; the Wastes tier 3. The far islands take a tier from their biome: tundra, swamp and wasteland 3, the rest 2. Each dungeon floor below the first adds one, to a cap of 4. A tier is worth what the level curve gives today at levels 1, 6, 11 and 16 (health ×1, 1.75, 2.5, 3; the blow as the resolver's reference blow at those levels). A gate's school does not change its tier.
+- **B. Rings by distance from Ashenmoor**: tier 1 near the start, one more every ~600 units, the far islands 3–4. No authoring, but a forest can be tier 1 at one edge and tier 2 at the other.
+- **C. A, and the level still counts for a little**: the tier as in A, times 1 + 2% a level past the tier's own (to ×1.3), so an easy place stays a little worth fighting late. Friends in one world would meet slightly different foes.
+
+A keeps a region's danger readable (the Wastes are dangerous, the coast is not), and is one Opus session once the resolver is on main.
+
 ## Answered
 
 ### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #362

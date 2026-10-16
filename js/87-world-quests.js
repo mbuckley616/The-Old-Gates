@@ -1475,9 +1475,48 @@ const giver=`${lord.title} ${lord.name}`;
     for(const L of [BAG,(typeof stashBag!=='undefined'?stashBag:[]),Object.values(EQ)])for(const it of L)if(it&&it.artifact==='wolf_cloak')halfCloak(it);
     if(EQ.back&&EQ.back.artifact==='wolf_cloak')artifactSay('The cloak is lighter on your shoulders. Something has gone out of it.');return true;}
   function artifactSay(t){setTimeout(()=>showMsgLong(t,'#a89878'),1600);} /* after the kill's *slain!* or the witness's line, which would cover it (the words only: the outcome is already written) */
+  // S992 — the Wolf-Mother's Cloak in its den (the approved draft, *The Makers' Things* §6; Michael's A on #270): the master of
+  // the cloak's lair sleeps on it, and wakes only when struck (a blow, an arrow or a spell: its health or its posture down), never
+  // by sight or sound. Struck once, it is awake for good (worldState.masters[seed].woke, the world row). The cloak lies under it,
+  // its hem toward the way in; within reach of the hem, and not attacking (no swing, no draw: "weapon sheathed", #270 2A), E
+  // reaches for it at Resolve 30 (artifactTry: the base, plus at most 2 from gear). Short of that it costs nothing and wakes
+  // nothing. Taken, the master goes on sleeping and lets you go. The first time you come within seven units of the sleeping
+  // master with a clear line, the draft's line, once (the character's: worldState.stats.cloakSeen). The cloak is a placeholder,
+  // a flat grey mantle; the den's prop and the master's sleeping pose are owed (H).
+  let CLOAK_DEN=null;
+  const CLOAK_SAY={seen:'The master of the cave is lying on something grey that is not its own hide.',
+    fail:'You put out your hand, and take it back. Not yet.',
+    take:'It lifts its head and looks at you for a long time. Then it lays its head down on the bare stone, and lets you go.'};
+  function cloakDenLay(portal,e){CLOAK_DEN=null;try{const P=artifactPlaces().wolf_cloak;if(!P||!portal||portal.seed==null||portal.seed!==cloakSeed()||cloakMasterDead())return null;
+    if(!e||e.dead||!e.master||ENEMIES.indexOf(e)<0)return null;const rec=(worldState.masters||{})[portal.seed];if(rec&&rec.woke)return null;
+    const S=artifactState('wolf_cloak');if(S&&S.half)return null;e.cloakSleep=true;e.alert=false;
+    const fl=e.floor||1,ex=(typeof dEntranceX!=='undefined')?dEntranceX:e.x,ez=(typeof dEntranceZ!=='undefined')?dEntranceZ:e.z;
+    let dx=ex-e.x,dz=ez-e.z;const dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;
+    let hx=e.x+dx*1.2,hz=e.z+dz*1.2;if(dSolid(hx,hz)){hx=e.x+dx*.6;hz=e.z+dz*.6;}
+    let mesh=null;if(!S){const g=new THREE.Group();const cl=new THREE.Mesh(new THREE.BoxGeometry(1.5,.03,1.9),new THREE.MeshLambertMaterial({color:0x8c8a86,emissive:0x141414}));
+      cl.position.set(0,0,.25);g.add(cl);g.position.set(e.x,(fl===2?FLOOR2_Y:0)+.02,e.z);g.rotation.y=Math.atan2(dx,dz);dScene.add(g);mesh=g;}
+    CLOAK_DEN={e,seed:portal.seed,floor:fl,mesh,name:P.name,hx,hz};return CLOAK_DEN;}catch(err){console.warn('cloakDenLay',err);return null;}}
+  // the dungeon's frame asks this of each foe first: true holds a sleeping master still for the frame; a strike wakes it for good
+  function cloakSleepTick(e){if(!e.cloakSleep)return false;
+    if(e.hp<e.maxHp||(typeof e.posture==='number'&&typeof e.maxPosture==='number'&&e.posture<e.maxPosture)){e.cloakSleep=false;e.alert=true;
+      const L=CLOAK_DEN,rec=L&&(worldState.masters||{})[L.seed];if(rec&&typeof rec==='object')rec.woke=true;return false;}
+    e.alert=false;if(e.mesh)e.mesh.position.set(e.x,e.baseY,e.z);if(e.el)e.el.position.set(e.x,.8,e.z);return true;}
+  function cloakHandsStill(){return !(swingT>0||_bowDrawing||powerCharging||powerSwingDelayT>0);}
+  function cloakDenNear(){const L=CLOAK_DEN;return !!(L&&L.mesh&&L.e&&!L.e.dead&&L.e.cloakSleep&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.hx,pz-L.hz)<1.5&&cloakHandsStill());}
+  // the first sight of it, once (called from the dungeon's frame)
+  function cloakDenTick(){const L=CLOAK_DEN;if(L&&L.mesh&&L.e&&L.e.dead){if(L.mesh.parent)L.mesh.parent.remove(L.mesh);L.mesh=null;return false;} /* killed asleep: the cloak goes to the hoard (S781) */
+    if(!L||!L.mesh||!L.e||L.e.dead||!L.e.cloakSleep||activeZoneId!=='dungeon'||currentFloor!==L.floor)return false;const st=worldState.stats||(worldState.stats={});
+    if(st.cloakSeen)return false;const d=Math.hypot(px-L.e.x,pz-L.e.z);if(d>7)return false;
+    for(let t=.15;t<.9;t+=.15)if(dSolid(px+(L.e.x-px)*t,pz+(L.e.z-pz)*t))return false;st.cloakSeen=1;showMsg(CLOAK_SAY.seen,'#c8c0a8');return true;}
+  // E at it: the named action is artifactTry (takeArtifact), with the draft's log line
+  function cloakDenTake(){const L=CLOAK_DEN;if(!L)return null;const c=artifactTry('wolf_cloak',`Took the Wolf-Mother's Cloak from under the master of ${L.name}. It lives.`);
+    if(c.gone){if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);L.mesh=null;return c;}
+    if(!c.ok){showMsg(CLOAK_SAY.fail,'#c8c0a8');return c;}
+    showMsg(CLOAK_SAY.take,'#c8c0a8');if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);L.mesh=null;if(typeof updateHUD==='function')updateHUD();return c;}
   // the journal's *Things not yet yours*: one line a tool you have tried and not taken, in the menu voice, with the number
   function artifactsNotYet(){const tr=worldState.artifactTries||{},P=artifactPlaces();return Object.keys(ARTIFACTS).filter(id=>tr[id]&&!artifactState(id)).map(id=>{const T=ARTIFACTS[id],c=T.check,p=P[id];
     if(id==='drowned_bell'&&p)return {id,text:`The Drowned Bell — in the wreck on the rock off ${p.coast}. At low tide.`}; /* S801 — the draft's line (second run, §1) */
+    if(id==='wolf_cloak'&&p)return {id,text:`The Wolf-Mother's Cloak — in the den at ${p.name}. Resolve 30.`}; /* S992 — the draft's line (first run, §4) */
     return {id,text:`${T.name.charAt(0).toUpperCase()+T.name.slice(1)}${p&&p.name?' — '+p.name:''}.${c?' '+(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[c.attr]?ATTR_DEF[c.attr].label:c.attr)+' '+c.need+'.':''}`};});}
   // faction quests ride the town-quest generator, flavoured and counted
   function factionTopics(site){
