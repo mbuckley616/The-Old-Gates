@@ -1,7 +1,7 @@
 # python3 docs/prototypes/levelup/bundle.py OUTDIR (Session 769): one self-contained page per scene for a host that
 # allows scripts only from a CDN (the claude.ai artifact). three.js comes from jsDelivr at the vendored version; the
 # slice's own modules are inlined.
-import re, sys, os
+import re, sys, os, json
 here = os.path.dirname(os.path.abspath(__file__)); out = sys.argv[1]; os.makedirs(out, exist_ok=True)
 V = '0.170.0'
 HEAD = '''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -48,4 +48,25 @@ build('gatelands-pieces.html', 'Gatelands building pieces', 'The Gatelands’ bu
 build('gatelands-plans.html', 'Gatelands plans in a row', 'Six Gatelands plans at true size, a person at each door. Drag to look.', 'pieces-gatelands.js', True, '?view=line')
 build('gatelands-kit.html', 'Gatelands pieces, one by one', 'The Gatelands pieces one by one beside a person. Drag to look.', 'pieces-gatelands.js', True, '?view=kit')
 build('gates-six.html', 'The six great gates', 'The six schools’ great gates (F5): one skeleton, the outer arch 100 m high, dressed by school. ?school=tine|uisce|cloch|scath|solas|gaoth &cam=wide|far|foot|scale. Drag to look.', 'gates.js', True, '?school=tine&cam=wide')
+# the HUD in the new look (concept, 15 Oct 2026): the slice's scene, then hud.js in place of its dynamic import, the
+# approved kit's CSS, icons and fonts inlined (fonts from Google, the host allows no others)
+def hud(name, title, note, scene_src, query):
+    css = open(os.path.join(here, '..', 'hud', 'kit.css'), encoding='utf-8').read() + open(os.path.join(here, 'hud.css'), encoding='utf-8').read()
+    defs = open(os.path.join(here, '..', 'hud', 'defs.html'), encoding='utf-8').read()
+    h = open(os.path.join(here, 'hud.js'), encoding='utf-8').read()
+    h = re.sub(r"// HUD-SCENE .*?// HUD-SCENE-END\n", '', h, flags=re.S)
+    h = h.replace('const DEFS = window.HUD_DEFS ||', 'const DEFS = ' + json.dumps(defs) + ' ||')
+    s = scene(open(os.path.join(here, scene_src), encoding='utf-8').read())
+    hs = scene(h); himps = re.findall(r"^import .*;$", hs, flags=re.M); hbody = re.sub(r"^import .*;\n", '', hs, flags=re.M)
+    # hud.js's catch goes in before the scene renders; the rest after it, in a block of its own
+    cut = hbody.index('const until'); pre, post = hbody[:cut], hbody[cut:]
+    src = '\n'.join(himps) + '\n' + pre + '\n' + s + '\n{\n' + post + '\n}\n'
+    if "from './creatures.js'" in src: src = kit(src)
+    imps = re.findall(r"^import .*;$", src, flags=re.M); body = re.sub(r"^import .*;\n", '', src, flags=re.M)
+    code = '\n'.join(dict.fromkeys(imports_c + imps)) + '\n' + common_body + '\n' + body
+    code = code.replace("new URLSearchParams(location.search)", f"new URLSearchParams(location.search || '{query}')")
+    head = HEAD.format(title=title, note=note, V=V).replace('<style>', '<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet"><style>' + css, 1)
+    open(os.path.join(out, name), 'w', encoding='utf-8').write(head + code + '\n</script></body></html>\n')
+hud('hud-lane.html', 'The HUD in the new look', 'The approved HUD over the new look, in a Gatelands lane. ?frame=metal|carved|bare. Drag to look.', 'street.js', '?scene=lane&frame=metal')
+hud('hud-hall.html', 'The HUD inside a gate', 'The approved HUD over the new look, a skeleton in a gate’s hall. ?frame=metal|carved|bare. Drag to look.', 'gate.js', '?scene=hall&view=hall&frame=metal')
 print('ok')
