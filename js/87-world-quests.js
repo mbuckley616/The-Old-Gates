@@ -1282,9 +1282,9 @@ const giver=`${lord.title} ${lord.name}`;
   function noonRingFlash(){if(!noonRingCarried()||Math.random()>=1/3)return false;const st=worldState.stats||(worldState.stats={});
     if(!st.ringStruck){st.ringStruck=1;showMsg('Lightning comes down a stone’s throw from you. The ring is warm.','#f0e0a0');}else if(typeof addLog==='function')addLog('⚡','Lightning, close.');return true;}
   // S802 — the Gate-Blade's trial (the page's Stone row; the approved draft's first run, §5): the blade stands in a standing stone
-  // outside its ruined gate (artifactPlaces().gate_blade, picked from the seed in Session 776). The stone stands 8 to 18 units
-  // from the gate's door on open ground, the first spot clear of every solid along bearings taken in an order seeded by the
-  // gate (bladeStoneSpot), found once the gate's cell is loaded and its compound built. The first time you come within ten
+  // outside its ruined gate (artifactPlaces().gate_blade, picked from the seed in Session 776). The stone stands outside the
+  // compound's gate on open ground (S993; it was 8 to 18 units from the door, inside the ring), the first spot clear of every solid
+  // (bladeStoneSpot), found once the gate's cell is loaded and its compound built. The first time you come within ten
   // units, the draft's line, once (the character's: stats.bladeSeen). E within 1.8 takes hold of the hilt: Might 30, the base
   // plus at most 2 from gear (artifactTry); short of it, one of the draft's three lines by how short, each logged with 🗝, costing
   // nothing and kept for the Journal. Taken, the stone stays, and E at it says what is left. The stone and the hilt are a
@@ -1294,19 +1294,23 @@ const giver=`${lord.title} ${lord.name}`;
     take:'It comes out of the stone the way a key comes out of a lock: all at once, after nothing.',
     after:'An empty slot in a standing stone. Looked at end on, it is the shape of a key.'};
   const BLADE_REACH=1.8;let BLADE_STONE=null,_bladeT=0;
-  function bladeStoneSpot(P){const r=seededRng('bladestone',P.door);const a0=r()*Math.PI*2;
-    for(let d=8;d<=18;d+=2)for(let k=0;k<12;k++){const a=a0+k/12*Math.PI*2,x=P.x+Math.cos(a)*d,z=P.z+Math.sin(a)*d;let ok=worldH(x,z)>SEA_Y+.5;
+  // S993 — the critic's s632: the stone stood 8 to 18 from the gate's keep door, inside the compound's ring (radius 27 round the
+  // door's 4 m south, its gate on +z). The draft puts it *outside a ruined gate, plainly visible from its road*: it now stands
+  // 31 to 41 from the ring's centre, on bearings fanned out from the compound's gate (never square on it, where the spur runs),
+  // clear of every solid, nearest the gate first. Nothing read depends on what has loaded but the compound's own walls. Read from where the gate is built (dungeonWorldPos).
+  function bladeStoneSpot(P){const W=(typeof dungeonWorldPos!=='undefined'&&dungeonWorldPos[P.door])||P;const cx=W.x,cz=W.z+4;
+    for(let d=31;d<=41;d+=2)for(let k=1;k<=16;k++){const a=Math.PI/2+(k%2?1:-1)*(.12+Math.ceil(k/2)*.12),x=cx+Math.cos(a)*d,z=cz+Math.sin(a)*d;let ok=worldH(x,z)>SEA_Y+.5;
       for(let q=0;q<8&&ok;q++)if(solidAt(x+Math.cos(q/8*Math.PI*2)*1.4,z+Math.sin(q/8*Math.PI*2)*1.4)||solidAt(x,z))ok=false;
       if(ok)return {x,z,y:worldH(x,z)};}
     return null;}
   function bladeStoneBuild(P){const sp=bladeStoneSpot(P);if(!sp)return null;const g=new THREE.Group();
-    const stone=new THREE.Mesh(new THREE.BoxGeometry(.95,2.1,.62),new THREE.MeshLambertMaterial({color:0x7d7a72}));stone.position.y=.95;stone.rotation.z=.04;g.add(stone);
+    const stone=new THREE.Mesh(new THREE.BoxGeometry(.95,1.1,.62),new THREE.MeshLambertMaterial({color:0x7d7a72}));stone.position.y=.5; /* S993 — 1.1 m, the critic's s632: the hilt at waist to chest, not over the eye */stone.rotation.z=.04;g.add(stone);
     const hilt=new THREE.Group();const iron=new THREE.MeshLambertMaterial({color:0x6c7078,emissive:0x101216}),leather=new THREE.MeshLambertMaterial({color:0x3a2616});
     const blade=new THREE.Mesh(new THREE.BoxGeometry(.06,.12,.012),iron);blade.position.y=.06;hilt.add(blade);
     const guard=new THREE.Mesh(new THREE.BoxGeometry(.32,.04,.05),iron);guard.position.y=.14;hilt.add(guard);
     const grip=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.24,6),leather);grip.position.y=.28;hilt.add(grip);
     const pommel=new THREE.Mesh(new THREE.SphereGeometry(.04,8,6),iron);pommel.position.y=.42;hilt.add(pommel);
-    hilt.position.y=2.0;g.add(hilt);g.position.set(sp.x,sp.y-.05,sp.z);g.rotation.y=Math.atan2(P.x-sp.x,P.z-sp.z);sc.add(g);
+    hilt.position.y=1.0;g.add(hilt);g.position.set(sp.x,sp.y-.05,sp.z);g.rotation.y=Math.atan2(P.x-sp.x,P.z-sp.z);sc.add(g);
     return {x:sp.x,z:sp.z,door:P.door,name:P.name,mesh:g,hilt};}
   function bladeStoneDrop(){if(BLADE_STONE&&BLADE_STONE.mesh&&BLADE_STONE.mesh.parent)BLADE_STONE.mesh.parent.remove(BLADE_STONE.mesh);BLADE_STONE=null;}
   // once a second from the loop: the stone is built while the gate's cell is loaded and you are within 300 units; the first sight
