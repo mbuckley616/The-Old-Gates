@@ -22806,3 +22806,44 @@ Corrections made during the session:
 - **The smoke and the stream are still,** the same want as the charcoal camp's and the falls': a moving-air and moving-water shader.
 - **The ash and alder are the kit's blob trees,** and the hedge is lumps of leaf.
 - **Still open in OG-124:** the hunters', pilgrims' and abandoned expedition's camps, and the small mysteries.
+
+## v80 — Session 1022 — The Mark's hunters' camp (card F8, prototype only)
+The freeze for F3 (#381) is still open. This session is the third of OG-124's road camps, after the charcoal burners' (1016) and the merchants' (1021), and the first in the Mark. OG-124's panel 4 lists "hunters" among its camps. It is `markHuntersCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=hunters`.
+
+The precedents are the autumn hunting camps of the northern fells. A party lived for a few weeks by a road into the hills in a tent of hides on a cone of poles; it is the shape every northern people used, from the Norse fell-booths to the reindeer herders'. They dried and smoked their meat on a pole rack over a slow fire, stretched hides on frames, and hung their kill from a pole between two trees. The camp is built at true size in birch and pine heath on a slope of 1 in 16, by a road:
+- **The tent:** 12 poles from a ring 4.8 m across cross at 3.4 m, each running 0.28 m past the middle. A cover of hides in five sewn courses rises to 2.85 m, leaving the smoke hole above. The door is a gap 1.2 m wide at the hip and 1.5 m high, facing the road, with the door hide rolled over it. Inside are a fire in a ring of stones and three hides of bedding round it, off the doorway. Smoke rises from the hole and leans east on a west wind.
+- **The rack:** four posts and two rails at 1.8 m, five cross-poles over them, and 25 strips of meat hung from them. A slow fire of green wood lies laid to smoulder under it, and its smoke rises through the strips.
+- **The hide frame:** a square of poles 1.8 m a side, leaning back 18 degrees on two props, with a hide laced into it on 20 thongs.
+- **The game pole:** lashed between two pines at 2.6 m, with a gambrel on a short rope from its middle and a tub under it. It is empty: the kill is the bodies builder's.
+- **The rest:** a woodpile of 91 billets against a granite boulder, a chopping stump with its axe, and a rack of three spears.
+- **The land:** heath of moss and heather tufts with 19 granite boulders, 14 pines and 22 birches going yellow. Trodden paths run from the road to the door and in, to the rack and on to the game pole, and to the frame and the wood.
+- **The size:** 24,600 to 24,800 triangles in 15 meshes, well under the 40,000 the camps are held to.
+
+The views are `camp` (from the road), `rack`, `tent`, `pole` and `far`, and `&dusk` gives the evening with the fires glowing.
+
+Corrections made during the session:
+- **The tent** was first 4.2 m across and 3.6 m high, a steep cone that read as a plains tipi. It is now broader and lower (4.8 m by 3.4 m), the fell-tent's shape.
+- **The ground** first read nearly black under the low autumn sun. The heath's moss is now lighter, and the track is lighter than the moss.
+- **The heather** first read as purple stones. It is now rust-brown, in smaller, rounder tufts, 220 of them.
+- **The birches' crowns** first came in four big mustard balls. They now come in seven smaller clusters of a duller yellow.
+- **The hide frame's** first placing formula had a dead term from an angled version, and was replaced by the straight one.
+- **Two of the check's** own measures needed fixing:
+  - The poles' crossing was first held to 0.5 m, though by design the tops lie 0.56 m apart; it is now held to 0.6 m.
+  - The door's check first printed the 99 m of a ray that met nothing; it now says that nothing is met from the door to the tent's middle.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 194 of 194 pass** (185 after Session 1021). Nine checks are new. The camp's `camp` view and its `rack` view at dusk render with no page errors, and seven checks run over three keys:
+  - **The builds:** each key builds the same twice, with 24,580 to 24,760 triangles in 15 meshes and 36 trees.
+  - **The tent:** its 12 poles' feet are 0.12 m in the ground, and their tops cross within 0.56 m. The cover is met −0.02 to 0.013 m off its cone at 28 points, and there are 3.49 m or more over the fire to the crossing.
+  - **The door:** it is open at the hip and at 1.4 m (nothing is met from the door to the tent's middle) and shut at 1.65 m (0 to 0.01 m). It is 1.22 to 1.25 m wide at the hip, and the smoke is 0.5 m or more over the cover.
+  - **The rack:** its posts are 0.3 m in the ground and their tops are level within 0 m. Every strip is 1.21 m or more over the embers, and 2 puffs of its smoke are among the strips.
+  - **The frame and the pole:** the hide frame's feet are 0.10 to 0.12 m in the ground. The game pole is met 0.057 to 0.064 m off both pines' bark, at 2.63 to 2.64 m over the ground at its middle.
+  - **The walk:** 74 half-metres, 5 of them at the door and inside. There is ground under each, no step is over 0.14 m, and there is 1.19 m or more clear at the hip and the head. Nothing is over the head below 2.0 m (1.45 m through the door and inside, stooped).
+  - **The woodpile:** all 91 billets are on the ground or the billets below (0.001 to 0.047 m).
+- **Pictures:** `places-hunters-camp.jpg`, `-rack`, `-tent`, `-pole`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **The tent's shape.** A cone of hides on poles is common to every northern people, and the canon does not say how the Mark's hunters camp. If it should be a turf-walled booth or a canvas ridge tent instead, that is Michael's call and a short change.
+- **The meat strips are plain dark boxes.** At hand's reach they want a fibrous texture.
+- **Nobody hunts here.** The hunters, their dogs and their kill are the bodies builder's.
+- **The smoke is still,** as at the other camps.
+- **Still open in OG-124:** the pilgrims' rest, the abandoned expedition and the small mysteries.
