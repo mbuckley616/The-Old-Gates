@@ -836,7 +836,7 @@ function buildHoodUp(P, G, meshes) {
 
 // ── the Aurennais' head-wrap (Session 994, L1; OG-044 and OG-056: head-wraps in saffron, red and teal, wound round) ──
 // Cloth wound round the head over the tucked hair. Its crown is the kettle helm's fitted dome (headDome) with 1.6 cm of cloth in
-// place of 1.2 of iron, and its edge runs across the forehead 2 cm over the brows, over the tops of the ears and down at the nape,
+// place of 1.2 of iron, and its edge runs across the forehead about 2 cm over the brows, over the tops of the ears and down at the nape,
 // where it gathers the hair. Round its lower half lie five wound turns, each a roll of the cloth that runs higher at the front or at
 // the back than the one under it, so they cross over the brow and at the nape as a wrap's turns do. The lowest turn, along the edge,
 // takes the border's colour when there is one. Rigid, carried by the head bone as the helm is

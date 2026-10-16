@@ -21855,7 +21855,7 @@ What changed in `people.js`:
 - **`headDome`, from the kettle helm.** Session 897's dome, fitted to the skull, is now a function of its own. The helm and the wrap share it, and the helm's numbers are unchanged (its checks pass as before). It reads the furthest point of the head and of the tucked hair in 72 directions round and 24 down, above a rim line, spreads each one to its neighbours and smooths them.
 - **`buildWrap`.**
   - **The crown** is that dome with 1.6 cm of clearance for the wound cloth (the helm has 1.2).
-  - **Its edge** runs across the forehead 1.2 cm over the helm's brow line, dips over the tops of the ears, and comes 12.8 cm down at the nape to gather the hair.
+  - **Its edge** runs across the forehead 1.9 cm over the tops of the brows, dips over the tops of the ears, and comes 12.8 cm down at the nape to gather the hair.
   - **Five wound turns** lie round its lower half. Each is a band of cloth 1.7 to 2.2 cm wide and about 1 cm thick: a tube flattened onto the head, its width swelling by 14% along its length.
   - **The turns cross.** Each runs higher at the front or at the back than the one under it, so they cross over the brow and at the nape as a wrap's turns do.
   - **Colours.** The lowest turn is in the edge colour (`wrapBorder`) when there is one, and otherwise a shade darker. The crown is a shade lighter.
