@@ -21714,3 +21714,14 @@ The critic found that the lord's *The blade from the stone.* at Coeur de Vie was
 - `crownclaim`, extended, 12 of 12: both topics are quest talk; every other check as before.
 ### Needs eyes
 - Nothing.
+
+## v80 — Session 988 — The foes' prewarm makes the shadow pass's program too (QA's `foewarm` on the new look, backlog I)
+QA found `foewarm` red twice on the new look with the same numbers each time. `prewarmFoes` (`42-zone-enemies.js`, Session 688) builds one foe of every kind behind the world's loading fade and compiles their programs with `REN.compile`. Even so, raising every kind in Dunmore then compiled 2 shaders and added a program, 42 → 43. Listing the programs before and after named it: a `depth` program, the shadow map's. `compile()` builds the materials the eye draws, not the depth materials the shadow pass makes for whatever casts a shadow. On r128 the foes' depth variant was one the world had already made. On 0.170 a foe casting a shadow keys one of its own, so the first such foe on screen still hitched.
+
+The prewarm now draws one frame of the scene, with the foes in it and the shadow map forced to update. The shadow pass builds its depth program there, behind the fade. The flag is put back as it was. QA left the test as it was, and it is unchanged.
+### Verified (headless Chromium)
+- `foewarm --look=new`: the prewarm makes 18 programs (17 before), in 1,215 ms (about 620 before, still behind the fade). Raising all 32 kinds in Dunmore now compiles 0 shaders and adds 0 programs (it was 2 and 1).
+- `foewarm` on the old look: 14 programs, 781 ms, nothing compiled on raising.
+- `lod`, `looknew` and `lookpair` pass.
+### Needs eyes
+- The world's first entry takes about 0.6 s longer behind the fade on software GL. On a laptop's GPU it should be a frame.

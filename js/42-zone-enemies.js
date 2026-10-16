@@ -891,7 +891,11 @@ function prewarmFoes(sc,cam){
   const lights=[];tmp.traverse(o=>{if(o.isLight)lights.push(o);});for(const l of lights)if(l.parent)l.parent.remove(l);
   tmp.traverse(o=>{o.frustumCulled=false;});
   if(typeof WORLD!=='undefined'&&sc===WORLD.scene)try{WORLD.sweepLights();}catch(e){} /* the world's tick folds stray lights into its pool of 24; before the first tick there are more, and every program would be keyed to that count */
-  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}sc.remove(tmp);
+  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}
+  /* S988 — compile() leaves out the shadow pass's depth materials, and on three.js 0.170 a foe casting a shadow keys one of its
+     own (QA's foewarm on the new look): one drawn frame with the shadow map forced makes it here, behind the loading fade */
+  if(REN.shadowMap&&REN.shadowMap.enabled){const nu=REN.shadowMap.needsUpdate;try{REN.shadowMap.needsUpdate=true;REN.render(sc,cam);}catch(e){}REN.shadowMap.needsUpdate=nu;}
+  sc.remove(tmp);
   const inTmp=r=>{for(let a=r&&r.root;a;a=a.parent)if(a===tmp)return true;return false;};
   for(const r of [...WOLF_RIGS])if(inTmp(r))WOLF_RIGS.delete(r);
   for(const r of [...PEOPLE_RIGS])if(inTmp(r))PEOPLE_RIGS.delete(r);
