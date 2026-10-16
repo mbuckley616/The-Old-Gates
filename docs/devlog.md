@@ -21670,3 +21670,26 @@ The fourth part of the sheet's first wave of perks. The Arms perks were left for
 - **Long eye barely shows.** An arrow lives 2.2 s (`ARROW_LIFE`), so a full draw flies 61.6 m and the perk acts only over its last 11.6 m: 0.17 m less drop. The sheet's 50 m was written for a longer flight. If Michael wants the perk to be felt, the lever is the arrow's life or the 50 m, and that is his number. F2b's table of ranges in metres is the natural place to settle it.
 - **Through** sends the arrow on with no new sound or mark on the first foe. Whether a pass-through wants a sound of its own is for the ear.
 - **Quick nock** also speeds the bow's draw on the viewmodel and the third-person body, which read the same clock.
+
+## v80 — Session 983 — A lord's job comes out the same whatever has loaded (QA's note, backlog B)
+QA found that a lord's job could change kind on a reload. `townQuestFor` (`87-world-quests.js`) rolls the kind on the job's own id (Session 678). But a *retrieve* needs a gate within 700 and a *deliver* a town within 900, and both were looked for among what had loaded (`nearDoors` reads `CELL_DOORS`, `nearSites` reads `SITES`). With nothing loaded near the lord's town, the job fell back to the road job. So on a fresh load, or on a second machine, the same id gave another job. That is against the S533 rule: an outcome keyed by id reads the world's data, never what has loaded. The cull's beast had the same fault, read from `dominantRegion`, the loaded regions (S701).
+
+Now the job reads the world's own data:
+- **Gates.** `doorsNearFixed(site, d)` takes the gates of the town's cell and its eight neighbours from `getCell`. Wet gates are left out (they are never built, S447), and each gate counts once, in its own cell. Each is set at the place the world draws it (`fixedDoorSpot`): a generated gate at its own x and z, a home fort on the straight line of its road at its `fortAt`, a home gate by its zone's anchor. The loaded cell nudges a gate off roads and pads; the job's choice does not see that.
+- **Towns.** `sitesNearFixed` reads the same nine cells' sites.
+- **The cull's beast** is read by `lairBiome`, the cells' regions, as the lairs' is.
+
+The job's words and its target still name the real door once it is placed (`dungeonWorldPos`). A retrieve given before its gate was placed carries the gate's seed and a `fixed` flag. `qTick` moves the thing and its pickup to the real door when the cell places it. `nearDoors` and `nearSites` are unchanged for the other callers (the guilds' commissions in `83-world-generator.js`).
+
+**Left under the same rule.** A *find* puts the lost person at the nearest camp's bedroll among the loaded camps (`beds`), and the *road* job's camp lies on a loaded road (`ROADS`). Both are places, not the kind or the words: the job is the same, and the spot can differ. They are noted in backlog B.
+### Verified (headless Chromium)
+- **`jobseed`** (new), 6 of 6:
+  - Three generated towns two cells or more from the start: `c10_1_p2`, `c5_7_s10`, `c9_9_s0`. None of their nine cells was loaded at first, and the old lookups found no gate or town near any of them (0/0 each). On the old code every retrieve and deliver there was a road job.
+  - The world's data finds 2/2, 3/1 and 2/1 gates and towns, before they load and after.
+  - The same 30 job keys at each town give the same jobs before and after the town builds: 30, 30 and 30 of 30. Over the 90: 15 retrieves, 27 delivers, 18 culls, 15 finds and 15 road jobs.
+  - A retrieve taken at `c10_1_p2` before its gate was placed lies at the real door's mark once the gate is placed (0 m off), and so does its pickup.
+  - Of the 12 gates near the four towns (Dunmore's five with them), the world's spot is where the cell placed it for the generated ones (median 0 m). The farthest is 174.6 m: a home fort, which the cell pushes 120 off its road. No page errors.
+- `datedwork`, `jobids`, `mapquests`, `mapseals`, `rowebeats`, `rowelines`, `theftlevel1`, `toldpages`, `turnin`, `warwords` and `worldjournal` pass.
+### Needs eyes
+- **A town's jobs change once, for every player.** A town that used to give road jobs before its neighbours loaded now gives the retrieve or the deliver its id rolled. A cull's beast can differ near a biome's edge. Jobs already in a save are kept as they were given.
+- **A home fort's choice reads its road's straight line.** A fort near the 700 edge can be counted in or out against where it actually stands, by up to about 175 m. It is the same in every game, which is the rule; the job still sends you to the real door.
