@@ -21172,3 +21172,18 @@ The second part of the sheet's first wave of perks: the body's, outside combat's
 - **Tireless** lets a sprint run stamina to nothing and pick it up again on the next frame. Holding Shift then gives a stuttering sprint at the edge of empty, not a stop. Play will show whether that reads as *tireless* or as a fault. A short floor (sprint only above 5 stamina) would be the lever, and that is a number for Michael.
 - **In the dark** only bites at night outdoors. Michael may want dungeons, cellars and unlit rooms to count. That needs a light rule, which the game does not have.
 - **Swimmer** at 25 more than doubles the swim. A Scout or a Duelist, majoring in Athletics, starts with it.
+
+## v80 — Session 975 — Cat's fall and Fitted (skills and perks A, session 3, part 3)
+Two more of the sheet's first wave, both in code that combat's resolver (PR #356) leaves alone:
+- **Acrobatics 50, *Cat's fall*.** A fall is free to 8 m, not 4 (`fallFree()`). Session 429's `fallLand` reads it for the blow, the landing shake and the Acrobatics use for a jump that lands higher than it left. The 6% of your health a metre past the free height is unchanged. The sheet moved Cat's fall from the platforming page's 75 to 50, and its `perkranks` suite measures 4 → 8 m at 49 and 50; this follows the sheet.
+- **Armour 25, *Fitted*.** The five worn pieces weigh half: head, chest, hands, legs and feet (`ARMOUR_SLOTS`, the same five that make an Armour use). A shield, the weapon, rings and the cloak weigh as before. `equipWeight` carries it, so the burden, the overload and the roll's heavy line all feel it.
+
+**Left, and why.** *Catch* (Acrobatics 25: mantle to 1.6 m, and catch an edge while falling) has no mantle to raise: the platforming page's mantle was never built, and it is a system of its own, not a perk. *Second step* and *Swallow's turn* (the double jump and the air dash) wait on the designer's numbers (L11). Armour's *Second skin* (worn armour never slows the roll) is one condition on the roll's heavy line. The resolver changes the line beside it in `startRoll`, so taking it now would be a merge conflict for the deep-work session; it waits with *Unbowed* and *Hold the line*, which are posture.
+### Verified (headless Chromium)
+- **`perkfall`** (new), 6 of 6:
+  - Cat's fall: the free height is 4 m at Acrobatics 49 and 8 at 50.
+  - Through the game's own landing (`fallLand`), at maxHP 130: a 6 m fall costs 16 at 49, which is 2 m past 4 at 6%, and nothing at 50. At 50, 7.9 m is free and 9 m costs 8, the one metre past 8. A 5 m fall still costs at 49.
+  - Fitted: five pieces of 10, a shield of 6 and a sword of 3 weigh 59 at Armour 24 and 34 at 25. No page errors.
+- `falls`, `beastfall`, `fortify`, `roll`, `perkbody`, `perkhand`, `armourlines-numbers` and `skillsave` pass.
+### Needs eyes
+- **Fitted at 25** is early. A Warrior or a Sentinel majors in Armour and starts at 25, so plate weighs half from the first minute. The sheet puts it there. Play will show whether the heavy line's burden, which the armour lines were balanced on (S564), still bites.

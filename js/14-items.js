@@ -83,7 +83,9 @@ function itemWeight(it){
   return w * (it.qty || 1);
 }
 function bagWeight(){let t=0; for(const it of BAG) t+=itemWeight(it); return t;}
-function equipWeight(){let t=0; for(const k of Object.keys(EQ)) t+=itemWeight(EQ[k]); return t;}
+// S975 — Fitted (Armour 25): the five worn pieces weigh half; a shield, the weapon, rings and the cloak as before
+const ARMOUR_SLOTS=['head','chest','hands','legs','feet'];
+function equipWeight(){const fit=perk('armour',25)?.5:1;let t=0; for(const k of Object.keys(EQ)) t+=itemWeight(EQ[k])*(ARMOUR_SLOTS.includes(k)?fit:1); return t;}
 function totalCarryWeight(){return bagWeight() + equipWeight();}
 function maxCarry(){return 50 + attrEff('might') * 5 + ((typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.cargoBonus():0) + (typeof fxOn==='function'&&fxOn('feather')?40:0);} // v80 — the ship's hold counts when she's near
 function encumbranceState(){
