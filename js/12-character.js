@@ -136,6 +136,26 @@ function skillsReady(){if(!SKILLS.blade)skillsInit(playerArchetype,1);return SKI
 function skillLv(id){const s=skillsReady()[id];return s?s.lv:5;}
 // 0 at 5 (a skill never trained moves as today), 1 at 100: the movement's lines run on this
 function skillT(id){return Math.max(0,Math.min(1,(skillLv(id)-5)/95));}
+// ── PERKS (Session 973: the build sheet's third session, its first wave) ──
+// Each skill's four perks arrive on their own at 25, 50, 75 and 100; nothing is saved, a perk is read from the skill.
+// `PERK_DEF[skill]` holds the sheet's names and what each does, in rank order. `PERK_LIVE` names the ones built so far:
+// the rest are shown on the Skills tab as not yet in the game. The schools' perks come with magic B, the land skills'
+// with survival. `perk('locks',50)` is true when Locks stands at 50 or more and Sure hand is built.
+const PERK_RANKS=[25,50,75,100];
+const PERK_DEF={
+  blade:[['Draw cut','the first swing from a sheathed blade does ×2 posture damage'],['Long riposte','the riposte window 0.8 → 1.2 s'],['Crossing','a perfect parry also staggers a second attacker within 3 m'],['Clean edge','a finisher ignores armour']],
+  blunt:[['Weight','+25% posture damage'],['Ringing','a power hit breaks a raised shield in one blow'],['Daze','a staggered foe stays down 0.6 s longer'],['Earthshaker','the chain’s third hit staggers every foe within 2 m']],
+  hand:[['Hard knuckles','a punch drains ×1.5 posture'],['Throw','a punch on a staggered foe knocks it down'],['Catch the blade','a perfect parry bare-handed knocks a one-handed weapon from the foe’s grip'],['Stone hand','the fists roll 4 to 7']],
+  bow:[['Steady','a full draw holds 3 s without sway'],['Quick nock','draw 30% faster'],['Long eye','half the drop past 50 m'],['Through','a full-draw arrow passes the first foe']],
+  guard:[['Deflect','a held shield turns arrows'],['Bulwark','a bash drains +50% posture'],['Iron wall','a heavy attack no longer breaks a held block'],['Second parry','within 0.4 s of a perfect parry, the next parry is perfect too']],
+  athletics:[['Swimmer','swim at run speed'],['Long breath','three times the air underwater'],['Road legs','no sprint cost on a road'],['Tireless','stamina comes back at once after a sprint']],
+  acrobatics:[['Catch','mantle to 1.6 m, and catch an edge while falling'],['Cat’s fall','falls free to 8 m (was 4)'],['Second step','the double jump'],['Swallow’s turn','the air dash']],
+  armour:[['Fitted','worn armour weighs half'],['Unbowed','your posture +25%'],['Hold the line','a light hit doesn’t stagger you above half posture'],['Second skin','worn armour never slows the roll']],
+  stealth:[['Soft step','sneak at walking speed'],['In the dark','sight on you −25% more out of light'],['Light foot','plates and crumbling floors don’t trigger while sneaking or sprinting'],['Shadow’s hand','a backstab does +50%']],
+  locks:[['Feel for it','the pin you work glows faintly at the shear'],['Sure hand','a snapped pick keeps the set pins'],['Quiet work','picking halves a witness’s range'],['No mark','a picked town lock is never found']],
+  speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
+const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50']);
+function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
 // ×0.64 at 5, ×1.0 at 50, ×1.4 at 100: a weapon's damage and a school's power
 function skillMult(id){return id?.6+.8*skillLv(id)/100:1;}
 // the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,

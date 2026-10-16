@@ -48,6 +48,7 @@
 .lp-pin i{position:absolute;left:3px;right:3px;bottom:0;height:34px;background:linear-gradient(#b8b2a4,#6a655a);border-radius:2px;display:block;transition:none}
 .lp-pin.set i{background:linear-gradient(#e8d8a0,#a8903c)}
 .lp-pin.broke i{background:linear-gradient(#c86a50,#7a3020)}
+.lp-pin.feel i{box-shadow:0 0 7px 1px rgba(232,216,160,.45)}
 #lp-status{margin-top:9px;min-height:18px;color:#c8b890;font-size:12px}
 #lp-foot{margin-top:8px;display:flex;justify-content:space-between;align-items:baseline;gap:18px;font-size:11px;color:#8a7a60}
 #lp-picks{white-space:nowrap}
@@ -291,6 +292,7 @@
 .lu-attr-rose{color:#c8b8e8;font-size:10px;margin-bottom:2px}
 .lu-pt{background:rgba(200,168,74,.12);border:1px solid rgba(200,168,74,.5);color:#ffd700;border-radius:4px;padding:0 6px;font-size:11px;cursor:pointer}.lu-pt:disabled{opacity:.3;cursor:default}
 .sk-row{display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(120,100,70,.18);font-size:12px}.sk-name{min-width:120px;color:#e8dcc0}.sk-gov{min-width:80px;color:#8a7a60;font-size:10px}.sk-lv{min-width:28px;text-align:right;color:#ffd700}.sk-bar{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}.sk-bar>div{height:100%;background:#c8b8e8}.sk-tag{min-width:42px;font-size:10px;color:#c8a84a}
+.sk-perks{display:flex;flex-wrap:wrap;gap:4px;padding:2px 0 5px 8px;font-size:10px}.sk-perk{padding:1px 6px;border:1px solid rgba(120,100,70,.3);border-radius:3px;color:#8a7a60}.sk-perk.held{color:#ffd700;border-color:rgba(255,215,0,.5)}.sk-perk.later{opacity:.45;font-style:italic}
 .cc-skill{display:inline-block;margin:2px;padding:3px 7px;border:1px solid #5a4a3a;border-radius:4px;font-size:11px;color:#b8a880;cursor:pointer;background:#1a1410}.cc-skill.maj{border-color:#ffd700;color:#ffd700}.cc-skill.min{border-color:#c8a84a;color:#e8d8a0;background:#2a2010}
 /* ── BOOK READER ─────────────────────────────────────────── */
 #book-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,.94);z-index:75;border-radius:8px;align-items:center;justify-content:center}
@@ -801,7 +803,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s650</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s651</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>

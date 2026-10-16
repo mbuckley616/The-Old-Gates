@@ -21115,3 +21115,33 @@ Correction to Session 947: its *Verified* left the new look's run to the PR comm
 - `node tests/run.mjs mapseals`: three runs green in a row; `--look=new` green.
 ### Needs eyes
 - Nothing for a playtest.
+
+## v80 — Session 973 — The perks begin: the table, the Skills tab's perk line, and the hand and word (skills and perks A, session 3, part 1)
+The build sheet's third session (`docs/design/skills-and-perks-build.md`) is the first wave of perks. Most of the Arms perks (Blade, Blunt, Hand-to-hand, Guard) and Armour's sit in the code that combat's resolver (PR #356) rewrites, so this session takes the perks that do not: the hand and the word. The rest follow in their own sessions.
+
+**The table.** `PERK_DEF` (`12-character.js`) holds the sheet's four perks for each of the eleven skills of the first wave, with their names and what they do, in rank order (25, 50, 75, 100). `perk(id, rank)` is true when the skill stands at the rank and that perk is built. Nothing is saved: a perk is read from the skill, as the sheet says. `PERK_LIVE` names the perks built so far. The Skills tab shows each skill's four under its row, lit gold when held. One not yet built is greyed and italic, and its tooltip says *not yet in the game*. A perk the game promises in a panel should not be one the game does not do.
+
+**Built this session:**
+- **Locks 25, *Feel for it*.** The pin you are working glows faintly while it sits at the shear, the window in which letting go sets it. The sheet says *the next pin's shear shows faintly*; the glow is the plainest reading of that in Oblivion's lock (`lpRender`, the class `feel`).
+- **Locks 50, *Sure hand*.** A snapped pick no longer drops the last pin you set (`lpBreak`).
+- **Locks 75, *Quiet work*.** A witness sees a lock being picked from half as far: 6 units, not 12, by day; 3, not 6, indoors. `witnessOf(house, picking)` takes the flag from `pickSeen` and from `noteCrime` for a lock. Anything else you do is seen as before.
+- **Speech 25, *Haggle*.** 5% better prices both ways, added in `barterPct` beside Speech's own 0.2% a level.
+- **Speech 50, *Talk it down*.** A guard's halt over a fine (`confront`, and `confrontIndoor`) offers *Talk it down. (Speech)* once in each town. It halves the fine, rounded up, marks the town's crime record (`c.talked`) and opens the halt again on the new fine, so the guard's own lines say the number. The change goes through one named action, `talkDownFine`. No new in-world line: the toast *The fine is halved: N gold.* and the log line are menu voice.
+
+**Not built, and why.** Three of the twelve perks in the hand and word name things the game does not do yet. *No mark* (Locks 100) says a picked town lock is never found. Today an unseen pick is written to `worldState.crimes` and nothing ever reads that record, so there is nothing for the perk to stop. *Hearing* (Speech 75) says a person at favour −1 still talks, but nobody refuses to talk at any favour (a seen crime makes a keeper refuse trade for five days, which is not talk). *Word given* (Speech 100) needs a trespass, and there is none. Each waits on the system it names. They show on the tab as not yet in the game. *Shadow's hand* (Stealth 100, a backstab +50%) is the resolver's.
+
+**A suite re-measured, not loosened.** `speechprice` read 10% and 20% at Speech 50 and 100, and 45% at Charisma 60 with Speech 100. Haggle adds 5% from 25, so those are now 15%, 25% and 50%. The 50% is the barter's whole ceiling for a master talker at the attribute cap; Session 953's note on a shared cap stands, and now with 5 more points in it.
+### Verified (headless Chromium)
+- **`perkhand`** (new), 14 of 14:
+  - Locks 24 holds no perk, and 25 holds *Feel for it* but not *Sure hand*.
+  - Haggle: Speech 24 → 25 moves the barter 4.8% → 10%, which is Speech's 0.2% and Haggle's 5%.
+  - Sure hand: a pick snapping on the third pin keeps both set pins at Locks 50, and drops one at 49.
+  - Feel for it: the pin glows while it is in the hold window at Locks 25, and not while it is still rising. At 24 it never glows.
+  - Quiet work, by day at Dunmore with the witness facing you: at Locks 75 a pick is seen at 5.9 units and not at 6.1 or 8. A walk past is still seen at 8. At Locks 74 the pick is seen at 8.
+  - Talk it down is offered at Speech 50 and not at 49. Clicked, the fine goes 75 → 38 and the halt reopens on *Pay the fine (38 gold)*. It is not offered again in that town, in the street or indoors.
+  - The Skills tab: eleven skills carry a perk line. Locks shows its four, two lit at 50. Speech's 75 and 100 are marked not yet in the game. No page errors.
+- `speechprice` re-measured (above) and passes. `barter`, `lockpicks`, `chestpicks`, `nightpick`, `burglary`, `witnessrange`, `witness`, `guardintro` and the crime and Skills-tab suites listed in the PR comment pass.
+### Needs eyes
+- **Feel for it** is a soft gold halo on the worked pin. Whether it is too faint, or too much of a cheat, only the lock in hand shows.
+- **Talk it down** closes the guard's talk and opens it again on the new fine. It is a quick blink, not a line from the guard. If the quest writer wants a word from him, `talkDownTopic` returns it.
+- The perk line on the Skills tab is plain markup, ten pixels high, until the parchment kit (#142 A, the look builder's).

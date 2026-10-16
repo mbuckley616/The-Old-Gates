@@ -384,7 +384,8 @@ function lpStatus(t,col){const el=document.getElementById('lp-status');if(el){el
 function lpRender(){
   const box=document.getElementById('lp-pins');if(!box)return;
   if(box.children.length!==LP.pins.length){box.innerHTML='';LP.pins.forEach(()=>{const d=document.createElement('div');d.className='lp-pin';d.appendChild(document.createElement('i'));box.appendChild(d);});}
-  LP.pins.forEach((p,i)=>{const el=box.children[i];el.className='lp-pin'+(p.set?' set':'')+(i===LP.cur&&!p.set?' cur':'');
+  const feel=perk('locks',25)&&lpPhase()==='hold'; /* S973 — Feel for it (Locks 25): the worked pin glows while it sits at the shear */
+  LP.pins.forEach((p,i)=>{const el=box.children[i];el.className='lp-pin'+(p.set?' set':'')+(i===LP.cur&&!p.set?' cur':'')+(feel&&i===LP.cur&&!p.set?' feel':'');
     el.firstChild.style.transform=`translateY(${-(p.set?74:p.y*74)}px)`;});
   const pk=document.getElementById('lp-picks');if(pk)pk.innerHTML=`picks: <b>${lpPicks()}</b> \u00b7 pins set: <b>${LP.pins.filter(p=>p.set).length}/${LP.pins.length}</b>`;
 }
@@ -439,8 +440,8 @@ function lpBreak(why){
   const left=lpSpendPick();
   try{sfxTone(2600,1400,.06,.16,'square');}catch(e){}
   const box=document.getElementById('lp-pins');if(box&&box.children[LP.cur]){const el=box.children[LP.cur];el.classList.add('broke');setTimeout(()=>el.classList.remove('broke'),260);}
-  // the last pin you set falls with it — the lock gives ground grudgingly
-  for(let i=LP.pins.length-1;i>=0;i--){if(LP.pins[i].set){LP.pins[i].set=false;LP.pins[i].y=0;break;}}
+  // the last pin you set falls with it — the lock gives ground grudgingly; S973 — Sure hand (Locks 50) keeps them
+  if(!perk('locks',50))for(let i=LP.pins.length-1;i>=0;i--){if(LP.pins[i].set){LP.pins[i].set=false;LP.pins[i].y=0;break;}}
   lpRender();
   if(left<=0){lpStatus(why+' That was your last pick.','#e88a8a');lpFail();return;}
   lpStatus(why+` The pick snaps. ${left} left.`,'#e8a880');

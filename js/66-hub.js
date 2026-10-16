@@ -252,7 +252,10 @@ function renderHubSkills(){const head=document.getElementById('skill-head'),box=
   if(head)head.innerHTML=`Level <b>${level}</b> · marks <b>${+levelMarks.toFixed(2)}</b> of ${marksNeeded()} to the next${levelReady()?' — <span style="color:#ffd700">rest in a bed</span>':''}. A major's or minor's rise is a mark, any other a quarter.`;
   const S=skillsReady(),tag=id=>skillMajors.includes(id)?'major':skillMinors.includes(id)?'minor':'',rank=id=>skillMajors.includes(id)?0:skillMinors.includes(id)?1:2;
   box.innerHTML=Object.keys(SKILL_DEF).sort((a,b)=>rank(a)-rank(b)).map(id=>{const s=S[id]||{lv:5,p:0},need=s.lv>=100?1:skillCost(s.lv),a=ATTR_DEF[SKILL_DEF[id].attr];
-    return `<div class="sk-row" data-skill="${id}"><span class="sk-tag">${tag(id)}</span><span class="sk-name">${SKILL_DEF[id].label}</span><span class="sk-gov">${a?a.label:''}</span><span class="sk-lv">${s.lv}</span><div class="sk-bar"><div style="width:${s.lv>=100?100:Math.min(100,s.p/need*100)}%"></div></div></div>`;}).join('');}
+    return `<div class="sk-row" data-skill="${id}"><span class="sk-tag">${tag(id)}</span><span class="sk-name">${SKILL_DEF[id].label}</span><span class="sk-gov">${a?a.label:''}</span><span class="sk-lv">${s.lv}</span><div class="sk-bar"><div style="width:${s.lv>=100?100:Math.min(100,s.p/need*100)}%"></div></div></div>${skPerkLine(id,s.lv)}`;}).join('');}
+// S973 — each skill's four perks under its row: lit when held; one not yet built says so in its tooltip
+function skPerkLine(id,lv){const P=PERK_DEF[id];if(!P)return '';return `<div class="sk-perks">${P.map((q,i)=>{const r=PERK_RANKS[i],live=PERK_LIVE.has(id+':'+r),held=live&&lv>=r;
+    return `<span class="sk-perk${held?' held':''}${live?'':' later'}" data-perk="${id}:${r}" title="${r}: ${q[1]}${live?'':' — not yet in the game'}">${r} ${q[0]}</span>`;}).join('')}</div>`;}
 function hubTab(name){sndTabSwitch();
   const tabs=['inv','magic','attrs','quests','journal','log','map','skills']; /* S952 — Skills last, so the others keep their places */
   if(tabs.includes(name))hubLastTab=name;

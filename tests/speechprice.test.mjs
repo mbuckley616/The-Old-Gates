@@ -13,8 +13,9 @@ const r = await page.evaluate(() => {
   currentHouse = ch; Object.assign(ATTRS, a0); SKILLS.speech = sp0; return out; });
 console.log(JSON.stringify(r));
 const B = r.barter;
-check(`Speech: 0.2% a level, to 20% (${B.c0s5}, ${B.c0s50}, ${B.c0s100} at 5, 50, 100)`, B.c0s5 === .01 && B.c0s50 === .1 && B.c0s100 === .2, B);
-check(`Charisma: 0.5% a point on top (${B.c10s5} at Charisma 10, Speech 5), its own share still to a quarter (${B.c60s100} at 60 and 100)`, B.c10s5 === .06 && B.c60s100 === .45, B);
+// S973: Haggle, Speech's perk at 25, adds 5% from there (perkhand measures the edge)
+check(`Speech: 0.2% a level, to 20%, and Haggle's 5% from 25 (${B.c0s5}, ${B.c0s50}, ${B.c0s100} at 5, 50, 100)`, B.c0s5 === .01 && B.c0s50 === .15 && B.c0s100 === .25, B);
+check(`Charisma: 0.5% a point on top (${B.c10s5} at Charisma 10, Speech 5), its own share still to a quarter (${B.c60s100} at 60 and 100)`, B.c10s5 === .06 && B.c60s100 === .5, B);
 check(`Finesse 10 takes ${r.sprint * 100}% off the sprint, Fortune 10 gives ${r.crit * 100}% crit`, Math.abs(r.sprint - .1) < 1e-9 && Math.abs(r.crit - .05) < 1e-9, r);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
