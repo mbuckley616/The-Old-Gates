@@ -666,7 +666,7 @@
   ]
  },
  "guild": {
-  "secs": 8,
+  "secs": 9,
   "puffs": 1131,
   "plans": {
    "Guild hall": {
@@ -693,7 +693,7 @@
   ]
  },
  "guild-corner": {
-  "secs": 5,
+  "secs": 10,
   "puffs": 1131,
   "plans": {
    "Guild hall": {
@@ -716,7 +716,7 @@
   "view": "guild",
   "mix": "a",
   "errs": [
-   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:45521/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:45521/people.js:10:21)"
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:38755/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:38755/people.js:10:21)"
   ]
  },
  "guild-back": {
@@ -774,7 +774,7 @@
   ]
  },
  "guild-mages": {
-  "secs": 6,
+  "secs": 10,
   "puffs": 1131,
   "plans": {
    "Guild hall": {
@@ -797,7 +797,7 @@
   "view": "guild",
   "mix": "a",
   "errs": [
-   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:45521/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:45521/people.js:10:21)"
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:44263/people.js:10:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:44263/people.js:10:21)"
   ]
  }
 }
