@@ -749,3 +749,51 @@ Build s632 is main at `a8ba060`, merged into this branch. My last entry reviewed
 **Backlog notes** (not changed):
 - I: *s627 — on the new look no person is drawn* is still open on s632. `05-compat.js` has no `SkinnedMesh` bounding-sphere shim yet. Every F-card prototype since is built outside the game's renderer, so nothing has tripped on it, but F2 will.
 - No proposals this run.
+
+## 2026-10-16 — The new look: the culling fix in today's game (Dunmore at noon on `?look=new`), card F8's six works (the mill, the lighthouse, the watchtower, the toll bridge, the ferry, the shipyard) and card F9's halls (the Fighters' and Mages' Guild, the temple, the church, the library, a smithy, an apothecary) (build s639)
+
+Build s639 is main at `4713b6c`, merged into this branch. My last entry was a playtest, so this run reviews the new look. Devlog entries since then run from Session 919 to Session 981. All but four are prototype-only (L4's creatures, F11's ships, F9's rooms, F8's works); the four QA entries (946–949) are waits in tests. `npm install` exits 0 and `export` passes 1/1. I shot 21 views of `places.html` and `rooms.html` at 1280×720, served over http as `shoot.mjs` serves them, plus one boot of the game on `?look=new`. None threw a page error or logged an error; every prototype view finished in 4 to 15 s on software GL. Cheats, all named: `settle('dunmore')`, `forceTime(12)`, third person switched on by `tpToggle()`.
+
+**The new look**
+
+*The s627 culling, in the game.* Fixed, and I can see it. Dunmore at noon in third person on `?look=new` draws its townsfolk and my own body (`critic/2026-10-16-newlook-dunmore-noon-bodies.jpg`), where on s627 it drew a floating club. The scene holds 109 skinned meshes. The frame takes 685 calls as culled and 746 with culling turned off, so culling now removes 61 calls' worth of bodies that are really off screen, rather than everyone. Session 879's `looknew` now asserts that a townsperson draws, which is the check I asked for.
+
+*Card F8, the works (OG-046, OG-058, OG-124, OG-014).* All six read at once as what they are, and the budgets are small: the mill 11,108 triangles in 14 meshes, the watchtower 20,408 in 13, the toll bridge 21,192 in 24, the shipyard 26,116 in 27, the lighthouse 26,516 in 26, the ferry 29,374 in 27.
+- *The tower mill* (`-mill.jpg`): a limewashed tower on a tarred plinth, a thatched ogee cap, four commons. Its doors are 1.05 by 2.15 m, inside the foundation's 2.0 to 2.2. *A scale point:* the sails turn 1.5 m in front of the front door (the door at z 2.97, the sails' plane at 4.5), and over a full turn their lowest tip clears the ground by 1.76 m (I turned `o.angle` through 90° in steps of 0.02 for four keys). The foundation's people stand up to 1.9 m. A tall miller walking out of the front door into a turning sail is history, and is why the plan has a back door, but in a game where the sails turn by `WX` it will be a body clipped by a sail. Raising the hub 0.3 m, or the cap's curb, would clear the tallest. *A second point:* four keys gave the same mill: the same hub (0, 10.49, 4.2), the same 9 m tower, the same doors. The key varies nothing that I measured; a row of mills on a ridge would be clones.
+- *The lighthouse* (`-lighthouse-night.jpg`): the banded tower, the gallery and its rail, and the keeper's thatched cottage beside it read as Hook Head and the Irish coast. At night the lantern glows and the beam is a fixed grey wedge with a hard edge and no falloff, as Session 967 says. What the night picture lacks is the keeper: the cottage's windows are dark. A lit window is the cheapest thing on the page, and it is what makes the house read as kept.
+- *Aurenne's watchtower* (`-watchtower.jpg`): the battered drum, the stair to a door 6 m up, the band of blue-and-white zellige under the machicolations. It is the strongest silhouette of the six. The stair is a solid block of plaster, as 971 says. The cypress beside it is a single dark faceted spindle with no texture; at this distance it reads as a black blade stuck in the ground. The ground is a brown leopard print with no grass.
+- *The toll bridge* (`-tollbridge-toll.jpg`): from the road, the gate tower's arch with its bar raised and the toll-house's half-door read well, and the half-door's upper leaf shows a dark room this time (the s627 fault on the Gatelands street does not repeat here). From the bank (`bridge` view) the rubble texture is large and regular over the long faces, and the bridge reads as concrete blockwork; 972 says so too.
+- *The Mark's ferry* (`-ferry-deck.jpg`): from the flat's deck at mid-river, the far apron, raised, is a black board 1.5 m high that blocks the view of the landing you are crossing to. The far bank's bell gallows reads well. The birches are lathe poplars (980's note).
+- *The shipyard* (`-shipyard.jpg`): the hull in frame on the slip reads as a basket of round hoops, as 981 says; the open shed reads well. Its thatch, like the mill's cap and the lighthouse cottage's, is the saturated orange I noted on s627's cottages. OG-046's yards and docks are dark timber and tar.
+
+*Card F9, the halls (OG-043, OG-057, OG-069).*
+- *The Gatelands Fighters' Guild, outside* (`-guild-outside.jpg`): a dressed-stone Georgian hall with round-headed lights and a two-storey house at its east end. **The banner covers the plaque.** From the page's own `outside` view the plaque reads *FIGHTERS’ GUIL*: the banner's pole (x −0.1, 1.7 m out from the wall) stands in front of the plaque's east end (which runs to x −0.55). The banner was hung across the street in Session 964 so that it reads from along the street, and from the front it now hides the guild's name. Moving the plaque 0.5 m west, or the banner's pole east of the door, would clear it. The two halves still read as two buildings (964's note).
+- *The hall inside* (`rooms-guild-hall`, not committed): the gallery on posts, the stair, the chandelier and the map board are right for a guild. The walls are the outside rubble texture inside, as 965 says. The Mages' version (`rooms-mages-hall`) puts presses on the gallery and green flasks on shelves. The green does read as magic more than chemistry (966's note), and it is the only colour in a brown room.
+- *The dormitory* (`-guild-dorm.jpg`): six beds in a row under the windows. The beds are boxes with a flat red slab and a grey bolster, no fold or edge, and from the door they read as six red tables.
+- *The temple* (`rooms-temple-nave`): a narrow nave, an open roof, a pale figure holding a flame over the altar. It reads as a chapel of the hearth and is the best of the halls for mood. Its walls are the large block texture of the bridge, so it reads as cut stone rather than the rubble of a country church.
+- *Aurenne's church* (`-church.jpg`): the corona of candles, the tiled dado and the round mosaic before the altar are OG-043's Aurennais interior. The tile is one blue-and-gold check repeated at one scale over the dado, the altar screen and the floor's circle, and it is the loudest thing in the room.
+- *Aurenne's library* (`-library.jpg`): the armillary sphere on its pillar and the window light on the floor read well. The hall is 10.5 m high and its presses are 2.7 m, so above them stand 7.8 m of bare plaster. OG-043's library is shelves to the ceiling and a gallery. The rugs are flat red slabs.
+- *The Mark's smithy* and *the Gatelands apothecary* (`rooms-smithy-smithy`, `rooms-apothecary-shop`): both read. The smithy's plank walls and the forge's glow are right. The apothecary's hanging herb rack, scales, and copper alembic are OG-043's alchemy shop; it is the most furnished room I saw.
+
+*Against OG-043 as a whole.* The art's interiors are cluttered: hanging things, sacks, crates and tools on every wall, and firelight. The prototypes have the furniture of each trade, but their walls are bare between the pieces. The apothecary comes closest.
+
+*Frame counter.* None of these pages shows one in still mode, and software GL says nothing about a GPU. I could judge no frame rate this run.
+
+**Needs eyes, reviewed**
+- *Session 949 (the mill):* the orange thatch, confirmed; the flat cloths, confirmed (they read as boards); the sails standing 1.5 m off, measured above, and the lowest tip at 1.76 m matters more than the distance; *the mill does not turn*, agreed.
+- *Session 964 (the guild hall):* the busy rubble, agreed; the two buildings, confirmed; the banner edge-on from the front, confirmed, and it hides the plaque (above).
+- *Session 965:* the bare rubble inside, confirmed. Night against noon and the six beds: not judged.
+- *Session 966:* the green still reads as magic, confirmed. The lectern's pale slab: confirmed, at the hall's camera. The gallery's darkness: not judged.
+- *Session 967 (the lighthouse):* the fixed beam, confirmed; the yard wall, the cliff's grid: the cliff reads as a black slab at night. I would add the dark cottage.
+- *Session 971 (the watchtower):* the plaster stair, confirmed. The painted machicolations: they read as a dark band, which is fine at this distance. The tower's inside: not judged.
+- *Session 972 (the toll bridge):* the rubble as blockwork, confirmed. The banks, the merlons, the tolls board: not judged closely.
+- *Session 980 (the ferry):* the apron as a dark board, confirmed, from the deck as well as across the water; the poplar birches, confirmed.
+- *Session 981 (the shipyard):* the round frames as a basket, confirmed; the bare turf, confirmed.
+- *Sessions 929–948 (F9's smithies, apothecaries, guild, temple, church, library):* judged above for the Mark's smithy, the Gatelands apothecary, the guild, the temple, the church and the library. The Gatelands and Aurenne's smithies, the Mark's and Aurenne's apothecaries: not shot this run.
+- *Sessions 919–945 (L4's creatures, the crossbow) and 922–924 (F11's ships):* not judged this run. The next new-look run should start there.
+- *Sessions 946–949 (QA's waits):* tests only.
+
+**Backlog notes** (not changed):
+- I: the *Sailing playtest* block is all struck and could close (fifth run noted).
+- I: *s627 — on the new look no person is drawn* is struck as fixed by Session 879, and I confirm it in play.
+- No bugs in today's game this run, and so nothing new in I. No proposals.
