@@ -21817,3 +21817,33 @@ Corrections made during the session:
 - **The quay's rubble texture is the toll bridge's**, large and regular, and its bollards are iron where a small yard would use timber.
 - **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
 - **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
+
+## v80 — Session 992 — The sash's knot and hanging ends (L1 and B2, prototype only)
+Session 989 left the sash's hip end as "a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang." OG-056 draws the Aurennais' sashes knotted at the hip with long ends falling over the thigh. This finishes a piece the kit already makes and the sheet already shows, so it asks nothing. It touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **The knot.** It sits on the band where the loop turns, 15 cm round from the loop's lowest point toward the front, so it lies on the front of the hip rather than its side. It is a lump 8 cm across the band, 6.8 cm along it and 4.4 cm deep, slightly irregular, with its inner face 3 mm over the band. A ring round its middle is in the border's colour, so it reads as cloth bound round on itself. It has 280 triangles.
+- **Two hanging ends** come out from under the knot. The longer is 32 cm and lies behind; the shorter is 25 cm and lies in front. They are 5 cm wide under the knot and widen to 7 cm, and each has the band's two borders and a bordered hem. They are laid in rows 1.5 cm apart, five lines across each row, and hang straight down. A row moves out only where what it hangs over (the thigh, the tunic's skirt, a long skirt, or the band itself under the knot) stands further out than the row above, and it never comes back in. The front end also stays 6 mm clear of the one behind. The longer end drifts in toward the body's middle and the shorter barely out, so they part by 5.2 cm at the hem. Together the ends add 228 triangles. A sash is now 1,516 triangles in one mesh, against 1,008 for the band alone.
+- **The hand.** The relaxed hand lies on the front of the thigh, right where the ends fall. At first the only fix was the existing arm lift, which then had to reach 0.24 to 0.27 radians to clear them; the check allows 0.2. So `makePerson` now does something else once the band is clear: it swings that arm back from the shoulder, 0.03 radians at a time (0.3 at most), until no point of the arm is in the knot or through an end. The men need 0.15 radians (about 9 degrees) and the woman 0.09. The lift is back to Session 990's values (0.18 and 0.09).
+- The dress takes `sashKnot` (on by default). With `false` you get the band alone, as before.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 299 checks pass** (292 before). The seven new checks:
+  - **Placement and clearance, on each of the three sashes:**
+    - The knot sits 13.1 cm under the belt on the men and 4.7 cm on the woman, whose belt sits lower.
+    - Nothing it lies over is inside the knot.
+    - The ends hang 0.31 to 0.33 m below it, 5.2 cm apart.
+    - Nothing comes out through the ends: 0 of 364, 1,216 and 391 points read, the nearest 4.6 to 6.5 mm under them.
+  - **The arm, on each of the three:** no point of it is in the knot or through an end, and the swing stays within 0.2.
+  - **`sashKnot: false`:** gives the band alone, 1,008 triangles and no knot.
+- The print check now counts the band's own triangles. Before this, it counted the whole mesh, so the knot read as extra print.
+- `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-sash-knot.jpg` (the hip close up, from the front) and `builder-sash-knot-side.jpg` (from the side, with the ends standing off the tunic's front).
+  - Re-shot: `builder-sash-man.jpg`, `-back.jpg`, `-woman.jpg` and `builder-peoples.jpg`.
+
+### Needs eyes
+- **The knot reads as a ball** with a band round it, most of all on the woman's madder sash. A real knot has a loop and the ends coming out of it; a flatter, wider lump, or one end looped over, would read better.
+- **The ends are stiff.** They hang straight and flat, with no twist and no fringe. OG-056's ends are fringed.
+- **The arm swung back.** At 0.15 radians the hand hangs at the side of the thigh, behind the ends. Whether that reads as relaxed or as held back needs a look in the line-up.
+- **In motion** the ends would swing. They are built on the posed body like the rest of the sash, so in the game they need bones or a cloth tick (B4, F4).

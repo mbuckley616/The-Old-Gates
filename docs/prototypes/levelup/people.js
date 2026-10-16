@@ -658,8 +658,8 @@ function buildSash(G, body, byName) {
   // surface's normal, 7 mm clear of the furthest point within 1.2 cm of that line (a dip of up to 2 cm in to meet a curving body)
   const cell = .02, grid = new Map(), key = (x, y, z) => (Math.floor(x / cell) + 512) * 1048576 + (Math.floor(y / cell) + 512) * 1024 + (Math.floor(z / cell) + 512);
   for (let q = 0; q < NP; q++) { const b = q * ST; d.set(SP[b] - C.x, SP[b + 1] - C.y, SP[b + 2] - C.z); if (d.dot(a) < uH) continue; const k = key(SP[b], SP[b + 1], SP[b + 2]); let L = grid.get(k); if (!L) grid.set(k, L = []); L.push(q); }
-  const near = (p, R, f) => { const r = Math.ceil(R / cell); const ix = Math.floor(p.x / cell), iy = Math.floor(p.y / cell), iz = Math.floor(p.z / cell);
-    for (let x = ix - r; x <= ix + r; x++) for (let y = iy - r; y <= iy + r; y++) for (let z = iz - r; z <= iz + r; z++) { const L = grid.get((x + 512) * 1048576 + (y + 512) * 1024 + (z + 512)); if (L) for (const q of L) f(q); } };
+  const near = (p, R, f, Gd = grid) => { const r = Math.ceil(R / cell); const ix = Math.floor(p.x / cell), iy = Math.floor(p.y / cell), iz = Math.floor(p.z / cell);
+    for (let x = ix - r; x <= ix + r; x++) for (let y = iy - r; y <= iy + r; y++) for (let z = iz - r; z <= iz + r; z++) { const L = Gd.get((x + 512) * 1048576 + (y + 512) * 1024 + (z + 512)); if (L) for (const q of L) f(q); } };
   const P0 = [], NS0 = [], T0 = [], A0 = [];
   for (let t = 0; t < NT; t++) { const th = t / NT * 2 * Math.PI, r = Rr[t * NS + (NS >> 1)]; P0.push(C.clone().addScaledVector(a, Math.cos(th) * r).addScaledVector(e, Math.sin(th) * r)); }
   for (let t = 0; t < NT; t++) { const p = P0[t], n0 = new THREE.Vector3(); near(p, .03, q => { const b = q * ST, w = .03 - Math.hypot(SP[b] - p.x, SP[b + 1] - p.y, SP[b + 2] - p.z); if (w > 0) n0.x += SP[b + 4] * w, n0.y += SP[b + 5] * w, n0.z += SP[b + 6] * w; });
@@ -686,6 +686,49 @@ function buildSash(G, body, byName) {
   const blocks = (s0, s1) => { for (let t = 0; t < NT; t++) { if (t % 4 > 1) continue; const base = pos.length / 3; for (const tt of [t, t + 1]) for (const s of [s0, s1]) { const q = vert(tt, s).addScaledVector(NS0[tt % NT], .0008); pos.push(q.x, q.y, q.z); col.push(edge.r, edge.g, edge.b); }
     idx.push(base, base + 1, base + 2, base + 2, base + 1, base + 3); } };
   const bw = .014, mw = .011; strip(-W / 2, -W / 2 + bw, edge); strip(-W / 2 + bw, W / 2 - bw, field); strip(W / 2 - bw, W / 2, edge); if (D.sashPrint !== false) blocks(-mw, mw);
+  const bandTris = idx.length / 3;
+  // the knot and its two hanging ends (Session 992, OG-056's sashes knotted at the hip): the knot sits on the band where it turns,
+  // a little to the front of the hip's side, and the two ends hang straight down from under it, pushed out only where what they
+  // hang over (the thigh, the tunic's skirt, a long skirt) stands further out than the line above. They read everything the
+  // band does, the thigh below the hip included, which the loop leaves out
+  let knot = null; if (D.sashKnot !== false) {
+    const gridAll = new Map(); for (let q = 0; q < NP; q++) { const b = q * ST, k = key(SP[b], SP[b + 1], SP[b + 2]); let L = gridAll.get(k); if (!L) gridAll.set(k, L = []); L.push(q); }
+    // the turn: the loop's lowest point, then 15 cm round it toward the front
+    let tl = 0; for (let t = 1; t < NT; t++) if (P0[t].y < P0[tl].y) tl = t; const dir = P0[(tl + 3) % NT].z > P0[(tl + NT - 3) % NT].z ? 1 : -1;
+    let tk = tl, run = 0; while (run < .15) { const nx = (tk + dir + NT) % NT; run += P0[tk].distanceTo(P0[nx]); tk = nx; }
+    const Pk = vert(tk, 0), On = NS0[tk].clone(), O = On.clone().setY(0).normalize(), X = new THREE.Vector3(0, 1, 0).cross(O).normalize(), At = A0[tk], Tt = T0[tk];
+    // the band's own points near the knot, which the ends come out from under and hang over
+    const BP = []; for (let i = 0; i < pos.length; i += 3) if (Math.hypot(pos[i] - Pk.x, pos[i + 1] - Pk.y, pos[i + 2] - Pk.z) < .14) BP.push(pos[i], pos[i + 1], pos[i + 2]);
+    // the knot: a lump 8 cm across the band, 6.8 along it and 4.4 deep, its inner face on the band, bound round its middle in the border's colour
+    const kr = [.04, .034, .022], kc = Pk.clone().addScaledVector(On, kr[2] + .003), KS = 14, KR = 10, kb = pos.length / 3;
+    for (let i = 0; i <= KR; i++) { const ph = i / KR * Math.PI; for (let j = 0; j <= KS; j++) { const th = j / KS * 2 * Math.PI, lx = Math.sin(ph) * Math.cos(th), ly = Math.cos(ph), lz = Math.sin(ph) * Math.sin(th);
+      const lump = 1 + .14 * Math.sin(3 * th + 1.3) * Math.sin(ph) + .08 * Math.cos(2 * ph), q2 = kc.clone().addScaledVector(At, lx * kr[0] * lump).addScaledVector(Tt, ly * kr[1] * lump).addScaledVector(On, lz * kr[2] * lump);
+      pos.push(q2.x, q2.y, q2.z); const c = Math.abs(ly) < .22 ? edge : field; col.push(c.r, c.g, c.b); } }
+    for (let i = 0; i < KR; i++) for (let j = 0; j < KS; j++) { const a0 = kb + i * (KS + 1) + j, b0 = a0 + KS + 1; idx.push(a0, b0, a0 + 1, a0 + 1, b0, b0 + 1); }
+    // an end: rows 1.5 cm apart down from under the knot (each clear of what is under it there and half a row up), five lines across; each line's offset out along O never comes back in
+    const need = (Q, extra) => { let h = -9; near(Q, .05, q => { const b = q * ST, dx = SP[b] - Q.x, dy = SP[b + 1] - Q.y, dz = SP[b + 2] - Q.z, along = dx * O.x + dy * O.y + dz * O.z; if (along < -.06) return;
+      if (Math.hypot(dx - O.x * along, dy - O.y * along, dz - O.z * along) < .012) h = Math.max(h, along + SP[b + 3]); }, gridAll);
+      for (let i = 0; i < BP.length; i += 3) { const dx = BP[i] - Q.x, dy = BP[i + 1] - Q.y, dz = BP[i + 2] - Q.z, along = dx * O.x + dy * O.y + dz * O.z; if (Math.hypot(dx - O.x * along, dy - O.y * along, dz - O.z * along) < .014) h = Math.max(h, along + .002 - clr); }
+      return h > -8 ? h + clr + extra : -9; };
+    const ends = [], step = .015, NK = 5;
+    const end = (len, s0, splay, w0, w1, h0, under) => { const nr = Math.round(len / step), H2 = [];
+      for (let j = 0; j <= nr; j++) { const f = j / nr, w = w0 + (w1 - w0) * Math.min(1, f * 3), cs = s0 + splay * f, row = [];
+        for (let k = 0; k < NK; k++) { const s = cs + (k / (NK - 1) - .5) * w, Q = Pk.clone().addScaledVector(X, s).add(new THREE.Vector3(0, -.012 - j * step, 0));
+          let h = Math.max(j ? H2[j - 1].h[k] : h0, need(Q, 0), j ? need(Q.clone().add(new THREE.Vector3(0, step / 2, 0)), 0) : -9); if (under) h = Math.max(h, under(j, s) + .006); row.push(h); }
+        H2.push({ cs, w, h: row }); }
+      // smoothed across each row, never in past the line above or what it hangs over
+      const at = (j, s) => { const r = H2[Math.max(0, Math.min(nr, j))], kf = (Math.max(-1, Math.min(1, (s - r.cs) / (r.w / 2))) + 1) / 2 * (NK - 1), k0 = Math.min(NK - 2, Math.floor(kf)), f = kf - k0; return r.h[k0] * (1 - f) + r.h[k0 + 1] * f; };
+      const P = (j, u) => { const r = H2[j], s = r.cs + u * r.w / 2; return Pk.clone().addScaledVector(X, s).add(new THREE.Vector3(0, -.012 - j * step, 0)).addScaledVector(O, at(j, s)); };
+      const band = (u0, u1, c, j0 = 0, j1 = nr) => { const base = pos.length / 3; for (let j = j0; j <= j1; j++) for (const u of [u0, u1]) { const q2 = P(j, u); pos.push(q2.x, q2.y, q2.z); col.push(c.r, c.g, c.b); }
+        for (let j = 0; j < j1 - j0; j++) { const i = base + j * 2; idx.push(i, i + 1, i + 2, i + 2, i + 1, i + 3); } };
+      const bu = bw / ((w0 + w1) / 2) * 2; band(-1, -1 + bu, edge); band(-1 + bu, 1 - bu, field, 0, nr - 1); band(-1 + bu, 1 - bu, edge, nr - 1, nr); band(1 - bu, 1, edge);
+      const e = { nr, H2, at, P, len }; ends.push(e); return e; };
+    // the longer end behind, the shorter over it, 3 cm apart at the knot and parting as they fall
+    // (the longer drifts in toward the body's middle and the shorter barely out, so neither swings into the hand hanging at the side)
+    const m = Math.sign((cx - Pk.x) * X.x + (cz - Pk.z) * X.z) || 1, e1 = end(.32, m * .008, m * .022, .05, .072, .004);
+    end(.25, -m * .016, -m * .006, .046, .066, .01, (j, s) => { const r = e1.H2[Math.min(e1.nr, j)]; return Math.abs(s - r.cs) < r.w / 2 + .02 ? e1.at(j, s) : -9; });
+    knot = { kc, kr, At, Tt, On, O, ends };
+  }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 30 }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'sash'; mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
   // nothing it lies over comes out through it: at four times the band's own points (half steps round and across), every point
@@ -700,9 +743,24 @@ function buildSash(G, body, byName) {
   for (let t2 = 0; t2 < NT * 2; t2++) for (let k2 = 0; k2 <= 2 * (NS - 1); k2++) { const t = t2 / 2, s = (k2 / (2 * (NS - 1)) - .5) * W, t0 = Math.floor(t), V = t === t0 ? vert(t0, s) : vert(t0, s).add(vert(t0 + 1, s)).multiplyScalar(.5), Nn = NS0[t0 % NT];
     for (const v of arm) { const dx = PP[v * 3] - V.x, dy = PP[v * 3 + 1] - V.y, dz = PP[v * 3 + 2] - V.z; if (Math.abs(dx) > .05 || Math.abs(dy) > .05 || Math.abs(dz) > .05) continue; const along = dx * Nn.x + dy * Nn.y + dz * Nn.z;
       if (along < -.04 || along > .006 || Math.hypot(dx - Nn.x * along, dy - Nn.y * along, dz - Nn.z * along) > .012) continue; if (!inArm[v]) { inArm[v] = 1; armIn++; } } }
+  // the knot and the ends (Session 992): nothing comes out through the knot (a point of what it lies over, pushed out by its own
+  // stand-off, inside the lump), nor through an end (as the band is read, along O at every half row and half line across), and no
+  // point of an arm is in the knot or within 1.2 cm of an end's line and from 4 cm under it to 6 mm over it
+  let kn = null; if (knot) { const { kc, kr, At, Tt, On, O, ends } = knot, inK = (x, y, z, pad) => { const dx = x - kc.x, dy = y - kc.y, dz = z - kc.z;
+      return ((dx * At.x + dy * At.y + dz * At.z) / (kr[0] * .88 + pad)) ** 2 + ((dx * Tt.x + dy * Tt.y + dz * Tt.z) / (kr[1] * .88 + pad)) ** 2 + ((dx * On.x + dy * On.y + dz * On.z) / (kr[2] * .88 + pad)) ** 2 < 1; };
+    let knotOut = 0, endTested = 0, endOut = 0, endWorst = -1, endArm = 0, lowest = 9, spread = 0; const sn2 = new Uint8Array(NP), an2 = new Uint8Array(n);
+    for (let q = 0; q < NP; q++) { const b = q * ST; if (inK(SP[b] + SP[b + 4] * SP[b + 3], SP[b + 1] + SP[b + 5] * SP[b + 3], SP[b + 2] + SP[b + 6] * SP[b + 3], 0)) knotOut++; }
+    for (const v of arm) if (inK(PP[v * 3], PP[v * 3 + 1], PP[v * 3 + 2], .004) && !an2[v]) { an2[v] = 1; endArm++; }
+    for (const e of ends) for (let j2 = 0; j2 <= 2 * e.nr; j2++) for (let u2 = -4; u2 <= 4; u2++) { const j = j2 >> 1, V = j2 & 1 ? e.P(j, u2 / 4).add(e.P(j + 1, u2 / 4)).multiplyScalar(.5) : e.P(j, u2 / 4); lowest = Math.min(lowest, V.y);
+      for (let q = 0; q < NP; q++) { const b = q * ST, dx = SP[b] - V.x, dy = SP[b + 1] - V.y, dz = SP[b + 2] - V.z; if (Math.abs(dx) > .05 || Math.abs(dy) > .05 || Math.abs(dz) > .05) continue; const along = dx * O.x + dy * O.y + dz * O.z; if (along < -.05) continue;
+        if (Math.hypot(dx - O.x * along, dy - O.y * along, dz - O.z * along) > .01) continue; const gap = along + SP[b + 3]; if (!sn2[q]) { sn2[q] = 1; endTested++; } endWorst = Math.max(endWorst, gap); if (gap > -.003 && sn2[q] === 1) { sn2[q] = 2; endOut++; } }
+      for (const v of arm) { const dx = PP[v * 3] - V.x, dy = PP[v * 3 + 1] - V.y, dz = PP[v * 3 + 2] - V.z; if (Math.abs(dx) > .05 || Math.abs(dy) > .05 || Math.abs(dz) > .05) continue; const along = dx * O.x + dy * O.y + dz * O.z;
+        if (along < -.04 || along > .006 || Math.hypot(dx - O.x * along, dy - O.y * along, dz - O.z * along) > .012) continue; if (!an2[v]) { an2[v] = 1; endArm++; } } }
+    { const a = ends[0].P(ends[0].nr, 0), b = ends[1].P(ends[1].nr, 0); spread = Math.hypot(a.x - b.x, a.z - b.z); }
+    kn = { knotOut, endTested, endOut, endWorst: +endWorst.toFixed(4), endArm, ends: ends.map(e => e.len), drop: +(kc.y - lowest).toFixed(3), spread: +spread.toFixed(3), knotY: +kc.y.toFixed(3), beltY: +yBelt.toFixed(3) }; }
   // the loop's length, and how high the shoulder's crossing sits over the hip's
   let len = 0; for (let t = 0; t < NT; t++) len += vert(t, 0).distanceTo(vert(t + 1, 0));
-  return { mesh, stats: { width: W, length: +len.toFixed(3), drop: +(S.y - H.y).toFixed(3), side: side > 0 ? 'L' : 'R', tris: idx.length / 3, read: pts, empty, tested, out, worst: +worst.toFixed(4), armIn } };
+  return { mesh, stats: { width: W, length: +len.toFixed(3), drop: +(S.y - H.y).toFixed(3), side: side > 0 ? 'L' : 'R', tris: idx.length / 3, bandTris, read: pts, empty, tested, out, worst: +worst.toFixed(4), armIn, knot: kn } };
 }
 
 // ── the hood up (Session 823, Michael's note on #274: "the hood is semi-transparent") ──
@@ -1595,10 +1653,16 @@ export function makePerson(G, o = {}) {
     const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
     spearGrip = fistGrip(body, byName, root, curl, hinge); }
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
-  // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band
-  let sashStats = null; if (D.sash) { const hipArm = byName[D.sashSide === 'R' ? 'upperarm01.L' : 'upperarm01.R'], sg = D.sashSide === 'R' ? 1 : -1; let T, lift = 0;
-    for (;;) { root.updateMatrixWorld(true); T = buildSash(G, body, byName); if (!T.stats.armIn || lift >= .3) break; lift += .03; hipArm.quaternion.multiply(q(0, 0, sg * .03)); }
-    root.add(T.mesh); sashStats = { ...T.stats, armLift: +lift.toFixed(2) }; }
+  // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band.
+  // Its knot's hanging ends (Session 992) fall over the front of the thigh, where the relaxed hand lies: then the arm is swung back
+  // from the shoulder, as far again at most, until the hand hangs at the thigh's side behind them
+  let sashStats = null; if (D.sash) { const hipArm = byName[D.sashSide === 'R' ? 'upperarm01.L' : 'upperarm01.R'], sg = D.sashSide === 'R' ? 1 : -1; let T, lift = 0, swing = 0;
+    const back = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion())), .03);
+    for (;;) { root.updateMatrixWorld(true); T = buildSash(G, body, byName); const ends = T.stats.knot ? T.stats.knot.endArm : 0;
+      if (T.stats.armIn && lift < .3) { lift += .03; hipArm.quaternion.multiply(q(0, 0, sg * .03)); }
+      else if (ends && swing < .3) { swing += .03; const pw = hipArm.parent.getWorldQuaternion(new THREE.Quaternion()); hipArm.quaternion.premultiply(pw).premultiply(back).premultiply(pw.invert()); }
+      else break; }
+    root.add(T.mesh); sashStats = { ...T.stats, armLift: +lift.toFixed(2), armSwing: +swing.toFixed(2) }; }
   let laceStats = null; if (D.bodice) { root.updateMatrixWorld(true); const L = buildLacing(G, meshes); for (const m of L.meshes) root.add(m); laceStats = L.stats; }
   let cordStats = null; if (D.cord) { root.updateMatrixWorld(true); const C = buildCord(G, body, meshes); for (const m of C.meshes) root.add(m); cordStats = C.stats; if (D.robe && o.robeStats !== false) Object.assign(cordStats, robeStats(body, meshes)); }
   let mailSt = null; if (mail && o.mailStats !== false) { root.updateMatrixWorld(true); mailSt = mailStats(body, meshes); }
@@ -1634,7 +1698,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
