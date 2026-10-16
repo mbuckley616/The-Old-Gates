@@ -1165,3 +1165,96 @@ export function gatelandsLighthouse(o = {}, r = stream('lighthouse')) {
   return { group, tris: Math.round(tris), draws: group.children.length - 1 + cot.userData.calls, top: +(L1 + (LR + .12) * .75 + 1.5).toFixed(2), tower: { r0, r1, h }, gallery: { y: GY, rOut: GR, rail: RAIL, rIn: r1 }, lantern: { r: LR, y0: L0, y1: L1, pedestal: 1.75 },
     focal: [0, FY, 0], door, cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: cot.userData.door }, cliff, ground, sea: SEA, lit };
 }
+
+// ── Aurenne's coastal watchtower (Session 968, card F8; L5's "roads and works", OG-046's watchtowers, OG-124's Aurenne panel: "a coastal
+// watchtower"). Piracy is the Mark's undeclared war and the Compact's tithe-ships its favourite prey (canon §1), so the Compact keeps a
+// chain of towers along its coast, each in sight of the next. The precedent is the Genoese and Saracen towers of the Tyrrhenian coast
+// and the borj of the Maghreb: a round tower on a scarp, its door high up and reached by a stair that stops short of it, a parapet on
+// machicolations, a beacon on the roof. In Aurenne's own dress (§1.3): cream lime plaster, limestone dressings, a band of blue tile.
+// Built at true size on its point, the sea to +z:
+//   - the point: dry turf over a rock edge that falls 11 m to the sea (the break 13 m out on the mean), rocks along it, two cypresses inland;
+//   - the tower: a scarp battered from 10 m across at the foot to 8.4 m at a limestone cordon 4 m up, then a near-upright drum to the
+//     terrace at 12.3 m; slit windows; under the parapet a band of blue tile;
+//   - the parapet: 20 limestone corbels carrying it out 0.65 m, open between (the machicolations, to drop stones on whoever is at the
+//     door), 1.05 m high over the terrace, with loopholes;
+//   - the door: round-headed, 1.0 by 2.1 m, painted blue, its sill 5.4 m up on the landward side. A masonry stair of 27 risers climbs
+//     beside the tower to a landing pier 1.1 m short of the sill, and a gangway of planks crosses the gap; o.drawn, it is drawn in;
+//   - the terrace: limestone, the stair's head in a small domed hut, the beacon in an iron basket on a stone plinth; o.lit, it burns.
+// -> { group, tris, draws, top, tower { r0, rS, hS, r1, h }, door { x, z, w, h, sill, face }, stair { rise, tread, n, foot [x, z],
+//   width, landing { x0, x1, z0, z1, top } }, gap, gangway, terrace { y, rIn, parapet }, hut { x, z, w }, beacon [x, y, z],
+//   cliff (the break's distance from the tower, sampled), ground(x, z), sea, lit, drawn }
+let WT = null;
+function watchMats() {
+  if (WT) return WT; const std = (c, ro = .9, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...o }), AQM = aqueductMats();
+  WT = { plaster: mat('plaster', { ns: .8, color: 0xeee0c2, rough: .95 }), cope: AQM.cope, zellige: AQM.zellige, ground: AQM.ground, rock: AQM.rock, leaf: std(0x1e3220, .9), bark: AQM.bark,
+    dark: std(0x0d0b09, 1), timber: mat('beam', { ns: 1.0, color: 0x7a5c40, rough: .9 }), door: std(0x3f73a6, .7), iron: std(0x2a2826, .5, { metalness: .6 }),
+    faggot: mat('wood', { ns: .6, color: 0x6a5238, rough: 1 }), flame: std(0xffc070, .6, { emissive: 0xff9a40, emissiveIntensity: 0 }), sea: std(0x1e5a6e, .2, { metalness: .1 }) };
+  return WT;
+}
+export function aurenneWatchtower(o = {}, r = stream('watchtower')) {
+  const M = watchMats(), B = new Map(), V = (x, y) => new THREE.Vector2(x, y), lit = !!o.lit, drawn = !!o.drawn;
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  // the point: flat within the break, ragged by bearing, a rock edge 11 m down to the sea; landward (-z) the flat runs on
+  const SEA = -11, BRK = 13, brk = a => BRK + 1.8 * Math.sin(3 * a + 1.1) + 1.0 * Math.sin(7 * a + .3) + .4 * Math.sin(13 * a + 2), dist = (x, z) => { const zz = Math.max(0, z), a = Math.atan2(x, zz); return Math.hypot(x, zz) * BRK / brk(a); };
+  const ground = (x, z) => { const d = dist(x, z), n = .1 * Math.sin(x * .29 + z * .19) + .07 * Math.sin(x * .08 - z * .21);
+    return d < BRK ? n * Math.min(1, d / 6) : Math.max(SEA - 1, n - (d - BRK) * 6 - 1.2 * Math.sin(x * .9 + z * 1.3) * Math.min(1, d - BRK)); };
+  for (const [S, X0, Z0, NX, NZ, sink] of [[1, -40, -40, 80, 80, 0], [3, -45, -120, 30, 27, .04]]) { const pos = [], idx = [], rockI = []; for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = X0 + i * S, z = Z0 + j * S; pos.push(x, ground(x, z) - sink, z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1, x = X0 + (i + .5) * S, z = Z0 + (j + .5) * S; (dist(x, z) < BRK + .5 ? idx : rockI).push(a, c, b, b, c, d); }
+    for (const [k, I] of [['ground', idx], ['rock', rockI]]) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(I); g.computeVertexNormals(); put(g.toNonIndexed(), k, 0, 0, 0, 0, 0, 0, .25); } }
+  { const g = new THREE.PlaneGeometry(400, 400); g.rotateX(-Math.PI / 2); put(g, 'sea', 0, SEA, 0); }
+  for (let k = 0; k < 34; k++) { const a = k / 34 * Math.PI - Math.PI / 2 + r() * .05, d = brk(a) + .2 + r() * .5, x = Math.sin(a) * d, z = Math.cos(a) * d, s = .4 + r() * .6;
+    put(new THREE.DodecahedronGeometry(s, 0), 'rock', x, ground(x, z) + s * .3, z, r() * 3, r() * 3, 0, .4); }
+  // the tower: the scarp to the cordon, the drum to the terrace
+  const R0 = 5.0, RS = 4.2, HS = 4.0, R1 = 4.1, H = 12.3, rad = y => y < HS ? R0 + (RS - R0) * y / HS : RS + (R1 - RS) * (y - HS) / (H - HS);
+  put(new THREE.LatheGeometry([V(.001, -1.2), V(R0 + .05, -1.2), V(R0, 0), V(RS, HS), V(R1, H), V(.001, H)], 48), 'plaster', 0, 0, 0, 0, 0, 0, .6);
+  put(new THREE.TorusGeometry(RS + .04, .14, 6, 48), 'cope', 0, HS, 0, Math.PI / 2);
+  put(new THREE.CylinderGeometry(rad(11.3) + .015, rad(10.9) + .015, .4, 48, 1, true), 'zellige', 0, 11.1, 0, 0, 0, 0, .3);
+  const bat = Math.atan((RS - R1) / (H - HS)), hole = (a, y, w, ht, k) => { const ym = y + (ht - w / 2) / 2, rr = rad(ym) + .03, x = Math.sin(a) * rr, z = Math.cos(a) * rr, hy = y + ht - w / 2, hr = rad(hy) + .035;
+    put(new THREE.PlaneGeometry(w, ht - w / 2), 'dark', x, ym, z, -bat, a); put(new THREE.CircleGeometry(w / 2, 10, 0, Math.PI), 'dark', Math.sin(a) * hr, hy, Math.cos(a) * hr, -bat, a);
+    if (k) { put(new THREE.RingGeometry(w / 2, w / 2 + .22, 10, 1, 0, Math.PI), 'cope', Math.sin(a) * (hr + .01), hy, Math.cos(a) * (hr + .01), -bat, a);
+      for (const s of [-1, 1]) put(new THREE.BoxGeometry(.22, ht - w / 2, .06), 'cope', x + Math.cos(a) * s * (w / 2 + .11), ym, z - Math.sin(a) * s * (w / 2 + .11), -bat, a);
+      put(new THREE.BoxGeometry(w + .5, .14, .3), 'cope', Math.sin(a) * (rr + .12), y - .07, Math.cos(a) * (rr + .12), 0, a);
+      /* the door's leaf: open into the tower while the gangway is down; drawn in, the leaf is shut and barred, just inside the reveal */
+      if (k === 'door' && drawn) { put(new THREE.BoxGeometry(w * .94, ht - w / 2 - .02, .05), 'door', x + Math.sin(a) * .012, ym, z + Math.cos(a) * .012, -bat, a); put(new THREE.CircleGeometry(w * .47, 10, 0, Math.PI), 'door', Math.sin(a) * (hr + .012), hy, Math.cos(a) * (hr + .012), -bat, a); } }
+    return { x: +x.toFixed(2), z: +z.toFixed(2), w, h: ht, sill: y, face: a }; };
+  const DY = 5.4, door = hole(Math.PI, DY, 1.0, 2.1, 'door');
+  for (const [a, y] of [[.3, 6.6], [1.9, 8.2], [2.5, 2.0], [3.6, 9.4], [4.6, 6.4], [5.6, 8.8]]) hole(a, y, .22, .9, false);
+  // the parapet on its corbels, open between them (the machicolations); its cope and loopholes; the terrace
+  const PR = R1 + .65, PI = R1 + .35, PY0 = H - .1, TY = H + .05, PT = TY + 1.05;
+  for (let k = 0; k < 20; k++) { const a = (k + .5) / 20 * Math.PI * 2; for (const [w, ht, d, y, rr] of [[.36, .32, .7, H - .26, R1 + .3], [.36, .3, .45, H - .57, R1 + .17], [.36, .28, .25, H - .86, R1 + .08]]) put(new THREE.BoxGeometry(w, ht, d), 'cope', Math.sin(a) * rr, y, Math.cos(a) * rr, 0, a); }
+  put(new THREE.RingGeometry(R1 - .01, PR, 48, 1), 'dark', 0, PY0 - .001, 0, Math.PI / 2);
+  put(new THREE.CylinderGeometry(PR, PR, PT - PY0, 48, 1, true), 'plaster', 0, (PY0 + PT) / 2, 0, 0, 0, 0, .6);
+  { const g = new THREE.CylinderGeometry(PI, PI, PT - TY, 48, 1, true); g.scale(-1, 1, 1); put(g, 'plaster', 0, (TY + PT) / 2, 0, 0, 0, 0, .6); }
+  put(new THREE.RingGeometry(PI - .02, PR + .05, 48, 1), 'cope', 0, PT, 0, -Math.PI / 2);
+  for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 + .16; put(new THREE.PlaneGeometry(.12, .5), 'dark', Math.sin(a) * (PR + .01), TY + .55, Math.cos(a) * (PR + .01), 0, a); }
+  put(new THREE.CylinderGeometry(PI + .02, PI + .02, .1, 48), 'cope', 0, TY - .05, 0, 0, 0, 0, .7);
+  // the stair's head: a small hut on the terrace under a little dome, its door to the beacon
+  const HX = -1.6, HZ = -1.6, HW = 1.5, HH = 2.2; put(new THREE.BoxGeometry(HW, HH, HW), 'plaster', HX, TY + HH / 2, HZ, 0, 0, 0, .6); put(new THREE.BoxGeometry(HW + .12, .12, HW + .12), 'cope', HX, TY + HH + .06, HZ);
+  put(new THREE.SphereGeometry(HW * .48, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), 'plaster', HX, TY + HH + .12, HZ, 0, 0, 0, .6);
+  put(new THREE.PlaneGeometry(.75, 1.75), 'dark', HX + HW / 2 + .01, TY + .875, HZ, 0, Math.PI / 2) /* its door on the +x face, toward the beacon's side */;
+  // the beacon: a stone plinth, an iron basket on three legs, a load of faggots; lit, it burns
+  const BX = 1.5, BZ = 1.5, BY = TY + .5; put(new THREE.BoxGeometry(1.0, .5, 1.0), 'cope', BX, TY + .25, BZ);
+  put(new THREE.CylinderGeometry(.55, .35, .55, 10, 1, true), 'iron', BX, BY + .62, BZ); put(new THREE.TorusGeometry(.55, .03, 4, 14), 'iron', BX, BY + .9, BZ, Math.PI / 2);
+  for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; put(new THREE.CylinderGeometry(.03, .03, .45, 5), 'iron', BX + Math.sin(a) * .3, BY + .2, BZ + Math.cos(a) * .3); }
+  for (let k = 0; k < 9; k++) put(new THREE.CylinderGeometry(.05, .05, .9, 5), 'faggot', BX + (r() - .5) * .5, BY + .85, BZ + (r() - .5) * .5, (r() - .5) * 1.2, r() * 3, (r() - .5) * 1.2);
+  put(new THREE.ConeGeometry(.42, 1.1, 8), 'flame', BX, BY + 1.35, BZ); M.flame.emissiveIntensity = lit ? 4 : 0; M.flame.visible = lit;
+  // the stair: a landing pier 1.1 m short of the sill, a solid flight of 27 risers climbing along +x to it; the gangway over the gap
+  const RISE = DY / 27, TREAD = .3, SW = 1.2, GAP = 1.1, LZ1 = -(rad(DY) + GAP), LZ0 = LZ1 - 1.6, LX0 = -.8, LX1 = .8, N = 27, floorY = (x, z) => Math.min(...[[x - .4, z - .4], [x + .4, z - .4], [x - .4, z + .4], [x + .4, z + .4]].map(([a, b]) => ground(a, b)));
+  { const y0 = floorY(0, (LZ0 + LZ1) / 2) - .3; put(new THREE.BoxGeometry(LX1 - LX0, DY - y0, LZ1 - LZ0), 'plaster', 0, (DY + y0) / 2, (LZ0 + LZ1) / 2, 0, 0, 0, .6); put(new THREE.BoxGeometry(LX1 - LX0 + .1, .1, LZ1 - LZ0 + .1), 'cope', 0, DY - .05, (LZ0 + LZ1) / 2); }
+  const SZ = LZ0 + SW / 2, steps = []; for (let k = 1; k < N; k++) { const x0 = LX1 + (N - 1 - k) * TREAD, x1 = x0 + TREAD, y = k * RISE, y0 = floorY((x0 + x1) / 2, SZ) - .3;
+    put(new THREE.BoxGeometry(TREAD, y - y0, SW), 'plaster', (x0 + x1) / 2, (y + y0) / 2, SZ, 0, 0, 0, .6); put(new THREE.BoxGeometry(TREAD + .03, .05, SW + .04), 'cope', (x0 + x1) / 2, y - .025, SZ); steps.push([+((x0 + x1) / 2).toFixed(3), +y.toFixed(3)]); }
+  const footX = LX1 + (N - 1) * TREAD;
+  if (!drawn) { for (let k = 0; k < 4; k++) put(new THREE.BoxGeometry(.22, .07, GAP + .5), 'timber', -.33 + k * .22, DY - .035, LZ1 + GAP / 2 - .05); }
+  /* drawn (o.drawn), the gangway is taken in through the door and the gap stands open */
+  // inland: a flagged path from the stair's foot, the cistern's wellhead, two cypresses
+  for (let z = SZ; z > -40; z -= .9) put(new THREE.BoxGeometry(1.3, .06, .85), 'cope', footX + 1.0 + (r() - .5) * .1, ground(footX + 1, z) + .02, z, 0, (r() - .5) * .08, 0, .6);
+  put(new THREE.CylinderGeometry(.55, .6, .8, 16), 'plaster', 6.5, ground(6.5, -12) + .4, -12, 0, 0, 0, .6); put(new THREE.CylinderGeometry(.6, .6, .1, 16), 'cope', 6.5, ground(6.5, -12) + .85, -12);
+  for (const [x, z, hgt] of [[-7, -15, 9], [-9.5, -12.5, 7.5]]) { put(new THREE.CylinderGeometry(.12, .18, 1.2, 6), 'bark', x, ground(x, z) + .6, z); const c = new THREE.LatheGeometry([V(.001, 0), V(.55, hgt * .12), V(.75, hgt * .4), V(.5, hgt * .75), V(.001, hgt)], 10); put(c, 'leaf', x, ground(x, z) + .8, z); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['ground', 'sea', 'rock', 'flame'].includes(k); m.receiveShadow = k !== 'sea'; group.add(m); tris += g.attributes.position.count / 3; }
+  const cliff = []; for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; let d = 0; while (d < 60 && ground(Math.sin(a) * d, Math.cos(a) * d) > -1) d += .25; cliff.push(+d.toFixed(2)); }
+  return { group, tris: Math.round(tris), draws: group.children.length, top: +(TY + HH + .12 + HW * .48).toFixed(2), tower: { r0: R0, rS: RS, hS: HS, r1: R1, h: H, rad }, door: { ...door, sill: DY },
+    stair: { rise: +RISE.toFixed(3), tread: TREAD, n: N, steps, foot: [+footX.toFixed(2), +SZ.toFixed(2)], width: SW, landing: { x0: LX0, x1: LX1, z0: +LZ0.toFixed(2), z1: +LZ1.toFixed(2), top: DY } },
+    gap: +GAP.toFixed(2), gangway: !drawn, terrace: { y: TY, rIn: PI, parapet: +(PT - TY).toFixed(2), rOut: PR }, hut: { x: HX, z: HZ, w: HW }, beacon: [BX, BY + .9, BZ], cliff, ground, sea: SEA, lit, drawn };
+}

@@ -21239,3 +21239,53 @@ Correction to Session 947: its *Verified* left the new look's run to the PR comm
 - `node tests/run.mjs mapseals`: three runs green in a row; `--look=new` green.
 ### Needs eyes
 - Nothing for a playtest.
+
+## v80 — Session 971 — Aurenne's coastal watchtower (card F8, prototype only)
+L5's "roads and works" (OG-046: "watchtowers and forts") has had the mine (857), the aqueduct (907), the windmill (949) and the lighthouse (967). OG-124's Aurenne panel draws "a coastal watchtower", and the canon gives it a reason: piracy is the Mark's undeclared war, and the Compact's tithe-ships are its favourite prey. So the Compact keeps a chain of towers along its coast, each in sight of the next. The precedent is the Genoese and Saracen towers of the Tyrrhenian coast and the borj of the Maghreb, which fits Aurenne's Mediterranean and North African register: a round tower on a scarp, its door high up, a stair that stops short of the door, a parapet on corbels, a beacon on the roof. It is dressed in Aurenne's own materials (§1.3, and the catalogue's note on OG-124 against Tuscan stone): cream lime plaster, limestone dressings and a band of blue tile. It lives in `places.js` beside the lighthouse, with its own view (`places-watchtower-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The tower** (`aurenneWatchtower` in `places.js`, at true size, the sea to +z):
+- **The point:** dry turf over a rock edge that falls 11 m to the sea, the break 13 m out on the mean and ragged by bearing. Rocks lie along it, and two cypresses stand inland.
+- **The scarp and the drum:** a scarp battered from 10 m across at the foot to 8.4 m at a limestone cordon 4 m up. Above it a near-upright drum rises to the terrace at 12.3 m, with six slit windows.
+- **The parapet:** under it, a band of blue tile. Twenty limestone corbels of three courses carry it 0.65 m out, the gaps between them dark: the machicolations, for dropping stones on whoever is at the door. It stands 1.05 m over the terrace, with ten loopholes.
+- **The door and the stair:**
+  - the door is round-headed, 1.0 by 2.1 m, in limestone jambs and a ring, its sill 5.4 m up on the landward side;
+  - a solid masonry stair of 27 risers of 0.2 m on 0.3 m treads climbs beside the tower to a landing pier 1.1 m short of the wall;
+  - a gangway of four planks crosses the gap. With `o.drawn` it is taken in, the gap stands open and the blue leaf is shut;
+  - while the gangway is down, the door stands open.
+- **The terrace:** paved in limestone. The stair's head is in a small hut of 1.5 m under a little dome. The beacon is an iron basket on three legs on a stone plinth, loaded with faggots; `o.lit` lights it.
+- **Inland:** a flagged path from the stair's foot, and the cistern's wellhead.
+- 20,408 triangles in 13 draws.
+
+The view: `places.html?place=watchtower`, with `view=tower` (from the path inland), `door` (on the landing), `roof` (on the terrace by the beacon), `sea` (from the water under the point) and `far` (from along the coast), plus `&drawn` and `&night`.
+
+Corrections made during the session:
+- **The inland camera** first stood past the edge of the point's neck, which is 26 m wide, and looked up a cliff.
+- **The door's leaf.** It sat 3 cm behind its own dark reveal and never showed. It is now in front of the reveal, and only when the gangway is drawn.
+- **The leaf's colour.** The kit's wood texture rendered it black. It is plain blue paint now; I did not find out why.
+- **The headland's size.** The first check found the tower 4.75 m from the break on its nearest seaward bearing, under the 5 m asked. The point was widened (the break from 12 to 13 m) rather than the rule relaxed.
+- **A slip in the check, mine.** Its first ray for the gangway fell exactly on the seam between two planks.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 90 of 90 pass** (82 after Session 967). Three views are new on the page check, all with no page errors: the tower, the landing with the gangway drawn, and the roof by night. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 30,000 triangles and 20 draws.
+  - **The stair:**
+    - each of its 26 steps found by a ray within 0.02 m of its height: 0.2 m rises on 0.3 m treads, 2R + T 0.7;
+    - the landing at the sill;
+    - the flight's foot on the ground.
+  - **The door:**
+    - the landing 1.09 m short of the wall at the sill;
+    - the gangway across the gap at the sill;
+    - drawn in, a drop of 4.05 m under the gap.
+  - **The terrace:**
+    - the parapet 1.05 m;
+    - a walk of 0.8 m or more past the hut and past the beacon, the two clear of each other;
+    - the eye 23.35 m over the sea sees a tower like it 34.5 km off;
+    - lit, the beacon burns.
+  - **The cliff:** the tower 5 m or more back from the break seaward.
+- **Pictures:** `places-watchtower-tower.jpg`, `-door`, `-roof`, `-sea`, `-far`, `-drawn` and `-night`.
+### Needs eyes
+- **The stair is a plain block of plaster.** A real one would have a low parapet on its open side, and often a break of its own, a drawbridge over a pit at its foot.
+- **The machicolations are painted, not open.** Their gaps are a dark ring under the parapet, and nothing passes through them.
+- **The tower has no inside.** The door opens on dark. A guardroom over a cistern, with the stair in the wall's thickness, would be a room for F9.
+- **The point's neck has straight sides** and reads as a wall from the coast, as the lighthouse's does.
+- **The faggots read black against the sky** from the terrace.
+- **Owed:** the rest of L5's works (a shipyard, a toll gate, a ferry).
