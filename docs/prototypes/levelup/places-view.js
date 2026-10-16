@@ -25,6 +25,7 @@ else if (Q.get('place') === 'tollbridge') await import('./places-tollbridge-view
 else if (Q.get('place') === 'ferry') await import('./places-ferry-view.js') /* Session 980: the Mark's rope ferry */;
 else if (Q.get('place') === 'shipyard') await import('./places-shipyard-view.js') /* Session 981: the Gatelands' shipyard */;
 else if (Q.get('place') === 'peat') await import('./places-peat-view.js') /* Session 991: the Gatelands' peat-cutting camp */;
+else if (Q.get('place') === 'shepherd') await import('./places-shepherd-view.js') /* Session 997: the Gatelands' abandoned shepherd's hut */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);

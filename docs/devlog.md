@@ -21489,3 +21489,61 @@ Corrections made during the session:
 - **The heather is low-poly blobs.** The bog cotton heads are a little large.
 - **Peat cut on a bog is a quest writer's and a systems builder's question too:** turf as fuel, a cutter's right to a bank. Nothing of that is drawn.
 - **Off the road (OG-124) still lacks:** the shepherd's hut, the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 997 — The Gatelands' abandoned shepherd's hut (card F8, prototype only)
+The next of OG-124's places off the road: the Gatelands panel's "abandoned shepherd's hut", built with OG-014's dry-stone walls and OG-077's foxglove. The precedent is the booley huts on Slievemore in Achill and the shielings of the Highlands. These were summer huts on the hill pasture, lived in while the flock grazed high and left when the custom died. They had a single room of dry stone with a gable hearth, a stone fold beside them, a spring above, and often a rowan planted at the door. It is `gatelandsShepherdHut` in `places.js`, with its own view (`places-shepherd-view.js`, dispatched from `places-view.js`). Nothing new is asked: whose hut it was and why it was left are the quest writer's, and no sheep or people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, y 0 the hut's floor, the hill rising to -z at about 1 in 7, the door downhill to +z):
+- **The hut:** 6.0 by 4.2 m of dry stone 0.6 m thick, to eaves of 1.9 m, on a levelled stance cut into the slope.
+  - The walls are built in lengths of about half a metre, each with its own ragged head.
+  - The west gable stands to its apex at 3.6 m, with a stub of chimney under a cap slab.
+  - The east gable has fallen. A stepped stump stands over the back corner, and 70 stones lie heaped on both sides of the end wall.
+  - The door is 0.85 by 1.8 m under a slab lintel. The window is 0.45 by 0.5 m with a lintel of its own.
+  - A hearthstone with two hobs sits at the west gable.
+- **The roof, fallen in:**
+  - Two rafters have slid down, their feet on the floor and their heads still on the wall-heads, read from the walls' own records.
+  - The ridge pole lies on the floor among seven heaps of rotted thatch.
+  - Nettles grow in the corners and at the door.
+- **The fold:** a round pen of dry stone 8.4 m across, its walls 1.07 m high and coped with stones set on edge to about 1.35 m.
+  - The gate faces the hut, 1.37 m clear between two standing posts.
+  - The wattle hurdle that closed it lies against the wall beside it.
+  - On the downhill side a breach 1.7 m wide has tumbled to the knee, its stones spilled outside.
+- **Round about:**
+  - A rowan stands by the door with its berries.
+  - Above the hut is a spring: a kerb of 14 stones, a lining, the water 0.35 m down, and a slab hood on its uphill side. The turf is let down inside the lining so the water shows.
+  - A worn track runs from the door to the fold's gate. It is a ribbon five vertices wide laid over the turf, not the turf's own quads, which stepped.
+  - About 90 clumps of bracken have gone rust, and 30 foxgloves have gone to seed.
+- 30,920 to 31,436 triangles in 18 meshes.
+
+The view: `places.html?place=shepherd`, with `view=hut` (from the track below), `inside` (by the hearth, toward the door), `fold` (from outside the breach), `spring` (below the spring) and `far` (from high over the hill).
+
+Corrections made during the session:
+- **The walls.** They first used the `lichen` texture, which read as brick coursing. They are on `cobble` now (the voronoi stone the abbey's dry walls use). The lintels first rendered black on `slab`, and are on `rock` now.
+- **The track.** It was first the terrain's own quads chosen by distance to the line, which drew a staircase. It is a ribbon now, and was widened to five vertices across when the check found the hummocks poking through a two-vertex one.
+- **The budget.** The first build came to 40,068 triangles. The terrain grid is now in bands (0.5 m round the place, 2 m beyond, 10 m at the edge), which brought it to 31,000.
+- **The spring.** It first sat on unbroken turf, with the water hidden under the grass. The turf now drops inside the lining.
+- **The check found three faults:**
+  - The ridge pole's west end lay on the hearthstone, and in one key its east end lay on the fallen gable's heap. The pole now runs from x -1.5 to 1.2, and the heap keeps to within 0.8 m of the end wall inside.
+  - The fold's coping first ran three stones a length, which read as battlements. It is now a stone every 0.2 m, with one in twelve missing.
+  - The fallen rafters' feet stood 2 cm over the stance, whose floor is at -0.02. They now rest on it.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 128 of 128 pass** (119 after Session 991). Two views are new on the page check, the hut and the inside, both with no page errors. Seven checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 30,920 to 31,436 triangles in 18 meshes.
+  - **The hut's walls:** rays from the room's middle at the hip, every 5°, all meet stone, except those that leave through the whole thickness of the doorway, which go out onto the hill. The floor reads -0.02 m wherever it is sampled, every 0.25 m.
+  - **The door:** 0.848 m wide and 1.80 m to its lintel. Every ray up from the room at 1.7 m finds open sky.
+  - **The gables:** the west one stands to 3.83 m (the cap over a 3.6 m apex); the east one has fallen to 1.48 to 1.60 m, under its 1.9 m eaves.
+  - **The fallen timbers:** every end of the two rafters and the ridge pole rests on the floor or the wall-head under it, 0.000 m off.
+  - **The fold:**
+    - its wall is met at the knee on 94 rays, within its thickness;
+    - it stands 1.36 to 1.37 m over the pen's floor at the median, and no lower than 1.03 m where a coping stone is gone;
+    - the gate is 1.37 m clear and every ray through it leaves;
+    - the breach is down to 0.43 to 0.49 m.
+  - **The spring and the track:** the water is 0.35 m under the ground and inside its lining. The track is found on the turf at all 30 points along its line.
+- **Pictures:** `places-shepherd-hut.jpg`, `-inside`, `-fold`, `-spring` and `-far`.
+### Needs eyes
+- **The rowan reads as a parasol.** Its limbs all leave one point at the top of a bare trunk. A rowan is small, often multi-stemmed, with an oval crown. The leaf is low-poly blobs.
+- **The bracken reads as orange stars** from above. From the track it is closer to bracken, but it wants more fronds and a duller rust.
+- **Inside, the walls are dark** under a grey afternoon, and the timbers read nearly black against them.
+- **The stone is one texture throughout.** A dry wall's courses, its throughs and its batter (the wall leaning in as it rises) are not drawn; the walls are plumb boxes.
+- **The hill is one smooth slope** with low hummocks. No outcrop, no stream below, no other walls running off over the hill. A real booley stood among a dozen such huts. One is drawn.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.

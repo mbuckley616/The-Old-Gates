@@ -1623,3 +1623,123 @@ export function gatelandsPeatCamp(o = {}, r = stream('peat')) {
   return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +(hy + WH + 1.4).toFixed(2), ground, bog,
     bank: { x0: -CX, x1: CX, lip: 0, bench: BENCH, benchZ: BZ, floorZ: [BZ, 12], water: WL }, spread, footings, slean, rick: { x: RKX, z: RKZ, l: RL, w: RWd, h: RH, y: +(bog(RKX, RKZ) - .05).toFixed(3) }, hut, fire, road: { z: RZ, w: RW } };
 }
+// gatelandsShepherdHut(o, r) (Session 997, card F8; OG-124's "abandoned shepherd's hut", with OG-014's dry-stone walls and OG-077's foxglove):
+// a summer hut on the hill pasture, after the booley huts on Slievemore and the shielings of the Highlands, left when the flock went. At true size,
+// a metre a unit, y 0 the hut's floor, the hill rising to -z at about 1 in 7 and the hut's door to +z, down the hill:
+//   - the hut: 6.0 by 4.2 m of dry-stone walls 0.6 m thick to eaves of 1.9 m, cut into the slope on a levelled stance. The west gable stands
+//     to its apex with a stub of chimney; the east gable has fallen and lies as a heap of stones in and out. The roof is gone: two rafters
+//     have slid down with their heads still on the wall-heads, the ridge pole lies on the floor among the rotted thatch. A door 0.85 by
+//     1.8 m under a slab lintel, a window of 0.45 by 0.5, a hearthstone at the west gable with its two hobs. Nettles inside and at the door.
+//   - the fold: a round pen of dry stone 8.4 m across, 1.35 m high with its coping on edge, its gate toward the hut between two standing
+//     posts, the wattle hurdle that closed it lying against the wall, and a breach on the downhill side tumbled to the knee.
+//   - a rowan by the door (the old charm against the fairies, kept when the hut was not), a stone-lined spring above the hut under a slab hood,
+//     the worn track from the door to the fold's gate, bracken going rust on the hill, and foxglove gone to seed.
+// -> { group, tris, draws, own, ground, hut { x, z, y, w, d, wall, eaves, ridge, door { x, z, w, h }, win { x, sill, w, h }, gableW, gableE, tops },
+//      rafters [{ a, b, rad }], ridgePole { a, b, rad }, fold { x, z, r, wall, h, gate { a, w }, breach { a, w } }, spring { x, z, water, lip }, rowan { x, z } }
+export function gatelandsShepherdHut(o = {}, r = stream('shepherd')) {
+  const MI = millMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0xa89878, rough: 1 }), earth: mat('plaster', { ns: 1.2, color: 0x5e4c3a, rough: 1 }),
+    wall: mat('cobble', { ns: 1.4, color: 0xb4b0a4, rough: .95 }), stone: mat('rock', { ns: 1.0, color: 0x9a968a, rough: 1 }), slab: mat('rock', { ns: .9, color: 0xa8a294, rough: .95 }),
+    timber: mat('beam', { ns: 1.0, color: 0x8a7a66, rough: 1 }), rot: mat('thatch', { ns: 1.2, color: 0x6a5a40, rough: 1 }), wattle: mat('thatch', { ns: 1.0, color: 0x8a6c48, rough: 1 }),
+    bark: std(0x5a5048, .9), leaf: std(0x5a6a32, .85), berry: std(0xb02a14, .5), nettle: std(0x3e5a28, .9), bracken: std(0x7a4c26, .95, { side: THREE.DoubleSide }), stalk: std(0x5a6a3a, .9),
+    glove: std(0x9a4a8a, .7), water: std(0x1c2224, .08, { metalness: .2 }), lining: mat('cobble', { ns: 1.2, color: 0x8a867a, rough: .95 }) };
+  M.lining.side = THREE.DoubleSide;
+  const B = new Map(), key = String(o.key || 'shepherd'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), C = new THREE.Vector3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: the hill falling to +z, a long swell across it, small hummocks; the hut's stance levelled at y 0, the bank cut behind it
+  const HW = 6.0, HD = 4.2, T = .6, EAV = 1.9, APEX = 3.6, S = .15, FC = [11, 5.5], FR = 4.2, FT = .6, FH = 1.35, SP = [-8, -6.5];
+  const hum = (x, z) => .06 * Math.sin(x * .9 + ph[0]) * Math.sin(z * .8 + ph[1]) + .04 * Math.sin(x * 2.3 + z * 1.7 + ph[2]);
+  const hill = (x, z) => -S * z + .35 * Math.sin(x * .06 + ph[3]) * Math.cos(z * .05 + ph[4]) + hum(x, z);
+  const stance = (x, z) => sm(1 - (Math.max(Math.abs(x) - HW / 2 - 1.0, Math.abs(z) - HD / 2 - .9, 0)) / 2.2);
+  const ground = (x, z) => { const t = stance(x, z), w = Math.hypot(x - SP[0], z - SP[1]); return (hill(x, z) * (1 - t) - .02 * t) - (w < .62 ? .6 : 0) /* the spring's well: the turf let down inside its lining */; };
+  // the track: from the door down to the fold's gate, a polyline the turf is worn along
+  const DX = 1.0, aG = Math.atan2(HD / 2 - FC[1], DX - FC[0]), gate = [FC[0] + (FR + .5) * Math.cos(aG), FC[1] + (FR + .5) * Math.sin(aG)];
+  const TR = [[DX, HD / 2], [DX + .6, HD / 2 + 2.2], [(DX + gate[0]) / 2 + .5, (HD / 2 + gate[1]) / 2 + 2.2], gate, [FC[0], FC[1]]];
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const trackD = (x, z) => Math.min(...TR.slice(0, -1).map((p, i) => segD(x, z, p, TR[i + 1])));
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const xs = steps([[-70, -30, 10], [-30, -14, 2], [-14, 20, .5], [20, 30, 2], [30, 70, 10]], 70), zs = steps([[-70, -30, 10], [-30, -12, 2], [-12, 13, .5], [13, 31, 2], [31, 70, 13]], 70);
+    const NX = xs.length, pos = [], I = { turf: [], track: [], earth: [] }; for (const z of zs) for (const x of xs) pos.push(x, ground(x, z), z);
+    for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < NX - 1; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, x = (xs[i] + xs[i + 1]) / 2, z = (zs[j] + zs[j + 1]) / 2;
+      const inHut = Math.abs(x) < HW / 2 && Math.abs(z) < HD / 2;
+      (inHut ? I.earth : I.turf).push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g.toNonIndexed(), k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the track worn in the turf: a ribbon laid 2 cm over the ground along the line, its width wandering, sampled every 0.25 m
+  { const pts = []; for (let i = 0; i < TR.length - 2; i++) { const [a, b] = [TR[i], TR[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / .25); for (let k = i ? 1 : 0; k <= n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
+    const pos = [], idx = []; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz), w = .38 + .1 * Math.sin(i * .7 + ph[5]) + .05 * Math.sin(i * 2.3);
+      for (const sd of [-1, -.5, 0, .5, 1]) { const ex = x - dz / l * w * sd, ez = z + dx / l * w * sd; pos.push(ex, ground(ex, ez) + .035, ez); } if (i) { const o = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(o + c, o + c + 5, o + c + 1, o + c + 1, o + c + 5, o + c + 6); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); if (g.attributes.normal.array[1] < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, 'track', 0, 0, 0, 0, 0, 0, .35); }
+  // the hut's walls: dry stone in lengths of about half a metre, each with its own ragged head; every head recorded for what rests on it
+  const tops = [], Y0 = -.35;
+  const wall = (ax, a0, a1, c, y1, rag, k = 'wall') => { const n = Math.max(1, Math.round((a1 - a0) / .55)), L = (a1 - a0) / n;
+    for (let s = 0; s < n; s++) { const top = y1 + (rag ? (F() - .5) * rag : 0), m = a0 + L * (s + .5);
+      if (ax === 'x') put(new THREE.BoxGeometry(L + .002, top - Y0, T), k, m, (top + Y0) / 2, c, 0, 0, 0, .9); else put(new THREE.BoxGeometry(T, top - Y0, L + .002), k, c, (top + Y0) / 2, m, 0, 0, 0, .9);
+      tops.push({ ax, a0: a0 + L * s, a1: a0 + L * (s + 1), c, y: +top.toFixed(4) }); } };
+  const topAt = (ax, c, a) => tops.find(t => t.ax === ax && Math.abs(t.c - c) < 1e-6 && a >= t.a0 && a <= t.a1).y;
+  const ZB = -HD / 2 + T / 2, ZF = HD / 2 - T / 2, XW = -HW / 2 + T / 2, XE = HW / 2 - T / 2, DW = .85, DH = 1.8, WX = -1.6, WWd = .45, SILL = .95, WHt = .5;
+  wall('x', -HW / 2, HW / 2, ZB, EAV, .2);
+  wall('x', -HW / 2, WX - WWd / 2, ZF, EAV, .2); wall('x', WX + WWd / 2, DX - DW / 2, ZF, EAV, .2); wall('x', DX + DW / 2, HW / 2, ZF, EAV, .25);
+  wall('x', WX - WWd / 2, WX + WWd / 2, ZF, SILL, 0); put(new THREE.BoxGeometry(WWd + .5, .14, T + .04), 'slab', WX, SILL + WHt + .07, ZF);   { const Hs = EAV - SILL - WHt - .14; put(new THREE.BoxGeometry(WWd, Hs, T), 'wall', WX, SILL + WHt + .14 + Hs / 2, ZF, 0, 0, 0, .9); }
+  put(new THREE.BoxGeometry(DW + .6, .16, T + .04), 'slab', DX, DH + .08, ZF); { const Hs = EAV - DH - .16; put(new THREE.BoxGeometry(DW, Hs, T), 'wall', DX, DH + .16 + Hs / 2, ZF, 0, 0, 0, .9); }
+  wall('z', -HD / 2 + T, HD / 2 - T, XW, EAV, 0); wall('z', -HD / 2 + T, HD / 2 - T, XE, EAV - .25, .45);
+  // the west gable to its apex, and a stub of chimney on it; the hearthstone and its hobs at its foot
+  { const s = new THREE.Shape(); s.moveTo(-HD / 2, 0); s.lineTo(HD / 2, 0); s.lineTo(0, APEX - EAV); s.closePath(); const g = new THREE.ExtrudeGeometry(s, { depth: T, bevelEnabled: false }); g.translate(0, 0, -T / 2); g.rotateY(Math.PI / 2); put(g, 'wall', XW, EAV, 0, 0, 0, 0, .9);
+    put(new THREE.BoxGeometry(T, .55, .7), 'wall', XW, APEX - .12, 0, 0, 0, 0, .9); put(new THREE.BoxGeometry(T + .1, .08, .8), 'slab', XW, APEX + .19, 0); }
+  put(new THREE.BoxGeometry(.7, .06, 1.1), 'slab', XW + T / 2 + .35, .01, 0); for (const sz of [-1, 1]) put(new THREE.BoxGeometry(.28, .32, .22), 'stone', XW + T / 2 + .2, .16, sz * .45);
+  // the east gable fallen: a stump of it over the back corner, and its stones in a heap both sides of the end wall
+  { let y = EAV - .25, z1 = -HD / 2 + 1.7; for (let k = 0; k < 4; k++) { const h = .2 + F() * .15; z1 -= .2 + F() * .25; put(new THREE.BoxGeometry(T, h, z1 + HD / 2), 'wall', XE, y + h / 2, (z1 - HD / 2) / 2, 0, 0, 0, .9); y += h; } }
+  const rubble = []; for (let k = 0; k < 70; k++) { const side = k % 2 ? 1 : -1, d = Math.pow(F(), 1.4) * (side < 0 ? .8 : 1.6) /* inside, the heap keeps to the gable's end */, z = (F() - .5) * (HD - .6), x = XE + side * (T / 2 + .1 + d), gy = side < 0 ? 0 : ground(x, z), s = .13 + F() * .1, h = Math.max(0, .55 - d * .4) * F();
+    const st = new THREE.IcosahedronGeometry(s, 0); st.scale(1.3, .7, 1); put(st, 'wall', x, gy + h + s * .45, z, F() * .4, F() * 3, F() * .4, .9); rubble.push([x, z]); }
+  // the roof fallen in: two rafters slid down with their heads on the wall-heads, the ridge pole on the floor, the rotted thatch in heaps
+  const RAD = .07, rafters = [];
+  for (const [fx, fz, hx, hz] of [[-.5, .95, -.9, ZB], [.45, -.75, -.25, ZF]]) { const hy = topAt('x', hz, hx) + RAD, a = [fx, RAD - .02, fz], b = [hx, hy, hz], d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]).normalize();
+    rod('timber', a, [b[0] + d.x * .25, b[1] + d.y * .25, b[2] + d.z * .25], RAD, 7); rafters.push({ a, b: b.map(v => +v.toFixed(4)), rad: RAD }); }
+  const ridgePole = { a: [-1.5, .04, .4], b: [1.2, .04, -.4], rad: .06 } /* clear of the hearth and the fallen gable's heap */; rod('timber', ridgePole.a, ridgePole.b, .06, 7);
+  for (let k = 0; k < 7; k++) { const x = -2 + F() * 4, z = -1.2 + F() * 2.4, g = new THREE.SphereGeometry(.35 + F() * .25, 8, 4, 0, 6.283, 0, Math.PI / 2); g.scale(1.4, .35, 1); put(g, 'rot', x, -.01, z, 0, F() * 3); }
+  // nettles in the hut's corners and at the door
+  const nettle = (x, z, gy) => { for (let k = 0; k < 5; k++) { const h = .35 + F() * .35, dx = (F() - .5) * .4, dz = (F() - .5) * .4; put(new THREE.BoxGeometry(.012, h, .012), 'nettle', x + dx, gy + h / 2, z + dz);
+    for (let j = 1; j <= 3; j++) put(new THREE.IcosahedronGeometry(.06, 0).scale(1.2, .35, 1.2), 'nettle', x + dx, gy + h * j / 3.3, z + dz, 0, F() * 3); } };
+  for (const [x, z] of [[XE - .7, ZF - .6], [XE - .6, ZB + .7], [-1.2, ZB + .6], [XW + .8, ZF - .5]]) nettle(x, z, 0);
+  for (const [x, z] of [[DX - .9, HD / 2 + .5], [DX + .9, HD / 2 + .45]]) nettle(x, z, ground(x, z));
+  // the rowan by the door: a leaning trunk, its limbs, leaf in clusters and the berries in red heads
+  const RW = [DX + 2.2, HD / 2 + 1.6]; { const gy = ground(...RW), top = [RW[0] + .3, gy + 2.4, RW[1] + .15]; rod('bark', [RW[0], gy - .1, RW[1]], top, .1, 8);
+    for (let k = 0; k < 6; k++) { const a = k * 1.05 + F() * .4, L = 1.0 + F() * .7, e = [top[0] + Math.cos(a) * L, top[1] + .5 + F() * .9, top[2] + Math.sin(a) * L]; rod('bark', [top[0], top[1] - .3 + k * .08, top[2]], e, .045, 6);
+      for (let j = 0; j < 4; j++) { const p = [e[0] + (F() - .5) * .9, e[1] + (F() - .3) * .6, e[2] + (F() - .5) * .9]; put(new THREE.IcosahedronGeometry(.32 + F() * .18, 1).scale(1.2, .7, 1.2), 'leaf', ...p, 0, F() * 3);
+        if (F() < .7) for (let b = 0; b < 3; b++) put(new THREE.IcosahedronGeometry(.07, 0), 'berry', p[0] + (F() - .5) * .5, p[1] - .2 - F() * .1, p[2] + (F() - .5) * .5); } } }
+  // the fold: a round pen of dry stone, coped with stones on edge; the gate toward the hut between two posts, a breach tumbled downhill
+  const GW = 1.3, BW = 1.7, aB = aG + Math.PI * .85, half = GW / 2 / (FR - FT / 2), NS = 56, foldSegs = [];
+  for (let s = 0; s < NS; s++) { const a0 = aG + half + (Math.PI * 2 - 2 * half) * s / NS, a1 = aG + half + (Math.PI * 2 - 2 * half) * (s + 1) / NS, a = (a0 + a1) / 2, cx = FC[0] + FR * Math.cos(a), cz = FC[1] + FR * Math.sin(a);
+    const L = 2 * (FR + FT / 2) * Math.sin((a1 - a0) / 2) + .02, gi = ground(FC[0] + (FR - FT / 2) * Math.cos(a), FC[1] + (FR - FT / 2) * Math.sin(a)), go = ground(FC[0] + (FR + FT / 2) * Math.cos(a), FC[1] + (FR + FT / 2) * Math.sin(a));
+    const db = Math.abs(Math.atan2(Math.sin(a - aB), Math.cos(a - aB))) * FR, broke = db < BW / 2 + .25, base = Math.min(gi, go) - .2, top = gi + (broke ? .3 + F() * .2 + Math.max(0, db - BW / 2) * 1.5 : FH - .28 + (F() - .5) * .06) /* the body to 1.07, the coping on edge brings it to 1.35 */;
+    put(new THREE.BoxGeometry(L, top - base, FT), 'wall', cx, (top + base) / 2, cz, 0, -a - Math.PI / 2, 0, .9); foldSegs.push({ a: +a.toFixed(4), top: +(top - gi).toFixed(3), broke });
+    if (!broke) for (let c = 0, nc = Math.ceil(L / .2); c < nc; c++) if (F() > .08) { const ac = a0 + (a1 - a0) * (c + .5) / nc; put(new THREE.BoxGeometry(.15 + F() * .04, .26 + F() * .08, FT - .08), 'wall', FC[0] + FR * Math.cos(ac), top + .14, FC[1] + FR * Math.sin(ac), 0, -ac - Math.PI / 2, (F() - .5) * .25, .9); }
+    else for (let c = 0; c < 6; c++) { const d = .5 + F() * 1.6, ac = a + (F() - .5) * (a1 - a0) * 2, x = FC[0] + (FR + d) * Math.cos(ac), z = FC[1] + (FR + d) * Math.sin(ac), sz = .14 + F() * .08; put(new THREE.IcosahedronGeometry(sz, 0).scale(1.3, .7, 1), 'wall', x, ground(x, z) + sz * .4, z, 0, F() * 3); } }
+  for (const sg of [-1, 1]) { const a = aG + sg * (half + .05), x = FC[0] + FR * Math.cos(a), z = FC[1] + FR * Math.sin(a); put(new THREE.BoxGeometry(.3, 1.9, .5), 'stone', x, ground(x, z) + .7, z, 0, -a - Math.PI / 2); }
+  // the hurdle that closed the gate, a wattle of rods on six sails, lying against the wall's outside beside it
+  { const a = aG + half + .35, x = FC[0] + (FR + FT / 2 + .35) * Math.cos(a), z = FC[1] + (FR + FT / 2 + .35) * Math.sin(a), gy = ground(x, z), ry = -a - Math.PI / 2, tilt = -.32;
+    const hg = []; for (let k = 0; k < 6; k++) hg.push(new THREE.CylinderGeometry(.025, .025, 1.15, 5).translate(-.7 + k * .28, .5, 0)); for (let k = 0; k < 7; k++) hg.push(new THREE.BoxGeometry(1.5, .07, .05).translate(0, .2 + k * .12, (k % 2 - .5) * .03));
+    put(mergeGeometries(hg.map(g => g.toNonIndexed())), 'wattle', x, gy - .05, z, tilt, ry, 0); }
+  // the spring above the hut: a kerb of stones, a lined well, the water 0.35 m down, a slab hood on its uphill side
+  const sg = hill(...SP), lip = sg + .12, WAT = sg - .35;
+  for (let k = 0; k < 14; k++) { const a = k / 14 * 6.283, st = new THREE.BoxGeometry(.3, .26, .24); const x = SP[0] + .66 * Math.cos(a), z = SP[1] + .66 * Math.sin(a); put(st, 'stone', x, hill(x, z) + .02, z, 0, -a, 0); }
+  put(new THREE.CylinderGeometry(.52, .52, .9, 14, 1, true), 'lining', SP[0], sg - .4, SP[1]); put(new THREE.CircleGeometry(.5, 14).rotateX(-Math.PI / 2), 'water', SP[0], WAT, SP[1]);
+  for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.14, .7, .7), 'slab', SP[0] + sx * .5, sg + .3, SP[1] - .55); put(new THREE.BoxGeometry(1.25, .12, .85), 'slab', SP[0], sg + .71, SP[1] - .5); put(new THREE.BoxGeometry(1.1, .7, .14), 'slab', SP[0], sg + .3, SP[1] - .9);
+  // bracken on the hill gone rust, and foxglove gone to seed, off the track, the stance, the fold and the spring
+  const clear = (x, z) => trackD(x, z) < 1 || stance(x, z) > .05 || Math.hypot(x - FC[0], z - FC[1]) < FR + 1.3 || Math.hypot(x - SP[0], z - SP[1]) < 1.6 || Math.hypot(x - RW[0], z - RW[1]) < 1.2 || rubble.some(([a, b]) => Math.abs(a - x) < .5 && Math.abs(b - z) < .5);
+  for (let k = 0, n = 0; k < 2000 && n < 90; k++) { const x = -26 + F() * 52, z = -24 + F() * 44; if (clear(x, z)) continue; n++; const gy = ground(x, z), a0 = F() * 6.283;
+    for (let j = 0; j < 7; j++) { const a = a0 + j * .9 + (F() - .5) * .4, L = .45 + F() * .3, rise = .7 + F() * .2, pos = []; let px = 0, py = 0, pa = rise;
+      const ring = []; for (let s = 0; s <= 3; s++) { ring.push([px, py, .11 * (1 - s / 3.4)]); px += Math.cos(pa) * L / 3; py += Math.sin(pa) * L / 3; pa -= .55; }
+      for (let s = 0; s < 3; s++) { const [x0, y0, w0] = ring[s], [x1, y1, w1] = ring[s + 1]; pos.push(x0, y0, -w0, x1, y1, -w1, x0, y0, w0, x0, y0, w0, x1, y1, -w1, x1, y1, w1); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'bracken', x, gy - .02, z, 0, a, 0); } }
+  for (let k = 0, n = 0; k < 900 && n < 30; k++) { const x = -18 + F() * 36, z = -14 + F() * 28; if (clear(x, z)) continue; n++; const gy = ground(x, z), h = .7 + F() * .5; put(new THREE.BoxGeometry(.018, h, .018), 'stalk', x, gy + h / 2, z);
+    for (let j = 0; j < 5; j++) put(new THREE.ConeGeometry(.035, .07, 5), 'glove', x + (F() - .5) * .05, gy + h * (.62 + j * .07), z + (F() - .5) * .05, Math.PI, 0, 0); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'track', 'earth', 'water'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, ground, hill, rafters, ridgePole,
+    hut: { x: 0, z: 0, y: 0, w: HW, d: HD, wall: T, eaves: EAV, ridge: APEX, door: { x: DX, z: HD / 2, w: DW, h: DH }, win: { x: WX, sill: SILL, w: WWd, h: WHt }, gableW: XW, gableE: XE, tops },
+    fold: { x: FC[0], z: FC[1], r: FR, wall: FT, h: FH, gate: { a: +aG.toFixed(4), w: GW }, breach: { a: +aB.toFixed(4), w: BW }, segs: foldSegs }, spring: { x: SP[0], z: SP[1], water: +WAT.toFixed(3), lip: +lip.toFixed(3), ground: +sg.toFixed(3) }, rowan: { x: RW[0], z: RW[1] }, track: TR };
+}
