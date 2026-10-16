@@ -664,11 +664,11 @@ function applyBackstab(e){
   // Weapon type — daggers are the dedicated backstab weapon. We check
   // weaponShape (the authoritative field; pierce-type covers daggers but
   // could theoretically apply to future spears, so shape is the right gate).
-  if(EQ.weapon && EQ.weapon.weaponShape === 'dagger') return BACKSTAB_DAGGER_MULT;
+  if(EQ.weapon && EQ.weapon.weaponShape === 'dagger') return BACKSTAB_DAGGER_MULT * shadowHandMult(); /* S1001 — Shadow's hand */
   // Non-dagger weapon (or bare hand) — the other-weapon bonus still applies
   // to reward positioning on swords/maces. Bare hand (no EQ.weapon) still
   // counts — you snuck up on them, you get the bonus.
-  return BACKSTAB_OTHER_MULT;
+  return BACKSTAB_OTHER_MULT * shadowHandMult();
 }
 // v71 — Shieldbearer frontal block. A raised guard (shieldUp:true) reduces
 // FRONTAL melee damage to this fraction until the guard is broken. Flanking /

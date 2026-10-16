@@ -1,4 +1,4 @@
-// The perks, first wave: Stealth and Athletics (Session 976; skills and perks A, the build sheet's third session). Built:
+// The perks, first wave: Stealth and Athletics (Session 976; Shadow's hand, Stealth 100, Session 1001; skills and perks A, the build sheet's third session). Built:
 // Stealth's Soft step (25, sneak at walking speed), In the dark (50, sight on you ×0.75 more out of light) and Light foot
 // (75, a spike plate does not trigger while you sneak or sprint); Athletics' Swimmer (25, swim at run speed), Long breath
 // (50, three times the air), Road legs (75, no sprint cost on a road) and Tireless (100, no pause after a sprint).
@@ -63,5 +63,19 @@ const foot = await page.evaluate(() => {
 console.log(JSON.stringify(foot));
 check(`Light foot: at Stealth 75 the plate stays armed sneaking (${foot.sneak75}) and sprinting (${foot.sprint75}), and springs at a walk (${!foot.walk75})`, foot.sneak75 && foot.sprint75 && !foot.walk75, foot);
 check(`at Stealth 74 sneaking springs it (${!foot.sneak74})`, !foot.sneak74, foot);
+// S1001 — Shadow's hand (Stealth 100): a backstab does +50%. A foe facing +z, you 1.3 behind it, then 1.3 in front; a dagger,
+// then a sword; the backstab multiplier and the whole blow through applyMeleeDamage, the dice held still
+const shadow = await page.evaluate(() => { const st0 = JSON.stringify(SKILLS.stealth), w0 = EQ.weapon, pin = { fc: _fortuneCrit }; _fortuneCrit = () => 1;
+  const e = { x: px, z: pz, combatYaw: 0, ry: 0, hp: 9999, maxHp: 9999, name: 'Bandit', baseType: 'Bandit', def: 0, alert: true };
+  const at = (lv, shape, behind) => { SKILLS.stealth = { lv, p: 0 }; EQ.weapon = shape ? { name: shape, weaponShape: shape, wType: 'blade', dmg: [10, 10] } : null;
+    const x0 = px, z0 = pz; px = e.x; pz = e.z + (behind ? -1.3 : 1.3); let m, dmg = null, err = null;
+    try { m = applyBackstab(e); dmg = applyMeleeDamage(Object.assign({}, e), 100).dmg; } catch (x) { err = String(x); } finally { px = x0; pz = z0; } return { m, dmg, err }; };
+  const o = { live: PERK_LIVE.has('stealth:100'), d99: at(99, 'dagger', true), d100: at(100, 'dagger', true), s99: at(99, 'sword', true), s100: at(100, 'sword', true), front100: at(100, 'dagger', false) };
+  SKILLS.stealth = JSON.parse(st0); EQ.weapon = w0; _fortuneCrit = pin.fc; return o; });
+console.log('shadow', JSON.stringify(shadow));
+check(`Shadow's hand: from behind with a dagger ×${shadow.d99.m} at Stealth 99, ×${shadow.d100.m} at 100; a sword ×${shadow.s99.m}, ×${shadow.s100.m}`,
+  shadow.live && shadow.d99.m === 3 && shadow.d100.m === 4.5 && shadow.s99.m === 1.5 && shadow.s100.m === 2.25, shadow);
+check(`the whole blow of 100: ${shadow.d99.dmg} → ${shadow.d100.dmg} with the dagger, ${shadow.s99.dmg} → ${shadow.s100.dmg} with the sword (×1.5); from the front ×${shadow.front100.m}`,
+  !shadow.d100.err && Math.abs(shadow.d100.dmg / shadow.d99.dmg - 1.5) < .02 && Math.abs(shadow.s100.dmg / shadow.s99.dmg - 1.5) < .02 && shadow.front100.m === 1, shadow);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

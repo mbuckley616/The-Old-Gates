@@ -155,9 +155,9 @@ const PERK_DEF={
   locks:[['Feel for it','the pin you work glows faintly at the shear'],['Sure hand','a snapped pick keeps the set pins'],['Quiet work','picking halves a witness’s range'],['No mark','a picked town lock is never found']],
   speech:[['Haggle','5% better prices both ways'],['Talk it down','a guard’s fine halved, once in each town'],['Hearing','a person at favour −1 still talks'],['Word given','once a day a guard takes your word for a trespass']]};
 const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50',
-  'stealth:25','stealth:50','stealth:75','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
+  'stealth:25','stealth:50','stealth:75','stealth:100','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
   'acrobatics:50','armour:25', /* S977 — Cat's fall and Fitted */
-  'bow:50','bow:75','bow:100']); /* S982 — Quick nock, Long eye, Through */
+  'bow:50','bow:75','bow:100']); /* S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
 // S976 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.
 function sneakMoveMult(){return _sneaking?(perk('stealth',25)?1:SNEAK_MOVE_MULT):1;}
@@ -183,6 +183,8 @@ function arrowGravity(a){const ud=a.userData;return ARROW_GRAVITY*(ud.longEye&&M
 // Through (Bow 100): a full-draw arrow goes on past the first foe it strikes, and can strike one more; true when this hit
 // is the one it passes through (the caller then neither sticks nor removes it)
 function arrowPasses(ud,e){if(!ud||!ud.through||ud.passed)return false;ud.passed=e;return true;}
+// S1001 — Shadow's hand (Stealth 100): a backstab does +50%, the whole blow ×1.5 on top of the dagger's ×3 or the rest's ×1.5
+function shadowHandMult(){return perk('stealth',100)?1.5:1;}
 function lightFootNow(){return perk('stealth',75)&&(_sneaking||_sprintNow);}
 // ×0.64 at 5, ×1.0 at 50, ×1.4 at 100: a weapon's damage and a school's power
 function skillMult(id){return id?.6+.8*skillLv(id)/100:1;}

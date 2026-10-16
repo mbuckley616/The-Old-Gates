@@ -28,6 +28,17 @@ The build sheet (`docs/design/double-jump-and-dash-build.md`) sets *Second step*
 - **C.** Capped at 4.7, with Haste lifting it to 6 for its 20 s: one more answer to a gap, and a Haste-shaped hole in the table (7.3 m).
 
 Recommendation: **A.** Each perk opens its own step, and a place built for the double jump reads the same to a Scout and a Warrior.
+### Hearing, No mark and Word given: build the rule each takes away, or other perks? (systems builder, Session 1001) — DECISION #376
+The build sheet's last three perks of the hand and the word each change a rule the game does not have, as Steady (#369) did for the bow. Session 1001 built Stealth 100 (*Shadow's hand*, a backstab ×1.5) and left these three off; the Skills tab shows them as *not yet in the game*.
+
+- **Hearing (Speech 75): "a person at favour −1 still talks".** Nobody refuses to talk at any favour today: a keeper refuses trade for five days after a crime they saw, and that is all.
+- **No mark (Locks 100): "a picked town lock is never found".** A picked lock is a crime only if someone sees the pick (Session 327). Nobody finds it afterwards.
+- **Word given (Speech 100): "once a day a guard takes your word for a trespass".** There is no trespass: being inside after hours is not a crime (the crime system's design, 26 Sep). The nearest thing is the lock crime (25 gold, −1 favour).
+
+What should the three be?
+- **A. Build the rule each perk takes away, then the perk** (recommended for No mark and Word given). *No mark*: a picked shop lock unseen is found by its keeper at the next opening: −1 favour in that town, no fine (nobody knows whose hand it was); No mark stops it. *Word given*: once a day, a guard's halt for a fine that is only lock crimes is waived at your word (*Word given.*), and the fine is cleared. *Hearing*: at favour −1 or worse a townsperson gives a greeting and no topics but trade; Hearing opens them again at −1 (not below). Hearing needs a brush-off line in each people's voice from the quest writer.
+- **B. Different perks, same names**, with no new rule: *Hearing*, +1 favour the first time you talk to each person in a town (once per town a day); *No mark*, a witness to a pick sees *someone*, and the fine is halved; *Word given*, *Talk it down* works twice in each town.
+- **C. Leave them** until 2.0's other systems work is in, and decide then.
 
 ## Answered
 
