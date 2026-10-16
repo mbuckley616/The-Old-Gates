@@ -346,6 +346,8 @@ function loop(now){
   if(K['KeyD']){mdx+=rgtX;mdz+=rgtZ;}
   const _roll=tickRoll(performance.now()/1000);
   if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
+  const _dash=_roll?null:tickAirDash(performance.now()/1000); /* S1010 — Swallow's turn, the air dash (10-player.js) */
+  if(_dash){mdx=_dash.dx;mdz=_dash.dz;}
   const moving=!!(mdx||mdz);
   _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
   if(moving)athleticsStep(spd,sprinting); /* S941 — Athletics: ten metres sprinted or swum */
@@ -358,8 +360,8 @@ function loop(now){
   // false. The boost ALSO respects the same collision-slide logic as normal
   // movement, so lunging into a wall stops at the wall rather than clipping.
   const _wHeldNow = !!(K['KeyW']||K['ArrowUp']);
-  const _lungeBoostActive = lungeT > 0 && _wHeldNow && !_roll;
-  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=_roll?mdx:mdx/len*spd,dz=_roll?mdz:mdz/len*spd;
+  const _lungeBoostActive = lungeT > 0 && _wHeldNow && !_roll && !_dash;
+  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=(_roll||_dash)?mdx:mdx/len*spd,dz=(_roll||_dash)?mdz:mdz/len*spd;
     // Extra forward displacement during lunge — added to the WASD-driven dx/dz.
     // Magnitude is (_lungeMult - 1) × spd so the total forward component
     // resolves to spd × _lungeMult (matching the design intent of "forward
@@ -395,7 +397,8 @@ function loop(now){
     if(inOverworld) jumpY=activeTerrainH(px,pz);
     velY=JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY;
   }
-  if(!onGround){
+  if(!onGround&&airDashing())velY=0; /* S1010 — the dash holds you level; the fall starts again from rest after it */
+  else if(!onGround){
     /* S1009 — the flight is integrated exactly, so its height is the same at any frame rate (the dropped-frame rule); it was
        velY first and then jumpY, which lost velY×dt/2 of every rise (0.05 of a jump at 60 fps, 0.16 at 20) */
     const _y0=jumpY;jumpY+=velY*dt-GRAVITY*dt*dt/2;velY-=GRAVITY*dt;

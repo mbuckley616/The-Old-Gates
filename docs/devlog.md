@@ -22220,3 +22220,29 @@ Not built, and owed: the air-speed cap and its `aircap` suite (#370); the dash, 
 - **How the step feels.** It is a set rise with no new pose until the bodies builder's tuck. Without #370's cap, a sprinter double-jumps farther than the sheet's table: up to 7.4 m at Athletics 100 and Swiftness 40.
 - **The ceiling in old rooms.** The legacy interiors keep their own low ceilings (a shop's 2.3 m), so their jumps are now capped at 0.5 m.
 - **Every jump is 0.05 m higher at 60 fps.** No place is built to the old height.
+
+## v80 — Session 1010 — Swallow's turn, the air dash at Acrobatics 100 (the double-jump sheet's session 2)
+The sheet's second session. Its numbers are all settled; the only open number is the air-speed cap (#370), which the dash does not read.
+
+- **The dash** (`airDashStart` and `tickAirDash`, `10-player.js`). Q in the air, while the dash is unspent, carries you 3.0 m level in 0.2 s. It goes toward the held keys, or straight on with none (where the roll on the ground goes back). The fall pauses, and starts again from rest when the dash ends.
+  - It works once a flight, for 20 stamina. There is none over 70% of your carry, immobile, swimming, levitating or staggered. Too winded, the bar flashes.
+  - Spent, Q buffers the landing roll as before.
+  - The loop moves the dash through the walk's own collision, as it moves the roll, so it stops at a wall in the world, a dungeon or a room.
+  - It has no untouchable window, no strike and no height.
+  - Its clock is `performance.now()`, as the roll's. The loop's dt is capped at 0.05, so no frame of it moves more than 0.75 m, and `fallTrack`'s 3 m travel rule holds without the exemption the sheet foresaw for an uncapped frame.
+  - The perk goes live (`acrobatics:100`), so all four of Acrobatics' perks are now in but *Catch*, which waits on the mantle.
+- **The landing roll, and a correction to the sheet.** The sheet says "a dash ending within 0.2 s of landing counts as the roll". Its own `airroll` row asks that Q pressed 0.1 s before landing halves a 10 m fall. The two cannot both hold. A dash begun 0.1 s before landing, at 13 m/s about 1.4 m up, holds you there 0.2 s, then drops you from rest for another 0.4 s. Its end is never within 0.2 s of the ground unless it began under 0.36 m up. So at Acrobatics 100 the old habit, Q before a hard landing, would have cost the whole fall. The built rule keeps the sheet's sentence and adds the intent behind it ("one key: pressing Q to soften a fall still softens it"). A dash also counts as the roll when it begins within 0.2 s of where you would have landed: worked out from your speed and the ground under you (`dashGroundY`, the same ground the loop lands you on). The designer may want the sheet's sentence to say so.
+### Verified (headless Chromium)
+- **`airdash`**, new, 10 of 10 (the sheet's `airdash`, `airdashwall`, `airdashframes` and `airroll` in one). It is driven through the game's own loop with the page's clock held to the loop's:
+  - Nothing at Acrobatics 99: Q in the air only buffers the roll.
+  - At 100, straight on: 3.000 m along the eye in 13 frames of 1/60. The height moves 0.0025 m, the last frame's fall from rest.
+  - The dash costs 20 stamina, and a second Q in the same flight dashes nothing.
+  - With A held, 3.000 m to the left.
+  - At 20 fps (steps of 50 ms) the same 3.000 m in 4 frames.
+  - Carrying 75% of your weight: no dash, no cost.
+  - A 10 m drop (8 m free at Acrobatics 100) costs 16. With the dash 0.1 s before landing it costs 8, rolled. With the dash spent and Q 0.1 s before, 8, as before.
+  - In a dungeon, from 1.5 m before a wall's face: the dash stops at 1.25 m, the body's radius short of it.
+- `airstep`, `falls` and `roll` pass after the change to `startRoll` and `fallLand`.
+### Needs eyes
+- **How it feels**, with no pose yet: you slide level for a fifth of a second. The lean is the bodies builder's (with F10).
+- **The jump-and-dash gaps.** Jump plus dash makes 6.45 m and all three 7.98 m, at the sheet's 4.7 m/s. Without #370's cap a sprinter goes farther.

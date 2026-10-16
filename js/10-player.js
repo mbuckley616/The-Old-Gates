@@ -258,6 +258,7 @@ let ROLL=null;
 function rollUntouchable(nowS){if(nowS<FINISHER_SAFE_UNTIL)return true;if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
 function startRoll(nowS,keys){
   const K=keys||{};
+  if(!ROLL&&!onGround&&airDashStart(K))return true; /* S1010 — Swallow's turn: Q in the air is the air dash while it is unspent */
   if(!ROLL&&!dead&&started&&!onGround)FALL.qAt=FALL.clock; // S429 — pressed in the air: rolled on landing if it is within FALL_ROLL_WIN
   if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
   if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
@@ -319,6 +320,7 @@ function fallLand(y){
     const dmg=Math.max(1,Math.round(maxHP*FALL_PER*(drop-free)));
     FALL.pend={dmg,drop,t:FALL_ROLL_WIN};
     landShake=Math.min(.3,.06+.02*(drop-free));
+    if(FALL.clock-AIRDASH.endAt<=FALL_ROLL_WIN||AIRDASH.soft){AIRDASH.soft=false;fallSettle(true);return drop;} /* S1010 — a dash that ended within 0.2 s of landing, or began within 0.2 s of it (airDashStart), is the landing roll */
     if(FALL.clock-FALL.qAt<=FALL_ROLL_WIN&&typeof window!=='undefined'&&window._K)startRoll(performance.now()/1000,window._K);
   }
   return drop;
@@ -330,7 +332,7 @@ function fallLand(y){
 // the flight's top. The air-speed cap the sheet asks beside it is DECISION #370's and waits.
 const AIRSTEP={used:false,up:false},AIRSTEP_V=4.5,AIRSTEP_V_HEAVY=3.2,AIRSTEP_STAM=12;
 function airStepTick(K){
-  if(onGround){AIRSTEP.used=false;AIRSTEP.up=false;return false;}
+  if(onGround){AIRSTEP.used=false;AIRSTEP.up=false;AIRDASH.used=false;AIRDASH.soft=false;return false;}
   if(!K['Space']){AIRSTEP.up=true;return false;}
   if(!AIRSTEP.up||AIRSTEP.used)return false;
   AIRSTEP.up=false;
@@ -343,6 +345,50 @@ function airStepTick(K){
   AIRSTEP.used=true;velY=totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT?AIRSTEP_V_HEAVY:AIRSTEP_V;
   try{sndJump();}catch(err){}
   return true;
+}
+// S1010 — Swallow's turn, Acrobatics 100: the air dash (the same sheet, its session 2). Q in the air while it is unspent
+// carries you 3.0 m level in 0.2 s, toward the held keys or straight on; the fall pauses and starts again from rest. Once
+// a flight, for 20 stamina; none over 70% of your carry, immobile, swimming, levitating or staggered. Spent, Q buffers the
+// landing roll as before. It stops at a solid as the walk does (the loop moves it through the walk's own collision), has no
+// untouchable window and no strike, and adds no height. A dash that ends within 0.2 s of landing counts as the landing roll
+// and halves the fall. Its clock is performance.now(), as the roll's, so a dropped frame changes neither its length nor its
+// time; the loop's dt is capped at 0.05, so no frame of it moves more than 0.75 m and fallTrack's 3 m travel rule holds.
+const AIRDASH={used:false,t0:null,dx:0,dz:0,done:0,endAt:-9,soft:false},AIRDASH_DIST=3.0,AIRDASH_DUR=.2,AIRDASH_STAM=20;
+function airDashStart(K){
+  if(AIRDASH.used||AIRDASH.t0!=null||!perk('acrobatics',100)||dead||!started)return false;
+  const nowS=performance.now()/1000;if(playerStaggered(nowS))return false;
+  if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
+  if(typeof spellLevitating==='function'&&spellLevitating())return false;
+  if(encumbranceState()==='immobile'||totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT)return false;
+  if(stamina<AIRDASH_STAM||staminaCD>0){flashStamina();return false;}
+  const k=K||{};let mx=0,mz=0;
+  if(k['KeyW']||k['ArrowUp']){mx+=fwdX;mz+=fwdZ;}
+  if(k['KeyS']||k['ArrowDown']){mx-=fwdX;mz-=fwdZ;}
+  if(k['KeyA']){mx-=rgtX;mz-=rgtZ;}
+  if(k['KeyD']){mx+=rgtX;mz+=rgtZ;}
+  if(!mx&&!mz){mx=fwdX;mz=fwdZ;}
+  const l=Math.hypot(mx,mz)||1;
+  stamina=Math.max(0,stamina-_stamCost(AIRDASH_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
+  /* the sheet's "one key": Q pressed to soften a fall still softens it. A dash begun within 0.2 s of where you would have
+     landed holds you up 0.2 s and then drops you from rest, so its end is never that near the ground; it counts as the roll */
+  const gy=dashGroundY(),dn=Math.max(0,-velY),h=jumpY-gy;
+  const soft=gy!=null&&h>=0&&(Math.sqrt(dn*dn+36*h)-dn)/18<=FALL_ROLL_WIN;
+  Object.assign(AIRDASH,{used:true,t0:nowS,dx:mx/l,dz:mz/l,done:0,soft});velY=0;
+  try{sndJump();}catch(err){}
+  return true;
+}
+function airDashing(){return AIRDASH.t0!=null;}
+// the ground under you, as the loop's landing reads it
+function dashGroundY(){const dun=lid&&lid.startsWith('dyn_');
+  if(dun||isInterior()){const b=(dun&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((dun&&currentFloor===2)?FLOOR2_Y:0);return footholdY(px,pz,jumpY,b);}
+  return activeTerrainH(px,pz);}
+// the dash's move this frame, {dx,dz,p}, or null; it ends at its 3 m, or on landing
+function tickAirDash(nowS){
+  if(AIRDASH.t0==null)return null;
+  if(onGround||dead){AIRDASH.t0=null;AIRDASH.endAt=FALL.clock;return null;}
+  const p=Math.min(1,Math.max(0,(nowS-AIRDASH.t0)/AIRDASH_DUR)),want=AIRDASH_DIST*p,step=want-AIRDASH.done;AIRDASH.done=want;
+  if(p>=1){AIRDASH.t0=null;AIRDASH.endAt=FALL.clock;}
+  return {dx:AIRDASH.dx*step,dz:AIRDASH.dz*step,p};
 }
 // S1009 — the head stops at the ceiling (the same sheet): a rise ends where the top of the head, SCALE.PERSON over the feet,
 // meets the room's ceiling (`_roomH` for a generated room, `_ceilH` for the old ones), the dungeon's floor height, or the
