@@ -22847,3 +22847,41 @@ Corrections made during the session:
 - **Nobody hunts here.** The hunters, their dogs and their kill are the bodies builder's.
 - **The smoke is still,** as at the other camps.
 - **Still open in OG-124:** the pilgrims' rest, the abandoned expedition and the small mysteries.
+
+## v80 — Session 1023 — Aurenne's abandoned expedition (card F8, prototype only)
+The freeze for F3 (#381) is still open. This session is the fourth of OG-124's road camps and the first in Aurenne, after the Gatelands' charcoal burners' (1016) and merchants' (1021) camps and the Mark's hunters' (1022). OG-124's panel 4 ends its row of camps with "abandoned expedition". It is `aurenneExpedition` in `docs/prototypes/levelup/places.js`, at `places.html?place=expedition`.
+
+A party came up a hill road to dig at an old terrace and left in a hurry some weeks ago, and what they could not carry lies where it fell. What they found and why they ran is left to the quest writer, so nothing here says it: the camp is only the state of things. It is built at true size on a dry Aurenne hillside rising at 1 in 10 from a road. Olives, cypresses and maquis stand on dry grass with pale limestone breaking through (OG-124's "terraced coast… cypresses", with no Tuscan building in it):
+- **The camp's terrace:** cut level into the slope, its bank eased over 3 m.
+- **The tents:** a ridge tent still standing (2.6 by 2.1 m, its ridge at 1.91 m), its door flap torn and hanging half across the door. A second has fallen from its front pole: its ridge pole runs from the back pole's top down to the ground, with the canvas draped over it and spread on the grass, and the front pole lies in front.
+- **The fire:** cold, with ash and four burnt sticks in its ring of stones. The pot lies on its side beside it, and a stool is knocked over.
+- **The handcart:** down on its left side, resting on its right wheel and its axle end. The left wheel is off and lying flat. Of its three crates, one has burst, with its lid off and straw spilled.
+- **The litter:** a folding table on its side, a surveyor's tripod fallen with its instrument off, a lantern on its side, and nine papers on the ground, some held down by stones.
+- **The old terrace wall:** dry stone 0.8 to 1.3 m high along the slope, its courses laid from the ground in front up to the terrace behind. One stretch has fallen, with its stones down the slope. A gap lets the path go up a single ramp of about 1 in 2.8.
+- **The dig:** on the old terrace above the wall, a trench 6 by 1.5 m and 1.6 m deep with upright cut faces and a level floor. A ladder stands in it to 0.6 m over the lip. Its spoil is heaped uphill, with a pick and a shovel left standing in it, and a column drum lies on its lip at the west end.
+- **The size:** 27,700 to 27,800 triangles in 16 meshes.
+
+The views are `camp` (from the road), `tents`, `dig`, `cart` and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The spoil** was first heaped downhill of the trench, which put it on the old terrace wall. It is now uphill.
+- **The wall** first stood in a gully. The ground's fine band stopped short of it, so the step was drawn on a 1 m grid. The band now runs to it, and the wall's courses are now laid from the ground in front up to the terrace behind. Before that they were a fixed three courses, which stood 0.62 to 1.39 m out of the ground.
+- **The trench** was first cut through the ground grid's cells, so a sloped skirt of ground hung inside its walls (0.12 m inside at mid-depth). Its edges now lie on the grid's lines, its cells are left out, and it has a floor of its own; its walls are met on their lines (0 m). The walls were also first one-sided and invisible from inside.
+- **The cart** first stood on the edge of the camp terrace's bank, with a wheel 0.037 m off the ground. It now stands on the terrace.
+- **The path up** first met a step of 0.6 m: the old terrace's 0.9 m step, then a ramp of 1 in 1.4, then the camp terrace's bank. The bank is eased over 3 m now, and the gap is one ramp from the camp's terrace to the old one, so the worst step is 0.19 m. The path also first passed 0.3 m from the fallen tent's canvas; it now goes west of it.
+- **The fallen tent's check** first counted the canvas hanging from its back pole, at 1.5 m, against a bound of 1.0 m. It now reads the front half only.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 202 of 202 pass** (194 after Session 1022). Eight checks are new. The expedition's `camp` view and its `dig` view at dusk render with no page errors, and six checks run over three keys:
+  - **The builds:** each key builds the same twice, with 27,736 to 27,760 triangles in 16 meshes and 19 trees.
+  - **The tents:** the standing tent's walls are met at their feet at all 6 points, with 1.91 m to its ridge. The fallen tent's canvas is 0.97 to 0.98 m at most over the ground over its front half.
+  - **The trench:** it is 1.6 m deep under its lowest lip, and its walls are met 0 m off their lines. The ladder's foot is on its floor (0 m), and its top is 0.6 m over the lip.
+  - **The cart and the fallen things:** the cart's standing wheel is 0.002 to 0.004 m off the ground and its loose wheel 0 m. All 11 fallen things lie −0.016 to 0.02 m off the ground.
+  - **The wall:** it is 0.77 to 1.29 m high at 17 points where it stands, and its gap is open on the path.
+  - **The walk:** 59 half-metres from the road up to the camp, the fire and the tent, and up through the gap to the trench. There is ground under each, no step is over 0.19 m, and there is 0.72 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-expedition-camp.jpg`, `-tents`, `-dig`, `-cart`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **What they dug for and why they left.** The column drum is the only hint, and it belongs to the quest writer to name or to change. It may want a DECISION if the dig is to be a lead.
+- **The papers are blank.** If they carry a line, it is the quest writer's.
+- **The ground's texture** is blotchy at this sun. It is the kit's dry turf, as at the aqueduct, and it wants F3's ground.
+- **Still open in OG-124:** the pilgrims' rest, which wants the canon on whose pilgrims and to where, and the small mysteries.
