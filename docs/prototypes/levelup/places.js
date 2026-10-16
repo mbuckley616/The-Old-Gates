@@ -1416,3 +1416,93 @@ export function markFerry(o = {}, r = stream('ferry')) {
     stage: { x: 1.2, z0: S0, z1: S1, top: SD }, flat: { z: zc, L, W: FW, deck: DK, bottom: BOT, forks, aprons: { near: aprons.pz, far: aprons.nz }, at }, rope, ropeX: RX, ropePosts: ZP,
     bell: { x: BX, z: BZ, mouth: +(MOUTH - gy).toFixed(2), pull: +(PULL - gy).toFixed(2), frame: BX - .74 }, house: { x: HX, z: HZ, y: hy, ry: HRY, w: 5.8, d: 8.4, sill: H.sill, stairOut: H.stairOut } };
 }
+
+// ── the Gatelands' shipyard (Session 981, card F8; L5's "roads and works", OG-046's "shipyards and dry docks", OG-014's harbours). A
+// shipwright's yard on a harbour shore, as the small yards of Arklow and Baltimore built their clinker boats: a hull in frame on a slip,
+// the last one finished at the quay. Built at true size, the sea to -z, the slip along z, y 0 the sea's surface:
+//   - the slip: two ground ways on sleepers at 1 in 12, from the yard 22 m up the shore down into water 1.2 m deep at their foot;
+//   - the hull on the stocks: the game's sloop's own lines (ships.js, its sections), bow up the slip: the keel on keel blocks, the stem
+//     and the sternpost, a frame every 1.3 m to the sheer, the garboard and two strakes hung, ribbands along the frames at the bilge and
+//     the sheer, shores from the ground to the bilge, staging on trestles down both sides;
+//   - the quay: a stone quay out into the harbour beside the slip, 6 m wide and 1.4 m over the water, bollards on it; the finished sloop
+//     (ships.js's gatelandsSloop) lying alongside its far face, its sail furled;
+//   - the yard: an open shed of posts under thatch over a sawpit with a log on trestles across it; a steam box on trestles by a boiler on
+//     a hearth; stacks of planks in stick and a pile of logs.
+// -> { group, tris, draws, own, slope, way(z) (the ways' top), ways { x, z0, z1 }, blocks [{ z, top, keel }] (world, under the keel),
+//   hull { matrix, keelLow }, staging { x, y, z0, z1 }, quay { x0, x1, z0, z1, top }, sloop { x, z, W, deck }, pit { x, z, w, l, d }, ground }
+export function gatelandsShipyard(o = {}, r = stream('shipyard')) {
+  const L0 = lightMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const M = { ...L0, water: L0.sea, way: mat('beam', { ns: 1.0, color: 0x4a3a2c, rough: .9 }), block: mat('beam', { ns: 1.0, color: 0x6a5440, rough: .95 }), oak: mat('wood', { ns: 1.0, color: 0xc29a6a, rough: .75 }),
+    plank: mat('wood', { ns: .9, color: 0xb08a5e, rough: .8 }), deck: mat('wood', { ns: .9, color: 0x9a8a72, rough: .9 }), strand: mat('rock', { ns: .8, color: 0xa49c8a, rough: 1 }),
+    bark: mat('beam', { ns: 1.4, color: 0x7a6250, rough: 1 }), boiler: std(0xb06a3c, .4, { metalness: .7 }) };
+  M.oak.side = M.plank.side = THREE.DoubleSide;
+  const B = new Map(), HB = new Map();
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5, into = B) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); if (into === B) worldUV(g, uv);
+    if (!into.has(k)) into.set(k, []); into.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, into = B, seg = 6) => { const A = new THREE.Vector3(...a), C = new THREE.Vector3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); g.translate(...A.clone().add(C).multiplyScalar(.5).toArray()); return put(g, k, 0, 0, 0, 0, 0, 0, .5, into); };
+  // the shore: the yard level at 1.4, the strand falling to the harbour's bed at 3.5; the slip's bed cut down to the ways
+  const LAND = 1.4, SL = 1 / 12, way = z => .5 + (z - 6) * SL, WZ0 = -14, WZ1 = 22, sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  const nat = (x, z) => { const y = z >= 8 ? LAND + .015 * (z - 8) : z >= 1 ? -.4 + (LAND + .4) * sm((z - 1) / 7) : -.4 - 3.1 * sm((1 - z) / 11); return y + (z > 8 ? .12 * Math.sin(x * .19 + z * .23) : .05 * Math.sin(x * .4)); };
+  const ground = (x, z) => { const c = Math.min(nat(x, z), way(z) - .4), m = sm((Math.abs(x) - 2.6) / 2); return z > WZ1 ? nat(x, z) : c + (nat(x, z) - c) * m; };
+  { const xs = []; for (let x = -50; x < -6; x += 1.5) xs.push(x); for (let x = -6; x < 6; x += .5) xs.push(x); for (let x = 6; x <= 50; x += 1.5) xs.push(x);
+    const Z0 = -40, NZ = 84, pos = [], I = { turf: [], strand: [] }, NX = xs.length; for (let j = 0; j <= NZ; j++) for (const x of xs) { const z = Z0 + j; pos.push(x, ground(x, z), z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX - 1; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, y = (pos[a * 3 + 1] + pos[d * 3 + 1]) / 2, z = Z0 + j + .5; (y < LAND - .05 || z < 7 ? I.strand : I.turf).push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g.toNonIndexed(), k, 0, 0, 0, 0, 0, 0, .25); } }
+  { const g = new THREE.PlaneGeometry(100, 50); g.rotateX(-Math.PI / 2); put(g, 'water', 0, 0, -17); }
+  // the slip: two ground ways on sleepers, each sleeper standing on the ground
+  const WX = .9, ang = Math.atan(SL), WL = (WZ1 - WZ0) / Math.cos(ang);
+  for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.3, .16, WL), 'way', sx * WX, (way(WZ0) + way(WZ1)) / 2 - .08, (WZ0 + WZ1) / 2, -ang);
+  for (let z = WZ0 + .5; z < WZ1; z += 1.2) { const yb = Math.min(ground(-1.4, z), ground(1.4, z), ground(0, z)) - .15, yt = way(z) - .16; put(new THREE.BoxGeometry(3.0, yt - yb, .22), 'block', 0, (yt + yb) / 2, z); }
+  // the hull on the stocks: the sloop's lines in its own frame (y 0 its waterline, +z the bow), set on the slip bow up at the slip's slope
+  const S = gatelandsSloop({}, stream('shipyard-lines')); S.group.traverse(m => m.geometry && m.geometry.dispose());
+  const zb = S.L / 2, zr = (z, u) => z * (1 - (z > 0 ? .13 : .09) * (1 - u) ** 1.5 * Math.abs(z / zb) ** 6), HZ = 12.6, KB = .7 /* the keel blocks' height */;
+  const keelY = z => S.sect(z, 0)[1] - .12 /* the keel's underside: it stands 0.12 under the moulded line, 0.24 deep */, HY = way(HZ) + KB + .12 + 1.05;
+  const HM = new THREE.Matrix4().compose(new THREE.Vector3(0, HY, HZ), new THREE.Quaternion().setFromEuler(new THREE.Euler(-ang, 0, 0)), new THREE.Vector3(1, 1, 1));
+  const NS = S.sections.length - 1, P = (i, u, sx = 1) => { const z = S.sections[i].z, [x, y] = S.sect(z, u); return [sx * x, y, zr(z, u)]; };
+  // the keel in segments along its rocker, the stem and the sternpost up their rake
+  for (let i = 1; i < NS - 1; i++) { const a = [0, keelY(S.sections[i].z) + .06, zr(S.sections[i].z, 0)], b = [0, keelY(S.sections[i + 1].z) + .06, zr(S.sections[i + 1].z, 0)]; put(new THREE.BoxGeometry(.2, .24, Math.hypot(b[1] - a[1], b[2] - a[2]) + .02), 'oak', 0, (a[1] + b[1]) / 2 + .06, (a[2] + b[2]) / 2, -Math.atan2(b[1] - a[1], b[2] - a[2]), 0, 0, .5, HB); }
+  for (const i of [0, NS]) for (let k = 0; k < 10; k++) rod('oak', P(i, k / 10), P(i, (k + 1) / 10), .1, HB, 6);
+  // the frames, every fourth station, to the sheer; the ribbands at the bilge and under the sheer; the garboard and two strakes hung
+  for (let i = 4; i < NS; i += 4) for (const sx of [-1, 1]) for (let k = 0; k < 12; k++) rod('oak', P(i, k / 12, sx), P(i, (k + 1) / 12, sx), .055, HB, 4);
+  for (const u of [.55, .93]) for (const sx of [-1, 1]) for (let i = 2; i < NS - 1; i++) rod('timber', P(i, u, sx), P(i + 1, u, sx), .03, HB, 4);
+  for (const sx of [-1, 1]) { const pos = []; const NU = 6; for (let i = 1; i < NS; i++) for (let k = 0; k <= NU; k++) pos.push(...P(i, .3 * k / NU, sx));
+    const idx = []; for (let i = 0; i < NS - 2; i++) for (let k = 0; k < NU; k++) { const a = i * (NU + 1) + k, b = a + 1, c = a + NU + 1, d = c + 1; idx.push(a, b, c, b, d, c); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g.toNonIndexed(), 'plank', 0, 0, 0, 0, 0, 0, .5, HB); }
+  for (const [k, gs] of HB) for (const g of gs) { g.applyMatrix4(HM); worldUV(g, .5); if (!B.has(k)) B.set(k, []); B.get(k).push(g); }
+  const W = (v) => new THREE.Vector3(...v).applyMatrix4(HM);
+  // the keel blocks: a stack of timbers from the ways' centre line up to the keel's underside at each, every 1.6 m
+  const blocks = []; for (let zl = -5; zl <= 5.2; zl += 1.6) { const k = W([0, keelY(zl), zl]), yb = way(k.z) - .16; put(new THREE.BoxGeometry(.5, k.y - yb, .4), 'block', 0, (k.y + yb) / 2, k.z); blocks.push({ z: +k.z.toFixed(3), top: +k.y.toFixed(3) }); }
+  // the shores: a prop from the ground just out from the hull to its turn of the bilge, under the staging, at every second frame, both sides; the staging on its trestles
+  for (let i = 8; i < NS - 4; i += 8) for (const sx of [-1, 1]) { const b = W(P(i, .3, sx)), gx = b.x + sx * .9 /* inside the staging's line: the shores stand under it */; rod('timber', [b.x + sx * .05, b.y, b.z], [gx, ground(gx, b.z) - .1, b.z], .08); }
+  const STX = 3.25, STY = HY - .2, SZ0 = HZ - 5.2, SZ1 = HZ + 5.2;
+  for (const sx of [-1, 1]) { for (let z = SZ0; z < SZ1; z += .45) put(new THREE.BoxGeometry(.7, .05, .42), 'deck', sx * STX, STY - .025 + (z + .21 - HZ) * SL, z + .21, -ang, 0, 0, .6);
+    for (let z = SZ0 + .4; z < SZ1; z += 2.4) for (const dx of [-.3, .3]) { const y0 = ground(sx * STX + dx, z) - .1, y1 = STY - .05 + (z - HZ) * SL; put(new THREE.BoxGeometry(.1, y1 - y0, .1), 'timber', sx * STX + dx, (y0 + y1) / 2, z); } }
+  // the quay: stone, out from the yard to the east of the slip, bollards along its edge; the finished sloop along its far face
+  const QX0 = 7, QX1 = 13, QZ0 = -22, QZ1 = 9;
+  put(new THREE.BoxGeometry(QX1 - QX0, LAND + 3.9, QZ1 - QZ0), 'rubble', (QX0 + QX1) / 2, (LAND - .1 - 4) / 2, (QZ0 + QZ1) / 2, 0, 0, 0, .6) /* under the dressed cap */; put(new THREE.BoxGeometry(QX1 - QX0 + .1, .12, QZ1 - QZ0 + .1), 'dress', (QX0 + QX1) / 2, LAND - .06, (QZ0 + QZ1) / 2, 0, 0, 0, .6);
+  for (let z = QZ0 + 2; z < QZ1 - 4; z += 6) for (const x of [QX0 + .4, QX1 - .4]) { put(new THREE.CylinderGeometry(.16, .2, .6, 10), 'iron', x, LAND + .3, z); put(new THREE.SphereGeometry(.2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), 'iron', x, LAND + .6, z); }
+  const sl = gatelandsSloop({}, stream(String(o.key || 'shipyard') + ':sloop')), SLX = QX1 + .35 + S.W / 2, SLZ = -8;
+  { const sail = sl.group.getObjectByName('sail'), bb = new THREE.Box3().setFromObject(sail), n = sail.geometry.attributes.position.count / 3; sl.group.remove(sail); sl.tris -= n;
+    const furl = new THREE.Mesh(new THREE.CylinderGeometry(.2, .2, bb.max.x - bb.min.x - .2, 10).rotateZ(Math.PI / 2), sail.material); furl.position.set((bb.min.x + bb.max.x) / 2, bb.max.y - .28, (bb.min.z + bb.max.z) / 2 - .05); furl.name = 'sail'; furl.castShadow = true; sl.group.add(furl); sl.tris += 40; }
+  sl.group.position.set(SLX, 0, SLZ); rod('rope', [QX1 - .4, LAND + .5, SLZ + 4], [SLX - 1.5, 1.6, SLZ + 5.4], .02); rod('rope', [QX1 - .4, LAND + .5, SLZ - 4], [SLX - 1.4, 1.5, SLZ - 5.6], .02);
+  // the shed: posts under a thatched roof over the sawpit, its log on trestles across the pit
+  const SX0 = -17, SX1 = -7, SHZ0 = 13, SHZ1 = 21, EAV = 3.0, RIDGE = 5.6;
+  for (let x = SX0; x <= SX1 + .01; x += 2.5) for (const z of [SHZ0, SHZ1]) { const y0 = ground(x, z) - .2; put(new THREE.BoxGeometry(.22, EAV - y0 + LAND, .22), 'timber', x, (EAV + LAND + y0) / 2, z); }
+  for (const z of [SHZ0, SHZ1]) put(new THREE.BoxGeometry(SX1 - SX0 + .4, .2, .22), 'timber', (SX0 + SX1) / 2, LAND + EAV, z);
+  { const hw = (SHZ1 - SHZ0) / 2 + .6, rise = RIDGE - EAV, sl2 = Math.hypot(hw, rise); for (const sz of [-1, 1]) put(new THREE.BoxGeometry(SX1 - SX0 + 1.2, .35, sl2), 'thatch', (SX0 + SX1) / 2, LAND + EAV + rise / 2 + .1, (SHZ0 + SHZ1) / 2 + sz * hw / 2, sz * Math.atan2(rise, hw), 0, 0, .7);
+    const gs = new THREE.Shape([[-hw + .6, 0], [hw - .6, 0], [0, rise - .3]].map(([a, b]) => new THREE.Vector2(a, b))); for (const x of [SX0, SX1]) { const g = new THREE.ShapeGeometry(gs); g.rotateY(Math.PI / 2); put(g, 'timber', x, LAND + EAV + .1, (SHZ0 + SHZ1) / 2); } }
+  const PX = -12, PZ = 17, PW = 1.0, PL = 4.2, PD = 1.8, py = ground(PX, PZ);
+  put(new THREE.BoxGeometry(PW, .02, PL), 'dark', PX, py + .03, PZ); for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.22, .18, PL + .5), 'timber', PX + sx * (PW / 2 + .11), py + .09, PZ);
+  for (const z of [PZ - 1.4, PZ + 1.4]) { put(new THREE.BoxGeometry(PW + .9, .2, .2), 'timber', PX, py + .28, z); }
+  { const g = new THREE.CylinderGeometry(.32, .36, 5.6, 12); g.rotateX(Math.PI / 2); put(g, 'bark', PX, py + .72, PZ); put(new THREE.BoxGeometry(.03, .9, .5), 'iron', PX, py + 1.2, PZ - .6); }
+  // the steam box on trestles by its boiler on a hearth; the stacks of planks in stick; the pile of logs
+  const BXs = -3.8, BZs = 27, by = ground(BXs, BZs); put(new THREE.BoxGeometry(.6, .6, 5.2), 'sailwood', BXs, by + 1.25, BZs); for (const z of [BZs - 2, BZs + 2]) for (const dx of [-.35, .35]) put(new THREE.BoxGeometry(.1, .95, .1), 'timber', BXs + dx, by + .47, z);
+  put(new THREE.BoxGeometry(1.4, .6, 1.4), 'rubble', BXs, by + .3, BZs - 3.6, 0, 0, 0, .6); put(new THREE.CylinderGeometry(.45, .5, .8, 14), 'boiler', BXs, by + 1.0, BZs - 3.6); rod('boiler', [BXs, by + 1.4, BZs - 3.6], [BXs, by + 1.4, BZs - 2.6], .06);
+  for (const [sx, sz] of [[4.6, 26], [8.4, 26]]) { const sy = ground(sx, sz); for (let layer = 0; layer < 6; layer++) { const y = sy + .1 + layer * .1; if (layer % 2) for (const dz of [-2, 0, 2]) put(new THREE.BoxGeometry(2.4, .04, .05), 'timber', sx, y - .03, sz + dz); else for (let k = 0; k < 6; k++) put(new THREE.BoxGeometry(.3, .05, 5.6), 'plank', sx - .9 + k * .36, y, sz, 0, 0, 0, .6); } }
+  for (let k = 0; k < 9; k++) { const row = k < 4 ? 0 : k < 7 ? 1 : 2, i = row === 0 ? k : row === 1 ? k - 4 : k - 7, g = new THREE.CylinderGeometry(.28, .3, 6, 10); g.rotateX(Math.PI / 2); put(g, 'bark', -9.5 + i * .58 + row * .29, ground(-9, 28) + .3 + row * .5, 28 + (r() - .5) * .4); }
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'strand', 'water', 'dark'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  const own = group.children.length; group.add(sl.group);
+  return { group, tris: Math.round(tris), own, draws: own + sl.draws, sloopTris: sl.tris, slope: SL, way, ways: { x: WX, z0: WZ0, z1: WZ1 }, blocks, hull: { matrix: HM, y: HY, z: HZ, keelLow: +Math.min(...blocks.map(b => b.top)).toFixed(3) },
+    staging: { x: STX, y: STY, z0: SZ0, z1: SZ1 }, quay: { x0: QX0, x1: QX1, z0: QZ0, z1: QZ1, top: LAND }, sloop: { x: SLX, z: SLZ, W: S.W, L: S.L, deck: S.deck }, pit: { x: PX, z: PZ, w: PW, l: PL }, ground };
+}

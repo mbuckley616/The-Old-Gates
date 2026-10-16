@@ -21400,3 +21400,48 @@ Corrections made during the session:
 - **The birches are the lathe crowns of the older places.** They read as poplars more than birches.
 - **The raised apron reads as a dark board** from across the water.
 - **Owed:** the last of L5's works, a shipyard.
+
+## v80 — Session 981 — The Gatelands' shipyard (card F8, prototype only)
+The last of L5's "roads and works" (OG-046: "shipyards and dry docks"). The precedent is the small clinker yards of the Irish coast, Arklow's and Baltimore's: a slip running down a harbour shore, a hull in frame on it, the last boat finished and lying at the quay, and a shed with a sawpit, a steam box and timber in stick. The hull on the stocks is not drawn freehand. It is the game's own sloop's lines (`ships.js`'s `gatelandsSloop` returns its sections and `sect`), framed up, so the boat being built is the boat at the quay. It lives in `places.js` beside the ferry, with its own view (`places-shipyard-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The yard** (`gatelandsShipyard` in `places.js`, at true size, the sea to -z, the slip along z, y 0 the sea's surface):
+- **The shore:** the yard level at 1.4 m over the water. A strand falls to the harbour's bed 3.5 m down, and the slip's bed is cut down to the ways.
+- **The slip:** two ground ways on sleepers at 1 in 12, from 22 m up the yard down to 1.17 m under the water at their foot.
+- **The hull on the stocks,** in the sloop's own lines, bow up the slip:
+  - the keel in segments along its rocker, on seven keel blocks 0.7 m high;
+  - the stem and the sternpost up their rake, and a frame every 1.3 m to the sheer;
+  - the garboard and the next two strakes hung;
+  - ribbands along the frames at the bilge and under the sheer;
+  - shores from the ground to the turn of the bilge;
+  - staging on trestles down both sides at the bilge's height.
+- **The quay:** stone, 6 m wide and 31 m long out into the harbour, 1.4 m over the water under a dressed cap, with bollards along both edges. The finished sloop (`gatelandsSloop`) lies alongside its far face with its sail furled, made fast fore and aft.
+- **The shed:** ten by eight metres of posts under thatch, over a sawpit with its log on trestles across it and the pit saw standing in the cut.
+- **The yard's work:** a steam box on trestles by a copper boiler on a stone hearth, two stacks of planks in stick, and a pile of logs.
+- 26,116 triangles in 18 meshes, and the sloop's 9.
+
+The view: `places.html?place=shipyard`, with `view=yard` (from the shore's west end), `stocks` (under the hull by the keel blocks), `staging` (on the port staging beside the frames), `quay` (on the quay, back to the slip), `shed` (by the sawpit) and `sea` (from the harbour).
+
+Corrections made during the session:
+- **The keel.** It first stood 6 cm over its blocks, because the keel and the blocks took their heights from two different offsets. Both now read the keel's underside.
+- **The logs and the boiler.** The logs first rendered white: `bark` is not in this kit's materials, so the default took them. They have a bark of their own now, and the boiler is copper, not the lighthouse's verdigris.
+- **The shores.** They first ran from the bilge out past the staging and through its planks. They now start at the turn of the bilge and stand inside the staging's line, as a yard's shores do.
+- **The quay's cap.** Its top was coplanar with the rubble's, so a ray could take either. The rubble now stops 0.1 m under the cap.
+- **The staging's planks.** Each was set at its height from its start, not its middle, which left it 1.75 cm low on the slope. The check's walk also first sampled every quarter metre, which fell in the 3 cm gaps between planks every ninth step. The walk now samples on each plank's middle.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 111 of 111 pass** (104 after Session 980). Two views are new on the page check: the yard and the quay, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 40,000 triangles and 20 meshes.
+  - **The slip:** the ways found exactly on their line at every metre, at 1 in 12.0, their foot 1.17 m under the water.
+  - **The hull:** the keel found resting on all seven keel blocks (0.000 m off each), and 0.7 m or more over the ways all along.
+  - **The staging:** walked end to end on both sides, a floor on every plank, 0.81 m clear of the frames at the hip.
+  - **The quay and the sloop:**
+    - the quay 1.40 m over the water, its dressed cap found;
+    - the sloop 0.57 m off its face at the waterline;
+    - 2.03 m of water under the sloop's keel.
+- **Pictures:** `places-shipyard-yard.jpg`, `-stocks`, `-staging`, `-quay`, `-shed` and `-sea`.
+### Needs eyes
+- **The frames are round rods.** A sawn frame is square in section and doubled (futtocks). From the slip they read as a basket more than a boat in frame.
+- **Only the garboard and two strakes are hung,** and they are one smooth surface, not clinker laps. The sloop's own strake builder could hang them properly.
+- **The sawpit is a dark rectangle,** not a hole. Nobody stands in it: people are the bodies builder's.
+- **The quay's rubble texture is the toll bridge's**, large and regular, and its bollards are iron where a small yard would use timber.
+- **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
+- **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
