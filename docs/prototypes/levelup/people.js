@@ -638,15 +638,22 @@ function buildSash(G, body, byName) {
   // a tunic stands off the tights as makePerson pushes it, by the point's rest place (up to 3.5 cm over the chest), and 3 mm more
   const tunicOff = (x, y) => .016 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0);
   const lists = [[PACK.G['body'], 0]]; if (D.tunic || D.trousers) lists.push([PACK.G['helper-tights'], D.tunic ? tunicOff : .01]);
-  if (D.skirt) lists.push([D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, .025]); if (D.belt) lists.push([PACK.R.belt, sashBeltOn(D) ? (x, y) => sashBeltPush(D, x, y) + .009 : .032]);
-  if (sashBeltOn(D)) lists.push([PACK.R.sashBeltDrawn || (PACK.R.sashBeltDrawn = clip(PACK.R.sashBelt, PACK.rest, y => y > .085 && y < .225)), (x, y) => sashBeltPush(D, x, y) + .002]);
+  // under a sash belt (Session 1019) the band is tucked: it reads neither belt, so it passes under them, and in the belt's band
+  // (and 1.5 cm past either edge) it stands 1 mm clear of what is under it, not 7: over a short tunic skirt (2.5 cm off the tights)
+  // that leaves it 1.5 mm under the sash belt (3 cm off)
+  const tuck = sashBeltOn(D), inBand = y => tuck && y > .07 && y < .24;
+  if (D.skirt) lists.push([D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, .025]); if (D.belt && !tuck) lists.push([PACK.R.belt, .032]);
   const ok = v => Math.abs(R0[v * 3]) <= .25 && PP[v * 3 + 1] <= nY - .01, SP = [];
   for (const [T, o] of lists) for (let t = 0; t < T.length; t += 3) { const A = T[t], B = T[t + 1], Cc = T[t + 2]; if (!ok(A) || !ok(B) || !ok(Cc)) continue;
     const ux = PP[B * 3] - PP[A * 3], uy = PP[B * 3 + 1] - PP[A * 3 + 1], uz = PP[B * 3 + 2] - PP[A * 3 + 2], vx = PP[Cc * 3] - PP[A * 3], vy = PP[Cc * 3 + 1] - PP[A * 3 + 1], vz = PP[Cc * 3 + 2] - PP[A * 3 + 2];
     let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
     for (let i = 0; i <= 4; i++) for (let j = 0; i + j <= 4; j++) { const wa = i / 4, wb = j / 4, wc = 1 - wa - wb; for (let k = 0; k < 3; k++) SP.push(PP[A * 3 + k] * wa + PP[B * 3 + k] * wb + PP[Cc * 3 + k] * wc);
-      SP.push(typeof o === 'function' ? o(R0[A * 3] * wa + R0[B * 3] * wb + R0[Cc * 3] * wc, R0[A * 3 + 1] * wa + R0[B * 3 + 1] * wb + R0[Cc * 3 + 1] * wc) : o, nx, ny, nz); } }
+      const ry = R0[A * 3 + 1] * wa + R0[B * 3 + 1] * wb + R0[Cc * 3 + 1] * wc; SP.push((typeof o === 'function' ? o(R0[A * 3] * wa + R0[B * 3] * wb + R0[Cc * 3] * wc, ry) : o) - (inBand(ry) ? .006 : 0), nx, ny, nz); } }
   const ST = 7, NP = SP.length / ST;
+  // tucked, the sash belt is a ceiling the band (and its end) stays 1.5 mm under: its points, each with how far makePerson pushes it out
+  const CPb = []; if (tuck) for (const [T, o] of [[PACK.R.sashBeltDrawn || (PACK.R.sashBeltDrawn = clip(PACK.R.sashBelt, PACK.rest, y => y > .085 && y < .225)), (x, y) => sashBeltPush(D, x, y)]])
+    for (let t = 0; t < T.length; t += 3) { const A = T[t], B = T[t + 1], Cc = T[t + 2]; for (let i = 0; i <= 4; i++) for (let j = 0; i + j <= 4; j++) { const wa = i / 4, wb = j / 4, wc = 1 - wa - wb, X3 = [0, 1, 2].map(k => PP[A * 3 + k] * wa + PP[B * 3 + k] * wb + PP[Cc * 3 + k] * wc);
+      CPb.push(X3, o(R0[A * 3] * wa + R0[B * 3] * wb + R0[Cc * 3] * wc, R0[A * 3 + 1] * wa + R0[B * 3 + 1] * wb + R0[Cc * 3 + 1] * wc)); } }
   // the shoulder's top, 11 cm out from the neck's line, and the other hip, 9 cm under the belt, just outside the body's side
   let hx = 0; for (let q = 0; q < NP; q++) if (SP[q * ST + 3] === 0 && Math.abs(SP[q * ST + 1] - (yBelt - .09)) < .02) hx = Math.max(hx, -side * (SP[q * ST] - cx));
   const S = new THREE.Vector3(cx + side * .11, nY - .02, cz), H = new THREE.Vector3(cx - side * (hx + .01), yBelt - .09, cz), C = S.clone().add(H).multiplyScalar(.5);
@@ -708,17 +715,21 @@ function buildSash(G, body, byName) {
   // a little to the front of the hip's side, and the two ends hang straight down from under it, pushed out only where what they
   // hang over (the thigh, the tunic's skirt, a long skirt) stands further out than the line above. They read everything the
   // band does, the thigh below the hip included, which the loop leaves out
-  // over a sash belt (Session 1010) the knot is left off: the sash runs on over the belt's band, its end tucked in under it, owed
-  let knot = null; if (D.sashKnot !== false && !sashBeltOn(D)) {
+  // under a sash belt (Session 1019) there is no knot: one end comes out from under the belt's lower edge in front of the hip, where
+  // the band goes in under it, and hangs 26 cm (Session 1010 had left the knot off and the band over the belt)
+  let knot = null; if (D.sashKnot !== false) {
     const gridAll = new Map(); for (let q = 0; q < NP; q++) { const b = q * ST, k = key(SP[b], SP[b + 1], SP[b + 2]); let L = gridAll.get(k); if (!L) gridAll.set(k, L = []); L.push(q); }
     // the turn: the loop's lowest point, then 15 cm round it toward the front
     let tl = 0; for (let t = 1; t < NT; t++) if (P0[t].y < P0[tl].y) tl = t; const dir = P0[(tl + 3) % NT].z > P0[(tl + NT - 3) % NT].z ? 1 : -1;
     let tk = tl, run = 0; while (run < .15) { const nx = (tk + dir + NT) % NT; run += P0[tk].distanceTo(P0[nx]); tk = nx; }
+    // tucked: from the turn toward the front until the band is 2.5 cm up under the sash belt's lower edge
+    let bandLo = 0; if (tuck) { let nb = 0; for (const v of new Set(PACK.R.sashBelt)) if (R0[v * 3 + 1] > .083 && R0[v * 3 + 1] < .09) { bandLo += PP[v * 3 + 1]; nb++; } bandLo /= nb || 1;
+      tk = tl; for (let i = 0; i < NT / 4 && P0[tk].y < bandLo + .025; i++) tk = (tk + dir + NT) % NT; }
     const Pk = vert(tk, 0), On = NS0[tk].clone(), O = On.clone().setY(0).normalize(), X = new THREE.Vector3(0, 1, 0).cross(O).normalize(), At = A0[tk], Tt = T0[tk];
     // the band's own points near the knot, which the ends come out from under and hang over
     const BP = []; for (let i = 0; i < pos.length; i += 3) if (Math.hypot(pos[i] - Pk.x, pos[i + 1] - Pk.y, pos[i + 2] - Pk.z) < .14) BP.push(pos[i], pos[i + 1], pos[i + 2]);
     // the knot: a lump 8 cm across the band, 6.8 along it and 4.4 deep, its inner face on the band, bound round its middle in the border's colour
-    const kr = [.04, .034, .022], kc = Pk.clone().addScaledVector(On, kr[2] + .003), KS = 14, KR = 10, kb = pos.length / 3;
+    const kr = tuck ? [.001, .001, .001] : [.04, .034, .022], kc = Pk.clone().addScaledVector(On, kr[2] + .003), KS = 14, KR = tuck ? -1 : 10, kb = pos.length / 3;
     for (let i = 0; i <= KR; i++) { const ph = i / KR * Math.PI; for (let j = 0; j <= KS; j++) { const th = j / KS * 2 * Math.PI, lx = Math.sin(ph) * Math.cos(th), ly = Math.cos(ph), lz = Math.sin(ph) * Math.sin(th);
       const lump = 1 + .14 * Math.sin(3 * th + 1.3) * Math.sin(ph) + .08 * Math.cos(2 * ph), q2 = kc.clone().addScaledVector(At, lx * kr[0] * lump).addScaledVector(Tt, ly * kr[1] * lump).addScaledVector(On, lz * kr[2] * lump);
       pos.push(q2.x, q2.y, q2.z); const c = Math.abs(ly) < .22 ? edge : field; col.push(c.r, c.g, c.b); } }
@@ -743,10 +754,20 @@ function buildSash(G, body, byName) {
       const e = { nr, H2, at, P, len }; ends.push(e); return e; };
     // the longer end behind, the shorter over it, 3 cm apart at the knot and parting as they fall
     // (the longer drifts in toward the body's middle and the shorter barely out, so neither swings into the hand hanging at the side)
-    const m = Math.sign((cx - Pk.x) * X.x + (cz - Pk.z) * X.z) || 1, e1 = end(.32, m * .008, m * .022, .05, .072, .004);
-    end(.25, -m * .016, -m * .006, .046, .066, .01, (j, s) => { const r = e1.H2[Math.min(e1.nr, j)]; return Math.abs(s - r.cs) < r.w / 2 + .02 ? e1.at(j, s) : -9; });
-    knot = { kc, kr, At, Tt, On, O, ends };
+    const m = Math.sign((cx - Pk.x) * X.x + (cz - Pk.z) * X.z) || 1, e1 = tuck ? end(.26, 0, m * .012, .05, .07, .003) : end(.32, m * .008, m * .022, .05, .072, .004);
+    if (!tuck) end(.25, -m * .016, -m * .006, .046, .066, .01, (j, s) => { const r = e1.H2[Math.min(e1.nr, j)]; return Math.abs(s - r.cs) < r.w / 2 + .02 ? e1.at(j, s) : -9; });
+    knot = { kc, kr, At, Tt, On, O, ends, tuck };
   }
+  // tucked: in a radial map of the sash belt round the waist's middle (its points pushed out level from there, in 72 directions and
+  // 1 cm bands, the nearest in each), every point of the sash within the belt's height is drawn in to 1.5 mm inside it, easing off
+  // over 4 cm past its top and bottom edges
+  let tuckPulled = 0; if (tuck && CPb.length) { let bx = 0, bz = 0, yb0 = 9, yb1 = -9; const nb = CPb.length / 2; for (let i = 0; i < CPb.length; i += 2) { bx += CPb[i][0] / nb; bz += CPb[i][2] / nb; }
+    const NAb = 72, BP3 = []; for (let i = 0; i < CPb.length; i += 2) { const [x, y, z] = CPb[i], r = Math.hypot(x - bx, z - bz), f = (r + CPb[i + 1]) / r; BP3.push(bx + (x - bx) * f, y, bz + (z - bz) * f); yb0 = Math.min(yb0, y); yb1 = Math.max(yb1, y); }
+    const NYb = Math.ceil((yb1 - yb0) / .01) + 1, BR = new Float32Array(NAb * NYb).fill(9), ab = (x, z) => ((Math.round(Math.atan2(x - bx, z - bz) / (2 * Math.PI) * NAb) % NAb) + NAb) % NAb, ybn = y => Math.max(0, Math.min(NYb - 1, Math.floor((y - yb0) / .01)));
+    for (let i = 0; i < BP3.length; i += 3) { const k = ybn(BP3[i + 1]) * NAb + ab(BP3[i], BP3[i + 2]); BR[k] = Math.min(BR[k], Math.hypot(BP3[i] - bx, BP3[i + 2] - bz)); }
+    const lim = (x, y, z) => { let m = 9; const a0 = ab(x, z), b0 = ybn(y); for (let da = -2; da <= 2; da++) for (let db = -1; db <= 1; db++) { const bb = b0 + db; if (bb >= 0 && bb < NYb) m = Math.min(m, BR[bb * NAb + (a0 + da + NAb) % NAb]); } return m; };
+    for (let i = 0; i < pos.length; i += 3) { const x = pos[i], y = pos[i + 1], z = pos[i + 2], out = y < yb0 ? yb0 - y : y > yb1 ? y - yb1 : 0; if (out >= .04) continue; const L = lim(x, Math.max(yb0, Math.min(yb1, y)), z); if (L > 8) continue;
+      const r = Math.hypot(x - bx, z - bz), want = L - .0015; if (r <= want) continue; const e = 1 - out / .04, nr = r + (want - r) * e * e * (3 - 2 * e), f = nr / r; pos[i] = bx + (x - bx) * f; pos[i + 2] = bz + (z - bz) * f; tuckPulled++; } }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 30 }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'sash'; mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
   // nothing it lies over comes out through it: at four times the band's own points (half steps round and across), every point
@@ -774,11 +795,11 @@ function buildSash(G, body, byName) {
         if (Math.hypot(dx - O.x * along, dy - O.y * along, dz - O.z * along) > .01) continue; const gap = along + SP[b + 3]; if (!sn2[q]) { sn2[q] = 1; endTested++; } endWorst = Math.max(endWorst, gap); if (gap > -.003 && sn2[q] === 1) { sn2[q] = 2; endOut++; } }
       for (const v of arm) { const dx = PP[v * 3] - V.x, dy = PP[v * 3 + 1] - V.y, dz = PP[v * 3 + 2] - V.z; if (Math.abs(dx) > .05 || Math.abs(dy) > .05 || Math.abs(dz) > .05) continue; const along = dx * O.x + dy * O.y + dz * O.z;
         if (along < -.04 || along > .006 || Math.hypot(dx - O.x * along, dy - O.y * along, dz - O.z * along) > .012) continue; if (!an2[v]) { an2[v] = 1; endArm++; } } }
-    { const a = ends[0].P(ends[0].nr, 0), b = ends[1].P(ends[1].nr, 0); spread = Math.hypot(a.x - b.x, a.z - b.z); }
-    kn = { knotOut, endTested, endOut, endWorst: +endWorst.toFixed(4), endArm, ends: ends.map(e => e.len), drop: +(kc.y - lowest).toFixed(3), spread: +spread.toFixed(3), knotY: +kc.y.toFixed(3), beltY: +yBelt.toFixed(3) }; }
+    if (ends[1]) { const a = ends[0].P(ends[0].nr, 0), b = ends[1].P(ends[1].nr, 0); spread = Math.hypot(a.x - b.x, a.z - b.z); }
+    kn = { knotOut, endTested, endOut, endWorst: +endWorst.toFixed(4), endArm, ends: ends.map(e => e.len), drop: +(kc.y - lowest).toFixed(3), spread: +spread.toFixed(3), knotY: +kc.y.toFixed(3), beltY: +yBelt.toFixed(3), tucked: knot.tuck }; }
   // the loop's length, and how high the shoulder's crossing sits over the hip's
   let len = 0; for (let t = 0; t < NT; t++) len += vert(t, 0).distanceTo(vert(t + 1, 0));
-  return { mesh, stats: { width: W, length: +len.toFixed(3), drop: +(S.y - H.y).toFixed(3), side: side > 0 ? 'L' : 'R', tris: idx.length / 3, bandTris, read: pts, empty, tested, out, worst: +worst.toFixed(4), armIn, knot: kn } };
+  return { mesh, stats: { width: W, length: +len.toFixed(3), drop: +(S.y - H.y).toFixed(3), side: side > 0 ? 'L' : 'R', tris: idx.length / 3, bandTris, read: pts, empty, tested, out, worst: +worst.toFixed(4), armIn, knot: kn, tuckPulled } };
 }
 
 // ── the hood up (Session 823, Michael's note on #274: "the hood is semi-transparent") ──
@@ -1772,7 +1793,7 @@ function buildCrossbow(G, body, byName, meshes, root, grip) {
 // the sash belt's promises (Session 1010), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
 // angles and 1 cm rows, nothing worn under it (the tunic, a skirt, a bodice, mail, the body) stands out past its inside, no point of
 // an arm is within it, and a leather belt worn over it lies outside it
-function sashBeltStats(meshes) {
+function sashBeltStats(meshes, root) {
   const sb = meshes.find(m => m.name === 'sashBelt'); if (!sb) return null; const R0 = PACK.rest, lo = .085, hi = .225;
   const pts = (m, f) => { const P = posedOf(m), I = m.geometry.index.array, out = []; for (let t = 0; t < I.length; t += 3) { const a = I[t], b = I[t + 1], c = I[t + 2]; if (!f(a, b, c)) continue;
     for (let i = 0; i <= 4; i++) for (let j = 0; i + j <= 4; j++) { const wa = i / 4, wb = j / 4, wc = 1 - wa - wb; out.push([0, 1, 2].map(k => P[a * 3 + k] * wa + P[b * 3 + k] * wb + P[c * 3 + k] * wc)); } } return out; };
@@ -1788,7 +1809,10 @@ function sashBeltStats(meshes) {
   const belt = meshes.find(m => m.name === 'belt'); if (belt) for (const p of pts(belt, within(.14, .185))) { const b = bin(p); if (b < 0 || sR[b] > 8) continue; beltTested++; if (rad(p) < sR[b] + .001) beltUnder++; }
   let w = 0; { const c = [], P = posedOf(sb); for (const i of new Set(sb.geometry.index.array)) if (ry(i) > lo && ry(i) < hi && R0[i * 3 + 2] > .05 && rx(i) < .03) c.push(P[i * 3 + 1]); w = c.length ? Math.max(...c) - Math.min(...c) : 0; }
   let round = 0; for (let a = 0; a < NA; a++) { const r = Math.floor(NR / 2), v = sR[r * NA + a]; if (v < 8) round += v * 2 * Math.PI / NA; }
-  return { tested, out, worst: +worst.toFixed(4), under, armTested, armIn, beltTested, beltUnder, width: +w.toFixed(3), round: +round.toFixed(3), rows: NR, empty: [...sR].filter(v => v > 8).length };
+  // the sash tucked under it (Session 1019): every point of the sash within the band (5 mm in from its edges) lies inside it
+  let sashTested = 0, sashOut = 0; const sh = root && root.getObjectByName('sash'); if (sh) { sh.updateMatrixWorld(true); const a = sh.geometry.attributes.position, v = new THREE.Vector3();
+    for (let i = 0; i < a.count; i++) { v.fromBufferAttribute(a, i).applyMatrix4(sh.matrixWorld); const p = [v.x, v.y, v.z]; if (p[1] < y0 + .005 || p[1] > y1 - .005) continue; const b = bin(p); if (b < 0 || sR[b] > 8) continue; sashTested++; if (rad(p) > sR[b] - .001) sashOut++; } }
+  return { tested, out, worst: +worst.toFixed(4), under, armTested, armIn, beltTested, beltUnder, sashTested, sashOut, width: +w.toFixed(3), round: +round.toFixed(3), rows: NR, empty: [...sR].filter(v => v > 8).length };
 }
 function posedOf(m) { const n = m.geometry.attributes.position.count, out = new Float32Array(n * 3), v = new THREE.Vector3(); m.updateMatrixWorld(true); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out; }
 // the hands against a long skirt, on the posed body (Session 887), radially: in 2 cm bands and 36 directions round the
@@ -2029,7 +2053,7 @@ export function makePerson(G, o = {}) {
   // coins hanging from the belt (Session 1004), when nothing hangs over the belt's front (a tabard, an apron)
   let beltCoinStats = null; if (D.beltCoins && D.belt && !D.tabard && !D.apron) { root.updateMatrixWorld(true); beltCoinStats = buildBeltCoins(G, body, byName, meshes, root)?.stats ?? null; }
   let sandalSt = null; if (D.sandals) { root.updateMatrixWorld(true); sandalSt = buildSoles(G, body, byName, meshes, root); }
-  let sashBeltSt = null; if (sashBeltOn(D)) { root.updateMatrixWorld(true); sashBeltSt = sashBeltStats(meshes); }
+  let sashBeltSt = null; if (sashBeltOn(D)) { root.updateMatrixWorld(true); sashBeltSt = sashBeltStats(meshes, root); }
   let mailSt = null; if (mail && o.mailStats !== false) { root.updateMatrixWorld(true); mailSt = mailStats(body, meshes); }
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats; }
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a

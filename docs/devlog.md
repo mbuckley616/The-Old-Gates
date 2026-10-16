@@ -22788,3 +22788,40 @@ Two faults were fixed during the session, both seen in the first pictures:
 - **It hangs straight from where it leaves the wrap.** It is a few centimetres off the back of the neck before it meets the shoulder, as a cloth hanging from the wrap's edge would be. It has no weight or sway.
 - **Faint ridges remain** low on the turban man's tail, where the shoulder blade's points are sparse.
 - **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image), and a shoulder sash's end tucked under the sash belt.
+
+## v80 — Session 1019 — The shoulder sash tucked under the sash belt (L1 and B2, prototype only)
+Session 1010's sash belt left one thing owed: "a shoulder sash's end tucked under it, its knot left off there for now". Until now, a shoulder sash worn with a sash belt lay over the belt's band, and its knot at the hip was not drawn, so the loop ran on over the belt with no end at all. OG-056 draws the shoulder sash going in under the wide belt and its end hanging out below. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `buildSash`:
+- **What it reads.** With a sash belt on (`sashBeltOn`), the band reads neither the sash belt nor the leather belt over it. In the belt's band, and 1.5 cm past either edge, it stands 1 mm clear of what is under it, not 7. A short tunic skirt stands 2.5 cm off the tights there and the sash belt 3 cm, so 1 mm is what leaves room for the sash between them.
+- **The ceiling.** The sash belt's own points, pushed out level from the waist's middle by what `sashBeltPush` gives, make a radial map in 72 directions and 1 cm bands. Every point of the sash within the belt's height is drawn in to 1.5 mm inside that map. The pull eases off over 4 cm past the belt's top and bottom edges.
+  - The first try read the ceiling along each point's own line out from the body, through a 1.2 cm tube, as the band reads its floor. On the slanting surface the floor and the ceiling crossed in 48 of 53 places, and the sash still showed through the belt.
+  - A sign error before that had pushed the band out where it should have come in.
+- **The end.** In place of the knot, one end comes out from under the belt's lower edge, in front of the hip where the band goes in under it. It is found by walking from the loop's turn toward the front until the band is 2.5 cm up under the edge. It hangs 26 cm, 5 to 7 cm wide, with its border and the border's colour at the hem, over the band below it and over the thigh.
+- **No new flag.** `sashKnot: false` still leaves the end off.
+
+`sashBeltStats` now also counts the sash's points within the belt's band that stand outside the belt.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 375 checks pass.** That is 374 after Session 1018 and 1 new: Session 1010's two sash-over-belt checks are rewritten as tuck checks, and a third case is added.
+- **The three cases:**
+  - a man in a short tunic skirt;
+  - a woman in a long skirt, with the sash on the right;
+  - a man with the leather belt over the sash belt as well.
+- **On each:**
+  - 0 of 108 to 109 sash points in the belt's band stand outside the belt;
+  - nothing under the belt comes through it (0 of 4,332 and 4,370 points);
+  - the leather belt is still outside the sash belt (0 of 780 under);
+  - the shoulder sash has 2 and 6 points out through it, inside Session 1010's allowance of 7;
+  - no arm is in it;
+  - one end hangs 0.27 m from where it comes out, with 0 of 951 to 1,108 points out through it and no arm in it.
+- **Every untucked sash check is unchanged**, among them the knot and its two ends on a belted tunic and a long skirt, and the band alone with `sashKnot: false`.
+- **Pictures:**
+  - New: `builder-sashtuck-front.jpg`, `-hip.jpg`, `-back.jpg` and `-full.jpg`.
+  - Re-shot: `builder-sashbelt-full.jpg`.
+
+### Needs eyes
+- **A small kink** where the band goes in under the belt's top edge in front. The band's points are 2.5 cm apart along its loop, so the 4 cm ease is drawn over one or two of them.
+- **The band comes out below the belt at the back of the hip** where the loop turns. A twist of the band shows there, since the loop's turn is only 1.5 cm under the belt's edge.
+- **The sash under the belt is only drawn in, never cut away.** It lies 1.5 mm inside the belt, so it can show at a grazing angle.
+- **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image of OG-056).
