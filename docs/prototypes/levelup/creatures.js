@@ -68,11 +68,13 @@ P.head = (B, o) => {
     B.meat('jaw', j, base.clone().addScaledVector(dir, len * o.jaw.len).addScaledVector(up, -r * o.jaw.drop), o.jaw.r * S, o.jaw.r * S * .55, { tone: o.tone }); }
   B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
-  if (o.skull) skullBits(B, o, S, base, dir, up);
+  if (o.skull) skullBits(B, o, S * (o.skull.k || 1), base, dir, up);
   else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
   if (o.ears) for (const sd of [1, -1]) B.bit('head', ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
   if (o.horns) for (const sd of [1, -1]) B.bit('head', horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
-  if (o.antlers) for (const sd of [1, -1]) B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
+  if (o.antlers) for (const sd of [1, -1]) { const m = B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
+    if (o.antlers.mist) (B.mistTips ||= []).push(...m.userData.tips); }
+  if (o.antlers?.mist) B.mist = { ...o.antlers.mist, tips: B.mistTips, color: B.tone(o.antlers.mist.tone || 'mist') };
   if (o.crystals) for (const sd of [1, -1]) B.bit('head', crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
   if (o.beak) B.bit('head', beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
   // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties
@@ -88,7 +90,8 @@ P.head = (B, o) => {
 // `bone` a long bone with its two knobs, `skull` a cranium with its eye holes
 P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
   for (const [kind, n] of Object.entries(o.n)) for (let k = 0; k < n; k++) {
-    const t = .08 + .84 * r(), sp = B.spineAt(t), a = r() * Math.PI * 2, d = Math.sqrt(r()) * sp.r * (o.depth ?? .5), p = sp.p.clone().add(V(Math.cos(a) * d * B.spineS[0], Math.sin(a) * d * B.spineS[1] * .8, (r() - .5) * sp.r * .4)), sz = o.size * (.7 + .6 * r());
+    let t, sp, p, sz; for (let tries = 0; tries < 16; tries++) { t = .08 + .84 * r(); sp = B.spineAt(t); const a = r() * Math.PI * 2, d = Math.sqrt(r()) * sp.r * (o.depth ?? .5); p = sp.p.clone().add(V(Math.cos(a) * d * B.spineS[0], Math.sin(a) * d * B.spineS[1] * .8, (r() - .5) * sp.r * .4)); sz = o.size * (.7 + .6 * r());
+      if (!(B.holes || []).some(h => capDist(h, p.x, p.y, p.z) < sz * .7)) break; } // never hung in a hole (Session 954)
     let m;
     if (kind === 'rubble') { m = new THREE.Mesh(new THREE.DodecahedronGeometry(sz * .5, 0), stdMat(B.tone('rubble'), { rough: .95, flat: true })); m.scale.set(1, .6 + .4 * r(), .8 + .4 * r()); }
     else if (kind === 'bone') { const L = sz * 2.4, g = new THREE.CylinderGeometry(sz * .09, sz * .09, L, 7); for (const e of [1, -1]) { const k2 = new THREE.SphereGeometry(sz * .17, 8, 6); k2.translate(0, e * L / 2, 0); g.copy(mergeGeometries([g.toNonIndexed(), k2.toNonIndexed()])); }
@@ -96,6 +99,13 @@ P.inclusions = (B, o) => { const r = rng(B.g.seed + 21);
     else { const g = new THREE.SphereGeometry(sz * .5, 14, 10); g.scale(.8, .85, 1); m = new THREE.Mesh(g, stdMat(B.tone('bone'), { rough: .7 }));
       for (const e of [1, -1]) { const h = ball(sz * .12, B.tone('dark'), V(e * sz * .16, sz * .06, sz * .42)); m.add(h); } }
     m.position.copy(p); m.rotation.set(r() * 6.3, r() * 6.3, r() * 6.3); B.bit(sp.bone, m); } };
+// holes (Session 954, OG-041's slime: "with holes through it"): tunnels cut clean through the flesh, so daylight shows through the body.
+// Each is a capsule across the body from flank to flank, `at` along the spine, `up` its height off the spine's line in the spine's
+// radius there, `r` its radius, `tilt` degrees from level (its left end raised). The flesh grows as before and then is cut where a hole
+// is (growFlesh); what a clear body holds keeps out of them (inclusions come after this part)
+P.holes = (B, o) => { B.holes = B.holes || [];
+  for (const h of o.list) { const sp = B.spineAt(h.at), c = sp.p.clone().add(V(0, h.up * sp.r * B.spineS[1], 0)), w = sp.r * B.spineS[0] * 2.2, tl = (h.tilt || 0) * DEG, d = V(Math.cos(tl), Math.sin(tl), Math.sin((h.yaw || 0) * DEG)).normalize();
+    B.holes.push({ a: c.clone().addScaledVector(d, -w), b: c.clone().addScaledVector(d, w), ra: h.r, rb: h.r, s: [1, 1, 1], sm: 1, c, d, up: h.up, bone: sp.bone }); } };
 // egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
 // its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
 // they cover, `drop` how far down its girth they sit (1 is the skin's underside)
@@ -130,6 +140,8 @@ const LEG = {
   plantFore: { j: [[0, 1, 0], [0, .52, -.05], [0, .1, .02], [0, 0, .2]], ik: 0, r: [.16, .12, .1], tips: 'coat' },
   plantHind: { j: [[0, 1, 0], [0, .56, .13], [0, .1, -.06], [0, 0, .18]], ik: 0, r: [.18, .12, .1], tips: 'coat' },
   bird: { j: [[0, 1, 0], [0, .78, .14], [0, .42, -.12], [0, .04, .02], [0, 0, .14]], ik: 1, r: [.13, .07, .035, .025], tips: 'skin', bare: 1 },
+  // Session 960: a griffin's foreleg, an eagle's on a beast's frame: the canid's joints, the shank and foot bare scaled skin, thinner
+  talonFore: { j: [[0, 1, 0], [0, .6, -.13], [0, .24, -.04], [0, .07, .02], [0, 0, .08]], ik: 0, r: [.11, .06, .032, .03], tips: 'skin' },
   insect: { j: [[0, 1, 0], [.18, 1.06, 0], [.72, 1.42, 0], [1.3, .3, 0], [1.48, 0, 0]], ik: 1, yaw: 1, r: [.07, .06, .045, .025] },
   sprawl: { j: [[0, 1, 0], [.62, 1.05, .04], [.78, .14, .08], [.84, 0, .2]], ik: 0, yaw: 1, r: [.1, .08, .06] },
   // Session 773: a hare's hind leg (a long foot from the hock), and a frog's (folded in a Z, the foot longest of all)
@@ -146,7 +158,9 @@ P.legs = (B, o) => {
     const rr = o.r || pre.r.map(v => v * hR);
     for (let k = 0; k < J.length - 1; k++) B.meat(names[k], J[k], J[k + 1], along(rr, k / (J.length - 1)), along(rr, (k + 1) / (J.length - 1)), { group: tag, tone: k >= J.length - 2 && pre.tips ? pre.tips : (pre.bare ? 'skin' : o.tone) });
     if (o.claws) { const tip = J[J.length - 1], d = J[J.length - 1].clone().sub(J[J.length - 2]).normalize(); d.y = Math.min(d.y, -.3); d.normalize();
-      for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize())); }
+      for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize(), o.claws.hook));
+      // a hind toe (Session 960, the griffin's talons): a fourth claw from the back of the foot, pointing back and down
+      if (o.claws.back) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len * o.claws.back, B.tone('dark'), J[J.length - 2].clone().lerp(tip, .3).add(V(0, o.claws.r * .5, 0)), V(0, -.45, -1).normalize(), o.claws.hook)); }
     // thorns (Session 929, OG-041's spider): short dark spines up every segment past the hip, on its upper and outer faces, raked
     // toward the foot. One merged mesh a segment, rigid on its bone; `per` is thorns a metre of leg
     if (o.thorns) { const r2 = rng(B.g.seed + 31 + B.legs.length), th = o.thorns;
@@ -218,13 +232,16 @@ P.wings = (B, o) => {
     const tag = 'wing' + (side > 0 ? 'L' : 'R'), arm = B.chain(tag, sp.bone, [root, elbow, wrist, tip]);
     B.meat(arm[0], root, elbow, o.r[0], o.r[1], { group: tag, tone: o.tone }); B.meat(arm[1], elbow, wrist, o.r[1], o.r[2], { group: tag, tone: o.tone }); B.meat(arm[2], wrist, tip, o.r[2], o.r[2] * .5, { group: tag, tone: o.tone });
     const back = V(0, -.02, -1), up = V(0, 1, 0);
-    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, arm[1], 'feather', 'featherTip');
-      feather(B, p.clone().add(V(0, .004 * span, .01 * span)), d, V(side, 0, 0), span * F.len * .34, span * .065, arm[1], 'covert', 'feather'); }
-    for (let i = 0; i < 3; i++) feather(B, root.clone().lerp(elbow, .3 + .3 * i), back, V(side, 0, 0), span * F.len * .5, span * .07, arm[0], 'covert', 'feather');
-    for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize();
-      feather(B, p, d, ac, span * F.len * (.7 + .3 * t) * (F.primary || 1), span * .06, arm[2], 'feather', 'featherTip');
-      if (i < F.np - 2) feather(B, p.clone().add(V(0, .004 * span, .008 * span)), d, ac, span * F.len * .4, span * .055, arm[2], 'covert', 'feather'); }
-    B.wings.push({ side, arm, fingers: [], feathered: true }); } return; }
+    // each flight feather hangs on a bone of its own at its root (Session 974), so a folded wing can turn it back along the body,
+    // as a bird's ligaments do; its covert rides on the same bone. `kind` is the row: c on the humerus, s the forearm, p the hand
+    const quills = [], quill = (par, p, d, kind, t, ac) => { const n = tag + 'q' + quills.length; B.bone(n, par, p); quills.push({ name: n, d: d.clone(), n: d.clone().cross(ac).normalize(), kind, t }); return n; };
+    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(), q = quill(arm[1], p, d, 's', t, V(side, 0, 0)); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, q, 'feather', 'featherTip');
+      feather(B, p.clone().add(V(0, .004 * span, .01 * span)), d, V(side, 0, 0), span * F.len * .34, span * .065, q, 'covert', 'feather'); }
+    for (let i = 0; i < 3; i++) { const p = root.clone().lerp(elbow, .3 + .3 * i); feather(B, p, back, V(side, 0, 0), span * F.len * .5, span * .07, quill(arm[0], p, back, 'c', i / 2, V(side, 0, 0)), 'covert', 'feather'); }
+    for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize(), q = quill(arm[2], p, d, 'p', t, ac);
+      feather(B, p, d, ac, span * F.len * (.7 + .3 * t) * (F.primary || 1), span * .06, q, 'feather', 'featherTip');
+      if (i < F.np - 2) feather(B, p.clone().add(V(0, .004 * span, .008 * span)), d, ac, span * F.len * .4, span * .055, q, 'covert', 'feather'); }
+    B.wings.push({ side, arm, fingers: [], feathered: true, quills, ragged: F.ragged || 0 }); } return; }
   for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), X = V(side, 0, 0);
     const elbow = root.clone().add(V(side * span * .2, span * .16, -span * .05)), wrist = elbow.clone().add(V(side * span * .26, -span * .04, span * .04));
@@ -394,7 +411,14 @@ const MATS = new Map();
 function stdMat(c, o = {}) { const k = c.getHexString() + JSON.stringify(o); if (!MATS.has(k)) MATS.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .6, metalness: 0, flatShading: !!o.flat, emissive: o.emissive || 0x000000, emissiveIntensity: o.ei ?? 1 })); return MATS.get(k); }
 function ball(r, c, p, rough = .5) { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), stdMat(c, { rough })); m.position.copy(p); return m; }
 function eye(r, color, p) { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), new THREE.MeshPhysicalMaterial({ color: new THREE.Color().setRGB(...color, THREE.SRGBColorSpace), roughness: .05, clearcoat: 1, emissive: new THREE.Color().setRGB(...color, THREE.SRGBColorSpace).multiplyScalar(.12) })); m.position.copy(p); return m; }
-function claw(r, len, c, p, dir) { const g = new THREE.ConeGeometry(r, len, 7); g.translate(0, len / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p); m.quaternion.setFromUnitVectors(UP, dir.clone().normalize()); return m; }
+// a claw: a cone along `dir`. With `hook` (Session 970, the griffin's talons) it arches: its middle raised `hook` / 2 of its length
+// away from the ground, at right angles to the claw, and its root and tip where a straight claw's are, so it curls down onto the point
+// without reaching any deeper. An eagle's talon, not a straight spike
+function claw(r, len, c, p, dir, hook = 0) { const g = new THREE.ConeGeometry(r, len, 7, hook ? 6 : 1); g.translate(0, len / 2, 0); const m = new THREE.Mesh(g, stdMat(c, { rough: .4 })); m.position.copy(p);
+  const d = dir.clone().normalize(); if (!hook) { m.quaternion.setFromUnitVectors(UP, d); return m; }
+  const b = V(0, -1, 0).addScaledVector(d, d.y), P = g.attributes.position, q = new THREE.Quaternion().setFromUnitVectors(UP, d), v = V(0, 0, 0); if (b.lengthSq() < 1e-4) b.set(0, 0, -1); b.normalize();
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); const t = v.y / len; v.applyQuaternion(q).addScaledVector(b, hook * len * 2 * (t * t - t)); P.setXYZ(i, v.x, v.y, v.z); }
+  g.computeVertexNormals(); return m; }
 // a tube along points, tapering from r0 to r1 (horns, antler beams and tines)
 function taperTube(pts, r0, r1, radial = 8) {
   const curve = new THREE.CatmullRomCurve3(pts), seg = Math.max(4, pts.length * 4), g = new THREE.TubeGeometry(curve, seg, 1, radial, false), pos = g.attributes.position, fr = curve.computeFrenetFrames(seg, false);
@@ -415,14 +439,35 @@ function horn(o, S, c, p, side) {
 }
 // antlers: a beam that sweeps up and back, with tines along it that branch forward and up
 function antler(o, S, c, p, side, r) {
-  const geos = [], L = o.len * S;
+  const geos = [], tips = [], L = o.len * S;
   const grow = (start, dir, len, rad, depth) => { const pts = [start.clone()]; let d = dir.clone(); const n = 5;
     for (let i = 1; i <= n; i++) { d.add(V(0, .08, -.04)).add(V((r() - .5) * .25, (r() - .5) * .15, (r() - .5) * .25)).normalize(); pts.push(pts[i - 1].clone().addScaledVector(d, len / n)); }
-    geos.push(taperTube(pts, rad, rad * .3, 7));
+    geos.push(taperTube(pts, rad, rad * .3, 7)); tips.push(pts[n].clone());
     if (depth > 0) for (let i = 1; i < n; i++) if (r() < (depth > 1 ? .75 : .45)) { const td = V(side * (r() - .3) * .6, .8, .55 + r() * .4).normalize(); grow(pts[i], td, len * (.32 + r() * .2), rad * .55, depth - 1); } };
   grow(V(), V(side * .55, .7, -.15).normalize(), L, o.r * S, o.depth ?? 2);
-  const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); return m;
+  const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); m.userData.tips = tips.map(t => t.add(p)); return m;
 }
+// a mist the antlers breathe (Session 969, OG-088's stag of shadows): from each tine's tip `per` puffs rise, swell and fade, each one
+// `life` of a stride behind the last, so the whole mist loops with the gait and a still picture is the same every time. The puffs are
+// points on the head bone, soft discs of the plan's `mist` tone drawn after the body (no depth write, no shadow); they rise `rise`
+// metres, drift back by `drift` and grow from `r0` to `r1`, their opacity `alpha` at the most. Up and back are the body's, not the head's
+// (Session 975): `pose` passes the head's turn against the body, so a lowered head's mist still rises straight up from its tines
+function mistPoints(o, seed) { const r = rng(seed + 31), per = o.per ?? 5, n = o.tips.length * per, pos = new Float32Array(n * 3), size = new Float32Array(n), alpha = new Float32Array(n), q = [];
+  o.tips.forEach((t, i) => { for (let k = 0; k < per; k++) q.push({ t, off: (k + r() * .5) / per, dx: (r() - .5) * .6, dz: (r() - .5) * .6, sp: .8 + .4 * r() }); });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aSize', new THREE.BufferAttribute(size, 1)); g.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+  const m = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uColor: { value: o.color }, uH: { value: 720 }, uS: { value: 1 } },
+    vertexShader: 'attribute float aSize; attribute float aAlpha; uniform float uH; uniform float uS; varying float vA;\nvoid main(){ vec4 mv = modelViewMatrix * vec4(position, 1.); gl_Position = projectionMatrix * mv; gl_PointSize = aSize * uS * projectionMatrix[1][1] * uH * .5 / -mv.z; vA = aAlpha; }',
+    fragmentShader: 'uniform vec3 uColor; varying float vA;\nvoid main(){ vec2 d = gl_PointCoord - .5; float e = 1. - smoothstep(.1, .5, length(d)); if (e <= 0.) discard; gl_FragColor = vec4(uColor, vA * e); }' });
+  const pts = new THREE.Points(g, m); pts.name = 'mist'; pts.frustumCulled = false; pts.renderOrder = 2; pts.userData = { o, q };
+  pts.onBeforeRender = R => { m.uniforms.uH.value = R.getDrawingBufferSize(new THREE.Vector2()).y; };
+  mistTick(pts, 0); return pts; }
+const _mX = new THREE.Vector3(), _mY = new THREE.Vector3(), _mZ = new THREE.Vector3();
+function mistTick(pts, ph, qInv) { const { o, q } = pts.userData, g = pts.geometry, P = g.attributes.position, S = g.attributes.aSize, A = g.attributes.aAlpha, rate = o.rate ?? 2;
+  _mX.set(1, 0, 0); _mY.set(0, 1, 0); _mZ.set(0, 0, 1); if (qInv) { _mX.applyQuaternion(qInv); _mY.applyQuaternion(qInv); _mZ.applyQuaternion(qInv); }
+  q.forEach((u, i) => { const a = (ph * rate + u.off) % 1, rise = (o.rise ?? .35) * a * u.sp, x = u.dx * rise * .5, z = -(o.drift ?? .15) * a + u.dz * rise * .5;
+    P.setXYZ(i, u.t.x + _mX.x * x + _mY.x * rise + _mZ.x * z, u.t.y + _mX.y * x + _mY.y * rise + _mZ.y * z, u.t.z + _mX.z * x + _mY.z * rise + _mZ.z * z);
+    S.setX(i, lerp(o.r0 ?? .05, o.r1 ?? .22, Math.sqrt(a))); A.setX(i, (o.alpha ?? .35) * sstep(0, .15, a) * (1 - sstep(.45, 1, a))); });
+  P.needsUpdate = S.needsUpdate = A.needsUpdate = true; }
 // crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040). `rake` (Session 920) scales how far they
 // lean and step back: 1 the Shatterhorn's sweep, toward 0 a crown standing up from the brow. `stone` (Session 926): matte rock, not glass
 function crystals(o, S, c, p, side, r) {
@@ -461,6 +506,12 @@ function growFlesh(flesh, o) {
       let d = 1e9; for (const c of caps) { const e = capDist(c, x, y, z); if (e < d) d = e; }
       if (d < pad) F[idx(i, j, l)] += Math.exp(-d / k); } } }
   }
+  // holes (Session 954): the field is cut to nothing inside a hole and eased back over a cell and a half outside it, so its wall is smooth
+  for (const h of o.holes || []) { const e = cell * 1.5, R = h.ra + e;
+    const i0 = Math.max(0, Math.floor((Math.min(h.a.x, h.b.x) - R - mn.x) / cell)), i1 = Math.min(nx - 1, Math.ceil((Math.max(h.a.x, h.b.x) + R - mn.x) / cell));
+    const j0 = Math.max(0, Math.floor((Math.min(h.a.y, h.b.y) - R - mn.y) / cell)), j1 = Math.min(ny - 1, Math.ceil((Math.max(h.a.y, h.b.y) + R - mn.y) / cell));
+    const l0 = Math.max(0, Math.floor((Math.min(h.a.z, h.b.z) - R - mn.z) / cell)), l1 = Math.min(nz - 1, Math.ceil((Math.max(h.a.z, h.b.z) + R - mn.z) / cell));
+    for (let l = l0; l <= l1; l++) for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const q = idx(i, j, l); if (F[q] > 0) F[q] *= sstep(0, e, capDist(h, mn.x + i * cell, mn.y + j * cell, mn.z + l * cell)); } }
   // surface nets: a vertex in every cell the surface crosses, at the mean of its edge crossings; a quad across every crossed edge
   const L = v => Math.log(Math.max(v, 1e-9)), cellV = new Int32Array(nx * ny * nz).fill(-1), pos = [];
   const CO = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]], ED = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
@@ -511,7 +562,7 @@ function bareGeo(B, o) { const gs = [];
 // weights are read as before. A socket holds a small lit eye when the plan's eyes are bright (the drowned skeleton's)
 function skullBits(B, o, S, base, dir, up) {
   const side = up.clone().cross(dir).normalize(), M = new THREE.Matrix4().makeBasis(side, up, dir).scale(V(S, S, S)).setPosition(base);
-  const boneM = stdMat(B.tone('coat'), { rough: .7 }), dark = stdMat(B.tone('dark'), { rough: .95 }), toothM = stdMat(B.tone('coat').clone().lerp(new THREE.Color(1, .97, .88), .4), { rough: .45 });
+  const bt = o.skull.tone || 'coat', boneM = stdMat(B.tone(bt), { rough: .7 }), dark = stdMat(B.tone('dark'), { rough: .95 }), toothM = stdMat(B.tone(bt).clone().lerp(new THREE.Color(1, .97, .88), .4), { rough: .45 });
   const L = (x, y, z) => V(x, y, z).applyMatrix4(M), ell = (h, c) => { const g = new THREE.SphereGeometry(1, 18, 12); g.scale(...h); g.translate(...c); return g; };
   const put = (bone, gs, m) => { const g = mergeGeometries(gs.map(q => { q.deleteAttribute('uv'); return q.applyMatrix4(M); })); g.computeVertexNormals(); const mesh = new THREE.Mesh(g, m); mesh.name = 'skull'; B.bit(bone, mesh); return g.index.count / 3; };
   const tube = (pts, r0, r1) => { const g = taperTube(pts.map(p => V(...p)), r0, r1, 8); return g; };
@@ -539,7 +590,7 @@ P.ribs = (B, o) => { const gs = [];
   B.ribs = o.n * 2; };
 function dressFlesh(geo, B, pal, plan) {
   const pos = geo.attributes.position, nrm = geo.attributes.normal, n = pos.count;
-  const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n);
+  const si = new Uint16Array(n * 4), sw = new Float32Array(n * 4), col = new Float32Array(n * 3), fur = new Float32Array(n), glow = new Float32Array(n), alpha = plan.faceClear ? new Float32Array(n).fill(1) : null;
   const wb = new Float32Array(B.bones.length), tones = Object.keys(pal), tw = new Float32Array(tones.length), toneI = Object.fromEntries(tones.map((t, i) => [t, i]));
   const kw = B.flesh.map(c => Math.max(.006, .32 * (c.ra + c.rb) / 2)), C = new THREE.Color(), D = new THREE.Color(), pat = plan.pattern, gl = plan.glow;
   for (let v = 0; v < n; v++) {
@@ -565,12 +616,17 @@ function dressFlesh(geo, B, pal, plan) {
       if (along > (F.back ?? -.3) && upw > -.35) C.copy(pal[side > F.from && side < F.to ? F.stripe : F.ground]).multiplyScalar(.95 + .1 * PN.noise(x * 40, y * 40, z * 40)); }
     const mott = 1 + (PN.noise(x * 4.1, y * 4.1, z * 4.1) * .16 + PN.noise(x * 17, y * 17, z * 17) * .06) * (plan.mottle ?? 1); C.multiplyScalar(mott);
     col[v * 3] = C.r; col[v * 3 + 1] = C.g; col[v * 3 + 2] = C.b; fur[v] = furry;
+    // the ice thin over the face (Session 968, the frozen man's): the hide's opacity falls from the plan's `clear` to `faceClear` over the
+    // head's front, so the skull under it shows; the crown and the back of the head keep the full frost
+    if (alpha && B.headFrame && B.by.head) { const H = B.headFrame, hs = (wb[B.by.head.i] + (B.by.jaw ? wb[B.by.jaw.i] : 0)) / tsum, rel = V(x, y, z).sub(H.base), fwd = rel.dot(H.dir) / H.len, upw = rel.dot(H.up) / H.r;
+      alpha[v] = lerp(1, plan.faceClear / plan.clear, sstep(.5, .85, hs) * sstep(.25, .5, fwd) * sstep(.9, .45, upw)); }
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
     if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) : 0;
       glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny))); }
   }
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setAttribute('aFur', new THREE.Float32BufferAttribute(fur, 1)); geo.setAttribute('aGlow', new THREE.Float32BufferAttribute(glow, 1));
+  if (alpha) geo.setAttribute('aAlpha', new THREE.Float32BufferAttribute(alpha, 1));
 }
 
 // ── materials: the hide, fur shells (cut by noise, as the people's mantles are), and the binding's glow ──
@@ -578,9 +634,10 @@ const GLOW_HEAD = 'attribute float aGlow; attribute float aFur; varying float vG
 function hideMat(o) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? .85, metalness: 0, ...(o.opacity < 1 ? { transparent: true, opacity: o.opacity, depthWrite: false } : {}) });
   m.onBeforeCompile = s => { s.uniforms.uGlow = { value: new THREE.Color(...(o.glow || [0, 0, 0])) };
-    s.vertexShader = GLOW_HEAD + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;');
-    s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;'); };
-  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0) + (o.opacity < 1 ? 'c' : ''); return m;
+    s.vertexShader = GLOW_HEAD + (o.face ? 'attribute float aAlpha; varying float vAlpha;\n' : '') + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGlow = aGlow; vFur = aFur; vRP = position;' + (o.face ? ' vAlpha = aAlpha;' : ''));
+    s.fragmentShader = 'uniform vec3 uGlow; varying float vGlow; varying float vFur; varying vec3 vRP;\n' + (o.face ? 'varying float vAlpha;\n' : '') + s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += uGlow * vGlow;')
+      .replace('vec4 diffuseColor = vec4( diffuse, opacity );', o.face ? 'vec4 diffuseColor = vec4( diffuse, opacity * vAlpha );' : 'vec4 diffuseColor = vec4( diffuse, opacity );'); };
+  m.customProgramCacheKey = () => 'hide' + JSON.stringify(o.glow || 0) + (o.opacity < 1 ? 'c' : '') + (o.face ? 'f' : ''); return m;
 }
 function furMat(o, layer, layers) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .9, side: THREE.DoubleSide, alphaTest: .5 });
@@ -623,29 +680,36 @@ export function build(g) {
   const minR = Math.min(...B.flesh.map(c => Math.min(c.ra, c.rb) * Math.min(...c.s)));
   const ext = B.flesh.reduce((m, c) => Math.max(m, Math.abs(c.a.z), Math.abs(c.b.z), Math.abs(c.a.x), Math.abs(c.b.x), c.a.y, c.b.y), 0) * 2;
   const cell = plan.cell ?? Math.max(minR * .7, ext / 240), blend = plan.blend ?? Math.max(cell * 1.2, .25 * minR);
-  const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend });
+  const { geo, grid } = plan.bare ? bareGeo(B, plan.bare) : growFlesh(B.flesh, { cell, blend, holes: B.holes });
   dressFlesh(geo, B, pal, plan);
   for (const f of B.after || []) f(geo); // what is laid on the grown skin (a harness, Session 944)
   // the skeleton
   const root = new THREE.Group(), bones = B.bones.map(b => { const o = new THREE.Bone(); o.name = b.name; o.position.copy(b.parent ? b.p.clone().sub(b.parent.p) : b.p); return o; });
   B.bones.forEach((b, i) => { if (b.parent) bones[b.parent.i].add(bones[i]); }); const rig = new THREE.Group(); rig.add(bones[0]); root.add(rig); rig.updateMatrixWorld(true);
   const skel = new THREE.Skeleton(bones), meshes = [];
-  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough, opacity: plan.clear })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
+  const hide = new THREE.SkinnedMesh(geo, hideMat({ glow: plan.glow?.color, rough: plan.rough, opacity: plan.clear, face: !!plan.faceClear })); hide.castShadow = true; hide.name = 'hide'; meshes.push(hide);
   if (plan.fur) for (let k = 1; k <= plan.fur.layers; k++) { const fg = geo.clone(); fg.setAttribute('aBase', new THREE.BufferAttribute(geo.attributes.position.array.slice(), 3)); const p = fg.attributes.position, nm = fg.attributes.normal, fa = fg.attributes.aFur, d = plan.fur.len * k / plan.fur.layers;
     for (let v = 0; v < p.count; v++) { const e = d * fa.getX(v); p.setXYZ(v, p.getX(v) + nm.getX(v) * e, p.getY(v) + nm.getY(v) * e + (plan.fur.droop || 0) * -e * e / plan.fur.len, p.getZ(v) + nm.getZ(v) * e); }
     const m = new THREE.SkinnedMesh(fg, furMat(plan.fur, k, plan.fur.layers)); m.castShadow = k < 3; m.name = 'fur' + k; meshes.push(m); }
   if (B.sheets.length) { const m = new THREE.SkinnedMesh(sheetGeo(B, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: plan.finRough ?? .5, transparent: true, opacity: plan.finOpacity ?? .9 })); m.castShadow = true; m.name = 'fins'; meshes.push(m); }
   if (B.tubes.length) { const m = new THREE.SkinnedMesh(tubeGeo(B, pal, plan.threadGlow || 1), plan.threadGlow ? new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, blending: THREE.AdditiveBlending, depthWrite: false }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6 })); m.name = 'threads'; meshes.push(m); }
-  for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75, ...(plan.wingOpacity < 1 ? { transparent: true, opacity: plan.wingOpacity, depthWrite: false } : {}) })); m.castShadow = true; m.name = 'wing'; meshes.push(m); }
+  for (const w of B.wings) { const m = new THREE.SkinnedMesh(wingGeo(B, w, pal), new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: .75, ...(plan.wingOpacity < 1 ? { transparent: true, opacity: plan.wingOpacity, depthWrite: false } : {}) })); m.castShadow = true; m.name = 'wing';
+    // a membrane lets light through (Session 959): the face away from the sun was lit by nothing and drew near black, so a skin wing
+    // gives back a share of its own colour (`wingLight`, 0.45 unless the plan says) as light that has come through it. Clear wings
+    // (the glasswing's) are seen through already and keep their look
+    const wl = w.feathered || plan.wingOpacity < 1 ? 0 : plan.wingLight ?? .45; if (wl) m.material.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n\ttotalEmissiveRadiance += vColor.rgb * ' + wl.toFixed(3) + ';'); };
+    meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
-  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = true; bones[b.i].add(obj); }
+  if (B.mist) B.mistObj = B.bit('head', mistPoints(B.mist, g.seed));
+  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = !obj.isPoints; bones[b.i].add(obj); }
   rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
   const C = { g, plan, B, root, rig, bones, byName: Object.fromEntries(bones.map(b => [b.name, b])), skel, meshes, phase: 0, gait: plan.gaits[0], stats: { bones: bones.length, tris: geo.index.count / 3, verts: geo.attributes.position.count, grid: grid.join('x'), cell: +cell.toFixed(3), ms: Math.round(performance.now() - t0) } };
   for (const L of B.legs) { L.bones = L.names.map(n => C.byName[n]); L.restLocal = L.bones[0].position.clone(); L.rest = L.J.map(p => p.clone()); L.dirs = L.J.slice(1).map((p, k) => p.clone().sub(L.J[k]).normalize()); L.lens = L.J.slice(1).map((p, k) => p.distanceTo(L.J[k]));
     // the knee's side of the line from the solved chain's root to its end: the way this leg bends
     const a = L.J[L.ik], b = L.J[L.ik + 2], u = b.clone().sub(a).normalize(), kn = L.J[L.ik + 1].clone().sub(a); L.pole = kn.sub(u.clone().multiplyScalar(kn.dot(u))).normalize(); if (!isFinite(L.pole.x) || L.pole.lengthSq() < .5) L.pole = V(0, 0, 1); }
   { let z0 = 1e9, z1 = -1e9; for (const f of B.flesh) for (const p of [f.a, f.b]) { z0 = Math.min(z0, p.z - f.ra); z1 = Math.max(z1, p.z + f.rb); } C.len = (z1 - z0) * g.sliders.size * (plan.scale || 1); } // its length, nose to tail, in world metres
-  C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3; C.S = g.sliders.size * (plan.scale || 1); C.air = {}; C.sac = B.sac;
+  C.legH = Math.max(.1, ...B.legs.map(L => L.hR)) || .3; C.S = g.sliders.size * (plan.scale || 1); C.air = {}; C.sac = B.sac; C.mist = B.mistObj;
+  if (C.mist) C.mist.material.uniforms.uS.value = C.S;
   const hd = (plan.heading || 0) * DEG; C.dir = V(Math.sin(hd), 0, Math.cos(hd)); // the way it walks in its own frame: a crab goes sideways
   return C;
 }
@@ -732,6 +796,26 @@ function flights(C, G) { if (C.air[C.gait]) return C.air[C.gait]; const B = C.B,
   return C.air[C.gait] = out; }
 const liftAt = (air, ph) => { for (const a of air) { let u = (ph - a.start + 1) % 1; if (u < a.len) { u /= a.len; return 4 * a.H * u * (1 - u); } } return 0; };
 // pose the creature at a phase of its gait; returns the worst foot error (metres) for the test
+// a folded wing's flight feathers turned back along the body (Session 974): each quill's bone is turned, in the frame of the spine
+// bone the wing hangs from, from where the folded arm has carried it to lie back and a little down, the hand's primaries outermost and
+// lowest, so the rows stack as a bird's do instead of fanning out from the wrist. `k` is how far (0 open, 1 stowed)
+// Each quill is also rolled about its own line (Session 983) so the card leans out and down over the flank, as a folded wing wraps the
+// body, instead of lying flat on the back and showing its edge from the side: the third number is how far the card's face is tipped
+// up from facing straight out, in degrees, the coverts flattest (on the back), the primaries most upright (lowest on the flank).
+// A wing whose primaries are too few to close (`feathers.ragged`, Session 984) fans them further down the flank, the outermost lowest,
+// so their tips stand apart with the light between them instead of stacking into one blade
+const QUILL_LIE = { p: t => [.01 + .04 * t, -.05 - .07 * t, 34 - 6 * t], s: t => [.02 + .03 * t, -.03 - .03 * t, 44 - 6 * t], c: t => [.01 + .01 * t, -.01, 58] };
+const _qS = new THREE.Quaternion(), _qP = new THREE.Quaternion(), _qD = new THREE.Quaternion(), _qI = new THREE.Quaternion(), _qR = new THREE.Quaternion(), _vN = new THREE.Vector3(), _vT = new THREE.Vector3(), _vF = new THREE.Vector3();
+function stowQuills(C, W, k) {
+  if (!k) { for (const f of W.quills) C.byName[f.name].quaternion.identity(); return; }
+  const arm0 = C.byName[W.arm[0]]; C.byName[W.arm[2]].updateWorldMatrix(true, false); arm0.parent.getWorldQuaternion(_qS).invert();
+  const rel = {}; for (const nm of W.arm) rel[nm] = C.byName[nm].getWorldQuaternion(new THREE.Quaternion()).premultiply(_qS);
+  for (const f of W.quills) {
+    const b = C.byName[f.name], qp = rel[b.parent.name], [out, down, tip] = QUILL_LIE[f.kind](f.t), e = tip * Math.PI / 180;
+    _vN.copy(f.d).applyQuaternion(qp); _vT.set(W.side * out, down - (f.kind === 'p' ? W.ragged * f.t : 0), -1).normalize(); _qD.setFromUnitVectors(_vN, _vT);
+    _vN.copy(f.n).applyQuaternion(qp).applyQuaternion(_qD); _vF.set(W.side * Math.cos(e), Math.sin(e), 0).addScaledVector(_vT, -_vT.dot(_vF)).normalize();
+    if (_vN.dot(_vF) < 0) _vF.negate(); _qD.premultiply(_qR.setFromUnitVectors(_vN, _vF));
+    _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
   for (const b of C.bones) b.quaternion.identity();
@@ -774,8 +858,14 @@ export function pose(C, phase) {
   for (const W of B.wings) if (W.feathered) { const fold = G.flap ? 0 : (C.plan.wingFold ?? 1), s = W.side, beat = G.flap ? Math.sin(tau * ph) : 0, up = G.flap ? Math.max(0, -Math.cos(tau * ph)) : 0;
     C.byName[W.arm[0]].rotation.set(.1 * fold, s * 1.2 * fold, s * (.55 * beat - .25 * fold));
     C.byName[W.arm[1]].rotation.set(0, -s * (2.5 * fold + .35 * up), -s * .15 * beat);
-    C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat); }
+    C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat);
+    if (W.quills) stowQuills(C, W, G.flap ? 0 : 1); }
   for (const W of B.wings) if (!W.feathered) { const flap = G.flap ? Math.sin(tau * ph) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
+    // an upright body's wings at rest (Session 956, the gargoyle's): the fold above lays a level back's wings along it, which on an
+    // upright one spreads them flat over its head. `wingRest` gives the arm's three bones their rest turns instead (x, then y and z
+    // mirrored by side), and the fingers a spread between them
+    if (!G.flap && C.plan.wingRest) { const R = C.plan.wingRest; for (let k = 0; k < 3; k++) C.byName[W.arm[k]].rotation.set(R[k][0], W.side * R[k][1], W.side * R[k][2] + W.side * .02 * Math.sin(tau * ph * .5));
+      W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * (R[3] ?? .2), 0)); continue; }
     C.byName[W.arm[0]].rotation.set(-.15 * fold, -W.side * .7 * fold, W.side * (.5 * flap - .35 * fold + .03 * Math.sin(tau * ph * .5)));
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
@@ -792,6 +882,7 @@ export function pose(C, phase) {
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
     worst = Math.max(worst, solveLeg(C, L, T, fold));
   }
+  if (C.mist) { const hd = C.mist.parent; hd.updateWorldMatrix(true, false); const qi = hd.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(C.rig.getWorldQuaternion(new THREE.Quaternion())); mistTick(C.mist, ph, qi); }
   return worst;
 }
 // one leg: yaw the leg toward its foot (an insect's coxa), hold the distal segments (a paw, a hoof), bend the two in between
@@ -1647,18 +1738,18 @@ Object.assign(PLANS, {
     glow: { color: [1.4, .5, 2.4], freq: 2.5, w: .025, all: .3 },
     parts: [...PLANS.boar.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .19, r: .018 }, eyes: o.eyes.map(e => ({ ...e, color: [.8, .45, 1] })) }] : [k, o]),
       ['spines', { n: 9, from: .25, to: 1.02, len: .3, r: .045, tone: 'crystal', taper: .35, crystal: 3 }]] }),
-  // Scáth: the stag of shadows: gaunt, its legs longer and its body drawn in, its antlers spread half again and as dark as its hide, violet in its seams (the mist its antlers breathe waits for the kit's particles)
+  // Scáth: the stag of shadows: gaunt, its legs longer and its body drawn in, its antlers spread half again and as dark as its hide, violet in its seams; its antlers breathe a violet mist from every tine (Session 969, `antlers.mist`)
   shadowstag: re(PLANS.stag, { name: 'Stag of Shadows', src: 'OG-088 (corrupted: a stag of shadows whose antlers breathe a mist)', school: 'Scáth', from: 'stag', scale: 1.08,
-    palette: { coat: [.14, .12, .17], saddle: [.08, .07, .1], belly: [.24, .2, .28], dark: [.02, .02, .03], hoof: [.05, .04, .06], horn: [.16, .13, .2] },
+    palette: { coat: [.14, .12, .17], saddle: [.08, .07, .1], belly: [.24, .2, .28], dark: [.02, .02, .03], hoof: [.05, .04, .06], horn: [.16, .13, .2], mist: [.46, .34, .62] },
     fur: { len: .022, layers: 6, sx: 380, droop: .3 }, glow: { color: [1.3, .5, 2.6], freq: 1.6, w: .02, all: .45, seam: { w: .04, y0: .9 } },
     parts: PLANS.stag.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, r: o.r.map(v => v * .82), hip: [o.hip[0] * 1.12, o.hip[1]], chest: [o.chest[0] * 1.12, o.chest[1]] }]
-      : k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.45, r: .034, depth: 3 }, eyes: o.eyes.map(e => ({ ...e, color: [.75, .5, 1] })) }] : k === 'neck' ? [k, { ...o, r: o.r.map(v => v * .85) }] : [k, o]) }),
+      : k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.45, r: .034, depth: 3, mist: { per: 7, rate: 2, rise: .45, drift: .22, r0: .08, r1: .4, alpha: .2 } }, eyes: o.eyes.map(e => ({ ...e, color: [.75, .5, 1] })) }] : k === 'neck' ? [k, { ...o, r: o.r.map(v => v * .85) }] : [k, o]) }),
   // Gaoth: the dusk eagle, its feathers draining to violet: the Crag Hawk grown to a giant eagle, its flight feathers dark at their tips, violet light in its seams
   duskeagle: re(PLANS.craghawk, { name: 'Dusk Eagle', src: 'OG-088 (corrupted: a dusk eagle with draining violet feathers)', school: 'Gaoth', from: 'craghawk', scale: 2.6,
     palette: { coat: [.26, .2, .32], saddle: [.16, .12, .22], belly: [.44, .36, .52], dark: [.03, .02, .04], horn: [.18, .16, .2], skin: [.5, .42, .2], feather: [.3, .22, .4], featherTip: [.08, .04, .14], covert: [.38, .3, .48] },
     glow: { color: [1.2, .45, 2.2], freq: 3, w: .02, all: .3 },
     // the shape: wings a third wider with longer primaries, too few of them to close (ragged, the light through their gaps), a heavier hooked beak, a longer tail fan
-    parts: PLANS.craghawk.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: o.span * 1.32, feathers: { ...o.feathers, np: 6, primary: 1.4 } }]
+    parts: PLANS.craghawk.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: o.span * 1.32, feathers: { ...o.feathers, np: 6, primary: 1.4, ragged: .24 } }]
       : k === 'head' ? [k, { ...o, beak: { ...o.beak, len: o.beak.len * 1.35, r: o.beak.r * 1.25, hook: .55 }, eyes: (o.eyes || []).map(e => ({ ...e, color: [.85, .5, 1] })) }]
       : k === 'tail' ? [k, { ...o, fan: { ...o.fan, len: o.fan.len * 1.4, spread: 50 } }] : [k, o]) })
 });
@@ -1712,21 +1803,40 @@ export const TROLLS = ['troll', 'tinetroll', 'uiscetroll', 'stonetroll'];
 // puts slimes in Uisce gates, a magma one in Tine's). No legs and no head: a body that heaves along (the crawl, paced in body
 // lengths), its crest rolled forward over its front like a wave about to break, clear enough to see what it has taken in ──
 Object.assign(PLANS, {
-  slime: { name: 'Slime', src: 'OG-041 (slime: translucent pale green, arched like a wave, bones and rubble suspended inside)', gaits: ['crawl', 'stand'], bl: .12, clear: .55, rough: .12, mottle: .5, wag: 0, pant: .05,
+  slime: { name: 'Slime', src: 'OG-041 (slime: translucent pale green, arched like a wave, bones and rubble suspended inside)', gaits: ['crawl', 'stand'], bl: .12, clear: .55, cell: .06, blend: .14, rough: .12, mottle: .5, wag: 0, pant: .05,
     palette: { coat: [.62, .78, .5], saddle: [.7, .84, .56], belly: [.45, .6, .36], bone: [.82, .78, .66], rubble: [.42, .4, .36], dark: [.08, .07, .06] },
     parts: [
       ['spine', { hip: [.32, -.55], chest: [.62, .3], n: 6, r: [.36, .52, .5, .3], s: [1.25, 1.05], arch: .14, rump: .3, rumpDrop: .2, rumpTaper: .7, front: .32, frontDrop: .42, frontTaper: .55 }],
+      ['holes', { list: [{ at: .66, up: .22, r: .12, tilt: 5 }, { at: .3, up: -.1, r: .085, tilt: -4 }, { at: .14, up: .3, r: .06 }] }],
       ['inclusions', { n: { skull: 1, bone: 5, rubble: 7 }, size: .16, depth: .55 }]
     ] }
 });
 Object.assign(PLANS, {
   // Tine's (OG-018: "orange jelly with dark holes"): molten, less clear, lit from inside, carrying clinker instead of bones
-  magmaslime: re(PLANS.slime, { name: 'Magma Slime', src: 'OG-018 (Tine: a magma slime, orange jelly with dark holes)', school: 'Tine', from: 'slime', clear: .8, rough: .3, mottle: 1.4, bl: .1,
+  magmaslime: re(PLANS.slime, { name: 'Magma Slime', src: 'OG-018 (Tine: a magma slime, orange jelly with dark holes)', school: 'Tine', from: 'slime', clear: .8, cell: .06, blend: .14, rough: .3, mottle: 1.4, bl: .1,
     palette: { coat: [.6, .17, .03], saddle: [.32, .08, .02], belly: [.85, .36, .06], bone: [.3, .24, .2], rubble: [.08, .07, .06], dark: [.04, .03, .03] },
     glow: { color: [2.6, .7, .12], freq: 2.4, w: .06, all: .7, base: .2 },
     parts: PLANS.slime.parts.map(([k, o]) => k === 'inclusions' ? [k, { ...o, n: { rubble: 11 } }] : [k, o]) })
 });
 export const SLIMES = ['slime', 'magmaslime'];
+// ── Session 955: the Winged Thing (OG-018's Gaoth row: "a feathered griffin-like beast"; canon §9a gives Gaoth "wisps, Gargoyle,
+// something winged", and the Wisp is Session 783's). A big cat's body on four legs, an eagle's head and hooked beak on a short neck,
+// feathered wings off the shoulders, a long tail ending in a fan of feathers. Pale storm-grey, barred darker, the beak and talons horn.
+// It walks and trots on the ground and flies with the flap; nothing of it is new to the kit ──
+Object.assign(PLANS, {
+  wingedthing: { name: 'Winged Thing', src: 'OG-018 (Gaoth: a feathered griffin-like beast)', school: 'Gaoth', gaits: ['walk', 'trot', 'fly', 'stand'], speedK: 1.1, flyH: 1.4, cell: .05, finOpacity: 1, wingFold: 1.2, fold: 1.1, wag: .08, neckNod: .06, rough: .6, spread: .04,
+    palette: { coat: [.66, .68, .7], saddle: [.42, .45, .5], belly: [.86, .86, .84], dark: [.05, .05, .06], horn: [.6, .52, .34], skin: [.5, .43, .28], feather: [.6, .63, .68], featherTip: [.18, .2, .26], covert: [.78, .8, .82] },
+    pattern: { kind: 'stripes', period: .06, tone: 'saddle' }, fur: { len: .03, layers: 6, sx: 150, sy: 60 },
+    parts: [
+      ['spine', { hip: [1.02, -.68], chest: [1.12, .5], n: 4, r: [.27, .3, .34], s: [.82, 1.05], rump: .18, front: .24, frontDrop: .06, arch: .06 }],
+      ['neck', { len: .56, n: 2, rise: 62, curve: -14, r: [.24, .14] }],
+      ['head', { len: .38, r: .14, pitch: 4, eyes: [{ f: .45, up: .35, out: .72, r: .028, color: [.95, .72, .18] }], beak: { len: .22, r: .07, up: -.12, hook: .45 } }],
+      ['tail', { len: 1.05, n: 4, r: [.09, .045], droop: 38, curl: -5, fan: { n: 5, len: .34, spread: 32 } }],
+      ['legs', { at: 1, kind: 'talonFore', out: .16, drop: .08, r: [.14, .07, .038, .036], claws: { r: .022, len: .14, back: .7, hook: .45 } }],
+      ['legs', { at: 0, kind: 'canidHind', out: .16, drop: .06, r: [.18, .1, .07, .06], claws: { r: .016, len: .06 } }],
+      ['wings', { at: .82, out: .2, up: .26, span: 3.4, r: [.085, .062, .042], feathers: { ns: 9, np: 10, len: .4, primary: 1.05 } }]
+    ] }
+});
 // ── Session 933: the goblin (OG-041: crouched, long ears, a long spear and a round hide shield). Canon §9a makes goblins no gate's
 // antibody but a gate's occupiers: they hold a spent gate as a warren. The troll's frame, half its height and thin: the same
 // hunched biped walk, the knees deep, the head big for the body and slung forward, ears long and swept out, the eyes large and
@@ -1756,6 +1866,32 @@ Object.assign(PLANS, {
     ] })
 });
 export const GOBLINS = ['goblin'];
+// ── Session 956: the gargoyle (OG-018: a stone Gargoyle in Cloch's row, a wind-swept one in Gaoth's; canon §9a puts gargoyles in both,
+// and the game's dormant Gargoyle is the foe it would replace). The goblin's crouched frame at five eighths of the troll's height, made of
+// stone: no ears, a heavy brow, horns swept back from it, fangs, a long tail, a ridge of stone spines down the back and bat's wings of
+// stone skin off the shoulders. It walks and trots crouched and beats its wings in `fly`. Gaoth's is the same body weathered pale by
+// the wind, its moss scoured off, its horns laid flatter and its wings a quarter wider ──
+Object.assign(PLANS, {
+  gargoyle: re(PLANS.goblin, { name: 'Gargoyle', src: 'OG-018 (Cloch: a stone Gargoyle)', school: 'Cloch', from: 'goblin', occupier: undefined, scale: .62, gaits: ['walk', 'trot', 'fly', 'stand'],
+    rough: .95, mottle: 2.2, speedK: .9, wag: .1, pant: 0, neckNod: .04, spread: .05, wingRest: [[.4, .9, 0], [0, 0, -1.6], [0, .5, .6], .2], fold: .7, finOpacity: 1, cell: .06,
+    palette: { coat: [.44, .43, .41], saddle: [.36, .35, .34], belly: [.5, .49, .46], moss: [.24, .3, .14], dark: [.05, .05, .05], horn: [.36, .35, .33], skin: [.4, .39, .37], rock: [.47, .45, .42], membrane: [.38, .37, .35], membraneEdge: [.25, .24, .23] },
+    pattern: { kind: 'patches', tone: 'moss', size: .2, cut: .1, amount: .5, up: .2 },
+    parts: [
+      ...PLANS.goblin.parts.filter(([k]) => !['gear', 'straps', 'head'].includes(k)),
+      ['head', { len: .48, r: .26, pitch: 8, s: [1.1, 1, 1], muzzle: { len: .85, r: .13, taper: .6, nose: 1, drop: .15 }, jaw: { len: .85, r: .12, drop: .9 },
+        brow: { f: .5, up: .66, out: .5, r: .08 }, eyes: [{ f: .52, up: .42, out: .48, r: .04, color: [.5, .48, .44] }], fangs: { r: .022, len: .08, f: .9, up: -.75, out: .35 },
+        horns: { len: .45, r: .075, f: .15, up: .75, out: .5, turn: .3, rise: .8, back: .6, spread: .2 } }],
+      ['tail', { len: 1.5, n: 5, r: [.11, .03], droop: 30, curl: 5 }],
+      ['wings', { at: .85, out: .25, up: .3, span: 3.5, fingers: 4, r: [.08, .06, .04], sag: .2, tone: 'membrane' }],
+      ['spines', { n: 8, from: .1, to: 1, len: .14, r: .06, tone: 'rock', taper: .4, stone: 1, dorsal: 1 }]
+    ] })
+});
+Object.assign(PLANS, {
+  gaothgargoyle: re(PLANS.gargoyle, { name: 'Gargoyle of Gaoth', src: 'OG-018 (Gaoth: a wind-swept Gargoyle)', school: 'Gaoth', from: 'gargoyle', scale: .62, rough: .8, mottle: 1.4, pattern: undefined, wingRest: PLANS.gargoyle.wingRest, cell: .06, spread: .05,
+    palette: { coat: [.66, .66, .64], saddle: [.56, .57, .56], belly: [.74, .74, .71], dark: [.06, .06, .07], horn: [.52, .52, .5], skin: [.6, .6, .58], rock: [.68, .68, .66], membrane: [.6, .61, .6], membraneEdge: [.42, .43, .44] },
+    parts: PLANS.gargoyle.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: o.span * 1.25 }] : k === 'head' ? [k, { ...o, horns: { ...o.horns, back: 1.1, rise: .3, len: o.horns.len * 1.15 } }] : [k, o]) })
+});
+export const GARGOYLES = ['gargoyle', 'gaothgargoyle'];
 // ── Session 934: the skeleton (OG-041: a notched sword and a round wooden shield, rags at the hips; canon §9a puts skeletons in Solas
 // and Uisce gates, so OG-018's drowned skeleton is the next to follow). The kit's first bare body: an upright biped with a man's
 // proportions whose capsules are drawn as bones (`bare`), a cage of ribs and a pelvis on its spine, a skull with dark sockets and a
@@ -1789,6 +1925,30 @@ Object.assign(PLANS, {
       ['fronds', { on: ['head', 'neck', 'spine', 'arm0L_', 'arm0R_'], n: 36, len: .34, w: .04, out: .25, spread: .2, lift: -1.6, back: .15, tip: 'frondTip' }]] })
 });
 export const SKELETONS = ['skeleton', 'drownedskeleton'];
+// ── Session 958: the Frost Thing, two ways (OG-018's Uisce row: "a crystalline ice-shard figure, all spikes"; canon §9a gives Uisce
+// "frost things", and says a steady gate makes "the shapes the local folklore had words for"). The catalogue flags the sheet's figure as
+// an elemental with no folk shape under the ice. Two plans for Michael to choose between (DECISION, decisions.md):
+// A `frostshard`, the sheet's figure: the troll's hunched frame in clear blue ice, shards out of its crown and down its back, lit cold;
+// B `frostfolk`, a folk shape under the ice: a man's frame (the skeleton's) grown whole and frozen, frosted white over blue, head bowed,
+// shards breaking from his shoulders and crown, the eyes lit pale. The drowned of the Uisce halls, walking. Michael took B (DECISION #362);
+// Session 968 gave him a face: the skeleton's skull inside his head (`skull.k` .85, in bone grey), under ice thinned to `faceClear` ──
+Object.assign(PLANS, {
+  frostshard: re(PLANS.troll, { name: 'Frost Thing (shards)', src: 'OG-018 (Uisce: a Frost Thing, a crystalline ice-shard figure, all spikes)', school: 'Uisce', from: 'troll', scale: .85, clear: .72, rough: .1, mottle: .6, pattern: undefined, finOpacity: 1,
+    palette: { coat: [.6, .78, .92], saddle: [.45, .62, .8], belly: [.74, .86, .96], dark: [.04, .06, .1], horn: [.66, .86, 1], ice: [.72, .9, 1], skin: [.58, .74, .88] },
+    glow: { color: [.5, 1.1, 2.4], freq: 2.2, w: .03, all: .3 },
+    parts: [...PLANS.troll.parts.map(([k, o]) => k === 'head' ? [k, { ...o, ears: undefined, horns: undefined, brow: undefined, crystals: { n: 6, len: .42, r: .07, f: .3, up: .8, out: .3, rake: .4 }, eyes: o.eyes.map(e => ({ ...e, color: [.6, .9, 1] })) }]
+      : k === 'arms' ? [k, { ...o, r: o.r.map(v => v * .8) }] : [k, o]),
+      ['spines', { n: 10, from: .05, to: 1, len: .5, r: .08, tone: 'ice', taper: .3, crystal: 4, dorsal: 1 }]] }),
+  frostfolk: re(PLANS.skeleton, { name: 'Frost Thing (the frozen)', src: 'OG-018 (Uisce: a Frost Thing), with a folk shape under the ice (canon §9a)', school: 'Uisce', from: 'skeleton', clear: .88, faceClear: .4, rough: .25, mottle: 1.2, finOpacity: 1, speedK: .7, cell: .028,
+    palette: { coat: [.82, .88, .93], saddle: [.62, .74, .86], belly: [.88, .92, .96], dark: [.05, .07, .1], horn: [.7, .88, 1], ice: [.74, .9, 1], skin: [.8, .86, .92], bone: [.56, .57, .5] },
+    glow: { color: [.45, .95, 2], freq: 1.6, w: .02, all: .22 },
+    parts: [
+      ...PLANS.skeleton.parts.filter(([k]) => ['spine', 'neck', 'legs', 'arms'].includes(k)).map(([k, o]) => k === 'spine' ? [k, { ...o, r: [.12, .125, .15], s: [1.15, .8] }] : k === 'neck' ? [k, { ...o, len: .16, r: [.055, .05] }] : k === 'arms' ? [k, { ...o, r: [.06, .05, .045], dir: [.1, -1, .12], bend: 22 }] : [k, o]),
+      ['head', { len: .22, r: .108, pitch: 12, s: [.9, 1.08, 1], muzzle: { len: .42, r: .062, taper: .85, drop: .25 }, jaw: { len: .5, r: .048, drop: .85 }, skull: { k: .85, tone: 'bone' },
+        eyes: [{ f: .55, up: .25, out: .42, r: .02, color: [.6, .92, 1] }], crystals: { n: 5, len: .16, r: .03, f: .2, up: .85, out: .25, rake: .5 } }],
+      ['spines', { n: 6, from: .55, to: 1, len: .3, r: .05, tone: 'ice', taper: .2, crystal: 3, dorsal: 1 }]] })
+});
+export const FROST = ['frostshard', 'frostfolk'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it

@@ -80,6 +80,116 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       out[k] = { clear: hide.material.transparent ? +hide.material.opacity.toFixed(2) : 1, bits: bits.length, out: out_, tris: C.stats.tris, school: C.plan.school || '' }; }
     return out; });
   for (const [k, t] of Object.entries(sl)) check(`${k}: a clear body (opacity ${t.clear}) holding ${t.bits} swallowed things, every one inside it through the crawl (${t.out} out)${t.school ? '; ' + t.school + "'s" : ''}`, t.clear < 1 && t.bits >= 8 && t.out === 0, t);
+  // the Winged Thing (Session 955, OG-018's Gaoth row): a Gaoth plan on four legs with two feathered wings, which in flight spread wider than half again its length
+  const wt = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('wingedthing', 'wingedthing:check')), T = await import('three'), span = () => { C.rig.updateMatrixWorld(true); const b = new T.Box3(); for (const m of C.meshes) if (m.name === 'fins') { m.geometry.computeBoundingBox(); } C.rig.traverse(o => { if (o.isBone && /^wing[LR]3$/.test(o.name)) b.expandByPoint(o.getWorldPosition(new T.Vector3())); }); return b.max.x - b.min.x; };
+    C.gait = 'stand'; K.pose(C, 0); const folded = span(); C.gait = 'fly'; let open = 0; for (let i = 0; i < 12; i++) { K.pose(C, i / 12); open = Math.max(open, span()); }
+    const body = C.len;
+    return { school: C.plan.school, legs: C.B.legs.length, wings: C.B.wings.filter(w => w.feathered).length, folded: +folded.toFixed(2), open: +open.toFixed(2), body: +body.toFixed(2) }; });
+  check(`wingedthing: Gaoth's griffin, ${wt.legs} legs and ${wt.wings} feathered wings, the wingtips ${wt.folded} m apart folded and up to ${wt.open} m in flight (its body ${wt.body} m long)`, wt.school === 'Gaoth' && wt.legs === 4 && wt.wings === 2 && wt.open > wt.body * 1.5 && wt.folded < wt.open * .6, wt);
+  // a folded bird's wing (Session 974): every flight feather on a quill bone of its own, turned at rest to lie back along the body within
+  // 25 degrees of its line (the arm alone carried them out to the side), and left as built when the wing is open
+  const qu = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {}, q = new T.Quaternion(), qr = new T.Quaternion(), v = new T.Vector3(), back = new T.Vector3(0, 0, -1);
+    for (const k of Object.keys(K.PLANS)) { const C0 = K.build(K.genome(k, k + ':check')); if (!C0.B.wings.some(w => w.feathered)) continue;
+      const rest = C0.plan.gaits.find(g => !K.GAITS[g].flap), fly = C0.plan.gaits.find(g => K.GAITS[g].flap), ws = C0.B.wings.filter(w => w.feathered);
+      const worst = (C, stow) => { C.rig.updateMatrixWorld(true); C.rig.getWorldQuaternion(qr).invert(); let a = 0, n = 0, off = 0, eMax = 0, eSum = 0;
+        for (const W of ws) for (const f of W.quills) { const b = C.byName[f.name]; n++; if (!stow) { off = Math.max(off, b.quaternion.angleTo(new T.Quaternion())); b.quaternion.identity(); b.updateMatrixWorld(true); }
+          v.copy(f.d).applyQuaternion(b.getWorldQuaternion(q).premultiply(qr)); a = Math.max(a, v.angleTo(back) * 180 / Math.PI);
+          v.copy(f.n).applyQuaternion(q); const e = Math.asin(Math.min(1, Math.abs(v.y))) * 180 / Math.PI; eMax = Math.max(eMax, e); eSum += e; }
+        return { a: +a.toFixed(1), n, off, face: +eMax.toFixed(1), faceMean: +(eSum / n).toFixed(1) }; };
+      const r = {}; if (rest) { C0.gait = rest; K.pose(C0, .2); r.stowed = worst(C0, true); K.pose(C0, .2); r.rigid = worst(C0, false); }
+      if (fly) { C0.gait = fly; let off = 0; for (let i = 0; i < 6; i++) { K.pose(C0, i / 6); for (const W of ws) for (const f of W.quills) off = Math.max(off, C0.byName[f.name].quaternion.angleTo(new T.Quaternion())); } r.openOff = +off.toFixed(4); }
+      // the primaries' fan at rest (Session 984): the least angle between neighbours' lines, the wing's ragged share
+      if (rest) { C0.gait = rest; K.pose(C0, .2); C0.rig.updateMatrixWorld(true); C0.rig.getWorldQuaternion(qr).invert(); let step = 9;
+        for (const W of ws) { const ps = W.quills.filter(f => f.kind === 'p').map(f => f.d.clone().applyQuaternion(C0.byName[f.name].getWorldQuaternion(q).premultiply(qr)));
+          for (let i = 1; i < ps.length; i++) step = Math.min(step, ps[i].angleTo(ps[i - 1]) * 180 / Math.PI); } r.fan = { step: +step.toFixed(2), ragged: ws[0].ragged };
+        // the two folded wings mirror each other: every feather's line and face, the left's against the right's reflected across the body,
+        // in the frame of the spine bone they hang from (the body's own roll and sway through the stride are not the wings')
+        let mir = 0; const [WL, WR] = ws, qs = C0.byName[WL.arm[0]].parent.getWorldQuaternion(new T.Quaternion()).invert(), rq = f => C0.byName[f.name].getWorldQuaternion(new T.Quaternion()).premultiply(qs);
+        if (WR) WL.quills.forEach((f, i) => { const g = WR.quills[i], ql = rq(f), qrr = rq(g);
+          for (const key of ['d', 'n']) { const a = f[key].clone().applyQuaternion(ql), b = g[key].clone().applyQuaternion(qrr); b.x = -b.x; mir = Math.max(mir, Math.min(a.angleTo(b), a.angleTo(b.negate())) * 180 / Math.PI); } });
+        r.mirror = +mir.toFixed(3); }
+      r.quills = ws.reduce((s, W) => s + W.quills.length, 0); r.tris = C0.stats.tris; out[k] = r; }
+    return out; });
+  for (const [k, r] of Object.entries(qu)) { if (r.stowed) { check(`${k}: its ${r.quills} folded flight feathers lie back along the body, the worst ${r.stowed.a} degrees off its line (${r.rigid.a} on the arm alone)`, r.quills >= 20 && r.stowed.a < 25 && r.stowed.a < r.rigid.a, r);
+      // and rolled to lean down over the flank (Session 983): each card's face tipped no more than 62 degrees up from facing straight out,
+      // so the folded wing shows its face from the side; flat on the back, as before the roll, the faces were tipped near 90
+      check(`${k}: its folded feathers lean down over the flank, faces tipped at most ${r.stowed.face} degrees from facing out (${r.stowed.faceMean} on average)`, r.stowed.face < 62 && r.stowed.faceMean < 50, r.stowed); }
+    if (r.mirror !== undefined) check(`${k}: its two folded wings mirror each other, every feather within ${r.mirror} degrees`, r.mirror < .5, r.mirror);
+    if (r.fan) check(r.fan.ragged ? `${k}: its few primaries stand apart when folded, at least ${r.fan.step} degrees between neighbours` : `${k}: its folded primaries stack close (${r.fan.step} degrees between neighbours at least)`, r.fan.ragged ? r.fan.step >= 2.4 : r.fan.step < 2.4, r.fan);
+    if (r.openOff !== undefined) check(`${k}: its feathers open as built in flight (turned at most ${r.openOff} rad)`, r.openOff < 1e-6, r); }
+  // the gargoyles (Session 956, OG-018's Cloch and Gaoth rows): stone wings folded close down the back at rest (`wingRest`), every wing bone
+  // behind the shoulder and inside a width less than its body's length, and spread wide when it flies
+  const ga = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
+    for (const k of K.GARGOYLES) { const C = K.build(K.genome(k, k + ':check')), pts = () => { C.rig.updateMatrixWorld(true); const b = new T.Box3(); C.rig.traverse(o => { if (o.isBone && /^wing/.test(o.name)) b.expandByPoint(o.getWorldPosition(new T.Vector3())); }); return b; };
+      C.gait = 'stand'; K.pose(C, 0); const rest = pts(), sh = C.byName.wingL0.getWorldPosition(new T.Vector3()), crown = C.byName.head.getWorldPosition(new T.Vector3()).y; C.gait = 'fly'; let open = 0; for (let i = 0; i < 12; i++) { K.pose(C, i / 12); const b = pts(); open = Math.max(open, b.max.x - b.min.x); }
+      out[k] = { school: C.plan.school, wings: C.B.wings.length, rest: +(rest.max.x - rest.min.x).toFixed(2), top: +rest.max.y.toFixed(2), crown: +crown.toFixed(2), open: +open.toFixed(2), len: +C.len.toFixed(2), behind: +(sh.z - rest.max.z).toFixed(2), tris: C.stats.tris }; }
+    return out; });
+  for (const [k, t] of Object.entries(ga)) check(`${k}: a gargoyle of ${t.school}, its ${t.wings} stone wings folded ${t.rest} m across at rest (its body ${t.len} m long), behind its shoulders, and ${t.open} m in flight`, t.wings === 2 && t.rest < t.len && t.behind >= -.05 && t.open > t.rest * 2, t);
+  // the Frost Thing's two options (Session 958, DECISION): both Uisce plans of clear ice with shards on them
+  const fr = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.FROST.map(k => { const C = K.build(K.genome(k, k + ':check')), h = C.meshes[0].material; let shards = 0; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.geometry.attributes.position.count >= 30 && o.material.flatShading) shards++; });
+    return { k, school: C.plan.school, clear: h.transparent ? +h.opacity.toFixed(2) : 1, shards, tris: C.stats.tris }; }); });
+  for (const t of fr) check(`${t.k}: a Frost Thing of Uisce in clear ice (opacity ${t.clear}) with ${t.shards} clusters of shards`, t.school === 'Uisce' && t.clear < 1 && t.shards >= 5, t);
+  // the mist rises in the body's up, not the head's (Session 975): with the stag's neck nodding hard (1.2 rad), every phase's puffs still
+  // leave their tines up and back within 10 degrees of the plan's rise and drift, where the head's own frame would tip them over
+  const mu = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), C = K.build(K.genome('shadowstag', 'shadowstag:check')), m = C.mist, P = m.geometry.attributes.position, o = m.userData.o;
+    C.plan = { ...C.plan, neckNod: 1.2 }; const want = new T.Vector3(0, o.rise, -o.drift).normalize(), qr = new T.Quaternion(), qm = new T.Quaternion(), qh = new T.Quaternion(); let worst = 0, tilt = 0;
+    for (let i = 0; i < 12; i++) { K.pose(C, i / 12); C.rig.updateMatrixWorld(true); C.rig.getWorldQuaternion(qr).invert(); m.getWorldQuaternion(qm).premultiply(qr); C.byName.head.getWorldQuaternion(qh).premultiply(qr);
+      tilt = Math.max(tilt, new T.Vector3(0, 1, 0).applyQuaternion(qh).angleTo(new T.Vector3(0, 1, 0)));
+      const d = new T.Vector3(); m.userData.q.forEach((u, k) => d.add(new T.Vector3(P.getX(k), P.getY(k), P.getZ(k)).sub(u.t).applyQuaternion(qm)));
+      worst = Math.max(worst, d.angleTo(want)); }
+    return { worst: +(worst * 180 / Math.PI).toFixed(1), tilt: +(tilt * 180 / Math.PI).toFixed(1) }; });
+  check(`shadowstag: its mist rises in the body's up, the puffs within ${mu.worst} degrees of up and back with the head tipped up to ${mu.tilt} degrees`, mu.worst < 10 && mu.tilt > 30, mu);
+  // the stag of shadows' mist (Session 969, OG-088): puffs from every tine's tip, no shadow, rising through the stride and the same at the same phase
+  const sm = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('shadowstag', 'shadowstag:check')), m = C.mist, P = m.geometry.attributes.position, A = m.geometry.attributes.aAlpha;
+    const snap = ph => { K.pose(C, ph); return Array.from(P.array); }, a = snap(.1), b = snap(.35), a2 = snap(.1); let moved = 0, same = 0, up = 0; for (let i = 0; i < a.length; i++) { moved = Math.max(moved, Math.abs(a[i] - b[i])); same = Math.max(same, Math.abs(a[i] - a2[i])); }
+    const tips = m.userData.q.length / (m.userData.o.per); let amax = 0; for (let i = 0; i < A.count; i++) amax = Math.max(amax, A.getX(i));
+    return { puffs: P.count, tips, onHead: m.parent === C.byName.head, shadow: m.castShadow, moved: +moved.toFixed(3), same, amax: +amax.toFixed(2), others: Object.keys(K.PLANS).filter(k => k !== 'shadowstag' && K.PLANS[k].parts.some(([, o]) => o.antlers?.mist)).length }; });
+  check(`shadowstag: its antlers breathe a mist, ${sm.puffs} puffs from ${sm.tips} tines on the head bone, no shadow, moving ${sm.moved} m through the stride and the same at the same phase`,
+    sm.onHead && !sm.shadow && sm.tips >= 10 && sm.moved > .05 && sm.same === 0 && sm.amax > 0 && sm.amax <= .2 && sm.others === 0, sm);
+  // the griffin's hooked talons (Session 970): each forefoot claw bows off the line from its root to its tip (an arch), and its tip reaches
+  // no lower than a straight claw's would
+  const tl = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), C = K.build(K.genome('wingedthing', 'wingedthing:check')), out = [];
+    for (const L of C.B.legs) { const foot = L.bones[L.bones.length - 1]; for (const m of foot.children) { if (!m.isMesh || m.geometry.type !== 'ConeGeometry') continue; const P = m.geometry.attributes.position, h = m.geometry.parameters.height, r = m.geometry.parameters.radius;
+      let tip = null, tipY = 1e9; const v = new T.Vector3(); for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); if (!tip || v.lengthSq() > tip.lengthSq()) tip = v.clone(); }
+      const u = tip.clone().normalize(); let bow = 0; for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); bow = Math.max(bow, v.clone().sub(u.clone().multiplyScalar(v.dot(u))).length() - r); }
+      out.push({ fore: L.at > 0, bow: +(bow / h).toFixed(2), reach: +(tip.length() / h).toFixed(2) }); } }
+    return out; });
+  const tf = tl.filter(t => t.fore);
+  check(`wingedthing: ${tf.length} hooked talons on its forefeet, each bowed ${Math.min(...tf.map(t => t.bow))} to ${Math.max(...tf.map(t => t.bow))} of its length, its tip where a straight claw's is`, tf.length === 8 && tf.every(t => t.bow > .1 && Math.abs(t.reach - 1) < .02), tl);
+  // the frozen man's face (Session 968, Michael's B): the skeleton's skull inside his head, the ice thinned over the face's front only, and
+  // the skull wholly under the hide (no crown through the top of his head)
+  const ff = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('frostfolk', 'frostfolk:check')), h = C.meshes[0], a = h.geometry.attributes.aAlpha, P = h.geometry.attributes.position;
+    C.rig.updateMatrixWorld(true); let sk = null; const T = await import('three'), box = new T.Box3();
+    C.rig.traverse(o => { if (o.name === 'skull') { box.expandByObject(o); sk = true; } }); h.updateMatrixWorld(true);
+    let lo = 1, thin = 0, over = -9; const v = new T.Vector3(); for (let i = 0; i < P.count; i++) { if (a) { lo = Math.min(lo, a.getX(i)); if (a.getX(i) < .9) thin++; }
+      v.fromBufferAttribute(P, i).applyMatrix4(h.matrixWorld); if (v.x > box.min.x && v.x < box.max.x && v.z > box.min.z && v.z < box.max.z) over = Math.max(over, v.y); }
+    return { skull: !!sk, tris: C.B.skull?.tris, face: a ? +(lo * C.plan.clear).toFixed(2) : null, thinShare: a ? +(thin / P.count).toFixed(3) : null, skullTop: +box.max.y.toFixed(3), hideTop: +over.toFixed(3) }; });
+  check(`frostfolk: the skeleton's skull under the ice (${ff.tris} triangles), the face's ice at ${ff.face} over ${(ff.thinShare * 100).toFixed(1)}% of the hide, the skull's top ${ff.skullTop} under the hide's ${ff.hideTop}`,
+    ff.skull && ff.face !== null && ff.face < .5 && ff.thinShare > .005 && ff.thinShare < .08 && ff.skullTop < ff.hideTop, ff);
+  // skin wings let light through (Session 959): every opaque membrane wing gives back a share of its colour, no feathered or clear one does
+  const wlt = await page.evaluate(async () => { const K = await import('./creatures.js'), out = { lit: [], plain: [] };
+    for (const k of Object.keys(K.PLANS)) { const P = K.PLANS[k]; if (!(P.parts || []).some(([n]) => n === 'wings')) continue; const C = K.build(K.genome(k, k + ':wl'));
+      for (const m of C.meshes) if (m.name === 'wing') { const membrane = !C.B.wings[0].feathered && !(P.wingOpacity < 1); (membrane === Object.hasOwn(m.material, 'onBeforeCompile') ? out.lit : out.plain).push(k + (membrane ? '' : ' (feathered or clear)') + (membrane === Object.hasOwn(m.material, 'onBeforeCompile') ? '' : ' WRONG')); } }
+    return out; });
+  check(`skin wings let light through: ${[...new Set(wlt.lit)].length} winged plans right, none wrong`, wlt.plain.length === 0 && wlt.lit.length > 0, { wrong: [...new Set(wlt.plain)], right: [...new Set(wlt.lit)] });
+  // the griffin's talons (Session 960): an eagle's foot on each foreleg, three claws forward and a hind toe, a cat's three on each hind foot
+  const tal = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('wingedthing', 'wingedthing:check')), n = {};
+    for (const L of C.B.legs) { const b = L.bones[L.bones.length - 1]; n[L.bones[0].name] = b.children.filter(o => o.isMesh).length; } return n; });
+  const tv = Object.entries(tal), fore = tv.filter(([k]) => /^leg0/.test(k)).map(([, v]) => v), hind = tv.filter(([k]) => !/^leg0/.test(k)).map(([, v]) => v);
+  check(`wingedthing: an eagle's talons on its forelegs (${fore.join(', ')} claws) and a cat's on its hind feet (${hind.join(', ')})`, fore.length === 2 && fore.every(v => v === 4) && hind.every(v => v === 3), tal);
+  // the slimes' holes (Session 954, OG-041: "with holes through it"): a line down each hole's axis meets no hide, at rest or through a whole
+  // crawl stride (each axis carried by its spine bone), while the same line moved two of the hole's radii toward the spine meets the body
+  const ho = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
+    for (const k of K.SLIMES) { const C = K.build(K.genome(k, k + ':check')), hide = C.meshes[0], side = hide.material.side; hide.material.side = T.DoubleSide; C.gait = 'crawl'; K.pose(C, 0); C.rig.updateMatrixWorld(true);
+      const H = (C.B.holes || []).map(h => { const M = C.byName[h.bone].matrixWorld.clone().invert(), w = p => C.rig.localToWorld(p.clone()); return { r: h.ra, c: w(h.c).applyMatrix4(M), e: w(h.c.clone().add(h.d)).applyMatrix4(M), up: w(h.c.clone().add(new T.Vector3(0, h.ra * 2.2 * (h.up > .4 ? -1 : 1), 0))).applyMatrix4(M), bone: C.byName[h.bone] }; });
+      const rc = new T.Raycaster(); let through = 0, lines = 0, body = 0;
+      for (let i = 0; i <= 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true);
+        for (const h of H) { const c = h.c.clone().applyMatrix4(h.bone.matrixWorld), d = h.e.clone().applyMatrix4(h.bone.matrixWorld).sub(c).normalize(), u = h.up.clone().applyMatrix4(h.bone.matrixWorld);
+          rc.set(c.clone().addScaledVector(d, -3), d); rc.far = 6; lines++; if (!rc.intersectObject(hide).length) through++;
+          rc.set(u.clone().addScaledVector(d, -3), d); if (rc.intersectObject(hide).length) { body++; h.n = (h.n || 0) + 1; } } }
+      hide.material.side = side; out[k] = { holes: H.length, lines, through, body, each: H.map(h => h.n || 0), tris: C.stats.tris }; }
+    return out; });
+  for (const [k, t] of Object.entries(ho)) check(`${k}: ${t.holes} holes clean through it, at rest and through the crawl (${t.through} of ${t.lines} lines clear, ${t.body} of ${t.lines} lines beside them in the body)`, t.holes >= 3 && t.through === t.lines && t.body === t.lines, t);
   for (const [k, t] of Object.entries(tr)) {
     check(`${k}: an upright biped with two arms (${t.legs} legs, ${t.arms} arms), its head ${t.head} m up`, t.legs === 2 && t.arms === 2 && t.hands === 2 && t.head > 2 && t.head < 3.4, t);
     check(`${k}: through its walk the hands swing between the hips and the ground (${t.lo} to ${t.hi} m, the hips at ${t.hip} m; ${t.swing} m apart at most)`, t.lo > .1 && t.hi < t.hip && t.swing > .15, t); }
