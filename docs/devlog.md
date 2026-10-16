@@ -22597,6 +22597,60 @@ Corrections made during the session:
 - **The stair's wall reads dark** where the sun is off it.
 - **The sloop is the kit's sloop at anchor with its sail down** (Session 858 for the hull line; #347 for the rest of Aurenne's hulls). The rowing boats are the lair's lathe shell.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), and the camps on the roads.
+## v80 — Session 1014 — The arms clear of a short tunic skirt (B2, against #274, prototype only)
+Michael's note on #274 asks that no arm come through any garment. Session 1010's full-length picture showed the far hand's fingertips as dark spots through the front of a man's short tunic skirt at the thigh. Session 887 lifts the arms out from the side, three hundredths of a radian at a time, until no point of either hand is inside a long skirt (and Session 897 did the same for mail), but never for a short one. A short skirt flares from the belt to a hem at mid-thigh, which is just where the hands hang, so on most men in one the fingers were inside it: in `builder-shortskirt-front-before.jpg` both hands are hidden in the skirt to the wrist. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+What changed in `people.js`: the lift reads the short skirt as it reads the long one (`handsInSkirt`, in 2 cm bands and 36 directions round the skirt's own middle), over the short skirt's points that are drawn (rest y above -.2, the shader's cut; the region runs to -.24). As before, it does not run under a full cloak, and the genome's pose is unchanged: the lift is worked out at build time. A man in mail keeps the mail skirt's test, which stands further out.
+
+`builder.check.mjs`: the shot filter takes a comma list (`--shots=shortskirt,peoples`).
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 353 checks pass** (344 after Session 1010; 9 new). On the old `people.js` the 9 new checks fail: no lift is worked out for a short skirt at all.
+- **The new checks:** two men of each of the four peoples, and Session 1010's Aurennais under a shoulder sash and a sash belt, each in a short tunic skirt. On every one, 0 points of either hand inside the skirt, of 1,003 to 1,787 tested. The arms are lifted 0.12 to 0.30 rad (the Aurennais the least, 0.12 and 0.15; a Gatelander the most, 0.30, the loop's limit), against 0.15 to 0.30 for the mail skirts and 0.18 to 0.24 for the long skirts under a bodice. The check allows up to 0.30.
+- **Every other check is unchanged**, among them the long skirts, the robes, the mail, the shields, spears and crossbows (which take the arm after the lift).
+- **Pictures:**
+  - New: `builder-shortskirt-front.jpg` (a Gatelander, face on) and `builder-shortskirt-turn.jpg` (a Markman, turned), each with a `-before` from the old `people.js`.
+  - Re-shot: `builder-sashbelt-full.jpg` (the fingertips through the skirt are gone) and `builder-peoples.jpg` (every man in a short skirt stands with his arms a little out).
+
+### Needs eyes
+- **The arms stand out further.** At 0.3 rad a man's hands hang a hand's breadth off his thighs, which reads a little stiff, like a man about to draw. Bending the wrists in, or the hands turned to the thigh, would let them hang closer; that is the animation work in B4.
+- **A dark mark on the skirt beside the right hand** in `builder-shortskirt-front.jpg` is the hand's shadow on the cloth, not a hand through it (0 points inside). It is speckled by the shadow map's resolution.
+- **Under a full cloak** nothing is lifted, as for the long skirt, since the cloak is built round the arms where they hang.
+## v80 — Session 1015 — The Aurennais sandals (L1 and B2, prototype only)
+OG-056 puts all eight of its everyday Aurennais in "leather sandals with ankle straps", and backlog L1 has listed the sandals as owed since Session 994. This session builds them. The sheet draws them plainly and the canon says nothing against them, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (a `feet` view) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The bare foot.** Under boots the body is not drawn below the knee: the boots are a shell off the tights' helper. With sandals the body's own skin is drawn below rest y -.6 (`PACK.R.feet`, MakeHuman's foot with its toes), and trousers stop at rest -.665, above the ankle, where they otherwise run to -.78 inside the boot.
+- **The straps** are a leather shell 2.5 mm off that skin, so they are skinned with the foot and bend with it. They are cut in the shader on the rest body (`SANDAL_KEEP`), across the foot from its middle line at rest |x| .222:
+  - an ankle strap 1.6 cm wide round the narrowest of the ankle;
+  - a strap 1.7 cm wide over the ball of the foot, behind the toes;
+  - a strap down the instep between the two;
+  - one up the back of the heel.
+  
+  The shadow is cut the same way (`cutDepth`). The straps cost no triangles of their own beyond the foot's shell.
+- **The soles** (`buildSoles`): for each foot, the posed body's points along its bottom (rest y under -.795, 726 a foot) are taken as an outline in the ground plane (a convex hull), set out 4 mm. That is made a slab 1.4 cm deep, 1 cm under the foot's lowest point and 4 mm up its sides, in a darker shade of the straps' leather. It is rigid and carried by the foot bone that stands over it: 120 triangles a sole.
+- **The person stands on the soles.** The ground was read off the lowest point of the whole morphed pack, which is the tights' helper under the boot, 2.6 cm below the bare foot. With sandals the ground is the soles' underside. Without that, the soles stood 2.6 cm off the ground (the first run of the new check measured 0.0259 to 0.0265 m). **A note for later:** any bare foot stands 2.6 cm high the same way, and the game's bodies will want the ground read off what is worn on the feet.
+- **The dress** takes `sandals` (the leather's colour; it saves and loads), worn in place of boots.
+- **The roll.** The Aurennais roll sandals at 0.7 in place of their boots, in the boots' leather: 23 of 40 do. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls them. The sheet shows all eight in sandals; boots stay on the rest for the roads and the ships.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 363 checks pass** (353 after Session 1014; 10 new). `kit.check.mjs` passes.
+- **The new checks**, on three people: an Aurennais man in trousers, an Aurennais woman in a long skirt, and a Gatelander in a short tunic skirt without trousers. On each:
+  - each foot has its sole, and 0 of its 726 bottom points fall outside the outline. The nearest is 3.7 to 3.8 mm in from the edge. The soles are 22.9 to 27.8 cm long;
+  - both soles stand at 0 m, on the ground, carried by `foot.L` and `foot.R`;
+  - the straps are drawn and the boots are not;
+  - the soles are 240 triangles the pair;
+  - it saves and loads back with `sandals` in the save.
+- **The roll:** 23 of 40 rolled Aurennais wear sandals, none with boots as well. None of 30 Markmen, Gatelanders and Old Blood wear them.
+- **Pictures:**
+  - New: `builder-sandals-man.jpg` (in trousers, the feet close), `-back.jpg` (the heel strap), `-woman.jpg` (under a long skirt) and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`, whose Aurennais now roll sandals.
+
+### Needs eyes
+- **The straps are drawn on the skin,** not modelled. Seen close and side-on they have no thickness.
+- **The sole is a slab** with a straight wall and no toe spring. It is rigid on the foot bone, so when the toes bend in a walk (B4) it will not bend with them. A sole skinned to the toe bones is owed with the walk.
+- **The sole's outline is a convex hull,** so the arch is filled straight across, as a cut leather sole is. The toes reach 3.7 mm from its front edge.
+- **Still owed in L1:** a scarf's tail and a taller turban, and the coins on the head-wrap's edge (to be confirmed from the full image).
 
 ## v80 — Session 1012 — The Gatelands' falls: the overgrown arches and the cave behind the water (card F8, prototype only)
 This is the last of OG-124's Gatelands places off the road. The Gatelands panel names "overgrown arches by a waterfall" and "a cave behind falls" as two finds; they are drawn here as one place, because the panel's picture puts them together and because a ruin seen through its arch is a good way to come upon a fall. There are three precedents:

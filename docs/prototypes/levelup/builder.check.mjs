@@ -86,6 +86,18 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     // the knot and its ends (Session 996) can be left off: the band alone, as Session 990 made it
     { const G0 = K.rollGenome('sash:1', { g: 1, people: 'aurennais' }), p = K.makePerson({ ...G0, dress: { ...G0.dress, sash: [.2, .26, .5], cloak: null, mantle: null, sashKnot: false } }); out.sashBare = { knot: p.sash.knot, tris: p.sash.tris }; }
     { const G0 = K.rollGenome('skirt:f', { g: 0 }); out.skirtHands = K.makePerson({ ...G0, dress: { ...G0.dress, skirt: 'long', mantle: null } }).skirtHands; }
+    // sandals (Session 1015): an Aurennais man in trousers, a woman in a long skirt, a Gatelander in a short tunic skirt without trousers
+    out.sandals = {}; { const THREE = await import('three'); for (const [name, seed, people, g, extra] of [['an Aurennais man in trousers', 'sand:0', 'aurennais', 1, {}], ['an Aurennais woman in a long skirt', 'sand:1', 'aurennais', 0, { skirt: 'long' }], ['a Gatelander in a short tunic skirt', 'sand:2', 'gatelander', 1, { skirt: 'short', trousers: null }]]) {
+      const G0 = K.rollGenome(seed, { g, people }), gg = { ...G0, dress: { ...G0.dress, cloak: null, robe: null, mail: null, ...extra, sandals: [.4, .26, .14], boots: null } }, p = K.makePerson(gg), s1 = JSON.stringify(K.toSaved(gg));
+      p.root.updateMatrixWorld(true); const soles = []; p.root.traverse(o => { if (o.name === 'sole') soles.push(o); });
+      out.sandals[name] = { ...p.sandals, straps: !!p.meshes.find(m => m.name === 'sandals'), boots: !!p.meshes.find(m => m.name === 'boots'), bones: soles.map(o => o.parent && o.parent.name).sort(), ground: soles.map(o => +new THREE.Box3().setFromObject(o).min.y.toFixed(4)),
+        saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"sandals"') }; } }
+    { let w = 0, both = 0; for (let i = 0; i < 40; i++) { const G = K.rollGenome('aur:' + i, { people: 'aurennais' }); if (G.dress.sandals) { w++; if (G.dress.boots) both++; } }
+      out.sandalRoll = { n: 40, w, both, others: ['markman', 'gatelander', 'oldblood'].flatMap(k => Array.from({ length: 10 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.sandals).length }; }
+    // the hands beside a short tunic skirt (Session 1011): eight men of the four peoples, and Session 1010's man under a sash and a sash belt
+    out.shortHands = []; for (const [seed, people, extra] of [...['aurennais', 'markman', 'gatelander', 'oldblood'].flatMap(k => [0, 1].map(i => ['short:' + k + i, k, {}])), ['sbelt:1', 'aurennais', { sashBelt: [.17, .2, .4], sash: [.62, .45, .18], belt: null, beltCoins: null }]]) {
+      const G0 = K.rollGenome(seed, { g: 1, people }), g = { ...G0, dress: { ...G0.dress, skirt: 'short', cloak: null, hood: null, apron: null, tabard: null, mail: null, robe: null, ...extra } }, p = K.makePerson(g);
+      out.shortHands.push({ seed, ...(p.skirtHands || { n: 0, bad: -1 }) }); }
     // the cuffs (Session 889): cut in the shader inside a wider region, and the Markmen's woven bands
     { const G0 = K.rollGenome('cuffs:m', { g: 1, people: 'markman' }), mk = Array.from({ length: 12 }, (_, i) => K.rollGenome(`markman:${i}`, { people: 'markman', g: i % 2 }));
       const g = { ...G0, dress: { ...G0.dress, cuffs: [.5, .14, .12], cuffBand: [.2, .28, .45], mantle: null } }, p = K.makePerson(g), cm = p.meshes.find(m => m.name === 'cuffs'), idx = cm.geometry.index.array, B = cm.geometry.attributes.aBase.array; let lo = 9, hi = 0;
@@ -173,6 +185,12 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return out; });
   check(`the beard stops under a cheek line: within the eyes' width ${(r.beard.gap * 100).toFixed(1)} cm under the lower lid, the moustache up to the nose (y ${r.beard.moustTop}), the dark base inside the hairs (${r.beard.baseTris} of ${r.beard.tris} triangles)`, r.beard.gap > .015 && r.beard.moustTop > .678 && r.beard.baseTris < r.beard.tris, r.beard);
   check(`a beard over a tunic stops at its collar: no card on the chest, 4 cm under the collar's front (${r.beardTunic.below} of ${r.beardTunic.verts} points)`, r.beardTunic.below === 0 && r.beardTunic.verts > 1000, r.beardTunic);
+  for (const [k, c] of Object.entries(r.sandals)) {
+    check(`${k}, sandals: a sole under each foot, every point of its bottom inside the outline (${c.feet.map(f => f.out + ' of ' + f.pts).join(', ')}), ${c.feet.map(f => (f.len * 100).toFixed(1)).join(' and ')} cm long`, c.feet.length === 2 && c.feet.every(f => f.out === 0 && f.pts > 300 && f.len > .2 && f.len < .31 && f.near > .002), c.feet);
+    check(`${k}, sandals: the soles on the ground (${c.ground.join(', ')} m) and carried by the two feet (${c.bones.join(', ')})`, c.ground.length === 2 && c.ground.every(y => Math.abs(y) < .001) && c.bones.join() === 'foot.L,foot.R', c);
+    check(`${k}, sandals: straps drawn, no boots, ${c.tris} triangles in the soles; it saves and loads`, c.straps && !c.boots && c.tris < 400 && c.saved, c); }
+  check(`the roll: ${r.sandalRoll.w} of 40 Aurennais wear sandals, ${r.sandalRoll.both} with boots too; ${r.sandalRoll.others} of 30 of the other peoples`, r.sandalRoll.w >= 18 && r.sandalRoll.w <= 34 && !r.sandalRoll.both && !r.sandalRoll.others, r.sandalRoll);
+  for (const h of r.shortHands) check(`${h.seed}, a man in a short tunic skirt: no hand inside it (${h.bad} of ${h.n} points; the arms lifted ${h.lift} rad)`, h.bad === 0 && h.n > 50 && h.lift <= .3, h);
   check(`a woman in a long skirt: no hand inside it (${r.skirtHands.bad} of ${r.skirtHands.n} points; the arms lifted ${r.skirtHands.lift} rad)`, r.skirtHands.bad === 0 && r.skirtHands.n > 300, r.skirtHands);
   check(`the cuffs: both edges cut in the shader at rest |x| .371 and .411, inside a region from ${r.cuffs.lo} to ${r.cuffs.hi}, so neither is a triangle's step; a woven band saves and loads back`, r.cuffs.lo < .366 && r.cuffs.hi > .415 && r.cuffs.band && r.cuffs.saved, r.cuffs);
   check(`the Markmen roll woven cuff bands (${r.cuffs.markmenBands} of 12), the other peoples not (${r.cuffs.others} of 3)`, r.cuffs.markmenBands >= 5 && r.cuffs.others === 0, r.cuffs);
@@ -285,7 +303,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots'));
 if (shotArg) { const only = shotArg.split('=')[1];
-  const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !name.includes(only)) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
     const t0 = Date.now(); await page.goto(`http://localhost:${port}/builder.html?w=${w}&h=${h}&${panel ? '' : 'still&'}${q}`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 900000 });
     await page.evaluate(() => document.getElementById('note').style.display = 'none'); if (panel) await page.waitForTimeout(1500);
     const buf = panel ? await page.screenshot({ type: 'jpeg', quality: 88 }) : Buffer.from((await page.evaluate(cr => { const c = document.querySelector('canvas'); if (!cr) return c.toDataURL('image/jpeg', .9); const [x, y, cw, ch] = cr, o = document.createElement('canvas'); o.width = cw * c.width; o.height = ch * c.height; o.getContext('2d').drawImage(c, x * c.width, y * c.height, o.width, o.height, 0, 0, o.width, o.height); return o.toDataURL('image/jpeg', .9); }, crop)).split(',')[1], 'base64');
@@ -387,6 +405,13 @@ if (shotArg) { const only = shotArg.split('=')[1];
           { const sb = { ...bc, belt: null, beltCoins: null, sashBelt: [.55, .22, .12] };
             await shot('sashbelt-man', 'people=aurennais&seed=belt:1&sex=m&view=waist&turn=.3&dress=' + dq(sb)); await shot('sashbelt-back', 'people=aurennais&seed=belt:1&sex=m&view=waist&turn=2.4&dress=' + dq(sb));
             await shot('sashbelt-woman', 'people=aurennais&seed=belt:0&sex=f&view=waist&turn=-.4&dress=' + dq({ ...bc, skirt: 'long', sashBelt: [.17, .2, .4] }));
+            // sandals (Session 1015): the feet close, front and back, and a woman full length
+            { const sd = { sandals: [.4, .26, .14], boots: null, cloak: null, robe: null, mail: null };
+              await shot('sandals-man', 'people=aurennais&seed=sand:0&sex=m&view=feet&turn=.3&dress=' + dq(sd)); await shot('sandals-back', 'people=aurennais&seed=sand:0&sex=m&view=feet&turn=2.6&dress=' + dq(sd));
+              await shot('sandals-woman', 'people=aurennais&seed=sand:1&sex=f&view=feet&turn=-.3&dress=' + dq({ ...sd, skirt: 'long', sandals: [.55, .36, .2] })); await shot('sandals-full', 'people=aurennais&seed=sand:1&sex=f&view=full&turn=.3&dress=' + dq({ ...sd, skirt: 'long', sandals: [.55, .36, .2] })); }
+            // the hands beside a short tunic skirt (Session 1011), front and three-quarter
+            await shot('shortskirt-front', 'people=gatelander&seed=short:gatelander1&sex=m&view=full&turn=0&dress=' + dq({ skirt: 'short', cloak: null, hood: null, apron: null, tabard: null, mail: null, robe: null }));
+            await shot('shortskirt-turn', 'people=markman&seed=short:markman0&sex=m&view=full&turn=.6&dress=' + dq({ skirt: 'short', cloak: null, hood: null, apron: null, tabard: null, mail: null, robe: null }));
             await shot('sashbelt-full', 'people=aurennais&seed=sbelt:1&sex=m&view=full&turn=.4&dress=' + dq({ ...sb, sashBelt: [.17, .2, .4], sash: [.62, .45, .18] })); }
           await shot('beltcoins-man', 'people=aurennais&seed=belt:1&sex=m&view=waist&turn=.3&dress=' + dq(bc)); await shot('beltcoins-woman', 'people=aurennais&seed=belt:0&sex=f&view=waist&turn=-.4&dress=' + dq({ ...bc, skirt: 'long' })); await shot('beltcoins-full', 'people=aurennais&seed=belt:0&sex=f&view=full&turn=.3&dress=' + dq({ ...bc, skirt: 'long', necklace: [.85, .66, .3], earrings: [.85, .66, .3] })); }
         await shot('necklace-side', 'people=aurennais&seed=neck:0&sex=f&view=neck&turn=1.2&dress=' + nf); await shot('necklace-sash', 'people=aurennais&seed=neck:0&sex=f&view=neck&turn=.3&dress=' + dq({ necklace: [.85, .66, .3], sash: [.55, .18, .12], earrings: [.85, .66, .3], cloak: null, hood: null, wrap: null, mantle: null })); }
