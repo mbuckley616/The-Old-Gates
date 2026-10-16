@@ -1,6 +1,6 @@
 // The perks, first wave: the hand and the word (Session 973; skills and perks A, the build sheet's third session). A perk
 // is read from its skill at 25, 50, 75 and 100. Built here: Locks' Feel for it (25), Sure hand (50) and Quiet work (75),
-// Speech's Haggle (25) and Talk it down (50), the guard giving way in his people's voice (Session 984, quest review Finding 31); the Skills tab shows each skill's four, lit when held.
+// Speech's Haggle (25) and Talk it down (50), the guard giving way in his people's voice (Session 986, quest review Finding 31); the Skills tab shows each skill's four, lit when held.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');

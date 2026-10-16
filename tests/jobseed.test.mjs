@@ -1,4 +1,4 @@
-// Session 983: a lord's job comes out the same whatever has loaded (QA's note, backlog B; the S533 rule). `townQuestFor` rolls
+// Session 985: a lord's job comes out the same whatever has loaded (QA's note, backlog B; the S533 rule). `townQuestFor` rolls
 // the job's kind on its own id, but fell back to the road job when no gate (a retrieve) or town (a deliver) had loaded near the
 // lord's town, and took the cull's beast from the loaded regions. Now the gates and towns are read from every cell's own data
 // (`doorsNearFixed`, `sitesNearFixed`) and the beast from the cells' regions (`lairBiome`). The same 30 job keys are asked at

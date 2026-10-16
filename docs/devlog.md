@@ -21671,7 +21671,7 @@ The fourth part of the sheet's first wave of perks. The Arms perks were left for
 - **Through** sends the arrow on with no new sound or mark on the first foe. Whether a pass-through wants a sound of its own is for the ear.
 - **Quick nock** also speeds the bow's draw on the viewmodel and the third-person body, which read the same clock.
 
-## v80 — Session 983 — A lord's job comes out the same whatever has loaded (QA's note, backlog B)
+## v80 — Session 985 — A lord's job comes out the same whatever has loaded (QA's note, backlog B)
 QA found that a lord's job could change kind on a reload. `townQuestFor` (`87-world-quests.js`) rolls the kind on the job's own id (Session 678). But a *retrieve* needs a gate within 700 and a *deliver* a town within 900, and both were looked for among what had loaded (`nearDoors` reads `CELL_DOORS`, `nearSites` reads `SITES`). With nothing loaded near the lord's town, the job fell back to the road job. So on a fresh load, or on a second machine, the same id gave another job. That is against the S533 rule: an outcome keyed by id reads the world's data, never what has loaded. The cull's beast had the same fault, read from `dominantRegion`, the loaded regions (S701).
 
 Now the job reads the world's own data:
@@ -21694,7 +21694,7 @@ The job's words and its target still name the real door once it is placed (`dung
 - **A town's jobs change once, for every player.** A town that used to give road jobs before its neighbours loaded now gives the retrieve or the deliver its id rolled. A cull's beast can differ near a biome's edge. Jobs already in a save are kept as they were given.
 - **A home fort's choice reads its road's straight line.** A fort near the 700 edge can be counted in or out against where it actually stands, by up to about 175 m. It is the same in every game, which is the rule; the job still sends you to the real door.
 
-## v80 — Session 984 — The guard gives way in his people's voice (quest review Finding 31)
+## v80 — Session 986 — The guard gives way in his people's voice (quest review Finding 31)
 The quest review (run 19, on `auto/quests`) found the one gap in Session 973's *Talk it down*. The fine halves and the halt opens again on its first line, so the guard who has just been argued down by half says *Halt. There’s a fine of 38 gold on you* as if the player had said nothing. Every other turn at the halt has a line in each people's voice. Applied as the review writes it, in `86-world-crime.js`:
 - `TALKED_LINES` beside `YIELD_LINES`, its four lines word for word.
 - `talkDownTopic`'s `fn` sets `c.talkedNow` once `talkDownFine` succeeds.
@@ -21705,3 +21705,5 @@ The one difference in form: the review's ternary is a small function, `talkedGre
 - `perkhand`, extended, 16 of 16. At Dunmore (Gatelander), Speech 50: the fine goes 75 → 38. The reopened halt says *A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: 38 gold, and we’ll say no more about it.*, with no *Halt*. The next halt there, indoors, greets as before (*Stand a moment. There’s a fine of 38 gold owed in Dunmore…*), and the flag is gone.
 ### Needs eyes
 - Nothing for a playtest beyond reading the four lines in their towns.
+
+**A correction to numbering.** The bodies builder took Session 983 on its own branch during this run, so the lord's job is Session 985 (pushed as *Session 983*, commit `ce3f8ace`) and the guard's line is Session 986 (pushed as *Session 984*, `0fe8f9f3`). The entries, the code comments and the tests carry the new numbers; the two commit messages keep the old ones.

@@ -535,7 +535,7 @@
       poor:'You have not got it. Find it.',
       pay:'It is paid.',
       refuse:'Then the blade.'}};
-  const TALKED_LINES={gatelander:f=>`A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: ${f} gold, and we’ll say no more about it.`,markman:f=>`Aye, all right. Half. ${f} gold, and don’t make me sorry.`,aurennais:f=>`You argue it well, Master. The town will accept half, on these terms: ${f} gold, and the matter closed.`,oldblood:f=>`Half, then. ${f} gold.`}; /* S984 — quest review Finding 31: the guard gives way in his people's voice */
+  const TALKED_LINES={gatelander:f=>`A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: ${f} gold, and we’ll say no more about it.`,markman:f=>`Aye, all right. Half. ${f} gold, and don’t make me sorry.`,aurennais:f=>`You argue it well, Master. The town will accept half, on these terms: ${f} gold, and the matter closed.`,oldblood:f=>`Half, then. ${f} gold.`}; /* S986 — quest review Finding 31: the guard gives way in his people's voice */
   const YIELD_LINES={
     gatelander:{greet:d=>`A bent knee mends faster than a broken head. ${d} gold, or a night in the cells.`,
       poor:'You haven’t got it. Then it’s the cells, or the sword again, and I’d not choose the sword.',
