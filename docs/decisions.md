@@ -17,6 +17,8 @@ Which should the Frost Thing be?
 Pictures: [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostshard.jpg), [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frostfolk.jpg), [the two beside the skeleton and the troll](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/creatures-frost.jpg).
 Michael: **B. A folk shape frozen** (15 Oct 2026, on the control room; issue #362). Session 968 gave him the face: the skeleton's modelled skull inside his head, seen through ice thinned to 0.4 over the face.
 
+Michael: **B. A folk shape frozen**. (15 Oct 2026, on the control room)
+
 ### Combat's resolver: how hard an ordinary blow lands, now that armour takes a share (the deep-work session, Session 939) — DECISION #355
 The attack table and the one resolver are built (`auto/fable-combat-resolver`). Armour now takes a share of every blow on you, as #181 B said: damage × 50 / (50 + armour), where it took half a point per point. That put the cliff between 20 and 40 armour.
 

@@ -21113,3 +21113,34 @@ What changed:
 ### Needs eyes
 - **The talons do not grip:** the toes are the claws themselves, so there is no scaled toe for a talon to hang from. An eagle's foot is toes first, which wants a toe chain in the kit.
 - **They are still black cones,** glossy and smooth. A talon is horn, darker at the tip.
+## v80 — Session 946 — bellwreck waits for its port's discovery (QA)
+The QA routine's first item with FREEZE #297 closed and F2a merged: the FLAKY suites whose test fixes were owed. `bellwreck` cost the most, two retries on 15 Oct (main's 69e0c91 and F2a's ce23dbe), each on the check *within forty units at high tide, A mast stands up out of the sea…, once*, whose list of things said held the mast's line and *Carrigcarra discovered · +50 XP*. The suite stands the player at the bell's port until the wreck is built, and stopped waiting the moment `BELL_WRECK` existed. The port itself is discovered by `tickDiscovery` (`js/83-world-generator.js`), which runs every half second over `SITES`, the loaded cells' sites only: on a slow runner the wreck could be built before the port's cell had loaded or the half second come round, and the toast then fired while the player stood by the mast, inside the window the check counts. The game is right (you are near the port); the test was waiting for the wrong thing. The wait now runs until the wreck is built and `discovered(P.port)` is true, and a check says the port was found before the wreck was visited. The mast check keeps its *once* and its single line: nothing was loosened.
+### Verified (headless Chromium)
+- `node tests/run.mjs bellwreck`: three runs green in a row (about 75 s each), every check passing; the new check *standing at the port, the port is discovered before the wreck is visited* true in each.
+- `node tests/run.mjs bellwreck --look=new`: green.
+### Needs eyes
+- Nothing for a playtest. CI is the proof: the row in `docs/qa/flaky.md` closes for good if `bellwreck` is not FLAKY on the next several runs that carry this.
+
+## v80 — Session 947 — carraignight waits for the door, not the clock (QA)
+`carraignight` went FLAKY once on 15 Oct (run 38695728480, shard 11): the street half passed, then the indoor loop threw at its first `page.evaluate` with `WORLD.settle.get('carraig_mor')` undefined, several homes in. The loop went into eight homes at eight hours each, paced by fixed waits: 1.5 s after `goToInterior`, 0.8 s after `exitInterior`. Both moves happen only in `doFade`'s callback, a 440 ms `setTimeout` (`js/20-quests.js`), which a loaded runner can fire late. When it did, the next step found the last room's `INT_BOX` still set with `lid` still the overworld, put the player at room coordinates (0 to the room's width) in the open world, and the next `WORLD.tick` dropped Carraig Mór as thousands of units away. The game was right to; the test had moved the player there. The loop now waits for `isInterior()` and `currentHouse` being this home after going in, and for `lid==='overworld'` after coming out, and throws rather than moving the player to `INT_BOX` when not indoors. The checks and their hours are unchanged.
+### Verified (headless Chromium)
+- `node tests/run.mjs carraignight`: three runs green in a row, about 3.5 min each. Indoors, seen by hour in the three runs: 23h30, 1h, 3h and 4h30 0/8 each time (the check); 21h30 2, 1, 4 of 8; 5h30 5, 3, 2 of 8.
+- `--look=new`: see the PR comment (run beside this commit).
+### Needs eyes
+- Nothing for a playtest. The game's fade still carries a timer, which is fine for a player; any other suite that paces `goToInterior` with a fixed wait has the same exposure (`grep -l "goToInterior" tests/` for the next QA run).
+
+## v80 — Session 948 — coopsaves waits for the game's own saves to land (QA)
+`coopsaves` went FLAKY once (run 38653460071, 14 Oct): *the old save loads to the same state* loaded the first character (gold 777, level 7) instead of the hand-written v2 save (gold 4242, level 9). Step 2 Continues the first character and lets it run 12 s; step 3 writes the old one-row save, calls `ssSetActive('oldone_manual_2')` and reloads. `ssWrite` (`js/70-saves.js`) sets the active key in its `.then`, when the write lands, so a save from step 2 still in flight landed after step 3's call and pointed Continue back at the first character. The test waited for nothing between the two. It now wraps `ssWrite` before clicking Continue to count the writes in flight, holds the autosave off (`SS.lastAuto`) once the character is hidden, and waits for the count to reach 0 before step 3. No check changed. The game's half, that a late autosave can re-point Continue after you load another save from the menu, was already filed in backlog I for the systems builder.
+Correction to Session 947: its *Verified* left the new look's run to the PR comment; `carraignight --look=new` passed, every check.
+### Verified (headless Chromium)
+- `node tests/run.mjs coopsaves`: three runs green in a row; the old save loads with gold 4242, level 9, `oldone`, clock 800.15.
+- `--look=new`: green.
+### Needs eyes
+- Nothing for a playtest.
+
+## v80 — Session 949 — mapseals waits for Dunmore's gate and neighbour (QA)
+`mapseals` went FLAKY once (run 38669829055, 15 Oct): *the map marks what the compass marks, four of Dunmore's jobs, one waiting to be reported* found no job waiting to be reported, because the first try's four jobs were a cull, two road jobs and a find. The suite asks `townQuestFor(dunmore, kind, true)` for a retrieve and a deliver right after `intoWorld`; `townQuestFor` (`js/87-world-quests.js`) builds a retrieve only when `nearDoors(site,700)` finds a gate and a deliver only when `nearSites(site,900)` finds a town with a pad, and falls back to the road job otherwise. Both read what has loaded, so on a slow runner neither was there yet. The suite now waits, polling every half second for up to two minutes, until both kinds come back as asked, then takes its four jobs as before. No check changed. The game's half (a seeded job can come out a different kind on a reload, against the S533 rule) is already in backlog I for the systems builder.
+### Verified (headless Chromium)
+- `node tests/run.mjs mapseals`: three runs green in a row; `--look=new` green.
+### Needs eyes
+- Nothing for a playtest.
