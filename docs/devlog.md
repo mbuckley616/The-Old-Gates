@@ -21547,3 +21547,73 @@ Corrections made during the session:
 - **The stone is one texture throughout.** A dry wall's courses, its throughs and its batter (the wall leaning in as it rises) are not drawn; the walls are plumb boxes.
 - **The hill is one smooth slope** with low hummocks. No outcrop, no stream below, no other walls running off over the hill. A real booley stood among a dozen such huts. One is drawn.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 998 — The Mark's hunting cabin (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "smoking hunting cabin in snow pines". OG-025's carved gables and steep snow roofs give the dress. The precedent is the Norwegian jakthytte and the outbuildings of a fäbod:
+- a laft cabin of logs notched over each other at the corners, their ends running on past the corner;
+- a sill on corner stones, and a low turf roof that holds the snow;
+- the crossed barge boards (vindski) at each gable;
+- a stabbur beside it: a small store on posts, each post capped with a flat stone the mice cannot climb past, its steps stopped short of the door.
+
+The cabin is lived in this time, unlike the shepherd's hut: the chimney smokes and the window is lit. It is `markHuntingCabin` in `places.js`, with its own view (`places-cabin-view.js`, dispatched from `places-view.js`). Nothing new is asked: whose cabin it is is the quest writer's, and no people or animals are drawn. It touches only the prototype folder.
+
+**The place** (at true size, y 0 the snow at the cabin, the door's gable to +z):
+- **The cabin:** log centres 3.8 by 4.6 m.
+  - The side walls have 11 courses of logs 0.26 m thick, 0.21 m apart, to eaves at 2.48 m. The gable walls run half a course out of phase, so the two walls cross at every corner.
+  - The logs run 0.3 m past each corner, their cut ends showing.
+  - The gables close upward in shortening logs to a ridge at 3.6 m.
+  - 61 wall logs stand on six corner and middle stones.
+  - The door is 0.85 by 1.85 m between frame posts, with a plank leaf shut. Antlers hang on the gable over it.
+  - A lit window of 0.6 by 0.45 m, with a glazing bar, is cut into the east wall.
+- **The roof:** boards, 0.12 m of turf and 0.25 m of snow, at 27°.
+  - It runs out 0.75 m over the side walls, 1.0 m over the door (a porch's shelter) and 0.5 m at the back.
+  - Crossed barge boards stand at both gables.
+- **The chimney:** a dry-stone stack up through the west slope, with snow banked round its foot and a cap slab. Nine puffs of smoke rise from it and lean away downwind.
+- **The stabbur:** a log store 2.0 by 1.8 m, its floor 1.02 m over the snow.
+  - It stands on four posts, each with a flat rat stone twice its width.
+  - It has a door of its own, a turf and snow roof, and log gables.
+  - Its three stone steps stop 0.44 m short of it.
+- **The yard:**
+  - 328 pieces of split wood in two rows under the west eaves.
+  - A chopping block with the axe in it.
+  - A hide laced on its frame of poles.
+  - Snowshoes leaning by the door.
+- **The paths:** trodden ribbons, banked with 0.12 m of thrown snow on both sides. They run to the woodpile, to the store's steps, and away through the trees.
+- **The forest:** 74 spruce from 11 m out, 8 to 17 m tall, in seven tiers each, with snow on most tiers.
+- 36,441 to 36,516 triangles in 17 meshes, and nine smoke sprites.
+
+The view: `places.html?place=cabin`, with `view=cabin` (from the path in the clearing), `store` (by the stabbur's steps), `corner` (close on the laft at the north-east corner, the lit window), `yard` (from the chopping block across the woodpile) and `far` (over the trees).
+
+Corrections made during the session:
+- **The window.** Its frame was first a solid board box 0.24 m deep, which buried the lit pane. The frame is now four boards round an open light.
+- **The spruce.** They first had five tiers, each with a full ring of snow, and read as stacked lampshades. They now have seven tiers, with smaller caps, set a little off-centre and missing from one tier in five.
+- **The woodpile.** It was first triangular prisms of one size, which bristled. The pieces are now four- or five-sided and of varied size.
+- **The paths.** They were first a trough carved into the snow. The terrain's 0.5 to 2 m grid could not hold a trough 0.55 m wide, so its chords covered the ribbon at 35 of 40 points. The snow is now level and the paths are banked: the thrown snow lies in two ribbons beside the trodden one.
+- **The check found three faults:**
+  - The banks crossed the other paths' trodden snow by the door, where all three paths meet. The banks now start 1.1 m out.
+  - One bank in two keys was wound face-down, so it was invisible from above. The ribbon's winding test read only its first vertex's normal; it now reads the sum of them all.
+  - The chimney stood 0.49 m over the snow banked round it. It is now 1.0 m over the roof at its edge, and 0.74 m over the bank.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 136 of 136 pass** (128 after Session 997). Two views are new on the page check, the cabin and the store, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 36,441 to 36,516 triangles in 17 meshes, 61 wall logs and 74 spruce.
+  - **The walls:** rays from the room's middle, every 5° at 0.6, 1.2, 1.8 and 2.3 m, meet log, board, the door's leaf or the window's light at all 288. Rays every 5 cm up each of the four corners, to the eaves, find a log at every height.
+  - **The door and the roof:**
+    - the doorway is 0.846 m wide and 1.923 m clear over the floor, with its leaf away;
+    - all 324 points looked down on over the roof find snow;
+    - the roof is over the door.
+  - **The chimney:** 0.74 m over the roof at it, every puff of smoke above it.
+  - **The stabbur:** its floor is 1.02 m over the snow and its steps stop 0.443 m short of it.
+  - **The yard and the forest:**
+    - none of the 328 pieces of wood is out from under the eaves;
+    - the nearest spruce stands 11.32 to 12.1 m out, none on a path;
+    - the paths are found trodden at all 30 points past the door's first 1.6 m;
+    - their banks stand 0.073 to 0.083 m over them at the least.
+- **Pictures:** `places-cabin-cabin.jpg`, `-store`, `-corner`, `-yard` and `-far`.
+### Needs eyes
+- **The cabin reads nearly black** against a low south-west sun, in every view but the lit window. The log texture is the beam's, dark and smooth. Laft logs are usually adzed flat on the inner and outer faces, and weather silver-grey; neither is drawn.
+- **The corner stones and the stabbur's steps** are the `stone` coursed texture, and read as blocks.
+- **The hide is one flat shape**, and the snowshoes are thin hoops.
+- **The spruce are still stylised cones.** From above (`far`) the nearest trees fill the frame.
+- **The smoke is nine soft puffs in a curve.** It does not move in a still picture; in the game it would want to drift.
+- **Nothing says who hunts from here,** or whether the cabin is a lead, a shelter to sleep in, or a merchant's. That is the quest writer's and the systems builder's.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
