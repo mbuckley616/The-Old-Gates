@@ -1166,7 +1166,7 @@ export function gatelandsLighthouse(o = {}, r = stream('lighthouse')) {
     focal: [0, FY, 0], door, cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: cot.userData.door }, cliff, ground, sea: SEA, lit };
 }
 
-// ── Aurenne's coastal watchtower (Session 968, card F8; L5's "roads and works", OG-046's watchtowers, OG-124's Aurenne panel: "a coastal
+// ── Aurenne's coastal watchtower (Session 971, card F8; L5's "roads and works", OG-046's watchtowers, OG-124's Aurenne panel: "a coastal
 // watchtower"). Piracy is the Mark's undeclared war and the Compact's tithe-ships its favourite prey (canon §1), so the Compact keeps a
 // chain of towers along its coast, each in sight of the next. The precedent is the Genoese and Saracen towers of the Tyrrhenian coast
 // and the borj of the Maghreb: a round tower on a scarp, its door high up and reached by a stair that stops short of it, a parapet on
@@ -1257,4 +1257,73 @@ export function aurenneWatchtower(o = {}, r = stream('watchtower')) {
   return { group, tris: Math.round(tris), draws: group.children.length, top: +(TY + HH + .12 + HW * .48).toFixed(2), tower: { r0: R0, rS: RS, hS: HS, r1: R1, h: H, rad }, door: { ...door, sill: DY },
     stair: { rise: +RISE.toFixed(3), tread: TREAD, n: N, steps, foot: [+footX.toFixed(2), +SZ.toFixed(2)], width: SW, landing: { x0: LX0, x1: LX1, z0: +LZ0.toFixed(2), z1: +LZ1.toFixed(2), top: DY } },
     gap: +GAP.toFixed(2), gangway: !drawn, terrace: { y: TY, rIn: PI, parapet: +(PT - TY).toFixed(2), rOut: PR }, hut: { x: HX, z: HZ, w: HW }, beacon: [BX, BY + .9, BZ], cliff, ground, sea: SEA, lit, drawn };
+}
+
+// ── the Gatelands' toll bridge (Session 972, card F8; L5's "roads and works", OG-046's toll gates and its stone bridges, OG-014's
+// stone bridges). A toll gate where a road crosses a river at a bridge, as the old Irish bridges of Kilkenny and the Boyne were tolled
+// at a gate tower on one bank. Built at true size, the road along z, the river along x:
+//   - the river: a channel 18 m across between banks, its water 3.4 m down, its bed 4.6 m down;
+//   - the bridge: three round arches of 5.6 m on piers of 1.4 m with cutwaters upstream and down, a voussoir ring on each face, the deck
+//     humped from the banks to 0.9 m over them at its middle, a cobbled way of 3.4 m between rubble parapets of 0.95 m under a cope;
+//   - the gate tower on the north bank: rubble with dressed quoins, 5.8 by 5 m and 9 m high, the road through it under a round arch of
+//     3 by 4.7 m, its timber leaves open against the passage, a box machicolation over the arch, slits, and the Irish stepped merlons;
+//   - the toll: beyond the tower, a bar across the road on a post, and the toll-keeper's cottage (the kit's GL_PLANS.cottage) beside it,
+//     its door to the road, and a board of the tolls by the bar. o.open: the bar is raised.
+// -> { group, tris, draws, deck(z), road (half the way's width), parapet, arches [{ z, span, spring, crown }], tower { z0, z1, w, h,
+//   passage { w, h } }, bar { z, open }, cottage { x, z, w, d, ry, door }, ground(x, z), water, bed }
+export function gatelandsTollBridge(o = {}, r = stream('tollbridge')) {
+  const M = { ...lightMats(), water: lightMats().sea }, B = new Map(), open = !!o.open;
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  // the land: the channel and its banks, flat beyond; the road's strip kept level
+  const WATER = -3.4, BED = -4.6, HALF = 14, ROAD = 1.7, deck = z => Math.abs(z) < HALF ? .9 * (1 - (z / HALF) ** 2) : 0;
+  const ground = (x, z) => { const az = Math.abs(z), t = az < 9 ? 0 : az < HALF ? (az - 9) / (HALF - 9) : 1, base = BED * (1 - t * t * (3 - 2 * t)), n = .12 * Math.sin(x * .23 + z * .17) + .08 * Math.sin(x * .07 - z * .31), m = Math.min(1, Math.max(0, (Math.abs(x) - ROAD - .5) / 3));
+    return base + n * m * (az > HALF ? 1 : .5); };
+  { const S = 1, X0 = -40, Z0 = -45, NX = 80, NZ = 90, pos = [], idx = [], rk = []; for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = X0 + i * S, z = Z0 + j * S; pos.push(x, ground(x, z), z); }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1; (Math.abs(Z0 + (j + .5) * S) < 11 ? rk : idx).push(a, c, b, b, c, d); }
+    for (const [k, I] of [['turf', idx], ['rock', rk]]) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(I); g.computeVertexNormals(); put(g.toNonIndexed(), k, 0, 0, 0, 0, 0, 0, .25); } }
+  { const g = new THREE.PlaneGeometry(200, 24); g.rotateX(-Math.PI / 2); put(g, 'water', 0, WATER, 0); }
+  // a face shape in (z, y) extruded across x: the bridge's body with its arches cut from below, the parapets
+  const across = (shape, w, x0, k, uv = .6) => { const g = new THREE.ExtrudeGeometry(shape, { depth: w, bevelEnabled: false, curveSegments: 14 }); g.rotateY(Math.PI / 2); g.translate(x0, 0, 0); return put(g, k, 0, 0, 0, 0, 0, 0, uv); };
+  const SPAN = 5.6, PIER = 1.4, SPRING = -2.9, AR = SPAN / 2, BW = 2 * ROAD + .8, arches = [-1, 0, 1].map(k => ({ z: k * (SPAN + PIER), span: SPAN, spring: SPRING, crown: SPRING + AR }));
+  { const s = new THREE.Shape(); s.moveTo(-HALF, deck(-HALF)); for (let k = 1; k <= 28; k++) { const z = -HALF + k * HALF / 14; s.lineTo(z, deck(z)); } s.lineTo(HALF, BED - .3);
+    for (const a of [...arches].reverse()) { s.lineTo(a.z + AR, BED - .3); s.lineTo(a.z + AR, SPRING); s.absarc(a.z, SPRING, AR, 0, Math.PI, false); s.lineTo(a.z - AR, BED - .3); } s.lineTo(-HALF, BED - .3); s.closePath();
+    across(s, BW, -BW / 2, 'rubble'); }
+  for (const a of arches) for (const sx of [-1, 1]) put(new THREE.RingGeometry(AR, AR + .5, 16, 1, 0, Math.PI), 'dress', sx * (BW / 2 + .01), SPRING, a.z, 0, sx * Math.PI / 2);
+  // the cutwaters: a pointed prism each side of each pier, capped in a stone pyramid at the springing
+  for (const zc of [-(SPAN + PIER) / 2, (SPAN + PIER) / 2]) for (const sx of [-1, 1]) { const s = new THREE.Shape(); s.moveTo(-PIER / 2, 0); s.lineTo(0, 1.3); s.lineTo(PIER / 2, 0); s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: SPRING + .4 - (BED - .3), bevelEnabled: false }); g.rotateX(-Math.PI / 2); g.translate(0, BED - .3, 0); g.rotateY(-sx * Math.PI / 2) /* its point out from the face */; put(g, 'rubble', sx * BW / 2, 0, zc, 0, 0, 0, .6);
+    const c = new THREE.ConeGeometry(.92, .9, 3); put(c, 'dress', sx * (BW / 2 + .43), SPRING + .85, zc, 0, sx > 0 ? Math.PI / 2 : -Math.PI / 2); }
+  // the parapets and their cope; the cobbled way along the deck
+  for (const sx of [-1, 1]) { const s = new THREE.Shape(); s.moveTo(-HALF, deck(-HALF) - .05); for (let k = 1; k <= 28; k++) { const z = -HALF + k * HALF / 14; s.lineTo(z, deck(z) - .05); }
+    for (let k = 28; k >= 0; k--) { const z = -HALF + k * HALF / 14; s.lineTo(z, deck(z) + .95); } s.closePath(); across(s, .4, sx > 0 ? ROAD : -ROAD - .4, 'rubble');
+    for (let k = 0; k < 28; k++) { const z0 = -HALF + k * HALF / 14, z1 = z0 + HALF / 14, sl = (deck(z1) - deck(z0)) / (z1 - z0); put(new THREE.BoxGeometry(.52, .12, (z1 - z0) * Math.hypot(1, sl) + .02), 'dress', sx * (ROAD + .2), (deck(z0) + deck(z1)) / 2 + 1.0, (z0 + z1) / 2, -Math.atan(sl)); } }
+  for (let z = -40; z < 40; z += .9) { const z1 = z + .9, sl = (deck(z1) - deck(z)) / .9, y = Math.abs(z + .45) < HALF ? (deck(z) + deck(z1)) / 2 : 0;
+    if (Math.abs(z + .45) > 14.5 && Math.abs(z + .45) < 19.6 && z > 0) continue; put(new THREE.BoxGeometry(2 * ROAD, .06, .88), 'path', (r() - .5) * .04, y + .03, z + .45, -Math.atan(sl), (r() - .5) * .02); }
+  // the gate tower: a face with its arch, extruded along z; quoins; stepped merlons; the box machicolation over the arch; slits; the leaves
+  const TZ0 = 14.5, TZ1 = 19.5, TW = 5.8, TH = 9, PW = 3.0, PS = 3.2, PH = PS + PW / 2;
+  { const s = new THREE.Shape(); s.moveTo(-TW / 2, -.6); s.lineTo(TW / 2, -.6); s.lineTo(TW / 2, TH); s.lineTo(-TW / 2, TH); s.closePath();
+    const h = new THREE.Path(); h.moveTo(-PW / 2, -.6); h.lineTo(PW / 2, -.6); h.lineTo(PW / 2, PS); h.absarc(0, PS, PW / 2, 0, Math.PI, false); h.lineTo(-PW / 2, -.6); s.holes.push(h);
+    const g = new THREE.ExtrudeGeometry(s, { depth: TZ1 - TZ0, bevelEnabled: false, curveSegments: 14 }); g.translate(0, 0, TZ0); put(g, 'rubble', 0, 0, 0, 0, 0, 0, .6);
+    put(new THREE.BoxGeometry(PW + .04, .06, TZ1 - TZ0), 'path', 0, .03, (TZ0 + TZ1) / 2); }
+  for (const sx of [-1, 1]) for (const sz of [TZ0, TZ1]) for (let y = 0; y < TH - .2; y += .55) { const long = Math.round(y / .55) % 2; put(new THREE.BoxGeometry(long ? .7 : .35, .5, long ? .35 : .7), 'dress', sx * (TW / 2 - (long ? .33 : .16) + .02), y + .25, sz + (sz < 17 ? 1 : -1) * ((long ? .16 : .33) - .02)); }
+  for (const sz of [TZ0, TZ1]) put(new THREE.RingGeometry(PW / 2, PW / 2 + .45, 14, 1, 0, Math.PI), 'dress', 0, PS, sz + (sz < 17 ? -.01 : .01), 0, sz < 17 ? Math.PI : 0);
+  { const per = [], N = 5; for (let k = 0; k < N; k++) { const t = (k + .5) / N; per.push([-TW / 2 + .25, TZ0 + t * (TZ1 - TZ0), Math.PI / 2], [TW / 2 - .25, TZ0 + t * (TZ1 - TZ0), Math.PI / 2], [-TW / 2 + t * TW, TZ0 + .25, 0], [-TW / 2 + t * TW, TZ1 - .25, 0]); }
+    for (const [x, z, ry] of per) { put(new THREE.BoxGeometry(.75, .55, .5), 'rubble', x, TH + .275, z, 0, ry, 0, .6); put(new THREE.BoxGeometry(.4, .35, .5), 'rubble', x, TH + .725, z, 0, ry, 0, .6); put(new THREE.BoxGeometry(.42, .06, .52), 'dress', x, TH + .93, z, 0, ry); } }
+  put(new THREE.BoxGeometry(2.0, 1.5, .8), 'rubble', 0, 7.0, TZ0 - .4, 0, 0, 0, .6); for (const x of [-.7, 0, .7]) put(new THREE.BoxGeometry(.3, .5, .8), 'dress', x, 6.0, TZ0 - .4); put(new THREE.PlaneGeometry(.12, .5), 'dark', 0, 7.1, TZ0 - .81, 0, Math.PI);
+  for (const [x, y, z, ry] of [[0, 6.6, TZ1 + .01, 0], [-TW / 2 - .01, 3.4, 17, -Math.PI / 2], [TW / 2 + .01, 5.6, 17, Math.PI / 2], [-TW / 2 - .01, 6.8, 17, -Math.PI / 2], [TW / 2 + .01, 2.6, 17, Math.PI / 2]]) put(new THREE.PlaneGeometry(.14, .8), 'dark', x, y, z, 0, ry);
+  for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.08, PS + .4, 1.45), 'door', sx * (PW / 2 - .06), (PS + .4) / 2, TZ1 - .85) /* the leaves, open flat against the passage's walls */;
+  // the toll: the bar across the road on its post, the board of the tolls, the toll-keeper's cottage beside the road, its door to it
+  const BZ = 21.2, BX = ROAD + .5, BY = 1.0; put(new THREE.CylinderGeometry(.12, .14, 1.3, 8), 'timber', BX, .65, BZ); put(new THREE.CylinderGeometry(.1, .1, .9, 6), 'timber', -BX, .45, BZ);
+  { const L = 2 * BX + .6, g = new THREE.CylinderGeometry(.07, .07, L, 8); g.rotateZ(Math.PI / 2); g.translate(-L / 2, 0, 0); put(g, 'red', BX, BY, BZ, 0, 0, open ? -1.35 : 0);
+    put(new THREE.SphereGeometry(.2, 8, 6), 'iron', BX + .25, BY, BZ); }
+  put(new THREE.BoxGeometry(1.3, .9, .06), 'lime', BX + 1.4, 1.75, BZ + .6, 0, -.4); for (let k = 0; k < 5; k++) put(new THREE.BoxGeometry(.9 - (k % 2) * .25, .04, .02), 'dark', BX + 1.4 + Math.sin(-.4) * .04, 2.05 - k * .14, BZ + .6 + Math.cos(-.4) * .04, 0, -.4);
+  for (const dx of [-.55, .55]) put(new THREE.BoxGeometry(.08, 1.5, .08), 'timber', BX + 1.4 + Math.cos(.4) * dx, .75, BZ + .6 + Math.sin(.4) * dx);
+  const plan = GL_PLANS.cottage({ paint: 'green' }); plan.r = stream('tollbridge-cottage'); const cot = gatelandsBuilding(plan), CX = ROAD + 1.5 + plan.d / 2, CZ = 27, CRY = -Math.PI / 2;
+  cot.position.set(CX, ground(CX, CZ) - .05, CZ); cot.rotation.y = CRY;
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'water', 'rock'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  group.add(cot); tris += cot.userData.tris;
+  return { group, tris: Math.round(tris), draws: group.children.length - 1 + cot.userData.calls, top: TH + .96, deck, road: ROAD, parapet: .95, arches, tower: { z0: TZ0, z1: TZ1, w: TW, h: TH, passage: { w: PW, h: PH } }, bar: { z: BZ, y: BY, open },
+    cottage: { x: CX, z: CZ, w: plan.w, d: plan.d, ry: CRY, door: cot.userData.door }, ground, water: WATER, bed: BED };
 }

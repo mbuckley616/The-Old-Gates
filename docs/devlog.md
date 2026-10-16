@@ -21289,3 +21289,55 @@ Corrections made during the session:
 - **The point's neck has straight sides** and reads as a wall from the coast, as the lighthouse's does.
 - **The faggots read black against the sky** from the terrace.
 - **Owed:** the rest of L5's works (a shipyard, a toll gate, a ferry).
+
+## v80 — Session 972 — The Gatelands' toll bridge (card F8, prototype only)
+L5's "roads and works" asks for toll gates (OG-046), and the Gatelands' own list asks for stone bridges (OG-014). The Irish precedent puts the two together: the old bridges of the Nore and the Boyne were tolled at a gate tower on one bank. So this is a crossing: a rubble bridge of three arches over a river, a gate tower on the north bank with the road through it, and the toll beyond it, a bar, a board of the tolls and the toll-keeper's cottage. It lives in `places.js` beside the lighthouse, with its own view (`places-tollbridge-view.js`, dispatched from `places-view.js`). It reuses the lighthouse's rubble, dressings and water, and the kit's cottage. Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+*A correction to Session 971:* its comments in `places.js`, `places.check.mjs` and the views first said Session 968, from before the run counted every branch. They now say 971.
+
+**The crossing** (`gatelandsTollBridge` in `places.js`, at true size, the road along z, the river along x):
+- **The river:** a channel 18 m across between steep turf banks, its water 3.4 m down and its bed 4.6 m down.
+- **The bridge:** 28 m from bank to bank, one rubble face in (z, y) with its arches cut from below, extruded across.
+  - Three round arches of 5.6 m stand on piers of 1.4 m, springing 0.5 m over the water, each with a dressed voussoir ring on both faces.
+  - The piers have pointed cutwaters upstream and down, capped in stone at the springing.
+  - The deck is humped from the banks to 0.9 m over them at the middle. The way is cobbled, 3.4 m wide, between rubble parapets of 0.95 m under a dressed cope that follows the hump.
+- **The gate tower** on the north bank: rubble with long-and-short dressed quoins, 5.8 by 5 m and 9 m high.
+  - The road passes through it under a round arch of 3 by 4.7 m with a dressed ring at each face, and its two leaves stand open against the passage's walls.
+  - A box machicolation on three corbels hangs over the arch on the bridge's side, there to drop stones on whoever will not pay.
+  - It has slits, and the Irish stepped merlons on all four sides.
+- **The toll,** past the tower:
+  - a red bar across the road on a post with an iron counterweight, a stump on the other side to rest it on; `o.open` raises it;
+  - a whitewashed board of the tolls on two posts;
+  - the toll-keeper's cottage, the kit's `GL_PLANS.cottage` painted green, along the road with its door to it.
+- 21,192 triangles in 12 meshes, and the cottage's 12.
+
+The view: `places.html?place=tollbridge`, with `view=bridge` (from the south bank downstream), `deck` (on the crown, toward the tower), `toll` (by the cottage, back toward the bar), `river` (low on the water under the arches) and `far` (from upstream), plus `&open`.
+
+Corrections made during the session:
+- **The rings and the cutwaters.** They first faced the wrong way on one face of the bridge.
+- **The walk's ray, mine.** In the check it first took the shut bar for the floor. The walk is now made with the bar raised.
+- **Sampling the slope, mine.** The check first read the 2 cm seams between the strips of cobbles as a 6 cm lip. It now samples on each strip's middle.
+- **The doorstep.** The cottage's door was asked to be 1 m off the road. Its step reaches to 0.6 m, which is right, and the check asks 0.3.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 96 of 96 pass** (90 after Session 971). Two views are new on the page check: the bridge, and the toll with the bar open, both with no page errors. Four checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 30,000 triangles.
+  - **The arches:**
+    - each crown found by a ray from the water within 0.05 m of its height (found at 0.00);
+    - the spans 5.57 m at the springing;
+    - 3.3 m of headroom over the water.
+  - **The way,** walked from bank to bank and through the tower on three lines:
+    - its floor within 0.002 m of the deck;
+    - the steepest slope 0.121, under 1 in 7.5;
+    - 3.4 m between the parapets, the parapets 1.06 m over the way;
+    - 4.04 m of headroom under the tower's arch.
+  - **The toll:**
+    - the bar shut across the road, and clear of it when raised;
+    - the cottage on the flat (corners within 0.21 m), its doorstep 0.6 m off the road.
+- **Pictures:** `places-tollbridge-bridge.jpg`, `-deck`, `-toll`, `-river`, `-far` and `-open`.
+### Needs eyes
+- **The rubble texture is large and busy** over the bridge's long faces. It reads as blockwork more than river rubble.
+- **The banks are bare turf** cut steeply to the water. There are no reeds, no stones at the foot of the piers and no current.
+- **The merlons' step is slight.** The Irish stepped crenellation is sharper, often in two steps.
+- **The tower is solid.** There is no room over the arch for the toll-keeper's men, and no stair.
+- **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
+- **Owed:** the rest of L5's works (a shipyard, a ferry).

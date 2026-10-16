@@ -20,7 +20,8 @@ else if (Q.get('place') === 'grotto') await import('./places-grotto-view.js') /*
 else if (Q.get('place') === 'abbey') await import('./places-abbey-view.js') /* Session 921: the Gatelands' monastic ruin */;
 else if (Q.get('place') === 'mill') await import('./places-mill-view.js') /* Session 949: the Gatelands' tower mill */;
 else if (Q.get('place') === 'lighthouse') await import('./places-lighthouse-view.js') /* Session 967: the Gatelands' lighthouse */;
-else if (Q.get('place') === 'watchtower') await import('./places-watchtower-view.js') /* Session 968: Aurenne's coastal watchtower */;
+else if (Q.get('place') === 'watchtower') await import('./places-watchtower-view.js') /* Session 971: Aurenne's coastal watchtower */;
+else if (Q.get('place') === 'tollbridge') await import('./places-tollbridge-view.js') /* Session 972: the Gatelands' toll bridge */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);

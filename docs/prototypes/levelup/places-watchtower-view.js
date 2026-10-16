@@ -1,4 +1,4 @@
-// Aurenne's coastal watchtower (Session 968, card F8): places.js's aurenneWatchtower on its point over the sea.
+// Aurenne's coastal watchtower (Session 971, card F8): places.js's aurenneWatchtower on its point over the sea.
 // ?place=watchtower&view=tower (default): from the path inland, the stair, the landing and the door; view=door: on the landing by the
 // gangway; view=roof: on the terrace by the beacon, looking along the coast; view=sea: from the water under the point; view=far: the point
 // from along the coast. &night: the beacon lit under a night sky. &drawn: the gangway taken in. &cam=x,y,z,tx,ty,tz.
