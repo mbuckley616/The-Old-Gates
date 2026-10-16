@@ -243,6 +243,20 @@
     for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;
       for(const t of getCell(i,j).sites)if(t.id!==site.id&&t.pad>0&&Math.hypot(t.x-site.x,t.z-site.z)<maxD)out.push(t);}
     return out.sort((a,b)=>Math.hypot(a.x-site.x,a.z-site.z)-Math.hypot(b.x-site.x,b.z-site.z)||(a.id<b.id?-1:1));}
+  // S1002 — the road job's road, from the cell's own data (QA's note, S533's rule): every road that ends at a settlement is in
+  // its own cell's `roadDefs` (the tree, the extras and the border roads; the home cell's are HOME_ROAD_DEFS), so the first of
+  // them is the same whatever has loaded, where `ROADS.find` read the loaded roads only. Its line is `buildRoad`'s spline, the
+  // same bends seeded by the road itself (S619), worked out here without building it (`roadfixed` proves the two the same).
+  function siteCellFixed(site){if(typeof site.cell==='string'){const m=site.cell.split(',');return getCell(+m[0],+m[1]);}const [i,j]=cellOf(site.x,site.z);return getCell(i,j);}
+  function roadOutFixed(site){const c=siteCellFixed(site);return c.roadDefs.find(d=>d.via!=='spur'&&(d.a===site.id||d.b===site.id))||null;}
+  function roadLineFixed(def,c){const by=id=>(c&&c.sites.find(t=>t.id===id))||siteAnywhere(id);const A=SITE[def.a]||by(def.a),B=SITE[def.b]||by(def.b);if(!A||!B)return null;
+    const hi=HOME_ROAD_DEFS.indexOf(def);const ri=hi>=0?hi+1:1000+String(def.a+'|'+def.b+'|'+(def.via||'')).split('').reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7)%50000;
+    const dx=B.x-A.x,dz=B.z-A.z,L=Math.hypot(dx,dz),nx=-dz/L,nz=dx/L,ctrl=[{x:A.x,z:A.z}];
+    for(let k=1;k<=3;k++){const t=k/4,off=(_smoothNoise(ri*37+k*11,ri*5,SEED+40,1)-.5)*2*L*.11;ctrl.push({x:A.x+dx*t+nx*off,z:A.z+dz*t+nz*off});}
+    ctrl.push({x:B.x,z:B.z});const pts=[],n=ctrl.length;
+    for(let i=0;i<n-1;i++){const p0=ctrl[Math.max(0,i-1)],p1=ctrl[i],p2=ctrl[i+1],p3=ctrl[Math.min(n-1,i+2)];const steps=Math.max(2,Math.round(Math.hypot(p2.x-p1.x,p2.z-p1.z)/6));
+      for(let sI=0;sI<steps;sI++)pts.push(catmull(p0,p1,p2,p3,sI/steps));}
+    pts.push({x:B.x,z:B.z});return pts;}
   function townQuestFor(site,force,fresh,key){
     const active=fresh?null:qActive().find(q=>q.giverSite===site.id&&!q.faction);if(active)return active;
     const id='tq:'+site.id+':'+QJ().filter(q=>q.giverSite===site.id).length; /* S503 — the town and the count of jobs it has given, not a Date.now() */
@@ -253,9 +267,9 @@ const giver=`${lord.title} ${lord.name}`;
     if(kind==='cull'){const t=({tundra:'Snow Wolf',fen:'Bog Crawler',swamp:'Bog Crawler',dunes:'Sand Scorpion',wasteland:'Ash Hound',moor:'Kobold',forest:'Wolf',autumn:'Boar'}[biome])||'Wolf';const n=4+tier;return {id,giver,giverSite:site.id,title:`${plural(2,t)} at ${site.name}`,desc:`${lord.name}: "${plural(2,t)} have been at the flocks. Kill ${n} of them within sight of the walls and the ${site.kind} will pay."`,objective:`Kill ${n} ${plural(n,t)} near ${site.name}`,kind,data:{target:t,need:n,have:0,x:site.x,z:site.z,radius:520},reward};}
     if(kind==='retrieve'){const doors=doorsNearFixed(site,700);const de=doors[Math.floor(r()*Math.min(3,doors.length))];if(de){const e=de.e,p=dungeonWorldPos[e.seed]||de.p;const item=pick(r,["my mother's ring","the parish silver","the reeve's seal","a bolt of dyed cloth","the old survey"]);return {id,giver,giverSite:site.id,title:`${item.charAt(0).toUpperCase()+item.slice(1)}`,desc:`${lord.name}: "Thieves took ${item} and ran for ${e.canonicalName||'an old gate'}, ${compassWord(p.x-site.x,p.z-site.z)} of here. It'll be dropped by the door — they never carry far. Bring it back."`,objective:`Recover ${item} near ${e.canonicalName||'the old gate'}`,kind,data:{x:p.x+7,z:p.z+5,got:false,item,seed:e.seed,fixed:!dungeonWorldPos[e.seed]},reward:reward+20};}}
     if(kind==='deliver'){const others=sitesNearFixed(site,900).filter(t=>t.pad>=45&&t.kind!=='portal');const t=others[Math.floor(r()*Math.min(4,others.length))];if(t){const tl=lordFor(t);return {id,giver,giverSite:site.id,title:`A letter for ${tl.title} ${tl.name}`,desc:`${lord.name}: "Carry this to ${tl.title} ${tl.name} at ${t.name}, ${compassWord(t.x-site.x,t.z-site.z)} of here. Put it in their hand, no one else's."`,objective:`Deliver the letter to ${tl.title} ${tl.name} at ${t.name}`,kind,data:{siteId:t.id,who:tl.name,x:t.x,z:t.z,done:false},reward};}}
-    if(kind==='find'){const bedsAll=beds.filter(b=>Math.hypot(b.x-site.x,b.z-site.z)<700);const names=NAMES[site.reg||'irish']||NAMES.irish;const who=pick(r,r()<.5?names.m:names.f);const spot=bedsAll[0]?{x:bedsAll[0].x,z:bedsAll[0].z}:{x:site.x+Math.cos(r()*6.28)*380,z:site.z+Math.sin(r()*6.28)*380};return {id,giver,giverSite:site.id,title:`Where is ${who}?`,desc:`${lord.name}: "${who} went out ${compassWord(spot.x-site.x,spot.z-site.z)} three days ago and hasn't come back. Find them — there's a camp out that way — and send them home."`,objective:`Find ${who} ${compassWord(spot.x-site.x,spot.z-site.z)} of ${site.name}`,kind,data:{who,x:spot.x,z:spot.z,found:false,spawned:false},reward};}
+    if(kind==='find'){const bedsAll=beds.filter(b=>Math.hypot(b.x-site.x,b.z-site.z)<700).sort((a,b)=>Math.hypot(a.x-site.x,a.z-site.z)-Math.hypot(b.x-site.x,b.z-site.z)||a.x-b.x||a.z-b.z); /* S1002 — the nearest camp, not the first loaded */const names=NAMES[site.reg||'irish']||NAMES.irish;const who=pick(r,r()<.5?names.m:names.f);const spot=bedsAll[0]?{x:bedsAll[0].x,z:bedsAll[0].z}:{x:site.x+Math.cos(r()*6.28)*380,z:site.z+Math.sin(r()*6.28)*380};return {id,giver,giverSite:site.id,title:`Where is ${who}?`,desc:`${lord.name}: "${who} went out ${compassWord(spot.x-site.x,spot.z-site.z)} three days ago and hasn't come back. Find them — there's a camp out that way — and send them home."`,objective:`Find ${who} ${compassWord(spot.x-site.x,spot.z-site.z)} of ${site.name}`,kind,data:{who,x:spot.x,z:spot.z,found:false,spawned:false},reward};}
     // road: a bandit camp on the nearest road out
-    const rd=ROADS.find(rr=>rr.def.a===site.id||rr.def.b===site.id);const q=rd?rd.pts[Math.min(rd.pts.length-1,Math.floor(rd.pts.length*.5))]:{x:site.x+300,z:site.z};return {id,giver,giverSite:site.id,title:`The road out of ${site.name}`,desc:`${lord.name}: "Bandits have made a camp on the road, ${compassWord(q.x-site.x,q.z-site.z)} of here. Carts won't come. Clear it."`,objective:`Clear the bandit camp on the road ${compassWord(q.x-site.x,q.z-site.z)} of ${site.name}`,kind:'road',data:{x:q.x,z:q.z,count:3+tier,have:0,spawned:false},reward:reward+30};
+    const rdef=roadOutFixed(site),rpts=rdef&&roadLineFixed(rdef,siteCellFixed(site));const q=rpts?rpts[Math.min(rpts.length-1,Math.floor(rpts.length*.5))]:{x:site.x+300,z:site.z}; /* S1002 — from the cell's data, not ROADS */return {id,giver,giverSite:site.id,title:`The road out of ${site.name}`,desc:`${lord.name}: "Bandits have made a camp on the road, ${compassWord(q.x-site.x,q.z-site.z)} of here. Carts won't come. Clear it."`,objective:`Clear the bandit camp on the road ${compassWord(q.x-site.x,q.z-site.z)} of ${site.name}`,kind:'road',data:{x:q.x,z:q.z,count:3+tier,have:0,spawned:false,ra:rdef?rdef.a:null,rb:rdef?rdef.b:null},reward:reward+30};
   }
   function lordTopics(site){
     const _st=TS(site),_lp=nationOf(...cellOf(site.x,site.z)).people;
@@ -270,7 +284,7 @@ const giver=`${lord.title} ${lord.name}`;
   function qOnKill(e,ctx){
     for(const q of qActive()){if(q.done)continue;
       if(q.kind==='cull'&&ctx==='zone'&&e.name===q.data.target&&Math.hypot(e.x-q.data.x,e.z-q.data.z)<q.data.radius){q.data.have++;if(q.data.have>=q.data.need)qComplete(q);}
-      if(q.kind==='road'&&e._questTag===q.id){q.data.have++;if(q.data.have>=q.data.count){qComplete(q);const rd=ROADS.find(rr=>rr.def.a===q.giverSite||rr.def.b===q.giverSite);if(rd)markRoadCleared(rd.def.a,rd.def.b);}}
+      if(q.kind==='road'&&e._questTag===q.id){q.data.have++;if(q.data.have>=q.data.count){qComplete(q);if(q.data.ra)markRoadCleared(q.data.ra,q.data.rb);else{const rd=ROADS.find(rr=>rr.def.a===q.giverSite||rr.def.b===q.giverSite);if(rd)markRoadCleared(rd.def.a,rd.def.b);}}} /* S1002 — the job's own road; a job saved before it, the first loaded as before */
     }
   }
   function qOnTalk(def){

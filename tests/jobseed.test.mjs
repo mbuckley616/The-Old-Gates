@@ -1,4 +1,4 @@
-// Session 985: a lord's job comes out the same whatever has loaded (QA's note, backlog B; the S533 rule). `townQuestFor` rolls
+// Session 985 (and 1002: the road job's camp from the cell's data): a lord's job comes out the same whatever has loaded (QA's note, backlog B; the S533 rule). `townQuestFor` rolls
 // the job's kind on its own id, but fell back to the road job when no gate (a retrieve) or town (a deliver) had loaded near the
 // lord's town, and took the cull's beast from the loaded regions. Now the gates and towns are read from every cell's own data
 // (`doorsNearFixed`, `sitesNearFixed`) and the beast from the cells' regions (`lairBiome`). The same 30 job keys are asked at
@@ -8,7 +8,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 const N = 30;
 const ask = (ids) => page.evaluate(([ids, N]) => ids.map(id => { const s = WORLD.siteAnywhere(id); const jobs = [];
-  for (let i = 0; i < N; i++) { const q = townQuestFor(s, null, true, 'jobseed:' + i); jobs.push(q.kind + '|' + q.title + '|' + (q.data.target || q.data.who || q.data.item || '')); }
+  for (let i = 0; i < N; i++) { const q = townQuestFor(s, null, true, 'jobseed:' + i); jobs.push(q.kind + '|' + q.title + '|' + (q.data.target || q.data.who || q.data.item || '') + (q.kind === 'road' ? '@' + q.data.x.toFixed(2) + ',' + q.data.z.toFixed(2) + '|' + q.data.ra + '>' + q.data.rb : '')); }
   const [ci, cj] = cellOf(s.x, s.z); return { id, jobs, loaded: [ci - 1, ci, ci + 1].flatMap(i => [cj - 1, cj, cj + 1].map(j => LOADED.has(cellKey(i, j)))).filter(Boolean).length,
     liveDoors: nearDoors(s, 700, false).length, liveTowns: nearSites(s, 900).filter(t => t.pad >= 45 && t.kind !== 'portal').length,
     fixedDoors: doorsNearFixed(s, 700).length, fixedTowns: sitesNearFixed(s, 900).filter(t => t.pad >= 45 && t.kind !== 'portal').length }; }), [ids, N]);
@@ -51,5 +51,21 @@ check(`the same ${N} job keys give the same jobs before and after each town load
 check(`a retrieve taken before its gate was placed is moved to the real door once it is (moved ${anchored && anchored.moved} m, ${anchored && anchored.off} m off the door's mark, the pickup with it)`,
   taken && anchored && anchored.fixed === false && anchored.off !== null && anchored.off < .01 && (anchored.pk === null || anchored.pk < .01), { taken, anchored });
 check(`the world's spot for a gate lies near where its cell placed it: ${spots.n} gates, median ${spots.median} m, the farthest ${spots.max} m`, spots.n > 0 && spots.median < 60, spots);
+// S1002 — the road job's camp, from the cell's data: the same spot before and after (in the jobs above), and the line worked out
+// without building (`roadLineFixed`) is the built road's own, point for point, for every loaded road of a settlement's cell
+const roads = await page.evaluate(() => { let n = 0, worst = 0, diffLen = 0, firstSame = 0, firstN = 0;
+  for (const rd of ROADS) { if (!rd.def || rd.def.via === 'spur' || rd.def.via === 'quay' || rd.def.via === 'coach') continue; const c = getCell(...rd.cell.split(',').map(Number));
+    if (!c.roadDefs.includes(rd.def)) continue; const pts = roadLineFixed(rd.def, c); n++; if (!pts || pts.length !== rd.pts.length) { diffLen++; continue; }
+    for (let i = 0; i < pts.length; i++) worst = Math.max(worst, Math.hypot(pts[i].x - rd.pts[i].x, pts[i].z - rd.pts[i].z)); }
+  // and the road the job names is the first loaded road out of the town, where the old code looked, for every loaded town
+  for (const S of WORLD.settle.values()) { const s = S.site; if (!s || !/^c\d|^[a-z]/.test(s.id)) continue; const live = ROADS.find(rr => rr.def.a === s.id || rr.def.b === s.id); const f = roadOutFixed(s);
+    if (!live || !f) continue; firstN++; if (live.def === f) firstSame++; }
+  return { n, worst: +worst.toFixed(6), diffLen, firstSame, firstN }; });
+console.log('roads', JSON.stringify(roads));
+const roadJobs = before.flatMap((b, i) => b.jobs.map((j, k) => [j, after[i].jobs[k]]).filter(([j]) => j.startsWith('road|')));
+check(`the road job's camp is the same before and after its town loads (${roadJobs.filter(([a, b]) => a === b).length} of ${roadJobs.length}), on a road of its own cell (${roadJobs.filter(([a]) => !a.endsWith('null>null')).length}; a glade has no road, and its camp is the fixed 300 m east)`,
+  roadJobs.length > 0 && roadJobs.every(([a, b]) => a === b) && roadJobs.some(([a]) => !a.endsWith('null>null')), roadJobs.slice(0, 6));
+check(`the road's line worked out from the cell's data is the built road's: ${roads.n} roads, ${roads.diffLen} of another length, the worst point ${roads.worst} m off; the first road out is the one the loaded roads gave in ${roads.firstSame} of ${roads.firstN} towns`,
+  roads.n > 5 && roads.diffLen === 0 && roads.worst < 1e-6 && roads.firstN > 0 && roads.firstSame === roads.firstN, roads);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
