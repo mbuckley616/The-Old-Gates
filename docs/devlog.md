@@ -21671,3 +21671,32 @@ What changed in `creatures.js`:
 ### Needs eyes
 - **The view from above** (`cam=top` is offset to one side) makes the far wing look splayed beside the near one, though the wings measure as mirror images. A plain top-down camera would settle what the folded silhouette reads as.
 - **Whether 13 degrees reads as worn or as untidy.** The tips part only over their last fifth, where the cards narrow.
+
+## v80 — Session 985 — The Aurennais' sash over one shoulder (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais "a sash over one shoulder" (OG-044, OG-056, both kept). OG-056 draws it as "a long patterned sash wrapped over one shoulder" in rust red and indigo, with block-printed borders. The wardrobe had nothing of the kind: Sessions 805 to 917 made the Gatelanders' and the Markmen's pieces, and the Aurennais wore a plain tunic. The sheet draws the sash plainly and the canon has nothing against it, so this asks nothing. It touches only the prototypes (`people.js`, `builder.js`'s labels and `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`buildSash`**: a band 9 cm wide, from the top of one shoulder (11 cm out from the neck's line) across the chest to the other hip (9 cm under the belt, just outside the body's side) and round the back. It reads what it lies over: the body, the tights' shell under a tunic (standing off it by makePerson's own push, up to 3.7 cm over the chest), a skirt's shell and the belt. Each triangle is read at 15 points; their corners alone left a fifth of the angles bare. It leaves out the arms and the neck. There are two printed borders 1.4 cm wide, done in vertex colours: one mesh, 864 triangles.
+- **How it lies.** The loop's centre line comes from a polar map in the plane through the shoulder, the hip and the body's front-to-back line, cut off at the hip. Three tries came before this:
+  - The plane's own width put the band edge-on into the side of the hip.
+  - The ray past the hip read the thigh and bellied out round it.
+  - At first the tunic's push was taken as a flat 2.8 cm, and the tunic came through at mid-chest.
+  So the band's width is now laid across the body's surface along the line (the surface's normal crossed with the line). Each of five rows across is set out along that normal, 7 mm clear of the furthest point within 1.2 cm, and may dip up to 2 cm to meet a curving body. It is then smoothed round the loop and across, never in past what it must clear.
+- **The arm at the hip is lifted** from the side, 0.03 radians at a time, until no point of it is through the band, as Session 887 did for a long skirt.
+- **The dress** takes `sash`, `sashBorder` (both colours, in the builder's garment list) and `sashSide` ('L' by default). It saves and loads.
+- **The roll.** The Aurennais roll a sash at 0.45, but only with no cloak and no bib. It comes in indigo, madder, saffron or olive with a sand, cream or madder border, over the left shoulder three times in four. It is drawn last in `peopleGenome`, so every earlier roll of a seed is as it was. No other people rolls one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 289 checks pass** (279 before). Ten new checks cover three sashes (a man over a belted tunic, a woman over a long skirt, a man over the right shoulder) and the roll:
+  - Nothing comes through: 0 of 11,935, 13,494 and 11,830 points read, with the nearest 3.1 to 4.2 mm under the band. The test looks at twice the band's own points round it and across it.
+  - No arm is through. The arm at the hip is lifted 0.18 radians on the men and 0.09 on the woman.
+  - It drops 0.54 and 0.50 m from shoulder to hip, in a loop 1.70 to 1.80 m long, and saves and loads back.
+  - 13 of 40 rolled Aurennais wear one (3 over the right shoulder), none under a cloak or a bib, and the Markmen none.
+- `kit.check.mjs` passes.
+- **Pictures:** `builder-sash-man.jpg`, `builder-sash-back.jpg` and `builder-sash-woman.jpg` are new; `builder-peoples.jpg` was re-shot, and its Aurennais man now wears an indigo sash.
+
+### Needs eyes
+- **The hip end** is a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang; that is a piece of its own.
+- **Over a cloak or a bib** it is not handled, so it is not rolled with either.
+- **The men's arm lift** (0.18 radians, about 10 degrees) holds the right hand a little off the hip. A broader-hipped man may need more; the lift stops at 0.3.
+- **The print** is borders only. OG-056's block-printed field would want a pattern in the shader, as the woven cuff band has.
