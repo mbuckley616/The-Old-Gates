@@ -16,11 +16,18 @@ const b = await page.evaluate(() => { for (const o of [...WORLD.others]) WORLD.d
 console.log(JSON.stringify(b));
 check(`bought at Portclare, her bow points to deeper water (ahead ${b.ahead}, astern ${b.astern})`, b.ahead[1] < b.astern[1] && b.ahead[0] <= b.astern[0], b);
 
+// Session 1005: the sea's other ships are rolled by the chunk and the game minute (S508), and the minute here is whatever the
+// clock reached while the world loaded: on one CI run in eight a pirate came out of the roll mid-run ("Black sails on the
+// horizon.") and the hull read 99. This suite is about her bow and the shallows, so the sea is kept empty while she sails
+// out; `others` counts the ships turned away.
 await page.evaluate(() => { const S = WORLD.ship; px = S.helm ? S.helm.x : S.x; pz = S.helm ? S.helm.z : S.z; jumpY = 1; S.sailing = true; S.speed = 0; WORLD.tick(1 / 60, performance.now()); });
 await key('KeyW', true);
 const s = await page.evaluate(() => { const S = WORLD.ship, x0 = S.x, z0 = S.z, h0 = WORLD.shipBars().hull; let stopped = 0;
-  for (let i = 0; i < 900; i++) { const v = S.speed; WORLD.tick(1 / 60, performance.now()); if (v > 1 && S.speed === 0) stopped++; }
-  return { moved: +Math.hypot(S.x - x0, S.z - z0).toFixed(1), speed: +S.speed.toFixed(2), hull: WORLD.shipBars().hull, h0, stopped, msg: document.getElementById('msg').textContent }; });
+  let others = 0; const said = [], show = showMsg; showMsg = (t, ...r) => { said.push(String(t).slice(0, 60)); return show(t, ...r); };
+  for (let i = 0; i < 900; i++) { const v = S.speed; WORLD.tick(1 / 60, performance.now()); if (v > 1 && S.speed === 0) stopped++;
+    for (const o of [...WORLD.others]) { WORLD.despawnOtherShip(o); others++; } }
+  showMsg = show;
+  return { others, said, wx: WX.type, sea: SHIP.sea, moved: +Math.hypot(S.x - x0, S.z - z0).toFixed(1), speed: +S.speed.toFixed(2), hull: WORLD.shipBars().hull, h0, stopped, msg: document.getElementById('msg').textContent }; });
 await key('KeyW', false);
 console.log(JSON.stringify(s));
 check(`at the wheel, W held fifteen seconds takes her out ${s.moved} units at ${s.speed}, her hull whole (${s.h0} → ${s.hull})`, s.moved > 60 && s.speed > 2 && s.hull === s.h0 && s.stopped === 0, s);
