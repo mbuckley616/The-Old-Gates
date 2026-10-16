@@ -22906,3 +22906,43 @@ Corrections made during the session:
 - **Nobody tends it.** The colliers are the bodies builder's, and the camp's people are the quest writer's to name.
 - **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
 - **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
+
+## v80 — Session 1024 — The Gatelanders' leg wraps (L1 and B2, prototype only)
+FREEZE #381 (F3) is still open, so this run kept to the prototypes. The next owed L1 item was the coins on the Aurennais head-wrap's edge. Session 1018 said it had to be confirmed from OG-056's full image, but that image is on Google Drive, which this session's network cannot reach. The thumbnail is too small to settle it, so it stays owed. This session takes the next unbuilt piece of the Gatelanders' dress: the leg wraps. OG-048 draws "boot wraps" and OG-059 "laced boots and leg wraps". The builder had capes, cloaks, hoods and tabards for the Gatelanders, but nothing between the boot and the knee. Building what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The shell.** `legWraps` is a wool shell off the tights' helper, between rest y -.715 (just above the ankle) and -.405 (under the knee, whose joint is at -.369). It stands 1.6 cm off the tights over trousers, where the trousers stand 0.8. Over a bare leg under a short tunic skirt it stands 0.6.
+- **The winding** is drawn in the shader, where the sash belt's folds are (Session 1010). Round each shin's own axis (read off the skeleton, the knee's joint to the ankle's), the band climbs one pitch of 5.5 cm a turn, 5.6 turns in all. The two legs are wound as mirrors.
+  - Each turn's lower edge rises over 1 cm from the crease, so it lies over the turn below. The turn then slopes back in to pass under the next. The cloth darkens into the crease, and the normal is bent by the slope.
+  - The top 1.2 cm lies flat. Two leather thongs in the boots' colour cross round it, front and back.
+  - The angle's seam is on the inside of the leg.
+- **The boots** are cut down to the ankle (rest -.69) when wraps are worn, so the wraps' lowest 2.5 cm go in under them.
+- **The roll.** A Gatelander man in trousers and boots rolls wraps at 0.45, in undyed, brown, moss or grey wool. This is drawn last, so every earlier roll of a seed is as it was. No woman and no other people rolls them.
+- **Saving.** `legWraps` is a garment colour in `GARMENTS`, so it saves and loads with the genome, and the builder's panel gives it a checkbox and a colour.
+- **The stats.** `legWrapStats` reads the posed trousers (or the bare leg) against the wraps' shell, and the wraps' lowest band against the boot's, with `shellThrough` (Session 887).
+
+In `builder.js`: a `shins` view, from the ankle to the knee.
+
+Corrections made during the session:
+- **The first winding stepped hard** from 0.5 to 0 at every crease. White specks ran along each one, where the bent normal turned through a pixel. The turn now falls back to 0 before the crease.
+- **The wobble on the turns' lines** was first 5 per cent of a turn. It swamped the spiral's slope, and the turns read as level stripes. It is now 1.8 per cent.
+- **A dark column of dashes** down the back of each calf looked like the angle's seam. Moving the seam to the inside of the leg left the column where it was. It is the bend's shadow where the leg turns from the key light: depth 1.4 made it hard, 0.7 lost the turns, and 1.1 is kept.
+- **Over a bare leg** the wraps first stood 21.6 mm off the skin, at the push used over trousers. They now stand 11.6.
+
+### Verified (headless Chromium)
+- `builder.check.mjs`: CHECKCOUNT
+- **The new checks.** Two men are checked: one in trousers and boots, and one with bare legs under a short tunic skirt.
+  - Nothing comes through the wraps: 0 of 290 trouser points, and 0 of 324 points of the bare leg.
+  - The wraps stand 8.0 mm over the trousers and 11.6 mm over the bare leg.
+  - The wraps' lowest 2 cm are inside the boot on both, with 0 of 36 points through it.
+  - They are 1,010 triangles, with 5.6 turns.
+  - They save and load back, and with `legWraps` off no wrap is built.
+- **The roll:** 6 of 13 Gatelander men wear wraps, and all 13 wear trousers and boots. No woman, Markman, Aurennais or Old Blood rolls them.
+- **New pictures:** `builder-legwraps-front.jpg`, `-back.jpg`, `-side.jpg`, `-moss.jpg` (moss wraps on bare legs) and `-full.jpg`.
+
+### Needs eyes
+- **From the front the turns read nearly level.** The spiral's slope shows from the side and behind.
+- **On the shadowed side** the creases show as short dark dashes.
+- **They are drawn, not modelled.** The shell's outline is a smooth cylinder, with no step at each turn's edge, so the silhouette is plain.
+- **The thongs** are two lines on the flat top, with no knot and no ends.
+- **Still owed in L1:** the coins on the head-wrap's edge, which need OG-056's full image; the Gatelanders' headscarves and baskets.

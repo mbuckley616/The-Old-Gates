@@ -110,6 +110,12 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
         saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"sandals"') }; } }
     { let w = 0, both = 0; for (let i = 0; i < 40; i++) { const G = K.rollGenome('aur:' + i, { people: 'aurennais' }); if (G.dress.sandals) { w++; if (G.dress.boots) both++; } }
       out.sandalRoll = { n: 40, w, both, others: ['markman', 'gatelander', 'oldblood'].flatMap(k => Array.from({ length: 10 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.sandals).length }; }
+    // the Gatelanders' leg wraps (Session 1021): a man in trousers and boots, one in a short tunic skirt with bare legs, and the roll
+    out.legWraps = {}; for (const [name, seed, extra] of [['a Gatelander in trousers and boots', 'wr:0', {}], ['a Gatelander with bare legs under a short tunic skirt', 'wr:1', { skirt: 'short', trousers: null }]]) {
+      const G0 = K.rollGenome(seed, { g: 1, people: 'gatelander' }), gg = { ...G0, dress: { ...G0.dress, cloak: null, mantle: null, sandals: null, boots: [.36, .25, .16], ...extra, legWraps: [.62, .58, .5] } }, p = K.makePerson(gg), s1 = JSON.stringify(K.toSaved(gg));
+      const bt = p.meshes.find(m => m.name === 'boots'); out.legWraps[name] = { ...p.legWraps, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"legWraps"'), boots: !!bt, plain: !!p.meshes.find(m => m.name === 'legWraps') && !K.makePerson({ ...gg, dress: { ...gg.dress, legWraps: null } }).meshes.find(m => m.name === 'legWraps') }; }
+    { const roll = k => Array.from({ length: 40 }, (_, i) => K.rollGenome(k + ':' + i, { people: k })); const gl = roll('gatelander'), men = gl.filter(G => G.g > .5);
+      out.legWrapRoll = { men: men.length, wrapped: men.filter(G => G.dress.legWraps).length, eligible: men.filter(G => G.dress.trousers && G.dress.boots).length, women: gl.filter(G => G.g <= .5 && G.dress.legWraps).length, others: ['markman', 'aurennais', 'oldblood'].flatMap(roll).filter(G => G.dress.legWraps).length, bare: gl.filter(G => G.dress.legWraps && !(G.dress.trousers && G.dress.boots)).length }; }
     // the hands beside a short tunic skirt (Session 1011): eight men of the four peoples, and Session 1010's man under a sash and a sash belt
     out.shortHands = []; for (const [seed, people, extra] of [...['aurennais', 'markman', 'gatelander', 'oldblood'].flatMap(k => [0, 1].map(i => ['short:' + k + i, k, {}])), ['sbelt:1', 'aurennais', { sashBelt: [.17, .2, .4], sash: [.62, .45, .18], belt: null, beltCoins: null }]]) {
       const G0 = K.rollGenome(seed, { g: 1, people }), g = { ...G0, dress: { ...G0.dress, skirt: 'short', cloak: null, hood: null, apron: null, tabard: null, mail: null, robe: null, ...extra } }, p = K.makePerson(g);
@@ -201,6 +207,10 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return out; });
   check(`the beard stops under a cheek line: within the eyes' width ${(r.beard.gap * 100).toFixed(1)} cm under the lower lid, the moustache up to the nose (y ${r.beard.moustTop}), the dark base inside the hairs (${r.beard.baseTris} of ${r.beard.tris} triangles)`, r.beard.gap > .015 && r.beard.moustTop > .678 && r.beard.baseTris < r.beard.tris, r.beard);
   check(`a beard over a tunic stops at its collar: no card on the chest, 4 cm under the collar's front (${r.beardTunic.below} of ${r.beardTunic.verts} points)`, r.beardTunic.below === 0 && r.beardTunic.verts > 1000, r.beardTunic);
+  for (const [k, c] of Object.entries(r.legWraps)) {
+    check(`${k}, leg wraps: no point of the ${c.under} out through them (${c.through} of ${c.pts}), ${(c.gap * 1000).toFixed(1)} mm over it, ${c.turns} turns, ${c.tris} triangles`, c.pts > 40 && c.through === 0 && c.gap > .003 && c.gap < .02 && c.turns > 5, c);
+    check(`${k}, leg wraps: their lowest 2 cm in under the boot's top (${c.bootThrough} of ${c.bootPts} out through it), saved and loaded back`, c.boots && c.bootPts > 10 && c.bootThrough === 0 && c.saved && c.plain, c); }
+  { const c = r.legWrapRoll; check(`leg wraps rolled on ${c.wrapped} of ${c.men} Gatelander men (${c.eligible} in trousers and boots), none on the women, none on another people, none without trousers and boots`, c.wrapped >= 3 && c.wrapped <= c.eligible && c.women === 0 && c.others === 0 && c.bare === 0, c); }
   for (const [k, c] of Object.entries(r.sandals)) {
     check(`${k}, sandals: a sole under each foot, every point of its bottom inside the outline (${c.feet.map(f => f.out + ' of ' + f.pts).join(', ')}), ${c.feet.map(f => (f.len * 100).toFixed(1)).join(' and ')} cm long`, c.feet.length === 2 && c.feet.every(f => f.out === 0 && f.pts > 300 && f.len > .2 && f.len < .31 && f.near > .002), c.feet);
     check(`${k}, sandals: the soles on the ground (${c.ground.join(', ')} m) and carried by the two feet (${c.bones.join(', ')})`, c.ground.length === 2 && c.ground.every(y => Math.abs(y) < .001) && c.bones.join() === 'foot.L,foot.R', c);
@@ -435,6 +445,11 @@ if (shotArg) { const only = shotArg.split('=')[1];
           { const sb = { ...bc, belt: null, beltCoins: null, sashBelt: [.55, .22, .12] };
             await shot('sashbelt-man', 'people=aurennais&seed=belt:1&sex=m&view=waist&turn=.3&dress=' + dq(sb)); await shot('sashbelt-back', 'people=aurennais&seed=belt:1&sex=m&view=waist&turn=2.4&dress=' + dq(sb));
             await shot('sashbelt-woman', 'people=aurennais&seed=belt:0&sex=f&view=waist&turn=-.4&dress=' + dq({ ...bc, skirt: 'long', sashBelt: [.17, .2, .4] }));
+            // leg wraps (Session 1021): the shins close, front, side and back, a moss pair, and the man full length
+            { const lw = { legWraps: [.62, .58, .5], cloak: null, mantle: null, sandals: null, boots: [.36, .25, .16] };
+              await shot('legwraps-front', 'people=gatelander&seed=wr:0&sex=m&view=shins&turn=.3&dress=' + dq(lw), 1280, 960); await shot('legwraps-back', 'people=gatelander&seed=wr:0&sex=m&view=shins&turn=2.4&dress=' + dq(lw), 1280, 960);
+              await shot('legwraps-side', 'people=gatelander&seed=wr:0&sex=m&view=shins&turn=1.3&dress=' + dq(lw), 1280, 960); await shot('legwraps-moss', 'people=gatelander&seed=wr:1&sex=m&view=shins&turn=-.6&dress=' + dq({ ...lw, legWraps: [.3, .36, .22], skirt: 'short', trousers: null }), 1280, 960);
+              await shot('legwraps-full', 'people=gatelander&seed=wr:0&sex=m&view=full&turn=.3&dress=' + dq(lw)); }
             // sandals (Session 1015): the feet close, front and back, and a woman full length
             { const sd = { sandals: [.4, .26, .14], boots: null, cloak: null, robe: null, mail: null };
               await shot('sandals-man', 'people=aurennais&seed=sand:0&sex=m&view=feet&turn=.3&dress=' + dq(sd)); await shot('sandals-back', 'people=aurennais&seed=sand:0&sex=m&view=feet&turn=2.6&dress=' + dq(sd));

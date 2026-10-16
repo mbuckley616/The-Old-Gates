@@ -77,6 +77,8 @@ function frame() {
   // the waist (Session 1004): the belt's front, and what hangs from it (or the sash belt's, Session 1010)
   else if (view === 'waist') { const b = person.root.getObjectByName('beltCoins'), sb = !b && (person.root.getObjectByName('sashBelt') || person.root.getObjectByName('belt')), t = b ? new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()) : sb ? bandMid(sb) : h.clone().setY(h.y - .7); cam.fov = 22; cam.position.set(t.x + .3 / zoom, t.y + .12, t.z + 1.05 / zoom); cam.lookAt(t); }
   // the feet (Session 1015): what is worn on them, sandals
+  // the shins (Session 1021): what is worn from the ankle to the knee, leg wraps
+  else if (view === 'shins') { const t = new THREE.Vector3(h.x, .3, h.z + .05); cam.fov = 24; cam.position.set(t.x + .4 / zoom, t.y + .12 / zoom, t.z + 1.3 / zoom); cam.lookAt(t); }
   else if (view === 'feet') { const t = new THREE.Vector3(h.x, .07, h.z + .05); cam.fov = 24; cam.position.set(t.x + .35 / zoom, t.y + .38 / zoom, t.z + .95 / zoom); cam.lookAt(t); }
   // over the head (Session 918): what is carried above it, a spear's head
   else if (view === 'over') { const sp = person.root.getObjectByName('spear'), b = sp && new THREE.Box3().setFromObject(sp), t = b ? new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - .24, (b.min.z + b.max.z) / 2) : h.clone().setY(h.y + .45);
