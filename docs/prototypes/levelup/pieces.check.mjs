@@ -70,13 +70,16 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
           const x = f === 'back' ? -o.x : f === 'front' ? o.x : null; if (f === 'back' && x < P.hallX && o.y < F1 + .3 && o.y + o.h > F1 - .3) gallery.push([f, i]);
           if ((f === 'front' || f === 'back') && x >= P.hallX && o.y > 1 && o.y < F1 + .2) upper.push([f, i]); }); }
       const door = P.open.front.find(o => o.kind === 'plank');
-      out.push({ guild, tris: u.tris, calls: u.calls, size: u.size, same: hash(a) === hash(b), clash, out: out2, gallery, upper, door: [door.w, door.h], plaque: P.plaque.y - (door.y + door.h + .34), text: P.plaque.text, banner: P.banner.colour });
+      out.push({ guild, tris: u.tris, calls: u.calls, size: u.size, same: hash(a) === hash(b), clash, out: out2, gallery, upper, door: [door.w, door.h], plaque: P.plaque.y - (door.y + door.h + .34), text: P.plaque.text, banner: P.banner.colour,
+        /* seen from the street at any bearing within 55° of square on, the banner (a flat cloth out from the wall) clears the name panel's frame */
+        hides: (() => { const B = P.banner, Q = P.plaque, z0 = B.out - .1 - B.w, z1 = B.out - .1, l = Q.x - Q.w / 2 - .2, r = Q.x + Q.w / 2 + .2; let worst = 99;
+          for (let a = -55; a <= 55; a += 1) { const t = Math.tan(a * Math.PI / 180), xs = [B.x - z0 * t, B.x - z1 * t], gap = Math.max(l - Math.max(...xs), Math.min(...xs) - r); worst = Math.min(worst, gap); } return +worst.toFixed(2); })() });
       for (const g of [a, b]) g.traverse(m => m.geometry && m.geometry.dispose()); }
     return out; });
   check(`the guild hall, a piece of its own (#352 C): ${G.map(g => `${g.guild} ${g.tris.toLocaleString()} triangles in ${g.calls} draws`).join(', ')}; ${G[0].size.w} by ${G[0].size.d} m, eaves ${G[0].size.eave} m, ridge ${G[0].size.ridge} m; each the same twice`, G.every(g => g.same && g.tris < 15000 && g.calls <= 16 && g.size.w === 14.4 && g.size.d === 9 && g.size.eave === 6.4));
   check(`the guild hall's openings: ${G[0].clash.length} clashes on a face, dressings included; ${G[0].out.length} into the quoins or the eaves`, G.every(g => !g.clash.length && !g.out.length), G.map(g => [g.clash, g.out]));
   check(`the guild hall keeps the room's floors: ${G[0].gallery.length} openings of the hall's back across the gallery's floor, ${G[0].upper.length} east-end sashes between the floors`, G.every(g => !g.gallery.length && !g.upper.length), G.map(g => [g.gallery, g.upper]));
-  check(`the guild hall's great door ${G[0].door.join(' by ')} m under its name panel (${G[0].text}, ${G[1].text}), clear of the arch's ring by ${G[0].plaque.toFixed(2)} m; the banners ${G.map(g => g.banner).join(' and ')}`, G.every(g => g.door[0] >= 1.5 && g.door[1] >= 3 && g.plaque >= 0) && G[0].banner !== G[1].banner && G[0].text !== G[1].text); }
+  check(`the guild hall's great door ${G[0].door.join(' by ')} m under its name panel (${G[0].text}, ${G[1].text}), clear of the arch's ring by ${G[0].plaque.toFixed(2)} m; the banners ${G.map(g => g.banner).join(' and ')}, clear of the panel by ${Math.min(...G.map(g => g.hides))} m seen from within 55° of square on (the critic's s639: it hid the D)`, G.every(g => g.door[0] >= 1.5 && g.door[1] >= 3 && g.plaque >= 0 && g.hides > 0) && G[0].banner !== G[1].banner && G[0].text !== G[1].text); }
 await page.close();
 for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`);

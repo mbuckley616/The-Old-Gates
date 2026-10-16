@@ -38,7 +38,7 @@ await page.evaluate(() => { window._drive = (step, max) => {
   finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
   return n; };
   window._swing = (e, keep) => { const face = () => { yaw = Math.atan2(-(e.x - px), -(e.z - pz)); pitch = -.05; };
-    keep(); face(); atkCd = 0; attack(false); let n = 0; _drive(() => { keep(); face(); return ++n > 3 && (!_pendingStrike || _pendingStrike.fired); }, 120); }; });
+    keep(); face(); atkCd = 0; CHAIN.n = 0; CHAIN.endG = -1e9; /* each a first swing, not the light chain's ×1.3 third */ attack(false); let n = 0; _drive(() => { keep(); face(); return ++n > 3 && (!_pendingStrike || _pendingStrike.fired); }, 120); }; });
 
 // skilluse and skilldamage through the resolver: a Bandit in the street, the same sword at Blade 5, 50 and 100
 const fight = await page.evaluate(() => {

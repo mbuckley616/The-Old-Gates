@@ -39,7 +39,10 @@ const fight = (punch, fists, max, hand = 5) => page.evaluate(([punch, fists, max
 
 const stand = await fight(false, true, 60 * 30);
 console.log('stood still', JSON.stringify(stand));
-check('stood still, the Bandit winds up and strikes: 12+ blows in 30 s, each after its tell, most landing', stand.blows >= 12 && stand.tells >= stand.blows && stand.landed >= stand.blows * .8 && stand.phpEnd < stand.php0 - 60, stand);
+// S940 — armour as a share (decision #181 B, the attack table): stood still you fall, where you used to outlast 30 s. S949 — an
+// ordinary blow at your level's kit is a sixth of your health (Michael's B on #355), so you fall at the sixth blow (6 of 6 landed,
+// 10.9 s, 130 health); 5 to 7 allows for the Bandit's roll. The rhythm is the same: 12 or more blows a 30 s.
+check('stood still, the Bandit winds up and strikes, 12+ blows a 30 s, each after its tell, most landing, until you fall at about the sixth', stand.blows / stand.secs >= 12 / 30 && stand.tells >= stand.blows && stand.landed >= stand.blows * .8 && (stand.blows >= 12 || (stand.phpEnd <= 0 && stand.landed >= 5 && stand.landed <= 7)), stand);
 
 // Hand-to-hand (Session 950, Michael's C on #357): bare fists are a skill of their own, the fists' 2–3 on its multiplier. The
 // critic's 7–12 punches was measured with the level's flat +1.5 in every hit; with it gone, an untrained fist (5, ×0.64) is

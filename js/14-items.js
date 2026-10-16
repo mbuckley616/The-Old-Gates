@@ -199,17 +199,11 @@ function weaponDamageType(w){
 // (0.24 → 0.45, 0.55 → 0.90), so the order is kept: the kobold is still the quickest, the golem the slowest. The tell
 // is read from the body now: the shared wind-up pose (e._wind, Session 130) runs the whole tell, and the red glow
 // comes only in its last 0.15 s (TELL_GLOW_S).
-const TELEGRAPH_BY_NAME = {
-  'Cave Troll':0.83, 'Forest Troll':0.83, 'Golem':0.90, 'Gargoyle':0.80,
-  'Goblin':0.51, 'Kobold Thief':0.45, 'Spider':0.51,
-  'Skeleton':0.60, 'Mimic':0.57, 'Slime':0.54, 'Small Slime':0.54,
-  'Bandit':0.57, 'Fire Elemental':0.65,
-  'Phantom':0.54, 'Wraith':0.57,
-};
-const TELL_MIN=.45,TELL_DEFAULT=.61,TELL_GLOW_S=.15;
+// S940 — the tells by kind live in the attack table now (FOE_ATTACKS, 74-strikes.js), and TELEGRAPH_BY_NAME is built there from it.
+const TELL_MIN=.45,TELL_DEFAULT=.61,TELL_GLOW_S=.15; /* S940 — TELL_DEFAULT is the families' tell in the attack table */
 function telegraphDuration(e){
   if(!e) return TELL_DEFAULT;
-  return TELEGRAPH_BY_NAME[e.baseType] ?? TELEGRAPH_BY_NAME[e.name] ?? TELL_DEFAULT;
+  return TELEGRAPH_BY_NAME[e.baseType] ?? TELEGRAPH_BY_NAME[e.name] ?? foeAttack(e).tell;
 }
 // Pulse the enemy's emissive red during wind-up; reset to black when done/cancelled.
 // Shared across dungeon + zone telegraph ticks so visual behavior stays consistent.

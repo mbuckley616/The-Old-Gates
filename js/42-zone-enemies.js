@@ -912,7 +912,7 @@ function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.h
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;a.x+=a.vx*dt;a.z+=a.vz*dt;a.m.position.set(a.x,a.y,a.z);
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
-    if(hit&&!dead){const def2=_armour();const raw=Math.max(1,a.dmg-Math.floor(def2*.5)+Math.floor(foeRand(a.from)*4));
+    if(hit&&!dead){const raw=foeBlow(a.from,a.dmg+Math.floor(foeRand(a.from)*4)); /* S940 — armour as a share, as of every blow */
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
       if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;armourUse();skillUse('guard',1,a); /* S941 fix — the arrow, not a foe: there is no e here */hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;armourUse();hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
@@ -1232,9 +1232,7 @@ function tickZoneEnemies(dt,now,sc){
           sndFaolchuBite();
         }
         if(strikeReaches(e)){
-          const def2=_armour();
-          const rawDmg=Math.max(1,e.dmg-Math.floor(def2*.5)+Math.floor(foeRand(e)*4));
-          executeStrike(e, rawDmg, now);
+          executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
         } else {
           sndSwing();
         }
@@ -1726,113 +1724,6 @@ function attackZoneEnemies(isPower, _isDeferred){
     atkCd=.5*(1-attrEff('swiftness')*0.01)*(_isPow?POWER_ATK_CD_MULT:1)*_swFactor*(_exhaustedStrike?1.3:1);
     stamina=Math.max(0,stamina-_stamCost(_stCost));
   }
-  swingT=(_isPow?(ANIM_PARAMS.swing.powerDur):(ANIM_PARAMS.swing.normalDur))*_swFactor;
-  // v69.1 — whoosh at swing start; contact + hit resolution at impact.
-  sndWhoosh();
-  // v66.1 — defer audio + hit resolution to the swing impact frame.
-  _pendingStrike = { resolveFn: _resolveZoneStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;_offenceS=playClockS;
+  beginSwing(_isPow,_resolveZoneStrike); // S940 — the swing's times from the attack table; the hit at its impact
 }
-// v66.1 — Zone melee resolution, extracted from attackZoneEnemies() and fired
-// at the swing impact frame. Impact-gather candidates, audio, cleave/damage.
-function _resolveZoneStrike(_isPow){
-  sndSwing();
-  let hit=false;
-  const _cleaveCap = (EQ.weapon && EQ.weapon.cleaveTargets) || CLEAVE_DEFAULT;
-  const _wPostMult = (EQ.weapon && EQ.weapon.postureMult) || 1.0;
-  const _candidates = [];
-  ZE.forEach(e=>{
-    if(e.dead||e.locked)return;
-    const ex=e.x-px,ez=e.z-pz,dist=Math.sqrt(ex*ex+ez*ez);
-    const _atkRange = e.isBoss ? 3.0 : 2.2;
-    // v65.2 — Cone tightened to .45 (~117° total). See attack() for rationale.
-    if(dist<_atkRange&&(ex*fwdX+ez*fwdZ)/(dist||1)>.45){
-      _candidates.push({e,dist});
-    }
-  });
-  _candidates.sort((a,b)=>a.dist-b.dist);
-  if(!_candidates.length&&activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.strikeNpc&&WORLD.strikeNpc(fwdX,fwdZ))hit=true; // S157 — assault
-  let _hitsLanded = 0;
-  for(const _c of _candidates){
-    if(_hitsLanded >= _cleaveCap) break;
-    const e = _c.e;
-    _hitsLanded++;
-    // v65 — Power-vs-shielded enemy: pure stagger, no damage. Mirrors the
-    // dungeon path. See attack() for the design rationale.
-    // S485 — a power attack swung on too little stamina (_exhaustedStrike) does not break the guard (Michael's A on #131):
-    // it falls through and lands as a guarded hit, 35% of the exhausted 45%, saying so
-    const _spent=_isPow&&e.shieldUp&&!riposteOpen(e)&&_exhaustedStrike;
-    if(_isPow && e.shieldUp && !riposteOpen(e) && !_spent){
-      if(typeof e.posture==='number' && !isStaggered(e)){
-        applyPostureDamage(e, (e.maxPosture||999), performance.now()/1000);
-        staggered.push({e, t: POSTURE_BREAK_STUN});
-        const body = enemyBodyMesh(e);
-        const m = body && body.material;
-        if(m && m.emissive){
-          m.emissive.setHex(0xffaa00);
-          setTimeout(()=>{ if(m && m.emissive) m.emissive.setHex(0); }, 220);
-        }
-      }
-      e.shieldUp = false;
-      dropShieldGuard(e);
-      e.alert = true; hit = true;
-      if(_isPow) sndPowerHit(); else sndHitEnemy((typeof wType!=='undefined'?wType:(typeof wt!=='undefined'?wt:undefined)),((typeof physResistMult!=='undefined'&&physResistMult<.8)||(typeof resistMult!=='undefined'&&resistMult<.8)));
-      showMsg(`💥 ${e.name}'s guard breaks!`, '#ffcc66');
-      continue;
-    }
-    {
-      const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];
-      const mightMult=1+(attrEff('might')*ATTR_DMG_PER_POINT);
-      const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1);
-      const powerMult=_isPow?POWER_DMG_MULT:1.0;
-      // v71 — Frontal shield block (see _resolveDungeonStrike for rationale).
-      const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const _wasAlert=!!e.alert; /* S941 — the weapon's skill carries the damage; the flat level×1.5 is gone (skills and perks A) */
-      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo)))*skillMult(weaponSkill(w))*mightMult*meleeBuff*powerMult*shMult);
-      const info=applyMeleeDamage(e, rawDmg);
-      const dmg=info.dmg;
-      if(_wasAlert&&weaponSkill(w))skillUse(weaponSkill(w),(info.riposte||info.finisher)?3:1,e);else if(info.backstab)skillUse('stealth',3,e);
-      e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg));e.alert=true;hit=true;alertPack(e,16);
-      if(_isPow)sndPowerHit();else sndHitEnemy((typeof wType!=='undefined'?wType:(typeof wt!=='undefined'?wt:undefined)),((typeof physResistMult!=='undefined'&&physResistMult<.8)||(typeof resistMult!=='undefined'&&resistMult<.8)));
-      // v61gj — Posture drain (same shape as the dungeon path). Skipped if the
-      // hit killed the target or if already staggered. v62: power attacks drain
-      // POSTURE_DRAIN_POWER (25) vs normal POSTURE_DRAIN_NORMAL (8).
-      // v65: postureMult from WEAPON_TYPES scales the drain on top.
-      if(e.hp>0 && typeof e.posture==='number' && !isStaggered(e)){
-        const drain = (_isPow&&!_spent ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult; // S485 — a spent power attack on a guard drains as the guarded hit it is
-        const broke = applyPostureDamage(e, drain, performance.now()/1000);
-        if(broke){
-          staggered.push({e, t: POSTURE_BREAK_STUN});
-          const body = enemyBodyMesh(e);
-          const m = body && body.material;
-          if(m && m.emissive){
-            m.emissive.setHex(0xffaa00);
-            setTimeout(()=>{ if(m && m.emissive) m.emissive.setHex(0); }, 220);
-          }
-          showMsg(`💥 ${e.name} staggered!`, '#ffcc66');
-        }
-      }
-      const sc=activeZoneId==='forest'?forestScene:ironhavenScene;
-      // Mirror attack()'s post-hit shape: if already dead, kill; else fire enchant
-      // (which can push hp <= 0 via extraDmg) then re-check. Previously zone combat
-      // skipped applyWeaponEnchant entirely — all 6 weapon enchants were inert
-      // anywhere outside a dungeon. (v61i fix; v61k folds the enchant toast into the
-      // hit message so it doesn't get overwritten on the same tick.)
-      // v63 — Compose combat-decoration tag once so the kill and non-kill paths
-      // both surface (BACKSTAB) / (CRIT) / (POWER) feedback. Previously kills
-      // dropped the tag entirely, so a kill-on-backstab read identically to a
-      // kill-on-frontal — the player got no reward signal for stealth play.
-      const _guardTag = (shMult<1.0) ? ' (GUARDED)' : '';
-      const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
-      dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A); the line below it is gone */
-      if(e.hp<=0)killZoneEnemy(e,sc,_killTag);
-      else{
-        const enc=applyWeaponEnchant(dmg,e);
-        dmgNumRider(e,enc);
-        if(e.hp<=0)killZoneEnemy(e,sc,_killTag);
-        else if(_spent)showMsg('Too spent to break the guard.','#ff9944');
-      }
-    }
-  }
-  document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
-  setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
-}
+function _resolveZoneStrike(_isPow){return resolvePlayerStrike(_isPow);} // S940 — the one resolver (74-strikes.js)

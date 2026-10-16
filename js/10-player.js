@@ -261,6 +261,7 @@ function startRoll(nowS,keys){
   if(!ROLL&&!onGround&&airDashStart(K))return true; /* S1011 — Swallow's turn: Q in the air is the air dash while it is unspent */
   if(!ROLL&&!dead&&started&&!onGround)FALL.qAt=FALL.clock; // S429 — pressed in the air: rolled on landing if it is within FALL_ROLL_WIN
   if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
+  if(typeof swingCommitted==='function'&&swingCommitted())return false; // S940 — a swing's wind-up and strike are committed; its recovery cancels into the roll
   if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
   if(typeof spellLevitating==='function'&&spellLevitating())return false;
   const enc=encumbranceState();if(enc==='immobile')return false;
@@ -273,7 +274,7 @@ function startRoll(nowS,keys){
   if(!mx&&!mz){mx=-fwdX;mz=-fwdZ;}
   const l=Math.hypot(mx,mz)||1;mx/=l;mz/=l;
   const heavy=totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT,sp=heavy?ROLL_HEAVY:ROLL_LIGHT;
-  blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;
+  blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;if(typeof swingCancel==='function')swingCancel();
   stamina=Math.max(0,stamina-_stamCost(ROLL_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
   ROLL={t0:nowS,dur:sp.dur,dist:sp.dist,i0:sp.i0,i1:sp.i1,dx:mx,dz:mz,done:0,heavy,fwd:(mx*fwdX+mz*fwdZ)>=-.01?1:-1};
   if(FALL.pend)fallSettle(true); // S429 — a roll within 0.2 s of landing halves the fall

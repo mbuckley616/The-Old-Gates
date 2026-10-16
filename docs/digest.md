@@ -263,3 +263,13 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing open. The builders work in prototypes until F2a lands.
 
 **Roadmap.** 239 of 303 stories done (unchanged since yesterday); 2.0's new look has 1 of 15 cards done, F2a in review, F6, F8, F9 and F11 under way as prototypes. The skills build sheet is written (#342).
+
+## 16 Oct 2026
+
+**Waiting on you.** Approve three: Combat's resolver (PR #356, f1976a3), Quest builds 979 (the Seventh Niche, 8417f89), Systems sessions 940–975 (skills by use and the first perks, e360f8f). Four decisions: #369 Steady's aim sway, #370 a cap on speed in the air, #373 enemies by place, #376 three perks whose rules the game lacks.
+
+**Landed on main since yesterday.** F2a, the scale pass (3a18a10): one unit a metre, people the measure; the builders' freeze ended. Look 925–999, prototypes only: the shepherd's hut, the hunting cabin, the logging camp and more of the places off the road (#350, #358, #368, #372, #375). Bodies prototypes (#349). QA's sessions (#351, #360, #365). The double-jump build sheet (#371), quest review run, concept round, the critic. Build s639.
+
+**Blocked.** Nothing. Systems 978–1002 had a backlog clash with main, resolved this morning; CI runs on 7378602 and the card moves to it when green.
+
+**Roadmap.** 240 of 303 stories done (239 yesterday); 2.0's new look 2 of 15 cards done (F1, F2a); the core loop's resolver and skills both wait on your approval.

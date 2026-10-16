@@ -64,6 +64,7 @@ function doBash(){
 }
 function attack(isPower, _isDeferred){
   if(playerStaggered(performance.now()/1000))return; // S281
+  if(DRINK&&!_isDeferred)return; // S940 — no swing while you drink
   if(isOverworldZone()){attackZoneEnemies(isPower, _isDeferred);return;}
   // v62 — Power attack: hold LMB past POWER_CHARGE_THRESHOLD before release.
   // Requires a weapon equipped (bare-hand is the fallback path; no power
@@ -89,133 +90,11 @@ function attack(isPower, _isDeferred){
     atkCd=.5*(1-attrEff('swiftness')*0.01)*(_isPow?POWER_ATK_CD_MULT:1)*_swFactor;
     stamina=Math.max(0,stamina-_stamCost(_stCost));
   }
-  // Weight-scaled swing animation duration (Sword w3 = 1.0× baseline).
-  swingT=(_isPow?(ANIM_PARAMS.swing.powerDur):(ANIM_PARAMS.swing.normalDur))*_swFactor;
-  // v69.1 — Whoosh of air fires NOW (swing start); the contact sound + hit
-  // resolution fire at impact via _pendingStrike. "whoooosh-THUNK".
-  sndWhoosh();
-  // v66.1 — Defer audio + hit resolution to the swing's impact frame instead
-  // of firing now. The render loop fires _pendingStrike when progress crosses
-  // ANIM_PARAMS.swing.impactPoint. Candidates are gathered AT impact.
-  _pendingStrike = { resolveFn: _resolveDungeonStrike, isPow: _isPow, fired: false }; _swingStartS=performance.now()/1000;_offenceS=playClockS;
+  // S940 — the swing's times from the weapon's row in the attack table (74-strikes.js), the whoosh now and the hit at
+  // its impact (v66.1, _pendingStrike); the chain and the commitment start here
+  beginSwing(_isPow,_resolveDungeonStrike);
 }
-// v66.1 — Dungeon melee resolution, extracted from attack() and fired at the
-// swing impact frame. Gathers candidates at call time (impact-gather), plays
-// the swing audio, and resolves cleave/damage/posture/kill.
-function _resolveDungeonStrike(_isPow){
-  sndSwing();
-  let hit=false;
-  const _cleaveCap = (EQ.weapon && EQ.weapon.cleaveTargets) || CLEAVE_DEFAULT;
-  const _wPostMult = (EQ.weapon && EQ.weapon.postureMult) || 1.0;
-  const _candidates = [];
-  ENEMIES.forEach(e=>{
-    if(e.dead||e.floor!==currentFloor||e.disguised)return;
-    const ex=e.x-px,ez=e.z-pz,dist=Math.sqrt(ex*ex+ez*ez);
-    // v65.2 — Cone tightened from .35 (140°) to .45 (~117°). The wider cone
-    // was catching enemies at the player's hips/peripheral and reading as
-    // "I hit something behind me." The new threshold corresponds to roughly
-    // a 58° half-angle each side of forward — front-and-slightly-flank only,
-    // not peripheral. Same threshold for 1H and 2H; cleave differentiates 2H
-    // via target count, not cone width.
-    if(dist<2.2&&(ex*fwdX+ez*fwdZ)/(dist||1)>.45){
-      _candidates.push({e,dist});
-    }
-  });
-  _candidates.sort((a,b)=>a.dist-b.dist);
-  let _hitsLanded = 0;
-  for(const _c of _candidates){
-    if(_hitsLanded >= _cleaveCap) break;
-    const e = _c.e;
-    _hitsLanded++;
-    // v65 — Power-attack-vs-shielded enemy: pure stagger, zero damage, free
-    // follow-up window. The shieldUp branch fires BEFORE damage resolution so
-    // raw attack power doesn't bleed through a "broken guard." Mirrors the
-    // player-side parry → enemy-staggered loop, just from the other side.
-    // Forecast: Shieldbearer (Session 5) ships with shieldUp:true and a "guard
-    // raised" telegraph — this rule fires for free at that point. shieldUp is
-    // currently a no-op canon flag; setting it on any enemy enables the rule.
-    // S485 — a power attack swung on too little stamina (_exhaustedStrike) does not break the guard (Michael's A on #131):
-    // it falls through and lands as a guarded hit, 35% of the exhausted 45%, saying so
-    const _spent=_isPow&&e.shieldUp&&!riposteOpen(e)&&_exhaustedStrike;
-    if(_isPow && e.shieldUp && !riposteOpen(e) && !_spent){
-      if(typeof e.posture==='number' && !isStaggered(e)){
-        // Force-break by draining max posture; pushes the enemy onto the
-        // staggered list with the standard POSTURE_BREAK_STUN window.
-        applyPostureDamage(e, (e.maxPosture||999), performance.now()/1000);
-        staggered.push({e, t: POSTURE_BREAK_STUN});
-        const body = enemyBodyMesh(e);
-        const m = body && body.material;
-        if(m && m.emissive){
-          m.emissive.setHex(0xffaa00);
-          setTimeout(()=>{ if(m && m.emissive) m.emissive.setHex(0); }, 220);
-        }
-      }
-      // v71 — Guard is now down: follow-up hits land full, and the raised-shield
-      // pose drops (dropShieldGuard lowers the arm mesh if this is a Shieldbearer).
-      e.shieldUp = false;
-      dropShieldGuard(e);
-      e.alert = true; hit = true;
-      if(_isPow) sndPowerHit(); else sndHitEnemy((typeof wType!=='undefined'?wType:(typeof wt!=='undefined'?wt:undefined)),((typeof physResistMult!=='undefined'&&physResistMult<.8)||(typeof resistMult!=='undefined'&&resistMult<.8)));
-      showMsg(`💥 ${e.name}'s guard breaks!`, '#ffcc66');
-      continue; // no damage on the breaking swing; skip resist/kill resolution
-    }
-    {
-      const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];
-      const mightMult=1+(attrEff('might')*ATTR_DMG_PER_POINT);
-      const powerMult=_isPow?POWER_DMG_MULT:1.0;
-      // v71 — Frontal shield block. A Shieldbearer hit from the front (not the
-      // rear cone) takes SHIELDBEARER_FRONT_BLOCK of the damage. shieldFrontMult
-      // returns 1.0 for everything else and for flanking hits.
-      const shMult=riposteOpen(e)?1:shieldFrontMult(e);
-      const _wasAlert=!!e.alert; /* S941 — the weapon's skill carries the damage; the flat level×1.5 is gone (skills and perks A) */
-      const rawDmg=Math.floor((lo+Math.floor(foeRand(e)*(hi-lo)))*skillMult(weaponSkill(w))*mightMult*_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1)*powerMult*shMult); // S322 — Firemoss and Caor Dubh underground too
-      const info=applyMeleeDamage(e, rawDmg);
-      const dmg=info.dmg;
-      if(_wasAlert&&weaponSkill(w))skillUse(weaponSkill(w),(info.riposte||info.finisher)?3:1,e);else if(info.backstab)skillUse('stealth',3,e);
-      e.hp=Math.max(0,e.hp-dmg);
-      e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;
-      e.alert=true;hit=true;
-      if(_isPow)sndPowerHit();else sndHitEnemy((typeof wType!=='undefined'?wType:(typeof wt!=='undefined'?wt:undefined)),((typeof physResistMult!=='undefined'&&physResistMult<.8)||(typeof resistMult!=='undefined'&&resistMult<.8)));
-      // v61gj — Posture drain. Only if still alive (no point staggering a corpse)
-      // and not already staggered (applyPostureDamage guards this too, but skipping
-      // the call entirely is cheaper). v62: power attacks drain POSTURE_DRAIN_POWER (25)
-      // vs normal POSTURE_DRAIN_NORMAL (8). Two power hits will break most non-brute
-      // enemies; brutes (1.5× familyMult) still take 3-4 power hits to break.
-      // v65: postureMult from WEAPON_TYPES (2H weapons) scales the drain on top.
-      // War hammers (2.25×) break a normal enemy in one power hit; brutes in two.
-      if(e.hp>0 && typeof e.posture==='number' && !isStaggered(e)){
-        const drain = (_isPow&&!_spent ? POSTURE_DRAIN_POWER : POSTURE_DRAIN_NORMAL) * _wPostMult; // S485 — a spent power attack on a guard drains as the guarded hit it is
-        const broke = applyPostureDamage(e, drain, performance.now()/1000);
-        if(broke){
-          staggered.push({e, t: POSTURE_BREAK_STUN});
-          // Stagger flash — reuses the v61d1 enemyBodyMesh helper that already
-          // powers parry-stagger and telegraph pulse. Same yellow tint.
-          const body = enemyBodyMesh(e);
-          const m = body && body.material;
-          if(m && m.emissive){
-            m.emissive.setHex(0xffaa00);
-            setTimeout(()=>{ if(m && m.emissive) m.emissive.setHex(0); }, 220);
-          }
-          showMsg(`💥 ${e.name} staggered!`, '#ffcc66');
-        }
-      }
-      // v63 — Compose combat-decoration tag (see zone branch comment).
-      // v71 — (GUARDED) appended when a frontal shield reduced the hit, so the
-      // player reads WHY the number is small and learns to flank or power-attack.
-      const _guardTag = (shMult<1.0) ? ' (GUARDED)' : '';
-      const _killTag = `${_isPow?' (POWER)':''}${info.backstab?' (BACKSTAB)':''}${info.finisher?' (FINISHER)':info.riposte?' (RIPOSTE)':info.crit?' (CRIT)':''}${_guardTag}${dmgTag(info,e)}`;
-      dmgNum(e,dmg,info,{guarded:shMult<1.0,power:_isPow}); /* S761 — the blow's number at its head (#198 A); the line below it is gone */
-      if(e.hp<=0){killE(e,_killTag);}else{
-        const enc=applyWeaponEnchant(dmg,e);
-        dmgNumRider(e,enc);
-        if(e.hp<=0)killE(e,_killTag);
-        else if(_spent)showMsg('Too spent to break the guard.','#ff9944');
-      }
-    }
-  }
-  document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
-  setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
-}
+function _resolveDungeonStrike(_isPow){return resolvePlayerStrike(_isPow);} // S940 — the one resolver (74-strikes.js)
 // v64 — fireArrow: spawn an arrow projectile and consume one from EQ.ammo.
 //
 // Routing: rides the existing BALLS[] (dungeon) / ZB[] (zone) projectile
@@ -807,20 +686,24 @@ function useItem(i){
   // v61x: potions with an `effect` field use the buff system (regen, warding, swiftness).
   // Tier-aware: a lower-tier potion doesn't overwrite a higher-tier active buff — instead
   // the potion is NOT consumed and the player gets a message. Equal or higher tier replaces.
+  // S940 — a potion takes 0.8 s at walking pace (combat B's commitment): it leaves the bag now and works when it is down
+  // (startDrink, tickDrink in 74-strikes.js). One at a time; a tonic a stronger one already outranks is refused untouched.
+  if(it.type==='potion'&&(it.effect||it.heal||it.mana||it.stam)&&DRINK){showMsg('You are still drinking.','#cc8844');return;}
   if(it.type==='potion' && it.effect){
-    const result = _applyPotionBuff(it.effect);
-    if(result==='blocked'){
+    const ex=_activeBuffs(it.effect.type)[0];
+    if(ex&&(ex._potionTier||0)>(it.effect._potionTier||0)){
       showMsg(`A stronger ${it.effect.label.split(' (')[0]} is already active.`, '#cc8844');
       return; // Don't consume
     }
-    sndUsePotion();
+    const eff=it.effect;
     it.qty = (it.qty||1) - 1;
     if(it.qty<=0) BAG.splice(i,1);
+    startDrink(()=>_applyPotionBuff(eff),it.name);
     return;
   }
-  if(it.type==='potion'&&it.heal){sndUsePotion();PHP=Math.min(effMaxHP(),PHP+it.heal);showMsg('Used '+it.name+'! +'+it.heal+' HP','#44ee44');it.qty--;if(it.qty<=0)BAG.splice(i,1);}
-  else if(it.type==='potion'&&it.mana){sndUsePotion();mana=Math.min(effMaxMana(),mana+it.mana);showMsg('Used '+it.name+'! +'+it.mana+' Mana','#88aaff');it.qty--;if(it.qty<=0)BAG.splice(i,1);}
-  else if(it.type==='potion'&&it.stam){sndUsePotion();stamina=Math.min(effMaxStamina(),stamina+it.stam);staminaCD=0;showMsg('Used '+it.name+'! +'+it.stam+' Stamina','#88ff88');it.qty--;if(it.qty<=0)BAG.splice(i,1);}
+  if(it.type==='potion'&&it.heal){const n=it.heal,nm=it.name;it.qty--;if(it.qty<=0)BAG.splice(i,1);startDrink(()=>{PHP=Math.min(effMaxHP(),PHP+n);showMsg('Used '+nm+'! +'+n+' HP','#44ee44');},nm);}
+  else if(it.type==='potion'&&it.mana){const n=it.mana,nm=it.name;it.qty--;if(it.qty<=0)BAG.splice(i,1);startDrink(()=>{mana=Math.min(effMaxMana(),mana+n);showMsg('Used '+nm+'! +'+n+' Mana','#88aaff');},nm);}
+  else if(it.type==='potion'&&it.stam){const n=it.stam,nm=it.name;it.qty--;if(it.qty<=0)BAG.splice(i,1);startDrink(()=>{stamina=Math.min(effMaxStamina(),stamina+n);staminaCD=0;showMsg('Used '+nm+'! +'+n+' Stamina','#88ff88');},nm);}
   else if(it.type==='book'){openBookReader(i);}
   else if(it.type==='misc'&&it.name==='Mystic Scroll'){/* Mystic Scrolls are vestigial from the old magic system — silently consumed, no effect. Old saves may still have some in bags. */it.qty--;if(it.qty<=0)BAG.splice(i,1);showMsg('The scroll crumbles to dust. Its meaning is lost to a dead tradition.','#888');}
   // v64 — Ammo equip path. Mirrors the type==='equip' branch but skips
