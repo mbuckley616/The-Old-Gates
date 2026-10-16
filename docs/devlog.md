@@ -21885,3 +21885,33 @@ What changed in `people.js`:
 - **One way of wrapping** serves both men and women. OG-056's women wear their head-scarves with a tail falling down the back, and its men wear taller turbans. A tail, and a height by sex, would be the next pieces.
 - **The weight:** 9,072 triangles is heavy for a hat. The turns could take 6 sides in place of 10 when F4 brings it into the game.
 - **The tucked hair** shows as a dark fringe on the neck under the nape's edge on the woman.
+
+## v80 — Session 995 — Hoop earrings (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais "coin and hoop jewellery" (OG-044, OG-056). This session makes the hoops; the coins are a necklace and owed. As with the sash and the wrap, the sheets draw them plainly and the canon has nothing against them, so this asks nothing. It touches only the prototypes (`people.js`, `builder.js`'s labels and `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`buildEarrings`:** a thin metal ring through each earlobe, 2.5 cm across on a woman and 1.8 cm on a man. It hangs in the plane of the side of the head, its top 2 mm into the lobe, and is carried rigid by the head bone. Gold or bronze, metallic. 1,152 triangles for the pair.
+- **The lobe** is the ear's lowest point on the unmorphed body (rest x past 7.3 cm, rest y between 68 and 75 cm, rest z between 3 and 6.5 cm). It is carried to the morphed head by its index, so it follows every face and height the sliders make.
+  - **Correction, mine:** the first try looked for the ear on the morphed head as the furthest-out point. On the woman it found the cheek, 1.5 cm forward of the ear; on the man it found a point level with the eyes.
+- **When it is built:** under the wrap, which stops above the lobes, the hoops show. Under a raised hood they are not built.
+- **The dress** takes `earrings` (the metal's colour; *hoop earrings* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll hoops at 0.6 for women and 0.25 for men, in gold or bronze. They are drawn last, so every earlier roll of a seed is as it was. No other people rolls them.
+- **The checks:** the man's picture is built from a genome made in the check (`g=`, clean-shaven, no wrap or cloak). Seed `ear:1`'s full beard hid the hoop.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 309 checks pass** (305 after Session 994). The four new checks:
+  - **A woman in gold and a man in bronze:**
+    - a hoop through each lobe;
+    - the lobes mirror images to 1 mm, 14.0 and 15.0 cm apart;
+    - no point of the head within 1.5 mm of either ring below the piercing;
+    - carried by the head bone, and saves and loads back.
+  - **No earrings under a raised hood.**
+  - **The roll:** 17 of 40 rolled Aurennais wear hoops, 9 of them women. None of 30 Markmen, Gatelanders and Old Blood do.
+- `kit.check.mjs` passes.
+- **Pictures:** `builder-earrings-woman.jpg` and `builder-earrings-man.jpg` are new; `builder-peoples.jpg` was re-shot.
+
+### Needs eyes
+- **A full beard** covers the lobe and hides the hoop. Its cards may run through the ring; nothing checks hair against it.
+- **Long loose hair or braids** falling over the ear are not checked against the ring either.
+- **The rings are rigid** on the head bone. In the game they would want to swing.
+- **Owed:** the coin necklace and the coins on the head-wrap's edge (OG-056), and the sandals.

@@ -49,6 +49,14 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     { const G0 = K.rollGenome('wrap:1', { g: 1, people: 'aurennais' }); out.wrapUnder = { hood: K.makePerson({ ...G0, dress: { ...G0.dress, wrap: [.12, .42, .42], cloak: [.3, .3, .3], hood: 'up' } }).wrap, helm: K.makePerson({ ...G0, dress: { ...G0.dress, wrap: [.12, .42, .42], helm: [.42, .43, .45] } }).wrap };
       let n = 0, w = 0, f = 0, hooded = 0; for (let i = 0; i < 40; i++) { const G = K.rollGenome('aur:' + i, { people: 'aurennais' }); n++; if (G.dress.wrap) { w++; if (G.g < .5) f++; if (G.dress.hood === 'up') hooded++; } }
       out.wrapRoll = { n, w, f, hooded, others: ['markman', 'gatelander', 'oldblood'].flatMap(k => Array.from({ length: 10 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.wrap).length }; }
+    // hoop earrings (Session 995, OG-044, OG-056): a woman in gold, a man in bronze, none under a raised hood; the roll
+    out.ears = {}; for (const [name, sex, metal] of [['an Aurennais woman, gold hoops', 0, [.85, .66, .3]], ['an Aurennais man, bronze hoops', 1, [.7, .45, .22]]]) {
+      const G0 = K.rollGenome('ear:' + sex, { g: sex, people: 'aurennais' }), g = { ...G0, dress: { ...G0.dress, earrings: metal } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
+      out.ears[name] = { ...p.earrings, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"earrings"'), onHead: !!p.byName['head'].getObjectByName('earrings') }; }
+    { const G0 = K.rollGenome('ear:0', { g: 0, people: 'aurennais' }); out.earHood = K.makePerson({ ...G0, dress: { ...G0.dress, earrings: [.85, .66, .3], cloak: [.3, .3, .3], hood: 'up' } }).earrings;
+      let w = 0, f = 0; for (let i = 0; i < 40; i++) { const G = K.rollGenome('aur:' + i, { people: 'aurennais' }); if (G.dress.earrings) { w++; if (G.g < .5) f++; } }
+      { const M0 = K.rollGenome('ear:1', { g: 1, people: 'aurennais' }), Kit = await import('./kit.js'); out.earManG = Kit.saveGenome('human', { ...M0, beard: 0, dress: { ...M0.dress, earrings: [.7, .45, .22], wrap: null, cloak: null, hood: null } }); }
+      out.earRoll = { n: 40, w, f, others: ['markman', 'gatelander', 'oldblood'].flatMap(k => Array.from({ length: 10 }, (_, i) => K.rollGenome(k + ':' + i, { people: k }))).filter(G => G.dress.earrings).length }; }
     // the knot and its ends (Session 992) can be left off: the band alone, as Session 990 made it
     { const G0 = K.rollGenome('sash:1', { g: 1, people: 'aurennais' }), p = K.makePerson({ ...G0, dress: { ...G0.dress, sash: [.2, .26, .5], cloak: null, mantle: null, sashKnot: false } }); out.sashBare = { knot: p.sash.knot, tris: p.sash.tris }; }
     { const G0 = K.rollGenome('skirt:f', { g: 0 }); out.skirtHands = K.makePerson({ ...G0, dress: { ...G0.dress, skirt: 'long', mantle: null } }).skirtHands; }
@@ -206,6 +214,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: it clears the brows by ${(t.brow * 1000).toFixed(1)} mm (${t.overBrow} points over them), comes ${(t.napeDrop * 100).toFixed(1)} cm down at the nape in ${t.turns} turns (${t.tris} triangles), and saves and loads back`, t.brow > .005 && !t.overBrow && t.napeDrop > .1 && t.turns === 5 && t.saved, t); }
   check('no head-wrap is built under a raised hood or a helm', r.wrapUnder.hood === null && r.wrapUnder.helm === null, r.wrapUnder);
   { const t = r.wrapRoll; check(`the Aurennais roll the head-wrap (${t.w} of ${t.n}, ${t.f} of them women), never under a raised hood, and no other people does`, t.w >= 6 && t.w <= 25 && !t.hooded && !t.others, t); }
+  for (const [k, t] of Object.entries(r.ears)) { const [L, R] = t.lobes; check(`${k}: a ${(t.r * 200).toFixed(1)} cm hoop through each lobe, the two lobes mirror images (${(t.apart * 100).toFixed(1)} cm apart), nothing of the head within 1.5 mm of either below the piercing (${t.near} points), carried by the head bone, and saves and loads back`,
+      t.near === 0 && Math.abs(L[0] + R[0]) < .001 && Math.abs(L[1] - R[1]) < .001 && Math.abs(L[2] - R[2]) < .001 && t.apart > .1 && t.apart < .18 && t.onHead && t.saved, t); }
+  globalThis.earManG = Buffer.from(JSON.stringify(r.earManG)).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  check('no earrings are built under a raised hood', r.earHood === null, r.earHood);
+  { const t = r.earRoll; check(`the Aurennais roll hoop earrings (${t.w} of ${t.n}, ${t.f} of them women), and no other people does`, t.w >= 8 && t.w <= 30 && t.f > t.w / 2 && !t.others, t); }
   check(`the sash with sashKnot false is the band alone (${r.sashBare.tris} triangles, no knot)`, r.sashBare.knot === null && r.sashBare.tris === 1008, r.sashBare);
   { const t = r.sashRoll; check(`the Aurennais roll the sash (${t.sashed} of ${t.n}, ${t.right} over the right shoulder), never under a cloak or a bib, and no other people does`, t.sashed >= 8 && t.sashed <= 30 && !t.covered && !t.markman, t); }
   for (const [k, t] of Object.entries(r.sashes)) { check(`${k}: nothing it lies over comes out through the sash (${t.out} of ${t.tested} points, the nearest ${(t.worst * 1000).toFixed(1)} mm under it)`, t.tested > 3000 && t.out === 0, t);
@@ -328,6 +341,8 @@ if (shotArg) { const only = shotArg.split('=')[1];
     { const wf = dq({ wrap: [.78, .55, .16], wrapBorder: [.55, .18, .12] }), wm = dq({ wrap: [.12, .42, .42] });
       await shot('wrap-woman', 'people=aurennais&seed=wrap:0&sex=f&view=head&turn=.4&dress=' + wf); await shot('wrap-back', 'people=aurennais&seed=wrap:0&sex=f&view=head&turn=2.6&dress=' + wf);
       await shot('wrap-man', 'people=aurennais&seed=wrap:1&sex=m&view=head&turn=.4&dress=' + wm); await shot('wrap-side', 'people=aurennais&seed=wrap:1&sex=m&view=head&turn=1.3&dress=' + wm); await shot('wrap-full', 'people=aurennais&seed=wrap:0&sex=f&view=full&turn=.4&dress=' + wf); }
+    { const ef = dq({ earrings: [.85, .66, .3] });
+      await shot('earrings-woman', 'people=aurennais&seed=ear:0&sex=f&view=face&turn=.9&dress=' + ef); await shot('earrings-man', 'view=face&turn=-.9&g=' + globalThis.earManG); }
     await shot('sash-knot', 'people=aurennais&seed=sash:1&sex=m&view=full&turn=.4&dress=' + dq(sm), 1920, 1080, false, [.38, .3, .24, .4]); await shot('sash-knot-side', 'people=aurennais&seed=sash:1&sex=m&view=side&turn=0&dress=' + dq(sm), 1920, 1080, false, [.32, .25, .36, .5]);
     await shot('sash-woman', 'people=aurennais&seed=sash:0&sex=f&view=full&turn=.4&dress=' + dq({ sash: [.55, .18, .12], sashBorder: [.9, .82, .6], skirt: 'long', cloak: null, apron: null, mantle: null })); }
   await shot('tabard-man', 'seed=b7&sex=m&view=full&turn=.4&dress=' + dq({ tabard: [.55, .08, .08], tabardTrim: [.72, .55, .2], mantle: null, cloak: null }));

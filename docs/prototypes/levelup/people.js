@@ -874,6 +874,25 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), border: !!D.wrapBorder } };
 }
 
+// ── hoop earrings (Session 995, L1; OG-044 and OG-056: the Aurennais' coin and hoop jewellery) ──
+// A thin ring of gold or bronze through each earlobe. The lobe is the lowest point of the ear on the unmorphed body (the outer ear
+// stands past 7.3 cm from the middle between 68 and 75 cm up the rest mesh), carried to the morphed head by its index. The hoop hangs from it in the plane of the head's side, its top 2 mm into the lobe, carried rigid by the head bone
+function buildEarrings(P, G, heads, byName) {
+  const R0 = PACK.rest, D = G.dress, hv = PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6)), man = (G.g ?? .5) > .5;
+  const r = man ? .009 : .0125, tube = man ? .0011 : .0013, metal = new THREE.MeshStandardMaterial({ color: sRGB(...D.earrings), metalness: .85, roughness: .28 });
+  const grp = new THREE.Group(); grp.name = 'earrings'; const out = []; let near = 0, lobes = [];
+  for (const sg of [-1, 1]) { const ear = hv.filter(i => R0[i * 3] * sg > .073 && R0[i * 3 + 1] > .68 && R0[i * 3 + 1] < .75 && R0[i * 3 + 2] > .03 && R0[i * 3 + 2] < .065);
+    let lobe = ear[0]; for (const i of ear) if (R0[i * 3 + 1] < R0[lobe * 3 + 1]) lobe = i;
+    const L = new THREE.Vector3(P[lobe * 3] - sg * .002, P[lobe * 3 + 1] + .002, P[lobe * 3 + 2]), C = L.clone().add(new THREE.Vector3(0, -r, 0)); lobes.push(L);
+    const g = new THREE.TorusGeometry(r, tube, 8, 36); g.rotateY(Math.PI / 2); g.translate(C.x, C.y, C.z);
+    // nothing of the head or the neck within 1.5 mm of the ring, below its top third (which goes through the lobe)
+    const pa = g.attributes.position; for (let k = 0; k < pa.count; k++) { const y = pa.getY(k); if (y > C.y + r * .4) continue; const x = pa.getX(k), z = pa.getZ(k);
+      for (const i of hv) { const dx = P[i * 3] - x, dy = P[i * 3 + 1] - y, dz = P[i * 3 + 2] - z; if (dx * dx + dy * dy + dz * dz < .0015 ** 2) { near++; break; } } }
+    g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z); const m = new THREE.Mesh(g, metal); m.castShadow = true; grp.add(m); out.push(m); }
+  byName['head'].add(grp);
+  return { mesh: grp, stats: { near, r, drop: +(lobes[0].y - 2 * r - heads['head'].y).toFixed(3), lobes: lobes.map(v => [+v.x.toFixed(3), +v.y.toFixed(3), +v.z.toFixed(3)]), apart: +lobes[0].distanceTo(lobes[1]).toFixed(3), tris: out.reduce((a, m) => a + m.geometry.index.count / 3, 0) } };
+}
+
 // ── the eyebrows (Session 824, Michael's note on #272: "eyebrows look pretty fugly still") ──
 // Session 770's brows were a band of the skin's triangles under three noise shells: square-ended blocks, the same
 // thickness end to end, a hand's width too high. Now a brow is drawn on the face as a shape (a head at the nose, an
@@ -1665,6 +1684,8 @@ export function makePerson(G, o = {}) {
     const eg = new THREE.SphereGeometry(r * .8, 32, 24); eg.rotateY(-Math.PI / 2); const e = new THREE.Mesh(eg, new THREE.MeshPhysicalMaterial({ map: eyeTex, roughness: .08, clearcoat: 1 }));
     const head = byName['head']; head.updateWorldMatrix(true, false); e.position.copy(c).sub(heads['head']); e.position.z -= r * .12; head.add(e); }
   let helmStats = null; if (D.helm) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } helmStats = buildHelm(P, G, heads, byName, hp).stats; }
+  // hoop earrings (Session 995), when no raised hood covers the ears
+  let earStats = null; if (D.earrings && !(D.cloak && D.hood === 'up')) earStats = buildEarrings(P, G, heads, byName).stats;
   // the head-wrap (Session 994), over the same tucked hair, when no helm or raised hood is on the head
   let wrapStats = null; if (D.wrap && !D.helm && !(D.cloak && D.hood === 'up')) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } let bt = -9; const bm = meshes.find(m => m.name === 'brows'); if (bm) { const a = bm.geometry.attributes.position.array; for (let i = 1; i < a.length; i += 3) bt = Math.max(bt, a[i]); } wrapStats = buildWrap(P, G, heads, byName, hp, bt).stats; }
   // pose: arms down from the A-pose, a slight bend at the elbow, weight on one leg, the head turned a little
@@ -1725,7 +1746,7 @@ export function makePerson(G, o = {}) {
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a crossbow in the same fist (Session 941), when it holds no spear
   let crossbowStats = null; if (D.crossbow && !D.spear) crossbowStats = { ...buildCrossbow(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
-  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, wrap: wrapStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats };
+  root.position.y = -minY; return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, wrap: wrapStats, earrings: earStats, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -1748,7 +1769,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -1783,7 +1804,7 @@ export const PEOPLES = {
     body: { m: { metres: [1.74, 1.86], muscle: [.5, .66], weight: [.32, .46] }, f: { metres: [1.62, 1.74], muscle: [.42, .56], weight: [.34, .48] } },
     skin: [[.74, .56, .42], [.64, .46, .33], [.52, .36, .25], [.4, .27, .19], [.31, .21, .15]], hair: [[.1, .07, .06], [.16, .11, .08], [.22, .15, .1]], eyes: [[.3, .2, .12], [.22, .15, .1], [.35, .28, .16]],
     styles: { m: { short: 7, tail: 1 }, f: { braids: 3, braid: 2, bun: 3, loose: 1 } },
-    wool: [[.86, .81, .71], [.9, .86, .78], [.25, .35, .55], [.74, .55, .25], [.8, .78, .74]], cloak: .1, brooch: [.7, .55, .25], apron: [.1, 0], mantle: 0, sash: .45, wrap: [.45, .3], brow: { m: { thick: [.6, .85], arch: [.4, .6] }, f: { thick: [.45, .65], arch: [.6, .85] } } },
+    wool: [[.86, .81, .71], [.9, .86, .78], [.25, .35, .55], [.74, .55, .25], [.8, .78, .74]], cloak: .1, brooch: [.7, .55, .25], apron: [.1, 0], mantle: 0, sash: .45, wrap: [.45, .3], earrings: [.6, .25], brow: { m: { thick: [.6, .85], arch: [.4, .6] }, f: { thick: [.45, .65], arch: [.6, .85] } } },
   oldblood: { name: 'the Old Blood', race: { caucasian: [.75, .95], african: [0, .05], asian: [.05, .25] },
     body: { m: { metres: [1.56, 1.66], muscle: [.4, .54], weight: [.28, .4] }, f: { metres: [1.46, 1.56], muscle: [.36, .5], weight: [.3, .42] } },
     skin: [[.82, .78, .76], [.78, .74, .72], [.85, .81, .79]], hair: [[.05, .05, .06], [.08, .07, .08], [.11, .1, .11]], eyes: [[.66, .68, .7], [.58, .6, .63]],
@@ -1816,6 +1837,8 @@ export function peopleGenome(rnd, people, g, o = {}) {
   // the Aurennais' head-wraps (Session 994, OG-044 and OG-056: saffron, madder, teal, indigo and undyed), more often on the women,
   // never with a raised hood, drawn last for the same reason
   if (P.wrap && !(D.cloak && D.hood === 'up') && rnd() < P.wrap[sx === 'f' ? 0 : 1]) { D.wrap = pick([[.78, .55, .16], [.6, .16, .12], [.12, .42, .42], [.2, .26, .5], [.88, .84, .74]]); if (rnd() < .5) D.wrapBorder = pick([[.86, .7, .35], [.9, .82, .6], [.55, .18, .12]]); }
+  // the Aurennais' hoops (Session 995, OG-044 and OG-056: gold and bronze), more often on the women, drawn last for the same reason
+  if (P.earrings && rnd() < P.earrings[sx === 'f' ? 0 : 1]) D.earrings = pick([[.85, .66, .3], [.7, .45, .22]]);
   return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)
