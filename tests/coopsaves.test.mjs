@@ -33,13 +33,17 @@ check('join(split(d)) is d', lossless.same, lossless);
 
 // 2. reload the page, Continue: both come back
 g.errs.length = 0; await page.reload(); await W(5000);
-await page.evaluate(() => document.getElementById('cb').click()); await W(12000); await g.hide();
+// count the game's own writes from Continue on: one that lands after step 3's ssSetActive points Continue back at this character
+// (ssWrite sets the active key when its write lands), so step 3 waits for them all (Session 948: FLAKY on 14 Oct)
+await page.evaluate(() => { window._ssPending = 0; const w = ssWrite; ssWrite = function () { _ssPending++; return w.apply(this, arguments).finally(() => _ssPending--); };
+  document.getElementById('cb').click(); }); await W(12000); await g.hide();
 const back = await page.evaluate((qid) => ({ started, gold, level, might: ATTRS.might, stone: BAG.filter(it => it && it.name === 'Blue Stone').length, px, pz, clock: worldState.gameTimeMinutes, abs: worldState.gameTimeAbsMinutes,
   qs: QS[qid].state, obj: QS[qid].objectives[0].current, box: worldState.boxes && worldState.boxes.g_test_3 && worldState.boxes.g_test_3.taken, picked: worldState.picked && worldState.picked.g_test_3, sold: worldState.stats && worldState.stats.sold, fav: worldState.favor && worldState.favor.dunmore }), set.qid);
 check('the character comes back', back.started && back.gold === 777 && back.level === 7 && back.might === set.might && back.stone === 1 && Math.abs(back.px - set.px) < .5 && Math.abs(back.pz - set.pz) < .5 && back.sold === 11 && back.fav === 3, back);
 check('and the world', back.qs === 'active' && back.obj === 1 && back.clock >= 1000 && back.clock < 1010 && back.abs >= 5000 && back.abs < 5010 && back.box === 2 && back.picked === 4400, back);
 
 // 3. a save in the old one-row shape (v2), written by hand into the store and the index: the boot splits it, Continue loads the same state
+await page.evaluate(() => { SS.lastAuto = Date.now(); }); await page.waitForFunction(() => window._ssPending === 0, null, { timeout: 60000 });
 const old = await page.evaluate(async (qid) => { const d = _buildSavePayload(); d.v = 2; d.charId = 'oldone'; d.wS.charId = 'oldone'; d.pName = 'Old One'; d.gold = 4242; d.level = 9; d.ts = Date.now() + 5;
   d.BAG = d.BAG.filter(it => !(it && it.name === 'Blue Stone')); d.BAG.push({ name: 'Red Stone', ico: '💎', type: 'misc', weight: .1, sellMult: 1, buyPrice: 9, qty: 1 });
   d.wS.gameTimeMinutes = 800; d.wS.boxes = { g_x_1: { taken: 1 } }; d.wS.picked = {}; d.QS[qid].state = 'complete'; d.wS.stats = { sold: 5 };
@@ -48,7 +52,10 @@ g.errs.length = 0; await page.reload(); await W(5000);
 const split = await page.evaluate(async (skSrc) => { const m = SS.idx.find(e => e.key === 'oldone_manual_2'); const cs = await ssGet('oldone_manual_2'), ws = await ssGet(ssWorldKey('oldone_manual_2'));
   const c = cs && JSON.parse(cs), w = ws && JSON.parse(ws); return { v: m && m.v, size: m && m.size, two: !!(cs && ws), cv: c && c.v, cGold: c && c.gold, cQS: c && c.QS, wClock: w && w.wS && w.wS.gameTimeMinutes, wBox: w && w.wS && w.wS.boxes, cStats: c && c.wS && c.wS.stats }; }, sk);
 check('the boot split the one-row save into two rows', split.two && split.v === 3 && split.cv === 3 && split.cGold === 4242 && split.cQS === undefined && split.wClock === 800 && split.wBox && split.wBox.g_x_1.taken === 1 && split.cStats && split.cStats.sold === 5 && split.size > old.len, split);
-await page.evaluate(() => document.getElementById('cb').click()); await W(12000); await g.hide();
+// count the game's own writes from Continue on: one that lands after step 3's ssSetActive points Continue back at this character
+// (ssWrite sets the active key when its write lands), so step 3 waits for them all (Session 948: FLAKY on 14 Oct)
+await page.evaluate(() => { window._ssPending = 0; const w = ssWrite; ssWrite = function () { _ssPending++; return w.apply(this, arguments).finally(() => _ssPending--); };
+  document.getElementById('cb').click(); }); await W(12000); await g.hide();
 const same = await page.evaluate((qid) => ({ started, gold, level, cid: worldState.charId, name: playerName, red: BAG.filter(it => it && it.name === 'Red Stone').length, blue: BAG.filter(it => it && it.name === 'Blue Stone').length, px, pz,
   clock: worldState.gameTimeMinutes, qs: QS[qid].state, box: worldState.boxes && worldState.boxes.g_x_1 && worldState.boxes.g_x_1.taken, sold: worldState.stats && worldState.stats.sold }), set.qid);
 check('the old save loads to the same state', same.started && same.gold === 4242 && same.level === 9 && same.cid === 'oldone' && same.name === 'Old One' && same.red === 1 && same.blue === 0 && Math.abs(same.px - old.px) < .5 && Math.abs(same.pz - old.pz) < .5
