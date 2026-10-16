@@ -8,6 +8,14 @@ fs.mkdirSync('tests/out', { recursive: true });
 
 async function shoot(look) {
   const g = await boot({ look }); const { page } = g;
+  // Session 991: the road's grain is a cosmetic roll, 1 ± .07 a vertex from Math.random (buildRoadRibbons, js/82-world-structures.js),
+  // so each boot lays a different road, and the road box (a few large near triangles) read 223–240 in red across four tries on CI
+  // (FLAKY on d07d7c0 and faaa8d4, worst 17 and 11), while sky, grass and wall agreed to a level. Both looks lay the same grain now:
+  // while one chunk's ribbons are built, Math.random is a stream seeded by the chunk (cx, cz), and the old Math.random comes back after.
+  await page.evaluate(() => { const build = buildRoadRibbons; window.__seededRoads = 0;
+    buildRoadRibbons = function (cx, cz, group) { window.__seededRoads++; let s = (Math.imul(cx | 0, 73856093) ^ Math.imul(cz | 0, 19349663)) >>> 0; const rnd = Math.random;
+      Math.random = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+      try { return build(cx, cz, group); } finally { Math.random = rnd; } }; });
   await g.intoWorld(); await g.settle('dunmore');
   // Session 832: clear sky is not bare ground. Snow that fell while the town loaded lies for a minute or more after the sky
   // clears (it melts at about .014 a second here), and on CI (dfea40a) the old look's picture had it and the new one's not:
@@ -25,7 +33,7 @@ async function shoot(look) {
     const gl = REN.getContext(), px1 = new Uint8Array(4); REN.render(scene, CAM); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px1);
     const t1 = performance.now(); for (let k = 0; k < 8; k++) { REN.render(scene, CAM); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px1); }
     const renderMs = +((performance.now() - t1) / 8).toFixed(1), calls = REN.info.render.calls, tris = REN.info.render.triangles;
-    return { rev: THREE.REVISION, url: o.toDataURL(), at: [Math.round(px), Math.round(pz)], renderMs, calls, tris }; });
+    return { seeded: window.__seededRoads, rev: THREE.REVISION, url: o.toDataURL(), at: [Math.round(px), Math.round(pz)], renderMs, calls, tris }; });
   // the frame's cost: the game's own meter over a few seconds of its own loop, standing still at the spot
   // Session 830: the meter reports once two frames 500 ms apart have been drawn; a loaded runner draws one every few seconds, so
   // 9 s could pass with no reading (CI's FLAKY on edda9f4; both looks read null here with two suites side by side). At least
@@ -69,6 +77,7 @@ console.log('  perf old', JSON.stringify(oldR.perf));
 console.log('  perf new', JSON.stringify(newR.perf));
 // Session 822 measured 6.0 over the frame, most of it the grass's fine noise and a house or two the town built differently that run;
 // (7.1 on a second run); the flat regions came within 1 level of each other
+check('both looks laid their roads with the seeded grain', oldR.seeded > 0 && newR.seeded > 0, { old: oldR.seeded, new: newR.seeded });
 check('the two pictures match closely: mean difference under 12 of 255 (the scene itself varies), average brightness within 3', diff.mean < 12 && Math.abs(diff.lumOld - diff.lumNew) < 3, diff);
 check('the colour and the light match: sky, grass, road and a lit wall each within 10 levels a channel', diff.worst <= 10, diff.regions);
 check('both looks measured their frame', !!(oldR.perf && newR.perf), { old: oldR.perf, new: newR.perf });
