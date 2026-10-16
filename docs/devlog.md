@@ -21847,3 +21847,41 @@ What changed in `people.js`:
 - **The ends are stiff.** They hang straight and flat, with no twist and no fringe. OG-056's ends are fringed.
 - **The arm swung back.** At 0.15 radians the hand hangs at the side of the thigh, behind the ends. Whether that reads as relaxed or as held back needs a look in the line-up.
 - **In motion** the ends would swing. They are built on the posed body like the rest of the sash, so in the game they need bones or a cloth tick (B4, F4).
+
+## v80 — Session 994 — The Aurennais' head-wrap (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais head-wraps (OG-044 and OG-056, both kept): cloth wound round the head in saffron, red and teal. The wardrobe had no such piece. The sheets draw it plainly and the canon has nothing against it, so, as with the sash (Session 989), this asks nothing. It touches only the prototypes (`people.js`, `builder.js`'s labels and `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`headDome`, from the kettle helm.** Session 897's dome, fitted to the skull, is now a function of its own. The helm and the wrap share it, and the helm's numbers are unchanged (its checks pass as before). It reads the furthest point of the head and of the tucked hair in 72 directions round and 24 down, above a rim line, spreads each one to its neighbours and smooths them.
+- **`buildWrap`.**
+  - **The crown** is that dome with 1.6 cm of clearance for the wound cloth (the helm has 1.2).
+  - **Its edge** runs across the forehead 1.2 cm over the helm's brow line, dips over the tops of the ears, and comes 12.8 cm down at the nape to gather the hair.
+  - **Five wound turns** lie round its lower half. Each is a band of cloth 1.7 to 2.2 cm wide and about 1 cm thick: a tube flattened onto the head, its width swelling by 14% along its length.
+  - **The turns cross.** Each runs higher at the front or at the back than the one under it, so they cross over the brow and at the nape as a wrap's turns do.
+  - **Colours.** The lowest turn is in the edge colour (`wrapBorder`) when there is one, and otherwise a shade darker. The crown is a shade lighter.
+  - **Seams.** The crown's and the turns' seams lie at the back; a first try put them down the middle of the forehead.
+  - **Size.** It is one mesh of 9,072 triangles, carried rigid by the head bone as the helm is.
+- **The hair is tucked** under a wrap as under a helm: short, the long styles and braids put away.
+- **Nothing else on the head.** No wrap is built under a raised hood or a helm.
+- **The dress** takes `wrap` and `wrapBorder` (in the builder's garment list as *head-wrap* and *head-wrap edge*). They save and load.
+- **The roll.** The Aurennais roll a wrap at 0.45 for women and 0.3 for men, never under a raised hood. The colours are saffron, madder, teal, indigo or undyed, and half the wraps have an edge in sand, cream or madder. It is drawn after the sash, last in `peopleGenome`, so every earlier roll of a seed is as it was. No other people rolls one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 305 checks pass** (299 after Session 992). The six new checks:
+  - **A woman with braids under a saffron wrap, and a bearded man in teal:**
+    - the head stays at least 16.0 mm under the cloth;
+    - none of the 27,774 and 27,862 tucked hair points comes out;
+    - it clears the tops of the brows by 18.7 and 18.9 mm, with no point of it over them;
+    - it comes 12.8 cm down at the nape, in five turns, and saves and loads back.
+  - **No wrap under a raised hood or a helm.**
+  - **The roll:** 13 of 40 rolled Aurennais wear one (7 of them women), none under a raised hood, and none of 30 Markmen, Gatelanders and Old Blood.
+- The helm's checks pass on the shared dome. `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-wrap-woman.jpg`, `-back.jpg`, `-man.jpg`, `-side.jpg` and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`. All three of its Aurennais now wear wraps; the sash man's is saffron.
+
+### Needs eyes
+- **Seen from the side** the wrap stands a little forward of the forehead, like a cap's peak. This is the dome's clearance at the brow.
+- **One way of wrapping** serves both men and women. OG-056's women wear their head-scarves with a tail falling down the back, and its men wear taller turbans. A tail, and a height by sex, would be the next pieces.
+- **The weight:** 9,072 triangles is heavy for a hat. The turns could take 6 sides in place of 10 when F4 brings it into the game.
+- **The tucked hair** shows as a dark fringe on the neck under the nape's edge on the woman.
