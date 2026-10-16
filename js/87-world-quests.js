@@ -1150,8 +1150,8 @@ const giver=`${lord.title} ${lord.name}`;
     return CROWN_BLADE.keep;}
   function crownBladeTopics(site){if(!site||site.id!==FACTIONS.crown.seat)return [];const S=artifactState('gate_blade');if(!S||S.yielded||!artifactCarried('gate_blade'))return [];
     const give={label:'Give it to the Crown.',quest:true,fn:()=>crownGiveBlade()||CROWN_BLADE.not};
-    if(S.licence)return [{label:'The licence.',response:CROWN_BLADE.lic,follow:[give]}];
-    return [{label:'The blade from the stone.',response:CROWN_BLADE.ask,follow:[give,{label:'I’ll keep it.',quest:true,fn:()=>crownLicenseBlade()||CROWN_BLADE.not},{label:'Not now.',response:CROWN_BLADE.not}]}];}
+    if(S.licence)return [{label:'The licence.',quest:true,response:CROWN_BLADE.lic,follow:[give]}];
+    return [{label:'The blade from the stone.',quest:true,response:CROWN_BLADE.ask,follow:[give,{label:'I’ll keep it.',quest:true,fn:()=>crownLicenseBlade()||CROWN_BLADE.not},{label:'Not now.',response:CROWN_BLADE.not}]}];}
   // S788 — the Drowned Bell's claimant, the Compact (the page's Sea row; the approved draft's words): any Factor in Aurenne (the
   // lord of an Aurennais town or port) asks while the bell is on you and not given up. *Give it to the Compact.*: below Factor,
   // and the Compact open to you, the rank of Factor (its second); at Factor or above, a service counted; sworn to another power

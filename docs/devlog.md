@@ -21707,3 +21707,10 @@ The one difference in form: the review's ternary is a small function, `talkedGre
 - Nothing for a playtest beyond reading the four lines in their towns.
 
 **A correction to numbering.** The bodies builder took Session 983 on its own branch during this run, so the lord's job is Session 985 (pushed as *Session 983*, commit `ce3f8ace`) and the guard's line is Session 986 (pushed as *Session 984*, `0fe8f9f3`). The entries, the code comments and the tests carry the new numbers; the two commit messages keep the old ones.
+
+## v80 — Session 987 — The Crown's blade topic is drawn as quest talk (the critic's note, backlog I)
+The critic found that the lord's *The blade from the stone.* at Coeur de Vie was grey in Tadhg's list, while *Serve the Crown.* and the work topics were gold. Its own *Give it to the Crown.* and *I’ll keep it.*, and the Waylamp's *The lamp.*, carry the mark. The topic in `crownBladeTopics` (`87-world-quests.js`) had no `quest:true`. Nor had its other state, *The licence.*, which the lord asks once you hold the blade under the Crown's licence. Both carry it now. No words changed.
+### Verified (headless Chromium)
+- `crownclaim`, extended, 12 of 12: both topics are quest talk; every other check as before.
+### Needs eyes
+- Nothing.
