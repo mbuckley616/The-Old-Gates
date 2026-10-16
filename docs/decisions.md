@@ -4,6 +4,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
+### Steady (Bow 25): build an aim sway for it to remove, or another perk? (systems builder, Session 982) — DECISION #369
+The build sheet's Bow 25 perk, *Steady*, is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly where the crosshair is for as long as you hold it, and only the stamina drain (8 a second) limits the hold. So there is nothing for Steady to take away. Session 982 built the Bow's other three perks (Quick nock, Long eye, Through) and left Steady off; the Skills tab shows it as *not yet in the game*.
+
+What should Steady be?
+- **A. Build a sway, then Steady** (recommended). A full draw held past 1 s starts to drift: the arrow leaves up to 2° off the crosshair, growing over the next 2 s, with a small visible wobble of the bow. Steady holds the aim true for the first 3 s of a full draw. The bow gains a skill in the hold, which is what Skyrim's and Oblivion's archery have, and the perk reads as written. The 1 s, 2° and 2 s are mine to tune in playtest.
+- **B. Steady without a sway**: a full draw costs no stamina for its first 3 s. Same name, a different perk; the bow stays as easy to aim as now.
+- **C. Leave it** until the bodies builder's bow draw and the new look's aim (F-cards) are in, and decide then.
+
+Michael: **Build a sway, then Steady**. (16 Oct 2026, on the control room)
+
 ### The double jump and the air dash — should speed in the air be capped? (the designer, 2026-10-16) — DECISION #370
 The build sheet (`docs/design/double-jump-and-dash-build.md`) sets *Second step* at Acrobatics 75 (a second press of Space sets the rise to 4.5 m/s: apex 1.77 m, about 5 m of gap, 12 stamina) and *Swallow's turn* at 100 (Q in the air: 3.0 m level in 0.2 s, 20 stamina), each once a flight, and builds the places to a table of steps. The table works only if a gap's length depends on Acrobatics alone, and today you fly at full ground speed: at Athletics 100 and Swiftness 40 an untrained jump clears 3.8 m and the double jump 7.4 m.
 - **A.** Capped at 4.7 m/s in the air for everyone, the sprint of untrained legs: anyone clears 2.9 m, the double jump about 5, the dash 6.5 to 8, for every character.
@@ -11,24 +23,34 @@ The build sheet (`docs/design/double-jump-and-dash-build.md`) sets *Second step*
 - **C.** Capped at 4.7, with Haste lifting it to 6 for its 20 s: one more answer to a gap, and a Haste-shaped hole in the table (7.3 m).
 
 Recommendation: **A.** Each perk opens its own step, and a place built for the double jump reads the same to a Scout and a Warrior.
-### Combat's resolver: how hard an ordinary blow lands, now that armour takes a share (the deep-work session, Session 939) — DECISION #355
-The attack table and the one resolver are built (`auto/fable-combat-resolver`). Armour now takes a share of every blow on you, as #181 B said: damage × 50 / (50 + armour), where it took half a point per point. That put the cliff between 20 and 40 armour.
 
-The card's retune is built: an ordinary blow of your level's tier, against a heavy kit of your level, lands at 10% of your health at levels 1 to 20, in the dungeon and in the open world. So you fall to the tenth unguarded blow. combat.md's B says a common enemy "dies in four to six hits and takes three to five of yours". If that means you fall to three to five blows, a tenth is outside it.
+Michael: **Cap air speed at 4.7 m/s for everyone**. (16 Oct 2026, on the control room)
 
-What an ordinary blow does today:
-- **In the dungeon:** 24% at level 1 (you fall to 4 blows), 10% at level 5, and 1 point from level 10.
-- **In the open world:** 5.5% at level 1, then 1 point.
+### Enemies by place, asked again now that skills have landed: which place is how dangerous? (systems builder, Session 992) — DECISION #373
+On #51 (29 Sep) you answered **C, not yet**: keep foes growing with your level until the skills sessions land. They have (Sessions 940–982: skills by use, the level on marks, the first perks), and 2.0 waits on enemies by place (your 1 B on the scope). Today every foe still grows with your level: health ×(1 + 0.15 a level, to ×3 at 14), and its blow with the reference blow (combat's resolver, PR #356, which keeps an ordinary blow near the same share of your health at your level's kit). Under skills by use that is Oblivion's failure: a character who levels by alchemy and locks meets wolves built for a fighter. And with friends in your world there is no one level to scale to.
 
-Whatever you choose, the open world's foes now hit as hard as the dungeon's at the same tier.
+The tier would replace the level in `enemyHpScale` and `enemyDmgScale` (and in the rare variants' chance), read from where the foe stands. The build waits for the resolver to merge, since it rewrites the same two functions.
+- **A. A tier for each region, plus the dungeon floor** *(recommended, as on #51)*. Home's regions are authored: the coast, Ashen, Bealach and Royale tier 1; Deepwood, the Foothills and Greywood tier 2; the Wastes tier 3. The far islands take a tier from their biome: tundra, swamp and wasteland 3, the rest 2. Each dungeon floor below the first adds one, to a cap of 4. A tier is worth what the level curve gives today at levels 1, 6, 11 and 16 (health ×1, 1.75, 2.5, 3; the blow as the resolver's reference blow at those levels). A gate's school does not change its tier.
+- **B. Rings by distance from Ashenmoor**: tier 1 near the start, one more every ~600 units, the far islands 3–4. No authoring, but a forest can be tier 1 at one edge and tier 2 at the other.
+- **C. A, and the level still counts for a little**: the tier as in A, times 1 + 2% a level past the tier's own (to ×1.3), so an easy place stays a little worth fighting late. Friends in one world would meet slightly different foes.
 
-- **A.** A tenth, as built: ten unguarded blows to fall at every level. A pack of three takes about three exchanges.
-- **B.** A sixth *(recommended)*: six unguarded blows to fall, about eight through a held block. One foe can kill you if you stand and trade, and a pack of three in two exchanges. The roll, parry and block keep you standing.
-- **C.** A quarter: four blows to fall. This is the middle of combat.md's three to five, and today's dungeon at level 1. With the open world's packs it reads closer to a Souls game than to Dragonwilds.
+A keeps a region's danger readable (the Wastes are dangerous, the coast is not), and is one Opus session once the resolver is on main.
 
-Recommendation: **B.** At a tenth, a single foe is something you can stand and swap blows with, and that is the click-and-swing combat.md set out to end. At a quarter, a pack punishes every misread. Whichever you choose, it is one constant (`BLOW_SHARE`, `74-strikes.js`), and the rest of the build is unchanged.
+Michael: **A danger tier per region, plus the dungeon floor**. (16 Oct 2026, on the control room)
 
-## Answered
+### Hearing, No mark and Word given: build the rule each takes away, or other perks? (systems builder, Session 1001) — DECISION #376
+The build sheet's last three perks of the hand and the word each change a rule the game does not have, as Steady (#369) did for the bow. Session 1001 built Stealth 100 (*Shadow's hand*, a backstab ×1.5) and left these three off; the Skills tab shows them as *not yet in the game*.
+
+- **Hearing (Speech 75): "a person at favour −1 still talks".** Nobody refuses to talk at any favour today: a keeper refuses trade for five days after a crime they saw, and that is all.
+- **No mark (Locks 100): "a picked town lock is never found".** A picked lock is a crime only if someone sees the pick (Session 327). Nobody finds it afterwards.
+- **Word given (Speech 100): "once a day a guard takes your word for a trespass".** There is no trespass: being inside after hours is not a crime (the crime system's design, 26 Sep). The nearest thing is the lock crime (25 gold, −1 favour).
+
+What should the three be?
+- **A. Build the rule each perk takes away, then the perk** (recommended for No mark and Word given). *No mark*: a picked shop lock unseen is found by its keeper at the next opening: −1 favour in that town, no fine (nobody knows whose hand it was); No mark stops it. *Word given*: once a day, a guard's halt for a fine that is only lock crimes is waived at your word (*Word given.*), and the fine is cleared. *Hearing*: at favour −1 or worse a townsperson gives a greeting and no topics but trade; Hearing opens them again at −1 (not below). Hearing needs a brush-off line in each people's voice from the quest writer.
+- **B. Different perks, same names**, with no new rule: *Hearing*, +1 favour the first time you talk to each person in a town (once per town a day); *No mark*, a witness to a pick sees *someone*, and the fine is halved; *Word given*, *Talk it down* works twice in each town.
+- **C. Leave them** until 2.0's other systems work is in, and decide then.
+
+Michael: **Build the rule each lifts, then the perk**. (16 Oct 2026, on the control room)
 
 ### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #362
 OG-018 draws Uisce's Frost Thing as "a crystalline ice-shard figure, all spikes". Canon §9a says a steady gate makes "the shapes the local folklore had words for", and the catalogue flags that the sheet's figure reads as an elemental, with no folk shape under the ice. Both are built as plans in the creature kit, for you to choose between.
