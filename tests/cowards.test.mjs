@@ -49,12 +49,14 @@ const ph = await page.evaluate(() => {
     if (e._windup != null && e._windup > .95) winds = msgs.filter(m => /winds up/.test(m[1])).length;
     return msgs.filter(m => /heavy blow|step clear/.test(m[1])).length >= 2; };
   try { _drive(step, 60 * 25); } finally { showMsg = _m; }
-  const out = { dmg: e.dmg, spd0, spd: e.spd, msgs }; _clear([e]); return out; });
+  const out = { dmg: e.dmg, heavy: foeBlow(e, e.dmg * 2.2), spd0, spd: e.spd, msgs }; _clear([e]); return out; });
 console.log('second phase', JSON.stringify(ph));
 const T = (re) => ph.msgs.filter(m => re.test(m[1])).map(m => m[0]);
 check('under half health the Ogre roars once and quickens by a third', T(/roars/).length === 1 && Math.abs(ph.spd / ph.spd0 - 1.3) < .01, ph);
 check('it winds up a second before each heavy, the heavies six seconds apart', T(/winds up/).length >= 2 && Math.abs(T(/winds up/)[1] - T(/winds up/)[0] - 6) < .1 && Math.abs(T(/heavy blow|step clear/)[0] - T(/winds up/)[0] - 1) < .1, ph.msgs);
-check('stood in reach, the heavy lands for 2.2× its blow', ph.msgs.some(m => m[1] === `Ogre's heavy blow: ${Math.round(ph.dmg * 2.2)}.`), ph.msgs);
+// S949 — since S940 the heavy goes through the attack table like every blow: 2.2× the Ogre's roll, its row and place, then your
+// armour's share (foeBlow), where it was 2.2× the bare roll.
+check('stood in reach, the heavy lands for 2.2× its blow, through your armour\'s share', ph.msgs.some(m => m[1] === `Ogre's heavy blow: ${ph.heavy}.`), ph);
 check('stepped out of reach during the wind-up, it lands nothing', ph.msgs.some(m => m[1] === 'You step clear.'), ph.msgs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

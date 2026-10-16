@@ -28,6 +28,8 @@ else if (Q.get('place') === 'peat') await import('./places-peat-view.js') /* Ses
 else if (Q.get('place') === 'shepherd') await import('./places-shepherd-view.js') /* Session 997: the Gatelands' abandoned shepherd's hut */;
 else if (Q.get('place') === 'cabin') await import('./places-cabin-view.js') /* Session 998: the Mark's hunting cabin */;
 else if (Q.get('place') === 'logging') await import('./places-logging-view.js') /* Session 999: the Mark's abandoned logging camp */;
+else if (Q.get('place') === 'cove') await import('./places-cove-view.js') /* Session 1007: Aurenne's smuggler's cove */;
+else if (Q.get('place') === 'icemouth') await import('./places-icemouth-view.js') /* Session 1006: the Mark's ice cave mouth */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();
 scene.background = new THREE.Color(0x020203); scene.fog = new THREE.FogExp2(new THREE.Color(.02, .02, .025), .035);

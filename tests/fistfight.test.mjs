@@ -39,13 +39,17 @@ const fight = (punch, fists, max) => page.evaluate(([punch, fists, max]) => {
 
 const stand = await fight(false, true, 60 * 30);
 console.log('stood still', JSON.stringify(stand));
-check('stood still, the Bandit winds up and strikes: 12+ blows in 30 s, each after its tell, most landing', stand.blows >= 12 && stand.tells >= stand.blows && stand.landed >= stand.blows * .8 && stand.phpEnd < stand.php0 - 60, stand);
+// S940 — armour as a share (decision #181 B, the attack table): stood still you fall, where you used to outlast 30 s. S949 — an
+// ordinary blow at your level's kit is a sixth of your health (Michael's B on #355), so you fall at the sixth blow (6 of 6 landed,
+// 10.9 s, 130 health); 5 to 7 allows for the Bandit's roll. The rhythm is the same: 12 or more blows a 30 s.
+check('stood still, the Bandit winds up and strikes, 12+ blows a 30 s, each after its tell, most landing, until you fall at about the sixth', stand.blows / stand.secs >= 12 / 30 && stand.tells >= stand.blows && stand.landed >= stand.blows * .8 && (stand.blows >= 12 || (stand.phpEnd <= 0 && stand.landed >= 5 && stand.landed <= 7)), stand);
 
 const runs = [];
 for (let k = 0; k < 5; k++) runs.push(await fight(true, true, 60 * 30));
 for (const r of runs) console.log('punched', JSON.stringify(r));
 const sum = (f) => runs.reduce((a, r) => a + f(r), 0);
-check('punched bare-handed, the Bandit dies every time, in 7–12 punches that land', runs.every(r => r.dead && r.hits >= 7 && r.hits <= 12), runs.map(r => [r.dead, r.hits, r.swings]));
+// S940 — the light chain: every third punch lands ×1.3, a tenth more on the average, so 7–12 punches became 6–11
+check('punched bare-handed, the Bandit dies every time, in 6–11 punches that land', runs.every(r => r.dead && r.hits >= 6 && r.hits <= 11), runs.map(r => [r.dead, r.hits, r.swings]));
 check('the punches break its posture: it stands staggered for a quarter of the fight or more', runs.every(r => r.stagFrames >= r.frames * .25), runs.map(r => [r.stagFrames, r.frames]));
 check('so it starts few wind-ups and lands two blows at most a fight', runs.every(r => r.landed <= 2), runs.map(r => [r.tells, r.blows, r.landed]));
 console.log('fists over five fights:', { secs: runs.map(r => r.secs), punches: sum(r => r.swings), landedOnYou: sum(r => r.landed), staggeredShare: +(sum(r => r.stagFrames) / sum(r => r.frames)).toFixed(2) });
