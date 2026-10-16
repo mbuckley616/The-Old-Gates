@@ -20334,6 +20334,69 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
 
+## v80 — Session 940 — Combat's resolver: the attack table and one resolver (deep work, card combat-resolver)
+The card was combat B's deep-work session (Michael's B, 28 Sep; v2-scope.md §4 and §7, after F2a and before F2b): one attack table and one resolver for the dungeon and the open world, plus commitment, the light chain, a potion's time, and armour as a share (#181 B).
+
+**The problem.** There were two resolvers for your swing, `_resolveDungeonStrike` (62) and `_resolveZoneStrike` (42). They were the same rules written twice, with small drifts: the dungeon's never doubled a blow on a dazed beast or woke its pack, and the world's never redrew the bar at the hit. A foe's blow had two free formulas:
+- the dungeon's: 10–20 × its multiplier, less half your armour;
+- the world's: its `dmg` + 0–3, less half your armour.
+
+**The table** is in `74-strikes.js`, so no script tag moved. `WEAPON_ATTACKS` has a row per weapon class, plus Fists, Bow, and a placeholder row for a sent cast (magic.md). `FOE_ATTACKS` has a row per family: humanoid, beast, spider, brute, troll, slime, elemental, wraith, mimic, shark, boss, and the master's slam. Each row carries tell, strike and recovery in seconds; reach in today's units; arc in degrees; a damage multiplier; posture; blockable and parryable; and empty `heavy` and `third` columns for combat.md's move-set sessions.
+
+Every number is today's:
+- **Your swings.** 0.55 s × the weight's factor, the impact at 0.55, the last third the recovery. A sword is 0.303 + 0.064 + 0.183 s.
+- **Posture and cleave.** Posture is 8 × postureMult, so 12, 14 and 18 on the two-handers; cleave is the type's own.
+- **Reach and the cone.** Reach is 2.2, and 3.0 against a boss (`REACH_VS_BOSS`). The cone is the old cos .45, which is 126.5° whole. The old comments said 117°; the number never changed.
+- **The foes.** Their tells are S282's by kind (`TELEGRAPH_BY_NAME` is now built from the rows, and 14-items.js reads it). Their blow lands in 1.6 units and 90°, a troll's in 2.4 and 140°, a boss's within its biteRange. Recovery is 1.0 s in the dungeon, and the world's kinds keep their own `atk`.
+- **Families.** `foeFamily(e)` finds the family from the kind's name, then its shape, then the troll and boss rules that `strikeArc` used.
+
+**One resolver.** `resolvePlayerStrike` serves both places, and the two old names are one-line callers (tests wrap them). It does:
+- reach and arc from the row, nearest first, up to the cleave;
+- the power blow that breaks a raised shield (S485's spent swing kept);
+- the damage chain in one swappable function, `meleeDamageChain`, which still reads Might and the flat level × 1.5 for the skills build to replace;
+- `applyMeleeDamage` (riposte, finisher, stagger, backstab), posture, the rune's rider and the kill.
+
+The hit sound now gets the weapon's damage type and the resist. Before, it was passed two names that were never in scope, so it always played the plain hit.
+
+**A foe's blow** goes through `foeBlow(e)`. It takes the foe's own roll, × the row's multiplier, × a scale for its place, then your armour's share. `executeStrike` reads the row for whether the blow parries or blocks and what it drains from your posture. The world's arrows and the lair beast's charge and heavy blow (85) go through the share too. The mimic's pounce keeps its (14 + level) roll. Magic (the orbs, the Faolchú's fire, the drain) keeps its own sums, since magic's resolver is out of this card.
+
+**Armour as a share.** Every blow on you is × 50 / (50 + armour). The retune follows the card:
+- **Target.** An ordinary blow of your level's tier, against a heavy kit of your level's material, lands at `BLOW_SHARE` (a tenth) of a reference health.
+- **The reference player.** 100 + 15 a level of health. The kit is helmet to boots plus a buckler, at the tier the loot reaches (1 + 0.4 a level): 7 armour at level 1, 18 at 5, 41 at 10, 146 at 20.
+- **The level curve.** `enemyDmgScale` was +8% a level, capped at ×2 at level 13. It is now the reference blow's growth, ×3.75 at 10 and ×13.2 at 20.
+- **The places.** Today's level-1 ordinary blow was a Skeleton's 30 in the dungeon and a Bandit's 7 in the world. Both are scaled to the same reference, so the world's foes now hit as hard as the dungeon's at a tier. They had hit about a quarter as hard.
+- **The slam** stays S617's share of your health.
+
+A tenth means falling to the tenth unguarded blow. If combat.md's "takes three to five of yours" means three to five blows to fall, that is outside it, so the session asks **DECISION #355** (A a tenth as built, B a sixth (recommended), C a quarter). Whichever is chosen, it is the one constant `BLOW_SHARE`.
+
+**Commitment** runs on the play clock, against the swing's own start (`SWING`, set by `beginSwing`, which both attack paths now call):
+- **In the wind-up and the strike** you move at ×0.35, and `commitTurn` holds your turn to 90° a second. A turn made before the click is yours: the facing is taken at the swing's start. That came from `captainguard`, which turns you behind a captain and swings in one frame.
+- **Roll and guard.** `startRoll` and the right button (`raiseGuard`, out of 92's handler so a test can call it) are refused then. In the recovery they cut the swing short.
+- **The light chain** is three swings in a row, each begun within 0.4 s of the last one's end. The third lands ×1.3 on the damage before armour and drains ×1.5 posture. A power blow breaks the chain.
+- **A potion** (heal, mana, stamina, or a tonic) leaves the bag at once and works after 0.8 s (`startDrink`/`tickDrink`). You walk at ×0.5 with no sprint and cannot swing; one at a time.
+
+Co-op rules: every window is the play clock against the two fighters' state, none is under 150 ms, damage rolls stay on the struck foe's stream (`foeRand`), and foes target through `targetOf` as before.
+### Verified (headless Chromium)
+- **`resolver` (new): 25 of 25.**
+  - **The table.** Every weapon row keeps today's swing length (within 2 ms), impact (0.55) and recovery (a third), and today's posture and cleave. Every row has all the columns, and the cast row is a placeholder. The families come out right, with 15 tells by kind.
+  - **The same Bandit in the dungeon and the open world.** Hit (2 and 2), miss at 2.3, miss at 70° off, hit at 60°. Guarded 1 and 1; a power blow breaks the guard for 0. Riposte 8 and 8; finisher 10 and 10.
+  - **Its blow in both places.** Unguarded 15 and 15, held block 10 and 10, parry 0 and 0 with the riposte open.
+  - **Commitment.** A sword's phases are 0.303, 0.064 and 0.183 s. Move is ×0.35, ×0.35 and ×1 by phase. Roll and guard are refused in the wind-up and strike, and both cancel in the recovery. A 1-rad flick turns 0.157 rad in 0.1 s, against 1 rad free.
+  - **The pace through the game's own loop.** 3.83 free against 1.341 committed, which is ×0.350.
+  - **The chain.** It goes 1, 2, 3, 1, 2; a power blow is 0; then 1. The third lands 5 against the first's 4, and drains 12 posture against 8.
+  - **The potion.** Nothing at 0.79 s, +30 at 0.81 s; ×0.5 pace, no swing, no second potion.
+  - **Armour.** Shares of 11, 6 and 4 at 0, 40 and 100 armour; a dungeon blow at 40 armour takes 6 as the share says.
+  - **The retune.** 10.0%, 10.0%, 10.0%, 10.2%, 10.0% and 9.9% of the reference health at levels 1, 3, 5, 10, 15 and 20, in both places.
+- **Re-measured to the new truth (none loosened):**
+  - `posture`: the Bandit's blow is `foeBlow(e, e.dmg)`, and the drain is still exactly 1.5× it.
+  - `herbparity`: Ferrous Guard's +8 armour is now its share of the arrow, 47 against 41, exact; the swing before the roll is let go, since the roll is refused while it is committed.
+  - `fistfight`: standing still, the rhythm is unchanged (12 or more blows a 30 s). You now fall at about the tenth blow, where you used to outlast 30 s. Punches to kill a Bandit are 6–11, where they were 7–12: every third punch lands ×1.3.
+- **Green unchanged:** counters, tells, roll, attrdmg, fists, fistswing, spentguard, spentblow, challenge, dazed, blacksail, duelrhythm, dunseed, foeseed, fortunecaor, guardlevel1, guardplay, guardsindoor, herbhidden, hptail, lvact, parrydeath, posturefloor, and the rest of the batch listed in the PR. `captainguard`, `dmgnums`, `fistfight`, `herbparity` and `posture` green on a re-run after the fixes above (`dmgnums` had failed once under three suites at once, before them, and passed three times since). The full suite runs on the PR's CI.
+### Needs eyes
+- **The new weight.** Swinging, you slow to a third of your pace and cannot whip round. Does it read as weight, or as the game holding you? The lock-on still turns you to the foe, at 90° a second while committed.
+- **The potion.** It works after 0.8 s with no sound or pose of drinking beyond the potion's old sound at the start. A drinking pose is the bodies builder's.
+- **The world's foes hit harder.** At level 1 a Bandit's blow went from about 5 to about 10 at a light kit, and from level 5 it no longer comes down to 1 point. #355 decides how hard.
+- **Owed:** #355's answer (one constant); the heavy and third columns (the six Opus sessions); reach in metres (F2b); magic's own resolver.
 ## v80 — Session 932 — The giant spider's thorns and egg sacs (L4, prototype only)
 The last of OG-041's classic five that already stood in the kit: the giant spider (Session 772) had the sheet's pale bulbous abdomen, dark legs and cluster of red eyes, but not its thorny legs or its egg sacs. The sheet draws both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
 
@@ -20859,6 +20922,41 @@ Corrections made during the session:
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
 
+## v80 — Session 949 — A blow is a sixth of your health (deep work, card combat-resolver, Michael's B on #355)
+Session 940 built the attack table and the one resolver and stopped on DECISION #355: with armour as a share, how much of your health should an ordinary blow of your level's tier take, at a kit of your level? Michael chose **B, a sixth: six blows to fall**. It is the one constant `BLOW_SHARE` in `74-strikes.js`, and this session sets it.
+
+It is .17, not 1/6. At exactly a sixth the rounding left you on 1 health after the sixth blow at level 10 (235 health, blows of 39) and level 20 (385, blows of 64), so those levels fell to the seventh. At .17 every level from 1 to 20 falls to the sixth blow.
+
+Four suites asserted the old numbers and are re-measured to the new truth, none loosened:
+- `resolver`: the retune check is now 15–18% and exactly six blows to fall, at every level from 1 to 20 (it sampled six levels before).
+- `fistfight`: standing still, you fall at the sixth blow (6 of 6 landed, 10.9 s, 130 health), where it was about the tenth. It allows 5 to 7 for the Bandit's roll.
+- `cowards`: the Ogre's second-phase heavy goes through the table since Session 940 (2.2× its roll, its row and place, then your armour's share: 94 here), but the suite still expected 2.2× the bare roll (35). This was CI's one red shard on the PR (shard 3, failed twice). The suite now reads the same sum in the page.
+- `guardsindoor`: the step that swings at the guard refilled your health before each swing but not your posture. His blows between your swings, at a sixth, kept your posture broken, and a staggered player cannot swing (0 of 6 landed). It now fills posture too, as `fistfight` does. A wrong first guess that you had fallen was tried and reverted: you lose 85 of 130 in the 8 s before it.
+
+Two housekeeping changes:
+- **Renumbered.** main carries another Session 939 (the Fighters' Guild prototype, from auto/design). This card's first session is renumbered 940: its devlog heading and its 31 `S939` notes in `js/` and `tests/`, none of which were on main. The commit `41d27a0` still says 939.
+- **Restored screenshots.** Four screenshots under `docs/prototypes/` that the local test runs rewrote were committed by mistake and restored in the next commit.
+### Verified (headless Chromium)
+- **`resolver`: 25 of 25.** An ordinary blow lands at 16.8–17.4% of your health in the dungeon and the open world alike: 17 of 100 at level 1, 27 of 160 at 5, 40 of 235 at 10, 53 of 310 at 15 and 65 of 385 at 20. You fall to the sixth blow at every level from 1 to 20.
+- **The combat and damage batch: 54 suites, all green.** It ran three at a time: attrpromise, autosave, bladehit, captainguard, caravan, cargo, challenge, counters, cowards, dazed, dmgnums, duel, duelrhythm, dungeonchase, dunseed, falls, foeseed, fortunecaor, guardlevel1, guardplay, guardsindoor, herbhidden, herbparity, hptail, journal, lairmaster, lvact, masterslam, parryclock, parrydeath, pauseleaf, pirateram, poinames, posture, roll, rowebeats, rowelines, shiphull, shipwreck, siegeturn, slamdamage, spentguard, wardall, wardswift, warwords, yardplay, tells, attrdmg, fists, fistswing, spentblow, blacksail, posturefloor and tpfists.
+- **Two needed a re-run alone.** `guardsindoor` was green after the fix above. `falls` lost its browser mid-run under the three-at-once load and passed alone. `blacksail` failed once and passed on the runner's retry (flaky).
+- **The full suite runs on the PR's CI.**
+### Needs eyes
+- **Six blows, in a real fight.** A lone Bandit or Skeleton that you stand and trade with can now kill you, and a pack of three can do it in about two exchanges. Is that the pressure combat.md wanted, or does the open world's density need a look (F2b, enemies by place)?
+- **Posture.** A blow's posture drain is 1.5× its damage, so harder blows break your guard sooner too. `guardsindoor` showed a guard keeping a still player staggered. Worth feeling whether a held block now breaks too quickly against two foes.
+
+## v80 — Session 963 — dmgnums keeps its foe fresh for the blow from behind (deep work, card combat-resolver, CI red on PR #356)
+CI ran PR #356 at 9abf6eb and failed on one shard (headless 7, 31 of 32 suites passed). `dmgnums` failed twice there and passed on main. The check that failed was *from behind*: the fourth swing at the street Bandit came up as a red crit with the word *staggered*, not lilac with *from behind*.
+
+The cause is the resolver's posture, not the numbers. The suite swings four times at one Bandit: a plain blow, a miss, a blow with Flames, and then the blow from behind. Since Session 940 the resolver drains the row's posture on every blow, and the chain's third swing drains ×1.5. So the Flames swing can break the Bandit's guard. Whether the 1.5 s stagger is still running when the fourth swing lands depends on how much real time passes between the swings, and that is slower on CI than here. A blow at a staggered foe is a crit. `dmgNumKind` puts a crit's word ahead of *from behind*, as it should: a riposte on a broken guard is the bigger news.
+
+The game is right, so the suite changes. Before the swing from behind, it now refills the Bandit's posture, clears its stagger and resets the chain, so that check tests only what it names. No check was loosened and no game code changed.
+### Verified (headless Chromium)
+- **Reproduced:** with the stagger left running before the swing from behind (one line, then removed), the check fails exactly as CI's did: `dn crit`, `staggered`, 25.
+- **With the reset:** `dmgnums` passes 14 of 14 here, twice. The blow from behind reads `dn back`, *from behind*, 15. The same reset passes with a stagger and 1 posture set just before it.
+- `parsecheck` is clean. No `js/` file changed.
+### Needs eyes
+- Nothing new. Session 949's two notes still stand: six blows in a real fight, and how fast a held block breaks against two foes.
 ## v80 — Session 946 — Card F9's fifteenth room: the Gatelands temple (prototype only)
 The shrine is next on L5's list after the guildhall (939), which waits on #352. OG-043 draws the Gatelands temple as a small stone church with a statue inside. The canon (§4.1) says what it is for: the Irish-register culture worships the six makers by their work, and "six have temples … each with a statue and a boon in its domain". So this is a temple of one of the six gods. It is drawn for An Teallach, the Hearth, the god of towns, by default; `o.god` gives any of the six their icon (the hull, the sundial, the wolf, the gate, the lamp, the shuttle, from the canon's table). The Church of the Weaver is Aurenne's (the Compact), and the Guest has no shrine, so neither is drawn here. FREEZE #297 is closed and F2a has merged, but this is still a prototype under the run's order (rooms first, then into the game). It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
 
@@ -21385,6 +21483,15 @@ Corrections made during the session:
 - **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
 - **Owed:** the rest of L5's works (a shipyard, a ferry).
 
+## v80 — Session 988 — guardsindoor: the yield no longer opens in the middle of the fight (card combat-resolver, CI red on #356)
+The producer put the card back in the queue because PR #356 had been red on 15f78f9 for six hours. `guardsindoor` failed twice on headless shard 9 (473 s, run 38819894062), and it passes on main. This run merged origin/main, which merged cleanly, and found the cause. It was the test's fight step, not the resolver. That step runs eight seconds of `WORLD.tickInterior` at 1/60 and passes `performance.now()` as the time. The guard paces his blows on that wall clock, so a slow runner fits more of them into the same eight seconds of ticks. Since Session 940's retune, each blow takes about a tenth of your health. On a loaded machine the blows took you from 130 to 33, under the fifth at which he offers the yield, and the yield's dialog opened inside the fight step. An open dialog pauses the main loop. Every swing the next step made then waited its full 15 s with `_pendingStrike` never fired, and he kept all 48 of his health. Run alone, the machine was quick enough that the fight step stayed above a fifth and the suite passed, which is why the failure seemed random. Reproduced here: three copies run side by side failed every time, and logging showed the yield's text open before the first swing.
+
+The fix is in the test only. The fight step now fills your health before every tick and adds up what each tick took, so "he closes and strikes" still measures his blows (about 97 to 99 health in the eight seconds) and the yield can no longer open early. The check also asks that no dialog is open at the end of the step. The yield is still tested as before, later in the suite, at a fifth of health set by hand. No check was loosened. The game is unchanged: in play the wall clock and the frame's `dt` run together, and at a fifth of health the yield should come.
+### Verified (headless Chromium)
+- `guardsindoor` before the fix: three copies run side by side, 3 of 3 failed at "your blows land on him indoors" (48 → 48). The yield's dialog was open before the first swing, at 33 of 130 health, and all six swings ended with `_pendingStrike` still set.
+- After the fix: three copies side by side, 3 of 3 passed. The fight step took 97 to 99 health with no dialog open, and the first swing landed.
+### Needs eyes
+- Nothing a player sees changes. One thing for later, outside this card: a guard paces his blows on `performance.now()` while his movement steps on `dt`, so two tick rates that differ make him hit at a different rate. The co-op rules allow it (it reads the clock), but a fight driven by fixed ticks in a test is not deterministic until his cooldown reads the play clock.
 ## v80 — Session 980 — The Mark's rope ferry (card F8, prototype only)
 L5's "roads and works" (OG-046) owed a shipyard and a ferry after Session 972's toll bridge. OG-046 lists "river port and ferry" among its works, and the Mark is the island with "a river valley at its heart" (OG-102) and no place built yet in `places.js` since the mine and the ice cave. So this is a crossing on a Markish river too wide to bridge cheaply: the Norse *ferjested*, a flat hauled across by hand along a rope, with a bell on the far bank to call the ferryman over. It lives in `places.js` beside the toll bridge, with its own view (`places-ferry-view.js`, dispatched from `places-view.js`). It reuses the lighthouse's materials and the kit's Markish hall (`markHall`, now imported into `places.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
 
