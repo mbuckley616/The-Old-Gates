@@ -50,7 +50,7 @@ What should the three be?
 - **B. Different perks, same names**, with no new rule: *Hearing*, +1 favour the first time you talk to each person in a town (once per town a day); *No mark*, a witness to a pick sees *someone*, and the fine is halved; *Word given*, *Talk it down* works twice in each town.
 - **C. Leave them** until 2.0's other systems work is in, and decide then.
 
-Michael: **Build the rule each lifts, then the perk**. (16 Oct 2026, on the control room)
+Michael: **Leave them until 2.0's other systems are in**. (16 Oct 2026, on the control room)
 
 ### The Frost Thing: the sheet's ice-shard figure, or a folk shape under the ice? (bodies builder, Session 958) — DECISION #362
 OG-018 draws Uisce's Frost Thing as "a crystalline ice-shard figure, all spikes". Canon §9a says a steady gate makes "the shapes the local folklore had words for", and the catalogue flags that the sheet's figure reads as an elemental, with no folk shape under the ice. Both are built as plans in the creature kit, for you to choose between.
