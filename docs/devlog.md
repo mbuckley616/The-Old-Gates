@@ -22405,6 +22405,22 @@ Corrections made during the session:
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
 
+## v80 — Session 1005 — `shipmoor` keeps the sea empty while she sails out (FLAKY on auto/backlog)
+QA's read of the last eight green CI runs (112 headless jobs, 16 Oct 07:21–12:15 UTC) found seven FLAKY retries and no suite red twice: `lookpair` twice and `looknew` once, both runs older than the fixes in Sessions 971 and 991; and once each `bridgenames` (the game's, already filed in I), `skillcurve`, `q7world` and `shipmoor`. `shipmoor` (auto/backlog 490b0f9, shard 14) read hull 99 against 100 after fifteen seconds at the wheel, and its last message was *Black sails on the horizon.* The suite sends the other ships away once, when she is bought. The sea rolls its pirate and merchant again every 2 s from the chunk and the game minute (S508, `tickOtherShips` in `85-world-sea.js`), and the minute is wherever the clock got to while the world loaded. So whether a pirate came near enough to cost a point depended on the boot. The suite is about her bow and the shallows (Session 473); the pirates have suites of their own (`pirateram`, `piratehold`). So while she sails out, it sends every other ship away each tick and counts them (`others`). It also records every line the sea says (`said`), the weather and the sea state, so a later red names what struck her. The checks are unchanged: moved over 60, speed over 2, the hull whole, never stopped.
+### Verified (headless Chromium)
+- `shipmoor` 3 of 3 green in each look. Every run rolled a pirate three times in the fifteen seconds (`others` 3, `said` three *Black sails on the horizon.*). She made 103.3–103.6 units at 7.5, hull 100 → 100, weather clear, sea 0–1. One run had six boots at once on four cores.
+### Needs eyes
+- Nothing to play. Three pirates rolled in fifteen seconds of sailing out of Portclare, every run. That may be the rate the game means (a roll at 0.5 every 2 s, each turned away here), but it is worth knowing for the sea's feel.
+
+## v80 — Session 1006 — `g.settle` runs the world's job queue and waits for the site, not 60 s (the new look's shards 7–8)
+The new look's shards 7 and 8 (main 6b8fbf9, side by side, 59 min) passed 65 of 67. `renewal` threw on `S.altar` and `dayseed` read `shrine null`, twice each. Then `renewal` failed alone on the old look as well, so the cause was not the look. A probe found shrine c6_8_p1 standing only on the 17th poll, about 42 s in, after the five sites built before it in its cell (s0, s1, s3, p0, then p1). The harness's `g.settle(id)` polled 24 times, 60 s, and then went on as if the site stood; `renewal` had its own copy of that loop. With six boots at once the shrine was not built even after a 180 s deadline. The world builds on a job queue at most two jobs a frame (`runJobs`, `81-world-cells.js`), so on software GL a load is counted in frames, not seconds. CI has passed both so far only because its runners are a little faster. `g.settle` now runs the queue the game has already laid out on each poll: the same jobs in the same order, more of them per frame, as `g.spin` does for ticks. It polls until the site is in `SETTLE`, up to `SETTLE_MS` (180 s by default). It returns whether the site was built and logs a miss, so a suite's own checks still name the fault. `renewal` now uses it and checks it (*the shrine is built*). No check's promise changed. The ledger (`docs/qa/looknew.md`) has shards 7–8 and the flaky ledger both rows.
+### Verified (headless Chromium)
+- Before: `renewal` red in both looks; `dayseed` red twice on the new look. The deadline alone, without the queue: both green in both looks with three boots running. With six boots, `renewal` read *not built after 180 s* in both looks.
+- With the queue: six boots at once, the shrine was built in all six suites. `dayseed` green in both looks, `renewal` green on the old look. On the new look `renewal` prayed and got its boon, then hit the 900 s cap in its own 40 real frames of regeneration with six boots on four cores. That is an overload no CI runner sees; it is not the shrine.
+- Shards 7–8 on the new look otherwise all green; suite times are in the ledger.
+### Needs eyes
+- Every suite that calls `g.settle` (about 60) now runs the job queue while it waits. The PR's full CI run is the check that none of them depended on a slow load. A suite that did would show on that run, and is the next session's.
+- Shards 9–14 of the new look are still owed.
 ## v80 — Session 1010 — The wide sash belt (L1 and B2, prototype only)
 (First committed as 1009, which the systems builder had taken in the same hour; renumbered.)
 OG-056 dresses its everyday Aurennais in "wide sash belts in rust red and indigo", and backlog L1 has listed the sash belt as owed since Session 989. This session builds it. The sheet draws it plainly and the canon says nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label, and the `waist` view aimed at a band) and `builder.check.mjs`.
@@ -22846,3 +22862,47 @@ A first try with two turns half as wide read as straps over a bare dome. Three w
 - **From behind and above,** the crown cloth still shows in the gaps between the crossing turns, and their flattened edges catch the light as fins.
 - **From the front** the top reads as wound, most clearly in saffron on the woman.
 - **A turban wound by hand** has one long cloth whose turns run into each other. These are separate rolls laid on the dome, with no ends.
+## v80 — Session 1016 — The Gatelands' charcoal burners' camp (card F8, prototype only)
+The freeze for F3 (#381) is open, so this run kept to the prototypes. The one item still open in backlog L10's *Off the road* (OG-124) was the camps on the roads, and this session builds the first: the charcoal burners. It is `gatelandsCharcoalCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=charcoal`.
+
+The precedents are the colliers of the Lake District's and the Weald's coppices, who lived beside a burn for the weeks of a season. They cut a pitstead, a level hearth in the slope, black from years of burns. On it they built the cordwood round a flue and sealed it under turf and earth, the "sammel". Wattle hurdles stood against the wind so the stack burned slow and even, and a ladder leaned on it to tend the top. They slept in a hut of poles under sods, with a door frame of two posts and a lintel (Furness, Grizedale). The camp is built at true size by a road through oak and hazel coppice, on a slope of 1 in 14:
+- **The burning stack:** a dome of sammel 4.8 m across and 1.9 m high on a hearth 9.2 m across. About 110 sods are laid over it in courses, each row over the joints of the one below. Twelve vents are at its foot, and its flue is open at the top. Smoke goes up from the flue and four vents and leans south-east on a north-west wind.
+- **The hurdles and the ladder:** three hurdles stand propped on the windward side, 3.7 m out. A ladder leans on the stack's east flank.
+- **The opened stack:** on the second hearth, a burn drawn and cooling. Charcoal is raked out in a low heap over the black, in a ring of ash, with a shovel in it and a riddle by it. Seven sacks stand filled and tied, with a rake against them.
+- **The cordwood:** billets a metre long, stacked 5 m long and 1.2 m high between stakes on their own levelled stance. Each billet rests on the ground or on the two under it.
+- **The hut:** a beehive of sods 3 m across and 2.9 m to its apex, the poles' tops crossed over it. Its door is 1.6 m high between two posts under a lintel, facing the road, with 0.84 m between the posts at the hip. A bed of bracken is inside, and a small fire with a tripod and a pot is outside.
+- **The road and the coppice:** a cart stands on the road with its shafts down and five sacks on it. Trodden paths run to both hearths and the hut. There are 11 oak standards and 30 hazel stools, every other stool near the hearths cut this winter to stubs, with bracken under them.
+- **The size:** 38,400 to 39,000 triangles in 19 meshes.
+
+The views are `camp` (from the road), `stack`, `heap`, `hut` and `far`, and `&dusk` gives the evening, with the vents and the fire glowing.
+
+Corrections made during the session:
+- **The budget.** The first build came to 44,700 triangles in 22 meshes. The cuts:
+  - the ground's fine band is now 1.2 m;
+  - there are fewer char lumps;
+  - the wattle is three-sided;
+  - the fern, a second leaf and the stones share materials now.
+- **The smoke** was first a column of faceted transparent spheres, and read blue and hard. It is now crossed upright quads under the kit's soft puff texture. A flat quad was tried too, and read as discs from the side.
+- **The sods** were first scattered at odd angles and read as loose tiles. They are now laid in courses, wide enough to overlap.
+- **The hazel stools** first had a ball of leaf on each rod, and read as lollipops. Each stool now has one crown of leaf over the sheaf of rods.
+- **The hearths** were first marked black on the ground grid, which gave them jagged edges. They are black discs on their level stances now. The ash ring was lifted off the disc, where it z-fought.
+- **The ladder.** The check first asked for 55 to 75 degrees. A ladder that steep on a dome this shape goes through the stack's foot, so the ladder leans at 40 degrees along the flank. The check now proves it clears the dome below its top.
+- **The cordwood** was first stacked in rows at fixed heights, and some billets hung 0.19 m over a gap. Each billet is now set on the ground or on the two under it.
+- **The hut's door.** Its check first passed with both rays missing: they ran out through the doorway, past the posts, and read 99 m. Cast just inside the frame, they met the posts 0.74 m apart, under the check's 0.75. The door's gap is now 0.7 rad, which gives 0.84 m, and the check fails unless both posts are met.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 176 of 176 pass** (167 after Session 1012). The charcoal camp's `camp` view and its `hut` view at dusk render with no page errors. Seven checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 38,400 to 39,000 triangles in 19 meshes, 30 hazel stools (5 to 8 of them cut) and 11 oaks.
+  - **The hearths and the stack:** the hearths are level (the ground within 0 m across each) and black. The stack is met within −0.06 to 0.10 m of its line at 48 points; the sammel is lumped by up to 0.09 m by design, and the sods stand proud of it. Its flue is open and its vents are on its face.
+  - **The smoke and the hurdles:** the smoke is to leeward. The hurdles are to windward, met on their line at the knee and the shoulder, their uprights in the ground.
+  - **The ladder:** its foot is on the hearth and its top on the stack, and it clears the dome.
+  - **The walk,** from the road to both hearths and the hut and in: ground under every half-metre, no step over 0.13 m, 0.36 m clear at the hip and the head, and nothing over the head (under the door's lintel at 1.6 m).
+  - **The hut's door** is 0.84 m between its posts at the hip and 1.6 m to its lintel, with 3.02 m of headroom inside.
+  - **What stands on the ground:** every billet is on what is under it, the cart's wheels are on the road and the sacks are on the ground. The fire is 2.2 m off the paths, with the pot 0.25 m over the embers.
+- **Pictures:** `places-charcoal-camp.jpg`, `-stack`, `-heap`, `-hut`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **The smoke is still.** A burn's smoke moves, and the vents breathe; this is the same want as the falls' curtain, a moving-air shader.
+- **The stack is seen in its middle days.** The lighting (fire dropped down the flue) and the settling (the stack sinking as it chars) are not shown.
+- **Nobody tends it.** The colliers are the bodies builder's, and the camp's people are the quest writer's to name.
+- **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
+- **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
