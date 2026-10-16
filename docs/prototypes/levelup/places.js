@@ -1013,7 +1013,7 @@ export function gatelandsAbbey(o = {}, r = stream('abbey')) {
 
 // ── the Gatelands' tower mill (Session 949, card F8; backlog L5's roads and works, OG-046's "farms and windmills"; OG-014's whitewashed
 // country). A tower mill of the south-east coast's kind, at true size, its door to +z:
-//   - the tower: rubble, limewashed, battered from 6 m across at the foot to 4.6 m at the curb 9 m up, a tarred plinth; two doors, front
+//   - the tower: rubble, limewashed, battered from 6 m across at the foot to 4.6 m at the curb 9.6 m up (so the sails clear a man under them by 2.4 m), a tarred plinth; two doors, front
 //     and back (so the miller can come and go whichever way the sails face), round-headed under dressed stone; four floors of small
 //     windows turning up the tower; a millstone worn out and leaned by the door, sacks of meal;
 //   - the cap: thatched, as the old Irish mills' were, an ogee of straw on a timber curb that turns on the tower's top;
@@ -1045,8 +1045,8 @@ export function gatelandsMill(o = {}, r = stream('mill')) {
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'turf'); }
   for (let z = 3.2; z < 30; z += .9) put(new THREE.BoxGeometry(1.4, .06, .86), 'path', (r() - .5) * .1, ground(0, z) + .02, z, 0, (r() - .5) * .08);
-  // the tower: a battered round of rubble, limewashed; the tar plinth; the doors and windows cut as dark reveals with dressed heads
-  const r0 = 3.0, r1 = 2.3, h = 9.0, rad = y => r0 + (r1 - r0) * y / h;
+  // the tower: a battered round of rubble, limewashed; the tar plinth; the doors and windows cut as dark reveals with dressed heads; 9.6 m to the curb (9.0 until Session 1005: the sails came within 1.76 m of the ground, the critic's s639)
+  const r0 = 3.0, r1 = 2.3, h = 9.6, rad = y => r0 + (r1 - r0) * y / h;
   put(new THREE.LatheGeometry([V(.001, -.5), V(r0 + .05, -.5), V(r0, 0), V(r1, h), V(.001, h)], 40), 'lime');
   put(new THREE.CylinderGeometry(rad(.5) + .02, r0 + .02, .5, 40, 1, true), 'tar', 0, .25, 0);
   /* each opening laid on the wall's batter (leaning in by bat) and just proud of it, so its foot does not sink into the stone */

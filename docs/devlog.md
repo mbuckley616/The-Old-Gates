@@ -21735,3 +21735,28 @@ Corrections made during the session:
 - **The chute has no lining and no side boards.** Real ones were often three logs, or planked, and iced to run faster. This one is two bare logs.
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 1005 — The critic's two faults on s639: the mill's sails and the guild's banner (cards F8 and F6, prototype only)
+The critic's run on s639 found two faults of scale in the look builder's prototypes, and the last run named them as next. Both are small, and both are fixed here. Nothing new is asked, and nothing outside the prototype folder is touched.
+
+**The tower mill's sails came within 1.76 m of the ground,** 1.5 m in front of its door, so a man of the foundation's 1.9 m walking to the door was clipped. Session 949's check held the sails to 1.5 m, which was the wrong bound: it had been set by the sails' own geometry, not by the person. Two ways to fix it were weighed: shorter sails or a taller tower. The sails stay at 8.6 m, which is what makes the mill read as a working mill from the road. The tower now stands 9.6 m to the curb (it was 9.0), and that lifts the hub by 0.6 m. The four floors of windows still fit under the curb, and the cap, tail pole and wheel follow the tower's height, as they did before. The check's bound is now 2.1 m, a 1.9 m man and a hand's clearance.
+
+**The Fighters' Guild's banner hid the last letter of its name panel** from the street to the east, which the critic read as *FIGHTERS’ GUIL*. The banner hung on a pole 1.7 m out at x -0.1, just past the panel's right end (the panel runs from -3.45 to -0.55). The cloth hangs flat across the street, between 0.65 and 1.6 m out from the wall. So from any view east of square-on, its projection slid left over the panel. It now hangs at x 2.6, where the hall meets the two-storey east end, between the hall's east light and the east end's sashes. This is still by the door, and it marks where the hall stops. `pieces.check.mjs` now works out the banner's shadow on the wall from every bearing within 55° of square-on. The check fails if it ever reaches the panel's frame.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 143 of 143 pass.**
+  - **The tower mill**, over 3 keys and 3 winds at every turn of a quarter, in 3° steps: the sails clear the ground by **2.36 m** (was 1.76; the bound is now 2.1), and the tower and cap by 1.53 m.
+  - It has 11,108 triangles in 14 meshes, and is 19.82 m to the finial.
+  - The doors and tail checks are unchanged.
+- **`pieces.check.mjs`: 20 of 20 pass.**
+  - The guild hall's banners (both guilds) are **0.66 m** clear of the name panel's frame from every bearing within 55° of square-on.
+  - The great door is 1.6 by 3.3 m under the panel, as before.
+  - Each guild hall still comes to 9,873 triangles in 14 draws.
+- **Pictures, retaken:**
+  - the mill: `places-mill-mill.jpg`, `-sails`, `-far`, `-back` and `-mill-rest`;
+  - the guild hall: `pieces-gatelands-guild.jpg`, `-guild-corner` and `-guild-mages`.
+  - The corner view now reads *FIGHTERS’ GUILD* in full, with the banner beyond the hall's east light.
+### Needs eyes
+- **The mill is now a little taller and slimmer.** It stands 9.6 m on a 6 m foot, 1.6 times its width (1.5 before). Whether it still reads as a squat Irish tower mill wants a look.
+- **The banner now stands 4.6 m from the door.** If it should hang at the door itself, the other answer is a pole on the door's west side. There the hall's west light is 2.4 m off, and from the west the banner would cover the light, not the panel.
+- **The game has neither piece yet.** Both are prototype pieces, so nothing in the game changes.
