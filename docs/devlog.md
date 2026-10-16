@@ -22221,8 +22221,8 @@ Not built, and owed: the air-speed cap and its `aircap` suite (#370); the dash, 
 - **The ceiling in old rooms.** The legacy interiors keep their own low ceilings (a shop's 2.3 m), so their jumps are now capped at 0.5 m.
 - **Every jump is 0.05 m higher at 60 fps.** No place is built to the old height.
 
-## v80 — Session 1010 — Swallow's turn, the air dash at Acrobatics 100 (the double-jump sheet's session 2)
-The sheet's second session. Its numbers are all settled; the only open number is the air-speed cap (#370), which the dash does not read.
+## v80 — Session 1011 — Swallow's turn, the air dash at Acrobatics 100 (the double-jump sheet's session 2)
+First committed as 1010, which the bodies builder had taken; renumbered. The sheet's second session. Its numbers are all settled; the only open number is the air-speed cap (#370), which the dash does not read.
 
 - **The dash** (`airDashStart` and `tickAirDash`, `10-player.js`). Q in the air, while the dash is unspent, carries you 3.0 m level in 0.2 s. It goes toward the held keys, or straight on with none (where the roll on the ground goes back). The fall pauses, and starts again from rest when the dash ends.
   - It works once a flight, for 20 stamina. There is none over 70% of your carry, immobile, swimming, levitating or staggered. Too winded, the bar flashes.

@@ -346,7 +346,7 @@ function loop(now){
   if(K['KeyD']){mdx+=rgtX;mdz+=rgtZ;}
   const _roll=tickRoll(performance.now()/1000);
   if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
-  const _dash=_roll?null:tickAirDash(performance.now()/1000); /* S1010 — Swallow's turn, the air dash (10-player.js) */
+  const _dash=_roll?null:tickAirDash(performance.now()/1000); /* S1011 — Swallow's turn, the air dash (10-player.js) */
   if(_dash){mdx=_dash.dx;mdz=_dash.dz;}
   const moving=!!(mdx||mdz);
   _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
@@ -397,7 +397,7 @@ function loop(now){
     if(inOverworld) jumpY=activeTerrainH(px,pz);
     velY=JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY;
   }
-  if(!onGround&&airDashing())velY=0; /* S1010 — the dash holds you level; the fall starts again from rest after it */
+  if(!onGround&&airDashing())velY=0; /* S1011 — the dash holds you level; the fall starts again from rest after it */
   else if(!onGround){
     /* S1009 — the flight is integrated exactly, so its height is the same at any frame rate (the dropped-frame rule); it was
        velY first and then jumpY, which lost velY×dt/2 of every rise (0.05 of a jump at 60 fps, 0.16 at 20) */

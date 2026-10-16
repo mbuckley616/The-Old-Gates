@@ -258,7 +258,7 @@ let ROLL=null;
 function rollUntouchable(nowS){if(nowS<FINISHER_SAFE_UNTIL)return true;if(!ROLL)return false;const t=nowS-ROLL.t0;return t>=ROLL.i0&&t<=ROLL.i1;}
 function startRoll(nowS,keys){
   const K=keys||{};
-  if(!ROLL&&!onGround&&airDashStart(K))return true; /* S1010 — Swallow's turn: Q in the air is the air dash while it is unspent */
+  if(!ROLL&&!onGround&&airDashStart(K))return true; /* S1011 — Swallow's turn: Q in the air is the air dash while it is unspent */
   if(!ROLL&&!dead&&started&&!onGround)FALL.qAt=FALL.clock; // S429 — pressed in the air: rolled on landing if it is within FALL_ROLL_WIN
   if(ROLL||dead||!started||!onGround||playerStaggered(nowS))return false;
   if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return false;
@@ -320,7 +320,7 @@ function fallLand(y){
     const dmg=Math.max(1,Math.round(maxHP*FALL_PER*(drop-free)));
     FALL.pend={dmg,drop,t:FALL_ROLL_WIN};
     landShake=Math.min(.3,.06+.02*(drop-free));
-    if(FALL.clock-AIRDASH.endAt<=FALL_ROLL_WIN||AIRDASH.soft){AIRDASH.soft=false;fallSettle(true);return drop;} /* S1010 — a dash that ended within 0.2 s of landing, or began within 0.2 s of it (airDashStart), is the landing roll */
+    if(FALL.clock-AIRDASH.endAt<=FALL_ROLL_WIN||AIRDASH.soft){AIRDASH.soft=false;fallSettle(true);return drop;} /* S1011 — a dash that ended within 0.2 s of landing, or began within 0.2 s of it (airDashStart), is the landing roll */
     if(FALL.clock-FALL.qAt<=FALL_ROLL_WIN&&typeof window!=='undefined'&&window._K)startRoll(performance.now()/1000,window._K);
   }
   return drop;
@@ -346,7 +346,7 @@ function airStepTick(K){
   try{sndJump();}catch(err){}
   return true;
 }
-// S1010 — Swallow's turn, Acrobatics 100: the air dash (the same sheet, its session 2). Q in the air while it is unspent
+// S1011 — Swallow's turn, Acrobatics 100: the air dash (the same sheet, its session 2). Q in the air while it is unspent
 // carries you 3.0 m level in 0.2 s, toward the held keys or straight on; the fall pauses and starts again from rest. Once
 // a flight, for 20 stamina; none over 70% of your carry, immobile, swimming, levitating or staggered. Spent, Q buffers the
 // landing roll as before. It stops at a solid as the walk does (the loop moves it through the walk's own collision), has no
