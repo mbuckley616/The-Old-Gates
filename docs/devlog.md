@@ -21958,3 +21958,57 @@ Corrections made during the session:
 - **The heather is low-poly blobs.** The bog cotton heads are a little large.
 - **Peat cut on a bog is a quest writer's and a systems builder's question too:** turf as fuel, a cutter's right to a bank. Nothing of that is drawn.
 - **Off the road (OG-124) still lacks:** the shepherd's hut, the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 1003 — The coin necklace (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais "coin and hoop jewellery" (OG-044, OG-056). Session 995 made the hoops and left the coins owed. This session makes the coin necklace. As with the sash, the wrap and the hoops, the sheets draw it plainly and the canon has nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label and a new `neck` view) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **`buildNecklace`:** a thin chain round the base of the neck, with coins hung from its front half on small rings. Carried rigid by the chest bone.
+  - **The chain** is 1.1 mm thick on a man and 0.9 mm on a woman, in the dress's metal. It is laid by 120 rays from outside, aimed in at the neck's base round it:
+    - level at the nape, 1 cm over the neck bone's head;
+    - in a U in front, down to 7.5 cm under it on a man and 8.5 cm on a woman, onto the breastbone;
+    - down from up to 60 degrees above at the sides, onto the shoulders' tops.
+
+    Each point lies 2 mm off the first thing worn that its ray meets. It is then smoothed round the loop and set back out against a fresh ray through where it now is, three times.
+  - **The coins:** nine on a woman, every 2.2 cm of chain, and seven on a man, every 2.4 cm. The middle one is larger: 2.4 cm across on a woman and 2.2 on a man, against 1.8 and 1.7.
+    - Each hangs 3.5 mm below its ring. Its centre is found by a ray aimed lower, so its face lies on the chest rather than across it.
+    - Each is set out along its face until nothing comes up within its rim.
+    - Where the chain runs steeply down, a coin that would cover the one before it lies over it by a coin's thickness, as scales do.
+    - Each is struck with a beaded rim and a stamp of eight rays round a boss, a little off centre. The stamp is a canvas used for colour and bump.
+  - **What it lies on:** the body and everything skinned over it, read at 15 points on every triangle near the neck; and the points of rigid pieces there (a sash, a bodice's lacing, a wrap's tail). Not the hair, the beard or a hood, and nothing more than 5 cm over the neck bone (the jaw, the ears and the hoops).
+  - **Size:** 3,540 triangles on a woman and 3,076 on a man, the chain about 1,450 of them.
+- **When it is built:** after the sash, the lacing and the robe's cord, so it lies over them; before the cloak, which hangs over it. It is not built under a raised hood.
+- **The dress** takes `necklace` (the metal's colour; *coin necklace* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll it at 0.35 for women and 0.12 for men, in the hoops' metal when they wear hoops and otherwise gold or bronze. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls it.
+- **`builder.js`:** a `neck` view (the throat and the upper chest), and the label.
+
+Three corrections of my own, made on the way and kept here because each is a trap for the next piece worn at the neck:
+- **`neck01`'s head sits at the back of the neck, below the shoulders' line.** Rays from it ran through the empty inside of the chest at the sides.
+- **Rays from inside the neck can only find the neck.** Taking the first surface met gave a choker, and taking the furthest found the breast or the hip. The rays must start in the air.
+- **A tunic's points are a few centimetres apart.** Between the breast and the collar its cloth is hollow, so the drawn triangles stand out past the points. A chain laid on the points alone went into the cloth there, in pieces. Reading 15 points on each triangle, as the sash does, fixed it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 329 checks pass** (309 before; 20 new). The new checks run on nine people:
+  - a woman in gold over a tunic and a bearded man in bronze;
+  - the necklace over a sash on either shoulder, a head-wrap's tail, a laced bodice, mail, a robe, and under a cloak with its hood down.
+
+  On every one of them:
+  - nothing of what it lies on comes up through the chain (0 of 450 to 702 points tested), and no ray missed;
+  - nothing comes up through a coin (0 of 186 to 382 points);
+  - no coin covers another (up to 2 laid over the one before, on the man with the sash on the right shoulder);
+  - each coin hangs within 1.8 mm of its ring's drop;
+  - the lowest coin hangs 9.8 to 11.0 cm under the neck's base and the chain is 63 to 71 cm round;
+  - it is carried by the chest bone, and it saves and loads back.
+- **None under a raised hood.**
+- **The roll:** 5 of 40 rolled Aurennais wear one (4 of them women); the one who also wears hoops wears them in the same metal. None of 30 Markmen, Gatelanders and Old Blood do.
+- `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-necklace-woman.jpg`, `-man.jpg`, `-side.jpg` and `-sash.jpg`.
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **Under a cloak with its hood down** the necklace is built and the check passes, but the cloak is laid without knowing it is there. Where the cloak's front edges meet at the brooch they may cross the top coins. Nothing checks that.
+- **A full beard** falls over the top of the chain. That is right, but nothing checks the beard's cards against the rings.
+- **The coins are rigid** on the chest bone. In the game they would want to swing, and the chain would want to follow a turning neck.
+- **The rings are drawn edge-on along the chain.** From the front they read as short bars at each coin's top.
+- **Owed:** the coins on the head-wrap's edge (OG-056), a scarf's tail and a taller turban, the sandals, the sash belt.
