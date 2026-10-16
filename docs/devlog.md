@@ -21530,6 +21530,49 @@ What changed in `creatures.js`:
 
 ### Needs eyes
 - **The mist still trails along with the stag** when it runs, because the puffs stay on the head bone. To leave it hanging in the air behind the stag, the game would have to spawn the puffs in the world.
+## v80 — Session 971 — enterDungeon waits for the camera to reach the floor (QA)
+The QA run of 16 Oct 00:52 read the CI runs since 18:51: three red, none of them a flake. Main's e7ae8d9 failed `bellwreck` twice on code from before
+Session 946's fix (main has carried it since #360). auto/systems' 1c9b2d2 failed six suites twice with the same numbers both tries (`attrpromise`, `barter`,
+`fortunecaor`, `lockpicks`, `levelpanel`, `shoprows`), all reading the attribute rules that branch changes, and the combat resolver's 15f78f9 failed
+`guardsindoor` twice (the guard's hp 48 before and after a blow indoors); each is its own branch's to carry, and `docs/qa/flaky.md` says so with the numbers.
+The one FLAKY in those runs was `looknew` on auto/systems shard 11: *a dungeon floor builds and draws, its foes in it* read 0 draw calls with the floor
+built (44 shell pieces, 28 foes), then passed on the retry.
+
+The cause is the shared helper, not the new look. `goToDungeon` sets `px/pz` to the floor's start, but only the main loop moves `CAM` there
+(`js/90-main.js`). `enterDungeon` (`tests/lib/dungeonshot.mjs`) waited for the zone, the new scene and then 1.5 s; when no loop frame ran in that time,
+which on 0.170 means the first frame of a new floor was still compiling its materials on software GL, the camera still stood at the world's x, z of
+13,000 or more and the render culled the whole floor. Measured here: the same floor from the player's spot drew 304 calls, from x, z 15,000 drew 0.
+The helper now also waits, up to 40 double frames, until the camera stands within 30 of the player. It waits for the state the check needs, not longer.
+Every one of the 34 suites that enter a gate through the helper gets the same wait; in the usual case the condition holds at once and adds nothing.
+
+### Verified (headless Chromium)
+- `looknew` three runs green, no retry: the dungeon check drew 322, 310 and 300 calls (CI's red read 0).
+- With the helper changed, old look, once each, all green: `dungeon` 55 s, `dungeonchase` 44, `dungeonexit` 105, `dungeonfoes` 60, `dungeonpace` 52,
+  `schoolroster`, `locksight`, `trapseed`.
+- A probe (not committed): after `enterDungeon`, CAM at (2, 11) and the player at (2, 11); 304 calls from there, 0 with the camera moved to 15,000.
+
+### Needs eyes
+Nothing for a playtest: a test-only change, no build tag bump. The six auto/systems suites are the systems builder's to re-measure or answer with the
+rules, and `guardsindoor` the combat resolver card's; the QA Slack post names both.
+
+## v80 — Session 972 — The new look's suite, shards 3 to 6 (QA)
+Session 972 carries on the ledger `docs/qa/looknew.md` from 15 Oct, run by shard of 14 under `node tests/run.mjs --look=new` on auto/qa at Session 971
+(main 148d635), two shards side by side on a 4-core container. `panelfocus`, red on 15 Oct at the 900 s cap with two shards sharing the cores, ran alone
+first. No test changed in this session: every red below fails the same way on its retry, and none of them is the test's to fix.
+
+### Verified (headless Chromium)
+- `panelfocus` alone, new look: passed, 437 s (CI's old look takes 270–546 s). The 15 Oct red was load, not the look.
+- Shards 3 and 4, 01:13–01:57 UTC: 62 of 62 pass (the longest were mainrun 614 s, placesave 482, dunwarm 324). Shards 1 to 4 now stand at 124 of 124.
+- Shards 5 and 6, 01:58–02:49 UTC: 64 of 66 pass. Two are red twice:
+  - `foewarm`: *raising every foe kind compiles no shader and adds no program* read 2 compiles and one new program (41→42, 42→43) after the prewarm ran
+    (33 kinds, 17 programs). This is the game's: on 0.170 the prewarm leaves one foe program to the first draw. Filed in backlog I for the systems builder
+    (`42-zone-enemies.js`, `prewarmFoes`).
+  - `hourhitch`: the worst frame after a change of hour was 12.6 and 13.8 s against the 8 s cap (noon 2.8 and 2.2 s), 896 s with the retry. Not
+    classified: two shards shared the cores, so this needs a run alone in both looks before anyone is named.
+
+### Needs eyes
+Shards 7 to 14 are owed, then `hourhitch` alone. The foe hitch on the new look is a real-GPU question too: one program compiled on a foe's first draw
+costs a few ms on Michael's laptop, against seconds headless.
 ## v80 — Session 971 — Aurenne's coastal watchtower (card F8, prototype only)
 L5's "roads and works" (OG-046: "watchtowers and forts") has had the mine (857), the aqueduct (907), the windmill (949) and the lighthouse (967). OG-124's Aurenne panel draws "a coastal watchtower", and the canon gives it a reason: piracy is the Mark's undeclared war, and the Compact's tithe-ships are its favourite prey. So the Compact keeps a chain of towers along its coast, each in sight of the next. The precedent is the Genoese and Saracen towers of the Tyrrhenian coast and the borj of the Maghreb, which fits Aurenne's Mediterranean and North African register: a round tower on a scarp, its door high up, a stair that stops short of the door, a parapet on corbels, a beacon on the roof. It is dressed in Aurenne's own materials (§1.3, and the catalogue's note on OG-124 against Tuscan stone): cream lime plaster, limestone dressings and a band of blue tile. It lives in `places.js` beside the lighthouse, with its own view (`places-watchtower-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
 
@@ -21915,6 +21958,32 @@ What changed in `people.js`:
 - **Long loose hair or braids** falling over the ear are not checked against the ring either.
 - **The rings are rigid** on the head bone. In the game they would want to swing.
 - **Owed:** the coin necklace and the coins on the head-wrap's edge (OG-056), and the sandals.
+## v80 — Session 991 — lookpair's road box read a road laid at random (QA)
+CI from 00:52 to 06:52 UTC on 16 Oct had nine green runs and no red. Five suites failed and then passed on the retry. `lookpair` did it twice, both times in shard 11 (auto/qa d07d7c0 and auto/backlog faaa8d4), and each retry cost about 7.5 minutes of a shard already running 50 or more. Both failures were on the same check, *the colour and the light match … each within 10 levels a channel*. Both times it was the road box alone: the old look read (240,226,153) against the new look's (223,211,142), worst 17, and later (225,212,143) against (236,223,150), worst 11. On all four tries the sky, grass and wall agreed to within a level, and the retries' roads read from 228 to 235 in red. So the road was moving within each look, not between the two looks.
+
+Measured here, the road's colour held steady within one page: 225 over four shots, with or without the 160-odd townsfolk (nothing moving crosses the box). It changed from one boot to the next: 233, 230 and 227 over three old-look boots. The cause is `buildRoadRibbons` (`js/82-world-structures.js`), which gives each road vertex a grain of `1+(Math.random()-.5)*.14`. The box is 200 by 60 pixels over a few large triangles near the eye, so its mean depends on a handful of random draws, and the two looks never draw the same ones. The game is right to do this: a cosmetic roll may stay `Math.random` under the co-op rules. The fault was in the test, which compared two different roads.
+
+The fix makes both looks lay the same road. Before the world builds, the suite wraps `buildRoadRibbons` (a global, which the world calls by its bare name). While one chunk's ribbons are built, `Math.random` is a mulberry stream seeded by the chunk's (cx, cz), and the page's own `Math.random` is put back afterwards. The order in which chunks load, and every other roll, are unaffected. A new check says that both looks laid their roads through the seeded build. The colour check keeps its 10 levels, and the mean-difference check keeps its 12.
+
+Also read this window: `bridgenames` FLAKY once, the game's bug, fixed by the systems builder's Session 978 and not yet on main. `looknew` FLAKY once on auto/bodies, the cause fixed by Session 971, waiting on PR #365. `hourhitch` FLAKY once on main, which `docs/qa/looknew.md` already owes a session of its own. The shard times are in `docs/qa/flaky.md`: 51.5–57.7 min for the slowest shard, and every job ended under its hour.
+### Verified (headless Chromium)
+- `node tests/run.mjs lookpair --no-retry`, three runs in a row, all green. Road (231,218,147) in both looks every time. Worst region 1, 2 and 1; mean difference 5.76, 5.71 and 5.74, against 6.84–9.28 on CI's four tries. The seeded builds were 106–110 chunks a look.
+- Probe before the fix: within one boot, four shots 1.5 s apart read the road at (225,213,143) every time, the same with the people hidden. Across three boots the road read 233, 230 and 227 in red.
+### Needs eyes
+- Nothing for play: the game is untouched. The same grain is in the town's footpaths (`js/83-world-generator.js`, 0.12). The box does not reach them, but a later picture check over a path would need the same care.
+
+## v80 — Session 992 — hourhitch: the 4× is of an ordinary frame, and the new look's 11 s stall is the game's (QA)
+`hourhitch` failed and then passed on the retry once on main (f84061f, shard 5). The new look's ledger had it red twice under load and owed it a run alone in both looks. On CI the failing check was *no frame after a change of hour over 4× the worst noon frame*. The 17:59 → 18:00 step had a 7.8 s frame with nothing compiled. Every step in that run took 4.7–5.8 s, and the cap Session 831 built from the steps' median was 10.6 s. What failed it was the other clause, 4× noon, with noon read once before the first dusk at 1.7 s, which gives 6.9 s. Noon is a single early sample, and on a loaded runner every frame after it is slower. Run alone here, the old look failed the same way: the jump to 23h was 7.4 s against 4 × 1.76 s, while the first night's new Lambert program compiled.
+
+The clause now reads 4× an *ordinary* frame, the larger of noon's worst and the steps' median. The cap is unchanged: 8 s, or twice noon or twice the median, whichever is larger. So the 20–24 s stall the suite was written to hunt still fails, and so does any frame over twice the median. In practice the cap is now the binding bound. The check's name says so. The suite also logs each step's buffer and texture uploads (counted on the GL context, like the shader compiles), for reading a long frame that compiles nothing.
+
+On the new look, alone, the suite is red for a different reason, and that reason is the game's. The jump to 21h (after 18h, 23h, 12h and 6h) gave one frame of 11.2 s, then 11.5 s on a second run. Nothing was compiled, the programs stayed at 42, the lights at 27, and the step had 258 uploads, fewer than most steps; the steps' median was 3.2–3.5 s. A probe with longer settling put a 9.1 s synchronous `REN.render` on the first dusk instead, again with nothing compiled. So the time is inside a render call on 0.170, and a compile count cannot see it. Filed in backlog I for the systems builder (or the F card that owns the new look). The suite is left to fail on it.
+### Verified (headless Chromium)
+- Old look, alone, three runs in a row: green. Worst judged frames 7.2, 4.0 and 3.0 s; medians 2.57, 2.73 and 2.64 s; noon 1.7–2.0 s. The first run would have failed the old clause (7.2 > 4 × 1.735).
+- New look, alone: red twice, before and after the change, at the jump to 21h (11.2 and 11.5 s). Every other check passes: no compile and no program after the first night, 27 lights throughout, the torches lit at night and out at noon.
+- Uploads a step (old look): 1,132–1,156 at the first dusk, 281–800 after.
+### Needs eyes
+- Whether the new look's stall at 21h is felt on Michael's laptop: one hitch when the clock jumps to night after a sleep or a wait. The headless frame is software GL; the ratio (3× an ordinary frame) is what counts.
 ## v80 — Session 991 — The Gatelands' peat-cutting camp (card F8, prototype only)
 The first of OG-124's places off the road that L5 and L10 had not yet built: the Gatelands panel's "peat-cutting camp" (OG-124, with OG-014's bogland and OG-099's fens). The precedent is a family's hand-cut turf bank on a raised bog, as in Connemara and the Bog of Allen: the face cut with the sleán in two spits, the sods thrown up onto the bank to dry, first spread and then footed on end, the dry turf built into a rick by the bog road to wait for the cart, and a cutters' bothy of sods under thatch with a fire at its door. It is `gatelandsPeatCamp` in `places.js`, with its own view (`places-peat-view.js`, dispatched from `places-view.js`). Nothing new is asked: who cuts here, and whether the camp is worked or left, is the quest writer's, and no people are drawn. It touches only the prototype folder.
 
