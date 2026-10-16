@@ -35,7 +35,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     out.tabards = {}; for (const [name, sex, dress] of [['man, the Crown tabard over a tunic', 1, { tabard: [.55, .08, .08], tabardTrim: [.72, .55, .2], mantle: null, cloak: null }], ['woman, the Crown tabard over a long skirt', 0, { tabard: [.55, .08, .08], mantle: null, cloak: null, skirt: 'long' }]]) {
       const G0 = K.rollGenome('tabard:' + sex, { g: sex }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));
       out.tabards[name] = { ...p.tabard, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), bytes: s1.length }; }
-    // the Aurennais' sash over one shoulder (Session 985, OG-056): a man over a belted tunic, a woman over a long skirt, a man with it over the right shoulder
+    // the Aurennais' sash over one shoulder (Session 989, OG-056): a man over a belted tunic, a woman over a long skirt, a man with it over the right shoulder
     out.sashes = {}; for (const [name, sex, dress] of [['an Aurennais man, a sash over a belted tunic', 1, { sash: [.2, .26, .5], sashBorder: [.86, .7, .35], cloak: null, mantle: null }],
         ['an Aurennais woman, a sash over a long skirt', 0, { sash: [.55, .18, .12], sashBorder: [.9, .82, .6], skirt: 'long', cloak: null, apron: null, mantle: null }], ['an Aurennais man, the sash over the right shoulder', 1, { sash: [.62, .45, .18], sashSide: 'R', cloak: null, mantle: null }]]) {
       const G0 = K.rollGenome('sash:' + sex, { g: sex, people: 'aurennais' }), g = { ...G0, dress: { ...G0.dress, ...dress } }, p = K.makePerson(g), s1 = JSON.stringify(K.toSaved(g));

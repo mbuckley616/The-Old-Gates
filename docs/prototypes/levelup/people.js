@@ -605,7 +605,7 @@ function buildTabard(G, body, byName) {
   return { mesh, stats: { columns: NC, width: +(2 * W).toFixed(3), hemDrop: +(nY - yHem).toFixed(3), tris: idx.length / 3, tested, out, belted: !!D.belt } };
 }
 
-// ── the Aurennais' sash over one shoulder (Session 985, L1; OG-056: "a long patterned sash wrapped over one shoulder", OG-044's
+// ── the Aurennais' sash over one shoulder (Session 989, L1; OG-056: "a long patterned sash wrapped over one shoulder", OG-044's
 // indigo and madder sashes) ──
 // A band 9 cm wide in a loop from the top of one shoulder, across the chest to the other hip and round the back. The loop lies in
 // the plane through the shoulder, the hip and the body's front-to-back line; round it, for each of 144 angles and at five places
@@ -1591,7 +1591,7 @@ export function makePerson(G, o = {}) {
     const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
     spearGrip = fistGrip(body, byName, root, curl, hinge); }
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
-  // the sash (Session 985): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band
+  // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band
   let sashStats = null; if (D.sash) { const hipArm = byName[D.sashSide === 'R' ? 'upperarm01.L' : 'upperarm01.R'], sg = D.sashSide === 'R' ? 1 : -1; let T, lift = 0;
     for (;;) { root.updateMatrixWorld(true); T = buildSash(G, body, byName); if (!T.stats.armIn || lift >= .3) break; lift += .03; hipArm.quaternion.multiply(q(0, 0, sg * .03)); }
     root.add(T.mesh); sashStats = { ...T.stats, armLift: +lift.toFixed(2) }; }
@@ -1692,7 +1692,7 @@ export function peopleGenome(rnd, people, g, o = {}) {
   if (P.cape && !D.cloak && rnd() < P.cape) { D.cloak = pick(P.capes); D.cape = true; D.cloakLen = rnd(); D.brooch = P.brooch; if (rnd() < .6) D.cloakHem = pick([[.62, .47, .22], [.3, .36, .22], [.2, .3, .4]]); }
   // the Markmen's woven cuff bands (Session 889, OG-025: red and blue), drawn last for the same reason
   if (P.cuffBands && rnd() < P.cuffBands) { const [a, b] = pick([[[.5, .14, .12], [.2, .28, .45]], [[.2, .28, .45], [.5, .14, .12]]]); D.cuffs = a; D.cuffBand = b; }
-  // the Aurennais' sash over one shoulder (Session 985, OG-056: indigo, madder, saffron and olive, block-printed borders), for those
+  // the Aurennais' sash over one shoulder (Session 989, OG-056: indigo, madder, saffron and olive, block-printed borders), for those
   // with no cloak and no bib to cover it, drawn last for the same reason
   if (P.sash && !D.cloak && !D.bib && rnd() < P.sash) { D.sash = pick([[.2, .26, .5], [.55, .18, .12], [.74, .52, .16], [.36, .38, .2]]); D.sashBorder = pick([[.86, .7, .35], [.9, .82, .6], [.55, .18, .12]]); D.sashSide = rnd() < .75 ? 'L' : 'R'; }
   return G;
