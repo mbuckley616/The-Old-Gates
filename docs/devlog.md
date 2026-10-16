@@ -21714,3 +21714,106 @@ What changed in `people.js`:
 
 ### Needs eyes
 - **One motif.** The print is a single row of squares. OG-056's borders show richer block prints, and a lozenge or a stepped motif would want the band in finer steps or a pattern in the shader.
+## v80 — Session 980 — The Mark's rope ferry (card F8, prototype only)
+L5's "roads and works" (OG-046) owed a shipyard and a ferry after Session 972's toll bridge. OG-046 lists "river port and ferry" among its works, and the Mark is the island with "a river valley at its heart" (OG-102) and no place built yet in `places.js` since the mine and the ice cave. So this is a crossing on a Markish river too wide to bridge cheaply: the Norse *ferjested*, a flat hauled across by hand along a rope, with a bell on the far bank to call the ferryman over. It lives in `places.js` beside the toll bridge, with its own view (`places-ferry-view.js`, dispatched from `places-view.js`). It reuses the lighthouse's materials and the kit's Markish hall (`markHall`, now imported into `places.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The crossing** (`markFerry` in `places.js`, at true size, the river along x and flowing to +x, the road along z, the ferryman's bank at +z):
+- **The river:** 40 m across at the water, its bed 2.4 m down. The banks are turf over a shingle strand rising 1.2 m. The valley climbs gently beyond them, and boulders lie along the strand.
+- **The road:** gravel, cut down through each bank to its landing at 1 in 8.
+- **The landings:** a timber stage on piles at each bank, 2.4 m wide and 8.5 m long, running 6 m out into water 2.4 m deep, its deck 0.55 m over the water. It has a rail on its downstream side, and the end pair of piles stands on as bollards.
+- **The rope:** a hawser between two snubbing posts, one up each bank. It is 1.75 m over the water at the posts and sags 0.35 m to the middle. It runs along the flat's upstream side, so it never crosses the way.
+- **The flat:**
+  - a tarred scow 9 by 3.2 m, its pram ends raked up, its deck 0.5 m over the water, 0.35 m drawn, with rails 1 m high down both sides;
+  - a hinged apron at each end: the one at a landing lowered onto the stage, the other raised as a gate;
+  - two forks on the upstream side, each carrying the rope on an iron roller under a timber keeper, at hand height (0.9 to 1 m over the deck);
+  - a pole stowed along the downstream rail.
+- **The ferryman's house:** the kit's Markish hall, turf-roofed (5.8 by 8.4 m), beside the road on the near bank, its gable door and steps to the road.
+- **The bell:** on the far bank by the road, a bronze bell in a gallows frame under a little shingle hood, its mouth 2 m up and its pull at 1.15 m.
+- `o.at` puts the flat at the near landing (the default), mid-river or the far landing.
+- Birches stand on both banks.
+- 29,374 triangles in 17 meshes, and the hall's 10.
+
+The view: `places.html?place=ferry`, with `view=ferry` (from the near bank upstream), `deck` (on the flat toward the far landing), `bell` (by the bell, back across to the house), `river` (low on the water downstream) and `far` (from high on the far bank), plus `&at=mid` or `&at=far`.
+
+Corrections made during the session:
+- **The water.** It first used the lighthouse's sea, a saturated blue. A river's is now its own grey-green.
+- **The ground's edge.** The ground first stopped at x ±48 m while the water ran on to the horizon. It now reaches ±72 m, coarser past 30 m, and the water stops with it.
+- **Three slips in the check, mine.**
+  - Its ray for the flat's deck fell on the seam between two planks, the same slip as Session 972's.
+  - Its walk sampled at exact quarter metres, which is where the stage's boards (laid every 0.25 m with 2 cm between) have their gaps, so every ray fell through to the strand. The walk now samples on each board's middle.
+  - Its mid-river aprons were cast against the near build's meshes.
+- **The house's footing.** The hall's back corner stands 0.62 m up its 0.8 m stone course on the rising bank. The check first asked 0.6. It now asks that the ground stays 0.1 m under the sill, which is what matters.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 104 of 104 pass** (96 after Session 972). Two views are new on the page check: the ferry, and the deck mid-river, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 30,000 triangles and 20 meshes.
+  - **The flat,** at all three stations:
+    - its deck found 0.50 m over the water;
+    - its keel found 0.35 m under;
+    - clear of the bed by 1.98 m or more.
+  - **The rope:**
+    - found 0.038 m over each roller (its radius is 0.035), a keeper 0.12 m over it;
+    - 0.9 to 0.99 m over the deck at the forks;
+    - 1.37 m or more over the water, found by rays every 2 m across;
+    - 0.62 m outside the stage.
+  - **The way,** 375 points on three lines from the road down the cut, along the stage, over the lowered apron and the length of the deck:
+    - a floor under every one;
+    - no step over 0.06 m;
+    - the steepest metre 0.127, under 1 in 7.5;
+    - nothing overhead.
+  - **The aprons:** at a landing the far one raised across the deck's end, 4.5 m from the middle; mid-river both raised.
+  - **The bell and the house:**
+    - the bell's mouth 2 m up and its pull 1.15 m up, its frame 1.36 m off the road;
+    - the hall's corners' ground from 0.22 m under to 0.62 m over its foot, its steps 0.8 m off the road.
+- **Pictures:** `places-ferry-ferry.jpg`, `-deck`, `-bell`, `-river`, `-far` and `-mid` (from the far bank, with the flat halfway over).
+### Needs eyes
+- **The flat has no ferryman.** People are the bodies builder's. Whether ringing the bell brings him, and what the crossing costs, are the systems builder's and Michael's.
+- **The water is flat and still.** There is no current, no wake at the flat's upstream side and no wet line on the piles.
+- **The valley's skyline is a bare ridge.** The banks want the Mark's own trees (pine and spruce among the birches) and a range behind them.
+- **The birches are the lathe crowns of the older places.** They read as poplars more than birches.
+- **The raised apron reads as a dark board** from across the water.
+- **Owed:** the last of L5's works, a shipyard.
+
+## v80 — Session 981 — The Gatelands' shipyard (card F8, prototype only)
+The last of L5's "roads and works" (OG-046: "shipyards and dry docks"). The precedent is the small clinker yards of the Irish coast, Arklow's and Baltimore's: a slip running down a harbour shore, a hull in frame on it, the last boat finished and lying at the quay, and a shed with a sawpit, a steam box and timber in stick. The hull on the stocks is not drawn freehand. It is the game's own sloop's lines (`ships.js`'s `gatelandsSloop` returns its sections and `sect`), framed up, so the boat being built is the boat at the quay. It lives in `places.js` beside the ferry, with its own view (`places-shipyard-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
+
+**The yard** (`gatelandsShipyard` in `places.js`, at true size, the sea to -z, the slip along z, y 0 the sea's surface):
+- **The shore:** the yard level at 1.4 m over the water. A strand falls to the harbour's bed 3.5 m down, and the slip's bed is cut down to the ways.
+- **The slip:** two ground ways on sleepers at 1 in 12, from 22 m up the yard down to 1.17 m under the water at their foot.
+- **The hull on the stocks,** in the sloop's own lines, bow up the slip:
+  - the keel in segments along its rocker, on seven keel blocks 0.7 m high;
+  - the stem and the sternpost up their rake, and a frame every 1.3 m to the sheer;
+  - the garboard and the next two strakes hung;
+  - ribbands along the frames at the bilge and under the sheer;
+  - shores from the ground to the turn of the bilge;
+  - staging on trestles down both sides at the bilge's height.
+- **The quay:** stone, 6 m wide and 31 m long out into the harbour, 1.4 m over the water under a dressed cap, with bollards along both edges. The finished sloop (`gatelandsSloop`) lies alongside its far face with its sail furled, made fast fore and aft.
+- **The shed:** ten by eight metres of posts under thatch, over a sawpit with its log on trestles across it and the pit saw standing in the cut.
+- **The yard's work:** a steam box on trestles by a copper boiler on a stone hearth, two stacks of planks in stick, and a pile of logs.
+- 26,116 triangles in 18 meshes, and the sloop's 9.
+
+The view: `places.html?place=shipyard`, with `view=yard` (from the shore's west end), `stocks` (under the hull by the keel blocks), `staging` (on the port staging beside the frames), `quay` (on the quay, back to the slip), `shed` (by the sawpit) and `sea` (from the harbour).
+
+Corrections made during the session:
+- **The keel.** It first stood 6 cm over its blocks, because the keel and the blocks took their heights from two different offsets. Both now read the keel's underside.
+- **The logs and the boiler.** The logs first rendered white: `bark` is not in this kit's materials, so the default took them. They have a bark of their own now, and the boiler is copper, not the lighthouse's verdigris.
+- **The shores.** They first ran from the bilge out past the staging and through its planks. They now start at the turn of the bilge and stand inside the staging's line, as a yard's shores do.
+- **The quay's cap.** Its top was coplanar with the rubble's, so a ray could take either. The rubble now stops 0.1 m under the cap.
+- **The staging's planks.** Each was set at its height from its start, not its middle, which left it 1.75 cm low on the slope. The check's walk also first sampled every quarter metre, which fell in the 3 cm gaps between planks every ninth step. The walk now samples on each plank's middle.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 111 of 111 pass** (104 after Session 980). Two views are new on the page check: the yard and the quay, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, under 40,000 triangles and 20 meshes.
+  - **The slip:** the ways found exactly on their line at every metre, at 1 in 12.0, their foot 1.17 m under the water.
+  - **The hull:** the keel found resting on all seven keel blocks (0.000 m off each), and 0.7 m or more over the ways all along.
+  - **The staging:** walked end to end on both sides, a floor on every plank, 0.81 m clear of the frames at the hip.
+  - **The quay and the sloop:**
+    - the quay 1.40 m over the water, its dressed cap found;
+    - the sloop 0.57 m off its face at the waterline;
+    - 2.03 m of water under the sloop's keel.
+- **Pictures:** `places-shipyard-yard.jpg`, `-stocks`, `-staging`, `-quay`, `-shed` and `-sea`.
+### Needs eyes
+- **The frames are round rods.** A sawn frame is square in section and doubled (futtocks). From the slip they read as a basket more than a boat in frame.
+- **Only the garboard and two strakes are hung,** and they are one smooth surface, not clinker laps. The sloop's own strake builder could hang them properly.
+- **The sawpit is a dark rectangle,** not a hole. Nobody stands in it: people are the bodies builder's.
+- **The quay's rubble texture is the toll bridge's**, large and regular, and its bollards are iron where a small yard would use timber.
+- **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
+- **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
