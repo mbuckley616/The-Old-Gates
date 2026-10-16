@@ -21165,3 +21165,19 @@ What changed in `creatures.js`:
 - **Seen from the side, the griffin's folded wing is a thin dark line.** The feathers are flat cards and it lies on its back edge-on. A bird's folded wing wraps down the flank, which would want the cards to roll as well as turn.
 - **The folded wing is turned, not slid.** Each feather pivots at its root and the roots stay where the folded arm puts them, so the primaries do not tuck under the secondaries as a real wing's do.
 - **The Dusk Eagle's six ragged primaries** fold as neatly as a whole wing. Its sheet says they are too few to close; a gap between them at rest would keep that look.
+
+## v80 — Session 975 — The stag's mist rises straight (L4, prototype only)
+Session 969 left this among its notes: "the puffs rise in the head's frame, so a lowered head tips its mist forward. The game's version should rise in the world's up." It is a fault in a body the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`mistTick` takes the head's turn against the body.** It lays each puff's rise along the body's up, its drift along the body's back and its scatter across the body's level. The puffs are still points on the head bone, so their tines carry them. Only the way they leave the tines changed.
+- **`pose` ticks the mist last,** once the neck and the legs are set, so it reads the head where the frame draws it. Before this, it ticked the mist first.
+- A creature on a slope would tip with its body. The body's up is the world's for every creature in the kit today, since none of them pitches its whole rig.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,084 checks pass** (1,083 before). The new check makes the stag of shadows nod its neck hard (`neckNod` 1.2), which tips the head up to 61.8 degrees through the stride. At every one of 12 phases, the puffs still leave their tines within 0.7 degrees of the plan's rise and drift. Against the previous commit's `creatures.js` the same check fails at 62.1 degrees. The Session 969 check on the mist passes as before (392 puffs, 0.28 m of movement through the stride, the same picture at the same phase).
+- `kit.check.mjs` passes.
+- Pictures: `creatures-shadowstag.jpg` and `creatures-shadowstag-front.jpg` re-shot. At the stag's own small nod they look as they did.
+
+### Needs eyes
+- **The mist still trails along with the stag** when it runs, because the puffs stay on the head bone. To leave it hanging in the air behind the stag, the game would have to spawn the puffs in the world.

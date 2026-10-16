@@ -450,7 +450,8 @@ function antler(o, S, c, p, side, r) {
 // a mist the antlers breathe (Session 969, OG-088's stag of shadows): from each tine's tip `per` puffs rise, swell and fade, each one
 // `life` of a stride behind the last, so the whole mist loops with the gait and a still picture is the same every time. The puffs are
 // points on the head bone, soft discs of the plan's `mist` tone drawn after the body (no depth write, no shadow); they rise `rise`
-// metres in the head's frame, drift back by `drift` and grow from `r0` to `r1`, their opacity `alpha` at the most
+// metres, drift back by `drift` and grow from `r0` to `r1`, their opacity `alpha` at the most. Up and back are the body's, not the head's
+// (Session 975): `pose` passes the head's turn against the body, so a lowered head's mist still rises straight up from its tines
 function mistPoints(o, seed) { const r = rng(seed + 31), per = o.per ?? 5, n = o.tips.length * per, pos = new Float32Array(n * 3), size = new Float32Array(n), alpha = new Float32Array(n), q = [];
   o.tips.forEach((t, i) => { for (let k = 0; k < per; k++) q.push({ t, off: (k + r() * .5) / per, dx: (r() - .5) * .6, dz: (r() - .5) * .6, sp: .8 + .4 * r() }); });
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aSize', new THREE.BufferAttribute(size, 1)); g.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
@@ -460,9 +461,11 @@ function mistPoints(o, seed) { const r = rng(seed + 31), per = o.per ?? 5, n = o
   const pts = new THREE.Points(g, m); pts.name = 'mist'; pts.frustumCulled = false; pts.renderOrder = 2; pts.userData = { o, q };
   pts.onBeforeRender = R => { m.uniforms.uH.value = R.getDrawingBufferSize(new THREE.Vector2()).y; };
   mistTick(pts, 0); return pts; }
-function mistTick(pts, ph) { const { o, q } = pts.userData, g = pts.geometry, P = g.attributes.position, S = g.attributes.aSize, A = g.attributes.aAlpha, rate = o.rate ?? 2;
-  q.forEach((u, i) => { const a = (ph * rate + u.off) % 1, rise = (o.rise ?? .35) * a * u.sp;
-    P.setXYZ(i, u.t.x + u.dx * rise * .5, u.t.y + rise, u.t.z - (o.drift ?? .15) * a + u.dz * rise * .5);
+const _mX = new THREE.Vector3(), _mY = new THREE.Vector3(), _mZ = new THREE.Vector3();
+function mistTick(pts, ph, qInv) { const { o, q } = pts.userData, g = pts.geometry, P = g.attributes.position, S = g.attributes.aSize, A = g.attributes.aAlpha, rate = o.rate ?? 2;
+  _mX.set(1, 0, 0); _mY.set(0, 1, 0); _mZ.set(0, 0, 1); if (qInv) { _mX.applyQuaternion(qInv); _mY.applyQuaternion(qInv); _mZ.applyQuaternion(qInv); }
+  q.forEach((u, i) => { const a = (ph * rate + u.off) % 1, rise = (o.rise ?? .35) * a * u.sp, x = u.dx * rise * .5, z = -(o.drift ?? .15) * a + u.dz * rise * .5;
+    P.setXYZ(i, u.t.x + _mX.x * x + _mY.x * rise + _mZ.x * z, u.t.y + _mX.y * x + _mY.y * rise + _mZ.y * z, u.t.z + _mX.z * x + _mY.z * rise + _mZ.z * z);
     S.setX(i, lerp(o.r0 ?? .05, o.r1 ?? .22, Math.sqrt(a))); A.setX(i, (o.alpha ?? .35) * sstep(0, .15, a) * (1 - sstep(.45, 1, a))); });
   P.needsUpdate = S.needsUpdate = A.needsUpdate = true; }
 // crystal horns: layered shards sweeping back from the brow (the Shatterhorn, OG-040). `rake` (Session 920) scales how far they
@@ -807,7 +810,6 @@ function stowQuills(C, W, k) {
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
-  if (C.mist) mistTick(C.mist, ph);
   for (const b of C.bones) b.quaternion.identity();
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
@@ -872,6 +874,7 @@ export function pose(C, phase) {
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
     worst = Math.max(worst, solveLeg(C, L, T, fold));
   }
+  if (C.mist) { const hd = C.mist.parent; hd.updateWorldMatrix(true, false); const qi = hd.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(C.rig.getWorldQuaternion(new THREE.Quaternion())); mistTick(C.mist, ph, qi); }
   return worst;
 }
 // one leg: yaw the leg toward its foot (an insect's coxa), hold the distal segments (a paw, a hoof), bend the two in between

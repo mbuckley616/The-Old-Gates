@@ -112,6 +112,16 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   const fr = await page.evaluate(async () => { const K = await import('./creatures.js'); return K.FROST.map(k => { const C = K.build(K.genome(k, k + ':check')), h = C.meshes[0].material; let shards = 0; C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh && o.geometry.attributes.position.count >= 30 && o.material.flatShading) shards++; });
     return { k, school: C.plan.school, clear: h.transparent ? +h.opacity.toFixed(2) : 1, shards, tris: C.stats.tris }; }); });
   for (const t of fr) check(`${t.k}: a Frost Thing of Uisce in clear ice (opacity ${t.clear}) with ${t.shards} clusters of shards`, t.school === 'Uisce' && t.clear < 1 && t.shards >= 5, t);
+  // the mist rises in the body's up, not the head's (Session 975): with the stag's neck nodding hard (1.2 rad), every phase's puffs still
+  // leave their tines up and back within 10 degrees of the plan's rise and drift, where the head's own frame would tip them over
+  const mu = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), C = K.build(K.genome('shadowstag', 'shadowstag:check')), m = C.mist, P = m.geometry.attributes.position, o = m.userData.o;
+    C.plan = { ...C.plan, neckNod: 1.2 }; const want = new T.Vector3(0, o.rise, -o.drift).normalize(), qr = new T.Quaternion(), qm = new T.Quaternion(), qh = new T.Quaternion(); let worst = 0, tilt = 0;
+    for (let i = 0; i < 12; i++) { K.pose(C, i / 12); C.rig.updateMatrixWorld(true); C.rig.getWorldQuaternion(qr).invert(); m.getWorldQuaternion(qm).premultiply(qr); C.byName.head.getWorldQuaternion(qh).premultiply(qr);
+      tilt = Math.max(tilt, new T.Vector3(0, 1, 0).applyQuaternion(qh).angleTo(new T.Vector3(0, 1, 0)));
+      const d = new T.Vector3(); m.userData.q.forEach((u, k) => d.add(new T.Vector3(P.getX(k), P.getY(k), P.getZ(k)).sub(u.t).applyQuaternion(qm)));
+      worst = Math.max(worst, d.angleTo(want)); }
+    return { worst: +(worst * 180 / Math.PI).toFixed(1), tilt: +(tilt * 180 / Math.PI).toFixed(1) }; });
+  check(`shadowstag: its mist rises in the body's up, the puffs within ${mu.worst} degrees of up and back with the head tipped up to ${mu.tilt} degrees`, mu.worst < 10 && mu.tilt > 30, mu);
   // the stag of shadows' mist (Session 969, OG-088): puffs from every tine's tip, no shadow, rising through the stride and the same at the same phase
   const sm = await page.evaluate(async () => { const K = await import('./creatures.js'), C = K.build(K.genome('shadowstag', 'shadowstag:check')), m = C.mist, P = m.geometry.attributes.position, A = m.geometry.attributes.aAlpha;
     const snap = ph => { K.pose(C, ph); return Array.from(P.array); }, a = snap(.1), b = snap(.35), a2 = snap(.1); let moved = 0, same = 0, up = 0; for (let i = 0; i < a.length; i++) { moved = Math.max(moved, Math.abs(a[i] - b[i])); same = Math.max(same, Math.abs(a[i] - a2[i])); }
