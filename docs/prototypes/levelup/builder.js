@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim' };
+const GLABEL = { sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -71,6 +71,8 @@ function frame() {
   else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05, h.z); }
   // the throat and the upper chest (Session 1003): what is worn at the neck's base, a necklace
   else if (view === 'neck') { cam.fov = 22; cam.position.set(h.x + .3 / zoom, h.y - .1, h.z + .95 / zoom); cam.lookAt(h.x, h.y - .2, h.z); }
+  // the waist (Session 1004): the belt's front, and what hangs from it
+  else if (view === 'waist') { const b = person.root.getObjectByName('beltCoins'), t = b ? new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()) : h.clone().setY(h.y - .7); cam.fov = 22; cam.position.set(t.x + .3 / zoom, t.y + .12, t.z + 1.05 / zoom); cam.lookAt(t); }
   // over the head (Session 918): what is carried above it, a spear's head
   else if (view === 'over') { const sp = person.root.getObjectByName('spear'), b = sp && new THREE.Box3().setFromObject(sp), t = b ? new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - .24, (b.min.z + b.max.z) / 2) : h.clone().setY(h.y + .45);
     cam.fov = 22; cam.position.set(t.x + .05, t.y + .06, t.z + 1.5 / zoom); cam.lookAt(t); }

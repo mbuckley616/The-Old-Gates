@@ -22082,3 +22082,42 @@ Three corrections of my own, made on the way and kept here because each is a tra
 - **Over a sash** (`builder-necklace-sash.jpg`), the middle coin sits on the sash's edge and tips flatter than the rest.
 - **The rings are drawn edge-on along the chain.** From the front they read as short bars at each coin's top.
 - **Owed:** the coins on the head-wrap's edge (OG-056), a scarf's tail and a taller turban, the sandals, the sash belt.
+
+## v80 — Session 1004 — Coins on the belt (L1 and B2, prototype only)
+OG-056's details panel draws "a tooled leather belt with hanging coins" among the Aurennais' jewellery. Session 1003's coin is reused for it, so this session hangs a row of them from the belt. Session 995's note listed "the coins on the head-wrap's edge" as owed. The catalogue row does not name them and the thumbnail is too small to show them, so that item is left as it was and this one, which the row does name, is built in its place. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label and a `waist` view) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **`buildBeltCoins`:** a row of coins 1.5 cm across, each on a ring from the belt's lower edge, across the front of the body from 0.85 rad either side, every 2.6 cm of the edge: 12 on the people checked, along 29 to 31 cm of it. Carried rigid by the hips' bone. 2,592 triangles for 12.
+  - **The edge** is the belt's own points at the bottom of what is drawn of it: the furthest out in each direction, taken down to the band's cut (rest y 0.135). A point standing more than 15% past the edge's middle radius is not used, since a sleeve hangs over the belt's sides there.
+  - **Each coin hangs straight down** 3.5 mm under its ring, facing out from the body. It is set out along its face until nothing it lies on comes up within its rim: the body and what is skinned over it, read at 15 points on every triangle, the belt's drawn band among them.
+  - **A coin with something in front of it** (an arm, a wide sleeve) would show only in part, so it is not hung. Beside the man's sash knot 2 of the 12 were left off: the knot's hanging ends are in front of them.
+- **When it is built:** after the necklace, on a belt that no tabard or apron covers.
+- **The dress** takes `beltCoins` (the metal's colour; *belt coins* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll it at 0.25 when their belt is uncovered, in the metal of the necklace or hoops they already wear, or else gold or bronze. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls it.
+
+**Correction to Session 1003:** the coins were turned into place from a left-handed basis (the face's side axis was the face's normal crossed with up, not up crossed with the normal). A quaternion read from a reflection is not a faithful rotation. On the necklace the coins happened to come out facing the right way. On the belt they came out tilted, with wedges bitten out of them by the cloth behind. Both now build from `(up × N, up, N)`. The necklace's pictures are re-shot, and its checks, which measure along each coin's face and not its mesh, are unchanged.
+
+Corrections of my own on the way, kept for the next piece hung from a belt:
+- **The belt's points run 1.5 cm up the band** above the drawn edge. A coin hung from them started behind the leather.
+- **The sparse edge points snapped several coins to one place:** 11 pairs touching. Coins are now placed by distance along the edge, interpolated between its points.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 336 checks pass** (329 after Session 1003; 7 new). The new checks:
+  - **Five people:** a man over a tunic, a woman over a long skirt, a man over mail, and the coins beside a sash's knot on either side. On each:
+    - every coin's top is under the belt's edge;
+    - nothing comes up through a coin;
+    - no coin touches the next;
+    - no coin stands more than 1.5 cm off what is behind it (3.5 mm at the most, over the long skirt);
+    - it is carried by the hips, and it saves and loads back.
+  - **None under a tabard or an apron.**
+  - **The roll:** 10 of 40 rolled Aurennais wear them, none on a covered belt; none of 30 Markmen, Gatelanders and Old Blood do.
+- `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-beltcoins-man.jpg`, `-woman.jpg` and `-full.jpg` (a woman with hoops, the necklace and the belt's coins).
+  - Re-shot: `builder-necklace-*.jpg` and `builder-peoples.jpg`.
+
+### Needs eyes
+- **The coins hang plumb**, so where a long skirt or a belly stands further out below, they hang clear of it (3.5 mm at the most on the people checked). That is right for a coin on a ring at rest; in the game they would swing.
+- **The rings are edge-on from the front**, as on the necklace.
+- **The belt is the plain leather belt.** OG-056's wide sash belts in rust and indigo, and the tooling on the leather, are not built; the sash belt stays owed.
+- **Still owed:** the coins on the head-wrap's edge (to be confirmed from the full image), a scarf's tail and a taller turban, the sandals, the sash belt.
