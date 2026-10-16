@@ -21144,3 +21144,24 @@ Correction to Session 947: its *Verified* left the new look's run to the PR comm
 - `node tests/run.mjs mapseals`: three runs green in a row; `--look=new` green.
 ### Needs eyes
 - Nothing for a playtest.
+
+## v80 — Session 974 — Folded wings lie closed (L4 and L3, prototype only)
+Session 961 left this in its notes: "from the front the primaries still fan out sideways from the folded wrist: the kit lays them outward from the hand, and the fold turns the bones, not the feathers." The same was true of every bird in the kit. Each flight feather was fixed to its arm bone, so when the arm folded into its Z the hand's primaries went back and out at the wrist and the forearm's secondaries stood out from the flank. From above, every perched bird and the griffin wore a spiky ruff where a folded wing should be. This is a fault in bodies the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **Every flight feather has a quill bone of its own** at its root, a child of the arm bone it grew on: the hand's primaries, the forearm's secondaries and the humerus's three coverts. A row's covert shares its feather's bone. That is 20 bones a wing on a hawk: the Crag Hawk has 64 bones (24 before) and the Winged Thing 83 (39 before). No triangles are added, and the skin weights are unchanged.
+- **`stowQuills`, run by `pose` after the wing's arm is set.** When the wing is folded, each quill is turned so that its feather lies back along the body. The turn is worked out in the frame of the spine bone the wing hangs from, from wherever the folded arm has carried that feather. The primaries end up outermost and lowest (out 1 to 5%, down 5 to 12%), the secondaries under them and the coverts flattest, so the rows lie stacked instead of in one plane. When the wing beats or soars, the quills are left as built, so open wings look as they did before.
+- **A tweak made during the session:** at first the primaries were set 3 to 10% outward. From above, the griffin's two folded wings then stood in a wide V. At 1 to 5% they close.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,083 checks pass** (1,065 before). The new checks cover the nine plans with feathered wings: the skyraven, the Crag Hawk, the raven, the crow, the Stormshrike, the Cliffswift, the Sunbeak Vulture, the Dusk Eagle and the Winged Thing.
+  - At rest, every flight feather lies within 7.4 to 8.8 degrees of the body's line. On the arm alone the worst was 83 to 100 degrees.
+  - In flight, no quill is turned at all.
+  - Every plan's gaits pass as before, and the Winged Thing's folded and open wingspans pass as before.
+- `kit.check.mjs` passes.
+- Pictures, from above at rest: `creatures-craghawk-folded.jpg`, `creatures-wingedthing-folded.jpg` and `creatures-duskeagle-folded.jpg` (new). The nine birds' own pictures and `creatures-wingedthing-front.jpg` were re-shot.
+
+### Needs eyes
+- **Seen from the side, the griffin's folded wing is a thin dark line.** The feathers are flat cards and it lies on its back edge-on. A bird's folded wing wraps down the flank, which would want the cards to roll as well as turn.
+- **The folded wing is turned, not slid.** Each feather pivots at its root and the roots stay where the folded arm puts them, so the primaries do not tuck under the secondaries as a real wing's do.
+- **The Dusk Eagle's six ragged primaries** fold as neatly as a whole wing. Its sheet says they are too few to close; a gap between them at rest would keep that look.

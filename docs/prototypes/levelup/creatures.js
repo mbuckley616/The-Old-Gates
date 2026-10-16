@@ -232,13 +232,16 @@ P.wings = (B, o) => {
     const tag = 'wing' + (side > 0 ? 'L' : 'R'), arm = B.chain(tag, sp.bone, [root, elbow, wrist, tip]);
     B.meat(arm[0], root, elbow, o.r[0], o.r[1], { group: tag, tone: o.tone }); B.meat(arm[1], elbow, wrist, o.r[1], o.r[2], { group: tag, tone: o.tone }); B.meat(arm[2], wrist, tip, o.r[2], o.r[2] * .5, { group: tag, tone: o.tone });
     const back = V(0, -.02, -1), up = V(0, 1, 0);
-    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, arm[1], 'feather', 'featherTip');
-      feather(B, p.clone().add(V(0, .004 * span, .01 * span)), d, V(side, 0, 0), span * F.len * .34, span * .065, arm[1], 'covert', 'feather'); }
-    for (let i = 0; i < 3; i++) feather(B, root.clone().lerp(elbow, .3 + .3 * i), back, V(side, 0, 0), span * F.len * .5, span * .07, arm[0], 'covert', 'feather');
-    for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize();
-      feather(B, p, d, ac, span * F.len * (.7 + .3 * t) * (F.primary || 1), span * .06, arm[2], 'feather', 'featherTip');
-      if (i < F.np - 2) feather(B, p.clone().add(V(0, .004 * span, .008 * span)), d, ac, span * F.len * .4, span * .055, arm[2], 'covert', 'feather'); }
-    B.wings.push({ side, arm, fingers: [], feathered: true }); } return; }
+    // each flight feather hangs on a bone of its own at its root (Session 974), so a folded wing can turn it back along the body,
+    // as a bird's ligaments do; its covert rides on the same bone. `kind` is the row: c on the humerus, s the forearm, p the hand
+    const quills = [], quill = (par, p, d, kind, t) => { const n = tag + 'q' + quills.length; B.bone(n, par, p); quills.push({ name: n, d: d.clone(), kind, t }); return n; };
+    for (let i = 0; i < F.ns; i++) { const t = i / (F.ns - 1), p = elbow.clone().lerp(wrist, t), d = back.clone().add(V(side * .15 * t, 0, 0)).normalize(), q = quill(arm[1], p, d, 's', t); feather(B, p, d, V(side, 0, 0), span * F.len * (.62 + .08 * t), span * .07, q, 'feather', 'featherTip');
+      feather(B, p.clone().add(V(0, .004 * span, .01 * span)), d, V(side, 0, 0), span * F.len * .34, span * .065, q, 'covert', 'feather'); }
+    for (let i = 0; i < 3; i++) { const p = root.clone().lerp(elbow, .3 + .3 * i); feather(B, p, back, V(side, 0, 0), span * F.len * .5, span * .07, quill(arm[0], p, back, 'c', i / 2), 'covert', 'feather'); }
+    for (let i = 0; i < F.np; i++) { const t = i / (F.np - 1), p = wrist.clone().lerp(tip, t * .92), d = V(side * (.25 + .9 * t), 0, -(1 - .85 * t)).normalize(), ac = V(-d.z * side, 0, d.x * side).normalize(), q = quill(arm[2], p, d, 'p', t);
+      feather(B, p, d, ac, span * F.len * (.7 + .3 * t) * (F.primary || 1), span * .06, q, 'feather', 'featherTip');
+      if (i < F.np - 2) feather(B, p.clone().add(V(0, .004 * span, .008 * span)), d, ac, span * F.len * .4, span * .055, q, 'covert', 'feather'); }
+    B.wings.push({ side, arm, fingers: [], feathered: true, quills }); } return; }
   for (const side of [1, -1]) {
     const root = sp.p.clone().add(V(side * o.out, o.up || 0, 0)), X = V(side, 0, 0);
     const elbow = root.clone().add(V(side * span * .2, span * .16, -span * .05)), wrist = elbow.clone().add(V(side * span * .26, -span * .04, span * .04));
@@ -790,6 +793,18 @@ function flights(C, G) { if (C.air[C.gait]) return C.air[C.gait]; const B = C.B,
   return C.air[C.gait] = out; }
 const liftAt = (air, ph) => { for (const a of air) { let u = (ph - a.start + 1) % 1; if (u < a.len) { u /= a.len; return 4 * a.H * u * (1 - u); } } return 0; };
 // pose the creature at a phase of its gait; returns the worst foot error (metres) for the test
+// a folded wing's flight feathers turned back along the body (Session 974): each quill's bone is turned, in the frame of the spine
+// bone the wing hangs from, from where the folded arm has carried it to lie back and a little down, the hand's primaries outermost and
+// lowest, so the rows stack as a bird's do instead of fanning out from the wrist. `k` is how far (0 open, 1 stowed)
+const QUILL_LIE = { p: t => [.01 + .04 * t, -.05 - .07 * t], s: t => [.02 + .03 * t, -.03 - .03 * t], c: t => [.01 + .01 * t, -.01] };
+const _qS = new THREE.Quaternion(), _qP = new THREE.Quaternion(), _qD = new THREE.Quaternion(), _qI = new THREE.Quaternion(), _vN = new THREE.Vector3(), _vT = new THREE.Vector3();
+function stowQuills(C, W, k) {
+  if (!k) { for (const f of W.quills) C.byName[f.name].quaternion.identity(); return; }
+  const arm0 = C.byName[W.arm[0]]; C.byName[W.arm[2]].updateWorldMatrix(true, false); arm0.parent.getWorldQuaternion(_qS).invert();
+  const rel = {}; for (const nm of W.arm) rel[nm] = C.byName[nm].getWorldQuaternion(new THREE.Quaternion()).premultiply(_qS);
+  for (const f of W.quills) { const b = C.byName[f.name], qp = rel[b.parent.name], [out, down] = QUILL_LIE[f.kind](f.t);
+    _vN.copy(f.d).applyQuaternion(qp); _vT.set(W.side * out, down, -1).normalize(); _qD.setFromUnitVectors(_vN, _vT);
+    _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
   if (C.mist) mistTick(C.mist, ph);
@@ -833,7 +848,8 @@ export function pose(C, phase) {
   for (const W of B.wings) if (W.feathered) { const fold = G.flap ? 0 : (C.plan.wingFold ?? 1), s = W.side, beat = G.flap ? Math.sin(tau * ph) : 0, up = G.flap ? Math.max(0, -Math.cos(tau * ph)) : 0;
     C.byName[W.arm[0]].rotation.set(.1 * fold, s * 1.2 * fold, s * (.55 * beat - .25 * fold));
     C.byName[W.arm[1]].rotation.set(0, -s * (2.5 * fold + .35 * up), -s * .15 * beat);
-    C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat); }
+    C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat);
+    if (W.quills) stowQuills(C, W, G.flap ? 0 : 1); }
   for (const W of B.wings) if (!W.feathered) { const flap = G.flap ? Math.sin(tau * ph) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
     // an upright body's wings at rest (Session 956, the gargoyle's): the fold above lays a level back's wings along it, which on an
     // upright one spreads them flat over its head. `wingRest` gives the arm's three bones their rest turns instead (x, then y and z
