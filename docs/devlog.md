@@ -22737,3 +22737,54 @@ In `builder.js`: a *head-wrap wound up as a turban* checkbox under the dress, an
 - **The underside of the lowest turn** catches the light behind the ears. Session 994's plain wrap does the same; it shows more on white cloth.
 - **It is rigid on the head bone**, as the wrap is: it has no weight and does not sway.
 - **Still owed in L1:** the scarf's tail (a wrap's end hanging to the shoulder), the coins on the head-wrap's edge, and a shoulder sash's end tucked under the sash belt.
+
+## v80 — Session 1018 — A head-wrap's tail (L1 and B2, prototype only)
+The other half of L1's "a scarf's tail and a taller turban" (Session 1017 built the turban). OG-044 and OG-056 draw several Aurennais women with the end of the head-wrap or scarf hanging loose from behind the ear down the back, and OG-109's Aurenne row has head scarves with tails. Session 994's wrap tucks every end in. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `people.js`:
+- **`buildWrapTail`**, built after the sash, the lacing and the cord, and before the necklace (which lies over it).
+- **Where it starts.** The wrap's loose end comes out from under its lowest turn, 0.55 rad off the back toward the side the genome names (`wrapTail`: `'L'` or `'R'`). It starts 3 cm up inside the turns, so it is seen to come from under them.
+- **Its shape.**
+  - It hangs 34 cm on a woman and 28 on a man, to the shoulder blade.
+  - It is gathered to 5 cm at the top and opens to 10 to 11 cm within its top third.
+  - It hangs straight down and never comes back in toward the body.
+  - Folds of up to 7 mm open down its length, only ever outward.
+  - Its last 2.5 cm is in the wrap's border colour.
+- **What it lies on** is read off a radial map round the neck's middle, in 72 directions and 1 cm bands. The map holds the furthest point of everything there: the body, the tunic, the hair and a mantle, all skinned, and what is carried rigid (a sash, the hoops). The map is spread to its neighbours and read between the bins, and the cloth lies 6 mm clear of it.
+- **Bones and triangles.** It is one mesh of 880 triangles, rigid on the chest bone as the necklace is.
+- **The roll.** An Aurennais with a wrap and no cloak rolls a tail at 0.55 if a woman and 0.25 if a man, on the left at 0.7. This is drawn after the turban, so every earlier roll of a seed is as it was. It is never built under a cloak, because the cloak and its hood lie on the back.
+
+In `builder.js`: a select beside the turban's checkbox (no tail, left, right).
+
+Two faults were fixed during the session, both seen in the first pictures:
+- **The first build read the wrap's points in the head bone's frame,** not the world's, and hung the tail 60 cm too low.
+- **The second build was wrong on the turban.** The tail's gathered top stood outside the turns like a spike, and its lower half was stepped where the map's bins showed. The fixes:
+  - it now starts inside the turns, and the wrap itself is left out of the map;
+  - the map is read with bilinear interpolation.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 374 checks pass** (368 after Session 1017; 6 new). `kit.check.mjs` passed after Session 1017, and nothing it loads has changed since.
+- **The new checks**, on two people:
+
+| | Woman: braids tucked under a saffron wrap, tail on the left over her indigo sash | Man: white turban, tail on the right |
+|---|---|---|
+| Points of what is under it that come through | 0 of 32,756 | 0 of 23,038 |
+| Gap from the top to the wrap's turns | 0.4 cm | 0.6 cm |
+| Share of its length lying on the back (within 12 mm of what is under it) | 51 per cent | 60 per cent |
+| Length | 34 cm | 28 cm |
+| Width at the hem | 11.8 cm | 11.1 cm |
+| Triangles | 880 | 880 |
+
+  Both save and load back with `wrapTail`.
+- **Under a cloak with its hood down,** no tail is built.
+- **The roll:** 3 of 13 Aurennais wraps have tails, all on women. No other people rolls one.
+- **The necklace** still lies over everything at the neck with 0 points through it.
+- **Pictures:**
+  - New: `builder-tail-back.jpg` and `-side.jpg` (the woman, close), `-full.jpg` (from behind) and `-turban.jpg` (the man, close).
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **It is rigid on the chest bone** and the wrap is rigid on the head bone. A head turned far to the tail's side would part them at the top, or push the tail into the turns. The game will want the tail's top rows weighted to the head and its lower rows to the chest, as the hood is.
+- **It hangs straight from where it leaves the wrap.** It is a few centimetres off the back of the neck before it meets the shoulder, as a cloth hanging from the wrap's edge would be. It has no weight or sway.
+- **Faint ridges remain** low on the turban man's tail, where the shoulder blade's points are sparse.
+- **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image), and a shoulder sash's end tucked under the sash belt.
