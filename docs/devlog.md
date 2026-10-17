@@ -24479,3 +24479,49 @@ CI failed `tiermap` (Session 1065) twice on `3421a74`. It found 0 live portals, 
 - `tiermap` 6 of 6, 28 portals.
 ### Needs eyes
 - Nothing.
+
+## v80 — Session 1070 — F2b, session 2, part 1: a step is 0.40 m (the body in the world)
+F2b's second session (`docs/design/scale-numbers-build.md`, *Movement*) begins with the step. `STEP_UP` was 0.62, set for the
+old 1.1 m body. At that height a person walked onto a chair, a chest or a bed as if each were a stair. It is now 0.40
+(`52-dungeon-gen.js`). That is over a stair's rise (0.18), a kerb and a bench's seat (0.39), but not onto a chest or a bed (0.45)
+or a table (0.68). A jump (apex 0.84) puts you on any of them, as the sheet asks. `STEP_UP` is read in four places:
+- where a solid lets you over it (`intSolidAt`);
+- which foothold you stand on (`footholdY`);
+- where a coaching inn's folk may stand (`coachInnFolk`, which reads the same rule);
+- nowhere else.
+
+**What else stands in the band.** Before the change I surveyed every Dunmore room type and six dungeons (four schools, a lair's
+cavern and a fort) for anything walkable at 0.62 and not at 0.40:
+- **Rooms:** the beds and the stash chest, both 0.45, which the sheet means to stop you.
+- **Dungeons:** nothing. Their stairs are newel helices and ramps, which rise 0.14 at most between 5 cm samples, and they hold no
+  low platforms.
+- **The legacy rooms** carry no height bands at all.
+
+**The body's radius stays where it is for now.** The world (`solidAt`) and the rooms already test a 0.30 radius, the sheet's
+number. Only the dungeon's is smaller: `dBlk` 0.20, and its props padded by 0.22. Its corridors are still one 1 m cell until
+session 3 builds Michael's 3 m cell (#300 C), and 0.30 in a 1 m corridor leaves 0.4 m to pass a prop, so that radius moves with
+the cell.
+
+**One suite re-measured.** `shells` checked that the middle of a cottage is free at the fixed point (1.5, 1.5). That point is
+0.13 m from the bed, which now blocks. It now takes the nearest clear spot to the room's middle, within a quarter of its width.
+The check still proves that a post blocks and that the room is not solid everywhere.
+
+Numbering: Session 1068 is the bodies builder's and 1069 another systems run's CI fix to `tiermap`, merged in here.
+### Verified (headless Chromium)
+- **`stepup`** (new), 9/9 in the old look and the new:
+  - `STEP_UP` is 0.40.
+  - In a Dunmore cottage, a bed (0.448), the chest (0.448) and a table (0.68) each stop you at the floor. Walked at, the bed stops
+    you 0.96 m from its middle and the table 0.82 m from its middle.
+  - A running jump peaks at 0.876 and leaves you standing on the table at 0.68.
+  - The inn's stair climbs to its top (2.743 of 2.743), with no rise over 0.144 between 5 cm steps.
+  - A bench's seat (0.394) is still stood on from the floor.
+- **36 neighbours pass** (every suite that reads `STEP_UP`, `footholdY`, `intSolidAt`, `INT_SOL` or the coaching inn, and the
+  stair suites): `airdash`, `airstep`, `barber` (5), `bedaim`, `boxspots`, `chairstash`, `civicfurn`, `coachinn`, `coachseat`,
+  `coachvoice`, `crime5`, `doorbed`, `falls`, `guardsindoor`, `homefurn`, `homesleep`, `innrooms`, `intaim`, `intdooraim`,
+  `intdoors`, `interiors`, `intnpcs`, `intreach`, `keepercone`, `keeperwalk`, `oddfurn`, `ragdoll` (2), `scalerooms`, `shopfurn`,
+  `sleeperreach`, `wokennight`, `newelstair`, `stairrail`, and `shells` re-measured.
+### Needs eyes
+- **Beds and chests now take a jump.** Walking into one stops you dead where you used to ride up onto it. Sleeping and the stash
+  are E at reach, so nothing is lost, but it is a different feel in a small room.
+- **Owed from session 2:** touch at 1.6, the wheel, swimming at 1.40 and the indoor sight line. The dungeon's radius goes with
+  session 3.
