@@ -84,9 +84,10 @@ await page.evaluate(() => { try { exitInterior(); } catch (e) {} });
 await page.waitForTimeout(1500);
 
 // a gate's floor
-await enterDungeon(page, { theme: 'ruins', seed: 11 });
+const cam = await enterDungeon(page, { theme: 'ruins', seed: 11 });
 const d = await page.evaluate(() => { let shell = 0, foes = ENEMIES.length; dScene.traverse(o => { if (o.userData && o.userData.dunShell) shell++; });
   REN.render(dScene, CAM); return { zone: activeZoneId, shell, foes, calls: REN.info.render.calls }; });
+Object.assign(d, cam);
 check('a dungeon floor builds and draws, its foes in it', d.zone === 'dungeon' && d.shell > 3 && d.foes > 0 && d.calls > 10, d);
 
 // a few real frames of the game's own loop, then the console
