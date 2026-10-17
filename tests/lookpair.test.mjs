@@ -27,7 +27,7 @@ async function shoot(look) {
     const t = WORLD.siteAnywhere('dunmore'); px = t.x + 6; pz = t.z + 34; yaw = Math.atan2(-(t.x - px), -(t.z - pz)); pitch = -.06; thirdPerson = false;
     forceTime(12);
     const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; let t0 = performance.now();
-    // Session 1053: on bf251d1 (CI, 16 Oct) the new look's road box read (167,196,98), the grass's own colour: no road drawn there,
+    // Session 1054: on bf251d1 (CI, 16 Oct) the new look's road box read (167,196,98), the grass's own colour: no road drawn there,
     // while snow had been cleared from both looks and the retry (the same cover) matched to 1. What lies under the box is read by a ray
     // through its centre (400, 390): a road ribbon, a near chunk's ground, or nothing near (the far terrain). The 30 frames stand; then
     // the loop runs on, up to 300 frames, until the ray meets a ribbon, and the check below names what it met.
@@ -92,7 +92,7 @@ console.log('  perf old', JSON.stringify(oldR.perf));
 console.log('  perf new', JSON.stringify(newR.perf));
 // Session 822 measured 6.0 over the frame, most of it the grass's fine noise and a house or two the town built differently that run;
 // (7.1 on a second run); the flat regions came within 1 level of each other
-// Session 1053: what the ray through the road box met in each look (see shoot); a miss names the cause, not the colour
+// Session 1054: what the ray through the road box met in each look (see shoot); a miss names the cause, not the colour
 console.log('  under the road box: old', JSON.stringify(oldR.road), 'new', JSON.stringify(newR.road));
 check('the road box looks onto a road ribbon in both looks', oldR.road.hit === 'road' && newR.road.hit === 'road', { old: oldR.road, new: newR.road });
 check('both looks laid their roads with the seeded grain', oldR.seeded > 0 && newR.seeded > 0, { old: oldR.seeded, new: newR.seeded });
