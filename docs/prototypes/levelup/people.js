@@ -172,13 +172,23 @@ const SCALES = `float scaleAt(vec2 p){ p *= vec2(42., 30.); float a = fwidth(p.y
   return edge * shade * (.82 + .3 * dome) * (.9 + .2 * t) + (1. - edge) * .28; }
 float mailAt(vec3 p, vec3 n){ vec3 w = abs(normalize(n)); w = pow(w, vec3(4.)); w /= (w.x + w.y + w.z);
   float m = scaleAt(p.zy) * w.x + scaleAt(p.xz) * w.y + scaleAt(p.xy) * w.z, k = clamp(length(fwidth(p.xy * 36.)) * 1.2 - .4, 0., 1.); return mix(m, .7, k); }`;
+// the binding (Session 1068; the cuirass's edges, owed from Session 1058): a band of dark leather 1.6 cm wide round the neck, the
+// sleeves and the hem, where the plates are sewn to their lining; its width is laid along the surface, the cut's distance in rest
+// height or width divided by how steeply the surface runs across it, so it is as wide over the flat of the shoulder as down the
+// hem; it is rolled (lighter down its middle), stitched 3 mm from its inner edge, and takes no metal. o.bind is [neck, sleeve, hem]
+const BIND_C = [.05, .026, .012], BIND = (b) => `float bindD(){ vec3 n = normalize(vRN); float sy = sqrt(max(1. - n.y * n.y, .05)), sx = sqrt(max(1. - n.x * n.x, .05));
+  return min(min((${b[0].toFixed(3)} - vB.y) / sy, (${b[1].toFixed(3)} - abs(vB.x)) / sx), (vB.y - (${b[2].toFixed(3)})) / sy); }`;
+const BIND_MIX = `float bD = bindD(), bA = fwidth(bD) * .7 + .0005, bK = 1. - smoothstep(.016 - bA, .016 + bA, bD), bU = clamp(bD / .016, 0., 1.);
+  float bS = (.72 + .4 * (1. - (2. * bU - 1.) * (2. * bU - 1.))) * (1. - .45 * (1. - smoothstep(.0006, .0006 + bA, abs(bD - .013)))) * (.92 + .16 * dn3(vB * 300.));
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(${BIND_C.map(v => v.toFixed(3)).join(', ')}) * bS, bK);`;
 function mailMat(color, o = {}) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.scales ? .36 : .45, metalness: o.scales ? .72 : .4, side: o.side ?? THREE.FrontSide });
   m.onBeforeCompile = s => {
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRN = normal; vB = aBase;');
-    s.fragmentShader = 'varying vec3 vB; varying vec3 vRN;\n' + (o.scales ? SCALES : RINGS) + '\n' + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + 'float mR = mailAt(vB, vRN); vec4 diffuseColor = vec4( diffuse * mR, opacity );')
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(.85, roughnessFactor, smoothstep(.2, .45, mR));'); };
-  m.userData.cut = o.cut; m.customProgramCacheKey = () => (o.scales ? 'scales' : 'mail') + JSON.stringify(o.cut || 0) + (o.hole || '');
+    s.fragmentShader = 'varying vec3 vB; varying vec3 vRN;\n' + (o.scales ? SCALES : RINGS) + '\n' + (o.bind ? DOTS.split('\nvec2 dotAt')[0] + '\n' + BIND(o.bind) + '\n' : '') + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + 'float mR = mailAt(vB, vRN); vec4 diffuseColor = vec4( diffuse * mR, opacity );' + (o.bind ? BIND_MIX : ''))
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(.85, roughnessFactor, smoothstep(.2, .45, mR));' + (o.bind ? ' roughnessFactor = mix(roughnessFactor, .72, bK);' : ''))
+      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>' + (o.bind ? '\n metalnessFactor *= 1. - bK;' : '')); };
+  m.userData.cut = o.cut; m.userData.bind = o.bind; m.customProgramCacheKey = () => (o.scales ? 'scales' : 'mail') + JSON.stringify(o.cut || 0) + (o.hole || '') + JSON.stringify(o.bind || 0);
   return m;
 }
 // a shadow cut as the garment is, so the triangles past its cut edge cast none (Session 897: the mail's hem threw teeth onto the thighs)
@@ -2295,7 +2305,9 @@ export function makePerson(G, o = {}) {
   // a scale cuirass (Session 1058; OG-044's Compact guards) is the same two shells in bronze scales: its sleeves cut short, at
   // the middle of the upper arm (rest |x| .25), its skirt over the hips to the top of the thigh (rest y -.13); plates on their lining
   // stand thicker than rings, so its body is 3 mm further out (under a woman's bust two points of the tunic came 3 mm through at 9)
-  if (mail) { const sc = !!D.scales, top = { cut: [.06, .6, sc ? .25 : .3, .003], scales: sc }, skirt = { side: THREE.DoubleSide, cut: [sc ? -.13 : -.27, .17, 9, .012], scales: sc };
+  // Its edges are bound in leather (Session 1068): the neck, the sleeves and the hem, and the hem is cut straight where the rings'
+  // is ragged (o.binding === false leaves the band off and the hem straight, for a check of the band alone)
+  if (mail) { const sc = !!D.scales, bd = sc && o.binding !== false, top = { cut: [.06, .6, sc ? .25 : .3, .003], scales: sc, bind: bd ? [.6, .25, -9] : 0 }, skirt = { side: THREE.DoubleSide, cut: [sc ? -.13 : -.27, .17, 9, sc ? .002 : .012], scales: sc, bind: bd ? [9, 9, -.13] : 0 };
     push('mail', PACK.R.mailTop, mailMat(sRGB(...D.mail), top), (x, y) => tunicPush(x, y) + (sc ? .012 : .009) + .012 * Math.max(0, Math.min(1, (.2 - y) / .1))).customDepthMaterial = cutDepth(top);
     push('mailSkirt', PACK.R.mailSkirt, mailMat(sRGB(...D.mail), skirt), (x, y) => .024 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + .03 * Math.max(0, Math.min(1, (y + .14) / .14)) + (D.skirt === 'long' ? .006 : 0)).customDepthMaterial = cutDepth(skirt); }
   // the wide sash belt (Session 1010; OG-056's "wide sash belts in rust red and indigo"): a band of cloth 14 cm wide wound round

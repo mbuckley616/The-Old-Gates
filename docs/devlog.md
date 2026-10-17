@@ -23473,3 +23473,27 @@ A fix made during the session:
 - **On the back, the light pools where the shell curves** (the small of the back and the seat), as it does on any metal. A bronze that has seen weather could be rougher.
 - **The canon's white** is the cloak alone here; the sheet gives no other place for it. A white tunic under a blue cloak would do as well, and is a choice for when the guards are dressed in the game.
 - **The helm is the kettle helm in bronze.** OG-044 draws open helms; the Corinthian of OG-019's bronze tier would be a truer Aurennais helm, and is not built in the kit.
+## v80 — Session 1068 — The scale cuirass bound in leather (L1 and B2, prototype only)
+Session 1058 built OG-044's scale cuirass for the Compact's guards and owed one thing for it: "the edges are bare." A real cuirass has its plates sewn to a lining, and the edges are bound in leather at the neck, the sleeves and the hem. Here the plates stopped at the shader's cut, and the hem's edge was broken by the cut's noise. This session binds those three edges. It finishes a look already built from the sheet and the canon, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+What is built (`BIND` and `BIND_MIX`, in `mailMat`):
+- **Where the band goes.** A band of dark leather 1.6 cm wide runs round the neck (rest y .6), round each sleeve's end (rest |x| .25) and round the skirt's hem (rest y -.13). The band is drawn in the shader, as the plates are. Its two hidden edges get none: the top shell's lower edge and the skirt's upper edge lie under each other at the waist.
+- **Its width is measured along the surface.** The shader takes the cut's distance in rest height (or width) and divides it by how steeply the surface runs across the cut. So the band is as wide over the near-level top of the shoulder as it is down the hem. A plain height cut would make it several centimetres wide over the shoulder.
+- **How it looks.** It is rolled, lighter down its middle. A stitch line runs 3 mm in from its inner edge, and a fine noise gives it grain. Its colour is a dark brown (linear .05, .026, .012). It takes no metal (metalness falls to 0 under it) and has a roughness of 0.72, so it reads as leather beside the bronze's 0.72 metalness and 0.36 roughness.
+- **The hem is cut straight.** A bound edge is not ragged, so the scale skirt's cut noise falls from 1.2 cm to 2 mm. The rings' hem keeps its 1.2 cm.
+- **A switch for the check.** `makePerson(G, { binding: false })` leaves the band off and keeps the straight hem, so a render with and without it differs only in the band. The genome is unchanged: every cuirass is bound, and nothing new is saved.
+
+A fix made during the session, to the check itself: the first version read its close views from a linear render target, as Session 1058's scale renders do. There the hem's shadowed band differed from the plates by less than the 12 levels the test counts, and it read 0.02% of the view changed. The binding's views now render to an sRGB target, as the page itself does.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 432 checks pass** (431 after Session 1058; 1 new). Every earlier cuirass check passes unchanged: nothing comes through on the three Aurennais, no hand is in its skirt, the cloak is clear, and it saves and loads back.
+- **The new check** renders the same guard close on the neck, the sleeve and the hem, with and without the binding:
+  - The band changes 4.8%, 6.9% and 6.6% of the three views.
+  - Those pixels are brown, red over blue 1.72, 1.67 and 1.84, where the bronze around them is gold.
+  - Both shells carry the band, neither does with it off, and each view renders the same twice.
+- **Pictures, all re-shot** (`--shots=scales`): `builder-scales-guard.jpg`, `-back.jpg`, `-close.jpg`, `-side.jpg`, `-woman.jpg` and `-kit.jpg`. The close shot shows the collar and both sleeve bands; the full shots show the hem's band.
+
+### Needs eyes
+- **The band is still flat in the geometry.** It is drawn, not modelled, so the outline of the hem is smooth, and from the side the binding has no thickness. At play distance it reads as a dark edge; close up it is a painted band.
+- **The neck band sits right on the tunic's collar.** On the guard the tunic's blue shows 1 to 2 cm above it. A real collar would stand up a little round the neck.
+- **The colour is one brown for every cuirass.** A red or blue binding could mark the Compact's colours, if the guards want one more note of them.
