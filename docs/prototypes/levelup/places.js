@@ -2487,3 +2487,415 @@ export function gatelandsCharcoalCamp(o = {}, r = stream('charcoal')) {
   return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground,
     pits: [P1, P2].map(p => ({ x: p.x, z: p.z, r: p.r, y: p.y })), stack: { x: S.x, z: S.z, y: sy, R: SR, H: SH, rAt, vents, flue: FLUE, sods: sodN }, ladder, hurdles, heap, sacks, cord, hut, fire, cart, road: { z: RZ, w: RW }, path, path2, trees, stools };
 }
+
+// ── the Gatelands' merchants' halt (Session 1021, card F8; OG-124's "camps on the roads: merchants"). The precedents: the carriers' tilt
+// waggons of the old roads, which stood the night on a green by water rather than pay an inn's yard, and the drovers' stances of the
+// Highland roads (a green by a ford, a fire, the beasts on a line); the chapman's trestle under a canvas fly at a fair green. Built at true
+// size, a metre a unit, on a green that rises gently to -z (1 in 20) from a road along x at z 13, a stream crossing the road at a ford:
+//   - two tilt waggons: a bed 3.6 m by 1.4 m on four spoked wheels (0.72 m behind, 0.52 m before), side boards, five hoops under a canvas
+//     tilt 2.8 m to its crown, the shafts down on the grass ahead; the first drawn up along the road with goods in its bed, the second
+//     turned in behind the fire;
+//   - the stall: a canvas fly laced to the first waggon's tilt and carried out 3 m on two poles, guyed to pegs; two trestle tables under
+//     it, one of bolts of cloth in three dyes, one of crocks, jugs and a small chest; a lantern on the right pole;
+//   - the fire: a ring of stones, a crane of two forked irons and a bar, a pot on its hook, two seat logs, a thin smoke;
+//   - the tent: a ridge tent of canvas 2.6 by 2.2 m, 1.95 m at its ridge, its door to the fire with the flaps tied back, a bedroll inside;
+//   - the line: a picket rope between two posts at 1.3 m, hay, two buckets, a bale of fodder (the beasts are the bodies builder's);
+//   - the goods stacked by the second waggon: casks, wool bales in rope bands, crates;
+//   - the stream: 3 m of water in a gravel bed under low banks, the west bank eased to a watering place where the path comes down, the road through it at a ford a hand deep, stepping stones beside the road;
+//   - a thorn hedge along the road's far side with gaps, ash on the green's edge, alder by the water; trodden paths from the road to the
+//     stall, the fire and the tent, and down to the water.
+// -> { group, tris, draws, own, ground(x, z), wagons [{ x, z, ry, wheels [{ x, y, z, r }], bed, crown }], awning { tie, front, poles [{ x, z, y0, y1 }], pegs [[x, y, z]], area [x0, x1, z0, z1] },
+//      tables [{ x, z, top, w, d, feet [[x, y, z]] }], goods [[x, y, z]] (bottoms of things on the tables), fire { x, z, embers, pot }, tent { x, z, ry, L, W, H, door [x, z] },
+//      picket { a, b, h, sag }, stack [{ x, y, z }] (bottoms of the stacked goods), stream { xAt(z), water(z), bed(z), ford { z, depth } }, stones [[x, y, z]], road { z, w }, paths [[[x, z]]], trees [{ x, z, h }] }
+export function gatelandsMerchantCamp(o = {}, r = stream('merchants')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const MI = millMats(), M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0x9a8a6c, rough: 1 }), gravel: mat('rock', { ns: 1.2, color: 0x8a8274, rough: 1 }),
+    water: std(0x4a6462, .14, { metalness: .15, transparent: true, opacity: .86 }), canvas: std(0xe2d6b8, .95, { side: THREE.DoubleSide }), wood: mat('wood', { ns: .9, color: 0x8e7254, rough: .9 }), paint: mat('wood', { ns: .7, color: 0x5a3a2a, rough: .8 }),
+    iron: MI.iron, rope: std(0x8a7650, .95), boltR: std(0x8a2a22, .9), boltB: std(0x2c3e66, .9), boltY: std(0xb08a34, .9), crock: std(0xa06a44, .7), hay: std(0xb4a468, 1), sack: MI.sack,
+    ash: mat('plaster', { ns: .8, color: 0x8e8a84, rough: 1 }), ember: std(0x2a1408, .6, { emissive: new THREE.Color(1, .4, .12), emissiveIntensity: 2.2 }), bark: std(0x5e564c, .95), leaf: std(0x50682c, .85),
+    lamp: std(0xffd8a0, .5, { emissive: new THREE.Color(1, .72, .38), emissiveIntensity: o.lit ? 3 : .4 }), dark: std(0x0c0a08, 1),
+    smoke: std(0xb0aca4, 1, { map: puffTex(), transparent: true, opacity: .4, depthWrite: false, side: THREE.DoubleSide }) };
+  const B = new Map(), key = String(o.key || 'merchants'), F = stream(key + ':lie'), ph = Array.from({ length: 10 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const grid = (k, nu, nv, f, uv = .5) => { const pos = [], idx = []; for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) pos.push(...f(i / nu, j / nv));
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return put(g, k, 0, 0, 0, 0, 0, 0, uv); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: rising to -z at 1 in 20 with a gentle roll; the stream's channel along xs(z), shallower where the road fords it
+  const RZ = 13, RW = 3.6, base = (x, z) => -.05 * z + .1 * Math.sin(x * .19 + ph[0]) * Math.sin(z * .15 + ph[1]) + .04 * Math.sin(x * .55 + z * .45 + ph[2]);
+  const xs = z => 19 + 1.6 * Math.sin(z * .11 + ph[3]), CH = 2.3, ford = z => sm((3.2 - Math.abs(z - RZ)) / 2.2), depth = z => .8 - .38 * ford(z), wdep = z => .3 - .12 * ford(z);
+  const WZ = 4.8, ease = (x, z) => x < xs(z) ? 1.8 * sm((2.2 - Math.abs(z - WZ)) / 1.4) : 0 /* the watering place: the west bank eased to 1 in 4 where the path comes down */;
+  const carve = (x, z) => { const e = ease(x, z); return depth(z) * sm((CH + .9 + e - Math.abs(x - xs(z))) / (1.6 + e)); }, land = (x, z) => base(x, z) - carve(x, z);
+  const bankY = z => base(xs(z), z), bedY = z => bankY(z) - depth(z), waterY = z => bedY(z) + wdep(z);
+  const roadY = x => land(x, RZ);
+  const ground = (x, z) => { const b = land(x, z), rw = sm((RW / 2 + 1.2 - Math.abs(z - RZ)) / 1.2); return b + (roadY(x) - .04 * Math.min(1, Math.abs(z - RZ) / (RW / 2)) - b) * rw; };
+  // the paths: from the road into the stall; from the road round the first waggon to the fire and the tent; to the line and down to the water
+  const AX = -3, AZ = 5, FX = 0, FZ = -1, TX = 6.6, TZ = -4.2, TL = 2.6, TW = 2.2, TH = 1.95, tdir = [FX - TX, FZ - TZ], tl = Math.hypot(...tdir), tc = tdir[0] / tl, ts = -tdir[1] / tl, TRY = Math.atan2(ts, tc);
+  const door = [TX + tc * TL / 2, TZ - ts * TL / 2];
+  const paths = [[[-2.6, RZ], [-2.8, 10.2], [-3.0, 7.95]], [[-2.2, 11.0], [1.4, 9.6], [2.6, 4.6], [2.8, 1.4], [door[0] + tc * 1.4, door[1] - ts * 1.4], door, [TX, TZ]], [[2.6, 4.6], [8.5, 4.2], [14.0, 4.6], [xs(WZ) - CH - .1, WZ]]];
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const pathD = (x, z) => Math.min(...paths.flatMap(p => p.slice(0, -1).map((q, i) => segD(x, z, q, p[i + 1]))));
+  // the ground: fine round the camp and the stream, coarse beyond; the road worn, the stream's bed gravel
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -45, 23], [-45, -22, 2.5], [-22, 14, 1.2], [14, 25, .5], [25, 45, 2.5], [45, 160, 23]], 160), gz = steps([[-160, -40, 24], [-40, -16, 2.5], [-16, 19, 1.2], [19, 45, 2.5], [45, 160, 23]], 160);
+    const pos = [], NX = gx.length, I = { turf: [], gravel: [], track: [] }; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cx = (gx[i] + gx[i + 1]) / 2, cz = (gz[j] + gz[j + 1]) / 2;
+      const k = Math.abs(cx - xs(cz)) < CH - .1 && Math.abs(cz) < 150 ? 'gravel' : Math.abs(cz - RZ) < RW / 2 + .1 && Math.abs(cx) < 150 ? 'track' : 'turf'; I[k].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the water: a strip down the channel at its own level, falling with the land
+  grid('water', 6, 120, (u, v) => { const z = -60 + v * 120, x = xs(z) + (u - .5) * 2 * (CH + .5); return [x, waterY(z), z]; }, .3) /* wider than the channel: its edges run under the banks */;
+  // the stepping stones: a row across the stream 2.6 m above the road's ford, flat tops a hand over the water
+  const stones = []; { const z0 = RZ - 2.6; for (let k = 0; k < 6; k++) { const z = z0 + (F() - .5) * .14, x = xs(z) - CH + .45 + k * (2 * CH - .9) / 5, wy = waterY(z), by = Math.min(land(x, z), wy - .05), top = wy + .1 + F() * .05;
+    const g = new THREE.CylinderGeometry(.24 + F() * .05, .3, top - by + .05, 7); put(g, 'gravel', x, (top + by - .05) / 2, z, (F() - .5) * .04, F() * 3); stones.push([+x.toFixed(3), +top.toFixed(3), +z.toFixed(3)]); } }
+  // the trodden paths: strips a hand over the ground
+  for (const P of paths) { const pts = []; for (let i = 0; i + 1 < P.length; i++) { const [a, b] = [P[i], P[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / .4); for (let k = i ? 1 : 0; k <= n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
+    const pos = [], idx = []; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz), w = .4 + .08 * Math.sin(i * .7 + ph[4]);
+      for (const sd of [-1, -.5, 0, .5, 1]) { const ex = x - dz / l * w * sd, ez = z + dx / l * w * sd; pos.push(ex, ground(ex, ez) + .03, ez); } if (i) { const o2 = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(o2 + c, o2 + c + 5, o2 + c + 1, o2 + c + 1, o2 + c + 5, o2 + c + 6); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); if (g.attributes.normal.array[1] < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, 'track', 0, 0, 0, 0, 0, 0, .35); }
+  // the waggons: built in their own frame (x along the bed, +x the shafts' end, z across) with world heights, then turned and set down
+  const V2 = (a, b) => new THREE.Vector2(a, b), wagons = [];
+  const wagon = (cx, cz, ry, load) => { const c = Math.cos(ry), s = Math.sin(ry), wp = (x, y, z) => [cx + x * c + z * s, y, cz - x * s + z * c], gw = (x, z) => ground(cx + x * c + z * s, cz - x * s + z * c), Mx = new THREE.Matrix4().makeRotationY(ry).setPosition(cx, 0, cz);
+    const P = (geo, k, x, y, z, rx = 0, ry2 = 0, rz = 0) => { geo.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry2, rz, 'YXZ')), V3(1, 1, 1))); geo.applyMatrix4(Mx); return put(geo, k); };
+    const R = (k, a, b, rad, seg = 6) => rod(k, wp(...a), wp(...b), rad, seg);
+    const BL = 3.6, BW = 1.4, wheels = [], ax = { back: [-1.1, .72], front: [1.15, .52] }, ay = {};
+    for (const [nm, [x, wr]] of Object.entries(ax)) { const ys = []; for (const sz of [-1, 1]) { const z = sz * .86, y = gw(x, z) + wr; ys.push(y);
+        const g = new THREE.CylinderGeometry(.09, .09, .16, 8); g.rotateX(Math.PI / 2); P(g, 'wood', x, y, z); const t = new THREE.TorusGeometry(wr - .03, .035, 4, 18); P(t, 'iron', x, y, z);
+        const fe = new THREE.TorusGeometry(wr - .08, .04, 4, 14); P(fe, 'wood', x, y, z); for (let k = 0; k < (wr > .6 ? 12 : 10); k++) { const a = k / (wr > .6 ? 12 : 10) * 6.283 + ph[5]; const sp = new THREE.CylinderGeometry(.022, .026, wr - .14, 4); sp.translate(0, (wr - .14) / 2 + .07, 0); P(sp, 'wood', x, y, z, 0, 0, a); }
+        const w = wp(x, y, z); wheels.push({ x: +w[0].toFixed(3), y: +y.toFixed(3), z: +w[2].toFixed(3), r: wr }); } ay[nm] = ys; R('wood', [x, ys[0], -.95], [x, ys[1], .95], .055, 6); }
+    const bed = Math.max(...ay.back) + .1, top = bed + .08; P(new THREE.BoxGeometry(BL, .08, BW), 'paint', 0, bed + .04, 0);
+    for (const sz of [-1, 1]) { P(new THREE.BoxGeometry(BL, .45, .05), 'paint', 0, top + .225, sz * (BW / 2 - .025)); R('wood', [-BL / 2, bed - .03, sz * .5], [BL / 2, bed - .03, sz * .5], .05, 5); }
+    for (const sx of [-1, 1]) P(new THREE.BoxGeometry(.05, .45, BW), 'paint', sx * (BL / 2 - .025), top + .225, 0);
+    const fa = Math.max(...ay.front); P(new THREE.BoxGeometry(.2, bed - fa, BW - .2), 'wood', ax.front[0], (bed + fa) / 2, 0); P(new THREE.BoxGeometry(.2, bed - Math.max(...ay.back) + .02, BW - .2), 'wood', ax.back[0], bed - .04, 0);
+    // the tilt: five hoops, straight sides rising 0.75 m from the boards, an arc of 0.72 m over; the canvas over them, a little longer than the bed
+    const TR = .72, T0 = top + .4, TV = .75, prof = []; for (let k = 0; k <= 4; k++) prof.push([-TR, T0 + TV * k / 4]); for (let k = 1; k <= 12; k++) { const a = Math.PI - k / 12 * Math.PI; prof.push([TR * Math.cos(a), T0 + TV + TR * Math.sin(a)]); } for (let k = 3; k >= 0; k--) prof.push([TR, T0 + TV * k / 4]);
+    const tilt = (u, v, sag) => { const q = prof[Math.round(v * (prof.length - 1))], x = -BL / 2 - .12 + u * (BL + .2), dent = sag * Math.pow(Math.sin(u * 5 * Math.PI), 2) * Math.min(1, (q[1] - T0) / TV); const s2 = Math.hypot(q[0], q[1] - T0 - TV) || 1, k2 = q[1] > T0 + TV ? 1 - dent / s2 : 1;
+      return wp(x, q[1] > T0 + TV ? T0 + TV + (q[1] - T0 - TV) * k2 : q[1], q[0] * (q[1] > T0 + TV ? k2 : 1 - dent * .5)); };
+    grid('canvas', 20, prof.length - 1, (u, v) => tilt(u, v, .035), .6);
+    for (let h = 0; h < 5; h++) { const x = -BL / 2 + .1 + h * (BL - .2) / 4; for (let k = 0; k + 1 < prof.length; k++) R('wood', [x, prof[k][1], prof[k][0] * .985], [x, prof[k + 1][1], prof[k + 1][0] * .985], .022, 4); }
+    // the shafts: from the front of the bed down to the grass ahead, a bar between them
+    for (const sz of [-1, 1]) R('wood', [BL / 2 - .3, bed - .02, sz * .42], [BL / 2 + 2.9, gw(BL / 2 + 2.9, sz * .42) + .045, sz * .42], .045, 6);
+    // the load: sacks and crates in the bed, seen under the tilt
+    if (load) for (let k = 0; k < 5; k++) { const x = -1.3 + k * .62, h = .4 + F() * .12; if (k % 2) P(new THREE.BoxGeometry(.5, h, .6), 'wood', x, top + h / 2, (F() - .5) * .3, 0, (F() - .5) * .2); else { const g = new THREE.LatheGeometry([V2(.001, 0), V2(.24, .01), V2(.27, .3), V2(.08, .6), V2(.001, .62)], 8); P(g, 'sack', x, top, (F() - .5) * .3); } }
+    const W = { x: cx, z: cz, ry, wheels, bed: +bed.toFixed(3), crown: +(T0 + TV + TR).toFixed(3), T0, TV, TR, wp, gw, BL };
+    wagons.push(W); return W; };
+  const WA = wagon(AX, AZ, 0, true), WB = wagon(-9.5, -1.5, .62, false);
+  // the stall: the fly laced along the first waggon's tilt where the arc meets the side at 55 degrees, carried 3 m out on two poles
+  const TA = Math.PI * 55 / 180, tieZ = AZ + WA.TR * Math.sin(TA), tieY = WA.T0 + WA.TV + WA.TR * Math.cos(TA), PZ = AZ + 3.6, PX = [AX - 1.85, AX + 1.85], poleY = Math.max(...PX.map(x => ground(x, PZ))) + 2.25;
+  grid('canvas', 16, 8, (u, v) => { const x = PX[0] - .25 + u * (PX[1] - PX[0] + .5), z = tieZ + v * (PZ + .25 - tieZ), y = tieY + (poleY - tieY) * Math.min(1, v * (PZ + .25 - tieZ) / (PZ - tieZ)) - .07 * Math.sin(v * Math.PI) * (.6 + .4 * Math.sin(u * Math.PI)); return [x, y, z]; }, .6);
+  const pegs = []; for (const [i, x] of PX.entries()) { const y0 = ground(x, PZ); rod('wood', [x, y0 - .3, PZ], [x, poleY + .12, PZ], .04, 6);
+    const sx = i ? 1 : -1, pg = [x + sx * 1.4, 0, PZ + 1.3]; pg[1] = ground(pg[0], pg[2]); rod('rope', [x, poleY + .06, PZ], [pg[0], pg[1] + .1, pg[2]], .008, 3); rod('wood', [pg[0], pg[1] - .2, pg[2]], [pg[0] - sx * .05, pg[1] + .14, pg[2] - .05], .025, 4); pegs.push(pg.map(v => +v.toFixed(3))); }
+  { const x = PX[1] - .08, y = poleY - .45, z = PZ + .06; rod('iron', [PX[1], poleY - .2, PZ], [x, y + .3, z], .006, 3); put(new THREE.BoxGeometry(.16, .24, .16), 'lamp', x, y + .1, z); put(new THREE.ConeGeometry(.13, .1, 4), 'iron', x, y + .27, z, 0, Math.PI / 4); put(new THREE.BoxGeometry(.18, .03, .18), 'iron', x, y - .03, z); }
+  const awning = { tie: [+tieZ.toFixed(3), +tieY.toFixed(3)], front: +PZ.toFixed(3), poles: PX.map(x => ({ x, z: PZ, y0: +ground(x, PZ).toFixed(3), y1: +poleY.toFixed(3) })), pegs, area: [PX[0], PX[1], tieZ + .3, PZ - .05] };
+  // the tables: two trestles under the fly, their boards level, their feet on the grass
+  const tables = [], goods = [];
+  const table = (x, z, w, d) => { const feet = []; for (const sx of [-1, 1]) for (const sz of [-1, 1]) feet.push([x + sx * (w / 2 - .2), z + sz * (d / 2 - .05)]); const top = Math.max(...feet.map(([fx, fz]) => ground(fx, fz))) + .8;
+    put(new THREE.BoxGeometry(w, .04, d), 'wood', x, top - .02, z); for (const sx of [-1, 1]) { for (const sz of [-1, 1]) rod('wood', [x + sx * (w / 2 - .2), ground(x + sx * (w / 2 - .2), z + sz * (d / 2 - .05)) - .04, z + sz * (d / 2 - .05)], [x + sx * (w / 2 - .2), top - .04, z + sz * .1], .025, 4); put(new THREE.BoxGeometry(.06, .06, d - .1), 'wood', x + sx * (w / 2 - .2), top - .07, z); }
+    const T = { x, z, top: +top.toFixed(3), w, d, feet: feet.map(([fx, fz]) => [fx, +ground(fx, fz).toFixed(3), fz]) }; tables.push(T); return T; };
+  const T1 = table(AX - .95, AZ + 2.05, 1.7, .7), T2 = table(AX + .95, AZ + 2.05, 1.7, .7);
+  { let i = 0; for (const k of ['boltR', 'boltB', 'boltY', 'boltR', 'boltB', 'boltY', 'boltB', 'boltR']) { const x = T1.x - .7 + i * .2, rr = .085, g = new THREE.CylinderGeometry(rr, rr, .62, 10); g.rotateX(Math.PI / 2); put(g, k, x, T1.top + rr, T1.z + (i % 2) * .05); goods.push([x, T1.top, T1.z]); i++; }
+    for (let j = 0; j < 3; j++) { const k = ['boltY', 'boltR', 'boltB'][j], x = T1.x - .5 + j * .3, g = new THREE.CylinderGeometry(.085, .085, .62, 10); g.rotateX(Math.PI / 2); put(g, k, x, T1.top + .085 + .16, T1.z + .02); } } /* a second course in the hollows of the first */
+  { const crock = (x, z, h, rr, k = 'crock') => { put(new THREE.LatheGeometry([V2(.001, 0), V2(rr * .8, 0), V2(rr, h * .4), V2(rr * .9, h * .8), V2(rr * .45, h * .92), V2(rr * .5, h), V2(.001, h)], 10), k, x, T2.top, z); goods.push([x, T2.top, z]); };
+    crock(T2.x - .65, T2.z - .1, .32, .13); crock(T2.x - .38, T2.z + .12, .26, .11); crock(T2.x - .15, T2.z - .12, .4, .14); crock(T2.x + .1, T2.z + .15, .22, .1); crock(T2.x + .3, T2.z - .1, .3, .12);
+    put(new THREE.BoxGeometry(.36, .22, .26), 'paint', T2.x + .62, T2.top + .11, T2.z, 0, .2); put(new THREE.BoxGeometry(.38, .025, .28), 'iron', T2.x + .62, T2.top + .225, T2.z, 0, .2); goods.push([T2.x + .62, T2.top, T2.z]); }
+  // the fire: a ring of stones, embers, a crane of two forked irons and a bar, the pot on its hook; two seat logs; a thin smoke
+  const fy = ground(FX, FZ);
+  for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283 + F() * .3, st = new THREE.IcosahedronGeometry(.11 + F() * .05, 0); st.scale(1.2, .7, 1); put(st, 'gravel', FX + .42 * Math.cos(a), fy + .04, FZ + .42 * Math.sin(a), 0, F() * 3); }
+  put(new THREE.CylinderGeometry(.3, .33, .05, 10), 'ember', FX, fy + .025, FZ); for (let k = 0; k < 5; k++) { const a = k * 1.25 + F(); rod('bark', [FX + .3 * Math.cos(a), fy + .05, FZ + .3 * Math.sin(a)], [FX - .05 * Math.cos(a), fy + .14, FZ - .05 * Math.sin(a)], .035, 5); }
+  for (const s of [-1, 1]) { rod('iron', [FX + s * .75, ground(FX + s * .75, FZ) - .15, FZ], [FX + s * .75, fy + 1.1, FZ], .014, 4); rod('iron', [FX + s * .75, fy + 1.05, FZ], [FX + s * .68, fy + 1.15, FZ], .01, 3); }
+  rod('iron', [FX - .8, fy + 1.08, FZ], [FX + .8, fy + 1.08, FZ], .012, 4); const PB = fy + .32; put(new THREE.LatheGeometry([V2(.001, 0), V2(.12, .01), V2(.17, .1), V2(.16, .24), V2(.14, .27), V2(.001, .27)], 12), 'iron', FX, PB, FZ); rod('iron', [FX, PB + .27, FZ], [FX, fy + 1.07, FZ], .005, 3);
+  for (const [lx, lz, la] of [[-1.5, -.6, .4], [.3, -2.4, -1.25]]) { const g = new THREE.CylinderGeometry(.17, .19, 1.5, 8); g.rotateZ(Math.PI / 2); const x = FX + lx, z = FZ + lz; put(g, 'bark', x, ground(x, z) + .14, z, 0, la); }
+  const SMK = [], puff = (x, y, z, s) => { const a = F() * 3; for (const ry of [a, a + Math.PI / 3, a + 2 * Math.PI / 3]) { const g = new THREE.PlaneGeometry(s * 2.4, s * 2.0); g.rotateY(ry); g.translate(x, y, z); SMK.push(g); } };
+  for (let k = 0; k < 10; k++) { const t = k / 9, h = .5 + t * 4.5; puff(FX + .5 * h * .35 + (F() - .5) * .2, fy + h, FZ + .5 * h * .35 + (F() - .5) * .2, .18 + t * .7); }
+  const fire = { x: FX, z: FZ, embers: +(fy + .05).toFixed(3), pot: +PB.toFixed(3) };
+  // the tent: a ridge tent, walls of 0.45 m under two pitches to the ridge, the back closed, the door to the fire with its flaps tied back
+  const tent = { x: TX, z: TZ, ry: TRY, L: TL, W: TW, H: TH, door };
+  { const c = Math.cos(TRY), s = Math.sin(TRY), wp = (x, y, z) => [TX + x * c + z * s, y, TZ - x * s + z * c], gt = (x, z) => ground(TX + x * c + z * s, TZ - x * s + z * c), ty = Math.max(...[[-1.3, -1.1], [1.3, -1.1], [-1.3, 1.1], [1.3, 1.1], [0, 0]].map(([x, z]) => gt(x, z))) - .02, WH = .45;
+    const wall = (u, v, sz) => { const x = -TL / 2 + u * TL, z = sz * TW / 2; return wp(x, gt(x, z) - .03 + v * (ty + WH - gt(x, z) + .03), z); };
+    for (const sz of [-1, 1]) { grid('canvas', 6, 1, (u, v) => wall(u, v, sz), .6); grid('canvas', 6, 4, (u, v) => { const x = -TL / 2 + u * TL, z = sz * TW / 2 * (1 - v), y = ty + WH + v * (TH - WH) - .03 * Math.sin(v * Math.PI) * Math.sin(u * Math.PI); return wp(x, y, z); }, .6); }
+    grid('canvas', 6, 6, (u, v) => { const z = (u - .5) * TW, x = -TL / 2, top = ty + (Math.abs(z) < TW / 2 ? WH + (TH - WH) * (1 - Math.abs(z) / (TW / 2)) : WH); return wp(x, gt(x, z) - .03 + v * (top - gt(x, z) + .03), z); }, .6);
+    for (const sz of [-1, 1]) grid('canvas', 3, 4, (u, v) => { const yy = ty + WH + (TH - WH) * (1 - u) * (1 - v * .1); return wp(TL / 2 + .05 + v * .05, gt(TL / 2, sz * TW / 2) + (yy - gt(TL / 2, sz * TW / 2)) * (1 - v * .9) * .98, sz * (TW / 2 * u * .2 + TW / 2 * .8 + .04 * v)); }, .6) /* the flaps tied back to the walls at the door */;
+    for (const sx of [-1, 1]) { rod('wood', wp(sx * (TL / 2 - .04), gt(sx * (TL / 2 - .04), 0) - .2, 0), wp(sx * (TL / 2 - .04), ty + TH + .1, 0), .03, 5);
+      for (const pz of sx > 0 ? [-1.2, 1.2] : [0]) { const pg = wp(sx * (TL / 2 + (sx > 0 ? .9 : 1.1)), 0, pz); pg[1] = ground(pg[0], pg[2]); rod('rope', wp(sx * (TL / 2 - .04), ty + TH + .05, 0), [pg[0], pg[1] + .08, pg[2]], .007, 3); rod('wood', [pg[0], pg[1] - .2, pg[2]], [pg[0], pg[1] + .12, pg[2]], .022, 4); } } /* the door's guy in a bridle to two pegs, so the way in is clear */
+    rod('wood', wp(-TL / 2, ty + TH - .02, 0), wp(TL / 2, ty + TH - .02, 0), .03, 5);
+    const b = wp(-.3, 0, -.5); put(new THREE.BoxGeometry(1.8, .14, .8), 'sack', b[0], gt(-.3, -.5) + .07, b[2], 0, TRY); const ch = wp(-.9, 0, .6); put(new THREE.BoxGeometry(.5, .32, .36), 'paint', ch[0], gt(-.9, .6) + .16, ch[2], 0, TRY);
+    tent.floor = +ty.toFixed(3); tent.ridge = +(ty + TH).toFixed(3); }
+  // the line: a picket rope between two posts, hay under it, two buckets, a bale of fodder
+  const pa = [8.4, 1.6], pb = [14.4, 1.6], PH = 1.3; let sag = 0;
+  { const ya = ground(...pa), yb = ground(...pb); rod('wood', [pa[0], ya - .4, pa[1]], [pa[0], ya + PH + .15, pa[1]], .07, 7); rod('wood', [pb[0], yb - .4, pb[1]], [pb[0], yb + PH + .15, pb[1]], .07, 7);
+    const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12, x = pa[0] + (pb[0] - pa[0]) * t, y = ya + PH + (yb - ya) * t - .12 * Math.sin(t * Math.PI); pts.push(V3(x, y, pa[1])); } put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, .012, 3), 'rope');
+    sag = +(ground((pa[0] + pb[0]) / 2, pa[1]) + PH - .12).toFixed(3); for (let k = 0; k < 3; k++) { const x = 9.6 + k * 1.9, z = pa[1] - .9, y = ground(x, z); put(new THREE.LatheGeometry([V2(.001, 0), V2(.65, .02), V2(.55, .22), V2(.3, .36), V2(.001, .4)], 10), 'hay', x, y - .02, z, 0, F() * 3); }
+    for (const [x, z] of [[pa[0] + .5, pa[1] + .5], [pb[0] - .5, pb[1] + .55]]) put(new THREE.LatheGeometry([V2(.001, 0), V2(.14, 0), V2(.17, .3), V2(.17, .3), V2(.001, .3)], 9), 'wood', x, ground(x, z), z);
+    const bx = pb[0] + .9, bz = pb[1] + .1, by = ground(bx, bz); put(new THREE.BoxGeometry(1.0, .55, .6), 'hay', bx, by + .26, bz, 0, .3); }
+  const picket = { a: pa, b: pb, h: PH, sag };
+  // the goods stacked by the second waggon: casks on their ends, wool bales in rope bands, crates, each on the ground or on the one below
+  const stack = []; { const sx = -8.6, sz = -5.6, cask = (x, z, y) => { put(new THREE.LatheGeometry([V2(.001, 0), V2(.26, 0), V2(.31, .28), V2(.26, .56), V2(.001, .56)], 12), 'wood', x, y, z); for (const h of [.06, .5]) put(new THREE.TorusGeometry(.275, .012, 3, 14).rotateX(Math.PI / 2), 'iron', x, y + h, z); stack.push({ x, y, z }); };
+    for (let k = 0; k < 4; k++) { const x = sx + k * .64, z = sz; cask(x, z, ground(x, z) - .01); }
+    for (let k = 0; k < 4; k++) { const x = sx + 3.0 + (k % 2) * 1.0, z = sz + .2 + Math.floor(k / 2) * .7, y0 = ground(x, z); put(new THREE.BoxGeometry(.9, .6, .6), 'sack', x, y0 + .29, z, 0, (F() - .5) * .1); for (const d of [-.25, .25]) put(new THREE.BoxGeometry(.04, .62, .62), 'rope', x + d, y0 + .29, z); stack.push({ x, y: y0 - .01, z }); }
+    { const x = sx + 3.5, z = sz + .2, y0 = Math.max(ground(x - .45, z), ground(x + .45, z), ground(x, z)) + .59; put(new THREE.BoxGeometry(.9, .6, .6), 'sack', x, y0 + .29, z, 0, .05); stack.push({ x, y: y0, z }); } /* across the two in the front row */
+    for (let k = 0; k < 3; k++) { const x = sx - .9, z = sz + 1.2 + Math.min(k, 1) * .55, y = ground(x, z) + (k === 2 ? .45 : 0), s = .45; put(new THREE.BoxGeometry(.55, s, .5), 'wood', x, y + s / 2, z, 0, k === 2 ? .2 : (F() - .5) * .02); stack.push({ x, y, z }); } }
+  // the thorn hedge along the road's far side, with gaps; ash on the green's edge; alder by the water; off the road, the paths and the camp
+  const keep = [[AX, AZ + 1.5, 4.2], [WB.x, WB.z, 4.0], [FX, FZ, 2.2], [TX, TZ, 3.2], [11.4, 1.6, 4.0], [-7.2, -5.4, 2.6]];
+  const clearOf = (x, z, m) => Math.abs(z - RZ) < RW / 2 + m || pathD(x, z) < m || keep.some(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) < kr + m) || Math.abs(x - xs(z)) < CH + m * .5;
+  for (let x = -60; x < 60; x += 1.25) { if (Math.sin(x * .13 + ph[6]) > .82 || Math.abs(x - xs(16.4)) < CH + 1) continue; const z = RZ + RW / 2 + 2.0 + (F() - .5) * .3, y = ground(x, z); for (let k = 0; k < 2; k++) put(new THREE.IcosahedronGeometry(.75 + F() * .3, 0).scale(1, .9, .8), 'leaf', x + (F() - .5) * .4, y + .55 + k * .65, z + (F() - .5) * .3, F(), F() * 3); }
+  const trees = []; const tree = (x, z, h, alder) => { const gy = ground(x, z), top = [x + (F() - .5) * .5, gy + h * .5, z + (F() - .5) * .5]; rod('bark', [x, gy - .3, z], top, .16 + h * .012, 7, .7);
+    for (let l = 0; l < 5; l++) { const a = l * 1.3 + F(), L = (alder ? 1.0 : 1.6) + F() * 1.4, e = [top[0] + Math.cos(a) * L, top[1] + .8 + l * .55 + F(), top[2] + Math.sin(a) * L]; rod('bark', [top[0], top[1] - .5 + l * .25, top[2]], e, .07, 5, .6);
+      for (let c2 = 0; c2 < 3; c2++) put(new THREE.IcosahedronGeometry(.9 + F() * .6, 0).scale(1.15, .8, 1.15), 'leaf', e[0] + (F() - .5) * 1.6, e[1] + (F() - .4) * 1.2, e[2] + (F() - .5) * 1.6, F(), F() * 3); }
+    put(new THREE.IcosahedronGeometry(1.4, 0).scale(1.15, .85, 1.15), 'leaf', top[0], gy + h * .85, top[2]); trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2) }); };
+  for (let k = 0, n = 0; k < 900 && n < 9; k++) { const x = -36 + F() * 52, z = -30 + F() * 26; if (clearOf(x, z, 3) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 8)) continue; n++; tree(x, z, 9 + F() * 4, false); }
+  for (let k = 0, n = 0; k < 900 && n < 7; k++) { const z = -34 + F() * 44, x = xs(z) + (F() < .5 ? -1 : 1) * (CH + 1.2 + F() * 1.2); if (Math.abs(z - RZ) < 5 || pathD(x, z) < 1.5 || trees.some(t => Math.hypot(t.x - x, t.z - z) < 5)) continue; n++; tree(x, z, 6 + F() * 3, true); }
+  const group = new THREE.Group(); let tris = 0; { const g = mergeGeometries(SMK, false); SMK.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M.smoke); m.name = 'smoke'; m.renderOrder = 2; group.add(m); tris += g.index.count / 3; }
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; if (k === 'water') m.renderOrder = 1;
+    m.castShadow = !['turf', 'track', 'gravel', 'water', 'ember', 'ash', 'dark'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground,
+    wagons: wagons.map(w => ({ x: w.x, z: w.z, ry: w.ry, wheels: w.wheels, bed: w.bed, crown: w.crown })), awning, tables, goods: goods.map(g => g.map(v => +v.toFixed(3))), fire, tent, picket, stack: stack.map(s => ({ x: +s.x.toFixed(3), y: +s.y.toFixed(3), z: +s.z.toFixed(3) })),
+    stream: { xAt: xs, water: waterY, bed: bedY, bank: bankY, w: 2 * CH, ford: { z: RZ, depth: +(waterY(RZ) - roadY(xs(RZ))).toFixed(3) } }, stones, road: { z: RZ, w: RW }, paths, trees };
+}
+
+// ── the Mark's hunters' camp (Session 1022, card F8; OG-124's "camps on the roads: … hunters"). The precedents: the autumn hunting camps of
+// the northern fells, where a party lived a few weeks by a road into the hills in a tent of hides on a cone of poles (the shape every
+// northern people used, from the Norse fell-booths to the reindeer-folk's), dried and smoked its meat on a pole rack over a slow fire,
+// stretched its hides on frames and hung its kill from a pole between two trees. Built at true size, a metre a unit, in birch and pine
+// heath on a slope rising to -z at 1 in 16, the road along x at z 12:
+//   - the tent: a cone of 12 poles 4.8 m across at the ground, crossing at 3.4 m, under a cover of hides to 2.85 m (the smoke hole above);
+//     its door a gap 1.0 m wide at the hip and 1.5 m high, the door hide rolled over it; a fire in its middle in a ring of stones and
+//     hides for bedding round it; smoke from the hole, leaning on the wind;
+//   - the rack: four posts and two rails at 1.8 m, cross-poles over them hung with strips of meat, a slow fire of green wood under it,
+//     its smoke rising through the strips;
+//   - the hide frame: a square of poles 1.8 m a side leaning on two props, a hide laced into it;
+//   - the game pole: lashed between two pines at 2.6 m, a gambrel on a rope from it, empty (the kill is the bodies builder's), a tub below;
+//   - the woodpile against a boulder, a chopping stump with its axe, a rack of three spears;
+//   - the land: heather, moss and granite boulders, birch going yellow and pine; trodden paths from the road to the door and in, to the
+//     rack, the frame, the game pole and the wood.
+// -> { group, tris, draws, own, ground(x, z), tent { x, z, y, R, H, cover, rAt(y), poles [[foot], [top]], door { w, h, phi } }, rack { x, z, posts [[x, y0, y1, z]], strips [[x, y, z]] (bottoms), embers },
+//      frame { corners [[x, y, z]], feet [[x, y, z]], hide [[x, y, z]] }, gamePole { a [x, y, z], b [x, y, z], trees [{ x, z, r }] }, wood { logs [[x, y]], z }, smoke [[x, y, z]], road { z, w }, paths, trees [{ x, z, h, kind }] }
+export function markHuntersCamp(o = {}, r = stream('hunters')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); markTextures();
+  const M = { turf: mat('turfMoss', { ns: 1.0, color: 0xf2e8b4, rough: 1 }), track: mat('turfDry', { ns: 1.0, color: 0xc0aa84, rough: 1 }), rock: mat('rock', { ns: 1.2, color: 0x9a948a, rough: .95 }),
+    hide: std(0x7a5a3e, .95, { side: THREE.DoubleSide }), pole: mat('wood', { ns: .9, color: 0xa88e6a, rough: .9 }), bark: std(0x5a4a3c, .95), birch: std(0xd8d4ca, .8), needle: std(0x2e3e2a, .9), leaf: std(0xb89a4c, .85),
+    heather: std(0x5a4636, 1), meat: std(0x5a1e18, .55), ember: std(0x2a1408, .6, { emissive: new THREE.Color(1, .4, .12), emissiveIntensity: 2.2 }), iron: std(0x2a2826, .5, { metalness: .6 }), billet: mat('beam', { ns: .9, color: 0x9a8262, rough: .95 }),
+    smoke: std(0xb0aca4, 1, { map: puffTex(), transparent: true, opacity: .42, depthWrite: false, side: THREE.DoubleSide }) };
+  const B = new Map(), key = String(o.key || 'hunters'), F = stream(key + ':lie'), ph = Array.from({ length: 10 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z), V2 = (a, b) => new THREE.Vector2(a, b);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: rising to -z at 1 in 16, rolling; level stances for the tent and the rack; the road along x
+  const RZ = 12, RW = 3.0, base = (x, z) => -z / 16 + .14 * Math.sin(x * .17 + ph[0]) * Math.sin(z * .14 + ph[1]) + .05 * Math.sin(x * .5 + z * .43 + ph[2]);
+  const TX = -3, TZ = 0, TR = 2.4, TH = 3.4, TC = 2.85, KX = 4.0, KZ = -1.2;
+  const pads = [{ x: TX, z: TZ, r: TR + .8 }, { x: KX, z: KZ, r: 2.2 }]; for (const p of pads) p.y = +base(p.x, p.z).toFixed(3);
+  const roadY = x => base(x, RZ);
+  const ground = (x, z) => { let b = base(x, z); for (const p of pads) { const w = sm((p.r + 1.4 - Math.hypot(x - p.x, z - p.z)) / 1.4); if (w > 0) b += (p.y - b) * w; }
+    const rw = sm((RW / 2 + 1.2 - Math.abs(z - RZ)) / 1.2); return b + (roadY(x) - .04 * Math.min(1, Math.abs(z - RZ) / (RW / 2)) - b) * rw; };
+  const ty = pads[0].y, ky = pads[1].y;
+  // the paths: from the road to the tent's door and in; from the door to the rack and on to the game pole; from the door to the wood and the frame
+  const GP = [[8.0, 3.2], [11.2, 3.0]], FRX = -8.2, FRZ = 4.2, WX = -8.6, WZ = -3.4;
+  const paths = [[[-1.6, RZ], [-2.4, 7.0], [TX, TZ + TR + 1.0], [TX, TZ + TR - .2], [TX, TZ + .7]], [[TX + .6, TZ + TR + 1.2], [1.4, 3.0], [KX - .4, KZ + 2.4], [7.0, 1.4], [9.6, 1.6]], [[TX - .6, TZ + TR + 1.2], [-6.0, 2.6], [FRX + 1.4, FRZ - 1.6], [-7.4, -.4], [WX + .6, WZ + 1.3]]];
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const pathD = (x, z) => Math.min(...paths.flatMap(p => p.slice(0, -1).map((q, i) => segD(x, z, q, p[i + 1]))));
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -45, 23], [-45, -20, 2.5], [-20, 20, 1.2], [20, 45, 2.5], [45, 160, 23]], 160), gz = steps([[-160, -40, 24], [-40, -16, 2.5], [-16, 18, 1.2], [18, 45, 2.5], [45, 160, 23]], 160);
+    const pos = [], NX = gx.length, I = { turf: [], track: [] }; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cz = (gz[j] + gz[j + 1]) / 2, cx = (gx[i] + gx[i + 1]) / 2;
+      I[Math.abs(cz - RZ) < RW / 2 + .1 && Math.abs(cx) < 150 ? 'track' : 'turf'].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  for (const P of paths) { const pts = []; for (let i = 0; i + 1 < P.length; i++) { const [a, b] = [P[i], P[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / .4); for (let k = i ? 1 : 0; k <= n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
+    const pos = [], idx = []; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz), w = .36 + .07 * Math.sin(i * .7 + ph[3]);
+      for (const sd of [-1, -.5, 0, .5, 1]) { const ex = x - dz / l * w * sd, ez = z + dx / l * w * sd; pos.push(ex, ground(ex, ez) + .03, ez); } if (i) { const o2 = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(o2 + c, o2 + c + 5, o2 + c + 1, o2 + c + 1, o2 + c + 5, o2 + c + 6); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); if (g.attributes.normal.array[1] < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, 'track', 0, 0, 0, 0, 0, 0, .35); }
+  // the tent: twelve poles from the ground to their crossing, the cover of hides on them to 3.0 m, the door a gap facing the road (+z)
+  const rAt = y => TR * (1 - y / TH) + .03, GAP = .72, DH = 1.5, poles = [];
+  for (let k = 0; k < 12; k++) { const a = GAP / 2 + .02 + k * (2 * Math.PI - GAP - .04) / 11, fx = TX + (TR + .02) * Math.sin(a), fz = TZ + (TR + .02) * Math.cos(a), ta = a + Math.PI + (F() - .5) * .3, top = [TX + .28 * Math.sin(ta), ty + TH + .55 + F() * .2, TZ + .28 * Math.cos(ta)];
+    const foot = [fx, ty - .12, fz]; rod('pole', foot, top, .035, 5, .7); poles.push([foot.map(v => +v.toFixed(3)), top.map(v => +v.toFixed(3))]); }
+  { const band = (y0, y1, n, p0, pl) => { const pts = []; for (let k = 0; k <= n; k++) { const y = y0 + (y1 - y0) * k / n; pts.push(V2(rAt(y) + .015 * Math.sin(k * 2.1 + ph[4]), y)); } return new THREE.LatheGeometry(pts, 28, p0, pl); };
+    put(band(-.04, DH, 5, GAP / 2, 2 * Math.PI - GAP), 'hide', TX, ty, TZ, 0, 0, 0, .8); put(band(DH, TC, 5, 0, 2 * Math.PI), 'hide', TX, ty, TZ, 0, 0, 0, .8);
+    for (let k = 0; k < 5; k++) { const y = .3 + k * .65, rr = rAt(y) + .012; put(new THREE.TorusGeometry(rr, .008, 3, 40, 2 * Math.PI - (y < DH ? GAP : 0)).rotateX(Math.PI / 2).rotateY(y < DH ? GAP / 2 - Math.PI / 2 : 0), 'pole', TX, ty + y, TZ); } /* the seams between the courses of hides, sewn */
+    const fy = DH + .05, fr = rAt(fy) + .06; { const g = new THREE.CylinderGeometry(.09, .09, 2 * fr * Math.sin(GAP / 2) + .3, 8); g.rotateZ(Math.PI / 2); put(g, 'hide', TX, ty + fy, TZ + fr * Math.cos(GAP / 2)); } /* the door hide, rolled up over the door */
+    for (let k = 0; k < 7; k++) { const a = k / 7 * 6.283 + .3, st = new THREE.IcosahedronGeometry(.1 + F() * .04, 0); st.scale(1.2, .7, 1); put(st, 'rock', TX + .45 * Math.sin(a), ty + .04, TZ + .45 * Math.cos(a)); }
+    put(new THREE.CylinderGeometry(.28, .3, .05, 10), 'ember', TX, ty + .025, TZ);
+    for (const a of [Math.PI * .6, Math.PI, Math.PI * 1.4]) { const g = new THREE.BoxGeometry(1.6, .08, .9); put(g, 'hide', TX + 1.3 * Math.sin(a), ty + .04, TZ + 1.3 * Math.cos(a), 0, a + Math.PI / 2); } } /* bedding round the fire, off the doorway */
+  const tent = { x: TX, z: TZ, y: ty, R: TR, H: TH, cover: TC, rAt, poles, door: { w: +(2 * rAt(1.0) * Math.sin(GAP / 2)).toFixed(3), h: DH, phi: 0 } };
+  // the smoke: from the smoke hole, and through the rack's strips; the wind from the west, so it leans east
+  const SMK = [], smoke = [], puff = (x, y, z, s) => { const a = F() * 3; for (const ry of [a, a + Math.PI / 3, a + 2 * Math.PI / 3]) { const g = new THREE.PlaneGeometry(s * 2.4, s * 2.0); g.rotateY(ry); g.translate(x, y, z); SMK.push(g); } smoke.push([x, y, z]); };
+  for (let k = 0; k < 10; k++) { const t = k / 9, h = .2 + t * 5; puff(TX + .55 * h + (F() - .5) * .2, ty + TC + .3 + h, TZ + .1 * h + (F() - .5) * .2, .2 + t * .9); }
+  // the rack: four posts and two rails at 1.8 m, five cross-poles over them, strips of meat hung from each; a slow fire under it
+  const RL = 3.0, RD = 1.3, RH = 1.8, posts = [], strips = [];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const x = KX + sx * RL / 2, z = KZ + sz * RD / 2; rod('pole', [x, ky - .3, z], [x, ky + RH + .12, z], .05, 6); posts.push([x, +(ky - .3).toFixed(3), +(ky + RH + .12).toFixed(3), z]); }
+  for (const sz of [-1, 1]) rod('pole', [KX - RL / 2 - .15, ky + RH, KZ + sz * RD / 2], [KX + RL / 2 + .15, ky + RH, KZ + sz * RD / 2], .04, 6);
+  for (let c = 0; c < 5; c++) { const x = KX - RL / 2 + .3 + c * (RL - .6) / 4; rod('pole', [x, ky + RH + .07, KZ - RD / 2 - .15], [x, ky + RH + .07, KZ + RD / 2 + .15], .025, 5);
+    for (let s = 0; s < 5; s++) { const z = KZ - RD / 2 + .15 + s * (RD - .3) / 4 + (F() - .5) * .05, L = .4 + F() * .18; put(new THREE.BoxGeometry(.035, L, .09 + F() * .03), 'meat', x + (F() - .5) * .02, ky + RH + .05 - L / 2, z, 0, (F() - .5) * .4, (F() - .5) * .08); strips.push([+x.toFixed(3), +(ky + RH + .05 - L).toFixed(3), +z.toFixed(3)]); } }
+  put(new THREE.CylinderGeometry(.42, .46, .06, 10), 'ember', KX, ky + .03, KZ); for (let k = 0; k < 6; k++) { const a = k * 1.05 + F() * .3; rod('billet', [KX + .55 * Math.cos(a), ky + .06, KZ + .55 * Math.sin(a)], [KX - .05 * Math.cos(a), ky + .16, KZ - .05 * Math.sin(a)], .045, 5); } /* green wood, laid to smoulder */
+  for (let k = 0; k < 9; k++) { const t = k / 8, h = .3 + t * 3.6; puff(KX + (F() - .5) * 1.4 * (1 - t * .5) + .35 * h, ky + h, KZ + (F() - .5) * .6, .22 + t * .55); }
+  const rack = { x: KX, z: KZ, y: ky, posts, strips, embers: +(ky + .06).toFixed(3), L: RL, D: RD };
+  // the hide frame: four poles lashed in a square, leaning back on two props, a hide laced into it
+  const frame = { corners: [], feet: [], hide: [] }; { const S = 1.8, lean = .32, fy0 = ground(FRX, FRZ), c = [];
+    const at = (u, v) => [FRX + (u - .5) * S, fy0 + .25 + v * S * Math.cos(lean), FRZ - v * S * Math.sin(lean)] /* its foot along x, leaning back to -z, to the road */;
+    for (const [u, v] of [[0, 0], [1, 0], [1, 1], [0, 1]]) c.push(at(u, v));
+    for (let k = 0; k < 4; k++) { const a = c[k], b = c[(k + 1) % 4], d = V3(...b).sub(V3(...a)).normalize().multiplyScalar(.18); rod('pole', V3(...a).sub(d).toArray(), V3(...b).add(d).toArray(), .035, 5); }
+    for (const k of [0, 1]) { const f = [c[k][0], ground(c[k][0], c[k][2]) - .1, c[k][2] + .05]; rod('pole', f, [c[k][0], c[k][1] + .02, c[k][2]], .035, 5); frame.feet.push(f.map(v => +v.toFixed(3))); }
+    for (const k of [2, 3]) { const p = [c[k][0], ground(c[k][0], c[k][2] - 1.0), c[k][2] - 1.0]; rod('pole', [p[0], p[1] - .12, p[2]], c[k], .03, 5); frame.feet.push([+p[0].toFixed(3), +(p[1] - .12).toFixed(3), +p[2].toFixed(3)]); }
+    const hp = []; for (const [u, v] of [[.12, .1], [.88, .1], [.9, .9], [.1, .88]]) hp.push(at(u, v)); const g = new THREE.BufferGeometry(), q = (i, j) => { const a = hp[0].map((v, n) => v + (hp[1][n] - v) * i), b = hp[3].map((v, n) => v + (hp[2][n] - v) * i); return a.map((v, n) => v + (b[n] - v) * j); };
+    const pos = []; for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { const a = q(i / 4, j / 4), b = q((i + 1) / 4, j / 4), cc = q(i / 4, (j + 1) / 4), d = q((i + 1) / 4, (j + 1) / 4); pos.push(...a, ...b, ...cc, ...b, ...d, ...cc); }
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'hide');
+    for (let k = 0; k < 4; k++) for (let s = 1; s < 6; s++) { const t = s / 6, a = hp[k].map((v, n) => v + (hp[(k + 1) % 4][n] - v) * t), b = c[k].map((v, n) => v + (c[(k + 1) % 4][n] - v) * t); rod('pole', a, b, .006, 3); } /* the lacing, from the hide's edge to the poles */
+    frame.corners = c.map(p => p.map(v => +v.toFixed(3))); frame.hide = hp.map(p => p.map(v => +v.toFixed(3))); }
+  // the trees: two pines for the game pole, then birch and pine over the heath, kept off the road, the paths and the camp
+  const trees = [], keep = [[TX, TZ, TR + 1.2], [KX, KZ, 2.4], [FRX, FRZ, 1.8], [WX, WZ, 2.2], [-6.2, -2.2, 1.2], [9.6, 2.0, 1.4]];
+  const pine = (x, z, h) => { const gy = ground(x, z); rod('bark', [x, gy - .3, z], [x, gy + h, z], .17 + h * .009, 7, .35); for (let t = 0; t < 5; t++) { const f = t / 5, y0 = gy + h * (.45 + f * .48), th = h * .2, rw = (1.9 - f * 1.4) * (.9 + F() * .2); put(new THREE.ConeGeometry(rw, th, 7, 1, true), 'needle', x, y0 + th / 2, z, 0, F() * 3); }
+    trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), kind: 'pine', r: .17 + h * .009 }); };
+  const birch = (x, z, h) => { const gy = ground(x, z), lean = (F() - .5) * .12; put(new THREE.CylinderGeometry(.07, .13, h * .7, 6), 'birch', x, gy + h * .35 - .1, z, 0, 0, lean);
+    for (let c = 0; c < 7; c++) put(new THREE.IcosahedronGeometry(.5 + F() * .3, 0).scale(1, 1.2, 1), 'leaf', x + (F() - .5) * 1.3 - lean * h * .5, gy + h * (.55 + c * .06) + (F() - .5) * .4, z + (F() - .5) * 1.3, F(), F() * 3); trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), kind: 'birch' }); };
+  for (const [x, z] of GP) pine(x, z, 11 + F() * 2);
+  const clearOf = (x, z, m) => Math.abs(z - RZ) < RW / 2 + m || pathD(x, z) < m || keep.some(([a, b, rr]) => Math.hypot(x - a, z - b) < rr + m);
+  for (let k = 0, n = 0; k < 900 && n < 12; k++) { const x = -34 + F() * 68, z = -30 + F() * 60; if (clearOf(x, z, 2.4) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 5)) continue; n++; pine(x, z, 9 + F() * 6); }
+  for (let k = 0, n = 0; k < 1200 && n < 22; k++) { const x = -30 + F() * 60, z = -26 + F() * 52; if (clearOf(x, z, 1.4) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 3)) continue; n++; birch(x, z, 6 + F() * 3); }
+  // the game pole: lashed between the two pines at 2.6 m, a gambrel on a short rope from its middle, a tub under it
+  const gp = GP.map(([x, z]) => trees.find(t => t.x === +x.toFixed(2) && t.z === +z.toFixed(2))), gy = Math.max(ground(...GP[0]), ground(...GP[1])) + 2.6;
+  { const [a, b] = gp, dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L; rod('pole', [a.x - ux * .1, gy, a.z - uz * .1], [b.x + ux * .1, gy, b.z + uz * .1], .06, 6);
+    for (const t of gp) put(new THREE.TorusGeometry(t.r + .07, .02, 3, 10).rotateX(Math.PI / 2), 'pole', t.x, gy - .05, t.z); for (const t of gp) put(new THREE.TorusGeometry(t.r + .07, .02, 3, 10).rotateX(Math.PI / 2), 'pole', t.x, gy + .05, t.z);
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2; rod('pole', [mx, gy - .05, mz], [mx, gy - .7, mz], .008, 3); rod('pole', [mx - .4 * ux, gy - .62, mz - .4 * uz], [mx + .4 * ux, gy - .62, mz + .4 * uz], .025, 5);
+    for (const s of [-1, 1]) rod('iron', [mx + s * .38 * ux, gy - .62, mz + s * .38 * uz], [mx + s * .4 * ux, gy - .78, mz + s * .4 * uz], .008, 3);
+    const ty2 = ground(mx, mz); put(new THREE.LatheGeometry([V2(.001, 0), V2(.32, 0), V2(.38, .32), V2(.36, .34), V2(.001, .34)], 12), 'billet', mx, ty2 - .01, mz); }
+  const gamePole = { a: [gp[0].x, +gy.toFixed(3), gp[0].z], b: [gp[1].x, +gy.toFixed(3), gp[1].z], trees: gp.map(t => ({ x: t.x, z: t.z, r: t.r })) };
+  // the boulders: granite, the wood stacked against the largest; the chopping stump and its axe; the spear rack
+  for (let k = 0, n = 0; k < 400 && n < 18; k++) { const x = -32 + F() * 64, z = -28 + F() * 50; if (clearOf(x, z, 1.0)) continue; n++; const q = .3 + F() * .8, g = new THREE.IcosahedronGeometry(q, 1); g.scale(1.3, .62, 1); put(g, 'rock', x, ground(x, z) + q * .12, z, 0, F() * 6); }
+  { const g = new THREE.IcosahedronGeometry(1.3, 1); g.scale(1.5, .8, 1); put(g, 'rock', WX, ground(WX, WZ - 1.3) + .4, WZ - 1.4, 0, .2); }
+  const logs = [], CL = 2.4, wy = Math.max(ground(WX - CL / 2, WZ), ground(WX + CL / 2, WZ), ground(WX, WZ)); put(new THREE.BoxGeometry(CL + .2, .1, .8), 'billet', WX, wy - .02, WZ); const wb = wy + .03;
+  for (let row = 0, below = null; row < 7; row++) { const now = []; for (let x = WX - CL / 2 + .1 + (row % 2) * .08; x < WX + CL / 2 - .08; x += .17) { const rr = .065 + F() * .02, xx = x + (F() - .5) * .02;
+      let y = wb + rr; if (below) { y = -9; for (const [bx, by, br] of below) { const dx = Math.abs(bx - xx); if (dx < br + rr) y = Math.max(y, by + Math.sqrt((br + rr) ** 2 - dx * dx)); } }
+      if (y < wb || y > wb + .95 || (row > 4 && F() < .3)) continue; now.push([xx, y, rr]); const g = new THREE.CylinderGeometry(rr, rr, .7, 5); g.rotateX(Math.PI / 2); put(g, 'billet', xx, y, WZ, 0, 0, F() * 3, 1.2); logs.push([+xx.toFixed(3), +y.toFixed(3)]); }
+    if (!now.length) break; below = now; }
+  { const sx = -6.2, sz = -2.2, sy = ground(sx, sz); put(new THREE.CylinderGeometry(.3, .34, .5, 9), 'billet', sx, sy + .2, sz); rod('pole', [sx + .05, sy + .5, sz], [sx + .4, sy + 1.05, sz + .25], .018, 4); put(new THREE.BoxGeometry(.04, .14, .18), 'iron', sx + .06, sy + .5, sz - .04, 0, .6, -.7); }
+  { const rx = 9.6, rz = 2.0, rl = 1.6; for (const s of [-1, 1]) { const x = rx + s * rl / 2, y0 = ground(x, rz); rod('pole', [x, y0 - .25, rz], [x, y0 + 1.5, rz], .035, 5); rod('pole', [x, y0 + 1.42, rz], [x + .12 * s, y0 + 1.62, rz], .02, 4); }
+    const ry = Math.max(ground(rx - rl / 2, rz), ground(rx + rl / 2, rz)) + 1.48; rod('pole', [rx - rl / 2 - .1, ry, rz], [rx + rl / 2 + .1, ry, rz], .03, 5);
+    for (let k = 0; k < 3; k++) { const x = rx - .45 + k * .45, z0 = rz + .55; rod('pole', [x, ground(x, z0) + .02, z0], [x + .04, ry + .65, rz - .03], .02, 4); put(new THREE.ConeGeometry(.03, .22, 4), 'iron', x + .045, ry + .76, rz - .06, -.4); } }
+  // the heath: heather and moss in tufts, off the paths and the stances
+  for (let k = 0, n = 0; k < 4000 && n < 220; k++) { const x = -28 + F() * 56, z = -24 + F() * 46; if (clearOf(x, z, .6)) continue; n++; const g = new THREE.IcosahedronGeometry(.2 + F() * .16, 0); g.scale(1.3, .8, 1.3); put(g, 'heather', x, ground(x, z) + .04, z, 0, F() * 3); }
+  const group = new THREE.Group(); let tris = 0; { const g = mergeGeometries(SMK, false); SMK.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M.smoke); m.name = 'smoke'; m.renderOrder = 2; group.add(m); tris += g.index.count / 3; }
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'track', 'ember'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground, tent, rack, frame, gamePole, wood: { logs, z: WZ, y: +wb.toFixed(3) }, smoke, road: { z: RZ, w: RW }, paths, trees };
+}
+
+// ── Aurenne's abandoned expedition (Session 1023, card F8; OG-124's "camps on the roads: … an abandoned expedition"). A party came up a hill
+// road to dig at an old terrace and left in a hurry, some weeks ago: what they could not carry is where it fell. Built at true size, a metre a
+// unit, on a dry hillside of Aurenne (OG-124's "terraced coast of vineyards and cypresses": its own plaster and tile, not Tuscan stone), the
+// slope rising to -z at 1 in 10, the road along x at z 12; a level camp terrace cut into it, an old terrace wall of pale stone above:
+//   - the tents: a ridge tent still standing, its door flap torn and hanging; a second fallen, its front pole down, the canvas over the
+//     ridge pole lying on the ground from its back pole;
+//   - the fire: cold, ash in its ring, the pot on its side, a stool knocked over;
+//   - the cart: a handcart down on one side, its other wheel off and lying flat by it, its load of crates spilled, one burst;
+//   - the dig: a trench 6 m by 1.4 m and 1.6 m deep cut into the old terrace above its wall, its spoil heaped uphill of it, a ladder in it,
+//     a pick and a shovel left in the spoil, a column drum lifted out onto the lip; what they found and why they ran is the quest writer's;
+//   - the litter: a folding table on its side, a surveyor's tripod fallen, a lantern on its side, papers held down by stones;
+//   - the hill: dry grass, pale limestone breaking through, olives, cypresses and maquis; a trodden path from the road to the camp and the dig.
+// -> { group, tris, draws, own, ground(x, z), tents { up { x, z, ry, L, W, H, floor, ridge }, down { x, z, ry, L, top } }, fire { x, z, y }, cart { wheel { x, y, z, r }, flat { x, y, z, r } },
+//      trench { x, z, L, W, lip, floor, ladder { foot, top } }, lying [{ x, y, z, what }] (the bottoms of things fallen), road { z, w }, paths, trees [{ x, z, h, kind }] }
+export function aurenneExpedition(o = {}, r = stream('expedition')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); aurenneTextures(); markTextures();
+  const M = { turf: mat('turfDry', { ns: .5, color: 0xfff0c4, rough: 1 }), track: mat('turfDry', { ns: .8, color: 0xd8c49c, rough: 1 }), earth: mat('plaster', { ns: 1.2, color: 0xa88a64, rough: 1 }), rock: mat('rock', { ns: 1.3, color: 0xd2c6ac, rough: .95 }),
+    wall: mat('stone', { ns: 1.2, color: 0xe2d6bc, rough: .95 }), canvas: std(0xd8ccb0, .95, { side: THREE.DoubleSide }), wood: mat('wood', { ns: .8, color: 0xd8bc94, rough: .9 }), iron: std(0x2c2a28, .5, { metalness: .6 }), ash: mat('plaster', { ns: .8, color: 0x8e8a84, rough: 1 }),
+    paper: std(0xece4d0, .9, { side: THREE.DoubleSide }), bark: std(0x6a6058, .95), olive: std(0x7a8a5e, .85), cypress: std(0x2e4028, .9), maquis: std(0x4a5a34, .9), straw: std(0xc8b478, 1), glass: std(0xc8c0a0, .3, { transparent: true, opacity: .6 }) };
+  M.earth.side = THREE.DoubleSide;
+  const B = new Map(), key = String(o.key || 'expedition'), F = stream(key + ':lie'), ph = Array.from({ length: 10 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z), V2 = (a, b) => new THREE.Vector2(a, b);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const grid = (k, nu, nv, f, uv = .5) => { const pos = [], idx = []; for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) pos.push(...f(i / nu, j / nv));
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return put(g, k, 0, 0, 0, 0, 0, 0, uv); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: rising to -z at 1 in 10; the camp's terrace levelled; the old terrace wall's step at z -6; the trench cut under it
+  const RZ = 12, RW = 3.0, base0 = (x, z) => -z / 10 + .12 * Math.sin(x * .2 + ph[0]) * Math.sin(z * .16 + ph[1]) + .05 * Math.sin(x * .6 + z * .5 + ph[2]);
+  const WZ = -6.2, GAPX = [-.4, 2.0], gapW = x => sm((x - GAPX[0]) / .3) * sm((GAPX[1] - x) / .3), step = (x, z) => .9 * sm((WZ - z) / .25), base = (x, z) => base0(x, z) + step(x, z) * (Math.abs(x) < 18 ? 1 : sm((24 - Math.abs(x)) / 6)) /* the old terrace: the land stands 0.9 m higher behind its wall */;
+  const CP = { x: 0, z: 0, r: 5.0 }; CP.y = +base0(0, 0).toFixed(3);
+  const TRX = -2.5, TRZ = -8.5, TL = 6, TWd = 1.5, TD = 1.6, /* its edges on the ground grid's lines, so no cell is cut by them */ lip = Math.max(...[-1, 1].flatMap(sx => [-1, 1].map(sz => base(TRX + sx * TL / 2, TRZ + sz * TWd / 2)))), tfloor = +(lip - TD).toFixed(3);
+  const inTr = (x, z) => Math.abs(x - TRX) < TL / 2 && Math.abs(z - TRZ) < TWd / 2;
+  const roadY = x => base(x, RZ);
+  const ground0 = (x, z) => { const b = base(x, z), w = sm((CP.r + 3.0 - Math.hypot(x - CP.x, (z - CP.z) * 1.15)) / 3.0) /* the terrace's cut bank eased over 3 m */; return b + (CP.y - b) * w; };
+  const ZA = -3.0, ZB = -7.6 /* the ramp up through the wall's gap, from the camp's terrace to the old one: one grade, about 1 in 2.8 */;
+  const ground = (x, z) => { let b = ground0(x, z); const gw = gapW(x) * sm((z - ZB + .6) / .6) * sm((ZA + .6 - z) / .6); if (gw > 0) { const t = Math.min(1, Math.max(0, (ZA - z) / (ZA - ZB))), y0 = ground0(x, ZA), y1 = ground0(x, ZB); b += (y0 + (y1 - y0) * t - b) * gw; }
+    const rw = sm((RW / 2 + 1.2 - Math.abs(z - RZ)) / 1.2); b += (roadY(x) - .04 * Math.min(1, Math.abs(z - RZ) / (RW / 2)) - b) * rw; return inTr(x, z) ? tfloor : b; };
+  // the paths: from the road up to the camp, through it to the fire and the standing tent, and up past the wall's gap to the trench's lip
+  const TUx = -3.4, TUz = -1.6, TUry = .25, TDx = 2.8, TDz = -2.0, TDry = -.3, FX = .4, FZ = 1.6;
+  const paths = [[[1.0, RZ], [.6, 8.4], [.2, 4.2], [FX - 1.4, FZ + .2], [TUx + 1.25 * Math.cos(TUry) + .9, TUz - 1.25 * Math.sin(TUry) + .3]], [[.2, 4.2], [1.4, 1.0], [.5, -1.6], [.4, -5.0], [.6, -7.4], [TRX + TL / 2 + .7, TRZ + TWd / 2 + .5]]];
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const pathD = (x, z) => Math.min(...paths.flatMap(p => p.slice(0, -1).map((q, i) => segD(x, z, q, p[i + 1]))));
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -45, 23], [-45, -20, 2.5], [-20, -6, 1.0], [-6, 1, .25], [1, 20, 1.0], [20, 45, 2.5], [45, 160, 23]], 160), gz = steps([[-160, -40, 24], [-40, -18, 2.5], [-18, -10.5, 1.0], [-10.5, -5.5, .25], [-5.5, 18, 1.0], [18, 45, 2.5], [45, 160, 23]], 160);
+    const pos = [], NX = gx.length, I = { turf: [], track: [], earth: [] }; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cx = (gx[i] + gx[i + 1]) / 2, cz = (gz[j] + gz[j + 1]) / 2;
+      if (inTr(cx, cz)) continue; I[Math.abs(cz - RZ) < RW / 2 + .1 && Math.abs(cx) < 150 ? 'track' : Math.abs(cx - TRX) < TL / 2 + .3 && Math.abs(cz - TRZ) < TWd / 2 + .3 ? 'earth' : 'turf'].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  put(new THREE.PlaneGeometry(TL, TWd).rotateX(-Math.PI / 2), 'earth', TRX, tfloor, TRZ, 0, 0, 0, .6) /* the trench's floor */;
+  // the trench's walls: cut faces of earth, upright, from the lip down to the floor on all four sides
+  for (const [ax, az, len, ry] of [[TRX, TRZ - TWd / 2, TL, 0], [TRX, TRZ + TWd / 2, TL, Math.PI], [TRX - TL / 2, TRZ, TWd, Math.PI / 2], [TRX + TL / 2, TRZ, TWd, -Math.PI / 2]]) {
+    const c = Math.cos(ry), s = Math.sin(ry); grid('earth', 12, 4, (u, v) => { const t = (u - .5) * len, x = ax + t * c, z = az - t * s, top = base(x, z) + .02; return [x, tfloor + (top - tfloor) * v, z]; }, .6); }
+  // the old terrace wall: dry stone 0.9 m high along z -6.2, a gap where the path goes up, part of it fallen
+  { const CH2 = [[-22, GAPX[0]], [GAPX[1], 20]]; for (const [x0, x1] of CH2) for (let x = x0; x < x1 - .2; x += .55) { const fallen = x > 7 && x < 10.5, w = .45 + F() * .12, xm = x + w / 2, bot = Math.min(ground(xm, WZ + .35), ground(xm, WZ + .1)) - .05, top = base(xm, WZ - .4) + .06, n = Math.max(1, Math.round((top - bot) / .3)), ch = (top - bot) / n;
+      for (let c = 0; c < (fallen ? 1 : n); c++) put(new THREE.BoxGeometry(w - (c % 2) * .04, ch - .02, .5), 'wall', xm + (c % 2) * .05, bot + c * ch + ch / 2, WZ + .05 + (F() - .5) * .04, 0, (F() - .5) * .06); /* courses from the ground in front up to the terrace behind */ if (fallen && F() < .6) put(new THREE.BoxGeometry(.45, .28, .5), 'wall', x + .2, base0(x, WZ + 1.0) + .14, WZ + 1.0 + F() * .6, F() * .4, F() * 3, F() * .3); } }
+  { const z0 = ZB, z1 = ZA; grid('track', 6, 6, (u, v) => { const x = GAPX[0] + .05 + u * (GAPX[1] - GAPX[0] - .1), z = z0 + (z1 - z0) * v; return [x, ground(x, z) + .03, z]; }, .4); } /* the gap: trodden earth up the ramp */
+  // the spoil: a long heap downhill of the trench; the pick and the shovel left in it; the column drum lifted out on the lip
+  const SPZ = TRZ - TWd / 2 - 1.5; { const g = new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(TL / 2 + .1, .6, .9); put(g, 'earth', TRX, ground(TRX, SPZ) - .12, SPZ, 0, 0, 0, .6); }
+  { const x = TRX - 1.2, z = SPZ, y = ground(x, z) + .55; rod('wood', [x, y - .3, z], [x + .3, y + .55, z + .2], .02, 5); put(new THREE.BoxGeometry(.5, .05, .06), 'iron', x - .02, y - .2, z, 0, 0, .35);
+    const x2 = TRX + 1.4, y2 = ground(x2, z) + .6; rod('wood', [x2, y2 - .2, z], [x2 - .2, y2 + .9, z - .15], .02, 5); put(new THREE.BoxGeometry(.24, .3, .02), 'iron', x2 + .01, y2 - .25, z, .15, 0, .05); }
+  const lying = [];
+  { const x = TRX - TL / 2 - .9, z = TRZ - .4, y = ground(x, z); const g = new THREE.CylinderGeometry(.42, .42, .55, 16); g.rotateZ(Math.PI / 2); put(g, 'wall', x, y + .41, z, 0, .3); lying.push({ x, y: +y.toFixed(3), z, what: 'drum', h: .42 }); }
+  // the ladder: from the trench's floor to over its lip at its east end
+  const lfoot = [TRX + TL / 2 - .5, tfloor, TRZ], ltop = [TRX + TL / 2 + .15, lip + .6, TRZ]; { const d = V3(...ltop).sub(V3(...lfoot)); for (const s of [-1, 1]) rod('wood', [lfoot[0], lfoot[1], lfoot[2] + s * .22], [ltop[0], ltop[1], ltop[2] + s * .22], .03, 5);
+    const n = Math.floor(d.length() / .3); for (let k = 1; k <= n; k++) { const p = V3(...lfoot).addScaledVector(d, k / (n + .4)); rod('wood', [p.x, p.y, p.z - .24], [p.x, p.y, p.z + .24], .018, 4); } }
+  // the tents: one standing (its door flap torn and hanging), one fallen from its front pole
+  const tents = {}; { const L = 2.6, W = 2.1, H = 1.95, WH = .4, c = Math.cos(TUry), s = Math.sin(TUry), wp = (x, y, z) => [TUx + x * c + z * s, y, TUz - x * s + z * c], gt = (x, z) => ground(TUx + x * c + z * s, TUz - x * s + z * c), ty = CP.y - .02;
+    for (const sz of [-1, 1]) { grid('canvas', 6, 1, (u, v) => { const x = -L / 2 + u * L, z = sz * W / 2; return wp(x, gt(x, z) - .03 + v * (ty + WH - gt(x, z) + .03), z); }, .6); grid('canvas', 6, 4, (u, v) => { const x = -L / 2 + u * L, z = sz * W / 2 * (1 - v), y = ty + WH + v * (H - WH) - .04 * Math.sin(v * Math.PI) * Math.sin(u * Math.PI); return wp(x, y, z); }, .6); }
+    grid('canvas', 6, 6, (u, v) => { const z = (u - .5) * W, x = -L / 2, top = ty + WH + (H - WH) * (1 - Math.abs(z) / (W / 2)); return wp(x, gt(x, z) - .03 + v * (top - gt(x, z) + .03), z); }, .6);
+    grid('canvas', 3, 5, (u, v) => { const z = u * W / 2 * .9, top = ty + WH + (H - WH) * (1 - z / (W / 2)), y = top - v * (top - ty - .5) * (1 - .3 * u); return wp(L / 2 + .02 + .12 * v * u, y, z + .06 * Math.sin(v * 6 + u)); }, .6) /* the torn flap, hanging half across the door */;
+    for (const sx of [-1, 1]) rod('wood', wp(sx * (L / 2 - .04), gt(sx * (L / 2 - .04), 0) - .2, 0), wp(sx * (L / 2 - .04), ty + H + .08, 0), .03, 5); rod('wood', wp(-L / 2, ty + H - .02, 0), wp(L / 2, ty + H - .02, 0), .03, 5);
+    tents.up = { x: TUx, z: TUz, ry: TUry, L, W, H, floor: +ty.toFixed(3), ridge: +(ty + H).toFixed(3) }; }
+  { const L = 2.6, W = 2.1, H = 1.95, c = Math.cos(TDry), s = Math.sin(TDry), wp = (x, y, z) => [TDx + x * c + z * s, y, TDz - x * s + z * c], gt = (x, z) => ground(TDx + x * c + z * s, TDz - x * s + z * c);
+    const hAt = (x, z) => { const t = (x + L / 2) / L, ridge = (H - .1) * (1 - t) + .12 * t, r2 = ridge * (1 - Math.min(1, Math.abs(z) / (W / 2 + .25 + t * .4))); return Math.max(.04, r2) + .04 * Math.sin(x * 3 + z * 4 + ph[5]) * t; } /* from the back pole's top down to the ground at the front */;
+    grid('canvas', 10, 10, (u, v) => { const x = -L / 2 + u * (L + .3), z = (v - .5) * (W + .5 + u * .8); return wp(x, gt(x, z) + hAt(x, z), z); }, .6);
+    rod('wood', wp(-L / 2 + .04, gt(-L / 2 + .04, 0) - .2, 0), wp(-L / 2 + .04, gt(-L / 2, 0) + H - .08, 0), .03, 5); rod('wood', wp(-L / 2 + .1, gt(-L / 2, 0) + H - .14, 0), wp(L / 2 + .2, gt(L / 2 + .2, 0) + .06, 0), .03, 5) /* the ridge pole, fallen from the back pole to the ground */;
+    const fp = wp(L / 2 + .9, 0, .5); fp[1] = ground(fp[0], fp[2]); rod('wood', [fp[0] - .9 * c, fp[1] + .03, fp[2] + .9 * s - .3], [fp[0] + .9 * c, fp[1] + .03, fp[2] - .9 * s + .3], .03, 5); lying.push({ x: fp[0], y: +fp[1].toFixed(3), z: fp[2], what: 'pole', h: .03 });
+    tents.down = { x: TDx, z: TDz, ry: TDry, L, top: +(gt(-L / 2, 0) + H).toFixed(3) }; }
+  // the fire: cold; ash in its ring of stones, the pot on its side, a stool knocked over
+  const fy = ground(FX, FZ); for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283 + F() * .3, st = new THREE.IcosahedronGeometry(.11 + F() * .04, 0); st.scale(1.2, .7, 1); put(st, 'rock', FX + .42 * Math.cos(a), fy + .04, FZ + .42 * Math.sin(a), 0, F() * 3); }
+  put(new THREE.CylinderGeometry(.3, .33, .04, 10), 'ash', FX, fy + .02, FZ); for (let k = 0; k < 4; k++) { const a = k * 1.5 + F(); rod('wood', [FX + .28 * Math.cos(a), fy + .05, FZ + .28 * Math.sin(a)], [FX - .02 * Math.cos(a), fy + .09, FZ - .02 * Math.sin(a)], .03, 5); }
+  { const x = FX + .9, z = FZ - .3, y = ground(x, z), g = new THREE.LatheGeometry([V2(.001, 0), V2(.12, .01), V2(.17, .1), V2(.16, .24), V2(.14, .27), V2(.14, .27)], 12); g.rotateZ(Math.PI / 2); put(g, 'iron', x + .13, y + .165, z, 0, .7); lying.push({ x, y: +y.toFixed(3), z, what: 'pot', h: .17 }); }
+  { const x = FX - 1.1, z = FZ - .7, y = ground(x, z); put(new THREE.CylinderGeometry(.18, .18, .05, 10), 'wood', x, y + .18, z, Math.PI / 2, .4); for (let k = 0; k < 3; k++) { const a = k * 2.09; rod('wood', [x + .12 * Math.cos(a) * Math.cos(.4), y + .03 + .1 * Math.sin(a) + .1, z - .12 * Math.cos(a) * Math.sin(.4)], [x + .12 * Math.cos(a) * Math.cos(.4) - .4 * Math.sin(.4), y + .03 + .1 * Math.sin(a) + .1, z - .12 * Math.cos(a) * Math.sin(.4) - .4 * Math.cos(.4)], .018, 4); } lying.push({ x, y: +y.toFixed(3), z, what: 'stool', h: .18 }); }
+  const fire = { x: FX, z: FZ, y: +fy.toFixed(3) };
+  // the handcart: down on its left side, its right wheel off and lying flat beside it; its crates spilled, one burst with straw
+  const cart = {}; { const KX = 4.4, KZ = 2.4, WR = .55, gw = ground(KX, KZ + .7), wy = gw + WR, ay = ground(KX, KZ - .7) + .07, tilt = Math.atan2(wy - ay, 1.4);
+    { const g = new THREE.CylinderGeometry(WR, WR, .07, 14); g.rotateX(Math.PI / 2); put(g, 'wood', KX, wy, KZ + .7); put(new THREE.TorusGeometry(WR - .01, .022, 4, 16), 'iron', KX, wy, KZ + .7); cart.wheel = { x: KX, y: +wy.toFixed(3), z: KZ + .7, r: WR }; }
+    rod('wood', [KX, wy, KZ + .75], [KX, ay, KZ - .7], .045, 6); const bedG = new THREE.BoxGeometry(1.8, .5, 1.1); bedG.translate(0, .32, 0); bedG.rotateX(tilt); put(bedG, 'wood', KX - .1, (wy + ay) / 2, KZ, 0, 0, 0);
+    for (const s of [-1, 1]) rod('wood', [KX + .8, (wy + ay) / 2 + .1 + s * .3 * Math.sin(tilt), KZ + s * .35], [KX + 2.4, ground(KX + 2.4, KZ + s * .35) + .04, KZ + s * .35], .035, 5);
+    const fx = KX - .4, fz = KZ - 1.9, fyy = ground(fx, fz); { const g = new THREE.CylinderGeometry(WR, WR, .07, 14); put(g, 'wood', fx, fyy + .035, fz); put(new THREE.TorusGeometry(WR - .01, .022, 4, 16).rotateX(Math.PI / 2), 'iron', fx, fyy + .04, fz); cart.flat = { x: fx, y: +fyy.toFixed(3), z: fz, r: WR }; lying.push({ x: fx, y: +fyy.toFixed(3), z: fz, what: 'wheel', h: .035 }); }
+    for (const [dx, dz, a, burst] of [[-1.4, -.4, .4, false], [-1.0, 1.4, 1.2, true], [.4, 1.7, 2.2, false]]) { const x = KX + dx, z = KZ + dz, y = ground(x, z); put(new THREE.BoxGeometry(.6, .4, .45), 'wood', x, y + .2, z, 0, a); lying.push({ x, y: +y.toFixed(3), z, what: 'crate', h: .2 });
+      if (burst) { put(new THREE.BoxGeometry(.62, .03, .47), 'wood', x + .5, ground(x + .5, z + .3) + .015, z + .3, 0, a + .5); for (let k = 0; k < 6; k++) { const sx = x + (F() - .2) * .9, sz = z + (F() - .5) * .9; put(new THREE.IcosahedronGeometry(.12 + F() * .08, 0).scale(1.4, .4, 1.2), 'straw', sx, ground(sx, sz) + .03, sz, 0, F() * 3); } } } }
+  // the litter: the folding table on its side, the tripod fallen, a lantern on its side, papers under stones
+  { const x = -.9, z = -2.9, y = ground(x, z); put(new THREE.BoxGeometry(1.2, .7, .03), 'wood', x, y + .35, z, 0, .5); for (const s of [-1, 1]) rod('wood', [x + s * .5 * Math.cos(.5), y + .62, z - s * .5 * Math.sin(.5)], [x + s * .5 * Math.cos(.5) + .6 * Math.sin(.5), y + .62, z - s * .5 * Math.sin(.5) + .6 * Math.cos(.5)], .02, 4); lying.push({ x, y: +y.toFixed(3), z, what: 'table', h: .35 }); }
+  { const x = -1.6, z = -4.3, y = ground(x, z); for (let k = 0; k < 3; k++) { const a = .3 + (k - 1) * .12; rod('wood', [x, y + .03, z], [x + 1.5 * Math.cos(a), ground(x + 1.5 * Math.cos(a), z + 1.5 * Math.sin(a)) + .03, z + 1.5 * Math.sin(a)], .02, 4); } put(new THREE.CylinderGeometry(.05, .05, .25, 8), 'iron', x - .1, y + .05, z - .05, 0, 0, Math.PI / 2); lying.push({ x, y: +y.toFixed(3), z, what: 'tripod', h: .03 }); }
+  { const x = TUx + 1.9, z = TUz + 1.2, y = ground(x, z); put(new THREE.BoxGeometry(.16, .16, .24), 'glass', x, y + .08, z, 0, .4); put(new THREE.BoxGeometry(.18, .18, .02), 'iron', x - .12 * Math.sin(.4), y + .09, z - .12 * Math.cos(.4), 0, .4); lying.push({ x, y: +y.toFixed(3), z, what: 'lantern', h: .08 }); }
+  for (let k = 0; k < 9; k++) { const a = F() * 6.283, d = 1 + F() * 2.4, x = -1.2 + d * Math.cos(a), z = -3.2 + d * Math.sin(a); if (pathD(x, z) < .5) continue; const y = ground(x, z); put(new THREE.PlaneGeometry(.21, .29).rotateX(-Math.PI / 2), 'paper', x, y + .012, z, 0, F() * 3); if (k % 3 === 0) put(new THREE.IcosahedronGeometry(.06, 0), 'rock', x + .05, y + .04, z); }
+  // the hill: limestone breaking through, olives, cypresses, maquis; off the road, the paths, the camp, the dig
+  const keep = [[0, 0, 6.5], [TRX, TRZ + .8, 4.6], [4.4, 2.0, 3]], clearOf = (x, z, m) => Math.abs(z - RZ) < RW / 2 + m || pathD(x, z) < m || keep.some(([a, b, rr]) => Math.hypot(x - a, z - b) < rr + m) || Math.abs(z - WZ) < .6 + m * .3;
+  for (let k = 0, n = 0; k < 600 && n < 26; k++) { const x = -34 + F() * 68, z = -30 + F() * 56; if (clearOf(x, z, .8)) continue; n++; const q = .3 + F() * .9, g = new THREE.IcosahedronGeometry(q, 1); g.scale(1.4, .5, 1); put(g, 'rock', x, ground(x, z) + q * .05, z, 0, F() * 6); }
+  const trees = [];
+  for (let k = 0, n = 0; k < 900 && n < 9; k++) { const x = -32 + F() * 64, z = -28 + F() * 52; if (clearOf(x, z, 2.2) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 7)) continue; n++; const gy = ground(x, z), h = 4 + F() * 1.6;
+    const top = [x + (F() - .5) * .8, gy + h * .45, z + (F() - .5) * .8]; rod('bark', [x, gy - .2, z], top, .2, 6, .7); for (let l = 0; l < 3; l++) { const a = l * 2.1 + F(), e = [top[0] + Math.cos(a) * 1.1, top[1] + .7 + F() * .5, top[2] + Math.sin(a) * 1.1]; rod('bark', top, e, .08, 5, .6);
+      for (let c2 = 0; c2 < 3; c2++) put(new THREE.IcosahedronGeometry(.8 + F() * .4, 0).scale(1.3, .7, 1.3), 'olive', e[0] + (F() - .5) * 1.2, e[1] + .3 + (F() - .5) * .5, e[2] + (F() - .5) * 1.2, F(), F() * 3); }
+    trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), kind: 'olive' }); }
+  for (let k = 0, n = 0; k < 900 && n < 10; k++) { const x = -34 + F() * 68, z = -30 + F() * 56; if (clearOf(x, z, 1.5) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 4)) continue; n++; const gy = ground(x, z), h = 8 + F() * 4, w = .8 + F() * .3, prof = [];
+    for (let s = 0; s <= 8; s++) { const t = s / 8; prof.push(V2(w * Math.sin(Math.PI * Math.min(1, t * 1.15) ** .7) * (1 - t * .25) + .02, t * h)); } put(new THREE.LatheGeometry(prof, 8), 'cypress', x, gy + .3, z); rod('bark', [x, gy - .2, z], [x, gy + .5, z], .14, 5);
+    trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), kind: 'cypress' }); }
+  for (let k = 0, n = 0; k < 2000 && n < 60; k++) { const x = -28 + F() * 56, z = -26 + F() * 48; if (clearOf(x, z, .7)) continue; n++; const g = new THREE.IcosahedronGeometry(.35 + F() * .3, 0); g.scale(1.3, .75, 1.2); put(g, 'maquis', x, ground(x, z) + .15, z, 0, F() * 3); }
+  const group = new THREE.Group(); let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'track', 'paper', 'ash'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground, tents, fire, cart,
+    trench: { x: TRX, z: TRZ, L: TL, W: TWd, lip: +lip.toFixed(3), floor: tfloor, ladder: { foot: lfoot.map(v => +v.toFixed(3)), top: ltop.map(v => +v.toFixed(3)) } }, lying, wall: { z: WZ, gap: GAPX }, road: { z: RZ, w: RW }, paths, trees };
+}
