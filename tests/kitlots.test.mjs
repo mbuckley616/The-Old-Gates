@@ -1,7 +1,7 @@
 // The Gatelands' lots widened to whole bays on the new look (Session 1065; card F6, Michael's C on DECISION #396). On ?look=new a
 // Gatelander settlement's homes and ordinary shops take the kit's bays (PKIT.gl.BAYS): a village's are cottages, a town's, port's
 // or city's townhouses and merchants' houses. Each such lot's width is exactly its bays and its end piers, it keeps its centre,
-// its depth, its door and its id (a house you own is still yours, whichever look you load it in), and it stands 0.9 m or more
+// its depth, its door (moved along the front into its bay since Session 1072) and its id (a house you own is still yours, whichever look you load it in), and it stands 0.9 m or more
 // clear of every other lot's walls. Settlements of the other islands, and the old look, are as they were.
 import { boot, check } from './lib/game.mjs';
 
@@ -10,7 +10,7 @@ const pickSites = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d =
   return [...near('gatelands', 'town', 2), ...near('gatelands', 'village', 2), ...near('gatelands', 'port', 1), ...near('gatelands', 'city', 1), ...near('mark', 'town', 1)].map(t => ({ id: t.id, kind: t.kind, nat: nat(t) })); };
 const survey = ids => { const out = {};
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id); if (!S) { out[id] = null; continue; }
-    out[id] = { houses: S.houses.filter(h => h.siteId === id).map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), kit: h.kit })),
+    out[id] = { houses: S.houses.filter(h => h.siteId === id).map(h => ({ id: h.id, type: h.type, w: h.w, d: h.d, x: +h.doorX.toFixed(3), z: +h.doorZ.toFixed(3), yaw: h.exitYaw, kit: h.kit })),
       lots: S.sol.filter(s => s.hid).map(s => ({ hid: s.hid, cx: s.cx, cz: s.cz, rx: s.rx, rz: s.rz, c: s.c, s: s.s })) }; }
   return out; };
 
@@ -29,9 +29,10 @@ const bw = (k, n) => +(n * B[k].bay + 2 * B[k].end).toFixed(3);
 const gl = sites.filter(s => s.nat === 'gatelands'), mk = sites.find(s => s.nat === 'mark');
 
 // the same houses: every id, door and depth of the old look, in the same order
-const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const ok = a.length === b.length && a.every((h, i) => h.id === b[i].id && h.type === b[i].type && h.d === b[i].d && Math.hypot(h.x - b[i].x, h.z - b[i].z) < .01);
+const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const ok = a.length === b.length && a.every((h, i) => { const k = b[i].kit ? b[i].kit.door || 0 : 0, tx = -Math.sin(h.yaw), tz = -Math.cos(h.yaw); /* a kit house's door stands in its bay (Session 1072), k along the front */
+    return h.id === b[i].id && h.type === b[i].type && h.d === b[i].d && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
   return { id: s.id, ok, n: a.length, first: ok ? null : a.map((h, i) => [h.id, b[i] && b[i].id, h.x, b[i] && b[i].x]).find(([p, q, x, y]) => p !== q || Math.abs(x - y) > .01) }; });
-check(`every settlement keeps its houses, ids, doors and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
+check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
 
 // the widths: whole bays, by kind of settlement and of lot
 const rows = gl.flatMap(s => neu[s.id].houses.map(h => ({ ...h, site: s.id, sk: s.kind, w0: old[s.id].houses.find(o => o.id === h.id).w })));

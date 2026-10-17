@@ -268,7 +268,8 @@
     // shops merchants' houses. A lot keeps its centre, its depth, its place in the town and so its id; it grows along the street
     // from 5–7 m toward 6–10 m, a bay at a time, and gives a bay back while it would come within 1.2 m of another lot, a road,
     // a cross street or the ring. Churches, keeps, guild halls, inns, the shipwright and the foreign quarter keep their size.
-    if(window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='gatelander'&&site.kind in KIT_SITE){
+    // (window.OG_KIT_TOWNS=false keeps the old towns on the new look: tests/lookpair sets it to compare the renderers alone)
+    if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='gatelander'&&site.kind in KIT_SITE){
       const town=KIT_SITE[site.kind]==='town',G=PKIT.gl,corners=(l,m)=>{const c=Math.cos(l.ry),s_=Math.sin(l.ry),hw=l.w/2+m,hd=l.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:l.x+u*c+v*s_,z:l.z-u*s_+v*c}));};
       const apart=(a,b)=>{const A=corners(a,.6),B=corners(b,.6);for(const P of [A,B])for(let k=0;k<2;k++){const ax=P[k+1].x-P[k].x,az=P[k+1].z-P[k].z;const pr=Q=>Q.map(q=>q.x*ax+q.z*az);const pa=pr(A),pb=pr(B);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
       const clear=(l,own)=>{const C=corners(l,0);for(const q of C){if(Math.hypot(q.x-cx,q.z-cz)>inner-1)return false;const ri=roadInfo(q.x,q.z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;
@@ -280,6 +281,18 @@
         if(n<lo){for(n=lo-1;n>=G.BAYS[kind].min;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}}
         if(n<G.BAYS[kind].min){lot.w=w0;return;}
         lot.kit={kind,bays:n,w0};});}
+    // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
+    // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
+    // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.
+    const KIT_TRADE={weapon:'ARMS · BLADES · BOWS',armor:'ARMOUR · MAIL · SHIELDS',potion:'APOTHECARY · HERBS',misc:'GENERAL GOODS',barber:'BARBER · SURGEON'};
+    let kitG=null;
+    function kitHouse(lot,type){
+      if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
+      const L=PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
+      b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
+      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.door=lot._kitDoor;
+      const c=(L.plan.chim||[])[0];if(c){const x=c.gable?c.gable*(U.size.w/2-.36):c.x,y=U.size.ridge+(L.plan.roof.kind==='thatch'?1.0:.85),cs=Math.cos(lot.ry),sn=Math.sin(lot.ry),wy=b.position.y;
+        S.chimneys.push({x:lot.x+x*cs,y:wy+y,z:lot.z-x*sn,t:type||'home',k:0});}}
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
@@ -315,20 +328,21 @@
       else if(biome==='tundra'&&site.kind==='village'&&site.islet){lot.two=false;geo=iceGeo(lot.w,lot.d,st,r);}
       else{lot.two=r()<(st.twoStory||0)||type==='inn';geo=buildingGeo(lot.w,lot.d,st,r,{chimney:r()<.65,twoStory:lot.two,h:type==='inn'?SCALE.STOREY_MAX:st.h,rise:type==='inn'?1.9:st.rise});}
       solR=Math.max(lot.w,lot.d)/2*.85;
-      const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
+      if(lot.kit){kitHouse(lot,type);geo.dispose();if(geo.userData&&geo.userData.lo)geo.userData.lo.dispose();} /* S1072 — the old builder still runs (its draws keep the town's stream, and so its people, as on the old look), and its mesh is let go */
+      else{const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
       lot._wallH=geo.userData&&geo.userData.wallH||null;lot._storeys=geo.userData&&geo.userData.storeys||null; /* S881 (F2a) — kept on the house: its wall's height and storeys */
-      {const ch=chimneyAt(geo,m,type||'home');if(ch)S.chimneys.push(ch);} // S343 — its smoke
+      {const ch=chimneyAt(geo,m,type||'home');if(ch)S.chimneys.push(ch);}} // S343 — its smoke
       // rotated footprint (settleSolid understands {c,s} rotated rects)
       sol.push({cx:lot.x,cz:lot.z,rx:lot.w/2+.15,rz:lot.d/2+.15,c:Math.cos(lot.ry),s:Math.sin(lot.ry),bt:type||'home',hid:lot.id,sh:lot._shuttered?1:0}); // v80 S138 — the map colours it by type
       // footpath: door → the street/road it faces
       {
-        const fx=lot.x+lot.tx*(lot.d/2+.3),fz=lot.z+lot.tz*(lot.d/2+.3);
+        const kd=lot._kitDoor||0,fx=lot.x+lot.tx*(lot.d/2+.3)+lot.tz*kd,fz=lot.z+lot.tz*(lot.d/2+.3)-lot.tx*kd; /* S1072 — from a kit house's door */
         let ex=fx+lot.tx*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND)),ez=fz+lot.tz*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND));
         const ri=roadInfo(ex,ez);if(ri&&ri.d>ROAD_HALF+1&&!lot.street){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,t=ri.t;ex=sg.ax+vx*t;ez=sg.az+vz*t;}
         if(lot.k==='sw'&&quayLane){const A=quayLane.a,B=quayLane.b,vx=B.x-A.x,vz=B.z-A.z,L2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((fx-A.x)*vx+(fz-A.z)*vz)/L2));ex=A.x+vx*u;ez=A.z+vz*u;} /* S618 — the yard's path ends on the quay lane */
         footReq.push({fx,fz,ex,ez,lot,hid:`g_${site.id}_${i}`}); // S193 — routed once every building stands (below)
       }
-      const doorX=lot.x+lot.tx*(lot.d/2+.15),doorZ=lot.z+lot.tz*(lot.d/2+.15);
+      const kdx=lot._kitDoor||0,doorX=lot.x+lot.tx*(lot.d/2+.15)+lot.tz*kdx,doorZ=lot.z+lot.tz*(lot.d/2+.15)-lot.tx*kdx; /* S1072 — a kit house's door stands in its bay, kdx along the front */
       if(!isShop){
         // Residence: enterable 'home' interior, a named resident who keeps
         // house inside and idles by the door outside in daylight.
@@ -605,6 +619,7 @@
       for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);
       buildBramBody(group,S._forge.x,worldH(S._forge.x,S._forge.z),S._forge.z,'world');}
     S.reach=t_reach(sol,site);
+    if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length;} // S1072 — the kit's houses, one mesh per material
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
