@@ -38,8 +38,7 @@ const s1 = a.f1[0], s2 = a.f2[0];
 check('the door is Very Easy, and plain Skeletons stand on both floors, tier 1 above and tier 2 below', a.grade === 'veryeasy' && !!s1 && !!s2 && s1.t === 1 && s2.t === 2, { grade: a.grade, s1, s2 });
 check(`floor 2's Skeleton has ×1.75 floor 1's health (${s2 && s2.hp} against ${s1 && s1.hp}, to the rounding)`, !!s1 && !!s2 && s1.hp === a.want.hp1 && s2.hp === a.want.hp && Math.abs(s2.hp / s1.hp - 1.75) < .04, { s1, s2, want: a.want });
 check(`its blow ×${a.want.dmg} (the sheet's 2.09) and its pace ×1.0: no ×1.5 or ×1.1 left`, !!s1 && !!s2 && Math.abs(s2.m / s1.m - a.want.dmg) < .001 && Math.abs(a.want.dmg - 2.09) < .01 && s2.s === s1.s, { s1, s2 });
-const u = l => JSON.stringify([...new Set(l.map(x => JSON.stringify(x)))]);
-/* the roster itself still shifts with your level (the kinds' minLevel, the next slice's tierkinds): the same kind is the same */
-check('a plain Skeleton on each floor is the same at level 20 as at level 1', u(a.f1) === u(b.f1) && u(a.f2) === u(b.f2) && a.f1.length > 0, { a: [u(a.f1), u(a.f2)], b: [u(b.f1), u(b.f2)] });
+check('every foe on both floors is the same at level 20 as at level 1: the roster is the floor\'s tier\'s (S1059)', JSON.stringify(a.all) === JSON.stringify(b.all), a.all.map((x, i) => [x, b.all[i]]).filter(([x, y]) => JSON.stringify(x) !== JSON.stringify(y)));
+check('a tier-1 floor holds no Wraith, Gargoyle or Mimic (their least tier is 2)', a.all.filter(x => x[1] === 1).every(x => !['Wraith', 'Gargoyle', 'Mimic'].includes(x[0])), a.all.filter(x => x[1] === 1).map(x => x[0]));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

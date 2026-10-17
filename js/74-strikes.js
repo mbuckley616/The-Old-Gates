@@ -792,6 +792,12 @@ function tierHere(){
 }
 // the level a foe's own extra terms read (a wraith's orb and its drain, a ship's volley): its tier's, as its health and blow (S1036)
 function foeTierLevel(e){return tierLevel(e&&e.tier!=null?e.tier:tierHere());}
+// S1059 — a kind's least tier (the enemies-by-place sheet): its old minLevel 1–3 is tier 1, 4–6 tier 2, 7 and up tier 3. A spawn
+// table is filtered by it before the pick, in the open, in a legacy zone and in a dungeon's roster, so no foe is ever latent on
+// the field (the minLevel lock, hidden until your level reached it, is gone). A site's own beasts and a quest's foes are set down
+// on purpose and are not filtered, as they were never locked (S386).
+function minTierOf(minLevel){const m=minLevel||1;return m>=7?3:m>=4?2:1;}
+function kindAllowed(name,tier){const D=ZONE_FOE_DEF[name];return minTierOf(D&&D.minLevel)<=(tier||1);}
 function enemyHpScale(tier){
   const lv=tierLevel(tier==null?tierHere():tier);
   return Math.min(3.0, 1 + (lv - 1) * 0.15);

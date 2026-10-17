@@ -1025,6 +1025,7 @@ function respawnZoneEnemies(zoneId){
   // Resolve the appropriate sol array (collision/static-occluder list).
   const sol = z.sol || cfg.sol || [];
   filtered.forEach(group=>{
+    if(!kindAllowed(group.name, zoneTier(zoneId))) return; /* S1059 — the kind's least tier, not your level (enemies by place) */
     const basePos = group.pos || [];
     const targetCount = (typeof _scaleSpawnCount === 'function') ? _scaleSpawnCount(basePos.length) : basePos.length;
     for(let i=0; i<targetCount; i++){

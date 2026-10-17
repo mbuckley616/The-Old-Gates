@@ -855,10 +855,10 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   const ey0=typeof _forestTerrainH==='function'&&activeZoneId==='forest'?_forestTerrainH(x,z):
              typeof _ironhavenTerrainH==='function'&&activeZoneId==='ironhaven'?_ironhavenTerrainH(x,z):0;
   g.position.set(x,ey0,z);sc.add(g);
-  // v59: locked state — enemy is latent until player reaches minLevel. Mesh hidden, AI/collision
-  // skipped in tick. Unlocked on the first tick where level >= minLevel (see tickZoneEnemies).
+  // v59: locked state — enemy was latent until the player reached minLevel. S1059: never, now: the spawn tables are
+  // filtered by the kind's least tier before the pick (kindAllowed, 74-strikes.js); `locked` stays for unlockFoe's callers.
   const minLevel=baseDef.minLevel||1;
-  const isLocked=(typeof level!=='undefined'?level:1)<minLevel;
+  const isLocked=false;
   g.visible=!isLocked;
   // v61gj — Build the zone enemy state, init posture, then return. Stamp `shape`
   // so the posture-family lookup resolves directly (zone shapes are wolf/spider/

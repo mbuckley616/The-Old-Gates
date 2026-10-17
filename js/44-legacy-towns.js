@@ -879,6 +879,7 @@ function buildWildernessZone(cfg){
     ? _filterBase.filter(g => g.respawn !== false)
     : _filterBase;
   _filteredGroups.forEach(group=>{
+    if(typeof kindAllowed==='function'&&!kindAllowed(group.name,zoneTier(cfg.id)))return; /* S1059 — the kind's least tier, not your level (enemies by place) */
     // Scale the position list. Round up means 1.5× of 2 = 3; we tile
     // the original positions and synthesize extras within a small jitter
     // radius around the originals to avoid stacked spawns.

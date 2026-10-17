@@ -24149,3 +24149,31 @@ The designer's build sheet (`docs/design/enemies-by-place-build.md`, on Michael'
 - **Late in the game, a coast crypt stays Very Easy.** A level-20 character met Very Hard there before. Under the sheet, a crypt on the coast is ×0.45 health for good, and the Wastes' doors are where a late character goes to be tested. Tier 4 is floor 2 of a tier-3 door.
 - **The roster still shifts with your level.** Wraiths take Phantoms' places from level 5 (the kinds' `minLevel`), so a level-1 and a level-20 visit to one door hold different kinds. That is the next slice (the kinds' minimum tier). The sheet's main suite, `tierlevelfree`, waits for it.
 - **Owed from the sheet:** the kinds, packs, Captains, commissions, guards, traps, the wyrm's fire and the map's label. The loot and the hoard wait on #394.
+
+## v80 — Session 1059 — Enemies by place: the kinds' least tier in place of the latent foe, and the pack's +1 and Captain at tier 2 (the designer's sheet, session 1, part 2)
+Before this session, a wild foe whose kind's `minLevel` was above your level was built *latent* (`buildZoneEnemy`): hidden, never ticked, impossible to hit, and shown on the first tick past that level. A dungeon's roster dropped the same kinds by `minLevel ≤ level`. So the same chunk, or the same door, held different things for a level-1 and a level-20 character.
+
+**The kinds.** Now a kind has a least tier, from its old `minLevel` (the sheet): 1–3 is tier 1, 4–6 tier 2, 7 and up tier 3 (`minTierOf`, `kindAllowed`, `74-strikes.js`). The table is filtered by it *before* the pick:
+- in the open world's chunk spawn, at the chunk's tier;
+- in a legacy zone's spawn and respawn, at the zone's tier;
+- in a dungeon's roster, at the floor's tier.
+
+`buildZoneEnemy` builds nothing latent any more; `locked` stays for `unlockFoe`'s callers. A tier-1 floor holds no Wraith, Gargoyle or Mimic, as a level-1 character met none before. The floor's tier is read, so floor 2 of a tier-1 door, tier 2, can hold them. A site's own beasts (a lair's wolves, a glade's boars) and a quest's foes are not filtered: they were never latent (S386, *a lair's beast is there whatever your level*), and filtering would have taken the Dire Wolves from a tier-1 lair.
+
+**The packs.** In the chunk spawn, the pack's +1 (past level 6) and its Bandit Captain (past level 5) now come at tier 2 and up. The same goes for the bandit camp's Captain (past level 4), the caravan's attackers' (past 5) and a road job's (past 5): one rule on every path, as the sheet asks.
+
+**Suite re-measured.** `questfoes` checked that *a wild Ogre built at level 1 is still latent*. It now checks that the Ogre is not latent, and that `kindAllowed` keeps it off a tier-1 table and lets it onto a tier-2 one. `tiergrade`'s roster check, narrowed last session, is the whole roster again.
+### Verified (headless Chromium)
+- **`tierkinds`** (new), 8/8. At night, every chunk in a square 1.2 radii across at the centre of five of home's regions was spawned at level 1 and at level 30:
+  - The coast gave 67 foes, Ashen 102, the Deepwood 104, the Foothills 247 and the Wastes 21.
+  - None was latent or hidden. None stood where its kind's least tier was above the chunk's.
+  - No Captain on the coast or in Ashen, where there had been one past level 5; 2 in the Deepwood and 15 in the Foothills.
+  - The Wastes' tier-3 chunks hold Hollowed.
+  - Every region gave the same foes at level 30 as at level 1: kinds, counts, Captains, variants and health.
+  - The least tiers read: Wolf and Skeleton 1; Cultist, Dire Wolf and Ogre 2; Ash Wight and Dragon 3.
+- **`tiergrade`** 8/8: all 28 foes of a two-floor coast crypt are the same at level 1 and level 20, and floor 1 holds no Wraith, Gargoyle or Mimic.
+- **`questfoes`** passes, with its check re-measured. So do the neighbours: `foes` (2), `dangertier`, `wolves`, `goblins`, `ogre`, `trolls`, `fiercewolf`, `bear`, `shark`, `crawler`, `scorpion`, `foeseed`, `captainguard`, `dungeonfoes`, `mimicspots`, `dunseed`, `challenge` and `yardplay`.
+### Needs eyes
+- **A level-1 character meets Ogres, Cave Bears and Captains in the Foothills** (tier 2), where nothing past level 4 stood before. That is the sheet's Caelid: the place's danger is readable, and a new character is meant to turn back.
+- **The coast never grows a Captain.** A late character on the coast meets plain bands for good.
+- **Owed from the sheet:** the commission's grade, the guards at tier 3, the traps and the wyrm's fire at the tier's level, and the door's grade on the map. The loot and the hoard wait on #394.

@@ -90,8 +90,8 @@ const raid = await page.evaluate(() => {
 console.log('raid at level 1', JSON.stringify(raid));
 check('at level 1 *Raiders! 4 of them* brings four raiders you can see and fight', raid.n === 4 && raid.latent === 0 && raid.shown === 4, raid);
 
-// 5 — the wild's own gate still holds
-const wild = await page.evaluate(() => { const e = buildZoneEnemy(WORLD.scene, [], px + 50, pz, 'Ogre', null); const out = { locked: e.locked, shown: e.mesh.visible }; WORLD.scene.remove(e.mesh); return out; });
-check('a wild Ogre built at level 1 is still latent (the minLevel gate is unchanged for the wild)', wild.locked === true && wild.shown === false, wild);
+// 5 — the wild's own gate (S1059, enemies by place): no foe is latent any more; a kind is kept off a place's table by its least tier
+const wild = await page.evaluate(() => { const e = buildZoneEnemy(WORLD.scene, [], px + 50, pz, 'Ogre', null); const out = { locked: e.locked, shown: e.mesh.visible, t1: kindAllowed('Ogre', 1), t2: kindAllowed('Ogre', 2) }; WORLD.scene.remove(e.mesh); return out; });
+check('a wild Ogre built at level 1 is not latent; it is kept off a tier-1 table and allowed at tier 2 (S1059)', wild.locked === false && wild.shown === true && !wild.t1 && wild.t2, wild);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

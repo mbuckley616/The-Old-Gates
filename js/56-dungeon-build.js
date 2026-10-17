@@ -3085,12 +3085,13 @@ function buildDungeon(portal){
     // and rolls its fight from its own (keyFoe, 42-zone-enemies.js). The shuffle was a sort on Math.random.
     const dKey=dKeyOf(portal,floorIdx),dFoes=seededRng('dfoes',dKey);
     const themeEnemies=portal.occupied?OCCUPIED_ROSTER:(THEME_DEF[portal.theme]||THEME_DEF.ruins).enemies; /* S759 — an occupied gate holds the warren (gateOf, 20-quests.js) */
-    // v59: filter the theme roster to enemies the player has unlocked. Preserves order + repeats
+    // v59: filter the theme roster to the kinds this floor can hold. Preserves order + repeats
     // so theme weighting (e.g. Skeleton appearing 3× in undead) still applies. If every entry is
     // gated (shouldn't happen — Skeleton is level 1), fall back to plain Skeleton.
+    // S1059 — by the floor's tier, not your level: a kind's least tier from its minLevel (minTierOf, the enemies-by-place sheet)
     const availableEnemies=themeEnemies.filter(n=>{
       const ed=EM[n]||EM.Skeleton;
-      return (ed.minLevel||1)<=level;
+      return minTierOf(ed.minLevel)<=dTier;
     });
     const pool=availableEnemies.length?availableEnemies:['Skeleton'];
     const ds=portal.diffScale||DIFF_SCALE.normal;
