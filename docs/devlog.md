@@ -23570,3 +23570,29 @@ The first fight, a new character's, is unchanged. The fight log now also records
 - **Main's own suite on main** (a worktree at `9bd7493`), for comparison: wins the rematch in 3.02 s; she never lands a blow.
 ### Needs eyes
 - How a level-8 swordsman with untrained Blade fares against foes that grow with the level, in play, until enemies by place (#373) lands: about half main's damage on a foe of twice the health.
+
+## v80 — Session 1027 — The air-speed cap: 4.7 m/s in the air for everyone (DECISION #370, the double-jump sheet)
+Michael's A on #370: speed in the air is capped at 4.7 m/s, the sprint of untrained legs (3.83 × 1.225), for every character. The double-jump sheet needs this cap among its *Three rules the two need*. Before it, a sprinter at Athletics 100 and Swiftness 40 flew at 6.2 m/s and cleared 3.8 m with no perk and 7.4 m with the double jump, so the sheet's step table, which places are to be built to, meant nothing.
+
+`airCapK(dx, dz, dt)` beside the double jump in `10-player.js` gives the factor (≤ 1) the loop puts on the frame's step. `90-main.js` multiplies it into the move before the open world's, the dungeon's and the rooms' collision. It is 1:
+- on the ground;
+- in the air dash, which moves its own 3 m in 0.2 s;
+- in the roll;
+- in the water;
+- under Levitate.
+
+The lunge's forward push is inside it, so a swing in the air does not beat it.
+
+One correction to the first build. The loop moves you before it lifts you, so the frame that jumps still moved at ground speed. That is 0.15 m into the gap at 60 fps under Haste and 0.23 m at 20 fps: the gap depended on the frame rate, against the dropped-frame rule. The cap now also holds on the frame that jumps (on the ground with Space down, which is the loop's own jump test). Walking off a ledge is still a ground move until you leave it.
+
+Nothing is asked: the number is Michael's.
+### Verified (headless Chromium)
+- **`aircap`** (new, the sheet's row), 7/7. The ground is held flat at the start's height and nothing on it is solid, because the sheet's figures land level with the take-off.
+  - Athletics 100 and Swiftness 40, sprinting: 6.174 m/s on the ground (the sheet's 6.2), 4.700 in the air. With Haste: 9.261 on the ground, 4.700 in the air.
+  - A walk (3.83) keeps its pace in the air.
+  - Gaps, level with the take-off: 2.872 m for that sprinter, 2.872 under Haste and 2.867 for untrained legs (the sheet's 2.87); 3.447 at Acrobatics 100 (3.44). The double jump pressed at the top under Haste at full sprint clears 4.844 at 75 (4.85) and 4.984 at 100 (4.98), never over 5.9.
+  - At 20 fps under Haste the jump at Acrobatics 100 is the same as at 60, within 0.03.
+- **Neighbours,** all pass: `airstep`, `airdash`, `falls`, `perkfall`, `roll`, `lockon`, `skillcurve` and `yardpanel`.
+### Needs eyes
+- How the cap feels off a sprint: you slow from 6.2 (or 9.3 under Haste) to 4.7 the moment you leave the ground. The sheet's precedent (Hollow Knight) holds the air at one speed; a long run-up no longer buys distance.
+- The bodies builder's tuck and lean, and the quest writer's one line the first time each perk is held, stay owed.

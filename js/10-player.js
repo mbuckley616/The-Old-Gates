@@ -330,7 +330,21 @@ function fallLand(y){
 // press of Space in the air sets the rise to 4.5 m/s (set, not added), once a flight, for 12 stamina; a held Space never
 // fires it, and it comes back on landing. Carrying over 70% the rise is 3.2, immobile none; never swimming, levitating or
 // staggered; too winded (under 12, or in staminaCD) the bar flashes. It does not reset the fall's count: fallTrack keeps
-// the flight's top. The air-speed cap the sheet asks beside it is DECISION #370's and waits.
+// the flight's top. The air-speed cap the sheet asks beside it is airCapK below (S1027).
+// S1027 — the air-speed cap, Michael's A on DECISION #370: in the air nobody moves faster than 4.7 m/s across the ground,
+// the sprint of untrained legs (3.83 × 1.225), so a gap's length is the jump's and Acrobatics' alone and the sheet's step
+// table holds for every character. Fast legs win on the ground, not over a gap. The factor (≤ 1) the loop puts on the
+// frame's step; 1 on the ground, in the air dash (its own 3 m), the roll, the water and under Levitate. The frame that
+// jumps is capped too: the loop moves you before it lifts you, so that frame is already flight, and at 20 fps under Haste
+// it would otherwise carry 0.23 m of ground speed into the gap (the dropped-frame rule).
+const AIR_CAP=4.7;
+function airCapK(dx,dz,dt){
+  if(!(dt>0))return 1;
+  if(onGround&&!(typeof K!=='undefined'&&K['Space']))return 1;
+  if(typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())return 1;
+  if(typeof spellLevitating==='function'&&spellLevitating())return 1;
+  const v=Math.hypot(dx,dz)/dt;return v>AIR_CAP?AIR_CAP/v:1;
+}
 const AIRSTEP={used:false,up:false},AIRSTEP_V=4.5,AIRSTEP_V_HEAVY=3.2,AIRSTEP_STAM=12;
 function airStepTick(K){
   if(onGround){AIRSTEP.used=false;AIRSTEP.up=false;AIRDASH.used=false;AIRDASH.soft=false;return false;}

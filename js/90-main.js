@@ -370,19 +370,20 @@ function loop(now){
     // speed multiplied by LUNGE_SPEED_MULT").
     const _lbx = _lungeBoostActive ? fwdX*spd*(_lungeMult-1) : 0;
     const _lbz = _lungeBoostActive ? fwdZ*spd*(_lungeMult-1) : 0;
-    const tdx = dx + _lbx;
-    const tdz = dz + _lbz;
+    const _ak = (_roll||_dash) ? 1 : airCapK(dx + _lbx, dz + _lbz, dt); /* S1027 — the air-speed cap (10-player.js) */
+    const tdx = (dx + _lbx) * _ak;
+    const tdz = (dz + _lbz) * _ak;
     if(lid==='overworld'){if(!currentZoneSolid(px+tdx,pz))px+=tdx;if(!currentZoneSolid(px,pz+tdz))pz+=tdz;}
     else if(isInterior()){
-      const R=0.3,nx2=px+dx,nz2=pz+dz;
+      const R=0.3,idx=dx*_ak,idz=dz*_ak,nx2=px+idx,nz2=pz+idz;
       const _intW={weapon:11,armor:11,potion:9,misc:10,inn:13,church:10,castle:18};
       const _intDd={weapon:10,armor:10,potion:9,misc:9,inn:11,church:16,castle:22};
       const iW=(currentHouse&&currentHouse._roomW)||_intW[currentHouse&&currentHouse.type||'misc']||10; // v80 — generated rooms carry their size
       const iD=(currentHouse&&currentHouse._roomD)||_intDd[currentHouse&&currentHouse.type||'misc']||9;
       const _gen=currentHouse&&currentHouse.id&&String(currentHouse.id).startsWith('g_');
       const behindCounter=_gen?(intSolidAt(nx2,nz2,R)):(nz2<2.5&&nx2>2.6&&nx2<iW-2.6); // v80 — generated rooms use their own furniture solids
-      if(nx2>R&&nx2<iW-R&&!behindCounter)px+=dx;
-      if(nz2>R&&nz2<iD-R&&!behindCounter)pz+=dz;
+      if(nx2>R&&nx2<iW-R&&!behindCounter)px+=idx;
+      if(nz2>R&&nz2<iD-R&&!behindCounter)pz+=idz;
     }
     else{const[nx,nz]=dSlide(px,pz,tdx,tdz);px=nx;pz=nz;}}
   try{pushFromBodies();}catch(err){} /* S623 — foes and townsfolk are solid to you */
