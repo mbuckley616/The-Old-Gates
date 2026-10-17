@@ -29,6 +29,12 @@ About 60 player-readable strings read, all on auto/systems (Sessions 982–1028)
 
 **auto/systems.** Finding 31 is in as written (`TALKED_LINES`, `talkedGreet`, Session 986): the guard who is talked down gives way in his people's voice. The Wolf-Mother's Cloak (Session 992) carries the draft's four lines, prompt and log word for word. The Waylamp's sight line (Session 1000) keeps *A lamp burns over the inn’s door in broad day.* and its rain clause, now said only by day and in rain, which is what the draft meant. The Crown's blade topic's labels (*The blade from the stone.*, *The licence.*, *I’ll keep it.*, *Not now.*) are plain. The perks, the double jump, the dash and the sway add no line a person says. Clean.
 
+**Michael's calls:** *The Great Gates, II* and *III* approved (16 Oct), recorded in `decisions.md`.
+
+**Built:** *Back to Their Bread*, Session 1030 on auto/quests-build (PR #367): the three descriptions after the open ending, and Varek at the fields. `backtobread` 9/9.
+
+**Drafted:** *The Great Gates, IV — Varek's two arcs* (`docs/quest_drafts.md`, on the page as `great-gates-4`).
+
 ---
 
 ## Run 19 — 16 Oct 2026
