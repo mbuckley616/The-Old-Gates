@@ -4,6 +4,24 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
+The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
+- **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.
+- **B. By level, as today.** Where you go does not change what you find.
+- **C. By place, with a floor of your level less two materials:** a level-25 character finds at least Obsidian everywhere. It softens A late but keeps half the problem.
+
+Recommendation: **A.** The good things are somewhere, and you go there for them (Morrowind, Elden Ring). It is the brief's "a world that pushes back", and the only option under which one chest is one roll for everyone in a shared world.
+
+### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
+F2a has merged, so the new kit's buildings, rooms and places can start going into the game behind `?look=new`, one kind a session (card F6, then F8 and F9). Nothing of the kit is in the game yet. The kit is about 1,300 lines of ES modules in `docs/prototypes/levelup/` (the surfaces in `common.js`: relief textures for plaster, ashlar, thatch, slate, pantile, turf and the rest; the piece builders in `pieces.js`; the places in `places.js`). The game is plain scripts in one scope, so the kit has to be copied over as a classic script, and CLAUDE.md makes a new `js/` file a decision of its own.
+
+Where should the kit live in the game?
+- **A. A new file, `js/38-kit.js`** (recommended): loaded after the people and creatures and before the legacy zones, in both looks, but only called when `OG_LOOK` is `new`. It holds the surfaces, the shared helpers (seeded streams, merge by material) and each piece builder as it comes in. The world files call it to build a house, a room or a place. The old look never touches it, so F14 deletes the old builders and keeps this file. The prototype pages stay the drawing board: a piece is drawn and checked there first, then copied.
+- **B. Inside `js/82-world-structures.js`**, with no new file. That file is the old houses (1,800 lines), and it would grow to about 3,500 and hold two looks' builders side by side until F14. Rooms (`83`, `84`) and places (`52`, `56`) would reach into it too.
+- **C. Not yet.** Keep building in the prototypes until F14, and bring everything in at the cutover.
+
+A keeps each look's code apart and gives F14 one file to keep and a list of files to delete. Pictures are not needed for this one; the kit as it stands is `docs/prototypes/levelup/pieces.html`, `rooms.html` and `places.html`.
+
 ## Answered
 
 ### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
@@ -283,6 +301,12 @@ Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writ
 
 ### Quest draft approved: The Great Gates, I — the knot at the ring
 Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
+
+### Quest draft approved: The Great Gates, II — the knife and the needle
+Michael: **Approved**. (16 Oct 2026, on the Quest Drafts page) In the quest writer's build queue; its words wait on the act at the ring (card F5 and the systems builder's knot).
+
+### Quest draft approved: The Great Gates, III — what each gate gives, and what it costs
+Michael: **Approved**. (16 Oct 2026, on the Quest Drafts page) In the quest writer's build queue; its words wait on the same.
 
 ### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
 **F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.

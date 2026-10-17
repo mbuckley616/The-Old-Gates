@@ -23433,6 +23433,20 @@ Corrections made during the session:
 - **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
 - **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
 
+## v80 — Session 1025 — `yardplay`'s rematch, red on the Systems merge (QA)
+The night's CI read found one red run that was not a flake: run 38968544927, auto/producer's fe3a650 (PR #384), which merges the Systems sessions 940–1013 Michael approved onto main 359d351. Shard 10's `yardplay` failed twice the same way: the rematch with Rowe, a week on at level 8 with an iron sword and stamina kept full, was lost, three of her blows taking 259 of 260 health while yours took her from 127 to 79. Main passes it, and auto/systems' own runs did too, narrowly. So the merge would have turned main red.
+
+A probe logged each blow. Rowe's rematch blow is 106 through a held guard (`dmg` 37, her level-8 scaling), the same on main; what changed is the player's side. Session 941 (skills and perks A) took the flat `level × 1.5` off a melee blow and put the damage on the weapon's skill, ×(0.6 + 0.8 × skill/100). The test set `level = 8` and left a fresh warrior's skills (blade 15, ×0.72), so the stand-in it calls *stronger* hit softer than before: 14 to 21 swings to Rowe's yield on the merged code against 5 or 6 on main, time enough for her to land three.
+
+The fix is the test's: the rematch's stand-in now carries the skills the game itself gives a level-8 character, the migration a pre-skills save gets on load (`skillsInit(playerArchetype, level)`, `70-saves.js`), which puts blade at 22. On a build without skills (main today) the line is skipped. The fight's record now names the blade skill. That is a lift of about 8% and not a cure: the rematch still takes 12 to 21 swings, and whether she lands three blows in that time is a matter of the runner. The cause underneath is the game's, a level-scaled foe against a player whose damage no longer grows with the level while the level still comes from xp; it is filed in backlog I for the systems builder.
+
+The same read: 7 green runs and 1 red since 18:52, one FLAKY retry (`panelfocus`, auto/bodies 40ed0cf, not looked into), FREEZE #381 closed. The ten retries owed from the last read (`q7world` first) are still owed.
+### Verified (headless Chromium)
+- Before the fix, on PR #384's code (`--src` of auto/producer's tree): fight 2 won here in 14 and 21 swings, Rowe landing one blow of 106 (CI's runner lost it in 6). On main: 5 swings, no blow taken.
+- After the fix: `yardplay` green 4 of 4 on PR #384's code (3 old look: 17, 12 and 21 swings, `blade` 22, Rowe landing at most one blow; 1 new look: 15 swings, none), and 1 of 1 on main (6 swings, `blade` null, the line skipped).
+### Needs eyes
+- PR #384's next CI run is the proof that counts: the fix widens the margin but does not close it.
+- Whether the rematch should be winnable at level 8 under the skills is the systems builder's (backlog I), and maybe Michael's.
 ## v80 — Session 1021 — The Gatelands' merchants' halt (card F8, prototype only)
 The freeze for F3 (#381) is still open, so this run kept to the prototypes. Backlog L10's *Off the road* (OG-124) still had four camps on the roads; the charcoal burners' came first (Session 1016), and this session builds the merchants'. OG-124's panel 4 shows it as covered waggons drawn up under trees with a fire. It is `gatelandsMerchantCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=merchants`.
 
@@ -23552,3 +23566,190 @@ Corrections made during the session:
 - **The papers are blank.** If they carry a line, it is the quest writer's.
 - **The ground's texture** is blotchy at this sun. It is the kit's dry turf, as at the aqueduct, and it wants F3's ground.
 - **Still open in OG-124:** the pilgrims' rest, which wants the canon on whose pilgrims and to where, and the small mysteries.
+
+## v80 — Session 1024 — The Gatelanders' leg wraps (L1 and B2, prototype only)
+FREEZE #381 (F3) is still open, so this run kept to the prototypes. The next owed L1 item was the coins on the Aurennais head-wrap's edge. Session 1018 said it had to be confirmed from OG-056's full image, but that image is on Google Drive, which this session's network cannot reach. The thumbnail is too small to settle it, so it stays owed. This session takes the next unbuilt piece of the Gatelanders' dress: the leg wraps. OG-048 draws "boot wraps" and OG-059 "laced boots and leg wraps". The builder had capes, cloaks, hoods and tabards for the Gatelanders, but nothing between the boot and the knee. Building what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The shell.** `legWraps` is a wool shell off the tights' helper, between rest y -.715 (just above the ankle) and -.405 (under the knee, whose joint is at -.369). It stands 1.6 cm off the tights over trousers, where the trousers stand 0.8. Over a bare leg under a short tunic skirt it stands 0.6.
+- **The winding** is drawn in the shader, where the sash belt's folds are (Session 1010). Round each shin's own axis (read off the skeleton, the knee's joint to the ankle's), the band climbs one pitch of 5.5 cm a turn, 5.6 turns in all. The two legs are wound as mirrors.
+  - Each turn's lower edge rises over 1 cm from the crease, so it lies over the turn below. The turn then slopes back in to pass under the next. The cloth darkens into the crease, and the normal is bent by the slope.
+  - The top 1.2 cm lies flat. Two leather thongs in the boots' colour cross round it, front and back.
+  - The angle's seam is on the inside of the leg.
+- **The boots** are cut down to the ankle (rest -.69) when wraps are worn, so the wraps' lowest 2.5 cm go in under them.
+- **The roll.** A Gatelander man in trousers and boots rolls wraps at 0.45, in undyed, brown, moss or grey wool. This is drawn last, so every earlier roll of a seed is as it was. No woman and no other people rolls them.
+- **Saving.** `legWraps` is a garment colour in `GARMENTS`, so it saves and loads with the genome, and the builder's panel gives it a checkbox and a colour.
+- **The stats.** `legWrapStats` reads the posed trousers (or the bare leg) against the wraps' shell, and the wraps' lowest band against the boot's, with `shellThrough` (Session 887).
+
+In `builder.js`: a `shins` view, from the ankle to the knee.
+
+Corrections made during the session:
+- **The first winding stepped hard** from 0.5 to 0 at every crease. White specks ran along each one, where the bent normal turned through a pixel. The turn now falls back to 0 before the crease.
+- **The wobble on the turns' lines** was first 5 per cent of a turn. It swamped the spiral's slope, and the turns read as level stripes. It is now 1.8 per cent.
+- **A dark column of dashes** down the back of each calf looked like the angle's seam. Moving the seam to the inside of the leg left the column where it was. It is the bend's shadow where the leg turns from the key light: depth 1.4 made it hard, 0.7 lost the turns, and 1.1 is kept.
+- **Over a bare leg** the wraps first stood 21.6 mm off the skin, at the push used over trousers. They now stand 11.6.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 380 checks pass** (375 after Session 1020; 5 new).
+- **The new checks.** Two men are checked: one in trousers and boots, and one with bare legs under a short tunic skirt.
+  - Nothing comes through the wraps: 0 of 290 trouser points, and 0 of 324 points of the bare leg.
+  - The wraps stand 8.0 mm over the trousers and 11.6 mm over the bare leg.
+  - The wraps' lowest 2 cm are inside the boot on both, with 0 of 36 points through it.
+  - They are 1,010 triangles, with 5.6 turns.
+  - They save and load back, and with `legWraps` off no wrap is built.
+- **The roll:** 6 of 13 Gatelander men wear wraps, and all 13 wear trousers and boots. No woman, Markman, Aurennais or Old Blood rolls them.
+- **New pictures:** `builder-legwraps-front.jpg`, `-back.jpg`, `-side.jpg`, `-moss.jpg` (moss wraps on bare legs) and `-full.jpg`.
+
+### Needs eyes
+- **From the front the turns read nearly level.** The spiral's slope shows from the side and behind.
+- **On the shadowed side** the creases show as short dark dashes.
+- **They are drawn, not modelled.** The shell's outline is a smooth cylinder, with no step at each turn's edge, so the silhouette is plain.
+- **The thongs** are two lines on the flat top, with no knot and no ends.
+- **Still owed in L1:** the coins on the head-wrap's edge, which need OG-056's full image; the Gatelanders' headscarves and baskets.
+
+## v80 — Session 1029 — The Gatelanders' headscarves (L1 and B2, prototype only)
+Numbered 1029: the systems builder's Sessions 1027 and 1028 reached its branch during this run. No FREEZE is open, but F4 has not merged, so the bodies stay in the prototypes. Session 1024 left two pieces of the Gatelanders' dress unbuilt: headscarves and baskets. This session builds the headscarf. OG-048 draws "a woman in a patterned headscarf" and OG-059 "headscarves on women". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+The headscarf is the Aurennais head-wrap (Session 994) tied another way: `D.scarf`. This keeps one garment colour, `wrap`, and one set of rules for the hair under it, which is tucked short as before. The thumbnails cannot show how the scarf is tied, so it is read as a kerchief folded corner to corner and knotted at the nape.
+
+What changed in `people.js`:
+- **The cut.** The scarf's dome is fitted to the head as the wrap's is (`headDome`), with 1.2 cm of cloth where the wrap has 1.6.
+  - Its edge runs across the forehead 3.5 cm over the brows (the wrap's is about 2).
+  - From there it comes down over the tops of the ears and falls to 13 cm under the brow line at the nape.
+  - In place of the wrap's five turns there is one folded edge, a flattened roll 4.5 mm round.
+- **The point** is the third corner, hanging down the middle of the back. It is laid by the wrap-tail's builder (Session 1018) with the side `C`. It is 9 cm wide under the knot and narrows to its corner 22 cm down (18 on a man). It lies 6 mm over whatever it hangs over, read off the same radial map. Its two edges take the border's colour.
+- **The knot** is a lump of cloth at the nape over the point, 4.6 by 3 cm. Its two ends, 5.5 cm long and 2.2 cm narrowing to 1.3 wide, lie on the point 6.5 mm out, clear of the point's folds. The point and the knot are carried by the chest bone, and none is built under a cloak.
+- **The print.** `clothMat` takes a new `print` colour. Where a vertex's `aPrint` is 1, the shader draws sprigs of four round petals on a 2.4 cm grid. Each row is offset by half a cell, and the print is read three ways off the rest position, as the weave is. Far off it fades to its average.
+- **Saving.** `D.scarfPrint` is a garment colour in `GARMENTS`, so it saves with the genome. `scarf` is a dress flag.
+- **The roll.** A Gatelander woman with no cloak and no helm rolls a scarf at 0.85. It comes in madder, moss, sea blue, ochre or undyed wool. Seven in ten are printed, in cream or ochre (madder or blue on the undyed), and half have a red border (ochre on a madder scarf). This is drawn last, so every earlier roll of a seed is as it was.
+
+In `builder.js`: a checkbox, *head-wrap tied as a headscarf*, and the print's colour under Dress.
+
+Corrections made during the session:
+- **The first cut sat like a cap.** Its edge was 7.5 cm over the brows and showed a bare forehead. It is now 3.5 cm over them.
+- **The point was first 15 cm wide where it left the scarf.** Its top corners stood out past the scarf's sides at the nape. It is now 9 cm wide there and narrows from the knot.
+- **The knot first shaded dark,** because its triangles were wound inward. The winding is flipped.
+- **The old wrap roll's check** counted any `wrap` on another people as a fault. It now counts wraps that are not scarves.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 388 checks pass** (380 after Session 1024; 8 new).
+- **Three women:** a braid under a printed madder scarf with an ochre edge, a bun under a plain moss one, and loose hair under a printed sea-blue one with a red edge.
+  - Nothing of the head or the tucked hair comes through the scarf: 0 of about 27,800 hair points. The scarf stands 12.5 to 13.2 mm over the head, and its fold is 3.5 to 3.6 cm over the brows.
+  - Nothing comes through the point: 0 of 27,600 to 33,100 points. It is 5.7 to 6.5 mm from the scarf, and the knot's ends lie 6.5 mm over it.
+  - Each saves and loads back.
+- **Under a cloak:** the scarf is worn with no point or knot.
+- **The roll:** 5 of 27 Gatelander women wear one, and 3 of those are printed. No man, no cloaked or helmed woman and no other people rolls one, and no print is in its field's colour.
+- **The scarf** is 3,312 triangles, and the point with its knot is 1,184 more.
+- **New pictures:** `builder-scarf-front.jpg`, `-side.jpg`, `-back.jpg`, `-moss.jpg`, `-blue.jpg` and `-full.jpg`.
+
+### Needs eyes
+- **The folded edge on a dark scarf reads as a black line** (`builder-scarf-moss.jpg`). Its colour is the cloth's, as the vertex colours show, but the thin roll sits under the crown's overhang and takes its shadow. A thicker roll standing further out would catch the light.
+- **The crown is a fitted dome, so it reads as a cap.** A kerchief has slack: a fold at the temples and a gather to the knot. None is modelled.
+- **The print smears where its three projections blend,** at about 45° on the crown.
+- **The tie at the nape is a reading of thumbnails.** Some country women tie under the chin. If Michael sees it otherwise, it is a change to the cut, not a new garment.
+- **The knot is a smooth lump.** Its ends are flat ribbons with no thickness.
+- **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), the Gatelanders' baskets, and the game (after F4).
+## v80 — Session 1025 — The Gatelands' overturned carriage (card F8, prototype only)
+The freeze for F3 (#381) closed on 17 Oct, and nothing on the decisions page waits on the look builder. Card F6 in the prototype kit is done (the Mark's lots, Aurenne's churches and civic buildings, the Gatelands' coloured towns, the one kit). So this run went on with OG-124's list. Its panel 6, "small mysteries with no marker", starts with "an overturned carriage". It is `gatelandsCarriage` in `docs/prototypes/levelup/places.js`, at `places.html?place=carriage`. The lone grave under a ringed cross was passed over for now: the canon gives the dead to the gates, so who lies alone in a field, and why, is the quest writer's first.
+
+A road coach left a lane at speed, went over the ditch and fell on its near side in the field beyond. Its team is gone, and nobody is anywhere. The place shows only the state of things an hour or a day after; what happened, and to whom, is left to the quest writer. The coach is the game's (Session 261) at true size: a panelled body 2.3 by 1.45 by 1.35 m, wheels of twelve spokes 1.44 m behind and 1.04 m in front. It is built upright in its own frame and then laid on its side, so every part keeps its place on it.
+- **On its side:** its roof faces the field wall and its underside the lane. Its two right wheels are up in the air and lie flat, and the fore-carriage is turned 15° on its pivot.
+- **The door:** the right door is swung out 100°, so it stands up past upright and leans back over the body. Through the doorway is the dark of the inside, with the seats. The lining is drawn from inside only, so it shows through the doorway and nowhere else.
+- **The wheels on the near side:** the rear one is broken off under the body, leaving its nave with three spokes snapped short; its rim lies in the grass and four spokes in the ditch. The front one is off and lying flat.
+- **At its front:** the pole is snapped a metre out from its socket, and its other half lies in the field. The four traces are cut short at the splinter bar and hang from it. The far lamp is still on its bracket and burning; the near one lies broken on the ground.
+- **The lane:** two gouges in the turf run from the lane's edge over the ditch to the coach, with clods thrown up beside them. The whip lies in the road and a hat in the ditch.
+- **The luggage:** it was thrown off the roof towards a dry-stone wall. A trunk stands on its end; another is burst, its lid back on its hinge and its clothes out over the grass. A hatbox has rolled away and a valise lies further off. One case is still strapped under the roof rail.
+- **The land:** pasture falling gently along the lane, the wall along the field's far side (1.0 to 1.2 m, with copes on edge), a thorn hedge across the lane, and ash and oak turning.
+- **The size:** 35,900 to 36,300 triangles in 19 meshes.
+
+The views are `coach` (from the lane), `door` (from the roof's side, the door standing up against the sky), `inside` (stood on its upper side, down into the doorway), `traces`, `luggage` and `far`, and `&dusk` gives the evening with the lamp lit.
+
+Corrections made during the session:
+- **The budget:** the first build came to 41,200 triangles in 23 meshes, over the 40,000 and 20 the places keep to. The brass went into the wheels' yellow and the hedge's thorn into the leaf, the green clothes became red, the broken window became black rather than a material of its own, and the wall was shortened from 80 m to 60 with two copes a stone instead of three.
+- **The light:** the sun first stood behind the lane's hedge, which left the coach's underside and the door in shadow from every view. It is now in the south-east.
+- **The far view** first looked through a tree in the hedge. No hedge tree now stands within 10 m of the coach on the lane's side.
+- **The wall's copes** first left gaps between them, so the check met the wall at 0.62 m where a cope was missing. They now close up, and the wall is 1.01 to 1.17 m.
+- **The clothes** were first a few big flat discs. There are now eleven smaller, longer heaps.
+
+The kit is now ready to go into the game behind `?look=new`, since F2a has merged. Where it lives there needs a new `js/` file, which is a decision of its own, so it is asked as **DECISION #389** (A, a new `js/38-kit.js`, recommended; B, inside `82-world-structures.js`; C, not until F14).
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 210 of 210 pass** (202 after Session 1023). Eight checks are new. The carriage's `coach` view and its `door` view at dusk render with no page errors, and six checks run over three keys:
+  - **The builds:** each key builds the same twice, with 35,892 to 36,340 triangles in 19 meshes and 17 to 18 trees.
+  - **On its side:** the lower side's underface is met by the ground 0.02 m off at 6 points, and the upper side is 1.47 m up. The two right wheels' hubs are 1.59 to 1.67 m over the ground, and their rims 1.54 m or more.
+  - **The door:** its free edge is 0.61 m over the upper side. A ray straight down through the doorway first meets the dark lining 1.4 m below, not a panel.
+  - **What fell:** the four traces' cut ends are 0.018 to 0.67 m over the ground. The 14 things thrown off lie −0.027 to 0.01 m off it.
+  - **The wall:** it is 1.01 to 1.17 m high at 18 points.
+  - **The walk:** 57 half-metres from the lane over the ditch to the coach's underside, and round its front and along its roof. There is ground under each, no step is over 0.21 m, and there is 0.61 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-carriage-coach.jpg`, `-door`, `-inside`, `-traces`, `-luggage`, `-far` and `-coach-dusk`.
+### Needs eyes
+- **The body reads as a box.** The game's coach has rounded panels; this one is flat panels on corner pillars. Its curve under the windows and a moulded belt rail are the next step if the place is kept.
+- **The traces** are thin, and from the lane they barely show. The cut ends are the place's one hint, so they may want to be thicker or to lie on the grass where they are seen.
+- **The lamp at dusk** is a small warm point; whether a lamp still burning should be the tell that it happened within the hour is the quest writer's.
+- **Nobody is here:** no driver, passengers or horses. If the place is a lead, who was in it is the quest writer's, and any body is the bodies builder's.
+- **Still open in OG-124:** the pilgrims' rest, the lone grave (both want the canon), strange tracks, the locked cellar, the unfinished camp and the odd rock.
+
+## v80 — Session 1026 — The Gatelands' locked cellar (card F8, prototype only)
+The second of OG-124's small mysteries with no marker (panel 6: "a locked cellar"). It is `gatelandsCellar` in `docs/prototypes/levelup/places.js`, at `places.html?place=cellar`.
+
+A cottage fell long ago and the field took it back, but someone still comes to its cellar. The place says only that: the lock is new and the grass is worn to it and nowhere else. Who comes, and what is below, is left to the quest writer. It is built at true size in pasture rising gently from a lane:
+- **The footings:** the cottage is 7.0 by 4.6 m outside, with walls 0.55 m thick of rubble stone in courses. They stand 0.3 to 0.85 m, each half-metre stretch to its own height, with the doorway's gap in the south wall.
+- **The west gable:** whole to the eaves at 2.4 m and its apex at 4.6 m, with the stack over it to 5.6 m and a dressed cap. Inside are the fireplace's dark mouth under a stone lintel, the hearth stone, and two patches of limewash still on the wall.
+- **The rest:** rubble fallen inside along the walls and out of the east end, 90 nettles in the footings, an elder grown against the east end, a bush by the lane and ash in the field.
+- **The hatch:** a 1.2 by 1.0 m mouth in a kerb of dressed stone at the floor's level, at the east end. Two leaves of grey oak boards lie on strap hinges, with a hasp between them. A chain of 19 bright links runs across both leaves to old staples in the kerb, held at the hasp by a padlock that is new and bright.
+- **The path:** the grass is worn to earth from the lane through the doorway to the hatch, and round the hatch, and nowhere else.
+- **The size:** 21,900 to 22,100 triangles in 12 meshes.
+
+The views are `ruin` (from the lane), `hatch` (from the doorway), `lock` (knelt by it) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The hatch's boards** were first placed by a wrong formula, which piled eight boards over each other across the middle. Each leaf now has four boards side by side.
+- **The chain's links** were first 9 rings 0.09 m apart, so they did not touch. There are now 19 longer links, each into the next.
+- **The padlock** first read black: a mirror metal reflects the dark scene. It is now a satin steel that reads bright.
+- **The elder** first grew over the hatch and hid it from the doorway. It now grows against the east end, outside.
+- **Two of the check's probes:** the leaves' probe first landed on a strap hinge, and the gable's on its slope and then on the stack's cap. They now read a board between the hinges, and the gable 0.7 m off its apex line, clear of the stack.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 216 of 216 pass** (210 after Session 1025). Six checks are new. The cellar's `ruin` view and its `lock` view at dusk render with no page errors, and four checks run over three keys:
+  - **The builds:** each key builds the same twice, with 21,936 to 22,068 triangles in 12 meshes and 11 trees.
+  - **The hatch:** the kerb's corners are 0.03 m over the floor and the oak leaves are met 0.075 m over it. The padlock is 0.032 m from the hasp and 0.06 m over the leaves.
+  - **The ruin:** the footings are 0.31 to 0.84 m high at 20 points, the gable is met 3.94 m up 0.7 m off its apex line, where its slope stands at 3.93, and the stack is at 5.6 m. The 25 fallen stones are −0.002 to 0.001 m off the ground.
+  - **The walk:** 25 half-metres from the lane through the doorway to the hatch, all 25 on worn ground. There is ground under each, no step is over 0.065 m, and there is 2.95 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-cellar-ruin.jpg`, `-hatch`, `-lock`, `-far` and `-ruin-dusk`.
+### Needs eyes
+- **The nettles are plain cones.** They read as a crop of little firs from the lane. A nettle wants a stem with paired leaves, which the plant kit (`30-plants.js` in the game) may already have the shape for.
+- **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
+- **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
+## v80 — Session 1033 — The Gatelanders' baskets (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. Session 1029 left two pieces of the Gatelanders' dress unbuilt: the coins on the head-wrap's edge, which need OG-056's full image, and the baskets. This session builds the basket. OG-048 draws "a farm woman with an apron and a basket" and lists woven baskets under the people's craft; OG-059 lists "a basket". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+The basket is an oval market basket of willow, carried by its bow handle in the right fist (`D.basket`, the willow's colour). It hangs plumb under the fist, its length fore and aft along the leg.
+- **The pose.** The right elbow straightens to 0.12 rad with the weight. The hand is turned at the wrist (0.51 to 0.59 rad) so its fingers point down and its knuckles run level, fore and aft. The four fingers close round the handle's crown with the spear's grip (`fistGrip`), since the handle is the spear shaft's thickness, 2.6 cm.
+- **The basket.** 38 by 27 cm at the rim and 30 by 20 at the foot, 17 cm deep. The wall has an outside, an inside 7 mm in, and a floor. On a canvas, the weave is drawn as eight stakes and eight rows of weavers to a tile, five tiles round (40 stakes). A weaver passes in front of alternate stakes, and the stakes show where it passes behind. The same canvas is the bump map. The rim is a roll 1 cm round. The bow handle rises 15 cm over the rim from 3 cm down the wall at each end, and is level for 13 cm over its crown, where the fist closes. Rim and handle are wound in skeins.
+- **What is in it.** A linen cloth over the load (`D.basketCloth`), domed and rucked a little and tucked in under the rim. With no cloth, fourteen apples are heaped to just over the rim, seven in ten red, the rest green, in one mesh.
+- **Clear of the body.** The arm is lifted out from the side, 0.03 rad at a time, until nothing of the person or what they wear (the right hand apart) is within a centimetre of the basket's sides. The basket is carried by the wrist, as the spear and the crossbow are.
+- **A spear or a crossbow wins:** a basket asked with either is not built. A full cloak is thrown back off the right shoulder for a basket as for a spear (Session 909), so the arm hangs free of it.
+- **Saving.** `basket` and `basketCloth` are garment colours in `GARMENTS`, so both save with the genome. The builder's Dress panel gets them as *willow basket* and *cloth over the basket*.
+- **The roll.** A Gatelander with no spear or crossbow rolls a basket at 0.4 for a woman, 0.12 for a man. It comes in buff, brown or peeled willow, and six in ten carry a cloth, undyed or madder. This is drawn last, so every earlier roll of a seed is as it was.
+
+Corrections made during the session:
+- **The first handle was an arch all the way over,** so it fell away under the fist at both ends of the hand. 18 to 21 of the hand's points were inside it, where the fingertips curl under. Its crown is now level for 13 cm, and none are.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 394 checks pass** (388 after Session 1029; 6 new).
+- **Four people:** a woman with a cloth over the basket, a woman in a long skirt with apples, a man with a madder cloth, and a woman under a moss cloak thrown back.
+  - None of the hand's points are inside the handle (0 of 1,430 to 1,514). The fingers bend 0.67 to 0.73, 0.82 to 0.90 and 0.59 to 0.67 rad at their three joints, and the nearest finger point is 0.3 to 0.4 mm off the handle. The thumb is clear.
+  - Nothing is within a centimetre of the basket's sides (0 of 538 to 1,677 points tested), the nearest 11.9 to 13.5 mm off. To get there the arm was lifted 0.09 rad on the man, 0.18 and 0.24 on the two women, and 0.45 under the cloak.
+  - The basket's foot is 52 to 61 cm off the ground. It is carried by the wrist, and each person saves and loads back.
+- **A basket and a spear asked together:** the spear is carried, not the basket.
+- **The roll:** 13 of 40 Gatelanders carry one, 10 of them women and 8 under a cloth. None has a spear or crossbow, and no other people rolls one.
+- **The size:** 6,528 triangles with a cloth, 7,808 with apples, in four meshes.
+- **New pictures:** `builder-basket-front.jpg`, `-back.jpg`, `-apples.jpg`, `-grip.jpg`, `-cloak.jpg` and `-man.jpg`.
+
+### Needs eyes
+- **The arm stands out from the side.** On the cloaked woman it is lifted 0.45 rad, about 26°, because the thrown-back cloak's front edge hangs by the right hip. A woman with a full basket more often lets it rest against the hip, or carries it in the crook of her elbow. Neither is built: the basket hangs plumb and never touches the body.
+- **The basket hangs rigid from the wrist.** When the arm moves (the game, after F4), it will turn with the hand rather than swing level under it.
+- **The weave reads as coiled rows from a distance.** The stakes show only close to.
+- **The cloth is a smooth dome** with no hang over the rim and no check.
+- **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).

@@ -6,12 +6,12 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `2ae3239` | run 19: F2a merged (Sessions 880–905, read on its branch in run 18) and the tags; no new string a player reads. Before that, run 18 to `2553a6d`, run 17 from `c66473e` (the Makers' tools, F1; Findings 29 and 30) |
-| auto/systems | `72929ad` | run 19: Sessions 940–978 (skills by use, perks, the attributes at their cap, the level's marks; S978's one *Shrine of …* a god); Finding 30 is in as written; Finding 31 |
-| auto/fable-combat-resolver | `15f78f9` | run 19: Sessions 939–963 (the attack table and one resolver); menu and combat text only, clean |
+| main | `9bd7493` | run 20: combat's resolver merged (read on its branch in run 19) and the tag; no new string a player reads. Before that, run 19 to `2ae3239`, run 18 to `2553a6d` |
+| auto/systems | `a9c4351` | run 20: Sessions 982–1028 (Finding 31 in as written, the Wolf-Mother's Cloak as drafted, the Waylamp's day line, the Crown's blade topic, the Bow's perks, the double jump and the dash, the sway); clean |
+| auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
-| auto/bodies, auto/wip-spear, claude/admiring-ride-s05yoi, auto/qa, auto/critic, auto/concept, auto/design | `9769708`, `5a1b57d`, `326e8a2`, `d07d7c0`, `f22f09a`, `d6d953e`, `1330b70` | run 19: nothing ahead of main in `js/` or `index.html` (prototypes, tests and docs) |
-| auto/backlog, auto/producer, auto/wip-cloak-hang | `828885e`, `28a0473`, `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
+| auto/bodies, auto/wip-spear, claude/admiring-ride-s05yoi, auto/qa, auto/critic, auto/concept, auto/design, auto/backlog, auto/producer | `d4798ad`, `5a1b57d`, `326e8a2`, `60f13dc`, `64c865c`, `89feed1`, `ff31a02`, `2c5fccc`, `542da1c` | run 20: nothing ahead of main in `js/` or `index.html` but the producer's merge of auto/systems (read there) |
+| auto/wip-cloak-hang | `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
 | auto/fable-f1-renderer | `026c76c` | run 17: merged into main (Session 822); no player-readable text but the settings sheet's *Renderer* row |
 | claude/v2-scope | `f712a74` | run 17: docs only (the 2.0 scope, Michael's 1 B, 2 A, 3 A; the third art round) |
 | auto/ci-shards, auto/wip-sitechest-load | `ef1c187`, `6b986b7` | run 19: no merge base with main now; unchanged since run 17 |
@@ -21,6 +21,20 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/fable-co-op-door, auto/fable-world-file, auto/fable-rivers | — | no merge base with main; not read |
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
+---
+
+## Run 20 — 17 Oct 2026
+
+About 60 player-readable strings read, all on auto/systems (Sessions 982–1028); main has only the combat resolver, read on its branch last run. No findings.
+
+**auto/systems.** Finding 31 is in as written (`TALKED_LINES`, `talkedGreet`, Session 986): the guard who is talked down gives way in his people's voice. The Wolf-Mother's Cloak (Session 992) carries the draft's four lines, prompt and log word for word. The Waylamp's sight line (Session 1000) keeps *A lamp burns over the inn’s door in broad day.* and its rain clause, now said only by day and in rain, which is what the draft meant. The Crown's blade topic's labels (*The blade from the stone.*, *The licence.*, *I’ll keep it.*, *Not now.*) are plain. The perks, the double jump, the dash and the sway add no line a person says. Clean.
+
+**Michael's calls:** *The Great Gates, II* and *III* approved (16 Oct), recorded in `decisions.md`.
+
+**Built:** *Back to Their Bread*, Session 1030 on auto/quests-build (PR #367): the three descriptions after the open ending, and Varek at the fields. `backtobread` 9/9.
+
+**Drafted:** *The Great Gates, IV — Varek's two arcs* (`docs/quest_drafts.md`, on the page as `great-gates-4`).
+
 ---
 
 ## Run 19 — 16 Oct 2026
