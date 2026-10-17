@@ -2026,3 +2026,19 @@ function tickQuestWaypoints(){
     mesh.visible=opacity>0.01;
   }
 }
+
+// ── LORE BOOKS (the approved draft *The Seventh Niche*, quest_drafts.md) ──
+// A lore book carries attr:null: it is read like a skill book and grants nothing (66-hub.js reads def.attr). randomBookItem
+// rolls skill books only; the lore books come from their own places: the Mages' Guild's counter and a rare library roll.
+BOOKS.push({id:'seventh_niche', name:'The Seventh Niche', ico:'📜', attr:null,
+  pages:[
+    "THE SEVENTH NICHE\n\nA disputation, in the form the Church's schools require: the question, the case for, the case against, and the answer. Copied for the library of the Prior. The clerk who set it down did not sign it.",
+    "THE QUESTION\n\nWhether the Guest, whom the old people named An tAoi and for whom they cut a niche but no figure, was a god of theirs, or something that came in among them and that they mistook for one.\n\nThe Church has answered, and the answer is on record: the Guest is a mistake of the old culture, a word for weather or for grief that the carvers made into a figure, because they made a figure of everything. This disputation does not reopen that answer. It sets down the case against it, as the schools require, so that the answer can be seen to have been earned.",
+    "THE CASE THAT IT WAS A GOD\n\nIt is argued, first, that at the oldest shrines the six have a figure and a tool each (the hull, the sundial, the wolf, the gate, the lamp, the shuttle) and the seventh has a niche. A people who made a figure of the weather would not leave a niche empty by mistake at every shrine they built.\n\nIt is argued, second, from the Weaver's own work. A loom is not strung for the weaver. It is strung for whoever is to wear the cloth. If the loom was strung, it was strung for someone, and the old people had a name for that someone.",
+    "THE CASE THAT IT WAS AN INTRUSION\n\nIt is argued against, first, that no offering has ever been found in a seventh niche: no coin, no bone, no ribbon. The old people paid all six. What sat in the seventh was not paid. It was watched.\n\nIt is argued against, second, that the niches were not left empty. They were emptied. The chisel marks are as old as the carving, so the people who cut the niche are the people who struck it out. One does not strike out one's god. One strikes out a door that was opened, and should not have been.",
+    "THE SONGS\n\nThree phrases recur in the old carvings and in the older songs. The clerk sets them down as the library has them: the one who returns; the one who walks the shortest road; the one who dies and does not.\n\nThe Church reads them as the old people's names for the dead. The clerk observes that the dead do not return, do not walk, and do die. The Church's reading is the kinder one. It is not the more exact one.\n\nThey are not a prophecy. The old people did not prophesy; they described. Whatever these describe, they describe as something already seen.",
+    "THE ANSWER\n\nThe answer stands as the Church gave it. The Guest was a mistake of the old culture.\n\nThe clerk records one reservation, as the schools permit. The Church holds the Guest to be a mistake, and has seen fit to brick up the one chapel where the mistake was ever given a figure, and that figure was given no face. The clerk does not dispute the answer. The clerk notes only that it has been paid for twice.\n\nIn the margin, in a different ink and a plainer hand: A door you brick up is still a door.\n\nAnd below it, smaller: Weaver keep whoever reads this after me."
+  ]});
+function loreBookItem(id){const def=BOOKS.find(b=>b.id===id);if(!def)return null;const it=makeBookItem(def);it.buyPrice=30;return it;}
+// the lore books a counter keeps: the Mages' Guild has The Seventh Niche (the guild libraries); no copy at the capital's cathedral
+function loreBooksFor(h){return h&&h.type==='guild_m'?[loreBookItem('seventh_niche')].filter(Boolean):[];}

@@ -429,7 +429,8 @@ function makeBookItem(def){
           buyPrice:0, sellMult:0.1};
 }
 function randomBookItem(){
-  return makeBookItem(BOOKS[Math.floor(lootRand()*BOOKS.length)]);
+  const skill=BOOKS.filter(b=>b.attr); /* S979 — the lore books (attr:null, 20-quests.js) are not in the skill-book roll */
+  return makeBookItem(skill[Math.floor(lootRand()*skill.length)]);
 }
 
 // Pick a random herb suitable for loot drops. Strategy: pick from all herbs whose zone isn't
@@ -696,6 +697,7 @@ const LOOT_POOLS={
   // scholarly spaces, not treasuries.
   library_chest:[
     {w:35, roll:()=>randomBookItem()},
+    {w: 3, roll:()=>loreBookItem('seventh_niche')||randomBookItem()}, // S979 — The Seventh Niche, rare (the approved draft)
     {w:20, roll:()=>({name:'Worn Tome',ico:'📕',type:'junk',weight:0.6,sellMult:.4,buyPrice:0,desc:'Pages too damaged to read. The binding still has value to a collector.'})},
     {w:15, roll:()=>randomLootHerb()||{name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:'torch',def:0,tier:1,material:'Wooden',matCol:0x6a3e12,weight:1,sellMult:.3,buyPrice:8}},
     {w:12, roll:()=>({name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:'torch',def:0,tier:1,material:'Wooden',matCol:0x6a3e12,weight:1,sellMult:.3,buyPrice:8})},

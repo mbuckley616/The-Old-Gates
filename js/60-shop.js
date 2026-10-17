@@ -696,6 +696,7 @@ function renderShop(){
     if(extra.length) stock=[...stock, ...extra];
   }
   if(typeof cloaksFor==='function'){const ck=cloaksFor(currentHouse);if(ck.length)stock=[...stock,...ck];} // S552 — cloaks
+  if(typeof loreBooksFor==='function'){const lb=loreBooksFor(currentHouse);if(lb.length)stock=[...stock,...lb];} /* S979 — The Seventh Niche at the Mages' Guild */
   {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];} // S564 — the light line at the armourer, robes at a goods shop
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;
@@ -780,6 +781,7 @@ function itemDesc(it){
     const def=BOOKS.find(b=>b.id===it.bookId);
     if(!def)return'Book';
     const read=booksRead.has(def.id);
+    if(!def.attr)return read?'Lore book (already read)':'Lore book';
     const attrLbl=(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[def.attr])?ATTR_DEF[def.attr].label:def.attr;
     return read?`Skill book (already read)`:`Skill book · +1 ${attrLbl} on read`;
   }

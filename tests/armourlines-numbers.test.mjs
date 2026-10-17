@@ -87,6 +87,8 @@ const G = await page.evaluate(async () => {
   const open = shopOpen; if (shopOpen) closeShop(); return { labels, open, rows };
 });
 console.log(JSON.stringify(G));
-check('the Mages\' Guild: its head offers Browse your wares., and the counter holds the four robes and nothing of a goods shop\'s', G.labels.includes('Browse your wares.') && G.open && G.rows.length === 4 && G.rows.every(n => / (Cowl|Robe|Wraps|Under-robe)$/.test(n)), G);
+// S979 — and the guild library's lore book, The Seventh Niche (the approved draft), beside them
+const robes = G.rows.filter(n => n !== 'The Seventh Niche');
+check('the Mages\' Guild: its head offers Browse your wares., and the counter holds the four robes, the guild\'s lore book and nothing of a goods shop\'s', G.labels.includes('Browse your wares.') && G.open && G.rows.length === 5 && G.rows.includes('The Seventh Niche') && robes.length === 4 && robes.every(n => / (Cowl|Robe|Wraps|Under-robe)$/.test(n)), G);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

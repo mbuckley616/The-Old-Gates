@@ -37,8 +37,9 @@ function openBookReader(bagIndex){
       showMsg(`📖 You absorb the book's wisdom. +1 ${attrLabel}!`,'#ffd700');
       addLog('📖',`Read "${def.name}" — +1 ${attrLabel}`);
     }
+    if(!def.attr)addLog('📖',`Read "${def.name}".`); /* S979 — a lore book grants nothing */
     // v61ea: book is NOT consumed. Player retains it for re-reading + lore.
-  } else {
+  } else if(def.attr){
     showMsg('You have already absorbed this book. The text is familiar.','#a08860');
   }
 
@@ -422,6 +423,7 @@ function itemStatShort(it){
     const def=BOOKS.find(b=>b.id===it.bookId);
     if(!def) return 'Book';
     const read=booksRead.has(def.id);
+    if(!def.attr) return read ? 'Read' : 'Lore';
     const attrLbl=(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[def.attr])?ATTR_DEF[def.attr].label:def.attr;
     return read ? `Read` : `+1 ${attrLbl}`;
   }
@@ -780,7 +782,10 @@ function showBagTooltip(idx,ev){
     if(def){
       const read=booksRead.has(def.id);
       const attrLbl=(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[def.attr])?ATTR_DEF[def.attr].label:def.attr;
-      if(read){
+      if(!def.attr){
+        html+=`<div class="bt-row" style="color:#a08860;font-style:italic">Lore book${read?' · read':''}</div>`;
+        html+=`<div class="bt-row" style="color:#a08860;font-size:9px">${def.pages.length} page${def.pages.length>1?'s':''}</div>`;
+      } else if(read){
         html+='<div class="bt-row" style="color:#8a7050;font-style:italic">Already absorbed</div>';
         html+='<div class="bt-row" style="color:#7a6848;font-size:9px">Re-read for lore only</div>';
       } else {
