@@ -567,9 +567,7 @@ let blockFlashT=0;       // blue/gold vignette timer
 let blockFlashCol='';    // '#4488ff' normal, '#ffd700' parry
 // v61gj-a2 — Parry timing window. Perfect parry now requires the block to have
 // been raised within this window before the hit lands. Holding-block-and-waiting
-// no longer auto-parries. Scales with Finesse (+10ms per point per redesign doc).
-const PARRY_WINDOW_BASE = 0.20;     // 200ms base window
-const PARRY_WINDOW_FINESSE = 0.01;  // +10ms per Finesse point
+// no longer auto-parries. S1047 — the window is Guard's now: parryWindowS() (12-character.js), 160 ms + 1 ms a level.
 // v61gj-a2 — Impact recoil state. Set by shieldImpact() when a hit lands, decays
 // to zero each frame in the viewmodel animation block. Sword has its own state so
 // bare-hand blocking can recoil even without a shield equipped.

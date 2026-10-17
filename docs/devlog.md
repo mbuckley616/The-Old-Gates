@@ -23962,3 +23962,21 @@ Corrections made during the session:
 - **The weave reads as coiled rows from a distance.** The stakes show only close to.
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
+
+## v80 — Session 1047 — Guard's parry window, Resolve's block cost and Armour's def (skills and perks A, the lines left for the resolver)
+Session 953 moved the attributes to the build sheet's *1% a point or less* everywhere outside combat's resolver, and left three lines because PR #356 was rewriting the code they sit in. The resolver has merged, so this session takes them, as the sheet and combat B (`docs/design/combat.md`, *Parry window*) write them. No number here is new: each is the sheet's.
+- **The parry window is Guard's** (`parryWindowS()`, `12-character.js`): 160 ms + 1 ms a Guard level, so 165 ms at an untrained 5, 185 at a major's 25 and 260 at 100. It was 200 ms + 10 ms a Finesse point, about 230 to 250 for most characters. Finesse is out of it. `PARRY_WINDOW_BASE` and `PARRY_WINDOW_FINESSE` (`10-player.js`) are gone; `executeStrike` reads the new function. The combat page's floor of 150 ms is never reached.
+- **Resolve takes 1% a point off a block's stamina** (`resolveBlockMult()`), still floored at half. It was 5% a point, so Resolve 10 halved the cost. It is read in the five places that had their own copy: the held block's drain each second (`90-main.js`), the parry's and the held block's cost (`74-strikes.js`), and a blocked bolt in the open world and in a dungeon (`42-zone-enemies.js`, `90-main.js`).
+- **Worn armour counts × (0.75 + 0.5 × Armour/100)** (`armourSkillMult()`, in `_armour()`, `50-travel.js`): × 0.775 at 5, × 1.0 at 50, × 1.25 at 100. A spell's ward (`defBoost`) is added whole. Everything that reads armour reads `_armour()`: the blow's share (`armourShare`), the bolts' 30% and the drain. The hub's *armour* figure is the same number, rounded.
+### Verified (headless Chromium)
+- **`perkguard`** (new, the sheet's suite of that name), 9/9, each through `executeStrike` against a Bandit in the open world:
+  - the window is 160, 165 and 260 ms at Guard 0, 5 and 100;
+  - at Guard 0 a block raised 155 ms before the blow parries and 170 ms is a held block; at Guard 100, 250 parries and 270 does not; Finesse 60 at Guard 0 still holds at 170;
+  - a held block of a 40-point blow costs 14, 13, 7 and 7 stamina at Resolve 0, 10, 50 and 90;
+  - five pieces of 10 count 38.75, 50 and 62.5 at Armour 5, 50 and 100, and a 40-point blow keeps 22.5, 20 and 17.8 through them.
+- **Neighbours:** `parryclock` passes (its 0.1 s block is inside the 165 ms); and `parrydeath`, `posture` (3), `resolver`, `counters`, `attrpromise`, `guardlevel1`, `hptail`, `tells`, `challenge`, `masterslam`, `wardall`, `wardswift`, `yardplay`, `slamdamage` and `skillcurve` all pass. `resolver` and `yardplay` set their skills at 50, where armour counts as before.
+### Needs eyes
+- **The parry is tighter for a new character.** Untrained, it is 165 ms where it was about 240; a Sentinel's or a Warrior's major Guard of 25 gives 185. A parry should now feel like something Guard teaches. Whether 165 is too unforgiving for a first fight is a playtest call, and the number is the sheet's.
+- **Armour is worth less until it is trained.** An untrained wearer takes about an eighth more through the same kit than before; at Armour 100 about a tenth less. `BLOW_SHARE`'s six blows to fall were tuned at the kit's full value, which is now Armour 50.
+- **Resolve no longer halves blocking at 10.** A Sentinel who put points into Resolve for its block will feel it.
+- **Owed next:** Guard's four perks (Deflect, Bulwark, Iron wall, Second parry), Armour's *Unbowed*, *Hold the line* and *Second skin*, then the Blade, Blunt and Hand-to-hand perks.

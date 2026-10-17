@@ -326,12 +326,12 @@ function loop(now){
   if(blocking&&!isInterior()){
     const hasShield=EQ.offhand&&EQ.offhand.shieldType==='shield';
     // v61au: Resolve reduces block stamina cost. Each point of Resolve cuts
-    // 5% off the per-second drain, clamped to a 50% floor (so a maxed-Resolve
+    // (since S1047, 1%; it was 5%) off the per-second drain, clamped to a 50% floor (so a maxed-Resolve
     // character still pays half cost, never gets free blocking). Addresses
     // the playtest concern that blocking was rarely worth doing — at Resolve
     // 5 a shield-block now drains ~10.3/s instead of 13.75/s, letting a
     // Sentinel hold guard for 4-5 seconds against a multi-enemy press.
-    const _blockMult = Math.max(0.5, 1 - ATTRS.resolve*0.05);
+    const _blockMult = resolveBlockMult(); // S1047 — 1% a point, the sheet's ≤1% rule
     stamina=Math.max(0,stamina-dt*(hasShield?13.75:8.75)*_blockMult);
     if(stamina===0){blocking=false;staminaCD=2;lvAct.staminaDepleted++;}
   }
@@ -1101,7 +1101,7 @@ function loop(now){
           // stamina cost scaled by Resolve.
           const sh = EQ.offhand;
           const hasShield = sh && sh.shieldType==='shield';
-          const _resolveMult = Math.max(0.5, 1 - (ATTRS.resolve||0)*0.05);
+          const _resolveMult = resolveBlockMult(); // S1047 — 1% a Resolve point
           let finalDmg;
           if(blocking){
             const magicReduction = _blockBoost(hasShield ? (sh.magicBlock||0.40) : 0.15);

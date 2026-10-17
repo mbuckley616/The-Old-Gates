@@ -403,7 +403,7 @@ function executeStrike(e, rawDmg, now){
   // Pre-v61c7, Resolve only helped passive holding — actual block events
   // (parries, late blocks) ignored Resolve entirely. Sentinel-style builds
   // now get a real defensive payoff in sustained multi-attacker fights.
-  const _resolveMult = Math.max(0.5, 1 - (ATTRS.resolve||0)*0.05);
+  const _resolveMult = resolveBlockMult(); // S1047 — 1% a Resolve point (was 5%)
   // v61gj-a2 — Parry window. Pre-v61gj-a2 the parry branch was simply `if(blocking)`,
   // which meant holding the block button locked in a perfect parry on every incoming
   // hit (no timing required, no skill check). Bram's canon dialog ("block early, not
@@ -413,7 +413,7 @@ function executeStrike(e, rawDmg, now){
   // where N = 200ms base + 10ms per Finesse point. Holding past the window falls
   // through to the held-block branch (the previously-named "late block" branch,
   // which has been dead code since v61c6 because the parry branch always ate first).
-  const _parryWindow = PARRY_WINDOW_BASE + attrEff('finesse') * PARRY_WINDOW_FINESSE;
+  const _parryWindow = parryWindowS(); // S1047 — Guard's, 160 ms + 1 ms a level
   const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow;
   const _row = foeAttack(e); // S940 — the blow's row: whether a guard takes it, whether it parries, what it drains from your posture
   if(blocking && _justRaisedBlock && _row.parryable){

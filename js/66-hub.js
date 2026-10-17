@@ -121,7 +121,7 @@ function renderLog(){
     body.innerHTML=html;}}catch(e){}
   // v80 S131 — what you're wearing, at a glance
   try{const slots=[['weapon','Weapon'],['offhand','Off-hand'],['head','Head'],['chest','Chest'],['hands','Hands'],['legs','Legs'],['feet','Feet'],['amulet','Amulet'],['ammo','Ammo']];
-    const def=Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);const w=EQ.weapon;const atk=w&&w.atk?`${w.atk[0]}–${w.atk[1]}`:'fists';const wt=Object.values(EQ).reduce((a,v)=>a+(v&&v.weight?v.weight:0),0);
+    const def=Math.round(Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)*armourSkillMult());const w=EQ.weapon;const atk=w&&w.atk?`${w.atk[0]}–${w.atk[1]}`:'fists';const wt=Object.values(EQ).reduce((a,v)=>a+(v&&v.weight?v.weight:0),0);
     const eq=document.createElement('div');eq.style.cssText='margin:0 0 12px;padding:8px 10px;background:rgba(40,40,40,.3);border-left:3px solid #8a7a60;border-radius:3px;font-size:12px;color:#c8b898';
     eq.innerHTML=`<div style="font:600 13px Georgia,serif;color:#e8d8a0;margin-bottom:6px;letter-spacing:.05em">WORN &nbsp;<span style="font-weight:400;color:#8a7a60;letter-spacing:0">attack ${atk} · armour ${def} · ${wt.toFixed(1)} weight</span></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px 12px">${slots.map(([k,l])=>`<div><span style="color:#8a7a60">${l}</span> ${EQ[k]?(EQ[k].name||'?'):'<span style="color:#5a5040">—</span>'}</div>`).join('')}</div>`;
     body.insertBefore(eq,body.firstChild);}catch(e){}

@@ -189,6 +189,12 @@ function shadowHandMult(){return perk('stealth',100)?1.5:1;}
 function lightFootNow(){return perk('stealth',75)&&(_sneaking||_sprintNow);}
 // ×0.64 at 5, ×1.0 at 50, ×1.4 at 100: a weapon's damage and a school's power
 function skillMult(id){return id?.6+.8*skillLv(id)/100:1;}
+// S1047 — the three lines left for combat's resolver (the sheet's Guard and Armour rows and its ≤1% rule). The parry window
+// is Guard's, 160 ms + 1 ms a level (combat B: 165 ms at 5, 260 at 100; Finesse is out of it). Resolve takes 1% a point off
+// a block's stamina (it was 5%), still floored at half. Worn armour's def counts × (0.75 + 0.5 × Armour/100).
+function parryWindowS(){return .160+.001*skillLv('guard');}
+function resolveBlockMult(){return Math.max(.5,1-(ATTRS.resolve||0)*.01);}
+function armourSkillMult(){return .75+.5*skillLv('armour')/100;}
 // the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,
 // the 23rd skill (Michael's C on #357, Session 950): the fists' roll on its multiplier, a punch on an alert foe a use
 function weaponSkill(w){if(!w)return 'hand';if(w.weaponShape==='bow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}

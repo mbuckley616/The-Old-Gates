@@ -302,7 +302,8 @@ const BEAST_TYPES=new Set(['Wolf','Dire Wolf','Snow Wolf','Ash Hound','Spider','
 function _blockBoost(r){return Math.min(.9,r*_buffMult('blockBoost',1));}
 // S322 — the rest of the herbs, the same in the open world and underground: Ferrous Guard (`defBoost`) counts as armour
 // against every blow and shot; Mist Fern (`staminaCost`) lightens every swing, bash, roll and draw, not only the sprint
-function _armour(){return Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)+(_hasBuff('defBoost')?(_activeBuffs('defBoost')[0].amount||0):0);}
+// S1047 — what you wear counts × the Armour skill's 0.775 (untrained) to 1.25 (at 100); a spell's ward is added whole
+function _armour(){return Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)*armourSkillMult()+(_hasBuff('defBoost')?(_activeBuffs('defBoost')[0].amount||0):0);}
 function _stamCost(c){return c*_buffMult('staminaCost',1);}
 // S325 — max stamina without what an active Stonecress lends (the save keeps this; buffs don't survive a load)
 function _baseMaxStamina(){return maxStamina-ACTIVE_BUFFS.filter(b=>b.type==='maxStamBuff').reduce((a,b)=>a+(b._stamAdd||0),0);}

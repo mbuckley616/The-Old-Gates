@@ -1396,7 +1396,7 @@ function tickZoneBalls(dt,sc){
         // 0.40 if not specified.
         const sh = EQ.offhand;
         const hasShield = sh && sh.shieldType==='shield';
-        const _resolveMult = Math.max(0.5, 1 - (ATTRS.resolve||0)*0.05);
+        const _resolveMult = resolveBlockMult(); // S1047 — 1% a Resolve point
         let finalDmg;
         if(blocking){
           const magicReduction = _blockBoost(hasShield ? (sh.magicBlock||0.40) : 0.15);
