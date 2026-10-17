@@ -23113,3 +23113,18 @@ Corrections made during the session:
 - **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
 - **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
+
+## v80 — Session 1038 — `skillcurve`: the fight's Bandit taken out of the run's lane (red twice on PR #384, QA)
+The CI read since 00:52 found one red run: auto/producer's 4262d1b (PR #384, the Systems sessions 940–1013 Michael approved, merged onto main), whose shard 6 failed `skillcurve` twice. The check was *the run at Athletics 5 and 100 … ×1.097 ±2%*, the same check that went FLAKY on auto/systems on 16 Oct (×1.075). Main does not have the suite, so it was red only where the Systems merge is, and it would have held PR #384 red.
+
+On 4262d1b here it failed one boot in two (4.088 and 4.39 a second, ×1.074). The speed rule has no roll in it (`3.83 + .37 × skillT('athletics')`, `90-main.js`), so I traced the run frame by frame. The suite drives the run from S.x − 2 along +x through S, which is where its fight had put a Bandit; the fight's `finally` set `e.hp = 0` and left him in `ZONES.world.enemies` and in the scene. The player was pushed round the body: the two runs ended 0.84 m apart in z, and the Athletics-100 run lost up to 4 cm of its 2.2 m, which is the whole 2%. Where the body lay depended on where the alert Bandit had moved during the fight, so it changed from boot to boot. The jump is measured at S as well.
+
+The fix is the test's. The fight's `finally` now removes the Bandit, body and all, the way `dmgnums` removes its foe. A new check says no live foe stands within 6 of the lane and the run keeps its line (drift under 1 cm). The ratio check and its ±2% are unchanged. The suite is only on auto/systems and PR #384, so the commit cannot ride `auto/qa`: its add of the file would collide with #384's copy. It is on `auto/qa-skillcurve` (ff40184), one file, cut from #384's head. auto/systems has the same copy of the file, so the commit applies there too.
+
+The same read: green on auto/quests, auto/systems, auto/backlog, auto/qa, auto/bodies and main since 00:52, and five runs still going at 06:52. The runners are short: auto/systems' 06:04 run had nine shards still queued. The FLAKY annotations were not read this time. `q7world` and the rest of `docs/qa/flaky.md`'s owed list are still owed.
+### Verified (headless Chromium)
+- Before, on 4262d1b: `skillcurve` 1 of 2 red (×1.074). Three traced runs: z drift 0.8 m between the two runs, the Bandit 1 m behind the player at hp 0.
+- After, on ff40184: 4 of 4 green in the old look and 1 of 1 in the new, each run 4.085 and 4.48 a second, ×1.097 exactly, drift 0, no foe left near the lane.
+### Needs eyes
+- `auto/qa-skillcurve` has to be merged into PR #384's branch (or auto/systems) by the producer; until then #384's shard 6 stays red about one run in two.
+- Whether a dead foe's body should push the player at all is a game question, not this suite's; nothing here says it is wrong.
