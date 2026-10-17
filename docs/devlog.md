@@ -23221,6 +23221,154 @@ Corrections made during the session:
 - **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
 
+## v80 — Session 1031 — The Gatelands' perched stone (card F8, prototype only)
+The last small mystery on OG-124's panel 6 that needs nothing from the canon or the quest writer first: "an odd rock". (Strange tracks need someone to have made them, which is the bodies builder's; the unfinished camp is close to the abandoned expedition already built; the lone grave and the pilgrims' rest wait on the canon.) DECISION #389, where the kit lives in the game, is still pending, so this run stayed in the prototypes. It is `gatelandsErratic` in `docs/prototypes/levelup/places.js`, at `places.html?place=erratic`.
+
+The odd rock is a real kind of thing: an erratic on a pedestal, after the Norber erratics in the Dales and the boulders on the Burren's pavement. The ice dropped a boulder of a dark stone that is not the hill's on a bed of limestone. The rain has since taken the pavement down by half a metre everywhere except under the boulder, which kept a column of it dry, so the boulder now sits on a pale stalk of the old surface. The place gives no reason for it beyond that, and whether it is a lead is the quest writer's. It is built at true size on a hill rising at 1 in 14 from a green road:
+- **The pavement:** about 250 clints in two sets of joints at 43° to the road. The main joints run unbroken and each strip has cross joints of its own. Every clint is a block 1 m deep whose top is the old surface, a little domed and tilted at its own small angle, and turned up to 2.3° off the joint. The grykes between them are 0.12 to 0.26 m wide and 0.85 m deep, with hart's-tongue ferns in them, and the pavement runs out into the turf at a ragged edge where the grykes fill with grass.
+- **The stone:** a boulder 2.2 to 2.5 m high and about 3.4 by 2.6 m across, its sole flat on a waisted pedestal of the pale limestone. The pedestal's top is level, 0.45 to 0.5 m over the highest pavement round it, so it stands 0.5 to 0.8 m on the slope. The boulder overhangs it all round, so the daylight shows under it. A smaller stranger of the same stone and three cobbles lie on the clints nearby.
+- **The land:** a lace wall of single limestone slabs across the hill above, laid on whatever is under each and with daylight through it; hazel grown up out of the grykes to the east in autumn yellow; a hawthorn on the turf below, bent 2.6 m downwind by the west wind and red with haws; and ash by the road.
+- **The size:** 37,100 to 38,100 triangles in 11 meshes.
+
+The views are `stone` (from the path below), `under` (crouched by it, the pedestal's waist and the overhang), `pavement` (from the clints above, down over the grykes) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The pavement's edge** first stood up out of the turf: the grykes' floor began to drop before the last clints, so the outermost blocks showed their sides up to 0.6 m. The drop now starts inside the second row, and the edge clints stand 0.08 m proud of the turf.
+- **The clints** first read as a tiled floor of near-equal blocks. Their sizes now range from 1.0 to 3.0 m by 0.7 to 2.9 m, and each is tilted and turned a little.
+- **The pedestal** was first cut to a fixed height over the surface at its middle, which left it 0.17 m over the clints on its uphill side. Its top is now set from the highest pavement round it.
+- **The wall's slabs** were first laid in fixed courses, so a short slab left a gap under the next course and some slabs floated. Each slab now rests on the highest of what is under it, and a last pass fills any notch too narrow for a whole slab.
+- **The boulder** was first nearly black and faceted. It is a lighter brown-grey now, with smooth normals.
+- **Two of the check's probes:** the wall's first sampled across it every 0.25 m and fell between slabs 0.2 m thick, reading whole stretches as missing; it now samples every 0.05 m. The overhang's first cast against the pedestal came from 6 m out and met an uphill clint; it now starts 2 m out.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 223 of 223 pass** (216 after Session 1026). Seven checks are new. The stone's `stone` view and its `under` view at dusk render with no page errors, and five checks run over three keys:
+  - **The builds:** each key builds the same twice, with 37,092 to 38,052 triangles in 11 meshes, 226 to 262 clints and 15 trees.
+  - **The stone:** the boulder (2.21 to 2.53 m high) is met 0 m over its pedestal's flat top. The pedestal is 0.5 to 0.8 m over the clints round it at the 7 or 8 of 8 points that land on a clint, and the boulder overhangs it 0.34 to 0.86 m in all eight directions.
+  - **The pavement:** the clints' tops are −0.03 to 0.03 m off the old surface at their middles. 141 to 164 grykes inside the pavement are 0.12 to 0.26 m wide and 0.84 m or more deep.
+  - **The wall:** it is 0.99 to 1.37 m high at 120 points, with daylight through 20 to 22.5% of the rays sent across it.
+  - **The walk:** 148 quarter-metres from the road up onto the pavement and round the stone, 117 or more of them on the clints. There is a foothold (the highest ground within 0.2 m) under each, no step is over 0.10 m, no gryke on the line is wider than a quarter-metre sample, and there is 0.84 m or more clear at the hip and the head, with nothing over the head. The hawthorn leans 2.6 m.
+- **Pictures:** `places-erratic-stone.jpg`, `-under`, `-pavement`, `-far` and `-stone-dusk`.
+### Needs eyes
+- **The clints are still boxes.** Real clints have rounded shoulders, runnels down their tops and grykes that widen at the top, and the kit's rock texture reads as marble on them. Those want F3's rock work before the pavement goes into the game.
+- **The boulder's texture** shows the rock texture's strata as rings on its crown. A granite or greywacke texture of its own would read as a different stone at a glance, which is the point of the place.
+- **The land round the pavement** is plain turf to a flat horizon, as at the other places. On the Burren the pavement runs on in terraces, which is the land's (F3).
+- **Whether the stone is a lead,** and whether anything is under it or carved on it, is the quest writer's. As built it is only odd.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks (whose, the bodies builder's) and the unfinished camp.
+
+## v80 — Session 1032 — The Mark's unfinished camp (card F8, prototype only)
+The next of OG-124's small mysteries (panel 6: "an unfinished camp"). It is `markUnfinishedCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=unfinished`. The abandoned expedition (Session 1023) is a camp that was lived in and left in haste. This one was never finished. It is set in the Mark so that snow can tell the story: snow has fallen on everything since, and there is no track in it, in or out. Who stopped here, and why they never came back, is left to the quest writer.
+
+It is built at true size in a spruce clearing on ground rising gently from a road, with the road only a shallow trough under the same snow:
+- **The tent:** a ridge tent's back pole stood 1.9 m and guyed to a peg behind, with the 2.6 m ridge pole leaned from its top to the snow in front. The front pole lies beside it, the canvas is still rolled and strapped at the back pole's foot, the six pegs and the mallet are laid out, and a red bedroll is half unrolled.
+- **The fire:** a ring of nine stones round birch bark under a cone of nine kindling sticks, laid and never lit, with snow on its tip. The kettle stands by it.
+- **The sledge:** a pulk with its load lashed under a cover and its shafts down on the snow, and one sack taken off beside it.
+- **The wood:** the axe is left in the chopping round, six billets are split, and a heap of brush has been gathered.
+- **The snow:** 2 to 6 cm lies on everything that is out. The clearing is one smooth field with no trodden snow anywhere, and 46 spruce stand round it from 9 m out.
+- **The size:** 22,200 to 22,300 triangles in 13 meshes.
+
+The views are `camp` (from the road), `tent` (by the fire, to the pole and the canvas), `fire` (knelt by it) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The poles, the stones and the sledge** first rendered black. Their kit textures need `markTextures()`, which this builder did not call, and the stones still read dark with it. They are plain colours now, and `millMats()` is called first as the other places do.
+- **The camp view** first showed the camp small from the road, so its field of view is now 38°.
+- **Two of the snow check's probes** first met the kettle's bail and the axe head, which lie over their caps. They now probe beside them.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 230 of 230 pass** (223 after Session 1031). Seven checks are new. The camp's `camp` view and its `fire` view at dusk render with no page errors, and five checks run over three keys:
+  - **The builds:** each key builds the same twice, with 22,222 to 22,299 triangles in 13 meshes and 46 spruce.
+  - **The tent:** the back pole is 1.9 m high, the ridge pole's top is 0 m from it and its foot 0 m off the snow. No material in the camp emits light.
+  - **The snow on things:** all 19 things lying out are met first by snow from above, −0.009 to 0 m from their tops. The 8 things laid down are −0.001 to 0.032 m off the snow.
+  - **No tracks:** there is no trodden ground anywhere. Round the fire the clearing's snow varies by no more than 0.022 m between half-metres, and the road is a trough 0.08 to 0.15 m deep under it.
+  - **The walk:** 46 half-metres in from the road and round the camp. There is ground under each, no step is over 0.07 m, and there is 0.82 m or more clear at the hip and the head, with nothing over the head or underfoot.
+- **Pictures:** `places-unfinished-camp.jpg`, `-tent`, `-fire`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **The snow on the brush heap** is one white disc, and from above it reads as a patch of cloth. Smaller caps on the sticks would be truer.
+- **The things are plain shapes in flat colours** (the bedroll, the canvas, the pulk), not the kit's textures. They want the bodies builder's cloth and the kit's wood before the camp goes into the game.
+- **The spruce** are the cabin's and the logging camp's cones. Close to the camp, the nearest one fills the far view.
+- **No tracks is the tell.** In the game, the player's own footprints (`FP`) will be the first marks in this snow. Whether a second line of prints, leading away and snowed half over, should be added is the quest writer's call, and the prints would be the bodies builder's.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), and strange tracks.
+
+## v80 — Session 1037 — The new kit's file in the game, js/38-kit.js (card F6)
+Michael answered DECISION #389 with A: the new kit lives in the game in a new file, `js/38-kit.js`. This session makes the file and brings the first kind into it: the Gatelands kit, the concept run's buildings (Sessions 834 to 964), which the prototype has checked longest.
+
+What is in the file:
+- **Its place:** a tag after `34-creatures.js`, before the legacy zones. It loads in both looks, and the code is only called on `?look=new`. Nothing in it touches `THREE` while the page loads, so on r128 it costs one object. Everything is inside one function, so the kit's short names (`box`, `face`, `stack`, `building`, …) stay out of the shared scope. The one global is `PKIT`.
+- **The base:** the seeded stream keyed by a string, `mergeByMaterial`, and the surfaces from `common.js` (plaster, rubble, ashlar, thatch, slate, wood). Each surface is painted the first time a material asks for it, not all at boot. The vendored three.js has no addons, so the file has its own small `mergeGeometries` for what the kit makes: position, normal and uv, not indexed.
+- **The Gatelands kit:** `PKIT.gl.building(plan)`, the eight plans in `PKIT.gl.PLANS` (cottage, forge, temple, guild hall, farmhouse, townhouse, merchant's house, warehouse) and `PKIT.gl.lot(street, i)`, the coloured towns of #280 A. They are copied line for line from `pieces.js` by a script, with three changes:
+  - The prototype's `SCALE` is `PS` here, since `SCALE` is the game's. The two agree: a door is 2.05 m.
+  - Textures carry no colour space. The game runs 0.170 with colour management off and a linear output (`05-compat.js`), so a texture is read as r128 read one, like the game's own.
+  - A plan with no stream of its own takes the kit's stream, not the prototype page's shared `rnd()`.
+
+Nothing in the world builds from it yet. The next session is the Gatelands' generated towns on the new look: lots from `PKIT.gl.lot`, with solids, doors and rooms to match the walls. The prototype pages stay the drawing board: a piece is drawn and checked there, then copied here.
+
+CLAUDE.md's code map does not list the file yet, and its count of script files is now 45. The routine may change CLAUDE.md only to add a gotcha, so that edit is the producer's.
+
+### Verified (headless Chromium)
+- **`tests/kit`: 11 of 11 pass.**
+  - **Old look:** `PKIT` is there, it has painted no surfaces, and there are no page errors.
+  - **The line-up:** the six plans build to exactly the triangles and sizes the prototype recorded in `pieces-gatelands.json` (cottage 1,826, hipped cottage 1,472, farmhouse 2,144, townhouse 5,033, merchant's house 4,426, warehouse 9,084). Each is one mesh per material, position, normal and uv only, in 10 to 14 draws. The first build painted six surfaces, and the line-up took 770 ms.
+  - **The other plans:** the forge (1,390 triangles), the temple (4,512) and both guild halls (9,873) build, each with a door to stand at. The kit's door is the game's, 2.05 m.
+  - **Lots:** eight lots of a street each build the same twice, lit windows and all, and no two neighbours share a colour.
+  - **In the world:** a street of six lots stood 30 m ahead in the open world is drawn: 78 more draw calls, exactly the sum of its buildings', and 27,774 triangles.
+- `looknew` passes. `parsecheck` covers 45 files.
+- **Picture:** `docs/prototypes/kit-street-ingame.png`, the street in the game at 11:00.
+### Needs eyes
+- **The colours** are the game's colour rule, not the prototype's tone curve. The renders look close in the picture, but the reds and the slate may sit darker or lighter on Michael's screen than on the prototype page.
+- **The surfaces** are painted on the main thread the first time they are used, which took about 0.7 s here. In the game that will be the first Gatelands town on the new look. If it shows as a hitch, they can be painted during the load.
+- **The street stands on raw ground** with its footing sunk 0.8 m. It has no solids, so the player walks through it, and its doors lead nowhere. That is the next session's work.
+
+## v80 — Session 1038 — Card F11: the Mark's caravel, by #347's answer (prototype only)
+Michael answered DECISION #347 on 15 Oct with A: when a hull takes another island's dress, the island's rig goes forward and the class's own stays aft. Nobody had built to it since. The Gatelands caravel already defaulted to that rig (`redonda`: square fore and main, the lateen mizzen), so it needed nothing. This session builds the Mark's caravel to the same rule. It is `markCaravel` in `docs/prototypes/levelup/ships.js`, at `ships.html?ship=markcaravel`.
+
+It is `aurenneCaravel` with `o.dress: 'mark'`: the very lines, rail, castle, cabin and wheel, in the Mark's cutter's dress (Session 871):
+- **The hull:** red-brown below the water and tarred black above, with the gilt wale. The castle's walls are tarred and its panels oak.
+- **The sails:** the cutter's tanned cloths, or its red and black stripes with `&stripe`.
+- **The head:** the cutter's gilt beast's head on the stem head (`&nohead` leaves it off). Its neck sits on the stem's top, and its crown is 1.5 m over the sheer, above the bowsprit.
+
+The rig is the Mark's gaff forward. The fore and the main each carry a gaff sail on an upright mast, and the mizzen on the castle keeps the caravel's lateen:
+- **The booms** are 2.15 m over the deck, as the cutter's are, so a person walks under them. The fore's ends 0.8 m short of the main mast, and the main's ends 1.1 m short of the castle's bulkhead, clear of the ladders.
+- **The gaffs** are peaked at 28°. The fore's peak is 1.83 m under the stay from the main's head to the fore's.
+- **The rigging:** shrouds stand on both sides of a gaff mast, and each sail has a peak halyard and a sheet to the deck. The mainstay runs from head to head and the forestay from the fore's head to the bowsprit, as on the Gatelands caravel.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and four builds checks are new.
+  - **Renders:** the `quarter` and `castle` views render with no page errors.
+  - **The builds:** 3 keys, plain and striped, each build the same twice: 31,934 triangles in 12 meshes. The lines, rail and castle are exactly Aurenne's caravel's.
+  - **The hull:** closed (0 of 1,080 rays from inside get out). The walk from the castle's ladders to the bow is clear at all 72 points on either side. Down the middle, the booms' undersides are 2.07 m over the deck. The cabin has 2.09 m of headroom and its door is clear for 2.7 m.
+  - **The rig:** two gaffs and one lateen. The booms end short of the next mast and of the castle by the margins above. Every sail's foot is 2.25 m or more over its deck, and no sail comes within 0.33 m of a mast not its own.
+  - **The head:** met from above on the stem's line, 1.5 m over the sheer.
+- **Pictures:** `ships-markcaravel-quarter.jpg`, `-side`, `-deck`, `-castle` and `-quarter-stripe`.
+
+A correction to the check during the session: its new probe down the middle of the deck first started inside the hatch's 0.3 m coaming, so it read 0.3 m of headroom. The hatch is now left out of it.
+### Needs eyes
+- **The gaff sails are tall and narrow** on the caravel's short spacing between masts. A Baltic schooner's look, which may or may not read as the Mark's.
+- **A tarred black hull with a lateen aft** mixes the two islands at a glance. That is what #347 A asks, but whether the silhouette still names the Mark is worth a look.
+- **Still owed by #347:** the cog and the galleon in the Mark's and Aurenne's dress.
+
+## v80 — Session 1039 — Card F11: the Mark's cog, by #347's answer (prototype only)
+The second hull built to Michael's A on DECISION #347. Option A's own text names this one: "a Mark cog with one gaff main in place of the square sail". It is `markCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'mark'`), at `ships.html?ship=markcog`.
+
+It is the very lines, waist rail, castles, cabin, wheel and cargo of the Gatelands cog (Session 892), in the Mark's cutter's dress:
+- **The hull:** red-brown below the water and tarred black above, the sheer strake and the castles' walls too. The wale and the castles' cappings are gilt.
+- **The sails:** the cutter's tanned cloths, or the red and black stripes with `&stripe`.
+- **The rig:** the yard, the square sail and its braces and sheets are gone. In their place on the same mast is one gaff main:
+  - The boom is 2.15 m over the deck, so a person walks under it, and ends 1.1 m short of the aftcastle.
+  - The gaff's throat is 7.6 m up, 1.95 m under the fighting top, and the gaff is peaked at 28°.
+  - The sail has a peak halyard and a sheet to the deck. The shrouds, forestay and bowsprit stay are the cog's.
+- **No beast's head:** the cog's stem head stands inside the forecastle's walls, where a head would be hidden.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `fore` views render with no page errors.
+  - **The builds:** 3 keys, plain and striped, each build the same twice: 40,808 to 40,844 triangles in 10 meshes. The lines, rail and castles are exactly the Gatelands cog's.
+  - **The hull:** closed (0 of 900 rays get out). The walk is clear at all 100 points, down either side and down the middle (the hatch left out), with 2.07 m under the boom.
+  - **The rig:** one gaff. The boom is 2.15 m up, the throat 1.95 m under the top, and the sail's foot 2.25 m over the deck. The sail is 1.02 m or more clear of both castles' edges.
+- **Pictures:** `ships-markcog-quarter.jpg`, `-side`, `-fore` and `-quarter-stripe`.
+
+A correction to the new check during the session: its first clearance probe cast rays straight along the ship at the castles' heights, and they only grazed the bellied sail's edge, so it read 4.9 m. The probe now measures the sail's bounds against both castles.
+### Needs eyes
+- **The sail is small for her.** One gaff between the castles carries less cloth than the cog's square sail, and she reads under-canvassed. A topsail over the gaff, as the cutter has, would be the next step if Michael wants more.
+- **Still owed by #347:** Aurenne's cog (one lateen), and the galleon in the Mark's and Aurenne's dress.
 ## v80 — Session 1038 — `skillcurve`: the fight's Bandit taken out of the run's lane (red twice on PR #384, QA)
 The CI read since 00:52 found one red run: auto/producer's 4262d1b (PR #384, the Systems sessions 940–1013 Michael approved, merged onto main), whose shard 6 failed `skillcurve` twice. The check was *the run at Athletics 5 and 100 … ×1.097 ±2%*, the same check that went FLAKY on auto/systems on 16 Oct (×1.075). Main does not have the suite, so it was red only where the Systems merge is, and it would have held PR #384 red.
 
@@ -23492,3 +23640,143 @@ What is built (in `makePerson`):
 
 ### Needs eyes
 - **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
+## v80 — Session 1044 — Card F11: Aurenne's cog, by #347's answer (prototype only)
+The third hull built to Michael's A on DECISION #347, and the last cog. Option A's text names it: "an Aurenne cog with one lateen". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait. This session touches only the prototypes: `ships.js`, `ships-view.js` and `ships.check.mjs`. It is `aurenneCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'aurenne'`), at `ships.html?ship=aurcog`.
+
+It has the very lines, waist rail, castles, cabin, wheel and cargo of the Gatelands cog (Session 892), in the caravel's dress (Session 890):
+- **The hull:** tallowed white below the water and oiled above. The sheer strake and both castles' walls are blue, and the wale and the castles' cappings gilt. It stays clinker, as the cog is.
+- **The sail:** white with the sun-star in gold, or plain with `&nostar`.
+- **The rig:** the yard, the square sail, its braces and its sheets are gone. In their place is one lateen, the caravel's main at the cog's size:
+  - The mast is raked 4° forward, as the caravel's lateen masts are, 0.88 m at its head. The fighting top is kept and rides on the raked mast.
+  - The yard is slung to starboard, 0.36 m off the mast's centre, from a sling 8 m over the deck at 56°. It runs 6.5 m forward to a tack 2.6 m over the deck and 10 m aft to a peak 16.3 m up.
+  - The clew is 2.5 m over the deck, 1.4 m forward of the aftcastle. So the whole sail stands between the castles, and no one on either castle walks under it.
+  - The tack is lashed to the forecastle's edge beam and the sheet led to the waist's rail, both above head height over the walk. The halyard runs down the mast.
+  - The shrouds stand on the weather side only, as the caravel's do. The forestay and the bowsprit stay are the cog's, from the raked mast's head.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `fore` views render with no page errors.
+  - **The builds:** 3 keys, with and without the star, each build the same twice: 40,620 to 40,656 triangles in 12 meshes. The lines, rail and castles are exactly the Gatelands cog's, and the star changes only the sail.
+  - **The hull:** closed (0 of 900 rays get out), with clinker laps of 0.024 to 0.033 m. The walk is clear at all 96 points, down either side and down the middle (the hatch and the mast left out), with 2.09 m of headroom and 0.67 m clear at the sides.
+  - **The rig:** one lateen to starboard. Every point of the sail and the yard is 2.5 m or more over the deck under it. The sail is 0.42 m or more clear of both castles' edges. The yard is 0.64 m clear of the top and 0.13 m clear of the tapered mast.
+- **Pictures:** `ships-aurcog-quarter.jpg`, `-side`, `-fore`, `-deck` and `-quarter-nostar`.
+
+A correction made during the session: the first build slung the yard 0.30 m off the mast, as the caravel's is. On the cog's thicker mast (0.2 m at the foot) that left 1 cm between the yard and the mast. The yard is now 0.36 m off, and the check measures the mast's taper rather than its foot.
+### Needs eyes
+- **The peak stands 16.3 m up**, 5 m over the cog's masthead, as the caravel's lateens stand over theirs. A cog's short, deep hull under so tall a sail may read top-heavy.
+- **The fighting top is kept** as the cog's own mark. A lateen's yard is hoisted from under it, which works, but a real lateener would rarely carry one.
+- **Still owed by #347:** the galleon in the Mark's and Aurenne's dress.
+
+## v80 — Session 1045 — Card F11: the Mark's galleon, by #347's answer (prototype only)
+The fourth hull built to Michael's A on DECISION #347. Option A's text reads: "a Mark galleon gaff-rigged on the mizzen and square forward, with tanned sails". That is the galleon's own rig, the one the Gatelands galleon already carries (Session 896): square fore and main with topsails, a gaff mizzen, a spritsail. So by the rule (the island's rig forward, the class's own aft) only the dress changes, and nothing new is asked. It is `markGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'mark'`), at `ships.html?ship=markgalleon`.
+
+What changes is the dress, the Mark's cutter's (Session 871):
+- **The hull:** red-brown below the water and tarred black above. The castles' walls, the transom and the twelve gun-port lids are tarred too, and the wale, the bands, the window heads and the lanterns gilt.
+- **The sails:** every sail is in the cutter's tanned cloths, or the red and black stripes with `&stripe`. The Gatelands galleon's plain sails take a corner of the harp's map; the Mark's have no badge, so each sail is mapped on the whole cloth, and the stripes run full height on every sail.
+- **No beast's head:** the galleon's stem head stands inside the forecastle's walls, as the cog's does, where a head would be hidden. The Mark's cog (Session 1039) made the same call.
+
+The lines, castles, cabin, wheel, ports, rig and hatches are the Gatelands galleon's, built by the same code.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `deck` views render with no page errors.
+  - **The builds:** 3 keys, plain and striped, each build the same twice: 43,216 triangles in 10 meshes, exactly the Gatelands galleon's count. Her sections, rail, castles, ports, sails and boom are exactly the Gatelands galleon's.
+  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
+  - **The sails:** the tanned map reaches its full extent (1.0) on the sails' UVs.
+- **Pictures:** `ships-markgalleon-quarter.jpg`, `-side`, `-castle` and `-quarter-stripe`.
+### Needs eyes
+- **A tarred black galleon with tanned square sails** may read as the Gatelands galleon in mourning rather than as the Mark's. #347's text keeps her rig, so her silhouette is the Gatelands galleon's, and only the colours name her.
+- **The port lids are tarred on a tarred hull** and almost vanish. Gilt or red lids would show the gun deck, if Michael wants it seen.
+- **Still owed by #347:** Aurenne's galleon (square forward, lateens on the main and the mizzen).
+
+## v80 — Session 1046 — Card F11: Aurenne's galleon, by #347's answer (prototype only)
+The last hull owed by Michael's A on DECISION #347. Option A's text reads: "an Aurenne galleon square forward with lateens on the main and the mizzen". It is `aurenneGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'aurenne'`), at `ships.html?ship=aurgalleon`. With it, all five classes have all three islands' dresses.
+
+The lines, castles, great cabin, ports, hatches and wheel are the Gatelands galleon's (Session 896), in the caravel's dress (Session 890):
+- **The hull:** tallowed white below the water and oiled above. The top two strakes, the castles' walls and the twelve gun-port lids are blue, and the wale, the bands, the window heads and the lanterns gilt.
+- **Forward:** the fore mast is square, exactly the Gatelands galleon's course and topsail, with the sun-star on the course. The spritsail is kept. The topsail and the spritsail are plain cloth.
+- **The main:** a lateen to starboard, the caravel's main at the galleon's size.
+  - The mast is raked 4° forward, and the galleon's round top is kept on it.
+  - The yard is slung 8.5 m over the deck at 56°. It runs forward to a tack 2.6 m over the deck, lashed by the fore mast's foot, and 11 m aft to a peak 17.6 m up over the quarterdeck.
+  - The clew is 2.5 m over the deck, 1.4 m forward of the quarterdeck, and is sheeted to the waist's rail.
+- **The mizzen:** a lateen to port on the quarterdeck, the caravel's mizzen. The mast is raked 4°, and the yard slung 5.4 m over the quarterdeck at 50°. The tack is lashed to the quarterdeck's edge rail, and the clew is over the transom, sheeted to the taffrail. It replaces the Gatelands galleon's gaff and boom.
+- **The stays and shrouds:** each lateen has its shrouds on its weather side only, as the caravel's do. The stay from the main's head to the fore's follows the raked mast.
+
+A correction made during the session: the first pictures showed a sliver of the sun-star's ray in a corner of the fore topsail and of the spritsail. Those sails take a corner of the star sail's map (as the Gatelands galleon's plain sails take a corner of the harp's), and the star's long rays reach 0.26 of the map in from the corner. Aurenne's plain sails now take the first 0.18 of the map, which is clean cloth.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `castle` views render with no page errors.
+  - **The builds:** 3 keys, with and without the star, each build the same twice: 42,600 triangles in 11 meshes. Her sections, rail, castles, ports and fore course are exactly the Gatelands galleon's, and the star changes only the sails.
+  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
+  - **The rig:** one square mast and two lateens, the main to starboard and the mizzen to port. Every point of every sail and yard is 2.2 m or more over the deck under it, the castles' decks where it is over them.
+  - **Clearances:** the main's lateen is 1.06 m aft of the fore's course, 0.69 m off the fore mast and 2.78 m off the mizzen mast. The mizzen's is 4.53 m off the main mast. The yards are 0.09 m off their own masts, and the main's yard 0.29 m off the top.
+- **Pictures:** `ships-aurgalleon-quarter.jpg`, `-side`, `-castle`, `-deck` and `-quarter-nostar`.
+### Needs eyes
+- **The main's peak stands 17.6 m up**, over a 22 m hull. The lateens make her read more as a big caravel than as a galleon, which is what #347 A asks, but the class may want its topsail-high look back.
+- **Three stars:** one on the fore course and one on each lateen, whose map is laid out about each sail's middle (the caravel shows one per lateen too). The topsail and the spritsail are plain. One star, on the main alone, would read quieter.
+- **#347 is built out.** All five classes in all three dresses wait on F11's parents in v2-scope §3 to go into the game.
+
+## v80 — Session 1052 — Card F8: the Gatelands' ruined tower house, taken by a band (prototype only)
+OG-121's card names six kinds of place that are not gates. One of them was still unbuilt: "ruined forts and settlements: collapsed keeps with lower levels, some taken by bandits". Its lairs add "escape routes". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait, and this session touches only the prototypes: `places.js`, the new `places-towerhouse-view.js`, `places-view.js` and `places.check.mjs`. It is `gatelandsTowerHouse` in `docs/prototypes/levelup/places.js`, at `places.html?place=towerhouse`.
+
+The keep is the island's own kind, a tower house in its bawn, built to the person at a metre a unit:
+- **The bawn:** a rubble wall 0.9 m thick and 3.2 m high round a yard 30 by 25 m, with a gateway of 3 m on the south and a breach on the east. A round flanker at the south-west corner stands to 5 m. In the yard are a lean-to of poles and hides against the west wall, a cart with a broken wheel, a fighting platform by the gate with its ladder, and a hurdle dragged aside from the gateway.
+- **The tower:** 11 by 8.5 m, walls 1.5 m thick, 16 m to its ragged head on the north and west. The south-east corner has fallen to 6.6 m, just over the vault's back, and its stones lie heaped below. The door is round-headed, 1.2 by 2.6 m in dressed stone. There are slits to the ground floor, windows to the three storeys above, and the corbels of the lost floors at 9.6 and 12.7 m. The storeys above the vault are out of reach, as #345 A left the round tower's door.
+- **The hall:** 8 by 5.5 m under a barrel vault springing at 3 m to 5.75 m, flagged. It holds the band's camp: three straw pallets, a fire on the flags with a pot on a tripod, a table of boards on two kegs with a bench, a rack of spears and a bow, and plunder in the corner. The stair's well is open along the north wall, 4.7 by 1.3 m, with a parapet on its open side.
+- **The cellar:** down 16 rises of 0.194 m on treads of 0.28 m. It is the tower's whole floor again, 2.5 m under the flags (2.25 m under the two beams). It is the band's store: crates, kegs, sacks and a strongbox.
+- **The souterrain:** the Gatelands' own underground passage, the escape route. It is drystone walls under lintels, 1.4 m wide and 2.2 m high, broken out through the cellar's west wall. It runs 15 m west under the bawn's wall, 0.5 m or more under the turf, with a lantern halfway. It ends in a stair of its own, 12 or 13 rises up a stone-lined pit in the slope 5 m outside the bawn, under a thorn, with its cover slab dragged aside.
+- **`o.held`** (the default): the band is there, the fire burning and three lanterns lit. False (`&empty`): the camp is cold and dark, and inside only your torch lights it.
+
+Who the band are, what they took and whether they fight is the systems builder's and the quest writer's. The place only shows that someone holds it. It is 64,300 triangles in 23 meshes.
+
+Two corrections made during the session. First, the souterrain's floor stopped at the tower's outer face, leaving the 1.5 m through the cellar's wall without a floor; the check's walk found it. Second, the stair's foot had only 0.4 m of floor before the cellar's west wall. The well now runs 0.3 m further east, which leaves 0.7 m at the foot.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: all pass.** Two render checks and seven builds checks are new.
+  - **Renders:** the `tower` view and the empty `hall` render with no page errors.
+  - **The builds:** 3 keys, each the same twice: 64,344 to 64,356 triangles in 23 meshes.
+  - **The walk:** 264 quarter-metres from the slope through the gateway and the door, round to the stair's head, down to the cellar, out along the souterrain and up its pit onto the slope. Every point has a floor on its line, no step is over 0.198 m, there are 2.2 m of headroom or more, and 0.51 m clear at the hip and the head.
+  - **The stairs:** 16 rises of 0.194 m down to the cellar, and 12 to 13 rises of 0.19 to 0.198 m up the pit, measured on the treads.
+  - **Openings:** the door is 1.2 m wide and 2.5 m clear over the floor, and the gateway is 3 m.
+  - **The vault:** over all 60 points of the hall outside the well, and over the well too, its soffit 4.03 to 5.74 m up.
+  - **The ruin:** the north-west corner stands to 15.91 to 15.97 m, and the south-east has fallen to 6.58 to 6.61 m, over the vault's back.
+  - **The souterrain:** its lintels are 2.2 m over its floor all along and 0.51 m or more under the land, the pit is open to the sky, and 17.1 m of it is in sight from the cellar's door.
+  - **Lights:** held, the fire and three lanterns are lit; empty, nothing is lit.
+- **Pictures:** `places-towerhouse-tower.jpg`, `-gate`, `-hall`, `-stair`, `-cellar`, `-souterrain`, `-out`, `-far` and `-hall-empty`.
+### Needs eyes
+- **The ways in and up are asked as DECISION #401.** As drawn, the band can be come at two ways, by the gate or from behind by the souterrain's pit, and the storeys above the vault are out of reach.
+- **The fallen corner** reads as a notch from the south-east. A real tower house usually falls along a whole face, or loses its corner down to the ground.
+- **The rubble masonry** is the kit's cobble texture at 0.8 of a metre. It may read as too regular for a ruin.
+- **The stair's well is dark** from its head: the fire is the hall's only shadowing light, and the parapet shades the stair. A lantern at the stair's head would show the way down, if Michael wants the band to have hung one.
+
+## v80 — Session 1053 — Card F8: the Mark's cliff fort (prototype only)
+OG-121's Mark panel names "mountain mines, ice caverns, cliff forts and snowed-in entrances". The mine (Session 857), the ice cavern (Session 903) and the ice cave mouth (Session 1006) are built, and the cliff fort is this session. #396 is still unanswered, so the session again touches only the prototypes: `places.js`, the new `places-clifffort-view.js`, `places-view.js` and `places.check.mjs`. It is `markCliffFort` in `docs/prototypes/levelup/places.js`, at `places.html?place=clifffort`.
+
+The cliffs are the fort's walls, and only the neck is built against. At a metre a unit, with the point to +z:
+- **The headland:** 40 m across and 50 m out, its line ragged past the palisade, its sides falling 32 m over 3 m to the sea at -31.
+- **The terrain:** one grid of a metre. Each triangle is sent to rock where it is steeper than 57° and to snow on the rest, so the cliffs and the snow come from the one height field.
+- **The neck:** a ditch 5 m wide and 2.6 m deep at z -4.5, and behind it a bank 1.8 m high. On the bank's crest stands a palisade of split logs 3.4 m high and pointed, 117 of them at 0.29 m from cliff edge to cliff edge, with two rails inside.
+- **The gate:** a tower of four posts 7.5 m high either side of a way 4.4 m wide, its deck at 4.4 m with a breastwork, under a roof of shingle at 52°. The gate is burst: one leaf hangs swung in on its iron straps, and the other lies broken off in the snow. A bridge of planks on two logs crosses the ditch, its deck following the land from bank to bank.
+- **Inside:** the kit's Markish hall (`markHall`, shingle and carved, 7 by 14 m), its porch and steps turned to the gate. There is a storehouse up on four posts with stone caps, after the island's raised stabbur, with its steps. At the point stands a beacon, a drum of dry stone with an iron basket on it and its fire long out.
+
+It is abandoned in winter. Who held it and who broke the gate is the quest writer's. It is 43,200 triangles in 19 draws, the hall's among them.
+
+Corrections made during the session:
+- The first pictures showed the whole headland as rock: my test of a triangle's slope had its cross product the wrong way round, so every level triangle read as a cliff.
+- The bridge's deck first stood level at 0.25 m over the higher bank, a step of 0.52 m up from the road; the check's walk found it. The deck now runs from bank to bank 0.12 m over each.
+- The sun first stood behind the fort from the road's side and left every view backlit.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 247 of 247 pass.** Two render checks and five builds checks are new.
+  - **Renders:** the `fort` and `gate` views render with no page errors.
+  - **The builds:** 3 keys, each the same twice: 43,196 triangles in 19 draws, 117 logs.
+  - **The walk:** 290 quarter-metres from the road over the bridge, through the gate, to the hall's steps and out to the point. Every point has ground or the bridge's planks on its line, no step is over 0.131 m, there are 4.23 m of headroom or more (the gate's deck) and 1.89 m clear.
+  - **The defences:** the ditch is 2.34 to 2.5 m under the bridge's deck. The palisade is shut at the hip from edge to edge but at the gate (0 gaps), and stands 3.31 m or more over the bank's crest. The gate's deck is 4.26 to 4.42 m over the way.
+  - **The cliffs:** at 33 points round the headland, the land 4 m out is 31.9 m or more under the top 3 m in.
+  - **Footings:** the hall's step is within 0.004 m of the snow, and the beacon's drum within 0.017 m.
+- **Pictures:** `places-clifffort-fort.jpg`, `-gate`, `-inside`, `-beacon`, `-cliff` and `-far`.
+### Needs eyes
+- **Whether it goes down into the cliff is asked as DECISION #402.** The recommendation is a sea-stair inside the rock to a sea cave and landing, the "lower levels" OG-121's forts have.
+- **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
+- **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
