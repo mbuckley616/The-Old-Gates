@@ -8,6 +8,11 @@ export async function enterDungeon(page, o = {}) {
     goToDungeon(p); }, o);
   for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);
   await page.waitForTimeout(1500);
+  // S950 — and wait for the game's loop to have put the camera at the floor's start: only the loop moves CAM to px/pz (js/90-main.js),
+  // and when no frame has run since the fade (a slow first frame on software GL) the camera still stands at the world's x, z of
+  // 13,000 or more, so a render of dScene culls the whole floor (looknew's *a dungeon floor builds and draws*, calls 0, on CI)
+  for (let k = 0; k < 40 && !(await page.evaluate(() => Math.hypot(CAM.position.x - px, CAM.position.z - pz) < 30)); k++)
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 export async function dungeonShots(page) {
   return page.evaluate(() => { const out = [];

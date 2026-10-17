@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim' };
+const GLABEL = { sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -37,7 +37,7 @@ else if (PLANS[Q.get('plan')]) { SP = 'creature'; G = cGenome(Q.get('plan'), Q.g
 else if (!Q.get('people')) G = rollPerson(Q.get('seed') || 'builder');
 if (SP === 'creature') { CG = G; G = null; }
 const locks = new Set();
-let person = null, view = Q.get('view') || (SP === 'creature' ? 'side' : 'full'), turn = Q.has('turn') ? +Q.get('turn') : 0, zoom = 1, dirty = true, gait = null;
+let person = null, view = Q.get('view') || (SP === 'creature' ? 'side' : 'full'), turn = Q.has('turn') ? +Q.get('turn') : 0, zoom = Q.has('zoom') ? +Q.get('zoom') : 1, dirty = true, gait = null;
 const saved = () => SP === 'human' ? toSaved(G) : saveGenome('creature', CG);
 const B = window.__builder = { get genome() { return saved(); }, get species() { return SP; }, get person() { return person; }, get creature() { return C; }, stats: STATS };
 
@@ -62,13 +62,22 @@ function rebuildCreature() {
   Object.assign(STATS, { species: 'creature', plan: CG.plan, gait, bones: C.stats.bones, tris: C.stats.tris, ms: C.stats.ms, speed: +speedOf(C).toFixed(2), bytes: JSON.stringify(saved()).length }); delete STATS.hair;
   frame(); dirty = true; syncText();
 }
+// the middle of a skinned band's front (Session 1010): its geometry holds every vertex of the body, so its box is the whole person; the drawn ones are read posed
+const bandMid = m => { const v = new THREE.Vector3(), o = new THREE.Vector3(), used = [...new Set(m.geometry.index.array)]; let n = 0, zMax = -9; const pts = used.map(i => m.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(m.matrixWorld)); for (const p of pts) zMax = Math.max(zMax, p.z);
+  for (const p of pts) if (p.z > zMax - .06) { o.add(p); n++; } return o.divideScalar(n || 1); };
 const cbox = () => { C.root.updateMatrixWorld(true); return new THREE.Box3().setFromObject(C.root); };
 function frame() {
   if (SP === 'creature') return frameCreature();
   person.root.rotation.y = turn + (view === 'back' ? Math.PI : view === 'side' ? Math.PI / 2 : 0); scene.updateMatrixWorld(true);
   const h = new THREE.Vector3(); person.byName['head'].getWorldPosition(h);
   cam.clearViewOffset(); if (view === 'face') { cam.fov = 18; cam.position.set(h.x + .22, h.y + .1, h.z + 1.25 / zoom); cam.lookAt(h.x, h.y + .05, h.z); }
-  else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05, h.z); }
+  else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05 + (person.wrap?.turban ? .04 : 0), h.z); }
+  // the throat and the upper chest (Session 1003): what is worn at the neck's base, a necklace
+  else if (view === 'neck') { cam.fov = 22; cam.position.set(h.x + .3 / zoom, h.y - .1, h.z + .95 / zoom); cam.lookAt(h.x, h.y - .2, h.z); }
+  // the waist (Session 1004): the belt's front, and what hangs from it (or the sash belt's, Session 1010)
+  else if (view === 'waist') { const b = person.root.getObjectByName('beltCoins'), sb = !b && (person.root.getObjectByName('sashBelt') || person.root.getObjectByName('belt')), t = b ? new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()) : sb ? bandMid(sb) : h.clone().setY(h.y - .7); cam.fov = 22; cam.position.set(t.x + .3 / zoom, t.y + .12, t.z + 1.05 / zoom); cam.lookAt(t); }
+  // the feet (Session 1015): what is worn on them, sandals
+  else if (view === 'feet') { const t = new THREE.Vector3(h.x, .07, h.z + .05); cam.fov = 24; cam.position.set(t.x + .35 / zoom, t.y + .38 / zoom, t.z + .95 / zoom); cam.lookAt(t); }
   // over the head (Session 918): what is carried above it, a spear's head
   else if (view === 'over') { const sp = person.root.getObjectByName('spear'), b = sp && new THREE.Box3().setFromObject(sp), t = b ? new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y - .24, (b.min.z + b.max.z) / 2) : h.clone().setY(h.y + .45);
     cam.fov = 22; cam.position.set(t.x + .05, t.y + .06, t.z + 1.5 / zoom); cam.lookAt(t); }
@@ -134,6 +143,8 @@ function buildPanel() {
     colour(GLABEL[k] || k, () => D()[k], v => { last = v; if (on.checked) D()[k] = v; }, on); }
   { const sk = el('select', {}, el('option', { value: '', textContent: 'none' }), el('option', { value: 'short', textContent: 'short' }), el('option', { value: 'long', textContent: 'long' })); sk.value = D().skirt || ''; sk.onchange = () => { D().skirt = sk.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'skirt' }), sk, el('span'))); inputs.skirt = () => sk.value = D().skirt || ''; }
+  { const tb = el('input', { type: 'checkbox', checked: !!D().turban, onchange: () => { D().turban = tb.checked; schedule(); } }); const tl = el('select', {}, ...[['', 'no tail'], ['L', 'tail on the left'], ['R', 'tail on the right']].map(([v, t]) => el('option', { value: v, textContent: t }))); tl.value = D().wrapTail || ''; tl.onchange = () => { D().wrapTail = tl.value || null; schedule(); };
+    panel.append(el('div', { className: 'bar' }, el('label', {}, tb, ' head-wrap wound up as a turban'), tl)); inputs.turban = () => { tb.checked = !!D().turban; tl.value = D().wrapTail || ''; }; }
   h2('Cloak and apron'); { const hd = el('select', {}, ...['none', 'down', 'up'].map(v => el('option', { value: v, textContent: 'hood ' + v }))); hd.value = D().hood || 'none'; hd.onchange = () => { D().hood = hd.value === 'none' ? null : hd.value; schedule(); };
     const bib = el('input', { type: 'checkbox', checked: !!D().bib, onchange: () => { D().bib = bib.checked; schedule(); } }), lea = el('input', { type: 'checkbox', checked: !!D().apronLeather, onchange: () => { D().apronLeather = lea.checked; schedule(); } }), cp = el('input', { type: 'checkbox', checked: !!D().cape, onchange: () => { D().cape = cp.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, hd, el('label', {}, bib, ' bib'), el('label', {}, lea, ' leather apron'), el('label', {}, cp, ' cape')));

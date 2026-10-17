@@ -20334,6 +20334,69 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
 
+## v80 — Session 940 — Combat's resolver: the attack table and one resolver (deep work, card combat-resolver)
+The card was combat B's deep-work session (Michael's B, 28 Sep; v2-scope.md §4 and §7, after F2a and before F2b): one attack table and one resolver for the dungeon and the open world, plus commitment, the light chain, a potion's time, and armour as a share (#181 B).
+
+**The problem.** There were two resolvers for your swing, `_resolveDungeonStrike` (62) and `_resolveZoneStrike` (42). They were the same rules written twice, with small drifts: the dungeon's never doubled a blow on a dazed beast or woke its pack, and the world's never redrew the bar at the hit. A foe's blow had two free formulas:
+- the dungeon's: 10–20 × its multiplier, less half your armour;
+- the world's: its `dmg` + 0–3, less half your armour.
+
+**The table** is in `74-strikes.js`, so no script tag moved. `WEAPON_ATTACKS` has a row per weapon class, plus Fists, Bow, and a placeholder row for a sent cast (magic.md). `FOE_ATTACKS` has a row per family: humanoid, beast, spider, brute, troll, slime, elemental, wraith, mimic, shark, boss, and the master's slam. Each row carries tell, strike and recovery in seconds; reach in today's units; arc in degrees; a damage multiplier; posture; blockable and parryable; and empty `heavy` and `third` columns for combat.md's move-set sessions.
+
+Every number is today's:
+- **Your swings.** 0.55 s × the weight's factor, the impact at 0.55, the last third the recovery. A sword is 0.303 + 0.064 + 0.183 s.
+- **Posture and cleave.** Posture is 8 × postureMult, so 12, 14 and 18 on the two-handers; cleave is the type's own.
+- **Reach and the cone.** Reach is 2.2, and 3.0 against a boss (`REACH_VS_BOSS`). The cone is the old cos .45, which is 126.5° whole. The old comments said 117°; the number never changed.
+- **The foes.** Their tells are S282's by kind (`TELEGRAPH_BY_NAME` is now built from the rows, and 14-items.js reads it). Their blow lands in 1.6 units and 90°, a troll's in 2.4 and 140°, a boss's within its biteRange. Recovery is 1.0 s in the dungeon, and the world's kinds keep their own `atk`.
+- **Families.** `foeFamily(e)` finds the family from the kind's name, then its shape, then the troll and boss rules that `strikeArc` used.
+
+**One resolver.** `resolvePlayerStrike` serves both places, and the two old names are one-line callers (tests wrap them). It does:
+- reach and arc from the row, nearest first, up to the cleave;
+- the power blow that breaks a raised shield (S485's spent swing kept);
+- the damage chain in one swappable function, `meleeDamageChain`, which still reads Might and the flat level × 1.5 for the skills build to replace;
+- `applyMeleeDamage` (riposte, finisher, stagger, backstab), posture, the rune's rider and the kill.
+
+The hit sound now gets the weapon's damage type and the resist. Before, it was passed two names that were never in scope, so it always played the plain hit.
+
+**A foe's blow** goes through `foeBlow(e)`. It takes the foe's own roll, × the row's multiplier, × a scale for its place, then your armour's share. `executeStrike` reads the row for whether the blow parries or blocks and what it drains from your posture. The world's arrows and the lair beast's charge and heavy blow (85) go through the share too. The mimic's pounce keeps its (14 + level) roll. Magic (the orbs, the Faolchú's fire, the drain) keeps its own sums, since magic's resolver is out of this card.
+
+**Armour as a share.** Every blow on you is × 50 / (50 + armour). The retune follows the card:
+- **Target.** An ordinary blow of your level's tier, against a heavy kit of your level's material, lands at `BLOW_SHARE` (a tenth) of a reference health.
+- **The reference player.** 100 + 15 a level of health. The kit is helmet to boots plus a buckler, at the tier the loot reaches (1 + 0.4 a level): 7 armour at level 1, 18 at 5, 41 at 10, 146 at 20.
+- **The level curve.** `enemyDmgScale` was +8% a level, capped at ×2 at level 13. It is now the reference blow's growth, ×3.75 at 10 and ×13.2 at 20.
+- **The places.** Today's level-1 ordinary blow was a Skeleton's 30 in the dungeon and a Bandit's 7 in the world. Both are scaled to the same reference, so the world's foes now hit as hard as the dungeon's at a tier. They had hit about a quarter as hard.
+- **The slam** stays S617's share of your health.
+
+A tenth means falling to the tenth unguarded blow. If combat.md's "takes three to five of yours" means three to five blows to fall, that is outside it, so the session asks **DECISION #355** (A a tenth as built, B a sixth (recommended), C a quarter). Whichever is chosen, it is the one constant `BLOW_SHARE`.
+
+**Commitment** runs on the play clock, against the swing's own start (`SWING`, set by `beginSwing`, which both attack paths now call):
+- **In the wind-up and the strike** you move at ×0.35, and `commitTurn` holds your turn to 90° a second. A turn made before the click is yours: the facing is taken at the swing's start. That came from `captainguard`, which turns you behind a captain and swings in one frame.
+- **Roll and guard.** `startRoll` and the right button (`raiseGuard`, out of 92's handler so a test can call it) are refused then. In the recovery they cut the swing short.
+- **The light chain** is three swings in a row, each begun within 0.4 s of the last one's end. The third lands ×1.3 on the damage before armour and drains ×1.5 posture. A power blow breaks the chain.
+- **A potion** (heal, mana, stamina, or a tonic) leaves the bag at once and works after 0.8 s (`startDrink`/`tickDrink`). You walk at ×0.5 with no sprint and cannot swing; one at a time.
+
+Co-op rules: every window is the play clock against the two fighters' state, none is under 150 ms, damage rolls stay on the struck foe's stream (`foeRand`), and foes target through `targetOf` as before.
+### Verified (headless Chromium)
+- **`resolver` (new): 25 of 25.**
+  - **The table.** Every weapon row keeps today's swing length (within 2 ms), impact (0.55) and recovery (a third), and today's posture and cleave. Every row has all the columns, and the cast row is a placeholder. The families come out right, with 15 tells by kind.
+  - **The same Bandit in the dungeon and the open world.** Hit (2 and 2), miss at 2.3, miss at 70° off, hit at 60°. Guarded 1 and 1; a power blow breaks the guard for 0. Riposte 8 and 8; finisher 10 and 10.
+  - **Its blow in both places.** Unguarded 15 and 15, held block 10 and 10, parry 0 and 0 with the riposte open.
+  - **Commitment.** A sword's phases are 0.303, 0.064 and 0.183 s. Move is ×0.35, ×0.35 and ×1 by phase. Roll and guard are refused in the wind-up and strike, and both cancel in the recovery. A 1-rad flick turns 0.157 rad in 0.1 s, against 1 rad free.
+  - **The pace through the game's own loop.** 3.83 free against 1.341 committed, which is ×0.350.
+  - **The chain.** It goes 1, 2, 3, 1, 2; a power blow is 0; then 1. The third lands 5 against the first's 4, and drains 12 posture against 8.
+  - **The potion.** Nothing at 0.79 s, +30 at 0.81 s; ×0.5 pace, no swing, no second potion.
+  - **Armour.** Shares of 11, 6 and 4 at 0, 40 and 100 armour; a dungeon blow at 40 armour takes 6 as the share says.
+  - **The retune.** 10.0%, 10.0%, 10.0%, 10.2%, 10.0% and 9.9% of the reference health at levels 1, 3, 5, 10, 15 and 20, in both places.
+- **Re-measured to the new truth (none loosened):**
+  - `posture`: the Bandit's blow is `foeBlow(e, e.dmg)`, and the drain is still exactly 1.5× it.
+  - `herbparity`: Ferrous Guard's +8 armour is now its share of the arrow, 47 against 41, exact; the swing before the roll is let go, since the roll is refused while it is committed.
+  - `fistfight`: standing still, the rhythm is unchanged (12 or more blows a 30 s). You now fall at about the tenth blow, where you used to outlast 30 s. Punches to kill a Bandit are 6–11, where they were 7–12: every third punch lands ×1.3.
+- **Green unchanged:** counters, tells, roll, attrdmg, fists, fistswing, spentguard, spentblow, challenge, dazed, blacksail, duelrhythm, dunseed, foeseed, fortunecaor, guardlevel1, guardplay, guardsindoor, herbhidden, hptail, lvact, parrydeath, posturefloor, and the rest of the batch listed in the PR. `captainguard`, `dmgnums`, `fistfight`, `herbparity` and `posture` green on a re-run after the fixes above (`dmgnums` had failed once under three suites at once, before them, and passed three times since). The full suite runs on the PR's CI.
+### Needs eyes
+- **The new weight.** Swinging, you slow to a third of your pace and cannot whip round. Does it read as weight, or as the game holding you? The lock-on still turns you to the foe, at 90° a second while committed.
+- **The potion.** It works after 0.8 s with no sound or pose of drinking beyond the potion's old sound at the start. A drinking pose is the bodies builder's.
+- **The world's foes hit harder.** At level 1 a Bandit's blow went from about 5 to about 10 at a light kit, and from level 5 it no longer comes down to 1 point. #355 decides how hard.
+- **Owed:** #355's answer (one constant); the heavy and third columns (the six Opus sessions); reach in metres (F2b); magic's own resolver.
 ## v80 — Session 932 — The giant spider's thorns and egg sacs (L4, prototype only)
 The last of OG-041's classic five that already stood in the kit: the giant spider (Session 772) had the sheet's pale bulbous abdomen, dark legs and cluster of red eyes, but not its thorny legs or its egg sacs. The sheet draws both, so this asks nothing new. FREEZE #297 is still open, so this touches only the prototypes (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
 
@@ -20859,6 +20922,295 @@ Corrections made during the session:
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
 
+## v80 — Session 954 — Holes through the slime (L4, prototype only)
+OG-041 draws its slime with holes through it, so daylight shows through the body. Session 928 owed them because the kit could only add flesh, never take it away. The sheet draws them, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`holes`, a new part.** Each hole is a capsule laid across the body from flank to flank. It is placed by `at` along the spine and `up`, its height off the spine's line in the spine's radius there, with a radius and an optional tilt.
+- **`growFlesh` cuts them.** The flesh's field is grown as before, then multiplied to nothing inside each hole and eased back to full over a cell and a half outside it, so the hole's wall is smooth. A body with no holes is grown exactly as before.
+- **Swallowed things keep out of the holes.** `inclusions` now runs after `holes`, and it re-rolls any bone, skull or stone that would hang in a hole (up to 16 tries, from the same seed).
+- **On both slimes:**
+  - A hole 12 cm across under the crest at the front.
+  - One of 8.5 cm low in the middle.
+  - A small one of 6 cm high at the back.
+- **The slimes' grid is finer, so the holes come out at the size asked.**
+  - The grid was sized to the slime's thinnest capsule, 11.5 cm a cell, coarser than the holes. A first try left the 6 cm hole as a wide bite, and a tilted one notched the crest in two.
+  - Both slimes are now meshed at 6 cm, with the blend pinned at the old 14 cm so the mound keeps its shape.
+  - The slime is 6,492 triangles (1,340 before) and the magma slime 6,244.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,012 checks pass** (1,010 before). The two new checks are on the holes, one for each slime:
+  - Each slime has three holes.
+  - At rest and through 24 poses of a crawl stride, a line down each hole's axis meets no hide: 75 of 75 lines clear. Each axis is carried by its own spine bone.
+  - The same line moved two of the hole's radii toward the spine meets the body every time, 75 of 75. So each hole is a hole in the body, not a gap beside it.
+- The slimes' swallowed things still stay inside the hide through the crawl.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-slime.jpg` and `creatures-magmaslime.jpg` re-shot. `creatures-classic.jpg` re-shot, with the drowned skeleton among the five.
+
+### Needs eyes
+- **Triangles:** the slimes cost almost five times what they did. A crowd of slimes wants the coarser grid as its far level of detail, where the holes can close.
+- **The magma slime's holes** show the floor through orange glass. OG-018 calls them "dark holes", which in a dark Tine hall they will be, but not in daylight.
+- **The holes are round tunnels.** OG-041's are ragged, and wider at their mouths than inside.
+
+## v80 — Session 955 — The Winged Thing: Gaoth's griffin (L4, prototype only)
+OG-018 draws Gaoth's foes as the Wisp, a wind-swept Gargoyle and the Winged Thing, "a feathered griffin-like beast". Canon §9a gives Gaoth "wisps, Gargoyle, something winged", and Gaoth is the school with no foes in the game. The Wisp was built in Session 783. The sheet draws the griffin and the catalogue flags nothing on it, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+**`wingedthing`, the Winged Thing (Gaoth):**
+- **Built from the kit's existing parts; no code is new.**
+  - A big cat's body on four legs, 1.1 m at the shoulder and 2.7 m from beak to tail.
+  - An eagle's head with a hooked beak on a short, steep neck.
+  - The hawks' feathered wings, 3.4 m across, set on the shoulders.
+  - A long tail ending in a fan of five feathers.
+- **Colour:** pale storm-grey barred darker, with a lighter belly. The flight feathers darken to their tips, and the beak and claws are dull horn.
+- **Gaits:** it walks, trots and stands. In `fly` it raises its wings over its back as the sheet draws it.
+- **Size:** 39 bones. The hide is 9,532 triangles on a 5 cm grid; the grid the kit picks from the thinnest leg gave 26,296.
+
+Corrections made during the session:
+- The wings were first 4.2 m across. Folded, their primaries reached a metre past the tail. They are now 3.4 m.
+- The first neck left the head sunk on the chest. It is now 0.56 m long and rises at 62°.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,022 checks pass** (1,012 before). The plan's family checks pass:
+  - Every foot reaches its target through the walk, the trot, the fly and the stand.
+  - Its feet are down for 0.65 of the walk, against a duty of 0.68, and 0.45 of the trot, against 0.45.
+  - The weights sum to one, and the genome is 156 bytes.
+- **A new check:** it is a Gaoth plan on four legs with two feathered wings.
+  - Its wingtips are 1.76 m apart folded and up to 5.71 m apart through a wingbeat.
+  - That is more than half again its 2.71 m length.
+- Pictures: `creatures-wingedthing.jpg` (walking, beside a man) and `creatures-wingedthing-fly.jpg` (the wings raised).
+
+### Needs eyes
+- **Its forefeet are a cat's,** with long claws. A griffin's are an eagle's talons, which want a bird's foot on a quadruped's foreleg, a leg preset the kit does not have.
+- **The fly gait holds it on the ground** with its wings beating, as the dragon's does. A griffin aloft needs the aloft gaits the hawks use, which carry no legs.
+- **Folded,** one long primary on each side still trails a little behind the hips.
+- **Its feathers are the fur shells barred,** and close up they read as a pelt.
+
+## v80 — Session 956 — The gargoyles of Cloch and Gaoth (L4, prototype only)
+OG-018 draws a stone Gargoyle in Cloch's row and a wind-swept one in Gaoth's. Canon §9a puts gargoyles in both schools, and the game has a dormant Gargoyle foe that the kit's plan would one day replace. The kit had no gargoyle. The sheet draws both and the catalogue flags nothing on them, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`gargoyle`, the Gargoyle (Cloch).** It is the goblin's crouched biped at 0.62 of the troll's height, 1.65 m long, built of stone:
+  - no ears, a heavy brow, horns swept back from it, fangs;
+  - a tail of 1.5 m in the troll's measure;
+  - a ridge of eight stone spines down the back;
+  - bat's wings of stone skin off the shoulders, 3.5 m across;
+  - grey stone with moss in patches, its eyes dull stone.
+  - It walks and trots crouched and beats its wings in `fly`. 58 bones; 6,824 triangles on a 6 cm grid, against 44,552 on the grid the kit picks from its thinnest capsule.
+- **`gaothgargoyle`, the Gargoyle of Gaoth:** the same body weathered pale by the wind, its moss scoured off, its horns laid flatter and a fifth longer, its wings a quarter wider. 7,316 triangles. `GARGOYLES` lists the two.
+- **`wingRest`, a new plan option: an upright body's wings at rest.**
+  - The kit folded the dragon's wings along its level back. On an upright body that spread them flat over its head like a canopy.
+  - `wingRest` gives the wing arm's three bones their rest turns, mirrored by side, and the fingers a spread between them.
+  - The values were found by a search over 6,144 sets: the narrowest fold that keeps every wing bone behind the shoulder, off the ground, and less than 0.9 m above the wing's root.
+  - The wings now fold up and back behind the shoulders, as a gargoyle on a cornice holds them.
+  - Two earlier tries failed. The first hung the wings to the ground behind it but fanned them out sideways. The second wrapped them round the front of its body.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,042 checks pass** (1,022 before). Both plans' family checks pass:
+  - Every foot reaches its target through the walk, the trot, the fly and the stand.
+  - Their feet are down for 0.69 of the walk, against a duty of 0.68, and 0.46 of the trot, against 0.45.
+  - The weights sum to one.
+- **A new check for each:** at rest, every wing bone lies behind the shoulder and within a width less than the body's length (1.22 m and 1.71 m, against 1.65 m and 1.79 m). Through a wingbeat they spread to 4.7 m and 6.22 m.
+- `kit.check.mjs` passes.
+- Pictures:
+  - `creatures-gargoyle.jpg` (side, beside a man), `creatures-gargoyle-front.jpg` and `creatures-gargoyle-fly.jpg` (the wings spread).
+  - `creatures-gaothgargoyle.jpg`.
+
+### Needs eyes
+- **The wings' stone skin reads near black** from most angles, because both faces of the membrane share one normal. The dragon's does the same.
+- **The head is a soft lump with horns.** A carved gargoyle's face (a snarl, deep-cut eyes) wants a sculpted head, as the skeleton's skull got in Session 942.
+- **Dormant:** the game's Gargoyle stands still until woken. The kit has no perched pose to hold it in, crouched on a ledge with its wings tight.
+- **The Gaoth gargoyle's "wind-swept" look** is only colour and proportion: nothing on it moves in the wind.
+
+## v80 — Session 958 — The Frost Thing, two ways (L4, prototype only), and a question
+OG-018 draws Uisce's Frost Thing as "a crystalline ice-shard figure, all spikes". Canon §9a says a steady gate makes "the shapes the local folklore had words for". The catalogue's note on the sheet says the figure reads as an elemental and "may need a folk shape under the ice". Whether it should is Michael's call, so this session builds both and asks (DECISION, `decisions.md`). Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js` (`FROST` lists the two):
+- **`frostshard`, option A (the sheet's figure):**
+  - The troll's hunched frame at 0.85 of its size, its arms a fifth thinner, in clear blue ice (0.72 opacity).
+  - A cold light runs through it.
+  - A crown of six shards, and ten clusters of four shards down its back.
+  - 12,676 triangles.
+- **`frostfolk`, option B (a folk shape frozen):**
+  - The skeleton's frame, a man's proportions, grown whole instead of drawn as bones.
+  - Frosted white over blue (0.88 opacity), its head bowed 12°, a crown of small shards, six clusters of shards breaking from the shoulders, the eyes lit pale.
+  - It walks slower than the skeleton.
+  - 7,756 triangles on a 2.8 cm grid.
+- **A correction made during the session:** the frozen man's head was first swallowed by its shoulders, a ghost in a sheet. Its trunk is thinner now and its neck longer. Its face is still unfinished.
+- **A gotcha:** the plans were first placed above `PLANS.skeleton` in the file. A plan built from another must come after it, or the module throws on load and the check page never finishes.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,060 checks pass** (1,042 before).
+  - Both plans' family checks pass. Every foot reaches its target through the walk, the trot and the stand, and their feet are down for 0.69 of the walk and 0.46 of the trot.
+  - A new check for each: an Uisce plan in clear ice with at least five clusters of shards (12 and 8).
+- Pictures: `creatures-frostshard.jpg`, `creatures-frostfolk.jpg` and `creatures-frost.jpg` (the two beside the skeleton and the troll).
+
+### Needs eyes
+- **The frozen man's face** is a smooth lump. If Michael takes B, the next session gives it a face under the frost: the skeleton's modelled skull, perhaps, seen through the ice.
+- **The sheet's figure is all spikes.** The kit's shards are clusters of five-sided cones, so A is a troll with shards on it more than a body made of them.
+- **On `creatures-frost.jpg`** the frozen man stands at the left edge, half cut by the frame.
+
+## v80 — Session 959 — Skin wings let the light through (the creature kit, prototype only)
+Session 956 left the gargoyles' stone wings drawing near black from most angles, and the dragon's red membrane did the same. This fixes a fault in a body the bodies builder made, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+**What was wrong:**
+- The first guess was the wing shadowing itself. It was not: with the wing taking no shadow, the picture did not change.
+- The membrane's colour is half the hide's (0.069 mean, against 0.152).
+- Seen from the side away from the sun, a two-sided membrane's normal faces away from the light, so nothing lights it. That is right for an opaque sheet, but wing skin is thin, and the sun shows through it.
+
+**What changed in `creatures.js`:**
+- A skin wing now gives back a share of its own colour as light that has come through it. A line is added to the wing material's shader at build: emissive light of the vertex colour times `wingLight`, a plan option, 0.45 unless the plan says otherwise.
+- Feathered wings are unchanged, and so are clear ones (the glasswing's, under `wingOpacity` 1), which are seen through already.
+- The dragon and both gargoyles are the plans it touches.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,061 checks pass** (1,060 before). The new check covers the 13 winged plans:
+  - The 3 with skin wings carry the light-through term.
+  - The 10 feathered or clear ones do not.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-gargoyle-front.jpg` and `creatures-dragon-front.jpg` (new) show the membranes grey stone and dark red where they were black. `creatures-gargoyle.jpg`, `-fly.jpg`, `creatures-gaothgargoyle.jpg` and `creatures-dragon.jpg` re-shot.
+- A correction to the check as first written: every three.js material has a default `onBeforeCompile`, so asking whether one is set was always true. The check asks whether the material has its own.
+
+### Needs eyes
+- **The light through is even,** the same whether the sun is behind the wing or not. A wing with the sun behind it should glow at its thin edges and show its finger bones dark, which wants the sun's direction in the shader.
+- **In a dark gate hall** the 0.45 share will read as a faint glow of its own. If it does, `wingLight` is one number per plan, and the game's version should scale it by the light that reaches the wing.
+
+## v80 — Session 960 — The griffin's talons (L4, prototype only)
+Session 955 owed the Winged Thing an eagle's forefeet: it stood on a cat's four paws, and a griffin's front is an eagle's. No question: the sheet draws it so. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`talonFore`, a new leg preset:** an eagle's foreleg on a beast's frame.
+  - It has the canid foreleg's joints, so it walks with the rest of the body's gait.
+  - The shank and foot are thinner and drawn in bare scaled skin, the feathered coat stopping at the wrist.
+- **`claws.back`, a new option on a leg's claws:** a hind toe. It is a fourth claw from the back of the foot, pointing back and down, its length the given share of the others'.
+- **On the Winged Thing:** the forelegs are `talonFore`, with claws of 14 cm (11 before) and a hind toe of 0.7 of that. The hind legs keep the cat's paws. The hide is 9,336 triangles (9,532 before).
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,062 checks pass** (1,061 before).
+  - The Winged Thing's feet still reach their targets through the walk, the trot, the fly and the stand. They are down for 0.65 of the walk and 0.45 of the trot, as before.
+  - A new check: four claws on each forefoot and three on each hind foot.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-wingedthing.jpg` re-shot, and `creatures-wingedthing-front.jpg` (new), where the talons read best.
+
+### Needs eyes
+- **The talons are the kit's straight cones.** An eagle's are hooked, and they grip.
+- **The scaled shank is plain skin tone:** no scales are drawn on it.
+- **From the front, the wings at rest are half open.** The hawks' fold, carried to a body this size, does not lay them flat on the back.
+
+## v80 — Session 961 — The griffin folds its wings (L4, prototype only)
+Session 960 left the Winged Thing's wings half open at rest: seen from the front they stood out from its shoulders. This refines its own plan, so it asks nothing. Only `creatures.js` is touched (one number).
+
+**What changed:**
+- The plan's `wingFold` is 1.2, up from 1. That is how far the hawks' fold turns each of the wing's three bones at rest.
+- At 1 the fold was sized for a crow's wing on a crow's body. On a griffin, with the wing's root out on its flanks, it left the wrists out to the sides.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,062 checks pass.** The Winged Thing's wing check passes with its wingtips 0.53 m apart folded (1.76 m before) and up to 5.71 m in flight, as before. Its gaits pass as before.
+- Pictures: `creatures-wingedthing.jpg` (the wings now lie flat along its back), `-front.jpg` and `-fly.jpg` re-shot.
+
+### Needs eyes
+- **From the front the primaries still fan out sideways** from the folded wrist: the kit lays them outward from the hand, and the fold turns the bones, not the feathers. Folding the feathers themselves is a kit change for every bird, left for a session that can picture them all.
+
+## v80 — Session 968 — The frozen man's face (L4, prototype only)
+Michael took B on DECISION #362: the Frost Thing is a folk shape frozen (`frostfolk`), and Session 958 left its face a smooth lump. This session gives it a face, as that entry proposed: the skeleton's modelled skull (Session 942), seen through the ice. It refines the plan he chose, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`faceClear`, a new plan option: the ice thin over the face.** The hide carries a per-vertex opacity when a plan sets it. Over the head's front it falls from the plan's `clear` (0.88) to `faceClear` (0.4); the crown, the back of the head and the rest of the body keep the full frost. It covers 3.3% of the hide. The hide's shader multiplies its opacity by the vertex's share, and gets a program of its own only on a plan that asks for it.
+- **`skull` can take options now:** `k` scales it against the head and `tone` colours it. The frozen man's is at 0.85, in a drowned bone grey under the frost, with his pale eyes lit in its sockets, as the drowned skeleton's are.
+- **The head refitted to hold it:** the muzzle shortened to a man's face (0.42 of the head, 0.6 before), the head's radius 10.8 cm (9.5 before). The hide is 7,800 triangles and the skull 4,356.
+- **A correction made during the session:** at a skull of 0.9 its crown stood 9 mm out through the top of the head. The new check caught it; 0.85, with the wider head, leaves 4 mm of ice over it.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,063 checks pass** (1,062 before). The new check: the skull is in his head, the face's ice is at 0.4 over 0.5 to 8% of the hide (3.3%), and the skull's top (1.886 m) is under the hide's (1.890 m). His gaits pass as before: the feet down 0.69 of the walk and 0.46 of the trot.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-frostfolk-head.jpg` (new; the brow, the lit sockets, the nasal hole and the teeth under the ice), `creatures-frostfolk-front.jpg` (new; at play distance the skull reads as a face), and `creatures-frostfolk.jpg` and `creatures-frost.jpg` re-shot.
+
+### Needs eyes
+- **From the side** the face reads less: the grown hide still rounds out ahead of the skull, and the ice there is seen edge-on, so it looks thick.
+- **The skull grins.** It is the skeleton's own, with both rows of teeth. A drowned man's jaw might hang open instead.
+- **4 mm of ice over the crown** is a thin margin. A head slider at its low end could push the skull through, and the check reads only the seed it builds.
+
+## v80 — Session 969 — The stag of shadows breathes its mist (L4, prototype only)
+OG-088 draws Scáth's corrupted stag as "a stag of shadows whose antlers breathe a mist". Session 919 built the stag gaunt, dark and violet in its seams, and left the mist "for the kit's particles", which did not exist. The sheet already draws it, so this asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`antler()` keeps its tines' tips:** the end of every branch it grows, in the body's rest frame.
+- **`antlers.mist`, a new option, and the kit's first particles (`mistPoints`, `mistTick`):**
+  - From each tip, `per` puffs rise `rise` metres in the head's frame, drift back by `drift`, and grow from `r0` to `r1`.
+  - Each fades in quickly and out slowly, its opacity at most `alpha`.
+  - They are one `THREE.Points` on the head bone, drawn as soft discs in the plan's `mist` tone, after the body, with no depth write and no shadow.
+- **Timing:** each puff's age is the stride's phase times `rate` plus its own offset. So `pose()` moves them with the gait, the mist loops with the stride, and a still picture is the same every time, with nothing random at draw time.
+- **The stag of shadows:** 7 puffs on each of its 56 tines (392 points), rising 45 cm, swelling from 8 to 40 cm, at 0.2 opacity, in a dusk violet (0.46, 0.34, 0.62). The hide is unchanged (53,376 triangles).
+- **A first try made during the session:** 4 puffs a tine at 20 cm read as a scatter of dots. More, larger and fainter puffs merge into a haze.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,064 checks pass** (1,063 before). The new check covers the stag:
+  - 392 puffs from 56 tines, on the head bone, casting no shadow.
+  - They move 0.27 m between two phases of the stride and are identical at the same phase twice.
+  - Their opacity peaks at 0.2.
+  - No other plan carries a mist.
+  - The stag, the deer and the Elderstag (whose antlers it reads from) pass their gaits as before.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-shadowstag.jpg` (re-shot, from the side), `creatures-shadowstag-front.jpg` (new; a plume off each antler) and `creatures-corrupted.jpg` (re-shot).
+
+### Needs eyes
+- **On the pale floor the mist reads as violet smoke.** In Scáth's violet dark it may vanish, or need to glow; `mist.tone` and `alpha` are per plan.
+- **The puffs rise in the head's frame,** so a lowered head tips its mist forward. The game's version should rise in the world's up.
+- **When it runs, the mist trails along with the stag** rather than being left behind it: the puffs are on the head bone.
+
+## v80 — Session 970 — The griffin's talons hook (L4, prototype only)
+Session 960 gave the Winged Thing an eagle's forefeet and left a note: "the talons are the kit's straight cones; an eagle's are hooked, and they grip." The sheet draws them hooked, so this asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`, `bestiary.js`).
+
+What changed:
+- **`claw()` takes a `hook`, and `claws.hook` passes it from a leg.** A hooked claw is a cone of six rings instead of one, bent into an arch: its middle is raised `hook` / 2 of its length, at right angles to the claw and away from the ground, and its root and tip stay where a straight claw's are. A claw with no hook is built as before.
+- **A first try made during the session:** carrying the tip toward the ground instead put the planted foot's talons 6 cm into the floor. The arch curls them over onto their points without reaching any deeper.
+- **On the Winged Thing:** `hook: .45` on the forelegs' four claws, the hind toe included. The cat's hind paws keep straight claws.
+- **The bestiary has a new view, `cam=foot`:** close on a forefoot, low, from the front and a little to the side, as `cam=head` is for the head.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,065 checks pass** (1,064 before).
+  - The new check: 8 forefoot claws, each bowed 0.13 to 0.15 of its length off the line from root to tip, and each tip at 1.00 of its length from the root, as a straight claw's is. The hind claws stay straight (a bow of 0).
+  - Its gaits pass as before: the feet down 0.65 of the walk and 0.45 of the trot.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-wingedthing-foot.jpg` (new), and `creatures-wingedthing.jpg` and `-front.jpg` re-shot.
+
+### Needs eyes
+- **The talons do not grip:** the toes are the claws themselves, so there is no scaled toe for a talon to hang from. An eagle's foot is toes first, which wants a toe chain in the kit.
+- **They are still black cones,** glossy and smooth. A talon is horn, darker at the tip.
+## v80 — Session 949 — A blow is a sixth of your health (deep work, card combat-resolver, Michael's B on #355)
+Session 940 built the attack table and the one resolver and stopped on DECISION #355: with armour as a share, how much of your health should an ordinary blow of your level's tier take, at a kit of your level? Michael chose **B, a sixth: six blows to fall**. It is the one constant `BLOW_SHARE` in `74-strikes.js`, and this session sets it.
+
+It is .17, not 1/6. At exactly a sixth the rounding left you on 1 health after the sixth blow at level 10 (235 health, blows of 39) and level 20 (385, blows of 64), so those levels fell to the seventh. At .17 every level from 1 to 20 falls to the sixth blow.
+
+Four suites asserted the old numbers and are re-measured to the new truth, none loosened:
+- `resolver`: the retune check is now 15–18% and exactly six blows to fall, at every level from 1 to 20 (it sampled six levels before).
+- `fistfight`: standing still, you fall at the sixth blow (6 of 6 landed, 10.9 s, 130 health), where it was about the tenth. It allows 5 to 7 for the Bandit's roll.
+- `cowards`: the Ogre's second-phase heavy goes through the table since Session 940 (2.2× its roll, its row and place, then your armour's share: 94 here), but the suite still expected 2.2× the bare roll (35). This was CI's one red shard on the PR (shard 3, failed twice). The suite now reads the same sum in the page.
+- `guardsindoor`: the step that swings at the guard refilled your health before each swing but not your posture. His blows between your swings, at a sixth, kept your posture broken, and a staggered player cannot swing (0 of 6 landed). It now fills posture too, as `fistfight` does. A wrong first guess that you had fallen was tried and reverted: you lose 85 of 130 in the 8 s before it.
+
+Two housekeeping changes:
+- **Renumbered.** main carries another Session 939 (the Fighters' Guild prototype, from auto/design). This card's first session is renumbered 940: its devlog heading and its 31 `S939` notes in `js/` and `tests/`, none of which were on main. The commit `41d27a0` still says 939.
+- **Restored screenshots.** Four screenshots under `docs/prototypes/` that the local test runs rewrote were committed by mistake and restored in the next commit.
+### Verified (headless Chromium)
+- **`resolver`: 25 of 25.** An ordinary blow lands at 16.8–17.4% of your health in the dungeon and the open world alike: 17 of 100 at level 1, 27 of 160 at 5, 40 of 235 at 10, 53 of 310 at 15 and 65 of 385 at 20. You fall to the sixth blow at every level from 1 to 20.
+- **The combat and damage batch: 54 suites, all green.** It ran three at a time: attrpromise, autosave, bladehit, captainguard, caravan, cargo, challenge, counters, cowards, dazed, dmgnums, duel, duelrhythm, dungeonchase, dunseed, falls, foeseed, fortunecaor, guardlevel1, guardplay, guardsindoor, herbhidden, herbparity, hptail, journal, lairmaster, lvact, masterslam, parryclock, parrydeath, pauseleaf, pirateram, poinames, posture, roll, rowebeats, rowelines, shiphull, shipwreck, siegeturn, slamdamage, spentguard, wardall, wardswift, warwords, yardplay, tells, attrdmg, fists, fistswing, spentblow, blacksail, posturefloor and tpfists.
+- **Two needed a re-run alone.** `guardsindoor` was green after the fix above. `falls` lost its browser mid-run under the three-at-once load and passed alone. `blacksail` failed once and passed on the runner's retry (flaky).
+- **The full suite runs on the PR's CI.**
+### Needs eyes
+- **Six blows, in a real fight.** A lone Bandit or Skeleton that you stand and trade with can now kill you, and a pack of three can do it in about two exchanges. Is that the pressure combat.md wanted, or does the open world's density need a look (F2b, enemies by place)?
+- **Posture.** A blow's posture drain is 1.5× its damage, so harder blows break your guard sooner too. `guardsindoor` showed a guard keeping a still player staggered. Worth feeling whether a held block now breaks too quickly against two foes.
+
+## v80 — Session 963 — dmgnums keeps its foe fresh for the blow from behind (deep work, card combat-resolver, CI red on PR #356)
+CI ran PR #356 at 9abf6eb and failed on one shard (headless 7, 31 of 32 suites passed). `dmgnums` failed twice there and passed on main. The check that failed was *from behind*: the fourth swing at the street Bandit came up as a red crit with the word *staggered*, not lilac with *from behind*.
+
+The cause is the resolver's posture, not the numbers. The suite swings four times at one Bandit: a plain blow, a miss, a blow with Flames, and then the blow from behind. Since Session 940 the resolver drains the row's posture on every blow, and the chain's third swing drains ×1.5. So the Flames swing can break the Bandit's guard. Whether the 1.5 s stagger is still running when the fourth swing lands depends on how much real time passes between the swings, and that is slower on CI than here. A blow at a staggered foe is a crit. `dmgNumKind` puts a crit's word ahead of *from behind*, as it should: a riposte on a broken guard is the bigger news.
+
+The game is right, so the suite changes. Before the swing from behind, it now refills the Bandit's posture, clears its stagger and resets the chain, so that check tests only what it names. No check was loosened and no game code changed.
+### Verified (headless Chromium)
+- **Reproduced:** with the stagger left running before the swing from behind (one line, then removed), the check fails exactly as CI's did: `dn crit`, `staggered`, 25.
+- **With the reset:** `dmgnums` passes 14 of 14 here, twice. The blow from behind reads `dn back`, *from behind*, 15. The same reset passes with a stagger and 1 posture set just before it.
+- `parsecheck` is clean. No `js/` file changed.
+### Needs eyes
+- Nothing new. Session 949's two notes still stand: six blows in a real fight, and how fast a held block breaks against two foes.
 ## v80 — Session 946 — Card F9's fifteenth room: the Gatelands temple (prototype only)
 The shrine is next on L5's list after the guildhall (939), which waits on #352. OG-043 draws the Gatelands temple as a small stone church with a statue inside. The canon (§4.1) says what it is for: the Irish-register culture worships the six makers by their work, and "six have temples … each with a statue and a boon in its domain". So this is a temple of one of the six gods. It is drawn for An Teallach, the Hearth, the god of towns, by default; `o.god` gives any of the six their icon (the hull, the sundial, the wolf, the gate, the lamp, the shuttle, from the canon's table). The Church of the Weaver is Aurenne's (the Compact), and the Guest has no shrine, so neither is drawn here. FREEZE #297 is closed and F2a has merged, but this is still a prototype under the run's order (rooms first, then into the game). It touches only `pieces.js`, `rooms.js`, `rooms-view.js` and `rooms.check.mjs`.
 
@@ -21252,6 +21604,85 @@ The draft put a copy *on a shelf in every Mages' Guild*. The game has no way to 
 ### Needs eyes
 - Whether 30 gold is the right price for a book that grants nothing, and whether the Mages' Guild counter reads as *the guild library*. A shelf to take it from is a look and systems item if Michael wants one.
 - The niche at the shrines is still owed (backlog A).
+## v80 — Session 974 — Folded wings lie closed (L4 and L3, prototype only)
+Session 961 left this in its notes: "from the front the primaries still fan out sideways from the folded wrist: the kit lays them outward from the hand, and the fold turns the bones, not the feathers." The same was true of every bird in the kit. Each flight feather was fixed to its arm bone, so when the arm folded into its Z the hand's primaries went back and out at the wrist and the forearm's secondaries stood out from the flank. From above, every perched bird and the griffin wore a spiky ruff where a folded wing should be. This is a fault in bodies the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **Every flight feather has a quill bone of its own** at its root, a child of the arm bone it grew on: the hand's primaries, the forearm's secondaries and the humerus's three coverts. A row's covert shares its feather's bone. That is 20 bones a wing on a hawk: the Crag Hawk has 64 bones (24 before) and the Winged Thing 83 (39 before). No triangles are added, and the skin weights are unchanged.
+- **`stowQuills`, run by `pose` after the wing's arm is set.** When the wing is folded, each quill is turned so that its feather lies back along the body. The turn is worked out in the frame of the spine bone the wing hangs from, from wherever the folded arm has carried that feather. The primaries end up outermost and lowest (out 1 to 5%, down 5 to 12%), the secondaries under them and the coverts flattest, so the rows lie stacked instead of in one plane. When the wing beats or soars, the quills are left as built, so open wings look as they did before.
+- **A tweak made during the session:** at first the primaries were set 3 to 10% outward. From above, the griffin's two folded wings then stood in a wide V. At 1 to 5% they close.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,083 checks pass** (1,065 before). The new checks cover the nine plans with feathered wings: the skyraven, the Crag Hawk, the raven, the crow, the Stormshrike, the Cliffswift, the Sunbeak Vulture, the Dusk Eagle and the Winged Thing.
+  - At rest, every flight feather lies within 7.4 to 8.8 degrees of the body's line. On the arm alone the worst was 83 to 100 degrees.
+  - In flight, no quill is turned at all.
+  - Every plan's gaits pass as before, and the Winged Thing's folded and open wingspans pass as before.
+- `kit.check.mjs` passes.
+- Pictures, from above at rest: `creatures-craghawk-folded.jpg`, `creatures-wingedthing-folded.jpg` and `creatures-duskeagle-folded.jpg` (new). The nine birds' own pictures and `creatures-wingedthing-front.jpg` were re-shot.
+
+### Needs eyes
+- **Seen from the side, the griffin's folded wing is a thin dark line.** The feathers are flat cards and it lies on its back edge-on. A bird's folded wing wraps down the flank, which would want the cards to roll as well as turn.
+- **The folded wing is turned, not slid.** Each feather pivots at its root and the roots stay where the folded arm puts them, so the primaries do not tuck under the secondaries as a real wing's do.
+- **The Dusk Eagle's six ragged primaries** fold as neatly as a whole wing. Its sheet says they are too few to close; a gap between them at rest would keep that look.
+
+## v80 — Session 975 — The stag's mist rises straight (L4, prototype only)
+Session 969 left this among its notes: "the puffs rise in the head's frame, so a lowered head tips its mist forward. The game's version should rise in the world's up." It is a fault in a body the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **`mistTick` takes the head's turn against the body.** It lays each puff's rise along the body's up, its drift along the body's back and its scatter across the body's level. The puffs are still points on the head bone, so their tines carry them. Only the way they leave the tines changed.
+- **`pose` ticks the mist last,** once the neck and the legs are set, so it reads the head where the frame draws it. Before this, it ticked the mist first.
+- A creature on a slope would tip with its body. The body's up is the world's for every creature in the kit today, since none of them pitches its whole rig.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,084 checks pass** (1,083 before). The new check makes the stag of shadows nod its neck hard (`neckNod` 1.2), which tips the head up to 61.8 degrees through the stride. At every one of 12 phases, the puffs still leave their tines within 0.7 degrees of the plan's rise and drift. Against the previous commit's `creatures.js` the same check fails at 62.1 degrees. The Session 969 check on the mist passes as before (392 puffs, 0.28 m of movement through the stride, the same picture at the same phase).
+- `kit.check.mjs` passes.
+- Pictures: `creatures-shadowstag.jpg` and `creatures-shadowstag-front.jpg` re-shot. At the stag's own small nod they look as they did.
+
+### Needs eyes
+- **The mist still trails along with the stag** when it runs, because the puffs stay on the head bone. To leave it hanging in the air behind the stag, the game would have to spawn the puffs in the world.
+## v80 — Session 971 — enterDungeon waits for the camera to reach the floor (QA)
+The QA run of 16 Oct 00:52 read the CI runs since 18:51: three red, none of them a flake. Main's e7ae8d9 failed `bellwreck` twice on code from before
+Session 946's fix (main has carried it since #360). auto/systems' 1c9b2d2 failed six suites twice with the same numbers both tries (`attrpromise`, `barter`,
+`fortunecaor`, `lockpicks`, `levelpanel`, `shoprows`), all reading the attribute rules that branch changes, and the combat resolver's 15f78f9 failed
+`guardsindoor` twice (the guard's hp 48 before and after a blow indoors); each is its own branch's to carry, and `docs/qa/flaky.md` says so with the numbers.
+The one FLAKY in those runs was `looknew` on auto/systems shard 11: *a dungeon floor builds and draws, its foes in it* read 0 draw calls with the floor
+built (44 shell pieces, 28 foes), then passed on the retry.
+
+The cause is the shared helper, not the new look. `goToDungeon` sets `px/pz` to the floor's start, but only the main loop moves `CAM` there
+(`js/90-main.js`). `enterDungeon` (`tests/lib/dungeonshot.mjs`) waited for the zone, the new scene and then 1.5 s; when no loop frame ran in that time,
+which on 0.170 means the first frame of a new floor was still compiling its materials on software GL, the camera still stood at the world's x, z of
+13,000 or more and the render culled the whole floor. Measured here: the same floor from the player's spot drew 304 calls, from x, z 15,000 drew 0.
+The helper now also waits, up to 40 double frames, until the camera stands within 30 of the player. It waits for the state the check needs, not longer.
+Every one of the 34 suites that enter a gate through the helper gets the same wait; in the usual case the condition holds at once and adds nothing.
+
+### Verified (headless Chromium)
+- `looknew` three runs green, no retry: the dungeon check drew 322, 310 and 300 calls (CI's red read 0).
+- With the helper changed, old look, once each, all green: `dungeon` 55 s, `dungeonchase` 44, `dungeonexit` 105, `dungeonfoes` 60, `dungeonpace` 52,
+  `schoolroster`, `locksight`, `trapseed`.
+- A probe (not committed): after `enterDungeon`, CAM at (2, 11) and the player at (2, 11); 304 calls from there, 0 with the camera moved to 15,000.
+
+### Needs eyes
+Nothing for a playtest: a test-only change, no build tag bump. The six auto/systems suites are the systems builder's to re-measure or answer with the
+rules, and `guardsindoor` the combat resolver card's; the QA Slack post names both.
+
+## v80 — Session 972 — The new look's suite, shards 3 to 6 (QA)
+Session 972 carries on the ledger `docs/qa/looknew.md` from 15 Oct, run by shard of 14 under `node tests/run.mjs --look=new` on auto/qa at Session 971
+(main 148d635), two shards side by side on a 4-core container. `panelfocus`, red on 15 Oct at the 900 s cap with two shards sharing the cores, ran alone
+first. No test changed in this session: every red below fails the same way on its retry, and none of them is the test's to fix.
+
+### Verified (headless Chromium)
+- `panelfocus` alone, new look: passed, 437 s (CI's old look takes 270–546 s). The 15 Oct red was load, not the look.
+- Shards 3 and 4, 01:13–01:57 UTC: 62 of 62 pass (the longest were mainrun 614 s, placesave 482, dunwarm 324). Shards 1 to 4 now stand at 124 of 124.
+- Shards 5 and 6, 01:58–02:49 UTC: 64 of 66 pass. Two are red twice:
+  - `foewarm`: *raising every foe kind compiles no shader and adds no program* read 2 compiles and one new program (41→42, 42→43) after the prewarm ran
+    (33 kinds, 17 programs). This is the game's: on 0.170 the prewarm leaves one foe program to the first draw. Filed in backlog I for the systems builder
+    (`42-zone-enemies.js`, `prewarmFoes`).
+  - `hourhitch`: the worst frame after a change of hour was 12.6 and 13.8 s against the 8 s cap (noon 2.8 and 2.2 s), 896 s with the retry. Not
+    classified: two shards shared the cores, so this needs a run alone in both looks before anyone is named.
+
+### Needs eyes
+Shards 7 to 14 are owed, then `hourhitch` alone. The foe hitch on the new look is a real-GPU question too: one program compiled on a foe's first draw
+costs a few ms on Michael's laptop, against seconds headless.
 ## v80 — Session 971 — Aurenne's coastal watchtower (card F8, prototype only)
 L5's "roads and works" (OG-046: "watchtowers and forts") has had the mine (857), the aqueduct (907), the windmill (949) and the lighthouse (967). OG-124's Aurenne panel draws "a coastal watchtower", and the canon gives it a reason: piracy is the Mark's undeclared war, and the Compact's tithe-ships are its favourite prey. So the Compact keeps a chain of towers along its coast, each in sight of the next. The precedent is the Genoese and Saracen towers of the Tyrrhenian coast and the borj of the Maghreb, which fits Aurenne's Mediterranean and North African register: a round tower on a scarp, its door high up, a stair that stops short of the door, a parapet on corbels, a beacon on the roof. It is dressed in Aurenne's own materials (§1.3, and the catalogue's note on OG-124 against Tuscan stone): cream lime plaster, limestone dressings and a band of blue tile. It lives in `places.js` beside the lighthouse, with its own view (`places-watchtower-view.js`, dispatched from `places-view.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
 
@@ -21354,6 +21785,97 @@ Corrections made during the session:
 - **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
 - **Owed:** the rest of L5's works (a shipyard, a ferry).
 
+## v80 — Session 983 — Folded wings wrap the flank (L4 and L3, prototype only)
+Session 974 left this in its notes: "seen from the side, the griffin's folded wing is a thin dark line. The feathers are flat cards and it lies on its back edge-on. A bird's folded wing wraps down the flank, which would want the cards to roll as well as turn." It is a fault in bodies the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **Each quill remembers its card's face** (`n`, the feather's line crossed with its width) when the wing is built, for the hand's primaries, the forearm's secondaries and the humerus's coverts.
+- **`stowQuills` rolls each quill about its own line** after it has turned it back along the body. The roll takes the card's face from wherever the turn left it to face out from the body and a little up, worked out in the frame of the spine bone the wing hangs from. How far up is the third number in `QUILL_LIE`: the coverts 58 degrees (they sit on the back), the secondaries 44 to 38, the primaries 34 to 28 (lowest, most upright on the flank). The roll takes the nearer of the two faces, since the cards are drawn on both sides. The feathers' lines do not move, so Session 974's numbers hold, and an open wing is left as built.
+- No bones and no triangles are added.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,093 checks pass** (1,084 before). The nine new checks are one per feathered flier (the skyraven, the Crag Hawk, the raven, the crow, the Stormshrike, the Cliffswift, the Sunbeak Vulture, the Dusk Eagle and the Winged Thing): at rest, every folded card's face is tipped at most 58 to 59.1 degrees up from facing straight out, and 38.7 to 40.4 on average. Against the previous commit's `creatures.js` (with only the face recorded) the same checks fail at 85.6 to 88.3 worst and 83.1 to 84.2 on average: flat on the back, edge-on from the side.
+  - The feathers still lie within 7.4 to 8.8 degrees of the body's line at rest, and are not turned at all in flight.
+- `kit.check.mjs` passes.
+- Pictures: `creatures-wingedthing.jpg` (from the side) against `creatures-wingedthing-side-before.jpg` (new, the previous commit's): the dark line is now a pale storm-grey wing laid over the flank. The nine fliers' pictures and the three `-folded.jpg` views from above were re-shot.
+
+### Needs eyes
+- **The folded wing reads as one smooth sheet.** At 28 to 58 degrees the cards overlap closely, so the separate rows show only at the tips. A slight step between rows would read as feathers.
+- **The cards are still turned and rolled at their roots, not slid.** The primaries do not tuck under the secondaries (Session 974's note stands).
+- **The Dusk Eagle's six ragged primaries** still close as neatly as a whole wing.
+
+## v80 — Session 984 — The Dusk Eagle's ragged wing stays ragged (L4, prototype only)
+Session 974 left this in its notes: "the Dusk Eagle's six ragged primaries fold as neatly as a whole wing. Its sheet says they are too few to close; a gap between them at rest would keep that look." OG-088 draws the corrupted eagle with its wing worn to a few long fingers, and the plan already gives it six primaries 1.4 times as long where the Crag Hawk has nine. Once folded, the quills laid all six into one blade. This is a fault in a body the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
+
+What changed in `creatures.js`:
+- **A wing's feathers take `ragged`** (in radians, near enough: how far the outermost primary is lowered against the innermost). A wing record carries it, and `stowQuills` lowers each primary in turn by that share of its place in the row. The hand's feathers then fan down the flank, the outermost lowest, and their tips stand apart. Session 983's roll then lays each card's face over the flank as before.
+- **The Dusk Eagle's wing has `ragged: .24`**, about 13 degrees from first primary to last. No other plan sets it, so every other bird folds as before.
+- No bones or triangles are added.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: all 1,111 checks pass** (1,093 before). The 18 new checks:
+  - **The fan, for each of the nine feathered fliers:** the Dusk Eagle's folded primaries are at least 3.23 degrees apart, neighbour to neighbour. With `ragged: 0` the same eagle measured 0.91 degrees, and the hawks, ravens, crows, shrike, swift and vulture stack at 0.57 degrees, the griffin at 0.51.
+  - **The mirror, for each of the nine:** the two folded wings are reflections of each other, to 0.000 degrees on every feather's line and face, in the frame of the spine bone they hang from. Measured in the rig's frame they differ by up to 4 degrees on the walking birds, because the body rolls through the stride.
+  - The Dusk Eagle's worst feather now lies 20.2 degrees off the body's line at rest (8.1 before), inside the 25 that Session 974 set. Its faces are tipped at most 59.1 degrees, and 40.1 on average.
+- `kit.check.mjs` passes.
+- **Pictures:** `creatures-duskeagle-perched.jpg` is new, a side view standing, with the six tips apart against the sky. `creatures-duskeagle-folded.jpg` and `creatures-craghawk-folded.jpg` were re-shot standing, from above.
+- **Correction to Sessions 974 and 983:** their `-folded.jpg` views of the Crag Hawk and the Dusk Eagle were taken in the plan's first gait, which for both birds is `soar`, so they showed open wings. They are now shot with `gait=stand`. The Winged Thing's view was right, since its first gait is a walk.
+
+### Needs eyes
+- **The view from above** (`cam=top` is offset to one side) makes the far wing look splayed beside the near one, though the wings measure as mirror images. A plain top-down camera would settle what the folded silhouette reads as.
+- **Whether 13 degrees reads as worn or as untidy.** The tips part only over their last fifth, where the cards narrow.
+
+## v80 — Session 989 — The Aurennais' sash over one shoulder (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais "a sash over one shoulder" (OG-044, OG-056, both kept). OG-056 draws it as "a long patterned sash wrapped over one shoulder" in rust red and indigo, with block-printed borders. The wardrobe had nothing of the kind: Sessions 805 to 917 made the Gatelanders' and the Markmen's pieces, and the Aurennais wore a plain tunic. The sheet draws the sash plainly and the canon has nothing against it, so this asks nothing. It touches only the prototypes (`people.js`, `builder.js`'s labels and `builder.check.mjs`). (Numbered 989: this entry was first committed as 985, which the systems builder had taken in the meantime.)
+
+What changed in `people.js`:
+- **`buildSash`**: a band 9 cm wide, from the top of one shoulder (11 cm out from the neck's line) across the chest to the other hip (9 cm under the belt, just outside the body's side) and round the back. It reads what it lies over: the body, the tights' shell under a tunic (standing off it by makePerson's own push, up to 3.7 cm over the chest), a skirt's shell and the belt. Each triangle is read at 15 points; their corners alone left a fifth of the angles bare. It leaves out the arms and the neck. There are two printed borders 1.4 cm wide, done in vertex colours: one mesh, 864 triangles.
+- **How it lies.** The loop's centre line comes from a polar map in the plane through the shoulder, the hip and the body's front-to-back line, cut off at the hip. Three tries came before this:
+  - The plane's own width put the band edge-on into the side of the hip.
+  - The ray past the hip read the thigh and bellied out round it.
+  - At first the tunic's push was taken as a flat 2.8 cm, and the tunic came through at mid-chest.
+  So the band's width is now laid across the body's surface along the line (the surface's normal crossed with the line). Each of five rows across is set out along that normal, 7 mm clear of the furthest point within 1.2 cm, and may dip up to 2 cm to meet a curving body. It is then smoothed round the loop and across, never in past what it must clear.
+- **The arm at the hip is lifted** from the side, 0.03 radians at a time, until no point of it is through the band, as Session 887 did for a long skirt.
+- **The dress** takes `sash`, `sashBorder` (both colours, in the builder's garment list) and `sashSide` ('L' by default). It saves and loads.
+- **The roll.** The Aurennais roll a sash at 0.45, but only with no cloak and no bib. It comes in indigo, madder, saffron or olive with a sand, cream or madder border, over the left shoulder three times in four. It is drawn last in `peopleGenome`, so every earlier roll of a seed is as it was. No other people rolls one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 289 checks pass** (279 before). Ten new checks cover three sashes (a man over a belted tunic, a woman over a long skirt, a man over the right shoulder) and the roll:
+  - Nothing comes through: 0 of 11,935, 13,494 and 11,830 points read, with the nearest 3.1 to 4.2 mm under the band. The test looks at twice the band's own points round it and across it.
+  - No arm is through. The arm at the hip is lifted 0.18 radians on the men and 0.09 on the woman.
+  - It drops 0.54 and 0.50 m from shoulder to hip, in a loop 1.70 to 1.80 m long, and saves and loads back.
+  - 13 of 40 rolled Aurennais wear one (3 over the right shoulder), none under a cloak or a bib, and the Markmen none.
+- `kit.check.mjs` passes.
+- **Pictures:** `builder-sash-man.jpg`, `builder-sash-back.jpg` and `builder-sash-woman.jpg` are new; `builder-peoples.jpg` was re-shot, and its Aurennais man now wears an indigo sash.
+
+### Needs eyes
+- **The hip end** is a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang; that is a piece of its own.
+- **Over a cloak or a bib** it is not handled, so it is not rolled with either.
+- **The men's arm lift** (0.18 radians, about 10 degrees) holds the right hand a little off the hip. A broader-hipped man may need more; the lift stops at 0.3.
+- **The print** is borders only. OG-056's block-printed field would want a pattern in the shader, as the woven cuff band has.
+
+## v80 — Session 990 — The sash's printed field (L1 and B2, prototype only)
+Session 989 left the sash with borders only, and said OG-056's sashes are block-printed. This adds the print. It touches only the prototypes (`people.js`, `builder.check.mjs`).
+
+What changed in `people.js`:
+- **A row of printed blocks down the middle of the field.** They are 2.2 cm wide and 2.5 cm long (two steps of the loop), with two steps between, in the border's colour. Each block is its own pair of triangles, so its edges stay sharp in vertex colours, and it lies 0.8 mm out from the band along the surface's normal, so it never fights the field for depth. A band carries 72 blocks, which add 144 triangles (1,008 in all).
+- The dress takes `sashPrint` (on by default); `false` gives the plain band.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 292 checks pass** (289 before). The three new checks find 72 blocks (144 triangles over the plain band's 864) on each of the three sashes. The Session 989 checks pass as before: nothing comes through, no arm is through, and the arm lifts are unchanged.
+- **Pictures:** `builder-sash-man.jpg`, `builder-sash-back.jpg`, `builder-sash-woman.jpg` and `builder-peoples.jpg` were re-shot.
+
+### Needs eyes
+- **One motif.** The print is a single row of squares. OG-056's borders show richer block prints, and a lozenge or a stepped motif would want the band in finer steps or a pattern in the shader.
+## v80 — Session 988 — guardsindoor: the yield no longer opens in the middle of the fight (card combat-resolver, CI red on #356)
+The producer put the card back in the queue because PR #356 had been red on 15f78f9 for six hours. `guardsindoor` failed twice on headless shard 9 (473 s, run 38819894062), and it passes on main. This run merged origin/main, which merged cleanly, and found the cause. It was the test's fight step, not the resolver. That step runs eight seconds of `WORLD.tickInterior` at 1/60 and passes `performance.now()` as the time. The guard paces his blows on that wall clock, so a slow runner fits more of them into the same eight seconds of ticks. Since Session 940's retune, each blow takes about a tenth of your health. On a loaded machine the blows took you from 130 to 33, under the fifth at which he offers the yield, and the yield's dialog opened inside the fight step. An open dialog pauses the main loop. Every swing the next step made then waited its full 15 s with `_pendingStrike` never fired, and he kept all 48 of his health. Run alone, the machine was quick enough that the fight step stayed above a fifth and the suite passed, which is why the failure seemed random. Reproduced here: three copies run side by side failed every time, and logging showed the yield's text open before the first swing.
+
+The fix is in the test only. The fight step now fills your health before every tick and adds up what each tick took, so "he closes and strikes" still measures his blows (about 97 to 99 health in the eight seconds) and the yield can no longer open early. The check also asks that no dialog is open at the end of the step. The yield is still tested as before, later in the suite, at a fifth of health set by hand. No check was loosened. The game is unchanged: in play the wall clock and the frame's `dt` run together, and at a fifth of health the yield should come.
+### Verified (headless Chromium)
+- `guardsindoor` before the fix: three copies run side by side, 3 of 3 failed at "your blows land on him indoors" (48 → 48). The yield's dialog was open before the first swing, at 33 of 130 health, and all six swings ended with `_pendingStrike` still set.
+- After the fix: three copies side by side, 3 of 3 passed. The fight step took 97 to 99 health with no dialog open, and the first swing landed.
+### Needs eyes
+- Nothing a player sees changes. One thing for later, outside this card: a guard paces his blows on `performance.now()` while his movement steps on `dt`, so two tick rates that differ make him hit at a different rate. The co-op rules allow it (it reads the clock), but a fight driven by fixed ticks in a test is not deterministic until his cooldown reads the play clock.
 ## v80 — Session 980 — The Mark's rope ferry (card F8, prototype only)
 L5's "roads and works" (OG-046) owed a shipyard and a ferry after Session 972's toll bridge. OG-046 lists "river port and ferry" among its works, and the Mark is the island with "a river valley at its heart" (OG-102) and no place built yet in `places.js` since the mine and the ice cave. So this is a crossing on a Markish river too wide to bridge cheaply: the Norse *ferjested*, a flat hauled across by hand along a rope, with a bell on the far bank to call the ferryman over. It lives in `places.js` beside the toll bridge, with its own view (`places-ferry-view.js`, dispatched from `places-view.js`). It reuses the lighthouse's materials and the kit's Markish hall (`markHall`, now imported into `places.js`). Nothing new is asked. It touches only `places.js`, the two views and `places.check.mjs`.
 
@@ -21457,3 +21979,1062 @@ Corrections made during the session:
 - **The quay's rubble texture is the toll bridge's**, large and regular, and its bollards are iron where a small yard would use timber.
 - **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
 - **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
+
+## v80 — Session 996 — The sash's knot and hanging ends (L1 and B2, prototype only)
+Session 989 left the sash's hip end as "a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang." OG-056 draws the Aurennais' sashes knotted at the hip with long ends falling over the thigh. This finishes a piece the kit already makes and the sheet already shows, so it asks nothing. It touches only the prototypes (`people.js`, `builder.check.mjs`). (Numbered 996: this entry was first committed as 992, which the systems builder had taken in the meantime.)
+
+What changed in `people.js`:
+- **The knot.** It sits on the band where the loop turns, 15 cm round from the loop's lowest point toward the front, so it lies on the front of the hip rather than its side. It is a lump 8 cm across the band, 6.8 cm along it and 4.4 cm deep, slightly irregular, with its inner face 3 mm over the band. A ring round its middle is in the border's colour, so it reads as cloth bound round on itself. It has 280 triangles.
+- **Two hanging ends** come out from under the knot. The longer is 32 cm and lies behind; the shorter is 25 cm and lies in front. They are 5 cm wide under the knot and widen to 7 cm, and each has the band's two borders and a bordered hem. They are laid in rows 1.5 cm apart, five lines across each row, and hang straight down. A row moves out only where what it hangs over (the thigh, the tunic's skirt, a long skirt, or the band itself under the knot) stands further out than the row above, and it never comes back in. The front end also stays 6 mm clear of the one behind. The longer end drifts in toward the body's middle and the shorter barely out, so they part by 5.2 cm at the hem. Together the ends add 228 triangles. A sash is now 1,516 triangles in one mesh, against 1,008 for the band alone.
+- **The hand.** The relaxed hand lies on the front of the thigh, right where the ends fall. At first the only fix was the existing arm lift, which then had to reach 0.24 to 0.27 radians to clear them; the check allows 0.2. So `makePerson` now does something else once the band is clear: it swings that arm back from the shoulder, 0.03 radians at a time (0.3 at most), until no point of the arm is in the knot or through an end. The men need 0.15 radians (about 9 degrees) and the woman 0.09. The lift is back to Session 990's values (0.18 and 0.09).
+- The dress takes `sashKnot` (on by default). With `false` you get the band alone, as before.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 299 checks pass** (292 before). The seven new checks:
+  - **Placement and clearance, on each of the three sashes:**
+    - The knot sits 13.1 cm under the belt on the men and 4.7 cm on the woman, whose belt sits lower.
+    - Nothing it lies over is inside the knot.
+    - The ends hang 0.31 to 0.33 m below it, 5.2 cm apart.
+    - Nothing comes out through the ends: 0 of 364, 1,216 and 391 points read, the nearest 4.6 to 6.5 mm under them.
+  - **The arm, on each of the three:** no point of it is in the knot or through an end, and the swing stays within 0.2.
+  - **`sashKnot: false`:** gives the band alone, 1,008 triangles and no knot.
+- The print check now counts the band's own triangles. Before this, it counted the whole mesh, so the knot read as extra print.
+- `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-sash-knot.jpg` (the hip close up, from the front) and `builder-sash-knot-side.jpg` (from the side, with the ends standing off the tunic's front).
+  - Re-shot: `builder-sash-man.jpg`, `-back.jpg`, `-woman.jpg` and `builder-peoples.jpg`.
+
+### Needs eyes
+- **The knot reads as a ball** with a band round it, most of all on the woman's madder sash. A real knot has a loop and the ends coming out of it; a flatter, wider lump, or one end looped over, would read better.
+- **The ends are stiff.** They hang straight and flat, with no twist and no fringe. OG-056's ends are fringed.
+- **The arm swung back.** At 0.15 radians the hand hangs at the side of the thigh, behind the ends. Whether that reads as relaxed or as held back needs a look in the line-up.
+- **In motion** the ends would swing. They are built on the posed body like the rest of the sash, so in the game they need bones or a cloth tick (B4, F4).
+
+## v80 — Session 994 — The Aurennais' head-wrap (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais head-wraps (OG-044 and OG-056, both kept): cloth wound round the head in saffron, red and teal. The wardrobe had no such piece. The sheets draw it plainly and the canon has nothing against it, so, as with the sash (Session 989), this asks nothing. It touches only the prototypes (`people.js`, `builder.js`'s labels and `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`headDome`, from the kettle helm.** Session 897's dome, fitted to the skull, is now a function of its own. The helm and the wrap share it, and the helm's numbers are unchanged (its checks pass as before). It reads the furthest point of the head and of the tucked hair in 72 directions round and 24 down, above a rim line, spreads each one to its neighbours and smooths them.
+- **`buildWrap`.**
+  - **The crown** is that dome with 1.6 cm of clearance for the wound cloth (the helm has 1.2).
+  - **Its edge** runs across the forehead 1.9 cm over the tops of the brows, dips over the tops of the ears, and comes 12.8 cm down at the nape to gather the hair.
+  - **Five wound turns** lie round its lower half. Each is a band of cloth 1.7 to 2.2 cm wide and about 1 cm thick: a tube flattened onto the head, its width swelling by 14% along its length.
+  - **The turns cross.** Each runs higher at the front or at the back than the one under it, so they cross over the brow and at the nape as a wrap's turns do.
+  - **Colours.** The lowest turn is in the edge colour (`wrapBorder`) when there is one, and otherwise a shade darker. The crown is a shade lighter.
+  - **Seams.** The crown's and the turns' seams lie at the back; a first try put them down the middle of the forehead.
+  - **Size.** It is one mesh of 9,072 triangles, carried rigid by the head bone as the helm is.
+- **The hair is tucked** under a wrap as under a helm: short, the long styles and braids put away.
+- **Nothing else on the head.** No wrap is built under a raised hood or a helm.
+- **The dress** takes `wrap` and `wrapBorder` (in the builder's garment list as *head-wrap* and *head-wrap edge*). They save and load.
+- **The roll.** The Aurennais roll a wrap at 0.45 for women and 0.3 for men, never under a raised hood. The colours are saffron, madder, teal, indigo or undyed, and half the wraps have an edge in sand, cream or madder. It is drawn after the sash, last in `peopleGenome`, so every earlier roll of a seed is as it was. No other people rolls one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 305 checks pass** (299 after Session 996). The six new checks:
+  - **A woman with braids under a saffron wrap, and a bearded man in teal:**
+    - the head stays at least 16.0 mm under the cloth;
+    - none of the 27,774 and 27,862 tucked hair points comes out;
+    - it clears the tops of the brows by 18.7 and 18.9 mm, with no point of it over them;
+    - it comes 12.8 cm down at the nape, in five turns, and saves and loads back.
+  - **No wrap under a raised hood or a helm.**
+  - **The roll:** 13 of 40 rolled Aurennais wear one (7 of them women), none under a raised hood, and none of 30 Markmen, Gatelanders and Old Blood.
+- The helm's checks pass on the shared dome. `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-wrap-woman.jpg`, `-back.jpg`, `-man.jpg`, `-side.jpg` and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`. All three of its Aurennais now wear wraps; the sash man's is saffron.
+
+### Needs eyes
+- **Seen from the side** the wrap stands a little forward of the forehead, like a cap's peak. This is the dome's clearance at the brow.
+- **One way of wrapping** serves both men and women. OG-056's women wear their head-scarves with a tail falling down the back, and its men wear taller turbans. A tail, and a height by sex, would be the next pieces.
+- **The weight:** 9,072 triangles is heavy for a hat. The turns could take 6 sides in place of 10 when F4 brings it into the game.
+- **The tucked hair** shows as a dark fringe on the neck under the nape's edge on the woman.
+
+## v80 — Session 995 — Hoop earrings (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais "coin and hoop jewellery" (OG-044, OG-056). This session makes the hoops; the coins are a necklace and owed. As with the sash and the wrap, the sheets draw them plainly and the canon has nothing against them, so this asks nothing. It touches only the prototypes (`people.js`, `builder.js`'s labels and `builder.check.mjs`).
+
+What changed in `people.js`:
+- **`buildEarrings`:** a thin metal ring through each earlobe, 2.5 cm across on a woman and 1.8 cm on a man. It hangs in the plane of the side of the head, its top 2 mm into the lobe, and is carried rigid by the head bone. Gold or bronze, metallic. 1,152 triangles for the pair.
+- **The lobe** is the ear's lowest point on the unmorphed body (rest x past 7.3 cm, rest y between 68 and 75 cm, rest z between 3 and 6.5 cm). It is carried to the morphed head by its index, so it follows every face and height the sliders make.
+  - **Correction, mine:** the first try looked for the ear on the morphed head as the furthest-out point. On the woman it found the cheek, 1.5 cm forward of the ear; on the man it found a point level with the eyes.
+- **When it is built:** under the wrap, which stops above the lobes, the hoops show. Under a raised hood they are not built.
+- **The dress** takes `earrings` (the metal's colour; *hoop earrings* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll hoops at 0.6 for women and 0.25 for men, in gold or bronze. They are drawn last, so every earlier roll of a seed is as it was. No other people rolls them.
+- **The checks:** the man's picture is built from a genome made in the check (`g=`, clean-shaven, no wrap or cloak). Seed `ear:1`'s full beard hid the hoop.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 309 checks pass** (305 after Session 994). The four new checks:
+  - **A woman in gold and a man in bronze:**
+    - a hoop through each lobe;
+    - the lobes mirror images to 1 mm, 14.0 and 15.0 cm apart;
+    - no point of the head within 1.5 mm of either ring below the piercing;
+    - carried by the head bone, and saves and loads back.
+  - **No earrings under a raised hood.**
+  - **The roll:** 17 of 40 rolled Aurennais wear hoops, 9 of them women. None of 30 Markmen, Gatelanders and Old Blood do.
+- `kit.check.mjs` passes.
+- **Pictures:** `builder-earrings-woman.jpg` and `builder-earrings-man.jpg` are new; `builder-peoples.jpg` was re-shot.
+
+### Needs eyes
+- **A full beard** covers the lobe and hides the hoop. Its cards may run through the ring; nothing checks hair against it.
+- **Long loose hair or braids** falling over the ear are not checked against the ring either.
+- **The rings are rigid** on the head bone. In the game they would want to swing.
+- **Owed:** the coin necklace and the coins on the head-wrap's edge (OG-056), and the sandals.
+## v80 — Session 991 — lookpair's road box read a road laid at random (QA)
+CI from 00:52 to 06:52 UTC on 16 Oct had nine green runs and no red. Five suites failed and then passed on the retry. `lookpair` did it twice, both times in shard 11 (auto/qa d07d7c0 and auto/backlog faaa8d4), and each retry cost about 7.5 minutes of a shard already running 50 or more. Both failures were on the same check, *the colour and the light match … each within 10 levels a channel*. Both times it was the road box alone: the old look read (240,226,153) against the new look's (223,211,142), worst 17, and later (225,212,143) against (236,223,150), worst 11. On all four tries the sky, grass and wall agreed to within a level, and the retries' roads read from 228 to 235 in red. So the road was moving within each look, not between the two looks.
+
+Measured here, the road's colour held steady within one page: 225 over four shots, with or without the 160-odd townsfolk (nothing moving crosses the box). It changed from one boot to the next: 233, 230 and 227 over three old-look boots. The cause is `buildRoadRibbons` (`js/82-world-structures.js`), which gives each road vertex a grain of `1+(Math.random()-.5)*.14`. The box is 200 by 60 pixels over a few large triangles near the eye, so its mean depends on a handful of random draws, and the two looks never draw the same ones. The game is right to do this: a cosmetic roll may stay `Math.random` under the co-op rules. The fault was in the test, which compared two different roads.
+
+The fix makes both looks lay the same road. Before the world builds, the suite wraps `buildRoadRibbons` (a global, which the world calls by its bare name). While one chunk's ribbons are built, `Math.random` is a mulberry stream seeded by the chunk's (cx, cz), and the page's own `Math.random` is put back afterwards. The order in which chunks load, and every other roll, are unaffected. A new check says that both looks laid their roads through the seeded build. The colour check keeps its 10 levels, and the mean-difference check keeps its 12.
+
+Also read this window: `bridgenames` FLAKY once, the game's bug, fixed by the systems builder's Session 978 and not yet on main. `looknew` FLAKY once on auto/bodies, the cause fixed by Session 971, waiting on PR #365. `hourhitch` FLAKY once on main, which `docs/qa/looknew.md` already owes a session of its own. The shard times are in `docs/qa/flaky.md`: 51.5–57.7 min for the slowest shard, and every job ended under its hour.
+### Verified (headless Chromium)
+- `node tests/run.mjs lookpair --no-retry`, three runs in a row, all green. Road (231,218,147) in both looks every time. Worst region 1, 2 and 1; mean difference 5.76, 5.71 and 5.74, against 6.84–9.28 on CI's four tries. The seeded builds were 106–110 chunks a look.
+- Probe before the fix: within one boot, four shots 1.5 s apart read the road at (225,213,143) every time, the same with the people hidden. Across three boots the road read 233, 230 and 227 in red.
+### Needs eyes
+- Nothing for play: the game is untouched. The same grain is in the town's footpaths (`js/83-world-generator.js`, 0.12). The box does not reach them, but a later picture check over a path would need the same care.
+
+## v80 — Session 992 — hourhitch: the 4× is of an ordinary frame, and the new look's 11 s stall is the game's (QA)
+`hourhitch` failed and then passed on the retry once on main (f84061f, shard 5). The new look's ledger had it red twice under load and owed it a run alone in both looks. On CI the failing check was *no frame after a change of hour over 4× the worst noon frame*. The 17:59 → 18:00 step had a 7.8 s frame with nothing compiled. Every step in that run took 4.7–5.8 s, and the cap Session 831 built from the steps' median was 10.6 s. What failed it was the other clause, 4× noon, with noon read once before the first dusk at 1.7 s, which gives 6.9 s. Noon is a single early sample, and on a loaded runner every frame after it is slower. Run alone here, the old look failed the same way: the jump to 23h was 7.4 s against 4 × 1.76 s, while the first night's new Lambert program compiled.
+
+The clause now reads 4× an *ordinary* frame, the larger of noon's worst and the steps' median. The cap is unchanged: 8 s, or twice noon or twice the median, whichever is larger. So the 20–24 s stall the suite was written to hunt still fails, and so does any frame over twice the median. In practice the cap is now the binding bound. The check's name says so. The suite also logs each step's buffer and texture uploads (counted on the GL context, like the shader compiles), for reading a long frame that compiles nothing.
+
+On the new look, alone, the suite is red for a different reason, and that reason is the game's. The jump to 21h (after 18h, 23h, 12h and 6h) gave one frame of 11.2 s, then 11.5 s on a second run. Nothing was compiled, the programs stayed at 42, the lights at 27, and the step had 258 uploads, fewer than most steps; the steps' median was 3.2–3.5 s. A probe with longer settling put a 9.1 s synchronous `REN.render` on the first dusk instead, again with nothing compiled. So the time is inside a render call on 0.170, and a compile count cannot see it. Filed in backlog I for the systems builder (or the F card that owns the new look). The suite is left to fail on it.
+### Verified (headless Chromium)
+- Old look, alone, three runs in a row: green. Worst judged frames 7.2, 4.0 and 3.0 s; medians 2.57, 2.73 and 2.64 s; noon 1.7–2.0 s. The first run would have failed the old clause (7.2 > 4 × 1.735).
+- New look, alone: red twice, before and after the change, at the jump to 21h (11.2 and 11.5 s). Every other check passes: no compile and no program after the first night, 27 lights throughout, the torches lit at night and out at noon.
+- Uploads a step (old look): 1,132–1,156 at the first dusk, 281–800 after.
+### Needs eyes
+- Whether the new look's stall at 21h is felt on Michael's laptop: one hitch when the clock jumps to night after a sleep or a wait. The headless frame is software GL; the ratio (3× an ordinary frame) is what counts.
+## v80 — Session 991 — The Gatelands' peat-cutting camp (card F8, prototype only)
+The first of OG-124's places off the road that L5 and L10 had not yet built: the Gatelands panel's "peat-cutting camp" (OG-124, with OG-014's bogland and OG-099's fens). The precedent is a family's hand-cut turf bank on a raised bog, as in Connemara and the Bog of Allen: the face cut with the sleán in two spits, the sods thrown up onto the bank to dry, first spread and then footed on end, the dry turf built into a rick by the bog road to wait for the cart, and a cutters' bothy of sods under thatch with a fire at its door. It is `gatelandsPeatCamp` in `places.js`, with its own view (`places-peat-view.js`, dispatched from `places-view.js`). Nothing new is asked: who cuts here, and whether the camp is worked or left, is the quest writer's, and no people are drawn. It touches only the prototype folder.
+
+**The camp** (at true size, y 0 the bog's surface, the face along x at z 0 and the cutaway to +z):
+- **The bank:** a face 36 m long, cut down about 1.3 m in two spits: a bench 0.8 m down and 0.45 m wide, then the floor. Its west end is cut steep and its east end ramps up at about 1 in 5 for the barrow. The face is flat-shaded peat, so its edge is not smoothed into the bog.
+- **The cutaway:** a wet floor with black water in its hollows, dry for 2 m out from the face where the cutter stands. The last generation's bank lies slumped and heathered 12 to 16 m out.
+- **On the bank:** the newest sods spread in nine rows to skin over, and older ones footed in sixes (five on end leaning in, one laid across), about 110 footings. There is a turf barrow half loaded, a creel, and the sleán standing in the bank by the lip.
+- **By the road:** a gravel bog road, a rick of dry turf beside it (4.2 by 1.5 by 1.4 m, its outside laid in courses), and the bothy: 3.6 by 2.8 m of sod walls 1.5 m high, a thatched roof held down by four ropes with stones hanging at the eaves, and a low door to the road. The fire burns on a ring of stones before it, with a crane of two forked sticks and a kettle on its hook.
+- **The bog:** heather and bog cotton on the uncut ground. The ground goes flat at the patch's edge, where four bands carry it out into the mist.
+- 39,000 to 39,800 triangles in 20 meshes.
+
+The view: `places.html?place=peat`, with `view=camp` (from the bog road), `bank` (on the cutaway's floor at the face), `spread` (on the bank among the footings), `hut` (by the fire) and `far` (from high over the cutaway).
+
+Corrections made during the session:
+- **The sky.** It first rendered black: the camera's far plane (3,000) was inside the sky dome (26,000).
+- **The fire.** It first stood on the road's edge. The bothy moved 1.6 m north.
+- **The face.** It first read black. Its normals had been smoothed with the bog's at the lip, and the peat was too dark under the rock texture. The face is now flat-shaded, and the peat, the floor and the sods are on the plaster texture in their own browns.
+- **The footings.** They first carried their top sod 3 cm over four leaners and read as little figures in hats. They are now five leaners with the sixth sat down among their tops.
+- **The edge.** Gaps showed white at the patch's edge where the hummocks dipped under the outer bands. The hummocks now fade to flat there.
+- **The check found two faults.** Water stood at the face's foot (8 to 26 samples in the first 1.5 m), and the floor's depth ran wider than the comment claimed. The floor is now lifted 0.14 m for 2 m out from the face, and the check's ranges are the ones designed.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 119 of 119 pass** (111 after Session 981). Two views are new on the page check, the camp and the hut, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 39,016 to 39,784 triangles in 20 meshes, 108 to 115 footings and 414 to 436 sods spread.
+  - **The bank, at 105 points:**
+    - the lip on the bog;
+    - the bench 0.68 to 0.92 m down (the hummocks) and 0.445 m wide;
+    - the floor 1.11 to 1.49 m down;
+    - the face the peat's and upright to 0.004 m.
+  - **The water:** over 19 to 20% of the floor, none in the first 1.5 m from the face, none on the bank.
+  - **The sods:** every footed sod's foot within 0.025 m of the bog; every spread sod found lying on it, its top 0.10 to 0.14 m up.
+  - **The sleán:** its blade 0.19 to 0.20 m into the bog, its grip 1.12 m up.
+  - **The bothy and the fire:**
+    - the door 0.78 m wide and 1.42 m high, with 1.8 m of room behind it;
+    - the kettle 0.32 m over the embers;
+    - the fire 1.6 m off the road.
+- **Pictures:** `places-peat-camp.jpg`, `-bank`, `-spread`, `-hut` and `-far`.
+### Needs eyes
+- **The footings read as a field of small cones** from the bank. That is roughly right, but real ones are looser and more ragged.
+- **The pools are smooth ellipses of black water,** with no rushes or sphagnum at their edges.
+- **The bothy's roof is two smooth slabs of thatch.** Its sod walls are the turf texture, not coursed sods. There is no smoke and no interior.
+- **The heather is low-poly blobs.** The bog cotton heads are a little large.
+- **Peat cut on a bog is a quest writer's and a systems builder's question too:** turf as fuel, a cutter's right to a bank. Nothing of that is drawn.
+- **Off the road (OG-124) still lacks:** the shepherd's hut, the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 1003 — The coin necklace (L1 and B2, prototype only)
+Backlog L1 gives the Aurennais "coin and hoop jewellery" (OG-044, OG-056). Session 995 made the hoops and left the coins owed. This session makes the coin necklace. As with the sash, the wrap and the hoops, the sheets draw it plainly and the canon has nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label and a new `neck` view) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **`buildNecklace`:** a thin chain round the base of the neck, with coins hung from its front half on small rings. Carried rigid by the chest bone.
+  - **The chain** is 1.1 mm thick on a man and 0.9 mm on a woman, in the dress's metal. It is laid by 120 rays from outside, aimed in at the neck's base round it:
+    - level at the nape, 1 cm over the neck bone's head;
+    - in a U in front, down to 7.5 cm under it on a man and 8.5 cm on a woman, onto the breastbone;
+    - down from up to 60 degrees above at the sides, onto the shoulders' tops.
+
+    Each point lies 2 mm off the first thing worn that its ray meets. It is then smoothed round the loop and set back out against a fresh ray through where it now is, three times.
+  - **The coins:** nine on a woman, every 2.2 cm of chain, and seven on a man, every 2.4 cm. The middle one is larger: 2.4 cm across on a woman and 2.2 on a man, against 1.8 and 1.7.
+    - Each hangs 3.5 mm below its ring. Its centre is found by a ray aimed lower, so its face lies on the chest rather than across it.
+    - Each is set out along its face until nothing comes up within its rim.
+    - Where the chain runs steeply down, a coin that would cover the one before it lies over it by a coin's thickness, as scales do.
+    - Each is struck with a beaded rim and a stamp of eight rays round a boss, a little off centre. The stamp is a canvas used for colour and bump.
+  - **What it lies on:** the body and everything skinned over it, read at 15 points on every triangle near the neck; and the points of rigid pieces there (a sash, a bodice's lacing, a wrap's tail). Not the hair, the beard or a hood, and nothing more than 5 cm over the neck bone (the jaw, the ears and the hoops).
+  - **Size:** 3,540 triangles on a woman and 3,076 on a man, the chain about 1,450 of them.
+- **When it is built:** after the sash, the lacing and the robe's cord, so it lies over them; before the cloak, which hangs over it. It is not built under a raised hood.
+- **The dress** takes `necklace` (the metal's colour; *coin necklace* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll it at 0.35 for women and 0.12 for men, in the hoops' metal when they wear hoops and otherwise gold or bronze. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls it.
+- **`builder.js`:** a `neck` view (the throat and the upper chest), and the label.
+
+Three corrections of my own, made on the way and kept here because each is a trap for the next piece worn at the neck:
+- **`neck01`'s head sits at the back of the neck, below the shoulders' line.** Rays from it ran through the empty inside of the chest at the sides.
+- **Rays from inside the neck can only find the neck.** Taking the first surface met gave a choker, and taking the furthest found the breast or the hip. The rays must start in the air.
+- **A tunic's points are a few centimetres apart.** Between the breast and the collar its cloth is hollow, so the drawn triangles stand out past the points. A chain laid on the points alone went into the cloth there, in pieces. Reading 15 points on each triangle, as the sash does, fixed it.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 329 checks pass** (309 before; 20 new). The new checks run on nine people:
+  - a woman in gold over a tunic and a bearded man in bronze;
+  - the necklace over a sash on either shoulder, a head-wrap's tail, a laced bodice, mail, a robe, and under a cloak with its hood down.
+
+  On every one of them:
+  - nothing of what it lies on comes up through the chain (0 of 450 to 702 points tested), and no ray missed;
+  - nothing comes up through a coin (0 of 186 to 382 points);
+  - no coin covers another (up to 2 laid over the one before, on the man with the sash on the right shoulder);
+  - each coin hangs within 1.8 mm of its ring's drop;
+  - the lowest coin hangs 9.8 to 11.0 cm under the neck's base and the chain is 63 to 71 cm round;
+  - it is carried by the chest bone, and it saves and loads back.
+- **None under a raised hood.**
+- **The roll:** 5 of 40 rolled Aurennais wear one (4 of them women); the one who also wears hoops wears them in the same metal. None of 30 Markmen, Gatelanders and Old Blood do.
+- `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-necklace-woman.jpg`, `-man.jpg`, `-side.jpg` and `-sash.jpg`.
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **Under a cloak with its hood down** the necklace is built and the check passes, but the cloak is laid without knowing it is there. Where the cloak's front edges meet at the brooch they may cross the top coins. Nothing checks that.
+- **A full beard** falls over the top of the chain. That is right, but nothing checks the beard's cards against the rings.
+- **The coins are rigid** on the chest bone. In the game they would want to swing, and the chain would want to follow a turning neck.
+- **Over a sash** (`builder-necklace-sash.jpg`), the middle coin sits on the sash's edge and tips flatter than the rest.
+- **The rings are drawn edge-on along the chain.** From the front they read as short bars at each coin's top.
+- **Owed:** the coins on the head-wrap's edge (OG-056), a scarf's tail and a taller turban, the sandals, the sash belt.
+
+## v80 — Session 1004 — Coins on the belt (L1 and B2, prototype only)
+OG-056's details panel draws "a tooled leather belt with hanging coins" among the Aurennais' jewellery. Session 1003's coin is reused for it, so this session hangs a row of them from the belt. Session 995's note listed "the coins on the head-wrap's edge" as owed. The catalogue row does not name them and the thumbnail is too small to show them, so that item is left as it was and this one, which the row does name, is built in its place. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label and a `waist` view) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **`buildBeltCoins`:** a row of coins 1.5 cm across, each on a ring from the belt's lower edge, across the front of the body from 0.85 rad either side, every 2.6 cm of the edge: 12 on the people checked, along 29 to 31 cm of it. Carried rigid by the hips' bone. 2,592 triangles for 12.
+  - **The edge** is the belt's own points at the bottom of what is drawn of it: the furthest out in each direction, taken down to the band's cut (rest y 0.135). A point standing more than 15% past the edge's middle radius is not used, since a sleeve hangs over the belt's sides there.
+  - **Each coin hangs straight down** 3.5 mm under its ring, facing out from the body. It is set out along its face until nothing it lies on comes up within its rim: the body and what is skinned over it, read at 15 points on every triangle, the belt's drawn band among them.
+  - **A coin with something in front of it** (an arm, a wide sleeve) would show only in part, so it is not hung. Beside the man's sash knot 2 of the 12 were left off: the knot's hanging ends are in front of them.
+- **When it is built:** after the necklace, on a belt that no tabard or apron covers.
+- **The dress** takes `beltCoins` (the metal's colour; *belt coins* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll it at 0.25 when their belt is uncovered, in the metal of the necklace or hoops they already wear, or else gold or bronze. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls it.
+
+**Correction to Session 1003:** the coins were turned into place from a left-handed basis (the face's side axis was the face's normal crossed with up, not up crossed with the normal). A quaternion read from a reflection is not a faithful rotation. On the necklace the coins happened to come out facing the right way. On the belt they came out tilted, with wedges bitten out of them by the cloth behind. Both now build from `(up × N, up, N)`. The necklace's pictures are re-shot, and its checks, which measure along each coin's face and not its mesh, are unchanged.
+
+Corrections of my own on the way, kept for the next piece hung from a belt:
+- **The belt's points run 1.5 cm up the band** above the drawn edge. A coin hung from them started behind the leather.
+- **The sparse edge points snapped several coins to one place:** 11 pairs touching. Coins are now placed by distance along the edge, interpolated between its points.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 336 checks pass** (329 after Session 1003; 7 new). The new checks:
+  - **Five people:** a man over a tunic, a woman over a long skirt, a man over mail, and the coins beside a sash's knot on either side. On each:
+    - every coin's top is under the belt's edge;
+    - nothing comes up through a coin;
+    - no coin touches the next;
+    - no coin stands more than 1.5 cm off what is behind it (3.5 mm at the most, over the long skirt);
+    - it is carried by the hips, and it saves and loads back.
+  - **None under a tabard or an apron.**
+  - **The roll:** 10 of 40 rolled Aurennais wear them, none on a covered belt; none of 30 Markmen, Gatelanders and Old Blood do.
+- `kit.check.mjs` passes.
+- **Pictures:**
+  - New: `builder-beltcoins-man.jpg`, `-woman.jpg` and `-full.jpg` (a woman with hoops, the necklace and the belt's coins).
+  - Re-shot: `builder-necklace-*.jpg` and `builder-peoples.jpg`.
+
+### Needs eyes
+- **The coins hang plumb**, so where a long skirt or a belly stands further out below, they hang clear of it (3.5 mm at the most on the people checked). That is right for a coin on a ring at rest; in the game they would swing.
+- **The rings are edge-on from the front**, as on the necklace.
+- **The belt is the plain leather belt.** OG-056's wide sash belts in rust and indigo, and the tooling on the leather, are not built; the sash belt stays owed.
+- **Still owed:** the coins on the head-wrap's edge (to be confirmed from the full image), a scarf's tail and a taller turban, the sandals, the sash belt.
+## v80 — Session 997 — The Gatelands' abandoned shepherd's hut (card F8, prototype only)
+The next of OG-124's places off the road: the Gatelands panel's "abandoned shepherd's hut", built with OG-014's dry-stone walls and OG-077's foxglove. The precedent is the booley huts on Slievemore in Achill and the shielings of the Highlands. These were summer huts on the hill pasture, lived in while the flock grazed high and left when the custom died. They had a single room of dry stone with a gable hearth, a stone fold beside them, a spring above, and often a rowan planted at the door. It is `gatelandsShepherdHut` in `places.js`, with its own view (`places-shepherd-view.js`, dispatched from `places-view.js`). Nothing new is asked: whose hut it was and why it was left are the quest writer's, and no sheep or people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, y 0 the hut's floor, the hill rising to -z at about 1 in 7, the door downhill to +z):
+- **The hut:** 6.0 by 4.2 m of dry stone 0.6 m thick, to eaves of 1.9 m, on a levelled stance cut into the slope.
+  - The walls are built in lengths of about half a metre, each with its own ragged head.
+  - The west gable stands to its apex at 3.6 m, with a stub of chimney under a cap slab.
+  - The east gable has fallen. A stepped stump stands over the back corner, and 70 stones lie heaped on both sides of the end wall.
+  - The door is 0.85 by 1.8 m under a slab lintel. The window is 0.45 by 0.5 m with a lintel of its own.
+  - A hearthstone with two hobs sits at the west gable.
+- **The roof, fallen in:**
+  - Two rafters have slid down, their feet on the floor and their heads still on the wall-heads, read from the walls' own records.
+  - The ridge pole lies on the floor among seven heaps of rotted thatch.
+  - Nettles grow in the corners and at the door.
+- **The fold:** a round pen of dry stone 8.4 m across, its walls 1.07 m high and coped with stones set on edge to about 1.35 m.
+  - The gate faces the hut, 1.37 m clear between two standing posts.
+  - The wattle hurdle that closed it lies against the wall beside it.
+  - On the downhill side a breach 1.7 m wide has tumbled to the knee, its stones spilled outside.
+- **Round about:**
+  - A rowan stands by the door with its berries.
+  - Above the hut is a spring: a kerb of 14 stones, a lining, the water 0.35 m down, and a slab hood on its uphill side. The turf is let down inside the lining so the water shows.
+  - A worn track runs from the door to the fold's gate. It is a ribbon five vertices wide laid over the turf, not the turf's own quads, which stepped.
+  - About 90 clumps of bracken have gone rust, and 30 foxgloves have gone to seed.
+- 30,920 to 31,436 triangles in 18 meshes.
+
+The view: `places.html?place=shepherd`, with `view=hut` (from the track below), `inside` (by the hearth, toward the door), `fold` (from outside the breach), `spring` (below the spring) and `far` (from high over the hill).
+
+Corrections made during the session:
+- **The walls.** They first used the `lichen` texture, which read as brick coursing. They are on `cobble` now (the voronoi stone the abbey's dry walls use). The lintels first rendered black on `slab`, and are on `rock` now.
+- **The track.** It was first the terrain's own quads chosen by distance to the line, which drew a staircase. It is a ribbon now, and was widened to five vertices across when the check found the hummocks poking through a two-vertex one.
+- **The budget.** The first build came to 40,068 triangles. The terrain grid is now in bands (0.5 m round the place, 2 m beyond, 10 m at the edge), which brought it to 31,000.
+- **The spring.** It first sat on unbroken turf, with the water hidden under the grass. The turf now drops inside the lining.
+- **The check found three faults:**
+  - The ridge pole's west end lay on the hearthstone, and in one key its east end lay on the fallen gable's heap. The pole now runs from x -1.5 to 1.2, and the heap keeps to within 0.8 m of the end wall inside.
+  - The fold's coping first ran three stones a length, which read as battlements. It is now a stone every 0.2 m, with one in twelve missing.
+  - The fallen rafters' feet stood 2 cm over the stance, whose floor is at -0.02. They now rest on it.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 128 of 128 pass** (119 after Session 991). Two views are new on the page check, the hut and the inside, both with no page errors. Seven checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 30,920 to 31,436 triangles in 18 meshes.
+  - **The hut's walls:** rays from the room's middle at the hip, every 5°, all meet stone, except those that leave through the whole thickness of the doorway, which go out onto the hill. The floor reads -0.02 m wherever it is sampled, every 0.25 m.
+  - **The door:** 0.848 m wide and 1.80 m to its lintel. Every ray up from the room at 1.7 m finds open sky.
+  - **The gables:** the west one stands to 3.83 m (the cap over a 3.6 m apex); the east one has fallen to 1.48 to 1.60 m, under its 1.9 m eaves.
+  - **The fallen timbers:** every end of the two rafters and the ridge pole rests on the floor or the wall-head under it, 0.000 m off.
+  - **The fold:**
+    - its wall is met at the knee on 94 rays, within its thickness;
+    - it stands 1.36 to 1.37 m over the pen's floor at the median, and no lower than 1.03 m where a coping stone is gone;
+    - the gate is 1.37 m clear and every ray through it leaves;
+    - the breach is down to 0.43 to 0.49 m.
+  - **The spring and the track:** the water is 0.35 m under the ground and inside its lining. The track is found on the turf at all 30 points along its line.
+- **Pictures:** `places-shepherd-hut.jpg`, `-inside`, `-fold`, `-spring` and `-far`.
+### Needs eyes
+- **The rowan reads as a parasol.** Its limbs all leave one point at the top of a bare trunk. A rowan is small, often multi-stemmed, with an oval crown. The leaf is low-poly blobs.
+- **The bracken reads as orange stars** from above. From the track it is closer to bracken, but it wants more fronds and a duller rust.
+- **Inside, the walls are dark** under a grey afternoon, and the timbers read nearly black against them.
+- **The stone is one texture throughout.** A dry wall's courses, its throughs and its batter (the wall leaning in as it rises) are not drawn; the walls are plumb boxes.
+- **The hill is one smooth slope** with low hummocks. No outcrop, no stream below, no other walls running off over the hill. A real booley stood among a dozen such huts. One is drawn.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 998 — The Mark's hunting cabin (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "smoking hunting cabin in snow pines". OG-025's carved gables and steep snow roofs give the dress. The precedent is the Norwegian jakthytte and the outbuildings of a fäbod:
+- a laft cabin of logs notched over each other at the corners, their ends running on past the corner;
+- a sill on corner stones, and a low turf roof that holds the snow;
+- the crossed barge boards (vindski) at each gable;
+- a stabbur beside it: a small store on posts, each post capped with a flat stone the mice cannot climb past, its steps stopped short of the door.
+
+The cabin is lived in this time, unlike the shepherd's hut: the chimney smokes and the window is lit. It is `markHuntingCabin` in `places.js`, with its own view (`places-cabin-view.js`, dispatched from `places-view.js`). Nothing new is asked: whose cabin it is is the quest writer's, and no people or animals are drawn. It touches only the prototype folder.
+
+**The place** (at true size, y 0 the snow at the cabin, the door's gable to +z):
+- **The cabin:** log centres 3.8 by 4.6 m.
+  - The side walls have 11 courses of logs 0.26 m thick, 0.21 m apart, to eaves at 2.48 m. The gable walls run half a course out of phase, so the two walls cross at every corner.
+  - The logs run 0.3 m past each corner, their cut ends showing.
+  - The gables close upward in shortening logs to a ridge at 3.6 m.
+  - 61 wall logs stand on six corner and middle stones.
+  - The door is 0.85 by 1.85 m between frame posts, with a plank leaf shut. Antlers hang on the gable over it.
+  - A lit window of 0.6 by 0.45 m, with a glazing bar, is cut into the east wall.
+- **The roof:** boards, 0.12 m of turf and 0.25 m of snow, at 27°.
+  - It runs out 0.75 m over the side walls, 1.0 m over the door (a porch's shelter) and 0.5 m at the back.
+  - Crossed barge boards stand at both gables.
+- **The chimney:** a dry-stone stack up through the west slope, with snow banked round its foot and a cap slab. Nine puffs of smoke rise from it and lean away downwind.
+- **The stabbur:** a log store 2.0 by 1.8 m, its floor 1.02 m over the snow.
+  - It stands on four posts, each with a flat rat stone twice its width.
+  - It has a door of its own, a turf and snow roof, and log gables.
+  - Its three stone steps stop 0.44 m short of it.
+- **The yard:**
+  - 328 pieces of split wood in two rows under the west eaves.
+  - A chopping block with the axe in it.
+  - A hide laced on its frame of poles.
+  - Snowshoes leaning by the door.
+- **The paths:** trodden ribbons, banked with 0.12 m of thrown snow on both sides. They run to the woodpile, to the store's steps, and away through the trees.
+- **The forest:** 74 spruce from 11 m out, 8 to 17 m tall, in seven tiers each, with snow on most tiers.
+- 36,441 to 36,516 triangles in 17 meshes, and nine smoke sprites.
+
+The view: `places.html?place=cabin`, with `view=cabin` (from the path in the clearing), `store` (by the stabbur's steps), `corner` (close on the laft at the north-east corner, the lit window), `yard` (from the chopping block across the woodpile) and `far` (over the trees).
+
+Corrections made during the session:
+- **The window.** Its frame was first a solid board box 0.24 m deep, which buried the lit pane. The frame is now four boards round an open light.
+- **The spruce.** They first had five tiers, each with a full ring of snow, and read as stacked lampshades. They now have seven tiers, with smaller caps, set a little off-centre and missing from one tier in five.
+- **The woodpile.** It was first triangular prisms of one size, which bristled. The pieces are now four- or five-sided and of varied size.
+- **The paths.** They were first a trough carved into the snow. The terrain's 0.5 to 2 m grid could not hold a trough 0.55 m wide, so its chords covered the ribbon at 35 of 40 points. The snow is now level and the paths are banked: the thrown snow lies in two ribbons beside the trodden one.
+- **The check found three faults:**
+  - The banks crossed the other paths' trodden snow by the door, where all three paths meet. The banks now start 1.1 m out.
+  - One bank in two keys was wound face-down, so it was invisible from above. The ribbon's winding test read only its first vertex's normal; it now reads the sum of them all.
+  - The chimney stood 0.49 m over the snow banked round it. It is now 1.0 m over the roof at its edge, and 0.74 m over the bank.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 136 of 136 pass** (128 after Session 997). Two views are new on the page check, the cabin and the store, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 36,441 to 36,516 triangles in 17 meshes, 61 wall logs and 74 spruce.
+  - **The walls:** rays from the room's middle, every 5° at 0.6, 1.2, 1.8 and 2.3 m, meet log, board, the door's leaf or the window's light at all 288. Rays every 5 cm up each of the four corners, to the eaves, find a log at every height.
+  - **The door and the roof:**
+    - the doorway is 0.846 m wide and 1.923 m clear over the floor, with its leaf away;
+    - all 324 points looked down on over the roof find snow;
+    - the roof is over the door.
+  - **The chimney:** 0.74 m over the roof at it, every puff of smoke above it.
+  - **The stabbur:** its floor is 1.02 m over the snow and its steps stop 0.443 m short of it.
+  - **The yard and the forest:**
+    - none of the 328 pieces of wood is out from under the eaves;
+    - the nearest spruce stands 11.32 to 12.1 m out, none on a path;
+    - the paths are found trodden at all 30 points past the door's first 1.6 m;
+    - their banks stand 0.073 to 0.083 m over them at the least.
+- **Pictures:** `places-cabin-cabin.jpg`, `-store`, `-corner`, `-yard` and `-far`.
+### Needs eyes
+- **The cabin reads nearly black** against a low south-west sun, in every view but the lit window. The log texture is the beam's, dark and smooth. Laft logs are usually adzed flat on the inner and outer faces, and weather silver-grey; neither is drawn.
+- **The corner stones and the stabbur's steps** are the `stone` coursed texture, and read as blocks.
+- **The hide is one flat shape**, and the snowshoes are thin hoops.
+- **The spruce are still stylised cones.** From above (`far`) the nearest trees fill the frame.
+- **The smoke is nine soft puffs in a curve.** It does not move in a still picture; in the game it would want to drift.
+- **Nothing says who hunts from here,** or whether the cabin is a lead, a shelter to sleep in, or a merchant's. That is the quest writer's and the systems builder's.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 999 — The Mark's abandoned logging camp (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "abandoned logging camp". The precedent is the winter fellings of Norway and Sweden before the railways. Trees were cut while the ground was frozen and sledged down to a deck. A timber chute (tømmerrenne) carried them down the slope onto a river's ice, to go down with the thaw. The men slept in a gapahuk, a lean-to of logs open to its fire. This camp was left mid-season: the deck is still stacked, a log is still chained to its sledge, and one length of the chute has come off its trestles. It is `markLoggingCamp` in `places.js`, with its own view (`places-logging-view.js`, dispatched from `places-view.js`). Nothing new is asked: why it was left is the quest writer's, and no people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, the slope falling to +z at 1 in 4.5 to the river's bank at z 26, the ice from 28 to 40 at y -6.3, the far bank rising beyond):
+- **The felling:** 50 stumps 0.44 to 0.68 m high, each with a cap of snow on its cut top. They are spaced 1.6 m apart or more, clear of the chute, the deck and the shelter. An axe is left in one. Spruce stand round the felling, with a few left standing inside it.
+- **The deck:** two skids across the slope, levelled together. 18 logs 5 m long sit on them in rows of 6, 5, 4 and 3, each in the hollow between the two below.
+- **The chute:** two logs side by side, a trough 0.3 m wide, in lengths of 5 m.
+  - It runs from the deck's foot 42 m down to 0.96 m over the ice, at one grade.
+  - It stands on trestles every 2.5 m, each of two splayed legs and a bar, with a brace where they stand over 1 m.
+  - One length (z 14 to 19) has come off. Its two trestles lie over in the snow, and its two logs lie askew beside the gap.
+- **The gapahuk:** 3.2 by 2.4 m, its back wall of logs 1 m high, its sides rising to 2.1 m at the open front, under a roof of poles, boards and snow.
+  - Inside is a bed of spruce boughs.
+  - Before it is a fire ring with the charred brands of the last fire and snow fallen into it.
+- **The sledge:** two runners turned up at the front and two bunks, with a log chained on them.
+- 32,832 to 33,000 triangles in 13 meshes, and 80 spruce.
+
+The view: `places.html?place=logging`, with `view=camp` (from the felling's top, down the chute to the ice), `chute` (beside the gap and the fallen length), `deck` (under the deck's end), `shelter` (before the gapahuk) and `far` (from the ice, up the slope).
+
+Corrections made during the session:
+- **The budget.** The first build came to 48,149 triangles. The terrain's fine band is now 0.75 m, not 0.5, which brought it to 33,000.
+- **The lean-to's side walls.** They were first written so that every course ran the full depth, through the roof's rising underside. A course above the back wall now starts where the roof clears it.
+- **The check found three faults:**
+  - The gap was declared as z 11 to 16, but the lengths start every 5 m from -11, so the one skipped was 14 to 19. The chute stood across half the declared gap, and the fallen trestle was one that held nothing. The gap is now 14 to 19, both of its trestles lie over, and the fallen length lies beside it.
+  - Each skid was levelled on its own, so one stood 0.04 to 0.09 m under the bottom row. Both are now levelled to the highest ground under either.
+  - The check's ray onto the first stump met the axe left in it. It now looks past the axe.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 143 of 143 pass** (136 after Session 998). Two views are new on the page check, the camp and the shelter, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 32,832 to 33,000 triangles in 13 meshes, 50 stumps and 80 spruce.
+  - **The chute:**
+    - its trough is found at 37 metres of its line, within 0.003 m of one grade;
+    - nothing stands in the gap;
+    - all 34 trestle bars sit 0.014 to 0.018 m under its logs;
+    - its foot is 0.96 m over the ice.
+  - **The deck:** each of the 18 logs rests on the two below it, or on the skid, within 0.02 m.
+  - **The stumps:** 0.44 to 0.68 m over the snow at their edges, with snow on every top.
+  - **The gapahuk and the sledge:**
+    - the gapahuk is met at the hip at the back and both sides, and open at the front;
+    - it has 2.02 m of headroom under the front and snow on its roof;
+    - the sledge's runners are 0.004 to 0.006 m off the snow.
+- **Pictures:** `places-logging-camp.jpg`, `-chute`, `-deck`, `-shelter` and `-far`.
+### Needs eyes
+- **The stumps and the logs read nearly black** against the snow, which is the same trouble as the cabin's. A fresh cut is pale and a winter-old one grey; only the cut ends show it.
+- **The skids are level,** so on the slope one end of each stands clear of the snow, which reads as resting on air. They want blocking under them.
+- **The fallen trestles are two sticks each.** A real one would lie as a frame.
+- **The ice is a flat plane** with a sheen, with no snow on it, no pressure ridges, and no logs lying out on it waiting for the thaw.
+- **The chute has no lining and no side boards.** Real ones were often three logs, or planked, and iced to run faster. This one is two bare logs.
+- **Nothing tells why the camp was left.** That is the quest writer's.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
+
+## v80 — Session 1005 — `shipmoor` keeps the sea empty while she sails out (FLAKY on auto/backlog)
+QA's read of the last eight green CI runs (112 headless jobs, 16 Oct 07:21–12:15 UTC) found seven FLAKY retries and no suite red twice: `lookpair` twice and `looknew` once, both runs older than the fixes in Sessions 971 and 991; and once each `bridgenames` (the game's, already filed in I), `skillcurve`, `q7world` and `shipmoor`. `shipmoor` (auto/backlog 490b0f9, shard 14) read hull 99 against 100 after fifteen seconds at the wheel, and its last message was *Black sails on the horizon.* The suite sends the other ships away once, when she is bought. The sea rolls its pirate and merchant again every 2 s from the chunk and the game minute (S508, `tickOtherShips` in `85-world-sea.js`), and the minute is wherever the clock got to while the world loaded. So whether a pirate came near enough to cost a point depended on the boot. The suite is about her bow and the shallows (Session 473); the pirates have suites of their own (`pirateram`, `piratehold`). So while she sails out, it sends every other ship away each tick and counts them (`others`). It also records every line the sea says (`said`), the weather and the sea state, so a later red names what struck her. The checks are unchanged: moved over 60, speed over 2, the hull whole, never stopped.
+### Verified (headless Chromium)
+- `shipmoor` 3 of 3 green in each look. Every run rolled a pirate three times in the fifteen seconds (`others` 3, `said` three *Black sails on the horizon.*). She made 103.3–103.6 units at 7.5, hull 100 → 100, weather clear, sea 0–1. One run had six boots at once on four cores.
+### Needs eyes
+- Nothing to play. Three pirates rolled in fifteen seconds of sailing out of Portclare, every run. That may be the rate the game means (a roll at 0.5 every 2 s, each turned away here), but it is worth knowing for the sea's feel.
+
+## v80 — Session 1006 — `g.settle` runs the world's job queue and waits for the site, not 60 s (the new look's shards 7–8)
+The new look's shards 7 and 8 (main 6b8fbf9, side by side, 59 min) passed 65 of 67. `renewal` threw on `S.altar` and `dayseed` read `shrine null`, twice each. Then `renewal` failed alone on the old look as well, so the cause was not the look. A probe found shrine c6_8_p1 standing only on the 17th poll, about 42 s in, after the five sites built before it in its cell (s0, s1, s3, p0, then p1). The harness's `g.settle(id)` polled 24 times, 60 s, and then went on as if the site stood; `renewal` had its own copy of that loop. With six boots at once the shrine was not built even after a 180 s deadline. The world builds on a job queue at most two jobs a frame (`runJobs`, `81-world-cells.js`), so on software GL a load is counted in frames, not seconds. CI has passed both so far only because its runners are a little faster. `g.settle` now runs the queue the game has already laid out on each poll: the same jobs in the same order, more of them per frame, as `g.spin` does for ticks. It polls until the site is in `SETTLE`, up to `SETTLE_MS` (180 s by default). It returns whether the site was built and logs a miss, so a suite's own checks still name the fault. `renewal` now uses it and checks it (*the shrine is built*). No check's promise changed. The ledger (`docs/qa/looknew.md`) has shards 7–8 and the flaky ledger both rows.
+### Verified (headless Chromium)
+- Before: `renewal` red in both looks; `dayseed` red twice on the new look. The deadline alone, without the queue: both green in both looks with three boots running. With six boots, `renewal` read *not built after 180 s* in both looks.
+- With the queue: six boots at once, the shrine was built in all six suites. `dayseed` green in both looks, `renewal` green on the old look. On the new look `renewal` prayed and got its boon, then hit the 900 s cap in its own 40 real frames of regeneration with six boots on four cores. That is an overload no CI runner sees; it is not the shrine.
+- Shards 7–8 on the new look otherwise all green; suite times are in the ledger.
+### Needs eyes
+- Every suite that calls `g.settle` (about 60) now runs the job queue while it waits. The PR's full CI run is the check that none of them depended on a slow load. A suite that did would show on that run, and is the next session's.
+- Shards 9–14 of the new look are still owed.
+## v80 — Session 1010 — The wide sash belt (L1 and B2, prototype only)
+(First committed as 1009, which the systems builder had taken in the same hour; renumbered.)
+OG-056 dresses its everyday Aurennais in "wide sash belts in rust red and indigo", and backlog L1 has listed the sash belt as owed since Session 989. This session builds it. The sheet draws it plainly and the canon says nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label, and the `waist` view aimed at a band) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The band** is a shell off the tights, as the leather belt is, so it is skinned with the body and cannot miss it when the body moves. Its region runs past its cut (rest .055 to .255), and the shader cuts it at rest .085 and .225, so neither edge is a triangle's. On the people checked it is 11.1 to 11.9 cm deep at the front and 95 to 100 cm round.
+  - It stands 8 mm off the tunic as `makePerson` pushes it there, 12 mm off a laced bodice (whose lower edge lies inside the band), and never less than the leather belt's 3 cm, which clears a skirt's top (`sashBeltPush`).
+  - **The tunic is taken in under its whole width.** Under a leather belt the tunic is gathered over 3 cm round rest .16; under the sash belt it is gathered from .095 to .215 and eases out over 3 cm past each edge (`waistIn`, shared by the tunic, the bodice and the shoulder sash's reading of the tunic). So it blouses over the band's top, as a wound sash makes it.
+- **The folds** are drawn in the shader (`FOLD`, a `fold` option on `clothMat`). Five soft ridges with sharp creases run round the band. They spiral one step round the body, as a wound cloth does, and wander with the angle and fade at the hems. The creases darken the cloth to 0.78 and bend its normal by the ridges' slope, as a bump map would. Every term is continuous round the body, so there is no seam at the back.
+- **A leather belt can be worn over it**, at 7 mm over the band. Its coins (Session 1004) hang from it over the sash as before.
+- **Where it is not worn:** under a tabard or an apron, which hang over the waist; with a robe, whose cord takes the waist; or over mail, whose skirt stands 5 cm out at the waist and is belted in leather (`sashBeltOn`).
+- **The shoulder sash over it:** the band reads the sash belt as something it lies over. Its knot at the hip is left off there, since it was built for a band ending at the hip and 23 points of the sash belt came up inside it. The shoulder sash runs on over the belt; tucking its end under the belt is owed.
+- **The dress** takes `sashBelt` (*sash belt* in the builder's list). It saves and loads.
+- **The roll.** The Aurennais roll it at 0.35 on an uncovered waist, in rust or indigo. Where coins hang from the leather belt it is kept over the sash; on the rest it is kept on four in ten. It is drawn last, so every earlier roll of a seed is as it was.
+
+A fix on the way, to a fault in today's bodies: **a man's trousers came out through the back of his tunic's skirt in pale patches** (`builder-sashbelt-back.jpg`'s man showed four before the fix). At the seat the short skirt's shell lies inside the tights' shell. Under a skirt the trousers now stop at rest -.12, 8 cm up inside its hem. The skirt is drawn on both sides, so its inside shows above them from below. This changes every man in a short tunic skirt with trousers, so `builder-peoples.jpg` is re-shot. The other pictures in the folder were not re-shot; they differ only where this showed.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 344 checks pass** (336 after Session 1004; 8 new). New checks:
+  - **Six people:**
+    - a man over a tunic;
+    - a woman over a long skirt;
+    - a man with a leather belt and its coins over the band;
+    - a woman over a laced bodice;
+    - a shoulder sash over the band, on either side.
+
+    Each is read round the waist's own axis in 72 angles and 1 cm rows, at 15 points on every triangle. On every one:
+    - nothing worn under it comes out through it: 0 of 4,332 to 7,126 points, the closest 4.1 to 5.4 mm inside;
+    - no arm is in it: 0 of 126 to 179 points;
+    - the leather belt lies outside it: 0 of 780 points under;
+    - it is 10 to 13 cm deep, and it saves and loads back.
+  - **The shoulder sash over it** stays clear of the arm (0 points), with its knot left off. 7 points come out through the shoulder sash on the man and 2 on the woman. The man's 7 come out on this body with or without the sash belt (measured before and after), and the check allows these two up to 7.
+  - **None under a tabard or an apron, over mail or with a robe**; one on a plain tunic.
+  - **The roll:** 16 of 40 rolled Aurennais wear one, 8 of them with the leather belt over it, none on a covered waist. None of 30 Markmen, Gatelanders and Old Blood do.
+- **Pictures:**
+  - New: `builder-sashbelt-man.jpg`, `-back.jpg`, `-woman.jpg` (indigo under a leather belt with its coins) and `-full.jpg` (indigo, under a shoulder sash).
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **The folds are drawn, not modelled.** The band's silhouette is smooth, and side-on its edges are straight.
+- **The shoulder sash over a sash belt** lies on top of it with no knot. A real one would be tucked under it or knotted over it.
+- **No hanging ends or fringe** on the sash belt itself. OG-056 shows the wrap's end tucked in, so none were drawn.
+- **A hand through a short tunic skirt.** In `builder-sashbelt-full.jpg` the fingertips of the far hand show as dark spots through the front of the man's short skirt at the thigh. This is in today's bodies and is not the sash belt's doing: the arms are lifted clear of a long skirt only (Session 887), never a short one. It is owed next, against Michael's note on #274.
+- **Still owed in L1:** the sandals, a scarf's tail and a taller turban, and the coins on the head-wrap's edge (to be confirmed from the full image).
+## v80 — Session 1005 — The critic's two faults on s639: the mill's sails and the guild's banner (cards F8 and F6, prototype only)
+The critic's run on s639 found two faults of scale in the look builder's prototypes, and the last run named them as next. Both are small, and both are fixed here. Nothing new is asked, and nothing outside the prototype folder is touched.
+
+**The tower mill's sails came within 1.76 m of the ground,** 1.5 m in front of its door, so a man of the foundation's 1.9 m walking to the door was clipped. Session 949's check held the sails to 1.5 m, which was the wrong bound: it had been set by the sails' own geometry, not by the person. Two ways to fix it were weighed: shorter sails or a taller tower. The sails stay at 8.6 m, which is what makes the mill read as a working mill from the road. The tower now stands 9.6 m to the curb (it was 9.0), and that lifts the hub by 0.6 m. The four floors of windows still fit under the curb, and the cap, tail pole and wheel follow the tower's height, as they did before. The check's bound is now 2.1 m, a 1.9 m man and a hand's clearance.
+
+**The Fighters' Guild's banner hid the last letter of its name panel** from the street to the east, which the critic read as *FIGHTERS’ GUIL*. The banner hung on a pole 1.7 m out at x -0.1, just past the panel's right end (the panel runs from -3.45 to -0.55). The cloth hangs flat across the street, between 0.65 and 1.6 m out from the wall. So from any view east of square-on, its projection slid left over the panel. It now hangs at x 2.6, where the hall meets the two-storey east end, between the hall's east light and the east end's sashes. This is still by the door, and it marks where the hall stops. `pieces.check.mjs` now works out the banner's shadow on the wall from every bearing within 55° of square-on. The check fails if it ever reaches the panel's frame.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 143 of 143 pass.**
+  - **The tower mill**, over 3 keys and 3 winds at every turn of a quarter, in 3° steps: the sails clear the ground by **2.36 m** (was 1.76; the bound is now 2.1), and the tower and cap by 1.53 m.
+  - It has 11,108 triangles in 14 meshes, and is 19.82 m to the finial.
+  - The doors and tail checks are unchanged.
+- **`pieces.check.mjs`: 20 of 20 pass.**
+  - The guild hall's banners (both guilds) are **0.66 m** clear of the name panel's frame from every bearing within 55° of square-on.
+  - The great door is 1.6 by 3.3 m under the panel, as before.
+  - Each guild hall still comes to 9,873 triangles in 14 draws.
+- **Pictures, retaken:**
+  - the mill: `places-mill-mill.jpg`, `-sails`, `-far`, `-back` and `-mill-rest`;
+  - the guild hall: `pieces-gatelands-guild.jpg`, `-guild-corner` and `-guild-mages`.
+  - The corner view now reads *FIGHTERS’ GUILD* in full, with the banner beyond the hall's east light.
+### Needs eyes
+- **The mill is now a little taller and slimmer.** It stands 9.6 m on a 6 m foot, 1.6 times its width (1.5 before). Whether it still reads as a squat Irish tower mill wants a look.
+- **The banner now stands 4.6 m from the door.** If it should hang at the door itself, the other answer is a pole on the door's west side. There the hall's west light is 2.4 m off, and from the west the banner would cover the light, not the panel.
+- **The game has neither piece yet.** Both are prototype pieces, so nothing in the game changes.
+
+## v80 — Session 1006 — The Mark's ice cave mouth (card F8, prototype only)
+The next of OG-124's places off the road: the Mark panel's "ice cave mouth". It is also OG-121's "snowed-in mouths". Session 903 built the ice cavern's inside, and Michael took it as drawn on #331. This is its outside, where the passage comes out of the ice. The precedents are the glacier caves of Breiðamerkurjökull and the snouts of the Norwegian outlet glaciers. The glacier ends in a face of ice banded grey with the grit it carried. Its meltwater has cut a tunnel out under the face, which glows blue a few metres in and then goes dark. The stream runs out over a gravel plain (the sandur) through a gap it has cut in the ridge of boulders the ice left when it stood further out (the terminal moraine). Blocks calved off the face lie at its foot. It is `markIceMouth` in `places.js`, with its own view (`places-icemouth-view.js`, dispatched from `places-view.js`). Nothing new is asked: what the cave leads to is the ice cavern's, and who knows the way is the quest writer's. It touches only the prototype folder.
+
+**The place** (at true size, the ice to -z, the stream flowing out to +z, y 0 the tunnel's floor at the mouth):
+- **The valley:** rock walls rise from 26 m either side of the stream to 34 m, with snow on their shelves. The sandur falls 1 in 25 away from the ice.
+- **The face:** it runs from x -44 to 44 and wanders ±2.5 m.
+  - It is 17 to 20 m high and leans out 1.5 m at its head.
+  - It is fluted by vertical runnels where the melt runs, and none of them reach its foot or the mouth's sill.
+  - Grey bands of grit run across it in wavy strips 0.25 to 0.55 m deep, broken where the arch is cut.
+- **The mouth:** an arch 8 m wide, upright to 2.4 m and 5.6 m to its crown, under a lip of clear ice.
+  - It narrows over 18 m to a throat 6 m wide and 4.6 m high.
+  - The ice is clear for the first 6 m, deep blue to 12 m and dark beyond. The tunnel goes on into the dark past the throat.
+  - The tunnel's floor is the sandur's gravel, rising 1 in 25 inward.
+  - 44 icicles hang from the lip and the first metres of the roof, each placed only where its tip leaves 2.1 m clear.
+- **The stream:** out of the dark along the tunnel's east side, then over the sandur in a channel 0.45 m deep, with stones in its bed, meandering ±3.2 m.
+- **The moraine:** a ridge of gravel 2.6 m high in an arc 26 m out, with boulders 0.7 to 3.5 m across over its crest and flanks. It is cut about 6 m wide where the stream goes through, and a cairn of six stones stands on the crest beside the gap.
+- **The ice's back:** a snowfield rising 1 in 4 for 24 m and then gently, with eight crevasses across the flow.
+- **The calved blocks:** 9 to 11 at the foot of the face, kept off the way in and the stream.
+- 32,116 to 32,660 triangles in 12 meshes.
+
+The view: `places.html?place=icemouth`, with `view=mouth` (on the sandur 20 m out by the stream), `inside` (in the tunnel at the blue, looking out), `throat` (at the mouth, looking in to the dark), `moraine` (from the crest by the cairn) and `far` (high over the sandur).
+
+Corrections made during the session:
+- **The face.** It was first drawn flat-shaded, with a 0.2 m jitter on a 0.8 m grid, and read as crumpled foil. Its grit bands were whole quads of a darker ice and read as broken bricks. The face, the ground and the snowfield are now shaded smooth across their grids (`smoothGrid`, new in this function). The fine jitter is gone, and runnels now give the face its relief. The bands are now strips of their own laid 6 cm proud of the face.
+- **The gravel.** It was first the `rock` texture at a dark grey and read as brown earth. On `cobble` it read as paving. It is now `rock` again, lighter (0xd2cec6). The snow patches drawn on the sandur were cut whole from the 3 m grid and read as pixels from above, so they are gone. Snow lies on the valley's walls only.
+- **The valley.** Its walls first rose to 26 m while the ice rose inward for 40 m, so the snowfield stood over the rock with a hard edge. The walls now rise to 34 m, and the ice rises steeply for its first 24 m only.
+- **The budget.** The first build came to 46,524 triangles. The ground's fine band is now 1.0 m (was 0.8), and the boulders are unsubdivided dodecahedra. That brought it to 32,000.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 151 of 151 pass** (143 after Session 1005). Two views are new on the page check, the mouth and the inside, both with no page errors. Six checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 32,116 to 32,660 triangles in 12 meshes.
+  - **The tunnel**, at 17 metres from the mouth to the throat:
+    - its walls are met at the hip 0.16 m inside to 0.13 m outside the arch's half-width;
+    - its roof (icicles aside) is 0.18 m under to 0.18 m over the arch's crown.
+  - **The walk in**, from 14 m out on the sandur, beside the stream, to the throat:
+    - there is ground under all 61 half-metres, and none of it is water;
+    - nothing stands in the way at the hip or the head;
+    - the 44 icicles' tips are 2.57 to 5.24 m over the floor.
+  - **The face:** rays at 6 m up across it every 2 m meet ice or grit at all 20, within 0.96 m of its line, and it is 17.03 to 20.07 m high from x -25 to 25.
+  - **The stream:**
+    - its water falls the whole way out;
+    - it is met from above at all 153 half-metres from the dark to 60 m out, through the moraine's gap;
+    - its banks are dry 2.4 m either side.
+  - **The moraine:** 2.13 m or more over the sandur at its crest on 20 bearings outside the gap.
+  - **The calved blocks:** 9 to 11 of them, all off the way in and the stream, each sunk into the gravel. The cairn stands 1.68 to 1.69 m tall on the crest.
+- **Pictures:** `places-icemouth-mouth.jpg`, `-inside`, `-throat`, `-moraine` and `-far`.
+### Needs eyes
+- **The face reads as a wall of grey stone** more than ice in the sandur views. The `rock` texture's veins show through the ice's colour, and nothing passes light. Real glacier ice is white at the surface and blue in its cracks and under the overhang. A shader that lets light through, as the bodies builder's skin wings do (Session 959), would serve it better than a colour.
+- **The grit bands are too even and too dark.** Real bands fold and pinch out; these run level across the whole face.
+- **The icicles read black** against the bright lip in the mouth's views, because they are lit from behind. They would be better a little emissive, or fewer.
+- **The calved blocks are rounded boxes.** Real ones have fresh blue faces where they broke.
+- **The tunnel is straight.** It ends in a dark plane at 18 m that the `throat` view looks straight at. Joining it to the ice cavern's passage, which winds, is for whoever places the two together.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), the smuggler's cove (Aurenne), and the camps on the roads.
+
+## v80 — Session 1007 — Aurenne's smuggler's cove (card F8, prototype only)
+The next of OG-124's places off the road: the Aurenne panel's "smuggler's cove". Session 873 built a smugglers' lair as a Gatelands sea cave, which Michael took on #314. This is the open-air kind, and it is Aurenne's. The canon makes piracy and the run past the Compact's tithe the coast's other trade (§1). The precedents are three places:
+- the calas of the Balearics, a narrow inlet between white limestone cliffs with a beach at its head;
+- Malta's Wied il-Għasri, where a stair is cut down the cliff to the water;
+- the fjord of Furore on the Amalfi coast, where fishermen's boathouses are cut into the cliff's foot behind plastered fronts.
+
+It is dressed in Aurenne's own way (canon §1.3): cream plaster, limestone dressings and doors painted blue. It is `aurenneCove` in `places.js`, with its own view (`places-cove-view.js`, dispatched from `places-view.js`). Nothing new is asked: who runs what through the cove, and whether the Compact's tithe-men know of it, are the quest writer's and the systems builder's. No people are drawn. It touches only the prototype folder.
+
+**The place** (at true size, the sea to +z, y 0 the sea):
+- **The inlet:** 14 m across at its head, opening to 38 m at its mouth 75 m out. Its cliffs stand 20 m over the sea within 2.2 m, their edge wandering by up to half a metre. The plateau runs on either side to the coast at about 82 m, where the cliffs turn away.
+- **The beach:** sand 15 m long, 1.35 m over the sea at the head, under the water 6.5 m out. The sea floor beyond falls to 6 m, deepest down the middle.
+- **The boathouses:** three in the west cliff's foot.
+  - Each is a plastered front 4.4 m wide and 4.2 m high under a cope, standing 0.8 m out from the rock and 1.7 m deep.
+  - Each has a round-headed door 3 m wide and 3 m high in dressed jambs, its leaves painted blue, and a barred window over it.
+  - The middle one stands open on the dark. The third has a slip of slabs at 1 in 7 into the sea.
+- **The cargo:** 13 bales, amphorae and casks before the boathouses.
+- **The stair:** 105 steps up the east cliff from the beach to the top.
+  - The risers are 0.18 m on 0.3 m treads, with a landing of 1.2 m every 18 steps.
+  - Each step is cut into the rock behind and built out over the water on a wall of ashlar.
+  - Its tread is 1.4 m clear at the foot and wider as it climbs, where the rock behind it lies further back.
+  - A plastered parapet, coped, runs along each flight on the open side. It follows the flight's own heading, since the stair drifts outward with the inlet as it climbs.
+  - The last step is at the top's own height.
+- **The lookout:** a plastered hut 3.2 m square on the east top near the mouth, 4 m back from the edge. Its blue door faces landward and its window faces the sea; `&night` lights a lamp in it.
+- **The boats:**
+  - a rowing boat drawn up on the sand;
+  - another lying at the slip's foot;
+  - with `o.ship` (the default), Aurenne's sloop (Session 858's line, `aurenneSloop`) at anchor mid-inlet, its sail down.
+- 24,869 triangles in 16 meshes, and 48,697 in 26 with the sloop.
+
+The view: `places.html?place=cove`, with `view=cove` (on the sand by the boat, out along the inlet), `houses` (the boathouses from the stair's foot), `stair` (on the stair at its third landing, up the flight), `top` (by the lookout, down the inlet) and `far` (from the sea off the mouth). Add `&night` for dusk with the lamp lit, and `&noship` for no sloop.
+
+Corrections made during the session:
+- **The beach.** It was first 10 m long and read as a ledge, not a cala. It is now 15 m long.
+- **The stair's wall.** It was first plastered, which made a 20 m sheet of plaster along the cliff. It is now ashlar, and the parapet is plaster.
+- **The parapet.**
+  - It was first a block on each step, which stair-stepped like a row of posts. Then it was a sloped wall along each flight, set along z.
+  - The check found that wall standing on the treads: the stair drifts up to 1.3 m outward over a flight as the inlet widens, so a wall along z was 0.65 m inside the stair at one end. At those points the check read a tread 1.09 m too high, headroom gone, and the parapet missing at the hip at 28 of 105 steps.
+  - Each flight's wall now runs along the flight's own heading.
+- **The boathouses' fronts.** They were first 0.6 m deep against the cliff's foot, and the cliff's wander brought the rock forward through the first door. They now stand 0.8 m out and 1.7 m deep.
+- **The look.**
+  - The sand was first `cobble`, and read as paving. It is now plaster-smooth sand.
+  - The rowing boat's hull was single-sided, so it drew black, and is now double-sided.
+  - The sun first lit the stair's cliff and left the boathouses in shade. It now lights the boathouses.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 158 of 158 pass** (151 after Session 1006). Two views are new on the page check, the cove and the boathouses, both with no page errors. Five checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 24,869 triangles in 16 meshes without the sloop (48,697 in 26 with it).
+  - **The stair:**
+    - 105 steps, risers 0.174 to 0.18 m, treads 0.3 m, and a landing at every 18th;
+    - a tread under every step within 0.000 m, and 2.2 m clear over every step;
+    - the parapet at the hip within 0.6 m at all 105;
+    - the last step at 20.02 m, with the top's ground beside it at 19.87 to 20.02 m.
+  - **The boathouses:**
+    - three, doors 3 by 3 m, and each front's foot on the sand;
+    - a ray at the door meets the leaf (or, at the middle one, the dark);
+    - rays at each front's top corners meet plaster, never rock;
+    - the third's slip goes 1.22 m into the sea.
+  - **The cliffs and the beach:**
+    - the cliffs are 18.5 m or more over the water or the sand within 4 m, on both sides, every 4 m from the head to 70 m out;
+    - the beach is 1.27 m dry at the head, and the water's edge is 6.5 m out.
+  - **The sloop and the lookout:**
+    - the sloop's keel is 5.54 m over the bed and its hull 9.4 m off the cliffs;
+    - the lookout stands 4.0 to 4.4 m back from the cliff's edge, its window to the sea clear for 30 m.
+- **Pictures:** `places-cove-cove.jpg`, `-houses`, `-stair`, `-top`, `-far` and `-night`.
+### Needs eyes
+- **The cliffs are plain walls** of one height with a sharp top edge. A cala's cliffs are undercut at the waterline, with notches, fallen blocks and pine clinging on. None of that is drawn, and the inlet reads as a cut.
+- **The plateau is bare.** Its turf is one texture, with no maquis, pine, wall or path to the lookout, and the stair's head meets it with no landing of its own.
+- **The boathouses are fronts only.** Their open door shows a dark plane. A room behind (a vault in the rock with a boat on the slip) would be a place of its own.
+- **The stair's wall reads dark** where the sun is off it.
+- **The sloop is the kit's sloop at anchor with its sail down** (Session 858 for the hull line; #347 for the rest of Aurenne's hulls). The rowing boats are the lair's lathe shell.
+- **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands), and the camps on the roads.
+## v80 — Session 1014 — The arms clear of a short tunic skirt (B2, against #274, prototype only)
+Michael's note on #274 asks that no arm come through any garment. Session 1010's full-length picture showed the far hand's fingertips as dark spots through the front of a man's short tunic skirt at the thigh. Session 887 lifts the arms out from the side, three hundredths of a radian at a time, until no point of either hand is inside a long skirt (and Session 897 did the same for mail), but never for a short one. A short skirt flares from the belt to a hem at mid-thigh, which is just where the hands hang, so on most men in one the fingers were inside it: in `builder-shortskirt-front-before.jpg` both hands are hidden in the skirt to the wrist. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+What changed in `people.js`: the lift reads the short skirt as it reads the long one (`handsInSkirt`, in 2 cm bands and 36 directions round the skirt's own middle), over the short skirt's points that are drawn (rest y above -.2, the shader's cut; the region runs to -.24). As before, it does not run under a full cloak, and the genome's pose is unchanged: the lift is worked out at build time. A man in mail keeps the mail skirt's test, which stands further out.
+
+`builder.check.mjs`: the shot filter takes a comma list (`--shots=shortskirt,peoples`).
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 353 checks pass** (344 after Session 1010; 9 new). On the old `people.js` the 9 new checks fail: no lift is worked out for a short skirt at all.
+- **The new checks:** two men of each of the four peoples, and Session 1010's Aurennais under a shoulder sash and a sash belt, each in a short tunic skirt. On every one, 0 points of either hand inside the skirt, of 1,003 to 1,787 tested. The arms are lifted 0.12 to 0.30 rad (the Aurennais the least, 0.12 and 0.15; a Gatelander the most, 0.30, the loop's limit), against 0.15 to 0.30 for the mail skirts and 0.18 to 0.24 for the long skirts under a bodice. The check allows up to 0.30.
+- **Every other check is unchanged**, among them the long skirts, the robes, the mail, the shields, spears and crossbows (which take the arm after the lift).
+- **Pictures:**
+  - New: `builder-shortskirt-front.jpg` (a Gatelander, face on) and `builder-shortskirt-turn.jpg` (a Markman, turned), each with a `-before` from the old `people.js`.
+  - Re-shot: `builder-sashbelt-full.jpg` (the fingertips through the skirt are gone) and `builder-peoples.jpg` (every man in a short skirt stands with his arms a little out).
+
+### Needs eyes
+- **The arms stand out further.** At 0.3 rad a man's hands hang a hand's breadth off his thighs, which reads a little stiff, like a man about to draw. Bending the wrists in, or the hands turned to the thigh, would let them hang closer; that is the animation work in B4.
+- **A dark mark on the skirt beside the right hand** in `builder-shortskirt-front.jpg` is the hand's shadow on the cloth, not a hand through it (0 points inside). It is speckled by the shadow map's resolution.
+- **Under a full cloak** nothing is lifted, as for the long skirt, since the cloak is built round the arms where they hang.
+## v80 — Session 1015 — The Aurennais sandals (L1 and B2, prototype only)
+OG-056 puts all eight of its everyday Aurennais in "leather sandals with ankle straps", and backlog L1 has listed the sandals as owed since Session 994. This session builds them. The sheet draws them plainly and the canon says nothing against them, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (a `feet` view) and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The bare foot.** Under boots the body is not drawn below the knee: the boots are a shell off the tights' helper. With sandals the body's own skin is drawn below rest y -.6 (`PACK.R.feet`, MakeHuman's foot with its toes), and trousers stop at rest -.665, above the ankle, where they otherwise run to -.78 inside the boot.
+- **The straps** are a leather shell 2.5 mm off that skin, so they are skinned with the foot and bend with it. They are cut in the shader on the rest body (`SANDAL_KEEP`), across the foot from its middle line at rest |x| .222:
+  - an ankle strap 1.6 cm wide round the narrowest of the ankle;
+  - a strap 1.7 cm wide over the ball of the foot, behind the toes;
+  - a strap down the instep between the two;
+  - one up the back of the heel.
+  
+  The shadow is cut the same way (`cutDepth`). The straps cost no triangles of their own beyond the foot's shell.
+- **The soles** (`buildSoles`): for each foot, the posed body's points along its bottom (rest y under -.795, 726 a foot) are taken as an outline in the ground plane (a convex hull), set out 4 mm. That is made a slab 1.4 cm deep, 1 cm under the foot's lowest point and 4 mm up its sides, in a darker shade of the straps' leather. It is rigid and carried by the foot bone that stands over it: 120 triangles a sole.
+- **The person stands on the soles.** The ground was read off the lowest point of the whole morphed pack, which is the tights' helper under the boot, 2.6 cm below the bare foot. With sandals the ground is the soles' underside. Without that, the soles stood 2.6 cm off the ground (the first run of the new check measured 0.0259 to 0.0265 m). **A note for later:** any bare foot stands 2.6 cm high the same way, and the game's bodies will want the ground read off what is worn on the feet.
+- **The dress** takes `sandals` (the leather's colour; it saves and loads), worn in place of boots.
+- **The roll.** The Aurennais roll sandals at 0.7 in place of their boots, in the boots' leather: 23 of 40 do. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls them. The sheet shows all eight in sandals; boots stay on the rest for the roads and the ships.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 363 checks pass** (353 after Session 1014; 10 new). `kit.check.mjs` passes.
+- **The new checks**, on three people: an Aurennais man in trousers, an Aurennais woman in a long skirt, and a Gatelander in a short tunic skirt without trousers. On each:
+  - each foot has its sole, and 0 of its 726 bottom points fall outside the outline. The nearest is 3.7 to 3.8 mm in from the edge. The soles are 22.9 to 27.8 cm long;
+  - both soles stand at 0 m, on the ground, carried by `foot.L` and `foot.R`;
+  - the straps are drawn and the boots are not;
+  - the soles are 240 triangles the pair;
+  - it saves and loads back with `sandals` in the save.
+- **The roll:** 23 of 40 rolled Aurennais wear sandals, none with boots as well. None of 30 Markmen, Gatelanders and Old Blood wear them.
+- **Pictures:**
+  - New: `builder-sandals-man.jpg` (in trousers, the feet close), `-back.jpg` (the heel strap), `-woman.jpg` (under a long skirt) and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`, whose Aurennais now roll sandals.
+
+### Needs eyes
+- **The straps are drawn on the skin,** not modelled. Seen close and side-on they have no thickness.
+- **The sole is a slab** with a straight wall and no toe spring. It is rigid on the foot bone, so when the toes bend in a walk (B4) it will not bend with them. A sole skinned to the toe bones is owed with the walk.
+- **The sole's outline is a convex hull,** so the arch is filled straight across, as a cut leather sole is. The toes reach 3.7 mm from its front edge.
+- **Still owed in L1:** a scarf's tail and a taller turban, and the coins on the head-wrap's edge (to be confirmed from the full image).
+
+## v80 — Session 1012 — The Gatelands' falls: the overgrown arches and the cave behind the water (card F8, prototype only)
+This is the last of OG-124's Gatelands places off the road. The Gatelands panel names "overgrown arches by a waterfall" and "a cave behind falls" as two finds; they are drawn here as one place, because the panel's picture puts them together and because a ruin seen through its arch is a good way to come upon a fall. There are three precedents:
+- Glencar and Ess-na-Larach: a fall of 12 to 15 m off a limestone head-wall into a pool in a wooded glen, where the shale beds weather back and undercut the face;
+- Seljalandsfoss: the path that goes behind the curtain under the overhang;
+- Glendalough below the Poulanass fall: ruined stone in the trees below the water.
+
+It is `gatelandsFalls` in `places.js`, with its own view (`places-falls-view.js`, dispatched from `places-view.js`). Whose hall the arcade belonged to, and what is in the cave, are the quest writer's to say. Nothing new is asked, and only the prototype folder is touched.
+
+**The place** (at true size, the fall to -z, the stream to +z, y 0 the pool's water):
+- **The head-wall:** a shallow horseshoe of grey limestone 11 to 12 m from the shelf to the lip. Its beds weather back in bands, and it is undercut 2.4 m round the fall, so the lip overhangs the shelf. The rock is dark and wet by the water, with moss and ivy elsewhere. The glen's sides rise to the plateau at 12 m.
+- **The fall:** the river runs in a channel 0.3 m under its banks to the lip and leaves it 5 m wide at 2 m/s. It falls freely 11.7 m and lands 3.1 m out from the lip in a curtain that widens by a seventh as it falls. The curtain is a sheet with 34 strands over it, with foam at its foot.
+- **The pool:** 12 by 9.6 m and 2.6 m deep. The stream runs out of it down the glen, 0.3 m under the glen's line.
+- **The shelf:** rock 1.2 m over the pool along the face's foot, from the east bank, under the overhang and behind the curtain, to the cave.
+- **The cave:** a round-headed mouth 3.4 m wide and 3.2 m high in the face behind the water. It narrows over 10 m to 2.6 by 2.5 m, and goes on into the dark. Its first 3 m are wet.
+- **The arcade:** three round arches of 2.8 m on piers 1 m square, springing at 3 m with dressed imposts and voussoirs. The wall stands to 5 to 6 m with a ragged top, broken down at its east end. The fourth arch has fallen: 6 to 10 of its voussoirs lie in the grass, and its far pier is a stump of 1.6 m. Ivy grows over the wall's top and faces and hangs in the bays, always leaving 2.2 m clear. The path from down the glen passes through the first bay, so the fall is first seen framed by the arch.
+- **The glen:** 20 oak and ash on its sides and over the lip, ferns by the water, under the face and at the arcade's foot, and a worn track as far as the shelf's rock.
+- 37,957 to 38,491 triangles in 18 meshes.
+
+The view: `places.html?place=falls`, with `view=arches` (on the path below the arcade, the fall in its first bay), `falls` (from the pool's east bank), `behind` (on the shelf behind the curtain, looking out through the water), `cave` (at the cave's mouth, in to the dark; a weak light stands in for the daylight thrown off the pool) and `far` (high over the glen).
+
+Corrections made during the session:
+- **The budget.** The first build came to 48,235 triangles. Most of the excess was foam, ivy and leaf cut at detail 1. The foam is now cut at detail 0, the ivy clumps are smaller and fewer, there are 20 trees with four clusters to a limb, and the floor's fine band is 0.8 m. That brought it to 38,000.
+- **The look.**
+  - The wet rock was first near black and glossy, and read as plastic. It is lighter now, and less smooth.
+  - The ivy was first in clumps up to half a metre, and read as green boulders stuck to the wall. It is now in clumps of 0.16 to 0.3 m.
+  - The glen's sides were rock wherever they were steeper than 1 in 1.25, which made them read as grey ramps from above. They are now rock only past 1 in 0.8.
+  - The cave view was black. It now has the bounce light described above.
+- **The walk.**
+  - The path first came onto the shelf at x 9. There the horseshoe brings the face forward, and the check found the walker's hip in the rock and a step of 1.2 m.
+  - It now comes onto the shelf at x 7.6, placed from the face's own line.
+  - The shelf's front edge now falls over 1.9 m (it was 0.6), so the climb onto it has no step over 0.26 m.
+- **The stream.** It first fell 1 in 28.6 while the glen fell 1 in 30, so by 50 m out its water was 0.1 m over its bed, and the check found the bed through it. The water now keeps 0.3 m under the glen's line.
+### Verified (headless Chromium)
+- **`places.check.mjs`: 167 of 167 pass** (158 after Session 1007). Two views are new on the page check, the arches and behind the fall, both with no page errors. Seven checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 37,957 to 38,491 triangles in 18 meshes and 20 trees.
+  - **The walk,** 105 half-metres, from down the glen, through the first bay, by the pool and onto the shelf, behind the curtain and 4 m into the cave:
+    - there is ground under every half-metre, and none of it is water;
+    - no step is over 0.26 m;
+    - headroom is 2.88 m or more, with 1.07 m or more clear at the hip and the head.
+  - **Behind the fall,** at 36 points: the curtain is 3.37 to 4.53 m out at the hip and the head, the first thing met, and the wet rock of the overhang is over.
+  - **The curtain:** it is met at 10 heights within 0.15 m of its line. Its foot is in the water, 2.08 to 2.2 m deep, and the river is in its channel at the lip, its banks 0.3 m over it.
+  - **The cave,** at 57 half-metres: its walls are within 0.11 m of its half-width at the hip, its roof within 0.12 m of its crown, and the dark is at its end.
+  - **The arcade:** its three bays are open at the hip and the head, 2.99 m or more clear under the hanging ivy, with the crowns where drawn and piers either side. The fourth bay has no arch, and 6 to 10 voussoirs lie in the grass.
+  - **The stream and the trees:** the stream is met on its line at 51 metres, with its banks dry 2.6 m either side, and every tree is 3.06 m or more off the path.
+- **Pictures:** `places-falls-arches.jpg`, `-falls`, `-behind`, `-cave` and `-far`.
+### Needs eyes
+- **The curtain is a sheet and strands with no motion and no spray.** A fall this size throws mist over the pool and wets the shelf. Moving water wants a shader of its own; it would serve the cove's surf and the ice mouth's stream as well.
+- **The arcade's stone is the cobble texture,** the shepherd's hut's dry stone. A hall's arcade would be coursed rubble, which the kit does not have.
+- **The ivy is clumps.** Real ivy climbs in sheets from the ground and hangs in falls of leaf, not beads on a thread.
+- **The glen's sides are smooth slopes of turf and rock.** They have no outcrops or fallen trees, and no undergrowth beyond the ferns.
+- **The cave goes 10 m and ends in a dark plane,** as the ice mouth's did. Joining it to the limestone cave (Session 872), whose lake lies under falls of its own, is for whoever places the two together.
+- **Off the road (OG-124) still lacks the camps on the roads.**
+
+## v80 — Session 1017 — The taller turban (L1 and B2, prototype only)
+Backlog L1 has owed "a taller turban" since Session 994 built the Aurennais head-wrap. OG-044 draws most of its Aurennais men in round, pale turbans that stand well above the head, and OG-093's sailors, OG-109's wardrobe matrix and OG-111's headwear row all have them; Session 994's wrap is a close cap over the skull, 6 cm over the brow line. This session winds the wrap up into a turban. The sheets draw it plainly and nothing in the canon is against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`. FREEZE #381 (F3, the land) is open, so nothing in `js/` was touched.
+
+What changed in `people.js` (`buildWrap`):
+- **A `turban` flag on the head-wrap** (it saves and loads; off by default, so every saved wrap is as it was). It is the same wrap on the same fitted dome, with two changes when it is on.
+- **The dome is raised and swelled.** Above the brow line the dome is stretched up by 0.8. From 2 cm over the wrap's edge, it stands out from the head's centre, by up to 15 per cent at 8 cm. Both only move the cloth outward, so the head and the tucked hair stay under it as before, and the edge round the brow, ears and nape does not move. The swell starts 2 cm up because a first try started it at the edge, and a pale ledge of the crown cloth showed under the turns over the ears.
+- **Five more turns** are wound above the wrap's five, 1.2 to 1.4 cm thick (the wrap's are 0.85 to 1.1). Their heights are set as shares of the way from the edge to the top of the dome (0.34 to 0.78), so they follow the dome whatever the head. Like the wrap's, each runs higher at the front or the back than the one under it, so the turns cross over the brow and at the nape.
+- **The roll.** An Aurennais who rolls a head-wrap winds it as a turban at 0.85 if a man and 0.2 if a woman. This is drawn after the sandals, so every earlier roll of a seed is as it was. Of 40 Aurennais, 13 wear wraps and 4 of those are turbans (3 on men). No other people rolls it.
+
+In `builder.js`: a *head-wrap wound up as a turban* checkbox under the dress, and a `zoom` URL parameter. The head view looks 4 cm higher on a turban, because its top was cut off in the frame.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 368 checks pass** (363 after Session 1015; 5 new). `kit.check.mjs` passes.
+- **The new checks**, on Session 994's two heads (a bearded man in white, a woman with braids in saffron with a madder edge), each with the plain wrap and with the turban:
+  - the head is 16 mm under the cloth at the nearest point, and 0 of 27,862 and 27,774 hair points come through;
+  - it clears the brows by 17.4 and 19.3 mm and comes 12.8 cm down at the nape, the same as the wrap;
+  - it has 10 turns and 16,272 triangles (the wrap has 9,072);
+  - it stands 12.6 and 11.2 cm over the brow line, where the plain wrap stands 6.6 and 5.8;
+  - it is 26.4 and 24.6 cm wide, where the wrap is 23.6 and 22.5;
+  - it saves and loads back with `"turban":true`.
+- **The roll check:** 4 of 13 wraps are turbans, 3 of them on men; none without a wrap; none among 30 of the other peoples.
+- **The wrap's own checks** now set `turban: false`, since `wrap:1`'s man rolls a turban under the new roll. The plain wrap's numbers are unchanged.
+- **Pictures:**
+  - New: `builder-turban-man.jpg`, `-side.jpg` (in profile), `-back.jpg`, `-woman.jpg` and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **The top is a smooth dome** of the crown cloth above the last turn. It reads as the cap many turbans are wound round, but OG-044's are wound to the top. A crossing turn over the crown would close it.
+- **The gaps between the turns** show the lighter crown cloth beneath, as thin pale lines. This is most visible from the back. It reads as folds at play distance and as gaps close up.
+- **The underside of the lowest turn** catches the light behind the ears. Session 994's plain wrap does the same; it shows more on white cloth.
+- **It is rigid on the head bone**, as the wrap is: it has no weight and does not sway.
+- **Still owed in L1:** the scarf's tail (a wrap's end hanging to the shoulder), the coins on the head-wrap's edge, and a shoulder sash's end tucked under the sash belt.
+
+## v80 — Session 1018 — A head-wrap's tail (L1 and B2, prototype only)
+The other half of L1's "a scarf's tail and a taller turban" (Session 1017 built the turban). OG-044 and OG-056 draw several Aurennais women with the end of the head-wrap or scarf hanging loose from behind the ear down the back, and OG-109's Aurenne row has head scarves with tails. Session 994's wrap tucks every end in. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `people.js`:
+- **`buildWrapTail`**, built after the sash, the lacing and the cord, and before the necklace (which lies over it).
+- **Where it starts.** The wrap's loose end comes out from under its lowest turn, 0.55 rad off the back toward the side the genome names (`wrapTail`: `'L'` or `'R'`). It starts 3 cm up inside the turns, so it is seen to come from under them.
+- **Its shape.**
+  - It hangs 34 cm on a woman and 28 on a man, to the shoulder blade.
+  - It is gathered to 5 cm at the top and opens to 10 to 11 cm within its top third.
+  - It hangs straight down and never comes back in toward the body.
+  - Folds of up to 7 mm open down its length, only ever outward.
+  - Its last 2.5 cm is in the wrap's border colour.
+- **What it lies on** is read off a radial map round the neck's middle, in 72 directions and 1 cm bands. The map holds the furthest point of everything there: the body, the tunic, the hair and a mantle, all skinned, and what is carried rigid (a sash, the hoops). The map is spread to its neighbours and read between the bins, and the cloth lies 6 mm clear of it.
+- **Bones and triangles.** It is one mesh of 880 triangles, rigid on the chest bone as the necklace is.
+- **The roll.** An Aurennais with a wrap and no cloak rolls a tail at 0.55 if a woman and 0.25 if a man, on the left at 0.7. This is drawn after the turban, so every earlier roll of a seed is as it was. It is never built under a cloak, because the cloak and its hood lie on the back.
+
+In `builder.js`: a select beside the turban's checkbox (no tail, left, right).
+
+Two faults were fixed during the session, both seen in the first pictures:
+- **The first build read the wrap's points in the head bone's frame,** not the world's, and hung the tail 60 cm too low.
+- **The second build was wrong on the turban.** The tail's gathered top stood outside the turns like a spike, and its lower half was stepped where the map's bins showed. The fixes:
+  - it now starts inside the turns, and the wrap itself is left out of the map;
+  - the map is read with bilinear interpolation.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 374 checks pass** (368 after Session 1017; 6 new). `kit.check.mjs` passed after Session 1017, and nothing it loads has changed since.
+- **The new checks**, on two people:
+
+| | Woman: braids tucked under a saffron wrap, tail on the left over her indigo sash | Man: white turban, tail on the right |
+|---|---|---|
+| Points of what is under it that come through | 0 of 32,756 | 0 of 23,038 |
+| Gap from the top to the wrap's turns | 0.4 cm | 0.6 cm |
+| Share of its length lying on the back (within 12 mm of what is under it) | 51 per cent | 60 per cent |
+| Length | 34 cm | 28 cm |
+| Width at the hem | 11.8 cm | 11.1 cm |
+| Triangles | 880 | 880 |
+
+  Both save and load back with `wrapTail`.
+- **Under a cloak with its hood down,** no tail is built.
+- **The roll:** 3 of 13 Aurennais wraps have tails, all on women. No other people rolls one.
+- **The necklace** still lies over everything at the neck with 0 points through it.
+- **Pictures:**
+  - New: `builder-tail-back.jpg` and `-side.jpg` (the woman, close), `-full.jpg` (from behind) and `-turban.jpg` (the man, close).
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **It is rigid on the chest bone** and the wrap is rigid on the head bone. A head turned far to the tail's side would part them at the top, or push the tail into the turns. The game will want the tail's top rows weighted to the head and its lower rows to the chest, as the hood is.
+- **It hangs straight from where it leaves the wrap.** It is a few centimetres off the back of the neck before it meets the shoulder, as a cloth hanging from the wrap's edge would be. It has no weight or sway.
+- **Faint ridges remain** low on the turban man's tail, where the shoulder blade's points are sparse.
+- **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image), and a shoulder sash's end tucked under the sash belt.
+
+## v80 — Session 1019 — The shoulder sash tucked under the sash belt (L1 and B2, prototype only)
+Session 1010's sash belt left one thing owed: "a shoulder sash's end tucked under it, its knot left off there for now". Until now, a shoulder sash worn with a sash belt lay over the belt's band, and its knot at the hip was not drawn, so the loop ran on over the belt with no end at all. OG-056 draws the shoulder sash going in under the wide belt and its end hanging out below. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `buildSash`:
+- **What it reads.** With a sash belt on (`sashBeltOn`), the band reads neither the sash belt nor the leather belt over it. In the belt's band, and 1.5 cm past either edge, it stands 1 mm clear of what is under it, not 7. A short tunic skirt stands 2.5 cm off the tights there and the sash belt 3 cm, so 1 mm is what leaves room for the sash between them.
+- **The ceiling.** The sash belt's own points, pushed out level from the waist's middle by what `sashBeltPush` gives, make a radial map in 72 directions and 1 cm bands. Every point of the sash within the belt's height is drawn in to 1.5 mm inside that map. The pull eases off over 4 cm past the belt's top and bottom edges.
+  - The first try read the ceiling along each point's own line out from the body, through a 1.2 cm tube, as the band reads its floor. On the slanting surface the floor and the ceiling crossed in 48 of 53 places, and the sash still showed through the belt.
+  - A sign error before that had pushed the band out where it should have come in.
+- **The end.** In place of the knot, one end comes out from under the belt's lower edge, in front of the hip where the band goes in under it. It is found by walking from the loop's turn toward the front until the band is 2.5 cm up under the edge. It hangs 26 cm, 5 to 7 cm wide, with its border and the border's colour at the hem, over the band below it and over the thigh.
+- **No new flag.** `sashKnot: false` still leaves the end off.
+
+`sashBeltStats` now also counts the sash's points within the belt's band that stand outside the belt.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 375 checks pass.** That is 374 after Session 1018 and 1 new: Session 1010's two sash-over-belt checks are rewritten as tuck checks, and a third case is added.
+- **The three cases:**
+  - a man in a short tunic skirt;
+  - a woman in a long skirt, with the sash on the right;
+  - a man with the leather belt over the sash belt as well.
+- **On each:**
+  - 0 of 108 to 109 sash points in the belt's band stand outside the belt;
+  - nothing under the belt comes through it (0 of 4,332 and 4,370 points);
+  - the leather belt is still outside the sash belt (0 of 780 under);
+  - the shoulder sash has 2 and 6 points out through it, inside Session 1010's allowance of 7;
+  - no arm is in it;
+  - one end hangs 0.27 m from where it comes out, with 0 of 951 to 1,108 points out through it and no arm in it.
+- **Every untucked sash check is unchanged**, among them the knot and its two ends on a belted tunic and a long skirt, and the band alone with `sashKnot: false`.
+- **Pictures:**
+  - New: `builder-sashtuck-front.jpg`, `-hip.jpg`, `-back.jpg` and `-full.jpg`.
+  - Re-shot: `builder-sashbelt-full.jpg`.
+
+### Needs eyes
+- **A small kink** where the band goes in under the belt's top edge in front. The band's points are 2.5 cm apart along its loop, so the 4 cm ease is drawn over one or two of them.
+- **The band comes out below the belt at the back of the hip** where the loop turns. A twist of the band shows there, since the loop's turn is only 1.5 cm under the belt's edge.
+- **The sash under the belt is only drawn in, never cut away.** It lies 1.5 mm inside the belt, so it can show at a grazing angle.
+- **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image of OG-056).
+
+## v80 — Session 1020 — Turns over the turban's crown (L1 and B2, prototype only)
+Session 1017's turban left its top as a smooth dome of the crown cloth above the last of its turns, where OG-044's turbans are wound to the top. That entry named the fix under *Needs eyes*: turns crossing over the crown. This is that fix, a refinement of something already built, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `buildWrap`, on a turban only:
+- **Three turns cross over the crown.** Each comes from under the upper turns on one side, goes over the top, and goes down under them on the other. They lie in planes 0.35, -0.5 and 1.45 rad off the front-to-back line, so they cross near the top. Each starts at 0.6 to 0.66 of the way from the wrap's edge to the top, under the highest turns.
+- **Their shape.** They are 1.6 to 1.7 cm rolls on the same raised and swelled dome, flattened wider than the turns (2.4 times along the dome, 0.45 out from it). Each is a slightly different shade of the cloth.
+- **Cost.** They add 2,400 triangles: the turban is 18,672 where it was 16,272. It now stands 14.4 and 13.2 cm over the brow line (12.6 and 11.2 before).
+- **The stats** count them as `cross`, apart from the ten `turns`.
+
+A first try with two turns half as wide read as straps over a bare dome. Three wider ones cover it from the front.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 375 checks pass.** The turban's checks now also require 3 turns over the crown.
+- **On both heads,** the head is still 16 mm under the cloth and 0 hair points come through. It clears the brows by 17.4 and 19.3 mm.
+- **Pictures:** re-shot `builder-turban-man.jpg`, `-side.jpg`, `-back.jpg`, `-woman.jpg`, `-full.jpg` and `builder-tail-turban.jpg`.
+
+### Needs eyes
+- **From behind and above,** the crown cloth still shows in the gaps between the crossing turns, and their flattened edges catch the light as fins.
+- **From the front** the top reads as wound, most clearly in saffron on the woman.
+- **A turban wound by hand** has one long cloth whose turns run into each other. These are separate rolls laid on the dome, with no ends.
+## v80 — Session 1016 — The Gatelands' charcoal burners' camp (card F8, prototype only)
+The freeze for F3 (#381) is open, so this run kept to the prototypes. The one item still open in backlog L10's *Off the road* (OG-124) was the camps on the roads, and this session builds the first: the charcoal burners. It is `gatelandsCharcoalCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=charcoal`.
+
+The precedents are the colliers of the Lake District's and the Weald's coppices, who lived beside a burn for the weeks of a season. They cut a pitstead, a level hearth in the slope, black from years of burns. On it they built the cordwood round a flue and sealed it under turf and earth, the "sammel". Wattle hurdles stood against the wind so the stack burned slow and even, and a ladder leaned on it to tend the top. They slept in a hut of poles under sods, with a door frame of two posts and a lintel (Furness, Grizedale). The camp is built at true size by a road through oak and hazel coppice, on a slope of 1 in 14:
+- **The burning stack:** a dome of sammel 4.8 m across and 1.9 m high on a hearth 9.2 m across. About 110 sods are laid over it in courses, each row over the joints of the one below. Twelve vents are at its foot, and its flue is open at the top. Smoke goes up from the flue and four vents and leans south-east on a north-west wind.
+- **The hurdles and the ladder:** three hurdles stand propped on the windward side, 3.7 m out. A ladder leans on the stack's east flank.
+- **The opened stack:** on the second hearth, a burn drawn and cooling. Charcoal is raked out in a low heap over the black, in a ring of ash, with a shovel in it and a riddle by it. Seven sacks stand filled and tied, with a rake against them.
+- **The cordwood:** billets a metre long, stacked 5 m long and 1.2 m high between stakes on their own levelled stance. Each billet rests on the ground or on the two under it.
+- **The hut:** a beehive of sods 3 m across and 2.9 m to its apex, the poles' tops crossed over it. Its door is 1.6 m high between two posts under a lintel, facing the road, with 0.84 m between the posts at the hip. A bed of bracken is inside, and a small fire with a tripod and a pot is outside.
+- **The road and the coppice:** a cart stands on the road with its shafts down and five sacks on it. Trodden paths run to both hearths and the hut. There are 11 oak standards and 30 hazel stools, every other stool near the hearths cut this winter to stubs, with bracken under them.
+- **The size:** 38,400 to 39,000 triangles in 19 meshes.
+
+The views are `camp` (from the road), `stack`, `heap`, `hut` and `far`, and `&dusk` gives the evening, with the vents and the fire glowing.
+
+Corrections made during the session:
+- **The budget.** The first build came to 44,700 triangles in 22 meshes. The cuts:
+  - the ground's fine band is now 1.2 m;
+  - there are fewer char lumps;
+  - the wattle is three-sided;
+  - the fern, a second leaf and the stones share materials now.
+- **The smoke** was first a column of faceted transparent spheres, and read blue and hard. It is now crossed upright quads under the kit's soft puff texture. A flat quad was tried too, and read as discs from the side.
+- **The sods** were first scattered at odd angles and read as loose tiles. They are now laid in courses, wide enough to overlap.
+- **The hazel stools** first had a ball of leaf on each rod, and read as lollipops. Each stool now has one crown of leaf over the sheaf of rods.
+- **The hearths** were first marked black on the ground grid, which gave them jagged edges. They are black discs on their level stances now. The ash ring was lifted off the disc, where it z-fought.
+- **The ladder.** The check first asked for 55 to 75 degrees. A ladder that steep on a dome this shape goes through the stack's foot, so the ladder leans at 40 degrees along the flank. The check now proves it clears the dome below its top.
+- **The cordwood** was first stacked in rows at fixed heights, and some billets hung 0.19 m over a gap. Each billet is now set on the ground or on the two under it.
+- **The hut's door.** Its check first passed with both rays missing: they ran out through the doorway, past the posts, and read 99 m. Cast just inside the frame, they met the posts 0.74 m apart, under the check's 0.75. The door's gap is now 0.7 rad, which gives 0.84 m, and the check fails unless both posts are met.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 176 of 176 pass** (167 after Session 1012). The charcoal camp's `camp` view and its `hut` view at dusk render with no page errors. Seven checks are new, over three keys:
+  - **The builds:** each key builds the same twice, with 38,400 to 39,000 triangles in 19 meshes, 30 hazel stools (5 to 8 of them cut) and 11 oaks.
+  - **The hearths and the stack:** the hearths are level (the ground within 0 m across each) and black. The stack is met within −0.06 to 0.10 m of its line at 48 points; the sammel is lumped by up to 0.09 m by design, and the sods stand proud of it. Its flue is open and its vents are on its face.
+  - **The smoke and the hurdles:** the smoke is to leeward. The hurdles are to windward, met on their line at the knee and the shoulder, their uprights in the ground.
+  - **The ladder:** its foot is on the hearth and its top on the stack, and it clears the dome.
+  - **The walk,** from the road to both hearths and the hut and in: ground under every half-metre, no step over 0.13 m, 0.36 m clear at the hip and the head, and nothing over the head (under the door's lintel at 1.6 m).
+  - **The hut's door** is 0.84 m between its posts at the hip and 1.6 m to its lintel, with 3.02 m of headroom inside.
+  - **What stands on the ground:** every billet is on what is under it, the cart's wheels are on the road and the sacks are on the ground. The fire is 2.2 m off the paths, with the pot 0.25 m over the embers.
+- **Pictures:** `places-charcoal-camp.jpg`, `-stack`, `-heap`, `-hut`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **The smoke is still.** A burn's smoke moves, and the vents breathe; this is the same want as the falls' curtain, a moving-air shader.
+- **The stack is seen in its middle days.** The lighting (fire dropped down the flue) and the settling (the stack sinking as it chars) are not shown.
+- **Nobody tends it.** The colliers are the bodies builder's, and the camp's people are the quest writer's to name.
+- **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
+- **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
+
+## v80 — Session 1021 — The Gatelands' merchants' halt (card F8, prototype only)
+The freeze for F3 (#381) is still open, so this run kept to the prototypes. Backlog L10's *Off the road* (OG-124) still had four camps on the roads; the charcoal burners' came first (Session 1016), and this session builds the merchants'. OG-124's panel 4 shows it as covered waggons drawn up under trees with a fire. It is `gatelandsMerchantCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=merchants`.
+
+The precedents are the carriers' tilt waggons of the old roads, which stood the night on a green by water rather than pay for an inn's yard, and the drovers' stances on the Highland roads: a green by a ford, a fire, the beasts on a line. The chapman's trestle under a canvas fly at a fair green is the third. The halt is built at true size on a green that rises at 1 in 20 from a road, with a stream crossing the road:
+- **Two tilt waggons:** each bed is 3.6 by 1.4 m, on wheels of 0.72 m behind and 0.52 m before, twelve and ten spokes with iron tyres. Five hoops carry a canvas tilt to 2.8 m at the crown, and the shafts rest on the grass ahead. The first is drawn up along the road with sacks and crates in its bed; the second is turned in behind the fire. Each wheel is set on the ground under it, so the axles follow the slope.
+- **The stall:** a canvas fly is laced along the first waggon's tilt and carried 3 m out on two poles, each guyed to a peg at 45 degrees away from the way in. Under it are two trestles, one of cloth bolts in madder, woad and weld in two courses, one of five crocks and jugs and a small iron-bound chest. A lantern hangs on the right pole.
+- **The fire:** a ring of stones and embers, a crane of two forked irons and a bar, a pot on its hook, two seat logs, and a thin smoke.
+- **The tent:** a ridge tent 2.6 by 2.2 m with walls of 0.45 m and its ridge at 1.95 m. Its door faces the fire with the flaps tied back, and a bedroll and a chest are inside. The door's guy is a bridle to two pegs, so the way in is clear.
+- **The line:** a picket rope between two posts, 1.3 m at the posts, with hay and two buckets under it and a bale of fodder. The beasts are the bodies builder's.
+- **The goods:** four casks, five wool bales in rope bands (one laid across two) and three crates, stacked by the second waggon.
+- **The stream:** water 0.18 to 0.3 m deep in a gravel bed, 0.5 m or more under its banks. The road goes through it at a ford 0.19 m deep. Six stepping stones cross 2.6 m upstream of the road, and the west bank is eased to 1 in 4 at a watering place where the path comes down.
+- **Round it:** a thorn hedge along the road's far side with gaps, nine ash on the green's edge and seven alder by the water. Trodden paths run from the road into the stall, round the first waggon to the fire and the tent, and to the line and the water.
+- **The size:** 35,800 to 36,200 triangles in 20 meshes.
+
+The views are `camp` (from the road), `stall`, `fire`, `ford` and `far`, and `&dusk` gives the evening with the lantern and the fire lit.
+
+Corrections made during the session:
+- **Meshes.** The first build came to 22 meshes. The stepping stones and the fire's ring now share the stream bed's gravel, and the hedge shares the trees' leaf, which gives 20.
+- **The stream** first read as a black road from above, because its water was nearly black. It is now a grey-green that reads as water. Its strip is also wider than the channel, so no bare bed shows at the edges.
+- **The hay** first read as pumpkins under the thatch texture. It is now a plain straw colour. The collar on the bale read as a tyre and was taken off.
+- **The path to the tent** first came at the door from inside the tent: a sign was wrong, and the check found canvas over the walker's head. The door's single guy also crossed the way in at hip height, so it is now a bridle to two pegs.
+- **The top bale** first sat over the gap between two rows. It now lies across the two in the front row. The check's single ray fell through the gap between them, so it now casts three rays.
+- **The way down to the water** was a 1-in-2 bank, with steps of 0.3 m. The west bank is eased where the path comes down, and the worst step is now 0.17 m.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 185 of 185 pass** (176 after Session 1016). Nine checks are new. The halt's `camp` view and its `fire` view at dusk render with no page errors, and seven checks run over three keys:
+  - **The builds:** each key builds the same twice, with 35,768 to 36,208 triangles in 20 meshes and 16 trees. The waggons' 8 wheels are −0.002 to 0.001 m off the ground.
+  - **The stall:** there are 2.23 m or more under the fly before the tables and 2.32 m behind them. The fly is within 0.004 m of its poles' tops and 0.11 m off the tilt, and its pegs are within 0.03 m of the ground.
+  - **The tables:** their feet are within 0.002 m of the ground, and all 14 goods sit on a board (0 m).
+  - **The walk:** 85 half-metres from the road into the stall (3 under the fly), to the fire, into the tent (4 inside) and down to the water. There is ground under each, no step is over 0.17 m, and there is 0.69 m or more clear at the hip and the head (inside the tent, at the hip only). Nothing is over the head below 2.0 m (1.75 m in the tent).
+  - **The tent, the fire and the line:** the tent's door is 1.39 m wide at the hip, with 1.9 m to its ridge. The fire is 3.38 m off the paths, with the pot 0.27 m over the embers. The picket rope is 1.17 to 1.18 m over the ground at its lowest.
+  - **The stream:** it is 0.5 m or more under its banks and 0.18 to 0.3 m deep, with the road 0.19 m under it at the ford. The stepping stones' tops are 0.10 to 0.15 m over the water, with gaps of 0.26 m at most, and the end ones are 0.6 m or less from dry land.
+  - **The stack:** all 12 stacked goods are on the ground or on the one under them (within 0.02 m).
+- **Pictures:** `places-merchants-camp.jpg`, `-stall`, `-fire`, `-ford`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **Nobody keeps it.** The carriers, their beasts on the line and what they sell (and at what price) belong to the bodies builder, the quest writer and the systems builder.
+- **The tent's tied-back flaps** read as thin spikes at its door corners from some bearings. They want a rolled flap instead.
+- **The smoke and the stream are still,** the same want as the charcoal camp's and the falls': a moving-air and moving-water shader.
+- **The ash and alder are the kit's blob trees,** and the hedge is lumps of leaf.
+- **Still open in OG-124:** the hunters', pilgrims' and abandoned expedition's camps, and the small mysteries.
+
+## v80 — Session 1022 — The Mark's hunters' camp (card F8, prototype only)
+The freeze for F3 (#381) is still open. This session is the third of OG-124's road camps, after the charcoal burners' (1016) and the merchants' (1021), and the first in the Mark. OG-124's panel 4 lists "hunters" among its camps. It is `markHuntersCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=hunters`.
+
+The precedents are the autumn hunting camps of the northern fells. A party lived for a few weeks by a road into the hills in a tent of hides on a cone of poles; it is the shape every northern people used, from the Norse fell-booths to the reindeer herders'. They dried and smoked their meat on a pole rack over a slow fire, stretched hides on frames, and hung their kill from a pole between two trees. The camp is built at true size in birch and pine heath on a slope of 1 in 16, by a road:
+- **The tent:** 12 poles from a ring 4.8 m across cross at 3.4 m, each running 0.28 m past the middle. A cover of hides in five sewn courses rises to 2.85 m, leaving the smoke hole above. The door is a gap 1.2 m wide at the hip and 1.5 m high, facing the road, with the door hide rolled over it. Inside are a fire in a ring of stones and three hides of bedding round it, off the doorway. Smoke rises from the hole and leans east on a west wind.
+- **The rack:** four posts and two rails at 1.8 m, five cross-poles over them, and 25 strips of meat hung from them. A slow fire of green wood lies laid to smoulder under it, and its smoke rises through the strips.
+- **The hide frame:** a square of poles 1.8 m a side, leaning back 18 degrees on two props, with a hide laced into it on 20 thongs.
+- **The game pole:** lashed between two pines at 2.6 m, with a gambrel on a short rope from its middle and a tub under it. It is empty: the kill is the bodies builder's.
+- **The rest:** a woodpile of 91 billets against a granite boulder, a chopping stump with its axe, and a rack of three spears.
+- **The land:** heath of moss and heather tufts with 19 granite boulders, 14 pines and 22 birches going yellow. Trodden paths run from the road to the door and in, to the rack and on to the game pole, and to the frame and the wood.
+- **The size:** 24,600 to 24,800 triangles in 15 meshes, well under the 40,000 the camps are held to.
+
+The views are `camp` (from the road), `rack`, `tent`, `pole` and `far`, and `&dusk` gives the evening with the fires glowing.
+
+Corrections made during the session:
+- **The tent** was first 4.2 m across and 3.6 m high, a steep cone that read as a plains tipi. It is now broader and lower (4.8 m by 3.4 m), the fell-tent's shape.
+- **The ground** first read nearly black under the low autumn sun. The heath's moss is now lighter, and the track is lighter than the moss.
+- **The heather** first read as purple stones. It is now rust-brown, in smaller, rounder tufts, 220 of them.
+- **The birches' crowns** first came in four big mustard balls. They now come in seven smaller clusters of a duller yellow.
+- **The hide frame's** first placing formula had a dead term from an angled version, and was replaced by the straight one.
+- **Two of the check's** own measures needed fixing:
+  - The poles' crossing was first held to 0.5 m, though by design the tops lie 0.56 m apart; it is now held to 0.6 m.
+  - The door's check first printed the 99 m of a ray that met nothing; it now says that nothing is met from the door to the tent's middle.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 194 of 194 pass** (185 after Session 1021). Nine checks are new. The camp's `camp` view and its `rack` view at dusk render with no page errors, and seven checks run over three keys:
+  - **The builds:** each key builds the same twice, with 24,580 to 24,760 triangles in 15 meshes and 36 trees.
+  - **The tent:** its 12 poles' feet are 0.12 m in the ground, and their tops cross within 0.56 m. The cover is met −0.02 to 0.013 m off its cone at 28 points, and there are 3.49 m or more over the fire to the crossing.
+  - **The door:** it is open at the hip and at 1.4 m (nothing is met from the door to the tent's middle) and shut at 1.65 m (0 to 0.01 m). It is 1.22 to 1.25 m wide at the hip, and the smoke is 0.5 m or more over the cover.
+  - **The rack:** its posts are 0.3 m in the ground and their tops are level within 0 m. Every strip is 1.21 m or more over the embers, and 2 puffs of its smoke are among the strips.
+  - **The frame and the pole:** the hide frame's feet are 0.10 to 0.12 m in the ground. The game pole is met 0.057 to 0.064 m off both pines' bark, at 2.63 to 2.64 m over the ground at its middle.
+  - **The walk:** 74 half-metres, 5 of them at the door and inside. There is ground under each, no step is over 0.14 m, and there is 1.19 m or more clear at the hip and the head. Nothing is over the head below 2.0 m (1.45 m through the door and inside, stooped).
+  - **The woodpile:** all 91 billets are on the ground or the billets below (0.001 to 0.047 m).
+- **Pictures:** `places-hunters-camp.jpg`, `-rack`, `-tent`, `-pole`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **The tent's shape.** A cone of hides on poles is common to every northern people, and the canon does not say how the Mark's hunters camp. If it should be a turf-walled booth or a canvas ridge tent instead, that is Michael's call and a short change.
+- **The meat strips are plain dark boxes.** At hand's reach they want a fibrous texture.
+- **Nobody hunts here.** The hunters, their dogs and their kill are the bodies builder's.
+- **The smoke is still,** as at the other camps.
+- **Still open in OG-124:** the pilgrims' rest, the abandoned expedition and the small mysteries.
+
+## v80 — Session 1023 — Aurenne's abandoned expedition (card F8, prototype only)
+The freeze for F3 (#381) is still open. This session is the fourth of OG-124's road camps and the first in Aurenne, after the Gatelands' charcoal burners' (1016) and merchants' (1021) camps and the Mark's hunters' (1022). OG-124's panel 4 ends its row of camps with "abandoned expedition". It is `aurenneExpedition` in `docs/prototypes/levelup/places.js`, at `places.html?place=expedition`.
+
+A party came up a hill road to dig at an old terrace and left in a hurry some weeks ago, and what they could not carry lies where it fell. What they found and why they ran is left to the quest writer, so nothing here says it: the camp is only the state of things. It is built at true size on a dry Aurenne hillside rising at 1 in 10 from a road. Olives, cypresses and maquis stand on dry grass with pale limestone breaking through (OG-124's "terraced coast… cypresses", with no Tuscan building in it):
+- **The camp's terrace:** cut level into the slope, its bank eased over 3 m.
+- **The tents:** a ridge tent still standing (2.6 by 2.1 m, its ridge at 1.91 m), its door flap torn and hanging half across the door. A second has fallen from its front pole: its ridge pole runs from the back pole's top down to the ground, with the canvas draped over it and spread on the grass, and the front pole lies in front.
+- **The fire:** cold, with ash and four burnt sticks in its ring of stones. The pot lies on its side beside it, and a stool is knocked over.
+- **The handcart:** down on its left side, resting on its right wheel and its axle end. The left wheel is off and lying flat. Of its three crates, one has burst, with its lid off and straw spilled.
+- **The litter:** a folding table on its side, a surveyor's tripod fallen with its instrument off, a lantern on its side, and nine papers on the ground, some held down by stones.
+- **The old terrace wall:** dry stone 0.8 to 1.3 m high along the slope, its courses laid from the ground in front up to the terrace behind. One stretch has fallen, with its stones down the slope. A gap lets the path go up a single ramp of about 1 in 2.8.
+- **The dig:** on the old terrace above the wall, a trench 6 by 1.5 m and 1.6 m deep with upright cut faces and a level floor. A ladder stands in it to 0.6 m over the lip. Its spoil is heaped uphill, with a pick and a shovel left standing in it, and a column drum lies on its lip at the west end.
+- **The size:** 27,700 to 27,800 triangles in 16 meshes.
+
+The views are `camp` (from the road), `tents`, `dig`, `cart` and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The spoil** was first heaped downhill of the trench, which put it on the old terrace wall. It is now uphill.
+- **The wall** first stood in a gully. The ground's fine band stopped short of it, so the step was drawn on a 1 m grid. The band now runs to it, and the wall's courses are now laid from the ground in front up to the terrace behind. Before that they were a fixed three courses, which stood 0.62 to 1.39 m out of the ground.
+- **The trench** was first cut through the ground grid's cells, so a sloped skirt of ground hung inside its walls (0.12 m inside at mid-depth). Its edges now lie on the grid's lines, its cells are left out, and it has a floor of its own; its walls are met on their lines (0 m). The walls were also first one-sided and invisible from inside.
+- **The cart** first stood on the edge of the camp terrace's bank, with a wheel 0.037 m off the ground. It now stands on the terrace.
+- **The path up** first met a step of 0.6 m: the old terrace's 0.9 m step, then a ramp of 1 in 1.4, then the camp terrace's bank. The bank is eased over 3 m now, and the gap is one ramp from the camp's terrace to the old one, so the worst step is 0.19 m. The path also first passed 0.3 m from the fallen tent's canvas; it now goes west of it.
+- **The fallen tent's check** first counted the canvas hanging from its back pole, at 1.5 m, against a bound of 1.0 m. It now reads the front half only.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 202 of 202 pass** (194 after Session 1022). Eight checks are new. The expedition's `camp` view and its `dig` view at dusk render with no page errors, and six checks run over three keys:
+  - **The builds:** each key builds the same twice, with 27,736 to 27,760 triangles in 16 meshes and 19 trees.
+  - **The tents:** the standing tent's walls are met at their feet at all 6 points, with 1.91 m to its ridge. The fallen tent's canvas is 0.97 to 0.98 m at most over the ground over its front half.
+  - **The trench:** it is 1.6 m deep under its lowest lip, and its walls are met 0 m off their lines. The ladder's foot is on its floor (0 m), and its top is 0.6 m over the lip.
+  - **The cart and the fallen things:** the cart's standing wheel is 0.002 to 0.004 m off the ground and its loose wheel 0 m. All 11 fallen things lie −0.016 to 0.02 m off the ground.
+  - **The wall:** it is 0.77 to 1.29 m high at 17 points where it stands, and its gap is open on the path.
+  - **The walk:** 59 half-metres from the road up to the camp, the fire and the tent, and up through the gap to the trench. There is ground under each, no step is over 0.19 m, and there is 0.72 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-expedition-camp.jpg`, `-tents`, `-dig`, `-cart`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **What they dug for and why they left.** The column drum is the only hint, and it belongs to the quest writer to name or to change. It may want a DECISION if the dig is to be a lead.
+- **The papers are blank.** If they carry a line, it is the quest writer's.
+- **The ground's texture** is blotchy at this sun. It is the kit's dry turf, as at the aqueduct, and it wants F3's ground.
+- **Still open in OG-124:** the pilgrims' rest, which wants the canon on whose pilgrims and to where, and the small mysteries.
