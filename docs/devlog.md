@@ -23266,3 +23266,35 @@ Corrections made during the session:
 - **On a man's tunic the thongs stand out 30° from plumb,** over the blousing under the belt. The pieces then lie on the cloth below it, where they hang. Whether that reads as hanging or as stuck on wants a look at play distance.
 - **The groove on the stone is faint** at waist distance, and the stone reads as a dark disc with an iron strap.
 - **Still owed for the Old Blood (OG-066):** the dark asymmetric layers over undyed linen, the single shoulder wrap and the scattered dot embroidery. The marks under the skin want a skin texture.
+## v80 — Session 1043 — The Old Blood's dot embroidery (L1 and B2, prototype only)
+This continues Session 1042 on the same kept sheet. OG-066 dresses the Old Blood in "cream undyed linen with a scattered dot embroidery", and OG-067 (not kept, but a sister pass) has linen "printed with small scattered marks". This session draws the embroidery in the shader, with no new triangles, the way Session 1029 drew the headscarf's sprigs. Drawing what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes.
+
+What is drawn:
+- **The knots.** `clothMat` takes a `dots` colour. The rest body is cut into cells of 1.4 cm, and some cells hold a knot of thread 2.2 to 3.8 mm across. The knot is set anywhere in its cell so the knots never read as a grid. It is shaded lighter toward its middle, as a raised knot is.
+- **The drifts.** How many cells hold a knot rises and falls over 11 cm drifts of the cloth, from 3 in 100 to 45 in 100. The knots gather in loose drifts and thin to nothing between them.
+- **The projection.** The pattern is read off the rest position along whichever axis the cloth faces most. Far off, it gives way to its average colour, so it does not shimmer.
+- **Where it goes.** It is drawn on the tunic, and on a skirt only when the skirt is the tunic's own cloth (a dress of one cloth). It is never on a skirt of another colour.
+- **Saving and the builder.** `dots` is a garment colour in `GARMENTS`, so it saves with the genome. The Dress panel gets it as *dot embroidery*.
+- **The roll.** On an undyed tunic, 60% of Old Blood roll dots in oxblood, slate or dusk violet thread (OG-066's palette). On a dark tunic, 30% roll them in bone. This is drawn last, so every earlier roll of a seed is as it was.
+- **A fix in `toSaved`.** A dress flag that rounds to its default, such as a `cloakLen` of 0.7999, was written as 0.8 and then dropped on reload, so the genome did not save and load back to the same text. It now compares the rounded value. This session's check found it, on a seed whose cloak was taken off.
+
+Corrections made during the session:
+- **The first pattern was even and too thick:** a knot in 45 of every 100 cells. On cream it read as measles. The drifts replace it.
+- **The first pattern blended its three projections,** which left half-faded ghost knots over the shoulders. It now takes only the dominant one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 406 checks pass** (401 after Session 1042; 5 new).
+- **How it was checked.** Each check renders a 320-pixel close view of the same person with the knots and without them, and compares the two.
+  - **An Old Blood man:** oxblood knots on an undyed tunic and bone on a dark one. The knots cover 0.52 to 0.53% of the view, and every changed pixel moves toward the thread's colour.
+  - **A woman's dress of one undyed cloth:** violet knots cover 0.26% of a view of the skirt.
+  - **A skirt of another colour under an embroidered bodice:** not one pixel of the skirt changes.
+  - **Repeatability:** the view without knots renders the same twice. Each person saves and loads back.
+- **The roll, over 120 Old Blood:**
+  - 47 roll the embroidery. 11 are on undyed tunics (of 19 rolled) and 36 are in bone on dark ones.
+  - No thread is in its tunic's own tone, and no other people rolls it.
+- **Pictures:** `builder-dots-close.jpg`, `-full.jpg` (with the amulet), `-dark.jpg` and `-woman.jpg`.
+
+### Needs eyes
+- **Oxblood knots on cream may read as spatter** at play distance, the colour of blood on linen. Slate and violet do not. If they do, oxblood can be kept to the dark tunics' bone's place, or dropped.
+- **On sloped cloth the knots are oval,** stretched up to about 1.4 to 1 where the cloth faces between two axes.
+- **The asymmetric dark layers and the single shoulder wrap** are still owed. They are garments, and OG-066's thumbnail is too small to cut them from. Its full image would help.
