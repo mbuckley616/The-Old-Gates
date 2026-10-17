@@ -23552,3 +23552,21 @@ Corrections made during the session:
 - **The papers are blank.** If they carry a line, it is the quest writer's.
 - **The ground's texture** is blotchy at this sun. It is the kit's dry turf, as at the aqueduct, and it wants F3's ground.
 - **Still open in OG-124:** the pilgrims' rest, which wants the canon on whose pilgrims and to where, and the small mysteries.
+
+## v80 — Session 1026 — The yard rematch at level 8, re-measured for skills by use (tests only)
+The producer could not land Systems sessions 940–1013 (bf251d1): with them, `tests/yardplay`'s rematch was lost, a level-8 player put from 260 health to 1 by Rowe's three blows, where main wins it untouched. Michael's A on that decision lifted F3's freeze so this run could fix it. Reproduced here on the merged head, twice running.
+
+What changed is the player's swing, not Rowe. Main's resolver adds `level × 1.5` to every swing; skills by use replaced that with the weapon's skill (`skillMult`, ×0.64 at 5 to ×1.4 at 100), as the skills page asks. The test made its rematch character by setting `level = 8` and leaving every skill where a new warrior's stands, so its iron sword hit Rowe for 17 and 7 a swing (main: about 32), while her health still grows with your level (127 at level 8). The skills build sheet keeps `enemyHpScale` and `enemyDmgScale` reading the level until enemies by place (DECISION #373, waiting) replaces them, so this is the interim it describes. It is not a fault for this branch to change. The fight ran 7.5 s, long enough for her to swing, and the stand-in wore nothing, so her blows landed at 106, 101 and 52.
+
+A level-8 character under skills is more than its level, so the stand-in now carries what one would have:
+- **The skills:** the save's own migration of a level-8 duelist (`skillsInit('duelist', 8)`: Blade a major at 39).
+- **The armour:** the heavy kit of that level's tier, helmet to boots and a buckler, the resolver's reference player (`kitTier(8)` = 4, 30 armour).
+
+The first fight, a new character's, is unchanged. The fight log now also records each blow on either side (`onHer`, `onYou`), so a change in the numbers shows in the log rather than only in the ending.
+### Verified (headless Chromium)
+- **`yardplay`, old look:** 9 of 9 checks pass, twice. The first fight is lost as before (her blows 35, 35, 40 and 19 on 130). In the rematch your sword lands 23 and 10 alternately, she yields at 5.37 s at 28 of 127, and you stand at 191 of 260 after her one blow of 69. Before the change, the same rematch was lost at 7.5 s (her 79 of 127, you at 1).
+- **`yardplay --look=new`:** 9 of 9; she yields at 5.5 s, with the same blows.
+- **`duel` and `duelrhythm`:** both pass.
+- **Main's own suite on main** (a worktree at `9bd7493`), for comparison: wins the rematch in 3.02 s; she never lands a blow.
+### Needs eyes
+- How a level-8 swordsman with untrained Blade fares against foes that grow with the level, in play, until enemies by place (#373) lands: about half main's damage on a foe of twice the health.
