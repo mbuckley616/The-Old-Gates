@@ -23760,3 +23760,34 @@ Three corrections were made during the session:
 - **Hairline cracks on the cliff:** they can show along the lines where the face was cut round the holes, where a clipped triangle meets an uncut neighbour. They are thin and dark at 1080p, mostly above the mouth.
 - **The cut is in the hall's shadow** on the fort's winter afternoon. Its picture is lit from the east to show the steps and the door.
 - **Hewn rock is flat panes** with the rock texture. The cave is the kit's noise-moved rock, smoother than a sea cave's would be.
+
+## v80 — Session 1063 — Card F6: the Gatelands' plans by bays, by #396's answer (prototype only)
+DECISION #396 asked how the kit's houses and the generator's lots should meet. The lots are 5 to 7 m wide; the houses were drawn 1.7 to 2.5 times a lot's floor. Michael chose C on 17 Oct: lay the plans out by bays, and widen the lots to whole bays (5 to 7 m becomes 6 to 10). This session does the first half in the prototype kit, `pieces.js`, with a view in `pieces-gatelands.js` and checks in `pieces.check.mjs`. The game's lots are the next session (`js/38-kit.js` and the generator in `83-world-generator.js`).
+
+A bay is one window's width of front with its pier. The measures come from the plans as drawn:
+- **Town house, 1.95 m:** the townhouse's and the merchant's sashes already stood 1.95 m apart.
+- **Cottage, 2.4 m:** the cottage was four of them.
+- **Farmhouse, 3.1 m:** the farmhouse was three.
+
+A plan of n bays is n bays plus an end pier at each corner: 0.3 m in a town house, 0.6 m in a farmhouse and none in a cottage. `glBayPlan(kind, n, o)` lays out a plan's openings on its bays:
+- **The cottage** (2 to 4 bays, 4.8 to 9.6 m): the half-door in the middle bay (the left one of two), a window in each other bay, the back door opposite the front, and the hearth's stack beside the door, as in a lobby-entry house. A two-bay cottage has its stack in the far gable.
+- **The farmhouse** (2 or 3 bays, 7.4 or 10.5 m): the transom door in the middle (or in the first of two), windows in the other bays and a window over every bay.
+- **The townhouse** (2 to 5 bays, 4.5 to 10.35 m): the fanlit door in an end bay (the lot says which), sashes in the other ground-floor bays and a sash over every bay on both floors above.
+- **The merchant's house** (3 to 5 bays, 6.45 to 10.35 m): the shop door in the last bay, the shop window across the rest with a bar a metre or so, the fascia the house's width less 0.4 m, and sashes over every bay.
+
+`o.d` sets a plan's depth. `glBaysFor(kind, lotW)` gives the most whole bays that fit a lot, and `glBayWidth(kind, n)` the width they make, so a town can widen its lots to whole bays. `gatelandsLot` takes `bays` and `d`. Without them every plan is as drawn, so the recorded line-up still holds triangle for triangle.
+
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass.** Five builds checks and one render check (`?view=bays`) are new.
+  - **Widths:** 12 plans, each exactly its bays and its ends.
+  - **Openings:** all inside their faces, 0.12 m or more clear of the corners and 0.15 m or more clear of one another.
+  - **Windows and doors:** every window above the ground floor is on a bay's line, with one in every bay on every upper floor. Every door is within 0.35 m of a bay's line (the merchant's shop door stands 0.35 m in from its bay).
+  - **Budget:** 1,230 to 6,221 triangles in 14 draws or fewer, each the same twice.
+  - **Fitting lots:** `glBaysFor` gives the most whole bays for every lot of 6 to 10 m by quarter metres (68 widths).
+  - **Lots:** a townhouse lot given 4 bays and 8 m is 8.4 by 8 m. One without them is 6.4 by 9 m, as drawn.
+- **Unchanged:** the line-up's six plans match their record.
+- **Pictures:** `gatelands-bays-high.jpg` (all four rows), `-cottage`, `-townhouse` and `-merchant` (a row each, from the street).
+### Needs eyes
+- **A two-bay townhouse is 4.5 m wide,** under the 6 m Michael's answer gives as the smallest lot, so the generator should start the townhouse at three bays. A two-bay one fits a lane's narrow lot if one is wanted.
+- **The townhouse is still 9 m deep.** In the game a lot's depth will set `o.d`. A deep house on a shallow lot is the generator's question for next session.
+- **The farmhouse has two sizes only.** A four-bay farmhouse (13.6 m) is wider than any town lot.

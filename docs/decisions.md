@@ -4,6 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
 - **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.
@@ -16,7 +17,8 @@ How should a town's lots and the kit's houses meet?
 
 The picture is the kit's street standing in the game: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-street-ingame.png
 
-## Answered
+Michael: **C, both: plans by bays, lots widened to whole bays** (17 Oct 2026, on #396). Session 1063 laid the cottage, farmhouse, townhouse and merchant's house out by bays in the prototype (`glBayPlan`, `glBaysFor`; `pieces-gatelands.html?view=bays`), and Session 1064 copied them into the game's kit (`PKIT.gl.bayPlan`). The generator's lots, widened to whole bays on the new look, are the next session.
+
 ### The Mark's cliff fort: does it go down into the cliff? (look builder, Session 1053) — DECISION #402
 **F8: the Mark's cliff fort (look builder, Session 1053).** OG-121's Mark panel asks for "mountain mines, ice caverns, cliff forts and snowed-in entrances", and this is the cliff fort. It is a prototype in `docs/prototypes/levelup/places.js` (`markCliffFort`), at `places.html?place=clifffort`.
 - **The headland:** 40 m across and 50 m out over the fjord, its cliffs falling 32 m to the sea, so the cliffs are its walls.
