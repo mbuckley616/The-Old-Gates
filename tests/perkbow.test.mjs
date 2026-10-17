@@ -1,7 +1,7 @@
 // The perks, first wave: the Bow (Session 982; skills and perks A, the build sheet's third session). Built: Quick nock (50,
 // the draw fills 30% faster), Long eye (75, an arrow falls at half the gravity once it has flown 50 m) and Through (100, a
-// full-draw arrow passes the first foe it strikes and can strike one more). Steady (25, a held full draw without sway) waits:
-// the game's bow has no sway to take away.
+// full-draw arrow passes the first foe it strikes and can strike one more). Steady (25, a held full draw without sway) came
+// with the aim's sway in Session 1028 (DECISION #369 A) and is measured in tests/bowsway.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -20,8 +20,8 @@ const nock = await page.evaluate(() => { const sk0 = JSON.stringify(SKILLS.bow);
 console.log('nock', JSON.stringify(nock));
 check(`Quick nock: a full draw takes ${nock.f49} frames at Bow 49 and ${nock.f50} at 50 (0.7 of the time)`,
   Math.abs(nock.f49 - 66) <= 1 && Math.abs(nock.f50 - Math.round(66 * .7)) <= 1, nock);
-check(`the Bow's perks built: Quick nock, Long eye and Through; Steady not yet (${nock.live.join(' ')})`,
-  JSON.stringify(nock.live) === '[false,true,true,true]', nock.live);
+check(`the Bow's perks built: Steady (S1028, on the aim's sway; tests/bowsway), Quick nock, Long eye and Through (${nock.live.join(' ')})`,
+  JSON.stringify(nock.live) === '[true,true,true,true]', nock.live);
 
 // 2. Long eye: an arrow fired level from high over open ground, through tickArrowMotion alone, at Bow 74 and 75
 const eye = await page.evaluate(() => { const out = {};

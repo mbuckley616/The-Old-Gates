@@ -178,14 +178,17 @@ function fireArrow(strength){
   arrowGroup.position.set(spawnX, spawnY, spawnZ);
   const _tpShot = tpShotFrom('L', sc);
   if(_tpShot) arrowGroup.position.copy(_tpShot.from);
-  const cosPitch = Math.cos(pitch);
   // v64.1 — Speed scales with draw strength (mirrors damage scaling). A weak
   // shot fires slower (more readable, more arc-feeling); a full draw snaps.
   const speedMult = ARROW_SPEED_MULT_MIN + (ARROW_SPEED_MULT_MAX - ARROW_SPEED_MULT_MIN) * strength;
   const arrowSpd = ARROW_SPEED * speedMult;
-  const vx = _tpShot ? _tpShot.dir.x * arrowSpd : fwdX * arrowSpd * cosPitch;
-  const vz = _tpShot ? _tpShot.dir.z * arrowSpd : fwdZ * arrowSpd * cosPitch;
-  const vy = _tpShot ? _tpShot.dir.y * arrowSpd : Math.sin(pitch) * arrowSpd;
+  // S1028 — the aim's sway (bowSway, 10-player.js): the line the arrow leaves on is turned by the drift of a long full draw
+  const _sw = bowSway();
+  const _ay = (_tpShot ? Math.atan2(-_tpShot.dir.x, -_tpShot.dir.z) : yaw) + _sw.yaw;
+  const _ap = (_tpShot ? Math.asin(Math.max(-1, Math.min(1, _tpShot.dir.y))) : pitch) + _sw.pitch;
+  const vx = -Math.sin(_ay) * Math.cos(_ap) * arrowSpd;
+  const vz = -Math.cos(_ay) * Math.cos(_ap) * arrowSpd;
+  const vy = Math.sin(_ap) * arrowSpd;
   // Orient arrow group so its +Z axis points along the velocity vector.
   // We use the same yaw-based lookAt as enemies — three-point trig.
   arrowGroup.rotation.y = Math.atan2(vx, vz);

@@ -25,6 +25,8 @@ The tier would replace the level in `enemyHpScale` and `enemyDmgScale` (and in t
 A keeps a region's danger readable (the Wastes are dangerous, the coast is not), and is one Opus session once the resolver is on main.
 Michael: **Build a sway, then Steady**. (16 Oct 2026, on the control room)
 
+Done, Session 1028 (systems builder): `bowSway`, 2° over 2 s after 1 s of full draw, Steady holding 3 s; `tests/bowsway`.
+
 ### The double jump and the air dash — should speed in the air be capped? (the designer, 2026-10-16) — DECISION #370
 The build sheet (`docs/design/double-jump-and-dash-build.md`) sets *Second step* at Acrobatics 75 (a second press of Space sets the rise to 4.5 m/s: apex 1.77 m, about 5 m of gap, 12 stamina) and *Swallow's turn* at 100 (Q in the air: 3.0 m level in 0.2 s, 20 stamina), each once a flight, and builds the places to a table of steps. The table works only if a gap's length depends on Acrobatics alone, and today you fly at full ground speed: at Athletics 100 and Swiftness 40 an untrained jump clears 3.8 m and the double jump 7.4 m.
 - **A.** Capped at 4.7 m/s in the air for everyone, the sprint of untrained legs: anyone clears 2.9 m, the double jump about 5, the dash 6.5 to 8, for every character.
@@ -45,6 +47,8 @@ What should the three be?
 - **C. Leave them** until 2.0's other systems work is in, and decide then.
 
 Michael: **Cap air speed at 4.7 m/s for everyone**. (16 Oct 2026, on the control room)
+
+Done, Session 1027 (systems builder): `airCapK`, the take-off frame capped too; `tests/aircap` meets the sheet's 4.7 in the air, 6.2 on the ground, and gaps 2.87, 3.44, 4.85, 4.98.
 
 ### Enemies by place, asked again now that skills have landed: which place is how dangerous? (systems builder, Session 992) — DECISION #373
 On #51 (29 Sep) you answered **C, not yet**: keep foes growing with your level until the skills sessions land. They have (Sessions 940–982: skills by use, the level on marks, the first perks), and 2.0 waits on enemies by place (your 1 B on the scope). Today every foe still grows with your level: health ×(1 + 0.15 a level, to ×3 at 14), and its blow with the reference blow (combat's resolver, PR #356, which keeps an ordinary blow near the same share of your health at your level's kit). Under skills by use that is Oblivion's failure: a character who levels by alchemy and locks meets wolves built for a fighter. And with friends in your world there is no one level to scale to.

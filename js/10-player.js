@@ -1066,6 +1066,17 @@ const ARROW_SPEED_MULT_MAX = 1.0;     // speed multiplier at BOW_DRAW_MAX releas
 // clearly visible at distance. Weak draws fly slower so they arc more for
 // the same range (emergent skill gradient).
 const ARROW_GRAVITY = 4.0;            // u/s² downward acceleration on in-flight arrows
+// S1028 — the aim's sway, Michael's A on DECISION #369. A full draw held past 1 s starts to drift: the arrow leaves up to
+// 2° off the crosshair, the drift growing over the next 2 s, and the bow in hand wobbles with it. Steady (Bow 25) holds the
+// aim true for the first 3 s of a full draw. The hold is counted on the draw's own clock (`_bowFullS`, the loop's step, as
+// `_bowDrawT` is), and the drift is a smooth figure in yaw and pitch whose size never passes the amplitude, so the same
+// hold always leaves the same way.
+const BOW_SWAY_AFTER=1,BOW_SWAY_STEADY=3,BOW_SWAY_GROW=2,BOW_SWAY_MAX=2*Math.PI/180;
+let _bowFullS=-1;
+function bowSwayAmp(){if(_bowFullS<0)return 0;const grace=perk('bow',25)?BOW_SWAY_STEADY:BOW_SWAY_AFTER;
+  return BOW_SWAY_MAX*Math.max(0,Math.min(1,(_bowFullS-grace)/BOW_SWAY_GROW));}
+function bowSway(){const A=bowSwayAmp();if(!A)return {yaw:0,pitch:0,amp:0};const t=_bowFullS;
+  return {yaw:A*.8*Math.sin(2*Math.PI*.55*t),pitch:A*.6*Math.sin(2*Math.PI*.8*t+1.1),amp:A};}
 // v64.2 — Stuck arrows persist for STUCK_ARROW_LIFE seconds after landing.
 // Stuck-in-enemy arrows are reparented to the enemy body mesh so they
 // follow movement. When the enemy dies, killE/killZoneEnemy removes the

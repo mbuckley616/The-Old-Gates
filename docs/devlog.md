@@ -23596,3 +23596,28 @@ Nothing is asked: the number is Michael's.
 ### Needs eyes
 - How the cap feels off a sprint: you slow from 6.2 (or 9.3 under Haste) to 4.7 the moment you leave the ground. The sheet's precedent (Hollow Knight) holds the air at one speed; a long run-up no longer buys distance.
 - The bodies builder's tuck and lean, and the quest writer's one line the first time each perk is held, stay owed.
+
+## v80 — Session 1028 — The aim's sway, and Steady (DECISION #369 A; skills and perks A, the Bow's last perk)
+Michael's A on #369: build a sway, then *Steady*. The Bow's 25 perk was written as "a full draw holds 3 s without sway", but the game's bow had no sway: a full draw aimed exactly at the crosshair for as long as it was held, limited only by the stamina it drains (8 a second). Session 982 built the Bow's other three perks and left Steady off.
+
+**The sway**, to the decision's numbers (`bowSway`, `10-player.js`):
+- A full draw held past 1 s starts to drift. The arrow leaves up to 2° off the crosshair, the drift growing over the next 2 s, so it is at full size 3 s into the hold.
+- The drift is a smooth figure in yaw and pitch (0.55 and 0.8 cycles a second, weighted 0.8 and 0.6), whose size never passes the amplitude. A hold is read, not rolled: the same hold always leaves the same way.
+- The hold is counted on the draw's own clock (`_bowFullS`, the loop's step), as the draw itself is. It starts when the draw reaches full and ends with the draw.
+
+**Where it shows:**
+- `fireArrow` turns the arrow's line by the drift. For a shot in third person, the line from the bow's hand to the aim point is turned the same way.
+- The bow in hand tilts with it, at 1.5 times the drift, in `90-main.js` beside the viewmodel's pose. This is a systems tell on the bow already built; the bodies builder may want to own its look.
+
+**Steady** (Bow 25) holds the aim true for the first 3 s of a full draw, not 1 (`PERK_LIVE` gains `bow:25`). The Skills tab now lights all four of the Bow's perks.
+
+`perkbow`'s check that *Steady* was not yet built now reads all four built. Its header says so.
+### Verified (headless Chromium)
+- **`bowsway`** (new), 7/7. A draw is held by the game's own loop, with arrows loosed by `fireArrow` at nine holds:
+  - **Bow 24:** true at 0.5 and 0.99 s. The amplitude is then 0.5° at 1.5 s, 1° at 2 and 2° from 3 s on. The arrows left 0.41, 0.76, 1.17, 1.40, 0.75, 1.74 and 1.92° off, each within its amplitude and never past 2°.
+  - **Bow 25:** true at every hold to 3 s, then 0.5° at 3.5, 1° at 4 and 2° at 5.
+  - The bow in hand tilts up to 2.99°, and the hold resets when the draw ends.
+- **Neighbours,** all pass: `perkbow`, `tpshots`, `hitseed`, `cloakden` and `duelrhythm`.
+### Needs eyes
+- Whether 2° reads in play. At 30 m it is about 1 m off, enough to miss a wolf's head and hit its body. The 1 s, 2° and 2 s are mine to tune, as the decision said.
+- The tilt in hand is a simple added rotation. The bodies builder's bow draw may want its own wobble.

@@ -202,6 +202,7 @@ function loop(now){
   // somehow becomes true (defensive — the mousedown branch blocks the RMB
   // path during drawing, but a save/load mid-draw or hurt-cancel could leave
   // a stale state).
+  if(!_bowDrawing) _bowFullS = -1; /* S1028 — the sway's hold ends with the draw */
   if(_bowDrawing){
     _bowDrawT += dt * bowDrawRate(); /* S982 — Quick nock */
     // Stamina drain — continuous, so the player can't infinitely hold a draw.
@@ -213,6 +214,7 @@ function loop(now){
     // stamina, which is the realistic feel — "you can't draw harder than the
     // bow allows").
     if(_bowDrawT > BOW_DRAW_MAX) _bowDrawT = BOW_DRAW_MAX;
+    _bowFullS = _bowDrawT >= BOW_DRAW_MAX ? Math.max(0, _bowFullS) + (_bowFullS < 0 ? 0 : dt) : -1; /* S1028 — the hold at full draw, for the sway */
     // Out of stamina → forced release. Fires whatever draw they've got.
     if(stamina <= 0){
       const strength = _bowDrawStrength();
@@ -727,6 +729,7 @@ function loop(now){
       _baseRY_eff + swingY + pb*-.25,
       _baseRZ_eff + swingZ + pb*-.35
     );
+    if(_bowDrawing&&_bowFullS>0){const _sw=bowSway();vmSword.rotation.y+=_sw.yaw*1.5;vmSword.rotation.x+=_sw.pitch*1.5;} /* S1028 — the bow wobbles with the aim's sway */
     // S396 — the fists keep their own poses: the jab, the guard and the power punch's draw
     if(vmSword.userData.fists)vmFistPose(gb,pb,walkSway,totalBob+jumpDisp*.04);
     // Animate enchant sparks (orbitPhase children)
