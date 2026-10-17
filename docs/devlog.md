@@ -23128,3 +23128,15 @@ The same read: green on auto/quests, auto/systems, auto/backlog, auto/qa, auto/b
 ### Needs eyes
 - `auto/qa-skillcurve` has to be merged into PR #384's branch (or auto/systems) by the producer; until then #384's shard 6 stays red about one run in two.
 - Whether a dead foe's body should push the player at all is a game question, not this suite's; nothing here says it is wrong.
+
+## v80 — Session 1039 — `q7world`: the swings stand where the Faolchú is the nearest foe in the arc (FLAKY twice, QA)
+`q7world` was the worst of the owed retries: twice on 16 Oct (auto/backlog 490b0f9, auto/systems bf251d1, both shard 8) the fight ended with the Faolchú at 5 hp and its two wolves alive, and the three checks after it fell with it. Main passed it here three times out of three, one swing each. So I logged the fight blow by blow on the Systems code (PR #384's head, which carries bf251d1).
+
+A blow lands on the nearest foe within reach in the swing's arc (`resolvePlayerStrike`, `74-strikes.js`). The suite stood 1.6 from the Faolchú on the far side of its wolves' midpoint, a rule from Session 465 against the wolves breaking your posture. With a wolf on each flank, the far side of the midpoint often still had one nearer than the Faolchú (1.31 against 1.6). One traced run swung 24 times: one blow on the Faolchú and the rest on a wolf with 250 hp. On main that one blow is enough for the last 5 HP. On the Systems code, damage is set by the weapon's skill (S941), so a blow there does 2 or 3 and two have to land. On a slow runner the 30 s of fixed ticks ran out first. The game is right to strike the nearer wolf.
+
+The fix is the test's. Each tick the suite picks one of 32 spots 1.6 from the Faolchú. It skips any spot that has a wolf in the swing's arc (the game's own `weaponAttack(EQ.weapon)` arc and reach) nearer than the Faolchú, and of the rest takes the one farthest from the wolves. The fight's record now counts the swings and the blows on the Faolchú and on the wolves. The checks are unchanged.
+### Verified (headless Chromium)
+- Before, on PR #384's code: 24 swings, 1 blow on the Faolchú and the rest on a wolf (250 → 160-odd hp); it passed that time only because a second blow got through before the 30 s ran out.
+- After: green 3 of 3 on main (1 swing, 1 blow on it, none on a wolf), 3 of 3 on PR #384's code (2–5 swings, 2–3 blows on it, none on a wolf) and 1 of 1 under `--look=new` on main.
+### Needs eyes
+- None for play. The fight's damage at the Faolchú's last 5 HP on the Systems code (2 or 3 a blow from a fresh warrior) is the skills' design, not this suite's.
