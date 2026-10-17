@@ -2899,3 +2899,146 @@ export function aurenneExpedition(o = {}, r = stream('expedition')) {
   return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground, tents, fire, cart,
     trench: { x: TRX, z: TRZ, L: TL, W: TWd, lip: +lip.toFixed(3), floor: tfloor, ladder: { foot: lfoot.map(v => +v.toFixed(3)), top: ltop.map(v => +v.toFixed(3)) } }, lying, wall: { z: WZ, gap: GAPX }, road: { z: RZ, w: RW }, paths, trees };
 }
+
+// ── the Gatelands' overturned carriage (Session 1025, card F8; OG-124's panel 6, "small mysteries with no marker: an overturned
+// carriage"). A road coach left the lane at speed, went over the ditch and fell on its near side in the field beyond; its team is gone,
+// the traces cut through at the splinter bar, and nobody is anywhere. What happened, and to whom, is the quest writer's: the place is only the
+// state of things, an hour or a day after. The coach is the game's (Session 261: a panelled body on its frame, a door and two quarter windows
+// each side, a roof rail with luggage, the driver's box, two lamps, leaf springs, wheels of twelve spokes larger behind, the pole) at true size,
+// a metre a unit. Built on a lane through pasture in early autumn, the road along x at z -6 falling gently to -x, the ditch on its north side:
+//   - the coach: on its left side in the field, its roof to the wall, its underside to the road; its two right wheels up in the air and flat,
+//     the fore-carriage turned 15°; its right door open and standing up into the air past upright, the dark of the body through it; the near
+//     rear wheel broken off under it, its rim and spokes by it; the near front wheel off and lying flat; the pole snapped a metre out;
+//   - the traces: four, cut short at the splinter bar and hanging; the far lamp still on its bracket and burning, the near one broken on the
+//     ground;
+//   - the road: two gouges in the turf from the lane's edge, over the ditch, to where it lies; the whip in the road, a hat in the ditch;
+//   - the luggage: off the roof, a trunk on its end, another burst with its lid back and clothes out of it, a hatbox, a valise; one case
+//     still strapped under the rail;
+//   - the land: a dry-stone wall along the field's far side, a thorn hedge across the lane, ash and oak turning.
+// -> { group, tris, draws, own, ground(x, z), coach { x, z, y, rest [[x, y, z]] (the lower side's underface), top (the upper side), door { hinge, edge [x, y, z], hole [x, y, z] },
+//      wheels [{ x, y, z, r }] (the two up, hub and radius), lamp [x, y, z] }, traces [[x, y, z]] (their cut ends), lying [{ x, y, z, what }], wall { z, h }, road { z, w }, ditch { z, w, d }, paths, trees }
+export function gatelandsCarriage(o = {}, r = stream('carriage')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); const MI = millMats();
+  const M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0x9a8a6c, rough: 1 }), earth: mat('plaster', { ns: 1.2, color: 0x6a5440, rough: 1 }), wall: mat('stone', { ns: 1.2, color: 0xb4b0a4, rough: .95 }),
+    paint: mat('wood', { ns: .5, color: 0x8a3a26, rough: .55 }), black: mat('wood', { ns: .4, color: 0x2a2220, rough: .6 }), yellow: mat('wood', { ns: .6, color: 0xc8a048, rough: .7 }), iron: MI.iron,
+    glass: std(0x2a3238, .12, { metalness: .3 }), dark: std(0x0c0a08, 1, { side: THREE.BackSide }), cloth: std(0x7a2a2a, .95),
+    leather: mat('wood', { ns: .3, color: 0x4a3020, rough: .7 }), trunk: mat('wood', { ns: .8, color: 0x7a5a3a, rough: .8 }), linen: std(0xe0d8c4, .95, { side: THREE.DoubleSide }), wool: std(0x3a4a5e, .95),
+    lamp: std(0xffd8a0, .5, { emissive: new THREE.Color(1, .72, .38), emissiveIntensity: o.lit ? 3 : .25 }), bark: std(0x5e564c, .95), leaf: std(0x56682a, .85), leafAu: std(0x9a7a2a, .85) };
+  const B = new Map(), key = String(o.key || 'carriage'), F = stream(key + ':lie'), ph = Array.from({ length: 10 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z), V2 = (a, b) => new THREE.Vector2(a, b);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const grid = (k, nu, nv, f, uv = .5) => { const pos = [], idx = []; for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) pos.push(...f(i / nu, j / nv));
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return put(g, k, 0, 0, 0, 0, 0, 0, uv); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: falling to -x at 1 in 40 with a roll; the lane along x at z -6, the ditch north of it; the field level where the coach lies
+  const RZ = -6, RW = 3.6, DZ = -3.0, DW = 2.2, DD = .45, WZ = 4.5, CX = 0, CZ = -.8, CA = .12;
+  const base0 = (x, z) => -.025 * x + .08 * Math.sin(x * .17 + ph[0]) * Math.sin(z * .13 + ph[1]) + .03 * Math.sin(x * .5 + z * .4 + ph[2]);
+  const CG = +base0(CX, CZ + 1).toFixed(3), flatW = (x, z) => sm((4.2 - Math.hypot((x - CX) * .8, z - CZ - 1)) / 2.2), base = (x, z) => { const b = base0(x, z); return b + (CG - b) * flatW(x, z); };
+  const ditch = (x, z) => DD * Math.pow(Math.max(0, Math.cos(Math.PI * Math.min(1, Math.abs(z - DZ) / (DW / 2)) / 2)), 1.4);
+  const roadY = x => base(x, RZ);
+  const ground = (x, z) => { const b = base(x, z) - ditch(x, z), rw = sm((RW / 2 + 1.0 - Math.abs(z - RZ)) / 1.0); return b + (roadY(x) - .04 * Math.min(1, Math.abs(z - RZ) / (RW / 2)) - b) * rw; };
+  // the paths: from the lane over the ditch to the coach's underside; from the lane round its front and along its roof to the wall
+  const paths = [[[CX + 6.5, RZ], [CX + 5.6, DZ], [CX + 3.6, CZ - 1.1], [CX - .4, CZ - 1.1]], [[CX - 7.5, RZ], [CX - 7.0, DZ], [CX - 5.0, CZ + .6], [CX - 4.0, CZ + 3.1], [CX + 3.4, CZ + 3.1]]];
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const pathD = (x, z) => Math.min(...paths.flatMap(p => p.slice(0, -1).map((q, i) => segD(x, z, q, p[i + 1]))));
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -45, 23], [-45, -22, 2.5], [-22, 22, 1.0], [22, 45, 2.5], [45, 160, 23]], 160), gz = steps([[-160, -40, 24], [-40, -14, 2.5], [-14, -8, 1.0], [-8, -1.6, .4], [-1.6, 8, 1.0], [8, 40, 2.5], [40, 160, 24]], 160);
+    const pos = [], NX = gx.length, I = { turf: [], track: [] }; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cz = (gz[j] + gz[j + 1]) / 2; I[Math.abs(cz - RZ) < RW / 2 + .1 ? 'track' : 'turf'].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // a strip of earth over the ground along a polyline, w wide (the gouges)
+  const strip = (k, P, w, lift = .025) => { const pts = []; for (let i = 0; i + 1 < P.length; i++) { const [a, b] = [P[i], P[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / .3); for (let q = i ? 1 : 0; q <= n; q++) pts.push([a[0] + (b[0] - a[0]) * q / n, a[1] + (b[1] - a[1]) * q / n]); }
+    const pos = [], idx = []; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz), ww = w * (.8 + .3 * Math.sin(i * .9 + ph[4]));
+      for (const sd of [-1, 0, 1]) { const ex = x - dz / l * ww * sd / 2, ez = z + dx / l * ww * sd / 2; pos.push(ex, ground(ex, ez) + lift, ez); } if (i) { const o2 = (i - 1) * 3; for (let c = 0; c < 2; c++) idx.push(o2 + c, o2 + c + 3, o2 + c + 1, o2 + c + 1, o2 + c + 3, o2 + c + 4); } });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); if (g.attributes.normal.array[1] < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, k, 0, 0, 0, 0, 0, 0, .35); };
+  // the gouges: the coach's wheels and then its side, from the lane's north edge over the ditch to where it lies
+  for (const dz of [0, 1.5]) strip('earth', [[CX + 19, RZ + RW / 2 - .1 + dz * .2], [CX + 12, DZ - .2 + dz * .5], [CX + 6.5, CZ - 1.6 + dz * .7], [CX + 2.2, CZ - .3 + dz * .5]], .32 + dz * .1);
+  for (let k = 0; k < 14; k++) { const t = F(), x = CX + 12 - t * 9, z = DZ + .4 + t * 2.4 + (F() - .5) * 2.2; if (pathD(x, z) < .5) continue; const g = new THREE.IcosahedronGeometry(.1 + F() * .08, 0); g.scale(1.3, .6, 1.1); put(g, 'earth', x, ground(x, z) + .04, z, F(), F() * 3); } /* clods thrown up */
+  // ── the coach: built upright in its own frame (x along it, +x the front; y up, the wheels' foot at 0; z across, +z its right side), then laid on
+  // its left side: local (x, y, z) goes to the world's (-x, z, y) turned by CA about the upright, so the roof faces the wall and the underside the lane
+  const CY = CG + .745, CM = new THREE.Matrix4().makeTranslation(CX, CY, CZ).multiply(new THREE.Matrix4().makeRotationY(Math.PI + CA)).multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+  const W = (x, y, z) => { const v = V3(x, y, z).applyMatrix4(CM); return [v.x, v.y, v.z]; };
+  const CP = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, pre = null) => { geo.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); if (pre) geo.applyMatrix4(pre); geo.applyMatrix4(CM); return put(geo, k); };
+  const CR = (k, a, b, rad, seg = 6, pre = null) => { const t = p => pre ? V3(...p).applyMatrix4(pre).toArray() : p; return rod(k, W(...t(a)), W(...t(b)), rad, seg); };
+  const BL = 2.3, BW = 1.45, Y0 = .85, Y1 = 2.2, T = .04, hx = BL / 2, hz = BW / 2, DX = [-.31, .31], DY = [.92, 2.1];
+  // the body: panels round a dark lining (drawn from inside only, so it shows through the doorway and nowhere else)
+  CP(new THREE.BoxGeometry(BL, T, BW), 'paint', 0, Y0 + T / 2, 0); CP(new THREE.BoxGeometry(BL + .12, .06, BW + .1), 'black', 0, Y1 + .03, 0);
+  for (const sx of [-1, 1]) CP(new THREE.BoxGeometry(T, Y1 - Y0, BW), 'paint', sx * (hx - T / 2), (Y0 + Y1) / 2, 0);
+  CP(new THREE.BoxGeometry(BL, Y1 - Y0, T), 'paint', 0, (Y0 + Y1) / 2, -hz + T / 2);
+  for (const [x0, x1, y0, y1] of [[-hx, DX[0], Y0, Y1], [DX[1], hx, Y0, Y1], [DX[0], DX[1], Y0, DY[0]], [DX[0], DX[1], DY[1], Y1]]) CP(new THREE.BoxGeometry(x1 - x0, y1 - y0, T), 'paint', (x0 + x1) / 2, (y0 + y1) / 2, hz - T / 2);
+  CP(new THREE.BoxGeometry(BL - .1, Y1 - Y0 - .1, BW - .1), 'dark', 0, (Y0 + Y1) / 2, 0);
+  CP(new THREE.BoxGeometry(.5, .14, BW - .14), 'cloth', -.8, Y0 + .48, 0); CP(new THREE.BoxGeometry(.5, .14, BW - .14), 'cloth', .8, Y0 + .48, 0) /* the two seats, under the windows */;
+  for (const sz of [-1, 1]) { for (const sx of [-1, 1]) for (const [x0, x1, y0, y1] of [[.5, .95, 1.5, 2.0]]) CP(new THREE.BoxGeometry(x1 - x0, y1 - y0, .012), sz > 0 && sx > 0 ? 'black' : 'glass', sx * (x0 + x1) / 2, (y0 + y1) / 2, sz * (hz + .006)) /* the quarter windows; the far front one broken out */;
+    for (const y of [Y0 + .05, 1.42, Y1 - .04]) CP(new THREE.BoxGeometry(BL + .02, .05, .03), 'black', 0, y, sz * (hz + .01)); }
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) CR('black', [sx * hx, Y0, sz * hz], [sx * hx, Y1, sz * hz], .03, 5) /* the corner pillars */;
+  // the door: hinged at its back edge, swung out 100° so it stands up past upright, leaning back over the body; its window, its brass handle
+  const DH = new THREE.Matrix4().makeTranslation(DX[0], 0, hz).multiply(new THREE.Matrix4().makeRotationY(-100 * Math.PI / 180)).multiply(new THREE.Matrix4().makeTranslation(-DX[0], 0, -hz));
+  { const dw = DX[1] - DX[0], dy = (DY[0] + DY[1]) / 2; CP(new THREE.BoxGeometry(dw - .01, DY[1] - DY[0] - .01, .035), 'paint', 0, dy, hz + .02, 0, 0, 0, DH); CP(new THREE.BoxGeometry(dw - .16, .4, .012), 'glass', 0, 1.78, hz + .042, 0, 0, 0, DH);
+    CP(new THREE.BoxGeometry(dw - .16, .3, .01), 'black', 0, 1.25, hz + .042, 0, 0, 0, DH); CP(new THREE.SphereGeometry(.025, 8, 6), 'yellow', DX[1] - .07, 1.45, hz + .06, 0, 0, 0, DH); CP(new THREE.BoxGeometry(dw - .16, .3, .01), 'black', 0, 1.25, hz + .042, 0, Math.PI, 0, DH) /* its inner face */; }
+  const doorEdge = W(...V3(DX[1], DY[1], hz + .02).applyMatrix4(DH).toArray()), doorHole = W(0, (DY[0] + DY[1]) / 2, hz);
+  // the roof rail and the one case still strapped under it, on the upper half
+  for (const [x, z] of [[1.0, .62], [-1.0, .62], [1.0, -.62], [-1.0, -.62]]) CR('iron', [x, Y1 + .06, z], [x, Y1 + .22, z], .015, 4);
+  for (const sz of [-1, 1]) CR('iron', [-1.0, Y1 + .22, sz * .62], [1.0, Y1 + .22, sz * .62], .015, 4); for (const sx of [-1, 1]) CR('iron', [sx * 1.0, Y1 + .22, -.62], [sx * 1.0, Y1 + .22, .62], .015, 4);
+  CP(new THREE.BoxGeometry(.62, .26, .4), 'leather', -.3, Y1 + .19, .38); CR('black', [-.3, Y1 + .06, .62], [-.3, Y1 + .33, .62], .012, 4);
+  // under it: the perch, the axles, the leaf springs; the fore-carriage turned 15° on its pivot
+  const FC = new THREE.Matrix4().makeTranslation(1.05, 0, 0).multiply(new THREE.Matrix4().makeRotationY(.26)).multiply(new THREE.Matrix4().makeTranslation(-1.05, 0, 0));
+  CR('black', [-1.1, .58, 0], [1.1, .52, 0], .055, 6); CR('iron', [-1.0, .72, -.8], [-1.0, .72, .96], .04, 6); CR('iron', [1.05, .52, -.8], [1.05, .52, .92], .035, 6, FC);
+  for (const [x, y, pre] of [[-1.0, .8, null], [1.05, .64, FC]]) for (const sz of [-1, 1]) { const g = new THREE.SphereGeometry(.1, 10, 6); g.scale(4.2, .7, 1.2); CP(g, 'black', x, y, sz * .5, 0, 0, 0, pre); }
+  // the wheels: the right pair up in the air on their axles, the iron tyre, the felloe, the spokes, the nave
+  const wheels = [], wheel = (x, y, z, rr, n, pre = null, keep = n) => { CP(new THREE.TorusGeometry(rr - .015, .03, 5, 32), 'iron', x, y, z, 0, 0, 0, pre); CP(new THREE.TorusGeometry(rr - .06, .035, 5, 28), 'yellow', x, y, z, 0, 0, 0, pre);
+    for (let k = 0; k < keep; k++) { const a = k / n * 6.283 + ph[5]; CR('yellow', [x + .09 * Math.cos(a), y + .09 * Math.sin(a), z], [x + (rr - .08) * Math.cos(a), y + (rr - .08) * Math.sin(a), z], .02, 4, pre); }
+    const g = new THREE.CylinderGeometry(.1, .1, .2, 10); g.rotateX(Math.PI / 2); CP(g, 'yellow', x, y, z, 0, 0, 0, pre); const w = W(...(pre ? V3(x, y, z).applyMatrix4(pre).toArray() : [x, y, z])); return { x: +w[0].toFixed(3), y: +w[1].toFixed(3), z: +w[2].toFixed(3), r: rr }; };
+  wheels.push(wheel(-1.0, .72, .92, .72, 12), wheel(1.05, .52, .88, .52, 12, FC));
+  { const g = new THREE.CylinderGeometry(.1, .1, .14, 10); g.rotateX(Math.PI / 2); CP(g, 'yellow', -1.0, .72, -.76); for (let k = 0; k < 3; k++) { const a = k * 1.9 + ph[6]; CR('yellow', [-1.0 + .09 * Math.cos(a), .72 + .09 * Math.sin(a), -.76], [-1.0 + .3 * Math.cos(a), .72 + .3 * Math.sin(a), -.76], .02, 4); } } /* the near rear nave, its spokes broken short */
+  // the driver's box: the seat over the front, its backrest against the body, the footboard sloping down ahead; the lamps at the front corners
+  CP(new THREE.BoxGeometry(.5, .32, BW - .1), 'black', hx + .2, 1.75, 0); CP(new THREE.BoxGeometry(.48, .1, BW - .1), 'cloth', hx + .2, 1.96, 0); CP(new THREE.BoxGeometry(.06, .38, BW - .1), 'black', hx + .03, 2.2, 0);
+  CP(new THREE.BoxGeometry(.6, .04, BW - .3), 'black', hx + .7, 1.42, 0, 0, 0, -.5); for (const sz of [-1, 1]) CR('iron', [hx + .45, 1.6, sz * .55], [hx + .95, 1.3, sz * .55], .015, 4);
+  { const x = hx + .05, y = 1.95, z = .82; CR('iron', [x - .05, y - .1, hz], [x, y - .1, z], .012, 4); CP(new THREE.BoxGeometry(.13, .2, .13), 'lamp', x, y, z); CP(new THREE.ConeGeometry(.1, .1, 4), 'black', x, y + .15, z, 0, Math.PI / 4); CP(new THREE.CylinderGeometry(.06, .07, .05, 8), 'black', x, y - .12, z); }
+  const lampW = W(hx + .05, 1.95, .82);
+  // the splinter bar ahead of the fore-carriage, the four traces cut short at it and hanging; the pole snapped a metre out from its socket
+  const traces = [];
+  { CR('black', [1.45, .55, -.62], [1.45, .55, .62], .035, 5, FC); for (const z of [-.6, -.3, .3, .6]) { const a = W(...V3(1.45, .55, z).applyMatrix4(FC).toArray()), L = .55 + F() * .35, hang = [a[0] - .18, Math.max(ground(a[0] - .18, a[2]) + .02, a[1] - L), a[2] + .05];
+      const rest = Math.max(0, L - (a[1] - hang[1])), end = [hang[0] - rest * .9, ground(hang[0] - rest * .9, hang[2]) + .02, hang[2]]; rod('leather', a, hang, .018, 4); if (rest > .05) rod('leather', hang, end, .018, 4); traces.push((rest > .05 ? end : hang).map(v => +v.toFixed(3))); }
+    CR('black', [1.15, .5, 0], [2.15, .56, 0], .05, 6, FC); for (let k = 0; k < 4; k++) { const a = k * 1.6; CR('yellow', [2.1, .56 + .03 * Math.sin(a), .03 * Math.cos(a)], [2.32 + .08 * k, .56 + .05 * Math.sin(a), .05 * Math.cos(a)], .012, 3, FC); } }
+  // ── off it: things lying where they fell (each one's foot on the ground)
+  const lying = [], lie = (what, x, z, h, f) => { const y = ground(x, z); f(x, y, z); lying.push({ x: +x.toFixed(3), y: +y.toFixed(3), z: +z.toFixed(3), what, h }); };
+  lie('wheel', CX - 3.2, CZ - 2.0, .035, (x, y, z) => { put(new THREE.TorusGeometry(.5, .03, 5, 28).rotateX(Math.PI / 2), 'iron', x, y + .035, z); put(new THREE.TorusGeometry(.46, .035, 5, 24).rotateX(Math.PI / 2), 'yellow', x, y + .035, z);
+    for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283; rod('yellow', [x + .09 * Math.cos(a), y + .035, z + .09 * Math.sin(a)], [x + .44 * Math.cos(a), y + .035, z + .44 * Math.sin(a)], .02, 4); } put(new THREE.CylinderGeometry(.1, .1, .2, 10), 'yellow', x, y + .1, z); });
+  lie('rim', CX + 1.8, CZ - .3 - 1.1, .035, (x, y, z) => { put(new THREE.TorusGeometry(.7, .03, 5, 20, 2.0).rotateX(Math.PI / 2), 'iron', x, y + .035, z, 0, ph[7]); put(new THREE.TorusGeometry(.66, .035, 5, 18, 1.7).rotateX(Math.PI / 2), 'yellow', x, y + .035, z, 0, ph[7] + .15); });
+  for (let k = 0; k < 4; k++) lie('spoke', CX + 2.6 + F() * .8, CZ - 2.1 - F() * .6, .02, (x, y, z) => { const a = F() * 3; rod('yellow', [x - .3 * Math.cos(a), y + .02, z - .3 * Math.sin(a)], [x + .3 * Math.cos(a), ground(x + .3 * Math.cos(a), z + .3 * Math.sin(a)) + .02, z + .3 * Math.sin(a)], .02, 4); });
+  lie('pole', CX - 4.6, CZ - 1.7, .05, (x, y, z) => { const a = .5; rod('black', [x - 1.1 * Math.cos(a), ground(x - 1.1 * Math.cos(a), z + 1.1 * Math.sin(a)) + .05, z + 1.1 * Math.sin(a)], [x + 1.1 * Math.cos(a), ground(x + 1.1 * Math.cos(a), z - 1.1 * Math.sin(a)) + .05, z - 1.1 * Math.sin(a)], .05, 6);
+    for (let k = 0; k < 3; k++) rod('yellow', [x + 1.05 * Math.cos(a), y + .05, z - 1.05 * Math.sin(a)], [x + (1.25 + .06 * k) * Math.cos(a), y + .05 + .02 * k, z - (1.25 + .06 * k) * Math.sin(a) + .03 * (k - 1)], .012, 3); });
+  lie('lamp', CX - 1.9, CZ + 2.5, .065, (x, y, z) => { put(new THREE.BoxGeometry(.13, .13, .2), 'glass', x, y + .065, z, 0, .7); put(new THREE.ConeGeometry(.1, .1, 4).rotateZ(Math.PI / 2), 'black', x + .14, y + .07, z - .1, 0, .7); });
+  lie('whip', CX + 9.0, RZ + .6, .015, (x, y, z) => { rod('black', [x - .7, roadY(x - .7) + .015, z - .2], [x + .7, roadY(x + .7) + .015, z + .2], .015, 4); rod('leather', [x + .7, roadY(x + .7) + .006, z + .2], [x + 1.6, roadY(x + 1.6) + .006, z + .6], .006, 3); });
+  lie('hat', CX + 4.0, DZ + .2, .0, (x, y, z) => { put(new THREE.CylinderGeometry(.19, .19, .015, 14), 'black', x, y + .008, z, .05, 0, .04); put(new THREE.CylinderGeometry(.11, .12, .16, 12), 'black', x + .02, y + .09, z, .05, 0, .04); });
+  // the luggage, thrown off the roof towards the wall: a trunk on its end, another burst with its lid back, a hatbox rolled away, a valise
+  lie('trunk', CX + 3.8, CZ + 4.5, .425, (x, y, z) => { put(new THREE.BoxGeometry(.6, .85, .5), 'trunk', x, y + .425, z, 0, .4); for (const d of [-.25, .25]) put(new THREE.BoxGeometry(.62, .04, .52), 'black', x, y + .425 + d, z, 0, .4); }) /* on its end, its two bands round it */;
+  lie('trunk', CX - 2.6, CZ + 4.7, .25, (x, y, z) => { const a = -.2, th = 110 * Math.PI / 180, oy = .5 + .25 * Math.sin(th) + .02, oz = .25 - .25 * Math.cos(th); put(new THREE.BoxGeometry(.8, .5, .5), 'trunk', x, y + .25, z, 0, a);
+    put(new THREE.BoxGeometry(.8, .04, .5), 'trunk', x + oz * Math.sin(a), y + oy, z + oz * Math.cos(a), th, a) /* its lid back on its hinge, 110° open */;
+    for (let k = 0; k < 11; k++) { const sx = x + (F() - .5) * 1.3, sz = z - .4 - F() * .7, kk = ['linen', 'wool', 'cloth', 'linen'][k % 4]; if (pathD(sx, sz) < .45) continue; const g = new THREE.IcosahedronGeometry(.11 + F() * .08, 1); g.scale(1.8 + F(), .28, .9 + F() * .5); put(g, kk, sx, ground(sx, sz) + .04, sz, F() * .2, F() * 3); } });
+  lie('hatbox', CX + 5.6, CZ + 2.0, .14, (x, y, z) => { put(new THREE.CylinderGeometry(.2, .2, .28, 14).rotateZ(Math.PI / 2), 'leather', x, y + .2, z, 0, .9); });
+  lie('valise', CX - 4.6, CZ + 4.2, .12, (x, y, z) => { put(new THREE.BoxGeometry(.6, .24, .38), 'leather', x, y + .12, z, 0, 1.2); put(new THREE.TorusGeometry(.07, .012, 4, 10, Math.PI), 'yellow', x, y + .25, z, 0, 1.2 + Math.PI / 2); });
+  // the wall: dry stone along the field's far side, 1.1 to 1.3 m, its top a row of copes on edge
+  const wallH = 1.15; for (let x = -30; x < 30; x += .5) { const w = .44 + F() * .1, xm = x + w / 2, bot = ground(xm, WZ) - .05, n = 4, ch = (wallH - .25) / n;
+    for (let c = 0; c < n; c++) put(new THREE.BoxGeometry(w - (c % 2) * .04, ch - .02, .62 - c * .06), 'wall', xm + (c % 2) * .05, bot + c * ch + ch / 2, WZ + (F() - .5) * .04, 0, (F() - .5) * .06);
+    for (let k = 0; k < 2; k++) put(new THREE.BoxGeometry(.25, .32, .36), 'wall', x + .125 + k * .25, bot + wallH - .25 + .15, WZ, 0, 0, (F() - .5) * .25); }
+  // the hedge across the lane, thorn; ash and oak in it and beyond the wall
+  for (let x = -60; x < 60; x += 1.2) { if (Math.sin(x * .11 + ph[8]) > .9) continue; const z = RZ - RW / 2 - 2.2 + (F() - .5) * .3, y = ground(x, z); for (let k = 0; k < 2; k++) put(new THREE.IcosahedronGeometry(.75 + F() * .3, 0).scale(1, .9, .8), 'leaf', x + (F() - .5) * .4, y + .55 + k * .7, z + (F() - .5) * .3, F(), F() * 3); }
+  const trees = [], tree = (x, z, h) => { const gy = ground(x, z), top = [x + (F() - .5) * .5, gy + h * .5, z + (F() - .5) * .5], au = F() < .45; rod('bark', [x, gy - .3, z], top, .16 + h * .013, 7, .7);
+    for (let l = 0; l < 5; l++) { const a = l * 1.3 + F(), L = 1.6 + F() * 1.4, e = [top[0] + Math.cos(a) * L, top[1] + .8 + l * .55 + F(), top[2] + Math.sin(a) * L]; rod('bark', [top[0], top[1] - .5 + l * .25, top[2]], e, .07, 5, .6);
+      for (let c2 = 0; c2 < 3; c2++) put(new THREE.IcosahedronGeometry(.9 + F() * .6, 0).scale(1.15, .8, 1.15), au && c2 ? 'leafAu' : 'leaf', e[0] + (F() - .5) * 1.6, e[1] + (F() - .4) * 1.2, e[2] + (F() - .5) * 1.6, F(), F() * 3); }
+    put(new THREE.IcosahedronGeometry(1.4, 0).scale(1.15, .85, 1.15), au ? 'leafAu' : 'leaf', top[0], gy + h * .85, top[2]); trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2) }); };
+  for (let k = 0, n = 0; k < 900 && n < 6; k++) { const x = -40 + F() * 80, z = RZ - RW / 2 - 2.2 + (F() - .5) * .6; if (x > -10 && x < 18 || trees.some(t => Math.hypot(t.x - x, t.z - z) < 9)) continue; n++; tree(x, z, 8 + F() * 4); }
+  for (let k = 0, n = 0; k < 900 && n < 8; k++) { const x = -40 + F() * 80, z = WZ + 3 + F() * 24; if (trees.some(t => Math.hypot(t.x - x, t.z - z) < 8)) continue; n++; tree(x, z, 9 + F() * 4); }
+  for (let k = 0, n = 0; k < 900 && n < 5; k++) { const x = -40 + F() * 80, z = RZ - RW / 2 - 8 - F() * 20; if (trees.some(t => Math.hypot(t.x - x, t.z - z) < 8)) continue; n++; tree(x, z, 9 + F() * 4); }
+  const group = new THREE.Group(); let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'track', 'earth', 'dark', 'lamp'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const rest = []; for (const x of [-.9, 0, .9]) for (const y of [1.05, 2.0]) rest.push(W(x, y, -hz).map(v => +v.toFixed(3)));
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground,
+    coach: { x: CX, z: CZ, y: CG, ry: CA, rest, top: +W(0, 1.5, hz)[1].toFixed(3), door: { edge: doorEdge.map(v => +v.toFixed(3)), hole: doorHole.map(v => +v.toFixed(3)) }, wheels, lamp: lampW.map(v => +v.toFixed(3)), front: W(hx + .9, 1.4, 0).map(v => +v.toFixed(3)) },
+    traces, lying, wall: { z: WZ, h: wallH }, road: { z: RZ, w: RW }, ditch: { z: DZ, w: DW, d: DD }, paths, trees };
+}
