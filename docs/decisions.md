@@ -4,7 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1063) — DECISION #405
+### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1066) — DECISION #405
 Under Michael's A on #373, no foe in a chunk, lair, commission or dungeon reads your level any more (`tierlevelfree`, 7/7). Two places outside the build sheet still do:
 - **A town's jobs** (`townQuestFor`): a cull asks for 4 + level ÷ 3 beasts and a road job's camp holds 3 + level ÷ 3 bandits. The pay is 40 + 30 × (level ÷ 3). At level 1 that is 4 beasts, 3 bandits and 40–69 gold; at level 30 it is 14, 13 and 340–369.
 - **The war's camps:** a siege camp holds 6 + level ÷ 3 bandits, and an occupation 5 + level ÷ 4.

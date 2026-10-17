@@ -1,4 +1,4 @@
-// Enemies by place, the sheet's main line (Session 1063; the designer's sheet on Michael's A on #373): one chunk, one lair, one
+// Enemies by place, the sheet's main line (Session 1066; the designer's sheet on Michael's A on #373): one chunk, one lair, one
 // commission and one dungeon's two floors, on the same seed, made at level 1 and at level 30, give the same foes: kind, variant,
 // health, blow and pace, the count, and the traps. No level is read where a foe, a trap or a dungeon is made. The hoard's gold and
 // the loot's material still follow your level until DECISION #394, so the hoard is read but not held to it.

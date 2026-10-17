@@ -1,4 +1,4 @@
-// Enemies by place, the main path (Session 1064; the designer's sheet on Michael's A on #373). Every place the main quest's first
+// Enemies by place, the main path (Session 1067; the designer's sheet on Michael's A on #373). Every place the main quest's first
 // act sends you, from the crypt to Aldwyn with the rubbing, stands at tier 1 or 2, counting the floor it sends you to: a door's
 // floor 2 is its tier plus one. A gate's world place is where the world's own data puts it (fixedDoorSpot), so the answer does
 // not hang on what has loaded; a live portal, where one stands, reads the same tier.

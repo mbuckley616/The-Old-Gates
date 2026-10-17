@@ -24385,7 +24385,10 @@ What is built (in `makePerson`):
 ### Needs eyes
 - **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
 
-## v80 — Session 1062 — Enemies by place: the door's grade on the map's subtitle (the designer's sheet, session 1, part 5)
+## v80 — Session 1065 — Enemies by place: the door's grade on the map's subtitle (the designer's sheet, session 1, part 5)
+*Renumbered: this run first committed Sessions 1065 to 1067 as 1062 to 1064, numbers the look builder's branch (auto/backlog)
+already held. The commits' messages keep the old numbers; the entries, the backlog, the code's notes and the suites carry the new.*
+
 Session 64 took the grades off the map's subtitles, because a door's grade was your level's and followed you: the map said a
 door was Very Easy at level 1 and Hard at level 12, which told you nothing about the door. Since Session 1058 a grade is the
 door's tier's and never changes, so the sheet puts it back: a door on the map reads *Old gate · undead · Very Easy*, or
@@ -24413,9 +24416,9 @@ writer's, after this. Nothing is saved.
 - **Owed from the sheet:** the whole-world suites `tierlevelfree` and `tiermainpath`. The loot and the hoard wait on #394; then
   the quest writer's four danger lines.
 
-## v80 — Session 1063 — Enemies by place: `tierlevelfree`, the sheet's main line (tests only)
+## v80 — Session 1066 — Enemies by place: `tierlevelfree`, the sheet's main line (tests only)
 The sheet's main suite: build each kind of place where foes are made, on the same seed, at level 1 and at level 30, and require
-the same foes. Since Sessions 1058 to 1062 it should hold everywhere the sheet names, and it does. No game code changed.
+the same foes. Since Sessions 1058 to 1061 and 1065 it should hold everywhere the sheet names, and it does. No game code changed.
 
 The suite makes, at each level:
 - 18 chunks at night, nine at the centre of the Deepwood and nine in the Wastes (`spawnChunkEncounters`);
@@ -24445,7 +24448,7 @@ Both are numbers a player feels, and the sheet does not say what replaces them, 
 - Nothing in play changed.
 - **Owed from the sheet:** `tiermainpath`. The loot and the hoard wait on #394; then the quest writer's four danger lines.
 
-## v80 — Session 1064 — Enemies by place: `tiermainpath`, the first act at tier 1 or 2 (tests only)
+## v80 — Session 1067 — Enemies by place: `tiermainpath`, the first act at tier 1 or 2 (tests only)
 The sheet's last suite asks whether the main quest's first act sends a new character anywhere above tier 2. If it did, the
 quest would stay where it is and the list would go to the producer. It does not. No game code changed.
 

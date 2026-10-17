@@ -968,7 +968,7 @@
     else if(kind==='ship'){ctx.beginPath();ctx.moveTo(-8,2);ctx.lineTo(8,2);ctx.lineTo(6,6);ctx.lineTo(-6,6);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillRect(-.6,-9,1.2,11);ctx.beginPath();ctx.moveTo(.6,-8);ctx.lineTo(7,-2);ctx.lineTo(.6,-1);ctx.closePath();ctx.fill();ctx.stroke();}
     ctx.restore();
   }
-  /* S1062 — the door's grade on its subtitle (Very Easy to Very Hard), its place's and fixed, so cached on the door by where it stands */
+  /* S1065 — the door's grade on its subtitle (Very Easy to Very Hard), its place's and fixed, so cached on the door by where it stands */
   function mapDoorGrade(e,p){if(typeof doorGrade!=='function')return '';const k=p.x+','+p.z;if(e._mapGradeAt!==k){e._mapGradeAt=k;e._mapGrade=(DIFF_SCALE[doorGrade(e,p.x,p.z)]||{}).label||'';}return e._mapGrade?' · '+e._mapGrade:'';}
   function mapEntries(cell){
     const out=[];const c=cell;if(!c)return out;

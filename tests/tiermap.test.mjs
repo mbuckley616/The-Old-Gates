@@ -1,4 +1,4 @@
-// Enemies by place, the map's label (Session 1062; the designer's sheet on Michael's A on #373). Session 64 took the grades off
+// Enemies by place, the map's label (Session 1065; the designer's sheet on Michael's A on #373). Session 64 took the grades off
 // the map's subtitles because they followed you; a door's grade is its place's now, so it shows again: "Old gate · undead · Very
 // Easy". Each door's label is the grade its live portal fights at, the same at level 1 and level 20, and the panel shows it.
 import { boot, check } from './lib/game.mjs';
