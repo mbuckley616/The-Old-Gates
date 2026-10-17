@@ -283,7 +283,7 @@ function drawWeapon(){if(!SHEATHED)return false;SHEATHED=false;_sheathedItem=nul
 function toggleSheath(){if(SHEATHED){drawWeapon();showMsg(`You draw the ${EQ.weapon?EQ.weapon.name:'weapon'}.`,'#c8b880');}
   else if(sheathWeapon())showMsg(`You sheathe the ${EQ.weapon.name}.`,'#c8b880');}
 function tickSheath(){
-  if(SHEATHED&&EQ.weapon!==_sheathedItem){SHEATHED=false;_sheathedItem=null;return;}
+  if(SHEATHED&&EQ.weapon!==_sheathedItem){SHEATHED=false;_sheathedItem=null;sheathView();return;}
   if(SHEATHED||SWING||!sheathable()||playClockS-_lastSwingG<SHEATH_IDLE_S)return;
   for(const f of strikeFoes()||[])if(f&&f.alert&&!f.dead&&f.hp>0&&Math.hypot(f.x-px,f.z-pz)<SHEATH_FOE_R)return;
   sheathWeapon();

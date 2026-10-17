@@ -24757,3 +24757,6 @@ and in hand."*
   by then, so the view showed fists. The suite now draws the weapon before it reads the view. The check is unchanged and passes.
   The other 12 of the 14 suites that read the viewmodel or a swing pass as they are: `fpweapons`, `fphands`, `player`,
   `tpguard`, `tpswing`, `spentblow`, `fistswing`, `dmgnums`, `skillcurve`, `tpfists`, `fistfight` and `perkarms`.
+- **Addendum to Session 1080: `bowsway`** found a real hole. When a sheathed weapon was swapped for another without the
+  inventory's own rebuild of the view, `tickSheath` cleared the sheath but left the empty hand standing, so the new bow was held
+  invisibly and did not wobble. Clearing the sheath now rebuilds the drawn view. `bowsway` and `sheath` pass.
