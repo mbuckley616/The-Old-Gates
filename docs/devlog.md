@@ -24113,3 +24113,14 @@ The question offers the small rule each needs (recommended), other perks under t
 - **Stone hand ends a brawl with a Bandit in 3 punches**, where 99 takes 8 or 9. That is more than twice the roll, since 4 to 7 is more than twice 2 to 3, and the Bandit dies before its posture matters. It is the sheet's number. A master's fist now outhits most one-handed blades of the early tiers.
 - **Earthshaker and Crossing both stagger foes you did not strike.** In a pack, a mace master's third swing stops everyone at your elbow.
 - **Owed:** DECISION #399's four; Guard's *Iron wall* with the heavy attacks. With these, the sheet's first wave of perks is in, apart from the ones that wait on a system.
+
+## v80 — Session 1057 — `skillcurve`'s punch at 100 pinned past Stone hand (a fix for Session 1051's break), and QA's lane fix brought in
+Session 1051 gave Hand-to-hand 100 its own roll (*Stone hand*, `STONE_HAND_ATK`, 4 to 7), but `skillcurve`'s *skilldamage* check pins only `FISTS.atk` to 100 to read the multiplier at 5, 50 and 100. At 100 the resolver now rolls Stone hand's dice instead, so the check read 64, 100 and 8 where it wants 64, 100 and 140. That session ran `fistfight`, `posturefloor` and `resolver` and missed this one. The check now pins Stone hand's two numbers to 100 as well, and puts both back after, so it measures the multiplier alone, as before. Nothing in the game changed.
+
+The same session brings in QA's fix for the suite (Session 1038, `ff40184` on `auto/qa-skillcurve`, cherry-picked): the fight's Bandit is taken out of the scene before the run, and a new check says the lane is clear. The producer's digest asked for it on this branch.
+### Verified (headless Chromium)
+- Before: `skillcurve` red twice, *a punch rolled at 100 hits 64, 100, 8*.
+- After: `skillcurve` green twice with `--no-retry`, every check: the punch ×0.64, ×1.0, ×1.4; the run's lane clear.
+- One earlier boot (before the pin) read the run at ×0.994 with the lane check at 0.036 m aside, and passed on its retry. That is the flake QA is chasing (backlog K), not this branch's.
+### Needs eyes
+- Nothing to play.

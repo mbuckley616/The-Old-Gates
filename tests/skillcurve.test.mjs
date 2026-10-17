@@ -65,10 +65,11 @@ const fight = await page.evaluate(() => {
     for (const lvl of [1, 20]) for (const b of [5, 50, 100]) { level = lvl; SKILLS.blade = { lv: b, p: 0 }; raw = []; _swing(e, keep); out.dmg[lvl + '/' + b] = raw[0]; }
     level = 1;
     // Hand-to-hand (Session 950, Michael's C on #357): bare fists are the 23rd skill, the fists' roll on its multiplier
-    const fa = FISTS.atk.slice(), keepW = EQ.weapon; EQ.weapon = null; FISTS.atk[0] = FISTS.atk[1] = 100; buildViewmodel(); out.hand = {};
+    const fa = FISTS.atk.slice(), sh = STONE_HAND_ATK.slice(), keepW = EQ.weapon; EQ.weapon = null; FISTS.atk[0] = FISTS.atk[1] = STONE_HAND_ATK[0] = STONE_HAND_ATK[1] = 100; buildViewmodel(); out.hand = {};
+    /* Stone hand (S1051) swaps the fists' roll at 100 for its own: both are pinned to 100, so the check reads the multiplier alone */
     try { for (const h of [5, 50, 100]) { SKILLS.hand = { lv: h, p: 0 }; raw = []; _swing(e, keep); out.hand[h] = raw[0]; }
       SKILLS.hand = { lv: 5, p: 0 }; uses.length = 0; SKILL_LAST.clear(); _swing(e, keep); out.handUse = uses.slice(); out.handP = SKILLS.hand.p;
-    } finally { FISTS.atk[0] = fa[0]; FISTS.atk[1] = fa[1]; EQ.weapon = keepW; buildViewmodel(); }
+    } finally { FISTS.atk[0] = fa[0]; FISTS.atk[1] = fa[1]; STONE_HAND_ATK[0] = sh[0]; STONE_HAND_ATK[1] = sh[1]; EQ.weapon = keepW; buildViewmodel(); }
   } finally { applyMeleeDamage = _a; skillUse = _u; e.hp = 0; e.dead = true; WORLD.scene.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); }
   /* the Bandit goes, body and all: the run's lane and the jump's spot are at S, and a body left there pushed the run aside by a different amount each boot */
   out.left = ZONES.world.enemies.filter(f => f.hp > 0 && Math.hypot(f.x - S.x, f.z - S.z) < 6).length;
