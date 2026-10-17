@@ -23066,3 +23066,46 @@ Corrections made during the session:
 - **They are drawn, not modelled.** The shell's outline is a smooth cylinder, with no step at each turn's edge, so the silhouette is plain.
 - **The thongs** are two lines on the flat top, with no knot and no ends.
 - **Still owed in L1:** the coins on the head-wrap's edge, which need OG-056's full image; the Gatelanders' headscarves and baskets.
+
+## v80 — Session 1027 — The Gatelanders' headscarves (L1 and B2, prototype only)
+No FREEZE is open, but F4 has not merged, so the bodies stay in the prototypes. Session 1024 left two pieces of the Gatelanders' dress unbuilt: headscarves and baskets. This session builds the headscarf. OG-048 draws "a woman in a patterned headscarf" and OG-059 "headscarves on women". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+The headscarf is the Aurennais head-wrap (Session 994) tied another way: `D.scarf`. This keeps one garment colour, `wrap`, and one set of rules for the hair under it, which is tucked short as before. The thumbnails cannot show how the scarf is tied, so it is read as a kerchief folded corner to corner and knotted at the nape.
+
+What changed in `people.js`:
+- **The cut.** The scarf's dome is fitted to the head as the wrap's is (`headDome`), with 1.2 cm of cloth where the wrap has 1.6.
+  - Its edge runs across the forehead 3.5 cm over the brows (the wrap's is about 2).
+  - From there it comes down over the tops of the ears and falls to 13 cm under the brow line at the nape.
+  - In place of the wrap's five turns there is one folded edge, a flattened roll 4.5 mm round.
+- **The point** is the third corner, hanging down the middle of the back. It is laid by the wrap-tail's builder (Session 1018) with the side `C`. It is 9 cm wide under the knot and narrows to its corner 22 cm down (18 on a man). It lies 6 mm over whatever it hangs over, read off the same radial map. Its two edges take the border's colour.
+- **The knot** is a lump of cloth at the nape over the point, 4.6 by 3 cm. Its two ends, 5.5 cm long and 2.2 cm narrowing to 1.3 wide, lie on the point 6.5 mm out, clear of the point's folds. The point and the knot are carried by the chest bone, and none is built under a cloak.
+- **The print.** `clothMat` takes a new `print` colour. Where a vertex's `aPrint` is 1, the shader draws sprigs of four round petals on a 2.4 cm grid. Each row is offset by half a cell, and the print is read three ways off the rest position, as the weave is. Far off it fades to its average.
+- **Saving.** `D.scarfPrint` is a garment colour in `GARMENTS`, so it saves with the genome. `scarf` is a dress flag.
+- **The roll.** A Gatelander woman with no cloak and no helm rolls a scarf at 0.85. It comes in madder, moss, sea blue, ochre or undyed wool. Seven in ten are printed, in cream or ochre (madder or blue on the undyed), and half have a red border (ochre on a madder scarf). This is drawn last, so every earlier roll of a seed is as it was.
+
+In `builder.js`: a checkbox, *head-wrap tied as a headscarf*, and the print's colour under Dress.
+
+Corrections made during the session:
+- **The first cut sat like a cap.** Its edge was 7.5 cm over the brows and showed a bare forehead. It is now 3.5 cm over them.
+- **The point was first 15 cm wide where it left the scarf.** Its top corners stood out past the scarf's sides at the nape. It is now 9 cm wide there and narrows from the knot.
+- **The knot first shaded dark,** because its triangles were wound inward. The winding is flipped.
+- **The old wrap roll's check** counted any `wrap` on another people as a fault. It now counts wraps that are not scarves.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 388 checks pass** (380 after Session 1024; 8 new).
+- **Three women:** a braid under a printed madder scarf with an ochre edge, a bun under a plain moss one, and loose hair under a printed sea-blue one with a red edge.
+  - Nothing of the head or the tucked hair comes through the scarf: 0 of about 27,800 hair points. The scarf stands 12.5 to 13.2 mm over the head, and its fold is 3.5 to 3.6 cm over the brows.
+  - Nothing comes through the point: 0 of 27,600 to 33,100 points. It is 5.7 to 6.5 mm from the scarf, and the knot's ends lie 6.5 mm over it.
+  - Each saves and loads back.
+- **Under a cloak:** the scarf is worn with no point or knot.
+- **The roll:** 5 of 27 Gatelander women wear one, and 3 of those are printed. No man, no cloaked or helmed woman and no other people rolls one, and no print is in its field's colour.
+- **The scarf** is 3,312 triangles, and the point with its knot is 1,184 more.
+- **New pictures:** `builder-scarf-front.jpg`, `-side.jpg`, `-back.jpg`, `-moss.jpg`, `-blue.jpg` and `-full.jpg`.
+
+### Needs eyes
+- **The folded edge on a dark scarf reads as a black line** (`builder-scarf-moss.jpg`). Its colour is the cloth's, as the vertex colours show, but the thin roll sits under the crown's overhang and takes its shadow. A thicker roll standing further out would catch the light.
+- **The crown is a fitted dome, so it reads as a cap.** A kerchief has slack: a fold at the temples and a gather to the knot. None is modelled.
+- **The print smears where its three projections blend,** at about 45° on the crown.
+- **The tie at the nape is a reading of thumbnails.** Some country women tie under the chin. If Michael sees it otherwise, it is a change to the cut, not a new garment.
+- **The knot is a smooth lump.** Its ends are flat ribbons with no thickness.
+- **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), the Gatelanders' baskets, and the game (after F4).
