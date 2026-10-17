@@ -397,6 +397,7 @@ function loop(now){
   const inOverworld=!inDungeon&&!isInterior();
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
   const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,floorBaseY0):floorBaseY0; // v80 — footholds (stairs, galleries)
+  if(typeof tickSheath==='function')tickSheath(); /* S1080 — the sheath: on its own after 5 s at peace */
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
     if(inOverworld) jumpY=activeTerrainH(px,pz);

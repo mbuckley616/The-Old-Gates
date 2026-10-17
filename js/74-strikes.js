@@ -234,7 +234,7 @@ function resolvePlayerStrike(_isPow){
     // weapon's postureMult, the chain's third ×1.5; skipped on a kill or a foe already staggered
     if(e.hp>0&&typeof e.posture==='number'&&!isStaggered(e)){
       const pm=(EQ.weapon&&EQ.weapon.postureMult)||1;
-      const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost*armsPostureMult(); // S485 — a spent power blow on a guard drains as the guarded hit it is; S1051 — Weight (Blunt 25), Hard knuckles (Hand-to-hand 25)
+      const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost*armsPostureMult()*(SWING&&SWING.drawCut&&armsPerk('blade',25)?DRAW_CUT_POSTURE:1); // S485 — a spent power blow on a guard drains as the guarded hit it is; S1051 — Weight (Blunt 25), Hard knuckles (Hand-to-hand 25)
       if(applyPostureDamage(e,drain,performance.now()/1000)){
         staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);
         showMsg(`💥 ${e.name} staggered!`,'#ffcc66');
@@ -268,14 +268,35 @@ function resolvePlayerStrike(_isPow){
 // swing's own start, so a dropped frame changes nothing and a host could run it.
 const COMMIT={move:.35,turnDeg:90,chainIdle:.4,chainDmg:1.3,chainPosture:1.5,drinkS:.8,drinkMove:.5};
 let SWING=null,CHAIN={n:0,endG:-1e9},DRINK=null;
+// S1080 — the sheath (Michael's A on #399, with his note: "a 'sheath' button where you can sheath your equipped weapon. Torches or
+// shields in your off hand stay equipped and in hand"). H sheathes the weapon in hand, or draws it. A drawn weapon is sheathed on
+// its own after SHEATH_IDLE_S with no swing and no alert foe within SHEATH_FOE_R (the lock-on's 14 m). Sheathed, the first-person
+// view is the empty hand's (buildViewmodel with the weapon held aside for the call); the off hand's shield or torch is built on its
+// own and stays. A swing begun sheathed draws as it swings: that swing is the draw cut, and with Draw cut (Blade 25) it drains ×2
+// posture. A bow is not sheathed (its draw is the aim). Changing the weapon in hand draws the new one.
+const SHEATH_IDLE_S=5,SHEATH_FOE_R=14,DRAW_CUT_POSTURE=2;
+let SHEATHED=false,_sheathedItem=null,_lastSwingG=-1e9;
+function sheathable(){return !!EQ.weapon&&weaponSkill(EQ.weapon)!=='bow';}
+function sheathView(){const w=EQ.weapon;if(SHEATHED)EQ.weapon=null;try{if(typeof buildViewmodel==='function')buildViewmodel();}finally{EQ.weapon=w;}}
+function sheathWeapon(){if(SHEATHED||SWING||!sheathable())return false;SHEATHED=true;_sheathedItem=EQ.weapon;sheathView();return true;}
+function drawWeapon(){if(!SHEATHED)return false;SHEATHED=false;_sheathedItem=null;if(EQ.weapon)sheathView();return true;}
+function toggleSheath(){if(SHEATHED){drawWeapon();showMsg(`You draw the ${EQ.weapon?EQ.weapon.name:'weapon'}.`,'#c8b880');}
+  else if(sheathWeapon())showMsg(`You sheathe the ${EQ.weapon.name}.`,'#c8b880');}
+function tickSheath(){
+  if(SHEATHED&&EQ.weapon!==_sheathedItem){SHEATHED=false;_sheathedItem=null;return;}
+  if(SHEATHED||SWING||!sheathable()||playClockS-_lastSwingG<SHEATH_IDLE_S)return;
+  for(const f of strikeFoes()||[])if(f&&f.alert&&!f.dead&&f.hp>0&&Math.hypot(f.x-px,f.z-pz)<SHEATH_FOE_R)return;
+  sheathWeapon();
+}
 // a swing begins: its times from the weapon's row (a power blow keeps powerDur), scaled by what a buff does to its pace
 function beginSwing(isPow,resolveFn){
+  const _drawCut=drawWeapon();_lastSwingG=playClockS; /* S1080 — a swing from the sheath draws as it goes */
   const row=weaponAttack(EQ.weapon),buff=_buffMult('atkSpeed',1);
   const total=isPow?ANIM_PARAMS.swing.powerDur*_weaponSwingFactor():(row.tell+row.strike+row.recovery)/buff;
   const k=isPow?total/(row.tell+row.strike+row.recovery):1/buff;
   let chain=0;
   if(!isPow){chain=(CHAIN.n>0&&CHAIN.n<3&&playClockS-CHAIN.endG<=COMMIT.chainIdle)?CHAIN.n+1:1;CHAIN.n=chain;}else CHAIN.n=0;
-  SWING={t0:playClockS,tell:row.tell*k,strike:row.strike*k,recovery:row.recovery*k,total,isPow:!!isPow,chain};
+  SWING={t0:playClockS,tell:row.tell*k,strike:row.strike*k,recovery:row.recovery*k,total,isPow:!!isPow,chain,drawCut:_drawCut};
   _commitYaw=yaw; // a turn made before the click is yours; the clamp holds from here
   CHAIN.endG=playClockS+total;
   swingT=total;

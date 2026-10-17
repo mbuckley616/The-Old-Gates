@@ -76,6 +76,7 @@ function _enterGame(){
     if(e2.code==='Escape'){e2.preventDefault();openPauseLeaf();return;} // S690 — Esc in play, no panel open: the pause leaf
     K[e2.code]=true;if(['KeyW','KeyS','KeyA','KeyD','KeyF','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e2.code))e2.preventDefault();if(e2.code==='KeyF')castSpell();if(e2.code==='KeyI')openHub('inv');if(e2.code==='KeyE'){e2.preventDefault();interact();}
     if(e2.code==='KeyQ'&&!e2.repeat)startRoll(performance.now()/1000,K); // S275 — the roll
+    if(e2.code==='KeyH'&&!e2.repeat)toggleSheath(); // S1080 — sheathe or draw (#399)
     // S389 — R locks on as the middle button does (Michael's A on #89: a trackpad has no middle button); again, it lets go.
     if(e2.code==='KeyR'&&!e2.repeat){e2.preventDefault();toggleLock();}
     // v63 — Ctrl toggles sneak. Both ControlLeft and ControlRight handled.

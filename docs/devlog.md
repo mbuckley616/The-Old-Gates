@@ -24719,3 +24719,37 @@ reached. I have filed it in the backlog beside the gold piles rather than changi
 ### Needs eyes
 - **The weapon simply vanishes.** Nothing falls to the ground and nothing can be picked up, and the foe's swing animation is still
   its weapon's. A dropped prop and a fist pose are the bodies builder's, if wanted.
+
+## v80 — Session 1080 — The sheath, and Draw cut (Blade 25) (Michael's A on #399)
+The last of #399's four. Nothing was ever sheathed: a weapon in your hand was always drawn. Michael's A gave the rule, *a blade is
+sheathed after 5 s with no swing and no foe alert within 14 m; the first swing after that drains ×2 posture*. His note added a
+button: *"Let's add a 'sheath' button where you can sheath your equipped weapon. Torches or shields in your off hand stay equipped
+and in hand."*
+
+**What changed** (`74-strikes.js`, beside the swing's commitment):
+- **The button.** H sheathes the weapon in hand or draws it (`toggleSheath`, bound in `92-creator.js`'s keys). It is named on the
+  controls line.
+- **On its own.** `tickSheath` (from the loop, `90-main.js`) sheathes a drawn weapon after 5 s with no swing and no alert foe
+  within 14 m, the lock-on's range.
+- **What it looks like.** A sheathed weapon stays equipped. The first-person view is the empty hand's, built by the viewmodel's
+  own `buildViewmodel` with the weapon held aside for the call, so nothing in the bodies builder's file changed. The off hand's
+  shield or torch is built on its own and stays.
+- **The draw cut.** A swing begun sheathed draws as it swings (`beginSwing`), and that swing carries `drawCut`. With Draw cut
+  (Blade 25) it drains ×2 posture in the resolver's drain line.
+- **What is left out.** A bow is never sheathed, as its draw is the aim. A new weapon in hand is drawn.
+- **The perk** is live. All four of #399's perks are now built, and `perkarms`' list of live perks is updated to match.
+### Verified (headless Chromium)
+- **`sheath`** (new), 9/9:
+  - H sheathes: the hand is the fists' (1 mesh against the sword's 9), and the sword and the buckler stay equipped. H again
+    draws it.
+  - It sheathes itself at 5.1 s, not at 4.9 s.
+  - It does not while an alert foe is 10 m off. One at 16 m does not hold it.
+  - A swapped weapon is drawn.
+  - The swing from the sheath draws and is the draw cut: 16 posture against 8 drawn and 8 at Blade 24.
+- **`perkarms`** passes with the new list of live perks.
+### Needs eyes
+- **The third-person body still holds the weapon while sheathed.** The first-person sheathe and draw are instant, with no
+  motion. Both are the bodies builder's, filed in the backlog.
+- **Phones have no H.** A touch button is owed with the phone controls.
+- **Auto-sheathing is new to every player.** After 5 s at peace the sword leaves the hand, and the next click draws and swings
+  at once. A playtest should say whether 5 s is too eager in town.

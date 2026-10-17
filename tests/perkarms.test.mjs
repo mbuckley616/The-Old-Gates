@@ -57,6 +57,6 @@ check('Crossing: a parry at Blade 75 staggers a second Bandit 2.5 m off, not at 
 check(`Clean edge: a finisher on def 20 lands ${r.f99.d} at Blade 99 and ${r.f100.d} at 100 (the def ignored)`, r.f99.f && r.f100.f && r.f100.d - r.f99.d >= 19, r);
 check(`Daze: a mace's posture break staggers ${r.d74} s at Blunt 74 and ${r.d75} s at 75; a sword's ${r.dSword}`, r.d74 === 1.5 && r.d75 === 2.1 && r.dSword === 1.5, r);
 check('Earthshaker: the chain\'s third at Blunt 100 staggers a Bandit 1.5 m behind you; not at 99, not on the first swing', !r.e99 && r.e100 && !r.e100first, r);
-check(`live: Blade ${r.live[0]}, Blunt ${r.live[1]}, Hand-to-hand ${r.live[2]} (Draw cut, Ringing, Throw and Catch the blade wait)`, r.live.join() === '0111,1011,1001', r);
+check(`live: Blade ${r.live[0]}, Blunt ${r.live[1]}, Hand-to-hand ${r.live[2]} (Draw cut, Ringing, Throw and Catch the blade since Sessions 1077–1080)`, r.live.join() === '1111,1111,1111', r);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

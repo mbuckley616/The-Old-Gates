@@ -161,7 +161,7 @@ const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50
   'bow:25','bow:50','bow:75','bow:100', /* S1048 — Guard's Deflect, Bulwark and Second parry; Iron wall waits on a foe's heavy attack (FOE_ATTACKS' heavy column) */
   'guard:25','guard:50','guard:100',
   'armour:50','armour:75','armour:100',
-  'blade:50','blade:75','blade:100','blunt:25','blunt:75','blunt:100','hand:25','hand:100','blunt:50','hand:50','hand:75']); /* S1079 — Catch the blade */ /* S1078 — Throw */ /* S1077 — Ringing (#399 A) */ /* S1051 — the Arms perks that need no new system (see armsPerk) */ /* S1050 — Armour's Unbowed (playerMaxPosture), Hold the line (playerPostureHit), Second skin (startRoll) */ /* S1028 — Steady, on the aim's sway (bowSway, 10-player.js); S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
+  'blade:50','blade:75','blade:100','blunt:25','blunt:75','blunt:100','hand:25','hand:100','blunt:50','hand:50','hand:75','blade:25']); /* S1080 — Draw cut, with the sheath */ /* S1079 — Catch the blade */ /* S1078 — Throw */ /* S1077 — Ringing (#399 A) */ /* S1051 — the Arms perks that need no new system (see armsPerk) */ /* S1050 — Armour's Unbowed (playerMaxPosture), Hold the line (playerPostureHit), Second skin (startRoll) */ /* S1028 — Steady, on the aim's sway (bowSway, 10-player.js); S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
 // S976 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.
 function sneakMoveMult(){return _sneaking?(perk('stealth',25)?1:SNEAK_MOVE_MULT):1;}
@@ -216,7 +216,7 @@ function rollLoad(){let w=totalCarryWeight();if(perk('armour',100)){const fit=pe
 // Blade: Long riposte (50) the riposte window 0.8 → 1.2 s; Crossing (75) a perfect parry also staggers a second attacker within
 // 3 m; Clean edge (100) a finisher ignores the foe's def. Blunt: Weight (25) +25% posture; Daze (75) a stagger you cause lasts
 // 0.6 s longer; Earthshaker (100) the chain's third hit staggers every foe within 2 m of you. Hand-to-hand: Hard knuckles (25)
-// a punch drains ×1.5 posture; Stone hand (100) the fists roll 4 to 7. Ringing (50, S1077) a shield a power hit breaks stays down while its bearer is alert. Throw (50, S1078) a punch on a staggered foe knocks it down (throwFoe). Catch the blade (75, S1079) a bare-handed perfect parry disarms (catchBlade). Draw cut waits on the sheath.
+// a punch drains ×1.5 posture; Stone hand (100) the fists roll 4 to 7. Ringing (50, S1077) a shield a power hit breaks stays down while its bearer is alert. Throw (50, S1078) a punch on a staggered foe knocks it down (throwFoe). Catch the blade (75, S1079) a bare-handed perfect parry disarms (catchBlade). Draw cut (25, S1080) the swing that draws from the sheath drains ×2 posture (the sheath is in 74-strikes.js).
 function armsPerk(id,rank){return weaponSkill(EQ.weapon)===id&&perk(id,rank);}
 const CROSSING_R=3,DAZE_S=.6,EARTHSHAKER_R=2,STONE_HAND_ATK=[4,8];
 function riposteSecs(){return armsPerk('blade',50)?1.2:RIPOSTE_S;}
