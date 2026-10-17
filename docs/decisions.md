@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
+F2a has merged, so the new kit's buildings, rooms and places can start going into the game behind `?look=new`, one kind a session (card F6, then F8 and F9). Nothing of the kit is in the game yet. The kit is about 1,300 lines of ES modules in `docs/prototypes/levelup/` (the surfaces in `common.js`: relief textures for plaster, ashlar, thatch, slate, pantile, turf and the rest; the piece builders in `pieces.js`; the places in `places.js`). The game is plain scripts in one scope, so the kit has to be copied over as a classic script, and CLAUDE.md makes a new `js/` file a decision of its own.
+
+Where should the kit live in the game?
+- **A. A new file, `js/38-kit.js`** (recommended): loaded after the people and creatures and before the legacy zones, in both looks, but only called when `OG_LOOK` is `new`. It holds the surfaces, the shared helpers (seeded streams, merge by material) and each piece builder as it comes in. The world files call it to build a house, a room or a place. The old look never touches it, so F14 deletes the old builders and keeps this file. The prototype pages stay the drawing board: a piece is drawn and checked there first, then copied.
+- **B. Inside `js/82-world-structures.js`**, with no new file. That file is the old houses (1,800 lines), and it would grow to about 3,500 and hold two looks' builders side by side until F14. Rooms (`83`, `84`) and places (`52`, `56`) would reach into it too.
+- **C. Not yet.** Keep building in the prototypes until F14, and bring everything in at the cutover.
+
+A keeps each look's code apart and gives F14 one file to keep and a list of files to delete. Pictures are not needed for this one; the kit as it stands is `docs/prototypes/levelup/pieces.html`, `rooms.html` and `places.html`.
+
 ## Answered
 
 ### Steady (Bow 25): build an aim sway for it to remove, or another perk? (systems builder, Session 982) — DECISION #369

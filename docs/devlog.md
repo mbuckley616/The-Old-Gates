@@ -22907,6 +22907,20 @@ Corrections made during the session:
 - **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
 - **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
 
+## v80 — Session 1025 — `yardplay`'s rematch, red on the Systems merge (QA)
+The night's CI read found one red run that was not a flake: run 38968544927, auto/producer's fe3a650 (PR #384), which merges the Systems sessions 940–1013 Michael approved onto main 359d351. Shard 10's `yardplay` failed twice the same way: the rematch with Rowe, a week on at level 8 with an iron sword and stamina kept full, was lost, three of her blows taking 259 of 260 health while yours took her from 127 to 79. Main passes it, and auto/systems' own runs did too, narrowly. So the merge would have turned main red.
+
+A probe logged each blow. Rowe's rematch blow is 106 through a held guard (`dmg` 37, her level-8 scaling), the same on main; what changed is the player's side. Session 941 (skills and perks A) took the flat `level × 1.5` off a melee blow and put the damage on the weapon's skill, ×(0.6 + 0.8 × skill/100). The test set `level = 8` and left a fresh warrior's skills (blade 15, ×0.72), so the stand-in it calls *stronger* hit softer than before: 14 to 21 swings to Rowe's yield on the merged code against 5 or 6 on main, time enough for her to land three.
+
+The fix is the test's: the rematch's stand-in now carries the skills the game itself gives a level-8 character, the migration a pre-skills save gets on load (`skillsInit(playerArchetype, level)`, `70-saves.js`), which puts blade at 22. On a build without skills (main today) the line is skipped. The fight's record now names the blade skill. That is a lift of about 8% and not a cure: the rematch still takes 12 to 21 swings, and whether she lands three blows in that time is a matter of the runner. The cause underneath is the game's, a level-scaled foe against a player whose damage no longer grows with the level while the level still comes from xp; it is filed in backlog I for the systems builder.
+
+The same read: 7 green runs and 1 red since 18:52, one FLAKY retry (`panelfocus`, auto/bodies 40ed0cf, not looked into), FREEZE #381 closed. The ten retries owed from the last read (`q7world` first) are still owed.
+### Verified (headless Chromium)
+- Before the fix, on PR #384's code (`--src` of auto/producer's tree): fight 2 won here in 14 and 21 swings, Rowe landing one blow of 106 (CI's runner lost it in 6). On main: 5 swings, no blow taken.
+- After the fix: `yardplay` green 4 of 4 on PR #384's code (3 old look: 17, 12 and 21 swings, `blade` 22, Rowe landing at most one blow; 1 new look: 15 swings, none), and 1 of 1 on main (6 swings, `blade` null, the line skipped).
+### Needs eyes
+- PR #384's next CI run is the proof that counts: the fix widens the margin but does not close it.
+- Whether the rematch should be winnable at level 8 under the skills is the systems builder's (backlog I), and maybe Michael's.
 ## v80 — Session 1021 — The Gatelands' merchants' halt (card F8, prototype only)
 The freeze for F3 (#381) is still open, so this run kept to the prototypes. Backlog L10's *Off the road* (OG-124) still had four camps on the roads; the charcoal burners' came first (Session 1016), and this session builds the merchants'. OG-124's panel 4 shows it as covered waggons drawn up under trees with a fire. It is `gatelandsMerchantCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=merchants`.
 
@@ -23109,3 +23123,75 @@ Corrections made during the session:
 - **The tie at the nape is a reading of thumbnails.** Some country women tie under the chin. If Michael sees it otherwise, it is a change to the cut, not a new garment.
 - **The knot is a smooth lump.** Its ends are flat ribbons with no thickness.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), the Gatelanders' baskets, and the game (after F4).
+## v80 — Session 1025 — The Gatelands' overturned carriage (card F8, prototype only)
+The freeze for F3 (#381) closed on 17 Oct, and nothing on the decisions page waits on the look builder. Card F6 in the prototype kit is done (the Mark's lots, Aurenne's churches and civic buildings, the Gatelands' coloured towns, the one kit). So this run went on with OG-124's list. Its panel 6, "small mysteries with no marker", starts with "an overturned carriage". It is `gatelandsCarriage` in `docs/prototypes/levelup/places.js`, at `places.html?place=carriage`. The lone grave under a ringed cross was passed over for now: the canon gives the dead to the gates, so who lies alone in a field, and why, is the quest writer's first.
+
+A road coach left a lane at speed, went over the ditch and fell on its near side in the field beyond. Its team is gone, and nobody is anywhere. The place shows only the state of things an hour or a day after; what happened, and to whom, is left to the quest writer. The coach is the game's (Session 261) at true size: a panelled body 2.3 by 1.45 by 1.35 m, wheels of twelve spokes 1.44 m behind and 1.04 m in front. It is built upright in its own frame and then laid on its side, so every part keeps its place on it.
+- **On its side:** its roof faces the field wall and its underside the lane. Its two right wheels are up in the air and lie flat, and the fore-carriage is turned 15° on its pivot.
+- **The door:** the right door is swung out 100°, so it stands up past upright and leans back over the body. Through the doorway is the dark of the inside, with the seats. The lining is drawn from inside only, so it shows through the doorway and nowhere else.
+- **The wheels on the near side:** the rear one is broken off under the body, leaving its nave with three spokes snapped short; its rim lies in the grass and four spokes in the ditch. The front one is off and lying flat.
+- **At its front:** the pole is snapped a metre out from its socket, and its other half lies in the field. The four traces are cut short at the splinter bar and hang from it. The far lamp is still on its bracket and burning; the near one lies broken on the ground.
+- **The lane:** two gouges in the turf run from the lane's edge over the ditch to the coach, with clods thrown up beside them. The whip lies in the road and a hat in the ditch.
+- **The luggage:** it was thrown off the roof towards a dry-stone wall. A trunk stands on its end; another is burst, its lid back on its hinge and its clothes out over the grass. A hatbox has rolled away and a valise lies further off. One case is still strapped under the roof rail.
+- **The land:** pasture falling gently along the lane, the wall along the field's far side (1.0 to 1.2 m, with copes on edge), a thorn hedge across the lane, and ash and oak turning.
+- **The size:** 35,900 to 36,300 triangles in 19 meshes.
+
+The views are `coach` (from the lane), `door` (from the roof's side, the door standing up against the sky), `inside` (stood on its upper side, down into the doorway), `traces`, `luggage` and `far`, and `&dusk` gives the evening with the lamp lit.
+
+Corrections made during the session:
+- **The budget:** the first build came to 41,200 triangles in 23 meshes, over the 40,000 and 20 the places keep to. The brass went into the wheels' yellow and the hedge's thorn into the leaf, the green clothes became red, the broken window became black rather than a material of its own, and the wall was shortened from 80 m to 60 with two copes a stone instead of three.
+- **The light:** the sun first stood behind the lane's hedge, which left the coach's underside and the door in shadow from every view. It is now in the south-east.
+- **The far view** first looked through a tree in the hedge. No hedge tree now stands within 10 m of the coach on the lane's side.
+- **The wall's copes** first left gaps between them, so the check met the wall at 0.62 m where a cope was missing. They now close up, and the wall is 1.01 to 1.17 m.
+- **The clothes** were first a few big flat discs. There are now eleven smaller, longer heaps.
+
+The kit is now ready to go into the game behind `?look=new`, since F2a has merged. Where it lives there needs a new `js/` file, which is a decision of its own, so it is asked as **DECISION #389** (A, a new `js/38-kit.js`, recommended; B, inside `82-world-structures.js`; C, not until F14).
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 210 of 210 pass** (202 after Session 1023). Eight checks are new. The carriage's `coach` view and its `door` view at dusk render with no page errors, and six checks run over three keys:
+  - **The builds:** each key builds the same twice, with 35,892 to 36,340 triangles in 19 meshes and 17 to 18 trees.
+  - **On its side:** the lower side's underface is met by the ground 0.02 m off at 6 points, and the upper side is 1.47 m up. The two right wheels' hubs are 1.59 to 1.67 m over the ground, and their rims 1.54 m or more.
+  - **The door:** its free edge is 0.61 m over the upper side. A ray straight down through the doorway first meets the dark lining 1.4 m below, not a panel.
+  - **What fell:** the four traces' cut ends are 0.018 to 0.67 m over the ground. The 14 things thrown off lie −0.027 to 0.01 m off it.
+  - **The wall:** it is 1.01 to 1.17 m high at 18 points.
+  - **The walk:** 57 half-metres from the lane over the ditch to the coach's underside, and round its front and along its roof. There is ground under each, no step is over 0.21 m, and there is 0.61 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-carriage-coach.jpg`, `-door`, `-inside`, `-traces`, `-luggage`, `-far` and `-coach-dusk`.
+### Needs eyes
+- **The body reads as a box.** The game's coach has rounded panels; this one is flat panels on corner pillars. Its curve under the windows and a moulded belt rail are the next step if the place is kept.
+- **The traces** are thin, and from the lane they barely show. The cut ends are the place's one hint, so they may want to be thicker or to lie on the grass where they are seen.
+- **The lamp at dusk** is a small warm point; whether a lamp still burning should be the tell that it happened within the hour is the quest writer's.
+- **Nobody is here:** no driver, passengers or horses. If the place is a lead, who was in it is the quest writer's, and any body is the bodies builder's.
+- **Still open in OG-124:** the pilgrims' rest, the lone grave (both want the canon), strange tracks, the locked cellar, the unfinished camp and the odd rock.
+
+## v80 — Session 1026 — The Gatelands' locked cellar (card F8, prototype only)
+The second of OG-124's small mysteries with no marker (panel 6: "a locked cellar"). It is `gatelandsCellar` in `docs/prototypes/levelup/places.js`, at `places.html?place=cellar`.
+
+A cottage fell long ago and the field took it back, but someone still comes to its cellar. The place says only that: the lock is new and the grass is worn to it and nowhere else. Who comes, and what is below, is left to the quest writer. It is built at true size in pasture rising gently from a lane:
+- **The footings:** the cottage is 7.0 by 4.6 m outside, with walls 0.55 m thick of rubble stone in courses. They stand 0.3 to 0.85 m, each half-metre stretch to its own height, with the doorway's gap in the south wall.
+- **The west gable:** whole to the eaves at 2.4 m and its apex at 4.6 m, with the stack over it to 5.6 m and a dressed cap. Inside are the fireplace's dark mouth under a stone lintel, the hearth stone, and two patches of limewash still on the wall.
+- **The rest:** rubble fallen inside along the walls and out of the east end, 90 nettles in the footings, an elder grown against the east end, a bush by the lane and ash in the field.
+- **The hatch:** a 1.2 by 1.0 m mouth in a kerb of dressed stone at the floor's level, at the east end. Two leaves of grey oak boards lie on strap hinges, with a hasp between them. A chain of 19 bright links runs across both leaves to old staples in the kerb, held at the hasp by a padlock that is new and bright.
+- **The path:** the grass is worn to earth from the lane through the doorway to the hatch, and round the hatch, and nowhere else.
+- **The size:** 21,900 to 22,100 triangles in 12 meshes.
+
+The views are `ruin` (from the lane), `hatch` (from the doorway), `lock` (knelt by it) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The hatch's boards** were first placed by a wrong formula, which piled eight boards over each other across the middle. Each leaf now has four boards side by side.
+- **The chain's links** were first 9 rings 0.09 m apart, so they did not touch. There are now 19 longer links, each into the next.
+- **The padlock** first read black: a mirror metal reflects the dark scene. It is now a satin steel that reads bright.
+- **The elder** first grew over the hatch and hid it from the doorway. It now grows against the east end, outside.
+- **Two of the check's probes:** the leaves' probe first landed on a strap hinge, and the gable's on its slope and then on the stack's cap. They now read a board between the hinges, and the gable 0.7 m off its apex line, clear of the stack.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 216 of 216 pass** (210 after Session 1025). Six checks are new. The cellar's `ruin` view and its `lock` view at dusk render with no page errors, and four checks run over three keys:
+  - **The builds:** each key builds the same twice, with 21,936 to 22,068 triangles in 12 meshes and 11 trees.
+  - **The hatch:** the kerb's corners are 0.03 m over the floor and the oak leaves are met 0.075 m over it. The padlock is 0.032 m from the hasp and 0.06 m over the leaves.
+  - **The ruin:** the footings are 0.31 to 0.84 m high at 20 points, the gable is met 3.94 m up 0.7 m off its apex line, where its slope stands at 3.93, and the stack is at 5.6 m. The 25 fallen stones are −0.002 to 0.001 m off the ground.
+  - **The walk:** 25 half-metres from the lane through the doorway to the hatch, all 25 on worn ground. There is ground under each, no step is over 0.065 m, and there is 2.95 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-cellar-ruin.jpg`, `-hatch`, `-lock`, `-far` and `-ruin-dusk`.
+### Needs eyes
+- **The nettles are plain cones.** They read as a crop of little firs from the lane. A nettle wants a stem with paired leaves, which the plant kit (`30-plants.js` in the game) may already have the shape for.
+- **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
+- **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
