@@ -3230,3 +3230,87 @@ export function gatelandsErratic(o = {}, r = stream('erratic')) {
   return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground, surf, mem,
     stone: { x: SX, z: SZ, ry: SRY, top: PT, rx: PRX2, rz: PRZ2, brx: BRX, brz: BRZ, h: BH, crown: +boulderTop.toFixed(3) }, other, lying, clints, ja: JA, wall: { z: WZ, h: wallH, n: WALL.length }, road: { z: RZ, w: RW }, paths, trees, thorn: { x: TX, z: TZ, lean } };
 }
+
+// ── the Mark's unfinished camp (Session 1032, card F8; OG-124's panel 6, "small mysteries with no marker: … an unfinished camp"). Someone
+// stopped in a spruce clearing by the road and began to make camp, and never finished: the tent's back pole is up with the ridge pole
+// leaned on it and the canvas still rolled at its foot, the fire is laid and never lit, the sledge half unloaded, the axe left in the
+// chopping round. Snow has fallen on all of it since, and there is no track in it, in or out. Who, and why they stopped, is the quest
+// writer's: the place only shows that nobody came back. Built at true size, a metre a unit, the ground rising to -z at 1 in 25, the road
+// along x at z 12 under the same snow:
+//   - the tent: a ridge tent's back pole (1.9 m) stood and guyed; its ridge pole (2.6 m) leaned from the pole's top to the ground; the front
+//     pole lying beside; the canvas rolled at the back pole's foot, the pegs and a mallet laid out, a bedroll half unrolled;
+//   - the fire: a ring of stones with a cone of kindling laid on birch bark, unlit; a kettle standing by it;
+//   - the sledge: a pulk with its load lashed under a cover, its shafts down on the snow, one sack taken off; the chopping round with the
+//     axe in it, a few billets split and a heap of brush gathered;
+//   - snow over everything, 2 to 6 cm on what lies out, and spruce standing round from 9 m out.
+// -> { group, tris, draws, own, ground(x, z), tent { pole [x, y, z] (its top), ridge [[x, y, z], [x, y, z]] (top and foot), bundle { x, z, r } },
+//      fire { x, z, tip [x, y, z] }, capped [{ x, z, top, what }], lying [{ x, y, z, what }], road { z, w, d }, paths, trees }
+export function markUnfinishedCamp(o = {}, r = stream('unfinished')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); millMats();
+  const M = { snowfield: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }), snow: mat('plaster', { ns: .2, color: 0xf6f8fc, rough: .95 }), pole: std(0x9a7a56, .85),
+    canvas: mat('plaster', { ns: .5, color: 0xc8b890, rough: .95 }), wood: std(0xb89a72, .9), bark: std(0x4a3a30, .95), birch: std(0xe8e2d4, .8), needle: std(0x2a3a2a, .9), stone: std(0x8e8a84, 1),
+    iron: std(0x2a2826, .5, { metalness: .6 }), sled: std(0x7a5634, .8), cover: std(0x8a7656, .95), wool: std(0x7a2a22, .95) };
+  const B = new Map(), key = String(o.key || 'unfinished'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: snow over a gentle slope with a soft roll; the road a shallow trough under the same snow
+  const RZ = 12, RW = 3.2, RD = .1, base = (x, z) => -z / 25 + .12 * Math.sin(x * .19 + ph[0]) * Math.sin(z * .16 + ph[1]) + .03 * Math.sin(x * .7 + z * .6 + ph[2]);
+  const ground = (x, z) => base(x, z) - RD * sm((RW / 2 + .6 - Math.abs(z - RZ)) / 1.2);
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -40, 24], [-40, -12, 2], [-12, 12, .5], [12, 40, 2], [40, 160, 24]], 160), gz = steps([[-160, -40, 24], [-40, -10, 2], [-10, 15, .5], [15, 40, 2], [40, 160, 24]], 160);
+    const pos = [], idx = [], NX = gx.length; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'snowfield', 0, 0, 0, 0, 0, 0, .35); }
+  const capped = [], lying = [], gy = (x, z) => ground(x, z);
+  const cap = (x, z, top, w, d, ry = 0, what = '') => { const t = .02 + F() * .04; put(new THREE.BoxGeometry(w, t, d), 'snow', x, top + t / 2 - .005, z, 0, ry); capped.push({ x: +x.toFixed(3), z: +z.toFixed(3), top: +(top + t - .005).toFixed(3), what }); };
+  const roundCap = (x, z, top, rr, what = '') => { const t = .02 + F() * .04, g = new THREE.SphereGeometry(rr, 8, 3, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1, t / rr, 1); put(g, 'snow', x, top - .005, z); capped.push({ x: +x.toFixed(3), z: +z.toFixed(3), top: +(top + t - .005).toFixed(3), what }); };
+  // the tent: the back pole stood and guyed behind; the ridge pole leaned from its top to the ground in front; the front pole lying beside
+  const TX = -1.8, TZ = -1.6, PH = 1.9, RL = 2.6, pb = [TX, gy(TX, TZ - 1.3), TZ - 1.3], top = [pb[0], pb[1] + PH, pb[2]];
+  rod('pole', [pb[0], pb[1] - .25, pb[2]], top, .03, 6); roundCap(top[0], top[2], top[1] + .03, .045, 'pole');
+  let fz = pb[2] + Math.sqrt(RL * RL - PH * PH); for (let k = 0; k < 4; k++) { const dy = top[1] - gy(TX, fz) - .025; fz = pb[2] + Math.sqrt(Math.max(.1, RL * RL - dy * dy)); }
+  const foot = [TX, gy(TX, fz) + .025, fz]; rod('pole', top, foot, .028, 6); lying.push({ x: TX, y: +gy(TX, fz).toFixed(3), z: +fz.toFixed(3), what: 'ridge foot' });
+  const peg = [TX, gy(TX, pb[2] - 1.5), pb[2] - 1.5]; rod('pole', [peg[0], peg[1] - .2, peg[2]], [peg[0], peg[1] + .1, peg[2]], .02, 5); rod('iron', [top[0], top[1] - .05, top[2]], [peg[0], peg[1] + .08, peg[2]], .004, 3) /* the guy */;
+  { const x = TX + .7, z0 = TZ - .2, z1 = TZ + 1.7; rod('pole', [x, gy(x, z0) + .025, z0], [x, gy(x, z1) + .025, z1], .028, 6); lying.push({ x, y: +gy(x, (z0 + z1) / 2).toFixed(3), z: (z0 + z1) / 2, what: 'front pole' }); }
+  const bundle = { x: TX - .55, z: pb[2] + .25, r: .2 }; { const y = gy(bundle.x, bundle.z) + bundle.r - .02; put(new THREE.CylinderGeometry(bundle.r, bundle.r, 1.1, 10), 'canvas', bundle.x, y, bundle.z, 0, .15, Math.PI / 2);
+    for (const s of [-.35, .35]) put(new THREE.TorusGeometry(bundle.r + .005, .008, 3, 10), 'iron', bundle.x + s * Math.cos(.15), y, bundle.z - s * Math.sin(.15), 0, .15 + Math.PI / 2, 0);
+    cap(bundle.x, bundle.z, y + bundle.r, 1.0, .18, .15, 'canvas'); lying.push({ x: bundle.x, y: +gy(bundle.x, bundle.z).toFixed(3), z: bundle.z, what: 'canvas' }); }
+  for (let k = 0; k < 6; k++) { const x = TX - 1.2 + k * .14, z = TZ + .4; put(new THREE.BoxGeometry(.025, .025, .32), 'wood', x, gy(x, z) + .01, z, 0, (F() - .5) * .2); }
+  { const x = TX - .4, z = TZ + .95, y = gy(x, z); rod('wood', [x - .2, y + .05, z], [x + .2, y + .05, z], .05, 8); rod('wood', [x, y + .02, z + .03], [x + .05, y + .03, z + .4], .015, 5); lying.push({ x, y: +y.toFixed(3), z, what: 'mallet' }); }
+  { const x = TX + .1, z = TZ + .4, y = gy(x, z); put(new THREE.CylinderGeometry(.13, .13, .75, 10), 'wool', x - .55, y + .12, z, 0, 0, Math.PI / 2); put(new THREE.BoxGeometry(.75, .03, .9), 'wool', x - .55, y + .015, z + .55);
+    cap(x - .55, z, y + .25, .7, .14, 0, 'bedroll'); lying.push({ x: x - .55, y: +y.toFixed(3), z: z + .55, what: 'bedroll' }); }
+  // the fire: a ring of stones, birch bark under a cone of kindling, laid and never lit; the kettle by it
+  const FX = .9, FZ = .9, fy = gy(FX, FZ); for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283, s = .1 + F() * .04, x = FX + Math.cos(a) * .48, z = FZ + Math.sin(a) * .48; put(new THREE.IcosahedronGeometry(s, 0).scale(1.2, .75, 1), 'stone', x, gy(x, z) + s * .5, z, F(), F() * 3); roundCap(x, z, gy(x, z) + s * 1.2, s * .9, 'stone'); }
+  for (let k = 0; k < 4; k++) put(new THREE.BoxGeometry(.12, .01, .08), 'birch', FX + (F() - .5) * .12, fy + .01, FZ + (F() - .5) * .12, 0, F() * 3);
+  const tip = [FX, fy + .46, FZ]; for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283 + F() * .2, x = FX + Math.cos(a) * .3, z = FZ + Math.sin(a) * .3; rod('wood', [x, fy, z], [tip[0] + Math.cos(a) * .02, tip[1], tip[2] + Math.sin(a) * .02], .018, 5); }
+  { const g = new THREE.ConeGeometry(.09, .06, 7); put(g, 'snow', tip[0], tip[1] + .02, tip[2]); capped.push({ x: tip[0], z: tip[2], top: +(tip[1] + .05).toFixed(3), what: 'kindling' }); }
+  { const x = FX + .85, z = FZ - .25, y = gy(x, z); put(new THREE.CylinderGeometry(.11, .14, .2, 10), 'iron', x, y + .1, z); rod('iron', [x - .11, y + .26, z], [x + .11, y + .26, z], .006, 4); roundCap(x, z, y + .2, .11, 'kettle'); capped[capped.length - 1].z = +(z + .06).toFixed(3) /* probed clear of the bail */; lying.push({ x, y: +y.toFixed(3), z, what: 'kettle' }); }
+  // the sledge: a pulk, its load lashed under a cover, its shafts down on the snow forward; a sack taken off beside it
+  const SX = 3.4, SZ = -1.2, SRY = .35; { const y = gy(SX, SZ), c = Math.cos(SRY), s = Math.sin(SRY), at = (u, v) => [SX + u * c + v * s, SZ - u * s + v * c];
+    put(new THREE.BoxGeometry(1.7, .26, .58), 'sled', SX, y + .13, SZ, 0, SRY); { const [x, z] = at(.95, 0); put(new THREE.CylinderGeometry(.29, .29, .26, 10, 1, false, 0, Math.PI), 'sled', x, y + .13, z, 0, SRY - Math.PI / 2); }
+    put(new THREE.BoxGeometry(1.3, .32, .5), 'cover', SX - .1 * c, y + .26 + .16, SZ + .1 * s, 0, SRY); for (const u of [-.4, 0, .4]) { const [x, z] = at(u - .1, 0); put(new THREE.BoxGeometry(.02, .34, .52), 'iron', x, y + .42, z, 0, SRY); }
+    { const [x, z] = at(-.1, 0); cap(x, z, y + .58, 1.25, .46, SRY, 'load'); }
+    for (const v of [-.22, .22]) { const a = at(1.15, v), b = at(2.9, v * 1.6); rod('pole', [a[0], y + .15, a[1]], [b[0], gy(b[0], b[1]) + .025, b[1]], .025, 5); }
+    lying.push({ x: SX, y: +y.toFixed(3), z: SZ, what: 'pulk' });
+    const [kx, kz] = at(-.2, .85), ky = gy(kx, kz); put(new THREE.SphereGeometry(.26, 10, 6).scale(1.3, .75, 1), 'cover', kx, ky + .17, kz, 0, F() * 3); roundCap(kx, kz, ky + .36, .2, 'sack'); lying.push({ x: kx, y: +ky.toFixed(3), z: kz, what: 'sack' }); }
+  // the chopping round with the axe in it, billets split, a heap of brush gathered
+  const CX = 2.2, CZ = 2.6, cy = gy(CX, CZ); put(new THREE.CylinderGeometry(.27, .29, .45, 12), 'wood', CX, cy + .22, CZ); cap(CX, CZ, cy + .45, .42, .42, 0, 'round'); capped[capped.length - 1].x = +(CX - .15).toFixed(3) /* clear of the axe */;
+  rod('wood', [CX + .05, cy + .5, CZ], [CX + .42, cy + .88, CZ + .2], .018, 5); put(new THREE.BoxGeometry(.14, .1, .02), 'iron', CX + .02, cy + .47, CZ - .01, 0, .5, .8);
+  for (let k = 0; k < 6; k++) { const x = CX - .7 + (k % 3) * .17, z = CZ + .35 + Math.floor(k / 3) * .14, h = .09; put(new THREE.BoxGeometry(.13, h, .4), 'wood', x, gy(x, z) + h / 2 + Math.floor(k / 3) * 0, z, 0, .1); }
+  cap(CX - .53, CZ + .42, gy(CX - .53, CZ + .42) + .09, .5, .4, .1, 'billets');
+  for (let k = 0; k < 18; k++) { const a = F() * 6.283, x = CX + 1.1 + (F() - .5) * .8, z = CZ - .6 + (F() - .5) * .6, L = .8 + F() * .6; rod('bark', [x, gy(x, z) + .03 + F() * .15, z], [x + Math.cos(a) * L, gy(x, z) + .05 + F() * .2, z + Math.sin(a) * L], .015, 4); }
+  roundCap(CX + 1.1, CZ - .6, gy(CX + 1.1, CZ - .6) + .22, .5, 'brush');
+  // the spruce round the clearing from 9 m out, clear of the road
+  const trees = []; for (let k = 0, n = 0; k < 900 && n < 46; k++) { const a = F() * 6.283, d = 9 + Math.pow(F(), .8) * 34, x = Math.cos(a) * d, z = Math.sin(a) * d * .8 - 2; if (Math.abs(z - RZ) < RW / 2 + 2 || trees.some(t => Math.hypot(t.x - x, t.z - z) < 2.6)) continue; n++;
+    const h = 8 + F() * 9, g0 = ground(x, z), w = h * (.22 + F() * .05); rod('bark', [x, g0 - .3, z], [x, g0 + h * .35, z], h * .016, 6);
+    for (let t = 0; t < 6; t++) { const f = t / 6, y0 = g0 + h * (.16 + f * .76), th = h * (.28 - f * .05), rw = w * (1 - f * .8) * (.9 + F() * .2); put(new THREE.ConeGeometry(rw, th, 8, 1, true), 'needle', x, y0 + th / 2, z, 0, F() * 3);
+      if (F() < .85) put(new THREE.ConeGeometry(rw * .62, th * .36, 7, 1, true), 'snow', x + (F() - .5) * rw * .2, y0 + th * .7 + .02, z + (F() - .5) * rw * .2, 0, F() * 3); } trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2) }); }
+  const paths = [[[0, RZ], [.2, 6], [.3, 2.4], [-.3, .2]], [[-.3, .2], [1.0, -.9], [2.4, .4], [1.0, 2.0], [-.3, .2]]];
+  const group = new THREE.Group(); let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'snowfield'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground,
+    tent: { pole: top.map(v => +v.toFixed(3)), ridge: [top.map(v => +v.toFixed(3)), foot.map(v => +v.toFixed(3))], bundle }, fire: { x: FX, z: FZ, tip: tip.map(v => +v.toFixed(3)) }, capped, lying, road: { z: RZ, w: RW, d: RD }, paths, trees };
+}

@@ -23133,3 +23133,36 @@ Corrections made during the session:
 - **The land round the pavement** is plain turf to a flat horizon, as at the other places. On the Burren the pavement runs on in terraces, which is the land's (F3).
 - **Whether the stone is a lead,** and whether anything is under it or carved on it, is the quest writer's. As built it is only odd.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks (whose, the bodies builder's) and the unfinished camp.
+
+## v80 — Session 1032 — The Mark's unfinished camp (card F8, prototype only)
+The next of OG-124's small mysteries (panel 6: "an unfinished camp"). It is `markUnfinishedCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=unfinished`. The abandoned expedition (Session 1023) is a camp that was lived in and left in haste. This one was never finished. It is set in the Mark so that snow can tell the story: snow has fallen on everything since, and there is no track in it, in or out. Who stopped here, and why they never came back, is left to the quest writer.
+
+It is built at true size in a spruce clearing on ground rising gently from a road, with the road only a shallow trough under the same snow:
+- **The tent:** a ridge tent's back pole stood 1.9 m and guyed to a peg behind, with the 2.6 m ridge pole leaned from its top to the snow in front. The front pole lies beside it, the canvas is still rolled and strapped at the back pole's foot, the six pegs and the mallet are laid out, and a red bedroll is half unrolled.
+- **The fire:** a ring of nine stones round birch bark under a cone of nine kindling sticks, laid and never lit, with snow on its tip. The kettle stands by it.
+- **The sledge:** a pulk with its load lashed under a cover and its shafts down on the snow, and one sack taken off beside it.
+- **The wood:** the axe is left in the chopping round, six billets are split, and a heap of brush has been gathered.
+- **The snow:** 2 to 6 cm lies on everything that is out. The clearing is one smooth field with no trodden snow anywhere, and 46 spruce stand round it from 9 m out.
+- **The size:** 22,200 to 22,300 triangles in 13 meshes.
+
+The views are `camp` (from the road), `tent` (by the fire, to the pole and the canvas), `fire` (knelt by it) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The poles, the stones and the sledge** first rendered black. Their kit textures need `markTextures()`, which this builder did not call, and the stones still read dark with it. They are plain colours now, and `millMats()` is called first as the other places do.
+- **The camp view** first showed the camp small from the road, so its field of view is now 38°.
+- **Two of the snow check's probes** first met the kettle's bail and the axe head, which lie over their caps. They now probe beside them.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 230 of 230 pass** (223 after Session 1031). Seven checks are new. The camp's `camp` view and its `fire` view at dusk render with no page errors, and five checks run over three keys:
+  - **The builds:** each key builds the same twice, with 22,222 to 22,299 triangles in 13 meshes and 46 spruce.
+  - **The tent:** the back pole is 1.9 m high, the ridge pole's top is 0 m from it and its foot 0 m off the snow. No material in the camp emits light.
+  - **The snow on things:** all 19 things lying out are met first by snow from above, −0.009 to 0 m from their tops. The 8 things laid down are −0.001 to 0.032 m off the snow.
+  - **No tracks:** there is no trodden ground anywhere. Round the fire the clearing's snow varies by no more than 0.022 m between half-metres, and the road is a trough 0.08 to 0.15 m deep under it.
+  - **The walk:** 46 half-metres in from the road and round the camp. There is ground under each, no step is over 0.07 m, and there is 0.82 m or more clear at the hip and the head, with nothing over the head or underfoot.
+- **Pictures:** `places-unfinished-camp.jpg`, `-tent`, `-fire`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **The snow on the brush heap** is one white disc, and from above it reads as a patch of cloth. Smaller caps on the sticks would be truer.
+- **The things are plain shapes in flat colours** (the bedroll, the canvas, the pulk), not the kit's textures. They want the bodies builder's cloth and the kit's wood before the camp goes into the game.
+- **The spruce** are the cabin's and the logging camp's cones. Close to the camp, the nearest one fills the far view.
+- **No tracks is the tell.** In the game, the player's own footprints (`FP`) will be the first marks in this snow. Whether a second line of prints, leading away and snowed half over, should be added is the quest writer's call, and the prints would be the bodies builder's.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), and strange tracks.
