@@ -4,6 +4,75 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
+The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
+- **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.
+- **The kit's houses** were drawn at true size: a cottage is 9.6 by 5.4 m, a townhouse 6.4 by 9 m, a merchant's house 8.4 by 9 m and a farmhouse 10.5 by 6.2 m. That is 1.7 to 2.5 times a lot's floor.
+
+How should a town's lots and the kit's houses meet?
+- **A. The lots take the house's size on the new look** (recommended). The generator picks the plan first (a cottage in a village, a townhouse or a merchant's house in a town, by `PKIT.gl.lot`) and gives the lot that plan's width and depth. The door, the solids, the footpath and the resident's place follow from the lot as they do today. A town's pad holds fewer houses, so about a third fewer residents, unless the pad grows. The old look keeps today's layout until F14 retires it. The houses stay as drawn and checked: people are the measure.
+- **B. The houses take the lot's size.** The plans gain a width and depth and lay their windows out by bays: a 6 by 5 m lot is a two-bay cottage. Both looks keep the same layout and the same people. The houses are smaller than drawn, and every plan's openings have to be redone and rechecked in the prototype first, which is about a session per plan.
+- **C. Both:** the plans laid out by bays (as B), and the lots widened to whole bays (5 to 7 m becomes 6 to 10). This is the most work, and the layout changes in both looks.
+
+The picture is the kit's street standing in the game: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-street-ingame.png
+
+Michael: **C, both: plans by bays, lots widened to whole bays** (17 Oct 2026, on #396). Session 1063 laid the cottage, farmhouse, townhouse and merchant's house out by bays in the prototype (`glBayPlan`, `glBaysFor`; `pieces-gatelands.html?view=bays`), and Session 1064 copied them into the game's kit (`PKIT.gl.bayPlan`). The generator's lots, widened to whole bays on the new look, are the next session.
+
+### The Mark's cliff fort: does it go down into the cliff? (look builder, Session 1053) — DECISION #402
+**F8: the Mark's cliff fort (look builder, Session 1053).** OG-121's Mark panel asks for "mountain mines, ice caverns, cliff forts and snowed-in entrances", and this is the cliff fort. It is a prototype in `docs/prototypes/levelup/places.js` (`markCliffFort`), at `places.html?place=clifffort`.
+- **The headland:** 40 m across and 50 m out over the fjord, its cliffs falling 32 m to the sea, so the cliffs are its walls.
+- **The neck:** shut by a ditch 2.6 m deep and a bank with a palisade of pointed logs from cliff edge to cliff edge.
+- **The gate:** a tower over the gate, the gate burst, one leaf hanging and one down in the snow.
+- **Inside:** the kit's Markish hall, a storehouse up on four posts, and a cold beacon at the point.
+
+It is abandoned in winter. Who held it and who broke the gate is the quest writer's.
+
+As drawn it has no inside beyond the hall: OG-121's other forts have "lower levels", and this one has none yet.
+
+**Should the cliff fort go down into the cliff?**
+- **A. As drawn:** a fort on the top only, a place to cross and look from. The hall's inside is a Markish room like any other.
+- **B. A sea-stair** *(recommended)*: a door in the rock behind the hall opens on a stair cut down inside the cliff, about 30 m, with turns and landings lit by slits in the face. It comes out in a sea cave with a boat landing, the fort's way to the water. That gives it a lower level to explore, as the card asks.
+- **C. A store under the hall:** a rock-cut cellar under the hall's floor, reached by a hatch. It is smaller than B, with no way to the sea.
+
+Pictures:
+- [from the road](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-fort.jpg)
+- [on the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-gate.jpg)
+- [inside the gate](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-inside.jpg)
+- [by the beacon](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-beacon.jpg)
+- [the cliffs from the sea](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-cliff.jpg)
+- [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-far.jpg)
+
+Michael: **B, a sea-stair down to a sea cave** (17 Oct 2026, on #402). Built in Session 1062 (prototype): a cut and a door behind the hall, nine flights in the west cliff lit by 15 slits through the face, and a sea cave with a quay and a boat, its mouth an arch in the cliff at the water. `places.html?place=clifffort&view=cut|stair|foot|cave|mouth`.
+
+### The Gatelands' ruined tower house: the ways in and up (look builder, Session 1052) — DECISION #401
+**F8: the Gatelands' ruined tower house, taken by a band (look builder, Session 1052).** OG-121's card asks for "collapsed keeps with lower levels, some taken by bandits", and its lairs for "escape routes". This is the last of its six kinds. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsTowerHouse`), at `places.html?place=towerhouse`.
+- **The bawn:** a walled yard 30 by 25 m with a gateway, a breach and a round flanker at one corner.
+- **The tower:** four storeys, 16 m high, with its south-east corner fallen to the top of the vault.
+- **The hall:** the stone-vaulted ground floor, where the band camps: pallets, a fire, a table on kegs, a rack of spears.
+- **The cellar:** down a stair in the floor. It is their store.
+- **The souterrain:** a drystone passage from the cellar, under the bawn's wall, to a pit in the slope behind a thorn. It is their way out.
+
+Who the band are is the systems builder's and the quest writer's.
+
+**How does a player come at it, and how high can they go?**
+- **A. As drawn** *(recommended)*: two ways in, by the gate or from behind by the souterrain's pit, for a player who finds it under the thorn. The storeys above the vault are out of reach, as the round tower's door is (#345 A).
+- **B. As A, and a way up:** a stair in the wall's thickness from the hall to the top of the vault, open to the sky inside the standing walls. The band keeps a lookout there, so they can be seen from the yard and can see you coming.
+- **C. The pit opens only from below:** it is the band's escape, not a way in. From outside it is a slab in the grass that will not lift, and the only way in is the gate.
+
+Pictures:
+- [from the slope](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-tower.jpg)
+- [in the gateway](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-gate.jpg)
+- [the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-hall.jpg)
+- [the stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-stair.jpg)
+- [the cellar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-cellar.jpg)
+- [the souterrain](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-souterrain.jpg)
+- [the pit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-out.jpg)
+- [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-far.jpg)
+- [the hall, empty](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-hall-empty.jpg)
+
+Michael: **A, as drawn: the gate or the hidden pit, no way up** (17 Oct 2026, on #401). Nothing to change; the tower house stands as Session 1052 built it (closed in Session 1062).
+
 ### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
 The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
 - **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.
@@ -22,7 +91,8 @@ Where should the kit live in the game?
 
 A keeps each look's code apart and gives F14 one file to keep and a list of files to delete. Pictures are not needed for this one; the kit as it stands is `docs/prototypes/levelup/pieces.html`, `rooms.html` and `places.html`.
 
-## Answered
+Michael: **A — the kit lives in a new file, js/38-kit.js.** (17 Oct 2026, on #389)
+Done, Session 1037: `js/38-kit.js` and its tag after `34-creatures.js`; the kit's surfaces, merging and the Gatelands kit (`PKIT.gl`), called only on the new look; `tests/kit`.
 
 ### Steady (Bow 25): build an aim sway for it to remove, or another perk? (systems builder, Session 982) — DECISION #369
 The build sheet's Bow 25 perk, *Steady*, is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly where the crosshair is for as long as you hold it, and only the stamina drain (8 a second) limits the hold. So there is nothing for Steady to take away. Session 982 built the Bow's other three perks (Quick nock, Long eye, Through) and left Steady off; the Skills tab shows it as *not yet in the game*.
@@ -220,6 +290,8 @@ Pictures:
 - C (lateens): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-lateen.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-lateen.jpg)
 
 Michael: **A. Island’s rig forward, the class’s own aft**. (15 Oct 2026, on the control room)
+Done, Session 1038 (in part): the Gatelands caravel already defaulted to A (`redonda`); the Mark's caravel built to it, gaff fore and main and the lateen mizzen (`markCaravel`, `ships.html?ship=markcaravel`). Owed by the same rule: the cog and the galleon in the Mark's and Aurenne's dress.
+Done, Session 1039 (in part): the Mark's cog, one gaff main in place of the square sail (`markCog`, `ships.html?ship=markcog`). Owed: Aurenne's cog and both galleons.
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
 Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
