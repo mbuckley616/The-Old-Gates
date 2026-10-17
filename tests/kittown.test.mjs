@@ -3,7 +3,7 @@
 // mesh per material for the town. Measured on Dunmore's own meshes: the walls stand where the solids are (a ray at each face from
 // 2 m out meets the house within the wall's thickness of its solid), the door you use is in the drawn doorway (a ray at it meets the
 // leaf, painted or a shop door's glazing, set back past the wall's face), the town's kit houses are a few dozen draws, and the old builder's houses are gone from those
-// lots. On the old look Dunmore is as it was.
+// lots. Their far copy (Session 1073) stands in for them from outside the town. On the old look Dunmore is as it was.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -34,7 +34,7 @@ const r = await page.evaluate(() => {
     out.push({ id: h.id, kind: h.kit.kind, bays: h.kit.bays, faces, door: dh ? +dh.distance.toFixed(2) : null, painted: !!(dh && (paints.has(dh.object.material) || (h.kit.kind === 'merchant' && (dh.object.material === M.frame || dh.object.material === M.glass)))), mat: dh ? Object.keys(M).find(k => M[k] === dh.object.material) || '?' : null });
   }
   /* nothing of the old builder on a kit lot: no other town mesh's bounds contain a kit lot's centre at 1 m */
-  const others = []; S.group.traverse(m => { if (m.isMesh && m.parent !== kitG && !m.isSkinnedMesh) others.push(m); });
+  const others = []; S.group.traverse(m => { if (m.isMesh && m.parent !== kitG && m.name !== 'kit houses far' && !m.isSkinnedMesh) others.push(m); });
   const down = new THREE.Raycaster(); let under = 0;
   for (const h of H) { const s = S.sol.find(q => q.hid === h.id); if (!s) continue; down.set(new THREE.Vector3(s.cx, WORLD.worldH(s.cx, s.cz) + 30, s.cz), new THREE.Vector3(0, -1, 0)); down.far = 29.5; if (down.intersectObjects(others, false).length) under++; }
   return { n: H.length, calls: kitG.children.length, tris: S.kitTris, out, under };
@@ -47,6 +47,18 @@ check(`the door you use is the drawn door: its painted leaf (a merchant's glazed
 check(`the town's kit houses are ${r.calls} draws (${r.tris} triangles)`, r.calls > 8 && r.calls <= 60, r);
 check('the old builder\'s houses are gone from the kit lots', r.under === 0, { under: r.under });
 
+// the far copy (Session 1073): a box and a roof for each house, one mesh; from outside the town it is drawn and the kit's houses are
+// not, in the street the other way round; it covers the same ground and stands as high as the houses (less their chimneys)
+const far = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), K = S.kitLod; if (!K) return { none: true };
+  const box = o => { const b = new THREE.Box3().setFromObject(o); return { x0: b.min.x, x1: b.max.x, y1: b.max.y, z0: b.min.z, z1: b.max.z }; };
+  K.hi.visible = true; K.lo.visible = true; const A = box(K.hi), B = box(K.lo);
+  const at = (dx, dz) => { px = K.x + dx; pz = K.z + dz; py = WORLD.worldH(px, pz) + 1.65; CAM.position.set(px, py, pz); houseLod(); houseLod(); return { hi: K.hi.visible, lo: K.lo.visible }; };
+  const out = at(K.r + 160, 0), inn = at(0, 0); return { r: Math.round(K.r), loTris: K.tris, hiTris: S.kitTris, A, B, out, inn }; });
+check(`a far copy of ${far.loTris} triangles stands for the kit's ${far.hiTris}`, !far.none && far.loTris > 0 && far.loTris * 20 < far.hiTris, far);
+const dB = far.none ? 9 : Math.max(...['x0', 'x1', 'z0', 'z1'].map(k => Math.abs(far.A[k] - far.B[k])));
+check(`it covers the kit houses' ground within ${dB.toFixed(2)} m and their height within ${far.none ? '?' : Math.abs(far.A.y1 - far.B.y1).toFixed(2)} m`, !far.none && dB < .8 && Math.abs(far.A.y1 - far.B.y1) < 1.5, far.none ? far : { A: far.A, B: far.B });
+check('from outside the town the far copy is drawn, in the town the kit\'s houses', !far.none && far.out.lo && !far.out.hi && far.inn.hi && !far.inn.lo, far);
+
 // a picture: a street of them at noon, from across it
 const shot = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind !== 'cottage');
   const h = H.sort((a, b) => b.kit.bays - a.kit.bays)[Math.min(3, H.length - 1)], fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw);
@@ -56,5 +68,9 @@ await g.frames(6);
 fs.mkdirSync(path.join(here, '../docs/prototypes'), { recursive: true });
 await page.screenshot({ path: path.join(here, '../docs/prototypes/kit-town-ingame.png') });
 console.log(`  (picture from across ${shot}: docs/prototypes/kit-town-ingame.png)`);
+// and from the fields, 170 m out, where the far copy stands in
+await page.evaluate(() => { const K = WORLD.settle.get('dunmore').kitLod; px = K.x + K.r + 90; pz = K.z + 40; py = WORLD.worldH(px, pz) + 1.65; yaw = Math.atan2(-(K.x - px), -(K.z - pz)); pitch = -.02; });
+await g.frames(6);
+await page.screenshot({ path: path.join(here, '../docs/prototypes/kit-town-far.png') });
 check('no errors on the new look', g.errs.length === 0, g.errs);
 await g.close();

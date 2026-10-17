@@ -23911,3 +23911,18 @@ The old builder still runs for these lots and its mesh is let go. Its draws on t
 - **Rooms:** a widened house's rooms are wider, and the door now opens in an end bay. The room's own doorway is still laid out as before, so where you appear inside against the front is for a playtest.
 - **The shop signs** are a new texture for each shop (1024 by 128), and they are not freed when a town unloads.
 - Churches, inns, guild halls and keeps are still the old builder's.
+
+## v80 — Session 1073 — Card F6: a far copy for the kit's houses (new look)
+Session 1072 built a Gatelands town's widened lots from the kit, at about 5,300 triangles a house, and owed a far copy. This session adds it (`genSettlement`, `houseLod`, `83-world-generator.js`). As each kit house is built, its far copy is made from the plan's size: the walls a box to the eaves in the wall's colour, and the roof one prism to the ridge, a little over the walls, in slate grey or thatch brown. All of a town's copies are one vertex-coloured mesh (`VC_MAT`, kept out of the town's bake). `houseLod` swaps the two by the old houses' rule (`HOUSE_LOD`, near 70 m and far 80 m, holding whichever it had in between). The distance is measured from the town's centre less half the reach of its kit houses, so in the town and at its edge you see the kit's houses, and from the fields their copy. `S.kitLod` holds both and the measure.
+
+### Verified (headless Chromium)
+- **`tests/kittown`: 11 of 11 pass.** Three checks are new.
+  - **Size:** Dunmore's far copy is 900 triangles, standing in for 265,522.
+  - **Fit:** it covers the kit houses' ground within 0.12 m. It is 1.45 m lower at the top, which is the chimneys it leaves off.
+  - **The swap:** 241 m from the centre (160 m past the houses' reach) the copy is drawn and the kit's houses are not. At the centre it is the other way round.
+  - **The picture:** `docs/prototypes/kit-town-far.png`, Dunmore from the fields to the east, its coloured houses between the trees.
+- `looknew` passes.
+- `parsecheck.py` is clean.
+### Needs eyes
+- **The swap's distance:** the old houses' 70 and 80 m, from a point about 40 m in from the town's edge, so Dunmore's houses change about 110 to 120 m from its centre. Whether the change shows is for a walk out of town.
+- **The copy is plain:** no windows, chimneys or gable walls (the prism's ends take the roof's colour). A hipped cottage's copy is gabled.
