@@ -11,8 +11,13 @@ export async function enterDungeon(page, o = {}) {
   // S950 — and wait for the game's loop to have put the camera at the floor's start: only the loop moves CAM to px/pz (js/90-main.js),
   // and when no frame has run since the fade (a slow first frame on software GL) the camera still stands at the world's x, z of
   // 13,000 or more, so a render of dScene culls the whole floor (looknew's *a dungeon floor builds and draws*, calls 0, on CI)
-  for (let k = 0; k < 40 && !(await page.evaluate(() => Math.hypot(CAM.position.x - px, CAM.position.z - pz) < 30)); k++)
+  // S1055 — the wait was 40 double frames and then went on silently; on 06ddc93 (CI, auto/systems) looknew read calls 0 again after it,
+  // so a slow runner's 40 frames can end before the loop's first frame on the new floor. It waits up to 120 s of real time now, and
+  // returns how far the camera stood from the player and how long it waited, so a suite can say so.
+  const t0 = Date.now(); let far = 1e9;
+  while (Date.now() - t0 < 120000 && (far = await page.evaluate(() => Math.hypot(CAM.position.x - px, CAM.position.z - pz))) >= 30)
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  return { camFar: +far.toFixed(1), camWaitMs: Date.now() - t0 };
 }
 export async function dungeonShots(page) {
   return page.evaluate(() => { const out = [];

@@ -23264,6 +23264,39 @@ Corrections made during the session:
 - **The weave reads as coiled rows from a distance.** The stakes show only close to.
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
+
+## v80 — Session 1054 — `lookpair`: the road box is looked at before the shot (FLAKY once on auto/systems, QA)
+`lookpair` failed once and passed on its retry on auto/systems bf251d1 (16 Oct, shard 11, 800 s with the retry). The red check was *the colour and the light match*, on the road box alone: the old look read (231,218,147), the new one (167,196,98), which is the grass's own colour. QA's ledger had put it down to snow, because the log's snow line read 0.278 and 0.28 of cover before the shots. The job's full log says otherwise. The retry also had the new look's cover at 0.28 and matched to 1 level, and the suite takes the cover off and repaints before both shots (Session 832). A probe here laid 0.31 of snow before the suite's clearing and read the road at (230,217,147). So the red shot simply had no road drawn under the box.
+
+Three causes were tried, and none reproduced in eight boots in either look, run two to four at once. First, the spot's chunk still queued: the teleport to the spot queues 8 chunks, and they are all built by frame 8 of the 30 the suite runs. Second, a chunk built before its cell's road registered: `buildRoadRibbons` runs only in `buildChunk`, but all 35 of the 90 loaded chunks that have road segments had every segment laid. Third, the snow. The first two remain possible on a slower runner, and which one it was is not known. So the suite now looks before it shoots. A ray through the road box's centre (400, 390) is cast against the near chunks' ground and road ribbons. After the suite's 30 frames, the loop runs on (up to 300 more frames) until the ray meets a ribbon. A new check, *the road box looks onto a road ribbon in both looks*, reports what the ray met: the chunk, the road segments in it, how many were laid, the build queue and the frames waited. A chunk that is late now gets waited for. A ribbon that was never laid fails by name instead of as a colour, and goes to the look builder (`80`/`82`). The colour check and its 10 levels are unchanged.
+
+### Verified (headless Chromium)
+- `lookpair`: 3 of 3 green, one alone and two side by side. Each look's ray met the road at chunk (211,397), 14 of 14 segments laid, nothing queued, 0 extra frames. The road box read (231,218,147) in both looks, the worst region 2 levels, mean difference 5.72.
+- CI read 06:52 to 12:52: 6 green runs and 1 red (auto/systems 26552c7: `q7world` before Session 1039 reached it, and `roll`, which that branch's own Session 1049 re-measured). No FLAKY annotations.
+
+### Needs eyes
+- Proof on CI: the next red on this check names its cause. If it reads `ground` with `laid` below `segs`, that is a road the chunk never got, and it is the look builder's to fix.
+
+## v80 — Session 1055 — `enterDungeon` waits for the camera by the clock, not by 40 frames (`looknew` FLAKY again, QA)
+`looknew`'s *a dungeon floor builds and draws* failed once more with `calls:0` on auto/systems 06ddc93 (16 Oct, shard 11). That run already carried Session 971's fix: `enterDungeon` (`tests/lib/dungeonshot.mjs`) waits for the game's loop to bring the camera within 30 of the player, since only the loop moves `CAM` and a floor rendered from the world's x, z is culled whole. But the wait was a count, 40 double frames, and when the count ran out it went on silently. On a runner where 0.170's first frame on a new floor is slow, the count can end first. The wait is now up to 120 s of real time, the same state polled the same way. `enterDungeon` returns how far the camera stood from the player and how long it waited. `looknew` adds both to its check's detail, so a red that comes back names a camera that never arrived instead of reading as a floor that drew nothing. The check's bound (calls over 10) is unchanged. The other twenty-odd suites that call the helper ignore its return value and get the longer wait.
+
+### Verified (headless Chromium)
+- `looknew`: 3 of 3 green, two of them side by side under `--look=new`. The camera arrived after 36, 328 and 965 ms, and the floor drew 311–329 calls.
+- `dungeon` and `trapseed` (two of the helper's other callers): green, side by side.
+
+### Needs eyes
+- Proof on CI over the next runs of shard 11.
+
+## v80 — Session 1056 — `beastfall`: one fall in two hundred freezes at the cap (the game's, filed; QA)
+`beastfall` failed once on b81802f (16 Oct, shard 7). One wolf settled at 4.02 s against the check's `< 4`, while the others settled in 1.2–1.8 s. QA's ledger had grouped it with `ragdoll` as "the physics' cap on a slow step". That is not what happened. The suite steps the fall at a fixed 1/60 (`tickPeople` and `tickCreatures`, then `tickRagdolls` for the seeded sixty), so the runner's speed changes nothing. What changes from boot to boot is the first fifteen deaths: they roll unseeded `Math.random`. A ragdoll (`tickRagdolls`, `js/32-people.js`) ends once it has been quiet for 15 steps, or at `R.t>4` wherever it is, so a body that never goes quiet is frozen where the cap catches it.
+
+The rate was measured with a probe: 600 deaths, six kinds, 100 each at the suite's four spots, plain, POWER and ARROW in turn, on unseeded draws. Three hit the cap: Snow Wolf 2 of 100, Dire Wolf 1 of 100, and Wolf, Ash Hound, Boar and Cave Bear none. One more took over 2.5 s. With fifteen unseeded deaths a run, that makes the suite red about one run in fourteen. Session 482 saw the same shape (a wolf creeping on a raised foreleg past the cap). The suite is right to fail, since a body frozen mid-creep is what it guards against, so it stays as it is. The finding is filed in backlog I for the bodies builder (`32`). No test changed.
+
+### Verified (headless Chromium)
+- The probe above: 3 of 600 at the cap (0.5%), every one a Snow Wolf or a Dire Wolf.
+
+### Needs eyes
+- Whether a body frozen at the cap is visible in play: a beast left on a raised leg, or tilted on a slope. The bodies builder's to look at with the inspector.
 ## v80 — Session 1042 — The Old Blood's amulet and belt charms (L1 and B2, prototype only)
 No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. The Gatelanders' dress is built but for the head-wrap's coins, which still need OG-056's full image, so this session starts the next people in L1, the Old Blood. OG-066 is kept for its clothes, not its bodies (the catalogue flags the tall, silver-haired, elvish figures as against the canon). Its row lists "a round stone-and-iron amulet on the belt, belts with small hanging charms". Building what the sheet draws on a kept sheet chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
 
