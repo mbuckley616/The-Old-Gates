@@ -682,7 +682,7 @@ function finisherOpen(e,nowS){
 // A raised Shieldbearer guard (shieldUp) is IMMUNE to bash (design call G) — the
 // shield is exactly the thing a bash can't crack; flank it or power-attack it.
 const BASH_BARE_POSTURE = 20;       // posture drained by a bare/weapon-only bash (2.5× a normal swing)
-const BASH_RANGE = 0.8;             // S1033 (F2b) — hull to hull, shield to chest: 1.4 centre to centre against a townsperson (it was 2.0 centre to centre)
+const BASH_RANGE = 0.8;             // S1035 (F2b) — hull to hull, shield to chest: 1.4 centre to centre against a townsperson (it was 2.0 centre to centre)
 const BASH_CONE_COS = 0.45;         // same front cone as a swing (~117°)
 const BASH_STAM_BARE = 10;          // flat stamina for a weapon-only/bare bash
 
@@ -822,7 +822,7 @@ const SNEAK_MOVE_MULT = 0.7;          // movement speed multiplier while sneakin
 // cos(VISION_CONE_HALF) is the dot-product threshold; 75° → cos = 0.259.
 // Player is "in vision cone" when dot(forward, toPlayer) > VISION_CONE_COS.
 const VISION_CONE_COS = 0.259;        // cos(75°) — half-angle of vision cone
-const HEARING_RADIUS = 0.9;           // omnidirectional detection radius, metres centre to centre (S1033, F2b: two bodies touch at 0.6, so 0.5 let you stand inside a guard unheard)
+const HEARING_RADIUS = 0.9;           // omnidirectional detection radius, metres centre to centre (S1035, F2b: two bodies touch at 0.6, so 0.5 let you stand inside a guard unheard)
 // S634 — Michael's A on #190: a foe hears you walk at 3 units, sneak at 1, in any direction; standing still you are heard
 // only at HEARING_RADIUS, as before. _pStep is set by the loop's movement each frame (90-main.js).
 const HEARING_WALK = 3, HEARING_SNEAK = 1;

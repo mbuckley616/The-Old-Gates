@@ -3080,7 +3080,7 @@ function buildDungeon(portal){
     return{g,hpFg,limbs};
   }
   function spawnFloorEnemies(map,floorIdx,baseY,dmgMult){
-    const dTier=dungeonTier(portal,floorIdx); /* S1032 — the door's place and the floor (#373 A), not your level */
+    const dTier=dungeonTier(portal,floorIdx); /* S1034 — the door's place and the floor (#373 A), not your level */
     // v80 S478 — the foes' spots, kinds and variants come from the floor's stream; each foe is keyed <dungeon>:<floor>:<index>
     // and rolls its fight from its own (keyFoe, 42-zone-enemies.js). The shuffle was a sort on Math.random.
     const dKey=dKeyOf(portal,floorIdx),dFoes=seededRng('dfoes',dKey);

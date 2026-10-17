@@ -36,7 +36,7 @@ function applySpellDamage(e, sp, tier){
 //   tell      seconds of wind-up before the blow lands (yours: click to impact; a foe's: its wind-up pose and glow)
 //   strike    seconds from the blow landing to the end of the commitment (yours; a foe's lands the frame its tell ends)
 //   recovery  seconds after that, the last third of your swing, the only part a roll or a block can cut short
-//   reach     metres, hull to hull (F2b, Session 1033): from the edge of your body to the edge of the foe's (hullOf)
+//   reach     metres, hull to hull (F2b, Session 1035): from the edge of your body to the edge of the foe's (hullOf)
 //   arc       degrees, the whole cone the blow lands in
 //   dmg       a multiplier on the blow's roll; posture: yours, what the swing drains from the foe's posture;
 //             a foe's, the multiple of its blow that drains yours unguarded (a held block drains ×1)
@@ -62,7 +62,7 @@ const WEAPON_ATTACKS={
   // a sent cast, one more row when magic's resolver comes (magic.md: words of the deep tongue); nothing reads it yet
   Cast:     {placeholder:true,tell:null,strike:null,recovery:null,reach:null,arc:null,dmg:null,posture:null,cleave:null,blockable:false,parryable:false,heavy:null,third:null},
 };
-// S1033 — F2b, session 1 (docs/design/scale-numbers-build.md, *Reach*): the reach column is hull to hull, so a blow lands when
+// S1035 — F2b, session 1 (docs/design/scale-numbers-build.md, *Reach*): the reach column is hull to hull, so a blow lands when
 // the foe's centre is inside your hull + the weapon's reach + its hull. Against a townsperson a sword lands at 2.2 centre to
 // centre, today's number; the dagger loses 0.4, the two-handers gain 0.6, a punch is a close thing (1.5). The hulls are the
 // sheet's until F4 gives each family's built value (e.hullR): you, a townsperson, a bandit or a skeleton 0.30; a goblin 0.25;
@@ -138,7 +138,7 @@ function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(ar
 
 // ── The one resolver for your swing (S940). The dungeon, the open world and the legacy zones each had their own
 // (_resolveDungeonStrike, _resolveZoneStrike), the same rules written twice; both are now this. At the swing's impact
-// it gathers the foes in reach (hull to hull, S1033) and in the arc of the weapon's row, nearest first, up to the
+// it gathers the foes in reach (hull to hull, S1035) and in the arc of the weapon's row, nearest first, up to the
 // row's cleave; a power blow breaks a raised shield without damage (S485: not when swung spent), every other blow runs
 // the damage chain, applyMeleeDamage (riposte, finisher, stagger, backstab, armour), posture, the rune's rider and
 // the kill. The third light swing of a chain lands ×1.3 and drains ×1.5 posture (COMMIT, the light chain).
@@ -710,7 +710,7 @@ const VARIANTS = {
   },
 };
 
-// S1032 — enemies by place (Michael's A on DECISION #373): a foe's health and blow grow with the danger of where it stands,
+// S1034 — enemies by place (Michael's A on DECISION #373): a foe's health and blow grow with the danger of where it stands,
 // not with your level. Each region has a tier: home's coast, Ashen, Bealach and Royale 1; Deepwood, the Foothills and Greywood 2;
 // the Wastes 3; a far island's region by its biome (tundra, swamp and wasteland 3, the rest 2). A dungeon is its door's tier, and
 // each floor below the first adds one, to 4. A gate's school does not change it. A tier is worth what the level curve gave at
@@ -756,14 +756,14 @@ function tierHere(){
   if(z==='world')return worldTierAt(px,pz);
   return zoneTier(z);
 }
-// the level a foe's own extra terms read (a wraith's orb and its drain, a ship's volley): its tier's, as its health and blow (S1034)
+// the level a foe's own extra terms read (a wraith's orb and its drain, a ship's volley): its tier's, as its health and blow (S1036)
 function foeTierLevel(e){return tierLevel(e&&e.tier!=null?e.tier:tierHere());}
 function enemyHpScale(tier){
   const lv=tierLevel(tier==null?tierHere():tier);
   return Math.min(3.0, 1 + (lv - 1) * 0.15);
 }
 // S940 — a foe's blow grows as the reference blow does (blowRef), so that with armour as a share an ordinary blow at the kit of
-// the tier's level stays near BLOW_SHARE of that level's health (S1032: the tier's level, not yours).
+// the tier's level stays near BLOW_SHARE of that level's health (S1034: the tier's level, not yours).
 function enemyDmgScale(tier){
   const lv=tierLevel(tier==null?tierHere():tier);
   return blowRef(lv)/blowRef(1);

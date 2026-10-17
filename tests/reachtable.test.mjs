@@ -1,4 +1,4 @@
-// F2b, session 1 (Session 1033; docs/design/scale-numbers-build.md, *Reach* and *Sight, hearing*): your blow's reach is hull
+// F2b, session 1 (Session 1035; docs/design/scale-numbers-build.md, *Reach* and *Sight, hearing*): your blow's reach is hull
 // to hull in metres, by weapon class, so it lands when the foe's centre is inside your hull (0.30) + the weapon's reach + the
 // foe's hull. The sheet's `reachtable` row: each class against a townsperson (a Bandit, 0.30), a wolf (0.35) and a troll (0.8),
 // stepped in by 0.05 from 4 m; the first distance that lands is within 0.05 of the sheet's table. With it the shove (0.8 hull

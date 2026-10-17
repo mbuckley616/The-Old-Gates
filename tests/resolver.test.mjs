@@ -174,7 +174,7 @@ check('a blow is × 50/(50 + armour): all of it at 0, 56% at 40, a third at 100 
 check('a dungeon foe\'s own blow at 40 armour lands as the share says', arm.armour === 40 && arm.e2e.lost === arm.e2e.want && arm.e2e.lost > 1, arm);
 
 // ── the retune: an ordinary blow at your level's kit is near a sixth of the reference health (Michael's B on #355), both places.
-// Since S1032 (enemies by place, #373 A) a foe's blow reads its place's tier, worth the levels 1, 6, 11 and 16: measured at each
+// Since S1034 (enemies by place, #373 A) a foe's blow reads its place's tier, worth the levels 1, 6, 11 and 16: measured at each
 // tier against the kit and health of the tier's level (it was every level from 1 to 20, when the blow read yours).
 const tune = await page.evaluate(() => {
   const L0 = level, rows = [];

@@ -756,7 +756,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // Apply variant overlay if one was selected upstream. Zones pass diff='normal' to pickVariant so only Greater can apply.
   const vr=applyVariantToDef(baseDef, type, variantKey);
   const d={...vr.def};
-  // S1032 — scaled by the danger of the place it stands in (#373 A), not by your level; a caller that knows the place passes zOpts.tier
+  // S1034 — scaled by the danger of the place it stands in (#373 A), not by your level; a caller that knows the place passes zOpts.tier
   const _tier=(zOpts&&zOpts.tier!=null)?zOpts.tier:foeTier(sc,x,z);
   const _hpLvl=enemyHpScale(_tier);
   const _dmgLvl=enemyDmgScale(_tier);

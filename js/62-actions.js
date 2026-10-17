@@ -35,7 +35,7 @@ function doBash(){
     if(!isOverworldZone() && (e.floor !== currentFloor || e.disguised)) continue;
     const ex = e.x - px, ez = e.z - pz;
     const dist = Math.hypot(ex, ez);
-    if(dist >= reachTo(e, BASH_RANGE)) continue; // S1033 — hull to hull (F2b)
+    if(dist >= reachTo(e, BASH_RANGE)) continue; // S1035 — hull to hull (F2b)
     if((ex*fwdX + ez*fwdZ)/(dist||1) <= BASH_CONE_COS) continue;  // front cone only
     if(e.alert)skillUse('guard',1,e); /* S941 — a bash is a Guard use */
     e.alert = true;

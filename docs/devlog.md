@@ -23708,7 +23708,8 @@ Corrections made during the session:
 - **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
 
-## v80 — Session 1032 — Enemies by place: a danger tier per region, plus the dungeon floor (DECISION #373 A)
+## v80 — Session 1034 — Enemies by place: a danger tier per region, plus the dungeon floor (DECISION #373 A)
+*(Numbered 1032 when first pushed. auto/backlog already had a 1032 and auto/bodies a 1033, so this run's three sessions are renumbered 1034–1036 here and in the code; the commits keep the numbers 1032–1034.)*
 Michael's A on #373: a foe grows with the danger of where it stands, not with your level. Until now every foe's health and blow read your level (`enemyHpScale`, `enemyDmgScale`, `74-strikes.js`), the Oblivion failure the skills page warned of: a character who levels by alchemy and locks meets wolves built for a fighter, and friends in one world have no one level to scale to. Combat's resolver, which rewrote those two functions, merged on 16 Oct, so this could be built now.
 
 **The tiers**, as the decision gives them (`REGION_TIER`, `BIOME_TIER`):
@@ -23748,7 +23749,7 @@ Michael's A on #373: a foe grows with the danger of where it stands, not with yo
 - **The Wastes and the far tundra are hard from the first step:** a wolf there has 45 health and a 20 blow against a level-1 character's 100 health. That is the decision's intent (the Wastes are dangerous), but the road from Ashenmoor to the Wastes should read as a warning in play.
 - **A late character on the coast now meets foes with their own base numbers.** That is the decision's A (C was the option that kept a little of the level).
 
-## v80 — Session 1033 — F2b, session 1, part 1: your reach hull to hull by weapon, the hulls, the shove and the still-hearing radius
+## v80 — Session 1035 — F2b, session 1, part 1: your reach hull to hull by weapon, the hulls, the shove and the still-hearing radius
 F2b (`docs/design/scale-numbers-build.md`) could start: F2a and combat's resolver have both merged. Its first session is *reach and hulls*. This session does the player's half of that, as one slice: the reach column, the hulls, the shove and the radius at which a still player is heard. The foes' reach table moves the engage tests in `tickZoneEnemies` and the dungeon's foe tick, and the chase suites with them, so it is the next part.
 
 **What was wrong.** Every weapon reached 2.2 units centre to centre in a 126.5° cone, from a dagger to a claymore. A troll's 0.8 m body counted for nothing, so you had to stand as close to its centre as to a goblin's. Against any boss the reach was a flat 3.0.
@@ -23787,8 +23788,8 @@ The sheet's `stillhear` row is folded into the new `reachtable` suite, so it cos
   - Session 2: the body in the world.
   - Session 3: the dungeon's cell, at Michael's C on #300, 3 m.
 
-## v80 — Session 1034 — Enemies by place, finished: a wraith's orb and drain and a ship's volley read the tier, not your level
-A correction to Session 1032. It moved a foe's health, its blow and the variants' chance onto the place's tier, but three of a foe's own blows still added your level:
+## v80 — Session 1036 — Enemies by place, finished: a wraith's orb and drain and a ship's volley read the tier, not your level
+A correction to Session 1034. It moved a foe's health, its blow and the variants' chance onto the place's tier, but three of a foe's own blows still added your level:
 - **A phantom's or wraith's orb** (`90-main.js`): 8–14 + level × 1.5.
 - **Their life-drain:** (4 or 6 + level × 0.5) × the foe's multiplier.
 - **A pirate ship's volley of arrows** (`85-world-sea.js`): 6 + level × 0.8.
@@ -23799,7 +23800,7 @@ Each was the Oblivion failure in small. A level-20 alchemist met orbs of 38 to 4
 
 **What still reads your level.** The dungeon's traps (the spike plate's 8–16 + level × 0.8, the swinging blade, the fire jet's 18 + level × 1.4) are not foes, and #373 named the foes. The same goes for the siege's and the occupation's numbers of foes, the caravan's captain at level 5, and the dungeon roster's `minLevel`. They are listed in the backlog for a later call, not changed.
 
-**One fix in my own test.** Session 1032's `dangertier` waited on `g.spin(10)`. That passes 10 as the weather and ticks the open world only, so it never drove the dungeon. It now waits on the game's own frames (`g.frames`), and its dungeon numbers do not change.
+**One fix in my own test.** Session 1034's `dangertier` waited on `g.spin(10)`. That passes 10 as the weather and ticks the open world only, so it never drove the dungeon. It now waits on the game's own frames (`g.frames`), and its dungeon numbers do not change.
 ### Verified (headless Chromium)
 - **`dangertier`:** 14/14 (one new check). In the Wastes' gate (tier 3, level 11), a Greater Phantom's orb is 24 when you are level 10 and 26 at level 20, both within 8–14 + 16.5. At level 20 the old rule gave 38 to 44.
 - **Neighbours, all pass:** `blacksail`, `piratehold`, `pirateram`, `wraithfloat` and `wraithhood`.
