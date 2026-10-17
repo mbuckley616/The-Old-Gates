@@ -22930,7 +22930,7 @@ Corrections made during the session:
 - **Over a bare leg** the wraps first stood 21.6 mm off the skin, at the push used over trousers. They now stand 11.6.
 
 ### Verified (headless Chromium)
-- `builder.check.mjs`: CHECKCOUNT
+- **`builder.check.mjs`: all 380 checks pass** (375 after Session 1020; 5 new).
 - **The new checks.** Two men are checked: one in trousers and boots, and one with bare legs under a short tunic skirt.
   - Nothing comes through the wraps: 0 of 290 trouser points, and 0 of 324 points of the bare leg.
   - The wraps stand 8.0 mm over the trousers and 11.6 mm over the bare leg.
