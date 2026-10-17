@@ -4,6 +4,29 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Draw cut, Ringing, Throw and Catch the blade: build what each needs, or other perks? (systems builder, Session 1051) — DECISION #399
+Sessions 1048 to 1051 built the Arms perks that combat's resolver made possible. Four of the build sheet's Arms perks name something the game does not have, or already does. The Skills tab shows them as *not yet in the game*.
+
+- **Draw cut (Blade 25): "the first swing from a sheathed blade does ×2 posture damage".** Nothing is sheathed today. A weapon in your hand is always drawn.
+- **Ringing (Blunt 50): "a power hit breaks a raised shield in one blow".** Every power hit already does this, whatever the weapon (since v65). A Shieldbearer's guard then comes back up.
+- **Throw (Hand-to-hand 50): "a punch on a staggered foe knocks it down".** No foe can be knocked down. A foe is staggered or it is not.
+- **Catch the blade (Hand-to-hand 75): "a perfect parry bare-handed knocks a one-handed weapon from the foe's grip".** A bare-handed parry works today, but a foe has no weapon to lose: its blow is its family's row, whatever it holds.
+
+What should the four be?
+- **A. Build the small rule each needs, then the perk** *(recommended)*.
+  - *Draw cut*: a blade is sheathed after 5 s with no swing and no foe alert within 14 m (the lock-on's range). The first swing after that drains ×2 posture.
+  - *Ringing*: the shield it breaks stays down for the rest of the fight, where today it comes back up.
+  - *Throw*: the foe falls for 1.5 s, open to a finisher from any side.
+  - *Catch the blade*: an armed humanoid parried bare-handed drops its weapon and fights on with its fists, at half its blow and the fists' reach.
+- **B. Other perks under the same names**, with no new rule:
+  - *Draw cut*: the first swing of a fight drains ×2 posture.
+  - *Ringing*: a mace's guarded hit drains ×2 posture.
+  - *Throw*: a punch on a staggered foe stretches the stagger by 1 s.
+  - *Catch the blade*: a bare-handed held block takes a quarter less.
+- **C. Leave them** until combat's later sessions, which add the heavy attacks, and decide then.
+
+A gives each perk the change of play the sheet means, at one small rule apiece; the sheathing rule is the largest of the four. B ships now but makes Ringing and Throw near copies of Weight and Daze.
+
 ### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
 The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
 - **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.

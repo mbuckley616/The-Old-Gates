@@ -48,14 +48,18 @@ check('stood still, the Bandit winds up and strikes, 12+ blows a 30 s, each afte
 // critic's 7–12 punches was measured with the level's flat +1.5 in every hit; with it gone, an untrained fist (5, ×0.64) is
 // the longer brawl Michael chose, and the critic's brawl comes back as the fist is trained (100, ×1.4).
 const runsAt = async (hand, n) => { const out = []; for (let k = 0; k < n; k++) out.push(await fight(true, true, 60 * 40, hand)); return out; };
-const raw = await runsAt(5, 3), master = await runsAt(100, 3), runs = raw.concat(master);
+// S1051 — the multiplier's brawl is measured at 99, a point under Stone hand (Hand-to-hand 100: the fists roll 4 to 7, `perkarms`),
+// which is fought on its own below
+const raw = await runsAt(5, 3), master = await runsAt(99, 3), stone = await runsAt(100, 2), runs = raw.concat(master);
 for (const r of raw) console.log('punched at Hand-to-hand 5', JSON.stringify(r));
-for (const r of master) console.log('punched at Hand-to-hand 100', JSON.stringify(r));
+for (const r of master) console.log('punched at Hand-to-hand 99', JSON.stringify(r));
+for (const r of stone) console.log('punched at Hand-to-hand 100, Stone hand', JSON.stringify(r));
 const sum = (f) => runs.reduce((a, r) => a + f(r), 0);
 check(`untrained (Hand-to-hand 5), the Bandit dies every time, in 15–28 punches that land (${raw.map(r => r.hits).join(', ')})`, raw.every(r => r.dead && r.hits >= 15 && r.hits <= 28), raw.map(r => [r.dead, r.hits, r.swings]));
 // S940 — the light chain lands every third punch ×1.3, so the critic's 7–12 is 6–11 (main's re-measure, carried here: the merge of
 // Session 1013 kept the old range, and CI's slower frames keep the chain and reached 6)
-check(`trained to 100, the critic's brawl under the light chain: dead in 6–11 punches (${master.map(r => r.hits).join(', ')})`, master.every(r => r.dead && r.hits >= 6 && r.hits <= 11), master.map(r => [r.dead, r.hits, r.swings]));
+check(`trained to 99, the critic's brawl under the light chain: dead in 6–11 punches (${master.map(r => r.hits).join(', ')})`, master.every(r => r.dead && r.hits >= 6 && r.hits <= 11), master.map(r => [r.dead, r.hits, r.swings]));
+check(`Stone hand at 100: the fists' 4 to 7 end it in about half the punches (${stone.map(r => r.hits).join(', ')}, against ${master.map(r => r.hits).join(', ')} at 99)`, stone.every(r => r.dead && r.hits >= 2 && r.hits * 1.5 <= Math.min(...master.map(m => m.hits))), stone.map(r => [r.dead, r.hits, r.swings]));
 check('the punches break its posture: it stands staggered for a quarter of the fight or more', runs.every(r => r.stagFrames >= r.frames * .25), runs.map(r => [r.stagFrames, r.frames]));
 check('so it starts few wind-ups and lands two blows at most a fight', runs.every(r => r.landed <= 2), runs.map(r => [r.tells, r.blows, r.landed]));
 console.log('fists over six fights:', { secs: runs.map(r => r.secs), punches: sum(r => r.swings), landedOnYou: sum(r => r.landed), staggeredShare: +(sum(r => r.stagFrames) / sum(r => r.frames)).toFixed(2) });

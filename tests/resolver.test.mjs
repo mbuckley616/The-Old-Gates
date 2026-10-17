@@ -119,6 +119,7 @@ check('through the loop, walking in a swing\'s wind-up goes at ×0.35 of the sam
 // ── the light chain: three in a row, the third ×1.3 damage and ×1.5 posture; lost after 0.4 s idle; a power blow breaks it
 const ch = await page.evaluate(() => {
   const out = {}; const EQk = { ...EQ }; for (const k in EQ) EQ[k] = null; CHAIN.n = 0; CHAIN.endG = -1e9;
+  const hand0 = SKILLS.hand; SKILLS.hand = { lv: 24, p: 0 }; /* S1051 — the chain's fists without Hard knuckles (25) and Stone hand (100), `perkarms` */
   const g0 = playClockS; const seq = []; let t = g0;
   const go = (gap, pow) => { const S = beginSwing(!!pow, () => {}); _pendingStrike = null; seq.push(S.chain); t = S.t0 + S.total + gap; playClockS = t; };
   go(.1); go(.39); go(0); go(0); go(.5); go(.2, true); go(.1);
@@ -132,7 +133,7 @@ const ch = await page.evaluate(() => {
   const raw = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1));
   const raw3 = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1) * 1.3);
   out.first = blow(1); out.third = blow(3); out.want = { first: challengeDealt(Math.max(1, raw)), third: challengeDealt(Math.max(1, raw3)) };
-  Math.random = rnd; Object.assign(EQ, EQk); return out;
+  Math.random = rnd; Object.assign(EQ, EQk); SKILLS.hand = hand0; return out;
 });
 console.log(JSON.stringify(ch));
 check('light swings chain 1, 2, 3 within 0.4 s of each other, then start again; 0.5 s idle loses it; a power blow breaks it', JSON.stringify(ch.seq) === JSON.stringify([1, 2, 3, 1, 2, 0, 1]), ch.seq);

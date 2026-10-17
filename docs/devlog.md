@@ -24035,3 +24035,45 @@ Armour's last three perks waited on combat's resolver, because the roll's weight
 ### Needs eyes
 - **Hold the line makes a full posture bar a one-blow shield**, so you are broken only by two blows in quick order. Against a single big hitter, a troll for one, that is a large change at 75.
 - **Owed:** the Blade, Blunt and Hand-to-hand perks, the last of the Arms; Guard's *Iron wall* and a heavy hit for *Hold the line*, once the heavy attacks are built.
+
+## v80 — Session 1051 — The Arms perks: Blade's Long riposte, Crossing and Clean edge; Blunt's Weight, Daze and Earthshaker; Hand-to-hand's Hard knuckles and Stone hand (skills and perks A)
+The last of the Arms perks that waited on combat's resolver. Eight of the build sheet's twelve for Blade, Blunt and Hand-to-hand are built here. Each is the weapon in hand's (`armsPerk(id, rank)`, `12-character.js`: no weapon is Hand-to-hand, a blunt `wType` is Blunt, anything else but the bow is Blade), so Blade's perks do nothing while you hold a mace. Each is read where the resolver already does that thing (`74-strikes.js`).
+- **Blade:**
+  - *Long riposte* (50): a perfect parry opens the riposte for 1.2 s, not 0.8 (`riposteSecs()`).
+  - *Crossing* (75): a perfect parry also staggers the nearest other alert foe within 3 m of you for 1.2 s and holds its next swing 2 s.
+  - *Clean edge* (100): a finisher ignores the foe's `def`, in `applyMeleeDamage`.
+- **Blunt:**
+  - *Weight* (25): a swing drains +25% posture (`armsPostureMult()`).
+  - *Daze* (75): a stagger you cause lasts 0.6 s longer (`dazeS()`), at a posture break, a broken guard and a parry.
+  - *Earthshaker* (100): the chain's third hit, when it lands, staggers every foe within 2 m of you, hull to hull, for 1.2 s, the parry's stagger (plus Daze's 0.6).
+- **Hand-to-hand:**
+  - *Hard knuckles* (25): a punch drains ×1.5 posture.
+  - *Stone hand* (100): the fists roll 4 to 7, not 2 to 3 (`STONE_HAND_ATK`).
+
+**Not built, asked as DECISION #399.** Four of the twelve name something the game does not have, or already has:
+- *Draw cut*: nothing is sheathed.
+- *Ringing*: every power hit already breaks a raised shield in one blow.
+- *Throw*: no foe can be knocked down.
+- *Catch the blade*: a foe has no weapon to lose.
+
+The question offers the small rule each needs (recommended), other perks under the same names, or waiting.
+
+**Three suites re-measured.** Their checks measured the old base rule, and a perk now changes it:
+- **`fistfight`'s trained brawl** is measured at Hand-to-hand 99, a point under Stone hand. Stone hand is fought on its own at 100, and must end the brawl in at most two-thirds of the 99's punches.
+- **`posturefloor`** pins Blunt and Blade at 24. The default character's major Blunt of 25 now carries Weight, which would stagger the Wolf in one war-hammer swing; the suite is about #211's floor, not the perk.
+- **`resolver`'s chain check** pins Hand-to-hand at 24 for the same reason.
+### Verified (headless Chromium)
+- **`perkarms`** (new), 10/10, with the dice pinned, each through the resolver against Bandits of 1,000 health and posture:
+  - A mace drains 8 posture at Blunt 24 and 10 at 25, and a sword at Blunt 100 drains 8. A punch drains 8 at Hand-to-hand 24 and 12 at 25.
+  - A punch lands 4 at 99 and 8 at 100.
+  - A parry opens 0.8 s at Blade 49, 1.2 at 50, and 0.8 with a mace.
+  - A parry at Blade 75 staggers a second Bandit 2.5 m off, but not at 74, and not one 3.6 m off.
+  - A finisher on def 20 lands 22 at Blade 99 and 42 at 100.
+  - A mace's posture break staggers 1.5 s at Blunt 74 and 2.1 at 75; a sword's 1.5.
+  - The chain's third at Blunt 100 staggers a Bandit 1.5 m behind you; not at 99, and not on the first swing.
+- **`fistfight`** 7/7 (one new check): 22 punches untrained, 8, 8 and 9 at 99, and 3 and 3 with Stone hand. **`posturefloor`** and **`resolver`** pass.
+- **Neighbours:** `counters`, `fists` (2), `fistswing`, `parrydeath`, `posture` (3), `captainguard`, `duel` (2), `perkguard`, `reachtable`, `swingblade`, `trolls` and `yardplay` pass.
+### Needs eyes
+- **Stone hand ends a brawl with a Bandit in 3 punches**, where 99 takes 8 or 9. That is more than twice the roll, since 4 to 7 is more than twice 2 to 3, and the Bandit dies before its posture matters. It is the sheet's number. A master's fist now outhits most one-handed blades of the early tiers.
+- **Earthshaker and Crossing both stagger foes you did not strike.** In a pack, a mace master's third swing stops everyone at your elbow.
+- **Owed:** DECISION #399's four; Guard's *Iron wall* with the heavy attacks. With these, the sheet's first wave of perks is in, apart from the ones that wait on a system.

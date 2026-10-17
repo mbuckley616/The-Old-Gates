@@ -160,7 +160,8 @@ const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50
   'acrobatics:75','acrobatics:100', /* S1009 — Second step, the double jump (airStepTick, 10-player.js); S1011 — Swallow's turn, the air dash (airDashStart) */
   'bow:25','bow:50','bow:75','bow:100', /* S1048 — Guard's Deflect, Bulwark and Second parry; Iron wall waits on a foe's heavy attack (FOE_ATTACKS' heavy column) */
   'guard:25','guard:50','guard:100',
-  'armour:50','armour:75','armour:100']); /* S1050 — Armour's Unbowed (playerMaxPosture), Hold the line (playerPostureHit), Second skin (startRoll) */ /* S1028 — Steady, on the aim's sway (bowSway, 10-player.js); S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
+  'armour:50','armour:75','armour:100',
+  'blade:50','blade:75','blade:100','blunt:25','blunt:75','blunt:100','hand:25','hand:100']); /* S1051 — the Arms perks that need no new system (see armsPerk) */ /* S1050 — Armour's Unbowed (playerMaxPosture), Hold the line (playerPostureHit), Second skin (startRoll) */ /* S1028 — Steady, on the aim's sway (bowSway, 10-player.js); S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
 // S976 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.
 function sneakMoveMult(){return _sneaking?(perk('stealth',25)?1:SNEAK_MOVE_MULT):1;}
@@ -210,6 +211,17 @@ function bulwarkMult(){return perk('guard',50)?1.5:1;}
 function unbowedMult(){return perk('armour',50)?1.25:1;}
 function holdTheLine(before,max,heavy){return !heavy&&perk('armour',75)&&before>max/2;}
 function rollLoad(){let w=totalCarryWeight();if(perk('armour',100)){const fit=perk('armour',25)?.5:1;for(const k of ARMOUR_SLOTS)w-=itemWeight(EQ[k])*fit;}return w;}
+// S1051 — the Arms perks, each read off the weapon in your hand (weaponSkill: none is Hand-to-hand, a blunt wType is Blunt,
+// the rest but the bow is Blade). `armsPerk('blade',50)` is true when the hand holds a blade and Blade's Long riposte is held.
+// Blade: Long riposte (50) the riposte window 0.8 → 1.2 s; Crossing (75) a perfect parry also staggers a second attacker within
+// 3 m; Clean edge (100) a finisher ignores the foe's def. Blunt: Weight (25) +25% posture; Daze (75) a stagger you cause lasts
+// 0.6 s longer; Earthshaker (100) the chain's third hit staggers every foe within 2 m of you. Hand-to-hand: Hard knuckles (25)
+// a punch drains ×1.5 posture; Stone hand (100) the fists roll 4 to 7. Draw cut, Ringing, Throw and Catch the blade wait.
+function armsPerk(id,rank){return weaponSkill(EQ.weapon)===id&&perk(id,rank);}
+const CROSSING_R=3,DAZE_S=.6,EARTHSHAKER_R=2,STONE_HAND_ATK=[4,8];
+function riposteSecs(){return armsPerk('blade',50)?1.2:RIPOSTE_S;}
+function armsPostureMult(){return armsPerk('blunt',25)?1.25:armsPerk('hand',25)?1.5:1;}
+function dazeS(t){return t+(armsPerk('blunt',75)?DAZE_S:0);}
 function secondParryOpen(){return blocking&&perk('guard',100)&&playClockS-_lastParryG<SECOND_PARRY_S;}
 // the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,
 // the 23rd skill (Michael's C on #357, Session 950): the fists' roll on its multiplier, a punch on an alert foe a use

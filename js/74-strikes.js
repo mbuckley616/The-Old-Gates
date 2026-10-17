@@ -170,7 +170,7 @@ function strikeCandidate(e){
 // The damage chain, one function a skills build can swap: the weapon's roll on the struck foe's stream, today's flat
 // level × 1.5, Might's 1% a point, the melee buffs, the power blow's ×1.8, a shield's front, the row and the chain.
 function meleeDamageChain(e,o){
-  const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];
+  const w=EQ.weapon,fa=!w&&perk('hand',100)?STONE_HAND_ATK:FISTS.atk,lo=w?w.atk[0]:fa[0],hi=w?w.atk[1]:fa[1]; // S1051 — Stone hand (Hand-to-hand 100)
   const mightMult=1+(attrEff('might')*ATTR_DMG_PER_POINT);
   const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1); // S322 — Firemoss and Caor Dubh everywhere
   const powerMult=o.isPow?POWER_DMG_MULT:1.0;
@@ -209,7 +209,7 @@ function resolvePlayerStrike(_isPow){
     if(_isPow&&e.shieldUp&&!riposteOpen(e)&&!_spent){
       if(typeof e.posture==='number'&&!isStaggered(e)){
         applyPostureDamage(e,(e.maxPosture||999),performance.now()/1000);
-        staggered.push({e,t:POSTURE_BREAK_STUN});
+        staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)}); /* S1051 — Daze (Blunt 75) */
         staggerFlash(e);
       }
       e.shieldUp=false;dropShieldGuard(e);e.alert=true;
@@ -233,9 +233,9 @@ function resolvePlayerStrike(_isPow){
     // weapon's postureMult, the chain's third ×1.5; skipped on a kill or a foe already staggered
     if(e.hp>0&&typeof e.posture==='number'&&!isStaggered(e)){
       const pm=(EQ.weapon&&EQ.weapon.postureMult)||1;
-      const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost; // S485 — a spent power blow on a guard drains as the guarded hit it is
+      const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost*armsPostureMult(); // S485 — a spent power blow on a guard drains as the guarded hit it is; S1051 — Weight (Blunt 25), Hard knuckles (Hand-to-hand 25)
       if(applyPostureDamage(e,drain,performance.now()/1000)){
-        staggered.push({e,t:POSTURE_BREAK_STUN});staggerFlash(e);
+        staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);
         showMsg(`💥 ${e.name} staggered!`,'#ffcc66');
       }
     }
@@ -252,6 +252,10 @@ function resolvePlayerStrike(_isPow){
     }
     out.push({e,dmg,info,third});
   }
+  // S1051 — Earthshaker (Blunt 100): the chain's third hit, landed, staggers every foe within 2 m of you
+  if(third&&armsPerk('blunt',100)&&out.some(o=>o.dmg>0)){const nowS=performance.now()/1000;
+    strikeFoes().forEach(f=>{if(!strikeCandidate(f)||f.hp<=0||isStaggered(f)||Math.hypot(f.x-px,f.z-pz)>EARTHSHAKER_R+hullOf(f))return;
+      staggered.push({e:f,t:dazeS(1.2)});staggerFlash(f);f.alert=true;out.push({e:f,shaken:true});});}
   document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
   setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
   return out;
@@ -320,7 +324,7 @@ function tickDrink(){
 
 function applyMeleeDamage(e, rawDmg){
   if(_exhaustedStrike)rawDmg=Math.max(1,Math.floor(rawDmg*.45)); // v80 S9 — exhausted swings land soft
-  const effDef = e.def || 0;
+  const effDef = (finisherOpen(e,performance.now()/1000)&&armsPerk('blade',100)) ? 0 : (e.def || 0); // S1051 — Clean edge (Blade 100)
   // Dormant enemies take 2× damage here too — consistent behavior across melee and magic.
   const dormantMult = e.dormant ? 2.0 : 1.0;
   // Physical damage-type resistance. Weapon's wType ('slash'/'pierce'/'blunt') looked up in enemy.resist.
@@ -422,8 +426,11 @@ function executeStrike(e, rawDmg, now){
     sndParry(); blockFlashT = 0.55; blockFlashCol = '#ffd700';
     let _parryBroke = false;
     if(typeof e.posture==='number' && !isStaggered(e)) _parryBroke = applyPostureDamage(e, (e.maxPosture||0)*RIPOSTE_POSTURE, now/1000);
-    staggered.push({e, t:_parryBroke?POSTURE_BREAK_STUN:1.2});
-    e._ripAt = now/1000; e._ripUntil = now/1000 + RIPOSTE_S;
+    staggered.push({e, t:dazeS(_parryBroke?POSTURE_BREAK_STUN:1.2)});
+    e._ripAt = now/1000; e._ripUntil = now/1000 + riposteSecs(); // S1051 — Long riposte (Blade 50), Daze (Blunt 75)
+    if(armsPerk('blade',75)){ // S1051 — Crossing (Blade 75): the nearest other alert foe within 3 m is staggered too
+      let o2=null,d2=CROSSING_R;for(const f of strikeFoes()){if(f===e||!strikeCandidate(f)||!f.alert||f.hp<=0||isStaggered(f))continue;const d=Math.hypot(f.x-px,f.z-pz);if(d<=d2){d2=d;o2=f;}}
+      if(o2){staggered.push({e:o2,t:1.2});staggerFlash(o2);o2.atkCd=Math.max(o2.atkCd||0,2.0);}}
     e.atkCd = 2.0;
     // v61d1 — Route the stagger flash through enemyBodyMesh(e) instead of
     // mesh.children[0]. Pre-v61d1 this was children[0].material assignment,
