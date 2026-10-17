@@ -23286,3 +23286,14 @@ Three causes were tried, and none reproduced in eight boots in either look, run 
 
 ### Needs eyes
 - Proof on CI over the next runs of shard 11.
+
+## v80 — Session 1055 — `beastfall`: one fall in two hundred freezes at the cap (the game's, filed; QA)
+`beastfall` failed once on b81802f (16 Oct, shard 7). One wolf settled at 4.02 s against the check's `< 4`, while the others settled in 1.2–1.8 s. QA's ledger had grouped it with `ragdoll` as "the physics' cap on a slow step". That is not what happened. The suite steps the fall at a fixed 1/60 (`tickPeople` and `tickCreatures`, then `tickRagdolls` for the seeded sixty), so the runner's speed changes nothing. What changes from boot to boot is the first fifteen deaths: they roll unseeded `Math.random`. A ragdoll (`tickRagdolls`, `js/32-people.js`) ends once it has been quiet for 15 steps, or at `R.t>4` wherever it is, so a body that never goes quiet is frozen where the cap catches it.
+
+The rate was measured with a probe: 600 deaths, six kinds, 100 each at the suite's four spots, plain, POWER and ARROW in turn, on unseeded draws. Three hit the cap: Snow Wolf 2 of 100, Dire Wolf 1 of 100, and Wolf, Ash Hound, Boar and Cave Bear none. One more took over 2.5 s. With fifteen unseeded deaths a run, that makes the suite red about one run in fourteen. Session 482 saw the same shape (a wolf creeping on a raised foreleg past the cap). The suite is right to fail, since a body frozen mid-creep is what it guards against, so it stays as it is. The finding is filed in backlog I for the bodies builder (`32`). No test changed.
+
+### Verified (headless Chromium)
+- The probe above: 3 of 600 at the cap (0.5%), every one a Snow Wolf or a Dire Wolf.
+
+### Needs eyes
+- Whether a body frozen at the cap is visible in play: a beast left on a raised leg, or tilted on a slope. The bodies builder's to look at with the inspector.
