@@ -4,6 +4,32 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelands' ruined tower house: the ways in and up (look builder, Session 1052) — DECISION #401
+**F8: the Gatelands' ruined tower house, taken by a band (look builder, Session 1052).** OG-121's card asks for "collapsed keeps with lower levels, some taken by bandits", and its lairs for "escape routes". This is the last of its six kinds. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsTowerHouse`), at `places.html?place=towerhouse`.
+- **The bawn:** a walled yard 30 by 25 m with a gateway, a breach and a round flanker at one corner.
+- **The tower:** four storeys, 16 m high, with its south-east corner fallen to the top of the vault.
+- **The hall:** the stone-vaulted ground floor, where the band camps: pallets, a fire, a table on kegs, a rack of spears.
+- **The cellar:** down a stair in the floor. It is their store.
+- **The souterrain:** a drystone passage from the cellar, under the bawn's wall, to a pit in the slope behind a thorn. It is their way out.
+
+Who the band are is the systems builder's and the quest writer's.
+
+**How does a player come at it, and how high can they go?**
+- **A. As drawn** *(recommended)*: two ways in, by the gate or from behind by the souterrain's pit, for a player who finds it under the thorn. The storeys above the vault are out of reach, as the round tower's door is (#345 A).
+- **B. As A, and a way up:** a stair in the wall's thickness from the hall to the top of the vault, open to the sky inside the standing walls. The band keeps a lookout there, so they can be seen from the yard and can see you coming.
+- **C. The pit opens only from below:** it is the band's escape, not a way in. From outside it is a slab in the grass that will not lift, and the only way in is the gate.
+
+Pictures:
+- [from the slope](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-tower.jpg)
+- [in the gateway](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-gate.jpg)
+- [the hall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-hall.jpg)
+- [the stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-stair.jpg)
+- [the cellar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-cellar.jpg)
+- [the souterrain](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-souterrain.jpg)
+- [the pit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-out.jpg)
+- [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-far.jpg)
+- [the hall, empty](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-hall-empty.jpg)
+
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
 - **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.

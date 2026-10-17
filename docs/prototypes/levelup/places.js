@@ -3314,3 +3314,170 @@ export function markUnfinishedCamp(o = {}, r = stream('unfinished')) {
   return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground,
     tent: { pole: top.map(v => +v.toFixed(3)), ridge: [top.map(v => +v.toFixed(3)), foot.map(v => +v.toFixed(3))], bundle }, fire: { x: FX, z: FZ, tip: tip.map(v => +v.toFixed(3)) }, capped, lying, road: { z: RZ, w: RW, d: RD }, paths, trees };
 }
+
+// ── the Gatelands' ruined tower house (Session 1052, card F8; OG-121's "ruined forts and settlements: collapsed keeps with lower levels,
+// some taken by bandits", and its lairs' "escape routes"). A lord's tower of the island's own kind, four storeys of rubble in a walled
+// bawn, long abandoned: its south-east corner has fallen to the vault, the floors above are gone to their corbels and the sky shows through
+// the windows. The stone vault over the ground floor still holds, and under it a band has made its camp; a stair in the floor goes down to
+// the cellar where they keep what they take, and from the cellar a souterrain runs west under the bawn's wall to a pit in the slope behind
+// a thorn. Who they are is the systems builder's and the quest writer's: the place shows only that someone holds it. A metre a unit, the
+// bawn level at y 0, the gate on +z:
+//   - the bawn: a rubble wall 0.9 m thick and 3.2 m high round a yard 30 by 25 m, a gateway of 3 m in its south side, a breach in its east
+//     side; a round flanker at its south-west corner, standing to 5 m; inside, a lean-to of poles and hides against the west wall, a cart
+//     with a broken wheel, a fighting platform by the gate with its ladder, a hurdle dragged aside from the gateway;
+//   - the tower: 11 by 8.5 m outside, walls 1.5 m thick, 16 m to its ragged head on the north and the west, fallen to 6.6 m over the
+//     south-east corner, its stones heaped below; a round-headed door of 1.2 by 2.6 m in dressed stone on the south, slits to the ground
+//     floor, windows to the three storeys above, the corbels of the lost floors;
+//   - the ground floor: 8 by 5.5 m under a barrel vault springing at 3 m to 5.75 m, flagged at 0.1; the camp: three pallets of straw, a fire
+//     on the flags with a pot on its tripod, a table of boards on two kegs with a bench, a rack of spears and a bow, plunder in the corner;
+//     the stair's well in the floor along the north wall, 4.7 by 1.3 m, a low parapet on its open side;
+//   - the stair: 16 rises of 0.194 m on treads of 0.28 m, 1.3 m wide, west from the floor (0.1) down to the cellar (-3.0);
+//   - the cellar: the tower's whole floor again under its flags and two beams (2.25 m clear under them); the store: crates, kegs, sacks and
+//     a strongbox;
+//   - the souterrain: a drystone passage 1.4 m wide and 2.2 m high under lintels, out through the cellar's west wall at z -5 and 16.6 m
+//     west, under the bawn's wall, to its own stair up a stone-lined pit in the slope 5 m outside the bawn, a thorn over it and its cover
+//     slab dragged aside.
+//   o.held (default true): the band is there, the fire burning and the lanterns lit; false, the camp is cold and dark.
+//   -> { group, tris, draws, own, top, ground(x, z), path ([x, y, z, kind]: kind 's' a stair or a step, 'g' on the land), held, lamps
+//        ([x, y, z]), fire [x, y, z] | null, tower { x0, x1, z0, z1, t, high, fallen, door { x, w, h } }, hall { x0, x1, z0, z1, floor,
+//        spring, crown }, well { x0, x1, z0, z1 }, stair { n, rise, run, x0, x1, z, top, bottom }, cellar { floor, ceil, beam },
+//        souterrain { z, w, h, x0, x1, floor }, exit { x0, x1, n, rise, run, top }, bawn { x0, x1, z0, z1, t, gate { x, w }, breach } }
+export function gatelandsTowerHouse(o = {}, r = stream('towerhouse')) {
+  const std = (c, ro = .9) => new THREE.MeshStandardMaterial({ color: c, roughness: ro }), held = o.held !== false, key = String(o.key || 'towerhouse');
+  const M = { ...lairMats(), ...abbeyMats(), straw: mat('thatch', { ns: .7, color: 0xc8b07a, rough: 1 }), blanket: std(0x6a4a3a, 1), hide: std(0x6a5038, .95), char: std(0x1a1614, 1), vault: abbeyMats().tower, tower: mat('cobble', { ns: 1.3, color: 0xdcd8cc, rough: .95 }), sack: std(0xa89a7c, 1) };
+  const B = new Map(), V = (x, y) => new THREE.Vector2(x, y);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const bx = (k, x0, x1, y0, y1, z0, z1, uv = .5) => put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, 0, 0, 0, uv);
+  const rod = (k, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = A.add(Bv).multiplyScalar(.5); put(g, k, m.x, m.y, m.z); };
+  const ph = Array.from({ length: 12 }, () => r() * 9), rag = (u, s = 1) => s * (.12 * Math.sin(u * 2.3 + ph[0]) + .08 * Math.sin(u * 5.1 + ph[1]) + .05 * Math.sin(u * 11.7 + ph[2]));
+  const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  // the plan: the tower's outside (X0..X1, Z0..Z1), its walls T thick; the hall's floor FL; the souterrain along z SZ at the cellar's floor CF
+  const X0 = -5.5, X1 = 5.5, Z0 = -10.25, Z1 = -1.75, T = 1.5, IX0 = X0 + T, IX1 = X1 - T, IZ0 = Z0 + T, IZ1 = Z1 - T, FL = .1, VS = 3.0, VR = (IZ1 - IZ0) / 2, VZ = (IZ0 + IZ1) / 2, FY1 = 6.3;
+  const CF = -3.0, CC = -.5, SZ = -5.0, SW = .7, SH = 2.2, SX1 = -20.6, BX = 15, BZ0 = -13, BZ1 = 12, BT = .9, GX = 1.5, GW = 3.0;
+  // the land: level over the bawn and 4.5 m round it, then falling away and lumpy; holes left for the tower's floor and the souterrain's pit
+  const F = field(stream(key + ':land'), .5), RX0 = -BX - 4.5, RX1 = BX + 4.5, RZ0 = BZ0 - 4.5, RZ1 = BZ1 + 4.5;
+  const ground = (x, z) => { const dx = Math.max(RX0 - x, 0, x - RX1), dz = Math.max(RZ0 - z, 0, z - RZ1), d = Math.hypot(dx, dz); if (d <= 0) return 0; return -d * .12 + F(x, 0, z)[1] * Math.min(1, d / 8) * 1.4; };
+  const PX0 = -25, PX1 = -20, PZ0 = SZ - 1, PZ1 = SZ + 1;
+  { const S = 1, N = 110, O = -55, pos = [], idx = [];
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) { const x = O + i * S, z = O + j * S; pos.push(x, ground(x, z), z); }
+    const hole = (x0, z0, X0_, X1_, Z0_, Z1_) => x0 >= X0_ - 1e-6 && x0 + S <= X1_ + 1e-6 && z0 >= Z0_ - 1e-6 && z0 + S <= Z1_ + 1e-6;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const x0 = O + i * S, z0 = O + j * S; if (hole(x0, z0, X0, X1, Z0, Z1) || hole(x0, z0, PX0, PX1, PZ0, PZ1)) continue; const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, 'turf', 0, 0, 0, 0, 0, 0, .5); }
+  // a wall of rubble, as the abbey's: its face in (u, y), u from 0 to L, its head top(u), T thick about z, at (x, z) turned ry (0 along +x,
+  // -pi/2 along +z); holes whose head would stand within 0.4 m of the wall's head are left out (the wall has fallen through them)
+  const archHole = (uc, w, sill, spring) => { const h = [V(uc - w / 2, sill), V(uc + w / 2, sill)]; for (let s = 0; s <= 12; s++) { const a = s / 12 * Math.PI; h.push(V(uc + Math.cos(a) * w / 2, spring + Math.sin(a) * w / 2)); } return { p: new THREE.Path(h), u: uc, top: spring + w / 2 }; };
+  const rectHole = (uc, w, sill, h) => ({ p: new THREE.Path([V(uc - w / 2, sill), V(uc + w / 2, sill), V(uc + w / 2, sill + h), V(uc - w / 2, sill + h)]), u: uc, top: sill + h, w });
+  const wall = (L, Tk, top, holes, k, x, z, ry, y0 = -.5) => { const pts = [V(0, y0), V(L, y0)], n = Math.max(2, Math.ceil(L / .3)); for (let s = n; s >= 0; s--) { const u = L * s / n; pts.push(V(u, top(u))); }
+    const sh = new THREE.Shape(pts); for (const h of holes) if (Math.min(top(h.u - (h.w || .6) / 2 - .2), top(h.u), top(h.u + (h.w || .6) / 2 + .2)) > h.top + .4) sh.holes.push(h.p);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: Tk, bevelEnabled: false, curveSegments: 12 }); g.translate(0, 0, -Tk / 2); put(g, k, x, 0, z, 0, ry, 0, .8); };
+  const dressArch = (x, z, ry, w, sill, spring, Tk) => { const sh = new THREE.Shape(), R = w / 2; sh.absarc(0, spring, R + .28, 0, Math.PI, false); sh.absarc(0, spring, R, Math.PI, 0, true);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: Tk + .06, bevelEnabled: false, curveSegments: 16 }); g.translate(0, 0, -(Tk + .06) / 2); put(g, 'dress', x, 0, z, 0, ry, 0, .5);
+    for (const e of [-1, 1]) { const j = new THREE.BoxGeometry(.28, spring - sill, Tk + .06); j.translate(e * (R + .14), (sill + spring) / 2, 0); put(j, 'dress', x, 0, z, 0, ry, 0, .5); } };
+  const stone = (x, y, z, s, k = 'rubble') => put(roughen(new RoundedBoxGeometry(s * (1 + r() * .6), s * (.5 + r() * .3), s * (.7 + r() * .4), 2, s * .12), r, s * .06, 2), k, x, y + s * .2, z, (r() - .5) * .5, r() * 3, (r() - .5) * .5);
+  // the tower's walls: north and south the full 11 m, east and west between them; the south-east corner fallen to just over the vault
+  const HI = 16.0, FALL = 6.6, fallS = u => sm(5.2, 8.6, u) * (HI - .4 - FALL + rag(u * 2.7 + 5, 1.6)), fallE = u => sm(1.6, 4.4, u) * (HI - .8 - FALL + rag(u * 2.9 + 1, 1.6));
+  const winds = (L, us) => us.flatMap(u => [rectHole(u, .7, 7.0, 1.25), rectHole(u, .7, 10.2, 1.25), rectHole(u, .6, 13.3, 1.1)]);
+  const DX = 1.5, DW = 1.2, DSP = 2.0;
+  wall(X1 - X0, T, u => HI - .4 + rag(u + 3) - fallS(u), [archHole(DX - X0, DW, 0, DSP), archHole(3.0, .22, 1.0, 1.9), ...winds(X1 - X0, [3.0, 7.6])], 'tower', X0, Z1 - T / 2, 0) /* the south wall and its door */;
+  dressArch(DX, Z1 - T / 2, 0, DW, 0, DSP, T); bx('dress', DX - DW / 2, DX + DW / 2, -.2, FL, Z1 - T, Z1) /* the threshold */;
+  wall(X1 - X0, T, u => HI + rag(u + 9), [archHole(5.5, .22, 1.0, 1.9), ...winds(X1 - X0, [3.4, 7.8])], 'tower', X0, Z0 + T / 2, 0) /* the north wall */;
+  wall(IZ1 - IZ0, T, u => HI - .2 + rag(u + 13), [archHole(2.75, .22, 1.0, 1.9), ...winds(IZ1 - IZ0, [2.75])], 'tower', X0 + T / 2, IZ0, -Math.PI / 2) /* the west wall */;
+  wall(IZ1 - IZ0, T, u => HI - .8 + rag(u + 17) - fallE(u), winds(IZ1 - IZ0, [1.6]), 'tower', X1 - T / 2, IZ0, -Math.PI / 2) /* the east wall */;
+  // the vault over the hall: the spandrels and the first floor's bed as one solid, its soffit a half round across the hall's width
+  { const sh = new THREE.Shape(); sh.moveTo(-VR, VS); sh.lineTo(-VR, FY1); sh.lineTo(VR, FY1); sh.lineTo(VR, VS); sh.absarc(0, VS, VR, 0, Math.PI, false);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: IX1 - IX0, bevelEnabled: false, curveSegments: 28 }); g.translate(0, 0, -(IX1 - IX0) / 2); put(g, 'vault', 0, 0, VZ, 0, Math.PI / 2, 0, .6);
+    bx('turf', IX0, IX1, FY1, FY1 + .12, IZ0, IZ1); for (let k = 0; k < 16; k++) stone(IX0 + .6 + r() * (IX1 - IX0 - 1.2), FY1 + .1, IZ0 + .5 + r() * (IZ1 - IZ0 - 1), .35 + r() * .3, 'tower'); }
+  // the corbels of the lost floors, along the north and the south walls inside, where the wall still stands over them
+  for (const y of [9.6, 12.7]) for (let x = IX0 + .6; x < IX1 - .3; x += 1.3) for (const [z, f] of [[IZ0, 0], [IZ1, 1]]) { if (f && HI - .4 - fallS(x - X0) < y + .6) continue; bx('tower', x - .17, x + .17, y - .3, y, f ? z - .4 : z, f ? z : z + .4); }
+  // the hall's floor: flags on the cellar's ceiling, the stair's well left open along the north wall, a parapet on its open side
+  const WX0 = IX0 + .2, WX1 = .9, WZ0 = IZ0, WZ1 = IZ0 + 1.3;
+  bx('flag', IX0, IX1, CC, FL, WZ1, IZ1); bx('flag', WX1, IX1, CC, FL, IZ0, WZ1); bx('flag', IX0, WX0, CC, FL, IZ0, WZ1);
+  bx('dress', WX0, WX1, FL, FL + .85, WZ1, WZ1 + .25);
+  // the stair: 16 rises, the treads solid to the cellar's floor
+  const NR = 16, RISE = (FL - CF) / NR, RUN = .28, SZc = (WZ0 + WZ1) / 2;
+  for (let k = 1; k < NR; k++) bx('flag', WX1 - k * RUN, WX1 - (k - 1) * RUN, CF, FL - k * RISE, WZ0, WZ1);
+  // the cellar: its floor, its walls round the tower's footprint (the west one broken through to the souterrain), two beams under the flags
+  bx('flag', IX0, IX1, CF - .3, CF, IZ0, IZ1); bx('dry', X0, X1, CF - .3, CC, Z0, IZ0); bx('dry', X0, X1, CF - .3, CC, IZ1, Z1); bx('dry', IX1, X1, CF - .3, CC, IZ0, IZ1);
+  bx('dry', X0, IX0, CF - .3, CC, IZ0, SZ - SW); bx('dry', X0, IX0, CF - .3, CC, SZ + SW, IZ1); bx('dry', X0, IX0, CF + SH, CC, SZ - SW, SZ + SW);
+  const BEAM = CC - .25; for (const x of [2.0, 3.4]) bx('timber', x - .13, x + .13, BEAM, CC, IZ0, IZ1);
+  // the souterrain: drystone sides, lintels over, a flagged floor, from the cellar's wall to the pit
+  bx('flag', SX1, IX0, CF - .3, CF, SZ - SW, SZ + SW);
+  for (const e of [-1, 1]) bx('dry', SX1, X0, CF - .3, CF + SH + .2, SZ + e * SW, SZ + e * (SW + .5), .45);
+  for (let x = X0; x > SX1 + .01; x -= .6) bx('boulder', Math.max(SX1, x - .62), x, CF + SH, CF + SH + .2, SZ - SW - .5, SZ + SW + .5);
+  // the pit: the souterrain's own stair up to a landing at the land's height, lined to 0.25 m over the land, a head wall over the lintels
+  const EY = ground(PX0, SZ), ER = EY - CF, EN = Math.ceil(ER / .2), ERISE = ER / EN, EX1 = SX1 - (EN - 1) * RUN, EX0 = PX0;
+  for (let k = 1; k < EN; k++) bx('flag', SX1 - k * RUN, SX1 - (k - 1) * RUN, CF - .3, CF + k * ERISE, SZ - SW, SZ + SW);
+  bx('flag', EX0, EX1, CF - .3, EY, SZ - SW, SZ + SW);
+  for (const e of [-1, 1]) wall(SX1 - EX0, .6, u => ground(EX0 + u, SZ + e * (SW + .6)) + .25, [], 'dry', EX0, SZ + e * (SW + .3), 0, CF - .3);
+  bx('dry', SX1, PX1 + .3, CF + SH, Math.max(ground(SX1, SZ), ground(PX1 + .3, SZ)) + .25, SZ - SW - .6, SZ + SW + .6);
+  put(new THREE.BoxGeometry(1.5, .14, 1.1), 'boulder', EX1 - .6, ground(EX1 - .6, SZ + 2.0) + .2, SZ + 2.0, .18, .4, .1) /* the cover slab, dragged aside */;
+  // the bawn: four walls of rubble, the gateway in the south, a breach in the east; a round flanker at the south-west corner
+  const BH = 3.2, BRK = [-1.5, 2.5], brk = u => { const c = (BRK[0] + BRK[1]) / 2 - BZ0, w = (BRK[1] - BRK[0]) / 2; return Math.max(0, 1 - (Math.abs(u - c) / w) ** 2) ** .5 * (BH - .5 + rag(u * 3, 1.5)); };
+  wall(2 * (BX + BT), BT, u => BH + rag(u + 21), [], 'rubble', -BX - BT, BZ0 - BT / 2, 0);
+  wall(GX - GW / 2 + BX + BT, BT, u => BH + rag(u + 25) + (u > GX - GW / 2 + BX + BT - 1 ? .4 : 0), [], 'rubble', -BX - BT, BZ1 + BT / 2, 0);
+  wall(BX + BT - GX - GW / 2, BT, u => BH + rag(u + 29) + (u < 1 ? .4 : 0), [], 'rubble', GX + GW / 2, BZ1 + BT / 2, 0);
+  wall(BZ1 - BZ0, BT, u => BH + rag(u + 33), [], 'rubble', -BX - BT / 2, BZ0, -Math.PI / 2);
+  wall(BZ1 - BZ0, BT, u => BH + rag(u + 37) - brk(u), [], 'rubble', BX + BT / 2, BZ0, -Math.PI / 2);
+  for (let k = 0; k < 22; k++) { const z = BRK[0] + r() * (BRK[1] - BRK[0]), x = BX + BT / 2 + (r() > .5 ? 1 : -1) * (.8 + r() * 2.4); stone(x, ground(x, z), z, .3 + r() * .25); }
+  { const cx = -BX - BT / 2, cz = BZ1 + BT / 2, ro = 2.6, ri = 1.6, N = 48, pos = [], P = (rr, a, y) => [cx + Math.sin(a) * rr, y, cz + Math.cos(a) * rr], ring = [];
+    for (let i = 0; i <= N; i++) { const a = i / N * Math.PI * 2, h = 5.0 + .35 * Math.sin(a * 3 + ph[7]) + rag(a * 4, 1.2); ring.push([P(ro, a, -.5), P(ro - .1, a, h), P(ri, a, h), P(ri, a, -.5)]); }
+    const tri = (a, b, c) => pos.push(...a, ...b, ...c), quad = (a, b, c, d) => { tri(a, b, c); tri(a, c, d); };
+    for (let i = 0; i < N; i++) { const [ob, ot, it, ib] = ring[i], [OB, OT, IT, IB] = ring[i + 1]; quad(ob, OB, OT, ot); quad(ot, OT, IT, it); quad(ib, it, IT, IB); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'rubble', 0, 0, 0, 0, 0, 0, .55); }
+  // the fallen corner's stones, heaped outside it and spilled toward the bawn's east wall
+  for (let k = 0; k < 46; k++) { const a = r() * Math.PI * .5, d = Math.sqrt(r()) * 4.2, x = X1 + .2 + Math.cos(a) * d, z = Z1 + .2 + Math.sin(a) * d * .9 - .8, s = .3 + r() * .4; stone(x, Math.max(0, (4.2 - d) * .35 - .2), z, s, 'tower'); }
+  // the camp in the hall: three pallets, the fire on the flags with its pot, a table on kegs and a bench, the rack, the plunder
+  const pallet = (x, z, ry, y0 = FL) => { put(new THREE.BoxGeometry(.85, .14, 1.9), 'straw', x, y0 + .07, z, 0, ry); put(new THREE.BoxGeometry(.8, .05, 1.1), 'blanket', x + Math.sin(ry) * .35, y0 + .16, z + Math.cos(ry) * .35, 0, ry + .05); };
+  pallet(IX0 + .45, SZ - .2, 0); pallet(-2.4, IZ1 - .45, Math.PI / 2); pallet(-.25, IZ1 - .45, Math.PI / 2 + .06);
+  const FXp = -1.6, FZp = -5.7; for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2; stone(FXp + Math.sin(a) * .5, FL - .08, FZp + Math.cos(a) * .5, .18, 'boulder'); }
+  bx('char', FXp - .35, FXp + .35, FL, FL + .03, FZp - .35, FZp + .35);
+  for (let k = 0; k < 5; k++) put(new THREE.CylinderGeometry(.045, .055, .7, 6).rotateZ(Math.PI / 2), held ? 'horn' : 'char', FXp, FL + .09, FZp, 0, k * 1.25, .12);
+  if (held) for (let k = 0; k < 3; k++) put(new THREE.ConeGeometry(.12 - k * .025, .4 - k * .08, 6), 'flame', FXp + (k - 1) * .09, FL + .3, FZp + (k % 2 - .5) * .08, 0, k);
+  for (let k = 0; k < 3; k++) { const a = k / 3 * Math.PI * 2; rod('iron', [FXp + Math.sin(a) * .55, FL, FZp + Math.cos(a) * .55], [FXp, FL + 1.0, FZp], .012, 4); }
+  put(new THREE.SphereGeometry(.17, 10, 6, 0, Math.PI * 2, Math.PI * .35, Math.PI * .65), 'iron', FXp, FL + .55, FZp); rod('iron', [FXp, FL + .62, FZp], [FXp, FL + 1.0, FZp], .006, 3);
+  const TXp = 2.95, TZp = -5.0; for (const dz of [-.6, .6]) put(new THREE.CylinderGeometry(.24, .21, .72, 10), 'keg', TXp, FL + .36, TZp + dz); bx('plank', TXp - .42, TXp + .42, FL + .72, FL + .78, TZp - 1.0, TZp + 1.0);
+  bx('plank', TXp - .95, TXp - .65, FL + .4, FL + .45, TZp - .8, TZp + .8); for (const dz of [-.65, .65]) bx('timber', TXp - .88, TXp - .72, FL, FL + .4, TZp + dz - .06, TZp + dz + .06);
+  bx('timber', IX1 - .25, IX1 - .1, FL + .9, FL + 1.0, -7.7, -6.1); for (let k = 0; k < 5; k++) { const z = -7.55 + k * .36; rod('timber', [IX1 - .55, FL, z], [IX1 - .08, FL + 2.0, z + .05], .018, 5); if (k < 4) put(new THREE.ConeGeometry(.035, .22, 4), 'iron', IX1 - .07, FL + 2.12, z + .05, 0, 0, -.23); }
+  { const bow = new THREE.TorusGeometry(.75, .015, 4, 20, Math.PI * .8); put(bow, 'timber', IX1 - .12, FL + 1.25, -6.25, 0, Math.PI / 2, Math.PI * .1 - .2); }
+  for (const [x, z, s] of [[3.4, -8.25, .6], [2.75, -8.3, .5], [3.45, -7.65, .45]]) put(new THREE.BoxGeometry(s, s * .8, s), 'crate', x, FL + s * .4, z, 0, r() * .4);
+  put(new THREE.BoxGeometry(.55, .45, .38), 'crate', 3.3, FL + .48 + .23, -8.2, 0, .2); for (let k = 0; k < 3; k++) put(roughen(new THREE.SphereGeometry(.28, 8, 6).scale(.9, 1.4, .8), r, .03), 'sack', 2.45 + k * .32, FL + .36, -7.5 - (k % 2) * .25);
+  // the lanterns, lit while the band is there: on a peg by the door inside, and in the cellar on its south wall by the stair's foot
+  const lamps = [], lamp = (x, y, z, ry) => { bx('iron', x - .02, x + .02, y + .2, y + .24, z - .02, z + .02); put(new THREE.BoxGeometry(.15, .22, .15), held ? 'horn' : 'iron', x, y, z, 0, ry); put(new THREE.ConeGeometry(.11, .1, 4).rotateY(Math.PI / 4), 'iron', x, y + .16, z, 0, ry); if (held) lamps.push([x, y, z]); };
+  lamp(.2, 2.05, IZ1 - .14, 0); lamp(-2.0, CF + 1.85, IZ1 - .14, 0); lamp(-12.5, CF + 1.95, SZ + SW - .14, 0) /* in the souterrain, halfway */;
+  // the cellar's store: crates, kegs and sacks against the east wall, the strongbox
+  for (const [x, z, s] of [[3.5, -8.3, .7], [3.55, -7.5, .6], [2.8, -8.35, .55], [3.5, -4.0, .65], [3.55, -3.75 - .7, .5]]) put(new THREE.BoxGeometry(s, s * .8, s), 'crate', x, CF + s * .4, z, 0, r() * .3);
+  for (const [x, z] of [[3.5, -6.6], [3.5, -6.05], [2.9, -6.35]]) put(new THREE.CylinderGeometry(.26, .23, .75, 10), 'keg', x, CF + .375, z);
+  for (let k = 0; k < 5; k++) put(roughen(new THREE.SphereGeometry(.3, 8, 6).scale(.9, 1.4, .8), r, .03), 'sack', 1.6 + (k % 3) * .55, CF + .4, -3.7 - Math.floor(k / 3) * .55);
+  { const cx = 2.3, cz = -5.6; bx('keg', cx - .45, cx + .45, CF, CF + .45, cz - .3, cz + .3); put(new THREE.CylinderGeometry(.3, .3, .9, 12, 1, false, 0, Math.PI).rotateZ(Math.PI / 2), 'keg', cx, CF + .45, cz, 0, 0, 0);
+    for (const dx of [-.3, .3]) bx('iron', cx + dx - .03, cx + dx + .03, CF, CF + .76, cz - .31, cz + .31); bx('iron', cx - .06, cx + .06, CF + .3, CF + .44, cz + .3, cz + .33); }
+  // the bawn's yard: a lean-to of poles and hides against the west wall, a cart with a broken wheel, the fighting platform and its ladder,
+  // the hurdle dragged from the gateway
+  { const x0 = -BX, x1 = -BX + 2.6, z0 = 1, z1 = 5.6; for (const z of [z0, (z0 + z1) / 2, z1]) { rod('timber', [x1, 0, z], [x1, 1.8, z], .05); rod('timber', [x1 - .1, 1.8, z], [x0 + .05, 2.6, z], .04); }
+    put(new THREE.BoxGeometry(Math.hypot(x1 - x0, .8) + .1, .04, z1 - z0 + .4), 'hide', (x0 + x1) / 2, 2.25, (z0 + z1) / 2, 0, 0, -Math.atan2(.8, x1 - x0)); pallet(x0 + 1.0, (z0 + z1) / 2, 0, 0); }
+  { const cx = 9.5, cz = 4.5, cry = .5, rot = (u, w) => [cx + Math.cos(cry) * u + Math.sin(cry) * w, cz - Math.sin(cry) * u + Math.cos(cry) * w];
+    put(new THREE.BoxGeometry(2.4, .12, 1.3), 'plank', cx, .72, cz, 0, cry, -.12); for (const w of [-.62, .62]) { const [x, z] = rot(0, w); put(new THREE.BoxGeometry(2.4, .35, .05), 'plank', x, .92, z, 0, cry, -.12); }
+    { const [x, z] = rot(.2, .78); put(new THREE.CylinderGeometry(.55, .55, .08, 14).rotateX(Math.PI / 2), 'timber', x, .55, z, 0, cry); }
+    { const [x, z] = rot(.6, -2.2); put(new THREE.CylinderGeometry(.55, .55, .08, 14), 'timber', x, .05, z, 0, cry); }
+    for (const w of [-.45, .45]) { const [a, b] = rot(1.2, w), [c, d] = rot(3.2, w * .8); rod('timber', [a, .72, b], [c, .05, d], .045); } }
+  { const px0 = -6.5, px1 = -1.6, pz0 = BZ1 - 1.6, pz1 = BZ1, PY = 1.9; for (const x of [px0 + .2, (px0 + px1) / 2, px1 - .2]) for (const z of [pz0 + .15, pz1 - .1]) rod('timber', [x, 0, z], [x, PY, z], .07);
+    bx('plank', px0, px1, PY, PY + .08, pz0, pz1); for (const s of [-1, 1]) rod('timber', [-4.2 + s * .22, 0, pz0 - .95], [-4.2 + s * .22, PY + .9, pz0 + .05], .035);
+    for (let k = 1; k < 8; k++) { const t = k / 8; rod('timber', [-4.42, (PY + .9) * t, pz0 - .95 + 1.0 * t], [-3.98, (PY + .9) * t, pz0 - .95 + 1.0 * t], .025, 4); } }
+  { const hx = GX + GW / 2 + .4, hz = BZ1 - .35; put(new THREE.BoxGeometry(2.0, 1.2, .08), 'basket', hx + 1.0, .58, hz, -.22, .05); }
+  // the trees: the thorn over the souterrain's pit, ash and thorn on the slopes
+  const tree = (x, z, h, w, k) => { const y = ground(x, z); put(new THREE.CylinderGeometry(w * .08, w * .12, h * .5, 7), 'bark', x, y + h * .25, z); for (let q = 0; q < 4; q++) { const s = w * (.5 + r() * .25), g = roughen(new THREE.IcosahedronGeometry(s, 2), r, s * .14, 1.3); g.scale(1, .75, 1); put(g, k, x + (r() - .5) * w * .7, y + h * .55 + r() * h * .3, z + (r() - .5) * w * .7, 0, r() * 3, 0, .4); } };
+  tree(-22.6, SZ - 2.5, 2.2, 1.7, 'leaf'); tree(-27.5, SZ + 5.5, 2.0, 1.5, 'leaf');
+  for (const [x, z] of [[-30, 22], [26, -24], [30, 20], [-8, -24], [12, 28]]) tree(x, z, 9 + r() * 3, 3.0, 'leaf');
+  // the walk: up the slope to the gate, across the yard, in at the door, round to the stair's head, down it, along the cellar's west side,
+  // out through the souterrain, up its stair and out onto the slope
+  const path = [[GX, ground(GX, 24), 24, 'g'], [GX, 0, 16.5, 'g'], [GX, 0, -1.2], [GX, FL, Z1 - .4, 's'], [GX, FL, -5.6], [1.3, FL, SZc], [WX1 + .05, FL, SZc],
+    [WX1 - (NR - 1) * RUN - .15, CF, SZc, 's'], [IX0 + .5, CF, SZ], [X0, CF, SZ], [SX1, CF, SZ], [EX1, EY, SZ, 's'], [EX0, EY, SZ], [EX0 - 3, ground(EX0 - 3, SZ), SZ, 'g']];
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'flame', 'horn'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground, path, held, lamps, fire: held ? [FXp, FL + .3, FZp] : null,
+    tower: { x0: X0, x1: X1, z0: Z0, z1: Z1, t: T, high: HI, fallen: FALL, door: { x: DX, w: DW, h: DSP + DW / 2 } }, hall: { x0: IX0, x1: IX1, z0: IZ0, z1: IZ1, floor: FL, spring: VS, crown: VS + VR },
+    well: { x0: WX0, x1: WX1, z0: WZ0, z1: WZ1 }, stair: { n: NR, rise: RISE, run: RUN, x0: WX1 - (NR - 1) * RUN, x1: WX1, z: SZc, top: FL, bottom: CF }, cellar: { floor: CF, ceil: CC, beam: BEAM },
+    souterrain: { z: SZ, w: 2 * SW, h: SH, x0: SX1, x1: IX0, floor: CF }, exit: { x0: EX0, x1: SX1, n: EN, rise: ERISE, run: RUN, top: EY },
+    bawn: { x0: -BX, x1: BX, z0: BZ0, z1: BZ1, t: BT, gate: { x: GX, w: GW }, breach: BRK } };
+}

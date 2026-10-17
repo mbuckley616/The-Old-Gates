@@ -23489,3 +23489,36 @@ A correction made during the session: the first pictures showed a sliver of the 
 - **The main's peak stands 17.6 m up**, over a 22 m hull. The lateens make her read more as a big caravel than as a galleon, which is what #347 A asks, but the class may want its topsail-high look back.
 - **Three stars:** one on the fore course and one on each lateen, whose map is laid out about each sail's middle (the caravel shows one per lateen too). The topsail and the spritsail are plain. One star, on the main alone, would read quieter.
 - **#347 is built out.** All five classes in all three dresses wait on F11's parents in v2-scope §3 to go into the game.
+
+## v80 — Session 1052 — Card F8: the Gatelands' ruined tower house, taken by a band (prototype only)
+OG-121's card names six kinds of place that are not gates. One of them was still unbuilt: "ruined forts and settlements: collapsed keeps with lower levels, some taken by bandits". Its lairs add "escape routes". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait, and this session touches only the prototypes: `places.js`, the new `places-towerhouse-view.js`, `places-view.js` and `places.check.mjs`. It is `gatelandsTowerHouse` in `docs/prototypes/levelup/places.js`, at `places.html?place=towerhouse`.
+
+The keep is the island's own kind, a tower house in its bawn, built to the person at a metre a unit:
+- **The bawn:** a rubble wall 0.9 m thick and 3.2 m high round a yard 30 by 25 m, with a gateway of 3 m on the south and a breach on the east. A round flanker at the south-west corner stands to 5 m. In the yard are a lean-to of poles and hides against the west wall, a cart with a broken wheel, a fighting platform by the gate with its ladder, and a hurdle dragged aside from the gateway.
+- **The tower:** 11 by 8.5 m, walls 1.5 m thick, 16 m to its ragged head on the north and west. The south-east corner has fallen to 6.6 m, just over the vault's back, and its stones lie heaped below. The door is round-headed, 1.2 by 2.6 m in dressed stone. There are slits to the ground floor, windows to the three storeys above, and the corbels of the lost floors at 9.6 and 12.7 m. The storeys above the vault are out of reach, as #345 A left the round tower's door.
+- **The hall:** 8 by 5.5 m under a barrel vault springing at 3 m to 5.75 m, flagged. It holds the band's camp: three straw pallets, a fire on the flags with a pot on a tripod, a table of boards on two kegs with a bench, a rack of spears and a bow, and plunder in the corner. The stair's well is open along the north wall, 4.7 by 1.3 m, with a parapet on its open side.
+- **The cellar:** down 16 rises of 0.194 m on treads of 0.28 m. It is the tower's whole floor again, 2.5 m under the flags (2.25 m under the two beams). It is the band's store: crates, kegs, sacks and a strongbox.
+- **The souterrain:** the Gatelands' own underground passage, the escape route. It is drystone walls under lintels, 1.4 m wide and 2.2 m high, broken out through the cellar's west wall. It runs 15 m west under the bawn's wall, 0.5 m or more under the turf, with a lantern halfway. It ends in a stair of its own, 12 or 13 rises up a stone-lined pit in the slope 5 m outside the bawn, under a thorn, with its cover slab dragged aside.
+- **`o.held`** (the default): the band is there, the fire burning and three lanterns lit. False (`&empty`): the camp is cold and dark, and inside only your torch lights it.
+
+Who the band are, what they took and whether they fight is the systems builder's and the quest writer's. The place only shows that someone holds it. It is 64,300 triangles in 23 meshes.
+
+Two corrections made during the session. First, the souterrain's floor stopped at the tower's outer face, leaving the 1.5 m through the cellar's wall without a floor; the check's walk found it. Second, the stair's foot had only 0.4 m of floor before the cellar's west wall. The well now runs 0.3 m further east, which leaves 0.7 m at the foot.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: all pass.** Two render checks and seven builds checks are new.
+  - **Renders:** the `tower` view and the empty `hall` render with no page errors.
+  - **The builds:** 3 keys, each the same twice: 64,344 to 64,356 triangles in 23 meshes.
+  - **The walk:** 264 quarter-metres from the slope through the gateway and the door, round to the stair's head, down to the cellar, out along the souterrain and up its pit onto the slope. Every point has a floor on its line, no step is over 0.198 m, there are 2.2 m of headroom or more, and 0.51 m clear at the hip and the head.
+  - **The stairs:** 16 rises of 0.194 m down to the cellar, and 12 to 13 rises of 0.19 to 0.198 m up the pit, measured on the treads.
+  - **Openings:** the door is 1.2 m wide and 2.5 m clear over the floor, and the gateway is 3 m.
+  - **The vault:** over all 60 points of the hall outside the well, and over the well too, its soffit 4.03 to 5.74 m up.
+  - **The ruin:** the north-west corner stands to 15.91 to 15.97 m, and the south-east has fallen to 6.58 to 6.61 m, over the vault's back.
+  - **The souterrain:** its lintels are 2.2 m over its floor all along and 0.51 m or more under the land, the pit is open to the sky, and 17.1 m of it is in sight from the cellar's door.
+  - **Lights:** held, the fire and three lanterns are lit; empty, nothing is lit.
+- **Pictures:** `places-towerhouse-tower.jpg`, `-gate`, `-hall`, `-stair`, `-cellar`, `-souterrain`, `-out`, `-far` and `-hall-empty`.
+### Needs eyes
+- **The ways in and up are asked as DECISION #401.** As drawn, the band can be come at two ways, by the gate or from behind by the souterrain's pit, and the storeys above the vault are out of reach.
+- **The fallen corner** reads as a notch from the south-east. A real tower house usually falls along a whole face, or loses its corner down to the ground.
+- **The rubble masonry** is the kit's cobble texture at 0.8 of a metre. It may read as too regular for a ruin.
+- **The stair's well is dark** from its head: the fire is the hall's only shadowing light, and the parapet shades the stair. A lantern at the stair's head would show the way down, if Michael wants the band to have hung one.
