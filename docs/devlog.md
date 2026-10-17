@@ -23786,3 +23786,22 @@ The sheet's `stillhear` row is folded into the new `reachtable` suite, so it cos
   - F2b session 1's second part: the foes' table (engage hull to hull, the wolf's lunge, the spider's and bear's 1.2 m, the troll's sweep, the Faolchú's bite less its snout), and the `foereach` suite.
   - Session 2: the body in the world.
   - Session 3: the dungeon's cell, at Michael's C on #300, 3 m.
+
+## v80 — Session 1034 — Enemies by place, finished: a wraith's orb and drain and a ship's volley read the tier, not your level
+A correction to Session 1032. It moved a foe's health, its blow and the variants' chance onto the place's tier, but three of a foe's own blows still added your level:
+- **A phantom's or wraith's orb** (`90-main.js`): 8–14 + level × 1.5.
+- **Their life-drain:** (4 or 6 + level × 0.5) × the foe's multiplier.
+- **A pirate ship's volley of arrows** (`85-world-sea.js`): 6 + level × 0.8.
+
+Each was the Oblivion failure in small. A level-20 alchemist met orbs of 38 to 44 in the gentlest crypt.
+
+**What changed.** Each now reads its tier's level (`foeTierLevel(e)`, `74-strikes.js`: the foe's `e.tier`, set when it is built, else the tier where you are). The volley reads the water it lands on (`worldTierAt` at the arrow's mark).
+
+**What still reads your level.** The dungeon's traps (the spike plate's 8–16 + level × 0.8, the swinging blade, the fire jet's 18 + level × 1.4) are not foes, and #373 named the foes. The same goes for the siege's and the occupation's numbers of foes, the caravan's captain at level 5, and the dungeon roster's `minLevel`. They are listed in the backlog for a later call, not changed.
+
+**One fix in my own test.** Session 1032's `dangertier` waited on `g.spin(10)`. That passes 10 as the weather and ticks the open world only, so it never drove the dungeon. It now waits on the game's own frames (`g.frames`), and its dungeon numbers do not change.
+### Verified (headless Chromium)
+- **`dangertier`:** 14/14 (one new check). In the Wastes' gate (tier 3, level 11), a Greater Phantom's orb is 24 when you are level 10 and 26 at level 20, both within 8–14 + 16.5. At level 20 the old rule gave 38 to 44.
+- **Neighbours, all pass:** `blacksail`, `piratehold`, `pirateram`, `wraithfloat` and `wraithhood`.
+### Needs eyes
+- Whether the traps should take the tier too: a spike plate at level 20 is 24 to 31, in any crypt. That is a rule of play for Michael, so I have put it in the backlog, not changed it.

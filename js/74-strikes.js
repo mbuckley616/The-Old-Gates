@@ -756,6 +756,8 @@ function tierHere(){
   if(z==='world')return worldTierAt(px,pz);
   return zoneTier(z);
 }
+// the level a foe's own extra terms read (a wraith's orb and its drain, a ship's volley): its tier's, as its health and blow (S1034)
+function foeTierLevel(e){return tierLevel(e&&e.tier!=null?e.tier:tierHere());}
 function enemyHpScale(tier){
   const lv=tierLevel(tier==null?tierHere():tier);
   return Math.min(3.0, 1 + (lv - 1) * 0.15);

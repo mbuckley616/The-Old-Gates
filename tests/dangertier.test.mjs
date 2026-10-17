@@ -2,7 +2,8 @@
 // stands, not with your level. Home's coast, Ashen, Bealach and Royale are tier 1; Deepwood, the Foothills and Greywood 2; the
 // Wastes 3; a far island's region by its biome (tundra, swamp and wasteland 3, the rest 2). A dungeon is its door's tier, plus
 // one a floor below the first, to 4. A tier is worth the old level curve at levels 1, 6, 11 and 16 (health ×1, 1.75, 2.5, 3; the
-// blow as the reference blow there), and the rare variants' chance reads that level too.
+// blow as the reference blow there), and the rare variants' chance reads that level too. Since S1034 a wraith's orb and its
+// drain, and a ship's volley, read the foe's tier's level too.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -53,15 +54,24 @@ async function enter(lv) {
     const p = Object.assign({}, PORTALS.find(q => q.zone === 'world' && !q.lair) || PORTALS[0], { x: W.x, z: W.z, seed: 7311, size: 'medium', theme: 'undead', zone: 'world', tutorial: false, diff: 'normal', diffScale: DIFF_SCALE.normal, lair: null });
     goToDungeon(p); }, [lv, t.W]);
   for (let i = 0; i < 60; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && ENEMIES.length > 0)) break; }
-  await g.spin(10);
+  await g.frames(4);
   const r = await page.evaluate(() => ENEMIES.map(e => ({ n: e.name, f: e.floor || 1, t: e.tier, hp: e.maxHp, m: +(e.dmgMult || 0).toFixed(3) })));
+  // S1034 — a phantom's or wraith's orb on the first floor: 8–14 plus its tier's level × 1.5, not yours
+  const orb = await page.evaluate(() => { const e = ENEMIES.find(q => q.ranged && (q.floor || 1) === 1 && !q.dead); if (!e) return null;
+    currentFloor = 1; px = e.x + 4; pz = e.z; e.alert = true; e.rangedCd = 0; BALLS.filter(b => b.userData.isEnemyOrb).forEach(b => b.userData._old = true); return { name: e.name, tier: e.tier }; });
+  if (orb) { for (let k = 0; k < 40 && !(await page.evaluate(() => BALLS.some(b => b.userData.isEnemyOrb && !b.userData._old))); k++) await g.frames(1); /* the dungeon's foes tick in the game's own loop (g.spin ticks the open world only) */
+    orb.dmg = await page.evaluate(() => { const b = BALLS.find(b => b.userData.isEnemyOrb && !b.userData._old); return b ? b.userData.dmg : null; }); }
+  r.orb = orb;
   await page.evaluate(() => { goToOW(); });
   for (let i = 0; i < 40; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId !== 'dungeon')) break; }
-  await g.spin(10);
+  await g.frames(4);
   return r;
 }
 const a = await enter(10), b = await enter(20);
-console.log(JSON.stringify({ a, b }));
+const oa = a.orb, ob = b.orb; delete a.orb; delete b.orb;
+console.log(JSON.stringify({ a, b, oa, ob }));
+check('a ranged foe\'s orb in the Wastes\' gate is 8–14 plus its tier\'s level (11) × 1.5, at level 10 and at level 20 (S1034)',
+  !!oa && !!ob && oa.tier === 3 && [oa.dmg, ob.dmg].every(d => d >= 24 && d <= 30), { oa, ob });
 check('the Wastes\' gate: its foes are tier 3 on the first floor and 4 below', a.length > 0 && a.every(e => e.t === (e.f > 1 ? 4 : 3)), a);
 check('the same gate at level 20 holds the same foes with the same health and blows as at level 10', a.length === b.length && JSON.stringify(a) === JSON.stringify(b), { a, b });
 check('no page errors', g.errs.length === 0, g.errs);

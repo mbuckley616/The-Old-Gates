@@ -1413,7 +1413,7 @@ function loop(now){
           e.drainCd = 1.0;
           const isWraithType = e.baseType==='Wraith';
           const baseDrain = isWraithType ? 6 : 4;
-          const rawDrain = Math.max(1, Math.round((baseDrain + level * 0.5) * (e.dmgMult || 1.0)));
+          const rawDrain = Math.max(1, Math.round((baseDrain + foeTierLevel(e) * 0.5) * (e.dmgMult || 1.0))); // S1034 — the tier's level, not yours (#373 A)
           const def2 = _armour();
           const finalDrain = _warded(Math.max(1, rawDrain - Math.floor(def2 * 0.3)));
           PHP = Math.max(0, PHP - finalDrain);
@@ -1451,7 +1451,7 @@ function loop(now){
           // The +0.8 offset puts the orb at chest-height for both floors.
           const orbGroundY = e.floor===2 ? FLOOR2_Y : 0;
           orb.position.set(e.x, orbGroundY+0.8, e.z);
-          orb.userData={vx:(dx2/dd)*5,vy:0,vz:(dz3/dd)*5,life:4,isEnemyOrb:true,dmg:8+Math.floor(Math.random()*7)+Math.floor(level*1.5)};
+          orb.userData={vx:(dx2/dd)*5,vy:0,vz:(dz3/dd)*5,life:4,isEnemyOrb:true,dmg:8+Math.floor(Math.random()*7)+Math.floor(foeTierLevel(e)*1.5)}; /* S1034 — the orb grows with the foe's tier's level, not yours (#373 A) */
           dScene.add(orb);BALLS.push(orb);sndEnemyOrb();
         }
       }

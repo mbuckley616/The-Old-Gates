@@ -835,7 +835,7 @@
   function tickArrows(dt){
     for(let i=ARROWS.length-1;i>=0;i--){const a=ARROWS[i];a.t+=dt;const u=Math.min(1,a.t/a.dur);const arc=Math.sin(u*Math.PI)*a.dur*4;
       const x=a.sx+(a.tx-a.sx)*u,z=a.sz+(a.tz-a.sz)*u,y=a.sy+(a.ty-a.sy)*u+arc;a.m.position.set(x,y,z);a.m.lookAt(a.tx,a.ty,a.tz);
-      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+level*.8)*(blocking?.4:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+tierLevel(worldTierAt(a.tx,a.tz))*.8)*(blocking?.4:1))); /* S1034 — the volley grows with the water's tier's level, not yours (#373 A) */PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
   }
   // boarding: E beside another ship (hulls close, or swimming up to her)
   // S638 — her net under the crosshair, or swum against (shipNetSide, 86-world-crime.js); off her deck
