@@ -3,7 +3,8 @@
 // mesh per material for the town. Measured on Dunmore's own meshes: the walls stand where the solids are (a ray at each face from
 // 2 m out meets the house within the wall's thickness of its solid), the door you use is in the drawn doorway (a ray at it meets the
 // leaf, painted or a shop door's glazing, set back past the wall's face), the town's kit houses are a few dozen draws, and the old builder's houses are gone from those
-// lots. Their far copy (Session 1073) stands in for them from outside the town. On the old look Dunmore is as it was.
+// lots. Their far copy (Session 1073) stands in for them from outside the town. Its two guild halls are the kit's (Session 1082),
+// measured as the houses are, their name panels and banners painted once. On the old look Dunmore is as it was.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -40,6 +41,8 @@ const r = await page.evaluate(() => {
   return { n: H.length, calls: kitG.children.length, tris: S.kitTris, out, under };
 });
 check('Dunmore has its kit houses', !r.none && r.n > 30, r.none ? r : { n: r.n });
+const halls = r.none ? [] : r.out.filter(h => h.kind === 'guildhall');
+check(`both of Dunmore's guild halls are the kit's hall (${halls.map(h => h.id).join(', ')}), measured with its houses below`, halls.length === 2, r.none ? r : r.out.map(h => h.kind));
 const bad = r.out.filter(h => h.nosol || h.faces.some(f => f == null || f > .05 || f < -.75));
 check(`every kit house's four walls stand on its solid, within the wall's thickness (${r.n} houses; each face ${-Math.max(...r.out.flatMap(h => h.faces))} to ${-Math.min(...r.out.flatMap(h => h.faces))} m inside its solid)`, bad.length === 0, bad.slice(0, 5));
 const badD = r.out.filter(h => h.door == null || h.door < 1.7 || h.door > 2.3 || !h.painted);
@@ -61,9 +64,10 @@ check('from outside the town the far copy is drawn, in the town the kit\'s house
 
 // the shops' signs (Session 1074): one painted for each trade, shared by its shops, and none more when the town is built again
 const sg = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), shops = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind === 'merchant'), trades = new Set(shops.map(h => h.type));
-  const a = PKIT.signsMade(), calls = S.kitCalls; disposeSettlement('dunmore'); genSettlement(allSites().find(t => t.id === 'dunmore')); const T = WORLD.settle.get('dunmore');
-  return { shops: shops.length, trades: trades.size, a, b: PKIT.signsMade(), calls, calls2: T.kitCalls }; });
+  const a = PKIT.signsMade(), p = PKIT.panelsMade(), calls = S.kitCalls; disposeSettlement('dunmore'); genSettlement(allSites().find(t => t.id === 'dunmore')); const T = WORLD.settle.get('dunmore');
+  return { shops: shops.length, trades: trades.size, a, b: PKIT.signsMade(), p, p2: PKIT.panelsMade(), calls, calls2: T.kitCalls }; });
 check(`${sg.shops} shops of ${sg.trades} trades paint ${sg.a} signs, and building the town again paints none (${sg.calls} draws, then ${sg.calls2})`, sg.shops > 3 && sg.a === sg.trades && sg.b === sg.a && sg.calls2 === sg.calls, sg);
+check(`the two guild halls paint ${sg.p} name panels and banners, and none more when the town is built again`, sg.p === 4 && sg.p2 === sg.p, sg);
 
 // a picture: a street of them at noon, from across it
 const shot = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind !== 'cottage');
@@ -74,6 +78,11 @@ await g.frames(6);
 fs.mkdirSync(path.join(here, '../docs/prototypes'), { recursive: true });
 await page.screenshot({ path: path.join(here, '../docs/prototypes/kit-town-ingame.png') });
 console.log(`  (picture from across ${shot}: docs/prototypes/kit-town-ingame.png)`);
+// the Fighters' guild hall from its street, 14 m out and a little to one side
+await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h = S.houses.find(h => h.siteId === 'dunmore' && h.type === 'guild_f'), fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw), ex = Math.cos(h.exitYaw), ez = -Math.sin(h.exitYaw);
+  px = h.doorX + fx * 14 + ex * 4; pz = h.doorZ + fz * 14 + ez * 4; py = WORLD.worldH(px, pz) + 1.65; yaw = Math.atan2(-(h.doorX - px), -(h.doorZ - pz)); pitch = .12; });
+await g.frames(6);
+await page.screenshot({ path: path.join(here, '../docs/prototypes/kit-guildhall-ingame.png') });
 // and from the fields, 170 m out, where the far copy stands in
 await page.evaluate(() => { const K = WORLD.settle.get('dunmore').kitLod; px = K.x + K.r + 90; pz = K.z + 40; py = WORLD.worldH(px, pz) + 1.65; yaw = Math.atan2(-(K.x - px), -(K.z - pz)); pitch = -.02; });
 await g.frames(6);

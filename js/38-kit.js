@@ -7,7 +7,7 @@
 // the one global is PKIT:
 //   PKIT.stream(key) -> a seeded stream in [0,1) keyed by a string (the co-op rule: a lot's look from its street and index)
 //   PKIT.mergeByMaterial(group) -> bakes every mesh into the group's frame, one mesh per material; returns the triangles
-//   PKIT.texturesMade() -> how many surfaces have been painted (0 until the first piece is built); PKIT.signsMade() -> how many signs
+//   PKIT.texturesMade() -> how many surfaces have been painted (0 until the first piece is built); PKIT.signsMade() -> how many signs; PKIT.panelsMade() -> name panels and banners
 //   The Gatelands kit (pieces.js's concept-run plans, Sessions 834 to 964): PKIT.gl.PLANS (cottage, forge, temple, guildhall,
 //   farmhouse, townhouse, merchant, warehouse), PKIT.gl.building(plan) -> a Group, one mesh per material, with userData
 //   {name, tris, calls, size: {w, d, eave, ridge}, door}; PKIT.gl.lot(street, i, s) -> {plan, kind, colour, paint} (#280 A).
@@ -124,14 +124,18 @@ function paintSign(text, bg, fg) {
   x.fillStyle = fg; x.font = '600 64px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 512, 68); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 8;
   return new THREE.MeshStandardMaterial({ map: t, roughness: .6 });
 }
-// a name cut in a dressed stone panel (Session 964): dark letters in a light stone, the panel's aspect kept
-function panelMat(text, aspect) {
+// a name cut in a dressed stone panel (Session 964): dark letters in a light stone, the panel's aspect kept. Kept by its words and
+// aspect as the signs are (Session 1082, the guild halls in the game's towns), and the banners by colour and guild
+const PANEL_KEY = /^(panel|banner)\|/;
+function panelMat(text, aspect) { const key = `panel|${text}|${aspect}`; return SIGNS[key] || (SIGNS[key] = paintPanel(text, aspect)); }
+function bannerMat(colour, guild) { const key = `banner|${colour}|${guild}`; return SIGNS[key] || (SIGNS[key] = paintBanner(colour, guild)); }
+function paintPanel(text, aspect) {
   const c = document.createElement('canvas'); c.width = 1024; c.height = Math.round(1024 / aspect); const x = c.getContext('2d'); x.fillStyle = '#d6cfbf'; x.fillRect(0, 0, c.width, c.height);
   x.strokeStyle = '#8f8676'; x.lineWidth = 8; x.strokeRect(16, 16, c.width - 32, c.height - 32); x.fillStyle = '#4a443b'; let fs = Math.round(c.height * .5); x.font = `600 ${fs}px Georgia, serif`; const tw = x.measureText(text).width; if (tw > c.width - 90) { fs = Math.floor(fs * (c.width - 90) / tw); x.font = `600 ${fs}px Georgia, serif`; } x.textAlign = 'center'; x.textBaseline = 'middle';
   x.fillText(text, 512, c.height * .54); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 8; return new THREE.MeshStandardMaterial({ map: t, roughness: .9 });
 }
 // a guild's banner (Session 964): a wool field in the guild's colour, a gilt border, crossed swords for the Fighters, a star for the Mages
-function bannerMat(colour, guild) {
+function paintBanner(colour, guild) {
   const c = document.createElement('canvas'); c.width = 256; c.height = 620; const x = c.getContext('2d'); x.fillStyle = colour; x.fillRect(0, 0, 256, 620); x.strokeStyle = '#d4ad55'; x.lineWidth = 14;
   x.beginPath(); x.moveTo(14, 8); x.lineTo(14, 600); x.moveTo(242, 8); x.lineTo(242, 600); x.moveTo(8, 18); x.lineTo(248, 18); x.stroke(); x.fillStyle = '#d4ad55'; x.lineCap = 'round';
   if (guild === 'mages') { x.beginPath(); for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 30 : 84; x.lineTo(128 + Math.cos(a) * r, 230 + Math.sin(a) * r); } x.closePath(); x.fill(); }
@@ -449,6 +453,6 @@ function gatelandsLot(street, i, s = {}) {
   return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }
 
-  return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).length,
+  return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();

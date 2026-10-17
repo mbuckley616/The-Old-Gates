@@ -23936,3 +23936,34 @@ Corrections made during the session:
 - **Whether it goes down into the cliff is asked as DECISION #402.** The recommendation is a sea-stair inside the rock to a sea cave and landing, the "lower levels" OG-121's forts have.
 - **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
 - **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
+
+## v80 — Session 1082 — Card F6: the Gatelands' guild halls built from the kit on the new look (#352 C)
+The backlog's next F6 item after the houses is the town's large buildings from the kit: the inn, the church, the guild hall and the keep. The guild hall is the one already drawn for it: Michael's C on #352 (a hall of its own, open to the roof, with a gallery to the dormitory), built in the prototype in Session 964 and copied into `PKIT.gl.PLANS.guildhall` with the rest in Session 1037. This session puts it in the towns. The church waits for its own session (the kit's temple is a small god's temple, 9.6 by 6 m, smaller than a town church), and so do the inn and the keep, which have no exterior plan in the kit yet.
+
+On `?look=new`, a Gatelander town's or city's Fighters' and Mages' guild halls are now the kit's hall, in red or in blue, with its own name panel (*FIGHTERS’ GUILD*, *MAGES’ GUILD*) and banner (`genSettlement`, `83-world-generator.js`):
+- **The lot:** the old builder's guild lot was 13 by 11 m. It takes the plan's 14.4 by 9 m. The front stays on the street line: the centre moves toward the street by the 1 m the depth gives up, so the door, the id and the steward stay where they were.
+- **Lots near a street:** a guild lot often stood nearer a road or a street than a widened house may. So the hall is taken when it comes no nearer to any road or street than the old lot did, and stays clear of every other lot. If the 0.7 m the hall grows at each end brings it near a street beside it, it slides along its front by up to 0.7 m (`kit.slide`), and the door moves with it. Dunmore's Fighters' hall needed the full slide.
+- **Built:** the hall goes through the same `kitHouse` as the houses (`kitHall`, its lit windows keyed by the town and the lot). It merges into the town's draws, takes a box-and-prism far copy, and draws its smoke from the hall's hearth stack. The door you use is the great door, 2 m off the centre.
+- **What it replaces:** the old hall's two poles with cloth and device, and its hanging trade sign, are not built for a kit hall. The kit's name panel and banner take their place.
+- **Painted once:** the name panels and banners were a fresh canvas each build, as the shop signs were before Session 1074. They are now kept by their words or colour in `38-kit.js`, as the signs are. `PKIT.panelsMade()` counts them, and `signsMade()` still counts only the signs.
+
+The room inside is laid out from the lot's size, as a widened house's is. A guild hall's room goes from 23 by 22 to 26 by 20 in the furniture kit's unit.
+
+### Verified (headless Chromium)
+- **`tests/kittown`: 13 of 13 pass.** Two checks are new.
+  - **Guild halls:** both of Dunmore's guild halls are the kit's hall. They are measured with the houses:
+    - Their four walls stand 0.15 m inside their solids.
+    - The ray at the door meets the painted leaf 1.82 m from a point 1.5 m out (the houses read 1.77 to 1.79).
+  - **Painted once:** the two halls paint 4 panels and banners, and building the town again paints none.
+  - **Totals:** Dunmore's kit buildings are 52, at 40 draws (35 before) and 285,268 triangles. The far copy is 936 triangles.
+  - **The picture:** `docs/prototypes/kit-guildhall-ingame.png`, the Fighters' hall from its street.
+- **`tests/kitlots`: all pass.** Two towns, a port, two villages and a city of the Gatelands.
+  - **Guild halls:** the check that guild halls keep their size is now a check that all 6 guild halls (Dunmore's, Vieux Marché's and Coeur de Vie's) are the kit's 14.4 by 9 m. Each slid 0 or 0.7 m and is clear of every other lot by 0.9 m or more.
+  - **Ids and doors:** every id and door is as on the old look, the doors allowing for the slide.
+- **On the new look:** `guildfurn` passes. intreach, scalerooms, windows, kit and cloakguild: see the PR comment.
+- `parsecheck.py` is clean.
+### Needs eyes
+- **The picture first:** a 9 m deep stone hall in a street of 4 to 6 m townhouses (#408 is still open).
+- **The room inside:** it is a little wider and shallower than before (26 by 20 against 23 by 22 in the kit's unit). Where you appear against the great door, 2 m off the centre, is for a playtest.
+- **The wall lantern by the door** is still the old one, hung 1.05 m to the side of the door's centre. The great door is 1.6 m wide, so it sits 0.25 m clear of the reveal.
+- **Still the old builder's:** the churches, inns and keeps.

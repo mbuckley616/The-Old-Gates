@@ -267,7 +267,7 @@
     // kit's plans (PKIT.gl.BAYS): a village's homes and shops are cottages, a town's, port's or city's homes townhouses and its
     // shops merchants' houses. A lot keeps its centre, its depth, its place in the town and so its id; it grows along the street
     // from 5–7 m toward 6–10 m, a bay at a time, and gives a bay back while it would come within 1.2 m of another lot, a road,
-    // a cross street or the ring. Churches, keeps, guild halls, inns, the shipwright and the foreign quarter keep their size.
+    // a cross street or the ring. Churches, keeps, inns, the shipwright and the foreign quarter keep their size (a guild hall takes the kit's, below).
     // (window.OG_KIT_TOWNS=false keeps the old towns on the new look: tests/lookpair sets it to compare the renderers alone)
     if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='gatelander'&&site.kind in KIT_SITE){
       const town=KIT_SITE[site.kind]==='town',G=PKIT.gl,corners=(l,m)=>{const c=Math.cos(l.ry),s_=Math.sin(l.ry),hw=l.w/2+m,hd=l.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:l.x+u*c+v*s_,z:l.z-u*s_+v*c}));};
@@ -280,7 +280,19 @@
         for(;;){for(;n>=lo;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}if(n>=lo||kind!=='merchant')break;kind='townhouse';n=start(kind);} /* a shop with no room for three bays of shop front is a townhouse's front */
         if(n<lo){for(n=lo-1;n>=G.BAYS[kind].min;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}}
         if(n<G.BAYS[kind].min){lot.w=w0;return;}
-        lot.kit={kind,bays:n,w0};});}
+        lot.kit={kind,bays:n,w0};});
+      // S1082 (card F6, Michael's C on #352) — a town's guild hall is the kit's guild hall, 14.4 by 9 m: the lot takes the plan's size
+      // with its front kept on the street line (the centre moves back toward the street by what the depth gives up), so its door, id
+      // and steward stay where they were. A lot with no room for the wider front keeps the old hall.
+      // A guild lot often stood nearer a road or a street than a widened house may (the old builder's 13 by 11 m): it takes the hall
+      // if it comes no nearer to one than it was and stays clear of every other lot, slid along its front by up to the 0.7 m it grows
+      // at each end if that clears a street beside it (kit.slide, which its door moves by too).
+      const near=(l,own)=>{let m=1e9;for(const q of corners(l,0)){m=Math.min(m,inner-1-Math.hypot(q.x-cx,q.z-cz));const ri=roadInfo(q.x,q.z,true);if(ri)m=Math.min(m,ri.d-ROAD_HALF-1.2);
+          for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;m=Math.min(m,Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)-1.6);}}return m;};
+      if(town)use.forEach((lot,i)=>{const t=shopTypes[i];if(t!=='guild_f'&&t!=='guild_m')return;const P=G.PLANS.guildhall(),w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,sh=(d0-P.d)/2,m0=Math.min(0,near(lot,lot.street));
+        lot.w=P.w;lot.d=P.d;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
+          if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});}
     // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
     // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
     // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.
@@ -289,14 +301,16 @@
     // a gable roof as one prism: eaves at y0 along ±hw (x) and ±hd (z), the ridge at y1 along x, its gables closed (non-indexed, for mergeGeos)
     function kitRoof(hw,hd,y0,y1){const P=[[-hw,y0,hd],[hw,y0,hd],[hw,y1,0],[-hw,y0,hd],[hw,y1,0],[-hw,y1,0],[hw,y0,-hd],[-hw,y0,-hd],[-hw,y1,0],[hw,y0,-hd],[-hw,y1,0],[hw,y1,0],[-hw,y0,-hd],[-hw,y0,hd],[-hw,y1,0],[hw,y0,hd],[hw,y0,-hd],[hw,y1,0]];
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;}
+    // S1082 — the guild hall's plan, its lit windows keyed by the town and the lot as a house's are; its door is the great door
+    function kitHall(lot){const plan=PKIT.gl.PLANS.guildhall({guild:lot.kit.guild});plan.r=PKIT.stream(`${site.id}:windows:${lot.n}`);plan.doorX=plan.open.front[0].x;return {plan,kind:'guildhall',colour:'stone'};}
     function kitHouse(lot,type){
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
-      const L=PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
+      const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
       b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
       {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
         box.translate(0,sz.eave/2,0);mx.makeRotationY(lot.ry).setPosition(lot.x,worldH(lot.x,lot.z)-.06,lot.z);
         kitLo.push([box,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(sz.w/2+(th?.35:.2),sz.d/2+(th?.45:.25),sz.eave,sz.ridge),mx,new THREE.Color(...(th?[.42,.35,.22]:[.24,.26,.30]))]);}
-      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.door=lot._kitDoor;
+      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);
       const c=(L.plan.chim||[])[0];if(c){const x=c.gable?c.gable*(U.size.w/2-.36):c.x,y=U.size.ridge+(L.plan.roof.kind==='thatch'?1.0:.85),cs=Math.cos(lot.ry),sn=Math.sin(lot.ry),wy=b.position.y;
         S.chimneys.push({x:lot.x+x*cs,y:wy+y,z:lot.z-x*sn,t:type||'home',k:0});}}
     const names=NAMES[reg];
@@ -384,7 +398,8 @@
         const fl=new THREE.Mesh(new THREE.ConeGeometry(.03,.09,6),new THREE.MeshBasicMaterial({color:0xffe090}));fl.position.y=-.01;lg.add(fl);lg.position.set(lx,ly,lz);group.add(lg);S.lamps.push({glass:lg,light:null});
       }
       let signY=null; // S246 — the trade sign is painted once the keeper's name is final (below)
-      if(type==='guild_f'||type==='guild_m'){
+      if((type==='guild_f'||type==='guild_m')&&lot.kit){} /* S1082 — the kit's hall carries its own name panel and banner */
+      else if(type==='guild_f'||type==='guild_m'){
         const y=worldH(doorX,doorZ);const col=GUILD_DEF[type].col;
         [-1,1].forEach(sd=>{const bx=doorX+lot.tx*.3-lot.tz*sd*2.4,bz=doorZ+lot.tz*.3+lot.tx*sd*2.4;
           const pole=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,1.1),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(bx+lot.tx*.45,y+5.3,bz+lot.tz*.45);pole.rotation.y=lot.ry;group.add(pole);
