@@ -23379,3 +23379,21 @@ Corrections made during the session:
 - **The back of the hand and the palm are marked alike.** The canon names the back of the hand only.
 - **The roll's shares are mine:** four in five marked, one in eight of those carrying the Cold. The canon gives no share. In the game the player's own Cold is the systems builder's stat, and this is the parameter it would drive.
 - **Still owed for the Old Blood (OG-066):** the eye strip for the Cold's greying eyes, which could ride the same `cold`.
+## v80 — Session 1053 — The Cold's grey eyes and pallor (L1 and B3, prototype only)
+This completes OG-066's last owed body item, its eye strip of pale grey, silver and ice blue "for the Cold's greying eyes". Canon §3.3 says each Mastery-tier reading "takes warmth: pallor deepens, eyes grey". Session 1052 made `G.marks` the Cold, so this session lets the same number carry the colour. Building what the canon says chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+What is built (in `makePerson`):
+- **The eyes.** At a Cold of 1 they go nine tenths of the way toward an ice grey (0.76, 0.8, 0.85).
+- **The skin.** It goes three fifths of the way toward its own grey, a little cooler and lighter. Both steps scale with the Cold, and nothing changes at 0.
+- **The genome keeps its own colours.** The change is made on the copy `makePerson` builds from, so a Cold that rises or falls in the game never loses the face's own colours. `makePerson` returns the colours it built with as `coldLook`.
+- **A switch for the marks' checks.** `makePerson(G, { coldColours: false })` leaves the colours as they are, so Session 1052's renders still measure the marks alone.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 427 checks pass** (426 after Session 1052; 1 new). The marks' checks pass unchanged with the colours left off.
+- **The eyes:** for the man of Session 1052, they are 0.217, 0.119 and 0.022 from the ice grey at a Cold of 0, 0.5 and 1.
+- **The skin:** its spread of colour falls from 0.06 to 0.03 and 0.01.
+- **At 0 and without marks,** the colours are the genome's own. The genome passed in is not changed.
+- **Pictures:** `builder-cold-face0.jpg` and `builder-cold-face1.jpg`, the same woman at a Cold of 0 and 1.
+
+### Needs eyes
+- **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.

@@ -2220,6 +2220,12 @@ function sashBeltOn(D) { return !!(D.sashBelt && !D.robe && !D.tabard && !D.apro
 function sashBeltPush(D, x, y) { const inner = Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0;
   let d = (D.tunic ? .013 + inner : 0) + .008; if (D.bodice) d = Math.max(d, .021 + inner + .012); return Math.max(d, .03); }
 export function makePerson(G, o = {}) {
+  // the Cold (Session 1053; canon §3.3, "pallor deepens, eyes grey"; OG-066's eye strip, pale grey to silver and ice blue): the
+  // eyes go toward an ice grey, nine tenths of the way at a Cold of 1, and the skin toward its own grey, a little cooler and
+  // lighter, three fifths of the way; the genome keeps its own colours, so the Cold can rise and fall over them
+  // (o.coldColours === false leaves them, for a check of the marks alone)
+  const cold = Math.max(0, Math.min(1, G.marks ?? 0)); if (cold > 0 && o.coldColours !== false) { const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k), L = .3 * G.skin[0] + .59 * G.skin[1] + .11 * G.skin[2];
+    G = { ...G, eyes: mix(G.eyes, [.76, .8, .85], .9 * cold), skin: mix(G.skin, [L + .02, L + .03, L + .06].map(v => Math.min(1, v)), .6 * cold) }; }
   // the robe (Session 887, B2): one cloth from the shoulders to the ankles, worn as the tunic and the long skirt in the robe's
   // colour, with sleeves that widen to the cuff and a fuller hem; a rope cord takes the belt's place, nothing under it shows
   if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, sashBelt: null, cuffs: null, cord: R.cord || [.62, .55, .42] } }; }
@@ -2402,7 +2408,7 @@ export function makePerson(G, o = {}) {
   // a basket in the same fist (Session 1033), when it holds no spear or crossbow; last, as it is lifted clear of all the rest
   let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, basket: basketStats, legWraps: legWrapSt };
+  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, basket: basketStats, legWraps: legWrapSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
