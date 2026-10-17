@@ -36,7 +36,7 @@ function applySpellDamage(e, sp, tier){
 //   tell      seconds of wind-up before the blow lands (yours: click to impact; a foe's: its wind-up pose and glow)
 //   strike    seconds from the blow landing to the end of the commitment (yours; a foe's lands the frame its tell ends)
 //   recovery  seconds after that, the last third of your swing, the only part a roll or a block can cut short
-//   reach     units, centre to centre (today's numbers; F2b re-measures them hull to hull in metres)
+//   reach     metres, hull to hull (F2b, Session 1033): from the edge of your body to the edge of the foe's (hullOf)
 //   arc       degrees, the whole cone the blow lands in
 //   dmg       a multiplier on the blow's roll; posture: yours, what the swing drains from the foe's posture;
 //             a foe's, the multiple of its blow that drains yours unguarded (a held block drains ×1)
@@ -47,23 +47,38 @@ function applySpellDamage(e, sp, tier){
 // (powerDur, POWER_DMG_MULT, POSTURE_DRAIN_POWER) until the heavy column is filled. The cone is cos .45 either side of
 // the facing, which is 126.5° whole (the old comments said 117°; the number never changed).
 const WEAPON_ATTACKS={
-  Fists:    {tell:.236,strike:.050,recovery:.143,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Dagger:   {tell:.253,strike:.054,recovery:.153,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Sword:    {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Scimitar: {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Bow:      {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Longsword:{tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Mace:     {tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  GreatClub:{tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:12,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Flail:    {tell:.369,strike:.078,recovery:.224,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Fists:    {tell:.236,strike:.050,recovery:.143,reach:0.9,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Dagger:   {tell:.253,strike:.054,recovery:.153,reach:1.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Sword:    {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Scimitar: {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Bow:      {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Longsword:{tell:.336,strike:.071,recovery:.204,reach:1.8,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Mace:     {tell:.336,strike:.071,recovery:.204,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  GreatClub:{tell:.336,strike:.071,recovery:.204,reach:1.9,arc:126.5,dmg:1,posture:12,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Flail:    {tell:.369,strike:.078,recovery:.224,reach:1.8,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Claymore: {tell:.402,strike:.085,recovery:.244,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:3,blockable:true,parryable:false,heavy:null,third:null},
   GreatAxe: {tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:2,blockable:true,parryable:false,heavy:null,third:null},
-  WarHammer:{tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:18,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  WarHammer:{tell:.424,strike:.090,recovery:.257,reach:1.9,arc:126.5,dmg:1,posture:18,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   // a sent cast, one more row when magic's resolver comes (magic.md: words of the deep tongue); nothing reads it yet
   Cast:     {placeholder:true,tell:null,strike:null,recovery:null,reach:null,arc:null,dmg:null,posture:null,cleave:null,blockable:false,parryable:false,heavy:null,third:null},
 };
-// against a boss your reach is 3.0 (the Faolchú's size); F2b makes it the boss's hull plus the weapon's reach
-const REACH_VS_BOSS=3.0;
+// S1033 — F2b, session 1 (docs/design/scale-numbers-build.md, *Reach*): the reach column is hull to hull, so a blow lands when
+// the foe's centre is inside your hull + the weapon's reach + its hull. Against a townsperson a sword lands at 2.2 centre to
+// centre, today's number; the dagger loses 0.4, the two-handers gain 0.6, a punch is a close thing (1.5). The hulls are the
+// sheet's until F4 gives each family's built value (e.hullR): you, a townsperson, a bandit or a skeleton 0.30; a goblin 0.25;
+// a wolf 0.35; a spider or a bear (the brutes) 0.6; a troll 0.8. A boss is 1.1, so a sword reaches it at 3.0, the flat number
+// it replaces; a kind the sheet does not name is 0.3 of its size, the disc it stands as (bodyR, 90-main.js).
+const HULL_YOU=.30,BOSS_HULL=1.1;
+const HULL_FAMILY={humanoid:.30,wraith:.30,beast:.35,spider:.6,brute:.6,troll:.8};
+const HULL_KIND={Goblin:.25,'Kobold Thief':.25};
+function hullOf(e){
+  if(!e)return .3;if(typeof e.hullR==='number')return e.hullR;
+  const k=HULL_KIND[e.baseType||e.baseName];if(k!=null)return k;
+  if(e.isBoss)return BOSS_HULL;
+  const f=HULL_FAMILY[foeFamily(e)];return f!=null?f:Math.max(.2,.3*(e.size||1));
+}
+// the centre-to-centre distance a blow of reach r (hull to hull) lands within, against e
+function reachTo(e,r){return HULL_YOU+r+hullOf(e);}
 const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',bow:'Bow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
 function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS[WSHAPE_TO_ROW[w.weaponShape]]||WEAPON_ATTACKS.Sword;}
 // The foes, a row per family built today. Each has one attack, its light one, from today's numbers: a tell by kind
@@ -123,7 +138,7 @@ function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(ar
 
 // ── The one resolver for your swing (S940). The dungeon, the open world and the legacy zones each had their own
 // (_resolveDungeonStrike, _resolveZoneStrike), the same rules written twice; both are now this. At the swing's impact
-// it gathers the foes in reach and in the arc of the weapon's row (a boss at REACH_VS_BOSS), nearest first, up to the
+// it gathers the foes in reach (hull to hull, S1033) and in the arc of the weapon's row, nearest first, up to the
 // row's cleave; a power blow breaks a raised shield without damage (S485: not when swung spent), every other blow runs
 // the damage chain, applyMeleeDamage (riposte, finisher, stagger, backstab, armour), posture, the rune's rider and
 // the kill. The third light swing of a chain lands ×1.3 and drains ×1.5 posture (COMMIT, the light chain).
@@ -158,7 +173,7 @@ function resolvePlayerStrike(_isPow){
   strikeFoes().forEach(e=>{
     if(!strikeCandidate(e))return;
     const ex=e.x-px,ez=e.z-pz,dist=Math.sqrt(ex*ex+ez*ez);
-    const reach=e.isBoss?REACH_VS_BOSS:row.reach;
+    const reach=reachTo(e,row.reach);
     if(dist<reach&&(ex*fwdX+ez*fwdZ)/(dist||1)>cosArc)_candidates.push({e,dist});
   });
   _candidates.sort((a,b)=>a.dist-b.dist);

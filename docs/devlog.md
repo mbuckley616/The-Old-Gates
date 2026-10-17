@@ -23747,3 +23747,42 @@ Michael's A on #373: a foe grows with the danger of where it stands, not with yo
 - **The second floor now steps twice:** its old ×1.5 to health and blow, and the tier's +1. A tier-3 gate's second floor is a tier-4 foe ×1.5 (a Skeleton 158 health against 88 above). If that is too steep, dropping the ×1.5 is a one-line change. It is a rule a player feels, so I have left it for Michael rather than changing it on my own.
 - **The Wastes and the far tundra are hard from the first step:** a wolf there has 45 health and a 20 blow against a level-1 character's 100 health. That is the decision's intent (the Wastes are dangerous), but the road from Ashenmoor to the Wastes should read as a warning in play.
 - **A late character on the coast now meets foes with their own base numbers.** That is the decision's A (C was the option that kept a little of the level).
+
+## v80 — Session 1033 — F2b, session 1, part 1: your reach hull to hull by weapon, the hulls, the shove and the still-hearing radius
+F2b (`docs/design/scale-numbers-build.md`) could start: F2a and combat's resolver have both merged. Its first session is *reach and hulls*. This session does the player's half of that, as one slice: the reach column, the hulls, the shove and the radius at which a still player is heard. The foes' reach table moves the engage tests in `tickZoneEnemies` and the dungeon's foe tick, and the chase suites with them, so it is the next part.
+
+**What was wrong.** Every weapon reached 2.2 units centre to centre in a 126.5° cone, from a dagger to a claymore. A troll's 0.8 m body counted for nothing, so you had to stand as close to its centre as to a goblin's. Against any boss the reach was a flat 3.0.
+
+**What changed (`74-strikes.js`).** `WEAPON_ATTACKS`' reach column is now in metres, hull to hull: from the edge of your body to the edge of the foe's.
+- **The reaches:** Fists 0.9; Dagger 1.2; Sword, Scimitar and Mace 1.6; Longsword and Flail 1.8; Great club and War hammer 1.9; Claymore and Great axe 2.2.
+- **The Bow:** its melee row is the sword's 1.6, since the sheet does not list it.
+- **The resolver:** it lands a blow when the foe's centre is within `reachTo(e, reach)` = your hull + the reach + its hull.
+- **The hulls** (`hullOf`) are the sheet's until F4 gives each family's built value as `e.hullR`:
+  - you, a townsperson, a bandit, a skeleton or a wraith 0.30;
+  - a goblin or a kobold 0.25;
+  - a wolf 0.35;
+  - a spider or a brute (the bear, the ogre, the golem) 0.6;
+  - a troll 0.8;
+  - a boss 1.1, so a sword reaches it at 3.0, the flat number it replaces;
+  - a kind the sheet does not name: 0.3 of its size, the disc it already stands as (`bodyR`).
+- **What a player feels:** against a townsperson a sword lands where it did, at 2.2. The dagger loses 0.4, the two-handers gain 0.6, a punch is a close thing at 1.5, and everything reaches a troll 0.5 further than a man.
+
+**The shove** (`BASH_RANGE`, `10-player.js`, read in `doBash`) is 0.8 hull to hull, shield to chest: 1.4 centre to centre against a man. It was 2.0 centre to centre, which was nearly a sword's reach.
+
+**Still hearing** (`HEARING_RADIUS`) goes from 0.5 to 0.9, as the sheet's one exception to *sight and hearing unchanged*. Two bodies touch at 0.6 centre to centre, so 0.5 let you stand inside a guard unheard.
+
+The sheet's `stillhear` row is folded into the new `reachtable` suite, so it costs no second boot.
+### Verified (headless Chromium)
+- **`reachtable`** (new), 8/8. Each of the eleven classes was stepped in by 0.05 from 4 m against a Bandit, a Wolf and a Cave Troll, swung through `resolvePlayerStrike`.
+  - All 33 first hits land within 0.05 of you + reach + hull: a sword at 2.15 against the Bandit (2.2), 2.2 against the wolf (2.25) and 2.65 against the troll (2.7).
+  - The dagger lands at 1.8 against the Bandit and the claymore at 2.8.
+  - The shove reaches the Bandit at 1.4.
+  - Standing still behind a guard, you are heard at 0.9.
+- **Neighbours, all pass:** `resolver`, `captainguard`, `chasesight`, `wanderface`, `bladehit`, `dungeonchase`, `faolchu`, `fistfight`, `fists` (2), `fistswing`, `lockon`, `parryclock`, `parrydeath`, `posture` (3), `posturefloor`, `swingblade`, `tpfists`, `tpswing`, `trolls`, `yardplay` and `duel` (2). The foes stop at 0.6 to 1.1 centre to centre, inside every class's reach, so no fight lost its reach.
+### Needs eyes
+- **The dagger's 1.8 and the fists' 1.5** against a man: the dagger asks you in, as the sheet means it to. Whether a fist fight still feels fair is a playtest question, since a Bandit engages at 1.1 and swings within 1.6 until the foes' part lands.
+- **The two-handers reach 2.8.** With a claymore's cleave of 3, a pack in front of you is easier to catch.
+- **Owed:**
+  - F2b session 1's second part: the foes' table (engage hull to hull, the wolf's lunge, the spider's and bear's 1.2 m, the troll's sweep, the Faolchú's bite less its snout), and the `foereach` suite.
+  - Session 2: the body in the world.
+  - Session 3: the dungeon's cell, at Michael's C on #300, 3 m.
