@@ -273,3 +273,13 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing. Systems 978–1002 had a backlog clash with main, resolved this morning; CI runs on 7378602 and the card moves to it when green.
 
 **Roadmap.** 240 of 303 stories done (239 yesterday); 2.0's new look 2 of 15 cards done (F1, F2a); the core loop's resolver and skills both wait on your approval.
+
+## 17 Oct 2026
+
+**Waiting on you.** Approve one: Quest builds 979–1030 (the Seventh Niche and Back to Their Bread in the game, 4f25ccc, green). Two decisions: #394 does the loot follow the place too (A, the tier sets the metal); #396 the Gatelands' towns, lots to the house's size or houses to the lot's (A, lots to the house, new look only).
+
+**Landed on main since yesterday.** Combat's resolver (60d7423): the attack table and one resolver. Look prototypes: places off the road for F8 (the shepherd's hut, the hunting cabin, the falls, the merchants' halt and more) and all five ship classes in three dresses. Bodies prototypes: the griffin, the gargoyles, the Aurennais' and Gatelanders' dress. QA's fixes to skillcurve, q7world and penance (d1ce93d). The loot-by-place build sheet, quest writer and critic runs. Build s666.
+
+**Blocked.** Systems 940–1050 (skills by use, the first perks, the double jump, enemies by place, F2b's reach): the approved bf251d1 loses the Caer Slige rematch; CI runs on 1ae8a6b, and the builder still owes QA's skillcurve fix. Look 1031–1046 waits on Systems for a shrine-name fix. F3 waits for Systems to land.
+
+**Roadmap.** 241 of 303 stories done (240 yesterday); 2.0's new look 2 of 15 cards done, F2b now under way; the core loop's resolver done, skills, enemies by place and the double jump under way.
