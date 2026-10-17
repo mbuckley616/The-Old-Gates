@@ -23298,3 +23298,47 @@ Corrections made during the session:
 - **Oxblood knots on cream may read as spatter** at play distance, the colour of blood on linen. Slate and violet do not. If they do, oxblood can be kept to the dark tunics' bone's place, or dropped.
 - **On sloped cloth the knots are oval,** stretched up to about 1.4 to 1 where the cloth faces between two axes.
 - **The asymmetric dark layers and the single shoulder wrap** are still owed. They are garments, and OG-066's thumbnail is too small to cut them from. Its full image would help.
+## v80 — Session 1051 — The Old Blood's shoulder wrap (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. Michael's notes #272 and #274 are closed and nothing new for the bodies came back from him, so this session builds the next thing owed on OG-066, which is kept. The sheet dresses the Old Blood in "dark, asymmetric layers over cream undyed linen" and "a single shoulder wrap". Its clothing strip draws a broad dark cloth over one shoulder, crossing the chest and the back. That cloth is the one dark asymmetric layer, so this session builds both owed items as one garment. Building what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built: the sash's loop (Session 989), built wide (`buildSash(G, body, byName, { wrap: true })`).
+- **The shape.** It goes over one shoulder and under the other arm, as the sash does. It is gathered to 17 cm over the shoulder's top, spreads to 30 cm over the chest and the back, and narrows to 13 cm where it turns under the arm at the hip. The width follows how high each point stands between the hip and the shoulder, smoothed round the loop.
+- **How it lies.** Its width is laid in 25 rows across, each set clear of what is under it, as the sash's five rows are. It stands 9 mm off where the sash stands 7. Over that, five soft folds run its length, laid outward only so none can go in. They rise 7 mm where it is gathered and 4 mm where it spreads, and nothing at the edges. Each crease is shaded darker and each ridge lighter in the vertex colour, with a rolled hem 1 cm in from either edge. It has no print and no knot.
+- **The neck and the arm.** Over the shoulder it also reads the neck's base, so its inner edge lies over the base and not through it. It also reads the cap of the arm on its side. The arm at its hip is lifted clear as the sash's is.
+- **The hair is not read.** A rule cuts the hair instead: a triangle of the hair's cards, a tail, a braid's locks, ties or brush is taken out if a corner of it is under the wrap. So hair goes in under the wrap and comes out below it, and a lock or a braid lying out over the wrap stays over it. The cut is made once, on the wrap that is kept.
+- **The amulet.** Under a wrap, the amulet and charms (Session 1042) hang on the shoulder's side, away from the hip where the wrap turns.
+- **Where it is worn.** Never with a sash, a cloak or a cape, a bib, a tabard or mail.
+- **Saving and the builder.** `shoulderWrap` is a garment colour in `GARMENTS`, and `shoulderWrapSide` (`L` or `R`) is a dress flag. The Dress panel gets it as *shoulder wrap*.
+- **The roll.** For an Old Blood with no cloak, cape, sash or bib, it rolls at 45% over an undyed tunic and half that over a dark one. The wool is umber, slate, ash, oxblood or dusk violet, never the tunic's own tone, and the wrap goes over the left shoulder on seven in ten. It is drawn last, so every earlier roll of a seed is as it was.
+
+Corrections made during the session:
+- **The first sheet was wound inward.** It shaded black whatever its colour, lit only where its edges curled. A bone-coloured test showed it. The sheet is now wound so its faces look out along the surface's normal.
+- **The first palette (near-black to slate) read as a hole** under the stage's light. It is now a shade lighter.
+- **The first hair rule read every point of the hair,** so the wrap lay over it. Over loose hair it followed every lock and came out ragged. Over a braid hanging off the back it drove the band 11 cm into the body at the hip, at 1,261 points. The cut replaces it.
+- **The edge bridging the armpit stands up to 4 cm off the arm.** The arm there is under the wrap, not through it, so on that side only a point within 2.5 cm under the wrap counts as through.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 422 checks pass** (406 after Session 1043; 16 new). The sash's checks pass unchanged.
+- **Five Old Blood people:**
+  - a man with short hair over an undyed tunic;
+  - a woman with a braid over a long skirt;
+  - a man with a tail, the wrap over the right shoulder;
+  - a woman with loose hair;
+  - a man over a dark embroidered tunic, with the amulet asked on the wrap's hip.
+- **On all five:**
+  - Nothing it lies over comes through: 0 of 36,283 to 39,035 points, the nearest 5.1 to 6.8 mm under it.
+  - No arm comes through, and no neck.
+  - The wrap is 17 cm across over the shoulder, 30 over the chest and back, and 13 at the hip. It is 11,520 triangles in one mesh, on the shoulder asked.
+  - Each person saves and loads back.
+- **The hair under it:** 166 triangles of the braid are taken out, 2,275 of the tail and 5,976 of the loose hair.
+- **The amulet** asked on the wrap's hip hangs at +0.42 rad, on the shoulder's side.
+- **Under a cloak, with a sash, under a tabard:** none is built, and the sash is kept.
+- **The roll, over 60 Old Blood:** 7 roll the wrap, 4 of them over undyed linen (of 5 undyed) and 2 on the right. None is under a cloak, a sash, a bib or a tabard, none is in the tunic's own tone, and none of 180 Markmen, Aurennais and Gatelanders rolls it.
+- **Pictures:** `builder-swrap-man.jpg`, `-back.jpg`, `-close.jpg`, `-woman.jpg`, `-braid.jpg` (the braid over it), `-loose.jpg` and `-right.jpg` (over the dark embroidered tunic, with the amulet). The shots are in `--shots=swrap`.
+
+### Needs eyes
+- **It is rigid on the root, like the sash.** In the game, after F4, it must ride the chest and the arm on its shoulder. A lifted arm will want its outer edge to slide.
+- **Over a tail the wrap rides over the rope** (the tail's cards under it are cut). At its inner edge on the back it makes a small sharp crease where it climbs over.
+- **Loose hair mostly lies over the wrap's top** and goes under it lower down. A strand that stood out survives as a lock over the cloth, which reads at a distance but not close up.
+- **The folds are even:** five, the same all the way along. A hand-draped wrap would bunch more at the shoulder and fall slacker on the back.
+- **Is this the sheet's "dark asymmetric layer", or is a second garment meant** (a long open over-tunic cut away on one side)? OG-066's thumbnail cannot say. If it is a second garment, it is still owed and wants the full image.
