@@ -24753,3 +24753,7 @@ and in hand."*
 - **Phones have no H.** A touch button is owed with the phone controls.
 - **Auto-sheathing is new to every player.** After 5 s at peace the sword leaves the hand, and the next click draws and swings
   at once. A playtest should say whether 5 s is too eager in town.
+- **Addendum to Session 1080: `fists`** read its *armed* view at boot. Under the new rule the sword had already sheathed itself
+  by then, so the view showed fists. The suite now draws the weapon before it reads the view. The check is unchanged and passes.
+  The other 12 of the 14 suites that read the viewmodel or a swing pass as they are: `fpweapons`, `fphands`, `player`,
+  `tpguard`, `tpswing`, `spentblow`, `fistswing`, `dmgnums`, `skillcurve`, `tpfists`, `fistfight` and `perkarms`.
