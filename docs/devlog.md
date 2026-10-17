@@ -23434,3 +23434,42 @@ What is built (in `makePerson`):
 
 ### Needs eyes
 - **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
+## v80 — Session 1058 — The Compact guards' scale cuirass (L1 and B2, prototype only)
+Backlog L1's Aurennais line has owed, since the review of 12 Oct, "Compact guards in blue and white (not Crown red) with a scale cuirass, a round bronze shield and a spear". The shield (Session 904, a bronze face), the hoplon (913) and the spear (907 to 910) were built; the cuirass was not. OG-044 draws its guards in a short-sleeved shirt of bronze scales to the hips, belted, over a tunic, and the canon (§1.5) moves them out of the sheet's Crown red into the Compact's blue and white. Building what the sheet and the canon already say chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **The mail made of scales.** A new dress flag, `scales`, turns the mail hauberk of Session 897 into a scale cuirass. It is the same two shells, the body off the tights and the skirt off the skirt shell, so everything the mail already keeps clear (the arms, the tunic, the legs, a cloak over it, the belt riding 8 mm out on it) holds for it, and everything that is not worn with mail (a sash belt, a shoulder wrap) is not worn with it either.
+- **Its cut.** The sleeves end at the middle of the upper arm (rest |x| 0.25, where the mail's go to the elbow at 0.3). The skirt ends at the top of the thigh (rest y -0.13, where the mail's goes a hand above the knee at -0.27), so a tunic's hem shows under it, as on the sheet.
+- **The plates, drawn in the shader** (`SCALES`, in `mailMat`). Each plate is 2.4 cm wide, in rows 3.3 cm apart, each row offset by half a plate. Each plate hangs from the row above and lies over the top of the row below, so a point belongs to the highest row whose plate reaches it. A plate is a tongue with a rounded foot, domed across. It is dark in the gaps at its edges and in the shadow under the foot of the plate above, and each is a little lighter or darker than its neighbours. They are seen three ways, as the rings are, and give way to their average far off.
+- **The metal.** Bronze takes metalness 0.72 and roughness 0.36 (the rings are 0.4 and 0.45), so the plates catch the light as the bronze helm and shield do.
+- **The genome.** It saves as `scales: true` and loads back; plain mail saves no flag.
+- **The builder page.** A checkbox, "the mail made of scales (a cuirass)".
+- **No roll.** No people rolls armour yet; the guards are dressed by hand, as the Crown's are.
+- **Its stand-off.** Plates on their lining stand thicker than rings, so the cuirass's body is 3 mm further out than the mail's (12 mm over the tunic, from 9). At 9, two points of a woman's tunic came 3.3 mm through under the bust. The belt rode 8 mm out on the mail and still clears it.
+
+A fix made during the session:
+- **The hands' test read a thin band at the hem.** The test that lifts the arms clear of a skirt reads the skirt in bands 2 cm tall. At the cuirass's short hem, the last band held 23 points from its front, so its middle sat 7 cm forward of the body's, and a woman's hands came out as 70 points inside it however far the arms were lifted. A garment can now ask that a band thinner than a number of points is not read (`handsInSkirt`'s `thin`), as `mailStats` already does at 24. Only the scale skirt asks it, so every other garment's lift, and every earlier picture, is as it was.
+- **The mail's tunic test read the cut-away sleeve.** It tests each tunic point against the nearest point of the mail's shell, and the shell runs past where its sleeve is cut. With the arm bent on a spear, the cut-away forearm part of the shell lay nearest a tunic point at the waist and called it through. The test now reads only the shell that is drawn, and only the tunic under it (to 2 cm inside the cut). For the rings this changes nothing: their cut is at 0.3 and the tunic points already stopped at 0.28.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 431 checks pass** (427 after Session 1053; 4 new).
+- **Three Aurennais in the cuirass**, in the Compact's blue tunic and pale trousers, a bronze helm:
+  - a guard;
+  - a woman over a long blue skirt;
+  - a guard under a white cloak, with a bronze shield and a spear.
+- **On all three**, the sleeves are cut at 0.25 and the skirt at -0.13, and nothing comes through: 0 of 148 upper-arm, 520 tunic and 105 to 326 hip points out.
+- **No hand is in its skirt:** the guard's arms are lifted 0.18 rad and the woman's 0.27 (the mail's lifts run 0.15 to 0.3).
+- **The cloak over the cuirass** is clear of it: 0 of 3,873 points through.
+- **Saving:** each saves and loads back with the flag, and plain mail saves none.
+- **Close renders** on the chest and the hip, against the same man in rings:
+  - The plates change 22% and 34% of the view.
+  - Brightness down the chest crosses its mean 7 times over 24 cm, where the rings' finer weave crosses it 42 times.
+  - Each view renders the same twice.
+- **Pictures:** `builder-scales-guard.jpg`, `-back.jpg`, `-close.jpg`, `-side.jpg`, `-woman.jpg` and `-kit.jpg` (under the white cloak with the shield and the spear). The shots are in `--shots=scales`.
+
+### Needs eyes
+- **The edges are bare.** A real cuirass is bound in leather at the neck, the sleeves and the hem; here the plates stop at a cut, its edge broken by the cut's noise.
+- **The plates are flat in the geometry.** They are drawn, not modelled, so the outline of the shoulder and the hem is smooth where plates would make it ragged. It reads at play distance; close up, the hem is the giveaway.
+- **On the back, the light pools where the shell curves** (the small of the back and the seat), as it does on any metal. A bronze that has seen weather could be rougher.
+- **The canon's white** is the cloak alone here; the sheet gives no other place for it. A white tunic under a blue cloak would do as well, and is a choice for when the guards are dressed in the game.
+- **The helm is the kettle helm in bronze.** OG-044 draws open helms; the Corinthian of OG-019's bronze tier would be a truer Aurennais helm, and is not built in the kit.
