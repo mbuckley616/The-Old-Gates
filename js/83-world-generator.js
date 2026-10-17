@@ -376,7 +376,7 @@
       if(house.guild||type==='shipwright'||type==='inn'||type==='barber')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
       if(type==='inn')def._extra.unshift(...innTopics(house,def.people)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
       if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...(typeof crownBladeTopics==='function'?crownBladeTopics(site):[]),...(typeof compactBellTopics==='function'?compactBellTopics(site):[]),...(typeof churchShuttleTopics==='function'?churchShuttleTopics(site):[]),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
-      if(type==='church'){def._extraFn=()=>[...penanceTopics(site),...(typeof shuttlePriestTopics==='function'?shuttlePriestTopics(def):[])];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
+      if(type==='church'){def._extraFn=()=>[...penanceTopics(site),...(typeof shuttlePriestTopics==='function'?shuttlePriestTopics(def):[]),...(typeof guestTopics==='function'?guestTopics(site,def):[])];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
       const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz},shop:type};snpcs.push(kn);
     });
     {const innH=houses.find(h=>h.type==='inn');S.innDoor=innH?{x:innH.exitX,z:innH.exitZ}:null;snpcs.forEach(n=>{if(n.sched&&n.sched.type==='keeper')n.sched.inn=S.innDoor;});}
