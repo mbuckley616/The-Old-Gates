@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelands' townhouses on the new look: how deep? (look builder, Session 1074) — DECISION #408
+The Gatelands' towns are now built from the kit on the new look (Sessions 1071 to 1074, #396 C). Their lots were widened to whole bays (6.45 to 10.35 m), but they kept the generator's depths of 4 to 6 m. A townhouse is three storeys and was drawn 9 m deep, so at 4 to 6 m it reads tall and thin from the side, as in the picture's nearer houses. The row behind leaves room: a town's rows are 10.7 m apart.
+
+How deep should a town's houses be?
+- **A. As now: the lot's depth, 4 to 6 m.** Nothing moves. The houses are shallow, with small rooms front to back.
+- **B. Townhouses and merchants' houses 8 m deep where the row behind allows, else as deep as fits** (recommended). The front stays on the street line and the house grows back into its yard. The ids, doors and residents stay as they are. The rooms inside are deeper, and cottages keep their 4 to 6 m.
+- **C. The kit's full 9 m.** Lots that cannot take it keep their depth, so a street mixes 9 m and 4 to 6 m houses.
+
+Picture (Dunmore on the new look, at noon): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-town-ingame.png
+
 ## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
