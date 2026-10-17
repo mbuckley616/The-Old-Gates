@@ -23860,3 +23860,25 @@ Session 1063 laid the Gatelands' plans out by bays in the prototype. This sessio
 - `parsecheck.py` is clean.
 ### Needs eyes
 - Nothing visible yet: no town uses the bay plans until the generator's lots are widened.
+
+## v80 — Session 1071 — Card F6: the Gatelands' lots widened to whole bays on the new look (#396 C)
+Michael's C on #396 asked for two things: the kit's plans laid out by bays (Sessions 1063 and 1064), and the generator's lots widened to whole bays, 5 to 7 m becoming 6 to 10. This session does the lots, in `genSettlement` (`83-world-generator.js`). His line on #396 puts the widening on the new look, so the old look's towns are untouched, as are the Mark's and Aurenne's (their kits are not in the game yet).
+
+On `?look=new`, in a settlement of the Gatelands (by the island's own nation, so an occupied town keeps its houses), every home and ordinary shop takes a kit plan: a village's or an outpost's are cottages; a town's, port's or city's homes are townhouses and its shops (weapons, armour, potions, goods, the barber) merchants' houses. The pass runs after the plan is laid and the ids are given, so a lot keeps its centre, its depth, its door, its place in the town and its id: a house you own is the same house in either look. A lot of 5, 6 or 7 m starts at the nearest whole bays to 6, 8 or 10 m (a townhouse 3, 4 or 5 bays, 6.45 to 10.35 m; a cottage 3 or 4, 7.2 or 9.6 m), never under three bays for a townhouse (Session 1063's note: two bays is narrower than any lot). It gives a bay back while it would come within 1.2 m of another lot, a road, a cross street or the ring inside the walls. A shop with no room for three bays of shop front takes a townhouse's front instead. If even the kit's least plan will not fit, the lot keeps its old width (none did, in seven towns). Churches, keeps, guild halls, inns, the shipwright and the foreign quarter by the quay keep their sizes. Each widened lot carries `kit: {kind, bays, w0}` on its house, for the next session, which builds the houses on these lots from `PKIT.gl.bayPlan`. The solids, the interiors (`house.w`) and the paths beside a lot already follow `lot.w`.
+
+Two top-level names are new: `KIT_SITE` and `KIT_SHOPS`, just above `genSettlement` (grepped: no clash).
+
+### Verified (headless Chromium)
+- **`tests/kitlots`, new: 12 of 12 pass.** It builds two towns, two villages, a port and a city of the Gatelands (Dunmore, Vieux Marché, Cill Beag, Droichead, Portclare, Coeur de Vie) and a town of the Mark, on both looks.
+  - **The same houses:** 57, 61, 6, 7, 32, 147 and 59 houses, with every id, type, depth and door where the old look has them.
+  - **Whole bays:** 279 lots widened, each exactly its bays and end piers wide. Every home takes a plan (238 of 238).
+  - **By kind:** 102 townhouses of 3 bays, 76 of 4, 54 of 5, and 3 of 2 bays where three would not fit; merchants' houses 15 of 3 bays, 11 of 4 and 9 of 5; cottages 6 of 3 and 3 of 4.
+  - **Growth:** 276 of the 279 are wider than they were, from 4.5 to 10.35 m where they were 5 to 7 m.
+  - **Clearance:** every widened lot's solid stands 0.9 m or more clear of every other lot's (1.2 m between the lots).
+  - **Unchanged:** 30 churches, keeps, guild halls, inns and shipwrights keep their sizes. The Mark's town is identical to the old look's, and no lot on the old look takes the bays.
+- **Neighbours:** `lookpair`, `looknew`, `people` and `peopleao` pass. `kit` failed once on its last check (a street drawn in the world: the frame drew 11 calls before and after the street was added, the failure Session 1064 saw), then passed twice in a row on this change. It is flaky and owed to QA, with the frame's 11 calls as the clue: the camera was not on the world when it rendered.
+- `parsecheck.py` is clean.
+### Needs eyes
+- **Nothing visible changes yet in the houses' look:** the old builder draws them wider on the new look until the next session puts the kit's plans on them. Gatelands' streets are fuller, with the gaps between houses about 2 m narrower.
+- **Depth:** lots stay 4 to 6 m deep. The kit's townhouse is drawn 9 m deep, so the next session builds it to the lot's depth (`o.d`). Whether a shallow townhouse reads right is for the pictures.
+- **Interiors** of widened houses are wider rooms on the new look. No suite of the rooms runs on the new look yet.
