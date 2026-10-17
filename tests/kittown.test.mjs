@@ -3,7 +3,7 @@
 // mesh per material for the town. Measured on Dunmore's own meshes: the walls stand where the solids are (a ray at each face from
 // 2 m out meets the house within the wall's thickness of its solid), the door you use is in the drawn doorway (a ray at it meets the
 // leaf, painted or a shop door's glazing, set back past the wall's face), the town's kit houses are a few dozen draws, and the old builder's houses are gone from those
-// lots. Their far copy (Session 1073) stands in for them from outside the town. Its two guild halls are the kit's (Session 1082),
+// lots. Their far copy (Session 1073) stands in for them from outside the town. Its two guild halls are the kit's (Session 1083),
 // measured as the houses are, their name panels and banners painted once. On the old look Dunmore is as it was.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';

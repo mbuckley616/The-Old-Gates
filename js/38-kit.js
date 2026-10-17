@@ -125,7 +125,7 @@ function paintSign(text, bg, fg) {
   return new THREE.MeshStandardMaterial({ map: t, roughness: .6 });
 }
 // a name cut in a dressed stone panel (Session 964): dark letters in a light stone, the panel's aspect kept. Kept by its words and
-// aspect as the signs are (Session 1082, the guild halls in the game's towns), and the banners by colour and guild
+// aspect as the signs are (Session 1083, the guild halls in the game's towns), and the banners by colour and guild
 const PANEL_KEY = /^(panel|banner)\|/;
 function panelMat(text, aspect) { const key = `panel|${text}|${aspect}`; return SIGNS[key] || (SIGNS[key] = paintPanel(text, aspect)); }
 function bannerMat(colour, guild) { const key = `banner|${colour}|${guild}`; return SIGNS[key] || (SIGNS[key] = paintBanner(colour, guild)); }

@@ -30,7 +30,7 @@ const gl = sites.filter(s => s.nat === 'gatelands'), mk = sites.find(s => s.nat 
 
 // the same houses: every id, door and depth of the old look, in the same order
 const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const ok = a.length === b.length && a.every((h, i) => { const k = b[i].kit ? b[i].kit.door || 0 : 0, tx = -Math.sin(h.yaw), tz = -Math.cos(h.yaw); /* a kit house's door stands in its bay (Session 1072), k along the front */
-    const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1082), its front kept */
+    const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1083), its front kept */
     return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : h.d === b[i].d) && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
   return { id: s.id, ok, n: a.length, first: ok ? null : a.map((h, i) => [h.id, b[i] && b[i].id, h.x, b[i] && b[i].x]).find(([p, q, x, y]) => p !== q || Math.abs(x - y) > .01) }; });
 check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
@@ -45,7 +45,7 @@ check('a village\'s are cottages; a town\'s, port\'s or city\'s homes townhouses
 check(`most homes take the bays (${Math.round(share * 100)}%)`, share > .8, { kit: kit.filter(h => h.type === 'home').length, homes: rows.filter(h => h.type === 'home').length });
 const special = rows.filter(h => ['church', 'castle', 'inn', 'shipwright'].includes(h.type));
 check(`churches, keeps, inns and the shipwright keep their size (${special.length})`, special.length > 4 && special.every(h => !h.kit && h.w === h.w0), special.filter(h => h.kit || h.w !== h.w0).slice(0, 4));
-// the guild halls (Session 1082, Michael's C on #352): a town's or city's is the kit's hall, 14.4 by 9 m, slid along its front by 0.7 m at most
+// the guild halls (Session 1083, Michael's C on #352): a town's or city's is the kit's hall, 14.4 by 9 m, slid along its front by 0.7 m at most
 const halls = rows.filter(h => h.type === 'guild_f' || h.type === 'guild_m'), badH = halls.filter(h => !h.kit || h.kit.kind !== 'guildhall' || h.w !== 14.4 || h.d !== 9 || Math.abs(h.kit.slide) > .7 || h.kit.guild !== (h.type === 'guild_m' ? 'mages' : 'fighters'));
 check(`every guild hall of the Gatelands' towns and city is the kit's hall, 14.4 by 9 m (${halls.length}; slid ${[...new Set(halls.map(h => h.kit && h.kit.slide))].join(', ')} m)`, halls.length >= 4 && badH.length === 0, badH.slice(0, 4));
 const wider = kit.filter(h => h.w > h.w0).length, w = kit.map(h => h.w);

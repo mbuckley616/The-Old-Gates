@@ -23937,7 +23937,8 @@ Corrections made during the session:
 - **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
 - **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
 
-## v80 — Session 1082 — Card F6: the Gatelands' guild halls built from the kit on the new look (#352 C)
+## v80 — Session 1083 — Card F6: the Gatelands' guild halls built from the kit on the new look (#352 C)
+(Numbered 1082 when first pushed. The bodies builder's auto/bodies holds a Session 1082 too, so this one is 1083.)
 The backlog's next F6 item after the houses is the town's large buildings from the kit: the inn, the church, the guild hall and the keep. The guild hall is the one already drawn for it: Michael's C on #352 (a hall of its own, open to the roof, with a gallery to the dormitory), built in the prototype in Session 964 and copied into `PKIT.gl.PLANS.guildhall` with the rest in Session 1037. This session puts it in the towns. The church waits for its own session (the kit's temple is a small god's temple, 9.6 by 6 m, smaller than a town church), and so do the inn and the keep, which have no exterior plan in the kit yet.
 
 On `?look=new`, a Gatelander town's or city's Fighters' and Mages' guild halls are now the kit's hall, in red or in blue, with its own name panel (*FIGHTERS’ GUILD*, *MAGES’ GUILD*) and banner (`genSettlement`, `83-world-generator.js`):

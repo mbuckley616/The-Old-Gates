@@ -281,7 +281,7 @@
         if(n<lo){for(n=lo-1;n>=G.BAYS[kind].min;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}}
         if(n<G.BAYS[kind].min){lot.w=w0;return;}
         lot.kit={kind,bays:n,w0};});
-      // S1082 (card F6, Michael's C on #352) — a town's guild hall is the kit's guild hall, 14.4 by 9 m: the lot takes the plan's size
+      // S1083 (card F6, Michael's C on #352) — a town's guild hall is the kit's guild hall, 14.4 by 9 m: the lot takes the plan's size
       // with its front kept on the street line (the centre moves back toward the street by what the depth gives up), so its door, id
       // and steward stay where they were. A lot with no room for the wider front keeps the old hall.
       // A guild lot often stood nearer a road or a street than a widened house may (the old builder's 13 by 11 m): it takes the hall
@@ -301,7 +301,7 @@
     // a gable roof as one prism: eaves at y0 along ±hw (x) and ±hd (z), the ridge at y1 along x, its gables closed (non-indexed, for mergeGeos)
     function kitRoof(hw,hd,y0,y1){const P=[[-hw,y0,hd],[hw,y0,hd],[hw,y1,0],[-hw,y0,hd],[hw,y1,0],[-hw,y1,0],[hw,y0,-hd],[-hw,y0,-hd],[-hw,y1,0],[hw,y0,-hd],[-hw,y1,0],[hw,y1,0],[-hw,y0,-hd],[-hw,y0,hd],[-hw,y1,0],[hw,y0,hd],[hw,y0,-hd],[hw,y1,0]];
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;}
-    // S1082 — the guild hall's plan, its lit windows keyed by the town and the lot as a house's are; its door is the great door
+    // S1083 — the guild hall's plan, its lit windows keyed by the town and the lot as a house's are; its door is the great door
     function kitHall(lot){const plan=PKIT.gl.PLANS.guildhall({guild:lot.kit.guild});plan.r=PKIT.stream(`${site.id}:windows:${lot.n}`);plan.doorX=plan.open.front[0].x;return {plan,kind:'guildhall',colour:'stone'};}
     function kitHouse(lot,type){
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
@@ -398,7 +398,7 @@
         const fl=new THREE.Mesh(new THREE.ConeGeometry(.03,.09,6),new THREE.MeshBasicMaterial({color:0xffe090}));fl.position.y=-.01;lg.add(fl);lg.position.set(lx,ly,lz);group.add(lg);S.lamps.push({glass:lg,light:null});
       }
       let signY=null; // S246 — the trade sign is painted once the keeper's name is final (below)
-      if((type==='guild_f'||type==='guild_m')&&lot.kit){} /* S1082 — the kit's hall carries its own name panel and banner */
+      if((type==='guild_f'||type==='guild_m')&&lot.kit){} /* S1083 — the kit's hall carries its own name panel and banner */
       else if(type==='guild_f'||type==='guild_m'){
         const y=worldH(doorX,doorZ);const col=GUILD_DEF[type].col;
         [-1,1].forEach(sd=>{const bx=doorX+lot.tx*.3-lot.tz*sd*2.4,bz=doorZ+lot.tz*.3+lot.tx*sd*2.4;
