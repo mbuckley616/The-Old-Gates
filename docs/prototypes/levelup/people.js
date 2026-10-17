@@ -452,7 +452,7 @@ function buildCloak(G, body, byName, rnd) {
   // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
   // with a spear in the right fist (Session 909) a full cloak is thrown back off the right shoulder, as a Markman frees his
   // weapon arm: it opens from the throat round to just behind the shoulder, so the forearm held forward is out of it
-  const thrown = !!(D.spear || D.crossbow) && !cape, th0 = thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
+  const thrown = !!(D.spear || D.crossbow || D.basket) && !cape, th0 = thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
     const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
@@ -1843,6 +1843,85 @@ function buildCrossbow(G, body, byName, meshes, root, grip) {
   const butt = new THREE.Vector3(0, CB_BUTT, 0).applyMatrix4(cb.matrixWorld), out = T.x * Math.sign(grip.C.x);
   return { mesh: cb, stats: { make, span: P.K.span, len: +(CB_BUTT - CB_FRONT + .12).toFixed(3), clear: +clear.toFixed(4), fist, handPts: handN, low: +(low - floor).toFixed(3), butt: +(butt.y - floor).toFixed(3), out: +out.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, curl: grip.curl, gripPts: grip.n, tris } };
 }
+// ── the Gatelanders' basket (Session 1033, L1; OG-048's farm woman with a basket, OG-059's "a basket", both sheets' woven baskets) ──
+// An oval market basket of willow carried by its bow handle in the right fist, the arm hanging straight with the weight, the
+// basket plumb under the fist with its length fore and aft along the leg. Stakes and weavers drawn on a canvas (randed over and
+// under, the stakes showing between the rows), a rolled rim, and a bow handle wrapped in a spiral of skeins. In it a linen cloth
+// over the load (D.basketCloth) or, with no cloth, a heap of apples. Its numbers, in metres: 38 cm long and 27 wide at the rim, 30
+// and 20 at the foot, 17 deep, the handle's crown 15 cm over the rim. Built in its own frame: x along its length, y up, z across,
+// the foot's middle at 0. The arm is lifted out from the side, three hundredths of a radian at a time, until nothing of the person
+// or what they wear (the right hand apart) is within a centimetre of its sides
+const BASKET = { a0: .15, b0: .1, a1: .19, b1: .135, D: .17, h: .15, flat: .065, wall: .007, R: SPEAR_R };
+function wickerTex() {
+  if (TEXW.wicker) return TEXW.wicker; const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), img = x.createImageData(N, N);
+  // eight stakes across the tile and eight rows of weavers up it; a weaver passes in front of a stake on alternate rows and stakes,
+  // and is round in section (darker at its top and bottom edges); where it passes behind, the stake shows, round across its width
+  const S = N / 8, Rw = N / 8;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const si = Math.floor(i / S), rj = Math.floor(j / Rw), fu = (i % S) / S, fv = (j % Rw) / Rw;
+    const stake = Math.abs(fu - .5) < .17, front = (si + rj) % 2 === 0, gap = fv < .06 || fv > .94; let v;
+    if (gap) v = .22;
+    else if (stake && !front) v = .55 + .4 * Math.sin(Math.PI * (fu - .33) / .34);
+    else { const e = Math.sin(Math.PI * fv), bow = front ? .1 * Math.cos(Math.PI * (fu - .5)) : -.12 * (stake ? 0 : 1 - Math.abs(fu - .5) * 2); v = (.45 + .5 * e) * (1 + bow); }
+    v *= .9 + .1 * Math.sin(i * 1.7 + j * .3) * Math.sin(j * .9); const k = (j * N + i) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = Math.max(0, Math.min(255, v * 255)); img.data[k + 3] = 255; }
+  x.putImageData(img, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return (TEXW.wicker = t);
+}
+function basketParts(D) {
+  const K = BASKET, NT = 64, NJ = 10, parts = [], tex = wickerTex(), col = sRGB(...D.basket);
+  const willow = new THREE.MeshStandardMaterial({ color: col, map: tex, bumpMap: tex, bumpScale: 1.4, roughness: .8, side: THREE.DoubleSide });
+  const ax = s => K.a0 + (K.a1 - K.a0) * s ** .8, bz = s => K.b0 + (K.b1 - K.b0) * s ** .8, pos = [], uv = [], idx = [];
+  // the wall, outside and in (the inside a wall's thickness in), and the foot under it; u runs five tiles round (40 stakes), v a tile in 8 cm
+  for (const [off, flip] of [[0, false], [K.wall, true]]) { const b0 = pos.length / 3;
+    for (let j = 0; j <= NJ; j++) { const s = j / NJ, y = (flip ? K.wall : 0) + s * (K.D - (flip ? K.wall : 0)); for (let t = 0; t <= NT; t++) { const th = t / NT * Math.PI * 2; pos.push((ax(s) - off) * Math.cos(th), y, (bz(s) - off) * Math.sin(th)); uv.push(t / NT * 5, y / .08); } }
+    for (let j = 0; j < NJ; j++) for (let t = 0; t < NT; t++) { const a = b0 + j * (NT + 1) + t, b = a + NT + 1; if (flip) idx.push(a, a + 1, b, a + 1, b + 1, b); else idx.push(a, b, a + 1, a + 1, b, b + 1); } }
+  for (const [y, off, flip] of [[0, 0, true], [K.wall, K.wall, false]]) { const c0 = pos.length / 3; pos.push(0, y, 0); uv.push(0, 0);
+    for (let t = 0; t <= NT; t++) { const th = t / NT * Math.PI * 2; pos.push((K.a0 - off) * Math.cos(th), y, (K.b0 - off) * Math.sin(th)); uv.push(Math.cos(th) * 2, Math.sin(th) * 2); }
+    for (let t = 0; t < NT; t++) if (flip) idx.push(c0, c0 + 1 + t, c0 + 2 + t); else idx.push(c0, c0 + 2 + t, c0 + 1 + t); }
+  const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); wg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); wg.setIndex(idx); wg.computeVertexNormals();
+  const wall = new THREE.Mesh(wg, willow); wall.name = 'basketWall'; parts.push(wall);
+  // the rim: a roll 1 cm round over the wall's top, and the bow handle, a tube 2.6 cm thick (the spear's, so the fist closes on it as it
+  // does on a shaft) from 3 cm down the wall at one end, over the top, to the other, straight and level for 13 cm over its crown where the fist closes; both wound with skeins (u along their length)
+  const rimPts = []; for (let t = 0; t <= NT; t++) { const th = t / NT * Math.PI * 2; rimPts.push(new THREE.Vector3((K.a1 - K.wall / 2) * Math.cos(th), K.D + .004, (K.b1 - K.wall / 2) * Math.sin(th))); }
+  const rg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rimPts, true), 96, .0105, 8, true); { const u = rg.attributes.uv; for (let k = 0; k < u.count; k++) u.setXY(k, u.getX(k) * 60 + u.getY(k), u.getY(k) * .6); }
+  const hp = [], e = K.a1 - K.wall / 2 - .002; for (let k = 0; k <= 40; k++) { const x = -e + 2 * e * k / 40, u = Math.max(0, (Math.abs(x) - K.flat) / (e - K.flat)); hp.push(new THREE.Vector3(x, K.D - .03 + (K.h + .03) * Math.sqrt(Math.max(0, 1 - u * u)), 0)); }
+  const hc = new THREE.CatmullRomCurve3(hp), hg = new THREE.TubeGeometry(hc, 64, K.R, 10, false); { const u = hg.attributes.uv; for (let k = 0; k < u.count; k++) u.setXY(k, u.getX(k) * 40 + u.getY(k) * 1.2, u.getY(k) * .8); }
+  const rim = new THREE.Mesh(rg, willow); rim.name = 'basketRim'; parts.push(rim); const handle = new THREE.Mesh(hg, willow); handle.name = 'basketHandle'; parts.push(handle);
+  // what is in it: a cloth over the load, domed a little and rucked, tucked in under the rim; or apples heaped to just over it
+  if (D.basketCloth) { const cp = [], ci = [], NR = 8; for (let r = 0; r <= NR; r++) for (let t = 0; t <= NT; t++) { const s = r / NR, th = t / NT * Math.PI * 2, rr = s * .97;
+      cp.push((K.a1 - K.wall) * rr * Math.cos(th), K.D - .006 + .045 * (1 - s * s) + .006 * Math.sin(5 * th + 1.3) * s * s + .004 * Math.sin(3 * th) * s, (K.b1 - K.wall) * rr * Math.sin(th)); }
+    for (let r = 0; r < NR; r++) for (let t = 0; t < NT; t++) { const a = r * (NT + 1) + t, b = a + NT + 1; ci.push(a, a + 1, b, a + 1, b + 1, b); }
+    const cg = new THREE.BufferGeometry(); cg.setAttribute('position', new THREE.Float32BufferAttribute(cp, 3)); cg.setIndex(ci); cg.computeVertexNormals();
+    const cloth = new THREE.Mesh(cg, clothMat(sRGB(...D.basketCloth), 'wool', { side: THREE.DoubleSide, scale: 40 })); cloth.name = 'basketCloth'; parts.push(cloth); }
+  else { const ap = [], an = [], ac = [], ai = [], sg = new THREE.SphereGeometry(.036, 12, 9), rnd = seeded('apples'), P = sg.attributes.position, Nn = sg.attributes.normal, I = sg.index.array;
+    const spots = []; for (const [n, rr, y] of [[1, 0, K.D - .02], [6, .55, K.D - .03], [5, .3, K.D + .012]]) for (let k = 0; k < n; k++) { const th = (k + (n === 5 ? .5 : 0)) / n * Math.PI * 2; spots.push([(K.a1 - .05) * rr * Math.cos(th) * (n === 5 ? 1.2 : 1), y + (n === 1 ? .03 : 0), (K.b1 - .05) * rr * Math.sin(th)]); }
+    for (const [x0, y0, z0] of spots) { const b = ap.length / 3, red = rnd() < .7, c = red ? [.55 + .15 * rnd(), .1 + .08 * rnd(), .06] : [.45, .55 + .1 * rnd(), .15], s = .9 + .2 * rnd();
+      for (let k = 0; k < P.count; k++) { const y = P.getY(k); ap.push(x0 + P.getX(k) * s, y0 + y * s * .88 - (Math.abs(y) > .03 ? .004 * Math.sign(y) : 0), z0 + P.getZ(k) * s); an.push(Nn.getX(k), Nn.getY(k), Nn.getZ(k)); const sh = .8 + .2 * (y / .036); ac.push(...c.map(v => v * sh)); }
+      for (const i of I) ai.push(b + i); }
+    const ag = new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(ap, 3)); ag.setAttribute('normal', new THREE.Float32BufferAttribute(an, 3)); ag.setAttribute('color', new THREE.Float32BufferAttribute(ac, 3)); ag.setIndex(ai);
+    const apples = new THREE.Mesh(ag, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .45 })); apples.name = 'basketApples'; parts.push(apples); }
+  return { parts, handleCurve: hc, ax, bz };
+}
+// whether a point in the basket's frame is within its sides (grown by m): under the rim, inside the oval at its height
+function basketIn(K, ax, bz, x, y, z, m) { if (y < -m || y > K.D + m) return false; const s = Math.max(0, Math.min(1, y / K.D)); return (x / (ax(s) + m)) ** 2 + (z / (bz(s) + m)) ** 2 < 1; }
+function buildBasket(G, body, byName, meshes, root, grip) {
+  const D = G.dress, K = BASKET, R0 = PACK.rest, wr = byName['wrist.R'], arm = byName['upperarm01.R'], P = basketParts(D);
+  const bk = new THREE.Group(); bk.name = 'basket'; for (const m of P.parts) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; bk.add(m); } root.add(bk);
+  // the grip is kept in the wrist's frame, so it goes where the arm goes
+  root.updateMatrixWorld(true); const toW = wr.matrixWorld.clone().invert(), Cl = grip.C.clone().applyMatrix4(toW), Al = grip.A.clone().transformDirection(toW);
+  let floor = 1e9; { const PP = posedBody(body); for (const i of new Set(PACK.G['body'])) floor = Math.min(floor, PP[i * 3 + 1]); }
+  const place = () => { root.updateMatrixWorld(true); const C = Cl.clone().applyMatrix4(wr.matrixWorld), A = Al.clone().transformDirection(wr.matrixWorld); A.y = 0; A.normalize(); if (A.z < 0) A.negate();
+    const Y = new THREE.Vector3(0, 1, 0), Z = A.clone().cross(Y); bk.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(A, Y, Z)); bk.position.copy(C).addScaledVector(Y, -(K.D + K.h)); root.updateMatrixWorld(true); return C; };
+  const test = () => { const inv = bk.matrixWorld.clone().invert(), v = new THREE.Vector3(); let n = 0, clear = 1, tested = 0;
+    eachPoint(wornClouds(body, meshes, root), (x, y, z, i) => { if (i >= 0 && R0[i * 3] < -.39) return; v.set(x, y, z).applyMatrix4(inv); if (v.y < -.02 || v.y > K.D + .02) return; tested++;
+      if (basketIn(K, P.ax, P.bz, v.x, v.y, v.z, .01)) n++; const s = Math.max(0, Math.min(1, v.y / K.D)), e = Math.hypot(v.x / P.ax(s), v.z / P.bz(s)); if (e > 1) clear = Math.min(clear, (e - 1) * Math.min(P.ax(s), P.bz(s))); });
+    return { n, clear, tested }; };
+  let lift = 0, T; place(); for (;;) { T = test(); if (!T.n || lift >= .6) break; lift += .03; arm.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -.03)); place(); }
+  // the fist on the handle: the right hand's points inside the handle's tube, by their distance to its curve near the crown
+  const inv = bk.matrixWorld.clone().invert(), v = new THREE.Vector3(), HP = P.handleCurve.getSpacedPoints(200); let fist = 0, handN = 0;
+  eachPoint(wornClouds(body, meshes, root), (x, y, z, i) => { if (i < 0 || R0[i * 3] >= -.39) return; v.set(x, y, z).applyMatrix4(inv); let d = 1; for (const p of HP) d = Math.min(d, p.distanceTo(v)); if (d < .05) handN++; if (d < K.R - .001) fist++; });
+  const foot = bk.getWorldPosition(new THREE.Vector3()).y - floor; wr.attach(bk);
+  let tris = 0; bk.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  return { mesh: bk, stats: { load: D.basketCloth ? 'cloth' : 'apples', inside: T.n, tested: T.tested, clear: +T.clear.toFixed(4), lift: +lift.toFixed(2), fist, handPts: handN, foot: +foot.toFixed(3), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, curl: grip.curl, gripPts: grip.n, tris } };
+}
 // the sash belt's promises (Session 1010), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
 // angles and 1 cm rows, nothing worn under it (the tunic, a skirt, a bodice, mail, the body) stands out past its inside, no point of
 // an arm is within it, and a leather belt worn over it lies outside it
@@ -2101,6 +2180,17 @@ export function makePerson(G, o = {}) {
     root.updateMatrixWorld(true); const hinge = at('finger2-1.R').sub(at('finger5-1.R')).normalize().applyQuaternion(byName['metacarpal2.R'].getWorldQuaternion(new THREE.Quaternion()).invert());
     const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
     spearGrip = fistGrip(body, byName, root, curl, hinge); }
+  // a basket in the right fist (Session 1033), when it holds no spear or crossbow: the arm straight with the weight, the hand turned so
+  // its fingers point down and its knuckles run level fore and aft, then the four fingers close round the handle's crown (fistGrip)
+  let basketGrip = null, basketWrist = 0; if (D.basket && !D.spear && !D.crossbow) { const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wr = byName['wrist.R'];
+    byName['lowerarm01.R'].quaternion.copy(q(.12, 0, 0)); root.updateMatrixWorld(true);
+    const frame = (L, K) => { K = K.clone().normalize(); L = L.clone().addScaledVector(K, -L.dot(K)).normalize(); return new THREE.Matrix4().makeBasis(L, K, L.clone().cross(K)); };
+    const mid = at('finger3-1.R').add(at('finger4-1.R')).multiplyScalar(.5), kn = at('finger2-1.R').sub(at('finger5-1.R')), cur = frame(mid.sub(at('wrist.R')), kn), tgt = frame(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, Math.sign(kn.z) || 1));
+    const fix = new THREE.Quaternion().setFromRotationMatrix(tgt.multiply(cur.transpose())); basketWrist = +(2 * Math.acos(Math.min(1, Math.abs(fix.w)))).toFixed(3);
+    wr.quaternion.copy(wr.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(fix.multiply(wr.getWorldQuaternion(new THREE.Quaternion()))));
+    root.updateMatrixWorld(true); const hinge = at('finger2-1.R').sub(at('finger5-1.R')).normalize().applyQuaternion(byName['metacarpal2.R'].getWorldQuaternion(new THREE.Quaternion()).invert());
+    const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
+    basketGrip = fistGrip(body, byName, root, curl, hinge); }
   let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
   // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band.
   // Its knot's hanging ends (Session 996) fall over the front of the thigh, where the relaxed hand lies: then the arm is swung back
@@ -2133,8 +2223,10 @@ export function makePerson(G, o = {}) {
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a crossbow in the same fist (Session 941), when it holds no spear
   let crossbowStats = null; if (D.crossbow && !D.spear) crossbowStats = { ...buildCrossbow(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
+  // a basket in the same fist (Session 1033), when it holds no spear or crossbow; last, as it is lifted clear of all the rest
+  let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, necklace: neckStats, beltCoins: beltCoinStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, legWraps: legWrapSt };
+  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, necklace: neckStats, beltCoins: beltCoinStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, basket: basketStats, legWraps: legWrapSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -2157,7 +2249,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', spearHead: null, crossbowMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && D[k] !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -2182,7 +2274,7 @@ export const PEOPLES = {
     body: { m: { metres: [1.72, 1.84], muscle: [.52, .7], weight: [.36, .52] }, f: { metres: [1.6, 1.72], muscle: [.45, .6], weight: [.38, .54] } },
     skin: [[.9, .74, .64], [.88, .69, .58], [.86, .64, .54], [.92, .77, .69]], hair: [[.62, .3, .14], [.5, .22, .1], [.72, .38, .18], [.25, .17, .12], [.36, .24, .15]], eyes: [[.42, .55, .4], [.4, .52, .62], [.38, .3, .2]],
     styles: { m: { short: 6, tail: 2 }, f: { braid: 3, tail: 2, bun: 2, loose: 2 } },
-    wool: [[.45, .16, .12], [.3, .36, .22], [.55, .42, .2], [.2, .3, .4], [.62, .58, .5]], cloak: .65, hood: .5, cape: .5, capes: [[.5, .14, .1], [.45, .16, .12], [.3, .36, .22]], brooch: [.62, .47, .22], legWraps: [0, .45], scarf: [.85, 0], apron: [.35, .3], mantle: 0, brow: { m: { thick: [.5, .75], arch: [.3, .5] }, f: { thick: [.35, .55], arch: [.5, .75] } } },
+    wool: [[.45, .16, .12], [.3, .36, .22], [.55, .42, .2], [.2, .3, .4], [.62, .58, .5]], cloak: .65, hood: .5, cape: .5, capes: [[.5, .14, .1], [.45, .16, .12], [.3, .36, .22]], brooch: [.62, .47, .22], legWraps: [0, .45], scarf: [.85, 0], basket: [.4, .12], apron: [.35, .3], mantle: 0, brow: { m: { thick: [.5, .75], arch: [.3, .5] }, f: { thick: [.35, .55], arch: [.5, .75] } } },
   markman: { name: 'Markmen', race: { caucasian: [1, 1], african: [0, 0], asian: [0, 0] },
     body: { m: { metres: [1.84, 1.98], muscle: [.66, .92], weight: [.48, .7] }, f: { metres: [1.72, 1.84], muscle: [.52, .7], weight: [.46, .64] } },
     skin: [[.92, .8, .74], [.9, .77, .7], [.88, .74, .66]], hair: [[.8, .72, .56], [.72, .64, .5], [.86, .8, .66], [.62, .54, .42]], eyes: [[.55, .6, .62], [.5, .56, .6], [.45, .55, .62]],
@@ -2247,6 +2339,9 @@ export function peopleGenome(rnd, people, g, o = {}) {
   // ochre or undyed wool; seven in ten block-printed in a colour not the field's, half with a red border; drawn last for the same reason
   if (P.scarf && !D.cloak && !D.helm && rnd() < P.scarf[sx === 'f' ? 0 : 1]) { const F = [[.45, .16, .12], [.3, .36, .22], [.2, .3, .4], [.6, .46, .2], [.8, .76, .66]], k = Math.floor(rnd() * F.length); D.wrap = F[k]; D.scarf = true;
     if (rnd() < .7) D.scarfPrint = k === 4 ? pick([[.5, .14, .1], [.2, .3, .4]]) : pick([[.86, .82, .7], [.8, .62, .3]]); if (rnd() < .5) D.wrapBorder = k === 0 ? [.8, .62, .3] : [.55, .14, .1]; }
+  // the Gatelanders' baskets (Session 1033, OG-048's farm woman, OG-059), more often on the women, in buff, brown or peeled willow; six in
+  // ten with a linen cloth over the load (undyed, or madder), the rest heaped with apples; drawn last for the same reason
+  if (P.basket && !D.spear && !D.crossbow && rnd() < P.basket[sx === 'f' ? 0 : 1]) { D.basket = pick([[.62, .47, .28], [.46, .33, .2], [.74, .64, .46]]); if (rnd() < .6) D.basketCloth = pick([[.84, .8, .7], [.8, .76, .66], [.6, .22, .16]]); }
   return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)

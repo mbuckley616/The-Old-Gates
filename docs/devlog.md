@@ -23195,3 +23195,35 @@ Corrections made during the session:
 - **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
 - **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
+## v80 — Session 1033 — The Gatelanders' baskets (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. Session 1029 left two pieces of the Gatelanders' dress unbuilt: the coins on the head-wrap's edge, which need OG-056's full image, and the baskets. This session builds the basket. OG-048 draws "a farm woman with an apron and a basket" and lists woven baskets under the people's craft; OG-059 lists "a basket". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+The basket is an oval market basket of willow, carried by its bow handle in the right fist (`D.basket`, the willow's colour). It hangs plumb under the fist, its length fore and aft along the leg.
+- **The pose.** The right elbow straightens to 0.12 rad with the weight. The hand is turned at the wrist (0.51 to 0.59 rad) so its fingers point down and its knuckles run level, fore and aft. The four fingers close round the handle's crown with the spear's grip (`fistGrip`), since the handle is the spear shaft's thickness, 2.6 cm.
+- **The basket.** 38 by 27 cm at the rim and 30 by 20 at the foot, 17 cm deep. The wall has an outside, an inside 7 mm in, and a floor. On a canvas, the weave is drawn as eight stakes and eight rows of weavers to a tile, five tiles round (40 stakes). A weaver passes in front of alternate stakes, and the stakes show where it passes behind. The same canvas is the bump map. The rim is a roll 1 cm round. The bow handle rises 15 cm over the rim from 3 cm down the wall at each end, and is level for 13 cm over its crown, where the fist closes. Rim and handle are wound in skeins.
+- **What is in it.** A linen cloth over the load (`D.basketCloth`), domed and rucked a little and tucked in under the rim. With no cloth, fourteen apples are heaped to just over the rim, seven in ten red, the rest green, in one mesh.
+- **Clear of the body.** The arm is lifted out from the side, 0.03 rad at a time, until nothing of the person or what they wear (the right hand apart) is within a centimetre of the basket's sides. The basket is carried by the wrist, as the spear and the crossbow are.
+- **A spear or a crossbow wins:** a basket asked with either is not built. A full cloak is thrown back off the right shoulder for a basket as for a spear (Session 909), so the arm hangs free of it.
+- **Saving.** `basket` and `basketCloth` are garment colours in `GARMENTS`, so both save with the genome. The builder's Dress panel gets them as *willow basket* and *cloth over the basket*.
+- **The roll.** A Gatelander with no spear or crossbow rolls a basket at 0.4 for a woman, 0.12 for a man. It comes in buff, brown or peeled willow, and six in ten carry a cloth, undyed or madder. This is drawn last, so every earlier roll of a seed is as it was.
+
+Corrections made during the session:
+- **The first handle was an arch all the way over,** so it fell away under the fist at both ends of the hand. 18 to 21 of the hand's points were inside it, where the fingertips curl under. Its crown is now level for 13 cm, and none are.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 394 checks pass** (388 after Session 1029; 6 new).
+- **Four people:** a woman with a cloth over the basket, a woman in a long skirt with apples, a man with a madder cloth, and a woman under a moss cloak thrown back.
+  - None of the hand's points are inside the handle (0 of 1,430 to 1,514). The fingers bend 0.67 to 0.73, 0.82 to 0.90 and 0.59 to 0.67 rad at their three joints, and the nearest finger point is 0.3 to 0.4 mm off the handle. The thumb is clear.
+  - Nothing is within a centimetre of the basket's sides (0 of 538 to 1,677 points tested), the nearest 11.9 to 13.5 mm off. To get there the arm was lifted 0.09 rad on the man, 0.18 and 0.24 on the two women, and 0.45 under the cloak.
+  - The basket's foot is 52 to 61 cm off the ground. It is carried by the wrist, and each person saves and loads back.
+- **A basket and a spear asked together:** the spear is carried, not the basket.
+- **The roll:** 13 of 40 Gatelanders carry one, 10 of them women and 8 under a cloth. None has a spear or crossbow, and no other people rolls one.
+- **The size:** 6,528 triangles with a cloth, 7,808 with apples, in four meshes.
+- **New pictures:** `builder-basket-front.jpg`, `-back.jpg`, `-apples.jpg`, `-grip.jpg`, `-cloak.jpg` and `-man.jpg`.
+
+### Needs eyes
+- **The arm stands out from the side.** On the cloaked woman it is lifted 0.45 rad, about 26°, because the thrown-back cloak's front edge hangs by the right hip. A woman with a full basket more often lets it rest against the hip, or carries it in the crook of her elbow. Neither is built: the basket hangs plumb and never touches the body.
+- **The basket hangs rigid from the wrist.** When the arm moves (the game, after F4), it will turn with the hand rather than swing level under it.
+- **The weave reads as coiled rows from a distance.** The stakes show only close to.
+- **The cloth is a smooth dome** with no hang over the rim and no check.
+- **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
