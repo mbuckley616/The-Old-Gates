@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-14T14:34:11.594Z
+Calls read to: 2026-10-16T17:51:09.360Z
 
 ---
 
@@ -3261,7 +3261,7 @@ The rumour pool's *Normal* lines become the *Any news?* pool's lasting default f
 
 ## The Great Gates, II — the knife and the needle
 
-*Unapproved. Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
+*Approved by Michael, 16 Oct 2026.* *Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
 
 ### What the canon fixes, and where it is silent
 
@@ -3416,7 +3416,7 @@ Piece I's lines stand. One line is added. At six bound, the knife's card gains t
 
 ## The Great Gates, III — what each gate gives, and what it costs
 
-*Unapproved. Drafted 16 Oct 2026.* The third piece of backlog A's *The six great gates: what clearing one means*. Piece I (approved 14 Oct) wrote the act at the ring and gave every tear the same gain, one tier deeper in the gate's school. It left *the gate's own reward* to be added to that line. Piece II (15 Oct, unapproved) named the knife and the needle. This piece gives each of the six its own gift to the player and its own cost to the world, and writes every line about them. Still owed, one piece a run: Varek's two arcs, and the Act III outline reconciled with all of it.
+*Approved by Michael, 16 Oct 2026.* *Drafted 16 Oct 2026.* The third piece of backlog A's *The six great gates: what clearing one means*. Piece I (approved 14 Oct) wrote the act at the ring and gave every tear the same gain, one tier deeper in the gate's school. It left *the gate's own reward* to be added to that line. Piece II (15 Oct, unapproved) named the knife and the needle. This piece gives each of the six its own gift to the player and its own cost to the world, and writes every line about them. Still owed, one piece a run: Varek's two arcs, and the Act III outline reconciled with all of it.
 
 ### What the canon fixes, and where it is silent
 

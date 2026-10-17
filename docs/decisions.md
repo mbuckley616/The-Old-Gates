@@ -236,6 +236,12 @@ Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writ
 ### Quest draft approved: The Great Gates, I — the knot at the ring
 Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.
 
+### Quest draft approved: The Great Gates, II — the knife and the needle
+Michael: **Approved**. (16 Oct 2026, on the Quest Drafts page) In the quest writer's build queue; its words wait on the act at the ring (card F5 and the systems builder's knot).
+
+### Quest draft approved: The Great Gates, III — what each gate gives, and what it costs
+Michael: **Approved**. (16 Oct 2026, on the Quest Drafts page) In the quest writer's build queue; its words wait on the same.
+
 ### Aurenne's trade tunnel: a road, or a smugglers' run? (look builder, Session 908) — DECISION #335
 **F8: Aurenne's second place, a trade tunnel (look builder, Session 908).** OG-121's Aurenne panel lists "trade tunnels". This one is a rock-cut passage through a headland from a town's quay to the road inland. It is a prototype in `docs/prototypes/levelup/places.js` (`aurenneTunnel`), at `places.html?place=tunnel`.
 - **The bore:** 56 m long, winding 1.6 m either side, 3.6 m wide, with upright walls to 2.4 m under a round vault (4.2 m at the crown).
