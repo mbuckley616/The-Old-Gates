@@ -23227,3 +23227,42 @@ Corrections made during the session:
 - **The weave reads as coiled rows from a distance.** The stakes show only close to.
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
+## v80 — Session 1042 — The Old Blood's amulet and belt charms (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. The Gatelanders' dress is built but for the head-wrap's coins, which still need OG-056's full image, so this session starts the next people in L1, the Old Blood. OG-066 is kept for its clothes, not its bodies (the catalogue flags the tall, silver-haired, elvish figures as against the canon). Its row lists "a round stone-and-iron amulet on the belt, belts with small hanging charms". Building what the sheet draws on a kept sheet chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`buildBeltCharms`):
+- **The amulet.** A round stone 4.4 cm across and 9 mm thick, its edge bevelled, its face speckled with a groove cut round it. It is bound in iron: a rim round its edge, a strap down the face and back, a boss in the middle, and a bail at the top. It hangs on a leather thong 4.5 cm under the belt's lower edge, 0.42 rad round from the front on the left hip.
+- **The charms.** Each hangs on its own shorter thong from its own point of the edge:
+  - a boar's tooth bound in leather at the root, curved a little outward at the tip, 4.2 cm toward the front;
+  - a small iron ring 1.5 cm across, 4 cm toward the back;
+  - an oxblood stone bead, 6.3 cm toward the back.
+- **How each hangs.** Each piece faces out from the body and is pushed out until nothing it lies on comes through it, as the belt coins are. A piece with an arm or a sleeve in front of it is left off.
+- **The thongs** lie over the cloth between the belt and the piece. Each is a tube through 13 points, each point pushed out to clear what is under it and the line kept convex, so it runs over a blousing tunic or the hip rather than under it.
+- **Carried by the hips,** as the coins are.
+- **Where it is worn:** only on a belt no tabard or apron covers.
+- **Saving and the builder.** `amulet` (the stone's colour) and `charms` (the thongs' leather) are garment colours in `GARMENTS`, so both save with the genome. Either can be worn alone. `amuletSide` (`L` or `R`) is a dress flag. The builder's Dress panel gets them as *stone amulet* and *belt charms*, and its `view=waist` finds them.
+- **The roll.** One Old Blood in two with an uncovered belt rolls the amulet, in slate, ash or a dusk grey-violet (OG-066's palette), three in ten of them on the right hip. 45% roll the charms, on thongs of the belt's own leather. This is drawn last, so every earlier roll of a seed is as it was.
+- **Shared code.** The belt coins' reading of the belt's edge and of what lies under it is now one function, `beltReach`, with the depth as a parameter: 9 cm for the coins, 13 cm for the amulet. The coins' checks pass unchanged.
+
+Corrections made during the session:
+- **The belt's lower edge has few points.** It has points at the front and at about ±0.8 and ±1.0 rad, and runs straight between them. The amulet's place was first the nearest of these points to 0.42 rad, which put it at the front or past the hip. It is now found where the edge's line crosses 0.42 rad.
+- **The first thongs were straight lines** from the edge to the piece. Where a tunic blouses under the belt, 9 to 10 of 24 to 32 points along them ran under the cloth. They now lie over it, by up to 1 cm, and none do.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 401 checks pass** (394 after Session 1033; 7 new). The belt coins' checks pass unchanged after the shared code was split out.
+- **Five Old Blood people:** a man over a tunic, a woman in a long skirt, a woman with the amulet on the right hip, a man with the charms alone, and a man under a cloak with its hood down.
+  - Every piece asked is hung and none is left off. They sit at ±0.18 to 0.77 rad, on the side asked.
+  - Every top is 2.5 to 2.9 cm under the belt's edge, and the lowest piece is 10.3 to 10.6 cm under it (6 cm with the charms alone).
+  - Nothing comes up through a piece (0 of 170 to 407 points), and each stands 0.7 mm off what is behind it.
+  - No thong point is under what is worn (0 of 27 to 36). The thongs lie up to 10.6 mm out over a man's tunic and 1.2 to 1.5 mm over a long skirt, and are 0.51 to 0.6 rad off plumb from end to end.
+  - No two pieces touch. Each person is carried by the hips and saves and loads back.
+- **Under a tabard or an apron:** none is built.
+- **The roll:** 23 of 40 Old Blood roll an amulet (6 on the right) and 21 roll charms. None is on a covered belt, and none of 120 Markmen, Aurennais and Gatelanders rolls either.
+- **The size:** 2,108 triangles for the amulet and three charms in 20 meshes, and 904 for the charms alone.
+- **Pictures:** `builder-charms-man.jpg`, `-woman.jpg`, `-full.jpg`, `-right.jpg` and `-cloak.jpg`.
+
+### Needs eyes
+- **The pieces hang rigid from the hips.** In the game, after F4, they will turn with the pelvis and not swing.
+- **On a man's tunic the thongs stand out 30° from plumb,** over the blousing under the belt. The pieces then lie on the cloth below it, where they hang. Whether that reads as hanging or as stuck on wants a look at play distance.
+- **The groove on the stone is faint** at waist distance, and the stone reads as a dark disc with an iron strap.
+- **Still owed for the Old Blood (OG-066):** the dark asymmetric layers over undyed linen, the single shoulder wrap and the scattered dot embroidery. The marks under the skin want a skin texture.

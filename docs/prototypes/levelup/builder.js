@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket' };
+const GLABEL = { sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -75,7 +75,7 @@ function frame() {
   // the throat and the upper chest (Session 1003): what is worn at the neck's base, a necklace
   else if (view === 'neck') { cam.fov = 22; cam.position.set(h.x + .3 / zoom, h.y - .1, h.z + .95 / zoom); cam.lookAt(h.x, h.y - .2, h.z); }
   // the waist (Session 1004): the belt's front, and what hangs from it (or the sash belt's, Session 1010)
-  else if (view === 'waist') { const b = person.root.getObjectByName('beltCoins'), sb = !b && (person.root.getObjectByName('sashBelt') || person.root.getObjectByName('belt')), t = b ? new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()) : sb ? bandMid(sb) : h.clone().setY(h.y - .7); cam.fov = 22; cam.position.set(t.x + .3 / zoom, t.y + .12, t.z + 1.05 / zoom); cam.lookAt(t); }
+  else if (view === 'waist') { const b = person.root.getObjectByName('beltCoins') || person.root.getObjectByName('beltCharms'), sb = !b && (person.root.getObjectByName('sashBelt') || person.root.getObjectByName('belt')), t = b ? new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()) : sb ? bandMid(sb) : h.clone().setY(h.y - .7); cam.fov = 22; cam.position.set(t.x + .3 / zoom, t.y + .12, t.z + 1.05 / zoom); cam.lookAt(t); }
   // the feet (Session 1015): what is worn on them, sandals
   // the shins (Session 1021): what is worn from the ankle to the knee, leg wraps
   else if (view === 'shins') { const t = new THREE.Vector3(h.x, .3, h.z + .05); cam.fov = 24; cam.position.set(t.x + .4 / zoom, t.y + .12 / zoom, t.z + 1.3 / zoom); cam.lookAt(t); }
