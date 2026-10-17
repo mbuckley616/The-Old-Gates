@@ -175,8 +175,8 @@ function loop(now){
       showMsg('Too heavy to run!','#dd8844');
     }
   }
-  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?1.7*cloakSwimMult():3.83)*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
-  const swiftMult=1+(attrEff('swiftness')*0.02);
+  const basespd=((typeof WORLD!=='undefined'&&activeZoneId==='world'&&WORLD.isSwimming())?swimSpeed():3.83+.37*skillT('athletics')) /* S941 — Athletics: the run 3.83 to 4.2, the swim ×0.8 to ×1.3 */*(fxOn('haste')?1.5:1); // v80 — swimming is slow; Haste
+  const swiftMult=1+(attrEff('swiftness')*0.005); /* S953 — the attributes at ≤1% a point (skills and perks A): Swiftness's move 0.5% (was 2%); Athletics carries the run */
   const sprintBuff=_buffMult('sprintSpeed',1)*_buffMult('swiftness',1); // S316 — the Boon of the Road (×1.25), read nowhere before
   // Encumbrance speed penalty: -50% when overloaded. Immobile zeros speed entirely.
   const _encSpeedMult = _encState==='immobile' ? 0 : _encState==='overloaded' ? 0.5 : 1.0;
@@ -203,7 +203,7 @@ function loop(now){
   // path during drawing, but a save/load mid-draw or hurt-cancel could leave
   // a stale state).
   if(_bowDrawing){
-    _bowDrawT += dt;
+    _bowDrawT += dt * bowDrawRate(); /* S982 — Quick nock */
     // Stamina drain — continuous, so the player can't infinitely hold a draw.
     // Tunable via BOW_STAM_DRAIN_PER_SEC; current 8/sec means a full-tier
     // 1 player can hold a max draw for ~6 seconds before running dry.
@@ -310,15 +310,16 @@ function loop(now){
   // v63 — Sneak movement multiplier. When _sneaking is true, player moves
   // at SNEAK_MOVE_MULT (0.7×) of normal. Sprint is suppressed while sneaking
   // (the modal commitment is intentional — Ctrl is a state, not modifier).
-  const _sneakMoveMult = _sneaking ? SNEAK_MOVE_MULT : 1.0;
+  const _sneakMoveMult = sneakMoveMult(); /* S976 — Soft step (Stealth 25) */
   tickPlayerPosture(dt,performance.now()/1000); // S281
   const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*commitMoveMult()*(playerStaggered(performance.now()/1000)?0:1)*dt;
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1); /* S779 — the Gate-Blade drawn */
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1); /* S779 — the Gate-Blade drawn; S976 — Road legs (Athletics 75) */
     stamina=Math.max(0,stamina-dt*sprintDrain);
-    if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
+    if(stamina===0){staminaCD=perk('athletics',100)?0:2;lvAct.staminaDepleted++;} /* S976 — Tireless (Athletics 100): no pause after a sprint */
     lvAct.sprintDist+=spd;
   }
+  _sprintNow=!!sprinting; /* S976 — Light foot reads it */
   // Blocking stamina drain (in dungeons and outdoor zones, not shops)
   if(blocking&&!isInterior()){
     const hasShield=EQ.offhand&&EQ.offhand.shieldType==='shield';
@@ -347,8 +348,12 @@ function loop(now){
   if(K['KeyD']){mdx+=rgtX;mdz+=rgtZ;}
   const _roll=tickRoll(performance.now()/1000);
   if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
+  const _dash=_roll?null:tickAirDash(performance.now()/1000); /* S1011 — Swallow's turn, the air dash (10-player.js) */
+  if(_dash){mdx=_dash.dx;mdz=_dash.dz;}
   const moving=!!(mdx||mdz);
   _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
+  if(moving)athleticsStep(spd,sprinting); /* S941 — Athletics: ten metres sprinted or swum */
+  stealthTick(dt);
   // v62.7 — Forward lunge boost. If lungeT > 0 AND W is currently held, add an
   // extra forward-direction displacement on top of normal WASD motion. The
   // boost is forward-only (uses fwdX/fwdZ, not the normalized WASD vector) so
@@ -357,8 +362,8 @@ function loop(now){
   // false. The boost ALSO respects the same collision-slide logic as normal
   // movement, so lunging into a wall stops at the wall rather than clipping.
   const _wHeldNow = !!(K['KeyW']||K['ArrowUp']);
-  const _lungeBoostActive = lungeT > 0 && _wHeldNow && !_roll;
-  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=_roll?mdx:mdx/len*spd,dz=_roll?mdz:mdz/len*spd;
+  const _lungeBoostActive = lungeT > 0 && _wHeldNow && !_roll && !_dash;
+  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=(_roll||_dash)?mdx:mdx/len*spd,dz=(_roll||_dash)?mdz:mdz/len*spd;
     // Extra forward displacement during lunge — added to the WASD-driven dx/dz.
     // Magnitude is (_lungeMult - 1) × spd so the total forward component
     // resolves to spd × _lungeMult (matching the design intent of "forward
@@ -383,19 +388,23 @@ function loop(now){
   try{pushFromBodies();}catch(err){} /* S623 — foes and townsfolk are solid to you */
 
   // Jump physics
-  const GRAVITY=18,JUMP_VEL=5.5;
+  const GRAVITY=18,JUMP_VEL=5.5+1.1*skillT('acrobatics'); /* S941 — Acrobatics: 5.5 to 6.6 */
   // Determine context: dungeon lid starts with 'dyn_', interior with 'int_', overworld is 'overworld'
   const inDungeon=lid&&lid.startsWith('dyn_');
   const inOverworld=!inDungeon&&!isInterior();
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
   const floorBaseY=(inDungeon||isInterior())?footholdY(px,pz,jumpY,floorBaseY0):floorBaseY0; // v80 — footholds (stairs, galleries)
+  airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
     if(inOverworld) jumpY=activeTerrainH(px,pz);
-    velY=JUMP_VEL;onGround=false;sndJump();
+    velY=JUMP_VEL;onGround=false;sndJump();_jumpFrom=jumpY;
   }
-  if(!onGround){
-    velY-=GRAVITY*dt;
-    jumpY+=velY*dt;
+  if(!onGround&&airDashing())velY=0; /* S1011 — the dash holds you level; the fall starts again from rest after it */
+  else if(!onGround){
+    /* S1009 — the flight is integrated exactly, so its height is the same at any frame rate (the dropped-frame rule); it was
+       velY first and then jumpY, which lost velY×dt/2 of every rise (0.05 of a jump at 60 fps, 0.16 at 20) */
+    const _y0=jumpY;jumpY+=velY*dt-GRAVITY*dt*dt/2;velY-=GRAVITY*dt;
+    if(velY>0||jumpY>_y0){const hc=headCeil(px,pz,_y0);if(jumpY+HEAD_H>hc){jumpY=Math.max(_y0,hc-HEAD_H);velY=Math.min(velY,0);}} /* S1009 — the head stops at the ceiling */
     // Flat floor clamp for dungeons and interiors (not terrain-following overworld)
     if((inDungeon||isInterior())&&jumpY<=floorBaseY){jumpY=floorBaseY;velY=0;onGround=true;sndLand();landShake=0.06;fallLand(jumpY);}
   }
@@ -1104,7 +1113,7 @@ function loop(now){
             sndPlayerHurt();
           }
           PHP=Math.max(0,PHP-finalDmg);hurtT=.4;
-          lvAct.damageTaken+=finalDmg;
+          lvAct.damageTaken+=finalDmg;armourUse();
           lastHitT=performance.now()/1000;
           if(PHP<=0&&!dead)playerDead();
           dScene.remove(fb);BALLS.splice(i,1);
@@ -1119,9 +1128,10 @@ function loop(now){
       if(fb.userData.isArrow){
         let arrowHit = false;
         ENEMIES.forEach(e=>{
-          if(arrowHit || e.dead || e.floor!==currentFloor || e.disguised) return;
+          if(arrowHit || e.dead || e.floor!==currentFloor || e.disguised || fb.userData.passed===e) return;
           if(Math.hypot(fb.position.x-e.x, fb.position.z-e.z) < ARROW_HIT_RADIUS){
             arrowHit = true;
+            const _thru = arrowPasses(fb.userData, e); /* S982 — Through: the arrow flies on past this one */
             const wt = fb.userData.wType || 'pierce';
             const resistMult = (e.resist && typeof e.resist[wt]==='number') ? e.resist[wt] : 1.0;
             let dmg = Math.max(1, Math.floor(arrowRawFor(fb.userData, e) * resistMult * _fortuneCrit(e)));
@@ -1129,6 +1139,7 @@ function loop(now){
             // Dormant Gargoyle bonus (matches melee path: dormant enemies take 2×).
             if(e.dormant) dmg = Math.floor(dmg * 2);
             dmg = challengeDealt(dmg); /* S684 — the challenge */
+            if(e.alert)skillUse('bow',1,e); /* S941 — an arrow on an alert foe */
             e.hp = Math.max(0, e.hp - dmg);
             if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
             e.alert = true;
@@ -1148,14 +1159,14 @@ function loop(now){
             dmgNum(e,dmg,tagInfo); /* S761 — #198 A */
             if(e.hp<=0){
               killE(e, ` (ARROW)${dmgTag(tagInfo, e)}`);
-              dScene.remove(fb); BALLS.splice(i,1);
+              if(!_thru){ dScene.remove(fb); BALLS.splice(i,1); }
             } else {
               // v64.2 — Stick arrow into enemy body (parent to body mesh).
               // Arrow stays in BALLS so stuckLife ticks down via
               // tickArrowMotion. On enemy death, the body mesh despawn
               // will pull the arrow with it (despawn-with-corpse).
               const body = enemyBodyMesh(e);
-              _stickArrowToEnemy(fb, body, dScene);
+              if(!_thru) _stickArrowToEnemy(fb, body, dScene);
             }
           }
         });
@@ -1206,6 +1217,7 @@ function loop(now){
       // out of detection range still recovers cleanly while off-screen.
       if(typeof e.posture!=='number') initPosture(e);
       tickPostureRegen(e, dt, now);
+      if(e.cloakSleep&&typeof cloakSleepTick==='function'&&cloakSleepTick(e))return; /* S992 — the cloak's master sleeps until struck (#270 1A) */
       // v63 — Directional detection. canSeePlayer combines distance,
       // sneak/buff modulation, vision cone, and hearing radius. LOS still
       // checked separately (existing dungeon behavior) since it uses dSolid.
@@ -1410,7 +1422,7 @@ function loop(now){
           spawnDrainFX(dScene, T.x, T.z, e.x, e.z);
           sndDrain();
           showMsg(`${e.name} drains ${finalDrain} HP (heals ${healAmt})`, '#aa44cc');
-          lvAct.damageTaken += finalDrain;
+          lvAct.damageTaken += finalDrain;armourUse();
           lastHitT = performance.now()/1000;
           if(PHP <= 0 && !dead) playerDead();
         }
@@ -1477,6 +1489,7 @@ function loop(now){
     // Drive the ambient hum based on closest-sigil proximity
     if(typeof updateSigilHum==='function')updateSigilHum(maxSigilProx);
     if(typeof shuttleTick==='function')shuttleTick(); /* S797 — the Shuttle's room, seen the first time */
+    if(typeof cloakDenTick==='function')cloakDenTick(); /* S992 — the cloak's den, seen the first time */
     const nearSigilPrompt=SIGILS.find(s=>s.floor===currentFloor&&Math.hypot(px-s.x,pz-s.z)<1.5);
     // interact prompt
     const nearCorpsePrompt=CORPSES.find(c=>c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
@@ -1501,6 +1514,7 @@ function loop(now){
       if(stairLabel){iprEl.textContent=stairLabel;iprEl.style.opacity='1';iprEl.style.display='block';}
     }
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
+    else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
     else if(nearSigilPrompt){
       const sp2=SPELLS.find(s=>s.id===nearSigilPrompt.spellId);
       iprEl.textContent=`Press 'E' — Touch the sigil of ${sp2?sp2.nameIr:'?'}`;

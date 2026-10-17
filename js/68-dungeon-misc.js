@@ -237,9 +237,9 @@ function buildSwingBlade(x,z,dir,r){const top=FLOOR_HEIGHT-.1,low=.95,L=top-low,
   return {kind:'blade',x,z,floor:1,pivot,blade,ph:r()*Math.PI*2,hitT:0};}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
-    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(trapRand(t)*8)+Math.floor(level*.8),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
+    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3&&!lightFootNow()){ /* S976 — Light foot (Stealth 75) */t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(trapRand(t)*8)+Math.floor(level*.8),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
       if(!t.armed){t.t+=dt;const up=t.t<.8?Math.min(1,t.t*6):Math.max(0,1-(t.t-.8)*1.5);t.spikes.position.y=-.4+up*.42;if(t.t>3){t.armed=true;t.spikes.position.y=-.4;}}}
-    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
+    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
 
 // ═══ v80 — DUNGEON FEEL: sounds, monster detail, exteriors, lockpicking ═══
 
@@ -384,7 +384,8 @@ function lpStatus(t,col){const el=document.getElementById('lp-status');if(el){el
 function lpRender(){
   const box=document.getElementById('lp-pins');if(!box)return;
   if(box.children.length!==LP.pins.length){box.innerHTML='';LP.pins.forEach(()=>{const d=document.createElement('div');d.className='lp-pin';d.appendChild(document.createElement('i'));box.appendChild(d);});}
-  LP.pins.forEach((p,i)=>{const el=box.children[i];el.className='lp-pin'+(p.set?' set':'')+(i===LP.cur&&!p.set?' cur':'');
+  const feel=perk('locks',25)&&lpPhase()==='hold'; /* S973 — Feel for it (Locks 25): the worked pin glows while it sits at the shear */
+  LP.pins.forEach((p,i)=>{const el=box.children[i];el.className='lp-pin'+(p.set?' set':'')+(i===LP.cur&&!p.set?' cur':'')+(feel&&i===LP.cur&&!p.set?' feel':'');
     el.firstChild.style.transform=`translateY(${-(p.set?74:p.y*74)}px)`;});
   const pk=document.getElementById('lp-picks');if(pk)pk.innerHTML=`picks: <b>${lpPicks()}</b> \u00b7 pins set: <b>${LP.pins.filter(p=>p.set).length}/${LP.pins.length}</b>`;
 }
@@ -427,7 +428,7 @@ function lpPress(){
   if(ph==='rise'){lpBreak('Too soon \u2014 the pin hadn\u2019t reached the shear.');return;}
   if(ph==='fall'){lpBreak('Too late \u2014 the pin was already falling.');return;}
   // 'hold': the moment it sits at the shear
-  p.set=true;p.y=1;LP.pushed=0;LP.phase='idle';try{sfxTone(2200,2600,.04,.1,'square');}catch(e){}
+  p.set=true;p.y=1;LP.pushed=0;LP.phase='idle';skillUse('locks',1,LP.cur); /* S941 — a pin set */try{sfxTone(2200,2600,.04,.1,'square');}catch(e){}
   const left=LP.pins.filter(x=>!x.set).length;
   if(!left){lpWin();return;}
   lpNextPin();lpStatus('It holds. '+left+' to go.','#c8e88a');lpRender();
@@ -439,8 +440,8 @@ function lpBreak(why){
   const left=lpSpendPick();
   try{sfxTone(2600,1400,.06,.16,'square');}catch(e){}
   const box=document.getElementById('lp-pins');if(box&&box.children[LP.cur]){const el=box.children[LP.cur];el.classList.add('broke');setTimeout(()=>el.classList.remove('broke'),260);}
-  // the last pin you set falls with it — the lock gives ground grudgingly
-  for(let i=LP.pins.length-1;i>=0;i--){if(LP.pins[i].set){LP.pins[i].set=false;LP.pins[i].y=0;break;}}
+  // the last pin you set falls with it — the lock gives ground grudgingly; S973 — Sure hand (Locks 50) keeps them
+  if(!perk('locks',50))for(let i=LP.pins.length-1;i>=0;i--){if(LP.pins[i].set){LP.pins[i].set=false;LP.pins[i].y=0;break;}}
   lpRender();
   if(left<=0){lpStatus(why+' That was your last pick.','#e88a8a');lpFail();return;}
   lpStatus(why+` The pick snaps. ${left} left.`,'#e8a880');
@@ -449,7 +450,7 @@ function lpFail(){
   LP.phase='done';
   setTimeout(()=>{closeLockpick();showMsg('No picks left. The lock holds.','#cc8844');},900);
 }
-function lpWin(){
+function lpWin(){skillUse('locks',3,'open'); /* S941 — a lock opened */
   LP.phase='done';lpRender();lpStatus('The lock gives.','#ffd700');
   const door=LP.door;
   try{sndDoorUnlock();}catch(e){}
@@ -476,7 +477,7 @@ function lpWin(){
   },true);
 })();
 // ── lockpicking: the floating key is gone; a lock is worked with a pick and a steady hand ──
-function pickChance(){const fin=attrEff('finesse');return Math.min(.92,.35+fin*.07+(level||1)*.01);}
+function pickChance(){const fin=attrEff('finesse');return Math.min(.92,.35+skillLv('locks')*.005+fin*.01);} /* S941 — Locks, half a point a level; Finesse at 1% (skills and perks A) */
 function tryLockpick(door){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0){showMsg('Locked. A lockpick would do it — the goods shops sell them.','#cc8844');try{sfxTone(400,300,.08,.1,'square');}catch(e){}return false;}
   openLockpick(door);return true; // v80 S142 — the lock is worked by hand now
   /* eslint-disable no-unreachable */
@@ -595,7 +596,7 @@ function dragonBreath(e){const d=Math.hypot(e.x-px,e.z-pz);if(d>11)return;const 
     const l=new THREE.PointLight(0xff6020,2.5,12);l.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+1.5,e.z);sc.add(l);_BREATH.push({pts,vel,t:0,l,sc});
     try{sfxNoise(1.1,0,0,.35,1200);sfxTone(120,60,1.0,.2,'sawtooth');}catch(err){}
     const dx=px-e.x,dz=pz-e.z,dd=Math.hypot(dx,dz);const ta=Math.atan2(dx,dz);let diff=Math.abs(ta-ang);if(diff>Math.PI)diff=Math.PI*2-diff;
-    if(dd<10&&diff<.45){const dmg=_warded(Math.round((18+level*1.4)*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
+    if(dd<10&&diff<.45){const dmg=_warded(Math.round((18+level*1.4)*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
     else showMsg('The fire misses you.','#c8e88a');},900);}
 function tickBreath(dt){for(let i=_BREATH.length-1;i>=0;i--){const b=_BREATH[i];b.t+=dt;const a=b.pts.geometry.attributes.position.array;for(let k=0;k<b.vel.length;k++){a[k*3]+=b.vel[k][0]*dt;a[k*3+1]+=b.vel[k][1]*dt;a[k*3+2]+=b.vel[k][2]*dt;b.vel[k][1]+=dt*.8;}b.pts.geometry.attributes.position.needsUpdate=true;b.pts.material.opacity=Math.max(0,.9-b.t*.9);b.l.intensity=Math.max(0,2.5-b.t*3);if(b.t>1.1){b.sc.remove(b.pts);b.sc.remove(b.l);_BREATH.splice(i,1);}}}
 function tickDragons(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.world.enemies||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);for(const e of E){if(e.dead||!e.dragon)continue;if(!e._dragonBuilt)detailDragon(e);

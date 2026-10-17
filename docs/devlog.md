@@ -20334,6 +20334,79 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
 
+## v80 — Session 940 — The guild head's *You still owe us* in four peoples (quest review run 17, Finding 30; a register fix)
+The quest review's Finding 30: a guild head asked for a second task while one is open answers in a Markman's words, *You still owe us: …*, whatever people the hall's town is. Every other line the head says is written four times. The finding is applied as written. `OWE_LINES` sits at the top level of `83-world-generator.js`, one line per people, each taking the task's short name and its progress. `offer(g,site,gp)` takes the head's people from the topics getter, where `gp` was already in scope for the hand-back. `cloakContract` in `87-world-quests.js` uses the same table with its `p`, and it can, because it runs only when a topic is chosen, long after both files have loaded. A people with no line falls back to the Markman's, which is the old text. The lord's *You still owe us* for Crown and League work (`87-world-quests.js`, the service topics) was not part of the finding and is unchanged.
+
+Two suites expected the Markman's words from a Gatelander head. `cloakguild` now checks all four lines, for the contract and for *Any work?* alike (the Old Blood's through the table, since no generated town is theirs). `handback` accepts any of the four.
+### Verified (headless Chromium)
+- `cloakguild` 12 of 12: the Gatelander, Markman and Aurennais heads each refuse in their own words, both to *The grey cloak.* and to *Any work?*, e.g. *You'll not plough two fields with the one ox. Yours is still on the board: Hunt 4 Wolves. 0/4.*; the Old Blood line reads *Yours is not done: Hunt 4 Wolves. 0/4.*
+- `handback`, `questgold`, `toldpages`, `turnin`, `datedguild`, `jobids`, `standingcount`, `blacksail` pass.
+### Needs eyes
+- Nothing to see but the words. A Gatelander hall's refusal is now a proverb and a sentence, longer than before.
+
+## v80 — Session 941 — Skills, the first session: 22 skills raised by use, and what they set (skills and perks A)
+Michael chose the Morrowind book for skills and perks (A, 27 Sep), with Oblivion Remastered's fixes. The designer's build sheet (`docs/design/skills-and-perks-build.md`, on auto/design, PR #343) turns it into numbers, and its open rate was answered B on #342 this morning. F2a has merged and FREEZE #297 is closed, so the core loop's first piece can go in. This is the sheet's first of three sessions: the skills table, the uses, the curve, the reads, the save and the migration. The level, the bed and the perks are untouched, so the level-up still runs on xp as before.
+
+**The table** (`12-character.js`). `SKILL_DEF` holds the sheet's 22 skills with their governing attributes. `SKILL_ARCH` holds each archetype's five majors and five minors, as the sheet's table has them. `skillsInit(arch, lv)` starts majors at 25, minors at 15 and the rest at 5; the creator calls it, and so does a load. `skillUse(id, weight, target)` is the one way a skill rises. It takes a use at most once a second for each skill and target, so thirty swings in ten seconds at one foe are ten uses. The next level costs `round(0.9 × L^1.2)` uses: 6 at 5, 43 at 25, 98 at 50, 223 at 99. A level gained says *Blade rises to 26.* on the message line, until the rising card (L11's interface list) exists. Skills stop at 100.
+
+**The uses**, wired where `lvAct` already counted something and at the new places:
+- **Blade, Blunt** (by the weapon's `wType`; a bow is Bow, fists Blunt): a melee hit on a foe that was already alert, in both resolvers. A riposte or finisher counts 3. A hit on an unaware foe teaches the weapon nothing; a backstab is Stealth 3.
+- **Bow**: an arrow on an alert foe, in both arrow paths. The sheet's ×2 past 30 m is owed: an arrow does not keep where it was loosed.
+- **Guard**: a hit taken on a held block 1, a bash on an alert foe 1, a perfect parry 3.
+- **Athletics**: every 10 m sprinted or swum. **Acrobatics**: a jump that lands more than 0.3 m higher than it left; a landing roll 1; a fall over 4 m lived through 2. The gap of 2 m is owed, since the loop does not know what a jump cleared.
+- **Armour**: a hit taken while wearing three or more pieces, at every site that counted damage taken (the strike resolvers, the zone foes, traps, the main loop's orbs and drains).
+- **The six schools**: a spell that hits an alert foe (a Mastery word 2), a heal with health lost, a buff cast.
+- **Stealth**: ten seconds sneaking inside a foe's sight range unseen (`canSeePlayer` marks the moment), and the backstab. **Locks**: a pin set 1, a lock opened 3. **Speech**: a sale or a purchase at any counter. **Alchemy**: a herb picked.
+- Cooking, Mining, Woodcutting, Smithing and Joinery have nothing to do yet. They wait on survival B. Speech's *a topic that moves favour* is owed with session 2.
+
+**The reads.** Each is at the place the thing is decided.
+- **Melee**: the roll × (0.6 + 0.8 × skill/100) × Might's 1% a point. The flat `level × 1.5` is gone from both resolvers.
+- **The bow**: the same multiplier, with its per-level floor gone.
+- **Spells**: power the same, from the school's skill, with `level × dmgLvl` gone; cost × (1.4 − 0.8 × skill/100). A heal's `level × healLvl` is gone too, the heal × the multiplier.
+- **The pick**: `pickChance` is 0.35 + 0.005 a Locks level + 1% a Finesse point, to 0.92. It was 7% a Finesse point and 1% a level.
+- **The gates**: `MATERIALS` asks `'skill'` at Iron 15, Steel 30, Mithril 45, Adamant 55, Obsidian 65, Draconic 75, Demonic 90, Cosmic 100. That means the weapon's own skill, through `reqHave`/`reqName`, which `canEquip`, the hub's tooltip and the load's check all read: *Requires Blade 30 (you have 29)*. Heavy armour asks Armour on the same gates. The light and robe lines keep Finesse and Intelligence on their old curve, and that is asked as **DECISION #354** (C recommended, as built). The quest reward's Iron Sword asks Blade 15.
+- **Movement**: the run 3.83 → 4.2, the swim ×0.8 → ×1.3, the sprint's cost −30%, all on Athletics. `JUMP_VEL` 5.5 → 6.6 on Acrobatics. These run from skill 5 to 100, so an untrained skill moves as today.
+- **Sight**: while you sneak, a foe's sight on you and a witness's range × (1 − 0.4 × Stealth/100).
+
+**The save** (`70-saves.js`). `skills`, `majors` and `minors` are top-level fields, so `ssSplitPayload` puts them in the character row, and no `worldState` key is added. A save made before skills is migrated once on load, from its archetype and level: majors 25 + 2 a level past the first, minors 15 + 1, both to 60, the rest 5, and the attributes left as they were. A level-12 Duelist comes back with Blade 47. That migration runs before the load's requirement check, so a weapon above the character's new skill is unequipped to the bag with the existing *Requirements tightened* toast. That is the sheet's "today's refusal is unchanged".
+
+**What a player feels.** A new character hits for 0.64 to 0.8 of the roll with the weapons the archetype trains. The flat level term is gone, so damage stops climbing with the level; it climbs with the skill. Spells cost more until their school is trained. Enemies still scale by level (Michael's C on #51) until enemies by place lands. The sheet expects that.
+
+The build sheet's suites `skillcurve`, `skilluse`, `skilldamage` and `skillgates` are one boot (`tests/skillcurve`, each check named for its suite), and `skillsave` and `skillmigrate` are the other (`tests/skillsave`). Six files would have cost CI six boots.
+
+**Fists** are not in the sheet's Blade or Blunt rows, so a punch takes no skill (×1) and teaches none. Without the level term a level-1 Bandit fight runs 11 to 16 punches, where `fistfight` wants 7 to 12. That number is Michael's, asked as **DECISION #357** (A recommended: fists as a Blunt weapon of 3 to 5). Until then, `fistfight` is red.
+
+A fault this session made and then fixed: `fireArrow` packs its roll for `arrowRawFor` with the level floor, and that floor had gone with the bow's damage line. Every arrow loosed threw a ReferenceError until the packed roll was mended (`lv: 0`, the Bow multiplier in `m`). `duelrhythm` found it.
+### Verified (headless Chromium)
+- `skillcurve` 17 of 17:
+  - The curve: 6, 43, 98, 223.
+  - A fresh Warrior: 5 skills at 25, 5 at 15, 12 at 5.
+  - Thirty uses in ten seconds at one target: 10, with Blade 5 → 6 and 4 toward the next level. Another target or skill counts the same second, and 100 is the top.
+  - Three real swings at an unaware Bandit land and teach Blade nothing; one at an alert Bandit is a use.
+  - A roll of 100 hits 64, 100 and 140 at Blade 5, 50 and 100, the same at levels 1 and 20.
+  - A Tine word of power 12 hits 8, 12 and 17. The pick is 0.375, 0.6 and 0.85.
+  - The run is ×1.081 from Athletics 5 to 100 (the sheet's ×1.097, inside 2%). The jump's apex is 0.78 and 1.14 m in the loop's fixed step, ×1.462 against 1.44.
+  - A Steel sword is refused at Blade 29 with *Requires Blade 30 (you have 29)* and held at 30. A Steel mace asks Blunt, and an Iron cuirass asks Armour 15.
+- `skillsave` 6 of 6:
+  - The character row carries all 22 skills, the majors and the minors; the world row carries none.
+  - The character row alone, into a fresh world, brings them back.
+  - A level-12 Duelist saved before skills comes back with Blade, Guard, Acrobatics, Athletics and Speech at 47, its minors at 26 and twelve skills at 5. Its attributes are unchanged, and 120 ticks run after with no page errors.
+- **The sweep.** Of the 99 suites that read damage, gates, picks, sneaking, movement, spells or the save, 48 ran here before the run's time was up. Three ran in parallel, so a slow suite could time out.
+  - Passed (40): `armourkit`, `barberbox`, `captainguard`, `challenge`, `cargo`, `backroomdoor`, `chasesight`, `coopsaves`, `counters`, `crime5`, `dateline`, `burglary`, `dmgnums`, `export`, `carraignight`, `cloaks`, `crime2`, `dungeonexit`, `fists`, `gateblade`, `deadkeys`, `guardsindoor`, `fishseed`, `foeseed`, `hoardmetal`, `jobfoereload`, `gait`, `fistswing`, `lairload`, `fortunecaor`, `guardlevel1`, `hearthcast`, `looknew`, `guardplay`, `herbstub`, `herbhidden`, `hitseed`, `mapnotes`, `homesleep`, `hptail`.
+  - Red, then fixed in their setup, not their bars (all pass now):
+    - `attrdmg` and `herbparity` took level 50 as "a big base"; they now take a roll of 200 at Blade 50.
+    - `armourlines-numbers` now expects the heavy line to ask Armour 45.
+    - `fortify` now expects Finesse's 1% a point on the pick (the sheet's), and an Iron Sword gated on Blade, which worn Might does not reach.
+  - `duelrhythm` found the arrow fault above, and passes.
+  - Still red: `fistfight`, waiting on #357.
+  - Red only under load, green alone: `attrpromise`, with Athletics pinned at 5, read 17.6 twice beside three other browsers and 14 and 7 alone. Why load moves it is not found; it is noted for QA in backlog K. `blacksail` failed twice under the same load, when the seat had not settled before the test read its lord, then passed alone. Main's code passed once under the same load.
+  - `diedload` ran past ten minutes under the parallel load and was not judged.
+  - Not run here: the other 51, which CI will run.
+### Needs eyes
+- **How a new character fights.** Hits are 0.64 to 0.8 of the roll until the weapon is trained, and spells cost up to 1.36 times as much. Enemies still grow with the level. Play the first hour with a Warrior and a Scholar.
+- **Skill-up lines** take the message line and can cover a combat line. The rising card is L11's.
+- **The run, swim and jump** move with Athletics and Acrobatics. Does Athletics 100 feel quick enough at 4.2?
+- **Owed in this item:** Bow's ×2 past 30 m, Acrobatics' gap, Speech's favour topics, Armour's `def` read and Speech's prices (with session 2's attribute pass), and the five land skills' uses with survival B.
 ## v80 — Session 940 — Combat's resolver: the attack table and one resolver (deep work, card combat-resolver)
 The card was combat B's deep-work session (Michael's B, 28 Sep; v2-scope.md §4 and §7, after F2a and before F2b): one attack table and one resolver for the dungeon and the open world, plus commitment, the light chain, a potion's time, and armour as a share (#181 B).
 
@@ -20922,6 +20995,158 @@ Corrections made during the session:
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
 
+## v80 — Session 950 — Hand-to-hand, the 23rd skill (Michael's C on #357), and the light and robe gates as built (#354 C)
+Session 941 took the level's flat `+1.5` out of every hit, and that left bare fists with no skill: a punch rolled the fists' 2 to 3 at ×1 and taught nothing. Michael answered #357 with C: a Hand-to-hand skill of its own, a 23rd, with a Might share, with the systems builder to add its row and perks. He answered #354 with C as well: the heavy line asks Armour, and the light and robe lines keep their attributes. Session 941 had already built that, so there is nothing to change for #354, and both entries move to Answered.
+
+**The skill** (`12-character.js`). `SKILL_DEF.hand` is *Hand-to-hand*, governed by Might, and sits after Blunt. `weaponSkill(null)`, the empty weapon hand, now gives `'hand'` (it gave nothing). Both melee resolvers already read `skillMult(weaponSkill(w))` and call `skillUse(weaponSkill(w), …)` on a hit on an alert foe, so a punch is now:
+- the fists' roll × (0.6 + 0.8 × Hand-to-hand/100) × Might's 1% a point;
+- a Hand-to-hand use, weighted 3 for a riposte or a finisher.
+
+As with every skill, an unaware foe teaches nothing. No archetype's suggested set takes Hand-to-hand, so it starts at 5. The creator's sheet (the build sheet's session 2) will let any character take it as a major or a minor. A save from Session 941 has 22 skills and loads with Hand-to-hand at 5, because the load starts from `skillsInit` and copies what the row has.
+
+**The sheet** (`docs/design/skills-and-perks-build.md`). Hand-to-hand gets a row in the 22 skills' table and four perks, following Blade's and Blunt's: what a fist can do that a blade cannot.
+- 25, *Hard knuckles*: a punch drains ×1.5 posture.
+- 50, *Throw*: a punch on a staggered foe knocks it down.
+- 75, *Catch the blade*: a perfect parry bare-handed knocks a one-handed weapon from the foe's grip.
+- 100, *Stone hand*: the fists roll 4 to 7.
+
+They are built with the first wave in the sheet's session 3.
+
+**What a player feels.** At Hand-to-hand 5 a punch is 2 or 3 × 0.64, and it floors to 1. A level-1 Bandit (25 health) now takes 22 to 25 punches over 9 to 10 seconds. At 100 a punch is 2 to 4 and the Bandit takes 8 to 12, which is the critic's brawl. `fistfight` measured 7 to 12 with the old level term. It now measures the chosen design at both ends: an untrained fist at 15 to 28, a master's at 7 to 12. The posture break and the Bandit's two blows at most hold at both. The bar for the master is the critic's own, not loosened.
+### Verified (headless Chromium)
+- `skillcurve` 19 of 19 (17 before):
+  - 23 skills; a fresh Warrior has five at 25, five at 15 and thirteen at 5.
+  - A punch rolled at 100 hits 64, 100 and 140 at Hand-to-hand 5, 50 and 100.
+  - A punch at an alert foe is one Hand-to-hand use, and nothing else.
+- `skillsave` 7 of 7:
+  - The character row carries all 23 skills.
+  - A row saved before Hand-to-hand loads it at 5, with the rest as saved (Bow 37, Locks 61).
+  - The migrated Duelist still has thirteen skills at 5.
+- `fistfight` 7 of 7. At Hand-to-hand 5: 25, 22 and 25 punches. At 100: 10, 12 and 8. Staggered for 46% to 57% of each fight; the Bandit lands 1 or 2 blows. The starting weapon kills it in 7 swings.
+- `fists` and `fistswing` pass. A punch at Hand-to-hand 5 lands for 1, and the starting weapon for 4. (`tpfists` was named in the same run and did not run; the runner reported 2 of 2.)
+### Needs eyes
+- **An untrained brawl is long.** Every punch at Hand-to-hand 5 does 1, so a Bandit is 25 punches and a tavern brawl at level 1 drags. That is C as written: the fists' 2 to 3 on a ×0.64 multiplier. If it reads too long in play, the lever is the fists' roll (`FISTS.atk`, 2 to 4) or a Monk's suggested set taking Hand-to-hand as a major (it would start at 25, where a punch is 1 or 2). Both are Michael's call.
+
+## v80 — Session 951 — A late autosave no longer re-points Continue (QA's routed save bug)
+QA found this on 14 Oct and the producer routed it here: `ssWrite` (`70-saves.js`) set the active key, the save Continue loads, whenever a write landed, whatever had happened while it was in flight. An autosave fires, the disk is slow, and you load another save from the menu. The autosave lands after the load and points Continue back at the save you had just left. The next Continue, or a reload of the page, puts you there. `coopsaves` went FLAKY on auto/backlog this way. QA's fix to the test waits for the writes; this fixes the game.
+
+**The fix.** A counter, `_ssLoadGen`, counts loads. `_applyLoadData` bumps it, since every load passes through it (the menu, Continue, the death screen's reload), and so does `ccBegin`, since a new character is a load of a kind. `ssWrite` notes the counter when it starts. When it lands, it points Continue at itself only if the counter has not moved. The save itself is always written, indexed and cached, so nothing is lost. It is in the list where you left it; it is just not where Continue goes. Two writes with no load between them behave as before: the later one is active.
+### Verified (headless Chromium)
+- **`latesave`** (new), 6 of 6. It fails its third check on the code before this session, so it reproduces the bug: Continue pointed at `…_auto_4`, the late autosave, not the slot just loaded.
+  - It saves slots 1 and 2, holds the store's put open, starts an autosave, and loads slot 1 from the menu (`_slotLoadClick`): gold 111, active slot 1.
+  - When the autosave lands, Continue still points at slot 1.
+  - The autosave is in the list with the 333 gold it saved.
+  - A save with nothing loaded while it is written still points Continue at itself.
+- `coopsaves` and `saveui` pass. `tpfists`, owed from Session 950, is in the PR comment.
+- A correction to Session 950's entry: `tests/run.mjs` takes one name, as a prefix, so `fists fistswing tpfists` ran the two suites whose names begin `fists`. `tpfists` runs here.
+### Needs eyes
+- Nothing to see in play. A player who loads from the menu while *Autosaved.* is still on its way finds Continue where they left it.
+
+## v80 — Session 952 — The level on marks, the bed's 12 points, the creator's majors and minors, and the Skills tab (skills and perks A, the sheet's second session)
+This is the build sheet's second session (`docs/design/skills-and-perks-build.md`), on Michael's B for #342: ten marks plus half the level. Session 941 put in the skills, and the level still ran on xp from kills and quests. Now it runs on the skills.
+
+**The marks** (`12-character.js`). `skillUse` counts the levels a skill gains and hands them to `skillMark`. A major's or a minor's rise is one mark, and any other skill's is a quarter. That is Oblivion Remastered's first fix: levelling by alchemy is never wasted. `levelUps` keeps this level's rises by skill for the bed. A level takes `marksNeeded(L)` = 10 + L/2: 10.5 at level 1, 15 at 10, 20 at 20. `chkLvl` and `takeLevelIfReady` (`62-actions.js`) read `levelReady()`, and the bed carries the surplus over. The sleep slip's *the level* line reads the same. Kills and quests still count `xp`, but nothing levels on it now. The HUD's *XP 0/200* reads *Marks 0/10.5*. The `xpBoost` buff (Caorthann Vigour, ×1.2) now multiplies skill uses, as the sheet says. The sheet's +25% is that herb's own 1.2 for now.
+
+**The bed's 12 points.** `openLevelUp` shows eight cards. Each has:
+- five diamonds, the points you may place in that row;
+- *what rose under it*, for example *Blade +3 this level*;
+- the gains, and − and + buttons.
+
+Clicking a card places a point. `luPrelit` pre-lights the 12 in proportion to the rises under each attribute, by largest remainder, inside the caps. A player who reads nothing gets Morrowind's answer, and any point can be moved. A sixth point in one row is refused, and so is a point past 60 (`ATTR_CAP`). Confirm waits until all 12 are placed, or fewer when the caps leave less room. Each point gives its attribute's gains as before: Fortitude 10 health and 5 stamina, Intelligence 10 mana. The level adds its own +10 health and +10 stamina. The archetype's automatic +1 to three primaries is gone, because the majors carry the archetype now. `getMultiplier` and the activity counters are no longer read by the bed or the hub. `lvAct` is still counted and saved, and is dropped in a later pass. The hub's Attributes rows show each attribute out of 60 and the rises under it this level, where they showed a multiplier.
+
+**The creator.** A *Your skills* row lists all 23 skills. The archetype suggests its five majors and five minors from the sheet's table. A click moves a skill from none to major to minor and back. `ccBegin` starts the chosen ones at 25 and 15 and the rest at 5 (`skillsChoose`). If a set is left short, it is filled from the archetype's suggestions.
+
+**The Skills tab.** The hub's last tab is *🎯 Skills*, placed last so the other tabs keep their order. At the top it shows the level, the marks and what a mark is. Below are 23 rows, majors first: the skill, the attribute that governs it, its level and a bar to the next. It is plain markup until the look builder puts it on the parchment kit (#142 A). The four perks per row come with the perks in session 3.
+
+**The save.** `levelMarks` and `levelUps` are top-level fields in the character's row. A save from before marks keeps its banked xp as marks in proportion: a level-4 character with half its xp banked comes back with 6 of 12.
+
+Still owed from the sheet's session 2: the attributes' ≤1% pass (Swiftness 2% → 0.5%, Fortune's crit and gold, `BOW_FINESSE_DMG`), Armour's `def` × (0.75 + 0.5 × skill/100), and Speech's prices. That is the next session.
+### Verified (headless Chromium)
+- **`levelmarks`** (new, the sheet's `levelmarks` and `levelsheet` in one boot), 17 of 17:
+  - A level takes 10.5, 15 and 20 marks at levels 1, 10 and 20.
+  - Ten major and minor rises are 10 marks, not yet a level. The eleventh banks it, and the bed takes it to level 2 with 0.5 carried.
+  - The rises were Blade 3, Guard 2, Armour 2, Bow 2 and Stealth 2. The sheet pre-lights Might 3, Resolve 2, Fortitude 2 and Finesse 5: 12 by largest remainder. Might's card reads *Blade +3 this level*.
+  - A sixth point in one row is refused. Confirm is refused and its button disabled until all 12 are placed, and a thirteenth is refused.
+  - Fortitude 5, Might 5 and Finesse 2 confirmed give exactly those, nothing else, and *❤ +60 max HP*: +60 health and +35 stamina.
+  - Forty rises outside the majors and minors are 10 of 11 marks, and four more bank the level.
+  - An attribute at 58 has room for 2.
+  - The Skills tab has 23 rows with the majors first. The save carries the marks and this level's rises.
+  - An old save banks 6 of 12. The creator suggests the Scout's set, and a click moves a skill. No page errors.
+- `levelpanel`, `stonecress`, `restslip`, `lvact`, `skillcurve`, `skillsave`, `creator`, `mainrun`: see the PR comment. `levelpanel` now asks for 12 points placed, and an archetype whose primaries include Fortitude gets the level's 10 alone. `stonecress` and `restslip` set the marks where they set `xp = xpNext`.
+### Needs eyes
+- **The pace.** #342 B's simulation expects level 10 at about 7 hours. Only play shows whether the first evening ends in a bed and a level.
+- **The bed's sheet** is the old two-column card grid with diamonds and − / +. #142 A's parchment sheet is the look builder's.
+- **The creator's skill row** sits under the attributes, a row of 23 chips. The creator is already long.
+
+## v80 — Session 953 — The attributes at ≤1% a point, and Speech's prices (skills and perks A, the rest of session 2)
+The build sheet's *The attributes at ≤1% a point* says every percentage an attribute gives is 1% a point or less, now that skills carry what the attributes used to. This session moves the ones that sit outside combat's resolver:
+- **Swiftness:** move 0.5% a point (2% before) (`90-main.js`).
+- **Fortune:** crit 0.5% a point (2%, `FORTUNE_CRIT_PCT`). Gold found 1% (5%, `rollGold`). The item drop chance 1% (2.5%, `lootDropChance`): the sheet does not name that one, but its rule covers it.
+- **Finesse:** the sprint's cost 1% a point (5%, `_finesseSprint`). Athletics now carries the sprint's cost.
+- **Charisma:** barter 0.5% a point (1%), its share still capped at a quarter. Quest gold 1% (2%, `questGold`), under the same rule.
+
+The cards (`ATTR_DEF`'s `gainDesc` and `gains`) and the hub's derived rows read the new numbers.
+
+**Speech's prices** (`60-shop.js`). `speechPct()` is 0.2% better prices a level, to 20% at 100. It is added to Charisma's share in `barterPct`, before the short cape's 2% at Aurenne's counters. An untrained Speech (5) is 1%.
+
+**Left for after combat's resolver (PR #356) merges.** These lines sit in the code that PR rewrites:
+- Resolve's block cost (−5% a point, in four places in `42`, `74` and `90`);
+- Finesse's parry milliseconds, which go to Guard (160 ms + 1 a level);
+- Armour's `def` × (0.75 + 0.5 × skill/100).
+
+Taking them now would be a merge conflict for the deep-work session. The resolver reads the skill multiplier, so they are a short session once it lands.
+### Verified (headless Chromium)
+- **`speechprice`** (new): Speech gives 1%, 10% and 20% at 5, 50 and 100. Charisma 10 adds 5%. At Charisma 60 and Speech 100 the total is 45%, because Charisma's own share stops at a quarter. Finesse 10 takes 10% off the sprint; Fortune 10 is 5% crit.
+- `fortunecard`, `questgold`, `fortify` and `cloaks` pass. The first three moved their bars to the new numbers: 110 world quest gold and 88 for a guild task of 80 at Charisma 10, a tenth more gold at Fortune 10, the sprint 3% cheaper at Finesse 3. The cape still adds its 2% on top (0.01 → 0.03 at Aurenne).
+### Needs eyes
+- **The barter's ceiling.** Charisma's quarter and Speech's fifth add to 45% better prices for a master talker at the cap. The sheet gives Speech 20% without saying whether the two share a ceiling. If counters feel too generous late on, a shared cap of 25% is the obvious lever. That is a number for Michael.
+- Movement and crits move less with their attributes now. A character who put points in Swiftness under the old rules runs a little slower than they did.
+
+## v80 — Session 957 — Two faults of Session 941's on CI: a blocked arrow threw, and `witnessrange` measured Stealth (a CI fix)
+CI on PR #353 (head `9e6edf3`) failed `wardall` and `witnessrange` twice each. Both are Session 941's.
+
+**`wardall`** found a fault in play. Session 941 added a Guard use where a zone archer's arrow lands on a held block (`tickZoneArrows`, `42-zone-enemies.js`) and keyed it on `e`. That loop's thing is the arrow `a`, and no `e` exists there, so every arrow taken on a block threw a ReferenceError. The use is now keyed on the arrow. The other three Guard sites (the parry, the blocked blow in `74-strikes.js`, the bash) do have their foe as `e`.
+
+**`witnessrange`** measured a sneaking witness's reach at 6 units. Since Session 941 that is 6 × (1 − 0.4 × Stealth/100), and a Warrior's Stealth of 5 makes it 5.88, so the 5.9 row went unseen. The suite now pins Stealth at 0 for its rows, which are an untrained sneak, and adds one at Stealth 50: 4.8 (4.7 seen, 4.9 not).
+
+The other reds on that run are not this fix's. `lockpicks` and `shoprows` are shop prices, which fits Session 953's Speech prices. `levelpanel` is Session 952's level sheet. They are left to their sessions.
+### Verified (headless Chromium)
+- `wardall` passes (it threw `e is not defined` before the fix).
+- `witnessrange` 10 of 10, the new Stealth 50 row among them.
+### Needs eyes
+- Nothing to see. The arrow fault would have shown as a frozen fight against archers while blocking.
+
+## v80 — Session 958 — `fortunecaor` re-measured to Fortune's 0.5% a point (a CI fix)
+CI on `1c9b2d2` had one red shard of fifteen, with `fortunecaor` failing twice. Session 953 set Fortune's crit chance to 0.5% a point, as the skills sheet's attribute pass asks (it was 2%). The suite still placed its rolls at 2%. Its rolls are now at the new edges: Fortune 1 crits under 0.005 and not at 0.006, and Fortune 10 under 0.05 and not at 0.051. At Fortune 5 the rate over 4,000 blows must fall between 0.018 and 0.032, around 0.025. The Caor Dubh half is unchanged.
+### Verified (headless Chromium)
+- `fortunecaor` 5 of 5.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 959 — `levelpanel` re-measured to Charisma's 0.5% and 1% (a CI fix)
+CI on `1c9b2d2` also failed `levelpanel` twice (shard 14). Session 958's note on the PR said the other shards were green; shard 14 finished after it, so that was wrong. Session 953 put Charisma at 0.5% barter and 1% quest gold a point (`ATTR_DEF.charisma.gains`), the sheet's attributes at ≤1%. The suite still read *+4% barter* and *+8% quest reward gold* for a raise of 4. The panel now says +2% and +4%, and the suite reads those. The stock line's threshold is unchanged.
+### Verified (headless Chromium)
+- `levelpanel` passes.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 960 — `attrpromise` and `barter` re-measured to Session 953's Finesse and Charisma (a CI fix)
+Shard 9 of CI on `1c9b2d2` failed `attrpromise` and `barter` twice each. Both measure Session 953's attribute pass, which is the sheet's attributes at ≤1%.
+- **`attrpromise`:** Finesse takes 1% a point off the sprint now, not 5%, and Athletics carries the rest. Finesse 10 sprints at 12.6 a second, ×0.9 of 14. The suite expected half, and now expects ×0.9.
+- **`barter`:** Charisma is 0.5% a point to a quarter, and Speech adds 0.2% a level on top. A Warrior's Speech of 5 had added 1% to every number. The suite pins Speech at 0, so Charisma is measured alone. Charisma 10 is now 5% off and 5% more paid. The quarter's cap is reached at 50, so the cap check moves from Charisma 40 to 60. The hub's Barter row reads 4% at Charisma 7 (3.5 rounded) and 25% at 60.
+### Verified (headless Chromium)
+- `attrpromise` and `barter` pass.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 961 — `lockpicks` and `shoprows` re-measured to the skills (a CI fix)
+Shard 11 of CI on `1c9b2d2` failed `lockpicks` twice. Run here, `shoprows` (shard 12 of the run before) failed too.
+- **`lockpicks`:** Session 953's Speech takes 0.2% a level off a price. At a Warrior's Speech of 5, the town's 12 became 11. The suite pins Speech at 0, so the price it reads is the town's.
+- **`shoprows`:** Session 941's own. The suite set every attribute to 0 so that some pieces would be locked, but weapons and heavy armour now ask for their skill. A Warrior's Blade 15 and Blunt 25 meet an Iron piece's 15, so nothing locked. Every skill goes to 1 as well, and the locked row reads *Requires Blade 15 (you have 1)*, which the check now allows.
+### Verified (headless Chromium)
+- `lockpicks` and `shoprows` pass.
+### Needs eyes
+- Nothing.
 ## v80 — Session 954 — Holes through the slime (L4, prototype only)
 OG-041 draws its slime with holes through it, so daylight shows through the body. Session 928 owed them because the kit could only add flesh, never take it away. The sheet draws them, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
 
@@ -21592,6 +21817,91 @@ Correction to Session 947: its *Verified* left the new look's run to the PR comm
 ### Needs eyes
 - Nothing for a playtest.
 
+## v80 — Session 973 — The perks begin: the table, the Skills tab's perk line, and the hand and word (skills and perks A, session 3, part 1)
+The build sheet's third session (`docs/design/skills-and-perks-build.md`) is the first wave of perks. Most of the Arms perks (Blade, Blunt, Hand-to-hand, Guard) and Armour's sit in the code that combat's resolver (PR #356) rewrites, so this session takes the perks that do not: the hand and the word. The rest follow in their own sessions.
+
+**The table.** `PERK_DEF` (`12-character.js`) holds the sheet's four perks for each of the eleven skills of the first wave, with their names and what they do, in rank order (25, 50, 75, 100). `perk(id, rank)` is true when the skill stands at the rank and that perk is built. Nothing is saved: a perk is read from the skill, as the sheet says. `PERK_LIVE` names the perks built so far. The Skills tab shows each skill's four under its row, lit gold when held. One not yet built is greyed and italic, and its tooltip says *not yet in the game*. A perk the game promises in a panel should not be one the game does not do.
+
+**Built this session:**
+- **Locks 25, *Feel for it*.** The pin you are working glows faintly while it sits at the shear, the window in which letting go sets it. The sheet says *the next pin's shear shows faintly*; the glow is the plainest reading of that in Oblivion's lock (`lpRender`, the class `feel`).
+- **Locks 50, *Sure hand*.** A snapped pick no longer drops the last pin you set (`lpBreak`).
+- **Locks 75, *Quiet work*.** A witness sees a lock being picked from half as far: 6 units, not 12, by day; 3, not 6, indoors. `witnessOf(house, picking)` takes the flag from `pickSeen` and from `noteCrime` for a lock. Anything else you do is seen as before.
+- **Speech 25, *Haggle*.** 5% better prices both ways, added in `barterPct` beside Speech's own 0.2% a level.
+- **Speech 50, *Talk it down*.** A guard's halt over a fine (`confront`, and `confrontIndoor`) offers *Talk it down. (Speech)* once in each town. It halves the fine, rounded up, marks the town's crime record (`c.talked`) and opens the halt again on the new fine, so the guard's own lines say the number. The change goes through one named action, `talkDownFine`. No new in-world line: the toast *The fine is halved: N gold.* and the log line are menu voice.
+
+**Not built, and why.** Three of the twelve perks in the hand and word name things the game does not do yet. *No mark* (Locks 100) says a picked town lock is never found. Today an unseen pick is written to `worldState.crimes` and nothing ever reads that record, so there is nothing for the perk to stop. *Hearing* (Speech 75) says a person at favour −1 still talks, but nobody refuses to talk at any favour (a seen crime makes a keeper refuse trade for five days, which is not talk). *Word given* (Speech 100) needs a trespass, and there is none. Each waits on the system it names. They show on the tab as not yet in the game. *Shadow's hand* (Stealth 100, a backstab +50%) is the resolver's.
+
+**A suite re-measured, not loosened.** `speechprice` read 10% and 20% at Speech 50 and 100, and 45% at Charisma 60 with Speech 100. Haggle adds 5% from 25, so those are now 15%, 25% and 50%. The 50% is the barter's whole ceiling for a master talker at the attribute cap; Session 953's note on a shared cap stands, and now with 5 more points in it.
+### Verified (headless Chromium)
+- **`perkhand`** (new), 14 of 14:
+  - Locks 24 holds no perk, and 25 holds *Feel for it* but not *Sure hand*.
+  - Haggle: Speech 24 → 25 moves the barter 4.8% → 10%, which is Speech's 0.2% and Haggle's 5%.
+  - Sure hand: a pick snapping on the third pin keeps both set pins at Locks 50, and drops one at 49.
+  - Feel for it: the pin glows while it is in the hold window at Locks 25, and not while it is still rising. At 24 it never glows.
+  - Quiet work, by day at Dunmore with the witness facing you: at Locks 75 a pick is seen at 5.9 units and not at 6.1 or 8. A walk past is still seen at 8. At Locks 74 the pick is seen at 8.
+  - Talk it down is offered at Speech 50 and not at 49. Clicked, the fine goes 75 → 38 and the halt reopens on *Pay the fine (38 gold)*. It is not offered again in that town, in the street or indoors.
+  - The Skills tab: eleven skills carry a perk line. Locks shows its four, two lit at 50. Speech's 75 and 100 are marked not yet in the game. No page errors.
+- `speechprice` re-measured (above) and passes. `barter`, `lockpicks`, `chestpicks`, `nightpick`, `burglary`, `witnessrange`, `witness`, `guardintro` and the crime and Skills-tab suites listed in the PR comment pass.
+### Needs eyes
+- **Feel for it** is a soft gold halo on the worked pin. Whether it is too faint, or too much of a cheat, only the lock in hand shows.
+- **Talk it down** closes the guard's talk and opens it again on the new fine. It is a quick blink, not a line from the guard. If the quest writer wants a word from him, `talkDownTopic` returns it.
+- The perk line on the Skills tab is plain markup, ten pixels high, until the parchment kit (#142 A, the look builder's).
+
+## v80 — Session 976 — Stealth's and Athletics' perks (skills and perks A, session 3, part 2)
+The second part of the sheet's first wave of perks: the body's, outside combat's resolver. Seven perks go live in `PERK_LIVE`, and the Skills tab lights them. Each is one small function in `12-character.js`, read where the thing is decided.
+- **Stealth 25, *Soft step*.** You sneak at walking speed (`sneakMoveMult()`: ×1, not ×0.7). The loop's `_sneakMoveMult` reads it.
+- **Stealth 50, *In the dark*.** Sneaking out of light, sight on you is ×0.75 on top of everything else. The sheet does not say what *out of light* is. The game has one dark rule today: the witnesses' night halving, in the open. So `outOfLight()` is night, in the open world, not indoors. It applies to a witness's reach (`witnessOf`) and to a foe's sight (`_sneakDetectMult`). A lit room or a torch-lit dungeon is not dark here, because nothing in the game says so yet. When a light rule arrives, it belongs in `outOfLight()`.
+- **Stealth 75, *Light foot*.** A spike plate does not spring under you while you sneak or sprint (`lightFootNow()`, in `tickDungeonTraps`). The loop now leaves the frame's sprint in `_sprintNow`. The sheet's *crumbling floors* do not exist in the dungeons yet. When they do, they read the same function.
+- **Athletics 25, *Swimmer*.** You swim at the run's speed, 3.83 to 4.2 with the skill (`swimSpeed()`). Before, it was 1.7 × the cloak's drag × Athletics' 0.8 to 1.3.
+- **Athletics 50, *Long breath*.** Three times the air underwater: 120 s, not 40 (`breathSecs()`). The sea's dive tick in `85-world-sea.js` reads it. That is a one-call change in the look builder's file: the breath is a rule, not a shape.
+- **Athletics 75, *Road legs*.** No sprint cost on a road (`roadLegsNow()`): within the road's half-width (2.6), outdoors in the world.
+- **Athletics 100, *Tireless*.** A sprint that empties your stamina no longer starts the 2 s pause before it comes back.
+
+*Shadow's hand* (Stealth 100, a backstab +50%) is a hit, and waits for the resolver with the Arms perks and Armour's.
+### Verified (headless Chromium)
+- **`perkbody`** (new), 12 of 12:
+  - Soft step: sneaking moves ×0.7 at Stealth 24 and ×1 at 25.
+  - Swimmer: the swim is 1.53 at Athletics 24 and 3.908 at 25, which is the run's 3.908.
+  - Long breath: 40 s of air at 24, 120 at 50.
+  - Road legs: on a road near Dunmore at 75, not at 74, not 8 units off the road. On the game's own loop with Shift and W held for ten frames, stamina 8 → 8.72 on the road at 75, and 8 → 6.78 off it at 74.
+  - In the dark: sneaking at 23h in the open, Stealth 50 takes ×0.75 more off sight than 49, with Stealth's own 0.4% a level divided out. At 13h it takes nothing.
+  - Tireless: emptied by a sprint, the pause is 1.97 s at Athletics 99 and 0 at 100.
+  - Light foot: at Stealth 75 the plate stays armed when you sneak or sprint onto it, and springs at a walk. At 74, sneaking springs it.
+  - No page errors.
+- The suites that touch the sneak, the swim, the dive, traps and the sprint pass (listed in the PR comment).
+### Needs eyes
+- **Tireless** lets a sprint run stamina to nothing and pick it up again on the next frame. Holding Shift then gives a stuttering sprint at the edge of empty, not a stop. Play will show whether that reads as *tireless* or as a fault. A short floor (sprint only above 5 stamina) would be the lever, and that is a number for Michael.
+- **In the dark** only bites at night outdoors. Michael may want dungeons, cellars and unlit rooms to count. That needs a light rule, which the game does not have.
+- **Swimmer** at 25 more than doubles the swim. A Scout or a Duelist, majoring in Athletics, starts with it.
+
+## v80 — Session 977 — Cat's fall and Fitted (skills and perks A, session 3, part 3)
+Two more of the sheet's first wave, both in code that combat's resolver (PR #356) leaves alone:
+- **Acrobatics 50, *Cat's fall*.** A fall is free to 8 m, not 4 (`fallFree()`). Session 429's `fallLand` reads it for the blow, the landing shake and the Acrobatics use for a jump that lands higher than it left. The 6% of your health a metre past the free height is unchanged. The sheet moved Cat's fall from the platforming page's 75 to 50, and its `perkranks` suite measures 4 → 8 m at 49 and 50; this follows the sheet.
+- **Armour 25, *Fitted*.** The five worn pieces weigh half: head, chest, hands, legs and feet (`ARMOUR_SLOTS`, the same five that make an Armour use). A shield, the weapon, rings and the cloak weigh as before. `equipWeight` carries it, so the burden, the overload and the roll's heavy line all feel it.
+
+**Left, and why.** *Catch* (Acrobatics 25: mantle to 1.6 m, and catch an edge while falling) has no mantle to raise: the platforming page's mantle was never built, and it is a system of its own, not a perk. *Second step* and *Swallow's turn* (the double jump and the air dash) wait on the designer's numbers (L11). Armour's *Second skin* (worn armour never slows the roll) is one condition on the roll's heavy line. The resolver changes the line beside it in `startRoll`, so taking it now would be a merge conflict for the deep-work session; it waits with *Unbowed* and *Hold the line*, which are posture.
+### Verified (headless Chromium)
+- **`perkfall`** (new), 6 of 6:
+  - Cat's fall: the free height is 4 m at Acrobatics 49 and 8 at 50.
+  - Through the game's own landing (`fallLand`), at maxHP 130: a 6 m fall costs 16 at 49, which is 2 m past 4 at 6%, and nothing at 50. At 50, 7.9 m is free and 9 m costs 8, the one metre past 8. A 5 m fall still costs at 49.
+  - Fitted: five pieces of 10, a shield of 6 and a sword of 3 weigh 59 at Armour 24 and 34 at 25. No page errors.
+- `falls`, `beastfall`, `fortify`, `roll`, `perkbody`, `perkhand`, `armourlines-numbers` and `skillsave` pass.
+### Needs eyes
+- **Fitted at 25** is early. A Warrior or a Sentinel majors in Armour and starts at 25, so plate weighs half from the first minute. The sheet puts it there. Play will show whether the heavy line's burden, which the armour lines were balanced on (S564), still bites.
+
+## v80 — Session 978 — One shrine bears its god's name (QA's `bridgenames` note, backlog I)
+QA found *no two named places share a name* failing at random on CI: once two shrines of one god had both built, two places read *Shrine of Na Beithígh*. The naming pass (`uniqueSiteNames`, Session 756) makes every shrine's name unique when the world is laid out. Then `buildShrine` overwrote it with *Shrine of* its god when the cell built, and six gods are shared among more shrines than that. Whether two names collided depended on which cells the walk had built, which is why the suite was flaky and not red.
+
+Now `godShrineOwner(god)` (`87-world-quests.js`) gives each god's name to one shrine: the first of its shrines in the grid's order, read once from every cell's sites. That is the same in every game and whatever has loaded. Any other shrine of that god keeps the name the pass gave it, from its culture's bank in the shrine's form (*Shrine of Heifialos*). Its god is unchanged: the altar's prayer, the dome's tint, the boon and the god's day still read `S.god`. No new words. QA left open whether the canon wants another form for a second shrine of one god (*… at <place>*). That is the quest writer's call, and `buildShrine` is the one line to change.
+### Verified (headless Chromium)
+- **`shrinenames`** (new), 6 of 6:
+  - Six gods have shrines, and each god's name goes to the first of its shrines in the grid's order.
+  - An Chloch has two shrines, `c0_0_i0` and `c5_0_i1`. The second is built first, which under the old code would have taken the god's name. It stays *Shrine of Heifialos*, with An Chloch as its god. The first then builds as *Shrine of An Chloch*.
+  - Across all twelve by twelve cells no two named places share a name. No page errors.
+- `bridgenames`, `poinames`, `pois`, `poipreview`, `renewal`, `calendar`, `dayseed`, `townbio` and `makertools` pass.
+**A correction to numbering.** This run numbered its sessions from 973 at its start, and the bodies builder took 974 and 975 on its own branch meanwhile. So the Stealth and Athletics perks are Session 976 (pushed as *Session 974*, commit `c0f71e78`), Cat's fall and Fitted are Session 977 (pushed as *Session 975*, `e360f8f4`), and this is 978. The entries, the code comments and the tests carry the new numbers; the two commit messages and their PR comments keep the old ones.
+### Needs eyes
+- A player who knew a shrine as *Shrine of An Chloch* in an old save may find it under its other name, if it was not the first. Saves key shrines by id, so nothing is lost but the label.
 ## v80 — Session 974 — Folded wings lie closed (L4 and L3, prototype only)
 Session 961 left this in its notes: "from the front the primaries still fan out sideways from the folded wrist: the kit lays them outward from the hand, and the fold turns the bones, not the feathers." The same was true of every bird in the kit. Each flight feather was fixed to its arm bone, so when the arm folded into its Z the hand's primaries went back and out at the wrist and the forearm's secondaries stood out from the flank. From above, every perched bird and the griffin wore a spiky ruff where a folded wing should be. This is a fault in bodies the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
 
@@ -21773,6 +22083,79 @@ Corrections made during the session:
 - **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
 - **Owed:** the rest of L5's works (a shipyard, a ferry).
 
+## v80 — Session 982 — The Bow's perks: Quick nock, Long eye and Through (skills and perks A, session 3, part 4)
+The fourth part of the sheet's first wave of perks. The Arms perks were left for combat's resolver (PR #356), but the bow is not in it: the resolver's diff touches no line of the draw, the flight or the arrow's hit. So the Bow's perks go in now. Three go live in `PERK_LIVE`, and the Skills tab lights them. Each is one small function in `12-character.js`, read where the thing is decided.
+- **Bow 50, *Quick nock*.** The draw fills 30% faster: `bowDrawRate()` is 1/0.7, so a full draw (`BOW_DRAW_MAX`, 1.1 s) takes 0.77 s. The loop's draw tick (`90-main.js`) reads it. The stamina drain is per second of holding, as before.
+- **Bow 75, *Long eye*.** An arrow that has flown 50 m on the level falls at half the gravity from there. `fireArrow` marks the arrow with the perk and its starting point; `tickArrowMotion` asks `arrowGravity(arrow)` for each frame's pull.
+- **Bow 100, *Through*.** A full-draw arrow goes on past the first foe it strikes and can strike one more. `fireArrow` marks it when the draw is full and the perk held. At both hit sites (the zones' `tickZoneBalls` and the dungeon's arrow branch in the loop), `arrowPasses` decides whether this hit is the one it passes through. If so, the arrow neither sticks nor is removed, and it skips that foe from then on. The second foe it meets takes it as before. The damage is rolled on each foe's own stream (`arrowRawFor`), so the second hit is its own roll.
+
+**Not built, and why.** *Steady* (Bow 25) is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly at the crosshair for as long as you hold it, and only the stamina drain limits the hold. A sway is a new rule with numbers a player feels, so it is asked as **DECISION #369**: A, build a sway (a held full draw drifts after 1 s) and Steady with it (recommended); B, Steady as three seconds of the hold free of stamina; C, wait for the bodies builder's draw and the new look's aim. Steady shows on the tab as not yet in the game.
+### Verified (headless Chromium)
+- **`perkbow`** (new), 8 of 8:
+  - Quick nock: on the game's own loop, an empty draw to a full one takes 65 frames at Bow 49 and 45 at 50. The perks built are Quick nock, Long eye and Through, and not Steady.
+  - Long eye: an arrow fired level, 40 m over 70 m of open ground, through `tickArrowMotion` alone. To 45 m it falls 5.281 m at Bow 74 and at 75 alike. By the end of its flight (61.6 m, its 2.2 s life) it has fallen 9.753 m at 74 and 9.587 at 75. Its fall speed is −8.8 and −8.0: the half gravity from 1.79 s, as the sum says.
+  - Through: three Bandits in a line, 4, 7 and 10 units ahead, one arrow each time. At Bow 99 a full draw stops in the first. At 100 a full draw strikes the first, flies on, and sticks in the second; the third is untouched. A draw at 0.8 at Bow 100 stops in the first. No page errors.
+  - `--look=new`: green.
+- `hitseed`, `tpshots`, `attrdmg`, `duelrhythm`, `shiparchers`, `perkhand`, `perkbody`, `perkfall` and `skillsave` pass.
+### Needs eyes
+- **Long eye barely shows.** An arrow lives 2.2 s (`ARROW_LIFE`), so a full draw flies 61.6 m and the perk acts only over its last 11.6 m: 0.17 m less drop. The sheet's 50 m was written for a longer flight. If Michael wants the perk to be felt, the lever is the arrow's life or the 50 m, and that is his number. F2b's table of ranges in metres is the natural place to settle it.
+- **Through** sends the arrow on with no new sound or mark on the first foe. Whether a pass-through wants a sound of its own is for the ear.
+- **Quick nock** also speeds the bow's draw on the viewmodel and the third-person body, which read the same clock.
+
+## v80 — Session 985 — A lord's job comes out the same whatever has loaded (QA's note, backlog B)
+QA found that a lord's job could change kind on a reload. `townQuestFor` (`87-world-quests.js`) rolls the kind on the job's own id (Session 678). But a *retrieve* needs a gate within 700 and a *deliver* a town within 900, and both were looked for among what had loaded (`nearDoors` reads `CELL_DOORS`, `nearSites` reads `SITES`). With nothing loaded near the lord's town, the job fell back to the road job. So on a fresh load, or on a second machine, the same id gave another job. That is against the S533 rule: an outcome keyed by id reads the world's data, never what has loaded. The cull's beast had the same fault, read from `dominantRegion`, the loaded regions (S701).
+
+Now the job reads the world's own data:
+- **Gates.** `doorsNearFixed(site, d)` takes the gates of the town's cell and its eight neighbours from `getCell`. Wet gates are left out (they are never built, S447), and each gate counts once, in its own cell. Each is set at the place the world draws it (`fixedDoorSpot`): a generated gate at its own x and z, a home fort on the straight line of its road at its `fortAt`, a home gate by its zone's anchor. The loaded cell nudges a gate off roads and pads; the job's choice does not see that.
+- **Towns.** `sitesNearFixed` reads the same nine cells' sites.
+- **The cull's beast** is read by `lairBiome`, the cells' regions, as the lairs' is.
+
+The job's words and its target still name the real door once it is placed (`dungeonWorldPos`). A retrieve given before its gate was placed carries the gate's seed and a `fixed` flag. `qTick` moves the thing and its pickup to the real door when the cell places it. `nearDoors` and `nearSites` are unchanged for the other callers (the guilds' commissions in `83-world-generator.js`).
+
+**Left under the same rule.** A *find* puts the lost person at the nearest camp's bedroll among the loaded camps (`beds`), and the *road* job's camp lies on a loaded road (`ROADS`). Both are places, not the kind or the words: the job is the same, and the spot can differ. They are noted in backlog B.
+### Verified (headless Chromium)
+- **`jobseed`** (new), 6 of 6:
+  - Three generated towns two cells or more from the start: `c10_1_p2`, `c5_7_s10`, `c9_9_s0`. None of their nine cells was loaded at first, and the old lookups found no gate or town near any of them (0/0 each). On the old code every retrieve and deliver there was a road job.
+  - The world's data finds 2/2, 3/1 and 2/1 gates and towns, before they load and after.
+  - The same 30 job keys at each town give the same jobs before and after the town builds: 30, 30 and 30 of 30. Over the 90: 15 retrieves, 27 delivers, 18 culls, 15 finds and 15 road jobs.
+  - A retrieve taken at `c10_1_p2` before its gate was placed lies at the real door's mark once the gate is placed (0 m off), and so does its pickup.
+  - Of the 12 gates near the four towns (Dunmore's five with them), the world's spot is where the cell placed it for the generated ones (median 0 m). The farthest is 174.6 m: a home fort, which the cell pushes 120 off its road. No page errors.
+- `datedwork`, `jobids`, `mapquests`, `mapseals`, `rowebeats`, `rowelines`, `theftlevel1`, `toldpages`, `turnin`, `warwords` and `worldjournal` pass.
+### Needs eyes
+- **A town's jobs change once, for every player.** A town that used to give road jobs before its neighbours loaded now gives the retrieve or the deliver its id rolled. A cull's beast can differ near a biome's edge. Jobs already in a save are kept as they were given.
+- **A home fort's choice reads its road's straight line.** A fort near the 700 edge can be counted in or out against where it actually stands, by up to about 175 m. It is the same in every game, which is the rule; the job still sends you to the real door.
+
+## v80 — Session 986 — The guard gives way in his people's voice (quest review Finding 31)
+The quest review (run 19, on `auto/quests`) found the one gap in Session 973's *Talk it down*. The fine halves and the halt opens again on its first line, so the guard who has just been argued down by half says *Halt. There’s a fine of 38 gold on you* as if the player had said nothing. Every other turn at the halt has a line in each people's voice. Applied as the review writes it, in `86-world-crime.js`:
+- `TALKED_LINES` beside `YIELD_LINES`, its four lines word for word.
+- `talkDownTopic`'s `fn` sets `c.talkedNow` once `talkDownFine` succeeds.
+- `confront` and `confrontIndoor` open on the people's line when it is set. `talkedGreet` clears it as the dialog opens, so the next halt in that town greets as before.
+
+The one difference in form: the review's ternary is a small function, `talkedGreet`, so that both halts share it and the flag is cleared in one place. The topics, the fine and the log line are unchanged.
+### Verified (headless Chromium)
+- `perkhand`, extended, 16 of 16. At Dunmore (Gatelander), Speech 50: the fine goes 75 → 38. The reopened halt says *A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: 38 gold, and we’ll say no more about it.*, with no *Halt*. The next halt there, indoors, greets as before (*Stand a moment. There’s a fine of 38 gold owed in Dunmore…*), and the flag is gone.
+### Needs eyes
+- Nothing for a playtest beyond reading the four lines in their towns.
+
+**A correction to numbering.** The bodies builder took Session 983 on its own branch during this run, so the lord's job is Session 985 (pushed as *Session 983*, commit `ce3f8ace`) and the guard's line is Session 986 (pushed as *Session 984*, `0fe8f9f3`). The entries, the code comments and the tests carry the new numbers; the two commit messages keep the old ones.
+
+## v80 — Session 987 — The Crown's blade topic is drawn as quest talk (the critic's note, backlog I)
+The critic found that the lord's *The blade from the stone.* at Coeur de Vie was grey in Tadhg's list, while *Serve the Crown.* and the work topics were gold. Its own *Give it to the Crown.* and *I’ll keep it.*, and the Waylamp's *The lamp.*, carry the mark. The topic in `crownBladeTopics` (`87-world-quests.js`) had no `quest:true`. Nor had its other state, *The licence.*, which the lord asks once you hold the blade under the Crown's licence. Both carry it now. No words changed.
+### Verified (headless Chromium)
+- `crownclaim`, extended, 12 of 12: both topics are quest talk; every other check as before.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 988 — The foes' prewarm makes the shadow pass's program too (QA's `foewarm` on the new look, backlog I)
+QA found `foewarm` red twice on the new look with the same numbers each time. `prewarmFoes` (`42-zone-enemies.js`, Session 688) builds one foe of every kind behind the world's loading fade and compiles their programs with `REN.compile`. Even so, raising every kind in Dunmore then compiled 2 shaders and added a program, 42 → 43. Listing the programs before and after named it: a `depth` program, the shadow map's. `compile()` builds the materials the eye draws, not the depth materials the shadow pass makes for whatever casts a shadow. On r128 the foes' depth variant was one the world had already made. On 0.170 a foe casting a shadow keys one of its own, so the first such foe on screen still hitched.
+
+The prewarm now draws one frame of the scene, with the foes in it and the shadow map forced to update. The shadow pass builds its depth program there, behind the fade. The flag is put back as it was. QA left the test as it was, and it is unchanged.
+### Verified (headless Chromium)
+- `foewarm --look=new`: the prewarm makes 18 programs (17 before), in 1,215 ms (about 620 before, still behind the fade). Raising all 32 kinds in Dunmore now compiles 0 shaders and adds 0 programs (it was 2 and 1).
+- `foewarm` on the old look: 14 programs, 781 ms, nothing compiled on raising.
+- `lod`, `looknew` and `lookpair` pass.
+### Needs eyes
+- The world's first entry takes about 0.6 s longer behind the fade on software GL. On a laptop's GPU it should be a frame.
 ## v80 — Session 983 — Folded wings wrap the flank (L4 and L3, prototype only)
 Session 974 left this in its notes: "seen from the side, the griffin's folded wing is a thin dark line. The feathers are flat cards and it lies on its back edge-on. A bird's folded wing wraps down the flank, which would want the cards to roll as well as turn." It is a fault in bodies the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
 
@@ -21968,6 +22351,38 @@ Corrections made during the session:
 - **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
 - **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
 
+## v80 — Session 992 — The Wolf-Mother's Cloak in its den: the last of the Makers' trials (Michael's A on #270)
+The Makers' six tools could all be had but one. The cloak came only off its master's corpse (Session 781), half its worth; the approved draft (*The Makers' Things* §6) has the master of the cloak's lair *asleep on it*, and you take it from under the living beast at Resolve 30. Two rules were missing, and Michael's A on #270 settled both: the master wakes only when struck, and "weapon sheathed" means not attacking. Built in `87-world-quests.js`, beside the Shuttle's room, with one call from `goToDungeon` and three from the loop and `interact`:
+- **The sleeper.** `cloakDenLay` runs after `lairFinish` in the cloak's cavern (`cloakSeed`), while its master lives and has never been woken. The master is marked `cloakSleep`. The dungeon's frame asks `cloakSleepTick(e)` of each foe before its sight check: a sleeping master is held still and unalert, whatever the player does beside it, so the cavern's other beasts are still the fight or the sneak on the way in. A strike wakes it (its health or its posture below full: a blow, an arrow or a spell), and the world remembers (`worldState.masters[seed].woke`, the world row), so it is awake on every later visit.
+- **The cloak** lies under it, its hem 1.2 m out toward the way in. It is a placeholder, a flat grey mantle; the den's prop (Session 850's prototype) and the sleeping pose are owed (H). Until then the master sleeps in its standing pose, as a dormant Gargoyle does, which #270 allowed for.
+- **The words**, the draft's, word for word. The first time you come within seven units of the sleeping master with a clear line (the foes' own line test), *The master of the cave is lying on something grey that is not its own hide.*, once (the character's `stats.cloakSeen`). Within 1.5 of the hem, and not swinging, charging, or drawing a bow, *Press 'E' to take the grey cloak from under it*. Below Resolve 30 (the base plus at most 2 from gear, `artifactTry`), *You put out your hand, and take it back. Not yet.*: nothing taken, nothing woken, the try kept. At 30, *It lifts its head and looks at you for a long time. Then it lays its head down on the bare stone, and lets you go.*, and the log reads *Took the Wolf-Mother's Cloak from under the master of ${lair}. It lives.* The cloak is whole, so Session 777's drain on the nearest town and Session 789's Guild claim follow as before. The master sleeps on.
+- **The Journal's** *Things not yet yours* now has the draft's own line for the cloak: *The Wolf-Mother's Cloak — in the den at ${lair}. Resolve 30.*
+- Killed in its sleep, the master's death goes the corpse's way (Session 781), and the placeholder leaves the floor.
+
+**Asked, not built: enemies by place (DECISION #373).** Michael's answer on #51 was *not yet, until the skills sessions land*. They have, and 2.0 waits on it, so the question is asked again with the same recommendation (A: a tier per region plus the dungeon floor). The build waits for combat's resolver to merge, since both rewrite `enemyHpScale` and `enemyDmgScale`.
+### Verified (headless Chromium)
+- **`cloakden`** (new), 15 of 15, in the real cavern (Dunkeel's Lair, an Ogre master on floor 2), driven by the game's loop:
+  - The master sleeps on the cloak, the hem 1.2 m out on open floor. From 6.5 units with a clear line, the draft's line once; nothing more at 4.
+  - Ninety frames 1.6 m from it: not alert, moved 0, your health lost 0.
+  - The prompt reads as the draft's at the hem, and not while a bow is drawn or a swing is in the air.
+  - Resolve 29: the draft's failing line, nothing taken or logged, the master still asleep ten frames later, the try kept; the Journal's line as drafted.
+  - Resolve 30: the draft's words and log line; the cloak whole and unique in the bag; the town pays 0.6 a day; the master asleep thirty frames on, and no prompt.
+  - A second visit: asleep, nothing under it. Struck (5 health): awake and alert, and `woke` written. A third visit: awake as any master. Another cavern's master is never laid down. No page errors.
+- `cloakden --look=new`: green. `cloakcorpse`, `wolfcloak`, `lairmaster`, `makertools`, `cloakguild` and `hoardspot` pass.
+### Needs eyes
+- **A sleeping master standing up.** Until the bodies builder's sleeping pose, the Ogre stands still over the grey slab. It reads as a statue more than a sleeper.
+- **Reach for the hem.** 1.5 m round a point 1.2 m in front of the master. Whether that feels like "within reach of the master" from every side of a large beast is for play; from behind it, there is no prompt.
+- **The cavern's way in.** The cloak's master sleeps, but its cavern's other beasts do not: the trial is Resolve at the end of an ordinary fight or sneak, as #270's A says.
+
+## v80 — Session 993 — The Gate-Blade's stone: a slab at waist height, outside the gate (the critic's s632, backlog I)
+The critic found two things wrong with the Gate-Blade's stone (Session 802). It was 2.1 m tall with the hilt at 2.0–2.4 m, so at the prompt's distance the eye saw only the slab and the hilt was above the frame, though the draft's blade stands *a hand's breadth below its guard*, a grip to take hold of. And it stood inside Dunmore Tower's yard, 8 from the keep's door with the walls 16–21 off, where Session 802's own entry and the draft both put it *outside the gate, plainly visible from its road*. Both are the placeholder doing what its entry says, so neither is a decision.
+- **The height.** The slab is 1.1 m (`bladeStoneBuild`), the critic's figure until the look builder's prop comes; the guard sits on its top and the pommel at 1.41 m.
+- **The place.** `bladeStoneSpot` now reads the compound as it is built (`buildFortCompound`: a ring of radius 27 round the door's point 4 m south, its gate on +z) from where the gate stands (`dungeonWorldPos`). It searches 31 to 41 m from the ring's centre on bearings fanned out from the gate's line, 0.24 to 1.08 rad either side and nearest first, never square on the gate where the spur road leaves. It takes the first spot clear of every solid within 1.4 m and above the sea, as before. The old seeded draw of a starting bearing is gone; nothing else drew from that stream. A road check was tried and dropped: `ROADS` holds only the roads loaded so far, and an outcome keyed by place must not read what has loaded (S533).
+### Verified (headless Chromium)
+- **`bladestone`**, extended, 13 of 13: at Dunmore Tower the stone stands 31.0 m from the compound's centre, outside its ring, 0.24 rad off the gate's line, on open ground, and the same spot again. The hilt stands 0.95–1.41 m over the ground. The first sight, the prompt, the six failing tries, the taking, the empty slot and the hermit as before.
+- `bladestone --look=new` green; `gateblade`, `bladekey`, `makershermit` and `crownclaim` pass.
+### Needs eyes
+- **Plainly visible from its road.** The stone is 4 m off the gate's axis at least, by the spur's mouth. Whether it reads as *the stone by the gate* from the road, or is lost against the curtain wall behind it, is for a playtest, and the prop is the look builder's.
 ## v80 — Session 996 — The sash's knot and hanging ends (L1 and B2, prototype only)
 Session 989 left the sash's hip end as "a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang." OG-056 draws the Aurennais' sashes knotted at the hip with long ends falling over the thigh. This finishes a piece the kit already makes and the sheet already shows, so it asks nothing. It touches only the prototypes (`people.js`, `builder.check.mjs`). (Numbered 996: this entry was first committed as 992, which the systems builder had taken in the meantime.)
 
@@ -22135,6 +22550,35 @@ Corrections made during the session:
 - **Peat cut on a bog is a quest writer's and a systems builder's question too:** turf as fuel, a cutter's right to a bank. Nothing of that is drawn.
 - **Off the road (OG-124) still lacks:** the shepherd's hut, the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
 
+## v80 — Session 1000 — The Waylamp's first sight waits for the day, and says the rain only in the rain (the critic's s632, backlog I)
+The critic saw the Waylamp's sight line, *A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.*, at Biafaira's The Wandering Anchor at two minutes past midnight under a clear sky. `tickWaylamp` said it once a character at any hour and in any weather. The backlog's note offered two ways: new lines from the quest writer, or the two halves keyed to the hour and the weather. The second needs no new words, so it is not a decision: the draft's two sentences are kept word for word and each is said only when it is true. By night a lamp over an inn's door is nothing strange, so the first sight waits: nothing is said and `stats.lampSeen` is not set, and the line comes the first time you are within 20 of the door by day (`lampDaySight`, the world's own `isNight`). The rain's half follows the first only while the weather is rain or storm (`lampInRain`, `WX.type`). The innkeeper's topic was never keyed to the sight and is unchanged.
+### Verified (headless Chromium)
+- **`waylamp`**, extended, 15 of 15, at Biafaira's The Wandering Anchor: at 0h03 under a clear sky nothing is said and the sight is kept; at noon, clear, *A lamp burns over the inn’s door in broad day.*; at noon in the rain, both halves. The rest of the trial as before (the innkeeper's offer, five towns' inns, the theft that puts it out, the seven days, the two rows). `lampheld` passes.
+### Needs eyes
+- **Fog and snow.** Neither carries the rain's half; whether *the rain does not seem to reach it* wants a snow line of its own is the quest writer's, if anyone asks.
+
+## v80 — Session 1001 — Shadow's hand, Stealth 100 (skills and perks A, session 3, part 5); three perks asked (DECISION #376)
+The build sheet's Stealth 100 perk, *Shadow's hand*, is "a backstab does +50%". The backstab is positional (Combat Redesign Session 2): behind a foe's rear cone, a dagger's blow is ×3 and any other's ×1.5, multiplied into the whole blow in `applyMeleeDamage`, with the stagger, the finisher and the luck. Shadow's hand multiplies the backstab's own multiplier by 1.5 (`shadowHandMult`, `12-character.js`, read in `applyBackstab`, `10-player.js`), so a dagger from behind is ×4.5 and a sword ×2.25, and the whole blow rises by half. The exclusions are the backstab's (a boss, a dormant foe, a ranged foe, a slime), so the perk adds nothing where there is no backstab. One code path for the dungeon and the open world: both resolve through `applyMeleeDamage`. Combat's resolver (PR #356) keeps `applyBackstab` as it is, so the perk rides it when it merges. A correction to the backlog: it listed Shadow's hand as waiting on #356; the resolver's branch changes neither `applyBackstab` nor where `applyMeleeDamage` reads it, so it did not need to.
+
+**Asked, not built (DECISION #376).** The hand and the word's last three perks each change a rule the game does not have, as Steady did for the bow (#369): *Hearing* (Speech 75, "a person at favour −1 still talks") when nobody refuses to talk at any favour; *No mark* (Locks 100, "a picked town lock is never found") when a pick is a crime only if seen at the time and nothing finds it after; *Word given* (Speech 100, "a guard takes your word for a trespass") when there is no trespass, being inside after hours not a crime by the crime system's design. The question offers building each rule and then its perk (recommended for No mark and Word given; Hearing wants a brush-off line from the quest writer), other perks under the same names, or waiting. The Skills tab shows the three as *not yet in the game*.
+
+With this, the first wave stands at 18 of its 40 perks built: the rest are combat's (Blade, Blunt, Hand-to-hand, Guard, Armour 50 and 75, which read posture and the parry and wait on the resolver's merge), Acrobatics' three (Catch, and the double jump and dash on #370), Steady (#369), and the three above.
+### Verified (headless Chromium)
+- **`perkbody`**, extended, 15 of 15: a foe facing +z with you 1.3 behind it, the dice held still: the backstab ×3 with a dagger at Stealth 99 and ×4.5 at 100, ×1.5 and ×2.25 with a sword; a blow of 100 through `applyMeleeDamage` lands 300 → 450 and 150 → 225; from the front ×1 at Stealth 100. The Stealth and Athletics perks before it as they were.
+- `dmgnums`, `captainguard` and `challenge` (which read the backstab) pass.
+### Needs eyes
+- **A dagger from behind at ×4.5.** With the stagger's ×1.5 a parried, backstabbed foe takes ×6.75 of a dagger's blow. That is a Master's reward at Stealth 100, as Skyrim's sneak attacks are, but whether it ends fights too quickly is for play.
+
+## v80 — Session 1002 — The road job's camp comes from the cell's data, and a missing person's camp is the nearest (QA's note, backlog B)
+Session 985 made a lord's job come out the same kind whatever had loaded, and left two places owed under the same rule (S533: an outcome keyed by id reads the hash and `getCell`, never what has loaded). The *road* job put its bandit camp halfway along `ROADS.find(…)`, the first loaded road out of the town: before the town's cell had loaded there was none, and the camp fell back to 300 m east. The *find* job put its missing person at `beds[0]`, the first roadside camp within 700 m in the order the camps were built.
+- **The road.** Every road that ends at a settlement is in its own cell's `roadDefs` (the tree, the two extras and the border roads, made with the cell; the home cell's are `HOME_ROAD_DEFS`), and `ROADS` holds them in that order once the cell loads, so the first of them is the road the old code found whenever the town had loaded. `roadOutFixed(site)` reads it from `getCell`, and `roadLineFixed(def,c)` works out its line as `buildRoad` does, with the same bends seeded by the road itself (S619), without building it. The camp is that line's middle point, as before. The job keeps its road's two ends (`data.ra`, `data.rb`), and clearing the camp marks that road cleared. A job saved before this session has neither and is marked as before. A glade or a camp has no road, so its job's camp stays 300 m east, which is also fixed.
+- **The camp of a missing person.** The roadside camps are built with their cells, and where one stands depends on the roads, pads and stamps built so far, so they cannot be read from the cell's data without building them. The job now takes the *nearest* camp within 700 m (ties by position), not the first built. You ask a lord in person, and the camps within 700 m of the town are on cells that have loaded around you by then, so the nearest is the same camp whichever cell loaded first. Still owed under the rule: a find asked for a town whose neighbours have not loaded takes the fallback spot. Nothing asks for one today.
+- `roadLineFixed` repeats `buildRoad`'s spline (`82-world-structures.js`, the look builder's file, untouched). The suite checks the two point for point, so a change to one without the other fails it.
+### Verified (headless Chromium)
+- **`jobseed`**, extended, 8 of 8. Three towns two cells or more from the start were asked 30 job keys each before any of their cells had loaded, then again once each had built: 90 of 90 the same, now with the road job's camp spot and its road in the comparison (15 road jobs, 10 of them on a road of their own cell, 5 at a glade with no road). For 69 loaded roads of the settlements' cells, the line worked out from the cell's data is the built road's: the same number of points, the worst 0 m off. In all 5 loaded towns with a road, the first road out is the one the loaded roads gave.
+- `mapseals`, `theftlevel1`, `rowebeats` and `rowelines` pass.
+### Needs eyes
+- Nothing a player sees changes for a town asked in person: the road and the camp are the ones they were.
 ## v80 — Session 1003 — The coin necklace (L1 and B2, prototype only)
 Backlog L1 gives the Aurennais "coin and hoop jewellery" (OG-044, OG-056). Session 995 made the hoops and left the coins owed. This session makes the coin necklace. As with the sash, the wrap and the hoops, the sheets draw it plainly and the canon has nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label and a new `neck` view) and `builder.check.mjs`.
 
@@ -22405,6 +22849,72 @@ Corrections made during the session:
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
 
+## v80 — Session 1008 — The new look's 11 s stall at a jump of the clock: not reproduced, and not the game's JavaScript (QA's `hourhitch`, backlog B)
+QA's Session 992 found `hourhitch` red twice on the new look, run alone: the jump to 21h gave one frame of 11.2 s, then 11.5 s, against a median of 3.2–3.5 s, with nothing compiled, and a probe put a 9.1 s synchronous `REN.render` on the first dusk. It was filed for the systems builder. QA's run predates Session 988, whose prewarm draws one frame with the shadow map forced, so the first question was whether that had moved the cost. It had not: neither tree stalls here.
+
+The suite was run three times alone in a 4-core container on the new look: this branch twice (one of them the probe below), and QA's own commit (77bb4b0a) once, through `--src`. Over 32 jumps of the clock no frame went over 1.8× its run's median. The worst was 8.2 s at 6h on QA's commit (median 4.75 s); on this branch 5.1 s at 21h (median 4.5 s). Every check passed each time.
+
+The probe (a scratch script, not a suite) wrapped `REN.render` and the shadow map's render in timers and ran the CPU profiler over each step's 12 frames, through two rounds of the six jumps. The game's JavaScript is not where a frame goes. A render call is 15–67 ms of script, the shadow pass 3–25 ms of that, and the viewmodel's second render 0–4 ms. A step's 12 frames take 40–55 s of wall time, and the main thread is idle for all but 1–1.5 s of them. The rest of a 3–5 s frame is the software rasterizer's, in the GPU process, which the page cannot see. The busiest script is the scene graph's `traverse` and `updateMatrixWorld` and the terrain's height reads, 30–90 ms a step each. A *synchronous* 9 s `REN.render` is then a GL call that blocked on that queue, not three.js doing work.
+
+So there is nothing in the game to change for it. It stays open in backlog B, rewritten for QA with these numbers: if it comes back, a step's `REN.render` time logged beside its frame time says whether it is the game or the rasterizer. The same pass struck a copy of the foes' prewarm item that the merge had left in B; Session 988 fixed it, and its line in I was already struck.
+### Verified (headless Chromium)
+- `hourhitch --look=new`, alone, this branch: 6 of 6. Worst judged frame 5.1 s, median 4.5 s, noon 3.4 s. 0 shaders compiled, 43 programs throughout, 27 lights.
+- The same on QA's commit 77bb4b0a: 6 of 6, worst 8.2 s at 6h, median 4.75 s, 42 programs.
+- Probe, 12 jumps (18h, 23h, 12h, 6h, 21h and 12h, twice): every `REN.render` 15–67 ms, no frame over 2× its step's others. CPU samples per step: idle 37–54 s, program 0.3–0.4 s, garbage collection 0.05–0.4 s.
+### Needs eyes
+- On Michael's laptop, with a real GPU: whether a sleep or a wait into the night hitches at all. The headless numbers say the game's script is not where a long frame would come from.
+
+## v80 — Session 1009 — Second step, the double jump at Acrobatics 75; the head stops at the ceiling; a jump's height no longer depends on the frame rate (the double-jump sheet's session 1, less #370's cap)
+The designer's build sheet (`docs/design/double-jump-and-dash-build.md`, merged in #371) gives the systems builder its first session now: the step, the air-speed cap, the head clamp and the fall rule. One of the four is its open number. The cap, 4.7 m/s in the air for everyone, is DECISION #370 and still waits on Michael. The other three are settled by the sheet, so they are built here and the cap is left out.
+
+- **Second step** (Acrobatics 75, `airStepTick` in `10-player.js`, called by the loop before the ground's jump). A fresh press of Space in the air sets the rise to 4.5 m/s. It is set, not added, so a quick double tap does not stack. The step works once a flight and comes back on landing. It costs 12 stamina, and the first jump stays free. A held Space never fires it: Space must be let go in the air before the press counts. Over 70% of your carry the rise is 3.2; immobile, swimming, levitating or staggered, there is none. Too winded (under 12, or in `staminaCD`), the stamina bar flashes, as the roll's does. The perk goes live in `PERK_LIVE`, so the Skills tab lights it.
+- **The head stops at the ceiling** (`headCeil`). A rise ends where the top of the head, `SCALE.PERSON` (1.8 m) over the feet, meets a ceiling. The ceiling is the room's own height, the dungeon floor's, or the underside of a foothold or solid over you (an inn's gallery, the floor above). A generated room now records its true height as `house._roomH` after `scaleRoom`: 2.89 m for a plain cottage, 3.18 for stone. Before, nothing recorded it, and the third-person camera still guesses by type as it did. This holds for every jump, not only the step. So at Acrobatics 100 a single jump (1.21 m) in a 2.89 m cottage now stops 0.12 m short of where it went, which was through the ceiling. Outdoors nothing is over you yet, until the heights card.
+- **The fall's count.** The sheet asks that a step pressed near the ground never resets a fall. `fallTrack` already keeps the flight's top, so nothing changed, and the suite proves it.
+- **A jump's height is the same at any frame rate.** The loop took gravity off `velY` first and then moved `jumpY`, which loses velY × dt/2 of every rise: a 0.84 m jump peaked at 0.79 at 60 fps and about 0.70 at 20. It now integrates the flight exactly, as the dropped-frame rule asks: 0.840 m at both. That raises every jump by 0.05 m at 60 fps, to the height the platforming page and the skills sheet were written to.
+- **Found and fixed by the suite before it shipped.** With the step called after the ground's jump, a flight that ended with Space let go left the press armed. A jump pressed on the very frame of landing then fired the step at take-off, a 1.77 m leap from the ground. The tick now runs first, so a landing always resets it.
+
+Not built, and owed: the air-speed cap and its `aircap` suite (#370); the dash, the sheet's session 2; the tuck and lean (the bodies builder's, with F10); and the one line the first time each is held, the quest writer's words.
+### Verified (headless Chromium)
+- **`airstep`**, new, 12 of 12 (the sheet's `airstep`, `headroom` and `airfall` in one). It is driven through the game's own loop at fixed 1/60 steps with the draw held off:
+  - Nothing at Acrobatics 74: the one jump, 1.102 m.
+  - At 75 a fresh press at the top rises to 1.666 m (the sheet's 1.66), and at 100 to 1.770 (1.77), each at a rise of 4.5 m/s and a cost of 12 stamina.
+  - Without the press, at 75 the jump is the one jump, 1.106 m. With Space held through the flight at 100, 1.21 m and no step.
+  - A third press after the step changes the rise by gravity's −0.3 m/s alone. At 11 stamina, nothing.
+  - A jump at Acrobatics 5 peaks at 0.840 m at 20 fps (steps of 50 ms) and at 60.
+  - A 12 m drop with the step pressed 1 m up is counted as 12.00 m.
+  - In a Dunmore cottage, 2.887 m to the ceiling, from a clear spot: the double jump's head stops at 2.887 m, and an untrained jump peaks with the head at 2.64.
+  - In a dungeon, 3.2 m to the ceiling: the double jump's top is 1.40 m (3.2 − 1.8).
+- `airstep --look=new` 12 of 12. `falls`, `perkfall`, `roll`, `lockon` and `skillcurve` pass (skillcurve's jump ratio is now exactly 1.44).
+### Needs eyes
+- **How the step feels.** It is a set rise with no new pose until the bodies builder's tuck. Without #370's cap, a sprinter double-jumps farther than the sheet's table: up to 7.4 m at Athletics 100 and Swiftness 40.
+- **The ceiling in old rooms.** The legacy interiors keep their own low ceilings (a shop's 2.3 m), so their jumps are now capped at 0.5 m.
+- **Every jump is 0.05 m higher at 60 fps.** No place is built to the old height.
+
+## v80 — Session 1011 — Swallow's turn, the air dash at Acrobatics 100 (the double-jump sheet's session 2)
+First committed as 1010, which the bodies builder had taken; renumbered. The sheet's second session. Its numbers are all settled; the only open number is the air-speed cap (#370), which the dash does not read.
+
+- **The dash** (`airDashStart` and `tickAirDash`, `10-player.js`). Q in the air, while the dash is unspent, carries you 3.0 m level in 0.2 s. It goes toward the held keys, or straight on with none (where the roll on the ground goes back). The fall pauses, and starts again from rest when the dash ends.
+  - It works once a flight, for 20 stamina. There is none over 70% of your carry, immobile, swimming, levitating or staggered. Too winded, the bar flashes.
+  - Spent, Q buffers the landing roll as before.
+  - The loop moves the dash through the walk's own collision, as it moves the roll, so it stops at a wall in the world, a dungeon or a room.
+  - It has no untouchable window, no strike and no height.
+  - Its clock is `performance.now()`, as the roll's. The loop's dt is capped at 0.05, so no frame of it moves more than 0.75 m, and `fallTrack`'s 3 m travel rule holds without the exemption the sheet foresaw for an uncapped frame.
+  - The perk goes live (`acrobatics:100`), so all four of Acrobatics' perks are now in but *Catch*, which waits on the mantle.
+- **The landing roll, and a correction to the sheet.** The sheet says "a dash ending within 0.2 s of landing counts as the roll". Its own `airroll` row asks that Q pressed 0.1 s before landing halves a 10 m fall. The two cannot both hold. A dash begun 0.1 s before landing, at 13 m/s about 1.4 m up, holds you there 0.2 s, then drops you from rest for another 0.4 s. Its end is never within 0.2 s of the ground unless it began under 0.36 m up. So at Acrobatics 100 the old habit, Q before a hard landing, would have cost the whole fall. The built rule keeps the sheet's sentence and adds the intent behind it ("one key: pressing Q to soften a fall still softens it"). A dash also counts as the roll when it begins within 0.2 s of where you would have landed: worked out from your speed and the ground under you (`dashGroundY`, the same ground the loop lands you on). The designer may want the sheet's sentence to say so.
+### Verified (headless Chromium)
+- **`airdash`**, new, 10 of 10 (the sheet's `airdash`, `airdashwall`, `airdashframes` and `airroll` in one). It is driven through the game's own loop with the page's clock held to the loop's:
+  - Nothing at Acrobatics 99: Q in the air only buffers the roll.
+  - At 100, straight on: 3.000 m along the eye in 13 frames of 1/60. The height moves 0.0025 m, the last frame's fall from rest.
+  - The dash costs 20 stamina, and a second Q in the same flight dashes nothing.
+  - With A held, 3.000 m to the left.
+  - At 20 fps (steps of 50 ms) the same 3.000 m in 4 frames.
+  - Carrying 75% of your weight: no dash, no cost.
+  - A 10 m drop (8 m free at Acrobatics 100) costs 16. With the dash 0.1 s before landing it costs 8, rolled. With the dash spent and Q 0.1 s before, 8, as before.
+  - In a dungeon, from 1.5 m before a wall's face: the dash stops at 1.25 m, the body's radius short of it.
+- `airstep`, `falls` and `roll` pass after the change to `startRoll` and `fallLand`.
+### Needs eyes
+- **How it feels**, with no pose yet: you slide level for a fifth of a second. The lean is the bodies builder's (with F10).
+- **The jump-and-dash gaps.** Jump plus dash makes 6.45 m and all three 7.98 m, at the sheet's 4.7 m/s. Without #370's cap a sprinter goes farther.
 ## v80 — Session 1005 — `shipmoor` keeps the sea empty while she sails out (FLAKY on auto/backlog)
 QA's read of the last eight green CI runs (112 headless jobs, 16 Oct 07:21–12:15 UTC) found seven FLAKY retries and no suite red twice: `lookpair` twice and `looknew` once, both runs older than the fixes in Sessions 971 and 991; and once each `bridgenames` (the game's, already filed in I), `skillcurve`, `q7world` and `shipmoor`. `shipmoor` (auto/backlog 490b0f9, shard 14) read hull 99 against 100 after fifteen seconds at the wheel, and its last message was *Black sails on the horizon.* The suite sends the other ships away once, when she is bought. The sea rolls its pirate and merchant again every 2 s from the chunk and the game minute (S508, `tickOtherShips` in `85-world-sea.js`), and the minute is wherever the clock got to while the world loaded. So whether a pirate came near enough to cost a point depended on the boot. The suite is about her bow and the shallows (Session 473); the pirates have suites of their own (`pirateram`, `piratehold`). So while she sails out, it sends every other ship away each tick and counts them (`others`). It also records every line the sea says (`said`), the weather and the sea state, so a later red names what struck her. The checks are unchanged: moved over 60, speed over 2, the hull whole, never stopped.
 ### Verified (headless Chromium)
@@ -22721,6 +23231,22 @@ Corrections made during the session:
 - **The cave goes 10 m and ends in a dark plane,** as the ice mouth's did. Joining it to the limestone cave (Session 872), whose lake lies under falls of its own, is for whoever places the two together.
 - **Off the road (OG-124) still lacks the camps on the roads.**
 
+## v80 — Session 1013 — Main's one resolver, merged with the skills (a merge; combat's resolver and skills and perks A)
+Combat's resolver (the deep-work card, approved 16 Oct) reached main. It replaced `_resolveDungeonStrike` and `_resolveZoneStrike` with one `resolvePlayerStrike` in `74-strikes.js`, and the damage with `meleeDamageChain`, "one function a skills build can swap". The skills sessions had changed the two old resolvers, so merging main into auto/systems conflicted there. Main's resolver is taken whole, and the skills' three changes move into it:
+- `meleeDamageChain` multiplies by `skillMult(weaponSkill(w))` in place of `level × 1.5`. Fists read Hand-to-hand.
+- `resolvePlayerStrike` notes whether the foe was already alert.
+- After the hit, the weapon's skill takes a use (3 for a riposte or finisher), or Stealth 3 for a backstab.
+
+Nothing else of either side changed. The build tag keeps the higher s666.
+
+Three suites needed re-measuring against the two together:
+- `fistfight`: our two checks, untrained 15–28 and Hand-to-hand 100 at the critic's 7–12, hold with the chain's ×1.3 third, so they stand. Main's single 6–11 range was left out.
+- `skillcurve`: its three damage swings came in quick succession, so the middle one was the chain's ×1.3 third. Each swing now starts a fresh chain.
+- `resolver` (main's): it punched with untrained fists, which now hit for 1 through a Bandit's armour, where the old level term had made it 2; the guard, riposte and finisher comparisons can't be told apart at 1. Every skill is set to 50 and Hand-to-hand to 100, which gives the old 4. Its expected chain damage reads the skill multiplier in place of the level term.
+### Verified (headless Chromium)
+- 23 suites that measure a hit or a skill: `attrdmg`, `bladehit`, `counters`, `dmgnums`, `duelrhythm`, `fists`, `fistswing`, `fortunecaor`, `handback`, `herbparity`, `levelmarks`, `levelpanel`, `perkbody`, `perkbow`, `perkfall`, `perkhand`, `posture`, `posturefloor`, `postureregen`, `resolver`, `skillcurve`, `skillsave`, `swingblade`, and `fistfight`: all pass.
+### Needs eyes
+- Nothing new. CI runs the rest.
 ## v80 — Session 1017 — The taller turban (L1 and B2, prototype only)
 Backlog L1 has owed "a taller turban" since Session 994 built the Aurennais head-wrap. OG-044 draws most of its Aurennais men in round, pale turbans that stand well above the head, and OG-093's sailors, OG-109's wardrobe matrix and OG-111's headwear row all have them; Session 994's wrap is a close cap over the skull, 6 cm over the brow line. This session winds the wrap up into a turban. The sheets draw it plainly and nothing in the canon is against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`. FREEZE #381 (F3, the land) is open, so nothing in `js/` was touched.
 

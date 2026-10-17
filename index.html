@@ -48,6 +48,7 @@
 .lp-pin i{position:absolute;left:3px;right:3px;bottom:0;height:34px;background:linear-gradient(#b8b2a4,#6a655a);border-radius:2px;display:block;transition:none}
 .lp-pin.set i{background:linear-gradient(#e8d8a0,#a8903c)}
 .lp-pin.broke i{background:linear-gradient(#c86a50,#7a3020)}
+.lp-pin.feel i{box-shadow:0 0 7px 1px rgba(232,216,160,.45)}
 #lp-status{margin-top:9px;min-height:18px;color:#c8b890;font-size:12px}
 #lp-foot{margin-top:8px;display:flex;justify-content:space-between;align-items:baseline;gap:18px;font-size:11px;color:#8a7a60}
 #lp-picks{white-space:nowrap}
@@ -287,6 +288,12 @@
 #lu-arch-bonus{color:#c8a84a;font-size:10px;text-align:center;margin:6px 0 12px;font-style:italic;letter-spacing:.04em;opacity:.85}
 #lu-arch-bonus .lu-arch-name{color:#ffd54a;font-style:normal;font-weight:600}
 #lu-arch-bonus.lu-arch-empty{display:none}
+.lu-attr-dias{letter-spacing:2px;font-size:11px}.lu-dia{color:#3a3020}.lu-dia.on{color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.5)}.lu-dia.shut{opacity:.25}
+.lu-attr-rose{color:#c8b8e8;font-size:10px;margin-bottom:2px}
+.lu-pt{background:rgba(200,168,74,.12);border:1px solid rgba(200,168,74,.5);color:#ffd700;border-radius:4px;padding:0 6px;font-size:11px;cursor:pointer}.lu-pt:disabled{opacity:.3;cursor:default}
+.sk-row{display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(120,100,70,.18);font-size:12px}.sk-name{min-width:120px;color:#e8dcc0}.sk-gov{min-width:80px;color:#8a7a60;font-size:10px}.sk-lv{min-width:28px;text-align:right;color:#ffd700}.sk-bar{flex:1;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}.sk-bar>div{height:100%;background:#c8b8e8}.sk-tag{min-width:42px;font-size:10px;color:#c8a84a}
+.sk-perks{display:flex;flex-wrap:wrap;gap:4px;padding:2px 0 5px 8px;font-size:10px}.sk-perk{padding:1px 6px;border:1px solid rgba(120,100,70,.3);border-radius:3px;color:#8a7a60}.sk-perk.held{color:#ffd700;border-color:rgba(255,215,0,.5)}.sk-perk.later{opacity:.45;font-style:italic}
+.cc-skill{display:inline-block;margin:2px;padding:3px 7px;border:1px solid #5a4a3a;border-radius:4px;font-size:11px;color:#b8a880;cursor:pointer;background:#1a1410}.cc-skill.maj{border-color:#ffd700;color:#ffd700}.cc-skill.min{border-color:#c8a84a;color:#e8d8a0;background:#2a2010}
 /* ── BOOK READER ─────────────────────────────────────────── */
 #book-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,.94);z-index:75;border-radius:8px;align-items:center;justify-content:center}
 #book-panel{background:linear-gradient(170deg,#2a1d0e,#1a1208);border:1px solid rgba(200,168,74,.4);border-radius:6px;padding:24px 32px 18px;width:560px;max-width:92%;max-height:88%;display:flex;flex-direction:column;box-shadow:0 0 50px rgba(200,150,40,.15),inset 0 0 40px rgba(40,26,10,.6)}
@@ -727,6 +734,10 @@
         <label class="cc-label">Refine your stats <span id="cc-points-left">— 8 points</span></label>
         <div id="cc-attr-grid"></div>
       </div>
+      <div id="cc-step-skills">
+        <label class="cc-label">Your skills <span id="cc-skill-count"></span></label>
+        <div id="cc-skill-grid"></div>
+      </div>
       <div id="cc-actions">
         <button id="cc-begin">Begin →</button>
       </div>
@@ -771,7 +782,7 @@
       <span style="color:#40a040">⚡</span><div class="bar"><div class="bf" id="stb" style="background:#40a040;width:100%"></div></div><span id="sv" style="color:#a0c890">100</span>
       <div id="psw" style="margin:1px 0 0 18px;width:88px;height:3px;background:#1a1410;border-radius:2px;overflow:hidden;opacity:0;transition:opacity .4s"><div id="psb" style="height:100%;width:100%;background:#c8a84a"></div></div>
     </div>
-    <div style="color:#c8a84a;font-size:11px">Lv<span id="lv">1</span> XP <span id="xv">0</span>/<span id="xn">100</span> <span id="lvready" style="display:none;margin-left:8px;padding:2px 8px;border-radius:10px;background:#e8c040;color:#2a1a08;font:700 11px Georgia,serif;animation:lvpulse 1.1s ease-in-out infinite">▲ LEVEL UP — rest in a bed</span></div>
+    <div style="color:#c8a84a;font-size:11px">Lv<span id="lv">1</span> Marks <span id="xv">0</span>/<span id="xn">10.5</span> <span id="lvready" style="display:none;margin-left:8px;padding:2px 8px;border-radius:10px;background:#e8c040;color:#2a1a08;font:700 11px Georgia,serif;animation:lvpulse 1.1s ease-in-out infinite">▲ LEVEL UP — rest in a bed</span></div>
     <div id="bh" style="margin-top:3px;color:#9a8060;font-size:11px"></div>
     <div id="ob" style="margin-top:3px;font-size:11px;color:#c8a84a"></div>
     <div id="buff-bar"></div>
@@ -792,7 +803,7 @@
     <button style="grid-column:3;grid-row:2" id="pd">▶</button>
   </div>
   <div id="lockmk" style="display:none;position:fixed;width:10px;height:10px;margin:-6px 0 0 -6px;border:1px solid #f0d890;background:rgba(200,168,74,.55);transform:rotate(45deg);pointer-events:none;z-index:6;box-shadow:0 0 4px rgba(0,0,0,.6)"></div>
-  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s643</span></div>
+  <div id="cbar">WASD/drag — move & look · Left-click — attack · Right-click — block · Q — roll · Middle-click/R — lock on · E — interact · F — cast magic · I — inventory <span style="opacity:.45;margin-left:14px">build s666</span></div>
   <div id="ip">
     <h2>Equipment &amp; Inventory</h2>
     <button id="ic" onclick="closeInv()">✕</button>
@@ -945,6 +956,7 @@
       <button class="hub-tab" onclick="hubTab('journal')">📖 Journal</button>
       <button class="hub-tab" onclick="hubTab('log')">👤 Character</button>
       <button class="hub-tab" onclick="hubTab('map')">🗺 Map</button>
+      <button class="hub-tab" onclick="hubTab('skills')">🎯 Skills</button>
       <button id="hub-close" onclick="closeHub()">✕</button>
     </div>
     <div id="hub-body">
@@ -1049,6 +1061,13 @@
       <div class="hub-panel" id="hpanel-log">
         <div id="log-body"></div>
       </div>
+      <div class="hub-panel" id="hpanel-skills">
+        <div class="attr-section">
+          <h3>Skills</h3>
+          <div id="skill-head" style="font-size:12px;color:#c8b8a0;margin-bottom:8px"></div>
+          <div id="skill-rows"></div>
+        </div>
+      </div>
       <div class="hub-panel" id="hpanel-map">
         <div id="wm-map-pane">
           <div id="wm-svg-wrap"></div>
@@ -1123,10 +1142,10 @@
   <div id="lu">
     <div id="lu-panel">
       <div id="lu-title">⚔ LEVEL UP ⚔</div>
-      <div id="lu-sub">LEVEL <span id="lu-lv">2</span> — Choose 3 attributes to increase</div>
+      <div id="lu-sub">LEVEL <span id="lu-lv">2</span> — Place 12 points, at most 5 in one attribute</div>
       <div id="lu-hpgain">❤ +10 HP restored</div>
       <div id="lu-attrs"></div>
-      <div id="lu-picks">Selected: <span id="lu-count">0</span> / 3</div>
+      <div id="lu-picks">Placed: <span id="lu-count">0</span> / 12</div>
       <div id="lu-arch-bonus"></div>
       <button id="lu-confirm" disabled onclick="confirmLevelUp()">Confirm</button>
     </div>
