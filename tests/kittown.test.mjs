@@ -59,6 +59,12 @@ const dB = far.none ? 9 : Math.max(...['x0', 'x1', 'z0', 'z1'].map(k => Math.abs
 check(`it covers the kit houses' ground within ${dB.toFixed(2)} m and their height within ${far.none ? '?' : Math.abs(far.A.y1 - far.B.y1).toFixed(2)} m`, !far.none && dB < .8 && Math.abs(far.A.y1 - far.B.y1) < 1.5, far.none ? far : { A: far.A, B: far.B });
 check('from outside the town the far copy is drawn, in the town the kit\'s houses', !far.none && far.out.lo && !far.out.hi && far.inn.hi && !far.inn.lo, far);
 
+// the shops' signs (Session 1074): one painted for each trade, shared by its shops, and none more when the town is built again
+const sg = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), shops = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind === 'merchant'), trades = new Set(shops.map(h => h.type));
+  const a = PKIT.signsMade(), calls = S.kitCalls; disposeSettlement('dunmore'); genSettlement(allSites().find(t => t.id === 'dunmore')); const T = WORLD.settle.get('dunmore');
+  return { shops: shops.length, trades: trades.size, a, b: PKIT.signsMade(), calls, calls2: T.kitCalls }; });
+check(`${sg.shops} shops of ${sg.trades} trades paint ${sg.a} signs, and building the town again paints none (${sg.calls} draws, then ${sg.calls2})`, sg.shops > 3 && sg.a === sg.trades && sg.b === sg.a && sg.calls2 === sg.calls, sg);
+
 // a picture: a street of them at noon, from across it
 const shot = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), H = S.houses.filter(h => h.siteId === 'dunmore' && h.kit && h.kit.kind !== 'cottage');
   const h = H.sort((a, b) => b.kit.bays - a.kit.bays)[Math.min(3, H.length - 1)], fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw);

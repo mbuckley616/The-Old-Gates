@@ -7,7 +7,7 @@
 // the one global is PKIT:
 //   PKIT.stream(key) -> a seeded stream in [0,1) keyed by a string (the co-op rule: a lot's look from its street and index)
 //   PKIT.mergeByMaterial(group) -> bakes every mesh into the group's frame, one mesh per material; returns the triangles
-//   PKIT.texturesMade() -> how many surfaces have been painted (0 until the first piece is built)
+//   PKIT.texturesMade() -> how many surfaces have been painted (0 until the first piece is built); PKIT.signsMade() -> how many signs
 //   The Gatelands kit (pieces.js's concept-run plans, Sessions 834 to 964): PKIT.gl.PLANS (cottage, forge, temple, guildhall,
 //   farmhouse, townhouse, merchant, warehouse), PKIT.gl.building(plan) -> a Group, one mesh per material, with userData
 //   {name, tris, calls, size: {w, d, eave, ridge}, door}; PKIT.gl.lot(street, i, s) -> {plan, kind, colour, paint} (#280 A).
@@ -115,7 +115,11 @@ function glMats() {
   for (const k in PAINTS) { const m = mat('wood', { ns: .7 }); m.color.setRGB(...PAINTS[k].map(v => Math.min(1, v * 2.7)), THREE.SRGBColorSpace); MAT['p:' + k] = m; }
   return MAT;
 }
-function signMat(text, bg, fg) {
+// one material for each sign's words and colours (Session 1074): a town's shops of one trade share it, so a town paints a handful
+// of fascias, not one a shop, and a town unloaded and built again paints none
+const SIGNS = {};
+function signMat(text, bg, fg) { const key = `${text}|${bg}|${fg}`; return SIGNS[key] || (SIGNS[key] = paintSign(text, bg, fg)); }
+function paintSign(text, bg, fg) {
   const c = document.createElement('canvas'); c.width = 1024; c.height = 128; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, 1024, 128); x.strokeStyle = fg; x.lineWidth = 6; x.strokeRect(10, 10, 1004, 108);
   x.fillStyle = fg; x.font = '600 64px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 512, 68); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 8;
   return new THREE.MeshStandardMaterial({ map: t, roughness: .6 });
@@ -445,6 +449,6 @@ function gatelandsLot(street, i, s = {}) {
   return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }
 
-  return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length,
+  return { stream, hashKey, mergeByMaterial, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).length,
     gl: { PLANS, FIN, PS, PAINTS, TOWN: GL_TOWN, building, lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();

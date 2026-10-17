@@ -23926,3 +23926,13 @@ Session 1072 built a Gatelands town's widened lots from the kit, at about 5,300 
 ### Needs eyes
 - **The swap's distance:** the old houses' 70 and 80 m, from a point about 40 m in from the town's edge, so Dunmore's houses change about 110 to 120 m from its centre. Whether the change shows is for a walk out of town.
 - **The copy is plain:** no windows, chimneys or gable walls (the prism's ends take the roof's colour). A hipped cottage's copy is gabled.
+
+## v80 — Session 1074 — Card F6: the kit's shop signs painted once a trade (new look)
+Session 1072 left one fault in the kit's towns. Every merchant's house painted its own fascia, a 1024 by 128 canvas texture with its material, and nothing freed them when a town unloaded, so each visit to a town painted them again. As separate materials they were also a draw each in the town's merged houses. `signMat` (`js/38-kit.js`) now keeps one material for each sign's words and colours. A town's shops of one trade share it, a town built again paints nothing new, and the merge folds a trade's shops into one draw. `PKIT.signsMade()` counts them.
+
+### Verified (headless Chromium)
+- **`tests/kittown`: 12 of 12 pass.** One check is new: Dunmore's 8 shops of 5 trades paint 5 signs. Unloading Dunmore and building it again paints none, and it is 35 draws both times, where it was 38.
+- **`tests/kit` passes:** the plans still build to the prototype's triangles.
+- `parsecheck.py` is clean.
+### Needs eyes
+- Nothing new to see: the signs read as before.
