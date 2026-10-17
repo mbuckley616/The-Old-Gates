@@ -147,6 +147,9 @@ function buildPanel() {
     colour(GLABEL[k] || k, () => D()[k], v => { last = v; if (on.checked) D()[k] = v; }, on); }
   { const sk = el('select', {}, el('option', { value: '', textContent: 'none' }), el('option', { value: 'short', textContent: 'short' }), el('option', { value: 'long', textContent: 'long' })); sk.value = D().skirt || ''; sk.onchange = () => { D().skirt = sk.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'skirt' }), sk, el('span'))); inputs.skirt = () => sk.value = D().skirt || ''; }
+  // the mail made as a scale cuirass (Session 1058, OG-044's Compact guards): bronze scales, short sleeves, to the top of the thigh
+  { const sc = el('input', { type: 'checkbox', checked: !!D().scales, onchange: () => { D().scales = sc.checked; schedule(); } });
+    panel.append(el('div', { className: 'bar' }, el('label', {}, sc, ' the mail made of scales (a cuirass)'))); inputs.scales = () => sc.checked = !!D().scales; }
   // the head-wrap tied as a Gatelander's headscarf (Session 1029): its point and knot down the back
   { const sf = el('input', { type: 'checkbox', checked: !!D().scarf, onchange: () => { D().scarf = sf.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, el('label', {}, sf, ' head-wrap tied as a headscarf'))); inputs.scarf = () => sf.checked = !!D().scarf; }
