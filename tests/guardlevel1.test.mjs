@@ -12,7 +12,7 @@ const r = await page.evaluate(() => {
   const N = 3000;
   const mk = (guard) => { const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.2, pz + fwdZ * 1.2, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.locked = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0; e.combatYaw = Math.atan2(px - e.x, pz - e.z);
-    if (guard) { e.name = e.displayName = 'Town Guard'; e.hp = e.maxHp = Math.round(40 + level * 8); e.dmg = Math.round(6 + level * 1.2); e.spd = 0; e.def = 3; }
+    if (guard) { e.name = e.displayName = 'Town Guard'; e.hp = e.maxHp = Math.round(40 + tierLevel(3) * 8); e.dmg = Math.round(6 + tierLevel(3) * 1.2); /* S1060 — guardEnemy's numbers at the law's tier 3 (level 11), not yours */ e.spd = 0; e.def = 3; }
     if (typeof e.posture !== 'number') initPosture(e); return e; };
   const w = EQ.weapon, lo = w ? w.atk[0] : FISTS.atk[0], hi = w ? w.atk[1] : FISTS.atk[1];
   const swing = .5 * (1 - attrEff('swiftness') * 0.01) * _weaponSwingFactor();
@@ -41,7 +41,7 @@ console.log(`level ${r.level}, ${r.maxHP} health, armour ${r.armour}, ${r.weapon
 for (const x of [G, B]) console.log(`  ${x.name.padEnd(10)} ${x.hp} hp, def ${x.def}: ${x.perSwing} a swing, dead in ${x.swingsToKill} swings (${x.timeToKill} s); hits for ${x.perBlow}, you fall in ${x.blowsToDie} blows (${x.timeToDie} s, a blow every ${(x.atkSpd + x.tell).toFixed(2)} s)`);
 check('a level-one character was measured', r.level === 1 && r.maxHP > 0, r);
 check('both foes were hit and hit back', G.perSwing > 0 && G.perBlow > 0 && B.perSwing > 0 && B.perBlow > 0, r);
-check('the guard carries guardEnemy\'s numbers at level one (48 health, 7 damage, defence 3)', G.hp === 48 && G.dmg === 7 && G.def === 3, G);
+check('the guard carries guardEnemy\'s numbers at tier 3 (S1060: 128 health, 19 damage, defence 3; 48 and 7 at level one before)', G.hp === 128 && G.dmg === 19 && G.def === 3, G);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

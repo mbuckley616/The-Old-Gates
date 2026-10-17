@@ -216,6 +216,12 @@ function bladeTouches(t){let b=t.blade||t._bl;if(!b){for(const c of t.pivot.chil
   return false;}
 // S606 — a trap's hit rolls on its own stream (co-op rules): its id is the dungeon's seed, the floor and its place in the list
 // the seeded placement made, `<seed>:<floor>:trap:<n>`, given the first time it is sprung, as a foe's is (`keyFoe`)
+// S1061 — a trap and a wyrm's fire are the place's (the enemies-by-place sheet): their level term is the tier's level of the floor
+// you stand on (tierHere: the door's tier, +1 below), not yours. A spike lands 8–15 on a tier-1 floor and 16–23 on a tier-3 one.
+function trapTierLevel(){return tierLevel(tierHere());}
+function spikeTrapRaw(t){return 8+Math.floor(trapRand(t)*8)+Math.floor(trapTierLevel()*.8);}
+function bladeTrapRaw(){return 10+Math.floor(trapTierLevel()*1.2);}
+function wyrmFireRaw(){return 18+trapTierLevel()*1.4;}
 function trapRand(t){if(!t.rng){t.id=t.id||(((typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||1)+':'+(t.floor||1)+':trap:'+D_TRAPS.indexOf(t));t.rng=seededRng('trap',t.id);}return t.rng();}
 // S582 — the swinging blade across the passage (Michael's A on DECISION #170, the Session 573 prototype): a crescent of steel on an
 // iron arm hung from a bracket in the roof, its flat face to you as you come up the corridor, swinging from wall to wall with the
@@ -237,9 +243,9 @@ function buildSwingBlade(x,z,dir,r){const top=FLOOR_HEIGHT-.1,low=.95,L=top-low,
   return {kind:'blade',x,z,floor:1,pivot,blade,ph:r()*Math.PI*2,hitT:0};}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
-    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3){t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(trapRand(t)*8)+Math.floor(level*.8),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
+    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3&&!lightFootNow()){ /* S976 — Light foot (Stealth 75) */t.armed=false;t.t=0;const dmg=_warded(spikeTrapRaw(t),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
       if(!t.armed){t.t+=dt;const up=t.t<.8?Math.min(1,t.t*6):Math.max(0,1-(t.t-.8)*1.5);t.spikes.position.y=-.4+up*.42;if(t.t>3){t.armed=true;t.spikes.position.y=-.4;}}}
-    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
+    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round(bladeTrapRaw()*.4):bladeTrapRaw(),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
 
 // ═══ v80 — DUNGEON FEEL: sounds, monster detail, exteriors, lockpicking ═══
 
@@ -384,7 +390,8 @@ function lpStatus(t,col){const el=document.getElementById('lp-status');if(el){el
 function lpRender(){
   const box=document.getElementById('lp-pins');if(!box)return;
   if(box.children.length!==LP.pins.length){box.innerHTML='';LP.pins.forEach(()=>{const d=document.createElement('div');d.className='lp-pin';d.appendChild(document.createElement('i'));box.appendChild(d);});}
-  LP.pins.forEach((p,i)=>{const el=box.children[i];el.className='lp-pin'+(p.set?' set':'')+(i===LP.cur&&!p.set?' cur':'');
+  const feel=perk('locks',25)&&lpPhase()==='hold'; /* S973 — Feel for it (Locks 25): the worked pin glows while it sits at the shear */
+  LP.pins.forEach((p,i)=>{const el=box.children[i];el.className='lp-pin'+(p.set?' set':'')+(i===LP.cur&&!p.set?' cur':'')+(feel&&i===LP.cur&&!p.set?' feel':'');
     el.firstChild.style.transform=`translateY(${-(p.set?74:p.y*74)}px)`;});
   const pk=document.getElementById('lp-picks');if(pk)pk.innerHTML=`picks: <b>${lpPicks()}</b> \u00b7 pins set: <b>${LP.pins.filter(p=>p.set).length}/${LP.pins.length}</b>`;
 }
@@ -427,7 +434,7 @@ function lpPress(){
   if(ph==='rise'){lpBreak('Too soon \u2014 the pin hadn\u2019t reached the shear.');return;}
   if(ph==='fall'){lpBreak('Too late \u2014 the pin was already falling.');return;}
   // 'hold': the moment it sits at the shear
-  p.set=true;p.y=1;LP.pushed=0;LP.phase='idle';try{sfxTone(2200,2600,.04,.1,'square');}catch(e){}
+  p.set=true;p.y=1;LP.pushed=0;LP.phase='idle';skillUse('locks',1,LP.cur); /* S941 — a pin set */try{sfxTone(2200,2600,.04,.1,'square');}catch(e){}
   const left=LP.pins.filter(x=>!x.set).length;
   if(!left){lpWin();return;}
   lpNextPin();lpStatus('It holds. '+left+' to go.','#c8e88a');lpRender();
@@ -439,8 +446,8 @@ function lpBreak(why){
   const left=lpSpendPick();
   try{sfxTone(2600,1400,.06,.16,'square');}catch(e){}
   const box=document.getElementById('lp-pins');if(box&&box.children[LP.cur]){const el=box.children[LP.cur];el.classList.add('broke');setTimeout(()=>el.classList.remove('broke'),260);}
-  // the last pin you set falls with it — the lock gives ground grudgingly
-  for(let i=LP.pins.length-1;i>=0;i--){if(LP.pins[i].set){LP.pins[i].set=false;LP.pins[i].y=0;break;}}
+  // the last pin you set falls with it — the lock gives ground grudgingly; S973 — Sure hand (Locks 50) keeps them
+  if(!perk('locks',50))for(let i=LP.pins.length-1;i>=0;i--){if(LP.pins[i].set){LP.pins[i].set=false;LP.pins[i].y=0;break;}}
   lpRender();
   if(left<=0){lpStatus(why+' That was your last pick.','#e88a8a');lpFail();return;}
   lpStatus(why+` The pick snaps. ${left} left.`,'#e8a880');
@@ -449,7 +456,7 @@ function lpFail(){
   LP.phase='done';
   setTimeout(()=>{closeLockpick();showMsg('No picks left. The lock holds.','#cc8844');},900);
 }
-function lpWin(){
+function lpWin(){skillUse('locks',3,'open'); /* S941 — a lock opened */
   LP.phase='done';lpRender();lpStatus('The lock gives.','#ffd700');
   const door=LP.door;
   try{sndDoorUnlock();}catch(e){}
@@ -476,7 +483,7 @@ function lpWin(){
   },true);
 })();
 // ── lockpicking: the floating key is gone; a lock is worked with a pick and a steady hand ──
-function pickChance(){const fin=attrEff('finesse');return Math.min(.92,.35+fin*.07+(level||1)*.01);}
+function pickChance(){const fin=attrEff('finesse');return Math.min(.92,.35+skillLv('locks')*.005+fin*.01);} /* S941 — Locks, half a point a level; Finesse at 1% (skills and perks A) */
 function tryLockpick(door){const i=BAG.findIndex(b=>b.name==='Lockpick');if(i<0){showMsg('Locked. A lockpick would do it — the goods shops sell them.','#cc8844');try{sfxTone(400,300,.08,.1,'square');}catch(e){}return false;}
   openLockpick(door);return true; // v80 S142 — the lock is worked by hand now
   /* eslint-disable no-unreachable */
@@ -513,7 +520,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const e=cand[0];if(!e)return;
   const dragon=!!L.dragon;const site=L.siteId&&typeof siteAnywhere==='function'?siteAnywhere(L.siteId):null;const bossName=site&&typeof lairBeast==='function'?lairBeast(site):L.boss; /* S699 — the beast of the lair where it stands now, as at the crag */e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${bossName}`;e.boss=true;e.dragon=dragon;
   if(!dragon)lairMasterBody(e,bossName,portal); /* S706 — Michael's A on #225: the lair's own beast, not the deepest foe renamed */
-  e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
+  const LT=tierLevel(dungeonTier(portal,e.floor||1)); /* S1034 — the master grows with its cavern's tier's level, not yours (#373 A) */e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+LT*.08));{const k=(dragon?2.2:1.6)*(1+LT*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
   if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88);
   if(!dragon&&e._lairBody){e._detailed=true;masterUnderCeiling(e);delete e.posture;delete e.maxPosture;initPosture(e);} /* S706 — its posture from its own health, as the world's beast's */ // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
@@ -536,8 +543,8 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
 // S706 — a lair cavern's master is the lair's own beast (Michael's A on DECISION #225): the foe standing deepest gives up its
 // place and floor, and is built again as the beast the lair is named for, on the open world's body for that kind (a Marsh Hag,
 // a Frost Troll, an Ash Wight, a Cave Bear or an Ogre: buildZoneEnemy's rig, moved into the cavern's group as the wyrm's is).
-// Its numbers are the kind's own at the cavern's scale, as any foe of the cavern is scaled: health by the gate's difficulty,
-// the floor (1.5 below) and your level; a blow by the same, its dmgMult set so the cavern's roll (10–20 before armour, 15 on
+// Its numbers are the kind's own at the cavern's scale, as any foe of the cavern is scaled: health by the gate's difficulty
+// and the cavern's tier (its floor's, S1058; once your level and ×1.5 below); a blow by the same, its dmgMult set so the cavern's roll (10–20 before armour, 15 on
 // average) lands the kind's own blow. lairFinish then makes it the master (×3 health, ×1.6 a blow, 1.5× the size) as before.
 function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'&&ZONE_FOE_DEF[kind];if(!D||!e||!e.mesh)return false;
   const z=buildZoneEnemy(new THREE.Group(),[],0,0,kind,null);const rig=z.limbs&&(z.limbs.person||z.limbs.wolf);if(!rig||!rig.root)return false;
@@ -545,8 +552,8 @@ function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'
   g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
   if(rig.root.parent)rig.root.parent.remove(rig.root);g.add(rig.root);rig.e=e;
   e.limbs={torso:z.limbs.torso,hpBg};if(z.limbs.person){e.limbs.person=z.limbs.person;e.limbs.armR=z.limbs.armR;}if(z.limbs.wolf)e.limbs.wolf=z.limbs.wolf;
-  const ds=portal.diffScale||DIFF_SCALE.normal,fm=(e.floor||1)>1?1.5:1;
-  e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*fm*enemyHpScale()));e.dmgMult=D.dmg/15*ds.dmg*fm*enemyDmgScale();delete e.dmg;
+  const ds=portal.diffScale||DIFF_SCALE.normal,fm=1; /* S1058 — the floor's step is its tier's +1 alone, as for every foe below (the enemies-by-place sheet) */
+  const tr=dungeonTier(portal,e.floor||1); /* S1034 — the cavern's tier (#373 A) */e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*fm*enemyHpScale(tr)));e.dmgMult=D.dmg/15*ds.dmg*fm*enemyDmgScale(tr);delete e.dmg;e.tier=tr;
   e.spd=D.spd*ds.spd*(fm>1?1.1:1);e.rankSpd=D.spd;e.size=D.scale||1;e.def=D.def||0;e.resist={...(D.resist||{})};
   e.baseType=kind;e.buildFn=D.shape==='brute'?'brute':'humanoid';e._origCol=D.col;e.variant=null;e.xpMult=1;
   e.isWraith=false;e.ranged=false;e.disguised=false;e.dormant=false;e.shieldUp=false;e.canFlee=false;e._burstNext=false;
@@ -595,7 +602,7 @@ function dragonBreath(e){const d=Math.hypot(e.x-px,e.z-pz);if(d>11)return;const 
     const l=new THREE.PointLight(0xff6020,2.5,12);l.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+1.5,e.z);sc.add(l);_BREATH.push({pts,vel,t:0,l,sc});
     try{sfxNoise(1.1,0,0,.35,1200);sfxTone(120,60,1.0,.2,'sawtooth');}catch(err){}
     const dx=px-e.x,dz=pz-e.z,dd=Math.hypot(dx,dz);const ta=Math.atan2(dx,dz);let diff=Math.abs(ta-ang);if(diff>Math.PI)diff=Math.PI*2-diff;
-    if(dd<10&&diff<.45){const dmg=_warded(Math.round((18+level*1.4)*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
+    if(dd<10&&diff<.45){const dmg=_warded(Math.round(wyrmFireRaw()*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
     else showMsg('The fire misses you.','#c8e88a');},900);}
 function tickBreath(dt){for(let i=_BREATH.length-1;i>=0;i--){const b=_BREATH[i];b.t+=dt;const a=b.pts.geometry.attributes.position.array;for(let k=0;k<b.vel.length;k++){a[k*3]+=b.vel[k][0]*dt;a[k*3+1]+=b.vel[k][1]*dt;a[k*3+2]+=b.vel[k][2]*dt;b.vel[k][1]+=dt*.8;}b.pts.geometry.attributes.position.needsUpdate=true;b.pts.material.opacity=Math.max(0,.9-b.t*.9);b.l.intensity=Math.max(0,2.5-b.t*3);if(b.t>1.1){b.sc.remove(b.pts);b.sc.remove(b.l);_BREATH.splice(i,1);}}}
 function tickDragons(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.world.enemies||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);for(const e of E){if(e.dead||!e.dragon)continue;if(!e._dragonBuilt)detailDragon(e);

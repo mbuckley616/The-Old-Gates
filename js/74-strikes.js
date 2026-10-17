@@ -9,7 +9,9 @@
 // Melee hits use applyMeleeDamage — simpler: buff mults → flat def → floor at 1, no resist (no elemental school).
 
 function applySpellDamage(e, sp, tier){
-  const baseDmg = spellMag(sp,tier) + Math.floor(foeRand(e)*10) + level*(sp.dmgLvl||3); // S480 — the spread on the struck foe's stream
+  const baseDmg = (spellMag(sp,tier) + Math.floor(foeRand(e)*10)) * (SKILL_DEF[sp.school]?skillMult(sp.school):1); // S480 — the spread on the struck foe's stream
+  /* S941 — the school's skill sets the power; the flat level term is gone (skills and perks A). A hit on an alert foe is a use. */
+  if(e.alert&&SKILL_DEF[sp.school])skillUse(sp.school,tier===3?2:1,e);
   const resistMult = (e.resist && e.resist[sp.school] !== undefined) ? e.resist[sp.school] : 1.0;
   // Dormant enemies (Gargoyle statue form) take 2× damage — rewards the player for spotting and attacking first.
   const dormantMult = e.dormant ? 2.0 : 1.0;
@@ -34,7 +36,7 @@ function applySpellDamage(e, sp, tier){
 //   tell      seconds of wind-up before the blow lands (yours: click to impact; a foe's: its wind-up pose and glow)
 //   strike    seconds from the blow landing to the end of the commitment (yours; a foe's lands the frame its tell ends)
 //   recovery  seconds after that, the last third of your swing, the only part a roll or a block can cut short
-//   reach     units, centre to centre (today's numbers; F2b re-measures them hull to hull in metres)
+//   reach     metres, hull to hull (F2b, Session 1035): from the edge of your body to the edge of the foe's (hullOf)
 //   arc       degrees, the whole cone the blow lands in
 //   dmg       a multiplier on the blow's roll; posture: yours, what the swing drains from the foe's posture;
 //             a foe's, the multiple of its blow that drains yours unguarded (a held block drains ×1)
@@ -45,23 +47,38 @@ function applySpellDamage(e, sp, tier){
 // (powerDur, POWER_DMG_MULT, POSTURE_DRAIN_POWER) until the heavy column is filled. The cone is cos .45 either side of
 // the facing, which is 126.5° whole (the old comments said 117°; the number never changed).
 const WEAPON_ATTACKS={
-  Fists:    {tell:.236,strike:.050,recovery:.143,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Dagger:   {tell:.253,strike:.054,recovery:.153,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Sword:    {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Scimitar: {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Bow:      {tell:.303,strike:.064,recovery:.183,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Longsword:{tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Mace:     {tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  GreatClub:{tell:.336,strike:.071,recovery:.204,reach:2.2,arc:126.5,dmg:1,posture:12,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
-  Flail:    {tell:.369,strike:.078,recovery:.224,reach:2.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Fists:    {tell:.236,strike:.050,recovery:.143,reach:0.9,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Dagger:   {tell:.253,strike:.054,recovery:.153,reach:1.2,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Sword:    {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Scimitar: {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Bow:      {tell:.303,strike:.064,recovery:.183,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Longsword:{tell:.336,strike:.071,recovery:.204,reach:1.8,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Mace:     {tell:.336,strike:.071,recovery:.204,reach:1.6,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  GreatClub:{tell:.336,strike:.071,recovery:.204,reach:1.9,arc:126.5,dmg:1,posture:12,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  Flail:    {tell:.369,strike:.078,recovery:.224,reach:1.8,arc:126.5,dmg:1,posture:8, cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   Claymore: {tell:.402,strike:.085,recovery:.244,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:3,blockable:true,parryable:false,heavy:null,third:null},
   GreatAxe: {tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:14,cleave:2,blockable:true,parryable:false,heavy:null,third:null},
-  WarHammer:{tell:.424,strike:.090,recovery:.257,reach:2.2,arc:126.5,dmg:1,posture:18,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
+  WarHammer:{tell:.424,strike:.090,recovery:.257,reach:1.9,arc:126.5,dmg:1,posture:18,cleave:1,blockable:true,parryable:false,heavy:null,third:null},
   // a sent cast, one more row when magic's resolver comes (magic.md: words of the deep tongue); nothing reads it yet
   Cast:     {placeholder:true,tell:null,strike:null,recovery:null,reach:null,arc:null,dmg:null,posture:null,cleave:null,blockable:false,parryable:false,heavy:null,third:null},
 };
-// against a boss your reach is 3.0 (the Faolchú's size); F2b makes it the boss's hull plus the weapon's reach
-const REACH_VS_BOSS=3.0;
+// S1035 — F2b, session 1 (docs/design/scale-numbers-build.md, *Reach*): the reach column is hull to hull, so a blow lands when
+// the foe's centre is inside your hull + the weapon's reach + its hull. Against a townsperson a sword lands at 2.2 centre to
+// centre, today's number; the dagger loses 0.4, the two-handers gain 0.6, a punch is a close thing (1.5). The hulls are the
+// sheet's until F4 gives each family's built value (e.hullR): you, a townsperson, a bandit or a skeleton 0.30; a goblin 0.25;
+// a wolf 0.35; a spider or a bear (the brutes) 0.6; a troll 0.8. A boss is 1.1, so a sword reaches it at 3.0, the flat number
+// it replaces; a kind the sheet does not name is 0.3 of its size, the disc it stands as (bodyR, 90-main.js).
+const HULL_YOU=.30,BOSS_HULL=1.1;
+const HULL_FAMILY={humanoid:.30,wraith:.30,beast:.35,spider:.6,brute:.6,troll:.8};
+const HULL_KIND={Goblin:.25,'Kobold Thief':.25};
+function hullOf(e){
+  if(!e)return .3;if(typeof e.hullR==='number')return e.hullR;
+  const k=HULL_KIND[e.baseType||e.baseName];if(k!=null)return k;
+  if(e.isBoss)return BOSS_HULL;
+  const f=HULL_FAMILY[foeFamily(e)];return f!=null?f:Math.max(.2,.3*(e.size||1));
+}
+// the centre-to-centre distance a blow of reach r (hull to hull) lands within, against e
+function reachTo(e,r){return HULL_YOU+r+hullOf(e);}
 const WSHAPE_TO_ROW={dagger:'Dagger',sword:'Sword',longsword:'Longsword',scimitar:'Scimitar',mace:'Mace',flail:'Flail',bow:'Bow',claymore:'Claymore',greataxe:'GreatAxe',warhammer:'WarHammer',greatclub:'GreatClub'};
 function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS[WSHAPE_TO_ROW[w.weaponShape]]||WEAPON_ATTACKS.Sword;}
 // The foes, a row per family built today. Each has one attack, its light one, from today's numbers: a tell by kind
@@ -69,12 +86,17 @@ function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS
 // at the wind-up (S275), a troll's sweep 2.4 and 140°, a boss's bite its own reach. Recovery is the dungeon's 1.0 s;
 // the open world's kinds keep their own pace (their `atk`). The blow's roll is the foe's own (foeBlowRaw).
 const FOE_ROW=(o)=>Object.assign({tell:TELL_DEFAULT,tells:{},strike:0,recovery:1.0,reach:1.6,arc:90,dmg:1,posture:1.5,blockable:true,parryable:true,heavy:null,third:null},o);
+// S1041 — F2b, session 1, part 2 (docs/design/scale-numbers-build.md, *Foes' reach*): the five families the sheet names carry
+// `hulls:true`, and their `reach` (the blow) and `engage` (where the tell starts) are metres hull to hull, from the edge of its
+// body to the edge of yours, as your own reach is (S1035). An armed humanoid's blow is its weapon's reach (foeWeaponReach); the
+// wolf engages at 0.6 and lunges up to 1.5 at the bite (`lunge`), so it may start its tell from 2.1. The other families keep
+// today's numbers, centre to centre: the tell at 1.1 in the open world and 0.9 in a dungeon, the blow within 1.6.
 const FOE_ATTACKS={
-  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57}}),
-  beast:    FOE_ROW({}),
-  spider:   FOE_ROW({tells:{Spider:.51}}),
-  brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80}}),
-  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},reach:2.4,arc:140}),
+  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2}),
+  beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70}),
+  spider:   FOE_ROW({tells:{Spider:.51},hulls:true,engage:.8,reach:1.2,arc:100}),
+  brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80},hulls:true,engage:.8,reach:1.2,arc:100}),
+  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},hulls:true,engage:1.6,reach:2.4,arc:140}),
   slime:    FOE_ROW({tells:{Slime:.54,'Small Slime':.54}}),
   elemental:FOE_ROW({tells:{'Fire Elemental':.65}}),
   wraith:   FOE_ROW({tells:{Phantom:.54,Wraith:.57}}),
@@ -97,6 +119,20 @@ function foeFamily(e){
   return FOE_FAMILY_OF[e.baseType||e.baseName]||FOE_SHAPE_FAMILY[e.shape]||'humanoid';
 }
 function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
+// S1041 — the weapon a person-bodied foe holds (its genome's, 32-people.js), and that weapon's reach from your table: a knife
+// the dagger's 1.2, the rest (sword, axe, mace, cutlass, and the staff and spear the sheet does not list) the sword's 1.6
+const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar'};
+function foeWeaponKind(e){const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
+function foeWeaponReach(e){const k=foeWeaponKind(e);return WEAPON_ATTACKS[FOE_WPN_ROW[k]||'Sword'].reach;}
+// a foe's reach, centre to centre: engage (its tell starts inside it; null = the place's own, 1.1 or 0.9), the blow, its arc,
+// and the wolf's lunge. A boss with a bite (the Faolchú) engages and bites at its biteRange less 0.9 (its snout), hull to hull.
+function foeReach(e,inDun){
+  const r=foeAttack(e);
+  if(e&&e.isBoss&&e.bossDef&&e.bossDef.biteRange){const b=reachTo(e,e.bossDef.biteRange-.9);return {engage:b,blow:b,deg:r.arc,lunge:0};}
+  if(!r.hulls)return {engage:inDun?.9:1.1,blow:r.reach,deg:r.arc,lunge:0};
+  const blow=foeFamily(e)==='humanoid'?foeWeaponReach(e):r.reach,L=r.lunge||0;
+  return {engage:reachTo(e,r.engage+L),blow:reachTo(e,blow),deg:r.arc,lunge:L,stand:reachTo(e,r.engage)};
+}
 // ── Armour as a share (decision #181 B, held for this table): every blow on you is × 50 / (50 + armour), so 50 armour
 // halves it and nothing reaches 1 by armour alone. It replaces the flat half a point a point that put the cliff between
 // 20 and 40 armour (S610). Retuned so an ordinary blow of your level's tier, at a heavy kit of your level, lands near
@@ -121,7 +157,7 @@ function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(ar
 
 // ── The one resolver for your swing (S940). The dungeon, the open world and the legacy zones each had their own
 // (_resolveDungeonStrike, _resolveZoneStrike), the same rules written twice; both are now this. At the swing's impact
-// it gathers the foes in reach and in the arc of the weapon's row (a boss at REACH_VS_BOSS), nearest first, up to the
+// it gathers the foes in reach (hull to hull, S1035) and in the arc of the weapon's row, nearest first, up to the
 // row's cleave; a power blow breaks a raised shield without damage (S485: not when swung spent), every other blow runs
 // the damage chain, applyMeleeDamage (riposte, finisher, stagger, backstab, armour), posture, the rune's rider and
 // the kill. The third light swing of a chain lands ×1.3 and drains ×1.5 posture (COMMIT, the light chain).
@@ -134,11 +170,12 @@ function strikeCandidate(e){
 // The damage chain, one function a skills build can swap: the weapon's roll on the struck foe's stream, today's flat
 // level × 1.5, Might's 1% a point, the melee buffs, the power blow's ×1.8, a shield's front, the row and the chain.
 function meleeDamageChain(e,o){
-  const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];
+  const w=EQ.weapon,fa=!w&&perk('hand',100)?STONE_HAND_ATK:FISTS.atk,lo=w?w.atk[0]:fa[0],hi=w?w.atk[1]:fa[1]; // S1051 — Stone hand (Hand-to-hand 100)
   const mightMult=1+(attrEff('might')*ATTR_DMG_PER_POINT);
   const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1); // S322 — Firemoss and Caor Dubh everywhere
   const powerMult=o.isPow?POWER_DMG_MULT:1.0;
-  return Math.floor((lo+Math.floor(foeRand(e)*(hi-lo))+Math.floor(level*1.5))*mightMult*meleeBuff*powerMult*o.shMult*o.row.dmg*o.chainDmg);
+  // S941 — the weapon's skill carries the damage, ×0.64 at 5 to ×1.4 at 100; the flat level × 1.5 is gone (skills and perks A)
+  return Math.floor((lo+Math.floor(foeRand(e)*(hi-lo)))*skillMult(weaponSkill(w))*mightMult*meleeBuff*powerMult*o.shMult*o.row.dmg*o.chainDmg);
 }
 function staggerFlash(e){
   const body=enemyBodyMesh(e),m=body&&body.material;
@@ -155,7 +192,7 @@ function resolvePlayerStrike(_isPow){
   strikeFoes().forEach(e=>{
     if(!strikeCandidate(e))return;
     const ex=e.x-px,ez=e.z-pz,dist=Math.sqrt(ex*ex+ez*ez);
-    const reach=e.isBoss?REACH_VS_BOSS:row.reach;
+    const reach=reachTo(e,row.reach);
     if(dist<reach&&(ex*fwdX+ez*fwdZ)/(dist||1)>cosArc)_candidates.push({e,dist});
   });
   _candidates.sort((a,b)=>a.dist-b.dist);
@@ -172,7 +209,7 @@ function resolvePlayerStrike(_isPow){
     if(_isPow&&e.shieldUp&&!riposteOpen(e)&&!_spent){
       if(typeof e.posture==='number'&&!isStaggered(e)){
         applyPostureDamage(e,(e.maxPosture||999),performance.now()/1000);
-        staggered.push({e,t:POSTURE_BREAK_STUN});
+        staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)}); /* S1051 — Daze (Blunt 75) */
         staggerFlash(e);
       }
       e.shieldUp=false;dropShieldGuard(e);e.alert=true;
@@ -183,9 +220,11 @@ function resolvePlayerStrike(_isPow){
     }
     // v71 — a Shieldbearer's front takes SHIELDBEARER_FRONT_BLOCK of the blow (shieldFrontMult is 1 for the rest)
     const shMult=riposteOpen(e)?1:shieldFrontMult(e);
+    const _wasAlert=!!e.alert; /* S941 — a hit on a foe already alert is a use of the weapon's skill */
     const rawDmg=meleeDamageChain(e,{isPow:_isPow,shMult,row,chainDmg});
     const info=applyMeleeDamage(e,rawDmg);
     const dmg=info.dmg;
+    {const ws=weaponSkill(EQ.weapon);if(_wasAlert&&ws)skillUse(ws,(info.riposte||info.finisher)?3:1,e);else if(info.backstab)skillUse('stealth',3,e);}
     e.hp=Math.max(0,e.hp-(e._stun>0?dmg*2:dmg)); // a dazed beast (S634) takes double
     if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
     e.alert=true;if(inW)alertPack(e,16);
@@ -194,9 +233,9 @@ function resolvePlayerStrike(_isPow){
     // weapon's postureMult, the chain's third ×1.5; skipped on a kill or a foe already staggered
     if(e.hp>0&&typeof e.posture==='number'&&!isStaggered(e)){
       const pm=(EQ.weapon&&EQ.weapon.postureMult)||1;
-      const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost; // S485 — a spent power blow on a guard drains as the guarded hit it is
+      const drain=(_isPow&&!_spent?POSTURE_DRAIN_POWER*pm:row.posture)*chainPost*armsPostureMult(); // S485 — a spent power blow on a guard drains as the guarded hit it is; S1051 — Weight (Blunt 25), Hard knuckles (Hand-to-hand 25)
       if(applyPostureDamage(e,drain,performance.now()/1000)){
-        staggered.push({e,t:POSTURE_BREAK_STUN});staggerFlash(e);
+        staggered.push({e,t:dazeS(POSTURE_BREAK_STUN)});staggerFlash(e);
         showMsg(`💥 ${e.name} staggered!`,'#ffcc66');
       }
     }
@@ -213,6 +252,10 @@ function resolvePlayerStrike(_isPow){
     }
     out.push({e,dmg,info,third});
   }
+  // S1051 — Earthshaker (Blunt 100): the chain's third hit, landed, staggers every foe within 2 m of you
+  if(third&&armsPerk('blunt',100)&&out.some(o=>o.dmg>0)){const nowS=performance.now()/1000;
+    strikeFoes().forEach(f=>{if(!strikeCandidate(f)||f.hp<=0||isStaggered(f)||Math.hypot(f.x-px,f.z-pz)>EARTHSHAKER_R+hullOf(f))return;
+      staggered.push({e:f,t:dazeS(1.2)});staggerFlash(f);f.alert=true;out.push({e:f,shaken:true});});}
   document.getElementById('df').style.boxShadow='inset 0 0 28px rgba(220,160,60,.4)';
   setTimeout(()=>document.getElementById('df').style.boxShadow='',150);
   return out;
@@ -281,7 +324,7 @@ function tickDrink(){
 
 function applyMeleeDamage(e, rawDmg){
   if(_exhaustedStrike)rawDmg=Math.max(1,Math.floor(rawDmg*.45)); // v80 S9 — exhausted swings land soft
-  const effDef = e.def || 0;
+  const effDef = (finisherOpen(e,performance.now()/1000)&&armsPerk('blade',100)) ? 0 : (e.def || 0); // S1051 — Clean edge (Blade 100)
   // Dormant enemies take 2× damage here too — consistent behavior across melee and magic.
   const dormantMult = e.dormant ? 2.0 : 1.0;
   // Physical damage-type resistance. Weapon's wType ('slash'/'pierce'/'blunt') looked up in enemy.resist.
@@ -321,10 +364,17 @@ function applyMeleeDamage(e, rawDmg){
 // 1.6 units and 90° for most, 2.4 units and 140° for a troll's sweep, a boss's own reach where it has one. Before, it
 // hit anyone within 1.4 units (1.3 in a dungeon) whichever way it faced.
 // S940 — the reach and the arc are the family's row in the attack table (FOE_ATTACKS).
-function strikeArc(e){
-  const r=foeAttack(e);
-  if(e.isBoss&&e.bossDef&&e.bossDef.biteRange)return {reach:Math.max(r.reach,e.bossDef.biteRange),deg:r.arc};
-  return {reach:r.reach,deg:r.arc};
+// S1041 — F2b: the reach is foeReach's blow, hull to hull for the families the sheet names (see FOE_ATTACKS).
+function strikeArc(e){const f=foeReach(e);return {reach:f.blow,deg:f.deg};}
+// S1041 — the wolf's lunge (F2b): at the bite it leaps along the line it wound up on (combatYaw), up to its lunge, to stand at
+// its engage distance from you, so a wolf that started its tell from 2.1 hull to hull still bites a player who stood still,
+// and one who stepped aside during the tell is bitten at the end of the leap only if still in its 70°.
+function foeLunge(e,solid){
+  const f=foeReach(e);if(!f.lunge||typeof e.combatYaw!=='number')return 0;
+  const sx=Math.sin(e.combatYaw),sz=Math.cos(e.combatYaw),along=(px-e.x)*sx+(pz-e.z)*sz;
+  const go=Math.max(0,Math.min(f.lunge,along-f.stand));if(go<=0)return 0;
+  let d=0;while(d<go-1e-6){const st=Math.min(.1,go-d);if(solid&&solid(e.x+sx*(d+st),e.z+sz*(d+st)))break;d+=st;}
+  e.x+=sx*d;e.z+=sz*d;return d;
 }
 function strikeReaches(e,arc){
   arc=arc||strikeArc(e);
@@ -357,7 +407,7 @@ function executeStrike(e, rawDmg, now){
   // Pre-v61c7, Resolve only helped passive holding — actual block events
   // (parries, late blocks) ignored Resolve entirely. Sentinel-style builds
   // now get a real defensive payoff in sustained multi-attacker fights.
-  const _resolveMult = Math.max(0.5, 1 - (ATTRS.resolve||0)*0.05);
+  const _resolveMult = resolveBlockMult(); // S1047 — 1% a Resolve point (was 5%)
   // v61gj-a2 — Parry window. Pre-v61gj-a2 the parry branch was simply `if(blocking)`,
   // which meant holding the block button locked in a perfect parry on every incoming
   // hit (no timing required, no skill check). Bram's canon dialog ("block early, not
@@ -367,8 +417,8 @@ function executeStrike(e, rawDmg, now){
   // where N = 200ms base + 10ms per Finesse point. Holding past the window falls
   // through to the held-block branch (the previously-named "late block" branch,
   // which has been dead code since v61c6 because the parry branch always ate first).
-  const _parryWindow = PARRY_WINDOW_BASE + attrEff('finesse') * PARRY_WINDOW_FINESSE;
-  const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow;
+  const _parryWindow = parryWindowS(); // S1047 — Guard's, 160 ms + 1 ms a level
+  const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow || secondParryOpen(); // S1048 — Second parry (Guard 100)
   const _row = foeAttack(e); // S940 — the blow's row: whether a guard takes it, whether it parries, what it drains from your posture
   if(blocking && _justRaisedBlock && _row.parryable){
     // PERFECT PARRY — block raised within the timing window before the hit landed
@@ -376,8 +426,11 @@ function executeStrike(e, rawDmg, now){
     sndParry(); blockFlashT = 0.55; blockFlashCol = '#ffd700';
     let _parryBroke = false;
     if(typeof e.posture==='number' && !isStaggered(e)) _parryBroke = applyPostureDamage(e, (e.maxPosture||0)*RIPOSTE_POSTURE, now/1000);
-    staggered.push({e, t:_parryBroke?POSTURE_BREAK_STUN:1.2});
-    e._ripAt = now/1000; e._ripUntil = now/1000 + RIPOSTE_S;
+    staggered.push({e, t:dazeS(_parryBroke?POSTURE_BREAK_STUN:1.2)});
+    e._ripAt = now/1000; e._ripUntil = now/1000 + riposteSecs(); // S1051 — Long riposte (Blade 50), Daze (Blunt 75)
+    if(armsPerk('blade',75)){ // S1051 — Crossing (Blade 75): the nearest other alert foe within 3 m is staggered too
+      let o2=null,d2=CROSSING_R;for(const f of strikeFoes()){if(f===e||!strikeCandidate(f)||!f.alert||f.hp<=0||isStaggered(f))continue;const d=Math.hypot(f.x-px,f.z-pz);if(d<=d2){d2=d;o2=f;}}
+      if(o2){staggered.push({e:o2,t:1.2});staggerFlash(o2);o2.atkCd=Math.max(o2.atkCd||0,2.0);}}
     e.atkCd = 2.0;
     // v61d1 — Route the stagger flash through enemyBodyMesh(e) instead of
     // mesh.children[0]. Pre-v61d1 this was children[0].material assignment,
@@ -401,7 +454,7 @@ function executeStrike(e, rawDmg, now){
     }
     sndParry();
     showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');
-    lvAct.parries++;
+    lvAct.parries++;skillUse('guard',3,e);_lastParryG=playClockS;
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
     // v61c7 — Parry stamina cost rebalanced. WAS rawDmg (100% — meaning a
@@ -429,8 +482,8 @@ function executeStrike(e, rawDmg, now){
     const reduction = _blockBoost(shieldBlock);
     const blockedDmg = Math.max(1, Math.round(rawDmg*(1-reduction)));
     const absorbed = rawDmg - blockedDmg;
-    const finalDmg = _warded(blockedDmg, e);
-    PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;
+    const finalDmg = _warded(blockedDmg, e);skillUse('guard',1,e);
+    PHP = Math.max(0, PHP-finalDmg); hurtT = .3; lvAct.damageTaken += finalDmg;armourUse();
     // v61c7 — Held block stamina also scales with Resolve (was raw `absorbed`).
     // Held block stays MORE expensive than parry (because 0.65 absorbed beats
     // 0.20 parry baseline at any Resolve level), so perfect timing remains the
@@ -449,7 +502,7 @@ function executeStrike(e, rawDmg, now){
     // Unblocked hit — apply damage reduction buffs
     const finalDmg = _warded(rawDmg, e);
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
-    sndPlayerHurt(); lvAct.damageTaken += finalDmg;
+    sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
     playerPostureHit(rawDmg*_row.posture, now/1000, false); // S281; S940 — the row's multiple (1.5 for every family today)
     e._lunge=.3; // v80 — every strike moves the body
@@ -547,7 +600,7 @@ function tickMasterSlam(e,dt,dist,now){
     const d=Math.hypot(px-e.x,pz-e.z);
     if(d>=SLAM_R){e._slamLast='clear';showMsg('The ground cracks where you stood.','#c8e88a');return false;}
     if(rollUntouchable(now/1000)){e._slamLast='rolled';showMsg('You roll through the blow.','#c8e88a');return false;}
-    const dmg=_warded(slamBlow(e),e);PHP=Math.max(0,PHP-dmg);hurtT=.5;lastHitT=now/1000;lvAct.damageTaken+=dmg;e._slamLast=dmg;
+    const dmg=_warded(slamBlow(e),e);PHP=Math.max(0,PHP-dmg);hurtT=.5;lastHitT=now/1000;lvAct.damageTaken+=dmg;armourUse();e._slamLast=dmg;
     if(typeof sndPlayerHurt==='function')sndPlayerHurt();updateHUD();
     showMsg(`${e.name} slams the ground under you: ${dmg}.`,'#ff6060');
     if(PHP<=0&&!dead)playerDead();
@@ -690,20 +743,69 @@ const VARIANTS = {
   },
 };
 
-// v56 rebalance: enemy HP/dmg scale with player level to keep combat engaging at high tiers.
-// Applied at spawn time in both dungeon (spawnFloorEnemies) and zone (buildZoneEnemy) paths.
-// - hpScale grows faster than dmgScale so fights get longer, not spikier, as player levels up.
-// - Caps exist so level 30+ runs don't become unwinnable.
-// - Level 1 player sees 1.0×/1.0× — unscaled base values as the designed-for-baseline.
-function enemyHpScale(){
-  const lv = (typeof level!=='undefined'?level:1) || 1;
+// S1034 — enemies by place (Michael's A on DECISION #373): a foe's health and blow grow with the danger of where it stands,
+// not with your level. Each region has a tier: home's coast, Ashen, Bealach and Royale 1; Deepwood, the Foothills and Greywood 2;
+// the Wastes 3; a far island's region by its biome (tundra, swamp and wasteland 3, the rest 2). A dungeon is its door's tier, and
+// each floor below the first adds one, to 4. A gate's school does not change it. A tier is worth what the level curve gave at
+// levels 1, 6, 11 and 16 (health ×1, 1.75, 2.5, 3; the blow as the resolver's reference blow there), and the rare variants'
+// chance reads that level too. The region is read from the foe's cell and its neighbours (getCell), never the live REGIONS.
+const DANGER_LV=[1,1,6,11,16];
+const REGION_TIER={coastal:1,ashen:1,bealach:1,royale:1,deepwood:2,foothills:2,greywood:2,wastes:3};
+const BIOME_TIER={tundra:3,swamp:3,wasteland:3};
+const LEGACY_ZONE_REGION={overworld:'ashen',hearthwick:'bealach',bealach_south:'bealach',forest:'deepwood',ironhaven:'royale'};
+function tierLevel(t){return DANGER_LV[Math.max(1,Math.min(4,t|0||1))];}
+function regionTier(r){if(!r)return 1;if(REGION_TIER[r.id]!=null)return REGION_TIER[r.id];return BIOME_TIER[r.biome]||2;}
+// the open world: the region whose field weighs most at (x,z) among the cell's and its neighbours' (the ring widens to three
+// cells for an islet in open sea, as lairBiome does); none at all is home's tier 1 at home and 2 elsewhere
+function worldTierAt(x,z){
+  if(typeof getCell!=='function'||typeof cellOf!=='function')return 1;
+  const [ci,cj]=cellOf(x,z);const regs=[];
+  for(let k=1;k<=3&&!regs.length;k++)for(let i=ci-k;i<=ci+k;i++)for(let j=cj-k;j<=cj+k;j++){const c=getCell(i,j);if(c&&c.regions)regs.push(...c.regions);}
+  if(!regs.length)return (typeof HOME_I!=='undefined'&&ci===HOME_I&&cj===HOME_J)?1:2;
+  let best=null,bw=0,near=null,nd=1e9;
+  for(const r_ of regs){const d=Math.hypot(x-r_.x,z-r_.z);const w=Math.max(0,1-d/r_.r);if(w>bw){bw=w;best=r_;}if(d/r_.r<nd){nd=d/r_.r;near=r_;}}
+  return regionTier(best||near);
+}
+// a legacy zone: its region, as its config names it
+function zoneTier(id){const Z=(typeof ZONES!=='undefined')&&ZONES[id];const reg=(Z&&Z._cfg&&Z._cfg.region)||LEGACY_ZONE_REGION[id];return REGION_TIER[reg]||1;}
+// a dungeon: its door's place, plus one a floor below the first, to 4; the tutorial's crypt is 1. A cell's door is zone 'gen'
+// until the world places it (S1058: it read as a legacy zone, tier 1)
+function dungeonTier(portal,floor){
+  if(!portal||portal.tutorial)return 1;
+  const base=(portal.zone==='world'||portal.zone==='gen')?worldTierAt(portal.x,portal.z):zoneTier(portal.zone||(typeof _preDungeonZone!=='undefined'?_preDungeonZone:'overworld'));
+  return Math.min(4,base+Math.max(0,(floor||1)-1));
+}
+// where a foe is built: the world's scene (or world coordinates) reads the region, a legacy zone's scene its zone, else where you are
+function foeTier(sc,x,z){
+  try{
+    const W=(typeof ZONES!=='undefined')&&ZONES.world;
+    if(W&&((sc&&sc===W.scene)||x>2500||z>2500))return worldTierAt(x,z);
+    if(sc&&typeof ZONES!=='undefined')for(const id in ZONES){const Z=ZONES[id];if(id!=='world'&&Z&&Z.scene===sc)return zoneTier(id);}
+  }catch(e){}
+  return tierHere();
+}
+function tierHere(){
+  const z=typeof activeZoneId!=='undefined'?activeZoneId:'world';
+  if(z==='dungeon')return dungeonTier(typeof currentPortal!=='undefined'?currentPortal:null,typeof currentFloor!=='undefined'?currentFloor:1);
+  if(z==='world')return worldTierAt(px,pz);
+  return zoneTier(z);
+}
+// the level a foe's own extra terms read (a wraith's orb and its drain, a ship's volley): its tier's, as its health and blow (S1036)
+function foeTierLevel(e){return tierLevel(e&&e.tier!=null?e.tier:tierHere());}
+// S1059 — a kind's least tier (the enemies-by-place sheet): its old minLevel 1–3 is tier 1, 4–6 tier 2, 7 and up tier 3. A spawn
+// table is filtered by it before the pick, in the open, in a legacy zone and in a dungeon's roster, so no foe is ever latent on
+// the field (the minLevel lock, hidden until your level reached it, is gone). A site's own beasts and a quest's foes are set down
+// on purpose and are not filtered, as they were never locked (S386).
+function minTierOf(minLevel){const m=minLevel||1;return m>=7?3:m>=4?2:1;}
+function kindAllowed(name,tier){const D=ZONE_FOE_DEF[name];return minTierOf(D&&D.minLevel)<=(tier||1);}
+function enemyHpScale(tier){
+  const lv=tierLevel(tier==null?tierHere():tier);
   return Math.min(3.0, 1 + (lv - 1) * 0.15);
 }
-// S940 — a foe's blow grows with your level as the reference blow does (blowRef), so that with armour as a share an
-// ordinary blow at your level's kit stays near BLOW_SHARE of your health. It was +8% a level to ×2.0 at level 13, against
-// armour taken off flat: by level 10 a kit of your level took the whole of an ordinary blow (S610).
-function enemyDmgScale(){
-  const lv = (typeof level!=='undefined'?level:1) || 1;
+// S940 — a foe's blow grows as the reference blow does (blowRef), so that with armour as a share an ordinary blow at the kit of
+// the tier's level stays near BLOW_SHARE of that level's health (S1034: the tier's level, not yours).
+function enemyDmgScale(tier){
+  const lv=tierLevel(tier==null?tierHere():tier);
   return blowRef(lv)/blowRef(1);
 }
 

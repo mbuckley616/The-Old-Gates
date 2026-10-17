@@ -1228,12 +1228,14 @@
     // marauders everywhere: a human band is always on the table
     table=table.concat([{name:'Bandit',w:2,n:[2,4]},{name:'Highwayman',w:1,n:[1,3]},{name:'Deserter',w:1,n:[2,3]}]);
     if(ambush)table=[{name:'Bandit',w:3,n:[2,4],road:true},{name:'Highwayman',w:2,n:[2,3],road:true},{name:'Deserter',w:1,n:[2,3],road:true},{name:'Bandit Archer',w:2,n:[1,2],road:true}];
+    const cTier=worldTierAt(cxw,czw);table=table.filter(g=>kindAllowed(g.name,cTier));if(!table.length)return; /* S1059 — the kinds this place can hold, before the pick (enemies by place) */
     let tw=0;table.forEach(g=>tw+=g.w);
     let pick=hash01(ch.cx,ch.cz,92+epoch)*tw,grp=table[0];
     for(const g of table){pick-=g.w;if(pick<=0){grp=g;break;}}
     let count=grp.n[0]+Math.floor(hash01(ch.cx,ch.cz,93+epoch)*(grp.n[1]-grp.n[0]+1));
-    if(level>=6&&count>1&&hash01(ch.cx,ch.cz,97+epoch)<.35)count++;
-    const leader=(grp.name==='Bandit'||grp.name==='Highwayman')&&level>=5&&count>=2&&hash01(ch.cx,ch.cz,98+epoch)<.5?'Bandit Captain':null;
+    /* S1059 — the pack's +1 and its Captain come at tier 2 and up, not past your levels 6 and 5 (enemies by place) */
+    if(cTier>=2&&count>1&&hash01(ch.cx,ch.cz,97+epoch)<.35)count++;
+    const leader=(grp.name==='Bandit'||grp.name==='Highwayman')&&cTier>=2&&count>=2&&hash01(ch.cx,ch.cz,98+epoch)<.5?'Bandit Captain':null;
     // Anchor: near the road for road groups, else anywhere open.
     let ax=cxw,az=czw;
     if(grp.road){
@@ -1252,7 +1254,7 @@
       }
       if(!ok)continue;
       const fid=key+':'+epoch+':'+i; // S477 — a chunk's foe is its chunk, its spawn epoch and its index (co-op rules)
-      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,typeof level!=='undefined'?level:1,'normal',seededRng('variant',fid)):null;
+      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,tierLevel(worldTierAt(ex,ez)),'normal',seededRng('variant',fid)):null;
       const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,(i===0&&leader)?leader:grp.name,variant),fid);
       e._chunk=key;
       ZONES.world.enemies.push(e);ch.enemies.push(e);

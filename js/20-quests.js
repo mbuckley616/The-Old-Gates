@@ -359,9 +359,17 @@ function gateOf(entry){const e=entry||{};if(e.theme!=='goblin')return {theme:e.t
 // v80 S9 — dungeon difficulty is the player's level, not an authored grade.
 // Portals resolve diff/diffScale at use time so a door you found at L2 is
 // still a fair fight at L12.
-// S718 — `up` grades above your level's, to Very Hard at most: a lair's cavern stands one above, a wyrm's two (Michael's A on #230)
-function levelDiffKey(up){const L=(typeof level==='number')?level:1;const G=['veryeasy','easy','normal','hard','veryhard'];const i=L<=2?0:L<=5?1:L<=9?2:L<=14?3:4;return G[Math.min(4,i+(up>0?up:0))];}
+// S718 — `up` grades above the ladder's, to Very Hard at most: a lair's cavern stands one above, a wyrm's two (Michael's A on #230)
+// S1058 — the grade is the door's tier's, not your level's (enemies by place, #373 A; the designer's sheet): the same ladder read at
+// the tier's level (tierLevel, 74-strikes.js), so tier 1 is Very Easy, 2 Normal, 3 Hard and 4 Very Hard, read once at the door
+// (floor 1's tier) and the same on floor 2, whose tier's own step is the floor's only one. A door's tier is its place's, so it is cached.
+function gradeAtLevel(L,up){const G=['veryeasy','easy','normal','hard','veryhard'];const i=L<=2?0:L<=5?1:L<=9?2:L<=14?3:4;return G[Math.min(4,i+(up>0?up:0))];}
+function tierDiffKey(tier,up){return gradeAtLevel(tierLevel(tier),up);}
+function portalDoorTier(p){const k=p.zone+':'+p.x+','+p.z;if(p._doorTierAt!==k){p._doorTierAt=k;p._doorTier=dungeonTier(p,1);}return p._doorTier;}
 function portalGradeUp(entry){const L=entry&&entry.lair;return L?(L.dragon?2:1):0;}
+// S1062 — a door's grade where it stands in the world (x, z), read as its live portal reads it, for the map's subtitle: Session 64
+// took the grade off the map because it followed you; a grade by place is worth reading again (the designer's sheet, #373 A)
+function doorGrade(entry,x,z){return tierDiffKey(dungeonTier({zone:'world',x,z},1),portalGradeUp(entry));}
 function makePortalDef(entry){
   const gate=gateOf(entry);
   const td=THEME_DEF[gate.theme]||THEME_DEF.ruins;
@@ -377,8 +385,8 @@ function makePortalDef(entry){
     keyBase:dungeonKeyBase(entry.seed),
     theme:gate.theme,
     occupied:gate.occupied,
-    get diff(){return levelDiffKey(portalGradeUp(entry));},
-    get diffScale(){return DIFF_SCALE[levelDiffKey(portalGradeUp(entry))];},
+    get diff(){return tierDiffKey(portalDoorTier(this),portalGradeUp(entry));},
+    get diffScale(){return DIFF_SCALE[tierDiffKey(portalDoorTier(this),portalGradeUp(entry))];},
     kind:entry.kind || 'cave_door',  // v61f8: forward-compat field. 'cave_door' (default, carved-rock-and-door "old gate") or 'fort_door' (built-stonework fort entrance).
     exterior:entry.exterior || 'gatehouse',  // v61f9: which FORT_EXTERIORS entry to use for fort_door portals. Default 'gatehouse'. Ignored for cave_door.
     interior:entry.interior || 'cave',  // v61g0: which FORT_INTERIORS entry to use for procedural interior generation. Default 'cave' (makeDungeon, random rooms + L-corridors). 'fort_tee' selects the trunk+cross fort interior. Independent of kind/exterior — a cave_door can technically host any interior, though canonically only fort_door entries set this.
@@ -441,7 +449,7 @@ const QUEST_DEFS=[
    objectives:[
      {type:'kill_in_dungeon', dungeonSeed:42, count:5, label:'Kill enemies in the Dungeon of Shadows'},
    ],
-   rewards:{gold:50, xp:120, items:[{name:'Iron Sword',ico:'⚔️',type:'equip',slot:'weapon',atk:[10,12],weaponShape:'sword',wType:'slash',weight:2,tier:3,material:'Iron',matCol:0xA8B0B8,matGuard:0x787880,reqAttr:'might',reqVal:5,buyPrice:36,sellMult:.45}]},
+   rewards:{gold:50, xp:120, items:[{name:'Iron Sword',ico:'⚔️',type:'equip',slot:'weapon',atk:[10,12],weaponShape:'sword',wType:'slash',weight:2,tier:3,material:'Iron',matCol:0xA8B0B8,matGuard:0x787880,reqAttr:'skill',reqVal:15,buyPrice:36,sellMult:.45}]},
    rewardSpeech:'You came back. Good. Iron sword — clean-forged, my own hammer on it. Keep it sharp.',
    readyText:"Five down in the Shadows. Skeletons mostly — the sound they make when they go is dry like splitting kindling. Back to the forge.",
    completeText:"Iron Sword from Bram. Clean-forged, his own hammer on it. Heavier than what I came in with — sits right. He pointed me at Edna in the south cottage. Said she's been sitting on something about the Shadows for thirty years.",
@@ -993,7 +1001,7 @@ function checkQuestProgress(event,data){
 
 // S340 — Charisma's +2% quest reward gold a point, on every quest's pay: the world's quests and faction services
 // (`qTurnIn`), the guild tasks and the two tutorial lines, as well as the legacy chain here. Only this one read it.
-function questGold(n){return Math.round((n||0)*(1+(ATTRS.charisma||0)*0.02));}
+function questGold(n){return Math.round((n||0)*(1+(ATTRS.charisma||0)*0.01));} /* S953 — 1% a Charisma point (was 2%), the attributes at ≤1% */
 function completeQuest(id){
   const qs=QS[id];const q=getQuest(id);
   if(!qs||qs.state!=='reward')return;

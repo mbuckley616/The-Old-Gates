@@ -12,7 +12,7 @@ const r = await page.evaluate(() => {
   const fresh = () => { delete worldState.artifacts; for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].artifact || BAG[i].licence) BAG.splice(i, 1); worldState.factions = {}; ATTRS.might = 30; artifactTry('gate_blade'); };
   const keepA = { ...ATTRS }, keepG = gold; const out = {};
   out.none = crownBladeTopics(site).length; fresh(); out.labels = lordLabels(); out.elsewhere = crownBladeTopics(siteAnywhere('dunmore') || allSites().find(t => t.id !== 'coeur_de_vie' && t.kind === 'town')).length;
-  const T = crownBladeTopics(site)[0]; out.ask = T.label; out.askSay = T.response; out.follow = T.follow.map(f => f.label);
+  const T = crownBladeTopics(site)[0]; out.ask = T.label; out.askQuest = T.quest === true; out.askSay = T.response; out.follow = T.follow.map(f => f.label);
   // given, rank 0
   gold = 0; out.gaveNew = T.follow[0].fn(); out.goldNew = gold; out.rankNew = fstate().crown.rank; out.titleNew = FACTIONS.crown.ranks[fstate().crown.rank - 1]; out.yielded = worldState.artifacts.gate_blade.yielded; out.after = crownBladeTopics(site).length;
   // given, already ranked
@@ -21,7 +21,7 @@ const r = await page.evaluate(() => {
   fresh(); fstate().league.rank = 2; gold = 0; out.gaveSworn = crownBladeTopics(site)[0].follow[0].fn(); out.goldSworn = gold; out.rankSworn = fstate().crown.rank;
   // kept under licence; the twentieth at a sale
   fresh(); out.keep = crownBladeTopics(site)[0].follow[1].fn(); const lic = BAG.find(i => i.licence === 'gate_blade'); out.lic = lic && { name: lic.name, unique: lic.unique, desc: lic.desc };
-  const T2 = crownBladeTopics(site)[0]; out.licLabel = T2.label; out.licSay = T2.response; out.licFollow = T2.follow.map(f => f.label);
+  const T2 = crownBladeTopics(site)[0]; out.licLabel = T2.label; out.licQuest = T2.quest === true; out.licSay = T2.response; out.licFollow = T2.follow.map(f => f.label);
   const said = []; const sm = showMsg, rs = renderShop; showMsg = (t) => said.push(t); renderShop = () => {}; /* no counter is open here */
   const sell = () => { BAG.push({ name: 'Old Boot', ico: '👢', type: 'misc', qty: 1, weight: 1, sellMult: .5, buyPrice: 200 }); const g0 = gold; sellItem(BAG.length - 1, 100); return { got: gold - g0, said: said[said.length - 1] }; };
   try { out.saleLic = sell(); const b = BAG.findIndex(i => i.artifact === 'gate_blade'); const blade = BAG.splice(b, 1)[0]; stashBag.push(blade); out.saleStash = sell(); stashBag.splice(stashBag.indexOf(blade), 1); BAG.push(blade); } finally { showMsg = sm; renderShop = rs; }
@@ -41,5 +41,6 @@ check(`under licence the lord asks *${r.licLabel}* and offers only *Give it to t
 const full = Math.round(100 * r.goldMult);
 check(`a sale of ${full}: ${r.saleLic.got} with the blade on you, *${r.saleLic.said}*; with the blade in the stash, ${r.saleStash.got}`, r.saleLic.got === full - Math.round(full / 20) && r.saleLic.said.endsWith(`(the Crown's twentieth, ${Math.round(full / 20)})`) && r.saleStash.got === full && !/twentieth/.test(r.saleStash.said), r);
 check('given after the licence: the gold, and the licence goes back with it', r.goldLic === 1500 && r.licGone, r);
+check(`both are drawn as quest talk, gold like *Serve the Crown.* (S987, the critic's note): ${r.askQuest}, ${r.licQuest}`, r.askQuest && r.licQuest, r);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

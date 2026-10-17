@@ -3080,16 +3080,18 @@ function buildDungeon(portal){
     return{g,hpFg,limbs};
   }
   function spawnFloorEnemies(map,floorIdx,baseY,dmgMult){
+    const dTier=dungeonTier(portal,floorIdx); /* S1034 — the door's place and the floor (#373 A), not your level */
     // v80 S478 — the foes' spots, kinds and variants come from the floor's stream; each foe is keyed <dungeon>:<floor>:<index>
     // and rolls its fight from its own (keyFoe, 42-zone-enemies.js). The shuffle was a sort on Math.random.
     const dKey=dKeyOf(portal,floorIdx),dFoes=seededRng('dfoes',dKey);
     const themeEnemies=portal.occupied?OCCUPIED_ROSTER:(THEME_DEF[portal.theme]||THEME_DEF.ruins).enemies; /* S759 — an occupied gate holds the warren (gateOf, 20-quests.js) */
-    // v59: filter the theme roster to enemies the player has unlocked. Preserves order + repeats
+    // v59: filter the theme roster to the kinds this floor can hold. Preserves order + repeats
     // so theme weighting (e.g. Skeleton appearing 3× in undead) still applies. If every entry is
     // gated (shouldn't happen — Skeleton is level 1), fall back to plain Skeleton.
+    // S1059 — by the floor's tier, not your level: a kind's least tier from its minLevel (minTierOf, the enemies-by-place sheet)
     const availableEnemies=themeEnemies.filter(n=>{
       const ed=EM[n]||EM.Skeleton;
-      return (ed.minLevel||1)<=level;
+      return minTierOf(ed.minLevel)<=dTier;
     });
     const pool=availableEnemies.length?availableEnemies:['Skeleton'];
     const ds=portal.diffScale||DIFF_SCALE.normal;
@@ -3140,14 +3142,14 @@ function buildDungeon(portal){
       const baseDef=EM[name]||EM.Skeleton;
       // Variant roll — gated by player level + dungeon difficulty. `portal.diff` is 'veryeasy'..'veryhard'.
       const fid=`${dKey}:${i}`,fr=seededRng('dspawn',fid);
-      const variantKey=pickVariant(name, level, portal.diff, seededRng('variant',fid));
+      const variantKey=pickVariant(name, tierLevel(dTier), portal.diff, seededRng('variant',fid));
       const vr=applyVariantToDef(baseDef, name, variantKey);
       const d=vr.def, displayName=vr.displayName;
       if(d.disguise&&mimicSpots.length){const k=mimicSpots.findIndex(([c,r])=>spawns.every((q,j)=>j===i||Math.hypot(q[0]-c,q[1]-r)>=2));if(k>=0){[ec,er]=mimicSpots.splice(k,1)[0];spawns[i]=[ec,er];}}
       // v56 rebalance: multiply HP and dmg by level-scaled factors so late-game weapons don't
       // trivialise the early dungeons. Baseline (level 1) remains unscaled.
-      const hpLvl=enemyHpScale();
-      const dmgLvl=enemyDmgScale();
+      const hpLvl=enemyHpScale(dTier);
+      const dmgLvl=enemyDmgScale(dTier);
       // v61aw: tutorial dampener. The first dungeon a fresh character ever
       // sees gets enemies tuned for "you've never fought before" — half HP
       // and half damage on top of whatever 'veryeasy' difficulty already
@@ -3172,7 +3174,7 @@ function buildDungeon(portal){
         dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,path:[],pathT:0,
         _origCol:d.col,baseY:baseYe,isWraith:d.buildFn==='wraith',atkAnim:0,atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+fr()*1.5,
-        dmgMult:(d.dmgMult||1.0)*ds.dmg*dmgMult*dmgLvl*tutMult,hasCried:false,floor:floorIdx,
+        dmgMult:(d.dmgMult||1.0)*ds.dmg*dmgMult*dmgLvl*tutMult,hasCried:false,floor:floorIdx,tier:dTier,
         def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,baseType:name,
         drainCd:0,disguised:!!d.disguise,dormant:!!d.dormant,fleeT:0,telegraphT:0,telegraphMax:0,
         // v71 — Shieldbearer frontal guard. shieldUp gates BOTH the power-vs-shield
@@ -3197,7 +3199,7 @@ function buildDungeon(portal){
     });
   }
   spawnFloorEnemies(dMap,1,0,1.0);
-  if(dMap2)spawnFloorEnemies(dMap2,2,FLOOR2_Y,1.5);
+  if(dMap2)spawnFloorEnemies(dMap2,2,FLOOR2_Y,1.0); /* S1058 — floor 2 steps once, by its tier's +1 (dungeonTier); its old ×1.5 and ×1.1 pace went (the enemies-by-place sheet) */
 
   // ── SIGIL PLACEMENT ─────────────────────────────────────────
   // Every entry in SIGIL_PLACEMENTS gets one sigil on floor 2 of its matching dungeon.
@@ -3337,7 +3339,7 @@ function goToDungeon(portal){if(!portal.tutorial&&activeZoneId==='world'&&typeof
     showZoneName('\u2694 '+portal.name+' ['+_ds.label+']');
   }
   document.getElementById('fbtn').style.display='block';
-  buildDungeon(portal);scene=dScene;try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){} /* S797 — the Shuttle's room */ // v80 — the lair's master and its hoard
+  buildDungeon(portal);scene=dScene;try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){} /* S797 — the Shuttle's room */try{cloakDenLay(portal,window._lairBoss);}catch(e){} /* S992 — the cloak's den */ // v80 — the lair's master and its hoard
   if(window._playerTorchLight){try{[owScene,forestScene,ironhavenScene].forEach(s=>{if(s)s.remove(window._playerTorchLight);});if(typeof WORLD!=='undefined'&&WORLD.scene)WORLD.scene.remove(window._playerTorchLight);dScene.add(window._playerTorchLight);}catch(e){}} // v80 — the torch comes with you
   startMusic('dungeon',portal.theme);
   if(portal.tutorial){

@@ -581,7 +581,7 @@
     DIVE.depth=Math.max(bed+.55,Math.min(SWIM_Y,DIVE.depth+vy*dt));
     const under=DIVE.depth<SWIM_Y-.15;
     if(under!==DIVE.under){DIVE.under=under;if(under)splash(false);}
-    if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath')))DIVE.breath=Math.max(0,DIVE.breath-dt/BREATH_S);if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+    if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath')))DIVE.breath=Math.max(0,DIVE.breath-dt/breathSecs()); /* S976 — Long breath (Athletics 50) */if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
     else DIVE.breath=Math.min(1,DIVE.breath+dt/4);
     breathUI();return DIVE.depth;
   }
@@ -835,14 +835,14 @@
   function tickArrows(dt){
     for(let i=ARROWS.length-1;i>=0;i--){const a=ARROWS[i];a.t+=dt;const u=Math.min(1,a.t/a.dur);const arc=Math.sin(u*Math.PI)*a.dur*4;
       const x=a.sx+(a.tx-a.sx)*u,z=a.sz+(a.tz-a.sz)*u,y=a.sy+(a.ty-a.sy)*u+arc;a.m.position.set(x,y,z);a.m.lookAt(a.tx,a.ty,a.tz);
-      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+level*.8)*(blocking?.4:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){if(deflectsArrows()){try{sndBlock();}catch(err){}showMsg('🛡 The arrow glances off your shield.','#ffd700');}else{const dmg=_warded(Math.round((6+tierLevel(worldTierAt(a.tx,a.tz))*.8)*(blocking?.4:1))); /* S1036 — the volley grows with the water's tier's level, not yours (#373 A) */PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}}
   }
   // boarding: E beside another ship (hulls close, or swimming up to her)
   // S638 — her net under the crosshair, or swum against (shipNetSide, 86-world-crime.js); off her deck
   function nearOther(){if(climbing()||jumpY>=4)return null;let best=null,bd=1e9;for(const o of OTHER){if(o.boarded||o.dead)continue;const p=o.plat;const d=Math.hypot(Math.max(p.x0-px,0,px-p.x1),Math.max(p.z0-pz,0,pz-p.z1));const on=d===0&&Math.abs(jumpY-DECK_Y)<1&&(!p.inside||p.inside(px,pz));if(!on&&d<bd&&d<8&&shipNetSide(o.mesh,o.W)){bd=d;best=o;}}return best;}
   function crewUp(o,alert){
     if(o.crew.length)return;
-    for(let k=0;k<3;k++){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const ex=o.x+fwd[0]*(-3+k*3)+(-fwd[1])*(k%2?1:-1)*1.2,ez=o.z+fwd[1]*(-3+k*3)+fwd[0]*(k%2?1:-1)*1.2;const fid=o.id?`${o.id}:crew:${k}`:null;const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',typeof pickVariant==='function'?pickVariant('Pirate',level,'normal',fid?seededRng('variant',fid):undefined):null);if(fid)keyFoe(e,fid);e.alert=!!alert;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
+    for(let k=0;k<3;k++){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const ex=o.x+fwd[0]*(-3+k*3)+(-fwd[1])*(k%2?1:-1)*1.2,ez=o.z+fwd[1]*(-3+k*3)+fwd[0]*(k%2?1:-1)*1.2;const fid=o.id?`${o.id}:crew:${k}`:null;const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',typeof pickVariant==='function'?pickVariant('Pirate',tierLevel(worldTierAt(ex,ez)),'normal',fid?seededRng('variant',fid):undefined):null);if(fid)keyFoe(e,fid);e.alert=!!alert;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
   }
   function boardOther(o,at){
     o.boarded=true;o.speed=0;o._fled=false;
