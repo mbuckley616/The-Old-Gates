@@ -23066,3 +23066,36 @@ The kit is now ready to go into the game behind `?look=new`, since F2a has merge
 - **The lamp at dusk** is a small warm point; whether a lamp still burning should be the tell that it happened within the hour is the quest writer's.
 - **Nobody is here:** no driver, passengers or horses. If the place is a lead, who was in it is the quest writer's, and any body is the bodies builder's.
 - **Still open in OG-124:** the pilgrims' rest, the lone grave (both want the canon), strange tracks, the locked cellar, the unfinished camp and the odd rock.
+
+## v80 — Session 1026 — The Gatelands' locked cellar (card F8, prototype only)
+The second of OG-124's small mysteries with no marker (panel 6: "a locked cellar"). It is `gatelandsCellar` in `docs/prototypes/levelup/places.js`, at `places.html?place=cellar`.
+
+A cottage fell long ago and the field took it back, but someone still comes to its cellar. The place says only that: the lock is new and the grass is worn to it and nowhere else. Who comes, and what is below, is left to the quest writer. It is built at true size in pasture rising gently from a lane:
+- **The footings:** the cottage is 7.0 by 4.6 m outside, with walls 0.55 m thick of rubble stone in courses. They stand 0.3 to 0.85 m, each half-metre stretch to its own height, with the doorway's gap in the south wall.
+- **The west gable:** whole to the eaves at 2.4 m and its apex at 4.6 m, with the stack over it to 5.6 m and a dressed cap. Inside are the fireplace's dark mouth under a stone lintel, the hearth stone, and two patches of limewash still on the wall.
+- **The rest:** rubble fallen inside along the walls and out of the east end, 90 nettles in the footings, an elder grown against the east end, a bush by the lane and ash in the field.
+- **The hatch:** a 1.2 by 1.0 m mouth in a kerb of dressed stone at the floor's level, at the east end. Two leaves of grey oak boards lie on strap hinges, with a hasp between them. A chain of 19 bright links runs across both leaves to old staples in the kerb, held at the hasp by a padlock that is new and bright.
+- **The path:** the grass is worn to earth from the lane through the doorway to the hatch, and round the hatch, and nowhere else.
+- **The size:** 21,900 to 22,100 triangles in 12 meshes.
+
+The views are `ruin` (from the lane), `hatch` (from the doorway), `lock` (knelt by it) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The hatch's boards** were first placed by a wrong formula, which piled eight boards over each other across the middle. Each leaf now has four boards side by side.
+- **The chain's links** were first 9 rings 0.09 m apart, so they did not touch. There are now 19 longer links, each into the next.
+- **The padlock** first read black: a mirror metal reflects the dark scene. It is now a satin steel that reads bright.
+- **The elder** first grew over the hatch and hid it from the doorway. It now grows against the east end, outside.
+- **Two of the check's probes:** the leaves' probe first landed on a strap hinge, and the gable's on its slope and then on the stack's cap. They now read a board between the hinges, and the gable 0.7 m off its apex line, clear of the stack.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 216 of 216 pass** (210 after Session 1025). Six checks are new. The cellar's `ruin` view and its `lock` view at dusk render with no page errors, and four checks run over three keys:
+  - **The builds:** each key builds the same twice, with 21,936 to 22,068 triangles in 12 meshes and 11 trees.
+  - **The hatch:** the kerb's corners are 0.03 m over the floor and the oak leaves are met 0.075 m over it. The padlock is 0.032 m from the hasp and 0.06 m over the leaves.
+  - **The ruin:** the footings are 0.31 to 0.84 m high at 20 points, the gable is met 3.94 m up 0.7 m off its apex line, where its slope stands at 3.93, and the stack is at 5.6 m. The 25 fallen stones are −0.002 to 0.001 m off the ground.
+  - **The walk:** 25 half-metres from the lane through the doorway to the hatch, all 25 on worn ground. There is ground under each, no step is over 0.065 m, and there is 2.95 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-cellar-ruin.jpg`, `-hatch`, `-lock`, `-far` and `-ruin-dusk`.
+### Needs eyes
+- **The nettles are plain cones.** They read as a crop of little firs from the lane. A nettle wants a stem with paired leaves, which the plant kit (`30-plants.js` in the game) may already have the shape for.
+- **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
+- **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
