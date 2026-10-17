@@ -214,9 +214,9 @@ function shellMat(color, layer, layers, o = {}) {
   m.customProgramCacheKey = () => 'shell' + layer + '/' + layers + JSON.stringify({ ...o, skin: !!o.skin });
   return m;
 }
-function skinMat(c, marks = null) {
+function skinMat(c, marks = null, scar = null) {
   const m = new THREE.MeshPhysicalMaterial({ color: c, roughness: .6, metalness: 0, sheen: .18, sheenColor: new THREE.Color(1, .45, .35), sheenRoughness: .5, vertexColors: true });
-  if (marks != null) markSkin(m, marks); return m;
+  if (marks != null) markSkin(m, marks); if (scar) scarSkin(m, scar); return m;
 }
 // the Old Blood's marks (Session 1052; canon §3.1, Michael's 2 B on OG-066): not ink but pale raised lines under the skin, branching
 // like veins, at the wrist, the back of the hand and the shoulder blade, on both sides. They spread as the Cold rises (§3.3), up the
@@ -253,6 +253,39 @@ float mkMarks(vec3 p) {
  { float h = mkLine * .0007; vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx); float det = dot(sx, r1) * faceDirection;
    vec3 g = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2); if (abs(det) > 0.) normal = normalize(abs(det) * normal - g); }`); };
   m.customProgramCacheKey = () => 'skin-marks';
+}
+// a scar (Session 1079, L1; OG-001's extras strip, "the disabled (an eyepatch, scars)"; OG-065's Garrick, scarred): an old cut from
+// over the brow down across the eye to the cheek, on one side. It lies on the rest face (aBase), so it is the same on every face
+// the morphs make: from 3.4 cm over the eye's middle, 2 mm toward the nose, to 3.8 cm under it, 1.3 cm out, widest (4.8 mm) a little
+// above its middle and tapering to its ends, its edges wavering by noise. Healed tissue is paler and pinker than the skin, a little
+// shiny and raised, with a puckered margin a shade darker, and the stitches' marks cross it every 6 mm. Drawn in the skin's
+// shader, with no new triangles; the brows grow none of their hairs on it (buildBrows)
+export function scarLine(side) {
+  const R0 = PACK.rest, L = [...new Set(PACK.G[`helper-${side === 'R' ? 'r' : 'l'}-eye`])]; let x = 0, y = 0, z = 0; for (const i of L) { x += R0[i * 3]; y += R0[i * 3 + 1]; z += R0[i * 3 + 2]; }
+  x /= L.length; y /= L.length; z /= L.length; const s = Math.sign(x) || 1;
+  return { A: [x - s * .002, y + .034], B: [x + s * .013, y - .038], z: z - .025, eye: [x, y, z] };
+}
+function scarDist(S, x, y) { const ax = S.B[0] - S.A[0], ay = S.B[1] - S.A[1], t = Math.max(0, Math.min(1, ((x - S.A[0]) * ax + (y - S.A[1]) * ay) / (ax * ax + ay * ay))); return { d: Math.hypot(x - S.A[0] - ax * t, y - S.A[1] - ay * t), t }; }
+function scarSkin(m, side) {
+  const S = scarLine(side), prev = m.onBeforeCompile, key = m.customProgramCacheKey;
+  m.onBeforeCompile = (sh, r) => { if (prev && prev !== THREE.Material.prototype.onBeforeCompile) prev(sh, r);
+    Object.assign(sh.uniforms, { scA: { value: new THREE.Vector2(...S.A) }, scB: { value: new THREE.Vector2(...S.B) }, scZ: { value: S.z } });
+    sh.vertexShader = (sh.vertexShader.includes('attribute vec3 aBase;') ? '' : 'attribute vec3 aBase;\n') + 'varying vec3 vSc;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vSc = aBase;');
+    sh.fragmentShader = `varying vec3 vSc; uniform vec2 scA; uniform vec2 scB; uniform float scZ; float scK = 0., scM = 0.;
+float scH(vec3 p) { return fract(sin(dot(p, vec3(91.3, 217.9, 47.1))) * 24634.6345); }
+float scN(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(scH(i), scH(i + vec3(1, 0, 0)), f.x), mix(scH(i + vec3(0, 1, 0)), scH(i + vec3(1, 1, 0)), f.x), f.y), mix(mix(scH(i + vec3(0, 0, 1)), scH(i + vec3(1, 0, 1)), f.x), mix(scH(i + vec3(0, 1, 1)), scH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+void scScar(vec3 p) { if (p.z < scZ) return; vec2 ab = scB - scA; float l = length(ab), t = clamp(dot(p.xy - scA, ab) / (l * l), 0., 1.);
+  vec2 q = p.xy - scA - ab * t; float d = length(q) + (scN(p * 160.) - .5) * .0012 + (scN(p * 40.) - .5) * .0016, w = .0021 * pow(sin(3.1416 * min(1., t * 1.15)), .55) + .0003, aa = fwidth(d) + .0002;
+  scK = 1. - smoothstep(w - aa, w + aa, d); scM = (1. - smoothstep(w, w + .0022, d)) * (1. - scK);
+  float s = (t * l) / .006, st = abs(fract(s) - .5), across = abs(dot(q, vec2(-ab.y, ab.x) / l));
+  scK = max(scK, (1. - smoothstep(.06, .12, st)) * (1. - smoothstep(w + .0012, w + .0024, across)) * step(.08, t) * step(t, .92) * .28); }
+` + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n scScar(vSc); diffuseColor.rgb = mix(diffuseColor.rgb * (1. - .06 * scM), diffuseColor.rgb * vec3(1.08, 1., 1.) + vec3(.11, .07, .075), scK * .9);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix(roughnessFactor, .36, scK);')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+ { float h = scK * .0005 - scM * .00015; vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx); float det = dot(sx, r1) * faceDirection;
+   vec3 g = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2); if (abs(det) > 0.) normal = normalize(abs(det) * normal - g); }`); };
+  m.customProgramCacheKey = () => (key ? key.call(m) : 'skin') + '+scar' + side;
 }
 
 // ── the genome ──
@@ -1158,6 +1191,76 @@ function buildEarrings(P, G, heads, byName) {
   return { mesh: grp, stats: { near, r, drop: +(lobes[0].y - 2 * r - heads['head'].y).toFixed(3), lobes: lobes.map(v => [+v.x.toFixed(3), +v.y.toFixed(3), +v.z.toFixed(3)]), apart: +lobes[0].distanceTo(lobes[1]).toFixed(3), tris: out.reduce((a, m) => a + m.geometry.index.count / 3, 0) } };
 }
 
+// ── the eyepatch (Session 1079, L1; OG-001's extras strip, "the disabled (an eyepatch, scars)") ──
+// An oval of black or brown leather 5 by 3.8 cm (4.6 by 3.5 on a woman) over the lost eye, on a cord round the head. The face under
+// it is read by rays straight in onto the morphed face, and the leather spans the socket as a stiff patch does: its middle stands
+// 1.5 mm off the face's highest points within 7 mm, smoothed, and it comes down to 1 mm off the skin at its edge, where a rim 2.5 mm
+// deep closes it to the face. Its face is drawn in a canvas: grain, a rolled edge, a stitch line 4 mm in. The cord is one loop in a
+// plane through the patch's inner top corner and its outer edge and over the far temple, so it rises across the forehead to the far
+// side and passes over the near ear: round the plane it lies on the outermost of the skin, the scalp, the hair, the brows and the
+// patch, 0.4 mm off. Both are carried rigid by the head bone; the lost eye's ball is not built
+const PATCH_TEX = () => PACK.patchTex || (PACK.patchTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), rnd = seeded('patch');
+  x.fillStyle = '#c8c8c8'; x.fillRect(0, 0, 256, 256); for (let k = 0; k < 2600; k++) { const v = 170 + rnd() * 70 | 0; x.fillStyle = `rgb(${v},${v},${v})`; x.fillRect(rnd() * 256, rnd() * 256, 1 + rnd() * 3, 1 + rnd() * 2); }
+  const g = x.createRadialGradient(128, 128, 96, 128, 128, 128); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.75, 'rgba(255,255,255,.35)'); g.addColorStop(.9, 'rgba(60,60,60,.5)'); g.addColorStop(1, 'rgba(40,40,40,.8)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+  x.strokeStyle = '#f0f0f0'; x.lineWidth = 3; x.setLineDash([7, 6]); x.beginPath(); x.arc(128, 128, 109, 0, 7); x.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })());
+function buildEyepatch(P, G, heads, byName, meshes) {
+  const R0 = PACK.rest, D = G.dress, side = D.eyepatchSide === 'R' ? 'r' : 'l', man = (G.g ?? .5) > .5, V = (a, i) => new THREE.Vector3(a[i * 3], a[i * 3 + 1], a[i * 3 + 2]);
+  const L = [...new Set(PACK.G[`helper-${side}-eye`])], c = new THREE.Vector3(); for (const i of L) c.add(V(P, i)); c.divideScalar(L.length); const sx = Math.sign(c.x) || 1;
+  const A = man ? .025 : .023, B = man ? .019 : .0175, cx = c.x + sx * .002, cy = c.y + .003;
+  // the face in front of the eye: every triangle of the body near it, and the frontmost hit of a ray straight in
+  const I = PACK.G['body'], tris = []; for (let t = 0; t < I.length; t += 3) { const a = I[t], b = I[t + 1], d = I[t + 2]; if ([a, b, d].every(i => Math.abs(P[i * 3] - cx) < A + .02 && Math.abs(P[i * 3 + 1] - cy) < B + .02 && P[i * 3 + 2] > c.z - .04)) tris.push(a, b, d); }
+  const rayZ = (x, y) => { let best = -9; for (let t = 0; t < tris.length; t += 3) { const a = tris[t] * 3, b = tris[t + 1] * 3, d = tris[t + 2] * 3, ax = P[a], ay = P[a + 1], bx = P[b], by = P[b + 1], dx = P[d], dy = P[d + 1];
+      const det = (by - dy) * (ax - dx) + (dx - bx) * (ay - dy); if (Math.abs(det) < 1e-12) continue; const u = ((by - dy) * (x - dx) + (dx - bx) * (y - dy)) / det, v = ((dy - ay) * (x - dx) + (ax - dx) * (y - dy)) / det, w = 1 - u - v;
+      if (u < -1e-6 || v < -1e-6 || w < -1e-6) continue; best = Math.max(best, u * P[a + 2] + v * P[b + 2] + w * P[d + 2]); } return best; };
+  // a 1 mm grid over the patch and 8 mm round it: the face (gaps filled from their neighbours), its highest within 7 mm, smoothed
+  const h = .001, M = .008, nx = Math.round(2 * (A + M) / h) + 1, ny = Math.round(2 * (B + M) / h) + 1, x0 = cx - A - M, y0 = cy - B - M, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[j * nx + i] = rayZ(x0 + i * h, y0 + j * h);
+  for (let pass = 0; pass < 6; pass++) for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) if (F[j * nx + i] < -1) { let s = 0, n = 0; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny && F[jj * nx + ii] > -1) { s += F[jj * nx + ii]; n++; } } if (n) F[j * nx + i] = s / n; }
+  const Hd = new Float32Array(nx * ny), R = 7; for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { let m = -9; for (let dj = -R; dj <= R; dj++) for (let di = -R; di <= R; di++) { if (di * di + dj * dj > R * R) continue; const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny) m = Math.max(m, F[jj * nx + ii]); } Hd[j * nx + i] = m; }
+  let Hs = Hd; for (let pass = 0; pass < 3; pass++) { const o = new Float32Array(nx * ny); for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { let s = 0, n = 0; for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny) { s += Hs[jj * nx + ii]; n++; } } o[j * nx + i] = s / n; } Hs = o; }
+  const samp = (G2, x, y) => { const fi = Math.max(0, Math.min(nx - 1.001, (x - x0) / h)), fj = Math.max(0, Math.min(ny - 1.001, (y - y0) / h)), i = Math.floor(fi), j = Math.floor(fj), u = fi - i, v = fj - j;
+    return G2[j * nx + i] * (1 - u) * (1 - v) + G2[j * nx + i + 1] * u * (1 - v) + G2[(j + 1) * nx + i] * (1 - u) * v + G2[(j + 1) * nx + i + 1] * u * v; };
+  const NR = 12, NS = 56, pos = [], uv = [], idx = [], at = (r, th) => { const x = cx + A * r * Math.cos(th), y = cy + B * r * Math.sin(th), f = rayZ(x, y) > -1 ? rayZ(x, y) : samp(F, x, y), top = Math.max(samp(Hs, x, y), f) + .0015, k = 1 - r ** 4;
+    return new THREE.Vector3(x, y, f + .001 + (top - f - .001) * k); };
+  for (let ri = 0; ri <= NR; ri++) for (let s = 0; s <= NS; s++) { const r = ri / NR, th = s / NS * Math.PI * 2, p = at(r, th); pos.push(p.x, p.y, p.z); uv.push(.5 + .5 * r * Math.cos(th) * -sx, .5 + .5 * r * Math.sin(th)); }
+  for (let ri = 0; ri < NR; ri++) for (let s = 0; s < NS; s++) { const a = ri * (NS + 1) + s, b = a + NS + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  // the rim: from the edge 2.5 mm straight back into the face
+  const e0 = NR * (NS + 1), r0 = pos.length / 3; for (let s = 0; s <= NS; s++) { const k = (e0 + s) * 3; pos.push(pos[k], pos[k + 1], pos[k + 2] - .0025); uv.push(uv[(e0 + s) * 2], uv[(e0 + s) * 2 + 1]); }
+  for (let s = 0; s < NS; s++) { const a = e0 + s, b = r0 + s; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  const leather = new THREE.MeshStandardMaterial({ color: sRGB(...D.eyepatch), map: PATCH_TEX(), roughness: .72, metalness: 0 });
+  // what the patch stands over: the lowest it is off the face inside its edge, and any point of the face in front of it
+  let gap = 9, through = 0; for (let ri = 1; ri < NR; ri++) for (let s = 0; s < NS; s++) { const k = (ri * (NS + 1) + s) * 3, f = rayZ(pos[k], pos[k + 1]); if (f > -1) gap = Math.min(gap, pos[k + 2] - f); }
+  const hv = PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6));
+  for (const i of hv) { const x = P[i * 3], y = P[i * 3 + 1], rr = ((x - cx) / A) ** 2 + ((y - cy) / B) ** 2; if (rr < .9 && P[i * 3 + 2] > at(Math.sqrt(rr), Math.atan2((y - cy) / B, (x - cx) / A)).z) through++; }
+  // the cord: a loop in the plane through the inner top corner, the outer edge and a point over the far temple
+  const edge = (r, th) => at(r, th), Ain = edge(.9, Math.atan2(.8, -sx * .6) ), Aout = edge(.97, Math.atan2(.3, sx * .954));
+  const bb = new THREE.Box3(); for (const i of hv) if (R0[i * 3 + 1] > .74) bb.expandByPoint(V(P, i)); const hc = bb.getCenter(new THREE.Vector3());
+  const Q = new THREE.Vector3(hc.x - sx * .08, c.y + .052, hc.z + .004), n = Aout.clone().sub(Ain).cross(Q.clone().sub(Ain)).normalize();
+  const O = hc.clone().addScaledVector(n, -hc.clone().sub(Ain).dot(n)), u = Ain.clone().add(Aout).multiplyScalar(.5).sub(O); u.addScaledVector(n, -u.dot(n)).normalize(); const w = n.clone().cross(u);
+  const cloud = []; for (const i of hv) cloud.push(V(P, i)); for (let k = 0; k < pos.length; k += 3) cloud.push(new THREE.Vector3(pos[k], pos[k + 1], pos[k + 2]));
+  const card = new Uint8Array(1 << 20); for (const m of meshes) if (/^(scalp|hair|brows)/.test(m.name)) { const a = m.geometry.attributes.position.array, ix = m.name === 'scalp' ? [...new Set(PACK.R.scalpRoots)] : null;
+    if (ix) for (const i of ix) cloud.push(V(a, i)); else for (let k = 0; k < a.length; k += 3) { if (/^hair/.test(m.name)) card[cloud.length] = 1; cloud.push(new THREE.Vector3(a[k], a[k + 1], a[k + 2])); } }
+  // keep only what lies within 6 mm of the plane, as radius and angle round O in it
+  const NP = 144, RHO = .0045, CR = man ? .0016 : .0014, rad = new Float32Array(NP).fill(-1), TAU = Math.PI * 2, near = [];
+  for (const p of cloud) { const d = p.clone().sub(O), off = d.dot(n); if (Math.abs(off) > .006) continue; const a = d.dot(u), b = d.dot(w); near.push([Math.atan2(b, a), Math.hypot(a, b), off, p]); }
+  for (let k = 0; k < NP; k++) { const ph = k / NP * TAU, cs = Math.cos(ph), sn = Math.sin(ph); for (const [ang, r] of near) { let da = Math.abs(ang - ph) % TAU; if (da > Math.PI) da = TAU - da; if (r * Math.sin(Math.min(da, Math.PI / 2)) < RHO && da < Math.PI / 2) rad[k] = Math.max(rad[k], r * Math.cos(da)); } }
+  for (let k = 0; k < NP; k++) if (rad[k] < 0) rad[k] = Math.max(rad[(k + NP - 1) % NP], rad[(k + 1) % NP], .06);
+  const rs = Array.from(rad, (r, k) => { let s = 0; for (let d = -2; d <= 2; d++) s += rad[(k + d + NP) % NP]; return Math.max(r, s / 5); });
+  const line = []; for (let k = 0; k <= NP; k++) { const ph = (k % NP) / NP * TAU; line.push(O.clone().addScaledVector(u, Math.cos(ph) * (rs[k % NP] + CR + .0004)).addScaledVector(w, Math.sin(ph) * (rs[k % NP] + CR + .0004))); }
+  const cg = tubeGeom(line, line.map(() => CR), 6), cord = new THREE.MeshStandardMaterial({ color: sRGB(...D.eyepatch).multiplyScalar(1.15), roughness: .7 });
+  // what the cord passes through (the skin, the patch, the scalp and the brows; the hair's cards apart), how far over the far
+  // eye's middle it runs on the forehead
+  const segD = p => { let m = 9; for (let k = 0; k < NP; k++) { const a = line[k], b = line[k + 1], ab = b.clone().sub(a), t = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / ab.lengthSq())); m = Math.min(m, p.distanceTo(a.clone().addScaledVector(ab, t))); } return m; };
+  let cut = 0, hairCut = 0; cloud.forEach((p, i) => { if (Math.abs(p.clone().sub(O).dot(n)) > .004) return; if (segD(p) < CR) card[i] ? hairCut++ : cut++; });
+  const far = [...new Set(PACK.G[`helper-${side === 'l' ? 'r' : 'l'}-eye`])], fc = new THREE.Vector3(); for (const i of far) fc.add(V(P, i)); fc.divideScalar(far.length);
+  let overFar = 9; for (const p of line) if (Math.abs(p.x - fc.x) < .012 && p.z > fc.z - .02) overFar = Math.min(overFar, p.y - fc.y);
+  const grp = new THREE.Group(); grp.name = 'eyepatch'; for (const [geo, mat, nm] of [[g, leather, 'patch'], [cg, cord, 'patchCord']]) { geo.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z); const m = new THREE.Mesh(geo, mat); m.name = nm; m.castShadow = true; grp.add(m); }
+  byName['head'].add(grp);
+  return { mesh: grp, stats: { side: side.toUpperCase(), size: [+(2 * A).toFixed(3), +(2 * B).toFixed(3)], gap: +gap.toFixed(4), through, cordCut: cut, cordHair: hairCut, overFarEye: +overFar.toFixed(3), tilt: +(Math.acos(Math.abs(n.y)) * 180 / Math.PI).toFixed(1), tris: idx.length / 3 + cg.index.count / 3 } };
+}
+
 // ── the coin necklace (Session 1003, L1; OG-044 and OG-056: the Aurennais' coin and hoop jewellery) ──
 // A thin metal chain round the base of the neck, lying on whatever is worn there (the skin, a tunic's collar, a sash, a wrap's
 // tail), with coins hung from its front half on small rings. The chain is found by rays from inside the neck: level at the nape,
@@ -1428,7 +1531,7 @@ export function browShape(G) {
   return { x0, x1, at, ex, ey, thick, arch };
 }
 function buildBrows(P, G, headB) {
-  const R0 = PACK.rest, tris = BROW_TRIS(), S = browShape(G), out = { tried: 0, roots: 0, lift: 0, headUp: 0, headN: 0, over: 0 };
+  const R0 = PACK.rest, tris = BROW_TRIS(), S = browShape(G), Sc = G.scar ? scarLine(G.scar) : null, out = { tried: 0, roots: 0, lift: 0, headUp: 0, headN: 0, over: 0, scarGap: 0 };
   // where a point of the unmorphed face (x, y) lies: its triangle and weights, then the same on the morphed face
   const locate = (x, y) => { for (let t = 0; t < tris.length; t += 3) { const a = tris[t], b = tris[t + 1], c = tris[t + 2], ax = R0[a * 3], ay = R0[a * 3 + 1], bx = R0[b * 3], by = R0[b * 3 + 1], cx = R0[c * 3], cy = R0[c * 3 + 1];
       const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy); if (Math.abs(d) < 1e-12) continue; const u = ((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / d, v = ((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / d, w = 1 - u - v;
@@ -1444,6 +1547,8 @@ function buildBrows(P, G, headB) {
     const t = Math.min(1, rb() ** 1.15), q = S.at(t), a = rb(), x = q.x + (rb() - .5) * .002, y = q.low + q.h * a;
     // the head starts sparse, so the brow does not begin on a square-cut end at the nose (Session 876)
     if (t < .1 && rb() > .3 + 7 * t) continue;
+    // a scar across the brow (Session 1079) leaves a gap in it: no hair roots within 2.8 mm of its line
+    if (Sc && scarDist(Sc, sg * x, y).d < .0028) { out.scarGap++; continue; }
     const L = locate(sg * x, y); out.tried++; if (!L) continue; out.roots++;
     if (L.n.z < 0) L.n.negate();
     // the comb: up and out at the head (Session 876: about 50 degrees, where Session 824's stood near upright and fanned), out
@@ -1463,7 +1568,7 @@ function buildBrows(P, G, headB) {
   const nV = pos.length / 3, si = new Uint16Array(nV * 4), sw = new Float32Array(nV * 4); for (let i = 0; i < nV; i++) { si[i * 4] = headB; sw[i * 4] = 1; } g.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
   const m = new THREE.MeshStandardMaterial({ color: col, roughness: .7, side: THREE.DoubleSide, vertexColors: true }); m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n normal = normalize(vNormal); if (dot(normal, vViewPosition) < 0.) normal = -normal;'); };
   const mesh = new THREE.SkinnedMesh(g, m); mesh.name = 'brows'; mesh.noCast = true;
-  return { mesh, stats: { hairs: idx.length / 18, tried: out.tried, roots: out.roots, lift: +out.lift.toFixed(4), headUp: +(out.headUp / Math.max(1, out.headN)).toFixed(3), over: +out.over.toFixed(4), tris: idx.length / 3 } };
+  return { mesh, stats: { hairs: idx.length / 18, tried: out.tried, roots: out.roots, lift: +out.lift.toFixed(4), headUp: +(out.headUp / Math.max(1, out.headN)).toFixed(3), over: +out.over.toFixed(4), scarGap: out.scarGap, tris: idx.length / 3 } };
 }
 // how much of a brow lies over a point of the unmorphed face (0 to 1), for the skin's shade
 function browCover(S, x, y) { const ax = Math.abs(x); if (ax < S.x0 - .003 || ax > S.x1 + .003) return 0; const t = Math.max(0, Math.min(1, (ax - S.x0) / (S.x1 - S.x0))), q = S.at(t);
@@ -2269,7 +2374,7 @@ export function makePerson(G, o = {}) {
   for (const b of ix.bones) { const bone = new THREE.Bone(); bone.name = b.name; heads[b.name] = jp(b.head); bones.push(bone); byName[b.name] = bone;
     if (b.parent) { byName[b.parent].add(bone); bone.position.copy(heads[b.name]).sub(heads[b.parent]); } else bone.position.copy(heads[b.name]); }
   const skeleton = new THREE.Skeleton(bones), root = new THREE.Group(), meshes = [];
-  const D0 = G.dress || {}, bodyIdx = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin), G.marks ?? null));
+  const D0 = G.dress || {}, bodyIdx = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin), G.marks ?? null, G.scar || null));
   // skin tones by region: lips and cheeks warmer, the brow a touch darker
   { const col = new Float32Array(PACK.N * 3), BS = browShape(G); for (let i = 0; i < PACK.N; i++) { const x = rest0[i * 3], y = rest0[i * 3 + 1], z = rest0[i * 3 + 2]; let r = 1, g = 1, b = 1;
       const lip = Math.exp(-((x / .022) ** 2) - ((y - .655) / .009) ** 2) * (z > .13 ? 1 : 0), cheek = Math.exp(-(((Math.abs(x) - .05) / .025) ** 2) - ((y - .69) / .02) ** 2) * (z > .07 ? 1 : 0), nose = Math.exp(-((x / .02) ** 2) - ((y - .69) / .015) ** 2) * (z > .14 ? 1 : 0);
@@ -2345,10 +2450,13 @@ export function makePerson(G, o = {}) {
   const eyeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#d8d0c4'; x.fillRect(0, 0, 128, 128);
     const gr = x.createRadialGradient(64, 64, 3, 64, 64, 15); gr.addColorStop(0, '#050403'); gr.addColorStop(.32, '#050403'); gr.addColorStop(.36, `rgb(${G.eyes.map(v => v * 255 | 0)})`); gr.addColorStop(.9, `rgb(${G.eyes.map(v => v * 150 | 0)})`); gr.addColorStop(1, '#ece6dc');
     x.fillStyle = gr; x.beginPath(); x.ellipse(64, 64, 15, 22, 0, 0, 7); x.fill(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
-  for (const side of ['l', 'r']) { const L = new Set(PACK.G[`helper-${side}-eye`]), c = new THREE.Vector3(); let r = 0; for (const i of L) c.add(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])); c.divideScalar(L.size); for (const i of L) r = Math.max(r, c.distanceTo(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])));
+  // under an eyepatch (Session 1079) the eye is lost, and its ball is not built
+  for (const side of ['l', 'r']) { if (D.eyepatch && side === (D.eyepatchSide === 'R' ? 'r' : 'l')) continue; const L = new Set(PACK.G[`helper-${side}-eye`]), c = new THREE.Vector3(); let r = 0; for (const i of L) c.add(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])); c.divideScalar(L.size); for (const i of L) r = Math.max(r, c.distanceTo(new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2])));
     const eg = new THREE.SphereGeometry(r * .8, 32, 24); eg.rotateY(-Math.PI / 2); const e = new THREE.Mesh(eg, new THREE.MeshPhysicalMaterial({ map: eyeTex, roughness: .08, clearcoat: 1 }));
     const head = byName['head']; head.updateWorldMatrix(true, false); e.position.copy(c).sub(heads['head']); e.position.z -= r * .12; head.add(e); }
   let helmStats = null; if (D.helm) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } helmStats = buildHelm(P, G, heads, byName, hp).stats; }
+  // the eyepatch (Session 1079), on the face under whatever is on the head; its cord over the hair
+  let patchStats = null; if (D.eyepatch) patchStats = buildEyepatch(P, G, heads, byName, meshes).stats;
   // hoop earrings (Session 995), when no raised hood covers the ears
   let earStats = null; if (D.earrings && !(D.cloak && D.hood === 'up')) earStats = buildEarrings(P, G, heads, byName).stats;
   // the head-wrap (Session 994), over the same tucked hair, when no helm or raised hood is on the head
@@ -2442,7 +2550,7 @@ export function makePerson(G, o = {}) {
   // a basket in the same fist (Session 1033), when it holds no spear or crossbow; last, as it is lifted clear of all the rest
   let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, basket: basketStats, legWraps: legWrapSt };
+  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, basket: basketStats, legWraps: legWrapSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -2465,20 +2573,20 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L' };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L' };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
   return { species: 'human', v: 1, seed: String(G.seed ?? 'person'), people: G.people || 'markman', sliders: round({ ...Object.fromEntries(BODY_SLIDERS.map(k => [k, G[k] ?? (k === 'prop' ? .6 : .5)])), ...(G.face || {}) }),
     race: round(G.race || { caucasian: 1 }), palette: { skin: hex(G.skin), hair: hex(G.hairCol || [0, 0, 0]), eyes: hex(G.eyes) }, hair: { style, len: r3(G.hair?.len ?? G.hairLen ?? .3), beard: r3(G.beard || 0), ...(G.brow ? { brow: [r3(G.brow.thick), r3(G.brow.arch)] } : {}) },
-    dress, pose: round(G.pose || {}), ...(G.marks != null ? { marks: { cold: r3(G.marks) } } : {}) };
+    dress, pose: round(G.pose || {}), ...(G.marks != null ? { marks: { cold: r3(G.marks) } } : {}), ...(G.scar ? { scar: G.scar } : {}) };
 }
 export function fromSaved(J) {
   if (!J || J.species !== 'human') throw new Error('not a human genome'); const S = J.sliders || {}, G = { seed: J.seed, people: J.people, race: { ...(J.race || { caucasian: 1 }) }, face: {} };
   for (const [k, v] of Object.entries(S)) if (BODY_SLIDERS.includes(k)) G[k] = v; else G.face[k] = v;
   G.skin = unhex(J.palette.skin); G.hairCol = unhex(J.palette.hair); G.eyes = unhex(J.palette.eyes);
   G.hair = { style: J.hair?.style || 'short', len: J.hair?.len ?? .3 }; G.beard = J.hair?.beard || 0; if (J.hair?.brow) G.brow = { thick: J.hair.brow[0], arch: J.hair.brow[1] };
-  G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; if (J.marks) G.marks = J.marks.cold ?? 0; return G;
+  G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; if (J.marks) G.marks = J.marks.cold ?? 0; if (J.scar) G.scar = J.scar; return G;
 }
 // ── the four peoples (Session 806, B3): slider ranges over the one human body, from the canon's peoples table (§2) and the
 // kept sheets (OG-048 and OG-059 Gatelanders, OG-025 Markmen, OG-044 Aurennais, OG-066 the Old Blood). A people sets the
@@ -2574,6 +2682,10 @@ export function peopleGenome(rnd, people, g, o = {}) {
   // in eight of those marked has read past the Withdrawal's law and carries the Cold, the marks spread a fifth to two thirds of the way
   // up toward the face; the rest barely past the wrist; drawn last for the same reason
   if (P.marks && rnd() < P.marks) G.marks = rnd() < .125 ? .2 + .45 * rnd() : .06 * rnd();
+  // the hurt (Session 1079; OG-001's extras strip asks for the disabled, an eyepatch and scars, in every town): an old cut across one
+  // eye on one man in fourteen and one woman in forty, of every people; one in four of those lost the eye and wears a patch over it,
+  // in black or brown leather; drawn last for the same reason
+  if (rnd() < (sx === 'f' ? .025 : .07)) { G.scar = rnd() < .5 ? 'L' : 'R'; if (rnd() < .25) { D.eyepatch = pick([[.11, .095, .085], [.24, .15, .09]]); D.eyepatchSide = G.scar; } }
   return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)

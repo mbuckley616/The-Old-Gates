@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap' };
+const GLABEL = { eyepatch: 'eyepatch', sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -150,6 +150,10 @@ function buildPanel() {
   // the mail made as a scale cuirass (Session 1058, OG-044's Compact guards): bronze scales, short sleeves, to the top of the thigh
   { const sc = el('input', { type: 'checkbox', checked: !!D().scales, onchange: () => { D().scales = sc.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, el('label', {}, sc, ' the mail made of scales (a cuirass)'))); inputs.scales = () => sc.checked = !!D().scales; }
+  // the hurt (Session 1079, OG-001's extras): an old scar across one eye, and the eyepatch's side
+  { const sc = el('select', {}, ...[['', 'no scar'], ['L', 'scar over the left eye'], ['R', 'scar over the right eye']].map(([v, t]) => el('option', { value: v, textContent: t }))); sc.value = G.scar || ''; sc.onchange = () => { G.scar = sc.value || null; schedule(); };
+    const ps = el('select', {}, ...[['L', 'patch on the left'], ['R', 'patch on the right']].map(([v, t]) => el('option', { value: v, textContent: t }))); ps.value = D().eyepatchSide || 'L'; ps.onchange = () => { D().eyepatchSide = ps.value; schedule(); };
+    panel.append(el('div', { className: 'bar' }, sc, ps)); inputs.scar = () => { sc.value = G.scar || ''; ps.value = D().eyepatchSide || 'L'; }; }
   // the head-wrap tied as a Gatelander's headscarf (Session 1029): its point and knot down the back
   { const sf = el('input', { type: 'checkbox', checked: !!D().scarf, onchange: () => { D().scarf = sf.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, el('label', {}, sf, ' head-wrap tied as a headscarf'))); inputs.scarf = () => sf.checked = !!D().scarf; }
@@ -217,7 +221,7 @@ function peoplesSheet() {
 (SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
-    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); }
+    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); }
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;
   // a creature walks on the spot in its gait (the bestiary's step, with the body kept where it stands); a person is still
   let t0 = performance.now();

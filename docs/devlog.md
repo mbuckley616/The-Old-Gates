@@ -23555,3 +23555,40 @@ A fix made during the session, to the check itself: the first version read its c
 - **The band is still flat in the geometry.** It is drawn, not modelled, so the outline of the hem is smooth, and from the side the binding has no thickness. At play distance it reads as a dark edge; close up it is a painted band.
 - **The neck band sits right on the tunic's collar.** On the guard the tunic's blue shows 1 to 2 cm above it. A real collar would stand up a little round the neck.
 - **The colour is one brown for every cuirass.** A red or blue binding could mark the Compact's colours, if the guards want one more note of them.
+
+## v80 — Session 1079 — The hurt: a scar across the eye and an eyepatch (L1, prototype only)
+Backlog L1's "children, the old and the hurt in towns" asks, from OG-001's extras strip, for "the disabled (an eyepatch, scars)", and from OG-065 for Garrick, scarred. The kit had neither: every face it made was whole. This session builds both in the builder. The sheets draw them and the backlog names them, so it chooses nothing new and asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **The scar** (`G.scar`, `'L'` or `'R'`; `scarLine`, `scarSkin`). It is an old cut from 3.4 cm over the eye's middle, down across the lid, to 3.8 cm under it on the cheek, leaning out by 1.5 cm. It is widest (4.8 mm) a little above its middle and tapers to its ends, and its edges waver by noise. Healed tissue is paler and pinker than the skin, a little shiny (roughness 0.36) and raised, with a puckered margin a shade darker. The stitches' marks cross it faintly every 6 mm. It is drawn in the skin's shader on the rest face, so every face the morphs make carries it in the same place, with no new triangles. It composes with the Old Blood's marks (Session 1052) on the same material. The brows grow no hair within 2.8 mm of its line, so it cuts a gap in the brow.
+- **The eyepatch** (`D.eyepatch`, a leather colour, and `D.eyepatchSide`; `buildEyepatch`). An oval of leather 5 by 3.8 cm on a man, 4.6 by 3.5 on a woman, over the lost eye. The face under it is read by rays straight in onto the morphed face. The leather spans the socket as a stiff patch does: its middle stands 1.5 mm off the face's highest points within 7 mm, smoothed, and it comes down to 1 mm off the skin at its edge, where a rim 2.5 mm deep closes it to the face. Its face is drawn in a canvas: grain, a rolled edge and a stitch line 4 mm in. The lost eye's ball is not built. 3,184 tris with the cord.
+- **The cord.** It is one loop in a plane through the patch's inner top corner, its outer edge and a point over the far temple. So it rises across the forehead over the far brow, runs back over the near ear, and goes round the back of the head over the hair. All the way round the plane, it lies 0.4 mm off the outermost of the skin, the scalp, the hair, the brows and the patch. Both pieces are carried rigid by the head bone.
+- **The roll.** It is drawn last, so every earlier roll of a seed is as it was. An old cut across one eye goes on one man in fourteen and one woman in forty, of every people. One in four of those lost the eye and wears a patch over it, in black or brown leather.
+- **The genome.** It saves `scar: 'L'` beside the marks, and the patch with the dress; a whole face saves neither.
+- **The builder page.** A select for the scar's side and the patch's side, and the eyepatch's colour among the garments; `?scar=L` in the address.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 437 checks pass** (432 after Session 1068; 5 new). Every earlier check passes unchanged.
+- **The patch on four heads**, either side (a Gatelander man with short hair, an Aurennais woman with loose hair, a Markman with a bun, an Old Blood woman with a braid):
+  - Inside its edge it is at least 1.3 to 1.5 mm off the face.
+  - No point of the face is in front of it, and one eyeball is built.
+- **The cord** passes through none of the skin, the scalp, the brows or the patch (0 points on all four).
+  - It crosses the forehead 2.6 to 2.8 cm above the far eye's middle, in a plane leaning 15.6 to 17 degrees.
+- **The scar**, rendered close on the face against the same man without it:
+  - It changes 0.76% (left) and 1.39% (right) of the view.
+  - It is lighter by 17.8 and 13.1 levels and warmer (red 68 and 66 levels over blue).
+  - Each lands on its own side, and the view renders the same twice.
+  - The brows leave out 77 to 115 roots on its line.
+- **Saving:** the scar, the patch and its side save and load back; a genome without them saves none.
+- **The roll:** over 320 people of the four peoples, 11 of 149 men and 4 of 171 women are scarred. Four of them wear a patch, each over the scarred eye.
+- **Pictures** (`--shots=hurt`):
+  - `builder-hurt-patch.jpg`, `-patch-side.jpg` and `-patch-back.jpg`: a scarred Markman in a black patch, from the front, the near side and the back.
+  - `builder-hurt-patch-woman.jpg`: an Aurennais woman in a brown one.
+  - `builder-hurt-scar.jpg` and `builder-hurt-scar-man.jpg`: the scar alone.
+
+### Needs eyes
+- **The patch is stiff and flat-black at a distance.** Its grain and stitch line read only close up. A patch of worn leather might want a faint sheen along its dome.
+- **The cord rides over the hair as a plane loop.** Where short hair's cards stand out at the back, it stands off them up to a few millimetres. It does not press the hair down.
+- **One scar only.** Garrick and the veterans could want others: a cheek cut, a split lip, a notched ear. Each would be the same kind of line in the skin's shader.
+- **Under a raised hood, a helm or a head-wrap** the cord is simply inside them. Nothing checks it there.
+- **The rest of the item:** children and the old (OG-081, OG-001), and Garrick's wheeled chair, are still owed.
