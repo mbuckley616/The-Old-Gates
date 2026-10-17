@@ -22906,3 +22906,123 @@ Corrections made during the session:
 - **Nobody tends it.** The colliers are the bodies builder's, and the camp's people are the quest writer's to name.
 - **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
 - **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
+
+## v80 — Session 1021 — The Gatelands' merchants' halt (card F8, prototype only)
+The freeze for F3 (#381) is still open, so this run kept to the prototypes. Backlog L10's *Off the road* (OG-124) still had four camps on the roads; the charcoal burners' came first (Session 1016), and this session builds the merchants'. OG-124's panel 4 shows it as covered waggons drawn up under trees with a fire. It is `gatelandsMerchantCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=merchants`.
+
+The precedents are the carriers' tilt waggons of the old roads, which stood the night on a green by water rather than pay for an inn's yard, and the drovers' stances on the Highland roads: a green by a ford, a fire, the beasts on a line. The chapman's trestle under a canvas fly at a fair green is the third. The halt is built at true size on a green that rises at 1 in 20 from a road, with a stream crossing the road:
+- **Two tilt waggons:** each bed is 3.6 by 1.4 m, on wheels of 0.72 m behind and 0.52 m before, twelve and ten spokes with iron tyres. Five hoops carry a canvas tilt to 2.8 m at the crown, and the shafts rest on the grass ahead. The first is drawn up along the road with sacks and crates in its bed; the second is turned in behind the fire. Each wheel is set on the ground under it, so the axles follow the slope.
+- **The stall:** a canvas fly is laced along the first waggon's tilt and carried 3 m out on two poles, each guyed to a peg at 45 degrees away from the way in. Under it are two trestles, one of cloth bolts in madder, woad and weld in two courses, one of five crocks and jugs and a small iron-bound chest. A lantern hangs on the right pole.
+- **The fire:** a ring of stones and embers, a crane of two forked irons and a bar, a pot on its hook, two seat logs, and a thin smoke.
+- **The tent:** a ridge tent 2.6 by 2.2 m with walls of 0.45 m and its ridge at 1.95 m. Its door faces the fire with the flaps tied back, and a bedroll and a chest are inside. The door's guy is a bridle to two pegs, so the way in is clear.
+- **The line:** a picket rope between two posts, 1.3 m at the posts, with hay and two buckets under it and a bale of fodder. The beasts are the bodies builder's.
+- **The goods:** four casks, five wool bales in rope bands (one laid across two) and three crates, stacked by the second waggon.
+- **The stream:** water 0.18 to 0.3 m deep in a gravel bed, 0.5 m or more under its banks. The road goes through it at a ford 0.19 m deep. Six stepping stones cross 2.6 m upstream of the road, and the west bank is eased to 1 in 4 at a watering place where the path comes down.
+- **Round it:** a thorn hedge along the road's far side with gaps, nine ash on the green's edge and seven alder by the water. Trodden paths run from the road into the stall, round the first waggon to the fire and the tent, and to the line and the water.
+- **The size:** 35,800 to 36,200 triangles in 20 meshes.
+
+The views are `camp` (from the road), `stall`, `fire`, `ford` and `far`, and `&dusk` gives the evening with the lantern and the fire lit.
+
+Corrections made during the session:
+- **Meshes.** The first build came to 22 meshes. The stepping stones and the fire's ring now share the stream bed's gravel, and the hedge shares the trees' leaf, which gives 20.
+- **The stream** first read as a black road from above, because its water was nearly black. It is now a grey-green that reads as water. Its strip is also wider than the channel, so no bare bed shows at the edges.
+- **The hay** first read as pumpkins under the thatch texture. It is now a plain straw colour. The collar on the bale read as a tyre and was taken off.
+- **The path to the tent** first came at the door from inside the tent: a sign was wrong, and the check found canvas over the walker's head. The door's single guy also crossed the way in at hip height, so it is now a bridle to two pegs.
+- **The top bale** first sat over the gap between two rows. It now lies across the two in the front row. The check's single ray fell through the gap between them, so it now casts three rays.
+- **The way down to the water** was a 1-in-2 bank, with steps of 0.3 m. The west bank is eased where the path comes down, and the worst step is now 0.17 m.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 185 of 185 pass** (176 after Session 1016). Nine checks are new. The halt's `camp` view and its `fire` view at dusk render with no page errors, and seven checks run over three keys:
+  - **The builds:** each key builds the same twice, with 35,768 to 36,208 triangles in 20 meshes and 16 trees. The waggons' 8 wheels are −0.002 to 0.001 m off the ground.
+  - **The stall:** there are 2.23 m or more under the fly before the tables and 2.32 m behind them. The fly is within 0.004 m of its poles' tops and 0.11 m off the tilt, and its pegs are within 0.03 m of the ground.
+  - **The tables:** their feet are within 0.002 m of the ground, and all 14 goods sit on a board (0 m).
+  - **The walk:** 85 half-metres from the road into the stall (3 under the fly), to the fire, into the tent (4 inside) and down to the water. There is ground under each, no step is over 0.17 m, and there is 0.69 m or more clear at the hip and the head (inside the tent, at the hip only). Nothing is over the head below 2.0 m (1.75 m in the tent).
+  - **The tent, the fire and the line:** the tent's door is 1.39 m wide at the hip, with 1.9 m to its ridge. The fire is 3.38 m off the paths, with the pot 0.27 m over the embers. The picket rope is 1.17 to 1.18 m over the ground at its lowest.
+  - **The stream:** it is 0.5 m or more under its banks and 0.18 to 0.3 m deep, with the road 0.19 m under it at the ford. The stepping stones' tops are 0.10 to 0.15 m over the water, with gaps of 0.26 m at most, and the end ones are 0.6 m or less from dry land.
+  - **The stack:** all 12 stacked goods are on the ground or on the one under them (within 0.02 m).
+- **Pictures:** `places-merchants-camp.jpg`, `-stall`, `-fire`, `-ford`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **Nobody keeps it.** The carriers, their beasts on the line and what they sell (and at what price) belong to the bodies builder, the quest writer and the systems builder.
+- **The tent's tied-back flaps** read as thin spikes at its door corners from some bearings. They want a rolled flap instead.
+- **The smoke and the stream are still,** the same want as the charcoal camp's and the falls': a moving-air and moving-water shader.
+- **The ash and alder are the kit's blob trees,** and the hedge is lumps of leaf.
+- **Still open in OG-124:** the hunters', pilgrims' and abandoned expedition's camps, and the small mysteries.
+
+## v80 — Session 1022 — The Mark's hunters' camp (card F8, prototype only)
+The freeze for F3 (#381) is still open. This session is the third of OG-124's road camps, after the charcoal burners' (1016) and the merchants' (1021), and the first in the Mark. OG-124's panel 4 lists "hunters" among its camps. It is `markHuntersCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=hunters`.
+
+The precedents are the autumn hunting camps of the northern fells. A party lived for a few weeks by a road into the hills in a tent of hides on a cone of poles; it is the shape every northern people used, from the Norse fell-booths to the reindeer herders'. They dried and smoked their meat on a pole rack over a slow fire, stretched hides on frames, and hung their kill from a pole between two trees. The camp is built at true size in birch and pine heath on a slope of 1 in 16, by a road:
+- **The tent:** 12 poles from a ring 4.8 m across cross at 3.4 m, each running 0.28 m past the middle. A cover of hides in five sewn courses rises to 2.85 m, leaving the smoke hole above. The door is a gap 1.2 m wide at the hip and 1.5 m high, facing the road, with the door hide rolled over it. Inside are a fire in a ring of stones and three hides of bedding round it, off the doorway. Smoke rises from the hole and leans east on a west wind.
+- **The rack:** four posts and two rails at 1.8 m, five cross-poles over them, and 25 strips of meat hung from them. A slow fire of green wood lies laid to smoulder under it, and its smoke rises through the strips.
+- **The hide frame:** a square of poles 1.8 m a side, leaning back 18 degrees on two props, with a hide laced into it on 20 thongs.
+- **The game pole:** lashed between two pines at 2.6 m, with a gambrel on a short rope from its middle and a tub under it. It is empty: the kill is the bodies builder's.
+- **The rest:** a woodpile of 91 billets against a granite boulder, a chopping stump with its axe, and a rack of three spears.
+- **The land:** heath of moss and heather tufts with 19 granite boulders, 14 pines and 22 birches going yellow. Trodden paths run from the road to the door and in, to the rack and on to the game pole, and to the frame and the wood.
+- **The size:** 24,600 to 24,800 triangles in 15 meshes, well under the 40,000 the camps are held to.
+
+The views are `camp` (from the road), `rack`, `tent`, `pole` and `far`, and `&dusk` gives the evening with the fires glowing.
+
+Corrections made during the session:
+- **The tent** was first 4.2 m across and 3.6 m high, a steep cone that read as a plains tipi. It is now broader and lower (4.8 m by 3.4 m), the fell-tent's shape.
+- **The ground** first read nearly black under the low autumn sun. The heath's moss is now lighter, and the track is lighter than the moss.
+- **The heather** first read as purple stones. It is now rust-brown, in smaller, rounder tufts, 220 of them.
+- **The birches' crowns** first came in four big mustard balls. They now come in seven smaller clusters of a duller yellow.
+- **The hide frame's** first placing formula had a dead term from an angled version, and was replaced by the straight one.
+- **Two of the check's** own measures needed fixing:
+  - The poles' crossing was first held to 0.5 m, though by design the tops lie 0.56 m apart; it is now held to 0.6 m.
+  - The door's check first printed the 99 m of a ray that met nothing; it now says that nothing is met from the door to the tent's middle.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 194 of 194 pass** (185 after Session 1021). Nine checks are new. The camp's `camp` view and its `rack` view at dusk render with no page errors, and seven checks run over three keys:
+  - **The builds:** each key builds the same twice, with 24,580 to 24,760 triangles in 15 meshes and 36 trees.
+  - **The tent:** its 12 poles' feet are 0.12 m in the ground, and their tops cross within 0.56 m. The cover is met −0.02 to 0.013 m off its cone at 28 points, and there are 3.49 m or more over the fire to the crossing.
+  - **The door:** it is open at the hip and at 1.4 m (nothing is met from the door to the tent's middle) and shut at 1.65 m (0 to 0.01 m). It is 1.22 to 1.25 m wide at the hip, and the smoke is 0.5 m or more over the cover.
+  - **The rack:** its posts are 0.3 m in the ground and their tops are level within 0 m. Every strip is 1.21 m or more over the embers, and 2 puffs of its smoke are among the strips.
+  - **The frame and the pole:** the hide frame's feet are 0.10 to 0.12 m in the ground. The game pole is met 0.057 to 0.064 m off both pines' bark, at 2.63 to 2.64 m over the ground at its middle.
+  - **The walk:** 74 half-metres, 5 of them at the door and inside. There is ground under each, no step is over 0.14 m, and there is 1.19 m or more clear at the hip and the head. Nothing is over the head below 2.0 m (1.45 m through the door and inside, stooped).
+  - **The woodpile:** all 91 billets are on the ground or the billets below (0.001 to 0.047 m).
+- **Pictures:** `places-hunters-camp.jpg`, `-rack`, `-tent`, `-pole`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **The tent's shape.** A cone of hides on poles is common to every northern people, and the canon does not say how the Mark's hunters camp. If it should be a turf-walled booth or a canvas ridge tent instead, that is Michael's call and a short change.
+- **The meat strips are plain dark boxes.** At hand's reach they want a fibrous texture.
+- **Nobody hunts here.** The hunters, their dogs and their kill are the bodies builder's.
+- **The smoke is still,** as at the other camps.
+- **Still open in OG-124:** the pilgrims' rest, the abandoned expedition and the small mysteries.
+
+## v80 — Session 1023 — Aurenne's abandoned expedition (card F8, prototype only)
+The freeze for F3 (#381) is still open. This session is the fourth of OG-124's road camps and the first in Aurenne, after the Gatelands' charcoal burners' (1016) and merchants' (1021) camps and the Mark's hunters' (1022). OG-124's panel 4 ends its row of camps with "abandoned expedition". It is `aurenneExpedition` in `docs/prototypes/levelup/places.js`, at `places.html?place=expedition`.
+
+A party came up a hill road to dig at an old terrace and left in a hurry some weeks ago, and what they could not carry lies where it fell. What they found and why they ran is left to the quest writer, so nothing here says it: the camp is only the state of things. It is built at true size on a dry Aurenne hillside rising at 1 in 10 from a road. Olives, cypresses and maquis stand on dry grass with pale limestone breaking through (OG-124's "terraced coast… cypresses", with no Tuscan building in it):
+- **The camp's terrace:** cut level into the slope, its bank eased over 3 m.
+- **The tents:** a ridge tent still standing (2.6 by 2.1 m, its ridge at 1.91 m), its door flap torn and hanging half across the door. A second has fallen from its front pole: its ridge pole runs from the back pole's top down to the ground, with the canvas draped over it and spread on the grass, and the front pole lies in front.
+- **The fire:** cold, with ash and four burnt sticks in its ring of stones. The pot lies on its side beside it, and a stool is knocked over.
+- **The handcart:** down on its left side, resting on its right wheel and its axle end. The left wheel is off and lying flat. Of its three crates, one has burst, with its lid off and straw spilled.
+- **The litter:** a folding table on its side, a surveyor's tripod fallen with its instrument off, a lantern on its side, and nine papers on the ground, some held down by stones.
+- **The old terrace wall:** dry stone 0.8 to 1.3 m high along the slope, its courses laid from the ground in front up to the terrace behind. One stretch has fallen, with its stones down the slope. A gap lets the path go up a single ramp of about 1 in 2.8.
+- **The dig:** on the old terrace above the wall, a trench 6 by 1.5 m and 1.6 m deep with upright cut faces and a level floor. A ladder stands in it to 0.6 m over the lip. Its spoil is heaped uphill, with a pick and a shovel left standing in it, and a column drum lies on its lip at the west end.
+- **The size:** 27,700 to 27,800 triangles in 16 meshes.
+
+The views are `camp` (from the road), `tents`, `dig`, `cart` and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The spoil** was first heaped downhill of the trench, which put it on the old terrace wall. It is now uphill.
+- **The wall** first stood in a gully. The ground's fine band stopped short of it, so the step was drawn on a 1 m grid. The band now runs to it, and the wall's courses are now laid from the ground in front up to the terrace behind. Before that they were a fixed three courses, which stood 0.62 to 1.39 m out of the ground.
+- **The trench** was first cut through the ground grid's cells, so a sloped skirt of ground hung inside its walls (0.12 m inside at mid-depth). Its edges now lie on the grid's lines, its cells are left out, and it has a floor of its own; its walls are met on their lines (0 m). The walls were also first one-sided and invisible from inside.
+- **The cart** first stood on the edge of the camp terrace's bank, with a wheel 0.037 m off the ground. It now stands on the terrace.
+- **The path up** first met a step of 0.6 m: the old terrace's 0.9 m step, then a ramp of 1 in 1.4, then the camp terrace's bank. The bank is eased over 3 m now, and the gap is one ramp from the camp's terrace to the old one, so the worst step is 0.19 m. The path also first passed 0.3 m from the fallen tent's canvas; it now goes west of it.
+- **The fallen tent's check** first counted the canvas hanging from its back pole, at 1.5 m, against a bound of 1.0 m. It now reads the front half only.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 202 of 202 pass** (194 after Session 1022). Eight checks are new. The expedition's `camp` view and its `dig` view at dusk render with no page errors, and six checks run over three keys:
+  - **The builds:** each key builds the same twice, with 27,736 to 27,760 triangles in 16 meshes and 19 trees.
+  - **The tents:** the standing tent's walls are met at their feet at all 6 points, with 1.91 m to its ridge. The fallen tent's canvas is 0.97 to 0.98 m at most over the ground over its front half.
+  - **The trench:** it is 1.6 m deep under its lowest lip, and its walls are met 0 m off their lines. The ladder's foot is on its floor (0 m), and its top is 0.6 m over the lip.
+  - **The cart and the fallen things:** the cart's standing wheel is 0.002 to 0.004 m off the ground and its loose wheel 0 m. All 11 fallen things lie −0.016 to 0.02 m off the ground.
+  - **The wall:** it is 0.77 to 1.29 m high at 17 points where it stands, and its gap is open on the path.
+  - **The walk:** 59 half-metres from the road up to the camp, the fire and the tent, and up through the gap to the trench. There is ground under each, no step is over 0.19 m, and there is 0.72 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-expedition-camp.jpg`, `-tents`, `-dig`, `-cart`, `-far` and `-camp-dusk`.
+### Needs eyes
+- **What they dug for and why they left.** The column drum is the only hint, and it belongs to the quest writer to name or to change. It may want a DECISION if the dig is to be a lead.
+- **The papers are blank.** If they carry a line, it is the quest writer's.
+- **The ground's texture** is blotchy at this sun. It is the kit's dry turf, as at the aqueduct, and it wants F3's ground.
+- **Still open in OG-124:** the pilgrims' rest, which wants the canon on whose pilgrims and to where, and the small mysteries.
