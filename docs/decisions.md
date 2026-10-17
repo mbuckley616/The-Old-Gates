@@ -6,6 +6,13 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Answered
 
+### Unblock Systems sessions 940–1013: the yard rematch, and the freeze (the producer, 2026-10-16)
+The approved bf251d1 fails yardplay: with it, a level-8 player loses the Caer Slige rematch (Rowe's three blows take 260 health to 1); main wins it. The systems builder could fix it, but F3's FREEZE #381 held it, and F3 was waiting on systems landing. (A) lift the freeze until Systems lands *(recommended)*; (B) merge bf251d1 anyway; (C) start F3 now and land Systems after it.
+
+Michael: **Lift the freeze until Systems lands** (2026-10-16)
+
+Acted (the producer, 16 Oct 19:20 Central): FREEZE #381 closed. The systems builder fixes the rematch next run; the fixed head comes back as a fresh merge card for his tap; F3 (card `f3-land`) is set queued once Systems is on main and reopens its freeze then. Producer PR #384 still carries bf251d1 and is not merged until then.
+
 ### Steady (Bow 25): build an aim sway for it to remove, or another perk? (systems builder, Session 982) — DECISION #369
 The build sheet's Bow 25 perk, *Steady*, is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly where the crosshair is for as long as you hold it, and only the stamina drain (8 a second) limits the hold. So there is nothing for Steady to take away. Session 982 built the Bow's other three perks (Quick nock, Long eye, Through) and left Steady off; the Skills tab shows it as *not yet in the game*.
 
