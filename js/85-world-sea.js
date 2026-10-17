@@ -557,9 +557,12 @@
     shipUpdatePlacement();
   }
   // Swimming: the water surface is the ground wherever the bed is deep.
-  const SWIM_Y=SEA_Y-.35;
-  function groundY(x,z){const h=worldH(x,z);if(h<SWIM_Y&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
-  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!SHIP.sailing&&worldH(px,pz)<SWIM_Y-.05&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
+  // S1084 (F2b, the water) — in metres for a 1.8 m body: you swim where the water is over 1.40 deep (chest-deep), and the
+  // swimmer's feet hang 1.45 under the surface, so the eye (SCALE.EYE_SWIM 1.65) rides 0.20 over it. They were 0.40 and 0.35,
+  // knee-deep. Water walking still holds you up wherever the water is over 0.35 deep (WALK_WATER), as it did.
+  const SWIM_DEPTH=1.40,SWIM_Y=SEA_Y-1.45,WALK_WATER=SEA_Y-.35;
+  function groundY(x,z){const h=worldH(x,z);if(h<WALK_WATER&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
+  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!SHIP.sailing&&worldH(px,pz)<SEA_Y-SWIM_DEPTH&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
   function onAnyPlatform(){for(const p of ZONES.world.platforms){if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-p.y)<1.2)return true;}return false;}
 
   // ═══ UNDER THE WATER (Session D) ═════════════════════════════════════
@@ -578,7 +581,7 @@
     const fwd=HELD_KEYS.KeyW,down=pitch<-.35,up=pitch>.35||HELD_KEYS.Space;
     let vy=0;
     if(fwd&&down)vy=-2.2;else if((fwd&&up)||HELD_KEYS.Space)vy=2.4;else if(!fwd)vy=.6; // buoyancy
-    DIVE.depth=Math.max(bed+.55,Math.min(SWIM_Y,DIVE.depth+vy*dt));
+    DIVE.depth=Math.min(SWIM_Y,Math.max(bed+.9,DIVE.depth+vy*dt)); /* S1084 (F2b) — a body lying in the water clears the bed by 0.90 (0.55), and never rises over the swimmer's line */
     const under=DIVE.depth<SWIM_Y-.15;
     if(under!==DIVE.under){DIVE.under=under;if(under)splash(false);}
     if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath')))DIVE.breath=Math.max(0,DIVE.breath-dt/breathSecs()); /* S976 — Long breath (Athletics 50) */if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}

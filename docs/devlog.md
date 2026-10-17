@@ -25048,3 +25048,48 @@ Corrections made during the session:
 - **Whether it goes down into the cliff is asked as DECISION #402.** The recommendation is a sea-stair inside the rock to a sea cave and landing, the "lower levels" OG-121's forts have.
 - **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
 - **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
+
+## v80 — Session 1084 — F2b, session 2, part 2: the water in metres (swim at 1.40, the eye 0.20 over it)
+F2b's second session (`docs/design/scale-numbers-build.md`, *Water*) has four parts left after the step; this is the water. You
+swam wherever the bed lay more than 0.40 under the sea, with the feet 0.35 under the surface (`SWIM_Y`). That was set for the old
+1.1 m body. On a 1.8 m person it is knee-deep, so you began swimming in water you could have waded. F2a had kept the swimmer's
+eye at the old 0.92 over the feet (`SCALE.EYE_SWIM`) so the surface stayed where it was until this session.
+
+**What changed** (`85-world-sea.js`, with one line each in `07-scale.js` and `54-thirdperson.js`):
+- **The swim begins at 1.40 m deep** (`SWIM_DEPTH`), chest-deep, and the feet hang 1.45 under the surface (`SWIM_Y`).
+- **The eye.** `EYE_SWIM` is now the standing eye, 1.65, so it rides 0.20 over the water, as the sheet asks. `cameraUnderwater`
+  already read the eye, so the camera goes under when a dive takes the feet 0.25 below the swimmer's line (0.52 before).
+- **Shallower water is waded.** Up to 1.40 m deep you walk on the bed, with no slowdown, which the sheet rules out. A bay you swam
+  across before, you now wade across.
+- **The diver** keeps 0.90 off the bed (0.55 before). The clamp is now taken in the other order, so the floor's clearance can
+  never lift a diver above the swimmer's line. With the deeper line and the larger clearance, a bed 1.75 to 2.35 m down used to be
+  able to raise you out of the swim.
+- **Water walking** still holds you on the surface wherever the water is over 0.35 deep (`WALK_WATER`), as it did. It is not left
+  to wade through 1.4 m of water under a spell that says you walk on it.
+- **The third-person body** sank by the swimmer's old line (`jumpY+.6`, which is 0.25 + 0.35). It now reads `SWIM_Y`, so its head
+  still clears the sea by a quarter metre. That is one expression in the bodies builder's file and does not change its look.
+
+**Unchanged.** A fish school is still reached within 1.6 of your feet. The feet sit 1.1 m lower at the surface, so deep schools are
+about a metre nearer and the shallow ones are as near as before. The nets, the sinking ship and the pirates all put a swimmer at
+`SWIM_Y` by name and follow the line.
+
+One suite re-measured: `pirateram` put its swimmer at the old `SEA_Y − .35`, above the new line, so it was no longer swimming. It
+now puts the swimmer at `SWIM_Y`. Its check is unchanged.
+### Verified (headless Chromium)
+- **`swimdepth`** (new), 10/10 in the old look and the new. The test walks down a shelving shore near the start, 84 m from dry land
+  to 3 m of water, through the game's own loop:
+  - At 0.91 m deep you wade: the feet are on the bed (0.06 behind it, the terrain follow's lag on the slope), the eye is 0.80 over
+    the water, and the camera is dry. You still wade at 1.38.
+  - The swim begins at 1.406 m deep, with the eye 0.24 over the water as it settles (0.20 once settled).
+  - In 5.5 m of water you hold at the line, 1.45 under. Looking down with W held, you dive: breath and the camera go under, and
+    the deepest you reach is 0.91 off the bed. Let go and you drift back up to the line and no higher, still swimming, with the
+    eye 0.20 over.
+- **Neighbours pass:** `netclimb`, `shipnets`, `shipwreck`, `blacksail`, `pirateram` (re-measured), `fishseed`, `perkbody`, `cloaks`
+  and `shark`.
+### Needs eyes
+- **Wading is new.** Coves, river mouths and the shallows off a quay that used to be swum are now walked, with the water at the
+  chest. Nothing slows you, which is the sheet's rule, but it may read oddly with no splash or wake. The splash and the wake are
+  the look builder's, if wanted.
+- **The swimming body in third person** puts its head a quarter metre over the water, and the camera's eye sits at 0.20. Worth a
+  look from behind on both looks.
+- **Owed from session 2:** touch at 1.6, the wheel, and the indoor sight line.

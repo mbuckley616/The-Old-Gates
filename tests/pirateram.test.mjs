@@ -16,7 +16,7 @@ check('open sea found', !!sea, sea);
 const run = (T, v, opts = {}) => page.evaluate(([T, v, opts]) => {
   for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
   worldState.ship = { cls: 'sloop', name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; WORLD.spawnShip(_sea.x, _sea.z, 0); const S = WORLD.ship; S.sailing = !opts.swim; S.speed = v;
-  if (opts.swim) { S.sailing = false; px = _sea.x + 20; pz = _sea.z; jumpY = WORLD.SEA_Y - .35; }
+  if (opts.swim) { S.sailing = false; px = _sea.x + 20; pz = _sea.z; jumpY = SWIM_Y; /* S1084 (F2b): the swimmer's line, 1.45 under the sea */ }
   WORLD.tick(1 / 60, performance.now());
   const o = WORLD.spawnOtherShip('pirate', S.x + 29, S.z); o.yaw = 0; o.speed = 6.5; o.volleyT = 1e9;
   const ev = []; let t = 0, hull = WORLD.shipBars().hull, wasRamming = false, minD = 1e9, runs = 0;
