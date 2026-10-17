@@ -1939,6 +1939,7 @@ const giver=`${lord.title} ${lord.name}`;
   }
   function tickVarek(dt){
     tickRoadsWalked(dt);
+    if(worldState.knowing){tickVarekFields();return;} /* S1030 — after the open ending he is only seen, at a distance */
     if(activeZoneId!=='world')return;
     if(worldState.story&&(worldState.story.step==='ashfeld'||worldState.story.step==='root'))return;
     const kind=varekDue();
@@ -1950,6 +1951,50 @@ const giver=`${lord.title} ${lord.name}`;
     if(!vstate().hinted||vstate().hinted!==kind){vstate().hinted=kind;showMsg('Someone is standing at the field, looking out.','#a0a8c0');}
   }
   function removeVarek(){if(!VX.npc)return;const n=VX.npc;sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);VX.npc=null;}
+  // S1030 — *Back to Their Bread* (the approved draft): after the open ending (`worldState.knowing`), once in a long while a
+  // townsperson says one of the three descriptions (canon §4.2) and goes back to their work. At most once a game-week, then one
+  // greeting in six, rolled from a stream keyed by the person and the game hour. *Dies* needs a death on record, *shortest road*
+  // the short road; *returns* is always open. No log, no topic: the greeting is the whole of it.
+  const KNOWING_LINES={
+    gatelander:{returns:"My grandmother had a song about the one who returns. She’d sing it at the churn and stop before the last verse, every time, and I never thought to ask her why. You put me in mind of it, coming in that door. Well. The butter won’t wait on a song.",
+      road:"There’s a line cut on the old stone by the ford: the one who walks the shortest road. I’ve passed it every day of my life and never once wondered who it meant till now. Weaver keep you. I’ve bread in the oven.",
+      dies:"They had a saying in the hills, my mother’s people: the one who dies and does not. A word for the stubborn, I always took it. You’d know better than I would, maybe. There now, the dough’s risen while I stood talking."},
+    markman:{returns:"Old word in the valleys. The one who returns. My father said it of men who came back from the strait. Not many. He’d have said it of you, {nick}. Right. That wood won’t split itself.",
+      road:"The one who walks the shortest road. Cut on the cairns up the pass. Nobody knows who for. You’ve the look of it, {nick}. Aye, well. The forge wants feeding.",
+      dies:"My grandmother had a saying. The one who dies and does not. She used it on cats. By iron, I’d use it on you. Off you go, {nick}. I’ve hides to scrape."},
+    aurennais:{returns:"Forgive me, Master. There is a phrase in the old songs, the one who returns, and the Church reads it as the dead. I find the Church’s reading less persuasive this morning than I did yesterday. I make no claim by it, and I would ask you not to repeat it. Now, if you will excuse me, the ledger closes at noon.",
+      road:"The old carvings speak of one who walks the shortest road, Master. The Church holds it to be a figure for death, which takes everyone by the shortest road. I have always accepted that reading. I accept it still, with a reservation I would not care to put in writing. Good day. The bread is owed at the Prior’s by the bell.",
+      dies:"Master, the old songs have a line about the one who dies and does not. My tutor at the academy called it an error of transcription. I have no grounds to doubt my tutor. I note only that you put me in mind of it, and that I cannot account for why. The salt will not weigh itself."},
+    oldblood:{returns:"An té a fhilleann. The one who returns. My mother had the words. Not the reason. The fire wants turf.",
+      road:"An bóthar is giorra. The shortest road. You walked it here. Go on. I have bread rising.",
+      dies:"An té a fhaigheann bás, agus nach bhfaigheann. The one who dies, and does not. Old words. I do not know who they were for. Sit, if you like. I am busy."}};
+  const KNOWING_WEEK=7*1440;
+  function knowingGreet(def){
+    if(!worldState.knowing||!def||def.authored||!def._siteId||def.name==='Varek'||def.role==='Guard'||def.nameKey==='lord')return null;
+    if(typeof GUILD_DEF!=='undefined'&&Object.values(GUILD_DEF).some(g=>g.role===def.role))return null;
+    const v=vstate(),now=worldState.gameTimeAbsMinutes||0;if(v.told!=null&&now-v.told<KNOWING_WEEK)return null;
+    const r=seededRng('knowing',def._siteId+':'+def.name+':'+Math.floor(now/60));if(r()>=1/6)return null;
+    const open=['returns'];if(v.shortRoad)open.push('road');if((v.deaths||0)>=1)open.push('dies');
+    const L=KNOWING_LINES[def.people]||KNOWING_LINES.gatelander;const line=L[open[Math.floor(r()*open.length)]];
+    v.told=now;return line.replace(/\{nick\}/g,duelNick());}
+  // Varek at a distance, at the fields (the draft's §2): within 420 of the nation's field, ten game-days since he was last seen
+  // there, he stands 90 off toward the field and does not move or speak; at 40 he is gone, and the grass springs back.
+  const VFLD={npc:null,site:null};
+  function removeFieldVarek(){if(!VFLD.npc)return;const n=VFLD.npc;sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);VFLD.npc=null;VFLD.site=null;}
+  function tickVarekFields(){
+    if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())){removeFieldVarek();return;}
+    if(VFLD.npc){const n=VFLD.npc,f=VFLD.site;
+      if(Math.hypot(px-n.g.position.x,pz-n.g.position.z)<40){removeFieldVarek();showMsg('Where he stood, the grass is pressed flat, and springing back.','#a0a8c0');}
+      else if(Math.hypot(px-f.x,pz-f.z)>420)removeFieldVarek();
+      return;}
+    const nk=nationKeyOf(...cellOf(px,pz));const f=fieldFor(nk);if(!f)return;
+    const D=Math.hypot(px-f.x,pz-f.z);if(D>420)return;
+    const v=vstate(),seen=v.fieldSeen||(v.fieldSeen={}),now=worldState.gameTimeAbsMinutes||0;
+    if(seen[f.id]!=null&&now-seen[f.id]<10*1440)return;
+    const ux=D>.01?(f.x-px)/D:1,uz=D>.01?(f.z-pz)/D:0,x=px+ux*90,z=pz+uz*90;
+    const def={name:'Varek',role:'',ico:'✒',authored:true,people:'oldblood',sCol:0xd0c8c4,hairCol:0x0e0c0c,bodyScale:[.92,.96,.92],bCol:0x2a2a30,x,z,greeting:[''],topics:[]};def.temper='weary';
+    const n=spawnNPC(def,Math.atan2(px-x,pz-z),true);n.sched={type:'lost'};n.g.position.set(x,worldH(x,z),z);VFLD.npc=n;VFLD.site=f;seen[f.id]=now;
+    showMsg('Far off across the field, someone is standing, looking out.','#a0a8c0');}
   function varekTalked(){if(VX.npc&&VX.kind){vstate().done[VX.kind]=1;if(typeof addLog==='function')addLog('✒',`Varek, at ${VX.site.name}: ${VX.kind==='returns'?'he watched you die and come back':VX.kind==='breath'?'he felt the world stop while you were gone':VX.kind==='map'?'he knows you took the shortest road':'he knows you went below the church'}.`);}}
   // ── the Guest's chapel: under the cathedral of Aurenne's capital ──
   // S152 — solved once over the whole grid, in grid order: it used to walk only the cells generated so far,
