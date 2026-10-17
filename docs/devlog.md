@@ -23067,8 +23067,8 @@ Corrections made during the session:
 - **The thongs** are two lines on the flat top, with no knot and no ends.
 - **Still owed in L1:** the coins on the head-wrap's edge, which need OG-056's full image; the Gatelanders' headscarves and baskets.
 
-## v80 — Session 1027 — The Gatelanders' headscarves (L1 and B2, prototype only)
-No FREEZE is open, but F4 has not merged, so the bodies stay in the prototypes. Session 1024 left two pieces of the Gatelanders' dress unbuilt: headscarves and baskets. This session builds the headscarf. OG-048 draws "a woman in a patterned headscarf" and OG-059 "headscarves on women". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+## v80 — Session 1029 — The Gatelanders' headscarves (L1 and B2, prototype only)
+Numbered 1029: the systems builder's Sessions 1027 and 1028 reached its branch during this run. No FREEZE is open, but F4 has not merged, so the bodies stay in the prototypes. Session 1024 left two pieces of the Gatelanders' dress unbuilt: headscarves and baskets. This session builds the headscarf. OG-048 draws "a woman in a patterned headscarf" and OG-059 "headscarves on women". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
 
 The headscarf is the Aurennais head-wrap (Session 994) tied another way: `D.scarf`. This keeps one garment colour, `wrap`, and one set of rules for the hair under it, which is tucked short as before. The thumbnails cannot show how the scarf is tied, so it is read as a kerchief folded corner to corner and knotted at the nape.
 

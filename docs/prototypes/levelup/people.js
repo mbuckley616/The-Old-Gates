@@ -122,7 +122,7 @@ function clothMat(color, kind = 'wool', o = {}) {
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vRN = normal; vB = aBase;');
     s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.band ? BAND : ''));
     if (o.band) s.fragmentShader = 'uniform vec3 bandC;\n' + s.fragmentShader;
-    // a block print (Session 1027, OG-048's patterned headscarf): sprigs in the print's own colour where the vertex's aPrint is 1
+    // a block print (Session 1029, OG-048's patterned headscarf): sprigs in the print's own colour where the vertex's aPrint is 1
     if (o.print) { s.uniforms.printC = { value: o.print }; s.vertexShader = 'attribute float aPrint; varying float vPr;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vPr = aPrint;');
       s.fragmentShader = 'uniform vec3 printC; varying float vPr;\n' + SPRIGS + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, printC * triTex(tW, ' + (o.scale ?? 22).toFixed(1) + '), printAt(vB, vRN) * vPr);'); }
     if (o.wind && o.wind.tie) { s.uniforms.tieC = { value: o.wind.tie }; s.fragmentShader = 'uniform vec3 tieC;\n' + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, '$1 ' + TIE(o.wind)); }
@@ -131,7 +131,7 @@ function clothMat(color, kind = 'wool', o = {}) {
   m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.print ? 'print' : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
   return m;
 }
-// the headscarf's print (Session 1027): a sprig of four round petals on a 2.4 cm grid, each row offset by half, read three ways off the
+// the headscarf's print (Session 1029): a sprig of four round petals on a 2.4 cm grid, each row offset by half, read three ways off the
 // rest position as the weave is; where a pixel holds more than a sprig or so it gives way to its average, so it does not shimmer far off
 const SPRIGS = `float sprigAt(vec2 p){ p *= 42.; p.x += .5 * mod(floor(p.y), 2.); vec2 f = fract(p) - .5; float a = fwidth(p.x) * .8 + .015, m = 0.;
   for (int k = 0; k < 4; k++) { float t = float(k) * 1.5708 + .4; m = max(m, 1. - smoothstep(.1 - a, .1 + a, length(f - .19 * vec2(cos(t), sin(t))))); } return m; }
@@ -904,7 +904,7 @@ function buildHoodUp(P, G, meshes) {
 // where it gathers the hair. Round its lower half lie five wound turns, each a roll of the cloth that runs higher at the front or at
 // the back than the one under it, so they cross over the brow and at the nape as a wrap's turns do. The lowest turn, along the edge,
 // takes the border's colour when there is one. Rigid, carried by the head bone as the helm is.
-// The Gatelanders' headscarf (Session 1027, L1; OG-048's woman in a patterned headscarf, OG-059's headscarves on women) is the same
+// The Gatelanders' headscarf (Session 1029, L1; OG-048's woman in a patterned headscarf, OG-059's headscarves on women) is the same
 // cloth tied another way (D.scarf): a kerchief folded corner to corner, its fold across the head 3 cm behind the hairline so the front
 // hair shows, over the tops of the ears and down to the nape, where its two corners are knotted over the third, which hangs down the
 // back (buildWrapTail). One folded edge in place of the five turns, and the cloth block-printed with sprigs when D.scarfPrint is set
@@ -964,7 +964,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
 // a radial map round the neck's middle: the furthest out of everything skinned near the upper back (the body, the tunic, the hair,
 // a mantle) and of what is carried rigid there (a sash, the wrap's own turns), in 72 directions and 1 cm bands. Folds open down
 // its length. Its last 2.5 cm takes the wrap's border colour, when there is one. Rigid, carried by the chest bone as the necklace is.
-// A headscarf's point (Session 1027, D.scarf) is laid the same way, down the middle of the back,
+// A headscarf's point (Session 1029, D.scarf) is laid the same way, down the middle of the back,
 // 9 cm wide under the knot narrowing to its corner 22 cm down (18 on a man), its two edges in the border's colour, printed as the scarf is. The other two
 // corners are knotted over it at the nape, a lump of cloth with two short ends 5.5 cm long lying on the point
 function buildWrapTail(G, body, byName, meshes, root) {
@@ -2115,7 +2115,7 @@ export function makePerson(G, o = {}) {
   let laceStats = null; if (D.bodice) { root.updateMatrixWorld(true); const L = buildLacing(G, meshes); for (const m of L.meshes) root.add(m); laceStats = L.stats; }
   let cordStats = null; if (D.cord) { root.updateMatrixWorld(true); const C = buildCord(G, body, meshes); for (const m of C.meshes) root.add(m); cordStats = C.stats; if (D.robe && o.robeStats !== false) Object.assign(cordStats, robeStats(body, meshes)); }
   // the head-wrap's tail (Session 1018), on the back over everything there, before the necklace that lies over it; never under a cloak
-  // and a headscarf's point and knot (Session 1027), the same way
+  // and a headscarf's point and knot (Session 1029), the same way
   let tailStats = null; if ((D.wrapTail || D.scarf) && wrapStats && !D.cloak) tailStats = buildWrapTail(G, body, byName, meshes, root)?.stats ?? null;
   // the coin necklace (Session 1003), over everything at the neck but a cloak, which hangs over it; none under a raised hood
   let neckStats = null; if (D.necklace && !(D.cloak && D.hood === 'up')) { root.updateMatrixWorld(true); neckStats = buildNecklace(G, body, byName, meshes, root).stats; }
@@ -2243,7 +2243,7 @@ export function peopleGenome(rnd, people, g, o = {}) {
   if (P.wrapTail && D.wrap && !D.cloak && rnd() < P.wrapTail[sx === 'f' ? 0 : 1]) D.wrapTail = rnd() < .7 ? 'L' : 'R';
   // the Gatelanders' leg wraps (Session 1021, OG-048 and OG-059), on men in trousers and boots, in undyed, brown, moss or grey wool, drawn last for the same reason
   if (P.legWraps && D.trousers && D.boots && rnd() < P.legWraps[sx === 'f' ? 0 : 1]) D.legWraps = pick([[.62, .58, .5], [.45, .38, .3], [.3, .36, .22], [.42, .42, .4]]);
-  // the Gatelanders' headscarves (Session 1027, OG-048 and OG-059: on women), never under a cloak or a helm, in madder, moss, sea blue,
+  // the Gatelanders' headscarves (Session 1029, OG-048 and OG-059: on women), never under a cloak or a helm, in madder, moss, sea blue,
   // ochre or undyed wool; seven in ten block-printed in a colour not the field's, half with a red border; drawn last for the same reason
   if (P.scarf && !D.cloak && !D.helm && rnd() < P.scarf[sx === 'f' ? 0 : 1]) { const F = [[.45, .16, .12], [.3, .36, .22], [.2, .3, .4], [.6, .46, .2], [.8, .76, .66]], k = Math.floor(rnd() * F.length); D.wrap = F[k]; D.scarf = true;
     if (rnd() < .7) D.scarfPrint = k === 4 ? pick([[.5, .14, .1], [.2, .3, .4]]) : pick([[.86, .82, .7], [.8, .62, .3]]); if (rnd() < .5) D.wrapBorder = k === 0 ? [.8, .62, .3] : [.55, .14, .1]; }

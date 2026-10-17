@@ -145,7 +145,7 @@ function buildPanel() {
     colour(GLABEL[k] || k, () => D()[k], v => { last = v; if (on.checked) D()[k] = v; }, on); }
   { const sk = el('select', {}, el('option', { value: '', textContent: 'none' }), el('option', { value: 'short', textContent: 'short' }), el('option', { value: 'long', textContent: 'long' })); sk.value = D().skirt || ''; sk.onchange = () => { D().skirt = sk.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'skirt' }), sk, el('span'))); inputs.skirt = () => sk.value = D().skirt || ''; }
-  // the head-wrap tied as a Gatelander's headscarf (Session 1027): its point and knot down the back
+  // the head-wrap tied as a Gatelander's headscarf (Session 1029): its point and knot down the back
   { const sf = el('input', { type: 'checkbox', checked: !!D().scarf, onchange: () => { D().scarf = sf.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, el('label', {}, sf, ' head-wrap tied as a headscarf'))); inputs.scarf = () => sf.checked = !!D().scarf; }
   { const tb = el('input', { type: 'checkbox', checked: !!D().turban, onchange: () => { D().turban = tb.checked; schedule(); } }); const tl = el('select', {}, ...[['', 'no tail'], ['L', 'tail on the left'], ['R', 'tail on the right']].map(([v, t]) => el('option', { value: v, textContent: t }))); tl.value = D().wrapTail || ''; tl.onchange = () => { D().wrapTail = tl.value || null; schedule(); };
