@@ -4,6 +4,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
+The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
+- **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.
+- **The kit's houses** were drawn at true size: a cottage is 9.6 by 5.4 m, a townhouse 6.4 by 9 m, a merchant's house 8.4 by 9 m and a farmhouse 10.5 by 6.2 m. That is 1.7 to 2.5 times a lot's floor.
+
+How should a town's lots and the kit's houses meet?
+- **A. The lots take the house's size on the new look** (recommended). The generator picks the plan first (a cottage in a village, a townhouse or a merchant's house in a town, by `PKIT.gl.lot`) and gives the lot that plan's width and depth. The door, the solids, the footpath and the resident's place follow from the lot as they do today. A town's pad holds fewer houses, so about a third fewer residents, unless the pad grows. The old look keeps today's layout until F14 retires it. The houses stay as drawn and checked: people are the measure.
+- **B. The houses take the lot's size.** The plans gain a width and depth and lay their windows out by bays: a 6 by 5 m lot is a two-bay cottage. Both looks keep the same layout and the same people. The houses are smaller than drawn, and every plan's openings have to be redone and rechecked in the prototype first, which is about a session per plan.
+- **C. Both:** the plans laid out by bays (as B), and the lots widened to whole bays (5 to 7 m becomes 6 to 10). This is the most work, and the layout changes in both looks.
+
+The picture is the kit's street standing in the game: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-street-ingame.png
+
 ## Answered
 
 ### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
