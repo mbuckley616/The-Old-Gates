@@ -23807,7 +23807,7 @@ Each was the Oblivion failure in small. A level-20 alchemist met orbs of 38 to 4
 ### Needs eyes
 - Whether the traps should take the tier too: a spike plate at level 20 is 24 to 31, in any crypt. That is a rule of play for Michael, so I have put it in the backlog, not changed it.
 
-## v80 — Session 1041 — `fistfight`'s trained range under the light chain (a CI fix; a correction to Session 1013)
+## v80 — Session 1042 — `fistfight`'s trained range under the light chain (a CI fix; a correction to Session 1013)
 CI failed `fistfight` twice on `57028d3`. On the first try, Hand-to-hand 100 killed the Bandit in 6, 6 and 7 punches, where the suite wants 7 to 12. This is a correction to Session 1013. That merge kept our range for the trained fists and set aside main's re-measure (6 to 11), on the grounds that our checks still passed here. Main's resolver lands every third light swing of a chain ×1.3. On CI's slower runner the chain holds more often, and 6 is within what main had measured. The trained check now reads 6–11, main's figure, and the untrained 15–28 is unchanged. The Bandit's 25 health is the same in every run, so the danger tier (Session 1034) is not the cause.
 
 The retry failed another way: two of its fights never began, at 0 punches in 40 s. That is the runner's timing, not a number, and it is noted for QA.
