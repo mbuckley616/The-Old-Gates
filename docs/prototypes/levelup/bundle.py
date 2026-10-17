@@ -23,6 +23,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     if use_common:
         s = scene(src)
         if "from './creatures.js'" in s: s = kit(s)
+        if "from './implements.js'" in s: s = implkit(s)
         imps = re.findall(r"^import .*;$", s, flags=re.M); body = re.sub(r"^import .*;\n", '', s, flags=re.M)
         allimps = list(dict.fromkeys(imports_c + imps)); code = '\n'.join(allimps) + '\n' + common_body + '\n' + body
     else: code = src
@@ -47,7 +48,19 @@ build('creature.html', 'One creature', 'One creature walking: change the plan, t
 build('gatelands-pieces.html', 'Gatelands building pieces', 'The Gatelands’ buildings as pieces (F6): a town street running out to its cottages. ?mix=a|b|c, &cam=eye|high|cottage|town. Drag to look.', 'pieces-gatelands.js', True, '?view=street&mix=a')
 build('gatelands-plans.html', 'Gatelands plans in a row', 'Six Gatelands plans at true size, a person at each door. Drag to look.', 'pieces-gatelands.js', True, '?view=line')
 build('gatelands-kit.html', 'Gatelands pieces, one by one', 'The Gatelands pieces one by one beside a person. Drag to look.', 'pieces-gatelands.js', True, '?view=kit')
+# the schools' implements (concept, 16 Oct 2026): implements.js goes in as one closure, as the creature kit does, its common.js
+# import dropped (common.js is inlined already)
+def implkit(s):
+    src = open(os.path.join(here, 'implements.js'), encoding='utf-8').read()
+    names = re.findall(r"^export (?:const|function) (\w+)", src, flags=re.M)
+    imps = [i for i in re.findall(r"^import .*;$", src, flags=re.M) if "./common.js" not in i]; body = re.sub(r"^import .*;\n", '', strip_common(src), flags=re.M)
+    m = re.search(r"^import \{([^}]*)\} from './implements.js';\n", s, flags=re.M)
+    wrapped = '\n'.join(imps) + '\nconst IK = (() => {\n' + body + '\nreturn { ' + ', '.join(names) + ' };\n})();\nconst {' + m.group(1) + '} = IK;\n'
+    return s[:m.start()] + wrapped + s[m.end():]
 build('gates-six.html', 'The six great gates', 'The six schools’ great gates (F5): one skeleton, the outer arch 100 m high, dressed by school. ?school=tine|uisce|cloch|scath|solas|gaoth &cam=wide|far|foot|scale. Drag to look.', 'gates.js', True, '?school=tine&cam=wide')
+build('implements-schools.html', 'The schools’ implements', 'The six schools’ magical implements (L7, OG-094): a staff, a hand piece, a focus and a tome each. &cam=wide|tine|uisce|cloch|scath|solas|gaoth. Drag to look.', 'implements-view.js', True, '?view=schools')
+build('implements-islands.html', 'Staffs by island', 'The common staff in each island’s make, the school in its stone; each rack holds the six schools. Drag to look.', 'implements-view.js', True, '?view=islands')
+build('implements-hand.html', 'Staffs in hand', 'A Gatelander, a Markman and an Aurennais with a staff in the fist. ?tier=island|school. Drag to look.', 'implements-view.js', True, '?view=hand&tier=school')
 # the HUD in the new look (concept, 15 Oct 2026): the slice's scene, then hud.js in place of its dynamic import, the
 # approved kit's CSS, icons and fonts inlined (fonts from Google, the host allows no others)
 def hud(name, title, note, scene_src, query):
