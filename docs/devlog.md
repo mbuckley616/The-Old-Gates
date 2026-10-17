@@ -24196,3 +24196,21 @@ Two more of the sheet's rows.
 - **A guard now kills a level-1 character in about 13 seconds**, where before a new character could cut one down (48 health). Fleeing, paying and yielding are the answers. That is the sheet's intent, and it is the biggest felt change of the three sessions. If it is too much in play, the lever is `GUARD_TIER`.
 - **A late character outgrows the guard.** At level 20 he is 128 health where he was 200.
 - **Owed from the sheet:** the traps and the wyrm's fire at the tier's level, and the door's grade on the map. The loot and the hoard wait on #394. Then the quest writer's four danger lines.
+
+## v80 — Session 1061 — Enemies by place: the traps and the wyrm's fire at the tier's level (the designer's sheet, session 1, part 4)
+The traps and a wyrm's breath were the last things in a dungeon that grew with you:
+- a spike, 8–15 + 0.8 × your level;
+- a swinging blade, 10 + 1.2 × your level;
+- a wyrm's fire, 18 + 1.4 × your level.
+
+A spike on a coast crypt's first floor landed 24–31 on a level-20 character. Each now takes the tier's level of the floor you stand on (`trapTierLevel`, `tierHere`: the door's tier, one more below), as its foes do. Each sum is its own small function in `68-dungeon-misc.js` (`spikeTrapRaw`, `bladeTrapRaw`, `wyrmFireRaw`), so a suite reads the number the game uses. The spike's roll is still the trap's own seeded stream (S477). Armour, the block's ×0.4 on a blade and ×0.5 on fire, and Light foot are unchanged.
+### Verified (headless Chromium)
+- **`tiertrap`** (new), 7/7, with a door stood in at the coast's centre and at the Wastes':
+  - 400 spikes land 8–15 on a tier-1 floor and 16–23 on a tier-3 floor, as the sheet asks.
+  - The same 400 sum to 4,623 and 7,823 at level 1 and level 30 alike.
+  - A blade lands 11 on tier 1 and 23 on tier 3, and 17 on floor 2 of a tier-1 door (tier 2).
+  - A wyrm's fire is 19.4 at tier 1 and 33.4 at tier 3, before the block.
+- **Neighbours:** `trapseed`, `bladehit`, `swingblade`, `perkbody`, `wardall`, `lvact` and `dragonsize`.
+### Needs eyes
+- **A wyrm on the coast now breathes 19 a blast at any level.** Before, it breathed 46 at level 20. A wyrm's cavern is two grades up, but its fire is the tier's alone, so late in the game a coast wyrm's fire is soft beside its bite.
+- **Owed from the sheet:** the door's grade on the map's subtitle. The loot and the hoard wait on #394. Then the quest writer's four danger lines for *Anything dangerous nearby?*. The sheet's whole-world suites, `tierlevelfree` and `tiermainpath`, come with the last of these.

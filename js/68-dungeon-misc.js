@@ -216,6 +216,12 @@ function bladeTouches(t){let b=t.blade||t._bl;if(!b){for(const c of t.pivot.chil
   return false;}
 // S606 — a trap's hit rolls on its own stream (co-op rules): its id is the dungeon's seed, the floor and its place in the list
 // the seeded placement made, `<seed>:<floor>:trap:<n>`, given the first time it is sprung, as a foe's is (`keyFoe`)
+// S1061 — a trap and a wyrm's fire are the place's (the enemies-by-place sheet): their level term is the tier's level of the floor
+// you stand on (tierHere: the door's tier, +1 below), not yours. A spike lands 8–15 on a tier-1 floor and 16–23 on a tier-3 one.
+function trapTierLevel(){return tierLevel(tierHere());}
+function spikeTrapRaw(t){return 8+Math.floor(trapRand(t)*8)+Math.floor(trapTierLevel()*.8);}
+function bladeTrapRaw(){return 10+Math.floor(trapTierLevel()*1.2);}
+function wyrmFireRaw(){return 18+trapTierLevel()*1.4;}
 function trapRand(t){if(!t.rng){t.id=t.id||(((typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||1)+':'+(t.floor||1)+':trap:'+D_TRAPS.indexOf(t));t.rng=seededRng('trap',t.id);}return t.rng();}
 // S582 — the swinging blade across the passage (Michael's A on DECISION #170, the Session 573 prototype): a crescent of steel on an
 // iron arm hung from a bracket in the roof, its flat face to you as you come up the corridor, swinging from wall to wall with the
@@ -237,9 +243,9 @@ function buildSwingBlade(x,z,dir,r){const top=FLOOR_HEIGHT-.1,low=.95,L=top-low,
   return {kind:'blade',x,z,floor:1,pivot,blade,ph:r()*Math.PI*2,hitT:0};}
 function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||scene!==dScene)return;const gy=currentFloor===2?FLOOR2_Y:0;
   for(const t of D_TRAPS){if(t.floor!==currentFloor)continue;const d=Math.hypot(px-t.x,pz-t.z);
-    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3&&!lightFootNow()){ /* S976 — Light foot (Stealth 75) */t.armed=false;t.t=0;const dmg=_warded(8+Math.floor(trapRand(t)*8)+Math.floor(level*.8),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
+    if(t.kind==='spike'){if(t.armed&&d<.55&&Math.abs(jumpY-gy)<.3&&!lightFootNow()){ /* S976 — Light foot (Stealth 75) */t.armed=false;t.t=0;const dmg=_warded(spikeTrapRaw(t),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Spikes! ${dmg} damage.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.1,900);if(PHP<=0)playerDead();}
       if(!t.armed){t.t+=dt;const up=t.t<.8?Math.min(1,t.t*6):Math.max(0,1-(t.t-.8)*1.5);t.spikes.position.y=-.4+up*.42;if(t.t>3){t.armed=true;t.spikes.position.y=-.4;}}}
-    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round((10+Math.floor(level*1.2))*.4):10+Math.floor(level*1.2),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
+    else{t.ph+=dt*2.2;const a=Math.sin(t.ph)*.42;t.pivot.rotation.z=a;const bx=t.x+Math.sin(t.pivot.rotation.y)*0,bz=t.z;t.hitT-=dt;if(t.hitT<=0&&d<2.5&&bladeTouches(t)){t.hitT=1.2;const dmg=_warded(blocking?Math.round(bladeTrapRaw()*.4):bladeTrapRaw(),TRAP_SRC);PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`The blade catches you: ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.4,0,0,.08,1200);if(PHP<=0)playerDead();}}}}
 
 // ═══ v80 — DUNGEON FEEL: sounds, monster detail, exteriors, lockpicking ═══
 
@@ -596,7 +602,7 @@ function dragonBreath(e){const d=Math.hypot(e.x-px,e.z-pz);if(d>11)return;const 
     const l=new THREE.PointLight(0xff6020,2.5,12);l.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+1.5,e.z);sc.add(l);_BREATH.push({pts,vel,t:0,l,sc});
     try{sfxNoise(1.1,0,0,.35,1200);sfxTone(120,60,1.0,.2,'sawtooth');}catch(err){}
     const dx=px-e.x,dz=pz-e.z,dd=Math.hypot(dx,dz);const ta=Math.atan2(dx,dz);let diff=Math.abs(ta-ang);if(diff>Math.PI)diff=Math.PI*2-diff;
-    if(dd<10&&diff<.45){const dmg=_warded(Math.round((18+level*1.4)*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
+    if(dd<10&&diff<.45){const dmg=_warded(Math.round(wyrmFireRaw()*(blocking?.5:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;armourUse();updateHUD();showMsg(`Fire! ${dmg} damage.`,'#ff6040');if(PHP<=0)playerDead();}
     else showMsg('The fire misses you.','#c8e88a');},900);}
 function tickBreath(dt){for(let i=_BREATH.length-1;i>=0;i--){const b=_BREATH[i];b.t+=dt;const a=b.pts.geometry.attributes.position.array;for(let k=0;k<b.vel.length;k++){a[k*3]+=b.vel[k][0]*dt;a[k*3+1]+=b.vel[k][1]*dt;a[k*3+2]+=b.vel[k][2]*dt;b.vel[k][1]+=dt*.8;}b.pts.geometry.attributes.position.needsUpdate=true;b.pts.material.opacity=Math.max(0,.9-b.t*.9);b.l.intensity=Math.max(0,2.5-b.t*3);if(b.t>1.1){b.sc.remove(b.pts);b.sc.remove(b.l);_BREATH.splice(i,1);}}}
 function tickDragons(dt){const E=activeZoneId==='world'?(ZONES.world&&ZONES.world.enemies||[]):(typeof ENEMIES!=='undefined'?ENEMIES:[]);for(const e of E){if(e.dead||!e.dragon)continue;if(!e._dragonBuilt)detailDragon(e);
