@@ -22721,6 +22721,147 @@ Corrections made during the session:
 - **The cave goes 10 m and ends in a dark plane,** as the ice mouth's did. Joining it to the limestone cave (Session 872), whose lake lies under falls of its own, is for whoever places the two together.
 - **Off the road (OG-124) still lacks the camps on the roads.**
 
+## v80 — Session 1017 — The taller turban (L1 and B2, prototype only)
+Backlog L1 has owed "a taller turban" since Session 994 built the Aurennais head-wrap. OG-044 draws most of its Aurennais men in round, pale turbans that stand well above the head, and OG-093's sailors, OG-109's wardrobe matrix and OG-111's headwear row all have them; Session 994's wrap is a close cap over the skull, 6 cm over the brow line. This session winds the wrap up into a turban. The sheets draw it plainly and nothing in the canon is against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`. FREEZE #381 (F3, the land) is open, so nothing in `js/` was touched.
+
+What changed in `people.js` (`buildWrap`):
+- **A `turban` flag on the head-wrap** (it saves and loads; off by default, so every saved wrap is as it was). It is the same wrap on the same fitted dome, with two changes when it is on.
+- **The dome is raised and swelled.** Above the brow line the dome is stretched up by 0.8. From 2 cm over the wrap's edge, it stands out from the head's centre, by up to 15 per cent at 8 cm. Both only move the cloth outward, so the head and the tucked hair stay under it as before, and the edge round the brow, ears and nape does not move. The swell starts 2 cm up because a first try started it at the edge, and a pale ledge of the crown cloth showed under the turns over the ears.
+- **Five more turns** are wound above the wrap's five, 1.2 to 1.4 cm thick (the wrap's are 0.85 to 1.1). Their heights are set as shares of the way from the edge to the top of the dome (0.34 to 0.78), so they follow the dome whatever the head. Like the wrap's, each runs higher at the front or the back than the one under it, so the turns cross over the brow and at the nape.
+- **The roll.** An Aurennais who rolls a head-wrap winds it as a turban at 0.85 if a man and 0.2 if a woman. This is drawn after the sandals, so every earlier roll of a seed is as it was. Of 40 Aurennais, 13 wear wraps and 4 of those are turbans (3 on men). No other people rolls it.
+
+In `builder.js`: a *head-wrap wound up as a turban* checkbox under the dress, and a `zoom` URL parameter. The head view looks 4 cm higher on a turban, because its top was cut off in the frame.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 368 checks pass** (363 after Session 1015; 5 new). `kit.check.mjs` passes.
+- **The new checks**, on Session 994's two heads (a bearded man in white, a woman with braids in saffron with a madder edge), each with the plain wrap and with the turban:
+  - the head is 16 mm under the cloth at the nearest point, and 0 of 27,862 and 27,774 hair points come through;
+  - it clears the brows by 17.4 and 19.3 mm and comes 12.8 cm down at the nape, the same as the wrap;
+  - it has 10 turns and 16,272 triangles (the wrap has 9,072);
+  - it stands 12.6 and 11.2 cm over the brow line, where the plain wrap stands 6.6 and 5.8;
+  - it is 26.4 and 24.6 cm wide, where the wrap is 23.6 and 22.5;
+  - it saves and loads back with `"turban":true`.
+- **The roll check:** 4 of 13 wraps are turbans, 3 of them on men; none without a wrap; none among 30 of the other peoples.
+- **The wrap's own checks** now set `turban: false`, since `wrap:1`'s man rolls a turban under the new roll. The plain wrap's numbers are unchanged.
+- **Pictures:**
+  - New: `builder-turban-man.jpg`, `-side.jpg` (in profile), `-back.jpg`, `-woman.jpg` and `-full.jpg`.
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **The top is a smooth dome** of the crown cloth above the last turn. It reads as the cap many turbans are wound round, but OG-044's are wound to the top. A crossing turn over the crown would close it.
+- **The gaps between the turns** show the lighter crown cloth beneath, as thin pale lines. This is most visible from the back. It reads as folds at play distance and as gaps close up.
+- **The underside of the lowest turn** catches the light behind the ears. Session 994's plain wrap does the same; it shows more on white cloth.
+- **It is rigid on the head bone**, as the wrap is: it has no weight and does not sway.
+- **Still owed in L1:** the scarf's tail (a wrap's end hanging to the shoulder), the coins on the head-wrap's edge, and a shoulder sash's end tucked under the sash belt.
+
+## v80 — Session 1018 — A head-wrap's tail (L1 and B2, prototype only)
+The other half of L1's "a scarf's tail and a taller turban" (Session 1017 built the turban). OG-044 and OG-056 draw several Aurennais women with the end of the head-wrap or scarf hanging loose from behind the ear down the back, and OG-109's Aurenne row has head scarves with tails. Session 994's wrap tucks every end in. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `people.js`:
+- **`buildWrapTail`**, built after the sash, the lacing and the cord, and before the necklace (which lies over it).
+- **Where it starts.** The wrap's loose end comes out from under its lowest turn, 0.55 rad off the back toward the side the genome names (`wrapTail`: `'L'` or `'R'`). It starts 3 cm up inside the turns, so it is seen to come from under them.
+- **Its shape.**
+  - It hangs 34 cm on a woman and 28 on a man, to the shoulder blade.
+  - It is gathered to 5 cm at the top and opens to 10 to 11 cm within its top third.
+  - It hangs straight down and never comes back in toward the body.
+  - Folds of up to 7 mm open down its length, only ever outward.
+  - Its last 2.5 cm is in the wrap's border colour.
+- **What it lies on** is read off a radial map round the neck's middle, in 72 directions and 1 cm bands. The map holds the furthest point of everything there: the body, the tunic, the hair and a mantle, all skinned, and what is carried rigid (a sash, the hoops). The map is spread to its neighbours and read between the bins, and the cloth lies 6 mm clear of it.
+- **Bones and triangles.** It is one mesh of 880 triangles, rigid on the chest bone as the necklace is.
+- **The roll.** An Aurennais with a wrap and no cloak rolls a tail at 0.55 if a woman and 0.25 if a man, on the left at 0.7. This is drawn after the turban, so every earlier roll of a seed is as it was. It is never built under a cloak, because the cloak and its hood lie on the back.
+
+In `builder.js`: a select beside the turban's checkbox (no tail, left, right).
+
+Two faults were fixed during the session, both seen in the first pictures:
+- **The first build read the wrap's points in the head bone's frame,** not the world's, and hung the tail 60 cm too low.
+- **The second build was wrong on the turban.** The tail's gathered top stood outside the turns like a spike, and its lower half was stepped where the map's bins showed. The fixes:
+  - it now starts inside the turns, and the wrap itself is left out of the map;
+  - the map is read with bilinear interpolation.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 374 checks pass** (368 after Session 1017; 6 new). `kit.check.mjs` passed after Session 1017, and nothing it loads has changed since.
+- **The new checks**, on two people:
+
+| | Woman: braids tucked under a saffron wrap, tail on the left over her indigo sash | Man: white turban, tail on the right |
+|---|---|---|
+| Points of what is under it that come through | 0 of 32,756 | 0 of 23,038 |
+| Gap from the top to the wrap's turns | 0.4 cm | 0.6 cm |
+| Share of its length lying on the back (within 12 mm of what is under it) | 51 per cent | 60 per cent |
+| Length | 34 cm | 28 cm |
+| Width at the hem | 11.8 cm | 11.1 cm |
+| Triangles | 880 | 880 |
+
+  Both save and load back with `wrapTail`.
+- **Under a cloak with its hood down,** no tail is built.
+- **The roll:** 3 of 13 Aurennais wraps have tails, all on women. No other people rolls one.
+- **The necklace** still lies over everything at the neck with 0 points through it.
+- **Pictures:**
+  - New: `builder-tail-back.jpg` and `-side.jpg` (the woman, close), `-full.jpg` (from behind) and `-turban.jpg` (the man, close).
+  - Re-shot: `builder-peoples.jpg`.
+
+### Needs eyes
+- **It is rigid on the chest bone** and the wrap is rigid on the head bone. A head turned far to the tail's side would part them at the top, or push the tail into the turns. The game will want the tail's top rows weighted to the head and its lower rows to the chest, as the hood is.
+- **It hangs straight from where it leaves the wrap.** It is a few centimetres off the back of the neck before it meets the shoulder, as a cloth hanging from the wrap's edge would be. It has no weight or sway.
+- **Faint ridges remain** low on the turban man's tail, where the shoulder blade's points are sparse.
+- **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image), and a shoulder sash's end tucked under the sash belt.
+
+## v80 — Session 1019 — The shoulder sash tucked under the sash belt (L1 and B2, prototype only)
+Session 1010's sash belt left one thing owed: "a shoulder sash's end tucked under it, its knot left off there for now". Until now, a shoulder sash worn with a sash belt lay over the belt's band, and its knot at the hip was not drawn, so the loop ran on over the belt with no end at all. OG-056 draws the shoulder sash going in under the wide belt and its end hanging out below. Nothing new is chosen, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `buildSash`:
+- **What it reads.** With a sash belt on (`sashBeltOn`), the band reads neither the sash belt nor the leather belt over it. In the belt's band, and 1.5 cm past either edge, it stands 1 mm clear of what is under it, not 7. A short tunic skirt stands 2.5 cm off the tights there and the sash belt 3 cm, so 1 mm is what leaves room for the sash between them.
+- **The ceiling.** The sash belt's own points, pushed out level from the waist's middle by what `sashBeltPush` gives, make a radial map in 72 directions and 1 cm bands. Every point of the sash within the belt's height is drawn in to 1.5 mm inside that map. The pull eases off over 4 cm past the belt's top and bottom edges.
+  - The first try read the ceiling along each point's own line out from the body, through a 1.2 cm tube, as the band reads its floor. On the slanting surface the floor and the ceiling crossed in 48 of 53 places, and the sash still showed through the belt.
+  - A sign error before that had pushed the band out where it should have come in.
+- **The end.** In place of the knot, one end comes out from under the belt's lower edge, in front of the hip where the band goes in under it. It is found by walking from the loop's turn toward the front until the band is 2.5 cm up under the edge. It hangs 26 cm, 5 to 7 cm wide, with its border and the border's colour at the hem, over the band below it and over the thigh.
+- **No new flag.** `sashKnot: false` still leaves the end off.
+
+`sashBeltStats` now also counts the sash's points within the belt's band that stand outside the belt.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 375 checks pass.** That is 374 after Session 1018 and 1 new: Session 1010's two sash-over-belt checks are rewritten as tuck checks, and a third case is added.
+- **The three cases:**
+  - a man in a short tunic skirt;
+  - a woman in a long skirt, with the sash on the right;
+  - a man with the leather belt over the sash belt as well.
+- **On each:**
+  - 0 of 108 to 109 sash points in the belt's band stand outside the belt;
+  - nothing under the belt comes through it (0 of 4,332 and 4,370 points);
+  - the leather belt is still outside the sash belt (0 of 780 under);
+  - the shoulder sash has 2 and 6 points out through it, inside Session 1010's allowance of 7;
+  - no arm is in it;
+  - one end hangs 0.27 m from where it comes out, with 0 of 951 to 1,108 points out through it and no arm in it.
+- **Every untucked sash check is unchanged**, among them the knot and its two ends on a belted tunic and a long skirt, and the band alone with `sashKnot: false`.
+- **Pictures:**
+  - New: `builder-sashtuck-front.jpg`, `-hip.jpg`, `-back.jpg` and `-full.jpg`.
+  - Re-shot: `builder-sashbelt-full.jpg`.
+
+### Needs eyes
+- **A small kink** where the band goes in under the belt's top edge in front. The band's points are 2.5 cm apart along its loop, so the 4 cm ease is drawn over one or two of them.
+- **The band comes out below the belt at the back of the hip** where the loop turns. A twist of the band shows there, since the loop's turn is only 1.5 cm under the belt's edge.
+- **The sash under the belt is only drawn in, never cut away.** It lies 1.5 mm inside the belt, so it can show at a grazing angle.
+- **Still owed in L1:** the coins on the head-wrap's edge (to be confirmed from the full image of OG-056).
+
+## v80 — Session 1020 — Turns over the turban's crown (L1 and B2, prototype only)
+Session 1017's turban left its top as a smooth dome of the crown cloth above the last of its turns, where OG-044's turbans are wound to the top. That entry named the fix under *Needs eyes*: turns crossing over the crown. This is that fix, a refinement of something already built, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`. FREEZE #381 is still open.
+
+What changed in `buildWrap`, on a turban only:
+- **Three turns cross over the crown.** Each comes from under the upper turns on one side, goes over the top, and goes down under them on the other. They lie in planes 0.35, -0.5 and 1.45 rad off the front-to-back line, so they cross near the top. Each starts at 0.6 to 0.66 of the way from the wrap's edge to the top, under the highest turns.
+- **Their shape.** They are 1.6 to 1.7 cm rolls on the same raised and swelled dome, flattened wider than the turns (2.4 times along the dome, 0.45 out from it). Each is a slightly different shade of the cloth.
+- **Cost.** They add 2,400 triangles: the turban is 18,672 where it was 16,272. It now stands 14.4 and 13.2 cm over the brow line (12.6 and 11.2 before).
+- **The stats** count them as `cross`, apart from the ten `turns`.
+
+A first try with two turns half as wide read as straps over a bare dome. Three wider ones cover it from the front.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 375 checks pass.** The turban's checks now also require 3 turns over the crown.
+- **On both heads,** the head is still 16 mm under the cloth and 0 hair points come through. It clears the brows by 17.4 and 19.3 mm.
+- **Pictures:** re-shot `builder-turban-man.jpg`, `-side.jpg`, `-back.jpg`, `-woman.jpg`, `-full.jpg` and `builder-tail-turban.jpg`.
+
+### Needs eyes
+- **From behind and above,** the crown cloth still shows in the gaps between the crossing turns, and their flattened edges catch the light as fins.
+- **From the front** the top reads as wound, most clearly in saffron on the woman.
+- **A turban wound by hand** has one long cloth whose turns run into each other. These are separate rolls laid on the dome, with no ends.
 ## v80 — Session 1016 — The Gatelands' charcoal burners' camp (card F8, prototype only)
 The freeze for F3 (#381) is open, so this run kept to the prototypes. The one item still open in backlog L10's *Off the road* (OG-124) was the camps on the roads, and this session builds the first: the charcoal burners. It is `gatelandsCharcoalCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=charcoal`.
 
