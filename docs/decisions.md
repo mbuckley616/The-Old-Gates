@@ -4,6 +4,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17)
+The build sheet (`docs/design/enemies-by-place-build.md`) builds your A on #373. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
+- **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.
+- **B. By level, as today.** Where you go does not change what you find.
+- **C. By place, with a floor of your level less two materials:** a level-25 character finds at least Obsidian everywhere. It softens A late but keeps half the problem.
+
+Recommendation: **A.** The good things are somewhere, and you go there for them (Morrowind, Elden Ring). It is the brief's "a world that pushes back", and the only option under which one chest is one roll for everyone in a shared world.
+
 ### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
 F2a has merged, so the new kit's buildings, rooms and places can start going into the game behind `?look=new`, one kind a session (card F6, then F8 and F9). Nothing of the kit is in the game yet. The kit is about 1,300 lines of ES modules in `docs/prototypes/levelup/` (the surfaces in `common.js`: relief textures for plaster, ashlar, thatch, slate, pantile, turf and the rest; the piece builders in `pieces.js`; the places in `places.js`). The game is plain scripts in one scope, so the kit has to be copied over as a classic script, and CLAUDE.md makes a new `js/` file a decision of its own.
 
