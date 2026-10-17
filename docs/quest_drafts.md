@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-14T14:34:11.594Z
+Calls read to: 2026-10-16T17:51:09.360Z
 
 ---
 
@@ -3261,7 +3261,7 @@ The rumour pool's *Normal* lines become the *Any news?* pool's lasting default f
 
 ## The Great Gates, II — the knife and the needle
 
-*Unapproved. Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
+*Approved by Michael, 16 Oct 2026.* *Drafted 15 Oct 2026.* The second piece of backlog A's *The six great gates: what clearing one means*. The first piece, *the knot at the ring*, was approved on 14 Oct along with Michael's A on DECISION #292. That piece wrote the act and left its tools as *the tearing artifact* and *the sealing artifact*. This piece names them and writes every line about them: what they are, where each comes from and who hands it over, the item cards, what the Old Blood and the three powers say of them, and what they do away from a knot. Still owed, one piece a run: each gate's own reward and its cost to the world; Varek's two arcs; the Act III outline reconciled with all of it.
 
 ### What the canon fixes, and where it is silent
 
@@ -3416,7 +3416,7 @@ Piece I's lines stand. One line is added. At six bound, the knife's card gains t
 
 ## The Great Gates, III — what each gate gives, and what it costs
 
-*Unapproved. Drafted 16 Oct 2026.* The third piece of backlog A's *The six great gates: what clearing one means*. Piece I (approved 14 Oct) wrote the act at the ring and gave every tear the same gain, one tier deeper in the gate's school. It left *the gate's own reward* to be added to that line. Piece II (15 Oct, unapproved) named the knife and the needle. This piece gives each of the six its own gift to the player and its own cost to the world, and writes every line about them. Still owed, one piece a run: Varek's two arcs, and the Act III outline reconciled with all of it.
+*Approved by Michael, 16 Oct 2026.* *Drafted 16 Oct 2026.* The third piece of backlog A's *The six great gates: what clearing one means*. Piece I (approved 14 Oct) wrote the act at the ring and gave every tear the same gain, one tier deeper in the gate's school. It left *the gate's own reward* to be added to that line. Piece II (15 Oct, unapproved) named the knife and the needle. This piece gives each of the six its own gift to the player and its own cost to the world, and writes every line about them. Still owed, one piece a run: Varek's two arcs, and the Act III outline reconciled with all of it.
 
 ### What the canon fixes, and where it is silent
 
@@ -3593,3 +3593,220 @@ At the moment of the tear, nothing changes from piece I: the act's lines, then t
 - *§10a*: the first faces are pleasures, and every toll is told as weather by people who stay kind and funny (*having a brother-in-law*; *I find I can afford only the first*). Nobody names the traveller.
 - *§2's registers*: Gatelanders in proverbs and no bare yes (*what's lent is lent*; *a calm sea is the sea holding its breath*); Markmen short, no honorific; Aurennais with *Master*, clauses and qualifiers, no oath; the Old Blood one exact sentence each, with the older word for the thing (*the door* for the gate, *unfinished* for the failing forms).
 - *No chosen one*: the gifts come with the tear to whoever cut the knot, and stop when it is bound.
+
+---
+
+## The Great Gates, IV — Varek's two arcs
+
+*Unapproved. Drafted 17 Oct 2026.* The fourth piece of backlog A's *The six great gates: what clearing one means*. Piece I wrote the act at the ring, piece II the knife and the needle, piece III each gate's gift and toll, all three approved (14 and 16 Oct). Each left Varek to this piece: his interest on the tearing path, his ire on the other, the meetings where he shows them, and his last stand at whichever gate would lock the six. Still owed, the last piece: the Act III outline reconciled with all of it, which is where the six-torn ending, the Root and the final monologue are placed.
+
+### What the canon fixes, and where it is silent
+
+- *Varek's path … at the last great gate Varek has a change of heart: he sees it will destroy everything, himself included, begs the player to stop, and fights to the death to stop them, a tragic hero at the end, before the world goes* (§9a, Michael 13 Oct). *The other path … Varek tries to stop them once or twice along the way, and the final confrontation comes just before the last great gate* (§9a). *So Varek's last stand comes at whichever gate would make the sixth match* (§9a). These are the two arcs, and the last stand's place.
+- *Reversible until the sixth* (§9a). So there is no path flag to read: a player may cut three knots, bind two of them back and cut a fourth. **Chosen plainly:** Varek reads what has been done, not what was meant. Each of his beats fires the first time a count is reached (one torn, three torn, five torn; one bound, two bound, four bound), and an undo has its own short note. A player who wavers hears both arcs' beats in the order they earned them. Each line answers the act just done, so none contradicts another.
+- *What turns his interest into ire on the other path is the act of binding: the first thing in 250 years to undo his work* (piece I, approved). *He gets no further than the door* of a great gate, because its antibodies rise first against what pulls hardest at the loom (piece II, approved). So every meeting is outside a gate: at a field, where he always stands (§9, the fields), or in a great gate's outer door. The last stand is in the door.
+- *He believes unbinding will let the dead stay, and whether he is right is the game's open question* (§3.1). Piece III's Solas leak shows the dead first seen, then walking, lost and not kept. **Chosen plainly:** the change of heart turns on that. It begins when the toll begins (three torn, piece III's *Somewhere, something gave*). It is sure at five, when he begs. He has been wrong about what was on the other side of the knot, and he says so in his own terms: not *the dead are lost*, but *they're not with anyone*. The open question stays open for the player. Varek has answered it for himself.
+- *Stop him — reseal: Varek's list gets its last entry — his own* (§11). So on the sealing path he dies at the last stand, and the last entry on his list is his own name, written before he goes to the door. On the tearing path he also dies, in Michael's words *fights to the death*, and the space under Ashenmoor stays empty: *put me at the bottom. Somebody should.*
+- *His voice* (Part I): asks questions; never monologues in dialogue; tired, not defeated; remembers every name; keeps notes and refers to small things said before; uses his old name exactly once, at the first meeting, and never again. He never says *game*, *save*, *player* or *screen* (§6). Every line below keeps these.
+- *Silent, and chosen plainly:* what he does to stop the player. He has two tools in the canon: words, and the unravelling of sigils that fails anchors and burns towns (§8.1). The first attempt is words, at a field. The second is force, in a great gate's door, and he withdraws when he is hurt, because he wants the last fight to be at the last gate, where it means something. **Not chosen:** failing a town's anchor to draw the player off. It would burn a settlement as a reaction to the player's choice, which is §8.1's Act II machinery and a heavier rule than *tries to stop you* needs. If Michael wants it, it replaces the second attempt and nothing else changes.
+- *Silent:* how his fights go. That is the systems builder's (combat's resolver) and the bodies builder's (his rig as a foe). This piece writes when they happen, how they end and every word said.
+- *His discoveries* (§6) run beside these beats and are not replaced. When a discovery and a gate beat are both due at the same field, the discovery comes first and the beat waits for the next visit.
+
+### 1. The shape
+
+| Beat | Earned | Where | What |
+|---|---|---|---|
+| **T1** | the first knot cut | the nearest field, next visit | glad; he asks what it felt like |
+| **T3** | three torn for the first time (*Somewhere, something gave*) | the nearest field | doubt |
+| **T5** | five torn for the first time | the nearest field | he begs |
+| **S1** | the first knot bound | a note in the pack, on waking | cold |
+| **S2** | two bound for the first time | the nearest field | the first attempt: words |
+| **S4** | four bound for the first time | the door of the next great gate entered with the needle | the second attempt: he fights, and goes |
+| **U** | an undo, either way, the first time each way | a note in the pack, on waking | one short note |
+| **L** | the player comes to the door of the gate whose act would lock the six, carrying the tool that would do it | that door | the last stand, to the death |
+
+The field beats use the field's own form (`tickVarek`): he stands there when the player comes within 420, and the hint line plays. Each beat has its own hint (§6). The notes come the way piece II's first note comes: *A paper you did not put there is folded in your pack.*
+
+### 2. The tearing arc — interest, doubt, the plea
+
+**T1** (greeting):
+> "You cut it. I felt it from here, the way you feel a door open somewhere in a house at night. Two hundred and fifty years I've stood outside those rings. Don't tell me what you saw. Tell me what you felt in your hands."
+
+Topics:
+- **"What did it do?"**
+  "It let go. That's all a knot does when you cut it. Everything it was holding is free to be something else now. Most things don't know it yet. They will."
+- **"Why couldn't you do it yourself?"**
+  "Because it knows me. I've pulled at it too long. You it lets through. I have the names of everyone who tried before you: Orla Fenn, Tomás of the Weir, a Markman called Hask who got further than any of them. None of them got where you got. I'd like to know why. I've stopped expecting to."
+- **"What happens if I cut them all?"**
+  "The world stops being held to the one shape. Lords stop being lords only because their fathers were. Children stop dying of the same three things. I've believed that for two hundred years. Ask me again after the next one."
+- **"Farewell."** → "Go carefully. Not for my sake. I find I'd like you to come back and tell me what the next one felt like."
+
+**T3** (greeting; he is sitting, not standing, with a paper on his knee):
+> "Did you feel it? At dusk, three days ago. Something gave that nobody touched. I've been taking things apart for two hundred years, and I know the sound of a thing coming loose that you didn't mean to loosen."
+
+Topics:
+- **"You wanted this."**
+  "I wanted change. I'm trying to tell whether this is change. A tree that grows crooked has changed. So has a tree that's falling."
+- **"The dead are walking in Aurenne."** (only while Solas is torn)
+  "I know. I went to see. I always thought that if the gates stopped burning them out, they'd stay. Our dead, with us. They're not with anyone. They stand in the roads trying to remember which way is home. I wrote eleven names last week. I don't know if the list is the right place for them. I don't know where else to put them."
+- **"What are you afraid of?"** (when Solas is not torn)
+  "That I was right about the cage and wrong about what's outside it. Those aren't the same mistake. The second one is worse."
+- **"Should I stop?"**
+  "I've never told anyone what to do. I've only ever asked them what they'd keep. I'm asking you now, and I find I want a particular answer, which has never happened to me before. What would you keep?"
+- **"Farewell."** → "Come back to the field before you go to the next one. Humour an old man."
+
+**T5** (greeting; he is standing facing the road the player came by, not the field):
+> "One left. Sit down. Please. I've walked a long way to say this, and I'd like to say it to someone sitting down."
+
+Topics:
+- **"Say it."**
+  "Don't cut the last one. I was wrong. Not about the lords. Not about the cruelty; I stand by every word of that. I was wrong about what the knot was holding. It wasn't holding the world still. It was holding the world. There's no better shape waiting on the other side. There's the shape, and then there's nothing, and the nothing has me in it too."
+- **"You spent two hundred years making me do this."**
+  "Yes. Put it on my list with the rest; it's long enough to take it. But don't make the list pointless. Every name on it was a price I paid for something. Cut the last knot and I paid for nothing. Áine's brother, the forty-three at Ashenmoor, the children at Ráth Dubh. All of them, for nothing."
+- **"And if I cut it anyway?"**
+  "Then I'll be at the door. I can't go further than the door, you know that. I'll be there, and I'll stop you, or I won't. I'd rather you didn't make me find out which."
+- **"Why do you care? You wanted it gone."**
+  "I wanted it changed. I've been wrong for two hundred and fifty years and only just noticed. You'll forgive an old man for wanting the world to go on long enough to be ashamed in."
+- **"Farewell."** → "Bind one. Any of them. I'd sleep, I think. I haven't slept in a long time."
+
+### 3. The sealing arc — ire, words, force
+
+**S1** (a note, *A note in the same cramped hand*, read in the book reader; the first line changes if piece II's first note was never given, see below):
+> You tied one. I felt that too. It was like a door shutting in a house I've lived in all my life, a door I spent a century getting open.
+>
+> I don't mind that you could. I mind that you chose to. I have written down every answer anyone has ever given me for anything. Yours will go on a page by itself, when I know what it is.
+
+(If the player never had piece II's first note, the paper's name is *A note in a cramped hand*, and the text is the same.)
+
+**S2** (greeting; the field):
+> "Two. Two knots in two hundred and fifty years, and both of them yours. Sit down. I'm going to try to talk you out of the next one, and I'd like you to know I'm doing it, so you can't say afterwards I was clever."
+
+Topics:
+- **"Talk, then."**
+  "Every lord you've met is a lord because his father was, and his father's father, back to a man with a sword and no scruples. Every famine comes round like a feast day. I've watched it go round nine times. The knot you tied holds all of it to the one shape. You've made the cage a little stronger and called it keeping the world safe. Safe for whom?"
+- **"The world is good. People are kind."**
+  "They are. They are. That's what makes it unbearable. Kind people, in the same ditches, under the same lords, for ever. Tell me that's what you'd keep. Mean it, and I'll write it down."
+- **"Tearing them would kill people."**
+  "It would. So does this, slower. The Compact bricks its gates shut, and its dead pile up behind the bricks, and nobody counts them. I count. I've always counted."
+- **"Leave me alone."**
+  "I will, for now. The next time I won't ask."
+- **"Farewell."** → "Think about the ditches. That's all. Think about them once, the next time you're standing at a ring."
+
+**S4**, the second attempt. The next time, after four are bound, that the player comes within reach of the outer door of a great gate that is not bound, carrying the needle, he is standing in it (`showMsg`):
+> *Someone is standing in the door of ${gate}, where nobody stands.*
+
+Greeting:
+> "Not this one. I asked you once, at the field. I said I wouldn't ask again, and I keep my word. It's one of the few things I still keep."
+
+Topics:
+- **"Stand aside."**
+  "I can't. I've stood aside for two hundred and fifty years, waiting for the knots to come undone on their own. You're the first thing that ever did them up again. Draw, if you're going to." → the fight.
+- **"Why fight me here?"**
+  "Because two more and it's done, and nobody can undo it. I'd rather lose to you here, where it can still be taken back, than there, where it can't."
+- **"Leave."** (the player walks away; he stays in the door until they are out of sight, and the door cannot be entered while he stands in it)
+
+**The fight** ends when he is brought to half his health. He steps back out of reach (`showMsg`, his words):
+> "Enough. You've made your point, and I've made mine. I'll be at the last one."
+
+He is gone, and the door is open. Log: *Varek stood in the door of ${gate}, and gave way.*
+
+**If the player falls** in that fight, they come back as they always do, and the next time they reach the door he is still there. His greeting, once:
+> "You came back. You always come back. I'm fighting the one thing in the world I can't outlast, and I knew that when I came."
+
+### 4. Changing course — the two notes
+
+**A cut knot bound again**, the first time (a note on waking):
+- Before T3: *You tied the one you cut. Changed your mind, or trying the needle against the knife? I'd have tried it too.*
+- From T3 on: *You tied one back. I don't know whether to thank you. I've decided to. Thank you.*
+
+**A bound knot cut again**, the first time (a note on waking):
+> *You cut the one you tied. I won't pretend I'm not glad. I'll only ask what changed. Something always changes first.*
+
+### 5. The last stand
+
+The player comes within reach of the outer door of the gate whose act would make all six alike, carrying the tool that would do it. Varek is in the door (`showMsg`):
+> *Varek is standing in the door of ${gate}. He has been waiting a while.*
+
+Piece I's *way back* (door to ring) cannot be taken while he stands there. Walking away is always open, and he stays.
+
+#### 5a. On the tearing path (five torn; the sixth would be cut)
+
+Greeting (if T5 was heard):
+> "You came anyway. I hoped you'd sit at the field a while longer. I'd have sat with you."
+
+Greeting (if T5 was not heard, because the player came straight here):
+> "You didn't come to the field. I'd have said it there. I'll say it here. Don't."
+
+Topics:
+- **"Let me pass."**
+  "I can't. I spent two hundred and fifty years bringing you here, and I'll spend what's left undoing it. Forgive me. No, don't. I've never asked for that, and I won't start at the end." → the fight, to the death.
+- **"I'll go and bind one."** (only carrying the needle)
+  "Then go. Any of them. I'll wait here. I've waited longer for less." (He stays until the count changes; then he is gone without a word, and the next meeting is a note: *Thank you. I'll sleep tonight.*)
+- **"Leave."**
+
+**When he falls** (his words, as the fight ends; then he is still):
+> "There. You're stronger than anything I could have made. I did make you, a little. My list's in my coat. Put me at the bottom. Somebody should."
+
+The *Worn Paper* (the list, as *The Last Entry* draft writes it, eight folds) is on him: the standard pickup. Its space under Ashenmoor is empty. Log: *Varek is dead at the door of ${gate}.* The door is open. What the cut does after this is the ending, which the next piece places.
+
+#### 5b. On the sealing path (five bound; the sixth would be bound)
+
+Greeting:
+> "The last one. I came early. I wanted to look at the hills from here once more, before."
+
+Topics:
+- **"Before what?"**
+  "Before one of us goes on the list. I wrote my own name last night, at the bottom, under Ashenmoor. It seemed only fair to be ready. If it's yours instead, I'll cross mine out. My hand's still steady enough for that."
+- **"You don't have to do this."**
+  "No. I'm choosing to. It's the only thing I've ever been sure was mine."
+- **"Stand aside."**
+  "Draw." → the fight, to the death.
+- **"Leave."**
+
+**When he falls:**
+> "There. It holds. You'll keep it, then, the whole of it, as it is. I hope you're right. I hope it's worth keeping. I'd have liked to see."
+
+The *Worn Paper* is on him, and its space under Ashenmoor has one line, in a hand steadier than the lines above it:
+> *Aldred, called Varek, at the door of ${gate}, in the {season} of the {year}. He kept looking.*
+
+Log: *Varek is dead at the door of ${gate}.* The door is open; binding the sixth knot locks the six (piece I, §6).
+
+The last line is the only place after the Ashfeld where the old name appears, and it is written, not said. Part I's rule (*he refers to himself by his old name exactly once, at the first meeting*) is about speech and stands. A player who has followed the Aldred thread through Edna, Bram and Corwin is handed the end of it here. **For Michael:** if the name should never be confirmed, the line reads *Varek, at the door of ${gate} …* and nothing else changes.
+
+#### 5c. If the player falls in the last stand
+
+They come back as they always do. The next time they reach the door he is still in it, and he says, once, on either path:
+> "You came back. Of course you did. I knew it when I came."
+
+#### 5d. After
+
+Varek does not come to the fields again on either path. His discoveries stop. The meeting at the Root, the fifth discovery and the final monologue are the next piece's to place, now that he can die at a great gate first.
+
+### 6. Where he stands between
+
+The field hint line (piece I's machinery, `showMsg` once per beat) by beat:
+- T1, S2: *Someone is standing at the field, looking out.* (the game's own line)
+- T3: *Someone is sitting at the field, with a paper on his knee.*
+- T5: *Someone is standing at the field, facing the road you came by.*
+
+Nobody in the towns talks about him in these beats. The talk of piece I goes on as before, and nobody connects the great gates to a man at a field.
+
+### What in the code would carry it
+
+- **State** (the world's row; Varek's life is the world's): `worldState.greatGates.ev.varek={t1,t3,t5,s1,s2,s4,undoT,undoS,doorFell,dead}`, inside piece II's `ev`, which is inside the one `greatGates` object piece I adds to `_applyLoadData`'s list. No new `worldState` key. Shared changes go through named actions: `varekBeat(kind)`, `varekWithdraw()`, `varekDies(gate)`.
+- **The field beats** (`tickVarek`, `87-world-quests.js`): a `gateBeatDue()` read before `varekDue()` (§6's discoveries go first when both are due), returning the earliest earned beat not yet heard. `varekDef(site,kind)` takes the beats as kinds, with the lines in a `GATE_VAREK` table beside `VAREK_LINES`. The topics marked *only while* are `avail` checks on piece I's `worldState.greatGates`.
+- **The notes** (`14-items.js` `BOOKS`; `sleep()` in `60-shop.js`): S1 and the undo notes are book items given on waking, by the same `giveItem` piece II uses for the first note, each once (`ev.varek.s1`, `undoT`, `undoS`).
+- **The door** (the great gate's door prompt in `62-actions.js`'s `.ob` chain, and the entry in `goToDungeon`, `56-dungeon-build.js`): when S4 or L is due and the conditions hold, Varek stands in the door as a foe that talks first (his look from `varekDef`; a boss in `BOSSES`, `42-zone-enemies.js`, fought through combat's resolver, his target through `targetOf(e)`). S4 ends at half health with `varekWithdraw()`; L ends with `varekDies(gate)` and drops the list. **For the builders:** his moves, his health and how he fights are the systems builder's, and his rig as a foe is the bodies builder's. Until those land, this piece's words wait, and the field beats and notes can be built alone.
+- **The list** (*The Last Entry*'s `worn_paper` book): on the sealing path, an eighth-fold line is added from `${gate}` and the calendar (`calDateLine`); on the tearing path, none.
+- **A test** for the builder: cut one knot and the next field visit is T1, with its four topics; cut two more and the log's *Somewhere, something gave* is followed by T3, which offers *The dead are walking in Aurenne* only while Solas is torn; bind one back and the next waking gives *You tied one back*; bind from untouched to four and the next unbound great gate's door has him in it, the fight ends at half his health with *I'll be at the last one*, and the door opens; reach the locking door with five bound and the needle, fight him to the end, and the list on him ends *He kept looking.*; save and reload after S4, and `ev.varek` holds the beats heard and he does not stand in the door again.
+
+### Checked against the canon
+
+- *§9a*: the tearing path ends in a plea and a fight to the death at the last gate, before the world goes; the sealing path has two attempts and a final confrontation just before the last gate; the last stand comes at whichever gate would make the sixth match. Nothing in this piece changes the act, the undo, the gifts or the lock.
+- *§11*: on the sealing path the last entry on his list is his own. The tearing path's ending, and §11's *help him* against §9a's six torn, are the next piece's to reconcile; this piece writes nothing past his death.
+- *§3.1*: he answers the open question for himself (*they're not with anyone*) and is not told he is right or wrong; the dead are seen through piece III's Solas lines and no one explains the Clearing.
+- *§10a*: he is the one awake, and he looks like the villain to the end, standing in a door. The player is never called the monster. The nearest anyone comes is his *I did make you, a little*, which makes him complicit, not the player.
+- *Part I, his voice*: questions, not speeches; *tired, not defeated*; names remembered (Orla Fenn, Tomás of the Weir, Hask, Áine's brother, Ashenmoor's forty-three, Ráth Dubh's children from *The Last Entry*); notes kept (*Yours will go on a page by itself*); never *game*, *save*, *player* or *screen*. His old name is never said, only written once at the end, and that line is offered to Michael to cut.
+- *Piece II*: he cannot pass a great gate's door, so he stands in one. The only time he stands where the player is going is the one place he can.
+- *No chosen one*: *You're stronger than anything I could have made* is said of what the player became, not of what they were meant for.
+- *The register*: Varek is Old Blood raised a Gatelander. He talks in his own voice as Part I sets it, plainly, with no proverb and no oath. The towns' talk is piece I's and is not changed.
