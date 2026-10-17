@@ -1464,9 +1464,10 @@ function loop(now){
         if(e.telegraphT<=0){
           e.telegraphT = 0;
           telegraphReset(e);
+          if(foeReach(e,true).lunge)foeLunge(e,dBlk); /* S1041 — the wolf leaps at the bite */
           executeDungeonStrike(e, now);
         }
-      } else if(!_slam&&!(e._slamT>0)&&dist<.9&&e.atkCd<=0&&!e.ranged){
+      } else if(!_slam&&!(e._slamT>0)&&dist<foeReach(e,true).engage&&e.atkCd<=0&&!e.ranged){ /* S1041 — F2b: hull to hull for the sheet's families, 0.9 for the rest */
         e.telegraphMax = telegraphDuration(e);
         e.telegraphT = e.telegraphMax;
         // v63 — Stamp combatYaw at windup start (see zone tick for rationale).

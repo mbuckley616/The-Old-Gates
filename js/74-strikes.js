@@ -86,12 +86,17 @@ function weaponAttack(w){if(!w)return WEAPON_ATTACKS.Fists;return WEAPON_ATTACKS
 // at the wind-up (S275), a troll's sweep 2.4 and 140°, a boss's bite its own reach. Recovery is the dungeon's 1.0 s;
 // the open world's kinds keep their own pace (their `atk`). The blow's roll is the foe's own (foeBlowRaw).
 const FOE_ROW=(o)=>Object.assign({tell:TELL_DEFAULT,tells:{},strike:0,recovery:1.0,reach:1.6,arc:90,dmg:1,posture:1.5,blockable:true,parryable:true,heavy:null,third:null},o);
+// S1041 — F2b, session 1, part 2 (docs/design/scale-numbers-build.md, *Foes' reach*): the five families the sheet names carry
+// `hulls:true`, and their `reach` (the blow) and `engage` (where the tell starts) are metres hull to hull, from the edge of its
+// body to the edge of yours, as your own reach is (S1035). An armed humanoid's blow is its weapon's reach (foeWeaponReach); the
+// wolf engages at 0.6 and lunges up to 1.5 at the bite (`lunge`), so it may start its tell from 2.1. The other families keep
+// today's numbers, centre to centre: the tell at 1.1 in the open world and 0.9 in a dungeon, the blow within 1.6.
 const FOE_ATTACKS={
-  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57}}),
-  beast:    FOE_ROW({}),
-  spider:   FOE_ROW({tells:{Spider:.51}}),
-  brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80}}),
-  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},reach:2.4,arc:140}),
+  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2}),
+  beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70}),
+  spider:   FOE_ROW({tells:{Spider:.51},hulls:true,engage:.8,reach:1.2,arc:100}),
+  brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80},hulls:true,engage:.8,reach:1.2,arc:100}),
+  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},hulls:true,engage:1.6,reach:2.4,arc:140}),
   slime:    FOE_ROW({tells:{Slime:.54,'Small Slime':.54}}),
   elemental:FOE_ROW({tells:{'Fire Elemental':.65}}),
   wraith:   FOE_ROW({tells:{Phantom:.54,Wraith:.57}}),
@@ -114,6 +119,20 @@ function foeFamily(e){
   return FOE_FAMILY_OF[e.baseType||e.baseName]||FOE_SHAPE_FAMILY[e.shape]||'humanoid';
 }
 function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
+// S1041 — the weapon a person-bodied foe holds (its genome's, 32-people.js), and that weapon's reach from your table: a knife
+// the dagger's 1.2, the rest (sword, axe, mace, cutlass, and the staff and spear the sheet does not list) the sword's 1.6
+const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar'};
+function foeWeaponKind(e){const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
+function foeWeaponReach(e){const k=foeWeaponKind(e);return WEAPON_ATTACKS[FOE_WPN_ROW[k]||'Sword'].reach;}
+// a foe's reach, centre to centre: engage (its tell starts inside it; null = the place's own, 1.1 or 0.9), the blow, its arc,
+// and the wolf's lunge. A boss with a bite (the Faolchú) engages and bites at its biteRange less 0.9 (its snout), hull to hull.
+function foeReach(e,inDun){
+  const r=foeAttack(e);
+  if(e&&e.isBoss&&e.bossDef&&e.bossDef.biteRange){const b=reachTo(e,e.bossDef.biteRange-.9);return {engage:b,blow:b,deg:r.arc,lunge:0};}
+  if(!r.hulls)return {engage:inDun?.9:1.1,blow:r.reach,deg:r.arc,lunge:0};
+  const blow=foeFamily(e)==='humanoid'?foeWeaponReach(e):r.reach,L=r.lunge||0;
+  return {engage:reachTo(e,r.engage+L),blow:reachTo(e,blow),deg:r.arc,lunge:L,stand:reachTo(e,r.engage)};
+}
 // ── Armour as a share (decision #181 B, held for this table): every blow on you is × 50 / (50 + armour), so 50 armour
 // halves it and nothing reaches 1 by armour alone. It replaces the flat half a point a point that put the cliff between
 // 20 and 40 armour (S610). Retuned so an ordinary blow of your level's tier, at a heavy kit of your level, lands near
@@ -341,10 +360,17 @@ function applyMeleeDamage(e, rawDmg){
 // 1.6 units and 90° for most, 2.4 units and 140° for a troll's sweep, a boss's own reach where it has one. Before, it
 // hit anyone within 1.4 units (1.3 in a dungeon) whichever way it faced.
 // S940 — the reach and the arc are the family's row in the attack table (FOE_ATTACKS).
-function strikeArc(e){
-  const r=foeAttack(e);
-  if(e.isBoss&&e.bossDef&&e.bossDef.biteRange)return {reach:Math.max(r.reach,e.bossDef.biteRange),deg:r.arc};
-  return {reach:r.reach,deg:r.arc};
+// S1041 — F2b: the reach is foeReach's blow, hull to hull for the families the sheet names (see FOE_ATTACKS).
+function strikeArc(e){const f=foeReach(e);return {reach:f.blow,deg:f.deg};}
+// S1041 — the wolf's lunge (F2b): at the bite it leaps along the line it wound up on (combatYaw), up to its lunge, to stand at
+// its engage distance from you, so a wolf that started its tell from 2.1 hull to hull still bites a player who stood still,
+// and one who stepped aside during the tell is bitten at the end of the leap only if still in its 70°.
+function foeLunge(e,solid){
+  const f=foeReach(e);if(!f.lunge||typeof e.combatYaw!=='number')return 0;
+  const sx=Math.sin(e.combatYaw),sz=Math.cos(e.combatYaw),along=(px-e.x)*sx+(pz-e.z)*sz;
+  const go=Math.max(0,Math.min(f.lunge,along-f.stand));if(go<=0)return 0;
+  let d=0;while(d<go-1e-6){const st=Math.min(.1,go-d);if(solid&&solid(e.x+sx*(d+st),e.z+sz*(d+st)))break;d+=st;}
+  e.x+=sx*d;e.z+=sz*d;return d;
 }
 function strikeReaches(e,arc){
   arc=arc||strikeArc(e);
