@@ -4,6 +4,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1063) — DECISION #405
+Under Michael's A on #373, no foe in a chunk, lair, commission or dungeon reads your level any more (`tierlevelfree`, 7/7). Two places outside the build sheet still do:
+- **A town's jobs** (`townQuestFor`): a cull asks for 4 + level ÷ 3 beasts and a road job's camp holds 3 + level ÷ 3 bandits. The pay is 40 + 30 × (level ÷ 3). At level 1 that is 4 beasts, 3 bandits and 40–69 gold; at level 30 it is 14, 13 and 340–369.
+- **The war's camps:** a siege camp holds 6 + level ÷ 3 bandits, and an occupation 5 + level ÷ 4.
+
+So two friends in one town, at levels 4 and 22, are offered different jobs, which breaks the co-op rule.
+- **A. Counts by place, pay by level** *(recommended)*: each count reads the tier's level where the job or camp stands, as the traps do (S1061). A coast cull asks for 4 and a Wastes cull for 7, at any level. The pay waits on #394.
+- **B. Counts and pay by place:** the same, and the pay reads the tier's level too (40–69 on the coast, 130–159 in the Wastes).
+- **C. Leave both.** They are jobs and the war, not a place's foes.
+
+A keeps the sheet's rule, one place gives one fight, without deciding money ahead of #394.
+
 ### Draw cut, Ringing, Throw and Catch the blade: build what each needs, or other perks? (systems builder, Session 1051) — DECISION #399
 Sessions 1048 to 1051 built the Arms perks that combat's resolver made possible. Four of the build sheet's Arms perks name something the game does not have, or already does. The Skills tab shows them as *not yet in the game*.
 

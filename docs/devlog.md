@@ -24412,3 +24412,35 @@ writer's, after this. Nothing is saved.
   noted for the map's next pass.
 - **Owed from the sheet:** the whole-world suites `tierlevelfree` and `tiermainpath`. The loot and the hoard wait on #394; then
   the quest writer's four danger lines.
+
+## v80 — Session 1063 — Enemies by place: `tierlevelfree`, the sheet's main line (tests only)
+The sheet's main suite: build each kind of place where foes are made, on the same seed, at level 1 and at level 30, and require
+the same foes. Since Sessions 1058 to 1062 it should hold everywhere the sheet names, and it does. No game code changed.
+
+The suite makes, at each level:
+- 18 chunks at night, nine at the centre of the Deepwood and nine in the Wastes (`spawnChunkEncounters`);
+- a lair round home, built again from nothing (`disposeSettlement`, `genSettlement`);
+- a guild commission's Ogre, on one task id (`ensureTaskWorldObjects`);
+- a Deepwood lair's cavern, both floors, with its master and its traps (`goToDungeon`).
+
+For each foe it compares the kind, variant, tier, health, blow, pace and whether it is latent.
+
+Found while reading for it, and outside the sheet's table:
+- **A town's jobs still count by your level** (`townQuestFor`, `87-world-quests.js`). A cull asks for 4 + level ÷ 3 beasts, a
+  road job's camp holds 3 + level ÷ 3 bandits, and the pay is 40 + 30 × (level ÷ 3).
+- **The war's siege camps and occupiers still count by your level.** A siege camp holds 6 + level ÷ 3 bandits and an occupation
+  5 + level ÷ 4.
+
+Both are numbers a player feels, and the sheet does not say what replaces them, so they are asked (DECISION #405) and not built.
+### Verified (headless Chromium)
+- **`tierlevelfree`** (new), 7/7:
+  - The 18 chunks give the same 12 foes at both levels (Deserters and Bandits at tier 2), and none is latent.
+  - Dunderry's Lair (tier 1) is built with the same Cave Bear (259 health, a blow of 25) and two Dire Wolves (40, 10).
+  - The commission's Ogre is 253 health and 33 blow at both levels (tier 2).
+  - The Deepwood cavern is Hard at both levels and holds the same 28 foes, 14 on each floor. Its master, *Testwood — Cave Bear*,
+    stands on floor 2 at tier 3 with 1,269 health.
+  - Its 3 traps stand in the same places and land the same: a spike 16, two blades 17.
+- **What still differs:** the cavern's hoard holds 153 gold at level 1 and 1,458 at level 30. That is DECISION #394's to settle.
+### Needs eyes
+- Nothing in play changed.
+- **Owed from the sheet:** `tiermainpath`. The loot and the hoard wait on #394; then the quest writer's four danger lines.
