@@ -23264,3 +23264,15 @@ Corrections made during the session:
 - **The weave reads as coiled rows from a distance.** The stakes show only close to.
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
+
+## v80 — Session 1053 — `lookpair`: the road box is looked at before the shot (FLAKY once on auto/systems, QA)
+`lookpair` failed once and passed on its retry on auto/systems bf251d1 (16 Oct, shard 11, 800 s with the retry). The red check was *the colour and the light match*, on the road box alone: the old look read (231,218,147), the new one (167,196,98), which is the grass's own colour. QA's ledger had put it down to snow, because the log's snow line read 0.278 and 0.28 of cover before the shots. The job's full log says otherwise. The retry also had the new look's cover at 0.28 and matched to 1 level, and the suite takes the cover off and repaints before both shots (Session 832). A probe here laid 0.31 of snow before the suite's clearing and read the road at (230,217,147). So the red shot simply had no road drawn under the box.
+
+Three causes were tried, and none reproduced in eight boots in either look, run two to four at once. First, the spot's chunk still queued: the teleport to the spot queues 8 chunks, and they are all built by frame 8 of the 30 the suite runs. Second, a chunk built before its cell's road registered: `buildRoadRibbons` runs only in `buildChunk`, but all 35 of the 90 loaded chunks that have road segments had every segment laid. Third, the snow. The first two remain possible on a slower runner, and which one it was is not known. So the suite now looks before it shoots. A ray through the road box's centre (400, 390) is cast against the near chunks' ground and road ribbons. After the suite's 30 frames, the loop runs on (up to 300 more frames) until the ray meets a ribbon. A new check, *the road box looks onto a road ribbon in both looks*, reports what the ray met: the chunk, the road segments in it, how many were laid, the build queue and the frames waited. A chunk that is late now gets waited for. A ribbon that was never laid fails by name instead of as a colour, and goes to the look builder (`80`/`82`). The colour check and its 10 levels are unchanged.
+
+### Verified (headless Chromium)
+- `lookpair`: 3 of 3 green, one alone and two side by side. Each look's ray met the road at chunk (211,397), 14 of 14 segments laid, nothing queued, 0 extra frames. The road box read (231,218,147) in both looks, the worst region 2 levels, mean difference 5.72.
+- CI read 06:52 to 12:52: 6 green runs and 1 red (auto/systems 26552c7: `q7world` before Session 1039 reached it, and `roll`, which that branch's own Session 1049 re-measured). No FLAKY annotations.
+
+### Needs eyes
+- Proof on CI: the next red on this check names its cause. If it reads `ground` with `laid` below `segs`, that is a road the chunk never got, and it is the look builder's to fix.
