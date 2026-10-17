@@ -23425,3 +23425,31 @@ The lines, castles, cabin, wheel, ports, rig and hatches are the Gatelands galle
 - **A tarred black galleon with tanned square sails** may read as the Gatelands galleon in mourning rather than as the Mark's. #347's text keeps her rig, so her silhouette is the Gatelands galleon's, and only the colours name her.
 - **The port lids are tarred on a tarred hull** and almost vanish. Gilt or red lids would show the gun deck, if Michael wants it seen.
 - **Still owed by #347:** Aurenne's galleon (square forward, lateens on the main and the mizzen).
+
+## v80 — Session 1046 — Card F11: Aurenne's galleon, by #347's answer (prototype only)
+The last hull owed by Michael's A on DECISION #347. Option A's text reads: "an Aurenne galleon square forward with lateens on the main and the mizzen". It is `aurenneGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'aurenne'`), at `ships.html?ship=aurgalleon`. With it, all five classes have all three islands' dresses.
+
+The lines, castles, great cabin, ports, hatches and wheel are the Gatelands galleon's (Session 896), in the caravel's dress (Session 890):
+- **The hull:** tallowed white below the water and oiled above. The top two strakes, the castles' walls and the twelve gun-port lids are blue, and the wale, the bands, the window heads and the lanterns gilt.
+- **Forward:** the fore mast is square, exactly the Gatelands galleon's course and topsail, with the sun-star on the course. The spritsail is kept. The topsail and the spritsail are plain cloth.
+- **The main:** a lateen to starboard, the caravel's main at the galleon's size.
+  - The mast is raked 4° forward, and the galleon's round top is kept on it.
+  - The yard is slung 8.5 m over the deck at 56°. It runs forward to a tack 2.6 m over the deck, lashed by the fore mast's foot, and 11 m aft to a peak 17.6 m up over the quarterdeck.
+  - The clew is 2.5 m over the deck, 1.4 m forward of the quarterdeck, and is sheeted to the waist's rail.
+- **The mizzen:** a lateen to port on the quarterdeck, the caravel's mizzen. The mast is raked 4°, and the yard slung 5.4 m over the quarterdeck at 50°. The tack is lashed to the quarterdeck's edge rail, and the clew is over the transom, sheeted to the taffrail. It replaces the Gatelands galleon's gaff and boom.
+- **The stays and shrouds:** each lateen has its shrouds on its weather side only, as the caravel's do. The stay from the main's head to the fore's follows the raked mast.
+
+A correction made during the session: the first pictures showed a sliver of the sun-star's ray in a corner of the fore topsail and of the spritsail. Those sails take a corner of the star sail's map (as the Gatelands galleon's plain sails take a corner of the harp's), and the star's long rays reach 0.26 of the map in from the corner. Aurenne's plain sails now take the first 0.18 of the map, which is clean cloth.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `castle` views render with no page errors.
+  - **The builds:** 3 keys, with and without the star, each build the same twice: 42,600 triangles in 11 meshes. Her sections, rail, castles, ports and fore course are exactly the Gatelands galleon's, and the star changes only the sails.
+  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
+  - **The rig:** one square mast and two lateens, the main to starboard and the mizzen to port. Every point of every sail and yard is 2.2 m or more over the deck under it, the castles' decks where it is over them.
+  - **Clearances:** the main's lateen is 1.06 m aft of the fore's course, 0.69 m off the fore mast and 2.78 m off the mizzen mast. The mizzen's is 4.53 m off the main mast. The yards are 0.09 m off their own masts, and the main's yard 0.29 m off the top.
+- **Pictures:** `ships-aurgalleon-quarter.jpg`, `-side`, `-castle`, `-deck` and `-quarter-nostar`.
+### Needs eyes
+- **The main's peak stands 17.6 m up**, over a 22 m hull. The lateens make her read more as a big caravel than as a galleon, which is what #347 A asks, but the class may want its topsail-high look back.
+- **Only the fore course carries the star.** The lateens show it whole (their map is laid out about each sail's middle), so she shows three stars, as the caravel does.
+- **#347 is built out.** All five classes in all three dresses wait on F11's parents in v2-scope §3 to go into the game.
