@@ -23376,3 +23376,30 @@ Corrections made during the session:
 - **The weave reads as coiled rows from a distance.** The stakes show only close to.
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
+
+## v80 — Session 1044 — Card F11: Aurenne's cog, by #347's answer (prototype only)
+The third hull built to Michael's A on DECISION #347, and the last cog. Option A's text names it: "an Aurenne cog with one lateen". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait. This session touches only the prototypes: `ships.js`, `ships-view.js` and `ships.check.mjs`. It is `aurenneCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'aurenne'`), at `ships.html?ship=aurcog`.
+
+It has the very lines, waist rail, castles, cabin, wheel and cargo of the Gatelands cog (Session 892), in the caravel's dress (Session 890):
+- **The hull:** tallowed white below the water and oiled above. The sheer strake and both castles' walls are blue, and the wale and the castles' cappings gilt. It stays clinker, as the cog is.
+- **The sail:** white with the sun-star in gold, or plain with `&nostar`.
+- **The rig:** the yard, the square sail, its braces and its sheets are gone. In their place is one lateen, the caravel's main at the cog's size:
+  - The mast is raked 4° forward, as the caravel's lateen masts are, 0.88 m at its head. The fighting top is kept and rides on the raked mast.
+  - The yard is slung to starboard, 0.36 m off the mast's centre, from a sling 8 m over the deck at 56°. It runs 6.5 m forward to a tack 2.6 m over the deck and 10 m aft to a peak 16.3 m up.
+  - The clew is 2.5 m over the deck, 1.4 m forward of the aftcastle. So the whole sail stands between the castles, and no one on either castle walks under it.
+  - The tack is lashed to the forecastle's edge beam and the sheet led to the waist's rail, both above head height over the walk. The halyard runs down the mast.
+  - The shrouds stand on the weather side only, as the caravel's do. The forestay and the bowsprit stay are the cog's, from the raked mast's head.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `fore` views render with no page errors.
+  - **The builds:** 3 keys, with and without the star, each build the same twice: 40,620 to 40,656 triangles in 12 meshes. The lines, rail and castles are exactly the Gatelands cog's, and the star changes only the sail.
+  - **The hull:** closed (0 of 900 rays get out), with clinker laps of 0.024 to 0.033 m. The walk is clear at all 96 points, down either side and down the middle (the hatch and the mast left out), with 2.09 m of headroom and 0.67 m clear at the sides.
+  - **The rig:** one lateen to starboard. Every point of the sail and the yard is 2.5 m or more over the deck under it. The sail is 0.42 m or more clear of both castles' edges. The yard is 0.64 m clear of the top and 0.13 m clear of the tapered mast.
+- **Pictures:** `ships-aurcog-quarter.jpg`, `-side`, `-fore`, `-deck` and `-quarter-nostar`.
+
+A correction made during the session: the first build slung the yard 0.30 m off the mast, as the caravel's is. On the cog's thicker mast (0.2 m at the foot) that left 1 cm between the yard and the mast. The yard is now 0.36 m off, and the check measures the mast's taper rather than its foot.
+### Needs eyes
+- **The peak stands 16.3 m up**, 5 m over the cog's masthead, as the caravel's lateens stand over theirs. A cog's short, deep hull under so tall a sail may read top-heavy.
+- **The fighting top is kept** as the cog's own mark. A lateen's yard is hoisted from under it, which works, but a real lateener would rarely carry one.
+- **Still owed by #347:** the galleon in the Mark's and Aurenne's dress.
