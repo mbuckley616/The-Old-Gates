@@ -576,12 +576,14 @@
   function talkDownTopic(S,c,reopen){if(!c||c.talked||!perk('speech',50))return [];
     return [{label:'Talk it down. (Speech)',quest:true,fn:()=>{if(!talkDownFine(S,c))return '';c.talkedNow=1;showMsg(`The fine is halved: ${c.bounty} gold.`,'#c8e88a');
       setTimeout(()=>{try{closeDialog();}catch(e){}reopen();},60);return '';}}];}
+  const GUARD_TIER=3;
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
     let gen=null;n.g.traverse(o=>{if(!gen&&o.userData&&o.userData.rig&&o.userData.rig.g)gen=o.userData.rig.g;}); // S171 — the guard who draws is the guard you spoke to
     // S509 — the guard who draws is keyed (co-op rules): his town, his place among its people, and the minute he drew
-    const ni=(S.npcs||[]).indexOf(n);const e=keyFoe(buildZoneEnemy(scn,sol,x,z,'Bandit',null,{genome:gen}),`${S.site.id}:guard:${ni>=0?ni:((n.def&&n.def.name)||'guard')}:${Math.floor(worldState.gameTimeAbsMinutes||0)}`);e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
-    e.hp=e.maxHp=Math.round(40+level*8);e.dmg=Math.round(6+level*1.2);e.spd=1.4;e.xpVal=0;e.def=3;e._guard={site:S.site.id,npc:n};e.alert=true;
+    const ni=(S.npcs||[]).indexOf(n);const e=keyFoe(buildZoneEnemy(scn,sol,x,z,'Bandit',null,{genome:gen,tier:GUARD_TIER}),`${S.site.id}:guard:${ni>=0?ni:((n.def&&n.def.name)||'guard')}:${Math.floor(worldState.gameTimeAbsMinutes||0)}`);e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
+    /* S1060 — the law is tier 3 in every town (the enemies-by-place sheet, Morrowind's precedent): its numbers read tier 3's level, 11, not yours */
+    const GL=tierLevel(GUARD_TIER);e.hp=e.maxHp=Math.round(40+GL*8);e.dmg=Math.round(6+GL*1.2);e.spd=1.4;e.xpVal=0;e.def=3;e._guard={site:S.site.id,npc:n};e.alert=true;
     try{const body=enemyBodyMesh(e);if(!(e.limbs&&e.limbs.person)&&body&&body.material&&body.material.color)body.material.color.setHex(0x6a2a2a);}catch(err){}
     ZONES.world.enemies.push(e);showMsg(`${(n.def&&n.def.name)||'The guard'} draws.`,'#ff8060');return e;}
   function standDown(S){for(const e of ZONES.world.enemies){if(!e._guard||e.dead||e._guard.site!==S.site.id)continue;e.dead=true;try{(e.mesh&&e.mesh.parent||sc).remove(e.mesh);}catch(err){}if(e.el)e.el.intensity=0;

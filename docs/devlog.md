@@ -24177,3 +24177,22 @@ Before this session, a wild foe whose kind's `minLevel` was above your level was
 - **A level-1 character meets Ogres, Cave Bears and Captains in the Foothills** (tier 2), where nothing past level 4 stood before. That is the sheet's Caelid: the place's danger is readable, and a new character is meant to turn back.
 - **The coast never grows a Captain.** A late character on the coast meets plain bands for good.
 - **Owed from the sheet:** the commission's grade, the guards at tier 3, the traps and the wyrm's fire at the tier's level, and the door's grade on the map. The loot and the hoard wait on #394.
+
+## v80 — Session 1060 — Enemies by place: the town guard at tier 3 in every town, and a commission's grade one above its place's (the designer's sheet, session 1, part 3)
+Two more of the sheet's rows.
+
+**The guard.** A guard who draws on you was a Bandit's body given `guardEnemy`'s own numbers: 40 + 8 × your level health and a blow of 6 + 1.2 × your level. So he was 48 and 7 at level 1, and 200 and 30 at level 20. He now stands at tier 3 in every town (`GUARD_TIER`). He is built with `{tier: 3}`, and his numbers read tier 3's level, 11: 128 health and a blow of 19, at any level, in any town. This is Morrowind's precedent, which the sheet takes: the law outclasses a new character, and a late one can defy it. The blow is set once, at the draw, so the tier is not counted twice.
+
+**The commission.** A guild commission's quarry already took its place's tier for its health (S1034), with the ×1.6 on top. Its rare-variant roll still asked for a fixed `'hard'` grade, everywhere. It now asks for one grade above its place's (`tierDiffKey(tier, 1)`): Easy on the coast, Hard in the Deepwood, Very Hard in the Wastes. The quarry stays a named one, harder than the country round it, and the ×1.6 stays.
+
+**Suite re-measured.** `guardlevel1` copies `guardEnemy`'s formula, so it would have passed on the old numbers. It now reads tier 3's level, and its check is 128 health and 19 damage (it was 48 and 7).
+### Verified (headless Chromium)
+- **`guardseed`** 4/4 (one new check). A guard drawn in Dunmore at level 1 and at level 30 is tier 3, with 128 health and a blow of 19 both times.
+- **`guardlevel1`** 3/3, the numbers for a new character (130 health, a Wooden GreatClub, a swing every 0.555 s):
+  - The guard takes 52 swings, 28.9 s, to fell, and fells you in 7 blows, 13.4 s.
+  - The world's Bandit, for scale, takes 8 swings and fells you in 16 blows.
+- **Neighbours:** `crime3`, `guardplay`, `guardsindoor`, `theft`, `questtargets`, `jobids`, `handback`, `witnessrange` and `towngate`.
+### Needs eyes
+- **A guard now kills a level-1 character in about 13 seconds**, where before a new character could cut one down (48 health). Fleeing, paying and yielding are the answers. That is the sheet's intent, and it is the biggest felt change of the three sessions. If it is too much in play, the lever is `GUARD_TIER`.
+- **A late character outgrows the guard.** At level 20 he is 128 health where he was 200.
+- **Owed from the sheet:** the traps and the wyrm's fire at the tier's level, and the door's grade on the map. The loot and the hoard wait on #394. Then the quest writer's four danger lines.
