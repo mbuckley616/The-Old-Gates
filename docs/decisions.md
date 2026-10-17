@@ -227,6 +227,7 @@ Pictures:
 - C (lateens): [quarter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-quarter-lateen.jpg), [side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/ships-glcaravel-side-lateen.jpg)
 
 Michael: **A. Island’s rig forward, the class’s own aft**. (15 Oct 2026, on the control room)
+Done, Session 1038 (in part): the Gatelands caravel already defaulted to A (`redonda`); the Mark's caravel built to it, gaff fore and main and the lateen mizzen (`markCaravel`, `ships.html?ship=markcaravel`). Owed by the same rule: the cog and the galleon in the Mark's and Aurenne's dress.
 
 ### Quest draft approved: The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
 Michael: **Approved**. (14 Oct 2026, on the Quest Drafts page) In the quest writer's build queue on auto/quests-build; nothing is built while FREEZE #297 is open.

@@ -23209,3 +23209,31 @@ CLAUDE.md's code map does not list the file yet, and its count of script files i
 - **The colours** are the game's colour rule, not the prototype's tone curve. The renders look close in the picture, but the reds and the slate may sit darker or lighter on Michael's screen than on the prototype page.
 - **The surfaces** are painted on the main thread the first time they are used, which took about 0.7 s here. In the game that will be the first Gatelands town on the new look. If it shows as a hitch, they can be painted during the load.
 - **The street stands on raw ground** with its footing sunk 0.8 m. It has no solids, so the player walks through it, and its doors lead nowhere. That is the next session's work.
+
+## v80 — Session 1038 — Card F11: the Mark's caravel, by #347's answer (prototype only)
+Michael answered DECISION #347 on 15 Oct with A: when a hull takes another island's dress, the island's rig goes forward and the class's own stays aft. Nobody had built to it since. The Gatelands caravel already defaulted to that rig (`redonda`: square fore and main, the lateen mizzen), so it needed nothing. This session builds the Mark's caravel to the same rule. It is `markCaravel` in `docs/prototypes/levelup/ships.js`, at `ships.html?ship=markcaravel`.
+
+It is `aurenneCaravel` with `o.dress: 'mark'`: the very lines, rail, castle, cabin and wheel, in the Mark's cutter's dress (Session 871):
+- **The hull:** red-brown below the water and tarred black above, with the gilt wale. The castle's walls are tarred and its panels oak.
+- **The sails:** the cutter's tanned cloths, or its red and black stripes with `&stripe`.
+- **The head:** the cutter's gilt beast's head on the stem head (`&nohead` leaves it off). Its neck sits on the stem's top, and its crown is 1.5 m over the sheer, above the bowsprit.
+
+The rig is the Mark's gaff forward. The fore and the main each carry a gaff sail on an upright mast, and the mizzen on the castle keeps the caravel's lateen:
+- **The booms** are 2.15 m over the deck, as the cutter's are, so a person walks under them. The fore's ends 0.8 m short of the main mast, and the main's ends 1.1 m short of the castle's bulkhead, clear of the ladders.
+- **The gaffs** are peaked at 28°. The fore's peak is 1.83 m under the stay from the main's head to the fore's.
+- **The rigging:** shrouds stand on both sides of a gaff mast, and each sail has a peak halyard and a sheet to the deck. The mainstay runs from head to head and the forestay from the fore's head to the bowsprit, as on the Gatelands caravel.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and four builds checks are new.
+  - **Renders:** the `quarter` and `castle` views render with no page errors.
+  - **The builds:** 3 keys, plain and striped, each build the same twice: 31,934 triangles in 12 meshes. The lines, rail and castle are exactly Aurenne's caravel's.
+  - **The hull:** closed (0 of 1,080 rays from inside get out). The walk from the castle's ladders to the bow is clear at all 72 points on either side. Down the middle, the booms' undersides are 2.07 m over the deck. The cabin has 2.09 m of headroom and its door is clear for 2.7 m.
+  - **The rig:** two gaffs and one lateen. The booms end short of the next mast and of the castle by the margins above. Every sail's foot is 2.25 m or more over its deck, and no sail comes within 0.33 m of a mast not its own.
+  - **The head:** met from above on the stem's line, 1.5 m over the sheer.
+- **Pictures:** `ships-markcaravel-quarter.jpg`, `-side`, `-deck`, `-castle` and `-quarter-stripe`.
+
+A correction to the check during the session: its new probe down the middle of the deck first started inside the hatch's 0.3 m coaming, so it read 0.3 m of headroom. The hatch is now left out of it.
+### Needs eyes
+- **The gaff sails are tall and narrow** on the caravel's short spacing between masts. A Baltic schooner's look, which may or may not read as the Mark's.
+- **A tarred black hull with a lateen aft** mixes the two islands at a glance. That is what #347 A asks, but whether the silhouette still names the Mark is worth a look.
+- **Still owed by #347:** the cog and the galleon in the Mark's and Aurenne's dress.
