@@ -273,7 +273,7 @@ function startRoll(nowS,keys){
   if(K['KeyD']){mx+=rgtX;mz+=rgtZ;}
   if(!mx&&!mz){mx=-fwdX;mz=-fwdZ;}
   const l=Math.hypot(mx,mz)||1;mx/=l;mz/=l;
-  const heavy=totalCarryWeight()/maxCarry()>ROLL_HEAVY_AT,sp=heavy?ROLL_HEAVY:ROLL_LIGHT;
+  const heavy=rollLoad()/maxCarry()>ROLL_HEAVY_AT,sp=heavy?ROLL_HEAVY:ROLL_LIGHT;
   blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;if(typeof swingCancel==='function')swingCancel();
   stamina=Math.max(0,stamina-_stamCost(ROLL_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
   ROLL={t0:nowS,dur:sp.dur,dist:sp.dist,i0:sp.i0,i1:sp.i1,dx:mx,dz:mz,done:0,heavy,fwd:(mx*fwdX+mz*fwdZ)>=-.01?1:-1};
@@ -438,13 +438,14 @@ function fallSettle(rolled){
 // 0.8 s and open: the guard drops, and you can't swing, block, roll or step. You come out of it with it full; otherwise
 // it refills as an enemy's does (5 a second, 1.5 s after the last blow; POSTURE_REGEN). The stagger reads performance.now().
 const PPOST={posture:100,maxPosture:100,lastHitAt:0,stagUntil:0},PLAYER_STAGGER_S=.8;
-function playerMaxPosture(){return 100+2*Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);}
+function playerMaxPosture(){return (100+2*Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0))*unbowedMult();} /* S1050 — Unbowed (Armour 50) */
 function playerStaggered(nowS){return nowS<PPOST.stagUntil;}
-function playerPostureHit(amount,nowS,guard){
+function playerPostureHit(amount,nowS,guard,heavy){
   PPOST.maxPosture=playerMaxPosture();
   PPOST.lastHitAt=nowS;
   if(playerStaggered(nowS))return false;
-  PPOST.posture=Math.max(0,Math.min(PPOST.posture,PPOST.maxPosture)-amount);
+  const _before=Math.min(PPOST.posture,PPOST.maxPosture);
+  PPOST.posture=Math.max(holdTheLine(_before,PPOST.maxPosture,heavy)?1:0,_before-amount); // S1050 — Hold the line (Armour 75)
   if(PPOST.posture>0)return false;
   PPOST.stagUntil=nowS+PLAYER_STAGGER_S;PPOST.broke=true;
   blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;powerSwingDelayT=0;_bowDrawing=false;ROLL=null;

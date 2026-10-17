@@ -24018,3 +24018,20 @@ The same run's other red, `q7world` (260 s, failed twice on shard 8), passes her
 - `roll` 10/10 (it was 7 of 10 here and on CI). `q7world` 1/1.
 ### Needs eyes
 - Nothing.
+
+## v80 — Session 1050 — Armour's perks: Unbowed, Hold the line and Second skin (skills and perks A)
+Armour's last three perks waited on combat's resolver, because the roll's weight line sits beside one the resolver changed. *Fitted* (25) has been in since Session 977. These three are in `12-character.js` beside the others, and each is read at one place in `10-player.js`.
+- **Unbowed (Armour 50): your posture +25%** (`unbowedMult()`, in `playerMaxPosture`). With 20 armour it is 175 where it was 140.
+- **Hold the line (Armour 75): a light hit doesn't stagger you above half posture** (`holdTheLine()`, in `playerPostureHit`). A hit taken while your posture is over half leaves at least 1, however hard it lands. Below half the hit breaks you as before, so a second blow still does. `playerPostureHit` takes a fourth argument, `heavy`, that the perk does not hold against. No caller passes it yet: no foe has a heavy attack (`FOE_ATTACKS`' heavy column, as with Guard's *Iron wall*), so every blow is light today.
+- **Second skin (Armour 100): worn armour never slows the roll** (`rollLoad()`, in `startRoll`). The roll is heavy over 70% of what you can carry (0.6 s over 1.8 m, not 0.45 over 2.6). At 100, what you wear on the five armour slots is left out of that load; the bag, the weapon and the shield still count. The air step and the dash keep reading the whole load: the sheet names the roll.
+### Verified (headless Chromium)
+- **`perkarmour`** (new), 8/8:
+  - 20 armour gives 140 posture at Armour 49 and 175 at 50.
+  - A blow worth 1.2 times a full posture breaks you at 74. At 75 it leaves you on 1.
+  - From 40% posture, a blow worth half breaks you at 75. A hit marked heavy breaks you from full.
+  - Worn armour weighing 80% of the 65 you can carry (after Fitted) rolls heavy, 1.8 m, at Armour 99, and light, 2.6 m, at 100. The same weight in the bag still rolls heavy at 100.
+  - All four of Armour's perks show as live.
+- **Neighbours:** `posture` (3), `posturefloor`, `roll`, `perkfall`, `perkguard`, `captainguard`, `airstep`, `airdash`, `resolver` and `tells` pass, run two at a time.
+### Needs eyes
+- **Hold the line makes a full posture bar a one-blow shield**, so you are broken only by two blows in quick order. Against a single big hitter, a troll for one, that is a large change at 75.
+- **Owed:** the Blade, Blunt and Hand-to-hand perks, the last of the Arms; Guard's *Iron wall* and a heavy hit for *Hold the line*, once the heavy attacks are built.
