@@ -24444,3 +24444,28 @@ Both are numbers a player feels, and the sheet does not say what replaces them, 
 ### Needs eyes
 - Nothing in play changed.
 - **Owed from the sheet:** `tiermainpath`. The loot and the hoard wait on #394; then the quest writer's four danger lines.
+
+## v80 — Session 1064 — Enemies by place: `tiermainpath`, the first act at tier 1 or 2 (tests only)
+The sheet's last suite asks whether the main quest's first act sends a new character anywhere above tier 2. If it did, the
+quest would stay where it is and the list would go to the producer. It does not. No game code changed.
+
+The suite walks `QUEST_DEFS` from *q0* to *q7* and finds each objective's place in the world's own data:
+- **A dungeon** is placed where `fixedDoorSpot` puts its door, independent of what has loaded. Its tier counts the floor the
+  objective sends you to, so a door's floor 2 is its tier plus one.
+- **A legacy zone's objective** goes to its town (Ashenmoor or Ironhaven). The Faolchú is placed where it is spawned beside
+  Ashenmoor.
+- **A live portal,** where one stands, must read the same tier as its door's place in the data.
+
+That leaves session 1 of the sheet built but for the loot and the hoard, which wait on #394, and the counts asked in #405.
+### Verified (headless Chromium)
+- **`tiermainpath`** (new), 4/4. 19 destinations in 11 places:
+  - Ashenmoor and Ironhaven are tier 1.
+  - The Dungeon of Shadows, the Crypt of Embers and the Vault of the Tide are tier 1 at the door and tier 2 on floor 2, where
+    *q2*, *q4* and *q5* send you.
+  - *q6*'s seven Ironhaven dungeons are tier 1 or 2. Three stand in the Foothills at tier 2: the Dead Sepulchre of Despair, the
+    Frost Sanctum of the Ancients and the Forsaken Ruin of Despair.
+  - Every live portal agrees with the data.
+### Needs eyes
+- **The Binding Stone's twenty kills.** Three of the seven Ironhaven dungeons are tier 2 at the door: Normal grade, ×1.75
+  health and ×2.09 blow. A character who picks one of those first meets twice the blow of the Vault of the Tide. That is
+  within the sheet's line, but it is the first place the main path's danger varies by choice.
