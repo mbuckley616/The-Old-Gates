@@ -23180,3 +23180,32 @@ Corrections made during the session:
 - **The spruce** are the cabin's and the logging camp's cones. Close to the camp, the nearest one fills the far view.
 - **No tracks is the tell.** In the game, the player's own footprints (`FP`) will be the first marks in this snow. Whether a second line of prints, leading away and snowed half over, should be added is the quest writer's call, and the prints would be the bodies builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), and strange tracks.
+
+## v80 — Session 1037 — The new kit's file in the game, js/38-kit.js (card F6)
+Michael answered DECISION #389 with A: the new kit lives in the game in a new file, `js/38-kit.js`. This session makes the file and brings the first kind into it: the Gatelands kit, the concept run's buildings (Sessions 834 to 964), which the prototype has checked longest.
+
+What is in the file:
+- **Its place:** a tag after `34-creatures.js`, before the legacy zones. It loads in both looks, and the code is only called on `?look=new`. Nothing in it touches `THREE` while the page loads, so on r128 it costs one object. Everything is inside one function, so the kit's short names (`box`, `face`, `stack`, `building`, …) stay out of the shared scope. The one global is `PKIT`.
+- **The base:** the seeded stream keyed by a string, `mergeByMaterial`, and the surfaces from `common.js` (plaster, rubble, ashlar, thatch, slate, wood). Each surface is painted the first time a material asks for it, not all at boot. The vendored three.js has no addons, so the file has its own small `mergeGeometries` for what the kit makes: position, normal and uv, not indexed.
+- **The Gatelands kit:** `PKIT.gl.building(plan)`, the eight plans in `PKIT.gl.PLANS` (cottage, forge, temple, guild hall, farmhouse, townhouse, merchant's house, warehouse) and `PKIT.gl.lot(street, i)`, the coloured towns of #280 A. They are copied line for line from `pieces.js` by a script, with three changes:
+  - The prototype's `SCALE` is `PS` here, since `SCALE` is the game's. The two agree: a door is 2.05 m.
+  - Textures carry no colour space. The game runs 0.170 with colour management off and a linear output (`05-compat.js`), so a texture is read as r128 read one, like the game's own.
+  - A plan with no stream of its own takes the kit's stream, not the prototype page's shared `rnd()`.
+
+Nothing in the world builds from it yet. The next session is the Gatelands' generated towns on the new look: lots from `PKIT.gl.lot`, with solids, doors and rooms to match the walls. The prototype pages stay the drawing board: a piece is drawn and checked there, then copied here.
+
+CLAUDE.md's code map does not list the file yet, and its count of script files is now 45. The routine may change CLAUDE.md only to add a gotcha, so that edit is the producer's.
+
+### Verified (headless Chromium)
+- **`tests/kit`: 11 of 11 pass.**
+  - **Old look:** `PKIT` is there, it has painted no surfaces, and there are no page errors.
+  - **The line-up:** the six plans build to exactly the triangles and sizes the prototype recorded in `pieces-gatelands.json` (cottage 1,826, hipped cottage 1,472, farmhouse 2,144, townhouse 5,033, merchant's house 4,426, warehouse 9,084). Each is one mesh per material, position, normal and uv only, in 10 to 14 draws. The first build painted six surfaces, and the line-up took 770 ms.
+  - **The other plans:** the forge (1,390 triangles), the temple (4,512) and both guild halls (9,873) build, each with a door to stand at. The kit's door is the game's, 2.05 m.
+  - **Lots:** eight lots of a street each build the same twice, lit windows and all, and no two neighbours share a colour.
+  - **In the world:** a street of six lots stood 30 m ahead in the open world is drawn: 78 more draw calls, exactly the sum of its buildings', and 27,774 triangles.
+- `looknew` passes. `parsecheck` covers 45 files.
+- **Picture:** `docs/prototypes/kit-street-ingame.png`, the street in the game at 11:00.
+### Needs eyes
+- **The colours** are the game's colour rule, not the prototype's tone curve. The renders look close in the picture, but the reds and the slate may sit darker or lighter on Michael's screen than on the prototype page.
+- **The surfaces** are painted on the main thread the first time they are used, which took about 0.7 s here. In the game that will be the first Gatelands town on the new look. If it shows as a hitch, they can be painted during the load.
+- **The street stands on raw ground** with its footing sunk 0.8 m. It has no solids, so the player walks through it, and its doors lead nowhere. That is the next session's work.

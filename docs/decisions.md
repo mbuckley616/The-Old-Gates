@@ -4,6 +4,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+
 ### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
 F2a has merged, so the new kit's buildings, rooms and places can start going into the game behind `?look=new`, one kind a session (card F6, then F8 and F9). Nothing of the kit is in the game yet. The kit is about 1,300 lines of ES modules in `docs/prototypes/levelup/` (the surfaces in `common.js`: relief textures for plaster, ashlar, thatch, slate, pantile, turf and the rest; the piece builders in `pieces.js`; the places in `places.js`). The game is plain scripts in one scope, so the kit has to be copied over as a classic script, and CLAUDE.md makes a new `js/` file a decision of its own.
 
@@ -14,7 +16,8 @@ Where should the kit live in the game?
 
 A keeps each look's code apart and gives F14 one file to keep and a list of files to delete. Pictures are not needed for this one; the kit as it stands is `docs/prototypes/levelup/pieces.html`, `rooms.html` and `places.html`.
 
-## Answered
+Michael: **A — the kit lives in a new file, js/38-kit.js.** (17 Oct 2026, on #389)
+Done, Session 1037: `js/38-kit.js` and its tag after `34-creatures.js`; the kit's surfaces, merging and the Gatelands kit (`PKIT.gl`), called only on the new look; `tests/kit`.
 
 ### Steady (Bow 25): build an aim sway for it to remove, or another perk? (systems builder, Session 982) — DECISION #369
 The build sheet's Bow 25 perk, *Steady*, is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly where the crosshair is for as long as you hold it, and only the stamina drain (8 a second) limits the hold. So there is nothing for Steady to take away. Session 982 built the Bow's other three perks (Quick nock, Long eye, Through) and left Steady off; the Skills tab shows it as *not yet in the game*.
