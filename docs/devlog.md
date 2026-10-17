@@ -24665,3 +24665,31 @@ with the sheath button, one a session. How a sheathed weapon looks belongs to th
     for Michael if it should follow the place too.
   - 1076: a road job out of Dunmore now asks 5 bandits at level 1, where it asked 3, because its camp stands in a tier-2 stretch.
     At level 1 that may be a harder first job than before.
+
+## v80 — Session 1078 — Throw (Hand-to-hand 50): a punch knocks a staggered foe down (Michael's A on #399)
+The second of #399's four. No foe could be knocked down: it was staggered or it was not. Michael's A gave the rule: *the foe
+falls for 1.5 s, open to a finisher from any side*.
+
+**What changed.**
+- **The throw.** A punch that lands on a staggered foe knocks it down when Throw is held, unless that punch is the finisher or a
+  riposte (`applyMeleeDamage`, `74-strikes.js`). `throwFoe` (`12-character.js`, beside the other Arms perks) holds the foe's
+  stagger for at least 1.5 s (`THROW_S`) and keeps its finisher open as long.
+- **Open from any side.** `finisherOpen` (`10-player.js`) skips its facing test while the foe is down (`e._downUntil`), so the
+  next blow from behind is the ×3 finisher.
+- **A thrown foe cannot be thrown again** until it rises.
+- **Fists only:** a sword does nothing with it, as with every Arms perk.
+- **The Skills tab** gives the perk's full line, and it is live.
+
+**What it does not do yet.** It does not lay the body down. The foe stands frozen in its stagger as before. `e._downUntil` is the
+clock it rises at, for the bodies builder to pose a fall on (filed in the backlog with the perk).
+### Verified (headless Chromium)
+- **`perkthrow`** (new), 8/8:
+  - A Bandit staggered with its back to you is not open to a finisher.
+  - At Hand-to-hand 49, a punch from behind (7) throws nothing.
+  - At 50 the punch puts it down for 1.49 s, its stagger held at 1.5. The next punch from behind is the finisher at 14, twice
+    the plain staggered 7 (×3 against ×1.5).
+  - From the front, the punch is the finisher itself and nothing is thrown.
+  - A sword at Hand-to-hand 100 throws nothing.
+### Needs eyes
+- **No fall is shown.** Until the bodies builder poses it, a thrown foe looks the same as a staggered one. The *goes down!* line
+  is the only sign of it.

@@ -666,6 +666,7 @@ let _swingStartS=-1e9,FINISHER_SAFE_UNTIL=0;
 function riposteOpen(e){return !!e&&typeof e._ripUntil==='number'&&_swingStartS>=e._ripAt&&_swingStartS<=e._ripUntil;}
 function finisherOpen(e,nowS){
   if(!e||!(e._finUntil>nowS)||!isStaggered(e))return false;
+  if(e._downUntil>nowS)return true; /* S1078 — a thrown foe is open from any side */
   if(typeof e.combatYaw!=='number')return true;
   const dx=px-e.x,dz=pz-e.z,d=Math.hypot(dx,dz)||1;
   return (Math.sin(e.combatYaw)*dx+Math.cos(e.combatYaw)*dz)/d>=0;

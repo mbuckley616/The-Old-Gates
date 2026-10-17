@@ -342,6 +342,7 @@ function applyMeleeDamage(e, rawDmg){
   const staggerMult = _fin ? FINISHER_MULT : _rip ? RIPOSTE_MULT : isStaggered(e) ? POSTURE_CRIT_MULT : 1.0;
   if(_fin){ e._finUntil = 0; e._ripUntil = -1e9; FINISHER_SAFE_UNTIL = _nowS + FINISHER_SAFE_S; }
   if(_rip) e._ripUntil = -1e9;
+  if(!_fin && !_rip && isStaggered(e) && armsPerk('hand',50) && !(e._downUntil > _nowS)) throwFoe(e, _nowS); // S1078 — Throw (Hand-to-hand 50)
   // v63 — Backstab multiplier (Combat Redesign Session 2). Stacks
   // multiplicatively with staggerMult so dagger + parry-staggered enemy
   // = ×3.0 × ×1.5 = ×4.5, the canonical burst-window combo. See
