@@ -27,13 +27,28 @@ async function shoot(look) {
     const t = WORLD.siteAnywhere('dunmore'); px = t.x + 6; pz = t.z + 34; yaw = Math.atan2(-(t.x - px), -(t.z - pz)); pitch = -.06; thirdPerson = false;
     forceTime(12);
     const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; let t0 = performance.now();
-    try { for (let n = 0; n < 30; n++) { t0 += 1000 / 60; loop(t0); } } finally { window.requestAnimationFrame = raf; prevT = 0; }
+    // Session 1054: on bf251d1 (CI, 16 Oct) the new look's road box read (167,196,98), the grass's own colour: no road drawn there,
+    // while snow had been cleared from both looks and the retry (the same cover) matched to 1. What lies under the box is read by a ray
+    // through its centre (400, 390): a road ribbon, a near chunk's ground, or nothing near (the far terrain). The 30 frames stand; then
+    // the loop runs on, up to 300 frames, until the ray meets a ribbon, and the check below names what it met.
+    const ribs = new Set(_ribbons), rc = new THREE.Raycaster();
+    const under = () => { const cv = REN.domElement; CAM.updateMatrixWorld(); rc.setFromCamera({ x: 400 / cv.width * 2 - 1, y: -(390 / cv.height * 2 - 1) }, CAM);
+      const objs = []; for (const ch of chunks.values()) ch.group.children.forEach(o => { if (o.isMesh && (o.geometry === ch.terrain || ribs.has(o.geometry))) objs.push(o); });
+      const h = rc.intersectObjects(objs, false)[0]; if (!h) return { hit: 'none', queued: buildQueue.length };
+      const ch = [...chunks.values()].find(c => c.group === h.object.parent), ox = ch.cx * CHUNK, oz = ch.cz * CHUNK;
+      let want = 0; for (const road of ROADS) { const p = road.pts; for (let i = 0; i < p.length - 1; i++) { const mx = (p[i].x + p[i + 1].x) / 2, mz = (p[i].z + p[i + 1].z) / 2; if (mx >= ox && mx < ox + CHUNK && mz >= oz && mz < oz + CHUNK) want++; } }
+      const have = ch.group.children.filter(o => o.isMesh && ribs.has(o.geometry)).reduce((s, o) => s + o.geometry.attributes.position.count / 6, 0);
+      return { hit: ribs.has(h.object.geometry) ? 'road' : 'ground', chunk: [ch.cx, ch.cz], segs: want, laid: have, queued: buildQueue.length }; };
+    let extra = 0;
+    try { for (let n = 0; n < 30; n++) { t0 += 1000 / 60; loop(t0); }
+      for (; extra < 300 && under().hit !== 'road'; extra++) { t0 += 1000 / 60; loop(t0); } } finally { window.requestAnimationFrame = raf; prevT = 0; }
+    const road = { ...under(), extra };
     REN.render(scene, CAM); const cv = REN.domElement, o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0);
     // the draw alone: eight renders of the same frame (shadows included), each waited out by reading one pixel back
     const gl = REN.getContext(), px1 = new Uint8Array(4); REN.render(scene, CAM); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px1);
     const t1 = performance.now(); for (let k = 0; k < 8; k++) { REN.render(scene, CAM); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px1); }
     const renderMs = +((performance.now() - t1) / 8).toFixed(1), calls = REN.info.render.calls, tris = REN.info.render.triangles;
-    return { seeded: window.__seededRoads, rev: THREE.REVISION, url: o.toDataURL(), at: [Math.round(px), Math.round(pz)], renderMs, calls, tris }; });
+    return { road, seeded: window.__seededRoads, rev: THREE.REVISION, url: o.toDataURL(), at: [Math.round(px), Math.round(pz)], renderMs, calls, tris }; });
   // the frame's cost: the game's own meter over a few seconds of its own loop, standing still at the spot
   // Session 830: the meter reports once two frames 500 ms apart have been drawn; a loaded runner draws one every few seconds, so
   // 9 s could pass with no reading (CI's FLAKY on edda9f4; both looks read null here with two suites side by side). At least
@@ -77,6 +92,9 @@ console.log('  perf old', JSON.stringify(oldR.perf));
 console.log('  perf new', JSON.stringify(newR.perf));
 // Session 822 measured 6.0 over the frame, most of it the grass's fine noise and a house or two the town built differently that run;
 // (7.1 on a second run); the flat regions came within 1 level of each other
+// Session 1054: what the ray through the road box met in each look (see shoot); a miss names the cause, not the colour
+console.log('  under the road box: old', JSON.stringify(oldR.road), 'new', JSON.stringify(newR.road));
+check('the road box looks onto a road ribbon in both looks', oldR.road.hit === 'road' && newR.road.hit === 'road', { old: oldR.road, new: newR.road });
 check('both looks laid their roads with the seeded grain', oldR.seeded > 0 && newR.seeded > 0, { old: oldR.seeded, new: newR.seeded });
 check('the two pictures match closely: mean difference under 12 of 255 (the scene itself varies), average brightness within 3', diff.mean < 12 && Math.abs(diff.lumOld - diff.lumNew) < 3, diff);
 check('the colour and the light match: sky, grass, road and a lit wall each within 10 levels a channel', diff.worst <= 10, diff.regions);
