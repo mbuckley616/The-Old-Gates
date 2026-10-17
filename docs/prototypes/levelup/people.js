@@ -289,11 +289,13 @@ void scScar(vec3 p) { if (p.z < scZ) return; vec2 ab = scB - scA; float l = leng
 }
 
 // ── the genome ──
-// g: 0 woman .. 1 man; age: .5 is 25, 1 is 90; muscle, weight, height, prop: 0..1; race: {caucasian, african, asian};
+// g: 0 woman .. 1 man; age: .1875 is 11, .5 is 25, 1 is 90; muscle, weight, height, prop: 0..1; race: {caucasian, african, asian};
 // face: {target: -1..1}; skin, hair, eyes: colours; dress: {tunic, trousers, boots, belt, mantle, skirt: 'short'|'long'|null,
 // hairLen: 0..1, beard: 0..1}
 function macroWeights(G) {
-  const W = {}, gw = { male: G.g, female: 1 - G.g }, a = Math.min(1, Math.max(.5, G.age)), aw = { young: 1 - (a - .5) / .5, old: (a - .5) / .5 };
+  // under 25 (Session 1081) the child's targets come in, MakeHuman's age of 11 at .1875, the youngest the genome goes; from 25 to 90
+  // the young and the old as before, so every grown body is as it was
+  const W = {}, gw = { male: G.g, female: 1 - G.g }, a = Math.min(1, Math.max(.1875, G.age ?? .5)), aw = a < .5 ? { child: (.5 - a) / .3125, young: (a - .1875) / .3125 } : { young: 1 - (a - .5) / .5, old: (a - .5) / .5 };
   const lvl = v => v < .5 ? { min: 1 - 2 * v, average: 2 * v, max: 0 } : { min: 0, average: 2 - 2 * v, max: 2 * v - 1 };
   const mw = lvl(G.muscle), ww = lvl(G.weight), h = G.height, hw = h < .5 ? { min: 1 - 2 * h, max: 0 } : { min: 0, max: 2 * h - 1 };
   for (const [r, rw] of Object.entries(G.race)) for (const gn in gw) for (const an in aw) W[`macrodetails/${r}-${gn}-${an}`] = rw * gw[gn] * aw[an];
@@ -2686,7 +2688,17 @@ export function peopleGenome(rnd, people, g, o = {}) {
   // eye on one man in fourteen and one woman in forty, of every people; one in four of those lost the eye and wears a patch over it,
   // in black or brown leather; drawn last for the same reason
   if (rnd() < (sx === 'f' ? .025 : .07)) { G.scar = rnd() < .5 ? 'L' : 'R'; if (rnd() < .25) { D.eyepatch = pick([[.11, .095, .085], [.24, .15, .09]]); D.eyepatchSide = G.scar; } }
+  // a child (Session 1081, L1; OG-081's children and young people, "each at child scale"; OG-109 to OG-111: children's clothes as small
+  // copies of their parents'): the same roll, so a child dresses as the grown folk of its people do, then made 11 to 15 years old
+  // from a stream of its own, slighter (muscle .3 to .45, weight .3 to .45), four fifths of the people's middle stature at 11 and 92 per cent at 15, and with nothing a
+  // grown body carries: no beard, no scar or patch, no helm, mail, tabard, shield, spear or crossbow, and an Old Blood child's
+  // marks barely past the wrist (canon §3.1: a child shows them or does not; the Cold comes of reading)
+  if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
+    for (const k of ['helm', 'mail', 'scales', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch']) D[k] = DRESS_FLAGS[k] ?? null;
+    if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
+    // a cloak or cape cut to the child (its length in buildCloak is in metres: .4 + the length, or a cape's .24 + .14 of it), so a long one does not pool on the ground
+    if (D.cloak) D.cloakLen = Math.max(0, D.cape ? ((.24 + .14 * (D.cloakLen ?? .8)) * f - .24) / .14 : (.4 + (D.cloakLen ?? .8)) * f - .4); }
   return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)
-export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed) }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }
+export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed), child: !!o.child }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }

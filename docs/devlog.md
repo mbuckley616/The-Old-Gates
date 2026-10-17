@@ -23592,3 +23592,40 @@ What is built:
 - **One scar only.** Garrick and the veterans could want others: a cheek cut, a split lip, a notched ear. Each would be the same kind of line in the skin's shader.
 - **Under a raised hood, a helm or a head-wrap** the cord is simply inside them. Nothing checks it there.
 - **The rest of the item:** children and the old (OG-081, OG-001), and Garrick's wheeled chair, are still owed.
+
+## v80 — Session 1081 — Children (L1, prototype only)
+The same backlog item, "children, the old and the hurt in towns", begins with child-scale people: the towns have only Finn. OG-081 draws five children "each at child scale", and the wardrobe sheets (OG-109 to OG-111) dress children "as small copies of their parents'". The kit could not make one. The builder's age ran only from 25 to 90: `macroWeights` clamped the age at 25, and the pack carried MakeHuman's young and old targets only. This session builds children from the sheets, so it asks nothing. It touches only the prototypes: `mh_pack.py`, `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **The child's targets in the pack.** `mh_pack.py` now packs MakeHuman's child macro targets beside the young and the old: the race, gender, muscle and weight, height and proportions targets at MakeHuman's age of 11. That is 84 macro targets, up from 56.
+- **The age slider runs from 11.** Under 25, `macroWeights` blends the child's targets into the young ones, from age 11 at 0.1875 up to 25 at 0.5. From 25 to 90 the weights are exactly as before, so every grown body is unchanged. The page's slider reads "age (11 → 25 → 90)".
+- **A child's roll** (`rollGenome(seed, { people, child: true })`; `?child` on the page). The child is first rolled as one of its people, so it dresses as the grown folk do. Then it is made a child from a stream of its own:
+  - **Age and build:** 11 to 15 years old, slighter (muscle and weight 0.3 to 0.45).
+  - **Stature:** four fifths of its people's middle stature at 11, rising to 92 per cent at 15. So an Old Blood child stands 1.21 to 1.46 m and a Markman child 1.42 to 1.76.
+  - **Nothing a grown body carries:** no beard, scar or patch, and no helm, mail, tabard, shield, spear or crossbow. An Old Blood child's marks stay barely past the wrist (canon §3.1: a child shows them or does not; the Cold comes of reading).
+  - **The cloak or cape is cut to the child.** `buildCloak`'s length is in metres, so a grown cloak pooled on the ground at 1.3 m. The length is scaled by the same share as the stature.
+- **The peoples sheet** with `?child`: each people as a man, a woman, a boy and a girl.
+- **The garments need nothing new.** Everything worn is cut on the rest body and pushed off the morphed one, so the tunic, skirt, boots, cloak, hair and the rest fit the child's body as they fit a grown one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 450 checks pass** (437 after Session 1079; 13 new). Every earlier check passes unchanged, so the grown bodies are as they were.
+- **Forty children of each people:**
+  - Aged 11.1 to 15.
+  - Between 79 and 93 per cent of their people's middle stature: Gatelanders 1.32–1.65 m, Markmen 1.42–1.76, Aurennais 1.34–1.65, Old Blood 1.21–1.46.
+  - None carries anything a grown body does, and none has the Cold.
+  - Each saves and loads back.
+- **Every hair style on a girl of 11 (1.32 m) and a boy of 11 (1.42 m)**, twelve heads in all:
+  - No strand under the skin: at most 1 of 111,242 points, the same bound as the grown folk's.
+  - No strand on the face, and every root on the skin (3.0 to 3.5 mm).
+  - Braids and tails hang 2.0 to 3.0 cm clear of the body.
+- **Pictures** (`--shots=children`):
+  - `builder-children.jpg`: the four peoples' man, woman, boy and girl.
+  - `builder-children-girl.jpg`: a Gatelander girl in her cloak, cut to her.
+  - `builder-children-boy.jpg`: a Markman boy.
+
+### Needs eyes
+- **The pack is 10.0 MB raw** (from 7.2). `character-builder.md` reckons on quantising and gzipping it to about 3 MB; with the child's targets that is nearer 4. Only the child's universal targets could be packed, to save a third of the growth.
+- **Children start at 11.** MakeHuman's next targets down are a baby's, and a child of five or eight would blend toward those. The sheets' children are mostly 10 to 14, so 11 serves, but the towns' littlest are not built.
+- **A child's head reads a little old at 11.** MakeHuman's child face is mild, and the people's face sliders and brows are still the grown folk's. A rounder face and lighter brows for children would be a refinement.
+- **The roll does not decide who has children,** nor how many are in a town. That is the game's job when F4 brings townsfolk over.
+- **The old** are the slider's top end, and they have no roll of their own yet. Garrick's wheeled chair is still owed.
