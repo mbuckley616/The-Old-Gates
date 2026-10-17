@@ -23806,3 +23806,37 @@ Each was the Oblivion failure in small. A level-20 alchemist met orbs of 38 to 4
 - **Neighbours, all pass:** `blacksail`, `piratehold`, `pirateram`, `wraithfloat` and `wraithhood`.
 ### Needs eyes
 - Whether the traps should take the tier too: a spike plate at level 20 is 24 to 31, in any crypt. That is a rule of play for Michael, so I have put it in the backlog, not changed it.
+
+## v80 — Session 1041 — F2b, session 1, part 2: the foes' reach hull to hull, the wolf's lunge, the Faolchú's bite less its snout
+F2b's first session (`docs/design/scale-numbers-build.md`, *Foes' reach*) had a second part owed after Session 1035: the foes' own table. Every foe began its tell within 1.1 units of you centre to centre (0.9 in a dungeon), whatever its size, and its blow landed within 1.6 in 90°, a troll's within 2.4 in 140°. A troll's 0.8 m body counted for nothing, and a knife-man reached as far as a swordsman.
+
+**What changed (`74-strikes.js`).** The five families the sheet names carry `hulls:true` in `FOE_ATTACKS`. For them, `engage` (where the tell starts) and `reach` (the blow) are metres hull to hull, the same rule as your own reach (`reachTo`: your 0.30 + the number + its hull). `foeReach(e)` gives both centre to centre, with the arc and the lunge, and `strikeArc` now reads it.
+- **An armed humanoid** engages at 1.2: 1.8 centre to centre against you, where it was 1.1. Its blow is its weapon's reach from your table, read from the genome's weapon (`foeWeaponKind`): a knife 1.2 (1.8 centre to centre), a sword, an axe, a mace or a cutlass 1.6 (2.2), in 90°. The staff and the spear are not on the sheet, so they take the sword's 1.6, as the Bow's melee row did in Session 1035.
+- **A wolf** engages at 0.6 after a lunge of 1.5, so it may start its tell from 2.1 hull to hull (2.75 centre to centre). At the bite it leaps along the line it wound up on (`foeLunge`, `combatYaw`), up to 1.5 and never past 0.6 from where you are along that line, and stopped by a wall. Then it bites within 0.9 (1.55 centre to centre) in 70°. Step aside during the tell and it leaps past you.
+- **A spider or a bear** (the brutes: the bear, the ogre, the golem, the gargoyle) engages at 0.8 and strikes within 1.2 in 100°: 1.7 and 2.1 centre to centre.
+- **A troll** engages at 1.6 and sweeps 2.4 in 140°: 2.7 and 3.5 centre to centre.
+- **The Faolchú** engages and bites at its `biteRange` less its snout's 0.9, hull to hull: 2.8 − 0.9 = 1.9, so 3.3 centre to centre with the boss's 1.1 hull (it was 2.8).
+- **The families the sheet does not name** (slimes, elementals, wraiths, mimics, sharks, other bosses, the cavern master's slam) keep today's numbers, centre to centre.
+
+**Where it is read.** The open world's tick (`tickZoneEnemies`) starts the tell at `foeReach(e).engage` and makes the wolf leap before the blow is tested. The dungeon's foe tick (`90-main.js`) does the same, against 0.9 for the families not named. Both resolve the blow through `strikeReaches`, now at the table's reach.
+
+**What does not change: where a foe stops.** It still closes to 1.0 in the open world, and to its disc in a dungeon. A first cut stopped each family just inside its new engage distance (1.7 for a man). That left a man outside your shove's 1.4, and `captainguard`'s bash from the front fell short. The sheet moves the tell and the blow, not the stand. A foe now begins its tell further out and keeps closing through it.
+### Verified (headless Chromium)
+- **`foereach`** (new), 9/9. Each kind was stepped in by 0.05 from 5 m, one tick of the open world's own foe tick at a time. The tell begins at:
+  - a Bandit (axe) and a Cultist (knife) 1.8, against the table's 1.8;
+  - a wolf 2.7 (2.75);
+  - a Spider and a Cave Bear 1.65 (1.7);
+  - a Cave Troll 2.65 (2.7).
+
+  The blows reach: the Bandit 2.15 (2.2), the Cultist 1.8 (1.8), the wolf 1.55, the Spider and the Bear 2.1, the Troll 3.5. Their arcs measure 90, 90, 70, 100, 100 and 140°. A wolf that told from 2.73 against a still player leapt 1.43 to stand 1.25 off, and bit. One that saw you step 1.5 aside leapt the same 1.43 along its old line, stood 1.95 off and missed. The Faolchú's bite and engage are 3.3.
+- **The first run of the neighbours** (before the stand was put back): `resolver`, `reachtable`, `dungeonchase`, `dungeonfoes`, `faolchu`, `fiercewolf`, `trolls`, `yardplay` and `duel` pass. `captainguard` failed its bash check, which led to the fix above.
+- **After the fix, all pass:** `captainguard`, `foereach` (9/9, the same numbers), `yardplay`, `faolchu`, `dungeonchase` and `fiercewolf`.
+### Needs eyes
+- **Fights open further out.** A man starts his swing at 1.8 and reaches 2.2, where both were 1.1 and 1.6. He still closes to 1.0, so he is usually in your face when the blow lands. A step back during his tell now has to be a full step.
+- **The troll's sweep reaches 3.5 and the Faolchú's bite 3.3.** The Faolchú's number takes the boss hull of Session 1035 (1.1). If its body is narrower than that, F4's built hull will bring it in.
+- **The wolf's leap is a snap of position at the bite**, not yet an animated jump. A wolf mid-chase usually has walked inside 1.25 by the end of its tell and does not leap at all. The leap shows when you stand off or back away.
+- **The dungeon at its old 1-unit cell:** a man now starts his swing 1.8 away in a corridor 1 wide, round no corner (the blow tests distance and arc, not walls, as before). Session 3's 3 m cell makes this natural.
+- **Owed:**
+  - F2b session 2, the body in the world.
+  - Session 3, the dungeon's cell at 3 m.
+  - The neighbours not re-run this session (the run's two hours): `duelrhythm`, `chasesight`, `questfoes`, `wanderface`, `legacyfoes`, `sitefoes`, `lockon` and the posture suites. They go to CI.

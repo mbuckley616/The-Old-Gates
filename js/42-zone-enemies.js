@@ -1176,6 +1176,7 @@ function tickZoneEnemies(dt,now,sc){
     }
     // Chase player
     let dx2=T.x-e.x,dz2=T.z-e.z,d=Math.hypot(dx2,dz2)||1;
+    const _fr = foeReach(e); /* S1041 — F2b: where its tell starts and how far its blow reaches, hull to hull (foeReach, 74-strikes.js); it still closes to 1.0, inside your shove */
     const _stopDist = e.isBoss ? Math.max(1.5, (e.bossDef.biteRange||2.0)-1.0) : 1.0;
     const _archer=/Archer|Slinger/.test(e.name||'');
     if(_archer){ // v80 S135 — archers keep 6–13u, back off when you close, and shoot
@@ -1233,13 +1234,14 @@ function tickZoneEnemies(dt,now,sc){
         if(e.isBoss && e.bossId==='faolchu' && typeof sndFaolchuBite==='function'){
           sndFaolchuBite();
         }
+        if(_fr.lunge&&foeLunge(e,currentZoneSolid)>0){const _ly=activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,_ly,e.z);e.el.position.set(e.x,_ly+.8,e.z);} /* S1041 — the wolf leaps at the bite */
         if(strikeReaches(e)){
           executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
         } else {
           sndSwing();
         }
       }
-    } else if(dist<(e.isBoss?(e.bossDef.biteRange||1.1):1.1) && e.atkCd<=0){
+    } else if(dist<_fr.engage && e.atkCd<=0){ /* S1041 — F2b: where the tell starts, hull to hull for the sheet's families; a boss's bite its biteRange less its snout */
       // v61c2 — bosses use bossDef.telegraphBase (0.6s for Faolchú) scaled
       // by the current phase's telegraphMult (1.0 / 0.85 / 0.55) so the
       // wind-up shortens as HP drops — Phase 3 reads as frenzy.
