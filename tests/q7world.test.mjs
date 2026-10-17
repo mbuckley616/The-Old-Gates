@@ -44,22 +44,31 @@ await page.evaluate(() => { const raf = window.requestAnimationFrame, rr = REN.r
 await page.evaluate(() => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
   const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu'); let t = performance.now();
+  const row = weaponAttack(EQ.weapon), cosArc = Math.cos(row.arc * Math.PI / 360);
+  const _a = applyMeleeDamage; window._blows = { faolchu: 0, wolves: 0, swings: 0 }; applyMeleeDamage = function (who) { window._blows[who === e ? 'faolchu' : 'wolves']++; return _a.apply(this, arguments); };
   try { for (let n = 0; n < 60 * 30 && !e.dead; n++) {
     // (posture is held full with health and stamina, and you stand on the Faolchú's far side from its wolves: on the runner
     // the real frames before this loop let both lessers close to 0.8 units, and the three of them kept your posture broken
     // on 1,667 of 1,800 ticks, so two swings left in 30 s and it stood at 5 HP; and a blow lands on the nearest in its arc)
     PHP = maxHP; stamina = 100; PPOST.posture = PPOST.maxPosture = playerMaxPosture(); PPOST.stagUntil = 0;
-    const L = ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead); let ax = 0, az = 1;
-    if (L.length) { let cx = 0, cz = 0; L.forEach(x => { cx += x.x / L.length; cz += x.z / L.length; }); const h = Math.hypot(e.x - cx, e.z - cz); if (h > .01) { ax = (e.x - cx) / h; az = (e.z - cz) / h; } }
+    // (and on a side where no wolf is in the swing's arc nearer than the Faolchú: a blow lands on the nearest foe in the arc
+    // (`resolvePlayerStrike`), and standing off the wolves' midpoint still left one at 1.3 between you on 2 of 3 swings. When
+    // a blow on the Faolchú does 2 or 3 (the skills, S941), its last 5 HP need two, and the swings fed a wolf of 250 instead)
+    const L = ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead); let ax = 0, az = 1, best = -1e9;
+    for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2, cx = Math.sin(a), cz = Math.cos(a), qx = e.x + cx * 1.6, qz = e.z + cz * 1.6;
+      let near = 1e9, blocked = false;
+      for (const x of L) { const lx = x.x - qx, lz = x.z - qz, d = Math.hypot(lx, lz); near = Math.min(near, d);
+        if (d < Math.max(1.6, row.reach) && (lx * -cx + lz * -cz) / (d || 1) > cosArc) blocked = true; }
+      const score = (blocked ? -1e6 : 0) + near; if (score > best) { best = score; ax = cx; az = cz; } }
     px = e.x + ax * 1.6; pz = e.z + az * 1.6; jumpY = WORLD.worldH(px, pz); const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1;
-    if (atkCd <= 0 && !_pendingStrike && swingT === 0) attack(false);
+    if (atkCd <= 0 && !_pendingStrike && swingT === 0) { attack(false); window._blows.swings++; }
     t += 1000 / 60; loop(t);
     if (window._hud == null) { const h = document.getElementById('bossHpHud'); window._hud = h && h.style.display; } } }
-  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; } });
+  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; applyMeleeDamage = _a; } });
 await g.frames(2);
 const fight = await page.evaluate(() => { const e = ZONES.world.enemies.find(e => e.isBoss && e.bossId === 'faolchu');
   const corpse = ZONE_CORPSES.find(c => c.zone === 'world' && c.items && c.items.some(i => i.name === "The Faolchú's Mark"));
-  return { heels: window._heels, hp: e.hp, dead: e.dead, defeated: !!worldState.faolchuDefeated, hud: window._hud, mark: !!corpse, lessers: ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead).length }; });
+  return { heels: window._heels, blows: window._blows, hp: e.hp, dead: e.dead, defeated: !!worldState.faolchuDefeated, hud: window._hud, mark: !!corpse, lessers: ZONES.world.enemies.filter(x => x.isLesserFaolchu && !x.dead).length }; });
 console.log(JSON.stringify({ early, fight }), await obj());
 check('reading Bram first does nothing yet (his objective waits on the Faolchú)', early === 0, early);
 check('the Faolchú falls to your blows: defeated, its bar shown while it fought, the Mark on its body, its wolves gone', fight.dead && fight.defeated && fight.hud === 'block' && fight.mark && fight.lessers === 0, fight);
