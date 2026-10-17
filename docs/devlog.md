@@ -23999,3 +23999,22 @@ The build sheet's Guard row (`docs/design/skills-and-perks-build.md`, *The perks
 - **Second parry is generous against a pack.** Holding the guard after one parry turns every blow for 0.4 s. That is what the sheet says, and it is the reward at 100.
 - **Deflect makes a shield-bearer proof against archers.** A ship's volley does nothing to a raised shield at Guard 25, at any tier.
 - **Owed:** Iron wall, with the heavy attacks. Next, Armour's *Unbowed*, *Hold the line* and *Second skin*, then Blade, Blunt and Hand-to-hand.
+
+## v80 — Session 1049 — `roll`'s reach checks re-measured to the foes' table (a CI fix; a correction to Session 1041)
+CI failed `roll` twice on `26552c7` (run 39016872205), and it fails the same way here on the branch before Session 1047. Its three reach checks measured the old numbers, centre to centre, from before F2b:
+- **A man's blow** landed within 1.6 (1.5 lands, 1.7 does not).
+- **A troll's sweep** reached 2.4 (2.2 at 60° lands, 2.6 ahead does not).
+- **The Faolchú's bite** reached 2.0 (1.9 lands, 2.1 does not).
+
+Session 1041 moved all three hull to hull, and did not re-run `roll` among its neighbours, so this is a correction to it. The sheet's rule is *re-measured, never loosened*. Each check keeps its shape, a near point that lands and a far one that does not, 0.1 either side of the new figure:
+- **A sword-armed man** (a sword's 1.6, as a foe with no genome's weapon takes): 2.2 centre to centre, so 2.1 lands and 2.3 does not.
+- **A troll:** 0.3 + 2.4 + its 0.8 = 3.5. At 3.4, 60° off lands and 80° off does not; 3.6 ahead does not.
+- **The Faolchú,** with the test's bite of 2.0: 2.0 less the snout's 0.9, + 0.3 + the boss's 1.1 = 2.5, so 2.4 lands and 2.6 does not.
+
+The other checks (the roll's distance and window, the side arcs at 1.2) are unchanged. The code is unchanged.
+
+The same run's other red, `q7world` (260 s, failed twice on shard 8), passes here in one try. It is noted for QA in backlog K, not changed.
+### Verified (headless Chromium)
+- `roll` 10/10 (it was 7 of 10 here and on CI). `q7world` 1/1.
+### Needs eyes
+- Nothing.
