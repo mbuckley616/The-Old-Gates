@@ -35,8 +35,12 @@ check(`In the dark: sneaking at night in the open, Stealth 50 takes ×${r.darkNi
 
 // the loop: Road legs and Tireless measured on the sprint itself, and Light foot on a spike plate
 // the game's own loop at a fixed 1/60 (as attrpromise drives it), with the real Shift and W held
+// S1071: the loop's frame already queued when the stub goes in still runs, at real time; landing between two sprints it set
+// prevT past the step clock, and the next stepped frame had a negative dt (the loop floors it at nothing), so the sprint
+// added stamina (9.98 against < 8 on CI). The stub now waits out that frame, and every _step starts its clock from prevT.
 await page.evaluate(() => { window._raf = window.requestAnimationFrame; window._rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
-  window._t = performance.now(); window._step = (n) => { for (let i = 0; i < n; i++) { _t += 1000 / 60; loop(_t); } }; });
+  window._dts = []; window._step = (n) => { _t = Math.max(_t, prevT); for (let i = 0; i < n; i++) { _t += 1000 / 60; const p = prevT; loop(_t); _dts.push((_t - p) / 1000); } };
+  return new Promise(res => window._raf(() => { window._t = prevT; res(); })); });
 const sprint = async (lv, where, st, frames) => {
   await page.evaluate(([lv, p, st]) => { SKILLS.athletics = { lv, p: 0 }; px = p.x; pz = p.z; jumpY = 0; ACTIVE_BUFFS.length = 0; stamina = st; staminaCD = 0; }, [lv, where, st]);
   await page.keyboard.down('Shift'); await page.keyboard.down('w');
@@ -50,6 +54,8 @@ const tired = await sprint(99, r.state.offR, 1, 12);
 const tireless = await sprint(100, r.state.offR, 1, 12);
 await page.evaluate(s => { SKILLS.athletics = JSON.parse(s); }, sk0);
 console.log(JSON.stringify({ onRoad, offRoad74, tired, tireless }));
+const dts = await page.evaluate(() => ({ n: _dts.length, min: Math.min(..._dts), max: Math.max(..._dts) }));
+check(`every stepped frame was 1/60 s (${dts.n} frames, ${dts.min.toFixed(4)} to ${dts.max.toFixed(4)})`, Math.abs(dts.min - 1 / 60) < 1e-6 && Math.abs(dts.max - 1 / 60) < 1e-6, dts);
 check(`Road legs on the sprint: stamina 8 → ${onRoad.stamina} over ten frames on the road (sprinting: ${onRoad.sprintNow})`, onRoad.sprintNow && onRoad.stamina >= 8, onRoad);
 check(`off the road at 74 the sprint drains it (${offRoad74.stamina})`, offRoad74.stamina < 8, offRoad74);
 check(`Tireless: emptied by a sprint, the pause is ${tired.cd.toFixed(2)} s at Athletics 99 and ${tireless.cd} at 100`, tired.cd > 1 && tireless.cd === 0, { tired, tireless });
