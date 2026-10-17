@@ -158,7 +158,8 @@ const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50
   'stealth:25','stealth:50','stealth:75','stealth:100','athletics:25','athletics:50','athletics:75','athletics:100', /* S976 — Stealth's three and Athletics' four */
   'acrobatics:50','armour:25', /* S977 — Cat's fall and Fitted */
   'acrobatics:75','acrobatics:100', /* S1009 — Second step, the double jump (airStepTick, 10-player.js); S1011 — Swallow's turn, the air dash (airDashStart) */
-  'bow:25','bow:50','bow:75','bow:100']); /* S1028 — Steady, on the aim's sway (bowSway, 10-player.js); S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
+  'bow:25','bow:50','bow:75','bow:100', /* S1048 — Guard's Deflect, Bulwark and Second parry; Iron wall waits on a foe's heavy attack (FOE_ATTACKS' heavy column) */
+  'guard:25','guard:50','guard:100']); /* S1028 — Steady, on the aim's sway (bowSway, 10-player.js); S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
 // S976 — the body's perks, read by the loop. Soft step (Stealth 25): the sneak at walking speed.
 function sneakMoveMult(){return _sneaking?(perk('stealth',25)?1:SNEAK_MOVE_MULT):1;}
@@ -195,6 +196,14 @@ function skillMult(id){return id?.6+.8*skillLv(id)/100:1;}
 function parryWindowS(){return .160+.001*skillLv('guard');}
 function resolveBlockMult(){return Math.max(.5,1-(ATTRS.resolve||0)*.01);}
 function armourSkillMult(){return .75+.5*skillLv('armour')/100;}
+// S1048 — Guard's perks. Deflect (25): a held shield, facing the shot, turns an arrow: no damage, the block's stamina.
+// Bulwark (50): a bash drains half as much posture again (a shield's bash already breaks it). Second parry (100): within
+// 0.4 s of a perfect parry, on the play clock, a block still held parries the next blow too.
+const SECOND_PARRY_S=.4;
+let _lastParryG=-1e9;
+function deflectsArrows(){return blocking&&!!EQ.offhand&&EQ.offhand.shieldType==='shield'&&perk('guard',25);}
+function bulwarkMult(){return perk('guard',50)?1.5:1;}
+function secondParryOpen(){return blocking&&perk('guard',100)&&playClockS-_lastParryG<SECOND_PARRY_S;}
 // the sheet's Blade is swords, daggers, axes and spears, Blunt maces, clubs, staves and hammers; bare fists are Hand-to-hand,
 // the 23rd skill (Michael's C on #357, Session 950): the fists' roll on its multiplier, a punch on an alert foe a use
 function weaponSkill(w){if(!w)return 'hand';if(w.weaponShape==='bow'||w.grantsAmmo==='arrow')return 'bow';return w.wType==='blunt'?'blunt':'blade';}

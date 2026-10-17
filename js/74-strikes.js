@@ -414,7 +414,7 @@ function executeStrike(e, rawDmg, now){
   // through to the held-block branch (the previously-named "late block" branch,
   // which has been dead code since v61c6 because the parry branch always ate first).
   const _parryWindow = parryWindowS(); // S1047 — Guard's, 160 ms + 1 ms a level
-  const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow;
+  const _justRaisedBlock = (playClockS - lastBlockAttemptG) < _parryWindow || secondParryOpen(); // S1048 — Second parry (Guard 100)
   const _row = foeAttack(e); // S940 — the blow's row: whether a guard takes it, whether it parries, what it drains from your posture
   if(blocking && _justRaisedBlock && _row.parryable){
     // PERFECT PARRY — block raised within the timing window before the hit landed
@@ -447,7 +447,7 @@ function executeStrike(e, rawDmg, now){
     }
     sndParry();
     showMsg(`⚡ Perfect Parry! ${e.name} staggered — riposte!`, '#ffd700');
-    lvAct.parries++;skillUse('guard',3,e);
+    lvAct.parries++;skillUse('guard',3,e);_lastParryG=playClockS;
     // v61gj-a2 — Shield/sword recoil. Forward kick — you deflected the strike outward.
     shieldImpact('parry', rawDmg, e.x, e.z);
     // v61c7 — Parry stamina cost rebalanced. WAS rawDmg (100% — meaning a

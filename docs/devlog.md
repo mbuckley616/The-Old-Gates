@@ -23980,3 +23980,22 @@ Session 953 moved the attributes to the build sheet's *1% a point or less* every
 - **Armour is worth less until it is trained.** An untrained wearer takes about an eighth more through the same kit than before; at Armour 100 about a tenth less. `BLOW_SHARE`'s six blows to fall were tuned at the kit's full value, which is now Armour 50.
 - **Resolve no longer halves blocking at 10.** A Sentinel who put points into Resolve for its block will feel it.
 - **Owed next:** Guard's four perks (Deflect, Bulwark, Iron wall, Second parry), Armour's *Unbowed*, *Hold the line* and *Second skin*, then the Blade, Blunt and Hand-to-hand perks.
+
+## v80 — Session 1048 — Guard's perks: Deflect, Bulwark and Second parry (skills and perks A)
+The build sheet's Guard row (`docs/design/skills-and-perks-build.md`, *The perks*) waited on combat's resolver with the other Arms perks. Three of its four are built here, in `12-character.js` beside the other perks, and read where the blow is resolved.
+- **Deflect (Guard 25): a held shield turns arrows.** The arrow does no damage, and the block costs its usual 6 stamina. The gold flash and the line *The arrow glances off your shield.* say it was turned. The shot must come from in front, as a block of an arrow already must. This applies to an archer's shot in the open world (`tickZoneArrows`, `42-zone-enemies.js`) and to a ship's volley (`85-world-sea.js`, where a raised guard took 0.4 of it). It is the shield's perk: with a weapon or bare hands the block is as before. `deflectsArrows()`.
+- **Bulwark (Guard 50): a bash drains +50% posture** (`bulwarkMult()`, in `doBash`). A bash with a weapon or bare hands drains 30 where it drained 20. A shield's bash already breaks the guard outright, so Bulwark adds nothing to it; the sheet does not say otherwise.
+- **Second parry (Guard 100):** within 0.4 s of a perfect parry, on the play clock, a block still held parries the next blow too, without being raised again (`secondParryOpen()`, `_lastParryG`, set at the parry in `executeStrike`). Two foes swinging together can both be parried with one press.
+- **Iron wall (Guard 75) is not built:** *a heavy attack no longer breaks a held block*. No foe has a heavy attack yet. `FOE_ATTACKS`' heavy column is empty until combat's later sessions fill it, and a held block today breaks only when your posture runs out. The Skills tab shows it as not yet in the game, as it does Acrobatics' *Catch*.
+### Verified (headless Chromium)
+- **`perkguard`**, 15/15 (six new checks):
+  - **Deflect:** an archer's arrow laid against a held shield takes 11 to 14 health at Guard 24 and 0 at 25. Bare-handed at 25 a held block still takes 11 to 13, and an open guard 32 to 37.
+  - **Bulwark:** a bare bash drains 20 posture at Guard 49 and 30 at 50.
+  - **Second parry:** at Guard 100, a block held since long before, 0.3 s after a parry, parries again. At 0.5 s it does not, and at Guard 99 it does not.
+  - Iron wall is listed as not yet live; the other three are.
+- Writing the suite showed Second parry at work in Session 1047's own checks: a 270 ms block straight after a 250 ms parry parried. The suite now clears the parry clock between trials.
+- **Neighbours:** `captainguard`, `counters`, `dangertier`, `deckprops`, `lvact`, `parryclock`, `perkbody`, `posture` (3), `reachtable`, `resolver`, `shiparchers`, `targetof`, `wardall` and `worldtarget` pass. `perkbow` failed its draw count (64 and 45 frames) with four suites running side by side, and passes on its own. `roll` fails three reach checks, and fails them the same way on the branch before this session: Session 1041's table moved them. The next session re-measures it.
+### Needs eyes
+- **Second parry is generous against a pack.** Holding the guard after one parry turns every blow for 0.4 s. That is what the sheet says, and it is the reward at 100.
+- **Deflect makes a shield-bearer proof against archers.** A ship's volley does nothing to a raised shield at Guard 25, at any tier.
+- **Owed:** Iron wall, with the heavy attacks. Next, Armour's *Unbowed*, *Hold the line* and *Second skin*, then Blade, Blunt and Hand-to-hand.

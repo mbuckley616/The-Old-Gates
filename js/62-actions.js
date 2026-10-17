@@ -46,7 +46,7 @@ function doBash(){
       const now = performance.now()/1000;
       const broke = hasShield
         ? (applyPostureDamage(e, (e.maxPosture||999), now), true)   // shield = force-break
-        : applyPostureDamage(e, BASH_BARE_POSTURE, now);            // weapon = chunk
+        : applyPostureDamage(e, BASH_BARE_POSTURE*bulwarkMult(), now);  // weapon = chunk; S1048 — Bulwark (Guard 50) ×1.5
       if(broke){
         staggered.push({e, t: POSTURE_BREAK_STUN});
         const body = enemyBodyMesh(e);
