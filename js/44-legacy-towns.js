@@ -900,7 +900,7 @@ function buildWildernessZone(cfg){
         ex = bx + (pr()*2-1)*jr;
         ez = bz + (pr()*2-1)*jr;
       }
-      zoneEnemies.push(keyFoe(buildZoneEnemy(sc,sol,ex,ez,group.name,pickVariant(group.name,level,'normal',seededRng('variant',fid))),fid));
+      zoneEnemies.push(keyFoe(buildZoneEnemy(sc,sol,ex,ez,group.name,pickVariant(group.name,tierLevel(zoneTier(cfg.id)),'normal',seededRng('variant',fid)),{tier:zoneTier(cfg.id)}),fid)); /* S1032 — the zone's tier (#373 A) */
     }
   });
   if(typeof _markZoneSpawned === 'function' && cfg.id) _markZoneSpawned(cfg.id);

@@ -3080,6 +3080,7 @@ function buildDungeon(portal){
     return{g,hpFg,limbs};
   }
   function spawnFloorEnemies(map,floorIdx,baseY,dmgMult){
+    const dTier=dungeonTier(portal,floorIdx); /* S1032 — the door's place and the floor (#373 A), not your level */
     // v80 S478 — the foes' spots, kinds and variants come from the floor's stream; each foe is keyed <dungeon>:<floor>:<index>
     // and rolls its fight from its own (keyFoe, 42-zone-enemies.js). The shuffle was a sort on Math.random.
     const dKey=dKeyOf(portal,floorIdx),dFoes=seededRng('dfoes',dKey);
@@ -3140,14 +3141,14 @@ function buildDungeon(portal){
       const baseDef=EM[name]||EM.Skeleton;
       // Variant roll — gated by player level + dungeon difficulty. `portal.diff` is 'veryeasy'..'veryhard'.
       const fid=`${dKey}:${i}`,fr=seededRng('dspawn',fid);
-      const variantKey=pickVariant(name, level, portal.diff, seededRng('variant',fid));
+      const variantKey=pickVariant(name, tierLevel(dTier), portal.diff, seededRng('variant',fid));
       const vr=applyVariantToDef(baseDef, name, variantKey);
       const d=vr.def, displayName=vr.displayName;
       if(d.disguise&&mimicSpots.length){const k=mimicSpots.findIndex(([c,r])=>spawns.every((q,j)=>j===i||Math.hypot(q[0]-c,q[1]-r)>=2));if(k>=0){[ec,er]=mimicSpots.splice(k,1)[0];spawns[i]=[ec,er];}}
       // v56 rebalance: multiply HP and dmg by level-scaled factors so late-game weapons don't
       // trivialise the early dungeons. Baseline (level 1) remains unscaled.
-      const hpLvl=enemyHpScale();
-      const dmgLvl=enemyDmgScale();
+      const hpLvl=enemyHpScale(dTier);
+      const dmgLvl=enemyDmgScale(dTier);
       // v61aw: tutorial dampener. The first dungeon a fresh character ever
       // sees gets enemies tuned for "you've never fought before" — half HP
       // and half damage on top of whatever 'veryeasy' difficulty already
@@ -3172,7 +3173,7 @@ function buildDungeon(portal){
         dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,path:[],pathT:0,
         _origCol:d.col,baseY:baseYe,isWraith:d.buildFn==='wraith',atkAnim:0,atkDir:{x:0,z:0},
         walkT:Math.random()*Math.PI*2,ranged:!!d.ranged,rangedCd:1.5+fr()*1.5,
-        dmgMult:(d.dmgMult||1.0)*ds.dmg*dmgMult*dmgLvl*tutMult,hasCried:false,floor:floorIdx,
+        dmgMult:(d.dmgMult||1.0)*ds.dmg*dmgMult*dmgLvl*tutMult,hasCried:false,floor:floorIdx,tier:dTier,
         def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,baseType:name,
         drainCd:0,disguised:!!d.disguise,dormant:!!d.dormant,fleeT:0,telegraphT:0,telegraphMax:0,
         // v71 — Shieldbearer frontal guard. shieldUp gates BOTH the power-vs-shield

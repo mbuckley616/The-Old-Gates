@@ -1252,7 +1252,7 @@
       }
       if(!ok)continue;
       const fid=key+':'+epoch+':'+i; // S477 — a chunk's foe is its chunk, its spawn epoch and its index (co-op rules)
-      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,typeof level!=='undefined'?level:1,'normal',seededRng('variant',fid)):null;
+      const variant=(typeof pickVariant==='function')?pickVariant(grp.name,tierLevel(worldTierAt(ex,ez)),'normal',seededRng('variant',fid)):null;
       const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,(i===0&&leader)?leader:grp.name,variant),fid);
       e._chunk=key;
       ZONES.world.enemies.push(e);ch.enemies.push(e);

@@ -72,6 +72,8 @@ A keeps a region's danger readable (the Wastes are dangerous, the coast is not),
 
 Michael: **A danger tier per region, plus the dungeon floor**. (16 Oct 2026, on the control room)
 
+Done, Session 1032 (systems builder): `foeTier`, `worldTierAt`, `dungeonTier` in `74-strikes.js`; `enemyHpScale`/`enemyDmgScale` and the variants' chance read the tier; `tests/dangertier`.
+
 ### Hearing, No mark and Word given: build the rule each takes away, or other perks? (systems builder, Session 1001) — DECISION #376
 The build sheet's last three perks of the hand and the word each change a rule the game does not have, as Steady (#369) did for the bow. Session 1001 built Stealth 100 (*Shadow's hand*, a backstab ×1.5) and left these three off; the Skills tab shows them as *not yet in the game*.
 

@@ -23707,3 +23707,43 @@ Corrections made during the session:
 - **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
 - **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
+
+## v80 — Session 1032 — Enemies by place: a danger tier per region, plus the dungeon floor (DECISION #373 A)
+Michael's A on #373: a foe grows with the danger of where it stands, not with your level. Until now every foe's health and blow read your level (`enemyHpScale`, `enemyDmgScale`, `74-strikes.js`), the Oblivion failure the skills page warned of: a character who levels by alchemy and locks meets wolves built for a fighter, and friends in one world have no one level to scale to. Combat's resolver, which rewrote those two functions, merged on 16 Oct, so this could be built now.
+
+**The tiers**, as the decision gives them (`REGION_TIER`, `BIOME_TIER`):
+- Home's regions: the coast, Ashen, Bealach and Royale 1; Deepwood, the Foothills and Greywood 2; the Wastes 3.
+- A far island's region by its biome: tundra, swamp and wasteland 3, the rest 2. A far region whose biome is *wastes* is 2: the decision names wasteland, not wastes.
+- A dungeon is its door's tier, plus one for each floor below the first, to 4 (`dungeonTier`). The tutorial's crypt is 1. A gate's school does not change it.
+- A legacy zone reads the region its config names (`south_road` is Ashen, and so on), or a fixed map for the five old zones (`LEGACY_ZONE_REGION`).
+
+**What a tier is worth.** The old level curve at levels 1, 6, 11 and 16 (`tierLevel`): health ×1, 1.75, 2.5 and 3, and the blow as the resolver's reference blow at those levels (×1, 2.09, 3.99 and 7.47).
+
+**Where it is read.** `foeTier(sc, x, z)` reads the world's region at the foe's own spot when the foe is built in the open world, and the zone's region in a legacy zone. The region comes from the foe's cell and its eight neighbours through `getCell`, never from the live `REGIONS`: the gotcha of S701 is that the live list holds only the loaded cells. The ring widens to three cells for an islet in open sea, as `lairBiome` does. `buildZoneEnemy` takes the tier from `zOpts.tier` when its caller knows the place (the legacy zones' spawn and respawn), otherwise from `foeTier`, and records it on the foe (`e.tier`).
+
+**The rare variants' chance** reads the tier's level in place of yours, at every call: the world's packs, site foes, job foes, pirate crews, the legacy zones and the dungeons. So no Greater Bandit is rolled on the coast at any level.
+
+**The masters** grow with their place's tier's level too, where they read your level before: the lair cavern's master (`lairFinish`, `1 + level × .08`) and the beast at the crag.
+
+**What is unchanged.** Which kinds a dungeon's roster may hold (`minLevel` against your level), the caravan's captain at level 5, the fire trap's damage and the xp a kill pays still read your level. They are spawn tables and traps, not a foe's scale, and the decision did not name them. The dungeon's second floor keeps its old ×1.5 on top of the tier's +1 (see *Needs eyes*).
+
+**Rowe's rematch** (QA's item in section I) is settled by this as well: the yard is tier 1, so Rowe a week on is the sergeant's champion she was, and her health no longer doubles with your level.
+
+**Tests re-measured, not loosened:**
+- `resolver`'s retune row measures the share at each tier's level, tiers 1 to 4, where it ran levels 1 to 20 when the blow read yours.
+- `lairmaster` and `masterslam` read the cavern's tier where they read your level.
+### Verified (headless Chromium)
+- **`dangertier`** (new), 13/13.
+  - Home's eight regions read 1, 1, 1, 2, 2, 1, 3, 2 (coastal, Ashen, Bealach, Deepwood, the Foothills, Royale, the Wastes, Greywood). Eleven far biomes each read their tier at their region's centre: tundra, swamp and wasteland 3, the other eight 2.
+  - The scales are 1, 1.75, 2.5 and 3 for health and 1, 2.088, 3.991 and 7.469 for the blow, each equal to `blowRef` at its level.
+  - A wolf on the coast is 18 health and a 5 blow at level 1 and at level 20. In the Wastes it is 45 and 20 at both. In the Deepwood it is 32 and 10.
+  - Over 400 seeded rolls, a Bandit's variant comes up 0 times on the coast and 75 in the Wastes.
+  - Dungeon tiers: the Wastes 3, 4, 4 on floors 1 to 3; Deepwood floor 2 is 3; the coast is 1; the tutorial is 1; a legacy door is 1.
+  - A gate set at the Wastes' centre and entered at level 10 and then at level 20 holds the same 28 foes, with the same health and blows. The 14 on floor 1 are tier 3 (Skeleton 88 health) and the 14 on floor 2 are tier 4 (Skeleton 158).
+- **`resolver`:** passes. An ordinary blow at each tier's level's kit is 17.0, 17.1, 16.8 and 16.9% of that level's health (100, 175, 250, 325): six blows to fall at every tier.
+- **`yardplay`:** 9/9. The rematch is won at 4.98 s on five blows (23, 10, 23, 10, 23), and she lands none. Session 1026's level-8 stand-in won it at 5.37 s at 191 of 260 health.
+- **Neighbours, all pass:** `lairmaster`, `masterslam`, `wyrm`, `foeseed`, `duel`, `duelrhythm`, `questfoes`, `spentguard`, `attrdmg`, `skillcurve`, `worldloot` and `levelmarks`.
+### Needs eyes
+- **The second floor now steps twice:** its old ×1.5 to health and blow, and the tier's +1. A tier-3 gate's second floor is a tier-4 foe ×1.5 (a Skeleton 158 health against 88 above). If that is too steep, dropping the ×1.5 is a one-line change. It is a rule a player feels, so I have left it for Michael rather than changing it on my own.
+- **The Wastes and the far tundra are hard from the first step:** a wolf there has 45 health and a 20 blow against a level-1 character's 100 health. That is the decision's intent (the Wastes are dangerous), but the road from Ashenmoor to the Wastes should read as a warning in play.
+- **A late character on the coast now meets foes with their own base numbers.** That is the decision's A (C was the option that kept a little of the level).

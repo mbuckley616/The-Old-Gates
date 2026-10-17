@@ -514,7 +514,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   const e=cand[0];if(!e)return;
   const dragon=!!L.dragon;const site=L.siteId&&typeof siteAnywhere==='function'?siteAnywhere(L.siteId):null;const bossName=site&&typeof lairBeast==='function'?lairBeast(site):L.boss; /* S699 — the beast of the lair where it stands now, as at the crag */e.name=dragon?`${L.place} Wyrm`:`${L.place} — ${bossName}`;e.boss=true;e.dragon=dragon;
   if(!dragon)lairMasterBody(e,bossName,portal); /* S706 — Michael's A on #225: the lair's own beast, not the deepest foe renamed */
-  e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+level*.08));{const k=(dragon?2.2:1.6)*(1+level*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
+  const LT=tierLevel(dungeonTier(portal,e.floor||1)); /* S1032 — the master grows with its cavern's tier's level, not yours (#373 A) */e.hp=e.maxHp=Math.round(e.maxHp*(dragon?6:3)*(1+LT*.08));{const k=(dragon?2.2:1.6)*(1+LT*.04);if(e.dmg)e.dmg=Math.round(e.dmg*k);e.dmgMult=(e.dmgMult||1)*k;}e.master=true;e.spd=(e.spd||1)*(dragon?.9:1.05); // v80 S130 — the master scales with level like the world's lair beast
   if(e.mesh){e.mesh.scale.multiplyScalar(dragon?2.6:1.5);e._detailed=false;}
   if(dragon)dragonBody(e,WOLF_KINDS.Dragon?WOLF_KINDS.Dragon.world:2.88);
   if(!dragon&&e._lairBody){e._detailed=true;masterUnderCeiling(e);delete e.posture;delete e.maxPosture;initPosture(e);} /* S706 — its posture from its own health, as the world's beast's */ // S219 — the world's dragon's size; S546 — read from the kind (4.5), held under the cavern's ceiling by dragonBody
@@ -547,7 +547,7 @@ function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'
   if(rig.root.parent)rig.root.parent.remove(rig.root);g.add(rig.root);rig.e=e;
   e.limbs={torso:z.limbs.torso,hpBg};if(z.limbs.person){e.limbs.person=z.limbs.person;e.limbs.armR=z.limbs.armR;}if(z.limbs.wolf)e.limbs.wolf=z.limbs.wolf;
   const ds=portal.diffScale||DIFF_SCALE.normal,fm=(e.floor||1)>1?1.5:1;
-  e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*fm*enemyHpScale()));e.dmgMult=D.dmg/15*ds.dmg*fm*enemyDmgScale();delete e.dmg;
+  const tr=dungeonTier(portal,e.floor||1); /* S1032 — the cavern's tier (#373 A) */e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*fm*enemyHpScale(tr)));e.dmgMult=D.dmg/15*ds.dmg*fm*enemyDmgScale(tr);delete e.dmg;e.tier=tr;
   e.spd=D.spd*ds.spd*(fm>1?1.1:1);e.rankSpd=D.spd;e.size=D.scale||1;e.def=D.def||0;e.resist={...(D.resist||{})};
   e.baseType=kind;e.buildFn=D.shape==='brute'?'brute':'humanoid';e._origCol=D.col;e.variant=null;e.xpMult=1;
   e.isWraith=false;e.ranged=false;e.disguised=false;e.dormant=false;e.shieldUp=false;e.canFlee=false;e._burstNext=false;

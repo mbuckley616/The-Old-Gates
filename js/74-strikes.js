@@ -695,20 +695,60 @@ const VARIANTS = {
   },
 };
 
-// v56 rebalance: enemy HP/dmg scale with player level to keep combat engaging at high tiers.
-// Applied at spawn time in both dungeon (spawnFloorEnemies) and zone (buildZoneEnemy) paths.
-// - hpScale grows faster than dmgScale so fights get longer, not spikier, as player levels up.
-// - Caps exist so level 30+ runs don't become unwinnable.
-// - Level 1 player sees 1.0×/1.0× — unscaled base values as the designed-for-baseline.
-function enemyHpScale(){
-  const lv = (typeof level!=='undefined'?level:1) || 1;
+// S1032 — enemies by place (Michael's A on DECISION #373): a foe's health and blow grow with the danger of where it stands,
+// not with your level. Each region has a tier: home's coast, Ashen, Bealach and Royale 1; Deepwood, the Foothills and Greywood 2;
+// the Wastes 3; a far island's region by its biome (tundra, swamp and wasteland 3, the rest 2). A dungeon is its door's tier, and
+// each floor below the first adds one, to 4. A gate's school does not change it. A tier is worth what the level curve gave at
+// levels 1, 6, 11 and 16 (health ×1, 1.75, 2.5, 3; the blow as the resolver's reference blow there), and the rare variants'
+// chance reads that level too. The region is read from the foe's cell and its neighbours (getCell), never the live REGIONS.
+const DANGER_LV=[1,1,6,11,16];
+const REGION_TIER={coastal:1,ashen:1,bealach:1,royale:1,deepwood:2,foothills:2,greywood:2,wastes:3};
+const BIOME_TIER={tundra:3,swamp:3,wasteland:3};
+const LEGACY_ZONE_REGION={overworld:'ashen',hearthwick:'bealach',bealach_south:'bealach',forest:'deepwood',ironhaven:'royale'};
+function tierLevel(t){return DANGER_LV[Math.max(1,Math.min(4,t|0||1))];}
+function regionTier(r){if(!r)return 1;if(REGION_TIER[r.id]!=null)return REGION_TIER[r.id];return BIOME_TIER[r.biome]||2;}
+// the open world: the region whose field weighs most at (x,z) among the cell's and its neighbours' (the ring widens to three
+// cells for an islet in open sea, as lairBiome does); none at all is home's tier 1 at home and 2 elsewhere
+function worldTierAt(x,z){
+  if(typeof getCell!=='function'||typeof cellOf!=='function')return 1;
+  const [ci,cj]=cellOf(x,z);const regs=[];
+  for(let k=1;k<=3&&!regs.length;k++)for(let i=ci-k;i<=ci+k;i++)for(let j=cj-k;j<=cj+k;j++){const c=getCell(i,j);if(c&&c.regions)regs.push(...c.regions);}
+  if(!regs.length)return (typeof HOME_I!=='undefined'&&ci===HOME_I&&cj===HOME_J)?1:2;
+  let best=null,bw=0,near=null,nd=1e9;
+  for(const r_ of regs){const d=Math.hypot(x-r_.x,z-r_.z);const w=Math.max(0,1-d/r_.r);if(w>bw){bw=w;best=r_;}if(d/r_.r<nd){nd=d/r_.r;near=r_;}}
+  return regionTier(best||near);
+}
+// a legacy zone: its region, as its config names it
+function zoneTier(id){const Z=(typeof ZONES!=='undefined')&&ZONES[id];const reg=(Z&&Z._cfg&&Z._cfg.region)||LEGACY_ZONE_REGION[id];return REGION_TIER[reg]||1;}
+// a dungeon: its door's place, plus one a floor below the first, to 4; the tutorial's crypt is 1
+function dungeonTier(portal,floor){
+  if(!portal||portal.tutorial)return 1;
+  const base=portal.zone==='world'?worldTierAt(portal.x,portal.z):zoneTier(portal.zone||(typeof _preDungeonZone!=='undefined'?_preDungeonZone:'overworld'));
+  return Math.min(4,base+Math.max(0,(floor||1)-1));
+}
+// where a foe is built: the world's scene (or world coordinates) reads the region, a legacy zone's scene its zone, else where you are
+function foeTier(sc,x,z){
+  try{
+    const W=(typeof ZONES!=='undefined')&&ZONES.world;
+    if(W&&((sc&&sc===W.scene)||x>2500||z>2500))return worldTierAt(x,z);
+    if(sc&&typeof ZONES!=='undefined')for(const id in ZONES){const Z=ZONES[id];if(id!=='world'&&Z&&Z.scene===sc)return zoneTier(id);}
+  }catch(e){}
+  return tierHere();
+}
+function tierHere(){
+  const z=typeof activeZoneId!=='undefined'?activeZoneId:'world';
+  if(z==='dungeon')return dungeonTier(typeof currentPortal!=='undefined'?currentPortal:null,typeof currentFloor!=='undefined'?currentFloor:1);
+  if(z==='world')return worldTierAt(px,pz);
+  return zoneTier(z);
+}
+function enemyHpScale(tier){
+  const lv=tierLevel(tier==null?tierHere():tier);
   return Math.min(3.0, 1 + (lv - 1) * 0.15);
 }
-// S940 — a foe's blow grows with your level as the reference blow does (blowRef), so that with armour as a share an
-// ordinary blow at your level's kit stays near BLOW_SHARE of your health. It was +8% a level to ×2.0 at level 13, against
-// armour taken off flat: by level 10 a kit of your level took the whole of an ordinary blow (S610).
-function enemyDmgScale(){
-  const lv = (typeof level!=='undefined'?level:1) || 1;
+// S940 — a foe's blow grows as the reference blow does (blowRef), so that with armour as a share an ordinary blow at the kit of
+// the tier's level stays near BLOW_SHARE of that level's health (S1032: the tier's level, not yours).
+function enemyDmgScale(tier){
+  const lv=tierLevel(tier==null?tierHere():tier);
   return blowRef(lv)/blowRef(1);
 }
 

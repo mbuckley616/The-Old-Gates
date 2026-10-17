@@ -14,8 +14,9 @@ for (const [k, kind] of KINDS.entries()) {
   await g.spin(30);
   rows.push(await page.evaluate((kind) => { const e = window._lairBoss; if (!e) return { kind, none: true };
     const D = ZONE_FOE_DEF[kind], ds = DIFF_SCALE.hard, fm = (e.floor || 1) > 1 ? 1.5 : 1;
-    const hp = Math.round(Math.max(1, Math.round(D.hp * ds.hp * fm * enemyHpScale())) * 3 * (1 + level * .08));
-    const dm = D.dmg / 15 * ds.dmg * fm * enemyDmgScale() * 1.6 * (1 + level * .04);
+    const T = dungeonTier(currentPortal, e.floor || 1), LT = tierLevel(T); /* S1032 — the cavern's tier, not your level (#373 A) */
+    const hp = Math.round(Math.max(1, Math.round(D.hp * ds.hp * fm * enemyHpScale(T))) * 3 * (1 + LT * .08));
+    const dm = D.dmg / 15 * ds.dmg * fm * enemyDmgScale(T) * 1.6 * (1 + LT * .04);
     const rig = e.limbs && (e.limbs.person || e.limbs.wolf); const root = rig && rig.root;
     e.mesh.updateMatrixWorld(true); const b = root ? new THREE.Box3().setFromObject(root) : null;
     const boxes = e.mesh.children.filter(c => c.isMesh && c.geometry && c.geometry.type === 'BoxGeometry').length;

@@ -756,9 +756,10 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // Apply variant overlay if one was selected upstream. Zones pass diff='normal' to pickVariant so only Greater can apply.
   const vr=applyVariantToDef(baseDef, type, variantKey);
   const d={...vr.def};
-  // v56 rebalance: scale zone enemy HP/dmg with player level, mirroring dungeon spawn path.
-  const _hpLvl=enemyHpScale();
-  const _dmgLvl=enemyDmgScale();
+  // S1032 — scaled by the danger of the place it stands in (#373 A), not by your level; a caller that knows the place passes zOpts.tier
+  const _tier=(zOpts&&zOpts.tier!=null)?zOpts.tier:foeTier(sc,x,z);
+  const _hpLvl=enemyHpScale(_tier);
+  const _dmgLvl=enemyDmgScale(_tier);
   if(d.hp){d.hp=Math.max(1,Math.round(d.hp*_hpLvl));}
   if(d.maxHp){d.maxHp=Math.max(1,Math.round(d.maxHp*_hpLvl));}
   if(d.dmg){d.dmg=Math.max(1,Math.round(d.dmg*_dmgLvl));}
@@ -863,6 +864,7 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // so the posture-family lookup resolves directly (zone shapes are wolf/spider/
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
   const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,baseName:type,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
+  zoneE.tier=_tier;
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*SCALE.ROOM_K*sc2;} // the bar over a person's head (S905: at the taller man's, F2a)

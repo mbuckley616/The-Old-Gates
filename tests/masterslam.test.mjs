@@ -15,10 +15,10 @@ for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon'
 await page.waitForTimeout(1000);
 
 const setup = await page.evaluate(() => { const e = window._lairBoss; if (!e) return { none: true };
-  const pre = window._preMult.get(e); const k = 1.6 * (1 + level * .04);
+  const pre = window._preMult.get(e); const k = 1.6 * (1 + tierLevel(dungeonTier(currentPortal, e.floor || 1)) * .04); /* S1032 — the cavern's tier's level, not yours (#373 A) */
   return { name: e.name, master: !!e.master, pre, post: e.dmgMult, k: +(e.dmgMult / pre).toFixed(3), want: +k.toFixed(3), others: ENEMIES.filter(x => x !== e && x.master).length, base: e.baseType, maxHP: effMaxHP(), armour: _armour(), diff: currentPortal && currentPortal.diffScale ? currentPortal.diffScale.dmg : null, kinds: [...new Set(ENEMIES.map(x => x.baseType + ':' + x.dmgMult.toFixed(1)))].slice(0, 12) }; });
 check('the lair\'s deepest foe is its master, the only one', !setup.none && setup.master && setup.others === 0, setup);
-check('the master\'s blows carry 1.6 × (1 + level × .04) of its kind\'s (was a no-op on e.dmg)', Math.abs(setup.k - setup.want) < .01, setup);
+check('the master\'s blows carry 1.6 × (1 + its tier\'s level × .04) of its kind\'s (was a no-op on e.dmg; the level was yours before S1032)', Math.abs(setup.k - setup.want) < .01, setup);
 
 // a stage: pause the loop, the player on the master's floor at a distance along +x, the master alert and facing
 await page.evaluate(() => { window._stage = (d) => { const e = window._lairBoss; invOpen = true; currentFloor = e.floor || 1;

@@ -1037,7 +1037,7 @@ function respawnZoneEnemies(zoneId){
         ez = bz + (pr()*2-1)*4;
       }
       if(typeof buildZoneEnemy === 'function'){
-        const e = keyFoe(buildZoneEnemy(zScene, sol, ex, ez, group.name, pickVariant(group.name, level, 'normal', seededRng('variant', fid))), fid);
+        const e = keyFoe(buildZoneEnemy(zScene, sol, ex, ez, group.name, pickVariant(group.name, tierLevel(zoneTier(zoneId)), 'normal', seededRng('variant', fid)), {tier:zoneTier(zoneId)}), fid); /* S1032 — the zone's tier (#373 A) */
         if(group.respawn === false && e) e._noRespawn = true;
         z.enemies.push(e);
       }

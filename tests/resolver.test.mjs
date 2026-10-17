@@ -173,16 +173,18 @@ console.log(JSON.stringify(arm));
 check('a blow is × 50/(50 + armour): all of it at 0, 56% at 40, a third at 100 (never 1 by armour alone)', arm.share.every(s => s.got === s.want) && arm.share[2].got > 1, arm.share);
 check('a dungeon foe\'s own blow at 40 armour lands as the share says', arm.armour === 40 && arm.e2e.lost === arm.e2e.want && arm.e2e.lost > 1, arm);
 
-// ── the retune: an ordinary blow at your level's kit is near a sixth of the reference health (Michael's B on #355), level 1 to 20, both places
+// ── the retune: an ordinary blow at your level's kit is near a sixth of the reference health (Michael's B on #355), both places.
+// Since S1032 (enemies by place, #373 A) a foe's blow reads its place's tier, worth the levels 1, 6, 11 and 16: measured at each
+// tier against the kit and health of the tier's level (it was every level from 1 to 20, when the blow read yours).
 const tune = await page.evaluate(() => {
   const L0 = level, rows = [];
-  for (let L = 1; L <= 20; L++) { level = L; const s = enemyDmgScale(), kit = kitRef(L), hp = hpRef(L);
+  for (let T = 1; T <= 4; T++) { const L = tierLevel(T); const s = enemyDmgScale(T), kit = kitRef(L), hp = hpRef(L);
     const dun = Math.round(armourShare(30 * s * foePlaceK({}), kit)), wld = Math.round(armourShare(7 * s * foePlaceK({ dmg: 7 }), kit));
-    rows.push({ L, kit, hp, scale: +s.toFixed(2), dun, wld, dShare: +(dun / hp).toFixed(3), wShare: +(wld / hp).toFixed(3), hitsToFall: Math.ceil(hp / dun) }); }
+    rows.push({ T, L, kit, hp, scale: +s.toFixed(2), dun, wld, dShare: +(dun / hp).toFixed(3), wShare: +(wld / hp).toFixed(3), hitsToFall: Math.ceil(hp / dun) }); }
   level = L0; return rows;
 });
 console.log(JSON.stringify(tune));
-check('an ordinary blow at your level\'s kit lands at 15–18% of your health from level 1 to 20, in the dungeon and the open world: six blows to fall', tune.every(r => Math.abs(r.dShare - 1 / 6) <= 1 / 60 && Math.abs(r.wShare - 1 / 6) <= 1 / 60 && r.hitsToFall === 6), tune);
+check('an ordinary blow at each tier\'s level\'s kit lands at 15–18% of that level\'s health, tiers 1 to 4, in the dungeon and the open world: six blows to fall', tune.every(r => Math.abs(r.dShare - 1 / 6) <= 1 / 60 && Math.abs(r.wShare - 1 / 6) <= 1 / 60 && r.hitsToFall === 6), tune);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
