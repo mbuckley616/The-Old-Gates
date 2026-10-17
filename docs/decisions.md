@@ -40,7 +40,7 @@ What should the four be?
 A gives each perk the change of play the sheet means, at one small rule apiece; the sheathing rule is the largest of the four. B ships now but makes Ringing and Throw near copies of Weight and Daze.
 Michael: **A, build the small rule each needs, then the perk** (2026-10-17, issue #399), with: "Let’s add a ‘sheath’ button where you can sheath your equipped weapon. Torches or shields in your off hand stay equipped and in hand."
 
-*Building, systems builder:* Ringing, Session 1077 (`tests/perkring`); Throw, Session 1078 (`tests/perkthrow`). Catch the blade, and Draw cut with the sheath button follow, one a session.
+*Building, systems builder:* Ringing, Session 1077 (`tests/perkring`); Throw, Session 1078 (`tests/perkthrow`); Catch the blade, Session 1079 (`tests/perkcatch`). Draw cut with the sheath button follows.
 
 
 ### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1066) — DECISION #405

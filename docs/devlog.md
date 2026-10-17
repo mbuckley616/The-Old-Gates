@@ -24693,3 +24693,29 @@ clock it rises at, for the bodies builder to pose a fall on (filed in the backlo
 ### Needs eyes
 - **No fall is shown.** Until the bodies builder poses it, a thrown foe looks the same as a staggered one. The *goes down!* line
   is the only sign of it.
+
+## v80 — Session 1079 — Catch the blade (Hand-to-hand 75): a bare-handed parry disarms (Michael's A on #399)
+The third of #399's four. A foe had no weapon to lose: its blow was its family's row, whatever it held. Michael's A: *an armed
+humanoid parried bare-handed drops its weapon and fights on with its fists, at half its blow and the fists' reach.*
+
+**What changed.**
+- **The disarm.** A perfect parry with empty hands, with Catch the blade held, now calls `catchBlade` (`12-character.js`) from
+  `executeStrike`'s parry branch (`74-strikes.js`). It takes a dagger, sword, axe, mace or cutlass from a person-bodied foe.
+  A spear, a staff or a bow is two-handed and stays in its grip.
+- **What changes for the foe.** It is marked `e._disarmed`, and the weapon in its fist is hidden (the rig's own `weapon`).
+- **Its fists.** `foeWeaponKind` now answers *fists*, so `foeReach` gives the Fists row's reach. `foeBlow` takes half the blow
+  (`CATCH_BLOW`).
+- **The perk** is live, and its line says what it does.
+
+**Something I found.** A revealed mimic's pounce rolls 14 + your level (`_burstNext`). It is a foe's blow that #373's tier never
+reached. I have filed it in the backlog beside the gold piles rather than changing it here.
+### Verified (headless Chromium)
+- **`perkcatch`** (new), 7/7:
+  - A Bandit holds a one-handed sword, in sight.
+  - At Hand-to-hand 74, a bare-handed perfect parry staggers it and takes nothing.
+  - At 75 the sword is hidden, its reach goes from 2.2 to 1.5 hull to hull (the fists' 0.9), and its blow from 55 to 28.
+  - With a spear it keeps its grip.
+  - With a sword in your own hand, Hand-to-hand 100 takes nothing.
+### Needs eyes
+- **The weapon simply vanishes.** Nothing falls to the ground and nothing can be picked up, and the foe's swing animation is still
+  its weapon's. A dropped prop and a fist pose are the bodies builder's, if wanted.

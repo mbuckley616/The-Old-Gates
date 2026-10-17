@@ -121,8 +121,8 @@ function foeFamily(e){
 function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
 // S1041 — the weapon a person-bodied foe holds (its genome's, 32-people.js), and that weapon's reach from your table: a knife
 // the dagger's 1.2, the rest (sword, axe, mace, cutlass, and the staff and spear the sheet does not list) the sword's 1.6
-const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar'};
-function foeWeaponKind(e){const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
+const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar',fists:'Fists'};
+function foeWeaponKind(e){if(e&&e._disarmed)return 'fists';const P=e&&e.limbs&&e.limbs.person,G=P&&P.g;return G?(G.gear==='spear'?'spear':G.wpn||null):null;}
 function foeWeaponReach(e){const k=foeWeaponKind(e);return WEAPON_ATTACKS[FOE_WPN_ROW[k]||'Sword'].reach;}
 // a foe's reach, centre to centre: engage (its tell starts inside it; null = the place's own, 1.1 or 0.9), the blow, its arc,
 // and the wolf's lunge. A boss with a bite (the Faolchú) engages and bites at its biteRange less 0.9 (its snout), hull to hull.
@@ -153,7 +153,7 @@ function blowRef(L){return BLOW_SHARE*hpRef(L)*(ARMOUR_K+kitRef(L))/ARMOUR_K;}
 function foeBlowRaw(e){return typeof e.dmg==='number'?e.dmg+Math.floor(foeRand(e)*4):(10+Math.floor(foeRand(e)*11))*(e.dmgMult||1);}
 function foePlaceK(e){return blowRef(1)/(typeof e.dmg==='number'?BLOW_ORDINARY.world:BLOW_ORDINARY.dungeon);}
 // the blow that reaches you: the roll, the row's multiplier, the place's scale, then your armour's share
-function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(armourShare((raw==null?foeBlowRaw(e):raw)*r.dmg*foePlaceK(e),arm)));}
+function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(armourShare((raw==null?foeBlowRaw(e):raw)*r.dmg*foePlaceK(e)*(e&&e._disarmed?CATCH_BLOW:1),arm)));} /* S1079 — a disarmed foe's fists, half its blow */
 
 // ── The one resolver for your swing (S940). The dungeon, the open world and the legacy zones each had their own
 // (_resolveDungeonStrike, _resolveZoneStrike), the same rules written twice; both are now this. At the swing's impact
@@ -433,6 +433,7 @@ function executeStrike(e, rawDmg, now){
     if(armsPerk('blade',75)){ // S1051 — Crossing (Blade 75): the nearest other alert foe within 3 m is staggered too
       let o2=null,d2=CROSSING_R;for(const f of strikeFoes()){if(f===e||!strikeCandidate(f)||!f.alert||f.hp<=0||isStaggered(f))continue;const d=Math.hypot(f.x-px,f.z-pz);if(d<=d2){d2=d;o2=f;}}
       if(o2){staggered.push({e:o2,t:1.2});staggerFlash(o2);o2.atkCd=Math.max(o2.atkCd||0,2.0);}}
+    if(armsPerk('hand',75))catchBlade(e); // S1079 — Catch the blade (Hand-to-hand 75)
     e.atkCd = 2.0;
     // v61d1 — Route the stagger flash through enemyBodyMesh(e) instead of
     // mesh.children[0]. Pre-v61d1 this was children[0].material assignment,
