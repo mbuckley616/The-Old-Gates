@@ -23451,5 +23451,5 @@ A correction made during the session: the first pictures showed a sliver of the 
 - **Pictures:** `ships-aurgalleon-quarter.jpg`, `-side`, `-castle`, `-deck` and `-quarter-nostar`.
 ### Needs eyes
 - **The main's peak stands 17.6 m up**, over a 22 m hull. The lateens make her read more as a big caravel than as a galleon, which is what #347 A asks, but the class may want its topsail-high look back.
-- **Only the fore course carries the star.** The lateens show it whole (their map is laid out about each sail's middle), so she shows three stars, as the caravel does.
+- **Three stars:** one on the fore course and one on each lateen, whose map is laid out about each sail's middle (the caravel shows one per lateen too). The topsail and the spritsail are plain. One star, on the main alone, would read quieter.
 - **#347 is built out.** All five classes in all three dresses wait on F11's parents in v2-scope §3 to go into the game.
