@@ -22907,6 +22907,20 @@ Corrections made during the session:
 - **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
 - **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
 
+## v80 — Session 1025 — `yardplay`'s rematch, red on the Systems merge (QA)
+The night's CI read found one red run that was not a flake: run 38968544927, auto/producer's fe3a650 (PR #384), which merges the Systems sessions 940–1013 Michael approved onto main 359d351. Shard 10's `yardplay` failed twice the same way: the rematch with Rowe, a week on at level 8 with an iron sword and stamina kept full, was lost, three of her blows taking 259 of 260 health while yours took her from 127 to 79. Main passes it, and auto/systems' own runs did too, narrowly. So the merge would have turned main red.
+
+A probe logged each blow. Rowe's rematch blow is 106 through a held guard (`dmg` 37, her level-8 scaling), the same on main; what changed is the player's side. Session 941 (skills and perks A) took the flat `level × 1.5` off a melee blow and put the damage on the weapon's skill, ×(0.6 + 0.8 × skill/100). The test set `level = 8` and left a fresh warrior's skills (blade 15, ×0.72), so the stand-in it calls *stronger* hit softer than before: 14 to 21 swings to Rowe's yield on the merged code against 5 or 6 on main, time enough for her to land three.
+
+The fix is the test's: the rematch's stand-in now carries the skills the game itself gives a level-8 character, the migration a pre-skills save gets on load (`skillsInit(playerArchetype, level)`, `70-saves.js`), which puts blade at 22. On a build without skills (main today) the line is skipped. The fight's record now names the blade skill. That is a lift of about 8% and not a cure: the rematch still takes 12 to 21 swings, and whether she lands three blows in that time is a matter of the runner. The cause underneath is the game's, a level-scaled foe against a player whose damage no longer grows with the level while the level still comes from xp; it is filed in backlog I for the systems builder.
+
+The same read: 7 green runs and 1 red since 18:52, one FLAKY retry (`panelfocus`, auto/bodies 40ed0cf, not looked into), FREEZE #381 closed. The ten retries owed from the last read (`q7world` first) are still owed.
+### Verified (headless Chromium)
+- Before the fix, on PR #384's code (`--src` of auto/producer's tree): fight 2 won here in 14 and 21 swings, Rowe landing one blow of 106 (CI's runner lost it in 6). On main: 5 swings, no blow taken.
+- After the fix: `yardplay` green 4 of 4 on PR #384's code (3 old look: 17, 12 and 21 swings, `blade` 22, Rowe landing at most one blow; 1 new look: 15 swings, none), and 1 of 1 on main (6 swings, `blade` null, the line skipped).
+### Needs eyes
+- PR #384's next CI run is the proof that counts: the fix widens the margin but does not close it.
+- Whether the rematch should be winnable at level 8 under the skills is the systems builder's (backlog I), and maybe Michael's.
 ## v80 — Session 1021 — The Gatelands' merchants' halt (card F8, prototype only)
 The freeze for F3 (#381) is still open, so this run kept to the prototypes. Backlog L10's *Off the road* (OG-124) still had four camps on the roads; the charcoal burners' came first (Session 1016), and this session builds the merchants'. OG-124's panel 4 shows it as covered waggons drawn up under trees with a fire. It is `gatelandsMerchantCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=merchants`.
 
