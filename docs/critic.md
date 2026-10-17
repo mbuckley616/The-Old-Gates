@@ -797,3 +797,43 @@ Build s639 is main at `4713b6c`, merged into this branch. My last entry was a pl
 - I: the *Sailing playtest* block is all struck and could close (fifth run noted).
 - I: *s627 — on the new look no person is drawn* is struck as fixed by Session 879, and I confirm it in play.
 - No bugs in today's game this run, and so nothing new in I. No proposals.
+
+## 2026-10-17 — Six blows in a real fight: a level-one Warrior against one Bandit, three, a held block and a timed one, a Deserter, and the wolf pack on the road south of Dunmore; a death and its load (build s643)
+
+Build s643 is main at `87a166f`, merged into this branch. My last entry reviewed the new look, so this run plays. Since s639 one thing has changed in today's game: card combat-resolver (Sessions 940, 949, 963, 988). Every blow now goes through one attack table, armour takes a share, and an ordinary blow at your level is a sixth of your health (Michael's B on #355). Session 949 asked for exactly this playtest: *six blows, in a real fight*, and *does a held block break too quickly against two foes*. Everything else in the devlog since Session 981 is prototype or tests only. `npm install` exits 0 and `export` passes 1/1. No page errors in four boots.
+
+The character is the harness's new Warrior: level 1, 130 health, 115 stamina, posture 104, a Wooden GreatClub, a Tattered Tunic, armour 2. The fights ran on the loop's own tick at 1/60 with the draw switched off, as `fistfight` runs them. `performance.now()` was held to the same clock, so the foes' pacing, my posture and my stagger all read one time. A bot faced the nearest foe and swung whenever the cooldown was down and it was in reach. It never drank, rolled or moved off. Cheats, all named: foes set down by `unlockFoe(buildZoneEnemy(…))`, as a quest sets them; `forceTime(12)`; `settle('dunmore')`; teleports south along the road.
+
+**What I played**
+
+*One Bandit (25 health), traded.* Three fights. He dies to 3 or 4 swings in about 2.1 s and lands 0 or 1 blow, of 19 to 27. Against one man the GreatClub ends it before the sixth-of-health rule matters. A lone Highwayman, Skeleton and Wolf went the same way (2.0 to 2.1 s, at most one blow taken). A Deserter (34 health) took 6.9 s and two blows of 29: 72 health left.
+
+*Three Bandits, traded.* I lost all three fights, in 16.6 s, 12.7 s and 9.0 s, after killing one or two of them. Each loss was six landed blows of 19 to 27. The sixth is the killing blow, as Session 949 promised. What decides it is stamina, not health. The GreatClub empties the 115 bar in three or four swings (35 left after three). After that the bot "swings" 27 to 55 times a fight to land five or six. Posture broke once a fight, between 1.75 s and 13.2 s in. So 949's "about two exchanges" holds: a level-one player who only swings at three men falls in 10 to 15 s.
+
+*A held block, never swinging.* Against one Bandit I fell at 16.4 s, after 9 blows. Six were blocked at 11 to 14 each, against 19 to 27 unguarded: the block takes about 45% off. Blocking cost stamina equal to what it absorbed, so stamina reached 0 first and the guard broke at 10.8 s. The last three blows came through at 16 to 21. Against two Bandits the numbers were nearly the same: 9 blows, 16.8 s, guard broken at 11.2 s. That answers 949's second note. A held block breaks in about 11 s whether one man or two strike at it, and holding it alone always loses. The two Bandits landed no more blows than one. I did not find out why; I suspect the block's push-back keeps the second man out of reach.
+
+*A timed block: the guard raised in the last 0.15 s of a wind-up, a swing otherwise.* I won every fight: two Bandits with 66 and 69 health left (13.1 s and 11.5 s), and three with 60 left in 20.1 s, with 5 perfect parries and 6 blocks. So the same character who dies to three Bandits by swinging beats them by reading the tell. That is the difference combat.md asks for, and I think it is right.
+
+*The road south of Dunmore, as it stands.* From Dunmore at 15h I walked south in four steps of 60 m. Of the 47 to 59 foes in the loaded cells, every Bandit, Deserter and Hollowed within 300 m is locked above level 1 and unseen. A level-one player meets only Goblins, Wolves and a Shark offshore. At 200 m a pack of three real Wolves (18 health each) lay 24 to 27 m off. I walked into them in third person, swinging (`critic/2026-10-17-wolves-road.jpg`, at 77 health after 6 s). They killed me at 12 s, with two of the three dead. Over four packs of three wolves, a level-one Warrior who only swings won three (27, 77 and 92 health left) and lost one. So the first fight a new character meets on the road out of Dunmore is a coin toss weighted their way. It is the strongest pressure in the game's first hour, and it comes from wolves, not men.
+
+*The death and the load.* *YOU DIED* came up with *Last save: autosave — the open country, level 1* and its two buttons (`critic/2026-10-17-died.jpg`). The log reads *First blood — slew a Wolf* and *Fell in the open country.* *Load last save* closed the screen and loaded the save in place: 130 of 130 health, XP back to 0/200, the world zone. It put me at (1130, 1480), which is open sea. That is the harness's doing, not the game's. `intoWorld()` stops at the legacy Hearthwick coordinates on its way to the continent, and the first autosave was taken there. Nothing autosaved during the walk south, because the town was reached by a teleport, not by its pad. I note it so that nobody reads the picture of a body standing in the sea as a bug.
+
+**What was wrong**
+
+Nothing I could call a bug in today's game. The resolver's numbers came out exactly as Session 949 wrote them: six unguarded blows to fall, about nine through a held block. No page errors.
+
+**What worked well**
+
+The tell matters. With the same weapon and health, timing the block turns three losses into three wins. The death screen is plain and fast, and its line names the save.
+
+**Needs eyes, reviewed**
+- *Session 949, six blows in a real fight:* judged headless, above. A lone foe is no threat at level 1. Three men kill a player who only swings in 9 to 17 s, and the stamina bar runs out before the health bar does. The wolf pack on the first road is the real test, and the player wins about three times in four. Whether that is the pressure combat.md wanted is Michael's call. One thing to know first: the systems builder's PR #353 (S1034, enemies by place, and S1041, the foes' reach hull to hull) changes both sides of these numbers, and it is not on main yet. These are s643's numbers and should be measured again when it lands.
+- *Session 949, a held block against two foes:* judged. The guard breaks at about 11 s against one or two Bandits, and stamina, not posture, decides it. Two foes did not break it faster.
+- *Session 963:* nothing new to judge. *Session 988:* the guard paces his blows on `performance.now()` and moves on `dt`. With both held to one clock here, the fights were steady. I could not judge the two clocks diverging in play.
+- *Sessions 991, 992, 1005, 1006, 1025 (QA):* tests only.
+- *Session 1005 (the critic's mill and banner):* prototype, for the next new-look run.
+- *The prototype sessions 984–1033 (L1/B2 dress, L4's Dusk Eagle, F8's places):* not judged this run. The next new-look run should take F8's road camps and small mysteries and the Aurennais dress.
+
+**Backlog notes** (not changed):
+- I: the *Sailing playtest* block is all struck and could close (sixth run noted).
+- No new lines in I this run, and no proposals.
