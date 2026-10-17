@@ -25,9 +25,15 @@ const crime = await page.evaluate(() => { forceTime(23); worldState.crime = {}; 
   return { shop: h.name, witness: w.def && w.def.name, day: Math.floor(worldState.gameTimeAbsMinutes / 1440) }; });
 const s0 = await state(); console.log('crime', JSON.stringify(crime), JSON.stringify(s0));
 check('a lock picked under a witness\'s eye: favour −1, a point owed, a 25-gold fine', s0.favor === -1 && s0.debt === 1 && s0.bounty === 25, { crime, s0 });
+// the pick takes you into the shop (`onPick` → `goToInterior`, on the fade's timer): wait for that, and for the way back out,
+// before the morning's ticks. A late fade put you in the room during them, and its coordinates outdoors made the world drop
+// Dunmore (`WORLD.settle.get('dunmore')` undefined on CI, 16 Oct; Session 1040, as `carraignight`'s Session 947)
+await page.waitForFunction(() => isInterior(), null, { timeout: 30000 });
+await page.evaluate(() => exitInterior());
+await page.waitForFunction(() => !isInterior() && lid === 'overworld', null, { timeout: 30000 }); await g.hide();
 
 // morning: the priest, where he is, through his own dialogue
-await page.evaluate(() => { forceTime(10); for (let i = 0; i < 240; i++) WORLD.tick(1 / 60, performance.now()); });
+await page.evaluate(() => { if (isInterior()) throw new Error('indoors before the morning'); forceTime(10); for (let i = 0; i < 240; i++) WORLD.tick(1 / 60, performance.now()); });
 const where = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const ch = S.houses.find(x => x.type === 'church');
   const pn = S.npcs.find(n => n.def === ch.dlg); window._ch = ch; window._pn = pn;
   return { church: ch && ch.name, priest: ch && ch.dlg && ch.dlg.name, inStreet: !!(pn && pn.g.visible && !pn._retreated) }; });

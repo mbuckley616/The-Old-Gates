@@ -22919,6 +22919,20 @@ Corrections made during the session:
 - **The oaks are the kit's blob trees,** and the coppice under them is thinner than a worked wood.
 - **Still open in OG-124:** the other road camps (merchants, hunters, a pilgrims' rest, an abandoned expedition) and the small mysteries.
 
+## v80 — Session 1025 — `yardplay`'s rematch, red on the Systems merge (QA)
+The night's CI read found one red run that was not a flake: run 38968544927, auto/producer's fe3a650 (PR #384), which merges the Systems sessions 940–1013 Michael approved onto main 359d351. Shard 10's `yardplay` failed twice the same way: the rematch with Rowe, a week on at level 8 with an iron sword and stamina kept full, was lost, three of her blows taking 259 of 260 health while yours took her from 127 to 79. Main passes it, and auto/systems' own runs did too, narrowly. So the merge would have turned main red.
+
+A probe logged each blow. Rowe's rematch blow is 106 through a held guard (`dmg` 37, her level-8 scaling), the same on main; what changed is the player's side. Session 941 (skills and perks A) took the flat `level × 1.5` off a melee blow and put the damage on the weapon's skill, ×(0.6 + 0.8 × skill/100). The test set `level = 8` and left a fresh warrior's skills (blade 15, ×0.72), so the stand-in it calls *stronger* hit softer than before: 14 to 21 swings to Rowe's yield on the merged code against 5 or 6 on main, time enough for her to land three.
+
+The fix is the test's: the rematch's stand-in now carries the skills the game itself gives a level-8 character, the migration a pre-skills save gets on load (`skillsInit(playerArchetype, level)`, `70-saves.js`), which puts blade at 22. On a build without skills (main today) the line is skipped. The fight's record now names the blade skill. That is a lift of about 8% and not a cure: the rematch still takes 12 to 21 swings, and whether she lands three blows in that time is a matter of the runner. The cause underneath is the game's, a level-scaled foe against a player whose damage no longer grows with the level while the level still comes from xp; it is filed in backlog I for the systems builder.
+
+The same read: 7 green runs and 1 red since 18:52, one FLAKY retry (`panelfocus`, auto/bodies 40ed0cf, not looked into), FREEZE #381 closed. The ten retries owed from the last read (`q7world` first) are still owed.
+### Verified (headless Chromium)
+- Before the fix, on PR #384's code (`--src` of auto/producer's tree): fight 2 won here in 14 and 21 swings, Rowe landing one blow of 106 (CI's runner lost it in 6). On main: 5 swings, no blow taken.
+- After the fix: `yardplay` green 4 of 4 on PR #384's code (3 old look: 17, 12 and 21 swings, `blade` 22, Rowe landing at most one blow; 1 new look: 15 swings, none), and 1 of 1 on main (6 swings, `blade` null, the line skipped).
+### Needs eyes
+- PR #384's next CI run is the proof that counts: the fix widens the margin but does not close it.
+- Whether the rematch should be winnable at level 8 under the skills is the systems builder's (backlog I), and maybe Michael's.
 ## v80 — Session 1021 — The Gatelands' merchants' halt (card F8, prototype only)
 The freeze for F3 (#381) is still open, so this run kept to the prototypes. Backlog L10's *Off the road* (OG-124) still had four camps on the roads; the charcoal burners' came first (Session 1016), and this session builds the merchants'. OG-124's panel 4 shows it as covered waggons drawn up under trees with a fire. It is `gatelandsMerchantCamp` in `docs/prototypes/levelup/places.js`, at `places.html?place=merchants`.
 
@@ -23052,3 +23066,396 @@ The second build from the quest writer's queue: *Back to Their Bread*, approved 
 - Whether one in six after a week is *once in a long while* in play. A player who lives in the towns will hear one about once a game-week.
 - Whether Varek at 90 units reads as *at a distance*, or wants to stand farther, on the field's far side as drafted.
 - The Old Blood's Irish is the quest writer's, in the deep register; the author may want to correct it.
+## v80 — Session 1024 — The Gatelanders' leg wraps (L1 and B2, prototype only)
+FREEZE #381 (F3) is still open, so this run kept to the prototypes. The next owed L1 item was the coins on the Aurennais head-wrap's edge. Session 1018 said it had to be confirmed from OG-056's full image, but that image is on Google Drive, which this session's network cannot reach. The thumbnail is too small to settle it, so it stays owed. This session takes the next unbuilt piece of the Gatelanders' dress: the leg wraps. OG-048 draws "boot wraps" and OG-059 "laced boots and leg wraps". The builder had capes, cloaks, hoods and tabards for the Gatelanders, but nothing between the boot and the knee. Building what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What changed in `people.js`:
+- **The shell.** `legWraps` is a wool shell off the tights' helper, between rest y -.715 (just above the ankle) and -.405 (under the knee, whose joint is at -.369). It stands 1.6 cm off the tights over trousers, where the trousers stand 0.8. Over a bare leg under a short tunic skirt it stands 0.6.
+- **The winding** is drawn in the shader, where the sash belt's folds are (Session 1010). Round each shin's own axis (read off the skeleton, the knee's joint to the ankle's), the band climbs one pitch of 5.5 cm a turn, 5.6 turns in all. The two legs are wound as mirrors.
+  - Each turn's lower edge rises over 1 cm from the crease, so it lies over the turn below. The turn then slopes back in to pass under the next. The cloth darkens into the crease, and the normal is bent by the slope.
+  - The top 1.2 cm lies flat. Two leather thongs in the boots' colour cross round it, front and back.
+  - The angle's seam is on the inside of the leg.
+- **The boots** are cut down to the ankle (rest -.69) when wraps are worn, so the wraps' lowest 2.5 cm go in under them.
+- **The roll.** A Gatelander man in trousers and boots rolls wraps at 0.45, in undyed, brown, moss or grey wool. This is drawn last, so every earlier roll of a seed is as it was. No woman and no other people rolls them.
+- **Saving.** `legWraps` is a garment colour in `GARMENTS`, so it saves and loads with the genome, and the builder's panel gives it a checkbox and a colour.
+- **The stats.** `legWrapStats` reads the posed trousers (or the bare leg) against the wraps' shell, and the wraps' lowest band against the boot's, with `shellThrough` (Session 887).
+
+In `builder.js`: a `shins` view, from the ankle to the knee.
+
+Corrections made during the session:
+- **The first winding stepped hard** from 0.5 to 0 at every crease. White specks ran along each one, where the bent normal turned through a pixel. The turn now falls back to 0 before the crease.
+- **The wobble on the turns' lines** was first 5 per cent of a turn. It swamped the spiral's slope, and the turns read as level stripes. It is now 1.8 per cent.
+- **A dark column of dashes** down the back of each calf looked like the angle's seam. Moving the seam to the inside of the leg left the column where it was. It is the bend's shadow where the leg turns from the key light: depth 1.4 made it hard, 0.7 lost the turns, and 1.1 is kept.
+- **Over a bare leg** the wraps first stood 21.6 mm off the skin, at the push used over trousers. They now stand 11.6.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 380 checks pass** (375 after Session 1020; 5 new).
+- **The new checks.** Two men are checked: one in trousers and boots, and one with bare legs under a short tunic skirt.
+  - Nothing comes through the wraps: 0 of 290 trouser points, and 0 of 324 points of the bare leg.
+  - The wraps stand 8.0 mm over the trousers and 11.6 mm over the bare leg.
+  - The wraps' lowest 2 cm are inside the boot on both, with 0 of 36 points through it.
+  - They are 1,010 triangles, with 5.6 turns.
+  - They save and load back, and with `legWraps` off no wrap is built.
+- **The roll:** 6 of 13 Gatelander men wear wraps, and all 13 wear trousers and boots. No woman, Markman, Aurennais or Old Blood rolls them.
+- **New pictures:** `builder-legwraps-front.jpg`, `-back.jpg`, `-side.jpg`, `-moss.jpg` (moss wraps on bare legs) and `-full.jpg`.
+
+### Needs eyes
+- **From the front the turns read nearly level.** The spiral's slope shows from the side and behind.
+- **On the shadowed side** the creases show as short dark dashes.
+- **They are drawn, not modelled.** The shell's outline is a smooth cylinder, with no step at each turn's edge, so the silhouette is plain.
+- **The thongs** are two lines on the flat top, with no knot and no ends.
+- **Still owed in L1:** the coins on the head-wrap's edge, which need OG-056's full image; the Gatelanders' headscarves and baskets.
+
+## v80 — Session 1029 — The Gatelanders' headscarves (L1 and B2, prototype only)
+Numbered 1029: the systems builder's Sessions 1027 and 1028 reached its branch during this run. No FREEZE is open, but F4 has not merged, so the bodies stay in the prototypes. Session 1024 left two pieces of the Gatelanders' dress unbuilt: headscarves and baskets. This session builds the headscarf. OG-048 draws "a woman in a patterned headscarf" and OG-059 "headscarves on women". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+The headscarf is the Aurennais head-wrap (Session 994) tied another way: `D.scarf`. This keeps one garment colour, `wrap`, and one set of rules for the hair under it, which is tucked short as before. The thumbnails cannot show how the scarf is tied, so it is read as a kerchief folded corner to corner and knotted at the nape.
+
+What changed in `people.js`:
+- **The cut.** The scarf's dome is fitted to the head as the wrap's is (`headDome`), with 1.2 cm of cloth where the wrap has 1.6.
+  - Its edge runs across the forehead 3.5 cm over the brows (the wrap's is about 2).
+  - From there it comes down over the tops of the ears and falls to 13 cm under the brow line at the nape.
+  - In place of the wrap's five turns there is one folded edge, a flattened roll 4.5 mm round.
+- **The point** is the third corner, hanging down the middle of the back. It is laid by the wrap-tail's builder (Session 1018) with the side `C`. It is 9 cm wide under the knot and narrows to its corner 22 cm down (18 on a man). It lies 6 mm over whatever it hangs over, read off the same radial map. Its two edges take the border's colour.
+- **The knot** is a lump of cloth at the nape over the point, 4.6 by 3 cm. Its two ends, 5.5 cm long and 2.2 cm narrowing to 1.3 wide, lie on the point 6.5 mm out, clear of the point's folds. The point and the knot are carried by the chest bone, and none is built under a cloak.
+- **The print.** `clothMat` takes a new `print` colour. Where a vertex's `aPrint` is 1, the shader draws sprigs of four round petals on a 2.4 cm grid. Each row is offset by half a cell, and the print is read three ways off the rest position, as the weave is. Far off it fades to its average.
+- **Saving.** `D.scarfPrint` is a garment colour in `GARMENTS`, so it saves with the genome. `scarf` is a dress flag.
+- **The roll.** A Gatelander woman with no cloak and no helm rolls a scarf at 0.85. It comes in madder, moss, sea blue, ochre or undyed wool. Seven in ten are printed, in cream or ochre (madder or blue on the undyed), and half have a red border (ochre on a madder scarf). This is drawn last, so every earlier roll of a seed is as it was.
+
+In `builder.js`: a checkbox, *head-wrap tied as a headscarf*, and the print's colour under Dress.
+
+Corrections made during the session:
+- **The first cut sat like a cap.** Its edge was 7.5 cm over the brows and showed a bare forehead. It is now 3.5 cm over them.
+- **The point was first 15 cm wide where it left the scarf.** Its top corners stood out past the scarf's sides at the nape. It is now 9 cm wide there and narrows from the knot.
+- **The knot first shaded dark,** because its triangles were wound inward. The winding is flipped.
+- **The old wrap roll's check** counted any `wrap` on another people as a fault. It now counts wraps that are not scarves.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 388 checks pass** (380 after Session 1024; 8 new).
+- **Three women:** a braid under a printed madder scarf with an ochre edge, a bun under a plain moss one, and loose hair under a printed sea-blue one with a red edge.
+  - Nothing of the head or the tucked hair comes through the scarf: 0 of about 27,800 hair points. The scarf stands 12.5 to 13.2 mm over the head, and its fold is 3.5 to 3.6 cm over the brows.
+  - Nothing comes through the point: 0 of 27,600 to 33,100 points. It is 5.7 to 6.5 mm from the scarf, and the knot's ends lie 6.5 mm over it.
+  - Each saves and loads back.
+- **Under a cloak:** the scarf is worn with no point or knot.
+- **The roll:** 5 of 27 Gatelander women wear one, and 3 of those are printed. No man, no cloaked or helmed woman and no other people rolls one, and no print is in its field's colour.
+- **The scarf** is 3,312 triangles, and the point with its knot is 1,184 more.
+- **New pictures:** `builder-scarf-front.jpg`, `-side.jpg`, `-back.jpg`, `-moss.jpg`, `-blue.jpg` and `-full.jpg`.
+
+### Needs eyes
+- **The folded edge on a dark scarf reads as a black line** (`builder-scarf-moss.jpg`). Its colour is the cloth's, as the vertex colours show, but the thin roll sits under the crown's overhang and takes its shadow. A thicker roll standing further out would catch the light.
+- **The crown is a fitted dome, so it reads as a cap.** A kerchief has slack: a fold at the temples and a gather to the knot. None is modelled.
+- **The print smears where its three projections blend,** at about 45° on the crown.
+- **The tie at the nape is a reading of thumbnails.** Some country women tie under the chin. If Michael sees it otherwise, it is a change to the cut, not a new garment.
+- **The knot is a smooth lump.** Its ends are flat ribbons with no thickness.
+- **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), the Gatelanders' baskets, and the game (after F4).
+## v80 — Session 1025 — The Gatelands' overturned carriage (card F8, prototype only)
+The freeze for F3 (#381) closed on 17 Oct, and nothing on the decisions page waits on the look builder. Card F6 in the prototype kit is done (the Mark's lots, Aurenne's churches and civic buildings, the Gatelands' coloured towns, the one kit). So this run went on with OG-124's list. Its panel 6, "small mysteries with no marker", starts with "an overturned carriage". It is `gatelandsCarriage` in `docs/prototypes/levelup/places.js`, at `places.html?place=carriage`. The lone grave under a ringed cross was passed over for now: the canon gives the dead to the gates, so who lies alone in a field, and why, is the quest writer's first.
+
+A road coach left a lane at speed, went over the ditch and fell on its near side in the field beyond. Its team is gone, and nobody is anywhere. The place shows only the state of things an hour or a day after; what happened, and to whom, is left to the quest writer. The coach is the game's (Session 261) at true size: a panelled body 2.3 by 1.45 by 1.35 m, wheels of twelve spokes 1.44 m behind and 1.04 m in front. It is built upright in its own frame and then laid on its side, so every part keeps its place on it.
+- **On its side:** its roof faces the field wall and its underside the lane. Its two right wheels are up in the air and lie flat, and the fore-carriage is turned 15° on its pivot.
+- **The door:** the right door is swung out 100°, so it stands up past upright and leans back over the body. Through the doorway is the dark of the inside, with the seats. The lining is drawn from inside only, so it shows through the doorway and nowhere else.
+- **The wheels on the near side:** the rear one is broken off under the body, leaving its nave with three spokes snapped short; its rim lies in the grass and four spokes in the ditch. The front one is off and lying flat.
+- **At its front:** the pole is snapped a metre out from its socket, and its other half lies in the field. The four traces are cut short at the splinter bar and hang from it. The far lamp is still on its bracket and burning; the near one lies broken on the ground.
+- **The lane:** two gouges in the turf run from the lane's edge over the ditch to the coach, with clods thrown up beside them. The whip lies in the road and a hat in the ditch.
+- **The luggage:** it was thrown off the roof towards a dry-stone wall. A trunk stands on its end; another is burst, its lid back on its hinge and its clothes out over the grass. A hatbox has rolled away and a valise lies further off. One case is still strapped under the roof rail.
+- **The land:** pasture falling gently along the lane, the wall along the field's far side (1.0 to 1.2 m, with copes on edge), a thorn hedge across the lane, and ash and oak turning.
+- **The size:** 35,900 to 36,300 triangles in 19 meshes.
+
+The views are `coach` (from the lane), `door` (from the roof's side, the door standing up against the sky), `inside` (stood on its upper side, down into the doorway), `traces`, `luggage` and `far`, and `&dusk` gives the evening with the lamp lit.
+
+Corrections made during the session:
+- **The budget:** the first build came to 41,200 triangles in 23 meshes, over the 40,000 and 20 the places keep to. The brass went into the wheels' yellow and the hedge's thorn into the leaf, the green clothes became red, the broken window became black rather than a material of its own, and the wall was shortened from 80 m to 60 with two copes a stone instead of three.
+- **The light:** the sun first stood behind the lane's hedge, which left the coach's underside and the door in shadow from every view. It is now in the south-east.
+- **The far view** first looked through a tree in the hedge. No hedge tree now stands within 10 m of the coach on the lane's side.
+- **The wall's copes** first left gaps between them, so the check met the wall at 0.62 m where a cope was missing. They now close up, and the wall is 1.01 to 1.17 m.
+- **The clothes** were first a few big flat discs. There are now eleven smaller, longer heaps.
+
+The kit is now ready to go into the game behind `?look=new`, since F2a has merged. Where it lives there needs a new `js/` file, which is a decision of its own, so it is asked as **DECISION #389** (A, a new `js/38-kit.js`, recommended; B, inside `82-world-structures.js`; C, not until F14).
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 210 of 210 pass** (202 after Session 1023). Eight checks are new. The carriage's `coach` view and its `door` view at dusk render with no page errors, and six checks run over three keys:
+  - **The builds:** each key builds the same twice, with 35,892 to 36,340 triangles in 19 meshes and 17 to 18 trees.
+  - **On its side:** the lower side's underface is met by the ground 0.02 m off at 6 points, and the upper side is 1.47 m up. The two right wheels' hubs are 1.59 to 1.67 m over the ground, and their rims 1.54 m or more.
+  - **The door:** its free edge is 0.61 m over the upper side. A ray straight down through the doorway first meets the dark lining 1.4 m below, not a panel.
+  - **What fell:** the four traces' cut ends are 0.018 to 0.67 m over the ground. The 14 things thrown off lie −0.027 to 0.01 m off it.
+  - **The wall:** it is 1.01 to 1.17 m high at 18 points.
+  - **The walk:** 57 half-metres from the lane over the ditch to the coach's underside, and round its front and along its roof. There is ground under each, no step is over 0.21 m, and there is 0.61 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-carriage-coach.jpg`, `-door`, `-inside`, `-traces`, `-luggage`, `-far` and `-coach-dusk`.
+### Needs eyes
+- **The body reads as a box.** The game's coach has rounded panels; this one is flat panels on corner pillars. Its curve under the windows and a moulded belt rail are the next step if the place is kept.
+- **The traces** are thin, and from the lane they barely show. The cut ends are the place's one hint, so they may want to be thicker or to lie on the grass where they are seen.
+- **The lamp at dusk** is a small warm point; whether a lamp still burning should be the tell that it happened within the hour is the quest writer's.
+- **Nobody is here:** no driver, passengers or horses. If the place is a lead, who was in it is the quest writer's, and any body is the bodies builder's.
+- **Still open in OG-124:** the pilgrims' rest, the lone grave (both want the canon), strange tracks, the locked cellar, the unfinished camp and the odd rock.
+
+## v80 — Session 1026 — The Gatelands' locked cellar (card F8, prototype only)
+The second of OG-124's small mysteries with no marker (panel 6: "a locked cellar"). It is `gatelandsCellar` in `docs/prototypes/levelup/places.js`, at `places.html?place=cellar`.
+
+A cottage fell long ago and the field took it back, but someone still comes to its cellar. The place says only that: the lock is new and the grass is worn to it and nowhere else. Who comes, and what is below, is left to the quest writer. It is built at true size in pasture rising gently from a lane:
+- **The footings:** the cottage is 7.0 by 4.6 m outside, with walls 0.55 m thick of rubble stone in courses. They stand 0.3 to 0.85 m, each half-metre stretch to its own height, with the doorway's gap in the south wall.
+- **The west gable:** whole to the eaves at 2.4 m and its apex at 4.6 m, with the stack over it to 5.6 m and a dressed cap. Inside are the fireplace's dark mouth under a stone lintel, the hearth stone, and two patches of limewash still on the wall.
+- **The rest:** rubble fallen inside along the walls and out of the east end, 90 nettles in the footings, an elder grown against the east end, a bush by the lane and ash in the field.
+- **The hatch:** a 1.2 by 1.0 m mouth in a kerb of dressed stone at the floor's level, at the east end. Two leaves of grey oak boards lie on strap hinges, with a hasp between them. A chain of 19 bright links runs across both leaves to old staples in the kerb, held at the hasp by a padlock that is new and bright.
+- **The path:** the grass is worn to earth from the lane through the doorway to the hatch, and round the hatch, and nowhere else.
+- **The size:** 21,900 to 22,100 triangles in 12 meshes.
+
+The views are `ruin` (from the lane), `hatch` (from the doorway), `lock` (knelt by it) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The hatch's boards** were first placed by a wrong formula, which piled eight boards over each other across the middle. Each leaf now has four boards side by side.
+- **The chain's links** were first 9 rings 0.09 m apart, so they did not touch. There are now 19 longer links, each into the next.
+- **The padlock** first read black: a mirror metal reflects the dark scene. It is now a satin steel that reads bright.
+- **The elder** first grew over the hatch and hid it from the doorway. It now grows against the east end, outside.
+- **Two of the check's probes:** the leaves' probe first landed on a strap hinge, and the gable's on its slope and then on the stack's cap. They now read a board between the hinges, and the gable 0.7 m off its apex line, clear of the stack.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 216 of 216 pass** (210 after Session 1025). Six checks are new. The cellar's `ruin` view and its `lock` view at dusk render with no page errors, and four checks run over three keys:
+  - **The builds:** each key builds the same twice, with 21,936 to 22,068 triangles in 12 meshes and 11 trees.
+  - **The hatch:** the kerb's corners are 0.03 m over the floor and the oak leaves are met 0.075 m over it. The padlock is 0.032 m from the hasp and 0.06 m over the leaves.
+  - **The ruin:** the footings are 0.31 to 0.84 m high at 20 points, the gable is met 3.94 m up 0.7 m off its apex line, where its slope stands at 3.93, and the stack is at 5.6 m. The 25 fallen stones are −0.002 to 0.001 m off the ground.
+  - **The walk:** 25 half-metres from the lane through the doorway to the hatch, all 25 on worn ground. There is ground under each, no step is over 0.065 m, and there is 2.95 m or more clear at the hip and the head, with nothing over the head.
+- **Pictures:** `places-cellar-ruin.jpg`, `-hatch`, `-lock`, `-far` and `-ruin-dusk`.
+### Needs eyes
+- **The nettles are plain cones.** They read as a crop of little firs from the lane. A nettle wants a stem with paired leaves, which the plant kit (`30-plants.js` in the game) may already have the shape for.
+- **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
+- **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
+
+## v80 — Session 1038 — `skillcurve`: the fight's Bandit taken out of the run's lane (red twice on PR #384, QA)
+The CI read since 00:52 found one red run: auto/producer's 4262d1b (PR #384, the Systems sessions 940–1013 Michael approved, merged onto main), whose shard 6 failed `skillcurve` twice. The check was *the run at Athletics 5 and 100 … ×1.097 ±2%*, the same check that went FLAKY on auto/systems on 16 Oct (×1.075). Main does not have the suite, so it was red only where the Systems merge is, and it would have held PR #384 red.
+
+On 4262d1b here it failed one boot in two (4.088 and 4.39 a second, ×1.074). The speed rule has no roll in it (`3.83 + .37 × skillT('athletics')`, `90-main.js`), so I traced the run frame by frame. The suite drives the run from S.x − 2 along +x through S, which is where its fight had put a Bandit; the fight's `finally` set `e.hp = 0` and left him in `ZONES.world.enemies` and in the scene. The player was pushed round the body: the two runs ended 0.84 m apart in z, and the Athletics-100 run lost up to 4 cm of its 2.2 m, which is the whole 2%. Where the body lay depended on where the alert Bandit had moved during the fight, so it changed from boot to boot. The jump is measured at S as well.
+
+The fix is the test's. The fight's `finally` now removes the Bandit, body and all, the way `dmgnums` removes its foe. A new check says no live foe stands within 6 of the lane and the run keeps its line (drift under 1 cm). The ratio check and its ±2% are unchanged. The suite is only on auto/systems and PR #384, so the commit cannot ride `auto/qa`: its add of the file would collide with #384's copy. It is on `auto/qa-skillcurve` (ff40184), one file, cut from #384's head. auto/systems has the same copy of the file, so the commit applies there too.
+
+The same read: green on auto/quests, auto/systems, auto/backlog, auto/qa, auto/bodies and main since 00:52, and five runs still going at 06:52. The runners are short: auto/systems' 06:04 run had nine shards still queued. The FLAKY annotations were not read this time. `q7world` and the rest of `docs/qa/flaky.md`'s owed list are still owed.
+### Verified (headless Chromium)
+- Before, on 4262d1b: `skillcurve` 1 of 2 red (×1.074). Three traced runs: z drift 0.8 m between the two runs, the Bandit 1 m behind the player at hp 0.
+- After, on ff40184: 4 of 4 green in the old look and 1 of 1 in the new, each run 4.085 and 4.48 a second, ×1.097 exactly, drift 0, no foe left near the lane.
+### Needs eyes
+- `auto/qa-skillcurve` has to be merged into PR #384's branch (or auto/systems) by the producer; until then #384's shard 6 stays red about one run in two.
+- Whether a dead foe's body should push the player at all is a game question, not this suite's; nothing here says it is wrong.
+
+## v80 — Session 1039 — `q7world`: the swings stand where the Faolchú is the nearest foe in the arc (FLAKY twice, QA)
+`q7world` was the worst of the owed retries: twice on 16 Oct (auto/backlog 490b0f9, auto/systems bf251d1, both shard 8) the fight ended with the Faolchú at 5 hp and its two wolves alive, and the three checks after it fell with it. Main passed it here three times out of three, one swing each. So I logged the fight blow by blow on the Systems code (PR #384's head, which carries bf251d1).
+
+A blow lands on the nearest foe within reach in the swing's arc (`resolvePlayerStrike`, `74-strikes.js`). The suite stood 1.6 from the Faolchú on the far side of its wolves' midpoint, a rule from Session 465 against the wolves breaking your posture. With a wolf on each flank, the far side of the midpoint often still had one nearer than the Faolchú (1.31 against 1.6). One traced run swung 24 times: one blow on the Faolchú and the rest on a wolf with 250 hp. On main that one blow is enough for the last 5 HP. On the Systems code, damage is set by the weapon's skill (S941), so a blow there does 2 or 3 and two have to land. On a slow runner the 30 s of fixed ticks ran out first. The game is right to strike the nearer wolf.
+
+The fix is the test's. Each tick the suite picks one of 32 spots 1.6 from the Faolchú. It skips any spot that has a wolf in the swing's arc (the game's own `weaponAttack(EQ.weapon)` arc and reach) nearer than the Faolchú, and of the rest takes the one farthest from the wolves. The fight's record now counts the swings and the blows on the Faolchú and on the wolves. The checks are unchanged.
+### Verified (headless Chromium)
+- Before, on PR #384's code: 24 swings, 1 blow on the Faolchú and the rest on a wolf (250 → 160-odd hp); it passed that time only because a second blow got through before the 30 s ran out.
+- After: green 3 of 3 on main (1 swing, 1 blow on it, none on a wolf), 3 of 3 on PR #384's code (2–5 swings, 2–3 blows on it, none on a wolf) and 1 of 1 under `--look=new` on main.
+### Needs eyes
+- None for play. The fight's damage at the Faolchú's last 5 HP on the Systems code (2 or 3 a blow from a fresh warrior) is the skills' design, not this suite's.
+
+## v80 — Session 1040 — `penance` waits for the pick's own move into the shop (FLAKY once, QA)
+`penance` went FLAKY once on 16 Oct (auto/bodies d2feb94, shard 12). It threw at the morning, `WORLD.settle.get('dunmore')` undefined after `forceTime(10)` and 240 ticks: Dunmore was gone. The suite stages a crime: a shop door picked at 23h with a witness three units off. It calls the lock's own `onPick`, and that takes you inside (`goToInterior(house)`, `86-world-crime.js:622`) on `doFade`'s 440 ms timer. The suite did not know it had been taken in, and went straight on to the morning's 240 explicit `WORLD.tick`s. On a fast runner those ran before the timer fired, and the later steps happened to cope with being indoors. On a slow one the timer fired first, so the ticks ran with the player at the room's coordinates, and the world dropped Dunmore as thousands of units off. This is `carraignight`'s shape (Session 947). The game is right to take you in when you pick a door, and right to drop a far town.
+
+The fix is the test's, the same wait as Session 947's. After the pick, the suite waits for the move indoors, steps back out, and waits for `lid === 'overworld'`. The morning's ticks now throw if they find you indoors, instead of quietly losing the town. The checks are unchanged.
+### Verified (headless Chromium)
+- The cause reproduced: the old suite with a 1.5 s pause after the pick threw *Cannot read properties of undefined (reading 'houses')*, the CI failure.
+- After: green 3 of 3, 1 of 1 with the same 1.5 s pause, and 1 of 1 under `--look=new`. The crime still reads favour −1, a point owed, a 25-gold fine (Lorcan's Forge, Gráinne).
+### Needs eyes
+- None.
+## v80 — Session 1033 — The Gatelanders' baskets (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. Session 1029 left two pieces of the Gatelanders' dress unbuilt: the coins on the head-wrap's edge, which need OG-056's full image, and the baskets. This session builds the basket. OG-048 draws "a farm woman with an apron and a basket" and lists woven baskets under the people's craft; OG-059 lists "a basket". Both sheets are kept, and building what they draw chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+The basket is an oval market basket of willow, carried by its bow handle in the right fist (`D.basket`, the willow's colour). It hangs plumb under the fist, its length fore and aft along the leg.
+- **The pose.** The right elbow straightens to 0.12 rad with the weight. The hand is turned at the wrist (0.51 to 0.59 rad) so its fingers point down and its knuckles run level, fore and aft. The four fingers close round the handle's crown with the spear's grip (`fistGrip`), since the handle is the spear shaft's thickness, 2.6 cm.
+- **The basket.** 38 by 27 cm at the rim and 30 by 20 at the foot, 17 cm deep. The wall has an outside, an inside 7 mm in, and a floor. On a canvas, the weave is drawn as eight stakes and eight rows of weavers to a tile, five tiles round (40 stakes). A weaver passes in front of alternate stakes, and the stakes show where it passes behind. The same canvas is the bump map. The rim is a roll 1 cm round. The bow handle rises 15 cm over the rim from 3 cm down the wall at each end, and is level for 13 cm over its crown, where the fist closes. Rim and handle are wound in skeins.
+- **What is in it.** A linen cloth over the load (`D.basketCloth`), domed and rucked a little and tucked in under the rim. With no cloth, fourteen apples are heaped to just over the rim, seven in ten red, the rest green, in one mesh.
+- **Clear of the body.** The arm is lifted out from the side, 0.03 rad at a time, until nothing of the person or what they wear (the right hand apart) is within a centimetre of the basket's sides. The basket is carried by the wrist, as the spear and the crossbow are.
+- **A spear or a crossbow wins:** a basket asked with either is not built. A full cloak is thrown back off the right shoulder for a basket as for a spear (Session 909), so the arm hangs free of it.
+- **Saving.** `basket` and `basketCloth` are garment colours in `GARMENTS`, so both save with the genome. The builder's Dress panel gets them as *willow basket* and *cloth over the basket*.
+- **The roll.** A Gatelander with no spear or crossbow rolls a basket at 0.4 for a woman, 0.12 for a man. It comes in buff, brown or peeled willow, and six in ten carry a cloth, undyed or madder. This is drawn last, so every earlier roll of a seed is as it was.
+
+Corrections made during the session:
+- **The first handle was an arch all the way over,** so it fell away under the fist at both ends of the hand. 18 to 21 of the hand's points were inside it, where the fingertips curl under. Its crown is now level for 13 cm, and none are.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 394 checks pass** (388 after Session 1029; 6 new).
+- **Four people:** a woman with a cloth over the basket, a woman in a long skirt with apples, a man with a madder cloth, and a woman under a moss cloak thrown back.
+  - None of the hand's points are inside the handle (0 of 1,430 to 1,514). The fingers bend 0.67 to 0.73, 0.82 to 0.90 and 0.59 to 0.67 rad at their three joints, and the nearest finger point is 0.3 to 0.4 mm off the handle. The thumb is clear.
+  - Nothing is within a centimetre of the basket's sides (0 of 538 to 1,677 points tested), the nearest 11.9 to 13.5 mm off. To get there the arm was lifted 0.09 rad on the man, 0.18 and 0.24 on the two women, and 0.45 under the cloak.
+  - The basket's foot is 52 to 61 cm off the ground. It is carried by the wrist, and each person saves and loads back.
+- **A basket and a spear asked together:** the spear is carried, not the basket.
+- **The roll:** 13 of 40 Gatelanders carry one, 10 of them women and 8 under a cloth. None has a spear or crossbow, and no other people rolls one.
+- **The size:** 6,528 triangles with a cloth, 7,808 with apples, in four meshes.
+- **New pictures:** `builder-basket-front.jpg`, `-back.jpg`, `-apples.jpg`, `-grip.jpg`, `-cloak.jpg` and `-man.jpg`.
+
+### Needs eyes
+- **The arm stands out from the side.** On the cloaked woman it is lifted 0.45 rad, about 26°, because the thrown-back cloak's front edge hangs by the right hip. A woman with a full basket more often lets it rest against the hip, or carries it in the crook of her elbow. Neither is built: the basket hangs plumb and never touches the body.
+- **The basket hangs rigid from the wrist.** When the arm moves (the game, after F4), it will turn with the hand rather than swing level under it.
+- **The weave reads as coiled rows from a distance.** The stakes show only close to.
+- **The cloth is a smooth dome** with no hang over the rim and no check.
+- **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
+## v80 — Session 1042 — The Old Blood's amulet and belt charms (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. The Gatelanders' dress is built but for the head-wrap's coins, which still need OG-056's full image, so this session starts the next people in L1, the Old Blood. OG-066 is kept for its clothes, not its bodies (the catalogue flags the tall, silver-haired, elvish figures as against the canon). Its row lists "a round stone-and-iron amulet on the belt, belts with small hanging charms". Building what the sheet draws on a kept sheet chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`buildBeltCharms`):
+- **The amulet.** A round stone 4.4 cm across and 9 mm thick, its edge bevelled, its face speckled with a groove cut round it. It is bound in iron: a rim round its edge, a strap down the face and back, a boss in the middle, and a bail at the top. It hangs on a leather thong 4.5 cm under the belt's lower edge, 0.42 rad round from the front on the left hip.
+- **The charms.** Each hangs on its own shorter thong from its own point of the edge:
+  - a boar's tooth bound in leather at the root, curved a little outward at the tip, 4.2 cm toward the front;
+  - a small iron ring 1.5 cm across, 4 cm toward the back;
+  - an oxblood stone bead, 6.3 cm toward the back.
+- **How each hangs.** Each piece faces out from the body and is pushed out until nothing it lies on comes through it, as the belt coins are. A piece with an arm or a sleeve in front of it is left off.
+- **The thongs** lie over the cloth between the belt and the piece. Each is a tube through 13 points, each point pushed out to clear what is under it and the line kept convex, so it runs over a blousing tunic or the hip rather than under it.
+- **Carried by the hips,** as the coins are.
+- **Where it is worn:** only on a belt no tabard or apron covers.
+- **Saving and the builder.** `amulet` (the stone's colour) and `charms` (the thongs' leather) are garment colours in `GARMENTS`, so both save with the genome. Either can be worn alone. `amuletSide` (`L` or `R`) is a dress flag. The builder's Dress panel gets them as *stone amulet* and *belt charms*, and its `view=waist` finds them.
+- **The roll.** One Old Blood in two with an uncovered belt rolls the amulet, in slate, ash or a dusk grey-violet (OG-066's palette), three in ten of them on the right hip. 45% roll the charms, on thongs of the belt's own leather. This is drawn last, so every earlier roll of a seed is as it was.
+- **Shared code.** The belt coins' reading of the belt's edge and of what lies under it is now one function, `beltReach`, with the depth as a parameter: 9 cm for the coins, 13 cm for the amulet. The coins' checks pass unchanged.
+
+Corrections made during the session:
+- **The belt's lower edge has few points.** It has points at the front and at about ±0.8 and ±1.0 rad, and runs straight between them. The amulet's place was first the nearest of these points to 0.42 rad, which put it at the front or past the hip. It is now found where the edge's line crosses 0.42 rad.
+- **The first thongs were straight lines** from the edge to the piece. Where a tunic blouses under the belt, 9 to 10 of 24 to 32 points along them ran under the cloth. They now lie over it, by up to 1 cm, and none do.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 401 checks pass** (394 after Session 1033; 7 new). The belt coins' checks pass unchanged after the shared code was split out.
+- **Five Old Blood people:** a man over a tunic, a woman in a long skirt, a woman with the amulet on the right hip, a man with the charms alone, and a man under a cloak with its hood down.
+  - Every piece asked is hung and none is left off. They sit at ±0.18 to 0.77 rad, on the side asked.
+  - Every top is 2.5 to 2.9 cm under the belt's edge, and the lowest piece is 10.3 to 10.6 cm under it (6 cm with the charms alone).
+  - Nothing comes up through a piece (0 of 170 to 407 points), and each stands 0.7 mm off what is behind it.
+  - No thong point is under what is worn (0 of 27 to 36). The thongs lie up to 10.6 mm out over a man's tunic and 1.2 to 1.5 mm over a long skirt, and are 0.51 to 0.6 rad off plumb from end to end.
+  - No two pieces touch. Each person is carried by the hips and saves and loads back.
+- **Under a tabard or an apron:** none is built.
+- **The roll:** 23 of 40 Old Blood roll an amulet (6 on the right) and 21 roll charms. None is on a covered belt, and none of 120 Markmen, Aurennais and Gatelanders rolls either.
+- **The size:** 2,108 triangles for the amulet and three charms in 20 meshes, and 904 for the charms alone.
+- **Pictures:** `builder-charms-man.jpg`, `-woman.jpg`, `-full.jpg`, `-right.jpg` and `-cloak.jpg`.
+
+### Needs eyes
+- **The pieces hang rigid from the hips.** In the game, after F4, they will turn with the pelvis and not swing.
+- **On a man's tunic the thongs stand out 30° from plumb,** over the blousing under the belt. The pieces then lie on the cloth below it, where they hang. Whether that reads as hanging or as stuck on wants a look at play distance.
+- **The groove on the stone is faint** at waist distance, and the stone reads as a dark disc with an iron strap.
+- **Still owed for the Old Blood (OG-066):** the dark asymmetric layers over undyed linen, the single shoulder wrap and the scattered dot embroidery. The marks under the skin want a skin texture.
+## v80 — Session 1043 — The Old Blood's dot embroidery (L1 and B2, prototype only)
+This continues Session 1042 on the same kept sheet. OG-066 dresses the Old Blood in "cream undyed linen with a scattered dot embroidery", and OG-067 (not kept, but a sister pass) has linen "printed with small scattered marks". This session draws the embroidery in the shader, with no new triangles, the way Session 1029 drew the headscarf's sprigs. Drawing what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes.
+
+What is drawn:
+- **The knots.** `clothMat` takes a `dots` colour. The rest body is cut into cells of 1.4 cm, and some cells hold a knot of thread 2.2 to 3.8 mm across. The knot is set anywhere in its cell so the knots never read as a grid. It is shaded lighter toward its middle, as a raised knot is.
+- **The drifts.** How many cells hold a knot rises and falls over 11 cm drifts of the cloth, from 3 in 100 to 45 in 100. The knots gather in loose drifts and thin to nothing between them.
+- **The projection.** The pattern is read off the rest position along whichever axis the cloth faces most. Far off, it gives way to its average colour, so it does not shimmer.
+- **Where it goes.** It is drawn on the tunic, and on a skirt only when the skirt is the tunic's own cloth (a dress of one cloth). It is never on a skirt of another colour.
+- **Saving and the builder.** `dots` is a garment colour in `GARMENTS`, so it saves with the genome. The Dress panel gets it as *dot embroidery*.
+- **The roll.** On an undyed tunic, 60% of Old Blood roll dots in oxblood, slate or dusk violet thread (OG-066's palette). On a dark tunic, 30% roll them in bone. This is drawn last, so every earlier roll of a seed is as it was.
+- **A fix in `toSaved`.** A dress flag that rounds to its default, such as a `cloakLen` of 0.7999, was written as 0.8 and then dropped on reload, so the genome did not save and load back to the same text. It now compares the rounded value. This session's check found it, on a seed whose cloak was taken off.
+
+Corrections made during the session:
+- **The first pattern was even and too thick:** a knot in 45 of every 100 cells. On cream it read as measles. The drifts replace it.
+- **The first pattern blended its three projections,** which left half-faded ghost knots over the shoulders. It now takes only the dominant one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 406 checks pass** (401 after Session 1042; 5 new).
+- **How it was checked.** Each check renders a 320-pixel close view of the same person with the knots and without them, and compares the two.
+  - **An Old Blood man:** oxblood knots on an undyed tunic and bone on a dark one. The knots cover 0.52 to 0.53% of the view, and every changed pixel moves toward the thread's colour.
+  - **A woman's dress of one undyed cloth:** violet knots cover 0.26% of a view of the skirt.
+  - **A skirt of another colour under an embroidered bodice:** not one pixel of the skirt changes.
+  - **Repeatability:** the view without knots renders the same twice. Each person saves and loads back.
+- **The roll, over 120 Old Blood:**
+  - 47 roll the embroidery. 11 are on undyed tunics (of 19 rolled) and 36 are in bone on dark ones.
+  - No thread is in its tunic's own tone, and no other people rolls it.
+- **Pictures:** `builder-dots-close.jpg`, `-full.jpg` (with the amulet), `-dark.jpg` and `-woman.jpg`.
+
+### Needs eyes
+- **Oxblood knots on cream may read as spatter** at play distance, the colour of blood on linen. Slate and violet do not. If they do, oxblood can be kept to the dark tunics' bone's place, or dropped.
+- **On sloped cloth the knots are oval,** stretched up to about 1.4 to 1 where the cloth faces between two axes.
+- **The asymmetric dark layers and the single shoulder wrap** are still owed. They are garments, and OG-066's thumbnail is too small to cut them from. Its full image would help.
+## v80 — Session 1051 — The Old Blood's shoulder wrap (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. Michael's notes #272 and #274 are closed and nothing new for the bodies came back from him, so this session builds the next thing owed on OG-066, which is kept. The sheet dresses the Old Blood in "dark, asymmetric layers over cream undyed linen" and "a single shoulder wrap". Its clothing strip draws a broad dark cloth over one shoulder, crossing the chest and the back. That cloth is the one dark asymmetric layer, so this session builds both owed items as one garment. Building what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built: the sash's loop (Session 989), built wide (`buildSash(G, body, byName, { wrap: true })`).
+- **The shape.** It goes over one shoulder and under the other arm, as the sash does. It is gathered to 17 cm over the shoulder's top, spreads to 30 cm over the chest and the back, and narrows to 13 cm where it turns under the arm at the hip. The width follows how high each point stands between the hip and the shoulder, smoothed round the loop.
+- **How it lies.** Its width is laid in 25 rows across, each set clear of what is under it, as the sash's five rows are. It stands 9 mm off where the sash stands 7. Over that, five soft folds run its length, laid outward only so none can go in. They rise 7 mm where it is gathered and 4 mm where it spreads, and nothing at the edges. Each crease is shaded darker and each ridge lighter in the vertex colour, with a rolled hem 1 cm in from either edge. It has no print and no knot.
+- **The neck and the arm.** Over the shoulder it also reads the neck's base, so its inner edge lies over the base and not through it. It also reads the cap of the arm on its side. The arm at its hip is lifted clear as the sash's is.
+- **The hair is not read.** A rule cuts the hair instead: a triangle of the hair's cards, a tail, a braid's locks, ties or brush is taken out if a corner of it is under the wrap. So hair goes in under the wrap and comes out below it, and a lock or a braid lying out over the wrap stays over it. The cut is made once, on the wrap that is kept.
+- **The amulet.** Under a wrap, the amulet and charms (Session 1042) hang on the shoulder's side, away from the hip where the wrap turns.
+- **Where it is worn.** Never with a sash, a cloak or a cape, a bib, a tabard or mail.
+- **Saving and the builder.** `shoulderWrap` is a garment colour in `GARMENTS`, and `shoulderWrapSide` (`L` or `R`) is a dress flag. The Dress panel gets it as *shoulder wrap*.
+- **The roll.** For an Old Blood with no cloak, cape, sash or bib, it rolls at 45% over an undyed tunic and half that over a dark one. The wool is umber, slate, ash, oxblood or dusk violet, never the tunic's own tone, and the wrap goes over the left shoulder on seven in ten. It is drawn last, so every earlier roll of a seed is as it was.
+
+Corrections made during the session:
+- **The first sheet was wound inward.** It shaded black whatever its colour, lit only where its edges curled. A bone-coloured test showed it. The sheet is now wound so its faces look out along the surface's normal.
+- **The first palette (near-black to slate) read as a hole** under the stage's light. It is now a shade lighter.
+- **The first hair rule read every point of the hair,** so the wrap lay over it. Over loose hair it followed every lock and came out ragged. Over a braid hanging off the back it drove the band 11 cm into the body at the hip, at 1,261 points. The cut replaces it.
+- **The edge bridging the armpit stands up to 4 cm off the arm.** The arm there is under the wrap, not through it, so on that side only a point within 2.5 cm under the wrap counts as through.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 422 checks pass** (406 after Session 1043; 16 new). The sash's checks pass unchanged.
+- **Five Old Blood people:**
+  - a man with short hair over an undyed tunic;
+  - a woman with a braid over a long skirt;
+  - a man with a tail, the wrap over the right shoulder;
+  - a woman with loose hair;
+  - a man over a dark embroidered tunic, with the amulet asked on the wrap's hip.
+- **On all five:**
+  - Nothing it lies over comes through: 0 of 36,283 to 39,035 points, the nearest 5.1 to 6.8 mm under it.
+  - No arm comes through, and no neck.
+  - The wrap is 17 cm across over the shoulder, 30 over the chest and back, and 13 at the hip. It is 11,520 triangles in one mesh, on the shoulder asked.
+  - Each person saves and loads back.
+- **The hair under it:** 166 triangles of the braid are taken out, 2,275 of the tail and 5,976 of the loose hair.
+- **The amulet** asked on the wrap's hip hangs at +0.42 rad, on the shoulder's side.
+- **Under a cloak, with a sash, under a tabard:** none is built, and the sash is kept.
+- **The roll, over 60 Old Blood:** 7 roll the wrap, 4 of them over undyed linen (of 5 undyed) and 2 on the right. None is under a cloak, a sash, a bib or a tabard, none is in the tunic's own tone, and none of 180 Markmen, Aurennais and Gatelanders rolls it.
+- **Pictures:** `builder-swrap-man.jpg`, `-back.jpg`, `-close.jpg`, `-woman.jpg`, `-braid.jpg` (the braid over it), `-loose.jpg` and `-right.jpg` (over the dark embroidered tunic, with the amulet). The shots are in `--shots=swrap`.
+
+### Needs eyes
+- **It is rigid on the root, like the sash.** In the game, after F4, it must ride the chest and the arm on its shoulder. A lifted arm will want its outer edge to slide.
+- **Over a tail the wrap rides over the rope** (the tail's cards under it are cut). At its inner edge on the back it makes a small sharp crease where it climbs over.
+- **Loose hair mostly lies over the wrap's top** and goes under it lower down. A strand that stood out survives as a lock over the cloth, which reads at a distance but not close up.
+- **The folds are even:** five, the same all the way along. A hand-draped wrap would bunch more at the shoulder and fall slacker on the back.
+- **Is this the sheet's "dark asymmetric layer", or is a second garment meant** (a long open over-tunic cut away on one side)? OG-066's thumbnail cannot say. If it is a second garment, it is still owed and wants the full image.
+## v80 — Session 1052 — The Old Blood's marks under the skin (L1 and B3, prototype only)
+This continues Session 1051 on the same kept sheet. The canon, §3.1, was settled by Michael's 2 B on OG-066. The marks are not ink. They are pale raised lines under the skin, branching like veins, at the wrist, the back of the hand and the shoulder blade. §3.3 adds that they spread as the Cold rises, up the arm and at last to the face. The builder's peoples table had carried them as owed since Session 806, waiting on "a skin texture". This session draws them in the skin's shader instead. Building what the canon says chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`markSkin`, through `skinMat(colour, cold)`):
+- **Where they are.** On both sides, along a line from the knuckles through the wrist, the elbow, the shoulder and the neck to the cheekbone. Each marked area is everything within 4.5 to 7.5 cm of the reached part of the line. The edge is broken by noise, so the marks end in tendrils.
+- **How the Cold carries them.**
+  - At a Cold of 0 they reach 5 cm past the wrist.
+  - At 1 they reach the cheek.
+  - The patch on each shoulder blade grows with them, from 5 cm across to 15.
+- **The lines.** They are the half-way contours of a warped noise at two scales. A slower third noise cuts them into open strands that taper. The whole contours closed into rings, which read as blots, not veins.
+- **How they look.** They are lighter than the skin and a little cooler. They are raised by a bump read off their own slope, about 0.7 mm. Far off they fade to nothing, so they do not shimmer.
+- **No new triangles.** It is all drawn on the rest body (`aBase`). The marks stay where they are on the body however it is posed.
+- **The genome.** `G.marks` is the Cold, from 0 to 1. Without it there are no marks. It saves as `marks: { cold }` and loads back. A genome without it saves nothing.
+- **The builder page.** It takes `?marks=` (a number, or `none`) and a new close `view=hand` of the left hand and wrist.
+- **The roll.** Four in five Old Blood are marked (canon: a child shows them or does not). One in eight of those has read past the Withdrawal's law and carries the Cold, reaching 0.2 to 0.65. The rest stay barely past the wrist. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls it.
+
+Corrections made during the session:
+- **The first lines were whole contours**, which closed into loops and rings on the shoulder blade. A third noise now cuts them into open strands.
+- **The first cut was too hard** and left the blades nearly bare. It was halved.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 426 checks pass** (422 after Session 1051; 4 new).
+- **How it was checked.** Each check renders a 320-pixel close view, at four places, of an unclothed Old Blood man without marks and with them at a Cold of 0, 0.6 and 1. The view without marks renders the same twice at all four places.
+- **The wrist** changes 2.3% of the view at every step of the Cold, every changed pixel lighter by 10 on average.
+- **The upper arm** is bare at 0 and marked at 0.6 (4.6%).
+- **The cheek** is bare at 0, touched at 0.6 (0.22%) and reached at 1 (1.5%).
+- **The shoulder blade's patch** grows from 0.09% of the view to 1.3% and 1.5%.
+- **Saving:** the Cold saves and loads back.
+- **The roll:** 95 of 120 Old Blood are marked, 15 of them past 0.15 (at most 0.64), and none of 120 of the other peoples.
+- **Pictures:** `builder-marks-hand.jpg` (at 0, the wrist under the sleeve), `-back.jpg` (the shoulder blades at 0.3), `-arm.jpg` (0.6, up the forearm) and `-face.jpg` (1, the temple, the cheek and round the ear).
+
+### Needs eyes
+- **On grey-pale skin the lines are pale on pale.** Close up they read by their raised edge more than their colour. At a few metres a clothed Old Blood shows only the wrists, and the marks fade there. That suits a people that hides, but it may be too quiet for play.
+- **At 1 on the face they are strong:** a web over the temple and round the ear. That may want to be saved for the last steps of the Cold.
+- **The back of the hand and the palm are marked alike.** The canon names the back of the hand only.
+- **The roll's shares are mine:** four in five marked, one in eight of those carrying the Cold. The canon gives no share. In the game the player's own Cold is the systems builder's stat, and this is the parameter it would drive.
+- **Still owed for the Old Blood (OG-066):** the eye strip for the Cold's greying eyes, which could ride the same `cold`.
+## v80 — Session 1053 — The Cold's grey eyes and pallor (L1 and B3, prototype only)
+This completes OG-066's last owed body item, its eye strip of pale grey, silver and ice blue "for the Cold's greying eyes". Canon §3.3 says each Mastery-tier reading "takes warmth: pallor deepens, eyes grey". Session 1052 made `G.marks` the Cold, so this session lets the same number carry the colour. Building what the canon says chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+What is built (in `makePerson`):
+- **The eyes.** At a Cold of 1 they go nine tenths of the way toward an ice grey (0.76, 0.8, 0.85).
+- **The skin.** It goes three fifths of the way toward its own grey, a little cooler and lighter. Both steps scale with the Cold, and nothing changes at 0.
+- **The genome keeps its own colours.** The change is made on the copy `makePerson` builds from, so a Cold that rises or falls in the game never loses the face's own colours. `makePerson` returns the colours it built with as `coldLook`.
+- **A switch for the marks' checks.** `makePerson(G, { coldColours: false })` leaves the colours as they are, so Session 1052's renders still measure the marks alone.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 427 checks pass** (426 after Session 1052; 1 new). The marks' checks pass unchanged with the colours left off.
+- **The eyes:** for the man of Session 1052, they are 0.217, 0.119 and 0.022 from the ice grey at a Cold of 0, 0.5 and 1.
+- **The skin:** its spread of colour falls from 0.06 to 0.03 and 0.01.
+- **At 0 and without marks,** the colours are the genome's own. The genome passed in is not changed.
+- **Pictures:** `builder-cold-face0.jpg` and `builder-cold-face1.jpg`, the same woman at a Cold of 0 and 1.
+
+### Needs eyes
+- **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
