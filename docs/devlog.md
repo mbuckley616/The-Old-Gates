@@ -23629,3 +23629,34 @@ What is built:
 - **A child's head reads a little old at 11.** MakeHuman's child face is mild, and the people's face sliders and brows are still the grown folk's. A rounder face and lighter brows for children would be a refinement.
 - **The roll does not decide who has children,** nor how many are in a town. That is the game's job when F4 brings townsfolk over.
 - **The old** are the slider's top end, and they have no roll of their own yet. Garrick's wheeled chair is still owed.
+
+## v80 — Session 1082 — The old (L1, prototype only)
+The third part of "children, the old and the hurt in towns". OG-001 draws Edna as "a white-haired old healer", and OG-065 draws Bronwen grey-haired. The age slider already ran to 90, and MakeHuman's old targets age the body and face, but no roll made old people. Nothing greyed their hair, and nothing bowed their backs. This session builds the old from the sheets, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **An old roll** (`rollGenome(seed, { people, old: true })`; `?old` on the page). The person is rolled as one of their people, so they dress as before. Then, from a stream of their own:
+  - 64 to 90 years old.
+  - A little less muscle.
+  - The hair (and so the brows and the beard, which take its colour) goes most of the way to white or to an iron grey, further the older they are. Fair hair always goes to white, so no head darkens.
+- **The stoop** (`pose.stoop`, 0 to 1), on six in ten of the old, more of one the older they are. The upper back bows forward through its two highest bones, 0.12 rad each at 1. The neck lifts back by most of it, so the face still looks ahead. The arms swing back by the back's whole bow, so they hang plumb from the shoulders as before. The skirt's lift and the sash's still clear the hands after it. It saves with the pose.
+- **The peoples sheet** with `?old`: each people's man and woman, grown and old. `?stoop=` sets the stoop on the page.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 452 checks pass** (450 after Session 1081; 2 new). Every earlier check passes unchanged; at no stoop the pose is the same.
+- **Forty old of each people** against the same seeds grown:
+  - Aged 64 to 90.
+  - Every head of hair is nearer grey or white than its grown one, and none is darker.
+  - 19 to 28 of each forty are stooped, from 0.35 to 0.97.
+  - The dress is exactly the grown roll's.
+- **The stoop at 0.9**, on an old man and an old woman in a long skirt:
+  - The head is carried 6.2 and 5.2 cm further forward of the chest.
+  - The face nods only 0.05 rad.
+  - The hands still clear the long skirt (0 points; 2 points before the arms were swung plumb, which the first run of the check caught).
+  - The stoop saves and loads back.
+- **Pictures** (`--shots=old-line,old-side,old-face`): `builder-old-line.jpg` shows the four peoples' man and woman, grown and old. `builder-old-side.jpg` is a stooped old Gatelander from the side, and `builder-old-face.jpg` an old woman whose brown hair is going grey (and whose face, at MakeHuman's old targets alone, reads younger than her years).
+
+### Needs eyes
+- **The stoop is in the back alone.** Old people also bend a little at the knee, and carry the head lower. A stick in the hand would be the old's prop (OG-001's elder's carved staff, OG-065's Síle), and is not built.
+- **The skin does not age.** MakeHuman's old targets thin the face and the body, but there are no age spots and no lines in the skin's shader.
+- **The roll does not decide who is old in a town.** That is F4's, when townsfolk come over.
+- **Garrick's wheeled chair** is still owed.

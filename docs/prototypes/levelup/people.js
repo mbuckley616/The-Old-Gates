@@ -2466,9 +2466,14 @@ export function makePerson(G, o = {}) {
   // pose: arms down from the A-pose, a slight bend at the elbow, weight on one leg, the head turned a little
   const q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
   const pose = Object.assign({ arm: .73, elbow: .62, head: 0, hip: 0 }, G.pose || {});
-  byName['upperarm01.L'].quaternion.copy(q(0, 0, -pose.arm)); byName['upperarm01.R'].quaternion.copy(q(0, 0, pose.arm));
+  // under a stoop (Session 1082) the arms are swung back by the back's whole bow, so they hang plumb from the shoulders as before
+  const plumb = q(-.24 * (pose.stoop || 0), 0, 0);
+  byName['upperarm01.L'].quaternion.copy(plumb.clone().multiply(q(0, 0, -pose.arm))); byName['upperarm01.R'].quaternion.copy(plumb.clone().multiply(q(0, 0, pose.arm)));
   byName['lowerarm01.L'].quaternion.copy(q(pose.elbow, 0, 0)); byName['lowerarm01.R'].quaternion.copy(q(pose.elbow, 0, 0));
   byName['head'].quaternion.copy(q(.04, pose.head, 0)); if (byName['jaw']) byName['jaw'].quaternion.copy(q(pose.jaw ?? -.12, 0, 0)); byName['spine05'].quaternion.copy(q(0, 0, pose.hip));
+  // the stoop of age (Session 1082, L1; OG-001's Edna, OG-065's Bronwen): the upper back bowed forward through its two highest
+  // bones, and the neck lifted back by most of it so the face still looks ahead
+  if (pose.stoop) { for (const n of ['spine02', 'spine01']) byName[n].quaternion.multiply(q(.12 * pose.stoop, 0, 0)); byName['neck01'].quaternion.multiply(q(-.18 * pose.stoop, 0, 0)); }
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
   // a long skirt (and so a robe) stands out at the thigh, where the hands hang: the arms are lifted out from the side, three
   // hundredths of a radian at a time, until no point of either hand is inside it (Session 887; the genome's pose is unchanged)
@@ -2478,7 +2483,7 @@ export function makePerson(G, o = {}) {
   let lift = 0, skirtHands = null; const skM = !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
   const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV(skM) : skM && D.skirt === 'short' ? PACK.skirtShortV || (PACK.skirtShortV = [...new Set(PACK.R.skirtShort)].filter(i => PACK.rest[i * 3 + 1] > -.2)) : undefined;
   if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM, undefined, skV, skM.name === 'mailSkirt' && D.scales ? 24 : 0); if (!skirtHands.bad || k === 10) break; lift += .03;
-    byName['upperarm01.L'].quaternion.copy(q(0, 0, -(pose.arm - lift))); byName['upperarm01.R'].quaternion.copy(q(0, 0, pose.arm - lift)); }
+    byName['upperarm01.L'].quaternion.copy(plumb.clone().multiply(q(0, 0, -(pose.arm - lift)))); byName['upperarm01.R'].quaternion.copy(plumb.clone().multiply(q(0, 0, pose.arm - lift))); }
   if (skirtHands) skirtHands.lift = +lift.toFixed(2);
   // a spear in the right fist (Sessions 907, 909 and 910), after the arms are lifted clear of a long skirt: the forearm turned to point forward and a little down, then rolled about
   // itself so the knuckles stand one over another (the first finger's on top) and the shaft can run up and down through the fist;
@@ -2693,6 +2698,12 @@ export function peopleGenome(rnd, people, g, o = {}) {
   // from a stream of its own, slighter (muscle .3 to .45, weight .3 to .45), four fifths of the people's middle stature at 11 and 92 per cent at 15, and with nothing a
   // grown body carries: no beard, no scar or patch, no helm, mail, tabard, shield, spear or crossbow, and an Old Blood child's
   // marks barely past the wrist (canon §3.1: a child shows them or does not; the Cold comes of reading)
+  // the old (Session 1082, L1; OG-001's Edna, "a white-haired old healer"; OG-065's grey-haired Bronwen): the same roll, then 64 to 90
+  // years old from a stream of their own, a little less muscle, the hair (and so the brows and beard) gone most of the way to grey
+  // or white (fair hair always to white, so it never darkens), and on six in ten a stoop, more of one the older they are
+  if (o.old) { const ro = seeded(String(o.seed ?? 'person') + '|old'), t = ro(); G.age = .8 + .2 * t; G.muscle = Math.max(.2, G.muscle - .1 - .08 * ro());
+    const w = ro() < .5 || .3 * G.hairCol[0] + .59 * G.hairCol[1] + .11 * G.hairCol[2] > .55 ? [.86, .85, .83] : [.66, .65, .63], k = .55 + .4 * t + .05 * ro(); G.hairCol = G.hairCol.map((v, i) => v + (w[i] - v) * Math.min(1, k));
+    if (ro() < .6) G.pose = { ...(G.pose || {}), stoop: +(.25 + .5 * t + .25 * ro()).toFixed(3) }; }
   if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
     for (const k of ['helm', 'mail', 'scales', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch']) D[k] = DRESS_FLAGS[k] ?? null;
     if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
@@ -2701,4 +2712,4 @@ export function peopleGenome(rnd, people, g, o = {}) {
   return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)
-export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed), child: !!o.child }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }
+export function rollGenome(seed, o = {}) { const rnd = seeded(seed), g = o.g ?? (rnd() < .5 ? 0 : 1); if (o.people) return peopleGenome(rnd, o.people, g, { seed: String(seed), child: !!o.child, old: !!o.old && !o.child }); const G = markGenome(rnd, g, { seed: String(seed) }); G.people = 'markman'; return G; }

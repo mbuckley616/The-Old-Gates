@@ -30,7 +30,7 @@ const comp = makeComposer(R, scene, cam, { bloom: .1, sat: 1.0, vig: .4, warm: [
 // ── state ──
 const b64 = { enc: o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), dec: s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))))) };
 // SP is the species shown: 'human' (G, the person) or 'creature' (CG, the creature's genome, built as C)
-const rollPerson = s => rollGenome(s, { g: Q.get('sex') === 'f' ? 0 : Q.get('sex') === 'm' ? 1 : undefined, people: Q.get('people') || undefined, child: Q.has('child') });
+const rollPerson = s => rollGenome(s, { g: Q.get('sex') === 'f' ? 0 : Q.get('sex') === 'm' ? 1 : undefined, people: Q.get('people') || undefined, child: Q.has('child'), old: Q.has('old') });
 let SP = 'human', G = null, CG = null, C = null;
 if (Q.get('g')) ({ species: SP, G } = readGenome(b64.dec(Q.get('g'))));
 else if (PLANS[Q.get('plan')]) { SP = 'creature'; G = cGenome(Q.get('plan'), Q.get('seed') || Q.get('plan') + ':builder'); }
@@ -213,8 +213,9 @@ window.__render = () => comp.render();
 // ?peoples: three of each people side by side (a man, a woman, and one of either), each rolled from a seed of place and index
 function peoplesSheet() {
   // with ?child (Session 1081) each people is a man, a woman, a boy and a girl
-  const kids = Q.has('child'), per = kids ? 4 : 3, keys = Object.keys(PEOPLES), out = [], n = keys.length * per, gap = .62; let i = 0;
-  for (const k of keys) for (let j = 0; j < per; j++) { const G1 = rollGenome(`${Q.get('seed') || 'line'}:${k}:${j}`, { people: k, g: kids ? j % 2 ? 0 : 1 : j === 0 ? 1 : j === 1 ? 0 : undefined, child: kids && j > 1 }), p = makePerson(G1);
+  // with ?old (Session 1082) an old man and an old woman in place of the children
+  const old = Q.has('old'), kids = Q.has('child') || old, per = kids ? 4 : 3, keys = Object.keys(PEOPLES), out = [], n = keys.length * per, gap = .62; let i = 0;
+  for (const k of keys) for (let j = 0; j < per; j++) { const G1 = rollGenome(`${Q.get('seed') || 'line'}:${k}:${j}`, { people: k, g: kids ? j % 2 ? 0 : 1 : j === 0 ? 1 : j === 1 ? 0 : undefined, child: kids && !old && j > 1, old: old && j > 1 }), p = makePerson(G1);
     p.root.position.x = (i++ - (n - 1) / 2) * gap + (keys.indexOf(k) - 1.5) * .35; p.root.rotation.y = (j - 1) * .12; scene.add(p.root); const bb = new THREE.Box3().expandByObject(p.meshes[0], true); out.push({ people: k, g: G1.g, child: G1.age < .3, h: +(bb.max.y - bb.min.y).toFixed(3) }); }
   cam.fov = 24; cam.aspect = W / H; cam.position.set(0, 1.2, ((n - 1) / 2 * gap + .75) / (Math.tan(12 * Math.PI / 180) * W / H)); cam.lookAt(0, .95, 0); cam.updateProjectionMatrix(); STATS.peoples = out;
 }
@@ -222,7 +223,7 @@ function peoplesSheet() {
 (SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
-    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); }
+    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') }; }
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;
   // a creature walks on the spot in its gait (the bestiary's step, with the body kept where it stands); a person is still
   let t0 = performance.now();
