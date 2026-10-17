@@ -24634,3 +24634,34 @@ the job's own roll. The roll draws nothing new, so every job's kind, place and t
   - Each count is its place's: Dunmore 4 and 5, Trostouir 7 and 6.
   - Every job pays exactly 300 more at level 30 than at level 1.
   - Besieged at level 30, Dunmore's camp is six soldiers, the count it had at level 1.
+
+## v80 — Session 1077 — Ringing (Blunt 50): a broken shield stays down for the fight (Michael's A on #399)
+Michael answered DECISION #399 with A: build the small rule each of the four Arms perks needs, then the perk. He also asked for a
+*sheath* button that sheathes the weapon in hand, with a torch or shield left in the off hand. Ringing comes first, as it is the
+smallest of the four.
+
+**What changed.** The sheet's Ringing read *a power hit breaks a raised shield in one blow*, which every power hit has done since
+v65. A Bandit Captain then raises its guard again as soon as its stagger runs out (`reraiseGuard`). With a blunt weapon in hand
+and Ringing held, the shield that hit breaks now stays down while its bearer is alert (`e._rung`, set in `resolvePlayerStrike`'s
+guard break, `74-strikes.js`). `reraiseGuard` (`14-items.js`) refuses while the foe is alert, and once it is calm the next call
+raises it as before. Like the rest of the Arms perks it is the weapon's: a sword's power hit at Blunt 100 lets the guard back up.
+The perk's line on the Skills tab now says what it does, and it is live (`PERK_LIVE`).
+
+**Still owed from #399:** Throw (a foe falls for 1.5 s), Catch the blade (a disarmed humanoid fights with its fists), and Draw cut
+with the sheath button, one a session. How a sheathed weapon looks belongs to the bodies builder's viewmodel.
+### Verified (headless Chromium)
+- **`perkring`** (new), 7/7:
+  - A Bandit Captain's raised shield breaks under a mace's power hit at Blunt 49 and at Blunt 50.
+  - At 49 the guard is up again once the stagger runs out on the zone's own tick (240 ticks).
+  - At 50 it stays down while the Captain is alert, and comes back up once it is calm.
+  - A sword's power hit at Blunt 100 lets the guard back up.
+  - Ringing is live on the Skills tab.
+### Needs eyes
+- **A rung Captain stays guardless until it calms.** A foe that never loses its alert (one that keeps chasing you) has no shield for
+  the rest of that meeting. That is the perk's point, but a long chase may make it feel permanent.
+- **Correction: Sessions 1075 and 1076 went out without their *Needs eyes*.**
+  - 1075: a coast character's drops now top out at Bronze at any level, so the smith and the shops are the way up. A playtest
+    should judge whether the first act's chests feel thin. A gold pile's count still grows with your level; that is a question
+    for Michael if it should follow the place too.
+  - 1076: a road job out of Dunmore now asks 5 bandits at level 1, where it asked 3, because its camp stands in a tier-2 stretch.
+    At level 1 that may be a harder first job than before.

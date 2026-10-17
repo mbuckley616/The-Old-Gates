@@ -213,6 +213,7 @@ function resolvePlayerStrike(_isPow){
         staggerFlash(e);
       }
       e.shieldUp=false;dropShieldGuard(e);e.alert=true;
+      if(armsPerk('blunt',50))e._rung=true; /* S1077 — Ringing (Blunt 50, Michael's A on #399): the shield stays down for the fight (reraiseGuard) */
       sndPowerHit();
       showMsg(`💥 ${e.name}'s guard breaks!`,'#ffcc66');
       out.push({e,guardBroke:true});

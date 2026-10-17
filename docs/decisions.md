@@ -4,6 +4,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
+F2a has merged, so the new kit's buildings, rooms and places can start going into the game behind `?look=new`, one kind a session (card F6, then F8 and F9). Nothing of the kit is in the game yet. The kit is about 1,300 lines of ES modules in `docs/prototypes/levelup/` (the surfaces in `common.js`: relief textures for plaster, ashlar, thatch, slate, pantile, turf and the rest; the piece builders in `pieces.js`; the places in `places.js`). The game is plain scripts in one scope, so the kit has to be copied over as a classic script, and CLAUDE.md makes a new `js/` file a decision of its own.
+
+Where should the kit live in the game?
+- **A. A new file, `js/38-kit.js`** (recommended): loaded after the people and creatures and before the legacy zones, in both looks, but only called when `OG_LOOK` is `new`. It holds the surfaces, the shared helpers (seeded streams, merge by material) and each piece builder as it comes in. The world files call it to build a house, a room or a place. The old look never touches it, so F14 deletes the old builders and keeps this file. The prototype pages stay the drawing board: a piece is drawn and checked there first, then copied.
+- **B. Inside `js/82-world-structures.js`**, with no new file. That file is the old houses (1,800 lines), and it would grow to about 3,500 and hold two looks' builders side by side until F14. Rooms (`83`, `84`) and places (`52`, `56`) would reach into it too.
+- **C. Not yet.** Keep building in the prototypes until F14, and bring everything in at the cutover.
+
+A keeps each look's code apart and gives F14 one file to keep and a list of files to delete. Pictures are not needed for this one; the kit as it stands is `docs/prototypes/levelup/pieces.html`, `rooms.html` and `places.html`.
+
+## Answered
+
 ### Draw cut, Ringing, Throw and Catch the blade: build what each needs, or other perks? (systems builder, Session 1051) — DECISION #399
 Sessions 1048 to 1051 built the Arms perks that combat's resolver made possible. Four of the build sheet's Arms perks name something the game does not have, or already does. The Skills tab shows them as *not yet in the game*.
 
@@ -26,18 +38,10 @@ What should the four be?
 - **C. Leave them** until combat's later sessions, which add the heavy attacks, and decide then.
 
 A gives each perk the change of play the sheet means, at one small rule apiece; the sheathing rule is the largest of the four. B ships now but makes Ringing and Throw near copies of Weight and Daze.
+Michael: **A, build the small rule each needs, then the perk** (2026-10-17, issue #399), with: "Let’s add a ‘sheath’ button where you can sheath your equipped weapon. Torches or shields in your off hand stay equipped and in hand."
 
-### Where the new kit lives in the game: a new file, js/38-kit.js? (look builder, Session 1025) — DECISION #389
-F2a has merged, so the new kit's buildings, rooms and places can start going into the game behind `?look=new`, one kind a session (card F6, then F8 and F9). Nothing of the kit is in the game yet. The kit is about 1,300 lines of ES modules in `docs/prototypes/levelup/` (the surfaces in `common.js`: relief textures for plaster, ashlar, thatch, slate, pantile, turf and the rest; the piece builders in `pieces.js`; the places in `places.js`). The game is plain scripts in one scope, so the kit has to be copied over as a classic script, and CLAUDE.md makes a new `js/` file a decision of its own.
+*Building, systems builder:* Ringing, Session 1077 (`tests/perkring`). Throw, Catch the blade, and Draw cut with the sheath button follow, one a session.
 
-Where should the kit live in the game?
-- **A. A new file, `js/38-kit.js`** (recommended): loaded after the people and creatures and before the legacy zones, in both looks, but only called when `OG_LOOK` is `new`. It holds the surfaces, the shared helpers (seeded streams, merge by material) and each piece builder as it comes in. The world files call it to build a house, a room or a place. The old look never touches it, so F14 deletes the old builders and keeps this file. The prototype pages stay the drawing board: a piece is drawn and checked there first, then copied.
-- **B. Inside `js/82-world-structures.js`**, with no new file. That file is the old houses (1,800 lines), and it would grow to about 3,500 and hold two looks' builders side by side until F14. Rooms (`83`, `84`) and places (`52`, `56`) would reach into it too.
-- **C. Not yet.** Keep building in the prototypes until F14, and bring everything in at the cutover.
-
-A keeps each look's code apart and gives F14 one file to keep and a list of files to delete. Pictures are not needed for this one; the kit as it stands is `docs/prototypes/levelup/pieces.html`, `rooms.html` and `places.html`.
-
-## Answered
 
 ### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1066) — DECISION #405
 Under Michael's A on #373, no foe in a chunk, lair, commission or dungeon reads your level any more (`tierlevelfree`, 7/7). Two places outside the build sheet still do:

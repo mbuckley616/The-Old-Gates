@@ -309,6 +309,7 @@ function reraiseGuard(e){
   if(!L || !L.shieldArm || !L.shieldProp) return;   // not a Shieldbearer
   if(e.shieldUp) return;                             // guard already up
   if(e.dead) return;
+  if(e._rung){if(e.alert)return;e._rung=false;}      // S1077 — Ringing broke it: down while the fight lasts
   e.shieldUp = true;
   L.shieldArm.rotation.x = (typeof L.shieldArmUpX==='number') ? L.shieldArmUpX : -1.15;
   L.shieldArm.rotation.z = (typeof L.shieldArmUpZ==='number') ? L.shieldArmUpZ : 0.5;
