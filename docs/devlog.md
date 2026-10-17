@@ -23790,3 +23790,173 @@ Corrections made during the session:
 - **The weave reads as coiled rows from a distance.** The stakes show only close to.
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
+## v80 — Session 1042 — The Old Blood's amulet and belt charms (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. The Gatelanders' dress is built but for the head-wrap's coins, which still need OG-056's full image, so this session starts the next people in L1, the Old Blood. OG-066 is kept for its clothes, not its bodies (the catalogue flags the tall, silver-haired, elvish figures as against the canon). Its row lists "a round stone-and-iron amulet on the belt, belts with small hanging charms". Building what the sheet draws on a kept sheet chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`buildBeltCharms`):
+- **The amulet.** A round stone 4.4 cm across and 9 mm thick, its edge bevelled, its face speckled with a groove cut round it. It is bound in iron: a rim round its edge, a strap down the face and back, a boss in the middle, and a bail at the top. It hangs on a leather thong 4.5 cm under the belt's lower edge, 0.42 rad round from the front on the left hip.
+- **The charms.** Each hangs on its own shorter thong from its own point of the edge:
+  - a boar's tooth bound in leather at the root, curved a little outward at the tip, 4.2 cm toward the front;
+  - a small iron ring 1.5 cm across, 4 cm toward the back;
+  - an oxblood stone bead, 6.3 cm toward the back.
+- **How each hangs.** Each piece faces out from the body and is pushed out until nothing it lies on comes through it, as the belt coins are. A piece with an arm or a sleeve in front of it is left off.
+- **The thongs** lie over the cloth between the belt and the piece. Each is a tube through 13 points, each point pushed out to clear what is under it and the line kept convex, so it runs over a blousing tunic or the hip rather than under it.
+- **Carried by the hips,** as the coins are.
+- **Where it is worn:** only on a belt no tabard or apron covers.
+- **Saving and the builder.** `amulet` (the stone's colour) and `charms` (the thongs' leather) are garment colours in `GARMENTS`, so both save with the genome. Either can be worn alone. `amuletSide` (`L` or `R`) is a dress flag. The builder's Dress panel gets them as *stone amulet* and *belt charms*, and its `view=waist` finds them.
+- **The roll.** One Old Blood in two with an uncovered belt rolls the amulet, in slate, ash or a dusk grey-violet (OG-066's palette), three in ten of them on the right hip. 45% roll the charms, on thongs of the belt's own leather. This is drawn last, so every earlier roll of a seed is as it was.
+- **Shared code.** The belt coins' reading of the belt's edge and of what lies under it is now one function, `beltReach`, with the depth as a parameter: 9 cm for the coins, 13 cm for the amulet. The coins' checks pass unchanged.
+
+Corrections made during the session:
+- **The belt's lower edge has few points.** It has points at the front and at about ±0.8 and ±1.0 rad, and runs straight between them. The amulet's place was first the nearest of these points to 0.42 rad, which put it at the front or past the hip. It is now found where the edge's line crosses 0.42 rad.
+- **The first thongs were straight lines** from the edge to the piece. Where a tunic blouses under the belt, 9 to 10 of 24 to 32 points along them ran under the cloth. They now lie over it, by up to 1 cm, and none do.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 401 checks pass** (394 after Session 1033; 7 new). The belt coins' checks pass unchanged after the shared code was split out.
+- **Five Old Blood people:** a man over a tunic, a woman in a long skirt, a woman with the amulet on the right hip, a man with the charms alone, and a man under a cloak with its hood down.
+  - Every piece asked is hung and none is left off. They sit at ±0.18 to 0.77 rad, on the side asked.
+  - Every top is 2.5 to 2.9 cm under the belt's edge, and the lowest piece is 10.3 to 10.6 cm under it (6 cm with the charms alone).
+  - Nothing comes up through a piece (0 of 170 to 407 points), and each stands 0.7 mm off what is behind it.
+  - No thong point is under what is worn (0 of 27 to 36). The thongs lie up to 10.6 mm out over a man's tunic and 1.2 to 1.5 mm over a long skirt, and are 0.51 to 0.6 rad off plumb from end to end.
+  - No two pieces touch. Each person is carried by the hips and saves and loads back.
+- **Under a tabard or an apron:** none is built.
+- **The roll:** 23 of 40 Old Blood roll an amulet (6 on the right) and 21 roll charms. None is on a covered belt, and none of 120 Markmen, Aurennais and Gatelanders rolls either.
+- **The size:** 2,108 triangles for the amulet and three charms in 20 meshes, and 904 for the charms alone.
+- **Pictures:** `builder-charms-man.jpg`, `-woman.jpg`, `-full.jpg`, `-right.jpg` and `-cloak.jpg`.
+
+### Needs eyes
+- **The pieces hang rigid from the hips.** In the game, after F4, they will turn with the pelvis and not swing.
+- **On a man's tunic the thongs stand out 30° from plumb,** over the blousing under the belt. The pieces then lie on the cloth below it, where they hang. Whether that reads as hanging or as stuck on wants a look at play distance.
+- **The groove on the stone is faint** at waist distance, and the stone reads as a dark disc with an iron strap.
+- **Still owed for the Old Blood (OG-066):** the dark asymmetric layers over undyed linen, the single shoulder wrap and the scattered dot embroidery. The marks under the skin want a skin texture.
+## v80 — Session 1043 — The Old Blood's dot embroidery (L1 and B2, prototype only)
+This continues Session 1042 on the same kept sheet. OG-066 dresses the Old Blood in "cream undyed linen with a scattered dot embroidery", and OG-067 (not kept, but a sister pass) has linen "printed with small scattered marks". This session draws the embroidery in the shader, with no new triangles, the way Session 1029 drew the headscarf's sprigs. Drawing what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes.
+
+What is drawn:
+- **The knots.** `clothMat` takes a `dots` colour. The rest body is cut into cells of 1.4 cm, and some cells hold a knot of thread 2.2 to 3.8 mm across. The knot is set anywhere in its cell so the knots never read as a grid. It is shaded lighter toward its middle, as a raised knot is.
+- **The drifts.** How many cells hold a knot rises and falls over 11 cm drifts of the cloth, from 3 in 100 to 45 in 100. The knots gather in loose drifts and thin to nothing between them.
+- **The projection.** The pattern is read off the rest position along whichever axis the cloth faces most. Far off, it gives way to its average colour, so it does not shimmer.
+- **Where it goes.** It is drawn on the tunic, and on a skirt only when the skirt is the tunic's own cloth (a dress of one cloth). It is never on a skirt of another colour.
+- **Saving and the builder.** `dots` is a garment colour in `GARMENTS`, so it saves with the genome. The Dress panel gets it as *dot embroidery*.
+- **The roll.** On an undyed tunic, 60% of Old Blood roll dots in oxblood, slate or dusk violet thread (OG-066's palette). On a dark tunic, 30% roll them in bone. This is drawn last, so every earlier roll of a seed is as it was.
+- **A fix in `toSaved`.** A dress flag that rounds to its default, such as a `cloakLen` of 0.7999, was written as 0.8 and then dropped on reload, so the genome did not save and load back to the same text. It now compares the rounded value. This session's check found it, on a seed whose cloak was taken off.
+
+Corrections made during the session:
+- **The first pattern was even and too thick:** a knot in 45 of every 100 cells. On cream it read as measles. The drifts replace it.
+- **The first pattern blended its three projections,** which left half-faded ghost knots over the shoulders. It now takes only the dominant one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 406 checks pass** (401 after Session 1042; 5 new).
+- **How it was checked.** Each check renders a 320-pixel close view of the same person with the knots and without them, and compares the two.
+  - **An Old Blood man:** oxblood knots on an undyed tunic and bone on a dark one. The knots cover 0.52 to 0.53% of the view, and every changed pixel moves toward the thread's colour.
+  - **A woman's dress of one undyed cloth:** violet knots cover 0.26% of a view of the skirt.
+  - **A skirt of another colour under an embroidered bodice:** not one pixel of the skirt changes.
+  - **Repeatability:** the view without knots renders the same twice. Each person saves and loads back.
+- **The roll, over 120 Old Blood:**
+  - 47 roll the embroidery. 11 are on undyed tunics (of 19 rolled) and 36 are in bone on dark ones.
+  - No thread is in its tunic's own tone, and no other people rolls it.
+- **Pictures:** `builder-dots-close.jpg`, `-full.jpg` (with the amulet), `-dark.jpg` and `-woman.jpg`.
+
+### Needs eyes
+- **Oxblood knots on cream may read as spatter** at play distance, the colour of blood on linen. Slate and violet do not. If they do, oxblood can be kept to the dark tunics' bone's place, or dropped.
+- **On sloped cloth the knots are oval,** stretched up to about 1.4 to 1 where the cloth faces between two axes.
+- **The asymmetric dark layers and the single shoulder wrap** are still owed. They are garments, and OG-066's thumbnail is too small to cut them from. Its full image would help.
+## v80 — Session 1051 — The Old Blood's shoulder wrap (L1 and B2, prototype only)
+No FREEZE is open and F4 has not merged, so the bodies stay in the prototypes. Michael's notes #272 and #274 are closed and nothing new for the bodies came back from him, so this session builds the next thing owed on OG-066, which is kept. The sheet dresses the Old Blood in "dark, asymmetric layers over cream undyed linen" and "a single shoulder wrap". Its clothing strip draws a broad dark cloth over one shoulder, crossing the chest and the back. That cloth is the one dark asymmetric layer, so this session builds both owed items as one garment. Building what a kept sheet draws chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built: the sash's loop (Session 989), built wide (`buildSash(G, body, byName, { wrap: true })`).
+- **The shape.** It goes over one shoulder and under the other arm, as the sash does. It is gathered to 17 cm over the shoulder's top, spreads to 30 cm over the chest and the back, and narrows to 13 cm where it turns under the arm at the hip. The width follows how high each point stands between the hip and the shoulder, smoothed round the loop.
+- **How it lies.** Its width is laid in 25 rows across, each set clear of what is under it, as the sash's five rows are. It stands 9 mm off where the sash stands 7. Over that, five soft folds run its length, laid outward only so none can go in. They rise 7 mm where it is gathered and 4 mm where it spreads, and nothing at the edges. Each crease is shaded darker and each ridge lighter in the vertex colour, with a rolled hem 1 cm in from either edge. It has no print and no knot.
+- **The neck and the arm.** Over the shoulder it also reads the neck's base, so its inner edge lies over the base and not through it. It also reads the cap of the arm on its side. The arm at its hip is lifted clear as the sash's is.
+- **The hair is not read.** A rule cuts the hair instead: a triangle of the hair's cards, a tail, a braid's locks, ties or brush is taken out if a corner of it is under the wrap. So hair goes in under the wrap and comes out below it, and a lock or a braid lying out over the wrap stays over it. The cut is made once, on the wrap that is kept.
+- **The amulet.** Under a wrap, the amulet and charms (Session 1042) hang on the shoulder's side, away from the hip where the wrap turns.
+- **Where it is worn.** Never with a sash, a cloak or a cape, a bib, a tabard or mail.
+- **Saving and the builder.** `shoulderWrap` is a garment colour in `GARMENTS`, and `shoulderWrapSide` (`L` or `R`) is a dress flag. The Dress panel gets it as *shoulder wrap*.
+- **The roll.** For an Old Blood with no cloak, cape, sash or bib, it rolls at 45% over an undyed tunic and half that over a dark one. The wool is umber, slate, ash, oxblood or dusk violet, never the tunic's own tone, and the wrap goes over the left shoulder on seven in ten. It is drawn last, so every earlier roll of a seed is as it was.
+
+Corrections made during the session:
+- **The first sheet was wound inward.** It shaded black whatever its colour, lit only where its edges curled. A bone-coloured test showed it. The sheet is now wound so its faces look out along the surface's normal.
+- **The first palette (near-black to slate) read as a hole** under the stage's light. It is now a shade lighter.
+- **The first hair rule read every point of the hair,** so the wrap lay over it. Over loose hair it followed every lock and came out ragged. Over a braid hanging off the back it drove the band 11 cm into the body at the hip, at 1,261 points. The cut replaces it.
+- **The edge bridging the armpit stands up to 4 cm off the arm.** The arm there is under the wrap, not through it, so on that side only a point within 2.5 cm under the wrap counts as through.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 422 checks pass** (406 after Session 1043; 16 new). The sash's checks pass unchanged.
+- **Five Old Blood people:**
+  - a man with short hair over an undyed tunic;
+  - a woman with a braid over a long skirt;
+  - a man with a tail, the wrap over the right shoulder;
+  - a woman with loose hair;
+  - a man over a dark embroidered tunic, with the amulet asked on the wrap's hip.
+- **On all five:**
+  - Nothing it lies over comes through: 0 of 36,283 to 39,035 points, the nearest 5.1 to 6.8 mm under it.
+  - No arm comes through, and no neck.
+  - The wrap is 17 cm across over the shoulder, 30 over the chest and back, and 13 at the hip. It is 11,520 triangles in one mesh, on the shoulder asked.
+  - Each person saves and loads back.
+- **The hair under it:** 166 triangles of the braid are taken out, 2,275 of the tail and 5,976 of the loose hair.
+- **The amulet** asked on the wrap's hip hangs at +0.42 rad, on the shoulder's side.
+- **Under a cloak, with a sash, under a tabard:** none is built, and the sash is kept.
+- **The roll, over 60 Old Blood:** 7 roll the wrap, 4 of them over undyed linen (of 5 undyed) and 2 on the right. None is under a cloak, a sash, a bib or a tabard, none is in the tunic's own tone, and none of 180 Markmen, Aurennais and Gatelanders rolls it.
+- **Pictures:** `builder-swrap-man.jpg`, `-back.jpg`, `-close.jpg`, `-woman.jpg`, `-braid.jpg` (the braid over it), `-loose.jpg` and `-right.jpg` (over the dark embroidered tunic, with the amulet). The shots are in `--shots=swrap`.
+
+### Needs eyes
+- **It is rigid on the root, like the sash.** In the game, after F4, it must ride the chest and the arm on its shoulder. A lifted arm will want its outer edge to slide.
+- **Over a tail the wrap rides over the rope** (the tail's cards under it are cut). At its inner edge on the back it makes a small sharp crease where it climbs over.
+- **Loose hair mostly lies over the wrap's top** and goes under it lower down. A strand that stood out survives as a lock over the cloth, which reads at a distance but not close up.
+- **The folds are even:** five, the same all the way along. A hand-draped wrap would bunch more at the shoulder and fall slacker on the back.
+- **Is this the sheet's "dark asymmetric layer", or is a second garment meant** (a long open over-tunic cut away on one side)? OG-066's thumbnail cannot say. If it is a second garment, it is still owed and wants the full image.
+## v80 — Session 1052 — The Old Blood's marks under the skin (L1 and B3, prototype only)
+This continues Session 1051 on the same kept sheet. The canon, §3.1, was settled by Michael's 2 B on OG-066. The marks are not ink. They are pale raised lines under the skin, branching like veins, at the wrist, the back of the hand and the shoulder blade. §3.3 adds that they spread as the Cold rises, up the arm and at last to the face. The builder's peoples table had carried them as owed since Session 806, waiting on "a skin texture". This session draws them in the skin's shader instead. Building what the canon says chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`markSkin`, through `skinMat(colour, cold)`):
+- **Where they are.** On both sides, along a line from the knuckles through the wrist, the elbow, the shoulder and the neck to the cheekbone. Each marked area is everything within 4.5 to 7.5 cm of the reached part of the line. The edge is broken by noise, so the marks end in tendrils.
+- **How the Cold carries them.**
+  - At a Cold of 0 they reach 5 cm past the wrist.
+  - At 1 they reach the cheek.
+  - The patch on each shoulder blade grows with them, from 5 cm across to 15.
+- **The lines.** They are the half-way contours of a warped noise at two scales. A slower third noise cuts them into open strands that taper. The whole contours closed into rings, which read as blots, not veins.
+- **How they look.** They are lighter than the skin and a little cooler. They are raised by a bump read off their own slope, about 0.7 mm. Far off they fade to nothing, so they do not shimmer.
+- **No new triangles.** It is all drawn on the rest body (`aBase`). The marks stay where they are on the body however it is posed.
+- **The genome.** `G.marks` is the Cold, from 0 to 1. Without it there are no marks. It saves as `marks: { cold }` and loads back. A genome without it saves nothing.
+- **The builder page.** It takes `?marks=` (a number, or `none`) and a new close `view=hand` of the left hand and wrist.
+- **The roll.** Four in five Old Blood are marked (canon: a child shows them or does not). One in eight of those has read past the Withdrawal's law and carries the Cold, reaching 0.2 to 0.65. The rest stay barely past the wrist. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls it.
+
+Corrections made during the session:
+- **The first lines were whole contours**, which closed into loops and rings on the shoulder blade. A third noise now cuts them into open strands.
+- **The first cut was too hard** and left the blades nearly bare. It was halved.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 426 checks pass** (422 after Session 1051; 4 new).
+- **How it was checked.** Each check renders a 320-pixel close view, at four places, of an unclothed Old Blood man without marks and with them at a Cold of 0, 0.6 and 1. The view without marks renders the same twice at all four places.
+- **The wrist** changes 2.3% of the view at every step of the Cold, every changed pixel lighter by 10 on average.
+- **The upper arm** is bare at 0 and marked at 0.6 (4.6%).
+- **The cheek** is bare at 0, touched at 0.6 (0.22%) and reached at 1 (1.5%).
+- **The shoulder blade's patch** grows from 0.09% of the view to 1.3% and 1.5%.
+- **Saving:** the Cold saves and loads back.
+- **The roll:** 95 of 120 Old Blood are marked, 15 of them past 0.15 (at most 0.64), and none of 120 of the other peoples.
+- **Pictures:** `builder-marks-hand.jpg` (at 0, the wrist under the sleeve), `-back.jpg` (the shoulder blades at 0.3), `-arm.jpg` (0.6, up the forearm) and `-face.jpg` (1, the temple, the cheek and round the ear).
+
+### Needs eyes
+- **On grey-pale skin the lines are pale on pale.** Close up they read by their raised edge more than their colour. At a few metres a clothed Old Blood shows only the wrists, and the marks fade there. That suits a people that hides, but it may be too quiet for play.
+- **At 1 on the face they are strong:** a web over the temple and round the ear. That may want to be saved for the last steps of the Cold.
+- **The back of the hand and the palm are marked alike.** The canon names the back of the hand only.
+- **The roll's shares are mine:** four in five marked, one in eight of those carrying the Cold. The canon gives no share. In the game the player's own Cold is the systems builder's stat, and this is the parameter it would drive.
+- **Still owed for the Old Blood (OG-066):** the eye strip for the Cold's greying eyes, which could ride the same `cold`.
+## v80 — Session 1053 — The Cold's grey eyes and pallor (L1 and B3, prototype only)
+This completes OG-066's last owed body item, its eye strip of pale grey, silver and ice blue "for the Cold's greying eyes". Canon §3.3 says each Mastery-tier reading "takes warmth: pallor deepens, eyes grey". Session 1052 made `G.marks` the Cold, so this session lets the same number carry the colour. Building what the canon says chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+What is built (in `makePerson`):
+- **The eyes.** At a Cold of 1 they go nine tenths of the way toward an ice grey (0.76, 0.8, 0.85).
+- **The skin.** It goes three fifths of the way toward its own grey, a little cooler and lighter. Both steps scale with the Cold, and nothing changes at 0.
+- **The genome keeps its own colours.** The change is made on the copy `makePerson` builds from, so a Cold that rises or falls in the game never loses the face's own colours. `makePerson` returns the colours it built with as `coldLook`.
+- **A switch for the marks' checks.** `makePerson(G, { coldColours: false })` leaves the colours as they are, so Session 1052's renders still measure the marks alone.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 427 checks pass** (426 after Session 1052; 1 new). The marks' checks pass unchanged with the colours left off.
+- **The eyes:** for the man of Session 1052, they are 0.217, 0.119 and 0.022 from the ice grey at a Cold of 0, 0.5 and 1.
+- **The skin:** its spread of colour falls from 0.06 to 0.03 and 0.01.
+- **At 0 and without marks,** the colours are the genome's own. The genome passed in is not changed.
+- **Pictures:** `builder-cold-face0.jpg` and `builder-cold-face1.jpg`, the same woman at a Cold of 0 and 1.
+
+### Needs eyes
+- **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
