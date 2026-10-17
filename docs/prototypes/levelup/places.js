@@ -3127,3 +3127,106 @@ export function gatelandsCellar(o = {}, r = stream('cellar')) {
     house: { x0: X0, x1: X1, z0: Z0, z1: Z1, t: T, door: DOOR, gable: { x: GX, apex: +(FY + APEX).toFixed(2), stack: +(FY + STK + .1).toFixed(2) } },
     hatch: { x: HX, z: HZ, w: HW, d: HD, kerb, leaves: +LT.toFixed(3), hasp, lock }, stubs, lying, road: { z: RZ, w: RW }, paths, trees };
 }
+
+// ── the Gatelands' perched stone (Session 1031, card F8; OG-124's panel 6, "small mysteries with no marker: … an odd rock"). On a bare hill
+// of limestone pavement, after the Burren and the Norber erratics, a boulder of a dark stone that is not the hill's sits on a pedestal of
+// the pale limestone half a metre high: the ice left it, and the rain has since taken the pavement down all round except where the boulder
+// kept it dry. It is odd to look at and nothing more is said: whether it is a lead is the quest writer's. Built at true size, a metre a
+// unit, the hill rising to -z at 1 in 14, a green road along x at z 16:
+//   - the pavement: clints of pale limestone in two sets of joints at 43° to the road, their tops the old surface, cut by grykes 0.12 to
+//     0.24 m wide and about 0.9 m deep, with hart's-tongue ferns in them; it runs out into the turf at a ragged edge;
+//   - the stone: a boulder about 3.4 by 2.4 by 2.6 m on a pedestal 0.45 to 0.6 m high, waisted, its flat top under the boulder's flat sole;
+//     the boulder overhangs it 0.4 m or more all round, so the daylight shows under it; a smaller stranger lies on the clints nearby;
+//   - the land: a lace wall of single limestone slabs across the hill above (daylight through it), hazel scrub grown up from the grykes to
+//     the east, a hawthorn bent by the west wind on the turf below, ash by the road.
+// -> { group, tris, draws, own, ground(x, z) (the turf and the grykes' floor), surf(x, z) (the pavement's old surface), stone { x, z, ry, top (the
+//      pedestal's top), rx, rz (its half-widths), h (the boulder's height) }, other { x, z, y, r }, clints [{ x, z, y, u, v, w, d }], ja (the joints' angle),
+//      wall { z, h }, road { z, w }, paths, trees, thorn { x, z, lean } }
+export function gatelandsErratic(o = {}, r = stream('erratic')) {
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }); const MI = millMats();
+  const M = { turf: MI.turf, track: mat('turfDry', { ns: 1.0, color: 0xa89878, rough: 1 }), gryke: std(0x1e2216, 1), clint: mat('rock', { ns: 1.4, color: 0xd2d0c8, rough: .95 }),
+    erratic: mat('rock', { ns: 1.6, color: 0x9a8c7c, rough: .9 }), wall: mat('rock', { ns: 1.2, color: 0xc4c2ba, rough: .95 }), fern: std(0x3e6a2a, .7, { side: THREE.DoubleSide }),
+    bark: std(0x5a5248, .95), leaf: std(0x8a8a3a, .85), haw: std(0x3a4624, .9), berry: std(0x9a2018, .6) };
+  const B = new Map(), key = String(o.key || 'erratic'), F = stream(key + ':lie'), ph = Array.from({ length: 12 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6, taper = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad * taper, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // the land: the pavement's old surface rising to -z at 1 in 14 with a roll; the pavement an irregular oval about the stone; the grykes' floor 0.9 m under it
+  const RZ = 16, RW = 3.0, PX = 1, PZ = -3, PRX = 21, PRZ = 13.5, JA = .75, CA = Math.cos(JA), SA = Math.sin(JA), DROP = .9;
+  const surf = (x, z) => -z / 14 + .18 * Math.sin(x * .09 + ph[0]) * Math.sin(z * .11 + ph[1]) + .05 * Math.sin(x * .31 + z * .27 + ph[2]);
+  const mem = (x, z) => { const a = Math.atan2(z - PZ, x - PX); return 1 - Math.hypot((x - PX) / PRX, (z - PZ) / PRZ) + .08 * Math.sin(a * 3 + ph[3]) + .05 * Math.sin(a * 7 + ph[4]); };
+  const roadY = x => surf(x, RZ) - .08, ground = (x, z) => { const m = mem(x, z), b = surf(x, z) - .08 - (DROP - .08) * sm((m - .06) / .06), rw = sm((RW / 2 + 1.0 - Math.abs(z - RZ)) / 1.0); return b + (roadY(x) - .04 * Math.min(1, Math.abs(z - RZ) / (RW / 2)) - b) * rw; };
+  { const steps = (bands, end) => { const v = []; for (const [a, b, st] of bands) for (let q = a; q < b - 1e-6; q += st) v.push(+q.toFixed(2)); v.push(end); return v; };
+    const gx = steps([[-160, -40, 24], [-40, -26, 2], [-26, 26, 1], [26, 40, 2], [40, 160, 24]], 160), gz = steps([[-160, -40, 24], [-40, -22, 2], [-22, 22, 1], [22, 40, 2], [40, 160, 24]], 160);
+    const pos = [], NX = gx.length, I = { turf: [], track: [], gryke: [] }; for (const z of gz) for (const x of gx) pos.push(x, ground(x, z), z);
+    for (let j = 0; j + 1 < gz.length; j++) for (let i = 0; i + 1 < NX; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, cx = (gx[i] + gx[i + 1]) / 2, cz = (gz[j] + gz[j + 1]) / 2;
+      I[Math.abs(cz - RZ) < RW / 2 + .1 ? 'track' : mem(cx, cz) > .085 ? 'gryke' : 'turf'].push(a, c, b, b, c, d); }
+    for (const [k, idx] of Object.entries(I)) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+  // the clints: strips along the main joints (u) cut by cross joints (v) of their own; each a block 1 m deep whose top is the old surface,
+  // a little domed (its edges 0.04 m lower), each at its own small offset; a gryke of 0.12 to 0.24 m between every two
+  const clints = [], ferns = []; { const toX = (u, v) => u * CA - v * SA, toZ = (u, v) => u * SA + v * CA;
+    for (let u = -36; u < 36;) { const uw = 1.0 + F() * 2.0, gu = .06 + F() * .06; for (let v = -36 + F() * 2; v < 36;) { const vw = .7 + F() * 2.2, gv = .06 + F() * .06;
+        const cu = u + uw / 2, cv = v + vw / 2, cx = toX(cu, cv), cz = toZ(cu, cv), w = uw - 2 * gu, d = vw - 2 * gv, off = (F() - .5) * .06, tu = (F() - .5) * .05, tv = (F() - .5) * .05, rot = (F() - .5) * .08, ca = Math.cos(JA + rot), sa = Math.sin(JA + rot); v += vw;
+        if (mem(cx, cz) < .02 || Math.abs(cz - RZ) < RW / 2 + 1.5) continue;
+        const g = new THREE.BoxGeometry(w, 1, d, 2, 1, 2).toNonIndexed(); g.rotateY(-JA - rot); g.deleteAttribute('normal'); const P = g.attributes.position;
+        for (let i = 0; i < P.count; i++) { const lx = P.getX(i), ly = P.getY(i), lz = P.getZ(i), x = cx + lx, z = cz + lz, lu = lx * ca + lz * sa, lv = -lx * sa + lz * ca, edge = Math.abs(Math.abs(lu) - w / 2) < .01 || Math.abs(Math.abs(lv) - d / 2) < .01;
+          P.setXYZ(i, x, ly > 0 ? surf(x, z) + off + tu * lu / (w / 2) + tv * lv / (d / 2) - (edge ? .07 : 0) : surf(x, z) - 1.0, z); }
+        put(g, 'clint'); clints.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), y: +(surf(cx, cz) + off).toFixed(3), u: +cu.toFixed(3), v: +cv.toFixed(3), w: +w.toFixed(3), d: +d.toFixed(3), gu: +(2 * gu).toFixed(3), gv: +(2 * gv).toFixed(3) });
+        if (F() < .35) ferns.push([toX(u + uw - gu, cv), toZ(u + uw - gu, cv)]); }
+      u += uw; } }
+  // the stone: a pedestal of the pavement's limestone, waisted, its flat top 0.45 to 0.6 m over the surface round it; on it the boulder, its sole flat
+  const SX = 0, SZ = -2, SRY = .4 + F() * .5, PRX2 = 1.0 + F() * .15, PRZ2 = .78 + F() * .1, PH0 = .46 + F() * .04, RIM = Math.max(...Array.from({ length: 16 }, (_, k) => surf(SX + Math.cos(k * .3927) * 1.5, SZ + Math.sin(k * .3927) * 1.5))), PT = +(RIM + PH0).toFixed(3), PH = PT - surf(SX, SZ);
+  { const g = new THREE.CylinderGeometry(1, 1, 1, 18, 6).toNonIndexed(); g.deleteAttribute('normal'); const P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const lx = P.getX(i), t = P.getY(i) + .5, lz = P.getZ(i), a = Math.atan2(lz, lx), s = Math.max(0, (t - 1 / 6) / (5 / 6)), rr = (1 + .07 * Math.sin(a * 5 + ph[5]) + .04 * Math.sin(a * 11 + ph[6])) * (1 - .17 * Math.sin(s * Math.PI));
+      const ex = lx * PRX2 * rr, ez = lz * PRZ2 * rr, x = SX + ex * Math.cos(SRY) + ez * Math.sin(SRY), z = SZ - ex * Math.sin(SRY) + ez * Math.cos(SRY); P.setXYZ(i, x, t < 1 / 6 - 1e-4 ? PT - PH - 1.0 : PT - PH * (1 - s), z); }
+    put(g, 'clint'); }
+  const BRX = PRX2 + .62 + F() * .25, BRZ = PRZ2 + .6 + F() * .2, BH = 2.2 + F() * .4, SOLE = .62; let boulderTop = 0;
+  { const g = new THREE.IcosahedronGeometry(1, 4); g.deleteAttribute('normal'); g.deleteAttribute('uv'); const P = g.attributes.position, D = V3(), ys = [];
+    for (let i = 0; i < P.count; i++) { D.set(P.getX(i), P.getY(i), P.getZ(i)).normalize(); const n = 1 + .09 * Math.sin(D.x * 3.1 + ph[7]) * Math.sin(D.z * 2.7 + ph[8]) + .06 * Math.sin(D.y * 4.3 + D.x * 2 + ph[9]) + .025 * Math.sin(D.x * 9 + D.z * 8 + ph[10]);
+      let y = D.y * n; y = Math.max(y, -SOLE); ys.push(y); P.setXYZ(i, D.x * n * BRX, y, D.z * n * BRZ); }
+    const lo = Math.min(...ys), hi = Math.max(...ys), k = BH / (hi - lo);
+    for (let i = 0; i < P.count; i++) { const ex = P.getX(i), ez = P.getZ(i), y = (P.getY(i) - lo) * k; P.setXYZ(i, SX + ex * Math.cos(SRY) + ez * Math.sin(SRY), PT + y, SZ - ex * Math.sin(SRY) + ez * Math.cos(SRY)); }
+    boulderTop = PT + BH; const sg = mergeVertices(g); sg.computeVertexNormals(); put(sg, 'erratic', 0, 0, 0, 0, 0, 0, .4); }
+  // a smaller stranger on the clints, and a few cobbles of the same dark stone
+  const lump = (x, z, rx, ry, rz, k = 'erratic') => { const g = new THREE.IcosahedronGeometry(1, 2); g.deleteAttribute('normal'); g.deleteAttribute('uv'); const P = g.attributes.position, D = V3(), a = F() * 6.283;
+    for (let i = 0; i < P.count; i++) { D.set(P.getX(i), P.getY(i), P.getZ(i)).normalize(); const n = 1 + .1 * Math.sin(D.x * 3 + a) * Math.sin(D.z * 3 - a); P.setXYZ(i, D.x * n * rx, Math.max(D.y * n, -.7) * ry, D.z * n * rz); }
+    const y0 = surf(x, z) + .7 * ry - .05, sg = mergeVertices(g); sg.computeVertexNormals(); put(sg, k, x, y0, z, 0, a); return { x: +x.toFixed(2), z: +z.toFixed(2), y: +(y0 - .7 * ry).toFixed(3), r: Math.max(rx, rz) }; };
+  const other = lump(SX + 6.5, SZ - 5.5, .62, .48, .5), lying = [other]; for (let k = 0; k < 3; k++) { const a = F() * 6.283, d = 4 + F() * 7; lying.push(lump(SX + Math.cos(a) * d, SZ + Math.sin(a) * d * .7, .2 + F() * .12, .16, .18 + F() * .1)); }
+  // hart's-tongue in the grykes: tufts of strap leaves rising out of the slot
+  for (const [x, z] of ferns.slice(0, 70)) { const y = surf(x, z) - .18, a0 = F() * 6.283; for (let b = 0; b < 5; b++) { const a = a0 + b * 1.256, L = .3 + F() * .15, g = new THREE.BoxGeometry(.045, .004, L); g.translate(0, 0, L / 2); put(g, 'fern', x, y, z, -.5 - F() * .4, a); } }
+  // the lace wall: single slabs of limestone, stood edge-on and laid in courses with daylight between, across the hill above the stone
+  const WZ = -15, wallH = [], WALL = []; {
+    const top = x => 1.25 + .15 * Math.sin(x * .3 + ph[11]); for (let x0 = -32; x0 < 32; x0 += .5) wallH.push({ x: +(x0 + .25).toFixed(2), h: +top(x0 + .25).toFixed(2) });
+    const wz = x => WZ + .4 * Math.sin(x * .07 + ph[3]), BIN = .05, bins = new Float32Array(Math.ceil(64 / BIN) + 2);
+    for (let c = 0; c < 9; c++) { let x = -32 + (c % 2) * .2; while (x < 32) { const L = .3 + F() * .28, gap = .03 + F() * .1, xm = x + L / 2, i0 = Math.floor((x + 32) / BIN), i1 = Math.min(bins.length - 1, Math.floor((x + L + 32) / BIN));
+        let y = 0; for (let k = i0; k <= i1; k++) y = Math.max(y, bins[k]); const h = Math.min(.18 + F() * .12, top(xm) - y);
+        if (h > .08) { const b = surf(xm, wz(xm)) - .04; put(new THREE.BoxGeometry(L, h - .01, .16 + F() * .06), 'wall', xm, b + y + h / 2, wz(xm), (F() - .5) * .06, Math.atan(.4 * .07 * Math.cos(xm * .07 + ph[3])) * -1 + (F() - .5) * .08, (F() - .5) * .08); for (let k = i0; k <= i1; k++) bins[k] = y + h; WALL.push(1); }
+        x += L + gap; } }
+    for (let c = 0; c < 8; c++) for (let k = 0; k < bins.length - 1;) { const xk = -32 + k * BIN; if (xk > 31.9 || bins[k] >= top(xk) - .2) { k++; continue; }
+      let e = k; while (e + 1 < bins.length - 1 && -32 + (e + 1) * BIN < 32 && bins[e + 1] < top(-32 + (e + 1) * BIN) - .2 && e - k < 10) e++;
+      let y = 0; for (let q = k; q <= e; q++) y = Math.max(y, bins[q]); const L = (e - k + 1) * BIN - .02, xm = xk + (e - k + 1) * BIN / 2, h = Math.min(.14 + F() * .1, top(xm) - y);
+      if (L >= .04 && h > .05) { const b = surf(xm, wz(xm)) - .04; put(new THREE.BoxGeometry(L, h - .01, .16 + F() * .06), 'wall', xm, b + y + h / 2, wz(xm), 0, Math.atan(.4 * .07 * Math.cos(xm * .07 + ph[3])) * -1, (F() - .5) * .06); for (let q = k; q <= e; q++) bins[q] = y + h; WALL.push(1); }
+      k = e + 1; } }
+  // the green: the hawthorn bent by the west wind, hazel up out of the grykes to the east, ash by the road
+  const trees = [], bush = (x, z, s) => { const gy = surf(x, z) - .3; for (let c = 0; c < 4; c++) rod('bark', [x, gy, z], [x + (F() - .5) * s * .8, gy + s * .95, z + (F() - .5) * s * .8], .04, 5, .6);
+    for (let c = 0; c < 6; c++) put(new THREE.IcosahedronGeometry(s * (.32 + F() * .18), 0).scale(1.2, .8, 1.2), 'leaf', x + (F() - .5) * s * 1.1, gy + s * (.65 + F() * .55), z + (F() - .5) * s * 1.1, F(), F() * 3); trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +(s * 1.3).toFixed(2), kind: 'hazel' }); };
+  for (let k = 0, n = 0; k < 400 && n < 9; k++) { const x = 9 + F() * 11, z = -11 + F() * 11; if (mem(x, z) < .1 || trees.some(t => Math.hypot(t.x - x, t.z - z) < 2.2)) continue; n++; bush(x, z, 1.8 + F() * 1.2); }
+  const TX = -6.5, TZ = 8.5, ty = ground(TX, TZ), lean = 2.6; { const top = [TX + lean, ty + 2.5, TZ + .2]; rod('bark', [TX, ty - .2, TZ], [TX + .8, ty + 1.3, TZ], .15, 7, .8); rod('bark', [TX + .8, ty + 1.3, TZ], top, .11, 6, .7);
+    for (let l = 0; l < 6; l++) { const e = [top[0] + .4 + F() * 1.6, top[1] - .3 + F() * .7, top[2] + (F() - .5) * 2.2]; rod('bark', [top[0] - .6 + l * .15, top[1] - .5 + l * .1, top[2]], e, .045, 5, .6);
+      for (let c = 0; c < 3; c++) { const p = [e[0] + (F() - .3) * 1.2, e[1] + (F() - .5) * .5, e[2] + (F() - .5) * 1.2]; put(new THREE.IcosahedronGeometry(.6 + F() * .3, 0).scale(1.5, .55, 1.2), 'haw', ...p, F() * .3, F() * 3);
+        for (let q = 0; q < 4; q++) put(new THREE.IcosahedronGeometry(.035, 0), 'berry', p[0] + (F() - .5) * 1.1, p[1] - .15 + F() * .2, p[2] + (F() - .5) * .9); } }
+    trees.push({ x: TX, z: TZ, h: +(top[1] + .4 - ty).toFixed(2), kind: 'hawthorn' }); }
+  const tree = (x, z, h) => { const gy = ground(x, z), top = [x, gy + h * .5, z]; rod('bark', [x, gy - .3, z], top, .16 + h * .013, 7, .7);
+    for (let l = 0; l < 5; l++) { const a = l * 1.3 + F(), L = 1.6 + F() * 1.4, e = [top[0] + Math.cos(a) * L, top[1] + .8 + l * .55 + F(), top[2] + Math.sin(a) * L]; rod('bark', [top[0], top[1] - .5 + l * .25, top[2]], e, .07, 5, .6);
+      for (let c2 = 0; c2 < 3; c2++) put(new THREE.IcosahedronGeometry(.9 + F() * .6, 0).scale(1.15, .8, 1.15), 'leaf', e[0] + (F() - .5) * 1.6, e[1] + (F() - .4) * 1.2, e[2] + (F() - .5) * 1.6, F(), F() * 3); }
+    trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2), kind: 'ash' }); };
+  for (let k = 0, n = 0; k < 900 && n < 5; k++) { const x = -45 + F() * 90, z = RZ + 3 + F() * 14; if (Math.abs(x) < 8 || trees.some(t => Math.hypot(t.x - x, t.z - z) < 10)) continue; n++; tree(x, z, 8 + F() * 4); }
+  const paths = [[[2.5, RZ], [2.2, 10], [1.8, 5], [1.4, SZ + BRZ + 1.6]], Array.from({ length: 13 }, (_, i) => { const a = Math.PI / 2 + i / 12 * Math.PI * 2; return [+(SX + Math.cos(a) * (BRX + 1.2)).toFixed(2), +(SZ + Math.sin(a) * (BRX + 1.2)).toFixed(2)]; })];
+  const group = new THREE.Group(); let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['turf', 'track', 'gryke'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, own: group.children.length, top: +new THREE.Box3().setFromObject(group).max.y.toFixed(2), ground, surf, mem,
+    stone: { x: SX, z: SZ, ry: SRY, top: PT, rx: PRX2, rz: PRZ2, brx: BRX, brz: BRZ, h: BH, crown: +boulderTop.toFixed(3) }, other, lying, clints, ja: JA, wall: { z: WZ, h: wallH, n: WALL.length }, road: { z: RZ, w: RW }, paths, trees, thorn: { x: TX, z: TZ, lean } };
+}

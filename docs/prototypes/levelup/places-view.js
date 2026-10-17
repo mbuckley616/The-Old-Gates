@@ -36,6 +36,7 @@ else if (Q.get('place') === 'hunters') await import('./places-hunters-view.js') 
 else if (Q.get('place') === 'expedition') await import('./places-expedition-view.js') /* Session 1023: Aurenne's abandoned expedition */;
 else if (Q.get('place') === 'carriage') await import('./places-carriage-view.js') /* Session 1025: the Gatelands' overturned carriage */;
 else if (Q.get('place') === 'cellar') await import('./places-cellar-view.js') /* Session 1026: the Gatelands' locked cellar */;
+else if (Q.get('place') === 'erratic') await import('./places-erratic-view.js') /* Session 1031: the Gatelands' perched stone */;
 else if (Q.get('place') === 'icemouth') await import('./places-icemouth-view.js') /* Session 1006: the Mark's ice cave mouth */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();

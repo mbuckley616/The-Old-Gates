@@ -23099,3 +23099,37 @@ Corrections made during the session:
 - **Below the hatch** nothing is built. If the cellar is to be opened, its steps and its room are a room for F9, and what is in it is the quest writer's.
 - **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
+
+## v80 — Session 1031 — The Gatelands' perched stone (card F8, prototype only)
+The last small mystery on OG-124's panel 6 that needs nothing from the canon or the quest writer first: "an odd rock". (Strange tracks need someone to have made them, which is the bodies builder's; the unfinished camp is close to the abandoned expedition already built; the lone grave and the pilgrims' rest wait on the canon.) DECISION #389, where the kit lives in the game, is still pending, so this run stayed in the prototypes. It is `gatelandsErratic` in `docs/prototypes/levelup/places.js`, at `places.html?place=erratic`.
+
+The odd rock is a real kind of thing: an erratic on a pedestal, after the Norber erratics in the Dales and the boulders on the Burren's pavement. The ice dropped a boulder of a dark stone that is not the hill's on a bed of limestone. The rain has since taken the pavement down by half a metre everywhere except under the boulder, which kept a column of it dry, so the boulder now sits on a pale stalk of the old surface. The place gives no reason for it beyond that, and whether it is a lead is the quest writer's. It is built at true size on a hill rising at 1 in 14 from a green road:
+- **The pavement:** about 250 clints in two sets of joints at 43° to the road. The main joints run unbroken and each strip has cross joints of its own. Every clint is a block 1 m deep whose top is the old surface, a little domed and tilted at its own small angle, and turned up to 2.3° off the joint. The grykes between them are 0.12 to 0.26 m wide and 0.85 m deep, with hart's-tongue ferns in them, and the pavement runs out into the turf at a ragged edge where the grykes fill with grass.
+- **The stone:** a boulder 2.2 to 2.5 m high and about 3.4 by 2.6 m across, its sole flat on a waisted pedestal of the pale limestone. The pedestal's top is level, 0.45 to 0.5 m over the highest pavement round it, so it stands 0.5 to 0.8 m on the slope. The boulder overhangs it all round, so the daylight shows under it. A smaller stranger of the same stone and three cobbles lie on the clints nearby.
+- **The land:** a lace wall of single limestone slabs across the hill above, laid on whatever is under each and with daylight through it; hazel grown up out of the grykes to the east in autumn yellow; a hawthorn on the turf below, bent 2.6 m downwind by the west wind and red with haws; and ash by the road.
+- **The size:** 37,100 to 38,100 triangles in 11 meshes.
+
+The views are `stone` (from the path below), `under` (crouched by it, the pedestal's waist and the overhang), `pavement` (from the clints above, down over the grykes) and `far`, and `&dusk` gives the evening.
+
+Corrections made during the session:
+- **The pavement's edge** first stood up out of the turf: the grykes' floor began to drop before the last clints, so the outermost blocks showed their sides up to 0.6 m. The drop now starts inside the second row, and the edge clints stand 0.08 m proud of the turf.
+- **The clints** first read as a tiled floor of near-equal blocks. Their sizes now range from 1.0 to 3.0 m by 0.7 to 2.9 m, and each is tilted and turned a little.
+- **The pedestal** was first cut to a fixed height over the surface at its middle, which left it 0.17 m over the clints on its uphill side. Its top is now set from the highest pavement round it.
+- **The wall's slabs** were first laid in fixed courses, so a short slab left a gap under the next course and some slabs floated. Each slab now rests on the highest of what is under it, and a last pass fills any notch too narrow for a whole slab.
+- **The boulder** was first nearly black and faceted. It is a lighter brown-grey now, with smooth normals.
+- **Two of the check's probes:** the wall's first sampled across it every 0.25 m and fell between slabs 0.2 m thick, reading whole stretches as missing; it now samples every 0.05 m. The overhang's first cast against the pedestal came from 6 m out and met an uphill clint; it now starts 2 m out.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 223 of 223 pass** (216 after Session 1026). Seven checks are new. The stone's `stone` view and its `under` view at dusk render with no page errors, and five checks run over three keys:
+  - **The builds:** each key builds the same twice, with 37,092 to 38,052 triangles in 11 meshes, 226 to 262 clints and 15 trees.
+  - **The stone:** the boulder (2.21 to 2.53 m high) is met 0 m over its pedestal's flat top. The pedestal is 0.5 to 0.8 m over the clints round it at the 7 or 8 of 8 points that land on a clint, and the boulder overhangs it 0.34 to 0.86 m in all eight directions.
+  - **The pavement:** the clints' tops are −0.03 to 0.03 m off the old surface at their middles. 141 to 164 grykes inside the pavement are 0.12 to 0.26 m wide and 0.84 m or more deep.
+  - **The wall:** it is 0.99 to 1.37 m high at 120 points, with daylight through 20 to 22.5% of the rays sent across it.
+  - **The walk:** 148 quarter-metres from the road up onto the pavement and round the stone, 117 or more of them on the clints. There is a foothold (the highest ground within 0.2 m) under each, no step is over 0.10 m, no gryke on the line is wider than a quarter-metre sample, and there is 0.84 m or more clear at the hip and the head, with nothing over the head. The hawthorn leans 2.6 m.
+- **Pictures:** `places-erratic-stone.jpg`, `-under`, `-pavement`, `-far` and `-stone-dusk`.
+### Needs eyes
+- **The clints are still boxes.** Real clints have rounded shoulders, runnels down their tops and grykes that widen at the top, and the kit's rock texture reads as marble on them. Those want F3's rock work before the pavement goes into the game.
+- **The boulder's texture** shows the rock texture's strata as rings on its crown. A granite or greywacke texture of its own would read as a different stone at a glance, which is the point of the place.
+- **The land round the pavement** is plain turf to a flat horizon, as at the other places. On the Burren the pavement runs on in terraces, which is the land's (F3).
+- **Whether the stone is a lead,** and whether anything is under it or carved on it, is the quest writer's. As built it is only odd.
+- **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks (whose, the bodies builder's) and the unfinished camp.
