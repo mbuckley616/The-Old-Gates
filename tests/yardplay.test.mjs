@@ -124,14 +124,18 @@ if (ended === 'lost') {
   check('at the seat: *Rowe\'s Captain. … The ring goes up again in seven days.*, then *Not yet. A week, I said.*', /^Rowe's Captain\./.test(t.said) && /seven days/.test(t.said) && /^Not yet\. A week/.test(t2.said), { t, t2 });
   await tick(120); const r3 = await meet('WORLD.rival.npc'); await close();
   check('Rowe holds the chair at the seat for the week: *Captain Rowe, for a week at least.*', r3 && /^Captain Rowe, for a week at least\./.test(r3.greet), r3);
-  // a week on, stronger: the rematch
+  // a week on, stronger: the rematch. Since S941 (skills and perks A) a weapon's damage is carried by its skill, not by the
+  // level, while Rowe still scales by the level: level 8 alone is a weaker stand-in than before. So the stand-in carries the
+  // skills a level-8 character holds by the game's own reckoning, the migration a pre-skills save gets on load (`skillsInit(arch,
+  // level)`, 70-saves.js; Session 1017). On a build without skills it is skipped.
   await page.evaluate(() => { worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 7 * 1440; forceTime(8); level = Math.max(level, 8); maxHP = Math.max(maxHP, 260); PHP = maxHP; dead = false;
+    if (typeof skillsInit === 'function') skillsInit(playerArchetype, level);
     const wt = WEAPON_TYPES.find(w => /sword/i.test(w.name || w.type || '')) || WEAPON_TYPES[0]; EQ.weapon = makeItem(3, wt, null, false); });
   await at(q1.x - 9, q1.z); await tick(30);
   const s1 = await meet('WORLD.duel.sgt');
   check('a week on, the ring is laid again and the sergeant will call it', s1 && s1.labels.includes('Call it.'), s1);
   await click(/^Call it\.$/); await g.frames(2); await close();
-  const f2 = await fight(true);
+  const f2 = await fight(true); f2.blade = await page.evaluate(() => typeof skillLv === 'function' ? skillLv('blade') : null);
   console.log('fight 2', JSON.stringify(f2));
   check('the rematch is fought to the yield and the yard acclaims you', f2.end === 'won' && f2.yieldAt != null, f2);
   ended = f2.end;
