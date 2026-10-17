@@ -23237,3 +23237,28 @@ A correction to the check during the session: its new probe down the middle of t
 - **The gaff sails are tall and narrow** on the caravel's short spacing between masts. A Baltic schooner's look, which may or may not read as the Mark's.
 - **A tarred black hull with a lateen aft** mixes the two islands at a glance. That is what #347 A asks, but whether the silhouette still names the Mark is worth a look.
 - **Still owed by #347:** the cog and the galleon in the Mark's and Aurenne's dress.
+
+## v80 — Session 1039 — Card F11: the Mark's cog, by #347's answer (prototype only)
+The second hull built to Michael's A on DECISION #347. Option A's own text names this one: "a Mark cog with one gaff main in place of the square sail". It is `markCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'mark'`), at `ships.html?ship=markcog`.
+
+It is the very lines, waist rail, castles, cabin, wheel and cargo of the Gatelands cog (Session 892), in the Mark's cutter's dress:
+- **The hull:** red-brown below the water and tarred black above, the sheer strake and the castles' walls too. The wale and the castles' cappings are gilt.
+- **The sails:** the cutter's tanned cloths, or the red and black stripes with `&stripe`.
+- **The rig:** the yard, the square sail and its braces and sheets are gone. In their place on the same mast is one gaff main:
+  - The boom is 2.15 m over the deck, so a person walks under it, and ends 1.1 m short of the aftcastle.
+  - The gaff's throat is 7.6 m up, 1.95 m under the fighting top, and the gaff is peaked at 28°.
+  - The sail has a peak halyard and a sheet to the deck. The shrouds, forestay and bowsprit stay are the cog's.
+- **No beast's head:** the cog's stem head stands inside the forecastle's walls, where a head would be hidden.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `fore` views render with no page errors.
+  - **The builds:** 3 keys, plain and striped, each build the same twice: 40,808 to 40,844 triangles in 10 meshes. The lines, rail and castles are exactly the Gatelands cog's.
+  - **The hull:** closed (0 of 900 rays get out). The walk is clear at all 100 points, down either side and down the middle (the hatch left out), with 2.07 m under the boom.
+  - **The rig:** one gaff. The boom is 2.15 m up, the throat 1.95 m under the top, and the sail's foot 2.25 m over the deck. The sail is 1.02 m or more clear of both castles' edges.
+- **Pictures:** `ships-markcog-quarter.jpg`, `-side`, `-fore` and `-quarter-stripe`.
+
+A correction to the new check during the session: its first clearance probe cast rays straight along the ship at the castles' heights, and they only grazed the bellied sail's edge, so it read 4.9 m. The probe now measures the sail's bounds against both castles.
+### Needs eyes
+- **The sail is small for her.** One gaff between the castles carries less cloth than the cog's square sail, and she reads under-canvassed. A topsail over the gaff, as the cutter has, would be the next step if Michael wants more.
+- **Still owed by #347:** Aurenne's cog (one lateen), and the galleon in the Mark's and Aurenne's dress.

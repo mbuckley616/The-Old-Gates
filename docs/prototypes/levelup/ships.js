@@ -499,8 +499,18 @@ export function aurenneCaravel(o = {}, r = stream('caravel')) {
 //   the cog up); the forecastle 2.15 m over the deck over her first 3.0 m, open beneath on two posts, a ladder up the middle. Both walled
 //   in green-painted boards with a rail at 1.0 m. A cargo hatch aft of the mast; barrels and crates lashed along the sides.
 //   -> as gatelandsSloop, with castles: { aft: { z0, z1, y, door, ladders }, fore: { z0, z1, y, ladder, posts } }, wheel: true.
+// o.dress 'mark' (Session 1039; Michael's A on DECISION #347, whose text gives "a Mark cog with one gaff main in place of the square
+//   sail"): the cog's lines, castles and wheel in the Mark's cutter's dress (red-brown below the water, tarred black above, the castles'
+//   walls tarred, a gilt wale and gilt cappings), and one gaff main in tanned cloths (o.stripe, the red and black) on the cog's mast: the
+//   boom 2.15 m over the deck so a person walks under it, ending 1.1 m short of the aftcastle; the gaff peaked at 28°, its throat under the
+//   fighting top. No beast's head: the cog's stem head stands inside the forecastle's walls. markCog(o, r) is this.
+//   -> as gatelandsCog, with dress 'mark', rig 'gaff', stripe, gaff ({ mast, top, boom: { y, z0, z1 }, throat, peak }), and no harp.
+let MGM = null;
+function mkCogMats(stripe) { if (MGM && MGM.stripe === stripe) return MGM.M; const C = cutterMats(stripe), G = mats(false);
+  MGM = { stripe, M: { ...G, tar: C.bottom, green: C.tar, cream: C.gilt, oak: C.oak, deck: C.deck, spar: C.spar, sail: C.sail } }; return MGM.M; }
+export function markCog(o = {}, r = stream('mkcog')) { return gatelandsCog({ ...o, dress: 'mark' }, r); }
 export function gatelandsCog(o = {}, r = stream('cog')) {
-  const harp = o.harp !== false, M = mats(harp), { put, rod, finish } = kit(M);
+  const MKD = o.dress === 'mark', stripe = MKD && !!o.stripe, harp = !MKD && o.harp !== false, M = MKD ? mkCogMats(stripe) : mats(harp), { put, rod, finish } = kit(M);
   const L = 17, W = 5.6, DRAFT = 1.25, DECK = 1.0, SHEER = 1.55, BOW = .85, STERN = .9, NS = 52, NSTR = 12, TH = .04, LAP = .025;
   const zs = -L / 2, zb = L / 2;
   const sheerAt = z => SHEER + BOW * Math.max(0, z / zb) ** 2 + STERN * Math.max(0, z / zs) ** 2;
@@ -518,7 +528,7 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
   for (let s = 0; s < NSTR; s++) { const u0 = s / NSTR, u1 = (s + 1) / NSTR + (s < NSTR - 1 ? .018 : 0), outer = [], inner = [];
     for (let i = 0; i <= NS; i++) { const z = zAt(i), ro = [], ri = []; for (let k = 0; k <= KR; k++) { const u = u0 + (u1 - u0) * k / KR, p = sect(z, u), n = norm(z, u), off = (LAP + TH * .3) * (1 - k / KR) * (s ? 1 : .2) + TH * .3;
         ro.push([p[0] + n[0] * off, p[1] + n[1] * off, zr(z, u)]); ri.push([p[0] + n[0] * (off - TH), p[1] + n[1] * (off - TH), zr(z, u)]); } outer.push(ro); inner.push(ri); }
-    const yMid = sect(0, (u0 + u1) / 2)[1], key = s === NSTR - 1 ? 'green' : yMid < .08 ? 'tar' : 'oak';
+    const yMid = sect(0, (u0 + u1) / 2)[1], key = s === NSTR - 1 ? 'green' : yMid < .08 ? 'tar' : MKD ? 'green' : 'oak';
     for (const side of [1, -1]) { const mir = rows => rows.map(row => row.map(([x, y, z]) => [x * side, y, z])); put(ribbon(mir(outer), side > 0), key, 0, 0, 0, 0, 0, 0, null); put(ribbon(mir(inner), side < 0), key, 0, 0, 0, 0, 0, 0, null);
       put(ribbon(mir(outer.map((row, i) => [row[0], inner[i][0]])), side < 0), key, 0, 0, 0, 0, 0, 0, null); } }
   // the keel; the stem and the sternpost, straight and raked, from the keel's ends to their heads over the sheer
@@ -571,19 +581,26 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
     else { put(new THREE.BoxGeometry(.7, .6, .7), 'deck', x, DECK + .3, z, 0, (r() - .5) * .2); cargo.push([x, z, .45]); } }
   // the mast, the yard at 8.2 m over the deck, the square sail from it to its foot 2.2 m over the deck, bellied forward
   const MH = 10.5, YY = DECK + 8.2, SF = DECK + 2.2, YL = 7.4;
-  rod([0, keelAt(MZ) + .1, MZ], [0, DECK + MH, MZ], .2, .12, 'spar'); rod([-YL / 2, YY, MZ + .16], [YL / 2, YY, MZ + .16], .08, .08, 'spar');
+  rod([0, keelAt(MZ) + .1, MZ], [0, DECK + MH, MZ], .2, .12, 'spar'); if (!MKD) rod([-YL / 2, YY, MZ + .16], [YL / 2, YY, MZ + .16], .08, .08, 'spar');
   { put(new THREE.CylinderGeometry(.45, .38, .5, 12), 'oak', 0, DECK + MH - .7, MZ); /* the top, a round fighting top */ }
-  { const g = new THREE.PlaneGeometry(YL - .3, YY - SF - .1, 14, 12), P = g.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k) / (YL / 2), y = P.getY(k) / ((YY - SF) / 2); P.setZ(k, .6 * (1 - x * x) * (1 - .6 * y * y) + .1 * (1 - y) / 2); }
+  if (!MKD) { const g = new THREE.PlaneGeometry(YL - .3, YY - SF - .1, 14, 12), P = g.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k) / (YL / 2), y = P.getY(k) / ((YY - SF) / 2); P.setZ(k, .6 * (1 - x * x) * (1 - .6 * y * y) + .1 * (1 - y) / 2); }
     g.computeVertexNormals(); put(g, 'sail', 0, (YY + SF) / 2 - .05, MZ + .25, 0, 0, 0, null); }
+  // the Mark's dress: one gaff main, the boom 2.15 m over the deck to 1.1 m short of the aftcastle, the gaff from under the top peaked at 28°
+  let gaff = null;
+  if (MKD) { const BY = DECK + 2.15, BZ1 = zs + 3.8 + 1.1, TY = DECK + 7.6, GL = 4.4, GA = 28 * Math.PI / 180, PK = [0, TY + GL * Math.sin(GA), MZ - .2 - GL * Math.cos(GA)];
+    rod([0, BY, MZ - .2], [0, BY, BZ1], .085, .07, 'spar'); rod([0, TY, MZ - .2], PK, .07, .06, 'spar');
+    put(quadSail([0, BY + .1, MZ - .25], [0, BY + .1, BZ1 + .25], PK, [0, TY - .05, MZ - .25], .5), 'sail', 0, 0, 0, 0, 0, 0, null);
+    rod([0, DECK + MH - .1, MZ], [0, (TY + PK[1]) / 2 + .4, (MZ - .2 + PK[2]) / 2], .01, .01, 'rope') /* the peak halyard */; rod([0, BY, BZ1 + .3], [0, DECK + .05, BZ1 + .3], .012, .012, 'rope') /* the sheet */;
+    gaff = { mast: [0, MZ], top: DECK + MH, boom: { y: BY, z0: MZ - .2, z1: BZ1 }, throat: TY, peak: PK.map(v => +v.toFixed(2)) }; }
   for (const e of [1, -1]) for (const dz of [-.9, -.3, .3, .9]) { const z = MZ + dz - .2; rod([0, DECK + MH * .9, MZ], [e * (sect(z, 1)[0] + .05), sheerAt(z) - .05, z], .013, .013, 'rope'); }
   rod([0, DECK + MH * .95, MZ], [0, sheerAt(zb) + .35, zb + .1], .015, .015, 'rope'); rod([0, DECK + MH * .95, MZ], SP, .013, .013, 'rope');
-  for (const e of [1, -1]) { rod([e * YL / 2, YY, MZ + .16], [e * (cw(zs + 2.2) - .05), CY + 1.0, zs + 2.2], .01, .01, 'rope'); rod([e * (YL / 2 - .3), SF, MZ + .3], [e * (sect(MZ - 2.6, 1)[0] - .06), DECK + 1.0, MZ - 2.6], .01, .01, 'rope'); }
+  if (!MKD) for (const e of [1, -1]) { rod([e * YL / 2, YY, MZ + .16], [e * (cw(zs + 2.2) - .05), CY + 1.0, zs + 2.2], .01, .01, 'rope'); rod([e * (YL / 2 - .3), SF, MZ + .3], [e * (sect(MZ - 2.6, 1)[0] - .06), DECK + 1.0, MZ - 2.6], .01, .01, 'rope'); }
   // the rudder hung on the sternpost; the wheel on the aftcastle 1 m aft of its edge
   { const pb = [zr(zs + .05, 0) + .05, keelAt(zs) - .12], pt = [zs - .12, sheerAt(zs) + .3], ang = Math.atan2(pt[0] - pb[0], pt[1] - pb[1]), rh = Math.hypot(pt[0] - pb[0], pt[1] - pb[1]) - .2;
     put(new THREE.BoxGeometry(.12, rh, .7).translate(0, rh / 2, -.4), 'oak', 0, pb[1] + .05, pb[0] - .02, ang);
     const wz = ZA - 1.0, wy = CY + 1.15; put(new THREE.TorusGeometry(.62, .035, 6, 24), 'oak', 0, wy, wz); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; rod([0, wy, wz], [.78 * Math.cos(a), wy + .78 * Math.sin(a), wz], .022, .018, 'oak'); }
     put(new THREE.CylinderGeometry(.07, .07, .3, 8).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), 'iron', 0, wy, wz - .12); put(new THREE.BoxGeometry(.18, wy - CY, .18), 'oak', 0, (wy + CY) / 2 - .05, wz - .3); }
-  return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: SF, mast: [0, MZ], hatch, sheerAt, keelAt, harp, wheel: true, cargo,
+  return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: MKD ? gaff.boom.y + .1 : SF, mast: [0, MZ], hatch, sheerAt, keelAt, harp, wheel: true, cargo, dress: MKD ? 'mark' : 'gatelands', rig: MKD ? 'gaff' : 'square', stripe, gaff,
     castles: { aft: { z0: zs + .25, z1: ZA, y: CY, door, ladders }, fore: { z0: ZF, z1: zb - .2, y: CY, ladder: fladder, posts } } });
 }
 
