@@ -768,10 +768,11 @@ function worldTierAt(x,z){
 }
 // a legacy zone: its region, as its config names it
 function zoneTier(id){const Z=(typeof ZONES!=='undefined')&&ZONES[id];const reg=(Z&&Z._cfg&&Z._cfg.region)||LEGACY_ZONE_REGION[id];return REGION_TIER[reg]||1;}
-// a dungeon: its door's place, plus one a floor below the first, to 4; the tutorial's crypt is 1
+// a dungeon: its door's place, plus one a floor below the first, to 4; the tutorial's crypt is 1. A cell's door is zone 'gen'
+// until the world places it (S1058: it read as a legacy zone, tier 1)
 function dungeonTier(portal,floor){
   if(!portal||portal.tutorial)return 1;
-  const base=portal.zone==='world'?worldTierAt(portal.x,portal.z):zoneTier(portal.zone||(typeof _preDungeonZone!=='undefined'?_preDungeonZone:'overworld'));
+  const base=(portal.zone==='world'||portal.zone==='gen')?worldTierAt(portal.x,portal.z):zoneTier(portal.zone||(typeof _preDungeonZone!=='undefined'?_preDungeonZone:'overworld'));
   return Math.min(4,base+Math.max(0,(floor||1)-1));
 }
 // where a foe is built: the world's scene (or world coordinates) reads the region, a legacy zone's scene its zone, else where you are

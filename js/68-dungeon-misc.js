@@ -537,8 +537,8 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
 // S706 — a lair cavern's master is the lair's own beast (Michael's A on DECISION #225): the foe standing deepest gives up its
 // place and floor, and is built again as the beast the lair is named for, on the open world's body for that kind (a Marsh Hag,
 // a Frost Troll, an Ash Wight, a Cave Bear or an Ogre: buildZoneEnemy's rig, moved into the cavern's group as the wyrm's is).
-// Its numbers are the kind's own at the cavern's scale, as any foe of the cavern is scaled: health by the gate's difficulty,
-// the floor (1.5 below) and your level; a blow by the same, its dmgMult set so the cavern's roll (10–20 before armour, 15 on
+// Its numbers are the kind's own at the cavern's scale, as any foe of the cavern is scaled: health by the gate's difficulty
+// and the cavern's tier (its floor's, S1058; once your level and ×1.5 below); a blow by the same, its dmgMult set so the cavern's roll (10–20 before armour, 15 on
 // average) lands the kind's own blow. lairFinish then makes it the master (×3 health, ×1.6 a blow, 1.5× the size) as before.
 function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'&&ZONE_FOE_DEF[kind];if(!D||!e||!e.mesh)return false;
   const z=buildZoneEnemy(new THREE.Group(),[],0,0,kind,null);const rig=z.limbs&&(z.limbs.person||z.limbs.wolf);if(!rig||!rig.root)return false;
@@ -546,7 +546,7 @@ function lairMasterBody(e,kind,portal){const D=typeof ZONE_FOE_DEF!=='undefined'
   g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
   if(rig.root.parent)rig.root.parent.remove(rig.root);g.add(rig.root);rig.e=e;
   e.limbs={torso:z.limbs.torso,hpBg};if(z.limbs.person){e.limbs.person=z.limbs.person;e.limbs.armR=z.limbs.armR;}if(z.limbs.wolf)e.limbs.wolf=z.limbs.wolf;
-  const ds=portal.diffScale||DIFF_SCALE.normal,fm=(e.floor||1)>1?1.5:1;
+  const ds=portal.diffScale||DIFF_SCALE.normal,fm=1; /* S1058 — the floor's step is its tier's +1 alone, as for every foe below (the enemies-by-place sheet) */
   const tr=dungeonTier(portal,e.floor||1); /* S1034 — the cavern's tier (#373 A) */e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*fm*enemyHpScale(tr)));e.dmgMult=D.dmg/15*ds.dmg*fm*enemyDmgScale(tr);delete e.dmg;e.tier=tr;
   e.spd=D.spd*ds.spd*(fm>1?1.1:1);e.rankSpd=D.spd;e.size=D.scale||1;e.def=D.def||0;e.resist={...(D.resist||{})};
   e.baseType=kind;e.buildFn=D.shape==='brute'?'brute':'humanoid';e._origCol=D.col;e.variant=null;e.xpMult=1;

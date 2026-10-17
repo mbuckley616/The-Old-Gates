@@ -3198,7 +3198,7 @@ function buildDungeon(portal){
     });
   }
   spawnFloorEnemies(dMap,1,0,1.0);
-  if(dMap2)spawnFloorEnemies(dMap2,2,FLOOR2_Y,1.5);
+  if(dMap2)spawnFloorEnemies(dMap2,2,FLOOR2_Y,1.0); /* S1058 — floor 2 steps once, by its tier's +1 (dungeonTier); its old ×1.5 and ×1.1 pace went (the enemies-by-place sheet) */
 
   // ── SIGIL PLACEMENT ─────────────────────────────────────────
   // Every entry in SIGIL_PLACEMENTS gets one sigil on floor 2 of its matching dungeon.

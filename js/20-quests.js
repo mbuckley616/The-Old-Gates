@@ -359,8 +359,13 @@ function gateOf(entry){const e=entry||{};if(e.theme!=='goblin')return {theme:e.t
 // v80 S9 — dungeon difficulty is the player's level, not an authored grade.
 // Portals resolve diff/diffScale at use time so a door you found at L2 is
 // still a fair fight at L12.
-// S718 — `up` grades above your level's, to Very Hard at most: a lair's cavern stands one above, a wyrm's two (Michael's A on #230)
-function levelDiffKey(up){const L=(typeof level==='number')?level:1;const G=['veryeasy','easy','normal','hard','veryhard'];const i=L<=2?0:L<=5?1:L<=9?2:L<=14?3:4;return G[Math.min(4,i+(up>0?up:0))];}
+// S718 — `up` grades above the ladder's, to Very Hard at most: a lair's cavern stands one above, a wyrm's two (Michael's A on #230)
+// S1058 — the grade is the door's tier's, not your level's (enemies by place, #373 A; the designer's sheet): the same ladder read at
+// the tier's level (tierLevel, 74-strikes.js), so tier 1 is Very Easy, 2 Normal, 3 Hard and 4 Very Hard, read once at the door
+// (floor 1's tier) and the same on floor 2, whose tier's own step is the floor's only one. A door's tier is its place's, so it is cached.
+function gradeAtLevel(L,up){const G=['veryeasy','easy','normal','hard','veryhard'];const i=L<=2?0:L<=5?1:L<=9?2:L<=14?3:4;return G[Math.min(4,i+(up>0?up:0))];}
+function tierDiffKey(tier,up){return gradeAtLevel(tierLevel(tier),up);}
+function portalDoorTier(p){const k=p.zone+':'+p.x+','+p.z;if(p._doorTierAt!==k){p._doorTierAt=k;p._doorTier=dungeonTier(p,1);}return p._doorTier;}
 function portalGradeUp(entry){const L=entry&&entry.lair;return L?(L.dragon?2:1):0;}
 function makePortalDef(entry){
   const gate=gateOf(entry);
@@ -377,8 +382,8 @@ function makePortalDef(entry){
     keyBase:dungeonKeyBase(entry.seed),
     theme:gate.theme,
     occupied:gate.occupied,
-    get diff(){return levelDiffKey(portalGradeUp(entry));},
-    get diffScale(){return DIFF_SCALE[levelDiffKey(portalGradeUp(entry))];},
+    get diff(){return tierDiffKey(portalDoorTier(this),portalGradeUp(entry));},
+    get diffScale(){return DIFF_SCALE[tierDiffKey(portalDoorTier(this),portalGradeUp(entry))];},
     kind:entry.kind || 'cave_door',  // v61f8: forward-compat field. 'cave_door' (default, carved-rock-and-door "old gate") or 'fort_door' (built-stonework fort entrance).
     exterior:entry.exterior || 'gatehouse',  // v61f9: which FORT_EXTERIORS entry to use for fort_door portals. Default 'gatehouse'. Ignored for cave_door.
     interior:entry.interior || 'cave',  // v61g0: which FORT_INTERIORS entry to use for procedural interior generation. Default 'cave' (makeDungeon, random rooms + L-corridors). 'fort_tee' selects the trunk+cross fort interior. Independent of kind/exterior — a cave_door can technically host any interior, though canonically only fort_door entries set this.

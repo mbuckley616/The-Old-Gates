@@ -24124,3 +24124,28 @@ The same session brings in QA's fix for the suite (Session 1038, `ff40184` on `a
 - One earlier boot (before the pin) read the run at ×0.994 with the lane check at 0.036 m aside, and passed on its retry. That is the flake QA is chasing (backlog K), not this branch's.
 ### Needs eyes
 - Nothing to play.
+
+## v80 — Session 1058 — Enemies by place: a dungeon's grade is its door's tier's, and floor 2 steps once (the designer's sheet, session 1, part 1)
+The designer's build sheet (`docs/design/enemies-by-place-build.md`, on Michael's A on #373) settles every place where a dungeon still read your level. This session builds the first two: the grade and the floor.
+
+**The grade.** `levelDiffKey` read your level: Very Easy at levels 1–2, up to Very Hard from 15, with the lair's +1 and the wyrm's +2. It set a dungeon's health, blow and pace (`DIFF_SCALE`), the variants' `minDiff`, and the loot's grade. Now `tierDiffKey(tier, up)` reads the same ladder at the tier's level (`tierLevel`: 1, 6, 11, 16). So a tier-1 door is Very Easy, tier 2 Normal, tier 3 Hard and tier 4 Very Hard, and the lair's and the wyrm's steps stand. The portal's `diff` and `diffScale` getters read the door's tier (`portalDoorTier`, `dungeonTier(portal, 1)`, cached by zone and position, since a place's tier never changes). The grade is the door's, so it is the same on floor 2. Each grade is what a character of the tier's level met at that door before, so the numbers Michael has played are kept.
+
+**Floor 2.** Floor 2 stepped twice: the tier's +1 (S1034) and the old ×1.5 health, ×1.5 blow and ×1.1 pace (`spawnFloorEnemies(dMap2, 2, FLOOR2_Y, 1.5)`, and `fm` in the lair master's body). The S1036 flag named it. The ×1.5 and ×1.1 are gone, so the tier's step is the floor's only one: ×1.75 health and ×2.09 blow over floor 1, the pace the same.
+
+**A fix on the way.** A cell's door is `zone:'gen'` in the cell's data until the world places it and calls it `'world'`. `dungeonTier` read `'gen'` as a legacy zone, which is tier 1 everywhere. Play never met it, since the live portal is relabelled first. But a portal built from the cell's door (as `lairgrade` builds them) read tier 1 in the Deepwood. `'gen'` now reads the world's tier.
+
+**Suites re-measured.** The rule changed under them; none was loosened.
+- **`lairgrade`** checked that a plain gate takes your level's grade. It now checks that each gate and lair round the start takes its tier's grade, one or two above for a lair or a wyrm, and the same at levels 1 to 20.
+- **`slamdamage`**'s grade check (*very easy at 1, very hard at 15*) is now *Very Easy at tier 1 at every level*. Its door stands on home's tier 1.
+- **`lairmaster`**'s expected health drops floor 2's ×1.5.
+### Verified (headless Chromium)
+- **`tiergrade`** (new), 7/7:
+  - A coast crypt is Very Easy, a Deepwood lair Hard and a coast wyrm's cavern Normal (tiers 1, 2, 1), the same at level 1 and level 20.
+  - Entered at the coast, the door is Very Easy, with plain Skeletons on both floors (tier 1 above, 2 below). Floor 1's Skeleton has 16 health, ×0.900 blow and 1.0125 pace; floor 2's has 28 health (×1.75), ×1.879 blow (×2.088) and the same pace.
+  - The Skeletons are the same at level 20.
+- **`lairgrade`** 7/7: the lairs round the start are Hard, bar one that is Easy, and the gates Normal, at every level from 1 to 20.
+- **`slamdamage`** passes, as do `dangertier`, `lairmaster`, `masterslam`, `bossbarunder`, `dragonsize`, `worldloot`, `dungeon` (5), `dungeonfoes`, `dungeonpace`, `lairhoard`, `wyrm`, `lairdoor`, `posturefloor` and `guardlevel1`.
+### Needs eyes
+- **Late in the game, a coast crypt stays Very Easy.** A level-20 character met Very Hard there before. Under the sheet, a crypt on the coast is ×0.45 health for good, and the Wastes' doors are where a late character goes to be tested. Tier 4 is floor 2 of a tier-3 door.
+- **The roster still shifts with your level.** Wraiths take Phantoms' places from level 5 (the kinds' `minLevel`), so a level-1 and a level-20 visit to one door hold different kinds. That is the next slice (the kinds' minimum tier). The sheet's main suite, `tierlevelfree`, waits for it.
+- **Owed from the sheet:** the kinds, packs, Captains, commissions, guards, traps, the wyrm's fire and the map's label. The loot and the hoard wait on #394.

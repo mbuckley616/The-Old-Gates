@@ -13,7 +13,7 @@ for (const [k, kind] of KINDS.entries()) {
   for (let i = 0; i < 60; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon' && !!window._lairBoss)) break; }
   await g.spin(30);
   rows.push(await page.evaluate((kind) => { const e = window._lairBoss; if (!e) return { kind, none: true };
-    const D = ZONE_FOE_DEF[kind], ds = DIFF_SCALE.hard, fm = (e.floor || 1) > 1 ? 1.5 : 1;
+    const D = ZONE_FOE_DEF[kind], ds = DIFF_SCALE.hard, fm = 1; /* S1058 — floor 2's ×1.5 went: the floor steps by its tier's +1 alone (the enemies-by-place sheet) */
     const T = dungeonTier(currentPortal, e.floor || 1), LT = tierLevel(T); /* S1034 — the cavern's tier, not your level (#373 A) */
     const hp = Math.round(Math.max(1, Math.round(D.hp * ds.hp * fm * enemyHpScale(T))) * 3 * (1 + LT * .08));
     const dm = D.dmg / 15 * ds.dmg * fm * enemyDmgScale(T) * 1.6 * (1 + LT * .04);
