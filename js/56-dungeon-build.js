@@ -1517,7 +1517,7 @@ function buildDungeon(portal){
       // Loot table identical — both use 'barrel' rolls. Crates aren't a
       // separate loot tier; they're a sibling prop with the same payout.
       const id = `${dKey}:barrel:${_nBarrel++}`; // S514 — its id, <seed>:<floor>:barrel:<n> (co-op rules); the loot adds the day
-      const items = rollContainerLoot('barrel', ds, th2, undefined, `${id}:${lootDay()}`);
+      const items = rollContainerLoot('barrel', ds, th2, undefined, `${id}:${lootDay()}`, dungeonTier(portal, floorIdx));
       BARRELS.push({
         id, x: wx, z: wz, floor: floorIdx, opened: false, items,
         displayName: isCrate ? 'Crate' : 'Barrel',
@@ -1650,7 +1650,7 @@ function buildDungeon(portal){
       // Default behavior unchanged — treasure → 'treasure' pool, else 'chest'.
       const poolKind = lootKind || (treasure?'treasure':'chest');
       const id=`${dKey}:chest:${_nChest++}`; // S514 — its id, <seed>:<floor>:chest:<n>
-      const items = rollContainerLoot(poolKind, ds, th2, undefined, `${id}:${lootDay()}`);
+      const items = rollContainerLoot(poolKind, ds, th2, undefined, `${id}:${lootDay()}`, dungeonTier(portal, floorIdx));
       const chObj={id,x:c,z:r,opened:false,lid,treasure,floor:floorIdx,mesh:group,items,displayName:treasure?'Treasure Chest':'Chest'};
       if(treasure||chestLockedAt(c,r,floorIdx))lockChest(chObj); // S150
       CHESTS.push(chObj);

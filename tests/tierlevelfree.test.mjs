@@ -1,7 +1,7 @@
 // Enemies by place, the sheet's main line (Session 1066; the designer's sheet on Michael's A on #373): one chunk, one lair, one
 // commission and one dungeon's two floors, on the same seed, made at level 1 and at level 30, give the same foes: kind, variant,
-// health, blow and pace, the count, and the traps. No level is read where a foe, a trap or a dungeon is made. The hoard's gold and
-// the loot's material still follow your level until DECISION #394, so the hoard is read but not held to it.
+// health, blow and pace, the count, and the traps. No level is read where a foe, a trap or a dungeon is made. Since Session 1073
+// (Michael's A on DECISION #394) the hoard and the floors' chests are held to it too; a gold pile's count still follows your level.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -41,7 +41,8 @@ async function enter(lv) {
   const r = await page.evaluate(() => { const ROW = e => [e.baseName || e.name, e.variant || null, e.tier || null, e.maxHp, +(e.dmgMult || 0).toFixed(4), +(e.dmg || 0).toFixed(3), +(e.spd || 0).toFixed(4), !!e.locked];
     const traps = D_TRAPS.map((t, i) => [t.kind || 'blade', +(t.x || 0).toFixed(2), +(t.z || 0).toFixed(2), t.kind === 'spike' ? spikeTrapRaw(t) : bladeTrapRaw()]);
     const h = (worldState.masters || {})[currentPortal.seed]; const hoard = h && h.hoard ? h.hoard.items.map(it => [it.name, it.value || 0]) : null;
-    return { grade: currentPortal.diff, foes: ENEMIES.map(e => [e.floor || 1, ...ROW(e), e === window._lairBoss]), traps, hoard, wyrm: +wyrmFireRaw().toFixed(2) }; });
+    const chests = CHESTS.concat(BARRELS).map(c => [c.id, ...(c.items || []).map(it => it.name + (it.type === 'gold' ? '' : '|' + (it.tier || 0)))]);
+    return { chests, grade: currentPortal.diff, foes: ENEMIES.map(e => [e.floor || 1, ...ROW(e), e === window._lairBoss]), traps, hoard, wyrm: +wyrmFireRaw().toFixed(2) }; });
   await page.evaluate(() => { goToOW(); });
   for (let i = 0; i < 40; i++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId !== 'dungeon')) break; }
   await g.frames(4);
@@ -56,5 +57,7 @@ check(`a lair round home (${open.lair && open.lair.name}, tier ${open.lair && op
 check('a commission\'s Ogre is the same at both levels', !!open.quarry[0] && JSON.stringify(open.quarry[0]) === JSON.stringify(open.quarry[1]), open.quarry);
 check(`a Deepwood lair's cavern is ${a.grade} at both levels, with the same ${a.foes.length} foes on its two floors, the master among them`, a.grade === b.grade && a.foes.some(x => x[0] === 2) && a.foes.some(x => x[x.length - 1]) && JSON.stringify(a.foes) === JSON.stringify(b.foes), diff(a.foes, b.foes));
 check(`its ${a.traps.length} traps stand in the same places and land the same at both levels`, JSON.stringify(a.traps) === JSON.stringify(b.traps) && a.wyrm === b.wyrm, { a: a.traps, b: b.traps });
+check(`the master's hoard is the same at both levels (${JSON.stringify(a.hoard)})`, !!a.hoard && JSON.stringify(a.hoard) === JSON.stringify(b.hoard), { a: a.hoard, b: b.hoard });
+check(`its ${a.chests.length} chests and barrels hold the same goods at both levels`, a.chests.length > 2 && JSON.stringify(a.chests) === JSON.stringify(b.chests), diff(a.chests, b.chests));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -529,7 +529,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   if(rec&&rec.hoard){lairHoardChest(portal,rec.hoard,dragon);showMsg(dragon?'The air is hot, and something very large is breathing in the dark.':'Something large is waiting further in.','#ffb060');window._lairBoss=e;return;}
   // S514 — the hoard is <seed>:<floor>:hoard, and its goods roll on its stream and the day, not Math.random (co-op rules)
   const hid=`${dKeyOf(portal,e.floor||1)}:hoard`,hr=seededRng('loot',hid+':'+lootDay());
-  const items=[];const gv=Math.round((60+level*25)*(dragon?3:1.8));items.push({name:'Gold Coins',ico:'●',type:'gold',value:gv,qty:1});
+  const items=[];const gv=Math.round((60+tierLevel(dungeonTier(portal,e.floor||1))*25)*(dragon?3:1.8)); /* S1073 — the floor's tier's level, not yours (#394) */items.push({name:'Gold Coins',ico:'●',type:'gold',value:gv,qty:1});
   /* S717 — the piece is named for its tier's metal (Michael's A on #232: it named Iron/Steel/Silver, a wyrm's Silver/Gold/Mithril, on a draw
      of its own); that draw is still taken, so every roll after it comes out as before */
   hr();const tier=dragon?5+Math.floor(hr()*2):3+Math.floor(hr()*2);const mt=(MATERIALS.find(q=>q.tier===tier)||MATERIALS[2]).name;

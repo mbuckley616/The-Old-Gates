@@ -24582,3 +24582,35 @@ Numbering: Session 1068 is the bodies builder's and 1069 another systems run's C
   are E at reach, so nothing is lost, but it is a different feel in a small room.
 - **Owed from session 2:** touch at 1.6, the wheel, swimming at 1.40 and the indoor sight line. The dungeon's radius goes with
   session 3.
+
+## v80 — Session 1075 — Enemies by place: the loot follows the place (Michael's A on #394)
+Michael answered DECISION #394 with A: *by place, the tier sets the metal*. Until now `rollLoot` capped a drop's material at
+1 + 0.4 × your level + 1.2 × the grade's health. A level-30 character found Draconic on coast wolves, and two friends opening one
+chest in a shared world would have got different things. The cap now reads the level of the danger tier where the roll is made
+(1, 6, 11 or 16, `tierLevel`), never yours. The formula is otherwise unchanged, so at the plain grade the best metal is Bronze at
+tier 1, Steel at tier 2, Adamant at tier 3 and Draconic at tier 4, as the sheet's option A said. A harder grade or a richer chest
+(a wreck at 1.4, a hoard at 2.4) still reaches a step higher.
+
+**Where the tier comes from.** `rollContainerLoot` takes the tier as a sixth argument and holds it for the roll
+(`withLootTier`, `14-items.js`, beside `withLootRng`):
+- **A corpse:** its foe's own `e.tier`, in the world (`42`) and in a dungeon (`62`).
+- **A dungeon's chest or barrel:** its floor's `dungeonTier(portal, floor)`, so floor 2's chests are a tier richer than floor 1's.
+- **A town's barrels, a site's chest, a wreck and a ship's chest:** the region where they stand (`worldTierAt`).
+- **A roll with no tier given** (the old `getLootItem`): it reads where you stand (`tierHere`). Indoors that is the town the room
+  belongs to, since `px, pz` are the room's own coordinates there.
+
+A lair hoard's gold was 60 + 25 × your level. The sheet's A names it too, so it now reads the master's floor's tier. A Deepwood
+cavern's second floor (tier 3) holds 603 at any level, where it held 153 at level 1 and 1,458 at level 30.
+
+**What I left.** A gold pile's count in a chest or on a body still has `rollGold`'s small level bonus (1.0 a level in a chest,
+0.7 on a body). The answer named the metal and the hoard, #405's answer keeps a job's pay by level, and a new rule for money is a
+number a player feels, so I have not changed it. `tierloot` and `tierlevelfree` compare a gold pile by its name, not its count.
+### Verified (headless Chromium)
+- **`tierloot`** (new), 12/12:
+  - 2,000 seeded chests at each tier hold the same goods at level 1 and at level 30, about 1,175 pieces of kit each time.
+  - The best metal is Bronze, Steel, Adamant and Draconic at tiers 1 to 4.
+  - A tier-1 corpse at level 30 tops out at Bronze; a tier-3 corpse at level 1 reaches Adamant.
+  - At home at level 30 a roll with no tier reads tier 1, with the cap of level 1.
+  - The Wastes' foes carry tier 3 for their corpses.
+- **`tierlevelfree`**, 9/9 (two checks added): the Deepwood cavern's hoard is the same at both levels (603 gold, a Steel Sword,
+  Greater Potions), and its 21 chests and barrels hold the same goods.

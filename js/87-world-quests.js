@@ -425,7 +425,7 @@ const giver=`${lord.title} ${lord.name}`;
        worldState.siteChests[site] (keepSiteChest, from takeLootItem), so what you take stays taken. It was built full again each time
        its site was (a walk out of range and back), on the same day the same goods. */
     const kept=worldState.siteChests&&worldState.siteChests[S.site.id];
-    let items=kept||(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay()):[])||[];if(!kept){if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});}
+    let items=kept||(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',mult,null,1,S.site.id+':chest:'+lootDay(),worldTierAt(S.site.x,S.site.z)):[])||[];if(!kept){if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:80,qty:1});items.forEach(it=>{if(it.qty==null)it.qty=1;});}
     const ch={id:S.site.id+':chest',x,z,y:y+.3,name,displayName:name,items,zone:'world',kind:'chest',g,lid,opened:!!kept,_site:S.site.id,_keepSite:S.site.id};if(typeof ZONE_CORPSES!=='undefined')ZONE_CORPSES.push(ch);S.chest=ch;return ch;}
   // S545 — the glade's look alone, on the builder's own rolls in its order (pr is rolled and the pond stamped first, so the
   // reeds and the log stand on the bowl): H(x,z) is the ground. buildGlade places it in the world, poiPreview on a stage.

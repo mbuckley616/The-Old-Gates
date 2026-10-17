@@ -421,6 +421,20 @@ let LOOT_RNG=null;
 function lootRand(){return LOOT_RNG?LOOT_RNG():Math.random();}
 function withLootRng(rng,fn){const was=LOOT_RNG;LOOT_RNG=rng;try{return fn();}finally{LOOT_RNG=was;}}
 // the day of the world's clock, for a container that refills: the same key rolls the same contents within one game day
+// S1073 — the loot follows the place (Michael's A on DECISION #394: the tier sets the metal). A roll's material cap reads the level of
+// the danger tier where it is rolled (1, 6, 11, 16), never yours: a foe's corpse its own tier, a dungeon's container its floor's,
+// a site's or a wreck's chest the region where it stands. LOOT_TIER is set for one roll by withLootTier; a roll with none set
+// reads the tier where you are (indoors, the town the room belongs to).
+let LOOT_TIER=null;
+function withLootTier(t,fn){if(t==null)return fn();const was=LOOT_TIER;LOOT_TIER=t;try{return fn();}finally{LOOT_TIER=was;}}
+function lootTierHere(){
+  try{
+    if(typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&currentHouse){const h=currentHouse.parent||currentHouse,S_=h.site&&typeof SETTLE!=='undefined'&&SETTLE.get?SETTLE.get(h.site):null,o=S_&&S_.site?S_.site:(h.x!=null?h:null);if(o&&o.x!=null&&typeof worldTierAt==='function')return worldTierAt(o.x,o.z);}
+    if(typeof tierHere==='function')return tierHere();
+  }catch(e){}
+  return 1;
+}
+function lootLevel(){return typeof tierLevel==='function'?tierLevel(LOOT_TIER!=null?LOOT_TIER:lootTierHere()):1;}
 function lootDay(){return Math.floor(((typeof worldState!=='undefined'&&worldState&&worldState.gameTimeAbsMinutes)||0)/1440);}
 
 function makeBookItem(def){
@@ -738,7 +752,7 @@ function rollLoot(diffScale, theme, kind){
   // v57: previously `round(3 + diffScale.hp*5)` gave too-generous drops at low level (Obsidian at L5).
   // New cap blends player level (0.4/level) with difficulty (1.2/diffScale.hp), floored at T1.
   // At L5 normal → cap T4 (Steel). L10 normal → T6 (Adamant). L15 hard → T9 (Demonic).
-  const playerLv = typeof level!=='undefined'?level:1;
+  const playerLv = lootLevel(); /* S1073 — the place's level, not yours (DECISION #394) */
   const diffFactor = diffScale ? diffScale.hp : 1.0;
   const maxTier = Math.min(10, Math.max(1, Math.floor(1 + playerLv*0.4 + diffFactor*1.2)));
   const weights=MATERIALS.map(m=>m.dropW*(m.tier<=maxTier?1:0));
@@ -772,7 +786,8 @@ function rollLoot(diffScale, theme, kind){
 //   treasure — same as chest but first roll 100% (never empty) and gold is tripled.
 //   barrel   — up to 2 items. First 40%, second 20% of that. P(empty) = 60%.
 //   corpse   — up to 2 items. First uses passed baseChance (existing fortune+difficulty roll); second 25% bonus.
-function rollContainerLoot(kind, diffScale, theme, baseChance, key){
+function rollContainerLoot(kind, diffScale, theme, baseChance, key, tier){
+  if(tier!=null&&LOOT_TIER!==tier)return withLootTier(tier,()=>rollContainerLoot(kind, diffScale, theme, baseChance, key));
   if(key!=null&&!LOOT_RNG)return withLootRng(seededRng('loot',key),()=>rollContainerLoot(kind, diffScale, theme, baseChance));
   const items=[];
   if((kind==='chest'||kind==='treasure')&&typeof spellbookItem==='function'&&lootRand()<.07){const rare=['suil_oiche','eitilt','sciath','siul_uisce'];items.push(spellbookItem(rare[Math.floor(lootRand()*rare.length)],1));} // v80 — rare spells live in chests
