@@ -23140,3 +23140,13 @@ The fix is the test's. Each tick the suite picks one of 32 spots 1.6 from the Fa
 - After: green 3 of 3 on main (1 swing, 1 blow on it, none on a wolf), 3 of 3 on PR #384's code (2–5 swings, 2–3 blows on it, none on a wolf) and 1 of 1 under `--look=new` on main.
 ### Needs eyes
 - None for play. The fight's damage at the Faolchú's last 5 HP on the Systems code (2 or 3 a blow from a fresh warrior) is the skills' design, not this suite's.
+
+## v80 — Session 1040 — `penance` waits for the pick's own move into the shop (FLAKY once, QA)
+`penance` went FLAKY once on 16 Oct (auto/bodies d2feb94, shard 12). It threw at the morning, `WORLD.settle.get('dunmore')` undefined after `forceTime(10)` and 240 ticks: Dunmore was gone. The suite stages a crime: a shop door picked at 23h with a witness three units off. It calls the lock's own `onPick`, and that takes you inside (`goToInterior(house)`, `86-world-crime.js:622`) on `doFade`'s 440 ms timer. The suite did not know it had been taken in, and went straight on to the morning's 240 explicit `WORLD.tick`s. On a fast runner those ran before the timer fired, and the later steps happened to cope with being indoors. On a slow one the timer fired first, so the ticks ran with the player at the room's coordinates, and the world dropped Dunmore as thousands of units off. This is `carraignight`'s shape (Session 947). The game is right to take you in when you pick a door, and right to drop a far town.
+
+The fix is the test's, the same wait as Session 947's. After the pick, the suite waits for the move indoors, steps back out, and waits for `lid === 'overworld'`. The morning's ticks now throw if they find you indoors, instead of quietly losing the town. The checks are unchanged.
+### Verified (headless Chromium)
+- The cause reproduced: the old suite with a 1.5 s pause after the pick threw *Cannot read properties of undefined (reading 'houses')*, the CI failure.
+- After: green 3 of 3, 1 of 1 with the same 1.5 s pause, and 1 of 1 under `--look=new`. The crime still reads favour −1, a point owed, a 25-gold fine (Lorcan's Forge, Gráinne).
+### Needs eyes
+- None.
