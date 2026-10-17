@@ -23438,146 +23438,6 @@ Corrections made during the session:
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
 
-## v80 — Session 1044 — Card F11: Aurenne's cog, by #347's answer (prototype only)
-The third hull built to Michael's A on DECISION #347, and the last cog. Option A's text names it: "an Aurenne cog with one lateen". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait. This session touches only the prototypes: `ships.js`, `ships-view.js` and `ships.check.mjs`. It is `aurenneCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'aurenne'`), at `ships.html?ship=aurcog`.
-
-It has the very lines, waist rail, castles, cabin, wheel and cargo of the Gatelands cog (Session 892), in the caravel's dress (Session 890):
-- **The hull:** tallowed white below the water and oiled above. The sheer strake and both castles' walls are blue, and the wale and the castles' cappings gilt. It stays clinker, as the cog is.
-- **The sail:** white with the sun-star in gold, or plain with `&nostar`.
-- **The rig:** the yard, the square sail, its braces and its sheets are gone. In their place is one lateen, the caravel's main at the cog's size:
-  - The mast is raked 4° forward, as the caravel's lateen masts are, 0.88 m at its head. The fighting top is kept and rides on the raked mast.
-  - The yard is slung to starboard, 0.36 m off the mast's centre, from a sling 8 m over the deck at 56°. It runs 6.5 m forward to a tack 2.6 m over the deck and 10 m aft to a peak 16.3 m up.
-  - The clew is 2.5 m over the deck, 1.4 m forward of the aftcastle. So the whole sail stands between the castles, and no one on either castle walks under it.
-  - The tack is lashed to the forecastle's edge beam and the sheet led to the waist's rail, both above head height over the walk. The halyard runs down the mast.
-  - The shrouds stand on the weather side only, as the caravel's do. The forestay and the bowsprit stay are the cog's, from the raked mast's head.
-
-### Verified (headless Chromium)
-- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
-  - **Renders:** the `quarter` and `fore` views render with no page errors.
-  - **The builds:** 3 keys, with and without the star, each build the same twice: 40,620 to 40,656 triangles in 12 meshes. The lines, rail and castles are exactly the Gatelands cog's, and the star changes only the sail.
-  - **The hull:** closed (0 of 900 rays get out), with clinker laps of 0.024 to 0.033 m. The walk is clear at all 96 points, down either side and down the middle (the hatch and the mast left out), with 2.09 m of headroom and 0.67 m clear at the sides.
-  - **The rig:** one lateen to starboard. Every point of the sail and the yard is 2.5 m or more over the deck under it. The sail is 0.42 m or more clear of both castles' edges. The yard is 0.64 m clear of the top and 0.13 m clear of the tapered mast.
-- **Pictures:** `ships-aurcog-quarter.jpg`, `-side`, `-fore`, `-deck` and `-quarter-nostar`.
-
-A correction made during the session: the first build slung the yard 0.30 m off the mast, as the caravel's is. On the cog's thicker mast (0.2 m at the foot) that left 1 cm between the yard and the mast. The yard is now 0.36 m off, and the check measures the mast's taper rather than its foot.
-### Needs eyes
-- **The peak stands 16.3 m up**, 5 m over the cog's masthead, as the caravel's lateens stand over theirs. A cog's short, deep hull under so tall a sail may read top-heavy.
-- **The fighting top is kept** as the cog's own mark. A lateen's yard is hoisted from under it, which works, but a real lateener would rarely carry one.
-- **Still owed by #347:** the galleon in the Mark's and Aurenne's dress.
-
-## v80 — Session 1045 — Card F11: the Mark's galleon, by #347's answer (prototype only)
-The fourth hull built to Michael's A on DECISION #347. Option A's text reads: "a Mark galleon gaff-rigged on the mizzen and square forward, with tanned sails". That is the galleon's own rig, the one the Gatelands galleon already carries (Session 896): square fore and main with topsails, a gaff mizzen, a spritsail. So by the rule (the island's rig forward, the class's own aft) only the dress changes, and nothing new is asked. It is `markGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'mark'`), at `ships.html?ship=markgalleon`.
-
-What changes is the dress, the Mark's cutter's (Session 871):
-- **The hull:** red-brown below the water and tarred black above. The castles' walls, the transom and the twelve gun-port lids are tarred too, and the wale, the bands, the window heads and the lanterns gilt.
-- **The sails:** every sail is in the cutter's tanned cloths, or the red and black stripes with `&stripe`. The Gatelands galleon's plain sails take a corner of the harp's map; the Mark's have no badge, so each sail is mapped on the whole cloth, and the stripes run full height on every sail.
-- **No beast's head:** the galleon's stem head stands inside the forecastle's walls, as the cog's does, where a head would be hidden. The Mark's cog (Session 1039) made the same call.
-
-The lines, castles, cabin, wheel, ports, rig and hatches are the Gatelands galleon's, built by the same code.
-
-### Verified (headless Chromium)
-- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
-  - **Renders:** the `quarter` and `deck` views render with no page errors.
-  - **The builds:** 3 keys, plain and striped, each build the same twice: 43,216 triangles in 10 meshes, exactly the Gatelands galleon's count. Her sections, rail, castles, ports, sails and boom are exactly the Gatelands galleon's.
-  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
-  - **The sails:** the tanned map reaches its full extent (1.0) on the sails' UVs.
-- **Pictures:** `ships-markgalleon-quarter.jpg`, `-side`, `-castle` and `-quarter-stripe`.
-### Needs eyes
-- **A tarred black galleon with tanned square sails** may read as the Gatelands galleon in mourning rather than as the Mark's. #347's text keeps her rig, so her silhouette is the Gatelands galleon's, and only the colours name her.
-- **The port lids are tarred on a tarred hull** and almost vanish. Gilt or red lids would show the gun deck, if Michael wants it seen.
-- **Still owed by #347:** Aurenne's galleon (square forward, lateens on the main and the mizzen).
-
-## v80 — Session 1046 — Card F11: Aurenne's galleon, by #347's answer (prototype only)
-The last hull owed by Michael's A on DECISION #347. Option A's text reads: "an Aurenne galleon square forward with lateens on the main and the mizzen". It is `aurenneGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'aurenne'`), at `ships.html?ship=aurgalleon`. With it, all five classes have all three islands' dresses.
-
-The lines, castles, great cabin, ports, hatches and wheel are the Gatelands galleon's (Session 896), in the caravel's dress (Session 890):
-- **The hull:** tallowed white below the water and oiled above. The top two strakes, the castles' walls and the twelve gun-port lids are blue, and the wale, the bands, the window heads and the lanterns gilt.
-- **Forward:** the fore mast is square, exactly the Gatelands galleon's course and topsail, with the sun-star on the course. The spritsail is kept. The topsail and the spritsail are plain cloth.
-- **The main:** a lateen to starboard, the caravel's main at the galleon's size.
-  - The mast is raked 4° forward, and the galleon's round top is kept on it.
-  - The yard is slung 8.5 m over the deck at 56°. It runs forward to a tack 2.6 m over the deck, lashed by the fore mast's foot, and 11 m aft to a peak 17.6 m up over the quarterdeck.
-  - The clew is 2.5 m over the deck, 1.4 m forward of the quarterdeck, and is sheeted to the waist's rail.
-- **The mizzen:** a lateen to port on the quarterdeck, the caravel's mizzen. The mast is raked 4°, and the yard slung 5.4 m over the quarterdeck at 50°. The tack is lashed to the quarterdeck's edge rail, and the clew is over the transom, sheeted to the taffrail. It replaces the Gatelands galleon's gaff and boom.
-- **The stays and shrouds:** each lateen has its shrouds on its weather side only, as the caravel's do. The stay from the main's head to the fore's follows the raked mast.
-
-A correction made during the session: the first pictures showed a sliver of the sun-star's ray in a corner of the fore topsail and of the spritsail. Those sails take a corner of the star sail's map (as the Gatelands galleon's plain sails take a corner of the harp's), and the star's long rays reach 0.26 of the map in from the corner. Aurenne's plain sails now take the first 0.18 of the map, which is clean cloth.
-
-### Verified (headless Chromium)
-- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
-  - **Renders:** the `quarter` and `castle` views render with no page errors.
-  - **The builds:** 3 keys, with and without the star, each build the same twice: 42,600 triangles in 11 meshes. Her sections, rail, castles, ports and fore course are exactly the Gatelands galleon's, and the star changes only the sails.
-  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
-  - **The rig:** one square mast and two lateens, the main to starboard and the mizzen to port. Every point of every sail and yard is 2.2 m or more over the deck under it, the castles' decks where it is over them.
-  - **Clearances:** the main's lateen is 1.06 m aft of the fore's course, 0.69 m off the fore mast and 2.78 m off the mizzen mast. The mizzen's is 4.53 m off the main mast. The yards are 0.09 m off their own masts, and the main's yard 0.29 m off the top.
-- **Pictures:** `ships-aurgalleon-quarter.jpg`, `-side`, `-castle`, `-deck` and `-quarter-nostar`.
-### Needs eyes
-- **The main's peak stands 17.6 m up**, over a 22 m hull. The lateens make her read more as a big caravel than as a galleon, which is what #347 A asks, but the class may want its topsail-high look back.
-- **Three stars:** one on the fore course and one on each lateen, whose map is laid out about each sail's middle (the caravel shows one per lateen too). The topsail and the spritsail are plain. One star, on the main alone, would read quieter.
-- **#347 is built out.** All five classes in all three dresses wait on F11's parents in v2-scope §3 to go into the game.
-
-## v80 — Session 1052 — Card F8: the Gatelands' ruined tower house, taken by a band (prototype only)
-OG-121's card names six kinds of place that are not gates. One of them was still unbuilt: "ruined forts and settlements: collapsed keeps with lower levels, some taken by bandits". Its lairs add "escape routes". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait, and this session touches only the prototypes: `places.js`, the new `places-towerhouse-view.js`, `places-view.js` and `places.check.mjs`. It is `gatelandsTowerHouse` in `docs/prototypes/levelup/places.js`, at `places.html?place=towerhouse`.
-
-The keep is the island's own kind, a tower house in its bawn, built to the person at a metre a unit:
-- **The bawn:** a rubble wall 0.9 m thick and 3.2 m high round a yard 30 by 25 m, with a gateway of 3 m on the south and a breach on the east. A round flanker at the south-west corner stands to 5 m. In the yard are a lean-to of poles and hides against the west wall, a cart with a broken wheel, a fighting platform by the gate with its ladder, and a hurdle dragged aside from the gateway.
-- **The tower:** 11 by 8.5 m, walls 1.5 m thick, 16 m to its ragged head on the north and west. The south-east corner has fallen to 6.6 m, just over the vault's back, and its stones lie heaped below. The door is round-headed, 1.2 by 2.6 m in dressed stone. There are slits to the ground floor, windows to the three storeys above, and the corbels of the lost floors at 9.6 and 12.7 m. The storeys above the vault are out of reach, as #345 A left the round tower's door.
-- **The hall:** 8 by 5.5 m under a barrel vault springing at 3 m to 5.75 m, flagged. It holds the band's camp: three straw pallets, a fire on the flags with a pot on a tripod, a table of boards on two kegs with a bench, a rack of spears and a bow, and plunder in the corner. The stair's well is open along the north wall, 4.7 by 1.3 m, with a parapet on its open side.
-- **The cellar:** down 16 rises of 0.194 m on treads of 0.28 m. It is the tower's whole floor again, 2.5 m under the flags (2.25 m under the two beams). It is the band's store: crates, kegs, sacks and a strongbox.
-- **The souterrain:** the Gatelands' own underground passage, the escape route. It is drystone walls under lintels, 1.4 m wide and 2.2 m high, broken out through the cellar's west wall. It runs 15 m west under the bawn's wall, 0.5 m or more under the turf, with a lantern halfway. It ends in a stair of its own, 12 or 13 rises up a stone-lined pit in the slope 5 m outside the bawn, under a thorn, with its cover slab dragged aside.
-- **`o.held`** (the default): the band is there, the fire burning and three lanterns lit. False (`&empty`): the camp is cold and dark, and inside only your torch lights it.
-
-Who the band are, what they took and whether they fight is the systems builder's and the quest writer's. The place only shows that someone holds it. It is 64,300 triangles in 23 meshes.
-
-Two corrections made during the session. First, the souterrain's floor stopped at the tower's outer face, leaving the 1.5 m through the cellar's wall without a floor; the check's walk found it. Second, the stair's foot had only 0.4 m of floor before the cellar's west wall. The well now runs 0.3 m further east, which leaves 0.7 m at the foot.
-
-### Verified (headless Chromium)
-- **`places.check.mjs`: all pass.** Two render checks and seven builds checks are new.
-  - **Renders:** the `tower` view and the empty `hall` render with no page errors.
-  - **The builds:** 3 keys, each the same twice: 64,344 to 64,356 triangles in 23 meshes.
-  - **The walk:** 264 quarter-metres from the slope through the gateway and the door, round to the stair's head, down to the cellar, out along the souterrain and up its pit onto the slope. Every point has a floor on its line, no step is over 0.198 m, there are 2.2 m of headroom or more, and 0.51 m clear at the hip and the head.
-  - **The stairs:** 16 rises of 0.194 m down to the cellar, and 12 to 13 rises of 0.19 to 0.198 m up the pit, measured on the treads.
-  - **Openings:** the door is 1.2 m wide and 2.5 m clear over the floor, and the gateway is 3 m.
-  - **The vault:** over all 60 points of the hall outside the well, and over the well too, its soffit 4.03 to 5.74 m up.
-  - **The ruin:** the north-west corner stands to 15.91 to 15.97 m, and the south-east has fallen to 6.58 to 6.61 m, over the vault's back.
-  - **The souterrain:** its lintels are 2.2 m over its floor all along and 0.51 m or more under the land, the pit is open to the sky, and 17.1 m of it is in sight from the cellar's door.
-  - **Lights:** held, the fire and three lanterns are lit; empty, nothing is lit.
-- **Pictures:** `places-towerhouse-tower.jpg`, `-gate`, `-hall`, `-stair`, `-cellar`, `-souterrain`, `-out`, `-far` and `-hall-empty`.
-### Needs eyes
-- **The ways in and up are asked as DECISION #401.** As drawn, the band can be come at two ways, by the gate or from behind by the souterrain's pit, and the storeys above the vault are out of reach.
-- **The fallen corner** reads as a notch from the south-east. A real tower house usually falls along a whole face, or loses its corner down to the ground.
-- **The rubble masonry** is the kit's cobble texture at 0.8 of a metre. It may read as too regular for a ruin.
-- **The stair's well is dark** from its head: the fire is the hall's only shadowing light, and the parapet shades the stair. A lantern at the stair's head would show the way down, if Michael wants the band to have hung one.
-
-## v80 — Session 1053 — Card F8: the Mark's cliff fort (prototype only)
-OG-121's Mark panel names "mountain mines, ice caverns, cliff forts and snowed-in entrances". The mine (Session 857), the ice cavern (Session 903) and the ice cave mouth (Session 1006) are built, and the cliff fort is this session. #396 is still unanswered, so the session again touches only the prototypes: `places.js`, the new `places-clifffort-view.js`, `places-view.js` and `places.check.mjs`. It is `markCliffFort` in `docs/prototypes/levelup/places.js`, at `places.html?place=clifffort`.
-
-The cliffs are the fort's walls, and only the neck is built against. At a metre a unit, with the point to +z:
-- **The headland:** 40 m across and 50 m out, its line ragged past the palisade, its sides falling 32 m over 3 m to the sea at -31.
-- **The terrain:** one grid of a metre. Each triangle is sent to rock where it is steeper than 57° and to snow on the rest, so the cliffs and the snow come from the one height field.
-- **The neck:** a ditch 5 m wide and 2.6 m deep at z -4.5, and behind it a bank 1.8 m high. On the bank's crest stands a palisade of split logs 3.4 m high and pointed, 117 of them at 0.29 m from cliff edge to cliff edge, with two rails inside.
-- **The gate:** a tower of four posts 7.5 m high either side of a way 4.4 m wide, its deck at 4.4 m with a breastwork, under a roof of shingle at 52°. The gate is burst: one leaf hangs swung in on its iron straps, and the other lies broken off in the snow. A bridge of planks on two logs crosses the ditch, its deck following the land from bank to bank.
-- **Inside:** the kit's Markish hall (`markHall`, shingle and carved, 7 by 14 m), its porch and steps turned to the gate. There is a storehouse up on four posts with stone caps, after the island's raised stabbur, with its steps. At the point stands a beacon, a drum of dry stone with an iron basket on it and its fire long out.
-
-It is abandoned in winter. Who held it and who broke the gate is the quest writer's. It is 43,200 triangles in 19 draws, the hall's among them.
-
-Corrections made during the session:
-- The first pictures showed the whole headland as rock: my test of a triangle's slope had its cross product the wrong way round, so every level triangle read as a cliff.
-- The bridge's deck first stood level at 0.25 m over the higher bank, a step of 0.52 m up from the road; the check's walk found it. The deck now runs from bank to bank 0.12 m over each.
-- The sun first stood behind the fort from the road's side and left every view backlit.
-
-### Verified (headless Chromium)
-- **`places.check.mjs`: 247 of 247 pass.** Two render checks and five builds checks are new.
-  - **Renders:** the `fort` and `gate` views render with no page errors.
-  - **The builds:** 3 keys, each the same twice: 43,196 triangles in 19 draws, 117 logs.
-  - **The walk:** 290 quarter-metres from the road over the bridge, through the gate, to the hall's steps and out to the point. Every point has ground or the bridge's planks on its line, no step is over 0.131 m, there are 4.23 m of headroom or more (the gate's deck) and 1.89 m clear.
-  - **The defences:** the ditch is 2.34 to 2.5 m under the bridge's deck. The palisade is shut at the hip from edge to edge but at the gate (0 gaps), and stands 3.31 m or more over the bank's crest. The gate's deck is 4.26 to 4.42 m over the way.
-  - **The cliffs:** at 33 points round the headland, the land 4 m out is 31.9 m or more under the top 3 m in.
-  - **Footings:** the hall's step is within 0.004 m of the snow, and the beacon's drum within 0.017 m.
-- **Pictures:** `places-clifffort-fort.jpg`, `-gate`, `-inside`, `-beacon`, `-cliff` and `-far`.
-### Needs eyes
-- **Whether it goes down into the cliff is asked as DECISION #402.** The recommendation is a sea-stair inside the rock to a sea cave and landing, the "lower levels" OG-121's forts have.
-- **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
-- **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
 ## v80 — Session 1054 — `lookpair`: the road box is looked at before the shot (FLAKY once on auto/systems, QA)
 `lookpair` failed once and passed on its retry on auto/systems bf251d1 (16 Oct, shard 11, 800 s with the retry). The red check was *the colour and the light match*, on the road box alone: the old look read (231,218,147), the new one (167,196,98), which is the grass's own colour. QA's ledger had put it down to snow, because the log's snow line read 0.278 and 0.28 of cover before the shots. The job's full log says otherwise. The retry also had the new look's cover at 0.28 and matched to 1 level, and the suite takes the cover off and repaints before both shots (Session 832). A probe here laid 0.31 of snow before the suite's clearing and read the road at (230,217,147). So the red shot simply had no road drawn under the box.
 
@@ -23936,3 +23796,143 @@ Session 1072 left one fault in the kit's towns. Every merchant's house painted i
 - `parsecheck.py` is clean.
 ### Needs eyes
 - Nothing new to see: the signs read as before.
+## v80 — Session 1044 — Card F11: Aurenne's cog, by #347's answer (prototype only)
+The third hull built to Michael's A on DECISION #347, and the last cog. Option A's text names it: "an Aurenne cog with one lateen". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait. This session touches only the prototypes: `ships.js`, `ships-view.js` and `ships.check.mjs`. It is `aurenneCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'aurenne'`), at `ships.html?ship=aurcog`.
+
+It has the very lines, waist rail, castles, cabin, wheel and cargo of the Gatelands cog (Session 892), in the caravel's dress (Session 890):
+- **The hull:** tallowed white below the water and oiled above. The sheer strake and both castles' walls are blue, and the wale and the castles' cappings gilt. It stays clinker, as the cog is.
+- **The sail:** white with the sun-star in gold, or plain with `&nostar`.
+- **The rig:** the yard, the square sail, its braces and its sheets are gone. In their place is one lateen, the caravel's main at the cog's size:
+  - The mast is raked 4° forward, as the caravel's lateen masts are, 0.88 m at its head. The fighting top is kept and rides on the raked mast.
+  - The yard is slung to starboard, 0.36 m off the mast's centre, from a sling 8 m over the deck at 56°. It runs 6.5 m forward to a tack 2.6 m over the deck and 10 m aft to a peak 16.3 m up.
+  - The clew is 2.5 m over the deck, 1.4 m forward of the aftcastle. So the whole sail stands between the castles, and no one on either castle walks under it.
+  - The tack is lashed to the forecastle's edge beam and the sheet led to the waist's rail, both above head height over the walk. The halyard runs down the mast.
+  - The shrouds stand on the weather side only, as the caravel's do. The forestay and the bowsprit stay are the cog's, from the raked mast's head.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `fore` views render with no page errors.
+  - **The builds:** 3 keys, with and without the star, each build the same twice: 40,620 to 40,656 triangles in 12 meshes. The lines, rail and castles are exactly the Gatelands cog's, and the star changes only the sail.
+  - **The hull:** closed (0 of 900 rays get out), with clinker laps of 0.024 to 0.033 m. The walk is clear at all 96 points, down either side and down the middle (the hatch and the mast left out), with 2.09 m of headroom and 0.67 m clear at the sides.
+  - **The rig:** one lateen to starboard. Every point of the sail and the yard is 2.5 m or more over the deck under it. The sail is 0.42 m or more clear of both castles' edges. The yard is 0.64 m clear of the top and 0.13 m clear of the tapered mast.
+- **Pictures:** `ships-aurcog-quarter.jpg`, `-side`, `-fore`, `-deck` and `-quarter-nostar`.
+
+A correction made during the session: the first build slung the yard 0.30 m off the mast, as the caravel's is. On the cog's thicker mast (0.2 m at the foot) that left 1 cm between the yard and the mast. The yard is now 0.36 m off, and the check measures the mast's taper rather than its foot.
+### Needs eyes
+- **The peak stands 16.3 m up**, 5 m over the cog's masthead, as the caravel's lateens stand over theirs. A cog's short, deep hull under so tall a sail may read top-heavy.
+- **The fighting top is kept** as the cog's own mark. A lateen's yard is hoisted from under it, which works, but a real lateener would rarely carry one.
+- **Still owed by #347:** the galleon in the Mark's and Aurenne's dress.
+
+## v80 — Session 1045 — Card F11: the Mark's galleon, by #347's answer (prototype only)
+The fourth hull built to Michael's A on DECISION #347. Option A's text reads: "a Mark galleon gaff-rigged on the mizzen and square forward, with tanned sails". That is the galleon's own rig, the one the Gatelands galleon already carries (Session 896): square fore and main with topsails, a gaff mizzen, a spritsail. So by the rule (the island's rig forward, the class's own aft) only the dress changes, and nothing new is asked. It is `markGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'mark'`), at `ships.html?ship=markgalleon`.
+
+What changes is the dress, the Mark's cutter's (Session 871):
+- **The hull:** red-brown below the water and tarred black above. The castles' walls, the transom and the twelve gun-port lids are tarred too, and the wale, the bands, the window heads and the lanterns gilt.
+- **The sails:** every sail is in the cutter's tanned cloths, or the red and black stripes with `&stripe`. The Gatelands galleon's plain sails take a corner of the harp's map; the Mark's have no badge, so each sail is mapped on the whole cloth, and the stripes run full height on every sail.
+- **No beast's head:** the galleon's stem head stands inside the forecastle's walls, as the cog's does, where a head would be hidden. The Mark's cog (Session 1039) made the same call.
+
+The lines, castles, cabin, wheel, ports, rig and hatches are the Gatelands galleon's, built by the same code.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `deck` views render with no page errors.
+  - **The builds:** 3 keys, plain and striped, each build the same twice: 43,216 triangles in 10 meshes, exactly the Gatelands galleon's count. Her sections, rail, castles, ports, sails and boom are exactly the Gatelands galleon's.
+  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
+  - **The sails:** the tanned map reaches its full extent (1.0) on the sails' UVs.
+- **Pictures:** `ships-markgalleon-quarter.jpg`, `-side`, `-castle` and `-quarter-stripe`.
+### Needs eyes
+- **A tarred black galleon with tanned square sails** may read as the Gatelands galleon in mourning rather than as the Mark's. #347's text keeps her rig, so her silhouette is the Gatelands galleon's, and only the colours name her.
+- **The port lids are tarred on a tarred hull** and almost vanish. Gilt or red lids would show the gun deck, if Michael wants it seen.
+- **Still owed by #347:** Aurenne's galleon (square forward, lateens on the main and the mizzen).
+
+## v80 — Session 1046 — Card F11: Aurenne's galleon, by #347's answer (prototype only)
+The last hull owed by Michael's A on DECISION #347. Option A's text reads: "an Aurenne galleon square forward with lateens on the main and the mizzen". It is `aurenneGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'aurenne'`), at `ships.html?ship=aurgalleon`. With it, all five classes have all three islands' dresses.
+
+The lines, castles, great cabin, ports, hatches and wheel are the Gatelands galleon's (Session 896), in the caravel's dress (Session 890):
+- **The hull:** tallowed white below the water and oiled above. The top two strakes, the castles' walls and the twelve gun-port lids are blue, and the wale, the bands, the window heads and the lanterns gilt.
+- **Forward:** the fore mast is square, exactly the Gatelands galleon's course and topsail, with the sun-star on the course. The spritsail is kept. The topsail and the spritsail are plain cloth.
+- **The main:** a lateen to starboard, the caravel's main at the galleon's size.
+  - The mast is raked 4° forward, and the galleon's round top is kept on it.
+  - The yard is slung 8.5 m over the deck at 56°. It runs forward to a tack 2.6 m over the deck, lashed by the fore mast's foot, and 11 m aft to a peak 17.6 m up over the quarterdeck.
+  - The clew is 2.5 m over the deck, 1.4 m forward of the quarterdeck, and is sheeted to the waist's rail.
+- **The mizzen:** a lateen to port on the quarterdeck, the caravel's mizzen. The mast is raked 4°, and the yard slung 5.4 m over the quarterdeck at 50°. The tack is lashed to the quarterdeck's edge rail, and the clew is over the transom, sheeted to the taffrail. It replaces the Gatelands galleon's gaff and boom.
+- **The stays and shrouds:** each lateen has its shrouds on its weather side only, as the caravel's do. The stay from the main's head to the fore's follows the raked mast.
+
+A correction made during the session: the first pictures showed a sliver of the sun-star's ray in a corner of the fore topsail and of the spritsail. Those sails take a corner of the star sail's map (as the Gatelands galleon's plain sails take a corner of the harp's), and the star's long rays reach 0.26 of the map in from the corner. Aurenne's plain sails now take the first 0.18 of the map, which is clean cloth.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `castle` views render with no page errors.
+  - **The builds:** 3 keys, with and without the star, each build the same twice: 42,600 triangles in 11 meshes. Her sections, rail, castles, ports and fore course are exactly the Gatelands galleon's, and the star changes only the sails.
+  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
+  - **The rig:** one square mast and two lateens, the main to starboard and the mizzen to port. Every point of every sail and yard is 2.2 m or more over the deck under it, the castles' decks where it is over them.
+  - **Clearances:** the main's lateen is 1.06 m aft of the fore's course, 0.69 m off the fore mast and 2.78 m off the mizzen mast. The mizzen's is 4.53 m off the main mast. The yards are 0.09 m off their own masts, and the main's yard 0.29 m off the top.
+- **Pictures:** `ships-aurgalleon-quarter.jpg`, `-side`, `-castle`, `-deck` and `-quarter-nostar`.
+### Needs eyes
+- **The main's peak stands 17.6 m up**, over a 22 m hull. The lateens make her read more as a big caravel than as a galleon, which is what #347 A asks, but the class may want its topsail-high look back.
+- **Three stars:** one on the fore course and one on each lateen, whose map is laid out about each sail's middle (the caravel shows one per lateen too). The topsail and the spritsail are plain. One star, on the main alone, would read quieter.
+- **#347 is built out.** All five classes in all three dresses wait on F11's parents in v2-scope §3 to go into the game.
+
+## v80 — Session 1052 — Card F8: the Gatelands' ruined tower house, taken by a band (prototype only)
+OG-121's card names six kinds of place that are not gates. One of them was still unbuilt: "ruined forts and settlements: collapsed keeps with lower levels, some taken by bandits". Its lairs add "escape routes". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait, and this session touches only the prototypes: `places.js`, the new `places-towerhouse-view.js`, `places-view.js` and `places.check.mjs`. It is `gatelandsTowerHouse` in `docs/prototypes/levelup/places.js`, at `places.html?place=towerhouse`.
+
+The keep is the island's own kind, a tower house in its bawn, built to the person at a metre a unit:
+- **The bawn:** a rubble wall 0.9 m thick and 3.2 m high round a yard 30 by 25 m, with a gateway of 3 m on the south and a breach on the east. A round flanker at the south-west corner stands to 5 m. In the yard are a lean-to of poles and hides against the west wall, a cart with a broken wheel, a fighting platform by the gate with its ladder, and a hurdle dragged aside from the gateway.
+- **The tower:** 11 by 8.5 m, walls 1.5 m thick, 16 m to its ragged head on the north and west. The south-east corner has fallen to 6.6 m, just over the vault's back, and its stones lie heaped below. The door is round-headed, 1.2 by 2.6 m in dressed stone. There are slits to the ground floor, windows to the three storeys above, and the corbels of the lost floors at 9.6 and 12.7 m. The storeys above the vault are out of reach, as #345 A left the round tower's door.
+- **The hall:** 8 by 5.5 m under a barrel vault springing at 3 m to 5.75 m, flagged. It holds the band's camp: three straw pallets, a fire on the flags with a pot on a tripod, a table of boards on two kegs with a bench, a rack of spears and a bow, and plunder in the corner. The stair's well is open along the north wall, 4.7 by 1.3 m, with a parapet on its open side.
+- **The cellar:** down 16 rises of 0.194 m on treads of 0.28 m. It is the tower's whole floor again, 2.5 m under the flags (2.25 m under the two beams). It is the band's store: crates, kegs, sacks and a strongbox.
+- **The souterrain:** the Gatelands' own underground passage, the escape route. It is drystone walls under lintels, 1.4 m wide and 2.2 m high, broken out through the cellar's west wall. It runs 15 m west under the bawn's wall, 0.5 m or more under the turf, with a lantern halfway. It ends in a stair of its own, 12 or 13 rises up a stone-lined pit in the slope 5 m outside the bawn, under a thorn, with its cover slab dragged aside.
+- **`o.held`** (the default): the band is there, the fire burning and three lanterns lit. False (`&empty`): the camp is cold and dark, and inside only your torch lights it.
+
+Who the band are, what they took and whether they fight is the systems builder's and the quest writer's. The place only shows that someone holds it. It is 64,300 triangles in 23 meshes.
+
+Two corrections made during the session. First, the souterrain's floor stopped at the tower's outer face, leaving the 1.5 m through the cellar's wall without a floor; the check's walk found it. Second, the stair's foot had only 0.4 m of floor before the cellar's west wall. The well now runs 0.3 m further east, which leaves 0.7 m at the foot.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: all pass.** Two render checks and seven builds checks are new.
+  - **Renders:** the `tower` view and the empty `hall` render with no page errors.
+  - **The builds:** 3 keys, each the same twice: 64,344 to 64,356 triangles in 23 meshes.
+  - **The walk:** 264 quarter-metres from the slope through the gateway and the door, round to the stair's head, down to the cellar, out along the souterrain and up its pit onto the slope. Every point has a floor on its line, no step is over 0.198 m, there are 2.2 m of headroom or more, and 0.51 m clear at the hip and the head.
+  - **The stairs:** 16 rises of 0.194 m down to the cellar, and 12 to 13 rises of 0.19 to 0.198 m up the pit, measured on the treads.
+  - **Openings:** the door is 1.2 m wide and 2.5 m clear over the floor, and the gateway is 3 m.
+  - **The vault:** over all 60 points of the hall outside the well, and over the well too, its soffit 4.03 to 5.74 m up.
+  - **The ruin:** the north-west corner stands to 15.91 to 15.97 m, and the south-east has fallen to 6.58 to 6.61 m, over the vault's back.
+  - **The souterrain:** its lintels are 2.2 m over its floor all along and 0.51 m or more under the land, the pit is open to the sky, and 17.1 m of it is in sight from the cellar's door.
+  - **Lights:** held, the fire and three lanterns are lit; empty, nothing is lit.
+- **Pictures:** `places-towerhouse-tower.jpg`, `-gate`, `-hall`, `-stair`, `-cellar`, `-souterrain`, `-out`, `-far` and `-hall-empty`.
+### Needs eyes
+- **The ways in and up are asked as DECISION #401.** As drawn, the band can be come at two ways, by the gate or from behind by the souterrain's pit, and the storeys above the vault are out of reach.
+- **The fallen corner** reads as a notch from the south-east. A real tower house usually falls along a whole face, or loses its corner down to the ground.
+- **The rubble masonry** is the kit's cobble texture at 0.8 of a metre. It may read as too regular for a ruin.
+- **The stair's well is dark** from its head: the fire is the hall's only shadowing light, and the parapet shades the stair. A lantern at the stair's head would show the way down, if Michael wants the band to have hung one.
+
+## v80 — Session 1053 — Card F8: the Mark's cliff fort (prototype only)
+OG-121's Mark panel names "mountain mines, ice caverns, cliff forts and snowed-in entrances". The mine (Session 857), the ice cavern (Session 903) and the ice cave mouth (Session 1006) are built, and the cliff fort is this session. #396 is still unanswered, so the session again touches only the prototypes: `places.js`, the new `places-clifffort-view.js`, `places-view.js` and `places.check.mjs`. It is `markCliffFort` in `docs/prototypes/levelup/places.js`, at `places.html?place=clifffort`.
+
+The cliffs are the fort's walls, and only the neck is built against. At a metre a unit, with the point to +z:
+- **The headland:** 40 m across and 50 m out, its line ragged past the palisade, its sides falling 32 m over 3 m to the sea at -31.
+- **The terrain:** one grid of a metre. Each triangle is sent to rock where it is steeper than 57° and to snow on the rest, so the cliffs and the snow come from the one height field.
+- **The neck:** a ditch 5 m wide and 2.6 m deep at z -4.5, and behind it a bank 1.8 m high. On the bank's crest stands a palisade of split logs 3.4 m high and pointed, 117 of them at 0.29 m from cliff edge to cliff edge, with two rails inside.
+- **The gate:** a tower of four posts 7.5 m high either side of a way 4.4 m wide, its deck at 4.4 m with a breastwork, under a roof of shingle at 52°. The gate is burst: one leaf hangs swung in on its iron straps, and the other lies broken off in the snow. A bridge of planks on two logs crosses the ditch, its deck following the land from bank to bank.
+- **Inside:** the kit's Markish hall (`markHall`, shingle and carved, 7 by 14 m), its porch and steps turned to the gate. There is a storehouse up on four posts with stone caps, after the island's raised stabbur, with its steps. At the point stands a beacon, a drum of dry stone with an iron basket on it and its fire long out.
+
+It is abandoned in winter. Who held it and who broke the gate is the quest writer's. It is 43,200 triangles in 19 draws, the hall's among them.
+
+Corrections made during the session:
+- The first pictures showed the whole headland as rock: my test of a triangle's slope had its cross product the wrong way round, so every level triangle read as a cliff.
+- The bridge's deck first stood level at 0.25 m over the higher bank, a step of 0.52 m up from the road; the check's walk found it. The deck now runs from bank to bank 0.12 m over each.
+- The sun first stood behind the fort from the road's side and left every view backlit.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 247 of 247 pass.** Two render checks and five builds checks are new.
+  - **Renders:** the `fort` and `gate` views render with no page errors.
+  - **The builds:** 3 keys, each the same twice: 43,196 triangles in 19 draws, 117 logs.
+  - **The walk:** 290 quarter-metres from the road over the bridge, through the gate, to the hall's steps and out to the point. Every point has ground or the bridge's planks on its line, no step is over 0.131 m, there are 4.23 m of headroom or more (the gate's deck) and 1.89 m clear.
+  - **The defences:** the ditch is 2.34 to 2.5 m under the bridge's deck. The palisade is shut at the hip from edge to edge but at the gate (0 gaps), and stands 3.31 m or more over the bank's crest. The gate's deck is 4.26 to 4.42 m over the way.
+  - **The cliffs:** at 33 points round the headland, the land 4 m out is 31.9 m or more under the top 3 m in.
+  - **Footings:** the hall's step is within 0.004 m of the snow, and the beacon's drum within 0.017 m.
+- **Pictures:** `places-clifffort-fort.jpg`, `-gate`, `-inside`, `-beacon`, `-cliff` and `-far`.
+### Needs eyes
+- **Whether it goes down into the cliff is asked as DECISION #402.** The recommendation is a sea-stair inside the rock to a sea cave and landing, the "lower levels" OG-121's forts have.
+- **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
+- **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
