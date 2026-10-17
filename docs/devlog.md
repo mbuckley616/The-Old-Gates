@@ -23960,7 +23960,7 @@ The room inside is laid out from the lot's size, as a widened house's is. A guil
 - **`tests/kitlots`: all pass.** Two towns, a port, two villages and a city of the Gatelands.
   - **Guild halls:** the check that guild halls keep their size is now a check that all 6 guild halls (Dunmore's, Vieux Marché's and Coeur de Vie's) are the kit's 14.4 by 9 m. Each slid 0 or 0.7 m and is clear of every other lot by 0.9 m or more.
   - **Ids and doors:** every id and door is as on the old look, the doors allowing for the slide.
-- **On the new look:** `guildfurn` passes. intreach, scalerooms, windows, kit and cloakguild: see the PR comment.
+- **On the new look (`--look=new`):** `guildfurn`, `intreach`, `scalerooms`, `windows` and `cloakguild` pass. `kit`, `kitlots` and `kittown` each boot the old look themselves as a control, and `--look=new` overrides that boot, so under the flag their old-look checks fail (`{"look":"new"}`). Run as they are meant to be, without the flag, all three pass.
 - `parsecheck.py` is clean.
 ### Needs eyes
 - **The picture first:** a 9 m deep stone hall in a street of 4 to 6 m townhouses (#408 is still open).
