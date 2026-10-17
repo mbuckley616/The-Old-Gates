@@ -23276,3 +23276,13 @@ Three causes were tried, and none reproduced in eight boots in either look, run 
 
 ### Needs eyes
 - Proof on CI: the next red on this check names its cause. If it reads `ground` with `laid` below `segs`, that is a road the chunk never got, and it is the look builder's to fix.
+
+## v80 — Session 1054 — `enterDungeon` waits for the camera by the clock, not by 40 frames (`looknew` FLAKY again, QA)
+`looknew`'s *a dungeon floor builds and draws* failed once more with `calls:0` on auto/systems 06ddc93 (16 Oct, shard 11). That run already carried Session 971's fix: `enterDungeon` (`tests/lib/dungeonshot.mjs`) waits for the game's loop to bring the camera within 30 of the player, since only the loop moves `CAM` and a floor rendered from the world's x, z is culled whole. But the wait was a count, 40 double frames, and when the count ran out it went on silently. On a runner where 0.170's first frame on a new floor is slow, the count can end first. The wait is now up to 120 s of real time, the same state polled the same way. `enterDungeon` returns how far the camera stood from the player and how long it waited. `looknew` adds both to its check's detail, so a red that comes back names a camera that never arrived instead of reading as a floor that drew nothing. The check's bound (calls over 10) is unchanged. The other twenty-odd suites that call the helper ignore its return value and get the longer wait.
+
+### Verified (headless Chromium)
+- `looknew`: 3 of 3 green, two of them side by side under `--look=new`. The camera arrived after 36, 328 and 965 ms, and the floor drew 311–329 calls.
+- `dungeon` and `trapseed` (two of the helper's other callers): green, side by side.
+
+### Needs eyes
+- Proof on CI over the next runs of shard 11.
