@@ -24384,3 +24384,31 @@ What is built (in `makePerson`):
 
 ### Needs eyes
 - **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
+
+## v80 — Session 1062 — Enemies by place: the door's grade on the map's subtitle (the designer's sheet, session 1, part 5)
+Session 64 took the grades off the map's subtitles, because a door's grade was your level's and followed you: the map said a
+door was Very Easy at level 1 and Hard at level 12, which told you nothing about the door. Since Session 1058 a grade is the
+door's tier's and never changes, so the sheet puts it back: a door on the map reads *Old gate · undead · Very Easy*, or
+*Fort · deep · Normal*, in the subtitle of its hover card and its panel.
+
+The label is `DIFF_SCALE`'s own (Very Easy to Very Hard), read by `doorGrade(entry, x, z)` (`20-quests.js`, beside the portal's
+grade). It reads the tier where the door stands in the world, as its live portal does (`dungeonTier` at floor 1), and adds the
+lair's one step and the wyrm's two. `mapEntries` (`83-world-generator.js`) caches it on the cell's door by its place
+(`mapDoorGrade`), since a door's grade never changes. No new line is said: the townsfolk's danger lines are the quest
+writer's, after this. Nothing is saved.
+### Verified (headless Chromium)
+- **`tiermap`** (new), 6/6, over the nine cells round home:
+  - 81 doors, every one with a grade: 15 Very Easy, 1 Easy, 63 Normal and 2 Hard.
+  - 28 doors have live portals, and each one's label is the grade its portal fights at.
+  - 3 lair caverns, each one grade above a plain gate where it stands (Very Easy to Easy, Normal to Hard twice).
+  - The labels are the same at level 1 and level 20.
+  - The map's panel shows *Old gate · undead · Very Easy* for the Dungeon of Shadows.
+- **Neighbours:** `lairrumour`, `shipwreck`, `mapquests`, `mapseals`, `tiergrade`, `lairgrade` and `dangertier`.
+### Needs eyes
+- **Most doors round home read Normal.** The coast's are Very Easy, but the Deepwood and the Foothills hold most of the nine
+  cells' doors, and they are tier 2. A new character reading the map sees one coast's worth of easy doors and a ring of Normal
+  ones, which is the sheet's intent.
+- **A lair's cavern says *Old gate · deep*** on the map, as it did before: its subtitle names it a gate. Not this session's;
+  noted for the map's next pass.
+- **Owed from the sheet:** the whole-world suites `tierlevelfree` and `tiermainpath`. The loot and the hoard wait on #394; then
+  the quest writer's four danger lines.

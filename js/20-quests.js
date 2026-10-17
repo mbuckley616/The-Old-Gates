@@ -367,6 +367,9 @@ function gradeAtLevel(L,up){const G=['veryeasy','easy','normal','hard','veryhard
 function tierDiffKey(tier,up){return gradeAtLevel(tierLevel(tier),up);}
 function portalDoorTier(p){const k=p.zone+':'+p.x+','+p.z;if(p._doorTierAt!==k){p._doorTierAt=k;p._doorTier=dungeonTier(p,1);}return p._doorTier;}
 function portalGradeUp(entry){const L=entry&&entry.lair;return L?(L.dragon?2:1):0;}
+// S1062 — a door's grade where it stands in the world (x, z), read as its live portal reads it, for the map's subtitle: Session 64
+// took the grade off the map because it followed you; a grade by place is worth reading again (the designer's sheet, #373 A)
+function doorGrade(entry,x,z){return tierDiffKey(dungeonTier({zone:'world',x,z},1),portalGradeUp(entry));}
 function makePortalDef(entry){
   const gate=gateOf(entry);
   const td=THEME_DEF[gate.theme]||THEME_DEF.ruins;
