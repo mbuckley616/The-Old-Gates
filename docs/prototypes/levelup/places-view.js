@@ -39,6 +39,7 @@ else if (Q.get('place') === 'cellar') await import('./places-cellar-view.js') /*
 else if (Q.get('place') === 'erratic') await import('./places-erratic-view.js') /* Session 1031: the Gatelands' perched stone */;
 else if (Q.get('place') === 'unfinished') await import('./places-unfinished-view.js') /* Session 1032: the Mark's unfinished camp */;
 else if (Q.get('place') === 'towerhouse') await import('./places-towerhouse-view.js') /* Session 1052: the Gatelands' ruined tower house */;
+else if (Q.get('place') === 'clifffort') await import('./places-clifffort-view.js') /* Session 1053: the Mark's cliff fort */;
 else if (Q.get('place') === 'icemouth') await import('./places-icemouth-view.js') /* Session 1006: the Mark's ice cave mouth */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();

@@ -23522,3 +23522,34 @@ Two corrections made during the session. First, the souterrain's floor stopped a
 - **The fallen corner** reads as a notch from the south-east. A real tower house usually falls along a whole face, or loses its corner down to the ground.
 - **The rubble masonry** is the kit's cobble texture at 0.8 of a metre. It may read as too regular for a ruin.
 - **The stair's well is dark** from its head: the fire is the hall's only shadowing light, and the parapet shades the stair. A lantern at the stair's head would show the way down, if Michael wants the band to have hung one.
+
+## v80 — Session 1053 — Card F8: the Mark's cliff fort (prototype only)
+OG-121's Mark panel names "mountain mines, ice caverns, cliff forts and snowed-in entrances". The mine (Session 857), the ice cavern (Session 903) and the ice cave mouth (Session 1006) are built, and the cliff fort is this session. #396 is still unanswered, so the session again touches only the prototypes: `places.js`, the new `places-clifffort-view.js`, `places-view.js` and `places.check.mjs`. It is `markCliffFort` in `docs/prototypes/levelup/places.js`, at `places.html?place=clifffort`.
+
+The cliffs are the fort's walls, and only the neck is built against. At a metre a unit, with the point to +z:
+- **The headland:** 40 m across and 50 m out, its line ragged past the palisade, its sides falling 32 m over 3 m to the sea at -31.
+- **The terrain:** one grid of a metre. Each triangle is sent to rock where it is steeper than 57° and to snow on the rest, so the cliffs and the snow come from the one height field.
+- **The neck:** a ditch 5 m wide and 2.6 m deep at z -4.5, and behind it a bank 1.8 m high. On the bank's crest stands a palisade of split logs 3.4 m high and pointed, 117 of them at 0.29 m from cliff edge to cliff edge, with two rails inside.
+- **The gate:** a tower of four posts 7.5 m high either side of a way 4.4 m wide, its deck at 4.4 m with a breastwork, under a roof of shingle at 52°. The gate is burst: one leaf hangs swung in on its iron straps, and the other lies broken off in the snow. A bridge of planks on two logs crosses the ditch, its deck following the land from bank to bank.
+- **Inside:** the kit's Markish hall (`markHall`, shingle and carved, 7 by 14 m), its porch and steps turned to the gate. There is a storehouse up on four posts with stone caps, after the island's raised stabbur, with its steps. At the point stands a beacon, a drum of dry stone with an iron basket on it and its fire long out.
+
+It is abandoned in winter. Who held it and who broke the gate is the quest writer's. It is 43,200 triangles in 19 draws, the hall's among them.
+
+Corrections made during the session:
+- The first pictures showed the whole headland as rock: my test of a triangle's slope had its cross product the wrong way round, so every level triangle read as a cliff.
+- The bridge's deck first stood level at 0.25 m over the higher bank, a step of 0.52 m up from the road; the check's walk found it. The deck now runs from bank to bank 0.12 m over each.
+- The sun first stood behind the fort from the road's side and left every view backlit.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 247 of 247 pass.** Two render checks and five builds checks are new.
+  - **Renders:** the `fort` and `gate` views render with no page errors.
+  - **The builds:** 3 keys, each the same twice: 43,196 triangles in 19 draws, 117 logs.
+  - **The walk:** 290 quarter-metres from the road over the bridge, through the gate, to the hall's steps and out to the point. Every point has ground or the bridge's planks on its line, no step is over 0.131 m, there are 4.23 m of headroom or more (the gate's deck) and 1.89 m clear.
+  - **The defences:** the ditch is 2.34 to 2.5 m under the bridge's deck. The palisade is shut at the hip from edge to edge but at the gate (0 gaps), and stands 3.31 m or more over the bank's crest. The gate's deck is 4.26 to 4.42 m over the way.
+  - **The cliffs:** at 33 points round the headland, the land 4 m out is 31.9 m or more under the top 3 m in.
+  - **Footings:** the hall's step is within 0.004 m of the snow, and the beacon's drum within 0.017 m.
+- **Pictures:** `places-clifffort-fort.jpg`, `-gate`, `-inside`, `-beacon`, `-cliff` and `-far`.
+### Needs eyes
+- **Whether it goes down into the cliff is asked as DECISION #402.** The recommendation is a sea-stair inside the rock to a sea cave and landing, the "lower levels" OG-121's forts have.
+- **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
+- **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.

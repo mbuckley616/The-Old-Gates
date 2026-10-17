@@ -4,6 +4,30 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Mark's cliff fort: does it go down into the cliff? (look builder, Session 1053) — DECISION #402
+**F8: the Mark's cliff fort (look builder, Session 1053).** OG-121's Mark panel asks for "mountain mines, ice caverns, cliff forts and snowed-in entrances", and this is the cliff fort. It is a prototype in `docs/prototypes/levelup/places.js` (`markCliffFort`), at `places.html?place=clifffort`.
+- **The headland:** 40 m across and 50 m out over the fjord, its cliffs falling 32 m to the sea, so the cliffs are its walls.
+- **The neck:** shut by a ditch 2.6 m deep and a bank with a palisade of pointed logs from cliff edge to cliff edge.
+- **The gate:** a tower over the gate, the gate burst, one leaf hanging and one down in the snow.
+- **Inside:** the kit's Markish hall, a storehouse up on four posts, and a cold beacon at the point.
+
+It is abandoned in winter. Who held it and who broke the gate is the quest writer's.
+
+As drawn it has no inside beyond the hall: OG-121's other forts have "lower levels", and this one has none yet.
+
+**Should the cliff fort go down into the cliff?**
+- **A. As drawn:** a fort on the top only, a place to cross and look from. The hall's inside is a Markish room like any other.
+- **B. A sea-stair** *(recommended)*: a door in the rock behind the hall opens on a stair cut down inside the cliff, about 30 m, with turns and landings lit by slits in the face. It comes out in a sea cave with a boat landing, the fort's way to the water. That gives it a lower level to explore, as the card asks.
+- **C. A store under the hall:** a rock-cut cellar under the hall's floor, reached by a hatch. It is smaller than B, with no way to the sea.
+
+Pictures:
+- [from the road](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-fort.jpg)
+- [on the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-gate.jpg)
+- [inside the gate](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-inside.jpg)
+- [by the beacon](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-beacon.jpg)
+- [the cliffs from the sea](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-cliff.jpg)
+- [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-far.jpg)
+
 ### The Gatelands' ruined tower house: the ways in and up (look builder, Session 1052) — DECISION #401
 **F8: the Gatelands' ruined tower house, taken by a band (look builder, Session 1052).** OG-121's card asks for "collapsed keeps with lower levels, some taken by bandits", and its lairs for "escape routes". This is the last of its six kinds. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsTowerHouse`), at `places.html?place=towerhouse`.
 - **The bawn:** a walled yard 30 by 25 m with a gateway, a breach and a round flanker at one corner.
