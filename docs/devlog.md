@@ -24614,3 +24614,23 @@ number a player feels, so I have not changed it. `tierloot` and `tierlevelfree` 
   - The Wastes' foes carry tier 3 for their corpses.
 - **`tierlevelfree`**, 9/9 (two checks added): the Deepwood cavern's hoard is the same at both levels (603 gold, a Steel Sword,
   Greater Potions), and its 21 chests and barrels hold the same goods.
+
+## v80 — Session 1076 — Town jobs and the war's camps count by place (Michael's A on #405)
+Michael answered DECISION #405 with A: *counts by place, pay by level*. Since #373 no foe read your level, but a town's jobs and
+the war's camps still did, so two friends at levels 4 and 22 in one town were offered different fights. All four counts now read
+the level of the danger tier where the fight stands (1, 6, 11 or 16), as the traps have since S1061 (`87-world-quests.js`):
+- **A cull** (`townQuestFor`): 4 + ⌊that level ÷ 3⌋ beasts, read at the town.
+- **A road job's camp:** 3 + ⌊that level ÷ 3⌋ bandits, read where the camp stands on the road. Dunmore's road camps sit in a
+  tier-2 stretch, so they hold 5.
+- **A siege camp:** 6 + ⌊that level ÷ 3⌋, read at its town.
+- **An occupation:** 5 + ⌊that level ÷ 4⌋, read at its town.
+
+So a coast cull asks for 4 beasts and a Wastes cull for 7, at any level. The pay is untouched: 40 + 30 × ⌊your level ÷ 3⌋ and
+the job's own roll. The roll draws nothing new, so every job's kind, place and title come out as before.
+### Verified (headless Chromium)
+- **`jobcount`** (new), 10/10:
+  - Dunmore is tier 1 and Trostouir, a Wastes town, tier 3.
+  - Twelve jobs at each town (six culls and six road camps on fixed keys) ask the same counts at level 1 and level 30.
+  - Each count is its place's: Dunmore 4 and 5, Trostouir 7 and 6.
+  - Every job pays exactly 300 more at level 30 than at level 1.
+  - Besieged at level 30, Dunmore's camp is six soldiers, the count it had at level 1.

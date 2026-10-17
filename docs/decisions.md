@@ -4,18 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1066) — DECISION #405
-Under Michael's A on #373, no foe in a chunk, lair, commission or dungeon reads your level any more (`tierlevelfree`, 7/7). Two places outside the build sheet still do:
-- **A town's jobs** (`townQuestFor`): a cull asks for 4 + level ÷ 3 beasts and a road job's camp holds 3 + level ÷ 3 bandits. The pay is 40 + 30 × (level ÷ 3). At level 1 that is 4 beasts, 3 bandits and 40–69 gold; at level 30 it is 14, 13 and 340–369.
-- **The war's camps:** a siege camp holds 6 + level ÷ 3 bandits, and an occupation 5 + level ÷ 4.
-
-So two friends in one town, at levels 4 and 22, are offered different jobs, which breaks the co-op rule.
-- **A. Counts by place, pay by level** *(recommended)*: each count reads the tier's level where the job or camp stands, as the traps do (S1061). A coast cull asks for 4 and a Wastes cull for 7, at any level. The pay waits on #394.
-- **B. Counts and pay by place:** the same, and the pay reads the tier's level too (40–69 on the coast, 130–159 in the Wastes).
-- **C. Leave both.** They are jobs and the war, not a place's foes.
-
-A keeps the sheet's rule, one place gives one fight, without deciding money ahead of #394.
-
 ### Draw cut, Ringing, Throw and Catch the blade: build what each needs, or other perks? (systems builder, Session 1051) — DECISION #399
 Sessions 1048 to 1051 built the Arms perks that combat's resolver made possible. Four of the build sheet's Arms perks name something the game does not have, or already does. The Skills tab shows them as *not yet in the game*.
 
@@ -50,6 +38,22 @@ Where should the kit live in the game?
 A keeps each look's code apart and gives F14 one file to keep and a list of files to delete. Pictures are not needed for this one; the kit as it stands is `docs/prototypes/levelup/pieces.html`, `rooms.html` and `places.html`.
 
 ## Answered
+
+### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1066) — DECISION #405
+Under Michael's A on #373, no foe in a chunk, lair, commission or dungeon reads your level any more (`tierlevelfree`, 7/7). Two places outside the build sheet still do:
+- **A town's jobs** (`townQuestFor`): a cull asks for 4 + level ÷ 3 beasts and a road job's camp holds 3 + level ÷ 3 bandits. The pay is 40 + 30 × (level ÷ 3). At level 1 that is 4 beasts, 3 bandits and 40–69 gold; at level 30 it is 14, 13 and 340–369.
+- **The war's camps:** a siege camp holds 6 + level ÷ 3 bandits, and an occupation 5 + level ÷ 4.
+
+So two friends in one town, at levels 4 and 22, are offered different jobs, which breaks the co-op rule.
+- **A. Counts by place, pay by level** *(recommended)*: each count reads the tier's level where the job or camp stands, as the traps do (S1061). A coast cull asks for 4 and a Wastes cull for 7, at any level. The pay waits on #394.
+- **B. Counts and pay by place:** the same, and the pay reads the tier's level too (40–69 on the coast, 130–159 in the Wastes).
+- **C. Leave both.** They are jobs and the war, not a place's foes.
+
+A keeps the sheet's rule, one place gives one fight, without deciding money ahead of #394.
+Michael: **Counts by place, pay by level**. (2026-10-17, issue #405)
+
+*Built, Session 1076 (systems builder):* a cull's and a road camp's counts read the tier's level where they stand, a siege camp's and an occupation's their town's; the pay is unchanged. `tests/jobcount`.
+
 
 ### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
 The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
