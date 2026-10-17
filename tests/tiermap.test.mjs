@@ -4,6 +4,8 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// a slow runner registers the doors' live portals after the cells round home are built (CI read 0): wait for them, up to 120 s
+for (let k = 0; k < 60; k++) { if (await page.evaluate(() => PORTALS.filter(p => p.seed != null).length > 3)) break; await page.waitForTimeout(2000); }
 const r = await page.evaluate(() => {
   const L0 = level, cells = [];
   for (let i = HOME_I - 1; i <= HOME_I + 1; i++) for (let j = HOME_J - 1; j <= HOME_J + 1; j++) { const c = getCell(i, j); if (c) cells.push(c); }

@@ -24472,3 +24472,10 @@ That leaves session 1 of the sheet built but for the loot and the hoard, which w
 - **The Binding Stone's twenty kills.** Three of the seven Ironhaven dungeons are tier 2 at the door: Normal grade, ×1.75
   health and ×2.09 blow. A character who picks one of those first meets twice the blow of the Vault of the Tide. That is
   within the sheet's line, but it is the first place the main path's danger varies by choice.
+
+## v80 — Session 1069 — `tiermap` waits for the doors' portals (a CI fix)
+CI failed `tiermap` (Session 1065) twice on `3421a74`. It found 0 live portals, so "each label is the grade its live portal fights at" and the panel check had nothing to read. Here the same commit finds 28. The suite read `PORTALS` as soon as it was in the world, and a slow runner registers the doors' portals after the cells round home are built. It now waits, up to 120 s, until more than three are registered. The checks themselves are unchanged.
+### Verified (headless Chromium)
+- `tiermap` 6 of 6, 28 portals.
+### Needs eyes
+- Nothing.
