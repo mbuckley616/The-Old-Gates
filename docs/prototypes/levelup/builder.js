@@ -74,6 +74,8 @@ function frame() {
   else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05 + (person.wrap?.turban ? .04 : 0), h.z); }
   // the throat and the upper chest (Session 1003): what is worn at the neck's base, a necklace
   else if (view === 'neck') { cam.fov = 22; cam.position.set(h.x + .3 / zoom, h.y - .1, h.z + .95 / zoom); cam.lookAt(h.x, h.y - .2, h.z); }
+  // the left hand and wrist (Session 1052): the Old Blood's marks, seen from outside the arm and a little in front
+  else if (view === 'hand') { const w = new THREE.Vector3(); person.byName['wrist.L'].getWorldPosition(w); const o = new THREE.Vector3(1, 0, 0).applyQuaternion(person.root.quaternion); cam.fov = 20; cam.position.set(w.x + o.x * .55 / zoom + .12 * Math.cos(turn), w.y + .12, w.z + o.z * .55 / zoom + .35 / zoom); cam.lookAt(w.x, w.y + .02, w.z); }
   // the waist (Session 1004): the belt's front, and what hangs from it (or the sash belt's, Session 1010)
   else if (view === 'waist') { const b = person.root.getObjectByName('beltCoins') || person.root.getObjectByName('beltCharms'), sb = !b && (person.root.getObjectByName('sashBelt') || person.root.getObjectByName('belt')), t = b ? new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()) : sb ? bandMid(sb) : h.clone().setY(h.y - .7); cam.fov = 22; cam.position.set(t.x + .3 / zoom, t.y + .12, t.z + 1.05 / zoom); cam.lookAt(t); }
   // the feet (Session 1015): what is worn on them, sandals
@@ -212,7 +214,7 @@ function peoplesSheet() {
 (SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
-    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; }
+    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); }
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;
   // a creature walks on the spot in its gait (the bestiary's step, with the body kept where it stands); a person is still
   let t0 = performance.now();

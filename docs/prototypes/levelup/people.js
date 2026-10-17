@@ -192,8 +192,45 @@ function shellMat(color, layer, layers, o = {}) {
   m.customProgramCacheKey = () => 'shell' + layer + '/' + layers + JSON.stringify({ ...o, skin: !!o.skin });
   return m;
 }
-function skinMat(c) {
-  return new THREE.MeshPhysicalMaterial({ color: c, roughness: .6, metalness: 0, sheen: .18, sheenColor: new THREE.Color(1, .45, .35), sheenRoughness: .5, vertexColors: true });
+function skinMat(c, marks = null) {
+  const m = new THREE.MeshPhysicalMaterial({ color: c, roughness: .6, metalness: 0, sheen: .18, sheenColor: new THREE.Color(1, .45, .35), sheenRoughness: .5, vertexColors: true });
+  if (marks != null) markSkin(m, marks); return m;
+}
+// the Old Blood's marks (Session 1052; canon §3.1, Michael's 2 B on OG-066): not ink but pale raised lines under the skin, branching
+// like veins, at the wrist, the back of the hand and the shoulder blade, on both sides. They spread as the Cold rises (§3.3), up the
+// arm and at last to the face: `cold` (0..1) carries their reach along a line from the knuckles through the wrist, the elbow, the
+// shoulder and the neck to the cheek, from 5 cm past the wrist at 0 to the cheekbone at 1, and grows the patch on each shoulder
+// blade from 5 cm across to 15. All of it is drawn in the shader on the rest body (aBase), with no new triangles: the lines are
+// the half-way contours of a warped noise at two scales, cut into open strands that taper by a third, slower noise (whole contours
+// closed into rings), lighter than the skin and raised by a bump read off their own slope;
+// the reach's edge is broken by noise so the marks end in tendrils, and far off they fade to nothing so they do not shimmer
+function restJoint(name) { const b = PACK.ix.bones.find(x => x.name === name), L = PACK.ix.joints[b.head], R0 = PACK.rest, v = new THREE.Vector3(); for (const i of L) v.x += R0[i * 3], v.y += R0[i * 3 + 1], v.z += R0[i * 3 + 2]; return v.divideScalar(L.length); }
+function markSkin(m, cold) {
+  const line = s => { const hd = restJoint('head'), P = [restJoint(`finger3-1.${s}`), restJoint(`wrist.${s}`), restJoint(`lowerarm01.${s}`), restJoint(`upperarm01.${s}`), restJoint('neck01'), hd.clone().add(new THREE.Vector3((s === 'L' ? 1 : -1) * .055, .035, .05))];
+      let L = 0; for (let i = 1; i < P.length; i++) L += P[i].distanceTo(P[i - 1]); return { P, L, L0: P[0].distanceTo(P[1]) + .05 }; },
+    A = line('L'), B = line('R'), reach = A.L0 + Math.max(0, Math.min(1, cold)) * (A.L - A.L0);
+  const blade = s => restJoint(`shoulder01.${s}`).add(new THREE.Vector3(0, -.07, -.075));
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, { mkA: { value: A.P }, mkB: { value: B.P }, mkL: { value: reach }, mkS: { value: [blade('L'), blade('R')] }, mkR: { value: .05 + .1 * Math.max(0, Math.min(1, cold)) } });
+    sh.vertexShader = 'attribute vec3 aBase; varying vec3 vMk;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vMk = aBase;');
+    sh.fragmentShader = `varying vec3 vMk; uniform vec3 mkA[6]; uniform vec3 mkB[6]; uniform float mkL; uniform vec3 mkS[2]; uniform float mkR; float mkLine = 0.;
+float mkH(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float mkN(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(mkH(i), mkH(i + vec3(1, 0, 0)), f.x), mix(mkH(i + vec3(0, 1, 0)), mkH(i + vec3(1, 1, 0)), f.x), f.y), mix(mix(mkH(i + vec3(0, 0, 1)), mkH(i + vec3(1, 0, 1)), f.x), mix(mkH(i + vec3(0, 1, 1)), mkH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+float mkSeg(vec3 p, vec3 a, vec3 b, float maxT) { vec3 ab = b - a; float l = length(ab); float t = clamp(dot(p - a, ab) / l, 0., min(l, maxT)); return length(p - a - ab / l * t); }
+float mkPath(vec3 p, vec3 P[6]) { float d = 9., a = 0.; for (int i = 0; i < 5; i++) { float l = length(P[i + 1] - P[i]); if (mkL > a) d = min(d, mkSeg(p, P[i], P[i + 1], mkL - a)); a += l; } return d; }
+float mkMarks(vec3 p) {
+  float rag = (mkN(p * 34.) - .5) * .035, d = min(mkPath(p, mkA), mkPath(p, mkB)), m = 1. - smoothstep(.045, .075, d + rag);
+  m = max(m, 1. - smoothstep(mkR * .55, mkR, min(length(p - mkS[0]), length(p - mkS[1])) + rag));
+  if (m <= 0.) return 0.;
+  vec3 q = p * 36. + vec3(mkN(p * 8.), mkN(p * 8. + 5.2), mkN(p * 8. + 9.7)) * 1.8; float n1 = mkN(q), n2 = mkN(q * 2.3 + 3.3), w1 = fwidth(n1), w2 = fwidth(n2);
+  float br = mkN(q * .7 + 7.1), tw = smoothstep(.45, .7, br), l1 = 1. - smoothstep(0., (.012 + .022 * tw) + w1, abs(n1 - .5)), l2 = (1. - smoothstep(0., .02 + w2, abs(n2 - .5))) * .55 * smoothstep(.2, .6, n1);
+  return max(l1 * smoothstep(.3, .46, br), l2 * smoothstep(.42, .58, br)) * m * (1. - smoothstep(.12, .35, w1)); }
+` + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n mkLine = mkMarks(vMk); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.1 + vec3(.07, .075, .085), mkLine * .85);')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+ { float h = mkLine * .0007; vec3 sx = dFdx(-vViewPosition), sy = dFdy(-vViewPosition), r1 = cross(sy, normal), r2 = cross(normal, sx); float det = dot(sx, r1) * faceDirection;
+   vec3 g = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2); if (abs(det) > 0.) normal = normalize(abs(det) * normal - g); }`); };
+  m.customProgramCacheKey = () => 'skin-marks';
 }
 
 // ── the genome ──
@@ -2197,7 +2234,7 @@ export function makePerson(G, o = {}) {
   for (const b of ix.bones) { const bone = new THREE.Bone(); bone.name = b.name; heads[b.name] = jp(b.head); bones.push(bone); byName[b.name] = bone;
     if (b.parent) { byName[b.parent].add(bone); bone.position.copy(heads[b.name]).sub(heads[b.parent]); } else bone.position.copy(heads[b.name]); }
   const skeleton = new THREE.Skeleton(bones), root = new THREE.Group(), meshes = [];
-  const D0 = G.dress || {}, bodyIdx = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin)));
+  const D0 = G.dress || {}, bodyIdx = D0.tunic ? (D0.trousers || D0.skirt === 'long' ? (D0.sandals ? PACK.R.bareFeet || (PACK.R.bareFeet = new Uint32Array([...PACK.R.bare, ...PACK.R.feet])) : PACK.R.bare) : PACK.R.bareLegs) : PACK.G.body, body = new THREE.SkinnedMesh(geomFor(P, bodyIdx), skinMat(sRGB(...G.skin), G.marks ?? null));
   // skin tones by region: lips and cheeks warmer, the brow a touch darker
   { const col = new Float32Array(PACK.N * 3), BS = browShape(G); for (let i = 0; i < PACK.N; i++) { const x = rest0[i * 3], y = rest0[i * 3 + 1], z = rest0[i * 3 + 2]; let r = 1, g = 1, b = 1;
       const lip = Math.exp(-((x / .022) ** 2) - ((y - .655) / .009) ** 2) * (z > .13 ? 1 : 0), cheek = Math.exp(-(((Math.abs(x) - .05) / .025) ** 2) - ((y - .69) / .02) ** 2) * (z > .07 ? 1 : 0), nose = Math.exp(-((x / .02) ** 2) - ((y - .69) / .015) ** 2) * (z > .14 ? 1 : 0);
@@ -2394,19 +2431,19 @@ export function toSaved(G) {
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
   return { species: 'human', v: 1, seed: String(G.seed ?? 'person'), people: G.people || 'markman', sliders: round({ ...Object.fromEntries(BODY_SLIDERS.map(k => [k, G[k] ?? (k === 'prop' ? .6 : .5)])), ...(G.face || {}) }),
     race: round(G.race || { caucasian: 1 }), palette: { skin: hex(G.skin), hair: hex(G.hairCol || [0, 0, 0]), eyes: hex(G.eyes) }, hair: { style, len: r3(G.hair?.len ?? G.hairLen ?? .3), beard: r3(G.beard || 0), ...(G.brow ? { brow: [r3(G.brow.thick), r3(G.brow.arch)] } : {}) },
-    dress, pose: round(G.pose || {}) };
+    dress, pose: round(G.pose || {}), ...(G.marks != null ? { marks: { cold: r3(G.marks) } } : {}) };
 }
 export function fromSaved(J) {
   if (!J || J.species !== 'human') throw new Error('not a human genome'); const S = J.sliders || {}, G = { seed: J.seed, people: J.people, race: { ...(J.race || { caucasian: 1 }) }, face: {} };
   for (const [k, v] of Object.entries(S)) if (BODY_SLIDERS.includes(k)) G[k] = v; else G.face[k] = v;
   G.skin = unhex(J.palette.skin); G.hairCol = unhex(J.palette.hair); G.eyes = unhex(J.palette.eyes);
   G.hair = { style: J.hair?.style || 'short', len: J.hair?.len ?? .3 }; G.beard = J.hair?.beard || 0; if (J.hair?.brow) G.brow = { thick: J.hair.brow[0], arch: J.hair.brow[1] };
-  G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; return G;
+  G.dress = { skirt: J.dress?.skirt || null }; for (const [k, d] of Object.entries(DRESS_FLAGS)) G.dress[k] = J.dress?.[k] ?? d; for (const k of GARMENTS) if (J.dress?.[k]) G.dress[k] = unhex(J.dress[k]); G.pose = { ...(J.pose || {}) }; if (J.marks) G.marks = J.marks.cold ?? 0; return G;
 }
 // ── the four peoples (Session 806, B3): slider ranges over the one human body, from the canon's peoples table (§2) and the
 // kept sheets (OG-048 and OG-059 Gatelanders, OG-025 Markmen, OG-044 Aurennais, OG-066 the Old Blood). A people sets the
 // ranges and the palettes; the seed picks inside them. Heights are given in metres (Michael's 1 B: the heroic hybrid, about
-// 1.80 m, the Markmen taller and the Old Blood short) and turned into the height slider by measuring the morphed body. The Old Blood's marks under the skin and the Gatelanders' freckles want a skin texture, owed.
+// 1.80 m, the Markmen taller and the Old Blood short) and turned into the height slider by measuring the morphed body. The Old Blood's marks under the skin are drawn in the skin's shader (Session 1052, markSkin); the Gatelanders' freckles want a skin texture, owed.
 const U = (a, b) => [a, b];
 export const PEOPLES = {
   gatelander: { name: 'Gatelanders', race: { caucasian: [.9, 1], african: [0, .05], asian: [0, .05] },
@@ -2428,7 +2465,7 @@ export const PEOPLES = {
     body: { m: { metres: [1.56, 1.66], muscle: [.4, .54], weight: [.28, .4] }, f: { metres: [1.46, 1.56], muscle: [.36, .5], weight: [.3, .42] } },
     skin: [[.82, .78, .76], [.78, .74, .72], [.85, .81, .79]], hair: [[.05, .05, .06], [.08, .07, .08], [.11, .1, .11]], eyes: [[.66, .68, .7], [.58, .6, .63]],
     styles: { m: { short: 5, tail: 3 }, f: { loose: 3, braid: 3, tail: 2 } },
-    wool: [[.18, .17, .2], [.3, .12, .12], [.28, .22, .32], [.82, .8, .74], [.36, .34, .33]], cloak: .5, hood: .2, brooch: [.4, .4, .42], apron: [0, 0], mantle: 0, amulet: .5, charms: .45, dots: .6, shoulderWrap: .45, brow: { m: { thick: [.3, .5], arch: [.1, .3] }, f: { thick: [.2, .4], arch: [.2, .4] } } },
+    wool: [[.18, .17, .2], [.3, .12, .12], [.28, .22, .32], [.82, .8, .74], [.36, .34, .33]], cloak: .5, hood: .2, brooch: [.4, .4, .42], apron: [0, 0], mantle: 0, amulet: .5, charms: .45, dots: .6, shoulderWrap: .45, marks: .8, brow: { m: { thick: [.3, .5], arch: [.1, .3] }, f: { thick: [.2, .4], arch: [.2, .4] } } },
 };
 // standing height in metres of a genome's body (crown to sole, unposed), and the height slider that gives a wanted stature
 export function statureOf(G) { const P = morph(G), tri = PACK.G['body']; let lo = 1e9, hi = -1e9; for (let t = 0; t < tri.length; t++) { const y = P[tri[t] * 3 + 1]; if (y < lo) lo = y; if (y > hi) hi = y; } return hi - lo; }
@@ -2493,6 +2530,10 @@ export function peopleGenome(rnd, people, g, o = {}) {
   if (P.shoulderWrap && D.tunic && !D.cloak && !D.sash && !D.bib && !D.tabard) { const undyed = D.tunic[0] > .6; if (rnd() < P.shoulderWrap * (undyed ? 1 : .5)) {
     const W = [[.4, .34, .3], [.36, .38, .42], [.48, .46, .44], [.44, .2, .18], [.4, .32, .44]].filter(c => Math.hypot(c[0] - D.tunic[0], c[1] - D.tunic[1], c[2] - D.tunic[2]) > .08);
     D.shoulderWrap = pick(W); if (rnd() < .3) D.shoulderWrapSide = 'R'; } }
+  // the Old Blood's marks under the skin (Session 1052; canon §3.1: a child either shows them or does not), on the people's share; one
+  // in eight of those marked has read past the Withdrawal's law and carries the Cold, the marks spread a fifth to two thirds of the way
+  // up toward the face; the rest barely past the wrist; drawn last for the same reason
+  if (P.marks && rnd() < P.marks) G.marks = rnd() < .125 ? .2 + .45 * rnd() : .06 * rnd();
   return G;
 }
 // a genome rolled from a seed, inside a people's ranges (Markfolk by default, as Session 804 rolled them)

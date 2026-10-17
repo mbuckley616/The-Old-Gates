@@ -23342,3 +23342,40 @@ Corrections made during the session:
 - **Loose hair mostly lies over the wrap's top** and goes under it lower down. A strand that stood out survives as a lock over the cloth, which reads at a distance but not close up.
 - **The folds are even:** five, the same all the way along. A hand-draped wrap would bunch more at the shoulder and fall slacker on the back.
 - **Is this the sheet's "dark asymmetric layer", or is a second garment meant** (a long open over-tunic cut away on one side)? OG-066's thumbnail cannot say. If it is a second garment, it is still owed and wants the full image.
+## v80 — Session 1052 — The Old Blood's marks under the skin (L1 and B3, prototype only)
+This continues Session 1051 on the same kept sheet. The canon, §3.1, was settled by Michael's 2 B on OG-066. The marks are not ink. They are pale raised lines under the skin, branching like veins, at the wrist, the back of the hand and the shoulder blade. §3.3 adds that they spread as the Cold rises, up the arm and at last to the face. The builder's peoples table had carried them as owed since Session 806, waiting on "a skin texture". This session draws them in the skin's shader instead. Building what the canon says chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`markSkin`, through `skinMat(colour, cold)`):
+- **Where they are.** On both sides, along a line from the knuckles through the wrist, the elbow, the shoulder and the neck to the cheekbone. Each marked area is everything within 4.5 to 7.5 cm of the reached part of the line. The edge is broken by noise, so the marks end in tendrils.
+- **How the Cold carries them.**
+  - At a Cold of 0 they reach 5 cm past the wrist.
+  - At 1 they reach the cheek.
+  - The patch on each shoulder blade grows with them, from 5 cm across to 15.
+- **The lines.** They are the half-way contours of a warped noise at two scales. A slower third noise cuts them into open strands that taper. The whole contours closed into rings, which read as blots, not veins.
+- **How they look.** They are lighter than the skin and a little cooler. They are raised by a bump read off their own slope, about 0.7 mm. Far off they fade to nothing, so they do not shimmer.
+- **No new triangles.** It is all drawn on the rest body (`aBase`). The marks stay where they are on the body however it is posed.
+- **The genome.** `G.marks` is the Cold, from 0 to 1. Without it there are no marks. It saves as `marks: { cold }` and loads back. A genome without it saves nothing.
+- **The builder page.** It takes `?marks=` (a number, or `none`) and a new close `view=hand` of the left hand and wrist.
+- **The roll.** Four in five Old Blood are marked (canon: a child shows them or does not). One in eight of those has read past the Withdrawal's law and carries the Cold, reaching 0.2 to 0.65. The rest stay barely past the wrist. It is drawn last, so every earlier roll of a seed is as it was. No other people rolls it.
+
+Corrections made during the session:
+- **The first lines were whole contours**, which closed into loops and rings on the shoulder blade. A third noise now cuts them into open strands.
+- **The first cut was too hard** and left the blades nearly bare. It was halved.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 426 checks pass** (422 after Session 1051; 4 new).
+- **How it was checked.** Each check renders a 320-pixel close view, at four places, of an unclothed Old Blood man without marks and with them at a Cold of 0, 0.6 and 1. The view without marks renders the same twice at all four places.
+- **The wrist** changes 2.3% of the view at every step of the Cold, every changed pixel lighter by 10 on average.
+- **The upper arm** is bare at 0 and marked at 0.6 (4.6%).
+- **The cheek** is bare at 0, touched at 0.6 (0.22%) and reached at 1 (1.5%).
+- **The shoulder blade's patch** grows from 0.09% of the view to 1.3% and 1.5%.
+- **Saving:** the Cold saves and loads back.
+- **The roll:** 95 of 120 Old Blood are marked, 15 of them past 0.15 (at most 0.64), and none of 120 of the other peoples.
+- **Pictures:** `builder-marks-hand.jpg` (at 0, the wrist under the sleeve), `-back.jpg` (the shoulder blades at 0.3), `-arm.jpg` (0.6, up the forearm) and `-face.jpg` (1, the temple, the cheek and round the ear).
+
+### Needs eyes
+- **On grey-pale skin the lines are pale on pale.** Close up they read by their raised edge more than their colour. At a few metres a clothed Old Blood shows only the wrists, and the marks fade there. That suits a people that hides, but it may be too quiet for play.
+- **At 1 on the face they are strong:** a web over the temple and round the ear. That may want to be saved for the last steps of the Cold.
+- **The back of the hand and the palm are marked alike.** The canon names the back of the hand only.
+- **The roll's shares are mine:** four in five marked, one in eight of those carrying the Cold. The canon gives no share. In the game the player's own Cold is the systems builder's stat, and this is the parameter it would drive.
+- **Still owed for the Old Blood (OG-066):** the eye strip for the Cold's greying eyes, which could ride the same `cold`.
