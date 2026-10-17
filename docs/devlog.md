@@ -23403,3 +23403,25 @@ A correction made during the session: the first build slung the yard 0.30 m off 
 - **The peak stands 16.3 m up**, 5 m over the cog's masthead, as the caravel's lateens stand over theirs. A cog's short, deep hull under so tall a sail may read top-heavy.
 - **The fighting top is kept** as the cog's own mark. A lateen's yard is hoisted from under it, which works, but a real lateener would rarely carry one.
 - **Still owed by #347:** the galleon in the Mark's and Aurenne's dress.
+
+## v80 — Session 1045 — Card F11: the Mark's galleon, by #347's answer (prototype only)
+The fourth hull built to Michael's A on DECISION #347. Option A's text reads: "a Mark galleon gaff-rigged on the mizzen and square forward, with tanned sails". That is the galleon's own rig, the one the Gatelands galleon already carries (Session 896): square fore and main with topsails, a gaff mizzen, a spritsail. So by the rule (the island's rig forward, the class's own aft) only the dress changes, and nothing new is asked. It is `markGalleon` in `docs/prototypes/levelup/ships.js` (`gatelandsGalleon` with `o.dress: 'mark'`), at `ships.html?ship=markgalleon`.
+
+What changes is the dress, the Mark's cutter's (Session 871):
+- **The hull:** red-brown below the water and tarred black above. The castles' walls, the transom and the twelve gun-port lids are tarred too, and the wale, the bands, the window heads and the lanterns gilt.
+- **The sails:** every sail is in the cutter's tanned cloths, or the red and black stripes with `&stripe`. The Gatelands galleon's plain sails take a corner of the harp's map; the Mark's have no badge, so each sail is mapped on the whole cloth, and the stripes run full height on every sail.
+- **No beast's head:** the galleon's stem head stands inside the forecastle's walls, as the cog's does, where a head would be hidden. The Mark's cog (Session 1039) made the same call.
+
+The lines, castles, cabin, wheel, ports, rig and hatches are the Gatelands galleon's, built by the same code.
+
+### Verified (headless Chromium)
+- **`ships.check.mjs`: all pass.** Two render checks and three builds checks are new.
+  - **Renders:** the `quarter` and `deck` views render with no page errors.
+  - **The builds:** 3 keys, plain and striped, each build the same twice: 43,216 triangles in 10 meshes, exactly the Gatelands galleon's count. Her sections, rail, castles, ports, sails and boom are exactly the Gatelands galleon's.
+  - **The hull:** closed (0 of 1,260 rays get out). The walk from the quarterdeck's ladders to the bow is clear at all 96 points, with 2.09 m of headroom and 0.69 m clear.
+  - **The sails:** the tanned map reaches its full extent (1.0) on the sails' UVs.
+- **Pictures:** `ships-markgalleon-quarter.jpg`, `-side`, `-castle` and `-quarter-stripe`.
+### Needs eyes
+- **A tarred black galleon with tanned square sails** may read as the Gatelands galleon in mourning rather than as the Mark's. #347's text keeps her rig, so her silhouette is the Gatelands galleon's, and only the colours name her.
+- **The port lids are tarred on a tarred hull** and almost vanish. Gilt or red lids would show the gun deck, if Michael wants it seen.
+- **Still owed by #347:** Aurenne's galleon (square forward, lateens on the main and the mizzen).

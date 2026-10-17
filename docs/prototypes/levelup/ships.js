@@ -639,8 +639,20 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
 //   through it; the forecastle over her first 3.5 m, open beneath on two posts, a ladder up the middle. The gun ports are closed lids
 //   along the gun deck under the main deck, which is the systems builder's (the ports are paint, no guns).
 //   -> as markCutter, with castles ({ aft, fore } as the cog's), sails ([{ mast z, course foot y }]), ports, wheel: true.
+// o.dress 'mark' (Session 1045; Michael's A on DECISION #347, whose text gives "a Mark galleon gaff-rigged on the mizzen and square
+//   forward, with tanned sails"): that is the galleon's own rig, so only the dress changes. Her lines, castles, ports, wheel and rig are
+//   the Gatelands galleon's, in the Mark's cutter's dress: red-brown below the water, tarred black above, the castles' walls, the transom
+//   and the gun-port lids tarred too, the wale, the bands and the lanterns gilt; every sail in the cutter's tanned cloths (o.stripe, the
+//   red and black), the cloths whole on every sail where the Gatelands' plain sails take a corner of the harp's map. No beast's head: the
+//   stem head stands inside the forecastle's walls, as on the Mark's cog. markGalleon(o, r) is this.
+//   -> as gatelandsGalleon, with dress 'mark', stripe, and no harp.
+let MLM = null;
+function mkGalleonMats(stripe) { if (MLM && MLM.stripe === stripe) return MLM.M; const C = cutterMats(stripe), G = mats(false);
+  MLM = { stripe, M: { ...G, tar: C.bottom, green: C.tar, cream: C.gilt, oak: C.oak, deck: C.deck, spar: C.spar, sail: C.sail } }; return MLM.M; }
+export function markGalleon(o = {}, r = stream('mkgalleon')) { return gatelandsGalleon({ ...o, dress: 'mark' }, r); }
 export function gatelandsGalleon(o = {}, r = stream('galleon')) {
-  const harp = o.harp !== false, M = mats(harp), { put, rod, finish } = kit(M);
+  const MKD = o.dress === 'mark', stripe = MKD && !!o.stripe, harp = !MKD && o.harp !== false, M = MKD ? mkGalleonMats(stripe) : mats(harp), { put, rod, finish } = kit(M);
+  /* the Mark's sails are the cloths whole: no sail takes a corner of the map */ const corner = g => { if (MKD) return; const U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * .3, U.getY(k) * .3); };
   const L = 22, W = 7.0, DRAFT = 1.5, DECK = 1.0, SHEER = 1.5, BOW = .7, STERN = 1.25, NS = 60, NSTR = 16, TH = .05, TRN = .62;
   const zs = -L / 2, zb = L / 2, ZT = zs + .05;
   const sheerAt = z => SHEER + BOW * Math.max(0, z / zb) ** 2 + STERN * Math.max(0, z / zs) ** 2;
@@ -654,11 +666,11 @@ export function gatelandsGalleon(o = {}, r = stream('galleon')) {
   // carvel: tarred below the water, oiled oak above, the top two strakes green
   const KR = 4; for (let s = 0; s < NSTR; s++) { const u0 = s / NSTR, u1 = (s + 1) / NSTR, outer = [], inner = [];
     for (let i = 0; i <= NS; i++) { const z = zAt(i), ro = [], ri = []; for (let k = 0; k <= KR; k++) { const u = u0 + (u1 - u0) * k / KR, p = sect(z, u), n = norm(z, u); ro.push([p[0] + n[0] * TH / 2, p[1] + n[1] * TH / 2, zr(z, u)]); ri.push([p[0] - n[0] * TH / 2, p[1] - n[1] * TH / 2, zr(z, u)]); } outer.push(ro); inner.push(ri); }
-    const key = s >= NSTR - 2 ? 'green' : sect(0, (u0 + u1) / 2)[1] < .02 ? 'tar' : 'oak';
+    const key = s >= NSTR - 2 ? 'green' : sect(0, (u0 + u1) / 2)[1] < .02 ? 'tar' : MKD ? 'green' : 'oak';
     for (const side of [1, -1]) { const mir = rows => rows.map(row => row.map(([x, y, z]) => [x * side, y, z])); put(ribbon(mir(outer), side > 0), key, 0, 0, 0, 0, 0, 0, null); put(ribbon(mir(inner), side < 0), key, 0, 0, 0, 0, 0, 0, null); } }
   // the transom, and five stern windows in it under the cream wale; two lanterns over it
   { const pts = []; for (let k = 0; k <= 30; k++) { const [x, y] = sect(ZT, k / 30); pts.push(new THREE.Vector2(x + TH / 2, y)); } for (let k = 30; k >= 0; k--) { const [x, y] = sect(ZT, k / 30); pts.push(new THREE.Vector2(-x - TH / 2, y)); }
-    put(new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: .06, bevelEnabled: false }), 'oak', 0, 0, ZT - .06, 0, 0, 0, .6);
+    put(new THREE.ExtrudeGeometry(new THREE.Shape(pts), { depth: .06, bevelEnabled: false }), MKD ? 'green' : 'oak', 0, 0, ZT - .06, 0, 0, 0, .6);
     const wy = DECK + 1.25; for (let k = -2; k <= 2; k++) { put(new THREE.BoxGeometry(.5, .6, .03), 'dark', k * .72, wy, ZT - .075); put(new THREE.BoxGeometry(.62, .08, .05), 'cream', k * .72, wy + .34, ZT - .08); } put(new THREE.BoxGeometry(4.2, .1, .08), 'cream', 0, wy - .38, ZT - .08); }
   // the keel; the stem following the planking's curve to a long head; the beak under the bowsprit
   { const pts = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); pts.push([zr(z, 0), keelAt(z) - .06]); }
@@ -710,7 +722,7 @@ export function gatelandsGalleon(o = {}, r = stream('galleon')) {
   const square = (mz, mh, cy, cw2, tw, foot, harpOn) => { rod([0, keelAt(mz) + .1, mz], [0, DECK + mh, mz], .24, .14, 'spar'); put(new THREE.CylinderGeometry(.55, .45, .45, 12), 'oak', 0, cy + .5, mz);
     rod([-cw2 / 2, cy, mz + .2], [cw2 / 2, cy, mz + .2], .1, .08, 'spar'); rod([-tw / 2, DECK + mh - .5, mz + .16], [tw / 2, DECK + mh - .5, mz + .16], .07, .06, 'spar');
     const sail = (w, top, bot, z, harpSail) => { const g = new THREE.PlaneGeometry(w - .3, top - bot - .1, 14, 12), P = g.attributes.position; for (let k = 0; k < P.count; k++) { const x = P.getX(k) / (w / 2), y = P.getY(k) / ((top - bot) / 2); P.setZ(k, .6 * (1 - x * x) * (1 - .6 * y * y) + .1 * (1 - y) / 2); }
-      if (!harpSail) { const U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * .3, U.getY(k) * .3); } g.computeVertexNormals(); put(g, 'sail', 0, (top + bot) / 2 - .05, z, 0, 0, 0, null); };
+      if (!harpSail) corner(g); g.computeVertexNormals(); put(g, 'sail', 0, (top + bot) / 2 - .05, z, 0, 0, 0, null); };
     sail(cw2, cy, foot, mz + .28, harpOn); sail(tw, DECK + mh - .5, cy + .8, mz + .24, false);
     for (const e of [1, -1]) for (const dz of [-1.0, -.4, .2, .8]) { const z = mz + dz - .3; rod([0, cy + .4, mz], [e * (sect(z, 1)[0] + .05), (z < ZA ? CY + .2 : z > ZF ? CY + .2 : sheerAt(z) - .05), z], .014, .014, 'rope'); }
     return { mz, foot }; };
@@ -718,14 +730,14 @@ export function gatelandsGalleon(o = {}, r = stream('galleon')) {
   rod([0, DECK + 13 * .72, -.4], [0, DECK + 10.5 * .72, 5.2], .025, .025, 'rope'); rod([0, DECK + 10.5 * .72, 5.2], SP, .025, .025, 'rope');
   // the mizzen through the quarterdeck: a gaff sail with its boom 2.2 m over the quarterdeck, aft past the transom
   const MZ = -8.0, MH = 9, BY = CY + 2.2, GT = CY + 6.2; rod([0, keelAt(MZ) + .1, MZ], [0, DECK + MH + 1.8, MZ], .17, .11, 'spar'); rod([0, BY, MZ - .2], [0, BY, ZT - 1.4], .08, .07, 'spar');
-  const PK = [0, GT + 3.2 * Math.sin(.55), MZ - 3.2 * Math.cos(.55)]; rod([0, GT, MZ - .2], PK, .07, .06, 'spar'); { const g = quadSail([0, BY + .1, MZ - .25], [0, BY + .1, ZT - 1.1], PK, [0, GT - .05, MZ - .25], .45), U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * .3, U.getY(k) * .3); put(g, 'sail', 0, 0, 0, 0, 0, 0, null); }
+  const PK = [0, GT + 3.2 * Math.sin(.55), MZ - 3.2 * Math.cos(.55)]; rod([0, GT, MZ - .2], PK, .07, .06, 'spar'); { const g = quadSail([0, BY + .1, MZ - .25], [0, BY + .1, ZT - 1.1], PK, [0, GT - .05, MZ - .25], .45); corner(g); put(g, 'sail', 0, 0, 0, 0, 0, 0, null); }
   for (const e of [1, -1]) for (const dz of [-.5, .3]) { const z = MZ + dz; rod([0, DECK + MH, MZ], [e * (cw(z) - .05), CY + .2, z], .012, .012, 'rope'); }
   // the spritsail on its yard under the bowsprit, a third of the way out
-  { const t = .4, sy = sheerAt(zb) + .4 + SPL * t * Math.sin(.28) - .25, sz = zb + SPL * t * Math.cos(.28); rod([-2.2, sy, sz], [2.2, sy, sz], .05, .05, 'spar'); const g = new THREE.PlaneGeometry(4.0, 1.8, 6, 4); const P = g.attributes.position; for (let k = 0; k < P.count; k++) P.setZ(k, .25 * (1 - (P.getX(k) / 2) ** 2)); g.computeVertexNormals(); { const U = g.attributes.uv; for (let k = 0; k < U.count; k++) U.setXY(k, U.getX(k) * .3, U.getY(k) * .3); } put(g, 'sail', 0, sy - .95, sz + .1, 0, 0, 0, null); }
+  { const t = .4, sy = sheerAt(zb) + .4 + SPL * t * Math.sin(.28) - .25, sz = zb + SPL * t * Math.cos(.28); rod([-2.2, sy, sz], [2.2, sy, sz], .05, .05, 'spar'); const g = new THREE.PlaneGeometry(4.0, 1.8, 6, 4); const P = g.attributes.position; for (let k = 0; k < P.count; k++) P.setZ(k, .25 * (1 - (P.getX(k) / 2) ** 2)); g.computeVertexNormals(); corner(g); put(g, 'sail', 0, sy - .95, sz + .1, 0, 0, 0, null); }
   // the rudder on the transom, its head through the quarterdeck; the wheel on the quarterdeck
   { const ry0 = keelAt(zs) - .05; put(new THREE.BoxGeometry(.14, sheerAt(ZT) - ry0, .9), 'oak', 0, (ry0 + sheerAt(ZT)) / 2, ZT - .5); rod([0, sheerAt(ZT) - .2, ZT - .2], [0, CY + .3, ZT - .2], .09, .09, 'oak');
     const wz = ZA - 1.0, wy = CY + 1.15; put(new THREE.TorusGeometry(.66, .035, 6, 24), 'oak', 0, wy, wz); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; rod([0, wy, wz], [.82 * Math.cos(a), wy + .82 * Math.sin(a), wz], .022, .018, 'oak'); }
     put(new THREE.CylinderGeometry(.07, .07, .3, 8).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), 'iron', 0, wy, wz - .12); put(new THREE.BoxGeometry(.18, wy - CY, .18), 'oak', 0, (wy + CY) / 2 - .05, wz - .3); }
-  return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: DECK + 2.2, mast: [0, -.4], hatch: hatches[0], hatches, sheerAt, keelAt, transom: ZT, carvel: true, harp, wheel: true, ports, sails, boom: { y: BY, z0: MZ - .2, z1: ZT - 1.4 },
+  return finish({ L, W, deck: DECK, sections, sect, nstr: NSTR, deckAt, rail, sailFoot: DECK + 2.2, mast: [0, -.4], hatch: hatches[0], hatches, sheerAt, keelAt, transom: ZT, carvel: true, harp, wheel: true, ports, sails, dress: MKD ? 'mark' : 'gatelands', stripe, boom: { y: BY, z0: MZ - .2, z1: ZT - 1.4 },
     castles: { aft: { z0: ZT, z1: ZA, y: CY, door, ladders }, fore: { z0: ZF, z1: zb - .3, y: CY, ladder: fladder, posts } } });
 }
