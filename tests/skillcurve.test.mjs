@@ -69,7 +69,9 @@ const fight = await page.evaluate(() => {
     try { for (const h of [5, 50, 100]) { SKILLS.hand = { lv: h, p: 0 }; raw = []; _swing(e, keep); out.hand[h] = raw[0]; }
       SKILLS.hand = { lv: 5, p: 0 }; uses.length = 0; SKILL_LAST.clear(); _swing(e, keep); out.handUse = uses.slice(); out.handP = SKILLS.hand.p;
     } finally { FISTS.atk[0] = fa[0]; FISTS.atk[1] = fa[1]; EQ.weapon = keepW; buildViewmodel(); }
-  } finally { applyMeleeDamage = _a; skillUse = _u; e.hp = 0; }
+  } finally { applyMeleeDamage = _a; skillUse = _u; e.hp = 0; e.dead = true; WORLD.scene.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); }
+  /* the Bandit goes, body and all: the run's lane and the jump's spot are at S, and a body left there pushed the run aside by a different amount each boot */
+  out.left = ZONES.world.enemies.filter(f => f.hp > 0 && Math.hypot(f.x - S.x, f.z - S.z) < 6).length;
   return out; });
 check(`skilluse: three swings at an unaware Bandit land (${fight.unaware && fight.unaware.swings}) and teach Blade nothing (${fight.unaware && fight.unaware.blade})`, !fight.noSpot && fight.unaware.swings === 3 && fight.unaware.blade === 0, fight);
 check(`skilluse: a swing at an alert one is a Blade use (${fight.aware && fight.aware.blade})`, !fight.noSpot && fight.aware.swings === 1 && fight.aware.blade === 1, fight.aware);
@@ -95,11 +97,12 @@ const move = await page.evaluate(([S]) => {
   const out = {}; const keepAll = () => { PHP = maxHP; dead = false; stamina = maxStamina; };
   const run = (lv) => { SKILLS.athletics = { lv, p: 0 }; px = S.x - 2; pz = S.z; yaw = -Math.PI / 2; for (const k in K) K[k] = false; let n = 0;
     _drive(() => { keepAll(); return ++n > 10; }, 20); K.KeyW = true; n = 0; _drive(() => { keepAll(); yaw = -Math.PI / 2; return ++n > 20; }, 40); const x0 = px; n = 0;
-    _drive(() => { keepAll(); yaw = -Math.PI / 2; return ++n > 30; }, 40); K.KeyW = false; return (px - x0) / (30 / 60); };
+    const z0 = pz; _drive(() => { keepAll(); yaw = -Math.PI / 2; return ++n > 30; }, 40); K.KeyW = false; out.drift = Math.max(out.drift || 0, Math.abs(pz - z0)); return (px - x0) / (30 / 60); };
   const jump = (lv) => { SKILLS.acrobatics = { lv, p: 0 }; px = S.x; pz = S.z; for (const k in K) K[k] = false; let n = 0; _drive(() => { keepAll(); return ++n > 20 && onGround; }, 120);
     const y0 = jumpY; let top = y0; K.Space = true; n = 0; _drive(() => { keepAll(); if (n === 1) K.Space = false; top = Math.max(top, jumpY); return ++n > 5 && onGround; }, 200); K.Space = false; return top - y0; };
-  out.run = [5, 100].map(run).map(v => +v.toFixed(3)); out.jump = [5, 100].map(jump).map(v => +v.toFixed(3));
+  out.run = [5, 100].map(run).map(v => +v.toFixed(3)); out.drift = +out.drift.toFixed(3); out.jump = [5, 100].map(jump).map(v => +v.toFixed(3));
   return out; }, [fight.S]);
+check(`the run's lane is clear: no live foe within 6 of it (${fight.left}), and the run keeps its line (${move.drift} m aside)`, fight.left === 0 && move.drift < .01, { left: fight.left, drift: move.drift });
 // the loop's own modifiers (Swiftness, the load) and its fixed step sit on both, so the measure is the ratio the sheet sets
 check(`the run at Athletics 5 and 100: ${move.run.join(' and ')} a second, ×${(move.run[1] / move.run[0]).toFixed(3)} (the sheet's 3.83 → 4.2, ×1.097, ±2%)`, Math.abs(move.run[1] / move.run[0] / (4.2 / 3.83) - 1) < .02, move);
 check(`the jump's apex at Acrobatics 5 and 100: ${move.jump.join(' and ')} m, ×${(move.jump[1] / move.jump[0]).toFixed(3)} (5.5 → 6.6 is ×1.44 the height, ±4%; 0.84 → 1.21 m)`, Math.abs(move.jump[1] / move.jump[0] / 1.44 - 1) < .04 && move.jump[0] > .7, move);
