@@ -23,13 +23,23 @@ const PANELS = [
   { name: 'a sigil stone, clicked', open: () => showSigilOverlay(SPELLS[0], 'The stone is cold.', null, null),
     btn: '#sigil-overlay', shut: () => document.getElementById('sigil-overlay').style.display === 'none' },
 ];
+// Session 1110: Playwright's `click` waits for the button to be stable over two of the page's animation frames, within 8 s. On a
+// loaded runner a frame of the game can take seconds, so three of the five clicks timed out on main 5521ba1 (shard 2) and their
+// panels never shut. The wait is now counted in the game's frames: the button's box is read on two frames in a row until it holds
+// still (up to 30 pairs), and the mouse clicks its centre, a real click that lands on whatever is on top there, as a player's does.
+const clickStill = async (sel) => { const loc = page.locator(sel).first(); let prev = null;
+  for (let k = 0; k < 30; k++) { const b = await loc.boundingBox().catch(() => null);
+    if (b && b.width > 0 && b.height > 0 && prev && ['x', 'y', 'width', 'height'].every(q => Math.abs(b[q] - prev[q]) < .5)) {
+      await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2); return { tries: k + 1 }; }
+    prev = b; await g.frames(1); }
+  console.log('  no still box for', sel, JSON.stringify(prev)); return { tries: 0 }; };
 const out = [];
 for (const P of PANELS) {
   await page.evaluate(() => { if (document.getElementById('g')) document.getElementById('g').focus(); });
   await page.evaluate(`(${P.open.toString()})()`); await g.frames(2);
-  await page.locator(P.btn).first().click({ timeout: 8000 }).catch(e => console.log('  click failed', String(e).slice(0, 300))); await g.frames(3);
+  const c = await clickStill(P.btn); await g.frames(3);
   const shut = await page.evaluate(`(${P.shut.toString()})()`);
-  const o = { panel: P.name, shut, focus: await focus(), ...(await walk()) };
+  const o = { panel: P.name, clicked: c.tries, shut, focus: await focus(), ...(await walk()) };
   out.push(o); console.log(' ', JSON.stringify(o));
 }
 check('each panel closes on its own button', out.every(o => o.shut), out);

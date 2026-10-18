@@ -31,6 +31,16 @@ const r = await page.evaluate(() => {
   // held against the open blows that are not a chain's third
   const _a = applyMeleeDamage; applyMeleeDamage = function (who, raw) { if (who === e) { lastRaw = raw; raws[mode] && raws[mode].push(raw);
     if (mode === 'open' && !(SWING && SWING.chain === 3)) raws.openPlain.push(raw); } return _a.apply(this, arguments); };
+  // S1109: each guarded front hit is kept with its unguarded twin, the same blow (the same roll off the foe's stream) at shMult 1,
+  // so the band below is that blow's own and not one estimated from the open blows the run happened to roll
+  const pairs = []; const _mc = meleeDamageChain; meleeDamageChain = function (who, o) {
+    if (who !== e || !o || !(o.shMult < 1)) return _mc.apply(this, arguments);
+    const had = 'rng' in who, rng = who.rng, src = rng || (() => Math.random()); let drew = null;
+    const put = () => { if (had) who.rng = rng; else delete who.rng; };
+    who.rng = function () { return (drew = src.apply(this, arguments)); };
+    let v; try { v = _mc.apply(this, arguments); } finally { put(); }
+    if (drew !== null) { who.rng = () => drew; try { pairs.push({ hit: v, open: _mc.call(this, who, Object.assign({}, o, { shMult: 1 })) }); } finally { put(); } }
+    return v; };
   const msgs = []; const _m = showMsg; showMsg = function (tx) { if (/guard|Bash|staggered/.test(tx)) msgs.push(tx); return _m.apply(this, arguments); };
   const face = () => { yaw = Math.atan2(-(e.x - px), -(e.z - pz)); };
   const keep = () => { PHP = maxHP; dead = false; PPOST.stagUntil = 0; stamina = maxStamina; if (e.hp < e.maxHp * .5) e.hp = e.maxHp; };
@@ -62,9 +72,9 @@ const r = await page.evaluate(() => {
       const bx = -Math.sin(e.combatYaw), bz = -Math.cos(e.combatYaw); px = e.x + bx * 1.3; pz = e.z + bz * 1.3;
       mode = 'flank'; const behind = isPlayerBehind(e); const raw = swing(false); mode = 'none';
       out.flanks.push({ behind, raw, upAtHit: e.shieldUp }); wait(90); px = e.x; pz = e.z + 1.4; }
-  } finally { applyMeleeDamage = _a; showMsg = _m; }
+  } finally { applyMeleeDamage = _a; showMsg = _m; meleeDamageChain = _mc; }
   const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0;
-  out.raws = raws; out.means = { front: +mean(raws.front).toFixed(2), open: +mean(raws.open).toFixed(2), flank: +mean(raws.flank).toFixed(2), openPlain: +mean(raws.openPlain).toFixed(2) };
+  out.raws = raws; out.pairs = pairs; out.means = { front: +mean(raws.front).toFixed(2), open: +mean(raws.open).toFixed(2), flank: +mean(raws.flank).toFixed(2), openPlain: +mean(raws.openPlain).toFixed(2) };
   out.msgs = msgs.slice(0, 12);
   e.dead = true; if (e.mesh) WORLD.scene.remove(e.mesh); const L = ZONES.world.enemies, i = L.indexOf(e); if (i >= 0) L.splice(i, 1);
   return out; });
@@ -76,10 +86,12 @@ check('a Bandit Captain stands with the guard up: the shield on its arm, raised 
 // starting weapon at this level), so a front hit is 1 or 2. The mean ratio was held above 0.2, which nine 1s in ten (a roll of 5
 // nine times, about 2% of runs) fell under: main's CI on 5bd8722, front [1,1,1,1,1,2,1,1,1,1]. Each hit is now held to the floored
 // 35% of the open rolls' range, and the mean to 0.15–0.45, which every mix of 1s and 2s against 5s and 6s keeps.
-const op = r.raws ? r.raws.open : [], fr = r.raws ? r.raws.front : [];
-const fLo = op.length ? Math.floor(Math.min(...op) * .35) : 1, fHi = op.length ? Math.floor((Math.max(...op) + 1) * .35) : 0;
-const inBand = fr.length > 0 && fr.every(x => x >= Math.max(1, fLo) && x <= fHi && x < Math.min(...op));
-check('from the front the guard holds: ten swings land at about a third of an open blow (35%, floored to whole points), and it stays up', r.frontUp && fr.length >= 8 && inBand && ratio > .15 && ratio < .45, { n: fr.length, front: fr, band: [fLo, fHi], ratio });
+// Session 1109: the band came from the open blows' rolls, and a run whose twelve open blows all rolled 6 (the GreatClub's 5–6 at
+// level 1) put it at 2–3, so a front roll of 5 (1) fell out of it (auto/quests 2df0963, shard 4, front [1,2,2,2,2,2,2,2,2,2]). Each
+// front hit is now held to its own blow: the same roll unguarded is `open`, and the hit is that blow's 35% floored, 1 or more, under it.
+const fr = r.raws ? r.raws.front : [], pr = r.pairs || [];
+const inBand = fr.length > 0 && pr.length === fr.length && pr.every((q, i) => q.hit === fr[i] && q.hit >= Math.max(1, Math.floor(q.open * .35)) && q.hit <= Math.floor((q.open + 1) * .35) && q.hit < q.open);
+check('from the front the guard holds: ten swings land at about a third of an open blow (35%, floored to whole points), and it stays up', r.frontUp && fr.length >= 8 && inBand && ratio > .15 && ratio < .45, { n: fr.length, front: fr, unguarded: pr.map(q => q.open), ratio });
 check('a bash from the front glances off the raised shield', r.bash.some(m => /glances off/.test(m)) && r.bashUp, r.bash);
 check('a power attack breaks the guard every time: it staggers, the shield arm drops, and that blow does no damage', r.cycles.length === 4 && r.cycles.every(c => c.broke && c.staggered && c.hpLost === 0 && c.msg.some(m => /guard breaks/.test(m)) && c.armX !== -1.15), r.cycles);
 check('while it reels, follow-up swings land in full', r.raws.open.length >= 4 && r.cycles.every(c => c.followUps >= 1), r.raws.open);
