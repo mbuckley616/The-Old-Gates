@@ -24259,3 +24259,40 @@ Backlog L6's "the base below deck" (OG-027, OG-072, both KEEP) has not been star
 - **The aftcastle's rear corner** shows a strip of sky over the sternpost from inside the cabin. That is the castle's own shape in `ships.js`, not the base's.
 - **The sea's hole** shows a sliver of light at the bow and stern in the cut view.
 - **Owed:** the other four classes' bases once #418 is answered (the sloop's cuddy, the galleon's great cabin under its stern windows). What the stations do is the systems builder's.
+
+## v80 — Session 1100 — Under the sea: the drowned arches under a coastal town (backlog L10, prototype only)
+Backlog L10's "under the sea" (OG-125, KEEP) has not been started. The game already dives, raises wrecks and fills their chests (`85-world-sea.js`), but there is no place on the sea floor to swim to. The sheet's shallows come first: drowned arches beneath a coastal town, kelp and a reef, a sunken rowboat, a hidden alcove. They are drawn in `docs/prototypes/levelup/undersea.js` (`drownedArches`), with its page (`undersea.html`, `undersea-view.js`) and its check. At a metre a unit, with the sea's surface at y 0 and the town on +z:
+- **The quay:** coursed stone along 36 m, from below the sand to 1.8 m over the water. It has a coping, iron rings and a stair of nine steps down its face into the water. On it stand two of the kit's Gatelands houses (`glBayPlan`), their fronts to the water, so the place lies under a town.
+- **The drowned arcade:**
+  - **Its plan:** old dressed stone running 34 m straight out from the quay: seven bays of round arches 4 m wide on piers 2.4 m across and 1.6 m along. Each arch has eleven voussoirs, with spandrels kept clear of its opening and a deck of slabs with the stumps of a parapet.
+  - **Its depth:** it was a causeway. Its deck lies 1.75 m under the water now, so the game's galleon (1.5 m draft) passes over it, and the near piers are silted almost to their springing.
+  - **Its deep end:** the first four bays stand whole. The fifth's arch has fallen, its eleven stones lying on the sand under it. The sixth and seventh piers stand as stumps.
+  - **Weed:** on every face that looks up, in the stone's own shader.
+- **The floor:** rippled sand from about 4.5 m deep at the quay to 16 m at 60 m out, with a reef of lumpy boulders either side, clear of the boat and the alcove.
+- **Kelp:** 129 twisted stalks, rooted where the floor is shallower than 9 m and reaching to between 0.6 and 3 m under the surface, none in the arcade's line.
+- **The rowing boat:** sunk on her side on the sand beside the fourth pier at 7.3 m, her oar beside her (the smugglers' lair's lathe hull, Session 883).
+- **The alcove:** a niche 1.2 by 1.7 m in the quay's face behind the kelp, its sill 3 m under the water, a small iron-bound chest in it. What is in the chest is the systems builder's, and who built the arches is the quest writer's.
+- **The question:** the page's light and fog take `&water=green|clear|mark`.
+  - **green:** the Gatelands, about 15 m of sight.
+  - **clear:** turquoise, about 40 m.
+  - **mark:** dark cold blue, about 10 m.
+- **The rest of the page:** soft shafts of light from the surface, and a surface seen from below. `?view=above` shows the arches from the quay's stair through a sheet of sea.
+
+### Verified (headless Chromium)
+- **`undersea.check.mjs` (new): 16 of 16 pass.**
+  - **Builds:** the place is the same twice and in budget, at 53,443 triangles in 38 draws with the two houses. The first run caught the houses' lit windows taken from the page's shared dice. They now have their own streams.
+  - **The floor:** 4.04 m deep at the quay to 16.02 m at 60 m out.
+  - **A galleon passes over:** rays along the arcade at 1.5 and 1.6 m deep meet nothing of it, and its deck is at −1.75.
+  - **The arcade:** eight piers, every one standing from below the sand (−4.92 to −12.76). Four bays are whole, and the stumps stand at −5.7 and −7.1 m.
+  - **The fallen arch:** its 11 stones lie on the sand under it, each within 0.6 m of the floor below it.
+  - **The kelp:** 129 stalks, every one rooted shallower than 9 m, its tip 0.6 to 3 m under the surface and clear of the arcade.
+  - **The boat** lies on the sand at 7.3 m, bedded 0.12 m into it.
+  - **The alcove is open to a swimmer:** six rays at its middle and 0.4 m off it, at its sill + 0.45 m and its head − 0.3 m, reach its back at z 0.9.
+  - **Renders:** the page's seven views render with no page errors.
+- **The first pictures** were taken from under the sand: I had put the floor at 3 m, not 4.5, at the cameras. They were retaken over it.
+- **Pictures:** `undersea-swim.jpg`, `-swim-clear`, `-swim-mark`, `-arches`, `-alcove`, `-boat` and `-above`.
+### Needs eyes
+- **The question:** the water's colour and clarity are asked as DECISION #419. The recommendation is A, by island.
+- **The kelp** is flat ribbons, and near the eye it fills the frame (the boat's view is half kelp). It does not sway: the page is a still.
+- **From the quay,** the surface is a plain transparent sheet with no ripples or reflection. The game's own water is F3's.
+- **Owed:** OG-125's wrecks at three depths (two lying together from one fight), sea caves with air pockets and tunnels and a shaft to the air, the sunken village and temples, the gate structures still lit under the sea (Uisce), and the Abyss (the Root).

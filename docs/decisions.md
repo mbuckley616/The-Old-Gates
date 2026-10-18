@@ -133,6 +133,31 @@ Pictures:
 - [the galley](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-galley.jpg)
 
 
+### The water under the sea: by island, the Gatelands' green everywhere, or clear everywhere? (look builder, Session 1100) — DECISION #419
+**Backlog L10, under the sea (look builder, Session 1100; OG-125).** The first place on the sea floor is drawn in `docs/prototypes/levelup/undersea.js`, at `undersea.html?view=swim|arches|alcove|boat|above&water=green|clear|mark`: drowned arches under a coastal town.
+- **The quay:** a quay of coursed stone with two of the kit's Gatelands houses on it.
+- **The arches:** an arcade of seven round arches 4 m wide runs 34 m out from the quay. It was a causeway: its deck now lies 1.75 m under the water, so the game's galleon (1.5 m draft) passes over it. Its first four bays stand whole. At the deep end one arch has fallen onto the sand and two piers stand as stumps.
+- **The floor:** sand from about 4.5 m deep at the quay to 16 m at 60 m out, with a reef either side.
+- **Kelp:** 129 stalks to between 0.6 and 3 m under the surface.
+- **Finds:** a rowing boat sunk on her side at 7.3 m, and a niche in the quay's face behind the kelp with a small chest.
+
+The water is the open question, because it sets the look of every place under the sea:
+- **A. By island** *(recommended)*: green and close in the Gatelands (about 15 m of sight), dark and cold blue in the Mark (about 10 m), clear turquoise in Aurenne (about 40 m). The sea says which island you are off, as the towns do.
+- **B. The Gatelands' green everywhere:** close and murky, things loom out of it.
+- **C. Clear turquoise everywhere:** the most to see and the furthest. It is the inviting answer, but the cold north would look like the south.
+
+Who built the arches and what is in the chest are not this question: they are the quest writer's and the systems builder's.
+
+Pictures:
+- [Gatelands green, out along the arcade](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-swim.jpg)
+- [the same, clear](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-swim-clear.jpg)
+- [the same, the Mark's](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-swim-mark.jpg)
+- [the bays from the side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-arches.jpg)
+- [the alcove](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-alcove.jpg)
+- [the boat](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-boat.jpg)
+- [from the quay's stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-above.jpg)
+
+
 ## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
