@@ -148,6 +148,38 @@
     if(streets.length){const rd=streets[0];const far=rd.def.a===site.id?rd.pts[rd.pts.length-1]:rd.pts[0];const dx=far.x-cx,dz=far.z-cz,L=Math.hypot(dx,dz)||1;ax=dx/L;az=dz/L;}
     const bx=-az,bz=ax; // perpendicular
     const streetLines=[]; // {px,pz,dx,dz} infinite lines, clipped to the pad
+    // S1135 (card F6, Michael's B on #433) — the town is laid out around its church and its keep, on both looks: before a lot is
+    // laid, a town's, port's or city's church takes a plot on the square and a keep its bawn's plot at the head of the main street, and
+    // the lots, the stalls, the widened houses and the streets keep out of them (a street that runs into one stops at it).
+    //   - the church: the kit's church with its west tower, end-on, 8.4 m wide and 27.4 m long (22.6 with two bays where three will not
+    //     fit), its tower's face 14 m from the town's heart, its flank 2.8 m off a street through the centre as a lot's front is, a yard
+    //     of 2 m beside it and 3 m behind; tried along the cross street first (the main road runs along the main street), each way, each side;
+    //   - the keep's bawn: 30 m wide and 25 m deep, astride the main street at its far end from the first road, its gate toward the heart;
+    //     else at an end of the cross street, else the near end of the main street, drawn in from the ring by 6 m at a time while a road is in it.
+    // A plot is { type, x, z, w, d, ry, tx, tz, k, lot }: its rect (with the yard), the way its front faces, and the building's own lot.
+    let PLOTS=[];
+    const plotC=(P,m)=>{const c=Math.cos(P.ry),s_=Math.sin(P.ry),hw=P.w/2+m,hd=P.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:P.x+u*c+v*s_,z:P.z-u*s_+v*c}));};
+    const rectsApart=(a,b,m)=>{const A=plotC(a,m),B=plotC(b,0);for(const P of [A,B])for(let k=0;k<2;k++){const ex=P[k+1].x-P[k].x,ez=P[k+1].z-P[k].z;const pa=A.map(q=>q.x*ex+q.z*ez),pb=B.map(q=>q.x*ex+q.z*ez);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
+    function inPlot(x,z,m){for(const P of PLOTS){const ex=x-P.x,ez=z-P.z,c=Math.cos(P.ry),s_=Math.sin(P.ry);if(Math.abs(ex*c-ez*s_)<P.w/2+m&&Math.abs(ex*s_+ez*c)<P.d/2+m)return true;}return false;}
+    const offPlots=(l,m=.6)=>!!l.plot||PLOTS.every(P=>rectsApart(l,P,m)); /* a plot's own building is in it by right */
+    function townPlots(){const out=[];if(!(site.kind==='town'||site.kind==='city'||site.kind==='port'))return out;
+      const h0=heroShops(site),types=h0?h0.map(h=>h.type):plan.shops;
+      // a rect in a frame: along u from t0 to t1, across it (v) from a0 to a1, its front toward -u; with ok() over its edges every 1.5 m
+      const frame=(ux,uz,vx,vz,t0,t1,a0,a1)=>{const tm=(t0+t1)/2,am=(a0+a1)/2;return {x:cx+ux*tm+vx*am,z:cz+uz*tm+vz*am,w:a1-a0,d:t1-t0,ry:Math.atan2(-ux,-uz),tx:-ux,tz:-uz};};
+      const fits=(P,own)=>{const C=plotC(P,0);for(let k=0;k<4;k++){const A=C[k],B=C[(k+1)%4],n=Math.ceil(Math.hypot(B.x-A.x,B.z-A.z)/1.5);for(let j=0;j<n;j++){const x=A.x+(B.x-A.x)*j/n,z=A.z+(B.z-A.z)*j/n;
+          if(Math.hypot(x-cx,z-cz)>inner-3)return false;const ri=roadInfo(x,z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;
+          for(const L of streetLines){if(L===own||Math.abs(L.dx*(-P.tz)+L.dz*P.tx)>.5)continue;/* a street across it is cut; one along it must stay 1.6 m off */ if(Math.abs((x-L.px)*(-L.dz)+(z-L.pz)*L.dx)<1.6)return false;}}}
+        if(site.quayStart&&Math.hypot(P.x-site.quayStart.x,P.z-site.quayStart.z)<Math.max(P.w,P.d)/2+20)return false;
+        return out.every(Q=>rectsApart(P,Q,1));};
+      const along=(ux,uz)=>streetLines.find(L=>L.px===cx&&L.pz===cz&&Math.abs(L.dx*uz-L.dz*ux)<1e-6)||null; /* the street through the heart along u */
+      const dirs=[[bx,bz],[-bx,-bz],[ax,az],[-ax,-az]];
+      if(types.includes('church'))outer:for(const n of [3,2]){const L=PKIT.gl.churchLen(n),W=8.4,t0=Math.sqrt(14*14-2.8*2.8);
+        for(const [ux,uz] of dirs)for(const sd of [1,-1]){const vx=-uz*sd,vz=ux*sd,P=frame(ux,uz,vx,vz,t0,t0+L+3,2.8,2.8+W+2);if(!fits(P,null))continue;
+          const lot=Object.assign(frame(ux,uz,vx,vz,t0,t0+L,2.8,2.8+W),{w:W,d:L,row:0,street:null,k:-1,plot:'church',bays:n});P.type='church';P.lot=lot;out.push(P);break outer;}}
+      if(types.includes('castle')){const T=Math.sqrt((inner-3)**2-15*15);
+        outer:for(const [ux,uz] of [[-ax,-az],[bx,bz],[-bx,-bz],[ax,az]])for(let t1=T;t1-25>=20;t1-=6){const vx=-uz,vz=ux,P=frame(ux,uz,vx,vz,t1-25,t1,-15,15);if(!fits(P,along(ux,uz)))continue; /* the main street runs into its gate */
+          const lot=Object.assign(frame(ux,uz,vx,vz,t1-1-11,t1-1,-7,7),{w:14,d:11,row:0,street:null,k:-2,plot:'castle'});P.type='castle';P.lot=lot;out.push(P);break outer;}}
+      return out;}
     if(useGrid){
       const G=site.kind==='city'?38:site.kind==='village'?17:site.kind==='port'?22:34; // block size; villages/ports one row per side
       const nmax=Math.floor((inner-6)/G);
@@ -155,6 +187,7 @@
         streetLines.push({px:cx+bx*k*G,pz:cz+bz*k*G,dx:ax,dz:az});   // streets along the axis
         streetLines.push({px:cx+ax*k*G,pz:cz+az*k*G,dx:bx,dz:bz});   // cross streets
       }
+      PLOTS=townPlots();
       // draw them (skip the real road's own lines roughly — they overlap harmlessly)
       streetLines.forEach(l=>{
         const half=Math.sqrt(Math.max(0,inner*inner-((l.px-cx)*(l.px-cx)+(l.pz-cz)*(l.pz-cz))));
@@ -162,7 +195,7 @@
         // S193 — where a road already runs along or across the street, the road is the street: the ribbon breaks
         // there rather than doubling it or weaving beside it (the playtest's overlapping patterns)
         let run=[];const flush=()=>{if(run.length>1&&Math.hypot(run[run.length-1].x-run[0].x,run[run.length-1].z-run[0].z)>3)paths.push({w:2.4,pts:[run[0],run[run.length-1]]});run=[];};
-        for(let t=-half;t<=half+1e-6;t+=1.5){const x=l.px+l.dx*t,z=l.pz+l.dz*t;const ri=roadInfo(x,z,true);if(ri&&ri.d<ROAD_HALF+1.2+3.5)flush();else run.push({x,z});}flush();
+        for(let t=-half;t<=half+1e-6;t+=1.5){const x=l.px+l.dx*t,z=l.pz+l.dz*t;const ri=roadInfo(x,z,true);if((ri&&ri.d<ROAD_HALF+1.2+3.5)||inPlot(x,z,1.2))flush();else run.push({x,z});}flush(); /* S1135 — and where a plot stands across it */
       });
       // a perimeter lane every street runs into (no dead ends in a field)
       // (S193: broken where a road crosses it, the road being the way through there)
@@ -196,6 +229,7 @@
             const rad=Math.max(w,d)/2+2.0;
             if(placed.some(p=>Math.hypot(p.x-lx,p.z-lz)<p.rad+rad))continue;
             const ry=Math.atan2(-nx*side,-nz*side);
+            if(!offPlots({x:lx,z:lz,w,d,ry},1))continue; /* S1135 — not in the church's or the keep's plot */
             placed.push({x:lx,z:lz,rad});
             lots.push({x:lx,z:lz,w,d,ry,tx:-nx*side,tz:-nz*side,row,street:{px:px_,pz:pz_,dx,dz},k:lots.length});
           }
@@ -229,6 +263,7 @@
         const rad=Math.max(w,d)/2+2.0;
         if(placed.some(p=>Math.hypot(p.x-lx,p.z-lz)<p.rad+rad))continue;
         const tx=(cx-lx),tz=(cz-lz),L=Math.hypot(tx,tz)||1;
+        if(!offPlots({x:lx,z:lz,w,d,ry:Math.atan2(tx/L,tz/L)},1))continue;
         placed.push({x:lx,z:lz,rad});
         lots.push({x:lx,z:lz,w,d,ry:Math.atan2(tx/L,tz/L),tx:tx/L,tz:tz/L,row:0,street:null,k:lots.length});
       }
@@ -240,20 +275,33 @@
       if(TST&&withBuilds){TST.builds.forEach(b=>{if(!b.done)return;if(b.key==='inn'&&!shopTypes.includes('inn'))shopTypes.push('inn');if(b.key==='chapel'&&!shopTypes.includes('church'))shopTypes.push('church');if(b.key==='guild'&&!shopTypes.includes('guild_f'))shopTypes.push('guild_f');});}
       // Size shop lots by type first, then drop any later lot that overlaps an
       // earlier one (shops come first, so churches/keeps keep their room).
-      lots.forEach((lot,i)=>{const t=shopTypes[i];if(t==='church'){lot.w=Math.max(lot.w,7);lot.d=Math.max(lot.d,9);}else if(t==='castle'){lot.w=14;lot.d=11;}else if(t==='guild_f'||t==='guild_m'){lot.w=13;lot.d=11;}});
+      // S1135 — a type with a plot takes it (below): the other lots are sized as if it were not in the list
+      const plotAt=PLOTS.map(P=>({P,i:shopTypes.indexOf(P.type)})).filter(q=>q.i>=0).sort((a,b)=>a.i-b.i),sizeTypes=shopTypes.filter((t,i)=>!plotAt.some(q=>q.i===i));
+      lots.forEach((lot,i)=>{const t=sizeTypes[i];if(t==='church'){lot.w=Math.max(lot.w,7);lot.d=Math.max(lot.d,9);}else if(t==='castle'){lot.w=14;lot.d=11;}else if(t==='guild_f'||t==='guild_m'){lot.w=13;lot.d=11;}});
       const kept=[];
       // S193 — a lot made bigger above (a keep, a guild hall, a church) is checked against the roads again: its corners
       // could reach one (3 of 1,062 buildings in thirty towns stood on a road)
       const lotOnRoad=lot=>{const c=Math.cos(lot.ry),s_=Math.sin(lot.ry);for(let u=-1;u<=1;u+=.5)for(let v=-1;v<=1;v+=.5){const lx=u*lot.w/2,lz=v*lot.d/2;const ri=roadInfo(lot.x+lx*c+lz*s_,lot.z-lx*s_+lz*c,true);if(ri&&ri.d<ROAD_HALF+.6)return true;}return false;};
       lots.forEach(lot=>{const rad=Math.max(lot.w,lot.d)/2+2.0;if(Math.hypot(lot.x-cx,lot.z-cz)>inner-Math.max(lot.w,lot.d)/2-1)return; // whole footprint inside the ring
         if(lot.w*lot.d>60&&lotOnRoad(lot))return;
+        if(!offPlots(lot,1))return; /* S1135 — a lot made bigger above may reach a plot */
         if(kept.some(k=>Math.hypot(k.x-lot.x,k.z-lot.z)<Math.max(k.w,k.d)/2+2.0+rad))return;kept.push(lot);});
       const use=kept.slice(0,Math.max(want,0)); // homes fill whatever the shops don't
+      // S1135 — a Gatelands town's guild hall becomes the kit's hall on the new look (S1083, below): where the hall would not stand on its
+      // lot for a plot's yard, the guild changes places with the first home whose lot it would stand on. Asked on both looks, so the
+      // two lay the town out alike; the question is the hall pass's own (14.4 by 9 m, its front kept, slid by up to 0.7 m).
+      if(PLOTS.length&&nationOf(ni,nj).people==='gatelander'&&(site.kind==='town'||site.kind==='city')){
+        const near=(l,own)=>{let m=1e9;for(const q of plotC(l,0)){m=Math.min(m,inner-1-Math.hypot(q.x-cx,q.z-cz));const ri=roadInfo(q.x,q.z,true);if(ri)m=Math.min(m,ri.d-ROAD_HALF-1.2);
+            for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;m=Math.min(m,Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)-1.6);}}return m;};
+        const hallFits=l=>{const sh=(l.d-9)/2,m0=Math.min(0,near(l,l.street));for(const sl of [0,.35,-.35,.7,-.7]){const h=Object.assign({},l,{w:14.4,d:9,x:l.x+l.tx*sh+l.tz*sl,z:l.z+l.tz*sh-l.tx*sl});
+            if(near(h,l.street)>=m0-1e-6&&use.every(u=>u===l||rectsApart(h,Object.assign({},u,{w:u.w+1.2,d:u.d+1.2}),.6))&&offPlots(h))return true;}return false;};
+        sizeTypes.forEach((t,i)=>{if((t!=='guild_f'&&t!=='guild_m')||i>=use.length||hallFits(use[i]))return;const j=use.findIndex((l,k)=>k>=sizeTypes.length&&hallFits(l));if(j>0){const q=use[i];use[i]=use[j];use[j]=q;}});}
       // ports: the shipwright gets its own lot at the quay head, door toward the quay
       if(site.kind==='port'&&site.quayStart){const si=shopTypes.indexOf('shipwright');const sd=shoreDir(site);
         if(si>=0&&sd){const q=site.quayStart;const lx=site.shipwrightLot?site.shipwrightLot.x:q.x-sd.dx*9-sd.dz*11,lz=site.shipwrightLot?site.shipwrightLot.z:q.z-sd.dz*9+sd.dx*11;const tx=-(-sd.dz),tz=-(sd.dx);
           const lot={x:lx,z:lz,w:7,d:6,ry:Math.atan2(tx,tz),tx,tz,row:0,street:null,two:true,k:'sw'};
           shopTypes.splice(si,1);shopTypes.unshift('shipwright');use.unshift(lot);}}
+      PLOTS.map(P=>({P,i:shopTypes.indexOf(P.type)})).filter(q=>q.i>=0).sort((a,b)=>a.i-b.i).forEach(({P,i})=>use.splice(Math.min(i,use.length),0,Object.assign({},P.lot))); /* S1135 — the church and the keep on their plots, at their places in the list (after the shipwright's, which moves it) */
       return {r,use,shopTypes,hero,lots};}
     const PL=planLots(TST?prosperity(site):0,true);const use=PL.use,shopTypes=PL.shopTypes,hero=PL.hero;r=PL.r;
     {const base=TST?planLots(baseProsperity(site),false).use:use;const at=new Map();base.forEach((l,i)=>at.set(l.k,i));
@@ -274,13 +322,7 @@
       const apart=(a,b)=>{const A=corners(a,.6),B=corners(b,.6);for(const P of [A,B])for(let k=0;k<2;k++){const ax=P[k+1].x-P[k].x,az=P[k+1].z-P[k].z;const pr=Q=>Q.map(q=>q.x*ax+q.z*az);const pa=pr(A),pb=pr(B);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
       const clear=(l,own)=>{const C=corners(l,0);for(const q of C){if(Math.hypot(q.x-cx,q.z-cz)>inner-1)return false;const ri=roadInfo(q.x,q.z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;
           for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;if(Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)<1.6)return false;}}
-        for(const u of use)if(u!==l&&!apart(l,u))return false;return true;};
-      use.forEach((lot,i)=>{const t=shopTypes[i]||null;if(t&&!KIT_SHOPS.has(t))return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
-        let kind=!town?'cottage':t?'merchant':'townhouse';const w0=lot.w,start=k=>{const B=G.BAYS[k];return Math.max(k==='townhouse'?3:B.min,Math.min(B.max,Math.round((6+(w0-5)*2-2*B.end)/B.bay)));};let n=start(kind);const lo=kind==='townhouse'?3:G.BAYS[kind].min; /* the nearest whole bays to 6, 8 or 10 m */
-        for(;;){for(;n>=lo;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}if(n>=lo||kind!=='merchant')break;kind='townhouse';n=start(kind);} /* a shop with no room for three bays of shop front is a townhouse's front */
-        if(n<lo){for(n=lo-1;n>=G.BAYS[kind].min;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}}
-        if(n<G.BAYS[kind].min){lot.w=w0;return;}
-        lot.kit={kind,bays:n,w0};});
+        for(const u of use)if(u!==l&&!apart(l,u))return false;return offPlots(l);}; /* S1135 — nor into a plot's yard */
       // S1083 (card F6, Michael's C on #352) — a town's guild hall is the kit's guild hall, 14.4 by 9 m: the lot takes the plan's size
       // with its front kept on the street line (the centre moves back toward the street by what the depth gives up), so its door, id
       // and steward stay where they were. A lot with no room for the wider front keeps the old hall.
@@ -291,24 +333,32 @@
           for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;m=Math.min(m,Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)-1.6);}}return m;};
       if(town)use.forEach((lot,i)=>{const t=shopTypes[i];if(t!=='guild_f'&&t!=='guild_m')return;const P=G.PLANS.guildhall(),w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,sh=(d0-P.d)/2,m0=Math.min(0,near(lot,lot.street));
         lot.w=P.w;lot.d=P.d;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
-          if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}
+          if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))&&offPlots(lot)){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
+      // (S1135: the bays after the guild halls, so a widened house never takes the room a hall needs)
+      use.forEach((lot,i)=>{const t=shopTypes[i]||null;if(t&&!KIT_SHOPS.has(t))return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
+        let kind=!town?'cottage':t?'merchant':'townhouse';const w0=lot.w,start=k=>{const B=G.BAYS[k];return Math.max(k==='townhouse'?3:B.min,Math.min(B.max,Math.round((6+(w0-5)*2-2*B.end)/B.bay)));};let n=start(kind);const lo=kind==='townhouse'?3:G.BAYS[kind].min; /* the nearest whole bays to 6, 8 or 10 m */
+        for(;;){for(;n>=lo;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}if(n>=lo||kind!=='merchant')break;kind='townhouse';n=start(kind);} /* a shop with no room for three bays of shop front is a townhouse's front */
+        if(n<lo){for(n=lo-1;n>=G.BAYS[kind].min;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}}
+        if(n<G.BAYS[kind].min){lot.w=w0;return;}
+        lot.kit={kind,bays:n,w0};});
       // S1086 (card F6, Michael's 1 A on #320) — a village's or an outpost's inn is the kit's farmhouse, "a house that takes guests":
       // three bays (10.5 by 6.2 m), or two (7.4 m) where three will not fit, its front kept on the street line as a guild hall's is and
       // slid along it by up to 0.6 m. A town's inn waits for the coaching inn, a piece of its own; a lot with no room keeps the old inn.
       if(!town)use.forEach((lot,i)=>{if(shopTypes[i]!=='inn')return;const w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,m0=Math.min(0,near(lot,lot.street));
         for(const n of [3,2]){const P=G.bayPlan('farmhouse',n),sh=(d0-P.d)/2;lot.w=P.w;lot.d=P.d;
           for(const sl of [0,.3,-.3,.6,-.6]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
-            if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'farmhouse',bays:n,inn:true,w0,d0,slide:sl};return;}}}
+            if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))&&offPlots(lot)){lot.kit={kind:'farmhouse',bays:n,inn:true,w0,d0,slide:sl};return;}}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
       // S1127 (card F6, Michael's B on #410) — a town's church is the kit's church with a west tower, 8.4 m wide and 27.4 m from the
       // tower's face to the chancel's gable (22.6 with a nave of two bays). It is tried end-on, the tower's door to the street, then
       // side-on along the street with a south door, at three bays and then two; its front kept on the street line, slid along it by up
       // to 3 m, no nearer a road or a street than the lot was and clear of every other lot. A lot with no room for it keeps the old church.
-      if(town)use.forEach((lot,i)=>{if(shopTypes[i]!=='church')return;const w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,m0=Math.min(0,near(lot,lot.street));
+      if(town)use.forEach((lot,i)=>{if(shopTypes[i]!=='church')return;if(lot.plot==='church'){lot.kit={kind:'church',bays:lot.bays,side:false,w0:lot.w,d0:lot.d,slide:0};return;} /* S1135 — on its plot it fits by construction */
+        const w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,m0=Math.min(0,near(lot,lot.street));
         for(const [bays,side] of [[3,false],[3,true],[2,false],[2,true]]){const L=G.churchLen(bays),W=side?L:8.4,D=side?8.4:L,sh=(d0-D)/2;lot.w=W;lot.d=D;
           for(const sl of [0,.5,-.5,1,-1,2,-2,3,-3]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
-            if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'church',bays,side,w0,d0,slide:sl};return;}}}
+            if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))&&offPlots(lot)){lot.kit={kind:'church',bays,side,w0,d0,slide:sl};return;}}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
       // S1126 (card F6, Michael's B on #408) — a town's townhouse or merchant's house grows back into its yard to 8 m deep where the
       // row behind allows, else as deep as fits, in steps of 0.25 m; its front stays on the street line (the centre moves back by half
@@ -497,7 +547,7 @@
       addMesh(wellGeo(),cx+6,cz+4,r()*Math.PI,1.3);
       for(let i=0;i<plan.stalls;i++){
         const ang=r()*Math.PI*2,rad0=9+r()*5,sx=cx+Math.cos(ang)*rad0,sz=cz+Math.sin(ang)*rad0;
-        const ri=roadInfo(sx,sz,true);if(ri&&ri.d<4)continue;
+        const ri=roadInfo(sx,sz,true);if(ri&&ri.d<4)continue;if(inPlot(sx,sz,1.5))continue; /* S1135 — not in the church's yard */
         addMesh(stallGeo(r),sx,sz,ang+Math.PI/2,1.4);
       }
     }
@@ -586,6 +636,7 @@
             const cand=[F,A,B,C,E];if(clearPath(cand,own)){P=cand;break outer;}}}
         if(P)paths.push({w:1.3,pts:P});}}
     S.paths=paths; // S193 — kept for the checks on overlaps
+    S.plots=PLOTS.map(P=>({type:P.type,x:P.x,z:P.z,w:P.w,d:P.d,ry:P.ry,tx:P.tx,tz:P.tz,lot:{x:P.lot.x,z:P.lot.z,w:P.lot.w,d:P.lot.d}})); // S1135 — the church's and the keep's plots, for the checks and the bawn
     if(paths.length){
       const pos=[],col=[];const tone=roadTone(cx,cz).clone().multiplyScalar(.92);
       paths.forEach(pth=>{const W=pth.w/2;

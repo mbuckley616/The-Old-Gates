@@ -4,6 +4,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
 ### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
 **Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.
 - **The church** is 8.4 m wide and 27.4 m from the tower's face to the chancel's gable (22.6 m with a nave of two bays). Its lot is about 5 to 7 m on a side.
@@ -27,7 +28,9 @@ Picture (Cœur de Vie on the new look, at noon, the church end-on to the market 
 The church as drawn, with three bays: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-square.jpg
 The bawn as drawn: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-bawn.jpg
 
-## Answered
+Michael: B, towns laid out around them, both looks; the game is not live, so lost saves are no concern (on #433, carried by the producer in #427).
+Done, Session 1135 (look builder): `genSettlement` reserves the church's plot on the square and the keep's bawn plot at the head of the main street before it lays the lots, on both looks; the streets stop at them and no lot stands in them. Every Gatelands church is now the kit's, end-on with three bays. The bawn itself is the next session. #433 is closed.
+
 ### The Weavers' ring of broken arches: its size, and does its script still burn? (look builder, Session 1119) — DECISION #429
 OG-104's first ruin at the scale of cliffs is built in the prototype (Session 1119): the Weavers' ring of broken arches on a coast, `places.html?place=ring`. It is twelve bays on the crown of a headland, 124 m across, with its open side to the sea and a 30 m cliff 40 m past it.
 - **The arches:** each is the gate kit's own pointed arch at 2.2 times its size. The opening is 22 m wide and 39.6 m to its point, the arch stands 44 m, and its stones are 3.3 m courses.
