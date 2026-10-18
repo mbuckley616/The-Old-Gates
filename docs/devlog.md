@@ -23831,3 +23831,15 @@ The suite now wraps `meleeDamageChain` for the captain's guarded calls (`shMult`
 
 ### Needs eyes
 - Nothing to play. `panelfocus` (FLAKY on main 5521ba1, shard 2) and `kitlots` (the look builder's suite, red on 2 of its 4 runs) are the next flaky items. `ragdoll`, `locksight` and the shared stepped-loop helper are still owed.
+
+## v80 — Session 1110 — panelfocus clicks in the game's frames (QA, tests only)
+The second FLAKY of this run's CI read: `panelfocus` on main 5521ba1 (shard 2, 1,169 s with its retry). It had already flaked once on auto/bodies 40ed0cf. On the first try, three of the five panels never shut: the rest slip's *Not now*, *Close Book* and the sigil stone. Each one logged `locator.click: Timeout 8000ms exceeded … waiting for element to be visible, enabled and stable`, and *each panel closes on its own button* and *W held … you walk* went red. The retry shut all five, the focus went to `#g` every time, and the game was right. Before a click, Playwright waits until the target has held its box still over two of the page's animation frames, and that wait is bounded by the click's 8 s timeout. On software GL, a frame of the game takes seconds on a loaded runner. The first try's wait ran past 8 s, so the click was never sent and the panel stayed open.
+
+The suite's `clickStill` now counts that wait in the game's own frames. It reads the button's box with `boundingBox`, waits one frame (`g.frames(1)`), and reads it again, up to 30 pairs, until two reads in a row agree to half a pixel. Then it clicks the box's centre with `page.mouse.click`. That is the same real mouse event a player's click is, and it lands on whatever is on top at that point. The suite's `shut` check still proves the click reached the button, and a box that never holds still is logged with its last reading. Nothing the suite checks has changed: the five panels, the focus on `#g`, W held and walked, and the journal's search keeping its focus.
+
+### Verified (headless Chromium)
+- `node tests/run.mjs panelfocus --no-retry --look=old|new`, one at a time: 3 of 3 green in each look. The old look took 456, 465 and 525 s; the new look 552, 594 and 650 s. Every one of the 30 clicks took 2 reads (the box held still on the first frame).
+- Two copies side by side on this 4-core container (the first attempt): the old look passed, and the new look shut its first four panels and was then stopped by `run.mjs`'s 900 s cap a suite. That says the suite costs about twice its time when the container is shared; it is not a failure of the click.
+
+### Needs eyes
+- Nothing to play. `panelfocus` is the slowest suite in shard 2 (CI 270–601 s); its 900 s cap is the next thing a slow runner meets. `kitlots` (the look builder's, red on 2 of 4 runs of auto/backlog) is the next flaky item once it reaches main, then `ragdoll`, `locksight` and the shared stepped-loop helper.
