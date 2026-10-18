@@ -300,7 +300,13 @@
         for(const n of [3,2]){const P=G.bayPlan('farmhouse',n),sh=(d0-P.d)/2;lot.w=P.w;lot.d=P.d;
           for(const sl of [0,.3,-.3,.6,-.6]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
             if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'farmhouse',bays:n,inn:true,w0,d0,slide:sl};return;}}}
-        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});}
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
+      // S1126 (card F6, Michael's B on #408) — a town's townhouse or merchant's house grows back into its yard to 8 m deep where the
+      // row behind allows, else as deep as fits, in steps of 0.25 m; its front stays on the street line (the centre moves back by half
+      // what it gains), so its door, id and resident stay where they were. Last, so no guild hall or inn loses a lot it took.
+      if(town)use.forEach(lot=>{const k=lot.kit;if(!k||(k.kind!=='townhouse'&&k.kind!=='merchant'))return;const d0=lot.d,x0=lot.x,z0=lot.z;
+        for(let d=8;d>d0+1e-6;d-=.25){const sh=(d0-d)/2;lot.d=d;lot.x=x0+lot.tx*sh;lot.z=z0+lot.tz*sh;if(clear(lot,lot.street)){k.d0=d0;return;}}
+        lot.d=d0;lot.x=x0;lot.z=z0;});}
     // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
     // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
     // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.

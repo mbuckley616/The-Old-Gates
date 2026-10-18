@@ -24820,3 +24820,25 @@ Session 1118's entry named two faults in its own whale fall. The vertebrae were 
 ### Needs eyes
 - **The braincase** is still three scaled spheres. The rostrum now leads the eye, but the skull's back end, with its occipital shield and the hollows over the eyes, is the next fault.
 - **Fish:** the bone has no life on it. What lives on a whale fall (worms, crabs, fish over her) is the bodies builder's if anyone's. The bone's own growth could deepen with the years, as the wrecks' does by depth.
+
+## v80 — Session 1126 — The Gatelands' town houses grow back to 8 m deep (card F6, Michael's B on #408)
+The Gatelands' towns on the new look are built from the kit, their lots widened to whole bays (Sessions 1071 to 1074). But the lots kept the generator's depths of 4 to 6 m, so a three-storey townhouse drawn 9 m deep stood as a tall thin slab seen from the side. Michael chose B on #408: townhouses and merchants' houses 8 m deep where the row behind allows, else as deep as fits, with cottages left as they are.
+- **The pass:** in `genSettlement` (`83-world-generator.js`), after the guild halls and the village inns have taken their lots, so neither loses a lot it took.
+  - **Which houses:** each town, port or city lot that took townhouse or merchant bays.
+  - **The search:** depths from 8 m down to its old depth in steps of 0.25 m. It takes the first depth that the widening pass's own test (`clear`) passes: inside the ring, clear of the roads, of every other street and of every other lot by 0.6 m.
+  - **The front stays put:** the house grows back into its yard and its centre moves back by half what it gains. So its door, its id, its resident and the door's footpath stay where they were.
+  - **What it records:** `house.kit.d0` keeps the old depth.
+- **What follows from the lot:** the solids, the far copy, the chimney smoke and the room inside (deeper front to back) all read the lot's new depth with no change of their own.
+- **What is unchanged:** the old look and the other islands.
+- **The critic's ask of 18 Oct:** they reported that every merchant's house reads *WOOL · LINEN · DRAPERY*, but that was main's kit, set into Dunmore by hand. On this branch the generator has passed each shop's trade since Session 1072 (`KIT_TRADE`), so nothing needed changing.
+- **Decisions:** #408, #410, #411, #416, #417, #418 and #419 moved to Answered with what each needs. #429, which a union merge had left under Answered with no answer, is back under Pending.
+
+### Verified (headless Chromium)
+- **`kitlots`: 14 of 14 pass,** one of them new. In the two towns, the port and the city near Dunmore, 270 of 270 town houses grew deeper: 233 to the full 8 m, the rest as deep as fits, on quarter metres (they were 4 to 6 m).
+  - **Unchanged:** every lot still stands 0.9 m or more clear of every other lot. Every house keeps its id, its type and its door to 0.01 m (the old depth checked against `kit.d0`). No village lot changed, and the Mark's town is as on the old look.
+- **`kittown`, `kitinn` and `kit`: all pass.**
+- **Pictures:** `docs/prototypes/kit-town-ingame.png` (the corner shop's side now reads as a house, not a slab), `kit-guildhall-ingame.png` and `kit-town-far.png`, redrawn.
+### Needs eyes
+- **The yards are smaller:** about 2 to 4 m are left behind each house, enough for nothing yet. Back yards with walls, privies and washing are a later piece.
+- **The rooms behind:** an 8 m townhouse's room is deeper than its furniture plan was made for. Whether `buildInteriorFor` fills it well wants a walk through.
+- **Owed:** the church with its west tower (#410 B), the coaching inn (#411 A) and the keep in its bawn (#416 B). Each is longer than the lot it replaces (the church is 27.4 m from tower to chancel), so each must find or make its room in the town.

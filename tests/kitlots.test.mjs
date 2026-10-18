@@ -2,7 +2,8 @@
 // Gatelander settlement's homes and ordinary shops take the kit's bays (PKIT.gl.BAYS): a village's are cottages, a town's, port's
 // or city's townhouses and merchants' houses. Each such lot's width is exactly its bays and its end piers, it keeps its centre,
 // its depth, its door (moved along the front into its bay since Session 1072) and its id (a house you own is still yours, whichever look you load it in), and it stands 0.9 m or more
-// clear of every other lot's walls. Settlements of the other islands, and the old look, are as they were.
+// clear of every other lot's walls. Since Session 1126 (Michael's B on #408) a town's townhouse or merchant's house grows back
+// into its yard to 8 m deep where it fits, its front and door kept. Settlements of the other islands, and the old look, are as they were.
 import { boot, check } from './lib/game.mjs';
 
 const pickSites = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d = siteAnywhere('dunmore'), A = allSites();
@@ -32,7 +33,7 @@ const gl = sites.filter(s => s.nat === 'gatelands'), mk = sites.find(s => s.nat 
 const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const ok = a.length === b.length && a.every((h, i) => { const k = b[i].kit ? b[i].kit.door || 0 : 0, tx = -Math.sin(h.yaw), tz = -Math.cos(h.yaw); /* a kit house's door stands in its bay (Session 1072), k along the front */
     const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1083), its front kept */
     const inn = b[i].kit && b[i].kit.inn; /* a village's inn takes the farmhouse's 6.2 m (Session 1086), its front kept */
-    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : h.d === b[i].d) && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
+    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
   return { id: s.id, ok, n: a.length, first: ok ? null : a.map((h, i) => [h.id, b[i] && b[i].id, h.x, b[i] && b[i].x]).find(([p, q, x, y]) => p !== q || Math.abs(x - y) > .01) }; });
 check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
 
@@ -54,6 +55,12 @@ const halls = rows.filter(h => h.type === 'guild_f' || h.type === 'guild_m'), ba
 check(`every guild hall of the Gatelands' towns and city is the kit's hall, 14.4 by 9 m (${halls.length}; slid ${[...new Set(halls.map(h => h.kit && h.kit.slide))].join(', ')} m)`, halls.length >= 4 && badH.length === 0, badH.slice(0, 4));
 const wider = kit.filter(h => h.w > h.w0).length, w = kit.map(h => h.w);
 check(`the lots grow: ${wider} of ${kit.length} wider than they were, ${Math.min(...w)} to ${Math.max(...w)} m (were ${Math.min(...kit.map(h => h.w0))} to ${Math.max(...kit.map(h => h.w0))})`, wider / kit.length > .7 && Math.max(...w) >= 8, null);
+// the depth (Session 1126, Michael's B on #408): a town's townhouses and merchants' houses grow back into their yards to 8 m where
+// the row behind allows, else as deep as fits; cottages, halls and inns are untouched by it
+const tk = kit.filter(h => h.sk !== 'village'), deep = tk.filter(h => h.kit.d0), d8 = tk.filter(h => h.d === 8);
+const badD = deep.filter(h => h.d > 8 || h.d <= h.kit.d0 || Math.abs(h.d * 4 - Math.round(h.d * 4)) > 1e-6) .concat(kit.filter(h => h.sk === 'village' && h.kit.d0));
+check(`a town's houses grow back toward 8 m deep: ${deep.length} of ${tk.length} deeper, ${d8.length} at the full 8 m (were ${Math.min(...tk.map(h => h.kit.d0 || h.d))} to ${Math.max(...tk.map(h => h.kit.d0 || h.d))} m)`,
+  deep.length / tk.length > .5 && d8.length > tk.length / 4 && badD.length === 0, badD.slice(0, 4));
 const hist = {}; kit.forEach(h => { const k = `${h.kit.kind} ${h.kit.bays}`; hist[k] = (hist[k] || 0) + 1; }); console.log('  bays:', JSON.stringify(hist));
 
 // clear of one another: a widened lot's walls stand 0.9 m or more from any other lot's (the solids are the lot and 0.15 m)
