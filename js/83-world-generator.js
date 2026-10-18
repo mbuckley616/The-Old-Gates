@@ -110,6 +110,8 @@
     add(SK.cyl(.06,.07,4.6,6),vary(pole,.06),-1.3,2.3,1.25,0,0,.12,.05);add(SK.cyl(.05,.05,.9,5),pole,-1.1,4.45,1.25,0,0,Math.PI/2+.12,.04);add(SK.torus(.09,.025,4,10),0x3a3430,-.7,4.35,1.25,0,0,0,.02);add(SK.cyl(.012,.012,3.2,4),rope,-.61,2.75,1.25,0,0,0,.02);
     add(SK.rbox(.34,.24,.3,.04,1),vary(wc,.08),-.61,1.05,1.25,0,.3,0,.05);
     return mergeParts(P);}
+  // S1065 — the settlements whose lots take the kit's bays on the new look, and the shops that are merchants' houses
+  const KIT_SITE={village:'village',outpost:'village',town:'town',port:'town',city:'town'},KIT_SHOPS=new Set(['weapon','armor','potion','misc','barber']);
   function genSettlement(site){
     if(SETTLE.has(site.id)||site.pad<=0)return;
     let r=rngFor(site.c*31+7,site.r*17+3);_townNames=new Set();_twinUsed=new Map();_roleNames=new Set();const _innNames=new Set();if(!site.lordless)try{const ln_=lordFor(site).name;_townNames.add(ln_);_roleNames.add(ln_);}catch(e){} // S248 — the lord's name is his own; the guild heads drawn before him leave it // S172 — names unique within the town where the bank allows
@@ -261,6 +263,56 @@
       const mine=l=>ownedHouse(l.id);
       all.forEach(l=>{if(mine(l)&&!use.some(u=>u.k===l.k)&&!use.some(u=>Math.hypot(u.x-l.x,u.z-l.z)<Math.max(u.w,u.d)/2+2+Math.max(l.w,l.d)/2+2))use.push(l);});
       const nS=shopTypes.length;for(let i=0;i<Math.min(nS,use.length);i++){if(!mine(use[i]))continue;const j=use.findIndex((u,k)=>k>=nS&&!mine(u));if(j<0)break;const o=use[i];use[i]=use[j];use.splice(j,1);use.push(o);}}
+    // S1065 (card F6, Michael's C on #396) — on the new look a Gatelander settlement's lots are widened to whole bays of the
+    // kit's plans (PKIT.gl.BAYS): a village's homes and shops are cottages, a town's, port's or city's homes townhouses and its
+    // shops merchants' houses. A lot keeps its centre, its depth, its place in the town and so its id; it grows along the street
+    // from 5–7 m toward 6–10 m, a bay at a time, and gives a bay back while it would come within 1.2 m of another lot, a road,
+    // a cross street or the ring. Churches, keeps, inns, the shipwright and the foreign quarter keep their size (a guild hall takes the kit's, below).
+    // (window.OG_KIT_TOWNS=false keeps the old towns on the new look: tests/lookpair sets it to compare the renderers alone)
+    if(window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&nationOf(ni,nj).people==='gatelander'&&site.kind in KIT_SITE){
+      const town=KIT_SITE[site.kind]==='town',G=PKIT.gl,corners=(l,m)=>{const c=Math.cos(l.ry),s_=Math.sin(l.ry),hw=l.w/2+m,hd=l.d/2+m;return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v])=>({x:l.x+u*c+v*s_,z:l.z-u*s_+v*c}));};
+      const apart=(a,b)=>{const A=corners(a,.6),B=corners(b,.6);for(const P of [A,B])for(let k=0;k<2;k++){const ax=P[k+1].x-P[k].x,az=P[k+1].z-P[k].z;const pr=Q=>Q.map(q=>q.x*ax+q.z*az);const pa=pr(A),pb=pr(B);if(Math.max(...pa)<Math.min(...pb)||Math.max(...pb)<Math.min(...pa))return true;}return false;};
+      const clear=(l,own)=>{const C=corners(l,0);for(const q of C){if(Math.hypot(q.x-cx,q.z-cz)>inner-1)return false;const ri=roadInfo(q.x,q.z,true);if(ri&&ri.d<ROAD_HALF+1.2)return false;
+          for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;if(Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)<1.6)return false;}}
+        for(const u of use)if(u!==l&&!apart(l,u))return false;return true;};
+      use.forEach((lot,i)=>{const t=shopTypes[i]||null;if(t&&!KIT_SHOPS.has(t))return;if(lot.k==='sw'||(site.kind==='port'&&site.quayStart&&Math.hypot(lot.x-site.quayStart.x,lot.z-site.quayStart.z)<34))return;
+        let kind=!town?'cottage':t?'merchant':'townhouse';const w0=lot.w,start=k=>{const B=G.BAYS[k];return Math.max(k==='townhouse'?3:B.min,Math.min(B.max,Math.round((6+(w0-5)*2-2*B.end)/B.bay)));};let n=start(kind);const lo=kind==='townhouse'?3:G.BAYS[kind].min; /* the nearest whole bays to 6, 8 or 10 m */
+        for(;;){for(;n>=lo;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}if(n>=lo||kind!=='merchant')break;kind='townhouse';n=start(kind);} /* a shop with no room for three bays of shop front is a townhouse's front */
+        if(n<lo){for(n=lo-1;n>=G.BAYS[kind].min;n--){lot.w=G.bayWidth(kind,n);if(clear(lot,lot.street))break;}}
+        if(n<G.BAYS[kind].min){lot.w=w0;return;}
+        lot.kit={kind,bays:n,w0};});
+      // S1083 (card F6, Michael's C on #352) — a town's guild hall is the kit's guild hall, 14.4 by 9 m: the lot takes the plan's size
+      // with its front kept on the street line (the centre moves back toward the street by what the depth gives up), so its door, id
+      // and steward stay where they were. A lot with no room for the wider front keeps the old hall.
+      // A guild lot often stood nearer a road or a street than a widened house may (the old builder's 13 by 11 m): it takes the hall
+      // if it comes no nearer to one than it was and stays clear of every other lot, slid along its front by up to the 0.7 m it grows
+      // at each end if that clears a street beside it (kit.slide, which its door moves by too).
+      const near=(l,own)=>{let m=1e9;for(const q of corners(l,0)){m=Math.min(m,inner-1-Math.hypot(q.x-cx,q.z-cz));const ri=roadInfo(q.x,q.z,true);if(ri)m=Math.min(m,ri.d-ROAD_HALF-1.2);
+          for(const L of streetLines){if(own&&L.px===own.px&&L.pz===own.pz&&L.dx===own.dx&&L.dz===own.dz)continue;m=Math.min(m,Math.abs((q.x-L.px)*(-L.dz)+(q.z-L.pz)*L.dx)-1.6);}}return m;};
+      if(town)use.forEach((lot,i)=>{const t=shopTypes[i];if(t!=='guild_f'&&t!=='guild_m')return;const P=G.PLANS.guildhall(),w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,sh=(d0-P.d)/2,m0=Math.min(0,near(lot,lot.street));
+        lot.w=P.w;lot.d=P.d;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
+          if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});}
+    // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
+    // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
+    // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.
+    const KIT_TRADE={weapon:'ARMS · BLADES · BOWS',armor:'ARMOUR · MAIL · SHIELDS',potion:'APOTHECARY · HERBS',misc:'GENERAL GOODS',barber:'BARBER · SURGEON'};
+    let kitG=null;const kitLo=[];
+    // a gable roof as one prism: eaves at y0 along ±hw (x) and ±hd (z), the ridge at y1 along x, its gables closed (non-indexed, for mergeGeos)
+    function kitRoof(hw,hd,y0,y1){const P=[[-hw,y0,hd],[hw,y0,hd],[hw,y1,0],[-hw,y0,hd],[hw,y1,0],[-hw,y1,0],[hw,y0,-hd],[-hw,y0,-hd],[-hw,y1,0],[hw,y0,-hd],[-hw,y1,0],[hw,y1,0],[-hw,y0,-hd],[-hw,y0,hd],[-hw,y1,0],[hw,y0,hd],[hw,y0,-hd],[hw,y1,0]];
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;}
+    // S1083 — the guild hall's plan, its lit windows keyed by the town and the lot as a house's are; its door is the great door
+    function kitHall(lot){const plan=PKIT.gl.PLANS.guildhall({guild:lot.kit.guild});plan.r=PKIT.stream(`${site.id}:windows:${lot.n}`);plan.doorX=plan.open.front[0].x;return {plan,kind:'guildhall',colour:'stone'};}
+    function kitHouse(lot,type){
+      if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
+      const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
+      b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
+      {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
+        box.translate(0,sz.eave/2,0);mx.makeRotationY(lot.ry).setPosition(lot.x,worldH(lot.x,lot.z)-.06,lot.z);
+        kitLo.push([box,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(sz.w/2+(th?.35:.2),sz.d/2+(th?.45:.25),sz.eave,sz.ridge),mx,new THREE.Color(...(th?[.42,.35,.22]:[.24,.26,.30]))]);}
+      lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);
+      const c=(L.plan.chim||[])[0];if(c){const x=c.gable?c.gable*(U.size.w/2-.36):c.x,y=U.size.ridge+(L.plan.roof.kind==='thatch'?1.0:.85),cs=Math.cos(lot.ry),sn=Math.sin(lot.ry),wy=b.position.y;
+        S.chimneys.push({x:lot.x+x*cs,y:wy+y,z:lot.z-x*sn,t:type||'home',k:0});}}
     const names=NAMES[reg];
     const usedNames=new Set();
     function newName(){let n;for(let k=0;k<20;k++){n=pick(r,r()<.5?names.m:names.f);if(!usedNames.has(n))break;}usedNames.add(n);return n;}
@@ -296,20 +348,21 @@
       else if(biome==='tundra'&&site.kind==='village'&&site.islet){lot.two=false;geo=iceGeo(lot.w,lot.d,st,r);}
       else{lot.two=r()<(st.twoStory||0)||type==='inn';geo=buildingGeo(lot.w,lot.d,st,r,{chimney:r()<.65,twoStory:lot.two,h:type==='inn'?SCALE.STOREY_MAX:st.h,rise:type==='inn'?1.9:st.rise});}
       solR=Math.max(lot.w,lot.d)/2*.85;
-      const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
+      if(lot.kit){kitHouse(lot,type);geo.dispose();if(geo.userData&&geo.userData.lo)geo.userData.lo.dispose();} /* S1072 — the old builder still runs (its draws keep the town's stream, and so its people, as on the old look), and its mesh is let go */
+      else{const m=addMesh(geo,lot.x,lot.z,lot.ry,0);
       lot._wallH=geo.userData&&geo.userData.wallH||null;lot._storeys=geo.userData&&geo.userData.storeys||null; /* S881 (F2a) — kept on the house: its wall's height and storeys */
-      {const ch=chimneyAt(geo,m,type||'home');if(ch)S.chimneys.push(ch);} // S343 — its smoke
+      {const ch=chimneyAt(geo,m,type||'home');if(ch)S.chimneys.push(ch);}} // S343 — its smoke
       // rotated footprint (settleSolid understands {c,s} rotated rects)
       sol.push({cx:lot.x,cz:lot.z,rx:lot.w/2+.15,rz:lot.d/2+.15,c:Math.cos(lot.ry),s:Math.sin(lot.ry),bt:type||'home',hid:lot.id,sh:lot._shuttered?1:0}); // v80 S138 — the map colours it by type
       // footpath: door → the street/road it faces
       {
-        const fx=lot.x+lot.tx*(lot.d/2+.3),fz=lot.z+lot.tz*(lot.d/2+.3);
+        const kd=lot._kitDoor||0,fx=lot.x+lot.tx*(lot.d/2+.3)+lot.tz*kd,fz=lot.z+lot.tz*(lot.d/2+.3)-lot.tx*kd; /* S1072 — from a kit house's door */
         let ex=fx+lot.tx*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND)),ez=fz+lot.tz*(lot.row*(9.5+LAT_GAP)+(lot.street?2.5:ROAD_BLEND));
         const ri=roadInfo(ex,ez);if(ri&&ri.d>ROAD_HALF+1&&!lot.street){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,t=ri.t;ex=sg.ax+vx*t;ez=sg.az+vz*t;}
         if(lot.k==='sw'&&quayLane){const A=quayLane.a,B=quayLane.b,vx=B.x-A.x,vz=B.z-A.z,L2=vx*vx+vz*vz||1,u=Math.max(0,Math.min(1,((fx-A.x)*vx+(fz-A.z)*vz)/L2));ex=A.x+vx*u;ez=A.z+vz*u;} /* S618 — the yard's path ends on the quay lane */
         footReq.push({fx,fz,ex,ez,lot,hid:`g_${site.id}_${i}`}); // S193 — routed once every building stands (below)
       }
-      const doorX=lot.x+lot.tx*(lot.d/2+.15),doorZ=lot.z+lot.tz*(lot.d/2+.15);
+      const kdx=lot._kitDoor||0,doorX=lot.x+lot.tx*(lot.d/2+.15)+lot.tz*kdx,doorZ=lot.z+lot.tz*(lot.d/2+.15)-lot.tx*kdx; /* S1072 — a kit house's door stands in its bay, kdx along the front */
       if(!isShop){
         // Residence: enterable 'home' interior, a named resident who keeps
         // house inside and idles by the door outside in daylight.
@@ -318,7 +371,7 @@
         const rdef=makeDef(site,reg,r,'Villager',resident,{nameKey:lot.n,x:doorX+lot.tx*1.4+lot.tz*1.0,z:doorZ+lot.tz*1.4-lot.tx*1.0,bCol:pick(r,[0x5a4030,0x3a5a3a,0x604828,0x504058,0x6a5a3a]),sCol:pick(r,[0xd4a878,0xc09070,0xb08060]),role:pick(r,['resident','farmer','weaver','cooper','old woman','fisher'])});
         rdef.roleTag=rdef.role;rdef.role='Villager';
         const hName=homeName(rdef.name,rdef.roleTag,compassWord(lot.x-site.x,lot.z-site.z));
-        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:hName,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id};
+        const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:hName,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id,kit:lot.kit||null};
         if(lot._shuttered){hh.shuttered=true;hh.name=`${hName} (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
         houses.push(hh);
@@ -336,7 +389,7 @@
       if(type==='church'&&!heroH){if(_churchNames.has(name)){const b=`${name} at the ${compassWord(lot.x-site.x,lot.z-site.z)} end`;name=b;for(let k=2;_churchNames.has(name);k++)name=`${b} (${k})`;}_churchNames.add(name);}
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
-      const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id};
+      const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id,kit:lot.kit||null};
       houses.push(house);if(lot._wallH){house.wallH=lot._wallH;house.storeys=lot._storeys;}
       { // wall lantern by the door (glow only)
         const lx=doorX+lot.tx*.25+lot.tz*1.05,lz=doorZ+lot.tz*.25-lot.tx*1.05,ly=worldH(doorX,doorZ)+SCALE.DOOR_H+.2;
@@ -345,7 +398,8 @@
         const fl=new THREE.Mesh(new THREE.ConeGeometry(.03,.09,6),new THREE.MeshBasicMaterial({color:0xffe090}));fl.position.y=-.01;lg.add(fl);lg.position.set(lx,ly,lz);group.add(lg);S.lamps.push({glass:lg,light:null});
       }
       let signY=null; // S246 — the trade sign is painted once the keeper's name is final (below)
-      if(type==='guild_f'||type==='guild_m'){
+      if((type==='guild_f'||type==='guild_m')&&lot.kit){} /* S1083 — the kit's hall carries its own name panel and banner */
+      else if(type==='guild_f'||type==='guild_m'){
         const y=worldH(doorX,doorZ);const col=GUILD_DEF[type].col;
         [-1,1].forEach(sd=>{const bx=doorX+lot.tx*.3-lot.tz*sd*2.4,bz=doorZ+lot.tz*.3+lot.tx*sd*2.4;
           const pole=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,1.1),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(bx+lot.tx*.45,y+5.3,bz+lot.tz*.45);pole.rotation.y=lot.ry;group.add(pole);
@@ -586,6 +640,9 @@
       for(let k=ZONE_CORPSES.length-1;k>=0;k--)if(ZONE_CORPSES[k].bramBody&&ZONE_CORPSES[k].zone==='world')ZONE_CORPSES.splice(k,1);
       buildBramBody(group,S._forge.x,worldH(S._forge.x,S._forge.z),S._forge.z,'world');}
     S.reach=t_reach(sol,site);
+    if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
+      const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
+      let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+Math.max(l.w,l.d)/2);S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -611,7 +668,11 @@
   // S194 — the houses' distant copies: each baked cluster of detailed houses is drawn near the eye (under HOUSE_LOD.near),
   // its plain twin past HOUSE_LOD.far, whichever it had in between
   const HOUSE_LOD={near:70,far:80};
-  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){const L=S.lodMeshes;if(!L)continue;
+  // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
+  // houses' reach: near the town the kit's houses, from outside it their far copy
+  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){const K=S.kitLod;
+    if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;}
+    const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
       const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}}}

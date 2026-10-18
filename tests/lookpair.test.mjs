@@ -16,6 +16,9 @@ async function shoot(look) {
     buildRoadRibbons = function (cx, cz, group) { window.__seededRoads++; let s = (Math.imul(cx | 0, 73856093) ^ Math.imul(cz | 0, 19349663)) >>> 0; const rnd = Math.random;
       Math.random = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
       try { return build(cx, cz, group); } finally { Math.random = rnd; } }; });
+  // Session 1072: on the new look a Gatelands town is built from the kit (tests/kittown), so Dunmore's houses differ by design; this
+  // suite compares the renderers, so both looks build the old town here.
+  await page.evaluate(() => { window.OG_KIT_TOWNS = false; });
   await g.intoWorld(); await g.settle('dunmore');
   // Session 832: clear sky is not bare ground. Snow that fell while the town loaded lies for a minute or more after the sky
   // clears (it melts at about .014 a second here), and on CI (dfea40a) the old look's picture had it and the new one's not:
