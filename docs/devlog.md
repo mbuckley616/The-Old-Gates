@@ -24140,8 +24140,8 @@ It trots, walks, gallops and stands like the wolves. It is peaceful, as the comm
 - **The wolfhound's other coats.** The breed's usual grey, brindle and wheaten would be `COATS` entries or a second plan; OG-065 shows only the black.
 - **Owed:** the hound sitting or lying by the chair (a rest pose, B4), the crossbow across Garrick's knees, and both in the game (after F4).
 
-## v80 — Session 1113 — Garrick's crossbow across his knees (L1, prototype only)
-OG-065 draws Garrick in his wheeled chair with a long gun across his knees. The catalogue's row for it says the canon has no firearms and asks for a crossbow instead. Session 1106 left it owed, because the chair dropped anything carried in the fist. This session lays the kit's crossbow across the lap. It touches only the prototypes: `people.js` (`buildLapCrossbow`, and `buildChair` now returns its boards and wheels) and `builder.check.mjs`.
+## v80 — Session 1116 — Garrick's crossbow across his knees (L1, prototype only)
+OG-065 draws Garrick in his wheeled chair with a long gun across his knees. The catalogue's row for it says the canon has no firearms and asks for a crossbow instead. Session 1106 left it owed, because the chair dropped anything carried in the fist. This session lays the kit's crossbow across the lap. It touches only the prototypes: `people.js` (`buildLapCrossbow`, and `buildChair` now returns its boards and wheels) and `builder.check.mjs`. (Renumbered twice: first pushed as 1111 and then 1113, both of which auto/systems holds.)
 
 How it lies:
 - **Flat across both thighs, over the knees.** The bolt's face is up, the tiller runs side to side, the butt is toward the sitter's right and the prod's span runs fore and aft. The make is the people's, as in the fist: wood for the Gatelands, steel for the Mark, horn for Aurenne.

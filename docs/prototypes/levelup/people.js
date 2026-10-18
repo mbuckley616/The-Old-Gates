@@ -2370,7 +2370,7 @@ function buildChair(G, body, byName, meshes, root) {
     wheelsDown: +Math.abs(wy - C.R - ground).toFixed(4), castersDown: +Math.max(...casters.map(c => Math.abs(c.position.y - C.r - ground))).toFixed(4), seatGap: +(seatY - sTop).toFixed(4), footGap: +(footY - (footY - C.gap)).toFixed(4), foreGap: fore.map(F => +(F.y - railY).toFixed(4)),
     behind: +(bodyBack - backZ).toFixed(3), railX: +railX.toFixed(3), hipX: +hipX.toFixed(3), clear: +clear.toFixed(4), through, tris } };
 }
-// the crossbow across the knees (Session 1113; OG-065's Garrick, whose long gun the catalogue makes a crossbow): laid flat on both
+// the crossbow across the knees (Session 1116; OG-065's Garrick, whose long gun the catalogue makes a crossbow): laid flat on both
 // thighs over the knees, the bolt's face up, the butt to the sitter's right and the prod out past the left wheel. It is let down
 // onto what is under it until the nearest point is 2 mm off (the thighs, and only the thighs, bear it), then moved forward a
 // centimetre at a time while any of it is in a board of the chair, a wheel, or a hand on the chair's arm
@@ -2549,7 +2549,7 @@ export function makePerson(G, o = {}) {
   // mail (Session 897) is worn over a padded coat, the tunic, and belted over: a man or woman in mail without either gets them
   // seated in a wheeled chair (Session 1106) nothing is worn or carried that hangs to the ground or is built round a standing body: no
   // cloak, tabard, sash or shoulder wrap, apron, long skirt or mail skirt's hang over the lap, nothing in the fist and no shield; a long skirt gives way to trousers
-  // (a crossbow stays: it is laid across the knees, Session 1113)
+  // (a crossbow stays: it is laid across the knees, Session 1116)
   if (G.dress?.chair) { const C = G.dress; G = { ...G, dress: { ...C, cloak: null, hood: null, tabard: null, sash: null, shoulderWrap: null, apron: null, bib: null, shield: null, spear: null, staff: null, basket: null, wrapTail: null,
     ...(C.skirt === 'long' || C.robe ? { skirt: null, robe: null, trousers: C.trousers || C.skirtColor || C.robe || [.3, .26, .2] } : {}) } }; }
   if (G.dress?.mail && !G.dress.robe) { const M = G.dress; G = { ...G, dress: { ...M, tunic: M.tunic || [.6, .54, .42], belt: M.belt || [.24, .16, .1] } }; }
@@ -2764,7 +2764,7 @@ export function makePerson(G, o = {}) {
   let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   // the wheeled chair (Session 1106), last, built to the seated body and everything on it
   let chairSt = null; if (D.chair) { const Ch = buildChair(G, body, byName, meshes, root); chairSt = { ...Ch.stats, armLift: +seatArms.toFixed(2), ground: Ch.ground };
-    // and a crossbow across the knees (Session 1113), laid on them after the chair, clear of it
+    // and a crossbow across the knees (Session 1116), laid on them after the chair, clear of it
     if (D.crossbow) chairSt.lap = buildLapCrossbow(G, body, byName, meshes, root, Ch).stats; }
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
   root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt };

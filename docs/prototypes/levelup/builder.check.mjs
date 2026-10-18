@@ -153,7 +153,7 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
       const has = n => !!p.root.getObjectByName(n);
       out.chairs[name] = { ...p.chair, ms, legs, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) && s1.includes('"chair"'), chairMesh: has('chair'), wheels: p.root.getObjectByName('chair')?.children.filter(c => c.name === 'chairWheel').length,
         dropped: ['cloak', 'tabard', 'spear', 'shield', 'staff', 'basket'].filter(has).concat(dress.skirt === 'long' && has('skirt') ? ['the long skirt'] : []), trousers: has('trousers'), skirtAsked: dress.skirt === 'long', ground }; }
-    // the crossbow across the knees (Session 1113, OG-065's Garrick): Garrick, a Markman in mail, a stooped old Markman, a woman whose skirt gave way, an Aurennais girl
+    // the crossbow across the knees (Session 1116, OG-065's Garrick): Garrick, a Markman in mail, a stooped old Markman, a woman whose skirt gave way, an Aurennais girl
     out.lapCrossbows = {}; for (const [name, people, sex, o, dress, extra] of [['Garrick, a wooden crossbow across his knees', 'gatelander', 1, {}, { mantle: [.42, .33, .24], eyepatch: [.12, .09, .07], eyepatchSide: 'L', cloak: null }, { scar: 'L', beard: .8, age: .62 }],
         ['a Markman in mail, a steel crossbow across his knees', 'markman', 1, {}, { mail: [.4, .4, .42], cloak: null }, {}], ['an old stooped Markman, a crossbow across his knees', 'markman', 1, { old: true }, {}, { pose: { stoop: .8 } }],
         ['a Gatelander woman, her skirt given way, a crossbow across her knees', 'gatelander', 0, {}, { skirt: 'long', cloak: null }, {}], ['an Aurennais girl, a horn crossbow across her knees', 'aurennais', 0, { child: true }, { cloak: null }, {}]]) {
