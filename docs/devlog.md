@@ -26172,3 +26172,21 @@ Session 1115 said the cats sit wrong: a cat sits with its forefeet together and 
 ### Needs eyes
 - **Whether 30% is right.** The Hollowcat's paws nearly touch. A sitting cat's do touch, and its forefeet sit a little forward too.
 - **Owed:** the tail wrapped round the forefeet, and the game (after F4).
+## v80 — Session 1135 — Gold piles by place (Michael's A on DECISION #431)
+Michael's A on #394 put a loot roll's metal and a lair hoard's gold on the place's danger tier, but a gold pile in a chest, a barrel or on
+a body (`rollGold`, `14-items.js`) still added your level: a coast chest at level 25 held 29 to 37 gold, and two friends at one chest in a
+shared world would have found different piles. Michael chose A on #431: by place. `rollGold`'s level term now reads `lootLevel()`, the
+tier's level where the pile is rolled (1, 6, 11 or 16), the same number the metal reads since Session 1073: a corpse its foe's tier, a
+dungeon's container its floor's, a site's, wreck's or ship's chest the region where it stands, and a roll with no tier the place you
+stand in. The bases and multipliers are unchanged (a chest 4–12 + the level, a treasure chest 8–18 + 1.5×, a body 2–8 + 0.7×, a barrel
+1–6 + half), and so are Fortune's 1% a point and the gold-find buff. `LOOT_FALLBACK`'s pile, rolled once as `60-shop.js` loads, reads
+level 1 as before (the tier function is in a later file and the lookup is guarded).
+### Verified (headless Chromium)
+- **`goldtier`** (new) 1/1, 8 checks, 600 seeded piles a kind and tier at level 1 and at level 30: chests 5–13, 10–18, 15–23 and 20–28
+  at tiers 1 to 4, treasure 9–19 to 32–42, a body 2–8 to 13–19, a barrel 1–6 to 9–14, the same at both levels. 400 tier-3 chests through
+  `rollContainerLoot` give the same piles at both levels. With no tier set, a chest at home at level 25 holds 5 to 13 (was 29 to 37).
+  Ten points of Fortune make it 6 to 14.
+- `fortunecard` and `tierloot` pass (`tierloot`'s comment and label no longer say the gold follows your level).
+### Needs eyes
+- Late gold: a level-25 player in the home province finds the same 5 to 13 a chest as at level 1. Michael chose this over C (a quarter
+  of the level past the tier's own); whether coin still feels worth bending down for late is a playtest's call.

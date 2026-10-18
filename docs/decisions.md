@@ -13,13 +13,6 @@ Combat B (your B, 28 Sep; `docs/design/combat.md`) gives every family a light at
 
 The third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp) follow in a later session under the same answer.
 
-### Gold piles by place too? (systems builder, 18 Oct 2026) — DECISION #431
-Your A on #394 put a loot roll's metal and a lair hoard's gold on the place's tier. A gold pile in a chest, a barrel or on a body (`rollGold`, `14-items.js`) still adds your level. A chest gives 4–12 + your level, a treasure chest 8–18 + 1.5 × your level, a body 2–8 + 0.7 × your level and a barrel 1–6 + half your level. At level 25 a coast chest holds 29 to 37 gold, and at level 1 a tier-3 chest holds 5 to 13. Two friends opening one chest in a shared world would find different piles.
-
-- **A. By place** *(recommended)*. The level term reads the place's tier level (1, 6, 11 or 16), as the metal does. A coast chest holds 5 to 13 at any level, and a tier-3 dungeon's 15 to 23. Fortune's 1% a point and the gold-find buff stay as they are.
-- **B. By level, as now.** Gold keeps up with what things cost you, wherever you are.
-- **C. By place, plus a little of the level.** As A, plus a quarter of your level past the tier's own, so late gold stays worth bending down for.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -70,6 +63,15 @@ How deep should a town's houses be?
 Picture (Dunmore on the new look, at noon): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-town-ingame.png
 
 ## Answered
+### Gold piles by place too? (systems builder, 18 Oct 2026) — DECISION #431
+Your A on #394 put a loot roll's metal and a lair hoard's gold on the place's tier. A gold pile in a chest, a barrel or on a body (`rollGold`, `14-items.js`) still adds your level. A chest gives 4–12 + your level, a treasure chest 8–18 + 1.5 × your level, a body 2–8 + 0.7 × your level and a barrel 1–6 + half your level. At level 25 a coast chest holds 29 to 37 gold, and at level 1 a tier-3 chest holds 5 to 13. Two friends opening one chest in a shared world would find different piles.
+
+- **A. By place** *(recommended)*. The level term reads the place's tier level (1, 6, 11 or 16), as the metal does. A coast chest holds 5 to 13 at any level, and a tier-3 dungeon's 15 to 23. Fortune's 1% a point and the gold-find buff stay as they are.
+- **B. By level, as now.** Gold keeps up with what things cost you, wherever you are.
+- **C. By place, plus a little of the level.** As A, plus a quarter of your level past the tier's own, so late gold stays worth bending down for.
+
+Michael: **A, gold by place** (18 Oct 2026, on #431). *Systems builder, Session 1135:* built; `rollGold` reads the place's tier level (`lootLevel`), `tests/goldtier`.
+
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
 - **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.

@@ -652,7 +652,9 @@ function rollGold(tier){
           : (tier==='corpse') ? {min:2, max:8, lvBonus:0.7}
           : {min:1, max:6, lvBonus:0.5};
   const base = Math.floor(lootRand()*(t.max - t.min + 1)) + t.min;
-  const lv = (typeof level==='number') ? level : 1;
+  // S1135 — the pile follows the place, as the metal does (Michael's A on DECISION #431): the level term is the tier's level where
+  // it is rolled (1, 6, 11, 16; lootLevel, above), never yours, so two players at one chest find one pile.
+  const lv = lootLevel();
   const fortune = (typeof ATTRS!=='undefined' && ATTRS && ATTRS.fortune) ? ATTRS.fortune : 0;
   const lvAdd = Math.floor(lv * t.lvBonus);
   const fortuneMult = 1 + fortune * 0.01; /* S953 — 1% a Fortune point (was 5%), the attributes at ≤1% */

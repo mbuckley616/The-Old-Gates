@@ -1,6 +1,6 @@
 // The loot follows the place (Session 1073; Michael's A on DECISION #394, the enemies-by-place sheet's `tierloot`): a roll's
 // material cap reads the danger tier's level where it is rolled (1, 6, 11, 16), never yours. 2,000 seeded chest rolls at each tier,
-// at level 1 and at level 30, give the same goods (a gold pile's count still follows your level), topped by Bronze, Steel, Adamant and Draconic; a corpse rolls on its foe's tier;
+// at level 1 and at level 30, give the same goods (and since Session 1135 the same gold piles, `goldtier`), topped by Bronze, Steel, Adamant and Draconic; a corpse rolls on its foe's tier;
 // a roll with no tier reads where you stand; a dungeon's floor-2 chest is a tier above its first.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -30,7 +30,7 @@ const names = ['Bronze', 'Steel', 'Adamant', 'Draconic'];
 console.log(JSON.stringify({ tiers: r.tiers.map(([a, b]) => [a.top, a.n, b.top, b.n]), corpse: r.corpse, here: r.here, wastesFoes: r.wastesFoes && r.wastesFoes.slice(0, 8) }));
 [2, 4, 6, 8].forEach((cap, i) => {
   const [a, b] = r.tiers[i];
-  check(`tier ${i + 1}: 2,000 chests at level 1 and at level 30 hold the same goods (the gold's count aside: it still grows with you, as #394 left it)`, a.sig === b.sig && a.n === b.n && a.n > 300, { a: a.sig.slice(0, 200), b: b.sig.slice(0, 200) });
+  check(`tier ${i + 1}: 2,000 chests at level 1 and at level 30 hold the same goods (the gold's count follows the place too since S1135, `goldtier`)`, a.sig === b.sig && a.n === b.n && a.n > 300, { a: a.sig.slice(0, 200), b: b.sig.slice(0, 200) });
   check(`tier ${i + 1}: the best metal is ${names[i]} (${cap})`, a.top === cap, a.top);
 });
 check('a tier-1 corpse at level 30 tops out at Bronze; a tier-3 corpse at level 1 reaches Adamant', r.corpse[0] === 2 && r.corpse[1] === 6, r.corpse);
