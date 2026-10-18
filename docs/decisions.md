@@ -319,6 +319,20 @@ As drawn it has no inside beyond the hall: OG-121's other forts have "lower leve
 - **A. As drawn:** a fort on the top only, a place to cross and look from. The hall's inside is a Markish room like any other.
 - **B. A sea-stair** *(recommended)*: a door in the rock behind the hall opens on a stair cut down inside the cliff, about 30 m, with turns and landings lit by slits in the face. It comes out in a sea cave with a boat landing, the fort's way to the water. That gives it a lower level to explore, as the card asks.
 - **C. A store under the hall:** a rock-cut cellar under the hall's floor, reached by a hatch. It is smaller than B, with no way to the sea.
+### Magic B — how many carvings does the main questline walk you to? (the designer, 2026-10-18) — DECISION #422
+The build sheet (`docs/design/magic-build.md`) sets the 24 words, the five forms, the six riders and the costs, and lays out the main quest's Register: Aldwyn stars carvings on the map at Q7's turn-in, and the guild's ranks come with them. How much of the finding should the main quest do itself, and how much should it leave to rubbings, rumours and Súil, the Weaver's Eye?
+- **A.** Nine: one per school on the home island, the Mouth, and one on each other island. The forms come with them, and from the sixth the Register and Súil lead to the other fifteen words.
+- **B.** All 24: a word at every step, so Act II's spine is about twenty-four gates.
+- **C.** One and the forms: the Register names the guild and the first stone, and the canon's three pointers do the rest, close to today.
+
+Recommendation: **A.** Every school and every form arrives on the main path, and the fifteen words left over are what exploring pays, each made findable by Súil. B turns the main quest into a checklist; C leaves the problem you named.
+
+## Answered
+### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
+The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
+- **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.
+- **B. By level, as today.** Where you go does not change what you find.
+- **C. By place, with a floor of your level less two materials:** a level-25 character finds at least Obsidian everywhere. It softens A late but keeps half the problem.
 
 Pictures:
 - [from the road](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-fort.jpg)
