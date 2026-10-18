@@ -38,6 +38,29 @@ Pictures:
 - [C, the bellcote](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-bellcote.jpg)
 - [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-all.jpg)
 
+### A town's coaching inn on the new look: three storeys and a yard, two storeys and a yard, or a merchant's house? (look builder, Session 1088) — DECISION #411
+**Card F6: a town's coaching inn (look builder, Session 1088).** Your 1 A on #320 made the village inn the kit's farmhouse, which is in the game since Session 1086. You left "a town's coaching inn, with a yard, a stable arch and more rooms" as its own piece for later. On the new look, a town's, port's or city's inns are still the old builder's. The piece is drawn in `docs/prototypes/levelup/pieces.js` (`gatelandsCoachInn`), at `pieces-gatelands.html?view=coachinn&inn=three|two|house|all` (`&cam=gate|yard` for the yard). It is built from the kit's town plan, so it shares the street's render, sashes, fanlights and harp sign.
+
+How should a town's inn stand in its street?
+- **A. Three storeys with a gateway and a yard** *(recommended)*:
+  - **The front:** a rendered town front of five bays of 2.4 m, 12.6 by 9 m to a ridge of 11.9 m, with the door under a fanlight in its middle and the harp sign beside it.
+  - **The gateway:** beside the front, in a rubble wall on the street line, 3.2 by 3.9 m with its leaves swung back.
+  - **The yard:** a cobbled yard behind, with a trough and pump, closed by a stable range of four stalls and a coach house's arch.
+
+  It stands a storey above its neighbours, and the gateway says what it is from the street. It is 9,700 triangles in 28 draws.
+- **B. Two storeys, long, with the same gateway and yard:** seven bays, 17.4 by 7.5 m. This is the country inn on the coach road, low and wide, better at a crossroads than in a terrace. It is 9,600 triangles in 28 draws.
+- **C. No yard: a merchant's house that takes guests.** The kit's merchant's house on four bays, its shop window the taproom's and its fascia the inn's name. It is the cheapest (4,400 triangles in 14 draws) and fits any lot, but there is nowhere for a horse and nothing marks it but the sign.
+
+What is unchanged: the inn's name, keeper, topics and rooms. The yard is scenery: whether it holds horses, a coach or the coach line's stop is the systems builder's and the bodies builder's.
+
+Pictures:
+- [A from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-three.jpg)
+- [A's gateway](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-yard.jpg)
+- [A's yard and stables](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-inyard.jpg)
+- [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-two.jpg)
+- [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-house.jpg)
+- [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-all.jpg)
+
 ## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:

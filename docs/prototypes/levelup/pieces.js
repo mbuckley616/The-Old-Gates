@@ -1058,6 +1058,46 @@ function church(o = {}) {
   ud.size = { w: +(nw / 2 + cw - t - .02 - x0).toFixed(2), d: tw === 'round' ? +(nd + 1.0 + 2.75).toFixed(2) : nd, eave: nh, ridge: +top.toFixed(2), nave: nave.userData.size, chancel: chancel.userData.size };
   ud.door = door; ud.tower = tw; G.userData = ud; return G;
 }
+// a town's coaching inn (Session 1088, card F6; Michael's 1 A on #320 left it "its own piece later"): the inn of a town, port or city.
+// o.kind is the question asked of Michael (DECISION, Session 1088):
+// 'three' (a rendered town front of three storeys and five bays of 2.4 m, 12.6 by 9 m, the door in its middle under a fanlight, a
+//   harp sign; beside it a gateway 3.2 m wide in a rubble wall into a cobbled yard behind, closed by the stable range: four stalls'
+//   half-doors and a coach house's arch under slate), 'two' (the same yard behind a long front of two storeys and seven bays, 17.4 by
+//   7.5 m, a country inn on the coach road) or 'house' (no yard: a merchant's house of four bays whose shop window is the taproom's,
+//   its fascia the inn's name). -> a Group, its userData {name, tris, calls, size, door, parts}
+function coachInn(o = {}) {
+  const kind = o.kind || 'three', r = o.r || stream('coachinn'), G = new THREE.Group(), parts = [], add = (g, x, z) => { g.position.set(x, 0, z); g.updateMatrix(); G.add(g); parts.push(g); return g; };
+  if (kind === 'house') { const P = bayPlan('merchant', 4, { color: o.color || 'cream', paint: o.paint || 'green', trade: o.name || 'THE HARP · ROOMS · STABLING', d: 9 }); P.r = r; P.name = 'Inn (a merchant’s house)';
+    const b = add(building(P), 0, 0); G.userData = { name: 'Inn in a merchant’s house', tris: b.userData.tris, calls: b.userData.calls, size: b.userData.size, door: b.userData.door, parts: [{ name: P.name, tris: b.userData.tris, calls: b.userData.calls }] }; return G; }
+  const three = kind === 'three', nb = three ? 5 : 7, bay = 2.4, w = +(nb * bay + .6).toFixed(2), d = three ? 9 : 7.5, g = three ? [3.0, 2.9, 2.6] : [3.0, 2.9], xs = Array.from({ length: nb }, (_, k) => +((k - (nb - 1) / 2) * bay).toFixed(2));
+  const P = PLANS.townhouse({ color: o.color || 'cream', paint: o.paint || 'green' }); Object.assign(P, { name: three ? 'Coaching inn' : 'Coaching inn, two storeys', w, d, floors: g, r, doorFace: 'front' });
+  P.chim = [{ gable: -1, flues: 4 }, { gable: 1, flues: 4 }]; P.sign = { x: bay / 2, y: g[0] + .55 };
+  P.open = { front: [{ kind: 'fan', x: 0, y: 0, w: 1.2, h: 3.0, arch: true, dress: true }, ...xs.filter(x => x).map(x => win(x, .75, 1.0, 1.85, [3, 2])), ...xs.map(x => win(x, g[0] + .4, 1.0, three ? 2.0 : 1.8, [3, 3])),
+      ...(three ? xs.map(x => win(x, g[0] + g[1] + .35, .95, 1.4, [3, 1])) : [])],
+    back: [{ kind: 'plank', x: -xs[1], y: 0, w: 1.0, h: 2.2 }, ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, .9, .9, 1.6, [2, 2])), ...xs.filter((x, k) => k % 2 === 0).map(x => win(x, g[0] + .4, .9, 1.7, [2, 2]))],
+    right: [win(-1.6, .9, .8, 1.4, [2, 2]), win(1.6, g[0] + .4, .8, 1.5, [2, 2])] };
+  const inn = add(building(P), 0, 0), h = g.reduce((a, b) => a + b, 0);
+  // the gateway: a rubble wall 5 m along the street from the inn's east end, 4.8 m high, a round-headed arch of 3.2 by 3.9 m with its leaves swung back
+  const bk = bucket(), gw = 5.0, gh = 4.8, gt = .6, yardD = 14, x1 = w / 2 + gw, zB = -d / 2 - yardD, FS = FIN.stone(), M0 = new THREE.Matrix4().makeTranslation(w / 2 + gw / 2, 0, d / 2);
+  face(bk, M0, { fin: FS, paint: 'p:' + P.paint, t: gt, r, outline: [[-gw / 2, 0], [gw / 2, 0], [gw / 2, gh], [-gw / 2, gh]], open: [{ kind: 'cart', x: 0, y: 0, w: 3.2, h: 3.9, arch: true, open: true }], strings: [] });
+  { const c = box(gw + .1, .16, gt + .16); c.translate(w / 2 + gw / 2, gh + .08, d / 2 - gt / 2); bk.add('dress', c); }
+  for (let k = 0, y = .1; y < gh - .2; k++, y += .34) { const a = k % 2 ? .3 : .55, q = box(a, .3, gt + .06); q.translate(x1 - a / 2 + .03, y + .15, d / 2 - gt / 2 + .03); bk.add('dress', q); }
+  // the yard's walls: the east one from the gateway back to the stables, the west one from the inn's back corner, 2.6 m and coped
+  for (const [x, z0, z1] of [[x1 - gt / 2, d / 2 - gt, zB + 5.5], [-w / 2 + gt / 2, -d / 2, zB + 5.5]]) { const L = z0 - z1, wl = box(gt, 2.6, L, .8); wl.translate(x, 1.3, (z0 + z1) / 2); bk.add('rubble', wl);
+    const c = box(gt + .14, .14, L + .1); c.translate(x, 2.67, (z0 + z1) / 2); bk.add('dress', c); }
+  { const f = box(gt + .1, .8, 4); f.translate(x1 - gt / 2, -.42, d / 2 - 2); bk.add('rubble', f); }
+  // a trough of dressed stone by the pump in the yard
+  { const tg = box(2.2, .7, .7); tg.translate(x1 - 1.3, .35, -d / 2 - 3); bk.add('dress', tg); const pm = box(.3, 1.5, .3); pm.translate(x1 - .5, .75, -d / 2 - 3); bk.add('p:' + P.paint, pm); const sp = box(.08, .08, .4); sp.translate(x1 - .5, 1.25, -d / 2 - 3 - .3); bk.add('iron', sp); }
+  const yard = finish(bk, 'Gateway and yard walls'); add(yard, 0, 0);
+  // the stable range across the back of the yard: rubble under slate, one high storey and its loft, four half-doors and the coach house's arch
+  const sw = +(w + gw).toFixed(2), S = { name: 'Stable range', w: sw, d: 5.5, t: .6, floors: [3.4], fin: FIN.stone(), paint: P.paint, r, roof: { kind: 'slate', pitch: SCALE.pitch.slate + 2, ov: .3, ovg: .25 }, chim: [], gutter: false, doorFace: 'front',
+    open: { front: [...[0, 1, 2, 3].map(k => ({ kind: 'half', x: -sw / 2 + 1.4 + k * 2.3, y: 0, w: 1.1, h: 2.1 })), ...[0, 1, 2, 3].map(k => win(-sw / 2 + 1.4 + k * 2.3, 2.45, .6, .6, [1, 1], { sash: false })), { kind: 'cart', x: sw / 2 - 2.6, y: 0, w: 2.9, h: 3.0, arch: true }] } };
+  const st = add(building(S), (-w / 2 + x1) / 2, zB + 2.75);
+  const ud = { name: three ? 'Coaching inn, three storeys' : 'Coaching inn, two storeys', tris: 0, calls: 0, parts: parts.map(p => ({ name: p.userData.name, tris: p.userData.tris, calls: p.userData.calls })) };
+  for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
+  ud.size = { w: +(w + gw).toFixed(2), d: +(d + yardD).toFixed(2), eave: +h.toFixed(2), ridge: inn.userData.size.ridge, inn: inn.userData.size, stables: st.userData.size, gate: { w: 3.2, h: 3.9, x: w / 2 + gw / 2 }, yard: { x0: -w / 2 + gt, x1: x1 - gt, z0: -d / 2, z1: zB + 5.5 } };
+  ud.door = inn.userData.door; G.userData = ud; return G;
+}
 // the Gatelands' lots (Session 835, Michael's A on #280: coloured towns). A town's lots are rendered in the earth colours,
 // with dressed quoins, string courses and a cornice; no two neighbours share a colour, as in Kinsale or Dingle, and the
 // door and sashes are painted in a colour that does not drown in the wall's. Cottages stay limewashed under thatch, farmhouses
@@ -1080,7 +1120,7 @@ export function gatelandsLot(street, i, s = {}) {
   return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }
 export { BAYS as GL_BAYS, bayWidth as glBayWidth, baysFor as glBaysFor, bayPlan as glBayPlan };
-export { church as gatelandsChurch };
+export { church as gatelandsChurch, coachInn as gatelandsCoachInn };
 export { SCALE, glMats, bucket as glBucket, finish as glFinish, box as glBox, face as glFace, building as gatelandsBuilding, PLANS as GL_PLANS, FIN as GL_FIN, win as glWin, PAINTS as GL_PAINTS };
 
 // ── the Markish hall (Session 819, a prototype for DECISION: the Mark's houses in the new kit) ──

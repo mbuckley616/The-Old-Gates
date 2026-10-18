@@ -24054,3 +24054,31 @@ Which god or Church the building serves is not this session's: the canon's six t
 - **The round tower's openings** are surrounds laid on the shaft, not cut through it. They read at a distance, but close to, the bell lights have no depth.
 - **The rubble** is the kit's cobble texture at 0.8, as the tower house's was. On a building this large its light-and-dark blocks read as a pattern.
 - **Owed:** the church into the game once #410 is answered (its lot is the old builder's size, so it needs the guild hall's treatment, front kept). The coaching inn and the keep each need a prototype.
+
+## v80 — Session 1088 — Card F6: a town's coaching inn in the kit, its shape asked (prototype only)
+Michael's 1 A on #320 made the village inn the farmhouse, and Session 1086 built it in the game. The same answer left "a town's coaching inn, with a yard, a stable arch and more rooms" for later, as a piece of its own. On the new look, a town's, port's or city's inns are still the old builder's. This session draws the coaching inn in the kit (`gatelandsCoachInn`, `docs/prototypes/levelup/pieces.js`), adds `?view=coachinn` to `pieces-gatelands.html`, and asks its shape as DECISION #411.
+
+`o.kind` gives three answers:
+- **`three`:**
+  - **The front:** the kit's town plan (render, string courses, cornice, parapets and kneelers) on five bays of 2.4 m: 12.6 by 9 m, three storeys of 3.0, 2.9 and 2.6 m, ridge 11.94 m. The door is a fanlight door of 1.2 by 3.0 m in the middle bay, with the harp sign beside it. There are sashes in every other bay, a back door and windows on the yard, and two windows in the gable over the passage.
+  - **The gateway:** a rubble wall 5 m along the street from the east gable, 4.8 m high and quoined at its end. It is laid out with the kit's own `face()`, and its arch of 3.2 by 3.9 m has its leaves swung back flat against the wall (the forge's open cart door).
+  - **The passage and yard:** the passage runs back beside the house into a yard 8.5 m deep, walled to 2.6 m and coped, with a dressed trough and a painted pump.
+  - **The stable range:** it closes the yard, 17.6 by 5.5 m, rubble under slate, 3.4 m to the eaves. It has four stalls' half-doors with loft lights over them, and a coach house's arch at the gateway's end.
+- **`two`:** the same yard behind a front of two storeys and seven bays, 17.4 by 7.5 m, ridge 8.8 m.
+- **`house`:** no yard. The kit's merchant's house on four bays, its shop window the taproom's and its fascia the inn's name (*THE HARP · ROOMS · STABLING*).
+
+The page stands each one in a flagged street between two townhouses of the kit, with the passage and yard cobbled. Who keeps horses or a coach in the yard is not this session's: that is the systems builder's coach line and the bodies builder's animals.
+
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass.** Four checks are new, and two views were added to the render list.
+  - **Builds:** each of the three is the same twice and in budget. Three storeys: 9,734 triangles in 28 draws. Two storeys: 9,638 in 28. The merchant's house: 4,426 in 14.
+  - **The front door** is a door of note: a fanlight door of 1.2 by 3.0 m, or the shop door of 1.1 by 2.65 m.
+  - **A coach goes through:** six rays from the street run along the gateway's middle and 0.8 m either side, at 1.5 and 3.0 m. In both yards, every ray meets nothing until the stable range's front, at z -13.17 to -12.92 and -12.42 to -12.17.
+  - **The sizes:** the three-storey front stands higher (ridge 11.94 against 8.8 m) and the two-storey one is longer (17.4 against 12.6 m). The merchant's house has no yard.
+  - **Renders:** `?view=coachinn` and `?view=coachinn&inn=all` render with no page errors but the people's missing pack.
+- **Pictures:** `pieces-gatelands-coachinn-three.jpg`, `-yard` (the gateway), `-inyard`, `-two`, `-house` and `-all`.
+### Needs eyes
+- **The question:** the shape is asked as DECISION #411, recommending A.
+- **The three-storey inn's front** differs from a townhouse's only by its width, its middle door and its sign. A painted name across the front is a common mark. There is no room for one between the fanlight and the first-floor sills at the kit's storeys.
+- **The yard is small** (8.5 m deep) so that the piece fits a town's lot depth with the row behind. A coach could not turn in it.
+- **Owed:** the keep needs a prototype; the church waits on #410 and the coaching inn on #411.

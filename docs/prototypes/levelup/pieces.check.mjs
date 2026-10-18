@@ -118,8 +118,27 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   check(`the west door is a door of note: ${C.map(c => `${c.tower} ${c.door[0]} by ${c.door[1]} m`).join(', ')}`, C.every(c => c.door[2] === 'plank' && c.door[0] >= 1.4 && c.door[1] >= 3.1 && c.doorAt && c.doorAt[0] < -8), C.map(c => [c.door, c.doorAt]));
   check(`the round tower stands ${by.round.top} m to its cap, the west tower ${by.square.top} m to its merlons, the bellcote ${by.bellcote.top} m`, by.round.top > 29 && by.square.top > 18 && by.square.top < by.round.top && by.bellcote.top < 14.5, C.map(c => [c.tower, c.top, c.parts]));
 }
+// Session 1088: a town's coaching inn (gatelandsCoachInn), three ways (o.kind three | two | house, asked of Michael): each the same twice and
+// in budget; the front door a door of note; and where there is a yard, a coach goes through: rays along the gateway's middle and 0.8 m
+// either side of it, at 1.5 and 3.0 m, meet nothing from the street until the stables' front across the yard.
+{ const I = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./pieces.js'), out = [];
+    const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+    for (const kind of ['three', 'two', 'house']) { const a = K.gatelandsCoachInn({ kind }), b = K.gatelandsCoachInn({ kind }), u = a.userData; a.updateMatrixWorld(true);
+      const plan = a.children[0].userData.plan, door = plan.open.front.find(o => /fan|shopdoor|plank/.test(o.kind)), rays = [];
+      if (u.size.gate) { const meshes = []; a.traverse(m => { if (m.isMesh) meshes.push(m); }); const rc = new THREE.Raycaster(), z0 = u.size.inn.d / 2 + 2;
+        for (const dx of [-.8, 0, .8]) for (const y of [1.5, 3.0]) { rc.set(new THREE.Vector3(u.size.gate.x + dx, y, z0), new THREE.Vector3(0, 0, -1)); rc.far = 40; const hit = rc.intersectObjects(meshes, false)[0];
+          rays.push({ dx, y, z: hit ? +(z0 - hit.distance).toFixed(2) : null, part: hit ? hit.object.parent.userData.name : null }); } }
+      out.push({ kind, tris: u.tris, calls: u.calls, same: hash(a) === hash(b), size: u.size, door: [door.kind, door.w, door.h], rays, parts: u.parts.map(p => p.name) }); }
+    return out; });
+  const by = Object.fromEntries(I.map(c => [c.kind, c]));
+  check(`the coaching inn three ways, each the same twice and in budget: ${I.map(c => `${c.kind} ${c.tris.toLocaleString()} triangles in ${c.calls} draws`).join(', ')}`, I.length === 3 && I.every(c => c.same && c.tris < 14000 && c.calls <= 30), I.map(c => [c.kind, c.tris, c.calls, c.same]));
+  check(`its front door is a door of note: ${I.map(c => `${c.kind} ${c.door[0]} ${c.door[1]} by ${c.door[2]} m`).join(', ')}`, I.every(c => c.door[1] >= 1.1 && c.door[2] >= 2.6), I.map(c => c.door));
+  const yards = I.filter(c => c.rays.length), clear = yards.every(c => c.rays.every(r => r.part === 'Stable range' && Math.abs(r.z - c.size.yard.z1) < .7));
+  check(`a coach goes through the gateway (${by.three.size.gate.w} by ${by.three.size.gate.h} m) to the stables' front across the yard: ${yards.map(c => `${c.kind}: 6 rays meet ${[...new Set(c.rays.map(r => r.part))].join(', ')} at z ${Math.min(...c.rays.map(r => r.z))} to ${Math.max(...c.rays.map(r => r.z))}`).join('; ')}`, yards.length === 2 && clear, yards.map(c => c.rays));
+  check(`sizes: three storeys ${by.three.size.inn.w} by ${by.three.size.inn.d} m to a ridge of ${by.three.size.inn.ridge} m, two storeys ${by.two.size.inn.w} by ${by.two.size.inn.d} m (${by.two.size.inn.ridge} m), the merchant's house ${by.house.size.w} by ${by.house.size.d} m`, by.three.size.inn.ridge > by.two.size.inn.ridge && by.two.size.inn.w > by.three.size.inn.w && !by.house.size.yard, I.map(c => c.size));
+}
 await page.close();
-for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays', 'church', 'church&tower=all']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays', 'church', 'church&tower=all', 'coachinn', 'coachinn&inn=all']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`);
   // a page error ends the wait at once (an error in the scene's module never sets __err)
   await Promise.race([pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 }), new Promise(res => pg.on('pageerror', e => { if (!/json|JSON/.test(String(e))) res(); }))]);
