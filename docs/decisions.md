@@ -83,6 +83,32 @@ Pictures:
 - [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-all.jpg)
 
 
+### A broken gate's floating stones: hang still as footholds, drift as scenery, or drift and bear you? (look builder, Session 1097) — DECISION #417
+**Backlog L10, one piece in three conditions (look builder, Session 1097; OG-126).** OG-126's rule is drawn as a kit: `docs/prototypes/levelup/gatekit.js`, at `gatekit.html?view=kit|piece|hall`. It has eight pieces at the nave's measures (visual-foundation.md §2): a floor of 2.5 m slabs, an aisle wall, a pointed arcade arch of 10 m, a pier 4 m thick and 20 m high, a stair 8 m wide, a bridge of 16 m, a balcony on corbels and a script panel. Each piece is made of its stones, and one seeded rule moves them, so a condition is never a second model:
+- **Whole:** every stone in place, the script amber.
+- **Cracked and leaning:** the piece leans 1.5 to 3°, a stone in four slips, dark cracks run across the faces, and the script dims, a panel in three going dark.
+- **Broken:** above a ragged line, about seven stones in ten of those that come loose float, lifted up to 3 m and turned. The rest lie fallen at the foot. A violet seam burns where each stone sat, and the script turns violet.
+
+Each of the six schools dresses the stone and the script's light. The nave view walks six bays, from whole to broken.
+
+The rule is yours (OG-126 kept). What is open is what the floating stones do in the game:
+- **A. Hang still, and you can stand on them** *(recommended)*. Each stone is fixed where the rule put it, keyed by place so it is the same every visit. It is solid, so a broken nave is something to climb, and costs nothing at run time: the stones merge into the hall's mesh like any other.
+- **B. Drift slowly, as scenery.** They bob 10 to 20 cm and turn a little, and you cannot stand on them. It is the most unsettling, a gate still coming apart, but each stone must be its own moving piece.
+- **C. Drift and bear you:** moving footholds. The broken halls become the platforming of OG-131, but every floating stone is a moving solid the systems builder has to carry.
+
+Nothing in the game changes yet: the dungeon's rooms are the systems builder's, and a gate's halls are card F5's.
+
+Pictures:
+- [the nave, whole to broken (Cloch)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-hall.jpg)
+- [the same in Tine's dress](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-hall-tine.jpg)
+- [Solas](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-hall-solas.jpg)
+- [the wall three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-wall.jpg)
+- [the arch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-arch.jpg)
+- [the pier](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-pier.jpg)
+- [the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-bridge.jpg)
+- [the kit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-kit.jpg)
+
+
 ## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:

@@ -1,0 +1,41 @@
+// node docs/prototypes/levelup/gatekit.check.mjs (Session 1097): the gate kit's one piece in three conditions (gatekit.js, OG-126).
+// Every piece in every condition and every school builds the same twice and in budget; whole moves nothing; cracked leans 1.5 to 3°
+// and slips stones but floats and drops none; broken floats stones above where they stood and drops others, with a violet seam for
+// each seat left and each stone floating; the condition is keyed by place (two keys break two ways); the school dresses the stone and
+// the light, and broken burns violet in all six; and the page's views render with no page errors.
+import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
+const here = path.dirname(fileURLToPath(import.meta.url));
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.bin': 'application/octet-stream' };
+const srv = http.createServer((q, r) => { const f = path.join(here, decodeURIComponent(q.url.split('?')[0])); if (!f.startsWith(here) || !fs.existsSync(f)) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(r); }).listen(0);
+const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] };
+if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
+const browser = await chromium.launch(launch); let fails = 0;
+const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined && !ok ? '  ' + JSON.stringify(info).slice(0, 1500) : '')); if (!ok) fails++; };
+const page = await browser.newPage({ viewport: { width: 320, height: 200 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+await page.goto(`http://localhost:${port}/gatekit.html?still&w=320&h=200&view=piece&piece=slab`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+const R = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./gatekit.js'), out = [];
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 5) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+  const top = (g, k) => { const m = g.children.find(c => c.userData.key === k); if (!m) return null; m.geometry.computeBoundingBox(); return +m.geometry.boundingBox.max.y.toFixed(2); };
+  for (const kind of K.GK_KINDS) for (const cond of K.GK_CONDS) { const a = K.gatePiece(kind, { cond }), b = K.gatePiece(kind, { cond }), c = K.gatePiece(kind, { cond, key: 'elsewhere:' + kind }), u = a.userData;
+    out.push({ kind, cond, tris: u.tris, calls: u.calls, same: hash(a) === hash(b), other: hash(a) !== hash(c), blocks: u.blocks, moved: u.moved, floating: u.floating, fallen: u.fallen, seams: u.seams, cracks: u.cracks, lean: u.lean,
+      keys: a.children.map(m => m.userData.key).sort(), top: Math.max(top(a, 'stone') ?? -9, top(a, 'floor') ?? -9, top(a, 'dress') ?? -9) }); }
+  const sch = []; for (const s of Object.keys(K.GK_SCHOOLS)) { const w = K.gatePiece('pier', { school: s }), x = K.gatePiece('pier', { school: s, cond: 'broken' }), m = k => (w.children.find(c => c.userData.key === k) || {}).material, mb = (x.children.find(c => c.userData.key === 'script') || {}).material;
+    sch.push({ s, stone: '#' + m('stone').color.getHexString(), glow: '#' + m('script').emissive.getHexString(), broken: mb ? '#' + mb.emissive.getHexString() : null }); }
+  return { out, sch }; });
+const O = R.out, by = (k, c) => O.find(o => o.kind === k && o.cond === c), vert = ['wall', 'arch', 'pier', 'balcony', 'panel'];
+check(`all ${O.length} builds (8 pieces, 3 conditions) the same twice and in budget: ${Math.min(...O.map(o => o.tris)).toLocaleString()} to ${Math.max(...O.map(o => o.tris)).toLocaleString()} triangles, ${Math.max(...O.map(o => o.calls))} draws or fewer`, O.length === 24 && O.every(o => o.same && o.tris < 8000 && o.calls <= 6), O.map(o => [o.kind, o.cond, o.tris, o.calls, o.same]));
+check(`whole moves nothing: 0 of ${O.filter(o => o.cond === 'whole').reduce((a, o) => a + o.blocks, 0)} stones moved, no seam, no crack, no lean`, O.filter(o => o.cond === 'whole').every(o => !o.moved && !o.seams && !o.cracks && !o.lean && !o.keys.includes('seam')));
+const cr = O.filter(o => o.cond === 'cracked');
+check(`cracked: ${vert.map(k => `${k} leans ${by(k, 'cracked').lean}°`).join(', ')}; floors and spans do not lean; ${cr.reduce((a, o) => a + o.moved, 0)} stones slipped and ${cr.reduce((a, o) => a + o.cracks, 0)} crack lines, none floating or fallen`,
+  cr.every(o => !o.floating && !o.fallen && !o.seams && o.moved > 0) && vert.every(k => Math.abs(by(k, 'cracked').lean) >= 1.5 && Math.abs(by(k, 'cracked').lean) <= 3) && ['slab', 'stair', 'bridge'].every(k => by(k, 'cracked').lean === 0) && cr.reduce((a, o) => a + o.cracks, 0) > 40, cr);
+const br = O.filter(o => o.cond === 'broken');
+check(`broken: ${br.reduce((a, o) => a + o.floating, 0)} stones float and ${br.reduce((a, o) => a + o.fallen, 0)} have fallen across the 8 pieces, every piece losing some (${br.map(o => `${o.kind} ${o.floating}+${o.fallen} of ${o.blocks}`).join(', ')})`, br.every(o => o.floating > 0 && o.moved === o.floating + o.fallen && o.moved < o.blocks), br.map(o => [o.kind, o.floating, o.fallen, o.blocks]));
+check(`a violet seam for every seat left and every stone afloat: ${br.reduce((a, o) => a + o.seams, 0)} seams`, br.every(o => o.seams === 2 * o.floating + o.fallen && o.keys.includes('seam')), br.map(o => [o.kind, o.seams, o.floating, o.fallen]));
+check(`what floats rises above where the whole piece stood: ${vert.map(k => `${k} ${by(k, 'whole').top} → ${by(k, 'broken').top} m`).join(', ')}`, vert.every(k => by(k, 'broken').top > by(k, 'whole').top + .3), vert.map(k => [k, by(k, 'whole').top, by(k, 'broken').top]));
+check(`keyed by place: the same piece under another key breaks another way (${O.filter(o => o.cond !== 'whole' && o.other).length} of ${O.filter(o => o.cond !== 'whole').length}), and whole is the same under any key`, O.filter(o => o.cond !== 'whole').every(o => o.other) && O.filter(o => o.cond === 'whole').every(o => !o.other), O.map(o => [o.kind, o.cond, o.other]));
+const S = R.sch; check(`the school dresses it: six stones (${S.map(s => s.s + ' ' + s.stone).join(', ')}), the script in the school's light whole and violet broken in all six (${S[0].broken})`, new Set(S.map(s => s.stone)).size === 6 && new Set(S.map(s => s.glow)).size >= 5 && S.every(s => s.broken === S[0].broken), S);
+check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close();
+for (const v of ['kit', 'hall', 'kit&school=tine', ...['slab', 'wall', 'arch', 'pier', 'stair', 'bridge', 'balcony', 'panel'].map(p => 'piece&piece=' + p)]) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/gatekit.html?still&w=320&h=200&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const st = await pg.evaluate(() => ({ n: Object.keys(window.__stats.plans || {}).length, tris: window.__stats.tris })); check(`gatekit.html?view=${v} renders: ${st.n} pieces, ${st.tris.toLocaleString()} triangles, no page errors`, st.n > 0 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
+await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);
