@@ -24638,3 +24638,21 @@ Session 1115 said the cats sit wrong: a cat sits with its forefeet together and 
 ### Needs eyes
 - **Whether 30% is right.** The Hollowcat's paws nearly touch. A sitting cat's do touch, and its forefeet sit a little forward too.
 - **Owed:** the tail wrapped round the forefeet, and the game (after F4).
+
+## v80 — Session 1138 — The time table refreshed and sixteen shards (QA, tests and CI only)
+The systems builder's run on af62671 (39146959449) went red on two shards. Shard 5 is the branch's own: its new `tierloot` suite does not parse. Shard 14 was cut by the job's 60-minute limit on its last suite, `witnessrange`, with nothing failed. That one is the harness's, and it would have cut the run whatever the change.
+
+`run.mjs` splits the suites by the seconds each took on CI, from a table last refreshed in Session 915 (455 suites). A suite not in the table counts as 60 s. The systems branch has 502 suites and 50 of them were not in the table; `kittown` alone took 346 s, and `rowelines` had grown from 254 to 354. So the split thought shard 14 was 46 minutes and it ran 59.6 before the cut. Across the whole run the suites the table knew took 1.09 times their numbers. The suites now add up to about 710 minutes on CI, 51 a shard at fourteen, and a suite's time moves by a third from runner to runner: a fourteen-shard run on that branch is a coin toss against the hour.
+
+Two changes, as Sessions 745 and 915 made before. The table is refreshed from that run: 491 suites timed from the thirteen shards that finished and shard 14's own log, `fistfight`'s FLAKY 264 s halved, 49 suites added; the ten the run did not time keep their numbers. And `check.yml` runs sixteen shards, not fourteen. No suite and no check changed. What actually stops the count growing with the suites is backlog K's *CI runs only the suites a change touches* (Michael's B); that is still owed.
+
+### Verified (headless Chromium)
+- **The plan, by `run.mjs`'s own split with the new table:**
+  - On auto/systems' 502 suites: 44 minutes a shard at sixteen, against 51 at fourteen.
+  - On main's 461: 41–42 minutes a shard, against 47–48 at fourteen.
+- **The split is unchanged:** the same greedy longest-first code, now with `/16`, so every suite is still in exactly one shard.
+- **`run.mjs` still runs:** `node tests/run.mjs ghoulwalk` 1/1, `node --check` clean, and `check.yml` loads as YAML.
+- **What is not proved here:** a sixteen-shard CI run. This PR's own run is the first; its slowest shard is the number to read.
+### Needs eyes
+- **Runner minutes.** Sixteen jobs a run in place of fourteen adds two installs (about 1.5 minutes each) to every run. The test minutes are the same.
+- **Owed:** the systems builder's `tierloot` (SyntaxError on load, shard 5) is theirs. The table wants refreshing again whenever a run shows a shard over 55 minutes.
