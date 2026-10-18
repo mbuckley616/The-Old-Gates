@@ -238,3 +238,50 @@ export function seaCave(o = {}) {
   const ringMin = T1.rings.slice(1, -3).map((rg, k) => Math.min(...rg.map(p => Math.hypot(p[0] - spine[k + 1][0], p[1] - spine[k + 1][1], p[2] - spine[k + 1][2])))), sideMin = T2.rings.slice(2, -2).map((rg, k) => Math.min(...rg.map(p => Math.hypot(p[0] - side[k + 2][0], p[1] - side[k + 2][1], p[2] - side[k + 2][2]))));
   return { group, tris: Math.round(tris), draws: group.children.length, floor, mouth: MOUTH, spine, side, tubeR: +Math.min(...ringMin).toFixed(2), sideR: +Math.min(...sideMin).toFixed(2), chamber: { ...CH, air: CH.c[1] + CH.r[1] }, shelf, shaft: SHAFT, pocket2: { ...P2, air: P2.c[1] + P2.r[1] }, flowers, land: LAND };
 }
+
+// ── a sunken village (Session 1104; OG-125's "sunken settlements: a village, temples"): a Gatelands village drowned where it stood, on a
+// valley floor 10 to 18 m down, built from the kit's own pieces and broken by the sea:
+//   - seven cottages (pieces.js's bay plans, 2 to 4 bays) along a lane, their thatch long gone, their walls broken at a ragged height by
+//     house (each a band 0.6 to 2.2 m under its eaves; what stood over it, frames and stacks too, gone); the lane between low dry-stone walls;
+//   - the church at the lane's end (pieces.js's gatelandsChurch, its round tower): the nave and chancel roofless, their walls broken; the
+//     round tower whole, so its cap stands out of the sea, the village's mark from the surface (OG-104's "towers half-sunk at low tide");
+//   - a high cross fallen across the lane, the village well.
+// Who lived there and why the sea took it is the quest writer's. -> { group, tris, draws, floor, houses: [{ x, z, bays, low, floorUnder, walls,
+//   gone }], church { low, floorUnder, top, roof }, cross, lane: [z0, z1] }
+import { gatelandsChurch, glMats } from './pieces.js';
+export function sunkenVillage(o = {}) {
+  const r = o.r || stream('undersea:village'), B = new Map(), put = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k); if (!x.attributes.uv) worldUV(x, .5); (B.get(key) || B.set(key, []).get(key)).push(x); return x; };
+  const floor = (x, z) => { const t = Math.min(1, Math.max(0, -z / 70)); return -(10 + 8 * t) + fbm(x / 18, z / 18, 3) * .9; };
+  { const N = 120, g = new THREE.PlaneGeometry(90, 100, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 40; P.setXYZ(i, x, floor(x, z), z); } g.computeVertexNormals(); worldUV(g, .25); put('sand', g); }
+  const KEY = new Map(Object.entries(glMats()).map(([k, m]) => [m, k])), group = new THREE.Group(); let tris = 0, draws = 0;
+  // settle a built piece on the slope: turned, then lowered so its lowest point is `sink` under the sand beneath it; the roofs taken away,
+  // the walls cut at a ragged height `brk(x, z)` over its foot; weed on all of it
+  const settle = (g, x, z, ry, sink, roofKeys, brk) => { g.rotation.y = ry; g.position.set(x, 0, z); g.updateMatrixWorld(true); const res = { roof: 0, walls: 0 };
+    const meshes = []; g.traverse(m => { if (m.isMesh) meshes.push(m); });
+    for (const m of meshes) { const k = KEY.get(m.material) || '', mw = m.matrixWorld.clone(), v = new THREE.Vector3();
+      if (roofKeys.includes(k) || k === 'dark' || k === 'glass' || k === 'lit') { m.parent.remove(m); res.roof++; continue; }
+      if (brk) res.walls += cutMesh(m, null, t => t.some(p => { v.copy(p).applyMatrix4(mw); return v.y > brk(v.x, v.z); })); /* every material: the frames, leaves and stacks over the break go with the walls */
+      m.material = encrust(m.material, .55); }
+    g.updateMatrixWorld(true); let low = Infinity; const v = new THREE.Vector3(); g.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 5) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); low = Math.min(low, v.y - floor(v.x, v.z)); } });
+    g.position.y = -sink - low; g.updateMatrixWorld(true); group.add(g); g.traverse(m => { if (m.isMesh) { tris += m.geometry.attributes.position.count / 3; draws++; } }); return { ...res, low: +(-sink).toFixed(2), floorUnder: +floor(x, z).toFixed(2) }; };
+  // the cottages along the lane, their fronts to it; each one's walls broken at its own ragged band under its eaves
+  const houses = []; for (let k = 0; k < 7; k++) { const sx = k % 2 ? 1 : -1, z = -8 - k * 5.2 - r() * 1.2, x = sx * (7 + r() * 1.5), bays = 2 + Math.floor(r() * 3), P = glBayPlan('cottage', bays, { hip: r() < .3, paint: ['red', 'green', 'blue', 'yellow'][k % 4] }); P.r = stream(`undersea:village:${k}`);
+    // its walls broken over its foot at its eaves less 0.6 to 2.2 m, ragged by 0.6 m along them (the cottage's eaves are at 2.7 m)
+    const g = gatelandsBuilding(P), ry = sx > 0 ? -Math.PI / 2 : Math.PI / 2, b0 = .6 + r() * 1.6, ph1 = r() * 9, foot0 = floor(x, z), h = { k, x: +x.toFixed(2), z: +z.toFixed(2), bays };
+    const res = settle(g, x, z, ry, .35, ['thatch', 'pot'], (wx, wz) => (2.7 - b0) + .6 * Math.sin(wx * 1.3 + wz * .9 + ph1)); /* in the house's own height: it is cut standing at y 0, before it is lowered */
+    houses.push({ ...h, ...res }); }
+  // the church at the lane's end, roofless, its walls broken; its round tower whole
+  const church = (() => { const C = gatelandsChurch({ tower: 'round', r: stream('undersea:church') }), x = 2, z = -52, foot0 = floor(x, z), ry = Math.PI / 2;
+    // the round tower is the church's third part: taken out and settled whole on its own, so only the nave's and the chancel's walls break
+    const T = C.children[2]; C.remove(T); const tw = new THREE.Group(); tw.add(T);
+    const res = settle(C, x, z, ry, .4, ['slate', 'ridge'], (wx, wz) => 3.2 + .8 * Math.sin(wx * .9 + wz * 1.1)), tres = settle(tw, x, z, ry, .6, [], null);
+    return { ...res, tower: tres, top: +new THREE.Box3().setFromObject(tw).max.y.toFixed(2) }; })();
+  // the lane's walls: dry-stone runs either side, broken in places; the fallen high cross; the well
+  for (const sx of [-1, 1]) for (let z = -6; z > -48; z -= 1.2) { if (r() < .2) continue; const x = sx * 3.6 + (r() - .5) * .2, h = .6 + r() * .5, g = new THREE.BoxGeometry(.7, h, 1.15); g.rotateY((r() - .5) * .2); g.translate(x, floor(x, z) + h / 2 - .1, z); worldUV(g, .6); put('field', g); }
+  const cross = (() => { const x = -1.2, z = -45, fy = floor(x, z); { const g = new THREE.BoxGeometry(1.3, .7, 1.0); g.translate(x - 1.6, floor(x - 1.6, z) + .25, z); put('field', g); }
+    { const g = new THREE.BoxGeometry(.42, 3.0, .3); g.rotateZ(Math.PI / 2 - .1); g.translate(x, fy + .2, z); put('field', g); } { const g = new THREE.TorusGeometry(.48, .07, 6, 20); g.rotateX(Math.PI / 2 + .1); g.translate(x + 1.2, fy + .12, z); put('field', g); } return { x, z, floor: +fy.toFixed(2) }; })();
+  { const x = 1.8, z = -22, fy = floor(x, z), g = new THREE.CylinderGeometry(.85, .9, .8, 18, 1, true); g.translate(x, fy + .3, z); put('field', g); }
+  const M = { sand: mat('plaster', { ns: 1.6, color: 0xd2c29a, rough: 1 }), field: encrust(mat('stone', { ns: 1.0, color: 0xb8b0a0 }), .6) };
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'sand'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, floor, houses, church, cross, lane: [-6, -48] };
+}

@@ -3,14 +3,15 @@
 // quay's face, the niche behind the kelp) | boat (the rowing boat on the sand by the fourth pier) | above (from the quay's stair, the
 // arches' shapes under the water); &water=green (default, the Gatelands, visibility about 15 m) | clear (turquoise, about 40 m) | mark
 // (dark cold blue, about 10 m): the question, the water's colour and clarity.
+// ?place=village (Session 1104): a sunken village, &view=lane (default) | house | church | tower.
 // ?place=cave (Session 1103): a sea cave with air pockets, &view=mouth (default) | tunnel | pocket | top.
 // ?place=wrecks (Session 1101): the wrecks at three depths, &view=pair (default) | storm | deep | wide | hole (Session 1102: where the cutter stove the cog in).
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, skyDome, run } from './common.js';
-import { drownedArches, wreckSite, seaCave } from './undersea.js';
+import { drownedArches, wreckSite, seaCave, sunkenVillage } from './undersea.js';
 
-const PLACE = ['wrecks', 'cave'].includes(Q.get('place')) ? Q.get('place') : 'arches', VIEW = Q.get('view') || (PLACE === 'wrecks' ? 'pair' : PLACE === 'cave' ? 'mouth' : 'swim'), WATER = { green: { c: [.10, .24, .20], d: .085, sun: [.75, .95, .85], k: 2.4 }, clear: { c: [.08, .34, .40], d: .03, sun: [.85, 1, 1], k: 3.0 }, mark: { c: [.04, .10, .16], d: .12, sun: [.6, .75, .95], k: 1.8 } }[Q.get('water')] || null;
-const WK = Q.get('water') && WATER ? Q.get('water') : 'green', WA = WATER || { c: [.10, .24, .20], d: .085, sun: [.75, .95, .85], k: 2.4 }, UNDER = VIEW !== 'above' && VIEW !== 'pocket' && VIEW !== 'top';
+const PLACE = ['wrecks', 'cave', 'village'].includes(Q.get('place')) ? Q.get('place') : 'arches', VIEW = Q.get('view') || (PLACE === 'wrecks' ? 'pair' : PLACE === 'cave' ? 'mouth' : PLACE === 'village' ? 'lane' : 'swim'), WATER = { green: { c: [.10, .24, .20], d: .085, sun: [.75, .95, .85], k: 2.4 }, clear: { c: [.08, .34, .40], d: .03, sun: [.85, 1, 1], k: 3.0 }, mark: { c: [.04, .10, .16], d: .12, sun: [.6, .75, .95], k: 1.8 } }[Q.get('water')] || null;
+const WK = Q.get('water') && WATER ? Q.get('water') : 'green', WA = WATER || { c: [.10, .24, .20], d: .085, sun: [.75, .95, .85], k: 2.4 }, UNDER = VIEW !== 'above' && VIEW !== 'pocket' && VIEW !== 'top' && VIEW !== 'tower';
 const R = makeRenderer(UNDER ? 1.1 : .9), scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(UNDER ? 70 : 55, W / H, .05, 30000);
 buildTextures(); const SUN = new THREE.Vector3(-.35, .8, .35).normalize();
 if (UNDER) { scene.background = new THREE.Color(...WA.c); scene.fog = new THREE.FogExp2(new THREE.Color(...WA.c), WA.d); }
@@ -18,7 +19,7 @@ else { skyDome(scene, SUN); scene.fog = new THREE.FogExp2(new THREE.Color(.72, .
 const sun = new THREE.DirectionalLight(new THREE.Color(...(UNDER ? WA.sun : [1, .93, .8])), UNDER ? WA.k : 3.2); sun.position.copy(SUN).multiplyScalar(80); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
 Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40, near: 1, far: 200 }); sun.shadow.bias = -.0005; sun.shadow.normalBias = .05; sun.target.position.set(0, -6, -18); sun.position.add(sun.target.position); scene.add(sun, sun.target);
 scene.add(new THREE.HemisphereLight(new THREE.Color(...(UNDER ? WA.c.map(v => v * 4) : [.62, .72, .9])), new THREE.Color(.10, .10, .08), UNDER ? 1.2 : 1.0));
-const P = PLACE === 'wrecks' ? wreckSite() : PLACE === 'cave' ? seaCave() : drownedArches(); scene.add(P.group);
+const P = PLACE === 'wrecks' ? wreckSite() : PLACE === 'cave' ? seaCave() : PLACE === 'village' ? sunkenVillage() : drownedArches(); scene.add(P.group);
 // the surface: from below a bright rippled ceiling, from above a sheet of sea that lets the arches show through
 { const g = new THREE.PlaneGeometry(400, 400, 1, 1); g.rotateX(-Math.PI / 2);
   const m = UNDER ? new THREE.MeshBasicMaterial({ color: new THREE.Color(...WA.c.map(v => Math.min(1, v * 5.5))), side: THREE.BackSide, fog: true }) : new THREE.MeshStandardMaterial({ color: new THREE.Color(...WA.c), transparent: true, opacity: .55, roughness: .08, metalness: .1, depthWrite: false });
@@ -31,6 +32,10 @@ if (UNDER) { const c = document.createElement('canvas'); c.width = 64; c.height 
 const C = { swim: [[3.4, -3.0, -2.8], [-.2, -4.8, -26]], arches: [[11.5, -4.4, -9.5], [0, -4.2, -11]], alcove: [[6.4, -2.4, -4.4], [7, -2.4, .6]], boat: [[8.0, -5.4, -14.6], [4.6, -7.4, -18.4]], above: [[-16.9, 3.4, -.8], [-2, -3, -16]] }[VIEW] || [[3.4, -3.6, -2.6], [-.2, -4.6, -26]];
 const CW = { storm: [[16, -6.5, -6], [6, -9.5, -15]], pair: [[-1, -11.5, -24.5], [-1.5, -16.5, -41]], deep: [[13, -20.5, -60], [1, -24, -74]], wide: [[22, -9, -20], [0, -18, -50]], hole: [[-.8, -14.2, -45.5], [-4.3, -15.6, -38.6]] }[VIEW];
 if (PLACE === 'wrecks') { const c = CW || [[-1, -11.5, -24.5], [-1.5, -16.5, -41]]; C[0] = c[0]; C[1] = c[1]; }
+// the sunken village (Session 1104): lane (down the drowned lane between the cottages to the church) | house (a cottage's broken walls) |
+// church (the nave and its tower from the lane's end) | tower (from a boat on the surface: the round tower standing out of the sea)
+const CV = { lane: [[0.4, -8.6, -2], [0, -12, -40]], house: [[-2.2, -9.4, -12.5], [-7.4, -11, -9.2]], church: [[-9, -11.5, -38], [3, -9, -56]], tower: [[-30, 2.2, -20], [-4, 6, -54]] }[VIEW];
+if (PLACE === 'village') { const c = CV || [[0.4, -8.6, -2], [0, -12, -40]]; C[0] = c[0]; C[1] = c[1]; }
 // the sea cave (Session 1103): mouth (from the sea, at the cliff's foot) | tunnel (inside, looking up it toward the chamber) | pocket (in the
 // chamber's air on the shelf, the water and the shaft's light) | top (the shaft's mouth on the land)
 const CC = { mouth: [[6, -8.5, -14], [0, -9, 0]], tunnel: [[-.5, -7.6, 6], [1.6, -2.5, 24]], pocket: [[5.4, 1.65, 33.5], [-2, .2, 44]], top: [[9, 14.2, 37], [2, 11, 44]] }[VIEW];
