@@ -1273,6 +1273,7 @@ function interact(){
       if(typeof WORLD!=='undefined'&&WORLD.hatchInteract())return; // v80 — cellar hatch
       if(typeof WORLD!=='undefined'&&WORLD.boxInteract())return; // S155 — the strongbox, the home's chest
       if(typeof WORLD!=='undefined'&&WORLD.lootInteract())return; // v80 — tower chest
+      if(typeof WORLD!=='undefined'&&WORLD.shelfInteract())return; // S1121 — a book from a shelf
       if(typeof WORLD!=='undefined'&&WORLD.guestInteract())return; // v80 — Cill an Aoi
       const bd=intBedTarget(); /* S645 — in range and under the crosshair */
       // S650 — a bed under the crosshair that offers rest wins over a door that is only near (the door is still found by nearness); the prompt in 90-main.js reads the same test

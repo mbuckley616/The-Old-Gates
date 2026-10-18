@@ -658,6 +658,26 @@
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
     if(typeof renderInv==='function')renderInv();return true;}
+  // S1121 — a book to take from a shelf (the quest writer's ask for *What the Stones Say*): a generated room's bookcase
+  // (INT_SHELF, set by buildInteriorFor) offers the book of the first rule in SHELF_BOOKS that names the room's kind and its
+  // town's people, once per room: taken, `worldState.shelfTaken[<house id>]` holds the book's id. It is the guild's copy, put
+  // out to be read, so taking it is no crime. A rule whose book is not in BOOKS offers nothing.
+  let INT_SHELF=null;
+  const SHELF_BOOKS=[{type:'guild_m',people:'gatelander',book:'words_on_stones'}];
+  function shelfBookFor(house){if(!house)return null;const site=houseSite(house);const pp=site?peopleOfSite(site):null;
+    for(const r of SHELF_BOOKS){if(r.type!==house.type||(r.people&&r.people!==pp))continue;const def=BOOKS.find(b=>b.id===r.book);if(def)return def;}
+    return null;}
+  function shelfPrompt(){if(!INT_SHELF||!currentHouse||INT_SHELF.id!==currentHouse.id)return null;if(worldState.shelfTaken&&worldState.shelfTaken[INT_SHELF.id])return null;
+    const def=shelfBookFor(currentHouse);if(!def)return null;
+    if(Math.hypot(px-INT_SHELF.x,pz-INT_SHELF.z)>TOUCH||Math.abs(jumpY-INT_SHELF.y)>.9)return null;
+    if(!aimBox(INT_SHELF.x,INT_SHELF.z,INT_SHELF.y+.5,.25,.9,1.3))return null;
+    return `Press 'E' to take ${def.name} from the shelf`;}
+  // the named action (co-op): the book into the bag, the room's copy gone for good
+  function takeShelfBook(house){const def=shelfBookFor(house);if(!def)return false;const T=worldState.shelfTaken||(worldState.shelfTaken={});if(T[house.id])return false;
+    T[house.id]=def.id;if(typeof bagAdd==='function')bagAdd(Object.assign(makeBookItem(def),{qty:1}));
+    showMsg(`You take ${def.name} from the shelf.`,'#e8d8a0');if(typeof addLog==='function')addLog('📗',`Took ${def.name} from the shelf at ${house.name}.`);
+    if(typeof renderInv==='function')renderInv();return true;}
+  function shelfInteract(){if(!shelfPrompt())return false;return takeShelfBook(currentHouse);}
   let INT_LOOT=null;
   function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<TOUCH&&Math.abs(jumpY-INT_LOOT.y)<1.2&&aimBox(INT_LOOT.x,INT_LOOT.z,INT_LOOT.y,.45,.45,.75))return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
   function towerLocked(){return !!INT_LOOT&&!(worldState.towerPicked&&worldState.towerPicked[INT_LOOT.id]);} // S150 — the tower's chest is a good lock

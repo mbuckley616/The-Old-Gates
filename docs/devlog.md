@@ -25613,3 +25613,33 @@ The grip is still built the same way, only the forearm's aim is new:
 - **The wrist cocks up about 38°** to keep the knuckles plumb, which reads as a firm grip from the side. A looser grip would let the staff lean out a little at its foot, which the check now forbids (lean under 0.08 rad).
 - **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
+
+## v80 — Session 1121 — A book from the shelf: the glossary's copy in a Gatelands Mages' Guild
+The quest writer's build of *What the Stones Say* (Session 1092, auto/quests-build) asked this builder for a rule the game lacked: a book
+taken from a shelf in a generated room. The prompt is on the furniture, the book goes into the bag, and each room gives it once, keyed by
+its house id. It is for the glossary's copy, *The Words on the Stones*, on a shelf in every Gatelands Mages' Guild. The book is not sold.
+The draft is approved and the backlog line gives the shape, so this is building to it, not a decision.
+
+- **The shelf** (`83-world-generator.js`): a Mages' Guild room records its first bookcase on the east wall as `INT_SHELF`, where
+  `furnKit().guildM` puts it. `scaleRoom` scales it with the room's other records.
+- **The rule** (`86-world-crime.js`, beside the tower's chest): `SHELF_BOOKS` holds rules of a room kind, a people and a book id.
+  `shelfBookFor(house)` gives the first rule's book that matches the room's kind and its town's people (`peopleOfSite`), provided the book is in
+  `BOOKS`. One rule is in: `guild_m`, the Gatelanders, `words_on_stones`. Main and this branch do not yet have that book (it is
+  the quest writer's, on auto/quests-build), so no shelf offers anything until their build merges. Then it appears with no further change.
+- **The prompt and the take:** within `TOUCH` (1.6 m) of the shelf, on its floor, with the crosshair on the case, the bar reads *Press 'E' to
+  take The Words on the Stones from the shelf*. E calls `takeShelfBook(house)`, the named action (co-op rules). The book goes into the
+  bag, `worldState.shelfTaken[<house id>]` is set to the book's id, and the log reads *Took … from the shelf at …*. It is the guild's copy, put out to be read,
+  so taking it is not stolen and is no crime. `shelfTaken` is a place's, so it lives in the world row and in the S242 list.
+### Verified (headless Chromium)
+- **`shelfbook`** (new) 1/1, 13 checks, at Dunmore's Mages' Guild (a Gatelands town; the book stood in, as main lacks it). The shelf is at
+  31.47 by 6.28 m in a 31.76 by 28.87 m room, on the east wall. At 1 m with the crosshair on it the bar offers the book by name. At 2 m
+  it does not, and facing away it does not. E puts a book in the bag, not stolen, with no crime record and `shelfTaken` set. The shelf then offers nothing,
+  and a second take is refused. Out and back in, the shelf is still empty. The mark is in the world row, not the character's, and comes back
+  through `ssSplitPayload`/`ssJoinPayload` and `_applyLoadData`. The same room under a rule for the Markmen offers nothing. Two
+  early runs failed the save step's control (the mark deleted, the shelf should offer again): the player stood 25 m off after re-entering
+  the room, the test's doing. The step now stands you at the shelf in the same evaluate; green three times since.
+- **Neighbours:** see the PR comment.
+### Needs eyes
+- Nothing to see on main or this branch until the quest writer's book merges. Then, at a Gatelands Mages' Guild's east bookcase,
+  the prompt should come up where your eye falls on the case, not from the desk or the board.
+- **Owed:** the quest writer's placement is in (`SHELF_BOOKS`). Their side is the book itself, already on their branch.
