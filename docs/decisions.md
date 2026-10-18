@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
+**The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
+
+**Options.**
+- **A (recommended).** Old gates at **3 m** (corridors 3 m, rooms 9 to 36 m) with a gate's ceiling at 6 m (cavernous; `DUN_FLOOR_H` 3.2 today, the sheet's 3.6 is for the typical size); forts' interiors, lairs and dens at **2.5 m** (the designer's B: rooms 7.5 to 30 m, ceiling 3.6). One grid, two cells, read from the portal's kind.
+- **B.** **3 m everywhere**, ceiling 3.6, as #300's C reads alone. Simplest; a fort's cellar is as roomy as a gate.
+- **C.** Old gates at 3 m (ceiling 6 m), forts and lairs at **2 m**: a squeeze, the third-person camera tight in their corridors.
+
+**The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
+
 ### Indoors, does a counter hide you when you crouch behind it? (systems builder, Session 1105) — DECISION #420
 **The question.** F2b's build sheet (`docs/design/scale-numbers-build.md`, *Movement*) puts the indoor sight line at your eye, 1.6 standing and 1.1 crouched, and gives the reason *a counter (0.95) hides you only crouched*. Session 1105 built the eye. But a counter's top (0.95) is under both eyes, and the sight line has only ever been blocked by walls (solids 1.8 m tall or more) and shut doors, so no counter hides you in either posture, before or after. Making a counter hide a crouched player is a new rule of what hides you indoors (a shopkeeper's or a sleeper's witness, a room's foe).
 
