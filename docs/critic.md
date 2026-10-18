@@ -837,3 +837,62 @@ The tell matters. With the same weapon and health, timing the block turns three 
 **Backlog notes** (not changed):
 - I: the *Sailing playtest* block is all struck and could close (sixth run noted).
 - No new lines in I this run, and no proposals.
+
+## 2026-10-18 — The new look: the kit's first house in Dunmore, card F8's tower house and cliff fort and the five small mysteries, F11's last four hulls, and the Old Blood's dress (build s644)
+
+Build s644 is main at `bcbcbbb`, merged into this branch. My last entry was a playtest, so this run reviews the new look. `npm install` exits 0 and `export` passes 1/1. I served `docs/prototypes/levelup/` over http as `shoot.mjs` does and took 35 frames at 1280×720 from `places.html`, `ships.html` and `builder.html`, plus one boot of today's game on `?look=new`. Every page loaded with no page errors. `builder.html` needs the MakeHuman pack, which is not committed. `mh_pack.py` fetched it in under a minute (7.2 MB, gitignored). Without the pack the page throws *Unexpected end of JSON input* and draws nothing. That is expected, but a fresh checkout cannot show the people until someone runs the script.
+
+None of the prototype pages shows a frame time. Each one reports triangles and draws: tower house 64,356 triangles in 23 draws, cliff fort 43,196 in 19, the carriage 36,380 in 19, the perched stone 38,560 in 11, the expedition 27,758 in 16, the unfinished camp 22,271 in 13, the locked cellar 22,068 in 12. Each hull is 31,934 to 43,216 triangles in 10 to 12 draws. In software GL every place rendered its still in 4 to 24 s, and the tower house was the slowest.
+
+### The new look
+
+**The kit in today's game (Session 1037, card F6).** I booted s644 on `?look=new`, settled Dunmore, set 11h and stood one `PKIT.gl.lot` house 18 m ahead in the street (`critic/2026-10-18-kit-dunmore.png`). There were no page errors or console warnings. The scale is right: two townsfolk walk past its shop door, and the 2.05 m door sits a head over them, as `visual-foundation.md` asks. Its register is a long way from Dunmore's. It is a three-storey Georgian merchant's house with sash windows and a slate roof, its eave at 8.5 m and its ridge at 11.9 m. Around it stand the town's whitewashed thatched cottages, eaves about 3 m. That is #280 A's coloured town, so it is not wrong, but a street of these inside today's Dunmore will read as another century. One small thing: every merchant's house reads *WOOL · LINEN · DRAPERY*. `lot()` never passes a trade, so the default in `js/38-kit.js:384` (copied from `pieces.js:953`) stands on all of them. Session 1037's picture shows three on one street of six.
+
+**The Gatelands' ruined tower house (Session 1052, OG-121's "collapsed keeps with lower levels, some taken by bandits").** It holds up from the far view and the gate. There is the bawn with its breach and flanker, the tower, the cart, and the band's camp under the vault (`critic/2026-10-18-th-tower.jpg`, `-th-hall.jpg`). The souterrain is the best frame of the run: a long, low, lit passage with daylight at its end. Five faults:
+- **The fallen corner is not a corner.** From the south-east and from above it reads as a V cut down the middle of the east face, from the head to the vault's back, with the face standing whole on both sides. Session 1052 flagged it as "a notch". From the default view it is the first thing you see.
+- **Too little rubble for what fell.** About 9 m of a 1.5 m wall came down, but the heap under it is a single waist-high pile.
+- **Two walls of one ruin do not match.** The bawn's 0.9 m rubble wall wears a coursed block texture that reads as brick or ashlar. The tower wears the kit's cobble at a far larger scale. The same coursed blocks are the field walls at the carriage, the perched stone and the expedition. Across F8 the Gatelands' walls read as laid brick, not dry stone.
+- **The hall's lighting.** The fire's flames and the lantern by the door render pure white. The stair's parapet is pale ashlar in a room of rubble, so it reads as a counter. The pallets are boxes with a brown slab on top.
+- **In the cellar the sacks read as eggs** (`-th-cellar.jpg`): four smooth, upright, cream ovoids by the strongbox.
+
+The door is 1.2 by 2.6 m, 0.4 m over the foundation's 2.0 to 2.2. A tower house's door was usually low, and a 2.6 m round-headed door makes the tower look smaller than its 16 m. The thorn over the souterrain's pit is the broad-leaf tree of the other places, not a thorn.
+
+**The Mark's cliff fort (Session 1053).** The palisade, the burst gate and the hall behind it read at once from the road (`-cf-fort.jpg`). Inside, the hall and the stabbur on its posts are the best Markish buildings yet. The cliff is the weak part (`-cf-cliff.jpg`). From the sea it is one dark sheet in even vertical folds, like a stage curtain, with no ledge, stack or change of colour, and snow showing only on its lip. Session 1053 says so in its own words. I agree, and it matters more here than in the cave pages, because the cliff is the view you sail toward. From above, the headland is a flat-topped pillar standing out of a plain sea. From the road, the gate tower's open gable shows one slope as a slab and the other as a stick, which reads as a broken roof. It is not one: the camera sits left of the ridge, and the gate view shows both slopes.
+
+**The small mysteries (F8: Sessions 1023, 1025, 1026, 1031, 1032).**
+- *The unfinished camp* reads best of the five. It is a half-pitched tent, a laid fire and a sledge in a snowed spruce clearing with no track, and the empty snow tells the story.
+- *The locked cellar* works at the hatch. The new chain and lock on old boards are the point, and they read (`-cellar-hatch.jpg`). The "nettles" around it are hard green cones, a knee-high plantation of small conifers.
+- *The overturned carriage* does not read as a coach from the lane (`-carriage.jpg`). It is a plain red-brown box on its side. One wheel stands up on its axle like a table, and the near wheels are black blobs.
+- *The perched stone* reads as a mushroom (`-erratic.jpg`): a dark brown loaf on a short pale stalk. The clints around it are huge flat tiles cut by straight, deep grykes, more paving than limestone pavement.
+- *The abandoned expedition* reads well at distance: white wall tents, cypresses and the cart. Its ground, like the carriage's, is a strong two-tone blotch that reads as camouflage print up close.
+
+None of these five has a person or a door in frame, so I could not check them against the scale table by eye.
+
+**F11's last hulls (Sessions 1038, 1039, 1044, 1045, 1046), against OG-004.**
+- *Aurenne's cog* and *Aurenne's galleon* read as Aurenne at once: white hulls under blue strakes, white lateens with the gold sun-star, which is OG-004's "white and blue sails with a gold sun-star, painted hulls".
+- *The Mark's cog* (`-s-markcog.jpg`) is as under-canvassed as Session 1039 feared. One small tanned gaff sail sits between two high castles on a deep black hull.
+- *The Mark's three hulls* (caravel, cog, galleon) are tarred black with tanned sails, and each keeps another class's silhouette. OG-004's Mark is dragon prows, oars and dark sails. #347 A chose the dress over the shape, so this is as asked. But from the sea the Mark's galleon is the Gatelands galleon in black, as Session 1045 says. Only the striped sail would name her at a distance.
+- *The spritsails* on both galleons hang under the bowsprit near the water and read as washing.
+
+**The Old Blood's dress (Sessions 1042, 1043, 1051, 1052, 1053) and the Gatelanders' basket (1033), against OG-066 and OG-048.** On the `peoples` sheet (`-b-peoples.jpg`) the Old Blood are the shortest people, measured top to toe with hair: 1.70, 1.55 and 1.58 m against 1.65 to 1.87 for the Gatelanders and 1.82 to 2.02 for the Markmen. They are grey-pale and black-haired, as canon §2 has them. The Old Blood woman at 1.55 sits under the foundation's 1.6. That is canon's "short, slight", and I would keep it. The Markman's 2.02 includes his hair and fur collar.
+- *The shoulder wrap* reads well (`-b-ob-dress.jpg`): a slate band over one shoulder, folds and all.
+- *The dot embroidery* in oxblood on cream reads as spatter at full-body distance. It is Session 1043's worry exactly: a rash or blood, not needlework. Slate or violet would not.
+- *The amulet and charms* are three dark specks at the belt from 3 m.
+- *The Cold at 1* (`-b-ob-cold.jpg`): the marks at the temple read as pale scribble, with closed loops (an *o*, a *ϕ*) round the ear. They do not read as Session 1052's open, tapering strands. OG-066 draws veins.
+- *The basket* hangs well clear of the skirt. The arm is out about 15°, and the weave reads as coiled rows, as 1033 says.
+
+**What reads, in one line:** the scale. Every door I could measure next to a person is right, and the people are the heights the foundation wants. What the art has that the pages lack is weathering and mass. OG-121's ruins are broken along whole faces and drowned in their own stone, and these are cut, tidy, and textured like new brick.
+
+### Needs eyes, reviewed
+- *1037 (the kit in the game):* judged above, in one boot. The colours are close to the prototype's. I could not judge the 0.7 s first paint as a hitch, since everything in software GL hitches.
+- *1038, 1039, 1044–1046 (hulls):* judged from stills. The Mark's cog is under-canvassed and the Mark's galleon reads as the Gatelands' in black. The Aurennais hulls read top-heavy only from the side. The *quarter* view does not show it.
+- *1052, 1053 (F8):* judged. The fallen corner and the curtain cliff are both as their sessions feared, and both are the first thing the eye meets.
+- *1033, 1042, 1043, 1051–1053 (the people):* judged, still. How things hang rigid in motion waits on F4.
+- *1038–1040, 1054–1056, 1071, 1072, 1090 (QA):* tests only.
+
+### What was wrong in today's game
+Nothing new. One boot on the new look and one export suite, with no page errors. No new lines in backlog I this run, and no proposals.
+
+### Backlog notes (not changed)
+- I: the *Sailing playtest* block (line 346) is all struck and could close (seventh run noted).
+- CLAUDE.md still says 44 script files, and its code map has no `38-kit.js`. There are 45 now. Session 1037 left that to the producer.
