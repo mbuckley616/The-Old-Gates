@@ -24628,3 +24628,26 @@ This session touches only `people.js` and `builder.check.mjs`, and fixes a fault
 ### Needs eyes
 - **What a scarf no longer darkens under.** A raised arm, a basket held up, or a building's shadow in the game no longer darkens the scarf, though the rest of the woman still darkens. In the open world the sun's shadow on a head is small; under eaves it may show as a scarf too bright. If it does, the fix is the fold as a mesh of its own, standing further out, so that the crown and the point can take shadows again.
 - **Owed:** slack at the temples and a gather to the knot (the shape); the game, after F4.
+
+## v80 — Session 1132 — The bear up the wall, not reproduced (backlog I, tests only)
+QA's entry of 18 Oct asks the bodies builder about a beast's corpse that came to rest up a wall. Of 32 Cave Bears killed within 0.8 of Hearthwick's well, one lay with the middle of its body 3.49 over the ground, two at 1.62 and 2.10, and three at 0.33 to 0.49, all of them quiet rather than stopped by the four-second cap. QA suspected the beasts' wall hold in `34-creatures.js` (Session 1091, the people's S466 hold). That hold keeps a point's height when the wall stops it and it moved less than `RD_GRIP.wall` (6 mm) in the step, and gravity alone moves a point at rest only 2.7 mm a step. This session tried to reproduce it before changing anything, and could not. So the game is unchanged, and no tag is bumped.
+
+- **`tests/beastwall`**, a new suite. Hearthwick is built through `g.settle`, then three cases are stepped to rest on `tickRagdolls`:
+  - 32 seeded Cave Bears killed within 0.8 of the well, half of them by a POWER blow, with you at QA's spot 30 south of it;
+  - 8 bears on clear ground ahead;
+  - the hold forced: 12 bears killed on clear ground, then lifted 1.5 and pressed against a wall at their side (everything 0.25 east of where each died made solid, to any height, as a house's wall is).
+- **The hold alone does not pin a falling body.** It acts only on a point entering the solid from outside. A body dropped from 1.5 is already falling at more than 6 mm a step by the time it meets the wall, so its height is never held.
+- **Where it may lie instead:**
+  - QA's run went through `tickPeople`, on unseeded draws, and read the middle of the body rather than the hips;
+  - the solids are columns with no top, so a body that ends over the well's 0.5 box, or over a house's footprint, is pushed sideways as if from a wall at any height;
+  - QA's 3.49 is about the house's eaves (3.65 by 2.15).
+  The next session should replay QA's steps exactly (`goToZone('world', 13100, 25450, 0, 'x')`, the bear at the well, `killZoneEnemy`, 240 steps of `tickPeople`), log the step at which the body stops falling, and see which solid and which point it holds.
+
+### Verified (headless Chromium)
+- **`beastwall`:** 5 of 5 checks pass on today's code.
+  - By the well, the hips lie 0.26 to 0.55 over the ground, none over 0.8, against 0.26 to 0.30 on clear ground. All 32 had the wall test on them.
+  - Dropped against the wall, the hips lie 0.26 to 0.31 over the ground.
+  - Every fall rests in 1.32 to 2.42 s; none reaches the cap.
+- **No game file changed.**
+### Needs eyes
+- **Nothing to look at yet.** QA's 3.49 still stands unexplained, and this suite does not catch it. It guards only that a beast by a wall rests on the ground in the cases it builds.
