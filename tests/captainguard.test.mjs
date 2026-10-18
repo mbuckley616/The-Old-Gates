@@ -26,8 +26,11 @@ const r = await page.evaluate(() => {
   px = S.x; pz = S.z + 1.4;
   const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], S.x, S.z, 'Bandit Captain', null)); e.alert = true; ZONES.world.enemies.push(e);
   const out = { name: e.name, weapon: EQ.weapon.name, built: { shieldUp: e.shieldUp, prop: !!(e.limbs && e.limbs.shieldProp), armX: e.limbs && e.limbs.shieldArm && +e.limbs.shieldArm.rotation.x.toFixed(2) } };
-  const raws = { front: [], open: [], flank: [] }; let mode = 'front', lastRaw = null;
-  const _a = applyMeleeDamage; applyMeleeDamage = function (who, raw) { if (who === e) { lastRaw = raw; raws[mode] && raws[mode].push(raw); } return _a.apply(this, arguments); };
+  const raws = { front: [], open: [], flank: [], openPlain: [] }; let mode = 'front', lastRaw = null;
+  // S1071: a chain's third blow does ×1.3 (COMMIT.chainDmg); the follow-ups chain, the flank swings never do, so the flank is
+  // held against the open blows that are not a chain's third
+  const _a = applyMeleeDamage; applyMeleeDamage = function (who, raw) { if (who === e) { lastRaw = raw; raws[mode] && raws[mode].push(raw);
+    if (mode === 'open' && !(SWING && SWING.chain === 3)) raws.openPlain.push(raw); } return _a.apply(this, arguments); };
   const msgs = []; const _m = showMsg; showMsg = function (tx) { if (/guard|Bash|staggered/.test(tx)) msgs.push(tx); return _m.apply(this, arguments); };
   const face = () => { yaw = Math.atan2(-(e.x - px), -(e.z - pz)); };
   const keep = () => { PHP = maxHP; dead = false; PPOST.stagUntil = 0; stamina = maxStamina; if (e.hp < e.maxHp * .5) e.hp = e.maxHp; };
@@ -61,12 +64,12 @@ const r = await page.evaluate(() => {
       out.flanks.push({ behind, raw, upAtHit: e.shieldUp }); wait(90); px = e.x; pz = e.z + 1.4; }
   } finally { applyMeleeDamage = _a; showMsg = _m; }
   const mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0;
-  out.raws = raws; out.means = { front: +mean(raws.front).toFixed(2), open: +mean(raws.open).toFixed(2), flank: +mean(raws.flank).toFixed(2) };
+  out.raws = raws; out.means = { front: +mean(raws.front).toFixed(2), open: +mean(raws.open).toFixed(2), flank: +mean(raws.flank).toFixed(2), openPlain: +mean(raws.openPlain).toFixed(2) };
   out.msgs = msgs.slice(0, 12);
   e.dead = true; if (e.mesh) WORLD.scene.remove(e.mesh); const L = ZONES.world.enemies, i = L.indexOf(e); if (i >= 0) L.splice(i, 1);
   return out; });
 console.log(JSON.stringify(r));
-const ratio = r.means && r.means.open ? r.means.front / r.means.open : 0, flankRatio = r.means && r.means.open ? r.means.flank / r.means.open : 0;
+const ratio = r.means && r.means.open ? r.means.front / r.means.open : 0, flankRatio = r.means && r.means.openPlain ? r.means.flank / r.means.openPlain : 0;
 console.log(JSON.stringify({ frontOverOpen: +ratio.toFixed(2), flankOverOpen: +flankRatio.toFixed(2) }));
 check('a Bandit Captain stands with the guard up: the shield on its arm, raised across the body', !r.noSpot && r.built.shieldUp && r.built.prop && r.built.armX === -1.15, r.built);
 // Session 659: each front hit is the swing's roll × 0.35, floored (`shieldFrontMult`), and the roll is the open blow's (5 or 6 with the
@@ -82,6 +85,8 @@ check('a power attack breaks the guard every time: it staggers, the shield arm d
 check('while it reels, follow-up swings land in full', r.raws.open.length >= 4 && r.cycles.every(c => c.followUps >= 1), r.raws.open);
 check('the guard comes back up when the stagger is over (1.5 s), the arm raised again, with its message', r.cycles.every(c => c.backUp && c.armXBack === -1.15 && c.reraiseMsg && c.downFor > 1.3 && c.downFor < 1.8), r.cycles.map(c => c.downFor));
 const fl = r.flanks.filter(f => !f.noTell);
-check('stepping round a captain committed to its blow, a swing from behind goes round the shield in full', fl.length >= 4 && fl.every(f => f.behind && f.upAtHit) && flankRatio > .8, { fl, flankRatio });
+// Session 1071: the flank was held against every open blow, a third of which (each cycle's third follow-up) carry the chain's
+// ×1.3; on the systems code's smaller rolls (3–5) that put the ratio at 0.78 on CI (bc98a27, flank [4,3,3,3,3,4], open mean 4.25)
+check('stepping round a captain committed to its blow, a swing from behind goes round the shield in full (as an open blow that is not a chain\'s third)', fl.length >= 4 && fl.every(f => f.behind && f.upAtHit) && r.raws.openPlain.length >= 4 && flankRatio > .8, { fl, flankRatio, openPlain: r.raws.openPlain });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
