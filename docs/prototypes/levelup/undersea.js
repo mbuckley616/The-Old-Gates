@@ -386,3 +386,74 @@ export function sunkenQuarter(o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'sand'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
   return { group, tris: Math.round(tris), draws, floor, bridge, theatre, church };
 }
+
+// ── a whale fall (Session 1118; OG-125's "a whale skeleton"): the bones of a great whale on a plain of sand 31 to 33 m down, years after she
+// sank, lying on her left side with her head to +x along z -20. A place's piece, not a body: no bone in it moves, and the living whale is
+// the bodies builder's. A metre a unit:
+//   - the column: 46 vertebrae from the skull's back (x 4) 15.3 m to the tail (x -11.3), each a centrum (0.28 m across at the neck to 0.33 at
+//     the loins, 0.07 at the tail) with its spine pointing along the sand to -z and its two transverse processes up and down; sunk 0.4 of
+//     its width in a scour hollow, the column bending as the sand took it; the last nine scattered by the current;
+//   - the cage: fourteen ribs on her upper (right) side, from the transverse processes of vertebrae 7 to 20, arching over from the spine
+//     1.3 to 2.2 m up and down to the sand on her belly’s side 2.3 to 2.9 m off; four midway (the fifth to the eighth) fallen outward on the sand,
+//     so there is a way in under the arches 1.1 m wide, and one more fallen; the ribs of her lower side flattened under the cage, mostly buried;
+//   - the skull: a braincase 2.2 m across and its rostrum 4.2 m long tapering to its tip, upright, sunk to the eyes; its two jaw-bones
+//     (5.2 m bows) fallen apart from it, one lying beside the rostrum and one dragged 3 m off;
+//   - a flipper: the shoulder blade, the arm and the fan of four fingers, carried by the current onto the sand at her back; a few loose bones about her.
+// What lives on her and what lies in the cage is the bodies builder's and the systems builder's; whose she was is no one's.
+// -> { group, tris, draws, floor(x, z), spine: [{ x, y, z, r, floor, loose }], ribs: [{ i, stand, peak, tip: [x, y, z], floorTip, base: [x, y, z] }],
+//   gap { x0, x1, clear, high }, skull { x, z, len, top, floor }, jaws: [{ x, z, len, floor }], flipper { x, z }, length }
+export function whaleFall(o = {}) {
+  const r = o.r || stream('undersea:whale'), B = new Map(), put = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k); if (!x.attributes.normal) x.computeVertexNormals(); worldUV(x, .8); (B.get(key) || B.set(key, []).get(key)).push(x); return x; };
+  const WZ = -20, floor = (x, z) => -31.5 - (x + 4) * .04 + fbm(x / 14, z / 14, 3) * .9 - .45 * Math.exp(-(((z - WZ - .6) / 4.5) ** 2) - ((x + 3) / 13) ** 2); /* a plain falling 0.04 to -x, a scour hollow round her */
+  { const N = 130, g = new THREE.PlaneGeometry(170, 150, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) - 3, z = P.getZ(i) + WZ; /* wide enough that the clear water's 40 m never finds its edge */ P.setXYZ(i, x, floor(x, z), z); } g.computeVertexNormals(); put('sand', g); }
+  // a bone along a path: rings of nA about each point, an ellipse of half-widths rad(t) = [across, flat], the flat side facing `up`; ends closed
+  const bone = (key, pts, rad, nA = 8, up = new THREE.Vector3(0, 1, 0)) => { const n = pts.length, pos = [], idx = [];
+    for (let k = 0; k < n; k++) { const t = k / (n - 1), p = pts[k], q = pts[Math.min(n - 1, k + 1)], pp = pts[Math.max(0, k - 1)], T = q.clone().sub(pp).normalize(), U = up.clone().sub(T.clone().multiplyScalar(up.dot(T))).normalize(), V = new THREE.Vector3().crossVectors(T, U), [a, b] = rad(t);
+      for (let j = 0; j < nA; j++) { const th = j / nA * Math.PI * 2, d = V.clone().multiplyScalar(Math.cos(th) * a).add(U.clone().multiplyScalar(Math.sin(th) * b)); pos.push(p.x + d.x, p.y + d.y, p.z + d.z); } }
+    for (let k = 0; k < n - 1; k++) for (let j = 0; j < nA; j++) { const a = k * nA + j, b = k * nA + (j + 1) % nA, c = a + nA, d = b + nA; idx.push(a, c, b, b, c, d); }
+    for (const [k, s] of [[0, -1], [n - 1, 1]]) { const c = pos.length / 3; pos.push(pts[k].x, pts[k].y, pts[k].z); for (let j = 0; j < nA; j++) { const a = k * nA + j, b = k * nA + (j + 1) % nA; s > 0 ? idx.push(c, a, b) : idx.push(c, b, a); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return put(key, g); };
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z), lump = (key, w, h, d, x, y, z, ry = 0, rz = 0, seg = 8) => { const g = new THREE.SphereGeometry(.5, seg, Math.max(4, seg - 2)); g.scale(w, h, d); g.rotateZ(rz); g.rotateY(ry); g.translate(x, y, z); g.computeVertexNormals(); return put(key, g); };
+  // the column: its line bends with the sand (a slow S in plan), each vertebra settled 0.4 of its width into the floor under it
+  const NV = 46, X0 = 4, LEN = 15.3, line = t => [X0 - LEN * t, WZ + .5 * Math.sin(t * 5.2 + .4) + .35 * t], rad = i => i < 4 ? .28 : i < 24 ? .28 + .05 * Math.sin((i - 4) / 20 * Math.PI) : Math.max(.07, .3 * (1 - (i - 24) / 24) ** 1.3);
+  const spine = []; for (let i = 0; i < NV; i++) { const t = i / (NV - 1); let [x, z] = line(t); const rr = rad(i), loose = i >= NV - 9; let ry = Math.atan2(-(line(Math.min(1, t + .01))[1] - z), -(line(Math.min(1, t + .01))[0] - x)) || 0, tilt = 0;
+    if (loose) { x += (r() - .5) * 1.6 * (i - NV + 10) / 5; z += (r() - .3) * 1.4 * (i - NV + 10) / 5; ry += (r() - .5) * 2.4; tilt = (r() - .5) * 1.2; }
+    const fy = floor(x, z), y = fy + rr * (loose ? .55 : .6), L = Math.min(.36, LEN / NV * .86) * (rr < .15 ? .8 : 1), G = [];
+    { const c = new THREE.CylinderGeometry(rr, rr, L, 12, 1); c.rotateZ(Math.PI / 2); G.push(c); }
+    if (rr > .1) { const sp = new THREE.BoxGeometry(L * .45, rr * .35, rr * 2.1); sp.translate(0, 0, -rr * 1.9); G.push(sp); /* the spinous process, along the sand to her back (-z) */
+      for (const s of [1, -1]) { const tp = new THREE.BoxGeometry(L * .4, rr * 1.7, rr * .3); tp.translate(0, s * rr * 1.5, 0); G.push(tp); } } /* the transverse processes, up and down */
+    const g = mergeGeometries(G.map(q => q.toNonIndexed()), false); G.forEach(q => q.dispose()); g.rotateX(tilt); g.rotateY(ry); g.translate(x, y, z); g.computeVertexNormals(); put('bone', g);
+    spine.push({ i, x: +x.toFixed(2), y: +y.toFixed(2), z: +z.toFixed(2), r: +rr.toFixed(2), floor: +fy.toFixed(2), loose }); }
+  // the cage: the upper ribs, from the top of each thoracic vertebra's transverse process, up and over toward the belly (+z) and down to the
+  // sand; each a half-ellipse swept back 0.4 m, flat across its sweep; the fifth to eighth and one other fallen outward on the sand
+  const FALL = new Set([4, 5, 6, 7, 10]), ribs = [];
+  for (let k = 0; k < 14; k++) { const s = spine[7 + k], f = Math.sin((k + 2) / 16 * Math.PI), H = .4 + 1.3 * f, Rz = 1.0 + .4 * f, base = V3(s.x, s.y + s.r * 2.2, s.z + .05), pts = [];
+    if (!FALL.has(k)) { for (let j = 0; j <= 16; j++) { const t = j / 16, th = t * Math.PI * .82, x = base.x - .4 * t, z = base.z + Rz * 1.15 * (1 - Math.cos(th)), w = t ** 2.5, yy = base.y * (1 - w) + (floor(x, z) + .05) * w + H * Math.sin(th) * (1 - t ** 5); pts.push(V3(x, yy, z)); } /* up from the spine, over, and down to the sand at a slant */
+      const tipF = floor(pts[16].x, pts[16].z); pts[16].y = tipF - .04; /* its tip set into the sand */
+      bone('bone', pts, t => [.06 * (1 - .4 * t) + .02, .075 * (1 - .4 * t) + .02], 7, V3(1, 0, 0)); /* broad to its sides, as a rib is */ const peak = Math.max(...pts.map(p => p.y - floor(p.x, p.z)));
+      ribs.push({ i: 7 + k, stand: true, peak: +peak.toFixed(2), base: [+base.x.toFixed(2), +base.y.toFixed(2), +base.z.toFixed(2)], tip: [+pts[16].x.toFixed(2), +pts[16].y.toFixed(2), +pts[16].z.toFixed(2)], floorTip: +tipF.toFixed(2) }); }
+    else { const L = Math.PI * (H + Rz) / 2 * .9, a = .25 + (r() - .5) * .5; for (let j = 0; j <= 12; j++) { const t = j / 12, x = base.x - .3 + Math.sin(a) * L * t + .25 * Math.sin(t * Math.PI), z = s.z + .6 + Math.cos(a) * L * t, yy = floor(x, z) + .03; pts.push(V3(x, yy, z)); }
+      bone('bone', pts, t => [.07 * (1 - .5 * t) + .02, .045 * (1 - .4 * t) + .015], 7); ribs.push({ i: 7 + k, stand: false, peak: .05, base: [+pts[0].x.toFixed(2), +pts[0].y.toFixed(2), +pts[0].z.toFixed(2)], tip: [+pts[12].x.toFixed(2), +pts[12].y.toFixed(2), +pts[12].z.toFixed(2)], floorTip: +floor(pts[12].x, pts[12].z).toFixed(2) }); } }
+  // her lower ribs: flattened under the cage, sunk so only their crowns show through the sand
+  for (let k = 0; k < 14; k += 1) { if (r() < .35) continue; const s = spine[7 + k], pts = []; for (let j = 0; j <= 8; j++) { const t = j / 8, x = s.x - .6 * t, z = s.z + .4 + 2.4 * t, yy = floor(x, z) - .02 + .06 * Math.sin(t * Math.PI); pts.push(V3(x, yy, z)); } bone('bone', pts, () => [.08, .04], 6); }
+  // the skull: the braincase at the column's head and the rostrum before it, upright, sunk to the eyes; the jaws fallen apart
+  const sk = (() => { const x = X0 + .9, z = WZ + .35, fy = floor(x + 2, z), L = 4.2; lump('bone', 1.9, 1.3, 2.3, x, fy + .35, z, 0, 0, 16); lump('bone', .7, 1.1, 2.6, x - .3, fy + .55, z, 0, -.3, 10); /* the braincase, and its occipital shield leaning back */
+    for (const s of [1, -1]) lump('bone', .9, .35, .5, x + .3, fy + .45, z + s * 1.15, 0, 0, 8); /* the cheek flanges */
+    const pts = [], up = V3(0, 1, 0); for (let j = 0; j <= 10; j++) { const t = j / 10, xx = x + .8 + L * t; pts.push(V3(xx, floor(xx, z) + .2 + .15 * Math.sin(t * Math.PI) - .1 * t, z + .1 * t)); }
+    bone('bone', pts, t => [.8 * (1 - t) ** .8 + .08, .2 * (1 - t * .6)], 10, up); const top = fy + .35 + .65; return { x: +x.toFixed(2), z: +z.toFixed(2), len: +(L + 2.0).toFixed(2), top: +top.toFixed(2), floor: +fy.toFixed(2) }; })();
+  const jaws = []; for (const [jx, jz, ang, bow] of [[sk.x + 2.4, WZ - 1.9, .08, -1], [sk.x + .6, WZ + 3.6, -.55, 1]]) { const L = 5.2, pts = []; for (let j = 0; j <= 14; j++) { const t = j / 14, u = L * (t - .5), w = bow * .55 * Math.sin(t * Math.PI), x = jx + u * Math.cos(ang) - w * Math.sin(ang), z = jz + u * Math.sin(ang) + w * Math.cos(ang); pts.push(V3(x, floor(x, z) + .1 - .04 * t, z)); }
+    bone('bone', pts, t => [.12 + .1 * (1 - t), .16 + .1 * (1 - t)], 9); jaws.push({ x: +jx.toFixed(2), z: +jz.toFixed(2), len: L, floor: +floor(jx, jz).toFixed(2) }); }
+  // the flipper, carried by the current to her back's side and laid out on the sand: the shoulder blade, the arm's three bones, a fan of four fingers
+  const fl = (() => { const x = spine[6].x + .4, z = WZ - 2.6, fy = floor(x, z); lump('bone', 1.1, .14, 1.4, x, fy + .04, z, .3, 0, 12);
+    const arm = (x0, z0, x1, z1, rr) => bone('bone', [V3(x0, floor(x0, z0) + .06, z0), V3((x0 + x1) / 2, floor((x0 + x1) / 2, (z0 + z1) / 2) + .08, (z0 + z1) / 2), V3(x1, floor(x1, z1) + .06, z1)], () => [rr, rr * .8], 7);
+    arm(x - .4, z - .7, x - .7, z - 1.4, .13); arm(x - .8, z - 1.5, x - 1.3, z - 2.6, .08); arm(x - .5, z - 1.5, x - .9, z - 2.7, .07);
+    for (let f = 0; f < 4; f++) { const a = -.35 + f * .25, bx = x - 1.1 + f * .2, bz = z - 2.8; for (let p = 0; p < 5 - Math.abs(f - 1.5); p++) { const px = bx - Math.sin(a) * .32 * p, pz = bz - Math.cos(a) * .32 * p - .02 * p * p; lump('bone', .1, .08, .26, px, floor(px, pz) + .04, pz, a, 0, 6); } }
+    return { x: +x.toFixed(2), z: +z.toFixed(2) }; })();
+  // a few loose bones: a rib's broken end, chevrons, hyoid pieces, about the hollow
+  for (let k = 0; k < 9; k++) { const x = -9 + r() * 14, z = WZ - 3 + r() * 7.5; if (Math.abs(z - WZ) < 1.1) continue; const pts = [], a = r() * Math.PI, L = .4 + r() * .9; for (let j = 0; j <= 4; j++) { const xx = x + Math.cos(a) * L * j / 4, zz = z + Math.sin(a) * L * j / 4; pts.push(V3(xx, floor(xx, zz) + .03, zz)); } bone('bone', pts, () => [.05, .04], 6); }
+  // the gap the fallen ribs leave in the cage: between the standing ribs either side of it, how wide and how high it stands clear
+  const st = ribs.filter(b => b.stand), g0 = st.filter(b => b.i < 11).at(-1), g1 = st.find(b => b.i > 14), gap = { x0: +(g1.base[0] + .1).toFixed(2), x1: +(g0.base[0] - .5).toFixed(2), clear: +(g0.base[0] - .5 - g1.base[0] - .1).toFixed(2), /* each rib swept back 0.4 m and 0.1 m thick */ high: +Math.min(g0.peak, g1.peak).toFixed(2) };
+  const M = { sand: mat('plaster', { ns: 1.6, color: 0xc8bc98, rough: 1 }), bone: encrust(mat('plaster', { ns: 1.3, color: 0xe4dcc4, rough: .85 }), .3) };
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'sand'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, floor, spine, ribs, gap, skull: sk, jaws, flipper: fl, length: +(sk.x + sk.len - spine.at(-10).x).toFixed(2) };
+}
