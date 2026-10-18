@@ -1961,3 +1961,21 @@ PLANS.troll.parts.push(['straps', { w: .08, tone: 'leather', straps: [
   { path: [[.74, 0], [.74, 90], [.74, 180], [.74, 270], [.74, 360]], closed: true, steps: 12, lift: .012 },
   { path: [[.98, 90], [.66, 10], [.34, -60]], steps: 10, lift: .012 },
   { path: [[.36, 140], [.36, 220]], steps: 8, lift: .012 }] }]);
+// ── Session 1107: Garrick's wolfhound (OG-065, "with a black wolfhound"; backlog L1 and L3). The first dog the kit has: a sighthound
+// on the wolf's kit of parts, taller than the grey wolf and lighter in the loin, the chest deep and the belly tucked up, the head long
+// and narrow with a long tapering muzzle and small ears folded back along the skull, the tail long and low with an upward sweep at its
+// end, the coat rough and wiry (long, coarse, drooping shells). Black, as OG-065 draws it ──
+Object.assign(PLANS, {
+  wolfhound: { name: 'Black wolfhound', src: 'OG-065 (Garrick\'s black wolfhound)', gaits: ['trot', 'walk', 'gallop', 'stand'], wag: .07, pant: .08, speedK: 1.15, rough: .6,
+    palette: { coat: [.16, .15, .14], saddle: [.1, .095, .09], belly: [.22, .21, .2], dark: [.03, .025, .02], horn: [.7, .66, .6] },
+    fur: { len: .05, layers: 10, sx: 120, sy: 32, droop: .3 },
+    parts: [
+      ['spine', { hip: [.86, -.42], chest: [.9, .36], n: 4, r: [.12, .11, .19], s: [.78, 1.25], rump: .11, rumpDrop: .02, front: .15, frontDrop: .09, arch: .05 }],
+      ['neck', { len: .34, n: 2, rise: 40, r: [.12, .085], s: [.85, 1.1], fwd: .02, up: .04 }],
+      ['head', { len: .4, r: .08, pitch: 10, s: [.85, .95, 1.15], muzzle: { len: 1, r: .045, nose: 1, drop: .03, taper: .6 }, jaw: { len: .85, r: .034, drop: .6 }, eyes: [{ f: .4, up: .38, out: .55, r: .013, color: [.22, .13, .06] }], ears: { kind: 'leaf', size: .075, f: .1, up: .8, out: .55, back: 70, splay: 30 } }],
+      ['tail', { len: .58, n: 5, r: [.045, .04, .022], droop: 62, curl: 13, s: [1, 1] }],
+      ['legs', { at: 1, kind: 'canidFore', out: .085, drop: .06, r: [.075, .04, .026, .022], claws: { r: .007, len: .022 } }],
+      ['legs', { at: 0, kind: 'canidHind', out: .085, drop: .03, r: [.09, .048, .028, .023], claws: { r: .007, len: .022 } }]
+    ] }
+});
+export const HOUNDS = ['wolfhound'];

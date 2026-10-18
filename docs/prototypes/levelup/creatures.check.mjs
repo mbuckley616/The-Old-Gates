@@ -273,6 +273,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${plan} on ${isle === 'mark' ? 'the Mark' : 'Aurenne'}: ${q.recoloured ? 'a coat of its own' : 'the same coat'} on the same bones (mean colour moved ${q.d})`, q.sameBones && (q.recoloured ? q.d > .015 : q.d < .002), q); }
   check(`a creature's island survives the saved genome, and a genome with none or an unknown one carries none`, isl.saved.island === 'mark' && isl.saved.none && isl.saved.bad, isl.saved);
   check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
+  // the hounds (Session 1107): OG-065's black wolfhound, a plan, standing taller at the withers than the grey wolf and its chest deeper than its loin
+  const hounds = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.HOUNDS || []).map(k => { const C = K.build(K.genome(k, k + ':check')), W = K.build(K.genome('wolf', 'wolf:check'));
+    const wither = C => { K.pose(C, 0); C.rig.updateMatrixWorld(true); const p = new C.rig.position.constructor(); let y = 0; for (const L of C.B.legs) { L.bones[0].getWorldPosition(p); y = Math.max(y, p.y); } return y; };
+    const sp = K.PLANS[k].parts.find(p => p[0] === 'spine')[1]; return { k, ok: !!K.PLANS[k], src: K.PLANS[k].src, wither: +wither(C).toFixed(3), wolf: +wither(W).toFixed(3), chest: sp.r[2], loin: sp.r[1] }; }); });
+  check(`the hounds: ${hounds.map(c => c.k).join(', ')} from OG-065, standing ${hounds.map(c => (c.wither * 100).toFixed(0)).join(', ')} cm at the top of the legs against the grey wolf's ${(hounds[0]?.wolf * 100).toFixed(0)}, the chest deeper than the loin`, hounds.length === 1 && hounds.every(c => c.ok && c.src.includes('OG-065') && c.wither > c.wolf * 1.08 && c.chest > c.loin * 1.4), hounds);
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 if (process.argv.includes('--shots')) {
   const shot = async (name, q, w = 1920, h = 1080) => { const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));

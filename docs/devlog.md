@@ -24116,3 +24116,26 @@ The builder page also takes `beard=` and `age=` in its query, for Garrick's pict
 - **The hips at 90°.** MakeHuman's default weights flatten the seat and pinch the groin a little when the thigh is level. The seat board hides most of it, but from the side the trousers crease sharply at the hip.
 - **The chair's design is a reading of OG-065,** whose chair is small in the image: two cart wheels and small front wheels, a slatted back, push handles. If Garrick should propel himself, the wheels would want hand rims and to sit further forward.
 - **Owed:** the chair pushed or turned (a gait, B4), his black wolfhound (OG-065), the crossbow across his knees (OG-065's musket, as the catalogue says), and the game (after F4).
+
+## v80 — Session 1107 — Garrick's black wolfhound (L1 and L3, prototype only)
+OG-065 draws Garrick on his headland wall with a black wolfhound at his side, and Session 1106's entry named it as owed. The kit had no dog of any kind: the common set's canids are the grey wolf, the fox and the Ironwolf. This session adds the hound as a plan in `creatures.js` (`wolfhound`, in a new group `HOUNDS`) with a check in `creatures.check.mjs`. It touches only the prototypes.
+
+It is built from the wolf's kit of parts, the canid legs and their gaits, with the proportions of a sighthound:
+- **The build.** It stands taller than the grey wolf, with longer legs. The chest is deep (radius 0.19 against the loin's 0.11), the belly is tucked up and the rump is lighter.
+- **The head.** It is long and narrow, with a long tapering muzzle and small ears folded back along the skull (`leaf` ears laid back 70°).
+- **The tail.** It is long and carried low, with an upward sweep at its end: five bones, a 62° droop curling up 13° a bone.
+- **The coat.** It is rough and wiry: longer, coarser shells that droop.
+- **The colour.** It is charcoal black, a little lifted from true black so its shape reads in shadow.
+
+It trots, walks, gallops and stands like the wolves. It is peaceful, as the common set is.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: 1,122 of 1,122 pass,** including the hound's own build, weights and gait checks and one new check.
+- **The hound:** 33 bones and 40,164 triangles, built in 633 ms; its genome is 154 bytes.
+- **Every gait is clean:** each foot reaches its target through the stride (0.0 cm), and the feet are down for each gait's duty (trot 0.45 of 0.45, walk 0.66 of 0.68, gallop 0.31 of 0.34).
+- **The new check:** the hound is a plan from OG-065, it stands 81 cm at the top of its legs against the grey wolf's 74, and its chest is deeper than its loin.
+- **Pictures:** `creatures-hounds.jpg` (the grey wolf and the wolfhound side by side), `creatures-wolfhound.jpg` (trotting), `creatures-wolfhound-gallop.jpg`.
+### Needs eyes
+- **The colour against the dark.** Black fur on a dark scene loses its outline. The coat is lifted to charcoal, but whether Garrick's hound needs a grizzled muzzle or a lighter belly to read at play distance is a playtest call.
+- **The wolfhound's other coats.** The breed's usual grey, brindle and wheaten would be `COATS` entries or a second plan; OG-065 shows only the black.
+- **Owed:** the hound sitting or lying by the chair (a rest pose, B4), the crossbow across Garrick's knees, and both in the game (after F4).
