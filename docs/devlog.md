@@ -25280,3 +25280,21 @@ change today; if foes indoors ever get a sight line, they should pass `cover`.
 - Tables are solid boxes in the room's record, so a table of 0.9 m or more counts as cover though its legs would show you. The kit's
   tables are 0.75 (`SCALE.TABLE`), under the line, so none does today.
 - **Owed:** #421's dungeon cell (A, 18 Oct) waits on the producer's call on a deep-work card or a FREEZE.
+
+## v80 — Session 1111 — A mimic's pounce at its tier's level, not yours
+Session 1079 found one foe's blow still growing with your level after Michael's A on #373 (a foe's danger by its place): a revealed
+mimic's first bite, the pounce from the chest, rolled 14 + your level on its multiplier (`executeDungeonStrike`, the `_burstNext`
+branch). It is a foe's blow, so #373 already names it; this is the rule doing what its session said. The roll is now
+`mimicPounceRaw(e)` (`74-strikes.js`): 14 + `foeTierLevel(e)`, the mimic's own tier's level (dungeon foes carry `tier` from
+`dungeonTier`), on `e.dmgMult` as before. At level 30 on a tier-1 floor the pounce was 44 on its multiplier and is now 15; at
+level 1 on a tier-3 floor it was 15 and is now 25. Armour takes its share as of any blow, as before.
+
+The multiplier already carries `enemyDmgScale(tier)`, so the tier counts twice in the pounce, as the level did before (both
+terms are older than this session). Left as it was; the pounce is meant to be the worst bite a chest gives.
+### Verified (headless Chromium)
+- **`tiertrap`** 1/1, 9 checks: the pounce is 15 at tier 1 and 25 at tier 3, the same at level 1 and level 30; a mimic built at
+  tier 2 with a multiplier of 1.5 pounces 30 on any floor (its own tier). The spike, blade and fire checks are unchanged.
+- **Neighbours pass:** `mimic`, `mimicspots`, `tierlevelfree`.
+### Needs eyes
+- Late in the game a mimic on an early floor bites far softer than it did (15 against 44 before armour at level 30). That is #373's
+  intent; whether a mimic should stay a shock wherever it hides is a playtest.

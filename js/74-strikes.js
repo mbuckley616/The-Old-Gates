@@ -534,6 +534,8 @@ function executeStrike(e, rawDmg, now){
   }
 }
 
+// S1111 — the pounce's level is the mimic's tier's (Michael's A on #373), not yours: 15 on a tier-1 floor, 25 on a tier-3
+function mimicPounceRaw(e){return (14 + foeTierLevel(e)) * ((e&&e.dmgMult)||1.0);}
 function executeDungeonStrike(e, now){
   const dx2 = px - e.x, dz3 = pz - e.z, dd = Math.hypot(dx2, dz3) || 1;
   e.atkCd = 1.0;
@@ -551,7 +553,7 @@ function executeDungeonStrike(e, now){
   if(e._burstNext){
     e._burstNext = false;
     // S940 — the pounce rolls (14 + level) on its multiplier where a blow rolls 10–20, and armour takes its share as of any blow
-    executeStrike(e, foeBlow(e, (14 + level * 1.0) * (e.dmgMult||1.0)), now);
+    executeStrike(e, foeBlow(e, mimicPounceRaw(e)), now);
     return;
   }
   executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
