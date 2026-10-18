@@ -24096,3 +24096,29 @@ The grip is still built the same way, only the forearm's aim is new:
 - **The wrist cocks up about 38°** to keep the knuckles plumb, which reads as a firm grip from the side. A looser grip would let the staff lean out a little at its foot, which the check now forbids (lean under 0.08 rad).
 - **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
+
+## v80 — Session 1128 — corpsebody's Cave Bear lay on Hearthwick's well (QA, tests only)
+The QA read of CI from 07:00 to 12:52 on 18 Oct found six green runs and no reds, with three FLAKY retries: `corpsebody` twice (auto/backlog 6e82f4a,
+shard 13; auto/producer-look 26bb613, shard 10) and `ragdoll` once. Both `corpsebody` reds were the Cave Bear alone, and they failed in two ways. On
+6e82f4a, *aimed at any part of the body … searchable* read 0/0: none of its 24 bones was within 3.4 of any of the four eyes. On 26bb613, *aimed past the
+body … it is not* failed from both flanks. The suite lays its five bodies in a line 30 ahead of the start, and the middle spot, the bear's, is
+Hearthwick's own centre (site 13100,25420). That puts the bear against the town's well, a 0.5 box at 13099.3,25419.9, and a 3.65×2.15 house set at 45°:
+275 of 625 grid points within 3 of the spot are solid. A probe killed 32 bears within 0.8 of the well. Six came to rest raised, every one quiet, not
+frozen by the four-second cap: the body's middle 3.49 over the ground (once), 1.62 and 2.10, and 0.33–0.49 three times. On clear ground 16 of 16 lay at
+0.14. A body 3.5 up is out of the eyes' reach, which is the 0/0. One 1.6–2.1 up stands in the miss ray's path, which is the flank failure. So the suite's
+fault was where it dropped the bodies. The body propped up the wall is the game's fault, filed in backlog I for the bodies builder: likely the wall hold,
+which keeps a stopped point's height when it moved less than `RD_GRIP.wall` in the step (`js/34-creatures.js`, from `ragdollStep`). `ragdoll`'s retry, 3
+bodies at the cap against at most 2 after throws at its wall, is the same family and is named in that entry.
+
+The suite now builds Hearthwick first (`g.settle`), so the town's solids are all registered before anything falls. A body whose spot has a solid within 3
+is laid 4 further ahead until none has. The bear and the troll go to 42; the bandit, the wolf and the golem keep their old spots. A first try moved the
+whole line to 42, and it turned *aimed at a dead bandit's foot … the old spot did not* red in 4 of 4. The bandit there is a different man (17 bones, built
+by place), and his lowest bone fell on the kill spot, so the old spot reached it too. The checks and their bounds are unchanged. The log line now carries
+each body's `lift` over the ground and where it lies, and the foot check's own line carries the foot against the kill spot, so a later red names its cause.
+### Verified (headless Chromium)
+- The probe: 6 of 32 bears at the well came to rest 0.33–3.49 over the ground; 0 of 16 on clear ground (0.14 each).
+- `corpsebody`, with the fix: 4 of 4 green in the old look (three side by side with a new-look run) and 1 of 1 in the new. The spots were
+  `[30,30,42,42,30]`, the bear's lift 0.14–0.15 and the bandit's foot 2.88–3.02 from the kill spot (old spot false). 46 s alone against 44 before.
+### Needs eyes
+- Backlog I's floating corpse: a bear killed against a wall in play may hang up it. It is the bodies builder's to fix; the suite no longer stands there.
+- `ragdoll` (3 capped at its wall, once) stays owed in `docs/qa/flaky.md`.
