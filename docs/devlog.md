@@ -24638,3 +24638,95 @@ Session 1115 said the cats sit wrong: a cat sits with its forefeet together and 
 ### Needs eyes
 - **Whether 30% is right.** The Hollowcat's paws nearly touch. A sitting cat's do touch, and its forefeet sit a little forward too.
 - **Owed:** the tail wrapped round the forefeet, and the game (after F4).
+
+## v80 — Session 1130 — The cats' tails wrapped round (L3, prototype only)
+Session 1126 drew the sitting cats' forefeet together and owed the other half of how a cat sits: its tail wrapped round. It had tried a bigger sideways curl about the tail bones' own axes, and because those axes are not level the lynx's tail bent upward instead. This session turns the tail about the body's up, as the stag's mist learned to rise in Session 975. It touches only `creatures.js` and `creatures.check.mjs`, and refines a pose already built, so it asks nothing.
+
+- **`sitWrap`** is a new plan field: two angles, the first tail bone's turn and the rest's, shared evenly down them. The Hollowcat has 0.9 and 2.4 rad. `sitWrap(C, …)` turns each bone, root to tip, about the rig's up carried into its parent's frame, so the tail stays as level as `sitFind` laid it. A plan with it skips the old 0.3 rad curl; every other sitter keeps that curl and sits as before.
+- **Which way.** The tail goes out to the cat's right from behind the haunch, then forward along its flank. The Hollowcat's tail is four bones and about 30 cm, and its forefeet are 41 cm ahead of its root, so the tip ends beside the hind foot, not at the forefeet. A wildcat's tail is short and blunt; this is as far round as it reaches.
+- **The lynxes.** `re()` now copies `sitWrap` too, so the Sunspire Lynx (a caracal's tail) wraps the same way. The Stormlynx is a bobtail: its four tail bones lie within 5 cm, and wrapping them only folds the stub into its rump, so it sets `sitWrap: null` and keeps the stub sitting straight back.
+- **The first numbers were too wide.** 1.2 and 1.6 rad swung the tail out 19 cm and left its tip pointing sideways behind the haunch. Turning the root less and the rest more tightens it to 13 cm off the middle line, against the hips' 5.
+
+### Verified (headless Chromium)
+- **A new check, for every plan with `sitWrap`:** sitting, it reads the tail's joints and every tail vertex past the first two bones against the body's and thighs' flesh, binned by 1 cm of height and length. A vertex counts as inside if it lies nearer the middle than the body's outside in its bin.
+  - The Hollowcat: the last bone is turned 149° from straight back, the last joints are 13.1 cm or more off the middle (the hips' 5.0), the tip is 2.8 cm forward of the root, the joints are level within 2.5 cm, and 0 of 806 vertices are inside the haunch.
+  - The Sunspire Lynx: 149°, 13.0 cm, 2.8 cm forward, level within 2.7 cm, 0 of 719 inside.
+- **The check bites.** With the wrap overdone (1.8 and 3.4 rad), 747 of the 806 vertices are inside the haunch and it fails. The values were put back.
+- **The three cats' sit check passes unchanged:** the forefeet are at 30%, the haunch 5.0 mm off the ground, and nothing but the toe pads is under the ground. The tail is held to that check as well.
+- **`creatures.check.mjs`:** 1,169 of 1,169 pass, 1,167 before and the two above.
+- **`builder.check.mjs`:** 476 of 476 pass, the hound by Garrick's chair among them (it lies, and does not sit with the wrap).
+- **Pictures:** `creatures-hollowcat-sit-tail.jpg` (from above, the tail round the right haunch), `creatures-hollowcat-sit-front.jpg` and `creatures-sunspirelynx-sit.jpg` (from the front), and `creatures-cats-sit.jpg` (the three cats, reshot).
+### Needs eyes
+- **How tight.** From the front the tail's tip shows as a soft ball beside the right hind foot. A real cat lays its tail flatter and closer, its tip over the forefeet. The Hollowcat's tail is too short to get there, and a longer one would change the plan.
+- **One side only.** Every cat wraps to its right. Which side could come from the seed, since it is a single sign.
+- **Owed:** the game, after F4.
+
+## v80 — Session 1131 — The headscarf's fold in its own colour (L1, prototype only)
+Session 1029 left a fault on the plain moss headscarf (`builder-scarf-moss.jpg`): its folded edge read as a black line, and so did the knot and the point down the back. The vertex colours were the cloth's, and Session 1029 put the darkness down to the crown's overhang. Rendering the same woman with the scarf's received shadows off proves it is the shadow map, not the light. The fold lies about 2 mm proud of the crown it is folded from, and a shadow map cannot tell 2 mm from contact, so the crown's shadow falls across the whole fold. The point and knot hang under the crown's back edge and come out black the same way. A dark cloth shows it most, because lit or in shadow it has little colour to keep.
+
+This session touches only `people.js` and `builder.check.mjs`, and fixes a fault in a garment Michael already has, so it asks nothing:
+- **The scarf (`wrap`) and its point and knot (`wrapTail`)** still cast shadows, so the face under the fold is shaded as before. They no longer receive any.
+- **The Aurennais head-wrap and its tail are unchanged.** Their turns are rolls up to 11 mm thick and stand out from one another. The scarf's one fold is 4.5 mm.
+- **The rest of Session 1029's notes stay open:** slack at the temples, a gather to the knot, the print's smear at 45° and the knot's flat ends. Each is a change of shape, not of shading.
+
+### Verified (headless Chromium)
+- **The same view, before and after** (seed `sc:1`, a bun under the moss scarf):
+  - before: the fold, the knot and the point are near black;
+  - after: all three are moss green, the fold's highlight runs along its top, and the face is shaded under it as before.
+- **A new check:** the three scarves of Session 1029's check (madder printed, moss plain, sea-blue printed) cast shadows and receive none, wrap and point alike. An Aurennais head-wrap with a tail still receives them, so only the scarf was let off.
+- **`builder.check.mjs`:** 477 of 477 pass, 476 before and the one above.
+- **Pictures, reshot:** `builder-scarf-moss.jpg`, `-front.jpg`, `-side.jpg`, `-back.jpg` and `-blue.jpg`.
+### Needs eyes
+- **What a scarf no longer darkens under.** A raised arm, a basket held up, or a building's shadow in the game no longer darkens the scarf, though the rest of the woman still darkens. In the open world the sun's shadow on a head is small; under eaves it may show as a scarf too bright. If it does, the fix is the fold as a mesh of its own, standing further out, so that the crown and the point can take shadows again.
+- **Owed:** slack at the temples and a gather to the knot (the shape); the game, after F4.
+
+## v80 — Session 1132 — The bear up the wall, not reproduced (backlog I, tests only)
+QA's entry of 18 Oct asks the bodies builder about a beast's corpse that came to rest up a wall. Of 32 Cave Bears killed within 0.8 of Hearthwick's well, one lay with the middle of its body 3.49 over the ground, two at 1.62 and 2.10, and three at 0.33 to 0.49, all of them quiet rather than stopped by the four-second cap. QA suspected the beasts' wall hold in `34-creatures.js` (Session 1091, the people's S466 hold). That hold keeps a point's height when the wall stops it and it moved less than `RD_GRIP.wall` (6 mm) in the step, and gravity alone moves a point at rest only 2.7 mm a step. This session tried to reproduce it before changing anything, and could not. So the game is unchanged, and no tag is bumped.
+
+- **`tests/beastwall`**, a new suite. Hearthwick is built through `g.settle`, then three cases are stepped to rest on `tickRagdolls`:
+  - 32 seeded Cave Bears killed within 0.8 of the well, half of them by a POWER blow, with you at QA's spot 30 south of it;
+  - 8 bears on clear ground ahead;
+  - the hold forced: 12 bears killed on clear ground, then lifted 1.5 and pressed against a wall at their side (everything 0.25 east of where each died made solid, to any height, as a house's wall is).
+- **The hold alone does not pin a falling body.** It acts only on a point entering the solid from outside. A body dropped from 1.5 is already falling at more than 6 mm a step by the time it meets the wall, so its height is never held.
+- **Where it may lie instead:**
+  - QA's run went through `tickPeople`, on unseeded draws, and read the middle of the body rather than the hips;
+  - the solids are columns with no top, so a body that ends over the well's 0.5 box, or over a house's footprint, is pushed sideways as if from a wall at any height;
+  - QA's 3.49 is about the house's eaves (3.65 by 2.15).
+  The next session should replay QA's steps exactly (`goToZone('world', 13100, 25450, 0, 'x')`, the bear at the well, `killZoneEnemy`, 240 steps of `tickPeople`), log the step at which the body stops falling, and see which solid and which point it holds.
+
+### Verified (headless Chromium)
+- **`beastwall`:** 5 of 5 checks pass on today's code.
+  - By the well, the hips lie 0.26 to 0.55 over the ground, none over 0.8, against 0.26 to 0.30 on clear ground. All 32 had the wall test on them.
+  - Dropped against the wall, the hips lie 0.26 to 0.31 over the ground.
+  - Every fall rests in 1.32 to 2.42 s; none reaches the cap.
+- **No game file changed.**
+### Needs eyes
+- **Nothing to look at yet.** QA's 3.49 still stands unexplained, and this suite does not catch it. It guards only that a beast by a wall rests on the ground in the cases it builds.
+
+## v80 — Session 1133 — A beast killed over a solid no longer climbs it (backlog I)
+**A correction to Session 1132**, which found no reproduction and changed nothing. Replaying QA's own path did reproduce it: `goToZone('world', 13100, 25450, 0, 'x')`, Hearthwick built, 40 unseeded Cave Bears killed within 0.8 of the well, and 240 steps of `tickPeople`. One bear, killed at (13099.08, 25419.81), rose to 12.5 m in a second and a half and then hung at 10.5 m. It counted as quiet, and its points touched the wall 1,581 times. Session 1132's cases missed it because none of them killed a bear *over* a solid: its middle was 0.22 from the well's centre, and 30 of its 31 points began inside the well's column. The solids are columns with no top, so the well is a wall at every height.
+
+The beasts' wall hold (Session 1091, from the people's S466) is what lifted it:
+- **A rise became velocity.** A point stopped at the wall moving more than `RD_GRIP.wall` kept half its move that step as velocity (`q.y = p.y − vy·0.5`). The bones pulled the points coming out of the column upward, and each step's pull was kept, so the body climbed at up to 0.27 a step.
+- **A point at rest never fell.** A point that moved less than 6 mm in the step was held at its height. Gravity alone gives a point at rest 2.7 mm a step, so once a point lay on the wall it could never start to fall, and the bear hung where the climb left it.
+
+QA's 3.49 is the same climb stopped lower. One line in `34-creatures.js` fixes it: a held point never rises, and it may always fall, at half its pace (the wall's rub). This still does what Session 1091 needed. A head rocking on a tree can no longer rock up, so it ratchets down to rest.
+
+The people's ragdoll in `32-people.js` has the same hold. It is left as it is: no person has been seen climbing, and its suites are QA's and the systems builder's neighbours. It is owed as a check.
+
+### Verified (headless Chromium)
+- **The probe** (18 seeded falls at three spots on and beside the well):
+  - before, at the spot inside the well's box: the highest point rested at 0.46, 1.66, 0.78, 7.72, 0.56 and 2.07;
+  - after: 0.43 to 0.49 for all 18.
+- **`beastwall`:** 6 of 6 pass, Session 1132's five and a new one.
+  - The new check: 12 bears killed over the column through `tickPeople`, 30 of their 31 points inside it. The highest point rests at 0.43 to 0.55, all at rest by 2.03 s.
+  - By the well, the hips lie 0.26 to 0.42; on clear ground 0.26 to 0.30; dropped against a wall 0.26 to 0.30.
+- **`beastfall`:** 39 of 39 pass. Session 1091's two old capped falls (the Snow Wolf and the Dire Wolf against a tree) settle in 1.27 and 1.88 s. The sixty seeded wolves have a median of 1.38 s, none capped.
+- **`corpsebody`:** 19 of 19 pass.
+- **The new look (`--look=new`):** `beastwall` 6 of 6 and `beastfall` 39 of 39 pass.
+- Build tag: s652.
+### Needs eyes
+- **Nothing visible in play,** unless a beast dies against a well, a cart or a house corner. It should now drop to the ground beside it.
+- **Owed:**
+  - the people's hold, the same check on `ragdollStep`;
+  - a bear's body overlapping a solid at death is itself odd, since foes collide by their centre point only. That is the systems builder's, and noted here only.
