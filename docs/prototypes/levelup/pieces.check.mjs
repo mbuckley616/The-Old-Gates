@@ -8,6 +8,10 @@
 // colour and every colour of the six is used; no door paint drowns in its wall; cottages limewashed under thatch, farmhouses
 // white, warehouses bare stone, town lots under slate; a lot builds the same twice, its lit windows included.
 // Session 964: the guild hall (Michael's C on #352), its own piece, in two guilds' dress.
+// Session 1063: the plans by bays (Michael's C on #396). Every plan on every count of bays it takes is that many bays wide and its ends;
+// its openings stand inside the face clear of the corners and of one another; every window above the ground floor stands on a bay's
+// line, and every bay has one on every upper floor; the door is in a bay; it builds in budget, the same twice; glBaysFor fits a lot of
+// 6 to 10 m with the most whole bays; a lot given bays builds that plan, and a lot without them is as it was.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -80,8 +84,27 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   check(`the guild hall's openings: ${G[0].clash.length} clashes on a face, dressings included; ${G[0].out.length} into the quoins or the eaves`, G.every(g => !g.clash.length && !g.out.length), G.map(g => [g.clash, g.out]));
   check(`the guild hall keeps the room's floors: ${G[0].gallery.length} openings of the hall's back across the gallery's floor, ${G[0].upper.length} east-end sashes between the floors`, G.every(g => !g.gallery.length && !g.upper.length), G.map(g => [g.gallery, g.upper]));
   check(`the guild hall's great door ${G[0].door.join(' by ')} m under its name panel (${G[0].text}, ${G[1].text}), clear of the arch's ring by ${G[0].plaque.toFixed(2)} m; the banners ${G.map(g => g.banner).join(' and ')}, clear of the panel by ${Math.min(...G.map(g => g.hides))} m seen from within 55° of square on (the critic's s639: it hid the D)`, G.every(g => g.door[0] >= 1.5 && g.door[1] >= 3 && g.plaque >= 0 && g.hides > 0) && G[0].banner !== G[1].banner && G[0].text !== G[1].text); }
+{ const Bq = await page.evaluate(async () => { const K = await import('./pieces.js'), out = [];
+    const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+    for (const kind of ['cottage', 'farmhouse', 'townhouse', 'merchant']) { const B = K.GL_BAYS[kind]; for (let n = B.min; n <= B.max; n++) { const P = K.glBayPlan(kind, n, {}), h = P.floors.reduce((a, f) => a + f, 0), up = [], clash = [], outside = [];
+      for (const f of ['front', 'back']) { const L = P.open[f] || []; L.forEach((o, i) => { if (Math.abs(o.x) + o.w / 2 > P.w / 2 - P.t - .12 || o.y + o.h > h - .1) outside.push([f, i]);
+        for (let j = 0; j < i; j++) { const q = L[j]; if (Math.abs(o.x - q.x) < (o.w + q.w) / 2 + .15 && o.y < q.y + q.h && q.y < o.y + o.h) clash.push([f, j, i]); }
+        if (f === 'front' && o.kind === 'win' && o.y > P.floors[0] - .2) up.push(o); }); }
+      const lines = P.floors.slice(1).map((_, k) => { const y0 = P.floors.slice(0, k + 1).reduce((a, f) => a + f, 0), row = up.filter(o => o.y > y0 - .2 && o.y < y0 + P.floors[k + 1]); return { n: row.length, on: row.every(o => P.bayX.some(x => Math.abs(x - o.x) < 1e-6)) }; });
+      const door = P.open.front.find(o => o.kind !== 'win' && o.kind !== 'shopwin'), mk = () => Object.assign(K.glBayPlan(kind, n, {}), { r: K.stream(`bays:${kind}:${n}`) }), g = K.gatelandsBuilding(mk()), g2 = K.gatelandsBuilding(mk());
+      out.push({ kind, n, w: P.w, want: +(n * B.bay + 2 * B.end).toFixed(3), outside, clash, lines, door: Math.min(...P.bayX.map(x => Math.abs(x - door.x))), tris: g.userData.tris, calls: g.userData.calls, same: hash(g) === hash(g2) });
+      for (const x of [g, g2]) x.traverse(m => m.geometry && m.geometry.dispose()); } }
+    const fit = []; for (const kind of ['cottage', 'farmhouse', 'townhouse', 'merchant']) for (let L = 6; L <= 10.001; L += .25) { const n = K.glBaysFor(kind, L), B = K.GL_BAYS[kind], w = K.glBayWidth(kind, n); fit.push({ kind, L, n, ok: (w <= L + 1e-6 || n === B.min) && (n === B.max || K.glBayWidth(kind, n + 1) > L + 1e-6) }); }
+    const lot = K.gatelandsLot('bays', 3, { kind: 'townhouse', bays: 4, d: 8 }), lot0 = K.gatelandsLot('bays', 3, { kind: 'townhouse' });
+    return { out, fit: fit.filter(f => !f.ok), fitN: fit.length, lot: [lot.plan.w, lot.plan.d, lot.plan.bays], lot0: [lot0.plan.w, lot0.plan.d, lot0.plan.bays ?? null] }; });
+  const O = Bq.out;
+  check(`the plans by bays (#396 C): ${O.length} plans, ${O.map(x => `${x.kind} ${x.n} bays ${x.w} m`).join(', ')}: each its bays and its ends`, O.every(x => Math.abs(x.w - x.want) < 1e-6), O.filter(x => Math.abs(x.w - x.want) >= 1e-6));
+  check(`their openings inside their faces, clear of the corners (${O.reduce((a, x) => a + x.outside.length, 0)} not) and of one another by 0.15 m (${O.reduce((a, x) => a + x.clash.length, 0)} clashes)`, O.every(x => !x.outside.length && !x.clash.length), O.filter(x => x.outside.length || x.clash.length).map(x => [x.kind, x.n, x.outside, x.clash]));
+  check(`every window above the ground floor on a bay's line, one a bay on every upper floor; the door within ${Math.max(...O.map(x => x.door)).toFixed(2)} m of a bay's line`, O.every(x => x.lines.every((l, k) => l.on && l.n === x.n) && x.door <= .4), O.filter(x => !x.lines.every(l => l.on && l.n === x.n) || x.door > .4).map(x => [x.kind, x.n, x.lines, x.door]));
+  check(`in budget and the same twice: ${Math.min(...O.map(x => x.tris)).toLocaleString()} to ${Math.max(...O.map(x => x.tris)).toLocaleString()} triangles, ${Math.max(...O.map(x => x.calls))} draws or fewer`, O.every(x => x.same && x.tris < 9000 && x.calls <= 16), O.map(x => [x.kind, x.n, x.tris, x.calls, x.same]));
+  check(`glBaysFor: a lot of 6 to 10 m takes the most whole bays that fit (${Bq.fitN} widths, ${Bq.fit.length} wrong); a townhouse lot given 4 bays and 8 m is ${Bq.lot.join(' by ').replace(/ by 4$/, '')} m, one without them ${Bq.lot0[0]} by ${Bq.lot0[1]} m as drawn`, !Bq.fit.length && Bq.lot[0] === 8.4 && Bq.lot[1] === 8 && Bq.lot[2] === 4 && Bq.lot0[0] === 6.4 && Bq.lot0[2] === null, [Bq.fit.slice(0, 4), Bq.lot, Bq.lot0]); }
 await page.close();
-for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`);
   // a page error ends the wait at once (an error in the scene's module never sets __err)
   await Promise.race([pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 }), new Promise(res => pg.on('pageerror', e => { if (!/json|JSON/.test(String(e))) res(); }))]);
