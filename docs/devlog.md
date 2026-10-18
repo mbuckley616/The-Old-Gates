@@ -24385,3 +24385,19 @@ Which way the embroidery is laid, and whether oxblood stays on cream, changes ho
 ### Needs eyes
 - **What it reads as.** Up close the powdering reads more as a printed calico than as hand knots. The knots are flat thread colour with the old raised shading, and they are not drawn as stitches.
 - **Owed:** Michael's answer on #432. Then, if powdering is chosen, the roll sets `dotsStyle`, or the drifts are taken out. Then the game, after F4.
+
+## v80 — Session 1126 — The cats sit with their forefeet together (L3, prototype only)
+Session 1115 said the cats sit wrong: a cat sits with its forefeet together and its tail wrapped round them, and these kept their standing stance. This session does the forefeet. It touches only `creatures.js` and `creatures.check.mjs`.
+
+- **The tuck.** A plan may carry `sitTuck`, the share of the forefeet's standing width they keep when it sits. The Hollowcat has 0.3. Each forefoot's target is drawn in toward the middle line by that share, at its standing place along the body, and the leg solver bends the leg to it.
+- **The lynxes.** `re()` copies a fixed list of a base plan's fields, so `sitTuck` is added to it. The Stormlynx and the Sunspire Lynx take it from the Hollowcat. The dogs and foxes have none and sit as before.
+- **The tail is not done.** A larger sideways curl for the cats' tails was tried and taken out. The tail bones' local axes are not level, so a bigger turn about them bent the lynx's tail upward instead of round the feet. The wrap needs the turn about the body's up, as the stag's mist found in Session 975.
+
+### Verified (headless Chromium)
+- **The sit's check for the three cats:** the forefeet are 1.5 cm off the middle line against 5.0 standing, 30% as asked, and exactly where they stand along the body. The haunch is 5.0 mm off the ground, the foot error is 0.0 cm, and nothing but the toe pads is under the ground.
+- **The other eight sitters** pass their check unchanged: "the forefeet where it stands".
+- **The full run:** 1,167 of 1,167 pass. No check was added; the existing check now allows for the tuck.
+- **Pictures:** `creatures-hollowcat-sit-front.jpg` (from the front, the forefeet together) and `creatures-cats-sit.jpg` (the three cats from the side).
+### Needs eyes
+- **Whether 30% is right.** The Hollowcat's paws nearly touch. A sitting cat's do touch, and its forefeet sit a little forward too.
+- **Owed:** the tail wrapped round the forefeet, and the game (after F4).

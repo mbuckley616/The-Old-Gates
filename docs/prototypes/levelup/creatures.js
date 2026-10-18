@@ -888,6 +888,8 @@ export function pose(C, phase) {
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
+    // a cat sits with its forefeet together (Session 1126, the plan's sitTuck: how much of the standing width is kept)
+    if (G.sit && !G.lie && C.plan.sitTuck && L.at === order[0]) T.x *= C.plan.sitTuck;
     // aloft, the feet tuck up and back; an insect's splayed legs only lift a little and hang (Session 864)
     if (G.aloft) { if (L.yaw) { T.y += (C.plan.flyH || 0) - .1 * L.hR; T.x = lerp(T.x, L.rest[0].x, .25); } else { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; } }
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
@@ -1233,7 +1235,7 @@ PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 
 // ── Session 843: the common set (OG-084's "all islands": wolf, red fox, brown hare, raven, crow, wild boar, deer, badger,
 // otter, trout; backlog L3). Peaceful animals, the first the game has. Five are other plans at another size and colour;
 // the fox, the boar, the badger and the otter have parts of their own, from the kit's parts and leg presets ──
-const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, ...o, parts: o.parts || base.parts });
+const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, sitTuck: base.sitTuck, ...o, parts: o.parts || base.parts });
 Object.assign(PLANS, {
   wolf: re(PLANS.ironwolf, { name: 'Grey wolf', src: 'OG-084 (all islands: wolf)', scale: .92, palette: { coat: [.5, .45, .38], saddle: [.24, .21, .18], belly: [.84, .8, .72], dark: [.06, .05, .05], horn: [.8, .76, .7] }, fur: { len: .032, layers: 9, sx: 260 } }),
   redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'], wag: .06, speedK: 1.1,
@@ -1397,7 +1399,7 @@ Object.assign(PLANS, {
       ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
       ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
     ] },
-  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit', 'lie'], wag: .1, speedK: 1, neckNod: .02,
+  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit', 'lie'], sitTuck: .3, wag: .1, speedK: 1, neckNod: .02,
     palette: { coat: [.5, .42, .32], saddle: [.24, .19, .14], belly: [.84, .78, .66], dark: [.06, .05, .04], pale: [.9, .86, .78] },
     pattern: { kind: 'stripes', period: .07, tone: 'saddle' }, fur: { len: .022, layers: 8, sx: 300 },
     parts: [
