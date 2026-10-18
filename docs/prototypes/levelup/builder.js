@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { eyepatch: 'eyepatch', staff: 'walking staff', sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap' };
+const GLABEL = { chair: 'wheeled chair', eyepatch: 'eyepatch', staff: 'walking staff', sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -37,13 +37,13 @@ else if (PLANS[Q.get('plan')]) { SP = 'creature'; G = cGenome(Q.get('plan'), Q.g
 else if (!Q.get('people')) G = rollPerson(Q.get('seed') || 'builder');
 if (SP === 'creature') { CG = G; G = null; }
 const locks = new Set();
-let person = null, view = Q.get('view') || (SP === 'creature' ? 'side' : 'full'), turn = Q.has('turn') ? +Q.get('turn') : 0, zoom = Q.has('zoom') ? +Q.get('zoom') : 1, dirty = true, gait = null;
+let person = null, pal = null, palAt = null, view = Q.get('view') || (SP === 'creature' ? 'side' : 'full'), turn = Q.has('turn') ? +Q.get('turn') : 0, zoom = Q.has('zoom') ? +Q.get('zoom') : 1, dirty = true, gait = null;
 const saved = () => SP === 'human' ? toSaved(G) : saveGenome('creature', CG);
 const B = window.__builder = { get genome() { return saved(); }, get species() { return SP; }, get person() { return person; }, get creature() { return C; }, stats: STATS };
 
 function clear() {
-  for (const x of [person, C]) if (x) { scene.remove(x.root); x.root.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
-  person = C = null;
+  for (const x of [person, C, pal]) if (x) { scene.remove(x.root); x.root.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  person = C = pal = null;
 }
 function rebuild() {
   clear(); if (SP === 'creature') return rebuildCreature();
@@ -51,7 +51,19 @@ function rebuild() {
   const t0 = performance.now(); person = makePerson(G); scene.add(person.root);
   let tris = 0; person.root.traverse(o => { if (o.isMesh && o.geometry.index) tris += o.geometry.index.count / 3; });
   for (const k of ['bones', 'plan', 'gait', 'speed']) delete STATS[k];
-  Object.assign(STATS, { species: 'human', ms: Math.round(performance.now() - t0), tris, hair: person.hair, bytes: JSON.stringify(toSaved(G)).length }); frame(); dirty = true; syncText();
+  Object.assign(STATS, { species: 'human', ms: Math.round(performance.now() - t0), tris, hair: person.hair, bytes: JSON.stringify(toSaved(G)).length }); if (PLANS[Q.get('with')]) withCreature(); frame(); dirty = true; syncText();
+}
+// a creature beside the person (Session 1123, Garrick's hound by his chair): with=PLAN, withGait=GAIT (else it stands), withSide=L or R
+// (the person's left or right, R by default), withGap=metres between them (.08), withFwd=metres its front is ahead of theirs (0). It is built
+// and posed once, lies in the person's frame facing their way, and turns with them (on the ground: a seated person's root is at the hips); its numbers are STATS.with
+function withCreature() {
+  pal = cBuild(cGenome(Q.get('with'), Q.get('withSeed') || Q.get('with') + ':builder')); pal.gait = pal.plan.gaits.includes(Q.get('withGait')) ? Q.get('withGait') : 'stand'; cPose(pal, .2);
+  pal.base = -(pal.plan.heading || 0) * Math.PI / 180; pal.root.rotation.y = pal.base; scene.add(pal.root); person.root.rotation.y = 0; scene.updateMatrixWorld(true);
+  // its box from the posed vertices (a skinned mesh's own box is its bind pose's)
+  const pb = new THREE.Box3().setFromObject(person.root.getObjectByName('chair') || person.root), cb = new THREE.Box3(), v = new THREE.Vector3(), right = Q.get('withSide') !== 'L', gap = +(Q.get('withGap') ?? .08);
+  pal.root.traverse(o => { if (o.isMesh) for (let i = 0; i < o.geometry.attributes.position.count; i++) cb.expandByPoint(o.getVertexPosition(i, v).applyMatrix4(o.matrixWorld)); });
+  palAt = new THREE.Vector3(right ? pb.min.x - gap - cb.max.x : pb.max.x + gap - cb.min.x, 0, pb.max.z + +(Q.get('withFwd') || 0) - cb.max.z);
+  STATS.with = { plan: Q.get('with'), gait: pal.gait, tris: pal.stats.tris, gap: +gap.toFixed(3), side: right ? 'R' : 'L', base: +pal.base.toFixed(4), low: +cb.min.y.toFixed(4), chairX: [+pb.min.x.toFixed(3), +pb.max.x.toFixed(3)], box: [+(cb.max.x - cb.min.x).toFixed(3), +(cb.max.y - cb.min.y).toFixed(3), +(cb.max.z - cb.min.z).toFixed(3)] };
 }
 function setShadow(r) { Object.assign(key.shadow.camera, { left: -r, right: r, top: r, bottom: -r * .2, near: 1, far: 20 + r * 6 }); key.position.set(-3, 5, 6).multiplyScalar(Math.max(1, r / 2.4)); key.shadow.camera.updateProjectionMatrix(); }
 // a creature: built from its genome, shown in place in its gait (it walks on the spot), with the post beside it
@@ -68,7 +80,9 @@ const bandMid = m => { const v = new THREE.Vector3(), o = new THREE.Vector3(), u
 const cbox = () => { C.root.updateMatrixWorld(true); return new THREE.Box3().setFromObject(C.root); };
 function frame() {
   if (SP === 'creature') return frameCreature();
-  person.root.rotation.y = turn + (view === 'back' ? Math.PI : view === 'side' ? Math.PI / 2 : 0); scene.updateMatrixWorld(true);
+  person.root.rotation.y = turn + (view === 'back' ? Math.PI : view === 'side' ? Math.PI / 2 : 0);
+  if (pal) { pal.root.position.copy(palAt).applyAxisAngle(new THREE.Vector3(0, 1, 0), person.root.rotation.y); pal.root.position.x += person.root.position.x; pal.root.position.z += person.root.position.z; pal.root.rotation.y = pal.base + person.root.rotation.y; }
+  scene.updateMatrixWorld(true);
   const h = new THREE.Vector3(); person.byName['head'].getWorldPosition(h);
   cam.clearViewOffset(); if (view === 'face') { cam.fov = 18; cam.position.set(h.x + .22, h.y + .1, h.z + 1.25 / zoom); cam.lookAt(h.x, h.y + .05, h.z); }
   else if (view === 'head') { cam.fov = 22; cam.position.set(h.x + .5 / zoom, h.y + .2, h.z + .9 / zoom); cam.lookAt(h.x, h.y - .05 + (person.wrap?.turban ? .04 : 0), h.z); }
@@ -226,7 +240,9 @@ function peoplesSheet() {
 (SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
-    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') }; }
+    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') };
+    // the beard and the age (Session 1106, for Garrick's pictures)
+    if (Q.has('beard')) G.beard = +Q.get('beard'); if (Q.has('age')) G.age = +Q.get('age'); }
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;
   // a creature walks on the spot in its gait (the bestiary's step, with the body kept where it stands); a person is still
   let t0 = performance.now();

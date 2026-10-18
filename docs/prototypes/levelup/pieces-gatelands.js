@@ -10,12 +10,14 @@
 // ?view=line: the six plans in a row with a person at each door and a plaque of its sizes and triangles.
 // ?view=kit: the pieces one by one on a flagged floor, each on a wall stub, beside a 1.8 m person.
 // ?view=guild (Session 964): the guild hall beside the farmhouse, &cam=front|corner|back|door, &guild=mages.
+// ?view=bays (Session 1063, #396 C): the cottage, the farmhouse, the townhouse and the merchant's house on every count of bays they take,
+// a row each, a person at each door and a plaque with its bays and width; &cam=high (default) | cottage | farmhouse | townhouse | merchant (the row from the front).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
 import { Q, W, H, STATS, rnd, fbm, sstep, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run } from './common.js';
 // the kit itself is in pieces.js since Session 834; this file is its page
-import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot } from './pieces.js';
+import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan } from './pieces.js';
 
 const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : 'eye'), STREET = Q.get('street') || 'gatelands-street';
 
@@ -27,7 +29,7 @@ scene.fog = new THREE.FogExp2(new THREE.Color(.72, .80, .90), VIEW === 'street' 
 const cam = new THREE.PerspectiveCamera(VIEW === 'line' ? 34 : 52, W / H, .1, 30000);
 buildTextures(); const MM = mats();
 const SUN = VIEW === 'street' ? new THREE.Vector3(.62, .48, .30).normalize() : new THREE.Vector3(-.45, .55, .70).normalize();
-const sun = new THREE.DirectionalLight(new THREE.Color(1, .9, .76), 3.5), focus = VIEW === 'street' ? new THREE.Vector3(0, 0, -22) : new THREE.Vector3(0, 0, 0);
+const sun = new THREE.DirectionalLight(new THREE.Color(1, .9, .76), 3.5), focus = VIEW === 'street' ? new THREE.Vector3(0, 0, -22) : VIEW === 'bays' ? new THREE.Vector3(0, 0, -39) : new THREE.Vector3(0, 0, 0);
 sun.position.copy(SUN).multiplyScalar(140).add(focus); sun.target.position.copy(focus); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
 Object.assign(sun.shadow.camera, { left: -46, right: 46, top: 46, bottom: -46, near: 1, far: 360 }); sun.shadow.bias = -.0003; sun.shadow.normalBias = .04;
 scene.add(sun, sun.target, new THREE.HemisphereLight(new THREE.Color(.62, .74, .96), new THREE.Color(.42, .36, .26), 1.2));
@@ -123,6 +125,16 @@ if (VIEW === 'kit') {
   small[2].w = 7.5; small[2].open.front = [{ kind: 'transom', x: -1.6, y: 0, w: 1.05, h: 2.5 }, win(1.6, .85, .95, 1.5, [3, 2]), win(-1.6, 3.55, .9, 1.3, [3, 2]), win(1.6, 3.55, .9, 1.3, [3, 2])];
   small.forEach((P, i) => { const g = building(P), x = -10.5 + i * 10.5; put(g, x, -18, 0); plaques.push([x, -13.4, { name: P.name, tris: g.userData.tris, calls: g.userData.calls, size: g.userData.size }]); if (i === 0) personAt(g, .3, 0, Math.PI); });
   cam.position.set(0, 12.5, 23); cam.lookAt(0, 0.6, -5); cam.fov = 58; cam.updateProjectionMatrix();
+}
+if (VIEW === 'bays') {
+  // a row a plan, back to front: the merchant's house, the townhouse, the farmhouse, the cottage; each on every count of bays it takes
+  flat(mat('plaster', { ns: 1.2, color: 0xb9b1a2, rough: .95 }), 64, 100, 0, -38, .01, .6); sun.shadow.camera.left = sun.shadow.camera.bottom = -62; sun.shadow.camera.right = sun.shadow.camera.top = 62;
+  const rows = [['merchant', { color: 'cream', paint: 'green' }, -78], ['townhouse', { color: 'ochre', paint: 'blue' }, -52], ['farmhouse', { paint: 'green' }, -26], ['cottage', { paint: 'red' }, 0]];
+  for (const [kind, o, z] of rows) { const B = GL_BAYS[kind], ws = []; for (let n = B.min; n <= B.max; n++) ws.push(glBayPlan(kind, n, o).w); let x = -(ws.reduce((a, b) => a + b, 0) + 2.4 * (ws.length - 1)) / 2;
+    for (let n = B.min; n <= B.max; n++) { const P = glBayPlan(kind, n, o); P.name = `${P.name.split(' ')[0]}, ${n} bays`; const g = building(P); x += P.w / 2; put(g, x, z - P.d / 2, 0);
+      people.push([x + P.doorX + .3, z + .7, Math.PI * .08]); plaques.push([x, z + 2.4, g.userData]); x += P.w / 2 + 2.4; } }
+  const rz = { cottage: 0, farmhouse: -26, townhouse: -52, merchant: -78 }[CAMQ], C = rz !== undefined ? [[0, 2.2, rz + 17], [0, CAMQ === 'cottage' ? 2.6 : 4.6, rz - 4]] : [[0, 52, 34], [0, 0, -42]];
+  cam.fov = rz !== undefined ? 68 : 50; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
 }
 if (VIEW === 'guild') {
   // the guild hall (Session 964, Michael's C on #352) on a flagged square, the farmhouse that drew the first guild beside it for its size;
