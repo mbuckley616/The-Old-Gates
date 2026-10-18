@@ -25128,3 +25128,18 @@ A generated room's bed and the home's chest were already at 1.6. The ship's whee
   - both doors of a Dunmore inn's upper floor: 1.575, none beyond;
   - two of its beds: 1.575, none beyond;
   - a sloop's wheel, on her deck: 1.575, none beyond. It answered to 2.375 before.
+
+## v80 — Session 1089 — flashshare's floors stand in the Wastes (red twice on d7e983c)
+CI's shard 7 on `d7e983c` was red twice on `flashshare`: *underground, every kind with two or more on a floor gives each its own body material*
+read four kinds (Golem, Skeleton, Cave Troll, Gargoyle), under its floor of six. No material was shared. Bisected locally: green on
+Session 1028 (`a9c4351`), red from Session 1032 (`3d8c5a0`, enemies by place, a danger tier per region and per dungeon floor) on, and green on
+main. The test reached the deeper kinds with `level = 12`, and since S1032 a dungeon's roster follows its door's place, not your level:
+its three floors stood at the first portal's place, tier 1, so only tier 1's kinds came two to a floor (eight floors gave the same four).
+The game is right and the test is old. `enterDungeon` (`tests/lib/dungeonshot.mjs`) now takes an optional `x, z` for the door (it copied
+only theme, seed, size, interior and name before, so a door could not be moved); `flashshare` stands its three doors at the home cell's
+Wastes (tier 3), the place level 12 used to stand for. Tests only; no game code changed.
+### Verified (headless Chromium)
+`flashshare` green: seven kinds two or more to a floor (Golem, Greater Golem, Skeleton, Greater Skeleton, Cave Troll, Greater Cave Troll,
+Gargoyle), none sharing a material; the open world's twelve unchanged. Without `x, z` the helper builds the same portal as before.
+### Needs eyes
+Nothing to see in play. `targetof`, `renewal`, `trapseed` and `fistfight` were red on the same run, the other sessions' (PR comment).
