@@ -4,6 +4,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Gatelanders' tartan: a note on cloaks, wider, by family, or none? (bodies builder, Session 1146) — DECISION #445
+**L1's wardrobe matrix: the Gatelanders' tartan (bodies builder, Session 1146).** OG-111 names "tartans" among the Gatelands' fabrics, and the catalogue calls them "a new note". Nothing in the canon speaks for or against them. The builder can now weave one into a cloak's cloth.
+
+The sett repeats every 16.8 cm. The cloak's own colour is the ground, with two dark bands side by side and a fine overcheck, in a 2/2 twill. It is laid round the wearer from the back's middle, and it covers the cloak, the shoulder cape and the hood, up or down. Nobody is rolled with it yet.
+
+**Where should tartan be worn?**
+- **A. A note, on cloaks** *(recommended)*. About one Gatelander cloak or cape in five is woven in a sett, in the people's colours (moss, madder, brown, muted blue), with two or three setts in all. Everything else stays plain wool, so the tartan stays a note.
+- **B. Wider.** Cloaks, capes and the women's skirts in tartan, about one in three Gatelanders. It becomes part of how the Gatelands look.
+- **C. By family.** One sett for each great house (Caelmont in the Crown's crimson, say), worn only by its people and its retainers. A tartan then says who someone belongs to, and plain is everyone else.
+- **D. None.** The Gatelands keep plain wools; the tartan stays in the kit, unrolled.
+
+Pictures: [the moss cloak from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-back.jpg) · [at full length](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-full.jpg) · [close, the twill](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-close.jpg) · [a madder cape](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-cape.jpg) · [a brown cloak, hood up](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-hood.jpg)
+
 ## Answered
 ### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
 **Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.

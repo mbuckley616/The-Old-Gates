@@ -24815,3 +24815,38 @@ Session 1143 left the waistcoat's two fronts as one piece, so only the buttons s
 ### Needs eyes
 - **The edge's wobble.** The line follows the rest coordinates through the posed chest, so it wavers a millimetre or two where the mesh's triangles are long. A real front edge would be a fold of cloth, which wants geometry.
 - **Owed:** as Session 1143.
+
+## v80 — Session 1146 — The Gatelanders' tartan (L1, prototype only; asked as a decision)
+Backlog L1's wardrobe matrix names "tartans a new note" for the Gatelands (OG-111's fabrics: "tartans, fur, embroidered silk"). No garment in the kit had a woven pattern bigger than its weave, and nothing in the canon speaks for or against tartan. This session weaves one into the cloth so Michael can see it, and asks him where it goes. Nothing is rolled with it yet. It touches only `people.js`, `builder.js` (two labels) and `builder.check.mjs`. A FREEZE (#441) is open, so the run kept to the prototypes.
+
+- **The sett.** `TARTAN` in `people.js` is a symmetric sett with a half of 8.4 cm, so it repeats every 16.8 cm:
+  - 3.2 cm of the ground (the cloak's own colour), then 1.6 of the dark, 0.5 of the ground and 1.6 of the dark again (two dark bands side by side, like tram lines);
+  - then 1.2 of the ground and 0.3 of the overcheck.
+  - The same stripes run in the warp and the weft, mirrored at each pivot. The wide ground square sits on the back's middle.
+- **The weave.** Where a warp stripe crosses a weft stripe, a 2/2 twill on 1.5 mm threads shows each in turn on diagonals. A dark band over the ground therefore reads half-tone, and where two dark bands cross it reads solid.
+  - Once a thread is smaller than a pixel, the pixel takes the two colours' average.
+  - Each stripe is averaged over the pixel's width (four samples), so it does not crawl at full length.
+- **How it is laid.** Across, the sett follows the arc round a vertical axis (the neck's for the cloak and the rolled hood, the head's for a hood that is up), starting from the back's middle, so the seam falls at the front opening. Down, it follows the height.
+  - Both are read off a new attribute, `aTart`, the garment's position as built. The hood's `aBase` holds its face opening rather than its position, and a first try that read the pattern off `aBase` drew the hood in fine corduroy.
+- **The garments.** `D.tartan` is the dark stripe's colour and `D.tartanLine` the overcheck's (the dark again if it has none). Both are GARMENTS keys, so they save as hex and the builder's page lists them.
+  - The cloak, the shoulder cape, the hood rolled on the shoulders and the hood up all take the sett through `clothMat`'s new `tartan` option. It is part of the program's cache key.
+  - The embroidered hem and the hood's rim stay plain, as bindings.
+- **A first try drew no cloak at all:** the sett's functions read `vB` before the shader declared it, so the cloak's program failed to compile, quietly. It now passes the position in.
+
+### Verified (headless Chromium)
+- **Three new tartan checks** (`builder.check.mjs`), each rendering the cloak's back from behind and comparing it with the same cloak plain:
+  - a moss cloak in a dark green and madder sett, hood down;
+  - a madder cape in a dark blue sett with no overcheck;
+  - a brown cloak in a dark sett with an ochre overcheck, hood up.
+  - The sett changes 6.4% of the view on the moss cloak (the dark green is close to the moss), 20.4% on the cape and 16.3% on the brown cloak. 100%, 100% and 81% of the changed pixels are darker; on the brown cloak the rest are the ochre overcheck. The hood's program carries the sett, the plain cloak renders the same twice, and the genome saves and loads back with `tartan` (and `tartanLine` where given).
+- **A fourth check:** no rolled genome wears a tartan (0 of 160, forty of each people), until Michael says where it goes.
+- **`builder.check.mjs`:** 488 of 488 pass, 484 before and the four above.
+- **The first full run** stopped in the new test, which looked the cloak up in `p.meshes`; it is a child of the root. The second failed two of the three on its own measure. It asked whether the changed pixels moved toward the stripe's colour, but the render target is linear and the colour was given in sRGB, so a darker pixel read as moving away. The checks now ask whether the pixels got darker.
+- **Pictures:**
+  - `builder-tartan-back.jpg`, `-full.jpg` and `-close.jpg`: the moss cloak from behind, at full length and close, where the twill shows.
+  - `builder-tartan-cape.jpg`: the madder cape.
+  - `builder-tartan-hood.jpg`: the brown cloak with its hood up.
+### Needs eyes
+- **The sett is one sett.** Its widths and its three colours are a guess at a country tartan, not a researched one. Each family or district could have its own; that is part of the question.
+- **Folds pinch the stripes.** The vertical stripes follow the cloak's columns, so they converge into the deep fold at the back's middle. A woven cloth would do much the same; a pressed one would not.
+- **Owed:** Michael's answer on where it is worn (DECISION #445), then the roll, and the game after F4.

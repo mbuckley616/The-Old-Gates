@@ -116,12 +116,28 @@ float foldH(vec3 p){ vec2 d = legD(p); float a = atan(-d.y, d.x), t = (p.y - ${w
 ${FOLDN}`;
 // two leather thongs crossed round the wraps' top, front and back, in the tie's colour
 const TIE = w => `{ float a = legA(vB) * .3183, d = vB.y - ${(w.hi - .011).toFixed(4)}; if (abs(d - .006 * a) < .0028 || abs(d + .006 * a) < .0028) diffuseColor.rgb = tieC * triTex(tW, 9.) * .9; }`;
+// a tartan (Session 1146; OG-111's "tartans", a new note in the Gatelands): a sett woven into the cloth, the same stripes in the warp and
+// the weft, mirrored at each pivot. Its half is 8.4 cm: 3.2 of the ground (the cloth's own colour), 1.6 of the dark, 0.5 of the ground,
+// 1.6 of the dark, 1.2 of the ground and 0.3 of the overcheck, so the ground's wide square sits on the pivot at the back's middle and two
+// dark bands run beside each other like tram lines. Where a warp and a weft stripe cross, a 2/2 twill shows each in turn on diagonals of
+// 1.5 mm threads, so a dark band over the ground reads half-tone; past a thread a pixel takes the two's average, and a stripe is averaged
+// over the pixel's width. Laid round the wearer: across, the arc round a vertical axis (the neck's for the cloak, the head's for the hood)
+// from the back's middle, so the front's opening takes the seam; down, the height. Both are read off aTart, the garment's position as built
+// (the hood's aBase holds its face opening, not its position)
+const TARTAN = `vec3 settC(float x, vec3 g){ float f = abs(mod(x, .168) - .084) * 100.; return f < 3.2 ? g : f < 4.8 ? tartK : f < 5.3 ? g : f < 6.9 ? tartK : f < 8.1 ? g : tartL; }
+vec3 settAA(float x, float w, vec3 g){ w = min(w, .02); return .25 * (settC(x - .375 * w, g) + settC(x - .125 * w, g) + settC(x + .125 * w, g) + settC(x + .375 * w, g)); }
+vec3 tartanAt(vec3 p, vec3 g){ vec2 d = p.xz - tartO; float u = atan(d.x, -d.y) * tartR, v = p.y; vec3 cw = settAA(u, fwidth(u), g), cf = settAA(v, fwidth(v), g);
+  vec2 q = vec2(u, v) / .0015; float tw = step(mod(floor(q.x) + floor(q.y), 4.), 1.5), k = clamp(max(fwidth(q.x), fwidth(q.y)) - .5, 0., 1.);
+  return mix(mix(cf, cw, tw), .5 * (cw + cf), k); }`;
 function clothMat(color, kind = 'wool', o = {}) {
   TEXW[kind] = TEXW[kind] || weave(128, kind);
   const m = new THREE.MeshStandardMaterial({ color, roughness: o.rough ?? (kind === 'leather' ? .62 : .95), metalness: 0, side: o.side ?? THREE.FrontSide });
   m.onBeforeCompile = s => { s.uniforms.tW = { value: TEXW[kind] }; if (o.band) s.uniforms.bandC = { value: o.band };
     s.vertexShader = 'attribute vec3 aBase; varying vec3 vB; varying vec3 vRP; varying vec3 vRN;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vRP = position; vRN = normal; vB = aBase;');
-    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.shade ? ` diffuseColor.rgb *= ${o.shade};` : '') + (o.band ? BAND : ''));
+    s.fragmentShader = 'uniform sampler2D tW; varying vec3 vB;\n' + TRI + s.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', CUT(o.cut) + (o.hole ? `if (${o.hole}) discard;` : '') + `vec4 diffuseColor = vec4( diffuse * triTex(tW, ${(o.scale ?? (kind === 'leather' ? 9 : 22)).toFixed(1)})${o.inner ? ` * (gl_FrontFacing ? 1. : ${o.inner.toFixed(2)})` : ''}, opacity );` + (o.shade ? ` diffuseColor.rgb *= ${o.shade};` : '') + (o.tartan ? ' diffuseColor.rgb *= tartanAt(vT, diffuse) / max(diffuse, vec3(.004));' : '') + (o.band ? BAND : ''));
+    if (o.tartan) { const t = o.tartan; s.uniforms.tartK = { value: t.dark }; s.uniforms.tartL = { value: t.line }; s.uniforms.tartO = { value: new THREE.Vector2(...t.o) }; s.uniforms.tartR = { value: t.r };
+      s.vertexShader = 'attribute vec3 aTart; varying vec3 vT;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vT = aTart;');
+      s.fragmentShader = 'uniform vec3 tartK; uniform vec3 tartL; uniform vec2 tartO; uniform float tartR; varying vec3 vT;\n' + TARTAN + '\n' + s.fragmentShader; }
     if (o.band) s.fragmentShader = 'uniform vec3 bandC;\n' + s.fragmentShader;
     // a block print (Session 1029, OG-048's patterned headscarf): sprigs in the print's own colour where the vertex's aPrint is 1
     if (o.print) { s.uniforms.printC = { value: o.print }; s.vertexShader = 'attribute float aPrint; varying float vPr;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vPr = aPrint;');
@@ -131,7 +147,7 @@ function clothMat(color, kind = 'wool', o = {}) {
     if (o.wind && o.wind.tie) { s.uniforms.tieC = { value: o.wind.tie }; s.fragmentShader = 'uniform vec3 tieC;\n' + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, '$1 ' + TIE(o.wind)); }
     if (o.fold || o.wind) s.fragmentShader = (o.wind ? WRAP_WIND(o.wind) : FOLD(o.fold)) + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, 'float fH = foldH(vB); $1 diffuseColor.rgb *= .78 + .22 * fH;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n normal = foldNormal(-vViewPosition, normal, vec2(dFdx(fH), dFdy(fH)) * ' + ((o.fold || o.wind).depth ?? 1.1).toFixed(2) + ', faceDirection);'); };
-  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.shade || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
+  m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.shade || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.tartan ? 'tartan' : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
   return m;
 }
 // the headscarf's print (Session 1029): a sprig of four round petals on a 2.4 cm grid, each row offset by half, read three ways off the
@@ -560,6 +576,8 @@ function posedBody(body) {
   const n = PACK.N, out = new Float32Array(n * 3), v = new THREE.Vector3(); body.updateMatrixWorld(true);
   for (let i = 0; i < n; i++) { body.getVertexPosition(i, v); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; } return out;
 }
+// the cloak's tartan, if it has one: the dark stripe in D.tartan, the overcheck in D.tartanLine (or the dark again), round the axis at o
+const tartanOf = (D, o, r) => D.tartan ? { tartan: { dark: sRGB(...D.tartan), line: sRGB(...(D.tartanLine || D.tartan)), o, r } } : {};
 function buildCloak(G, body, byName, rnd) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
@@ -594,8 +612,8 @@ function buildCloak(G, body, byName, rnd) {
   // wound so its normals point out of the cloak (Session 917): the shadow's lookup is moved along the vertex normal (normalBias), and
   // with them pointing in, the cloak's outside read its own shadow 2 cm behind it and went dark wherever the key light fell on it
   for (let k = 0; k < K - 1; k++) for (let r = 0; r < R - 1; r++) { const a = k * R + r, b = a + R; idx.push(a, b, a + 1, b, b + 1, a + 1); }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
-  const cm = clothMat(sRGB(...D.cloak), D.cloakFur ? 'leather' : 'wool', { side: THREE.DoubleSide, scale: 26 }), cloak = new THREE.Mesh(g, cm); cloak.name = 'cloak'; out.push(cloak);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aTart', g.attributes.aBase); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  const cm = clothMat(sRGB(...D.cloak), D.cloakFur ? 'leather' : 'wool', { side: THREE.DoubleSide, scale: 26, ...tartanOf(D, [neck.x, neck.z], .2) }), cloak = new THREE.Mesh(g, cm); cloak.name = 'cloak'; out.push(cloak);
   // an embroidered hem (OG-048, OG-059: red embroidered borders): a band of its own colour over the last 3.5 cm of the
   // sheet, laid 1.5 mm proud of it round the neck's axis so it never sinks into the cloth
   if (D.cloakHem) { const nb = Math.min(R - 2, Math.round(.035 / .0105)), bp = [], bi = [];
@@ -606,7 +624,7 @@ function buildCloak(G, body, byName, rnd) {
   // a fur lining turned out at the collar (the Markmen's), or the hood rolled on the shoulders
   const ring = tops.map(t => t.start.clone().addScaledVector(t.n, .012).add(new THREE.Vector3(0, .012, 0)));
   if (D.cloakFur) for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(tubeGeom(ring, ring.map(() => .026 + s * .004), 8), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; out.push(m); }
-  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25)), m = new THREE.Mesh(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'hood'; out.push(m); }
+  else if (D.hood === 'down') { const kb = Math.round(-th0 / (th1 - th0) * (K - 1)), back = ring.slice(Math.max(0, kb - Math.round(K * .2)), kb + Math.round(K * .2)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25)), m = new THREE.Mesh(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...tartanOf(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; out.push(m); }
   // the brooch at the throat, where the two front columns meet
   const a = thrown ? tops[K - 1] : tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
   const br = new THREE.Mesh(new THREE.CylinderGeometry(.021, .021, .006, 24), new THREE.MeshStandardMaterial({ color: sRGB(...(D.brooch || [.55, .42, .2])), metalness: .9, roughness: .38 }));
@@ -1034,7 +1052,7 @@ function buildHoodUp(P, G, meshes) {
   const front = (q, ph) => Math.cos(ph) > 0 && q.z > c.z;
   for (let i = 0; i <= I; i++) for (let j = 0; j <= J; j++) { const ph = j / J * Math.PI * 2, q = at(ph, i / I, j); pos.push(q.x, q.y, q.z); base.push(front(q, ph) ? openS(q) : 9, 0, Math.cos(ph)); uv.push(j / J, i / I); }
   for (let i = 0; i < I; i++) for (let j = 0; j < J; j++) { const a = i * (J + 1) + j, b = a + J + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(base, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(base, 3)); g.setAttribute('aTart', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
   // the rolled hem round the face: where each row crosses the opening's edge, up the left cheek and down the right
   const left = [], right = []; for (let i = 0; i <= I; i++) { const row = []; for (let j = 0; j <= J; j++) { const k = (i * (J + 1) + j) * 3; row.push([base[k], new THREE.Vector3(pos[k], pos[k + 1], pos[k + 2])]); }
     for (let j = 0; j < J; j++) { const [s0, p0] = row[j], [s1, p1] = row[j + 1]; if ((s0 < 1) !== (s1 < 1) && Math.min(s0, s1) < 9 && Math.max(s0, s1) < 9) { const q = p0.clone().lerp(p1, (1 - s0) / (s1 - s0)); (q.x > c.x ? right : left).push(q); } } }
@@ -1048,7 +1066,7 @@ function buildHoodUp(P, G, meshes) {
       for (let q = 0; q < 4; q++) { si[i * 4 + q] = PACK.skinIndex[best * 4 + q]; sw[i * 4 + q] = PACK.skinWeight[best * 4 + q]; } }
     geo.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4)); return geo; };
   if (!rim.attributes.aBase) rim.setAttribute('aBase', rim.attributes.position);
-  const col = sRGB(...D.cloak), hood = new THREE.SkinnedMesh(skin(g), clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 26, inner: .42, hole: 'vB.z > 0. && vB.x < 1.' })); hood.name = 'hoodUp';
+  const col = sRGB(...D.cloak), hood = new THREE.SkinnedMesh(skin(g), clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 26, inner: .42, hole: 'vB.z > 0. && vB.x < 1.', ...tartanOf(D, [c.x, c.z], .11) })); hood.name = 'hoodUp';
   const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem';
   // what would show through: any point of the head, the ears or the scalp's hair outside the dome, away from the face's opening
   let tested = 0, poke = 0; { const v = new THREE.Vector3(), test = q => { if (q.y < c.y - ryB * .5) return; tested++; if (q.z > c.z && openS(q) < 1) return;
@@ -2824,7 +2842,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
