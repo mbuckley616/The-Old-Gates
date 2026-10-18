@@ -25186,3 +25186,31 @@ So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where
 ### Needs eyes
 - Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
 - `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
+
+## v80 — Session 1104 — The branch's own reds: trapseed, targetof, fistfight and renewal re-measured to the rules that moved them
+QA's standing comment on the Systems sessions PR (17–18 Oct) named four suites red twice on auto/systems, each bisected to one of this
+builder's sessions. All four are the game doing what its session said, measured by a suite written before it. Tests only; no game code changed.
+- **`trapseed`** (from S1061, the traps at the floor's tier's level): its band, 8–15 + level × 0.8, read your level. The plate rolls on
+  `trapTierLevel()`, so on CI's tier-2 floor it hit 16 and 19 against a ceiling of 15. The band now reads `trapTierLevel()`. Its check is unchanged.
+- **`targetof`** (from S1059, the kinds' least tier in place of the latent foe): the dungeon half took the first walking foe and stood it
+  4 off you, with the decoy 4 off the other side. Since S1059 that foe is a Phantom, and a ranged foe holds its ground inside 4.5 and
+  shoots (`90-main.js`, `wantsToChase`), so it went nowhere (4 → 4). The suite now skips ranged foes as it skipped slimes and mimics;
+  the next walker is a Skeleton.
+- **`fistfight`** (from S1078, Throw at Hand-to-hand 50): the 6–11 punches at 99 were the multiplier's brawl, measured before Throw
+  existed. A thrown Bandit lies with its finisher open from any side, so the fight sometimes ends in 5. The 99 and 100 fights now hold
+  `hand:50` out of `PERK_LIVE` for their own run (restored after), so the multiplier and Stone hand are measured as written, and three
+  fights with Throw are checked beside them: dead every time, in 2 to 11 punches.
+- **`renewal`** (from S1059 too; filed in backlog K by Session 1085 as QA's): a Highwayman stands 4.3 m from An Spéir's altar at
+  `c6_8_p1`, in a tier-2 chunk. Before S1059 he was latent at level 1. Over the measure he wakes and kills a 10-health player, and a
+  dead player regains nothing (health −10, everything else still). The suite puts the foes within 60 m of the altar down before each
+  measure. The game is right: a shrine on a road is not a safe place in the Foothills.
+### Verified (headless Chromium)
+- `targetof` 1/1: before the change, *the Phantom closes on you (4 → 4)* failed as on CI; after it, the Skeleton closes 4 → 0.63, and
+  with the decoy goes 4 → 0.63 to it and 4 → 7.37 from you.
+- `trapseed` 1/1: hits 15, 12, 11, 9, 10, 11 at tier level 1, the band 8–15 (this container's floor is tier 1; CI's was not).
+- `fistfight` 1/1: at 99 without Throw 9, 10, 10 punches (in 6–11); with Throw 5, 5, 9; Stone hand passes against the former.
+- `renewal` 1/1: before, health −10 and 109 s for 40 frames; after, health and stamina +1.00 and mana +2.60 under the boon, 0, 0 and
+  +1.60 without it, and the fill stops at each maximum.
+### Needs eyes
+- **A Highwayman at a shrine's altar.** Shrines are not kept clear of the chunk spawn, which was true before S1059 too; it shows more
+  now that the Foothills' tier-2 kinds stand from level 1. If a shrine should be a safe pad, that is a rule of play and Michael's.

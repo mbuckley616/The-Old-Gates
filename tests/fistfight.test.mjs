@@ -19,7 +19,8 @@ await page.evaluate(() => { window._keepW = EQ.weapon; window._drive = (step, ma
   return n; }; });
 
 // one fight: `punch` swings whenever the cooldown is down and the Bandit is within reach; `fists` empties the weapon hand
-const fight = (punch, fists, max, hand = 5) => page.evaluate(([punch, fists, max, hand]) => {
+const fight = (punch, fists, max, hand = 5, noThrow = false) => page.evaluate(([punch, fists, max, hand, noThrow]) => {
+  const _thr = PERK_LIVE.has('hand:50'); if (noThrow) PERK_LIVE.delete('hand:50');
   forceTime(12); SKILLS.hand = { lv: hand, p: 0 }; EQ.weapon = fists ? null : window._keepW; buildViewmodel();
   PHP = maxHP; dead = false; stamina = maxStamina; atkCd = 0; PPOST.stagUntil = 0; PPOST.posture = PPOST.maxPosture;
   const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], px, pz - 4, 'Bandit', null)); e.alert = true; ZONES.world.enemies.push(e);
@@ -31,11 +32,11 @@ const fight = (punch, fists, max, hand = 5) => page.evaluate(([punch, fists, max
   const step = () => { if (e.dead || e.hp <= 0 || PHP <= 0) return true; stamina = maxStamina; yaw = Math.atan2(-(e.x - px), -(e.z - pz));
     if (staggered.find(s => s.e === e)) log.stagFrames++;
     if (punch && atkCd <= 0 && !_pendingStrike && Math.hypot(e.x - px, e.z - pz) < 1.6) { attack(false); log.swings++; } };
-  try { log.frames = _drive(step, max); } finally { sndTelegraph = _t; executeStrike = _x; _resolveZoneStrike = _r; }
+  try { log.frames = _drive(step, max); } finally { sndTelegraph = _t; executeStrike = _x; _resolveZoneStrike = _r; if (_thr) PERK_LIVE.add('hand:50'); }
   Object.assign(log, { secs: +(log.frames / 60).toFixed(2), hpEnd: e.hp, dead: !!e.dead, php0: maxHP, phpEnd: PHP, tell: +telegraphDuration(e).toFixed(2), recover: e.atkSpd });
   if (!e.dead) { e.dead = true; if (e.mesh) WORLD.scene.remove(e.mesh); }
   const L = ZONES.world.enemies, i = L.indexOf(e); if (i >= 0) L.splice(i, 1);
-  return log; }, [punch, fists, max, hand]);
+  return log; }, [punch, fists, max, hand, noThrow]);
 
 const stand = await fight(false, true, 60 * 30);
 console.log('stood still', JSON.stringify(stand));
@@ -47,18 +48,22 @@ check('stood still, the Bandit winds up and strikes, 12+ blows a 30 s, each afte
 // Hand-to-hand (Session 950, Michael's C on #357): bare fists are a skill of their own, the fists' 2–3 on its multiplier. The
 // critic's 7–12 punches was measured with the level's flat +1.5 in every hit; with it gone, an untrained fist (5, ×0.64) is
 // the longer brawl Michael chose, and the critic's brawl comes back as the fist is trained (100, ×1.4).
-const runsAt = async (hand, n) => { const out = []; for (let k = 0; k < n; k++) out.push(await fight(true, true, 60 * 40, hand)); return out; };
+const runsAt = async (hand, n, noThrow = false) => { const out = []; for (let k = 0; k < n; k++) out.push(await fight(true, true, 60 * 40, hand, noThrow)); return out; };
 // S1051 — the multiplier's brawl is measured at 99, a point under Stone hand (Hand-to-hand 100: the fists roll 4 to 7, `perkarms`),
-// which is fought on its own below
-const raw = await runsAt(5, 3), master = await runsAt(99, 3), stone = await runsAt(100, 2), runs = raw.concat(master);
+// which is fought on its own below. S1104 — and with Throw (Hand-to-hand 50, S1078) held out of the live list: a thrown Bandit lies with
+// its finisher open from any side, which ends the brawl sooner (5 punches on CI), so the multiplier is measured without it and
+// Throw's own brawl beside it
+const raw = await runsAt(5, 3), master = await runsAt(99, 3, true), thrown = await runsAt(99, 3), stone = await runsAt(100, 2, true), runs = raw.concat(master);
 for (const r of raw) console.log('punched at Hand-to-hand 5', JSON.stringify(r));
 for (const r of master) console.log('punched at Hand-to-hand 99', JSON.stringify(r));
+for (const r of thrown) console.log('punched at Hand-to-hand 99, with Throw', JSON.stringify(r));
 for (const r of stone) console.log('punched at Hand-to-hand 100, Stone hand', JSON.stringify(r));
 const sum = (f) => runs.reduce((a, r) => a + f(r), 0);
 check(`untrained (Hand-to-hand 5), the Bandit dies every time, in 15–28 punches that land (${raw.map(r => r.hits).join(', ')})`, raw.every(r => r.dead && r.hits >= 15 && r.hits <= 28), raw.map(r => [r.dead, r.hits, r.swings]));
 // S940 — the light chain lands every third punch ×1.3, so the critic's 7–12 is 6–11 (main's re-measure, carried here: the merge of
 // Session 1013 kept the old range, and CI's slower frames keep the chain and reached 6)
 check(`trained to 99, the critic's brawl under the light chain: dead in 6–11 punches (${master.map(r => r.hits).join(', ')})`, master.every(r => r.dead && r.hits >= 6 && r.hits <= 11), master.map(r => [r.dead, r.hits, r.swings]));
+check(`Throw at 99: the Bandit still dies, in no more punches than the multiplier's 11 (${thrown.map(r => r.hits).join(', ')})`, thrown.every(r => r.dead && r.hits >= 2 && r.hits <= 11), thrown.map(r => [r.dead, r.hits, r.swings]));
 check(`Stone hand at 100: the fists' 4 to 7 end it in about half the punches (${stone.map(r => r.hits).join(', ')}, against ${master.map(r => r.hits).join(', ')} at 99)`, stone.every(r => r.dead && r.hits >= 2 && r.hits * 1.5 <= Math.min(...master.map(m => m.hits))), stone.map(r => [r.dead, r.hits, r.swings]));
 check('the punches break its posture: it stands staggered for a quarter of the fight or more', runs.every(r => r.stagFrames >= r.frames * .25), runs.map(r => [r.stagFrames, r.frames]));
 check('so it starts few wind-ups and lands two blows at most a fight', runs.every(r => r.landed <= 2), runs.map(r => [r.tells, r.blows, r.landed]));
