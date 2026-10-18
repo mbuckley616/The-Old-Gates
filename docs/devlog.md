@@ -23832,6 +23832,161 @@ The suite now records the open blows that are not a chain's third (`openPlain`) 
 
 ### Needs eyes
 - On the Systems code the rolls are 3 or 4, so six flank blows against eight open ones is still a coarse sample: one run here read 0.83. If it goes red again with plain-open blows, the next step is more flank swings, not a lower bound.
+## v80 — Session 1062 — Card F8: the cliff fort's sea-stair, by #402's answer (prototype only)
+Michael answered three of the look builder's questions on 17 Oct. On #402 (the Mark's cliff fort) he chose B: a sea-stair down to a sea cave. On #401 (the Gatelands' ruined tower house) he chose A, as drawn: the gate or the hidden pit, and no way up. The tower house needs no change, so #401 is closed and moved under Answered with this entry. On #396 he chose C, which is Session 1063. This session builds the sea-stair. It touches only the prototypes: `places.js` (`markCliffFort`), `places-clifffort-view.js` and `places.check.mjs`.
+
+The stair goes down inside the west cliff, from the snow behind the hall to the water. At a metre a unit:
+- **The cut:** behind the hall's north-west corner, a trench 5 by 2 m cut into the rock. It has 16 steps of 0.19 m on 0.25 m treads and a landing at the foot, 3.2 m down. Its walls rise to the land's own edge. The terrain's triangles over it are left out along the grid's lines, so the walls meet the snow exactly.
+- **The door:** in the cut's west face, 1.2 by 2.3 m, in a timber frame. Its plank leaf stands open against the passage wall.
+- **The passage:** about 3 m west to the shaft's head, 1.2 m wide and 2.3 m high, 0.9 m or more under the land.
+- **The shaft:** a dog-leg of nine flights of 16 rises (0.186 m on 0.28 m treads), 1.1 m wide in two columns with a 0.6 m spine of rock between them. The flights turn on landings 1.3 m deep at either end and go down 26.8 m in all, to 1 m above the sea. The roofs follow the flights at 2.5 m over the nosing.
+- **The slits:** one in the west wall at every landing and one halfway down every outer flight, 15 in all. Each is an embrasure 0.6 by 1.1 m at the wall, narrowing to 0.18 by 0.75 m at the face, through 2.4 to 5.8 m of rock. They are cut out of the cliff's mesh: a triangle under a hole is clipped to the parts around it, carrying its normals, so the face keeps its shading. A slit's sides end on the face exactly.
+- **The foot:** a passage 3 m south from the last landing ends in a dressed face of rock and opens into the sea cave.
+- **The sea cave:** about 9 m each way inside the cliff's face, its roof 7 m over the water. The rock is seen from inside and is kept only where the land is above it, so it stops at the cliff's face. Its mouth is a rough arch 5.8 m wide and 5.2 m over the water, cut in the west cliff. A quay of hewn rock runs along its east wall, 1 m over the water, with two iron rings. A rowing boat is tied to one by the bow.
+
+Two changes to the fort were needed for this:
+- **The cliff runs straight along the shaft.** The ragged line of the cliff now fades out over the shaft's 7 m and 3 m either side. Where the cliff bulged out, the first slits ran 8.7 m through the rock. They are now at most 5.8 m.
+- **The rocks at the cliff's foot are left out in front of the mouth,** so a boat can come in.
+
+The holes are cut as convex outlines in the face's (z, y) plane, so the mouth can be an arch rather than a rectangle. The cliff and the hewn rock are double-sided, because inside the mouth the face is seen from behind. The fort is now 49,000 triangles in 22 draws, the hall's among them.
+
+Three corrections were made during the session:
+- The boat's hull was single-sided, and from above its inside did not draw.
+- The cave's wall closed the foot's passage, because `rockBox`'s keep test reads the box's outward normal and I had the sign the wrong way round.
+- The cut's door frame left 2.08 m clear under its lintel. The opening is now 2.3 m high.
+
+### Verified (headless Chromium)
+- **`places.check.mjs`: 253 of 253 pass.** Two render checks (`stair`, `cave`) and four builds checks are new.
+  - **The walk down:** 350 quarter-metres, from the snow into the cut, through the door, down 26.8 m and out onto the quay, on 3 keys. Every point has a floor on its line, no step is over 0.188 m, there are 2.18 m of headroom or more (the door's lintel) and 0.36 m clear (the door's leaf).
+  - **The rises:** 144 on the flights, all 0.186 m, and 17 up the cut, 0.179 to 0.188 m, measured on the treads. The door is 0.96 m across inside its frame.
+  - **The slits:** all 15 are open through the cliff to the sky, through 2.41 to 5.78 m of rock. The roofs of the passage and the top two landings are 0.58 m or more under the land.
+  - **The sea cave:** from the quay the eye goes out through the mouth to the open sea. From the sea it goes in 2.72 to 2.98 m past the quay's edge to the cave's back wall. The quay is 1 m over the water, and the boat's keel is 0.18 m under it and its gunwale 0.28 m over.
+- **Unchanged:** the fort's own five checks still pass with the straightened cliff: the walk from the road, the ditch and the palisade, the cliffs and the hall's step. It is 49,005 to 49,169 triangles in 22 draws.
+- **Pictures:** `places-clifffort-cut.jpg`, `-stair`, `-foot`, `-cave` and `-mouth`.
+### Needs eyes
+- **Light:** inside, the light from each slit is a cool lamp in the embrasure, and the sky light is turned down. The prototype has no light bounce, so the dark between slits is a guess.
+- **Hairline cracks on the cliff:** they can show along the lines where the face was cut round the holes, where a clipped triangle meets an uncut neighbour. They are thin and dark at 1080p, mostly above the mouth.
+- **The cut is in the hall's shadow** on the fort's winter afternoon. Its picture is lit from the east to show the steps and the door.
+- **Hewn rock is flat panes** with the rock texture. The cave is the kit's noise-moved rock, smoother than a sea cave's would be.
+
+## v80 — Session 1063 — Card F6: the Gatelands' plans by bays, by #396's answer (prototype only)
+DECISION #396 asked how the kit's houses and the generator's lots should meet. The lots are 5 to 7 m wide; the houses were drawn 1.7 to 2.5 times a lot's floor. Michael chose C on 17 Oct: lay the plans out by bays, and widen the lots to whole bays (5 to 7 m becomes 6 to 10). This session does the first half in the prototype kit, `pieces.js`, with a view in `pieces-gatelands.js` and checks in `pieces.check.mjs`. The game's lots are the next session (`js/38-kit.js` and the generator in `83-world-generator.js`).
+
+A bay is one window's width of front with its pier. The measures come from the plans as drawn:
+- **Town house, 1.95 m:** the townhouse's and the merchant's sashes already stood 1.95 m apart.
+- **Cottage, 2.4 m:** the cottage was four of them.
+- **Farmhouse, 3.1 m:** the farmhouse was three.
+
+A plan of n bays is n bays plus an end pier at each corner: 0.3 m in a town house, 0.6 m in a farmhouse and none in a cottage. `glBayPlan(kind, n, o)` lays out a plan's openings on its bays:
+- **The cottage** (2 to 4 bays, 4.8 to 9.6 m): the half-door in the middle bay (the left one of two), a window in each other bay, the back door opposite the front, and the hearth's stack beside the door, as in a lobby-entry house. A two-bay cottage has its stack in the far gable.
+- **The farmhouse** (2 or 3 bays, 7.4 or 10.5 m): the transom door in the middle (or in the first of two), windows in the other bays and a window over every bay.
+- **The townhouse** (2 to 5 bays, 4.5 to 10.35 m): the fanlit door in an end bay (the lot says which), sashes in the other ground-floor bays and a sash over every bay on both floors above.
+- **The merchant's house** (3 to 5 bays, 6.45 to 10.35 m): the shop door in the last bay, the shop window across the rest with a bar a metre or so, the fascia the house's width less 0.4 m, and sashes over every bay.
+
+`o.d` sets a plan's depth. `glBaysFor(kind, lotW)` gives the most whole bays that fit a lot, and `glBayWidth(kind, n)` the width they make, so a town can widen its lots to whole bays. `gatelandsLot` takes `bays` and `d`. Without them every plan is as drawn, so the recorded line-up still holds triangle for triangle.
+
+### Verified (headless Chromium)
+- **`pieces.check.mjs`: all pass.** Five builds checks and one render check (`?view=bays`) are new.
+  - **Widths:** 12 plans, each exactly its bays and its ends.
+  - **Openings:** all inside their faces, 0.12 m or more clear of the corners and 0.15 m or more clear of one another.
+  - **Windows and doors:** every window above the ground floor is on a bay's line, with one in every bay on every upper floor. Every door is within 0.35 m of a bay's line (the merchant's shop door stands 0.35 m in from its bay).
+  - **Budget:** 1,230 to 6,221 triangles in 14 draws or fewer, each the same twice.
+  - **Fitting lots:** `glBaysFor` gives the most whole bays for every lot of 6 to 10 m by quarter metres (68 widths).
+  - **Lots:** a townhouse lot given 4 bays and 8 m is 8.4 by 8 m. One without them is 6.4 by 9 m, as drawn.
+- **Unchanged:** the line-up's six plans match their record.
+- **Pictures:** `gatelands-bays-high.jpg` (all four rows), `-cottage`, `-townhouse` and `-merchant` (a row each, from the street).
+### Needs eyes
+- **A two-bay townhouse is 4.5 m wide,** under the 6 m Michael's answer gives as the smallest lot, so the generator should start the townhouse at three bays. A two-bay one fits a lane's narrow lot if one is wanted.
+- **The townhouse is still 9 m deep.** In the game a lot's depth will set `o.d`. A deep house on a shallow lot is the generator's question for next session.
+- **The farmhouse has two sizes only.** A four-bay farmhouse (13.6 m) is wider than any town lot.
+
+## v80 — Session 1064 — Card F6: the plans by bays in the game's kit (#396 C)
+Session 1063 laid the Gatelands' plans out by bays in the prototype. This session copies that code into the game's kit, `js/38-kit.js`, as the kit's rule asks: a piece is drawn and checked in the prototype first, then copied. `PKIT.gl` now has `BAYS`, `bayPlan(kind, n, o)`, `bayWidth(kind, n)` and `baysFor(kind, lotW)`. `PKIT.gl.lot(street, i, s)` takes `s.bays` and `s.d`, as `gatelandsLot` does in the prototype. The code is the prototype's, with the kit's measures `PS` in place of the prototype's `SCALE`. Nothing in the game calls it yet, so no town changes. The next session widens the generator's lots to whole bays on the new look, and lets a lot's depth set the plan's.
+
+### Verified (headless Chromium)
+- **`tests/kit`: all pass.** Two checks are new.
+  - **The plans:** all 12 are their bays and ends wide (4.8 to 10.5 m) and build to the prototype's triangles, from 1,230 for a two-bay cottage to 6,221 for a five-bay townhouse.
+  - **Fitting lots:** `baysFor` gives the most whole bays for every lot of 6 to 10 m. A townhouse lot given 4 bays and 8 m is 8.4 by 8 m, and one without them is 6.4 by 9 m, as drawn.
+- **One flaky failure, not caused by this change:** the suite's last check (a street of six lots drawn in the world) failed once, with no draw calls added. That run was alongside the prototype's 15-minute check. It then passed twice without the retry: once with this change and once with this change stashed.
+- `parsecheck.py` is clean.
+### Needs eyes
+- Nothing visible yet: no town uses the bay plans until the generator's lots are widened.
+
+## v80 — Session 1071 — Card F6: the Gatelands' lots widened to whole bays on the new look (#396 C)
+Michael's C on #396 asked for two things: the kit's plans laid out by bays (Sessions 1063 and 1064), and the generator's lots widened to whole bays, 5 to 7 m becoming 6 to 10. This session does the lots, in `genSettlement` (`83-world-generator.js`). His line on #396 puts the widening on the new look, so the old look's towns are untouched, as are the Mark's and Aurenne's (their kits are not in the game yet).
+
+On `?look=new`, in a settlement of the Gatelands (by the island's own nation, so an occupied town keeps its houses), every home and ordinary shop takes a kit plan: a village's or an outpost's are cottages; a town's, port's or city's homes are townhouses and its shops (weapons, armour, potions, goods, the barber) merchants' houses. The pass runs after the plan is laid and the ids are given, so a lot keeps its centre, its depth, its door, its place in the town and its id: a house you own is the same house in either look. A lot of 5, 6 or 7 m starts at the nearest whole bays to 6, 8 or 10 m (a townhouse 3, 4 or 5 bays, 6.45 to 10.35 m; a cottage 3 or 4, 7.2 or 9.6 m), never under three bays for a townhouse (Session 1063's note: two bays is narrower than any lot). It gives a bay back while it would come within 1.2 m of another lot, a road, a cross street or the ring inside the walls. A shop with no room for three bays of shop front takes a townhouse's front instead. If even the kit's least plan will not fit, the lot keeps its old width (none did, in seven towns). Churches, keeps, guild halls, inns, the shipwright and the foreign quarter by the quay keep their sizes. Each widened lot carries `kit: {kind, bays, w0}` on its house, for the next session, which builds the houses on these lots from `PKIT.gl.bayPlan`. The solids, the interiors (`house.w`) and the paths beside a lot already follow `lot.w`.
+
+Two top-level names are new: `KIT_SITE` and `KIT_SHOPS`, just above `genSettlement` (grepped: no clash).
+
+### Verified (headless Chromium)
+- **`tests/kitlots`, new: 12 of 12 pass.** It builds two towns, two villages, a port and a city of the Gatelands (Dunmore, Vieux Marché, Cill Beag, Droichead, Portclare, Coeur de Vie) and a town of the Mark, on both looks.
+  - **The same houses:** 57, 61, 6, 7, 32, 147 and 59 houses, with every id, type, depth and door where the old look has them.
+  - **Whole bays:** 279 lots widened, each exactly its bays and end piers wide. Every home takes a plan (238 of 238).
+  - **By kind:** 102 townhouses of 3 bays, 76 of 4, 54 of 5, and 3 of 2 bays where three would not fit; merchants' houses 15 of 3 bays, 11 of 4 and 9 of 5; cottages 6 of 3 and 3 of 4.
+  - **Growth:** 276 of the 279 are wider than they were, from 4.5 to 10.35 m where they were 5 to 7 m.
+  - **Clearance:** every widened lot's solid stands 0.9 m or more clear of every other lot's (1.2 m between the lots).
+  - **Unchanged:** 30 churches, keeps, guild halls, inns and shipwrights keep their sizes. The Mark's town is identical to the old look's, and no lot on the old look takes the bays.
+- **Neighbours:** `lookpair`, `looknew`, `people` and `peopleao` pass. `kit` failed once on its last check (a street drawn in the world: the frame drew 11 calls before and after the street was added, the failure Session 1064 saw), then passed twice in a row on this change. It is flaky and owed to QA, with the frame's 11 calls as the clue: the camera was not on the world when it rendered.
+- `parsecheck.py` is clean.
+### Needs eyes
+- **Nothing visible changes yet in the houses' look:** the old builder draws them wider on the new look until the next session puts the kit's plans on them. Gatelands' streets are fuller, with the gaps between houses about 2 m narrower.
+- **Depth:** lots stay 4 to 6 m deep. The kit's townhouse is drawn 9 m deep, so the next session builds it to the lot's depth (`o.d`). Whether a shallow townhouse reads right is for the pictures.
+- **Interiors** of widened houses are wider rooms on the new look. No suite of the rooms runs on the new look yet.
+
+## v80 — Session 1072 — Card F6: the Gatelands' houses built from the kit on the new look (#396 C)
+Session 1071 widened a Gatelander settlement's lots to whole bays on the new look. This session puts the kit's houses on them (`genSettlement`, `83-world-generator.js`). Each widened lot's house is now `PKIT.gl.lot(site, lot id, {kind, bays, d})`: the cottage, townhouse or merchant's plan on its bays, at the lot's own depth, in the lot's colour and paint, keyed by the town and the lot's id so it looks the same at every visit (#280 A's colours with no two neighbours alike, now counted in id order). A merchant's fascia reads its trade: *ARMS · BLADES · BOWS*, *ARMOUR · MAIL · SHIELDS*, *APOTHECARY · HERBS*, *GENERAL GOODS* or *BARBER · SURGEON*. Every kit house in a town stands in one group at the town's centre, which is merged at the end into one mesh per material (`PKIT.mergeByMaterial`): Dunmore's 50 kit houses are 38 draws.
+
+What follows the house:
+- **The door you use** moves along the front into the door's bay (`plan.doorX`; a townhouse's end bay, a merchant's last, a cottage's middle). Its footpath starts there.
+- **The smoke** rises from the plan's first stack, at its pot.
+- **The wall's height and storeys** (`house.wallH`, `house.storeys`, F2a's record) are the plan's.
+- **The solids** were already the lot's, which is the plan's footprint.
+
+The old builder still runs for these lots and its mesh is let go. Its draws on the town's stream keep everything drawn after them as on the old look: the residents, their names and the shops. The cost is the old geometry built and thrown away, about one house's worth of time per lot. Churches, inns, guild halls, keeps, the shipwright and the foreign quarter stay on the old builder until their plans come in.
+
+### Verified (headless Chromium)
+- **`tests/kittown`, new: 8 of 8 pass**, measured on Dunmore's own meshes.
+  - **Walls:** all four walls of each of the 50 kit houses stand 0.15 m inside the solid's edge, which is the solid's own margin. A merchant's shop front stands 0.12 m prouder, 0.03 m inside.
+  - **Doors:** the ray at each door meets its painted leaf, or a merchant's glazed door, 0.13 m behind the wall's face.
+  - **Draws:** 38 for the town's kit houses, 265,522 triangles.
+  - **The old houses are gone:** no other town mesh is under a kit lot's centre.
+  - **The old look:** Dunmore has no kit houses.
+  - **The picture:** `docs/prototypes/kit-town-ingame.png`, a Dunmore street at noon.
+- **`tests/kitlots` still passes,** its door check now allowing for each door's offset into its bay.
+- **`lookpair` failed once** on brightness, 176.3 against 172.6 (the limit is 3). It compares the two renderers on one view of Dunmore, whose houses now differ by design. A switch, `window.OG_KIT_TOWNS=false`, keeps the old towns on the new look. `lookpair` sets it on both boots, since the suite measures the renderers, not the houses, and then it passes. `looknew`, `people` and `kit` pass.
+- `parsecheck.py` is clean.
+### Needs eyes
+- **The picture first:** whether the townhouses read right at 4 to 6 m deep. They are three storeys on a shallow plan, and side-on they look tall and thin. Deepening a town's lots would push them into the row behind; that would be its own session and perhaps a question.
+- **Triangles:** about 5,300 a house, 265,000 for Dunmore, against the old builder's few hundred, and there is no far copy yet. The draw budget holds (38 draws), but a city's 147 lots is the frame-rate test.
+- **Rooms:** a widened house's rooms are wider, and the door now opens in an end bay. The room's own doorway is still laid out as before, so where you appear inside against the front is for a playtest.
+- **The shop signs** are a new texture for each shop (1024 by 128), and they are not freed when a town unloads.
+- Churches, inns, guild halls and keeps are still the old builder's.
+
+## v80 — Session 1073 — Card F6: a far copy for the kit's houses (new look)
+Session 1072 built a Gatelands town's widened lots from the kit, at about 5,300 triangles a house, and owed a far copy. This session adds it (`genSettlement`, `houseLod`, `83-world-generator.js`). As each kit house is built, its far copy is made from the plan's size: the walls a box to the eaves in the wall's colour, and the roof one prism to the ridge, a little over the walls, in slate grey or thatch brown. All of a town's copies are one vertex-coloured mesh (`VC_MAT`, kept out of the town's bake). `houseLod` swaps the two by the old houses' rule (`HOUSE_LOD`, near 70 m and far 80 m, holding whichever it had in between). The distance is measured from the town's centre less half the reach of its kit houses, so in the town and at its edge you see the kit's houses, and from the fields their copy. `S.kitLod` holds both and the measure.
+
+### Verified (headless Chromium)
+- **`tests/kittown`: 11 of 11 pass.** Three checks are new.
+  - **Size:** Dunmore's far copy is 900 triangles, standing in for 265,522.
+  - **Fit:** it covers the kit houses' ground within 0.12 m. It is 1.45 m lower at the top, which is the chimneys it leaves off.
+  - **The swap:** 241 m from the centre (160 m past the houses' reach) the copy is drawn and the kit's houses are not. At the centre it is the other way round.
+  - **The picture:** `docs/prototypes/kit-town-far.png`, Dunmore from the fields to the east, its coloured houses between the trees.
+- `looknew` passes.
+- `parsecheck.py` is clean.
+### Needs eyes
+- **The swap's distance:** the old houses' 70 and 80 m, from a point about 40 m in from the town's edge, so Dunmore's houses change about 110 to 120 m from its centre. Whether the change shows is for a walk out of town.
+- **The copy is plain:** no windows, chimneys or gable walls (the prism's ends take the roof's colour). A hipped cottage's copy is gabled.
+
+## v80 — Session 1074 — Card F6: the kit's shop signs painted once a trade (new look)
+Session 1072 left one fault in the kit's towns. Every merchant's house painted its own fascia, a 1024 by 128 canvas texture with its material, and nothing freed them when a town unloaded, so each visit to a town painted them again. As separate materials they were also a draw each in the town's merged houses. `signMat` (`js/38-kit.js`) now keeps one material for each sign's words and colours. A town's shops of one trade share it, a town built again paints nothing new, and the merge folds a trade's shops into one draw. `PKIT.signsMade()` counts them.
+
+### Verified (headless Chromium)
+- **`tests/kittown`: 12 of 12 pass.** One check is new: Dunmore's 8 shops of 5 trades paint 5 signs. Unloading Dunmore and building it again paints none, and it is 35 draws both times, where it was 38.
+- **`tests/kit` passes:** the plans still build to the prototype's triangles.
+- `parsecheck.py` is clean.
+### Needs eyes
+- Nothing new to see: the signs read as before.
 ## v80 — Session 1044 — Card F11: Aurenne's cog, by #347's answer (prototype only)
 The third hull built to Michael's A on DECISION #347, and the last cog. Option A's text names it: "an Aurenne cog with one lateen". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait. This session touches only the prototypes: `ships.js`, `ships-view.js` and `ships.check.mjs`. It is `aurenneCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'aurenne'`), at `ships.html?ship=aurcog`.
 
@@ -23985,6 +24140,37 @@ So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where
 ### Needs eyes
 - Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
 - `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
+## v80 — Session 1083 — Card F6: the Gatelands' guild halls built from the kit on the new look (#352 C)
+(Numbered 1082 when first pushed. The bodies builder's auto/bodies holds a Session 1082 too, so this one is 1083.)
+The backlog's next F6 item after the houses is the town's large buildings from the kit: the inn, the church, the guild hall and the keep. The guild hall is the one already drawn for it: Michael's C on #352 (a hall of its own, open to the roof, with a gallery to the dormitory), built in the prototype in Session 964 and copied into `PKIT.gl.PLANS.guildhall` with the rest in Session 1037. This session puts it in the towns. The church waits for its own session (the kit's temple is a small god's temple, 9.6 by 6 m, smaller than a town church), and so do the inn and the keep, which have no exterior plan in the kit yet.
+
+On `?look=new`, a Gatelander town's or city's Fighters' and Mages' guild halls are now the kit's hall, in red or in blue, with its own name panel (*FIGHTERS’ GUILD*, *MAGES’ GUILD*) and banner (`genSettlement`, `83-world-generator.js`):
+- **The lot:** the old builder's guild lot was 13 by 11 m. It takes the plan's 14.4 by 9 m. The front stays on the street line: the centre moves toward the street by the 1 m the depth gives up, so the door, the id and the steward stay where they were.
+- **Lots near a street:** a guild lot often stood nearer a road or a street than a widened house may. So the hall is taken when it comes no nearer to any road or street than the old lot did, and stays clear of every other lot. If the 0.7 m the hall grows at each end brings it near a street beside it, it slides along its front by up to 0.7 m (`kit.slide`), and the door moves with it. Dunmore's Fighters' hall needed the full slide.
+- **Built:** the hall goes through the same `kitHouse` as the houses (`kitHall`, its lit windows keyed by the town and the lot). It merges into the town's draws, takes a box-and-prism far copy, and draws its smoke from the hall's hearth stack. The door you use is the great door, 2 m off the centre.
+- **What it replaces:** the old hall's two poles with cloth and device, and its hanging trade sign, are not built for a kit hall. The kit's name panel and banner take their place.
+- **Painted once:** the name panels and banners were a fresh canvas each build, as the shop signs were before Session 1074. They are now kept by their words or colour in `38-kit.js`, as the signs are. `PKIT.panelsMade()` counts them, and `signsMade()` still counts only the signs.
+
+The room inside is laid out from the lot's size, as a widened house's is. A guild hall's room goes from 23 by 22 to 26 by 20 in the furniture kit's unit.
+
+### Verified (headless Chromium)
+- **`tests/kittown`: 13 of 13 pass.** Two checks are new.
+  - **Guild halls:** both of Dunmore's guild halls are the kit's hall. They are measured with the houses:
+    - Their four walls stand 0.15 m inside their solids.
+    - The ray at the door meets the painted leaf 1.82 m from a point 1.5 m out (the houses read 1.77 to 1.79).
+  - **Painted once:** the two halls paint 4 panels and banners, and building the town again paints none.
+  - **Totals:** Dunmore's kit buildings are 52, at 40 draws (35 before) and 285,268 triangles. The far copy is 936 triangles.
+  - **The picture:** `docs/prototypes/kit-guildhall-ingame.png`, the Fighters' hall from its street.
+- **`tests/kitlots`: all pass.** Two towns, a port, two villages and a city of the Gatelands.
+  - **Guild halls:** the check that guild halls keep their size is now a check that all 6 guild halls (Dunmore's, Vieux Marché's and Coeur de Vie's) are the kit's 14.4 by 9 m. Each slid 0 or 0.7 m and is clear of every other lot by 0.9 m or more.
+  - **Ids and doors:** every id and door is as on the old look, the doors allowing for the slide.
+- **On the new look (`--look=new`):** `guildfurn`, `intreach`, `scalerooms`, `windows` and `cloakguild` pass. `kit`, `kitlots` and `kittown` each boot the old look themselves as a control, and `--look=new` overrides that boot, so under the flag their old-look checks fail (`{"look":"new"}`). Run as they are meant to be, without the flag, all three pass.
+- `parsecheck.py` is clean.
+### Needs eyes
+- **The picture first:** a 9 m deep stone hall in a street of 4 to 6 m townhouses (#408 is still open).
+- **The room inside:** it is a little wider and shallower than before (26 by 20 against 23 by 22 in the kit's unit). Where you appear against the great door, 2 m off the centre, is for a playtest.
+- **The wall lantern by the door** is still the old one, hung 1.05 m to the side of the door's centre. The great door is 1.6 m wide, so it sits 0.25 m clear of the reveal.
+- **Still the old builder's:** the churches, inns and keeps.
 ## v80 — Session 1085 — The old's walking staff (L1, prototype only)
 Session 1082 made the old and owed them a stick: OG-001's extras strip has an elder's carved staff, OG-042 gives the Old Blood elder "a tall carved staff", and OG-065's Síle carries a carved knotwork staff. This session builds that staff in the builder from those sheets, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
 
