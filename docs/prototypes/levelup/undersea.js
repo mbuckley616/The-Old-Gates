@@ -101,3 +101,56 @@ export function seaMats() {
   M.dark = new THREE.MeshStandardMaterial({ color: new THREE.Color(.03, .04, .04), roughness: 1 });
   return (SM = M);
 }
+
+// ── the wrecks (Session 1101; OG-125's "wrecks at three depths, a reef-grown hull, two wrecks lying together from one fight") ──
+// A slope of sand from 6 m deep to 28 m at 80 m out (z 0 to -80), the island hulls of ships.js laid on it with their sails and running
+// rigging gone, their timbers grown with weed by depth:
+//   - the storm wreck, 9 to 10 m down: a Gatelands sloop thrown on her starboard side across a reef of rocks, her mast along the sand;
+//   - the fight, 16 to 17 m down: a Gatelands cog heeled over and settled, and the Mark cutter that rammed her, still in her side, bow down;
+//   - the deep wreck, 25 to 27 m down: an Aurenne galleon sitting upright in the sand to her bilge, the most grown of the four;
+//   - about each, her cargo strewn on the sand (crates, barrels, amphorae for Aurenne's), and a sea chest by her stern (what is in it is the
+//     systems builder's; whose they were, the quest writer's).
+// -> { group, tris, draws, floor(x, z), wrecks: [{ name, depth, box: [x0, y0, z0, x1, y1, z1], floorUnder, keel, heel }], cargo: [{ x, y, z, floor }],
+//   chests: [{ x, y, z, floor }], gone: (meshes of sail and rope left off), pair (do the fight's two hulls meet) }
+import { gatelandsSloop, gatelandsCog, markCutter, aurenneGalleon } from './ships.js';
+function encrust(m, k) { const c = m.clone(); c.onBeforeCompile = s => { s.vertexShader = 'varying vec3 vNe;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vNe = normalize(mat3(modelMatrix) * normal);');
+    s.fragmentShader = 'varying vec3 vNe;\n' + s.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.14, .22, .10), ${k.toFixed(2)} * smoothstep(-.2, .7, vNe.y));\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.20, .24, .18), ${(k * .5).toFixed(2)});`); };
+  c.customProgramCacheKey = () => 'encrust' + k; return c; }
+export function wreckSite(o = {}) {
+  const r = o.r || stream('undersea:wrecks'), B = new Map(), put = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k); if (!x.attributes.uv) worldUV(x, .5); (B.get(key) || B.set(key, []).get(key)).push(x); return x; };
+  const floor = (x, z) => { const t = Math.min(1, Math.max(0, -z / 80)); return -(6 + 22 * t) + fbm(x / 16, z / 16, 3) * 1.4 + Math.sin(x * .8 + z * .4) * .04; };
+  { const N = 130, g = new THREE.PlaneGeometry(110, 104, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 44; P.setXYZ(i, x, floor(x, z), z); } g.computeVertexNormals(); worldUV(g, .25); put('sand', g); }
+  const group = new THREE.Group(), wrecks = [], cargo = [], chests = [], gone = []; let tris = 0, draws = 0;
+  // lay a hull: heel (about her length), pitch, turn; sunk so her lowest point is `sink` under the sand at her middle; weed by depth
+  const lay = (name, S, { x, z, heel = 0, pitch = 0, ry = 0, sink = .5, weed = .5 }) => { const g = S.group;
+    for (const m of [...g.children]) if (/sail|rope/.test(m.name)) { g.remove(m); gone.push(name + ':' + m.name); }
+    for (const m of g.children) m.material = encrust(m.material, weed);
+    // her keel follows the slope along her heading; then she settles by her planking (not her spars): the lowest point of her hull, against
+    // the sand under that point, lies `sink` into it
+    const L2 = S.L / 2, slope = (floor(x + Math.sin(ry) * L2, z + Math.cos(ry) * L2) - floor(x - Math.sin(ry) * L2, z - Math.cos(ry) * L2)) / S.L;
+    g.rotation.set(pitch - Math.atan(slope), ry, heel, 'YXZ'); g.position.set(x, 0, z); g.updateMatrixWorld(true); const fy = floor(x, z), v = new THREE.Vector3(); let low = Infinity;
+    for (const m of g.children) { if (/spar|iron|rope|sail/.test(m.name)) continue; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 3) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); low = Math.min(low, v.y - floor(v.x, v.z)); } }
+    g.position.y = -sink - low; g.updateMatrixWorld(true);
+    let rest = Infinity; for (const m of g.children) { if (/spar|iron|rope|sail/.test(m.name)) continue; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 3) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); rest = Math.min(rest, v.y - floor(v.x, v.z)); } }
+    const b2 = new THREE.Box3().setFromObject(g); group.add(g); g.traverse(m => { if (m.isMesh) { tris += m.geometry.attributes.position.count / 3; draws++; } });
+    const w = { name, depth: +(-fy).toFixed(2), box: [b2.min.x, b2.min.y, b2.min.z, b2.max.x, b2.max.y, b2.max.z].map(v => +v.toFixed(2)), floorUnder: +fy.toFixed(2), keel: +b2.min.y.toFixed(2), heel: +(heel * 180 / Math.PI).toFixed(1), sink, rest: +rest.toFixed(3), slope: +(Math.atan(slope) * 180 / Math.PI).toFixed(1) }; wrecks.push(w); return w; };
+  // her cargo about her and her chest by her stern
+  const strew = (w, n, amph, stern) => { const [x0, , z0, x1, , z1] = w.box, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    for (let k = 0; k < n; k++) { const a = r() * Math.PI * 2, d = 3 + r() * 6, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d, fy = floor(x, z), kind = amph && k % 2 ? 2 : k % 3 ? 0 : 1;
+      if (kind === 0) { const s = .5 + r() * .3, g = new THREE.BoxGeometry(s, s * .8, s); g.rotateY(r() * 3); g.rotateZ((r() - .5) * .4); g.translate(x, fy + s * .35, z); worldUV(g, .6); put('crate', g); cargo.push({ x, y: fy + s * .35 - s * .4, z, floor: fy }); }
+      else if (kind === 1) { const g = new THREE.CylinderGeometry(.28, .25, .75, 12); g.rotateZ(Math.PI / 2); g.rotateY(r() * 3); g.translate(x, fy + .22, z); worldUV(g, .6); put('crate', g); cargo.push({ x, y: fy + .22 - .28, z, floor: fy }); }
+      else { const pts = [[.02, 0], [.14, .1], [.2, .35], [.18, .6], [.07, .75], [.06, .85], [.09, .88]].map(([u, v]) => new THREE.Vector2(u, v)), g = new THREE.LatheGeometry(pts, 10); g.rotateZ(Math.PI / 2 * (.7 + r() * .3)); g.rotateY(r() * 3); g.translate(x, fy + .14, z); put('clay', g); cargo.push({ x, y: fy + .14 - .2, z, floor: fy }); } }
+    const [sx, sz] = stern, fy = floor(sx, sz), g = new THREE.BoxGeometry(.9, .5, .55); g.rotateY(r() * 3); g.rotateZ(.25); g.translate(sx, fy + .2, sz); worldUV(g, .6); put('chest', g); chests.push({ x: sx, y: fy + .2 - .3, z: sz, floor: fy }); };
+  // the storm wreck on her side across the reef
+  { for (let k = 0; k < 16; k++) { const x = 3 + r() * 9, z = -9 - r() * 9, s = .6 + r() * 1.3, g = new THREE.IcosahedronGeometry(s, 1), P = g.attributes.position, ph = r() * 9; for (let i = 0; i < P.count; i++) { const a = P.getX(i), b = P.getY(i), c = P.getZ(i), n = 1 + .22 * Math.sin(a * 3.1 + ph) * Math.cos(c * 2.7 + b * 1.9); P.setXYZ(i, a * n, b * n * .6, c * n); } g.computeVertexNormals(); worldUV(g, .5); g.translate(x, floor(x, z) + s * .1, z); put('reef', g); }
+    const w = lay('storm wreck (Gatelands sloop)', gatelandsSloop({}, stream('wreck:sloop')), { x: 7, z: -14, heel: -1.25, pitch: .05, ry: .7, sink: .3, weed: .35 }); strew(w, 8, false, [3.2, -17.5]); }
+  // the fight: the cog heeled and settled, the cutter's bow in her side
+  { const w1 = lay('the fight (Gatelands cog)', gatelandsCog({}, stream('wreck:cog')), { x: -6, z: -42, heel: .45, ry: -.25, sink: .7, weed: .55 });
+    const w2 = lay('the fight (Mark cutter)', markCutter({}, stream('wreck:cutter')), { x: 4.6, z: -38.5, heel: -.22, pitch: .16, ry: -1.62, sink: .8, weed: .55 }); strew(w1, 10, false, [-9.5, -49]); strew(w2, 6, false, [11.5, -37]); }
+  // the deep wreck: upright, sunk to her bilge, the most grown
+  { const w = lay('the deep wreck (Aurenne galleon)', aurenneGalleon({}, stream('wreck:galleon')), { x: 1, z: -74, heel: .1, ry: .45, sink: 1.3, weed: .8 }); strew(w, 12, true, [-6, -80]); }
+  const M = { sand: mat('plaster', { ns: 1.6, color: 0xd2c29a, rough: 1 }), reef: encrust(mat('rock', { ns: 1.2, color: 0x8a8478 }), .6), crate: encrust(mat('wood', { ns: .9, color: 0x7a5e40 }), .5), clay: encrust(new THREE.MeshStandardMaterial({ color: new THREE.Color(.62, .36, .22), roughness: .8 }), .4), chest: encrust(mat('wood', { ns: .9, color: 0x5e4630 }), .45) };
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'sand'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
+  const [a, b] = wrecks.slice(1, 3).map(w => new THREE.Box3(new THREE.Vector3(...w.box.slice(0, 3)), new THREE.Vector3(...w.box.slice(3))));
+  return { group, tris: Math.round(tris), draws, floor, wrecks, cargo, chests, gone, pair: a.intersectsBox(b) };
+}

@@ -33,7 +33,22 @@ const K = R.kelp; check(`${K.length} kelp stalks, every one rooted on the floor 
 check(`the rowing boat lies on the sand at ${-R.boat.y} m, 0.12 m into it (the floor at ${R.boatFloor})`, Math.abs(R.boat.low - (R.boatFloor - .12)) < .05, [R.boat, R.boatFloor]);
 const rays = R.rays; check(`the alcove (${R.alcove.w} by ${R.alcove.h} m, its sill ${-R.alcove.y0} m under) is open to a swimmer: six rays meet ${[...new Set(rays.map(r => r.what))].join(', ')} at z ${Math.min(...rays.map(r => r.z))} to ${Math.max(...rays.map(r => r.z))}`, rays.every(r => r.what && r.z > .8) && R.alcove.w >= 1.0 && R.alcove.h >= 1.5, rays);
 check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close();
-for (const v of ['swim', 'arches', 'alcove', 'boat', 'above', 'swim&water=clear', 'swim&water=mark']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+// Session 1101: the wrecks at three depths (wreckSite): the same twice and in budget; the storm wreck at 8 to 12 m, the fight at 14 to 20 m,
+// the deep wreck at 23 to 30 m; each hull settled by its planking into the sand (its lowest point 0.2 to 1.5 m under the sand below it,
+// none floating); sails and running rigging gone from all four; the fight's two hulls meet; the cargo and the chests lie on the sand.
+{ const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e3 = []; pg.on('pageerror', e => e3.push(String(e)));
+  await pg.goto(`http://localhost:${port}/undersea.html?still&w=320&h=200&place=wrecks&view=wide`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const W = await pg.evaluate(async () => { const K = await import('./undersea.js'); const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };
+    const a = K.wreckSite(), b = K.wreckSite(); return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), wrecks: a.wrecks, gone: a.gone, pair: a.pair, cargo: a.cargo.map(c => +(c.y - c.floor).toFixed(2)), chests: a.chests.map(c => +(c.y - c.floor).toFixed(2)) }; });
+  const by = W.wrecks.map(w => `${w.name} at ${w.depth} m`);
+  check(`the wrecks build the same twice and in budget: ${W.tris.toLocaleString()} triangles in ${W.draws} draws, four hulls`, W.same && W.wrecks.length === 4 && W.tris < 260000 && W.draws <= 90, [W.tris, W.draws, W.same]);
+  const [st, c1, c2, dp] = W.wrecks; check(`three depths: ${by.join(', ')}`, st.depth >= 8 && st.depth <= 12 && c1.depth >= 14 && c1.depth <= 20 && c2.depth >= 14 && c2.depth <= 20 && dp.depth >= 23 && dp.depth <= 30, W.wrecks.map(w => [w.name, w.depth]));
+  check(`each hull settled by its planking into the sand: ${W.wrecks.map(w => `${w.name.split(' (')[1].replace(')', '')} ${-w.rest} m in, keel along a slope of ${w.slope}°`).join('; ')}`, W.wrecks.every(w => w.rest <= -.2 && w.rest >= -1.5), W.wrecks.map(w => [w.name, w.rest, w.sink]));
+  check(`sails and running rigging gone: ${W.gone.length} meshes left off (${[...new Set(W.gone.map(g => g.split(':')[1]))].join(', ')}) from all four`, W.wrecks.every(w => W.gone.some(g => g.startsWith(w.name))), W.gone);
+  check(`the fight: the cutter's bow is in the cog's side (their hulls meet)`, W.pair);
+  check(`the cargo (${W.cargo.length}) and the chests (${W.chests.length}) lie on the sand, each within 0.25 m of it`, W.cargo.length >= 30 && W.cargo.every(d => Math.abs(d) < .25) && W.chests.length === 4 && W.chests.every(d => Math.abs(d) < .25), [W.cargo, W.chests]);
+  check('the wrecks page: no page errors', e3.length === 0, e3.slice(0, 2)); await pg.close(); }
+for (const v of ['swim', 'arches', 'alcove', 'boat', 'above', 'swim&water=clear', 'swim&water=mark', 'pair&place=wrecks', 'storm&place=wrecks', 'deep&place=wrecks', 'wide&place=wrecks']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/undersea.html?still&w=320&h=200&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
-  const st = await pg.evaluate(() => window.__stats); check(`undersea.html?view=${v} renders: ${st.tris.toLocaleString()} triangles, ${st.kelp} kelp, no page errors`, st.tris > 0 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
+  const st = await pg.evaluate(() => window.__stats); check(`undersea.html?view=${v} renders: ${st.tris.toLocaleString()} triangles, ${st.kelp} kelp, ${st.wrecks} wrecks, no page errors`, st.tris > 0 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);
