@@ -1758,6 +1758,58 @@ const giver=`${lord.title} ${lord.name}`;
   // S408 (Michael's B on #96) — a blow begun within DUEL_CHECK s of her kneeling is held: it lands on nothing. A blow begun later is murder
   function duelCheck(e){if(!(_offenceS<(DUEL.yieldS||0)+DUEL_CHECK))return false;e.hp=DUEL.hp0;e.dead=false;
     if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}showMsg('You check the blow.','#e8d8a0');return true;}
+  // S1112 — the night watch on the Spire of Caer Slige (the approved draft *The Spire Held*, docs/quest_drafts.md, Michael 14 Oct;
+  // backlog A). The quest is the League's, outside the nine services: spireGive(seat) gives it (the writer's *The spire?* topic
+  // calls it). With it in 'wait', the first time you stand on the spire's roof between 20h and 1h the watch begins. Three waves of
+  // the seat's cull target form on the roof, 15 minutes in and then two hours apart (2 or 3, then 2, then 3). On the roof at 6h with
+  // every wave dead, the spire is held for good (league.spire='held', spireDay). Down the hatch, ten seconds off the roof, dead, or
+  // the seat occupied, and the watch is back to 'wait' (its foes gone); it can be tried again the next night. Wait is refused
+  // while on watch (WORLD.onWatch). The narration is the draft's §4, word for word; its topics, the night sergeant, Rowe's
+  // morning and the rumours are the quest writer's build.
+  const SPIRE={q:null,foes:[],offS:0,began:false};
+  const SPIRE_WAVES=[15,135,255],SPIRE_OFF_S=10,SPIRE_SQ=3.7;
+  const SPIRE_LINES={begin:'The watch on the spire: dark to first light.',
+    waves:['Something gathers in the light on the parapet and drops to the roof on four legs.','The new cuts brighten. Two more shapes come out of them.','The light pours. Whatever it makes, it makes faster now.'],
+    cleared:['The light thins.','The light thins.','The cuts are dim. The sky to the east is not.'],
+    left:'You leave the roof. Behind you, the light comes back into the cuts.',
+    held:'First light. The new cuts are only cuts now, pale and dry, and the stone under your hand is cold. The spire is held.',heldLog:'The Spire of Caer Slige is held.',wait:'Not on watch.'};
+  const CULL_BY_BIOME={tundra:'Snow Wolf',fen:'Bog Crawler',swamp:'Bog Crawler',dunes:'Sand Scorpion',wasteland:'Ash Hound',moor:'Kobold',forest:'Wolf',autumn:'Boar'};
+  function spireQuest(){return qActive().find(q=>q.kind==='spire')||null;}
+  function spireRoof(){const sp=anchoredPlaces().spire;if(!sp)return null;const S_=SETTLE.get(sp.id);return S_&&S_.roof?S_.roof:null;}
+  function spireOnRoof(){if(typeof isInterior==='function'&&isInterior())return false;const r=spireRoof();return !!r&&Math.abs(jumpY-r.y)<1.2&&Math.abs(px-r.x)<=SPIRE_SQ&&Math.abs(pz-r.z)<=SPIRE_SQ;}
+  function spireWatchHours(){const h=hourNow();return h>=20||h<1;}
+  function onWatch(){const q=spireQuest();return !!q&&q.data.state==='watch';}
+  // the named action that gives the quest (the record is the draft's code note)
+  function spireGive(site){const L=fstate().league,F=FACTIONS.league;if(!site||F.seat!==site.id||L.rank<3||L.spire==='held'||spireQuest())return null;
+    if(TS(site).flags.occupied!=null)return null;const sp=anchoredPlaces().spire;
+    const q={id:'fq_league_spire',kind:'spire',giver:F.name,giverSite:site.id,title:"The Captains' League: The Spire Held",objective:'Hold the Spire of Caer Slige from dark to first light',data:{state:'wait',wave:0,began:null,x:sp?sp.x:site.x,z:sp?sp.z:site.z},reward:260+level*20,faction:'league'};
+    const old=qFind(q.id);if(old){const k=QJ().indexOf(old);if(k>=0)QJ().splice(k,1);}qAdd(q);L.spire='given';return q;}
+  function spireClearFoes(){SPIRE.foes.forEach(e=>{if(e.dead)return;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);});SPIRE.foes=[];}
+  function spireReset(q,quiet){const d=q.data;d.state='wait';d.wave=0;d.began=null;d.end=null;d.cleared=0;spireClearFoes();SPIRE.offS=0;if(!quiet)showMsg(SPIRE_LINES.left,'#c8b880');}
+  function spireBegin(q){const d=q.data,now=worldState.gameTimeAbsMinutes||0,day0=Math.floor(now/1440)*1440;
+    d.state='watch';d.began=now;d.end=(hourNow()>=20?day0+1440:day0)+360;d.wave=0;d.cleared=0;SPIRE.offS=0;SPIRE.foes=[];addLog('🌙',SPIRE_LINES.begin);}
+  function spireWave(q,n){const r=spireRoof();if(!r)return;const d=q.data,rnd=seededRng('spire',q.id+':'+d.began+':'+n);
+    const seat=siteAnywhere(q.giverSite),t=CULL_BY_BIOME[seat?lairBiome(seat):'']||'Wolf';const cnt=n===0?2+(rnd()<.5?1:0):n===1?2:3;
+    for(let i=0;i<cnt;i++){const a=rnd()*Math.PI*2+i*Math.PI*2/cnt,x=r.x+Math.cos(a)*1.8,z=r.z+Math.sin(a)*1.8;
+      const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,x,z,t,null)),q.id+':'+d.began+':w'+n+':'+i);e.x=x;e.z=z;e._questTag=q.id;e._spire=true;e.homeX=r.x;e.homeZ=r.z;e.alert=true;
+      if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);SPIRE.foes.push(e);}
+    d.wave=n+1;addLog('🌙',SPIRE_LINES.waves[n]);}
+  function spireHeld(q){const L=fstate().league;q.data.state='held';L.spire='held';L.spireDay=dayNow();SPIRE.foes=[];qComplete(q);showMsg(SPIRE_LINES.held,'#e8d8a0');addLog('🏛',SPIRE_LINES.heldLog);}
+  function tickSpire(dt){
+    const q=spireQuest();if(SPIRE.q&&SPIRE.q!==q){spireClearFoes();SPIRE.q=null;}if(!q)return;SPIRE.q=q;const d=q.data;
+    if(d.state!=='wait'&&d.state!=='watch')return;
+    if(d.state==='wait'&&Math.hypot(px-d.x,pz-d.z)>180)return;
+    const seat=siteAnywhere(q.giverSite),occ=!!(seat&&TS(seat).flags.occupied!=null);
+    if(d.state==='wait'){if(!occ&&spireOnRoof()&&spireWatchHours())spireBegin(q);return;}
+    if(SPIRE.foes.length===0&&d.wave>0){spireReset(q,true);return;} /* a watch left by a load is laid again: its foes were never saved */
+    if(occ||PHP<=0||dead){spireReset(q,true);return;}
+    if(spireOnRoof())SPIRE.offS=0;else{SPIRE.offS+=dt;if(SPIRE.offS>SPIRE_OFF_S){spireReset(q);return;}}
+    const now=worldState.gameTimeAbsMinutes||0;
+    while(d.wave<3&&now>=d.began+SPIRE_WAVES[d.wave])spireWave(q,d.wave);
+    const alive=SPIRE.foes.filter(e=>!e.dead&&e.hp>0).length;
+    if(d.wave>(d.cleared||0)&&alive===0){addLog('🌙',SPIRE_LINES.cleared[d.wave-1]);d.cleared=d.wave;}
+    if(d.wave===3&&alive===0&&now>=d.end&&spireOnRoof())spireHeld(q);
+  }
   // the ring holds you at 1 health: going down in it is a yield, not a death
   function duelDown(){const q=DUEL.q;if(!q||q.data.state!=='fight'||Math.hypot(px-q.data.x,pz-q.data.z)>DUEL_R+2)return false;duelLost(q,'down');return true;}
   // v80 S133 — a guild hunt's ground on the compass until the tally is met

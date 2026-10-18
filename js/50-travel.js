@@ -846,6 +846,8 @@ function _markZoneSpawned(zoneId){
 function _canWait(){
   // Block in dungeons.
   if(lid !== 'overworld') return {ok:false, reason:'You cannot pass time in a dungeon.'};
+  // S1112 — on watch on the spire (the draft's §4 line); asked before the enemies, which stand on the roof with you
+  if(typeof WORLD!=='undefined'&&WORLD.onWatch&&WORLD.onWatch()) return {ok:false, reason:'Not on watch.'};
   // Block during combat — any non-dead enemy aggroed within 20m.
   const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && Math.hypot(px-e.x,pz-e.z)<20);
   if(inCombat) return {ok:false, reason:'You cannot pass time while enemies are near.'};

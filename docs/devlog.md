@@ -25298,3 +25298,43 @@ terms are older than this session). Left as it was; the pounce is meant to be th
 ### Needs eyes
 - Late in the game a mimic on an early floor bites far softer than it did (15 against 44 before armour at level 30). That is #373's
   intent; whether a mimic should stay a shock wherever it hides is a playtest.
+
+## v80 — Session 1112 — The Spire Held: the night watch on the roof
+Michael approved the quest writer's *The Spire Held* on 14 Oct (`docs/quest_drafts.md`). Its words wait on a rule the game lacked, a night
+watch on the spire's roof, which the writer filed for this builder (backlog A on auto/quests-build). This session builds the rule to the
+draft's *Shape* and *What in the code would carry it*, in `87-world-quests.js` beside the duel:
+- **`spireGive(site)`**, the named action that gives the quest: the League's seat, rank 3, the spire not held, the seat not occupied, not
+  already given. It adds the draft's record (`fq_league_spire`, kind `spire`, 260 + 20 × level gold, outside the nine services) with its
+  `data` at the spire, and sets `league.spire='given'`. The writer's *The spire?* topic calls it.
+- **`tickSpire(dt)`**, in the world's tick after `tickDuel`. With the quest in `'wait'`, the first time you stand on the spire's roof between
+  20h and 1h the watch begins (`'watch'`, `began` and `end`, the next 6h, in game minutes). On the roof means `jumpY` within 1.2 of `S.roof.y`
+  and inside the roof platform's square (±3.7). Three waves of the seat's cull target (`lairBiome` of the seat, the cull's own table, now
+  `CULL_BY_BIOME`) form on the roof 1.8 m from its centre 15 minutes in, then 2 h 15 and 4 h 15 in: 2 or 3 (seeded by the quest and the
+  night), then 2, then 3, as the draft's lines count them. Each is keyed (`<quest>:<began>:w<n>:<i>`) and tagged to the quest. On the roof at
+  6h with every wave dead, the spire is held: `league.spire='held'`, `league.spireDay`, the quest complete for the writer's turn-in.
+- **The resets:** more than ten seconds off the roof (the hatch included, since the world's tick does not run in the top room), a dead
+  player, or the seat occupied put the quest back to `'wait'` and take the watch's living foes out of the world. A watch saved mid-night
+  comes back as `'wait'` once a wave had formed, since foes are not saved. It can be tried again the next night.
+- **Wait** (`_canWait`, `50-travel.js`) is refused while on watch with the draft's *Not on watch.*, asked before the enemies-near check,
+  since the wolves are on the roof with you.
+- **The narration** is the draft's §4, word for word (`SPIRE_LINES`): the begin, the three waves and their clearing in the log, leaving
+  the roof, first light. The rest of the draft's words (the brief, the night sergeant, the stone, Rowe's morning, the turn-in, the
+  rumours) are the quest writer's build; the light in the cuts is the look builder's.
+
+The draft said to check first whether a world foe can stand on a roof platform. It can: `tickZoneEnemies` places a foe at
+`activeTerrainH`, which reads the highest platform under it, and the tower's ground ring keeps a roof foe inside about 2.5 m of the centre.
+So the waves form on the roof, and the draft's hatch fallback line is not needed.
+### Verified (headless Chromium)
+- **`spirewatch`** (new) 1/1, 18 checks, at the spire of this seed (roof at 48.6): given at rank 3, not at 2, not twice; no watch at 14h; at
+  21h the watch begins with no foe, and Wait answers *Not on watch.*; the waves at 21:15, 23:15 and 1:15 are 3, 2 and 3 of the seat's
+  cull target (Wolf here), standing at the roof's height (0.00 off it after six frames); at 5:59 with all dead the watch still runs; at
+  6h it is held, quest done, `spireDay` today, the log ending with the draft's lines, and Wait no longer refused. Off the roof 9 s the
+  watch runs; at 11 s it ends and no watch foe is left in the world; it begins again at 23h; a dead player and an occupied seat end it.
+- **Neighbours pass:** `duel` (2/2), `restslip`, `dateline`.
+### Needs eyes
+- A night on the roof is ten game hours of real play with Wait refused. The draft chose that; how long it feels at the game's clock rate
+  is the playtest.
+- Three wolves in a 2.5 m pen on a roof with a parapet: whether the fight reads, and whether a wolf's lunge or a shove ever puts you over
+  the parapet (the roof platform ends at the merlons).
+- **Owed:** the quest writer's words (the topic that calls `spireGive`, the sergeant, the stone, Rowe's morning, the turn-in, the rumours);
+  the look builder's light in the cuts.
