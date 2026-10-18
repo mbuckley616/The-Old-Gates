@@ -5,6 +5,15 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 ## Pending
 
 ## Answered
+### The wolf's snap and the troll's stamp: when does the second blow of a two-hit string come? (systems builder, Session 1140) — DECISION #438
+Combat B's move sets (`docs/design/combat.md`) give every family a third move. Session 1140 built the bandit's feint, the page's delayed swing, under your A on #430: one wind-up in four, with the pose held 0.3 s at its top. Two moves are left: the wolf's *lunge and snap* and the troll's *sweep and stamp*. Both are the page's two-hit string. The wolf's lunge already exists (it leaps up to 1.5 m at the bite, S1041). The page does not say when the second blow comes or what it covers, and a player would feel both. Today a roll is untouchable from 0.08 to 0.30 s.
+
+- **A. The second blow 0.45 s after the first, with its own gold glow in its last 0.15 s** *(recommended)*. 0.45 s is the shortest tell any foe has (TELL_MIN), so the second blow reads as a quick tell of its own. One roll cannot cover both blows: you roll the first and then block or roll the second. Each blow does light damage. The wolf's snap is a second bite at its reach with no second leap. The troll's stamp hits all round it out to 1.6 m, so stepping behind a troll after its sweep does not save you. Like the feint, it comes one wind-up in four.
+- **B. The second blow 0.25 s after the first.** One well-timed roll takes both blows, and a block that is held takes both. The string punishes standing still, not a roll that comes too early.
+- **C. Only the snap and the stamp, with no string.** The wolf's third move is its lunge as it is now, and the troll's is a stamp in place of its sweep one blow in four. This is cheaper, but the page's "two-hit string" is dropped.
+
+Michael: **Second blow 0.45 s later, with its own glow**. (2026-10-18, on #438)
+
 ### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
 **Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.
 - **The church** is 8.4 m wide and 27.4 m from the tower's face to the chancel's gable (22.6 m with a nave of two bays). Its lot is about 5 to 7 m on a side.
