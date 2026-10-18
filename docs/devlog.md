@@ -24390,8 +24390,8 @@ OG-125's "sunken settlements: a village, an amphitheatre, temples, a bridge". Th
   - **The walls break:** cut by `cutMesh` at a ragged height in the piece's own frame. Every material over the break goes with the walls, frames, leaves and stacks included.
   - **It settles:** lowered until its lowest point is a set depth into the sand under it, and grown with weed.
   - **The fix:** the first try measured the break against the sand while the piece still stood at y 0, so every wall was over it and only the window frames were left, floating.
-- **Seven cottages:**  on 2 to 4 bays, along a lane from 11 to 15 m down, their fronts to it. Each wall is broken at its own band 0.6 to 2.2 m under the eaves, ragged by 0.6 m along it. The lane runs between low dry-stone walls with gaps in them, with the village well beside it.
-- **The church at the lane's end:**  with its round tower, at 16 m.
+- **Seven cottages:** `glBayPlan('cottage')` on 2 to 4 bays, along a lane from 11 to 15 m down, their fronts to it. Each wall is broken at its own band 0.6 to 2.2 m under the eaves, ragged by 0.6 m along it. The lane runs between low dry-stone walls with gaps in them, with the village well beside it.
+- **The church at the lane's end:** `gatelandsChurch` with its round tower, at 16 m.
   - **The nave and chancel:** roofless, their walls broken at about 3.2 m.
   - **The round tower:** taken out of the church and settled whole on its own. Its cap stands 15.7 m out of the sea, the village's mark from the surface (OG-104's "towers half-sunk at low tide").
   - **Its high cross:** fallen across the lane, its ring beside it.
@@ -24402,7 +24402,7 @@ OG-125's "sunken settlements: a village, an amphitheatre, temples, a bridge". Th
   - **The cottages:** seven, every one roofless (4 or 5 meshes of thatch, pots and dark gone) and broken (274 to 820 triangles over the break), at 11.0 to 14.8 m.
   - **The church:** roofless (8 meshes) and broken (7,916 triangles) at 16 m, its tower whole and its cap 15.74 m over the sea.
   - **The rest:** the arches', the wrecks' and the cave's checks pass as before.
-- **Pictures:** , ,  and . The tower is seen from a boat on the surface.
+- **Pictures:** `undersea-village-lane.jpg`, `-house`, `-church` and `-tower`. The tower is seen from a boat on the surface.
 ### Needs eyes
 - **The broken walls** are cut along the wall slab's own triangles, which are long, so the breaks run in straight slants and points where the gables were, not in courses. A break that follows the stone's courses would read truer.
 - **63 draws** for eight buildings: each keeps its own meshes. In the game a drowned village would merge by material, as the towns do.
