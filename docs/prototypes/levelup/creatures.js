@@ -825,7 +825,7 @@ function stowQuills(C, W, k) {
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
   // a rest's numbers are found once per creature and gait (the sit's pitch, the lie's drop, the tail's lift), while finding them it poses itself
-  if (G.sit && !C.sitFinding) { const R = (C.rests = C.rests || {})[C.gait]; if (R) Object.assign(C, R); else { C.sitFinding = true; sitFind(C); C.sitFinding = false; C.rests[C.gait] = { sitA: C.sitA, sitY: C.sitY, sitT: C.sitT, sitH: C.sitH }; } }
+  if (G.sit && !C.sitFinding) { const R = (C.rests = C.rests || {})[C.gait]; if (R) Object.assign(C, R); else { C.sitFinding = true; sitFind(C); C.sitFinding = false; C.rests[C.gait] = { sitA: C.sitA, sitY: C.sitY, sitT: C.sitT, sitH: C.sitH, sitF: C.sitF }; } }
   for (const b of C.bones) b.quaternion.identity();
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
@@ -912,7 +912,7 @@ function sitFrame(C) {
 // the pitch, found once (before a pose, which it runs itself)
 function sitFind(C) {
   const { B, order, hip, pitchFor } = sitFrame(C);
-  C.sitA = 0; C.sitT = -.06; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1] || GAITS[C.gait].lie && L.at === order[0]).flatMap(L => L.names.slice(0, 2))].map(n => C.bones.indexOf(C.byName[n])));
+  C.sitA = 0; C.sitT = -.06; C.sitF = 0; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1] || GAITS[C.gait].lie && L.at === order[0]).flatMap(L => L.names.slice(0, L.at === order[0] && L.at !== order[order.length - 1] ? 1 : 2))].map(n => C.bones.indexOf(C.byName[n])));
     const M = C.meshes[0], si = M.geometry.attributes.skinIndex, sw = M.geometry.attributes.skinWeight, vs = []; for (let v = 0; v < si.count; v++) { let best = 0, bi = -1; for (let j = 0; j < 4; j++) { const w = sw.getComponent(v, j); if (w > best) { best = w; bi = si.getComponent(v, j); } } if (idx.has(bi)) vs.push(v); }
     const low = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (let k = 0; k < vs.length; k++) { M.getVertexPosition(vs[k], p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
     // lying, the body is lowered level instead (C.sitY, how far), the same halving on the hip's height
@@ -921,7 +921,12 @@ function sitFind(C) {
     // then the tail (Session 1115): lifted from lying level (a little drooped) only as far as its own flesh needs to clear the ground
     if (B.chains.tail) { const ti = new Set(B.chains.tail.map(n => C.bones.indexOf(C.byName[n]))), tv = []; for (let v = 0; v < si.count; v++) if (ti.has(si.getX(v))) tv.push(v);
       const tlow = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (const v of tv) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
-      pose(C, 0); if (tlow() < SIT.haunch) { let lo = -.06, up = 1.4; for (let k = 0; k < 14; k++) { C.sitT = (lo + up) / 2; pose(C, 0); if (tlow() > SIT.haunch) up = C.sitT; else lo = C.sitT; } C.sitT = up; } } }
+      pose(C, 0); if (tlow() < SIT.haunch) { let lo = -.06, up = 1.4; for (let k = 0; k < 14; k++) { C.sitT = (lo + up) / 2; pose(C, 0); if (tlow() > SIT.haunch) up = C.sitT; else lo = C.sitT; } C.sitT = up; } }
+    // lying, the forearm and wrist laid along the ground (Session 1122): raised from the paw's standing height only as far as their own
+    // flesh needs to be 5 mm off the ground (a cat's forearm is thicker than its paw is high)
+    if (lie) { const fL = B.legs.filter(L => L.at === order[0]), fi = new Set(fL.flatMap(L => L.names.slice(1, L.J.length - 2)).map(n => C.bones.indexOf(C.byName[n]))), fv = []; for (let v = 0; v < si.count; v++) if (fi.has(si.getX(v))) fv.push(v);
+      const flow = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (const v of fv) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
+      pose(C, 0); if (flow() < SIT.haunch) { let lo = 0, up = .15 * fL[0].hR; for (let k = 0; k < 14; k++) { C.sitF = (lo + up) / 2; pose(C, 0); if (flow() > SIT.haunch) up = C.sitF; else lo = C.sitF; } C.sitF = up; } } }
 }
 function sitBody(C) {
   const { B, piv } = sitFrame(C), sp = C.byName.spine0;
@@ -950,10 +955,10 @@ function sitLeg(C, L) {
 function lieLeg(C, L) {
   const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
   L.bones[0].position.copy(L.restLocal);
-  const F0 = L.rest[m], ey = L.rest[m - 1].y + SIT.hock * L.hR, dy = root.y - ey, L0 = L.lens[0], err = Math.max(0, dy - L0);
+  const F0 = L.rest[m], lift = C.sitF || 0, ey = L.rest[m - 1].y + lift + SIT.hock * L.hR, dy = root.y - ey, L0 = L.lens[0], err = Math.max(0, dy - L0);
   const elbow = V(F0.x, ey, root.z - Math.sqrt(Math.max(0, L0 * L0 - dy * dy))), Pp = [root, elbow]; let at = elbow, e2 = 0;
-  // the wrist and the paw at the paw's standing height, the toes' tip on the ground
-  for (let k = 1; k < m; k++) { const y = k === m - 1 ? F0.y : L.rest[m - 1].y, len = L.lens[k], fall = Math.abs(y - at.y); e2 = Math.max(e2, fall - len); const dz = Math.sqrt(Math.max(0, len * len - fall * fall)); at = V(F0.x, y, at.z + dz); Pp.push(at); }
+  // the wrist and the paw at the paw's standing height (raised by C.sitF where their flesh needs it), the toes' tip on the ground
+  for (let k = 1; k < m; k++) { const y = k === m - 1 ? F0.y : L.rest[m - 1].y + lift, len = L.lens[k], fall = Math.abs(y - at.y); e2 = Math.max(e2, fall - len); const dz = Math.sqrt(Math.max(0, len * len - fall * fall)); at = V(F0.x, y, at.z + dz); Pp.push(at); }
   let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
   return Math.max(err, e2);
 }
@@ -983,7 +988,7 @@ function solveLeg(C, L, T, fold) {
 // ── the plans. Each is its source in the concept art, a palette, the gaits it has, and its parts ──
 // Tones: coat, saddle and belly (counter-shading), dark (nose, claws, pads), hoof, horn, skin (bare), pale, membrane.
 export const PLANS = {
-  ironwolf: { name: 'Ironwolf', src: 'OG-084, OG-031 (Stonefang Wolf)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit'],
+  ironwolf: { name: 'Ironwolf', src: 'OG-084, OG-031 (Stonefang Wolf)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'],
     palette: { coat: [.44, .42, .4], saddle: [.16, .15, .14], belly: [.78, .75, .69], dark: [.06, .05, .05], horn: [.8, .76, .7] },
     fur: { len: .035, layers: 9, sx: 260 },
     parts: [
@@ -1229,7 +1234,7 @@ PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 
 const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, ...o, parts: o.parts || base.parts });
 Object.assign(PLANS, {
   wolf: re(PLANS.ironwolf, { name: 'Grey wolf', src: 'OG-084 (all islands: wolf)', scale: .92, palette: { coat: [.5, .45, .38], saddle: [.24, .21, .18], belly: [.84, .8, .72], dark: [.06, .05, .05], horn: [.8, .76, .7] }, fur: { len: .032, layers: 9, sx: 260 } }),
-  redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit'], wag: .06, speedK: 1.1,
+  redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'], wag: .06, speedK: 1.1,
     palette: { coat: [.72, .34, .12], saddle: [.55, .24, .08], belly: [.95, .92, .86], dark: [.08, .05, .04], pale: [.97, .95, .9] },
     fur: { len: .028, layers: 8, sx: 320 },
     parts: [
@@ -1390,7 +1395,7 @@ Object.assign(PLANS, {
       ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
       ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
     ] },
-  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit'], wag: .1, speedK: 1, neckNod: .02,
+  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit', 'lie'], wag: .1, speedK: 1, neckNod: .02,
     palette: { coat: [.5, .42, .32], saddle: [.24, .19, .14], belly: [.84, .78, .66], dark: [.06, .05, .04], pale: [.9, .86, .78] },
     pattern: { kind: 'stripes', period: .07, tone: 'saddle' }, fur: { len: .022, layers: 8, sx: 300 },
     parts: [

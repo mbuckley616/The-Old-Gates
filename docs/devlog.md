@@ -24261,3 +24261,44 @@ The first try left the fore toes' tips 2.3 cm up, because the drop from the elbo
 - **The head is held low and forward.** A hound lying watchful lifts its head. The neck could take some of the lowering as the sit's takes the pitch.
 - **The lie on the other canids** is one word in their gaits, as Session 1115 did for the sit, with its check already general.
 - **Owed:** the hound beside Garrick's chair in one picture (people and creatures on one stage), and both in the game after F4.
+
+## v80 — Session 1122 — The wolves, foxes and wildcats lie down (L3, prototype only)
+Session 1117 gave the lie to the wolfhound alone and said the other canids needed only one word each in their gaits. That is true for the wolves and the Thornrunner. It was not true for the foxes and the cats. This session gives `'lie'` to the Ironwolf, the red fox and the Hollowcat, and so to all eleven plans that sit, and fixes what failed on the small ones. It touches only `creatures.js` and `creatures.check.mjs`.
+
+What went wrong at first:
+- **The foxes and cats stopped 2.5 to 3 cm off the ground.** The search that lowers the body counted the forelegs' first two bones. That is the upper arm and the forearm. `lieLeg` lays the forearm at a fixed height along the ground, so its flesh reached 5 mm before the body did, and the search stopped there.
+- **The cats' forefeet missed by 1.1 to 1.4 cm.** Their shoulders stayed higher than the upper arm can reach down from, and `lieLeg` reported the gap.
+
+The fix:
+- **The drop's search counts only the upper arm** of a foreleg. On every plan the hind shins now set the drop, as they do on the hound.
+- **A third small search, like the tail's (`C.sitF`).** With the body down, the cats' forearms and wrists went 3 to 6 mm into the ground: a cat's forearm is thicker than its paw is high. So the laid forearm, wrist and paw are raised from the paw's standing height only as far as their own flesh needs to be 5 mm off the ground. The lift is cached with the other rest numbers, per gait.
+- **The toes after the lift.** On the cats the toes cannot quite reach the ground from the raised paw. Their tips stay 2 to 4 mm up, and the foot check reports it.
+- **The check's forefeet bound.** "More than 5 cm ahead of where it stands" was the hound's. It is now a twentieth of the standing withers.
+
+The hound's numbers are unchanged: its forelegs never limited the drop.
+
+### Verified (headless Chromium)
+- **Every plan's lie** (withers standing to lying; forefeet ahead; the head's height):
+
+  | Plan | Withers | Forefeet ahead | Head up |
+  |---|---|---|---|
+  | Ironwolf | 79 to 21 cm | 11 cm | 47 cm |
+  | Grey wolf | 76 to 20 | 10 | 47 |
+  | Red fox | 36 to 12 | 5 | 21 |
+  | Redspine Fox | 37 to 11 | 5 | 21 |
+  | Mirage Fox | 36 to 11 | 5 | 21 |
+  | Lanternfox | 34 to 11 | 5 | 20 |
+  | Thornrunner | 50 to 14 | 7 | 24 |
+  | Hollowcat | 30 to 9 | 2 | 16 |
+  | Stormlynx | 30 to 10 | 3 | 16 |
+  | Sunspire Lynx | 28 to 9 | 2 | 16 |
+  | Wolfhound | 81 to 24 | 12 | 52 |
+
+- **Every lie:** the belly and haunch are 5.0 mm off the ground. Nothing but the toe pads is under it: the lowest other point is 3.3 to 5.0 mm up. The Stormlynx's snowshoe paws sink 4.9 mm, as they do sitting (4.6 standing).
+- **The foot errors:** 0.0 cm on the dogs and foxes, 0.2 to 0.4 cm on the cats.
+- **The full run:** 1,167 of 1,167 pass, 1,147 before and 20 new: ten foot checks and ten lie checks.
+- **Picture:** `creatures-lying.jpg` (the Hollowcat, the red fox, the Stormlynx, the grey wolf, the Thornrunner and the wolfhound, each by a man for scale).
+### Needs eyes
+- **The heads are low.** All of them are held low and forward, as Session 1117 said of the hound. A watchful animal lifts its head; the neck could take some of the drop.
+- **The cats' forefeet.** They end only 2 to 3 cm ahead of where they stand, and their toes hang a few millimetres up. A lying cat tucks its paws or stretches them forward. Either is a different pose of the forearm, not this one.
+- **Owed:** the hound beside Garrick's chair in one picture, and all of it in the game (after F4).
