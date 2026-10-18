@@ -562,7 +562,7 @@ function buildCloak(G, body, byName, rnd) {
   // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
   // with a spear in the right fist (Session 909) a full cloak is thrown back off the right shoulder, as a Markman frees his
   // weapon arm: it opens from the throat round to just behind the shoulder, so the forearm held forward is out of it
-  const thrown = !!(D.spear || D.crossbow || D.basket) && !cape, th0 = thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
+  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket) && !cape, th0 = thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   for (let k = 0; k < K; k++) { const th = th0 + (k / (K - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
     const start = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006); tops.push({ start, dir, n: e.n });
@@ -2049,6 +2049,67 @@ function buildSpear(G, body, byName, meshes, root, grip) {
   let tris = 0; sp.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
   return { mesh: sp, stats: { head: HD, headLen: +(K.sock + K.blade).toFixed(3), headW: +(2 * Math.max(...prof.map(v => v.x))).toFixed(4), clear: +clear.toFixed(4), fist, shaft: +(2 * RS).toFixed(4), gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, len: +LEN.toFixed(3), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), over: +(B.y + LEN * A.y - crown).toFixed(3), tris } };
 }
+// the old's walking staff (Session 1085, L1; OG-001's elder's carved staff, OG-042's Old Blood elder's tall carved staff, OG-065's
+// Síle and her knotwork staff), carried in the right fist as the spear is: the same grip, its foot on the ground where the fist's line
+// meets it. Wood, never quite straight: it bends a centimetre or so between the fist and either end, and is true through the fist. By
+// people (its bend turned by the genome's own colours, so it is the same from a saved genome): the Gatelands a hazel staff with the knob of its root left on, its foot bare; the Mark an ash staff shod in iron, an iron
+// ring under its knob; Aurenne an olive staff with a turned knob of bronze and a bronze shoe; the Old Blood the tall staff, carved in
+// knotwork for 20 cm under its knob, shod in iron. Its top stands under the chin, or over the crown for the Old Blood
+const STAFFS = {
+  hazel: { top: -.2, knob: 1.75, carve: 0, shoe: null, ring: null, cap: null },
+  ash: { top: -.17, knob: 1.55, carve: 0, shoe: [.42, .43, .45], ring: [.42, .43, .45], cap: null },
+  olive: { top: -.22, knob: 1.6, carve: 0, shoe: [.62, .45, .22], ring: null, cap: [.62, .45, .22] },
+  carved: { top: .1, knob: 1.9, carve: .2, shoe: [.42, .43, .45], ring: null, cap: null } };
+const staffSeed = s => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
+// the staff's centre line (in its frame: y up its axis from the foot, the fist at yF) and its radius at a height and an angle round it.
+// The knob is a bulb whose middle is a little over half way up it; a root's knob is lumpy, a turned one round
+function staffShape(K, LEN, yF, ph) {
+  const RS = SPEAR_R, kn = RS * K.knob, KH = kn * 1.7;
+  const bend = y => { const u = y < yF ? (yF - y) / yF : (y - yF) / (LEN - yF), w = Math.max(0, Math.min(1, (Math.abs(y - yF) - .12) / .25)); return w * Math.sin(Math.PI * Math.min(1, u)) * .011; };
+  const off = y => { const a = ph + (y > yF ? 0 : 2.1), b = bend(y); return new THREE.Vector3(b * Math.cos(a), 0, b * Math.sin(a)); };
+  const r = (y, th) => { const t = LEN - y; let R = RS * (y < yF - .12 ? .9 + .1 * y / (yF - .12) : y > yF + .12 ? 1 + .08 * (y - yF - .12) / (LEN - yF - .12) : 1);
+    if (t < KH) { const s = 1 - t / KH, bulb = kn * Math.sqrt(Math.max(0, 1 - ((s - .55) / .45) ** 2)) * (K.cap ? 1 : 1 + .1 * Math.sin(3 * th + 7 * s + ph) + .06 * Math.sin(5 * th - 4 * s)); R = s < .55 ? Math.max(R, bulb) : bulb; }
+    // the knotwork: two crossing spirals cut 1.6 mm into the wood, a lattice of strands for the carve's length under the knob
+    else if (K.carve && t < KH + K.carve) { const a = 2 * th + y * 70, b = 2 * th - y * 70, g = Math.min(Math.abs(Math.sin(a)), Math.abs(Math.sin(b))), e = Math.min(1, (t - KH) / .012, (KH + K.carve - t) / .012); R -= .0016 * e * Math.max(0, 1 - g / .28); }
+    return Math.max(R, .0003); };
+  return { off, r, KH, kn };
+}
+// a tube of rings round the bent centre line, from y0 to y1, closed at the foot when it starts there
+function staffTube(S, y0, y1, n, NS) {
+  const pos = [], idx = []; for (let k = 0; k <= n; k++) { const y = y0 + (y1 - y0) * k / n, o = S.off(y); for (let j = 0; j < NS; j++) { const th = j / NS * Math.PI * 2, R = S.r(y, th); pos.push(o.x + R * Math.cos(th), y, o.z + R * Math.sin(th)); } }
+  for (let k = 0; k < n; k++) for (let j = 0; j < NS; j++) { const a = k * NS + j, b = k * NS + (j + 1) % NS, c = a + NS, d = b + NS; idx.push(a, c, b, b, c, d); }
+  if (y0 === 0) { const c0 = pos.length / 3, o = S.off(0); pos.push(o.x, 0, o.z); for (let j = 0; j < NS; j++) idx.push(c0, j, (j + 1) % NS); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+function buildStaff(G, body, byName, meshes, root, grip) {
+  root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, PP = posedBody(body);
+  let floor = 1e9, crown = -1e9; for (const i of new Set(PACK.G['body'])) { floor = Math.min(floor, PP[i * 3 + 1]); crown = Math.max(crown, PP[i * 3 + 1]); }
+  const make = STAFFS[D.staffMake] ? D.staffMake : ({ markman: 'ash', aurennais: 'olive', oldblood: 'carved' })[G.people] || 'hazel', K = STAFFS[make];
+  const A = grip.A, B = grip.C.clone().addScaledVector(A, (floor - grip.C.y) / A.y), yF = grip.C.clone().sub(B).dot(A), LEN = (crown + K.top - floor) / A.y, ph = staffSeed([G.seed ?? 'person', G.people, ...D.staff, ...(G.skin || [])].map(v => typeof v === 'number' ? Math.round(Math.max(0, Math.min(1, v)) * 255) : v).join('|')) * Math.PI * 2;
+  const S = staffShape(K, LEN, yF, ph), NS = 32, yK = LEN - S.KH, yC = yK - K.carve - .02;
+  const wood = new THREE.MeshStandardMaterial({ color: sRGB(...D.staff), roughness: .62 }), metal = c => new THREE.MeshStandardMaterial({ color: sRGB(...c), metalness: .7, roughness: .35 });
+  const st = new THREE.Group(); st.name = 'staff';
+  // the wood in two runs of rings: 4 cm apart up the plain shaft, 3 mm apart over the carving and the knob; a turned knob is bronze
+  const lo = new THREE.Mesh(staffTube(S, 0, yC, Math.ceil(yC / .04), NS), wood), hi = new THREE.Mesh(staffTube(S, yC, K.cap ? yK : LEN, Math.ceil(((K.cap ? yK : LEN) - yC) / .003), NS), wood); lo.name = hi.name = 'staffWood'; st.add(lo, hi);
+  if (K.cap) { const m = new THREE.Mesh(staffTube(S, yK, LEN, 16, NS), metal(K.cap)); m.name = 'staffKnob'; st.add(m); }
+  // the shoe on its foot and the ring under the knob, each on the centre line where it sits
+  if (K.shoe) { const o = S.off(.03), m = new THREE.Mesh(new THREE.CylinderGeometry(SPEAR_R * .9 + .0012, SPEAR_R * .82, .06, 16), metal(K.shoe)); m.position.set(o.x, .03, o.z); st.add(m); }
+  if (K.ring) { const y = yK - .009, o = S.off(y), R = S.r(y, 0) + .0014, m = new THREE.Mesh(new THREE.CylinderGeometry(R, R, .016, 16), metal(K.ring)); m.position.set(o.x, y, o.z); st.add(m); }
+  st.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
+  st.position.copy(B); st.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), A); root.add(st); root.updateMatrixWorld(true);
+  // what comes near it: every cloud's points but the right hand's, by their distance to its bent centre line against its widest
+  // radius at that height; and the fist's points inside it
+  let clear = 1, fist = 0; const w = new THREE.Vector3(), rMax = y => { let m = 0; for (let j = 0; j < 16; j++) m = Math.max(m, S.r(y, j / 16 * Math.PI * 2)); return m; };
+  eachPoint(wornClouds(body, meshes, root), (x, y, z, i) => { w.set(x, y, z).sub(B); const t = w.dot(A); if (t < 0 || t > LEN) return; const d = w.addScaledVector(A, -t).sub(S.off(t).applyQuaternion(st.quaternion)).length();
+    if (d > .08) return; const R = rMax(t); if (i >= 0 && R0[i * 3] < -.39) { if (d < R - .001) fist++; return; } clear = Math.min(clear, d - R); });
+  byName['wrist.R'].attach(st);
+  let tris = 0; st.traverse(m => { if (m.isMesh) tris += m.geometry.index.count / 3; });
+  // its normals point out of it (away from the centre line at their height), so the key light falls on its outside
+  let out = 0, nv = 0; for (const m of [lo, hi]) { const P = m.geometry.attributes.position, N = m.geometry.attributes.normal; for (let i = 0; i < P.count; i++) { const y = P.getY(i), o = S.off(y); if (y < .001) continue; nv++; if ((P.getX(i) - o.x) * N.getX(i) + (P.getZ(i) - o.z) * N.getZ(i) > 0) out++; } }
+  let bendMax = 0, trueAt = 0; for (let y = 0; y <= LEN; y += .01) { const b = S.off(y).length(); bendMax = Math.max(bendMax, b); if (Math.abs(y - yF) < .1) trueAt = Math.max(trueAt, b); }
+  return { mesh: st, stats: { make, len: +LEN.toFixed(3), top: +(B.y + LEN * A.y - crown).toFixed(3), foot: +(B.y - floor).toFixed(4), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), fistAt: +(yF / LEN).toFixed(3), knob: +(2 * S.kn).toFixed(4),
+    bend: +bendMax.toFixed(4), trueAtFist: +trueAt.toFixed(4), carve: K.carve, outward: +(out / nv).toFixed(3), clear: +clear.toFixed(4), fist, gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, tris } };
+}
 // the crossbow (Session 941; L7, OG-028, Michael's 6 A: the spear and the crossbow first), carried point down in the right fist by
 // the wrist of its tiller, the stock plumb through the fist as the spear's shaft is, the butt up by the forearm and the prod and its
 // stirrup down by the shin, the prod spanning fore and aft so neither tip comes near the leg, the bolt's face turned out. Unspanned:
@@ -2489,7 +2550,7 @@ export function makePerson(G, o = {}) {
   // itself so the knuckles stand one over another (the first finger's on top) and the shaft can run up and down through the fist;
   // the shaft is laid in the palm and the four fingers close on it (fistGrip). (The elbow's own x is not its hinge: 1.45 rad
   // about it swung the forearm round a cone, backward)
-  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
+  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow || D.staff) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
     const setWorld = Q => lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
     setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), new THREE.Vector3(-.12, -.2, 1).normalize()).multiply(wq())); root.updateMatrixWorld(true);
     const ax = at('wrist.R').sub(at('lowerarm01.R')).normalize(), flat = v => v.addScaledVector(ax, -v.dot(ax)).normalize(), kn = flat(at('finger2-1.R').sub(at('finger5-1.R'))), up = flat(new THREE.Vector3(0, 1, 0));
@@ -2506,7 +2567,7 @@ export function makePerson(G, o = {}) {
     spearGrip = fistGrip(body, byName, root, curl, hinge); }
   // a basket in the right fist (Session 1033), when it holds no spear or crossbow: the arm straight with the weight, the hand turned so
   // its fingers point down and its knuckles run level fore and aft, then the four fingers close round the handle's crown (fistGrip)
-  let basketGrip = null, basketWrist = 0; if (D.basket && !D.spear && !D.crossbow) { const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wr = byName['wrist.R'];
+  let basketGrip = null, basketWrist = 0; if (D.basket && !D.spear && !D.crossbow && !D.staff) { const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wr = byName['wrist.R'];
     byName['lowerarm01.R'].quaternion.copy(q(.12, 0, 0)); root.updateMatrixWorld(true);
     const frame = (L, K) => { K = K.clone().normalize(); L = L.clone().addScaledVector(K, -L.dot(K)).normalize(); return new THREE.Matrix4().makeBasis(L, K, L.clone().cross(K)); };
     const mid = at('finger3-1.R').add(at('finger4-1.R')).multiplyScalar(.5), kn = at('finger2-1.R').sub(at('finger5-1.R')), cur = frame(mid.sub(at('wrist.R')), kn), tgt = frame(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, Math.sign(kn.z) || 1));
@@ -2554,10 +2615,12 @@ export function makePerson(G, o = {}) {
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a crossbow in the same fist (Session 941), when it holds no spear
   let crossbowStats = null; if (D.crossbow && !D.spear) crossbowStats = { ...buildCrossbow(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
-  // a basket in the same fist (Session 1033), when it holds no spear or crossbow; last, as it is lifted clear of all the rest
+  // a walking staff in the same fist (Session 1085), when it holds no spear or crossbow
+  let staffStats = null; if (D.staff && !D.spear && !D.crossbow) staffStats = { ...buildStaff(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
+  // a basket in the same fist (Session 1033), when it holds no spear, crossbow or staff; last, as it is lifted clear of all the rest
   let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, basket: basketStats, legWraps: legWrapSt };
+  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -2580,7 +2643,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L' };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -2703,9 +2766,12 @@ export function peopleGenome(rnd, people, g, o = {}) {
   // or white (fair hair always to white, so it never darkens), and on six in ten a stoop, more of one the older they are
   if (o.old) { const ro = seeded(String(o.seed ?? 'person') + '|old'), t = ro(); G.age = .8 + .2 * t; G.muscle = Math.max(.2, G.muscle - .1 - .08 * ro());
     const w = ro() < .5 || .3 * G.hairCol[0] + .59 * G.hairCol[1] + .11 * G.hairCol[2] > .55 ? [.86, .85, .83] : [.66, .65, .63], k = .55 + .4 * t + .05 * ro(); G.hairCol = G.hairCol.map((v, i) => v + (w[i] - v) * Math.min(1, k));
-    if (ro() < .6) G.pose = { ...(G.pose || {}), stoop: +(.25 + .5 * t + .25 * ro()).toFixed(3) }; }
+    if (ro() < .6) G.pose = { ...(G.pose || {}), stoop: +(.25 + .5 * t + .25 * ro()).toFixed(3) };
+    // a walking staff (Session 1085), drawn after the rest so every earlier roll is as it was: on a third of the old, more of the
+    // older and the stooped, and on half the Old Blood's (their elders' carved staff), when the right fist holds nothing else
+    const sr = ro(), pk = a => a[Math.floor(ro() * a.length)]; if (!D.spear && !D.crossbow && !D.basket && sr < (G.people === 'oldblood' ? .5 : .3) + .15 * t + (G.pose?.stoop ? .1 : 0)) D.staff = G.people === 'oldblood' ? pk([[.2, .16, .13], [.3, .24, .19]]) : G.people === 'aurennais' ? pk([[.5, .4, .28], [.42, .32, .2]]) : pk([[.45, .33, .2], [.36, .26, .16], [.52, .42, .3]]); }
   if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
-    for (const k of ['helm', 'mail', 'scales', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch']) D[k] = DRESS_FLAGS[k] ?? null;
+    for (const k of ['helm', 'mail', 'scales', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake']) D[k] = DRESS_FLAGS[k] ?? null;
     if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
     // a cloak or cape cut to the child (its length in buildCloak is in metres: .4 + the length, or a cape's .24 + .14 of it), so a long one does not pool on the ground
     if (D.cloak) D.cloakLen = Math.max(0, D.cape ? ((.24 + .14 * (D.cloakLen ?? .8)) * f - .24) / .14 : (.4 + (D.cloakLen ?? .8)) * f - .4); }

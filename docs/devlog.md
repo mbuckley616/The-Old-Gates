@@ -23948,3 +23948,39 @@ Corrections made during the session:
 - **Whether it goes down into the cliff is asked as DECISION #402.** The recommendation is a sea-stair inside the rock to a sea cave and landing, the "lower levels" OG-121's forts have.
 - **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
 - **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
+
+## v80 — Session 1085 — The old's walking staff (L1, prototype only)
+Session 1082 made the old and owed them a stick: OG-001's extras strip has an elder's carved staff, OG-042 gives the Old Blood elder "a tall carved staff", and OG-065's Síle carries a carved knotwork staff. This session builds that staff in the builder from those sheets, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`buildStaff`, `STAFFS`, `D.staff` for the wood's colour, `D.staffMake`):
+- **The grip is the spear's.** The forearm is turned forward, the knuckles stand plumb, and the fingers close on a shaft 26 mm thick. The staff stands upright through the fist, its foot on the ground where the fist's line meets it.
+- **It is wood, never quite straight.** It bends by up to 11 mm between the fist and either end, a different way above and below, and it is true for 12 cm either side of the fist. Below the fist it thins to nine tenths, and above it swells by up to 8 per cent. The way it bends is read from the genome's own colours, so a saved person carries the same staff.
+- **By people:**
+  - The Gatelands: hazel, with the knob of its root left on, lumpy, 4.5 cm across; its foot bare.
+  - The Mark: ash, an iron ring under a 4 cm knob, and shod in iron.
+  - Aurenne: olive, a turned bronze knob and a bronze shoe.
+  - The Old Blood: the tall staff of OG-042 and OG-065. Its knob is 4.9 cm across, and for 20 cm under it the wood is carved in knotwork: two crossing spirals cut 1.6 mm in.
+  - The others stand 17 to 22 cm under the crown, at the chin. The Old Blood's stands 10 cm over it.
+- **Mesh.** It is rings of 32 round the bent centre line: 4 cm apart up the plain shaft, 3 mm over the carving and the knob. That is 3,600 to 4,100 triangles, and 7,800 to 8,200 carved.
+- **The roll.** It is drawn last in the old's own stream, so every earlier roll is as it was. A third of the old get one, more of them the older and the stooped ones, and half the Old Blood's. Only one hand holds things, so it goes to none who already carry a spear, a crossbow or a basket. If a staff and a basket are both asked, the staff wins; if a spear is asked, the spear does. No grown person or child rolls one, and a child roll clears it. A cloak is thrown back off the staff's arm, as off the spear's.
+- **The builder page.** "walking staff" among the garments, and a select for its make (or the people's own).
+- **The check script.** `builder.check.mjs --shots-only --shots=<names>` takes pictures without the 13-minute check.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 461 checks pass** (452 after Session 1082; 9 new). Every earlier check passes unchanged. The old's roll is still the grown roll's dress, the staff aside.
+- **Seven staffs** (each make on its people, a stooped woman of 0.9 over a long skirt, a Markman under a fur-collared cloak, the carved staff asked on a Gatelander):
+  - The foot is on the ground (0.0 mm) and the staff leans 0 rad.
+  - The fist sits 59 to 74 per cent up it. The fingers are bent 0.56 to 0.89 rad, the nearest 0.3 to 0.5 mm off the wood, and no point of the hand is inside it.
+  - Nothing else comes within 5.3 mm (the Old Blood elder's knob by her shoulder) to 19.6 mm.
+  - Its normals all point out of it (100%).
+  - It builds the same twice, and it saves and loads back.
+  - Neither the long skirt nor the cloak is broken by it.
+- **The roll, sixty old of each people:** 25 Gatelanders, 28 Markmen, 32 Aurennais and 39 Old Blood carry one. None of them holds anything else in that fist, and none of the grown or the children has one.
+- **A fix the pictures caught:** the first build wound the tube's faces inward, so the wood rendered dark and the knob as a black disc. The check now counts the outward normals.
+- **Pictures** (`--shots=staff`): `builder-staff-hazel.jpg`, `-ash.jpg`, `-olive.jpg` and `-carved.jpg`, each make on an old man or woman of its people. `builder-staff-stoop.jpg` is a stooped Gatelander from the side, and `builder-staff-top.jpg` is the carved knob and knotwork close.
+
+### Needs eyes
+- **The arm is the spear's.** The forearm reaches forward almost level, so from the side the old hold the staff out before them rather than leaning on it. A walking staff wants the hand nearer the hip and the staff a little ahead of the foot. That is a grip of its own (and a gait that leans on it), not built.
+- **The carving is shallow at play distance.** It is 1.6 mm deep on a 32-sided tube, so it reads only close up. A darker stain in the grooves would carry it further.
+- **No charms on the Old Blood's staff.** OG-042 hangs bone and stone charms on the elder; the belt's charms (Session 1042) could be tied under the knob.
+- **Still owed from the item:** Garrick's wheeled chair, and children under 11.
