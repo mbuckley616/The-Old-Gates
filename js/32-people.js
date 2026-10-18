@@ -1182,7 +1182,10 @@ function tickRagdolls(dt){
   for(const R of RAGDOLLS){
     if(!R.top.parent||!R.rig.root.parent){RAGDOLLS.delete(R);continue;}
     R.acc=Math.min(R.acc+Math.max(0,dt||0),4*RD_DT);let n=0,mv=0;
-    while(R.acc>=RD_DT){R.acc-=RD_DT;n++;R.t+=RD_DT;(R.step||ragdollStep)(R);for(const o of R.P){const m=Math.abs(o.p.x-o.q.x)+Math.abs(o.p.y-o.q.y)+Math.abs(o.p.z-o.q.z);if(m>mv)mv=m;}}
+    // S1091 — how far each point went in the step, from where it began (sx, sy, sz), not p less q: the ground's friction sets q
+    // part way back in a pass, and a forepaw dragged off and back by the bones each step kept a velocity it never spent, so a body
+    // lying still read as moving and met the four-second cap (one beast's fall in 200, CI's beastfall)
+    while(R.acc>=RD_DT){R.acc-=RD_DT;n++;R.t+=RD_DT;(R.step||ragdollStep)(R);for(const o of R.P){const m=o.sy===undefined?Math.abs(o.p.x-o.q.x)+Math.abs(o.p.y-o.q.y)+Math.abs(o.p.z-o.q.z):Math.abs(o.p.x-o.sx)+Math.abs(o.p.y-o.sy)+Math.abs(o.p.z-o.sz);if(m>mv)mv=m;}}
     if(!n)continue;
     (R.apply||ragdollApply)(R); // S427 — a beast's ragdoll brings its own step and apply (34-creatures.js)
     R.quiet=mv<.0015*R.s?R.quiet+n:0;

@@ -23640,6 +23640,174 @@ What is built (in `makePerson`):
 
 ### Needs eyes
 - **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
+## v80 — Session 1058 — The Compact guards' scale cuirass (L1 and B2, prototype only)
+Backlog L1's Aurennais line has owed, since the review of 12 Oct, "Compact guards in blue and white (not Crown red) with a scale cuirass, a round bronze shield and a spear". The shield (Session 904, a bronze face), the hoplon (913) and the spear (907 to 910) were built; the cuirass was not. OG-044 draws its guards in a short-sleeved shirt of bronze scales to the hips, belted, over a tunic, and the canon (§1.5) moves them out of the sheet's Crown red into the Compact's blue and white. Building what the sheet and the canon already say chooses nothing new, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **The mail made of scales.** A new dress flag, `scales`, turns the mail hauberk of Session 897 into a scale cuirass. It is the same two shells, the body off the tights and the skirt off the skirt shell, so everything the mail already keeps clear (the arms, the tunic, the legs, a cloak over it, the belt riding 8 mm out on it) holds for it, and everything that is not worn with mail (a sash belt, a shoulder wrap) is not worn with it either.
+- **Its cut.** The sleeves end at the middle of the upper arm (rest |x| 0.25, where the mail's go to the elbow at 0.3). The skirt ends at the top of the thigh (rest y -0.13, where the mail's goes a hand above the knee at -0.27), so a tunic's hem shows under it, as on the sheet.
+- **The plates, drawn in the shader** (`SCALES`, in `mailMat`). Each plate is 2.4 cm wide, in rows 3.3 cm apart, each row offset by half a plate. Each plate hangs from the row above and lies over the top of the row below, so a point belongs to the highest row whose plate reaches it. A plate is a tongue with a rounded foot, domed across. It is dark in the gaps at its edges and in the shadow under the foot of the plate above, and each is a little lighter or darker than its neighbours. They are seen three ways, as the rings are, and give way to their average far off.
+- **The metal.** Bronze takes metalness 0.72 and roughness 0.36 (the rings are 0.4 and 0.45), so the plates catch the light as the bronze helm and shield do.
+- **The genome.** It saves as `scales: true` and loads back; plain mail saves no flag.
+- **The builder page.** A checkbox, "the mail made of scales (a cuirass)".
+- **No roll.** No people rolls armour yet; the guards are dressed by hand, as the Crown's are.
+- **Its stand-off.** Plates on their lining stand thicker than rings, so the cuirass's body is 3 mm further out than the mail's (12 mm over the tunic, from 9). At 9, two points of a woman's tunic came 3.3 mm through under the bust. The belt rode 8 mm out on the mail and still clears it.
+
+A fix made during the session:
+- **The hands' test read a thin band at the hem.** The test that lifts the arms clear of a skirt reads the skirt in bands 2 cm tall. At the cuirass's short hem, the last band held 23 points from its front, so its middle sat 7 cm forward of the body's, and a woman's hands came out as 70 points inside it however far the arms were lifted. A garment can now ask that a band thinner than a number of points is not read (`handsInSkirt`'s `thin`), as `mailStats` already does at 24. Only the scale skirt asks it, so every other garment's lift, and every earlier picture, is as it was.
+- **The mail's tunic test read the cut-away sleeve.** It tests each tunic point against the nearest point of the mail's shell, and the shell runs past where its sleeve is cut. With the arm bent on a spear, the cut-away forearm part of the shell lay nearest a tunic point at the waist and called it through. The test now reads only the shell that is drawn, and only the tunic under it (to 2 cm inside the cut). For the rings this changes nothing: their cut is at 0.3 and the tunic points already stopped at 0.28.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 431 checks pass** (427 after Session 1053; 4 new).
+- **Three Aurennais in the cuirass**, in the Compact's blue tunic and pale trousers, a bronze helm:
+  - a guard;
+  - a woman over a long blue skirt;
+  - a guard under a white cloak, with a bronze shield and a spear.
+- **On all three**, the sleeves are cut at 0.25 and the skirt at -0.13, and nothing comes through: 0 of 148 upper-arm, 520 tunic and 105 to 326 hip points out.
+- **No hand is in its skirt:** the guard's arms are lifted 0.18 rad and the woman's 0.27 (the mail's lifts run 0.15 to 0.3).
+- **The cloak over the cuirass** is clear of it: 0 of 3,873 points through.
+- **Saving:** each saves and loads back with the flag, and plain mail saves none.
+- **Close renders** on the chest and the hip, against the same man in rings:
+  - The plates change 22% and 34% of the view.
+  - Brightness down the chest crosses its mean 7 times over 24 cm, where the rings' finer weave crosses it 42 times.
+  - Each view renders the same twice.
+- **Pictures:** `builder-scales-guard.jpg`, `-back.jpg`, `-close.jpg`, `-side.jpg`, `-woman.jpg` and `-kit.jpg` (under the white cloak with the shield and the spear). The shots are in `--shots=scales`.
+
+### Needs eyes
+- **The edges are bare.** A real cuirass is bound in leather at the neck, the sleeves and the hem; here the plates stop at a cut, its edge broken by the cut's noise.
+- **The plates are flat in the geometry.** They are drawn, not modelled, so the outline of the shoulder and the hem is smooth where plates would make it ragged. It reads at play distance; close up, the hem is the giveaway.
+- **On the back, the light pools where the shell curves** (the small of the back and the seat), as it does on any metal. A bronze that has seen weather could be rougher.
+- **The canon's white** is the cloak alone here; the sheet gives no other place for it. A white tunic under a blue cloak would do as well, and is a choice for when the guards are dressed in the game.
+- **The helm is the kettle helm in bronze.** OG-044 draws open helms; the Corinthian of OG-019's bronze tier would be a truer Aurennais helm, and is not built in the kit.
+## v80 — Session 1068 — The scale cuirass bound in leather (L1 and B2, prototype only)
+Session 1058 built OG-044's scale cuirass for the Compact's guards and owed one thing for it: "the edges are bare." A real cuirass has its plates sewn to a lining, and the edges are bound in leather at the neck, the sleeves and the hem. Here the plates stopped at the shader's cut, and the hem's edge was broken by the cut's noise. This session binds those three edges. It finishes a look already built from the sheet and the canon, so it asks nothing. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+What is built (`BIND` and `BIND_MIX`, in `mailMat`):
+- **Where the band goes.** A band of dark leather 1.6 cm wide runs round the neck (rest y .6), round each sleeve's end (rest |x| .25) and round the skirt's hem (rest y -.13). The band is drawn in the shader, as the plates are. Its two hidden edges get none: the top shell's lower edge and the skirt's upper edge lie under each other at the waist.
+- **Its width is measured along the surface.** The shader takes the cut's distance in rest height (or width) and divides it by how steeply the surface runs across the cut. So the band is as wide over the near-level top of the shoulder as it is down the hem. A plain height cut would make it several centimetres wide over the shoulder.
+- **How it looks.** It is rolled, lighter down its middle. A stitch line runs 3 mm in from its inner edge, and a fine noise gives it grain. Its colour is a dark brown (linear .05, .026, .012). It takes no metal (metalness falls to 0 under it) and has a roughness of 0.72, so it reads as leather beside the bronze's 0.72 metalness and 0.36 roughness.
+- **The hem is cut straight.** A bound edge is not ragged, so the scale skirt's cut noise falls from 1.2 cm to 2 mm. The rings' hem keeps its 1.2 cm.
+- **A switch for the check.** `makePerson(G, { binding: false })` leaves the band off and keeps the straight hem, so a render with and without it differs only in the band. The genome is unchanged: every cuirass is bound, and nothing new is saved.
+
+A fix made during the session, to the check itself: the first version read its close views from a linear render target, as Session 1058's scale renders do. There the hem's shadowed band differed from the plates by less than the 12 levels the test counts, and it read 0.02% of the view changed. The binding's views now render to an sRGB target, as the page itself does.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 432 checks pass** (431 after Session 1058; 1 new). Every earlier cuirass check passes unchanged: nothing comes through on the three Aurennais, no hand is in its skirt, the cloak is clear, and it saves and loads back.
+- **The new check** renders the same guard close on the neck, the sleeve and the hem, with and without the binding:
+  - The band changes 4.8%, 6.9% and 6.6% of the three views.
+  - Those pixels are brown, red over blue 1.72, 1.67 and 1.84, where the bronze around them is gold.
+  - Both shells carry the band, neither does with it off, and each view renders the same twice.
+- **Pictures, all re-shot** (`--shots=scales`): `builder-scales-guard.jpg`, `-back.jpg`, `-close.jpg`, `-side.jpg`, `-woman.jpg` and `-kit.jpg`. The close shot shows the collar and both sleeve bands; the full shots show the hem's band.
+
+### Needs eyes
+- **The band is still flat in the geometry.** It is drawn, not modelled, so the outline of the hem is smooth, and from the side the binding has no thickness. At play distance it reads as a dark edge; close up it is a painted band.
+- **The neck band sits right on the tunic's collar.** On the guard the tunic's blue shows 1 to 2 cm above it. A real collar would stand up a little round the neck.
+- **The colour is one brown for every cuirass.** A red or blue binding could mark the Compact's colours, if the guards want one more note of them.
+
+## v80 — Session 1079 — The hurt: a scar across the eye and an eyepatch (L1, prototype only)
+Backlog L1's "children, the old and the hurt in towns" asks, from OG-001's extras strip, for "the disabled (an eyepatch, scars)", and from OG-065 for Garrick, scarred. The kit had neither: every face it made was whole. This session builds both in the builder. The sheets draw them and the backlog names them, so it chooses nothing new and asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **The scar** (`G.scar`, `'L'` or `'R'`; `scarLine`, `scarSkin`). It is an old cut from 3.4 cm over the eye's middle, down across the lid, to 3.8 cm under it on the cheek, leaning out by 1.5 cm. It is widest (4.8 mm) a little above its middle and tapers to its ends, and its edges waver by noise. Healed tissue is paler and pinker than the skin, a little shiny (roughness 0.36) and raised, with a puckered margin a shade darker. The stitches' marks cross it faintly every 6 mm. It is drawn in the skin's shader on the rest face, so every face the morphs make carries it in the same place, with no new triangles. It composes with the Old Blood's marks (Session 1052) on the same material. The brows grow no hair within 2.8 mm of its line, so it cuts a gap in the brow.
+- **The eyepatch** (`D.eyepatch`, a leather colour, and `D.eyepatchSide`; `buildEyepatch`). An oval of leather 5 by 3.8 cm on a man, 4.6 by 3.5 on a woman, over the lost eye. The face under it is read by rays straight in onto the morphed face. The leather spans the socket as a stiff patch does: its middle stands 1.5 mm off the face's highest points within 7 mm, smoothed, and it comes down to 1 mm off the skin at its edge, where a rim 2.5 mm deep closes it to the face. Its face is drawn in a canvas: grain, a rolled edge and a stitch line 4 mm in. The lost eye's ball is not built. 3,184 tris with the cord.
+- **The cord.** It is one loop in a plane through the patch's inner top corner, its outer edge and a point over the far temple. So it rises across the forehead over the far brow, runs back over the near ear, and goes round the back of the head over the hair. All the way round the plane, it lies 0.4 mm off the outermost of the skin, the scalp, the hair, the brows and the patch. Both pieces are carried rigid by the head bone.
+- **The roll.** It is drawn last, so every earlier roll of a seed is as it was. An old cut across one eye goes on one man in fourteen and one woman in forty, of every people. One in four of those lost the eye and wears a patch over it, in black or brown leather.
+- **The genome.** It saves `scar: 'L'` beside the marks, and the patch with the dress; a whole face saves neither.
+- **The builder page.** A select for the scar's side and the patch's side, and the eyepatch's colour among the garments; `?scar=L` in the address.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 437 checks pass** (432 after Session 1068; 5 new). Every earlier check passes unchanged.
+- **The patch on four heads**, either side (a Gatelander man with short hair, an Aurennais woman with loose hair, a Markman with a bun, an Old Blood woman with a braid):
+  - Inside its edge it is at least 1.3 to 1.5 mm off the face.
+  - No point of the face is in front of it, and one eyeball is built.
+- **The cord** passes through none of the skin, the scalp, the brows or the patch (0 points on all four).
+  - It crosses the forehead 2.6 to 2.8 cm above the far eye's middle, in a plane leaning 15.6 to 17 degrees.
+- **The scar**, rendered close on the face against the same man without it:
+  - It changes 0.76% (left) and 1.39% (right) of the view.
+  - It is lighter by 17.8 and 13.1 levels and warmer (red 68 and 66 levels over blue).
+  - Each lands on its own side, and the view renders the same twice.
+  - The brows leave out 77 to 115 roots on its line.
+- **Saving:** the scar, the patch and its side save and load back; a genome without them saves none.
+- **The roll:** over 320 people of the four peoples, 11 of 149 men and 4 of 171 women are scarred. Four of them wear a patch, each over the scarred eye.
+- **Pictures** (`--shots=hurt`):
+  - `builder-hurt-patch.jpg`, `-patch-side.jpg` and `-patch-back.jpg`: a scarred Markman in a black patch, from the front, the near side and the back.
+  - `builder-hurt-patch-woman.jpg`: an Aurennais woman in a brown one.
+  - `builder-hurt-scar.jpg` and `builder-hurt-scar-man.jpg`: the scar alone.
+
+### Needs eyes
+- **The patch is stiff and flat-black at a distance.** Its grain and stitch line read only close up. A patch of worn leather might want a faint sheen along its dome.
+- **The cord rides over the hair as a plane loop.** Where short hair's cards stand out at the back, it stands off them up to a few millimetres. It does not press the hair down.
+- **One scar only.** Garrick and the veterans could want others: a cheek cut, a split lip, a notched ear. Each would be the same kind of line in the skin's shader.
+- **Under a raised hood, a helm or a head-wrap** the cord is simply inside them. Nothing checks it there.
+- **The rest of the item:** children and the old (OG-081, OG-001), and Garrick's wheeled chair, are still owed.
+
+## v80 — Session 1081 — Children (L1, prototype only)
+The same backlog item, "children, the old and the hurt in towns", begins with child-scale people: the towns have only Finn. OG-081 draws five children "each at child scale", and the wardrobe sheets (OG-109 to OG-111) dress children "as small copies of their parents'". The kit could not make one. The builder's age ran only from 25 to 90: `macroWeights` clamped the age at 25, and the pack carried MakeHuman's young and old targets only. This session builds children from the sheets, so it asks nothing. It touches only the prototypes: `mh_pack.py`, `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **The child's targets in the pack.** `mh_pack.py` now packs MakeHuman's child macro targets beside the young and the old: the race, gender, muscle and weight, height and proportions targets at MakeHuman's age of 11. That is 84 macro targets, up from 56.
+- **The age slider runs from 11.** Under 25, `macroWeights` blends the child's targets into the young ones, from age 11 at 0.1875 up to 25 at 0.5. From 25 to 90 the weights are exactly as before, so every grown body is unchanged. The page's slider reads "age (11 → 25 → 90)".
+- **A child's roll** (`rollGenome(seed, { people, child: true })`; `?child` on the page). The child is first rolled as one of its people, so it dresses as the grown folk do. Then it is made a child from a stream of its own:
+  - **Age and build:** 11 to 15 years old, slighter (muscle and weight 0.3 to 0.45).
+  - **Stature:** four fifths of its people's middle stature at 11, rising to 92 per cent at 15. So an Old Blood child stands 1.21 to 1.46 m and a Markman child 1.42 to 1.76.
+  - **Nothing a grown body carries:** no beard, scar or patch, and no helm, mail, tabard, shield, spear or crossbow. An Old Blood child's marks stay barely past the wrist (canon §3.1: a child shows them or does not; the Cold comes of reading).
+  - **The cloak or cape is cut to the child.** `buildCloak`'s length is in metres, so a grown cloak pooled on the ground at 1.3 m. The length is scaled by the same share as the stature.
+- **The peoples sheet** with `?child`: each people as a man, a woman, a boy and a girl.
+- **The garments need nothing new.** Everything worn is cut on the rest body and pushed off the morphed one, so the tunic, skirt, boots, cloak, hair and the rest fit the child's body as they fit a grown one.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 450 checks pass** (437 after Session 1079; 13 new). Every earlier check passes unchanged, so the grown bodies are as they were.
+- **Forty children of each people:**
+  - Aged 11.1 to 15.
+  - Between 79 and 93 per cent of their people's middle stature: Gatelanders 1.32–1.65 m, Markmen 1.42–1.76, Aurennais 1.34–1.65, Old Blood 1.21–1.46.
+  - None carries anything a grown body does, and none has the Cold.
+  - Each saves and loads back.
+- **Every hair style on a girl of 11 (1.32 m) and a boy of 11 (1.42 m)**, twelve heads in all:
+  - No strand under the skin: at most 1 of 111,242 points, the same bound as the grown folk's.
+  - No strand on the face, and every root on the skin (3.0 to 3.5 mm).
+  - Braids and tails hang 2.0 to 3.0 cm clear of the body.
+- **Pictures** (`--shots=children`):
+  - `builder-children.jpg`: the four peoples' man, woman, boy and girl.
+  - `builder-children-girl.jpg`: a Gatelander girl in her cloak, cut to her.
+  - `builder-children-boy.jpg`: a Markman boy.
+
+### Needs eyes
+- **The pack is 10.0 MB raw** (from 7.2). `character-builder.md` reckons on quantising and gzipping it to about 3 MB; with the child's targets that is nearer 4. Only the child's universal targets could be packed, to save a third of the growth.
+- **Children start at 11.** MakeHuman's next targets down are a baby's, and a child of five or eight would blend toward those. The sheets' children are mostly 10 to 14, so 11 serves, but the towns' littlest are not built.
+- **A child's head reads a little old at 11.** MakeHuman's child face is mild, and the people's face sliders and brows are still the grown folk's. A rounder face and lighter brows for children would be a refinement.
+- **The roll does not decide who has children,** nor how many are in a town. That is the game's job when F4 brings townsfolk over.
+- **The old** are the slider's top end, and they have no roll of their own yet. Garrick's wheeled chair is still owed.
+
+## v80 — Session 1082 — The old (L1, prototype only)
+The third part of "children, the old and the hurt in towns". OG-001 draws Edna as "a white-haired old healer", and OG-065 draws Bronwen grey-haired. The age slider already ran to 90, and MakeHuman's old targets age the body and face, but no roll made old people. Nothing greyed their hair, and nothing bowed their backs. This session builds the old from the sheets, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built:
+- **An old roll** (`rollGenome(seed, { people, old: true })`; `?old` on the page). The person is rolled as one of their people, so they dress as before. Then, from a stream of their own:
+  - 64 to 90 years old.
+  - A little less muscle.
+  - The hair (and so the brows and the beard, which take its colour) goes most of the way to white or to an iron grey, further the older they are. Fair hair always goes to white, so no head darkens.
+- **The stoop** (`pose.stoop`, 0 to 1), on six in ten of the old, more of one the older they are. The upper back bows forward through its two highest bones, 0.12 rad each at 1. The neck lifts back by most of it, so the face still looks ahead. The arms swing back by the back's whole bow, so they hang plumb from the shoulders as before. The skirt's lift and the sash's still clear the hands after it. It saves with the pose.
+- **The peoples sheet** with `?old`: each people's man and woman, grown and old. `?stoop=` sets the stoop on the page.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 452 checks pass** (450 after Session 1081; 2 new). Every earlier check passes unchanged; at no stoop the pose is the same.
+- **Forty old of each people** against the same seeds grown:
+  - Aged 64 to 90.
+  - Every head of hair is nearer grey or white than its grown one, and none is darker.
+  - 19 to 28 of each forty are stooped, from 0.35 to 0.97.
+  - The dress is exactly the grown roll's.
+- **The stoop at 0.9**, on an old man and an old woman in a long skirt:
+  - The head is carried 6.2 and 5.2 cm further forward of the chest.
+  - The face nods only 0.05 rad.
+  - The hands still clear the long skirt (0 points; 2 points before the arms were swung plumb, which the first run of the check caught).
+  - The stoop saves and loads back.
+- **Pictures** (`--shots=old-line,old-side,old-face`): `builder-old-line.jpg` shows the four peoples' man and woman, grown and old. `builder-old-side.jpg` is a stooped old Gatelander from the side, and `builder-old-face.jpg` an old woman whose brown hair is going grey (and whose face, at MakeHuman's old targets alone, reads younger than her years).
+
+### Needs eyes
+- **The stoop is in the back alone.** Old people also bend a little at the knee, and carry the head lower. A stick in the hand would be the old's prop (OG-001's elder's carved staff, OG-065's Síle), and is not built.
+- **The skin does not age.** MakeHuman's old targets thin the face and the body, but there are no age spots and no lines in the skin's shader.
+- **The roll does not decide who is old in a town.** That is F4's, when townsfolk come over.
+- **Garrick's wheeled chair** is still owed.
 
 ## v80 — Session 1071 — perkbody's stepped loop starts from the last real frame (QA, tests only)
 `perkbody` went FLAKY on three runs, all shard 5: bf251d1 on auto/systems, and the producer's branch twice today (bc98a27 and ac8206e). Each time the red check was *off the road at 74 the sprint drains it*, with stamina 9.98 against `< 8` while sprinting; the retries read 6.78. The suite lives on auto/systems (Session 976), not on main. The sprint is measured in the game's own loop. The test stubs `requestAnimationFrame` and `REN.render` and calls `loop(_t)` ten times, adding a sixtieth of a second to its own clock `_t` each time. But the game's frame that was already queued when the stub went in still runs once, at real time. When it lands between two sprints, while the keys are being pressed, it leaves `prevT` ahead of `_t`. The next stepped frame then has a negative `dt`: the loop caps `dt` at 0.05 and puts no floor under it. So the sprint's drain, `stamina - dt*drain`, adds stamina. Real browsers never run time backwards, so this is the test's, not the game's.
@@ -23817,3 +23985,88 @@ So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where
 ### Needs eyes
 - Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
 - `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
+## v80 — Session 1085 — The old's walking staff (L1, prototype only)
+Session 1082 made the old and owed them a stick: OG-001's extras strip has an elder's carved staff, OG-042 gives the Old Blood elder "a tall carved staff", and OG-065's Síle carries a carved knotwork staff. This session builds that staff in the builder from those sheets, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` and `builder.check.mjs`.
+
+What is built (`buildStaff`, `STAFFS`, `D.staff` for the wood's colour, `D.staffMake`):
+- **The grip is the spear's.** The forearm is turned forward, the knuckles stand plumb, and the fingers close on a shaft 26 mm thick. The staff stands upright through the fist, its foot on the ground where the fist's line meets it.
+- **It is wood, never quite straight.** It bends by up to 11 mm between the fist and either end, a different way above and below, and it is true for 12 cm either side of the fist. Below the fist it thins to nine tenths, and above it swells by up to 8 per cent. The way it bends is read from the genome's own colours, so a saved person carries the same staff.
+- **By people:**
+  - The Gatelands: hazel, with the knob of its root left on, lumpy, 4.5 cm across; its foot bare.
+  - The Mark: ash, an iron ring under a 4 cm knob, and shod in iron.
+  - Aurenne: olive, a turned bronze knob and a bronze shoe.
+  - The Old Blood: the tall staff of OG-042 and OG-065. Its knob is 4.9 cm across, and for 20 cm under it the wood is carved in knotwork: two crossing spirals cut 1.6 mm in.
+  - The others stand 17 to 22 cm under the crown, at the chin. The Old Blood's stands 10 cm over it.
+- **Mesh.** It is rings of 32 round the bent centre line: 4 cm apart up the plain shaft, 3 mm over the carving and the knob. That is 3,600 to 4,100 triangles, and 7,800 to 8,200 carved.
+- **The roll.** It is drawn last in the old's own stream, so every earlier roll is as it was. A third of the old get one, more of them the older and the stooped ones, and half the Old Blood's. Only one hand holds things, so it goes to none who already carry a spear, a crossbow or a basket. If a staff and a basket are both asked, the staff wins; if a spear is asked, the spear does. No grown person or child rolls one, and a child roll clears it. A cloak is thrown back off the staff's arm, as off the spear's.
+- **The builder page.** "walking staff" among the garments, and a select for its make (or the people's own).
+- **The check script.** `builder.check.mjs --shots-only --shots=<names>` takes pictures without the 13-minute check.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: all 461 checks pass** (452 after Session 1082; 9 new). Every earlier check passes unchanged. The old's roll is still the grown roll's dress, the staff aside.
+- **Seven staffs** (each make on its people, a stooped woman of 0.9 over a long skirt, a Markman under a fur-collared cloak, the carved staff asked on a Gatelander):
+  - The foot is on the ground (0.0 mm) and the staff leans 0 rad.
+  - The fist sits 59 to 74 per cent up it. The fingers are bent 0.56 to 0.89 rad, the nearest 0.3 to 0.5 mm off the wood, and no point of the hand is inside it.
+  - Nothing else comes within 5.3 mm (the Old Blood elder's knob by her shoulder) to 19.6 mm.
+  - Its normals all point out of it (100%).
+  - It builds the same twice, and it saves and loads back.
+  - Neither the long skirt nor the cloak is broken by it.
+- **The roll, sixty old of each people:** 25 Gatelanders, 28 Markmen, 32 Aurennais and 39 Old Blood carry one. None of them holds anything else in that fist, and none of the grown or the children has one.
+- **A fix the pictures caught:** the first build wound the tube's faces inward, so the wood rendered dark and the knob as a black disc. The check now counts the outward normals.
+- **Pictures** (`--shots=staff`): `builder-staff-hazel.jpg`, `-ash.jpg`, `-olive.jpg` and `-carved.jpg`, each make on an old man or woman of its people. `builder-staff-stoop.jpg` is a stooped Gatelander from the side, and `builder-staff-top.jpg` is the carved knob and knotwork close.
+
+### Needs eyes
+- **The arm is the spear's.** The forearm reaches forward almost level, so from the side the old hold the staff out before them rather than leaning on it. A walking staff wants the hand nearer the hip and the staff a little ahead of the foot. That is a grip of its own (and a gait that leans on it), not built.
+- **The carving is shallow at play distance.** It is 1.6 mm deep on a 32-sided tube, so it reads only close up. A darker stain in the grooves would carry it further.
+- **No charms on the Old Blood's staff.** OG-042 hangs bone and stone charms on the elder; the belt's charms (Session 1042) could be tied under the knob.
+- **Still owed from the item:** Garrick's wheeled chair, and children under 11.
+
+## v80 — Session 1091 — The beasts' falls that never came to rest (backlog I)
+QA filed it on 17 Oct (Session 1056): one beast's ragdoll in about 200 never comes to rest and is frozen at the four-second cap, so `beastfall` goes red about one run in fourteen. QA asked for the cause to be found, not the cap lengthened. This is a fix to today's bodies, so it is fair while F4 is open: `js/32-people.js` and `js/34-creatures.js`, and `tests/beastfall.test.mjs`.
+
+A probe ran seeded falls of the six kinds and watched what each slow fall was doing past three seconds. There were two causes.
+- **A body lying still read as moving.** `tickRagdolls` called a body quiet when every point's p less q was under 1.5 mm a step. A step's ground pass sets q part of the way back toward p (its friction), and the floor grip and the walls set q too. So q is not where the point began the step. One Snow Wolf lay with a forepaw that the bones dragged 8 mm off and back every step. It ended each step exactly where it began, but its q stayed 1 cm off, and the body was not frozen until the cap. The step now records where each point began (`sy` beside the `sx` and `sz` the beasts' step already kept), and the quiet test reads how far the point went from there. The people's step already recorded all three, so their quiet test reads the same thing.
+- **A beast against a tree rocked on it.** The people's step got its wall hold in Session 466: a point a wall stopped last step is held in every pass, and in height too when it barely moves. The beasts' step never had it, and it held a point against a wall only in the last two of its ten passes. A Dire Wolf with its head on a trunk was driven into it and shoved back, head and neck rocking 2 mm a step on a one-second beat until the cap. The beasts' step now has the same hold, `o.w`/`o.w0` and `RD_GRIP.wall`, scaled by the beast's size.
+
+I also tried a third change and took it out. The hinge's correction of a knee or elbow was made inelastic once the body is down, by moving q with p. It settled the one boar left, but over the 1,350 falls it left 4 at the cap and 31 over 2.5 s, against 1 and 10 without it.
+
+### Verified (headless Chromium)
+- **The probe, before and after:** 1,350 seeded falls on the same draws, 300 each of the Wolf, the Snow Wolf and the Dire Wolf, and 150 each of the Ash Hound, the boar and the Cave Bear, plain, POWER and ARROW in turn.
+  - **Before:** 11 met the cap (Snow Wolf 3, Dire Wolf 5, boar 1, Cave Bear 2) and 19 took over 2.5 s.
+  - **After:** 1 met the cap (the boar) and 10 took over 2.5 s.
+  - The medians are unchanged: 1.38 to 1.6 s.
+- **`beastfall`: all checks pass, one new.** On a fresh page, before any other kill, it replays two of the old capped falls on their draws: the Snow Wolf (seed 73) and the Dire Wolf against a tree (seed 193).
+  - On the old code both freeze at 4.02 s. The check fails, and was run to see it fail.
+  - Now they rest at 0.78 s and 1.38 s.
+  - Its sixty seeded wolves: median 1.4 s, slowest 1.97, none over 2.5.
+- **The neighbours pass:** `ragdoll` (the people's falls, whose quiet test now reads the same measure), `ragdollsearch`, `corpsebody`, `fiercewolf`, `parrydeath`, `shipdead`.
+### Needs eyes
+- **One boar in the 1,350 still meets the cap.** Its left hind knee and hock rock about a centimetre against the ground on a half-second beat, with no wall near. The hinge holds the knee forward by moving it, and that move is a velocity. The fix tried for it (above) was worse over the whole set, so it is owed. `beastfall`'s fifteen unseeded deaths are wolves, not boars, so the suite should now go red about one run in a hundred or less, against one in fourteen.
+- **The ten falls over 2.5 s** are real settling: a tail root balanced upright that slowly topples, or a limb sliding down a slope. Nothing a player sees freezes mid-move.
+
+## v80 — Session 1092 — The walking staff's own grip (L1, prototype only)
+Session 1085 gave the old a walking staff on the spear's grip and named the fault in its Needs eyes: the forearm reached forward almost level, so from the side the old held the staff out before them rather than leaning on it. This session refines that grip, which needs no new question. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+The grip is still built the same way, only the forearm's aim is new:
+- **The forearm's aim.** The forearm is aimed down the new `STAFF_ARM` from the elbow, 38° forward and down, where the spear's runs 11° down.
+- **The hand.** It is rolled as before, so the knuckles stand plumb. The wrist cocks up to keep the hand level, and the fingers close on the shaft with `fistGrip`.
+- **The staff.** It still stands plumb through the fist with its foot where the fist's line meets the ground.
+- **The result.** The fist comes down to the belt, and the staff stands closer in, its foot just ahead of the toes. The spear and the crossbow keep their own aim.
+
+`buildStaff` now also reports the fist's height up the body and how far ahead of the toes the foot comes down. The check holds both.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: 461 of 461 pass,** the same count as before. The staff check also holds the fist at 45 to 60 per cent up the body and the foot 0 to 20 cm ahead of the toes.
+- **The seven staffs:**
+  - The fist sits 57 to 59 per cent up the body. Before, it was at mid-chest.
+  - The foot comes down 7.7 to 16 cm ahead of the toes; the stooped woman's is the furthest out.
+  - The fist is 53 to 67 per cent up the staff.
+  - The foot is on the ground (0.0 mm) and the staff leans 0 rad.
+  - The fingers are bent 0.56 to 0.89 rad, and no point of the hand is inside the wood.
+  - Nothing else comes within 5.3 mm (the Old Blood elder's knob by her shoulder, as before).
+  - Neither the long skirt nor the cloak is broken by it.
+- **Pictures** (`--shots=staff`): `builder-staff-hazel.jpg`, `-ash`, `-olive`, `-carved`, `-stoop` (from the side, where the change shows) and `-top`, all retaken.
+### Needs eyes
+- **The wrist cocks up about 38°** to keep the knuckles plumb, which reads as a firm grip from the side. A looser grip would let the staff lean out a little at its foot, which the check now forbids (lean under 0.08 rad).
+- **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
+- **Still owed from the item:** Garrick's wheeled chair, and children under 11.

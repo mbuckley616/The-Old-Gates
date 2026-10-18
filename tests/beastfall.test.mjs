@@ -10,6 +10,19 @@ await g.intoWorld(); await g.frames(30);
 const r = await page.evaluate(() => {
   forceTime(11); const raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0;
   const V = () => new THREE.Vector3(), out = { kinds: {}, wolves: [] };
+  // S1091: two falls from QA's measured three in 600 that met the four-second cap, on the draws that made them, from a fresh page
+  // (first, before any other kill). A Snow Wolf lying still with a forepaw dragged off and back by the bones every step kept a
+  // velocity it never spent, and the settle test (which read p less q) saw it moving; a Dire Wolf with its head against a tree
+  // rocked on it, the wall holding a point only in the last two passes (the people's S466 hold was never ported)
+  const fall = (kind, s, off, tag) => { const rr = Math.random, ang = (s % 4) * 1.1, dist = 4 + (s % 3) * 1.5, x = px + Math.sin(ang) * dist, z = pz + Math.cos(ang) * dist;
+    let a = s * 7919 + 104729 + kind.length * 31 + off; Math.random = () => { a = (a * 1103515245 + 12345) % 2147483648; return a / 2147483648; };
+    const e = buildZoneEnemy(WORLD.scene, [], x, z, kind, null); e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
+    e.mesh.position.set(x, activeTerrainH(x, z), z); e.mesh.updateMatrixWorld(true); e.hp = 0;
+    const R = (killZoneEnemy(e, WORLD.scene, tag), [...RAGDOLLS].find(q => q.rig === e.limbs.wolf)); let i = 0, walls = 0;
+    if (R && R.solid) { const s0 = R.solid; R.solid = (x, z) => { const v = s0(x, z); if (v) walls++; return v; }; }
+    while (R && RAGDOLLS.has(R) && i < 300) { tickRagdolls(1 / 60); i++; }
+    Math.random = rr; WORLD.scene.remove(e.mesh); return { kind, t: R ? +R.t.toFixed(2) : 9, walls }; };
+  out.capped = [fall('Snow Wolf', 73, 0, ' (POWER)'), fall('Dire Wolf', 193, 5000, ' (POWER)')];
   let n = 0;
   const kill = (type, tag) => {
     const a = n++ * 1.1, dist = 4 + (n % 3) * 1.5, x = px + Math.sin(a) * dist, z = pz + Math.cos(a) * dist;
@@ -68,6 +81,7 @@ check('most wolves end on the flank rather than the back (back up between -.5 an
 check('every wolf settles, and the deaths differ (the hips land in different places)', ws.every(w => w.settled > 0 && w.settled < 4) && new Set(ws.map(w => w.spread)).size > 3, ws.map(w => w.settled));
 { const st = [...r.seeded].sort((a, b) => a - b); console.log('seeded wolves: median', st[30], 'slowest', st[59], 'over 2.5 s', st.filter(x => x > 2.5).length);
   check('sixty seeded wolf deaths: the median rests within 1.6 s, none meets the cap, at most one takes over 2.5 s', st.length === 60 && st[30] < 1.6 && st[59] < 4 && st.filter(x => x > 2.5).length <= 1, { median: st[30], slowest: st.slice(-3) }); }
+check('S1091: two falls that met the cap (a Snow Wolf lying still on a stored velocity, a Dire Wolf against a tree) settle inside 3 s', r.capped.every(c => c.t < 3) && r.capped[1].walls > 0, r.capped);
 const sp = r.kinds.Spider;
 check('a spider keeps its curl where it stands: no ragdoll, no 90° turn, on the ground', sp.rig && !sp.ragdoll && sp.rotZ === 0 && Math.abs(sp.lift) < .01, sp);
 check('a beast\'s fall costs under 15 ms a step (about 1 ms alone; a loaded runner is slower)', r.msPerStep > 0 && r.msPerStep < 15, r.msPerStep);
