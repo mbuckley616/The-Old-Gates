@@ -24008,3 +24008,26 @@ What is built (`buildStaff`, `STAFFS`, `D.staff` for the wood's colour, `D.staff
 - **The carving is shallow at play distance.** It is 1.6 mm deep on a 32-sided tube, so it reads only close up. A darker stain in the grooves would carry it further.
 - **No charms on the Old Blood's staff.** OG-042 hangs bone and stone charms on the elder; the belt's charms (Session 1042) could be tied under the knob.
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
+
+## v80 — Session 1091 — The beasts' falls that never came to rest (backlog I)
+QA filed it on 17 Oct (Session 1056): one beast's ragdoll in about 200 never comes to rest and is frozen at the four-second cap, so `beastfall` goes red about one run in fourteen. QA asked for the cause to be found, not the cap lengthened. This is a fix to today's bodies, so it is fair while F4 is open: `js/32-people.js` and `js/34-creatures.js`, and `tests/beastfall.test.mjs`.
+
+A probe ran seeded falls of the six kinds and watched what each slow fall was doing past three seconds. There were two causes.
+- **A body lying still read as moving.** `tickRagdolls` called a body quiet when every point's p less q was under 1.5 mm a step. A step's ground pass sets q part of the way back toward p (its friction), and the floor grip and the walls set q too. So q is not where the point began the step. One Snow Wolf lay with a forepaw that the bones dragged 8 mm off and back every step. It ended each step exactly where it began, but its q stayed 1 cm off, and the body was not frozen until the cap. The step now records where each point began (`sy` beside the `sx` and `sz` the beasts' step already kept), and the quiet test reads how far the point went from there. The people's step already recorded all three, so their quiet test reads the same thing.
+- **A beast against a tree rocked on it.** The people's step got its wall hold in Session 466: a point a wall stopped last step is held in every pass, and in height too when it barely moves. The beasts' step never had it, and it held a point against a wall only in the last two of its ten passes. A Dire Wolf with its head on a trunk was driven into it and shoved back, head and neck rocking 2 mm a step on a one-second beat until the cap. The beasts' step now has the same hold, `o.w`/`o.w0` and `RD_GRIP.wall`, scaled by the beast's size.
+
+I also tried a third change and took it out. The hinge's correction of a knee or elbow was made inelastic once the body is down, by moving q with p. It settled the one boar left, but over the 1,350 falls it left 4 at the cap and 31 over 2.5 s, against 1 and 10 without it.
+
+### Verified (headless Chromium)
+- **The probe, before and after:** 1,350 seeded falls on the same draws, 300 each of the Wolf, the Snow Wolf and the Dire Wolf, and 150 each of the Ash Hound, the boar and the Cave Bear, plain, POWER and ARROW in turn.
+  - **Before:** 11 met the cap (Snow Wolf 3, Dire Wolf 5, boar 1, Cave Bear 2) and 19 took over 2.5 s.
+  - **After:** 1 met the cap (the boar) and 10 took over 2.5 s.
+  - The medians are unchanged: 1.38 to 1.6 s.
+- **`beastfall`: all checks pass, one new.** On a fresh page, before any other kill, it replays two of the old capped falls on their draws: the Snow Wolf (seed 73) and the Dire Wolf against a tree (seed 193).
+  - On the old code both freeze at 4.02 s. The check fails, and was run to see it fail.
+  - Now they rest at 0.78 s and 1.38 s.
+  - Its sixty seeded wolves: median 1.4 s, slowest 1.97, none over 2.5.
+- **The neighbours pass:** `ragdoll` (the people's falls, whose quiet test now reads the same measure), `ragdollsearch`, `corpsebody`, `fiercewolf`, `parrydeath`, `shipdead`.
+### Needs eyes
+- **One boar in the 1,350 still meets the cap.** Its left hind knee and hock rock about a centimetre against the ground on a half-second beat, with no wall near. The hinge holds the knee forward by moving it, and that move is a velocity. The fix tried for it (above) was worse over the whole set, so it is owed. `beastfall`'s fifteen unseeded deaths are wolves, not boars, so the suite should now go red about one run in a hundred or less, against one in fourteen.
+- **The ten falls over 2.5 s** are real settling: a tail root balanced upright that slowly topples, or a limb sliding down a slope. Nothing a player sees freezes mid-move.
