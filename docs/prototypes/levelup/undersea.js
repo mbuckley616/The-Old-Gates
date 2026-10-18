@@ -116,14 +116,25 @@ import { gatelandsSloop, gatelandsCog, markCutter, aurenneGalleon } from './ship
 function encrust(m, k) { const c = m.clone(); c.onBeforeCompile = s => { s.vertexShader = 'varying vec3 vNe;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vNe = normalize(mat3(modelMatrix) * normal);');
     s.fragmentShader = 'varying vec3 vNe;\n' + s.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.14, .22, .10), ${k.toFixed(2)} * smoothstep(-.2, .7, vNe.y));\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.20, .24, .18), ${(k * .5).toFixed(2)});`); };
   c.customProgramCacheKey = () => 'encrust' + k; return c; }
+// drop a mesh's triangles that a test rejects (drop(v) on any of its vertices, or dropTri([a, b, c]) on all three; in the hull's own frame, before she is laid): how a wreck loses
+// her top-hamper, a stove-in strake or a fallen quarter, from the ship's own meshes. -> the triangles dropped
+function cutMesh(m, drop, dropTri) { const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, keep = { p: [], n: [], u: [] }, v = new THREE.Vector3(); let gone = 0;
+  for (let t = 0; t < P.count; t += 3) { let out = false; if (dropTri) out = dropTri([0, 1, 2].map(k => new THREE.Vector3().fromBufferAttribute(P, t + k))); else for (let k = 0; k < 3; k++) { v.fromBufferAttribute(P, t + k); if (drop(v)) { out = true; break; } } if (out) { gone++; continue; }
+    for (let k = 0; k < 3; k++) { keep.p.push(P.getX(t + k), P.getY(t + k), P.getZ(t + k)); if (N) keep.n.push(N.getX(t + k), N.getY(t + k), N.getZ(t + k)); if (U) keep.u.push(U.getX(t + k), U.getY(t + k)); } }
+  if (!gone) return 0; const h = new THREE.BufferGeometry(); h.setAttribute('position', new THREE.Float32BufferAttribute(keep.p, 3)); if (N) h.setAttribute('normal', new THREE.Float32BufferAttribute(keep.n, 3)); if (U) h.setAttribute('uv', new THREE.Float32BufferAttribute(keep.u, 2)); g.dispose(); m.geometry = h; return gone; }
 export function wreckSite(o = {}) {
   const r = o.r || stream('undersea:wrecks'), B = new Map(), put = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k); if (!x.attributes.uv) worldUV(x, .5); (B.get(key) || B.set(key, []).get(key)).push(x); return x; };
   const floor = (x, z) => { const t = Math.min(1, Math.max(0, -z / 80)); return -(6 + 22 * t) + fbm(x / 16, z / 16, 3) * 1.4 + Math.sin(x * .8 + z * .4) * .04; };
   { const N = 130, g = new THREE.PlaneGeometry(110, 104, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 44; P.setXYZ(i, x, floor(x, z), z); } g.computeVertexNormals(); worldUV(g, .25); put('sand', g); }
   const group = new THREE.Group(), wrecks = [], cargo = [], chests = [], gone = []; let tris = 0, draws = 0;
   // lay a hull: heel (about her length), pitch, turn; sunk so her lowest point is `sink` under the sand at her middle; weed by depth
-  const lay = (name, S, { x, z, heel = 0, pitch = 0, ry = 0, sink = .5, weed = .5 }) => { const g = S.group;
+  const lay = (name, S, { x, z, heel = 0, pitch = 0, ry = 0, sink = .5, weed = .5, mast = null, drop = null }) => { const g = S.group, dmg = { spar: 0, hull: 0, top0: S.top };
     for (const m of [...g.children]) if (/sail|rope/.test(m.name)) { g.remove(m); gone.push(name + ':' + m.name); }
+    // Session 1102, the damage: the masts broken off at `mast` over her deck (their tops and yards gone with them), her hull cut by `drop`
+    if (mast != null) { const cy = S.deck + mast; for (const m of g.children) { if (/sail|rope/.test(m.name)) continue;
+        // what lies wholly over the break goes (the yards, the tops, the topmasts); a spar that crosses it is cut off at it, a stump
+        dmg.spar += cutMesh(m, null, t => t.every(v => v.y > cy)); if (m.name === 'spar') { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) if (P.getY(i) > cy) P.setY(i, cy); P.needsUpdate = true; } } }
+    if (drop) for (const m of g.children) if (!/spar|sail|rope/.test(m.name)) dmg.hull += cutMesh(m, drop);
     for (const m of g.children) m.material = encrust(m.material, weed);
     // her keel follows the slope along her heading; then she settles by her planking (not her spars): the lowest point of her hull, against
     // the sand under that point, lies `sink` into it
@@ -133,7 +144,7 @@ export function wreckSite(o = {}) {
     g.position.y = -sink - low; g.updateMatrixWorld(true);
     let rest = Infinity; for (const m of g.children) { if (/spar|iron|rope|sail/.test(m.name)) continue; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 3) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); rest = Math.min(rest, v.y - floor(v.x, v.z)); } }
     const b2 = new THREE.Box3().setFromObject(g); group.add(g); g.traverse(m => { if (m.isMesh) { tris += m.geometry.attributes.position.count / 3; draws++; } });
-    const w = { name, depth: +(-fy).toFixed(2), box: [b2.min.x, b2.min.y, b2.min.z, b2.max.x, b2.max.y, b2.max.z].map(v => +v.toFixed(2)), floorUnder: +fy.toFixed(2), keel: +b2.min.y.toFixed(2), heel: +(heel * 180 / Math.PI).toFixed(1), sink, rest: +rest.toFixed(3), slope: +(Math.atan(slope) * 180 / Math.PI).toFixed(1) }; wrecks.push(w); return w; };
+    const w = { name, depth: +(-fy).toFixed(2), box: [b2.min.x, b2.min.y, b2.min.z, b2.max.x, b2.max.y, b2.max.z].map(v => +v.toFixed(2)), floorUnder: +fy.toFixed(2), keel: +b2.min.y.toFixed(2), heel: +(heel * 180 / Math.PI).toFixed(1), sink, rest: +rest.toFixed(3), slope: +(Math.atan(slope) * 180 / Math.PI).toFixed(1), dmg, top: +new THREE.Box3().setFromObject(g).max.y.toFixed(2), group: g, S, at: { x, z, ry, heel } }; wrecks.push(w); return w; };
   // her cargo about her and her chest by her stern
   const strew = (w, n, amph, stern) => { const [x0, , z0, x1, , z1] = w.box, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
     for (let k = 0; k < n; k++) { const a = r() * Math.PI * 2, d = 3 + r() * 6, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d, fy = floor(x, z), kind = amph && k % 2 ? 2 : k % 3 ? 0 : 1;
@@ -141,16 +152,26 @@ export function wreckSite(o = {}) {
       else if (kind === 1) { const g = new THREE.CylinderGeometry(.28, .25, .75, 12); g.rotateZ(Math.PI / 2); g.rotateY(r() * 3); g.translate(x, fy + .22, z); worldUV(g, .6); put('crate', g); cargo.push({ x, y: fy + .22 - .28, z, floor: fy }); }
       else { const pts = [[.02, 0], [.14, .1], [.2, .35], [.18, .6], [.07, .75], [.06, .85], [.09, .88]].map(([u, v]) => new THREE.Vector2(u, v)), g = new THREE.LatheGeometry(pts, 10); g.rotateZ(Math.PI / 2 * (.7 + r() * .3)); g.rotateY(r() * 3); g.translate(x, fy + .14, z); put('clay', g); cargo.push({ x, y: fy + .14 - .2, z, floor: fy }); } }
     const [sx, sz] = stern, fy = floor(sx, sz), g = new THREE.BoxGeometry(.9, .5, .55); g.rotateY(r() * 3); g.rotateZ(.25); g.translate(sx, fy + .2, sz); worldUV(g, .6); put('chest', g); chests.push({ x: sx, y: fy + .2 - .3, z: sz, floor: fy }); };
+  // a fallen mast: a spar of length L and radius rad lying on the sand from (x, z) along heading a, bedded a little into it
+  const spars = []; const fallSpar = (x, z, a, L, rad) => { const n = 8; for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, xa = x + Math.sin(a) * L * t0, za = z + Math.cos(a) * L * t0, xb = x + Math.sin(a) * L * t1, zb = z + Math.cos(a) * L * t1,
+      ya = floor(xa, za) + rad * .7, yb = floor(xb, zb) + rad * .7, d = new THREE.Vector3(xb - xa, yb - ya, zb - za), g = new THREE.CylinderGeometry(rad * (1 - .25 * t1), rad * (1 - .25 * t0), d.length() + .02, 10);
+      g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); g.translate((xa + xb) / 2, (ya + yb) / 2, (za + zb) / 2); worldUV(g, .6); put('spar', g); }
+    spars.push({ x: +x.toFixed(2), z: +z.toFixed(2), L, ends: [[x, z], [x + Math.sin(a) * L, z + Math.cos(a) * L]].map(([px, pz]) => [+px.toFixed(2), +pz.toFixed(2), +floor(px, pz).toFixed(2)]) }); };
   // the storm wreck on her side across the reef
   { for (let k = 0; k < 16; k++) { const x = 3 + r() * 9, z = -9 - r() * 9, s = .6 + r() * 1.3, g = new THREE.IcosahedronGeometry(s, 1), P = g.attributes.position, ph = r() * 9; for (let i = 0; i < P.count; i++) { const a = P.getX(i), b = P.getY(i), c = P.getZ(i), n = 1 + .22 * Math.sin(a * 3.1 + ph) * Math.cos(c * 2.7 + b * 1.9); P.setXYZ(i, a * n, b * n * .6, c * n); } g.computeVertexNormals(); worldUV(g, .5); g.translate(x, floor(x, z) + s * .1, z); put('reef', g); }
-    const w = lay('storm wreck (Gatelands sloop)', gatelandsSloop({}, stream('wreck:sloop')), { x: 7, z: -14, heel: -1.25, pitch: .05, ry: .7, sink: .3, weed: .35 }); strew(w, 8, false, [3.2, -17.5]); }
+    const w = lay('storm wreck (Gatelands sloop)', gatelandsSloop({}, stream('wreck:sloop')), { x: 7, z: -14, heel: -1.25, pitch: .05, ry: .7, sink: .3, weed: .35, mast: 2.4 }); strew(w, 8, false, [3.2, -17.5]); fallSpar(12.5, -12.0, 2.3, 6.5, .14); }
   // the fight: the cog heeled and settled, the cutter's bow in her side
-  { const w1 = lay('the fight (Gatelands cog)', gatelandsCog({}, stream('wreck:cog')), { x: -6, z: -42, heel: .45, ry: -.25, sink: .7, weed: .55 });
-    const w2 = lay('the fight (Mark cutter)', markCutter({}, stream('wreck:cutter')), { x: 4.6, z: -38.5, heel: -.22, pitch: .16, ry: -1.62, sink: .8, weed: .55 }); strew(w1, 10, false, [-9.5, -49]); strew(w2, 6, false, [11.5, -37]); }
+  { const w2 = lay('the fight (Mark cutter)', markCutter({}, stream('wreck:cutter')), { x: 2.5, z: -38.6, /* her stem 0.1 m inside the cog's planking (it stopped 2.1 m short at x 4.6) */ heel: -.22, pitch: .16, ry: -1.62, sink: .8, weed: .55, mast: 4.0 });
+    // where her stem is, the cog is stove in: her strakes, rail and deck within 1.5 m of the cutter's stem head are gone (in the cog's frame)
+    const cu = w2.S, stem = new THREE.Vector3(0, cu.sheerAt(cu.L / 2) - .3, cu.L / 2 - .4).applyMatrix4(w2.group.matrixWorld), cog = gatelandsCog({}, stream('wreck:cog'));
+    const placeCog = { x: -6, z: -42, heel: .45, ry: -.25 }, Mc = new THREE.Matrix4().compose(new THREE.Vector3(placeCog.x, 0, placeCog.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, placeCog.ry, placeCog.heel, 'YXZ')), new THREE.Vector3(1, 1, 1));
+    const local = stem.clone(); /* the cog's y is not known until she settles: the hole is taken about the stem's place along her and its height over her keel */
+    const w1 = lay('the fight (Gatelands cog)', cog, { ...placeCog, sink: .7, weed: .55, mast: 5.0, drop: v => { const wv = v.clone().applyMatrix4(Mc); return Math.hypot(wv.x - local.x, wv.z - local.z) < 1.5 && v.y > -.4; } });
+    w1.hole = { at: [+local.x.toFixed(2), +local.y.toFixed(2), +local.z.toFixed(2)] }; strew(w1, 10, false, [-9.5, -49]); strew(w2, 6, false, [11.5, -37]); fallSpar(-12.5, -38, -1.0, 7.5, .17); fallSpar(9.5, -33.5, .5, 5.5, .12); }
   // the deep wreck: upright, sunk to her bilge, the most grown
-  { const w = lay('the deep wreck (Aurenne galleon)', aurenneGalleon({}, stream('wreck:galleon')), { x: 1, z: -74, heel: .1, ry: .45, sink: 1.3, weed: .8 }); strew(w, 12, true, [-6, -80]); }
-  const M = { sand: mat('plaster', { ns: 1.6, color: 0xd2c29a, rough: 1 }), reef: encrust(mat('rock', { ns: 1.2, color: 0x8a8478 }), .6), crate: encrust(mat('wood', { ns: .9, color: 0x7a5e40 }), .5), clay: encrust(new THREE.MeshStandardMaterial({ color: new THREE.Color(.62, .36, .22), roughness: .8 }), .4), chest: encrust(mat('wood', { ns: .9, color: 0x5e4630 }), .45) };
+  { const ga = aurenneGalleon({}, stream('wreck:galleon')), zq = -ga.L / 2 + 3.6; const w = lay('the deep wreck (Aurenne galleon)', ga, { x: 1, z: -74, heel: .1, ry: .45, sink: 1.3, weed: .8, mast: 9.0, drop: v => v.z < zq && v.x > .4 && v.y > ga.deck + .9 }); strew(w, 12, true, [-6, -80]); fallSpar(-7, -66, 2.6, 9, .2); fallSpar(8, -79, -.4, 7, .15); }
+  const M = { sand: mat('plaster', { ns: 1.6, color: 0xd2c29a, rough: 1 }), reef: encrust(mat('rock', { ns: 1.2, color: 0x8a8478 }), .6), crate: encrust(mat('wood', { ns: .9, color: 0x7a5e40 }), .5), clay: encrust(new THREE.MeshStandardMaterial({ color: new THREE.Color(.62, .36, .22), roughness: .8 }), .4), chest: encrust(mat('wood', { ns: .9, color: 0x5e4630 }), .45), spar: encrust(mat('wood', { ns: .9, color: 0x6e5a42 }), .6) };
   for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'sand'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
   const [a, b] = wrecks.slice(1, 3).map(w => new THREE.Box3(new THREE.Vector3(...w.box.slice(0, 3)), new THREE.Vector3(...w.box.slice(3))));
-  return { group, tris: Math.round(tris), draws, floor, wrecks, cargo, chests, gone, pair: a.intersectsBox(b) };
+  return { group, tris: Math.round(tris), draws, floor, wrecks: wrecks.map(({ group: _g, S: _s, ...w }) => w), cargo, chests, gone, spars, pair: a.intersectsBox(b) };
 }

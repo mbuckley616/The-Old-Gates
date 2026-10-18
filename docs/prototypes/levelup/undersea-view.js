@@ -3,7 +3,7 @@
 // quay's face, the niche behind the kelp) | boat (the rowing boat on the sand by the fourth pier) | above (from the quay's stair, the
 // arches' shapes under the water); &water=green (default, the Gatelands, visibility about 15 m) | clear (turquoise, about 40 m) | mark
 // (dark cold blue, about 10 m): the question, the water's colour and clarity.
-// ?place=wrecks (Session 1101): the wrecks at three depths, &view=pair (default) | storm | deep | wide.
+// ?place=wrecks (Session 1101): the wrecks at three depths, &view=pair (default) | storm | deep | wide | hole (Session 1102: where the cutter stove the cog in).
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, skyDome, run } from './common.js';
 import { drownedArches, wreckSite } from './undersea.js';
@@ -28,7 +28,7 @@ if (UNDER) { const c = document.createElement('canvas'); c.width = 64; c.height 
   const sm = new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(...WA.sun), transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: true });
   for (let k = 0; k < 26; k++) { const x = -14 + (k * 7.3) % 28, z = -2 - (k * 11.7) % (PLACE === 'wrecks' ? 80 : 40), h = 16, g = new THREE.PlaneGeometry(.6 + (k % 3) * .4, h); g.translate(0, -h / 2, 0); const m = new THREE.Mesh(g, sm); m.position.set(x, 0, z); m.rotation.set(-.25, k * .7, .2); scene.add(m); } }
 const C = { swim: [[3.4, -3.0, -2.8], [-.2, -4.8, -26]], arches: [[11.5, -4.4, -9.5], [0, -4.2, -11]], alcove: [[6.4, -2.4, -4.4], [7, -2.4, .6]], boat: [[8.0, -5.4, -14.6], [4.6, -7.4, -18.4]], above: [[-16.9, 3.4, -.8], [-2, -3, -16]] }[VIEW] || [[3.4, -3.6, -2.6], [-.2, -4.6, -26]];
-const CW = { storm: [[16, -6.5, -6], [6, -9.5, -15]], pair: [[-1, -11.5, -24.5], [-1.5, -16.5, -41]], deep: [[13, -20.5, -60], [1, -24, -74]], wide: [[22, -9, -20], [0, -18, -50]] }[VIEW];
+const CW = { storm: [[16, -6.5, -6], [6, -9.5, -15]], pair: [[-1, -11.5, -24.5], [-1.5, -16.5, -41]], deep: [[13, -20.5, -60], [1, -24, -74]], wide: [[22, -9, -20], [0, -18, -50]], hole: [[-.8, -14.2, -45.5], [-4.3, -15.6, -38.6]] }[VIEW];
 if (PLACE === 'wrecks') { const c = CW || [[-1, -11.5, -24.5], [-1.5, -16.5, -41]]; C[0] = c[0]; C[1] = c[1]; }
 cam.position.set(...C[0]); cam.lookAt(...C[1]);
 STATS.view = VIEW; STATS.water = WK; STATS.tris = P.tris; STATS.draws = P.draws; STATS.kelp = P.kelp ? P.kelp.length : 0; STATS.place = PLACE; STATS.wrecks = P.wrecks ? P.wrecks.length : 0; STATS.plans = { arches: { tris: P.tris, draws: P.draws } };

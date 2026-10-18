@@ -24329,3 +24329,30 @@ Session 1100 drew OG-125's shallows and asked the water's colour and clarity as 
 - **Inside:** the holds and cabins are the hulls' own dark boxes. With #418 answered, the base's rooms would furnish them as a drowned cabin.
 - **Budget:** 161,730 triangles for four hulls is the prototype's full detail. In the game a wreck would want the ships' far copy beyond 30 m.
 - **Owed:** OG-125's sea caves with air pockets, the sunken village and temples, the gate structures still lit under the sea, and the Abyss.
+
+## v80 — Session 1102 — Under the sea: the wrecks broken (backlog L10, prototype only)
+Session 1101 laid the island hulls on the sea floor whole, and its entry named that as the first thing owed: no stove-in side, no broken mast. This session breaks them from the ships' own meshes, with no new model, in `undersea.js`'s `wreckSite`.
+- **`cutMesh(m, drop, dropTri)`:** drops a merged mesh's triangles that a test rejects, in the hull's own frame before she is laid.
+  - **`drop(v)`** rejects a triangle when any of its vertices fails (a hole).
+  - **`dropTri([a, b, c])`** judges the triangle whole.
+- **The masts broken, at a height over each deck:** the sloop's at 2.4 m, the cutter's at 4, the cog's at 5, the galleon's at 9.
+  - **What goes:** everything wholly over the break, the yards, the fighting tops and the topmasts, in any material.
+  - **What stays:** a spar crossing the break is cut off at it, so a stump stands. The first try dropped every triangle with a vertex over the break. That took the whole mast, which is one segment from heel to head, and left the yards and the cog's top floating.
+  - **The fallen tops:** five fallen spars lie along the sand beside their ships (6.5 to 9 m), bedded a little into it.
+- **The cog stove in:** where the cutter's stem is, the cog's strakes, rail and deck within 1.5 m of it, above her turn of the bilge, are gone, 2,392 triangles.
+  - **The fix:** the first try cut nothing. Measured, the cutter's stem stood 2.1 m short of the cog's planking: her bowsprit was what made the two boxes meet. She is moved 2.1 m along her heading, so her stem is in the hole.
+- **The galleon's starboard quarter fallen in:** her castle's walls and rail over the deck aft of 3.6 m from her stern, 1,286 triangles, so her cabin stands open on that side.
+- `undersea.html?place=wrecks&view=hole` looks at the cutter's head in the cog's side.
+
+### Verified (headless Chromium)
+- **`undersea.check.mjs`: 30 of 30 pass.** Three checks are new and one was made stricter.
+  - **The masts broken:** in all four hulls, 30 to 96 triangles of yards and tops are gone, and each stands no taller than built (the sloop 11.5 → 7.0 m keel to top, the cutter 14 → 10.2). The cog reads 12.5 against her 11.5 because, heeled, her keel to top is not her height.
+  - **The cog's hole:** 2,392 triangles of the cog are gone about the cutter's stem, and the fight's hulls still meet. The check now asks for both.
+  - **The galleon's quarter:** 1,286 triangles are gone.
+  - **The fallen spars:** five lie along the sand.
+  - **The rest:** all Session 1101's checks pass as before (four hulls, 159,394 triangles in 37 draws, each settled 0.3 to 1.3 m into the sand, the cargo and chests on it). The drowned arches' eleven checks also pass.
+- **Pictures:** `undersea-wreck-pair.jpg`, `-pair-clear`, `-storm`, `-deep` and `-hole`.
+### Needs eyes
+- **The cut edges** are clean. A hole wants sprung planks standing out of it and splinters, and a stump wants a jagged top. Both would be small pieces placed at the edge `cutMesh` leaves.
+- **The fallen quarter** shows the galleon's cabin as her own dark box. With #418 answered, the drowned cabin would be furnished from the base.
+- **Owed:** OG-125's sea caves with air pockets, the sunken village and temples, the lit gate structures and the Abyss.
