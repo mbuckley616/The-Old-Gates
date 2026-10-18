@@ -938,7 +938,15 @@ function sitBody(C) {
   if (B.chains.neck && GAITS[C.gait].lie) { const n = B.chains.neck; n.forEach(nm => C.byName[nm].rotation.x -= SIT.lieNeck / n.length); if (C.byName.head) C.byName.head.rotation.x += SIT.lieNeck; }
   // the tail: its first bone turned back level against the pitch and its droop (then up by what sitFind found), each bone after curled round to one side
   if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const a = rigPos(C, t0, V()), b = rigPos(C, C.byName[B.chains.tail[1]], V()), d = b.sub(a);
-    t0.rotation.x += Math.atan2(-d.y, -d.z) + C.sitT; B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += SIT.tailCurl; }); }
+    t0.rotation.x += Math.atan2(-d.y, -d.z) + C.sitT; if (C.plan.sitWrap) sitWrap(C, C.plan.sitWrap); else B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += SIT.tailCurl; }); }
+}
+// a cat's tail wrapped round its forefeet (Session 1130, the plan's sitWrap: [the first bone's turn, the rest's turn shared down them]).
+// Each bone is turned about the body's up, not its own axes (whose tilt bent a bigger curl upward, Session 1126), so the tail stays
+// as level as sitFind laid it: out to the cat's right from the haunch, then forward along its flank toward the forefeet
+function sitWrap(C, [a0, a]) {
+  const t = C.B.chains.tail, up = V(0, 1, 0).applyQuaternion(C.rig.getWorldQuaternion(new THREE.Quaternion())), q = new THREE.Quaternion(), qp = new THREE.Quaternion();
+  t.forEach((nm, k) => { const b = C.byName[nm]; b.parent.updateWorldMatrix(true, false); b.parent.getWorldQuaternion(qp);
+    q.setFromAxisAngle(up.clone().applyQuaternion(qp.invert()), -(k ? a / (t.length - 1) : a0)); b.quaternion.premultiply(q); });
 }
 // a hind leg sitting: the toes' tip on the ground ahead, the toes and the hock's long bone laid back from it, the hock raised a
 // twentieth of the leg off the paw's height so the shin's flesh clears the ground, just behind the hip, and the thigh and shin bent to meet it about the knee (which points forward, as it stands)
@@ -1235,7 +1243,7 @@ PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 
 // ── Session 843: the common set (OG-084's "all islands": wolf, red fox, brown hare, raven, crow, wild boar, deer, badger,
 // otter, trout; backlog L3). Peaceful animals, the first the game has. Five are other plans at another size and colour;
 // the fox, the boar, the badger and the otter have parts of their own, from the kit's parts and leg presets ──
-const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, sitTuck: base.sitTuck, ...o, parts: o.parts || base.parts });
+const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, sitTuck: base.sitTuck, sitWrap: base.sitWrap, ...o, parts: o.parts || base.parts });
 Object.assign(PLANS, {
   wolf: re(PLANS.ironwolf, { name: 'Grey wolf', src: 'OG-084 (all islands: wolf)', scale: .92, palette: { coat: [.5, .45, .38], saddle: [.24, .21, .18], belly: [.84, .8, .72], dark: [.06, .05, .05], horn: [.8, .76, .7] }, fur: { len: .032, layers: 9, sx: 260 } }),
   redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'], wag: .06, speedK: 1.1,
@@ -1399,7 +1407,7 @@ Object.assign(PLANS, {
       ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
       ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
     ] },
-  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit', 'lie'], sitTuck: .3, wag: .1, speedK: 1, neckNod: .02,
+  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit', 'lie'], sitTuck: .3, sitWrap: [.9, 2.4], wag: .1, speedK: 1, neckNod: .02,
     palette: { coat: [.5, .42, .32], saddle: [.24, .19, .14], belly: [.84, .78, .66], dark: [.06, .05, .04], pale: [.9, .86, .78] },
     pattern: { kind: 'stripes', period: .07, tone: 'saddle' }, fur: { len: .022, layers: 8, sx: 300 },
     parts: [
@@ -1451,7 +1459,7 @@ Object.assign(PLANS, {
   icehorn: re(PLANS.goat, { name: 'Icehorn', src: 'OG-031 (huge curled hollow horns that moan in the wind)', scale: 1.15, rough: .8,
     palette: { coat: [.86, .84, .8], saddle: [.74, .72, .68], belly: [.9, .89, .86], dark: [.08, .07, .06], hoof: [.12, .1, .08], horn: [.62, .58, .5] }, fur: { len: .08, layers: 11, sx: 70, sy: 22, droop: .75 },
     parts: PLANS.goat.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...curled, len: .5 } }] : [k, o]) }),
-  stormlynx: re(PLANS.hollowcat, { name: 'Stormlynx', src: 'OG-031 (high ridges; snowshoe paws, long ear tufts)', scale: 1.4,
+  stormlynx: re(PLANS.hollowcat, { name: 'Stormlynx', src: 'OG-031 (high ridges; snowshoe paws, long ear tufts)', scale: 1.4, sitWrap: null,
     palette: { coat: [.66, .64, .6], saddle: [.42, .4, .38], belly: [.9, .88, .84], dark: [.06, .05, .05], pale: [.92, .9, .86] }, fur: { len: .035, layers: 9, sx: 240 }, pattern: null,
     parts: PLANS.hollowcat.parts.map(([k, o]) => k === 'tail' ? [k, { ...o, len: .1, r: [.04, .035] }] : k === 'head' ? [k, { ...o, ears: { ...o.ears, size: .1 } }] : k === 'legs' ? [k, { ...o, r: o.r.map((x, i) => i === 3 ? x * 1.8 : x * 1.15) }] : [k, o]) }),
   ironpineelk: re(PLANS.stag, { name: 'Ironpine Elk', src: 'OG-031 (dark, with sweeping antlers)', scale: 1.22,
