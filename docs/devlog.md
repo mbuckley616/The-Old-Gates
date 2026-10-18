@@ -25330,7 +25330,7 @@ So the waves form on the roof, and the draft's hatch fallback line is not needed
   cull target (Wolf here), standing at the roof's height (0.00 off it after six frames); at 5:59 with all dead the watch still runs; at
   6h it is held, quest done, `spireDay` today, the log ending with the draft's lines, and Wait no longer refused. Off the roof 9 s the
   watch runs; at 11 s it ends and no watch foe is left in the world; it begins again at 23h; a dead player and an occupied seat end it.
-- **Neighbours pass:** `duel` (2/2), `restslip`, `dateline`.
+- **Neighbours pass:** `duel` (2/2), `restslip`, `dateline`, and `jobcount` and `jobseed` after the cull table became one (`CULL_BY_BIOME`).
 ### Needs eyes
 - A night on the roof is ten game hours of real play with Wait refused. The draft chose that; how long it feels at the game's clock rate
   is the playtest.
