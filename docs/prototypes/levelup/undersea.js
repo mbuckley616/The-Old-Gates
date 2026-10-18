@@ -122,6 +122,16 @@ function cutMesh(m, drop, dropTri) { const g = m.geometry, P = g.attributes.posi
   for (let t = 0; t < P.count; t += 3) { let out = false; if (dropTri) out = dropTri([0, 1, 2].map(k => new THREE.Vector3().fromBufferAttribute(P, t + k))); else for (let k = 0; k < 3; k++) { v.fromBufferAttribute(P, t + k); if (drop(v)) { out = true; break; } } if (out) { gone++; continue; }
     for (let k = 0; k < 3; k++) { keep.p.push(P.getX(t + k), P.getY(t + k), P.getZ(t + k)); if (N) keep.n.push(N.getX(t + k), N.getY(t + k), N.getZ(t + k)); if (U) keep.u.push(U.getX(t + k), U.getY(t + k)); } }
   if (!gone) return 0; const h = new THREE.BufferGeometry(); h.setAttribute('position', new THREE.Float32BufferAttribute(keep.p, 3)); if (N) h.setAttribute('normal', new THREE.Float32BufferAttribute(keep.n, 3)); if (U) h.setAttribute('uv', new THREE.Float32BufferAttribute(keep.u, 2)); g.dispose(); m.geometry = h; return gone; }
+// clip a mesh's triangles to the part under a ragged height top(x, z) (Session 1105), where inside(c) holds for the triangle's centre: the
+// triangles across the break are cut at it, so a tall face (a tower's shaft, one triangle from foot to cornice) is broken, not dropped whole
+function clipMesh(m, top, inside) { const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, out = { p: [], n: [], u: [] }; let cut = 0;
+  const vx = i => ({ p: [P.getX(i), P.getY(i), P.getZ(i)], n: N ? [N.getX(i), N.getY(i), N.getZ(i)] : null, u: U ? [U.getX(i), U.getY(i)] : null }), mix = (a, b, t) => ({ p: a.p.map((v, k) => v + (b.p[k] - v) * t), n: a.n && a.n.map((v, k) => v + (b.n[k] - v) * t), u: a.u && a.u.map((v, k) => v + (b.u[k] - v) * t) });
+  const emit = v => { out.p.push(...v.p); if (v.n) out.n.push(...v.n); if (v.u) out.u.push(...v.u); };
+  for (let t = 0; t < P.count; t += 3) { const T = [vx(t), vx(t + 1), vx(t + 2)], c = new THREE.Vector3(...[0, 1, 2].map(k => (T[0].p[k] + T[1].p[k] + T[2].p[k]) / 3));
+    if (!inside(c)) { T.forEach(emit); continue; } const d = T.map(v => v.p[1] - top(v.p[0], v.p[2])); if (d.every(x => x <= 0)) { T.forEach(emit); continue; } cut++;
+    const poly = []; for (let k = 0; k < 3; k++) { const a = T[k], b = T[(k + 1) % 3], da = d[k], db = d[(k + 1) % 3]; if (da <= 0) poly.push(a); if ((da <= 0) !== (db <= 0)) poly.push(mix(a, b, da / (da - db))); }
+    for (let k = 1; k + 1 < poly.length; k++) [poly[0], poly[k], poly[k + 1]].forEach(emit); }
+  if (!cut) return 0; const h = new THREE.BufferGeometry(); h.setAttribute('position', new THREE.Float32BufferAttribute(out.p, 3)); if (N) h.setAttribute('normal', new THREE.Float32BufferAttribute(out.n, 3)); if (U) h.setAttribute('uv', new THREE.Float32BufferAttribute(out.u, 2)); g.dispose(); m.geometry = h; return cut; }
 export function wreckSite(o = {}) {
   const r = o.r || stream('undersea:wrecks'), B = new Map(), put = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k); if (!x.attributes.uv) worldUV(x, .5); (B.get(key) || B.set(key, []).get(key)).push(x); return x; };
   const floor = (x, z) => { const t = Math.min(1, Math.max(0, -z / 80)); return -(6 + 22 * t) + fbm(x / 16, z / 16, 3) * 1.4 + Math.sin(x * .8 + z * .4) * .04; };
@@ -284,4 +294,80 @@ export function sunkenVillage(o = {}) {
   const M = { sand: mat('plaster', { ns: 1.6, color: 0xd2c29a, rough: 1 }), field: encrust(mat('stone', { ns: 1.0, color: 0xb8b0a0 }), .6) };
   for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'sand'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
   return { group, tris: Math.round(tris), draws, floor, houses, church, cross, lane: [-6, -48] };
+}
+
+// ── a drowned quarter of an Aurenne town (Session 1105; OG-125's "sunken settlements: an amphitheatre, temples, a bridge") ──
+// A slope of pale sand from 12 m deep at z 0 to 28 m at 80 m out, the bed of the town's river cut 3 m into it along x -20, and on it three of
+// the town's stones, in Aurenne's limestone and glaze:
+//   - the bridge: three round arches of 7 m on two piers of 2.2 m, 32 m from bank to bank and 4.6 m wide, across the river at z -30, its deck
+//     about 9 m under the water; its middle span has fallen, two stubs of its arch left on the piers and its stones on the bed under the gap;
+//   - the theatre: a cavea of nine tiers (0.9 m treads, 0.42 m risers) from 7 to 15 m out about its orchestra, opening to the deep water, its
+//     back cut into the slope; built in eight wedges, one fallen (its stones spilled into the orchestra) and one slumped 0.55 m; across the
+//     orchestra its stage wall of three arched doors, broken at ragged heights, and its six columns, two standing, three broken, one fallen;
+//   - the church of the Weaver: pieces.js's town church (OG-061, the blue dome) on its podium at about 23 m, its porch to the shore; its
+//     dome's crown and east half fallen in (the stones inside it), its tower's shaft broken at about 13.6 m and its belfry's stones on the
+//     sand beside it, the sand drifted over its steps.
+// -> { group, tris, draws, floor(x, z), bridge { x, z, deck, bed, spring, spans: [x], faces: [x], fallen: [{ x, y, z, floor }] },
+//   theatre { c: [x, z], base, tiers, top, wedges, gone, slumped, columns: [h] }, church { x, z, gone: { dome, tower, fills }, low, floorUnder, foot, top } }
+import { aurenneChurch, aurenneTextures } from './pieces.js';
+export function sunkenQuarter(o = {}) {
+  aurenneTextures(); const r = o.r || stream('undersea:quarter'), B = new Map(), put = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k); if (!x.attributes.uv) worldUV(x, .5); (B.get(key) || B.set(key, []).get(key)).push(x); return x; };
+  const RX = -20, floor = (x, z) => { const t = Math.min(1, Math.max(0, -z / 80)); return -(12 + 16 * t) - 3.2 * Math.exp(-(((x - RX) / 6) ** 2)) + fbm(x / 16, z / 16, 3) * .8; };
+  { const N = 130, g = new THREE.PlaneGeometry(100, 100, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) - 4, z = P.getZ(i) - 36; P.setXYZ(i, x, floor(x, z), z); } g.computeVertexNormals(); worldUV(g, .25); put('sand', g); }
+  const group = new THREE.Group(); let tris = 0, draws = 0;
+  const block = (key, w, h, d, x, z, sink = .15) => { const g = new THREE.BoxGeometry(w, h, d); g.rotateX((r() - .5) * .6); g.rotateY(r() * Math.PI); g.rotateZ((r() - .5) * .6); g.computeBoundingBox(); const lo = g.boundingBox.min.y, y = floor(x, z) - lo - sink; g.translate(x, y, z); worldUV(g, .6); put(key, g); return { x: +x.toFixed(2), y: +(y + lo).toFixed(2), z: +z.toFixed(2), floor: +floor(x, z).toFixed(2) }; };
+  // the bridge, drawn as four sections cut at the arches' crowns, each one polygon of deck, half-arches and pier, extruded across its width;
+  // the middle span's halves are stubs: its arch's first courses left on the pier, a ragged break up to the deck
+  const bridge = (() => { const BX = RX, BZ = -30, Wd = 4.6, s = 7, R = s / 2, pw = 2.2, c = [-(s + pw), 0, s + pw], half = 16, bank = Math.max(floor(BX - 12, BZ), floor(BX + 12, BZ)), yS = bank + .5, yD = yS + R + 2.4, yB = floor(BX, BZ) - 2;
+    const arc = (cx, a0, a1, n = 10) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * Math.PI / 180; return [cx + R * Math.cos(a), yS + R * Math.sin(a)]; });
+    // the stub of a broken half-arch on a pier face xf, toward the span (dir +1 to +x): the arch's first 30 degrees, then ragged to the deck
+    const stub = (xf, dir) => { const cx = xf + dir * R, a = arc(cx, dir > 0 ? 180 : 0, dir > 0 ? 150 : 30, 3), p = a.at(-1); return [...a, [p[0] + dir * .4, p[1] + .9], [xf + dir * .9, yD - 1.6], [xf + dir * .45, yD - .8], [xf + dir * .15, yD - .3]]; };
+    const secs = [
+      [[-half, yB], [c[0] - R, yB], ...arc(c[0], 180, 90), [c[0], yD], [-half, yD]],
+      [[c[0], yD], ...arc(c[0], 90, 0), [c[0] + R, yB], [c[1] - R, yB], ...stub(c[1] - R, 1), [c[1] - R - .3, yD]],
+      [[c[1] + R + .3, yD], ...stub(c[1] + R, -1).reverse(), [c[1] + R, yB], [c[2] - R, yB], ...arc(c[2], 180, 90), [c[2], yD]],
+      [[c[2], yD], ...arc(c[2], 90, 0), [c[2] + R, yB], [half, yB], [half, yD]]];
+    for (const pts of secs) { const sh = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y))), g = new THREE.ExtrudeGeometry(sh, { depth: Wd, bevelEnabled: false }); g.translate(BX, 0, BZ - Wd / 2); worldUV(g, .7); put('stone', g); }
+    // its parapets, in 1.6 m lengths with gaps, over the deck that is left
+    for (const [a, b] of [[-half, c[1] - R - .3], [c[1] + R + .3, half]]) for (const sz of [-1, 1]) for (let x = a; x < b - .4; x += 1.6) { if (r() < .18) continue; const L = Math.min(1.6, b - x) - .05, h = .7 + r() * .35, g = new THREE.BoxGeometry(L, h, .38); g.translate(BX + x + L / 2, yD + h / 2, BZ + sz * (Wd / 2 - .19)); put('stone', g); }
+    // the middle span's stones on the bed under the gap
+    const fallen = []; for (let k = 0; k < 18; k++) fallen.push(block('stone', .7 + r() * .5, .5 + r() * .3, 1.0 + r() * 1.0, BX + (r() - .5) * 6.2, BZ + (r() - .5) * 7));
+    return { x: BX, z: BZ, width: Wd, deck: +yD.toFixed(2), bed: +floor(BX, BZ).toFixed(2), spring: +yS.toFixed(2), spans: c.map(v => BX + v), faces: [c[0] + R, c[1] - R, c[1] + R, c[2] - R].map(v => BX + v), half, fallen }; })();
+  // the theatre: the cavea as eight lathe wedges of tiers about the orchestra (a little over a half ring, open to -z); one fallen, one slumped
+  const theatre = (() => { const cx = 14, cz = -14, base = floor(cx, cz) + .05, N = 9, tr = .9, rs = .42, r0 = 7, pts = [[r0, -1.4]];
+    for (let i = 0; i < N; i++) { pts.push([r0 + tr * i, rs * (i + 1)], [r0 + tr * (i + 1), rs * (i + 1)]); } const ro = r0 + tr * N, top = rs * N; pts.push([ro, top + .9], [ro + .7, top + .9], [ro + .7, -1.6]);
+    const prof = pts.map(([a, b]) => new THREE.Vector2(a, b)), W = 8, span = 3.5, gone = 5, slump = 2, wedges = [];
+    // the step profile as a flat cap, closing a wedge's cut end where it meets the fallen wedge or ends the cavea
+    const cap = (phi, dy) => { const g = new THREE.ShapeGeometry(new THREE.Shape(prof)); g.rotateY(phi - Math.PI / 2); g.translate(cx, base + dy, cz); worldUV(g, .6); put('theatre', g); };
+    for (let k = 0; k < W; k++) { const p0 = -span / 2 + span * k / W, dy = k === slump ? -.55 : 0; if (k === 0 || k === gone + 1) cap(p0, dy); if (k === W - 1 || k === gone - 1) cap(p0 + span / W, dy); if (k === gone) { for (let j = 0; j < 14; j++) { const a = p0 + r() * span / W, rr = r0 - .5 - r() * 5; block('theatre', .9, .42, .8 + r() * .6, cx + rr * Math.sin(a), cz + rr * Math.cos(a)); } continue; }
+      const g = new THREE.LatheGeometry(prof, 7, p0, span / W); g.translate(cx, base - (k === slump ? .55 : 0), cz); if (k === slump) { g.translate(-cx, 0, -cz); g.rotateY(.012); g.translate(cx, 0, cz); } const x = put('theatre', g); x.computeVertexNormals(); wedges.push(k); }
+    { const g = new THREE.CircleGeometry(r0, 40); g.rotateX(-Math.PI / 2); g.translate(cx, base + .02, cz); worldUV(g, .5); put('pave', g); }
+    // the stage wall across the orchestra: three arched doors, its top broken in a ragged line from 2.6 to 7 m
+    const zw = cz - 8.2, wb = Math.min(floor(cx - 13, zw), floor(cx + 13, zw)) - .4, sh = new THREE.Shape(); sh.moveTo(-13, 0); sh.lineTo(13, 0);
+    for (let x = 13; x >= -13; x -= 1.3) sh.lineTo(x, (x > 7 ? 2.6 : 4.4) + 2.4 * Math.abs(Math.sin(x * .37 + 1.1)) + (r() - .5) * .8 + (base - wb));
+    sh.lineTo(-13, 0); for (const [dx, w, h] of [[-7, 1.8, 3.4], [0, 2.6, 4.2], [7, 1.8, 3.4]]) { const p = new THREE.Path(), y0 = base - wb, rr = w / 2; p.moveTo(dx - rr, y0); p.lineTo(dx + rr, y0); p.lineTo(dx + rr, y0 + h - rr); p.absarc(dx, y0 + h - rr, rr, 0, Math.PI, false); p.lineTo(dx - rr, y0); sh.holes.push(p); }
+    { const g = new THREE.ExtrudeGeometry(sh, { depth: 1.2, bevelEnabled: false, curveSegments: 8 }); g.translate(cx, wb, zw - 1.2); worldUV(g, .6); put('theatre', g); }
+    // its columns before it: two standing whole (6 m), three broken, one fallen on the orchestra's edge
+    const columns = []; [6, 2.4, 6, 3.6, 1.3, 0].forEach((h, i) => { const x = cx - 10 + i * 4, z = zw + 1.4, fy = floor(x, z) - .2;
+      if (!h) { const g = new THREE.CylinderGeometry(.36, .4, 5.4, 14); g.rotateZ(Math.PI / 2); g.rotateY(.5); g.translate(x - .4, base + .32, z + 3); put('theatre', g); columns.push(0); return; }
+      const g = new THREE.CylinderGeometry(.34, .4, h + (base - fy), 14); g.translate(x, fy + (h + base - fy) / 2, z); put('theatre', g); if (h >= 6) { const k = new THREE.BoxGeometry(1.0, .4, 1.0); k.translate(x, base + h + .2, z); put('theatre', k); } columns.push(h); });
+    return { c: [cx, cz], base: +base.toFixed(2), tiers: N, top: +(base + top).toFixed(2), r: [r0, ro], wedges, gone: [gone], slumped: [slump], columns, wall: { z: zw, foot: +wb.toFixed(2) } }; })();
+  // the church of the Weaver, its dome's east half fallen in and its belfry gone; settled on its podium, the dark fills taken away
+  const church = (() => { const C = aurenneChurch({ rank: 'town', w: 14, tower: 1 }, stream('undersea:temple')), I = C.inner, x = 12, z = -56, sink = .5, g = C.group, gone = { dome: 0, tower: 0, fills: 0 };
+    const tx = I.W / 2 - 1, ys = I.y0 + I.dh * .55, crown = I.y0 + I.dh + I.R * .75, shaft = I.H * 1.35; /* the dome's crown gone whole and its east half below it; the tower broken at about 13.6 m, over its foot, its belfry fallen */
+    for (const m of [...g.children]) { if (!m.isMesh) continue; if (/^(dark|leaf|tree|bloom)/.test(m.name)) { g.remove(m); gone.fills++; continue; } /* the dark fills, and the cypresses by its porch, long dead */ if (m.geometry.index) m.geometry = m.geometry.toNonIndexed();
+      gone.dome += cutMesh(m, v => Math.hypot(v.x, v.z) < I.R + 1.6 && v.y > ys && (v.y > crown || v.x > -.6 + .9 * Math.sin(v.z * .9 + v.y * .4)));
+      gone.tower += clipMesh(m, (px, pz) => shaft + .5 * Math.sin(px * 2.1 + pz * 1.3) - .35 * (px - tx), c => c.x > tx && c.z > I.D / 2 - 1); /* everything of the tower over the break: its belfry, cornice and little dome */
+      m.material = encrust(m.material, .75); m.material.side = THREE.DoubleSide; } /* both faces: the broken dome is seen from inside, where it has no skin of its own */
+    // the dome's stones inside the church, and the belfry's on the sand by its tower
+    g.rotation.y = 0; g.position.set(x, 0, z); g.updateMatrixWorld(true); let low = Infinity; const v = new THREE.Vector3(); g.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 5) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); low = Math.min(low, v.y - floor(v.x, v.z)); } });
+    g.position.y = -sink - low; g.updateMatrixWorld(true); group.add(g); g.traverse(m => { if (m.isMesh) { tris += m.geometry.attributes.position.count / 3; draws++; } });
+    const floorY = g.position.y + I.pl; for (let k = 0; k < 16; k++) { const a = r() * Math.PI - Math.PI / 2, rr = r() * I.R * .9, bx = x + Math.abs(rr * Math.cos(a)), bz = z + rr * Math.sin(a), gg = new THREE.BoxGeometry(.8 + r() * .6, .45 + r() * .3, .7 + r() * .5); gg.rotateY(r() * 3); gg.rotateZ((r() - .5) * .5); gg.translate(bx, floorY + .3, bz); put(k % 3 ? 'stone' : 'glaze', gg); }
+    for (let k = 0; k < 10; k++) block('stone', .7 + r() * .4, .5 + r() * .3, .8 + r() * .6, x + I.W / 2 + 4 + r() * 5, z + I.D / 2 + 2 + r() * 6);
+    const box = new THREE.Box3().setFromObject(g); return { x, z, gone, low: -sink, floorUnder: +floor(x, z).toFixed(2), foot: +g.position.y.toFixed(2), top: +box.max.y.toFixed(2), domeTop: +(g.position.y + C.domeTop).toFixed(2) }; })();
+  const lime = mat('limestone', { ns: 1.0, color: 0xe6dcc6 }), M = { sand: mat('plaster', { ns: 1.6, color: 0xe2d6b2, rough: 1 }), stone: encrust(lime, .55), theatre: encrust(lime, .5), pave: encrust(mat('limestone', { ns: .8, color: 0xd8ccb0 }), .35),
+    glaze: encrust(new THREE.MeshStandardMaterial({ color: new THREE.Color(.16, .32, .62), roughness: .5 }), .4) };
+  M.theatre.side = THREE.DoubleSide;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'sand'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, floor, bridge, theatre, church };
 }
