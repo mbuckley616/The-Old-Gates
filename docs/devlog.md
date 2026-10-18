@@ -25253,3 +25253,30 @@ next CI run shows the cause. Tests only. The game's rule is right: a staggered p
 ### Needs eyes
 Nothing in play. If CI shows `stag: true` on the next run, the cause above is confirmed; if it shows `stag: false` and frames 1 again,
 it is something else and this entry is wrong.
+
+## v80 — Session 1110 — Cover indoors: crouched behind a counter, a witness does not see you (Michael's A on #420)
+Session 1105 put the indoor sight line at your eye and raised the build sheet's *a counter (0.95) hides you only crouched*, which did not
+follow from the eye: a counter's top is under both eyes, and the line was only ever blocked by walls (1.8 m or more) and shut doors.
+Michael chose A on #420: crouched, cover close by hides you. `intSightLine` (`86-world-crime.js`) takes a fifth argument, `cover`. With it, and
+while you crouch, a solid that stands on your floor (its foot within 0.3 of it) and reaches 0.9 m or more (`COVER_H`), and that the line
+crosses within 1 m of you (`COVER_R`), blocks the line: a counter, a chest, a bed's foot, a barrel. Standing, only walls and shut doors
+hide you, as before. A solid you are standing inside is not cover.
+
+Who asks for cover: the two witness checks in `witnessOf` indoors, the keeper or resident and the room's people (`INT_NPCS`). Who does not:
+lock-on (`lockSight`, `10-player.js`) and E's aim at a bed or a box (`aimBox`, `68-dungeon-misc.js`), which call the line with you at its
+start. They ask whether you can see a thing, not whether it sees you, and a counter in front of you must not stop you looting the chest
+behind it. A room's foe does not use the line at all (`canSeePlayer` is range and cone), so the decision's *a room's foe* has nothing to
+change today; if foes indoors ever get a sight line, they should pass `cover`.
+### Verified (headless Chromium)
+- **`sightline`** 1/1, 11 checks, in a Dunmore inn (11.2 × 12 m). New: a counter (0 to 0.95) 0.3 to 0.9 m short of you hides you
+  crouched and not standing (`st: true, cr: false`); a 0.6 m box in the same place hides you in neither; the same counter with no cover
+  asked (lock-on's line) hides you in neither; the same counter by the watcher, with you 2.5 m off, hides you in neither; a thin counter
+  mid-line, 1.1 to 1.4 m off you, hides you in neither, asked or not. Session 1105's checks still pass: 381 open pairs seen both ways, both
+  walls block both, the high solid (1.3 to 3.2) hides you standing only, on the ground floor and 2 m up.
+- **Neighbours pass:** `witness` (2/2), `witnessrange`, `keepercone`, `sleeperreach`, `locksight`, `shopsight`.
+### Needs eyes
+- Crouch behind a shop's counter while the keeper faces you from across it: you should stay unseen within 1 m of the counter and be seen
+  a step further back. Whether 1 m feels right next to the furniture as built is a playtest.
+- Tables are solid boxes in the room's record, so a table of 0.9 m or more counts as cover though its legs would show you. The kit's
+  tables are 0.75 (`SCALE.TABLE`), under the line, so none does today.
+- **Owed:** #421's dungeon cell (A, 18 Oct) waits on the producer's call on a deep-work card or a FREEZE.

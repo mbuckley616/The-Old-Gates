@@ -14,15 +14,8 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 **The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
 
-### Indoors, does a counter hide you when you crouch behind it? (systems builder, Session 1105) — DECISION #420
-**The question.** F2b's build sheet (`docs/design/scale-numbers-build.md`, *Movement*) puts the indoor sight line at your eye, 1.6 standing and 1.1 crouched, and gives the reason *a counter (0.95) hides you only crouched*. Session 1105 built the eye. But a counter's top (0.95) is under both eyes, and the sight line has only ever been blocked by walls (solids 1.8 m tall or more) and shut doors, so no counter hides you in either posture, before or after. Making a counter hide a crouched player is a new rule of what hides you indoors (a shopkeeper's or a sleeper's witness, a room's foe).
+Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
-**Options.**
-- **A (recommended).** Crouched, a solid at least counter height (0.9 m) hides you when you are within 1 m of it on the far side from the watcher: a counter, a chest, a bed's foot, a barrel. Standing, only walls and doors hide you, as now. One check in `intSightLine`; `sightline` measures it.
-- **B.** Leave the rule as it stands: only walls and shut doors hide you, at either eye. The sheet's counter line is dropped.
-- **C.** Crouched, any solid taller than half the crouched eye (0.55) between you and the watcher hides you, wherever it stands in the line. Simpler, but a low table across the room would hide you from a guard at the door.
-
-The systems builder will build whichever is chosen; nothing waits on it but the sheet's one line.
 ### Six great gates torn: what ends? (the quest writer, 2026-10-18) — DECISION #413
 Asked under the draft *The Great Gates, V — what was bound: Act III, reconciled* (`docs/quest_drafts.md`, unapproved). Your leaning (13 Oct, *The great gates' two paths* below) is that tearing all six deletes every save. §11 says the world remakes itself on a new seed with your name, people and one carried item, and the approved *The Last Entry* puts Varek's list in the first gate of that new world. Since Session 456 a slot is two rows, the character's and the world's.
 - **A. This world ends; the character goes on** *(recommended)*. The slot's world row is deleted and stamped unmade, so it can't be continued or imported back. The character carries to a new seed (§11, as built: `og_carry`), and the list waits in the first gate. Other slots are untouched. The world the player made is truly gone, and nothing they didn't stake is taken.
@@ -93,6 +86,20 @@ How should a town's lots and the kit's houses meet?
 The picture is the kit's street standing in the game: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-street-ingame.png
 
 ## Answered
+### Indoors, does a counter hide you when you crouch behind it? (systems builder, Session 1105) — DECISION #420
+**The question.** F2b's build sheet (`docs/design/scale-numbers-build.md`, *Movement*) puts the indoor sight line at your eye, 1.6 standing and 1.1 crouched, and gives the reason *a counter (0.95) hides you only crouched*. Session 1105 built the eye. But a counter's top (0.95) is under both eyes, and the sight line has only ever been blocked by walls (solids 1.8 m tall or more) and shut doors, so no counter hides you in either posture, before or after. Making a counter hide a crouched player is a new rule of what hides you indoors (a shopkeeper's or a sleeper's witness, a room's foe).
+
+**Options.**
+- **A (recommended).** Crouched, a solid at least counter height (0.9 m) hides you when you are within 1 m of it on the far side from the watcher: a counter, a chest, a bed's foot, a barrel. Standing, only walls and doors hide you, as now. One check in `intSightLine`; `sightline` measures it.
+- **B.** Leave the rule as it stands: only walls and shut doors hide you, at either eye. The sheet's counter line is dropped.
+- **C.** Crouched, any solid taller than half the crouched eye (0.55) between you and the watcher hides you, wherever it stands in the line. Simpler, but a low table across the room would hide you from a guard at the door.
+
+The systems builder will build whichever is chosen; nothing waits on it but the sheet's one line.
+
+Michael: **A, crouched, cover close by hides you.** (2026-10-18, on #420)
+
+*Built, Session 1110 (systems builder):* `intSightLine` takes a fifth argument, `cover`, which the two witness checks pass (the keeper or resident, and the room's people). Crouched, a solid from your floor to 0.9 m or more, within 1 m of you on the line, blocks it. Lock-on and E's aim never ask for cover. `tests/sightline`.
+
 ### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
 The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
 - **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.

@@ -376,10 +376,16 @@
   function clearLine(ax,az,bx,bz){const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.6));for(let i=1;i<n;i++){const t=i/n;if(solidAt(ax+(bx-ax)*t,az+(bz-az)*t))return false;}return true;}
   // v80 S167 — indoors, sight stops at a partition wall (a solid taller than a person's head) or a shut door; counters,
   // tables and beds do not block it. An open door's box stands out of the way, so its doorway is clear.
-  function intSightLine(ax,az,bx,bz){const S_=(typeof INT_SOL!=='undefined'&&INT_SOL)||[];const D_=(typeof INT_DOORS!=='undefined'&&INT_DOORS)||[];
-    const eye=(typeof jumpY==='number'?jumpY:0)+(_sneaking?SCALE.EYE_CROUCH:SCALE.EYE_STAND); /* S1105 — F2b: the line at your eye, 1.65 standing and 1.1 crouched (it was 1.1 always) */const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
+  // S1110 — cover (Michael's A on #420): a watcher's line (cover true: a is the watcher, b is you) is also blocked, while you crouch,
+  // by a solid of counter height or more (COVER_H, from your floor) within COVER_R of you: a counter, a chest, a bed's foot, a barrel.
+  // Standing, only walls and shut doors hide you. Lock-on and E's aim (you at a) never ask for cover.
+  const COVER_H=.9,COVER_R=1;
+  function intSightLine(ax,az,bx,bz,cover){const S_=(typeof INT_SOL!=='undefined'&&INT_SOL)||[];const D_=(typeof INT_DOORS!=='undefined'&&INT_DOORS)||[];
+    const fl=typeof jumpY==='number'?jumpY:0,eye=fl+(_sneaking?SCALE.EYE_CROUCH:SCALE.EYE_STAND); /* S1105 — F2b: the line at your eye, 1.65 standing and 1.1 crouched (it was 1.1 always) */const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
+    const C=cover&&_sneaking?S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=fl+.3&&s.y1>=fl+COVER_H&&!(bx>s.x0&&bx<s.x1&&bz>s.z0&&bz<s.z1)):[];
     const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.1));
-    for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
+    for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;
+      if(C.length&&d*(1-t)<=COVER_R)for(const s of C)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
   // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)
   const INT_FOV=Math.cos(Math.PI/3);
   const WIT_HEAR=2;
@@ -388,8 +394,8 @@
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(quiet)R*=.5;if(sneak)R*=.5*(1-.4*skillLv('stealth')/100)*inTheDarkMult(); /* S941 — Stealth; S976 — In the dark (Stealth 50) */ /* S552 — the dark hood */if(isNight())R*=.5;
     if(typeof isInterior==='function'&&isInterior()){const inR=quiet?3:6; // indoors: whoever is in the room with you, facing you, and can see you
       if(sleeperNear()){wakeSleeper(intNPCMesh,true);return {name:currentHouse.keeper||'the resident'};} /* S739 — a sleeper sees nothing, and hears within two units */
-      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
-      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
+      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz,true))return {name:currentHouse.keeper||'the keeper'};
+      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz,true));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     // S705 — the street as the shop (Michael's A on #222): a townsperson or guard sees in the same 120° cone the way they face,
     // to the same ranges; within two units they hear you whichever way they face
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(d>=WIT_HEAR&&!intFaces(n.g))continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
