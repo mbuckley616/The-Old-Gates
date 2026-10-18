@@ -24800,3 +24800,18 @@ Backlog L1's wardrobe matrix asks for each island's dress by kind and class. OG-
 - **The shoulder.** The waistcoat runs up to the tunic's neckline at the sides of the neck, where a tailored one would have its seam a little lower. From the front it reads as a high-cut country waistcoat.
 - **No front edge.** The two fronts are one piece, and only the buttons say it opens. A darker line down the middle, or the left front lapped over the right, would say it more plainly.
 - **Owed:** the rest of the matrix (formal, travel and winter dress by class, and the Mark's and Aurenne's columns), and the game, after F4.
+
+## v80 — Session 1144 — The waistcoat's front edge (L1, prototype only)
+Session 1143 left the waistcoat's two fronts as one piece, so only the buttons showed that it opens. This session draws the edge of the front that laps over, as the shadow it casts. It refines a garment built the session before, so it asks nothing. It touches only `people.js` and `builder.check.mjs`.
+
+- **`clothMat` takes `shade`**, a GLSL expression in the rest coordinates that multiplies the cloth's colour after its weave. It is part of the program's cache key, as `hole` is. Nothing else uses it yet.
+- **`WAISTCOAT_EDGE`**: the right front lapped over the left. Its edge runs 1.2 cm to the wearer's right of the buttons' line, from the belt up to where it meets the V's side, so the lapped front's edge becomes one side of the V. It is a line at half the cloth's brightness 2 mm wide, fading out over another 1.5 mm, on the front only.
+- **The first try stopped at rest y .445,** a hair over the V's point, and left a short stub of line standing in the open V. Running it up to .46 takes it into the V's side.
+
+### Verified (headless Chromium)
+- **The four waistcoat checks** now also read the edge in each waistcoat's program, and all pass, with the same clearances as Session 1143 (the shell has not moved).
+- **`builder.check.mjs`:** 484 of 484 pass, the same count as Session 1143; no check was added, and the four waistcoat checks now hold the edge too.
+- **Pictures, reshot:** all six `builder-waistcoat-*.jpg`. Close up (`-close.jpg`) the edge reads as a front lapped over at the buttons. At full length it is faint, and the buttons still carry the front.
+### Needs eyes
+- **The edge's wobble.** The line follows the rest coordinates through the posed chest, so it wavers a millimetre or two where the mesh's triangles are long. A real front edge would be a fold of cloth, which wants geometry.
+- **Owed:** as Session 1143.
