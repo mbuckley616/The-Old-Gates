@@ -24609,3 +24609,22 @@ Session 1126 drew the sitting cats' forefeet together and owed the other half of
 - **How tight.** From the front the tail's tip shows as a soft ball beside the right hind foot. A real cat lays its tail flatter and closer, its tip over the forefeet. The Hollowcat's tail is too short to get there, and a longer one would change the plan.
 - **One side only.** Every cat wraps to its right. Which side could come from the seed, since it is a single sign.
 - **Owed:** the game, after F4.
+
+## v80 — Session 1131 — The headscarf's fold in its own colour (L1, prototype only)
+Session 1029 left a fault on the plain moss headscarf (`builder-scarf-moss.jpg`): its folded edge read as a black line, and so did the knot and the point down the back. The vertex colours were the cloth's, and Session 1029 put the darkness down to the crown's overhang. Rendering the same woman with the scarf's received shadows off proves it is the shadow map, not the light. The fold lies about 2 mm proud of the crown it is folded from, and a shadow map cannot tell 2 mm from contact, so the crown's shadow falls across the whole fold. The point and knot hang under the crown's back edge and come out black the same way. A dark cloth shows it most, because lit or in shadow it has little colour to keep.
+
+This session touches only `people.js` and `builder.check.mjs`, and fixes a fault in a garment Michael already has, so it asks nothing:
+- **The scarf (`wrap`) and its point and knot (`wrapTail`)** still cast shadows, so the face under the fold is shaded as before. They no longer receive any.
+- **The Aurennais head-wrap and its tail are unchanged.** Their turns are rolls up to 11 mm thick and stand out from one another. The scarf's one fold is 4.5 mm.
+- **The rest of Session 1029's notes stay open:** slack at the temples, a gather to the knot, the print's smear at 45° and the knot's flat ends. Each is a change of shape, not of shading.
+
+### Verified (headless Chromium)
+- **The same view, before and after** (seed `sc:1`, a bun under the moss scarf):
+  - before: the fold, the knot and the point are near black;
+  - after: all three are moss green, the fold's highlight runs along its top, and the face is shaded under it as before.
+- **A new check:** the three scarves of Session 1029's check (madder printed, moss plain, sea-blue printed) cast shadows and receive none, wrap and point alike. An Aurennais head-wrap with a tail still receives them, so only the scarf was let off.
+- **`builder.check.mjs`:** 477 of 477 pass, 476 before and the one above.
+- **Pictures, reshot:** `builder-scarf-moss.jpg`, `-front.jpg`, `-side.jpg`, `-back.jpg` and `-blue.jpg`.
+### Needs eyes
+- **What a scarf no longer darkens under.** A raised arm, a basket held up, or a building's shadow in the game no longer darkens the scarf, though the rest of the woman still darkens. In the open world the sun's shadow on a head is small; under eaves it may show as a scarf too bright. If it does, the fix is the fold as a mesh of its own, standing further out, so that the crown and the point can take shadows again.
+- **Owed:** slack at the temples and a gather to the knot (the shape); the game, after F4.
