@@ -23,6 +23,29 @@ Pictures:
 - From the dais at its heart: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-heart.jpg
 - From over the sea: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-far.jpg
 
+### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
+**Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.
+- **The church** is 8.4 m wide and 27.4 m from the tower's face to the chancel's gable (22.6 m with a nave of two bays). Its lot is about 5 to 7 m on a side.
+- **The keep in its bawn** is about 30 by 25 m. Its lot is 14 by 11 m.
+
+Session 1127 brought the church into the game where it fits on its own, as the guild halls were brought in. It is tried end-on (the tower's door to the street), then side-on along the street with a door in the nave's south side, with its front kept and slid up to 3 m, and never over another lot or a street. That fits **1 town in 5** (Cœur de Vie). A town's rows are 10.7 m apart, so end-on it crosses the street behind, and side-on it needs the frontage of three or four houses. Everywhere else the old church stands. The bawn would fare no better.
+
+How should they find room?
+- **A. The big building takes its room, and the houses under it are not built on the new look** *(recommended)*.
+  - **How:** the church, side-on along its street, and the keep's bawn take the lots they cover. That is about 3 or 4 houses for a church and 6 to 8 for a bawn, and those houses' residents go with them.
+  - **What it never takes:** a house you own, a shop, an inn, a guild hall or a named resident's house. Where one is in the way, the next placement is tried, then the old building.
+  - **What is unchanged:** the old look, and every other house's id, door and resident.
+- **B. The towns are laid out around them, on both looks.** The generator keeps the church's and the keep's plots (on the square, at the head of the main street) before it lays the lots. Every town reads best this way, but every town's layout changes once, in both looks. Houses are numbered by lot, so a house owned in an older save would move or be lost unless the save is migrated.
+- **C. A smaller church or keep where the full one does not fit.**
+  - **The church:** the nave and tower without the chancel (about 21 m), then the bellcote church (#410's C) on the old lot.
+  - **The keep:** the tower alone (#416's A).
+  - **The cost:** no house is lost, but a town's church and keep vary from town to town.
+- **D. As now:** the kit's church where it fits (1 in 5) and the old one elsewhere. The bawn the same.
+
+Picture (Cœur de Vie on the new look, at noon, the church end-on to the market square, two bays): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-church-ingame.png
+The church as drawn, with three bays: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-square.jpg
+The bawn as drawn: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-bawn.jpg
+
 ## Answered
 ### The Gatelands' townhouses on the new look: how deep? (look builder, Session 1074) — DECISION #408
 The Gatelands' towns are now built from the kit on the new look (Sessions 1071 to 1074, #396 C). Their lots were widened to whole bays (6.45 to 10.35 m), but they kept the generator's depths of 4 to 6 m. A townhouse is three storeys and was drawn 9 m deep, so at 4 to 6 m it reads tall and thin from the side, as in the picture's nearer houses. The row behind leaves room: a town's rows are 10.7 m apart.

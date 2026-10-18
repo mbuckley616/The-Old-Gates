@@ -301,6 +301,15 @@
           for(const sl of [0,.3,-.3,.6,-.6]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
             if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'farmhouse',bays:n,inn:true,w0,d0,slide:sl};return;}}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
+      // S1127 (card F6, Michael's B on #410) — a town's church is the kit's church with a west tower, 8.4 m wide and 27.4 m from the
+      // tower's face to the chancel's gable (22.6 with a nave of two bays). It is tried end-on, the tower's door to the street, then
+      // side-on along the street with a south door, at three bays and then two; its front kept on the street line, slid along it by up
+      // to 3 m, no nearer a road or a street than the lot was and clear of every other lot. A lot with no room for it keeps the old church.
+      if(town)use.forEach((lot,i)=>{if(shopTypes[i]!=='church')return;const w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,m0=Math.min(0,near(lot,lot.street));
+        for(const [bays,side] of [[3,false],[3,true],[2,false],[2,true]]){const L=G.churchLen(bays),W=side?L:8.4,D=side?8.4:L,sh=(d0-D)/2;lot.w=W;lot.d=D;
+          for(const sl of [0,.5,-.5,1,-1,2,-2,3,-3]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
+            if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'church',bays,side,w0,d0,slide:sl};return;}}}
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
       // S1126 (card F6, Michael's B on #408) — a town's townhouse or merchant's house grows back into its yard to 8 m deep where the
       // row behind allows, else as deep as fits, in steps of 0.25 m; its front stays on the street line (the centre moves back by half
       // what it gains), so its door, id and resident stay where they were. Last, so no guild hall or inn loses a lot it took.
@@ -317,8 +326,18 @@
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;}
     // S1083 — the guild hall's plan, its lit windows keyed by the town and the lot as a house's are; its door is the great door
     function kitHall(lot){const plan=PKIT.gl.PLANS.guildhall({guild:lot.kit.guild});plan.r=PKIT.stream(`${site.id}:windows:${lot.n}`);plan.doorX=plan.open.front[0].x;return {plan,kind:'guildhall',colour:'stone'};}
+    // S1127 — the church with its west tower (PKIT.gl.church, in its lot's frame): its far copy a box for the nave and chancel under one
+    // roof prism and a box for the tower; its door the tower's or, side-on, the nave's south door
+    function kitChurch(lot){const C=PKIT.gl.church({bays:lot.kit.bays,side:lot.kit.side,r:PKIT.stream(`${site.id}:windows:${lot.n}`)}),U=C.userData,y=worldH(lot.x,lot.z)-.06;
+      C.position.set(lot.x-cx,y,lot.z-cz);C.rotation.y=lot.ry;C.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(C);
+      const sz=U.size,T=sz.tower,mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(lot.x,y,lot.z),stone=new THREE.Color(.78,.76,.71);
+      {const b=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed();b.translate(0,sz.eave/2,0);kitLo.push([b,mx,stone]);}
+      {const r=lot.kit.side?kitRoof(sz.w/2,sz.d/2+.3,sz.eave,sz.eave+4.6):kitRoof(sz.d/2,sz.w/2+.3,sz.eave,sz.eave+4.6);if(!lot.kit.side)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.24,.26,.30)]);}
+      {const b=new THREE.BoxGeometry(T.s,T.h,T.s).toNonIndexed();b.translate(lot.kit.side?T.at:0,T.h/2,lot.kit.side?0:T.at);kitLo.push([b,mx,stone]);}
+      lot._kitDoor=U.door;lot._wallH=sz.eave;lot._storeys=1;lot.two=false;lot.kit.tris=U.tris;lot.kit.calls=U.calls;lot.kit.colour='stone';lot.kit.door=U.door+(lot.kit.slide||0);}
     function kitHouse(lot,type){
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
+      if(lot.kit.kind==='church'){kitChurch(lot);return;}
       const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
       b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
       {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */

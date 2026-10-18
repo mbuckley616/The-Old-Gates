@@ -4,6 +4,7 @@
 // its depth, its door (moved along the front into its bay since Session 1072) and its id (a house you own is still yours, whichever look you load it in), and it stands 0.9 m or more
 // clear of every other lot's walls. Since Session 1126 (Michael's B on #408) a town's townhouse or merchant's house grows back
 // into its yard to 8 m deep where it fits, its front and door kept. Settlements of the other islands, and the old look, are as they were.
+import fs from 'fs';
 import { boot, check } from './lib/game.mjs';
 
 const pickSites = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z)), d = siteAnywhere('dunmore'), A = allSites();
@@ -25,31 +26,36 @@ await g0.close();
 
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 const neu = await page.evaluate(survey, sites.map(s => s.id));
-const B = await page.evaluate(() => PKIT.gl.BAYS);
+const B = await page.evaluate(() => PKIT.gl.BAYS), CL = await page.evaluate(() => ({ 2: PKIT.gl.churchLen(2), 3: PKIT.gl.churchLen(3) }));
 const bw = (k, n) => +(n * B[k].bay + 2 * B[k].end).toFixed(3);
 const gl = sites.filter(s => s.nat === 'gatelands'), mk = sites.find(s => s.nat === 'mark');
 
 // the same houses: every id, door and depth of the old look, in the same order
 const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const ok = a.length === b.length && a.every((h, i) => { const k = b[i].kit ? b[i].kit.door || 0 : 0, tx = -Math.sin(h.yaw), tz = -Math.cos(h.yaw); /* a kit house's door stands in its bay (Session 1072), k along the front */
     const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1083), its front kept */
-    const inn = b[i].kit && b[i].kit.inn; /* a village's inn takes the farmhouse's 6.2 m (Session 1086), its front kept */
-    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
+    const inn = b[i].kit && b[i].kit.inn, kch = b[i].kit && b[i].kit.kind === 'church'; /* a town's church takes the kit church's size (Session 1127), its front kept */ /* a village's inn takes the farmhouse's 6.2 m (Session 1086), its front kept */
+    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : kch ? b[i].d === (b[i].kit.side ? 8.4 : CL[b[i].kit.bays]) : b[i].kit && b[i].kit.d0 ? b[i].kit.d0 === h.d && b[i].d > h.d && b[i].d <= 8 : h.d === b[i].d) && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
   return { id: s.id, ok, n: a.length, first: ok ? null : a.map((h, i) => [h.id, b[i] && b[i].id, h.x, b[i] && b[i].x]).find(([p, q, x, y]) => p !== q || Math.abs(x - y) > .01) }; });
 check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
 
 // the widths: whole bays, by kind of settlement and of lot
 const rows = gl.flatMap(s => neu[s.id].houses.map(h => ({ ...h, site: s.id, sk: s.kind, w0: old[s.id].houses.find(o => o.id === h.id).w })));
-const kit = rows.filter(h => h.kit && h.kit.kind !== 'guildhall' && !h.kit.inn), share = kit.filter(h => h.type === 'home').length / rows.filter(h => h.type === 'home').length;
+const kit = rows.filter(h => h.kit && h.kit.kind !== 'guildhall' && h.kit.kind !== 'church' && !h.kit.inn), share = kit.filter(h => h.type === 'home').length / rows.filter(h => h.type === 'home').length;
 const badW = kit.filter(h => h.w !== bw(h.kit.kind, h.kit.bays) || h.kit.bays < B[h.kit.kind].min || h.kit.bays > B[h.kit.kind].max || h.kit.w0 !== h.w0);
 check(`each widened lot is exactly its bays and end piers wide (${kit.length} lots)`, kit.length > 40 && badW.length === 0, badW.slice(0, 6));
 const badK = kit.filter(h => (h.sk === 'village') !== (h.kit.kind === 'cottage') || (h.sk !== 'village' && (h.type === 'home') !== (h.kit.kind === 'townhouse') && !(h.kit.kind === 'townhouse' && h.type !== 'home')));
 check('a village\'s are cottages; a town\'s, port\'s or city\'s homes townhouses and shops merchants\' houses (or a townhouse\'s front)', badK.length === 0, badK.slice(0, 6));
 check(`most homes take the bays (${Math.round(share * 100)}%)`, share > .8, { kit: kit.filter(h => h.type === 'home').length, homes: rows.filter(h => h.type === 'home').length });
-const special = rows.filter(h => ['church', 'castle', 'shipwright'].includes(h.type) || (h.type === 'inn' && h.sk !== 'village'));
-check(`churches, keeps, a town's inns and the shipwright keep their size (${special.length})`, special.length > 4 && special.every(h => !h.kit && h.w === h.w0), special.filter(h => h.kit || h.w !== h.w0).slice(0, 4));
+const special = rows.filter(h => ['castle', 'shipwright'].includes(h.type) || (h.type === 'church' && h.sk === 'village') || (h.type === 'inn' && h.sk !== 'village'));
+check(`a village's church, keeps, a town's inns and the shipwright keep their size (${special.length})`, special.length > 4 && special.every(h => !h.kit && h.w === h.w0), special.filter(h => h.kit || h.w !== h.w0).slice(0, 4));
 // a village's inn (Session 1086, Michael's 1 A on #320): the kit's farmhouse, three bays (10.5 m) or two (7.4 m), 6.2 m deep, slid 0.6 m at most
 const vinns = rows.filter(h => h.type === 'inn' && h.sk === 'village'), badI = vinns.filter(h => !h.kit || h.kit.kind !== 'farmhouse' || !h.kit.inn || h.w !== bw('farmhouse', h.kit.bays) || h.d !== 6.2 || Math.abs(h.kit.slide) > .6);
 check(`each village's inn is the kit's farmhouse (${vinns.map(h => `${h.kit && h.kit.bays} bays, slid ${h.kit && h.kit.slide} m`).join('; ')})`, vinns.length >= 2 && badI.length === 0, badI.slice(0, 4));
+// the town church (Session 1127, Michael's B on #410): a town's, port's or city's is the kit's church with its west tower where it fits,
+// end-on (8.4 m wide, 27.4 or 22.6 m deep) or side-on (27.4 or 22.6 wide, 8.4 deep), slid along its front by 3 m at most
+const tch = rows.filter(h => h.type === 'church' && h.sk !== 'village'), kch = tch.filter(h => h.kit), badC = kch.filter(h => h.kit.kind !== 'church' || ![2, 3].includes(h.kit.bays) || Math.abs(h.kit.slide) > 3
+  || (h.kit.side ? h.w !== CL[h.kit.bays] || h.d !== 8.4 : h.w !== 8.4 || h.d !== CL[h.kit.bays]));
+check(`the towns' churches are the kit's church where it fits: ${kch.length} of ${tch.length} (${kch.map(h => `${h.site} ${h.kit.bays} bays ${h.kit.side ? 'side-on' : 'end-on'}`).join('; ')})`, kch.length >= 1 && badC.length === 0, badC.slice(0, 4));
 // the guild halls (Session 1083, Michael's C on #352): a town's or city's is the kit's hall, 14.4 by 9 m, slid along its front by 0.7 m at most
 const halls = rows.filter(h => h.type === 'guild_f' || h.type === 'guild_m'), badH = halls.filter(h => !h.kit || h.kit.kind !== 'guildhall' || h.w !== 14.4 || h.d !== 9 || Math.abs(h.kit.slide) > .7 || h.kit.guild !== (h.type === 'guild_m' ? 'mages' : 'fighters'));
 check(`every guild hall of the Gatelands' towns and city is the kit's hall, 14.4 by 9 m (${halls.length}; slid ${[...new Set(halls.map(h => h.kit && h.kit.slide))].join(', ')} m)`, halls.length >= 4 && badH.length === 0, badH.slice(0, 4));
@@ -73,5 +79,12 @@ check('every widened lot stands 0.9 m or more clear of every other lot', close.l
 
 // the Mark's town is as it was
 check('the Mark\'s town is as on the old look, widths and all', JSON.stringify(old[mk.id].houses) === JSON.stringify(neu[mk.id].houses), null);
+// a picture of a kit church in its town at noon, from over its street, 24 m up, 26 m out and 22 m to one side (docs/prototypes/kit-church-ingame.png)
+if (kch.length) { const c = kch[0]; const url = await page.evaluate(([site, id]) => { forceTime(12); const S = WORLD.settle.get(site), h = S.houses.find(h => h.id === id), fx = -Math.sin(h.exitYaw), fz = -Math.cos(h.exitYaw), ex = Math.cos(h.exitYaw), ez = -Math.sin(h.exitYaw);
+    const L = h.kit.side ? 4 : h.d / 2, tx = h.doorX - fx * L, tz = h.doorZ - fz * L, X = tx + fx * 26 + ex * 22, Z = tz + fz * 26 + ez * 22, cv = REN.domElement, sc = WORLD.scene;
+    const cam = new THREE.PerspectiveCamera(50, cv.width / cv.height, .1, 600); cam.position.set(X, WORLD.worldH(X, Z) + 24, Z); cam.lookAt(tx, WORLD.worldH(tx, tz) + 6, tz);
+    CAM.position.copy(cam.position); WORLD.tick(1 / 60, performance.now()); sc.updateMatrixWorld(true); REN.render(sc, cam);
+    const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/png'); }, [c.site, c.id]);
+  fs.writeFileSync(new URL('../docs/prototypes/kit-church-ingame.png', import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log(`  (picture: docs/prototypes/kit-church-ingame.png, ${c.site})`); }
 check('no errors on the new look', g.errs.length === 0, g.errs);
 await g.close();
