@@ -24222,3 +24222,30 @@ The check now runs over every plan whose gaits include `sit`. Two of its bounds 
 - **The cats.** A cat sits with its forefeet together and its tail wrapped round them. These keep their standing stance and lay the tail back and to one side.
 - **The neck's kink** from Session 1114 is unchanged. Spreading the correction down the neck was tried and made no visible difference, so it was taken out.
 - **Owed:** lying down, and the game (after F4).
+
+## v80 — Session 1117 — The wolfhound lies down (L1 and L3, prototype only)
+Session 1114 owed the hound's other rest, lying by the chair's wheel. This session adds it as a second rest gait, `lie`. The wolfhound has it so far. It touches only `creatures.js` and `creatures.check.mjs`.
+
+How it lies (a sphinx's lie, head up):
+- **Lowered level.** The body is not pitched. It is lowered by the same halving on the hip's height that pitches the sit, until the lowest vertex of the body, the thighs and shins, and the upper arms and forearms is 5 mm off the ground.
+- **The hind legs** fold as they do sitting (`sitLeg`).
+- **The forelegs (`lieLeg`)** put the elbow on the ground just behind the shoulder, as far back as the upper arm reaches from the lowered shoulder. The forearm, the wrist and the toes are laid forward along the ground at the paw's standing height, with the toes' tip down. If a bone is too short for its drop, the error is reported, never hidden.
+- **Each rest's numbers are kept per gait.** The pitch, the drop and the tail's lift are now cached per creature and per gait (`C.rests`), so a sit and a lie do not share them. A guard keeps the search's own poses from searching again.
+
+The first try left the fore toes' tips 2.3 cm up, because the drop from the elbow's height to the ground was longer than the toe bone. The wrist and paw now lie at the paw's height.
+
+### Verified (headless Chromium)
+- **The lie's own check:**
+  - the hound lies level (pitch 0), its withers lowered from 81 to 24 cm;
+  - the forefeet are 12 cm ahead of where it stands, and the hind toes 21 cm ahead of the hips;
+  - the belly and haunch are 5.0 mm off the ground;
+  - nothing but the toe pads is under the ground (52 vertices, against 53 standing), and the rest's lowest point is 5.0 mm up;
+  - the head is 52 cm up;
+  - the foot error is 0.0 cm.
+- **The sits are unchanged,** eleven plans.
+- **The full run:** 1,147 of 1,147 pass, 1,145 before and two new: the lie's foot check and the check above.
+- **Pictures:** `creatures-wolfhound-lie.jpg` (side) and `creatures-wolfhound-lie-front.jpg`.
+### Needs eyes
+- **The head is held low and forward.** A hound lying watchful lifts its head. The neck could take some of the lowering as the sit's takes the pitch.
+- **The lie on the other canids** is one word in their gaits, as Session 1115 did for the sit, with its check already general.
+- **Owed:** the hound beside Garrick's chair in one picture (people and creatures on one stage), and both in the game after F4.

@@ -770,7 +770,10 @@ export const GAITS = {
   soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 },
   // Session 1114: a four-legged body sitting (Garrick's hound by his chair): the forefeet where they stand, the body pitched up about
   // the shoulders until the haunch is on the ground, the hind legs folded under it with the hocks laid flat (sitBody, sitLeg)
-  sit: { duty: 1, fr: 0, sit: 1, phase: () => 0 }
+  sit: { duty: 1, fr: 0, sit: 1, phase: () => 0 },
+  // Session 1117: lying down, head up (a sphinx): the body lowered level until its underside is on the ground, the hind legs folded
+  // as they sit, the forelegs laid forward along the ground from the elbow (lieLeg)
+  lie: { duty: 1, fr: 0, sit: 1, lie: 1, phase: () => 0 }
 };
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = V(), _m = new THREE.Matrix4();
 // a bone's rotation and position in the rig's frame (the body's own space: the ground is y = 0)
@@ -821,7 +824,8 @@ function stowQuills(C, W, k) {
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
-  if (G.sit && C.sitA === undefined) sitFind(C);
+  // a rest's numbers are found once per creature and gait (the sit's pitch, the lie's drop, the tail's lift), while finding them it poses itself
+  if (G.sit && !C.sitFinding) { const R = (C.rests = C.rests || {})[C.gait]; if (R) Object.assign(C, R); else { C.sitFinding = true; sitFind(C); C.sitFinding = false; C.rests[C.gait] = { sitA: C.sitA, sitY: C.sitY, sitT: C.sitT, sitH: C.sitH }; } }
   for (const b of C.bones) b.quaternion.identity();
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
@@ -880,6 +884,7 @@ export function pose(C, phase) {
   let worst = 0; const order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
   for (const L of B.legs) {
     if (G.sit && L.at === order[order.length - 1]) { worst = Math.max(worst, sitLeg(C, L)); continue; }
+    if (G.lie && L.at === order[0]) { worst = Math.max(worst, lieLeg(C, L)); continue; }
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
@@ -907,10 +912,12 @@ function sitFrame(C) {
 // the pitch, found once (before a pose, which it runs itself)
 function sitFind(C) {
   const { B, order, hip, pitchFor } = sitFrame(C);
-  C.sitA = 0; C.sitT = -.06; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1]).flatMap(L => L.names.slice(0, 2))].map(n => C.bones.indexOf(C.byName[n])));
+  C.sitA = 0; C.sitT = -.06; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1] || GAITS[C.gait].lie && L.at === order[0]).flatMap(L => L.names.slice(0, 2))].map(n => C.bones.indexOf(C.byName[n])));
     const M = C.meshes[0], si = M.geometry.attributes.skinIndex, sw = M.geometry.attributes.skinWeight, vs = []; for (let v = 0; v < si.count; v++) { let best = 0, bi = -1; for (let j = 0; j < 4; j++) { const w = sw.getComponent(v, j); if (w > best) { best = w; bi = si.getComponent(v, j); } } if (idx.has(bi)) vs.push(v); }
     const low = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (let k = 0; k < vs.length; k++) { M.getVertexPosition(vs[k], p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
-    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; C.sitA = pitchFor(h); pose(C, 0); if (low() > SIT.haunch) hi = h; else lo = h; } C.sitA = pitchFor(hi); C.sitH = hi;
+    // lying, the body is lowered level instead (C.sitY, how far), the same halving on the hip's height
+    const lie = GAITS[C.gait].lie, set = h => { if (lie) C.sitY = hip.y - h; else C.sitA = pitchFor(h); }; C.sitY = 0;
+    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; set(h); pose(C, 0); if (low() > SIT.haunch) hi = h; else lo = h; } set(hi); C.sitH = hi;
     // then the tail (Session 1115): lifted from lying level (a little drooped) only as far as its own flesh needs to clear the ground
     if (B.chains.tail) { const ti = new Set(B.chains.tail.map(n => C.bones.indexOf(C.byName[n]))), tv = []; for (let v = 0; v < si.count; v++) if (ti.has(si.getX(v))) tv.push(v);
       const tlow = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (const v of tv) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
@@ -918,7 +925,7 @@ function sitFind(C) {
 }
 function sitBody(C) {
   const { B, piv } = sitFrame(C), sp = C.byName.spine0;
-  const R = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), C.sitA); sp.quaternion.premultiply(R); sp.position.sub(piv).applyQuaternion(R).add(piv);
+  const R = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), C.sitA); sp.quaternion.premultiply(R); sp.position.sub(piv).applyQuaternion(R).add(piv); sp.position.y -= C.sitY || 0;
   if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= C.sitA * SIT.neck;
   // the tail: its first bone turned back level against the pitch and its droop (then up by what sitFind found), each bone after curled round to one side
   if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const a = rigPos(C, t0, V()), b = rigPos(C, C.byName[B.chains.tail[1]], V()), d = b.sub(a);
@@ -937,6 +944,18 @@ function sitLeg(C, L) {
   const Pp = [root, root.clone().addScaledVector(u, a).addScaledVector(pole, h), root.clone().addScaledVector(u, dl), paw, tip];
   let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
   return err;
+}
+// a foreleg lying (Session 1117): the elbow down on the ground just behind the shoulder, as far back as the upper arm reaches from
+// where the lowered shoulder is, and the forearm, the wrist and the toes laid forward along the ground from it
+function lieLeg(C, L) {
+  const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
+  L.bones[0].position.copy(L.restLocal);
+  const F0 = L.rest[m], ey = L.rest[m - 1].y + SIT.hock * L.hR, dy = root.y - ey, L0 = L.lens[0], err = Math.max(0, dy - L0);
+  const elbow = V(F0.x, ey, root.z - Math.sqrt(Math.max(0, L0 * L0 - dy * dy))), Pp = [root, elbow]; let at = elbow, e2 = 0;
+  // the wrist and the paw at the paw's standing height, the toes' tip on the ground
+  for (let k = 1; k < m; k++) { const y = k === m - 1 ? F0.y : L.rest[m - 1].y, len = L.lens[k], fall = Math.abs(y - at.y); e2 = Math.max(e2, fall - len); const dz = Math.sqrt(Math.max(0, len * len - fall * fall)); at = V(F0.x, y, at.z + dz); Pp.push(at); }
+  let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
+  return Math.max(err, e2);
 }
 // one leg: yaw the leg toward its foot (an insect's coxa), hold the distal segments (a paw, a hoof), bend the two in between
 function solveLeg(C, L, T, fold) {
@@ -2019,7 +2038,7 @@ PLANS.troll.parts.push(['straps', { w: .08, tone: 'leather', straps: [
 // and narrow with a long tapering muzzle and small ears folded back along the skull, the tail long and low with an upward sweep at its
 // end, the coat rough and wiry (long, coarse, drooping shells). Black, as OG-065 draws it ──
 Object.assign(PLANS, {
-  wolfhound: { name: 'Black wolfhound', src: 'OG-065 (Garrick\'s black wolfhound)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit'], wag: .07, pant: .08, speedK: 1.15, rough: .6,
+  wolfhound: { name: 'Black wolfhound', src: 'OG-065 (Garrick\'s black wolfhound)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'], wag: .07, pant: .08, speedK: 1.15, rough: .6,
     palette: { coat: [.16, .15, .14], saddle: [.1, .095, .09], belly: [.22, .21, .2], dark: [.03, .025, .02], horn: [.7, .66, .6] },
     fur: { len: .05, layers: 10, sx: 120, sy: 32, droop: .3 },
     parts: [
