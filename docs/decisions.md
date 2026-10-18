@@ -177,7 +177,7 @@ Pictures:
 - [the hold](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-hold.jpg)
 - [the Mark's hold](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-hold-mark.jpg)
 - [the galley](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-galley.jpg)
-Michael: **A, the base lives in the hull's own lines** (18 Oct 2026, on #418). The cog's base stands as drawn (`shipbase.js`); the sloop's and the galleon's bases in their own lines are owed (backlog L6).
+Michael: **A, the base lives in the hull's own lines** (18 Oct 2026, on #418). The cog's base stands as drawn (`shipbase.js`); the sloop's is built in Session 1129 (`sloopBase`, `shipbase.html?ship=sloop`); the galleon's, the cutter's and the caravel's are owed (backlog L6).
 
 ### The water under the sea: by island, the Gatelands' green everywhere, or clear everywhere? (look builder, Session 1100) — DECISION #419
 **Backlog L10, under the sea (look builder, Session 1100; OG-125).** The first place on the sea floor is drawn in `docs/prototypes/levelup/undersea.js`, at `undersea.html?view=swim|arches|alcove|boat|above&water=green|clear|mark`: drowned arches under a coastal town.

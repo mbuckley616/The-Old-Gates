@@ -24880,3 +24880,33 @@ Michael chose B for the Gatelands' town church on #410: the square west tower of
 - **The church sits tight:** it stands 0.6 m off the house behind it, and has no churchyard. The prototype's yard (a high cross and headstones) is the page's, not the kit's. #433's answer decides whether there is room for one.
 - **On a slope:** a 22 to 27 m church on a slope stands on its 0.8 m footing, set at its centre's height. The pads are flat, but a church at a pad's edge wants a look.
 - **Owed:** the coaching inn (#411 A) and the keep in its bawn (#416 B), both after #433.
+
+## v80 — Session 1129 — The sloop's base below deck, in her own lines (backlog L6, Michael's A on #418; prototype only)
+Michael chose A on #418: the base below deck lives in the hull's own lines, each class's base the size of its hull (OG-027's ladder: the sloop a bunk and a chest, the cog as drawn in Session 1099, the galleon more rooms). This session builds the smallest, the sloop's, as `sloopBase` in `docs/prototypes/levelup/shipbase.js`, at `shipbase.html?ship=sloop&view=cut|hold&dress=…`.
+- **The hull:** the sloop is 13 m long, 4.4 m in the beam and 2.05 m from keel to deck, with no castles, so her base is one low hold under the deck between two bulkheads, 6 m long.
+- **The hatch:** `gatelandsSloop` in `ships.js` takes `o.open`, as the cog did. The planks inside the coaming are cut and the hatch's dark plate is left out. Without it she is the hull she was (`ships.check.mjs` passes).
+- **The hold's frame:**
+  - **The floor:** ceiling planks at -0.8, where the hull is 1.5 m across.
+  - **The frames and beams:** frames every 0.75 m, and deck beams every metre except over the hatch, whose ends are carried on carlings.
+  - **The rest:** the mast through to its step, and a ladder from the floor up through the hatch.
+- **What is in it:** OG-027's bunk and chest, a cask of water and a lantern, dressed by island as the cog's are (the Mark's furs and a hide for the rug). No bench, still or galley: those come with the cog.
+- **The berth is raised against the port side,** as a small boat's berth is. The first berth stood on the floor at the width of the hull half a metre up, so its foot was outside the planking, where the hull is only 1.5 m across. Raised 0.32 m with a board front and a locker door down to the floor, it leaves 0.71 m between it and the sea chest across the way.
+- **Headroom:** 1.75 m between the beams and 1.58 m under them, so a 1.8 m person stoops everywhere below. There is 1 m over the berth's tick.
+- **The cost:** about 2,200 triangles in 9 to 11 draws over the sloop's 24,368.
+
+### Verified (headless Chromium)
+- **`shipbase.check.mjs`: 22 of 22 pass,** nine of them new.
+  - **Builds:** the sloop's base builds the same twice in all three dresses (2,188, 2,173 and 2,188 triangles in 11, 9 and 11 draws).
+  - **What is in it:** a bunk, a bunk front, a sea chest, a water cask and a ladder, with no bench, still or galley.
+  - **Inside her lines:** every piece stands inside her planking and inside the hold (0 out in each dress).
+  - **Headroom and the way between:** as above.
+  - **The hatch:** a ray down through it meets the floor's planks at -0.8 m.
+  - **Shut, she is the sloop as built:** the 84 triangles between the two are exactly the cut deck planks and the plate.
+  - **The views:** all render without page errors.
+  - **The cog:** unchanged, its 13 checks as before.
+- **`ships.check.mjs`: 101 pass.**
+- **Pictures:** `shipbase-sloop-cut.jpg` (from abeam, her starboard side cut away), `shipbase-sloop-hold.jpg` (in the hold from by the mast, the berth, the chest and the ladder up to the hatch) and `shipbase-sloop-hold-mark.jpg` (the Mark's).
+### Needs eyes
+- **It is dark below:** one lantern and the hatch light a 6 m hold, and the hold view reads dim. The cog's has two lanterns.
+- **Whether a 1.58 m stoop reads as a home or as a crawl space.** It is a sloop's truth, and the reason to buy the cog.
+- **Owed:** the galleon's base with more rooms, then the cutter's and the caravel's, and the base into the game (`CABIN` in `85-world-sea.js`, one 7 by 8 m room today) with card F11.

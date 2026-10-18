@@ -100,7 +100,10 @@ export function gatelandsSloop(o = {}, r = stream('sloop')) {
   // the deck: fore-and-aft planks at DECK, each cut to the hull's half-breadth at that height (deckAt), on beams below
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .16; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      const z0 = zz[0], z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+      const z0 = zz[0], z1 = zz[zz.length - 1];
+      /* o.open (Session 1129): the hatch open to the hold, its planks cut at the coaming's inside; otherwise the deck runs under its dark plate */
+      if (o.open && Math.abs(x) - PW / 2 < .6) { for (const [a2, b2] of [[z0, -2.6], [-1.4, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); }
+      else put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     /* the covering board: a strip along each side from the last plank out to the hull, so the deck meets the planking */
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // the bulwark's inner face is the top strakes' inside; the rail: stanchions every 0.9 m along the sheer, a cap rail at 1.0 m over the
@@ -112,7 +115,7 @@ export function gatelandsSloop(o = {}, r = stream('sloop')) {
   // the hatch amidships aft of the mast: a coaming 0.3 m high round a dark opening, its cover leaning beside it
   const MZ = 1.0, hatch = { x0: -.6, x1: .6, z0: -2.6, z1: -1.4 };
   { const hz = (hatch.z0 + hatch.z1) / 2; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(1.32, .3, .08), 'oak', 0, DECK + .15, hz + e * .62); put(new THREE.BoxGeometry(.08, .3, 1.24), 'oak', e * .62, DECK + .15, hz); }
-    put(new THREE.BoxGeometry(1.16, .02, 1.16), 'dark', 0, DECK + .02, hz); }
+    if (!o.open) put(new THREE.BoxGeometry(1.16, .02, 1.16), 'dark', 0, DECK + .02, hz); }
   // the mast, stepped forward of amidships; the yard at 9 m, the square sail from it to its foot 2.2 m over the deck, bellied forward
   // (the Mark's dress takes the Mark's rig instead, #306's one rig to an island: the cutter's gaff main and topsail, a staysail and a jib
   // on a bowsprit, the boom 2.15 m over the deck)
