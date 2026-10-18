@@ -98,8 +98,14 @@ const FOE_ROW=(o)=>Object.assign({tell:TELL_DEFAULT,tells:{},strike:0,recovery:1
 // It lands for twice the damage and twice the posture; a held block takes its share of the damage but the
 // guard breaks (Guard's Iron wall, 75, holds it: twice a held block's posture instead); a perfect parry is as good as ever.
 const HEAVY_ROW=(o)=>Object.assign({share:.25,tell:1.0,add:.35,dmg:2,posture:2,breaks:true},o);
+// S1140 — the third move (combat.md's move sets; the third moves follow #430's answer). The humanoids' is the bandit's feint, the
+// page's delayed swing: the wind-up pose reaches its top at the kind's own tell and holds there `pause` (0.3 s) before the blow, so a
+// roll timed to the usual tell is spent when it lands. A light blow in all else: the gold glow in its last 0.15 s, the light damage.
+// One wind-up in four, as the heavy: a seeded roll of its own (`feint`, on the id and the blow's count) after the heavy roll has said
+// light, never twice running; `roll` is that roll's odds on a light blow, which lands one in four in all (25.1% of 4,000, tests/feint).
+const FEINT_ROW=(o)=>Object.assign({share:.25,roll:.43,pause:.3},o);
 const FOE_ATTACKS={
-  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2,heavy:HEAVY_ROW({})}),
+  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2,heavy:HEAVY_ROW({}),feint:FEINT_ROW({})}),
   beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70,heavy:HEAVY_ROW({})}),
   spider:   FOE_ROW({tells:{Spider:.51},hulls:true,engage:.8,reach:1.2,arc:100,heavy:HEAVY_ROW({})}),
   brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80},hulls:true,engage:.8,reach:1.2,arc:100,heavy:HEAVY_ROW({})}),
@@ -135,7 +141,20 @@ function foeHeavyRoll(e){
   const u=seededRng('heavy',(e.id||e.baseType||e.baseName||e.name||'foe')+':'+n)(); /* a foe with no id yet rolls on its kind's name, still seeded */
   return e._heavyLast=u<H.share/(1-H.share); /* a third after a light blow: never twice running, still one in four in all */
 }
-function foeWindUp(e){const base=telegraphDuration(e);e._heavy=foeHeavyRoll(e);return e._heavy?Math.max(foeHeavyRow(e).tell,base+foeHeavyRow(e).add):base;}
+// S1140 — the feint's row (humanoids only, so far) and its roll, made only on a wind-up the heavy roll has left light
+function foeFeintRow(e){if(!e||e.isBoss)return null;const r=foeAttack(e);return r&&r.feint||null;}
+function foeFeintRoll(e){
+  const F=foeFeintRow(e);if(!F)return false;
+  if(e._feintLast){e._feintLast=false;return false;}
+  const u=seededRng('feint',(e.id||e.baseType||e.baseName||e.name||'foe')+':'+(e._blowN||0))();
+  return e._feintLast=u<F.roll;
+}
+function foeWindUp(e){
+  const base=telegraphDuration(e);e._heavy=foeHeavyRoll(e);e._feint=0;
+  if(e._heavy){e._feintLast=false;return Math.max(foeHeavyRow(e).tell,base+foeHeavyRow(e).add);}
+  if(foeFeintRoll(e)){e._feint=foeFeintRow(e).pause;return base+e._feint;} /* the pose tops out at base and holds (telegraphPulse) */
+  return base;
+}
 // S1041 — the weapon a person-bodied foe holds (its genome's, 32-people.js), and that weapon's reach from your table: a knife
 // the dagger's 1.2, the rest (sword, axe, mace, cutlass, and the staff and spear the sheet does not list) the sword's 1.6
 const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar',fists:'Fists'};
@@ -637,7 +656,7 @@ function tickMasterSlam(e,dt,dist,now){
   if(e._slamT>0){
     if(isStaggered(e)){slamCancel(e);return false;}
     e._slamT-=dt;const p=1-Math.max(0,e._slamT)/SLAM_TELL;
-    e.telegraphMax=SLAM_TELL;telegraphPulse(e,p);
+    e.telegraphMax=SLAM_TELL;e._feint=0;telegraphPulse(e,p);
     const r=slamRing(e);r.visible=true;r.material.opacity=.15+.55*p;
     if(e._slamT>0)return true;
     e._slamT=0;telegraphReset(e);r.visible=false;e.atkCd=Math.max(e.atkCd||0,1.2);e._slamCd=slamEvery(e);e._slams=(e._slams||0)+1;

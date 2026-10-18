@@ -26310,3 +26310,41 @@ its later blows roll.
   the slow kinds' heavies feel fair or ponderous is a playtest's call.
 - **Owed under #430:** the third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp). A heavy wind-up pose for each
   family is the bodies builder's, whenever they choose.
+## v80 — Session 1140 — The bandit's feint (the third moves under Michael's A on DECISION #430)
+Combat B's move sets (`docs/design/combat.md`) give every family a light blow, a heavy one and one third move: a gap-closer, a delayed
+swing ("a pause at the top of the tell, .3 s, to catch the panicked roll"), or a two-hit string. The page names three: the wolf lunges and
+snaps, the troll sweeps and stamps, the bandit feints. #430 put the third moves "in a later session under the same answer", and Michael's
+answer was one blow in four, read by its length. This session builds the bandit's feint, for the whole humanoid family (bandits, goblins,
+kobolds, skeletons, shieldbearers), since the attack table's rows are by family.
+
+- **The roll** (`foeFeintRoll`, `74-strikes.js`): made only on a wind-up the heavy roll has left light, a seeded roll of its own (`feint`,
+  on the foe's id and its blow's count, co-op rules), never twice running. Its odds on a light blow are 0.43 (`FEINT_ROW.roll`), which
+  lands one wind-up in four in all, as the heavy. The heavy roll is untouched: the same heavies fall on the same blows as before.
+- **The swing** (`foeWindUp`): the tell is the kind's own + 0.3 (a Bandit 0.87, a kobold 0.75, a skeleton 0.90). `telegraphPulse` drives
+  the wind-up pose to its top at the kind's own tell and holds it there through the pause, so the body says *now* where a light blow
+  would land, and the blow comes 0.3 s later. The glow is a light blow's, gold, in the last 0.15 s, so it comes after the pause, not at
+  the top. The blow is a light blow in everything else. `telegraphReset` and the master's slam clear the flag.
+- **What it does to a roll:** a roll pressed 0.15 s before a light blow lands is untouchable when it lands (0.08–0.30 s). Against the
+  feint, the same roll is spent 0.15 s before the blow and you are hit.
+- **The wolf** already leaps at the bite (`lunge`, 1.5 m, S1041), so its gap-closer is there in part; the snap, and the troll's
+  stamp (a two-hit string), are still owed.
+### Verified (headless Chromium)
+- **`feint`** (new) 1/1, 12 checks. Of 4,000 seeded wind-ups of one Bandit, 24.2% are feints and 24.8% heavy, never two feints running.
+  The same Bandit gives the same 4,000 again and another Bandit gives another. The heavies fall on exactly the blows `foeHeavyRoll` alone
+  gives. The tells are 0.57 → 0.87 (Bandit), 0.45 → 0.75 (kobold) and 0.60 → 0.90 (skeleton), with the heavy at 1.0. A wolf, a golem, a
+  troll, a boss and the shark never feint. A live Bandit through `tickZoneEnemies` at 1/60: the light wind-up runs 35 frames and the feint
+  53. The feint's pose reaches its top at frame 35 and holds at 1.0 to the blow. Its glow starts at frame 44 of 53 (the light's at 26 of
+  35). Both land (24 and 21). A roll pressed 0.15 s before the light blow is due makes the light miss (0) and the feint land (21).
+- **Re-measured, not loosened:** `heavyblow`'s light tells and its 60 s live Bandit now tell a feint apart (tells 0.57, 0.87 and 1.0 only).
+  `tells`' end-to-end Bandit holds the feint out as it holds the heavy out, because it measures the light tell.
+- **Neighbours, 18 suites four at a time:** `heavyblow`, `tells`, `resolver`, `roll`, `counters`, `parryclock`, `posture`, `duelrhythm`,
+  `wolves`, `foes`, `guardplay`, `questfoes`, `targetof`, `lockon`, `perkguard`, `spentguard` and `mimic` were green. `fistfight` was red
+  under the load of four at a time, with every punch fight after the first at zero punches, and then green four runs in five alone. The
+  red solo run was its stood-still count, the weight you survive before the last blow, which hangs on the Bandit's `Math.random` damage
+  (Session 1137 named it). The feint moves neither the damage nor the heavies. It is QA's to steady and is filed in backlog K.
+### Needs eyes
+- **Does the feint read?** The pose stops at its top and holds, with no glow until the last 0.15 s. Whether a player sees *hold* and
+  waits, or only learns it by being hit, is a playtest's call. The bodies builder could give the hold a small draw-back.
+- **One in four** is read from #430's answer ("the third moves follow under the same answer"). With the heavy, half a bandit's blows
+  are now something other than the plain swing. If that is too busy, `FEINT_ROW.roll` is the one number to change.
+- **Owed under #430:** the wolf's snap and the troll's stamp, each a two-hit string whose second blow's timing the page leaves open.

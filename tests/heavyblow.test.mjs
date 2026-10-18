@@ -22,7 +22,7 @@ const r = await page.evaluate(() => {
   out.fams = Object.fromEntries(Object.entries(fam).map(([k, e]) => { const s = rolls(e, 4000); return [k, { share: +((s.match(/H/g) || []).length / 4000).toFixed(3), twice: s.includes('HH') }]; }));
   out.none = [{ id: 'f', isBoss: true, shape: 'wolf' }, { id: 'sh', baseType: 'Shark', baseName: 'Shark' }].map(e => rolls(e, 400).includes('H'));
   // the tells: light as built, heavy 1.0 (every humanoid's and the wolf's tell + 0.35 is under it)
-  const tell = (e, heavy) => { e._heavyLast = false; const u = Math.random; const t = (() => { for (let i = 0; i < 400; i++) { const v = foeWindUp(e); if (e._heavy === heavy) return v; } return -1; })(); return +t.toFixed(3); };
+  const tell = (e, heavy) => { e._heavyLast = false; const u = Math.random; const t = (() => { for (let i = 0; i < 400; i++) { const v = foeWindUp(e); if (e._heavy === heavy && !e._feint) return v; } return -1; })(); return +t.toFixed(3); };
   out.tellsBig = { golem: [tell(fam.golem, false), tell(fam.golem, true)], troll: [tell(fam.troll, false), tell(fam.troll, true)], slime: [tell(fam.slime, false), tell(fam.slime, true)] };
   out.tells = { bandit: [tell(B, false), tell(B, true)], wolf: [tell(W, false), tell(W, true)], kobold: [tell({ id: 'k', baseType: 'Kobold Thief', baseName: 'Kobold Thief' }, false), tell({ id: 'k', baseType: 'Kobold Thief', baseName: 'Kobold Thief' }, true)] };
   // a real Bandit in front of you: the glow, the blow's size and what it does to you
@@ -81,16 +81,16 @@ const live = await page.evaluate(() => {
   forceTime(12); PHP = maxHP; dead = false;
   const e = keyFoe(unlockFoe(buildZoneEnemy(WORLD.scene, [], px, pz - 1.2, 'Bandit', null)), 'heavytest:run:0'); e.alert = true; ZONES.world.enemies.push(e);
   const log = { winds: [], blows: [] }; const _t = sndTelegraph, _x = executeStrike;
-  sndTelegraph = function () { log.winds.push([+e.telegraphMax.toFixed(2), !!e._heavy]); return _t.apply(this, arguments); };
+  sndTelegraph = function () { log.winds.push([+e.telegraphMax.toFixed(2), !!e._heavy, !!e._feint]); return _t.apply(this, arguments); };
   executeStrike = function (f, raw) { if (f === e) log.blows.push([!!f._heavy, raw]); return _x.apply(this, arguments); };
   const step = () => { PHP = maxHP; stamina = maxStamina; PPOST.stagUntil = 0; PPOST.posture = PPOST.maxPosture; yaw = Math.atan2(-(e.x - px), -(e.z - pz)); };
   try { _drive(step, 3600); } finally { sndTelegraph = _t; executeStrike = _x; }
   e.dead = true; WORLD.scene.remove(e.mesh); const L = ZONES.world.enemies, i = L.indexOf(e); if (i >= 0) L.splice(i, 1);
   return log; });
-const H = live.winds.filter(w => w[1]), Lt = live.winds.filter(w => !w[1]);
+const H = live.winds.filter(w => w[1]), Lt = live.winds.filter(w => !w[1] && !w[2]), Ft = live.winds.filter(w => w[2]); /* S1140 — a feint is a light blow held 0.3 s (tests/feint) */
 const hb = live.blows.filter(b => b[0]).map(b => b[1]), lb = live.blows.filter(b => !b[0]).map(b => b[1]);
 console.log(JSON.stringify({ winds: live.winds.length, heavy: H.length, blows: live.blows.length, hb: hb.slice(0, 6), lb: lb.slice(0, 6) }));
-check(`in 60 s of the loop the Bandit wound up ${live.winds.length} times, ${H.length} heavy, tells 0.57 and 1.0 only`, live.winds.length >= 15 && H.length >= 2 && H.every(w => w[0] === 1) && Lt.every(w => w[0] === .57), live.winds);
+check(`in 60 s of the loop the Bandit wound up ${live.winds.length} times, ${H.length} heavy, ${Ft.length} feints, tells 0.57, 0.87 and 1.0 only`, live.winds.length >= 15 && H.length >= 2 && H.every(w => w[0] === 1) && Lt.every(w => w[0] === .57) && Ft.every(w => w[0] === .87), live.winds);
 check('its heavy blows land at about twice its light ones', hb.length >= 2 && lb.length >= 2 && Math.min(...hb) > Math.max(...lb), { hb, lb });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

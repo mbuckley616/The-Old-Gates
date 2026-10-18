@@ -238,6 +238,7 @@ function enemyBodyMesh(e){
 }
 function telegraphPulse(e, progress){
   e._wind=progress; // v80 S130 — the shared attack pose reads it
+  if(e._feint>0){const T=e.telegraphMax||TELL_DEFAULT;e._wind=Math.min(1,progress*T/Math.max(.05,T-e._feint));} /* S1140 — a feint's pose tops out at the kind's tell and holds through the pause */
   // S282 — the glow only in the tell's last TELL_GLOW_S seconds; the pose carries the rest
   const left=(1-progress)*(e.telegraphMax||TELL_DEFAULT),k=Math.max(0,Math.min(1,1-left/TELL_GLOW_S));
   const body = enemyBodyMesh(e);
@@ -246,7 +247,7 @@ function telegraphPulse(e, progress){
   if(m && m.emissive){ if(e._heavy) m.emissive.setRGB(k*0.75, k*0.08, k*0.05); else m.emissive.setRGB(k*0.75, k*0.52, k*0.08); }
 }
 function telegraphReset(e){
-  e._wind=0;
+  e._wind=0;e._feint=0;
   const body = enemyBodyMesh(e);
   const m = body && body.material;
   if(m && m.emissive) m.emissive.setRGB(0,0,0);
