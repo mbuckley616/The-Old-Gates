@@ -24651,3 +24651,31 @@ QA's entry of 18 Oct asks the bodies builder about a beast's corpse that came to
 - **No game file changed.**
 ### Needs eyes
 - **Nothing to look at yet.** QA's 3.49 still stands unexplained, and this suite does not catch it. It guards only that a beast by a wall rests on the ground in the cases it builds.
+
+## v80 — Session 1133 — A beast killed over a solid no longer climbs it (backlog I)
+**A correction to Session 1132**, which found no reproduction and changed nothing. Replaying QA's own path did reproduce it: `goToZone('world', 13100, 25450, 0, 'x')`, Hearthwick built, 40 unseeded Cave Bears killed within 0.8 of the well, and 240 steps of `tickPeople`. One bear, killed at (13099.08, 25419.81), rose to 12.5 m in a second and a half and then hung at 10.5 m. It counted as quiet, and its points touched the wall 1,581 times. Session 1132's cases missed it because none of them killed a bear *over* a solid: its middle was 0.22 from the well's centre, and 30 of its 31 points began inside the well's column. The solids are columns with no top, so the well is a wall at every height.
+
+The beasts' wall hold (Session 1091, from the people's S466) is what lifted it:
+- **A rise became velocity.** A point stopped at the wall moving more than `RD_GRIP.wall` kept half its move that step as velocity (`q.y = p.y − vy·0.5`). The bones pulled the points coming out of the column upward, and each step's pull was kept, so the body climbed at up to 0.27 a step.
+- **A point at rest never fell.** A point that moved less than 6 mm in the step was held at its height. Gravity alone gives a point at rest 2.7 mm a step, so once a point lay on the wall it could never start to fall, and the bear hung where the climb left it.
+
+QA's 3.49 is the same climb stopped lower. One line in `34-creatures.js` fixes it: a held point never rises, and it may always fall, at half its pace (the wall's rub). This still does what Session 1091 needed. A head rocking on a tree can no longer rock up, so it ratchets down to rest.
+
+The people's ragdoll in `32-people.js` has the same hold. It is left as it is: no person has been seen climbing, and its suites are QA's and the systems builder's neighbours. It is owed as a check.
+
+### Verified (headless Chromium)
+- **The probe** (18 seeded falls at three spots on and beside the well):
+  - before, at the spot inside the well's box: the highest point rested at 0.46, 1.66, 0.78, 7.72, 0.56 and 2.07;
+  - after: 0.43 to 0.49 for all 18.
+- **`beastwall`:** 6 of 6 pass, Session 1132's five and a new one.
+  - The new check: 12 bears killed over the column through `tickPeople`, 30 of their 31 points inside it. The highest point rests at 0.43 to 0.55, all at rest by 2.03 s.
+  - By the well, the hips lie 0.26 to 0.42; on clear ground 0.26 to 0.30; dropped against a wall 0.26 to 0.30.
+- **`beastfall`:** 39 of 39 pass. Session 1091's two old capped falls (the Snow Wolf and the Dire Wolf against a tree) settle in 1.27 and 1.88 s. The sixty seeded wolves have a median of 1.38 s, none capped.
+- **`corpsebody`:** 19 of 19 pass.
+- **The new look (`--look=new`):** `beastwall` 6 of 6 and `beastfall` 39 of 39 pass.
+- Build tag: s652.
+### Needs eyes
+- **Nothing visible in play,** unless a beast dies against a well, a cart or a house corner. It should now drop to the ground beside it.
+- **Owed:**
+  - the people's hold, the same check on `ragdollStep`;
+  - a bear's body overlapping a solid at death is itself odd, since foes collide by their centre point only. That is the systems builder's, and noted here only.

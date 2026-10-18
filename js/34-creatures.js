@@ -424,8 +424,12 @@ function creatureRagdollStep(R){
     // S1091: the people's wall (S466): a point the wall stopped last step is held in every pass, not the last two only, and held
     // in height too when it barely moves; without it a head leaning on a tree was driven into it and shoved back, step after step,
     // and the Dire Wolf and the boar lay rocking against it past the four-second cap
+    // S1132: and a held point never rises, though it may always fall (at half its pace, the wall's rub). Held in height whenever it
+    // moved less than RD_GRIP.wall, a point at rest on a wall never fell (gravity is 2.7 mm a step), and a rise the bones gave it was
+    // kept as half a velocity every step, so a Cave Bear killed over Hearthwick's well, 30 of its 31 points inside the column,
+    // climbed it to 12 and hung there at 10.5, quiet (QA's 3.49, S1128)
     if(R.solid)for(const o of P)if((it>=8||o.w0)&&R.solid(O.x+o.p.x*R.K,O.z+o.p.z*R.K)&&!R.solid(O.x+o.sx*R.K,O.z+o.sz*R.K)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;o.w=true;
-      const vy=o.p.y-o.sy;if(Math.abs(vy)<RD_GRIP.wall*R.s)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
+      const vy=o.p.y-o.sy;if(vy>=0)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
   }
 }
 function creatureRagdollApply(R){
