@@ -15,7 +15,12 @@ def strip_common(src):
     return src
 def scene(src):
     return re.sub(r"^import \{[^}]*\} from './(common|people).js';\n", '', src, flags=re.M)
-common = strip_common(open(os.path.join(here, 'common.js'), encoding='utf-8').read()) + '\n' + strip_common(open(os.path.join(here, 'people.js'), encoding='utf-8').read())
+_c = strip_common(open(os.path.join(here, 'common.js'), encoding='utf-8').read()); _p = strip_common(open(os.path.join(here, 'people.js'), encoding='utf-8').read())
+# a top-level name people.js keeps to itself and common.js also declares (people.js's WIND since Session 1024) is renamed in
+# people.js's copy: the two modules share one scope here, and a module cannot both import a name and declare it, so none is shared
+_top = lambda src: set(re.findall(r"^(?:const|let|var|function|async function|class) (\w+)", src, flags=re.M))
+for _n in sorted(_top(_c) & _top(_p)): _p = re.sub(r"\b%s\b" % _n, 'P_' + _n, _p)
+common = _c + '\n' + _p
 imports_c = re.findall(r"^import .*;$", common, flags=re.M)
 common_body = re.sub(r"^import .*;\n", '', common, flags=re.M)
 def build(name, title, note, srcfile, use_common, query=''):
@@ -24,6 +29,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         s = scene(src)
         if "from './creatures.js'" in s: s = kit(s)
         if "from './implements.js'" in s: s = implkit(s)
+        if "from './helms.js'" in s: s = helmkit(s)
         imps = re.findall(r"^import .*;$", s, flags=re.M); body = re.sub(r"^import .*;\n", '', s, flags=re.M)
         allimps = list(dict.fromkeys(imports_c + imps)); code = '\n'.join(allimps) + '\n' + common_body + '\n' + body
     else: code = src
@@ -61,6 +67,16 @@ build('gates-six.html', 'The six great gates', 'The six schools’ great gates (
 build('implements-schools.html', 'The schools’ implements', 'The six schools’ magical implements (L7, OG-094): a staff, a hand piece, a focus and a tome each. &cam=wide|tine|uisce|cloch|scath|solas|gaoth. Drag to look.', 'implements-view.js', True, '?view=schools')
 build('implements-islands.html', 'Staffs by island', 'The common staff in each island’s make, the school in its stone; each rack holds the six schools. Drag to look.', 'implements-view.js', True, '?view=islands')
 build('implements-hand.html', 'Staffs in hand', 'A Gatelander, a Markman and an Aurennais with a staff in the fist. ?tier=island|school. Drag to look.', 'implements-view.js', True, '?view=hand&tier=school')
+# the armour's helms by tier (concept, 17 Oct 2026): helms.js goes in as one closure, as implements.js does
+def helmkit(s):
+    src = open(os.path.join(here, 'helms.js'), encoding='utf-8').read()
+    names = re.findall(r"^export (?:const|function) (\w+)", src, flags=re.M)
+    imps = [i for i in re.findall(r"^import .*;$", src, flags=re.M) if "./common.js" not in i]; body = re.sub(r"^import .*;\n", '', strip_common(src), flags=re.M)
+    m = re.search(r"^import \{([^}]*)\} from './helms.js';\n", s, flags=re.M)
+    wrapped = '\n'.join(imps) + '\nconst HK = (() => {\n' + body + '\nreturn { ' + ', '.join(names) + ' };\n})();\nconst {' + m.group(1) + '} = HK;\n'
+    return s[:m.start()] + wrapped + s[m.end():]
+build('helms-line.html', 'Helms by tier', 'The heavy line’s ten helms, Wooden to Cosmic (L7, OG-052 and OG-019). ?set=a (one shape) | b (OG-052’s silhouettes) | c (b, visors shut), &cam=whole|far|heads|close. Drag to look.', 'helms-view.js', True, '?view=line&set=b')
+build('helms-hoods.html', 'Hoods by tier', 'The robe line’s raised hoods, Mithril to Cosmic: circlets (?set=a) or antlers, horns, a crescent and a halo (?set=b). Drag to look.', 'helms-view.js', True, '?view=robes&set=b')
 # the HUD in the new look (concept, 15 Oct 2026): the slice's scene, then hud.js in place of its dynamic import, the
 # approved kit's CSS, icons and fonts inlined (fonts from Google, the host allows no others)
 def hud(name, title, note, scene_src, query):

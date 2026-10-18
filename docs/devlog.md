@@ -24908,6 +24908,29 @@ and in hand."*
 - **Addendum to Session 1080: `bowsway`** found a real hole. When a sheathed weapon was swapped for another without the
   inventory's own rebuild of the view, `tickSheath` cleared the sheath but left the empty hand standing, so the new bow was held
   invisibly and did not wobble. Clearing the sheath now rebuilds the drawn view. `bowsway` and `sheath` pass.
+## v80 — Session 1071 — perkbody's stepped loop starts from the last real frame (QA, tests only)
+`perkbody` went FLAKY on three runs, all shard 5: bf251d1 on auto/systems, and the producer's branch twice today (bc98a27 and ac8206e). Each time the red check was *off the road at 74 the sprint drains it*, with stamina 9.98 against `< 8` while sprinting; the retries read 6.78. The suite lives on auto/systems (Session 976), not on main. The sprint is measured in the game's own loop. The test stubs `requestAnimationFrame` and `REN.render` and calls `loop(_t)` ten times, adding a sixtieth of a second to its own clock `_t` each time. But the game's frame that was already queued when the stub went in still runs once, at real time. When it lands between two sprints, while the keys are being pressed, it leaves `prevT` ahead of `_t`. The next stepped frame then has a negative `dt`: the loop caps `dt` at 0.05 and puts no floor under it. So the sprint's drain, `stamina - dt*drain`, adds stamina. Real browsers never run time backwards, so this is the test's, not the game's.
+
+The fix is in the stub. It now waits out the queued frame (a promise on the real `requestAnimationFrame` resolves in the same frame) and starts `_t` from that frame's `prevT`. Every `_step` also starts from `max(_t, prevT)`, so a stray frame can never put the clock behind. A new check records every stepped frame's `dt` and asks that each is 1/60 s. The commit is bac01b0 on `auto/qa-perkbody`, cut from auto/systems as Session 1038's skillcurve fix was, for the systems builder to merge.
+
+### Verified (headless Chromium)
+- A probe that forces a real frame 0.4 s late between sprints gave the next stepped frame `dt` −1.29 s, and the sprint took stamina from 8 to 16.37. The old suite with that frame forced fails its check at 21.86, sprinting. That is CI's failure, larger.
+- The fixed suite: 3 of 3 green (6.78 each time), 1 of 1 under `--look=new`, and green with the late frame forced. Every stepped frame was 1/60 s (52 of 52).
+
+### Needs eyes
+- 41 more suites on main step `loop` from their own clock the same way. Those that await between steps can meet the same stray frame, and a negative `dt` reverses anything the loop integrates over time. A shared helper in `tests/lib/` would close the hole for all of them. It is owed in `docs/qa/flaky.md`, and the systems builder still has to merge bac01b0.
+
+## v80 — Session 1072 — captainguard holds the flank against open blows of the same kind (QA, tests only)
+`captainguard` went FLAKY once, on the producer's branch bc98a27 (which carries the Systems code), shard 4. The red check was *a swing from behind goes round the shield in full*: the flank ratio was 0.78 against `> .8`. The flank blows were `[4,3,3,3,3,4]` against an open mean of 4.25, from open blows `[4,4,5,3,4,5,4,4,5,4,4,5]`. The log came through the GitHub connector; `gh`'s log download is refused by the proxy here. The open blows are the three follow-ups in each of four cycles while the captain reels, so each cycle's third is a chain's third blow and does ×1.3 (`COMMIT.chainDmg`, read as `SWING.chain===3`). Each flank swing follows a long wait and never chains, so the check measured a single blow against a set that carried the chain's bonus a third of the time. On main's rolls (5–8 with the GreatClub) that left a margin of 0.89–0.96. On the Systems code's skill-scaled rolls (3–5) the bonus alone brings the ratio to about 0.85, and a low draw takes it under 0.8.
+
+The suite now records the open blows that are not a chain's third (`openPlain`) and holds the flank against those. The bound is unchanged at 0.8, and the check asks for at least four such blows. The front, follow-up and guard checks read the same arrays as before.
+
+### Verified (headless Chromium)
+- 3 of 3 green on main (flank ratio 0.96, 0.98, 1.09). 3 of 3 on the Systems code (auto/systems' worktree: 0.83, 0.92, 0.96). 1 of 1 under `--look=new`.
+- CI's failing numbers read 0.92 under the new comparison.
+
+### Needs eyes
+- On the Systems code the rolls are 3 or 4, so six flank blows against eight open ones is still a coarse sample: one run here read 0.83. If it goes red again with plain-open blows, the next step is more flank swings, not a lower bound.
 ## v80 — Session 1044 — Card F11: Aurenne's cog, by #347's answer (prototype only)
 The third hull built to Michael's A on DECISION #347, and the last cog. Option A's text names it: "an Aurenne cog with one lateen". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait. This session touches only the prototypes: `ships.js`, `ships-view.js` and `ships.check.mjs`. It is `aurenneCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'aurenne'`), at `ships.html?ship=aurcog`.
 
@@ -25151,3 +25174,15 @@ Wastes (tier 3), the place level 12 used to stand for. Tests only; no game code 
 Gargoyle), none sharing a material; the open world's twelve unchanged. Without `x, z` the helper builds the same portal as before.
 ### Needs eyes
 Nothing to see in play. `targetof`, `renewal`, `trapseed` and `fistfight` were red on the same run, the other sessions' (PR comment).
+## v80 — Session 1090 — The new look's suite, shards 9 and 10 (QA)
+QA's run of 18 Oct 00:52 UTC found no red that was not its change's own. In CI from 17 Oct 17:00 to 18 Oct 00:52 there were 3 red runs, all on the builders' own work. auto/backlog 726dd57: `kitlots` failed twice; the branch's next head, 8aea55a, is green. auto/systems 3421a74 and bbb2e4a: `trapseed` failed twice on both, its spike plate hitting 19 and 16 against the old band of 8–15 at level 1. Since Session 1061 (enemies by place), the plate's band follows the floor's tier (`tiertrap`), so the check still measures the level rule; trapseed is the systems builder's to re-measure on the branch that changed it. Also red: `targetof`, where the dungeon's Phantom is alert but does not move (4 → 4 both ways, on both runs), and `perkarms`, whose live list Session 1080 updated since. auto/systems' two later heads were cancelled before their shards ran, so its current state is unread. No suite was FLAKY.
+
+So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where shards 9–14 were owed. Shards 9 and 10 ran under `--look=new` side by side on main 5521ba1: 66 of 66 green. 48 suites are new to the ledger. The other 18 were already there from earlier shards, because the shards reshuffle as suites are added. `falls` was the one blemish: its first try lost the page after five of its eight drops, and the retry passed. This run's own setup command also started a stray old-look run of the whole suite (`run.mjs --help` is not a help flag; it runs everything). That run shared the four cores for 30 minutes, until its time limit killed it, so six boots were running and the try took ~1,490 s against CI's 219. Run alone afterwards, `falls` passed 10 of 10 in about 7 minutes. The page loss was the load's, not the new look's. The ledger now holds 305 of the suite's 459 files.
+
+### Verified (headless Chromium)
+- `node tests/run.mjs --shard=9/14 --look=new`: 33/33, `falls` FLAKY (1,707 s with the retry, under the stray run). `--shard=10/14 --look=new`: 33/33. The longest after `falls` were `lod` 426 s, `yardplay` 368 and `fortwalk` 357.
+- `node tests/run.mjs falls --look=new --no-retry`, alone: 10/10, including the dungeon's 12-unit roll and 22-unit death that the overloaded try never reached.
+
+### Needs eyes
+- Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
+- `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.

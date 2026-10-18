@@ -9,16 +9,20 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 |---|---|---|---|---|---|
 | `armourfit` | 5/14 | pass | pass | 49 |  |
 | `armourlines-numbers` | 3/14 | pass | pass | 51 |  |
+| `articles` | 9/14 | pass | pass | 70 |  |
 | `ashenburn` | 3/14 | pass | pass | 67 |  |
 | `ashwort` | 6/14 | pass | pass | 46 |  |
 | `autosave` | 3/14 | pass | pass | 103 |  |
 | `backslot` | 1/14 | pass | pass | 42 |  |
 | `barber` | 1/14 | pass | pass | 109 |  |
 | `barberbox` | 2/14 | pass | pass | 81 |  |
+| `barberchair` | 9/14 | pass | pass | 84 |  |
+| `barberfee` | 10/14 | pass | pass | 85 |  |
 | `bear` | 1/14 | pass | pass | 46 |  |
 | `beastfall` | 7/14 | pass | pass | 159 |  |
 | `beat` | 4/14 | pass | pass | 101 |  |
 | `bedaim` | 5/14 | pass | pass | 82 |  |
+| `bedrollprompt` | 10/14 | pass | pass | 56 |  |
 | `bellwreck` | 3/14 | pass | pass | 68 |  |
 | `blacksail` | 6/14 | pass | pass | 154 |  |
 | `bladehit` | 5/14 | pass | pass | 45 |  |
@@ -29,6 +33,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `boxspots` | 5/14 | pass | pass | 99 |  |
 | `bridgenames` | 2/14 | pass | pass | 104 |  |
 | `bronzehelm` | 7/14 | pass | pass | 28 |  |
+| `buffstack` | 9/14 | pass | pass | 42 |  |
 | `buildsite` | 8/14 | pass | pass | 102 |  |
 | `burglary` | 6/14 | pass | pass | 146 |  |
 | `calendar` | 1/14 | pass | pass | 85 |  |
@@ -42,6 +47,8 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `civicfurn` | 6/14 | pass | pass | 75 |  |
 | `cloakbody` | 5/14 | pass | pass | 50 |  |
 | `cloakguild` | 1/14 | pass | pass | 44 |  |
+| `coach` | 9/14 | pass | pass | 71 |  |
+| `coachinn` | 9/14 | pass | pass | 146 |  |
 | `coachseat` | 2/14 | pass | pass | 102 |  |
 | `coachstop` | 8/14 | pass | pass | 100 |  |
 | `coldhearth` | 2/14 | pass | pass | 101 |  |
@@ -57,12 +64,15 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `datedwork` | 1/14 | pass | pass | 42 |  |
 | `dayseed` | 8/14 | pass | red, then pass | 398 | Red twice in shard 8: `shrine null`, the same cause as `renewal` (`g.settle` gave up at 60 s). Fixed in Session 1006; 4 of 4 green in both looks since. |
 | `dazed` | 2/14 | pass | pass | 90 |  |
+| `deadkeys` | 10/14 | pass | pass | 113 |  |
 | `deadtree` | 8/14 | pass | pass | 20 |  |
+| `deathplace` | 10/14 | pass | pass | 56 |  |
 | `demonickit` | 5/14 | pass | pass | 18 |  |
 | `dlgkeys` | 7/14 | pass | pass | 56 |  |
 | `dmgnums` | 7/14 | pass | pass | 172 |  |
 | `doorbed` | 5/14 | pass | pass | 149 |  |
 | `drydoors` | 3/14 | pass | pass | 86 |  |
+| `due` | 10/14 | pass | pass | 44 |  |
 | `duel` | 4/14 | pass | pass | 59 |  |
 | `dunfurn` | 8/14 | pass | pass | 170 |  |
 | `dungeon` | 7/14 | pass | pass | 84 |  |
@@ -73,20 +83,26 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `dunwarm` | 4/14 | pass | pass | 324 |  |
 | `enchantmotes` | 8/14 | pass | pass | 49 |  |
 | `export` | 1/14 | pass | pass | 51 |  |
+| `falls` | 9/14 | pass | red, then pass | 1707 | Its first try lost the page (*Target page … has been closed*) after five of eight drops, in the dungeon, in the half hour this container ran a third, stray run of the whole suite beside the two shards (six boots on four cores; the first try alone took ~1,490 s against CI's 219). The retry passed. Run alone after: see the line under the table. |
 | `feastsquare` | 5/14 | pass | pass | 67 |  |
 | `featurenames` | 8/14 | pass | pass | 12 |  |
 | `ferry` | 1/14 | pass | pass | 57 |  |
+| `fiercewolf` | 9/14 | pass | pass | 59 |  |
 | `fistfight` | 8/14 | pass | pass | 143 |  |
 | `fists` | 8/14 | pass | pass | 67 |  |
+| `fistswing` | 10/14 | pass | pass | 148 |  |
 | `foearmour` | 5/14 | pass | pass | 43 |  |
 | `foelogname` | 7/14 | pass | pass | 51 |  |
 | `foes` | 1/14 | pass | pass | 71 |  |
 | `foewarm` | 5/14 | pass | **red** | 170 | Red twice (identical): *raising every foe kind compiles no shader and adds no program* read 2 compiles and one new program (41→42, 42→43) when every kind is raised and drawn; the prewarm itself ran (33 kinds, 17 programs). On 0.170 the prewarm (`prewarmFoes`, `js/42-zone-enemies.js`) leaves one foe program to be compiled on its first draw: the game's, filed in backlog I for the systems builder. |
+| `fortbarracks` | 10/14 | pass | pass | 101 |  |
 | `fortcot` | 4/14 | pass | pass | 122 |  |
 | `fortfurn` | 3/14 | pass | pass | 110 |  |
 | `forthall` | 8/14 | pass | pass | 92 |  |
 | `fortunecaor` | 1/14 | pass | pass | 44 |  |
 | `fortunecard` | 4/14 | pass | pass | 37 |  |
+| `fortwalk` | 9/14 | pass | pass | 357 |  |
+| `fphands` | 9/14 | pass | pass | 51 |  |
 | `fpshield` | 3/14 | pass | pass | 47 |  |
 | `fpweapons` | 4/14 | pass | pass | 50 |  |
 | `gait` | 3/14 | pass | pass | 73 |  |
@@ -96,10 +112,13 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `ghoulface` | 1/14 | pass | pass | 20 |  |
 | `ghoulwalk` | 6/14 | pass | pass | 9 |  |
 | `goblinbody` | 5/14 | pass | pass | 10 |  |
+| `golem` | 10/14 | pass | pass | 60 |  |
 | `guardintro` | 6/14 | pass | pass | 47 |  |
 | `guardplay` | 7/14 | pass | pass | 293 |  |
 | `guardseed` | 6/14 | pass | pass | 47 |  |
+| `guardsindoor` | 9/14 | pass | pass | 151 |  |
 | `guildfurn` | 4/14 | pass | pass | 73 |  |
+| `handback` | 10/14 | pass | pass | 66 |  |
 | `harbour` | 3/14 | pass | pass | 72 |  |
 | `hearthcast` | 3/14 | pass | pass | 64 |  |
 | `helmhair` | 6/14 | pass | pass | 21 |  |
@@ -111,11 +130,13 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `hoardspot` | 5/14 | pass | pass | 81 |  |
 | `homenames` | 8/14 | pass | pass | 119 |  |
 | `honesttown` | 3/14 | pass | pass | 43 |  |
+| `horselegs` | 10/14 | pass | pass | 17 |  |
 | `hourhitch` | 5/14 | pass | **red** | 896 | Red twice in shard 5 under load: a worst frame of 12.6 and 13.8 s against noon's 2.8 and 2.2 s. **Classified, Session 992**: run alone, the new look is red twice at the same step, the jump to 21h, at 11.2 and 11.5 s, with 0 shaders compiled, 42 programs before and after, and the steps' median 3.2–3.5 s. The old look, alone in the same container, passed 3 of 3 (worst 3.0–7.2 s). The game's: filed in backlog I (*On the new look one jump of the clock stalls the frame for 11 s with nothing compiled*), for the systems builder or the F card that owns the new look. The suite now also logs each step's buffer and texture uploads. |
 | `housebuy` | 4/14 | pass | pass | 54 |  |
 | `houses` | 6/14 | pass | pass | 58 |  |
 | `hptail` | 2/14 | pass | pass | 65 |  |
 | `hubregen` | 2/14 | pass | pass | 42 |  |
+| `hubreturn` | 9/14 | pass | pass | 124 |  |
 | `hullbakes` | 7/14 | pass | pass | 62 |  |
 | `hullshape` | 4/14 | pass | pass | 46 |  |
 | `huntvariant` | 7/14 | pass | pass | 43 |  |
@@ -133,6 +154,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `lairdoor` | 6/14 | pass | pass | 81 |  |
 | `lairgrade` | 8/14 | pass | pass | 51 |  |
 | `lairhoard` | 1/14 | pass | pass | 70 |  |
+| `lairload` | 9/14 | pass | pass | 65 |  |
 | `lairmaster` | 4/14 | pass | pass | 49 |  |
 | `lairname` | 8/14 | pass | pass | 97 |  |
 | `lairrumour` | 7/14 | pass | pass | 44 |  |
@@ -143,17 +165,23 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `legacyshells` | 2/14 | pass | pass | 60 |  |
 | `legacyshops` | 6/14 | pass | pass | 50 |  |
 | `levelpanel` | 3/14 | pass | pass | 42 |  |
+| `livepick` | 9/14 | pass | pass | 157 |  |
 | `lockfair` | 8/14 | pass | pass | 80 |  |
 | `lockon` | 4/14 | pass | pass | 121 |  |
 | `lockpicks` | 1/14 | pass | pass | 85 |  |
 | `locks` | 1/14 | pass | pass | 127 |  |
 | `locksight` | 2/14 | pass | pass | 87 |  |
 | `lockswitch` | 4/14 | pass | pass | 37 |  |
+| `lod` | 10/14 | pass | pass | 426 |  |
 | `lootpicks` | 7/14 | pass | pass | 118 |  |
 | `lootseed` | 4/14 | pass | pass | 65 |  |
 | `mainmarks` | 5/14 | pass | pass | 67 |  |
 | `mainrun` | 4/14 | pass | pass | 614 |  |
+| `makertools` | 9/14 | pass | pass | 63 |  |
 | `makerwords` | 7/14 | pass | pass | 61 |  |
+| `mapquests` | 9/14 | pass | pass | 46 |  |
+| `mapseals` | 9/14 | pass | pass | 71 |  |
+| `mapsharp` | 10/14 | pass | pass | 114 |  |
 | `masterslam` | 8/14 | pass | pass | 65 |  |
 | `metkey` | 6/14 | pass | pass | 62 |  |
 | `mushrooms` | 1/14 | pass | pass | 112 |  |
@@ -162,6 +190,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `newelstair` | 3/14 | pass | pass | 65 |  |
 | `noonring` | 8/14 | pass | pass | 59 |  |
 | `oddfurn` | 6/14 | pass | pass | 49 |  |
+| `ogre` | 10/14 | pass | pass | 50 |  |
 | `packshape` | 3/14 | pass | pass | 64 |  |
 | `panelfocus` | 2/14 | pass | pass | 437 | Red at the 900 s cap on 15 Oct with two shards sharing four cores (four 8 s `locator.click` timeouts in its panel walk); run alone on 16 Oct (Session 971's run) it passed in 437 s, inside CI's old-look 270–546 s. Load, not the look: no owner. |
 | `parryclock` | 3/14 | pass | pass | 66 |  |
@@ -175,6 +204,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `q7world` | 8/14 | pass | pass | 320 |  |
 | `qtybutton` | 2/14 | pass | pass | 76 |  |
 | `quaynet` | 6/14 | pass | pass | 126 |  |
+| `quaywall` | 10/14 | pass | pass | 116 |  |
 | `questfoes` | 2/14 | pass | pass | 275 |  |
 | `questtargets` | 7/14 | pass | pass | 190 |  |
 | `ragdoll` | 2/14 | pass | pass | 160 |  |
@@ -183,12 +213,14 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `reader` | 8/14 | pass | pass | 257 |  |
 | `register` | 2/14 | pass | pass | 70 |  |
 | `renewal` | 7/14 | pass | red, then pass | 223 | Red twice in shard 7: it threw on `S.altar`, so the shrine was not built. It was also red alone in the old look. The cause was the harness: its own 60 s wait for the shrine, its cell's sixth site, which stood after 42 s with one boot. Fixed in Session 1006 (`g.settle` runs the job queue). The shrine then built in all 8 runs across both looks; 7 of 8 passed whole. One new-look run, six boots on four cores, hit the 900 s cap later, in its 40 real frames. |
+| `resolver` | 9/14 | pass | pass | 58 |  |
 | `restslip` | 5/14 | pass | pass | 49 |  |
 | `ringtrial` | 7/14 | pass | pass | 81 |  |
 | `rivers` | 8/14 | pass | pass | 78 |  |
 | `riversail` | 1/14 | pass | pass | 62 |  |
 | `roadseed` | 7/14 | pass | pass | 103 |  |
 | `rocks` | 4/14 | pass | pass | 55 |  |
+| `sackseed` | 9/14 | pass | pass | 36 |  |
 | `sailtrim` | 5/14 | pass | pass | 57 |  |
 | `savelabel` | 3/14 | pass | pass | 59 |  |
 | `savepic` | 4/14 | pass | pass | 67 |  |
@@ -197,9 +229,11 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `saveui` | 6/14 | pass | pass | 140 |  |
 | `scaleratio` | 6/14 | pass | pass | 355 |  |
 | `schoolroster` | 6/14 | pass | pass | 154 |  |
+| `scorpion` | 9/14 | pass | pass | 40 |  |
 | `seahint` | 1/14 | pass | pass | 44 |  |
 | `seaseed` | 8/14 | pass | pass | 51 |  |
 | `seasonwx` | 2/14 | pass | pass | 37 |  |
+| `seawear` | 10/14 | pass | pass | 87 |  |
 | `secondary` | 4/14 | pass | pass | 46 |  |
 | `selltopic` | 6/14 | pass | pass | 56 |  |
 | `shark` | 2/14 | pass | pass | 43 |  |
@@ -210,14 +244,17 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `shiphull` | 8/14 | pass | pass | 58 |  |
 | `shiphulls` | 4/14 | pass | pass | 40 |  |
 | `shiplog` | 6/14 | pass | pass | 70 |  |
+| `shipnets` | 9/14 | pass | pass | 60 |  |
 | `ships` | 6/14 | pass | pass | 46 |  |
 | `shipwreck` | 4/14 | pass | pass | 39 |  |
 | `shipwright` | 6/14 | pass | pass | 107 |  |
 | `shoperrands` | 1/14 | pass | pass | 167 |  |
 | `shophours` | 1/14 | pass | pass | 105 |  |
 | `shoprows` | 7/14 | pass | pass | 79 |  |
+| `shopsight` | 10/14 | pass | pass | 268 |  |
 | `shoreplaces` | 8/14 | pass | pass | 110 |  |
 | `shuttle` | 8/14 | pass | pass | 49 |  |
+| `shuttleclaim` | 10/14 | pass | pass | 72 |  |
 | `shuttletrial` | 3/14 | pass | pass | 80 |  |
 | `siegeturn` | 7/14 | pass | pass | 88 |  |
 | `signposts` | 7/14 | pass | pass | 47 |  |
@@ -239,6 +276,9 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `taskhomes` | 7/14 | pass | pass | 155 |  |
 | `tells` | 2/14 | pass | pass | 40 |  |
 | `thresholdname` | 4/14 | pass | pass | 60 |  |
+| `told` | 10/14 | pass | pass | 113 |  |
+| `townbarrels` | 9/14 | pass | pass | 104 |  |
+| `townlocks` | 9/14 | pass | pass | 48 |  |
 | `townroads` | 4/14 | pass | pass | 66 |  |
 | `tpguard` | 5/14 | pass | pass | 45 |  |
 | `tpshots` | 3/14 | pass | pass | 73 |  |
@@ -248,21 +288,33 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `turnin` | 7/14 | pass | pass | 67 |  |
 | `twins` | 1/14 | pass | pass | 81 |  |
 | `twinsrebuild` | 5/14 | pass | pass | 43 |  |
+| `underclothes` | 10/14 | pass | pass | 40 |  |
 | `unequip` | 3/14 | pass | pass | 41 |  |
+| `walls` | 10/14 | pass | pass | 67 |  |
+| `wardall` | 9/14 | pass | pass | 41 |  |
 | `wardswift` | 8/14 | pass | pass | 53 |  |
 | `warwords` | 1/14 | pass | pass | 69 |  |
 | `watch` | 8/14 | pass | pass | 104 |  |
+| `wayfinding` | 9/14 | pass | pass | 44 |  |
 | `waylamp` | 1/14 | pass | pass | 112 |  |
 | `wealth` | 7/14 | pass | pass | 82 |  |
 | `weapons` | 8/14 | pass | pass | 60 |  |
 | `wholepoints` | 4/14 | pass | pass | 42 |  |
+| `windows` | 10/14 | pass | pass | 49 |  |
 | `witness` | 7/14 | pass | pass | 120 |  |
 | `witnessrange` | 1/14 | pass | pass | 68 |  |
 | `wokennight` | 8/14 | pass | pass | 93 |  |
 | `wolfcloak` | 6/14 | pass | pass | 69 |  |
+| `wolves` | 9/14 | pass | pass | 63 |  |
 | `woodenkit` | 8/14 | pass | pass | 19 |  |
 | `worldjournal` | 3/14 | pass | pass | 48 |  |
 | `worldloot` | 3/14 | pass | pass | 40 |  |
+| `wraithfloat` | 10/14 | pass | pass | 45 |  |
 | `wraithhood` | 6/14 | pass | pass | 48 |  |
+| `yardplay` | 10/14 | pass | pass | 368 |  |
 
-Shards 1–4: 124 of 124 pass (panelfocus alone; shards 3 and 4 on 16 Oct 01:13–01:57 UTC, auto/qa at Session 971, main 148d635, two shards side by side, 44 min). Shards 5 and 6 (16 Oct 01:58–02:49 UTC, same build, side by side): 64 of 66 pass; `foewarm` red (the game's, filed), `hourhitch` red (owed alone). Shards 7 and 8 (16 Oct 12:54–13:53 UTC, main 6b8fbf9, side by side, 59 min): 65 of 67 pass. `renewal` and `dayseed` were red for the harness (`g.settle` gave up at 60 s) and pass since Session 1006. Shards 9–14: owed.
+Shards 1–4: 124 of 124 pass (panelfocus alone; shards 3 and 4 on 16 Oct 01:13–01:57 UTC, auto/qa at Session 971, main 148d635, two shards side by side, 44 min). Shards 5 and 6 (16 Oct 01:58–02:49 UTC, same build, side by side): 64 of 66 pass; `foewarm` red (the game's, filed), `hourhitch` red (owed alone). Shards 7 and 8 (16 Oct 12:54–13:53 UTC, main 6b8fbf9, side by side, 59 min): 65 of 67 pass. `renewal` and `dayseed` were red for the harness (`g.settle` gave up at 60 s) and pass since Session 1006. Shards 9 and 10 (18 Oct 00:59–02:05 UTC, main 5521ba1, side by side, Session 1090): 66 of 66 pass, 48 suites new to this ledger and 18 already
+in it from an earlier shard (the shards reshuffle as suites are added; the 18 kept their first rows). Old look: main's CI run 39066602458 (c2e0352, 17 Oct), green.
+`falls` lost its page on the first try and passed on the retry. For that run's first 30 minutes a stray third run of the whole suite, in the old look,
+shared the four cores (six boots), and the try took about 1,490 s against CI's 219. Run alone afterwards (`--no-retry`), it passed 10 of 10 in about 7 minutes:
+the load's, not the look's. Shards 11–14: owed. 202 of the suite's 459 files were not in this ledger before this session; 154 still are not.
