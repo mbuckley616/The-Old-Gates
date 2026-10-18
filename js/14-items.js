@@ -693,6 +693,7 @@ const LOOT_POOLS={
   library_chest:[
     {w:35, roll:()=>randomBookItem()},
     {w: 3, roll:()=>loreBookItem('seventh_niche')||randomBookItem()}, // S979 — The Seventh Niche, rare (the approved draft)
+    {w: 2, roll:()=>loreBookItem('words_on_stones')||randomBookItem()}, // S1092 — The Words on the Stones, rare (What the Stones Say)
     {w:20, roll:()=>({name:'Worn Tome',ico:'📕',type:'junk',weight:0.6,sellMult:.4,buyPrice:0,desc:'Pages too damaged to read. The binding still has value to a collector.'})},
     {w:15, roll:()=>randomLootHerb()||{name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:'torch',def:0,tier:1,material:'Wooden',matCol:0x6a3e12,weight:1,sellMult:.3,buyPrice:8}},
     {w:12, roll:()=>({name:'Torch',ico:'🔦',type:'equip',slot:'offhand',torchType:'torch',def:0,tier:1,material:'Wooden',matCol:0x6a3e12,weight:1,sellMult:.3,buyPrice:8})},

@@ -2023,6 +2023,27 @@ const giver=`${lord.title} ${lord.name}`;
     if(v.chapel)return [{label:L.ask,response:L.after}];
     const cap=guestChapelHouse()?guestChapelHouse().name:'the capital';
     return [{label:L.ask,folder:true,response:L.say,follow:[{label:L.follow,response:L.then.replace('${cap}',cap)}]}];}
+  // S1092 — What the Stones Say (the approved draft, quest_drafts.md): the Mages' Guild head on what the Guild teaches of the
+  // sigils, selling the academy's primer; the Fighters' Guild head handing every new hand the Board's sheet, once
+  const SIGIL_LORE={
+    aurennais:{teach:'Impression and Comprehension, Master, and the Guild certifies both. Mastery we do not teach, because it cannot be taught. It comes from the stones alone, and the academy declines to certify what it cannot examine. The Guild’s treatise sets out the terms.',
+      buy:'Forty gold, Master, and the copy is yours outright. Read the catalogue before you read the rest; it is the part the examiners ask about.',short:'The copy is forty gold, Master. The library does not lend.',
+      sheet:'The Board issues a sheet to each new member, Master. It is brief and it is not well written, and every word of it is correct. Take it.',had:'You have been issued the sheet, Master. The Board issues one.'},
+    gatelander:{teach:'To the second degree, and not a step past it. The last step’s on the stone, and you’ll not find it in a book, any more than you’d learn to swim from a drawing of the sea.',
+      buy:'Forty gold. It’s the academy’s book, so take it with salt. They know the names of everything and the use of half.',short:'Forty gold, and a book’s no cheaper for being dry, more’s the pity.',
+      sheet:'There’s a sheet for that, and it’s the one piece of paper in this hall worth the reading. Take it. It’s shorter than the advice you’d get from me.',had:'You’ve had the sheet already. A thing read twice is a thing half learned, so read it a third time.'},
+    markman:{teach:'Two of the three. The third’s the stone’s. Can’t sell you that.',
+      buy:'Forty gold. Dry as a ledger. Has the names in it, though.',short:'Forty. Come back with it.',
+      sheet:'Aye. Here. Every new hand gets the sheet. Read it twice.',had:'You’ve got the sheet. Read it again.'},
+    oldblood:{teach:'Two degrees. The third is the stone’s. Léamh, my mother called it. Reading. She did not do it.',
+      buy:'Forty gold. The words are in it. The meaning is not.',short:'Forty gold.',
+      sheet:'There is a sheet. Take it. Do what it says about reading.',had:'You have it.'}};
+  function sigilLoreTopic(g,gp){const L=SIGIL_LORE[gp]||SIGIL_LORE.markman;
+    if(g==='guild_m'){const price=40;return [{label:'What does the Guild teach of the sigils?',folder:true,response:L.teach,follow:[{label:`Is it written down? (Buy On the Seals, ${price} gold)`,quest:true,fn:()=>{
+      if(gold<price)return L.short;const it=loreBookItem('on_the_seals');if(!it)return L.short;gold-=price;updateHUD();if(typeof bagAdd==='function')bagAdd(it);else BAG.push(it);return L.buy;}}]}];}
+    if(g==='guild_f')return [{label:'Anything I should know about the warm stones?',quest:true,fn:()=>{
+      if(booksRead.has('warm_stones')||BAG.some(b=>b&&b.bookId==='warm_stones'))return L.had;const it=loreBookItem('warm_stones');if(!it)return L.had;it.buyPrice=0;if(typeof bagAdd==='function')bagAdd(it);else BAG.push(it);return L.sheet;}}];
+    return [];}
   function isGuestCathedral(house){if(house.type!=='church')return false;const cap=guestChapelHouse();return !!cap&&house.siteId===cap.id;}
   function guestPrompt(){if(!currentHouse||currentHouse.type!=='chapel')return null;if(Math.hypot(px-currentHouse.intW/2,pz-2.2)<1.8)return "Press 'E' to pray";return null;}
   function guestInteract(){if(!guestPrompt())return false;

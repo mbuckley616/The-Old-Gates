@@ -774,7 +774,7 @@ function showBagTooltip(idx,ev){
       const read=booksRead.has(def.id);
       const attrLbl=(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[def.attr])?ATTR_DEF[def.attr].label:def.attr;
       if(!def.attr){
-        html+=`<div class="bt-row" style="color:#a08860;font-style:italic">Lore book${read?' · read':''}</div>`;
+        html+=`<div class="bt-row" style="color:#a08860;font-style:italic">${def.sheet?'Lore':'Lore book'}${read?' · read':''}</div>`;
         html+=`<div class="bt-row" style="color:#a08860;font-size:9px">${def.pages.length} page${def.pages.length>1?'s':''}</div>`;
       } else if(read){
         html+='<div class="bt-row" style="color:#8a7050;font-style:italic">Already absorbed</div>';
