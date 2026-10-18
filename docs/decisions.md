@@ -73,7 +73,7 @@ How should a town's lots and the kit's houses meet?
 
 The picture is the kit's street standing in the game: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-street-ingame.png
 
-### Magic B — how many carvings does the main questline walk you to? (the designer, 2026-10-18)
+### Magic B — how many carvings does the main questline walk you to? (the designer, 2026-10-18) — DECISION #422
 The build sheet (`docs/design/magic-build.md`) sets the 24 words, the five forms, the six riders and the costs, and lays out the main quest's Register: Aldwyn stars carvings on the map at Q7's turn-in, and the guild's ranks come with them. How much of the finding should the main quest do itself, and how much should it leave to rubbings, rumours and Súil, the Weaver's Eye?
 - **A.** Nine: one per school on the home island, the Mouth, and one on each other island. The forms come with them, and from the sixth the Register and Súil lead to the other fifteen words.
 - **B.** All 24: a word at every step, so Act II's spine is about twenty-four gates.
