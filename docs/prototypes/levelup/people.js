@@ -2290,6 +2290,86 @@ function buildBasket(G, body, byName, meshes, root, grip) {
 // the sash belt's promises (Session 1010), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
 // angles and 1 cm rows, nothing worn under it (the tunic, a skirt, a bodice, mail, the body) stands out past its inside, no point of
 // an arm is within it, and a leather belt worn over it lies outside it
+// the wheeled chair (Session 1106; L1, OG-065's Garrick, "a veteran in a wheeled chair"): an oak armchair on two big cart wheels
+// beside the seat and two small wheels under its front legs, a footboard hung from its front, a handle off each back post for whoever
+// pushes it. The person sits first (makePerson's seated pose) and the chair is built to them, in the root's frame: the seat under the
+// lowest point of the seat and thighs, the back behind the furthest point of the back, the arms under the forearms, the footboard
+// under the soles; the ground is under the footboard and both pairs of wheels stand on it. Plain wood and iron, no hand rims: it is pushed
+// the seated pose (Session 1106): radians at the hip and knee, the thighs' spread, the forearms' aim (out, down, forward)
+const SEAT = { hip: 1.5, knee: 1.32, spread: .07, foreOut: .03, foreDown: -.02, curl: [.5, .45, .3] };
+const CHAIR = { R: .31, r: .075, tyre: .016, spokes: 10, board: .028, rail: [.05, .032], post: .042, foot: .06, gap: .002 };
+function buildChair(G, body, byName, meshes, root) {
+  root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, C = CHAIR, clouds = wornClouds(body, meshes, root);
+  const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
+  // the measures, off everything worn: the seat (rest y -.42 to .08 inside the arms), the back (rest y .1 to .55), the soles, the forearms
+  let seatY = 1e9, hipX = 0, backZ = 1e9, kneeZ = -1e9, footY = 1e9, footZ = [1e9, -1e9], footX = 0, shinX = 0, top = -1e9, pitZ = 1e9;
+  const fore = ['L', 'R'].map(s => ({ e: at('lowerarm01.' + s), w: at('wrist.' + s), y: 1e9, x: 0, n: 0, z: [1e9, -1e9] })), v = new THREE.Vector3();
+  eachPoint(clouds, (x, y, z, i) => { if (i < 0) return; const rx = Math.abs(R0[i * 3]), ry = R0[i * 3 + 1]; top = Math.max(top, y);
+    if (ry > -.42 && ry < .08 && rx < .3) { seatY = Math.min(seatY, y); kneeZ = Math.max(kneeZ, z); }
+    if (ry > .1 && ry < .55 && rx < .25) backZ = Math.min(backZ, z);
+    if (ry < -.55) shinX = Math.max(shinX, Math.abs(x));
+    if (ry < -.74) { footY = Math.min(footY, y); footZ[0] = Math.min(footZ[0], z); footZ[1] = Math.max(footZ[1], z); footX = Math.max(footX, Math.abs(x)); }
+    if (rx > .28 && ry < .35) for (const F of fore) { const a = F.w.clone().sub(F.e), t = v.set(x, y, z).sub(F.e).dot(a) / a.lengthSq(); if (t < -.1 || t > 1.05) continue; if (v.addScaledVector(a, -t).length() > .07) continue;
+      F.y = Math.min(F.y, y); F.x += x; F.n++; F.z[0] = Math.min(F.z[0], z); F.z[1] = Math.max(F.z[1], z); } });
+  // a sole built after the pose (a sandal's) is under the foot too
+  eachPoint(clouds, (x, y, z, i) => { if (i < 0 && y < seatY - .2) { footY = Math.min(footY, y); footZ[0] = Math.min(footZ[0], z); footZ[1] = Math.max(footZ[1], z); footX = Math.max(footX, Math.abs(x)); } if (i < 0) return; if (R0[i * 3 + 1] > -.42 && R0[i * 3 + 1] < .08 && Math.abs(R0[i * 3]) < .3 && y < seatY + .22) hipX = Math.max(hipX, Math.abs(x));
+    // the backs of the knees, which the bend draws down below the seat's line: the seat stops a centimetre short of them
+    if (R0[i * 3 + 1] > -.56 && R0[i * 3 + 1] < -.42 && Math.abs(R0[i * 3]) < .3 && y < seatY + .004) pitZ = Math.min(pitZ, z); });
+  for (const F of fore) F.x /= F.n || 1;
+  // the hair down the back (a braid, a tail, loose hair) lies between the back and the chair's: the back stands behind it too
+  const hairPts = []; for (const m of meshes) if (m.name === 'hair') { const X = posedOf(m); for (let k = 0; k < X.length; k += 3) hairPts.push(X[k], X[k + 1], X[k + 2]); }
+  let hairZ = 1e9; for (let k = 0; k < hairPts.length; k += 3) if (hairPts[k + 1] > seatY && Math.abs(hairPts[k]) < hipX + .05 && hairPts[k + 2] < backZ + .06) hairZ = Math.min(hairZ, hairPts[k + 2]);
+  const bodyBack = backZ; backZ = Math.min(backZ, hairZ);
+  const P = C.post, ground = footY - C.gap - C.board - C.foot, sTop = seatY - C.gap, backTop = sTop + Math.max(.42, (top - sTop) * .62), railX = Math.max(Math.abs(fore[0].x), Math.abs(fore[1].x), hipX + P / 2 + .012), W = railX + P / 2;
+  // and behind whatever else is worn within its height and width, the arms apart (a head-wrap's or a headscarf's knot at the nape)
+  eachPoint(clouds, (x, y, z, i) => { if (y > sTop + .05 && y < backTop + .02 && Math.abs(x) < W && !(i >= 0 && Math.abs(R0[i * 3]) > .3)) backZ = Math.min(backZ, z); });
+  const z0 = backZ - C.gap - C.board, zb0 = z0 - P, zF = Math.min(kneeZ - .085, pitZ - .01), railFs = { [-1]: at('finger3-1.R').z - .018, 1: at('finger3-1.L').z - .018 }, railF = Math.min(railFs[-1], railFs[1]);
+  // each arm's top just under the lowest thing over it, from the back post to the knuckles (the forearm, the elbow, a sleeve)
+  let railY = Math.min(fore[0].y, fore[1].y);
+  eachPoint(clouds, (x, y, z) => { if (y < sTop + .08) return; for (const s of [-1, 1]) if (Math.abs(x - s * railX) < C.rail[0] / 2 + .003 && z > zb0 && z < railFs[s]) railY = Math.min(railY, y); });
+  railY -= C.gap;
+  const wood = new THREE.MeshStandardMaterial({ color: sRGB(...D.chair), roughness: .7 }), dark = new THREE.MeshStandardMaterial({ color: sRGB(...D.chair).multiplyScalar(.7), roughness: .75 }), iron = new THREE.MeshStandardMaterial({ color: sRGB(.16, .15, .14), metalness: .75, roughness: .45 });
+  const ch = new THREE.Group(); ch.name = 'chair'; const boxes = [];
+  const box = (name, x0, x1, y0, y1, zA, zB, m = wood) => { const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, zB - zA), b = new THREE.Mesh(g, m); b.position.set((x0 + x1) / 2, (y0 + y1) / 2, (zA + zB) / 2); b.name = name; ch.add(b); boxes.push({ name, lo: [x0, y0, zA], hi: [x1, y1, zB] }); return b; };
+  // the seat, a board between the arms' posts; its frame under it to the posts
+  box('chairSeat', -W, W, sTop - C.board, sTop, z0, zF);
+  // the back: two posts behind the back's furthest point, from under the seat to the shoulder blades, and three rails between
+  for (const s of [-1, 1]) box('chairPost', s * W - P / 2, s * W + P / 2, ground + C.R * .9, backTop, zb0, z0 + .002);
+  for (const f of [.3, .62, .94]) box('chairBack', -W + P / 2, W - P / 2, sTop + (backTop - sTop) * f - .035, sTop + (backTop - sTop) * f + .035, zb0 + .01, z0, dark);
+  // the push handles, back from the posts' tops
+  for (const s of [-1, 1]) box('chairHandle', s * W - .014, s * W + .014, backTop - .06, backTop - .03, zb0 - .14, zb0, dark);
+  // the arms: a rail under each forearm from the back post to the front post, which stands on the seat's front corner and goes down to its small wheel
+  for (const s of [-1, 1]) { box('chairArm', s * railX - C.rail[0] / 2, s * railX + C.rail[0] / 2, railY - C.rail[1], railY, zb0, railFs[s]);
+    box('chairLeg', s * W - P / 2, s * W + P / 2, ground + 2 * C.r + .01, railY - C.rail[1], railF - P / 2, railF + P / 2); }
+  // the side frames under the seat, the axle's brackets and the axle
+  for (const s of [-1, 1]) box('chairRail', s * W - P / 2, s * W + P / 2, sTop - C.board - .05, sTop - C.board, zb0, railF + P / 2);
+  const wz = z0 + .08, wy = ground + C.R, wx = W + P / 2 + .03;
+  for (const s of [-1, 1]) box('chairBracket', s * W - P / 2, s * W + P / 2, wy - .03, sTop - C.board - .05, wz - .025, wz + .025, dark);
+  { const a = new THREE.Mesh(new THREE.CylinderGeometry(.016, .016, 2 * wx + .05, 12), iron); a.rotation.z = Math.PI / 2; a.position.set(0, wy, wz); a.name = 'chairAxle'; ch.add(a); }
+  // the footboard under the soles, on two hangers from the seat's front rail
+  const fx = Math.max(footX, shinX) + .015, fz0 = Math.min(footZ[0] - .02, zF - .02), fz1 = footZ[1] + .03;
+  box('chairFoot', -fx - .03, fx + .03, footY - C.gap - C.board, footY - C.gap, fz0, fz1);
+  for (const s of [-1, 1]) box('chairHanger', s > 0 ? fx : -fx - .03, s > 0 ? fx + .03 : -fx, footY - C.gap - C.board, sTop - C.board - .05, fz0, fz0 + .03, dark);
+  // a wheel: an iron tyre on a wooden felloe, turned spokes, a hub; in the yz plane at x
+  const wheel = (name, x, y, z, R, n) => { const g = new THREE.Group(); g.name = name;
+    const t = new THREE.Mesh(new THREE.TorusGeometry(R - C.tyre / 2, C.tyre / 2 + .002, 8, 48), iron); t.rotation.y = Math.PI / 2; g.add(t);
+    const f = new THREE.Mesh(new THREE.TorusGeometry(R - C.tyre - .016, .02, 8, 48), wood); f.rotation.y = Math.PI / 2; f.scale.set(1, 1, .9); g.add(f);
+    const h = new THREE.Mesh(new THREE.CylinderGeometry(R * .14, R * .14, .07, 16), dark); h.rotation.z = Math.PI / 2; g.add(h);
+    for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, s = new THREE.Mesh(new THREE.CylinderGeometry(.009, .012, R - C.tyre - .03, 8), wood); s.position.set(0, Math.cos(a) * R * .5, Math.sin(a) * R * .5); s.rotation.x = a; g.add(s); }
+    g.position.set(x, y, z); ch.add(g); return g; };
+  for (const s of [-1, 1]) wheel('chairWheel', s * wx, wy, wz, C.R, C.spokes);
+  const casters = [-1, 1].map(s => wheel('chairCaster', s * W, ground + C.r, railF, C.r, 6));
+  ch.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } }); root.add(ch); root.updateMatrixWorld(true);
+  // what is through it: every worn point inside a board by more than 3 mm, and inside a big wheel's disc
+  const through = {}; let clear = 1;
+  eachPoint(clouds, (x, y, z, i) => { for (const b of boxes) { const d = Math.min(x - b.lo[0], b.hi[0] - x, y - b.lo[1], b.hi[1] - y, z - b.lo[2], b.hi[2] - z); if (d > 0) clear = Math.min(clear, -d); if (d > .003) { through[b.name] = (through[b.name] || 0) + 1; if (i >= 0 && (through.at || []).length < 8) (through.at = through.at || []).push([b.name, +R0[i * 3].toFixed(3), +R0[i * 3 + 1].toFixed(3), +d.toFixed(3)]); } }
+    for (const s of [-1, 1]) if (Math.abs(x - s * wx) < .02 && Math.hypot(y - wy, z - wz) < C.R) through.chairWheel = (through.chairWheel || 0) + 1; });
+  for (let k = 0; k < hairPts.length; k += 3) for (const b of boxes) { const x = hairPts[k], y = hairPts[k + 1], z = hairPts[k + 2]; if (Math.min(x - b.lo[0], b.hi[0] - x, y - b.lo[1], b.hi[1] - y, z - b.lo[2], b.hi[2] - z) > .003) through.hair = (through.hair || 0) + 1; }
+  let tris = 0; ch.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  return { ground, stats: { seatH: +(sTop - ground).toFixed(3), railH: +(railY - ground).toFixed(3), backH: +(backTop - ground).toFixed(3), width: +(2 * (wx + .02)).toFixed(3), wheelR: C.R,
+    wheelsDown: +Math.abs(wy - C.R - ground).toFixed(4), castersDown: +Math.max(...casters.map(c => Math.abs(c.position.y - C.r - ground))).toFixed(4), seatGap: +(seatY - sTop).toFixed(4), footGap: +(footY - (footY - C.gap)).toFixed(4), foreGap: fore.map(F => +(F.y - railY).toFixed(4)),
+    behind: +(bodyBack - backZ).toFixed(3), railX: +railX.toFixed(3), hipX: +hipX.toFixed(3), clear: +clear.toFixed(4), through, tris } };
+}
 function sashBeltStats(meshes, root) {
   const sb = meshes.find(m => m.name === 'sashBelt'); if (!sb) return null; const R0 = PACK.rest, lo = .085, hi = .225;
   const pts = (m, f) => { const P = posedOf(m), I = m.geometry.index.array, out = []; for (let t = 0; t < I.length; t += 3) { const a = I[t], b = I[t + 1], c = I[t + 2]; if (!f(a, b, c)) continue;
@@ -2434,6 +2514,10 @@ export function makePerson(G, o = {}) {
   // colour, with sleeves that widen to the cuff and a fuller hem; a rope cord takes the belt's place, nothing under it shows
   if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, sashBelt: null, cuffs: null, cord: R.cord || [.62, .55, .42] } }; }
   // mail (Session 897) is worn over a padded coat, the tunic, and belted over: a man or woman in mail without either gets them
+  // seated in a wheeled chair (Session 1106) nothing is worn or carried that hangs to the ground or is built round a standing body: no
+  // cloak, tabard, sash or shoulder wrap, apron, long skirt or mail skirt's hang over the lap, nothing in the fist and no shield; a long skirt gives way to trousers
+  if (G.dress?.chair) { const C = G.dress; G = { ...G, dress: { ...C, cloak: null, hood: null, tabard: null, sash: null, shoulderWrap: null, apron: null, bib: null, shield: null, spear: null, crossbow: null, staff: null, basket: null, wrapTail: null,
+    ...(C.skirt === 'long' || C.robe ? { skirt: null, robe: null, trousers: C.trousers || C.skirtColor || C.robe || [.3, .26, .2] } : {}) } }; }
   if (G.dress?.mail && !G.dress.robe) { const M = G.dress; G = { ...G, dress: { ...M, tunic: M.tunic || [.6, .54, .42], belt: M.belt || [.24, .16, .1] } }; }
   const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null, browStats = null;
   // the feet on the ground
@@ -2543,12 +2627,30 @@ export function makePerson(G, o = {}) {
   // bones, and the neck lifted back by most of it so the face still looks ahead
   if (pose.stoop) { for (const n of ['spine02', 'spine01']) byName[n].quaternion.multiply(q(.12 * pose.stoop, 0, 0)); byName['neck01'].quaternion.multiply(q(-.18 * pose.stoop, 0, 0)); }
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
+  // seated (Session 1106; OG-065's Garrick): the thighs swung forward to level and spread a little, the shins sloped forward to the
+  // footboard, the feet level; the forearms laid forward along the chair's arms, the upper arms lifted out from the side, three
+  // hundredths of a radian at a time, until each forearm lies outside the hips by the arm post's width (the chair is built to them after)
+  let seatArms = 0; if (D.chair) { const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
+    for (const s of ['L', 'R']) { const sg = s === 'L' ? 1 : -1; byName['upperleg01.' + s].quaternion.copy(q(-SEAT.hip, 0, sg * SEAT.spread)); byName['lowerleg01.' + s].quaternion.copy(q(SEAT.knee, 0, 0)); byName['foot.' + s].quaternion.copy(q(SEAT.hip - SEAT.knee, 0, 0)); }
+    const fore = () => { for (const s of ['L', 'R']) { const lb = byName['lowerarm01.' + s], sg = s === 'L' ? 1 : -1; root.updateMatrixWorld(true); lb.quaternion.copy(q(pose.elbow, 0, 0)); root.updateMatrixWorld(true);
+      const wq = lb.getWorldQuaternion(new THREE.Quaternion()), Q = new THREE.Quaternion().setFromUnitVectors(at('wrist.' + s).sub(at('lowerarm01.' + s)).normalize(), new THREE.Vector3(sg * SEAT.foreOut, SEAT.foreDown, 1).normalize()).multiply(wq);
+      lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
+      // the palm turned down onto the arm's end by the forearm's twist bone: the knuckles' line level, the first finger's toward the body's middle
+      const tw = byName['lowerarm02.' + s], ax = at('wrist.' + s).sub(at('lowerarm01.' + s)).normalize(), flat = u => u.addScaledVector(ax, -u.dot(ax)).normalize(), kn = flat(at('finger2-1.' + s).sub(at('finger5-1.' + s))), tg = flat(new THREE.Vector3(-sg, 0, 0));
+      const tq = tw.getWorldQuaternion(new THREE.Quaternion()), R = new THREE.Quaternion().setFromAxisAngle(ax, Math.atan2(kn.clone().cross(tg).dot(ax), kn.dot(tg)));
+      tw.quaternion.copy(tw.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(R.multiply(tq))); root.updateMatrixWorld(true);
+      // the fingers bent over the arm's front end, about the knuckles' line
+      const hinge = at('finger2-1.' + s).sub(at('finger5-1.' + s)).normalize().applyQuaternion(byName['metacarpal2.' + s].getWorldQuaternion(new THREE.Quaternion()).invert());
+      for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${s}`]; if (b) b.quaternion.setFromAxisAngle(hinge, -sg * SEAT.curl[j - 1]); } } root.updateMatrixWorld(true); };
+    for (let k = 0; k <= 15; k++) { fore(); const PP = posedBody(body); let hx = 0; for (const i of new Set(PACK.G['body'])) { const rx = Math.abs(PACK.rest[i * 3]), ry = PACK.rest[i * 3 + 1]; if (ry > -.42 && ry < .08 && rx < .3) hx = Math.max(hx, Math.abs(PP[i * 3])); }
+      const wx = Math.min(Math.abs(at('wrist.L').x), Math.abs(at('wrist.R').x), Math.abs(at('lowerarm01.L').x), Math.abs(at('lowerarm01.R').x)); if (wx > hx + .045 || k === 15) break; seatArms += .03;
+      byName['upperarm01.L'].quaternion.copy(plumb.clone().multiply(q(0, 0, -(pose.arm - seatArms)))); byName['upperarm01.R'].quaternion.copy(plumb.clone().multiply(q(0, 0, pose.arm - seatArms))); } }
   // a long skirt (and so a robe) stands out at the thigh, where the hands hang: the arms are lifted out from the side, three
   // hundredths of a radian at a time, until no point of either hand is inside it (Session 887; the genome's pose is unchanged)
   // Not under a full cloak: it hangs over the hands and is built round the arms where they are, so lifting them only lumps it
   // A mail skirt stands out further still, and is lifted clear of the same way (Session 897)
   // A short skirt too (Session 1011): the hands hang beside its lower half, and fingertips showed through its front at the thigh
-  let lift = 0, skirtHands = null; const skM = !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
+  let lift = 0, skirtHands = null; const skM = !D.chair && !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
   const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV(skM) : skM && D.skirt === 'short' ? PACK.skirtShortV || (PACK.skirtShortV = [...new Set(PACK.R.skirtShort)].filter(i => PACK.rest[i * 3 + 1] > -.2)) : undefined;
   if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM, undefined, skV, skM.name === 'mailSkirt' && D.scales ? 24 : 0); if (!skirtHands.bad || k === 10) break; lift += .03;
     byName['upperarm01.L'].quaternion.copy(plumb.clone().multiply(q(0, 0, -(pose.arm - lift)))); byName['upperarm01.R'].quaternion.copy(plumb.clone().multiply(q(0, 0, pose.arm - lift))); }
@@ -2626,8 +2728,10 @@ export function makePerson(G, o = {}) {
   let staffStats = null; if (D.staff && !D.spear && !D.crossbow) staffStats = { ...buildStaff(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a basket in the same fist (Session 1033), when it holds no spear, crossbow or staff; last, as it is lifted clear of all the rest
   let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
+  // the wheeled chair (Session 1106), last, built to the seated body and everything on it
+  let chairSt = null; if (D.chair) { const Ch = buildChair(G, body, byName, meshes, root); chairSt = { ...Ch.stats, armLift: +seatArms.toFixed(2), ground: Ch.ground }; }
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -2650,7 +2754,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

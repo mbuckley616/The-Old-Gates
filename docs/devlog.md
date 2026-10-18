@@ -24081,3 +24081,38 @@ So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where
 ### Needs eyes
 - Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
 - `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
+
+## v80 — Session 1106 — Garrick's wheeled chair (L1, prototype only)
+Backlog L1's "children, the old and the hurt" has owed "a veteran in a wheeled chair (Garrick)" since the third round: OG-065 draws him scarred, bearded and fur-collared, seated in a wheeled chair on a headland wall. This session builds the seat and the chair in the builder. It touches only the prototypes: `people.js`, `builder.js` (two query keys and a label) and `builder.check.mjs`.
+
+The person sits first, and the chair is built to them:
+- **The seated pose (`SEAT`).** The thighs swing forward to level (1.5 rad at the hip) and spread 0.07 rad. The knees bend 1.32 rad, so the shins slope forward about 0.1 rad to a footboard, and the feet are turned back to level. The forearms are aimed forward and level. The forearm's twist bone turns the palm down, and the fingers bend over the end of the chair's arm about the knuckles' line. The upper arms are lifted out from the side three hundredths of a radian at a time until each forearm lies outside the hips by an arm post's width (0.27 to 0.45 rad).
+- **The chair (`buildChair`).** It is an oak armchair and is measured off everything the person wears, posed:
+  - the seat board 2 mm under the lowest point of the seat and thighs, stopping a centimetre short of the backs of the knees, which the bend draws down;
+  - the back's two posts and three rails 2 mm behind whatever is behind the back within its height: the back itself, hair down the back, a head-wrap's knot;
+  - each arm 2 mm under the lowest thing over it, from the back post to that hand's knuckles;
+  - the footboard 2 mm under the soles (a sandal's sole included), hung from the seat's front outside the shins.
+- **The ground and the wheels.** The ground is 6 cm under the footboard. Two iron-tyred cart wheels, 62 cm across with ten spokes, stand beside the seat on an iron axle under its back half. Two small wheels, 15 cm across, are under the front legs. A handle comes back off each back post for whoever pushes the chair; there are no hand rims.
+- **Plain wood and iron:** 7,700 triangles.
+- **What is not worn in it.** Nothing is worn that hangs to the ground or is built round a standing body: the cloak and hood, a tabard, a sash or shoulder wrap, an apron, a wrap's tail. Nothing is held in the fist or slung on the arm (spear, crossbow, staff, basket, shield). A long skirt or a robe gives way to trousers in its colour. Skinned shells follow the bones and stay on: the tunic and its short skirt, the trousers, boots, leg wraps, sandals, the fur mantle, mail, a helm, a head-wrap.
+- **The genome.** It is `D.chair` (the wood's colour), which saves and loads like any garment. The roll never gives it: it is a named person's.
+
+The builder page also takes `beard=` and `age=` in its query, for Garrick's pictures.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: 468 of 468 pass,** 461 before and seven new: six people in the chair and the roll.
+- **The six in the chair:** Garrick (a scarred, bearded Gatelander with an eyepatch and a fur mantle), a Gatelander woman whose long skirt gave way, an old stooped Markman who asked for a cloak, an Old Blood woman with loose hair down her back, an Aurennais girl in sandals, and a Markman in mail and a helm who asked for a spear and a shield.
+  - Each seat is 42 to 54 cm up, under them by 2.0 mm, and the feet are 2.0 mm over the footboard.
+  - The forearms lie 2.0 to 15.2 mm over the arms.
+  - The thighs are within 0.023 rad of level, and the shins are 0.08 to 0.14 rad forward of plumb.
+  - Both pairs of wheels are on the ground (0.0 mm).
+  - No worn point is inside any board or a big wheel's disc (0.0 mm). The Old Blood woman's hair lies between her back and the chair's, which stands 4.9 cm further back for it.
+  - Nothing is hung or carried. The long skirt's trousers are there.
+  - Each saves and loads back.
+- **The roll:** none of 360 rolled genomes (four peoples, grown, old and children) sits in a chair.
+- **Before the check was written,** a probe of twelve rolled people in the chair (grown, old with a stoop, children; all four peoples) found two backs through the backrest and an elbow through an arm. The two backs were a head-wrap's knot and a headscarf's knot at the nape. The back and the arms now measure everything over or behind them, and all twelve came clear.
+- **Pictures** (`--shots=chair`): `builder-chair-garrick.jpg`, `-side`, `-face`, `-back` (the Old Blood woman's hair), `-woman`, `-girl`.
+### Needs eyes
+- **The hips at 90°.** MakeHuman's default weights flatten the seat and pinch the groin a little when the thigh is level. The seat board hides most of it, but from the side the trousers crease sharply at the hip.
+- **The chair's design is a reading of OG-065,** whose chair is small in the image: two cart wheels and small front wheels, a slatted back, push handles. If Garrick should propel himself, the wheels would want hand rims and to sit further forward.
+- **Owed:** the chair pushed or turned (a gait, B4), his black wolfhound (OG-065), the crossbow across his knees (OG-065's musket, as the catalogue says), and the game (after F4).
