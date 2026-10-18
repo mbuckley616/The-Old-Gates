@@ -16,7 +16,7 @@ const survey = ids => { const out = {}, rc = (P, m) => { const c = Math.cos(P.ry
     const pa = A.map(q => (q.x * ax + q.z * az) / L), pb = B.map(q => (q.x * ax + q.z * az) / L); best = Math.max(best, Math.min(...pb) - Math.max(...pa), Math.min(...pa) - Math.max(...pb)); } return best; };
   for (const id of ids) { const site = allSites().find(t => t.id === id); if (!WORLD.settle.get(id)) genSettlement(site); const S = WORLD.settle.get(id);
     const houses = S.houses.filter(h => h.siteId === id), sol = S.sol.filter(s => s.hid).map(s => ({ hid: s.hid, x: s.cx, z: s.cz, w: 2 * s.rx, d: 2 * s.rz, ry: Math.atan2(s.s || 0, s.c == null ? 1 : s.c) }));
-    const plots = S.plots || [], own = P => houses.find(h => h.type === P.type && Math.hypot(h.doorX - (P.lot.x + P.tx * (P.lot.d / 2 + .15)), h.doorZ - (P.lot.z + P.tz * (P.lot.d / 2 + .15))) < .02);
+    const plots = S.plots || [], own = P => houses.find(h => h.type === P.type && (Math.hypot(h.doorX - (P.lot.x + P.tx * (P.lot.d / 2 + .15)), h.doorZ - (P.lot.z + P.tz * (P.lot.d / 2 + .15))) < .02 || (h.kit && h.kit.kind === 'keep' && inside(P, h.doorX, h.doorZ, 0)))); /* S1143 — the kit's keep's door is its tower's, inside the bawn */
     const intr = [], streets = [];
     for (const P of plots) { const mine = own(P);
       for (const q of sol) { if (mine && q.hid === mine.id) continue; const gp = gap(P, q); if (gp < .45) intr.push([P.type, q.hid, +gp.toFixed(2)]); } /* 0.6 apart, less the solid's 0.15 */
@@ -45,8 +45,10 @@ check(`every city (and a town with a keep) has its bawn's plot of 30 by 25 m, it
 const intr = all.flatMap(s => [...s.o.intr, ...s.n.intr].map(x => [s.id, ...x])), streets = all.flatMap(s => [...s.o.streets, ...s.n.streets].map(x => [s.id, ...x]));
 check(`no other building stands in a plot or its yard, on either look (${all.reduce((a, s) => a + s.o.n, 0)} and ${all.reduce((a, s) => a + s.n.n, 0)} buildings)`, intr.length === 0, intr.slice(0, 6));
 check('no street runs into a plot: a street that meets one stops at it', streets.length === 0, streets.slice(0, 6));
-check('the two looks lay the plots out alike: the same plots, and the church\'s and keep\'s ids and doors', all.every(s => JSON.stringify(s.o.plots.map(p => [p.type, p.x, p.z, p.w, p.d, p.ry, p.house && p.house.id, p.house && p.house.x, p.house && p.house.z]))
-  === JSON.stringify(s.n.plots.map(p => [p.type, p.x, p.z, p.w, p.d, p.ry, p.house && p.house.id, p.house && p.house.x, p.house && p.house.z]))), all.map(s => [s.id, s.o.plots.length, s.n.plots.length]));
+// (the keep's door on the new look is its tower's, inside the bawn, since Session 1143: kitbawn holds it; its id is the same)
+const same = p => [p.type, p.x, p.z, p.w, p.d, p.ry, p.house && p.house.id, ...(p.type === 'castle' ? [] : [p.house && p.house.x, p.house && p.house.z])];
+check('the two looks lay the plots out alike: the same plots, the church\'s and keep\'s ids, and the church\'s doors', all.every(s => JSON.stringify(s.o.plots.map(same))
+  === JSON.stringify(s.n.plots.map(same))), all.map(s => [s.id, s.o.plots.length, s.n.plots.length]));
 const glc = all.filter(s => s.nat === 'gatelands').flatMap(s => s.n.plots.filter(p => p.type === 'church')), other = all.filter(s => s.nat !== 'gatelands').flatMap(s => s.n.plots.map(p => p.house).filter(Boolean));
 check(`on the new look each Gatelands church on its plot is the kit's church end-on (${glc.map(p => `${p.house.kit && p.house.kit.bays} bays`).join(', ')}); elsewhere, and on the old look, the old builders`,
   glc.length >= 5 && glc.every(p => p.house.kit && p.house.kit.kind === 'church' && !p.house.kit.side && CL[p.house.kit.bays - 2] === p.house.d) && other.every(h => h && !h.kit) && all.every(s => s.o.plots.every(p => !p.house || !p.house.kit)), glc.map(p => p.house));

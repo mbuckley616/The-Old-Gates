@@ -25629,3 +25629,36 @@ The people's ragdoll in `32-people.js` has the same hold. It is left as it is: n
 - **Owed:**
   - the people's hold, the same check on `ragdollStep`;
   - a bear's body overlapping a solid at death is itself odd, since foes collide by their centre point only. That is the systems builder's, and noted here only.
+## v80 — Session 1143 — The keep in its bawn, on its plot (card F6, Michael's B on #416)
+Session 1138 kept every city a bawn plot of 30 by 25 m at the head of its main street, and Session 1139 copied the keep in its bawn into the game's kit. This session stands the one on the other, on the new look, in the Gatelands' cities. It is Michael's chosen design brought into the game, so it asks nothing.
+
+- **The placing (`genSettlement`, `83-world-generator.js`).** In the kit's plan, a city's keep lot on its plot builds `PKIT.gl.keep({kind:'bawn'})` once, measures it, and centres it on the plot: 29.7 by 24.6 m with its flankers, inside the plot's 30 by 25, its gate toward the heart where the main street stops. The group is kept for `kitKeep`, which builds nothing a second time. Its lit windows come from the town's stream (`<site>:windows:keep`).
+- **The keep's lot is the tower.** The lot becomes the tower's own footprint, 11 by 8.5 m in the bawn's back west corner. So the keep's solid, its door (the tower's, 2.2 m west of its middle), its lantern, its banners and its steward are the tower's. Its id is unchanged. The steward's room is the old keep's: `house.w` and `d` stay 14 by 11, because a room sized to the tower is a piece of work of its own.
+- **Solids.** The bawn's walls are solids: the front either side of the gateway, west, east and back. So are the two flankers, the household's house against the east wall and the well. The gateway is open. They carry no house id, so the map draws them as walls.
+- **The footpath** runs from the tower's door to the gate's inside and out through it. Before this, the generic path from the door would have met the front wall and gone round.
+- **The far copy:** a box and a roof prism for the tower, and a box for each wall, flanker and the house. The town's LOD radius now counts the bawn's reach.
+- **A bug found on the way.** The map of measured pieces was first declared after the plan step that fills it. That is a temporal dead zone: the first city with a keep threw. The map is now declared beside `PLOTS`.
+- **Which cities have one.** Of the five Gatelands cities, two have a keep today: c7_8_s6 and c1_9_s1. A keep comes with prosperity 80. The others keep the empty plot, as before.
+
+### Verified (headless Chromium)
+- **`kitbawn` (new): 9 of 9 pass.**
+  - **Both cities:** c7_8_s6 and c1_9_s1 have their keep on the plot, the same two on both looks.
+  - **The kit's bawn:** each is 18,346 triangles in 31 or 32 draws. The count depends on the lit windows' stream. The prototype's default is 32.
+  - **Inside its plot:** its box in the plot's frame is ±14.85 by ±12.28 m. Its gate faces the heart, the plot's front 106.6 m from it.
+  - **The door:** it is the tower's, at −9.7, −2.9 in the plot's frame. The house is still 14 by 11 for the room.
+  - **Solids:** the gateway is open. Seven points on the walls, flankers and tower are solid. Three points in the yard are clear.
+  - **The footpath:** it runs −9.7,−2.8 → 1,8.7 → 1,11.6, out through the gate at x = 1.
+  - **The far copy:** the town's far copy reaches 143.8 m, past the bawn's far corner at 120.3.
+  - **The old look:** each keep is the old one, on the plot's lot, its door at the lot's front.
+  - **Errors:** none, on either look.
+  - **The ground across the plots:** varies by 2.7 m at c7_8_s6 and 1.8 m at c1_9_s1. The walls' footings go 0.8 m down.
+- **`townplots`: all pass.** It now finds the kit's keep by its door inside the plot, and compares the keep's id across the looks but not its door.
+- **The neighbouring suites, all passing:** `townbarrels` (no hash moved: it reads the old look), `kit` (6 of 6), `kittown`, `kitkeep`, `housebuy`, `townroads` and `kitlots`. The rest run in CI.
+- **Picture:** `docs/prototypes/kit-bawn-ingame.png`, c7_8_s6 from high on the heart's side: the tower, the yard with its house and well, the flankers, and the path out through the gate.
+### Needs eyes
+- **The slope:** a plot falling 2.7 m. The bawn stands at its middle's height, and its walls' footings reach 0.8 m down, so a downhill corner may show a gap. Terracing the plot is F3's.
+- **The houses before the gate:** they stand 1 to 2 m off the plot's edge. The front wall may feel crowded from the street.
+- **The steward:** they keep their schedule. Whether they walk through the bawn's wall on the way to the square has not been watched.
+- **Owed:**
+  - **The tower's own room:** four storeys, 8 by 5.5 m inside. It replaces the old hall of 26 by 32 m.
+  - **The far copy at a distance**, from a ridge.
