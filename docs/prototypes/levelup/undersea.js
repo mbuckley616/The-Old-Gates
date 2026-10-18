@@ -125,8 +125,10 @@ function cutMesh(m, drop, dropTri) { const g = m.geometry, P = g.attributes.posi
 // clip a mesh's triangles to the part under a ragged height top(x, z) (Session 1105), where inside(c) holds for the triangle's centre: the
 // triangles across the break are cut at it, so a tall face (a tower's shaft, one triangle from foot to cornice) is broken, not dropped whole.
 // fine (Session 1108): a triangle across the break is first halved along its longest edge until no edge is longer than it, so a stepped
-// top (courses of stone) is followed at that spacing, not drawn as one straight slant across a wall slab's long triangles
-function clipMesh(m, top, inside, fine = 0) { const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, out = { p: [], n: [], u: [] }; let cut = 0;
+// top (courses of stone) is followed at that spacing, not drawn as one straight slant across a wall slab's long triangles.
+// capT (Session 1109): a wall's thickness; each upright face's cut edge is carried half of it inward, level, so the two faces of a broken
+// slab meet in a top of stone between them and the wall is not seen hollow from above
+function clipMesh(m, top, inside, fine = 0, capT = 0) { const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, out = { p: [], n: [], u: [] }; let cut = 0, caps = 0;
   const vx = i => ({ p: [P.getX(i), P.getY(i), P.getZ(i)], n: N ? [N.getX(i), N.getY(i), N.getZ(i)] : null, u: U ? [U.getX(i), U.getY(i)] : null }), mix = (a, b, t) => ({ p: a.p.map((v, k) => v + (b.p[k] - v) * t), n: a.n && a.n.map((v, k) => v + (b.n[k] - v) * t), u: a.u && a.u.map((v, k) => v + (b.u[k] - v) * t) });
   const emit = v => { out.p.push(...v.p); if (v.n) out.n.push(...v.n); if (v.u) out.u.push(...v.u); };
   for (let t = 0; t < P.count; t += 3) { const T = [vx(t), vx(t + 1), vx(t + 2)], c = new THREE.Vector3(...[0, 1, 2].map(k => (T[0].p[k] + T[1].p[k] + T[2].p[k]) / 3));
@@ -134,10 +136,14 @@ function clipMesh(m, top, inside, fine = 0) { const g = m.geometry, P = g.attrib
     const clip = (T, depth) => { const d = T.map(v => v.p[1] - top(v.p[0], v.p[2])); if (d.every(x => x <= 0)) return T.forEach(emit); if (d.every(x => x > 0)) return;
       const L = [0, 1, 2].map(k => Math.hypot(...T[k].p.map((v, j) => v - T[(k + 1) % 3].p[j]))), k = L.indexOf(Math.max(...L));
       if (fine && L[k] > fine && depth < 12) { const mid = mix(T[k], T[(k + 1) % 3], .5), o = T[(k + 2) % 3]; clip([T[k], mid, o], depth + 1); clip([mid, T[(k + 1) % 3], o], depth + 1); return; }
-      const poly = []; for (let k = 0; k < 3; k++) { const a = T[k], b = T[(k + 1) % 3], da = d[k], db = d[(k + 1) % 3]; if (da <= 0) poly.push(a); if ((da <= 0) !== (db <= 0)) poly.push(mix(a, b, da / (da - db))); }
-      for (let k = 1; k + 1 < poly.length; k++) [poly[0], poly[k], poly[k + 1]].forEach(emit); };
+      const poly = [], cutAt = []; for (let k = 0; k < 3; k++) { const a = T[k], b = T[(k + 1) % 3], da = d[k], db = d[(k + 1) % 3]; if (da <= 0) poly.push(a); if ((da <= 0) !== (db <= 0)) { const q = mix(a, b, da / (da - db)); poly.push(q); cutAt.push(q); } }
+      for (let k = 1; k + 1 < poly.length; k++) [poly[0], poly[k], poly[k + 1]].forEach(emit);
+      if (capT && cutAt.length === 2) { const [A, B, C] = T.map(v => new THREE.Vector3(...v.p)), n = T[0].n ? new THREE.Vector3(...T[0].n).normalize() : B.clone().sub(A).cross(C.clone().sub(A)).normalize(); /* the face's own normal, which points out of the wall whatever the winding */
+        if (Math.abs(n.y) < .3) { n.y = 0; n.normalize().multiplyScalar(-capT / 2); const [a, b] = cutAt, a2 = { p: [a.p[0] + n.x, a.p[1], a.p[2] + n.z], n: a.n, u: a.u && [a.u[0], a.u[1] + capT / 2] }, b2 = { p: [b.p[0] + n.x, b.p[1], b.p[2] + n.z], n: b.n, u: b.u && [b.u[0], b.u[1] + capT / 2] };
+          const up = v => ({ ...v, n: v.n && [0, 1, 0] }), q = [a, b, b2, a2].map(up), e1 = new THREE.Vector3(...q[1].p).sub(new THREE.Vector3(...q[0].p)), e2 = new THREE.Vector3(...q[2].p).sub(new THREE.Vector3(...q[0].p));
+          if (e1.cross(e2).y < 0) q.reverse(); [q[0], q[1], q[2], q[0], q[2], q[3]].forEach(emit); caps++; } } };
     clip(T, 0); }
-  if (!cut) return 0; const h = new THREE.BufferGeometry(); h.setAttribute('position', new THREE.Float32BufferAttribute(out.p, 3)); if (N) h.setAttribute('normal', new THREE.Float32BufferAttribute(out.n, 3)); if (U) h.setAttribute('uv', new THREE.Float32BufferAttribute(out.u, 2)); g.dispose(); m.geometry = h; return cut; }
+  if (!cut) return 0; m.userData.caps = caps; const h = new THREE.BufferGeometry(); h.setAttribute('position', new THREE.Float32BufferAttribute(out.p, 3)); if (N) h.setAttribute('normal', new THREE.Float32BufferAttribute(out.n, 3)); if (U) h.setAttribute('uv', new THREE.Float32BufferAttribute(out.u, 2)); g.dispose(); m.geometry = h; return cut; }
 // a break that follows the stone (Session 1108): a ragged height f(x, z) rounded down to a course of 0.3 m, each 0.6 m stone along the wall
 // (by its own hash) a course short or one higher, so a wall's top steps as laid stone falls. For clipMesh with fine at 0.3.
 function courses(f, seed) { return (wx, wz) => { const i = Math.floor((wx + wz) / .6), hsh = Math.sin(i * 127.1 + seed * 311.7) * 43758.5453, rr = hsh - Math.floor(hsh); return Math.floor((f(wx, wz) + (rr - .5) * .6) / .3) * .3; }; }
@@ -275,11 +281,11 @@ export function sunkenVillage(o = {}) {
   const KEY = new Map(Object.entries(glMats()).map(([k, m]) => [m, k])), group = new THREE.Group(); let tris = 0, draws = 0;
   // settle a built piece on the slope: turned, then lowered so its lowest point is `sink` under the sand beneath it; the roofs taken away,
   // the walls cut at a ragged height `brk(x, z)` over its foot; weed on all of it
-  const settle = (g, x, z, ry, sink, roofKeys, brk) => { g.rotation.y = ry; g.position.set(x, 0, z); g.updateMatrixWorld(true); const res = { roof: 0, walls: 0 };
+  const settle = (g, x, z, ry, sink, roofKeys, brk, capT = 0) => { g.rotation.y = ry; g.position.set(x, 0, z); g.updateMatrixWorld(true); const res = { roof: 0, walls: 0, caps: 0 };
     const meshes = []; g.traverse(m => { if (m.isMesh) meshes.push(m); });
     for (const m of meshes) { const k = KEY.get(m.material) || '', mw = m.matrixWorld.clone(), v = new THREE.Vector3();
       if (roofKeys.includes(k) || k === 'dark' || k === 'glass' || k === 'lit') { m.parent.remove(m); res.roof++; continue; }
-      if (brk) { if (m.geometry.index) m.geometry = m.geometry.toNonIndexed(); res.walls += clipMesh(m, (lx, lz) => { v.set(lx, 0, lz).applyMatrix4(mw); return brk(v.x, v.z); }, () => true, .3); } /* every material: the frames, leaves and stacks over the break go with the walls; Session 1108: clipped along the courses, not dropped by whole triangles */
+      if (brk) { if (m.geometry.index) m.geometry = m.geometry.toNonIndexed(); res.walls += clipMesh(m, (lx, lz) => { v.set(lx, 0, lz).applyMatrix4(mw); return brk(v.x, v.z); }, () => true, .3, /^(w:|rubble)/.test(k) ? capT : 0); res.caps += m.userData.caps || 0; } /* every material: the frames, leaves and stacks over the break go with the walls; Session 1108: clipped along the courses, not dropped by whole triangles */
       m.material = encrust(m.material, .55); }
     g.updateMatrixWorld(true); let low = Infinity; const v = new THREE.Vector3(); g.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 5) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); low = Math.min(low, v.y - floor(v.x, v.z)); } });
     g.position.y = -sink - low; g.updateMatrixWorld(true); group.add(g); g.traverse(m => { if (m.isMesh) { tris += m.geometry.attributes.position.count / 3; draws++; } }); return { ...res, low: +(-sink).toFixed(2), floorUnder: +floor(x, z).toFixed(2) }; };
@@ -287,13 +293,13 @@ export function sunkenVillage(o = {}) {
   const houses = []; for (let k = 0; k < 7; k++) { const sx = k % 2 ? 1 : -1, z = -8 - k * 5.2 - r() * 1.2, x = sx * (7 + r() * 1.5), bays = 2 + Math.floor(r() * 3), P = glBayPlan('cottage', bays, { hip: r() < .3, paint: ['red', 'green', 'blue', 'yellow'][k % 4] }); P.r = stream(`undersea:village:${k}`);
     // its walls broken over its foot at its eaves less 0.6 to 2.2 m, ragged by 0.6 m along them (the cottage's eaves are at 2.7 m)
     const g = gatelandsBuilding(P), ry = sx > 0 ? -Math.PI / 2 : Math.PI / 2, b0 = .6 + r() * 1.6, ph1 = r() * 9, foot0 = floor(x, z), h = { k, x: +x.toFixed(2), z: +z.toFixed(2), bays };
-    const res = settle(g, x, z, ry, .35, ['thatch', 'pot'], courses((wx, wz) => (2.7 - b0) + .6 * Math.sin(wx * 1.3 + wz * .9 + ph1), k)); /* in the house's own height: it is cut standing at y 0, before it is lowered */
+    const res = settle(g, x, z, ry, .35, ['thatch', 'pot'], courses((wx, wz) => (2.7 - b0) + .6 * Math.sin(wx * 1.3 + wz * .9 + ph1), k), P.t || .6); /* in the house's own height: it is cut standing at y 0, before it is lowered */
     houses.push({ ...h, ...res }); }
   // the church at the lane's end, roofless, its walls broken; its round tower whole
   const church = (() => { const C = gatelandsChurch({ tower: 'round', r: stream('undersea:church') }), x = 2, z = -52, foot0 = floor(x, z), ry = Math.PI / 2;
     // the round tower is the church's third part: taken out and settled whole on its own, so only the nave's and the chancel's walls break
     const T = C.children[2]; C.remove(T); const tw = new THREE.Group(); tw.add(T);
-    const res = settle(C, x, z, ry, .4, ['slate', 'ridge'], courses((wx, wz) => 3.2 + .8 * Math.sin(wx * .9 + wz * 1.1), 9)), tres = settle(tw, x, z, ry, .6, [], null);
+    const res = settle(C, x, z, ry, .4, ['slate', 'ridge'], courses((wx, wz) => 3.2 + .8 * Math.sin(wx * .9 + wz * 1.1), 9), .9), tres = settle(tw, x, z, ry, .6, [], null);
     return { ...res, tower: tres, top: +new THREE.Box3().setFromObject(tw).max.y.toFixed(2) }; })();
   // the lane's walls: dry-stone runs either side, broken in places; the fallen high cross; the well
   for (const sx of [-1, 1]) for (let z = -6; z > -48; z -= 1.2) { if (r() < .2) continue; const x = sx * 3.6 + (r() - .5) * .2, h = .6 + r() * .5, g = new THREE.BoxGeometry(.7, h, 1.15); g.rotateY((r() - .5) * .2); g.translate(x, floor(x, z) + h / 2 - .1, z); worldUV(g, .6); put('field', g); }
@@ -366,7 +372,7 @@ export function sunkenQuarter(o = {}) {
     const tx = I.W / 2 - 1, ys = I.y0 + I.dh * .55, crown = I.y0 + I.dh + I.R * .75, shaft = I.H * 1.35; /* the dome's crown gone whole and its east half below it; the tower broken at about 13.6 m, over its foot, its belfry fallen */
     for (const m of [...g.children]) { if (!m.isMesh) continue; if (/^(dark|leaf|tree|bloom)/.test(m.name)) { g.remove(m); gone.fills++; continue; } /* the dark fills, and the cypresses by its porch, long dead */ if (m.geometry.index) m.geometry = m.geometry.toNonIndexed();
       gone.dome += cutMesh(m, v => Math.hypot(v.x, v.z) < I.R + 1.6 && v.y > ys && (v.y > crown || v.x > -.6 + .9 * Math.sin(v.z * .9 + v.y * .4)));
-      gone.tower += clipMesh(m, courses((px, pz) => shaft + .5 * Math.sin(px * 2.1 + pz * 1.3) - .35 * (px - tx), 3), c => c.x > tx && c.z > I.D / 2 - 1, .3); /* everything of the tower over the break: its belfry, cornice and little dome */
+      gone.tower += clipMesh(m, courses((px, pz) => shaft + .5 * Math.sin(px * 2.1 + pz * 1.3) - .35 * (px - tx), 3), c => c.x > tx && c.z > I.D / 2 - 1, .3, .6); gone.caps = (gone.caps || 0) + (m.userData.caps || 0); /* everything of the tower over the break: its belfry, cornice and little dome */
       m.material = encrust(m.material, .75); m.material.side = THREE.DoubleSide; } /* both faces: the broken dome is seen from inside, where it has no skin of its own */
     // the dome's stones inside the church, and the belfry's on the sand by its tower
     g.rotation.y = 0; g.position.set(x, 0, z); g.updateMatrixWorld(true); let low = Infinity; const v = new THREE.Vector3(); g.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 5) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); low = Math.min(low, v.y - floor(v.x, v.z)); } });

@@ -24458,3 +24458,22 @@ Session 1104's entry named the sunken village's breaks as its first fault. Each 
 ### Needs eyes
 - **The wall tops are open:** a clipped wall is a hollow slab, so from above its top shows as its two faces with nothing between. A cap along the break (the slab's thickness, in the wall's stone) would close it. It is the next small pass.
 - **25k triangles for seven cottages and a church:** cheap in a prototype. In the game a drowned village's breaks would be cut once and kept, or `fine` raised to 0.45 m (about half the cost).
+
+## v80 — Session 1109 — Under the sea: the broken walls closed on top (backlog L10, prototype only)
+Session 1108 left the clipped walls open: a wall slab cut at its courses is two faces with nothing between them, and from above a broken cottage read as walls of paper. This session gives `clipMesh` a `capT`, a wall's thickness, in `docs/prototypes/levelup/undersea.js`.
+- **How the cap is made:** where an upright face is cut, its cut edge is carried half the thickness inward along the face's own normal, level, as a strip facing up. The wall's two faces each lay half, and they meet in a top of stone the slab's thickness across.
+- **The normal it reads:** the face's normal attribute, not its winding, so a strip never points out of the wall.
+- **What gets caps:** only the wall materials (the kit's `w:` renders and `rubble`), so a window frame or a door leaf cut at the break is not given a slab of its own.
+- **The thicknesses:** a cottage takes its plan's own wall (`SCALE.wall.cottage`, 0.6 m), the village church's nave 0.9 m, and the drowned Aurenne church's tower 0.6 m.
+- **A new view:** `undersea.html?place=village&view=walls` looks down onto a cottage's wall tops. The village's views were named after the cave's, and a view called `top` drew the village from above the water, so the new view is named `walls`.
+- **Lost work:** the first draft of this session's code was lost to a `git checkout` of the file mid-session, used to throw away a test change. It was re-applied from the session's own notes and checked again in full.
+
+### Verified (headless Chromium)
+- **`undersea.check.mjs`: 62 of 62 pass.** One check is new.
+  - **The new check:** every cottage has 619 to 998 lengths of wall top and the village church 3,238.
+  - **The cost:** the village is 80,991 triangles in 63 draws (63,199 before), and the quarter 46,485 in 14.
+  - **The rest:** all the earlier checks pass as before.
+- **Pictures:** `undersea-village-walls.jpg`. Rendered once without caps from the same camera, the walls showed no thickness at all, and every broken wall now shows its stone top. Also redrawn: `-house`, `-lane`, `-church` and `undersea-quarter-temple-clear`.
+### Needs eyes
+- **Shards at the corners:** where a cut crosses a window reveal or a wall's end, the strips laid from the reveal's faces lie along the wall rather than across it. They sit inside the wall's mass, but at a corner a few show as small shards.
+- **Cost:** about 18k triangles for the caps of seven cottages and a church. Most are the short strips along the stepped break, and a merge of each course's strips would cut them by half.

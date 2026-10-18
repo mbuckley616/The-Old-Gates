@@ -33,9 +33,10 @@ if (UNDER) { const c = document.createElement('canvas'); c.width = 64; c.height 
 const C = { swim: [[3.4, -3.0, -2.8], [-.2, -4.8, -26]], arches: [[11.5, -4.4, -9.5], [0, -4.2, -11]], alcove: [[6.4, -2.4, -4.4], [7, -2.4, .6]], boat: [[8.0, -5.4, -14.6], [4.6, -7.4, -18.4]], above: [[-16.9, 3.4, -.8], [-2, -3, -16]] }[VIEW] || [[3.4, -3.6, -2.6], [-.2, -4.6, -26]];
 const CW = { storm: [[16, -6.5, -6], [6, -9.5, -15]], pair: [[-1, -11.5, -24.5], [-1.5, -16.5, -41]], deep: [[13, -20.5, -60], [1, -24, -74]], wide: [[22, -9, -20], [0, -18, -50]], hole: [[-.8, -14.2, -45.5], [-4.3, -15.6, -38.6]] }[VIEW];
 if (PLACE === 'wrecks') { const c = CW || [[-1, -11.5, -24.5], [-1.5, -16.5, -41]]; C[0] = c[0]; C[1] = c[1]; }
-// the sunken village (Session 1104): lane (down the drowned lane between the cottages to the church) | house (a cottage's broken walls) |
+// the sunken village (Session 1104): lane (down the drowned lane between the cottages to the church) | house (a cottage's broken walls) | walls
+// (Session 1109: down onto a cottage's broken wall tops) |
 // church (the nave and its tower from the lane's end) | tower (from a boat on the surface: the round tower standing out of the sea)
-const CV = { lane: [[0.4, -8.6, -2], [0, -12, -40]], house: [[-2.2, -9.4, -12.5], [-7.4, -11, -9.2]], church: [[-9, -11.5, -38], [3, -9, -56]], tower: [[-30, 2.2, -20], [-4, 6, -54]] }[VIEW];
+const CV = { lane: [[0.4, -8.6, -2], [0, -12, -40]], house: [[-2.2, -9.4, -12.5], [-7.4, -11, -9.2]], walls: [[-4.6, -7.0, -13.2], [-7.6, -10.6, -9.4]], church: [[-9, -11.5, -38], [3, -9, -56]], tower: [[-30, 2.2, -20], [-4, 6, -54]] }[VIEW];
 if (PLACE === 'village') { const c = CV || [[0.4, -8.6, -2], [0, -12, -40]]; C[0] = c[0]; C[1] = c[1]; }
 // the drowned quarter (Session 1105): temple (the church's broken dome and tower from the east) | bridge (the gap of its fallen span, from
 // upstream) | theatre (from over its top tier, down into the orchestra and the stage wall) | wide (the three together)
