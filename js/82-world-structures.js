@@ -1215,9 +1215,11 @@
     const epoch=Math.floor(nowHours()/RESPAWN_H);
     const roll=hash01(ch.cx*7+epoch,ch.cz*13-epoch,91);
     let dens=dom.r.enc*3.4*(isNight()?1.7:1); // dense; more at night
-    // No spawns inside site pads.
+    // No spawns inside site pads. S1113 — the pads of the chunk's cell and its eight neighbours, from getCell: SITES holds only the
+    // sites loaded so far, so a chunk built before its shrine's cell had pushed its sites put a Highwayman at the altar (S533's rule)
     for(const t of SITES){if(t.pad>0&&Math.hypot(cxw-t.x,czw-t.z)<t.pad+70)return;}
     const [ci,cj]=cellOf(cxw,czw);
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;for(const t of c.sites){if(t.pad>0&&Math.hypot(cxw-t.x,czw-t.z)<t.pad+70)return;}}
     const nearRoad=(()=>{const ri=roadInfo(cxw,czw);return ri&&ri.d<40;})();
     const patrolled=nationKeyOf(ci,cj)==='gatelands'&&roadInfo(cxw,czw)&&roadInfo(cxw,czw).d<40; // the Crown patrols its roads
     const ambush=nearRoad&&hash01(ch.cx*3+epoch,ch.cz*5+epoch,96)<(patrolled?.12:nationKeyOf(ci,cj)==='mark'?.34:.26); // bandits work the roads; more in the Mark

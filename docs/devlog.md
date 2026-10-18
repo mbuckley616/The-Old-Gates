@@ -25338,3 +25338,25 @@ So the waves form on the roof, and the draft's hatch fallback line is not needed
   the parapet (the roof platform ends at the merlons).
 - **Owed:** the quest writer's words (the topic that calls `spireGive`, the sergeant, the stone, Rowe's morning, the turn-in, the rumours);
   the look builder's light in the cuts.
+
+## v80 — Session 1113 — No foe at the shrine: the chunk spawn reads the cells' pads, not what has loaded
+Session 1104 found a Highwayman 4.3 m from An Spéir's altar (`c6_8_p1`), and left as Michael's whether a shrine should be a safe pad.
+It already is: `spawnChunkEncounters` (`82-world-structures.js`) says *No spawns inside site pads* and skips a chunk whose centre is
+within a site's pad + 70. Probed here, the chunk that held the foe (236,310) has its centre 34.4 m from the shrine, well inside
+28 + 70. The skip read `SITES`, the sites pushed so far by the cells that have loaded. The shrine is its cell's sixth site and is
+built late (Session 1006 timed it at 42 s alone), so the chunk beside it spawned before the shrine was in `SITES`. That is CLAUDE.md's
+S533 gotcha: an outcome keyed by place must read `getCell`, never what has loaded. So this is the rule failing by load order, not a
+missing rule, and no question goes to Michael.
+
+The skip now also reads the pads of the chunk's cell and its eight neighbours from `getCell` (every pad + 70 is far smaller than a cell),
+and keeps the `SITES` loop beside it for any site added outside a cell's list. The fix is one statement in the look builder's file. The
+spawn rule is a system's, and the line touched nothing anyone sees but where foes stand.
+### Verified (headless Chromium)
+- **`padspawn`** (new), 5 checks at the shrine of An Spéir. On the old line, run by mistake while the fix was stashed, it was red: 26 chunk
+  foes were loaded, and 3 Deserters from chunk 236,310 stood 1.3, 6.9 and 18.5 m from the altar. After: 15 chunk foes loaded, none within
+  30 m of the altar, and no loaded chunk foe's chunk centre inside any cell site's pad + 70.
+- **Neighbours pass:** `renewal` (its S1104 workaround still runs and now finds nothing to put down), `foeseed`, `packshape`, `tierkinds`,
+  `tierlevelfree` and `tierloot`.
+### Needs eyes
+- Ground near the late-built places (shrines, glades, spires, the outer sites of a busy cell) is emptier of foes now, by as much as it
+  was meant to be. Chunks loaded in another order were already clear, so the world does not change from one load to the next as before.
