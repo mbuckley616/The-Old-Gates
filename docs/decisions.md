@@ -4,6 +4,13 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Six great gates torn: what ends? (the quest writer, 2026-10-18) — DECISION #413
+Asked under the draft *The Great Gates, V — what was bound: Act III, reconciled* (`docs/quest_drafts.md`, unapproved). Your leaning (13 Oct, *The great gates' two paths* below) is that tearing all six deletes every save. §11 says the world remakes itself on a new seed with your name, people and one carried item, and the approved *The Last Entry* puts Varek's list in the first gate of that new world. Since Session 456 a slot is two rows, the character's and the world's.
+- **A. This world ends; the character goes on** *(recommended)*. The slot's world row is deleted and stamped unmade, so it can't be continued or imported back. The character carries to a new seed (§11, as built: `og_carry`), and the list waits in the first gate. Other slots are untouched. The world the player made is truly gone, and nothing they didn't stake is taken.
+- **B. Every save ends.** Every slot, every character, and the carry: the title screen as if the game had never been opened. The precedents are NieR: Automata's ending E, where the player is asked to give up their save and it is deleted, and Doki Doki Literature Club's deleted character file. Costs: it takes slots the player never staked; an exported file outside the browser survives it, so it is never quite total; §11's new seed and *The Last Entry* go; the warning at the knot has to say so plainly.
+- **C. This slot ends, both rows; other slots stay.** The character dies with the world: no new seed, no carried item, no list. Total for what was staked, and nothing more.
+On every answer the sixth cut asks once first: *This is the last of them. Cut it, and there is no coming back to this world.* The draft is written for A; only its ending screen's lines and the save action change under B or C.
+
 ### The Mark's cliff fort: does it go down into the cliff? (look builder, Session 1053) — DECISION #402
 **F8: the Mark's cliff fort (look builder, Session 1053).** OG-121's Mark panel asks for "mountain mines, ice caverns, cliff forts and snowed-in entrances", and this is the cliff fort. It is a prototype in `docs/prototypes/levelup/places.js` (`markCliffFort`), at `places.html?place=clifffort`.
 - **The headland:** 40 m across and 50 m out over the fjord, its cliffs falling 32 m to the sea, so the cliffs are its walls.

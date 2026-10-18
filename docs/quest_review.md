@@ -6,11 +6,12 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `9bd7493` | run 20: combat's resolver merged (read on its branch in run 19) and the tag; no new string a player reads. Before that, run 19 to `2ae3239`, run 18 to `2553a6d` |
-| auto/systems | `a9c4351` | run 20: Sessions 982–1028 (Finding 31 in as written, the Wolf-Mother's Cloak as drafted, the Waylamp's day line, the Crown's blade topic, the Bow's perks, the double jump and the dash, the sway); clean |
+| main | `5521ba1` | run 21: the Look sessions 1031–1053 (the kit's file `38-kit.js`: building names only), the Quest builds 979–1030 (read on their branch), the tag; clean. Before that, run 20 to `9bd7493`: combat's resolver merged (read on its branch in run 19) and the tag; no new string a player reads. Before that, run 19 to `2ae3239`, run 18 to `2553a6d` |
+| auto/systems | `9b2f0e1` | run 21: Sessions 1061–1089 (enemies by place, the perks Ringing, Throw, Catch the blade and Draw cut, the sheath, F2b's touch and water); the new lines a player reads are UI (*You draw the …*, *You sheathe the …*, *You tear the weapon from …'s grip!*, *The arrow glances off your shield.*); clean. Run 20 to `a9c4351`: Sessions 982–1028 (Finding 31 in as written, the Wolf-Mother's Cloak as drafted, the Waylamp's day line, the Crown's blade topic, the Bow's perks, the double jump and the dash, the sway); clean |
 | auto/fable-combat-resolver | `f1976a3` | run 20: merged into main, nothing ahead |
 | auto/fable-f2a-scale, auto/wip-fable-f2a-scale | `e82ad5c`, `a5a4667` | run 19: merged into main, nothing ahead |
-| auto/bodies, auto/wip-spear, claude/admiring-ride-s05yoi, auto/qa, auto/critic, auto/concept, auto/design, auto/backlog, auto/producer | `d4798ad`, `5a1b57d`, `326e8a2`, `60f13dc`, `64c865c`, `89feed1`, `ff31a02`, `2c5fccc`, `542da1c` | run 20: nothing ahead of main in `js/` or `index.html` but the producer's merge of auto/systems (read there) |
+| auto/bodies, auto/backlog, auto/producer, auto/producer-look, auto/qa, auto/critic, auto/concept, auto/design, auto/wip-spear, claude/admiring-ride-s05yoi | `4835b27`, `66d90ed`, `bfdfc3c`, `bba817f`, `b38646f`, `ea488a9`, `5f6940a`, `c39b280`, `5a1b57d`, `326e8a2` | run 21: bodies (rig and creature numbers) and backlog (the kit and the generator's lots) add no line a player reads; the producer's is its merge of auto/systems (read there); the rest nothing ahead of main in `js/` or `index.html` |
+| auto/quests-build | `5685361` | run 21: my own build, Session 1092 (*What the Stones Say*, the draft's words) |
 | auto/wip-cloak-hang | `f4e973d` | run 17: nothing ahead of main in `js/` or `index.html` |
 | auto/fable-f1-renderer | `026c76c` | run 17: merged into main (Session 822); no player-readable text but the settings sheet's *Renderer* row |
 | claude/v2-scope | `f712a74` | run 17: docs only (the 2.0 scope, Michael's 1 B, 2 A, 3 A; the third art round) |
@@ -22,6 +23,18 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 21 — 18 Oct 2026
+
+About 40 player-readable strings read: main's merges (the kit's building names, my own builds of 16 and 17 Oct, read last run on their branch) and auto/systems' Sessions 1061–1089. No findings.
+
+**auto/systems.** Four new lines, all in the game's plain UI voice: *You draw the ${weapon}.*, *You sheathe the ${weapon}.*, *✋ You tear the weapon from ${e.name}'s grip!* (Catch the blade) and *🛡 The arrow glances off your shield.* The perk cards (*Ringing*, *Throw*, *Catch the blade*, *Draw cut*) describe rules and nobody speaks them. The guild's *you still owe us* now has a line for each people (*You'll not plough two fields with the one ox*, the Aurennais *one contract is closed before the next is entered*, the Old Blood *Yours is not done*); all four were read in run 20 and are in register. Clean.
+
+**Michael's calls:** none newer than 16 Oct.
+
+**Built:** *What the Stones Say*, Session 1092 on auto/quests-build (PR #414): the treatise, the sheet, the glossary in the library roll and both heads' lines. `stonessay` 9/9. *The Spire Held* (approved 14 Oct, older) needs a night watch on the roof, a new rule of play, so it is filed in backlog A for the systems builder. *Back to Their Bread* is on main (17 Oct).
+
+**Drafted:** *The Great Gates, V — what was bound: Act III, reconciled* (`docs/quest_drafts.md`, on the page as `great-gates-5`), the last piece of the six great gates. DECISION #413 asks what six torn leaves.
 
 ## Run 20 — 17 Oct 2026
 
