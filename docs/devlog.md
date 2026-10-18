@@ -24688,7 +24688,7 @@ Session 1133 owed one check. The people's ragdoll in `32-people.js` (`ragdollSte
   - 24 killed beside it;
   - 8 on clear ground;
   - 12 lifted 1.5 and dropped against a wall at their side.
-- **No person climbs.** On today's code the hips of all 48 at the well rest 0.10 to 0.15 over the ground. Three of them rest *sitting* against the wall, their backs to it and the top of the head 0.99 to 1.02 up. A probe of the points shows the head and neck held at the wall and a shoulder in it. That is a body slumped against a house wall, not one hanging on it. A person's bones are short and its 21 points heavy at the hips, so the pull out of the column never outweighs gravity, as it did on the bear's long back.
+- **No person climbs.** On today's code the hips of all 48 at the well rest 0.10 to 0.15 over the ground. Seven of them rest *sitting* against the wall, their backs to it and the top of the head 0.82 to 1.02 up. A probe of the points shows the head and neck held at the wall and a shoulder in it. That is a body slumped against a house wall, not one hanging on it. A person's bones are short and its 21 points heavy at the hips, so the pull out of the column never outweighs gravity, as it did on the bear's long back.
 - **The rule is the beasts' anyway.** A point held at a wall never rises, and it may always fall, at half its pace (`if(vy>=0)` in place of `Math.abs(vy)<RD_GRIP.wall`). Under the old rule a point at rest against a wall could never start to fall, since gravity is 2.7 mm a step and the hold's threshold 6 mm. One Bandit dropped against the wall kept its hips at 0.29; it lies at 0.16 now. The two ragdolls now share one rule, so the beasts' fix cannot come back through the people's code.
 
 ### Verified (headless Chromium)
@@ -24698,7 +24698,7 @@ Session 1133 owed one check. The people's ragdoll in `32-people.js` (`ragdollSte
   - Clear ground: highest point 0.13 to 0.24.
   - Dropped against a wall: hips 0.12 to 0.16 (0.12 to 0.29 before the change).
   - All 68 falls at rest by 2.17 s; none meets the four-second cap.
-- **Before the change** the same suite showed the same three seated bodies at 0.99 to 1.02. The checks were first written with a 0.8 ceiling, which failed on those three, and were then set to the hips and a seated head's 1.2.
+- **Before the change** the same suite showed eight seated bodies, the top of the head 0.86 to 1.02 up. The checks were first written with a 0.8 ceiling on the highest point, which failed on those, and were then set to the hips (0.4) and a seated head's 1.2.
 - **The people's ragdoll suites on the change:**
   - `ragdoll` and `ragdollsearch`, 2 of 2 suites, in both looks. Indoors, 24 bodies were thrown at the room's wall: median 1.73 s, one at the cap, none in the wall.
   - `corpsebody`, `cloakcorpse` and `falls`: all pass. That is 98 checks across the six suites, old look.

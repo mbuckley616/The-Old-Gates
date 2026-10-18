@@ -39,7 +39,7 @@ const r = await page.evaluate(() => {
   window.requestAnimationFrame = raf; return out;
 });
 const rng = a => `${Math.min(...a)}–${Math.max(...a)}`;
-// a body may come to rest sitting against the wall, the top of its head about 1.0 up (as 3 of 48 do, before and after S1136); what
+// a body may come to rest sitting against the wall, the top of its head 0.8 to 1.0 up (8 of 48 before S1136, 7 after); what
 // it may not do is hang: the hips on the ground, and nothing higher than a seated head
 const ov = r.over.map(f => f.top), oh = r.over.map(f => f.hips);
 check(`the well is a solid the Bandits fall against (${r.over.filter(f => f.wall).length} of ${r.over.length} with the wall test, ${rng(r.over.map(f => f.inside))} of ${r.over[0]?.n} points inside it at death)`, r.solid && r.over.every(f => f.wall) && Math.max(...r.over.map(f => f.inside)) > 10);
