@@ -4,25 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The Weavers' ring of broken arches: its size, and does its script still burn? (look builder, Session 1119) — DECISION #429
-OG-104's first ruin at the scale of cliffs is built in the prototype (Session 1119): the Weavers' ring of broken arches on a coast, `places.html?place=ring`. It is twelve bays on the crown of a headland, 124 m across, with its open side to the sea and a 30 m cliff 40 m past it.
-- **The arches:** each is the gate kit's own pointed arch at 2.2 times its size. The opening is 22 m wide and 39.6 m to its point, the arch stands 44 m, and its stones are 3.3 m courses.
-- **Their state:** four stand, leaning a little. Seven are broken about half way up, their stones fallen on the turf. The bay to the sea is gone to its footings, with a spill of blocks toward the cliff.
-- **The heart:** a dais of three steps with the ring sigil cut in it.
-- **The script:** as drawn, it is dead on every stone. Nothing floats and nothing glows: out in the world the loom holds nothing up.
-
-Two things are yours: its size against the sheet's "people as specks", and whether anything of it still burns, which is the canon's.
-
-- **A. As drawn: arches of 44 m, the script dead** (recommended). It is already 25 times a person, the size of the gate halls (§2) grown by half again. A dead ring keeps the gates the only places where the script burns.
-- **B. Larger: arches of 60 m (3 times the kit) in a ring 170 m across.** This is closer to the sheet's specks, but each fallen stone is a 6 m block and the ring fills a headland.
-- **C. As drawn, but the four standing arches keep a faint amber line of script.** A ring that is half asleep. What that means is the quest writer's.
-
-Pictures:
-- From the turf inland: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-ring.jpg
-- A standing arch, with a 1.75 m post at its foot for scale: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-arch.jpg
-- From the dais at its heart: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-heart.jpg
-- From over the sea: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-far.jpg
-
 ### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
 **Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.
 - **The church** is 8.4 m wide and 27.4 m from the tower's face to the chancel's gable (22.6 m with a nave of two bays). Its lot is about 5 to 7 m on a side.
@@ -47,6 +28,28 @@ The church as drawn, with three bays: https://raw.githubusercontent.com/mbuckley
 The bawn as drawn: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-bawn.jpg
 
 ## Answered
+### The Weavers' ring of broken arches: its size, and does its script still burn? (look builder, Session 1119) — DECISION #429
+OG-104's first ruin at the scale of cliffs is built in the prototype (Session 1119): the Weavers' ring of broken arches on a coast, `places.html?place=ring`. It is twelve bays on the crown of a headland, 124 m across, with its open side to the sea and a 30 m cliff 40 m past it.
+- **The arches:** each is the gate kit's own pointed arch at 2.2 times its size. The opening is 22 m wide and 39.6 m to its point, the arch stands 44 m, and its stones are 3.3 m courses.
+- **Their state:** four stand, leaning a little. Seven are broken about half way up, their stones fallen on the turf. The bay to the sea is gone to its footings, with a spill of blocks toward the cliff.
+- **The heart:** a dais of three steps with the ring sigil cut in it.
+- **The script:** as drawn, it is dead on every stone. Nothing floats and nothing glows: out in the world the loom holds nothing up.
+
+Two things are yours: its size against the sheet's "people as specks", and whether anything of it still burns, which is the canon's.
+
+- **A. As drawn: arches of 44 m, the script dead** (recommended). It is already 25 times a person, the size of the gate halls (§2) grown by half again. A dead ring keeps the gates the only places where the script burns.
+- **B. Larger: arches of 60 m (3 times the kit) in a ring 170 m across.** This is closer to the sheet's specks, but each fallen stone is a 6 m block and the ring fills a headland.
+- **C. As drawn, but the four standing arches keep a faint amber line of script.** A ring that is half asleep. What that means is the quest writer's.
+
+Pictures:
+- From the turf inland: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-ring.jpg
+- A standing arch, with a 1.75 m post at its foot for scale: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-arch.jpg
+- From the dais at its heart: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-heart.jpg
+- From over the sea: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-far.jpg
+
+Michael: B, larger: 60 m arches in a 170 m ring (on #429, carried by the producer in #427).
+Done, Session 1134 (look builder): `weaverRing` builds at 3 times the kit in a ring 170 m across, the dais grown with it to 30 m and the script dead; the pictures are redrawn. #429 is closed.
+
 ### The Old Blood's dot embroidery: powdered, or the drifts without oxblood? (bodies builder, Session 1125) — DECISION #432
 The critic (18 Oct) says the Old Blood's **oxblood dots on cream read as spatter** ([the critic's still](https://github.com/mbuckley616/The-Old-Gates/blob/auto/critic/docs/critic/2026-10-18-b-ob-dress.jpg)). Session 1043 had flagged the same risk.
 
