@@ -24757,3 +24757,20 @@ Session 1133 owed one check. The people's ragdoll in `32-people.js` (`ragdollSte
 - Build tag: s653.
 ### Needs eyes
 - **Nothing should look different,** beyond a rare body against a wall now sliding the last few centimetres down it. A corpse may still come to rest sitting against a wall. Against a house that is right. Against something low, like the well's ring, the world's solids are columns with no top, so the body leans on air above the stone. That is in the solids, not the bodies.
+
+## v80 — Session 1142 — The Old Blood's embroidery powdered (L1, prototype only; Michael's A on #432)
+Michael answered DECISION #432 with A: the Old Blood's dot embroidery is powdered, every colour kept. Session 1125 had built the powdering beside the drifts as `dotsStyle: 'powder'` and left the drifts the default until he chose. This session makes the powdering the default. It touches only `people.js` and `builder.check.mjs`, and asks nothing.
+
+- **The default.** `DRESS_FLAGS.dotsStyle` is now `'powder'`, and the tunic's and the same-cloth skirt's material powders unless the genome asks for `'drift'`. A rolled genome never sets the flag, so every Old Blood who rolls the embroidery (oxblood, slate or dusk violet on undyed linen, bone on a dark tunic) is powdered. The roll itself is unchanged, so every seed draws the same thread on the same tunic as before.
+- **Saved genomes.** `toSaved` writes a flag only when it differs from the default. A genome saved before this session carries no `dotsStyle` and now loads powdered, as A asks. One saved with `"powder"` (Session 1125's check) loads the same, and `'drift'` is now the value that gets saved.
+- **The drifts stay** for a genome that asks for them, so Session 1043's pictures can still be made. Its checks and its two pictures (`builder-dots-close.jpg`, `-full.jpg`) now ask for `'drift'` by name. The powdered pictures no longer name the flag, since it is the default.
+
+### Verified (headless Chromium)
+- **A new check:** an Old Blood rolled with oxblood knots on cream renders pixel for pixel as the same man asking for `'powder'`, and 1.96% of the close view differs from him asking for `'drift'`. The default saves no flag, and `'drift'` saves its own. A genome saved without the flag loads with `dotsStyle` `'powder'`, renders the same as itself asking for `'powder'`, and differs from the drifts.
+- **Every dots check passes:** the drifts named, 0.5% of the close view; the powdered default, 1.4%; bone on a dark tunic, 1.3%; violet on the same-cloth skirt, 2.6%; none on a skirt of another colour. Every changed pixel moves toward the thread's colour.
+- **`builder.check.mjs`:** 478 of 478 pass, 477 before and the one above. It ran on a fresh MakeHuman pack (84 macro targets; the first download cut one short, and it was fetched again before the run).
+- **The first run** of the new check failed on its own measure: it compared the loaded genome with the rolled one asking for `'powder'`, and 0.34% of the view differed. A save rounds the colours to hex, so the two are not the same person to the pixel. It now compares the loaded genome with itself.
+- **Pictures, reshot:** `builder-dots-close.jpg`, `-full.jpg` (the drifts, by name), `builder-dots-powder-close.jpg`, `-full.jpg`, `-slate.jpg` (the default), `-dark.jpg` and `-woman.jpg` (now powdered).
+### Needs eyes
+- **Bone on a dark tunic and the woman's violet dress** are powdered now too. Session 1125 pictured only the oxblood and slate on cream, so these two are new to Michael's eye: `builder-dots-dark.jpg` and `builder-dots-woman.jpg`.
+- **Owed:** the game, after F4.

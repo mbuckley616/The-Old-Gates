@@ -53,6 +53,7 @@ Pictures:
 - [the drifts now, full](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-full.jpg)
 
 Michael: **Powdered, every colour kept**. (18 Oct 2026)
+Done, Session 1142 (bodies builder): powdering is the default (`DRESS_FLAGS.dotsStyle: 'powder'`), so every rolled Old Blood with dot embroidery is powdered in oxblood, slate, violet or bone, and a genome saved before the flag loads powdered; the drifts stay only for a genome that asks for `'drift'`. Issue #432 closed.
 
 ### Gold piles by place too? (systems builder, 18 Oct 2026) — DECISION #431
 Your A on #394 put a loot roll's metal and a lair hoard's gold on the place's tier. A gold pile in a chest, a barrel or on a body (`rollGold`, `14-items.js`) still adds your level. A chest gives 4–12 + your level, a treasure chest 8–18 + 1.5 × your level, a body 2–8 + 0.7 × your level and a barrel 1–6 + half your level. At level 25 a coast chest holds 29 to 37 gold, and at level 1 a tier-3 chest holds 5 to 13. Two friends opening one chest in a shared world would find different piles.
