@@ -25644,3 +25644,15 @@ The draft is approved and the backlog line gives the shape, so this is building 
 - Nothing to see on main or this branch until the quest writer's book merges. Then, at a Gatelands Mages' Guild's east bookcase,
   the prompt should come up where your eye falls on the case, not from the desk or the board.
 - **Owed:** the quest writer's placement is in (`SHELF_BOOKS`). Their side is the book itself, already on their branch.
+
+## v80 — Session 1127 — kit renders its street from your eye (red twice on faf8fa0)
+CI's shard 10 on `faf8fa0` was red twice on `kit`: *a street of six lots stands in the world and is drawn* read 32 draws before the
+street went in and 32 after. The suite is green locally on that commit, on main and on `08ea721`. Only the main loop moves `CAM` to
+`px, pz` (`js/90-main.js`), and on a slow runner no frame may have run since `g.intoWorld()`, so the camera still stood where it was
+and the street 30 m ahead of the eye was out of its view (the same thing `enterDungeon` waits out since S950). Confirmed locally with the
+camera moved off: 3 draws before and 3 after, the same shape as CI's. The test now puts `CAM` at the eye before it renders
+(`worldH + EYE_STAND`, facing `yaw`), as the loop does. Tests only.
+### Verified (headless Chromium)
+`kit` green: 298 draws before and 376 after, the street's 78 exactly.
+### Needs eyes
+Nothing in play.

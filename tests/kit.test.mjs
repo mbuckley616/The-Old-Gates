@@ -49,6 +49,9 @@ const st = await page.evaluate(() => { forceTime(11); const grp = new THREE.Grou
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
   for (let i = 0; i < 6; i++) { const L = PKIT.gl.lot('the kit test street', i), b = PKIT.gl.building(L.plan), w = b.userData.size.w, x = x0 + w / 2;
     const wx = px + fx * 30 + rx * x, wz = pz + fz * 30 + rz * x; b.position.set(wx, WORLD.worldH(wx, wz), wz); b.rotation.y = yaw; grp.add(b); calls += b.userData.calls; tris += b.userData.tris; x0 += w + .2; }
+  // S1127 — the camera at your eye, as the loop puts it: only the loop moves CAM to px, pz, and on a slow runner no frame may have run
+  // since the world opened, so the camera still stood elsewhere and the street drew nothing (32 → 32 on faf8fa0, twice)
+  CAM.position.set(px, WORLD.worldH(px, pz) + EYE_STAND, pz); CAM.rotation.set(0, yaw, 0); CAM.updateMatrixWorld();
   const before = (REN.render(scene, CAM), REN.info.render.calls); scene.add(grp); REN.render(scene, CAM); const after = REN.info.render.calls;
   return { calls, tris, before, after, inScene: !!grp.parent }; });
 check(`a street of six lots stands in the world and is drawn (${st.calls} draws, ${st.tris} triangles)`, st.inScene && st.after > st.before && st.after - st.before <= st.calls * 2, st);
