@@ -1112,7 +1112,7 @@ function interact(){
     if(nearPortal){goToDungeon(nearPortal);return;}
     // House doors — Ashenmoor, Hearthwick, or Ironhaven
     if(activeZoneId==='overworld'){
-      const nearHouse=HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+      const nearHouse=HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH);
       if(nearHouse){
         // v61al: destroyed buildings have no interior to enter. Emit a brief
         // flavor line and return. Damaged-but-standing buildings pass through
@@ -1124,10 +1124,10 @@ function interact(){
         goToInterior(nearHouse);return;
       }
     } else if(activeZoneId==='hearthwick'){
-      const nearHWHouse=HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+      const nearHWHouse=HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH);
       if(nearHWHouse){goToInterior(nearHWHouse);return;}
     } else if(activeZoneId==='ironhaven'){
-      const nearIHHouse=IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+      const nearIHHouse=IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH);
       if(nearIHHouse){
         // v61d6 — Safehouse is locked until Caldric grants it. Pre-grant,
         // the door responds with a fixed line in the player's voice rather
@@ -1148,7 +1148,7 @@ function interact(){
       // gets a near-house find without per-zone hardcoded branches.
       const zHouses=(ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||null;
       if(zHouses){
-        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<1.5); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
+        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
         if(nearZH){
           // S155 — a shop after hours or a home at night is locked: pick it (S142's lock), or come back
           if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearZH)&&!WORLD.doorPicked(nearZH)){tryLockpick(WORLD.doorLockFor(nearZH));return;}
@@ -1161,9 +1161,9 @@ function interact(){
     if(typeof bladeStoneNear==='function'&&bladeStoneNear()){bladeStoneUse();return;} /* S802 — the Gate-Blade's stone */
     if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipInteract())return; // v80 C — the helm
     // v80 S9 — camp bedrolls in the open world
-    if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<1.5);if(bd){openSleepUI();return;}}
+    if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<TOUCH);if(bd){openSleepUI();return;}}
     // Herb harvest — all zones
-    const nearHerb=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<1.1);
+    const nearHerb=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
@@ -1255,7 +1255,7 @@ function interact(){
         });
         return;
       }
-      const nearBoard=OW_NOTICE_BOARDS.find(b=>b.zone===activeZoneId&&Math.hypot(px-b.x,pz-b.z)<1.4);
+      const nearBoard=OW_NOTICE_BOARDS.find(b=>b.zone===activeZoneId&&Math.hypot(px-b.x,pz-b.z)<TOUCH);
       if(nearBoard){openNoticeBoard(nearBoard);return;}
     }
     talkNPC();return;
@@ -1290,7 +1290,7 @@ function interact(){
       openStash();
       return;
     }
-    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
+    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<TOUCH && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
       openSleepUI();
       return;
     }

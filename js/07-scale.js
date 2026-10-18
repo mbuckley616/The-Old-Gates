@@ -43,3 +43,8 @@ SCALE.ROOM_K=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;
 // Bear's hump 88%) are drawn at their kinds' `play` size times this, so they stand to the 1.78 m man as they stood to the old
 // 1.233 one. Only the drawing: a foe's `size` (its hits and reach, card F2b's) is unchanged.
 SCALE.BEAST=SCALE.ROOM_K;
+// S1085 (F2b, card's *Touch and talk*) — what E reaches with a hand: a door, a board, a bed, a hatch, a chest, a herb, the barber's
+// chair, the ship's wheel. One number in place of eight (1.1 to 1.5 by function), from the body's centre, horizontally; a
+// floor-level thing is then 2.30 from the standing eye, inside the sheet's 2.4 ray. The dungeon's own (its doors, sigils,
+// stairs, cots) stay on its 1 m cell until F2b's third session gives it the 3 m one.
+const TOUCH=1.6;

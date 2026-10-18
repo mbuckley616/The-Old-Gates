@@ -500,7 +500,7 @@
   function eyeOnBox(box,reach){if(typeof CAM==='undefined'||!CAM)return false;CAM.updateMatrixWorld();CAM.getWorldDirection(_eyeD);_eyeR.set(CAM.position,_eyeD);
     const tpb=(typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;return !!_eyeR.intersectBox(box,_eyeP)&&CAM.position.distanceTo(_eyeP)<=reach+tpb;}
   function wheelAimed(){const w=SHIP.mesh&&SHIP.mesh.userData.wheel;if(!w)return false;w.updateMatrixWorld(true);_eyeB.setFromObject(w).expandByScalar(.15);return eyeOnBox(_eyeB,3.2);}
-  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<2.4&&wheelAimed();}
+  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<TOUCH&&wheelAimed();}
   function shipInteract(){
     if(climbing())return true;
     if(roofInteract())return true;
@@ -516,8 +516,8 @@
     return false;
   }
   function nearNpcName(){let best=null,bd=3.2;for(const n of npcs){if(n._retreated||!n.g.visible)continue;const d=Math.hypot(n.g.position.x-px,n.g.position.z-pz);if(d<bd){bd=d;best=n;}}return best?`${best.def.name}${best.def.role&&best.def.role!=='Villager'?' — '+best.def.role:''}`:null;}
-  function roofPrompt(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<1.4)return "Press 'E' to climb back down";}return null;}
-  function roofInteract(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<1.4){const hs=ZONES.world.houses.find(x=>x.type==='tower'&&x.siteId===S.site.id);if(!hs)return false;window._pendingPos={x:4.5,z:4.5-2.2+1.0,yaw:0,jumpY:30};goToInterior(hs);return true;}}return false;}
+  function roofPrompt(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH)return "Press 'E' to climb back down";}return null;}
+  function roofInteract(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH){const hs=ZONES.world.houses.find(x=>x.type==='tower'&&x.siteId===S.site.id);if(!hs)return false;window._pendingPos={x:4.5,z:4.5-2.2+1.0,yaw:0,jumpY:30};goToInterior(hs);return true;}}return false;}
   function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;if(!SHIP.mesh)return null;if(SHIP.sailing)return "Press 'E' to let go of the wheel";const cp=cabinPrompt();if(cp)return cp;if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to climb aboard the ${SHIP.name}`;return null;}
   // ── sea sounds (use the engine's AX / sfxGain) ──
   const SND={wind:null,windG:null,creakT:0,splashT:0,wasSwim:false};

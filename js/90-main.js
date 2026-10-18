@@ -927,18 +927,18 @@ function loop(now){
     // the player walks up to a pile of rubble and sees "Press E to enter
     // Bram's Forge." Damaged-but-standing buildings (Edna, oratory) keep
     // their prompt because they're still enterable quest targets.
-    const nearHouseRaw=activeZoneId==='overworld'?HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)
-                   :activeZoneId==='hearthwick'?HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)
-                   :activeZoneId==='ironhaven'?IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)
+    const nearHouseRaw=activeZoneId==='overworld'?HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH)
+                   :activeZoneId==='hearthwick'?HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH)
+                   :activeZoneId==='ironhaven'?IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH)
                    // v61e1: generic per-zone houses lookup mirrors the interact handler.
-                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<1.5)||null; /* S614 — a door entered by the crosshair (the ship's hatch) is not found by standing on it */
+                   :((ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||[]).find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH)||null; /* S614 — a door entered by the crosshair (the ship's hatch) is not found by standing on it */
     const nearHouse = (nearHouseRaw && activeZoneId==='overworld' && _houseDestroyed(nearHouseRaw)) ? null : nearHouseRaw;
     const activeNPCs=(ZONES[activeZoneId]&&ZONES[activeZoneId].npcs)||[];
     const nearNPC=talkAimedNPC(activeNPCs); // v80 — aimed, not near; S596 — the nearest of those aimed at, the one E talks to
-    const nearHerbPrompt=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<1.1);
+    const nearHerbPrompt=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     // v61b: notice boards zone-scoped (each entry carries a `zone` tag).
     const nearBoard=(typeof isSettlementZone==='function' && isSettlementZone(activeZoneId))
-      ? OW_NOTICE_BOARDS.find(b=>b.zone===activeZoneId&&Math.hypot(px-b.x,pz-b.z)<1.4) : null;
+      ? OW_NOTICE_BOARDS.find(b=>b.zone===activeZoneId&&Math.hypot(px-b.x,pz-b.z)<TOUCH) : null;
     const nearZCorpse=ZONE_CORPSES.find(c=>c.zone===activeZoneId&&c.items&&c.items.length>0&&lookingAt(c)); // v80 — look-at
     // v61al: Bram's body gets its own interact prompt — "investigate" on first
     // read (flavor text beat, advances Q7 obj 1), "loot" on subsequent visits
@@ -1042,7 +1042,7 @@ function loop(now){
     // v61d4 — Stash + bed proximity prompts. Both check the live globals
     // set by buildInterior's safehouse branch; null in any other interior.
     const nearStash=stashAimed(); /* S656 — the prompt asks what E does */
-    const _nbd=INT_BEDS.length?intBedTarget():null;const nearBed=INT_BEDS.length?(!!_nbd&&!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)); /* S645 — the prompt asks what E does: under the crosshair, and intBedPos only where E reads it */ // v80 — any usable bed
+    const _nbd=INT_BEDS.length?intBedTarget():null;const nearBed=INT_BEDS.length?(!!_nbd&&!!(typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))):(intBedPos && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<TOUCH && bedAimed(intBedPos)); /* S645 — the prompt asks what E does: under the crosshair, and intBedPos only where E reads it */ // v80 — any usable bed
     const iprInt=document.getElementById('ipr');
     const _dpr=(typeof WORLD!=='undefined'&&WORLD.intDoorPrompt)?WORLD.intDoorPrompt():null; // v80 S143
     if(nearExit){iprInt.textContent="Press 'E' to leave";iprInt.style.opacity='1';iprInt.style.display='block';}

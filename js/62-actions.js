@@ -831,7 +831,7 @@ function updateHUD(){
   const ob=document.getElementById('ob');if(lid==='overworld'){ob.style.color='#88cc44';
   const _shipHint=(activeZoneId==='world'&&typeof WORLD!=='undefined')?WORLD.shipPrompt():null; // v80 C — the ship comes first
   if(_shipHint){ob.style.color='#c8b880';ob.textContent=_shipHint;}else
-  if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds&&ZONES.world.beds.some(b=>Math.hypot(px-b.x,pz-b.z)<1.5)){ob.style.color='#c8b880';ob.textContent="A bedroll — Press 'E' to rest"+(level<(typeof levelFor==='function'?levelFor(xp):level)?' and take your level':'');}else
+  if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds&&ZONES.world.beds.some(b=>Math.hypot(px-b.x,pz-b.z)<TOUCH)){ob.style.color='#c8b880';ob.textContent="A bedroll — Press 'E' to rest"+(level<(typeof levelFor==='function'?levelFor(xp):level)?' and take your level':'');}else
   if(activeZoneId==='forest'){const alive=ZE.filter(e=>!e.dead&&!e.locked).length;ob.textContent=alive?`${alive} creature${alive>1?'s':''} nearby · Stay on the path`:'Deep in the Deepwood Forest · E near gate to travel';}
   else if(activeZoneId==='ironhaven'){ob.textContent='Press E near a soldier or gate · Press E near a building to enter';}
   else{ob.textContent='Press E near a villager to talk · Press E near a door or cave to enter';}

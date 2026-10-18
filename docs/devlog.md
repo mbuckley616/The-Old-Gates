@@ -25093,3 +25093,38 @@ now puts the swimmer at `SWIM_Y`. Its check is unchanged.
 - **The swimming body in third person** puts its head a quarter metre over the water, and the camera's eye sits at 0.20. Worth a
   look from behind on both looks.
 - **Owed from session 2:** touch at 1.6, the wheel, and the indoor sight line.
+
+## v80 — Session 1085 — F2b, session 2, part 3: one touch, 1.6 m, and the wheel within it
+The sheet's *Touch and talk* table replaces eight touch numbers with one. What E reaches with a hand was 1.1 to 1.5 m by function:
+- a herb 1.1;
+- a notice board, the stash and a legacy room's bed 1.4;
+- a house door, a room's door, a bedroll, the tower's chest and the barber's chair 1.5;
+- a cellar hatch 1.3, the roof's hatch 1.4.
+
+A generated room's bed and the home's chest were already at 1.6. The ship's wheel answered at 2.4, further than a hand.
+
+**What changed.**
+- **One constant.** `TOUCH` 1.6 (`07-scale.js`, beside `SCALE`, so every file has it at load) is now the reach for all of these
+  and for the wheel. It is measured from the body's centre, horizontally, as before.
+- **The aim rules stand.** Every check that needed the crosshair still needs it: doors, beds, the stash, the chests, the hatches,
+  the barber's chair and the wheel.
+- **Prompts match.** The prompts that repeated the numbers (`90-main.js`, the bedroll's in `62-actions.js`) read the same
+  constant, so the prompt and E cannot disagree.
+- **Floor-level things.** The sheet's ray rule is met without a new test: a herb at 1.6 is 2.30 m from the standing eye, inside
+  2.4.
+
+**What is left alone.**
+- **Talk:** 2.2 and 3.2, which the sheet keeps.
+- **Big things:** a gate at 1.8, a portal at 2.0, a shrine at 2.6, the coach at 3.2 and the quests' named reaches. None of them is
+  a hand on a thing.
+- **Aimed loot:** corpses, chests and barrels, at 3.0 and 2.6 under the crosshair.
+- **Auto pickups:** what you walk over.
+- **The dungeon's own checks:** its doors, sigils, stairs, entrance, cots, the mimic, the Shuttle and the cloak's den. They sit on
+  the 1 m cell, where 1.6 would reach through a wall into the next corridor. They move with session 3's 3 m cell.
+### Verified (headless Chromium)
+- **`touchrange`** (new), 7/7. Each target is approached along several clear lines and stepped out by 0.05 m from 1.225, with the
+  crosshair held on it. The furthest answer must reach 1.575, and nothing may answer past 1.6:
+  - a herb on the open ground: 1.575, none beyond;
+  - both doors of a Dunmore inn's upper floor: 1.575, none beyond;
+  - two of its beds: 1.575, none beyond;
+  - a sloop's wheel, on her deck: 1.575, none beyond. It answered to 2.375 before.
