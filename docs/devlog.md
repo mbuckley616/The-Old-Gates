@@ -24401,3 +24401,25 @@ Session 1115 said the cats sit wrong: a cat sits with its forefeet together and 
 ### Needs eyes
 - **Whether 30% is right.** The Hollowcat's paws nearly touch. A sitting cat's do touch, and its forefeet sit a little forward too.
 - **Owed:** the tail wrapped round the forefeet, and the game (after F4).
+
+## v80 — Session 1130 — The cats' tails wrapped round (L3, prototype only)
+Session 1126 drew the sitting cats' forefeet together and owed the other half of how a cat sits: its tail wrapped round. It had tried a bigger sideways curl about the tail bones' own axes, and because those axes are not level the lynx's tail bent upward instead. This session turns the tail about the body's up, as the stag's mist learned to rise in Session 975. It touches only `creatures.js` and `creatures.check.mjs`, and refines a pose already built, so it asks nothing.
+
+- **`sitWrap`** is a new plan field: two angles, the first tail bone's turn and the rest's, shared evenly down them. The Hollowcat has 0.9 and 2.4 rad. `sitWrap(C, …)` turns each bone, root to tip, about the rig's up carried into its parent's frame, so the tail stays as level as `sitFind` laid it. A plan with it skips the old 0.3 rad curl; every other sitter keeps that curl and sits as before.
+- **Which way.** The tail goes out to the cat's right from behind the haunch, then forward along its flank. The Hollowcat's tail is four bones and about 30 cm, and its forefeet are 41 cm ahead of its root, so the tip ends beside the hind foot, not at the forefeet. A wildcat's tail is short and blunt; this is as far round as it reaches.
+- **The lynxes.** `re()` now copies `sitWrap` too, so the Sunspire Lynx (a caracal's tail) wraps the same way. The Stormlynx is a bobtail: its four tail bones lie within 5 cm, and wrapping them only folds the stub into its rump, so it sets `sitWrap: null` and keeps the stub sitting straight back.
+- **The first numbers were too wide.** 1.2 and 1.6 rad swung the tail out 19 cm and left its tip pointing sideways behind the haunch. Turning the root less and the rest more tightens it to 13 cm off the middle line, against the hips' 5.
+
+### Verified (headless Chromium)
+- **A new check, for every plan with `sitWrap`:** sitting, it reads the tail's joints and every tail vertex past the first two bones against the body's and thighs' flesh, binned by 1 cm of height and length. A vertex counts as inside if it lies nearer the middle than the body's outside in its bin.
+  - The Hollowcat: the last bone is turned 149° from straight back, the last joints are 13.1 cm or more off the middle (the hips' 5.0), the tip is 2.8 cm forward of the root, the joints are level within 2.5 cm, and 0 of 806 vertices are inside the haunch.
+  - The Sunspire Lynx: 149°, 13.0 cm, 2.8 cm forward, level within 2.7 cm, 0 of 719 inside.
+- **The check bites.** With the wrap overdone (1.8 and 3.4 rad), 747 of the 806 vertices are inside the haunch and it fails. The values were put back.
+- **The three cats' sit check passes unchanged:** the forefeet are at 30%, the haunch 5.0 mm off the ground, and nothing but the toe pads is under the ground. The tail is held to that check as well.
+- **`creatures.check.mjs`:** 1,169 of 1,169 pass, 1,167 before and the two above.
+- **`builder.check.mjs`:** 476 of 476 pass, the hound by Garrick's chair among them (it lies, and does not sit with the wrap).
+- **Pictures:** `creatures-hollowcat-sit-tail.jpg` (from above, the tail round the right haunch), `creatures-hollowcat-sit-front.jpg` and `creatures-sunspirelynx-sit.jpg` (from the front), and `creatures-cats-sit.jpg` (the three cats, reshot).
+### Needs eyes
+- **How tight.** From the front the tail's tip shows as a soft ball beside the right hind foot. A real cat lays its tail flatter and closer, its tip over the forefeet. The Hollowcat's tail is too short to get there, and a longer one would change the plan.
+- **One side only.** Every cat wraps to its right. Which side could come from the seed, since it is a single sign.
+- **Owed:** the game, after F4.
