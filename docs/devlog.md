@@ -24032,7 +24032,7 @@ I also tried a third change and took it out. The hinge's correction of a knee or
 - **One boar in the 1,350 still meets the cap.** Its left hind knee and hock rock about a centimetre against the ground on a half-second beat, with no wall near. The hinge holds the knee forward by moving it, and that move is a velocity. The fix tried for it (above) was worse over the whole set, so it is owed. `beastfall`'s fifteen unseeded deaths are wolves, not boars, so the suite should now go red about one run in a hundred or less, against one in fourteen.
 - **The ten falls over 2.5 s** are real settling: a tail root balanced upright that slowly topples, or a limb sliding down a slope. Nothing a player sees freezes mid-move.
 
-## v80 — Session 1092 — The walking staff's own grip (L1, prototype only)
+## v80 — Session 1094 — The walking staff's own grip (L1, prototype only)
 Session 1085 gave the old a walking staff on the spear's grip and named the fault in its Needs eyes: the forearm reached forward almost level, so from the side the old held the staff out before them rather than leaning on it. This session refines that grip, which needs no new question. It touches only the prototypes: `people.js` and `builder.check.mjs`.
 
 The grip is still built the same way, only the forearm's aim is new:
@@ -24059,7 +24059,8 @@ The grip is still built the same way, only the forearm's aim is new:
 - **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
 
-## v80 — Session 1093 — people.js's WIND renamed (prototype only)
+## v80 — Session 1095 — people.js's WIND renamed (prototype only)
+Renumbered: this run pushed Sessions 1092 and 1093, and auto/quests-build pushed its own 1092 at the same time, so they are 1094 and 1095.
 The concept artist reported in the room on 17 Oct: since Session 1024, `people.js`'s own `WIND` (the leg wraps' wound-cloth shader chunk) broke 16 of the 17 pages that `bundle.py` makes. `common.js` exports a `WIND` of its own, the leaves' sway uniform. The bundle puts both modules in one scope, so the two names clashed. `bundle.py` already works round this by renaming any shared top-level name in its copy of `people.js`, but the concept artist asked for the cleaner fix in `people.js` itself. It is now `WRAP_WIND`, used in its one place. `bundle.py`'s comment notes the old name, and the rename rule stays in place as a guard for any later clash.
 
 ### Verified (headless Chromium)

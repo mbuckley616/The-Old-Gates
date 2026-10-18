@@ -109,7 +109,7 @@ ${FOLDN}`;
 // next, a crease where they meet; the top 1.2 cm, where the thongs tie, lies flat
 const LEGA = `vec2 legD(vec3 p){ return vec2(abs(p.x) - .158 - (-.369 - p.y) * .165, p.z - .032 - (p.y + .369) * .085); }
 float legA(vec3 p){ vec2 d = legD(p); return atan(d.x, d.y); }`;
-// named WRAP_WIND (Session 1093), not WIND: common.js exports a WIND (the leaves' sway), and the bundle shares one scope
+// named WRAP_WIND (Session 1095), not WIND: common.js exports a WIND (the leaves' sway), and the bundle shares one scope
 const WRAP_WIND = w => `${LEGA}
 float foldH(vec3 p){ vec2 d = legD(p); float a = atan(-d.y, d.x), t = (p.y - ${w.lo.toFixed(3)}) / ${w.pitch.toFixed(4)} - a * .15915 + .018 * sin(a * 3. + p.y * 37.) + .01 * sin(a * 7. - p.y * 61.), q = fract(t);
   float h = smoothstep(0., .18, q) * (1. - smoothstep(.45, 1., q)); return mix(.7, h, clamp((${w.hi.toFixed(3)} - p.y) / .012, 0., 1.)); }
@@ -2061,7 +2061,7 @@ const STAFFS = {
   ash: { top: -.17, knob: 1.55, carve: 0, shoe: [.42, .43, .45], ring: [.42, .43, .45], cap: null },
   olive: { top: -.22, knob: 1.6, carve: 0, shoe: [.62, .45, .22], ring: null, cap: [.62, .45, .22] },
   carved: { top: .1, knob: 1.9, carve: .2, shoe: [.42, .43, .45], ring: null, cap: null } };
-// the walking grip (Session 1092): a staff is leant on, not held out as a spear is, so its forearm drops 38° forward and down from
+// the walking grip (Session 1094): a staff is leant on, not held out as a spear is, so its forearm drops 38° forward and down from
 // the elbow (the spear's runs on almost level), the fist by the hip and the staff's foot a hand ahead of the toes; the wrist cocks
 // up to keep the knuckles plumb, as before
 const STAFF_ARM = new THREE.Vector3(-.1, -.62, .78);
@@ -2089,7 +2089,7 @@ function staffTube(S, y0, y1, n, NS) {
 function buildStaff(G, body, byName, meshes, root, grip) {
   root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, PP = posedBody(body);
   let floor = 1e9, crown = -1e9; for (const i of new Set(PACK.G['body'])) { floor = Math.min(floor, PP[i * 3 + 1]); crown = Math.max(crown, PP[i * 3 + 1]); }
-  // the walking grip's measures (Session 1092): the fist's height up the body, and how far ahead of the toes the foot comes down
+  // the walking grip's measures (Session 1094): the fist's height up the body, and how far ahead of the toes the foot comes down
   let toe = -1e9; for (const i of new Set(PACK.G['body'])) if (PP[i * 3 + 1] < floor + .12) toe = Math.max(toe, PP[i * 3 + 2]);
   const make = STAFFS[D.staffMake] ? D.staffMake : ({ markman: 'ash', aurennais: 'olive', oldblood: 'carved' })[G.people] || 'hazel', K = STAFFS[make];
   const A = grip.A, B = grip.C.clone().addScaledVector(A, (floor - grip.C.y) / A.y), yF = grip.C.clone().sub(B).dot(A), LEN = (crown + K.top - floor) / A.y, ph = staffSeed([G.seed ?? 'person', G.people, ...D.staff, ...(G.skin || [])].map(v => typeof v === 'number' ? Math.round(Math.max(0, Math.min(1, v)) * 255) : v).join('|')) * Math.PI * 2;

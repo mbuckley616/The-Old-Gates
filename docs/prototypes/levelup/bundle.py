@@ -16,7 +16,7 @@ def strip_common(src):
 def scene(src):
     return re.sub(r"^import \{[^}]*\} from './(common|people).js';\n", '', src, flags=re.M)
 _c = strip_common(open(os.path.join(here, 'common.js'), encoding='utf-8').read()); _p = strip_common(open(os.path.join(here, 'people.js'), encoding='utf-8').read())
-# a top-level name people.js keeps to itself and common.js also declares (people.js's WIND from Session 1024 until 1093) is renamed in
+# a top-level name people.js keeps to itself and common.js also declares (people.js's WIND from Session 1024 until 1095) is renamed in
 # people.js's copy: the two modules share one scope here, and a module cannot both import a name and declare it, so none is shared
 _top = lambda src: set(re.findall(r"^(?:const|let|var|function|async function|class) (\w+)", src, flags=re.M))
 for _n in sorted(_top(_c) & _top(_p)): _p = re.sub(r"\b%s\b" % _n, 'P_' + _n, _p)
