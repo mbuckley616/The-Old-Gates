@@ -3828,3 +3828,15 @@ Done, Session 168 (auto): the three classes, the two looks and the harbour boats
 ### The world-file cut, today (the local Fable session, 4 Oct 2026)
 Michael asked for the whole split and rearchitecture to land on 4 Oct. Step 1 was on main since 1 Oct (Session 379); step 2, breaking up `80-world.js`, sat as the Fable card `world-file` behind FREEZE #138, blocked on #115 (red on `guardplay`, which the freeze stopped the systems builder from fixing) and #134. The producer's 11:19 question offered A (lift the freeze), B (merge #115 red) and C (cut now, #115 to merge the rewritten world after).
 Michael: **None of the three — the local session carries it all, today, the right way** (4 Oct 2026, in chat with Claude): fix `guardplay` on auto/systems (Session 483; it was real, not the runner), merge #134 and then #115 (its last red, `beastfall`, passes here on the merged state and on main: the runner, as ruled three times before), run the cut here on a branch with a PR so CI runs every shard, merge it, and keep FREEZE #138 until that PR is on main. Done, Session 484; the producer closes #138 and Michael pastes the nine world files into the builders' prompts.
+
+### 1.0 is frozen: the new look is the game (Michael, in chat with a local session, 18 Oct 2026) — Session 1145
+Michael asked why changes he expected were not in the game, saw seven open PRs and a Systems branch 121 commits ahead of main, and
+asked what would get 2.0 moving fastest. Nobody plays the old look but him.
+Michael: **"1.0 is frozen. Make the new look the default, stop old-look work and double testing, clear the waiting piles, and find out
+why the land and people stalled."** (18 Oct 2026, in chat.) Then, on how to land the waiting branches: **approve them on the board** (the
+local session marked Systems 1eb2b77 and Quest builds d7219d6 approved on the control room, each with any commits that only merge main
+in; Bodies 1136 was already approved). Done in Session 1145: the new look is the page's default (`?look=old` the way back), the suites
+boot it unless `tests/lib/old-look.json` names them, CLAUDE.md's "2.0 only" section holds the rules, and FREEZE #441 holds new Systems
+sessions until Systems is on main. Why the land and people stalled: F3 (`f3-land`) is queued only once Systems is on main (#381 A), and
+Systems never landed because each new session moved its head past the approved one; F4 has no card, and its people wait behind F3 in the
+deep-work queue though its files (`32-people.js`, `34-creatures.js`) do not overlap F3's.

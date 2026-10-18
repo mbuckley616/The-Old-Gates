@@ -20,6 +20,19 @@ Michael designs and playtests; Claude implements. This file is what Claude reads
 - `scripts/parsecheck.py` — syntax-checks every `js/` file and their concatenation. `scripts/tag.py bump` bumps the build tag.
   `scripts/split.py`, `scripts/split_world.py` and `scripts/join.py` made the layout and prove it (kept one release, per decision #75).
 
+## 2.0 only (Michael, 18 Oct 2026: "1.0 is frozen")
+Nobody plays 1.0 but Michael, and he plays 2.0 from now on. The game is the new look (`docs/design/v2-scope.md`); every session serves it.
+- **The new look is the default.** `index.html` boots three.js 0.170 unless the URL says `?look=old` or the setting `og.renderer` is
+  `'old'`. The old look stays only until card F14 deletes it.
+- **No new work for the old look.** No builder, mesh, texture, number or prototype that only the old look (r128, the legacy zones, the
+  pre-kit builders) uses. Fix an old-look fault only when it breaks shared code or a suite still on the old-look list.
+- **Test on the new look only.** A suite boots the new look unless `tests/lib/old-look.json` names it (156 suites on 18 Oct, those
+  not yet seen passing there, from QA's `docs/qa/looknew.md`). QA strikes a suite from that list once it passes on the new look and never
+  adds one; a new or changed suite is verified on the new look alone. Never run a change on both looks to prove it.
+- **2.0's cards come first**, then the core loop (combat, skills and perks, enemies by place, magic B), then everything else.
+- **Land small and often.** A branch that holds more than a day's sessions is a risk to everyone's merges: stop adding to it until it
+  lands. While a `FREEZE:` issue for a landing is open, the builder whose branch it names adds nothing to that branch.
+
 ## A session
 1. Read the last devlog entry and the backlog before touching code.
 2. One feature or bug per session. Ask before building anything whose design is open.

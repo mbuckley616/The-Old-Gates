@@ -17,6 +17,8 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// 18 Oct 2026: the suites not yet seen passing on the new look, which still boot the old one (see boot's `look` below)
+const OLD_LOOK = new Set(JSON.parse(fs.readFileSync(new URL('./old-look.json', import.meta.url), 'utf8')).suites);
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, '..', '..');
@@ -67,8 +69,9 @@ export async function boot(opts = {}) {
   await page.addInitScript(() => { window.lookAtPt = (x, y, z) => { const ey = jumpY + (typeof _eyeHeightCur === 'number' ? _eyeHeightCur : 1.6);
     yaw = Math.atan2(-(x - px), -(z - pz)); pitch = Math.atan2(y - ey, Math.hypot(x - px, z - pz)); CAM.position.set(px, ey, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); }; });
   // S822: `boot({ look: 'new' })`, or OG_LOOK=new (run.mjs --look=new), boots on three.js 0.170 (vendor/three.r170.min.js, beside
-  // index.html, so it needs no swap); the default is the old look on tests/vendor's r128, as before
-  const look = opts.look || process.env.OG_LOOK || '';
+  // index.html, so it needs no swap). Since 18 Oct 2026 the page's default is the new look; a suite named in tests/lib/old-look.json
+  // (not yet seen passing on the new look) still boots `?look=old` until QA strikes it, and `--look=old` boots every suite old
+  const look = opts.look || process.env.OG_LOOK || (OLD_LOOK.has(path.basename(process.argv[1] || '', '.test.mjs')) ? 'old' : '');
   await page.goto('file://' + file + (look ? '?look=' + look : ''));
   await page.waitForTimeout(4000);
 

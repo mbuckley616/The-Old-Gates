@@ -9,7 +9,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const rec = JSON.parse(fs.readFileSync(path.join(here, '../docs/prototypes/levelup/pieces-gatelands.json'), 'utf8')).line.plans;
 
 // the old look: the file is there and has painted nothing
-{ const g = await boot(); const o = await g.page.evaluate(() => ({ look: window.OG_LOOK || 'old', kit: typeof PKIT, made: PKIT.texturesMade(), fns: typeof PKIT.gl.building }));
+{ const g = await boot({ look: 'old' }); const o = await g.page.evaluate(() => ({ look: window.OG_LOOK || 'old', kit: typeof PKIT, made: PKIT.texturesMade(), fns: typeof PKIT.gl.building }));
   check('on the old look the kit loads and paints nothing', o.look !== 'new' && o.kit === 'object' && o.made === 0 && o.fns === 'function' && g.errs.length === 0, { ...o, errs: g.errs });
   await g.close(); }
 

@@ -24730,3 +24730,27 @@ The people's ragdoll in `32-people.js` has the same hold. It is left as it is: n
 - **Owed:**
   - the people's hold, the same check on `ragdollStep`;
   - a bear's body overlapping a solid at death is itself odd, since foes collide by their centre point only. That is the systems builder's, and noted here only.
+
+## v80 — Session 1145 — 1.0 is frozen: the new look is the default
+Michael asked why changes he expected were missing from the game and why seven PRs were open; then, having heard that only he plays the old
+look, asked for 2.0 as fast as it can go: "1.0 is frozen. Make the new look the default, stop old-look work and double testing, clear the
+waiting piles, and find out why the land and people stalled." What was wrong was not the deploy (Pages serves main, current to def978b) but
+the merging. Systems (#353) held 121 commits since 15 Oct: Michael approved bf251d1 on 16 Oct, it went red on `yardplay`, and each session
+after moved the head past the approval, so it never landed. F3, the land, is queued only once Systems is on main (#381 A), so the land
+waited on it. F4, the people, has no card, and waits behind F3 in the deep-work queue though its files do not overlap F3's.
+
+What changed. The page's head script now boots the new look unless the URL says `?look=old` or the setting `og.renderer` is `'old'`;
+the settings sheet's renderer row keeps only that way back (← old, → back to the default). The test harness boots each suite on the new
+look unless `tests/lib/old-look.json` names it: 156 suites, the ones QA's ledger (`docs/qa/looknew.md`) has not seen pass there, the
+unlisted 154 and the two reds `foewarm` and `hourhitch`. Each suite runs once, on one look; the list only shrinks. `kit`'s first check
+asks for the old look by name and `settingsheet` reads the flipped row. CLAUDE.md gains a "2.0 only" section: no new old-look work, test on
+the new look only, 2.0's cards first, land small and often. To land the piles: FREEZE #441 holds the systems and look builders; on the
+control room Systems 1eb2b77 and Quest builds d7219d6 are approved (Michael chose "approve them on the board"), each with any commits that
+only merge main in; Bodies 1136 was approved already; the cancelled shard 6 on 1eb2b77 was re-run.
+### Verified (headless Chromium)
+Locally, one at a time on this branch: `settingsheet` 1/1 on the new look (the row's ← stores `'old'`, the page stays on 0.170 until the next
+load, → clears it), `kit` 3/3 (its first check asks for the old look by name), `looknew` 1/1 (no page or console errors), `bear` 1/1 on the
+new look by default, `aimbubble` 1/1 on the old look by the list. `parsecheck` clean. CI's shards on the PR are the full answer.
+### Needs eyes
+Michael on Pages with no `?look=`: the new look, and the old one only by `?look=old`. A browser that once chose the old look in the
+settings keeps it until the row is moved back. The F4 card is the producer's to write; the land's card queues when Systems is on main.
