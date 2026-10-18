@@ -404,7 +404,7 @@ function creatureRagdollStep(R){
   // in 3 Wolf falls of 400 and 7 Dire Wolf falls (the Cave Bear already 7 at 1.35); it is now turned while it stands past .6 (was .8),
   // twice as hard: 0 in 400 for the Wolf, the Snow Wolf and the Ash Hound, 1 for the Dire Wolf and the bear
     if(_crd3.crossVectors(z,x).y>.6){R.tipped=(R.tipped||0)+1;for(const n of ['hips','spine','neck','chest','belly'])P[R.I[n]].q.addScaledVector(R.lat,(n==='chest'||n==='belly'?1:-1)*R.roll*R.s*2.4*RD_DT);}}
-  for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
+  for(const o of P){const vx=(o.p.x-o.q.x)*dm,vy=(o.p.y-o.q.y)*dm,vz=(o.p.z-o.q.z)*dm;o.q.copy(o.p);o.sx=o.p.x;o.sz=o.p.z;o.sy=o.p.y;o.w0=o.w;o.w=false;o.p.x+=vx;o.p.y+=vy-9.8*RD_DT*RD_DT;o.p.z+=vz;}
   for(let it=0;it<10;it++){
     for(const [a,b,len,min] of C){const pa=P[a].p,pb=P[b].p,d=_crd1.subVectors(pb,pa),l=d.length()||1e-6;if(min&&l>=len)continue;const k=(l-len)/l*.5;pa.addScaledVector(d,k);pb.addScaledVector(d,-k);}
     // a leg joint across its limb's line, the wrong way along the body, is set back onto it
@@ -421,7 +421,11 @@ function creatureRagdollStep(R){
         // S482: the people's floor grip (S466): a point on the ground creeping slower than RD_GRIP.floor a step is held where
         // the step began; without it one wolf death in eighty crept sideways on its raised foreleg past the four-second cap
         if(Math.abs(o.p.x-o.sx)+Math.abs(o.p.z-o.sz)<RD_GRIP.floor*R.s){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}}}
-    if(R.solid&&it>=8)for(const o of P)if(R.solid(O.x+o.p.x*R.K,O.z+o.p.z*R.K)&&!R.solid(O.x+o.sx*R.K,O.z+o.sz*R.K)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;}
+    // S1091: the people's wall (S466): a point the wall stopped last step is held in every pass, not the last two only, and held
+    // in height too when it barely moves; without it a head leaning on a tree was driven into it and shoved back, step after step,
+    // and the Dire Wolf and the boar lay rocking against it past the four-second cap
+    if(R.solid)for(const o of P)if((it>=8||o.w0)&&R.solid(O.x+o.p.x*R.K,O.z+o.p.z*R.K)&&!R.solid(O.x+o.sx*R.K,O.z+o.sz*R.K)){o.p.x=o.q.x=o.sx;o.p.z=o.q.z=o.sz;o.w=true;
+      const vy=o.p.y-o.sy;if(Math.abs(vy)<RD_GRIP.wall*R.s)o.p.y=o.q.y=o.sy;else o.q.y=o.p.y-vy*.5;}
   }
 }
 function creatureRagdollApply(R){
