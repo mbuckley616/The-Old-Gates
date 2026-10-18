@@ -24139,3 +24139,31 @@ It trots, walks, gallops and stands like the wolves. It is peaceful, as the comm
 - **The colour against the dark.** Black fur on a dark scene loses its outline. The coat is lifted to charcoal, but whether Garrick's hound needs a grizzled muzzle or a lighter belly to read at play distance is a playtest call.
 - **The wolfhound's other coats.** The breed's usual grey, brindle and wheaten would be `COATS` entries or a second plan; OG-065 shows only the black.
 - **Owed:** the hound sitting or lying by the chair (a rest pose, B4), the crossbow across Garrick's knees, and both in the game (after F4).
+
+## v80 — Session 1113 — Garrick's crossbow across his knees (L1, prototype only)
+OG-065 draws Garrick in his wheeled chair with a long gun across his knees. The catalogue's row for it says the canon has no firearms and asks for a crossbow instead. Session 1106 left it owed, because the chair dropped anything carried in the fist. This session lays the kit's crossbow across the lap. It touches only the prototypes: `people.js` (`buildLapCrossbow`, and `buildChair` now returns its boards and wheels) and `builder.check.mjs`.
+
+How it lies:
+- **Flat across both thighs, over the knees.** The bolt's face is up, the tiller runs side to side, the butt is toward the sitter's right and the prod's span runs fore and aft. The make is the people's, as in the fist: wood for the Gatelands, steel for the Mark, horn for Aurenne.
+- **Out past the left wheel.** The prod sits 2.5 cm plus its own bend outside the big wheel's tyre, so its tips pass outside the wheel. The butt reaches about 37 to 44 cm to the right of the middle.
+- **Let down onto the thighs.** Its height is halved twenty times between too near and clear, until the nearest worn point is 2 mm off. That point must be a thigh's, never a hand's or anything worn.
+- **Moved clear of the chair.** It starts 7 cm back of the knees' front and moves forward a centimetre at a time while any of its points is in a board of the chair (the arms, the front legs) or a big wheel's disc, or while what bears it is not a thigh.
+- **Carried by the root bone,** not the wrist.
+- **The hands stay on the chair's arms** as Session 1106 laid them.
+
+A crossbow asked with the chair used to be dropped. Now it lies here instead, and nothing builds the fist's grip for it. A spear, staff, basket or shield is still dropped. The roll still never gives anyone the chair.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: 473 of 473 pass,** 468 before and five new.
+- **The five new sitters:** Garrick, a Markman in mail, an old stooped Markman, a woman whose long skirt gave way, and an Aurennais girl.
+  - Each crossbow is the right make and lies level (0.0 mm between the butt and the prod).
+  - Each rests on the thighs, 2.0 mm off, 4 to 7 cm back of the knees' front.
+  - The prods are 45 to 48 cm out against wheels at 35 to 40 cm; the girl's is 41 against 31.
+  - No point of a crossbow is in any board, wheel or hand. Nothing is in the fist. Each saves and loads back.
+- **The cost:** 5,056 to 5,856 triangles; each sitter builds in 0.6 to 2.3 s with the chair.
+- **The earlier chair checks are unchanged,** six sitters with nothing through any board.
+- **Pictures** (`--shots=chair-crossbow`): `builder-chair-crossbow.jpg` and `builder-chair-crossbow-side.jpg`.
+### Needs eyes
+- **The hands.** They stay on the chair's arms, a hand's length behind the crossbow. A right hand resting on the stock would read more as his weapon, but it would mean a second seated arm pose.
+- **Side to side or slanted.** OG-065's gun lies roughly across him. A slant (the butt by the right hip, the prod past the left knee) would keep the prod off the wheel, but it would sit less plainly "across the knees".
+- **Owed:** the hound sitting or lying by the chair (B4), the chair pushed (B4), and the game (after F4).
