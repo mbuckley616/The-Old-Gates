@@ -137,8 +137,31 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   check(`a coach goes through the gateway (${by.three.size.gate.w} by ${by.three.size.gate.h} m) to the stables' front across the yard: ${yards.map(c => `${c.kind}: 6 rays meet ${[...new Set(c.rays.map(r => r.part))].join(', ')} at z ${Math.min(...c.rays.map(r => r.z))} to ${Math.max(...c.rays.map(r => r.z))}`).join('; ')}`, yards.length === 2 && clear, yards.map(c => c.rays));
   check(`sizes: three storeys ${by.three.size.inn.w} by ${by.three.size.inn.d} m to a ridge of ${by.three.size.inn.ridge} m, two storeys ${by.two.size.inn.w} by ${by.two.size.inn.d} m (${by.two.size.inn.ridge} m), the merchant's house ${by.house.size.w} by ${by.house.size.d} m`, by.three.size.inn.ridge > by.two.size.inn.ridge && by.two.size.inn.w > by.three.size.inn.w && !by.house.size.yard, I.map(c => c.size));
 }
+// Session 1093: a town's keep (gatelandsKeep), three ways (o.kind tower | bawn | hall, asked of Michael): each the same twice and in budget;
+// the tower's door a door of note with the machicolation over it; the roof inside the walk, under the parapet's merlons and the gables'
+// apexes; which of the three fits the game's keep lot (14 by 11 m) as it is; and in the bawn, rays through the gateway reach the yard.
+{ const K = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./pieces.js'), out = [];
+    const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+    for (const kind of ['tower', 'bawn', 'hall']) { const a = K.gatelandsKeep({ kind }), b = K.gatelandsKeep({ kind }), u = a.userData; a.updateMatrixWorld(true);
+      const T = a.children[0], box = new THREE.Box3().setFromObject(a), tb = new THREE.Box3().setFromObject(T), slate = T.children.find(m => m.material === K.glMats().slate), rb = new THREE.Box3().setFromObject(slate);
+      const dress = T.children.filter(m => m.material === K.glMats().dress).map(m => new THREE.Box3().setFromObject(m)), dmax = Math.max(...dress.map(x => x.max.y));
+      const rays = []; if (u.size.gate) { const meshes = []; a.traverse(m => { if (m.isMesh) meshes.push(m); }); const rc = new THREE.Raycaster(), z0 = u.size.gate.z + 2;
+        for (const dx of [-.6, 0, .6]) for (const y of [1.5, 3.0]) { rc.set(new THREE.Vector3(u.size.gate.x + dx, y, z0), new THREE.Vector3(0, 0, -1)); rc.far = 60; const hit = rc.intersectObjects(meshes, false)[0]; rays.push({ dx, y, z: hit ? +(z0 - hit.distance).toFixed(2) : null, part: hit ? hit.object.parent.userData.name : null }); } }
+      out.push({ kind, tris: u.tris, calls: u.calls, same: hash(a) === hash(b), size: u.size, door: [u.towerDoor.kind, u.towerDoor.w, u.towerDoor.h], doorAt: [+u.door.x.toFixed(2), +u.door.z.toFixed(2)],
+        foot: [+(box.max.x - box.min.x).toFixed(2), +(box.max.z - box.min.z).toFixed(2)], top: +tb.max.y.toFixed(2), roof: [+rb.min.y.toFixed(2), +rb.max.y.toFixed(2), +rb.min.z.toFixed(2), +rb.max.z.toFixed(2)], merlons: +dmax.toFixed(2), rays, parts: u.parts.map(p => p.name) }); }
+    return out; });
+  const by = Object.fromEntries(K.map(c => [c.kind, c])), w = by.tower.size.walk;
+  check(`the keep three ways, each the same twice and in budget: ${K.map(c => `${c.kind} ${c.tris.toLocaleString()} triangles in ${c.calls} draws`).join(', ')}`, K.length === 3 && K.every(c => c.same && c.tris < 24000 && c.calls <= 34), K.map(c => [c.kind, c.tris, c.calls, c.same, c.parts]));
+  check(`the tower's door is a door of note: ${by.tower.door[0]} ${by.tower.door[1]} by ${by.tower.door[2]} m, on the front`, K.every(c => c.door[0] === 'plank' && c.door[1] >= 1.2 && c.door[2] >= 2.6) && by.tower.doorAt[1] > 4.25, K.map(c => [c.door, c.doorAt]));
+  check(`the roof lies inside the walk (${by.tower.roof[2]} to ${by.tower.roof[3]} m across, ${by.tower.roof[0]} to ${by.tower.roof[1]} m up; walk ${w} m), under the gables' coping and the stacks (${by.tower.merlons} m), the tower ${by.tower.top} m to its pots`,
+    K.every(c => c.roof[0] > w && c.roof[3] < c.size.tower.d / 2 - .5 && c.roof[1] < c.merlons - .5 && c.top > 19 && c.top < 22), K.map(c => [c.roof, c.merlons, c.top]));
+  const fits = K.map(c => [c.kind, c.foot[0] <= 14 && c.foot[1] <= 11]);
+  check(`on the game's keep lot of 14 by 11 m: the tower ${by.tower.foot[0]} by ${by.tower.foot[1]} m fits as it is; the bawn ${by.bawn.foot[0]} by ${by.bawn.foot[1]} m and the hall ${by.hall.foot[0]} by ${by.hall.foot[1]} m need it widened`, fits[0][1] && !fits[1][1] && !fits[2][1], K.map(c => [c.kind, c.foot]));
+  const yard = by.bawn.rays, inner = by.bawn.size.gate.z - by.bawn.size.bawn.t - 1;
+  check(`through the bawn's gateway (${by.bawn.size.gate.w} by ${by.bawn.size.gate.h} m) six rays reach the yard: they meet ${[...new Set(yard.map(r => r.part))].join(', ')} at z ${Math.min(...yard.map(r => r.z))} to ${Math.max(...yard.map(r => r.z))}`, yard.length === 6 && yard.every(r => r.z !== null && r.z < inner), yard);
+}
 await page.close();
-for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays', 'church', 'church&tower=all', 'coachinn', 'coachinn&inn=all']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays', 'church', 'church&tower=all', 'coachinn', 'coachinn&inn=all', 'keep', 'keep&keep=all']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`);
   // a page error ends the wait at once (an error in the scene's module never sets __err)
   await Promise.race([pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 }), new Promise(res => pg.on('pageerror', e => { if (!/json|JSON/.test(String(e))) res(); }))]);

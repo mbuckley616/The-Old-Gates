@@ -16,14 +16,16 @@
 // &cam=corner (default, from the south-west) | front (the south side) | west (the door) | far (from 90 m) | high.
 // ?view=coachinn (Session 1088): a town's coaching inn in its street, &inn=three (default) | two | house | all (the three in a row),
 // &cam=street (default) | gate (through the gateway into the yard) | yard (from the yard) | high.
+// ?view=keep (Session 1093): a town's keep, &keep=tower (default) | bawn | hall | all (the three in a row), the game's keep lot (14 by 11 m)
+// marked in gravel under it; &cam=street (default) | corner | door | far (from 90 m) | high.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
 import { Q, W, H, STATS, rnd, fbm, sstep, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run } from './common.js';
 // the kit itself is in pieces.js since Session 834; this file is its page
-import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan, gatelandsChurch, gatelandsCoachInn } from './pieces.js';
+import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan, gatelandsChurch, gatelandsCoachInn, gatelandsKeep } from './pieces.js';
 
-const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : Q.get('view') === 'church' ? (Q.get('tower') === 'all' ? 'high' : 'corner') : Q.get('view') === 'coachinn' ? (Q.get('inn') === 'all' ? 'high' : 'street') : 'eye'), STREET = Q.get('street') || 'gatelands-street';
+const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : Q.get('view') === 'church' ? (Q.get('tower') === 'all' ? 'high' : 'corner') : Q.get('view') === 'coachinn' ? (Q.get('inn') === 'all' ? 'high' : 'street') : Q.get('view') === 'keep' ? (Q.get('keep') === 'all' ? 'high' : 'street') : 'eye'), STREET = Q.get('street') || 'gatelands-street';
 
 
 // ═══════════════════════════════ the scenes ═══════════════════════════════
@@ -177,6 +179,19 @@ if (VIEW === 'coachinn') {
     if (!all) { const L = building(glBayPlan('townhouse', 3, { color: 'rose', paint: 'blue' })), R2 = building(glBayPlan('townhouse', 3, { color: 'sage', paint: 'red', doorX: 1 }));
       const hw = (u.size.inn ? u.size.inn.w : u.size.w) / 2, e = u.size.yard ? u.size.w - hw : hw; put(L, x - hw - L.userData.size.w / 2 - .02, -(9 - (u.size.inn ? u.size.inn.d : 9)) / 2, 0); put(R2, x + e + R2.userData.size.w / 2 + .02, -(9 - (u.size.inn ? u.size.inn.d : 9)) / 2, 0); } });
   const C = all ? [[0, 30, 72], [0, 4, -6]] : { street: [[-9, 1.7, 22], [2, 6, 0]], gate: [[12.6, 1.7, 14], [8.8, 2.5, -8]], yard: [[-4.5, 1.7, -5.2], [9, 2.2, -13.5]], high: [[-24, 28, 30], [4, 0, -8]] }[CAMQ] || [[-9, 1.7, 22], [2, 6, 0]];
+  cam.fov = all ? 50 : 58; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
+}
+if (VIEW === 'keep') {
+  // the keep on a flagged street, the game's keep lot (14 by 11 m, its front on the street) in gravel under it; a townhouse beside it for its size
+  const KQ = Q.get('keep') || 'tower', all = KQ === 'all', kinds = all ? ['tower', 'bawn', 'hall'] : [KQ], dx = 44;
+  sun.shadow.camera.left = sun.shadow.camera.bottom = -70; sun.shadow.camera.right = sun.shadow.camera.top = 70;
+  kinds.forEach((k, i) => { const x = all ? (i - 1) * dx : 0, g = gatelandsKeep({ kind: k }), u = g.userData, zf = u.size.bawn ? u.size.bawn.d / 2 : 4.25, x0 = u.size.bawn ? -u.size.bawn.w / 2 : -5.5;
+    put(g, x, 0, 0); personAt(g, .4, .6, Math.PI * .9);
+    flat(mat('plaster', { ns: 1.4, color: 0x9a9082, rough: 1 }), 14, 11, x + x0 + 7 - .2, zf - 5.5, .015, .8); /* the game's lot, 14 by 11 m, its front on the street line */
+    flat('flag', Math.max(u.size.w, 14) + 18, 5, x + x0 + Math.max(u.size.w, 14) / 2, zf + 2.5, .01, 1.3); plaques.push([x - 2, zf + 4.4, u]);
+    if (!all) { const L = building(glBayPlan('townhouse', 3, { color: 'ochre', paint: 'green' })); put(L, x + x0 - 1.6 - L.userData.size.w / 2, zf - L.userData.size.d / 2, 0); } });
+  const C = all ? [[0, 36, 82], [0, 6, -4]] : { street: [[8, 1.7, 26], [-1, 8, 0]], corner: [[-24, 2, 22], [0, 8, 0]], door: [[-5, 1.7, 11], [-2.2, 3.2, 4]], far: [[-60, 6, 70], [0, 9, 0]], high: [[-28, 30, 34], [2, 2, -2]] }[CAMQ] || [[8, 1.7, 26], [-1, 8, 0]];
+  if (!all && KQ === 'bawn' && CAMQ === 'street') { C[0] = [12, 1.7, 34]; C[1] = [-2, 6, 0]; }
   cam.fov = all ? 50 : 58; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
 }
 STATS.plans = BUILT; STATS.view = VIEW; STATS.mix = MIX;

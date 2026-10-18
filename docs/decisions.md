@@ -61,6 +61,28 @@ Pictures:
 - [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-house.jpg)
 - [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-all.jpg)
 
+### A town's keep on the new look: the tower alone, the tower in a bawn, or the tower and a hall? (look builder, Session 1096) — DECISION #416
+**Card F6: a town's keep (look builder, Session 1096).** On the new look, a Gatelands town's keep (the lord's seat, where the steward speaks for the lord) is still the old builder's box on its 14 by 11 m lot. The kit had no plan for it. It is drawn in `docs/prototypes/levelup/pieces.js` (`gatelandsKeep`), at `pieces-gatelands.html?view=keep&keep=tower|bawn|hall|all`. All three share one tower. It is the island's own lord's house, the tower house, of which Session 1052's ruin is one fallen: four storeys of rubble, 11 by 8.5 m, with walls 1.5 m thick and 13.4 m to the wall walk on a battered plinth. Its door is 1.2 by 2.6 m in dressed stone, with a machicolation over it. It has slits and small leaded lights, and the hall's paired lights on the top floor. On the walk there is a parapet of stepped merlons and two corbelled bartizans. The slate roof sits inside the walk, between gables that stand proud of it, with a stack on each, 20.4 m to the pots.
+
+How should a town's keep stand?
+- **A. The tower alone** *(recommended)*:
+  - **The lot:** it fits the game's keep lot as it is (12.5 by 10 m with its plinth and bartizans), so the town's layout, doors and ids do not move.
+  - **The look:** at 20 m it is the tallest thing in a Gatelands town but the church tower. It reads as the same kind of building as the ruined tower houses in the country.
+  - **The cost:** 16,000 triangles in 15 draws.
+- **B. The tower in its bawn:** the tower in the back corner of a walled yard 26 by 22 m. The walls are 3.6 m high, with a gateway of 3 by 3.4 m, a round flanker of 6.5 m at each front corner, a well, and a house for the household against the east wall. It is the castle of OG-070's hill towns, but the lot must grow to about 30 by 25 m (twice as wide, more than twice as deep), which moves the lots around it. The cost is 18,300 triangles in 32 draws.
+- **C. The tower and a hall:** a hall range of two storeys, 13 by 7.5 m, against the tower's east side, with the lord's hall on its first floor in three tall lights. It is a lord's house more than a fort, and the steward's door is the hall's. The lot must be 25 m wide. The cost is 20,800 triangles in 26 draws.
+
+What is unchanged: the keep's name, lord, steward and topics, and the room inside (its hall keeps its own size, as the guild halls' do).
+
+Pictures:
+- [A from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-tower.jpg)
+- [A from the corner](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-corner.jpg)
+- [A from 90 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-far.jpg)
+- [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-bawn.jpg)
+- [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-hall.jpg)
+- [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-all.jpg)
+
+
 ## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
