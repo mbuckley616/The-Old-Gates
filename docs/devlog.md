@@ -24181,3 +24181,34 @@ This session draws the pieces and the rule in a module of their own, `docs/proto
 - **The seams** are a thin plate at each seat. Where a whole course has lifted, they read as bright bars between the courses (the wall's broken top). A seam drawn only along the break's edge might read better.
 - **Floors:** the floor's slabs are boxes on a plane, so the nave's first bay shows a 0.6 m step where the slab pieces begin.
 - **Owed:** OG-126's vaults, shafts, chasm edges and railings, and the six layouts (a generator's, with the systems builder). The pieces go into the game with card F5.
+
+## v80 — Session 1098 — The gate kit's last four pieces: the vault, the shaft, the chasm's edge and the rail (backlog L10, prototype only)
+Session 1097 drew eight of OG-126's pieces and the rule of three conditions. Of the sheet's kit it left the vaulted ceilings, the shafts, the chasm edges and the railings. They are pieces like the others and do not wait on DECISION #417, which asks only what the floating stones do in the game. This session adds them to `gatekit.js`. The rule needed two small additions:
+- `still`: the vault and the shaft do not lean when cracked, since one hangs from its springers and the other is cut into the floor.
+- `fixed`: a block that never comes loose.
+
+The condition can now break a piece along z as well as x and y. A piece can name the floor its fallen stones lie on (`ground`), and `o.shadow` can turn its shadow off.
+- **vault:** a rib vault over a bay of any size (`o.w`, `o.d`, `o.rise`; 14 by 14 by 9 m by default).
+  - **Its surface:** two pointed barrels crossing, the intrados the higher of the two at every point, so a groin runs along each diagonal. It is laid in tiles 0.6 m deep on an 8 by 8 grid.
+  - **Its ribs:** a moulded rib under each groin and a wall rib on each side, with a boss at the crossing and the ring sigil under it.
+  - **Broken:** the crown's stones float up to 3.3 m over it, and what falls lies on the floor below (`ground`), not at the springing.
+  - **In the nave:** `?view=hall` now vaults its six bays from the piers' caps at 21.3 m to a crown of 33.3 m. The vaults whole, cracked and broken follow the bays under them.
+- **shaft:** a round well 6 m across and 12 m deep, in eight courses of twelve curved stones (`hexa`, a stone of eight corners), with a coped rim at the floor and script round its top course. What breaks from it drops down the shaft. Its page view cuts holes in the floor for it.
+- **edge:** a chasm's edge, three rows of floor slabs to a lip of coping, the chasm on +z. The face below is coursed 10 m down, clipped to the piece's width. Below 3.5 m the face is the chasm's own rock (`fixed`): when broken, only the lip, the slabs nearest it and the face's top courses come loose.
+- **rail:** a balustrade of 10 m, six posts with caps and five bays of four turned balusters between a plinth and a rail.
+
+### Verified (headless Chromium)
+- **`gatekit.check.mjs`: 26 of 26 pass.** The suite now runs 12 pieces in 3 conditions, and two checks are new.
+  - **Builds:** all 36 are the same twice and in budget, at 108 to 3,648 triangles in 6 draws or fewer.
+  - **Whole:** 0 of 537 stones move.
+  - **Cracked:** the wall, arch, pier, balcony and panel lean 1.59 to 2.4°, and the seven others do not. 138 stones slip and there are 424 crack lines.
+  - **Broken:** 218 stones float and 85 fall, every piece losing some but not all (the vault 75 + 27 of 125, the shaft 36 + 17 of 108, the edge 16 + 5 of 51). There are 521 seams, one for each seat left and one under each stone afloat.
+  - **Keyed by place:** 24 of 24 break another way under another key.
+  - **The new pieces:** the vault's crown floats from 9.59 to 12.87 m, and the edge loses only its lip, 21 of 51 stones.
+  - **Renders:** all 17 views render with no page errors. The vaulted nave is 36,084 triangles and the kit 42,364.
+- **Pictures:** `gatekit-vault.jpg`, `-shaft`, `-edge`, `-rail`, `-hall` (now vaulted) and `-kit` (redone).
+### Needs eyes
+- **The broken vault** is the brightest thing in the nave. Its 75 floating tiles each have their seams, and from the door the last two bays read as a violet cloud. That may be right for a catastrophic gate, but it would be the first thing to tone down.
+- **The rail** breaks along its length, so its far bays rise in a stair. A rail breaking at one bay and hanging from it might read better.
+- **The shaft's well** is dark below its rim, lit only by its script. A view from inside it is owed.
+- **Owed:** OG-126's six layouts (a linear descent, a branching labyrinth, a hub with shortcuts back, a vertical complex of shafts, a ring of loops, a cave network). They are a generator's, with the systems builder.

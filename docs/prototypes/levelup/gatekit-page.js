@@ -3,7 +3,7 @@
 // ?view=kit (default): the eight pieces in rows, whole, cracked and broken left to right, a 1.8 m figure at each;
 // ?view=piece&piece=slab|wall|arch|pier|stair|bridge|balcony|panel: one piece three ways, from the eye;
 // ?view=hall: a nave 26 m wide of six bays, its piers, arcades and floor whole in the first two bays, cracked in the next two,
-//   broken in the last two, a stair and a script panel at the far end (visual-foundation.md §2's nave, built from the kit).
+//   broken in the last two, a vault over each bay (Session 1098), a stair and a script panel at the far end (visual-foundation.md §2's nave, built from the kit).
 // &school=cloch (default) | tine | uisce | scath | solas | gaoth dresses the stone and the light.
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, mat, run } from './common.js';
@@ -23,7 +23,10 @@ function figure(x, z, ry = 0) { const g = new THREE.Group(), add = (geo, y) => {
   add(new THREE.CylinderGeometry(.17, .14, .82, 10), .41); add(new THREE.CylinderGeometry(.21, .17, .62, 10), 1.12); add(new THREE.SphereGeometry(.12, 12, 10), 1.67); add(new THREE.CylinderGeometry(.06, .06, .1, 8), 1.48);
   g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); figures.push(g); }
 const lamp = (x, y, z, c, k = 6, d = 22) => { const l = new THREE.PointLight(new THREE.Color(...c), k, d, 1.6); l.position.set(x, y, z); scene.add(l); };
-const floor = (w, d, x, z) => { const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w * .2, uv.getY(i) * d * .2);
+// the hall's floor: a plane of great slabs, or (holes: [[x, z, r]]) a shape with round holes cut through it for the shafts
+const floor = (w, d, x, z, holes) => { let g; if (holes) { const sh = new THREE.Shape(); sh.moveTo(-w / 2, -d / 2); sh.lineTo(w / 2, -d / 2); sh.lineTo(w / 2, d / 2); sh.lineTo(-w / 2, d / 2); sh.lineTo(-w / 2, -d / 2);
+    for (const [hx, hz, r] of holes) { const h = new THREE.Path(); h.absarc(hx - x, -(hz - z), r, 0, Math.PI * 2, true); sh.holes.push(h); } g = new THREE.ShapeGeometry(sh, 32); const uv = g.attributes.uv, P = g.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, (P.getX(i) + w / 2) / w, (P.getY(i) + d / 2) / d); }
+  else g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w * .2, uv.getY(i) * d * .2);
   const m = new THREE.Mesh(g, mat('slab', { ns: .8, color: new THREE.Color(...GK_SCHOOLS[SCHOOL].stone).multiplyScalar(.6), rough: .45 })); m.position.set(x, -.62, z); m.receiveShadow = true; scene.add(m); };
 const glow = c => c === 'broken' ? [.62, .30, 1.0] : GK_SCHOOLS[SCHOOL].glow;
 
@@ -32,16 +35,19 @@ if (VIEW === 'kit') { // rows of pieces, the conditions left to right
   rows.forEach((k, i) => { const zz = -i * 24; GK_CONDS.forEach((c, j) => { const x = (j - 1) * dx; put(gatePiece(k, { cond: c, school: SCHOOL }), x, zz); figure(x + 6.5, zz + 4, -.4); lamp(x, 7, zz + 8, glow(c), 5, 26); }); });
   cam.position.set(0, 70, 64); cam.lookAt(0, 0, -64);
 } else if (VIEW === 'piece') {
-  const dx = PIECE === 'bridge' ? 24 : PIECE === 'arch' ? 22 : 18; floor(120, 80, 0, -10);
-  GK_CONDS.forEach((c, j) => { const x = (j - 1) * dx; put(gatePiece(PIECE, { cond: c, school: SCHOOL }), x, 0); figure(x + (PIECE === 'pier' ? 3.6 : 4.2), 3.2, -.3); lamp(x - 3, 5, 7, glow(c), 7, 30); });
-  const hgt = { slab: 4, wall: 7, arch: 9, pier: 10, stair: 4, bridge: 5, balcony: 5, panel: 4 }[PIECE], far = { slab: 34, wall: 46, arch: 54, pier: 50, stair: 34, bridge: 56, balcony: 40, panel: 30 }[PIECE];
-  cam.position.set(4, 1.65 + (PIECE === 'slab' ? 6 : 0), far); cam.lookAt(0, hgt, 0);
+  const dx = PIECE === 'bridge' ? 24 : PIECE === 'arch' || PIECE === 'vault' ? 22 : 18;
+  /* the shaft's floor has its holes; the edge's floor stops where the piece's own begins, the chasm before it */
+  if (PIECE === 'shaft') floor(120, 80, 0, -10, [-1, 0, 1].map(j => [j * dx, 0, 4.4])); else if (PIECE === 'edge') floor(120, 44, 0, -7.5 - 22); else floor(120, 80, 0, -10);
+  GK_CONDS.forEach((c, j) => { const x = (j - 1) * dx; put(gatePiece(PIECE, { cond: c, school: SCHOOL }), x, 0); figure(x + (PIECE === 'pier' ? 3.6 : PIECE === 'shaft' ? 5.2 : 4.2), PIECE === 'edge' ? -2 : 3.2, -.3); lamp(x - 3, 5, 7, glow(c), 7, 30); });
+  const hgt = { slab: 4, wall: 7, arch: 9, pier: 10, stair: 4, bridge: 5, balcony: 5, panel: 4, vault: 5, shaft: -2, edge: -3, rail: 1 }[PIECE], far = { slab: 34, wall: 46, arch: 54, pier: 50, stair: 34, bridge: 56, balcony: 40, panel: 30, vault: 50, shaft: 36, edge: 34, rail: 26 }[PIECE];
+  cam.position.set(4, 1.65 + ({ slab: 6, shaft: 11, edge: 2, vault: 2 }[PIECE] || 0), far); cam.lookAt(0, hgt, 0);
 } else { // the nave: piers every 14 m either side of a floor 26 m wide, an arcade between them, six bays
   const bays = 6, pitch = 14, half = 13 + 2.45, cond = i => GK_CONDS[Math.floor(i / 2)]; floor(80, bays * pitch + 60, 0, -bays * pitch / 2);
   for (let i = 0; i <= bays; i++) { const z = -i * pitch, c = cond(Math.min(bays - 1, i)); for (const sx of [-1, 1]) put(gatePiece('pier', { cond: c, school: SCHOOL, key: `hall:pier:${sx}:${i}` }), sx * half, z); }
   for (let i = 0; i < bays; i++) { const z = -(i + .5) * pitch, c = cond(i);
     for (const sx of [-1, 1]) put(gatePiece('arch', { cond: c, school: SCHOOL, key: `hall:arch:${sx}:${i}` }), sx * half, z, Math.PI / 2);
     for (let a = 0; a < 3; a++) for (let b = 0; b < 2; b++) put(gatePiece('slab', { cond: c, school: SCHOOL, key: `hall:slab:${i}:${a}:${b}` }), (a - 1) * 7.5, z + (b - .5) * 7, 0, -.02);
+    put(gatePiece('vault', { cond: c, school: SCHOOL, key: `hall:vault:${i}`, w: 2 * half, d: pitch, rise: 12, ground: -21.3, shadow: false }), 0, z, 0, 21.3);
     lamp(0, 6, z, glow(c), 9, 34); }
   put(gatePiece('stair', { cond: 'broken', school: SCHOOL, key: 'hall:stair' }), 0, -bays * pitch - 4); put(gatePiece('panel', { cond: 'broken', school: SCHOOL, key: 'hall:panel' }), -6, -bays * pitch - 10);
   figure(1.2, -2, Math.PI); figure(-2.4, -30, Math.PI * .9); figure(2, -58, Math.PI * 1.1);
