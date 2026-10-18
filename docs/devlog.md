@@ -23817,3 +23817,17 @@ So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where
 ### Needs eyes
 - Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
 - `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
+
+## v80 — Session 1109 — captainguard's front band is each blow's own (QA, tests only)
+QA's run of 18 Oct 06:52 UTC read CI from 00:52. Seven runs were green and two were red, and both reds were the builders' own work. auto/backlog 66d90ed had `kitlots`, and auto/systems d7e983c had `targetof`, `trapseed`, `fistfight` and `flashshare`; `docs/qa/flaky.md` has the details. Two suites passed only on the retry: `panelfocus` on main 5521ba1, still owed, and `captainguard` on auto/quests 2df0963. That second one is main 42b44b0 plus the quest writer's docs, so the flake came after Session 1072's flank fix. It is this session's.
+
+The red check was *from the front the guard holds*: front `[1,2,2,2,2,2,2,2,2,2]` against the band `[2,3]`. The band was estimated from the open blows the run happened to roll. Its floor was the smallest open roll × 0.35 and its top the largest + 1 × 0.35, floored, and each front hit also had to be under every open roll. The starting Wooden GreatClub rolls 5 or 6 at level 1. That run's twelve open blows rolled 6 every time (plus two chained thirds of 8), so the floor was 2, and the one front swing that rolled 5 landed its floored 35% (1) under it. The game was right. The test only knew the open rolls it had sampled, not what each front blow had rolled.
+
+The suite now wraps `meleeDamageChain` for the captain's guarded calls (`shMult` < 1). It records the value the foe's stream gave that call (`e.rng`, or `Math.random` when the foe has none). It then works out the same blow at `shMult` 1 by replaying that value, so the stream is not drawn again and the fight's later rolls are not moved. Each front hit is held to its own twin: at least 1, at least the twin × 0.35 floored, at most the twin + 1 × 0.35 floored, and under the twin. That is Session 659's rule applied to the one blow instead of a range guessed from others. The rule is unchanged, and it is tighter, since a hit can no longer pass because a different blow had a lower roll. The other checks are unchanged: ten swings, the mean ratio 0.15–0.45 and the flank.
+
+### Verified (headless Chromium)
+- `node tests/run.mjs captainguard --no-retry`: 3 of 3 green in the old look and 3 of 3 in the new (`--look=new`), side by side. The front hits and their twins were, for example, `[1,1,2,1,2,2,1,1,2,2]` / `[5,5,6,5,6,8,5,5,6,6]`. A chained third also lands on the front (twin 8, hit 2) and passes the same rule.
+- Not run against the failing roll itself: that needs a run whose open blows all roll 6 with a front 5 among them, about 1 run in 10. Under the new check, the CI run's front `[1,…]` with a twin of 5 is inside its own band [1, 2].
+
+### Needs eyes
+- Nothing to play. `panelfocus` (FLAKY on main 5521ba1, shard 2) and `kitlots` (the look builder's suite, red on 2 of its 4 runs) are the next flaky items. `ragdoll`, `locksight` and the shared stepped-loop helper are still owed.
