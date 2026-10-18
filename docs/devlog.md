@@ -25503,7 +25503,7 @@ Why the two suites were red:
   - The six Gatelands churches are the kit's, with three bays.
 - **`townbarrels`: all pass,** the four re-pinned hashes and Droichead's unchanged one among them.
 - **`kit`'s street check:** 78 draws added (298 to 376), 27,774 triangles. `kitinn` and `kitlots` ran in the same pass.
-- **Also run:** `kittown`, `churchname`, `churchnames`, `housebuy` and `townroads` (results in the PR comment).
+- **Also run, all passing:** `kittown`, `churchname`, `churchnames`, `housebuy` and `townroads`.
 - **Not run here:** the other suites that read the towns. CI runs them.
 ### Needs eyes
 - **The towns are new.** Every town, port and city has moved round its church. Dunmore and Cœur de Vie are the first to walk.
