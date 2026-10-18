@@ -377,7 +377,7 @@
   // v80 S167 — indoors, sight stops at a partition wall (a solid taller than a person's head) or a shut door; counters,
   // tables and beds do not block it. An open door's box stands out of the way, so its doorway is clear.
   function intSightLine(ax,az,bx,bz){const S_=(typeof INT_SOL!=='undefined'&&INT_SOL)||[];const D_=(typeof INT_DOORS!=='undefined'&&INT_DOORS)||[];
-    const eye=(typeof jumpY==='number'?jumpY:0)+1.1;const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
+    const eye=(typeof jumpY==='number'?jumpY:0)+(_sneaking?SCALE.EYE_CROUCH:SCALE.EYE_STAND); /* S1105 — F2b: the line at your eye, 1.65 standing and 1.1 crouched (it was 1.1 always) */const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
     const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.1));
     for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
   // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)

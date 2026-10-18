@@ -4,6 +4,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### Indoors, does a counter hide you when you crouch behind it? (systems builder, Session 1105) — DECISION #420
+**The question.** F2b's build sheet (`docs/design/scale-numbers-build.md`, *Movement*) puts the indoor sight line at your eye, 1.6 standing and 1.1 crouched, and gives the reason *a counter (0.95) hides you only crouched*. Session 1105 built the eye. But a counter's top (0.95) is under both eyes, and the sight line has only ever been blocked by walls (solids 1.8 m tall or more) and shut doors, so no counter hides you in either posture, before or after. Making a counter hide a crouched player is a new rule of what hides you indoors (a shopkeeper's or a sleeper's witness, a room's foe).
+
+**Options.**
+- **A (recommended).** Crouched, a solid at least counter height (0.9 m) hides you when you are within 1 m of it on the far side from the watcher: a counter, a chest, a bed's foot, a barrel. Standing, only walls and doors hide you, as now. One check in `intSightLine`; `sightline` measures it.
+- **B.** Leave the rule as it stands: only walls and shut doors hide you, at either eye. The sheet's counter line is dropped.
+- **C.** Crouched, any solid taller than half the crouched eye (0.55) between you and the watcher hides you, wherever it stands in the line. Simpler, but a low table across the room would hide you from a guard at the door.
+
+The systems builder will build whichever is chosen; nothing waits on it but the sheet's one line.
+
 ### The Mark's cliff fort: does it go down into the cliff? (look builder, Session 1053) — DECISION #402
 **F8: the Mark's cliff fort (look builder, Session 1053).** OG-121's Mark panel asks for "mountain mines, ice caverns, cliff forts and snowed-in entrances", and this is the cliff fort. It is a prototype in `docs/prototypes/levelup/places.js` (`markCliffFort`), at `places.html?place=clifffort`.
 - **The headland:** 40 m across and 50 m out over the fjord, its cliffs falling 32 m to the sea, so the cliffs are its walls.

@@ -25214,3 +25214,28 @@ builder's sessions. All four are the game doing what its session said, measured 
 ### Needs eyes
 - **A Highwayman at a shrine's altar.** Shrines are not kept clear of the chunk spawn, which was true before S1059 too; it shows more
   now that the Foothills' tier-2 kinds stand from level 1. If a shrine should be a safe pad, that is a rule of play and Michael's.
+
+## v80 — Session 1105 — F2b, session 2, part 4: the indoor sight line at your eye
+The last of the sheet's *The body in the world* rows. `intSightLine` (`86-world-crime.js`) is the line a room's witnesses (the
+keeper, a sleeper, the people of `INT_NPCS`) and a room's foe (`canSeePlayer` indoors) see you along. It ran at 1.1 over your floor
+whatever your posture. It now runs at your eye: `SCALE.EYE_STAND` (1.65) standing and `SCALE.EYE_CROUCH` (1.1) crouched, over
+`jumpY`, so it rides an upper floor as before. The sheet says 1.6; F2a set the standing eye at 1.65, and the line reads the eye the
+camera uses. What blocks it is unchanged: a solid that spans the eye and is 1.8 tall or more, or a shut door.
+
+**The counter.** The sheet's reason for the row is *a counter (0.95) hides you only crouched*. That does not follow from the eye: a
+counter's top is under both eyes, and the blocker rule has never counted a solid under 1.8. So the counter hides you in neither posture,
+before and after this session. Making it hide a crouched player is a new rule of what hides you, so it is DECISION #420 (A: crouched
+within 1 m behind anything counter-high; B: walls and doors only, as now; C: anything over 0.55 anywhere in the line), and the suite
+pins today's rule until it is answered.
+
+In play the change bites only where a solid spans 1.1 to 1.65 without reaching the floor (a high shelf, a gallery's edge, a beam): standing,
+it hides you; crouched, you see under it and are seen. Floor-to-ceiling walls and doors hide you in both, as they did.
+### Verified (headless Chromium)
+- **`sightline`** (new), 7/7, in a Dunmore inn: 381 open pairs 2.5 m apart on its floor are seen in both postures; the line across each
+  of its 2 ground-floor walls is blocked in both; a solid from 1.3 to 3.2 set between two open points hides you standing and not
+  crouched, and the same 2 m up (an upper floor's 3.3 to 5.2, `jumpY` 2); a wall from the floor hides you in both; a counter (0 to
+  0.95) in neither. On the old line (the change stashed) the two high-solid checks fail, standing seen (`st: true`).
+- **Neighbours pass:** `witness` (2), `witnessrange`, `keepercone`, `sleeperreach`, `locksight`, `shopsight`.
+### Needs eyes
+- Nothing visible changes in most rooms: their walls run floor to ceiling. The bite is under high shelving and galleries, if any room has them.
+- **Owed:** F2b session 3, the dungeon's cell at 3 m (Michael's C on #300), and #420.
