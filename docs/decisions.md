@@ -10,6 +10,30 @@ Asked under the draft *The Great Gates, V — what was bound: Act III, reconcile
 - **B. Every save ends.** Every slot, every character, and the carry: the title screen as if the game had never been opened. The precedents are NieR: Automata's ending E, where the player is asked to give up their save and it is deleted, and Doki Doki Literature Club's deleted character file. Costs: it takes slots the player never staked; an exported file outside the browser survives it, so it is never quite total; §11's new seed and *The Last Entry* go; the warning at the knot has to say so plainly.
 - **C. This slot ends, both rows; other slots stay.** The character dies with the world: no new seed, no carried item, no list. Total for what was staked, and nothing more.
 On every answer the sixth cut asks once first: *This is the last of them. Cut it, and there is no coming back to this world.* The draft is written for A; only its ending screen's lines and the save action change under B or C.
+### The Gatelands' townhouses on the new look: how deep? (look builder, Session 1074) — DECISION #408
+The Gatelands' towns are now built from the kit on the new look (Sessions 1071 to 1074, #396 C). Their lots were widened to whole bays (6.45 to 10.35 m), but they kept the generator's depths of 4 to 6 m. A townhouse is three storeys and was drawn 9 m deep, so at 4 to 6 m it reads tall and thin from the side, as in the picture's nearer houses. The row behind leaves room: a town's rows are 10.7 m apart.
+
+How deep should a town's houses be?
+- **A. As now: the lot's depth, 4 to 6 m.** Nothing moves. The houses are shallow, with small rooms front to back.
+- **B. Townhouses and merchants' houses 8 m deep where the row behind allows, else as deep as fits** (recommended). The front stays on the street line and the house grows back into its yard. The ids, doors and residents stay as they are. The rooms inside are deeper, and cottages keep their 4 to 6 m.
+- **C. The kit's full 9 m.** Lots that cannot take it keep their depth, so a street mixes 9 m and 4 to 6 m houses.
+
+Picture (Dunmore on the new look, at noon): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-town-ingame.png
+
+## Answered
+### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
+The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
+- **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.
+- **The kit's houses** were drawn at true size: a cottage is 9.6 by 5.4 m, a townhouse 6.4 by 9 m, a merchant's house 8.4 by 9 m and a farmhouse 10.5 by 6.2 m. That is 1.7 to 2.5 times a lot's floor.
+
+How should a town's lots and the kit's houses meet?
+- **A. The lots take the house's size on the new look** (recommended). The generator picks the plan first (a cottage in a village, a townhouse or a merchant's house in a town, by `PKIT.gl.lot`) and gives the lot that plan's width and depth. The door, the solids, the footpath and the resident's place follow from the lot as they do today. A town's pad holds fewer houses, so about a third fewer residents, unless the pad grows. The old look keeps today's layout until F14 retires it. The houses stay as drawn and checked: people are the measure.
+- **B. The houses take the lot's size.** The plans gain a width and depth and lay their windows out by bays: a 6 by 5 m lot is a two-bay cottage. Both looks keep the same layout and the same people. The houses are smaller than drawn, and every plan's openings have to be redone and rechecked in the prototype first, which is about a session per plan.
+- **C. Both:** the plans laid out by bays (as B), and the lots widened to whole bays (5 to 7 m becomes 6 to 10). This is the most work, and the layout changes in both looks.
+
+The picture is the kit's street standing in the game: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-street-ingame.png
+
+Michael: **C, both: plans by bays, lots widened to whole bays** (17 Oct 2026, on #396). Session 1063 laid the cottage, farmhouse, townhouse and merchant's house out by bays in the prototype (`glBayPlan`, `glBaysFor`; `pieces-gatelands.html?view=bays`), and Session 1064 copied them into the game's kit (`PKIT.gl.bayPlan`). The generator's lots, widened to whole bays on the new look, are the next session.
 
 ### The Mark's cliff fort: does it go down into the cliff? (look builder, Session 1053) — DECISION #402
 **F8: the Mark's cliff fort (look builder, Session 1053).** OG-121's Mark panel asks for "mountain mines, ice caverns, cliff forts and snowed-in entrances", and this is the cliff fort. It is a prototype in `docs/prototypes/levelup/places.js` (`markCliffFort`), at `places.html?place=clifffort`.
@@ -34,6 +58,8 @@ Pictures:
 - [by the beacon](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-beacon.jpg)
 - [the cliffs from the sea](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-cliff.jpg)
 - [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-clifffort-far.jpg)
+
+Michael: **B, a sea-stair down to a sea cave** (17 Oct 2026, on #402). Built in Session 1062 (prototype): a cut and a door behind the hall, nine flights in the west cliff lit by 15 slits through the face, and a sea cave with a quay and a boat, its mouth an arch in the cliff at the water. `places.html?place=clifffort&view=cut|stair|foot|cave|mouth`.
 
 ### The Gatelands' ruined tower house: the ways in and up (look builder, Session 1052) — DECISION #401
 **F8: the Gatelands' ruined tower house, taken by a band (look builder, Session 1052).** OG-121's card asks for "collapsed keeps with lower levels, some taken by bandits", and its lairs for "escape routes". This is the last of its six kinds. It is a prototype in `docs/prototypes/levelup/places.js` (`gatelandsTowerHouse`), at `places.html?place=towerhouse`.
@@ -61,10 +87,7 @@ Pictures:
 - [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-far.jpg)
 - [the hall, empty](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-towerhouse-hall-empty.jpg)
 
-### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
-The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
-- **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.
-- **The kit's houses** were drawn at true size: a cottage is 9.6 by 5.4 m, a townhouse 6.4 by 9 m, a merchant's house 8.4 by 9 m and a farmhouse 10.5 by 6.2 m. That is 1.7 to 2.5 times a lot's floor.
+Michael: **A, as drawn: the gate or the hidden pit, no way up** (17 Oct 2026, on #401). Nothing to change; the tower house stands as Session 1052 built it (closed in Session 1062).
 
 How should a town's lots and the kit's houses meet?
 - **A. The lots take the house's size on the new look** (recommended). The generator picks the plan first (a cottage in a village, a townhouse or a merchant's house in a town, by `PKIT.gl.lot`) and gives the lot that plan's width and depth. The door, the solids, the footpath and the resident's place follow from the lot as they do today. A town's pad holds fewer houses, so about a third fewer residents, unless the pad grows. The old look keeps today's layout until F14 retires it. The houses stay as drawn and checked: people are the measure.

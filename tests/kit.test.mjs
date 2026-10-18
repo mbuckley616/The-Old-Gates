@@ -35,6 +35,19 @@ const more = await page.evaluate(() => { const P = PKIT.gl.PLANS, out = {};
 check('the forge, the temple and both guild halls build, each with a door to stand at', Object.values(more.out).every(v => v.tris > 1000 && v.calls <= 16 && v.door), more.out);
 check('the kit\'s door is 2.05 m, as the game\'s (07-scale.js)', more.door.h === 2.05 && Math.abs(more.game - 2.05) < 1e-6, { kit: more.door, game: more.game });
 
+// the plans by bays (Session 1064; Michael's C on #396), copied from pieces.js's Session 1063: each plan on each count of bays it takes
+// is that many bays and its ends wide and builds to the prototype's triangles (pieces.check.mjs's numbers); baysFor fits a lot of 6 to
+// 10 m with the most whole bays; a lot given bays and a depth builds them, and one without is as drawn
+const BAYTRIS = { cottage: [1230, 1556, 1826], farmhouse: [1744, 2144], townhouse: [4443, 5033, 5631, 6221], merchant: [4018, 4426, 4846] };
+const bays = await page.evaluate(T => { const G = PKIT.gl, out = [];
+  for (const kind in T) { const B = G.BAYS[kind]; for (let n = B.min; n <= B.max; n++) { const P = Object.assign(G.bayPlan(kind, n, {}), { r: PKIT.stream('bays') }), b = G.building(P);
+    out.push({ kind, n, w: b.userData.size.w, want: +(n * B.bay + 2 * B.end).toFixed(3), tris: b.userData.tris, rec: T[kind][n - B.min] }); b.traverse(m => m.geometry && m.geometry.dispose()); } }
+  const fit = []; for (const kind in T) for (let L = 6; L <= 10.001; L += .25) { const n = G.baysFor(kind, L), B = G.BAYS[kind]; if (!((G.bayWidth(kind, n) <= L + 1e-6 || n === B.min) && (n === B.max || G.bayWidth(kind, n + 1) > L + 1e-6))) fit.push([kind, L, n]); }
+  const lot = G.lot('bays', 3, { kind: 'townhouse', bays: 4, d: 8 }).plan, lot0 = G.lot('bays', 3, { kind: 'townhouse' }).plan;
+  return { out, fit, lot: [lot.w, lot.d, lot.bays], lot0: [lot0.w, lot0.d, lot0.bays ?? null] }; }, BAYTRIS);
+check(`the plans by bays: ${bays.out.length} plans, each its bays and ends wide (${bays.out.map(x => x.kind[0] + x.n + ' ' + x.w).join(', ')}) and the prototype's triangles`, bays.out.every(x => Math.abs(x.w - x.want) < .01 && x.tris === x.rec), bays.out.filter(x => Math.abs(x.w - x.want) >= .01 || x.tris !== x.rec));
+check(`baysFor fits lots of 6 to 10 m with the most whole bays; a townhouse lot of 4 bays and 8 m is ${bays.lot[0]} by ${bays.lot[1]} m, one without bays ${bays.lot0[0]} by ${bays.lot0[1]} m as drawn`, !bays.fit.length && bays.lot.join() === '8.4,8,4' && bays.lot0[0] === 6.4 && bays.lot0[2] === null, bays);
+
 // a lot is the same twice from its street and index (the co-op rule), lit windows and all; no two neighbours share a colour
 const lots = await page.evaluate(() => { const hash = b => { let h = 0; b.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
   const keys = b => b.children.map(m => m.material.uuid ? (m.material.emissiveIntensity > 0 ? 'lit' : '') + m.geometry.attributes.position.count : '').join();
