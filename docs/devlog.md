@@ -24761,3 +24761,41 @@ OG-125's sheet lists a whale skeleton among the deep water's finds, and Session 
 - **The skull is the weakest part:** spheres and a tapered plate read as a whale's skull from the front, but not as the broad, arched plate of a rorqual's rostrum seen from above.
 - **Light at 31 m:** the page lights every depth as it lights the shallows. At 31 m the light would be dimmer and bluer, which is #419's question again, by depth as well as by island.
 - **Owed:** OG-125's lit gate structures (Uisce, with card F5) and the Abyss (the Root).
+
+## v80 — Session 1119 — Ruins at the scale of cliffs: the Weavers' ring of broken arches (backlog L5, OG-104, prototype only)
+OG-104 draws sixteen of the Weavers' old works at the size of cliffs, with people as specks beside them, and none was built. This session builds its first, "a vast stone circle of broken arches on a coast", as `weaverRing` in a new module, `docs/prototypes/levelup/ruins.js`, at `places.html?place=ring&view=ring|arch|heart|far` (`places-ring-view.js`). It is in a module of its own because `places.js` holds 3,650 lines of places that are not gates, and OG-104's sixteen are a family of their own. The sheet's name for it is the generator's; the builders are the Weavers, never a lost empire, as the catalogue's row notes.
+- **The kit's stone:** the ring is built from the gate kit's own pointed arch (`gatekit.js`), so a ruin and a gate are one stone.
+- **`ruin`, new in the kit:** out in the world the loom holds nothing up, so `gatePiece` takes a new `ruin` option.
+  - **Under 'broken':** every loose stone falls instead of floating, no violet seam burns, and the script is dead on every stone.
+  - **Under 'cracked':** the script is dead.
+  - **What it leaves alone:** the kit's three conditions are untouched without it (`gatekit.check.mjs` 25 of 25 as before).
+- **The arches:** at 2.2 times the kit's size each opening is 22 m wide and 39.6 m to its point. Each arch stands 44 m, its stones 3.3 m courses, and twelve bays stand on a circle 124 m across on the level crown of a headland, each face to the heart.
+- **Their conditions:** a stream keyed by the ring makes four 'cracked' (standing, leaning 1.5 to 3°, slipped stones and cracks) and seven 'broken' as ruins (above a ragged line about half way up, 19 to 22 stones each lie fallen on the turf, inward or out).
+- **The bay to the sea:** gone to the lowest courses of its jambs, with 16 blocks spilled toward the cliff's edge.
+- **The site:** the cliff falls 30 m to the sea 40 m past the ring's seaward edge, and the turf rolls beyond the crown.
+- **The heart:** a dais of three round steps of 0.9 m, 22 m across, with the ring sigil of OG-037 cut dead in its middle stone.
+- **The scale:** a plain grey post 1.75 m high at the foot of the standing arch that takes the sun. It stands in for a person until the bodies builder's pack stands there, and is not drawn as one.
+- **The cost:** the arches are merged by material across the ring, 15 draws in all.
+- **Fixes on the way:**
+  - **The dais:** the kit's `slab` is the gates' dark polished floor and read as a black ring under the sky. The steps are the arches' own stone now.
+  - **The arch view:** the first camera stood 16 m from a 44 m arch and saw only its soffit. It stands 36 m in now, with the post at the arch's foot in frame.
+  - **The sun:** the first sun was on the sea side, which left every inland view backlit.
+- **Asked:** its size against the sheet's specks, and whether anything of it still burns (the canon's), as **DECISION #429**: A as drawn (recommended), B larger (60 m arches), C the standing arches keep a faint amber line.
+
+### Verified (headless Chromium)
+- **`ruins.check.mjs` (new): 13 of 13 pass.**
+  - **Builds:** the same twice and in budget, at 64,088 triangles in 15 draws.
+  - **The arches:** eleven on the circle at 62.00 m from the heart. Four stand 44.2 to 44.4 m to their points and seven are broken to 22.2 to 27.2 m.
+  - **A ruin, not a gate:** no stone floats in any bay and no seam burns. The broken bays' stones lie fallen (19 to 22 each), and there is no script, ring or seam mesh at all.
+  - **Nothing sunk:** no stone lies deeper under the turf than its footing (the least is 0.51 m).
+  - **The seaward bay:** its 4 footings and 16 spilled stones, the nearest 6.8 m from the cliff's edge and none over it.
+  - **The cliff:** the turf at the edge stands 29.1 to 30.5 m over the sea.
+  - **The scale:** the opening is 22.6 times the 1.75 m post at a standing arch's foot.
+  - **The views:** all five render without page errors.
+- **`gatekit.check.mjs`: 25 of 25 pass.** `ruin` changes nothing without it.
+- **Pictures:** `places-ring-ring.jpg` (from the turf inland), `-arch` (a standing arch with the post at its foot), `-heart` (from the dais, the sigil in the foreground) and `-far` (from over the sea, the headland and the cliff).
+### Needs eyes
+- **The fallen stones are too regular:** each lies whole, a clean block 3 to 5 m on a side, heaped where it fell. A ruin of this age would have them broken, sunk into the turf and grown over. A pass on the spill (split blocks, a lean into the ground, turf over the low ones) would read older.
+- **The stone is bare:** OG-104 draws lichen and grass on the ledges, and the kit's ashlar is clean. A weathering dress on the kit (lichen on the up faces, the gates' own `encrust` rule) would serve every ruin of OG-104.
+- **The turf is one flat colour,** and the headland has no rocks, gorse or path to the ring. Card F3's land would dress it in the game.
+- **Owed:** OG-104's other fifteen sites, among them the half-sunk towers (begun under the sea, Session 1104's round tower), the Bone Wastes (a titanic creature's ribs as walkways, which this run's whale fall rehearses at a smaller size) and the Scarred Gate (card F5).

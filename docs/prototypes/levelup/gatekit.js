@@ -13,7 +13,9 @@
 // 'bridge' (a span of 16 m on one arch, its deck and parapet), 'balcony' (a gallery on corbels with its rail), 'panel' (a script
 // panel 3 by 6 m in a frame), 'vault' (a rib vault over a bay, o.w by o.d), 'shaft' (a round well 6 m across and 12 m deep),
 // 'edge' (a chasm's edge, its lip and the face below), 'rail' (a balustrade of 10 m). o.school dresses the stone and the script's light (GK_SCHOOLS, the six from gates.js's table).
-// gatePiece(kind, { cond, school, key }) -> a Group, one mesh a material; userData { kind, cond, school, tris, calls, blocks, moved,
+// o.ruin (Session 1119, OG-104's ruins at the scale of cliffs): a ruin out in the world, where the loom holds nothing up: under 'broken'
+// every loose stone falls and none floats, no seam burns, and the script is dead on every stone; under 'cracked' the script is dead.
+// gatePiece(kind, { cond, school, key, ruin }) -> a Group, one mesh a material; userData { kind, cond, school, tris, calls, blocks, moved,
 //   floating, fallen, seams, cracks, lean, size: { w, h, d }, key }. Everything that varies comes from a stream keyed by the
 //   piece's key and its condition, so a piece is the same twice and the same piece breaks the same way in every world.
 import * as THREE from 'three';
@@ -207,7 +209,7 @@ function condition(P, cond, key) {
     if (cond === 'cracked' && r() < .25) { const t = new THREE.Matrix4().makeTranslation(b.c.x, b.c.y, b.c.z).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((r() - .5) * .03, (r() - .5) * .03, (r() - .5) * .03))).multiply(new THREE.Matrix4().makeTranslation(-b.c.x, -b.c.y, -b.c.z));
       M.premultiply(t).premultiply(new THREE.Matrix4().makeTranslation((r() - .5) * .06, -r() * .08, (r() - .5) * .06)); kind = 'slipped'; st.moved++; }
     if (cond === 'broken' && !b.fixed && f + rag(b) > cut) { const t = (f - cut) / Math.max(.05, 1 - cut), h = b.hi - b.lo;
-      if (r() < .72) { // float: lifted and turned about its own centre, drifted out; its seat burns
+      if (!P.ruin && r() < .72) { // float: lifted and turned about its own centre, drifted out; its seat burns
         const lift = .5 + t * 2.6 + r() * .6, rot = new THREE.Euler((r() - .5) * .5 * (.4 + t), (r() - .5) * .4, (r() - .5) * .5 * (.4 + t));
         M.premultiply(new THREE.Matrix4().makeTranslation(-b.c.x, -b.c.y, -b.c.z)).premultiply(new THREE.Matrix4().makeRotationFromEuler(rot)).premultiply(new THREE.Matrix4().makeTranslation(b.c.x + (r() - .5) * .8, b.c.y + lift, b.c.z + (r() - .5) * 1.2));
         kind = 'floating'; st.floating++; seat = true; }
@@ -220,9 +222,9 @@ function condition(P, cond, key) {
       st.moved++; }
     // the lean applies to all that still stands on the piece (and to the seats of what has left it)
     const ML = kind === 'fallen' ? M : M.clone().premultiply(L);
-    for (const p of b.parts) { const g = p.geo.clone().applyMatrix4(ML); out.push({ key: (p.key === 'script' || p.key === 'ring') && kind === 'fallen' ? 'dead' : p.key === 'script' && cond === 'cracked' && r() < .33 ? 'dead' : p.key, geo: g }); }
+    for (const p of b.parts) { const g = p.geo.clone().applyMatrix4(ML); out.push({ key: (p.key === 'script' || p.key === 'ring') && (kind === 'fallen' || P.ruin) ? 'dead' : p.key === 'script' && cond === 'cracked' && r() < .33 ? 'dead' : p.key, geo: g }); }
     if (cond === 'cracked' && b.parts[0].key !== 'dress' && r() < .3) for (const g of crack(r, b)) { out.push({ key: 'crack', geo: g.applyMatrix4(ML) }); st.cracks++; }
-    if (seat) { // the seat it left: a thin violet plate on what it stood on, and one under the stone if it floats
+    if (seat && !P.ruin) { // the seat it left: a thin violet plate on what it stood on, and one under the stone if it floats
       const bb = b.box, w = bb.max.x - bb.min.x - .08, d = bb.max.z - bb.min.z - .08, g = new THREE.BoxGeometry(Math.max(.05, w), .05, Math.max(.05, d)); g.translate(b.c.x, b.flat ? bb.min.y + .03 : bb.min.y + .03, b.c.z); out.push({ key: 'seam', geo: g.applyMatrix4(L) }); st.seams++;
       if (kind === 'floating') { const u = new THREE.BoxGeometry(Math.max(.05, w), .05, Math.max(.05, d)); u.translate(b.c.x, bb.min.y - .03, b.c.z); out.push({ key: 'seam', geo: u.applyMatrix4(M) }); st.seams++; } } }
   return { parts: out, st };
@@ -230,7 +232,7 @@ function condition(P, cond, key) {
 
 export function gatePiece(kind, o = {}) {
   const cond = GK_CONDS.includes(o.cond) ? o.cond : 'whole', school = GK_SCHOOLS[o.school] ? o.school : 'cloch', key = o.key || `gatekit:${kind}`;
-  const P = BUILD[kind](o), { parts, st } = condition(P, cond, key), M = gkMats(school, cond), by = {};
+  const P = BUILD[kind](o); P.ruin = !!o.ruin; const { parts, st } = condition(P, cond, key), M = gkMats(school, cond), by = {};
   for (const p of parts) { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
     if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); (by[p.key] ||= []).push(g); }
   const G = new THREE.Group(); let tris = 0, calls = 0;

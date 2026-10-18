@@ -159,6 +159,25 @@ Pictures:
 
 
 ## Answered
+### The Weavers' ring of broken arches: its size, and does its script still burn? (look builder, Session 1119) — DECISION #429
+OG-104's first ruin at the scale of cliffs is built in the prototype (Session 1119): the Weavers' ring of broken arches on a coast, `places.html?place=ring`. It is twelve bays on the crown of a headland, 124 m across, with its open side to the sea and a 30 m cliff 40 m past it.
+- **The arches:** each is the gate kit's own pointed arch at 2.2 times its size. The opening is 22 m wide and 39.6 m to its point, the arch stands 44 m, and its stones are 3.3 m courses.
+- **Their state:** four stand, leaning a little. Seven are broken about half way up, their stones fallen on the turf. The bay to the sea is gone to its footings, with a spill of blocks toward the cliff.
+- **The heart:** a dais of three steps with the ring sigil cut in it.
+- **The script:** as drawn, it is dead on every stone. Nothing floats and nothing glows: out in the world the loom holds nothing up.
+
+Two things are yours: its size against the sheet's "people as specks", and whether anything of it still burns, which is the canon's.
+
+- **A. As drawn: arches of 44 m, the script dead** (recommended). It is already 25 times a person, the size of the gate halls (§2) grown by half again. A dead ring keeps the gates the only places where the script burns.
+- **B. Larger: arches of 60 m (3 times the kit) in a ring 170 m across.** This is closer to the sheet's specks, but each fallen stone is a 6 m block and the ring fills a headland.
+- **C. As drawn, but the four standing arches keep a faint amber line of script.** A ring that is half asleep. What that means is the quest writer's.
+
+Pictures:
+- From the turf inland: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-ring.jpg
+- A standing arch, with a 1.75 m post at its foot for scale: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-arch.jpg
+- From the dais at its heart: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-heart.jpg
+- From over the sea: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-far.jpg
+
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
 - **The generator's lots** are 5 to 7 m wide and 4 to 6 m deep.
