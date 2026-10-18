@@ -25359,4 +25359,4 @@ spawn rule is a system's, and the line touched nothing anyone sees but where foe
   `tierlevelfree` and `tierloot`.
 ### Needs eyes
 - Ground near the late-built places (shrines, glades, spires, the outer sites of a busy cell) is emptier of foes now, by as much as it
-  was meant to be. Chunks loaded in another order were already clear, so the world does not change from one load to the next as before.
+  was meant to be. Before, whether a chunk by such a place held foes depended on the order the cells loaded in; now it does not.
