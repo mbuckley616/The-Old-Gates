@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z
+Calls read to: 2026-10-16T17:51:09.360Z (run 21, 18 Oct: no new calls)
 
 ---
 
@@ -503,7 +503,7 @@ The Compact's ninth *after* line (grep `Cold-eyes always find their own`) reads:
 
 ## The Spire Held — a night on the roof at Caer Slige
 
-*Approved by Michael, 14 Oct 2026.* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
+*Approved by Michael, 14 Oct 2026.* *Waits on the systems builder's night watch on the spire's roof (backlog A, 18 Oct); the words are built once it lands.* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
 
 ### What the canon fixes, and where it is silent
 
@@ -675,7 +675,7 @@ Topics:
 
 ## Back to Their Bread — the open ending's three descriptions
 
-*Approved by Michael, 14 Oct 2026.* *Drafted 2 Oct 2026. Backlog A, consequence hooks: "someone says one of the three descriptions to you and goes back to their bread" in the open ending. Canon §11, the third path: "once in a long while someone says one of the three descriptions to the player and goes back to their bread; Varek is seen, at a distance, at fields." The build already ends that way (`ending('open')` sets `worldState.knowing`, saved and loaded since Session 242), and the ending screen promises it: "Once in a long while, someone will say one of the three descriptions to you, and go back to their bread." Nothing reads `knowing` yet. This draft is what reads it.*
+*Approved by Michael, 14 Oct 2026.* *Built, Session 1030; on main 17 Oct.* *Drafted 2 Oct 2026. Backlog A, consequence hooks: "someone says one of the three descriptions to you and goes back to their bread" in the open ending. Canon §11, the third path: "once in a long while someone says one of the three descriptions to the player and goes back to their bread; Varek is seen, at a distance, at fields." The build already ends that way (`ending('open')` sets `worldState.knowing`, saved and loaded since Session 242), and the ending screen promises it: "Once in a long while, someone will say one of the three descriptions to you, and go back to their bread." Nothing reads `knowing` yet. This draft is what reads it.*
 
 ### What the canon fixes, and where it is silent
 
@@ -753,7 +753,7 @@ The second line is the whole of it. He is seen; he is not spoken to. The open en
 
 ## What the Stones Say — the sigil-lore books in the guilds
 
-*Approved by Michael, 14 Oct 2026.* *Drafted 3 Oct 2026. Backlog A, Lore objects: the sigil-lore books in the guilds (the other half of the line *The Seventh Niche* took).*
+*Approved by Michael, 14 Oct 2026.* *Built in part, Session 1092 (18 Oct), on auto/quests-build: the treatise sold by the Mages' Guild head (the follow reads* Is it written down? (Buy On the Seals, 40 gold)*), the sheet given once by the Fighters' Guild head, the glossary as a rare library roll, every line word for word. The glossary's shelf copy waits on a shelf pick-up (backlog A, systems).* *Drafted 3 Oct 2026. Backlog A, Lore objects: the sigil-lore books in the guilds (the other half of the line *The Seventh Niche* took).*
 
 ### What the canon fixes, and where it is silent
 
@@ -3810,3 +3810,165 @@ Nobody in the towns talks about him in these beats. The talk of piece I goes on 
 - *Piece II*: he cannot pass a great gate's door, so he stands in one. The only time he stands where the player is going is the one place he can.
 - *No chosen one*: *You're stronger than anything I could have made* is said of what the player became, not of what they were meant for.
 - *The register*: Varek is Old Blood raised a Gatelander. He talks in his own voice as Part I sets it, plainly, with no proverb and no oath. The towns' talk is piece I's and is not changed.
+
+---
+
+## The Great Gates, V — what was bound: Act III, reconciled
+
+*Unapproved. Drafted 18 Oct 2026.* The last piece of backlog A's *The six great gates: what clearing one means*. Piece I wrote the act at the ring, piece II the knife and the needle, piece III each gate's gift and toll (all three approved, 14 and 16 Oct), and piece IV Varek's two arcs (17 Oct, unapproved). This piece does what canon §9a leaves to the quest writer: it reconciles the Act III outline with the six knots. It says which act ends the world, which saves it, and which leaves it open. It places the Root, the fifth discovery and the final monologue, and rewrites the build's Ashfeld and Root lines that the knots now overrule. What six torn leaves behind is Michael's call, and it is asked as **DECISION #413** (below). This draft is written for A, the recommendation. Only §5's screen and §8's code change under B or C.
+
+### What the canon fixes, and where it is silent
+
+- **§9a (Michael, 13 Oct).** Each great gate is sealed or torn, and any choice can be undone until all six match. Six sealed lock together and protect the world indefinitely. Six torn collapse reality. Until then the world lives with whatever mix the player has left. Varek's last stand comes at whichever gate would make the sixth match. So **the knots decide the ending, and nothing else does.** The build's Root, where three rows (*Break it*, *Seal it*, *Leave it open*) end the game, is overruled on two of its three rows.
+- **§11's three endings** map onto the knots plainly. *Help him — unbind* is six torn. *Stop him — reseal* is six sealed: Varek's list gets its last entry, his own, which piece IV already writes at the last stand. *The third path — stay, knowing* is the mix: the binding left open knowingly, the world living watched. The third path is the only ending the knots cannot make on their own, so it is the one the Root keeps.
+- **§8.3.** Act III collapses to one authored place, the root beneath all the gates: *Discovery 5. The final beat.* Part I has the final confrontation end *not with combat but with revelation*, in the monologue. §9a has Varek fight to the death at a door. **Chosen plainly:** these are two scenes, and they come in that order. The revelation is at the Root, where he gives up on the dialogue (the monologue, Part I's deliberate exception to *never monologues*). The confrontation is at the last door, where he fights. A player who goes to the Root first meets a Varek at the last door who already knows he cannot win. Piece IV's *I knew it when I came* was written for him.
+- **The monologue is Michael's text** (`quest_writing.md`, *Varek — final monologue*). It is used here word for word and in its order. Its last line, *Go home. You've done what you came to do.*, sends the player away from the Root, and that is where the third path is offered: the player can refuse to go.
+- **§6, the final beat.** *A Sunday afternoon* is a design note, and *Every death written down. And I was the whole of your evening.* is already built as his answer to the player's pause. The Root draft (*The Root — the rooms beneath all the gates*, unapproved) reads the pause into three bands. This piece keeps both and puts the monologue after them.
+- **§9a, Michael's leaning.** *Tearing all 6 actually deletes all of your saves and truly 'unmakes' the world.* `decisions.md` records it as a leaning, to be raised again with its precedents and costs before anything is built. §11 says the opposite thing (*remakes itself on a new seed … one carried item persist*), and the approved *The Last Entry* is built on §11. That is DECISION #413.
+- *Silent:* when the knots can be reached. The great gates are places on the map, and nothing in the canon keeps a player out of one before the Ashfeld. **Chosen plainly:** the knots answer whenever the player reaches them (pieces I and II need nothing else), and the lock's ending fires whatever the act. A player who locks six before the Ashfeld has their ending, and Act II's thread simply stops. Varek is at the last door anyway (piece IV), because he has been watching since the first sigil (Part I).
+- *Silent:* whether the third path locks the mix. **Chosen plainly:** it doesn't. *Leave it open. Knowing.* is a stance, not a seventh knot. The knots still answer, and a player who later makes six match gets that ending instead. §9a's *until then the world lives with whatever mix* is read literally. **For Michael:** if the third path should lock the mix as it stands, the Root's row adds piece I's *will not take the edge* line to every knot, and nothing else changes.
+
+### 1. The shape of Act III
+
+| Where | When | What happens | What it decides |
+|---|---|---|---|
+| **The Ashfeld** | Act II's climax (as built) | Varek's question; the player's answer (*stop*, *help*, *neither*) | nothing about the ending: it shapes his first lines and points at the Root and the knots |
+| **The six great gates** | any time a ring is reached (pieces I–III) | cut or bind; undo by going back | the world, once six match |
+| **The fields and the doors** | the counts reached (piece IV) | his interest or his ire; two attempts; his last stand | nothing; he can only delay |
+| **The Root** | once its guard is dead, any time before a lock | the fifth discovery, the final beat, the monologue | the third path, if the player stays |
+| **The lock** | six alike | the sixth act, after the last stand | *sealed* or *unbound* |
+
+The quest *What Was Bound* (Varek's, given at the Ashfeld) closes on whichever ending comes first: the Root's *knowing*, the sixth bind, or the sixth cut. *Knowing* closes it. A later lock gives its own ending screen and log line, and the quest stays closed.
+
+### 2. The Ashfeld — two answers rewritten
+
+The question, the greeting and the *Then what are you doing to the sigils?* row stand as built. The three answers still set `S.choice` and send the player on. Two of them promised that the Root decides, and that is no longer true.
+
+- **"Stop. Leave the gates."** (was: *… I'll be there before you, because I always am. Decide there.*)
+  > "You'd have me leave it running. Then go and see what it runs on. The place beneath all the gates is on the far side of Aurenne, under the water. The Root. I'll be there before you, because I always am. Look at it, and then tell me you'd leave it running."
+- **"I'll help you unbind it."** (was: *Then there is one gate left that matters, and it isn't a gate. … we'll take the last stone out with our hands.*)
+  > "Then it isn't me you'll be helping. It's six knots, one at the far end of each great gate, one to each of the old words, and I can't reach any of them. You can. Under all of them, off Aurenne's far shore, under the water, is the Root, where they all run back to. Go and look at it first. I'll be there before you."
+- **"Neither. I want to see it first."** As built: *"That's the first honest thing anyone has said to me on this field. The Root, then. Off Aurenne's far shore, under the water. Come and look, and then tell me what you see between us."*
+
+**The quest** (`storyQuest('act3_root', …)` in `finishAsh`):
+- Title: *What Was Bound* (as built). Giver: Varek (as built).
+- Description: *Six great gates, one to each of the old words, and a knot at the far end of each. Under all of them, the Root, under the water off Aurenne's far shore. You'll need to breathe down there, or a hull to reach it.*
+- Objective: *The six great gates, and the Root beneath them*
+
+The log's *Act III — What Was Bound* line stands, with its second sentence changed: *Act III — What Was Bound. Six great gates, and the Root under the water off Aurenne's far shore.*
+
+### 3. The Root — the revelation
+
+The rooms, the guard, the touch and the pause are the Root draft's (§6 there), and nothing in them changes. Varek stands at the glass once the guard is dead. His greeting is as built, and the *…* row and its three bands are the Root draft's, each ending *And I was the whole of your evening.*
+
+**Then he goes on without waiting.** The band's reply carries one row, *(Say nothing.)*, and each row after it is the same, so the monologue is read one paragraph to a node, at the player's pace. The paragraphs are `quest_writing.md`'s, word for word:
+
+1. > "I thought I understood what was underneath. The logic beneath the stone. I spent two hundred and fifty years learning to read it. I was proud of that. I want you to know — I was genuinely proud."
+2. > "And then I watched you walk through it like it wasn't there. Like the walls were suggestions. Like the rules were someone else's rules."
+3. > "You were never in danger. Not really. Were you."
+4. > "I built my entire life on the belief that I was the deepest thing in this world. That if I could just get far enough down, I would find the place where things could be changed. And you came from further down than that. You came from a place I don't have a name for."
+5. > "I don't know if you can hear me the way I hear you. I don't know if any of this means anything to you at all. But I want to say it anyway."
+6. > "I was wrong about the arithmetic. Not about the cruelty — the cruelty is real, I stand by every word. But I was wrong about what I was. I thought I was the variable that changed everything. I was just... a very determined piece of the puzzle. Weren't I."
+7. > "Tell me — wherever you come from. Does it get better? For them, I mean. The ones I was trying to help."
+8. > "It doesn't matter. Go home. You've done what you came to do."
+
+The writing doc's stage directions (*a long pause* after the third, *he doesn't wait for an answer* after the seventh) are the player's own pauses on the *(Say nothing.)* rows. They are not printed.
+
+After the eighth, two rows:
+- **"Leave it open. Knowing."** As built: *"Stay, then. Knowing. That's more than any of us managed. Once in a long while someone will say a thing about you and go back to their bread, and you'll know what they meant. So will I."* → the open ending (§4).
+- **"Farewell."** → *"Go on, then. The knots are where they were. So am I."* He stays at the glass until the player leaves the Root. He is not there again, and the fields' beats (piece IV) go on.
+
+**The build's other two rows go.** *Break it. Let the world unbind.* and *Seal it. Close the window.* are removed with their answers. The world is unbound or sealed only at a knot.
+
+**Once heard**, the monologue is kept (`story.rootSpoken`), and two of piece IV's lines take a form that remembers it:
+- **T5, "Say it."**, its first sentences: *"Don't cut the last one. I told you at the Root I was wrong about what I was. I was wrong about what the knot was holding, too. It wasn't holding the world still. It was holding the world."* The rest of the line is piece IV's.
+- **The last stand (5a and 5b), the greeting**, a sentence put first: *"You didn't go home."*
+
+### 4. The open ending — the third path
+
+*Leave it open. Knowing.* calls `ending('open')` as built: `worldState.knowing`, the log line *The Root left open, knowing.*, and the ending screen *LEFT OPEN, KNOWING*, whose three lines stand. *Back to Their Bread* (built, Session 1030) reads `knowing`: the descriptions in the towns, and Varek at the fields at a distance.
+
+What is new: the knots still answer. Varek's arc beats stop (he has asked the player to stay, and they have). His last stand does not: if the player goes on to make six match, he is at that door (piece IV §5). On the sealing path the line he wrote under Ashenmoor stands. On the tearing path the list stays empty below Ashenmoor. The lock's ending follows as below, and `knowing` stays set.
+
+### 5. The lock — the two endings at a knot
+
+#### Six bound — *the window narrowed*
+
+Piece I §6's lines play (*The knot is whole, and five others answer it …*), and its log and journal lines stand. Then, after 2 s, `ending('sealed')`: the log *The six great gates are bound, and held.* (in place of the Root's *The Root sealed. The window narrows.*), and the ending screen:
+
+- Title: *THE WINDOW NARROWED* (as built)
+- Line: *The knots hold, each to each. The stones keep their warmth and give a little less of it. The world is as it was, and safe, and yours to walk.* (was: *The reading stops. The stones go cold for good. The world is smaller, and safe, and yours.* The knots thin a school by a tier (piece I) and stop nothing, and six sealed keep the game as it is, by Michael's word, so *cold for good* and *smaller* say too much.)
+- Second line: *Varek's list has its last line.* (as built)
+- The button: *Go on* (as built). The game goes on, and so does everything in it.
+
+The Root afterwards is the Root draft's *Sealed*: stone where the black was, cold, no prompt, no Varek. A player who never went down finds it that way and never hears the monologue. That is what not looking costs.
+
+#### Six torn — *the loom released*
+
+The sixth cut can only be made past Varek, dead in the door (piece IV §5a), with his list in the player's pack and nothing written under Ashenmoor.
+
+**At the knot, before the cut.** Piece I's three-way prompt keeps its rows, but at the sixth the first row reads *Cut the last knot.* Choosing it asks once more (`showMsg`, then the rows *Cut it.* / *Not yet.*):
+> *This is the last of them. Cut it, and there is no coming back to this world.*
+
+(Under B, a second sentence: *Nothing you have made here will be kept.*)
+
+**The cut.** Piece I's tear lines do not play. In their place, three lines, each timed by the clock and not by frames (the dropped-frame rule):
+> *The knot parts, and there is no knot left anywhere to answer it.*
+
+after 2.5 s:
+> *The colour goes out of the ring, then out of the hall, then out of your hands.*
+
+after 5 s:
+> *Far off, every gate on the three islands opens at once, like a breath let out.*
+
+The look's last stage (card F12) runs under these lines: black and white, then nothing. The music stops at the first line (no cue of its own, as the burn has none).
+
+Then `ending('unbound')`: the log *The six great gates are torn. The world unbinds; a new book begins.* (in place of *The Root broken.*), and the ending screen:
+
+- Title: *THE LOOM RELEASED* (as built)
+- Line: *Everything held comes loose, gently, the way a hand opens. The coasts you walked are not there to walk. Somewhere a new one is being drawn, with your name in the first line of it.*
+- Second line: *A new world waits at the title screen — the same name, the same people, one thing carried through. This one is gone.*
+- The button: *Go on*, which goes to the title screen, not back to the world.
+
+**What *gone* means (DECISION #413).** Under **A**, this slot's world row is deleted and stamped unmade, so neither *Continue* nor an import can open it again. The character row goes on to the new seed through `og_carry` (as built: name, people, look, one item). The new game wakes in the Crypt of First Light, and *The Last Entry*'s Worn Paper lies at the foot of the sarcophagus: the same list he died with, empty below Ashenmoor. Other slots are untouched. Under **B** and **C** the screen's second line changes (below), and *The Last Entry* is never found.
+
+- **Under B** (every save): line, *Everything held comes loose, gently, the way a hand opens. Nothing is left that was held: not the coasts, not the towns, not the one who walked them.* Second line, *There is nothing to go back to.* The button is *Go on* to an empty title screen.
+- **Under C** (this slot, whole): line as A's. Second line, *This one is gone, and so is the one who walked it.* The button is *Go on* to the title screen, with the slot empty.
+
+### 6. Before the Ashfeld
+
+A player can reach a great ring in Act I or II (the knife's note needs only a ring, piece II). Nothing in this piece waits on the act:
+- The lock's endings fire whatever the act. After a sealed lock, Act II's thread goes on as built where it can. Varek is dead, so the Ashfeld never fires, and Corwin's and Oswy's lines stand.
+- *The Root* is reached only through *What Was Bound*'s directions, so a player who locks first and never had the Ashfeld finds the Root by the map, sealed or after the world.
+- An unbound lock before the Ashfeld ends the game as above. The Last Entry's list says what it says. It was written over two hundred and fifty years and does not depend on when it was found.
+
+### What in the code would carry it
+
+- **The Ashfeld** (`tickAshfeld`, `88-world-ticks.js`): two `fn` return strings replaced, word for word (§2), and `finishAsh`'s `storyQuest` description, objective and log line.
+- **The Root** (`tickRoot`): the `…` row's follow becomes a chain of eight *(Say nothing.)* nodes carrying the monologue, the last with the two rows of §3. *Break it* and *Seal it* are removed. `story.rootSpoken=true` on the eighth (inside `story`, which the load already reads back; no new `worldState` key). The Root draft's band and room code is that draft's.
+- **The endings** (`ending(kind)`): `'open'` as built. `'sealed'` and `'unbound'` move from the Root rows to the lock, called by piece I's `bindKnot`/`cutKnot` when the act makes six alike, through one named action, `lockGates(kind)`. That action sets `worldState.greatGatesLocked`, writes the log line and calls `ending(kind)` after the lines' timers. `ending()`'s log lines and `endingScreen()`'s texts change as §5 gives them. Only `'unbound'`'s button goes to the title.
+- **The world's end under A** (`70-saves.js`): one named action, `unmakeWorld(slot)`. It runs after `og_carry` is written. It deletes the slot's world row (`ssWorldKey(key)`) and leaves a stamp in its place (`{unmade:true, at}`), which `ssLoad` and `ssImportFiles` refuse with *That world is gone.* The character row stays, and the creator's `_ogCarry` path is unchanged. Under B, the action clears every `SS` key and `og_carry` too. Under C, both rows of the one slot go.
+- **The confirm at the sixth cut**: piece I's prompt rows (`62-actions.js`, the knot's `.ob` branch) read `gatesTorn()===5 && state!=='torn'` to give *Cut the last knot.* and its confirm.
+- **The look**: card F12's stage reads the torn count. The sixth is a stage of its own, run over the cut's five seconds.
+- **The lines**: an `END_LINES` table beside `KNOT_LINES` (`87-world-quests.js`): the confirm, the three cut lines, the two log lines and the screen texts.
+- **A test** for the builder: the Ashfeld's *help* answer returns the new line and the quest's objective reads *The six great gates, and the Root beneath them*. At the Root, after the guard, the *…* band is followed by eight *(Say nothing.)* nodes in the writing doc's order, then *Leave it open. Knowing.* and *Farewell.*, and no *Break it* or *Seal it*. *Knowing* sets `worldState.knowing`, and a knot still answers after it. With five bound, binding the sixth logs *The six great gates are bound, and held.* and shows *The knots hold, each to each.*, and the game goes on. With five torn and Varek dead, *Cut the last knot.* asks once, the three lines come at 0, 2.5 and 5 s by the clock, and under A the slot's world row is gone and stamped while the character row and `og_carry` remain, *Continue* refuses the slot, and a new game from `og_carry` lays the Worn Paper.
+
+### DECISION #413 — what six torn leaves
+
+Michael's leaning (13 Oct) is that tearing all six deletes every save. §11 says the world remakes itself on a new seed with the player's name, people and one item, and the approved *The Last Entry* puts Varek's list in the first gate of that new world. Since Session 456 a slot is two rows, the character's and the world's.
+
+- **A. This world ends; the character goes on** *(recommended)*. The slot's world row is deleted and stamped unmade, so it can't be continued or imported back. The character carries to a new seed (§11, as built), and the list waits in the first gate (*The Last Entry*). Other slots are untouched. The itch is paid in full: the world the player made is truly gone, and nothing they didn't stake is taken. The two-row save was built for exactly this split.
+- **B. Every save ends.** Every slot, every character, and `og_carry`: the title screen as if the game had never been opened. This is NieR: Automata's ending E, where the player is asked to give up their save and it is deleted. Doki Doki Literature Club deletes a character's file to make the same point. Costs: it takes slots the player never staked; an exported file outside the browser survives it, so it is never quite total; §11's new seed and *The Last Entry* go; and the warning at the knot has to say so plainly, or the first player it surprises will be the last who trusts the game.
+- **C. This slot ends, both rows; other slots stay.** The character dies with the world. There is no new seed, no carried item and no list, and other characters are kept. It sits between A and B: total for what was staked, and nothing more.
+
+### Checked against the canon
+
+- *§9a*: the knots alone decide; six bound lock and keep the game as it is (the screen's *Go on* returns to it); six torn end it; the mix stays open; Varek's last stand is at the sixth door on both paths, and nothing here moves it.
+- *§11*: the three endings are kept and mapped (six torn, six sealed, the mix chosen knowingly). *Help him*'s new seed, carried item and list in the first gate stand under A, the recommendation. *Stop him*'s last entry is Varek's own (piece IV). The third path's *sigils return, magic deepens* is the open screen as built, and *Varek is seen, at a distance, at fields* is *Back to Their Bread*.
+- *§8.3*: the Root is the one authored place, with discovery 5 and the final beat. The monologue is there because §8.3 puts *the final beat* there, and Part I's *ends not with combat but with revelation* is kept for the revelation. The combat is §9a's and comes after.
+- *Part I, his voice*: the monologue is Part I's own exception, *a monologue because he has finally given up on the dialogue*. Everywhere else he asks. *Weren't I.* is the writing doc's, kept.
+- *Part I, the final monologue's note*: *there is no one left who cares enough to drive the change he sought*. On both paths he dies at a door after the Root, so the note holds by the time the world is decided.
+- *§10a*: nobody calls the player the monster. The nearest anyone comes is *You were never in danger*, which the player can take as they like. The surface stays high fantasy to the lock. The horror is the cut's three lines, and they are the player's own act, described.
+- *§6*: never *game*, *save*, *player* or *screen* in anyone's mouth. The ending screen is narration, and it says *world* and *slot* nowhere. *This one is gone* is the nearest it comes.
+- *No chosen one*: the Root asks what is between them. It does not say what the player was for.
+- *Register*: Varek only, in his own voice. The narration is the game's: second person, present tense, what is seen first.
