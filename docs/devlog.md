@@ -23991,3 +23991,38 @@ The room inside is laid out from the lot's size, as a widened house's is. A guil
 - **The room inside:** it is a little wider and shallower than before (26 by 20 against 23 by 22 in the kit's unit). Where you appear against the great door, 2 m off the centre, is for a playtest.
 - **The wall lantern by the door** is still the old one, hung 1.05 m to the side of the door's centre. The great door is 1.6 m wide, so it sits 0.25 m clear of the reveal.
 - **Still the old builder's:** the churches, inns and keeps.
+
+## v80 — Session 1086 — Card F6: a Gatelands village's inn is the kit's farmhouse on the new look (#320 1 A)
+The backlog's F6 line owes the inn, the church and the keep from the kit, and the producer's last post named the inn and the church next. Michael already chose the village inn's shell: his 1 A on #320 (14 Oct) is "the farmhouse as a village inn, as drawn: a village's inn is a house that takes guests", with a town's coaching inn left as a piece of its own later. Bringing a chosen prototype into the game needs no new question, so this session does that one kind. The church needs a plan the kit does not have (its temple is a small god's, 9.6 by 6 m), and so do the coaching inn and the keep. Those are prototypes first.
+
+On `?look=new`, the inn of a Gatelander village or outpost is now the kit's farmhouse (`genSettlement`, `83-world-generator.js`). It is whitewashed, two storeys of 2.9 and 2.7 m under slate, with a stack at each gable and a transom door in its middle bay:
+- **The lot:** the plan is `PKIT.gl.bayPlan('farmhouse', n)`. Three bays give 10.5 by 6.2 m, and where three will not fit, two give 7.4 m. The old inn's lot was 5 to 7 by 4 to 6 m. It is placed as the guild hall's is: the front stays on the street line and the house grows back into its yard. It is taken when it comes no nearer to the road, a street or the ring than the old lot did, and stays clear of every other lot. It may slide along its front by up to 0.6 m to clear. A lot with no room keeps the old inn.
+- **Built:** it goes through the same `kitHouse` as the cottages beside it. `PKIT.gl.lot` keys its paint and lit windows by the village and the lot, it merges into the village's draws, it gets its box-and-prism far copy, and its smoke comes from the west gable's stack. The door you use is the plan's middle-bay door.
+- **What stays the old builder's:** the hanging trade sign (the farmhouse has no sign of its own) and the wall lantern. The room inside does not change: an inn's room is sized by its own clamps (10 to 12 by 11.7 to 13 m in the old unit), not by the lot, so it is the same room as before. Prototype S893's taproom inside the farmhouse (`gatelandsInn`, #320's 2 A) is not built in the game yet.
+
+A town's, port's or city's inns keep the old builder's for now.
+
+### Verified (headless Chromium)
+- **`tests/kitinn` (new): 12 of 12 pass.** It uses Cill Beag, the Gatelands village nearest Dunmore.
+  - **The old look:** its inn, *The Wandering Ram*, is the old builder's, 6 by 5 m.
+  - **The new look:** it is the kit's farmhouse on 3 bays, 10.5 by 6.2 m, slid 0 m.
+  - **The walls:** its four walls stand 0.15, 0.3, 0.15 and 0.15 m inside its solid.
+  - **The door:** a ray at the door meets the painted leaf (`p:blue`) 1.8 m from a point 1.5 m out, as the houses read 1.77 to 1.82.
+  - **The sign:** its two faces hang 1.15 m out from the door, 2.4 m up.
+  - **The smoke:** it rises from the west gable stack, 4.89 m from the centre and 8.99 m up.
+  - **The old inn:** nothing of the old builder is left on the lot.
+  - **Draws:** the village's kit buildings are 16 draws, 8,284 triangles, with a far copy of 90.
+  - **The room:** it builds (71 pieces, 2 beds to let), and Niall offers *A bed for the night?*.
+  - **No errors.**
+  - **The picture:** `docs/prototypes/kit-inn-ingame.png`, the inn from its road at noon.
+- **`tests/kitlots`: 13 of 13 pass.** Three checks were changed to fit the new inn:
+  - The depth check allows the village inn's 6.2 m.
+  - The size check now reads "churches, keeps, a town's inns and the shipwright keep their size" (22).
+  - A new check: both surveyed villages' inns are the farmhouse on 3 bays, slid 0 m.
+  - Everything else is as before, ids and doors included.
+- **`tests/kittown`: 14 of 14 pass**, as before: Dunmore is a town, so its inns are unchanged (52 kit buildings, 40 draws, 285,268 triangles).
+- `parsecheck.py` is clean. Build tag s651.
+### Needs eyes
+- **The sign and the lantern:** the board's top comes to about 2.9 m, 0.65 m under the upstairs sill over the door. In the picture it reads well, but a sign bracket drawn into the plan would sit better than the old builder's arm.
+- **Its size in a village:** a 10.5 m house among cottages of 4.8 to 9.6 m. It is the largest building in a village, which suits an inn.
+- **Owed:** the taproom inside the farmhouse from S893's prototype; a town's coaching inn, the church and the keep, each a prototype in the kit first.

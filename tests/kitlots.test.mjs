@@ -31,20 +31,24 @@ const gl = sites.filter(s => s.nat === 'gatelands'), mk = sites.find(s => s.nat 
 // the same houses: every id, door and depth of the old look, in the same order
 const same = sites.map(s => { const a = old[s.id].houses, b = neu[s.id].houses; const ok = a.length === b.length && a.every((h, i) => { const k = b[i].kit ? b[i].kit.door || 0 : 0, tx = -Math.sin(h.yaw), tz = -Math.cos(h.yaw); /* a kit house's door stands in its bay (Session 1072), k along the front */
     const hall = b[i].kit && b[i].kit.kind === 'guildhall'; /* a guild hall takes the kit hall's 9 m (Session 1083), its front kept */
-    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : h.d === b[i].d) && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
+    const inn = b[i].kit && b[i].kit.inn; /* a village's inn takes the farmhouse's 6.2 m (Session 1086), its front kept */
+    return h.id === b[i].id && h.type === b[i].type && (hall ? b[i].d === 9 : inn ? b[i].d === 6.2 : h.d === b[i].d) && Math.hypot(h.x + tz * k - b[i].x, h.z - tx * k - b[i].z) < .01; });
   return { id: s.id, ok, n: a.length, first: ok ? null : a.map((h, i) => [h.id, b[i] && b[i].id, h.x, b[i] && b[i].x]).find(([p, q, x, y]) => p !== q || Math.abs(x - y) > .01) }; });
 check(`every settlement keeps its houses, ids, doors (in their bays) and depths (${same.map(s => s.n).join(', ')} houses)`, same.every(s => s.ok), same.filter(s => !s.ok));
 
 // the widths: whole bays, by kind of settlement and of lot
 const rows = gl.flatMap(s => neu[s.id].houses.map(h => ({ ...h, site: s.id, sk: s.kind, w0: old[s.id].houses.find(o => o.id === h.id).w })));
-const kit = rows.filter(h => h.kit && h.kit.kind !== 'guildhall'), share = kit.filter(h => h.type === 'home').length / rows.filter(h => h.type === 'home').length;
+const kit = rows.filter(h => h.kit && h.kit.kind !== 'guildhall' && !h.kit.inn), share = kit.filter(h => h.type === 'home').length / rows.filter(h => h.type === 'home').length;
 const badW = kit.filter(h => h.w !== bw(h.kit.kind, h.kit.bays) || h.kit.bays < B[h.kit.kind].min || h.kit.bays > B[h.kit.kind].max || h.kit.w0 !== h.w0);
 check(`each widened lot is exactly its bays and end piers wide (${kit.length} lots)`, kit.length > 40 && badW.length === 0, badW.slice(0, 6));
 const badK = kit.filter(h => (h.sk === 'village') !== (h.kit.kind === 'cottage') || (h.sk !== 'village' && (h.type === 'home') !== (h.kit.kind === 'townhouse') && !(h.kit.kind === 'townhouse' && h.type !== 'home')));
 check('a village\'s are cottages; a town\'s, port\'s or city\'s homes townhouses and shops merchants\' houses (or a townhouse\'s front)', badK.length === 0, badK.slice(0, 6));
 check(`most homes take the bays (${Math.round(share * 100)}%)`, share > .8, { kit: kit.filter(h => h.type === 'home').length, homes: rows.filter(h => h.type === 'home').length });
-const special = rows.filter(h => ['church', 'castle', 'inn', 'shipwright'].includes(h.type));
-check(`churches, keeps, inns and the shipwright keep their size (${special.length})`, special.length > 4 && special.every(h => !h.kit && h.w === h.w0), special.filter(h => h.kit || h.w !== h.w0).slice(0, 4));
+const special = rows.filter(h => ['church', 'castle', 'shipwright'].includes(h.type) || (h.type === 'inn' && h.sk !== 'village'));
+check(`churches, keeps, a town's inns and the shipwright keep their size (${special.length})`, special.length > 4 && special.every(h => !h.kit && h.w === h.w0), special.filter(h => h.kit || h.w !== h.w0).slice(0, 4));
+// a village's inn (Session 1086, Michael's 1 A on #320): the kit's farmhouse, three bays (10.5 m) or two (7.4 m), 6.2 m deep, slid 0.6 m at most
+const vinns = rows.filter(h => h.type === 'inn' && h.sk === 'village'), badI = vinns.filter(h => !h.kit || h.kit.kind !== 'farmhouse' || !h.kit.inn || h.w !== bw('farmhouse', h.kit.bays) || h.d !== 6.2 || Math.abs(h.kit.slide) > .6);
+check(`each village's inn is the kit's farmhouse (${vinns.map(h => `${h.kit && h.kit.bays} bays, slid ${h.kit && h.kit.slide} m`).join('; ')})`, vinns.length >= 2 && badI.length === 0, badI.slice(0, 4));
 // the guild halls (Session 1083, Michael's C on #352): a town's or city's is the kit's hall, 14.4 by 9 m, slid along its front by 0.7 m at most
 const halls = rows.filter(h => h.type === 'guild_f' || h.type === 'guild_m'), badH = halls.filter(h => !h.kit || h.kit.kind !== 'guildhall' || h.w !== 14.4 || h.d !== 9 || Math.abs(h.kit.slide) > .7 || h.kit.guild !== (h.type === 'guild_m' ? 'mages' : 'fighters'));
 check(`every guild hall of the Gatelands' towns and city is the kit's hall, 14.4 by 9 m (${halls.length}; slid ${[...new Set(halls.map(h => h.kit && h.kit.slide))].join(', ')} m)`, halls.length >= 4 && badH.length === 0, badH.slice(0, 4));

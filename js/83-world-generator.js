@@ -292,6 +292,14 @@
       if(town)use.forEach((lot,i)=>{const t=shopTypes[i];if(t!=='guild_f'&&t!=='guild_m')return;const P=G.PLANS.guildhall(),w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,sh=(d0-P.d)/2,m0=Math.min(0,near(lot,lot.street));
         lot.w=P.w;lot.d=P.d;for(const sl of [0,.35,-.35,.7,-.7]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
           if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'guildhall',guild:t==='guild_m'?'mages':'fighters',w0,d0,slide:sl};return;}}
+        lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});
+      // S1086 (card F6, Michael's 1 A on #320) — a village's or an outpost's inn is the kit's farmhouse, "a house that takes guests":
+      // three bays (10.5 by 6.2 m), or two (7.4 m) where three will not fit, its front kept on the street line as a guild hall's is and
+      // slid along it by up to 0.6 m. A town's inn waits for the coaching inn, a piece of its own; a lot with no room keeps the old inn.
+      if(!town)use.forEach((lot,i)=>{if(shopTypes[i]!=='inn')return;const w0=lot.w,d0=lot.d,x0=lot.x,z0=lot.z,m0=Math.min(0,near(lot,lot.street));
+        for(const n of [3,2]){const P=G.bayPlan('farmhouse',n),sh=(d0-P.d)/2;lot.w=P.w;lot.d=P.d;
+          for(const sl of [0,.3,-.3,.6,-.6]){lot.x=x0+lot.tx*sh+lot.tz*sl;lot.z=z0+lot.tz*sh-lot.tx*sl;
+            if(near(lot,lot.street)>=m0-1e-6&&use.every(u=>u===lot||apart(lot,u))){lot.kit={kind:'farmhouse',bays:n,inn:true,w0,d0,slide:sl};return;}}}
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});}
     // S1072 (card F6) — a widened lot's house is the kit's plan on its bays, at the lot's depth (PKIT.gl.lot keyed by the town and
     // the lot's id, so its colours, paint and lit windows are the same at every visit). The houses stand in one group at the town's
