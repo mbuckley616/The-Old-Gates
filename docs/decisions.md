@@ -4,6 +4,32 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+## Answered
+### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
+**Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.
+- **The church** is 8.4 m wide and 27.4 m from the tower's face to the chancel's gable (22.6 m with a nave of two bays). Its lot is about 5 to 7 m on a side.
+- **The keep in its bawn** is about 30 by 25 m. Its lot is 14 by 11 m.
+
+Session 1127 brought the church into the game where it fits on its own, as the guild halls were brought in. It is tried end-on (the tower's door to the street), then side-on along the street with a door in the nave's south side, with its front kept and slid up to 3 m, and never over another lot or a street. That fits **1 town in 5** (Cœur de Vie). A town's rows are 10.7 m apart, so end-on it crosses the street behind, and side-on it needs the frontage of three or four houses. Everywhere else the old church stands. The bawn would fare no better.
+
+How should they find room?
+- **A. The big building takes its room, and the houses under it are not built on the new look** *(recommended)*.
+  - **How:** the church, side-on along its street, and the keep's bawn take the lots they cover. That is about 3 or 4 houses for a church and 6 to 8 for a bawn, and those houses' residents go with them.
+  - **What it never takes:** a house you own, a shop, an inn, a guild hall or a named resident's house. Where one is in the way, the next placement is tried, then the old building.
+  - **What is unchanged:** the old look, and every other house's id, door and resident.
+- **B. The towns are laid out around them, on both looks.** The generator keeps the church's and the keep's plots (on the square, at the head of the main street) before it lays the lots. Every town reads best this way, but every town's layout changes once, in both looks. Houses are numbered by lot, so a house owned in an older save would move or be lost unless the save is migrated.
+- **C. A smaller church or keep where the full one does not fit.**
+  - **The church:** the nave and tower without the chancel (about 21 m), then the bellcote church (#410's C) on the old lot.
+  - **The keep:** the tower alone (#416's A).
+  - **The cost:** no house is lost, but a town's church and keep vary from town to town.
+- **D. As now:** the kit's church where it fits (1 in 5) and the old one elsewhere. The bawn the same.
+
+Picture (Cœur de Vie on the new look, at noon, the church end-on to the market square, two bays): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-church-ingame.png
+The church as drawn, with three bays: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-square.jpg
+The bawn as drawn: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-bawn.jpg
+
+Michael: **Towns laid out around them, both looks** — This game is not live, so don’t worry about saves being lost / preserving current state gameplay progression. (18 Oct 2026)
+
 ### The Old Blood's dot embroidery: powdered, or the drifts without oxblood? (bodies builder, Session 1125) — DECISION #432
 The critic (18 Oct) says the Old Blood's **oxblood dots on cream read as spatter** ([the critic's still](https://github.com/mbuckley616/The-Old-Gates/blob/auto/critic/docs/critic/2026-10-18-b-ob-dress.jpg)). Session 1043 had flagged the same risk.
 
@@ -26,8 +52,60 @@ Pictures:
 - [the drifts now, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-close.jpg)
 - [the drifts now, full](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-full.jpg)
 
+Michael: **Powdered, every colour kept**. (18 Oct 2026)
 
-## Answered
+### Gold piles by place too? (systems builder, 18 Oct 2026) — DECISION #431
+Your A on #394 put a loot roll's metal and a lair hoard's gold on the place's tier. A gold pile in a chest, a barrel or on a body (`rollGold`, `14-items.js`) still adds your level. A chest gives 4–12 + your level, a treasure chest 8–18 + 1.5 × your level, a body 2–8 + 0.7 × your level and a barrel 1–6 + half your level. At level 25 a coast chest holds 29 to 37 gold, and at level 1 a tier-3 chest holds 5 to 13. Two friends opening one chest in a shared world would find different piles.
+
+- **A. By place** *(recommended)*. The level term reads the place's tier level (1, 6, 11 or 16), as the metal does. A coast chest holds 5 to 13 at any level, and a tier-3 dungeon's 15 to 23. Fortune's 1% a point and the gold-find buff stay as they are.
+- **B. By level, as now.** Gold keeps up with what things cost you, wherever you are.
+- **C. By place, plus a little of the level.** As A, plus a quarter of your level past the tier's own, so late gold stays worth bending down for.
+
+Michael: **By place**. (18 Oct 2026)
+
+### The foes' heavy attacks: how often, and how does the player tell one from a light blow? (systems builder, 18 Oct 2026) — DECISION #430
+Combat B (your B, 28 Sep; `docs/design/combat.md`) gives every family a light attack, a heavy one and a third move. The resolver is on main with a `heavy` column in `FOE_ATTACKS`, and nothing fills it yet. Today every foe has one blow, with a tell of 0.45 to 0.9 s by kind, and a held block breaks only when your posture runs out. Guard's *Iron wall* (75) and Armour's heavy hit for *Hold the line* both wait on it. The page sets the heavy's numbers: a 0.9 to 1.1 s tell, twice the damage, twice the posture, a held block broken, a parry still good. It leaves two things a player would feel: how often a foe picks the heavy, and how you read it before it lands.
+
+- **A. One blow in four, read by its length and a red glow** *(recommended)*. Each wind-up is a seeded roll on the foe and the blow's count (co-op rule): 25% heavy, never twice running. Light tells stay as built (0.45 to 0.9 s by kind). The heavy is 1.0 s, or the kind's tell + 0.35 s if that is longer, on the same wind-up pose held deeper, with the last 0.15 s glow red, not gold. The bodies builder can add a heavy pose later. First session: humanoids and wolves (the page's "wolves and bandits first").
+- **B. Heavy only at range or into a block.** A foe swings heavy when you are holding block, or as an opener from just outside its reach. It punishes turtling, and a fighter who never blocks rarely sees one.
+- **C. Wait for the poses.** No heavy until the bodies builder makes a heavy wind-up pose for each family, so it reads by shape alone. *Iron wall* waits with it.
+
+The third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp) follow in a later session under the same answer.
+
+Michael: **One blow in four, read by length and a red glow**. (18 Oct 2026)
+
+### The Weavers' ring of broken arches: its size, and does its script still burn? (look builder, Session 1119) — DECISION #429
+OG-104's first ruin at the scale of cliffs is built in the prototype (Session 1119): the Weavers' ring of broken arches on a coast, `places.html?place=ring`. It is twelve bays on the crown of a headland, 124 m across, with its open side to the sea and a 30 m cliff 40 m past it.
+- **The arches:** each is the gate kit's own pointed arch at 2.2 times its size. The opening is 22 m wide and 39.6 m to its point, the arch stands 44 m, and its stones are 3.3 m courses.
+- **Their state:** four stand, leaning a little. Seven are broken about half way up, their stones fallen on the turf. The bay to the sea is gone to its footings, with a spill of blocks toward the cliff.
+- **The heart:** a dais of three steps with the ring sigil cut in it.
+- **The script:** as drawn, it is dead on every stone. Nothing floats and nothing glows: out in the world the loom holds nothing up.
+
+Two things are yours: its size against the sheet's "people as specks", and whether anything of it still burns, which is the canon's.
+
+- **A. As drawn: arches of 44 m, the script dead** (recommended). It is already 25 times a person, the size of the gate halls (§2) grown by half again. A dead ring keeps the gates the only places where the script burns.
+- **B. Larger: arches of 60 m (3 times the kit) in a ring 170 m across.** This is closer to the sheet's specks, but each fallen stone is a 6 m block and the ring fills a headland.
+- **C. As drawn, but the four standing arches keep a faint amber line of script.** A ring that is half asleep. What that means is the quest writer's.
+
+Pictures:
+- From the turf inland: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-ring.jpg
+- A standing arch, with a 1.75 m post at its foot for scale: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-arch.jpg
+- From the dais at its heart: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-heart.jpg
+- From over the sea: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-far.jpg
+
+Michael: **Larger: 60 m arches in a 170 m ring**. (18 Oct 2026)
+
+### Magic B — how many carvings does the main questline walk you to? (the designer, 2026-10-18) — DECISION #422
+The build sheet (`docs/design/magic-build.md`) sets the 24 words, the five forms, the six riders and the costs, and lays out the main quest's Register: Aldwyn stars carvings on the map at Q7's turn-in, and the guild's ranks come with them. How much of the finding should the main quest do itself, and how much should it leave to rubbings, rumours and Súil, the Weaver's Eye?
+- **A.** Nine: one per school on the home island, the Mouth, and one on each other island. The forms come with them, and from the sixth the Register and Súil lead to the other fifteen words.
+- **B.** All 24: a word at every step, so Act II's spine is about twenty-four gates.
+- **C.** One and the forms: the Register names the guild and the first stone, and the canon's three pointers do the rest, close to today.
+
+Recommendation: **A.** Every school and every form arrives on the main path, and the fifteen words left over are what exploring pays, each made findable by Súil. B turns the main quest into a checklist; C leaves the problem you named.
+
+Michael: **Nine: one per school, the Mouth, one per island** — How do the rest of them get unlocked though? I think the mages guild is one path but it should also be an option to unlock them yourself. 
+
+Also, what is the mouth/what purpose does it serve at this point? Do we still need / want that? Is it even a gate? (18 Oct 2026)
 
 ### The armour's top-tier helms: one shape, OG-052's silhouettes, or visors shut? (concept artist, L7, OG-052)
 Backlog L7 takes the armour's top-tier headgear from OG-052, which you kept for that alone (OG-019 is the ladder). The prototype (`docs/prototypes/levelup/helms.html`, three.js 0.170) fits a helm to each person's own head, 1.2 to 1.9 cm clear. It shows the heavy line's ten tiers on people of all four peoples, 1.59 to 1.94 m tall. Wooden to Steel are the same in every option: a slatted cap, a crested Corinthian, the kettle helm, a great helm. The question is the six magical tiers, Mithril to Cosmic:
@@ -341,14 +419,6 @@ As drawn it has no inside beyond the hall: OG-121's other forts have "lower leve
 - **A. As drawn:** a fort on the top only, a place to cross and look from. The hall's inside is a Markish room like any other.
 - **B. A sea-stair** *(recommended)*: a door in the rock behind the hall opens on a stair cut down inside the cliff, about 30 m, with turns and landings lit by slits in the face. It comes out in a sea cave with a boat landing, the fort's way to the water. That gives it a lower level to explore, as the card asks.
 - **C. A store under the hall:** a rock-cut cellar under the hall's floor, reached by a hatch. It is smaller than B, with no way to the sea.
-### Magic B — how many carvings does the main questline walk you to? (the designer, 2026-10-18) — DECISION #422
-The build sheet (`docs/design/magic-build.md`) sets the 24 words, the five forms, the six riders and the costs, and lays out the main quest's Register: Aldwyn stars carvings on the map at Q7's turn-in, and the guild's ranks come with them. How much of the finding should the main quest do itself, and how much should it leave to rubbings, rumours and Súil, the Weaver's Eye?
-- **A.** Nine: one per school on the home island, the Mouth, and one on each other island. The forms come with them, and from the sixth the Register and Súil lead to the other fifteen words.
-- **B.** All 24: a word at every step, so Act II's spine is about twenty-four gates.
-- **C.** One and the forms: the Register names the guild and the first stone, and the canon's three pointers do the rest, close to today.
-
-Recommendation: **A.** Every school and every form arrives on the main path, and the fifteen words left over are what exploring pays, each made findable by Súil. B turns the main quest into a checklist; C leaves the problem you named.
-
 ## Answered
 ### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
 The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
