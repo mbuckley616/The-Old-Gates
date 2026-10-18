@@ -26348,3 +26348,13 @@ kobolds, skeletons, shieldbearers), since the attack table's rows are by family.
 - **One in four** is read from #430's answer ("the third moves follow under the same answer"). With the heavy, half a bandit's blows
   are now something other than the plain swing. If that is too busy, `FEINT_ROW.roll` is the one number to change.
 - **Owed under #430:** the wolf's snap and the troll's stamp, each a two-hit string whose second blow's timing the page leaves open.
+## v80 — Session 1141 — `tierloot` parses again (a fix to Session 1135)
+QA reported it in the room. On auto/systems af62671, `tierloot` failed on load in CI shard 5 with a SyntaxError. Session 1135 edited its
+check label, which is a template literal, and wrapped the name `goldtier` in backticks. The first backtick ended the string. The suite
+never ran after that, and parsecheck did not catch it, because parsecheck reads `js/` only. The backticks are gone and the label's
+words are unchanged. A gotcha line in CLAUDE.md now says to run `node --check` on a suite after editing its labels.
+### Verified (headless Chromium)
+- `tierloot` 1/1, 12 checks: tiers 1 to 4 hold the same goods at levels 1 and 30, and the best metal is Bronze, Steel, Adamant and Draconic.
+- `node --check` passes on every file in `tests/`, so no other suite on the branch has the same fault.
+### Needs eyes
+- Nothing. This was a broken test, not a change to the game.
