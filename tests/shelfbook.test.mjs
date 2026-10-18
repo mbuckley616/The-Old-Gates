@@ -44,7 +44,8 @@ check('taking it is no crime (not marked stolen, no record)', !took.stolen && to
 check('the shelf offers nothing more', took.p === null, took);
 const twice = await page.evaluate(() => WORLD.takeShelfBook(_G));
 check('the named action refuses a second copy', twice === false, twice);
-await page.evaluate(() => exitInterior()); await g.spin(20); await enter();
+// leaving sets your spot outside on a 700 ms timer (58-interiors-legacy.js); going back in sooner, it fires in the room
+await page.evaluate(() => exitInterior()); await page.waitForTimeout(1500); await g.spin(20); await enter();
 const back = await prompt(1.0, true);
 check('back in the room, still nothing on the shelf', back.p === null, back);
 await prompt(1.0, true);

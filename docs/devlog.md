@@ -25637,8 +25637,9 @@ The draft is approved and the backlog line gives the shape, so this is building 
   and a second take is refused. Out and back in, the shelf is still empty. The mark is in the world row, not the character's, and comes back
   through `ssSplitPayload`/`ssJoinPayload` and `_applyLoadData`. The same room under a rule for the Markmen offers nothing. Two
   early runs failed the save step's control (the mark deleted, the shelf should offer again): the player stood 25 m off after re-entering
-  the room, the test's doing. The step now stands you at the shelf in the same evaluate; green three times since.
-- **Neighbours:** see the PR comment.
+  the room, the test's doing. Leaving sets your spot outside on a 700 ms timer (`58-interiors-legacy.js`), and the test went back in
+  before it fired, so it fired in the room. The test now waits 1.5 s after leaving. Green four times since, once under seven browsers at once.
+- **Neighbours pass**, side by side: `guildfurn`, `chairstash`, `coopsaves`, `interiors`, `seventhniche`, `intdooraim`.
 ### Needs eyes
 - Nothing to see on main or this branch until the quest writer's book merges. Then, at a Gatelands Mages' Guild's east bookcase,
   the prompt should come up where your eye falls on the case, not from the desk or the board.
