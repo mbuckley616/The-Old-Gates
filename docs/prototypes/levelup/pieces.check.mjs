@@ -103,8 +103,23 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   check(`every window above the ground floor on a bay's line, one a bay on every upper floor; the door within ${Math.max(...O.map(x => x.door)).toFixed(2)} m of a bay's line`, O.every(x => x.lines.every((l, k) => l.on && l.n === x.n) && x.door <= .4), O.filter(x => !x.lines.every(l => l.on && l.n === x.n) || x.door > .4).map(x => [x.kind, x.n, x.lines, x.door]));
   check(`in budget and the same twice: ${Math.min(...O.map(x => x.tris)).toLocaleString()} to ${Math.max(...O.map(x => x.tris)).toLocaleString()} triangles, ${Math.max(...O.map(x => x.calls))} draws or fewer`, O.every(x => x.same && x.tris < 9000 && x.calls <= 16), O.map(x => [x.kind, x.n, x.tris, x.calls, x.same]));
   check(`glBaysFor: a lot of 6 to 10 m takes the most whole bays that fit (${Bq.fitN} widths, ${Bq.fit.length} wrong); a townhouse lot given 4 bays and 8 m is ${Bq.lot.join(' by ').replace(/ by 4$/, '')} m, one without them ${Bq.lot0[0]} by ${Bq.lot0[1]} m as drawn`, !Bq.fit.length && Bq.lot[0] === 8.4 && Bq.lot[1] === 8 && Bq.lot[2] === 4 && Bq.lot0[0] === 6.4 && Bq.lot0[2] === null, [Bq.fit.slice(0, 4), Bq.lot, Bq.lot0]); }
+// Session 1087: the town church (gatelandsChurch), three ways of hanging its bell (o.tower round | square | bellcote, asked of Michael):
+// each the same twice and in budget; the chancel lower than the nave, the door a door of note (1.4 m or more by 3.1), and in the
+// round tower the door 3 m or more up and the tower over 24 m with its cap; in the west tower the door moved into its foot.
+{ const C = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./pieces.js'), out = [];
+    const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+    for (const tower of ['round', 'square', 'bellcote']) { const a = K.gatelandsChurch({ tower }), b = K.gatelandsChurch({ tower }), u = a.userData, nave = a.children[0].userData.plan, T = a.children[2];
+      const door = tower === 'square' ? T.userData.plan.open.left[0] : nave.open.left[0], tb = T ? new THREE.Box3().setFromObject(T) : null;
+      out.push({ tower, tris: u.tris, calls: u.calls, size: u.size, same: hash(a) === hash(b), door: [door.w, door.h, door.kind], doorAt: u.door ? [+u.door.x.toFixed(2), +u.door.z.toFixed(2)] : null, top: tb ? +tb.max.y.toFixed(2) : null, parts: u.parts.map(p => p.name) }); }
+    return out; });
+  const by = Object.fromEntries(C.map(c => [c.tower, c]));
+  check(`the town church three ways, each the same twice and in budget: ${C.map(c => `${c.tower} ${c.tris.toLocaleString()} triangles in ${c.calls} draws`).join(', ')}`, C.length === 3 && C.every(c => c.same && c.tris < 20000 && c.calls <= 28), C);
+  check(`the chancel (${by.round.size.chancel.w} by ${by.round.size.chancel.d} m, ridge ${by.round.size.chancel.ridge} m) is lower than the nave (${by.round.size.nave.w} by ${by.round.size.nave.d} m, ridge ${by.round.size.nave.ridge} m)`, C.every(c => c.size.chancel.ridge < c.size.nave.ridge - 1.5 && c.size.chancel.d < c.size.nave.d), C.map(c => c.size));
+  check(`the west door is a door of note: ${C.map(c => `${c.tower} ${c.door[0]} by ${c.door[1]} m`).join(', ')}`, C.every(c => c.door[2] === 'plank' && c.door[0] >= 1.4 && c.door[1] >= 3.1 && c.doorAt && c.doorAt[0] < -8), C.map(c => [c.door, c.doorAt]));
+  check(`the round tower stands ${by.round.top} m to its cap, the west tower ${by.square.top} m to its merlons, the bellcote ${by.bellcote.top} m`, by.round.top > 29 && by.square.top > 18 && by.square.top < by.round.top && by.bellcote.top < 14.5, C.map(c => [c.tower, c.top, c.parts]));
+}
 await page.close();
-for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+for (const v of ['street', 'street&mix=lot', 'line', 'kit', 'guild', 'guild&guild=mages', 'bays', 'church', 'church&tower=all']) { const pg = await browser.newPage({ viewport: { width: 480, height: 270 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/pieces-gatelands.html?still&w=480&h=270&view=${v}`);
   // a page error ends the wait at once (an error in the scene's module never sets __err)
   await Promise.race([pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 }), new Promise(res => pg.on('pageerror', e => { if (!/json|JSON/.test(String(e))) res(); }))]);

@@ -991,6 +991,73 @@ function bayPlan(kind, n, o = {}) {
     P.shop = { ...P.shop, w: w - .4 }; P.sign = { ...P.sign, x: -w / 2 + .2 }; P.doorX = dx; }
   return P;
 }
+// the town church (Session 1087, card F6): the kit's temple is a small god's, 9.6 by 6 m, too small for a town's church, so a town
+// church of its own. A nave of rubble 16 by 8.4 m with walls 0.9 m thick and 6.2 m to the eaves under a steep slate roof (the temple's
+// pitch), a round-headed west door of 1.5 by 3.2 m in dressed stone with a light over it, three tall round-headed lights a side; a
+// chancel 7.2 by 6.2 m and 5 m to its eaves to the east, lower, with a two-light east window and a light a side. o.tower is the
+// question asked of Michael (DECISION, Session 1087): 'round' (the Gatelands' own: a free-standing round tower of 24 m and a conical
+// stone cap, its door 3.2 m up by a ladder, 5 m off the nave's north-west corner), 'square' (a west tower of four stages, 17.6 m to
+// its battlements, the door moved into its foot) or 'bellcote' (a bell in an open frame on the west gable, no tower).
+// -> a Group of the nave, the chancel and the tower, its userData {name, tris, calls, size, door, parts}
+// a cylinder's or a cone's own UVs (round it, along it) scaled to metres, so the stone's courses run level and stay their size
+const cylUV = (g, su, sv) => { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * su, uv.getY(i) * sv); return g; };
+function church(o = {}) {
+  const tw = o.tower || 'round', r = o.r || stream('church'), t = .9, nw = 16, nd = 8.4, nh = 6.2, cw = 7.2, cd = 6.2, ch = 5.0, pitch = SCALE.pitch.slate + 14, tp = Math.tan(pitch * RAD);
+  const lancet = (x, y = 2.3, w = .6, h = 2.5) => win(x, y, w, h, [1, 4], { sash: false, arch: true });
+  const N = { name: 'Nave', w: nw, d: nd, t, floors: [nh], fin: FIN.stone(), paint: o.paint || 'red', r, roof: { kind: 'slate', pitch, ov: .3, ovg: .25 }, chim: [], doorFace: 'left', gutter: false,
+    open: { left: tw === 'square' ? [lancet(0, 2.6, .5, 1.9)] : [{ kind: 'plank', x: 0, y: 0, w: 1.5, h: 3.2, arch: true, dress: true, ajar: !!o.ajar }, lancet(0, 4.2, .5, 1.5)],
+      front: [-4.8, 0, 4.8].map(x => lancet(x)), back: [-4.8, 0, 4.8].map(x => lancet(x)) } };
+  const C = { name: 'Chancel', w: cw, d: cd, t: .8, floors: [ch], fin: FIN.stone(), paint: N.paint, r, roof: { kind: 'slate', pitch, ov: .3, ovg: .25 }, chim: [], gutter: false, interior: true,
+    open: { right: [-.55, .55].map(x => lancet(x, 1.9, .55, 2.4)), front: [lancet(.9, 2.0, .5, 2.0)], back: [lancet(.9, 2.0, .5, 2.0)] } };
+  const G = new THREE.Group(), parts = [], add = (g, x, z) => { g.position.set(x, 0, z); g.updateMatrix(); G.add(g); parts.push(g); return g; };
+  const nave = add(building(N), 0, 0), chancel = add(building(C), nw / 2 + cw / 2 - t - .02, 0);
+  let door = nave.userData.door ? nave.userData.door.clone() : null, top = nave.userData.size.ridge, x0 = -nw / 2, z0 = -nd / 2;
+  if (tw === 'round') { // the round tower: a battered shaft of rubble, its door high up, slits up the shaft, four bell lights and a stone cap
+    const bk = bucket(), R0 = 2.75, R1 = 2.3, Hs = 24, cx = -nw / 2 - 5.0, cz = -nd / 2 - 1.0, rAt = y => R0 + (R1 - R0) * y / Hs;
+    { const g = new THREE.CylinderGeometry(R1, R0, Hs, 32, 8, true); cylUV(g, 2 * Math.PI * (R0 + R1) / 2 * .8, Hs * .8); g.translate(0, Hs / 2, 0); bk.add('rubble', g); }
+    { const g = new THREE.CylinderGeometry(R0 + .22, R0 + .3, 1.1, 32); g.translate(0, -.2, 0); bk.add('dress', g); }
+    { const g = new THREE.CylinderGeometry(R1 + .14, R1 + .14, .26, 32); g.translate(0, Hs - .1, 0); bk.add('dress', g); }
+    { const g = new THREE.ConeGeometry(R1 + .12, 5.6, 32, 4); cylUV(g, 2 * Math.PI * (R1 + .12) / 2 * .8, 6.1 * .8); g.translate(0, Hs + 2.8, 0); bk.add('rubble', g); }
+    { const g = new THREE.SphereGeometry(.22, 10, 8); g.translate(0, Hs + 5.65, 0); bk.add('dress', g); }
+    { const g = new THREE.CircleGeometry(R1 - .05, 24); g.rotateX(Math.PI / 2); g.translate(0, Hs - .2, 0); bk.add('dark', g); }
+    // an opening on the shaft: a dressed surround standing proud of the batter and the dark of the opening inside it, facing angle a
+    const hole = (a, y, w, h, key = 'dark') => { const R = rAt(y + h / 2), M = new THREE.Matrix4().makeRotationY(a).setPosition(Math.sin(a) * R, 0, Math.cos(a) * R);
+      for (const [gw, gh, gx, gy] of [[.22, h + .22, -w / 2 - .11, y + h / 2], [.22, h + .22, w / 2 + .11, y + h / 2], [w + .44, .22, 0, y - .11]]) { const g = box(gw, gh, .3); g.translate(gx, gy, 0); bk.add('dress', g, M); }
+      { const sh = new THREE.Shape(); sh.absarc(0, 0, w / 2 + .22, 0, Math.PI, false); sh.absarc(0, 0, w / 2, Math.PI, 0, true); const g = new THREE.ExtrudeGeometry(sh, { depth: .3, bevelEnabled: false, curveSegments: 12 }); g.translate(0, y + h, -.15); bk.add('dress', g, M); }
+      { const sh = new THREE.Shape(); sh.moveTo(-w / 2, y); sh.lineTo(w / 2, y); sh.lineTo(w / 2, y + h); sh.absarc(0, y + h, w / 2, 0, Math.PI, false); sh.lineTo(-w / 2, y); const g = new THREE.ShapeGeometry(sh, 8); g.translate(0, 0, .16); bk.add(key, g, M); } };
+    // the door faces east, toward the nave's west front
+    hole(Math.PI / 2, 3.2, .8, 1.9, 'p:' + N.paint);
+    [[0, 7.4], [Math.PI * .9, 11.2], [Math.PI * 1.6, 15.0], [Math.PI * .35, 18.4]].forEach(([a, y]) => hole(a, y, .26, .9));
+    for (let k = 0; k < 4; k++) hole(k * Math.PI / 2 + Math.PI / 4, 21.0, .62, 1.3);
+    // the ladder up to the door: two rails and rungs, leant from the grass to the sill
+    { const foot = R0 + 1.5, sill = 3.1, len = Math.hypot(foot - rAt(3), sill), ang = Math.atan2(foot - rAt(3), sill);
+      for (const sz of [-.26, .26]) { const g = box(.07, len, .07); g.rotateZ(ang); g.translate((foot + rAt(3)) / 2, sill / 2, sz); bk.add('board', g); }
+      for (let k = 1; k * .3 < sill; k++) { const y = k * .3, x = foot - (foot - rAt(3)) * y / sill; const g = new THREE.CylinderGeometry(.025, .025, .52, 6); g.rotateX(Math.PI / 2); g.translate(x, y, 0); bk.add('board', g); } }
+    const T = finish(bk, 'Round tower'); T.userData.size = { w: R0 * 2, d: R0 * 2, eave: Hs, ridge: +(Hs + 5.87).toFixed(2) }; add(T, cx, cz); top = Math.max(top, Hs + 5.87); x0 = cx - R0;
+  } else if (tw === 'square') { // the west tower: four stages, the door in its foot, slits, a bell stage of louvred lights, a parapet of stepped merlons
+    const s = 5.6, st = [4.4, 4.4, 4.4, 3.6], h = st.reduce((a, b) => a + b, 0), ys = st.reduce((a, f) => (a.push(a.at(-1) + f), a), [0]);
+    const T = { name: 'West tower', w: s, d: s, t: 1.1, floors: st, fin: FIN.stone(), paint: N.paint, r, roof: { kind: 'slate', pitch: 24, hip: true, ov: -.6 }, chim: [], doorFace: 'left', gutter: false,
+      open: { left: [{ kind: 'plank', x: 0, y: 0, w: 1.4, h: 3.1, arch: true, dress: true, ajar: !!o.ajar }, lancet(0, ys[1] + 1.2, .35, 1.3), lancet(0, ys[2] + 1.2, .35, 1.3), { kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }],
+        front: [lancet(0, ys[2] + 1.2, .35, 1.3), { kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }], back: [lancet(0, ys[1] + 1.2, .35, 1.3), { kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }],
+        right: [{ kind: 'vent', x: 0, y: ys[3] + .7, w: .8, h: 1.7, arch: true }] } };
+    const g = building(T), bk = bucket(); // the parapet: a wall walk's breastwork, stepped merlons in the island's way
+    for (const [ax, az, len] of [[0, s / 2, s], [0, -s / 2, s], [s / 2, 0, s], [-s / 2, 0, s]]) { const along = ax === 0; { const b = box(along ? len + .2 : .5, .7, along ? .5 : len + .2); b.translate(ax - Math.sign(ax) * .25, h + .35, az - Math.sign(az) * .25); bk.add('rubble', b); }
+      for (let k = 0; k < 4; k++) { const u = -len / 2 + .55 + k * (len - 1.1) / 3; for (const [mw, mh, my] of [[.9, .5, h + .95], [.5, .4, h + 1.4]]) { const b = box(along ? mw : .5, mh, along ? .5 : mw); b.translate(along ? u : ax - Math.sign(ax) * .25, my, along ? az - Math.sign(az) * .25 : u); bk.add('dress', b); } } }
+    const P = finish(bk, 'Parapet'); g.add(...P.children); g.userData.tris += P.userData.tris; g.userData.calls += P.userData.calls;
+    add(g, -nw / 2 - s / 2 + .5, 0); door = g.userData.door.clone().add(new THREE.Vector3(-nw / 2 - s / 2 + .5, 0, 0)); top = Math.max(top, h + 1.6); x0 = -nw / 2 - s + .5;
+  } else { // the bellcote: two dressed piers and an arch on the west gable's apex, the bell hung in it, a coping over
+    const bk = bucket(), ay = nh + nd / 2 * tp, x = -nw / 2 + t / 2;
+    for (const sz of [-.55, .55]) { const g = box(t, 1.7, .32); g.translate(x, ay + .55, sz); bk.add('dress', g); }
+    { const g = box(t, .42, 1.42); g.translate(x, ay + 1.6, 0); bk.add('dress', g); } { const g = box(t + .2, .14, 1.6); g.rotateX(0); g.translate(x, ay + 1.88, 0); bk.add('dress', g); }
+    { const g = new THREE.LatheGeometry([[0, .62], [.12, .6], [.2, .5], [.24, .3], [.32, .05], [.36, 0], [0, 0]].map(([u, v]) => new THREE.Vector2(u, v)), 14); g.translate(x, ay + .55, 0); bk.add('iron', g); }
+    { const g = box(.12, .12, .9); g.translate(x, ay + 1.3, 0); bk.add('board', g); }
+    const B = finish(bk, 'Bellcote'); add(B, 0, 0); top = Math.max(top, ay + 1.95);
+  }
+  const ud = { name: { round: 'Church with a round tower', square: 'Church with a west tower', bellcote: 'Church with a bellcote' }[tw], tris: 0, calls: 0, parts: parts.map(p => ({ name: p.userData.name, tris: p.userData.tris, calls: p.userData.calls })) };
+  for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
+  ud.size = { w: +(nw / 2 + cw - t - .02 - x0).toFixed(2), d: tw === 'round' ? +(nd + 1.0 + 2.75).toFixed(2) : nd, eave: nh, ridge: +top.toFixed(2), nave: nave.userData.size, chancel: chancel.userData.size };
+  ud.door = door; ud.tower = tw; G.userData = ud; return G;
+}
 // the Gatelands' lots (Session 835, Michael's A on #280: coloured towns). A town's lots are rendered in the earth colours,
 // with dressed quoins, string courses and a cornice; no two neighbours share a colour, as in Kinsale or Dingle, and the
 // door and sashes are painted in a colour that does not drown in the wall's. Cottages stay limewashed under thatch, farmhouses
@@ -1013,6 +1080,7 @@ export function gatelandsLot(street, i, s = {}) {
   return { plan, kind, colour: town ? colour : kind === 'warehouse' ? 'stone' : 'lime', paint: town ? paint : plan.paint };
 }
 export { BAYS as GL_BAYS, bayWidth as glBayWidth, baysFor as glBaysFor, bayPlan as glBayPlan };
+export { church as gatelandsChurch };
 export { SCALE, glMats, bucket as glBucket, finish as glFinish, box as glBox, face as glFace, building as gatelandsBuilding, PLANS as GL_PLANS, FIN as GL_FIN, win as glWin, PAINTS as GL_PAINTS };
 
 // ── the Markish hall (Session 819, a prototype for DECISION: the Mark's houses in the new kit) ──

@@ -12,14 +12,16 @@
 // ?view=guild (Session 964): the guild hall beside the farmhouse, &cam=front|corner|back|door, &guild=mages.
 // ?view=bays (Session 1063, #396 C): the cottage, the farmhouse, the townhouse and the merchant's house on every count of bays they take,
 // a row each, a person at each door and a plaque with its bays and width; &cam=high (default) | cottage | farmhouse | townhouse | merchant (the row from the front).
+// ?view=church (Session 1087): the town church in its yard, &tower=round (default) | square | bellcote | all (the three in a row),
+// &cam=corner (default, from the south-west) | front (the south side) | west (the door) | far (from 90 m) | high.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loadPack, makePerson, markGenome } from './people.js';
 import { Q, W, H, STATS, rnd, fbm, sstep, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run } from './common.js';
 // the kit itself is in pieces.js since Session 834; this file is its page
-import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan } from './pieces.js';
+import { glMats as mats, glBucket as bucket, glFinish as finish, glBox as box, glFace as face, gatelandsBuilding as building, GL_PLANS as PLANS, GL_FIN as FIN, glWin as win, gatelandsLot, GL_BAYS, glBayPlan, gatelandsChurch } from './pieces.js';
 
-const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : 'eye'), STREET = Q.get('street') || 'gatelands-street';
+const VIEW = Q.get('view') || 'street', MIX = Q.get('mix') || 'a', CAMQ = Q.get('cam') || (Q.get('view') === 'guild' ? 'front' : Q.get('view') === 'church' ? (Q.get('tower') === 'all' ? 'high' : 'corner') : 'eye'), STREET = Q.get('street') || 'gatelands-street';
 
 
 // ═══════════════════════════════ the scenes ═══════════════════════════════
@@ -144,6 +146,24 @@ if (VIEW === 'guild') {
   plaques.push([-7.5, 7.0, g.userData], [15.2, 5.2, F.userData]);
   const C = { front: [[1.5, 1.65, 26], [1.5, 4.6, 0]], corner: [[-17, 3.2, 17], [0, 4.2, 0]], back: [[9, 2.4, -21], [-1, 4.4, 0]], door: [[-6.6, 1.65, 9.0], [-1.6, 3.7, 3.6]] }[CAMQ] || [[1.5, 1.65, 26], [1.5, 4.6, 0]];
   cam.position.set(...C[0]); cam.lookAt(...C[1]);
+}
+if (VIEW === 'church') {
+  // the church in a yard of grass, a gravel path to its west door, a high cross and a few headstones; the farmhouse beside it for its size
+  const TW = Q.get('tower') || 'round', all = TW === 'all', kinds = all ? ['round', 'square', 'bellcote'] : [TW], dx = 46;
+  sun.shadow.camera.left = sun.shadow.camera.bottom = -70; sun.shadow.camera.right = sun.shadow.camera.top = 70;
+  kinds.forEach((tw, i) => { const x = all ? (i - 1) * dx : 0, g = gatelandsChurch({ tower: tw, ajar: true }); put(g, x, 0, 0); personAt(g, .4, .6, -Math.PI * .4);
+    flat(mat('plaster', { ns: 1.4, color: 0x9a9082, rough: 1 }), 14, 2.2, x - 8 - 7 - (tw === 'square' ? 5 : 0), 0, .02, .8);
+    plaques.push([x + 2, 9.5, g.userData]);
+    // the high cross: a shaft on a stepped base, the ring about the head
+    const hc = bucket(), cx = x - 13, cz = 10; { const b = box(1.3, .7, 1.0); b.translate(cx, .35, cz); hc.add('rubble', b); } { const b = box(.42, 3.0, .3); b.translate(cx, 2.2, cz); hc.add('ashlar', b); }
+    { const b = box(1.5, .34, .3); b.translate(cx, 3.2, cz); hc.add('ashlar', b); } { const b = new THREE.TorusGeometry(.48, .07, 6, 20); b.translate(cx, 3.2, cz); hc.add('ashlar', b); }
+    { const b = box(.3, .3, .3); b.translate(cx, 3.85, cz); hc.add('ashlar', b); } scene.add(finish(hc, 'High cross'));
+    const hs = bucket(), rr = (() => { let s2 = 7 + i; return () => ((s2 = (s2 * 16807) % 2147483647) - 1) / 2147483646; })();
+    for (let k = 0; k < 9; k++) { const sx = x - 4 + (k % 5) * 2.6 + rr() * .6, sz = 8.2 + Math.floor(k / 5) * 2.4 + rr() * .4, b = box(.6 + rr() * .25, .8 + rr() * .5, .16); b.rotateZ((rr() - .5) * .16); b.rotateY((rr() - .5) * .2); b.translate(sx, .35, sz); hs.add('rubble', b); }
+    scene.add(finish(hs, 'Headstones')); });
+  if (!all) { const F = building(PLANS.farmhouse({})); put(F, 24, 4, 0); plaques.push([24, 9.8, F.userData]); }
+  const C = all ? (CAMQ === 'eye' ? [[-60, 2, 30], [0, 8, 0]] : [[-6, 34, 96], [-6, 9, 0]]) : { corner: [[-31, 1.8, 21], [-5, 8, 0]], front: [[2, 1.8, 30], [2, 6, 0]], west: [[-26, 1.7, 6], [-9, 4.0, 0]], far: [[-70, 6, 60], [0, 9, 0]], high: [[-30, 34, 40], [0, 4, 0]] }[CAMQ] || [[-36, 2.2, 26], [-4, 7.5, 0]];
+  cam.fov = all ? 50 : 56; cam.updateProjectionMatrix(); cam.position.set(...C[0]); cam.lookAt(...C[1]);
 }
 STATS.plans = BUILT; STATS.view = VIEW; STATS.mix = MIX;
 

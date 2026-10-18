@@ -14,6 +14,30 @@ How deep should a town's houses be?
 
 Picture (Dunmore on the new look, at noon): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-town-ingame.png
 
+### The Gatelands' town church on the new look: a round tower, a west tower, or a bellcote? (look builder, Session 1087) — DECISION #410
+**Card F6: the Gatelands' town church (look builder, Session 1087).** The Gatelands' towns are now built from the kit on the new look, except their churches, inns and keeps. The kit's temple is a small god's temple, 9.6 by 6 m, which is too small for a town's church, so the church is drawn new. It is a prototype in `docs/prototypes/levelup/pieces.js` (`gatelandsChurch`), at `pieces-gatelands.html?view=church&tower=round|square|bellcote|all`.
+
+What every option shares:
+- **The nave:** rubble, 16 by 8.4 m, with walls 0.9 m thick, 6.2 m to the eaves under the temple's steep slate (ridge 11.4 m).
+- **The west door:** round-headed in dressed stone, 1.5 by 3.2 m, with a light over it.
+- **The windows:** three tall round-headed lights a side.
+- **The chancel:** to the east, 7.2 by 6.2 m and lower (ridge 8.9 m), with a two-light east window.
+- **The yard:** a high cross and headstones. The yard is the page's, not the kit's.
+
+The question is how the bell hangs. That sets the church's mark on the skyline:
+- **A. A round tower** *(recommended)*: free-standing, 5 m off the nave's north-west corner. It is 24 m of battered rubble under a conical stone cap, 29.9 m in all. Its door is 3.2 m up, reached by a ladder, with slits up the shaft and four bell lights under the cap. It is the Gatelands' own (Glendalough, Clonmacnoise, Kilkenny), and a town reads from three fields away by it. It is 13,600 triangles in 21 draws.
+- **B. A west tower:** square, four stages, 18.4 m to its stepped merlons. The door moves into its foot. This is the later parish church, more Norman than Irish. It is 17,400 triangles in 26 draws.
+- **C. A bellcote:** the bell in an open stone frame on the west gable's apex, with no tower. It is the plainest and the cheapest, a village's church, and does not mark a town from afar. It is 10,100 triangles in 19 draws.
+
+Which god or Church the building serves, and what stands inside, are not part of this question. They stay with the canon and the quest writer, and the old builder's church keeps its name, priest and topics in every option.
+
+Pictures:
+- [A, the round tower, from the south-west](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-round.jpg)
+- [A from 90 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-far.jpg)
+- [B, the west tower](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-square.jpg)
+- [C, the bellcote](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-bellcote.jpg)
+- [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-all.jpg)
+
 ## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:
