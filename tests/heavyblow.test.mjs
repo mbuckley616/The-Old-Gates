@@ -1,4 +1,5 @@
-// The foes' heavy blow (Session 1136; combat.md's move sets, Michael's A on DECISION #430), humanoids and wolves first.
+// The foes' heavy blow (Session 1136; combat.md's move sets, Michael's A on DECISION #430), humanoids and wolves first; every other
+// family but the shark since Session 1137 (a boss keeps its phases, the cavern master its slam).
 // One wind-up in four is heavy, a seeded roll on the foe's id and its blow's count, never twice running. Its tell is 1.0 s or the
 // kind's + 0.35, the same pose held longer, its last 0.15 s glowing red where a light blow's glows gold. It lands for twice the damage
 // and twice the posture; a held block breaks (Guard's Iron wall, 75, holds it); a perfect parry is as good as ever. Hold the line
@@ -15,10 +16,14 @@ const r = await page.evaluate(() => {
   out.share = (a.match(/H/g) || []).length / 4000; out.twice = a.includes('HH'); out.same = a === b;
   out.other = rolls({ id: 'heavytest:bandit:1', baseType: 'Bandit', baseName: 'Bandit' }, 4000) !== a;
   const W = { id: 'heavytest:wolf:0', shape: 'wolf', name: 'Wolf' }; const w = rolls(W, 4000); out.wolf = (w.match(/H/g) || []).length / 4000;
-  out.none = [{ id: 'g', baseType: 'Golem', baseName: 'Golem' }, { id: 's', baseType: 'Spider', baseName: 'Spider' }, { id: 't', baseType: 'Cave Troll', name: 'Cave Troll' }, { id: 'f', isBoss: true, shape: 'wolf' }]
-    .map(e => rolls(e, 400).includes('H'));
+  // S1137: every other family has the row now (the shark aside); a boss keeps its phases, the master its slam
+  const fam = { golem: { id: 'g', baseType: 'Golem', baseName: 'Golem' }, spider: { id: 's', baseType: 'Spider', baseName: 'Spider' }, troll: { id: 't', baseType: 'Cave Troll', name: 'Cave Troll' },
+    slime: { id: 'sl', baseType: 'Slime', baseName: 'Slime' }, elemental: { id: 'el', baseType: 'Fire Elemental', baseName: 'Fire Elemental' }, wraith: { id: 'ph', isWraith: true, baseType: 'Phantom', baseName: 'Phantom' }, mimic: { id: 'mi', baseType: 'Mimic', baseName: 'Mimic' } };
+  out.fams = Object.fromEntries(Object.entries(fam).map(([k, e]) => { const s = rolls(e, 4000); return [k, { share: +((s.match(/H/g) || []).length / 4000).toFixed(3), twice: s.includes('HH') }]; }));
+  out.none = [{ id: 'f', isBoss: true, shape: 'wolf' }, { id: 'sh', baseType: 'Shark', baseName: 'Shark' }].map(e => rolls(e, 400).includes('H'));
   // the tells: light as built, heavy 1.0 (every humanoid's and the wolf's tell + 0.35 is under it)
   const tell = (e, heavy) => { e._heavyLast = false; const u = Math.random; const t = (() => { for (let i = 0; i < 400; i++) { const v = foeWindUp(e); if (e._heavy === heavy) return v; } return -1; })(); return +t.toFixed(3); };
+  out.tellsBig = { golem: [tell(fam.golem, false), tell(fam.golem, true)], troll: [tell(fam.troll, false), tell(fam.troll, true)], slime: [tell(fam.slime, false), tell(fam.slime, true)] };
   out.tells = { bandit: [tell(B, false), tell(B, true)], wolf: [tell(W, false), tell(W, true)], kobold: [tell({ id: 'k', baseType: 'Kobold Thief', baseName: 'Kobold Thief' }, false), tell({ id: 'k', baseType: 'Kobold Thief', baseName: 'Kobold Thief' }, true)] };
   // a real Bandit in front of you: the glow, the blow's size and what it does to you
   const sk0 = JSON.parse(JSON.stringify(SKILLS)), eq0 = { ...EQ };
@@ -52,7 +57,9 @@ console.log(JSON.stringify(r));
 check(`one wind-up in four is heavy: ${(r.share * 100).toFixed(1)}% of 4,000 for a Bandit, ${(r.wolf * 100).toFixed(1)}% for a wolf`, Math.abs(r.share - .25) < .03 && Math.abs(r.wolf - .25) < .03, r);
 check('never two heavies running', !r.twice, r);
 check('the roll is seeded on the foe and the count: the same foe gives the same 4,000 again, another foe another', r.same && r.other, r);
-check('a golem, a spider, a troll and a boss never swing heavy (no heavy row yet)', r.none.every(x => !x), r.none);
+check('every other family swings heavy one in four, never twice running (S1137): ' + Object.entries(r.fams).map(([k, v]) => k + ' ' + v.share).join(', '), Object.values(r.fams).every(v => Math.abs(v.share - .25) < .03 && !v.twice), r.fams);
+check('a boss and the shark never swing heavy (their own blows)', r.none.every(x => !x), r.none);
+check(`the slow kinds' heavy is their tell + 0.35: golem ${r.tellsBig.golem}, troll ${r.tellsBig.troll}; a slime's ${r.tellsBig.slime}`, r.tellsBig.golem[0] === .9 && r.tellsBig.golem[1] === 1.25 && r.tellsBig.troll[0] === .83 && r.tellsBig.troll[1] === 1.18 && r.tellsBig.slime[0] === .54 && r.tellsBig.slime[1] === 1, r.tellsBig);
 check(`the light tells stay as built (Bandit ${r.tells.bandit[0]}, wolf ${r.tells.wolf[0]}, kobold ${r.tells.kobold[0]}), the heavy is 1.0`,
   r.tells.bandit[0] === .57 && r.tells.wolf[0] === .61 && r.tells.kobold[0] === .45 && r.tells.bandit[1] === 1 && r.tells.wolf[1] === 1 && r.tells.kobold[1] === 1, r.tells);
 check(`the heavy's last moment glows red ${r.glowH}, a light one's gold ${r.glowL}; neither glows halfway through`, r.glowH[0] > .5 && r.glowH[1] < .15 && r.glowL[0] > .5 && r.glowL[1] > .4 && r.glowEarly === 0, r);

@@ -26234,3 +26234,29 @@ out of the live perks waiting for it. Michael chose A on #430: one blow in four,
   the bodies builder's heavy wind-up pose would help.
 - **Owed under #430's answer:** the other families' heavy rows (spiders, brutes, trolls, slimes, elementals, wraiths, mimics) and the third
   moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp).
+## v80 — Session 1137 — The heavy blow for every other family (Michael's A on DECISION #430)
+Session 1136 built #430's answer for humanoids and wolves, the answer's first session. This one fills `FOE_ATTACKS`' heavy column for every
+other family: spiders, brutes (golems, gargoyles, cave bears, ogres), trolls, slimes, fire elementals, wraiths and mimics. The rule is the
+same for every family (combat.md gives the move sets one heavy blow): one wind-up in four, never twice running, twice the damage and the
+posture, a held block broken unless you have *Iron wall*, a parry still good. The tell is 1.0 s or the kind's tell + 0.35, so the slow kinds
+wind up longest: a golem 1.25 s, a troll 1.18, a gargoyle 1.15. Three keep their own blow and have no row: a boss (its phases), the cavern
+master's slam, and the shark (the sea's own bite, not the shared wind-up). A mimic's first pounce after the reveal is its burst, as before;
+its later blows roll.
+### Verified (headless Chromium)
+- **`heavyblow`** 1/1, now 17 checks. Over 4,000 seeded wind-ups each, the golem is heavy 24.7%, the spider 24.4%, the troll 25.3%, the slime
+  24.6%, the elemental 24.4%, the wraith 25.2% and the mimic 24.9%, never two running. A boss and the shark never swing heavy. The heavy tells are
+  1.25 (golem, light 0.9), 1.18 (troll, 0.83) and 1.0 (slime, 0.54).
+- **Neighbours, 26 suites** that fight these kinds, all green: `bodies`, `chasesight`, `cowards`, `dazed`, `dungeonpace`, `foereach`,
+  `herbhidden`, `herbparity`, `lairmaster`, `lairtheme`, `makerwords`, `masterslam`, `questfoes`, `resolver`, `roll`, `tells`, `tierlevelfree`,
+  `wanderface`, `wardall`, `wolfcloak`, `attrpromise`, `slimes`, `mimic`, `wolves`, `targetof`, `dunseed`.
+- **A correction to Session 1136's `fistfight` re-measure.** It passed once alone, but the Bandit's damage is a `Math.random` roll, so
+  the count of blows that fell you can come out at 8 (H l H l H). The check is now the weight you survived before the last blow, 4 to 6 light
+  blows' worth (it was 5 to 7 blows to fall when every blow was light). The punching fights also lost twice, a trained brawl taking 12
+  punches and the armed fight ending with you dead. A heavy that staggers you between punches measures the Bandit, not the fists. Those
+  fights now hold the Bandit's heavy out, as S1104 holds Throw out (`heavyblow` measures it), and the stand-still fight keeps it. Green
+  twice in a row since.
+### Needs eyes
+- **A golem's 1.25 s heavy.** With the gold-and-red glow it should be the easiest heavy to read, and the hardest to sit through. Whether
+  the slow kinds' heavies feel fair or ponderous is a playtest's call.
+- **Owed under #430:** the third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp). A heavy wind-up pose for each
+  family is the bodies builder's, whenever they choose.

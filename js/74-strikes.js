@@ -94,19 +94,20 @@ const FOE_ROW=(o)=>Object.assign({tell:TELL_DEFAULT,tells:{},strike:0,recovery:1
 // S1136 — the heavy blow (combat.md's move sets; Michael's A on DECISION #430), humanoids and wolves first. One wind-up in four
 // (`share`, the roll a third after a light blow) is heavy, a seeded roll on the foe's id and its blow's count (co-op rules), never twice running. Its tell is 1.0 s or the
 // kind's tell + 0.35, whichever is longer, the same wind-up pose held longer, its last 0.15 s glowing red where a light blow's glows
-// gold (telegraphPulse). It lands for twice the damage and twice the posture; a held block takes its share of the damage but the
+// gold (telegraphPulse). S1137 — every family has it now but the shark, a boss and the master's slam, each of which keeps its own blow.
+// It lands for twice the damage and twice the posture; a held block takes its share of the damage but the
 // guard breaks (Guard's Iron wall, 75, holds it: twice a held block's posture instead); a perfect parry is as good as ever.
 const HEAVY_ROW=(o)=>Object.assign({share:.25,tell:1.0,add:.35,dmg:2,posture:2,breaks:true},o);
 const FOE_ATTACKS={
   humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2,heavy:HEAVY_ROW({})}),
   beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70,heavy:HEAVY_ROW({})}),
-  spider:   FOE_ROW({tells:{Spider:.51},hulls:true,engage:.8,reach:1.2,arc:100}),
-  brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80},hulls:true,engage:.8,reach:1.2,arc:100}),
-  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},hulls:true,engage:1.6,reach:2.4,arc:140}),
-  slime:    FOE_ROW({tells:{Slime:.54,'Small Slime':.54}}),
-  elemental:FOE_ROW({tells:{'Fire Elemental':.65}}),
-  wraith:   FOE_ROW({tells:{Phantom:.54,Wraith:.57}}),
-  mimic:    FOE_ROW({tells:{Mimic:.57}}),
+  spider:   FOE_ROW({tells:{Spider:.51},hulls:true,engage:.8,reach:1.2,arc:100,heavy:HEAVY_ROW({})}),
+  brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80},hulls:true,engage:.8,reach:1.2,arc:100,heavy:HEAVY_ROW({})}),
+  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},hulls:true,engage:1.6,reach:2.4,arc:140,heavy:HEAVY_ROW({})}),
+  slime:    FOE_ROW({tells:{Slime:.54,'Small Slime':.54},heavy:HEAVY_ROW({})}),
+  elemental:FOE_ROW({tells:{'Fire Elemental':.65},heavy:HEAVY_ROW({})}),
+  wraith:   FOE_ROW({tells:{Phantom:.54,Wraith:.57},heavy:HEAVY_ROW({})}),
+  mimic:    FOE_ROW({tells:{Mimic:.57},heavy:HEAVY_ROW({})}),
   shark:    FOE_ROW({}),
   boss:     FOE_ROW({}), // the tell is the boss's own (bossDef.telegraphBase by phase), the reach its biteRange
   slam:     FOE_ROW({tell:.9,reach:3,arc:360,blockable:false,parryable:false}), // the cavern master's (S404, S617): its blow is a share of your health
