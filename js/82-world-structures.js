@@ -1039,6 +1039,10 @@
           else{let arrived=npcStep(n,t.x,t.z,spd,dt); // blocked for good (npcStep gives up) is not arriving: once more cell by cell, then on to the next point
             if(arrived&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>=.8&&n._bwTry!==t){n._bwTry=t;n._bwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t,true);arrived=!n._bwp.length;}
             if(arrived)next();moving=!arrived;}}}
+      else if(plan.go&&n.sched.bawn){const t=plan.go; /* S1143 — a steward in a bawn goes by the streets, out through its gate (straight, the wall stops him and he gives up there) */
+        if(n._gwT!==t||(n._gwArr===t&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>2)){n._gwT=t;n._gwArr=null;n._gwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t);} /* again when he is far from a place he reached (the next day) */
+        if(n._gwp&&n._gwp.length){const w=n._gwp[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._gwp.shift();moving=true;}
+        else{const arrived=npcStep(n,t.x,t.z,spd,dt);if(arrived){n._gwArr=t;if(plan.thenHide)n._arrivedHide=true;}moving=!arrived;}}
       else if(plan.go){const arrived=npcStep(n,plan.go.x,plan.go.z,spd,dt);if(arrived&&plan.thenHide)n._arrivedHide=true;moving=!arrived;}
       else if(plan.wander){
         n.wt-=dt;

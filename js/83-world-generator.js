@@ -541,7 +541,7 @@
       if(type==='inn')def._extra.unshift(...innTopics(house,def.people)); // v80 — the innkeeper lets the rooms; S141 — one of them; S237 — shared with the coaching inn
       if(type==='castle'){def._extra.unshift(...lordTopics(site));def._extraFn=()=>[...tutTownTopics(site),...factionTopics(site),...(typeof crownBladeTopics==='function'?crownBladeTopics(site):[]),...(typeof compactBellTopics==='function'?compactBellTopics(site):[]),...(typeof churchShuttleTopics==='function'?churchShuttleTopics(site):[]),...fineTopics(site),...investTopics(site),...routeTopics(site),...coachTopics(site)];house.dlg=def;} // the keep's steward carries the lord's quests
       if(type==='church'){def._extraFn=()=>[...penanceTopics(site),...(typeof shuttlePriestTopics==='function'?shuttlePriestTopics(def):[]),...(typeof guestTopics==='function'?guestTopics(site,def):[])];if(!house.dlg)house.dlg=def;} // S158 — the priest hears a confession
-      const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz},shop:type};snpcs.push(kn);
+      const kn=spawnNPC(def,lot.ry+Math.PI,true);kn.sched={type:type==='inn'?'innkeeper':(house.guild?'innkeeper':'keeper'),door:{x:exX,z:exZ},plaza:{x:cx,z:cz},shop:type};if(lot.kit&&lot.kit.kind==='keep')kn.sched.bawn=true; /* S1143 — he leaves the bawn by its gate */snpcs.push(kn);
     });
     {const innH=houses.find(h=>h.type==='inn');S.innDoor=innH?{x:innH.exitX,z:innH.exitZ}:null;snpcs.forEach(n=>{if(n.sched&&n.sched.type==='keeper')n.sched.inn=S.innDoor;});}
     const clearDead=()=>{snpcs.forEach(n=>{sc.remove(n.g);sc.remove(n.dot);});snpcs.length=0;}; // S269 — out of the scene too, not only out of the list

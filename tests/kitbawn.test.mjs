@@ -27,6 +27,11 @@ const survey = () => { const nat = t => nationKeyOf(...cellOf(t.x, t.z));
       o.at = [+au.toFixed(2), +av.toFixed(2)];
       const path = (S.paths || []).find(p => p.w === 1.3 && p.pts.length === 3 && Math.hypot(p.pts[0].x - h.doorX, p.pts[0].z - h.doorZ) < .6);
       o.path = path ? path.pts.map(q => loc(q.x, q.z).map(v => +v.toFixed(1))) : null;
+      // the steward's evening walk to the inn (Session 1143): straight, the bawn's wall is in the way; by the streets, out through the gateway, clear of every solid
+      { const n = S.npcs.find(q => q.sched && q.sched.bawn), sc = n && n.sched; o.steward = !!n;
+        if (sc && sc.inn) { const hit = (a, b) => { const L = Math.hypot(b.x - a.x, b.z - a.z), m = Math.ceil(L / .25); for (let j = 1; j < m; j++) if (settleSolid(a.x + (b.x - a.x) * j / m, a.z + (b.z - a.z) * j / m, .2)) return true; return false; };
+          const way = [sc.door, ...townRoute(S)(sc.door, sc.inn), sc.inn]; o.straight = hit(sc.door, sc.inn); o.wayHits = way.slice(1).filter((p, j) => hit(way[j], p)).length; o.wayN = way.length;
+          o.throughGate = way.some((p, j) => j && (() => { const [u0, v0] = loc(way[j - 1].x, way[j - 1].z), [u1, v1] = loc(p.x, p.z), fv = av + B.d / 2 - B.t / 2; if ((v0 - fv) * (v1 - fv) > 0) return false; const u = u0 + (u1 - u0) * (fv - v0) / (v1 - v0); return Math.abs(u - gx) < 1.5; })()); } }
       o.lodR = S.kitLod.r; o.reach = Math.max(...[[o.box[0], o.box[2]], [o.box[1], o.box[2]], [o.box[1], o.box[3]], [o.box[0], o.box[3]]].map(([u, v]) => { const q = W(u, v); return Math.hypot(q.x - site.x, q.z - site.z); }));
       // the ground under the bawn: its height range across the plot, for the walls' footings (0.8 m below)
       const hs = []; for (let u = -14; u <= 14; u += 2) for (let v = -12; v <= 12; v += 2) { const q = W(u, v); hs.push(worldH(q.x, q.z)); } o.ground = +(Math.max(...hs) - Math.min(...hs)).toFixed(2); }
@@ -42,6 +47,8 @@ check(`the bawn stands inside its plot of 30 by 25 m, its gate toward the heart 
 check(`the keep's door is the tower's, in the bawn's back west corner (${N.map(o => o.door.join(', ')).join('; ')}); the steward's room is the old keep's, 14 by 11`, N.every(o => o.door[0] < -5 && o.door[1] < 0 && o.w === 14 && o.d === 11), N.map(o => [o.door, o.w, o.d]));
 check('the gateway is open; the walls, the flankers and the tower are solid; the yard is clear', N.every(o => o.gate === 'open' && o.walls.every(Boolean) && o.yard.every(x => !x)), N.map(o => [o.gate, o.walls, o.yard]));
 check(`a footpath runs from the tower's door out through the gate (${N.map(o => o.path && o.path.map(p => p.join(',')).join(' → ')).join('; ')})`, N.every(o => o.path && Math.abs(o.path[1][0] - o.at[0] - 1) < .2 && o.path[2][1] > o.at[1] + 11), N.map(o => o.path));
+check(`the steward's evening walk to the inn goes out through the gate by the streets (${N.map(o => `${o.id}: straight ${o.straight ? 'blocked' : 'clear'}, ${o.wayN} points, ${o.wayHits} through a solid`).join('; ')})`,
+  N.every(o => o.steward && o.throughGate && o.wayHits === 0), N.map(o => [o.steward, o.straight, o.wayN, o.wayHits, o.throughGate]));
 check(`the town's far copy reaches the bawn's far corner (${N.map(o => `${o.lodR.toFixed(1)} against ${o.reach.toFixed(1)} m`).join('; ')})`, N.every(o => o.lodR >= o.reach - .05), N.map(o => [o.lodR, o.reach]));
 console.log(`  (the ground across each plot: ${N.map(o => `${o.id} ${o.ground} m`).join(', ')}; the walls' footings go 0.8 m down)`);
 check(`on the old look each keep is the old one on the plot's lot, its door at the lot's front (${O.map(o => o.door.join(', ')).join('; ')})`, O.every(o => !o.kit && Math.abs(o.door[0]) < .05 && Math.abs(o.door[1] - o.lotDoor[1]) < .05), O);

@@ -25662,3 +25662,18 @@ Session 1138 kept every city a bawn plot of 30 by 25 m at the head of its main s
 - **Owed:**
   - **The tower's own room:** four storeys, 8 by 5.5 m inside. It replaces the old hall of 26 by 32 m.
   - **The far copy at a distance**, from a ridge.
+## v80 — Session 1145 — The steward leaves the bawn by its gate (card F6)
+Session 1143 put the keep in its bawn and owed a question: does the steward walk through the bawn's wall? Reading the town's ticks answered it. A keeper's evening walk to the inn is `npcStep`, a straight line that slides along what it meets. It gives up after 40 stuck frames and counts that as arriving. So a steward in the tower's corner walked into the back or west wall toward an inn behind them, stalled there, and vanished against it, as if they had reached the inn. Session 1138's number is not the cause: before the bawn the keep stood alone on its lot.
+
+- **The fix (`tickTownNPCs`, `82-world-structures.js`):** a steward whose keep is the kit's bawn (`sched.bawn`, set by `genSettlement`) goes by the streets. They follow the watch's own route through the town (`townRoute`, Session 166's breadth-first grid over the pad's solids), waypoint by waypoint, and walk the last stretch straight as before.
+- **When the route is drawn again:** when the place they are going to changes, or when they are more than 2 m from a place they have already reached (the next day's walk).
+- **Every other keeper walks as before.** Only these two stewards change, so no other town's timing moves.
+
+### Verified (headless Chromium)
+- **`kitbawn`: 10 of 10 pass.** One check is new: the steward's evening walk.
+  - **Straight to the inn,** a wall is in the way in both cities.
+  - **By the streets:** 13 points at c7_8_s6 and 9 at c1_9_s1. None of the legs between them crosses a solid (sampled every 0.25 m), and the way crosses the front wall's line within the gateway.
+- **The other nine checks** pass as in Session 1143.
+### Needs eyes
+- **Untested: the steward walking it in a running town.** The test checks the route the tick follows, not the tick itself over an evening.
+- **What a player sees:** at 18:00 the steward should walk out of the gate.
