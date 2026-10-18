@@ -24331,3 +24331,31 @@ Two things went wrong on the way:
 - **Where the hound lies.** OG-065's thumbnail is too small to show it. This lays the hound along the right wheel, facing his way. The other side, or across his feet, is one parameter.
 - **The sitting hound's height.** Its head is at the seated man's shoulder: a big wolfhound, as the plan is.
 - **Owed:** the chair pushed (B4), and both of them in the game (after F4).
+
+## v80 — Session 1124 — The lying head held up (L3, prototype only)
+Sessions 1117 and 1122 both flagged the same thing: every lie holds its head low and forward. A hound lying watchful lifts it. This session raises it. It touches only `creatures.js`, and refines a pose already built, so it asks nothing.
+
+- **The neck is raised.** Lying, it is turned up 0.3 rad (`SIT.lieNeck`), spread evenly down its bones so that it curves.
+- **The head is turned back down** by the same angle, so the muzzle stays level.
+- **The first try was too much.** 0.5 rad, all at the neck's first bone, stood the neck nearly upright and bent the head off it at a sharp angle, like a goose.
+- **The searches are unchanged.** The lie's drop and lifts run on the pose with the raise in it. The raise only lifts the head, so they find the same numbers.
+
+### Verified (headless Chromium)
+- **The head's height lying, before and after:**
+
+  | Plan | Before | After |
+  |---|---|---|
+  | Wolfhound | 52 cm | 57 cm |
+  | Ironwolf | 47 | 52 |
+  | Grey wolf | 47 | 51 |
+  | Thornrunner | 24 | 26 |
+  | The foxes | 20 to 21 | 23 to 24 |
+  | The cats | 16 | 17 to 18 |
+
+- **Everything else in the lie is as in Session 1122:** the drop, the forearms, the feet and what is under the ground.
+- **No new check.** The lie's existing bound (the head above the withers) holds both before and after, so no number proves this change. The pictures are what show it.
+- **The full run:** 1,167 of 1,167 pass.
+- **Pictures, reshot:** `creatures-wolfhound-lie.jpg`, `creatures-lying.jpg`, `builder-chair-hound.jpg` and `builder-chair-hound-side.jpg`.
+### Needs eyes
+- **How high.** 0.3 rad is one number for every plan. A cat lying with its head up holds it higher, and a resting dog may drop its chin to its paws, which would be a third rest.
+- **Owed:** the game, after F4.

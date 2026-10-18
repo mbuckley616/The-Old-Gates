@@ -900,7 +900,7 @@ export function pose(C, phase) {
 // stand; how far is found once per creature, halving the hip's height until the lowest point of the body and thighs (every vertex
 // whose bone is the spine's, a thigh's or a shin's) is 5 mm off the ground. The neck takes back most of the pitch so the head looks ahead,
 // and the tail is laid back along the ground and curled round toward the haunch
-const SIT = { haunch: .005, neck: .8, tailCurl: .3, hock: .05 };
+const SIT = { haunch: .005, neck: .8, tailCurl: .3, hock: .05, lieNeck: .3 };
 function sitFrame(C) {
   const B = C.B, order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
   const mean = at => { const v = V(), Ls = B.legs.filter(L => L.at === at); for (const L of Ls) v.add(L.rest[0]); return v.divideScalar(Ls.length); };
@@ -932,6 +932,8 @@ function sitBody(C) {
   const { B, piv } = sitFrame(C), sp = C.byName.spine0;
   const R = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), C.sitA); sp.quaternion.premultiply(R); sp.position.sub(piv).applyQuaternion(R).add(piv); sp.position.y -= C.sitY || 0;
   if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= C.sitA * SIT.neck;
+  // lying, the neck is raised as a watchful animal holds it (Session 1124), spread down its bones, and the head turned back down by as much, so the muzzle stays level
+  if (B.chains.neck && GAITS[C.gait].lie) { const n = B.chains.neck; n.forEach(nm => C.byName[nm].rotation.x -= SIT.lieNeck / n.length); if (C.byName.head) C.byName.head.rotation.x += SIT.lieNeck; }
   // the tail: its first bone turned back level against the pitch and its droop (then up by what sitFind found), each bone after curled round to one side
   if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const a = rigPos(C, t0, V()), b = rigPos(C, C.byName[B.chains.tail[1]], V()), d = b.sub(a);
     t0.rotation.x += Math.atan2(-d.y, -d.z) + C.sitT; B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += SIT.tailCurl; }); }
