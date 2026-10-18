@@ -25239,3 +25239,17 @@ it hides you; crouched, you see under it and are seen. Floor-to-ceiling walls an
 ### Needs eyes
 - Nothing visible changes in most rooms: their walls run floor to ceiling. The bite is under high shelving and galleries, if any room has them.
 - **Owed:** F2b session 3, the dungeon's cell at 3 m (Michael's C on #300), and #420.
+
+## v80 — Session 1108 — questfoes swings unstaggered (red twice on 08ea721)
+CI's shard 2 on `08ea721` was red twice on `questfoes`: *a swing at her lands* read `frames: 1`, so `attack()` began no swing at all, and
+Hesket Rowe kept her 109. The suite is green locally on that commit, on S1104, S1080, S1077 and on main, five copies at once. The
+difference is the clock: the step before runs 90 enemy ticks in one evaluate with `performance.now()` as their time, and on a slow runner
+those 90 ticks take seconds of real time, long enough for Rowe (alert, at 0.98) to finish a blow. Its stagger is real time
+(`PPOST.stagUntil`), and `attack()` returns at once while you are staggered (S281). The test now clears the stagger along with the
+other things it resets before the swing (cooldown, stamina, the pending strike) and logs whether you were staggered (`stag`), so the
+next CI run shows the cause. Tests only. The game's rule is right: a staggered player cannot swing.
+### Verified (headless Chromium)
+`questfoes` green locally: the swing takes 13 frames and Rowe goes from 109 to 108, `stag: false` here, as it was before.
+### Needs eyes
+Nothing in play. If CI shows `stag: true` on the next run, the cause above is confirmed; if it shows `stag: false` and frames 1 again,
+it is something else and this entry is wrong.

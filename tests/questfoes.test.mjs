@@ -38,9 +38,12 @@ check('the enemy tick runs her: in 90 ticks she closes from 4 units', walked.d <
 const hit = await page.evaluate(async () => {
   const e = WORLD.duel.rowe; const rnd = Math.random; Math.random = () => .5;
   e.x = px + fwdX * 1.2; e.z = pz + fwdZ * 1.2; e.mesh.position.x = e.x; e.mesh.position.z = e.z; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0; e.shieldUp = false;
+  // S1108 — and you stand unstaggered: the 90 ticks above run with performance.now() as their clock, and on a slow runner that is seconds,
+  // time enough for her to land a blow whose stagger (real time) turned this swing away (frames 1 on 08ea721, twice)
+  const stag = playerStaggered(performance.now() / 1000); PPOST.stagUntil = 0;
   const hp0 = e.hp; atkCd = 0; stamina = maxStamina; swingT = 0; _pendingStrike = null; attack(false);
   let frames = 0; await new Promise(r => { const f = () => { frames++; if ((swingT === 0 && !_pendingStrike) || frames > 60) r(); else requestAnimationFrame(f); }; requestAnimationFrame(f); });
-  Math.random = rnd; return { hp0, hp: e.hp, frames, state: WORLD.duel.q.data.state };
+  Math.random = rnd; return { hp0, hp: e.hp, frames, stag, state: WORLD.duel.q.data.state };
 });
 console.log('a swing at rowe', JSON.stringify(hit));
 check('a swing at her lands: she loses health', hit.hp < hit.hp0, hit);
