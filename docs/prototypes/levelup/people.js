@@ -2060,6 +2060,10 @@ const STAFFS = {
   ash: { top: -.17, knob: 1.55, carve: 0, shoe: [.42, .43, .45], ring: [.42, .43, .45], cap: null },
   olive: { top: -.22, knob: 1.6, carve: 0, shoe: [.62, .45, .22], ring: null, cap: [.62, .45, .22] },
   carved: { top: .1, knob: 1.9, carve: .2, shoe: [.42, .43, .45], ring: null, cap: null } };
+// the walking grip (Session 1092): a staff is leant on, not held out as a spear is, so its forearm drops 38° forward and down from
+// the elbow (the spear's runs on almost level), the fist by the hip and the staff's foot a hand ahead of the toes; the wrist cocks
+// up to keep the knuckles plumb, as before
+const STAFF_ARM = new THREE.Vector3(-.1, -.62, .78);
 const staffSeed = s => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
 // the staff's centre line (in its frame: y up its axis from the foot, the fist at yF) and its radius at a height and an angle round it.
 // The knob is a bulb whose middle is a little over half way up it; a root's knob is lumpy, a turned one round
@@ -2084,6 +2088,8 @@ function staffTube(S, y0, y1, n, NS) {
 function buildStaff(G, body, byName, meshes, root, grip) {
   root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, PP = posedBody(body);
   let floor = 1e9, crown = -1e9; for (const i of new Set(PACK.G['body'])) { floor = Math.min(floor, PP[i * 3 + 1]); crown = Math.max(crown, PP[i * 3 + 1]); }
+  // the walking grip's measures (Session 1092): the fist's height up the body, and how far ahead of the toes the foot comes down
+  let toe = -1e9; for (const i of new Set(PACK.G['body'])) if (PP[i * 3 + 1] < floor + .12) toe = Math.max(toe, PP[i * 3 + 2]);
   const make = STAFFS[D.staffMake] ? D.staffMake : ({ markman: 'ash', aurennais: 'olive', oldblood: 'carved' })[G.people] || 'hazel', K = STAFFS[make];
   const A = grip.A, B = grip.C.clone().addScaledVector(A, (floor - grip.C.y) / A.y), yF = grip.C.clone().sub(B).dot(A), LEN = (crown + K.top - floor) / A.y, ph = staffSeed([G.seed ?? 'person', G.people, ...D.staff, ...(G.skin || [])].map(v => typeof v === 'number' ? Math.round(Math.max(0, Math.min(1, v)) * 255) : v).join('|')) * Math.PI * 2;
   const S = staffShape(K, LEN, yF, ph), NS = 32, yK = LEN - S.KH, yC = yK - K.carve - .02;
@@ -2107,7 +2113,7 @@ function buildStaff(G, body, byName, meshes, root, grip) {
   // its normals point out of it (away from the centre line at their height), so the key light falls on its outside
   let out = 0, nv = 0; for (const m of [lo, hi]) { const P = m.geometry.attributes.position, N = m.geometry.attributes.normal; for (let i = 0; i < P.count; i++) { const y = P.getY(i), o = S.off(y); if (y < .001) continue; nv++; if ((P.getX(i) - o.x) * N.getX(i) + (P.getZ(i) - o.z) * N.getZ(i) > 0) out++; } }
   let bendMax = 0, trueAt = 0; for (let y = 0; y <= LEN; y += .01) { const b = S.off(y).length(); bendMax = Math.max(bendMax, b); if (Math.abs(y - yF) < .1) trueAt = Math.max(trueAt, b); }
-  return { mesh: st, stats: { make, len: +LEN.toFixed(3), top: +(B.y + LEN * A.y - crown).toFixed(3), foot: +(B.y - floor).toFixed(4), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), fistAt: +(yF / LEN).toFixed(3), knob: +(2 * S.kn).toFixed(4),
+  return { mesh: st, stats: { make, len: +LEN.toFixed(3), top: +(B.y + LEN * A.y - crown).toFixed(3), foot: +(B.y - floor).toFixed(4), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), fistAt: +(yF / LEN).toFixed(3), fistH: +((grip.C.y - floor) / (crown - floor)).toFixed(3), ahead: +(B.z - toe).toFixed(3), knob: +(2 * S.kn).toFixed(4),
     bend: +bendMax.toFixed(4), trueAtFist: +trueAt.toFixed(4), carve: K.carve, outward: +(out / nv).toFixed(3), clear: +clear.toFixed(4), fist, gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, tris } };
 }
 // the crossbow (Session 941; L7, OG-028, Michael's 6 A: the spear and the crossbow first), carried point down in the right fist by
@@ -2552,7 +2558,7 @@ export function makePerson(G, o = {}) {
   // about it swung the forearm round a cone, backward)
   let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow || D.staff) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
     const setWorld = Q => lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
-    setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), new THREE.Vector3(-.12, -.2, 1).normalize()).multiply(wq())); root.updateMatrixWorld(true);
+    setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), (D.staff && !D.spear && !D.crossbow ? STAFF_ARM : new THREE.Vector3(-.12, -.2, 1)).clone().normalize()).multiply(wq())); root.updateMatrixWorld(true);
     const ax = at('wrist.R').sub(at('lowerarm01.R')).normalize(), flat = v => v.addScaledVector(ax, -v.dot(ax)).normalize(), kn = flat(at('finger2-1.R').sub(at('finger5-1.R'))), up = flat(new THREE.Vector3(0, 1, 0));
     setWorld(new THREE.Quaternion().setFromAxisAngle(ax, Math.atan2(kn.clone().cross(up).dot(ax), kn.dot(up))).multiply(wq())); root.updateMatrixWorld(true);
     // what the roll leaves, the wrist takes: the hand turned so it runs on level from the forearm and its knuckles stand plumb

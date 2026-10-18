@@ -24031,3 +24031,30 @@ I also tried a third change and took it out. The hinge's correction of a knee or
 ### Needs eyes
 - **One boar in the 1,350 still meets the cap.** Its left hind knee and hock rock about a centimetre against the ground on a half-second beat, with no wall near. The hinge holds the knee forward by moving it, and that move is a velocity. The fix tried for it (above) was worse over the whole set, so it is owed. `beastfall`'s fifteen unseeded deaths are wolves, not boars, so the suite should now go red about one run in a hundred or less, against one in fourteen.
 - **The ten falls over 2.5 s** are real settling: a tail root balanced upright that slowly topples, or a limb sliding down a slope. Nothing a player sees freezes mid-move.
+
+## v80 — Session 1092 — The walking staff's own grip (L1, prototype only)
+Session 1085 gave the old a walking staff on the spear's grip and named the fault in its Needs eyes: the forearm reached forward almost level, so from the side the old held the staff out before them rather than leaning on it. This session refines that grip, which needs no new question. It touches only the prototypes: `people.js` and `builder.check.mjs`.
+
+The grip is still built the same way, only the forearm's aim is new:
+- **The forearm's aim.** The forearm is aimed down the new `STAFF_ARM` from the elbow, 38° forward and down, where the spear's runs 11° down.
+- **The hand.** It is rolled as before, so the knuckles stand plumb. The wrist cocks up to keep the hand level, and the fingers close on the shaft with `fistGrip`.
+- **The staff.** It still stands plumb through the fist with its foot where the fist's line meets the ground.
+- **The result.** The fist comes down to the belt, and the staff stands closer in, its foot just ahead of the toes. The spear and the crossbow keep their own aim.
+
+`buildStaff` now also reports the fist's height up the body and how far ahead of the toes the foot comes down. The check holds both.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: 461 of 461 pass,** the same count as before. The staff check also holds the fist at 45 to 60 per cent up the body and the foot 0 to 20 cm ahead of the toes.
+- **The seven staffs:**
+  - The fist sits 57 to 59 per cent up the body. Before, it was at mid-chest.
+  - The foot comes down 7.7 to 16 cm ahead of the toes; the stooped woman's is the furthest out.
+  - The fist is 53 to 67 per cent up the staff.
+  - The foot is on the ground (0.0 mm) and the staff leans 0 rad.
+  - The fingers are bent 0.56 to 0.89 rad, and no point of the hand is inside the wood.
+  - Nothing else comes within 5.3 mm (the Old Blood elder's knob by her shoulder, as before).
+  - Neither the long skirt nor the cloak is broken by it.
+- **Pictures** (`--shots=staff`): `builder-staff-hazel.jpg`, `-ash`, `-olive`, `-carved`, `-stoop` (from the side, where the change shows) and `-top`, all retaken.
+### Needs eyes
+- **The wrist cocks up about 38°** to keep the knuckles plumb, which reads as a firm grip from the side. A looser grip would let the staff lean out a little at its foot, which the check now forbids (lean under 0.08 rad).
+- **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
+- **Still owed from the item:** Garrick's wheeled chair, and children under 11.
