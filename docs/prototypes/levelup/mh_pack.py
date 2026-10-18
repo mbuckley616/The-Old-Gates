@@ -36,9 +36,10 @@ def target(path):
 names = []
 for race in ['caucasian', 'african', 'asian']:
     for gen in ['male', 'female']:
-        for age in ['young', 'old']: names.append(f'macrodetails/{race}-{gen}-{age}')
+        for age in ['child', 'young', 'old']: names.append(f'macrodetails/{race}-{gen}-{age}')
+# the child (Session 1081): MakeHuman's age of 11, so a genome's age runs from 11 to 90
 for gen in ['male', 'female']:
-    for age in ['young', 'old']:
+    for age in ['child', 'young', 'old']:
         for m in ['min', 'average', 'max']:
             for w in ['min', 'average', 'max']:
                 if m == 'average' and w == 'average': continue
