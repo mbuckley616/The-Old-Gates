@@ -24167,3 +24167,33 @@ A crossbow asked with the chair used to be dropped. Now it lies here instead, an
 - **The hands.** They stay on the chair's arms, a hand's length behind the crossbow. A right hand resting on the stock would read more as his weapon, but it would mean a second seated arm pose.
 - **Side to side or slanted.** OG-065's gun lies roughly across him. A slant (the butt by the right hip, the prod past the left knee) would keep the prod off the wheel, but it would sit less plainly "across the knees".
 - **Owed:** the hound sitting or lying by the chair (B4), the chair pushed (B4), and the game (after F4).
+
+## v80 — Session 1114 — The wolfhound sits (L1 and L3, prototype only)
+Session 1107's hound could trot, walk, gallop and stand. It owed a rest pose, to sit or lie by Garrick's chair as OG-065 draws it. This session gives the creature kit a sit, a gait any four-legged plan can take, and gives it to the wolfhound. It touches only the prototypes: `creatures.js` (`GAITS.sit`, `sitFind`, `sitBody`, `sitLeg`) and `creatures.check.mjs`.
+
+How it sits:
+- **The forefeet stay where it stands.** The body turns nose-up about the line through the forelegs' roots, and the forelegs keep their standing targets.
+- **How far it turns** is found once per creature. The hip's height is halved sixteen times until the lowest vertex of the body, the thighs and the shins is 5 mm off the ground. On the hound that is 52°.
+- **The hind legs fold under it.** The kit's leg solver holds the distal bones at their standing angle, which cannot lay a hock down, so the hind leg sitting is placed joint by joint (`sitLeg`):
+  - the toes' tip is on the ground ahead;
+  - the paw is behind it, and the hock's long bone lies back from the paw, raised a twentieth of the leg so the shin's flesh clears the ground;
+  - the hock is just behind the hip;
+  - the thigh and shin bend to meet it about a forward knee, solved like any other leg.
+- **The head and the tail.** The neck takes back four fifths of the pitch, so the head looks ahead. The tail's first bone is turned back level along the ground and the rest curl round to one side.
+
+The first try counted only the body and thighs, and the shins went 2 cm under the ground. Raising the hock alone left them 6 mm under. Counting the shins in the search fixed it.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`:** the generic foot check passes for the new gait (0.0 cm).
+- **The new check:**
+  - the hound pitches 52° nose-up and its forefeet are exactly where they stand;
+  - the haunch and shins are 5.0 mm off the ground (23 cm standing);
+  - the hind toes are 21 cm ahead of the hips;
+  - nothing is under the ground but the toe pads (52 vertices, against 53 standing: the kit's pads sink 2 cm in every pose), and the lowest other point is 5.0 mm up;
+  - the head is 121 cm up against the withers' 81.
+- **The full run:** 1,124 of 1,124 pass, 1,122 before and two new: the sit's foot check and the check above.
+- **Pictures:** `creatures-wolfhound-sit.jpg` (side) and `creatures-wolfhound-sit-front.jpg`.
+### Needs eyes
+- **The neck.** Taking the pitch back at the neck's first bone leaves a kink where the neck meets the chest. A sitting hound carries its neck upright, and spreading the correction down the neck would round it.
+- **The seat.** The haunch rests on the ground behind the hocks, as a dog's does, but the thighs' flesh is the kit's capsules, so it reads as a lump rather than a folded thigh. From the side at play distance it reads as sitting.
+- **Owed:** lying down (the hound's other rest, by the chair's wheel), the sit on the other canids (one line each in their `gaits`), the chair pushed (B4), and all of it in the game (after F4).

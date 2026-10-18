@@ -767,7 +767,10 @@ export const GAITS = {
   crawl: { duty: 1, bl: .18, ripple: 1, phase: () => 0 },
   drift: { duty: 1, bl: .25, bell: 1, phase: () => 0 },
   // Session 775: a bird in the air, its wings beating, its legs tucked up under it
-  soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 }
+  soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 },
+  // Session 1114: a four-legged body sitting (Garrick's hound by his chair): the forefeet where they stand, the body pitched up about
+  // the shoulders until the haunch is on the ground, the hind legs folded under it with the hocks laid flat (sitBody, sitLeg)
+  sit: { duty: 1, fr: 0, sit: 1, phase: () => 0 }
 };
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = V(), _m = new THREE.Matrix4();
 // a bone's rotation and position in the rig's frame (the body's own space: the ground is y = 0)
@@ -818,6 +821,7 @@ function stowQuills(C, W, k) {
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
+  if (G.sit && C.sitA === undefined) sitFind(C);
   for (const b of C.bones) b.quaternion.identity();
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
@@ -869,11 +873,13 @@ export function pose(C, phase) {
     C.byName[W.arm[0]].rotation.set(-.15 * fold, -W.side * .7 * fold, W.side * (.5 * flap - .35 * fold + .03 * Math.sin(tau * ph * .5)));
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
+  if (G.sit) sitBody(C);
   C.rig.updateMatrixWorld(true);
   // the legs: the foot's target from the gait, then IK
   const sweep = sweepOf(C, G), D = C.dir;
   let worst = 0; const order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
   for (const L of B.legs) {
+    if (G.sit && L.at === order[order.length - 1]) { worst = Math.max(worst, sitLeg(C, L)); continue; }
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
@@ -884,6 +890,49 @@ export function pose(C, phase) {
   }
   if (C.mist) { const hd = C.mist.parent; hd.updateWorldMatrix(true, false); const qi = hd.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(C.rig.getWorldQuaternion(new THREE.Quaternion())); mistTick(C.mist, ph, qi); }
   return worst;
+}
+// sitting (Session 1114). The body turns nose-up about the line through the forelegs' roots, so the forefeet stay where they
+// stand; how far is found once per creature, halving the hip's height until the lowest point of the body and thighs (every vertex
+// whose bone is the spine's, a thigh's or a shin's) is 5 mm off the ground. The neck takes back most of the pitch so the head looks ahead,
+// and the tail is laid back along the ground and curled round toward the haunch
+const SIT = { haunch: .005, neck: .8, tailCurl: .3, hock: .05 };
+function sitFrame(C) {
+  const B = C.B, order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
+  const mean = at => { const v = V(), Ls = B.legs.filter(L => L.at === at); for (const L of Ls) v.add(L.rest[0]); return v.divideScalar(Ls.length); };
+  const piv = mean(order[0]), hip = mean(order[order.length - 1]), dy = hip.y - piv.y, dz = hip.z - piv.z;
+  // the pitch that puts the hip at height h: y' = dy cos a - dz sin a, solved by halving (a from 0 down to -1.4)
+  const pitchFor = h => { let lo = -1.4, hi = 0; for (let k = 0; k < 30; k++) { const a = (lo + hi) / 2; if (piv.y + dy * Math.cos(a) - dz * Math.sin(a) > h) hi = a; else lo = a; } return (lo + hi) / 2; };
+  return { B, order, piv, hip, pitchFor };
+}
+// the pitch, found once (before a pose, which it runs itself)
+function sitFind(C) {
+  const { B, order, hip, pitchFor } = sitFrame(C);
+  C.sitA = 0; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1]).flatMap(L => L.names.slice(0, 2))].map(n => C.bones.indexOf(C.byName[n])));
+    const M = C.meshes[0], si = M.geometry.attributes.skinIndex, sw = M.geometry.attributes.skinWeight, vs = []; for (let v = 0; v < si.count; v++) { let best = 0, bi = -1; for (let j = 0; j < 4; j++) { const w = sw.getComponent(v, j); if (w > best) { best = w; bi = si.getComponent(v, j); } } if (idx.has(bi)) vs.push(v); }
+    const low = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (let k = 0; k < vs.length; k++) { M.getVertexPosition(vs[k], p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
+    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; C.sitA = pitchFor(h); pose(C, 0); if (low() > SIT.haunch) hi = h; else lo = h; } C.sitA = pitchFor(hi); C.sitH = hi; }
+}
+function sitBody(C) {
+  const { B, piv } = sitFrame(C), sp = C.byName.spine0;
+  const R = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), C.sitA); sp.quaternion.premultiply(R); sp.position.sub(piv).applyQuaternion(R).add(piv);
+  if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= C.sitA * SIT.neck;
+  // the tail: its first bone turned back level against the pitch and its droop, each bone after curled round to one side
+  if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const a = rigPos(C, t0, V()), b = rigPos(C, C.byName[B.chains.tail[1]], V()), d = b.sub(a);
+    t0.rotation.x += Math.atan2(-d.y, -d.z) - .06; B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += SIT.tailCurl; }); }
+}
+// a hind leg sitting: the toes' tip on the ground ahead, the toes and the hock's long bone laid back from it, the hock raised a
+// twentieth of the leg off the paw's height so the shin's flesh clears the ground, just behind the hip, and the thigh and shin bent to meet it about the knee (which points forward, as it stands)
+function sitLeg(C, L) {
+  const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion()), hR = L.hR;
+  L.bones[0].position.copy(L.restLocal);
+  const F0 = L.rest[m], P2 = L.rest[m - 1], toe = L.lens[m - 1], pawY = P2.y, tz = Math.sqrt(Math.max(0, toe * toe - (pawY - F0.y) ** 2));
+  const hk = SIT.hock * hR, hock = V(F0.x, pawY + hk, root.z - .08 * hR), paw = hock.clone().add(V(0, -hk, Math.sqrt(L.lens[m - 2] ** 2 - hk * hk))), tip = paw.clone().add(V(0, F0.y - pawY, tz));
+  const L1 = L.lens[0], L2 = L.lens[1], d = hock.clone().sub(root); let dl = d.length(); const u = d.divideScalar(dl || 1), err = Math.max(0, dl - (L1 + L2), Math.abs(L1 - L2) - dl);
+  dl = Math.max(Math.abs(L1 - L2) + 1e-4, Math.min(L1 + L2 - 1e-4, dl));
+  const a = (L1 * L1 - L2 * L2 + dl * dl) / (2 * dl), h = Math.sqrt(Math.max(0, L1 * L1 - a * a)), pole = L.pole.clone(); pole.sub(u.clone().multiplyScalar(pole.dot(u))).normalize();
+  const Pp = [root, root.clone().addScaledVector(u, a).addScaledVector(pole, h), root.clone().addScaledVector(u, dl), paw, tip];
+  let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
+  return err;
 }
 // one leg: yaw the leg toward its foot (an insect's coxa), hold the distal segments (a paw, a hoof), bend the two in between
 function solveLeg(C, L, T, fold) {
@@ -1966,7 +2015,7 @@ PLANS.troll.parts.push(['straps', { w: .08, tone: 'leather', straps: [
 // and narrow with a long tapering muzzle and small ears folded back along the skull, the tail long and low with an upward sweep at its
 // end, the coat rough and wiry (long, coarse, drooping shells). Black, as OG-065 draws it ──
 Object.assign(PLANS, {
-  wolfhound: { name: 'Black wolfhound', src: 'OG-065 (Garrick\'s black wolfhound)', gaits: ['trot', 'walk', 'gallop', 'stand'], wag: .07, pant: .08, speedK: 1.15, rough: .6,
+  wolfhound: { name: 'Black wolfhound', src: 'OG-065 (Garrick\'s black wolfhound)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit'], wag: .07, pant: .08, speedK: 1.15, rough: .6,
     palette: { coat: [.16, .15, .14], saddle: [.1, .095, .09], belly: [.22, .21, .2], dark: [.03, .025, .02], horn: [.7, .66, .6] },
     fur: { len: .05, layers: 10, sx: 120, sy: 32, droop: .3 },
     parts: [
