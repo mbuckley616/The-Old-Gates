@@ -24441,3 +24441,20 @@ Session 1104 drowned a Gatelands village and left OG-125's amphitheatre, temples
 - **The theatre's outer wall** is a plain curved face. A real cavea has arched entries through it, and its back would be buried deeper in the slope.
 - **The weed:** it barely shows on the pale limestone in the green water. Aurenne's water, if #419 goes by island, is the clear one, where the weed would want to be stronger.
 - **Owed:** OG-125's lit gate structures (Uisce, with card F5), the whale skeleton, and the Abyss (the Root).
+
+## v80 — Session 1108 — Under the sea: broken walls that follow the stone (backlog L10, prototype only)
+Session 1104's entry named the sunken village's breaks as its first fault. Each wall was cut by dropping every triangle with a corner over a ragged height. The kit's wall slabs are a few long triangles, so a break ran in a straight slant from eaves to sill, or stood as a point where a gable had been. Session 1107's `clipMesh` cuts triangles at the height instead of dropping them. This session gives it two more things and puts the village through it, in `docs/prototypes/levelup/undersea.js`:
+- **`fine`:** a triangle across the break is first halved along its longest edge until no edge is over 0.3 m. Triangles wholly under or over the break are kept or dropped as they were, so only the band along the break is subdivided.
+- **`courses(f, seed)`:** the ragged height is rounded down to a course of 0.3 m. Each 0.6 m stone along the wall, by its own hash, stops a course short or goes a course higher, so the top steps as laid stone falls.
+- **Where it is used:**
+  - **The village:** the seven cottages and the church's nave and chancel break through it. Their window frames, leaves and stacks over the break are cut with the walls, as before.
+  - **The quarter:** the tower of Session 1107's drowned church breaks the same way, and its smooth wave is gone.
+
+### Verified (headless Chromium)
+- **`undersea.check.mjs`: 61 of 61 pass.**
+  - **The village:** the same twice and in budget, at 63,199 triangles in 63 draws (37,611 before). The subdivision along the breaks is the 25,588 added. Its seven cottages are each broken (302 to 878 triangles cut or dropped) and still settled at 11.0 to 14.8 m. Its church is broken (8,126) and its round tower whole, its cap 15.74 m over the sea.
+  - **The quarter:** 46,021 triangles in 14 draws, the church's top still 3.09 m under.
+- **Pictures:** `undersea-village-house.jpg` against Session 1104's, from the same camera. The old picture had a gable standing as a bare triangle with a window frame floating beside it. The cottage now keeps its gable wall to a stepped, broken top with the window in it, and the side walls fall away in steps. Also redrawn: `-lane`, `-church`, `-tower`, `undersea-quarter-temple` and `-temple-clear`.
+### Needs eyes
+- **The wall tops are open:** a clipped wall is a hollow slab, so from above its top shows as its two faces with nothing between. A cap along the break (the slab's thickness, in the wall's stone) would close it. It is the next small pass.
+- **25k triangles for seven cottages and a church:** cheap in a prototype. In the game a drowned village's breaks would be cut once and kept, or `fine` raised to 0.45 m (about half the cost).
