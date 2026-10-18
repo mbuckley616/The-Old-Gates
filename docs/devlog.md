@@ -25128,6 +25128,14 @@ A generated room's bed and the home's chest were already at 1.6. The ship's whee
   - both doors of a Dunmore inn's upper floor: 1.575, none beyond;
   - two of its beds: 1.575, none beyond;
   - a sloop's wheel, on her deck: 1.575, none beyond. It answered to 2.375 before.
+- **Neighbours.** 60 of 63 pass: every suite that reaches a door, a bed, a herb, a hatch, a chest, the stash, the barber's chair,
+  the wheel, the board or `interact`. The three that do not fail the same way on the branch before this run (`0622b6f2`):
+  - `renewal`: the player is dead at the altar. Filed in backlog K for QA.
+  - `scaleratio` and `placesave`: in this container the browser closes partway through.
+### Needs eyes
+- **Reaching further.** Doors, boards, herbs and hatches answer a step further off than they did (up to 0.5 m for a herb), and the
+  wheel answers nearer (1.6 against 2.4). In a tight room, check that two things a step apart still give the one you look at.
+- **Owed from session 2:** the indoor sight line.
 
 ## v80 — Session 1089 — flashshare's floors stand in the Wastes (red twice on d7e983c)
 CI's shard 7 on `d7e983c` was red twice on `flashshare`: *underground, every kind with two or more on a floor gives each its own body material*
