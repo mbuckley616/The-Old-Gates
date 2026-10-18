@@ -24302,3 +24302,32 @@ The hound's numbers are unchanged: its forelegs never limited the drop.
 - **The heads are low.** All of them are held low and forward, as Session 1117 said of the hound. A watchful animal lifts its head; the neck could take some of the drop.
 - **The cats' forefeet.** They end only 2 to 3 cm ahead of where they stand, and their toes hang a few millimetres up. A lying cat tucks its paws or stretches them forward. Either is a different pose of the forearm, not this one.
 - **Owed:** the hound beside Garrick's chair in one picture, and all of it in the game (after F4).
+
+## v80 — Session 1123 — The hound beside Garrick's chair (L1 and L3, prototype only)
+Session 1117 owed one picture of the wolfhound and Garrick together, as OG-065 draws them. The builder page showed either a person or a creature, never both. This session adds a stage to the builder: a creature beside the person. It touches only `builder.js` and `builder.check.mjs`.
+
+How the stage works (`withCreature`, from the page's query):
+- **The parameters.** `with=PLAN` names the creature. `withGait` sets its gait (it stands if none is given). `withSide=L` or `R` puts it on the person's left or right (right by default). `withGap` is the space between them (8 cm), and `withFwd` how far its front is ahead of theirs (0).
+- **The placement.** The creature is built and posed once. It lies in the person's frame, facing their way, beside the chair's box (or the body's, without a chair). It turns with them in every view.
+- **Its numbers** are in `STATS.with`: the plan, the gait, the triangle count, the side, its heading and its posed size.
+
+Two things went wrong on the way:
+- **The hound floated 49 cm up.** The stage first put the hound at the person's root, but a seated person's root is at the hips. Only the root's x and z carry over now.
+- **The bind pose was measured, not the pose.** A skinned mesh's own box is its bind pose's, so the lying hound was measured as if it stood. The placement now reads the posed vertices.
+
+### Verified (headless Chromium)
+- **The new check, on a second builder page** (Garrick, then the hound lying and then sitting by his right wheel). Both are read in Garrick's own frame, from the vertices:
+  - its hide's lowest point is 1.8 cm under the ground, which is the toe pads, as in every pose. The outer fur shells under the pads go to 7.7 cm, standing as well, so the hide is what the check reads;
+  - its fur is 8.0 cm clear of the chair;
+  - its front is level with the chair's lying, and 35.0 cm behind it sitting, as asked;
+  - it is turned with him, at 49,200 triangles.
+- **`builder.check.mjs`:** 475 of 475 pass, 473 before and the two above.
+- **`creatures.check.mjs`** is untouched since Session 1122 (1,167 of 1,167).
+- **Pictures:**
+  - `builder-chair-hound.jpg`: lying, from his right front;
+  - `builder-chair-hound-side.jpg`: lying, from the side, its nose by the footboard;
+  - `builder-chair-hound-sit.jpg`: sitting, its head at his shoulder.
+### Needs eyes
+- **Where the hound lies.** OG-065's thumbnail is too small to show it. This lays the hound along the right wheel, facing his way. The other side, or across his feet, is one parameter.
+- **The sitting hound's height.** Its head is at the seated man's shoulder: a big wolfhound, as the plan is.
+- **Owed:** the chair pushed (B4), and both of them in the game (after F4).
