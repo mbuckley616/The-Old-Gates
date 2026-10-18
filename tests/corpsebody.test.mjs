@@ -6,14 +6,24 @@ import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 
+// Session 1128: the line 30 ahead put the Cave Bear on Hearthwick's own centre, against its well and a house, and a beast
+// held at a wall can come to rest up it (3.49 over the ground in 1 fall of 32 here; the middle bear on CI twice on 18 Oct,
+// filed in backlog I). So the town is built first (its solids are in SETTLE), and a body whose spot has a solid within 3 of
+// it is laid further ahead, 4 at a time, until none has; the others keep their spots (the bandit there is the one whose
+// foot the old spot missed).
+const built = await g.settle('hearthwick');
+const spots = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  const clear = (x, z) => { for (let dx = -3; dx <= 3; dx += .5) for (let dz = -3; dz <= 3; dz += .5) if (WORLD.solidAt(x + dx, z + dz)) return false; return true; };
+  return [0, 1, 2, 3, 4].map(i => { for (let d = 30; d <= 90; d += 4) { const x = px + fx * d + (i - 2) * 9, z = pz + fz * d; if (clear(x, z)) return { x, z, d }; } return null; }); });
+check('Hearthwick is built and each body has a spot clear of solids', built && spots.every(Boolean), { built, d: spots.map(p => p && p.d) });
 const KINDS = ['Bandit', 'Wolf', 'Cave Bear', 'Cave Troll', 'Golem'];
-const r = await page.evaluate((KINDS) => {
-  const fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._C = {};
-  KINDS.forEach((n, i) => { const x = px + fx * 30 + (i - 2) * 9, z = pz + fz * 30;
+const r = await page.evaluate(([KINDS, L]) => {
+  window._C = {};
+  KINDS.forEach((n, i) => { const x = L[i].x, z = L[i].z;
     const e = buildZoneEnemy(WORLD.scene, [], x, z, n, null); e.mesh.position.y = WORLD.worldH(x, z); e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.hp = 0; killZoneEnemy(e, WORLD.scene, ''); const c = ZONE_CORPSES[ZONE_CORPSES.length - 1];
     if (!c.items.length) c.items.push({ name: 'Gold Coins', ico: '●', type: 'gold', value: 5, qty: 1 }); _C[n] = { e, c }; });
-  return Object.keys(_C).map(n => ({ n, body: _C[n].c.body === _C[n].e.mesh })); }, KINDS);
+  return Object.keys(_C).map(n => ({ n, body: _C[n].c.body === _C[n].e.mesh })); }, [KINDS, spots.map((p, i) => p || { x: px + (i - 2) * 9, z: pz - 30 })]);
 check('every kill leaves a corpse carrying its body', r.length === KINDS.length && r.every(x => x.body), r);
 for (let i = 0; i < 40; i++) await page.evaluate(() => { for (let k = 0; k < 6; k++) { tickPeople(1 / 60, performance.now()); if (typeof tickCreatures === 'function') tickCreatures(1 / 60, performance.now()); } });
 
@@ -43,7 +53,7 @@ const probe = await page.evaluate(() => {
       rows.push({ side: +side.toFixed(2), nAll, nNew, nOld, offBody, sky }); }
     // out of reach: 6 units off, aimed at the middle
     const far = new V(mid.x + 6, gy + 1.6, mid.z); aim(far, mid); const outOfReach = !lookingAt(c);
-    out[n] = { bones: bones.length, ext: +(c._ext || 0).toFixed(2), r: +(c._r || 0).toFixed(2), rows, outOfReach }; }
+    out[n] = { bones: bones.length, lift: +(mid.y - gy).toFixed(2), at: [+mid.x.toFixed(1), +mid.z.toFixed(1)], ext: +(c._ext || 0).toFixed(2), r: +(c._r || 0).toFixed(2), rows, outOfReach }; }
   return out; });
 for (const [n, p] of Object.entries(probe)) console.log(n, JSON.stringify(p));
 for (const [n, p] of Object.entries(probe)) {
@@ -60,7 +70,7 @@ const ui = await page.evaluate(() => { const { e, c } = _C.Bandit; const bones =
   const far = bones.map(b => b.getWorldPosition(new THREE.Vector3())).sort((a, b) => b.distanceTo(foot) - a.distanceTo(foot))[0];
   const away = foot.clone().sub(far).setY(0).normalize(); const from = foot.clone().addScaledVector(away, 1.6); from.y = WORLD.worldH(from.x, from.z) + 1.6;
   window._aimFoot = () => { px = from.x; pz = from.z; CAM.position.copy(from); CAM.lookAt(foot); CAM.updateMatrixWorld(true); };
-  _aimFoot(); return { target: lootTargetNow() === c, oldSpot: (() => { const b = c.body; c.body = null; const v = lookingAt(c); c.body = b; return v; })() }; });
+  _aimFoot(); return { foot: [+(foot.x - c.x).toFixed(2), +(foot.y - WORLD.worldH(c.x, c.z)).toFixed(2), +(foot.z - c.z).toFixed(2)], eye: +Math.hypot(from.x - c.x, from.z - c.z).toFixed(2), kill: [+c.x.toFixed(1), +c.z.toFixed(1)], target: lootTargetNow() === c, oldSpot: (() => { const b = c.body; c.body = null; const v = lookingAt(c); c.body = b; return v; })() }; });
 console.log(JSON.stringify(ui));
 check('aimed at a dead bandit’s foot, the crosshair takes it as the loot target (the old spot did not)', ui.target && !ui.oldSpot, ui);
 // in a dungeon (killE's corpses): a foe with a skeleton, killed where it stands, searched at its foot
