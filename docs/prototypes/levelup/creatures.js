@@ -907,18 +907,22 @@ function sitFrame(C) {
 // the pitch, found once (before a pose, which it runs itself)
 function sitFind(C) {
   const { B, order, hip, pitchFor } = sitFrame(C);
-  C.sitA = 0; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1]).flatMap(L => L.names.slice(0, 2))].map(n => C.bones.indexOf(C.byName[n])));
+  C.sitA = 0; C.sitT = -.06; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1]).flatMap(L => L.names.slice(0, 2))].map(n => C.bones.indexOf(C.byName[n])));
     const M = C.meshes[0], si = M.geometry.attributes.skinIndex, sw = M.geometry.attributes.skinWeight, vs = []; for (let v = 0; v < si.count; v++) { let best = 0, bi = -1; for (let j = 0; j < 4; j++) { const w = sw.getComponent(v, j); if (w > best) { best = w; bi = si.getComponent(v, j); } } if (idx.has(bi)) vs.push(v); }
     const low = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (let k = 0; k < vs.length; k++) { M.getVertexPosition(vs[k], p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
-    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; C.sitA = pitchFor(h); pose(C, 0); if (low() > SIT.haunch) hi = h; else lo = h; } C.sitA = pitchFor(hi); C.sitH = hi; }
+    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; C.sitA = pitchFor(h); pose(C, 0); if (low() > SIT.haunch) hi = h; else lo = h; } C.sitA = pitchFor(hi); C.sitH = hi;
+    // then the tail (Session 1115): lifted from lying level (a little drooped) only as far as its own flesh needs to clear the ground
+    if (B.chains.tail) { const ti = new Set(B.chains.tail.map(n => C.bones.indexOf(C.byName[n]))), tv = []; for (let v = 0; v < si.count; v++) if (ti.has(si.getX(v))) tv.push(v);
+      const tlow = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (const v of tv) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
+      pose(C, 0); if (tlow() < SIT.haunch) { let lo = -.06, up = 1.4; for (let k = 0; k < 14; k++) { C.sitT = (lo + up) / 2; pose(C, 0); if (tlow() > SIT.haunch) up = C.sitT; else lo = C.sitT; } C.sitT = up; } } }
 }
 function sitBody(C) {
   const { B, piv } = sitFrame(C), sp = C.byName.spine0;
   const R = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), C.sitA); sp.quaternion.premultiply(R); sp.position.sub(piv).applyQuaternion(R).add(piv);
   if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= C.sitA * SIT.neck;
-  // the tail: its first bone turned back level against the pitch and its droop, each bone after curled round to one side
+  // the tail: its first bone turned back level against the pitch and its droop (then up by what sitFind found), each bone after curled round to one side
   if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const a = rigPos(C, t0, V()), b = rigPos(C, C.byName[B.chains.tail[1]], V()), d = b.sub(a);
-    t0.rotation.x += Math.atan2(-d.y, -d.z) - .06; B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += SIT.tailCurl; }); }
+    t0.rotation.x += Math.atan2(-d.y, -d.z) + C.sitT; B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += SIT.tailCurl; }); }
 }
 // a hind leg sitting: the toes' tip on the ground ahead, the toes and the hock's long bone laid back from it, the hock raised a
 // twentieth of the leg off the paw's height so the shin's flesh clears the ground, just behind the hip, and the thigh and shin bent to meet it about the knee (which points forward, as it stands)
@@ -960,7 +964,7 @@ function solveLeg(C, L, T, fold) {
 // ── the plans. Each is its source in the concept art, a palette, the gaits it has, and its parts ──
 // Tones: coat, saddle and belly (counter-shading), dark (nose, claws, pads), hoof, horn, skin (bare), pale, membrane.
 export const PLANS = {
-  ironwolf: { name: 'Ironwolf', src: 'OG-084, OG-031 (Stonefang Wolf)', gaits: ['trot', 'walk', 'gallop', 'stand'],
+  ironwolf: { name: 'Ironwolf', src: 'OG-084, OG-031 (Stonefang Wolf)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit'],
     palette: { coat: [.44, .42, .4], saddle: [.16, .15, .14], belly: [.78, .75, .69], dark: [.06, .05, .05], horn: [.8, .76, .7] },
     fur: { len: .035, layers: 9, sx: 260 },
     parts: [
@@ -1206,7 +1210,7 @@ PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 
 const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, ...o, parts: o.parts || base.parts });
 Object.assign(PLANS, {
   wolf: re(PLANS.ironwolf, { name: 'Grey wolf', src: 'OG-084 (all islands: wolf)', scale: .92, palette: { coat: [.5, .45, .38], saddle: [.24, .21, .18], belly: [.84, .8, .72], dark: [.06, .05, .05], horn: [.8, .76, .7] }, fur: { len: .032, layers: 9, sx: 260 } }),
-  redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand'], wag: .06, speedK: 1.1,
+  redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit'], wag: .06, speedK: 1.1,
     palette: { coat: [.72, .34, .12], saddle: [.55, .24, .08], belly: [.95, .92, .86], dark: [.08, .05, .04], pale: [.97, .95, .9] },
     fur: { len: .028, layers: 8, sx: 320 },
     parts: [
@@ -1367,7 +1371,7 @@ Object.assign(PLANS, {
       ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
       ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
     ] },
-  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand'], wag: .1, speedK: 1, neckNod: .02,
+  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit'], wag: .1, speedK: 1, neckNod: .02,
     palette: { coat: [.5, .42, .32], saddle: [.24, .19, .14], belly: [.84, .78, .66], dark: [.06, .05, .04], pale: [.9, .86, .78] },
     pattern: { kind: 'stripes', period: .07, tone: 'saddle' }, fur: { len: .022, layers: 8, sx: 300 },
     parts: [

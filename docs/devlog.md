@@ -24197,3 +24197,28 @@ The first try counted only the body and thighs, and the shins went 2 cm under th
 - **The neck.** Taking the pitch back at the neck's first bone leaves a kink where the neck meets the chest. A sitting hound carries its neck upright, and spreading the correction down the neck would round it.
 - **The seat.** The haunch rests on the ground behind the hocks, as a dog's does, but the thighs' flesh is the kit's capsules, so it reads as a lump rather than a folded thigh. From the side at play distance it reads as sitting.
 - **Owed:** lying down (the hound's other rest, by the chair's wheel), the sit on the other canids (one line each in their `gaits`), the chair pushed (B4), and all of it in the game (after F4).
+
+## v80 — Session 1115 — The wolves, foxes and wildcats sit (L3, prototype only)
+Session 1114's sit was given to the wolfhound alone, and it named the other canids as owed. This session gives it to every plan built on the Ironwolf's, the red fox's or the Hollowcat's parts: eleven plans in all. Two things needed fixing along the way. It touches only `creatures.js` and `creatures.check.mjs`.
+
+- **The plans.** `'sit'` is added to the gaits of the Ironwolf, the red fox and the Hollowcat. The plans built from them inherit it: the grey wolf, the Redspine Fox, the Mirage Fox, the Lanternfox, the Thornrunner, the Stormlynx and the Sunspire Lynx. With the wolfhound that makes eleven.
+- **The tail gets its own search.** Laid level along the ground less 0.06 rad, the hound's thin tail cleared the ground. The wolves' and foxes' thicker tails went 3 to 5 cm under it. `sitFind` now runs a second halving after the pitch: the tail's first bone is lifted from that drooped level only as far as its own flesh needs to be 5 mm off the ground.
+- **A NaN on the first try.** The rump's vertices are partly weighted to the tail's first bone. During the pitch search the tail's lift was still undefined, so the rump went NaN and the pitch came out 0°. The lift now starts at its drooped value before either search.
+
+The check now runs over every plan whose gaits include `sit`. Two of its bounds were the hound's and are now relative:
+- the standing haunch must be ten times the sitting one, not 20 cm (a fox's is 10 cm);
+- nothing but the toe pads may be deeper than it is standing. The Stormlynx's snowshoe paws sink 4.6 mm standing and 4.9 sitting.
+
+### Verified (headless Chromium)
+- **Every sitter's sit:** each plan's foot error is 0.0 cm, and each holds to the sit's check.
+- **The pitch:** 28° (the Sunspire Lynx) to 54° (the Thornrunner), the long-legged dogs most.
+- **The haunch and shins:** 5.0 mm off the ground (the grey wolf's 7.2, its tail the limit).
+- **The hind toes:** 7 to 21 cm ahead of the hips.
+- **The forefeet:** exactly where they stand.
+- **The head:** above the withers.
+- **The full run:** 1,145 of 1,145 pass, 1,124 before and 21 new: ten sitters' foot checks, ten sit checks and the list of sitters.
+- **Picture:** `creatures-sitters.jpg` (the Hollowcat, the red fox, the Stormlynx, the grey wolf, the Thornrunner and the wolfhound, each by a man for scale).
+### Needs eyes
+- **The cats.** A cat sits with its forefeet together and its tail wrapped round them. These keep their standing stance and lay the tail back and to one side.
+- **The neck's kink** from Session 1114 is unchanged. Spreading the correction down the neck was tried and made no visible difference, so it was taken out.
+- **Owed:** lying down, and the game (after F4).
