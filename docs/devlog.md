@@ -24774,3 +24774,29 @@ Michael answered DECISION #432 with A: the Old Blood's dot embroidery is powdere
 ### Needs eyes
 - **Bone on a dark tunic and the woman's violet dress** are powdered now too. Session 1125 pictured only the oxblood and slate on cream, so these two are new to Michael's eye: `builder-dots-dark.jpg` and `builder-dots-woman.jpg`.
 - **Owed:** the game, after F4.
+
+## v80 — Session 1143 — The Gatelanders' waistcoat (L1, prototype only)
+Backlog L1's wardrobe matrix asks for each island's dress by kind and class. OG-109's Gatelands column names "laced bodices, long skirts, tunics, waistcoats, hooded cloaks". The kit had the bodice (Session 888), the skirts, the tunic and the cloaks, but no waistcoat. The sheet draws it and the canon has nothing against it, so, as with the sash (Session 989) and the head-wrap (Session 994), this asks nothing. It touches only `people.js` and `builder.check.mjs`.
+
+- **The shell** is the bodice's: the torso off the tights, 8 mm over the tunic, ending under the belt, with the same push.
+  - **The neck:** a V at the front, from the breastbone (rest y .44) widening 0.35 cm for each centimetre up.
+  - **The armholes:** they curve in from the shell's 19 cm under the arm to 16 cm at the shoulder. The bodice's straps stop at 14.8. A first cut stepped straight from 19 to 16 at the chest, and from behind it left a small green point at each armpit; the curve (a smoothstep over rest y .38 to .485) took them out.
+  - **The cloth:** wool, or leather on `waistcoatLeather`.
+- **Six buttons** (`buildButtons`) run down the closed front from just over the belt to under the V. Like the bodice's lacing, they are built after the pose: each is the shell's own point nearest the middle at its height, read on the posed shell, with a flattened dome 11 mm across set on it along its normal. They are horn on wool and pale bone on leather, 132 triangles each.
+- **It gives way** to a bodice (the same shell), a robe, mail or scales, a tabard or a bib, all of which lie on the same chest. It is not worn without a tunic. `waistcoatOn(D)` holds the rule. The sash belt stands out over it as it does over a bodice, and the shells that the sash belt measures itself against now include it.
+- **The roll:** Gatelander men only, at 35%, in the people's earth green, brown, muted blue or a dark drab, or brown leather on three in ten. It comes from a seeded stream of its own (`seed|waistcoat`), so every other roll of every seed is as it was. A rolled waistcoat the man cannot wear (under a tabard, say) is dropped.
+
+### Verified (headless Chromium)
+- **Four new waistcoat checks:** green wool, brown leather, under a cloak with its hood down, and under a sash belt.
+  - On each, the posed waistcoat stands out of the posed tunic over the whole closed body: 467 shared points, the nearest 6.8 to 7.2 mm out along the tunic's normal, none under 4 mm.
+  - Six buttons span 22.5 to 23.7 cm, 792 triangles in all.
+  - The genome saves and loads back.
+- **What it gives way to:** none is built under a tabard, a leather bib, mail, a bodice or a robe, or without a tunic, and one is built on its own.
+- **The roll:** 21 of 60 Gatelander men roll it, 6 of them in leather, and all 21 can wear it. No Gatelander woman and none of the 180 of the other peoples roll it.
+- **`builder.check.mjs`:** 484 of 484 pass, 478 before and the six above. Every earlier check on the rolled Gatelanders (arms through garments, hair, baskets, spears) passes with the waistcoats now among them.
+- **The first run** stopped the page: the no-tunic case left a man's tunic skirt with no colour. That case now takes the skirt away too.
+- **Pictures:** `builder-waistcoat-close.jpg`, `-full.jpg`, `-side.jpg`, `-back.jpg` (green wool), `-leather.jpg` and `-cloak.jpg` (muted blue under a madder cloak, hood down).
+### Needs eyes
+- **The shoulder.** The waistcoat runs up to the tunic's neckline at the sides of the neck, where a tailored one would have its seam a little lower. From the front it reads as a high-cut country waistcoat.
+- **No front edge.** The two fronts are one piece, and only the buttons say it opens. A darker line down the middle, or the left front lapped over the right, would say it more plainly.
+- **Owed:** the rest of the matrix (formal, travel and winter dress by class, and the Mark's and Aurenne's columns), and the game, after F4.
