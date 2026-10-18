@@ -24140,6 +24140,32 @@ So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where
 ### Needs eyes
 - Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
 - `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
+
+## v80 — Session 1109 — captainguard's front band is each blow's own (QA, tests only)
+QA's run of 18 Oct 06:52 UTC read CI from 00:52. Seven runs were green and two were red, and both reds were the builders' own work. auto/backlog 66d90ed had `kitlots`, and auto/systems d7e983c had `targetof`, `trapseed`, `fistfight` and `flashshare`; `docs/qa/flaky.md` has the details. Two suites passed only on the retry: `panelfocus` on main 5521ba1, still owed, and `captainguard` on auto/quests 2df0963. That second one is main 42b44b0 plus the quest writer's docs, so the flake came after Session 1072's flank fix. It is this session's.
+
+The red check was *from the front the guard holds*: front `[1,2,2,2,2,2,2,2,2,2]` against the band `[2,3]`. The band was estimated from the open blows the run happened to roll. Its floor was the smallest open roll × 0.35 and its top the largest + 1 × 0.35, floored, and each front hit also had to be under every open roll. The starting Wooden GreatClub rolls 5 or 6 at level 1. That run's twelve open blows rolled 6 every time (plus two chained thirds of 8), so the floor was 2, and the one front swing that rolled 5 landed its floored 35% (1) under it. The game was right. The test only knew the open rolls it had sampled, not what each front blow had rolled.
+
+The suite now wraps `meleeDamageChain` for the captain's guarded calls (`shMult` < 1). It records the value the foe's stream gave that call (`e.rng`, or `Math.random` when the foe has none). It then works out the same blow at `shMult` 1 by replaying that value, so the stream is not drawn again and the fight's later rolls are not moved. Each front hit is held to its own twin: at least 1, at least the twin × 0.35 floored, at most the twin + 1 × 0.35 floored, and under the twin. That is Session 659's rule applied to the one blow instead of a range guessed from others. The rule is unchanged, and it is tighter, since a hit can no longer pass because a different blow had a lower roll. The other checks are unchanged: ten swings, the mean ratio 0.15–0.45 and the flank.
+
+### Verified (headless Chromium)
+- `node tests/run.mjs captainguard --no-retry`: 3 of 3 green in the old look and 3 of 3 in the new (`--look=new`), side by side. The front hits and their twins were, for example, `[1,1,2,1,2,2,1,1,2,2]` / `[5,5,6,5,6,8,5,5,6,6]`. A chained third also lands on the front (twin 8, hit 2) and passes the same rule.
+- Not run against the failing roll itself: that needs a run whose open blows all roll 6 with a front 5 among them, about 1 run in 10. Under the new check, the CI run's front `[1,…]` with a twin of 5 is inside its own band [1, 2].
+
+### Needs eyes
+- Nothing to play. `panelfocus` (FLAKY on main 5521ba1, shard 2) and `kitlots` (the look builder's suite, red on 2 of its 4 runs) are the next flaky items. `ragdoll`, `locksight` and the shared stepped-loop helper are still owed.
+
+## v80 — Session 1110 — panelfocus clicks in the game's frames (QA, tests only)
+The second FLAKY of this run's CI read: `panelfocus` on main 5521ba1 (shard 2, 1,169 s with its retry). It had already flaked once on auto/bodies 40ed0cf. On the first try, three of the five panels never shut: the rest slip's *Not now*, *Close Book* and the sigil stone. Each one logged `locator.click: Timeout 8000ms exceeded … waiting for element to be visible, enabled and stable`, and *each panel closes on its own button* and *W held … you walk* went red. The retry shut all five, the focus went to `#g` every time, and the game was right. Before a click, Playwright waits until the target has held its box still over two of the page's animation frames, and that wait is bounded by the click's 8 s timeout. On software GL, a frame of the game takes seconds on a loaded runner. The first try's wait ran past 8 s, so the click was never sent and the panel stayed open.
+
+The suite's `clickStill` now counts that wait in the game's own frames. It reads the button's box with `boundingBox`, waits one frame (`g.frames(1)`), and reads it again, up to 30 pairs, until two reads in a row agree to half a pixel. Then it clicks the box's centre with `page.mouse.click`. That is the same real mouse event a player's click is, and it lands on whatever is on top at that point. The suite's `shut` check still proves the click reached the button, and a box that never holds still is logged with its last reading. Nothing the suite checks has changed: the five panels, the focus on `#g`, W held and walked, and the journal's search keeping its focus.
+
+### Verified (headless Chromium)
+- `node tests/run.mjs panelfocus --no-retry --look=old|new`, one at a time: 3 of 3 green in each look. The old look took 456, 465 and 525 s; the new look 552, 594 and 650 s. Every one of the 30 clicks took 2 reads (the box held still on the first frame).
+- Two copies side by side on this 4-core container (the first attempt): the old look passed, and the new look shut its first four panels and was then stopped by `run.mjs`'s 900 s cap a suite. That says the suite costs about twice its time when the container is shared; it is not a failure of the click.
+
+### Needs eyes
+- Nothing to play. `panelfocus` is the slowest suite in shard 2 (CI 270–601 s); its 900 s cap is the next thing a slow runner meets. `kitlots` (the look builder's, red on 2 of 4 runs of auto/backlog) is the next flaky item once it reaches main, then `ragdoll`, `locksight` and the shared stepped-loop helper.
 ## v80 — Session 1083 — Card F6: the Gatelands' guild halls built from the kit on the new look (#352 C)
 (Numbered 1082 when first pushed. The bodies builder's auto/bodies holds a Session 1082 too, so this one is 1083.)
 The backlog's next F6 item after the houses is the town's large buildings from the kit: the inn, the church, the guild hall and the keep. The guild hall is the one already drawn for it: Michael's C on #352 (a hall of its own, open to the roof, with a gallery to the dormitory), built in the prototype in Session 964 and copied into `PKIT.gl.PLANS.guildhall` with the rest in Session 1037. This session puts it in the towns. The church waits for its own session (the kit's temple is a small god's temple, 9.6 by 6 m, smaller than a town church), and so do the inn and the keep, which have no exterior plan in the kit yet.
@@ -24257,6 +24283,31 @@ The grip is still built the same way, only the forearm's aim is new:
 - **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
 
+## v80 — Session 1128 — corpsebody's Cave Bear lay on Hearthwick's well (QA, tests only)
+The QA read of CI from 07:00 to 12:52 on 18 Oct found six green runs and no reds, with three FLAKY retries: `corpsebody` twice (auto/backlog 6e82f4a,
+shard 13; auto/producer-look 26bb613, shard 10) and `ragdoll` once. Both `corpsebody` reds were the Cave Bear alone, and they failed in two ways. On
+6e82f4a, *aimed at any part of the body … searchable* read 0/0: none of its 24 bones was within 3.4 of any of the four eyes. On 26bb613, *aimed past the
+body … it is not* failed from both flanks. The suite lays its five bodies in a line 30 ahead of the start, and the middle spot, the bear's, is
+Hearthwick's own centre (site 13100,25420). That puts the bear against the town's well, a 0.5 box at 13099.3,25419.9, and a 3.65×2.15 house set at 45°:
+275 of 625 grid points within 3 of the spot are solid. A probe killed 32 bears within 0.8 of the well. Six came to rest raised, every one quiet, not
+frozen by the four-second cap: the body's middle 3.49 over the ground (once), 1.62 and 2.10, and 0.33–0.49 three times. On clear ground 16 of 16 lay at
+0.14. A body 3.5 up is out of the eyes' reach, which is the 0/0. One 1.6–2.1 up stands in the miss ray's path, which is the flank failure. So the suite's
+fault was where it dropped the bodies. The body propped up the wall is the game's fault, filed in backlog I for the bodies builder: likely the wall hold,
+which keeps a stopped point's height when it moved less than `RD_GRIP.wall` in the step (`js/34-creatures.js`, from `ragdollStep`). `ragdoll`'s retry, 3
+bodies at the cap against at most 2 after throws at its wall, is the same family and is named in that entry.
+
+The suite now builds Hearthwick first (`g.settle`), so the town's solids are all registered before anything falls. A body whose spot has a solid within 3
+is laid 4 further ahead until none has. The bear and the troll go to 42; the bandit, the wolf and the golem keep their old spots. A first try moved the
+whole line to 42, and it turned *aimed at a dead bandit's foot … the old spot did not* red in 4 of 4. The bandit there is a different man (17 bones, built
+by place), and his lowest bone fell on the kill spot, so the old spot reached it too. The checks and their bounds are unchanged. The log line now carries
+each body's `lift` over the ground and where it lies, and the foot check's own line carries the foot against the kill spot, so a later red names its cause.
+### Verified (headless Chromium)
+- The probe: 6 of 32 bears at the well came to rest 0.33–3.49 over the ground; 0 of 16 on clear ground (0.14 each).
+- `corpsebody`, with the fix: 4 of 4 green in the old look (three side by side with a new-look run) and 1 of 1 in the new. The spots were
+  `[30,30,42,42,30]`, the bear's lift 0.14–0.15 and the bandit's foot 2.88–3.02 from the kill spot (old spot false). 46 s alone against 44 before.
+### Needs eyes
+- Backlog I's floating corpse: a bear killed against a wall in play may hang up it. It is the bodies builder's to fix; the suite no longer stands there.
+- `ragdoll` (3 capped at its wall, once) stays owed in `docs/qa/flaky.md`.
 ## v80 — Session 1095 — people.js's WIND renamed (prototype only)
 Renumbered: this run pushed Sessions 1092 and 1093, and auto/quests-build pushed its own 1092 at the same time, so they are 1094 and 1095.
 The concept artist reported in the room on 17 Oct: since Session 1024, `people.js`'s own `WIND` (the leg wraps' wound-cloth shader chunk) broke 16 of the 17 pages that `bundle.py` makes. `common.js` exports a `WIND` of its own, the leaves' sway uniform. The bundle puts both modules in one scope, so the two names clashed. `bundle.py` already works round this by renaming any shared top-level name in its copy of `people.js`, but the concept artist asked for the cleaner fix in `people.js` itself. It is now `WRAP_WIND`, used in its one place. `bundle.py`'s comment notes the old name, and the rename rule stays in place as a guard for any later clash.
