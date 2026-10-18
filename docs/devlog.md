@@ -23640,6 +23640,30 @@ What is built (in `makePerson`):
 
 ### Needs eyes
 - **On the Old Blood the change is quiet.** Their skin is already grey-pale and their eyes grey (0.66, 0.68, 0.7), so the Cold mostly cools them. The marks of Session 1052 say more than the colour does. If the Cold is to read across a room, the eyes could go further toward silver, or take a faint light.
+
+## v80 — Session 1071 — perkbody's stepped loop starts from the last real frame (QA, tests only)
+`perkbody` went FLAKY on three runs, all shard 5: bf251d1 on auto/systems, and the producer's branch twice today (bc98a27 and ac8206e). Each time the red check was *off the road at 74 the sprint drains it*, with stamina 9.98 against `< 8` while sprinting; the retries read 6.78. The suite lives on auto/systems (Session 976), not on main. The sprint is measured in the game's own loop. The test stubs `requestAnimationFrame` and `REN.render` and calls `loop(_t)` ten times, adding a sixtieth of a second to its own clock `_t` each time. But the game's frame that was already queued when the stub went in still runs once, at real time. When it lands between two sprints, while the keys are being pressed, it leaves `prevT` ahead of `_t`. The next stepped frame then has a negative `dt`: the loop caps `dt` at 0.05 and puts no floor under it. So the sprint's drain, `stamina - dt*drain`, adds stamina. Real browsers never run time backwards, so this is the test's, not the game's.
+
+The fix is in the stub. It now waits out the queued frame (a promise on the real `requestAnimationFrame` resolves in the same frame) and starts `_t` from that frame's `prevT`. Every `_step` also starts from `max(_t, prevT)`, so a stray frame can never put the clock behind. A new check records every stepped frame's `dt` and asks that each is 1/60 s. The commit is bac01b0 on `auto/qa-perkbody`, cut from auto/systems as Session 1038's skillcurve fix was, for the systems builder to merge.
+
+### Verified (headless Chromium)
+- A probe that forces a real frame 0.4 s late between sprints gave the next stepped frame `dt` −1.29 s, and the sprint took stamina from 8 to 16.37. The old suite with that frame forced fails its check at 21.86, sprinting. That is CI's failure, larger.
+- The fixed suite: 3 of 3 green (6.78 each time), 1 of 1 under `--look=new`, and green with the late frame forced. Every stepped frame was 1/60 s (52 of 52).
+
+### Needs eyes
+- 41 more suites on main step `loop` from their own clock the same way. Those that await between steps can meet the same stray frame, and a negative `dt` reverses anything the loop integrates over time. A shared helper in `tests/lib/` would close the hole for all of them. It is owed in `docs/qa/flaky.md`, and the systems builder still has to merge bac01b0.
+
+## v80 — Session 1072 — captainguard holds the flank against open blows of the same kind (QA, tests only)
+`captainguard` went FLAKY once, on the producer's branch bc98a27 (which carries the Systems code), shard 4. The red check was *a swing from behind goes round the shield in full*: the flank ratio was 0.78 against `> .8`. The flank blows were `[4,3,3,3,3,4]` against an open mean of 4.25, from open blows `[4,4,5,3,4,5,4,4,5,4,4,5]`. The log came through the GitHub connector; `gh`'s log download is refused by the proxy here. The open blows are the three follow-ups in each of four cycles while the captain reels, so each cycle's third is a chain's third blow and does ×1.3 (`COMMIT.chainDmg`, read as `SWING.chain===3`). Each flank swing follows a long wait and never chains, so the check measured a single blow against a set that carried the chain's bonus a third of the time. On main's rolls (5–8 with the GreatClub) that left a margin of 0.89–0.96. On the Systems code's skill-scaled rolls (3–5) the bonus alone brings the ratio to about 0.85, and a low draw takes it under 0.8.
+
+The suite now records the open blows that are not a chain's third (`openPlain`) and holds the flank against those. The bound is unchanged at 0.8, and the check asks for at least four such blows. The front, follow-up and guard checks read the same arrays as before.
+
+### Verified (headless Chromium)
+- 3 of 3 green on main (flank ratio 0.96, 0.98, 1.09). 3 of 3 on the Systems code (auto/systems' worktree: 0.83, 0.92, 0.96). 1 of 1 under `--look=new`.
+- CI's failing numbers read 0.92 under the new comparison.
+
+### Needs eyes
+- On the Systems code the rolls are 3 or 4, so six flank blows against eight open ones is still a coarse sample: one run here read 0.83. If it goes red again with plain-open blows, the next step is more flank swings, not a lower bound.
 ## v80 — Session 1044 — Card F11: Aurenne's cog, by #347's answer (prototype only)
 The third hull built to Michael's A on DECISION #347, and the last cog. Option A's text names it: "an Aurenne cog with one lateen". DECISION #396 (the Gatelands' towns in the new kit) is still unanswered, so the game's towns wait. This session touches only the prototypes: `ships.js`, `ships-view.js` and `ships.check.mjs`. It is `aurenneCog` in `docs/prototypes/levelup/ships.js` (`gatelandsCog` with `o.dress: 'aurenne'`), at `ships.html?ship=aurcog`.
 
