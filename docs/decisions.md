@@ -109,6 +109,30 @@ Pictures:
 - [the kit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-kit.jpg)
 
 
+### The base below deck: in the hull's own lines, the hold deepened, or one big cabin as today? (look builder, Session 1099) — DECISION #418
+**Backlog L6, the base below deck (look builder, Session 1099; OG-027, OG-072).** Today the game's cabin is one room of 7 by 8 m (`CABIN`, `85-world-sea.js`), the same for every ship and wider than any hull: the cog is 5.6 m across. OG-027 draws the base in the ship's own rooms, growing with the hull. The cog's base is drawn inside her real lines in `docs/prototypes/levelup/shipbase.js`, at `shipbase.html?view=cut|cabin|hold|galley&dress=gatelands|mark|aurenne`. Nothing stands outside the planking:
+- **The cabin under the aftcastle:** 3.6 m long, 2.2 to 4.8 m wide, 2.03 m clear. It holds a box bunk (rest and save), a sea chest, the chart table with its chart, dividers and a candle, a stool, a shelf, a rug and a lantern.
+- **The hold under the hatch:** a floor 3.6 m wide amidships, frames every 0.75 m and beams every metre, with a ladder up through the open hatch. It holds barrels, crates and sacks; the workbench with a vice and a rack of tools (crafting); a table with a still, a retort and phials (alchemy); two chests (the stash); and two lanterns. It is 1.85 m between the beams and 1.66 m under them, so a 1.8 m person stoops under a beam.
+- **The galley under the forecastle:** a firebox on a tray of sand, a pot on a crane, a water cask.
+- **The dress by island:** Gatelands oak, wool and brick; the Mark tarred wood, furs, a hide and an iron firepan; Aurenne oiled wood, brass, madder and indigo, and blue tile.
+
+Where should the base live?
+- **A. In the hull's own lines** *(recommended)*. Each class's base is the size of its hull (OG-027's ladder: the sloop a bunk and a chest, the cog as drawn, the galleon more rooms), so a bigger ship is a bigger home. The hold is low, as a cog's was.
+- **B. As A, with the hold deepened** so a 1.8 m person stands under every beam. The floor drops 0.2 m into the bilge, so it is narrower (about 3.3 m), and the ship outside is unchanged.
+- **C. As today: one cabin of 7 by 8 m for every ship**, roomier than any hull and entered through the hatch. It is the cheapest, but the ship you walk below in is not the ship you sail.
+
+What is unchanged: what the bed, chests and stations do (the systems builder's), and the hull outside.
+
+Pictures:
+- [the cog cut away (Gatelands)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cut.jpg)
+- [the Mark's](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cut-mark.jpg)
+- [Aurenne's](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cut-aurenne.jpg)
+- [the cabin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cabin.jpg)
+- [the hold](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-hold.jpg)
+- [the Mark's hold](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-hold-mark.jpg)
+- [the galley](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-galley.jpg)
+
+
 ## Answered
 ### The Gatelands' towns in the new kit: lots to the house's size, or houses to the lot's? (look builder, Session 1037) — DECISION #396
 The new kit is in the game (`js/38-kit.js`, Session 1037), and the next step is the Gatelands' generated towns built from it on `?look=new`. The kit's houses and the generator's lots are different sizes:

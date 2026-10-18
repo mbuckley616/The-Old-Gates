@@ -1,0 +1,42 @@
+// node docs/prototypes/levelup/shipbase.check.mjs (Session 1099): the base below deck (shipbase.js, OG-027, OG-072) in the cog's own lines.
+// Each island's base builds the same twice and in budget; every piece of it stands inside the planking (its box's corners within the
+// hull's inside half-breadth at their height, at both its ends) and between its room's floor and ceiling; the cabin stands a 1.8 m
+// person upright, the hold's headroom under the beams is measured; the hatch is open to the hold's floor, with a ladder up it; the
+// cog with her hatch shut is the hull ships.js always built; and the page's views render with no page errors.
+import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
+const here = path.dirname(fileURLToPath(import.meta.url));
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.bin': 'application/octet-stream' };
+const srv = http.createServer((q, r) => { const f = path.join(here, decodeURIComponent(q.url.split('?')[0])); if (!f.startsWith(here) || !fs.existsSync(f)) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'content-type': types[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(r); }).listen(0);
+const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] };
+if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
+const browser = await chromium.launch(launch); let fails = 0;
+const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined && !ok ? '  ' + JSON.stringify(info).slice(0, 1800) : '')); if (!ok) fails++; };
+const page = await browser.newPage({ viewport: { width: 320, height: 200 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+await page.goto(`http://localhost:${port}/shipbase.html?still&w=320&h=200&view=galley`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+const R = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./shipbase.js'), SH = await import('./ships.js'), out = [];
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
+  for (const dress of ['gatelands', 'mark', 'aurenne']) { const a = K.shipBase({ dress }), b = K.shipBase({ dress }), S = a.ship, cw = z => S.sect(z, 1)[0] - .06, bad = [];
+    for (const it of a.items) { const [x0, y0, z0, x1, y1, z1] = it.box, room = it.place === 'cabin' ? a.cabin : it.place === 'galley' ? a.galley : it.place === 'hatch' ? { floor: a.floor, ceil: S.deck + .35 } : { floor: a.floor, ceil: a.deckUnder };
+      if (it.place === 'hatch' && (x0 < a.hatch.x0 || x1 > a.hatch.x1 || z1 > a.hatch.z1 + .2)) bad.push([it.name, 'through the hatch', x0, x1, z1]);
+      for (const z of [z0, z1]) for (const y of [y0 + .02, y1 - .02]) { const lim = (it.place === 'cabin' ? Math.min(a.hb(z, y), cw(z)) : a.hb(z, y)) + .02; if (Math.max(Math.abs(x0), Math.abs(x1)) > lim) bad.push([it.name, it.place, 'side', +z.toFixed(2), +y.toFixed(2), +Math.max(Math.abs(x0), Math.abs(x1)).toFixed(2), +lim.toFixed(2)]); }
+      if (y0 < room.floor - .02 || y1 > room.ceil + .01) bad.push([it.name, it.place, 'height', y0, y1, room.floor, room.ceil]); }
+    // the hatch: a ray down beside the ladder meets the hold's floor; the ladder's rungs
+    a.group.updateMatrixWorld(true); const meshes = []; a.group.traverse(m => { if (m.isMesh) meshes.push(m); }); const rc = new THREE.Raycaster(new THREE.Vector3(.45, S.deck + 2.2, -2.1), new THREE.Vector3(0, -1, 0)); rc.far = 10; const hit = rc.intersectObjects(meshes, false)[0];
+    out.push({ dress, tris: a.tris, draws: a.draws, shipTris: a.shipTris, same: hash(a.group) === hash(b.group), items: a.items.length, kinds: [...new Set(a.items.map(i => i.name))], bad,
+      cabin: +(a.cabin.ceil - a.cabin.floor).toFixed(2), galley: +(a.galley.ceil - a.galley.floor).toFixed(2), underBeams: +(a.beamBottom - a.floor).toFixed(2), betweenBeams: +(a.deckUnder - a.floor).toFixed(2),
+      hatchHit: hit ? [+hit.point.y.toFixed(2), hit.object.name] : null, floor: a.floor, ladder: a.ladder, lights: a.lights.length }); }
+  // the cog as ships.js builds her with the hatch shut, against the same cog with it open: only the planks over the hatch and its plate differ
+  const shut = SH.gatelandsCog({}), open = SH.gatelandsCog({ open: true }), cnt = (S2, n) => { const m = S2.group.children.find(c => c.name === n); return m ? m.geometry.attributes.position.count / 3 : 0; };
+  return { out, ship: { shut: shut.tris, open: open.tris, deckShut: cnt(shut, 'deck'), deckOpen: cnt(open, 'deck'), darkShut: cnt(shut, 'dark'), darkOpen: cnt(open, 'dark') } }; });
+const O = R.out, G = O[0];
+check(`the base builds the same twice in all three dresses and in budget: ${O.map(o => `${o.dress} ${o.tris.toLocaleString()} triangles in ${o.draws} draws`).join(', ')} (the cog ${G.shipTris.toLocaleString()})`, O.every(o => o.same && o.tris < 30000 && o.draws <= 24), O.map(o => [o.dress, o.tris, o.draws, o.same]));
+check(`the pieces of a base, every one placed (${G.items} in the Gatelands: ${G.kinds.join(', ')})`, O.every(o => ['bunk', 'sea chest', 'chart table', 'workbench', 'alchemy table', 'chest', 'firebox', 'barrel', 'ladder'].every(k => o.kinds.includes(k))), O.map(o => o.kinds));
+check(`every piece stands inside the planking and inside its room: ${O.map(o => `${o.dress} ${o.bad.length} of ${o.items} out`).join(', ')}`, O.every(o => o.bad.length === 0), O.map(o => o.bad));
+check(`headroom: the cabin ${G.cabin} m and the galley ${G.galley} m clear for a 1.8 m person upright; the hold ${G.betweenBeams} m between the beams and ${G.underBeams} m under them (a 1.8 m person stoops under a beam)`, O.every(o => o.cabin >= 2.0 && o.galley >= 2.0 && o.underBeams >= 1.6 && o.betweenBeams >= 1.8), O.map(o => [o.cabin, o.galley, o.betweenBeams, o.underBeams]));
+check(`the hatch is open to the hold, the ladder inside its opening: a ray down beside the ladder meets ${G.hatchHit && G.hatchHit[1]} at ${G.hatchHit && G.hatchHit[0]} m (the floor at ${G.floor}); the ladder runs from ${G.ladder.foot[1]} to ${G.ladder.head[1]} m`, O.every(o => o.hatchHit && Math.abs(o.hatchHit[0] - o.floor) < .02 && o.hatchHit[1] === 'base:plank'), O.map(o => o.hatchHit));
+check(`with the hatch shut the cog is as ships.js built her: ${R.ship.shut.toLocaleString()} triangles shut, ${R.ship.open.toLocaleString()} open (deck ${R.ship.deckShut} → ${R.ship.deckOpen}, the hatch's plate ${R.ship.darkShut} → ${R.ship.darkOpen})`, R.ship.shut === R.ship.open - (R.ship.deckOpen - R.ship.deckShut) - (R.ship.darkOpen - R.ship.darkShut) && R.ship.darkOpen === R.ship.darkShut - 12, R.ship);
+check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close();
+for (const v of ['cut', 'cabin', 'hold', 'galley', 'cut&dress=mark', 'cut&dress=aurenne']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/shipbase.html?still&w=320&h=200&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const st = await pg.evaluate(() => window.__stats); check(`shipbase.html?view=${v} renders: ${st.items} pieces, ${st.tris.toLocaleString()} triangles, no page errors`, st.items > 0 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
+await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

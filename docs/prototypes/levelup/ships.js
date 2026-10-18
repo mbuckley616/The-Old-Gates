@@ -552,7 +552,10 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
   // the deck
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .18; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      const z0 = zz[0], z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+      const z0 = zz[0], z1 = zz[zz.length - 1];
+      /* o.open (Session 1099): the hatch open to the hold, its planks cut; otherwise the deck runs under the hatch's dark plate as before */
+      if (o.open && Math.abs(x) - PW / 2 < .6) { for (const [a2, b2] of [[z0, -3.0], [-1.2, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); }
+      else put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // the cream wale along the sheer strake's top
   for (let i = 0; i + 2 <= NS; i += 2) { const za = zAt(i), zc = zAt(i + 2); for (const e of [1, -1]) rod([e * (sect(za, 1)[0] + .02), sheerAt(za) - .02, za], [e * (sect(zc, 1)[0] + .02), sheerAt(zc) - .02, zc], .045, .045, 'cream'); }
@@ -587,7 +590,7 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
   // the cargo hatch aft of the mast
   const MZ = .4, hatch = { x0: -.6, x1: .6, z0: -3.0, z1: -1.2 };
   { const hz = (hatch.z0 + hatch.z1) / 2, hw = hatch.x1 - hatch.x0 + .12, hd = hatch.z1 - hatch.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); }
-    put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
+    if (!o.open) put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
   // cargo along the sides: barrels and crates against the rail, lashed
   const cargo = []; for (const e of [1, -1]) for (const z of [-.9, 1.8, 3.0]) { const x = e * (deckAt(z) - .45); if (r() < .5) { put(new THREE.CylinderGeometry(.3, .27, .8, 12), 'oak', x, DECK + .4, z); cargo.push([x, z, .3]); }
     else { put(new THREE.BoxGeometry(.7, .6, .7), 'deck', x, DECK + .3, z, 0, (r() - .5) * .2); cargo.push([x, z, .45]); } }
