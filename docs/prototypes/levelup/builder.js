@@ -11,7 +11,7 @@ import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
-const GLABEL = { sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap' };
+const GLABEL = { eyepatch: 'eyepatch', staff: 'walking staff', sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'kettle helm', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap' };
 
 if (STILL) document.body.classList.add('still');
 const R = makeRenderer(.95), scene = new THREE.Scene(); scene.background = new THREE.Color(.035, .04, .05);
@@ -30,7 +30,7 @@ const comp = makeComposer(R, scene, cam, { bloom: .1, sat: 1.0, vig: .4, warm: [
 // ── state ──
 const b64 = { enc: o => btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''), dec: s => JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))))) };
 // SP is the species shown: 'human' (G, the person) or 'creature' (CG, the creature's genome, built as C)
-const rollPerson = s => rollGenome(s, { g: Q.get('sex') === 'f' ? 0 : Q.get('sex') === 'm' ? 1 : undefined, people: Q.get('people') || undefined });
+const rollPerson = s => rollGenome(s, { g: Q.get('sex') === 'f' ? 0 : Q.get('sex') === 'm' ? 1 : undefined, people: Q.get('people') || undefined, child: Q.has('child'), old: Q.has('old') });
 let SP = 'human', G = null, CG = null, C = null;
 if (Q.get('g')) ({ species: SP, G } = readGenome(b64.dec(Q.get('g'))));
 else if (PLANS[Q.get('plan')]) { SP = 'creature'; G = cGenome(Q.get('plan'), Q.get('seed') || Q.get('plan') + ':builder'); }
@@ -133,7 +133,7 @@ function buildPanel() {
     for (const k of locks) { if (k.startsWith('f:')) N.face[k.slice(2)] = G.face[k.slice(2)]; else N[k] = G[k]; } G = N; syncAll(); rebuild(); } });
   panel.append(el('div', { className: 'bar' }, el('label', { textContent: 'seed ' }), seed, sex, roll));
   panel.append(el('div', { className: 'bar' }, el('label', { textContent: 'people ' }), ppl));
-  h2('Body'); const BL = { g: 'woman · man', age: 'age (25 → 90)', muscle: 'muscle', weight: 'weight', height: 'height', prop: 'proportions' };
+  h2('Body'); const BL = { g: 'woman · man', age: 'age (11 → 25 → 90)', muscle: 'muscle', weight: 'weight', height: 'height', prop: 'proportions' };
   for (const k of BODY_SLIDERS) slider(BL[k], () => G[k] ?? .5, v => G[k] = v, 0, 1, k);
   h2('Face'); for (const f of FACE) slider(f.replace(/-/g, ' '), () => (G.face || {})[f] ?? 0, v => (G.face = G.face || {})[f] = v, -1, 1, 'f:' + f);
   h2('Colour'); colour('skin', () => G.skin, v => G.skin = v); colour('hair', () => G.hairCol, v => G.hairCol = v); colour('eyes', () => G.eyes, v => G.eyes = v);
@@ -147,6 +147,16 @@ function buildPanel() {
     colour(GLABEL[k] || k, () => D()[k], v => { last = v; if (on.checked) D()[k] = v; }, on); }
   { const sk = el('select', {}, el('option', { value: '', textContent: 'none' }), el('option', { value: 'short', textContent: 'short' }), el('option', { value: 'long', textContent: 'long' })); sk.value = D().skirt || ''; sk.onchange = () => { D().skirt = sk.value || null; schedule(); };
     panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'skirt' }), sk, el('span'))); inputs.skirt = () => sk.value = D().skirt || ''; }
+  // the mail made as a scale cuirass (Session 1058, OG-044's Compact guards): bronze scales, short sleeves, to the top of the thigh
+  { const sc = el('input', { type: 'checkbox', checked: !!D().scales, onchange: () => { D().scales = sc.checked; schedule(); } });
+    panel.append(el('div', { className: 'bar' }, el('label', {}, sc, ' the mail made of scales (a cuirass)'))); inputs.scales = () => sc.checked = !!D().scales; }
+  // the hurt (Session 1079, OG-001's extras): an old scar across one eye, and the eyepatch's side
+  { const sc = el('select', {}, ...[['', 'no scar'], ['L', 'scar over the left eye'], ['R', 'scar over the right eye']].map(([v, t]) => el('option', { value: v, textContent: t }))); sc.value = G.scar || ''; sc.onchange = () => { G.scar = sc.value || null; schedule(); };
+    const ps = el('select', {}, ...[['L', 'patch on the left'], ['R', 'patch on the right']].map(([v, t]) => el('option', { value: v, textContent: t }))); ps.value = D().eyepatchSide || 'L'; ps.onchange = () => { D().eyepatchSide = ps.value; schedule(); };
+    panel.append(el('div', { className: 'bar' }, sc, ps)); inputs.scar = () => { sc.value = G.scar || ''; ps.value = D().eyepatchSide || 'L'; }; }
+  // the old's walking staff (Session 1085, OG-001, OG-042, OG-065): its make, or the people's own
+  { const sm = el('select', {}, ...[['', 'staff by people'], ['hazel', 'hazel, a root knob'], ['ash', 'ash, iron-shod'], ['olive', 'olive, a bronze knob'], ['carved', 'carved knotwork, tall']].map(([v, t]) => el('option', { value: v, textContent: t }))); sm.value = D().staffMake || ''; sm.onchange = () => { D().staffMake = sm.value || null; schedule(); };
+    panel.append(el('div', { className: 'crow' }, el('label', { textContent: 'staff' }), sm, el('span'))); inputs.staffMake = () => sm.value = D().staffMake || ''; }
   // the head-wrap tied as a Gatelander's headscarf (Session 1029): its point and knot down the back
   { const sf = el('input', { type: 'checkbox', checked: !!D().scarf, onchange: () => { D().scarf = sf.checked; schedule(); } });
     panel.append(el('div', { className: 'bar' }, el('label', {}, sf, ' head-wrap tied as a headscarf'))); inputs.scarf = () => sf.checked = !!D().scarf; }
@@ -205,16 +215,18 @@ function sheet() {
 window.__render = () => comp.render();
 // ?peoples: three of each people side by side (a man, a woman, and one of either), each rolled from a seed of place and index
 function peoplesSheet() {
-  const keys = Object.keys(PEOPLES), out = [], n = keys.length * 3, gap = .62; let i = 0;
-  for (const k of keys) for (let j = 0; j < 3; j++) { const G1 = rollGenome(`${Q.get('seed') || 'line'}:${k}:${j}`, { people: k, g: j === 0 ? 1 : j === 1 ? 0 : undefined }), p = makePerson(G1);
-    p.root.position.x = (i++ - (n - 1) / 2) * gap + (keys.indexOf(k) - 1.5) * .35; p.root.rotation.y = (j - 1) * .12; scene.add(p.root); const bb = new THREE.Box3().expandByObject(p.meshes[0], true); out.push({ people: k, g: G1.g, h: +(bb.max.y - bb.min.y).toFixed(3) }); }
+  // with ?child (Session 1081) each people is a man, a woman, a boy and a girl
+  // with ?old (Session 1082) an old man and an old woman in place of the children
+  const old = Q.has('old'), kids = Q.has('child') || old, per = kids ? 4 : 3, keys = Object.keys(PEOPLES), out = [], n = keys.length * per, gap = .62; let i = 0;
+  for (const k of keys) for (let j = 0; j < per; j++) { const G1 = rollGenome(`${Q.get('seed') || 'line'}:${k}:${j}`, { people: k, g: kids ? j % 2 ? 0 : 1 : j === 0 ? 1 : j === 1 ? 0 : undefined, child: kids && !old && j > 1, old: old && j > 1 }), p = makePerson(G1);
+    p.root.position.x = (i++ - (n - 1) / 2) * gap + (keys.indexOf(k) - 1.5) * .35; p.root.rotation.y = (j - 1) * .12; scene.add(p.root); const bb = new THREE.Box3().expandByObject(p.meshes[0], true); out.push({ people: k, g: G1.g, child: G1.age < .3, h: +(bb.max.y - bb.min.y).toFixed(3) }); }
   cam.fov = 24; cam.aspect = W / H; cam.position.set(0, 1.2, ((n - 1) / 2 * gap + .75) / (Math.tan(12 * Math.PI / 180) * W / H)); cam.lookAt(0, .95, 0); cam.updateProjectionMatrix(); STATS.peoples = out;
 }
 // a people's genome measures the morphed body for its height, so with ?people= it is rolled once the pack is in (Session 826)
 (SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
-    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); }
+    if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') }; }
   if (!STILL) buildPanel(); rebuild(); comp.render(); window.__done = true;
   // a creature walks on the spot in its gait (the bestiary's step, with the body kept where it stands); a person is still
   let t0 = performance.now();
