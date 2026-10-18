@@ -24359,3 +24359,29 @@ Sessions 1117 and 1122 both flagged the same thing: every lie holds its head low
 ### Needs eyes
 - **How high.** 0.3 rad is one number for every plan. A cat lying with its head up holds it higher, and a resting dog may drop its chin to its paws, which would be a third rest.
 - **Owed:** the game, after F4.
+
+## v80 — Session 1125 — The dot embroidery powdered, and a question (L1, prototype only)
+The critic's 18 Oct pass on the new look found five faults. One is mine: "oxblood dots on cream read as spatter", on the Old Blood's dress. Session 1043 had flagged that risk, and it named two ways out: keep oxblood off cream, or drop it.
+
+There is a third, which keeps OG-066's palette. The trouble is how the knots are laid as much as their colour. They gather in noise-driven drifts and thin to nothing between them, and they come in different sizes. Clumps and gaps of dark red on cream are what splashes look like. Session 1043's first try, an even scatter, read as measles.
+
+Embroidery that is scattered evenly is done as "powdering": one small figure repeated on a grid. This session builds that beside the drifts:
+- **`dotsStyle: 'powder'`** is a new dress flag; its default is `'drift'`, so nothing rolled changes.
+- **The grid** is a half-drop one, 3.5 cm across.
+- **The figure** is a trefoil of three equal knots 3.2 mm round, 3 mm off the cell's middle, turned at random. Every cell holds one.
+- **The rest is as before:** the projection along the axis the cloth faces most, the fade to its average far off, and the tunic and same-cloth skirt only.
+
+Which way the embroidery is laid, and whether oxblood stays on cream, changes how the Old Blood look. That is Michael's to choose, so it is asked as DECISION #432, recommending the powdering with every colour kept. The default stays the drifts until he answers. It touches only `people.js` and `builder.check.mjs`.
+
+### Verified (headless Chromium)
+- **The new check:** the same Old Blood man, the same oxblood on the same undyed tunic, powdered.
+  - The knots cover 1.4% of the close view, against the drifts' 0.5%.
+  - Every changed pixel moves toward the thread's colour.
+  - The view without them renders the same twice.
+  - The genome saves with `"powder"` and loads back.
+- **Every earlier dots check passes unchanged**, so the drifts are as they were.
+- **`builder.check.mjs`:** 476 of 476 pass, 475 before and one new. The same run shows Session 1123's two hound checks still pass after Session 1124's neck.
+- **Pictures:** `builder-dots-powder-close.jpg`, `-full.jpg` (oxblood) and `-slate.jpg`, beside Session 1043's `builder-dots-close.jpg` and `-full.jpg`.
+### Needs eyes
+- **What it reads as.** Up close the powdering reads more as a printed calico than as hand knots. The knots are flat thread colour with the old raised shading, and they are not drawn as stitches.
+- **Owed:** Michael's answer on #432. Then, if powdering is chosen, the roll sets `dotsStyle`, or the drifts are taken out. Then the game, after F4.
