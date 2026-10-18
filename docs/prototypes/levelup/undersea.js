@@ -175,3 +175,66 @@ export function wreckSite(o = {}) {
   const [a, b] = wrecks.slice(1, 3).map(w => new THREE.Box3(new THREE.Vector3(...w.box.slice(0, 3)), new THREE.Vector3(...w.box.slice(3))));
   return { group, tris: Math.round(tris), draws, floor, wrecks: wrecks.map(({ group: _g, S: _s, ...w }) => w), cargo, chests, gone, spars, pair: a.intersectsBox(b) };
 }
+
+// ── a sea cave with air pockets (Session 1103; OG-125's "sea caves with air pockets, tunnels between them, a vertical shaft to air, glowing
+// flowers, hidden exits to the surface"). The cliff's face along x at z 0, the sea before it (z < 0) on a floor 14 m down, the land on its
+// top at 12 m over the water (z > 0):
+//   - the mouth: an opening 4.6 m across in the face, its foot 11.3 m down, the tunnel's tube standing round it;
+//   - the tunnel: a winding tube of rock 5.2 m across, rising from the mouth 30 m in and 8 m up to the chamber;
+//   - the chamber: a hollow 18 m across and 22 m long, its lower part flooded to the sea's level and its roof 5.5 m over it: the air pocket.
+//     A shelf of shingle rises out of the water along its east side (to 0.6 m), the glowing flowers on it;
+//   - the shaft: a round well 3 m across from the chamber's roof to the land, the light and the air coming down it (a hidden way out);
+//   - the side tunnel: 3.4 m across from the chamber's far end 16 m on to a second, smaller pocket (8 by 8 m, 2.4 m of air).
+// -> { group, tris, draws, floor, mouth { x, y0, y1, w }, spine: [[x, y, z]...] (the tunnel's), tubeR (its least clear half-width), chamber
+//   { c: [x, y, z], r: [rx, ry, rz], air }, shelf { x0, x1, z0, z1, top }, shaft { x, z, r, y0, y1 }, pocket2 { c, r, air }, flowers }
+export function seaCave(o = {}) {
+  const r = o.r || stream('undersea:seacave'), B = new Map(), put = (key, g) => { const x = g.index ? g.toNonIndexed() : g; for (const k of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(k)) x.deleteAttribute(k); x.computeVertexNormals(); worldUV(x, .3); (B.get(key) || B.set(key, []).get(key)).push(x); return x; };
+  const ph = Array.from({ length: 6 }, () => r() * 9), noise = (x, y, z) => .55 * Math.sin(x * .55 + ph[0]) * Math.sin(z * .5 + ph[1]) + .35 * Math.sin(y * .8 + x * .3 + ph[2]) + .25 * Math.sin(z * 1.3 + y * 1.1 + ph[3]);
+  const LAND = 12, FLOOR = -14, floor = (x, z) => FLOOR + fbm(x / 12, z / 12, 3) * 1.2;
+  // the chamber and the second pocket: lumpy ellipsoids; a point is inside one when its scaled radius is under 1
+  const CH = { c: [0, 0, 40], r: [9, 5.5, 11] }, P2 = { c: [9, 0, 64], r: [4, 2.4, 4] }, MOUTH = { x: 0, y0: -11.3, y1: -6.7, w: 4.6 };
+  const spine = []; for (let k = 0; k <= 30; k++) { const t = k / 30; spine.push([2.2 * Math.sin(t * Math.PI * 1.3), -9 + 8 * t * t * (3 - 2 * t) * .95, -2 + t * (CH.c[2] - CH.r[2] + 2 - -2)]); }
+  const side = []; for (let k = 0; k <= 16; k++) { const t = k / 16; side.push([CH.c[0] + 4 + (P2.c[0] - 4) * t, -1.0 + .6 * Math.sin(t * Math.PI), CH.c[2] + CH.r[2] - 3 + (P2.c[2] - P2.r[2] + 1.5 - (CH.c[2] + CH.r[2] - 3)) * t]); }
+  const TR = 2.6, SR = 1.7;
+  const inEll = (E, x, y, z, m = 0) => Math.hypot((x - E.c[0]) / (E.r[0] - m), (y - E.c[1]) / (E.r[1] - m), (z - E.c[2]) / (E.r[2] - m)) < 1;
+  const nearSpine = (S, R, x, y, z, m = 0) => S.some(([a, b, c]) => Math.hypot(x - a, y - b, z - c) < R - m);
+  // a lumpy shell round an ellipsoid (its faces looking in), with a test to drop faces where something opens into it
+  const shell = (E, nTh, nPh, drop) => { const pos = []; const P = (i, j) => { const th = i / nTh * Math.PI, phi = j / nPh * Math.PI * 2, d = [Math.sin(th) * Math.cos(phi), Math.cos(th), Math.sin(th) * Math.sin(phi)], p = [E.c[0] + d[0] * E.r[0], E.c[1] + d[1] * E.r[1], E.c[2] + d[2] * E.r[2]], n = noise(...p) * .8; return [p[0] + d[0] * n, p[1] + d[1] * n, p[2] + d[2] * n]; };
+    for (let i = 0; i < nTh; i++) for (let j = 0; j < nPh; j++) { const a = P(i, j), b = P(i + 1, j), c = P(i + 1, j + 1), d = P(i, j + 1); for (const tri of [[a, c, b], [a, d, c]]) { const cx = (tri[0][0] + tri[1][0] + tri[2][0]) / 3, cy = (tri[0][1] + tri[1][1] + tri[2][1]) / 3, cz = (tri[0][2] + tri[1][2] + tri[2][2]) / 3; if (drop(cx, cy, cz)) continue; pos.push(...tri.flat()); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); return g; };
+  // a tube along a spine (its faces looking in), its ends left open, a test to drop faces inside what it opens into
+  const tube = (S, R, nA, drop) => { const pos = [], ring = k => { const p = S[Math.min(S.length - 1, k)], q = S[Math.min(S.length - 1, k + 1)], pp = S[Math.max(0, k - 1)], t = new THREE.Vector3(q[0] - pp[0], q[1] - pp[1], q[2] - pp[2]).normalize(), u = new THREE.Vector3(0, 1, 0).sub(t.clone().multiplyScalar(t.y)).normalize(), w = new THREE.Vector3().crossVectors(t, u);
+      return Array.from({ length: nA + 1 }, (_, j) => { const a = j / nA * Math.PI * 2, d = u.clone().multiplyScalar(Math.sin(a)).add(w.clone().multiplyScalar(Math.cos(a))), x = p[0] + d.x * R, y = p[1] + d.y * R, z = p[2] + d.z * R, n = noise(x, y, z) * .5; return [x + d.x * n, y + d.y * n, z + d.z * n]; }); };
+    const rings = S.map((_, k) => ring(k)); for (let k = 0; k < S.length - 1; k++) for (let j = 0; j < nA; j++) { const a = rings[k][j], b = rings[k + 1][j], c = rings[k + 1][j + 1], d = rings[k][j + 1]; for (const tri of [[a, b, c], [a, c, d]]) { const cx = (tri[0][0] + tri[1][0] + tri[2][0]) / 3, cy = (tri[0][1] + tri[1][1] + tri[2][1]) / 3, cz = (tri[0][2] + tri[1][2] + tri[2][2]) / 3; if (drop(cx, cy, cz)) continue; pos.push(...tri.flat()); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); return { g, rings }; };
+  const SHAFT = { x: 2.0, z: 44, r: 1.5, y0: 4.0, y1: LAND };
+  // the chamber's shell: open where the tunnel, the side tunnel and the shaft come in
+  put('rock', shell(CH, 36, 48, (x, y, z) => nearSpine(spine.slice(-4), TR + .4, x, y, z) || nearSpine(side.slice(0, 4), SR + .4, x, y, z) || (y > 2 && Math.hypot(x - SHAFT.x, z - SHAFT.z) < SHAFT.r + .5)));
+  put('rock', shell(P2, 18, 24, (x, y, z) => nearSpine(side.slice(-4), SR + .4, x, y, z)));
+  const T1 = tube(spine, TR, 18, (x, y, z) => inEll(CH, x, y, z, .6) || z < -1.5), T2 = tube(side, SR, 14, (x, y, z) => inEll(CH, x, y, z, .6) || inEll(P2, x, y, z, .4)); put('rock', T1.g); put('rock', T2.g);
+  // the shaft: a tube of rock from the roof to the land, straight up
+  { const S = []; for (let k = 0; k <= 8; k++) S.push([SHAFT.x, SHAFT.y0 + (SHAFT.y1 - SHAFT.y0 + .2) * k / 8, SHAFT.z]); put('rock', tube(S, SHAFT.r, 16, (x, y, z) => inEll(CH, x, y, z, .3)).g); }
+  // the cliff's face, its foot on the floor and its top at the land, the mouth cut out of it
+  { const N = 60, M2 = 40, pos = [], W2 = 70, Pt = (i, j) => { const x = -W2 / 2 + W2 * i / N, y = FLOOR - 1 + (LAND - FLOOR + 1) * j / M2; return [x, y, -1.2 + noise(x, y, 0) * 1.4 + Math.max(0, (y - 6) * .15)]; };
+    for (let i = 0; i < N; i++) for (let j = 0; j < M2; j++) { const a = Pt(i, j), b = Pt(i + 1, j), c = Pt(i + 1, j + 1), d = Pt(i, j + 1); for (const tri of [[a, b, c], [a, c, d]]) { const cx = (tri[0][0] + tri[1][0] + tri[2][0]) / 3, cy = (tri[0][1] + tri[1][1] + tri[2][1]) / 3; if (Math.hypot(cx - MOUTH.x, cy - (MOUTH.y0 + MOUTH.y1) / 2) < MOUTH.w / 2) continue; /* the hole the tunnel's own size, inside its walls, so no water shows between the face and the tube */ pos.push(...tri.flat()); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); put('rock', g); }
+  // the land on the cliff's top, the shaft's mouth open in it; and the sea floor before the cliff
+  { const sh = new THREE.Shape(); sh.moveTo(-35, -0.5); sh.lineTo(35, -0.5); sh.lineTo(35, -80); sh.lineTo(-35, -80); sh.lineTo(-35, -0.5); const h = new THREE.Path(); h.absarc(SHAFT.x, -SHAFT.z, SHAFT.r + .2, 0, Math.PI * 2, true); sh.holes.push(h); const g = new THREE.ShapeGeometry(sh, 24); g.rotateX(-Math.PI / 2); g.translate(0, LAND, 0); put('turf', g); }
+  { const N = 70, g = new THREE.PlaneGeometry(80, 50, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 24; P.setXYZ(i, x, floor(x, z), Math.min(z, 0)); } put('sand', g); }
+  // the tunnel's floor: rubble along its foot, so it reads as a passage; the chamber's shelf of shingle along its east side, out of the water
+  const shelf = { x0: CH.c[0] + 3.0, x1: CH.c[0] + 8.2, z0: CH.c[2] - 6, z1: CH.c[2] + 6, top: .6 };
+  { const N = 16, g = new THREE.PlaneGeometry(shelf.x1 - shelf.x0, shelf.z1 - shelf.z0, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i) + (shelf.x0 + shelf.x1) / 2, z = P.getZ(i) + CH.c[2], t = (x - shelf.x0) / (shelf.x1 - shelf.x0), e = Math.min(1, Math.abs(z - CH.c[2]) / 6);
+      P.setXYZ(i, x, -1.2 + (shelf.top + 1.2) * Math.min(1, t * 2.2) * (1 - e * e) + noise(x, 0, z) * .05, z); } put('shingle', g); }
+  // the glowing flowers on the shelf: clusters of small cups on stems, lit from within (the caves' flowers, OG-099)
+  const flowers = []; for (let k = 0; k < 9; k++) { const x = shelf.x0 + 2.6 + r() * 2.2, z = CH.c[2] - 4 + r() * 8; for (let q = 0; q < 6; q++) { const fx = x + (r() - .5) * .7, fz = z + (r() - .5) * .7, t = (fx - shelf.x0) / (shelf.x1 - shelf.x0), e = Math.min(1, Math.abs(fz - CH.c[2]) / 6), fy = -1.2 + (shelf.top + 1.2) * Math.min(1, t * 2.2) * (1 - e * e), h = .15 + r() * .2; if (fy < .08) continue; /* on the dry shingle only, never at the water's edge */
+      const s = new THREE.CylinderGeometry(.008, .012, h, 4); s.translate(fx, fy + h / 2, fz); put('stem', s); const c = new THREE.ConeGeometry(.04, .06, 6, 1, true); c.rotateX(Math.PI); c.translate(fx, fy + h + .02, fz); put('glow', c); flowers.push([+fx.toFixed(2), +fy.toFixed(2), +fz.toFixed(2)]); } }
+  // the water in the pockets: a surface at the sea's level over each, seen from the air above it and from the water under it
+  { for (const E of [CH, P2]) { const g = new THREE.CircleGeometry(1, 40); g.rotateX(-Math.PI / 2); g.scale(E.r[0] * 1.02, 1, E.r[2] * 1.02); g.translate(E.c[0], 0, E.c[2]); put('pocketwater', g); } }
+  const M = { rock: mat('rock', { ns: 1.3, color: 0x6e6a62, rough: .95 }), sand: mat('plaster', { ns: 1.6, color: 0xd2c29a, rough: 1 }), turf: new THREE.MeshStandardMaterial({ color: new THREE.Color(.24, .36, .14), roughness: 1 }), shingle: mat('rock', { ns: 1.4, color: 0x8a8478, rough: 1 }),
+    stem: new THREE.MeshStandardMaterial({ color: new THREE.Color(.2, .3, .16), roughness: .8 }), glow: new THREE.MeshStandardMaterial({ color: new THREE.Color(.2, .3, .4), emissive: new THREE.Color(.45, .85, 1), emissiveIntensity: 2.2, side: THREE.DoubleSide }),
+    pocketwater: new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .16, .16), roughness: .08, metalness: .1, transparent: true, opacity: .7, side: THREE.DoubleSide, depthWrite: false }) };
+  M.rock.side = THREE.DoubleSide;
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['pocketwater', 'glow', 'sand'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const ringMin = T1.rings.slice(1, -3).map((rg, k) => Math.min(...rg.map(p => Math.hypot(p[0] - spine[k + 1][0], p[1] - spine[k + 1][1], p[2] - spine[k + 1][2])))), sideMin = T2.rings.slice(2, -2).map((rg, k) => Math.min(...rg.map(p => Math.hypot(p[0] - side[k + 2][0], p[1] - side[k + 2][1], p[2] - side[k + 2][2]))));
+  return { group, tris: Math.round(tris), draws: group.children.length, floor, mouth: MOUTH, spine, side, tubeR: +Math.min(...ringMin).toFixed(2), sideR: +Math.min(...sideMin).toFixed(2), chamber: { ...CH, air: CH.c[1] + CH.r[1] }, shelf, shaft: SHAFT, pocket2: { ...P2, air: P2.c[1] + P2.r[1] }, flowers, land: LAND };
+}
