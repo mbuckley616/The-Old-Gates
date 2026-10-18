@@ -91,9 +91,15 @@ const FOE_ROW=(o)=>Object.assign({tell:TELL_DEFAULT,tells:{},strike:0,recovery:1
 // body to the edge of yours, as your own reach is (S1035). An armed humanoid's blow is its weapon's reach (foeWeaponReach); the
 // wolf engages at 0.6 and lunges up to 1.5 at the bite (`lunge`), so it may start its tell from 2.1. The other families keep
 // today's numbers, centre to centre: the tell at 1.1 in the open world and 0.9 in a dungeon, the blow within 1.6.
+// S1136 — the heavy blow (combat.md's move sets; Michael's A on DECISION #430), humanoids and wolves first. One wind-up in four
+// (`share`, the roll a third after a light blow) is heavy, a seeded roll on the foe's id and its blow's count (co-op rules), never twice running. Its tell is 1.0 s or the
+// kind's tell + 0.35, whichever is longer, the same wind-up pose held longer, its last 0.15 s glowing red where a light blow's glows
+// gold (telegraphPulse). It lands for twice the damage and twice the posture; a held block takes its share of the damage but the
+// guard breaks (Guard's Iron wall, 75, holds it: twice a held block's posture instead); a perfect parry is as good as ever.
+const HEAVY_ROW=(o)=>Object.assign({share:.25,tell:1.0,add:.35,dmg:2,posture:2,breaks:true},o);
 const FOE_ATTACKS={
-  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2}),
-  beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70}),
+  humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2,heavy:HEAVY_ROW({})}),
+  beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70,heavy:HEAVY_ROW({})}),
   spider:   FOE_ROW({tells:{Spider:.51},hulls:true,engage:.8,reach:1.2,arc:100}),
   brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80},hulls:true,engage:.8,reach:1.2,arc:100}),
   troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},hulls:true,engage:1.6,reach:2.4,arc:140}),
@@ -119,6 +125,16 @@ function foeFamily(e){
   return FOE_FAMILY_OF[e.baseType||e.baseName]||FOE_SHAPE_FAMILY[e.shape]||'humanoid';
 }
 function foeAttack(e){return FOE_ATTACKS[foeFamily(e)];}
+// S1136 — the heavy blow's row for this foe (a boss keeps its own phases), its roll at a wind-up, and the tell that wind-up runs
+function foeHeavyRow(e){if(!e||e.isBoss)return null;const r=foeAttack(e);return r&&r.heavy||null;}
+function foeHeavyRoll(e){
+  const H=foeHeavyRow(e);if(!H)return false;
+  const n=e._blowN=(e._blowN||0)+1;
+  if(e._heavyLast){e._heavyLast=false;return false;}
+  const u=seededRng('heavy',(e.id||e.baseType||e.baseName||e.name||'foe')+':'+n)(); /* a foe with no id yet rolls on its kind's name, still seeded */
+  return e._heavyLast=u<H.share/(1-H.share); /* a third after a light blow: never twice running, still one in four in all */
+}
+function foeWindUp(e){const base=telegraphDuration(e);e._heavy=foeHeavyRoll(e);return e._heavy?Math.max(foeHeavyRow(e).tell,base+foeHeavyRow(e).add):base;}
 // S1041 — the weapon a person-bodied foe holds (its genome's, 32-people.js), and that weapon's reach from your table: a knife
 // the dagger's 1.2, the rest (sword, axe, mace, cutlass, and the staff and spear the sheet does not list) the sword's 1.6
 const FOE_WPN_ROW={dagger:'Dagger',sword:'Sword',axe:'Mace',mace:'Mace',cutlass:'Scimitar',fists:'Fists'};
@@ -153,7 +169,7 @@ function blowRef(L){return BLOW_SHARE*hpRef(L)*(ARMOUR_K+kitRef(L))/ARMOUR_K;}
 function foeBlowRaw(e){return typeof e.dmg==='number'?e.dmg+Math.floor(foeRand(e)*4):(10+Math.floor(foeRand(e)*11))*(e.dmgMult||1);}
 function foePlaceK(e){return blowRef(1)/(typeof e.dmg==='number'?BLOW_ORDINARY.world:BLOW_ORDINARY.dungeon);}
 // the blow that reaches you: the roll, the row's multiplier, the place's scale, then your armour's share
-function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(armourShare((raw==null?foeBlowRaw(e):raw)*r.dmg*foePlaceK(e)*(e&&e._disarmed?CATCH_BLOW:1),arm)));} /* S1079 — a disarmed foe's fists, half its blow */
+function foeBlow(e,raw,arm){const r=foeAttack(e);return Math.max(1,Math.round(armourShare((raw==null?foeBlowRaw(e):raw)*r.dmg*foePlaceK(e)*(e&&e._disarmed?CATCH_BLOW:1)*(e&&e._heavy&&r.heavy?r.heavy.dmg:1),arm)));} /* S1079 — a disarmed foe's fists, half its blow */
 
 // ── The one resolver for your swing (S940). The dungeon, the open world and the legacy zones each had their own
 // (_resolveDungeonStrike, _resolveZoneStrike), the same rules written twice; both are now this. At the swing's impact
@@ -409,6 +425,7 @@ function strikeReaches(e,arc){
 // S564 — undo a perfect parry's flash: the body's own material back (see executeStrike)
 function parryFlashEnd(e){const P=e&&e._parryFlash;if(!P)return;e._parryFlash=null;if(P.body.material===P.fl)P.body.material=P.orig;try{P.fl.dispose();}catch(_){}}
 function executeStrike(e, rawDmg, now){
+  const _hv = e._heavy ? foeHeavyRow(e) : null; e._heavy = false; // S1136 — this blow's heavy row, spent with it
   // S275 — mid-roll you are not there to be hit
   if(rollUntouchable(now/1000)){sndSwing();e._lunge=.3;showMsg(`${e.name} strikes empty air.`,'#c8b880');return;}
   const sh = EQ.offhand;
@@ -518,7 +535,8 @@ function executeStrike(e, rawDmg, now){
     if(stamina===0){ staminaCD = 2; lvAct.staminaDepleted++; }
     sndBlock(); blockFlashT = 0.4; blockFlashCol = '#4488ff';
     // S762 — the line (*🛡 Blocked! … hits for N (reduced)*, with the shield hint) is gone: the bar's pale tail says it (#198 A)
-    playerPostureHit(rawDmg, now/1000, true); // S281 — after the toast, so a guard that breaks says so
+    if(_hv && _hv.breaks && !perk('guard',75)) playerPostureHit(PPOST.maxPosture*4, now/1000, true, true); // S1136 — a heavy blow breaks the guard, unless Iron wall (Guard 75)
+    else playerPostureHit(rawDmg*(_hv?_hv.posture:1), now/1000, true, !!_hv); // S281 — after the toast, so a guard that breaks says so
     // v61gj-a2 — Shield/sword recoil. Backward push — you absorbed the blow.
     shieldImpact('block', rawDmg, e.x, e.z);
     if(PHP<=0 && !dead) playerDead();
@@ -528,7 +546,7 @@ function executeStrike(e, rawDmg, now){
     PHP = Math.max(0, PHP-finalDmg); hurtT = .5;
     sndPlayerHurt(); lvAct.damageTaken += finalDmg;armourUse();
     lastHitT = now/1000;
-    playerPostureHit(rawDmg*_row.posture, now/1000, false); // S281; S940 — the row's multiple (1.5 for every family today)
+    playerPostureHit(rawDmg*_row.posture*(_hv?_hv.posture:1), now/1000, false, !!_hv); // S281; S940 — the row's multiple (1.5 for every family today); S1136 — twice for a heavy
     e._lunge=.3; // v80 — every strike moves the body
     if(PHP<=0 && !dead) playerDead();
   }
@@ -542,7 +560,7 @@ function executeDungeonStrike(e, now){
   e.atkDir = {x: dx2/dd, z: dz3/dd};
   e.atkAnim = 0.35;
   // Whiff — player stepped out of reach during wind-up, or out of its arc (S275). Enemy still commits to the lunge.
-  if(!strikeReaches(e)){ sndSwing(); return; }
+  if(!strikeReaches(e)){ e._heavy = false; sndSwing(); return; }
   // v61d5 — Mimic burst-pounce branch. The first strike after reveal uses
   // the burst formula (14 + level + dmgMult, scaled by .3 of def) instead
   // of the standard melee roll. This is the "pounced from a chest" hit —

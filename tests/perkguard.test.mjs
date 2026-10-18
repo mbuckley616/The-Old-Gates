@@ -3,7 +3,8 @@
 // `perkguard`: 160 and 260 ms at Guard 0 and 100, never under 150), Finesse out of it. Resolve takes 1% a point off a
 // block's stamina (was 5%). Worn armour's def counts × (0.75 + 0.5 × Armour/100).
 // Session 1048, Guard's perks: Deflect (25) a held shield turns arrows; Bulwark (50) a bash drains +50% posture; Second
-// parry (100) within 0.4 s of a perfect parry the next is perfect too. Iron wall (75) waits on a foe's heavy attack.
+// parry (100) within 0.4 s of a perfect parry the next is perfect too. Iron wall (75) is live since Session 1136, with the foes'
+// heavy blow (`heavyblow`).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -74,6 +75,6 @@ check(`it is the shield's: bare-handed at 25 a held block still takes ${p.d25bar
 check(`Bulwark: a bare bash drains ${p.b49} posture at Guard 49 and ${p.b50} at 50 (×1.5)`, p.b49 > 0 && Math.abs(p.b50 / p.b49 - 1.5) < .01, p);
 check('Second parry: at Guard 100 a held block 0.3 s after a parry parries again; not at 0.5 s', p.s100.first && p.s100.at && p.s100.second && !p.s100.late, p);
 check('at Guard 99 the held block 0.3 s after is only a held block', p.s99.first && !p.s99.second, p);
-check('Iron wall is shown as not yet in the game (no foe has a heavy attack); the other three are live', p.live.join() === 'true,true,false,true', p);
+check('all four of Guard\'s perks are live (Iron wall since S1136, with the heavy blow)', p.live.join() === 'true,true,true,true', p);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -242,7 +242,8 @@ function telegraphPulse(e, progress){
   const left=(1-progress)*(e.telegraphMax||TELL_DEFAULT),k=Math.max(0,Math.min(1,1-left/TELL_GLOW_S));
   const body = enemyBodyMesh(e);
   const m = body && body.material;
-  if(m && m.emissive) m.emissive.setRGB(k*0.75, k*0.08, k*0.05);
+  // S1136 — a heavy blow's glow is red, a light one's gold (Michael's A on #430: the heavy is read by its length and its red)
+  if(m && m.emissive){ if(e._heavy) m.emissive.setRGB(k*0.75, k*0.08, k*0.05); else m.emissive.setRGB(k*0.75, k*0.52, k*0.08); }
 }
 function telegraphReset(e){
   e._wind=0;

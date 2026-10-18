@@ -1239,6 +1239,7 @@ function tickZoneEnemies(dt,now,sc){
         if(strikeReaches(e)){
           executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
         } else {
+          e._heavy = false;
           sndSwing();
         }
       }
@@ -1251,7 +1252,7 @@ function tickZoneEnemies(dt,now,sc){
         const ph = phases.find(p=>p.id===e.phaseId) || phases[0] || {telegraphMult:1.0};
         e.telegraphMax = Math.max(TELL_MIN, (e.bossDef.telegraphBase||0.6) * (ph.telegraphMult||1.0)); // S282 — no tell under 0.45 s, the frenzy included
       } else {
-        e.telegraphMax = telegraphDuration(e);
+        e.telegraphMax = foeWindUp(e); // S1136 — one in four heavy, for the families with a heavy row
       }
       e.telegraphT = e.telegraphMax;
       // v63 — Stamp combatYaw at windup start. The enemy's mesh.lookAt

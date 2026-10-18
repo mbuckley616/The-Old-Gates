@@ -4,15 +4,6 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
-### The foes' heavy attacks: how often, and how does the player tell one from a light blow? (systems builder, 18 Oct 2026) — DECISION #430
-Combat B (your B, 28 Sep; `docs/design/combat.md`) gives every family a light attack, a heavy one and a third move. The resolver is on main with a `heavy` column in `FOE_ATTACKS`, and nothing fills it yet. Today every foe has one blow, with a tell of 0.45 to 0.9 s by kind, and a held block breaks only when your posture runs out. Guard's *Iron wall* (75) and Armour's heavy hit for *Hold the line* both wait on it. The page sets the heavy's numbers: a 0.9 to 1.1 s tell, twice the damage, twice the posture, a held block broken, a parry still good. It leaves two things a player would feel: how often a foe picks the heavy, and how you read it before it lands.
-
-- **A. One blow in four, read by its length and a red glow** *(recommended)*. Each wind-up is a seeded roll on the foe and the blow's count (co-op rule): 25% heavy, never twice running. Light tells stay as built (0.45 to 0.9 s by kind). The heavy is 1.0 s, or the kind's tell + 0.35 s if that is longer, on the same wind-up pose held deeper, with the last 0.15 s glow red, not gold. The bodies builder can add a heavy pose later. First session: humanoids and wolves (the page's "wolves and bandits first").
-- **B. Heavy only at range or into a block.** A foe swings heavy when you are holding block, or as an opener from just outside its reach. It punishes turtling, and a fighter who never blocks rarely sees one.
-- **C. Wait for the poses.** No heavy until the bodies builder makes a heavy wind-up pose for each family, so it reads by shape alone. *Iron wall* waits with it.
-
-The third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp) follow in a later session under the same answer.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -63,6 +54,17 @@ How deep should a town's houses be?
 Picture (Dunmore on the new look, at noon): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-town-ingame.png
 
 ## Answered
+### The foes' heavy attacks: how often, and how does the player tell one from a light blow? (systems builder, 18 Oct 2026) — DECISION #430
+Combat B (your B, 28 Sep; `docs/design/combat.md`) gives every family a light attack, a heavy one and a third move. The resolver is on main with a `heavy` column in `FOE_ATTACKS`, and nothing fills it yet. Today every foe has one blow, with a tell of 0.45 to 0.9 s by kind, and a held block breaks only when your posture runs out. Guard's *Iron wall* (75) and Armour's heavy hit for *Hold the line* both wait on it. The page sets the heavy's numbers: a 0.9 to 1.1 s tell, twice the damage, twice the posture, a held block broken, a parry still good. It leaves two things a player would feel: how often a foe picks the heavy, and how you read it before it lands.
+
+- **A. One blow in four, read by its length and a red glow** *(recommended)*. Each wind-up is a seeded roll on the foe and the blow's count (co-op rule): 25% heavy, never twice running. Light tells stay as built (0.45 to 0.9 s by kind). The heavy is 1.0 s, or the kind's tell + 0.35 s if that is longer, on the same wind-up pose held deeper, with the last 0.15 s glow red, not gold. The bodies builder can add a heavy pose later. First session: humanoids and wolves (the page's "wolves and bandits first").
+- **B. Heavy only at range or into a block.** A foe swings heavy when you are holding block, or as an opener from just outside its reach. It punishes turtling, and a fighter who never blocks rarely sees one.
+- **C. Wait for the poses.** No heavy until the bodies builder makes a heavy wind-up pose for each family, so it reads by shape alone. *Iron wall* waits with it.
+
+The third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp) follow in a later session under the same answer.
+
+Michael: **A, one blow in four, read by length and a red glow** (18 Oct 2026, on #430). *Systems builder, Session 1136:* built for humanoids and wolves (`FOE_ATTACKS`' heavy column, `foeWindUp`, `tests/heavyblow`); Iron wall is live with it. A correction to the question: the light tell's glow was red (S282), not gold, so the light glow is now gold so that the heavy's red reads.
+
 ### Gold piles by place too? (systems builder, 18 Oct 2026) — DECISION #431
 Your A on #394 put a loot roll's metal and a lair hoard's gold on the place's tier. A gold pile in a chest, a barrel or on a body (`rollGold`, `14-items.js`) still adds your level. A chest gives 4–12 + your level, a treasure chest 8–18 + 1.5 × your level, a body 2–8 + 0.7 × your level and a barrel 1–6 + half your level. At level 25 a coast chest holds 29 to 37 gold, and at level 1 a tier-3 chest holds 5 to 13. Two friends opening one chest in a shared world would find different piles.
 

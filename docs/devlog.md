@@ -26190,3 +26190,47 @@ level 1 as before (the tier function is in a later file and the lookup is guarde
 ### Needs eyes
 - Late gold: a level-25 player in the home province finds the same 5 to 13 a chest as at level 1. Michael chose this over C (a quarter
   of the level past the tier's own); whether coin still feels worth bending down for late is a playtest's call.
+## v80 — Session 1136 — The foes' heavy blow: humanoids and wolves (Michael's A on DECISION #430)
+Combat B's move sets (`docs/design/combat.md`) give every family a light attack, a heavy one and a third move. The resolver has carried a
+`heavy` column in `FOE_ATTACKS` since Session 940, and nothing filled it: every foe swung one light blow, and Guard's *Iron wall* (75) sat
+out of the live perks waiting for it. Michael chose A on #430: one blow in four, read by its length and a red glow, humanoids and wolves first.
+
+- **The roll** (`foeHeavyRoll`, `74-strikes.js`): at each wind-up, a seeded roll on the foe's id and its blow's count (co-op rules; a
+  foe with no id yet rolls on its kind's name, so even a test's or a legacy zone's foe is reproducible). Never twice running. Read
+  literally, "25%, never twice running" lands one blow in five (20.8% of 4,000 in the first run), so the roll after a light blow is a
+  third, which gives the one in four Michael chose.
+- **The tell** (`foeWindUp`, which both wind-up starts now call: the open world's and the legacy zones' in `42-zone-enemies.js`, the
+  dungeon's in `90-main.js`): the light tells are as built (0.45 to 0.61 s for these two families); the heavy is 1.0 s, or the kind's
+  tell + 0.35 if longer. It is the same wind-up pose held longer, and the bodies builder can add a heavy pose later.
+- **The glow** (`telegraphPulse`, `14-items.js`): a heavy's last 0.15 s glows red. **A correction to the question as I wrote it:** #430's
+  A said the heavy would glow "red, not gold", but the light tell's glow has been red since Session 282. For the red to tell the two
+  apart, a light blow's last 0.15 s now glows gold (0.75, 0.52, 0.08); the heavy keeps the red it had.
+- **What it does** (`executeStrike`, `foeBlow`): twice the damage and twice the posture. A held block still takes its share of the damage,
+  but the guard breaks (posture emptied, the 0.8 s stagger, *Your guard breaks!*). With *Iron wall* the block holds, at twice a held
+  block's posture. A perfect parry is as good as ever. *Hold the line* (Armour 75) reads the blow's heaviness at last: it keeps you up
+  under a light hit above half posture, not under a heavy. A boss keeps its own phases and has no heavy row; the other families follow.
+- **Iron wall** is in `PERK_LIVE`.
+### Verified (headless Chromium)
+- **`heavyblow`** (new) 1/1, 15 checks. Of 4,000 seeded wind-ups 25.5% are heavy for a Bandit and 24.5% for a wolf, never two running;
+  the same foe gives the same 4,000 again, another foe another. A golem, a spider, a troll and a boss never swing heavy. The light tells
+  are 0.57 (Bandit), 0.61 (wolf) and 0.45 (kobold), and the heavy is 1.0 for all three. At the strike the heavy glows (0.75, 0.08) and
+  the light (0.75, 0.52); halfway through the tell neither glows. On a live Bandit the blow goes 24 → 48. Unguarded, a heavy drains 30
+  posture against a light's 15. Under a held block both take 7 of 10, the light drains 10 posture, and the heavy empties it and staggers you.
+  A perfect parry takes a heavy cleanly. With Iron wall the block holds, at 20 posture against 10. Hold the line keeps you up under the
+  light hit and not under the heavy. In 60 s of the loop's own ticks a keyed Bandit a metre off wound up 30 times, 8 of them heavy,
+  with tells of 0.57 and 1.0 only. Its heavies landed 37 to 53, its lights 19 to 27.
+- **Re-measured, not loosened:** `fistfight`'s *you fall at about the sixth blow* (Michael's B on #355) now counts a heavy as two light blows:
+  the Bandit stood still against you now fells you in four blows, two of them heavy. `tells`' end-to-end Bandit is pinned to a light blow,
+  because it measures the light tell. `perkguard` now reads all four of Guard's perks as live.
+- **Neighbours, 56 suites four at a time**: all green but `hptail` (the HUD's clock) and `looknew` (*the save store did not open*), which
+  touch no foe and passed alone afterwards. Among them `tells`, `foes`, `wolves`, `slimes`, `resolver`, `posture`, `targetof`, `duelrhythm`,
+  `parryclock`, `perkarmour`, `perkarms`, `spentguard`, `guardplay`, `q7world`, `questfoes`, `captainguard`, `lockon`. `goldtier` is
+  Session 1135's.
+### Needs eyes
+- **The gold light glow.** Every light blow's last 0.15 s is now gold, not red. Does gold read as a warning at all, and is it too close to the
+  perfect parry's yellow flash, which follows a parried blow? If it is, the light could go back to red and the heavy take another colour.
+  That is Michael's call; this build follows the answer's words.
+- **The heavy at 1.0 s.** It is the same pose held longer. Whether you can tell it in time without the glow is a playtest's question, and
+  the bodies builder's heavy wind-up pose would help.
+- **Owed under #430's answer:** the other families' heavy rows (spiders, brutes, trolls, slimes, elementals, wraiths, mimics) and the third
+  moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp).

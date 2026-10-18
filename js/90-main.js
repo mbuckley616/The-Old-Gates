@@ -1469,7 +1469,7 @@ function loop(now){
           executeDungeonStrike(e, now);
         }
       } else if(!_slam&&!(e._slamT>0)&&dist<foeReach(e,true).engage&&e.atkCd<=0&&!e.ranged){ /* S1041 — F2b: hull to hull for the sheet's families, 0.9 for the rest */
-        e.telegraphMax = telegraphDuration(e);
+        e.telegraphMax = foeWindUp(e); // S1136 — one in four heavy, for the families with a heavy row
         e.telegraphT = e.telegraphMax;
         // v63 — Stamp combatYaw at windup start (see zone tick for rationale).
         e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);

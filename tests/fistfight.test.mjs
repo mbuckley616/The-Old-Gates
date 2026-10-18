@@ -24,10 +24,10 @@ const fight = (punch, fists, max, hand = 5, noThrow = false) => page.evaluate(([
   forceTime(12); SKILLS.hand = { lv: hand, p: 0 }; EQ.weapon = fists ? null : window._keepW; buildViewmodel();
   PHP = maxHP; dead = false; stamina = maxStamina; atkCd = 0; PPOST.stagUntil = 0; PPOST.posture = PPOST.maxPosture;
   const e = unlockFoe(buildZoneEnemy(WORLD.scene, [], px, pz - 4, 'Bandit', null)); e.alert = true; ZONES.world.enemies.push(e);
-  const log = { weapon: EQ.weapon ? EQ.weapon.name : 'fists', hp0: e.hp, posture: e.maxPosture || e.posture, tells: 0, blows: 0, landed: 0, swings: 0, hits: 0, stagFrames: 0, frames: 0 };
+  const log = { weapon: EQ.weapon ? EQ.weapon.name : 'fists', hp0: e.hp, posture: e.maxPosture || e.posture, tells: 0, blows: 0, heavy: 0, landed: 0, swings: 0, hits: 0, stagFrames: 0, frames: 0 };
   const _t = sndTelegraph, _x = executeStrike, _r = _resolveZoneStrike;
   sndTelegraph = function () { log.tells++; return _t.apply(this, arguments); };
-  executeStrike = function () { log.blows++; const h = PHP; const out = _x.apply(this, arguments); if (PHP < h) log.landed++; return out; };
+  executeStrike = function () { log.blows++; if (arguments[0] && arguments[0]._heavy) log.heavy++; const h = PHP; const out = _x.apply(this, arguments); if (PHP < h) log.landed++; return out; };
   _resolveZoneStrike = function () { const h = e.hp; const out = _r.apply(this, arguments); if (e.hp < h) log.hits++; return out; };
   const step = () => { if (e.dead || e.hp <= 0 || PHP <= 0) return true; stamina = maxStamina; yaw = Math.atan2(-(e.x - px), -(e.z - pz));
     if (staggered.find(s => s.e === e)) log.stagFrames++;
@@ -43,7 +43,7 @@ console.log('stood still', JSON.stringify(stand));
 // S940 — armour as a share (decision #181 B, the attack table): stood still you fall, where you used to outlast 30 s. S949 — an
 // ordinary blow at your level's kit is a sixth of your health (Michael's B on #355), so you fall at the sixth blow (6 of 6 landed,
 // 10.9 s, 130 health); 5 to 7 allows for the Bandit's roll. The rhythm is the same: 12 or more blows a 30 s.
-check('stood still, the Bandit winds up and strikes, 12+ blows a 30 s, each after its tell, most landing, until you fall at about the sixth', stand.blows / stand.secs >= 12 / 30 && stand.tells >= stand.blows && stand.landed >= stand.blows * .8 && (stand.blows >= 12 || (stand.phpEnd <= 0 && stand.landed >= 5 && stand.landed <= 7)), stand);
+check('stood still, the Bandit winds up and strikes, 12+ blows a 30 s, each after its tell, most landing, until you fall at about the sixth (a heavy counts two since S1136)', stand.blows / stand.secs >= 12 / 30 && stand.tells >= stand.blows && stand.landed >= stand.blows * .8 && (stand.blows >= 12 || (stand.phpEnd <= 0 && stand.landed + stand.heavy >= 5 && stand.landed + stand.heavy <= 7)), stand);
 
 // Hand-to-hand (Session 950, Michael's C on #357): bare fists are a skill of their own, the fists' 2–3 on its multiplier. The
 // critic's 7–12 punches was measured with the level's flat +1.5 in every hit; with it gone, an untrained fist (5, ×0.64) is

@@ -159,7 +159,7 @@ const PERK_LIVE=new Set(['locks:25','locks:50','locks:75','speech:25','speech:50
   'acrobatics:50','armour:25', /* S977 — Cat's fall and Fitted */
   'acrobatics:75','acrobatics:100', /* S1009 — Second step, the double jump (airStepTick, 10-player.js); S1011 — Swallow's turn, the air dash (airDashStart) */
   'bow:25','bow:50','bow:75','bow:100', /* S1048 — Guard's Deflect, Bulwark and Second parry; Iron wall waits on a foe's heavy attack (FOE_ATTACKS' heavy column) */
-  'guard:25','guard:50','guard:100',
+  'guard:25','guard:50','guard:75','guard:100', /* S1136 — Iron wall, with the foes' heavy blow */
   'armour:50','armour:75','armour:100',
   'blade:50','blade:75','blade:100','blunt:25','blunt:75','blunt:100','hand:25','hand:100','blunt:50','hand:50','hand:75','blade:25']); /* S1080 — Draw cut, with the sheath */ /* S1079 — Catch the blade */ /* S1078 — Throw */ /* S1077 — Ringing (#399 A) */ /* S1051 — the Arms perks that need no new system (see armsPerk) */ /* S1050 — Armour's Unbowed (playerMaxPosture), Hold the line (playerPostureHit), Second skin (startRoll) */ /* S1028 — Steady, on the aim's sway (bowSway, 10-player.js); S982 — Quick nock, Long eye, Through; S1001 — Shadow's hand (stealth:100) */
 function perk(id,rank){return PERK_LIVE.has(id+':'+rank)&&skillLv(id)>=rank;}
@@ -206,7 +206,7 @@ let _lastParryG=-1e9;
 function deflectsArrows(){return blocking&&!!EQ.offhand&&EQ.offhand.shieldType==='shield'&&perk('guard',25);}
 function bulwarkMult(){return perk('guard',50)?1.5:1;}
 // S1050 — Armour's perks. Unbowed (50): your posture +25%. Hold the line (75): a light hit taken above half your posture
-// leaves you on your feet (a foe's blow is light until FOE_ATTACKS' heavy column is filled). Second skin (100): what you
+// leaves you on your feet (since S1136 a humanoid's or a wolf's heavy blow is not light, and staggers you). Second skin (100): what you
 // wear on the five armour slots does not count toward the load that makes a roll heavy.
 function unbowedMult(){return perk('armour',50)?1.25:1;}
 function holdTheLine(before,max,heavy){return !heavy&&perk('armour',75)&&before>max/2;}
