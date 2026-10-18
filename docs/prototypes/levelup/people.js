@@ -109,7 +109,8 @@ ${FOLDN}`;
 // next, a crease where they meet; the top 1.2 cm, where the thongs tie, lies flat
 const LEGA = `vec2 legD(vec3 p){ return vec2(abs(p.x) - .158 - (-.369 - p.y) * .165, p.z - .032 - (p.y + .369) * .085); }
 float legA(vec3 p){ vec2 d = legD(p); return atan(d.x, d.y); }`;
-const WIND = w => `${LEGA}
+// named WRAP_WIND (Session 1093), not WIND: common.js exports a WIND (the leaves' sway), and the bundle shares one scope
+const WRAP_WIND = w => `${LEGA}
 float foldH(vec3 p){ vec2 d = legD(p); float a = atan(-d.y, d.x), t = (p.y - ${w.lo.toFixed(3)}) / ${w.pitch.toFixed(4)} - a * .15915 + .018 * sin(a * 3. + p.y * 37.) + .01 * sin(a * 7. - p.y * 61.), q = fract(t);
   float h = smoothstep(0., .18, q) * (1. - smoothstep(.45, 1., q)); return mix(.7, h, clamp((${w.hi.toFixed(3)} - p.y) / .012, 0., 1.)); }
 ${FOLDN}`;
@@ -128,7 +129,7 @@ function clothMat(color, kind = 'wool', o = {}) {
     // the Old Blood's scattered dot embroidery (Session 1043, OG-066): knots of thread in the dots' own colour, each one shaded as raised
     if (o.dots) { s.uniforms.dotsC = { value: o.dots }; s.fragmentShader = 'uniform vec3 dotsC;\n' + DOTS + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n { vec2 dk = dotsAt(vB, vRN); diffuseColor.rgb = mix(diffuseColor.rgb, dotsC * triTex(tW, ' + (o.scale ?? 22).toFixed(1) + ') * (.8 + .45 * dk.y), dk.x); }'); }
     if (o.wind && o.wind.tie) { s.uniforms.tieC = { value: o.wind.tie }; s.fragmentShader = 'uniform vec3 tieC;\n' + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, '$1 ' + TIE(o.wind)); }
-    if (o.fold || o.wind) s.fragmentShader = (o.wind ? WIND(o.wind) : FOLD(o.fold)) + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, 'float fH = foldH(vB); $1 diffuseColor.rgb *= .78 + .22 * fH;')
+    if (o.fold || o.wind) s.fragmentShader = (o.wind ? WRAP_WIND(o.wind) : FOLD(o.fold)) + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, 'float fH = foldH(vB); $1 diffuseColor.rgb *= .78 + .22 * fH;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n normal = foldNormal(-vViewPosition, normal, vec2(dFdx(fH), dFdy(fH)) * ' + ((o.fold || o.wind).depth ?? 1.1).toFixed(2) + ', faceDirection);'); };
   m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
   return m;

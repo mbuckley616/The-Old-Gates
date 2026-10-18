@@ -24058,3 +24058,13 @@ The grip is still built the same way, only the forearm's aim is new:
 - **The wrist cocks up about 38°** to keep the knuckles plumb, which reads as a firm grip from the side. A looser grip would let the staff lean out a little at its foot, which the check now forbids (lean under 0.08 rad).
 - **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
+
+## v80 — Session 1093 — people.js's WIND renamed (prototype only)
+The concept artist reported in the room on 17 Oct: since Session 1024, `people.js`'s own `WIND` (the leg wraps' wound-cloth shader chunk) broke 16 of the 17 pages that `bundle.py` makes. `common.js` exports a `WIND` of its own, the leaves' sway uniform. The bundle puts both modules in one scope, so the two names clashed. `bundle.py` already works round this by renaming any shared top-level name in its copy of `people.js`, but the concept artist asked for the cleaner fix in `people.js` itself. It is now `WRAP_WIND`, used in its one place. `bundle.py`'s comment notes the old name, and the rename rule stays in place as a guard for any later clash.
+
+### Verified (headless Chromium)
+- **The names:** `common.js` and `people.js` now share no top-level name (the bundler's own test, run here: the empty set).
+- **The bundle:** `bundle.py` writes all 19 pages, with nothing renamed in `people.js`'s copy.
+- **`builder.check.mjs`: 461 of 461 pass,** the leg wraps' checks among them.
+### Needs eyes
+- Nothing to see: the leg wraps draw as before.
