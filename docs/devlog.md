@@ -24230,7 +24230,7 @@ I also tried a third change and took it out. The hinge's correction of a knee or
 - **One boar in the 1,350 still meets the cap.** Its left hind knee and hock rock about a centimetre against the ground on a half-second beat, with no wall near. The hinge holds the knee forward by moving it, and that move is a velocity. The fix tried for it (above) was worse over the whole set, so it is owed. `beastfall`'s fifteen unseeded deaths are wolves, not boars, so the suite should now go red about one run in a hundred or less, against one in fourteen.
 - **The ten falls over 2.5 s** are real settling: a tail root balanced upright that slowly topples, or a limb sliding down a slope. Nothing a player sees freezes mid-move.
 
-## v80 — Session 1092 — The walking staff's own grip (L1, prototype only)
+## v80 — Session 1094 — The walking staff's own grip (L1, prototype only)
 Session 1085 gave the old a walking staff on the spear's grip and named the fault in its Needs eyes: the forearm reached forward almost level, so from the side the old held the staff out before them rather than leaning on it. This session refines that grip, which needs no new question. It touches only the prototypes: `people.js` and `builder.check.mjs`.
 
 The grip is still built the same way, only the forearm's aim is new:
@@ -24256,3 +24256,334 @@ The grip is still built the same way, only the forearm's aim is new:
 - **The wrist cocks up about 38°** to keep the knuckles plumb, which reads as a firm grip from the side. A looser grip would let the staff lean out a little at its foot, which the check now forbids (lean under 0.08 rad).
 - **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
+
+## v80 — Session 1095 — people.js's WIND renamed (prototype only)
+Renumbered: this run pushed Sessions 1092 and 1093, and auto/quests-build pushed its own 1092 at the same time, so they are 1094 and 1095.
+The concept artist reported in the room on 17 Oct: since Session 1024, `people.js`'s own `WIND` (the leg wraps' wound-cloth shader chunk) broke 16 of the 17 pages that `bundle.py` makes. `common.js` exports a `WIND` of its own, the leaves' sway uniform. The bundle puts both modules in one scope, so the two names clashed. `bundle.py` already works round this by renaming any shared top-level name in its copy of `people.js`, but the concept artist asked for the cleaner fix in `people.js` itself. It is now `WRAP_WIND`, used in its one place. `bundle.py`'s comment notes the old name, and the rename rule stays in place as a guard for any later clash.
+
+### Verified (headless Chromium)
+- **The names:** `common.js` and `people.js` now share no top-level name (the bundler's own test, run here: the empty set).
+- **The bundle:** `bundle.py` writes all 19 pages, with nothing renamed in `people.js`'s copy.
+- **`builder.check.mjs`: 461 of 461 pass,** the leg wraps' checks among them.
+### Needs eyes
+- Nothing to see: the leg wraps draw as before.
+## v80 — Session 1090 — The new look's suite, shards 9 and 10 (QA)
+QA's run of 18 Oct 00:52 UTC found no red that was not its change's own. In CI from 17 Oct 17:00 to 18 Oct 00:52 there were 3 red runs, all on the builders' own work. auto/backlog 726dd57: `kitlots` failed twice; the branch's next head, 8aea55a, is green. auto/systems 3421a74 and bbb2e4a: `trapseed` failed twice on both, its spike plate hitting 19 and 16 against the old band of 8–15 at level 1. Since Session 1061 (enemies by place), the plate's band follows the floor's tier (`tiertrap`), so the check still measures the level rule; trapseed is the systems builder's to re-measure on the branch that changed it. Also red: `targetof`, where the dungeon's Phantom is alert but does not move (4 → 4 both ways, on both runs), and `perkarms`, whose live list Session 1080 updated since. auto/systems' two later heads were cancelled before their shards ran, so its current state is unread. No suite was FLAKY.
+
+So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where shards 9–14 were owed. Shards 9 and 10 ran under `--look=new` side by side on main 5521ba1: 66 of 66 green. 48 suites are new to the ledger. The other 18 were already there from earlier shards, because the shards reshuffle as suites are added. `falls` was the one blemish: its first try lost the page after five of its eight drops, and the retry passed. This run's own setup command also started a stray old-look run of the whole suite (`run.mjs --help` is not a help flag; it runs everything). That run shared the four cores for 30 minutes, until its time limit killed it, so six boots were running and the try took ~1,490 s against CI's 219. Run alone afterwards, `falls` passed 10 of 10 in about 7 minutes. The page loss was the load's, not the new look's. The ledger now holds 305 of the suite's 459 files.
+
+### Verified (headless Chromium)
+- `node tests/run.mjs --shard=9/14 --look=new`: 33/33, `falls` FLAKY (1,707 s with the retry, under the stray run). `--shard=10/14 --look=new`: 33/33. The longest after `falls` were `lod` 426 s, `yardplay` 368 and `fortwalk` 357.
+- `node tests/run.mjs falls --look=new --no-retry`, alone: 10/10, including the dungeon's 12-unit roll and 22-unit death that the overloaded try never reached.
+
+### Needs eyes
+- Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
+- `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
+
+## v80 — Session 1106 — Garrick's wheeled chair (L1, prototype only)
+Backlog L1's "children, the old and the hurt" has owed "a veteran in a wheeled chair (Garrick)" since the third round: OG-065 draws him scarred, bearded and fur-collared, seated in a wheeled chair on a headland wall. This session builds the seat and the chair in the builder. It touches only the prototypes: `people.js`, `builder.js` (two query keys and a label) and `builder.check.mjs`.
+
+The person sits first, and the chair is built to them:
+- **The seated pose (`SEAT`).** The thighs swing forward to level (1.5 rad at the hip) and spread 0.07 rad. The knees bend 1.32 rad, so the shins slope forward about 0.1 rad to a footboard, and the feet are turned back to level. The forearms are aimed forward and level. The forearm's twist bone turns the palm down, and the fingers bend over the end of the chair's arm about the knuckles' line. The upper arms are lifted out from the side three hundredths of a radian at a time until each forearm lies outside the hips by an arm post's width (0.27 to 0.45 rad).
+- **The chair (`buildChair`).** It is an oak armchair and is measured off everything the person wears, posed:
+  - the seat board 2 mm under the lowest point of the seat and thighs, stopping a centimetre short of the backs of the knees, which the bend draws down;
+  - the back's two posts and three rails 2 mm behind whatever is behind the back within its height: the back itself, hair down the back, a head-wrap's knot;
+  - each arm 2 mm under the lowest thing over it, from the back post to that hand's knuckles;
+  - the footboard 2 mm under the soles (a sandal's sole included), hung from the seat's front outside the shins.
+- **The ground and the wheels.** The ground is 6 cm under the footboard. Two iron-tyred cart wheels, 62 cm across with ten spokes, stand beside the seat on an iron axle under its back half. Two small wheels, 15 cm across, are under the front legs. A handle comes back off each back post for whoever pushes the chair; there are no hand rims.
+- **Plain wood and iron:** 7,700 triangles.
+- **What is not worn in it.** Nothing is worn that hangs to the ground or is built round a standing body: the cloak and hood, a tabard, a sash or shoulder wrap, an apron, a wrap's tail. Nothing is held in the fist or slung on the arm (spear, crossbow, staff, basket, shield). A long skirt or a robe gives way to trousers in its colour. Skinned shells follow the bones and stay on: the tunic and its short skirt, the trousers, boots, leg wraps, sandals, the fur mantle, mail, a helm, a head-wrap.
+- **The genome.** It is `D.chair` (the wood's colour), which saves and loads like any garment. The roll never gives it: it is a named person's.
+
+The builder page also takes `beard=` and `age=` in its query, for Garrick's pictures.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: 468 of 468 pass,** 461 before and seven new: six people in the chair and the roll.
+- **The six in the chair:** Garrick (a scarred, bearded Gatelander with an eyepatch and a fur mantle), a Gatelander woman whose long skirt gave way, an old stooped Markman who asked for a cloak, an Old Blood woman with loose hair down her back, an Aurennais girl in sandals, and a Markman in mail and a helm who asked for a spear and a shield.
+  - Each seat is 42 to 54 cm up, under them by 2.0 mm, and the feet are 2.0 mm over the footboard.
+  - The forearms lie 2.0 to 15.2 mm over the arms.
+  - The thighs are within 0.023 rad of level, and the shins are 0.08 to 0.14 rad forward of plumb.
+  - Both pairs of wheels are on the ground (0.0 mm).
+  - No worn point is inside any board or a big wheel's disc (0.0 mm). The Old Blood woman's hair lies between her back and the chair's, which stands 4.9 cm further back for it.
+  - Nothing is hung or carried. The long skirt's trousers are there.
+  - Each saves and loads back.
+- **The roll:** none of 360 rolled genomes (four peoples, grown, old and children) sits in a chair.
+- **Before the check was written,** a probe of twelve rolled people in the chair (grown, old with a stoop, children; all four peoples) found two backs through the backrest and an elbow through an arm. The two backs were a head-wrap's knot and a headscarf's knot at the nape. The back and the arms now measure everything over or behind them, and all twelve came clear.
+- **Pictures** (`--shots=chair`): `builder-chair-garrick.jpg`, `-side`, `-face`, `-back` (the Old Blood woman's hair), `-woman`, `-girl`.
+### Needs eyes
+- **The hips at 90°.** MakeHuman's default weights flatten the seat and pinch the groin a little when the thigh is level. The seat board hides most of it, but from the side the trousers crease sharply at the hip.
+- **The chair's design is a reading of OG-065,** whose chair is small in the image: two cart wheels and small front wheels, a slatted back, push handles. If Garrick should propel himself, the wheels would want hand rims and to sit further forward.
+- **Owed:** the chair pushed or turned (a gait, B4), his black wolfhound (OG-065), the crossbow across his knees (OG-065's musket, as the catalogue says), and the game (after F4).
+
+## v80 — Session 1107 — Garrick's black wolfhound (L1 and L3, prototype only)
+OG-065 draws Garrick on his headland wall with a black wolfhound at his side, and Session 1106's entry named it as owed. The kit had no dog of any kind: the common set's canids are the grey wolf, the fox and the Ironwolf. This session adds the hound as a plan in `creatures.js` (`wolfhound`, in a new group `HOUNDS`) with a check in `creatures.check.mjs`. It touches only the prototypes.
+
+It is built from the wolf's kit of parts, the canid legs and their gaits, with the proportions of a sighthound:
+- **The build.** It stands taller than the grey wolf, with longer legs. The chest is deep (radius 0.19 against the loin's 0.11), the belly is tucked up and the rump is lighter.
+- **The head.** It is long and narrow, with a long tapering muzzle and small ears folded back along the skull (`leaf` ears laid back 70°).
+- **The tail.** It is long and carried low, with an upward sweep at its end: five bones, a 62° droop curling up 13° a bone.
+- **The coat.** It is rough and wiry: longer, coarser shells that droop.
+- **The colour.** It is charcoal black, a little lifted from true black so its shape reads in shadow.
+
+It trots, walks, gallops and stands like the wolves. It is peaceful, as the common set is.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`: 1,122 of 1,122 pass,** including the hound's own build, weights and gait checks and one new check.
+- **The hound:** 33 bones and 40,164 triangles, built in 633 ms; its genome is 154 bytes.
+- **Every gait is clean:** each foot reaches its target through the stride (0.0 cm), and the feet are down for each gait's duty (trot 0.45 of 0.45, walk 0.66 of 0.68, gallop 0.31 of 0.34).
+- **The new check:** the hound is a plan from OG-065, it stands 81 cm at the top of its legs against the grey wolf's 74, and its chest is deeper than its loin.
+- **Pictures:** `creatures-hounds.jpg` (the grey wolf and the wolfhound side by side), `creatures-wolfhound.jpg` (trotting), `creatures-wolfhound-gallop.jpg`.
+### Needs eyes
+- **The colour against the dark.** Black fur on a dark scene loses its outline. The coat is lifted to charcoal, but whether Garrick's hound needs a grizzled muzzle or a lighter belly to read at play distance is a playtest call.
+- **The wolfhound's other coats.** The breed's usual grey, brindle and wheaten would be `COATS` entries or a second plan; OG-065 shows only the black.
+- **Owed:** the hound sitting or lying by the chair (a rest pose, B4), the crossbow across Garrick's knees, and both in the game (after F4).
+
+## v80 — Session 1116 — Garrick's crossbow across his knees (L1, prototype only)
+OG-065 draws Garrick in his wheeled chair with a long gun across his knees. The catalogue's row for it says the canon has no firearms and asks for a crossbow instead. Session 1106 left it owed, because the chair dropped anything carried in the fist. This session lays the kit's crossbow across the lap. It touches only the prototypes: `people.js` (`buildLapCrossbow`, and `buildChair` now returns its boards and wheels) and `builder.check.mjs`. (Renumbered twice: first pushed as 1111 and then 1113, both of which auto/systems holds.)
+
+How it lies:
+- **Flat across both thighs, over the knees.** The bolt's face is up, the tiller runs side to side, the butt is toward the sitter's right and the prod's span runs fore and aft. The make is the people's, as in the fist: wood for the Gatelands, steel for the Mark, horn for Aurenne.
+- **Out past the left wheel.** The prod sits 2.5 cm plus its own bend outside the big wheel's tyre, so its tips pass outside the wheel. The butt reaches about 37 to 44 cm to the right of the middle.
+- **Let down onto the thighs.** Its height is halved twenty times between too near and clear, until the nearest worn point is 2 mm off. That point must be a thigh's, never a hand's or anything worn.
+- **Moved clear of the chair.** It starts 7 cm back of the knees' front and moves forward a centimetre at a time while any of its points is in a board of the chair (the arms, the front legs) or a big wheel's disc, or while what bears it is not a thigh.
+- **Carried by the root bone,** not the wrist.
+- **The hands stay on the chair's arms** as Session 1106 laid them.
+
+A crossbow asked with the chair used to be dropped. Now it lies here instead, and nothing builds the fist's grip for it. A spear, staff, basket or shield is still dropped. The roll still never gives anyone the chair.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`: 473 of 473 pass,** 468 before and five new.
+- **The five new sitters:** Garrick, a Markman in mail, an old stooped Markman, a woman whose long skirt gave way, and an Aurennais girl.
+  - Each crossbow is the right make and lies level (0.0 mm between the butt and the prod).
+  - Each rests on the thighs, 2.0 mm off, 4 to 7 cm back of the knees' front.
+  - The prods are 45 to 48 cm out against wheels at 35 to 40 cm; the girl's is 41 against 31.
+  - No point of a crossbow is in any board, wheel or hand. Nothing is in the fist. Each saves and loads back.
+- **The cost:** 5,056 to 5,856 triangles; each sitter builds in 0.6 to 2.3 s with the chair.
+- **The earlier chair checks are unchanged,** six sitters with nothing through any board.
+- **Pictures** (`--shots=chair-crossbow`): `builder-chair-crossbow.jpg` and `builder-chair-crossbow-side.jpg`.
+### Needs eyes
+- **The hands.** They stay on the chair's arms, a hand's length behind the crossbow. A right hand resting on the stock would read more as his weapon, but it would mean a second seated arm pose.
+- **Side to side or slanted.** OG-065's gun lies roughly across him. A slant (the butt by the right hip, the prod past the left knee) would keep the prod off the wheel, but it would sit less plainly "across the knees".
+- **Owed:** the hound sitting or lying by the chair (B4), the chair pushed (B4), and the game (after F4).
+
+## v80 — Session 1114 — The wolfhound sits (L1 and L3, prototype only)
+Session 1107's hound could trot, walk, gallop and stand. It owed a rest pose, to sit or lie by Garrick's chair as OG-065 draws it. This session gives the creature kit a sit, a gait any four-legged plan can take, and gives it to the wolfhound. It touches only the prototypes: `creatures.js` (`GAITS.sit`, `sitFind`, `sitBody`, `sitLeg`) and `creatures.check.mjs`.
+
+How it sits:
+- **The forefeet stay where it stands.** The body turns nose-up about the line through the forelegs' roots, and the forelegs keep their standing targets.
+- **How far it turns** is found once per creature. The hip's height is halved sixteen times until the lowest vertex of the body, the thighs and the shins is 5 mm off the ground. On the hound that is 52°.
+- **The hind legs fold under it.** The kit's leg solver holds the distal bones at their standing angle, which cannot lay a hock down, so the hind leg sitting is placed joint by joint (`sitLeg`):
+  - the toes' tip is on the ground ahead;
+  - the paw is behind it, and the hock's long bone lies back from the paw, raised a twentieth of the leg so the shin's flesh clears the ground;
+  - the hock is just behind the hip;
+  - the thigh and shin bend to meet it about a forward knee, solved like any other leg.
+- **The head and the tail.** The neck takes back four fifths of the pitch, so the head looks ahead. The tail's first bone is turned back level along the ground and the rest curl round to one side.
+
+The first try counted only the body and thighs, and the shins went 2 cm under the ground. Raising the hock alone left them 6 mm under. Counting the shins in the search fixed it.
+
+### Verified (headless Chromium)
+- **`creatures.check.mjs`:** the generic foot check passes for the new gait (0.0 cm).
+- **The new check:**
+  - the hound pitches 52° nose-up and its forefeet are exactly where they stand;
+  - the haunch and shins are 5.0 mm off the ground (23 cm standing);
+  - the hind toes are 21 cm ahead of the hips;
+  - nothing is under the ground but the toe pads (52 vertices, against 53 standing: the kit's pads sink 2 cm in every pose), and the lowest other point is 5.0 mm up;
+  - the head is 121 cm up against the withers' 81.
+- **The full run:** 1,124 of 1,124 pass, 1,122 before and two new: the sit's foot check and the check above.
+- **Pictures:** `creatures-wolfhound-sit.jpg` (side) and `creatures-wolfhound-sit-front.jpg`.
+### Needs eyes
+- **The neck.** Taking the pitch back at the neck's first bone leaves a kink where the neck meets the chest. A sitting hound carries its neck upright, and spreading the correction down the neck would round it.
+- **The seat.** The haunch rests on the ground behind the hocks, as a dog's does, but the thighs' flesh is the kit's capsules, so it reads as a lump rather than a folded thigh. From the side at play distance it reads as sitting.
+- **Owed:** lying down (the hound's other rest, by the chair's wheel), the sit on the other canids (one line each in their `gaits`), the chair pushed (B4), and all of it in the game (after F4).
+
+## v80 — Session 1115 — The wolves, foxes and wildcats sit (L3, prototype only)
+Session 1114's sit was given to the wolfhound alone, and it named the other canids as owed. This session gives it to every plan built on the Ironwolf's, the red fox's or the Hollowcat's parts: eleven plans in all. Two things needed fixing along the way. It touches only `creatures.js` and `creatures.check.mjs`.
+
+- **The plans.** `'sit'` is added to the gaits of the Ironwolf, the red fox and the Hollowcat. The plans built from them inherit it: the grey wolf, the Redspine Fox, the Mirage Fox, the Lanternfox, the Thornrunner, the Stormlynx and the Sunspire Lynx. With the wolfhound that makes eleven.
+- **The tail gets its own search.** Laid level along the ground less 0.06 rad, the hound's thin tail cleared the ground. The wolves' and foxes' thicker tails went 3 to 5 cm under it. `sitFind` now runs a second halving after the pitch: the tail's first bone is lifted from that drooped level only as far as its own flesh needs to be 5 mm off the ground.
+- **A NaN on the first try.** The rump's vertices are partly weighted to the tail's first bone. During the pitch search the tail's lift was still undefined, so the rump went NaN and the pitch came out 0°. The lift now starts at its drooped value before either search.
+
+The check now runs over every plan whose gaits include `sit`. Two of its bounds were the hound's and are now relative:
+- the standing haunch must be ten times the sitting one, not 20 cm (a fox's is 10 cm);
+- nothing but the toe pads may be deeper than it is standing. The Stormlynx's snowshoe paws sink 4.6 mm standing and 4.9 sitting.
+
+### Verified (headless Chromium)
+- **Every sitter's sit:** each plan's foot error is 0.0 cm, and each holds to the sit's check.
+- **The pitch:** 28° (the Sunspire Lynx) to 54° (the Thornrunner), the long-legged dogs most.
+- **The haunch and shins:** 5.0 mm off the ground (the grey wolf's 7.2, its tail the limit).
+- **The hind toes:** 7 to 21 cm ahead of the hips.
+- **The forefeet:** exactly where they stand.
+- **The head:** above the withers.
+- **The full run:** 1,145 of 1,145 pass, 1,124 before and 21 new: ten sitters' foot checks, ten sit checks and the list of sitters.
+- **Picture:** `creatures-sitters.jpg` (the Hollowcat, the red fox, the Stormlynx, the grey wolf, the Thornrunner and the wolfhound, each by a man for scale).
+### Needs eyes
+- **The cats.** A cat sits with its forefeet together and its tail wrapped round them. These keep their standing stance and lay the tail back and to one side.
+- **The neck's kink** from Session 1114 is unchanged. Spreading the correction down the neck was tried and made no visible difference, so it was taken out.
+- **Owed:** lying down, and the game (after F4).
+
+## v80 — Session 1117 — The wolfhound lies down (L1 and L3, prototype only)
+Session 1114 owed the hound's other rest, lying by the chair's wheel. This session adds it as a second rest gait, `lie`. The wolfhound has it so far. It touches only `creatures.js` and `creatures.check.mjs`.
+
+How it lies (a sphinx's lie, head up):
+- **Lowered level.** The body is not pitched. It is lowered by the same halving on the hip's height that pitches the sit, until the lowest vertex of the body, the thighs and shins, and the upper arms and forearms is 5 mm off the ground.
+- **The hind legs** fold as they do sitting (`sitLeg`).
+- **The forelegs (`lieLeg`)** put the elbow on the ground just behind the shoulder, as far back as the upper arm reaches from the lowered shoulder. The forearm, the wrist and the toes are laid forward along the ground at the paw's standing height, with the toes' tip down. If a bone is too short for its drop, the error is reported, never hidden.
+- **Each rest's numbers are kept per gait.** The pitch, the drop and the tail's lift are now cached per creature and per gait (`C.rests`), so a sit and a lie do not share them. A guard keeps the search's own poses from searching again.
+
+The first try left the fore toes' tips 2.3 cm up, because the drop from the elbow's height to the ground was longer than the toe bone. The wrist and paw now lie at the paw's height.
+
+### Verified (headless Chromium)
+- **The lie's own check:**
+  - the hound lies level (pitch 0), its withers lowered from 81 to 24 cm;
+  - the forefeet are 12 cm ahead of where it stands, and the hind toes 21 cm ahead of the hips;
+  - the belly and haunch are 5.0 mm off the ground;
+  - nothing but the toe pads is under the ground (52 vertices, against 53 standing), and the rest's lowest point is 5.0 mm up;
+  - the head is 52 cm up;
+  - the foot error is 0.0 cm.
+- **The sits are unchanged,** eleven plans.
+- **The full run:** 1,147 of 1,147 pass, 1,145 before and two new: the lie's foot check and the check above.
+- **Pictures:** `creatures-wolfhound-lie.jpg` (side) and `creatures-wolfhound-lie-front.jpg`.
+### Needs eyes
+- **The head is held low and forward.** A hound lying watchful lifts its head. The neck could take some of the lowering as the sit's takes the pitch.
+- **The lie on the other canids** is one word in their gaits, as Session 1115 did for the sit, with its check already general.
+- **Owed:** the hound beside Garrick's chair in one picture (people and creatures on one stage), and both in the game after F4.
+
+## v80 — Session 1122 — The wolves, foxes and wildcats lie down (L3, prototype only)
+Session 1117 gave the lie to the wolfhound alone and said the other canids needed only one word each in their gaits. That is true for the wolves and the Thornrunner. It was not true for the foxes and the cats. This session gives `'lie'` to the Ironwolf, the red fox and the Hollowcat, and so to all eleven plans that sit, and fixes what failed on the small ones. It touches only `creatures.js` and `creatures.check.mjs`.
+
+What went wrong at first:
+- **The foxes and cats stopped 2.5 to 3 cm off the ground.** The search that lowers the body counted the forelegs' first two bones. That is the upper arm and the forearm. `lieLeg` lays the forearm at a fixed height along the ground, so its flesh reached 5 mm before the body did, and the search stopped there.
+- **The cats' forefeet missed by 1.1 to 1.4 cm.** Their shoulders stayed higher than the upper arm can reach down from, and `lieLeg` reported the gap.
+
+The fix:
+- **The drop's search counts only the upper arm** of a foreleg. On every plan the hind shins now set the drop, as they do on the hound.
+- **A third small search, like the tail's (`C.sitF`).** With the body down, the cats' forearms and wrists went 3 to 6 mm into the ground: a cat's forearm is thicker than its paw is high. So the laid forearm, wrist and paw are raised from the paw's standing height only as far as their own flesh needs to be 5 mm off the ground. The lift is cached with the other rest numbers, per gait.
+- **The toes after the lift.** On the cats the toes cannot quite reach the ground from the raised paw. Their tips stay 2 to 4 mm up, and the foot check reports it.
+- **The check's forefeet bound.** "More than 5 cm ahead of where it stands" was the hound's. It is now a twentieth of the standing withers.
+
+The hound's numbers are unchanged: its forelegs never limited the drop.
+
+### Verified (headless Chromium)
+- **Every plan's lie** (withers standing to lying; forefeet ahead; the head's height):
+
+  | Plan | Withers | Forefeet ahead | Head up |
+  |---|---|---|---|
+  | Ironwolf | 79 to 21 cm | 11 cm | 47 cm |
+  | Grey wolf | 76 to 20 | 10 | 47 |
+  | Red fox | 36 to 12 | 5 | 21 |
+  | Redspine Fox | 37 to 11 | 5 | 21 |
+  | Mirage Fox | 36 to 11 | 5 | 21 |
+  | Lanternfox | 34 to 11 | 5 | 20 |
+  | Thornrunner | 50 to 14 | 7 | 24 |
+  | Hollowcat | 30 to 9 | 2 | 16 |
+  | Stormlynx | 30 to 10 | 3 | 16 |
+  | Sunspire Lynx | 28 to 9 | 2 | 16 |
+  | Wolfhound | 81 to 24 | 12 | 52 |
+
+- **Every lie:** the belly and haunch are 5.0 mm off the ground. Nothing but the toe pads is under it: the lowest other point is 3.3 to 5.0 mm up. The Stormlynx's snowshoe paws sink 4.9 mm, as they do sitting (4.6 standing).
+- **The foot errors:** 0.0 cm on the dogs and foxes, 0.2 to 0.4 cm on the cats.
+- **The full run:** 1,167 of 1,167 pass, 1,147 before and 20 new: ten foot checks and ten lie checks.
+- **Picture:** `creatures-lying.jpg` (the Hollowcat, the red fox, the Stormlynx, the grey wolf, the Thornrunner and the wolfhound, each by a man for scale).
+### Needs eyes
+- **The heads are low.** All of them are held low and forward, as Session 1117 said of the hound. A watchful animal lifts its head; the neck could take some of the drop.
+- **The cats' forefeet.** They end only 2 to 3 cm ahead of where they stand, and their toes hang a few millimetres up. A lying cat tucks its paws or stretches them forward. Either is a different pose of the forearm, not this one.
+- **Owed:** the hound beside Garrick's chair in one picture, and all of it in the game (after F4).
+
+## v80 — Session 1123 — The hound beside Garrick's chair (L1 and L3, prototype only)
+Session 1117 owed one picture of the wolfhound and Garrick together, as OG-065 draws them. The builder page showed either a person or a creature, never both. This session adds a stage to the builder: a creature beside the person. It touches only `builder.js` and `builder.check.mjs`.
+
+How the stage works (`withCreature`, from the page's query):
+- **The parameters.** `with=PLAN` names the creature. `withGait` sets its gait (it stands if none is given). `withSide=L` or `R` puts it on the person's left or right (right by default). `withGap` is the space between them (8 cm), and `withFwd` how far its front is ahead of theirs (0).
+- **The placement.** The creature is built and posed once. It lies in the person's frame, facing their way, beside the chair's box (or the body's, without a chair). It turns with them in every view.
+- **Its numbers** are in `STATS.with`: the plan, the gait, the triangle count, the side, its heading and its posed size.
+
+Two things went wrong on the way:
+- **The hound floated 49 cm up.** The stage first put the hound at the person's root, but a seated person's root is at the hips. Only the root's x and z carry over now.
+- **The bind pose was measured, not the pose.** A skinned mesh's own box is its bind pose's, so the lying hound was measured as if it stood. The placement now reads the posed vertices.
+
+### Verified (headless Chromium)
+- **The new check, on a second builder page** (Garrick, then the hound lying and then sitting by his right wheel). Both are read in Garrick's own frame, from the vertices:
+  - its hide's lowest point is 1.8 cm under the ground, which is the toe pads, as in every pose. The outer fur shells under the pads go to 7.7 cm, standing as well, so the hide is what the check reads;
+  - its fur is 8.0 cm clear of the chair;
+  - its front is level with the chair's lying, and 35.0 cm behind it sitting, as asked;
+  - it is turned with him, at 49,200 triangles.
+- **`builder.check.mjs`:** 475 of 475 pass, 473 before and the two above.
+- **`creatures.check.mjs`** is untouched since Session 1122 (1,167 of 1,167).
+- **Pictures:**
+  - `builder-chair-hound.jpg`: lying, from his right front;
+  - `builder-chair-hound-side.jpg`: lying, from the side, its nose by the footboard;
+  - `builder-chair-hound-sit.jpg`: sitting, its head at his shoulder.
+### Needs eyes
+- **Where the hound lies.** OG-065's thumbnail is too small to show it. This lays the hound along the right wheel, facing his way. The other side, or across his feet, is one parameter.
+- **The sitting hound's height.** Its head is at the seated man's shoulder: a big wolfhound, as the plan is.
+- **Owed:** the chair pushed (B4), and both of them in the game (after F4).
+
+## v80 — Session 1124 — The lying head held up (L3, prototype only)
+Sessions 1117 and 1122 both flagged the same thing: every lie holds its head low and forward. A hound lying watchful lifts it. This session raises it. It touches only `creatures.js`, and refines a pose already built, so it asks nothing.
+
+- **The neck is raised.** Lying, it is turned up 0.3 rad (`SIT.lieNeck`), spread evenly down its bones so that it curves.
+- **The head is turned back down** by the same angle, so the muzzle stays level.
+- **The first try was too much.** 0.5 rad, all at the neck's first bone, stood the neck nearly upright and bent the head off it at a sharp angle, like a goose.
+- **The searches are unchanged.** The lie's drop and lifts run on the pose with the raise in it. The raise only lifts the head, so they find the same numbers.
+
+### Verified (headless Chromium)
+- **The head's height lying, before and after:**
+
+  | Plan | Before | After |
+  |---|---|---|
+  | Wolfhound | 52 cm | 57 cm |
+  | Ironwolf | 47 | 52 |
+  | Grey wolf | 47 | 51 |
+  | Thornrunner | 24 | 26 |
+  | The foxes | 20 to 21 | 23 to 24 |
+  | The cats | 16 | 17 to 18 |
+
+- **Everything else in the lie is as in Session 1122:** the drop, the forearms, the feet and what is under the ground.
+- **No new check.** The lie's existing bound (the head above the withers) holds both before and after, so no number proves this change. The pictures are what show it.
+- **The full run:** 1,167 of 1,167 pass.
+- **Pictures, reshot:** `creatures-wolfhound-lie.jpg`, `creatures-lying.jpg`, `builder-chair-hound.jpg` and `builder-chair-hound-side.jpg`.
+### Needs eyes
+- **How high.** 0.3 rad is one number for every plan. A cat lying with its head up holds it higher, and a resting dog may drop its chin to its paws, which would be a third rest.
+- **Owed:** the game, after F4.
+
+## v80 — Session 1125 — The dot embroidery powdered, and a question (L1, prototype only)
+The critic's 18 Oct pass on the new look found five faults. One is mine: "oxblood dots on cream read as spatter", on the Old Blood's dress. Session 1043 had flagged that risk, and it named two ways out: keep oxblood off cream, or drop it.
+
+There is a third, which keeps OG-066's palette. The trouble is how the knots are laid as much as their colour. They gather in noise-driven drifts and thin to nothing between them, and they come in different sizes. Clumps and gaps of dark red on cream are what splashes look like. Session 1043's first try, an even scatter, read as measles.
+
+Embroidery that is scattered evenly is done as "powdering": one small figure repeated on a grid. This session builds that beside the drifts:
+- **`dotsStyle: 'powder'`** is a new dress flag; its default is `'drift'`, so nothing rolled changes.
+- **The grid** is a half-drop one, 3.5 cm across.
+- **The figure** is a trefoil of three equal knots 3.2 mm round, 3 mm off the cell's middle, turned at random. Every cell holds one.
+- **The rest is as before:** the projection along the axis the cloth faces most, the fade to its average far off, and the tunic and same-cloth skirt only.
+
+Which way the embroidery is laid, and whether oxblood stays on cream, changes how the Old Blood look. That is Michael's to choose, so it is asked as DECISION #432, recommending the powdering with every colour kept. The default stays the drifts until he answers. It touches only `people.js` and `builder.check.mjs`.
+
+### Verified (headless Chromium)
+- **The new check:** the same Old Blood man, the same oxblood on the same undyed tunic, powdered.
+  - The knots cover 1.4% of the close view, against the drifts' 0.5%.
+  - Every changed pixel moves toward the thread's colour.
+  - The view without them renders the same twice.
+  - The genome saves with `"powder"` and loads back.
+- **Every earlier dots check passes unchanged**, so the drifts are as they were.
+- **`builder.check.mjs`:** 476 of 476 pass, 475 before and one new. The same run shows Session 1123's two hound checks still pass after Session 1124's neck.
+- **Pictures:** `builder-dots-powder-close.jpg`, `-full.jpg` (oxblood) and `-slate.jpg`, beside Session 1043's `builder-dots-close.jpg` and `-full.jpg`.
+### Needs eyes
+- **What it reads as.** Up close the powdering reads more as a printed calico than as hand knots. The knots are flat thread colour with the old raised shading, and they are not drawn as stitches.
+- **Owed:** Michael's answer on #432. Then, if powdering is chosen, the roll sets `dotsStyle`, or the drifts are taken out. Then the game, after F4.
+
+## v80 — Session 1126 — The cats sit with their forefeet together (L3, prototype only)
+Session 1115 said the cats sit wrong: a cat sits with its forefeet together and its tail wrapped round them, and these kept their standing stance. This session does the forefeet. It touches only `creatures.js` and `creatures.check.mjs`.
+
+- **The tuck.** A plan may carry `sitTuck`, the share of the forefeet's standing width they keep when it sits. The Hollowcat has 0.3. Each forefoot's target is drawn in toward the middle line by that share, at its standing place along the body, and the leg solver bends the leg to it.
+- **The lynxes.** `re()` copies a fixed list of a base plan's fields, so `sitTuck` is added to it. The Stormlynx and the Sunspire Lynx take it from the Hollowcat. The dogs and foxes have none and sit as before.
+- **The tail is not done.** A larger sideways curl for the cats' tails was tried and taken out. The tail bones' local axes are not level, so a bigger turn about them bent the lynx's tail upward instead of round the feet. The wrap needs the turn about the body's up, as the stag's mist found in Session 975.
+
+### Verified (headless Chromium)
+- **The sit's check for the three cats:** the forefeet are 1.5 cm off the middle line against 5.0 standing, 30% as asked, and exactly where they stand along the body. The haunch is 5.0 mm off the ground, the foot error is 0.0 cm, and nothing but the toe pads is under the ground.
+- **The other eight sitters** pass their check unchanged: "the forefeet where it stands".
+- **The full run:** 1,167 of 1,167 pass. No check was added; the existing check now allows for the tuck.
+- **Pictures:** `creatures-hollowcat-sit-front.jpg` (from the front, the forefeet together) and `creatures-cats-sit.jpg` (the three cats from the side).
+### Needs eyes
+- **Whether 30% is right.** The Hollowcat's paws nearly touch. A sitting cat's do touch, and its forefeet sit a little forward too.
+- **Owed:** the tail wrapped round the forefeet, and the game (after F4).

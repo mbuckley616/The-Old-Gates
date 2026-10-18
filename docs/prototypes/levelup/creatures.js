@@ -767,7 +767,13 @@ export const GAITS = {
   crawl: { duty: 1, bl: .18, ripple: 1, phase: () => 0 },
   drift: { duty: 1, bl: .25, bell: 1, phase: () => 0 },
   // Session 775: a bird in the air, its wings beating, its legs tucked up under it
-  soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 }
+  soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 },
+  // Session 1114: a four-legged body sitting (Garrick's hound by his chair): the forefeet where they stand, the body pitched up about
+  // the shoulders until the haunch is on the ground, the hind legs folded under it with the hocks laid flat (sitBody, sitLeg)
+  sit: { duty: 1, fr: 0, sit: 1, phase: () => 0 },
+  // Session 1117: lying down, head up (a sphinx): the body lowered level until its underside is on the ground, the hind legs folded
+  // as they sit, the forelegs laid forward along the ground from the elbow (lieLeg)
+  lie: { duty: 1, fr: 0, sit: 1, lie: 1, phase: () => 0 }
 };
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = V(), _m = new THREE.Matrix4();
 // a bone's rotation and position in the rig's frame (the body's own space: the ground is y = 0)
@@ -818,6 +824,8 @@ function stowQuills(C, W, k) {
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 export function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
+  // a rest's numbers are found once per creature and gait (the sit's pitch, the lie's drop, the tail's lift), while finding them it poses itself
+  if (G.sit && !C.sitFinding) { const R = (C.rests = C.rests || {})[C.gait]; if (R) Object.assign(C, R); else { C.sitFinding = true; sitFind(C); C.sitFinding = false; C.rests[C.gait] = { sitA: C.sitA, sitY: C.sitY, sitT: C.sitT, sitH: C.sitH, sitF: C.sitF }; } }
   for (const b of C.bones) b.quaternion.identity();
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
@@ -869,14 +877,19 @@ export function pose(C, phase) {
     C.byName[W.arm[0]].rotation.set(-.15 * fold, -W.side * .7 * fold, W.side * (.5 * flap - .35 * fold + .03 * Math.sin(tau * ph * .5)));
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
+  if (G.sit) sitBody(C);
   C.rig.updateMatrixWorld(true);
   // the legs: the foot's target from the gait, then IK
   const sweep = sweepOf(C, G), D = C.dir;
   let worst = 0; const order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
   for (const L of B.legs) {
+    if (G.sit && L.at === order[order.length - 1]) { worst = Math.max(worst, sitLeg(C, L)); continue; }
+    if (G.lie && L.at === order[0]) { worst = Math.max(worst, lieLeg(C, L)); continue; }
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
+    // a cat sits with its forefeet together (Session 1126, the plan's sitTuck: how much of the standing width is kept)
+    if (G.sit && !G.lie && C.plan.sitTuck && L.at === order[0]) T.x *= C.plan.sitTuck;
     // aloft, the feet tuck up and back; an insect's splayed legs only lift a little and hang (Session 864)
     if (G.aloft) { if (L.yaw) { T.y += (C.plan.flyH || 0) - .1 * L.hR; T.x = lerp(T.x, L.rest[0].x, .25); } else { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; } }
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
@@ -884,6 +897,74 @@ export function pose(C, phase) {
   }
   if (C.mist) { const hd = C.mist.parent; hd.updateWorldMatrix(true, false); const qi = hd.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(C.rig.getWorldQuaternion(new THREE.Quaternion())); mistTick(C.mist, ph, qi); }
   return worst;
+}
+// sitting (Session 1114). The body turns nose-up about the line through the forelegs' roots, so the forefeet stay where they
+// stand; how far is found once per creature, halving the hip's height until the lowest point of the body and thighs (every vertex
+// whose bone is the spine's, a thigh's or a shin's) is 5 mm off the ground. The neck takes back most of the pitch so the head looks ahead,
+// and the tail is laid back along the ground and curled round toward the haunch
+const SIT = { haunch: .005, neck: .8, tailCurl: .3, hock: .05, lieNeck: .3 };
+function sitFrame(C) {
+  const B = C.B, order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
+  const mean = at => { const v = V(), Ls = B.legs.filter(L => L.at === at); for (const L of Ls) v.add(L.rest[0]); return v.divideScalar(Ls.length); };
+  const piv = mean(order[0]), hip = mean(order[order.length - 1]), dy = hip.y - piv.y, dz = hip.z - piv.z;
+  // the pitch that puts the hip at height h: y' = dy cos a - dz sin a, solved by halving (a from 0 down to -1.4)
+  const pitchFor = h => { let lo = -1.4, hi = 0; for (let k = 0; k < 30; k++) { const a = (lo + hi) / 2; if (piv.y + dy * Math.cos(a) - dz * Math.sin(a) > h) hi = a; else lo = a; } return (lo + hi) / 2; };
+  return { B, order, piv, hip, pitchFor };
+}
+// the pitch, found once (before a pose, which it runs itself)
+function sitFind(C) {
+  const { B, order, hip, pitchFor } = sitFrame(C);
+  C.sitA = 0; C.sitT = -.06; C.sitF = 0; { const hL = B.legs.find(L => L.at === order[order.length - 1]), idx = new Set([...B.spineNames, ...B.legs.filter(L => L.at === order[order.length - 1] || GAITS[C.gait].lie && L.at === order[0]).flatMap(L => L.names.slice(0, L.at === order[0] && L.at !== order[order.length - 1] ? 1 : 2))].map(n => C.bones.indexOf(C.byName[n])));
+    const M = C.meshes[0], si = M.geometry.attributes.skinIndex, sw = M.geometry.attributes.skinWeight, vs = []; for (let v = 0; v < si.count; v++) { let best = 0, bi = -1; for (let j = 0; j < 4; j++) { const w = sw.getComponent(v, j); if (w > best) { best = w; bi = si.getComponent(v, j); } } if (idx.has(bi)) vs.push(v); }
+    const low = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (let k = 0; k < vs.length; k++) { M.getVertexPosition(vs[k], p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
+    // lying, the body is lowered level instead (C.sitY, how far), the same halving on the hip's height
+    const lie = GAITS[C.gait].lie, set = h => { if (lie) C.sitY = hip.y - h; else C.sitA = pitchFor(h); }; C.sitY = 0;
+    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; set(h); pose(C, 0); if (low() > SIT.haunch) hi = h; else lo = h; } set(hi); C.sitH = hi;
+    // then the tail (Session 1115): lifted from lying level (a little drooped) only as far as its own flesh needs to clear the ground
+    if (B.chains.tail) { const ti = new Set(B.chains.tail.map(n => C.bones.indexOf(C.byName[n]))), tv = []; for (let v = 0; v < si.count; v++) if (ti.has(si.getX(v))) tv.push(v);
+      const tlow = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (const v of tv) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
+      pose(C, 0); if (tlow() < SIT.haunch) { let lo = -.06, up = 1.4; for (let k = 0; k < 14; k++) { C.sitT = (lo + up) / 2; pose(C, 0); if (tlow() > SIT.haunch) up = C.sitT; else lo = C.sitT; } C.sitT = up; } }
+    // lying, the forearm and wrist laid along the ground (Session 1122): raised from the paw's standing height only as far as their own
+    // flesh needs to be 5 mm off the ground (a cat's forearm is thicker than its paw is high)
+    if (lie) { const fL = B.legs.filter(L => L.at === order[0]), fi = new Set(fL.flatMap(L => L.names.slice(1, L.J.length - 2)).map(n => C.bones.indexOf(C.byName[n]))), fv = []; for (let v = 0; v < si.count; v++) if (fi.has(si.getX(v))) fv.push(v);
+      const flow = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (const v of fv) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
+      pose(C, 0); if (flow() < SIT.haunch) { let lo = 0, up = .15 * fL[0].hR; for (let k = 0; k < 14; k++) { C.sitF = (lo + up) / 2; pose(C, 0); if (flow() > SIT.haunch) up = C.sitF; else lo = C.sitF; } C.sitF = up; } } }
+}
+function sitBody(C) {
+  const { B, piv } = sitFrame(C), sp = C.byName.spine0;
+  const R = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), C.sitA); sp.quaternion.premultiply(R); sp.position.sub(piv).applyQuaternion(R).add(piv); sp.position.y -= C.sitY || 0;
+  if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= C.sitA * SIT.neck;
+  // lying, the neck is raised as a watchful animal holds it (Session 1124), spread down its bones, and the head turned back down by as much, so the muzzle stays level
+  if (B.chains.neck && GAITS[C.gait].lie) { const n = B.chains.neck; n.forEach(nm => C.byName[nm].rotation.x -= SIT.lieNeck / n.length); if (C.byName.head) C.byName.head.rotation.x += SIT.lieNeck; }
+  // the tail: its first bone turned back level against the pitch and its droop (then up by what sitFind found), each bone after curled round to one side
+  if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const a = rigPos(C, t0, V()), b = rigPos(C, C.byName[B.chains.tail[1]], V()), d = b.sub(a);
+    t0.rotation.x += Math.atan2(-d.y, -d.z) + C.sitT; B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += SIT.tailCurl; }); }
+}
+// a hind leg sitting: the toes' tip on the ground ahead, the toes and the hock's long bone laid back from it, the hock raised a
+// twentieth of the leg off the paw's height so the shin's flesh clears the ground, just behind the hip, and the thigh and shin bent to meet it about the knee (which points forward, as it stands)
+function sitLeg(C, L) {
+  const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion()), hR = L.hR;
+  L.bones[0].position.copy(L.restLocal);
+  const F0 = L.rest[m], P2 = L.rest[m - 1], toe = L.lens[m - 1], pawY = P2.y, tz = Math.sqrt(Math.max(0, toe * toe - (pawY - F0.y) ** 2));
+  const hk = SIT.hock * hR, hock = V(F0.x, pawY + hk, root.z - .08 * hR), paw = hock.clone().add(V(0, -hk, Math.sqrt(L.lens[m - 2] ** 2 - hk * hk))), tip = paw.clone().add(V(0, F0.y - pawY, tz));
+  const L1 = L.lens[0], L2 = L.lens[1], d = hock.clone().sub(root); let dl = d.length(); const u = d.divideScalar(dl || 1), err = Math.max(0, dl - (L1 + L2), Math.abs(L1 - L2) - dl);
+  dl = Math.max(Math.abs(L1 - L2) + 1e-4, Math.min(L1 + L2 - 1e-4, dl));
+  const a = (L1 * L1 - L2 * L2 + dl * dl) / (2 * dl), h = Math.sqrt(Math.max(0, L1 * L1 - a * a)), pole = L.pole.clone(); pole.sub(u.clone().multiplyScalar(pole.dot(u))).normalize();
+  const Pp = [root, root.clone().addScaledVector(u, a).addScaledVector(pole, h), root.clone().addScaledVector(u, dl), paw, tip];
+  let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
+  return err;
+}
+// a foreleg lying (Session 1117): the elbow down on the ground just behind the shoulder, as far back as the upper arm reaches from
+// where the lowered shoulder is, and the forearm, the wrist and the toes laid forward along the ground from it
+function lieLeg(C, L) {
+  const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
+  L.bones[0].position.copy(L.restLocal);
+  const F0 = L.rest[m], lift = C.sitF || 0, ey = L.rest[m - 1].y + lift + SIT.hock * L.hR, dy = root.y - ey, L0 = L.lens[0], err = Math.max(0, dy - L0);
+  const elbow = V(F0.x, ey, root.z - Math.sqrt(Math.max(0, L0 * L0 - dy * dy))), Pp = [root, elbow]; let at = elbow, e2 = 0;
+  // the wrist and the paw at the paw's standing height (raised by C.sitF where their flesh needs it), the toes' tip on the ground
+  for (let k = 1; k < m; k++) { const y = k === m - 1 ? F0.y : L.rest[m - 1].y + lift, len = L.lens[k], fall = Math.abs(y - at.y); e2 = Math.max(e2, fall - len); const dz = Math.sqrt(Math.max(0, len * len - fall * fall)); at = V(F0.x, y, at.z + dz); Pp.push(at); }
+  let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
+  return Math.max(err, e2);
 }
 // one leg: yaw the leg toward its foot (an insect's coxa), hold the distal segments (a paw, a hoof), bend the two in between
 function solveLeg(C, L, T, fold) {
@@ -911,7 +992,7 @@ function solveLeg(C, L, T, fold) {
 // ── the plans. Each is its source in the concept art, a palette, the gaits it has, and its parts ──
 // Tones: coat, saddle and belly (counter-shading), dark (nose, claws, pads), hoof, horn, skin (bare), pale, membrane.
 export const PLANS = {
-  ironwolf: { name: 'Ironwolf', src: 'OG-084, OG-031 (Stonefang Wolf)', gaits: ['trot', 'walk', 'gallop', 'stand'],
+  ironwolf: { name: 'Ironwolf', src: 'OG-084, OG-031 (Stonefang Wolf)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'],
     palette: { coat: [.44, .42, .4], saddle: [.16, .15, .14], belly: [.78, .75, .69], dark: [.06, .05, .05], horn: [.8, .76, .7] },
     fur: { len: .035, layers: 9, sx: 260 },
     parts: [
@@ -1154,10 +1235,10 @@ PLANS.posthare.parts = [...PLANS.snowhare.parts, ['saddle', { at: .55, len: .14 
 // ── Session 843: the common set (OG-084's "all islands": wolf, red fox, brown hare, raven, crow, wild boar, deer, badger,
 // otter, trout; backlog L3). Peaceful animals, the first the game has. Five are other plans at another size and colour;
 // the fox, the boar, the badger and the otter have parts of their own, from the kit's parts and leg presets ──
-const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, ...o, parts: o.parts || base.parts });
+const re = (base, o) => ({ fur: base.fur, pattern: base.pattern, glow: base.glow, gaits: base.gaits, wag: base.wag, fold: base.fold, neckNod: base.neckNod, flyH: base.flyH, finOpacity: base.finOpacity, rough: base.rough, bl: base.bl, water: base.water, mottle: base.mottle, pant: base.pant, sitTuck: base.sitTuck, ...o, parts: o.parts || base.parts });
 Object.assign(PLANS, {
   wolf: re(PLANS.ironwolf, { name: 'Grey wolf', src: 'OG-084 (all islands: wolf)', scale: .92, palette: { coat: [.5, .45, .38], saddle: [.24, .21, .18], belly: [.84, .8, .72], dark: [.06, .05, .05], horn: [.8, .76, .7] }, fur: { len: .032, layers: 9, sx: 260 } }),
-  redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand'], wag: .06, speedK: 1.1,
+  redfox: { name: 'Red fox', src: 'OG-084 (all islands: red fox), OG-009 (Redspine Fox)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'], wag: .06, speedK: 1.1,
     palette: { coat: [.72, .34, .12], saddle: [.55, .24, .08], belly: [.95, .92, .86], dark: [.08, .05, .04], pale: [.97, .95, .9] },
     fur: { len: .028, layers: 8, sx: 320 },
     parts: [
@@ -1318,7 +1399,7 @@ Object.assign(PLANS, {
       ['tail', { len: .14, n: 1, r: [.05, .03], droop: 20 }],
       ['legs', { at: .4, kind: 'bird', out: .04, drop: .04, r: [.04, .014, .01, .008], claws: { r: .003, len: .03 } }]
     ] },
-  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand'], wag: .1, speedK: 1, neckNod: .02,
+  hollowcat: { name: 'Hollowcat', src: 'OG-009 (a tufted-eared wildcat of remote woods)', gaits: ['walk', 'trot', 'gallop', 'stand', 'sit', 'lie'], sitTuck: .3, wag: .1, speedK: 1, neckNod: .02,
     palette: { coat: [.5, .42, .32], saddle: [.24, .19, .14], belly: [.84, .78, .66], dark: [.06, .05, .04], pale: [.9, .86, .78] },
     pattern: { kind: 'stripes', period: .07, tone: 'saddle' }, fur: { len: .022, layers: 8, sx: 300 },
     parts: [
@@ -1961,3 +2042,21 @@ PLANS.troll.parts.push(['straps', { w: .08, tone: 'leather', straps: [
   { path: [[.74, 0], [.74, 90], [.74, 180], [.74, 270], [.74, 360]], closed: true, steps: 12, lift: .012 },
   { path: [[.98, 90], [.66, 10], [.34, -60]], steps: 10, lift: .012 },
   { path: [[.36, 140], [.36, 220]], steps: 8, lift: .012 }] }]);
+// ── Session 1107: Garrick's wolfhound (OG-065, "with a black wolfhound"; backlog L1 and L3). The first dog the kit has: a sighthound
+// on the wolf's kit of parts, taller than the grey wolf and lighter in the loin, the chest deep and the belly tucked up, the head long
+// and narrow with a long tapering muzzle and small ears folded back along the skull, the tail long and low with an upward sweep at its
+// end, the coat rough and wiry (long, coarse, drooping shells). Black, as OG-065 draws it ──
+Object.assign(PLANS, {
+  wolfhound: { name: 'Black wolfhound', src: 'OG-065 (Garrick\'s black wolfhound)', gaits: ['trot', 'walk', 'gallop', 'stand', 'sit', 'lie'], wag: .07, pant: .08, speedK: 1.15, rough: .6,
+    palette: { coat: [.16, .15, .14], saddle: [.1, .095, .09], belly: [.22, .21, .2], dark: [.03, .025, .02], horn: [.7, .66, .6] },
+    fur: { len: .05, layers: 10, sx: 120, sy: 32, droop: .3 },
+    parts: [
+      ['spine', { hip: [.86, -.42], chest: [.9, .36], n: 4, r: [.12, .11, .19], s: [.78, 1.25], rump: .11, rumpDrop: .02, front: .15, frontDrop: .09, arch: .05 }],
+      ['neck', { len: .34, n: 2, rise: 40, r: [.12, .085], s: [.85, 1.1], fwd: .02, up: .04 }],
+      ['head', { len: .4, r: .08, pitch: 10, s: [.85, .95, 1.15], muzzle: { len: 1, r: .045, nose: 1, drop: .03, taper: .6 }, jaw: { len: .85, r: .034, drop: .6 }, eyes: [{ f: .4, up: .38, out: .55, r: .013, color: [.22, .13, .06] }], ears: { kind: 'leaf', size: .075, f: .1, up: .8, out: .55, back: 70, splay: 30 } }],
+      ['tail', { len: .58, n: 5, r: [.045, .04, .022], droop: 62, curl: 13, s: [1, 1] }],
+      ['legs', { at: 1, kind: 'canidFore', out: .085, drop: .06, r: [.075, .04, .026, .022], claws: { r: .007, len: .022 } }],
+      ['legs', { at: 0, kind: 'canidHind', out: .085, drop: .03, r: [.09, .048, .028, .023], claws: { r: .007, len: .022 } }]
+    ] }
+});
+export const HOUNDS = ['wolfhound'];

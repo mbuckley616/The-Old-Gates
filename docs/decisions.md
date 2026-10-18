@@ -4,6 +4,28 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 ## Pending
 
+### The Old Blood's dot embroidery: powdered, or the drifts without oxblood? (bodies builder, Session 1125) — DECISION #432
+The critic (18 Oct) says the Old Blood's **oxblood dots on cream read as spatter** ([the critic's still](https://github.com/mbuckley616/The-Old-Gates/blob/auto/critic/docs/critic/2026-10-18-b-ob-dress.jpg)). Session 1043 had flagged the same risk.
+
+The embroidery is OG-066's "scattered dot embroidery" on undyed linen, in OG-066's palette: 60% of the Old Blood on cream tunics roll it in oxblood, slate or dusk violet.
+
+What makes it read as spatter is how the knots are laid. They gather in loose drifts and thin out between them, and they come in different sizes. Session 1043 tried an even scatter first, and that read as measles.
+
+So the builder (Session 1125) now has a second way to lay them, `dotsStyle: 'powder'`. One small figure, a trefoil of three equal knots 3.2 mm across, is sown in every cell of a half-drop grid 3.5 cm apart, each turned at random. That is how needlework "powdering" is done. It reads as a pattern, not as splashes. The default is still the drifts until you choose.
+
+**How should the Old Blood's dot embroidery be laid?**
+- **A. Powdered, every colour kept** *(recommended)*. Every embroidered tunic is powdered, still in oxblood, slate, violet or bone, so OG-066's palette stands.
+- **B. Drifts as now, but no oxblood on cream.** Cream tunics take slate or violet only, and oxblood goes nowhere (or only onto the dark tunics).
+- **C. Powdered, and no oxblood on cream.**
+- **D. Leave it as it is.**
+
+Pictures:
+- [powdered, oxblood, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-powder-close.jpg)
+- [powdered, oxblood, full](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-powder-full.jpg)
+- [powdered, slate, full](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-powder-slate.jpg)
+- [the drifts now, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-close.jpg)
+- [the drifts now, full](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-full.jpg)
+
 ### Six great gates torn: what ends? (the quest writer, 2026-10-18) — DECISION #413
 Asked under the draft *The Great Gates, V — what was bound: Act III, reconciled* (`docs/quest_drafts.md`, unapproved). Your leaning (13 Oct, *The great gates' two paths* below) is that tearing all six deletes every save. §11 says the world remakes itself on a new seed with your name, people and one carried item, and the approved *The Last Entry* puts Varek's list in the first gate of that new world. Since Session 456 a slot is two rows, the character's and the world's.
 - **A. This world ends; the character goes on** *(recommended)*. The slot's world row is deleted and stamped unmade, so it can't be continued or imported back. The character carries to a new seed (§11, as built: `og_carry`), and the list waits in the first gate. Other slots are untouched. The world the player made is truly gone, and nothing they didn't stake is taken.

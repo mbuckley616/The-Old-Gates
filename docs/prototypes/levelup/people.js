@@ -109,7 +109,8 @@ ${FOLDN}`;
 // next, a crease where they meet; the top 1.2 cm, where the thongs tie, lies flat
 const LEGA = `vec2 legD(vec3 p){ return vec2(abs(p.x) - .158 - (-.369 - p.y) * .165, p.z - .032 - (p.y + .369) * .085); }
 float legA(vec3 p){ vec2 d = legD(p); return atan(d.x, d.y); }`;
-const WIND = w => `${LEGA}
+// named WRAP_WIND (Session 1095), not WIND: common.js exports a WIND (the leaves' sway), and the bundle shares one scope
+const WRAP_WIND = w => `${LEGA}
 float foldH(vec3 p){ vec2 d = legD(p); float a = atan(-d.y, d.x), t = (p.y - ${w.lo.toFixed(3)}) / ${w.pitch.toFixed(4)} - a * .15915 + .018 * sin(a * 3. + p.y * 37.) + .01 * sin(a * 7. - p.y * 61.), q = fract(t);
   float h = smoothstep(0., .18, q) * (1. - smoothstep(.45, 1., q)); return mix(.7, h, clamp((${w.hi.toFixed(3)} - p.y) / .012, 0., 1.)); }
 ${FOLDN}`;
@@ -126,9 +127,9 @@ function clothMat(color, kind = 'wool', o = {}) {
     if (o.print) { s.uniforms.printC = { value: o.print }; s.vertexShader = 'attribute float aPrint; varying float vPr;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vPr = aPrint;');
       s.fragmentShader = 'uniform vec3 printC; varying float vPr;\n' + SPRIGS + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, printC * triTex(tW, ' + (o.scale ?? 22).toFixed(1) + '), printAt(vB, vRN) * vPr);'); }
     // the Old Blood's scattered dot embroidery (Session 1043, OG-066): knots of thread in the dots' own colour, each one shaded as raised
-    if (o.dots) { s.uniforms.dotsC = { value: o.dots }; s.fragmentShader = 'uniform vec3 dotsC;\n' + DOTS + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n { vec2 dk = dotsAt(vB, vRN); diffuseColor.rgb = mix(diffuseColor.rgb, dotsC * triTex(tW, ' + (o.scale ?? 22).toFixed(1) + ') * (.8 + .45 * dk.y), dk.x); }'); }
+    if (o.dots) { s.uniforms.dotsC = { value: o.dots }; s.uniforms.dotsP = { value: o.dotsPowder ? 1 : 0 }; s.fragmentShader = 'uniform vec3 dotsC;\nuniform float dotsP;\n' + DOTS + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n { vec2 dk = dotsAt(vB, vRN); diffuseColor.rgb = mix(diffuseColor.rgb, dotsC * triTex(tW, ' + (o.scale ?? 22).toFixed(1) + ') * (.8 + .45 * dk.y), dk.x); }'); }
     if (o.wind && o.wind.tie) { s.uniforms.tieC = { value: o.wind.tie }; s.fragmentShader = 'uniform vec3 tieC;\n' + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, '$1 ' + TIE(o.wind)); }
-    if (o.fold || o.wind) s.fragmentShader = (o.wind ? WIND(o.wind) : FOLD(o.fold)) + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, 'float fH = foldH(vB); $1 diffuseColor.rgb *= .78 + .22 * fH;')
+    if (o.fold || o.wind) s.fragmentShader = (o.wind ? WRAP_WIND(o.wind) : FOLD(o.fold)) + s.fragmentShader.replace(/(vec4 diffuseColor = vec4\( diffuse \* [^;]*;)/, 'float fH = foldH(vB); $1 diffuseColor.rgb *= .78 + .22 * fH;')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n normal = foldNormal(-vViewPosition, normal, vec2(dFdx(fH), dFdy(fH)) * ' + ((o.fold || o.wind).depth ?? 1.1).toFixed(2) + ', faceDirection);'); };
   m.customProgramCacheKey = () => 'cloth' + kind + JSON.stringify(o.cut || 0) + (o.scale || 0) + (o.hole || '') + (o.inner || '') + (o.band ? 'band' : '') + (o.print ? 'print' : '') + (o.dots ? 'dots' : '') + JSON.stringify(o.fold || 0) + JSON.stringify(o.wind ? { ...o.wind, tie: !!o.wind.tie } : 0);
   return m;
@@ -143,7 +144,9 @@ float printAt(vec3 p, vec3 n){ vec3 w = abs(normalize(n)); w = pow(w, vec3(4.));
 // 1.4 cm of the rest body, a knot of thread in some of them, set anywhere in its cell so they do not read as a grid, 1.1 to 1.9 mm round.
 // How many cells hold one rises and falls over 11 cm drifts of the cloth (from 3 in 100 to 45), so they lie scattered, not evenly
 // sown. Read off the rest position along whichever axis the cloth faces most (a blend of the three left half-faded ghosts), and given
-// way to its average where a pixel holds more than a knot
+// way to its average where a pixel holds more than a knot. Or (Session 1125, dress.dotsStyle 'powder', the critic's "oxblood dots on cream
+// read as spatter"): powdered as needlework is, one motif in every cell of a half-drop grid 3.5 cm across, each a trefoil of three
+// knots 3.2 mm round 3 mm off its middle, turned at random, none left out, so the cloth is sown evenly with a small figure
 const DOTS = `float dh3(vec3 p){ p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float dn3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f); return mix(mix(mix(dh3(i), dh3(i + vec3(1., 0., 0.)), f.x), mix(dh3(i + vec3(0., 1., 0.)), dh3(i + vec3(1., 1., 0.)), f.x), f.y),
   mix(mix(dh3(i + vec3(0., 0., 1.)), dh3(i + vec3(1., 0., 1.)), f.x), mix(dh3(i + vec3(0., 1., 1.)), dh3(i + vec3(1., 1., 1.)), f.x), f.y), f.z); }
@@ -151,7 +154,11 @@ vec2 dotAt(vec2 p, float keep){ p *= 70.; vec2 c = floor(p), f = fract(p); float
   for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) { vec2 cc = c + vec2(float(i), float(j)); float h = fract(sin(dot(cc, vec2(127.1, 311.7))) * 43758.5453); if (h > keep) continue;
     vec2 o = vec2(fract(h * 17.31), fract(h * 41.77)) * .7 + .15; float r = .08 + .05 * fract(h * 7.9), d = length(f - vec2(float(i), float(j)) - o), k = 1. - smoothstep(r - a, r + a, d);
     if (k > m) { m = k; hi = clamp(1. - d / r, 0., 1.); } } return vec2(m, hi); }
-vec2 dotsAt(vec3 p, vec3 n){ vec3 w = abs(normalize(n)); float keep = .03 + .42 * smoothstep(.45, .8, dn3(p * 9. + 2.3)), k = clamp(length(fwidth(p.xy * 70.)) * 1.2 - .5, 0., 1.);
+vec2 powderAt(vec2 p){ p *= 28.; vec2 c = floor(p); p.y += .5 * mod(c.x, 2.); c = floor(p); vec2 f = fract(p) - .5; float h = fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453), a = fwidth(p.x) * .8 + .01, m = 0., hi = 0.;
+  for (int k = 0; k < 3; k++) { float t = h * 6.2832 + float(k) * 2.0944; float d = length(f - .09 * vec2(cos(t), sin(t))), q = 1. - smoothstep(.045 - a, .045 + a, d); if (q > m) { m = q; hi = clamp(1. - d / .045, 0., 1.); } } return vec2(m, hi); }
+vec2 dotsAt(vec3 p, vec3 n){ vec3 w = abs(normalize(n));
+  if (dotsP > .5) { float k = clamp(length(fwidth(p.xy * 28.)) * 2.5 - .5, 0., 1.); vec2 m = w.x > w.y && w.x > w.z ? powderAt(p.zy + 3.1) : w.y > w.z ? powderAt(p.xz + 5.7) : powderAt(p.xy); return mix(m, vec2(.02, .5), k); }
+  float keep = .03 + .42 * smoothstep(.45, .8, dn3(p * 9. + 2.3)), k = clamp(length(fwidth(p.xy * 70.)) * 1.2 - .5, 0., 1.);
   vec2 m = w.x > w.y && w.x > w.z ? dotAt(p.zy + 3.1, keep) : w.y > w.z ? dotAt(p.xz + 5.7, keep) : dotAt(p.xy, keep); return mix(m, vec2(.02 * keep, .5), k); }`;
 // mail (Session 897): rows of riveted rings drawn in the shader on the rest body's coordinates, each row offset by half a
 // ring, seen three ways as the cloth's weave is; the gaps between the rings and their holes are dark (the padding under them),
@@ -2060,7 +2067,7 @@ const STAFFS = {
   ash: { top: -.17, knob: 1.55, carve: 0, shoe: [.42, .43, .45], ring: [.42, .43, .45], cap: null },
   olive: { top: -.22, knob: 1.6, carve: 0, shoe: [.62, .45, .22], ring: null, cap: [.62, .45, .22] },
   carved: { top: .1, knob: 1.9, carve: .2, shoe: [.42, .43, .45], ring: null, cap: null } };
-// the walking grip (Session 1092): a staff is leant on, not held out as a spear is, so its forearm drops 38° forward and down from
+// the walking grip (Session 1094): a staff is leant on, not held out as a spear is, so its forearm drops 38° forward and down from
 // the elbow (the spear's runs on almost level), the fist by the hip and the staff's foot a hand ahead of the toes; the wrist cocks
 // up to keep the knuckles plumb, as before
 const STAFF_ARM = new THREE.Vector3(-.1, -.62, .78);
@@ -2088,7 +2095,7 @@ function staffTube(S, y0, y1, n, NS) {
 function buildStaff(G, body, byName, meshes, root, grip) {
   root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, PP = posedBody(body);
   let floor = 1e9, crown = -1e9; for (const i of new Set(PACK.G['body'])) { floor = Math.min(floor, PP[i * 3 + 1]); crown = Math.max(crown, PP[i * 3 + 1]); }
-  // the walking grip's measures (Session 1092): the fist's height up the body, and how far ahead of the toes the foot comes down
+  // the walking grip's measures (Session 1094): the fist's height up the body, and how far ahead of the toes the foot comes down
   let toe = -1e9; for (const i of new Set(PACK.G['body'])) if (PP[i * 3 + 1] < floor + .12) toe = Math.max(toe, PP[i * 3 + 2]);
   const make = STAFFS[D.staffMake] ? D.staffMake : ({ markman: 'ash', aurennais: 'olive', oldblood: 'carved' })[G.people] || 'hazel', K = STAFFS[make];
   const A = grip.A, B = grip.C.clone().addScaledVector(A, (floor - grip.C.y) / A.y), yF = grip.C.clone().sub(B).dot(A), LEN = (crown + K.top - floor) / A.y, ph = staffSeed([G.seed ?? 'person', G.people, ...D.staff, ...(G.skin || [])].map(v => typeof v === 'number' ? Math.round(Math.max(0, Math.min(1, v)) * 255) : v).join('|')) * Math.PI * 2;
@@ -2289,6 +2296,119 @@ function buildBasket(G, body, byName, meshes, root, grip) {
 // the sash belt's promises (Session 1010), read on the posed meshes round the waist's own axis, at 15 points on every triangle: in 72
 // angles and 1 cm rows, nothing worn under it (the tunic, a skirt, a bodice, mail, the body) stands out past its inside, no point of
 // an arm is within it, and a leather belt worn over it lies outside it
+// the wheeled chair (Session 1106; L1, OG-065's Garrick, "a veteran in a wheeled chair"): an oak armchair on two big cart wheels
+// beside the seat and two small wheels under its front legs, a footboard hung from its front, a handle off each back post for whoever
+// pushes it. The person sits first (makePerson's seated pose) and the chair is built to them, in the root's frame: the seat under the
+// lowest point of the seat and thighs, the back behind the furthest point of the back, the arms under the forearms, the footboard
+// under the soles; the ground is under the footboard and both pairs of wheels stand on it. Plain wood and iron, no hand rims: it is pushed
+// the seated pose (Session 1106): radians at the hip and knee, the thighs' spread, the forearms' aim (out, down, forward)
+const SEAT = { hip: 1.5, knee: 1.32, spread: .07, foreOut: .03, foreDown: -.02, curl: [.5, .45, .3] };
+const CHAIR = { R: .31, r: .075, tyre: .016, spokes: 10, board: .028, rail: [.05, .032], post: .042, foot: .06, gap: .002 };
+function buildChair(G, body, byName, meshes, root) {
+  root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, C = CHAIR, clouds = wornClouds(body, meshes, root);
+  const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
+  // the measures, off everything worn: the seat (rest y -.42 to .08 inside the arms), the back (rest y .1 to .55), the soles, the forearms
+  let seatY = 1e9, hipX = 0, backZ = 1e9, kneeZ = -1e9, footY = 1e9, footZ = [1e9, -1e9], footX = 0, shinX = 0, top = -1e9, pitZ = 1e9;
+  const fore = ['L', 'R'].map(s => ({ e: at('lowerarm01.' + s), w: at('wrist.' + s), y: 1e9, x: 0, n: 0, z: [1e9, -1e9] })), v = new THREE.Vector3();
+  eachPoint(clouds, (x, y, z, i) => { if (i < 0) return; const rx = Math.abs(R0[i * 3]), ry = R0[i * 3 + 1]; top = Math.max(top, y);
+    if (ry > -.42 && ry < .08 && rx < .3) { seatY = Math.min(seatY, y); kneeZ = Math.max(kneeZ, z); }
+    if (ry > .1 && ry < .55 && rx < .25) backZ = Math.min(backZ, z);
+    if (ry < -.55) shinX = Math.max(shinX, Math.abs(x));
+    if (ry < -.74) { footY = Math.min(footY, y); footZ[0] = Math.min(footZ[0], z); footZ[1] = Math.max(footZ[1], z); footX = Math.max(footX, Math.abs(x)); }
+    if (rx > .28 && ry < .35) for (const F of fore) { const a = F.w.clone().sub(F.e), t = v.set(x, y, z).sub(F.e).dot(a) / a.lengthSq(); if (t < -.1 || t > 1.05) continue; if (v.addScaledVector(a, -t).length() > .07) continue;
+      F.y = Math.min(F.y, y); F.x += x; F.n++; F.z[0] = Math.min(F.z[0], z); F.z[1] = Math.max(F.z[1], z); } });
+  // a sole built after the pose (a sandal's) is under the foot too
+  eachPoint(clouds, (x, y, z, i) => { if (i < 0 && y < seatY - .2) { footY = Math.min(footY, y); footZ[0] = Math.min(footZ[0], z); footZ[1] = Math.max(footZ[1], z); footX = Math.max(footX, Math.abs(x)); } if (i < 0) return; if (R0[i * 3 + 1] > -.42 && R0[i * 3 + 1] < .08 && Math.abs(R0[i * 3]) < .3 && y < seatY + .22) hipX = Math.max(hipX, Math.abs(x));
+    // the backs of the knees, which the bend draws down below the seat's line: the seat stops a centimetre short of them
+    if (R0[i * 3 + 1] > -.56 && R0[i * 3 + 1] < -.42 && Math.abs(R0[i * 3]) < .3 && y < seatY + .004) pitZ = Math.min(pitZ, z); });
+  for (const F of fore) F.x /= F.n || 1;
+  // the hair down the back (a braid, a tail, loose hair) lies between the back and the chair's: the back stands behind it too
+  const hairPts = []; for (const m of meshes) if (m.name === 'hair') { const X = posedOf(m); for (let k = 0; k < X.length; k += 3) hairPts.push(X[k], X[k + 1], X[k + 2]); }
+  let hairZ = 1e9; for (let k = 0; k < hairPts.length; k += 3) if (hairPts[k + 1] > seatY && Math.abs(hairPts[k]) < hipX + .05 && hairPts[k + 2] < backZ + .06) hairZ = Math.min(hairZ, hairPts[k + 2]);
+  const bodyBack = backZ; backZ = Math.min(backZ, hairZ);
+  const P = C.post, ground = footY - C.gap - C.board - C.foot, sTop = seatY - C.gap, backTop = sTop + Math.max(.42, (top - sTop) * .62), railX = Math.max(Math.abs(fore[0].x), Math.abs(fore[1].x), hipX + P / 2 + .012), W = railX + P / 2;
+  // and behind whatever else is worn within its height and width, the arms apart (a head-wrap's or a headscarf's knot at the nape)
+  eachPoint(clouds, (x, y, z, i) => { if (y > sTop + .05 && y < backTop + .02 && Math.abs(x) < W && !(i >= 0 && Math.abs(R0[i * 3]) > .3)) backZ = Math.min(backZ, z); });
+  const z0 = backZ - C.gap - C.board, zb0 = z0 - P, zF = Math.min(kneeZ - .085, pitZ - .01), railFs = { [-1]: at('finger3-1.R').z - .018, 1: at('finger3-1.L').z - .018 }, railF = Math.min(railFs[-1], railFs[1]);
+  // each arm's top just under the lowest thing over it, from the back post to the knuckles (the forearm, the elbow, a sleeve)
+  let railY = Math.min(fore[0].y, fore[1].y);
+  eachPoint(clouds, (x, y, z) => { if (y < sTop + .08) return; for (const s of [-1, 1]) if (Math.abs(x - s * railX) < C.rail[0] / 2 + .003 && z > zb0 && z < railFs[s]) railY = Math.min(railY, y); });
+  railY -= C.gap;
+  const wood = new THREE.MeshStandardMaterial({ color: sRGB(...D.chair), roughness: .7 }), dark = new THREE.MeshStandardMaterial({ color: sRGB(...D.chair).multiplyScalar(.7), roughness: .75 }), iron = new THREE.MeshStandardMaterial({ color: sRGB(.16, .15, .14), metalness: .75, roughness: .45 });
+  const ch = new THREE.Group(); ch.name = 'chair'; const boxes = [];
+  const box = (name, x0, x1, y0, y1, zA, zB, m = wood) => { const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, zB - zA), b = new THREE.Mesh(g, m); b.position.set((x0 + x1) / 2, (y0 + y1) / 2, (zA + zB) / 2); b.name = name; ch.add(b); boxes.push({ name, lo: [x0, y0, zA], hi: [x1, y1, zB] }); return b; };
+  // the seat, a board between the arms' posts; its frame under it to the posts
+  box('chairSeat', -W, W, sTop - C.board, sTop, z0, zF);
+  // the back: two posts behind the back's furthest point, from under the seat to the shoulder blades, and three rails between
+  for (const s of [-1, 1]) box('chairPost', s * W - P / 2, s * W + P / 2, ground + C.R * .9, backTop, zb0, z0 + .002);
+  for (const f of [.3, .62, .94]) box('chairBack', -W + P / 2, W - P / 2, sTop + (backTop - sTop) * f - .035, sTop + (backTop - sTop) * f + .035, zb0 + .01, z0, dark);
+  // the push handles, back from the posts' tops
+  for (const s of [-1, 1]) box('chairHandle', s * W - .014, s * W + .014, backTop - .06, backTop - .03, zb0 - .14, zb0, dark);
+  // the arms: a rail under each forearm from the back post to the front post, which stands on the seat's front corner and goes down to its small wheel
+  for (const s of [-1, 1]) { box('chairArm', s * railX - C.rail[0] / 2, s * railX + C.rail[0] / 2, railY - C.rail[1], railY, zb0, railFs[s]);
+    box('chairLeg', s * W - P / 2, s * W + P / 2, ground + 2 * C.r + .01, railY - C.rail[1], railF - P / 2, railF + P / 2); }
+  // the side frames under the seat, the axle's brackets and the axle
+  for (const s of [-1, 1]) box('chairRail', s * W - P / 2, s * W + P / 2, sTop - C.board - .05, sTop - C.board, zb0, railF + P / 2);
+  const wz = z0 + .08, wy = ground + C.R, wx = W + P / 2 + .03;
+  for (const s of [-1, 1]) box('chairBracket', s * W - P / 2, s * W + P / 2, wy - .03, sTop - C.board - .05, wz - .025, wz + .025, dark);
+  { const a = new THREE.Mesh(new THREE.CylinderGeometry(.016, .016, 2 * wx + .05, 12), iron); a.rotation.z = Math.PI / 2; a.position.set(0, wy, wz); a.name = 'chairAxle'; ch.add(a); }
+  // the footboard under the soles, on two hangers from the seat's front rail
+  const fx = Math.max(footX, shinX) + .015, fz0 = Math.min(footZ[0] - .02, zF - .02), fz1 = footZ[1] + .03;
+  box('chairFoot', -fx - .03, fx + .03, footY - C.gap - C.board, footY - C.gap, fz0, fz1);
+  for (const s of [-1, 1]) box('chairHanger', s > 0 ? fx : -fx - .03, s > 0 ? fx + .03 : -fx, footY - C.gap - C.board, sTop - C.board - .05, fz0, fz0 + .03, dark);
+  // a wheel: an iron tyre on a wooden felloe, turned spokes, a hub; in the yz plane at x
+  const wheel = (name, x, y, z, R, n) => { const g = new THREE.Group(); g.name = name;
+    const t = new THREE.Mesh(new THREE.TorusGeometry(R - C.tyre / 2, C.tyre / 2 + .002, 8, 48), iron); t.rotation.y = Math.PI / 2; g.add(t);
+    const f = new THREE.Mesh(new THREE.TorusGeometry(R - C.tyre - .016, .02, 8, 48), wood); f.rotation.y = Math.PI / 2; f.scale.set(1, 1, .9); g.add(f);
+    const h = new THREE.Mesh(new THREE.CylinderGeometry(R * .14, R * .14, .07, 16), dark); h.rotation.z = Math.PI / 2; g.add(h);
+    for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, s = new THREE.Mesh(new THREE.CylinderGeometry(.009, .012, R - C.tyre - .03, 8), wood); s.position.set(0, Math.cos(a) * R * .5, Math.sin(a) * R * .5); s.rotation.x = a; g.add(s); }
+    g.position.set(x, y, z); ch.add(g); return g; };
+  for (const s of [-1, 1]) wheel('chairWheel', s * wx, wy, wz, C.R, C.spokes);
+  const casters = [-1, 1].map(s => wheel('chairCaster', s * W, ground + C.r, railF, C.r, 6));
+  ch.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } }); root.add(ch); root.updateMatrixWorld(true);
+  // what is through it: every worn point inside a board by more than 3 mm, and inside a big wheel's disc
+  const through = {}; let clear = 1;
+  eachPoint(clouds, (x, y, z, i) => { for (const b of boxes) { const d = Math.min(x - b.lo[0], b.hi[0] - x, y - b.lo[1], b.hi[1] - y, z - b.lo[2], b.hi[2] - z); if (d > 0) clear = Math.min(clear, -d); if (d > .003) { through[b.name] = (through[b.name] || 0) + 1; if (i >= 0 && (through.at || []).length < 8) (through.at = through.at || []).push([b.name, +R0[i * 3].toFixed(3), +R0[i * 3 + 1].toFixed(3), +d.toFixed(3)]); } }
+    for (const s of [-1, 1]) if (Math.abs(x - s * wx) < .02 && Math.hypot(y - wy, z - wz) < C.R) through.chairWheel = (through.chairWheel || 0) + 1; });
+  for (let k = 0; k < hairPts.length; k += 3) for (const b of boxes) { const x = hairPts[k], y = hairPts[k + 1], z = hairPts[k + 2]; if (Math.min(x - b.lo[0], b.hi[0] - x, y - b.lo[1], b.hi[1] - y, z - b.lo[2], b.hi[2] - z) > .003) through.hair = (through.hair || 0) + 1; }
+  let tris = 0; ch.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  return { ground, boxes, wheel: { x: wx, y: wy, z: wz, R: C.R }, stats: { seatH: +(sTop - ground).toFixed(3), railH: +(railY - ground).toFixed(3), backH: +(backTop - ground).toFixed(3), width: +(2 * (wx + .02)).toFixed(3), wheelR: C.R,
+    wheelsDown: +Math.abs(wy - C.R - ground).toFixed(4), castersDown: +Math.max(...casters.map(c => Math.abs(c.position.y - C.r - ground))).toFixed(4), seatGap: +(seatY - sTop).toFixed(4), footGap: +(footY - (footY - C.gap)).toFixed(4), foreGap: fore.map(F => +(F.y - railY).toFixed(4)),
+    behind: +(bodyBack - backZ).toFixed(3), railX: +railX.toFixed(3), hipX: +hipX.toFixed(3), clear: +clear.toFixed(4), through, tris } };
+}
+// the crossbow across the knees (Session 1116; OG-065's Garrick, whose long gun the catalogue makes a crossbow): laid flat on both
+// thighs over the knees, the bolt's face up, the butt to the sitter's right and the prod out past the left wheel. It is let down
+// onto what is under it until the nearest point is 2 mm off (the thighs, and only the thighs, bear it), then moved forward a
+// centimetre at a time while any of it is in a board of the chair, a wheel, or a hand on the chair's arm
+const LAP = { gap: .002, back: .07, prodOut: .025 };
+function buildLapCrossbow(G, body, byName, meshes, root, Ch) {
+  root.updateMatrixWorld(true); const D = G.dress, R0 = PACK.rest, clouds = wornClouds(body, meshes, root);
+  const make = CROSSBOWS[D.crossbowMake] ? D.crossbowMake : ({ markman: 'steel', aurennais: 'horn' })[G.people] || 'wood', P = crossbowParts(D, make), K = P.K;
+  const cb = new THREE.Group(); cb.name = 'crossbow'; for (const m of P.parts) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; cb.add(m); }
+  // the knees: the furthest forward of the seat and thighs (as the chair measures them)
+  let kneeZ = -1e9; eachPoint(clouds, (x, y, z, i) => { if (i >= 0 && R0[i * 3 + 1] > -.42 && R0[i * 3 + 1] < .08 && Math.abs(R0[i * 3]) < .3) kneeZ = Math.max(kneeZ, z); });
+  // its frame: the tiller across the lap (its butt toward -x, the right), the prod's span fore and aft, the bolt's face up
+  cb.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1)));
+  const prodX = Ch.wheel.x + .02 + K.bend + LAP.prodOut, v = new THREE.Vector3(), w = new THREE.Vector3(), inv = new THREE.Matrix4();
+  // the nearest worn point under it at a height, and what it is (the thigh's: rest y -.56 to .08, inside the hips)
+  const near = () => { root.updateMatrixWorld(true); inv.copy(cb.matrixWorld).invert(); let d0 = 1, on = null;
+    eachPoint(clouds, (x, y, z, i) => { v.set(x, y, z).applyMatrix4(inv); if (v.y < CB_FRONT - .14 || v.y > CB_BUTT + .01 || Math.abs(v.z) > K.span / 2 + .01 || v.x > .2) return; const d = crossbowDist(K, P.px, v.x, v.y, v.z);
+      if (d < d0) { d0 = d; on = i >= 0 ? (R0[i * 3 + 1] > -.56 && R0[i * 3 + 1] < .08 && Math.abs(R0[i * 3]) < .3 ? 'thigh' : 'body ' + R0[i * 3].toFixed(2) + ',' + R0[i * 3 + 1].toFixed(2)) : 'worn'; } }); return { d: d0, on }; };
+  // what of it is in the chair: its points inside a board (by more than a millimetre) or a big wheel's disc
+  const inChair = () => { root.updateMatrixWorld(true); const hit = {}; cb.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position; for (let k = 0; k < a.count; k++) { w.fromBufferAttribute(a, k).applyMatrix4(m.matrixWorld);
+      for (const b of Ch.boxes) if (Math.min(w.x - b.lo[0], b.hi[0] - w.x, w.y - b.lo[1], b.hi[1] - w.y, w.z - b.lo[2], b.hi[2] - w.z) > -.001) hit[b.name] = (hit[b.name] || 0) + 1;
+      for (const s of [-1, 1]) if (Math.abs(w.x - s * Ch.wheel.x) < .025 && Math.hypot(w.y - Ch.wheel.y, w.z - Ch.wheel.z) < Ch.wheel.R + .005) hit.chairWheel = (hit.chairWheel || 0) + 1; } }); return hit; };
+  let st = null, z = kneeZ - LAP.back, hit = {};
+  root.add(cb); for (let k = 0; k <= 15; k++, z += .01) {
+    // let down: the highest height that is too near and the lowest that is clear, halved twenty times
+    let hi = 2, lo = -1; cb.position.set(prodX + CB_PROD, hi, z); for (let j = 0; j < 20; j++) { const y = (hi + lo) / 2; cb.position.y = y; if (near().d >= LAP.gap) hi = y; else lo = y; }
+    cb.position.y = hi; st = near(); hit = inChair(); if (!Object.keys(hit).length && st.on === 'thigh') break; }
+  (byName.root || byName['spine05'] || root).attach(cb);
+  let tris = 0; cb.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  const end = y => new THREE.Vector3(0, y, 0).applyMatrix4(cb.matrixWorld);
+  return { mesh: cb, stats: { make, span: K.span, gap: +st.d.toFixed(4), on: st.on, through: hit, overKnee: +(kneeZ - z).toFixed(3), prodX: +end(CB_PROD).x.toFixed(3), buttX: +end(CB_BUTT).x.toFixed(3), wheelX: +Ch.wheel.x.toFixed(3),
+    level: +Math.abs(end(CB_BUTT).y - end(CB_PROD).y).toFixed(4), parent: cb.parent.name, tris } };
+}
 function sashBeltStats(meshes, root) {
   const sb = meshes.find(m => m.name === 'sashBelt'); if (!sb) return null; const R0 = PACK.rest, lo = .085, hi = .225;
   const pts = (m, f) => { const P = posedOf(m), I = m.geometry.index.array, out = []; for (let t = 0; t < I.length; t += 3) { const a = I[t], b = I[t + 1], c = I[t + 2]; if (!f(a, b, c)) continue;
@@ -2433,6 +2553,11 @@ export function makePerson(G, o = {}) {
   // colour, with sleeves that widen to the cuff and a fuller hem; a rope cord takes the belt's place, nothing under it shows
   if (G.dress?.robe) { const R = G.dress; G = { ...G, dress: { ...R, tunic: R.robe, skirt: 'long', skirtColor: R.robe, trousers: null, belt: null, sashBelt: null, cuffs: null, cord: R.cord || [.62, .55, .42] } }; }
   // mail (Session 897) is worn over a padded coat, the tunic, and belted over: a man or woman in mail without either gets them
+  // seated in a wheeled chair (Session 1106) nothing is worn or carried that hangs to the ground or is built round a standing body: no
+  // cloak, tabard, sash or shoulder wrap, apron, long skirt or mail skirt's hang over the lap, nothing in the fist and no shield; a long skirt gives way to trousers
+  // (a crossbow stays: it is laid across the knees, Session 1116)
+  if (G.dress?.chair) { const C = G.dress; G = { ...G, dress: { ...C, cloak: null, hood: null, tabard: null, sash: null, shoulderWrap: null, apron: null, bib: null, shield: null, spear: null, staff: null, basket: null, wrapTail: null,
+    ...(C.skirt === 'long' || C.robe ? { skirt: null, robe: null, trousers: C.trousers || C.skirtColor || C.robe || [.3, .26, .2] } : {}) } }; }
   if (G.dress?.mail && !G.dress.robe) { const M = G.dress; G = { ...G, dress: { ...M, tunic: M.tunic || [.6, .54, .42], belt: M.belt || [.24, .16, .1] } }; }
   const P = morph(G), { ix } = PACK, rest0 = PACK.rest; RND = seeded(G.seed ?? 'person'); let hairStats = null, hoodStats = null, browStats = null;
   // the feet on the ground
@@ -2467,11 +2592,11 @@ export function makePerson(G, o = {}) {
   // never comes through it, and seen from both sides, since its open cuff shows the inside
   const sleeve = x => D.robe ? .03 * Math.max(0, Math.min(1, (Math.abs(x) - .24) / .16)) ** 1.5 : 0;
   const tunicPush = (x, y) => .013 + sleeve(x) + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0);
-  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}), ...(D.dots ? { dots: sRGB(...D.dots) } : {}) }), tunicPush);
+  if (D.tunic) push('tunic', PACK.R.tunic, clothMat(sRGB(...D.tunic), 'wool', { cut: [D.robe ? .145 : D.skirt ? .12 : -.02, .612, .4, .002], ...(D.robe ? { side: THREE.DoubleSide, inner: .55 } : {}), ...(D.dots ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle === 'powder' } : {}) }), tunicPush);
   // a laced bodice over the chemise (Session 888; OG-110's green laced gown, OG-109's Gatelands bodices): 8 mm over the
   // tunic, ending under the belt (rest .14), open down the front between the eyelets, so the chemise shows in the gap; the lacing is built after the pose
   if (D.bodice) push('bodice', PACK.R.bodice, clothMat(sRGB(...D.bodice), 'wool', { cut: [.14, .62, .19, .002], hole: '(vB.z > .03 && abs(vB.x) < .0085 && vB.y > .2 && vB.y < .5) || (vB.y > .485 && (abs(vB.x) < .068 || abs(vB.x) > .148))', side: THREE.DoubleSide, inner: .5 }), (x, y) => .021 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - y) / .2)) * (1 - .8 * waistIn(D, y)) : 0));
-  if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01], ...(D.dots && (!D.skirtColor || hex(D.skirtColor) === hex(D.tunic)) ? { dots: sRGB(...D.dots) } : {}) }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
+  if (D.skirt) push('skirt', D.skirt === 'long' ? PACK.R.skirtLong : PACK.R.skirtShort, clothMat(sRGB(...(D.skirtColor || D.tunic)), 'wool', { side: THREE.DoubleSide, cut: [D.skirt === 'long' ? -2 : -.2, .17, 9, .01], ...(D.dots && (!D.skirtColor || hex(D.skirtColor) === hex(D.tunic)) ? { dots: sRGB(...D.dots), dotsPowder: D.dotsStyle === 'powder' } : {}) }), (x, y) => .012 + .012 * Math.max(0, Math.min(1, (.14 - y) / .3)) + (D.robe ? .035 * Math.max(0, Math.min(1, (-.35 - y) / .45)) ** 1.2 : 0));
   // the mail hauberk (Session 897; OG-019's Iron tier, mail to the knee under a belt): its body 9 mm over the tunic, its sleeves
   // to the elbow (cut at rest |x| .3), its neck at the tunic's; its skirt off the skirt shell, 1.2 cm over a skirt's, from under the
   // belt to above the knee. Both are shells skinned as the body is, so no arm or leg comes through them; the belt rides 8 mm out on the mail
@@ -2542,12 +2667,30 @@ export function makePerson(G, o = {}) {
   // bones, and the neck lifted back by most of it so the face still looks ahead
   if (pose.stoop) { for (const n of ['spine02', 'spine01']) byName[n].quaternion.multiply(q(.12 * pose.stoop, 0, 0)); byName['neck01'].quaternion.multiply(q(-.18 * pose.stoop, 0, 0)); }
   for (const side of ['L', 'R']) { const sg = side === 'L' ? -1 : 1; for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${side}`]; if (b) b.quaternion.copy(q(0, 0, sg * (.25 + .12 * j))); } }
+  // seated (Session 1106; OG-065's Garrick): the thighs swung forward to level and spread a little, the shins sloped forward to the
+  // footboard, the feet level; the forearms laid forward along the chair's arms, the upper arms lifted out from the side, three
+  // hundredths of a radian at a time, until each forearm lies outside the hips by the arm post's width (the chair is built to them after)
+  let seatArms = 0; if (D.chair) { const at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
+    for (const s of ['L', 'R']) { const sg = s === 'L' ? 1 : -1; byName['upperleg01.' + s].quaternion.copy(q(-SEAT.hip, 0, sg * SEAT.spread)); byName['lowerleg01.' + s].quaternion.copy(q(SEAT.knee, 0, 0)); byName['foot.' + s].quaternion.copy(q(SEAT.hip - SEAT.knee, 0, 0)); }
+    const fore = () => { for (const s of ['L', 'R']) { const lb = byName['lowerarm01.' + s], sg = s === 'L' ? 1 : -1; root.updateMatrixWorld(true); lb.quaternion.copy(q(pose.elbow, 0, 0)); root.updateMatrixWorld(true);
+      const wq = lb.getWorldQuaternion(new THREE.Quaternion()), Q = new THREE.Quaternion().setFromUnitVectors(at('wrist.' + s).sub(at('lowerarm01.' + s)).normalize(), new THREE.Vector3(sg * SEAT.foreOut, SEAT.foreDown, 1).normalize()).multiply(wq);
+      lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
+      // the palm turned down onto the arm's end by the forearm's twist bone: the knuckles' line level, the first finger's toward the body's middle
+      const tw = byName['lowerarm02.' + s], ax = at('wrist.' + s).sub(at('lowerarm01.' + s)).normalize(), flat = u => u.addScaledVector(ax, -u.dot(ax)).normalize(), kn = flat(at('finger2-1.' + s).sub(at('finger5-1.' + s))), tg = flat(new THREE.Vector3(-sg, 0, 0));
+      const tq = tw.getWorldQuaternion(new THREE.Quaternion()), R = new THREE.Quaternion().setFromAxisAngle(ax, Math.atan2(kn.clone().cross(tg).dot(ax), kn.dot(tg)));
+      tw.quaternion.copy(tw.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(R.multiply(tq))); root.updateMatrixWorld(true);
+      // the fingers bent over the arm's front end, about the knuckles' line
+      const hinge = at('finger2-1.' + s).sub(at('finger5-1.' + s)).normalize().applyQuaternion(byName['metacarpal2.' + s].getWorldQuaternion(new THREE.Quaternion()).invert());
+      for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.${s}`]; if (b) b.quaternion.setFromAxisAngle(hinge, -sg * SEAT.curl[j - 1]); } } root.updateMatrixWorld(true); };
+    for (let k = 0; k <= 15; k++) { fore(); const PP = posedBody(body); let hx = 0; for (const i of new Set(PACK.G['body'])) { const rx = Math.abs(PACK.rest[i * 3]), ry = PACK.rest[i * 3 + 1]; if (ry > -.42 && ry < .08 && rx < .3) hx = Math.max(hx, Math.abs(PP[i * 3])); }
+      const wx = Math.min(Math.abs(at('wrist.L').x), Math.abs(at('wrist.R').x), Math.abs(at('lowerarm01.L').x), Math.abs(at('lowerarm01.R').x)); if (wx > hx + .045 || k === 15) break; seatArms += .03;
+      byName['upperarm01.L'].quaternion.copy(plumb.clone().multiply(q(0, 0, -(pose.arm - seatArms)))); byName['upperarm01.R'].quaternion.copy(plumb.clone().multiply(q(0, 0, pose.arm - seatArms))); } }
   // a long skirt (and so a robe) stands out at the thigh, where the hands hang: the arms are lifted out from the side, three
   // hundredths of a radian at a time, until no point of either hand is inside it (Session 887; the genome's pose is unchanged)
   // Not under a full cloak: it hangs over the hands and is built round the arms where they are, so lifting them only lumps it
   // A mail skirt stands out further still, and is lifted clear of the same way (Session 897)
   // A short skirt too (Session 1011): the hands hang beside its lower half, and fingertips showed through its front at the thigh
-  let lift = 0, skirtHands = null; const skM = !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
+  let lift = 0, skirtHands = null; const skM = !D.chair && !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
   const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV(skM) : skM && D.skirt === 'short' ? PACK.skirtShortV || (PACK.skirtShortV = [...new Set(PACK.R.skirtShort)].filter(i => PACK.rest[i * 3 + 1] > -.2)) : undefined;
   if (skM) for (let k = 0; k <= 10; k++) { root.updateMatrixWorld(true); skirtHands = handsInSkirt(body, skM, undefined, skV, skM.name === 'mailSkirt' && D.scales ? 24 : 0); if (!skirtHands.bad || k === 10) break; lift += .03;
     byName['upperarm01.L'].quaternion.copy(plumb.clone().multiply(q(0, 0, -(pose.arm - lift)))); byName['upperarm01.R'].quaternion.copy(plumb.clone().multiply(q(0, 0, pose.arm - lift))); }
@@ -2556,7 +2699,7 @@ export function makePerson(G, o = {}) {
   // itself so the knuckles stand one over another (the first finger's on top) and the shaft can run up and down through the fist;
   // the shaft is laid in the palm and the four fingers close on it (fistGrip). (The elbow's own x is not its hinge: 1.45 rad
   // about it swung the forearm round a cone, backward)
-  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow || D.staff) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
+  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow && !D.chair || D.staff) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
     const setWorld = Q => lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
     setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), (D.staff && !D.spear && !D.crossbow ? STAFF_ARM : new THREE.Vector3(-.12, -.2, 1)).clone().normalize()).multiply(wq())); root.updateMatrixWorld(true);
     const ax = at('wrist.R').sub(at('lowerarm01.R')).normalize(), flat = v => v.addScaledVector(ax, -v.dot(ax)).normalize(), kn = flat(at('finger2-1.R').sub(at('finger5-1.R'))), up = flat(new THREE.Vector3(0, 1, 0));
@@ -2620,13 +2763,17 @@ export function makePerson(G, o = {}) {
   else if (D.shield) shieldStats = buildShieldBack(G, body, byName, meshes, root, heads).stats;
   let spearStats = null; if (D.spear) spearStats = { ...buildSpear(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a crossbow in the same fist (Session 941), when it holds no spear
-  let crossbowStats = null; if (D.crossbow && !D.spear) crossbowStats = { ...buildCrossbow(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
+  let crossbowStats = null; if (D.crossbow && !D.spear && !D.chair) crossbowStats = { ...buildCrossbow(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a walking staff in the same fist (Session 1085), when it holds no spear or crossbow
   let staffStats = null; if (D.staff && !D.spear && !D.crossbow) staffStats = { ...buildStaff(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a basket in the same fist (Session 1033), when it holds no spear, crossbow or staff; last, as it is lifted clear of all the rest
   let basketStats = null; if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
+  // the wheeled chair (Session 1106), last, built to the seated body and everything on it
+  let chairSt = null; if (D.chair) { const Ch = buildChair(G, body, byName, meshes, root); chairSt = { ...Ch.stats, armLift: +seatArms.toFixed(2), ground: Ch.ground };
+    // and a crossbow across the knees (Session 1116), laid on them after the chair, clear of it
+    if (D.crossbow) chairSt.lap = buildLapCrossbow(G, body, byName, meshes, root, Ch).stats; }
   const legWrapSt = D.legWraps ? legWrapStats(body, meshes) : null;
-  root.position.y = -(sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, wrapTail: tailStats, earrings: earStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, legWraps: legWrapSt, chair: chairSt };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -2649,7 +2796,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'drift' };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
