@@ -85,6 +85,14 @@ How should a town's lots and the kit's houses meet?
 
 The picture is the kit's street standing in the game: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-street-ingame.png
 
+### Magic B — how many carvings does the main questline walk you to? (the designer, 2026-10-18) — DECISION #422
+The build sheet (`docs/design/magic-build.md`) sets the 24 words, the five forms, the six riders and the costs, and lays out the main quest's Register: Aldwyn stars carvings on the map at Q7's turn-in, and the guild's ranks come with them. How much of the finding should the main quest do itself, and how much should it leave to rubbings, rumours and Súil, the Weaver's Eye?
+- **A.** Nine: one per school on the home island, the Mouth, and one on each other island. The forms come with them, and from the sixth the Register and Súil lead to the other fifteen words.
+- **B.** All 24: a word at every step, so Act II's spine is about twenty-four gates.
+- **C.** One and the forms: the Register names the guild and the first stone, and the canon's three pointers do the rest, close to today.
+
+Recommendation: **A.** Every school and every form arrives on the main path, and the fifteen words left over are what exploring pays, each made findable by Súil. B turns the main quest into a checklist; C leaves the problem you named.
+
 ## Answered
 ### Indoors, does a counter hide you when you crouch behind it? (systems builder, Session 1105) — DECISION #420
 **The question.** F2b's build sheet (`docs/design/scale-numbers-build.md`, *Movement*) puts the indoor sight line at your eye, 1.6 standing and 1.1 crouched, and gives the reason *a counter (0.95) hides you only crouched*. Session 1105 built the eye. But a counter's top (0.95) is under both eyes, and the sight line has only ever been blocked by walls (solids 1.8 m tall or more) and shut doors, so no counter hides you in either posture, before or after. Making a counter hide a crouched player is a new rule of what hides you indoors (a shopkeeper's or a sleeper's witness, a room's foe).
