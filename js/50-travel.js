@@ -289,7 +289,7 @@ function _hasBuff(type){return ACTIVE_BUFFS.some(b=>b.type===type);}
 function _wardMult(){return Math.min(_buffMult('dmgReduce',1),_buffMult('warding',1))*_buffMult('physResist',1)*(_hasBuff('dmgBurst')?CAOR_RISK:1);}
 // S328 (Michael's A on #58) — Caor Dubh's risk: while its fury lasts you take a fifth more from everything. Fortune's
 // crit: 2% a point that a melee blow or an arrow lands for half again, on top of any stagger, riposte or backstab.
-const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.02,FORTUNE_CRIT_MULT=1.5;
+const CAOR_RISK=1.2,FORTUNE_CRIT_PCT=.005,FORTUNE_CRIT_MULT=1.5; /* S953 — Fortune's crit 0.5% a point (was 2%), the attributes at ≤1% */
 const RENEWAL_RATE=.5;
 function _fortuneCrit(e){const c=Math.min(.5,(ATTRS.fortune||0)*FORTUNE_CRIT_PCT);return c>0&&(typeof foeRand==='function'?foeRand(e):Math.random())<c?FORTUNE_CRIT_MULT:1;} // S480 — on the struck foe's stream (co-op rules)
 // S320 — the same ward on every other blow, shot and trap that reaches you (at least 1 when something landed)
@@ -302,14 +302,15 @@ const BEAST_TYPES=new Set(['Wolf','Dire Wolf','Snow Wolf','Ash Hound','Spider','
 function _blockBoost(r){return Math.min(.9,r*_buffMult('blockBoost',1));}
 // S322 — the rest of the herbs, the same in the open world and underground: Ferrous Guard (`defBoost`) counts as armour
 // against every blow and shot; Mist Fern (`staminaCost`) lightens every swing, bash, roll and draw, not only the sprint
-function _armour(){return Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)+(_hasBuff('defBoost')?(_activeBuffs('defBoost')[0].amount||0):0);}
+// S1047 — what you wear counts × the Armour skill's 0.775 (untrained) to 1.25 (at 100); a spell's ward is added whole
+function _armour(){return Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0)*armourSkillMult()+(_hasBuff('defBoost')?(_activeBuffs('defBoost')[0].amount||0):0);}
 function _stamCost(c){return c*_buffMult('staminaCost',1);}
 // S325 — max stamina without what an active Stonecress lends (the save keeps this; buffs don't survive a load)
 function _baseMaxStamina(){return maxStamina-ACTIVE_BUFFS.filter(b=>b.type==='maxStamBuff').reduce((a,b)=>a+(b._stamAdd||0),0);}
 // S323 — what the level-up card promises: Resolve +1% magic resist a point (the Faolchú's fire, the dungeon's bolts),
 // Finesse -5% sprint cost a point (to a quarter)
 function _magicResist(){return Math.max(.5,1-(ATTRS.resolve||0)*.01);}
-function _finesseSprint(){return Math.max(.25,1-attrEff('finesse')*.05);}
+function _finesseSprint(){return Math.max(.25,1-attrEff('finesse')*.01);} /* S953 — 1% a Finesse point (was 5%): Athletics carries the sprint's cost */
 // S341 — two buffs of one kind don't stack, and neither may cut the other short: the stronger is the one that counts,
 // and a weaker one that outlasts it waits underneath (`_under`, counting down all the while) and holds again when the
 // stronger ends. So Firemoss eaten under the Boon of the Arm no longer ends the boon, and a Shield cast under the Boon
@@ -360,7 +361,7 @@ function harvestHerb(h){
   if(typeof WORLD!=='undefined')WORLD.guild.onHarvest(h); // v80 S12
   const item={...h.def.item,qty:1,_typeKey:h.type};
   if(!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return;}
-  h.harvested=true;h.gl.intensity=0;
+  h.harvested=true;h.gl.intensity=0;skillUse('alchemy',1,h); /* S941 — a pick is an Alchemy use */
   {const u=h.g.userData;if(u&&u.picked){u.whole.visible=false;u.picked.visible=true;}else h.g.visible=false;} // S217 — a bush picked in the old zones stays, bare, as in the world
   if(h.def.respawn!=null)h.respawnT=h.def.respawn;
   bagAdd(item);
@@ -845,6 +846,8 @@ function _markZoneSpawned(zoneId){
 function _canWait(){
   // Block in dungeons.
   if(lid !== 'overworld') return {ok:false, reason:'You cannot pass time in a dungeon.'};
+  // S1112 — on watch on the spire (the draft's §4 line); asked before the enemies, which stand on the roof with you
+  if(typeof WORLD!=='undefined'&&WORLD.onWatch&&WORLD.onWatch()) return {ok:false, reason:'Not on watch.'};
   // Block during combat — any non-dead enemy aggroed within 20m.
   const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && Math.hypot(px-e.x,pz-e.z)<20);
   if(inCombat) return {ok:false, reason:'You cannot pass time while enemies are near.'};
@@ -1024,6 +1027,7 @@ function respawnZoneEnemies(zoneId){
   // Resolve the appropriate sol array (collision/static-occluder list).
   const sol = z.sol || cfg.sol || [];
   filtered.forEach(group=>{
+    if(!kindAllowed(group.name, zoneTier(zoneId))) return; /* S1059 — the kind's least tier, not your level (enemies by place) */
     const basePos = group.pos || [];
     const targetCount = (typeof _scaleSpawnCount === 'function') ? _scaleSpawnCount(basePos.length) : basePos.length;
     for(let i=0; i<targetCount; i++){
@@ -1037,7 +1041,7 @@ function respawnZoneEnemies(zoneId){
         ez = bz + (pr()*2-1)*4;
       }
       if(typeof buildZoneEnemy === 'function'){
-        const e = keyFoe(buildZoneEnemy(zScene, sol, ex, ez, group.name, pickVariant(group.name, level, 'normal', seededRng('variant', fid))), fid);
+        const e = keyFoe(buildZoneEnemy(zScene, sol, ex, ez, group.name, pickVariant(group.name, tierLevel(zoneTier(zoneId)), 'normal', seededRng('variant', fid)), {tier:zoneTier(zoneId)}), fid); /* S1034 — the zone's tier (#373 A) */
         if(group.respawn === false && e) e._noRespawn = true;
         z.enemies.push(e);
       }
@@ -1110,7 +1114,7 @@ function interact(){
     if(nearPortal){goToDungeon(nearPortal);return;}
     // House doors — Ashenmoor, Hearthwick, or Ironhaven
     if(activeZoneId==='overworld'){
-      const nearHouse=HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+      const nearHouse=HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH);
       if(nearHouse){
         // v61al: destroyed buildings have no interior to enter. Emit a brief
         // flavor line and return. Damaged-but-standing buildings pass through
@@ -1122,10 +1126,10 @@ function interact(){
         goToInterior(nearHouse);return;
       }
     } else if(activeZoneId==='hearthwick'){
-      const nearHWHouse=HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+      const nearHWHouse=HEARTHWICK_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH);
       if(nearHWHouse){goToInterior(nearHWHouse);return;}
     } else if(activeZoneId==='ironhaven'){
-      const nearIHHouse=IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<1.5);
+      const nearIHHouse=IRONHAVEN_HOUSES.find(h=>Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH);
       if(nearIHHouse){
         // v61d6 — Safehouse is locked until Caldric grants it. Pre-grant,
         // the door responds with a fixed line in the player's voice rather
@@ -1146,7 +1150,7 @@ function interact(){
       // gets a near-house find without per-zone hardcoded branches.
       const zHouses=(ZONES[activeZoneId]&&ZONES[activeZoneId].houses)||null;
       if(zHouses){
-        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<1.5); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
+        const nearZH=zHouses.find(h=>!h.byAim&&Math.hypot(px-h.doorX,pz-h.doorZ)<TOUCH); /* S614 — the ship's hatch is entered by the crosshair (WORLD.shipInteract) */
         if(nearZH){
           // S155 — a shop after hours or a home at night is locked: pick it (S142's lock), or come back
           if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearZH)&&!WORLD.doorPicked(nearZH)){tryLockpick(WORLD.doorLockFor(nearZH));return;}
@@ -1159,9 +1163,9 @@ function interact(){
     if(typeof bladeStoneNear==='function'&&bladeStoneNear()){bladeStoneUse();return;} /* S802 — the Gate-Blade's stone */
     if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipInteract())return; // v80 C — the helm
     // v80 S9 — camp bedrolls in the open world
-    if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<1.5);if(bd){openSleepUI();return;}}
+    if(activeZoneId==='world'&&ZONES.world&&ZONES.world.beds){const bd=ZONES.world.beds.find(b=>Math.hypot(px-b.x,pz-b.z)<TOUCH);if(bd){openSleepUI();return;}}
     // Herb harvest — all zones
-    const nearHerb=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<1.1);
+    const nearHerb=activeHerbs().find(h=>!h.harvested&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
@@ -1253,7 +1257,7 @@ function interact(){
         });
         return;
       }
-      const nearBoard=OW_NOTICE_BOARDS.find(b=>b.zone===activeZoneId&&Math.hypot(px-b.x,pz-b.z)<1.4);
+      const nearBoard=OW_NOTICE_BOARDS.find(b=>b.zone===activeZoneId&&Math.hypot(px-b.x,pz-b.z)<TOUCH);
       if(nearBoard){openNoticeBoard(nearBoard);return;}
     }
     talkNPC();return;
@@ -1269,6 +1273,7 @@ function interact(){
       if(typeof WORLD!=='undefined'&&WORLD.hatchInteract())return; // v80 — cellar hatch
       if(typeof WORLD!=='undefined'&&WORLD.boxInteract())return; // S155 — the strongbox, the home's chest
       if(typeof WORLD!=='undefined'&&WORLD.lootInteract())return; // v80 — tower chest
+      if(typeof WORLD!=='undefined'&&WORLD.shelfInteract())return; // S1121 — a book from a shelf
       if(typeof WORLD!=='undefined'&&WORLD.guestInteract())return; // v80 — Cill an Aoi
       const bd=intBedTarget(); /* S645 — in range and under the crosshair */
       // S650 — a bed under the crosshair that offers rest wins over a door that is only near (the door is still found by nearness); the prompt in 90-main.js reads the same test
@@ -1288,7 +1293,7 @@ function interact(){
       openStash();
       return;
     }
-    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<1.4 && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
+    if(intBedPos && !INT_BEDS.length && Math.hypot(px-intBedPos.x,pz-intBedPos.z)<TOUCH && bedAimed(intBedPos)){ // v80 S11 — generated rooms use INT_BEDS (height-aware)
       openSleepUI();
       return;
     }
@@ -1313,6 +1318,7 @@ function interact(){
     return;
   }
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
+  if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
   // Sigil touch — floor 2 only, closer range than most interactables
   const nearSig=SIGILS.find(s=>s.floor===currentFloor && Math.hypot(px-s.x,pz-s.z)<1.5);
   if(nearSig){touchSigil(nearSig);return;}

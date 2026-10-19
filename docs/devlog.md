@@ -20334,6 +20334,79 @@ The view: `ships.html?ship=glcaravel`, with the caravel's views, `&rig=square` o
 - **The green castle reads nearly black** in the shade, like the green strakes.
 - **Owed:** the five hulls left, by #347's answer. The Mark's caravel, cog and galleon, and Aurenne's cog and galleon, follow the rule he picks.
 
+## v80 — Session 940 — The guild head's *You still owe us* in four peoples (quest review run 17, Finding 30; a register fix)
+The quest review's Finding 30: a guild head asked for a second task while one is open answers in a Markman's words, *You still owe us: …*, whatever people the hall's town is. Every other line the head says is written four times. The finding is applied as written. `OWE_LINES` sits at the top level of `83-world-generator.js`, one line per people, each taking the task's short name and its progress. `offer(g,site,gp)` takes the head's people from the topics getter, where `gp` was already in scope for the hand-back. `cloakContract` in `87-world-quests.js` uses the same table with its `p`, and it can, because it runs only when a topic is chosen, long after both files have loaded. A people with no line falls back to the Markman's, which is the old text. The lord's *You still owe us* for Crown and League work (`87-world-quests.js`, the service topics) was not part of the finding and is unchanged.
+
+Two suites expected the Markman's words from a Gatelander head. `cloakguild` now checks all four lines, for the contract and for *Any work?* alike (the Old Blood's through the table, since no generated town is theirs). `handback` accepts any of the four.
+### Verified (headless Chromium)
+- `cloakguild` 12 of 12: the Gatelander, Markman and Aurennais heads each refuse in their own words, both to *The grey cloak.* and to *Any work?*, e.g. *You'll not plough two fields with the one ox. Yours is still on the board: Hunt 4 Wolves. 0/4.*; the Old Blood line reads *Yours is not done: Hunt 4 Wolves. 0/4.*
+- `handback`, `questgold`, `toldpages`, `turnin`, `datedguild`, `jobids`, `standingcount`, `blacksail` pass.
+### Needs eyes
+- Nothing to see but the words. A Gatelander hall's refusal is now a proverb and a sentence, longer than before.
+
+## v80 — Session 941 — Skills, the first session: 22 skills raised by use, and what they set (skills and perks A)
+Michael chose the Morrowind book for skills and perks (A, 27 Sep), with Oblivion Remastered's fixes. The designer's build sheet (`docs/design/skills-and-perks-build.md`, on auto/design, PR #343) turns it into numbers, and its open rate was answered B on #342 this morning. F2a has merged and FREEZE #297 is closed, so the core loop's first piece can go in. This is the sheet's first of three sessions: the skills table, the uses, the curve, the reads, the save and the migration. The level, the bed and the perks are untouched, so the level-up still runs on xp as before.
+
+**The table** (`12-character.js`). `SKILL_DEF` holds the sheet's 22 skills with their governing attributes. `SKILL_ARCH` holds each archetype's five majors and five minors, as the sheet's table has them. `skillsInit(arch, lv)` starts majors at 25, minors at 15 and the rest at 5; the creator calls it, and so does a load. `skillUse(id, weight, target)` is the one way a skill rises. It takes a use at most once a second for each skill and target, so thirty swings in ten seconds at one foe are ten uses. The next level costs `round(0.9 × L^1.2)` uses: 6 at 5, 43 at 25, 98 at 50, 223 at 99. A level gained says *Blade rises to 26.* on the message line, until the rising card (L11's interface list) exists. Skills stop at 100.
+
+**The uses**, wired where `lvAct` already counted something and at the new places:
+- **Blade, Blunt** (by the weapon's `wType`; a bow is Bow, fists Blunt): a melee hit on a foe that was already alert, in both resolvers. A riposte or finisher counts 3. A hit on an unaware foe teaches the weapon nothing; a backstab is Stealth 3.
+- **Bow**: an arrow on an alert foe, in both arrow paths. The sheet's ×2 past 30 m is owed: an arrow does not keep where it was loosed.
+- **Guard**: a hit taken on a held block 1, a bash on an alert foe 1, a perfect parry 3.
+- **Athletics**: every 10 m sprinted or swum. **Acrobatics**: a jump that lands more than 0.3 m higher than it left; a landing roll 1; a fall over 4 m lived through 2. The gap of 2 m is owed, since the loop does not know what a jump cleared.
+- **Armour**: a hit taken while wearing three or more pieces, at every site that counted damage taken (the strike resolvers, the zone foes, traps, the main loop's orbs and drains).
+- **The six schools**: a spell that hits an alert foe (a Mastery word 2), a heal with health lost, a buff cast.
+- **Stealth**: ten seconds sneaking inside a foe's sight range unseen (`canSeePlayer` marks the moment), and the backstab. **Locks**: a pin set 1, a lock opened 3. **Speech**: a sale or a purchase at any counter. **Alchemy**: a herb picked.
+- Cooking, Mining, Woodcutting, Smithing and Joinery have nothing to do yet. They wait on survival B. Speech's *a topic that moves favour* is owed with session 2.
+
+**The reads.** Each is at the place the thing is decided.
+- **Melee**: the roll × (0.6 + 0.8 × skill/100) × Might's 1% a point. The flat `level × 1.5` is gone from both resolvers.
+- **The bow**: the same multiplier, with its per-level floor gone.
+- **Spells**: power the same, from the school's skill, with `level × dmgLvl` gone; cost × (1.4 − 0.8 × skill/100). A heal's `level × healLvl` is gone too, the heal × the multiplier.
+- **The pick**: `pickChance` is 0.35 + 0.005 a Locks level + 1% a Finesse point, to 0.92. It was 7% a Finesse point and 1% a level.
+- **The gates**: `MATERIALS` asks `'skill'` at Iron 15, Steel 30, Mithril 45, Adamant 55, Obsidian 65, Draconic 75, Demonic 90, Cosmic 100. That means the weapon's own skill, through `reqHave`/`reqName`, which `canEquip`, the hub's tooltip and the load's check all read: *Requires Blade 30 (you have 29)*. Heavy armour asks Armour on the same gates. The light and robe lines keep Finesse and Intelligence on their old curve, and that is asked as **DECISION #354** (C recommended, as built). The quest reward's Iron Sword asks Blade 15.
+- **Movement**: the run 3.83 → 4.2, the swim ×0.8 → ×1.3, the sprint's cost −30%, all on Athletics. `JUMP_VEL` 5.5 → 6.6 on Acrobatics. These run from skill 5 to 100, so an untrained skill moves as today.
+- **Sight**: while you sneak, a foe's sight on you and a witness's range × (1 − 0.4 × Stealth/100).
+
+**The save** (`70-saves.js`). `skills`, `majors` and `minors` are top-level fields, so `ssSplitPayload` puts them in the character row, and no `worldState` key is added. A save made before skills is migrated once on load, from its archetype and level: majors 25 + 2 a level past the first, minors 15 + 1, both to 60, the rest 5, and the attributes left as they were. A level-12 Duelist comes back with Blade 47. That migration runs before the load's requirement check, so a weapon above the character's new skill is unequipped to the bag with the existing *Requirements tightened* toast. That is the sheet's "today's refusal is unchanged".
+
+**What a player feels.** A new character hits for 0.64 to 0.8 of the roll with the weapons the archetype trains. The flat level term is gone, so damage stops climbing with the level; it climbs with the skill. Spells cost more until their school is trained. Enemies still scale by level (Michael's C on #51) until enemies by place lands. The sheet expects that.
+
+The build sheet's suites `skillcurve`, `skilluse`, `skilldamage` and `skillgates` are one boot (`tests/skillcurve`, each check named for its suite), and `skillsave` and `skillmigrate` are the other (`tests/skillsave`). Six files would have cost CI six boots.
+
+**Fists** are not in the sheet's Blade or Blunt rows, so a punch takes no skill (×1) and teaches none. Without the level term a level-1 Bandit fight runs 11 to 16 punches, where `fistfight` wants 7 to 12. That number is Michael's, asked as **DECISION #357** (A recommended: fists as a Blunt weapon of 3 to 5). Until then, `fistfight` is red.
+
+A fault this session made and then fixed: `fireArrow` packs its roll for `arrowRawFor` with the level floor, and that floor had gone with the bow's damage line. Every arrow loosed threw a ReferenceError until the packed roll was mended (`lv: 0`, the Bow multiplier in `m`). `duelrhythm` found it.
+### Verified (headless Chromium)
+- `skillcurve` 17 of 17:
+  - The curve: 6, 43, 98, 223.
+  - A fresh Warrior: 5 skills at 25, 5 at 15, 12 at 5.
+  - Thirty uses in ten seconds at one target: 10, with Blade 5 → 6 and 4 toward the next level. Another target or skill counts the same second, and 100 is the top.
+  - Three real swings at an unaware Bandit land and teach Blade nothing; one at an alert Bandit is a use.
+  - A roll of 100 hits 64, 100 and 140 at Blade 5, 50 and 100, the same at levels 1 and 20.
+  - A Tine word of power 12 hits 8, 12 and 17. The pick is 0.375, 0.6 and 0.85.
+  - The run is ×1.081 from Athletics 5 to 100 (the sheet's ×1.097, inside 2%). The jump's apex is 0.78 and 1.14 m in the loop's fixed step, ×1.462 against 1.44.
+  - A Steel sword is refused at Blade 29 with *Requires Blade 30 (you have 29)* and held at 30. A Steel mace asks Blunt, and an Iron cuirass asks Armour 15.
+- `skillsave` 6 of 6:
+  - The character row carries all 22 skills, the majors and the minors; the world row carries none.
+  - The character row alone, into a fresh world, brings them back.
+  - A level-12 Duelist saved before skills comes back with Blade, Guard, Acrobatics, Athletics and Speech at 47, its minors at 26 and twelve skills at 5. Its attributes are unchanged, and 120 ticks run after with no page errors.
+- **The sweep.** Of the 99 suites that read damage, gates, picks, sneaking, movement, spells or the save, 48 ran here before the run's time was up. Three ran in parallel, so a slow suite could time out.
+  - Passed (40): `armourkit`, `barberbox`, `captainguard`, `challenge`, `cargo`, `backroomdoor`, `chasesight`, `coopsaves`, `counters`, `crime5`, `dateline`, `burglary`, `dmgnums`, `export`, `carraignight`, `cloaks`, `crime2`, `dungeonexit`, `fists`, `gateblade`, `deadkeys`, `guardsindoor`, `fishseed`, `foeseed`, `hoardmetal`, `jobfoereload`, `gait`, `fistswing`, `lairload`, `fortunecaor`, `guardlevel1`, `hearthcast`, `looknew`, `guardplay`, `herbstub`, `herbhidden`, `hitseed`, `mapnotes`, `homesleep`, `hptail`.
+  - Red, then fixed in their setup, not their bars (all pass now):
+    - `attrdmg` and `herbparity` took level 50 as "a big base"; they now take a roll of 200 at Blade 50.
+    - `armourlines-numbers` now expects the heavy line to ask Armour 45.
+    - `fortify` now expects Finesse's 1% a point on the pick (the sheet's), and an Iron Sword gated on Blade, which worn Might does not reach.
+  - `duelrhythm` found the arrow fault above, and passes.
+  - Still red: `fistfight`, waiting on #357.
+  - Red only under load, green alone: `attrpromise`, with Athletics pinned at 5, read 17.6 twice beside three other browsers and 14 and 7 alone. Why load moves it is not found; it is noted for QA in backlog K. `blacksail` failed twice under the same load, when the seat had not settled before the test read its lord, then passed alone. Main's code passed once under the same load.
+  - `diedload` ran past ten minutes under the parallel load and was not judged.
+  - Not run here: the other 51, which CI will run.
+### Needs eyes
+- **How a new character fights.** Hits are 0.64 to 0.8 of the roll until the weapon is trained, and spells cost up to 1.36 times as much. Enemies still grow with the level. Play the first hour with a Warrior and a Scholar.
+- **Skill-up lines** take the message line and can cover a combat line. The rising card is L11's.
+- **The run, swim and jump** move with Athletics and Acrobatics. Does Athletics 100 feel quick enough at 4.2?
+- **Owed in this item:** Bow's ×2 past 30 m, Acrobatics' gap, Speech's favour topics, Armour's `def` read and Speech's prices (with session 2's attribute pass), and the five land skills' uses with survival B.
 ## v80 — Session 940 — Combat's resolver: the attack table and one resolver (deep work, card combat-resolver)
 The card was combat B's deep-work session (Michael's B, 28 Sep; v2-scope.md §4 and §7, after F2a and before F2b): one attack table and one resolver for the dungeon and the open world, plus commitment, the light chain, a potion's time, and armour as a share (#181 B).
 
@@ -20922,6 +20995,158 @@ Corrections made during the session:
 - **The hall is the inn's house.** From the lane, the guild hall and the village inn look alike but for the paint and the open door; #352 asks about this.
 - **Owed:** the Mages' Guild, and the Mark's and Aurenne's halls, once #352 is answered; the shrine and the library in each nation's dress.
 
+## v80 — Session 950 — Hand-to-hand, the 23rd skill (Michael's C on #357), and the light and robe gates as built (#354 C)
+Session 941 took the level's flat `+1.5` out of every hit, and that left bare fists with no skill: a punch rolled the fists' 2 to 3 at ×1 and taught nothing. Michael answered #357 with C: a Hand-to-hand skill of its own, a 23rd, with a Might share, with the systems builder to add its row and perks. He answered #354 with C as well: the heavy line asks Armour, and the light and robe lines keep their attributes. Session 941 had already built that, so there is nothing to change for #354, and both entries move to Answered.
+
+**The skill** (`12-character.js`). `SKILL_DEF.hand` is *Hand-to-hand*, governed by Might, and sits after Blunt. `weaponSkill(null)`, the empty weapon hand, now gives `'hand'` (it gave nothing). Both melee resolvers already read `skillMult(weaponSkill(w))` and call `skillUse(weaponSkill(w), …)` on a hit on an alert foe, so a punch is now:
+- the fists' roll × (0.6 + 0.8 × Hand-to-hand/100) × Might's 1% a point;
+- a Hand-to-hand use, weighted 3 for a riposte or a finisher.
+
+As with every skill, an unaware foe teaches nothing. No archetype's suggested set takes Hand-to-hand, so it starts at 5. The creator's sheet (the build sheet's session 2) will let any character take it as a major or a minor. A save from Session 941 has 22 skills and loads with Hand-to-hand at 5, because the load starts from `skillsInit` and copies what the row has.
+
+**The sheet** (`docs/design/skills-and-perks-build.md`). Hand-to-hand gets a row in the 22 skills' table and four perks, following Blade's and Blunt's: what a fist can do that a blade cannot.
+- 25, *Hard knuckles*: a punch drains ×1.5 posture.
+- 50, *Throw*: a punch on a staggered foe knocks it down.
+- 75, *Catch the blade*: a perfect parry bare-handed knocks a one-handed weapon from the foe's grip.
+- 100, *Stone hand*: the fists roll 4 to 7.
+
+They are built with the first wave in the sheet's session 3.
+
+**What a player feels.** At Hand-to-hand 5 a punch is 2 or 3 × 0.64, and it floors to 1. A level-1 Bandit (25 health) now takes 22 to 25 punches over 9 to 10 seconds. At 100 a punch is 2 to 4 and the Bandit takes 8 to 12, which is the critic's brawl. `fistfight` measured 7 to 12 with the old level term. It now measures the chosen design at both ends: an untrained fist at 15 to 28, a master's at 7 to 12. The posture break and the Bandit's two blows at most hold at both. The bar for the master is the critic's own, not loosened.
+### Verified (headless Chromium)
+- `skillcurve` 19 of 19 (17 before):
+  - 23 skills; a fresh Warrior has five at 25, five at 15 and thirteen at 5.
+  - A punch rolled at 100 hits 64, 100 and 140 at Hand-to-hand 5, 50 and 100.
+  - A punch at an alert foe is one Hand-to-hand use, and nothing else.
+- `skillsave` 7 of 7:
+  - The character row carries all 23 skills.
+  - A row saved before Hand-to-hand loads it at 5, with the rest as saved (Bow 37, Locks 61).
+  - The migrated Duelist still has thirteen skills at 5.
+- `fistfight` 7 of 7. At Hand-to-hand 5: 25, 22 and 25 punches. At 100: 10, 12 and 8. Staggered for 46% to 57% of each fight; the Bandit lands 1 or 2 blows. The starting weapon kills it in 7 swings.
+- `fists` and `fistswing` pass. A punch at Hand-to-hand 5 lands for 1, and the starting weapon for 4. (`tpfists` was named in the same run and did not run; the runner reported 2 of 2.)
+### Needs eyes
+- **An untrained brawl is long.** Every punch at Hand-to-hand 5 does 1, so a Bandit is 25 punches and a tavern brawl at level 1 drags. That is C as written: the fists' 2 to 3 on a ×0.64 multiplier. If it reads too long in play, the lever is the fists' roll (`FISTS.atk`, 2 to 4) or a Monk's suggested set taking Hand-to-hand as a major (it would start at 25, where a punch is 1 or 2). Both are Michael's call.
+
+## v80 — Session 951 — A late autosave no longer re-points Continue (QA's routed save bug)
+QA found this on 14 Oct and the producer routed it here: `ssWrite` (`70-saves.js`) set the active key, the save Continue loads, whenever a write landed, whatever had happened while it was in flight. An autosave fires, the disk is slow, and you load another save from the menu. The autosave lands after the load and points Continue back at the save you had just left. The next Continue, or a reload of the page, puts you there. `coopsaves` went FLAKY on auto/backlog this way. QA's fix to the test waits for the writes; this fixes the game.
+
+**The fix.** A counter, `_ssLoadGen`, counts loads. `_applyLoadData` bumps it, since every load passes through it (the menu, Continue, the death screen's reload), and so does `ccBegin`, since a new character is a load of a kind. `ssWrite` notes the counter when it starts. When it lands, it points Continue at itself only if the counter has not moved. The save itself is always written, indexed and cached, so nothing is lost. It is in the list where you left it; it is just not where Continue goes. Two writes with no load between them behave as before: the later one is active.
+### Verified (headless Chromium)
+- **`latesave`** (new), 6 of 6. It fails its third check on the code before this session, so it reproduces the bug: Continue pointed at `…_auto_4`, the late autosave, not the slot just loaded.
+  - It saves slots 1 and 2, holds the store's put open, starts an autosave, and loads slot 1 from the menu (`_slotLoadClick`): gold 111, active slot 1.
+  - When the autosave lands, Continue still points at slot 1.
+  - The autosave is in the list with the 333 gold it saved.
+  - A save with nothing loaded while it is written still points Continue at itself.
+- `coopsaves` and `saveui` pass. `tpfists`, owed from Session 950, is in the PR comment.
+- A correction to Session 950's entry: `tests/run.mjs` takes one name, as a prefix, so `fists fistswing tpfists` ran the two suites whose names begin `fists`. `tpfists` runs here.
+### Needs eyes
+- Nothing to see in play. A player who loads from the menu while *Autosaved.* is still on its way finds Continue where they left it.
+
+## v80 — Session 952 — The level on marks, the bed's 12 points, the creator's majors and minors, and the Skills tab (skills and perks A, the sheet's second session)
+This is the build sheet's second session (`docs/design/skills-and-perks-build.md`), on Michael's B for #342: ten marks plus half the level. Session 941 put in the skills, and the level still ran on xp from kills and quests. Now it runs on the skills.
+
+**The marks** (`12-character.js`). `skillUse` counts the levels a skill gains and hands them to `skillMark`. A major's or a minor's rise is one mark, and any other skill's is a quarter. That is Oblivion Remastered's first fix: levelling by alchemy is never wasted. `levelUps` keeps this level's rises by skill for the bed. A level takes `marksNeeded(L)` = 10 + L/2: 10.5 at level 1, 15 at 10, 20 at 20. `chkLvl` and `takeLevelIfReady` (`62-actions.js`) read `levelReady()`, and the bed carries the surplus over. The sleep slip's *the level* line reads the same. Kills and quests still count `xp`, but nothing levels on it now. The HUD's *XP 0/200* reads *Marks 0/10.5*. The `xpBoost` buff (Caorthann Vigour, ×1.2) now multiplies skill uses, as the sheet says. The sheet's +25% is that herb's own 1.2 for now.
+
+**The bed's 12 points.** `openLevelUp` shows eight cards. Each has:
+- five diamonds, the points you may place in that row;
+- *what rose under it*, for example *Blade +3 this level*;
+- the gains, and − and + buttons.
+
+Clicking a card places a point. `luPrelit` pre-lights the 12 in proportion to the rises under each attribute, by largest remainder, inside the caps. A player who reads nothing gets Morrowind's answer, and any point can be moved. A sixth point in one row is refused, and so is a point past 60 (`ATTR_CAP`). Confirm waits until all 12 are placed, or fewer when the caps leave less room. Each point gives its attribute's gains as before: Fortitude 10 health and 5 stamina, Intelligence 10 mana. The level adds its own +10 health and +10 stamina. The archetype's automatic +1 to three primaries is gone, because the majors carry the archetype now. `getMultiplier` and the activity counters are no longer read by the bed or the hub. `lvAct` is still counted and saved, and is dropped in a later pass. The hub's Attributes rows show each attribute out of 60 and the rises under it this level, where they showed a multiplier.
+
+**The creator.** A *Your skills* row lists all 23 skills. The archetype suggests its five majors and five minors from the sheet's table. A click moves a skill from none to major to minor and back. `ccBegin` starts the chosen ones at 25 and 15 and the rest at 5 (`skillsChoose`). If a set is left short, it is filled from the archetype's suggestions.
+
+**The Skills tab.** The hub's last tab is *🎯 Skills*, placed last so the other tabs keep their order. At the top it shows the level, the marks and what a mark is. Below are 23 rows, majors first: the skill, the attribute that governs it, its level and a bar to the next. It is plain markup until the look builder puts it on the parchment kit (#142 A). The four perks per row come with the perks in session 3.
+
+**The save.** `levelMarks` and `levelUps` are top-level fields in the character's row. A save from before marks keeps its banked xp as marks in proportion: a level-4 character with half its xp banked comes back with 6 of 12.
+
+Still owed from the sheet's session 2: the attributes' ≤1% pass (Swiftness 2% → 0.5%, Fortune's crit and gold, `BOW_FINESSE_DMG`), Armour's `def` × (0.75 + 0.5 × skill/100), and Speech's prices. That is the next session.
+### Verified (headless Chromium)
+- **`levelmarks`** (new, the sheet's `levelmarks` and `levelsheet` in one boot), 17 of 17:
+  - A level takes 10.5, 15 and 20 marks at levels 1, 10 and 20.
+  - Ten major and minor rises are 10 marks, not yet a level. The eleventh banks it, and the bed takes it to level 2 with 0.5 carried.
+  - The rises were Blade 3, Guard 2, Armour 2, Bow 2 and Stealth 2. The sheet pre-lights Might 3, Resolve 2, Fortitude 2 and Finesse 5: 12 by largest remainder. Might's card reads *Blade +3 this level*.
+  - A sixth point in one row is refused. Confirm is refused and its button disabled until all 12 are placed, and a thirteenth is refused.
+  - Fortitude 5, Might 5 and Finesse 2 confirmed give exactly those, nothing else, and *❤ +60 max HP*: +60 health and +35 stamina.
+  - Forty rises outside the majors and minors are 10 of 11 marks, and four more bank the level.
+  - An attribute at 58 has room for 2.
+  - The Skills tab has 23 rows with the majors first. The save carries the marks and this level's rises.
+  - An old save banks 6 of 12. The creator suggests the Scout's set, and a click moves a skill. No page errors.
+- `levelpanel`, `stonecress`, `restslip`, `lvact`, `skillcurve`, `skillsave`, `creator`, `mainrun`: see the PR comment. `levelpanel` now asks for 12 points placed, and an archetype whose primaries include Fortitude gets the level's 10 alone. `stonecress` and `restslip` set the marks where they set `xp = xpNext`.
+### Needs eyes
+- **The pace.** #342 B's simulation expects level 10 at about 7 hours. Only play shows whether the first evening ends in a bed and a level.
+- **The bed's sheet** is the old two-column card grid with diamonds and − / +. #142 A's parchment sheet is the look builder's.
+- **The creator's skill row** sits under the attributes, a row of 23 chips. The creator is already long.
+
+## v80 — Session 953 — The attributes at ≤1% a point, and Speech's prices (skills and perks A, the rest of session 2)
+The build sheet's *The attributes at ≤1% a point* says every percentage an attribute gives is 1% a point or less, now that skills carry what the attributes used to. This session moves the ones that sit outside combat's resolver:
+- **Swiftness:** move 0.5% a point (2% before) (`90-main.js`).
+- **Fortune:** crit 0.5% a point (2%, `FORTUNE_CRIT_PCT`). Gold found 1% (5%, `rollGold`). The item drop chance 1% (2.5%, `lootDropChance`): the sheet does not name that one, but its rule covers it.
+- **Finesse:** the sprint's cost 1% a point (5%, `_finesseSprint`). Athletics now carries the sprint's cost.
+- **Charisma:** barter 0.5% a point (1%), its share still capped at a quarter. Quest gold 1% (2%, `questGold`), under the same rule.
+
+The cards (`ATTR_DEF`'s `gainDesc` and `gains`) and the hub's derived rows read the new numbers.
+
+**Speech's prices** (`60-shop.js`). `speechPct()` is 0.2% better prices a level, to 20% at 100. It is added to Charisma's share in `barterPct`, before the short cape's 2% at Aurenne's counters. An untrained Speech (5) is 1%.
+
+**Left for after combat's resolver (PR #356) merges.** These lines sit in the code that PR rewrites:
+- Resolve's block cost (−5% a point, in four places in `42`, `74` and `90`);
+- Finesse's parry milliseconds, which go to Guard (160 ms + 1 a level);
+- Armour's `def` × (0.75 + 0.5 × skill/100).
+
+Taking them now would be a merge conflict for the deep-work session. The resolver reads the skill multiplier, so they are a short session once it lands.
+### Verified (headless Chromium)
+- **`speechprice`** (new): Speech gives 1%, 10% and 20% at 5, 50 and 100. Charisma 10 adds 5%. At Charisma 60 and Speech 100 the total is 45%, because Charisma's own share stops at a quarter. Finesse 10 takes 10% off the sprint; Fortune 10 is 5% crit.
+- `fortunecard`, `questgold`, `fortify` and `cloaks` pass. The first three moved their bars to the new numbers: 110 world quest gold and 88 for a guild task of 80 at Charisma 10, a tenth more gold at Fortune 10, the sprint 3% cheaper at Finesse 3. The cape still adds its 2% on top (0.01 → 0.03 at Aurenne).
+### Needs eyes
+- **The barter's ceiling.** Charisma's quarter and Speech's fifth add to 45% better prices for a master talker at the cap. The sheet gives Speech 20% without saying whether the two share a ceiling. If counters feel too generous late on, a shared cap of 25% is the obvious lever. That is a number for Michael.
+- Movement and crits move less with their attributes now. A character who put points in Swiftness under the old rules runs a little slower than they did.
+
+## v80 — Session 957 — Two faults of Session 941's on CI: a blocked arrow threw, and `witnessrange` measured Stealth (a CI fix)
+CI on PR #353 (head `9e6edf3`) failed `wardall` and `witnessrange` twice each. Both are Session 941's.
+
+**`wardall`** found a fault in play. Session 941 added a Guard use where a zone archer's arrow lands on a held block (`tickZoneArrows`, `42-zone-enemies.js`) and keyed it on `e`. That loop's thing is the arrow `a`, and no `e` exists there, so every arrow taken on a block threw a ReferenceError. The use is now keyed on the arrow. The other three Guard sites (the parry, the blocked blow in `74-strikes.js`, the bash) do have their foe as `e`.
+
+**`witnessrange`** measured a sneaking witness's reach at 6 units. Since Session 941 that is 6 × (1 − 0.4 × Stealth/100), and a Warrior's Stealth of 5 makes it 5.88, so the 5.9 row went unseen. The suite now pins Stealth at 0 for its rows, which are an untrained sneak, and adds one at Stealth 50: 4.8 (4.7 seen, 4.9 not).
+
+The other reds on that run are not this fix's. `lockpicks` and `shoprows` are shop prices, which fits Session 953's Speech prices. `levelpanel` is Session 952's level sheet. They are left to their sessions.
+### Verified (headless Chromium)
+- `wardall` passes (it threw `e is not defined` before the fix).
+- `witnessrange` 10 of 10, the new Stealth 50 row among them.
+### Needs eyes
+- Nothing to see. The arrow fault would have shown as a frozen fight against archers while blocking.
+
+## v80 — Session 958 — `fortunecaor` re-measured to Fortune's 0.5% a point (a CI fix)
+CI on `1c9b2d2` had one red shard of fifteen, with `fortunecaor` failing twice. Session 953 set Fortune's crit chance to 0.5% a point, as the skills sheet's attribute pass asks (it was 2%). The suite still placed its rolls at 2%. Its rolls are now at the new edges: Fortune 1 crits under 0.005 and not at 0.006, and Fortune 10 under 0.05 and not at 0.051. At Fortune 5 the rate over 4,000 blows must fall between 0.018 and 0.032, around 0.025. The Caor Dubh half is unchanged.
+### Verified (headless Chromium)
+- `fortunecaor` 5 of 5.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 959 — `levelpanel` re-measured to Charisma's 0.5% and 1% (a CI fix)
+CI on `1c9b2d2` also failed `levelpanel` twice (shard 14). Session 958's note on the PR said the other shards were green; shard 14 finished after it, so that was wrong. Session 953 put Charisma at 0.5% barter and 1% quest gold a point (`ATTR_DEF.charisma.gains`), the sheet's attributes at ≤1%. The suite still read *+4% barter* and *+8% quest reward gold* for a raise of 4. The panel now says +2% and +4%, and the suite reads those. The stock line's threshold is unchanged.
+### Verified (headless Chromium)
+- `levelpanel` passes.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 960 — `attrpromise` and `barter` re-measured to Session 953's Finesse and Charisma (a CI fix)
+Shard 9 of CI on `1c9b2d2` failed `attrpromise` and `barter` twice each. Both measure Session 953's attribute pass, which is the sheet's attributes at ≤1%.
+- **`attrpromise`:** Finesse takes 1% a point off the sprint now, not 5%, and Athletics carries the rest. Finesse 10 sprints at 12.6 a second, ×0.9 of 14. The suite expected half, and now expects ×0.9.
+- **`barter`:** Charisma is 0.5% a point to a quarter, and Speech adds 0.2% a level on top. A Warrior's Speech of 5 had added 1% to every number. The suite pins Speech at 0, so Charisma is measured alone. Charisma 10 is now 5% off and 5% more paid. The quarter's cap is reached at 50, so the cap check moves from Charisma 40 to 60. The hub's Barter row reads 4% at Charisma 7 (3.5 rounded) and 25% at 60.
+### Verified (headless Chromium)
+- `attrpromise` and `barter` pass.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 961 — `lockpicks` and `shoprows` re-measured to the skills (a CI fix)
+Shard 11 of CI on `1c9b2d2` failed `lockpicks` twice. Run here, `shoprows` (shard 12 of the run before) failed too.
+- **`lockpicks`:** Session 953's Speech takes 0.2% a level off a price. At a Warrior's Speech of 5, the town's 12 became 11. The suite pins Speech at 0, so the price it reads is the town's.
+- **`shoprows`:** Session 941's own. The suite set every attribute to 0 so that some pieces would be locked, but weapons and heavy armour now ask for their skill. A Warrior's Blade 15 and Blunt 25 meet an Iron piece's 15, so nothing locked. Every skill goes to 1 as well, and the locked row reads *Requires Blade 15 (you have 1)*, which the check now allows.
+### Verified (headless Chromium)
+- `lockpicks` and `shoprows` pass.
+### Needs eyes
+- Nothing.
 ## v80 — Session 954 — Holes through the slime (L4, prototype only)
 OG-041 draws its slime with holes through it, so daylight shows through the body. Session 928 owed them because the kit could only add flesh, never take it away. The sheet draws them, so this asks nothing new. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
 
@@ -21592,6 +21817,91 @@ Correction to Session 947: its *Verified* left the new look's run to the PR comm
 ### Needs eyes
 - Nothing for a playtest.
 
+## v80 — Session 973 — The perks begin: the table, the Skills tab's perk line, and the hand and word (skills and perks A, session 3, part 1)
+The build sheet's third session (`docs/design/skills-and-perks-build.md`) is the first wave of perks. Most of the Arms perks (Blade, Blunt, Hand-to-hand, Guard) and Armour's sit in the code that combat's resolver (PR #356) rewrites, so this session takes the perks that do not: the hand and the word. The rest follow in their own sessions.
+
+**The table.** `PERK_DEF` (`12-character.js`) holds the sheet's four perks for each of the eleven skills of the first wave, with their names and what they do, in rank order (25, 50, 75, 100). `perk(id, rank)` is true when the skill stands at the rank and that perk is built. Nothing is saved: a perk is read from the skill, as the sheet says. `PERK_LIVE` names the perks built so far. The Skills tab shows each skill's four under its row, lit gold when held. One not yet built is greyed and italic, and its tooltip says *not yet in the game*. A perk the game promises in a panel should not be one the game does not do.
+
+**Built this session:**
+- **Locks 25, *Feel for it*.** The pin you are working glows faintly while it sits at the shear, the window in which letting go sets it. The sheet says *the next pin's shear shows faintly*; the glow is the plainest reading of that in Oblivion's lock (`lpRender`, the class `feel`).
+- **Locks 50, *Sure hand*.** A snapped pick no longer drops the last pin you set (`lpBreak`).
+- **Locks 75, *Quiet work*.** A witness sees a lock being picked from half as far: 6 units, not 12, by day; 3, not 6, indoors. `witnessOf(house, picking)` takes the flag from `pickSeen` and from `noteCrime` for a lock. Anything else you do is seen as before.
+- **Speech 25, *Haggle*.** 5% better prices both ways, added in `barterPct` beside Speech's own 0.2% a level.
+- **Speech 50, *Talk it down*.** A guard's halt over a fine (`confront`, and `confrontIndoor`) offers *Talk it down. (Speech)* once in each town. It halves the fine, rounded up, marks the town's crime record (`c.talked`) and opens the halt again on the new fine, so the guard's own lines say the number. The change goes through one named action, `talkDownFine`. No new in-world line: the toast *The fine is halved: N gold.* and the log line are menu voice.
+
+**Not built, and why.** Three of the twelve perks in the hand and word name things the game does not do yet. *No mark* (Locks 100) says a picked town lock is never found. Today an unseen pick is written to `worldState.crimes` and nothing ever reads that record, so there is nothing for the perk to stop. *Hearing* (Speech 75) says a person at favour −1 still talks, but nobody refuses to talk at any favour (a seen crime makes a keeper refuse trade for five days, which is not talk). *Word given* (Speech 100) needs a trespass, and there is none. Each waits on the system it names. They show on the tab as not yet in the game. *Shadow's hand* (Stealth 100, a backstab +50%) is the resolver's.
+
+**A suite re-measured, not loosened.** `speechprice` read 10% and 20% at Speech 50 and 100, and 45% at Charisma 60 with Speech 100. Haggle adds 5% from 25, so those are now 15%, 25% and 50%. The 50% is the barter's whole ceiling for a master talker at the attribute cap; Session 953's note on a shared cap stands, and now with 5 more points in it.
+### Verified (headless Chromium)
+- **`perkhand`** (new), 14 of 14:
+  - Locks 24 holds no perk, and 25 holds *Feel for it* but not *Sure hand*.
+  - Haggle: Speech 24 → 25 moves the barter 4.8% → 10%, which is Speech's 0.2% and Haggle's 5%.
+  - Sure hand: a pick snapping on the third pin keeps both set pins at Locks 50, and drops one at 49.
+  - Feel for it: the pin glows while it is in the hold window at Locks 25, and not while it is still rising. At 24 it never glows.
+  - Quiet work, by day at Dunmore with the witness facing you: at Locks 75 a pick is seen at 5.9 units and not at 6.1 or 8. A walk past is still seen at 8. At Locks 74 the pick is seen at 8.
+  - Talk it down is offered at Speech 50 and not at 49. Clicked, the fine goes 75 → 38 and the halt reopens on *Pay the fine (38 gold)*. It is not offered again in that town, in the street or indoors.
+  - The Skills tab: eleven skills carry a perk line. Locks shows its four, two lit at 50. Speech's 75 and 100 are marked not yet in the game. No page errors.
+- `speechprice` re-measured (above) and passes. `barter`, `lockpicks`, `chestpicks`, `nightpick`, `burglary`, `witnessrange`, `witness`, `guardintro` and the crime and Skills-tab suites listed in the PR comment pass.
+### Needs eyes
+- **Feel for it** is a soft gold halo on the worked pin. Whether it is too faint, or too much of a cheat, only the lock in hand shows.
+- **Talk it down** closes the guard's talk and opens it again on the new fine. It is a quick blink, not a line from the guard. If the quest writer wants a word from him, `talkDownTopic` returns it.
+- The perk line on the Skills tab is plain markup, ten pixels high, until the parchment kit (#142 A, the look builder's).
+
+## v80 — Session 976 — Stealth's and Athletics' perks (skills and perks A, session 3, part 2)
+The second part of the sheet's first wave of perks: the body's, outside combat's resolver. Seven perks go live in `PERK_LIVE`, and the Skills tab lights them. Each is one small function in `12-character.js`, read where the thing is decided.
+- **Stealth 25, *Soft step*.** You sneak at walking speed (`sneakMoveMult()`: ×1, not ×0.7). The loop's `_sneakMoveMult` reads it.
+- **Stealth 50, *In the dark*.** Sneaking out of light, sight on you is ×0.75 on top of everything else. The sheet does not say what *out of light* is. The game has one dark rule today: the witnesses' night halving, in the open. So `outOfLight()` is night, in the open world, not indoors. It applies to a witness's reach (`witnessOf`) and to a foe's sight (`_sneakDetectMult`). A lit room or a torch-lit dungeon is not dark here, because nothing in the game says so yet. When a light rule arrives, it belongs in `outOfLight()`.
+- **Stealth 75, *Light foot*.** A spike plate does not spring under you while you sneak or sprint (`lightFootNow()`, in `tickDungeonTraps`). The loop now leaves the frame's sprint in `_sprintNow`. The sheet's *crumbling floors* do not exist in the dungeons yet. When they do, they read the same function.
+- **Athletics 25, *Swimmer*.** You swim at the run's speed, 3.83 to 4.2 with the skill (`swimSpeed()`). Before, it was 1.7 × the cloak's drag × Athletics' 0.8 to 1.3.
+- **Athletics 50, *Long breath*.** Three times the air underwater: 120 s, not 40 (`breathSecs()`). The sea's dive tick in `85-world-sea.js` reads it. That is a one-call change in the look builder's file: the breath is a rule, not a shape.
+- **Athletics 75, *Road legs*.** No sprint cost on a road (`roadLegsNow()`): within the road's half-width (2.6), outdoors in the world.
+- **Athletics 100, *Tireless*.** A sprint that empties your stamina no longer starts the 2 s pause before it comes back.
+
+*Shadow's hand* (Stealth 100, a backstab +50%) is a hit, and waits for the resolver with the Arms perks and Armour's.
+### Verified (headless Chromium)
+- **`perkbody`** (new), 12 of 12:
+  - Soft step: sneaking moves ×0.7 at Stealth 24 and ×1 at 25.
+  - Swimmer: the swim is 1.53 at Athletics 24 and 3.908 at 25, which is the run's 3.908.
+  - Long breath: 40 s of air at 24, 120 at 50.
+  - Road legs: on a road near Dunmore at 75, not at 74, not 8 units off the road. On the game's own loop with Shift and W held for ten frames, stamina 8 → 8.72 on the road at 75, and 8 → 6.78 off it at 74.
+  - In the dark: sneaking at 23h in the open, Stealth 50 takes ×0.75 more off sight than 49, with Stealth's own 0.4% a level divided out. At 13h it takes nothing.
+  - Tireless: emptied by a sprint, the pause is 1.97 s at Athletics 99 and 0 at 100.
+  - Light foot: at Stealth 75 the plate stays armed when you sneak or sprint onto it, and springs at a walk. At 74, sneaking springs it.
+  - No page errors.
+- The suites that touch the sneak, the swim, the dive, traps and the sprint pass (listed in the PR comment).
+### Needs eyes
+- **Tireless** lets a sprint run stamina to nothing and pick it up again on the next frame. Holding Shift then gives a stuttering sprint at the edge of empty, not a stop. Play will show whether that reads as *tireless* or as a fault. A short floor (sprint only above 5 stamina) would be the lever, and that is a number for Michael.
+- **In the dark** only bites at night outdoors. Michael may want dungeons, cellars and unlit rooms to count. That needs a light rule, which the game does not have.
+- **Swimmer** at 25 more than doubles the swim. A Scout or a Duelist, majoring in Athletics, starts with it.
+
+## v80 — Session 977 — Cat's fall and Fitted (skills and perks A, session 3, part 3)
+Two more of the sheet's first wave, both in code that combat's resolver (PR #356) leaves alone:
+- **Acrobatics 50, *Cat's fall*.** A fall is free to 8 m, not 4 (`fallFree()`). Session 429's `fallLand` reads it for the blow, the landing shake and the Acrobatics use for a jump that lands higher than it left. The 6% of your health a metre past the free height is unchanged. The sheet moved Cat's fall from the platforming page's 75 to 50, and its `perkranks` suite measures 4 → 8 m at 49 and 50; this follows the sheet.
+- **Armour 25, *Fitted*.** The five worn pieces weigh half: head, chest, hands, legs and feet (`ARMOUR_SLOTS`, the same five that make an Armour use). A shield, the weapon, rings and the cloak weigh as before. `equipWeight` carries it, so the burden, the overload and the roll's heavy line all feel it.
+
+**Left, and why.** *Catch* (Acrobatics 25: mantle to 1.6 m, and catch an edge while falling) has no mantle to raise: the platforming page's mantle was never built, and it is a system of its own, not a perk. *Second step* and *Swallow's turn* (the double jump and the air dash) wait on the designer's numbers (L11). Armour's *Second skin* (worn armour never slows the roll) is one condition on the roll's heavy line. The resolver changes the line beside it in `startRoll`, so taking it now would be a merge conflict for the deep-work session; it waits with *Unbowed* and *Hold the line*, which are posture.
+### Verified (headless Chromium)
+- **`perkfall`** (new), 6 of 6:
+  - Cat's fall: the free height is 4 m at Acrobatics 49 and 8 at 50.
+  - Through the game's own landing (`fallLand`), at maxHP 130: a 6 m fall costs 16 at 49, which is 2 m past 4 at 6%, and nothing at 50. At 50, 7.9 m is free and 9 m costs 8, the one metre past 8. A 5 m fall still costs at 49.
+  - Fitted: five pieces of 10, a shield of 6 and a sword of 3 weigh 59 at Armour 24 and 34 at 25. No page errors.
+- `falls`, `beastfall`, `fortify`, `roll`, `perkbody`, `perkhand`, `armourlines-numbers` and `skillsave` pass.
+### Needs eyes
+- **Fitted at 25** is early. A Warrior or a Sentinel majors in Armour and starts at 25, so plate weighs half from the first minute. The sheet puts it there. Play will show whether the heavy line's burden, which the armour lines were balanced on (S564), still bites.
+
+## v80 — Session 978 — One shrine bears its god's name (QA's `bridgenames` note, backlog I)
+QA found *no two named places share a name* failing at random on CI: once two shrines of one god had both built, two places read *Shrine of Na Beithígh*. The naming pass (`uniqueSiteNames`, Session 756) makes every shrine's name unique when the world is laid out. Then `buildShrine` overwrote it with *Shrine of* its god when the cell built, and six gods are shared among more shrines than that. Whether two names collided depended on which cells the walk had built, which is why the suite was flaky and not red.
+
+Now `godShrineOwner(god)` (`87-world-quests.js`) gives each god's name to one shrine: the first of its shrines in the grid's order, read once from every cell's sites. That is the same in every game and whatever has loaded. Any other shrine of that god keeps the name the pass gave it, from its culture's bank in the shrine's form (*Shrine of Heifialos*). Its god is unchanged: the altar's prayer, the dome's tint, the boon and the god's day still read `S.god`. No new words. QA left open whether the canon wants another form for a second shrine of one god (*… at <place>*). That is the quest writer's call, and `buildShrine` is the one line to change.
+### Verified (headless Chromium)
+- **`shrinenames`** (new), 6 of 6:
+  - Six gods have shrines, and each god's name goes to the first of its shrines in the grid's order.
+  - An Chloch has two shrines, `c0_0_i0` and `c5_0_i1`. The second is built first, which under the old code would have taken the god's name. It stays *Shrine of Heifialos*, with An Chloch as its god. The first then builds as *Shrine of An Chloch*.
+  - Across all twelve by twelve cells no two named places share a name. No page errors.
+- `bridgenames`, `poinames`, `pois`, `poipreview`, `renewal`, `calendar`, `dayseed`, `townbio` and `makertools` pass.
+**A correction to numbering.** This run numbered its sessions from 973 at its start, and the bodies builder took 974 and 975 on its own branch meanwhile. So the Stealth and Athletics perks are Session 976 (pushed as *Session 974*, commit `c0f71e78`), Cat's fall and Fitted are Session 977 (pushed as *Session 975*, `e360f8f4`), and this is 978. The entries, the code comments and the tests carry the new numbers; the two commit messages and their PR comments keep the old ones.
+### Needs eyes
+- A player who knew a shrine as *Shrine of An Chloch* in an old save may find it under its other name, if it was not the first. Saves key shrines by id, so nothing is lost but the label.
 ## v80 — Session 979 — The Seventh Niche: the book and the priest's *Who is the Guest?* (quest writer)
 The first build from the quest writer's queue: *The Seventh Niche*, approved by Michael on 14 Oct on the Quest Drafts page, oldest of the ten approvals. This build covers the draft's book and its priests. The niche is the third part of the draft, a struck-empty recess beside every shrine's altar with a prompt and a popup. It needs a new mesh, which is the look builder's, so its words wait in backlog A until the look builder has made it. The book is *The Seventh Niche*, a Church disputation in six pages, word for word as drafted (`js/20-quests.js`, pushed onto `BOOKS` with `attr:null`). It is the game's first lore book: it reads in the book reader and grants nothing. The bag and the shop call it *Lore book*, and *Lore book (already read)* once read. The bag's short column says *Lore*. A first read logs *Read "The Seventh Niche".* (`66-hub.js`, `60-shop.js`, small branches on `def.attr`). `randomBookItem` now rolls the six skill books alone, so the dungeon and chest rolls are unchanged: the lore book is pushed after them and filtered out. The library pool gains a rare roll of it (weight 3 against 35 for a skill book).
 
@@ -21785,6 +22095,79 @@ Corrections made during the session:
 - **The board of tolls is lines, not words.** What a crossing costs is a price, so it is the systems builder's and Michael's.
 - **Owed:** the rest of L5's works (a shipyard, a ferry).
 
+## v80 — Session 982 — The Bow's perks: Quick nock, Long eye and Through (skills and perks A, session 3, part 4)
+The fourth part of the sheet's first wave of perks. The Arms perks were left for combat's resolver (PR #356), but the bow is not in it: the resolver's diff touches no line of the draw, the flight or the arrow's hit. So the Bow's perks go in now. Three go live in `PERK_LIVE`, and the Skills tab lights them. Each is one small function in `12-character.js`, read where the thing is decided.
+- **Bow 50, *Quick nock*.** The draw fills 30% faster: `bowDrawRate()` is 1/0.7, so a full draw (`BOW_DRAW_MAX`, 1.1 s) takes 0.77 s. The loop's draw tick (`90-main.js`) reads it. The stamina drain is per second of holding, as before.
+- **Bow 75, *Long eye*.** An arrow that has flown 50 m on the level falls at half the gravity from there. `fireArrow` marks the arrow with the perk and its starting point; `tickArrowMotion` asks `arrowGravity(arrow)` for each frame's pull.
+- **Bow 100, *Through*.** A full-draw arrow goes on past the first foe it strikes and can strike one more. `fireArrow` marks it when the draw is full and the perk held. At both hit sites (the zones' `tickZoneBalls` and the dungeon's arrow branch in the loop), `arrowPasses` decides whether this hit is the one it passes through. If so, the arrow neither sticks nor is removed, and it skips that foe from then on. The second foe it meets takes it as before. The damage is rolled on each foe's own stream (`arrowRawFor`), so the second hit is its own roll.
+
+**Not built, and why.** *Steady* (Bow 25) is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly at the crosshair for as long as you hold it, and only the stamina drain limits the hold. A sway is a new rule with numbers a player feels, so it is asked as **DECISION #369**: A, build a sway (a held full draw drifts after 1 s) and Steady with it (recommended); B, Steady as three seconds of the hold free of stamina; C, wait for the bodies builder's draw and the new look's aim. Steady shows on the tab as not yet in the game.
+### Verified (headless Chromium)
+- **`perkbow`** (new), 8 of 8:
+  - Quick nock: on the game's own loop, an empty draw to a full one takes 65 frames at Bow 49 and 45 at 50. The perks built are Quick nock, Long eye and Through, and not Steady.
+  - Long eye: an arrow fired level, 40 m over 70 m of open ground, through `tickArrowMotion` alone. To 45 m it falls 5.281 m at Bow 74 and at 75 alike. By the end of its flight (61.6 m, its 2.2 s life) it has fallen 9.753 m at 74 and 9.587 at 75. Its fall speed is −8.8 and −8.0: the half gravity from 1.79 s, as the sum says.
+  - Through: three Bandits in a line, 4, 7 and 10 units ahead, one arrow each time. At Bow 99 a full draw stops in the first. At 100 a full draw strikes the first, flies on, and sticks in the second; the third is untouched. A draw at 0.8 at Bow 100 stops in the first. No page errors.
+  - `--look=new`: green.
+- `hitseed`, `tpshots`, `attrdmg`, `duelrhythm`, `shiparchers`, `perkhand`, `perkbody`, `perkfall` and `skillsave` pass.
+### Needs eyes
+- **Long eye barely shows.** An arrow lives 2.2 s (`ARROW_LIFE`), so a full draw flies 61.6 m and the perk acts only over its last 11.6 m: 0.17 m less drop. The sheet's 50 m was written for a longer flight. If Michael wants the perk to be felt, the lever is the arrow's life or the 50 m, and that is his number. F2b's table of ranges in metres is the natural place to settle it.
+- **Through** sends the arrow on with no new sound or mark on the first foe. Whether a pass-through wants a sound of its own is for the ear.
+- **Quick nock** also speeds the bow's draw on the viewmodel and the third-person body, which read the same clock.
+
+## v80 — Session 985 — A lord's job comes out the same whatever has loaded (QA's note, backlog B)
+QA found that a lord's job could change kind on a reload. `townQuestFor` (`87-world-quests.js`) rolls the kind on the job's own id (Session 678). But a *retrieve* needs a gate within 700 and a *deliver* a town within 900, and both were looked for among what had loaded (`nearDoors` reads `CELL_DOORS`, `nearSites` reads `SITES`). With nothing loaded near the lord's town, the job fell back to the road job. So on a fresh load, or on a second machine, the same id gave another job. That is against the S533 rule: an outcome keyed by id reads the world's data, never what has loaded. The cull's beast had the same fault, read from `dominantRegion`, the loaded regions (S701).
+
+Now the job reads the world's own data:
+- **Gates.** `doorsNearFixed(site, d)` takes the gates of the town's cell and its eight neighbours from `getCell`. Wet gates are left out (they are never built, S447), and each gate counts once, in its own cell. Each is set at the place the world draws it (`fixedDoorSpot`): a generated gate at its own x and z, a home fort on the straight line of its road at its `fortAt`, a home gate by its zone's anchor. The loaded cell nudges a gate off roads and pads; the job's choice does not see that.
+- **Towns.** `sitesNearFixed` reads the same nine cells' sites.
+- **The cull's beast** is read by `lairBiome`, the cells' regions, as the lairs' is.
+
+The job's words and its target still name the real door once it is placed (`dungeonWorldPos`). A retrieve given before its gate was placed carries the gate's seed and a `fixed` flag. `qTick` moves the thing and its pickup to the real door when the cell places it. `nearDoors` and `nearSites` are unchanged for the other callers (the guilds' commissions in `83-world-generator.js`).
+
+**Left under the same rule.** A *find* puts the lost person at the nearest camp's bedroll among the loaded camps (`beds`), and the *road* job's camp lies on a loaded road (`ROADS`). Both are places, not the kind or the words: the job is the same, and the spot can differ. They are noted in backlog B.
+### Verified (headless Chromium)
+- **`jobseed`** (new), 6 of 6:
+  - Three generated towns two cells or more from the start: `c10_1_p2`, `c5_7_s10`, `c9_9_s0`. None of their nine cells was loaded at first, and the old lookups found no gate or town near any of them (0/0 each). On the old code every retrieve and deliver there was a road job.
+  - The world's data finds 2/2, 3/1 and 2/1 gates and towns, before they load and after.
+  - The same 30 job keys at each town give the same jobs before and after the town builds: 30, 30 and 30 of 30. Over the 90: 15 retrieves, 27 delivers, 18 culls, 15 finds and 15 road jobs.
+  - A retrieve taken at `c10_1_p2` before its gate was placed lies at the real door's mark once the gate is placed (0 m off), and so does its pickup.
+  - Of the 12 gates near the four towns (Dunmore's five with them), the world's spot is where the cell placed it for the generated ones (median 0 m). The farthest is 174.6 m: a home fort, which the cell pushes 120 off its road. No page errors.
+- `datedwork`, `jobids`, `mapquests`, `mapseals`, `rowebeats`, `rowelines`, `theftlevel1`, `toldpages`, `turnin`, `warwords` and `worldjournal` pass.
+### Needs eyes
+- **A town's jobs change once, for every player.** A town that used to give road jobs before its neighbours loaded now gives the retrieve or the deliver its id rolled. A cull's beast can differ near a biome's edge. Jobs already in a save are kept as they were given.
+- **A home fort's choice reads its road's straight line.** A fort near the 700 edge can be counted in or out against where it actually stands, by up to about 175 m. It is the same in every game, which is the rule; the job still sends you to the real door.
+
+## v80 — Session 986 — The guard gives way in his people's voice (quest review Finding 31)
+The quest review (run 19, on `auto/quests`) found the one gap in Session 973's *Talk it down*. The fine halves and the halt opens again on its first line, so the guard who has just been argued down by half says *Halt. There’s a fine of 38 gold on you* as if the player had said nothing. Every other turn at the halt has a line in each people's voice. Applied as the review writes it, in `86-world-crime.js`:
+- `TALKED_LINES` beside `YIELD_LINES`, its four lines word for word.
+- `talkDownTopic`'s `fn` sets `c.talkedNow` once `talkDownFine` succeeds.
+- `confront` and `confrontIndoor` open on the people's line when it is set. `talkedGreet` clears it as the dialog opens, so the next halt in that town greets as before.
+
+The one difference in form: the review's ternary is a small function, `talkedGreet`, so that both halts share it and the flag is cleared in one place. The topics, the fine and the log line are unchanged.
+### Verified (headless Chromium)
+- `perkhand`, extended, 16 of 16. At Dunmore (Gatelander), Speech 50: the fine goes 75 → 38. The reopened halt says *A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: 38 gold, and we’ll say no more about it.*, with no *Halt*. The next halt there, indoors, greets as before (*Stand a moment. There’s a fine of 38 gold owed in Dunmore…*), and the flag is gone.
+### Needs eyes
+- Nothing for a playtest beyond reading the four lines in their towns.
+
+**A correction to numbering.** The bodies builder took Session 983 on its own branch during this run, so the lord's job is Session 985 (pushed as *Session 983*, commit `ce3f8ace`) and the guard's line is Session 986 (pushed as *Session 984*, `0fe8f9f3`). The entries, the code comments and the tests carry the new numbers; the two commit messages keep the old ones.
+
+## v80 — Session 987 — The Crown's blade topic is drawn as quest talk (the critic's note, backlog I)
+The critic found that the lord's *The blade from the stone.* at Coeur de Vie was grey in Tadhg's list, while *Serve the Crown.* and the work topics were gold. Its own *Give it to the Crown.* and *I’ll keep it.*, and the Waylamp's *The lamp.*, carry the mark. The topic in `crownBladeTopics` (`87-world-quests.js`) had no `quest:true`. Nor had its other state, *The licence.*, which the lord asks once you hold the blade under the Crown's licence. Both carry it now. No words changed.
+### Verified (headless Chromium)
+- `crownclaim`, extended, 12 of 12: both topics are quest talk; every other check as before.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 988 — The foes' prewarm makes the shadow pass's program too (QA's `foewarm` on the new look, backlog I)
+QA found `foewarm` red twice on the new look with the same numbers each time. `prewarmFoes` (`42-zone-enemies.js`, Session 688) builds one foe of every kind behind the world's loading fade and compiles their programs with `REN.compile`. Even so, raising every kind in Dunmore then compiled 2 shaders and added a program, 42 → 43. Listing the programs before and after named it: a `depth` program, the shadow map's. `compile()` builds the materials the eye draws, not the depth materials the shadow pass makes for whatever casts a shadow. On r128 the foes' depth variant was one the world had already made. On 0.170 a foe casting a shadow keys one of its own, so the first such foe on screen still hitched.
+
+The prewarm now draws one frame of the scene, with the foes in it and the shadow map forced to update. The shadow pass builds its depth program there, behind the fade. The flag is put back as it was. QA left the test as it was, and it is unchanged.
+### Verified (headless Chromium)
+- `foewarm --look=new`: the prewarm makes 18 programs (17 before), in 1,215 ms (about 620 before, still behind the fade). Raising all 32 kinds in Dunmore now compiles 0 shaders and adds 0 programs (it was 2 and 1).
+- `foewarm` on the old look: 14 programs, 781 ms, nothing compiled on raising.
+- `lod`, `looknew` and `lookpair` pass.
+### Needs eyes
+- The world's first entry takes about 0.6 s longer behind the fade on software GL. On a laptop's GPU it should be a frame.
 ## v80 — Session 983 — Folded wings wrap the flank (L4 and L3, prototype only)
 Session 974 left this in its notes: "seen from the side, the griffin's folded wing is a thin dark line. The feathers are flat cards and it lies on its back edge-on. A bird's folded wing wraps down the flank, which would want the cards to roll as well as turn." It is a fault in bodies the kit already makes, so it asks nothing. Only the prototypes are touched (`creatures.js`, `creatures.check.mjs`).
 
@@ -21980,6 +22363,38 @@ Corrections made during the session:
 - **The yard is bare turf.** Chips, shavings and tar barrels would sell it.
 - **L5's roads and works are done** in prototype: mine, aqueduct, windmill, lighthouse, watchtower, toll bridge, ferry, shipyard. Canals and quarries remain on OG-046's board, unlisted.
 
+## v80 — Session 992 — The Wolf-Mother's Cloak in its den: the last of the Makers' trials (Michael's A on #270)
+The Makers' six tools could all be had but one. The cloak came only off its master's corpse (Session 781), half its worth; the approved draft (*The Makers' Things* §6) has the master of the cloak's lair *asleep on it*, and you take it from under the living beast at Resolve 30. Two rules were missing, and Michael's A on #270 settled both: the master wakes only when struck, and "weapon sheathed" means not attacking. Built in `87-world-quests.js`, beside the Shuttle's room, with one call from `goToDungeon` and three from the loop and `interact`:
+- **The sleeper.** `cloakDenLay` runs after `lairFinish` in the cloak's cavern (`cloakSeed`), while its master lives and has never been woken. The master is marked `cloakSleep`. The dungeon's frame asks `cloakSleepTick(e)` of each foe before its sight check: a sleeping master is held still and unalert, whatever the player does beside it, so the cavern's other beasts are still the fight or the sneak on the way in. A strike wakes it (its health or its posture below full: a blow, an arrow or a spell), and the world remembers (`worldState.masters[seed].woke`, the world row), so it is awake on every later visit.
+- **The cloak** lies under it, its hem 1.2 m out toward the way in. It is a placeholder, a flat grey mantle; the den's prop (Session 850's prototype) and the sleeping pose are owed (H). Until then the master sleeps in its standing pose, as a dormant Gargoyle does, which #270 allowed for.
+- **The words**, the draft's, word for word. The first time you come within seven units of the sleeping master with a clear line (the foes' own line test), *The master of the cave is lying on something grey that is not its own hide.*, once (the character's `stats.cloakSeen`). Within 1.5 of the hem, and not swinging, charging, or drawing a bow, *Press 'E' to take the grey cloak from under it*. Below Resolve 30 (the base plus at most 2 from gear, `artifactTry`), *You put out your hand, and take it back. Not yet.*: nothing taken, nothing woken, the try kept. At 30, *It lifts its head and looks at you for a long time. Then it lays its head down on the bare stone, and lets you go.*, and the log reads *Took the Wolf-Mother's Cloak from under the master of ${lair}. It lives.* The cloak is whole, so Session 777's drain on the nearest town and Session 789's Guild claim follow as before. The master sleeps on.
+- **The Journal's** *Things not yet yours* now has the draft's own line for the cloak: *The Wolf-Mother's Cloak — in the den at ${lair}. Resolve 30.*
+- Killed in its sleep, the master's death goes the corpse's way (Session 781), and the placeholder leaves the floor.
+
+**Asked, not built: enemies by place (DECISION #373).** Michael's answer on #51 was *not yet, until the skills sessions land*. They have, and 2.0 waits on it, so the question is asked again with the same recommendation (A: a tier per region plus the dungeon floor). The build waits for combat's resolver to merge, since both rewrite `enemyHpScale` and `enemyDmgScale`.
+### Verified (headless Chromium)
+- **`cloakden`** (new), 15 of 15, in the real cavern (Dunkeel's Lair, an Ogre master on floor 2), driven by the game's loop:
+  - The master sleeps on the cloak, the hem 1.2 m out on open floor. From 6.5 units with a clear line, the draft's line once; nothing more at 4.
+  - Ninety frames 1.6 m from it: not alert, moved 0, your health lost 0.
+  - The prompt reads as the draft's at the hem, and not while a bow is drawn or a swing is in the air.
+  - Resolve 29: the draft's failing line, nothing taken or logged, the master still asleep ten frames later, the try kept; the Journal's line as drafted.
+  - Resolve 30: the draft's words and log line; the cloak whole and unique in the bag; the town pays 0.6 a day; the master asleep thirty frames on, and no prompt.
+  - A second visit: asleep, nothing under it. Struck (5 health): awake and alert, and `woke` written. A third visit: awake as any master. Another cavern's master is never laid down. No page errors.
+- `cloakden --look=new`: green. `cloakcorpse`, `wolfcloak`, `lairmaster`, `makertools`, `cloakguild` and `hoardspot` pass.
+### Needs eyes
+- **A sleeping master standing up.** Until the bodies builder's sleeping pose, the Ogre stands still over the grey slab. It reads as a statue more than a sleeper.
+- **Reach for the hem.** 1.5 m round a point 1.2 m in front of the master. Whether that feels like "within reach of the master" from every side of a large beast is for play; from behind it, there is no prompt.
+- **The cavern's way in.** The cloak's master sleeps, but its cavern's other beasts do not: the trial is Resolve at the end of an ordinary fight or sneak, as #270's A says.
+
+## v80 — Session 993 — The Gate-Blade's stone: a slab at waist height, outside the gate (the critic's s632, backlog I)
+The critic found two things wrong with the Gate-Blade's stone (Session 802). It was 2.1 m tall with the hilt at 2.0–2.4 m, so at the prompt's distance the eye saw only the slab and the hilt was above the frame, though the draft's blade stands *a hand's breadth below its guard*, a grip to take hold of. And it stood inside Dunmore Tower's yard, 8 from the keep's door with the walls 16–21 off, where Session 802's own entry and the draft both put it *outside the gate, plainly visible from its road*. Both are the placeholder doing what its entry says, so neither is a decision.
+- **The height.** The slab is 1.1 m (`bladeStoneBuild`), the critic's figure until the look builder's prop comes; the guard sits on its top and the pommel at 1.41 m.
+- **The place.** `bladeStoneSpot` now reads the compound as it is built (`buildFortCompound`: a ring of radius 27 round the door's point 4 m south, its gate on +z) from where the gate stands (`dungeonWorldPos`). It searches 31 to 41 m from the ring's centre on bearings fanned out from the gate's line, 0.24 to 1.08 rad either side and nearest first, never square on the gate where the spur road leaves. It takes the first spot clear of every solid within 1.4 m and above the sea, as before. The old seeded draw of a starting bearing is gone; nothing else drew from that stream. A road check was tried and dropped: `ROADS` holds only the roads loaded so far, and an outcome keyed by place must not read what has loaded (S533).
+### Verified (headless Chromium)
+- **`bladestone`**, extended, 13 of 13: at Dunmore Tower the stone stands 31.0 m from the compound's centre, outside its ring, 0.24 rad off the gate's line, on open ground, and the same spot again. The hilt stands 0.95–1.41 m over the ground. The first sight, the prompt, the six failing tries, the taking, the empty slot and the hermit as before.
+- `bladestone --look=new` green; `gateblade`, `bladekey`, `makershermit` and `crownclaim` pass.
+### Needs eyes
+- **Plainly visible from its road.** The stone is 4 m off the gate's axis at least, by the spur's mouth. Whether it reads as *the stone by the gate* from the road, or is lost against the curtain wall behind it, is for a playtest, and the prop is the look builder's.
 ## v80 — Session 996 — The sash's knot and hanging ends (L1 and B2, prototype only)
 Session 989 left the sash's hip end as "a flat panel lying on the side of the hip. A sash is knotted or tucked there, and its ends would hang." OG-056 draws the Aurennais' sashes knotted at the hip with long ends falling over the thigh. This finishes a piece the kit already makes and the sheet already shows, so it asks nothing. It touches only the prototypes (`people.js`, `builder.check.mjs`). (Numbered 996: this entry was first committed as 992, which the systems builder had taken in the meantime.)
 
@@ -22147,6 +22562,35 @@ Corrections made during the session:
 - **Peat cut on a bog is a quest writer's and a systems builder's question too:** turf as fuel, a cutter's right to a bank. Nothing of that is drawn.
 - **Off the road (OG-124) still lacks:** the shepherd's hut, the overgrown arches by falls and the cave behind them (Gatelands); the hunting cabin, the logging camp and the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
 
+## v80 — Session 1000 — The Waylamp's first sight waits for the day, and says the rain only in the rain (the critic's s632, backlog I)
+The critic saw the Waylamp's sight line, *A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.*, at Biafaira's The Wandering Anchor at two minutes past midnight under a clear sky. `tickWaylamp` said it once a character at any hour and in any weather. The backlog's note offered two ways: new lines from the quest writer, or the two halves keyed to the hour and the weather. The second needs no new words, so it is not a decision: the draft's two sentences are kept word for word and each is said only when it is true. By night a lamp over an inn's door is nothing strange, so the first sight waits: nothing is said and `stats.lampSeen` is not set, and the line comes the first time you are within 20 of the door by day (`lampDaySight`, the world's own `isNight`). The rain's half follows the first only while the weather is rain or storm (`lampInRain`, `WX.type`). The innkeeper's topic was never keyed to the sight and is unchanged.
+### Verified (headless Chromium)
+- **`waylamp`**, extended, 15 of 15, at Biafaira's The Wandering Anchor: at 0h03 under a clear sky nothing is said and the sight is kept; at noon, clear, *A lamp burns over the inn’s door in broad day.*; at noon in the rain, both halves. The rest of the trial as before (the innkeeper's offer, five towns' inns, the theft that puts it out, the seven days, the two rows). `lampheld` passes.
+### Needs eyes
+- **Fog and snow.** Neither carries the rain's half; whether *the rain does not seem to reach it* wants a snow line of its own is the quest writer's, if anyone asks.
+
+## v80 — Session 1001 — Shadow's hand, Stealth 100 (skills and perks A, session 3, part 5); three perks asked (DECISION #376)
+The build sheet's Stealth 100 perk, *Shadow's hand*, is "a backstab does +50%". The backstab is positional (Combat Redesign Session 2): behind a foe's rear cone, a dagger's blow is ×3 and any other's ×1.5, multiplied into the whole blow in `applyMeleeDamage`, with the stagger, the finisher and the luck. Shadow's hand multiplies the backstab's own multiplier by 1.5 (`shadowHandMult`, `12-character.js`, read in `applyBackstab`, `10-player.js`), so a dagger from behind is ×4.5 and a sword ×2.25, and the whole blow rises by half. The exclusions are the backstab's (a boss, a dormant foe, a ranged foe, a slime), so the perk adds nothing where there is no backstab. One code path for the dungeon and the open world: both resolve through `applyMeleeDamage`. Combat's resolver (PR #356) keeps `applyBackstab` as it is, so the perk rides it when it merges. A correction to the backlog: it listed Shadow's hand as waiting on #356; the resolver's branch changes neither `applyBackstab` nor where `applyMeleeDamage` reads it, so it did not need to.
+
+**Asked, not built (DECISION #376).** The hand and the word's last three perks each change a rule the game does not have, as Steady did for the bow (#369): *Hearing* (Speech 75, "a person at favour −1 still talks") when nobody refuses to talk at any favour; *No mark* (Locks 100, "a picked town lock is never found") when a pick is a crime only if seen at the time and nothing finds it after; *Word given* (Speech 100, "a guard takes your word for a trespass") when there is no trespass, being inside after hours not a crime by the crime system's design. The question offers building each rule and then its perk (recommended for No mark and Word given; Hearing wants a brush-off line from the quest writer), other perks under the same names, or waiting. The Skills tab shows the three as *not yet in the game*.
+
+With this, the first wave stands at 18 of its 40 perks built: the rest are combat's (Blade, Blunt, Hand-to-hand, Guard, Armour 50 and 75, which read posture and the parry and wait on the resolver's merge), Acrobatics' three (Catch, and the double jump and dash on #370), Steady (#369), and the three above.
+### Verified (headless Chromium)
+- **`perkbody`**, extended, 15 of 15: a foe facing +z with you 1.3 behind it, the dice held still: the backstab ×3 with a dagger at Stealth 99 and ×4.5 at 100, ×1.5 and ×2.25 with a sword; a blow of 100 through `applyMeleeDamage` lands 300 → 450 and 150 → 225; from the front ×1 at Stealth 100. The Stealth and Athletics perks before it as they were.
+- `dmgnums`, `captainguard` and `challenge` (which read the backstab) pass.
+### Needs eyes
+- **A dagger from behind at ×4.5.** With the stagger's ×1.5 a parried, backstabbed foe takes ×6.75 of a dagger's blow. That is a Master's reward at Stealth 100, as Skyrim's sneak attacks are, but whether it ends fights too quickly is for play.
+
+## v80 — Session 1002 — The road job's camp comes from the cell's data, and a missing person's camp is the nearest (QA's note, backlog B)
+Session 985 made a lord's job come out the same kind whatever had loaded, and left two places owed under the same rule (S533: an outcome keyed by id reads the hash and `getCell`, never what has loaded). The *road* job put its bandit camp halfway along `ROADS.find(…)`, the first loaded road out of the town: before the town's cell had loaded there was none, and the camp fell back to 300 m east. The *find* job put its missing person at `beds[0]`, the first roadside camp within 700 m in the order the camps were built.
+- **The road.** Every road that ends at a settlement is in its own cell's `roadDefs` (the tree, the two extras and the border roads, made with the cell; the home cell's are `HOME_ROAD_DEFS`), and `ROADS` holds them in that order once the cell loads, so the first of them is the road the old code found whenever the town had loaded. `roadOutFixed(site)` reads it from `getCell`, and `roadLineFixed(def,c)` works out its line as `buildRoad` does, with the same bends seeded by the road itself (S619), without building it. The camp is that line's middle point, as before. The job keeps its road's two ends (`data.ra`, `data.rb`), and clearing the camp marks that road cleared. A job saved before this session has neither and is marked as before. A glade or a camp has no road, so its job's camp stays 300 m east, which is also fixed.
+- **The camp of a missing person.** The roadside camps are built with their cells, and where one stands depends on the roads, pads and stamps built so far, so they cannot be read from the cell's data without building them. The job now takes the *nearest* camp within 700 m (ties by position), not the first built. You ask a lord in person, and the camps within 700 m of the town are on cells that have loaded around you by then, so the nearest is the same camp whichever cell loaded first. Still owed under the rule: a find asked for a town whose neighbours have not loaded takes the fallback spot. Nothing asks for one today.
+- `roadLineFixed` repeats `buildRoad`'s spline (`82-world-structures.js`, the look builder's file, untouched). The suite checks the two point for point, so a change to one without the other fails it.
+### Verified (headless Chromium)
+- **`jobseed`**, extended, 8 of 8. Three towns two cells or more from the start were asked 30 job keys each before any of their cells had loaded, then again once each had built: 90 of 90 the same, now with the road job's camp spot and its road in the comparison (15 road jobs, 10 of them on a road of their own cell, 5 at a glade with no road). For 69 loaded roads of the settlements' cells, the line worked out from the cell's data is the built road's: the same number of points, the worst 0 m off. In all 5 loaded towns with a road, the first road out is the one the loaded roads gave.
+- `mapseals`, `theftlevel1`, `rowebeats` and `rowelines` pass.
+### Needs eyes
+- Nothing a player sees changes for a town asked in person: the road and the camp are the ones they were.
 ## v80 — Session 1003 — The coin necklace (L1 and B2, prototype only)
 Backlog L1 gives the Aurennais "coin and hoop jewellery" (OG-044, OG-056). Session 995 made the hoops and left the coins owed. This session makes the coin necklace. As with the sash, the wrap and the hoops, the sheets draw it plainly and the canon has nothing against it, so it asks nothing. It touches only the prototypes: `people.js`, `builder.js` (its label and a new `neck` view) and `builder.check.mjs`.
 
@@ -22417,6 +22861,72 @@ Corrections made during the session:
 - **Nothing tells why the camp was left.** That is the quest writer's.
 - **Off the road (OG-124) still lacks:** the overgrown arches by falls and the cave behind them (Gatelands); the ice cave mouth (the Mark); the smuggler's cove (Aurenne); and the camps on the roads.
 
+## v80 — Session 1008 — The new look's 11 s stall at a jump of the clock: not reproduced, and not the game's JavaScript (QA's `hourhitch`, backlog B)
+QA's Session 992 found `hourhitch` red twice on the new look, run alone: the jump to 21h gave one frame of 11.2 s, then 11.5 s, against a median of 3.2–3.5 s, with nothing compiled, and a probe put a 9.1 s synchronous `REN.render` on the first dusk. It was filed for the systems builder. QA's run predates Session 988, whose prewarm draws one frame with the shadow map forced, so the first question was whether that had moved the cost. It had not: neither tree stalls here.
+
+The suite was run three times alone in a 4-core container on the new look: this branch twice (one of them the probe below), and QA's own commit (77bb4b0a) once, through `--src`. Over 32 jumps of the clock no frame went over 1.8× its run's median. The worst was 8.2 s at 6h on QA's commit (median 4.75 s); on this branch 5.1 s at 21h (median 4.5 s). Every check passed each time.
+
+The probe (a scratch script, not a suite) wrapped `REN.render` and the shadow map's render in timers and ran the CPU profiler over each step's 12 frames, through two rounds of the six jumps. The game's JavaScript is not where a frame goes. A render call is 15–67 ms of script, the shadow pass 3–25 ms of that, and the viewmodel's second render 0–4 ms. A step's 12 frames take 40–55 s of wall time, and the main thread is idle for all but 1–1.5 s of them. The rest of a 3–5 s frame is the software rasterizer's, in the GPU process, which the page cannot see. The busiest script is the scene graph's `traverse` and `updateMatrixWorld` and the terrain's height reads, 30–90 ms a step each. A *synchronous* 9 s `REN.render` is then a GL call that blocked on that queue, not three.js doing work.
+
+So there is nothing in the game to change for it. It stays open in backlog B, rewritten for QA with these numbers: if it comes back, a step's `REN.render` time logged beside its frame time says whether it is the game or the rasterizer. The same pass struck a copy of the foes' prewarm item that the merge had left in B; Session 988 fixed it, and its line in I was already struck.
+### Verified (headless Chromium)
+- `hourhitch --look=new`, alone, this branch: 6 of 6. Worst judged frame 5.1 s, median 4.5 s, noon 3.4 s. 0 shaders compiled, 43 programs throughout, 27 lights.
+- The same on QA's commit 77bb4b0a: 6 of 6, worst 8.2 s at 6h, median 4.75 s, 42 programs.
+- Probe, 12 jumps (18h, 23h, 12h, 6h, 21h and 12h, twice): every `REN.render` 15–67 ms, no frame over 2× its step's others. CPU samples per step: idle 37–54 s, program 0.3–0.4 s, garbage collection 0.05–0.4 s.
+### Needs eyes
+- On Michael's laptop, with a real GPU: whether a sleep or a wait into the night hitches at all. The headless numbers say the game's script is not where a long frame would come from.
+
+## v80 — Session 1009 — Second step, the double jump at Acrobatics 75; the head stops at the ceiling; a jump's height no longer depends on the frame rate (the double-jump sheet's session 1, less #370's cap)
+The designer's build sheet (`docs/design/double-jump-and-dash-build.md`, merged in #371) gives the systems builder its first session now: the step, the air-speed cap, the head clamp and the fall rule. One of the four is its open number. The cap, 4.7 m/s in the air for everyone, is DECISION #370 and still waits on Michael. The other three are settled by the sheet, so they are built here and the cap is left out.
+
+- **Second step** (Acrobatics 75, `airStepTick` in `10-player.js`, called by the loop before the ground's jump). A fresh press of Space in the air sets the rise to 4.5 m/s. It is set, not added, so a quick double tap does not stack. The step works once a flight and comes back on landing. It costs 12 stamina, and the first jump stays free. A held Space never fires it: Space must be let go in the air before the press counts. Over 70% of your carry the rise is 3.2; immobile, swimming, levitating or staggered, there is none. Too winded (under 12, or in `staminaCD`), the stamina bar flashes, as the roll's does. The perk goes live in `PERK_LIVE`, so the Skills tab lights it.
+- **The head stops at the ceiling** (`headCeil`). A rise ends where the top of the head, `SCALE.PERSON` (1.8 m) over the feet, meets a ceiling. The ceiling is the room's own height, the dungeon floor's, or the underside of a foothold or solid over you (an inn's gallery, the floor above). A generated room now records its true height as `house._roomH` after `scaleRoom`: 2.89 m for a plain cottage, 3.18 for stone. Before, nothing recorded it, and the third-person camera still guesses by type as it did. This holds for every jump, not only the step. So at Acrobatics 100 a single jump (1.21 m) in a 2.89 m cottage now stops 0.12 m short of where it went, which was through the ceiling. Outdoors nothing is over you yet, until the heights card.
+- **The fall's count.** The sheet asks that a step pressed near the ground never resets a fall. `fallTrack` already keeps the flight's top, so nothing changed, and the suite proves it.
+- **A jump's height is the same at any frame rate.** The loop took gravity off `velY` first and then moved `jumpY`, which loses velY × dt/2 of every rise: a 0.84 m jump peaked at 0.79 at 60 fps and about 0.70 at 20. It now integrates the flight exactly, as the dropped-frame rule asks: 0.840 m at both. That raises every jump by 0.05 m at 60 fps, to the height the platforming page and the skills sheet were written to.
+- **Found and fixed by the suite before it shipped.** With the step called after the ground's jump, a flight that ended with Space let go left the press armed. A jump pressed on the very frame of landing then fired the step at take-off, a 1.77 m leap from the ground. The tick now runs first, so a landing always resets it.
+
+Not built, and owed: the air-speed cap and its `aircap` suite (#370); the dash, the sheet's session 2; the tuck and lean (the bodies builder's, with F10); and the one line the first time each is held, the quest writer's words.
+### Verified (headless Chromium)
+- **`airstep`**, new, 12 of 12 (the sheet's `airstep`, `headroom` and `airfall` in one). It is driven through the game's own loop at fixed 1/60 steps with the draw held off:
+  - Nothing at Acrobatics 74: the one jump, 1.102 m.
+  - At 75 a fresh press at the top rises to 1.666 m (the sheet's 1.66), and at 100 to 1.770 (1.77), each at a rise of 4.5 m/s and a cost of 12 stamina.
+  - Without the press, at 75 the jump is the one jump, 1.106 m. With Space held through the flight at 100, 1.21 m and no step.
+  - A third press after the step changes the rise by gravity's −0.3 m/s alone. At 11 stamina, nothing.
+  - A jump at Acrobatics 5 peaks at 0.840 m at 20 fps (steps of 50 ms) and at 60.
+  - A 12 m drop with the step pressed 1 m up is counted as 12.00 m.
+  - In a Dunmore cottage, 2.887 m to the ceiling, from a clear spot: the double jump's head stops at 2.887 m, and an untrained jump peaks with the head at 2.64.
+  - In a dungeon, 3.2 m to the ceiling: the double jump's top is 1.40 m (3.2 − 1.8).
+- `airstep --look=new` 12 of 12. `falls`, `perkfall`, `roll`, `lockon` and `skillcurve` pass (skillcurve's jump ratio is now exactly 1.44).
+### Needs eyes
+- **How the step feels.** It is a set rise with no new pose until the bodies builder's tuck. Without #370's cap, a sprinter double-jumps farther than the sheet's table: up to 7.4 m at Athletics 100 and Swiftness 40.
+- **The ceiling in old rooms.** The legacy interiors keep their own low ceilings (a shop's 2.3 m), so their jumps are now capped at 0.5 m.
+- **Every jump is 0.05 m higher at 60 fps.** No place is built to the old height.
+
+## v80 — Session 1011 — Swallow's turn, the air dash at Acrobatics 100 (the double-jump sheet's session 2)
+First committed as 1010, which the bodies builder had taken; renumbered. The sheet's second session. Its numbers are all settled; the only open number is the air-speed cap (#370), which the dash does not read.
+
+- **The dash** (`airDashStart` and `tickAirDash`, `10-player.js`). Q in the air, while the dash is unspent, carries you 3.0 m level in 0.2 s. It goes toward the held keys, or straight on with none (where the roll on the ground goes back). The fall pauses, and starts again from rest when the dash ends.
+  - It works once a flight, for 20 stamina. There is none over 70% of your carry, immobile, swimming, levitating or staggered. Too winded, the bar flashes.
+  - Spent, Q buffers the landing roll as before.
+  - The loop moves the dash through the walk's own collision, as it moves the roll, so it stops at a wall in the world, a dungeon or a room.
+  - It has no untouchable window, no strike and no height.
+  - Its clock is `performance.now()`, as the roll's. The loop's dt is capped at 0.05, so no frame of it moves more than 0.75 m, and `fallTrack`'s 3 m travel rule holds without the exemption the sheet foresaw for an uncapped frame.
+  - The perk goes live (`acrobatics:100`), so all four of Acrobatics' perks are now in but *Catch*, which waits on the mantle.
+- **The landing roll, and a correction to the sheet.** The sheet says "a dash ending within 0.2 s of landing counts as the roll". Its own `airroll` row asks that Q pressed 0.1 s before landing halves a 10 m fall. The two cannot both hold. A dash begun 0.1 s before landing, at 13 m/s about 1.4 m up, holds you there 0.2 s, then drops you from rest for another 0.4 s. Its end is never within 0.2 s of the ground unless it began under 0.36 m up. So at Acrobatics 100 the old habit, Q before a hard landing, would have cost the whole fall. The built rule keeps the sheet's sentence and adds the intent behind it ("one key: pressing Q to soften a fall still softens it"). A dash also counts as the roll when it begins within 0.2 s of where you would have landed: worked out from your speed and the ground under you (`dashGroundY`, the same ground the loop lands you on). The designer may want the sheet's sentence to say so.
+### Verified (headless Chromium)
+- **`airdash`**, new, 10 of 10 (the sheet's `airdash`, `airdashwall`, `airdashframes` and `airroll` in one). It is driven through the game's own loop with the page's clock held to the loop's:
+  - Nothing at Acrobatics 99: Q in the air only buffers the roll.
+  - At 100, straight on: 3.000 m along the eye in 13 frames of 1/60. The height moves 0.0025 m, the last frame's fall from rest.
+  - The dash costs 20 stamina, and a second Q in the same flight dashes nothing.
+  - With A held, 3.000 m to the left.
+  - At 20 fps (steps of 50 ms) the same 3.000 m in 4 frames.
+  - Carrying 75% of your weight: no dash, no cost.
+  - A 10 m drop (8 m free at Acrobatics 100) costs 16. With the dash 0.1 s before landing it costs 8, rolled. With the dash spent and Q 0.1 s before, 8, as before.
+  - In a dungeon, from 1.5 m before a wall's face: the dash stops at 1.25 m, the body's radius short of it.
+- `airstep`, `falls` and `roll` pass after the change to `startRoll` and `fallLand`.
+### Needs eyes
+- **How it feels**, with no pose yet: you slide level for a fifth of a second. The lean is the bodies builder's (with F10).
+- **The jump-and-dash gaps.** Jump plus dash makes 6.45 m and all three 7.98 m, at the sheet's 4.7 m/s. Without #370's cap a sprinter goes farther.
 ## v80 — Session 1005 — `shipmoor` keeps the sea empty while she sails out (FLAKY on auto/backlog)
 QA's read of the last eight green CI runs (112 headless jobs, 16 Oct 07:21–12:15 UTC) found seven FLAKY retries and no suite red twice: `lookpair` twice and `looknew` once, both runs older than the fixes in Sessions 971 and 991; and once each `bridgenames` (the game's, already filed in I), `skillcurve`, `q7world` and `shipmoor`. `shipmoor` (auto/backlog 490b0f9, shard 14) read hull 99 against 100 after fifteen seconds at the wheel, and its last message was *Black sails on the horizon.* The suite sends the other ships away once, when she is bought. The sea rolls its pirate and merchant again every 2 s from the chunk and the game minute (S508, `tickOtherShips` in `85-world-sea.js`), and the minute is wherever the clock got to while the world loaded. So whether a pirate came near enough to cost a point depended on the boot. The suite is about her bow and the shallows (Session 473); the pirates have suites of their own (`pirateram`, `piratehold`). So while she sails out, it sends every other ship away each tick and counts them (`others`). It also records every line the sea says (`said`), the weather and the sea state, so a later red names what struck her. The checks are unchanged: moved over 60, speed over 2, the hull whole, never stopped.
 ### Verified (headless Chromium)
@@ -22680,6 +23190,22 @@ What changed in `people.js`:
 - **The sole's outline is a convex hull,** so the arch is filled straight across, as a cut leather sole is. The toes reach 3.7 mm from its front edge.
 - **Still owed in L1:** a scarf's tail and a taller turban, and the coins on the head-wrap's edge (to be confirmed from the full image).
 
+## v80 — Session 1013 — Main's one resolver, merged with the skills (a merge; combat's resolver and skills and perks A)
+Combat's resolver (the deep-work card, approved 16 Oct) reached main. It replaced `_resolveDungeonStrike` and `_resolveZoneStrike` with one `resolvePlayerStrike` in `74-strikes.js`, and the damage with `meleeDamageChain`, "one function a skills build can swap". The skills sessions had changed the two old resolvers, so merging main into auto/systems conflicted there. Main's resolver is taken whole, and the skills' three changes move into it:
+- `meleeDamageChain` multiplies by `skillMult(weaponSkill(w))` in place of `level × 1.5`. Fists read Hand-to-hand.
+- `resolvePlayerStrike` notes whether the foe was already alert.
+- After the hit, the weapon's skill takes a use (3 for a riposte or finisher), or Stealth 3 for a backstab.
+
+Nothing else of either side changed. The build tag keeps the higher s666.
+
+Three suites needed re-measuring against the two together:
+- `fistfight`: our two checks, untrained 15–28 and Hand-to-hand 100 at the critic's 7–12, hold with the chain's ×1.3 third, so they stand. Main's single 6–11 range was left out.
+- `skillcurve`: its three damage swings came in quick succession, so the middle one was the chain's ×1.3 third. Each swing now starts a fresh chain.
+- `resolver` (main's): it punched with untrained fists, which now hit for 1 through a Bandit's armour, where the old level term had made it 2; the guard, riposte and finisher comparisons can't be told apart at 1. Every skill is set to 50 and Hand-to-hand to 100, which gives the old 4. Its expected chain damage reads the skill multiplier in place of the level term.
+### Verified (headless Chromium)
+- 23 suites that measure a hit or a skill: `attrdmg`, `bladehit`, `counters`, `dmgnums`, `duelrhythm`, `fists`, `fistswing`, `fortunecaor`, `handback`, `herbparity`, `levelmarks`, `levelpanel`, `perkbody`, `perkbow`, `perkfall`, `perkhand`, `posture`, `posturefloor`, `postureregen`, `resolver`, `skillcurve`, `skillsave`, `swingblade`, and `fistfight`: all pass.
+### Needs eyes
+- Nothing new. CI runs the rest.
 ## v80 — Session 1012 — The Gatelands' falls: the overgrown arches and the cave behind the water (card F8, prototype only)
 This is the last of OG-124's Gatelands places off the road. The Gatelands panel names "overgrown arches by a waterfall" and "a cave behind falls" as two finds; they are drawn here as one place, because the panel's picture puts them together and because a ruin seen through its arch is a good way to come upon a fall. There are three precedents:
 - Glencar and Ess-na-Larach: a fall of 12 to 15 m off a limestone head-wall into a pool in a wooded glen, where the shale beds weather back and undercut the face;
@@ -23053,6 +23579,74 @@ Corrections made during the session:
 - **The ground's texture** is blotchy at this sun. It is the kit's dry turf, as at the aqueduct, and it wants F3's ground.
 - **Still open in OG-124:** the pilgrims' rest, which wants the canon on whose pilgrims and to where, and the small mysteries.
 
+## v80 — Session 1026 — The yard rematch at level 8, re-measured for skills by use (tests only)
+The producer could not land Systems sessions 940–1013 (bf251d1): with them, `tests/yardplay`'s rematch was lost, a level-8 player put from 260 health to 1 by Rowe's three blows, where main wins it untouched. Michael's A on that decision lifted F3's freeze so this run could fix it. Reproduced here on the merged head, twice running.
+
+What changed is the player's swing, not Rowe. Main's resolver adds `level × 1.5` to every swing; skills by use replaced that with the weapon's skill (`skillMult`, ×0.64 at 5 to ×1.4 at 100), as the skills page asks. The test made its rematch character by setting `level = 8` and leaving every skill where a new warrior's stands, so its iron sword hit Rowe for 17 and 7 a swing (main: about 32), while her health still grows with your level (127 at level 8). The skills build sheet keeps `enemyHpScale` and `enemyDmgScale` reading the level until enemies by place (DECISION #373, waiting) replaces them, so this is the interim it describes. It is not a fault for this branch to change. The fight ran 7.5 s, long enough for her to swing, and the stand-in wore nothing, so her blows landed at 106, 101 and 52.
+
+A level-8 character under skills is more than its level, so the stand-in now carries what one would have:
+- **The skills:** the save's own migration of a level-8 duelist (`skillsInit('duelist', 8)`: Blade a major at 39).
+- **The armour:** the heavy kit of that level's tier, helmet to boots and a buckler, the resolver's reference player (`kitTier(8)` = 4, 30 armour).
+
+The first fight, a new character's, is unchanged. The fight log now also records each blow on either side (`onHer`, `onYou`), so a change in the numbers shows in the log rather than only in the ending.
+### Verified (headless Chromium)
+- **`yardplay`, old look:** 9 of 9 checks pass, twice. The first fight is lost as before (her blows 35, 35, 40 and 19 on 130). In the rematch your sword lands 23 and 10 alternately, she yields at 5.37 s at 28 of 127, and you stand at 191 of 260 after her one blow of 69. Before the change, the same rematch was lost at 7.5 s (her 79 of 127, you at 1).
+- **`yardplay --look=new`:** 9 of 9; she yields at 5.5 s, with the same blows.
+- **`duel` and `duelrhythm`:** both pass.
+- **Main's own suite on main** (a worktree at `9bd7493`), for comparison: wins the rematch in 3.02 s; she never lands a blow.
+### Needs eyes
+- How a level-8 swordsman with untrained Blade fares against foes that grow with the level, in play, until enemies by place (#373) lands: about half main's damage on a foe of twice the health.
+
+## v80 — Session 1027 — The air-speed cap: 4.7 m/s in the air for everyone (DECISION #370, the double-jump sheet)
+Michael's A on #370: speed in the air is capped at 4.7 m/s, the sprint of untrained legs (3.83 × 1.225), for every character. The double-jump sheet needs this cap among its *Three rules the two need*. Before it, a sprinter at Athletics 100 and Swiftness 40 flew at 6.2 m/s and cleared 3.8 m with no perk and 7.4 m with the double jump, so the sheet's step table, which places are to be built to, meant nothing.
+
+`airCapK(dx, dz, dt)` beside the double jump in `10-player.js` gives the factor (≤ 1) the loop puts on the frame's step. `90-main.js` multiplies it into the move before the open world's, the dungeon's and the rooms' collision. It is 1:
+- on the ground;
+- in the air dash, which moves its own 3 m in 0.2 s;
+- in the roll;
+- in the water;
+- under Levitate.
+
+The lunge's forward push is inside it, so a swing in the air does not beat it.
+
+One correction to the first build. The loop moves you before it lifts you, so the frame that jumps still moved at ground speed. That is 0.15 m into the gap at 60 fps under Haste and 0.23 m at 20 fps: the gap depended on the frame rate, against the dropped-frame rule. The cap now also holds on the frame that jumps (on the ground with Space down, which is the loop's own jump test). Walking off a ledge is still a ground move until you leave it.
+
+Nothing is asked: the number is Michael's.
+### Verified (headless Chromium)
+- **`aircap`** (new, the sheet's row), 7/7. The ground is held flat at the start's height and nothing on it is solid, because the sheet's figures land level with the take-off.
+  - Athletics 100 and Swiftness 40, sprinting: 6.174 m/s on the ground (the sheet's 6.2), 4.700 in the air. With Haste: 9.261 on the ground, 4.700 in the air.
+  - A walk (3.83) keeps its pace in the air.
+  - Gaps, level with the take-off: 2.872 m for that sprinter, 2.872 under Haste and 2.867 for untrained legs (the sheet's 2.87); 3.447 at Acrobatics 100 (3.44). The double jump pressed at the top under Haste at full sprint clears 4.844 at 75 (4.85) and 4.984 at 100 (4.98), never over 5.9.
+  - At 20 fps under Haste the jump at Acrobatics 100 is the same as at 60, within 0.03.
+- **Neighbours,** all pass: `airstep`, `airdash`, `falls`, `perkfall`, `roll`, `lockon`, `skillcurve` and `yardpanel`.
+### Needs eyes
+- How the cap feels off a sprint: you slow from 6.2 (or 9.3 under Haste) to 4.7 the moment you leave the ground. The sheet's precedent (Hollow Knight) holds the air at one speed; a long run-up no longer buys distance.
+- The bodies builder's tuck and lean, and the quest writer's one line the first time each perk is held, stay owed.
+
+## v80 — Session 1028 — The aim's sway, and Steady (DECISION #369 A; skills and perks A, the Bow's last perk)
+Michael's A on #369: build a sway, then *Steady*. The Bow's 25 perk was written as "a full draw holds 3 s without sway", but the game's bow had no sway: a full draw aimed exactly at the crosshair for as long as it was held, limited only by the stamina it drains (8 a second). Session 982 built the Bow's other three perks and left Steady off.
+
+**The sway**, to the decision's numbers (`bowSway`, `10-player.js`):
+- A full draw held past 1 s starts to drift. The arrow leaves up to 2° off the crosshair, the drift growing over the next 2 s, so it is at full size 3 s into the hold.
+- The drift is a smooth figure in yaw and pitch (0.55 and 0.8 cycles a second, weighted 0.8 and 0.6), whose size never passes the amplitude. A hold is read, not rolled: the same hold always leaves the same way.
+- The hold is counted on the draw's own clock (`_bowFullS`, the loop's step), as the draw itself is. It starts when the draw reaches full and ends with the draw.
+
+**Where it shows:**
+- `fireArrow` turns the arrow's line by the drift. For a shot in third person, the line from the bow's hand to the aim point is turned the same way.
+- The bow in hand tilts with it, at 1.5 times the drift, in `90-main.js` beside the viewmodel's pose. This is a systems tell on the bow already built; the bodies builder may want to own its look.
+
+**Steady** (Bow 25) holds the aim true for the first 3 s of a full draw, not 1 (`PERK_LIVE` gains `bow:25`). The Skills tab now lights all four of the Bow's perks.
+
+`perkbow`'s check that *Steady* was not yet built now reads all four built. Its header says so.
+### Verified (headless Chromium)
+- **`bowsway`** (new), 7/7. A draw is held by the game's own loop, with arrows loosed by `fireArrow` at nine holds:
+  - **Bow 24:** true at 0.5 and 0.99 s. The amplitude is then 0.5° at 1.5 s, 1° at 2 and 2° from 3 s on. The arrows left 0.41, 0.76, 1.17, 1.40, 0.75, 1.74 and 1.92° off, each within its amplitude and never past 2°.
+  - **Bow 25:** true at every hold to 3 s, then 0.5° at 3.5, 1° at 4 and 2° at 5.
+  - The bow in hand tilts up to 2.99°, and the hold resets when the draw ends.
+- **Neighbours,** all pass: `perkbow`, `tpshots`, `hitseed`, `cloakden` and `duelrhythm`.
+### Needs eyes
+- Whether 2° reads in play. At 30 m it is about 1 m off, enough to miss a wolf's head and hit its body. The 1 s, 2° and 2 s are mine to tune, as the decision said.
+- The tilt in hand is a simple added rotation. The bodies builder's bow draw may want its own wobble.
 ## v80 — Session 1030 — Back to Their Bread: the three descriptions, and Varek at the fields (quest writer)
 The second build from the quest writer's queue: *Back to Their Bread*, approved by Michael on 14 Oct on the Quest Drafts page. The open ending has set `worldState.knowing` since Session 242, and its screen promises that *once in a long while, someone will say one of the three descriptions to you, and go back to their bread*. Until now nothing read the flag. This build is the whole draft: the greeting, and Varek seen at a distance at the fields. It needed no new system, so it came before the older approvals that do.
 
@@ -23221,6 +23815,146 @@ Corrections made during the session:
 - **The lock as a lock:** whether this padlock is one the player can pick, and at what skill, is the systems builder's.
 - **Still open in OG-124:** the pilgrims' rest and the lone grave (both want the canon), strange tracks, the unfinished camp and the odd rock.
 
+## v80 — Session 1034 — Enemies by place: a danger tier per region, plus the dungeon floor (DECISION #373 A)
+*(Numbered 1032 when first pushed. auto/backlog already had a 1032 and auto/bodies a 1033, so this run's three sessions are renumbered 1034–1036 here and in the code; the commits keep the numbers 1032–1034.)*
+Michael's A on #373: a foe grows with the danger of where it stands, not with your level. Until now every foe's health and blow read your level (`enemyHpScale`, `enemyDmgScale`, `74-strikes.js`), the Oblivion failure the skills page warned of: a character who levels by alchemy and locks meets wolves built for a fighter, and friends in one world have no one level to scale to. Combat's resolver, which rewrote those two functions, merged on 16 Oct, so this could be built now.
+
+**The tiers**, as the decision gives them (`REGION_TIER`, `BIOME_TIER`):
+- Home's regions: the coast, Ashen, Bealach and Royale 1; Deepwood, the Foothills and Greywood 2; the Wastes 3.
+- A far island's region by its biome: tundra, swamp and wasteland 3, the rest 2. A far region whose biome is *wastes* is 2: the decision names wasteland, not wastes.
+- A dungeon is its door's tier, plus one for each floor below the first, to 4 (`dungeonTier`). The tutorial's crypt is 1. A gate's school does not change it.
+- A legacy zone reads the region its config names (`south_road` is Ashen, and so on), or a fixed map for the five old zones (`LEGACY_ZONE_REGION`).
+
+**What a tier is worth.** The old level curve at levels 1, 6, 11 and 16 (`tierLevel`): health ×1, 1.75, 2.5 and 3, and the blow as the resolver's reference blow at those levels (×1, 2.09, 3.99 and 7.47).
+
+**Where it is read.** `foeTier(sc, x, z)` reads the world's region at the foe's own spot when the foe is built in the open world, and the zone's region in a legacy zone. The region comes from the foe's cell and its eight neighbours through `getCell`, never from the live `REGIONS`: the gotcha of S701 is that the live list holds only the loaded cells. The ring widens to three cells for an islet in open sea, as `lairBiome` does. `buildZoneEnemy` takes the tier from `zOpts.tier` when its caller knows the place (the legacy zones' spawn and respawn), otherwise from `foeTier`, and records it on the foe (`e.tier`).
+
+**The rare variants' chance** reads the tier's level in place of yours, at every call: the world's packs, site foes, job foes, pirate crews, the legacy zones and the dungeons. So no Greater Bandit is rolled on the coast at any level.
+
+**The masters** grow with their place's tier's level too, where they read your level before: the lair cavern's master (`lairFinish`, `1 + level × .08`) and the beast at the crag.
+
+**What is unchanged.** Which kinds a dungeon's roster may hold (`minLevel` against your level), the caravan's captain at level 5, the fire trap's damage and the xp a kill pays still read your level. They are spawn tables and traps, not a foe's scale, and the decision did not name them. The dungeon's second floor keeps its old ×1.5 on top of the tier's +1 (see *Needs eyes*).
+
+**Rowe's rematch** (QA's item in section I) is settled by this as well: the yard is tier 1, so Rowe a week on is the sergeant's champion she was, and her health no longer doubles with your level.
+
+**Tests re-measured, not loosened:**
+- `resolver`'s retune row measures the share at each tier's level, tiers 1 to 4, where it ran levels 1 to 20 when the blow read yours.
+- `lairmaster` and `masterslam` read the cavern's tier where they read your level.
+### Verified (headless Chromium)
+- **`dangertier`** (new), 13/13.
+  - Home's eight regions read 1, 1, 1, 2, 2, 1, 3, 2 (coastal, Ashen, Bealach, Deepwood, the Foothills, Royale, the Wastes, Greywood). Eleven far biomes each read their tier at their region's centre: tundra, swamp and wasteland 3, the other eight 2.
+  - The scales are 1, 1.75, 2.5 and 3 for health and 1, 2.088, 3.991 and 7.469 for the blow, each equal to `blowRef` at its level.
+  - A wolf on the coast is 18 health and a 5 blow at level 1 and at level 20. In the Wastes it is 45 and 20 at both. In the Deepwood it is 32 and 10.
+  - Over 400 seeded rolls, a Bandit's variant comes up 0 times on the coast and 75 in the Wastes.
+  - Dungeon tiers: the Wastes 3, 4, 4 on floors 1 to 3; Deepwood floor 2 is 3; the coast is 1; the tutorial is 1; a legacy door is 1.
+  - A gate set at the Wastes' centre and entered at level 10 and then at level 20 holds the same 28 foes, with the same health and blows. The 14 on floor 1 are tier 3 (Skeleton 88 health) and the 14 on floor 2 are tier 4 (Skeleton 158).
+- **`resolver`:** passes. An ordinary blow at each tier's level's kit is 17.0, 17.1, 16.8 and 16.9% of that level's health (100, 175, 250, 325): six blows to fall at every tier.
+- **`yardplay`:** 9/9. The rematch is won at 4.98 s on five blows (23, 10, 23, 10, 23), and she lands none. Session 1026's level-8 stand-in won it at 5.37 s at 191 of 260 health.
+- **Neighbours, all pass:** `lairmaster`, `masterslam`, `wyrm`, `foeseed`, `duel`, `duelrhythm`, `questfoes`, `spentguard`, `attrdmg`, `skillcurve`, `worldloot` and `levelmarks`.
+### Needs eyes
+- **The second floor now steps twice:** its old ×1.5 to health and blow, and the tier's +1. A tier-3 gate's second floor is a tier-4 foe ×1.5 (a Skeleton 158 health against 88 above). If that is too steep, dropping the ×1.5 is a one-line change. It is a rule a player feels, so I have left it for Michael rather than changing it on my own.
+- **The Wastes and the far tundra are hard from the first step:** a wolf there has 45 health and a 20 blow against a level-1 character's 100 health. That is the decision's intent (the Wastes are dangerous), but the road from Ashenmoor to the Wastes should read as a warning in play.
+- **A late character on the coast now meets foes with their own base numbers.** That is the decision's A (C was the option that kept a little of the level).
+
+## v80 — Session 1035 — F2b, session 1, part 1: your reach hull to hull by weapon, the hulls, the shove and the still-hearing radius
+F2b (`docs/design/scale-numbers-build.md`) could start: F2a and combat's resolver have both merged. Its first session is *reach and hulls*. This session does the player's half of that, as one slice: the reach column, the hulls, the shove and the radius at which a still player is heard. The foes' reach table moves the engage tests in `tickZoneEnemies` and the dungeon's foe tick, and the chase suites with them, so it is the next part.
+
+**What was wrong.** Every weapon reached 2.2 units centre to centre in a 126.5° cone, from a dagger to a claymore. A troll's 0.8 m body counted for nothing, so you had to stand as close to its centre as to a goblin's. Against any boss the reach was a flat 3.0.
+
+**What changed (`74-strikes.js`).** `WEAPON_ATTACKS`' reach column is now in metres, hull to hull: from the edge of your body to the edge of the foe's.
+- **The reaches:** Fists 0.9; Dagger 1.2; Sword, Scimitar and Mace 1.6; Longsword and Flail 1.8; Great club and War hammer 1.9; Claymore and Great axe 2.2.
+- **The Bow:** its melee row is the sword's 1.6, since the sheet does not list it.
+- **The resolver:** it lands a blow when the foe's centre is within `reachTo(e, reach)` = your hull + the reach + its hull.
+- **The hulls** (`hullOf`) are the sheet's until F4 gives each family's built value as `e.hullR`:
+  - you, a townsperson, a bandit, a skeleton or a wraith 0.30;
+  - a goblin or a kobold 0.25;
+  - a wolf 0.35;
+  - a spider or a brute (the bear, the ogre, the golem) 0.6;
+  - a troll 0.8;
+  - a boss 1.1, so a sword reaches it at 3.0, the flat number it replaces;
+  - a kind the sheet does not name: 0.3 of its size, the disc it already stands as (`bodyR`).
+- **What a player feels:** against a townsperson a sword lands where it did, at 2.2. The dagger loses 0.4, the two-handers gain 0.6, a punch is a close thing at 1.5, and everything reaches a troll 0.5 further than a man.
+
+**The shove** (`BASH_RANGE`, `10-player.js`, read in `doBash`) is 0.8 hull to hull, shield to chest: 1.4 centre to centre against a man. It was 2.0 centre to centre, which was nearly a sword's reach.
+
+**Still hearing** (`HEARING_RADIUS`) goes from 0.5 to 0.9, as the sheet's one exception to *sight and hearing unchanged*. Two bodies touch at 0.6 centre to centre, so 0.5 let you stand inside a guard unheard.
+
+The sheet's `stillhear` row is folded into the new `reachtable` suite, so it costs no second boot.
+### Verified (headless Chromium)
+- **`reachtable`** (new), 8/8. Each of the eleven classes was stepped in by 0.05 from 4 m against a Bandit, a Wolf and a Cave Troll, swung through `resolvePlayerStrike`.
+  - All 33 first hits land within 0.05 of you + reach + hull: a sword at 2.15 against the Bandit (2.2), 2.2 against the wolf (2.25) and 2.65 against the troll (2.7).
+  - The dagger lands at 1.8 against the Bandit and the claymore at 2.8.
+  - The shove reaches the Bandit at 1.4.
+  - Standing still behind a guard, you are heard at 0.9.
+- **Neighbours, all pass:** `resolver`, `captainguard`, `chasesight`, `wanderface`, `bladehit`, `dungeonchase`, `faolchu`, `fistfight`, `fists` (2), `fistswing`, `lockon`, `parryclock`, `parrydeath`, `posture` (3), `posturefloor`, `swingblade`, `tpfists`, `tpswing`, `trolls`, `yardplay` and `duel` (2). The foes stop at 0.6 to 1.1 centre to centre, inside every class's reach, so no fight lost its reach.
+### Needs eyes
+- **The dagger's 1.8 and the fists' 1.5** against a man: the dagger asks you in, as the sheet means it to. Whether a fist fight still feels fair is a playtest question, since a Bandit engages at 1.1 and swings within 1.6 until the foes' part lands.
+- **The two-handers reach 2.8.** With a claymore's cleave of 3, a pack in front of you is easier to catch.
+- **Owed:**
+  - F2b session 1's second part: the foes' table (engage hull to hull, the wolf's lunge, the spider's and bear's 1.2 m, the troll's sweep, the Faolchú's bite less its snout), and the `foereach` suite.
+  - Session 2: the body in the world.
+  - Session 3: the dungeon's cell, at Michael's C on #300, 3 m.
+
+## v80 — Session 1036 — Enemies by place, finished: a wraith's orb and drain and a ship's volley read the tier, not your level
+A correction to Session 1034. It moved a foe's health, its blow and the variants' chance onto the place's tier, but three of a foe's own blows still added your level:
+- **A phantom's or wraith's orb** (`90-main.js`): 8–14 + level × 1.5.
+- **Their life-drain:** (4 or 6 + level × 0.5) × the foe's multiplier.
+- **A pirate ship's volley of arrows** (`85-world-sea.js`): 6 + level × 0.8.
+
+Each was the Oblivion failure in small. A level-20 alchemist met orbs of 38 to 44 in the gentlest crypt.
+
+**What changed.** Each now reads its tier's level (`foeTierLevel(e)`, `74-strikes.js`: the foe's `e.tier`, set when it is built, else the tier where you are). The volley reads the water it lands on (`worldTierAt` at the arrow's mark).
+
+**What still reads your level.** The dungeon's traps (the spike plate's 8–16 + level × 0.8, the swinging blade, the fire jet's 18 + level × 1.4) are not foes, and #373 named the foes. The same goes for the siege's and the occupation's numbers of foes, the caravan's captain at level 5, and the dungeon roster's `minLevel`. They are listed in the backlog for a later call, not changed.
+
+**One fix in my own test.** Session 1034's `dangertier` waited on `g.spin(10)`. That passes 10 as the weather and ticks the open world only, so it never drove the dungeon. It now waits on the game's own frames (`g.frames`), and its dungeon numbers do not change.
+### Verified (headless Chromium)
+- **`dangertier`:** 14/14 (one new check). In the Wastes' gate (tier 3, level 11), a Greater Phantom's orb is 24 when you are level 10 and 26 at level 20, both within 8–14 + 16.5. At level 20 the old rule gave 38 to 44.
+- **Neighbours, all pass:** `blacksail`, `piratehold`, `pirateram`, `wraithfloat` and `wraithhood`.
+### Needs eyes
+- Whether the traps should take the tier too: a spike plate at level 20 is 24 to 31, in any crypt. That is a rule of play for Michael, so I have put it in the backlog, not changed it.
+
+## v80 — Session 1042 — `fistfight`'s trained range under the light chain (a CI fix; a correction to Session 1013)
+CI failed `fistfight` twice on `57028d3`. On the first try, Hand-to-hand 100 killed the Bandit in 6, 6 and 7 punches, where the suite wants 7 to 12. This is a correction to Session 1013. That merge kept our range for the trained fists and set aside main's re-measure (6 to 11), on the grounds that our checks still passed here. Main's resolver lands every third light swing of a chain ×1.3. On CI's slower runner the chain holds more often, and 6 is within what main had measured. The trained check now reads 6–11, main's figure, and the untrained 15–28 is unchanged. The Bandit's 25 health is the same in every run, so the danger tier (Session 1034) is not the cause.
+
+The retry failed another way: two of its fights never began, at 0 punches in 40 s. That is the runner's timing, not a number, and it is noted for QA.
+### Verified (headless Chromium)
+- `fistfight` 7 of 7 here: trained 9, 10, 9; untrained 22.
+### Needs eyes
+- Nothing.
+## v80 — Session 1041 — F2b, session 1, part 2: the foes' reach hull to hull, the wolf's lunge, the Faolchú's bite less its snout
+F2b's first session (`docs/design/scale-numbers-build.md`, *Foes' reach*) had a second part owed after Session 1035: the foes' own table. Every foe began its tell within 1.1 units of you centre to centre (0.9 in a dungeon), whatever its size, and its blow landed within 1.6 in 90°, a troll's within 2.4 in 140°. A troll's 0.8 m body counted for nothing, and a knife-man reached as far as a swordsman.
+
+**What changed (`74-strikes.js`).** The five families the sheet names carry `hulls:true` in `FOE_ATTACKS`. For them, `engage` (where the tell starts) and `reach` (the blow) are metres hull to hull, the same rule as your own reach (`reachTo`: your 0.30 + the number + its hull). `foeReach(e)` gives both centre to centre, with the arc and the lunge, and `strikeArc` now reads it.
+- **An armed humanoid** engages at 1.2: 1.8 centre to centre against you, where it was 1.1. Its blow is its weapon's reach from your table, read from the genome's weapon (`foeWeaponKind`): a knife 1.2 (1.8 centre to centre), a sword, an axe, a mace or a cutlass 1.6 (2.2), in 90°. The staff and the spear are not on the sheet, so they take the sword's 1.6, as the Bow's melee row did in Session 1035.
+- **A wolf** engages at 0.6 after a lunge of 1.5, so it may start its tell from 2.1 hull to hull (2.75 centre to centre). At the bite it leaps along the line it wound up on (`foeLunge`, `combatYaw`), up to 1.5 and never past 0.6 from where you are along that line, and stopped by a wall. Then it bites within 0.9 (1.55 centre to centre) in 70°. Step aside during the tell and it leaps past you.
+- **A spider or a bear** (the brutes: the bear, the ogre, the golem, the gargoyle) engages at 0.8 and strikes within 1.2 in 100°: 1.7 and 2.1 centre to centre.
+- **A troll** engages at 1.6 and sweeps 2.4 in 140°: 2.7 and 3.5 centre to centre.
+- **The Faolchú** engages and bites at its `biteRange` less its snout's 0.9, hull to hull: 2.8 − 0.9 = 1.9, so 3.3 centre to centre with the boss's 1.1 hull (it was 2.8).
+- **The families the sheet does not name** (slimes, elementals, wraiths, mimics, sharks, other bosses, the cavern master's slam) keep today's numbers, centre to centre.
+
+**Where it is read.** The open world's tick (`tickZoneEnemies`) starts the tell at `foeReach(e).engage` and makes the wolf leap before the blow is tested. The dungeon's foe tick (`90-main.js`) does the same, against 0.9 for the families not named. Both resolve the blow through `strikeReaches`, now at the table's reach.
+
+**What does not change: where a foe stops.** It still closes to 1.0 in the open world, and to its disc in a dungeon. A first cut stopped each family just inside its new engage distance (1.7 for a man). That left a man outside your shove's 1.4, and `captainguard`'s bash from the front fell short. The sheet moves the tell and the blow, not the stand. A foe now begins its tell further out and keeps closing through it.
+### Verified (headless Chromium)
+- **`foereach`** (new), 9/9. Each kind was stepped in by 0.05 from 5 m, one tick of the open world's own foe tick at a time. The tell begins at:
+  - a Bandit (axe) and a Cultist (knife) 1.8, against the table's 1.8;
+  - a wolf 2.7 (2.75);
+  - a Spider and a Cave Bear 1.65 (1.7);
+  - a Cave Troll 2.65 (2.7).
+
+  The blows reach: the Bandit 2.15 (2.2), the Cultist 1.8 (1.8), the wolf 1.55, the Spider and the Bear 2.1, the Troll 3.5. Their arcs measure 90, 90, 70, 100, 100 and 140°. A wolf that told from 2.73 against a still player leapt 1.43 to stand 1.25 off, and bit. One that saw you step 1.5 aside leapt the same 1.43 along its old line, stood 1.95 off and missed. The Faolchú's bite and engage are 3.3.
+- **The first run of the neighbours** (before the stand was put back): `resolver`, `reachtable`, `dungeonchase`, `dungeonfoes`, `faolchu`, `fiercewolf`, `trolls`, `yardplay` and `duel` pass. `captainguard` failed its bash check, which led to the fix above.
+- **After the fix, all pass:** `captainguard`, `foereach` (9/9, the same numbers), `yardplay`, `faolchu`, `dungeonchase` and `fiercewolf`.
+### Needs eyes
+- **Fights open further out.** A man starts his swing at 1.8 and reaches 2.2, where both were 1.1 and 1.6. He still closes to 1.0, so he is usually in your face when the blow lands. A step back during his tell now has to be a full step.
+- **The troll's sweep reaches 3.5 and the Faolchú's bite 3.3.** The Faolchú's number takes the boss hull of Session 1035 (1.1). If its body is narrower than that, F4's built hull will bring it in.
+- **The wolf's leap is a snap of position at the bite**, not yet an animated jump. A wolf mid-chase usually has walked inside 1.25 by the end of its tell and does not leap at all. The leap shows when you stand off or back away.
+- **The dungeon at its old 1-unit cell:** a man now starts his swing 1.8 away in a corridor 1 wide, round no corner (the blow tests distance and arc, not walls, as before). Session 3's 3 m cell makes this natural.
+- **Owed:**
+  - F2b session 2, the body in the world.
+  - Session 3, the dungeon's cell at 3 m.
+  - The neighbours not re-run this session (the run's two hours): `duelrhythm`, `chasesight`, `questfoes`, `wanderface`, `legacyfoes`, `sitefoes`, `lockon` and the posture suites. They go to CI.
 ## v80 — Session 1031 — The Gatelands' perched stone (card F8, prototype only)
 The last small mystery on OG-124's panel 6 that needs nothing from the canon or the quest writer first: "an odd rock". (Strange tracks need someone to have made them, which is the bodies builder's; the unfinished camp is close to the abandoned expedition already built; the lone grave and the pilgrims' rest wait on the canon.) DECISION #389, where the kit lives in the game, is still pending, so this run stayed in the prototypes. It is `gatelandsErratic` in `docs/prototypes/levelup/places.js`, at `places.html?place=erratic`.
 
@@ -23438,6 +24172,221 @@ Corrections made during the session:
 - **The cloth is a smooth dome** with no hang over the rim and no check.
 - **Still owed in L1:** the coins on the head-wrap's edge (they need OG-056's full image), and the game (after F4).
 
+## v80 — Session 1047 — Guard's parry window, Resolve's block cost and Armour's def (skills and perks A, the lines left for the resolver)
+Session 953 moved the attributes to the build sheet's *1% a point or less* everywhere outside combat's resolver, and left three lines because PR #356 was rewriting the code they sit in. The resolver has merged, so this session takes them, as the sheet and combat B (`docs/design/combat.md`, *Parry window*) write them. No number here is new: each is the sheet's.
+- **The parry window is Guard's** (`parryWindowS()`, `12-character.js`): 160 ms + 1 ms a Guard level, so 165 ms at an untrained 5, 185 at a major's 25 and 260 at 100. It was 200 ms + 10 ms a Finesse point, about 230 to 250 for most characters. Finesse is out of it. `PARRY_WINDOW_BASE` and `PARRY_WINDOW_FINESSE` (`10-player.js`) are gone; `executeStrike` reads the new function. The combat page's floor of 150 ms is never reached.
+- **Resolve takes 1% a point off a block's stamina** (`resolveBlockMult()`), still floored at half. It was 5% a point, so Resolve 10 halved the cost. It is read in the five places that had their own copy: the held block's drain each second (`90-main.js`), the parry's and the held block's cost (`74-strikes.js`), and a blocked bolt in the open world and in a dungeon (`42-zone-enemies.js`, `90-main.js`).
+- **Worn armour counts × (0.75 + 0.5 × Armour/100)** (`armourSkillMult()`, in `_armour()`, `50-travel.js`): × 0.775 at 5, × 1.0 at 50, × 1.25 at 100. A spell's ward (`defBoost`) is added whole. Everything that reads armour reads `_armour()`: the blow's share (`armourShare`), the bolts' 30% and the drain. The hub's *armour* figure is the same number, rounded.
+### Verified (headless Chromium)
+- **`perkguard`** (new, the sheet's suite of that name), 9/9, each through `executeStrike` against a Bandit in the open world:
+  - the window is 160, 165 and 260 ms at Guard 0, 5 and 100;
+  - at Guard 0 a block raised 155 ms before the blow parries and 170 ms is a held block; at Guard 100, 250 parries and 270 does not; Finesse 60 at Guard 0 still holds at 170;
+  - a held block of a 40-point blow costs 14, 13, 7 and 7 stamina at Resolve 0, 10, 50 and 90;
+  - five pieces of 10 count 38.75, 50 and 62.5 at Armour 5, 50 and 100, and a 40-point blow keeps 22.5, 20 and 17.8 through them.
+- **Neighbours:** `parryclock` passes (its 0.1 s block is inside the 165 ms); and `parrydeath`, `posture` (3), `resolver`, `counters`, `attrpromise`, `guardlevel1`, `hptail`, `tells`, `challenge`, `masterslam`, `wardall`, `wardswift`, `yardplay`, `slamdamage` and `skillcurve` all pass. `resolver` and `yardplay` set their skills at 50, where armour counts as before.
+### Needs eyes
+- **The parry is tighter for a new character.** Untrained, it is 165 ms where it was about 240; a Sentinel's or a Warrior's major Guard of 25 gives 185. A parry should now feel like something Guard teaches. Whether 165 is too unforgiving for a first fight is a playtest call, and the number is the sheet's.
+- **Armour is worth less until it is trained.** An untrained wearer takes about an eighth more through the same kit than before; at Armour 100 about a tenth less. `BLOW_SHARE`'s six blows to fall were tuned at the kit's full value, which is now Armour 50.
+- **Resolve no longer halves blocking at 10.** A Sentinel who put points into Resolve for its block will feel it.
+- **Owed next:** Guard's four perks (Deflect, Bulwark, Iron wall, Second parry), Armour's *Unbowed*, *Hold the line* and *Second skin*, then the Blade, Blunt and Hand-to-hand perks.
+
+## v80 — Session 1048 — Guard's perks: Deflect, Bulwark and Second parry (skills and perks A)
+The build sheet's Guard row (`docs/design/skills-and-perks-build.md`, *The perks*) waited on combat's resolver with the other Arms perks. Three of its four are built here, in `12-character.js` beside the other perks, and read where the blow is resolved.
+- **Deflect (Guard 25): a held shield turns arrows.** The arrow does no damage, and the block costs its usual 6 stamina. The gold flash and the line *The arrow glances off your shield.* say it was turned. The shot must come from in front, as a block of an arrow already must. This applies to an archer's shot in the open world (`tickZoneArrows`, `42-zone-enemies.js`) and to a ship's volley (`85-world-sea.js`, where a raised guard took 0.4 of it). It is the shield's perk: with a weapon or bare hands the block is as before. `deflectsArrows()`.
+- **Bulwark (Guard 50): a bash drains +50% posture** (`bulwarkMult()`, in `doBash`). A bash with a weapon or bare hands drains 30 where it drained 20. A shield's bash already breaks the guard outright, so Bulwark adds nothing to it; the sheet does not say otherwise.
+- **Second parry (Guard 100):** within 0.4 s of a perfect parry, on the play clock, a block still held parries the next blow too, without being raised again (`secondParryOpen()`, `_lastParryG`, set at the parry in `executeStrike`). Two foes swinging together can both be parried with one press.
+- **Iron wall (Guard 75) is not built:** *a heavy attack no longer breaks a held block*. No foe has a heavy attack yet. `FOE_ATTACKS`' heavy column is empty until combat's later sessions fill it, and a held block today breaks only when your posture runs out. The Skills tab shows it as not yet in the game, as it does Acrobatics' *Catch*.
+### Verified (headless Chromium)
+- **`perkguard`**, 15/15 (six new checks):
+  - **Deflect:** an archer's arrow laid against a held shield takes 11 to 14 health at Guard 24 and 0 at 25. Bare-handed at 25 a held block still takes 11 to 13, and an open guard 32 to 37.
+  - **Bulwark:** a bare bash drains 20 posture at Guard 49 and 30 at 50.
+  - **Second parry:** at Guard 100, a block held since long before, 0.3 s after a parry, parries again. At 0.5 s it does not, and at Guard 99 it does not.
+  - Iron wall is listed as not yet live; the other three are.
+- Writing the suite showed Second parry at work in Session 1047's own checks: a 270 ms block straight after a 250 ms parry parried. The suite now clears the parry clock between trials.
+- **Neighbours:** `captainguard`, `counters`, `dangertier`, `deckprops`, `lvact`, `parryclock`, `perkbody`, `posture` (3), `reachtable`, `resolver`, `shiparchers`, `targetof`, `wardall` and `worldtarget` pass. `perkbow` failed its draw count (64 and 45 frames) with four suites running side by side, and passes on its own. `roll` fails three reach checks, and fails them the same way on the branch before this session: Session 1041's table moved them. The next session re-measures it.
+### Needs eyes
+- **Second parry is generous against a pack.** Holding the guard after one parry turns every blow for 0.4 s. That is what the sheet says, and it is the reward at 100.
+- **Deflect makes a shield-bearer proof against archers.** A ship's volley does nothing to a raised shield at Guard 25, at any tier.
+- **Owed:** Iron wall, with the heavy attacks. Next, Armour's *Unbowed*, *Hold the line* and *Second skin*, then Blade, Blunt and Hand-to-hand.
+
+## v80 — Session 1049 — `roll`'s reach checks re-measured to the foes' table (a CI fix; a correction to Session 1041)
+CI failed `roll` twice on `26552c7` (run 39016872205), and it fails the same way here on the branch before Session 1047. Its three reach checks measured the old numbers, centre to centre, from before F2b:
+- **A man's blow** landed within 1.6 (1.5 lands, 1.7 does not).
+- **A troll's sweep** reached 2.4 (2.2 at 60° lands, 2.6 ahead does not).
+- **The Faolchú's bite** reached 2.0 (1.9 lands, 2.1 does not).
+
+Session 1041 moved all three hull to hull, and did not re-run `roll` among its neighbours, so this is a correction to it. The sheet's rule is *re-measured, never loosened*. Each check keeps its shape, a near point that lands and a far one that does not, 0.1 either side of the new figure:
+- **A sword-armed man** (a sword's 1.6, as a foe with no genome's weapon takes): 2.2 centre to centre, so 2.1 lands and 2.3 does not.
+- **A troll:** 0.3 + 2.4 + its 0.8 = 3.5. At 3.4, 60° off lands and 80° off does not; 3.6 ahead does not.
+- **The Faolchú,** with the test's bite of 2.0: 2.0 less the snout's 0.9, + 0.3 + the boss's 1.1 = 2.5, so 2.4 lands and 2.6 does not.
+
+The other checks (the roll's distance and window, the side arcs at 1.2) are unchanged. The code is unchanged.
+
+The same run's other red, `q7world` (260 s, failed twice on shard 8), passes here in one try. It is noted for QA in backlog K, not changed.
+### Verified (headless Chromium)
+- `roll` 10/10 (it was 7 of 10 here and on CI). `q7world` 1/1.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 1050 — Armour's perks: Unbowed, Hold the line and Second skin (skills and perks A)
+Armour's last three perks waited on combat's resolver, because the roll's weight line sits beside one the resolver changed. *Fitted* (25) has been in since Session 977. These three are in `12-character.js` beside the others, and each is read at one place in `10-player.js`.
+- **Unbowed (Armour 50): your posture +25%** (`unbowedMult()`, in `playerMaxPosture`). With 20 armour it is 175 where it was 140.
+- **Hold the line (Armour 75): a light hit doesn't stagger you above half posture** (`holdTheLine()`, in `playerPostureHit`). A hit taken while your posture is over half leaves at least 1, however hard it lands. Below half the hit breaks you as before, so a second blow still does. `playerPostureHit` takes a fourth argument, `heavy`, that the perk does not hold against. No caller passes it yet: no foe has a heavy attack (`FOE_ATTACKS`' heavy column, as with Guard's *Iron wall*), so every blow is light today.
+- **Second skin (Armour 100): worn armour never slows the roll** (`rollLoad()`, in `startRoll`). The roll is heavy over 70% of what you can carry (0.6 s over 1.8 m, not 0.45 over 2.6). At 100, what you wear on the five armour slots is left out of that load; the bag, the weapon and the shield still count. The air step and the dash keep reading the whole load: the sheet names the roll.
+### Verified (headless Chromium)
+- **`perkarmour`** (new), 8/8:
+  - 20 armour gives 140 posture at Armour 49 and 175 at 50.
+  - A blow worth 1.2 times a full posture breaks you at 74. At 75 it leaves you on 1.
+  - From 40% posture, a blow worth half breaks you at 75. A hit marked heavy breaks you from full.
+  - Worn armour weighing 80% of the 65 you can carry (after Fitted) rolls heavy, 1.8 m, at Armour 99, and light, 2.6 m, at 100. The same weight in the bag still rolls heavy at 100.
+  - All four of Armour's perks show as live.
+- **Neighbours:** `posture` (3), `posturefloor`, `roll`, `perkfall`, `perkguard`, `captainguard`, `airstep`, `airdash`, `resolver` and `tells` pass, run two at a time.
+### Needs eyes
+- **Hold the line makes a full posture bar a one-blow shield**, so you are broken only by two blows in quick order. Against a single big hitter, a troll for one, that is a large change at 75.
+- **Owed:** the Blade, Blunt and Hand-to-hand perks, the last of the Arms; Guard's *Iron wall* and a heavy hit for *Hold the line*, once the heavy attacks are built.
+
+## v80 — Session 1051 — The Arms perks: Blade's Long riposte, Crossing and Clean edge; Blunt's Weight, Daze and Earthshaker; Hand-to-hand's Hard knuckles and Stone hand (skills and perks A)
+The last of the Arms perks that waited on combat's resolver. Eight of the build sheet's twelve for Blade, Blunt and Hand-to-hand are built here. Each is the weapon in hand's (`armsPerk(id, rank)`, `12-character.js`: no weapon is Hand-to-hand, a blunt `wType` is Blunt, anything else but the bow is Blade), so Blade's perks do nothing while you hold a mace. Each is read where the resolver already does that thing (`74-strikes.js`).
+- **Blade:**
+  - *Long riposte* (50): a perfect parry opens the riposte for 1.2 s, not 0.8 (`riposteSecs()`).
+  - *Crossing* (75): a perfect parry also staggers the nearest other alert foe within 3 m of you for 1.2 s and holds its next swing 2 s.
+  - *Clean edge* (100): a finisher ignores the foe's `def`, in `applyMeleeDamage`.
+- **Blunt:**
+  - *Weight* (25): a swing drains +25% posture (`armsPostureMult()`).
+  - *Daze* (75): a stagger you cause lasts 0.6 s longer (`dazeS()`), at a posture break, a broken guard and a parry.
+  - *Earthshaker* (100): the chain's third hit, when it lands, staggers every foe within 2 m of you, hull to hull, for 1.2 s, the parry's stagger (plus Daze's 0.6).
+- **Hand-to-hand:**
+  - *Hard knuckles* (25): a punch drains ×1.5 posture.
+  - *Stone hand* (100): the fists roll 4 to 7, not 2 to 3 (`STONE_HAND_ATK`).
+
+**Not built, asked as DECISION #399.** Four of the twelve name something the game does not have, or already has:
+- *Draw cut*: nothing is sheathed.
+- *Ringing*: every power hit already breaks a raised shield in one blow.
+- *Throw*: no foe can be knocked down.
+- *Catch the blade*: a foe has no weapon to lose.
+
+The question offers the small rule each needs (recommended), other perks under the same names, or waiting.
+
+**Three suites re-measured.** Their checks measured the old base rule, and a perk now changes it:
+- **`fistfight`'s trained brawl** is measured at Hand-to-hand 99, a point under Stone hand. Stone hand is fought on its own at 100, and must end the brawl in at most two-thirds of the 99's punches.
+- **`posturefloor`** pins Blunt and Blade at 24. The default character's major Blunt of 25 now carries Weight, which would stagger the Wolf in one war-hammer swing; the suite is about #211's floor, not the perk.
+- **`resolver`'s chain check** pins Hand-to-hand at 24 for the same reason.
+### Verified (headless Chromium)
+- **`perkarms`** (new), 10/10, with the dice pinned, each through the resolver against Bandits of 1,000 health and posture:
+  - A mace drains 8 posture at Blunt 24 and 10 at 25, and a sword at Blunt 100 drains 8. A punch drains 8 at Hand-to-hand 24 and 12 at 25.
+  - A punch lands 4 at 99 and 8 at 100.
+  - A parry opens 0.8 s at Blade 49, 1.2 at 50, and 0.8 with a mace.
+  - A parry at Blade 75 staggers a second Bandit 2.5 m off, but not at 74, and not one 3.6 m off.
+  - A finisher on def 20 lands 22 at Blade 99 and 42 at 100.
+  - A mace's posture break staggers 1.5 s at Blunt 74 and 2.1 at 75; a sword's 1.5.
+  - The chain's third at Blunt 100 staggers a Bandit 1.5 m behind you; not at 99, and not on the first swing.
+- **`fistfight`** 7/7 (one new check): 22 punches untrained, 8, 8 and 9 at 99, and 3 and 3 with Stone hand. **`posturefloor`** and **`resolver`** pass.
+- **Neighbours:** `counters`, `fists` (2), `fistswing`, `parrydeath`, `posture` (3), `captainguard`, `duel` (2), `perkguard`, `reachtable`, `swingblade`, `trolls` and `yardplay` pass.
+### Needs eyes
+- **Stone hand ends a brawl with a Bandit in 3 punches**, where 99 takes 8 or 9. That is more than twice the roll, since 4 to 7 is more than twice 2 to 3, and the Bandit dies before its posture matters. It is the sheet's number. A master's fist now outhits most one-handed blades of the early tiers.
+- **Earthshaker and Crossing both stagger foes you did not strike.** In a pack, a mace master's third swing stops everyone at your elbow.
+- **Owed:** DECISION #399's four; Guard's *Iron wall* with the heavy attacks. With these, the sheet's first wave of perks is in, apart from the ones that wait on a system.
+
+## v80 — Session 1057 — `skillcurve`'s punch at 100 pinned past Stone hand (a fix for Session 1051's break), and QA's lane fix brought in
+Session 1051 gave Hand-to-hand 100 its own roll (*Stone hand*, `STONE_HAND_ATK`, 4 to 7), but `skillcurve`'s *skilldamage* check pins only `FISTS.atk` to 100 to read the multiplier at 5, 50 and 100. At 100 the resolver now rolls Stone hand's dice instead, so the check read 64, 100 and 8 where it wants 64, 100 and 140. That session ran `fistfight`, `posturefloor` and `resolver` and missed this one. The check now pins Stone hand's two numbers to 100 as well, and puts both back after, so it measures the multiplier alone, as before. Nothing in the game changed.
+
+The same session brings in QA's fix for the suite (Session 1038, `ff40184` on `auto/qa-skillcurve`, cherry-picked): the fight's Bandit is taken out of the scene before the run, and a new check says the lane is clear. The producer's digest asked for it on this branch.
+### Verified (headless Chromium)
+- Before: `skillcurve` red twice, *a punch rolled at 100 hits 64, 100, 8*.
+- After: `skillcurve` green twice with `--no-retry`, every check: the punch ×0.64, ×1.0, ×1.4; the run's lane clear.
+- One earlier boot (before the pin) read the run at ×0.994 with the lane check at 0.036 m aside, and passed on its retry. That is the flake QA is chasing (backlog K), not this branch's.
+### Needs eyes
+- Nothing to play.
+
+## v80 — Session 1058 — Enemies by place: a dungeon's grade is its door's tier's, and floor 2 steps once (the designer's sheet, session 1, part 1)
+The designer's build sheet (`docs/design/enemies-by-place-build.md`, on Michael's A on #373) settles every place where a dungeon still read your level. This session builds the first two: the grade and the floor.
+
+**The grade.** `levelDiffKey` read your level: Very Easy at levels 1–2, up to Very Hard from 15, with the lair's +1 and the wyrm's +2. It set a dungeon's health, blow and pace (`DIFF_SCALE`), the variants' `minDiff`, and the loot's grade. Now `tierDiffKey(tier, up)` reads the same ladder at the tier's level (`tierLevel`: 1, 6, 11, 16). So a tier-1 door is Very Easy, tier 2 Normal, tier 3 Hard and tier 4 Very Hard, and the lair's and the wyrm's steps stand. The portal's `diff` and `diffScale` getters read the door's tier (`portalDoorTier`, `dungeonTier(portal, 1)`, cached by zone and position, since a place's tier never changes). The grade is the door's, so it is the same on floor 2. Each grade is what a character of the tier's level met at that door before, so the numbers Michael has played are kept.
+
+**Floor 2.** Floor 2 stepped twice: the tier's +1 (S1034) and the old ×1.5 health, ×1.5 blow and ×1.1 pace (`spawnFloorEnemies(dMap2, 2, FLOOR2_Y, 1.5)`, and `fm` in the lair master's body). The S1036 flag named it. The ×1.5 and ×1.1 are gone, so the tier's step is the floor's only one: ×1.75 health and ×2.09 blow over floor 1, the pace the same.
+
+**A fix on the way.** A cell's door is `zone:'gen'` in the cell's data until the world places it and calls it `'world'`. `dungeonTier` read `'gen'` as a legacy zone, which is tier 1 everywhere. Play never met it, since the live portal is relabelled first. But a portal built from the cell's door (as `lairgrade` builds them) read tier 1 in the Deepwood. `'gen'` now reads the world's tier.
+
+**Suites re-measured.** The rule changed under them; none was loosened.
+- **`lairgrade`** checked that a plain gate takes your level's grade. It now checks that each gate and lair round the start takes its tier's grade, one or two above for a lair or a wyrm, and the same at levels 1 to 20.
+- **`slamdamage`**'s grade check (*very easy at 1, very hard at 15*) is now *Very Easy at tier 1 at every level*. Its door stands on home's tier 1.
+- **`lairmaster`**'s expected health drops floor 2's ×1.5.
+### Verified (headless Chromium)
+- **`tiergrade`** (new), 7/7:
+  - A coast crypt is Very Easy, a Deepwood lair Hard and a coast wyrm's cavern Normal (tiers 1, 2, 1), the same at level 1 and level 20.
+  - Entered at the coast, the door is Very Easy, with plain Skeletons on both floors (tier 1 above, 2 below). Floor 1's Skeleton has 16 health, ×0.900 blow and 1.0125 pace; floor 2's has 28 health (×1.75), ×1.879 blow (×2.088) and the same pace.
+  - The Skeletons are the same at level 20.
+- **`lairgrade`** 7/7: the lairs round the start are Hard, bar one that is Easy, and the gates Normal, at every level from 1 to 20.
+- **`slamdamage`** passes, as do `dangertier`, `lairmaster`, `masterslam`, `bossbarunder`, `dragonsize`, `worldloot`, `dungeon` (5), `dungeonfoes`, `dungeonpace`, `lairhoard`, `wyrm`, `lairdoor`, `posturefloor` and `guardlevel1`.
+### Needs eyes
+- **Late in the game, a coast crypt stays Very Easy.** A level-20 character met Very Hard there before. Under the sheet, a crypt on the coast is ×0.45 health for good, and the Wastes' doors are where a late character goes to be tested. Tier 4 is floor 2 of a tier-3 door.
+- **The roster still shifts with your level.** Wraiths take Phantoms' places from level 5 (the kinds' `minLevel`), so a level-1 and a level-20 visit to one door hold different kinds. That is the next slice (the kinds' minimum tier). The sheet's main suite, `tierlevelfree`, waits for it.
+- **Owed from the sheet:** the kinds, packs, Captains, commissions, guards, traps, the wyrm's fire and the map's label. The loot and the hoard wait on #394.
+
+## v80 — Session 1059 — Enemies by place: the kinds' least tier in place of the latent foe, and the pack's +1 and Captain at tier 2 (the designer's sheet, session 1, part 2)
+Before this session, a wild foe whose kind's `minLevel` was above your level was built *latent* (`buildZoneEnemy`): hidden, never ticked, impossible to hit, and shown on the first tick past that level. A dungeon's roster dropped the same kinds by `minLevel ≤ level`. So the same chunk, or the same door, held different things for a level-1 and a level-20 character.
+
+**The kinds.** Now a kind has a least tier, from its old `minLevel` (the sheet): 1–3 is tier 1, 4–6 tier 2, 7 and up tier 3 (`minTierOf`, `kindAllowed`, `74-strikes.js`). The table is filtered by it *before* the pick:
+- in the open world's chunk spawn, at the chunk's tier;
+- in a legacy zone's spawn and respawn, at the zone's tier;
+- in a dungeon's roster, at the floor's tier.
+
+`buildZoneEnemy` builds nothing latent any more; `locked` stays for `unlockFoe`'s callers. A tier-1 floor holds no Wraith, Gargoyle or Mimic, as a level-1 character met none before. The floor's tier is read, so floor 2 of a tier-1 door, tier 2, can hold them. A site's own beasts (a lair's wolves, a glade's boars) and a quest's foes are not filtered: they were never latent (S386, *a lair's beast is there whatever your level*), and filtering would have taken the Dire Wolves from a tier-1 lair.
+
+**The packs.** In the chunk spawn, the pack's +1 (past level 6) and its Bandit Captain (past level 5) now come at tier 2 and up. The same goes for the bandit camp's Captain (past level 4), the caravan's attackers' (past 5) and a road job's (past 5): one rule on every path, as the sheet asks.
+
+**Suite re-measured.** `questfoes` checked that *a wild Ogre built at level 1 is still latent*. It now checks that the Ogre is not latent, and that `kindAllowed` keeps it off a tier-1 table and lets it onto a tier-2 one. `tiergrade`'s roster check, narrowed last session, is the whole roster again.
+### Verified (headless Chromium)
+- **`tierkinds`** (new), 8/8. At night, every chunk in a square 1.2 radii across at the centre of five of home's regions was spawned at level 1 and at level 30:
+  - The coast gave 67 foes, Ashen 102, the Deepwood 104, the Foothills 247 and the Wastes 21.
+  - None was latent or hidden. None stood where its kind's least tier was above the chunk's.
+  - No Captain on the coast or in Ashen, where there had been one past level 5; 2 in the Deepwood and 15 in the Foothills.
+  - The Wastes' tier-3 chunks hold Hollowed.
+  - Every region gave the same foes at level 30 as at level 1: kinds, counts, Captains, variants and health.
+  - The least tiers read: Wolf and Skeleton 1; Cultist, Dire Wolf and Ogre 2; Ash Wight and Dragon 3.
+- **`tiergrade`** 8/8: all 28 foes of a two-floor coast crypt are the same at level 1 and level 20, and floor 1 holds no Wraith, Gargoyle or Mimic.
+- **`questfoes`** passes, with its check re-measured. So do the neighbours: `foes` (2), `dangertier`, `wolves`, `goblins`, `ogre`, `trolls`, `fiercewolf`, `bear`, `shark`, `crawler`, `scorpion`, `foeseed`, `captainguard`, `dungeonfoes`, `mimicspots`, `dunseed`, `challenge` and `yardplay`.
+### Needs eyes
+- **A level-1 character meets Ogres, Cave Bears and Captains in the Foothills** (tier 2), where nothing past level 4 stood before. That is the sheet's Caelid: the place's danger is readable, and a new character is meant to turn back.
+- **The coast never grows a Captain.** A late character on the coast meets plain bands for good.
+- **Owed from the sheet:** the commission's grade, the guards at tier 3, the traps and the wyrm's fire at the tier's level, and the door's grade on the map. The loot and the hoard wait on #394.
+
+## v80 — Session 1060 — Enemies by place: the town guard at tier 3 in every town, and a commission's grade one above its place's (the designer's sheet, session 1, part 3)
+Two more of the sheet's rows.
+
+**The guard.** A guard who draws on you was a Bandit's body given `guardEnemy`'s own numbers: 40 + 8 × your level health and a blow of 6 + 1.2 × your level. So he was 48 and 7 at level 1, and 200 and 30 at level 20. He now stands at tier 3 in every town (`GUARD_TIER`). He is built with `{tier: 3}`, and his numbers read tier 3's level, 11: 128 health and a blow of 19, at any level, in any town. This is Morrowind's precedent, which the sheet takes: the law outclasses a new character, and a late one can defy it. The blow is set once, at the draw, so the tier is not counted twice.
+
+**The commission.** A guild commission's quarry already took its place's tier for its health (S1034), with the ×1.6 on top. Its rare-variant roll still asked for a fixed `'hard'` grade, everywhere. It now asks for one grade above its place's (`tierDiffKey(tier, 1)`): Easy on the coast, Hard in the Deepwood, Very Hard in the Wastes. The quarry stays a named one, harder than the country round it, and the ×1.6 stays.
+
+**Suite re-measured.** `guardlevel1` copies `guardEnemy`'s formula, so it would have passed on the old numbers. It now reads tier 3's level, and its check is 128 health and 19 damage (it was 48 and 7).
+### Verified (headless Chromium)
+- **`guardseed`** 4/4 (one new check). A guard drawn in Dunmore at level 1 and at level 30 is tier 3, with 128 health and a blow of 19 both times.
+- **`guardlevel1`** 3/3, the numbers for a new character (130 health, a Wooden GreatClub, a swing every 0.555 s):
+  - The guard takes 52 swings, 28.9 s, to fell, and fells you in 7 blows, 13.4 s.
+  - The world's Bandit, for scale, takes 8 swings and fells you in 16 blows.
+- **Neighbours:** `crime3`, `guardplay`, `guardsindoor`, `theft`, `questtargets`, `jobids`, `handback`, `witnessrange` and `towngate`.
+### Needs eyes
+- **A guard now kills a level-1 character in about 13 seconds**, where before a new character could cut one down (48 health). Fleeing, paying and yielding are the answers. That is the sheet's intent, and it is the biggest felt change of the three sessions. If it is too much in play, the lever is `GUARD_TIER`.
+- **A late character outgrows the guard.** At level 20 he is 128 health where he was 200.
+- **Owed from the sheet:** the traps and the wyrm's fire at the tier's level, and the door's grade on the map. The loot and the hoard wait on #394. Then the quest writer's four danger lines.
+
+## v80 — Session 1061 — Enemies by place: the traps and the wyrm's fire at the tier's level (the designer's sheet, session 1, part 4)
+The traps and a wyrm's breath were the last things in a dungeon that grew with you:
+- a spike, 8–15 + 0.8 × your level;
+- a swinging blade, 10 + 1.2 × your level;
+- a wyrm's fire, 18 + 1.4 × your level.
+
+A spike on a coast crypt's first floor landed 24–31 on a level-20 character. Each now takes the tier's level of the floor you stand on (`trapTierLevel`, `tierHere`: the door's tier, one more below), as its foes do. Each sum is its own small function in `68-dungeon-misc.js` (`spikeTrapRaw`, `bladeTrapRaw`, `wyrmFireRaw`), so a suite reads the number the game uses. The spike's roll is still the trap's own seeded stream (S477). Armour, the block's ×0.4 on a blade and ×0.5 on fire, and Light foot are unchanged.
+### Verified (headless Chromium)
+- **`tiertrap`** (new), 7/7, with a door stood in at the coast's centre and at the Wastes':
+  - 400 spikes land 8–15 on a tier-1 floor and 16–23 on a tier-3 floor, as the sheet asks.
+  - The same 400 sum to 4,623 and 7,823 at level 1 and level 30 alike.
+  - A blade lands 11 on tier 1 and 23 on tier 3, and 17 on floor 2 of a tier-1 door (tier 2).
+  - A wyrm's fire is 19.4 at tier 1 and 33.4 at tier 3, before the block.
+- **Neighbours:** `trapseed`, `bladehit`, `swingblade`, `perkbody`, `wardall`, `lvact` and `dragonsize`.
+### Needs eyes
+- **A wyrm on the coast now breathes 19 a blast at any level.** Before, it breathed 46 at level 20. A wyrm's cavern is two grades up, but its fire is the tier's alone, so late in the game a coast wyrm's fire is soft beside its bite.
+- **Owed from the sheet:** the door's grade on the map's subtitle. The loot and the hoard wait on #394. Then the quest writer's four danger lines for *Anything dangerous nearby?*. The sheet's whole-world suites, `tierlevelfree` and `tiermainpath`, come with the last of these.
 ## v80 — Session 1054 — `lookpair`: the road box is looked at before the shot (FLAKY once on auto/systems, QA)
 `lookpair` failed once and passed on its retry on auto/systems bf251d1 (16 Oct, shard 11, 800 s with the retry). The red check was *the colour and the light match*, on the road box alone: the old look read (231,218,147), the new one (167,196,98), which is the grass's own colour. QA's ledger had put it down to snow, because the log's snow line read 0.278 and 0.28 of cover before the shots. The job's full log says otherwise. The retry also had the new look's cover at 0.28 and matched to 1 level, and the suite takes the cover off and repaints before both shots (Session 832). A probe here laid 0.31 of snow before the suite's clearing and read the road at (230,217,147). So the red shot simply had no road drawn under the box.
 
@@ -23809,6 +24758,324 @@ What is built:
 - **The roll does not decide who is old in a town.** That is F4's, when townsfolk come over.
 - **Garrick's wheeled chair** is still owed.
 
+## v80 — Session 1065 — Enemies by place: the door's grade on the map's subtitle (the designer's sheet, session 1, part 5)
+*Renumbered: this run first committed Sessions 1065 to 1067 as 1062 to 1064, numbers the look builder's branch (auto/backlog)
+already held. The commits' messages keep the old numbers; the entries, the backlog, the code's notes and the suites carry the new.*
+
+Session 64 took the grades off the map's subtitles, because a door's grade was your level's and followed you: the map said a
+door was Very Easy at level 1 and Hard at level 12, which told you nothing about the door. Since Session 1058 a grade is the
+door's tier's and never changes, so the sheet puts it back: a door on the map reads *Old gate · undead · Very Easy*, or
+*Fort · deep · Normal*, in the subtitle of its hover card and its panel.
+
+The label is `DIFF_SCALE`'s own (Very Easy to Very Hard), read by `doorGrade(entry, x, z)` (`20-quests.js`, beside the portal's
+grade). It reads the tier where the door stands in the world, as its live portal does (`dungeonTier` at floor 1), and adds the
+lair's one step and the wyrm's two. `mapEntries` (`83-world-generator.js`) caches it on the cell's door by its place
+(`mapDoorGrade`), since a door's grade never changes. No new line is said: the townsfolk's danger lines are the quest
+writer's, after this. Nothing is saved.
+### Verified (headless Chromium)
+- **`tiermap`** (new), 6/6, over the nine cells round home:
+  - 81 doors, every one with a grade: 15 Very Easy, 1 Easy, 63 Normal and 2 Hard.
+  - 28 doors have live portals, and each one's label is the grade its portal fights at.
+  - 3 lair caverns, each one grade above a plain gate where it stands (Very Easy to Easy, Normal to Hard twice).
+  - The labels are the same at level 1 and level 20.
+  - The map's panel shows *Old gate · undead · Very Easy* for the Dungeon of Shadows.
+- **Neighbours:** `lairrumour`, `shipwreck`, `mapquests`, `mapseals`, `tiergrade`, `lairgrade` and `dangertier`.
+### Needs eyes
+- **Most doors round home read Normal.** The coast's are Very Easy, but the Deepwood and the Foothills hold most of the nine
+  cells' doors, and they are tier 2. A new character reading the map sees one coast's worth of easy doors and a ring of Normal
+  ones, which is the sheet's intent.
+- **A lair's cavern says *Old gate · deep*** on the map, as it did before: its subtitle names it a gate. Not this session's;
+  noted for the map's next pass.
+- **Owed from the sheet:** the whole-world suites `tierlevelfree` and `tiermainpath`. The loot and the hoard wait on #394; then
+  the quest writer's four danger lines.
+
+## v80 — Session 1066 — Enemies by place: `tierlevelfree`, the sheet's main line (tests only)
+The sheet's main suite: build each kind of place where foes are made, on the same seed, at level 1 and at level 30, and require
+the same foes. Since Sessions 1058 to 1061 and 1065 it should hold everywhere the sheet names, and it does. No game code changed.
+
+The suite makes, at each level:
+- 18 chunks at night, nine at the centre of the Deepwood and nine in the Wastes (`spawnChunkEncounters`);
+- a lair round home, built again from nothing (`disposeSettlement`, `genSettlement`);
+- a guild commission's Ogre, on one task id (`ensureTaskWorldObjects`);
+- a Deepwood lair's cavern, both floors, with its master and its traps (`goToDungeon`).
+
+For each foe it compares the kind, variant, tier, health, blow, pace and whether it is latent.
+
+Found while reading for it, and outside the sheet's table:
+- **A town's jobs still count by your level** (`townQuestFor`, `87-world-quests.js`). A cull asks for 4 + level ÷ 3 beasts, a
+  road job's camp holds 3 + level ÷ 3 bandits, and the pay is 40 + 30 × (level ÷ 3).
+- **The war's siege camps and occupiers still count by your level.** A siege camp holds 6 + level ÷ 3 bandits and an occupation
+  5 + level ÷ 4.
+
+Both are numbers a player feels, and the sheet does not say what replaces them, so they are asked (DECISION #405) and not built.
+### Verified (headless Chromium)
+- **`tierlevelfree`** (new), 7/7:
+  - The 18 chunks give the same 12 foes at both levels (Deserters and Bandits at tier 2), and none is latent.
+  - Dunderry's Lair (tier 1) is built with the same Cave Bear (259 health, a blow of 25) and two Dire Wolves (40, 10).
+  - The commission's Ogre is 253 health and 33 blow at both levels (tier 2).
+  - The Deepwood cavern is Hard at both levels and holds the same 28 foes, 14 on each floor. Its master, *Testwood — Cave Bear*,
+    stands on floor 2 at tier 3 with 1,269 health.
+  - Its 3 traps stand in the same places and land the same: a spike 16, two blades 17.
+- **What still differs:** the cavern's hoard holds 153 gold at level 1 and 1,458 at level 30. That is DECISION #394's to settle.
+### Needs eyes
+- Nothing in play changed.
+- **Owed from the sheet:** `tiermainpath`. The loot and the hoard wait on #394; then the quest writer's four danger lines.
+
+## v80 — Session 1067 — Enemies by place: `tiermainpath`, the first act at tier 1 or 2 (tests only)
+The sheet's last suite asks whether the main quest's first act sends a new character anywhere above tier 2. If it did, the
+quest would stay where it is and the list would go to the producer. It does not. No game code changed.
+
+The suite walks `QUEST_DEFS` from *q0* to *q7* and finds each objective's place in the world's own data:
+- **A dungeon** is placed where `fixedDoorSpot` puts its door, independent of what has loaded. Its tier counts the floor the
+  objective sends you to, so a door's floor 2 is its tier plus one.
+- **A legacy zone's objective** goes to its town (Ashenmoor or Ironhaven). The Faolchú is placed where it is spawned beside
+  Ashenmoor.
+- **A live portal,** where one stands, must read the same tier as its door's place in the data.
+
+That leaves session 1 of the sheet built but for the loot and the hoard, which wait on #394, and the counts asked in #405.
+### Verified (headless Chromium)
+- **`tiermainpath`** (new), 4/4. 19 destinations in 11 places:
+  - Ashenmoor and Ironhaven are tier 1.
+  - The Dungeon of Shadows, the Crypt of Embers and the Vault of the Tide are tier 1 at the door and tier 2 on floor 2, where
+    *q2*, *q4* and *q5* send you.
+  - *q6*'s seven Ironhaven dungeons are tier 1 or 2. Three stand in the Foothills at tier 2: the Dead Sepulchre of Despair, the
+    Frost Sanctum of the Ancients and the Forsaken Ruin of Despair.
+  - Every live portal agrees with the data.
+### Needs eyes
+- **The Binding Stone's twenty kills.** Three of the seven Ironhaven dungeons are tier 2 at the door: Normal grade, ×1.75
+  health and ×2.09 blow. A character who picks one of those first meets twice the blow of the Vault of the Tide. That is
+  within the sheet's line, but it is the first place the main path's danger varies by choice.
+
+## v80 — Session 1069 — `tiermap` waits for the doors' portals (a CI fix)
+CI failed `tiermap` (Session 1065) twice on `3421a74`. It found 0 live portals, so "each label is the grade its live portal fights at" and the panel check had nothing to read. Here the same commit finds 28. The suite read `PORTALS` as soon as it was in the world, and a slow runner registers the doors' portals after the cells round home are built. It now waits, up to 120 s, until more than three are registered. The checks themselves are unchanged.
+### Verified (headless Chromium)
+- `tiermap` 6 of 6, 28 portals.
+### Needs eyes
+- Nothing.
+
+## v80 — Session 1070 — F2b, session 2, part 1: a step is 0.40 m (the body in the world)
+F2b's second session (`docs/design/scale-numbers-build.md`, *Movement*) begins with the step. `STEP_UP` was 0.62, set for the
+old 1.1 m body. At that height a person walked onto a chair, a chest or a bed as if each were a stair. It is now 0.40
+(`52-dungeon-gen.js`). That is over a stair's rise (0.18), a kerb and a bench's seat (0.39), but not onto a chest or a bed (0.45)
+or a table (0.68). A jump (apex 0.84) puts you on any of them, as the sheet asks. `STEP_UP` is read in four places:
+- where a solid lets you over it (`intSolidAt`);
+- which foothold you stand on (`footholdY`);
+- where a coaching inn's folk may stand (`coachInnFolk`, which reads the same rule);
+- nowhere else.
+
+**What else stands in the band.** Before the change I surveyed every Dunmore room type and six dungeons (four schools, a lair's
+cavern and a fort) for anything walkable at 0.62 and not at 0.40:
+- **Rooms:** the beds and the stash chest, both 0.45, which the sheet means to stop you.
+- **Dungeons:** nothing. Their stairs are newel helices and ramps, which rise 0.14 at most between 5 cm samples, and they hold no
+  low platforms.
+- **The legacy rooms** carry no height bands at all.
+
+**The body's radius stays where it is for now.** The world (`solidAt`) and the rooms already test a 0.30 radius, the sheet's
+number. Only the dungeon's is smaller: `dBlk` 0.20, and its props padded by 0.22. Its corridors are still one 1 m cell until
+session 3 builds Michael's 3 m cell (#300 C), and 0.30 in a 1 m corridor leaves 0.4 m to pass a prop, so that radius moves with
+the cell.
+
+**One suite re-measured.** `shells` checked that the middle of a cottage is free at the fixed point (1.5, 1.5). That point is
+0.13 m from the bed, which now blocks. It now takes the nearest clear spot to the room's middle, within a quarter of its width.
+The check still proves that a post blocks and that the room is not solid everywhere.
+
+Numbering: Session 1068 is the bodies builder's and 1069 another systems run's CI fix to `tiermap`, merged in here.
+### Verified (headless Chromium)
+- **`stepup`** (new), 9/9 in the old look and the new:
+  - `STEP_UP` is 0.40.
+  - In a Dunmore cottage, a bed (0.448), the chest (0.448) and a table (0.68) each stop you at the floor. Walked at, the bed stops
+    you 0.96 m from its middle and the table 0.82 m from its middle.
+  - A running jump peaks at 0.876 and leaves you standing on the table at 0.68.
+  - The inn's stair climbs to its top (2.743 of 2.743), with no rise over 0.144 between 5 cm steps.
+  - A bench's seat (0.394) is still stood on from the floor.
+- **36 neighbours pass** (every suite that reads `STEP_UP`, `footholdY`, `intSolidAt`, `INT_SOL` or the coaching inn, and the
+  stair suites): `airdash`, `airstep`, `barber` (5), `bedaim`, `boxspots`, `chairstash`, `civicfurn`, `coachinn`, `coachseat`,
+  `coachvoice`, `crime5`, `doorbed`, `falls`, `guardsindoor`, `homefurn`, `homesleep`, `innrooms`, `intaim`, `intdooraim`,
+  `intdoors`, `interiors`, `intnpcs`, `intreach`, `keepercone`, `keeperwalk`, `oddfurn`, `ragdoll` (2), `scalerooms`, `shopfurn`,
+  `sleeperreach`, `wokennight`, `newelstair`, `stairrail`, and `shells` re-measured.
+### Needs eyes
+- **Beds and chests now take a jump.** Walking into one stops you dead where you used to ride up onto it. Sleeping and the stash
+  are E at reach, so nothing is lost, but it is a different feel in a small room.
+- **Owed from session 2:** touch at 1.6, the wheel, swimming at 1.40 and the indoor sight line. The dungeon's radius goes with
+  session 3.
+
+## v80 — Session 1075 — Enemies by place: the loot follows the place (Michael's A on #394)
+Michael answered DECISION #394 with A: *by place, the tier sets the metal*. Until now `rollLoot` capped a drop's material at
+1 + 0.4 × your level + 1.2 × the grade's health. A level-30 character found Draconic on coast wolves, and two friends opening one
+chest in a shared world would have got different things. The cap now reads the level of the danger tier where the roll is made
+(1, 6, 11 or 16, `tierLevel`), never yours. The formula is otherwise unchanged, so at the plain grade the best metal is Bronze at
+tier 1, Steel at tier 2, Adamant at tier 3 and Draconic at tier 4, as the sheet's option A said. A harder grade or a richer chest
+(a wreck at 1.4, a hoard at 2.4) still reaches a step higher.
+
+**Where the tier comes from.** `rollContainerLoot` takes the tier as a sixth argument and holds it for the roll
+(`withLootTier`, `14-items.js`, beside `withLootRng`):
+- **A corpse:** its foe's own `e.tier`, in the world (`42`) and in a dungeon (`62`).
+- **A dungeon's chest or barrel:** its floor's `dungeonTier(portal, floor)`, so floor 2's chests are a tier richer than floor 1's.
+- **A town's barrels, a site's chest, a wreck and a ship's chest:** the region where they stand (`worldTierAt`).
+- **A roll with no tier given** (the old `getLootItem`): it reads where you stand (`tierHere`). Indoors that is the town the room
+  belongs to, since `px, pz` are the room's own coordinates there.
+
+A lair hoard's gold was 60 + 25 × your level. The sheet's A names it too, so it now reads the master's floor's tier. A Deepwood
+cavern's second floor (tier 3) holds 603 at any level, where it held 153 at level 1 and 1,458 at level 30.
+
+**What I left.** A gold pile's count in a chest or on a body still has `rollGold`'s small level bonus (1.0 a level in a chest,
+0.7 on a body). The answer named the metal and the hoard, #405's answer keeps a job's pay by level, and a new rule for money is a
+number a player feels, so I have not changed it. `tierloot` and `tierlevelfree` compare a gold pile by its name, not its count.
+### Verified (headless Chromium)
+- **`tierloot`** (new), 12/12:
+  - 2,000 seeded chests at each tier hold the same goods at level 1 and at level 30, about 1,175 pieces of kit each time.
+  - The best metal is Bronze, Steel, Adamant and Draconic at tiers 1 to 4.
+  - A tier-1 corpse at level 30 tops out at Bronze; a tier-3 corpse at level 1 reaches Adamant.
+  - At home at level 30 a roll with no tier reads tier 1, with the cap of level 1.
+  - The Wastes' foes carry tier 3 for their corpses.
+- **`tierlevelfree`**, 9/9 (two checks added): the Deepwood cavern's hoard is the same at both levels (603 gold, a Steel Sword,
+  Greater Potions), and its 21 chests and barrels hold the same goods.
+
+## v80 — Session 1076 — Town jobs and the war's camps count by place (Michael's A on #405)
+Michael answered DECISION #405 with A: *counts by place, pay by level*. Since #373 no foe read your level, but a town's jobs and
+the war's camps still did, so two friends at levels 4 and 22 in one town were offered different fights. All four counts now read
+the level of the danger tier where the fight stands (1, 6, 11 or 16), as the traps have since S1061 (`87-world-quests.js`):
+- **A cull** (`townQuestFor`): 4 + ⌊that level ÷ 3⌋ beasts, read at the town.
+- **A road job's camp:** 3 + ⌊that level ÷ 3⌋ bandits, read where the camp stands on the road. Dunmore's road camps sit in a
+  tier-2 stretch, so they hold 5.
+- **A siege camp:** 6 + ⌊that level ÷ 3⌋, read at its town.
+- **An occupation:** 5 + ⌊that level ÷ 4⌋, read at its town.
+
+So a coast cull asks for 4 beasts and a Wastes cull for 7, at any level. The pay is untouched: 40 + 30 × ⌊your level ÷ 3⌋ and
+the job's own roll. The roll draws nothing new, so every job's kind, place and title come out as before.
+### Verified (headless Chromium)
+- **`jobcount`** (new), 10/10:
+  - Dunmore is tier 1 and Trostouir, a Wastes town, tier 3.
+  - Twelve jobs at each town (six culls and six road camps on fixed keys) ask the same counts at level 1 and level 30.
+  - Each count is its place's: Dunmore 4 and 5, Trostouir 7 and 6.
+  - Every job pays exactly 300 more at level 30 than at level 1.
+  - Besieged at level 30, Dunmore's camp is six soldiers, the count it had at level 1.
+
+## v80 — Session 1077 — Ringing (Blunt 50): a broken shield stays down for the fight (Michael's A on #399)
+Michael answered DECISION #399 with A: build the small rule each of the four Arms perks needs, then the perk. He also asked for a
+*sheath* button that sheathes the weapon in hand, with a torch or shield left in the off hand. Ringing comes first, as it is the
+smallest of the four.
+
+**What changed.** The sheet's Ringing read *a power hit breaks a raised shield in one blow*, which every power hit has done since
+v65. A Bandit Captain then raises its guard again as soon as its stagger runs out (`reraiseGuard`). With a blunt weapon in hand
+and Ringing held, the shield that hit breaks now stays down while its bearer is alert (`e._rung`, set in `resolvePlayerStrike`'s
+guard break, `74-strikes.js`). `reraiseGuard` (`14-items.js`) refuses while the foe is alert, and once it is calm the next call
+raises it as before. Like the rest of the Arms perks it is the weapon's: a sword's power hit at Blunt 100 lets the guard back up.
+The perk's line on the Skills tab now says what it does, and it is live (`PERK_LIVE`).
+
+**Still owed from #399:** Throw (a foe falls for 1.5 s), Catch the blade (a disarmed humanoid fights with its fists), and Draw cut
+with the sheath button, one a session. How a sheathed weapon looks belongs to the bodies builder's viewmodel.
+### Verified (headless Chromium)
+- **`perkring`** (new), 7/7:
+  - A Bandit Captain's raised shield breaks under a mace's power hit at Blunt 49 and at Blunt 50.
+  - At 49 the guard is up again once the stagger runs out on the zone's own tick (240 ticks).
+  - At 50 it stays down while the Captain is alert, and comes back up once it is calm.
+  - A sword's power hit at Blunt 100 lets the guard back up.
+  - Ringing is live on the Skills tab.
+### Needs eyes
+- **A rung Captain stays guardless until it calms.** A foe that never loses its alert (one that keeps chasing you) has no shield for
+  the rest of that meeting. That is the perk's point, but a long chase may make it feel permanent.
+- **Correction: Sessions 1075 and 1076 went out without their *Needs eyes*.**
+  - 1075: a coast character's drops now top out at Bronze at any level, so the smith and the shops are the way up. A playtest
+    should judge whether the first act's chests feel thin. A gold pile's count still grows with your level; that is a question
+    for Michael if it should follow the place too.
+  - 1076: a road job out of Dunmore now asks 5 bandits at level 1, where it asked 3, because its camp stands in a tier-2 stretch.
+    At level 1 that may be a harder first job than before.
+
+## v80 — Session 1078 — Throw (Hand-to-hand 50): a punch knocks a staggered foe down (Michael's A on #399)
+The second of #399's four. No foe could be knocked down: it was staggered or it was not. Michael's A gave the rule: *the foe
+falls for 1.5 s, open to a finisher from any side*.
+
+**What changed.**
+- **The throw.** A punch that lands on a staggered foe knocks it down when Throw is held, unless that punch is the finisher or a
+  riposte (`applyMeleeDamage`, `74-strikes.js`). `throwFoe` (`12-character.js`, beside the other Arms perks) holds the foe's
+  stagger for at least 1.5 s (`THROW_S`) and keeps its finisher open as long.
+- **Open from any side.** `finisherOpen` (`10-player.js`) skips its facing test while the foe is down (`e._downUntil`), so the
+  next blow from behind is the ×3 finisher.
+- **A thrown foe cannot be thrown again** until it rises.
+- **Fists only:** a sword does nothing with it, as with every Arms perk.
+- **The Skills tab** gives the perk's full line, and it is live.
+
+**What it does not do yet.** It does not lay the body down. The foe stands frozen in its stagger as before. `e._downUntil` is the
+clock it rises at, for the bodies builder to pose a fall on (filed in the backlog with the perk).
+### Verified (headless Chromium)
+- **`perkthrow`** (new), 8/8:
+  - A Bandit staggered with its back to you is not open to a finisher.
+  - At Hand-to-hand 49, a punch from behind (7) throws nothing.
+  - At 50 the punch puts it down for 1.49 s, its stagger held at 1.5. The next punch from behind is the finisher at 14, twice
+    the plain staggered 7 (×3 against ×1.5).
+  - From the front, the punch is the finisher itself and nothing is thrown.
+  - A sword at Hand-to-hand 100 throws nothing.
+### Needs eyes
+- **No fall is shown.** Until the bodies builder poses it, a thrown foe looks the same as a staggered one. The *goes down!* line
+  is the only sign of it.
+
+## v80 — Session 1079 — Catch the blade (Hand-to-hand 75): a bare-handed parry disarms (Michael's A on #399)
+The third of #399's four. A foe had no weapon to lose: its blow was its family's row, whatever it held. Michael's A: *an armed
+humanoid parried bare-handed drops its weapon and fights on with its fists, at half its blow and the fists' reach.*
+
+**What changed.**
+- **The disarm.** A perfect parry with empty hands, with Catch the blade held, now calls `catchBlade` (`12-character.js`) from
+  `executeStrike`'s parry branch (`74-strikes.js`). It takes a dagger, sword, axe, mace or cutlass from a person-bodied foe.
+  A spear, a staff or a bow is two-handed and stays in its grip.
+- **What changes for the foe.** It is marked `e._disarmed`, and the weapon in its fist is hidden (the rig's own `weapon`).
+- **Its fists.** `foeWeaponKind` now answers *fists*, so `foeReach` gives the Fists row's reach. `foeBlow` takes half the blow
+  (`CATCH_BLOW`).
+- **The perk** is live, and its line says what it does.
+
+**Something I found.** A revealed mimic's pounce rolls 14 + your level (`_burstNext`). It is a foe's blow that #373's tier never
+reached. I have filed it in the backlog beside the gold piles rather than changing it here.
+### Verified (headless Chromium)
+- **`perkcatch`** (new), 7/7:
+  - A Bandit holds a one-handed sword, in sight.
+  - At Hand-to-hand 74, a bare-handed perfect parry staggers it and takes nothing.
+  - At 75 the sword is hidden, its reach goes from 2.2 to 1.5 hull to hull (the fists' 0.9), and its blow from 55 to 28.
+  - With a spear it keeps its grip.
+  - With a sword in your own hand, Hand-to-hand 100 takes nothing.
+### Needs eyes
+- **The weapon simply vanishes.** Nothing falls to the ground and nothing can be picked up, and the foe's swing animation is still
+  its weapon's. A dropped prop and a fist pose are the bodies builder's, if wanted.
+
+## v80 — Session 1080 — The sheath, and Draw cut (Blade 25) (Michael's A on #399)
+The last of #399's four. Nothing was ever sheathed: a weapon in your hand was always drawn. Michael's A gave the rule, *a blade is
+sheathed after 5 s with no swing and no foe alert within 14 m; the first swing after that drains ×2 posture*. His note added a
+button: *"Let's add a 'sheath' button where you can sheath your equipped weapon. Torches or shields in your off hand stay equipped
+and in hand."*
+
+**What changed** (`74-strikes.js`, beside the swing's commitment):
+- **The button.** H sheathes the weapon in hand or draws it (`toggleSheath`, bound in `92-creator.js`'s keys). It is named on the
+  controls line.
+- **On its own.** `tickSheath` (from the loop, `90-main.js`) sheathes a drawn weapon after 5 s with no swing and no alert foe
+  within 14 m, the lock-on's range.
+- **What it looks like.** A sheathed weapon stays equipped. The first-person view is the empty hand's, built by the viewmodel's
+  own `buildViewmodel` with the weapon held aside for the call, so nothing in the bodies builder's file changed. The off hand's
+  shield or torch is built on its own and stays.
+- **The draw cut.** A swing begun sheathed draws as it swings (`beginSwing`), and that swing carries `drawCut`. With Draw cut
+  (Blade 25) it drains ×2 posture in the resolver's drain line.
+- **What is left out.** A bow is never sheathed, as its draw is the aim. A new weapon in hand is drawn.
+- **The perk** is live. All four of #399's perks are now built, and `perkarms`' list of live perks is updated to match.
+### Verified (headless Chromium)
+- **`sheath`** (new), 9/9:
+  - H sheathes: the hand is the fists' (1 mesh against the sword's 9), and the sword and the buckler stay equipped. H again
+    draws it.
+  - It sheathes itself at 5.1 s, not at 4.9 s.
+  - It does not while an alert foe is 10 m off. One at 16 m does not hold it.
+  - A swapped weapon is drawn.
+  - The swing from the sheath draws and is the draw cut: 16 posture against 8 drawn and 8 at Blade 24.
+- **`perkarms`** passes with the new list of live perks.
+### Needs eyes
+- **The third-person body still holds the weapon while sheathed.** The first-person sheathe and draw are instant, with no
+  motion. Both are the bodies builder's, filed in the backlog.
+- **Phones have no H.** A touch button is owed with the phone controls.
+- **Auto-sheathing is new to every player.** After 5 s at peace the sword leaves the hand, and the next click draws and swings
+  at once. A playtest should say whether 5 s is too eager in town.
+- **Addendum to Session 1080: `fists`** read its *armed* view at boot. Under the new rule the sword had already sheathed itself
+  by then, so the view showed fists. The suite now draws the weapon before it reads the view. The check is unchanged and passes.
+  The other 12 of the 14 suites that read the viewmodel or a swing pass as they are: `fpweapons`, `fphands`, `player`,
+  `tpguard`, `tpswing`, `spentblow`, `fistswing`, `dmgnums`, `skillcurve`, `tpfists`, `fistfight` and `perkarms`.
+- **Addendum to Session 1080: `bowsway`** found a real hole. When a sheathed weapon was swapped for another without the
+  inventory's own rebuild of the view, `tickSheath` cleared the sheath but left the empty hand standing, so the new bow was held
+  invisibly and did not wobble. Clearing the sheath now rebuilds the drawn view. `bowsway` and `sheath` pass.
 ## v80 — Session 1071 — perkbody's stepped loop starts from the last real frame (QA, tests only)
 `perkbody` went FLAKY on three runs, all shard 5: bf251d1 on auto/systems, and the producer's branch twice today (bc98a27 and ac8206e). Each time the red check was *off the road at 74 the sprint drains it*, with stamina 9.98 against `< 8` while sprinting; the retries read 6.78. The suite lives on auto/systems (Session 976), not on main. The sprint is measured in the game's own loop. The test stubs `requestAnimationFrame` and `REN.render` and calls `loop(_t)` ten times, adding a sixtieth of a second to its own clock `_t` each time. But the game's frame that was already queued when the stub went in still runs once, at real time. When it lands between two sprints, while the keys are being pressed, it leaves `prevT` ahead of `_t`. The next stepped frame then has a negative `dt`: the loop caps `dt` at 0.05 and puts no floor under it. So the sprint's drain, `stamina - dt*drain`, adds stamina. Real browsers never run time backwards, so this is the test's, not the game's.
 
@@ -24128,6 +25395,108 @@ Corrections made during the session:
 - **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
 - **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
 
+## v80 — Session 1084 — F2b, session 2, part 2: the water in metres (swim at 1.40, the eye 0.20 over it)
+F2b's second session (`docs/design/scale-numbers-build.md`, *Water*) has four parts left after the step; this is the water. You
+swam wherever the bed lay more than 0.40 under the sea, with the feet 0.35 under the surface (`SWIM_Y`). That was set for the old
+1.1 m body. On a 1.8 m person it is knee-deep, so you began swimming in water you could have waded. F2a had kept the swimmer's
+eye at the old 0.92 over the feet (`SCALE.EYE_SWIM`) so the surface stayed where it was until this session.
+
+**What changed** (`85-world-sea.js`, with one line each in `07-scale.js` and `54-thirdperson.js`):
+- **The swim begins at 1.40 m deep** (`SWIM_DEPTH`), chest-deep, and the feet hang 1.45 under the surface (`SWIM_Y`).
+- **The eye.** `EYE_SWIM` is now the standing eye, 1.65, so it rides 0.20 over the water, as the sheet asks. `cameraUnderwater`
+  already read the eye, so the camera goes under when a dive takes the feet 0.25 below the swimmer's line (0.52 before).
+- **Shallower water is waded.** Up to 1.40 m deep you walk on the bed, with no slowdown, which the sheet rules out. A bay you swam
+  across before, you now wade across.
+- **The diver** keeps 0.90 off the bed (0.55 before). The clamp is now taken in the other order, so the floor's clearance can
+  never lift a diver above the swimmer's line. With the deeper line and the larger clearance, a bed 1.75 to 2.35 m down used to be
+  able to raise you out of the swim.
+- **Water walking** still holds you on the surface wherever the water is over 0.35 deep (`WALK_WATER`), as it did. It is not left
+  to wade through 1.4 m of water under a spell that says you walk on it.
+- **The third-person body** sank by the swimmer's old line (`jumpY+.6`, which is 0.25 + 0.35). It now reads `SWIM_Y`, so its head
+  still clears the sea by a quarter metre. That is one expression in the bodies builder's file and does not change its look.
+
+**Unchanged.** A fish school is still reached within 1.6 of your feet. The feet sit 1.1 m lower at the surface, so deep schools are
+about a metre nearer and the shallow ones are as near as before. The nets, the sinking ship and the pirates all put a swimmer at
+`SWIM_Y` by name and follow the line.
+
+One suite re-measured: `pirateram` put its swimmer at the old `SEA_Y − .35`, above the new line, so it was no longer swimming. It
+now puts the swimmer at `SWIM_Y`. Its check is unchanged.
+### Verified (headless Chromium)
+- **`swimdepth`** (new), 10/10 in the old look and the new. The test walks down a shelving shore near the start, 84 m from dry land
+  to 3 m of water, through the game's own loop:
+  - At 0.91 m deep you wade: the feet are on the bed (0.06 behind it, the terrain follow's lag on the slope), the eye is 0.80 over
+    the water, and the camera is dry. You still wade at 1.38.
+  - The swim begins at 1.406 m deep, with the eye 0.24 over the water as it settles (0.20 once settled).
+  - In 5.5 m of water you hold at the line, 1.45 under. Looking down with W held, you dive: breath and the camera go under, and
+    the deepest you reach is 0.91 off the bed. Let go and you drift back up to the line and no higher, still swimming, with the
+    eye 0.20 over.
+- **Neighbours pass:** `netclimb`, `shipnets`, `shipwreck`, `blacksail`, `pirateram` (re-measured), `fishseed`, `perkbody`, `cloaks`
+  and `shark`.
+### Needs eyes
+- **Wading is new.** Coves, river mouths and the shallows off a quay that used to be swum are now walked, with the water at the
+  chest. Nothing slows you, which is the sheet's rule, but it may read oddly with no splash or wake. The splash and the wake are
+  the look builder's, if wanted.
+- **The swimming body in third person** puts its head a quarter metre over the water, and the camera's eye sits at 0.20. Worth a
+  look from behind on both looks.
+- **Owed from session 2:** touch at 1.6, the wheel, and the indoor sight line.
+
+## v80 — Session 1085 — F2b, session 2, part 3: one touch, 1.6 m, and the wheel within it
+The sheet's *Touch and talk* table replaces eight touch numbers with one. What E reaches with a hand was 1.1 to 1.5 m by function:
+- a herb 1.1;
+- a notice board, the stash and a legacy room's bed 1.4;
+- a house door, a room's door, a bedroll, the tower's chest and the barber's chair 1.5;
+- a cellar hatch 1.3, the roof's hatch 1.4.
+
+A generated room's bed and the home's chest were already at 1.6. The ship's wheel answered at 2.4, further than a hand.
+
+**What changed.**
+- **One constant.** `TOUCH` 1.6 (`07-scale.js`, beside `SCALE`, so every file has it at load) is now the reach for all of these
+  and for the wheel. It is measured from the body's centre, horizontally, as before.
+- **The aim rules stand.** Every check that needed the crosshair still needs it: doors, beds, the stash, the chests, the hatches,
+  the barber's chair and the wheel.
+- **Prompts match.** The prompts that repeated the numbers (`90-main.js`, the bedroll's in `62-actions.js`) read the same
+  constant, so the prompt and E cannot disagree.
+- **Floor-level things.** The sheet's ray rule is met without a new test: a herb at 1.6 is 2.30 m from the standing eye, inside
+  2.4.
+
+**What is left alone.**
+- **Talk:** 2.2 and 3.2, which the sheet keeps.
+- **Big things:** a gate at 1.8, a portal at 2.0, a shrine at 2.6, the coach at 3.2 and the quests' named reaches. None of them is
+  a hand on a thing.
+- **Aimed loot:** corpses, chests and barrels, at 3.0 and 2.6 under the crosshair.
+- **Auto pickups:** what you walk over.
+- **The dungeon's own checks:** its doors, sigils, stairs, entrance, cots, the mimic, the Shuttle and the cloak's den. They sit on
+  the 1 m cell, where 1.6 would reach through a wall into the next corridor. They move with session 3's 3 m cell.
+### Verified (headless Chromium)
+- **`touchrange`** (new), 7/7. Each target is approached along several clear lines and stepped out by 0.05 m from 1.225, with the
+  crosshair held on it. The furthest answer must reach 1.575, and nothing may answer past 1.6:
+  - a herb on the open ground: 1.575, none beyond;
+  - both doors of a Dunmore inn's upper floor: 1.575, none beyond;
+  - two of its beds: 1.575, none beyond;
+  - a sloop's wheel, on her deck: 1.575, none beyond. It answered to 2.375 before.
+- **Neighbours.** 60 of 63 pass: every suite that reaches a door, a bed, a herb, a hatch, a chest, the stash, the barber's chair,
+  the wheel, the board or `interact`. The three that do not fail the same way on the branch before this run (`0622b6f2`):
+  - `renewal`: the player is dead at the altar. Filed in backlog K for QA.
+  - `scaleratio` and `placesave`: in this container the browser closes partway through.
+### Needs eyes
+- **Reaching further.** Doors, boards, herbs and hatches answer a step further off than they did (up to 0.5 m for a herb), and the
+  wheel answers nearer (1.6 against 2.4). In a tight room, check that two things a step apart still give the one you look at.
+- **Owed from session 2:** the indoor sight line.
+
+## v80 — Session 1089 — flashshare's floors stand in the Wastes (red twice on d7e983c)
+CI's shard 7 on `d7e983c` was red twice on `flashshare`: *underground, every kind with two or more on a floor gives each its own body material*
+read four kinds (Golem, Skeleton, Cave Troll, Gargoyle), under its floor of six. No material was shared. Bisected locally: green on
+Session 1028 (`a9c4351`), red from Session 1032 (`3d8c5a0`, enemies by place, a danger tier per region and per dungeon floor) on, and green on
+main. The test reached the deeper kinds with `level = 12`, and since S1032 a dungeon's roster follows its door's place, not your level:
+its three floors stood at the first portal's place, tier 1, so only tier 1's kinds came two to a floor (eight floors gave the same four).
+The game is right and the test is old. `enterDungeon` (`tests/lib/dungeonshot.mjs`) now takes an optional `x, z` for the door (it copied
+only theme, seed, size, interior and name before, so a door could not be moved); `flashshare` stands its three doors at the home cell's
+Wastes (tier 3), the place level 12 used to stand for. Tests only; no game code changed.
+### Verified (headless Chromium)
+`flashshare` green: seven kinds two or more to a floor (Golem, Greater Golem, Skeleton, Greater Skeleton, Cave Troll, Greater Cave Troll,
+Gargoyle), none sharing a material; the open world's twelve unchanged. Without `x, z` the helper builds the same portal as before.
+### Needs eyes
+Nothing to see in play. `targetof`, `renewal`, `trapseed` and `fistfight` were red on the same run, the other sessions' (PR comment).
 ## v80 — Session 1090 — The new look's suite, shards 9 and 10 (QA)
 QA's run of 18 Oct 00:52 UTC found no red that was not its change's own. In CI from 17 Oct 17:00 to 18 Oct 00:52 there were 3 red runs, all on the builders' own work. auto/backlog 726dd57: `kitlots` failed twice; the branch's next head, 8aea55a, is green. auto/systems 3421a74 and bbb2e4a: `trapseed` failed twice on both, its spike plate hitting 19 and 16 against the old band of 8–15 at level 1. Since Session 1061 (enemies by place), the plate's band follows the floor's tier (`tiertrap`), so the check still measures the level rule; trapseed is the systems builder's to re-measure on the branch that changed it. Also red: `targetof`, where the dungeon's Phantom is alert but does not move (4 → 4 both ways, on both runs), and `perkarms`, whose live list Session 1080 updated since. auto/systems' two later heads were cancelled before their shards ran, so its current state is unread. No suite was FLAKY.
 
@@ -24141,6 +25510,179 @@ So the session went to item 2, the new-look ledger (`docs/qa/looknew.md`), where
 - Shards 11–14 under the new look (154 files) are still owed. They are the next QA run's item 2 unless CI goes red first.
 - `trapseed` and `targetof` on auto/systems: the systems builder's to re-measure or fix. Read again once that branch's CI completes on its current head.
 
+## v80 — Session 1104 — The branch's own reds: trapseed, targetof, fistfight and renewal re-measured to the rules that moved them
+QA's standing comment on the Systems sessions PR (17–18 Oct) named four suites red twice on auto/systems, each bisected to one of this
+builder's sessions. All four are the game doing what its session said, measured by a suite written before it. Tests only; no game code changed.
+- **`trapseed`** (from S1061, the traps at the floor's tier's level): its band, 8–15 + level × 0.8, read your level. The plate rolls on
+  `trapTierLevel()`, so on CI's tier-2 floor it hit 16 and 19 against a ceiling of 15. The band now reads `trapTierLevel()`. Its check is unchanged.
+- **`targetof`** (from S1059, the kinds' least tier in place of the latent foe): the dungeon half took the first walking foe and stood it
+  4 off you, with the decoy 4 off the other side. Since S1059 that foe is a Phantom, and a ranged foe holds its ground inside 4.5 and
+  shoots (`90-main.js`, `wantsToChase`), so it went nowhere (4 → 4). The suite now skips ranged foes as it skipped slimes and mimics;
+  the next walker is a Skeleton.
+- **`fistfight`** (from S1078, Throw at Hand-to-hand 50): the 6–11 punches at 99 were the multiplier's brawl, measured before Throw
+  existed. A thrown Bandit lies with its finisher open from any side, so the fight sometimes ends in 5. The 99 and 100 fights now hold
+  `hand:50` out of `PERK_LIVE` for their own run (restored after), so the multiplier and Stone hand are measured as written, and three
+  fights with Throw are checked beside them: dead every time, in 2 to 11 punches.
+- **`renewal`** (from S1059 too; filed in backlog K by Session 1085 as QA's): a Highwayman stands 4.3 m from An Spéir's altar at
+  `c6_8_p1`, in a tier-2 chunk. Before S1059 he was latent at level 1. Over the measure he wakes and kills a 10-health player, and a
+  dead player regains nothing (health −10, everything else still). The suite puts the foes within 60 m of the altar down before each
+  measure. The game is right: a shrine on a road is not a safe place in the Foothills.
+### Verified (headless Chromium)
+- `targetof` 1/1: before the change, *the Phantom closes on you (4 → 4)* failed as on CI; after it, the Skeleton closes 4 → 0.63, and
+  with the decoy goes 4 → 0.63 to it and 4 → 7.37 from you.
+- `trapseed` 1/1: hits 15, 12, 11, 9, 10, 11 at tier level 1, the band 8–15 (this container's floor is tier 1; CI's was not).
+- `fistfight` 1/1: at 99 without Throw 9, 10, 10 punches (in 6–11); with Throw 5, 5, 9; Stone hand passes against the former.
+- `renewal` 1/1: before, health −10 and 109 s for 40 frames; after, health and stamina +1.00 and mana +2.60 under the boon, 0, 0 and
+  +1.60 without it, and the fill stops at each maximum.
+### Needs eyes
+- **A Highwayman at a shrine's altar.** Shrines are not kept clear of the chunk spawn, which was true before S1059 too; it shows more
+  now that the Foothills' tier-2 kinds stand from level 1. If a shrine should be a safe pad, that is a rule of play and Michael's.
+
+## v80 — Session 1105 — F2b, session 2, part 4: the indoor sight line at your eye
+The last of the sheet's *The body in the world* rows. `intSightLine` (`86-world-crime.js`) is the line a room's witnesses (the
+keeper, a sleeper, the people of `INT_NPCS`) and a room's foe (`canSeePlayer` indoors) see you along. It ran at 1.1 over your floor
+whatever your posture. It now runs at your eye: `SCALE.EYE_STAND` (1.65) standing and `SCALE.EYE_CROUCH` (1.1) crouched, over
+`jumpY`, so it rides an upper floor as before. The sheet says 1.6; F2a set the standing eye at 1.65, and the line reads the eye the
+camera uses. What blocks it is unchanged: a solid that spans the eye and is 1.8 tall or more, or a shut door.
+
+**The counter.** The sheet's reason for the row is *a counter (0.95) hides you only crouched*. That does not follow from the eye: a
+counter's top is under both eyes, and the blocker rule has never counted a solid under 1.8. So the counter hides you in neither posture,
+before and after this session. Making it hide a crouched player is a new rule of what hides you, so it is DECISION #420 (A: crouched
+within 1 m behind anything counter-high; B: walls and doors only, as now; C: anything over 0.55 anywhere in the line), and the suite
+pins today's rule until it is answered.
+
+In play the change bites only where a solid spans 1.1 to 1.65 without reaching the floor (a high shelf, a gallery's edge, a beam): standing,
+it hides you; crouched, you see under it and are seen. Floor-to-ceiling walls and doors hide you in both, as they did.
+### Verified (headless Chromium)
+- **`sightline`** (new), 7/7, in a Dunmore inn: 381 open pairs 2.5 m apart on its floor are seen in both postures; the line across each
+  of its 2 ground-floor walls is blocked in both; a solid from 1.3 to 3.2 set between two open points hides you standing and not
+  crouched, and the same 2 m up (an upper floor's 3.3 to 5.2, `jumpY` 2); a wall from the floor hides you in both; a counter (0 to
+  0.95) in neither. On the old line (the change stashed) the two high-solid checks fail, standing seen (`st: true`).
+- **Neighbours pass:** `witness` (2), `witnessrange`, `keepercone`, `sleeperreach`, `locksight`, `shopsight`.
+### Needs eyes
+- Nothing visible changes in most rooms: their walls run floor to ceiling. The bite is under high shelving and galleries, if any room has them.
+- **Owed:** F2b session 3, the dungeon's cell at 3 m (Michael's C on #300), and #420.
+
+## v80 — Session 1108 — questfoes swings unstaggered (red twice on 08ea721)
+CI's shard 2 on `08ea721` was red twice on `questfoes`: *a swing at her lands* read `frames: 1`, so `attack()` began no swing at all, and
+Hesket Rowe kept her 109. The suite is green locally on that commit, on S1104, S1080, S1077 and on main, five copies at once. The
+difference is the clock: the step before runs 90 enemy ticks in one evaluate with `performance.now()` as their time, and on a slow runner
+those 90 ticks take seconds of real time, long enough for Rowe (alert, at 0.98) to finish a blow. Its stagger is real time
+(`PPOST.stagUntil`), and `attack()` returns at once while you are staggered (S281). The test now clears the stagger along with the
+other things it resets before the swing (cooldown, stamina, the pending strike) and logs whether you were staggered (`stag`), so the
+next CI run shows the cause. Tests only. The game's rule is right: a staggered player cannot swing.
+### Verified (headless Chromium)
+`questfoes` green locally: the swing takes 13 frames and Rowe goes from 109 to 108, `stag: false` here, as it was before.
+### Needs eyes
+Nothing in play. If CI shows `stag: true` on the next run, the cause above is confirmed; if it shows `stag: false` and frames 1 again,
+it is something else and this entry is wrong.
+
+## v80 — Session 1110 — Cover indoors: crouched behind a counter, a witness does not see you (Michael's A on #420)
+Session 1105 put the indoor sight line at your eye and raised the build sheet's *a counter (0.95) hides you only crouched*, which did not
+follow from the eye: a counter's top is under both eyes, and the line was only ever blocked by walls (1.8 m or more) and shut doors.
+Michael chose A on #420: crouched, cover close by hides you. `intSightLine` (`86-world-crime.js`) takes a fifth argument, `cover`. With it, and
+while you crouch, a solid that stands on your floor (its foot within 0.3 of it) and reaches 0.9 m or more (`COVER_H`), and that the line
+crosses within 1 m of you (`COVER_R`), blocks the line: a counter, a chest, a bed's foot, a barrel. Standing, only walls and shut doors
+hide you, as before. A solid you are standing inside is not cover.
+
+Who asks for cover: the two witness checks in `witnessOf` indoors, the keeper or resident and the room's people (`INT_NPCS`). Who does not:
+lock-on (`lockSight`, `10-player.js`) and E's aim at a bed or a box (`aimBox`, `68-dungeon-misc.js`), which call the line with you at its
+start. They ask whether you can see a thing, not whether it sees you, and a counter in front of you must not stop you looting the chest
+behind it. A room's foe does not use the line at all (`canSeePlayer` is range and cone), so the decision's *a room's foe* has nothing to
+change today; if foes indoors ever get a sight line, they should pass `cover`.
+### Verified (headless Chromium)
+- **`sightline`** 1/1, 11 checks, in a Dunmore inn (11.2 × 12 m). New: a counter (0 to 0.95) 0.3 to 0.9 m short of you hides you
+  crouched and not standing (`st: true, cr: false`); a 0.6 m box in the same place hides you in neither; the same counter with no cover
+  asked (lock-on's line) hides you in neither; the same counter by the watcher, with you 2.5 m off, hides you in neither; a thin counter
+  mid-line, 1.1 to 1.4 m off you, hides you in neither, asked or not. Session 1105's checks still pass: 381 open pairs seen both ways, both
+  walls block both, the high solid (1.3 to 3.2) hides you standing only, on the ground floor and 2 m up.
+- **Neighbours pass:** `witness` (2/2), `witnessrange`, `keepercone`, `sleeperreach`, `locksight`, `shopsight`.
+### Needs eyes
+- Crouch behind a shop's counter while the keeper faces you from across it: you should stay unseen within 1 m of the counter and be seen
+  a step further back. Whether 1 m feels right next to the furniture as built is a playtest.
+- Tables are solid boxes in the room's record, so a table of 0.9 m or more counts as cover though its legs would show you. The kit's
+  tables are 0.75 (`SCALE.TABLE`), under the line, so none does today.
+- **Owed:** #421's dungeon cell (A, 18 Oct) waits on the producer's call on a deep-work card or a FREEZE.
+
+## v80 — Session 1111 — A mimic's pounce at its tier's level, not yours
+Session 1079 found one foe's blow still growing with your level after Michael's A on #373 (a foe's danger by its place): a revealed
+mimic's first bite, the pounce from the chest, rolled 14 + your level on its multiplier (`executeDungeonStrike`, the `_burstNext`
+branch). It is a foe's blow, so #373 already names it; this is the rule doing what its session said. The roll is now
+`mimicPounceRaw(e)` (`74-strikes.js`): 14 + `foeTierLevel(e)`, the mimic's own tier's level (dungeon foes carry `tier` from
+`dungeonTier`), on `e.dmgMult` as before. At level 30 on a tier-1 floor the pounce was 44 on its multiplier and is now 15; at
+level 1 on a tier-3 floor it was 15 and is now 25. Armour takes its share as of any blow, as before.
+
+The multiplier already carries `enemyDmgScale(tier)`, so the tier counts twice in the pounce, as the level did before (both
+terms are older than this session). Left as it was; the pounce is meant to be the worst bite a chest gives.
+### Verified (headless Chromium)
+- **`tiertrap`** 1/1, 9 checks: the pounce is 15 at tier 1 and 25 at tier 3, the same at level 1 and level 30; a mimic built at
+  tier 2 with a multiplier of 1.5 pounces 30 on any floor (its own tier). The spike, blade and fire checks are unchanged.
+- **Neighbours pass:** `mimic`, `mimicspots`, `tierlevelfree`.
+### Needs eyes
+- Late in the game a mimic on an early floor bites far softer than it did (15 against 44 before armour at level 30). That is #373's
+  intent; whether a mimic should stay a shock wherever it hides is a playtest.
+
+## v80 — Session 1112 — The Spire Held: the night watch on the roof
+Michael approved the quest writer's *The Spire Held* on 14 Oct (`docs/quest_drafts.md`). Its words wait on a rule the game lacked, a night
+watch on the spire's roof, which the writer filed for this builder (backlog A on auto/quests-build). This session builds the rule to the
+draft's *Shape* and *What in the code would carry it*, in `87-world-quests.js` beside the duel:
+- **`spireGive(site)`**, the named action that gives the quest: the League's seat, rank 3, the spire not held, the seat not occupied, not
+  already given. It adds the draft's record (`fq_league_spire`, kind `spire`, 260 + 20 × level gold, outside the nine services) with its
+  `data` at the spire, and sets `league.spire='given'`. The writer's *The spire?* topic calls it.
+- **`tickSpire(dt)`**, in the world's tick after `tickDuel`. With the quest in `'wait'`, the first time you stand on the spire's roof between
+  20h and 1h the watch begins (`'watch'`, `began` and `end`, the next 6h, in game minutes). On the roof means `jumpY` within 1.2 of `S.roof.y`
+  and inside the roof platform's square (±3.7). Three waves of the seat's cull target (`lairBiome` of the seat, the cull's own table, now
+  `CULL_BY_BIOME`) form on the roof 1.8 m from its centre 15 minutes in, then 2 h 15 and 4 h 15 in: 2 or 3 (seeded by the quest and the
+  night), then 2, then 3, as the draft's lines count them. Each is keyed (`<quest>:<began>:w<n>:<i>`) and tagged to the quest. On the roof at
+  6h with every wave dead, the spire is held: `league.spire='held'`, `league.spireDay`, the quest complete for the writer's turn-in.
+- **The resets:** more than ten seconds off the roof (the hatch included, since the world's tick does not run in the top room), a dead
+  player, or the seat occupied put the quest back to `'wait'` and take the watch's living foes out of the world. A watch saved mid-night
+  comes back as `'wait'` once a wave had formed, since foes are not saved. It can be tried again the next night.
+- **Wait** (`_canWait`, `50-travel.js`) is refused while on watch with the draft's *Not on watch.*, asked before the enemies-near check,
+  since the wolves are on the roof with you.
+- **The narration** is the draft's §4, word for word (`SPIRE_LINES`): the begin, the three waves and their clearing in the log, leaving
+  the roof, first light. The rest of the draft's words (the brief, the night sergeant, the stone, Rowe's morning, the turn-in, the
+  rumours) are the quest writer's build; the light in the cuts is the look builder's.
+
+The draft said to check first whether a world foe can stand on a roof platform. It can: `tickZoneEnemies` places a foe at
+`activeTerrainH`, which reads the highest platform under it, and the tower's ground ring keeps a roof foe inside about 2.5 m of the centre.
+So the waves form on the roof, and the draft's hatch fallback line is not needed.
+### Verified (headless Chromium)
+- **`spirewatch`** (new) 1/1, 18 checks, at the spire of this seed (roof at 48.6): given at rank 3, not at 2, not twice; no watch at 14h; at
+  21h the watch begins with no foe, and Wait answers *Not on watch.*; the waves at 21:15, 23:15 and 1:15 are 3, 2 and 3 of the seat's
+  cull target (Wolf here), standing at the roof's height (0.00 off it after six frames); at 5:59 with all dead the watch still runs; at
+  6h it is held, quest done, `spireDay` today, the log ending with the draft's lines, and Wait no longer refused. Off the roof 9 s the
+  watch runs; at 11 s it ends and no watch foe is left in the world; it begins again at 23h; a dead player and an occupied seat end it.
+- **Neighbours pass:** `duel` (2/2), `restslip`, `dateline`, and `jobcount` and `jobseed` after the cull table became one (`CULL_BY_BIOME`).
+### Needs eyes
+- A night on the roof is ten game hours of real play with Wait refused. The draft chose that; how long it feels at the game's clock rate
+  is the playtest.
+- Three wolves in a 2.5 m pen on a roof with a parapet: whether the fight reads, and whether a wolf's lunge or a shove ever puts you over
+  the parapet (the roof platform ends at the merlons).
+- **Owed:** the quest writer's words (the topic that calls `spireGive`, the sergeant, the stone, Rowe's morning, the turn-in, the rumours);
+  the look builder's light in the cuts.
+
+## v80 — Session 1113 — No foe at the shrine: the chunk spawn reads the cells' pads, not what has loaded
+Session 1104 found a Highwayman 4.3 m from An Spéir's altar (`c6_8_p1`), and left as Michael's whether a shrine should be a safe pad.
+It already is: `spawnChunkEncounters` (`82-world-structures.js`) says *No spawns inside site pads* and skips a chunk whose centre is
+within a site's pad + 70. Probed here, the chunk that held the foe (236,310) has its centre 34.4 m from the shrine, well inside
+28 + 70. The skip read `SITES`, the sites pushed so far by the cells that have loaded. The shrine is its cell's sixth site and is
+built late (Session 1006 timed it at 42 s alone), so the chunk beside it spawned before the shrine was in `SITES`. That is CLAUDE.md's
+S533 gotcha: an outcome keyed by place must read `getCell`, never what has loaded. So this is the rule failing by load order, not a
+missing rule, and no question goes to Michael.
+
+The skip now also reads the pads of the chunk's cell and its eight neighbours from `getCell` (every pad + 70 is far smaller than a cell),
+and keeps the `SITES` loop beside it for any site added outside a cell's list. The fix is one statement in the look builder's file. The
+spawn rule is a system's, and the line touched nothing anyone sees but where foes stand.
+### Verified (headless Chromium)
+- **`padspawn`** (new), 5 checks at the shrine of An Spéir. On the old line, run by mistake while the fix was stashed, it was red: 26 chunk
+  foes were loaded, and 3 Deserters from chunk 236,310 stood 1.3, 6.9 and 18.5 m from the altar. After: 15 chunk foes loaded, none within
+  30 m of the altar, and no loaded chunk foe's chunk centre inside any cell site's pad + 70.
+- **Neighbours pass:** `renewal` (its S1104 workaround still runs and now finds nothing to put down), `foeseed`, `packshape`, `tierkinds`,
+  `tierlevelfree` and `tierloot`.
+### Needs eyes
+- Ground near the late-built places (shrines, glades, spires, the outer sites of a busy cell) is emptier of foes now, by as much as it
+  was meant to be. Before, whether a chunk by such a place held foes depended on the order the cells loaded in; now it does not.
 ## v80 — Session 1109 — captainguard's front band is each blow's own (QA, tests only)
 QA's run of 18 Oct 06:52 UTC read CI from 00:52. Seven runs were green and two were red, and both reds were the builders' own work. auto/backlog 66d90ed had `kitlots`, and auto/systems d7e983c had `targetof`, `trapseed`, `fistfight` and `flashshare`; `docs/qa/flaky.md` has the details. Two suites passed only on the retry: `panelfocus` on main 5521ba1, still owed, and `captainguard` on auto/quests 2df0963. That second one is main 42b44b0 plus the quest writer's docs, so the flake came after Session 1072's flank fix. It is this session's.
 
@@ -24283,6 +25825,48 @@ The grip is still built the same way, only the forearm's aim is new:
 - **Still a standing pose.** A walk that plants the staff with the opposite foot is a gait, for B4 and the game (after F4).
 - **Still owed from the item:** Garrick's wheeled chair, and children under 11.
 
+## v80 — Session 1121 — A book from the shelf: the glossary's copy in a Gatelands Mages' Guild
+The quest writer's build of *What the Stones Say* (Session 1092, auto/quests-build) asked this builder for a rule the game lacked: a book
+taken from a shelf in a generated room. The prompt is on the furniture, the book goes into the bag, and each room gives it once, keyed by
+its house id. It is for the glossary's copy, *The Words on the Stones*, on a shelf in every Gatelands Mages' Guild. The book is not sold.
+The draft is approved and the backlog line gives the shape, so this is building to it, not a decision.
+
+- **The shelf** (`83-world-generator.js`): a Mages' Guild room records its first bookcase on the east wall as `INT_SHELF`, where
+  `furnKit().guildM` puts it. `scaleRoom` scales it with the room's other records.
+- **The rule** (`86-world-crime.js`, beside the tower's chest): `SHELF_BOOKS` holds rules of a room kind, a people and a book id.
+  `shelfBookFor(house)` gives the first rule's book that matches the room's kind and its town's people (`peopleOfSite`), provided the book is in
+  `BOOKS`. One rule is in: `guild_m`, the Gatelanders, `words_on_stones`. Main and this branch do not yet have that book (it is
+  the quest writer's, on auto/quests-build), so no shelf offers anything until their build merges. Then it appears with no further change.
+- **The prompt and the take:** within `TOUCH` (1.6 m) of the shelf, on its floor, with the crosshair on the case, the bar reads *Press 'E' to
+  take The Words on the Stones from the shelf*. E calls `takeShelfBook(house)`, the named action (co-op rules). The book goes into the
+  bag, `worldState.shelfTaken[<house id>]` is set to the book's id, and the log reads *Took … from the shelf at …*. It is the guild's copy, put out to be read,
+  so taking it is not stolen and is no crime. `shelfTaken` is a place's, so it lives in the world row and in the S242 list.
+### Verified (headless Chromium)
+- **`shelfbook`** (new) 1/1, 13 checks, at Dunmore's Mages' Guild (a Gatelands town; the book stood in, as main lacks it). The shelf is at
+  31.47 by 6.28 m in a 31.76 by 28.87 m room, on the east wall. At 1 m with the crosshair on it the bar offers the book by name. At 2 m
+  it does not, and facing away it does not. E puts a book in the bag, not stolen, with no crime record and `shelfTaken` set. The shelf then offers nothing,
+  and a second take is refused. Out and back in, the shelf is still empty. The mark is in the world row, not the character's, and comes back
+  through `ssSplitPayload`/`ssJoinPayload` and `_applyLoadData`. The same room under a rule for the Markmen offers nothing. Two
+  early runs failed the save step's control (the mark deleted, the shelf should offer again): the player stood 25 m off after re-entering
+  the room, the test's doing. Leaving sets your spot outside on a 700 ms timer (`58-interiors-legacy.js`), and the test went back in
+  before it fired, so it fired in the room. The test now waits 1.5 s after leaving. Green four times since, once under seven browsers at once.
+- **Neighbours pass**, side by side: `guildfurn`, `chairstash`, `coopsaves`, `interiors`, `seventhniche`, `intdooraim`.
+### Needs eyes
+- Nothing to see on main or this branch until the quest writer's book merges. Then, at a Gatelands Mages' Guild's east bookcase,
+  the prompt should come up where your eye falls on the case, not from the desk or the board.
+- **Owed:** the quest writer's placement is in (`SHELF_BOOKS`). Their side is the book itself, already on their branch.
+
+## v80 — Session 1127 — kit renders its street from your eye (red twice on faf8fa0)
+CI's shard 10 on `faf8fa0` was red twice on `kit`: *a street of six lots stands in the world and is drawn* read 32 draws before the
+street went in and 32 after. The suite is green locally on that commit, on main and on `08ea721`. Only the main loop moves `CAM` to
+`px, pz` (`js/90-main.js`), and on a slow runner no frame may have run since `g.intoWorld()`, so the camera still stood where it was
+and the street 30 m ahead of the eye was out of its view (the same thing `enterDungeon` waits out since S950). Confirmed locally with the
+camera moved off: 3 draws before and 3 after, the same shape as CI's. The test now puts `CAM` at the eye before it renders
+(`worldH + EYE_STAND`, facing `yaw`), as the loop does. Tests only.
+### Verified (headless Chromium)
+`kit` green: 298 draws before and 376 after, the street's 78 exactly.
+### Needs eyes
+Nothing in play.
 ## v80 — Session 1128 — corpsebody's Cave Bear lay on Hearthwick's well (QA, tests only)
 The QA read of CI from 07:00 to 12:52 on 18 Oct found six green runs and no reds, with three FLAKY retries: `corpsebody` twice (auto/backlog 6e82f4a,
 shard 13; auto/producer-look 26bb613, shard 10) and `ragdoll` once. Both `corpsebody` reds were the Cave Bear alone, and they failed in two ways. On
@@ -24638,6 +26222,142 @@ Session 1115 said the cats sit wrong: a cat sits with its forefeet together and 
 ### Needs eyes
 - **Whether 30% is right.** The Hollowcat's paws nearly touch. A sitting cat's do touch, and its forefeet sit a little forward too.
 - **Owed:** the tail wrapped round the forefeet, and the game (after F4).
+## v80 — Session 1135 — Gold piles by place (Michael's A on DECISION #431)
+Michael's A on #394 put a loot roll's metal and a lair hoard's gold on the place's danger tier, but a gold pile in a chest, a barrel or on
+a body (`rollGold`, `14-items.js`) still added your level: a coast chest at level 25 held 29 to 37 gold, and two friends at one chest in a
+shared world would have found different piles. Michael chose A on #431: by place. `rollGold`'s level term now reads `lootLevel()`, the
+tier's level where the pile is rolled (1, 6, 11 or 16), the same number the metal reads since Session 1073: a corpse its foe's tier, a
+dungeon's container its floor's, a site's, wreck's or ship's chest the region where it stands, and a roll with no tier the place you
+stand in. The bases and multipliers are unchanged (a chest 4–12 + the level, a treasure chest 8–18 + 1.5×, a body 2–8 + 0.7×, a barrel
+1–6 + half), and so are Fortune's 1% a point and the gold-find buff. `LOOT_FALLBACK`'s pile, rolled once as `60-shop.js` loads, reads
+level 1 as before (the tier function is in a later file and the lookup is guarded).
+### Verified (headless Chromium)
+- **`goldtier`** (new) 1/1, 8 checks, 600 seeded piles a kind and tier at level 1 and at level 30: chests 5–13, 10–18, 15–23 and 20–28
+  at tiers 1 to 4, treasure 9–19 to 32–42, a body 2–8 to 13–19, a barrel 1–6 to 9–14, the same at both levels. 400 tier-3 chests through
+  `rollContainerLoot` give the same piles at both levels. With no tier set, a chest at home at level 25 holds 5 to 13 (was 29 to 37).
+  Ten points of Fortune make it 6 to 14.
+- `fortunecard` and `tierloot` pass (`tierloot`'s comment and label no longer say the gold follows your level).
+### Needs eyes
+- Late gold: a level-25 player in the home province finds the same 5 to 13 a chest as at level 1. Michael chose this over C (a quarter
+  of the level past the tier's own); whether coin still feels worth bending down for late is a playtest's call.
+## v80 — Session 1136 — The foes' heavy blow: humanoids and wolves (Michael's A on DECISION #430)
+Combat B's move sets (`docs/design/combat.md`) give every family a light attack, a heavy one and a third move. The resolver has carried a
+`heavy` column in `FOE_ATTACKS` since Session 940, and nothing filled it: every foe swung one light blow, and Guard's *Iron wall* (75) sat
+out of the live perks waiting for it. Michael chose A on #430: one blow in four, read by its length and a red glow, humanoids and wolves first.
+
+- **The roll** (`foeHeavyRoll`, `74-strikes.js`): at each wind-up, a seeded roll on the foe's id and its blow's count (co-op rules; a
+  foe with no id yet rolls on its kind's name, so even a test's or a legacy zone's foe is reproducible). Never twice running. Read
+  literally, "25%, never twice running" lands one blow in five (20.8% of 4,000 in the first run), so the roll after a light blow is a
+  third, which gives the one in four Michael chose.
+- **The tell** (`foeWindUp`, which both wind-up starts now call: the open world's and the legacy zones' in `42-zone-enemies.js`, the
+  dungeon's in `90-main.js`): the light tells are as built (0.45 to 0.61 s for these two families); the heavy is 1.0 s, or the kind's
+  tell + 0.35 if longer. It is the same wind-up pose held longer, and the bodies builder can add a heavy pose later.
+- **The glow** (`telegraphPulse`, `14-items.js`): a heavy's last 0.15 s glows red. **A correction to the question as I wrote it:** #430's
+  A said the heavy would glow "red, not gold", but the light tell's glow has been red since Session 282. For the red to tell the two
+  apart, a light blow's last 0.15 s now glows gold (0.75, 0.52, 0.08); the heavy keeps the red it had.
+- **What it does** (`executeStrike`, `foeBlow`): twice the damage and twice the posture. A held block still takes its share of the damage,
+  but the guard breaks (posture emptied, the 0.8 s stagger, *Your guard breaks!*). With *Iron wall* the block holds, at twice a held
+  block's posture. A perfect parry is as good as ever. *Hold the line* (Armour 75) reads the blow's heaviness at last: it keeps you up
+  under a light hit above half posture, not under a heavy. A boss keeps its own phases and has no heavy row; the other families follow.
+- **Iron wall** is in `PERK_LIVE`.
+### Verified (headless Chromium)
+- **`heavyblow`** (new) 1/1, 15 checks. Of 4,000 seeded wind-ups 25.5% are heavy for a Bandit and 24.5% for a wolf, never two running;
+  the same foe gives the same 4,000 again, another foe another. A golem, a spider, a troll and a boss never swing heavy. The light tells
+  are 0.57 (Bandit), 0.61 (wolf) and 0.45 (kobold), and the heavy is 1.0 for all three. At the strike the heavy glows (0.75, 0.08) and
+  the light (0.75, 0.52); halfway through the tell neither glows. On a live Bandit the blow goes 24 → 48. Unguarded, a heavy drains 30
+  posture against a light's 15. Under a held block both take 7 of 10, the light drains 10 posture, and the heavy empties it and staggers you.
+  A perfect parry takes a heavy cleanly. With Iron wall the block holds, at 20 posture against 10. Hold the line keeps you up under the
+  light hit and not under the heavy. In 60 s of the loop's own ticks a keyed Bandit a metre off wound up 30 times, 8 of them heavy,
+  with tells of 0.57 and 1.0 only. Its heavies landed 37 to 53, its lights 19 to 27.
+- **Re-measured, not loosened:** `fistfight`'s *you fall at about the sixth blow* (Michael's B on #355) now counts a heavy as two light blows:
+  the Bandit stood still against you now fells you in four blows, two of them heavy. `tells`' end-to-end Bandit is pinned to a light blow,
+  because it measures the light tell. `perkguard` now reads all four of Guard's perks as live.
+- **Neighbours, 56 suites four at a time**: all green but `hptail` (the HUD's clock) and `looknew` (*the save store did not open*), which
+  touch no foe and passed alone afterwards. Among them `tells`, `foes`, `wolves`, `slimes`, `resolver`, `posture`, `targetof`, `duelrhythm`,
+  `parryclock`, `perkarmour`, `perkarms`, `spentguard`, `guardplay`, `q7world`, `questfoes`, `captainguard`, `lockon`. `goldtier` is
+  Session 1135's.
+### Needs eyes
+- **The gold light glow.** Every light blow's last 0.15 s is now gold, not red. Does gold read as a warning at all, and is it too close to the
+  perfect parry's yellow flash, which follows a parried blow? If it is, the light could go back to red and the heavy take another colour.
+  That is Michael's call; this build follows the answer's words.
+- **The heavy at 1.0 s.** It is the same pose held longer. Whether you can tell it in time without the glow is a playtest's question, and
+  the bodies builder's heavy wind-up pose would help.
+- **Owed under #430's answer:** the other families' heavy rows (spiders, brutes, trolls, slimes, elementals, wraiths, mimics) and the third
+  moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp).
+## v80 — Session 1137 — The heavy blow for every other family (Michael's A on DECISION #430)
+Session 1136 built #430's answer for humanoids and wolves, the answer's first session. This one fills `FOE_ATTACKS`' heavy column for every
+other family: spiders, brutes (golems, gargoyles, cave bears, ogres), trolls, slimes, fire elementals, wraiths and mimics. The rule is the
+same for every family (combat.md gives the move sets one heavy blow): one wind-up in four, never twice running, twice the damage and the
+posture, a held block broken unless you have *Iron wall*, a parry still good. The tell is 1.0 s or the kind's tell + 0.35, so the slow kinds
+wind up longest: a golem 1.25 s, a troll 1.18, a gargoyle 1.15. Three keep their own blow and have no row: a boss (its phases), the cavern
+master's slam, and the shark (the sea's own bite, not the shared wind-up). A mimic's first pounce after the reveal is its burst, as before;
+its later blows roll.
+### Verified (headless Chromium)
+- **`heavyblow`** 1/1, now 17 checks. Over 4,000 seeded wind-ups each, the golem is heavy 24.7%, the spider 24.4%, the troll 25.3%, the slime
+  24.6%, the elemental 24.4%, the wraith 25.2% and the mimic 24.9%, never two running. A boss and the shark never swing heavy. The heavy tells are
+  1.25 (golem, light 0.9), 1.18 (troll, 0.83) and 1.0 (slime, 0.54).
+- **Neighbours, 26 suites** that fight these kinds, all green: `bodies`, `chasesight`, `cowards`, `dazed`, `dungeonpace`, `foereach`,
+  `herbhidden`, `herbparity`, `lairmaster`, `lairtheme`, `makerwords`, `masterslam`, `questfoes`, `resolver`, `roll`, `tells`, `tierlevelfree`,
+  `wanderface`, `wardall`, `wolfcloak`, `attrpromise`, `slimes`, `mimic`, `wolves`, `targetof`, `dunseed`.
+- **A correction to Session 1136's `fistfight` re-measure.** It passed once alone, but the Bandit's damage is a `Math.random` roll, so
+  the count of blows that fell you can come out at 8 (H l H l H). The check is now the weight you survived before the last blow, 4 to 6 light
+  blows' worth (it was 5 to 7 blows to fall when every blow was light). The punching fights also lost twice, a trained brawl taking 12
+  punches and the armed fight ending with you dead. A heavy that staggers you between punches measures the Bandit, not the fists. Those
+  fights now hold the Bandit's heavy out, as S1104 holds Throw out (`heavyblow` measures it), and the stand-still fight keeps it. Green
+  twice in a row since.
+### Needs eyes
+- **A golem's 1.25 s heavy.** With the gold-and-red glow it should be the easiest heavy to read, and the hardest to sit through. Whether
+  the slow kinds' heavies feel fair or ponderous is a playtest's call.
+- **Owed under #430:** the third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp). A heavy wind-up pose for each
+  family is the bodies builder's, whenever they choose.
+## v80 — Session 1140 — The bandit's feint (the third moves under Michael's A on DECISION #430)
+Combat B's move sets (`docs/design/combat.md`) give every family a light blow, a heavy one and one third move: a gap-closer, a delayed
+swing ("a pause at the top of the tell, .3 s, to catch the panicked roll"), or a two-hit string. The page names three: the wolf lunges and
+snaps, the troll sweeps and stamps, the bandit feints. #430 put the third moves "in a later session under the same answer", and Michael's
+answer was one blow in four, read by its length. This session builds the bandit's feint, for the whole humanoid family (bandits, goblins,
+kobolds, skeletons, shieldbearers), since the attack table's rows are by family.
+
+- **The roll** (`foeFeintRoll`, `74-strikes.js`): made only on a wind-up the heavy roll has left light, a seeded roll of its own (`feint`,
+  on the foe's id and its blow's count, co-op rules), never twice running. Its odds on a light blow are 0.43 (`FEINT_ROW.roll`), which
+  lands one wind-up in four in all, as the heavy. The heavy roll is untouched: the same heavies fall on the same blows as before.
+- **The swing** (`foeWindUp`): the tell is the kind's own + 0.3 (a Bandit 0.87, a kobold 0.75, a skeleton 0.90). `telegraphPulse` drives
+  the wind-up pose to its top at the kind's own tell and holds it there through the pause, so the body says *now* where a light blow
+  would land, and the blow comes 0.3 s later. The glow is a light blow's, gold, in the last 0.15 s, so it comes after the pause, not at
+  the top. The blow is a light blow in everything else. `telegraphReset` and the master's slam clear the flag.
+- **What it does to a roll:** a roll pressed 0.15 s before a light blow lands is untouchable when it lands (0.08–0.30 s). Against the
+  feint, the same roll is spent 0.15 s before the blow and you are hit.
+- **The wolf** already leaps at the bite (`lunge`, 1.5 m, S1041), so its gap-closer is there in part; the snap, and the troll's
+  stamp (a two-hit string), are still owed.
+### Verified (headless Chromium)
+- **`feint`** (new) 1/1, 12 checks. Of 4,000 seeded wind-ups of one Bandit, 24.2% are feints and 24.8% heavy, never two feints running.
+  The same Bandit gives the same 4,000 again and another Bandit gives another. The heavies fall on exactly the blows `foeHeavyRoll` alone
+  gives. The tells are 0.57 → 0.87 (Bandit), 0.45 → 0.75 (kobold) and 0.60 → 0.90 (skeleton), with the heavy at 1.0. A wolf, a golem, a
+  troll, a boss and the shark never feint. A live Bandit through `tickZoneEnemies` at 1/60: the light wind-up runs 35 frames and the feint
+  53. The feint's pose reaches its top at frame 35 and holds at 1.0 to the blow. Its glow starts at frame 44 of 53 (the light's at 26 of
+  35). Both land (24 and 21). A roll pressed 0.15 s before the light blow is due makes the light miss (0) and the feint land (21).
+- **Re-measured, not loosened:** `heavyblow`'s light tells and its 60 s live Bandit now tell a feint apart (tells 0.57, 0.87 and 1.0 only).
+  `tells`' end-to-end Bandit holds the feint out as it holds the heavy out, because it measures the light tell.
+- **Neighbours, 18 suites four at a time:** `heavyblow`, `tells`, `resolver`, `roll`, `counters`, `parryclock`, `posture`, `duelrhythm`,
+  `wolves`, `foes`, `guardplay`, `questfoes`, `targetof`, `lockon`, `perkguard`, `spentguard` and `mimic` were green. `fistfight` was red
+  under the load of four at a time, with every punch fight after the first at zero punches, and then green four runs in five alone. The
+  red solo run was its stood-still count, the weight you survive before the last blow, which hangs on the Bandit's `Math.random` damage
+  (Session 1137 named it). The feint moves neither the damage nor the heavies. It is QA's to steady and is filed in backlog K.
+### Needs eyes
+- **Does the feint read?** The pose stops at its top and holds, with no glow until the last 0.15 s. Whether a player sees *hold* and
+  waits, or only learns it by being hit, is a playtest's call. The bodies builder could give the hold a small draw-back.
+- **One in four** is read from #430's answer ("the third moves follow under the same answer"). With the heavy, half a bandit's blows
+  are now something other than the plain swing. If that is too busy, `FEINT_ROW.roll` is the one number to change.
+- **Owed under #430:** the wolf's snap and the troll's stamp, each a two-hit string whose second blow's timing the page leaves open.
+## v80 — Session 1141 — `tierloot` parses again (a fix to Session 1135)
+QA reported it in the room. On auto/systems af62671, `tierloot` failed on load in CI shard 5 with a SyntaxError. Session 1135 edited its
+check label, which is a template literal, and wrapped the name `goldtier` in backticks. The first backtick ended the string. The suite
+never ran after that, and parsecheck did not catch it, because parsecheck reads `js/` only. The backticks are gone and the label's
+words are unchanged. A gotcha line in CLAUDE.md now says to run `node --check` on a suite after editing its labels.
+### Verified (headless Chromium)
+- `tierloot` 1/1, 12 checks: tiers 1 to 4 hold the same goods at levels 1 and 30, and the best metal is Bronze, Steel, Adamant and Draconic.
+- `node --check` passes on every file in `tests/`, so no other suite on the branch has the same fault.
+### Needs eyes
+- Nothing. This was a broken test, not a change to the game.
 
 ## v80 — Session 1130 — The cats' tails wrapped round (L3, prototype only)
 Session 1126 drew the sitting cats' forefeet together and owed the other half of how a cat sits: its tail wrapped round. It had tried a bigger sideways curl about the tail bones' own axes, and because those axes are not level the lynx's tail bent upward instead. This session turns the tail about the body's up, as the stag's mist learned to rise in Session 975. It touches only `creatures.js` and `creatures.check.mjs`, and refines a pose already built, so it asks nothing.

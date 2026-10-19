@@ -53,10 +53,12 @@ console.log('  before', JSON.stringify(r.before));
 console.log('  after', JSON.stringify(r.after));
 console.log('  next', JSON.stringify(r.next));
 console.log('  done', JSON.stringify(r.done), 'relic', JSON.stringify(r.relic), 'raid', JSON.stringify(r.raid), 'commission', JSON.stringify(r.commission));
-check('with the stuck draught, *Any work?* says you still owe it, and *I can’t do it.* is offered', /still owe us/.test(r.before.work) && r.before.labels.includes('I can’t do it.') && !r.before.labels.includes("It's done."), r.before);
+// quest review finding 30: the head says it in their own people's words
+const OWE = /still owe us|still on the board|still open|is not done/;
+check('with the stuck draught, *Any work?* says you still owe it, and *I can’t do it.* is offered', OWE.test(r.before.work) && r.before.labels.includes('I can’t do it.') && !r.before.labels.includes("It's done."), r.before);
 check('handed back: the task is gone, with no pay, no XP and no mark against your standing', r.after.active === null && r.after.gold === 0 && r.after.xp === 0 && r.after.done === 0 && r.after.rank, r.after);
 check('the head answers, the log and the journal say it was handed back, and the topic goes', /[Bb]ack/.test(r.after.said) && r.after.said === r.voices[r.people] && r.after.log.some(t => /Handed back/.test(t)) && r.after.jl.includes('lapsed') && !r.after.labels.includes('I can’t do it.'), r.after);
-check('*Any work?* then gives a new task', !!r.next.id && r.next.id !== 'guild_m:ironhaven:9' && !/still owe/.test(r.next.said), r.next);
+check('*Any work?* then gives a new task', !!r.next.id && r.next.id !== 'guild_m:ironhaven:9' && !OWE.test(r.next.said), r.next);
 check('a task that is done offers *It’s done.*, not the hand-back', r.done.labels.includes("It's done.") && !r.done.labels.includes('I can’t do it.'), r.done);
 check('a relic handed back is taken up from the world', r.relic.hadObj && r.relic.inPick && r.relic.objGone && r.relic.pickGone, r.relic);
 check('a raid handed back leaves the town no longer under raid', r.raid.active === null && !r.raid.raid, r.raid);

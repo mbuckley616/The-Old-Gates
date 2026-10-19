@@ -12,7 +12,7 @@ const r = await page.evaluate(() => {
   const eat = () => { HERB_CONSUME_COUNTS.stonecress = 20; BAG.push(Object.assign({}, HERB_DEF.stonecress.item, { _typeKey: 'stonecress', qty: 1 })); useHerb(BAG.length - 1); };
   out.base = maxStamina; eat(); out.lent = maxStamina;
   // a level taken while it runs, then it wears off
-  xp = xpNext; takeLevelIfReady(); out.levelled = maxStamina; tickActiveBuffs(1000); out.after = maxStamina;
+  levelMarks = marksNeeded(); /* S952 — the level comes on marks */ takeLevelIfReady(); out.levelled = maxStamina; tickActiveBuffs(1000); out.after = maxStamina;
   // saved while it runs: the save carries the maximum without it
   eat(); out.lent2 = maxStamina; const d = JSON.parse(JSON.stringify(_buildSavePayload())); out.saved = d.maxStamina; out.savedSt = d.stamina;
   // an older save (base 100) loaded while it runs: the buff goes, and nothing is taken off the loaded maximum

@@ -313,8 +313,8 @@ function tpUpdate(dt,st){
   tpCamera(dt,st.camY);
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
-  /* S880 (F2a) — swimming, the body sinks to its shoulders: the head's top a quarter metre over the sea (SWIM_Y is 0.35 under it) */
-  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming())R.root.position.y=jumpY+.6-SCALE.PERSON_MODEL*(R.root.scale.y||1);
+  /* S880 (F2a) — swimming, the body sinks to its shoulders: the head's top a quarter metre over the sea; S1084 (F2b) reads the swimmer's line (SWIM_Y, 1.45 under it now) */
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming())R.root.position.y=jumpY+(SEA_Y+.25-SWIM_Y)-SCALE.PERSON_MODEL*(R.root.scale.y||1);
   {const cp=(typeof climbPose==='function')?climbPose():null;if(cp)R.root.rotation.y=cp.ry;} /* S743 — on a net the body faces the hull */
   // S154 — the stride follows the ground; S162 — and runs past PW.RUN.on heights a second, as the townsfolk do
   {let d=TP.lx==null?0:Math.hypot(px-TP.lx,pz-TP.lz);TP.lx=px;TP.lz=pz;if(d>1.5)d=0;const s=R.root.scale.x||1,v=dt>0?d/dt:0;

@@ -53,10 +53,14 @@ check('the shell lies inside the walls and under the ceiling; the door is centre
 // (S896: a cottage of true size is about a third as wide as the room 1.8 times too big, so it has fewer beams and posts: 1.4k up)
 check('the shell costs 1–25k triangles a room and the door under 3k', kit.every(k => r[k].tris > 1000 && r[k].tris < 25000 && r[k].doorTris < 3000), Object.fromEntries(kit.map(k => [k, [r[k].tris, r[k].doorTris]])));
 
-// a post is a solid: walking along the west wall of a home stops at it
+// a post is a solid: walking along the west wall of a home stops at it. (S1070: the free spot is the nearest clear one to the
+// room's middle, within a quarter of its width; it was (1.5, 1.5), 0.13 m from the bed, which a 0.40 step no longer walks onto)
 const walk = await page.evaluate(() => { const house = { id: 'g_shellwalk_1', type: 'home', w: 7, d: 5, doorX: px, doorZ: pz, style: 'irish', reg: 'irish' };
   WORLD.buildInteriorFor(house); const p = INT_SOL.find(q => q.post && q.x0 < .1 && q.z0 > 1);
-  const j0 = jumpY; jumpY = 0; const res = { post: p && [p.x0, p.z0], blocked: p ? intSolidAt(.3, (p.z0 + p.z1) / 2, .3) : null, free: intSolidAt(1.5, 1.5, .3) }; jumpY = j0; return res; });
+  const j0 = jumpY; jumpY = 0;
+  const RW = house._roomW || house.intW, RD = house._roomD || house.intD; let mid = null;
+  for (let d = 0; d < Math.min(RW, RD) / 4 && !mid; d += .1) for (let a = 0; a < 6.28 && !mid; a += .2) { const x = RW / 2 + Math.cos(a) * d, z = RD / 2 + Math.sin(a) * d; if (!intSolidAt(x, z, .3)) mid = [+x.toFixed(2), +z.toFixed(2)]; }
+  const res = { post: p && [p.x0, p.z0], blocked: p ? intSolidAt(.3, (p.z0 + p.z1) / 2, .3) : null, free: !mid, mid }; jumpY = j0; return res; });
 check('a post blocks the player at the wall; the middle of the room is free', walk.blocked === true && walk.free === false, walk);
 
 // pictures: today's shell beside the kit's is in docs/prototypes/shells-*.png; here the four homes, the inn and the smithy

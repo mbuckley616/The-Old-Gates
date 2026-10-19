@@ -83,7 +83,9 @@ function itemWeight(it){
   return w * (it.qty || 1);
 }
 function bagWeight(){let t=0; for(const it of BAG) t+=itemWeight(it); return t;}
-function equipWeight(){let t=0; for(const k of Object.keys(EQ)) t+=itemWeight(EQ[k]); return t;}
+// S977 — Fitted (Armour 25): the five worn pieces weigh half; a shield, the weapon, rings and the cloak as before
+const ARMOUR_SLOTS=['head','chest','hands','legs','feet'];
+function equipWeight(){const fit=perk('armour',25)?.5:1;let t=0; for(const k of Object.keys(EQ)) t+=itemWeight(EQ[k])*(ARMOUR_SLOTS.includes(k)?fit:1); return t;}
 function totalCarryWeight(){return bagWeight() + equipWeight();}
 function maxCarry(){return 50 + attrEff('might') * 5 + ((typeof WORLD!=='undefined'&&activeZoneId==='world')?WORLD.cargoBonus():0) + (typeof fxOn==='function'&&fxOn('feather')?40:0);} // v80 — the ship's hold counts when she's near
 function encumbranceState(){
@@ -109,14 +111,14 @@ function canCarry(item){return totalCarryWeight() + itemWeight(item) <= maxCarry
 const MATERIALS=[
   {tier:1,name:'Wooden',   blade:0x8B5E3C,guard:0x6B3E20,glow:null,        reqAttr:null,reqVal:0,  dropW:40},
   {tier:2,name:'Bronze',   blade:0xCD7F32,guard:0x9B5F12,glow:null,        reqAttr:null,reqVal:0,  dropW:28},
-  {tier:3,name:'Iron',     blade:0xA8B0B8,guard:0x787880,glow:null,        reqAttr:'might',reqVal:5, dropW:18},
-  {tier:4,name:'Steel',    blade:0xDDE8EC,guard:0xA0B0B8,glow:null,        reqAttr:'might',reqVal:10, dropW:10},
-  {tier:5,name:'Mithril',  blade:0x3A5DA8,guard:0x2A3D88,glow:0x4466cc,   reqAttr:'might',reqVal:16, dropW:4},
-  {tier:6,name:'Adamant',  blade:0x2D6A2D,guard:0x1D4A1D,glow:0x33aa33,   reqAttr:'might',reqVal:24, dropW:2.0},
-  {tier:7,name:'Obsidian', blade:0x1A1A1A,guard:0x0D0D0D,glow:0x440088,   reqAttr:'might',reqVal:32, dropW:1.0},
-  {tier:8,name:'Draconic', blade:0xCC2200,guard:0x881100,glow:0xff4400,   reqAttr:'might',reqVal:40, dropW:0.5},
-  {tier:9,name:'Demonic',  blade:0x8800CC,guard:0x550088,glow:0xcc00ff,   reqAttr:'might',reqVal:48, dropW:0.2},
-  {tier:10,name:'Cosmic',  blade:0x88EEFF,guard:0x44CCDD,glow:0x00ddff,   reqAttr:'might',reqVal:56, dropW:0.08},
+  {tier:3,name:'Iron',     blade:0xA8B0B8,guard:0x787880,glow:null,        reqAttr:'skill',reqVal:15, dropW:18},
+  {tier:4,name:'Steel',    blade:0xDDE8EC,guard:0xA0B0B8,glow:null,        reqAttr:'skill',reqVal:30, dropW:10},
+  {tier:5,name:'Mithril',  blade:0x3A5DA8,guard:0x2A3D88,glow:0x4466cc,   reqAttr:'skill',reqVal:45, dropW:4},
+  {tier:6,name:'Adamant',  blade:0x2D6A2D,guard:0x1D4A1D,glow:0x33aa33,   reqAttr:'skill',reqVal:55, dropW:2.0},
+  {tier:7,name:'Obsidian', blade:0x1A1A1A,guard:0x0D0D0D,glow:0x440088,   reqAttr:'skill',reqVal:65, dropW:1.0},
+  {tier:8,name:'Draconic', blade:0xCC2200,guard:0x881100,glow:0xff4400,   reqAttr:'skill',reqVal:75, dropW:0.5},
+  {tier:9,name:'Demonic',  blade:0x8800CC,guard:0x550088,glow:0xcc00ff,   reqAttr:'skill',reqVal:90, dropW:0.2},
+  {tier:10,name:'Cosmic',  blade:0x88EEFF,guard:0x44CCDD,glow:0x00ddff,   reqAttr:'skill',reqVal:100, dropW:0.08},
 ];
 
 // Weapon types — shape, slot, weight, base atk range multiplier
@@ -236,14 +238,16 @@ function enemyBodyMesh(e){
 }
 function telegraphPulse(e, progress){
   e._wind=progress; // v80 S130 — the shared attack pose reads it
+  if(e._feint>0){const T=e.telegraphMax||TELL_DEFAULT;e._wind=Math.min(1,progress*T/Math.max(.05,T-e._feint));} /* S1140 — a feint's pose tops out at the kind's tell and holds through the pause */
   // S282 — the glow only in the tell's last TELL_GLOW_S seconds; the pose carries the rest
   const left=(1-progress)*(e.telegraphMax||TELL_DEFAULT),k=Math.max(0,Math.min(1,1-left/TELL_GLOW_S));
   const body = enemyBodyMesh(e);
   const m = body && body.material;
-  if(m && m.emissive) m.emissive.setRGB(k*0.75, k*0.08, k*0.05);
+  // S1136 — a heavy blow's glow is red, a light one's gold (Michael's A on #430: the heavy is read by its length and its red)
+  if(m && m.emissive){ if(e._heavy) m.emissive.setRGB(k*0.75, k*0.08, k*0.05); else m.emissive.setRGB(k*0.75, k*0.52, k*0.08); }
 }
 function telegraphReset(e){
-  e._wind=0;
+  e._wind=0;e._feint=0;
   const body = enemyBodyMesh(e);
   const m = body && body.material;
   if(m && m.emissive) m.emissive.setRGB(0,0,0);
@@ -307,6 +311,7 @@ function reraiseGuard(e){
   if(!L || !L.shieldArm || !L.shieldProp) return;   // not a Shieldbearer
   if(e.shieldUp) return;                             // guard already up
   if(e.dead) return;
+  if(e._rung){if(e.alert)return;e._rung=false;}      // S1077 — Ringing broke it: down while the fight lasts
   e.shieldUp = true;
   L.shieldArm.rotation.x = (typeof L.shieldArmUpX==='number') ? L.shieldArmUpX : -1.15;
   L.shieldArm.rotation.z = (typeof L.shieldArmUpZ==='number') ? L.shieldArmUpZ : 0.5;
@@ -354,7 +359,7 @@ function lineType(line,slot){return ARMOR_LINE_TYPES.find(t=>t.line===line&&t.sl
 function armorTypeOf(it){if(!it||!it.slot)return null;if(it.line)return lineType(it.line,it.slot);
   if(it.shieldType==='shield')return ARMOR_TYPES.find(t=>t.type==='Buckler');return ARMOR_TYPES.find(t=>t.slot===it.slot)||null;}
 function armorPrice(t,typeObj){return Math.max(5,Math.round(TIER_VALUE[t]*(0.5+((typeObj.priceDefMult||typeObj.defMult)||0.3)*0.3)*(typeObj.priceMult||1)));}
-function armorReq(t,typeObj){return t>=3?{reqAttr:(typeObj&&typeObj.line&&ARMOR_LINES[typeObj.line].req)||'fortitude',reqVal:ARMOR_FORT_REQ[t]||0}:{reqAttr:null,reqVal:0};}
+function armorReq(t,typeObj){if(t<3)return {reqAttr:null,reqVal:0};const ln=typeObj&&typeObj.line;return ln?{reqAttr:ARMOR_LINES[ln].req,reqVal:ARMOR_FORT_REQ[t]||0}:{reqAttr:'armour',reqVal:SKILL_GATE[t]||0};} /* S941 — heavy armour reads the Armour skill (skills and perks A); the light and robe lines keep their attribute, asked in decisions.md */
 function linePieces(line){let n=0;for(const k in EQ){const it=EQ[k];if(it&&it.line===line)n++;}return n;}
 
 // ── BOOKS ────────────────────────────────────────────────────────
@@ -419,6 +424,20 @@ let LOOT_RNG=null;
 function lootRand(){return LOOT_RNG?LOOT_RNG():Math.random();}
 function withLootRng(rng,fn){const was=LOOT_RNG;LOOT_RNG=rng;try{return fn();}finally{LOOT_RNG=was;}}
 // the day of the world's clock, for a container that refills: the same key rolls the same contents within one game day
+// S1073 — the loot follows the place (Michael's A on DECISION #394: the tier sets the metal). A roll's material cap reads the level of
+// the danger tier where it is rolled (1, 6, 11, 16), never yours: a foe's corpse its own tier, a dungeon's container its floor's,
+// a site's or a wreck's chest the region where it stands. LOOT_TIER is set for one roll by withLootTier; a roll with none set
+// reads the tier where you are (indoors, the town the room belongs to).
+let LOOT_TIER=null;
+function withLootTier(t,fn){if(t==null)return fn();const was=LOOT_TIER;LOOT_TIER=t;try{return fn();}finally{LOOT_TIER=was;}}
+function lootTierHere(){
+  try{
+    if(typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&currentHouse){const h=currentHouse.parent||currentHouse,S_=h.site&&typeof SETTLE!=='undefined'&&SETTLE.get?SETTLE.get(h.site):null,o=S_&&S_.site?S_.site:(h.x!=null?h:null);if(o&&o.x!=null&&typeof worldTierAt==='function')return worldTierAt(o.x,o.z);}
+    if(typeof tierHere==='function')return tierHere();
+  }catch(e){}
+  return 1;
+}
+function lootLevel(){return typeof tierLevel==='function'?tierLevel(LOOT_TIER!=null?LOOT_TIER:lootTierHere()):1;}
 function lootDay(){return Math.floor(((typeof worldState!=='undefined'&&worldState&&worldState.gameTimeAbsMinutes)||0)/1440);}
 
 function makeBookItem(def){
@@ -599,18 +618,21 @@ function makeItem(matTier, typeObj, enchant, isArmor){
   return item;
 }
 
+// S941 — what a requirement reads: 'skill' is the weapon's own skill (Blade, Blunt or Bow), a skill's id that skill, else an attribute
+function reqHave(it){if(it.reqAttr==='skill')return skillLv(weaponSkill(it));if(SKILL_DEF[it.reqAttr])return skillLv(it.reqAttr);return ATTRS[it.reqAttr]||0;}
+function reqName(it){if(it.reqAttr==='skill')return SKILL_DEF[weaponSkill(it)].label;if(SKILL_DEF[it.reqAttr])return SKILL_DEF[it.reqAttr].label;return (ATTR_DEF[it.reqAttr]&&ATTR_DEF[it.reqAttr].label)||it.reqAttr;}
 // Check if player can equip an item
 function canEquip(item){
   if(!item.reqAttr||!item.reqVal)return{ok:true};
-  const have=ATTRS[item.reqAttr]||0;
+  const have=reqHave(item);
   if(have>=item.reqVal)return{ok:true};
-  return{ok:false,msg:`Requires ${ATTR_DEF[item.reqAttr]?.label||item.reqAttr} ${item.reqVal} (you have ${have})`};
+  return{ok:false,msg:`Requires ${reqName(item)} ${item.reqVal} (you have ${have})`};
 }
 
 // v61c0: gold drop roll. Three knobs:
 //   - tier : 'barrel' | 'corpse' | 'chest' — scales the base range
 //   - level : current player level — adds a small flat bonus per level
-//   - fortune : ATTRS.fortune — multiplies total by 5% per point
+//   - fortune : ATTRS.fortune — multiplies total by 1% per point (5% until S953)
 //   - goldFind : `goldFind` buff multiplier (Goldenrod's herb passive, etc.)
 // Result is clamped to >=1 so a Fortune 0 / Level 1 player can't roll
 // 0 gold from a barrel and feel cheated. Pre-v61c0 ranges were
@@ -632,10 +654,12 @@ function rollGold(tier){
           : (tier==='corpse') ? {min:2, max:8, lvBonus:0.7}
           : {min:1, max:6, lvBonus:0.5};
   const base = Math.floor(lootRand()*(t.max - t.min + 1)) + t.min;
-  const lv = (typeof level==='number') ? level : 1;
+  // S1135 — the pile follows the place, as the metal does (Michael's A on DECISION #431): the level term is the tier's level where
+  // it is rolled (1, 6, 11, 16; lootLevel, above), never yours, so two players at one chest find one pile.
+  const lv = lootLevel();
   const fortune = (typeof ATTRS!=='undefined' && ATTRS && ATTRS.fortune) ? ATTRS.fortune : 0;
   const lvAdd = Math.floor(lv * t.lvBonus);
-  const fortuneMult = 1 + fortune * 0.05;
+  const fortuneMult = 1 + fortune * 0.01; /* S953 — 1% a Fortune point (was 5%), the attributes at ≤1% */
   const buffMult = (typeof _buffMult==='function') ? _buffMult('goldFind', 1) : 1;
   return Math.max(1, Math.round((base + lvAdd) * fortuneMult * buffMult));
 }
@@ -733,7 +757,7 @@ function rollLoot(diffScale, theme, kind){
   // v57: previously `round(3 + diffScale.hp*5)` gave too-generous drops at low level (Obsidian at L5).
   // New cap blends player level (0.4/level) with difficulty (1.2/diffScale.hp), floored at T1.
   // At L5 normal → cap T4 (Steel). L10 normal → T6 (Adamant). L15 hard → T9 (Demonic).
-  const playerLv = typeof level!=='undefined'?level:1;
+  const playerLv = lootLevel(); /* S1073 — the place's level, not yours (DECISION #394) */
   const diffFactor = diffScale ? diffScale.hp : 1.0;
   const maxTier = Math.min(10, Math.max(1, Math.floor(1 + playerLv*0.4 + diffFactor*1.2)));
   const weights=MATERIALS.map(m=>m.dropW*(m.tier<=maxTier?1:0));
@@ -767,7 +791,8 @@ function rollLoot(diffScale, theme, kind){
 //   treasure — same as chest but first roll 100% (never empty) and gold is tripled.
 //   barrel   — up to 2 items. First 40%, second 20% of that. P(empty) = 60%.
 //   corpse   — up to 2 items. First uses passed baseChance (existing fortune+difficulty roll); second 25% bonus.
-function rollContainerLoot(kind, diffScale, theme, baseChance, key){
+function rollContainerLoot(kind, diffScale, theme, baseChance, key, tier){
+  if(tier!=null&&LOOT_TIER!==tier)return withLootTier(tier,()=>rollContainerLoot(kind, diffScale, theme, baseChance, key));
   if(key!=null&&!LOOT_RNG)return withLootRng(seededRng('loot',key),()=>rollContainerLoot(kind, diffScale, theme, baseChance));
   const items=[];
   if((kind==='chest'||kind==='treasure')&&typeof spellbookItem==='function'&&lootRand()<.07){const rare=['suil_oiche','eitilt','sciath','siul_uisce'];items.push(spellbookItem(rare[Math.floor(lootRand()*rare.length)],1));} // v80 — rare spells live in chests

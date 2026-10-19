@@ -41,12 +41,12 @@ console.log('arrow', JSON.stringify(arrow));
 // the decoy is 10 east and 10 south of the archer: the arrow flies along (0.71, 0.71); at you it would fly due south (0, 1)
 check('an archer\'s arrow flies at targetOf (the decoy south-east), not at you (due south)', arrow.added === 1 && Math.abs(arrow.dir[0] - .71) < .05 && Math.abs(arrow.dir[1] - .71) < .05, arrow);
 
-// the dungeon: a foe that walks, alert, with you on one side and the decoy on the other
+// the dungeon: a foe that walks, alert (not a ranged one: inside 4.5 it holds its ground and shoots, 90-main.js), with you on one side and the decoy on the other
 await page.evaluate(() => { const p = makePortalDef(WORLD.doorAnywhere(42)); const wp = WORLD.dungeonPos[42]; if (wp) { p.x = wp.x; p.z = wp.z; } p.zone = 'world'; px = p.x; pz = p.z + 3; goToDungeon(p); });
 for (let k = 0; k < 60 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && ENEMIES.length > 0)); k++) await page.waitForTimeout(500);
 const setup = await page.evaluate(() => { const free = (x, z) => !dSolid(x, z) && !dSolid(x + .3, z) && !dSolid(x - .3, z) && !dSolid(x, z + .3) && !dSolid(x, z - .3);
   const line = (a, b) => { for (let t = 0; t <= 1; t += .05) if (dSolid(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t)) return false; return true; };
-  for (const e of ENEMIES) { if (e.dead || e.dormant || e.disguised || (e.floor != null && e.floor !== currentFloor)) continue; const fam = enemyPostureFamily(e); if (fam === 'slime' || fam === 'mimic') continue;
+  for (const e of ENEMIES) { if (e.dead || e.dormant || e.disguised || (e.floor != null && e.floor !== currentFloor)) continue; const fam = enemyPostureFamily(e); if (fam === 'slime' || fam === 'mimic' || e.ranged) continue;
     for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, dx = Math.sin(a), dz = Math.cos(a);
       const P = { x: e.x + dx * 4, z: e.z + dz * 4 }, D = { x: e.x - dx * 4, z: e.z - dz * 4 };
       if (free(P.x, P.z) && free(D.x, D.z) && line(e, P) && line(e, D)) { window._dfoe = e; window._dP = P; window._dD = D; window._dE = { x: e.x, z: e.z }; return { name: e.name, fam, P, D, at: { x: e.x, z: e.z } }; } } }

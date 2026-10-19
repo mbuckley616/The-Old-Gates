@@ -15,9 +15,11 @@ const open = await page.evaluate(() => { const out = {}; const t = WORLD.siteAny
   return out; });
 console.log(' open', JSON.stringify(open));
 check('in the open, twelve kinds: flashing one foe leaves its twin dark (no body material shared)', Object.keys(open).length === 12 && Object.values(open).every(o => !o.same && !o.otherLit), open);
-await page.evaluate(() => { level = 12; });
+// since Session 1032 a dungeon's roster follows its door's place, not your level: the doors stand in the home cell's Wastes (tier 3),
+// as they did at level 12, or only four kinds come two to a floor
+const W = await page.evaluate(() => { const r = getCell(HOME_I, HOME_J).regions.find(r => r.id === 'wastes'); return { x: r.x, z: r.z }; });
 const dun = {};
-for (const [theme, seed] of [['crypt', 3], ['cave', 5], ['mine', 9]]) { await enterDungeon(page, { theme, seed });
+for (const [theme, seed] of [['crypt', 3], ['cave', 5], ['mine', 9]]) { await enterDungeon(page, { theme, seed, x: W.x, z: W.z });
   Object.assign(dun, await page.evaluate(() => { const by = {}; for (const e of ENEMIES) if (e.mesh && enemyBodyMesh(e)) (by[e.name] = by[e.name] || []).push(e); const o = {};
     for (const k in by) { const L = by[k]; if (L.length < 2) continue; const m0 = enemyBodyMesh(L[0]).material;
       o[k] = L.slice(1).filter(e => enemyBodyMesh(e).material === m0).length; } return o; })); }

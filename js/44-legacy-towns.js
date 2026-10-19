@@ -879,6 +879,7 @@ function buildWildernessZone(cfg){
     ? _filterBase.filter(g => g.respawn !== false)
     : _filterBase;
   _filteredGroups.forEach(group=>{
+    if(typeof kindAllowed==='function'&&!kindAllowed(group.name,zoneTier(cfg.id)))return; /* S1059 — the kind's least tier, not your level (enemies by place) */
     // Scale the position list. Round up means 1.5× of 2 = 3; we tile
     // the original positions and synthesize extras within a small jitter
     // radius around the originals to avoid stacked spawns.
@@ -900,7 +901,7 @@ function buildWildernessZone(cfg){
         ex = bx + (pr()*2-1)*jr;
         ez = bz + (pr()*2-1)*jr;
       }
-      zoneEnemies.push(keyFoe(buildZoneEnemy(sc,sol,ex,ez,group.name,pickVariant(group.name,level,'normal',seededRng('variant',fid))),fid));
+      zoneEnemies.push(keyFoe(buildZoneEnemy(sc,sol,ex,ez,group.name,pickVariant(group.name,tierLevel(zoneTier(cfg.id)),'normal',seededRng('variant',fid)),{tier:zoneTier(cfg.id)}),fid)); /* S1034 — the zone's tier (#373 A) */
     }
   });
   if(typeof _markZoneSpawned === 'function' && cfg.id) _markZoneSpawned(cfg.id);

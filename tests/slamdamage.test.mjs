@@ -1,7 +1,7 @@
 // The cavern master's slam against your health, measured (backlog C, Session 404's owed "the damage, by play").
 // Since Session 617 (Michael's C on #181) the slam is 45% of your max health, 60% with no chest piece, whatever the
 // master and the armour; the suite now checks that rule where it measured the old one (twice the blow, armour off first). Real lair caverns (makePortalDef, as a world lair door builds them, so the difficulty
-// follows your level) are built at six levels and three seeds; each master's slam is rolled through the game's own
+// is the door's: its place's tier since S1058, your level's before) are built at six levels and three seeds; each master's slam is rolled through the game's own
 // slamBlow at two armours (bare, and a full heavy kit at the best tier a lair can drop at that level) and set against
 // your max health at that level for two characters: a Scholar who never takes Fortitude, and a Sentinel who starts
 // with 3 and takes the archetype's +1 every level. An ordinary blow of the same master is the dungeon strike's roll.
@@ -40,7 +40,8 @@ for (const L of LEVELS) for (const seed of SEEDS) {
 const ok = rows.filter(r => !r.none);
 check('every cavern built its master (18 = 6 levels × 3 seeds)', ok.length === LEVELS.length * SEEDS.length, rows.filter(r => r.none));
 check('the slam rolled through slamBlow is 60% of your max health bare and 45% in the kit, at every level, every master', ok.every(r => r.bare.lo >= r.bare.want.slam[0] && r.bare.hi <= r.bare.want.slam[1] && r.kit.lo >= r.kit.want.slam[0] && r.kit.hi <= r.kit.want.slam[1]), ok.map(r => [r.L, r.bare.lo, r.bare.hi, r.bare.want.slam, r.kit.lo, r.kit.hi, r.kit.want.slam]));
-check('a lair\'s difficulty follows your level (very easy at 1, very hard at 15 and 20)', ok.filter(r => r.L === 1).every(r => r.diff === 'veryeasy') && ok.filter(r => r.L >= 15).every(r => r.diff === 'veryhard'), ok.map(r => [r.L, r.diff]));
+/* S1058 — the grade is the door's tier's (enemies by place): this door stands where you do, on home's tier 1, so Very Easy at every level */
+check('a cavern\'s difficulty is its place\'s, not your level\'s: Very Easy at tier 1, at levels 1 to 20', ok.length === rows.length && ok.every(r => r.diff === 'veryeasy'), ok.map(r => [r.L, r.diff]));
 // the table: by level, the worst and the mean of the three masters, as a share of each character's health
 const T = LEVELS.map(L => { const rs = ok.filter(r => r.L === L);
   const pct = (v, hp) => Math.round(100 * v / hp);
