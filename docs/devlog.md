@@ -27397,3 +27397,47 @@ Session 1143 put the keep in its bawn and owed a question: does the steward walk
 ### Needs eyes
 - **Untested: the steward walking it in a running town.** The test checks the route the tick follows, not the tick itself over an evening.
 - **What a player sees:** at 18:00 the steward should walk out of the gate.
+## v80 — Session 1148 — The cutter's base below deck, in her own lines (backlog L6, Michael's A on #418; prototype only)
+A FREEZE is open (#441, the waiting branches landing on main), so this run keeps to the prototypes. Michael's A on #418 put each class's base in its own hull's lines; the cog's (Session 1099) and the sloop's (Session 1129) are drawn, and the cutter's is next. This session builds it as `cutterBase` in `docs/prototypes/levelup/shipbase.js`, at `shipbase.html?ship=cutter&view=cut|hold|aft&dress=…`. Cited images: OG-027 (the ladder of interiors by hull), OG-072.
+- **The hull:** the game's cutter is 14 m by 4.0 m with a draft of 1.45, 0.4 m deeper than the sloop and as narrow, with no castles. So her base is one hold, like the sloop's, but deep enough to stand in. It runs 7.8 m, from a bulkhead before the tiller's sweep (z -4.6) to one forward of the mast (z 3.2).
+- **The hatch:** `markCutter` in `ships.js` (and so the Gatelands' and Aurenne's cutters, which are it in their dress) takes `o.open`, as the sloop and the cog do. With it shut she is the hull she was.
+- **The hold's frame:**
+  - **The floor:** ceiling planks at -0.9, where the hull is 1.4 m across.
+  - **The frames and beams:** frames every 0.75 m, deck beams about every 0.8 m. There is no beam between -2.45 and -0.35. The ladder is steep (0.32 m forward for each metre up), so a beam at the hatch's after edge would have crossed it. Carlings either side of the opening carry the deck there.
+  - **The mast:** it runs through to its step, raked 4° forward on Aurenne's lateen cutter.
+- **What is in it:** the sloop's three things and OG-027's next rung, a navigation table and basic crafting.
+  - **The sloop's three:** the box bunk raised against the port side, the sea chest and the water cask.
+  - **The chart table,** across from the berth, with a chart, the log, dividers, a candle and a stool.
+  - **A short workbench** to starboard forward of the hatch, with a vice and a rack of four tools on the frames.
+  - **Stores:** a barrel beside the cask, by the mast.
+  - **Light:** two lanterns.
+  - **No still and no galley:** those come with the cog.
+  - **The dress:** by island, as the cog's. The Mark's is the default, since the game's cutter is the Mark's.
+- **The narrow floor aft.** The chart table and the bench are tops on cleats at the side, with two legs at their inner edge. Aft the floor is so narrow that the first legs stood outside the planking, so each top is brought inboard until its legs stand on the floor. The table first sat at the berth's head, leaving a way of 0.53 m. It is moved 1 m forward, where she is wider, and the way is 0.61 m.
+- **The chest** first stood at the berth's foot, in the ladder's path. It now stands to port across from the bench.
+- **Headroom:** 1.85 m between the beams and 1.68 m under them. A 1.8 m person stands upright between the beams and ducks under one, against the sloop's stoop everywhere at 1.58 m.
+- **The cost:** 3,257 to 3,272 triangles in 11 to 13 draws, over the cutter's 21,000 or so.
+
+### Verified (headless Chromium)
+- **`shipbase.check.mjs`: 35 of 35 pass,** 13 of them new.
+  - **Builds:** the base builds the same twice in all three dresses. It is 3,257 triangles in 11 draws in the Mark's dress, and 3,272 in 13 in the Gatelands' and Aurenne's.
+  - **What is in it:** 12 pieces: a ladder, a bunk and its front, a chart table, its legs and a stool, a sea chest, a workbench, its legs and a tool rack, a water cask and a barrel. There is no still, alchemy table or firebox.
+  - **Inside her lines:** every piece stands inside her planking and inside the hold, 0 out in each dress.
+  - **Nothing in the way:** a new check. No two pieces overlap, none stands in the ladder's way or the mast's, and no beam crosses the ladder.
+  - **Headroom and the ways:** 1.85 m between the beams and 1.68 m under them, over a floor at -0.9. There is 1.04 m over the berth's tick and 0.9 m over the chart table. The way is 0.61 m between the berth and the table and 0.71 m past the bench.
+  - **The hatch:** a ray down beside the ladder meets the floor's planks at -0.9 m.
+  - **Shut, she is the cutter as built:** 21,594 triangles shut and 21,690 open. The difference is exactly the cut deck planks and the plate's 12.
+  - **The views:** the six new views render without page errors.
+  - **The cog's and the sloop's checks:** pass as before.
+- **`ships.check.mjs`: all pass,** with `markCutter`'s `o.open` added (it changes nothing when shut).
+- **Pictures:**
+  - `shipbase-cutter-cut.jpg`: from above abeam, her starboard side cut away.
+  - `shipbase-cutter-hold.jpg`: forward from under the hatch, the bench, the chest and the mast.
+  - `shipbase-cutter-aft.jpg`: aft past the ladder, the chart table by its candle and the berth.
+  - `shipbase-cutter-cut-aurenne.jpg` and `shipbase-cutter-aft-gatelands.jpg`: the other two dresses.
+### Needs eyes
+- **It reads dark,** as the sloop's does: two lanterns in a 7.8 m hold, and the forward view is dim.
+- **Port and starboard:** the base follows the cog's and the sloop's naming, the berth to "port" at -x. Looking forward, -x is on the right-hand side, which a sailor calls starboard. The three bases agree with each other. If it matters, the fix is one word in each comment, not a move.
+- **Owed:**
+  - the galleon's base, with more rooms, and the caravel's;
+  - then the base into the game (`CABIN`, `85-world-sea.js`) with card F11, after the freeze.
