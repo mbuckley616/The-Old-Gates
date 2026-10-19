@@ -29,10 +29,11 @@ check('fields are laid on the open country and never on a road or in a site\'s s
 check('the gradient dome replaces the old sky dome', m.dome && !m.oldDome, m);
 
 // the sky follows the clock: zenith brightest at noon, a warm horizon at dawn and at the golden hour (17.5; on the game's clock the
-// sun is down by 18.5, so 20h is already night), dark at midnight
+// sun is down by 18.5, so 20h is already night), dark at midnight. In clear weather: an overcast greys the zenith toward .5 by
+// design, and CI's first run of this suite drew a sky that had clouded over (midnight's zenith .185)
 const sky = {};
 for (const h of [6, 12, 17.5, 20, 0]) {
-  sky[h] = await page.evaluate(h => { forceTime(h); for (let i = 0; i < 240; i++) WORLD.tick(1 / 60, performance.now()); const U = LAND.skyMat.uniforms;
+  sky[h] = await page.evaluate(h => { forceTime(h); const wx = WORLD.wx; wx.type = wx.next = 'clear'; wx.k = 1; for (let i = 0; i < 240; i++) WORLD.tick(1 / 60, performance.now()); const U = LAND.skyMat.uniforms;
     const L = c => +(.2126 * c.r + .7152 * c.g + .0722 * c.b).toFixed(3);
     return { zen: L(U.uZen.value), hor: L(U.uHor.value), warm: +(U.uHor.value.r / Math.max(.01, U.uHor.value.b)).toFixed(2), sunY: +U.uSun.value.y.toFixed(2) }; }, h);
 }
