@@ -1011,7 +1011,9 @@ function buildSash(G, body, byName, o = {}) {
 // the shoulders over the cloak. The face is cut out of it in front only, from the brow to the throat, edged with a
 // rolled hem, and its inside is shaded darker, so it reads as cloth with a thickness. It is skinned to the nearest
 // points of the body (the head's above, the neck's and shoulders' below), so it turns with the head.
-function buildHoodUp(P, G, meshes) {
+// o.clr: the hem's clearance over the shoulders, in place of the cloak's (Session 1152, the coat's hood over its fur collar); o.fur: a fur
+// ruff round the face's opening, seven shells off the hood's own front, in that colour
+function buildHoodUp(P, G, meshes, o = {}) {
   const R0 = PACK.rest, body = PACK.G['body'], D = G.dress, pt = i => new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
   const box = f => { const b = new THREE.Box3(); for (const i of new Set(body)) if (f(R0[i * 3], R0[i * 3 + 1], R0[i * 3 + 2])) b.expandByPoint(pt(i)); return b; };
   const head = box((x, y) => y > .66), brow = box((x, y, z) => z > .1 && y > .74 && y < .76), chin = box((x, y, z) => z > .08 && y < .66 && y > .6 && Math.abs(x) < .02);
@@ -1035,7 +1037,7 @@ function buildHoodUp(P, G, meshes) {
     rx *= k; ryT *= k; rzF *= k; rzB *= k; }
   // the hem lies on the shoulders and the upper back: at each angle round the neck, the body's height there, and clear of the cloak
   const J = 56, I = 64, th0 = 2.05, pos = [], base = [], uv = [], idx = [];
-  const hx = (sh.max.x - cn.x) * .82, hzB = cn.z - sh.min.z + .01, hzF = sh.max.z - cn.z, clr = D.mantle ? .095 : .04;
+  const hx = (sh.max.x - cn.x) * .82, hzB = cn.z - sh.min.z + .01, hzF = sh.max.z - cn.z, clr = o.clr ?? (D.mantle ? .095 : .04);
   const yAt = (x, z) => { let y = -1e9; for (const i of new Set(body)) { const ry = R0[i * 3 + 1]; if (ry < .3 || ry > .62) continue; if ((P[i * 3] - x) ** 2 + (P[i * 3 + 2] - z) ** 2 < .022 ** 2) y = Math.max(y, P[i * 3 + 1]); } return y; };
   const yHem0 = sh.max.y + clr;
   // the grid: J columns round the head (0 = the front), I rows from the crown to the hem
@@ -1067,12 +1069,20 @@ function buildHoodUp(P, G, meshes) {
     geo.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4)); return geo; };
   if (!rim.attributes.aBase) rim.setAttribute('aBase', rim.attributes.position);
   const col = sRGB(...D.cloak), hood = new THREE.SkinnedMesh(skin(g), clothMat(col, 'wool', { side: THREE.DoubleSide, scale: 26, inner: .42, hole: 'vB.z > 0. && vB.x < 1.', ...tartanOf(D, [c.x, c.z], .11) })); hood.name = 'hoodUp';
-  const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem';
+  const hemM = new THREE.SkinnedMesh(skin(rim), clothMat(o.fur ? sRGB(...o.fur).multiplyScalar(.8) : col.clone().multiplyScalar(.9), 'wool', { scale: 26 })); hemM.name = 'hoodHem';
+  // the fur ruff (Session 1152, OG-109's fur-lined hooded coats): the hood's front, where it is within three tenths of its opening's size again of the
+  // face, in seven shells 3.5 mm apart pushed out from the head's middle, cut at the opening's edge as the hood is and on a smooth line outside it, not the triangles' stairs; the hood's own
+  // skinning, so the ruff moves with it
+  const furM = []; let furTris = 0; if (o.fur) { const fi = []; for (let t = 0; t < idx.length; t += 3) if ([0, 1, 2].every(k => base[idx[t + k] * 3] < 1.3)) fi.push(idx[t], idx[t + 1], idx[t + 2]);
+    const sg = skin(g.clone()), si = sg.attributes.skinIndex, sw = sg.attributes.skinWeight;
+    for (let s = 0; s < 7; s++) { const lay = .003 + s * .0035, pp = new Float32Array(pos.length); for (let i = 0; i < pos.length; i += 3) { const dx = pos[i] - c.x, dy = pos[i + 1] - c.y, dz = pos[i + 2] - c.z, L = Math.hypot(dx, dy, dz) || 1; pp[i] = pos[i] + dx / L * lay; pp[i + 1] = pos[i + 1] + dy / L * lay; pp[i + 2] = pos[i + 2] + dz / L * lay; }
+      const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(pp, 3)); fg.setAttribute('aBase', new THREE.Float32BufferAttribute(base, 3)); fg.setAttribute('skinIndex', si); fg.setAttribute('skinWeight', sw); fg.setIndex(fi); fg.computeVertexNormals();
+      const fm = new THREE.SkinnedMesh(fg, shellMat(sRGB(...o.fur), s, 7, { sx: 260, sy: 70, solid: s === 0, hole: '(vB.z > 0. && vB.x < 1.) || vB.x > 1.2 + (nz(vB * vec3(90., 90., 90.)) - .5) * .06' })); fm.name = 'hoodFur' + s; furM.push(fm); furTris += fi.length / 3; } }
   // what would show through: any point of the head, the ears or the scalp's hair outside the dome, away from the face's opening
   let tested = 0, poke = 0; { const v = new THREE.Vector3(), test = q => { if (q.y < c.y - ryB * .5) return; tested++; if (q.z > c.z && openS(q) < 1) return;
       const d = q.clone().sub(c); if (Math.hypot(d.x / rx, d.y / (d.y > 0 ? ryT : ryB), d.z / (d.z > 0 ? rzF : rzB)) >= 1) poke++; };
     for (const i of new Set(body)) if (R0[i * 3 + 1] > .6) test(pt(i)); for (const m of hairM) { const a = m.geometry.attributes.position; for (let i = 0; i < a.count; i++) test(v.fromBufferAttribute(a, i)); } }
-  return { meshes: [hood, hemM], stats: { tested, poke, tris: idx.length / 3 + rim.index.count / 3, rimPoints: sm.length, k: +(rx / (hs.x + .028)).toFixed(3), yHem: +yHem0.toFixed(3) } };
+  return { meshes: [hood, hemM, ...furM], stats: { tested, poke, furTris, tris: idx.length / 3 + rim.index.count / 3, rimPoints: sm.length, k: +(rx / (hs.x + .028)).toFixed(3), yHem: +yHem0.toFixed(3) } };
 }
 
 // ── the Aurennais' head-wrap (Session 994, L1; OG-044 and OG-056: head-wraps in saffron, red and teal, wound round) ──
@@ -2594,6 +2604,8 @@ const WAISTCOAT_HOLE = '(vB.z > .02 && vB.y > .44 && abs(vB.x) < .006 + .35 * (v
 // the winter coat (Session 1147; OG-109's Gatelands winter column, "fur-lined winter coats"): the outer layer, so a coat takes the
 // cloak's, the mantle's, the apron's, the sash's and the shoulder wrap's place, and covers a waistcoat, a bodice and the cuffs; never over
 // a robe, mail or scales or under a tabard (which lie on the same shells), nor in a wheeled chair (its skirt hangs to the calf)
+// a hood up over the head: the cloak's, or the coat's (Session 1152)
+function hoodUpOn(D) { return !!(D && (D.cloak && D.hood === 'up' || coatOn(D) && D.coatHood === 'up')); }
 function coatOn(D) { return !!(D && D.coat && !D.robe && !D.mail && !D.scales && !D.tabard && !D.chair); }
 // its hem, from the coat's length: .75 (the default) is mid-calf, rest y -.6; 0 is a jacket's skirt over the hips, 1 is to the ankle
 const coatHem = D => -.3 - .4 * (D.coatLen ?? .75);
@@ -2719,9 +2731,9 @@ export function makePerson(G, o = {}) {
     // and at the sides comes down onto the skin toward that border (0.8 mm, from 2.5), so its faded edge is not a ledge seen side-on by the ear
     sm.geometry.setAttribute('aEdge', new THREE.BufferAttribute(PACK.scalpEdge, 1));
     const headB = ix.bones.findIndex(b => b.name === 'head'), bb = new THREE.Box3(); for (const v of scalp) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.004); hc.y -= .02; hr.y += .02;
-    const tuck = D.cloak && D.hood === 'up' || D.helm || D.wrap ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
+    const tuck = hoodUpOn(D) || D.helm || D.wrap ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
     // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline
-    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap) && !(D.cloak && D.hood === 'up') || m.name !== 'hair')); hairStats = H.stats;
+    const H = buildHair(P, tuck, heads, PACK.R.scalpRoots, headB, RND); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap) && !hoodUpOn(D) || m.name !== 'hair')); hairStats = H.stats;
     { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
     if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
       push('beardBase', PACK.R.beardBase, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
@@ -2732,6 +2744,9 @@ export function makePerson(G, o = {}) {
       const mc = hairCards(P, PACK.R.moust, { n: 110, len: .028, seg: 3, width: .009, lift: .2, comb: -.1, fall: 1, grav: .2, rootOff: .002, bone: headB, color: sRGB(...G.hairCol).multiplyScalar(.92), outward: hc });
       mc.name = 'moust'; meshes.push(mc); } }
   if (D.cloak && D.hood === 'up') { const H = buildHoodUp(P, G, meshes); meshes.push(...H.meshes); hoodStats = H.stats; }
+  // the coat's hood (Session 1152, OG-109's Mark: fur-lined hooded coats), the cloak's hood in the coat's wool, its hem clear of the coat's
+  // shoulders and its fur collar, and with the coat's fur round the face
+  else if (coatOn(D) && D.coatHood === 'up') { const H = buildHoodUp(P, { ...G, dress: { ...D, cloak: D.coat, tartan: null, tartanLine: null } }, meshes, { clr: D.coatFur ? .075 : .05, fur: D.coatFur }); meshes.push(...H.meshes); hoodStats = H.stats; }
   root.add(bones[0]); root.updateMatrixWorld(true);
   for (const m of meshes) { root.add(m); m.updateMatrixWorld(true); m.bind(skeleton); m.castShadow = !m.noCast; m.receiveShadow = true; m.frustumCulled = false; }
   // eyes: a white ball with an iris, set in the helper's sockets, carried by the head
@@ -2746,9 +2761,9 @@ export function makePerson(G, o = {}) {
   // the eyepatch (Session 1079), on the face under whatever is on the head; its cord over the hair
   let patchStats = null; if (D.eyepatch) patchStats = buildEyepatch(P, G, heads, byName, meshes).stats;
   // hoop earrings (Session 995), when no raised hood covers the ears
-  let earStats = null; if (D.earrings && !(D.cloak && D.hood === 'up')) earStats = buildEarrings(P, G, heads, byName).stats;
+  let earStats = null; if (D.earrings && !hoodUpOn(D)) earStats = buildEarrings(P, G, heads, byName).stats;
   // the head-wrap (Session 994), over the same tucked hair, when no helm or raised hood is on the head
-  let wrapStats = null; if (D.wrap && !D.helm && !(D.cloak && D.hood === 'up')) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } let bt = -9; const bm = meshes.find(m => m.name === 'brows'); if (bm) { const a = bm.geometry.attributes.position.array; for (let i = 1; i < a.length; i += 3) bt = Math.max(bt, a[i]); } wrapStats = buildWrap(P, G, heads, byName, hp, bt).stats; }
+  let wrapStats = null; if (D.wrap && !D.helm && !hoodUpOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } let bt = -9; const bm = meshes.find(m => m.name === 'brows'); if (bm) { const a = bm.geometry.attributes.position.array; for (let i = 1; i < a.length; i += 3) bt = Math.max(bt, a[i]); } wrapStats = buildWrap(P, G, heads, byName, hp, bt).stats; }
   // pose: arms down from the A-pose, a slight bend at the elbow, weight on one leg, the head turned a little
   const q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
   const pose = Object.assign({ arm: .73, elbow: .62, head: 0, hip: 0 }, G.pose || {});
@@ -2844,7 +2859,7 @@ export function makePerson(G, o = {}) {
   // and a headscarf's point and knot (Session 1029), the same way
   let tailStats = null; if ((D.wrapTail || D.scarf) && wrapStats && !D.cloak) tailStats = buildWrapTail(G, body, byName, meshes, root)?.stats ?? null;
   // the coin necklace (Session 1003), over everything at the neck but a cloak, which hangs over it; none under a raised hood
-  let neckStats = null; if (D.necklace && !(D.cloak && D.hood === 'up')) { root.updateMatrixWorld(true); neckStats = buildNecklace(G, body, byName, meshes, root).stats; }
+  let neckStats = null; if (D.necklace && !hoodUpOn(D)) { root.updateMatrixWorld(true); neckStats = buildNecklace(G, body, byName, meshes, root).stats; }
   // coins hanging from the belt (Session 1004), when nothing hangs over the belt's front (a tabard, an apron)
   let beltCoinStats = null; if (D.beltCoins && D.belt && !D.tabard && !D.apron) { root.updateMatrixWorld(true); beltCoinStats = buildBeltCoins(G, body, byName, meshes, root)?.stats ?? null; }
   // the Old Blood's amulet and charms on the belt (Session 1042), when nothing hangs over the belt's front, as for the coins
@@ -2894,7 +2909,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

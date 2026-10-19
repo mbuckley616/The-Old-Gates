@@ -26648,3 +26648,31 @@ Session 1146 wove a sett into the cloak's cloth and asked Michael where it is wo
 - **Whether one in five reads as a note.** In a market of thirty Gatelanders about twenty-five wear a cloak or cape, so about five would be in a sett. That may read as more than a note; the rate is one number.
 - **The hood rolled down** on the moss woman shows a dark, broken roll at the nape. That is the hood's own shape, not the sett, and it is there on a plain cloak too.
 - **Owed:** the game after F4.
+
+## v80 — Session 1152 — The Mark's fur-lined hooded coat (L1, prototype only)
+Session 1147's winter coat owed OG-109's Mark column: "fur-lined hooded coats". The sheet draws one and the canon says nothing against it, so this asks nothing, as with the coat itself. It touches only `people.js`, `builder.js` (one checkbox) and `builder.check.mjs`. FREEZE #441 is still open, so the run kept to the prototypes.
+
+- **The hood.** `D.coatHood: 'up'` puts the cloak's fitted hood (`buildHoodUp`, Session 1069's dome) over the head in the coat's own wool. Nothing new is shaped for it. `buildHoodUp` takes two new options:
+  - `clr`, the hem's clearance over the shoulders: 7.5 cm over a fur collar, 5 cm over a plain coat, against the cloak's 4.
+  - `fur`, the ruff.
+- **The ruff.** The hood's front within three tenths of the opening's size again of the face, in seven shells 3.5 mm apart. They are pushed out from the head's middle and cut at the opening's edge as the hood is. The outer edge is cut on a smooth, slightly noisy line, not on the triangles' stairs: the first picture's ruff was ragged along them. The shells share the hood's skinning. The rolled rim round the face takes the fur's colour.
+- **Under it.** As under a cloak's hood, the hair is tucked and no earrings, necklace or head-wrap is built: one predicate, `hoodUpOn(D)`, now answers for the cloak's hood and the coat's in `makePerson`.
+- **Down:** not built. A coat with `coatHood` unset has no hood, as before. A hood lying on the back is owed.
+- **The roll:** none, as for the coat. The season is the game's.
+
+### Verified (headless Chromium)
+- **Three new hooded-coat checks** (`builder.check.mjs`): a Markman in charcoal with a grey-brown fur, a Markwoman in brown with a pale fur, and a Markman in a plain blue coat, each hood up, given earrings and a necklace. On each:
+  - 0 of 7,123 to 7,191 head and hair points through the hood;
+  - the hair tucked, with no earrings or necklace built;
+  - 7 fur shells on the furred coats (11,837 and 13,097 triangles for the seven), none on the plain one;
+  - with the hood unset, no hood built;
+  - saved and loaded back with `coatHood`.
+  The hood itself is 8,752 triangles, as on a cloak.
+- **`builder.check.mjs`:** 496 of 496 pass (493 before and the three above). The cloak's own hood checks are unchanged.
+- **A first ruff** took the band out to half the opening's size again: 16.2k and 17.3k triangles, and a ragged edge. Cut to three tenths with the smooth line, it is 11.8k to 13.1k.
+- **Pictures** (`builder-coathood-*.jpg`): `-full`, `-face`, `-back` and `-side` (the charcoal Markman), `-woman` (the brown coat with the pale fur) and `-plain` (the blue coat's hood, no fur).
+### Needs eyes
+- **The ruff's cost.** 12 to 13k triangles is as much as the rest of the coat's fur together. A ruff narrower again, or four shells in place of seven, would halve it; the pictures should say whether it would still read.
+- **The hood's hem flares out over the shoulders** a little more than on a cloak, since it is lifted to clear the fur collar, and from the back it stands off the coat at the neck.
+- **The beard** comes down over the ruff at the chin, where the opening's slot runs to the throat. A real ruff would push it in.
+- **Owed:** the hood down on the back, who wears a hooded coat in which season (the game's, with `WX`), and the game after F4.
