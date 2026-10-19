@@ -58,6 +58,9 @@ check('no two neighbouring lots share a colour', lots.every((l, i) => !i || l.co
 
 // a street in the world: six lots in a row 30 m ahead, each turned to face the eye, drawn in the frame
 await g.intoWorld();
+// Session 1138: the eye is where the player stands only once the game's loop has drawn a frame since the move to 13100,25450; on a
+// slow runner intoWorld's 9 s can pass without one, and the eye is still at the legacy Hearthwick's 1130,1480, 12 km off the street
+await page.waitForFunction(() => Math.hypot(CAM.position.x - px, CAM.position.z - pz) < 20, null, { timeout: 180000 });
 const st = await page.evaluate(() => { forceTime(11); const grp = new THREE.Group(); grp.name = 'kit test street'; let x0 = -24, calls = 0, tris = 0;
   const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
   for (let i = 0; i < 6; i++) { const L = PKIT.gl.lot('the kit test street', i), b = PKIT.gl.building(L.plan), w = b.userData.size.w, x = x0 + w / 2;

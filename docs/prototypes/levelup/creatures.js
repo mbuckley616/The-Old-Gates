@@ -313,9 +313,10 @@ P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) *
 // `dorsal` (Session 926): out of the back, square to the spine, not straight up (an upright body's back faces behind it)
 P.spines = (B, o) => { const sd0 = B.spinePts[B.spinePts.length - 1].clone().sub(B.spinePts[0]).normalize(), dors = o.dorsal ? UP.clone().addScaledVector(sd0, -sd0.y).normalize() : UP;
   for (let k = 0; k < o.n; k++) { const t = lerp(o.from, o.to, k / (o.n - 1)), sp = B.spineAt(t), h = o.len * (1 - .5 * Math.abs(k / (o.n - 1) - .5) * 2 * (o.taper ?? .5));
-  const at = sp.p.clone().addScaledVector(dors, sp.r * (o.dorsal ? B.spineS[0] * .7 + B.spineS[1] * .3 : B.spineS[1]) * .85);
+  // on a bare body (Session 1168) the spine is drawn as its vertebrae, `bare.vr` of the capsule's radius, so a spur stands on them
+  const at = sp.p.clone().addScaledVector(dors, sp.r * (o.dorsal ? B.spineS[0] * .7 + B.spineS[1] * .3 : B.spineS[1]) * .85 * (B.plan.bare ? (B.plan.bare.vr ?? .3) : 1));
   if (o.crystal) { const sd = k % 2 ? 1 : -1; B.bit(sp.bone, crystals({ n: o.crystal, len: h, r: o.r, stone: o.stone }, 1, B.tone(o.tone || 'horn'), at.add(V(sd * sp.r * .25, 0, 0)), sd, rng(B.g.seed + 11 + k))); continue; }
-  B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), at, V(0, 1, -.35).normalize())); } };
+  B.bit(sp.bone, claw(o.r, h, B.tone(o.tone || 'dark'), at, V(...(o.dir || [0, 1, -.35])).normalize())).name = 'spur'; (B.spurs = B.spurs || []).push({ off: +at.distanceTo(sp.p).toFixed(4), r: sp.r }); } };
 
 // a coiled shell (Session 862): a tube wound round an axis, growing as it goes, so the whorls stack into a spire. At the
 // mouth the tube is widest; toward the apex it shrinks by `grow` a turn and rises. Spiral bands run along the whorls, pale at
@@ -552,7 +553,9 @@ function bareGeo(B, o) { const gs = [];
     if (name === 'head' || name === 'jaw') { if (!B.skull) put(new THREE.CapsuleGeometry((f.ra + f.rb) / 2, L, 6, 14), f.a.clone().lerp(f.b, .5), [f.s[0], 1, f.s[1]]); }
     else if (/^(spine|neck|tail)/.test(f.group)) { const n = Math.max(1, Math.round(L / (o.vert ?? .05)));
       for (let k = 0; k < n; k++) { const t = (k + .5) / n, r = lerp(f.ra, f.rb, t) * (o.vr ?? .3); put(new THREE.CylinderGeometry(r, r * 1.1, L / n * .6, 10), f.a.clone().lerp(f.b, t)); } }
-    else { const sh = o.shaft ?? .32, kn = o.knob ?? .5; put(new THREE.CylinderGeometry(f.rb * sh, f.ra * sh, L, 8), f.a.clone().lerp(f.b, .5));
+    // `seg` (Session 1168) cuts a shaft into rings that far apart, so a pattern read at the vertices (a failing gate's lit cracks) has
+    // somewhere to lie along the bone; the steady skeleton's shafts are one segment each
+    else { const sh = o.shaft ?? .32, kn = o.knob ?? .5; put(new THREE.CylinderGeometry(f.rb * sh, f.ra * sh, L, o.seg ? 10 : 8, o.seg ? Math.max(1, Math.round(L / o.seg)) : 1), f.a.clone().lerp(f.b, .5));
       for (const [p, r] of [[f.a, f.ra], [f.b, f.rb]]) { const g = new THREE.SphereGeometry(r * kn, 10, 8); g.translate(p.x, p.y, p.z); gs.push(g); } } }
   const geo = mergeGeometries(gs.map(g => { g.deleteAttribute('uv'); return g; })); return { geo, grid: [0, 0, 0] }; }
 // a modelled skull (Session 942), for a bare head whose two capsules read soft and cartoonish: a cranium longer than it is wide, a
@@ -2038,6 +2041,37 @@ Object.assign(PLANS, {
       ['spines', { n: 6, from: .55, to: 1, len: .3, r: .05, tone: 'ice', taper: .2, crystal: 3, dorsal: 1 }]] })
 });
 export const FROST = ['frostshard', 'frostfolk'];
+// ── Session 1168: a failing gate's foe (OG-073, backlog L4: "the same model with extra limbs and broken anatomy, which a build can make
+// from one rig"; Michael kept the sheet, and the monster rule keeps the glow to the seams). Solas's row first: the skeleton grown wrong. The
+// steady skeleton's frame, sword and shield and rags as they are, and on it what the gate has added: a second pair of arms from the
+// middle of the cage and a third, small and crooked, from under it, each swinging on its own beat; a row of bone spurs down the back
+// raked up and out; three more ribs, so the cage runs down to the pelvis; and the bones cracked, the cracks lit Solas's white-gold and
+// nothing else lit but the sockets. The plan's `condition` and `school` say what it is; the steady skeleton is the plan it grows from ──
+Object.assign(PLANS, {
+  failingskeleton: re(PLANS.skeleton, { name: 'Skeleton (failing gate)', src: 'OG-073 (Solas: the skeleton at a failing gate, grown extra arms and spines)', school: 'Solas', condition: 'failing', from: 'skeleton', bare: { ...PLANS.skeleton.bare, seg: .02 },
+    mottle: 1.1, speedK: .85,
+    palette: { ...PLANS.skeleton.palette, coat: [.8, .76, .64] },
+    glow: { color: [2.6, 2.15, 1.25], freq: 9, w: .035, all: .8 },
+    parts: [...PLANS.skeleton.parts.map(([k, o]) => k === 'head' ? [k, { ...o, pitch: 4, eyes: o.eyes.map(e => ({ ...e, r: .02, color: [1, .86, .5] })) }]
+      : k === 'ribs' ? [k, { ...o, n: 10, from: .12 }] : [k, o]),
+      ['arms', { at: .7, out: .12, up: 0, dz: .02, len: .56, r: [.045, .038, .032], dir: [.82, -.5, .2], bend: 40, tone: 'coat', swing: .4, phase: 1.7 }],
+      ['arms', { at: .42, out: .1, up: 0, dz: .02, len: .4, r: [.036, .03, .026], dir: [.9, -.3, -.15], bend: 55, tone: 'coat', swing: .5, phase: 3.4 }],
+      ['spines', { n: 9, from: .1, to: 1, len: .15, r: .016, tone: 'coat', taper: .35, dorsal: 1, dir: [0, .55, -1] }]] })
+});
+// ── Session 1169: Gaoth's failing gargoyle (OG-073's Gaoth row: "bigger wings and more limbs"). Gaoth's weathered gargoyle, its wings
+// half again the Cloch gargoyle's span (Gaoth's own steady wings are a quarter wider), a second pair of clawed arms out of the shoulder
+// blades reaching forward and out over the first, and the stone cracked with the cracks lit the pale blue-white of a storm sky (on a
+// finer grid than the steady gargoyle's, 4 cm against 6, so a crack has vertices to lie on). The wing kit names its bones without a
+// pair's index, so a second pair of wings waits on that ──
+Object.assign(PLANS, {
+  failinggargoyle: re(PLANS.gaothgargoyle, { name: 'Gargoyle of Gaoth (failing gate)', src: 'OG-073 (Gaoth: the gargoyle at a failing gate, bigger wings and more limbs)', school: 'Gaoth', condition: 'failing', from: 'gaothgargoyle',
+    scale: .62, wingRest: PLANS.gargoyle.wingRest, cell: .04, spread: .05, palette: PLANS.gaothgargoyle.palette,
+    glow: { color: [1.3, 1.8, 2.6], freq: 7, w: .03, all: .75 },
+    parts: [...PLANS.gaothgargoyle.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: PLANS.gargoyle.parts.find(([q]) => q === 'wings')[1].span * 1.5 }]
+      : k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.7, .9, 1.3] })) }] : [k, o]),
+      ['arms', { at: .82, out: .22, up: .12, dz: -.04, len: 1.05, r: [.07, .06, .05], dir: [.75, .05, .65], dir2: [.2, -.6, .78], tone: 'coat', claws: { r: .012, len: .07 }, swing: .3, phase: 1.9 }]] })
+});
+export const FAILING = ['failingskeleton', 'failinggargoyle'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it

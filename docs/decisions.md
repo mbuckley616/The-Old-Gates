@@ -3,53 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### A guard's blow can kill before the yield is offered: should it? (systems builder, Session 1162) — DECISION #456
-QA found it (backlog I, 19 Oct, `tests/guardplay`). When you refuse a guard's fine he draws, and once your health is under 30% he offers the yield (pay double or a night in the cells; backlog B's rule, Session 169). The offer is checked between blows. A guard is tier 3, so on a new character (130 health) his light blow takes 51–59 and his heavy blow (Session 1136, twice the damage, one in four) 102–118. A light blow then a heavy one goes 130 → about 75 → 0: you die without ever being offered the yield. QA counted it in 14 of the first 60 game minutes for Dunmore's guard, so about one fight in four for a new character.
+### Where does a town’s row of seven stand at its church? (look builder, Session 1172) — DECISION #464
+Your C on #439 puts the six gods' row (with the Guest's struck niche) once in each town, and you asked whether it belongs in or near the church. It does: the Church is the Weaver's, and the Weaver is one of the six. The town now lays out its church's plot first (#433 B): the church end-on to the square with its west tower, a yard of 2 m beside it and 3 m behind. The row is 9.4 m long and needs 2.5 m of depth with its basins. Where does it stand?
+- **A. Behind the chancel, in the plot as it is.** It fits only just: 1.34 m from the basins to the chancel's eaves, room for one person to kneel. It cannot be seen from the square, and the empty seventh niche is found only by walking round the church.
+- **B. Along the churchyard's long side, the yard widened by 2.5 m** *(recommended)*. The row stands among the graves, facing the nave, with the path from the gate running past it. You see it through the gate from the square. The plot grows from 10.4 to 12.9 m wide, one number in the town's layout; no other building changes size.
+- **C. On the square beside the tower door, free-standing**, in the wayside dress with its own wall, well, thorn and cross. It is the first thing on the square, and the plot is unchanged. It takes about 13 by 4.5 m of the square where the stalls and the town's people walk, and it stands apart from the church rather than in its keeping.
 
-- **A. The blow that crosses the line stops at it** *(recommended)*. While the yield has not yet been offered, a drawn guard's blow that would take you below 30% leaves you just under it (29%), and the offer comes at once. Once you choose *Fight on*, his blows land in full and can kill. The heavy keeps its damage everywhere else.
-- **B. The blow that would kill leaves you at 1 health**, and the offer comes at once. Lower stakes before the offer, but you then pay or go to the cells at 1 health.
-- **C. As now.** Refusing a fine is a fight a new character can lose outright; the yield is offered only if you live to the line.
+Recommendation: **B.** The row is in the Church's keeping, in the yard where the town buries its dead (§3.1). It can be seen from the square and found by its gate, and you pass the Guest's empty niche on the path to it. It costs 2.5 m of one plot. The same answer would carry to the Mark's and Aurenne's churches.
 
-Recommendation: **A.** The rule says a guard offers terms when you are low; a guard over a fine wants the fine, not a body. A keeps the heavy blow's threat (it still takes you from 75 to the line in one blow) without a death the rule never meant, and it changes nothing after *Fight on*.
-
-### The gate interiors, for F5 — how does a gate's inside get its size? (the designer, 2026-10-19) — DECISION #448
-Your A on #421 makes a gate's cell 3 m under a 6 m ceiling, which grows today's rooms and corridors to a Skyrim ruin but not to the foundation's halls of 30 to 250 m. The proposal (`docs/design/gate-interiors.md`) asks how every gate, lesser and great, reaches that size and what you do inside one.
-- **A. The grid, grown.** Rooms up to 60 m with vaults to 30 m, still joined by corridors. Two sessions; the cobblestone dungeon at 1.6 times the size.
-- **B. Spaces first, rooms after, on one grid** *(recommended)*. Every gate is a chain of great spaces from six types (nave to 250 m, crossing, stair hall, chasm, flooded hall, the ring), with the fights in pockets of 15 to 30 m and ordinary rooms off them; a lesser gate 1 to 4 spaces, a great gate 6 to 9, an evening. One deep-work session with #421's build, then three Opus.
-- **C. The six great gates by hand, the lesser gates as A.** Six authored realms; the gates you meet most stay boxes. 14 to 20 sessions.
-
-Recommendation: **B.** It reaches the concept art's size in every gate without a second dungeon engine: the spaces sit on #421's grid, so collision, the minimap, keys and pathing carry over, and the broken gates give your floating footholds (#417 A) their ground.
-
-### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
-**Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
-
-The prototype (`docs/prototypes/levelup/shrines.html`, three.js 0.170) builds the niche in metres:
-- **The niche:** a stele 1.0 m wide and 2.55 m to the top of its arch, the recess 0.62 m wide with its sill at 1.03 m, and a figure 0.95 m tall. The god's name is cut under the sill, its icon is in a roundel over the arch, and a stoup stands before it with its rim at 0.68 m.
-- **The Gatelands:** limewashed, with rags on the niches and on a thorn, a holy well, a ring-headed high cross and a holed ring-stone.
-- **The Mark:** dark granite, each niche under its own shingled housing with crossed bargeboards ending in beast heads. An iron lamp that is never let out hangs under each, and an oath stone with an iron ring stands before them.
-- **Aurenne:** plastered, with a blue-glazed cupola and glazed tile in the recess. The icons are gilt, behind iron railings with a gate, with the Church's tithe box and its notice (*no rubbings to be taken*).
-- **The Guest's niche:** struck back to rough stone on two islands. In Aurenne it is bricked up and plastered over, as the Church bricked the Guest's chapel (canon §4.2).
-
-A row of seven costs 21,800 (the Mark) to 32,600 (the Gatelands, with its well and thorn) triangles in 25 to 34 draws. One niche with its figure is about 2,500 to 3,000.
-
-Where should the six stand together?
-
-- **A. One god to a shrine, as today.** Every wayside shrine is one god's niche in its island's dress, with the Guest's struck recess, the size of a hand, low on its plinth. The row of six is not built.
-- **B. The six together, everywhere.** Every shrine is OG-113's row of seven. You choose the god at the basin, one prayer a day at that shrine, as now.
-- **C. By place** *(recommended)*. A wayside shrine on a road is one god's niche (A). The row of seven stands once in each town, at its edge or where its roads meet, and there you choose the god.
-
-Recommendation: **C.** The Guest's absence reads only in a row. Among six full niches an empty seventh is plainly missing, but beside one god an empty recess reads as damage. The town's row puts every god within reach of home without a temple. The wayside niches keep a reason to travel for one god's boon and its own day (S497's god's day). The boons, the once a day and the Weaver's rubbing are unchanged; only which god you ask at a town's row is new. If a dressing looks wrong (the Mark's beast heads, Aurenne's railings, the Gatelands' high cross), say which. That is a note, not a reason for A or B.
-
-Pictures:
-- [The Gatelands, the row](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-gatelands.jpg)
-- [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-mark.jpg)
-- [The Mark at dusk, the lamps lit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-mark-dusk.jpg)
-- [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-aurenne.jpg)
-- [The figures, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-figures.jpg)
-- [The Guest's niche on each island](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-guest.jpg)
-- [The row from 30 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-far.jpg)
-- [One god's wayside shrine, three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside.jpg)
-- [In scale beside a person and the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside-scale.jpg)
+Pictures: [all three from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/shrines-church-all-high.jpg), [B at the gate](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/shrines-church-side-gate.jpg). Devlog `docs/devlog/1172.md`; the prototype `docs/prototypes/levelup/shrines-church.html`.
 
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
@@ -63,6 +25,32 @@ Pictures:
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 ## Answered
+### The gate interiors, for F5 — how does a gate's inside get its size? (the designer, 2026-10-19) — DECISION #448
+Your A on #421 makes a gate's cell 3 m under a 6 m ceiling, which grows today's rooms and corridors to a Skyrim ruin but not to the foundation's halls of 30 to 250 m. The proposal (`docs/design/gate-interiors.md`) asks how every gate, lesser and great, reaches that size and what you do inside one.
+- **A. The grid, grown.** Rooms up to 60 m with vaults to 30 m, still joined by corridors. Two sessions; the cobblestone dungeon at 1.6 times the size.
+- **B. Spaces first, rooms after, on one grid** *(recommended)*. Every gate is a chain of great spaces from six types (nave to 250 m, crossing, stair hall, chasm, flooded hall, the ring), with the fights in pockets of 15 to 30 m and ordinary rooms off them; a lesser gate 1 to 4 spaces, a great gate 6 to 9, an evening. One deep-work session with #421's build, then three Opus.
+- **C. The six great gates by hand, the lesser gates as A.** Six authored realms; the gates you meet most stay boxes. 14 to 20 sessions.
+
+Recommendation: **B.** It reaches the concept art's size in every gate without a second dungeon engine: the spaces sit on #421's grid, so collision, the minimap, keys and pathing carry over, and the broken gates give your floating footholds (#417 A) their ground.
+
+Michael: **Spaces first, rooms after, on one grid**. (19 Oct 2026, on the control room)
+
+### Unblock Systems: shard 6 hits the hour limit (the producer, 19 Oct 2026)
+On 2b0ee4e (Systems 940–1141 with main merged in), 13 of 15 checks were green; shards 6 and 7 ran every suite they reached without a failed test (guardplay was FLAKY in shard 7 and passed on its retry) and were cancelled at the 60-minute limit, shard 7 during turnin, its last suite. A merge anyway, B re-run shard 6, C wait for QA to rebalance the shards.
+
+Michael: **Merge anyway**. (19 Oct 2026, on the control room) *Producer:* merged PR #353 at 2b0ee4e (main dad5f7c). turnin.test.mjs did not run on this head; the next CI run on main covers it.
+
+### A guard's blow can kill before the yield is offered: should it? (systems builder, Session 1162) — DECISION #456
+QA found it (backlog I, 19 Oct, `tests/guardplay`). When you refuse a guard's fine he draws, and once your health is under 30% he offers the yield (pay double or a night in the cells; backlog B's rule, Session 169). The offer is checked between blows. A guard is tier 3, so on a new character (130 health) his light blow takes 51–59 and his heavy blow (Session 1136, twice the damage, one in four) 102–118. A light blow then a heavy one goes 130 → about 75 → 0: you die without ever being offered the yield. QA counted it in 14 of the first 60 game minutes for Dunmore's guard, so about one fight in four for a new character.
+
+- **A. The blow that crosses the line stops at it** *(recommended)*. While the yield has not yet been offered, a drawn guard's blow that would take you below 30% leaves you just under it (29%), and the offer comes at once. Once you choose *Fight on*, his blows land in full and can kill. The heavy keeps its damage everywhere else.
+- **B. The blow that would kill leaves you at 1 health**, and the offer comes at once. Lower stakes before the offer, but you then pay or go to the cells at 1 health.
+- **C. As now.** Refusing a fine is a fight a new character can lose outright; the yield is offered only if you live to the line.
+
+Recommendation: **A.** The rule says a guard offers terms when you are low; a guard over a fine wants the fine, not a body. A keeps the heavy blow's threat (it still takes you from 75 to the line in one blow) without a death the rule never meant, and it changes nothing after *Fight on*.
+
+Michael: **The blow that crosses the line stops at it** (A). (2026-10-19)
+
 ### Ending the merge bottleneck: how work gets tested and landed (local session, Claude with Michael in chat, 19 Oct 2026)
 Work piles up because of five things. (1) Every PR runs the whole game test suite, 16 to 20 jobs of up to an hour each, and GitHub runs only about 20 jobs at once. (2) Every branch edits the same few lines (the build number, the devlog, the backlog), so each merge makes every other PR clash and re-test. (3) An approval is pinned to one commit, and builders keep adding to the branch, so approvals go stale. (4) Each lane keeps one standing PR that collects 100+ commits before it lands. (5) One producer run does all the merging.
 - **A. Fix all five** *(recommended)*. 1: a PR runs only the tests its changes touch plus a short smoke set; the full suite runs on main after each merge, and a break is reverted within the hour. 2: the build number is stamped automatically on main, and each session writes its devlog and backlog note in its own file. 3: Michael approves the card, not one commit; later green commits that only add prototypes, docs or main merges go in without a new tap. 4: builders open a fresh small PR each run. 5: a workflow merges an approved PR the minute its tests pass. Tests-only, docs and prototype PRs merge on green without him; he approves what changes the game. One deep-work card for 1 to 3, prompt changes for 4 and 5.
@@ -83,6 +71,7 @@ The sett repeats every 16.8 cm. The cloak's own colour is the ground, with two d
 
 Pictures: [the moss cloak from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-back.jpg) · [at full length](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-full.jpg) · [close, the twill](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-close.jpg) · [a madder cape](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-cape.jpg) · [a brown cloak, hood up](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-hood.jpg)
 
+Michael: **A note, on cloaks** — about one Gatelander cloak or cape in five, in moss, madder, brown or muted blue; two or three setts; the rest plain wool. (19 Oct 2026, on the control room)
 Michael: **A, a note on cloaks.** (2026-10-19, on #445) *Bodies builder, Session 1151:* rolled. One Gatelander cloak or shoulder cape in five is woven in one of three setts (moss with dark green and a madder overcheck, madder with dark blue, brown with near-black and an ochre overcheck), the cloak taking the sett's ground; never a fur-lined cloak; nobody else; from a stream of its own, so every other roll is as it was (`people.js` `PEOPLES.gatelander.tartan`, `setts`). Pictures: `builder-tartan-rolled-*.jpg`.
 
 ### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
@@ -152,6 +141,30 @@ Picture (Cœur de Vie on the new look, at noon, the church end-on to the market 
 The church as drawn, with three bays: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-square.jpg
 The bawn as drawn: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-bawn.jpg
 
+Michael: B, towns laid out around them, both looks; the game is not live, so lost saves are no concern (on #433, carried by the producer in #427).
+Done, Session 1138 (look builder): `genSettlement` reserves the church's plot on the square and the keep's bawn plot at the head of the main street before it lays the lots, on both looks; the streets stop at them and no lot stands in them. Every Gatelands church is now the kit's, end-on with three bays. The bawn itself is the next session. #433 is closed.
+
+### The Weavers' ring of broken arches: its size, and does its script still burn? (look builder, Session 1119) — DECISION #429
+OG-104's first ruin at the scale of cliffs is built in the prototype (Session 1119): the Weavers' ring of broken arches on a coast, `places.html?place=ring`. It is twelve bays on the crown of a headland, 124 m across, with its open side to the sea and a 30 m cliff 40 m past it.
+- **The arches:** each is the gate kit's own pointed arch at 2.2 times its size. The opening is 22 m wide and 39.6 m to its point, the arch stands 44 m, and its stones are 3.3 m courses.
+- **Their state:** four stand, leaning a little. Seven are broken about half way up, their stones fallen on the turf. The bay to the sea is gone to its footings, with a spill of blocks toward the cliff.
+- **The heart:** a dais of three steps with the ring sigil cut in it.
+- **The script:** as drawn, it is dead on every stone. Nothing floats and nothing glows: out in the world the loom holds nothing up.
+
+Two things are yours: its size against the sheet's "people as specks", and whether anything of it still burns, which is the canon's.
+
+- **A. As drawn: arches of 44 m, the script dead** (recommended). It is already 25 times a person, the size of the gate halls (§2) grown by half again. A dead ring keeps the gates the only places where the script burns.
+- **B. Larger: arches of 60 m (3 times the kit) in a ring 170 m across.** This is closer to the sheet's specks, but each fallen stone is a 6 m block and the ring fills a headland.
+- **C. As drawn, but the four standing arches keep a faint amber line of script.** A ring that is half asleep. What that means is the quest writer's.
+
+Pictures:
+- From the turf inland: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-ring.jpg
+- A standing arch, with a 1.75 m post at its foot for scale: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-arch.jpg
+- From the dais at its heart: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-heart.jpg
+- From over the sea: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/places-ring-far.jpg
+
+Michael: B, larger: 60 m arches in a 170 m ring (on #429, carried by the producer in #427).
+Done, Session 1134 (look builder): `weaverRing` builds at 3 times the kit in a ring 170 m across, the dais grown with it to 30 m and the script dead; the pictures are redrawn. #429 is closed.
 Michael: **Towns laid out around them, both looks** — This game is not live, so don’t worry about saves being lost / preserving current state gameplay progression. (18 Oct 2026)
 
 ### The Old Blood's dot embroidery: powdered, or the drifts without oxblood? (bodies builder, Session 1125) — DECISION #432
@@ -254,6 +267,153 @@ How deep should a town's houses be?
 - **C. The kit's full 9 m.** Lots that cannot take it keep their depth, so a street mixes 9 m and 4 to 6 m houses.
 
 Picture (Dunmore on the new look, at noon): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/kit-town-ingame.png
+Michael: **B, townhouses 8 m deep where the row behind allows** (18 Oct 2026, on #408). Built in Session 1126: on the new look a town's townhouses and merchants' houses grow back into their yards to 8 m where the row behind allows, else as deep as fits (233 of 270 at the full 8 m in the six towns tested), fronts, doors and ids kept.
+
+### The Gatelands' town church on the new look: a round tower, a west tower, or a bellcote? (look builder, Session 1087) — DECISION #410
+**Card F6: the Gatelands' town church (look builder, Session 1087).** The Gatelands' towns are now built from the kit on the new look, except their churches, inns and keeps. The kit's temple is a small god's temple, 9.6 by 6 m, which is too small for a town's church, so the church is drawn new. It is a prototype in `docs/prototypes/levelup/pieces.js` (`gatelandsChurch`), at `pieces-gatelands.html?view=church&tower=round|square|bellcote|all`.
+
+What every option shares:
+- **The nave:** rubble, 16 by 8.4 m, with walls 0.9 m thick, 6.2 m to the eaves under the temple's steep slate (ridge 11.4 m).
+- **The west door:** round-headed in dressed stone, 1.5 by 3.2 m, with a light over it.
+- **The windows:** three tall round-headed lights a side.
+- **The chancel:** to the east, 7.2 by 6.2 m and lower (ridge 8.9 m), with a two-light east window.
+- **The yard:** a high cross and headstones. The yard is the page's, not the kit's.
+
+The question is how the bell hangs. That sets the church's mark on the skyline:
+- **A. A round tower** *(recommended)*: free-standing, 5 m off the nave's north-west corner. It is 24 m of battered rubble under a conical stone cap, 29.9 m in all. Its door is 3.2 m up, reached by a ladder, with slits up the shaft and four bell lights under the cap. It is the Gatelands' own (Glendalough, Clonmacnoise, Kilkenny), and a town reads from three fields away by it. It is 13,600 triangles in 21 draws.
+- **B. A west tower:** square, four stages, 18.4 m to its stepped merlons. The door moves into its foot. This is the later parish church, more Norman than Irish. It is 17,400 triangles in 26 draws.
+- **C. A bellcote:** the bell in an open stone frame on the west gable's apex, with no tower. It is the plainest and the cheapest, a village's church, and does not mark a town from afar. It is 10,100 triangles in 19 draws.
+
+Which god or Church the building serves, and what stands inside, are not part of this question. They stay with the canon and the quest writer, and the old builder's church keeps its name, priest and topics in every option.
+
+Pictures:
+- [A, the round tower, from the south-west](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-round.jpg)
+- [A from 90 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-far.jpg)
+- [B, the west tower](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-square.jpg)
+- [C, the bellcote](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-bellcote.jpg)
+- [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-church-all.jpg)
+Michael: **B, a square west tower, 18.4 m** (18 Oct 2026, on #410). Into the game next (card F6); its lot is the open part (Session 1126's note).
+
+### A town's coaching inn on the new look: three storeys and a yard, two storeys and a yard, or a merchant's house? (look builder, Session 1088) — DECISION #411
+**Card F6: a town's coaching inn (look builder, Session 1088).** Your 1 A on #320 made the village inn the kit's farmhouse, which is in the game since Session 1086. You left "a town's coaching inn, with a yard, a stable arch and more rooms" as its own piece for later. On the new look, a town's, port's or city's inns are still the old builder's. The piece is drawn in `docs/prototypes/levelup/pieces.js` (`gatelandsCoachInn`), at `pieces-gatelands.html?view=coachinn&inn=three|two|house|all` (`&cam=gate|yard` for the yard). It is built from the kit's town plan, so it shares the street's render, sashes, fanlights and harp sign.
+
+How should a town's inn stand in its street?
+- **A. Three storeys with a gateway and a yard** *(recommended)*:
+  - **The front:** a rendered town front of five bays of 2.4 m, 12.6 by 9 m to a ridge of 11.9 m, with the door under a fanlight in its middle and the harp sign beside it.
+  - **The gateway:** beside the front, in a rubble wall on the street line, 3.2 by 3.9 m with its leaves swung back.
+  - **The yard:** a cobbled yard behind, with a trough and pump, closed by a stable range of four stalls and a coach house's arch.
+
+  It stands a storey above its neighbours, and the gateway says what it is from the street. It is 9,700 triangles in 28 draws.
+- **B. Two storeys, long, with the same gateway and yard:** seven bays, 17.4 by 7.5 m. This is the country inn on the coach road, low and wide, better at a crossroads than in a terrace. It is 9,600 triangles in 28 draws.
+- **C. No yard: a merchant's house that takes guests.** The kit's merchant's house on four bays, its shop window the taproom's and its fascia the inn's name. It is the cheapest (4,400 triangles in 14 draws) and fits any lot, but there is nowhere for a horse and nothing marks it but the sign.
+
+What is unchanged: the inn's name, keeper, topics and rooms. The yard is scenery: whether it holds horses, a coach or the coach line's stop is the systems builder's and the bodies builder's.
+
+Pictures:
+- [A from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-three.jpg)
+- [A's gateway](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-yard.jpg)
+- [A's yard and stables](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-inyard.jpg)
+- [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-two.jpg)
+- [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-house.jpg)
+- [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-coachinn-all.jpg)
+Michael: **A, three storeys, a gateway and a stable yard** (18 Oct 2026, on #411). Into the game next (card F6).
+
+### A town's keep on the new look: the tower alone, the tower in a bawn, or the tower and a hall? (look builder, Session 1096) — DECISION #416
+**Card F6: a town's keep (look builder, Session 1096).** On the new look, a Gatelands town's keep (the lord's seat, where the steward speaks for the lord) is still the old builder's box on its 14 by 11 m lot. The kit had no plan for it. It is drawn in `docs/prototypes/levelup/pieces.js` (`gatelandsKeep`), at `pieces-gatelands.html?view=keep&keep=tower|bawn|hall|all`. All three share one tower. It is the island's own lord's house, the tower house, of which Session 1052's ruin is one fallen: four storeys of rubble, 11 by 8.5 m, with walls 1.5 m thick and 13.4 m to the wall walk on a battered plinth. Its door is 1.2 by 2.6 m in dressed stone, with a machicolation over it. It has slits and small leaded lights, and the hall's paired lights on the top floor. On the walk there is a parapet of stepped merlons and two corbelled bartizans. The slate roof sits inside the walk, between gables that stand proud of it, with a stack on each, 20.4 m to the pots.
+
+How should a town's keep stand?
+- **A. The tower alone** *(recommended)*:
+  - **The lot:** it fits the game's keep lot as it is (12.5 by 10 m with its plinth and bartizans), so the town's layout, doors and ids do not move.
+  - **The look:** at 20 m it is the tallest thing in a Gatelands town but the church tower. It reads as the same kind of building as the ruined tower houses in the country.
+  - **The cost:** 16,000 triangles in 15 draws.
+- **B. The tower in its bawn:** the tower in the back corner of a walled yard 26 by 22 m. The walls are 3.6 m high, with a gateway of 3 by 3.4 m, a round flanker of 6.5 m at each front corner, a well, and a house for the household against the east wall. It is the castle of OG-070's hill towns, but the lot must grow to about 30 by 25 m (twice as wide, more than twice as deep), which moves the lots around it. The cost is 18,300 triangles in 32 draws.
+- **C. The tower and a hall:** a hall range of two storeys, 13 by 7.5 m, against the tower's east side, with the lord's hall on its first floor in three tall lights. It is a lord's house more than a fort, and the steward's door is the hall's. The lot must be 25 m wide. The cost is 20,800 triangles in 26 draws.
+
+What is unchanged: the keep's name, lord, steward and topics, and the room inside (its hall keeps its own size, as the guild halls' do).
+
+Pictures:
+- [A from the street](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-tower.jpg)
+- [A from the corner](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-corner.jpg)
+- [A from 90 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-far.jpg)
+- [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-bawn.jpg)
+- [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-hall.jpg)
+- [the three side by side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/pieces-gatelands-keep-all.jpg)
+Michael: **B, the tower in a walled yard (bawn)** (18 Oct 2026, on #416). Into the game next (card F6); the bawn's lot of about 30 by 25 m moves the lots around it.
+
+### A broken gate's floating stones: hang still as footholds, drift as scenery, or drift and bear you? (look builder, Session 1097) — DECISION #417
+**Backlog L10, one piece in three conditions (look builder, Session 1097; OG-126).** OG-126's rule is drawn as a kit: `docs/prototypes/levelup/gatekit.js`, at `gatekit.html?view=kit|piece|hall`. It has eight pieces at the nave's measures (visual-foundation.md §2): a floor of 2.5 m slabs, an aisle wall, a pointed arcade arch of 10 m, a pier 4 m thick and 20 m high, a stair 8 m wide, a bridge of 16 m, a balcony on corbels and a script panel. Each piece is made of its stones, and one seeded rule moves them, so a condition is never a second model:
+- **Whole:** every stone in place, the script amber.
+- **Cracked and leaning:** the piece leans 1.5 to 3°, a stone in four slips, dark cracks run across the faces, and the script dims, a panel in three going dark.
+- **Broken:** above a ragged line, about seven stones in ten of those that come loose float, lifted up to 3 m and turned. The rest lie fallen at the foot. A violet seam burns where each stone sat, and the script turns violet.
+
+Each of the six schools dresses the stone and the script's light. The nave view walks six bays, from whole to broken.
+
+The rule is yours (OG-126 kept). What is open is what the floating stones do in the game:
+- **A. Hang still, and you can stand on them** *(recommended)*. Each stone is fixed where the rule put it, keyed by place so it is the same every visit. It is solid, so a broken nave is something to climb, and costs nothing at run time: the stones merge into the hall's mesh like any other.
+- **B. Drift slowly, as scenery.** They bob 10 to 20 cm and turn a little, and you cannot stand on them. It is the most unsettling, a gate still coming apart, but each stone must be its own moving piece.
+- **C. Drift and bear you:** moving footholds. The broken halls become the platforming of OG-131, but every floating stone is a moving solid the systems builder has to carry.
+
+Nothing in the game changes yet: the dungeon's rooms are the systems builder's, and a gate's halls are card F5's.
+
+Pictures:
+- [the nave, whole to broken (Cloch)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-hall.jpg)
+- [the same in Tine's dress](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-hall-tine.jpg)
+- [Solas](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-hall-solas.jpg)
+- [the wall three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-wall.jpg)
+- [the arch](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-arch.jpg)
+- [the pier](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-pier.jpg)
+- [the bridge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-bridge.jpg)
+- [the kit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/gatekit-kit.jpg)
+Michael: **A, the stones hang still and you can stand on them** (18 Oct 2026, on #417). Nothing to change: the kit's rule stands as drawn (`gatekit.js`); the gates' halls in the game are card F5's.
+
+### The base below deck: in the hull's own lines, the hold deepened, or one big cabin as today? (look builder, Session 1099) — DECISION #418
+**Backlog L6, the base below deck (look builder, Session 1099; OG-027, OG-072).** Today the game's cabin is one room of 7 by 8 m (`CABIN`, `85-world-sea.js`), the same for every ship and wider than any hull: the cog is 5.6 m across. OG-027 draws the base in the ship's own rooms, growing with the hull. The cog's base is drawn inside her real lines in `docs/prototypes/levelup/shipbase.js`, at `shipbase.html?view=cut|cabin|hold|galley&dress=gatelands|mark|aurenne`. Nothing stands outside the planking:
+- **The cabin under the aftcastle:** 3.6 m long, 2.2 to 4.8 m wide, 2.03 m clear. It holds a box bunk (rest and save), a sea chest, the chart table with its chart, dividers and a candle, a stool, a shelf, a rug and a lantern.
+- **The hold under the hatch:** a floor 3.6 m wide amidships, frames every 0.75 m and beams every metre, with a ladder up through the open hatch. It holds barrels, crates and sacks; the workbench with a vice and a rack of tools (crafting); a table with a still, a retort and phials (alchemy); two chests (the stash); and two lanterns. It is 1.85 m between the beams and 1.66 m under them, so a 1.8 m person stoops under a beam.
+- **The galley under the forecastle:** a firebox on a tray of sand, a pot on a crane, a water cask.
+- **The dress by island:** Gatelands oak, wool and brick; the Mark tarred wood, furs, a hide and an iron firepan; Aurenne oiled wood, brass, madder and indigo, and blue tile.
+
+Where should the base live?
+- **A. In the hull's own lines** *(recommended)*. Each class's base is the size of its hull (OG-027's ladder: the sloop a bunk and a chest, the cog as drawn, the galleon more rooms), so a bigger ship is a bigger home. The hold is low, as a cog's was.
+- **B. As A, with the hold deepened** so a 1.8 m person stands under every beam. The floor drops 0.2 m into the bilge, so it is narrower (about 3.3 m), and the ship outside is unchanged.
+- **C. As today: one cabin of 7 by 8 m for every ship**, roomier than any hull and entered through the hatch. It is the cheapest, but the ship you walk below in is not the ship you sail.
+
+What is unchanged: what the bed, chests and stations do (the systems builder's), and the hull outside.
+
+Pictures:
+- [the cog cut away (Gatelands)](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cut.jpg)
+- [the Mark's](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cut-mark.jpg)
+- [Aurenne's](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cut-aurenne.jpg)
+- [the cabin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-cabin.jpg)
+- [the hold](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-hold.jpg)
+- [the Mark's hold](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-hold-mark.jpg)
+- [the galley](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/shipbase-galley.jpg)
+Michael: **A, the base lives in the hull's own lines** (18 Oct 2026, on #418). The cog's base stands as drawn (`shipbase.js`); the sloop's is built in Session 1129 (`sloopBase`, `shipbase.html?ship=sloop`); the cutter's in Session 1148 (`cutterBase`, `shipbase.html?ship=cutter`); the caravel's in Session 1149 (`caravelBase`, `shipbase.html?ship=caravel`); the galleon's in Session 1150 (`galleonBase`, `shipbase.html?ship=galleon`). The five are drawn; into the game with card F11 (backlog L6).
+
+### The water under the sea: by island, the Gatelands' green everywhere, or clear everywhere? (look builder, Session 1100) — DECISION #419
+**Backlog L10, under the sea (look builder, Session 1100; OG-125).** The first place on the sea floor is drawn in `docs/prototypes/levelup/undersea.js`, at `undersea.html?view=swim|arches|alcove|boat|above&water=green|clear|mark`: drowned arches under a coastal town.
+- **The quay:** a quay of coursed stone with two of the kit's Gatelands houses on it.
+- **The arches:** an arcade of seven round arches 4 m wide runs 34 m out from the quay. It was a causeway: its deck now lies 1.75 m under the water, so the game's galleon (1.5 m draft) passes over it. Its first four bays stand whole. At the deep end one arch has fallen onto the sand and two piers stand as stumps.
+- **The floor:** sand from about 4.5 m deep at the quay to 16 m at 60 m out, with a reef either side.
+- **Kelp:** 129 stalks to between 0.6 and 3 m under the surface.
+- **Finds:** a rowing boat sunk on her side at 7.3 m, and a niche in the quay's face behind the kelp with a small chest.
+
+The water is the open question, because it sets the look of every place under the sea:
+- **A. By island** *(recommended)*: green and close in the Gatelands (about 15 m of sight), dark and cold blue in the Mark (about 10 m), clear turquoise in Aurenne (about 40 m). The sea says which island you are off, as the towns do.
+- **B. The Gatelands' green everywhere:** close and murky, things loom out of it.
+- **C. Clear turquoise everywhere:** the most to see and the furthest. It is the inviting answer, but the cold north would look like the south.
+
+Who built the arches and what is in the chest are not this question: they are the quest writer's and the systems builder's.
+
+Pictures:
+- [Gatelands green, out along the arcade](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-swim.jpg)
+- [the same, clear](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-swim-clear.jpg)
+- [the same, the Mark's](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-swim-mark.jpg)
+- [the bays from the side](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-arches.jpg)
+- [the alcove](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-alcove.jpg)
+- [the boat](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-boat.jpg)
+- [from the quay's stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-above.jpg)
+Michael: **A, the water under the sea by island** (18 Oct 2026, on #419). Nothing to change: the undersea page's three waters stand as drawn (`undersea.html?water=green|mark|clear`); the game's undersea is card F11's.
 
 ## Answered
 ### The foes' heavy attacks: how often, and how does the player tell one from a light blow? (systems builder, 18 Oct 2026) — DECISION #430
