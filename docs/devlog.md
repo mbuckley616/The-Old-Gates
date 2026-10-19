@@ -28098,7 +28098,9 @@ OG-109's Mark column draws its formal dress as "blue and red, with woven bands":
 - **Formal dress is more than its edges:** OG-109's Markmen wear their formal tunics longer, nearer the knee, and the women a mantle over the gown. Neither is built.
 - **Owed:** who wears it (the game, by rank or occasion), and the game after F4.
 
-## v80 — Session 1165 — The night watch along a turned wall: `beat` green (owed by Session 1160)
+## v80 — Session 1166 — The night watch along a turned wall: `beat` green (owed by Session 1160)
+*First pushed as 1165; auto/bodies holds 1165.*
+
 **A correction to Session 1160 first.** That entry put `beat`'s remaining red down to `townRoute`'s whole-metre grid missing walls thinner than a cell. That was not it. I traced Portclare's beat at 5 cm and none of its 13 legs crosses a wall. Three of them graze a box's corner for one to three samples, and the solids are padded by 0.3 m, so a wall thinner than a cell does not occur. The grid is left as it was.
 
 **The cause:** a house turned 20.5°. Session 1138 lays the lots out turned to the streets, and one of Portclare's houses (12.4, 13.2 from the square, 6.3 by 5.3 m) has its south-west corner at 10.4, 17.1. The beat point at 9, 17 lies a step beyond it. The watchman, Dáire, came along the house's south face going west and was wedged on that face, a step short of the point:
