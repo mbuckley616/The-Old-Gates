@@ -22,7 +22,17 @@ const talk = (houseId, label, follow) => page.evaluate(([houseId, label, follow]
   return { labels, say, people: def.people };
 }, [houseId, label, follow]);
 
+// S1000 — the critic's s632: the first sight waits for the day, and the rain's half is said only in the rain
+const sight = await page.evaluate((site) => { const h = lampFirstInn(site); px = h.doorX + 6; pz = h.doorZ + 6; const out = {}; const sl = showMsgLong;
+  const look = (hour, wx) => { forceTime(hour); WX.type = WX.next = wx; WX.k = 0; delete worldState.stats.lampSeen; let said = null; showMsgLong = (t) => { said = t; };
+    try { tickWaylamp(true); } finally { showMsgLong = sl; } return { said, seen: !!worldState.stats.lampSeen, night: isNight() }; };
+  out.night = look(0.05, 'clear'); out.day = look(12, 'clear'); out.rain = look(12, 'rain'); delete worldState.stats.lampSeen; return out; }, P.site);
+console.log(JSON.stringify(sight));
+check('at midnight, clear: nothing said, the first sight kept for the day', sight.night.night && sight.night.said === null && !sight.night.seen, sight.night);
+check(`at noon, clear: *${sight.day.said}*`, sight.day.said === 'A lamp burns over the inn’s door in broad day.' && sight.day.seen, sight.day);
+check(`at noon in the rain: both halves`, sight.rain.said === 'A lamp burns over the inn’s door in broad day. The rain does not seem to reach it.', sight.rain);
 const inn = await page.evaluate((site) => { const h = lampFirstInn(site); const second = WORLD.settle.get(site).houses.filter(x => x.type === 'inn')[1];
+  forceTime(12); WX.type = WX.next = 'rain'; WX.k = 0;
   px = h.doorX + 6; pz = h.doorZ + 6; let said = null; const sl = showMsgLong; showMsgLong = (t) => { said = t; }; try { tickWaylamp(true); } finally { showMsgLong = sl; }
   let again = null; showMsgLong = (t) => { again = t; }; try { tickWaylamp(true); } finally { showMsgLong = sl; }
   return { id: h.id, name: h.name, second: second && second.id, said, again }; }, P.site);

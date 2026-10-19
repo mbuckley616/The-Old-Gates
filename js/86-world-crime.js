@@ -376,20 +376,26 @@
   function clearLine(ax,az,bx,bz){const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.6));for(let i=1;i<n;i++){const t=i/n;if(solidAt(ax+(bx-ax)*t,az+(bz-az)*t))return false;}return true;}
   // v80 S167 — indoors, sight stops at a partition wall (a solid taller than a person's head) or a shut door; counters,
   // tables and beds do not block it. An open door's box stands out of the way, so its doorway is clear.
-  function intSightLine(ax,az,bx,bz){const S_=(typeof INT_SOL!=='undefined'&&INT_SOL)||[];const D_=(typeof INT_DOORS!=='undefined'&&INT_DOORS)||[];
-    const eye=(typeof jumpY==='number'?jumpY:0)+1.1;const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
+  // S1110 — cover (Michael's A on #420): a watcher's line (cover true: a is the watcher, b is you) is also blocked, while you crouch,
+  // by a solid of counter height or more (COVER_H, from your floor) within COVER_R of you: a counter, a chest, a bed's foot, a barrel.
+  // Standing, only walls and shut doors hide you. Lock-on and E's aim (you at a) never ask for cover.
+  const COVER_H=.9,COVER_R=1;
+  function intSightLine(ax,az,bx,bz,cover){const S_=(typeof INT_SOL!=='undefined'&&INT_SOL)||[];const D_=(typeof INT_DOORS!=='undefined'&&INT_DOORS)||[];
+    const fl=typeof jumpY==='number'?jumpY:0,eye=fl+(_sneaking?SCALE.EYE_CROUCH:SCALE.EYE_STAND); /* S1105 — F2b: the line at your eye, 1.65 standing and 1.1 crouched (it was 1.1 always) */const B=S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=eye&&s.y1>=eye&&(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)));
+    const C=cover&&_sneaking?S_.filter(s=>s.y0!=null&&s.y1!=null&&s.y0<=fl+.3&&s.y1>=fl+COVER_H&&!(bx>s.x0&&bx<s.x1&&bz>s.z0&&bz<s.z1)):[];
     const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.1));
-    for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
+    for(let i=1;i<n;i++){const t=i/n,x=ax+(bx-ax)*t,z=az+(bz-az)*t;for(const s of B)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;
+      if(C.length&&d*(1-t)<=COVER_R)for(const s of C)if(x>s.x0&&x<s.x1&&z>s.z0&&z<s.z1)return false;}return true;}
   // S368 — indoors a person sees what they face (Michael's B on #73): a 120° cone about the way they look, (sin ry, cos ry)
   const INT_FOV=Math.cos(Math.PI/3);
   const WIT_HEAR=2;
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
-  function witnessOf(house){
-    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(sneak)R*=.5; /* S552 — the dark hood */if(isNight())R*=.5;
-    if(typeof isInterior==='function'&&isInterior()){const inR=6; // indoors: whoever is in the room with you, facing you, and can see you
+  function witnessOf(house,picking){const quiet=!!picking&&perk('locks',75); /* S973 — Quiet work (Locks 75): a pick is seen from half as far */
+    const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(quiet)R*=.5;if(sneak)R*=.5*(1-.4*skillLv('stealth')/100)*inTheDarkMult(); /* S941 — Stealth; S976 — In the dark (Stealth 50) */ /* S552 — the dark hood */if(isNight())R*=.5;
+    if(typeof isInterior==='function'&&isInterior()){const inR=quiet?3:6; // indoors: whoever is in the room with you, facing you, and can see you
       if(sleeperNear()){wakeSleeper(intNPCMesh,true);return {name:currentHouse.keeper||'the resident'};} /* S739 — a sleeper sees nothing, and hears within two units */
-      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz))return {name:currentHouse.keeper||'the keeper'};
-      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
+      if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz,true))return {name:currentHouse.keeper||'the keeper'};
+      const m=(INT_NPCS||[]).find(n=>Math.hypot(px-n.g.position.x,pz-n.g.position.z)<inR&&intFaces(n.g)&&intSightLine(n.g.position.x,n.g.position.z,px,pz,true));return m?{name:(m.def&&m.def.name)||'someone'}:null;}
     // S705 — the street as the shop (Michael's A on #222): a townsperson or guard sees in the same 120° cone the way they face,
     // to the same ranges; within two units they hear you whichever way they face
     let best=null,bd=R;for(const n of npcs){if(!n.g.visible||n._retreated)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>=bd)continue;if(d>=WIT_HEAR&&!intFaces(n.g))continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;best=n;bd=d;}
@@ -430,11 +436,11 @@
     if(site&&typeof isInterior==='function'&&isInterior())try{dispatchGuard(house,site);}catch(e){} // S239 — seen indoors: a guard is sent
     showMsg(`${w.name} saw you ${what}.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you ${what} at ${house.name}${site?'; '+site.name+' will not forget it':''}.`);}
   // S327 — asked each frame of a town pick (Michael's A on #54): whoever sees you now sees the lock picked
-  function pickSeen(house){const w=witnessOf(house);if(!w)return null;
+  function pickSeen(house){const w=witnessOf(house,true);if(!w)return null;
     (worldState.crimes||(worldState.crimes=[])).push({kind:'lock',site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});seenCrime('lock',house,w);return w;}
   function noteCrime(kind,house,value,coins){(worldState.crimes||(worldState.crimes=[])).push({kind,site:house.siteId||null,house:house.id,day:dayNow(),min:absMin()});
     if(coins>0&&house.siteId){const C=worldState.crime||(worldState.crime={});const c=C[house.siteId]||(C[house.siteId]={bounty:0,debt:0,last:0});c.loot=(c.loot||0)+coins;} // S168 — the gold taken in a town, for the cells to take back
-    const w=witnessOf(house);if(w)seenCrime(kind,house,w,value);return !!w;}
+    const w=witnessOf(house,kind==='lock');if(w)seenCrime(kind,house,w,value);return !!w;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const C=worldState.crime;const c=C&&C[typeof site==='string'?site:site.id];return c?c.bounty:0;}
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
@@ -535,6 +541,7 @@
       poor:'You have not got it. Find it.',
       pay:'It is paid.',
       refuse:'Then the blade.'}};
+  const TALKED_LINES={gatelander:f=>`A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: ${f} gold, and we’ll say no more about it.`,markman:f=>`Aye, all right. Half. ${f} gold, and don’t make me sorry.`,aurennais:f=>`You argue it well, Master. The town will accept half, on these terms: ${f} gold, and the matter closed.`,oldblood:f=>`Half, then. ${f} gold.`}; /* S986 — quest review Finding 31: the guard gives way in his people's voice */
   const YIELD_LINES={
     gatelander:{greet:d=>`A bent knee mends faster than a broken head. ${d} gold, or a night in the cells.`,
       poor:'You haven’t got it. Then it’s the cells, or the sword again, and I’d not choose the sword.',
@@ -554,24 +561,35 @@
       cells:'Come. The cells are quiet.'}};
   // S550 — on the feast day a fine was halved, the guard says so after the halt (the Old Blood keep no watch: the Gatelander line)
   function feastFineLine(S,c){if(!c||c.feast!==dayNow()||typeof FEAST_FINE==='undefined')return '';return ' '+(FEAST_FINE[peopleOfSite(S.site)]||FEAST_FINE.gatelander);}
+  function talkedGreet(S,c,fine){if(!c||!c.talkedNow)return '';delete c.talkedNow;return (TALKED_LINES[peopleOfSite(S.site)]||TALKED_LINES.markman)(fine);}
   function haltLines(S){return HALT_LINES[peopleOfSite(S.site)]||HALT_LINES.markman;}
   function yieldLines(S){return YIELD_LINES[peopleOfSite(S.site)]||YIELD_LINES.markman;}
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
+      ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
-    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
+    openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
+      ...talkDownTopic(S,c,()=>confront(n,S,c)),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
+  // S973 — Talk it down (Speech 50): once in each town, a guard's fine is halved; the halt opens again on the new fine
+  function talkDownFine(S,c){if(!c||c.talked||c.bounty<=0||!perk('speech',50))return false;c.bounty=Math.ceil(c.bounty/2);c.talked=1;
+    if(typeof addLog==='function')addLog('⚖',`Talked the fine at ${S.site.name} down to ${c.bounty} gold.`);return true;}
+  function talkDownTopic(S,c,reopen){if(!c||c.talked||!perk('speech',50))return [];
+    return [{label:'Talk it down. (Speech)',quest:true,fn:()=>{if(!talkDownFine(S,c))return '';c.talkedNow=1;showMsg(`The fine is halved: ${c.bounty} gold.`,'#c8e88a');
+      setTimeout(()=>{try{closeDialog();}catch(e){}reopen();},60);return '';}}];}
+  const GUARD_TIER=3;
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
     let gen=null;n.g.traverse(o=>{if(!gen&&o.userData&&o.userData.rig&&o.userData.rig.g)gen=o.userData.rig.g;}); // S171 — the guard who draws is the guard you spoke to
     // S509 — the guard who draws is keyed (co-op rules): his town, his place among its people, and the minute he drew
-    const ni=(S.npcs||[]).indexOf(n);const e=keyFoe(buildZoneEnemy(scn,sol,x,z,'Bandit',null,{genome:gen}),`${S.site.id}:guard:${ni>=0?ni:((n.def&&n.def.name)||'guard')}:${Math.floor(worldState.gameTimeAbsMinutes||0)}`);e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
-    e.hp=e.maxHp=Math.round(40+level*8);e.dmg=Math.round(6+level*1.2);e.spd=1.4;e.xpVal=0;e.def=3;e._guard={site:S.site.id,npc:n};e.alert=true;
+    const ni=(S.npcs||[]).indexOf(n);const e=keyFoe(buildZoneEnemy(scn,sol,x,z,'Bandit',null,{genome:gen,tier:GUARD_TIER}),`${S.site.id}:guard:${ni>=0?ni:((n.def&&n.def.name)||'guard')}:${Math.floor(worldState.gameTimeAbsMinutes||0)}`);e.name='Town Guard';e.displayName='Town Guard';e.locked=false;e.minLevel=1;if(e.mesh)e.mesh.visible=true;
+    /* S1060 — the law is tier 3 in every town (the enemies-by-place sheet, Morrowind's precedent): its numbers read tier 3's level, 11, not yours */
+    const GL=tierLevel(GUARD_TIER);e.hp=e.maxHp=Math.round(40+GL*8);e.dmg=Math.round(6+GL*1.2);e.spd=1.4;e.xpVal=0;e.def=3;e._guard={site:S.site.id,npc:n};e.alert=true;
     try{const body=enemyBodyMesh(e);if(!(e.limbs&&e.limbs.person)&&body&&body.material&&body.material.color)body.material.color.setHex(0x6a2a2a);}catch(err){}
     ZONES.world.enemies.push(e);showMsg(`${(n.def&&n.def.name)||'The guard'} draws.`,'#ff8060');return e;}
   function standDown(S){for(const e of ZONES.world.enemies){if(!e._guard||e.dead||e._guard.site!==S.site.id)continue;e.dead=true;try{(e.mesh&&e.mesh.parent||sc).remove(e.mesh);}catch(err){}if(e.el)e.el.intensity=0;
@@ -624,7 +642,7 @@
   function boxCoins(p,type){const mult=/weapon|armor|armoury|forge/.test(type)?1.2:/potion|apothecary/.test(type)?.8:1;return (10+50*Math.max(0,Math.min(100,p))/100)*mult;}
   function boxState(){if(!INT_BOX)return null;const B=worldState.boxes||(worldState.boxes={});const r=B[INT_BOX.id];if(r&&dayNow()-r.taken<5)return 'empty';if(r&&INT_BOX.open)INT_BOX.open=false; // refilled: locked again
     return INT_BOX.open?'open':'locked';}
-  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>1.6||jumpY>.6)return null;if(!aimBox(INT_BOX.x,INT_BOX.z,0,.42,.42,.7))return null; /* S646 — and under the crosshair */const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
+  function boxPrompt(){if(!INT_BOX||!currentHouse)return null;if(Math.hypot(px-INT_BOX.x,pz-INT_BOX.z)>TOUCH||jumpY>.6)return null;if(!aimBox(INT_BOX.x,INT_BOX.z,0,.42,.42,.7))return null; /* S646 — and under the crosshair */const st=boxState();const name=INT_BOX.kind==='home'?'the chest':'the strongbox';
     return st==='empty'?(INT_BOX.kind==='home'?'The chest is empty':'The strongbox is empty'):st==='locked'?`Press 'E' to pick the lock on ${name}`:`Press 'E' to open ${name}`;}
   function boxInteract(){if(!boxPrompt())return false;const st=boxState(),X=INT_BOX;
     if(st==='empty'){showMsg(X.kind==='home'?'Nothing left in it.':'The takings are gone; they will not have refilled it yet.','#c8b880');return true;}
@@ -640,13 +658,33 @@
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
     if(typeof renderInv==='function')renderInv();return true;}
+  // S1121 — a book to take from a shelf (the quest writer's ask for *What the Stones Say*): a generated room's bookcase
+  // (INT_SHELF, set by buildInteriorFor) offers the book of the first rule in SHELF_BOOKS that names the room's kind and its
+  // town's people, once per room: taken, `worldState.shelfTaken[<house id>]` holds the book's id. It is the guild's copy, put
+  // out to be read, so taking it is no crime. A rule whose book is not in BOOKS offers nothing.
+  let INT_SHELF=null;
+  const SHELF_BOOKS=[{type:'guild_m',people:'gatelander',book:'words_on_stones'}];
+  function shelfBookFor(house){if(!house)return null;const site=houseSite(house);const pp=site?peopleOfSite(site):null;
+    for(const r of SHELF_BOOKS){if(r.type!==house.type||(r.people&&r.people!==pp))continue;const def=BOOKS.find(b=>b.id===r.book);if(def)return def;}
+    return null;}
+  function shelfPrompt(){if(!INT_SHELF||!currentHouse||INT_SHELF.id!==currentHouse.id)return null;if(worldState.shelfTaken&&worldState.shelfTaken[INT_SHELF.id])return null;
+    const def=shelfBookFor(currentHouse);if(!def)return null;
+    if(Math.hypot(px-INT_SHELF.x,pz-INT_SHELF.z)>TOUCH||Math.abs(jumpY-INT_SHELF.y)>.9)return null;
+    if(!aimBox(INT_SHELF.x,INT_SHELF.z,INT_SHELF.y+.5,.25,.9,1.3))return null;
+    return `Press 'E' to take ${def.name} from the shelf`;}
+  // the named action (co-op): the book into the bag, the room's copy gone for good
+  function takeShelfBook(house){const def=shelfBookFor(house);if(!def)return false;const T=worldState.shelfTaken||(worldState.shelfTaken={});if(T[house.id])return false;
+    T[house.id]=def.id;if(typeof bagAdd==='function')bagAdd(Object.assign(makeBookItem(def),{qty:1}));
+    showMsg(`You take ${def.name} from the shelf.`,'#e8d8a0');if(typeof addLog==='function')addLog('📗',`Took ${def.name} from the shelf at ${house.name}.`);
+    if(typeof renderInv==='function')renderInv();return true;}
+  function shelfInteract(){if(!shelfPrompt())return false;return takeShelfBook(currentHouse);}
   let INT_LOOT=null;
-  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<1.5&&Math.abs(jumpY-INT_LOOT.y)<1.2&&aimBox(INT_LOOT.x,INT_LOOT.z,INT_LOOT.y,.45,.45,.75))return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
+  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<TOUCH&&Math.abs(jumpY-INT_LOOT.y)<1.2&&aimBox(INT_LOOT.x,INT_LOOT.z,INT_LOOT.y,.45,.45,.75))return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
   function towerLocked(){return !!INT_LOOT&&!(worldState.towerPicked&&worldState.towerPicked[INT_LOOT.id]);} // S150 — the tower's chest is a good lock
   function lootInteract(){if(!lootPrompt())return false;
     if(towerLocked()){const id=INT_LOOT.id;if(typeof tryLockpick==='function')tryLockpick({seed:'tower_'+id,minPins:4,lockTitle:'A locked chest',onPick:()=>{(worldState.towerPicked||(worldState.towerPicked={}))[id]=true;lootInteract();}});return true;}
     const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1,'tower:'+INT_LOOT.id):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
-  function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<1.3&&Math.abs(jumpY-HATCH.y)<.9&&intHatchAimed())return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
+  function hatchPrompt(){if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<TOUCH&&Math.abs(jumpY-HATCH.y)<.9&&intHatchAimed())return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}
   // S646 — the hatch under the crosshair: a way up (the roof's, a cellar's or the chapel's ladder) is the column from its floor to
   // the ceiling, a way down the square of the hatch (1.1 across) and a little above it
   function intHatchAimed(){const up=HATCH.roof||(currentHouse&&(currentHouse.type==='cellar'||currentHouse.type==='chapel'));return aimBox(HATCH.x,HATCH.z,HATCH.y-.1,.65,.65,up?3.2:.6);}

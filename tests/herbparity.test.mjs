@@ -42,10 +42,12 @@ const d = await page.evaluate(() => {
   const out = {}; const rnd = Math.random; Math.random = () => .5; const lvl = level; level = 50; // a big base, so rounding cannot hide a tenth
   const e = ENEMIES.find(x => !x.dead && x.floor === currentFloor && !x.disguised); ENEMIES.forEach(x => { if (x !== e) x.dead = true; });
   e.shieldUp = false; e.resist = {}; e.def = 0;
+  // S941: the level no longer adds to a swing (skills and perks A), so the big base is a roll of 200 at Blade 50 (×1.0)
+  const kw = EQ.weapon, kb = SKILLS.blade; EQ.weapon = { name: 'Test Sword', slot: 'weapon', weaponShape: 'sword', wType: 'slash', weight: 3, atk: [200, 200] }; SKILLS.blade = { lv: 50, p: 0 };
   const hit = () => { e.x = px + fwdX * 1.2; e.z = pz + fwdZ * 1.2; e.hp = e.maxHp = 1e6; e.posture = 1e6; e.maxPosture = 1e6; e.dead = false; _resolveDungeonStrike(false); return 1e6 - e.hp; };
   ACTIVE_BUFFS.length = 0; out.plain = hit();
   _applyBuff({ ...HERB_DEF.firemoss.item.hiddenEffect }); out.firemoss = hit();
-  ACTIVE_BUFFS.length = 0; _applyBuff({ ...HERB_DEF.caordubh.item.hiddenEffect }); out.caordubh = hit(); level = lvl;
+  ACTIVE_BUFFS.length = 0; _applyBuff({ ...HERB_DEF.caordubh.item.hiddenEffect }); out.caordubh = hit(); level = lvl; EQ.weapon = kw; SKILLS.blade = kb;
   // a Phantom's 30-point bolt, with and without Ferrous Guard
   const gy = currentFloor === 2 ? FLOOR2_Y : 0; window._raf0 = window.requestAnimationFrame; const rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
   let t = performance.now(); e.dead = true;

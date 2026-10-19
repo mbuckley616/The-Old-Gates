@@ -13,7 +13,7 @@ const slip = () => page.evaluate(() => { const q = id => document.getElementById
 // 9:40 pm on day 4, hurt, ready to level
 await page.evaluate(() => { ZE.forEach(e => { if (e && !e.dead) e.locked = true; });
   worldState.gameTimeMinutes = 21 * 60 + 40; worldState.gameTimeAbsMinutes = 3 * 1440 + 21 * 60 + 40;
-  PHP = Math.round(effMaxHP() * .5); mana = Math.round(effMaxMana() * .4); xp = xpNext; openSleepUI(); });
+  PHP = Math.round(effMaxHP() * .5); mana = Math.round(effMaxMana() * .4); levelMarks = marksNeeded(); /* S952 — the level comes on marks */ openSleepUI(); });
 const s8 = await slip();
 const want = await page.evaluate(() => ({ p8: restPreview(8), p3: restPreview(3), mh: effMaxHP(), mm: effMaxMana(), hp: PHP, mp: mana, lv: level }));
 console.log('sleep 8', JSON.stringify(s8));
@@ -36,7 +36,7 @@ const slept = await page.evaluate(() => ({ abs: worldState.gameTimeAbsMinutes, t
 check(`Sleep to noon (key 3) sleeps 14 h 20 min, fills health and takes the level (${before.lv} → ${slept.lv})`, slept.abs - before.abs >= 860 && slept.abs - before.abs < 875 && slept.hp === slept.mh && slept.lv === before.lv + 1 && !slept.open, { before, slept });
 
 // waiting: any number of hours, nothing restored
-await page.evaluate(() => { PHP = Math.round(effMaxHP() * .5); xp = xpNext; openWaitMenu(); });
+await page.evaluate(() => { PHP = Math.round(effMaxHP() * .5); levelMarks = marksNeeded(); /* S952 — the level comes on marks */ openWaitMenu(); });
 const w = await slip();
 console.log('wait', JSON.stringify(w));
 check(`the ⏳ opens the same slip, Wait, set to dawn (${w.hrs})`, w.open && w.title === 'Wait' && w.min === 18 * 60 && /YOU RISE · 6:00 am/.test(w.dial) && /Waiting restores nothing; a bed does\./.test(w.out) && /only sleep takes the level/.test(w.out), w);

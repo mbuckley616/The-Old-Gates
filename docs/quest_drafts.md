@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 21, 18 Oct: no new calls)
+Calls read to: 2026-10-16T17:51:09.360Z (run 22, 19 Oct: no new calls)
 
 ---
 
@@ -503,7 +503,7 @@ The Compact's ninth *after* line (grep `Cold-eyes always find their own`) reads:
 
 ## The Spire Held — a night on the roof at Caer Slige
 
-*Approved by Michael, 14 Oct 2026.* *Waits on the systems builder's night watch on the spire's roof (backlog A, 18 Oct); the words are built once it lands.* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
+*Approved by Michael, 14 Oct 2026.* *The rule is on main (the systems builder's night watch, Session 1112, with §4's narration word for word); the topics, the night sergeant and Rowe are built once FREEZE #441 lifts.* *Drafted 1 Oct 2026. Backlog A, the faction line's last owed item: "the spire to hold after the League's finale". The League's ninth service now ends with the Captain of Caer Slige saying "the spire's yours to hold. Something up there pays my sergeants in light", and Rowe, spared, saying "You hold it, and I'll watch what comes down off it at night." Nothing in the game yet lets the player do either. This draft is what holding it means.*
 
 ### What the canon fixes, and where it is silent
 
@@ -3972,3 +3972,190 @@ Michael's leaning (13 Oct) is that tearing all six deletes every save. §11 says
 - *§6*: never *game*, *save*, *player* or *screen* in anyone's mouth. The ending screen is narration, and it says *world* and *slot* nowhere. *This one is gone* is the nearest it comes.
 - *No chosen one*: the Root asks what is between them. It does not say what the player was for.
 - *Register*: Varek only, in his own voice. The narration is the game's: second person, present tense, what is seen first.
+
+---
+
+## Sea Legends, I — the ships' names, the singing ship, and the tales at the quay
+
+*Unapproved.* *Drafted 19 Oct 2026. Backlog L, Sea legends (OG-049): "named ships, a ghost ship heard singing in fog (rare and eerie, not grim), the Whispering Deep, the Veiled Isles, wrecks to dive (the Sunken Library); figureheads, charts and instruments as rewards." This first run covers the named ships, the singing ship and its chart, and the three tales told at the quay. The Sunken Library, the figureheads and the instruments are a second run.*
+
+### What the canon fixes, and where it is silent
+
+- *Three islands, three nations* (§1). The sea between them is *a road, not a wall* for Aurenne, *known for ships that come back* (§1.3). The Mark's free captains prey on Crown and Compact shipping, and *every hull that passes is tithed* by the Compact (§1.3, §1.4).
+- *The dead persist as drift*, and the sigils, *carved over a grave*, are where they are burned out so the loom can hold the living. *Undead are the uncleared* (§3.1). Áine: *we pay rent to the sea by losing one of ours every winter*. A crew drowned at sea never reaches a gate. The canon does not say what becomes of them, and this draft does not say either. The Old Blood's name for the singing crew, *the graveless*, is as near as anyone comes, and it is exact without explaining.
+- *An Mhuir, the Sea*: tides, ships, whales; *the sea owns them twice a day* is scripture (§4.1). The Drowned Bell is hers (*The Makers' Things*, approved and built).
+- §10a: the surface is high fantasy, *wonder, colour and adventure*, and locals treat the strange as ordinary. So the singing ship is a story every harbour tells with a straight face, and when the player meets her she is sad and a little funny, not frightening.
+- *Silent:* any island beyond the three. The Veiled Isles stay a tale here, islands seen in fog and never landed on. Adding land would be Michael's call, so this draft adds none. The Whispering Deep is a tale too, and every people puts it off someone else's coast. Naming a real place for either is left for the second run, with the Sunken Library.
+- *Silent:* ships' names. The code has one list of ten (`SHIP_NAMES`, `84-world-interiors.js`), all in the Markish register, and it includes *Kestrel*, which is Oswy Blackhand's ship (`story:oswy`). A player can buy a ship with the villain's courier's name. §1 below fixes that.
+
+### The shape
+
+No quest is given. The pieces can be found in any order, and nothing is lost by missing them.
+
+1. **Ships have names.** A ship you buy is named by the yard that built her, in its nation's register. A merchantman you pass at sea has a name too, and the prompt says it.
+2. **The singing ship.** Rarely, in fog, far out at sea, you hear a crew singing, and then you see her: a grey ship whose sails are full on the wrong side of the wind. You can follow her, but you never reach her. When the fog thins she is gone, and the first time you see her, she leaves a chart case floating on the water.
+3. **The chart and the wreck.** The chart has no coast on it, only soundings closing on one mark. The mark is a wreck on the sea bed, already in the world. Her sea chest holds the last pages of the ship's log.
+4. **The log.** Any harbourmaster will take it. An Aurennais harbourmaster closes a ledger the Compact has kept open for ninety-one years and pays the finder's fee under the old terms. The others send it east and take a third for the trouble.
+5. **The tales.** At every harbour, and from the innkeeper of any port, *Any tales of the sea?* gives one of three legends in the speaker's own voice: the singing ship, the Whispering Deep, or the Veiled Isles.
+
+**What it changes.** Nothing in the world's shape. One ledger closes. Afterwards the Aurennais harbourmasters tell the singing ship's tale differently, and she still sings.
+
+**Reward.** The finder's fee: 180 gold from an Aurennais harbourmaster, 120 from any other. The chart and the log can be kept, read, or sold for nothing. No stat, no boon.
+
+### 1. Ships' names
+
+**The player's ship** takes her name from the yard's nation (`nationKeyOf` at the port where she is bought, or the Compact's port for `grantShip`), rolled from a stream keyed by the port's id. Today the name comes from `Math.random`; a name is saved, so under the co-op rules it is rolled from a seeded stream. The Compact's grant takes the Aurenne bank.
+
+| The Gatelands | The Mark | Aurenne |
+|---|---|---|
+| Faoileán *(the gull)* | Grey Gull | Mercy |
+| Réalt na Maidine *(the morning star)* | Salt Heron | Good Account |
+| An Bhó Rua *(the red cow)* | Marrow | Constancy |
+| Cara *(friend)* | Ember Wake | Thalassa |
+| Fáinne Geal *(the bright ring, the dawn)* | Lantern | Berenike |
+| Siúlóir *(walker)* | Cormorant | Second Tithe |
+| Cuach *(the cuckoo)* | Old Ram | Witnessed |
+| An Tobar *(the well)* | Wandering Oar | The Prior's Leave |
+| | Bad Penny | |
+| | Short Answer | |
+
+- The Mark's list is the code's own, less *Kestrel* (Oswy's) and *Mercy* (which goes to Aurenne: Markmen scorn the priests who would have named her). *Bad Penny* and *Short Answer* are new.
+- The Gatelands name their boats as they name their children, in the old tongue. *An Bhó Rua* is a joke the Gatelands enjoy: a horse-and-cattle people naming a ship for the thing they know best.
+- Aurenne names its hulls for virtues and the terms of a contract, and sometimes for the house's daughters (*Thalassa* and *Berenike* are in the Aurennais Register's bank). *Witnessed* is the Compact's highest praise. *Safe Return* is never rolled (§3).
+- A ship already saved keeps her name. A saved ship named *Kestrel* keeps it as well; it is the player's, and nobody remarks on it.
+
+**Merchantmen at sea** (`spawnOtherShip`, kind `'merchant'`) take a name from the bank of the nation whose waters they are in, rolled from their own id's stream, so the prompt reads *Press 'E' to climb aboard the Good Account*, not *a merchantman*. In the log and in lines they are *the {name}*. The black-sailed ships keep *a black-sailed ship*: the free captains paint their names out. Oswy's *Kestrel* is unchanged.
+
+### 2. The singing ship
+
+**When.** At sea in fog (`WX.type==='fog'`), on deep water (`worldH` below −20), at least 900 from any site. Once in a fog spell at most, and never twice in a game day: the roll is `seededRng('singer', <cell>:<game day>)`, one in four. Fog at sea is rarer than fog ashore (`weatherWeights`), so most players meet her two or three times in a long game, and some never do.
+
+**What you see and hear.** She stands 150–200 off the bow, a cog of the merchantman's lines with grey canvas and no lamp lit. She keeps that distance at the player's speed. A crew's voices come from her, a hauling song, quiet, in the common tongue. Nobody is on her deck. Narration, in the log and on screen, in the game's own voice (second person, what is seen first):
+
+- On the first sound: *Somewhere in the fog, a crew is singing.*
+- When she shows: *A ship stands off your bow in the fog. Her sails are full on the wrong side of the wind.*
+- With the Drowned Bell aboard, once: *The bell in your hold rings once, though the sea is flat.*
+- At 100 or closer: *You can make out the words now.* Then the verse, line by line in the log (below).
+- At 60 or closer, or when the fog thins: *The fog closes, and opens, and she is not there.*
+- The first time only, when she has gone: *Where she was, something is floating.* A chart case lies on the water there for the player to take (*Press 'E' to take the chart case*). On taking it: *A chart case, sealed with wax. It is dry inside.*
+
+**The verse.** One verse a meeting, the first, then the second, then the first again.
+
+> *Haul, and the harbour light is lit,*
+> *haul, and the book is open;*
+> *we're owed at the quay and we're owed at home,*
+> *and the sea has kept us waiting.*
+
+> *Haul, for the tithe is paid ahead,*
+> *haul, for the hold is dry;*
+> *there's a name in the book by the harbour door,*
+> *and nobody's crossed it off.*
+
+The song is a pump-and-capstan song of the Compact's crews, the kind of thing the log (§3) says they sang at the pumps. It is not a hymn or an oath, and it does not mention a god. It is wistful and a little proud. The crew think they are on their way in.
+
+**She cannot be boarded, struck or caught.** Arrows and spells pass through the grey canvas without a sound (no hit, no `volley`). The prompt never offers *climb aboard*. Sailing at her closes the gap to 60, and then she is gone.
+
+### 3. The chart and the wreck
+
+**The Singer's Chart** (an item, `type:'misc'`, `story:'singer_chart'`, weight .2, sells for nothing). Read in the bag:
+
+> A sea chart drawn in a careful hand. There is no coast on it. There are soundings, hundreds of them, in fathoms, closing in from every side on one mark. Some of the ink is fresh.
+>
+> In the corner, in the Compact's form: *The Safe Return, out of {port}. Master: Hanno. Tithed at the light.*
+
+`{port}` is the Aurennais port nearest to the wreck. While the chart is in the bag and the log not yet taken, the map and the compass star the wreck as *The Safe Return*.
+
+**The wreck** is one already in the world: the nearest wreck to where the ship vanished. A chunk holds a wreck when `hash01(cx,cz,150)<=.06` and its depth sample finds water between −2.5 and −8 (`spawnWreck`), so it can be found by scanning chunks outward, without loading them. Its id is the wreck's own (`wreck:<cx,cz>`). Its chest holds what it always held, with the log added once:
+
+**The Safe Return's log** (`type:'book'`, a lore book like the sigil treatises, `attr:null`, `story:'safe_log'`). Its title, *The Safe Return — the last pages*. Its text is in the Aurennais institutional register: formal and exact, and it swears no oath.
+
+> *The fourth day out of {port}. Wind fair, north-east. Hold: salt, glass in straw, forty bales of dyed cloth, entered and tithed at the light. Crew of eleven, all well.*
+>
+> *The fifth day. Wind failing. Sounded at the second bell and found the bottom where the chart has it.*
+>
+> *The sixth day. Fog. We stand off and sound, as the terms require, and do not close a coast blind. The men sing at the pumps, which is not required, and which I permit.*
+>
+> *The seventh day. Fog. The soundings do not agree with the chart. I have redrawn them.*
+>
+> *The eighth day. Fog. I have redrawn them again. The men ask me how far we are from {port}. I tell them the truth, which is that we are expected.*
+>
+> *The ninth day. Fog. We are expected.*
+
+The rest of the pages are blank. Nothing in the log says what happened, and nobody in the game ever says it.
+
+### 4. The log, at the harbour
+
+A topic on every harbourmaster while the log is in the bag: ***The Safe Return's log.*** (`quest:true`). Each answer is the speaker's people's (`peopleOfNpc`). The fee is paid, the log is taken out of the bag, and the world's ledger closes.
+
+**Aurennais:**
+> "Forgive me, Master — may I? … Yes. The *Safe Return*, out of {port}. She has been carried in the Compact's books as expected for ninety-one years. The tithe on her cargo is still accruing; I believe it is the largest sum the light is owed. With your leave, I shall enter her now. The Compact pays a finder's fee on an entered hull, under the old terms, and the terms are generous, because they are so seldom met."
+
+**Gatelander:**
+> "A log off a hull nobody's found in ninety years. The sea gives back what it's done with, they say, and never a day before. That's an Aurennais hand, and they'll want it more than we do, and pay for the wanting. Leave it with me and it goes east on the next boat. Here's your share of the fee, and I've kept a third for the sending. By the Weaver, I'd not have gone down for it myself."
+
+**Markman:**
+> "The tithe-men's ghost. Aye, I know the name. Every crew does. You went down for her? Iron and blood. The ledgers will want this, and they'll pay for it, and count the coins twice while they do. I'll see it goes. Here's yours. I kept a third. Sending costs."
+
+**Old Blood:**
+> "*An lucht gan uaigh.* The graveless. We had a name for that crew before they had a ship. It will go east. Here."
+
+Log, every people: *Handed the Safe Return's log to the harbourmaster at {site}. {fee} gold.*
+
+**Afterwards**, an Aurennais harbourmaster's *Any tales of the sea?* gives this in place of the singing ship's tale:
+> "The *Safe Return* is entered, Master; I saw the line drawn myself. I am told she still sings. The ledger is satisfied. It seems the sea keeps books of its own."
+
+And the singing ship still comes in fog, with the same two verses. Finding her log closes the Compact's ledger, and the crew sing on.
+
+### 5. *Any tales of the sea?*
+
+A topic on every harbourmaster, and on the innkeeper of any port (`site.kind==='port'`). The tale is one of three, picked by the site's id, so a harbour always tells the same one and the player has to go about to hear all three. The speaker's people decides the voice (`peopleOfNpc`).
+
+**The singing ship**
+
+- *Gatelander:* "There's a ship sings in the fog, out past where the gulls turn back. Grey canvas, full on the wrong side of the wind. If you hear her, my grandfather said, give her a verse back and she'll give you the road home. He never heard her himself. He said that was the proof of it."
+- *Markman:* "The Choir. Aye. Grey ship, sings in fog. Don't answer her. Old Wulf answered her once off the strait and sang every watch for a year after. Couldn't stop. Good voice, mind. Better than before."
+- *Aurennais:* "There is a vessel, Master, that is heard in fog and not otherwise met. The Compact's harbours carry her as expected. It would be discourteous to strike her from the books while she is still, so to speak, under way. The crews call her the *Safe Return*. That was her name. One assumes it still is."
+- *Old Blood:* "*An lucht gan uaigh.* The graveless. They sing because nobody buried them."
+
+**The Whispering Deep**
+
+- *Gatelander:* "Off the Mark there's deep water that talks. Lie on the deck on a flat night and you'll hear it under the boards, like a house full of people in the next room. The Markmen will tell you it's off our coast. It's off theirs. Water that talks never tells you where it is."
+- *Markman:* "Deep water that whispers. Off Aurenne, they say. Tithe-men's water. Wouldn't fish it. The fish there know too much."
+- *Aurennais:* "The Whispering Deep is said to lie off the Gatelands, Master, where the water goes down past any line we carry. I have not sounded it myself. I am told the voices are courteous, which is more than one may say of the Gatelands' harbours."
+- *Old Blood:* "*An Duibheagán Cainte.* The deep that speaks. Do not answer. It is not speaking to you."
+
+**The Veiled Isles**
+
+- *Gatelander:* "The Veiled Isles? You'll see them in a fog, three of them, green to the water's edge, with smoke going up from a chimney. You'll not see them twice. The Aurennais have them on their charts as a question, and I'd call that the most honest line on any chart they ever drew."
+- *Markman:* "Islands in the fog. Never the same ones. Every captain's seen them. No captain's landed. Iron and blood, I'd land. Nobody's asked me."
+- *Aurennais:* "Our charts mark the Veiled Isles as *unconfirmed*, Master, which is a term of art. Twice the Compact has sent a factor out to tithe them. Twice the factor has come back with an excellent account of the fog."
+- *Old Blood:* "*Na hOileáin faoi Cheo.* The islands under fog. They are there when it is."
+
+Each people's jab at another is about work and harbours (the Aurennais on the Gatelands' harbours, the Markman's *tithe-men*), and §2.1 already gives the other side of each: *Their ships come back. Ours don't.* — *Their steel's better than ours and they know it.* — *Nobody keeps a field or a promise like a Gatelander.* The Gatelander's *the most honest line on any chart they ever drew* is a back-handed compliment, and the Aurennais would take it as one.
+
+### What in the code would carry it
+
+- **The names** (`84-world-interiors.js`): `SHIP_NAMES` becomes `SHIP_NAMES_BY={gatelands:[…],mark:[…],aurenne:[…]}` (§1). `SHIP_NAMES` is read in one place, `spawnShip` (`85-world-sea.js`), and only when no name is saved. `buyShip(site)` and `grantShip(seat)` pass the port to it, and the name is `pick(seededRng('shipname',port.id),SHIP_NAMES_BY[nationKeyOf(...cellOf(port.x,port.z))])`. In `spawnOtherShip`, a merchant's `name` is `'the '+pick(o.rng,SHIP_NAMES_BY[nationKeyOf(...cellOf(x,z))])`. The stream is the ship's own, already seeded by its id. **Buildable now**, on the machinery the game has, with a suite: a ship bought at a Markish port, at an Aurennais port and at a Gatelands port takes a name from that bank, the same port gives the same name on a second run, *Kestrel* is in no bank, and a merchantman's climb prompt names her.
+- **The tales** (`84-world-interiors.js`, the harbourmaster's `makeDef` topics; the port innkeeper's topics in `83-world-generator.js`): one topic, `{label:'Any tales of the sea?',response:()=>seaTale(site,people)}`, with `SEA_TALES={singer:{gatelander,markman,aurennais,oldblood},deep:{…},isles:{…}}` and the entered line, in `87-world-quests.js` beside the other quest hooks. The pick is `['singer','deep','isles'][cellHash-of-site.id % 3]`. **Buildable now** too, with a suite: every harbourmaster has the topic, its answer is that site's tale in the speaker's people's voice, and it is the same on a reload.
+- **The singing ship** (systems, look, and the sound; filed in backlog A under this draft's name):
+  - *Systems*, `85-world-sea.js`: a tick beside `tickOtherShips` that rolls the meeting (§2's rule and stream), keeps her 150–200 ahead, never offers the climb prompt or takes a hit, drops her at 60 or when the fog thins, and on the first meeting floats the chart case. The record is `worldState.seaTales={verse:n, chart:'<cx,cz>', log:1}` (the character's: it is what you have seen and carry; in `SS_CHAR_WS` and the S242 list), and the ledger, `worldState.safeReturn={entered:'<site id>', day}`, is the world's (the S242 list only). The wreck is found by scanning chunks outward from where she vanished with `spawnWreck`'s own test, without loading them. `spawnWreck` adds the log to that wreck's chest when `seaTales.chart` names it and `seaTales.log` is unset. Taking the log sets `seaTales.log` through one named action, `takeSafeLog()`; the turn-in is `enterSafeReturn(site)`. Both are co-op rule actions, and every roll is seeded.
+  - *Look*: a pale look for the cog, `buildShipMesh(cls.L,cls.W,'singer')`: grey canvas bellied against `windDir()` (`shipTrim` with the sign flipped), no lamps, an empty deck; in fog only, so no far copy is wanted.
+  - *Sound*: a crew's hauling song, voices without words that can be made out, under the fog's own sound, fading in at 250 and out at 60. The verse is given as text in the log, so the sound never has to carry words.
+- **The words** (the quest writer, once the systems land): the narration lines (§2), the verses, the chart's and the log's text (§3) in `BOOKS` with `attr:null`, the turn-in topic and its four answers (§4), all in a `SINGER_LINES` table in `87-world-quests.js`.
+- **A test** for the encounter: with fog forced (`devWeather('fog')`) on deep water and the stream's roll forced, she appears 150–200 ahead and holds it for 600 ticks at full sail. An arrow at her hits nothing. At 60 she is gone, and the chart case floats. Taken, the chart stars one wreck, and that wreck's chest holds the log. The log given to an Aurennais harbourmaster pays 180 and sets `safeReturn.entered`, and the next Aurennais tale is the entered line. Both keys survive a save and a load, in their own rows.
+
+### Checked against the canon
+
+- *§3.1*: the drowned crew are not said to be anything. *The graveless* is the Old Blood's older name for them, true and exact, and it points at the graves the sigils are carved over without saying why that matters. The player who has read *The Words on the Stones* may make the connection.
+- *§2, the register*: Gatelanders in proverbs and indirection (*the sea gives back what it's done with*, *he said that was the proof of it*), never a bare yes or no, the oath on the Weaver. Markmen short, *aye*, a nickname (*Old Wulf*, *the Choir*), the oath on iron and blood, no honorific. The Aurennais formal, *Master*, qualified, in contracts and ledgers (*entered*, *under the old terms*, *a term of art*), and never an oath. The Old Blood sparing, answering with the older name for the thing.
+- *§2.1*: each people's jab is about work and harbours, never bodies, and each is answered elsewhere by a named person or in §2.1 itself.
+- *§1.3*: *known for ships that come back*. The singing ship is the one Aurennais ship that didn't, and her own harbours still carry her as expected. The Compact's tithe on the dead ship is still accruing.
+- *§10a*: a pleasant surface with a dry turn. The crew think they are on their way in, the Veiled Isles have been tithed twice, and the fish in the Whispering Deep know too much. The eerie part is the ship's sails on the wrong side of the wind and the soundings on the chart in fresh ink. No death is shown or described.
+- *No chosen one*: the ship does not seek the player out, and she would have sung to anyone in the fog.
+- *Silent, chosen plainly*: no new island and no named deep (§*What the canon fixes*). The Whispering Deep and the Veiled Isles stay tales, and the Sunken Library waits for the second run.
+- *Names*: no Ald-; *Hanno* is the Aurennais bank's own; *Wulf* is the Mark's Anglo register; the Irish is checked (*faoileán*, *réalt na maidine*, *an bhó rua*, *fáinne geal*, *siúlóir*, *cuach*, *an tobar*, *an lucht gan uaigh*, *an duibheagán cainte*, *na hoileáin faoi cheo*).
+
+### Owed, and not drafted here
+
+- *Sea Legends, II*: the Sunken Library, a diveable wreck with rooms (look builder), and what is read there; the Whispering Deep given a place, if it earns one; figureheads, charts and instruments as rewards (with backlog L's *Making a ship yours*).
+- The ferry crossings' small talk at sea, and named ferries.
