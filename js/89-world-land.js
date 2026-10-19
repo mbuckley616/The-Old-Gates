@@ -172,14 +172,57 @@ function landPost(scene){
   const keep={tm:0,ex:1};
   scene.onBeforeRender=r=>{keep.tm=r.toneMapping;keep.ex=r.toneMappingExposure;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=LAND.exposure;};
   scene.onAfterRender=r=>{r.toneMapping=keep.tm;r.toneMappingExposure=keep.ex;};
+  if(!LAND.rawRender){const raw=REN.render.bind(REN);LAND.rawRender=raw;REN.render=(sc2,cam)=>landRender(raw,sc2,cam);} // S1183: bloom wraps the world's frame
+}
+// ── bloom (Session 1183): the world's frame through a render target, as the slice's composer does it ────────────────
+// At Middle and High the world renders into a half-float target, its own lights unclamped (three tone-maps nothing drawn
+// into a target), then a bright pass and a two-way blur at a quarter of the size, then one quad to the screen that adds the
+// glow, tone-maps with ACES and grades (the same chunk the materials use) and darkens the frame's edge a little, as the slice's
+// grade did. Five full-screen quads, no change to the scene. Every other scene, a target someone else set, and Low take the
+// direct path. REN.info counts the whole frame, so the draw-call budget reads the same.
+const LAND_BLOOM={rt:null,a:null,b:null,qs:null,cam:null,quad:null,mBright:null,mBlur:null,mComp:null,size:new THREE.Vector2(),frames:0};
+function landBloomSetup(){
+  const B=LAND_BLOOM;if(B.qs)return;
+  const vs='varying vec2 vUv;\nvoid main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
+  B.mBright=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,toneMapped:false,uniforms:{tDiffuse:{value:null},uT:{value:.85}},vertexShader:vs,
+    fragmentShader:'uniform sampler2D tDiffuse; uniform float uT; varying vec2 vUv;\nvoid main(){ vec3 c = texture2D(tDiffuse, vUv).rgb; float l = dot(c, vec3(.2126, .7152, .0722));\n  gl_FragColor = vec4(c * smoothstep(uT, uT + .5, l), 1.); }'});
+  B.mBlur=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,toneMapped:false,uniforms:{tDiffuse:{value:null},uDir:{value:new THREE.Vector2()}},vertexShader:vs,
+    fragmentShader:'uniform sampler2D tDiffuse; uniform vec2 uDir; varying vec2 vUv;\nvoid main(){ vec3 c = texture2D(tDiffuse, vUv).rgb * .227;\n  c += (texture2D(tDiffuse, vUv + uDir * 1.385).rgb + texture2D(tDiffuse, vUv - uDir * 1.385).rgb) * .316;\n  c += (texture2D(tDiffuse, vUv + uDir * 3.231).rgb + texture2D(tDiffuse, vUv - uDir * 3.231).rgb) * .07;\n  gl_FragColor = vec4(c, 1.); }'});
+  B.mComp=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms:{tScene:{value:null},tBloom:{value:null},uK:{value:.22},uVig:{value:.3}},vertexShader:vs,
+    fragmentShader:'uniform sampler2D tScene, tBloom; uniform float uK, uVig; varying vec2 vUv;\nvoid main(){ vec3 c = texture2D(tScene, vUv).rgb + texture2D(tBloom, vUv).rgb * uK;\n  vec2 q = vUv - .5; c *= 1. - uVig * dot(q, q) * 2.;\n  gl_FragColor = vec4(c, 1.);\n  #include <tonemapping_fragment>\n}'});
+  B.quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),B.mBright);B.quad.frustumCulled=false;B.qs=new THREE.Scene();B.qs.add(B.quad);B.cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+}
+function landBloomTargets(w,h){
+  const B=LAND_BLOOM;if(B.rt&&B.size.x===w&&B.size.y===h)return;B.size.set(w,h);
+  for(const k of ['rt','a','b'])if(B[k])B[k].dispose();
+  const o={type:THREE.HalfFloatType,depthBuffer:false};
+  B.rt=new THREE.WebGLRenderTarget(w,h,{type:THREE.HalfFloatType,samples:4});
+  const qw=Math.max(1,w>>2),qh=Math.max(1,h>>2);B.a=new THREE.WebGLRenderTarget(qw,qh,o);B.b=new THREE.WebGLRenderTarget(qw,qh,o);
+}
+function landRender(raw,s,c){
+  if(!LAND.on||s!==sc||!landQ().bloom||REN.getRenderTarget()!==null)return raw(s,c);
+  const B=LAND_BLOOM;landBloomSetup();const sz=_lC.v2||(_lC.v2=new THREE.Vector2());REN.getDrawingBufferSize(sz);landBloomTargets(sz.x,sz.y);
+  const info=REN.info,ar=info.autoReset;if(ar)info.reset();info.autoReset=false;
+  const pass=(m,to)=>{B.quad.material=m;REN.setRenderTarget(to);raw(B.qs,B.cam);};
+  try{
+    REN.setRenderTarget(B.rt);raw(s,c);
+    B.mBright.uniforms.tDiffuse.value=B.rt.texture;pass(B.mBright,B.a);
+    const qx=1/B.a.width,qy=1/B.a.height;
+    for(let i=0;i<2;i++){B.mBlur.uniforms.tDiffuse.value=B.a.texture;B.mBlur.uniforms.uDir.value.set(qx*(1+i),0);pass(B.mBlur,B.b);
+      B.mBlur.uniforms.tDiffuse.value=B.b.texture;B.mBlur.uniforms.uDir.value.set(0,qy*(1+i));pass(B.mBlur,B.a);}
+    const tm=REN.toneMapping,ex=REN.toneMappingExposure;REN.toneMapping=THREE.ACESFilmicToneMapping;REN.toneMappingExposure=LAND.exposure;
+    B.mComp.uniforms.tScene.value=B.rt.texture;B.mComp.uniforms.tBloom.value=B.a.texture;
+    try{pass(B.mComp,null);}finally{REN.toneMapping=tm;REN.toneMappingExposure=ex;}
+    B.frames++;
+  }finally{REN.setRenderTarget(null);info.autoReset=ar;}
 }
 // ── the quality levels: what each spends (item 6 of the card) ──────────────────────────────────────────────────────
 // Kept with the other settings in this browser (SETTINGS.quality, 0 low, 1 middle, 2 high); the middle level is the budget's
 // (v2-scope.md §5). Grass: blades a chunk and how many chunks out from the player's own; flowers are a share of the blades.
 const LAND_Q=[
-  {name:'Low',grass:0,ring:0,flowers:0,shadow:1024,clouds:0},
-  {name:'Middle',grass:6000,ring:1,flowers:.04,shadow:2048,clouds:14},
-  {name:'High',grass:12000,ring:1,flowers:.05,shadow:4096,clouds:30}];
+  {name:'Low',grass:0,ring:0,flowers:0,shadow:1024,clouds:0,bloom:0},
+  {name:'Middle',grass:6000,ring:1,flowers:.04,shadow:2048,clouds:14,bloom:1},
+  {name:'High',grass:12000,ring:1,flowers:.05,shadow:4096,clouds:30,bloom:1}];
 function landQ(){const q=(typeof SETTINGS!=='undefined'&&SETTINGS.quality!=null)?SETTINGS.quality:1;return LAND_Q[Math.max(0,Math.min(2,q|0))];}
 // ── grass and wildflowers: instanced blades near the player, on one wind ────────────────────────────────────────────
 // A chunk within the quality level's ring of the player's own gets its grass, built a chunk a frame and dropped when it leaves

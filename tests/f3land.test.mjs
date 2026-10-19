@@ -1,4 +1,4 @@
-// Card F3, the land in the new look (Sessions 1180–1182, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
+// Card F3, the land in the new look (Sessions 1180–1183, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
 // shaded by the land's own material, which paints fields, hedgerows, rock and the woods from afar over groundColor's vertex
 // colour; every chunk carries a per-vertex mask that keeps the fields off roads and out of site stamps; the sky is a gradient
 // dome that follows the clock; the world's frame is tone-mapped (ACES) and graded, and rooms are not. The console stays clean
@@ -54,7 +54,8 @@ const grass = () => page.evaluate(() => { const cx = Math.floor(px / CHUNK), cz 
     blades += G.grass.count; most = Math.max(most, G.grass.count); flowers += G.flowers ? G.flowers.count : 0;
     for (let i = 0; i < G.grass.count; i += 13) { G.grass.getMatrixAt(i, M); v.setFromMatrixPosition(M); const x = v.x + ch.cx * CHUNK, z = v.z + ch.cz * CHUNK; checked++;
       const ri = roadInfo(x, z); if ((ri && ri.d < ROAD_HALF) || stampAt(x, z) || v.y < SEA_Y) bad++; } }
-  return { level: Q.name, cap: Q.grass, chunksG, ringN, blades, most, flowers, bad, checked, shadow: sun.shadow.mapSize.x, puffs: LAND.clouds ? LAND.clouds.count : 0, cloudMeshes: LAND.clouds ? 1 : 0,
+  const f0 = LAND_BLOOM.frames; REN.render(scene, CAM); const bloom = LAND_BLOOM.frames - f0, calls = REN.info.render.calls;
+  return { level: Q.name, cap: Q.grass, chunksG, ringN, blades, most, flowers, bad, checked, shadow: sun.shadow.mapSize.x, puffs: LAND.clouds ? LAND.clouds.count : 0, cloudMeshes: LAND.clouds ? 1 : 0, bloom, calls,
     row: settingRows().some(r => r.k === 'quality') }; });
 const setQ = q => page.evaluate(q => { const row = settingRows().find(r => r.k === 'quality'); settingSet(row, q); for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now()); }, q);
 const mid = await grass();
@@ -65,6 +66,9 @@ await setQ(2); const hi = await grass();
 await setQ(0); const lo = await grass();
 await setQ(1); const back = await grass();
 check('the three levels change what the land spends: grass, the shadow map and the clouds', lo.blades === 0 && lo.puffs === 0 && lo.shadow === 1024 && mid.shadow === 2048 && hi.shadow === 4096 && hi.blades > mid.blades * 1.5 && hi.puffs > mid.puffs, { lo, mid, hi });
+// Session 1183: bloom, the world's frame through a render target at Middle and High (a bright pass, the blur, the composite with
+// ACES, the grade and the vignette), the direct path at Low; REN.info still counts the whole frame
+check('bloom runs at Middle and High, not at Low, and the frame\'s draw calls are still counted whole', mid.bloom === 1 && hi.bloom === 1 && lo.bloom === 0 && mid.calls > 50, { lo: [lo.bloom, lo.calls], mid: [mid.bloom, mid.calls], hi: [hi.bloom, hi.calls] });
 check('back at the middle level, the same grass grows again (a chunk\'s blades come from a stream seeded by the chunk)', back.blades === mid.blades && back.flowers === mid.flowers, { mid: mid.blades, back: back.blades });
 
 // Session 1182: trees from leaf cards. The scatter decides every tree as before and the new look only draws it: build each loaded
