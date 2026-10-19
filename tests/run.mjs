@@ -88,6 +88,11 @@ const SECS = { aimbubble: 88, aircap: 65, airdash: 86, airstep: 98, aldwynword: 
  wildseed: 51, windows: 50, witness: 100, witnessrange: 57, wokennight: 88, wolfcloak: 93, wolves: 73, woodenkit: 35,
  worldjournal: 64, worldloot: 47, worldtarget: 79, wraithfloat: 55, wraithhood: 72, wreck: 49, wxplace: 96, wyrm: 60,
  yardpanel: 64, yardplay: 218 };
+// `--changed=BASE` (CI on a pull request, Michael's A on the pipeline, 19 Oct 2026): only the suites the change since BASE can
+// reach, by tests/lib/select.mjs; main and a plain run take every suite.
+const changedArg = args.find(a => a.startsWith('--changed='));
+if (changedArg && !only) { const { selectSuites } = await import('./lib/select.mjs'); const sel = selectSuites({ base: changedArg.slice(10) });
+  console.log(`selection: ${sel.mode}, ${sel.reason}`); if (sel.mode !== 'full') { const keep = new Set(sel.suites.map(s => s + '.test.mjs')); files = files.filter(f => keep.has(f)); } }
 if (shardArg) { const [k, n] = shardArg.slice(8).split('/').map(Number); const load = Array(n).fill(0), mine = new Set();
   const w = f => SECS[f.replace('.test.mjs', '')] || 60;
   [...files].sort((a, b) => w(b) - w(a) || a.localeCompare(b)).forEach(f => { const j = load.indexOf(Math.min(...load)); load[j] += w(f); if (j === k - 1) mine.add(f); });
