@@ -3,44 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
-**Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
-
-The prototype (`docs/prototypes/levelup/shrines.html`, three.js 0.170) builds the niche in metres:
-- **The niche:** a stele 1.0 m wide and 2.55 m to the top of its arch, the recess 0.62 m wide with its sill at 1.03 m, and a figure 0.95 m tall. The god's name is cut under the sill, its icon is in a roundel over the arch, and a stoup stands before it with its rim at 0.68 m.
-- **The Gatelands:** limewashed, with rags on the niches and on a thorn, a holy well, a ring-headed high cross and a holed ring-stone.
-- **The Mark:** dark granite, each niche under its own shingled housing with crossed bargeboards ending in beast heads. An iron lamp that is never let out hangs under each, and an oath stone with an iron ring stands before them.
-- **Aurenne:** plastered, with a blue-glazed cupola and glazed tile in the recess. The icons are gilt, behind iron railings with a gate, with the Church's tithe box and its notice (*no rubbings to be taken*).
-- **The Guest's niche:** struck back to rough stone on two islands. In Aurenne it is bricked up and plastered over, as the Church bricked the Guest's chapel (canon §4.2).
-
-A row of seven costs 21,800 (the Mark) to 32,600 (the Gatelands, with its well and thorn) triangles in 25 to 34 draws. One niche with its figure is about 2,500 to 3,000.
-
-Where should the six stand together?
-
-- **A. One god to a shrine, as today.** Every wayside shrine is one god's niche in its island's dress, with the Guest's struck recess, the size of a hand, low on its plinth. The row of six is not built.
-- **B. The six together, everywhere.** Every shrine is OG-113's row of seven. You choose the god at the basin, one prayer a day at that shrine, as now.
-- **C. By place** *(recommended)*. A wayside shrine on a road is one god's niche (A). The row of seven stands once in each town, at its edge or where its roads meet, and there you choose the god.
-
-Recommendation: **C.** The Guest's absence reads only in a row. Among six full niches an empty seventh is plainly missing, but beside one god an empty recess reads as damage. The town's row puts every god within reach of home without a temple. The wayside niches keep a reason to travel for one god's boon and its own day (S497's god's day). The boons, the once a day and the Weaver's rubbing are unchanged; only which god you ask at a town's row is new. If a dressing looks wrong (the Mark's beast heads, Aurenne's railings, the Gatelands' high cross), say which. That is a note, not a reason for A or B.
-
-Pictures:
-- [The Gatelands, the row](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-gatelands.jpg)
-- [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-mark.jpg)
-- [The Mark at dusk, the lamps lit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-mark-dusk.jpg)
-- [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-aurenne.jpg)
-- [The figures, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-figures.jpg)
-- [The Guest's niche on each island](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-guest.jpg)
-- [The row from 30 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-far.jpg)
-- [One god's wayside shrine, three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside.jpg)
-- [In scale beside a person and the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside-scale.jpg)
-
-### The wolf's snap and the troll's stamp: when does the second blow of a two-hit string come? (systems builder, Session 1140) — DECISION #438
-Combat B's move sets (`docs/design/combat.md`) give every family a third move. Session 1140 built the bandit's feint, the page's delayed swing, under your A on #430: one wind-up in four, with the pose held 0.3 s at its top. Two moves are left: the wolf's *lunge and snap* and the troll's *sweep and stamp*. Both are the page's two-hit string. The wolf's lunge already exists (it leaps up to 1.5 m at the bite, S1041). The page does not say when the second blow comes or what it covers, and a player would feel both. Today a roll is untouchable from 0.08 to 0.30 s.
-
-- **A. The second blow 0.45 s after the first, with its own gold glow in its last 0.15 s** *(recommended)*. 0.45 s is the shortest tell any foe has (TELL_MIN), so the second blow reads as a quick tell of its own. One roll cannot cover both blows: you roll the first and then block or roll the second. Each blow does light damage. The wolf's snap is a second bite at its reach with no second leap. The troll's stamp hits all round it out to 1.6 m, so stepping behind a troll after its sweep does not save you. Like the feint, it comes one wind-up in four.
-- **B. The second blow 0.25 s after the first.** One well-timed roll takes both blows, and a block that is held takes both. The string punishes standing still, not a roll that comes too early.
-- **C. Only the snap and the stamp, with no string.** The wolf's third move is its lunge as it is now, and the troll's is a stamp in place of its sweep one blow in four. This is cheaper, but the page's "two-hit string" is dropped.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -53,6 +15,26 @@ Combat B's move sets (`docs/design/combat.md`) give every family a third move. S
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 ## Answered
+### Unblock Systems: shard 6 hits the hour limit (the producer, 19 Oct 2026)
+On 2b0ee4e (Systems 940–1141 with main merged in), 13 of 15 checks were green; shards 6 and 7 ran every suite they reached without a failed test (guardplay was FLAKY in shard 7 and passed on its retry) and were cancelled at the 60-minute limit, shard 7 during turnin, its last suite. A merge anyway, B re-run shard 6, C wait for QA to rebalance the shards.
+
+Michael: **Merge anyway**. (19 Oct 2026, on the control room) *Producer:* merged PR #353 at 2b0ee4e (main dad5f7c). turnin.test.mjs did not run on this head; the next CI run on main covers it.
+
+### The Gatelanders' tartan: a note on cloaks, wider, by family, or none? (bodies builder, Session 1146) — DECISION #445
+**L1's wardrobe matrix: the Gatelanders' tartan (bodies builder, Session 1146).** OG-111 names "tartans" among the Gatelands' fabrics, and the catalogue calls them "a new note". Nothing in the canon speaks for or against them. The builder can now weave one into a cloak's cloth.
+
+The sett repeats every 16.8 cm. The cloak's own colour is the ground, with two dark bands side by side and a fine overcheck, in a 2/2 twill. It is laid round the wearer from the back's middle, and it covers the cloak, the shoulder cape and the hood, up or down. Nobody is rolled with it yet.
+
+**Where should tartan be worn?**
+- **A. A note, on cloaks** *(recommended)*. About one Gatelander cloak or cape in five is woven in a sett, in the people's colours (moss, madder, brown, muted blue), with two or three setts in all. Everything else stays plain wool, so the tartan stays a note.
+- **B. Wider.** Cloaks, capes and the women's skirts in tartan, about one in three Gatelanders. It becomes part of how the Gatelands look.
+- **C. By family.** One sett for each great house (Caelmont in the Crown's crimson, say), worn only by its people and its retainers. A tartan then says who someone belongs to, and plain is everyone else.
+- **D. None.** The Gatelands keep plain wools; the tartan stays in the kit, unrolled.
+
+Pictures: [the moss cloak from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-back.jpg) · [at full length](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-full.jpg) · [close, the twill](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-close.jpg) · [a madder cape](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-cape.jpg) · [a brown cloak, hood up](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-hood.jpg)
+
+Michael: **A note, on cloaks** — about one Gatelander cloak or cape in five, in moss, madder, brown or muted blue; two or three setts; the rest plain wool. (19 Oct 2026, on the control room)
+
 ### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
 **Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
 
