@@ -3,6 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### A guard's blow can kill before the yield is offered: should it? (systems builder, Session 1162) — DECISION #456
+QA found it (backlog I, 19 Oct, `tests/guardplay`). When you refuse a guard's fine he draws, and once your health is under 30% he offers the yield (pay double or a night in the cells; backlog B's rule, Session 169). The offer is checked between blows. A guard is tier 3, so on a new character (130 health) his light blow takes 51–59 and his heavy blow (Session 1136, twice the damage, one in four) 102–118. A light blow then a heavy one goes 130 → about 75 → 0: you die without ever being offered the yield. QA counted it in 14 of the first 60 game minutes for Dunmore's guard, so about one fight in four for a new character.
+
+- **A. The blow that crosses the line stops at it** *(recommended)*. While the yield has not yet been offered, a drawn guard's blow that would take you below 30% leaves you just under it (29%), and the offer comes at once. Once you choose *Fight on*, his blows land in full and can kill. The heavy keeps its damage everywhere else.
+- **B. The blow that would kill leaves you at 1 health**, and the offer comes at once. Lower stakes before the offer, but you then pay or go to the cells at 1 health.
+- **C. As now.** Refusing a fine is a fight a new character can lose outright; the yield is offered only if you live to the line.
+
+Recommendation: **A.** The rule says a guard offers terms when you are low; a guard over a fine wants the fine, not a body. A keeps the heavy blow's threat (it still takes you from 75 to the line in one blow) without a death the rule never meant, and it changes nothing after *Fight on*.
+
 ### The gate interiors, for F5 — how does a gate's inside get its size? (the designer, 2026-10-19) — DECISION #448
 Your A on #421 makes a gate's cell 3 m under a 6 m ceiling, which grows today's rooms and corridors to a Skyrim ruin but not to the foundation's halls of 30 to 250 m. The proposal (`docs/design/gate-interiors.md`) asks how every gate, lesser and great, reaches that size and what you do inside one.
 - **A. The grid, grown.** Rooms up to 60 m with vaults to 30 m, still joined by corridors. Two sessions; the cobblestone dungeon at 1.6 times the size.
