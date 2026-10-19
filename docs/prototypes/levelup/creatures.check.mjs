@@ -336,6 +336,29 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: no head under its hood, a black hollow on the head bone with ${t.slits.length} slits of light in it, Scáth's violet`, t.hood?.black && t.hood.onHead && t.slits.length === 2 && t.slits.every(e => e.sx > 2 && e.em[2] > e.em[0] && e.em[0] > e.em[1] && e.em[2] > .5) && t.school === 'Scáth' && /OG-018/.test(t.src), t);
     check(`${k}: arms ${t.arm} m long (a man's are about 0.75), reaching ${t.reach} m ahead of its chest standing, ${t.claws} bone claws; nothing else lit (${t.lit})`, t.arm > .9 && t.reach > .4 && t.claws >= 6 && t.lit === 0, t); }
   check(`the wraiths: ${Object.keys(wr).join(', ')}`, Object.keys(wr).length >= 1, Object.keys(wr));
+  // the fire elemental (Session 1185; OG-018's Tine row, the game's since S222, Michael's B on Session 214): no legs, floating clear of the
+  // ground; a crust lit only in its cracks over a column of flame; tongues of flame grown from the body and a crown of them on the head,
+  // licking at rest; arms of flame, lit claws, lit eyes
+  const el = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.ELEMENTALS || []) { const C = K.build(K.genome(k, k + ':check')), g = C.meshes[0].geometry, gl = g.attributes.aGlow, inv = new T.Matrix4(), box = new T.Box3(), P = new T.Vector3(); let low = 1e9, high = -1e9;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); box.setFromObject(C.meshes[0], true); low = Math.min(low, box.min.y - C.root.position.y); high = Math.max(high, box.max.y - C.root.position.y); } }
+      // how far each tongue's tip moves through a still cycle (the stand), and where the crown's tongues are rooted
+      C.gait = 'stand'; const tips = C.B.crests.map(() => []); for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
+        C.B.crests.forEach((Cr, j) => tips[j].push(C.byName[Cr.names[Cr.names.length - 1]].getWorldPosition(new T.Vector3()).applyMatrix4(inv))); }
+      const move = tips.map(t => Math.max(...t.map(a => Math.max(...t.map(b => a.distanceTo(b)))))) .map(v => v * C.S);
+      const crown = C.B.crests.filter(Cr => C.byName[Cr.names[0]].parent === C.byName.head).length;
+      const bi = Object.fromEntries(C.bones.map((b, i) => [b.name, i])), si = g.attributes.skinIndex, arm = new Set(C.B.arms.flatMap(A => A.names.map(n => bi[n]))), tg = new Set(C.B.crests.flatMap(Cr => Cr.names.slice(1).map(n => bi[n])));
+      let core = 0, coreLit = 0, flame = 0, flameLit = 0, armN = 0, armLit = 0; const chest = bi[C.B.spineNames[C.B.spineNames.length - 1]];
+      for (let v = 0; v < gl.count; v++) { const b = si.getX(v), lit = gl.getX(v) > .2; if (b === chest) { core++; if (lit) coreLit++; } if (tg.has(b)) { flame++; if (lit) flameLit++; } if (arm.has(b)) { armN++; if (lit) armLit++; } }
+      let claws = 0, clawLit = 0, eyes = []; C.rig.traverse(o => { if (o.isMesh && o.geometry.type === 'ConeGeometry') { claws++; if (o.material.emissive.r > .5) clawLit++; } if (o.isMesh && o.material?.clearcoat === 1) eyes.push(o.material.emissive.toArray().map(v => +v.toFixed(2))); });
+      out[k] = { legs: C.B.legs.length, low: +low.toFixed(3), h: +high.toFixed(2), tongues: C.B.crests.length, crown, move: move.map(v => +v.toFixed(3)), core: +(coreLit / core).toFixed(3), flame: +(flameLit / flame).toFixed(3), arms: +(armLit / armN).toFixed(3), claws, clawLit, eyes, glow: C.plan.glow.color, school: C.plan.school, src: C.plan.src, tris: C.stats.tris, bones: C.stats.bones }; }
+    return out; });
+  for (const [k, t] of Object.entries(el)) { console.log(k, JSON.stringify(t));
+    check(`${k}: no legs, floating ${t.low} m clear of the ground through its bob, ${t.h} m to the crown's tips (a man's height)`, t.legs === 0 && t.low > .2 && t.h > 1.7 && t.h < 2.2, t);
+    check(`${k}: ${t.tongues} tongues of flame, ${t.crown} of them a crown on the head, every tip licking ${Math.min(...t.move) * 100 | 0} cm or more at rest`, t.tongues >= 10 && t.crown >= 3 && Math.min(...t.move) > .02, t);
+    check(`${k}: the crust lit only in its cracks (${(t.core * 100).toFixed(1)}% of the chest), the tongues past their roots ${(t.flame * 100).toFixed(0)}% and the arms ${(t.arms * 100).toFixed(0)}% flame, Tine's forge-orange`, t.core > .03 && t.core < .35 && t.flame > .8 && t.arms > .8 && t.glow[0] > t.glow[1] * 2 && t.glow[1] > t.glow[2] && t.school === 'Tine' && /OG-018/.test(t.src), t);
+    check(`${k}: ${t.clawLit} of ${t.claws} claws lit, ${t.eyes.length} eyes lit yellow`, t.claws >= 6 && t.clawLit === t.claws && t.eyes.length === 2 && t.eyes.every(e => e[0] > .5 && e[1] > .3 && e[2] < e[1]), t); }
+  check(`the elementals: ${Object.keys(el).join(', ')}`, Object.keys(el).length >= 1, Object.keys(el));
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));

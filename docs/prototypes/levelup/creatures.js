@@ -40,7 +40,8 @@ P.spine = (B, o) => {
   const pts = []; for (let k = 0; k < n; k++) { const t = k / (n - 1), p = hip.clone().lerp(chest, t); p.y += (o.arch || 0) * Math.sin(Math.PI * t); pts.push(p); }
   const names = B.chain('spine', null, pts), R = t => along(o.r, t);
   for (let k = 0; k < n - 1; k++) B.meat(names[k], pts[k], pts[k + 1], R(k / (n - 1)), R((k + 1) / (n - 1)), { s, group: 'spine', tone: o.tone });
-  B.meat(names[0], hip, hip.clone().add(V(0, -(o.rumpDrop || 0), -(o.rump || 0))), r0, r0 * (o.rumpTaper ?? .85), { s, group: 'spine', tone: o.tone });
+  // `rumpTone` (Session 1185): the rump in a tone of its own (the fire elemental's column of flame under its crust)
+  B.meat(names[0], hip, hip.clone().add(V(0, -(o.rumpDrop || 0), -(o.rump || 0))), r0, r0 * (o.rumpTaper ?? .85), { s, group: 'spine', tone: o.rumpTone || o.tone });
   B.meat(names[n - 1], chest, chest.clone().add(V(0, -(o.frontDrop || 0), o.front || 0)), r1, r1 * (o.frontTaper ?? .85), { s, group: 'spine', tone: o.tone });
   if (o.hump) { const t = o.hump.at, k = Math.min(n - 2, Math.floor(t * (n - 1))), c = hip.clone().lerp(chest, t); c.y += o.hump.up; B.meat(names[k], c.clone().add(V(0, 0, -o.hump.len / 2)), c.clone().add(V(0, 0, o.hump.len / 2)), o.hump.r, o.hump.r * .8, { s: [o.hump.sx || .8, 1, 1] }); }
   B.spinePts = pts; B.spineNames = names; B.spineR = R; B.spineS = s;
@@ -117,13 +118,16 @@ P.holes = (B, o) => { B.holes = B.holes || [];
 // `at` along the spine, `out` its root's offset to the side in the spine's radius there, `len` its length, `n` its bones, `lean` and
 // `curl` the degrees from upright at its root and added a bone (forward), `splay` degrees out to the side, `r` the radii root to tip, `s` its section's scale
 // (wider than deep, as a wave's crest is).
-// The crawl rolls each on its own beat (`phase`)
+// The crawl rolls each on its own beat (`phase`).
+// Session 1185 (the fire elemental's tongues of flame): `fwd` sets the root ahead (or behind) in the spine's radius, and `on: 'head'`
+// roots it on the head instead, `f` along the skull, so a crown of tongues grows out of the head as one with it
 P.crests = (B, o) => { B.crests = B.crests || [];
-  for (const c of o.list) { const sp = B.spineAt(c.at), n = c.n || 4, sd = Math.sign(c.out || 0) || 1, sx = Math.sin((c.splay || 0) * DEG) * sd;
-    const pts = [sp.p.clone().add(V((c.out || 0) * sp.r * B.spineS[0], sp.r * B.spineS[1] * (c.sink ?? .5), 0))];
+  for (const c of o.list) { const H = c.on === 'head' && B.headFrame, sp = H ? { p: H.base.clone().addScaledVector(H.dir, H.len * (c.f ?? .2)), r: H.r, bone: 'head' } : B.spineAt(c.at), sS = H ? [1, 1] : B.spineS;
+    const n = c.n || 4, sd = Math.sign(c.out || 0) || 1, sx = Math.sin((c.splay || 0) * DEG) * sd;
+    const pts = [sp.p.clone().add(V((c.out || 0) * sp.r * sS[0], sp.r * sS[1] * (c.sink ?? .5), (c.fwd || 0) * sp.r))];
     for (let j = 0; j < n; j++) { const a = ((c.lean || 0) + (c.curl || 0) * j) * DEG, d = V(sx, Math.cos(a), Math.sin(a)).normalize(); pts.push(pts[j].clone().addScaledVector(d, c.len / n)); }
     const tag = 'crest' + B.crests.length + '_', names = B.chain(tag, sp.bone, pts);
-    for (let j = 0; j < n; j++) B.meat(names[j], pts[j], pts[j + 1], along(c.r, j / n), along(c.r, (j + 1) / n), { group: tag, tone: c.tone, s: c.s });
+    for (let j = 0; j < n; j++) B.meat(names[j], pts[j], pts[j + 1], along(c.r, j / n), along(c.r, (j + 1) / n), { group: tag, tone: j === n - 1 && c.tip ? c.tip : c.tone, s: c.s }); // `tip`: the last bone's tone (Session 1185, a flame's yellow tip)
     B.crests.push({ names, phase: c.phase || 0, tip: pts[n] }); } };
 // egg sacs (Session 929, OG-041's giant spider): a clutch of silk balls stuck to the underside of the tail (a spider's abdomen) toward
 // its tip, each a lumpy wrapped sphere, half sunk into the hide, rigid on the tail bone it hangs from. `at` is the stretch of the tail
@@ -202,7 +206,9 @@ P.arms = (B, o) => {
     const elbow = root.clone().addScaledVector(dir, len * .5), d2 = o.dir2 ? V(side * o.dir2[0], o.dir2[1], o.dir2[2]).normalize() : dir.clone().applyAxisAngle(V(1, 0, 0), -(o.bend || 30) * DEG).normalize(), wrist = elbow.clone().addScaledVector(d2, len * .42), hand = wrist.clone().addScaledVector(d2, len * .14);
     const tag = 'arm' + (B.arms.length / 2 | 0) + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, [root, elbow, wrist, hand]);
     const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone, s: o.s }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone, s: o.s }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone, s: o.s });
-    if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone(o.claws.tone || 'dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
+    // claws of flame (Session 1185, the fire elemental's): `glow` lights a claw in its own colour
+    if (o.claws) for (let c = -1; c <= 1; c++) { const m = B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone(o.claws.tone || 'dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
+      if (o.claws.glow) { m.material = m.material.clone(); m.material.emissive.copy(m.material.color).multiplyScalar(o.claws.glow); } }
     // a pincer (Session 773): a swollen hand and two fingers, the fixed one longer
     if (o.chela) { const c = o.chela; B.meat(names[2], wrist.clone().addScaledVector(d2, -len * .04), hand, c.r, c.r * .8, { s: [1, .62, 1], tone: o.tone, group: tag + 'c' });
       const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
@@ -656,7 +662,9 @@ function dressFlesh(geo, B, pal, plan) {
       alpha[v] = lerp(1, plan.faceClear / plan.clear, sstep(.5, .85, hs) * sstep(.25, .5, fwd) * sstep(.9, .45, upw)); }
     // the binding's seams: a crack pattern along the line `glow.line` (the spine's seam) or over the whole hide
     if (gl) { const cr = Math.abs(PN.noise(x * gl.freq, y * gl.freq, z * gl.freq * .6)), seam = gl.seam ? sstep(gl.seam.w, 0, Math.abs(x)) * sstep(gl.seam.y0, gl.seam.y0 + .08, y) * (ny > .2 ? 1 : 0) : 0;
-      glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny))); }
+      glow[v] = Math.max(seam, sstep(gl.w, 0, cr) * (gl.all || 0), (gl.base || 0) * (1 - .5 * Math.max(0, -ny)));
+      // a tone that is itself light (Session 1185, the fire elemental's flame): `tones` lights a vertex by its share of each
+      if (gl.tones) for (const [t, k] of Object.entries(gl.tones)) if (tw[toneI[t]]) glow[v] = Math.max(glow[v], k * tw[toneI[t]] / ts); }
   }
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.setAttribute('aFur', new THREE.Float32BufferAttribute(fur, 1)); geo.setAttribute('aGlow', new THREE.Float32BufferAttribute(glow, 1));
@@ -893,7 +901,9 @@ export function pose(C, phase) {
   // a floating body (Session 1177) bobs, slowly at rest; going, it leans into the way it goes
   if (C.plan.hover) { sp.position.y += C.plan.hover * Math.sin(tau * ph * (G.hover ? 1 : .35)); if (G.hover) sp.rotation.x += .08; }
   // a jelly's crests (Session 1174) roll forward and back down their length, each on its own beat; slower and smaller at rest
-  for (const Cr of B.crests || []) { const np = Cr.names.length; for (let j = 0; j < np - 1; j++) C.byName[Cr.names[j]].rotation.set((G.bl ? .2 : .07) * Math.sin(tau * ph * (G.bl ? 1 : .4) + Cr.phase - j * .7) * (j ? 1 : .5), 0, 0); }
+  // flame (Session 1185, `flicker`: k beats a cycle, a whole number so the loop closes, and `a` radians) licks both ways, fast, going or not
+  const FL = C.plan.flicker;
+  for (const Cr of B.crests || []) { const np = Cr.names.length; for (let j = 0; j < np - 1; j++) C.byName[Cr.names[j]].rotation.set(FL ? FL.a * Math.sin(tau * ph * FL.k + Cr.phase - j * .9) * (j ? 1 : .4) : (G.bl ? .2 : .07) * Math.sin(tau * ph * (G.bl ? 1 : .4) + Cr.phase - j * .7) * (j ? 1 : .5), 0, FL ? FL.a * .7 * Math.sin(tau * ph * (FL.k + 1) + Cr.phase * 1.7 - j * .6) * (j ? 1 : .4) : 0); }
   // arms swing against the legs; wings rest half-folded, breathing, or beat
   // a flipper (Session 861) flies through the water: it beats down and up, sweeps back on the downstroke and feathers on the way up
   for (const A of B.arms) if (A.stroke) { const sd = A.side, w = tau * ph * (G.swim ? 1 : .4) + A.phase, k = A.stroke * (G.swim ? 1 : .25);
@@ -2188,6 +2198,43 @@ Object.assign(PLANS, {
       ['rags', { n: 14, len: .4, w: .11, rx: .26, rz: .21, up: -.32, gaps: .1, tone: 'cloth', tip: 'clothTip', cord: 'clothTip' }]] })
 });
 FAILING.push('failingwraith');
+// ── Session 1185: the fire elemental (OG-018's Tine row: "Fire Elemental"; canon §9a's forge-hot halls; the game's own since S222,
+// Michael's B on Session 214: "a figure of flame over a molten core, with arms of fire, clawed hands of flame and a crown of fire").
+// No legs: a man's height of body that narrows below the hips into a column of flame and floats clear of the floor, as the game's does.
+// The body is a dark crust of cooling slag cracked all over, the cracks lit forge-orange and the whole a little lit from within; tongues
+// of flame rise from the shoulders, the flanks, the chest and the back, grown out of the body as one surface, and a crown of them from the
+// head (the crests of Session 1174, rooted where the plan says and licking both ways, fast, going or not: `flicker`); the arms are flame
+// to the shoulder, the claws flame-yellow and lit, the eyes yellow, every tongue yellow at its tip (`tip`). The flame is a tone that is light (`glow.tones`). Tine's failing
+// form, its stone skeleton inside the flame, grows from this ──
+const TONGUE = { n: 3, r: [.1, .065, .03, .008], tone: 'flame', tip: 'ember' };
+Object.assign(PLANS, {
+  fireelemental: { name: 'Fire Elemental', src: 'OG-018 (Tine: a Fire Elemental of the forge-hot halls)', school: 'Tine', gaits: ['hover', 'stand'], hover: .05, bl: .3, rough: .9, mottle: 1.3, wag: 0, pant: 0, neckNod: .02,
+    flicker: { k: 8, a: .16 },
+    palette: { coat: [.13, .05, .03], saddle: [.09, .04, .03], belly: [.19, .07, .03], flame: [1, .36, .05], ember: [1, .7, .22], dark: [.02, .01, .01] },
+    glow: { color: [2.4, .62, .1], freq: 5, w: .07, all: .9, tones: { flame: .32, ember: .5 } },
+    parts: [
+      ['spine', { hip: [1, -.02], chest: [1.42, .04], n: 4, r: [.16, .15, .24], s: [1.4, .85], rump: .02, rumpDrop: .62, rumpTaper: .3, rumpTone: 'flame', front: 0 }],
+      ['neck', { len: .17, n: 1, rise: 82, r: [.085, .075], up: .03 }],
+      ['head', { len: .25, r: .11, pitch: 0, s: [1, 1.05, 1], brow: { f: .45, up: .5, out: .55, r: .035 }, eyes: [{ f: .8, up: .15, out: .38, r: .018, glow: 2.2, color: [1, .86, .3] }] }],
+      ['arms', { at: .95, out: .3, up: -.02, len: .8, r: [.085, .07, .055], dir: [.45, -.85, .2], bend: 35, tone: 'flame', claws: { r: .014, len: .1, tone: 'ember', glow: 2.5 }, swing: .18 }],
+      ['crests', { list: [
+        { ...TONGUE, at: .95, out: .95, len: 0.46, lean: -4, curl: 8, splay: 22, phase: 0 },
+        { ...TONGUE, at: .95, out: -.95, len: 0.41, lean: -4, curl: 8, splay: 22, phase: 1.3 },
+        { ...TONGUE, at: .6, out: 1.05, fwd: .2, len: 0.35, lean: 8, curl: 6, splay: 34, phase: 2.6 },
+        { ...TONGUE, at: .55, out: -1.05, fwd: .1, len: 0.38, lean: 8, curl: 6, splay: 34, phase: 3.9 },
+        { ...TONGUE, at: .75, out: .25, fwd: -.85, len: 0.49, lean: -24, curl: -8, splay: 8, phase: 5.2 },
+        { ...TONGUE, at: .7, out: -.3, fwd: -.85, len: 0.43, lean: -22, curl: -8, splay: 8, phase: .7 },
+        { ...TONGUE, at: .3, out: .15, fwd: -.8, len: 0.38, lean: -18, curl: -6, splay: 6, phase: 2 },
+        { ...TONGUE, at: .4, out: -.2, fwd: .8, len: 0.32, lean: 16, curl: 4, splay: 6, phase: 3.3 },
+        { ...TONGUE, at: .2, out: .9, len: 0.30, lean: 0, curl: 6, splay: 26, phase: 4.6 },
+        { ...TONGUE, at: .2, out: -.9, len: 0.30, lean: 0, curl: 6, splay: 26, phase: 5.9 },
+        { ...TONGUE, on: 'head', f: .15, out: .55, sink: .55, len: .3, lean: -14, curl: 6, splay: 16, r: [.045, .03, .014, .004], tone: 'ember', phase: 1.1 },
+        { ...TONGUE, on: 'head', f: .28, out: 0, sink: .7, len: .34, lean: -4, curl: 6, r: [.05, .034, .015, .004], tone: 'ember', phase: 2.4 },
+        { ...TONGUE, on: 'head', f: .15, out: -.55, sink: .55, len: .28, lean: -14, curl: 6, splay: 16, r: [.045, .03, .014, .004], tone: 'ember', phase: 3.7 },
+        { ...TONGUE, on: 'head', f: .02, out: 0, sink: .55, len: .26, lean: -30, curl: 4, r: [.045, .03, .014, .004], tone: 'ember', phase: 5 }] }]
+    ] }
+});
+export const ELEMENTALS = ['fireelemental'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
