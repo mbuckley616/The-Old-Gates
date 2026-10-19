@@ -23,6 +23,40 @@ Combat B's move sets (`docs/design/combat.md`) give every family a third move. S
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 ## Answered
+### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
+**Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
+
+The prototype (`docs/prototypes/levelup/shrines.html`, three.js 0.170) builds the niche in metres:
+- **The niche:** a stele 1.0 m wide and 2.55 m to the top of its arch, the recess 0.62 m wide with its sill at 1.03 m, and a figure 0.95 m tall. The god's name is cut under the sill, its icon is in a roundel over the arch, and a stoup stands before it with its rim at 0.68 m.
+- **The Gatelands:** limewashed, with rags on the niches and on a thorn, a holy well, a ring-headed high cross and a holed ring-stone.
+- **The Mark:** dark granite, each niche under its own shingled housing with crossed bargeboards ending in beast heads. An iron lamp that is never let out hangs under each, and an oath stone with an iron ring stands before them.
+- **Aurenne:** plastered, with a blue-glazed cupola and glazed tile in the recess. The icons are gilt, behind iron railings with a gate, with the Church's tithe box and its notice (*no rubbings to be taken*).
+- **The Guest's niche:** struck back to rough stone on two islands. In Aurenne it is bricked up and plastered over, as the Church bricked the Guest's chapel (canon §4.2).
+
+A row of seven costs 21,800 (the Mark) to 32,600 (the Gatelands, with its well and thorn) triangles in 25 to 34 draws. One niche with its figure is about 2,500 to 3,000.
+
+Where should the six stand together?
+
+- **A. One god to a shrine, as today.** Every wayside shrine is one god's niche in its island's dress, with the Guest's struck recess, the size of a hand, low on its plinth. The row of six is not built.
+- **B. The six together, everywhere.** Every shrine is OG-113's row of seven. You choose the god at the basin, one prayer a day at that shrine, as now.
+- **C. By place** *(recommended)*. A wayside shrine on a road is one god's niche (A). The row of seven stands once in each town, at its edge or where its roads meet, and there you choose the god.
+
+Recommendation: **C.** The Guest's absence reads only in a row. Among six full niches an empty seventh is plainly missing, but beside one god an empty recess reads as damage. The town's row puts every god within reach of home without a temple. The wayside niches keep a reason to travel for one god's boon and its own day (S497's god's day). The boons, the once a day and the Weaver's rubbing are unchanged; only which god you ask at a town's row is new. If a dressing looks wrong (the Mark's beast heads, Aurenne's railings, the Gatelands' high cross), say which. That is a note, not a reason for A or B.
+
+Pictures:
+- [The Gatelands, the row](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-gatelands.jpg)
+- [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-mark.jpg)
+- [The Mark at dusk, the lamps lit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-mark-dusk.jpg)
+- [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-aurenne.jpg)
+- [The figures, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-figures.jpg)
+- [The Guest's niche on each island](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-guest.jpg)
+- [The row from 30 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-far.jpg)
+- [One god's wayside shrine, three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside.jpg)
+- [In scale beside a person and the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside-scale.jpg)
+
+Michael: **By place: one niche on roads, the row in each town** — Would it make sense to have the rows in or near churches? (2026-10-18, on the control room)
+*Acted on:* recorded by the producer; the row of seven stands once per town (his note asks for it in or near the town's church), each wayside shrine one god's niche. Issue #439 closed. For the look builder (backlog L9).
+
 ### The wolf's snap and the troll's stamp: when does the second blow of a two-hit string come? (systems builder, Session 1140) — DECISION #438
 Combat B's move sets (`docs/design/combat.md`) give every family a third move. Session 1140 built the bandit's feint, the page's delayed swing, under your A on #430: one wind-up in four, with the pose held 0.3 s at its top. Two moves are left: the wolf's *lunge and snap* and the troll's *sweep and stamp*. Both are the page's two-hit string. The wolf's lunge already exists (it leaps up to 1.5 m at the bite, S1041). The page does not say when the second blow comes or what it covers, and a player would feel both. Today a roll is untouchable from 0.08 to 0.30 s.
 
