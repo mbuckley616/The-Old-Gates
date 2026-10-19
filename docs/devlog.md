@@ -26469,6 +26469,19 @@ The people's ragdoll in `32-people.js` has the same hold. It is left as it is: n
   - the people's hold, the same check on `ragdollStep`;
   - a bear's body overlapping a solid at death is itself odd, since foes collide by their centre point only. That is the systems builder's, and noted here only.
 
+## v80 — Session 1158 — `guardplay`: the guard's heavy blow rolled on the runner's clock (tests only; the kill filed in I)
+`guardplay` was red twice on four CI runs on 18 and 19 Oct, two of them docs-only branches and one main itself (d3a4faa). Each red read the same: the drawn guard's blows took the player from 130 to 0 in 174 ticks and the yield was never offered, where a green run reaches the yield at 18 health in 42 ticks. The QA ledger of 19 Oct 07:20 guessed at S1136's heavy blow and could not test it under FREEZE #441.
+
+Measured now. A guard is tier 3 (S1060), and his blow on a new character (130 health, 1.75 armour) is 51–59 light and 102–118 heavy. The yield is offered between blows once health is under 30% (39). So a heavy blow first (130 to 12–28) or two light ones reach it, and a light blow then a heavy one (130 to 71–79, then 0) kills. Which blows are heavy is seeded on the guard's key, `dunmore:guard:16:<the game minute he drew>` (S509's co-op key, S1136's roll). The suite never set that minute: it was wherever the clock had got to when the halt was refused, and that hangs on how many frames the runner drew while the world loaded. Here the minute is always 1 (a heavy first blow, the green run). Of the first 60 minutes, 14 go light then heavy and kill.
+
+The suite now sets the clock to minute 1.5 before *I’ll not pay*, so he always draws at minute 1, and it logs the drawn guard's key so a later red names its minute. No check changed. Pinning chooses the heavy-first path, so the suite still plays a heavy blow into the yield. The light-then-heavy kill is the game's and goes in backlog I for the systems builder (`tickCrime`/`offerYield` in `86-world-crime.js`, the heavy roll in `74-strikes.js`). What the fix should be is a design call: offer the yield at the blow that would cross the line, cap a heavy blow at the line, or neither.
+### Verified (headless Chromium)
+- **The cause, reproduced:** the suite pinned to minute 3.5 draws `dunmore:guard:16:3` and fails exactly as CI did: `f1 {ticks:174, hp:0, dlg:false}`, *Then the sword, and Weaver forgive the both of us.*, and the same seven checks red after it.
+- **Pinned to minute 1:** 3 of 3 green in the old look and 1 of 1 under `--look=new`, each drawing `dunmore:guard:16:1` and reaching the yield at 18 health in 42 ticks.
+- **The blows:** light 51 and 59 at the roll's ends, heavy 102 and 118 (`foeBlow` on the guard's numbers). Over 600 minutes, 212 roll a heavy first blow (35%, a third by design).
+### Needs eyes
+- **A fined new character can die to a guard without the yield being offered**, about one fight in four. Filed in I; the design is Michael's through the systems builder.
+- Three CI runs of this commit are the proof still owed.
 ## v80 — Session 1136 — The people's wall hold, checked (backlog I)
 Session 1133 owed one check. The people's ragdoll in `32-people.js` (`ragdollStep`, S466) holds a point at a wall the same way the beasts' did, and the beasts' hold let a Cave Bear killed over Hearthwick's well climb the column to 12 m. This session asked whether a person can do the same, and could not make one.
 

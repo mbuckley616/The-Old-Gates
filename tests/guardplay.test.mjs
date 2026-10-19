@@ -47,8 +47,13 @@ console.log('halt', gd, JSON.stringify(h1), JSON.stringify(halt));
 check('three units from a guard with a fine on you, he halts you by name: the fine, pay, or he draws', halt.name === gd && /75 gold/.test(halt.greet) && halt.choices.includes('Pay the fine (75 gold)') && halt.choices.includes('I’ll not pay.'), halt);
 
 // 3. refuse: he draws
+// The drawn guard is keyed by the game minute he drew at, and his heavy blows (S1136, one in four) roll on that key: the minute was
+// wherever the clock had got to on the runner, so the fight differed from run to run (Session 1158). Pinned to minute 1, whose first
+// blow is heavy (130 to 12–28, under the yield's line). A light blow and then a heavy one, as at minute 3, takes 130 to 0 with no
+// yield offered: the game's, filed in backlog I for the systems builder.
+await page.evaluate(() => { worldState.gameTimeAbsMinutes = 1.5; });
 await click('^I’ll not pay'); const refused = await said(); await page.waitForTimeout(300); await g.frames(1);
-const d1 = await drawn(); const gHid = await page.evaluate(() => !window._gd.g.visible && window._gd._drawn);
+const d1 = await drawn(); console.log('drawn key', await page.evaluate(() => (ZONES.world.enemies.find(e => e._guard && !e.dead) || {}).id)); const gHid = await page.evaluate(() => !window._gd.g.visible && window._gd._drawn);
 console.log('refuse', refused, JSON.stringify(d1), gHid);
 check('refused, he draws: a Town Guard of his name stands in for him, alert, and he leaves the street', d1.length === 1 && d1[0].by === gd && d1[0].name === 'Town Guard' && d1[0].alert && gHid && !(await page.evaluate(() => dlgOpen)), { refused, d1 });
 
