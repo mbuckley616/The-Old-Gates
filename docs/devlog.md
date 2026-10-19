@@ -27493,3 +27493,54 @@ The FREEZE (#441) still holds, so this is a prototype session. The cutter's base
 - **Owed:**
   - the galleon's base, with more rooms;
   - then the bases into the game (`CABIN`, `85-world-sea.js`) with card F11, after the freeze.
+## v80 — Session 1150 — The galleon's base below deck: the great cabin, the hold and its crew, the galley (backlog L6, Michael's A on #418; prototype only)
+This is the last of the five bases Michael's A on #418 asked for: each class's base in its own hull's lines, and the galleon's with "more rooms". It is still a prototype under FREEZE #441: `galleonBase` in `docs/prototypes/levelup/shipbase.js`, at `shipbase.html?ship=galleon&view=cut|cabin|hold|crew|galley&dress=…`. The Gatelands' dress is the default. Cited images: OG-027, whose top rung is "captain's cabin with stern windows, globe and chart table … armoury, expanded crafting" and crew quarters with hammocks, and OG-072.
+- **The hull:** the game's galleon is 22 m by 7.0 m with a draft of 1.5. She has a quarterdeck over her last 6 m with the great cabin under it, a forecastle over her first 3.5 m open beneath on two posts, and two hatches either side of the main mast.
+- **The hatches:** `gatelandsGalleon` in `ships.js` takes `o.open`, cutting the deck's planks at both coamings and leaving out both plates. With them shut she is the hull she was.
+- **The great cabin** (z -10.95 to -5.0, 2.03 m clear), under her five stern windows:
+  - a locker seat across the stern with the island's cushion;
+  - the captain's table before it, with two stools;
+  - the box bed to port, with the sea chest at its foot;
+  - the chart table to starboard, with a globe on a stand and its ring, the chart, dividers and a stool;
+  - a sideboard with bottles and cups against the bulkhead, to starboard of the door;
+  - two lanterns and a rug, and the mizzen through the middle.
+  - The door's metre is clear.
+- **The hold** (z -4.9 to 6.8): 2.08 m between the beams and 1.89 under them, over a floor at -1.13 where she is 2 m across. A 1.8 m person stands everywhere below, the only base where that is true. You enter down the after hatch. The forward hatch is a cargo hatch, its middle 0.8 m kept clear. In it:
+  - aft, the workbench (2 m long, two vices, a rack of seven tools) and the alchemist's table, either side of the ladder;
+  - two chests for the stash, set end-on against the sides aft of the main mast;
+  - four barrels between the main mast and the forward hatch, where she is widest;
+  - **the crew's quarters forward:** four hammocks slung fore and aft between the beams at 3.0 and 4.8, their lowest point 1.02 m over the floor and 1.28 m of way between the two pairs;
+  - **the arms rack** against the forward bulkhead (OG-027's armoury): spears upright and two round shields, as wide as the narrow floor there allows;
+  - three lanterns.
+- **The galley** under the forecastle, as the cog's: the firebox on its sand with crane and pot, and a water cask.
+- **Fixed on the way:**
+  - **The arms rack** was first 1.8 m wide, wider than the floor at the bow (0.52 m a side), so it is now sized to the floor.
+  - **The locker seat's** after corners stood outside the stern's planking at deck height, so it is now sized at both heights.
+  - **The chests** first stood broadside against the main mast, leaving 0.15 m to pass. They now stand end-on aft of it.
+  - **The barrels** first stood under the cargo hatch, where she narrows and they closed on its middle. They are now moved aft of it. A crate that could never fit outboard of them was dropped.
+- **The cost:** 8,268 triangles in 17 draws in the Gatelands' and Aurenne's dress and 8,522 in 15 in the Mark's, over the galleon's 43,408.
+
+### Verified (headless Chromium)
+- **`shipbase.check.mjs`: 62 of 62 pass,** 14 of them new.
+  - **Builds:** the galleon's base builds the same twice in all three dresses.
+  - **What is in it:** 28 pieces, OG-027's top rung.
+  - **Inside her lines:** every piece stands inside her planking (in the cabin and the galley, inside the castles' walls) and inside its room. 0 of 28 are out in each dress.
+  - **Nothing in the way:** no two pieces overlap, none stands on a mast, in the ladder's way, in the cabin's doorway or under a hatch's middle, and no beam crosses the ladder.
+  - **Headroom and the ways:** as above. There is 1.34 m between the bench and the still.
+  - **The hatches:** rays down both meet the floor's planks at -1.13 m.
+  - **Lights:** six.
+  - **Shut, she is the galleon as built:** 43,216 triangles shut and 43,408 open. The difference is exactly the cut deck planks and the two plates' 24.
+  - **The views:** the seven new views render without page errors.
+- **`ships.check.mjs`: 101 of 101 pass.**
+- **Pictures:**
+  - `shipbase-galleon-cut.jpg`: from above abeam: the galley, the hammocks, the stores, the hold's workshop and the great cabin.
+  - `shipbase-galleon-cabin.jpg`: from the door: the table under the stern windows, the bed, the globe.
+  - `shipbase-galleon-hold.jpg`: aft, to the bench and the still.
+  - `shipbase-galleon-crew.jpg`: forward, the hammocks and the arms rack.
+  - `shipbase-galleon-galley.jpg`.
+  - `shipbase-galleon-cabin-mark.jpg`: the Mark's dress.
+### Needs eyes
+- **It is dark below,** as in all five bases. The crew's view especially, with one lantern forward. The game will light rooms its own way (L12).
+- **The hammocks are cloth strips, empty.** The crew is the systems builder's (OG-093's crew as upgrades) and the bodies builder's.
+- **The arms rack** holds props, not the player's weapons. What it stores is a rule for the systems builder.
+- **The five bases are drawn.** Bringing them into the game (`CABIN`, `85-world-sea.js`, one 7 by 8 m room today) is card F11's, after the freeze. No new question is needed, since #418's A is the design.
