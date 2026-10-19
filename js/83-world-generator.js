@@ -1501,7 +1501,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(HATCH.active||HATCH.x!=null)S(HATCH,['x','z','y']);
     house.intW*=k;house.intD*=k;
   }
-  // S1158 (card F9, Michael's 2 A on #320) — on the new look, a Gatelands village inn on three bays (the kit's farmhouse outside, S1086)
+  // S1161 (card F9, Michael's 2 A on #320) — on the new look, a Gatelands village inn on three bays (the kit's farmhouse outside, S1086)
   // is the kit's taproom inside (PKIT.gl.inn, rooms.js's Session 893): the farmhouse's own walls, the hearth in the west gable, the bar
   // across the back, the stair up the east gable to the passage and three rooms to let. It is drawn in metres, so nothing is scaled
   // (scaleRoom's k is 1, as the tower's); the kit's frame (centre on the ground, front +z, floor at F0) moves to the room's (0 to W,
@@ -1552,7 +1552,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const reg=house.reg||'irish',type=house.type||'misc',st=house.style||'irish';
     INT_BED_NATION=nationAt(house.doorX,house.doorZ); // S288 — the beds' wood
     furnFree();
-    if(kitTaproom(house))return buildKitTaproom(house); /* S1158 — the kit's taproom, at its true size */
+    if(kitTaproom(house))return buildKitTaproom(house); /* S1161 — the kit's taproom, at its true size */
     const two=!!house.two;
     // S896 (F2a) — the room's true size in metres (07-scale.js; visual-foundation.md §1: a cottage room 4 to 6 across, an inn's hall
     // 10 to 14, a church's nave 8 to 12 wide), then laid out in the old unit (÷ SCALE.ROOM_K) and scaled back up at the end

@@ -1,4 +1,4 @@
-// The Gatelander taproom inside a village inn on the new look (Session 1158; card F9, Michael's 2 A on DECISION #320: the taproom
+// The Gatelander taproom inside a village inn on the new look (Session 1161; card F9, Michael's 2 A on DECISION #320: the taproom
 // drawn inside the kit's farmhouse). On ?look=new a Gatelands village inn on three bays is the kit's farmhouse outside (S1086) and
 // PKIT.gl.inn inside (S1157), at its true size, not scaled. In the village nearest Dunmore, entered as you enter it: the room is the
 // farmhouse's inside (9.5 by 5.2 m), walled all round; you arrive clear and leave by the door, and not from the tables; the stair

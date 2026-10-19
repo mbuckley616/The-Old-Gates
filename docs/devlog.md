@@ -27650,7 +27650,8 @@ The freeze (#441) is closed and F2a is on main, so card F9's rooms may come into
   - the hearth's and the lamp's lights;
   - the innkeeper's directions (`galleryEast`), which must say the stair is east.
 
-## v80 — Session 1158 — The Gatelander taproom inside the village inn (card F9, Michael's 2 A on #320)
+## v80 — Session 1161 — The Gatelander taproom inside the village inn (card F9, Michael's 2 A on #320)
+(Numbered 1158 when first pushed, and its commit says so. auto/qa holds a Session 1158 too, so this one is 1161.)
 Session 1157 copied the taproom into the game's kit. This session hangs it: on `?look=new`, the inn of a Gatelands village on three bays is the kit's farmhouse outside (Session 1086) and now the taproom inside, the room Michael chose on #320 (2 A).
 
 **`buildKitTaproom` (`83-world-generator.js`).** `buildInteriorFor` hands the room to it when `kitTaproom(house)` holds: the inn, the kit's farmhouse on three bays, not a coaching inn, on the new look.
@@ -27702,13 +27703,13 @@ A two-bay inn (7.4 m) and a coaching inn keep the old room. The taproom is laid 
 - **Owed:** a two-bay inn's taproom; a coaching inn's (the board and the travellers in the kit's room); the Mark's alehall and Aurenne's tavern, once #321 and #322 are answered.
 
 ## v80 — Session 1159 — The Mark's alehall, copied into the game's kit (card F9, Michael's A on #321)
-**Two corrections to Sessions 1157 and 1158 first.**
+**Two corrections to Sessions 1157 and 1161 (first pushed as 1158) first.**
 - **#321 and #322 are answered.** Both entries, and the backlog line, said the Mark's alehall and Aurenne's tavern waited on them. They do not. Michael answered both on 14 Oct:
   - #321 A: wall benches, 10 by 18 m, as drawn;
   - #322 A: the Roman house, a vine on a pergola.
 
   The two inns are chosen rooms like the Gatelander one.
-- **#303's 1 A is not met yet.** Michael's 1 A on #303 (14 Oct) puts the rooms of 2.0 *inside the street's own shell*: "the house you see is the house you walk into, with no load at the door". Session 1158's taproom is the farmhouse's own inside, at its true size, but it is still built as its own scene when you go in, as every room is today. Bringing rooms into the street with no load needs:
+- **#303's 1 A is not met yet.** Michael's 1 A on #303 (14 Oct) puts the rooms of 2.0 *inside the street's own shell*: "the house you see is the house you walk into, with no load at the door". Session 1161's taproom (first pushed as 1158) is the farmhouse's own inside, at its true size, but it is still built as its own scene when you go in, as every room is today. Bringing rooms into the street with no load needs:
   - an indoor flag that does not mean "another scene";
   - the solids and footholds in world coordinates;
   - the light by the street's sun and the room's lamps.
