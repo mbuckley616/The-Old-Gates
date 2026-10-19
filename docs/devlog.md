@@ -26796,3 +26796,32 @@ Session 1156's Needs eyes: on a long gown the woven band's lower thread ran alon
 ### Needs eyes
 - **The lozenges' spacing** looks uneven in the close views. It steps to 12 threads a lozenge on a pixel grid, so neighbouring lozenges differ by a thread. It was there before this fix.
 - **Owed:** the knee-length formal tunic, the mantle over the gown, who wears it (the game), and the game after F4.
+
+## v80 — Session 1164 — The Mark's formal tunic, worn to the knee (L1, prototype only)
+Session 1156 owed the rest of OG-109's Mark formal column: the men wear their formal tunics longer, nearer the knee. The builder had two skirts, a short tunic skirt cut at rest -.2 (mid-thigh) and a long one to the ankle. This adds a third length. It refines the formal dress already built and asks nothing. It touches only `people.js`, `builder.js` (one option) and `builder.check.mjs`.
+
+- **`skirt: 'knee'`.** The long skirt's shell (the skirt helper, both legs inside one tube), cut in the shader at rest -.345, with the short skirt's 1 cm of noise on the cut. The knee's joint is at rest -.369, so the cut lies over the kneecap. A short tunic's own region stops at -.24, which is why it cannot simply be cut lower.
+- **`SKIRT_CUT` and `skirtR(D)`** give each length's cut and shell. The four places that chose a shell by `D.skirt === 'long'` now ask `skirtR`: what the cloak drapes over, what the hair and the sash clear, and the skirt's own mesh. A mail skirt over it stands off as it does over a long one, since the shell is the same.
+- **The hands** beside it are tested against its points above the cut, as a short skirt's are.
+- **The woven band** on its hem runs 5 mm over the cut, as on a short tunic (`'(vB.y + .34) / .04'`).
+- **In a wheeled chair** it is cut short. The long shell over a seated lap is the reason the chair already swaps a long skirt for trousers.
+- **The page:** the skirt select has "to the knee".
+- **The roll:** none. Who dresses formally is the game's to say.
+
+Correction to Session 1163: `builder-bands-hem-side.jpg` was not a side view. It is the hem from a quarter turn the other way, and it is renamed `builder-bands-hem-turned.jpg`. Session 1163's entry and its PR comment name the old file.
+
+### Verified (headless Chromium)
+- **Four new checks** (`builder.check.mjs`), four Markmen in knee-length tunics, two with the woven bands. The hem is measured where the shader cuts it: each triangle edge across rest -.345, its posed ends blended at the crossing, 152 crossings. On each:
+  - the hem runs from -0.3 to 0.6 cm at its lowest (between the legs) to 7.1 to 7.2 cm at its highest over the knee's joint (`lowerleg01`);
+  - it is 19.1 to 20.7 cm lower than a short tunic's lowest point on the same man;
+  - no hand is in it (0 of 948 to 1,562 hand points, the arms lifted 0.12 to 0.21 rad);
+  - the band is on its own cut;
+  - it saves and loads back with `"skirt":"knee"`;
+  - in a wheeled chair it is cut at -.2.
+- **A first cut at -.33** put the hem 8 cm over the joint when measured by the lowest point kept, not the crossing. That measure was wrong: it stood a row of the shell's points above the real hem. -.345 was chosen on the crossing measure and the pictures.
+- **`builder.check.mjs`:** 508 of 508 pass (504 before and the four above).
+- **Pictures** (`builder-knee-*.jpg`): `-full` (the blue Markman with ochre bands, belted), `-turned` (the same, turned the other way), `-plain` (a Markman in charcoal, no bands).
+### Needs eyes
+- **The cut's noise** reads as a short fringe at the hem on a plain tunic, as it does on a short one. With the band, the band's ground fills the noise.
+- **Walking:** the shell is one tube round both legs. A knee-length hem across a stride stretches as the long gown's does; the builder has no stride pose to judge it by.
+- **Owed:** the women's mantle over the gown (OG-110), who wears formal dress (the game), and the game after F4.
