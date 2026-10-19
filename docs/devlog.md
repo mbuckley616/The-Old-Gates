@@ -26617,3 +26617,34 @@ Backlog L1's wardrobe matrix has five columns for each island, and OG-109's Gate
 - **The fur's pile** reads as a mottled band close up, more felt than fox. It is the mantle's noise at a shorter length.
 - **The front is closed to the hem**, with no vent or opening below the belt, so a walking leg pushes the whole skirt (the long skirt does the same).
 - **Owed:** the Mark's fur-lined hooded coat (OG-109), who wears a coat in which season (the game's, with `WX`), and the game after F4.
+
+## v80 — Session 1151 — The Gatelanders' tartan rolled: a note on cloaks (L1, prototype only; Michael's A on #445)
+Session 1146 wove a sett into the cloak's cloth and asked Michael where it is worn. He answered A on #445: a note, on cloaks. This session rolls it. It touches only `people.js` (the Gatelanders' rate and setts, and four lines of the roll) and `builder.check.mjs`. FREEZE #441 is still open, so the run kept to the prototypes.
+
+- **Who.** One Gatelander cloak or shoulder cape in five (`PEOPLES.gatelander.tartan`, .2). Never a fur-lined cloak (no Gatelander has one today, but a later roll might). No other people.
+- **The setts.** Three, the three Michael saw in Session 1146's pictures (`PEOPLES.gatelander.setts`):
+  - a moss ground with dark green bands and a madder overcheck;
+  - a madder ground with dark blue bands and no overcheck;
+  - a brown ground with near-black bands and an ochre overcheck.
+  The cloak takes the sett's ground, so a sett always comes in its own colours, rather than a dark green band laid over a madder cloak.
+- **The stream.** The roll draws from `seed|tartan`, as the waistcoat draws from its own (Session 1143), so every other roll of a seed is exactly as it was. Children and the old dress as the grown folk do, so they take it at the same rate.
+
+### Verified (headless Chromium)
+- **The roll check** (`builder.check.mjs`), which replaces Session 1146's "nobody wears one". Over 400 Gatelanders (every thirteenth a child, every eleventh old):
+  - 63 of 340 cloaks and capes are in a sett (18.5%), 17 of them capes out of 61;
+  - by sett 12, 23 and 28; each is one of the three, with the cloak in its ground;
+  - none is fur-lined; 7 children and 3 old among them;
+  - a rolled one builds with the sett in its cloak's program;
+  - no Markman, Aurennais or Old Blood wears one (0 of 120).
+  The same 400 seeds rolled with the rate at 0 give the same genomes, apart from the cloak's colour and the sett.
+- **The first run** failed that last comparison only on the order of keys: an old man's staff is drawn after the tartan, so his `staff` key landed after `tartan` in one genome and before it in the other. The check now compares with the keys sorted, and passes.
+- **`builder.check.mjs`:** 493 of 493 pass (the same count as before: one check replaced).
+- **Pictures** (`builder-tartan-rolled-*.jpg`), four Gatelanders as the roll made them, no dress set by hand:
+  - `-moss`: a woman in a moss cloak, from behind;
+  - `-madder`: a man in madder;
+  - `-brown`: a woman in brown, hood up;
+  - `-cape`: a man in a moss shoulder cape over a leather waistcoat.
+### Needs eyes
+- **Whether one in five reads as a note.** In a market of thirty Gatelanders about twenty-five wear a cloak or cape, so about five would be in a sett. That may read as more than a note; the rate is one number.
+- **The hood rolled down** on the moss woman shows a dark, broken roll at the nape. That is the hood's own shape, not the sett, and it is there on a plain cloak too.
+- **Owed:** the game after F4.
