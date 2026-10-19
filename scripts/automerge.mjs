@@ -1,9 +1,11 @@
-// Merge every open pull request that is ready (Michael's A on the pipeline, 19 Oct 2026; .github/workflows/automerge.yml runs it).
-// Ready: `check`'s gate is green on the commit, GitHub can merge it cleanly, and
-//   - every file it changes is under docs/ or tests/ (not tests/lib/ or tests/run.mjs, the harness): it needs no approval; or
-//   - Michael approved it: a comment on the PR from the repository's owner side, "Approved by Michael: <sha>", which the producer
-//     posts when he taps Approve on the control room. Later commits that change only docs/ or tests/, or that merge main in, ride
-//     along. If a later commit changes anything else, the approved commit is merged by itself and the PR waits for a new tap.
+// Merge every open pull request that is ready (Michael's A on the pipeline, and his B on approvals, 19 Oct 2026;
+// .github/workflows/automerge.yml runs it). Michael decides designs, not merges: a PR that builds what he has decided merges
+// itself once it passes. Ready: `check`'s gate is green on the commit, GitHub can merge it cleanly, it has no `hold` label
+// (Michael's, or any role's that wants his eyes first), and
+//   - it leaves the pipeline alone (.github/, the test harness tests/lib/ and tests/run.mjs, this script): no approval; or
+//   - it changes the pipeline, and Michael approved it: a comment on the PR from the repository's owner side, "Approved by
+//     Michael: <sha>". Later commits that leave the pipeline alone, or merge main in, ride along; if a later commit changes the
+//     pipeline again, the approved commit is merged by itself and the PR waits for a new approval.
 // After a merge it starts `check` (every suite) and `stamp` (the build number) on main by name, because a merge made with the
 // workflow's own token starts no workflow. DRY_RUN=1 says what it would do and changes nothing.
 const TOKEN = process.env.GH_TOKEN, REPO = process.env.REPO || 'mbuckley616/The-Old-Gates', DRY = !!process.env.DRY_RUN;
@@ -20,7 +22,8 @@ async function gh(path, method = 'GET', body) {
 }
 async function all(path) { const out = []; for (let p = 1; ; p++) { const page = await gh(`${path}${path.includes('?') ? '&' : '?'}per_page=100&page=${p}`); out.push(...page); if (page.length < 100) return out; } }
 
-const lowRisk = f => f.startsWith('docs/') || (f.startsWith('tests/') && !f.startsWith('tests/lib/') && f !== 'tests/run.mjs');
+const PIPELINE = f => f.startsWith('.github/') || f.startsWith('tests/lib/') || f === 'tests/run.mjs' || f === 'scripts/automerge.mjs';
+const lowRisk = f => !PIPELINE(f);
 
 // green: the gate passed; before the gate existed (an older head), every check that ran passed
 async function green(sha) {
@@ -62,11 +65,12 @@ for (const pr of await all('/pulls?state=open&base=main')) {
     const files = (await all(`/pulls/${n}/files`)).map(f => f.filename);
     const comments = await all(`/issues/${n}/comments`);
     let target = null, why = '';
-    if (files.every(lowRisk)) { target = head; why = 'docs and tests only'; }
+    if ((pr.labels || []).some(l => l.name === 'hold')) { console.log(`#${n}: held`); continue; }
+    if (files.every(lowRisk)) { target = head; why = 'gate green; no pipeline files'; }
     else {
       const approvals = comments.filter(c => TRUSTED.has(c.author_association) && APPROVAL.test(c.body));
       const last = approvals[approvals.length - 1];
-      if (!last) { console.log(`#${n}: waiting for Michael's approval`); continue; }
+      if (!last) { console.log(`#${n}: changes the pipeline; waiting for Michael's approval`); continue; }
       const approved = APPROVAL.exec(last.body)[1];
       if (head.startsWith(approved)) { target = head; why = `approved at ${approved.slice(0, 7)}`; }
       else {

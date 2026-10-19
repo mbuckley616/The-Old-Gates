@@ -139,14 +139,20 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
 Sessions started from claude.ai/code or the Claude app run on a fresh checkout of the GitHub repo.
 `scripts/cloud-setup.sh` (a SessionStart hook in `.claude/settings.json`) installs Playwright and
 Chromium there; locally it does nothing. A cloud session can only push its own branch, not `main`:
-commit there and open a PR. **How a PR lands (Michael's A on the pipeline, 19 Oct 2026; `docs/pipeline.md`):** CI runs only
-the suites the change can reach (`tests/lib/select.mjs`; a docs-only PR runs none) and reports one check, `gate`. The
-`automerge` workflow merges a PR the minute `gate` is green and it merges cleanly, if it changes only `docs/` and `tests/`
-(not `tests/lib/` or `tests/run.mjs`), or if Michael approved it: when he taps Approve on the control room, the producer posts
-the comment `Approved by Michael: <sha>` on the PR, and does not merge it by hand. Later commits that change only docs or
-tests, or merge main in, ride along; any other later commit waits for a new tap while the approved commit lands alone. Main
-runs every suite after each merge: a red on main is the next run's first job for the builder that owns it (the producer
-reverts the merge if it is not fixed within the day). Keep a branch's unapproved work small: what waits for a tap is what blocks.
+commit there and open a PR. **How a PR lands (Michael's A on the pipeline and his B on approvals, 19 Oct 2026;
+`docs/pipeline.md`):** CI runs only the suites the change can reach (`tests/lib/select.mjs`; a docs-only PR runs none) and
+reports one check, `gate`. The `automerge` workflow merges a PR the minute `gate` is green and it merges cleanly. **Michael
+decides designs, not merges:** a PR that builds what he has already decided needs no tap. Two exceptions wait for him: a PR
+labelled `hold` (put it on anything you want his eyes on first, and say why in the PR), and a PR that changes the pipeline
+itself (`.github/`, `tests/lib/`, `tests/run.mjs`, `scripts/automerge.mjs`), which merges on the comment
+`Approved by Michael: <sha>`, posted by the producer when he taps Approve. An open design question is still a `DECISION:`
+before anything is built. Main runs every suite after each merge: a red on main is the next run's first job for the builder
+that owns it, and the producer reverts the merge if it is not fixed within the day.
+**These landing rules win** over anything a routine's own prompt still says about branches, the build tag, the devlog,
+decisions.md or merging (prompts written before 19 Oct 2026 may say otherwise).
+**One small PR per run:** every run starts a fresh branch from main (`auto/<lane>-<session>`, the run's first session
+number), does its sessions there, opens its own PR, and leaves it to land. No branch is kept or reused from run to run, and
+nothing is added to a PR once the run that opened it has ended (a red that is your own fault is fixed in the next run's PR).
 Only the producer routine notifies Michael (PushNotification) or writes to the control room; every other session,
 cloud or local, raises questions in its devlog file and a `DECISION:` issue (the producer copies them into
 `docs/decisions.md`, the one writer of that file) and stays silent — the producer
