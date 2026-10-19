@@ -223,7 +223,7 @@ function _clearOffhandForTwoHander(reason){
 // S691 — the settings (Michael's B on #208): kept in this browser under 'og.settings', for every character, never in a save. The volumes
 // are percentages over the loud/quiet/off button's levels (`applyVolumes`, 72-audio.js); look speed multiplies the mouse's .004 a
 // pixel; brightness is a CSS filter on the canvas; the field of view is the resting one (sprint adds 10, a lunge 17, as before).
-const SETTINGS_DEF={master:100,music:100,effects:100,voices:100,look:1,invert:false,bright:0,fov:75,quality:1}; // quality: the new look's land (S1176, F3), 0 low, 1 middle, 2 high
+const SETTINGS_DEF={master:100,music:100,effects:100,voices:100,look:1,invert:false,bright:0,fov:75,quality:1}; // quality: the new look's land (S1181, F3), 0 low, 1 middle, 2 high
 const SETTINGS=Object.assign({},SETTINGS_DEF);
 try{const s=JSON.parse(localStorage.getItem('og.settings')||'{}');for(const k in SETTINGS_DEF)if(typeof s[k]===typeof SETTINGS_DEF[k])SETTINGS[k]=s[k];}catch(e){}
 function settingsSave(){try{localStorage.setItem('og.settings',JSON.stringify(SETTINGS));}catch(e){}}

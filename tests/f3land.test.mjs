@@ -1,4 +1,4 @@
-// Card F3, the land in the new look (Sessions 1175–1177, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
+// Card F3, the land in the new look (Sessions 1180–1182, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
 // shaded by the land's own material, which paints fields, hedgerows, rock and the woods from afar over groundColor's vertex
 // colour; every chunk carries a per-vertex mask that keeps the fields off roads and out of site stamps; the sky is a gradient
 // dome that follows the clock; the world's frame is tone-mapped (ACES) and graded, and rooms are not. The console stays clean
@@ -41,7 +41,7 @@ check('the sky follows forceTime: noon\'s zenith brighter than 17.5h\'s, 17.5h\'
 check('the sun rides the dome: up at noon, down at midnight', sky[12].sunY > .9 && sky[0].sunY < -.9, sky);
 check('the horizon warms at sunrise and at the golden hour and is cooler at noon', sky[6].warm > sky[12].warm && sky[17.5].warm > sky[12].warm, sky);
 
-// Session 1176: grass and wildflowers, streamed with the chunks. Out in the open country west of Dunmore, the chunks in the quality
+// Session 1181: grass and wildflowers, streamed with the chunks. Out in the open country west of Dunmore, the chunks in the quality
 // level's ring of the player's own grow instanced blades (a chunk a frame), none on a road, in a stamp or under the sea; the three
 // levels change the counts, the sun's shadow map and the clouds, which are one instanced mesh, one draw call.
 const field = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); let best = null;
@@ -67,7 +67,7 @@ await setQ(1); const back = await grass();
 check('the three levels change what the land spends: grass, the shadow map and the clouds', lo.blades === 0 && lo.puffs === 0 && lo.shadow === 1024 && mid.shadow === 2048 && hi.shadow === 4096 && hi.blades > mid.blades * 1.5 && hi.puffs > mid.puffs, { lo, mid, hi });
 check('back at the middle level, the same grass grows again (a chunk\'s blades come from a stream seeded by the chunk)', back.blades === mid.blades && back.flowers === mid.flowers, { mid: mid.blades, back: back.blades });
 
-// Session 1177: trees from leaf cards. The scatter decides every tree as before and the new look only draws it: build each loaded
+// Session 1182: trees from leaf cards. The scatter decides every tree as before and the new look only draws it: build each loaded
 // chunk's scatter again with the land off (the old look's meshes) and compare, species by species, every tree's matrix and colour,
 // and the chunk's colliders and tree points. The leafy kinds and the conifers are the land's (one instanced mesh a species, a
 // draw call each, as before); dead trees, scrub and mushrooms keep their old shapes.

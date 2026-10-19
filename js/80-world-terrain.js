@@ -618,7 +618,7 @@
         // around white, so normalise toward 1.
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
       },solR=sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5);
-      if(!landTrees(group,trees[sp],sp,tint,solR,sol))place(trees[sp],sp,tint,true,solR); // S1177 (F3): the new look draws the leafy kinds and conifers from leaf cards, at the same places
+      if(!landTrees(group,trees[sp],sp,tint,solR,sol))place(trees[sp],sp,tint,true,solR); // S1182 (F3): the new look draws the leafy kinds and conifers from leaf cards, at the same places
     }
     {const by={};rocks.forEach(r=>{r.sink=0;(by[r.proto]||(by[r.proto]=[])).push(r);});for(const k in by)place(by[k],k,(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);} // S264 — one instanced mesh per kind of rock in the chunk
     place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);},false,0);
@@ -691,7 +691,7 @@
     if(ch.fish){const i=LIFE.fish.indexOf(ch.fish);if(i>=0)LIFE.fish.splice(i,1);}
     ch.herbs.forEach(h=>{if(h.g&&h.g.parent)h.g.parent.remove(h.g);const i=ZONES.world.herbs.indexOf(h);if(i>=0)ZONES.world.herbs.splice(i,1);});ch.herbs.length=0;
     if(ch.loot&&typeof ZONE_CORPSES!=='undefined')ch.loot.forEach(c=>{const i=ZONE_CORPSES.indexOf(c);if(i>=0)ZONE_CORPSES.splice(i,1);});
-    landGrassDrop(ch); // S1176 (F3): the grass's blade and flower are shared by every chunk; only its instances go
+    landGrassDrop(ch); // S1181 (F3): the grass's blade and flower are shared by every chunk; only its instances go
     sc.remove(ch.group);
     ch.terrain.dispose();
     ch.group.traverse(o=>{if(o.isInstancedMesh){o.geometry.dispose();o.dispose();}});

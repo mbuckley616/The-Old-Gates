@@ -293,7 +293,7 @@ void main(){ float a = texture2D(uMap, vUv).a * uOp; if (a < .01) discard;
   im.frustumCulled=false;im.renderOrder=-4;im.userData.puffs=list.length;im.userData.q=Q.name;
   LAND.clouds=im;LAND.sky.add(im);
 }
-// ── trees: leaf cards around clumps, normals turned out from the crown (item 3, Session 1177) ──────────────────────────
+// ── trees: leaf cards around clumps, normals turned out from the crown (item 3, Session 1182) ──────────────────────────
 // The scatter decides every tree as before (where, which species, its size, girth, turn and tint, its collider and its tree
 // point; S533: keyed by the hash and the cell), and the new look only draws it differently: for the leafy kinds and the conifers,
 // the slice's kit in place of the low-poly crown. Leaves are cards around clumps, their normals turned out from the crown's

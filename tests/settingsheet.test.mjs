@@ -19,7 +19,7 @@ console.log(JSON.stringify(a.rows));
 const hasRule = await page.evaluate(() => typeof setChallenge === 'function');
 // Session 822: a tenth, the renderer (card F1), after the mouse's two
 const nine = ['Everything', 'Music', 'Blows and steps', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down', 'Renderer'];
-// Session 1176 (card F3): on the new look, Quality follows the renderer (the land's three levels); the old look has no land to set
+// Session 1181 (card F3): on the new look, Quality follows the renderer (the land's three levels); the old look has no land to set
 if (await page.evaluate(() => window.OG_LOOK === 'new')) nine.push('Quality');
 check('Settings on the leaf opens the sheet with its ten rows (and the challenge only where the rule is built)', a.view === 'settings' && JSON.stringify(a.rows) === JSON.stringify(hasRule ? [...nine, 'How hard the world strikes'] : nine), { hasRule, rows: a.rows });
 check('everything starts as it was: 100s, brightness 0, field of view 75, look 1×', a.S.master === 100 && a.S.music === 100 && a.S.bright === 0 && a.S.fov === 75 && a.S.look === 1 && a.S.invert === false, a.S);

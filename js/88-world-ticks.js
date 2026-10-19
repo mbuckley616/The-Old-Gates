@@ -267,7 +267,7 @@
     tickLightPool(dt);tickWeather(dt);tickSmoke(dt);tickShip(dt);tickSailTrim(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickOtherShips(dt,now||performance.now());tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
     stream(px,pz,false);
     houseLod();
-    landTick(dt); // S1176 (F3): the new look's grass, a chunk a frame, and its wind
+    landTick(dt); // S1181 (F3): the new look's grass, a chunk a frame, and its wind
     atmosphere(dt);
     tickSettlements(dt,false);
     tickTownNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}
