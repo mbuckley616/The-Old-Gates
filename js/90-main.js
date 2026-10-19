@@ -1465,7 +1465,7 @@ function loop(now){
         if(e.telegraphT<=0){
           e.telegraphT = 0;
           telegraphReset(e);
-          if(foeReach(e,true).lunge)foeLunge(e,dBlk); /* S1041 — the wolf leaps at the bite */
+          if(foeReach(e,true).lunge&&e._string!==2)foeLunge(e,dBlk); /* S1041 — the wolf leaps at the bite; S1162 — not at the snap */
           executeDungeonStrike(e, now);
         }
       } else if(!_slam&&!(e._slamT>0)&&dist<foeReach(e,true).engage&&e.atkCd<=0&&!e.ranged){ /* S1041 — F2b: hull to hull for the sheet's families, 0.9 for the rest */
