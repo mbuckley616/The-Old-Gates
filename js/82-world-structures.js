@@ -1021,6 +1021,9 @@
       const gx=n.g.position.x,gz=n.g.position.z;
       const plan=(n._settle&&n._settle.raid)?{hide:true}:scheduleFor(n,h);
       // hidden = indoors somewhere; the interior generator spawns them there
+      // arrived-and-hidden holds only while the plan is still "go, then hide": the sea tutorial's "wait at your door" brings the
+      // shipwright back out even when he gave up short of the inn (npcStep's no-headway rule since S1160)
+      if(!plan.thenHide)n._arrivedHide=false;
       if(plan.hide||(n._arrivedHide)){if(n.g.visible){n.g.visible=false;n.dot.visible=false;}if(n._torch&&n._torch.visible){n._torch.visible=false;n._torch.userData.light.intensity=0;}n._retreated=true;if(plan.hide)n._arrivedHide=false;continue;}
       if(n._drawn)continue; // S157 — drawn against you; the enemy stands in
       if(!n.g.visible){n.g.visible=true;n._retreated=false;n.g.position.set(n.home.x,worldH(n.home.x,n.home.z),n.home.z);}
