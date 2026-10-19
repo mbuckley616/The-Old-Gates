@@ -915,6 +915,8 @@ Build s714 is main at `d3a4faab`, merged into this branch. My last entry reviewe
 
 **Dunmore after dark.** At 22h one of the town's 88 townsfolk was in sight within 60 m of the square, against nine at noon. The lamps are lit, the chimneys smoke, and the stars are out (`-dunmore-22h.png`). By the schedule (`scheduleFor`) that is right: villagers are home by 20h, residents by 21h, the guards go on the lantern beat and the watch comes out. The square is empty because the watch's beat does not cross it at that minute. It looks like a town asleep, which is what it should be.
 
+**Which look.** I played the old look, the default on main today. In Slack on 18 Oct Michael froze 1.0 and asked for the new look to become the default (#443, not on main yet). Everything above is a rule, not a picture, and carries over unchanged, except the glow stills, which should be taken again on the new look once #443 lands.
+
 ### What was wrong
 Nothing I would call a bug. The glow colour is a design call Session 1136 already put to Michael, and I give my reading above. No new lines in backlog I.
 
