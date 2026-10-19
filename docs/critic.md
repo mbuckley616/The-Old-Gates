@@ -896,3 +896,43 @@ Nothing new. One boot on the new look and one export suite, with no page errors.
 ### Backlog notes (not changed)
 - I: the *Sailing playtest* block (line 346) is all struck and could close (seventh run noted).
 - CLAUDE.md still says 44 script files, and its code map has no `38-kit.js`. There are 45 now. Session 1037 left that to the producer.
+
+## 2026-10-19 — Dunmore's fifteen counters crouched and standing (Session 1110's cover), a Bandit's three blows by day and by night (1136, 1137, 1140), Clodagh's Goods, a room at The Bramble Hearth (build s714)
+
+Build s714 is main at `d3a4faab`, merged into this branch. My last entry reviewed the new look, so this run is a playtest. `npm install` exits 0 and `export` passes 1/1. Three throwaway scripts under `tests/tmp/` played Dunmore on the old look: every keeper's room at 13h, the street at 12h and 22h, a Bandit in front of you at both hours, the general store, and the first inn at 20h. No page errors in any of them.
+
+**The counters (Session 1110, Michael's A on #420).** I went into all fifteen of Dunmore's rooms with a keeper: two guilds, a forge, an armoury, two apothecaries, three general stores, four inns, the Oratory and the barber. In each I stood on the far side of the solid nearest the keeper, turned the keeper to face me and asked `witnessOf` with a pick in hand, at 0.4, 0.8, 1.3 and 2 m past the counter's front edge. Every shop counter is the same box: it runs 0.72 m under the floor and its top is 0.94 m, so it clears `COVER_H` (0.9) by 4 cm. The answer was the same in all thirteen rooms where the spot was clear of other solids. Standing, the keeper sees you at every distance. Crouched, you are hidden at 0.4 and 0.8 and seen at 1.3 and 2. The keeper stood 2.0 to 2.8 m from you at the near spots. Two rooms are exceptions. In the Oratory, crouching hides you at every distance out to 5.1 m from Pádraig, because the pews stand in the line every metre or so. In Bríd's Armoury a 2.3 m rack beside the keeper does the same. Both follow from the rule, and both feel right: a church full of pews should hide a crouching thief. So the session's *Needs eyes* holds up: within a metre of the counter you are unseen, and a step back you are seen. From the player's eye, crouched 0.4 m off the Fighters' Guild counter at 1.1 m, the counter is a wall of wood up to the chin. Gráinne shows head and shoulders over it, with her *Press 'E' to talk* still up (`critic/2026-10-19-counter-guild_f.png`). The one thing the room does not tell you is that you are hidden. The HUD shows nothing different at 0.8 m than at 1.3 m, and the answer flips 4 cm above the counter's real top. I would leave the 1 m as built.
+
+**The heavy blow, the feint, and the glows (Sessions 1136, 1137, 1140).** I stood a Bandit 2.6 m ahead on Dunmore's road at noon and at 22h and painted each of its glows at full strength through the game's own `telegraphPulse`. Then I painted the perfect parry's flash with `executeStrike`'s colours.
+- **The gold reads as a warning but not as itself.** At noon the light blow's gold (`emissive` bf8414) turns the whole body a flat, even marigold (`-glow-12h-light.png`). The parry flash (`color` ffdd44, `emissive` 664400) turns it ochre (`-glow-12h-parry.png`). Side by side the two are one hue a shade apart. In a fight they never sit side by side: the gold comes in the last 0.15 s of a wind-up and the yellow follows a parried blow, a beat later. At 22h the gold is plainer, a lamplit amber on a dark street (`-glow-22h-light.png`), and still in the parry's family. Session 1136 asked whether the gold is too close to the parry's yellow. From these pictures it is, by day. A colour that means *it is coming* should not be one shade from the colour that means *you caught it*.
+- **The red heavy reads at once, by night especially** (`-glow-22h-heavy.png`): a body of solid scarlet that is not like anything else on the street.
+- **Both glows replace the body.** The emissive at k=1 washes out the clothes, the face and the hair. For 0.15 s the foe is a flat colour shape, a cut-out more than a lit body. It works as a tell, but it is the loudest thing in the game's palette.
+- **Half the blows are not a plain swing.** I let a keyed Bandit (`critic:fight:1`) fight me for 40 s of the loop's own ticks, with my block held. It wound up 19 times: 7 light, 6 heavy and 6 feints. Through the held block the light blows did 11 to 16 and the heavies 22 to 32. The first heavy took 85 of 104 posture and broke the guard, as 1136 built. Session 1140 asked whether one in four feints on top of one in four heavies is too busy. From the numbers alone it is busy: only 37% of this Bandit's blows were the swing the tutorial teaches. Whether the feint *reads* (the pose stopping at its top) I cannot judge headless. My 40 s ran in a synchronous loop, faster than the real clock, so I make no claim about posture recovery or the stagger's length.
+
+**Clodagh's Goods at 13h.** Six things bought and sold back at the counter, at Charisma 0. Torch: list 8, paid 8, sold for 2. Dungeon Map: 15, 14, 4. Lockpick: 12, 11, 4. Health Potion: 18, 17, 7. Wooden Bow: 4, 4, 1. A dozen Iron Arrows: 2 for the bundle, and a single arrow sells for 0 (S366's *a piece is under a coin*). No money loop, and the shop sheet's header reads *Clodagh · "Rope, salt, candles, and questions."*, which is in the canon's voice.
+
+**The Bramble Hearth at 20h.** Ruairí's topics put *Something to eat and drink?* and *A bed for the night?* first. The offer reads *The house is empty tonight… A room is 11 gold — the first door on the right*, and *Yes. 11 gold.* takes 11 of 60 and says *yours till this time tomorrow*. At the room-0 bed on the gallery (2.74 m up), the bar reads *Your room — press 'E' to rest*, and E opens the sleep slip (`-inn-sleep.png`): *Hearthday, the 1st of Reaping, in the 27th year of the Peace · 8:00 pm · The Bramble Hearth, Dunmore*. Its 8-hour default wakes you at 4:01 am, which the dial and the line agree on. The slip is the best-made panel in the game. The default is the one odd thing: a traveller who takes a room at eight is woken in the dark. *Morning 8 am* is one key away, so it is not a bug.
+
+**Dunmore after dark.** At 22h one of the town's 88 townsfolk was in sight within 60 m of the square, against nine at noon. The lamps are lit, the chimneys smoke, and the stars are out (`-dunmore-22h.png`). By the schedule (`scheduleFor`) that is right: villagers are home by 20h, residents by 21h, the guards go on the lantern beat and the watch comes out. The square is empty because the watch's beat does not cross it at that minute. It looks like a town asleep, which is what it should be.
+
+**Which look.** I played the old look, the default on main today. In Slack on 18 Oct Michael froze 1.0 and asked for the new look to become the default (#443, not on main yet). Everything above is a rule, not a picture, and carries over unchanged, except the glow stills, which should be taken again on the new look once #443 lands.
+
+### What was wrong
+Nothing I would call a bug. The glow colour is a design call Session 1136 already put to Michael, and I give my reading above. No new lines in backlog I.
+
+### Needs eyes, reviewed
+- *1110 (cover):* judged in all fifteen rooms. It works as described, and within 1 m is right for a 0.94 counter. The tables are 0.75 and under the line, as the session says.
+- *1111 (the mimic's pounce):* not played. No mimic this run.
+- *1112 (the spire watch):* not judged. The quest writer's words that give the quest are not on main, so a player cannot start the watch.
+- *1121 (the shelf book):* nothing to see on main, as the session says.
+- *1135 (gold by place):* not played. The rule is a table and `goldtier` measures it.
+- *1136 (the gold glow, the 1.0 s heavy):* judged as stills: the gold is too near the parry's yellow by day, and the red is plain. The 1.0 s heavy without the glow I cannot judge headless.
+- *1137 (the golem's 1.25 s heavy):* not played.
+- *1140 (the feint):* judged as counts only: 6 feints and 6 heavies in 19 wind-ups. Whether the hold reads, I cannot judge headless.
+- *1091, 1132, 1133 (the beasts' falls):* not seen. No beast died near a solid in my play.
+- *1094–1131 (Garrick, the hound, the cats, the dress):* prototype only, for a new-look run.
+- *1104, 1108–1110, 1127, 1128, 1138, 1141 (QA):* tests only.
+
+### Backlog notes (not changed)
+- I: the *Sailing playtest* block (line 356) is all struck and could close (eighth run noted).
+- CLAUDE.md still says 44 script files and has no `38-kit.js` in its code map. There are 45 files.
