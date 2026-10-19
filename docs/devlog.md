@@ -26825,3 +26825,26 @@ Correction to Session 1163: `builder-bands-hem-side.jpg` was not a side view. It
 - **The cut's noise** reads as a short fringe at the hem on a plain tunic, as it does on a short one. With the band, the band's ground fills the noise.
 - **Walking:** the shell is one tube round both legs. A knee-length hem across a stride stretches as the long gown's does; the builder has no stride pose to judge it by.
 - **Owed:** the women's mantle over the gown (OG-110), who wears formal dress (the game), and the game after F4.
+
+## v80 — Session 1165 — The coat hood's fur ruff, at under half the triangles (L1, prototype only)
+Session 1152's Needs eyes: the ruff round a hooded coat's face cost 11.8k to 13.1k triangles, as much as the rest of the coat's fur together. It proposed narrowing the ruff or cutting its seven shells to four, and the pictures would have had to say whether it still read. Neither was needed. Each shell was a full copy of the hood's front within the ruff's reach, and the shells' shader then discarded most of it. It touches only `people.js` and `builder.check.mjs`, and changes nothing that shows.
+
+- **What was drawn for nothing.** Each shell held 1,691 triangles of the hood's front and showed 676 of them:
+  - 986 (58%) lay wholly inside the face's opening at the front, where the shader discards every fragment (`aBase` z > 0 and x < 1);
+  - 29 lay wholly past the ruff's outer line, whose noisy cut reaches 1.23 at most.
+- **The cut.** A triangle whose three corners are all in one of those two regions is now left out of the shells. Both tests are half-spaces in `aBase`, and `aBase` is interpolated across a triangle, so every fragment of such a triangle would have been discarded too. Nothing that drew before is lost.
+- The shell count, the spacing, the ruff's width and its outer line are unchanged.
+
+### Verified (headless Chromium)
+- **Session 1152's three hood-up checks** (`builder.check.mjs`) now also count the ruff's triangles that lie wholly where its shader discards: 0 on each. The ruff's ceiling is tightened from 14,000 to 6,000 triangles.
+  - The charcoal Markman's ruff is 4,732 triangles (was 11,837).
+  - The brown-coated Markwoman's is 5,411 (was 13,097).
+  - The plain coat has no ruff.
+  - 0 of 7,123 to 7,191 head and hair points come through the hood, as before.
+- **A pixel comparison was tried and does not settle it.** Rendering the hood and ruff alone from four sides, the same build twice differs in 26k to 30k pixels of 385k to 441k, and old against new in 33k to 41k. The seven shells 3.5 mm apart do not render the same way twice on SwiftShader, even with `Math.random` seeded. So the proof is the geometric one above, and the check counts it.
+- **`builder.check.mjs`:** 508 of 508 pass.
+- **Pictures:** `builder-coathood-face.jpg` and `-woman.jpg` retaken. The ruff reads as it did.
+### Needs eyes
+- **The ruff's look** is unchanged; whether seven shells are needed at all is still open, but the cost no longer presses the question.
+- **The hair texture's `Math.random`** (`strandTex`) makes two builds of one genome differ in their hair's strands. That is cosmetic and allowed by the co-op rules, but it keeps any pixel comparison of a whole person noisy.
+- **Owed:** the women's mantle over the gown (OG-110; the fur mantle the Markmen roll may already be it, in white), and the game after F4.

@@ -1152,7 +1152,10 @@ function buildHoodUp(P, G, meshes, o = {}) {
   // the fur ruff (Session 1152, OG-109's fur-lined hooded coats): the hood's front, where it is within three tenths of its opening's size again of the
   // face, in seven shells 3.5 mm apart pushed out from the head's middle, cut at the opening's edge as the hood is and on a smooth line outside it, not the triangles' stairs; the hood's own
   // skinning, so the ruff moves with it
-  const furM = []; let furTris = 0; if (o.fur) { const fi = []; for (let t = 0; t < idx.length; t += 3) if ([0, 1, 2].every(k => base[idx[t + k] * 3] < 1.3)) fi.push(idx[t], idx[t + 1], idx[t + 2]);
+  // (Session 1165: a triangle wholly where the shells' shader discards, inside the opening at the front or past the outer line's furthest reach at
+  // 1.23, is left out of them: 58% of the hood's front lay inside the opening, so each shell was drawing 1,691 triangles to show 676)
+  const furM = []; let furTris = 0; if (o.fur) { const fi = [], bx = i => base[i * 3], bz = i => base[i * 3 + 2]; for (let t = 0; t < idx.length; t += 3) { const v = [idx[t], idx[t + 1], idx[t + 2]];
+      if (v.every(i => bx(i) < 1.3) && !v.every(i => bz(i) > 0 && bx(i) < 1) && !v.every(i => bx(i) > 1.23)) fi.push(...v); }
     const sg = skin(g.clone()), si = sg.attributes.skinIndex, sw = sg.attributes.skinWeight;
     for (let s = 0; s < 7; s++) { const lay = .003 + s * .0035, pp = new Float32Array(pos.length); for (let i = 0; i < pos.length; i += 3) { const dx = pos[i] - c.x, dy = pos[i + 1] - c.y, dz = pos[i + 2] - c.z, L = Math.hypot(dx, dy, dz) || 1; pp[i] = pos[i] + dx / L * lay; pp[i + 1] = pos[i + 1] + dy / L * lay; pp[i + 2] = pos[i + 2] + dz / L * lay; }
       const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(pp, 3)); fg.setAttribute('aBase', new THREE.Float32BufferAttribute(base, 3)); fg.setAttribute('skinIndex', si); fg.setAttribute('skinWeight', sw); fg.setIndex(fi); fg.computeVertexNormals();
