@@ -252,34 +252,41 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: ${t.school ? 'its sockets lit (' + t.lit + ' eyes)' : 'its sockets empty and dark'}`, t.school ? t.lit === 2 : t.lit === 0, { lit: t.lit });
     if (t.school) check(`${k}: the ${t.from} of ${t.school}, weed-hung (OG-018)`, t.from === 'skeleton' && t.school === 'Uisce' && t.weed, t);
     check(`${k}: carries ${(t.gear || []).join(' and ')}, clear of the ground through every gait (lowest ${t.low} m)`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.low > .02, t); }
-  // a failing gate's foe (Session 1168, OG-073, backlog L4): the steady skeleton grown wrong. Two more pairs of arms, each swinging on its own
-  // beat and held out from the cage through every gait; bone spurs standing on the vertebrae; the bones cracked and only the cracks lit,
-  // Solas's white-gold; the sword and shield still in the first pair's hands
+  // a failing gate's foes (Sessions 1168, 1169; OG-073, backlog L4): each the steady plan it grows from, with more limbs, its stone or bone
+  // cracked and only the cracks lit in its school's colour. The extra hands swing on their own beat, held out from the body and off the
+  // ground through every gait. Solas's skeleton: two more pairs of arms, bone spurs on its vertebrae, more ribs, its sword and shield still
+  // in the first pair's hands. Gaoth's gargoyle: wings half again the Cloch gargoyle's, and a second pair of clawed arms
   const fl = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
     for (const k of K.FAILING || []) { const C = K.build(K.genome(k, k + ':check')), base = K.build(K.genome(C.plan.from, C.plan.from + ':check')), P = new T.Vector3(), inv = new T.Matrix4();
       const gl = C.meshes[0].geometry.attributes.aGlow, g0 = base.meshes[0].geometry.attributes.aGlow; let lit = 0, lit0 = 0; for (let v = 0; v < gl.count; v++) if (gl.getX(v) > .5) lit++; for (let v = 0; v < g0.count; v++) if (g0.getX(v) > .5) lit0++;
-      const hands = C.B.arms.filter(A => !A.names[0].startsWith('arm0')).map(A => A.names[3]), first = C.B.arms.filter(A => A.names[0].startsWith('arm0')).map(A => A.names[3]); let low = 1e9, inX = 1e9, swingMax = 0; const items = [], box = new T.Box3(); C.rig.traverse(o => { if (o.name === 'sword' || o.name === 'shield') items.push(o); });
-      let gearLow = 1e9; const beat = {};
+      const pairs0 = base.B.arms.length / 2, hands = C.B.arms.filter(A => +A.names[0][3] >= pairs0).map(A => A.names[3]); let low = 1e9, inX = 1e9; const items = [], box = new T.Box3(); C.rig.traverse(o => { if (o.name === 'sword' || o.name === 'shield') items.push(o); });
+      let gearLow = 1e9; const beat = {}, first = C.B.arms.find(A => A.names[0].startsWith('arm0L'))?.names[3];
       for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
-        for (const h of hands) { C.byName[h].getWorldPosition(P).applyMatrix4(inv); low = Math.min(low, P.y); inX = Math.min(inX, Math.abs(P.x)); if (gait === 'walk') (beat[h] = beat[h] || []).push(P.z); }
+        for (const h of [...hands, first]) { if (!h) continue; C.byName[h].getWorldPosition(P).applyMatrix4(inv); if (h !== first) { low = Math.min(low, P.y); inX = Math.min(inX, Math.abs(P.x)); } if (gait === 'walk') (beat[h] = beat[h] || []).push(P.z); }
         for (const o of items) { box.setFromObject(o); gearLow = Math.min(gearLow, box.min.y - C.root.position.y); } } }
-      // each extra hand's fore-and-aft swing in the walk, and whether the pairs swing out of step with one another
-      const sw = Object.fromEntries(Object.entries(beat).map(([h, z]) => [h, +(Math.max(...z) - Math.min(...z)).toFixed(3)])), peak = h => beat[h].indexOf(Math.max(...beat[h]));
-      const L1 = hands.find(h => h.startsWith('arm1L')), L2 = hands.find(h => h.startsWith('arm2L'));
+      // each extra hand's fore-and-aft swing in the walk, and whether each extra pair swings out of step with the pair before it
+      const sw = Object.fromEntries(hands.map(h => [h, +(Math.max(...beat[h]) - Math.min(...beat[h])).toFixed(3)])), peak = h => beat[h].indexOf(Math.max(...beat[h]));
+      const lefts = [first, ...hands.filter(h => h.startsWith('arm') && h[4] === 'L')].filter(Boolean), offBeat = lefts.length > 1 && lefts.every((h, i) => !i || peak(h) !== peak(lefts[i - 1]));
+      const spineO = C.plan.parts.find(([q]) => q === 'spine')[1], ribs = C.plan.parts.find(([q]) => q === 'ribs')?.[1], body = ribs ? ribs.w : Math.max(...spineO.r) * spineO.s[0];
+      const span = pl => pl.parts.find(([q]) => q === 'wings')?.[1].span || 0;
       let spurs = 0; C.rig.traverse(o => { if (o.name === 'spur') spurs++; });
-      out[k] = { name: C.plan.name, school: C.plan.school, condition: C.plan.condition, from: C.plan.from, src: C.plan.src, pairs: C.B.arms.length / 2, basePairs: base.B.arms.length / 2, ribs: C.B.ribs, baseRibs: base.B.ribs,
-        lit: +(lit / gl.count).toFixed(3), lit0, glow: C.plan.glow?.color, eyes: (() => { let n = 0; C.rig.traverse(o => { if (o.isMesh && o.material?.clearcoat === 1) n++; }); return n; })(),
-        spurs, spurOff: Math.max(...(C.B.spurs || []).map(q => q.off / q.r)), low: +low.toFixed(3), inX: +inX.toFixed(3), cage: +(C.plan.parts.find(([p]) => p === 'ribs')[1].w).toFixed(3), sw, offBeat: L1 && L2 ? peak(L1) !== peak(L2) : false,
-        gear: C.B.gear, gearLow: +gearLow.toFixed(3), tris: C.stats.tris, baseTris: base.stats.tris, bones: C.stats.bones }; }
+      out[k] = { name: C.plan.name, school: C.plan.school, condition: C.plan.condition, from: C.plan.from, src: C.plan.src, pairs: C.B.arms.length / 2, basePairs: pairs0, ribs: C.B.ribs, baseRibs: base.B.ribs,
+        lit: +(lit / gl.count).toFixed(3), lit0, glow: C.plan.glow?.color, baseGlow: !!base.plan.glow, eyes: (() => { let n = 0; C.rig.traverse(o => { if (o.isMesh && o.material?.clearcoat === 1) n++; }); return n; })(),
+        spurs, spurOff: C.B.spurs ? Math.max(...C.B.spurs.map(q => q.off / q.r)) : null, low: +low.toFixed(3), inX: +inX.toFixed(3), body: +body.toFixed(3), sw, offBeat, span: span(C.plan), baseSpan: span(base.plan), cloch: span(K.PLANS.gargoyle),
+        gear: C.B.gear, gearLow: +gearLow.toFixed(3), tris: C.stats.tris, baseTris: base.stats.tris, bones: C.stats.bones, baseBones: base.stats.bones }; }
     return out; });
+  const SCHOOL = { Solas: c => c[0] > 2 && c[1] > 1.6 && c[2] < c[1], Gaoth: c => c[2] > c[1] && c[1] > c[0] && c[2] > 2 };
   for (const [k, t] of Object.entries(fl)) { console.log(k, JSON.stringify(t));
-    check(`${k}: the ${t.from} of ${t.school} at a ${t.condition} gate, from OG-073`, t.from === 'skeleton' && t.school === 'Solas' && t.condition === 'failing' && /OG-073/.test(t.src), t);
-    check(`${k}: ${t.pairs} pairs of arms against the steady one's ${t.basePairs}, the extra hands held out from the cage (nearest ${(t.inX * 100).toFixed(1)} cm off the middle, the cage ${(t.cage * 100).toFixed(0)} cm) and off the ground (lowest ${t.low} m) through every gait`, t.pairs === t.basePairs + 2 && t.inX > t.cage && t.low > .5, t);
-    check(`${k}: each extra hand swings in the walk (${Object.values(t.sw).map(v => (v * 100).toFixed(0)).join(', ')} cm), the two pairs out of step`, Object.values(t.sw).every(v => v > .05) && t.offBeat, t.sw);
-    check(`${k}: ${t.spurs} bone spurs on the vertebrae (their bases within ${t.spurOff.toFixed(2)} of the spine's radius), ${t.ribs} ribs against ${t.baseRibs}`, t.spurs >= 8 && t.spurOff < .4 && t.ribs > t.baseRibs, t);
-    check(`${k}: the cracks lit and nothing else, ${(t.lit * 100).toFixed(1)}% of the bones' vertices, in white-gold (${t.glow}); the steady skeleton lit nowhere (${t.lit0}); its sockets lit (${t.eyes})`, t.lit > .03 && t.lit < .3 && t.lit0 === 0 && t.glow && t.glow[0] > 2 && t.glow[1] > 1.6 && t.glow[2] < t.glow[1] && t.eyes === 2, t);
-    check(`${k}: still carries ${(t.gear || []).join(' and ')} in the first pair's hands, clear of the ground (lowest ${t.gearLow} m); ${t.tris} triangles against ${t.baseTris}, ${t.bones} bones`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.gearLow > .02 && t.tris < 4 * t.baseTris, t); }
-  check(`failing gates' foes: ${Object.keys(fl).join(', ')}`, Object.keys(fl).length >= 1, Object.keys(fl));
+    check(`${k}: the ${t.from} of ${t.school} at a ${t.condition} gate, from OG-073`, t.from && t.condition === 'failing' && SCHOOL[t.school] && /OG-073/.test(t.src), t);
+    check(`${k}: ${t.pairs} pairs of arms against the steady one's ${t.basePairs} (${t.bones} bones against ${t.baseBones}), the extra hands held out from the body (nearest ${(t.inX * 100).toFixed(1)} cm off the middle, the body ${(t.body * 100).toFixed(0)} cm) and off the ground (lowest ${t.low} m) through every gait`, t.pairs > t.basePairs && t.bones > t.baseBones && t.inX > t.body && t.low > .3, t);
+    check(`${k}: each extra hand swings in the walk (${Object.values(t.sw).map(v => (v * 100).toFixed(0)).join(', ')} cm), each pair out of step with the one before`, Object.values(t.sw).every(v => v > .05) && t.offBeat, t.sw);
+    check(`${k}: the cracks lit and nothing else, ${(t.lit * 100).toFixed(1)}% of the vertices, in ${t.school}'s colour (${t.glow}); the steady one lit nowhere (${t.lit0}); its eyes lit (${t.eyes})`, t.lit > .03 && t.lit < .3 && !t.baseGlow && t.lit0 === 0 && t.eyes === 2, t);
+    check(`${k}: ${t.tris} triangles against the steady one's ${t.baseTris}`, t.tris < 4 * t.baseTris, t);
+    if (t.from === 'skeleton') {
+      check(`${k}: ${t.spurs} bone spurs on the vertebrae (their bases within ${t.spurOff?.toFixed(2)} of the spine's radius), ${t.ribs} ribs against ${t.baseRibs}`, t.spurs >= 8 && t.spurOff < .4 && t.ribs > t.baseRibs, t);
+      check(`${k}: still carries ${(t.gear || []).join(' and ')} in the first pair's hands, clear of the ground (lowest ${t.gearLow} m)`, (t.gear || []).includes('sword') && t.gear.includes('shield') && t.gearLow > .02, t); }
+    if (t.school === 'Gaoth') check(`${k}: a wingspan of ${t.span} in the plan's units against Gaoth's steady ${t.baseSpan} and Cloch's ${t.cloch}, half again Cloch's`, Math.abs(t.span - 1.5 * t.cloch) < .01 && t.span > t.baseSpan, t); }
+  check(`failing gates' foes: ${Object.keys(fl).join(', ')}`, Object.keys(fl).length >= 2, Object.keys(fl));
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));

@@ -2058,7 +2058,20 @@ Object.assign(PLANS, {
       ['arms', { at: .42, out: .1, up: 0, dz: .02, len: .4, r: [.036, .03, .026], dir: [.9, -.3, -.15], bend: 55, tone: 'coat', swing: .5, phase: 3.4 }],
       ['spines', { n: 9, from: .1, to: 1, len: .15, r: .016, tone: 'coat', taper: .35, dorsal: 1, dir: [0, .55, -1] }]] })
 });
-export const FAILING = ['failingskeleton'];
+// ── Session 1169: Gaoth's failing gargoyle (OG-073's Gaoth row: "bigger wings and more limbs"). Gaoth's weathered gargoyle, its wings
+// half again the Cloch gargoyle's span (Gaoth's own steady wings are a quarter wider), a second pair of clawed arms out of the shoulder
+// blades reaching forward and out over the first, and the stone cracked with the cracks lit the pale blue-white of a storm sky (on a
+// finer grid than the steady gargoyle's, 4 cm against 6, so a crack has vertices to lie on). The wing kit names its bones without a
+// pair's index, so a second pair of wings waits on that ──
+Object.assign(PLANS, {
+  failinggargoyle: re(PLANS.gaothgargoyle, { name: 'Gargoyle of Gaoth (failing gate)', src: 'OG-073 (Gaoth: the gargoyle at a failing gate, bigger wings and more limbs)', school: 'Gaoth', condition: 'failing', from: 'gaothgargoyle',
+    scale: .62, wingRest: PLANS.gargoyle.wingRest, cell: .04, spread: .05, palette: PLANS.gaothgargoyle.palette,
+    glow: { color: [1.3, 1.8, 2.6], freq: 7, w: .03, all: .75 },
+    parts: [...PLANS.gaothgargoyle.parts.map(([k, o]) => k === 'wings' ? [k, { ...o, span: PLANS.gargoyle.parts.find(([q]) => q === 'wings')[1].span * 1.5 }]
+      : k === 'head' ? [k, { ...o, eyes: o.eyes.map(e => ({ ...e, color: [.7, .9, 1.3] })) }] : [k, o]),
+      ['arms', { at: .82, out: .22, up: .12, dz: -.04, len: 1.05, r: [.07, .06, .05], dir: [.75, .05, .65], dir2: [.2, -.6, .78], tone: 'coat', claws: { r: .012, len: .07 }, swing: .3, phase: 1.9 }]] })
+});
+export const FAILING = ['failingskeleton', 'failinggargoyle'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
