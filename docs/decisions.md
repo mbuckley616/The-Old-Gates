@@ -3,6 +3,14 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The gate interiors, for F5 — how does a gate's inside get its size? (the designer, 2026-10-19) — DECISION #448
+Your A on #421 makes a gate's cell 3 m under a 6 m ceiling, which grows today's rooms and corridors to a Skyrim ruin but not to the foundation's halls of 30 to 250 m. The proposal (`docs/design/gate-interiors.md`) asks how every gate, lesser and great, reaches that size and what you do inside one.
+- **A. The grid, grown.** Rooms up to 60 m with vaults to 30 m, still joined by corridors. Two sessions; the cobblestone dungeon at 1.6 times the size.
+- **B. Spaces first, rooms after, on one grid** *(recommended)*. Every gate is a chain of great spaces from six types (nave to 250 m, crossing, stair hall, chasm, flooded hall, the ring), with the fights in pockets of 15 to 30 m and ordinary rooms off them; a lesser gate 1 to 4 spaces, a great gate 6 to 9, an evening. One deep-work session with #421's build, then three Opus.
+- **C. The six great gates by hand, the lesser gates as A.** Six authored realms; the gates you meet most stay boxes. 14 to 20 sessions.
+
+Recommendation: **B.** It reaches the concept art's size in every gate without a second dungeon engine: the spaces sit on #421's grid, so collision, the minimap, keys and pathing carry over, and the broken gates give your floating footholds (#417 A) their ground.
+
 ### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
 **Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
 
