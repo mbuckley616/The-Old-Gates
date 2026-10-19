@@ -8,7 +8,8 @@ await page.evaluate(() => { forceTime(13); for (let i = BAG.length - 1; i >= 0; 
   const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'misc' && x.keeper); window._h = h; px = h.exitX; pz = h.exitZ; goToInterior(h); });
 await page.waitForTimeout(4500); await g.hide();
 
-const shop = await page.evaluate(() => { forceTime(13); openShop(); gold = 500; renderShop();
+// S953: Speech takes 0.2% a level off a price; it is pinned at 0 so the price read is the town's
+const shop = await page.evaluate(() => { forceTime(13); SKILLS.speech = { lv: 0, p: 0 }; openShop(); gold = 500; renderShop();
   const row = [...document.querySelectorAll('#sh-stock .sh-row')].find(r => /Lockpick/.test(r.textContent)); if (!row) return { none: true, shop: window._h.name, rows: [...document.querySelectorAll('#sh-stock .sh-row')].map(r => r.textContent.trim().slice(0, 30)) };
   const listed = row.textContent.replace(/\s+/g, ' ').trim(); const g0 = gold; row.onclick(); const modal = document.getElementById('qty-modal').style.display === 'flex'; const unit = _qtyCtx && _qtyCtx.unitPrice;
   qtyPick(3); const paid = g0 - gold; const stacks = BAG.filter(b => b.name === 'Lockpick'); const picks = lpPicks();

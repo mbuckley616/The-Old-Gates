@@ -11,6 +11,8 @@ await page.waitForTimeout(4500); await g.hide();
 
 const r = await page.evaluate(() => { forceTime(13); openShop(); gold = 5000;
   for (const k in ATTRS) ATTRS[k] = 0;
+  // S941: weapons and heavy armour are gated on their skill (Blade, Blunt, Bow, Armour), not on Might and Fortitude, so every skill goes to 1 too
+  for (const k in SKILLS) SKILLS[k] = { lv: 1, p: 0 };
   const torch = { ...TORCH_ITEM }, shield = makeItem(2, ARMOR_TYPES.find(t => t.slot === 'offhand' && t.shieldType === 'shield'), null, true);
   BAG.push(torch, shield); renderShop();
   const glyph = row => (row.querySelector('.ico-badge') || {}).textContent;
@@ -29,7 +31,7 @@ check('a weapon or armour shop is open', r.open && /weapon|armor/.test(r.kind), 
 check('the Torch shows its own glyph, not a shield', r.torch === '🔦', r.torch);
 check('a shield still shows a shield', r.shield === '🛡', r.shield);
 check('with every attribute at 0 some pieces are locked', r.locked > 0, { locked: r.locked, rows: r.rows });
-check('every locked row says what it needs and what you have', r.locked > 0 && r.lockedNotes.every(n => /^Requires \S+ \d+ \(you have 0\)/.test(n)), r.lockedNotes);
+check('every locked row says what it needs and what you have', r.locked > 0 && r.lockedNotes.every(n => /^Requires \S+ \d+ \(you have [01]\)/.test(n)), r.lockedNotes);
 check('no wearable row says Requires', r.openWithReq === 0, r.openWithReq);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -38,9 +38,12 @@ check('the enemy tick runs her: in 90 ticks she closes from 4 units', walked.d <
 const hit = await page.evaluate(async () => {
   const e = WORLD.duel.rowe; const rnd = Math.random; Math.random = () => .5;
   e.x = px + fwdX * 1.2; e.z = pz + fwdZ * 1.2; e.mesh.position.x = e.x; e.mesh.position.z = e.z; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0; e.shieldUp = false;
+  // S1108 — and you stand unstaggered: the 90 ticks above run with performance.now() as their clock, and on a slow runner that is seconds,
+  // time enough for her to land a blow whose stagger (real time) turned this swing away (frames 1 on 08ea721, twice)
+  const stag = playerStaggered(performance.now() / 1000); PPOST.stagUntil = 0;
   const hp0 = e.hp; atkCd = 0; stamina = maxStamina; swingT = 0; _pendingStrike = null; attack(false);
   let frames = 0; await new Promise(r => { const f = () => { frames++; if ((swingT === 0 && !_pendingStrike) || frames > 60) r(); else requestAnimationFrame(f); }; requestAnimationFrame(f); });
-  Math.random = rnd; return { hp0, hp: e.hp, frames, state: WORLD.duel.q.data.state };
+  Math.random = rnd; return { hp0, hp: e.hp, frames, stag, state: WORLD.duel.q.data.state };
 });
 console.log('a swing at rowe', JSON.stringify(hit));
 check('a swing at her lands: she loses health', hit.hp < hit.hp0, hit);
@@ -90,8 +93,8 @@ const raid = await page.evaluate(() => {
 console.log('raid at level 1', JSON.stringify(raid));
 check('at level 1 *Raiders! 4 of them* brings four raiders you can see and fight', raid.n === 4 && raid.latent === 0 && raid.shown === 4, raid);
 
-// 5 — the wild's own gate still holds
-const wild = await page.evaluate(() => { const e = buildZoneEnemy(WORLD.scene, [], px + 50, pz, 'Ogre', null); const out = { locked: e.locked, shown: e.mesh.visible }; WORLD.scene.remove(e.mesh); return out; });
-check('a wild Ogre built at level 1 is still latent (the minLevel gate is unchanged for the wild)', wild.locked === true && wild.shown === false, wild);
+// 5 — the wild's own gate (S1059, enemies by place): no foe is latent any more; a kind is kept off a place's table by its least tier
+const wild = await page.evaluate(() => { const e = buildZoneEnemy(WORLD.scene, [], px + 50, pz, 'Ogre', null); const out = { locked: e.locked, shown: e.mesh.visible, t1: kindAllowed('Ogre', 1), t2: kindAllowed('Ogre', 2) }; WORLD.scene.remove(e.mesh); return out; });
+check('a wild Ogre built at level 1 is not latent; it is kept off a tier-1 table and allowed at tier 2 (S1059)', wild.locked === false && wild.shown === true && !wild.t1 && wild.t2, wild);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

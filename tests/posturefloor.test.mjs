@@ -10,6 +10,8 @@ const stop = g.keepAlive();
 
 const r = await page.evaluate(() => {
   const out = { floor: ENEMY_POSTURE_FLOOR, foes: {} }; const keep = ZE, keepW = EQ.weapon;
+  // S1051 — the floor is measured without the Arms perks: Blunt's Weight (25) drains +25% and would stagger the Wolf in one
+  const sk0 = JSON.parse(JSON.stringify(SKILLS)); SKILLS.blunt = { lv: 24, p: 0 }; SKILLS.blade = { lv: 24, p: 0 };
   const mk = (type) => { const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.2, pz + fwdZ * 1.2, type, null);
     if (!e.mesh.parent) WORLD.scene.add(e.mesh); e.locked = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0;
     e.combatYaw = Math.atan2(px - e.x, pz - e.z); if (typeof e.posture !== 'number') initPosture(e); return e; };
@@ -30,7 +32,7 @@ const r = await page.evaluate(() => {
     finally { ZE = keep; }
     const res = { swings: isStaggered(e) ? n : null, mult: (EQ.weapon && EQ.weapon.postureMult) || 1 }; clean(e); return res; };
   out.greatclub = swings('GreatClub'); out.sword = swings('Sword'); out.claymore = swings('Claymore'); out.hammer = swings('WarHammer');
-  Math.random = rnd; EQ.weapon = keepW;
+  Math.random = rnd; EQ.weapon = keepW; for (const k in sk0) SKILLS[k] = sk0[k];
   return out;
 });
 stop();

@@ -756,9 +756,10 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   // Apply variant overlay if one was selected upstream. Zones pass diff='normal' to pickVariant so only Greater can apply.
   const vr=applyVariantToDef(baseDef, type, variantKey);
   const d={...vr.def};
-  // v56 rebalance: scale zone enemy HP/dmg with player level, mirroring dungeon spawn path.
-  const _hpLvl=enemyHpScale();
-  const _dmgLvl=enemyDmgScale();
+  // S1034 — scaled by the danger of the place it stands in (#373 A), not by your level; a caller that knows the place passes zOpts.tier
+  const _tier=(zOpts&&zOpts.tier!=null)?zOpts.tier:foeTier(sc,x,z);
+  const _hpLvl=enemyHpScale(_tier);
+  const _dmgLvl=enemyDmgScale(_tier);
   if(d.hp){d.hp=Math.max(1,Math.round(d.hp*_hpLvl));}
   if(d.maxHp){d.maxHp=Math.max(1,Math.round(d.maxHp*_hpLvl));}
   if(d.dmg){d.dmg=Math.max(1,Math.round(d.dmg*_dmgLvl));}
@@ -854,15 +855,16 @@ function buildZoneEnemy(sc,sol,x,z,type,variantKey,zOpts){
   const ey0=typeof _forestTerrainH==='function'&&activeZoneId==='forest'?_forestTerrainH(x,z):
              typeof _ironhavenTerrainH==='function'&&activeZoneId==='ironhaven'?_ironhavenTerrainH(x,z):0;
   g.position.set(x,ey0,z);sc.add(g);
-  // v59: locked state — enemy is latent until player reaches minLevel. Mesh hidden, AI/collision
-  // skipped in tick. Unlocked on the first tick where level >= minLevel (see tickZoneEnemies).
+  // v59: locked state — enemy was latent until the player reached minLevel. S1059: never, now: the spawn tables are
+  // filtered by the kind's least tier before the pick (kindAllowed, 74-strikes.js); `locked` stays for unlockFoe's callers.
   const minLevel=baseDef.minLevel||1;
-  const isLocked=(typeof level!=='undefined'?level:1)<minLevel;
+  const isLocked=false;
   g.visible=!isLocked;
   // v61gj — Build the zone enemy state, init posture, then return. Stamp `shape`
   // so the posture-family lookup resolves directly (zone shapes are wolf/spider/
   // brute/humanoid — distinct from dungeon buildFn vocabulary).
   const zoneE = {size:sc2,limbs,hpBg,x,z,hp:d.hp,maxHp:d.maxHp,mesh:g,hpFg,el,name:displayName,baseName:type,spd:d.spd,dmg:d.dmg,atkSpd:d.atk,dead:false,alert:false,atkCd:0,ph:Math.random()*Math.PI*2,homeX:x,homeZ:z,xpVal:d.xpVal,walkT:Math.random()*Math.PI*2,def:d.def||0,resist:d.resist||{},variant:vr.variant,xpMult:vr.xpMult,telegraphT:0,telegraphMax:0,minLevel,locked:isLocked,_origCol:d.col,shape:d.shape,beast:BEAST_TYPES.has(type),combatYaw:Math.random()*Math.PI*2};
+  zoneE.tier=_tier;
   initPosture(zoneE);
   if(wolfRig)wolfRig.e=zoneE;
   if(personRig){personRig.e=zoneE;hpBg.position.y=hpFg.position.y=1.3*SCALE.ROOM_K*sc2;} // the bar over a person's head (S905: at the taller man's, F2a)
@@ -891,7 +893,11 @@ function prewarmFoes(sc,cam){
   const lights=[];tmp.traverse(o=>{if(o.isLight)lights.push(o);});for(const l of lights)if(l.parent)l.parent.remove(l);
   tmp.traverse(o=>{o.frustumCulled=false;});
   if(typeof WORLD!=='undefined'&&sc===WORLD.scene)try{WORLD.sweepLights();}catch(e){} /* the world's tick folds stray lights into its pool of 24; before the first tick there are more, and every program would be keyed to that count */
-  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}sc.remove(tmp);
+  sc.add(tmp);try{REN.compile(sc,cam);}catch(e){}
+  /* S988 — compile() leaves out the shadow pass's depth materials, and on three.js 0.170 a foe casting a shadow keys one of its
+     own (QA's foewarm on the new look): one drawn frame with the shadow map forced makes it here, behind the loading fade */
+  if(REN.shadowMap&&REN.shadowMap.enabled){const nu=REN.shadowMap.needsUpdate;try{REN.shadowMap.needsUpdate=true;REN.render(sc,cam);}catch(e){}REN.shadowMap.needsUpdate=nu;}
+  sc.remove(tmp);
   const inTmp=r=>{for(let a=r&&r.root;a;a=a.parent)if(a===tmp)return true;return false;};
   for(const r of [...WOLF_RIGS])if(inTmp(r))WOLF_RIGS.delete(r);
   for(const r of [...PEOPLE_RIGS])if(inTmp(r))PEOPLE_RIGS.delete(r);
@@ -910,8 +916,9 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
     if(hit&&!dead){const raw=foeBlow(a.from,a.dmg+Math.floor(foeRand(a.from)*4)); /* S940 — armour as a share, as of every blow */
       const fx=-Math.sin(yaw),fz=-Math.cos(yaw);const toA=(a.from.x-px),toZ=(a.from.z-pz),tl=Math.hypot(toA,toZ)||1;const facing=(fx*toA+fz*toZ)/tl>.4;
-      if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
-      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
+      if(facing&&deflectsArrows()){skillUse('guard',1,a);stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#ffd700';showMsg('🛡 The arrow glances off your shield.','#ffd700');} /* S1048 — Deflect (Guard 25) */
+      else if(blocking&&facing){const red=_warded(Math.max(1,Math.round(raw*(1-_blockBoost(.65)))));PHP=Math.max(0,PHP-red);lvAct.damageTaken+=red;armourUse();skillUse('guard',1,a); /* S941 fix — the arrow, not a foe: there is no e here */hurtT=.25;stamina=Math.max(0,stamina-6);try{sndBlock();}catch(err){}blockFlashT=.3;blockFlashCol='#4488ff';showMsg(`🛡 Arrow blocked — ${red}`,'#88aaff');}
+      else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;armourUse();hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
 // S616 — a foe whose straight step is blocked (a barrel on a deck, a post, a trunk) slides along it: the step's one axis or
@@ -1170,6 +1177,7 @@ function tickZoneEnemies(dt,now,sc){
     }
     // Chase player
     let dx2=T.x-e.x,dz2=T.z-e.z,d=Math.hypot(dx2,dz2)||1;
+    const _fr = foeReach(e); /* S1041 — F2b: where its tell starts and how far its blow reaches, hull to hull (foeReach, 74-strikes.js); it still closes to 1.0, inside your shove */
     const _stopDist = e.isBoss ? Math.max(1.5, (e.bossDef.biteRange||2.0)-1.0) : 1.0;
     const _archer=/Archer|Slinger/.test(e.name||'');
     if(_archer){ // v80 S135 — archers keep 6–13u, back off when you close, and shoot
@@ -1227,13 +1235,15 @@ function tickZoneEnemies(dt,now,sc){
         if(e.isBoss && e.bossId==='faolchu' && typeof sndFaolchuBite==='function'){
           sndFaolchuBite();
         }
+        if(_fr.lunge&&foeLunge(e,currentZoneSolid)>0){const _ly=activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,_ly,e.z);e.el.position.set(e.x,_ly+.8,e.z);} /* S1041 — the wolf leaps at the bite */
         if(strikeReaches(e)){
           executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
         } else {
+          e._heavy = false;
           sndSwing();
         }
       }
-    } else if(dist<(e.isBoss?(e.bossDef.biteRange||1.1):1.1) && e.atkCd<=0){
+    } else if(dist<_fr.engage && e.atkCd<=0){ /* S1041 — F2b: where the tell starts, hull to hull for the sheet's families; a boss's bite its biteRange less its snout */
       // v61c2 — bosses use bossDef.telegraphBase (0.6s for Faolchú) scaled
       // by the current phase's telegraphMult (1.0 / 0.85 / 0.55) so the
       // wind-up shortens as HP drops — Phase 3 reads as frenzy.
@@ -1242,7 +1252,7 @@ function tickZoneEnemies(dt,now,sc){
         const ph = phases.find(p=>p.id===e.phaseId) || phases[0] || {telegraphMult:1.0};
         e.telegraphMax = Math.max(TELL_MIN, (e.bossDef.telegraphBase||0.6) * (ph.telegraphMult||1.0)); // S282 — no tell under 0.45 s, the frenzy included
       } else {
-        e.telegraphMax = telegraphDuration(e);
+        e.telegraphMax = foeWindUp(e); // S1136 — one in four heavy, for the families with a heavy row
       }
       e.telegraphT = e.telegraphMax;
       // v63 — Stamp combatYaw at windup start. The enemy's mesh.lookAt
@@ -1388,7 +1398,7 @@ function tickZoneBalls(dt,sc){
         // 0.40 if not specified.
         const sh = EQ.offhand;
         const hasShield = sh && sh.shieldType==='shield';
-        const _resolveMult = Math.max(0.5, 1 - (ATTRS.resolve||0)*0.05);
+        const _resolveMult = resolveBlockMult(); // S1047 — 1% a Resolve point
         let finalDmg;
         if(blocking){
           const magicReduction = _blockBoost(hasShield ? (sh.magicBlock||0.40) : 0.15);
@@ -1408,7 +1418,7 @@ function tickZoneBalls(dt,sc){
         finalDmg = challengeTaken(finalDmg); /* S684 — the challenge (her fire never went through _warded) */
         PHP = Math.max(0, PHP-finalDmg);
         hurtT = .4;
-        lvAct.damageTaken += finalDmg;
+        lvAct.damageTaken += finalDmg;armourUse();
         lastHitT = performance.now()/1000;
         if(PHP<=0 && !dead) playerDead();
         sc.remove(fb); ZB.splice(i,1);
@@ -1427,9 +1437,10 @@ function tickZoneBalls(dt,sc){
     if(fb.userData.isArrow){
       let arrowHit = false;
       ZE.forEach(e=>{
-        if(arrowHit || e.dead || e.locked) return;
+        if(arrowHit || e.dead || e.locked || fb.userData.passed===e) return;
         if(Math.hypot(fb.position.x-e.x, fb.position.z-e.z) < ARROW_HIT_RADIUS){
           arrowHit = true;
+          const _thru = arrowPasses(fb.userData, e); /* S982 — Through: the arrow flies on past this one */
           // Reach into the arrow's pre-rolled rawDmg and route through the
           // resist pipeline. wType is stamped on the arrow at fire time
           // (typically 'pierce'; silver/broadhead arrows override).
@@ -1444,6 +1455,7 @@ function tickZoneBalls(dt,sc){
           // Flat def subtraction (same shape as applyMeleeDamage)
           if(typeof e.def === 'number') dmg = Math.max(1, dmg - Math.floor(e.def * 0.5));
           dmg = challengeDealt(dmg); /* S684 — the challenge */
+          if(e.alert)skillUse('bow',1,e); /* S941 — an arrow on an alert foe */
           e.hp = Math.max(0, e.hp - dmg);
           e.alert = true;
           if(e.hpFg){ e.hpFg.scale.x = e.hp/e.maxHp; e.hpFg.position.x = (e.hp/e.maxHp-1)*.275; }
@@ -1471,14 +1483,14 @@ function tickZoneBalls(dt,sc){
             const _killTag = ` (ARROW)${dmgTag(tagInfo, e)}`;
             if(typeof killZoneEnemy === 'function') killZoneEnemy(e, sc, _killTag);
             else { e.dead = true; }
-            sc.remove(fb); ZB.splice(i,1);
+            if(!_thru){ sc.remove(fb); ZB.splice(i,1); }
           } else {
             // v64.2 — Stick the arrow into the enemy body. The body mesh
             // becomes the arrow's parent so it follows movement/rotation.
             // The arrow stays in ZB (not removed from the array) so its
             // stuckLife counts down on subsequent frames via tickArrowMotion.
             const body = enemyBodyMesh(e);
-            _stickArrowToEnemy(fb, body, sc);
+            if(!_thru) _stickArrowToEnemy(fb, body, sc);
           }
         }
       });
@@ -1535,7 +1547,7 @@ function tickZoneBalls(dt,sc){
 // Loot drop chance — based on fortune attribute and enemy difficulty (hp as proxy for rarity)
 // Base 35% chance, fortune adds up to +25%, harder enemies add up to +20%
 function lootDropChance(e){
-  const fortuneBonus=(ATTRS.fortune||0)*0.025; // +2.5% per fortune point, cap ~25% at 10
+  const fortuneBonus=(ATTRS.fortune||0)*0.01; // S953 — +1% per fortune point (was 2.5%), the attributes at ≤1%
   const hpRatio=Math.min(1,(e.maxHp||e.hp||20)/90); // scales 0→1 from weakest to golem
   const diffBonus=hpRatio*0.20;
   return Math.min(0.85,0.35+fortuneBonus+diffBonus);
@@ -1591,7 +1603,7 @@ function killZoneEnemy(e,sc,tag=''){
   lootSpark.position.set(e.x, lootY, e.z);
   sc.add(lootSpark);
   // Roll loot via shared pipeline — corpse drop chance + bonus roll, zone-appropriate theme
-  const items = rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S478 — a keyed foe's corpse rolls on its id
+  const items = rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined, e.tier); // S478 — a keyed foe's corpse rolls on its id
   bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   // v61c2 — Boss death hooks. The Faolchú gets:
   //   - guaranteed unique drop (The Faolchú's Mark amulet) prepended to

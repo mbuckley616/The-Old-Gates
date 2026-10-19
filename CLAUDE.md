@@ -217,6 +217,8 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
   footholds, beds, doors, the people's boxes). Inside the builder, numbers are in the old unit; anything that adds to a room after
   it is built (`onEnterInterior`, the crime and quest code) works in true metres, as do `house.intW/intD`. People are never scaled
   by it: they are built at their true height. The tower is the exception (scaled by 1).
+- A test's check label is usually a template literal: a backtick inside it (`` `goldtier` ``) ends the string and the suite no longer parses
+  (S1135's `tierloot`, found by QA in CI, S1141). parsecheck reads `js/` only: `node --check tests/<name>.test.mjs` after editing a label.
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 

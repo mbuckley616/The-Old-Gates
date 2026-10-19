@@ -8,6 +8,8 @@ await g.intoWorld();
 const build = await page.evaluate(() => { thirdPerson = false; const keep = { w: EQ.weapon, o: EQ.offhand };
   const st = () => ({ fists: !!(vmSword && vmSword.userData.fists), left: !!(vmSword && vmSword.userData.fistL), armR: !!(vmArmR && vmSword && vmArmR.userData.wristHand === vmSword.userData.elbow),
     armL: !!(vmArmL && vmSword && vmSword.userData.fistL && vmArmL.userData.wristHand === vmSword.userData.fistL.userData.elbow), shield: !!vmShield });
+  // S1080 — a weapon sheathes itself after 5 s at peace; the armed view is read drawn
+  if (typeof drawWeapon === 'function') { drawWeapon(); _lastSwingG = playClockS; }
   const out = {}; out.armed = st();
   EQ.weapon = null; EQ.offhand = null; buildViewmodel(); out.empty = st();
   out.tris = vmSword.children[0].geometry.attributes.position.count / 3;

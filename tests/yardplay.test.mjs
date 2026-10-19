@@ -8,7 +8,9 @@
 // exhausted swing lands at 45%),
 // says *Not yet.* when she offers the yield, and stops when she kneels. Whichever ending the first fight gives, both are
 // walked: a new character's fight on its own stamina, then, a week on, the rematch at level 8 with an iron sword and its
-// stamina kept full (a stand-in for the blocks and rolls a bot does not make).
+// stamina kept full (a stand-in for the blocks and rolls a bot does not make). Since skills by use (S1026) a sword's damage
+// is its Blade, not the level, so the level-8 stand-in carries what a level-8 swordsman would: the save's migration of a
+// level-8 duelist (Blade a major, 39) and the heavy kit of that level's tier, the resolver's own reference player.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -76,12 +78,12 @@ check('*Call it.*: *Rope\'s up.* and the fight is on, Rowe a Bandit Captain unde
 // the fight, fought by the loop
 const fight = (full) => page.evaluate((full) => {
   const D = WORLD.duel, e = D.rowe, q = D.q, cx = q.data.x, cz = q.data.z;
-  const log = { swings: 0, power: 0, hitsOnHer: 0, hitsOnYou: 0, offered: 0, said: [], yieldAt: null, end: null, hp0: PHP, max: maxHP, level, weapon: EQ.weapon ? EQ.weapon.name : 'fists', minHP: PHP };
+  const log = { swings: 0, power: 0, hitsOnHer: 0, hitsOnYou: 0, onHer: [], onYou: [], offered: 0, said: [], yieldAt: null, end: null, hp0: PHP, max: maxHP, level, weapon: EQ.weapon ? EQ.weapon.name : 'fists', minHP: PHP };
   const _m = showMsg; showMsg = function (t) { if (/yield|Rowe|acclaim|rope|check/i.test(t)) log.said.push(t); return _m.apply(this, arguments); };
   let lastHer = e.hp, lastYou = PHP; const t0 = playClockS;
   const step = () => {
     const s = q.data.state; if (s === 'yielded' && log.yieldAt == null) log.yieldAt = +(playClockS - t0).toFixed(2);
-    if (e.hp < lastHer) log.hitsOnHer++; lastHer = e.hp; if (PHP < lastYou) log.hitsOnYou++; lastYou = PHP; log.minHP = Math.min(log.minHP, PHP);
+    if (e.hp < lastHer) { log.hitsOnHer++; log.onHer.push(lastHer - e.hp); } lastHer = e.hp; if (PHP < lastYou) { log.hitsOnYou++; log.onYou.push(lastYou - PHP); } lastYou = PHP; log.minHP = Math.min(log.minHP, PHP);
     if (s === 'won' || s === 'murder' || s === 'lost') { log.end = s; return true; }
     if (dlgOpen) { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /Not yet/.test(x.textContent)); if (b) { log.offered++; b.click(); } try { closeDialog(); } catch (err) {} return false; }
     if (s === 'yielded') return false;
@@ -124,18 +126,16 @@ if (ended === 'lost') {
   check('at the seat: *Rowe\'s Captain. … The ring goes up again in seven days.*, then *Not yet. A week, I said.*', /^Rowe's Captain\./.test(t.said) && /seven days/.test(t.said) && /^Not yet\. A week/.test(t2.said), { t, t2 });
   await tick(120); const r3 = await meet('WORLD.rival.npc'); await close();
   check('Rowe holds the chair at the seat for the week: *Captain Rowe, for a week at least.*', r3 && /^Captain Rowe, for a week at least\./.test(r3.greet), r3);
-  // a week on, stronger: the rematch. Since S941 (skills and perks A) a weapon's damage is carried by its skill, not by the
-  // level, while Rowe still scales by the level: level 8 alone is a weaker stand-in than before. So the stand-in carries the
-  // skills a level-8 character holds by the game's own reckoning, the migration a pre-skills save gets on load (`skillsInit(arch,
-  // level)`, 70-saves.js; Session 1017). On a build without skills it is skipped.
-  await page.evaluate(() => { worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 7 * 1440; forceTime(8); level = Math.max(level, 8); maxHP = Math.max(maxHP, 260); PHP = maxHP; dead = false;
-    if (typeof skillsInit === 'function') skillsInit(playerArchetype, level);
+  // a week on, stronger: the rematch
+  await page.evaluate(() => { worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 7 * 1440; forceTime(8); level = Math.max(level, 8); skillsInit('duelist', level); for (const t of KIT_PIECES) { const T = ARMOR_TYPES.find(x => x.type === t); EQ[T.slot] = makeItem(kitTier(level), T, null, true); }
+    window._rb = { blade: skillLv('blade'), armour: _armour(), kit: kitRef(level), tier: kitTier(level) }; maxHP = Math.max(maxHP, 260); PHP = maxHP; dead = false;
     const wt = WEAPON_TYPES.find(w => /sword/i.test(w.name || w.type || '')) || WEAPON_TYPES[0]; EQ.weapon = makeItem(3, wt, null, false); });
   await at(q1.x - 9, q1.z); await tick(30);
   const s1 = await meet('WORLD.duel.sgt');
   check('a week on, the ring is laid again and the sergeant will call it', s1 && s1.labels.includes('Call it.'), s1);
   await click(/^Call it\.$/); await g.frames(2); await close();
-  const f2 = await fight(true); f2.blade = await page.evaluate(() => typeof skillLv === 'function' ? skillLv('blade') : null);
+  const rb = await page.evaluate(() => window._rb); console.log('rematch skills', JSON.stringify(rb));
+  const f2 = await fight(true);
   console.log('fight 2', JSON.stringify(f2));
   check('the rematch is fought to the yield and the yard acclaims you', f2.end === 'won' && f2.yieldAt != null, f2);
   ended = f2.end;

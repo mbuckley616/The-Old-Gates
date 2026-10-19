@@ -8,13 +8,14 @@ await g.intoWorld();
 const crit = await page.evaluate(() => {
   const R = Math.random; const e = () => ({ name: 'Dummy', def: 0, hp: 500, maxHp: 500, x: px + 900, z: pz + 900, resist: null });
   const hit = (fort, roll) => { ATTRS.fortune = fort; Math.random = () => roll; try { return applyMeleeDamage(e(), 100); } finally { Math.random = R; } };
-  const r = { none: hit(0, .01), one: hit(1, .01), oneMiss: hit(1, .03), ten: hit(10, .19), tenMiss: hit(10, .21) };
+  // S953 (skills and perks A): Fortune's crit is 0.5% a point, not 2%; Session 957 re-measured this suite to it
+  const r = { none: hit(0, .004), one: hit(1, .004), oneMiss: hit(1, .006), ten: hit(10, .049), tenMiss: hit(10, .051) };
   let n = 0; ATTRS.fortune = 5; for (let i = 0; i < 4000; i++) if (applyMeleeDamage(e(), 100).lucky) n++;
   ATTRS.fortune = 0; r.rate5 = n / 4000; return r; });
 console.log('crit', JSON.stringify(crit));
-check('Fortune 0: no crit at a roll of .01 (100 → 100)', crit.none.dmg === 100 && !crit.none.lucky, crit.none);
-check('Fortune 1: a roll under .02 crits for ×1.5 and is tagged a crit (150); .03 does not', crit.one.dmg === 150 && crit.one.lucky && crit.one.crit && crit.oneMiss.dmg === 100, crit);
-check('Fortune 10: under .20 crits, over does not; at Fortune 5 about one blow in ten crits', crit.ten.dmg === 150 && crit.tenMiss.dmg === 100 && crit.rate5 > .085 && crit.rate5 < .115, crit);
+check('Fortune 0: no crit at a roll of .004 (100 → 100)', crit.none.dmg === 100 && !crit.none.lucky, crit.none);
+check('Fortune 1: a roll under .005 crits for ×1.5 and is tagged a crit (150); .006 does not', crit.one.dmg === 150 && crit.one.lucky && crit.one.crit && crit.oneMiss.dmg === 100, crit);
+check('Fortune 10: under .05 crits, over does not; at Fortune 5 about one blow in forty crits', crit.ten.dmg === 150 && crit.tenMiss.dmg === 100 && crit.rate5 > .018 && crit.rate5 < .032, crit);
 
 // Caor Dubh: eaten with its hidden effect known, blows land a fifth harder until it wears off; a hit still does +40%
 const caor = await page.evaluate(() => {

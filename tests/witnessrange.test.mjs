@@ -13,10 +13,14 @@ const r = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); con
     for (let b = 0; b < 8 && !at; b++) { const hd = b / 8 * Math.PI * 2, ex = x + Math.cos(hd) * 13, ez = z + Math.sin(hd) * 13; let ok = true; for (let t = 0; t <= 26 && ok; t++) { if (WORLD.solidAt(x + Math.cos(hd) * t / 2, z + Math.sin(hd) * t / 2)) ok = false; } if (ok) at = { x, z, hd }; } }
   if (!at) return { noGround: true };
   px = at.x; pz = at.z; jumpY = 0;
+  // S941: sneaking, a witness's reach is also × (1 − 0.4 × Stealth/100) (skills and perks A); the rows below are an untrained sneak, Stealth 0
+  SKILLS.stealth = { lv: 0, p: 0 };
   const put = d => { const x = at.x + Math.cos(at.hd) * d, z = at.z + Math.sin(at.hd) * d; w.g.visible = true; w._retreated = false; w.g.position.set(x, WORLD.worldH(x, z), z); w.g.rotation.y = Math.atan2(px - x, pz - z); };
   const ds = [2.9, 3.1, 5.9, 6.1, 11.9, 12.1]; const out = { rows: {} };
   for (const [label, hour, sn] of [['day', 13, false], ['day, sneaking', 13, true], ['night', 23, false], ['night, sneaking', 23, true]]) {
     forceTime(hour); _sneaking = sn; out.rows[label] = ds.filter(d => { put(d); return !!WORLD.witnessOf(h); }); }
+  // and at Stealth 50 the sneaking reach by day is 6 × 0.8 = 4.8
+  SKILLS.stealth = { lv: 50, p: 0 }; forceTime(13); _sneaking = true; out.stealth50 = [4.7, 4.9].filter(d => { put(d); return !!WORLD.witnessOf(h); }); SKILLS.stealth = { lv: 0, p: 0 };
   // Session 563: the dark hood (S552) brings a witness's reach from 12 to 11, and halves as before; the traveller's cloak does not
   const ds2 = [5.4, 5.6, 10.9, 11.1, 11.9]; out.hood = {};
   for (const [label, kind, hour, sn] of [['hood, day', 'hood', 13, false], ['hood, day, sneaking', 'hood', 13, true], ['hood, night, sneaking', 'hood', 23, true], ['wool, day', 'wool', 13, false]]) {
@@ -36,6 +40,7 @@ console.log(JSON.stringify(r));
 check('found open ground on Dunmore\'s pad', !r.noGround, r);
 check('by day, walking: seen to 12 units (11.9 yes, 12.1 no)', JSON.stringify(r.rows['day']) === JSON.stringify([2.9, 3.1, 5.9, 6.1, 11.9]), r.rows);
 check('by day, sneaking: seen to 6', JSON.stringify(r.rows['day, sneaking']) === JSON.stringify([2.9, 3.1, 5.9]), r.rows);
+check(`at Stealth 50, sneaking by day: seen to 4.8 (4.7 yes, 4.9 no): ${JSON.stringify(r.stealth50)}`, JSON.stringify(r.stealth50) === JSON.stringify([4.7]), r.stealth50);
 check('at night, walking: seen to 6', JSON.stringify(r.rows['night']) === JSON.stringify([2.9, 3.1, 5.9]), r.rows);
 check('at night, sneaking: seen to 3', JSON.stringify(r.rows['night, sneaking']) === JSON.stringify([2.9]), r.rows);
 check('in the dark hood a witness sees to 11 by day (10.9 yes, 11.1 no), 5.5 sneaking, 2.75 sneaking at night', JSON.stringify(r.hood['hood, day']) === JSON.stringify([2.6, 2.9, 5.4, 5.6, 10.9]) && JSON.stringify(r.hood['hood, day, sneaking']) === JSON.stringify([2.6, 2.9, 5.4]) && JSON.stringify(r.hood['hood, night, sneaking']) === JSON.stringify([2.6]), r.hood);
