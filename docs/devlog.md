@@ -27746,3 +27746,42 @@ A two-bay inn (7.4 m) and a coaching inn keep the old room. The taproom is laid 
 ### Needs eyes
 - **Nothing to see yet.**
 - **Owed, the hanging:** the alehall as a Markish inn's room on `?look=new`. On the new look the Mark's streets still have the old builder's houses outside (F6 in the game is the Gatelands' so far), so the hall would be larger inside than out until the Mark's lots come into the game. That is how every room in the game is today, but it is further from #303's 1 A than the taproom is. The producer may prefer the Mark's lots first.
+
+## v80 — Session 1160 — The branch's own reds: crime2 and penance green, beat's stuck guard found (half fixed)
+QA found `crime2`, `penance` and `beat` red twice on #393 and reproduced two of them on its merge commit (19 Oct). The cause is in this branch, and all three reproduce here. Session 1138 lays every town out round its church and keep plots, on both looks, so Dunmore's and Portclare's streets, and who stands where, changed.
+
+**`crime2` and `penance`: the tests.** Both freeze the town, show one townsperson (`S.npcs[0]`) 3 m out from a shop's door and pick its lock. Neither turns that witness toward the door. A witness 2 m or more away sees only in their 120° cone (S705), so the outcome hung on whatever heading the first townsperson had at the town's last tick. Main's first townsperson faced the door by luck. On this branch it is Gráinne, the innkeeper, facing 0.08 rad when the door is at 1.65, with a clear line between. Both suites now face the witness to the door, which is what "a witness within sight" means. Nothing in the game changes.
+
+**`beat`: a fault in the game, half fixed.**
+- **What happened:** in Portclare the night watch, Dáire, stood still all 600 s.
+  - His street route's next point was 0.63 m due west, but a thin solid lay between.
+  - So `npcStep` (`82-world-structures.js`) found the straight step and the x-step blocked, and tried the z-slide.
+  - The point lay on his own z to within 1e-10 m, so the slide was 1e-12 m. That is below the double's step at z ≈ 25,267, so it did not even move him.
+  - It still counted as headway and reset the stuck count every frame, so he never gave up.
+- **The fix:** a one-axis slide of under a fifth of the step is now no headway. A blocked walker gives up after 40 frames, as it was meant to, and goes on to the next point.
+- **The result:** Dáire's time standing still falls from 599.5 s to 154.5 s.
+- **What is left:** the suite is still red.
+  - Dáire's longest stop is 15 s, against 10 allowed.
+  - In Dunmore, Maeve's is 27 s.
+  - Two of Portclare's five shop doors (Olivier's Smithy and Fionnuala's Stores) get no lantern in ten minutes.
+
+**The remaining cause, measured:** `townRoute` builds its grid from `solidAt` at whole-metre cells, so a wall thinner than a cell, between two cell centres, is invisible to it. Every route between Portclare's 13 beat points comes back empty (it takes the straight line). Three of those straight legs cross thin solids:
+- leg 0, from Olivier's Smithy;
+- leg 6, from (22, 3);
+- leg 11, a 32 m diagonal across the town from Odhrán's Stores to (14, −7).
+
+The grid predates this branch. The re-laid streets put walls across those legs. The fix is the route's, either of these:
+- sample each cell's edges, not only its centre;
+- build the beat from the street network rather than shop-to-shop lines.
+
+Either is a routing change best done with time to run every walking suite. It is owed to the next run, first.
+
+### Verified (headless Chromium)
+- **`crime2`: all pass,** red before. **`penance`: all pass,** red before. The witness, the fine, the confession and the Crown's refusal run as written.
+- **`beat`: still red,** as described above. Before the fix Dáire stood 599.5 s with 0 of 5 doors passed. After it he stands 154.5 s, his longest stop is 15 s, and the doors get 0, 9, 8, 0 and 4 passes.
+- **`constable`, `crime3` and `gateguards`** (the guards' other walks through `npcStep`) pass.
+- `parsecheck.py` is clean. Build tag s718.
+### Needs eyes
+- **Nothing to see.**
+- **Owed, first:** `beat`'s routes through thin walls, by the route above.
+- **QA:** `crime2` and `penance` can come off the branch's red list. `beat` stays on it until the route is fixed.

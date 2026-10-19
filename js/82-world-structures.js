@@ -989,10 +989,11 @@
     if(d<(near||.8))return true;
     if(near&&d<spd*dt){n.g.position.x=tx;n.g.position.z=tz;return true;}
     const mx=dx/d*spd*dt,mz=dz/d*spd*dt;
-    const try_=(x,z)=>!solidAt(x,z);
+    const try_=(x,z)=>!solidAt(x,z),slide=spd*dt*.2; /* S1160 — a slide along one axis of under a fifth of the step is no headway: with the target dead ahead on one
+       axis, a 1e-12 slide along the other "succeeded", reset the count and held Portclare's watch at a wall for ten minutes */
     if(try_(gx+mx,gz+mz)){n.g.position.x+=mx;n.g.position.z+=mz;}
-    else if(try_(gx+mx,gz))n.g.position.x+=mx;
-    else if(try_(gx,gz+mz))n.g.position.z+=mz;
+    else if(Math.abs(mx)>slide&&try_(gx+mx,gz))n.g.position.x+=mx;
+    else if(Math.abs(mz)>slide&&try_(gx,gz+mz))n.g.position.z+=mz;
     else{n._stuck=(n._stuck||0)+1;if(n._stuck>40){n._stuck=0;return true;}return false;}
     n._stuck=0;n.g.rotation.y=Math.atan2(dx,dz);
     return false;
