@@ -3,6 +3,45 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The gate interiors, for F5 — how does a gate's inside get its size? (the designer, 2026-10-19) — DECISION #448
+Your A on #421 makes a gate's cell 3 m under a 6 m ceiling, which grows today's rooms and corridors to a Skyrim ruin but not to the foundation's halls of 30 to 250 m. The proposal (`docs/design/gate-interiors.md`) asks how every gate, lesser and great, reaches that size and what you do inside one.
+- **A. The grid, grown.** Rooms up to 60 m with vaults to 30 m, still joined by corridors. Two sessions; the cobblestone dungeon at 1.6 times the size.
+- **B. Spaces first, rooms after, on one grid** *(recommended)*. Every gate is a chain of great spaces from six types (nave to 250 m, crossing, stair hall, chasm, flooded hall, the ring), with the fights in pockets of 15 to 30 m and ordinary rooms off them; a lesser gate 1 to 4 spaces, a great gate 6 to 9, an evening. One deep-work session with #421's build, then three Opus.
+- **C. The six great gates by hand, the lesser gates as A.** Six authored realms; the gates you meet most stay boxes. 14 to 20 sessions.
+
+Recommendation: **B.** It reaches the concept art's size in every gate without a second dungeon engine: the spaces sit on #421's grid, so collision, the minimap, keys and pathing carry over, and the broken gates give your floating footholds (#417 A) their ground.
+
+### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
+**Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
+
+The prototype (`docs/prototypes/levelup/shrines.html`, three.js 0.170) builds the niche in metres:
+- **The niche:** a stele 1.0 m wide and 2.55 m to the top of its arch, the recess 0.62 m wide with its sill at 1.03 m, and a figure 0.95 m tall. The god's name is cut under the sill, its icon is in a roundel over the arch, and a stoup stands before it with its rim at 0.68 m.
+- **The Gatelands:** limewashed, with rags on the niches and on a thorn, a holy well, a ring-headed high cross and a holed ring-stone.
+- **The Mark:** dark granite, each niche under its own shingled housing with crossed bargeboards ending in beast heads. An iron lamp that is never let out hangs under each, and an oath stone with an iron ring stands before them.
+- **Aurenne:** plastered, with a blue-glazed cupola and glazed tile in the recess. The icons are gilt, behind iron railings with a gate, with the Church's tithe box and its notice (*no rubbings to be taken*).
+- **The Guest's niche:** struck back to rough stone on two islands. In Aurenne it is bricked up and plastered over, as the Church bricked the Guest's chapel (canon §4.2).
+
+A row of seven costs 21,800 (the Mark) to 32,600 (the Gatelands, with its well and thorn) triangles in 25 to 34 draws. One niche with its figure is about 2,500 to 3,000.
+
+Where should the six stand together?
+
+- **A. One god to a shrine, as today.** Every wayside shrine is one god's niche in its island's dress, with the Guest's struck recess, the size of a hand, low on its plinth. The row of six is not built.
+- **B. The six together, everywhere.** Every shrine is OG-113's row of seven. You choose the god at the basin, one prayer a day at that shrine, as now.
+- **C. By place** *(recommended)*. A wayside shrine on a road is one god's niche (A). The row of seven stands once in each town, at its edge or where its roads meet, and there you choose the god.
+
+Recommendation: **C.** The Guest's absence reads only in a row. Among six full niches an empty seventh is plainly missing, but beside one god an empty recess reads as damage. The town's row puts every god within reach of home without a temple. The wayside niches keep a reason to travel for one god's boon and its own day (S497's god's day). The boons, the once a day and the Weaver's rubbing are unchanged; only which god you ask at a town's row is new. If a dressing looks wrong (the Mark's beast heads, Aurenne's railings, the Gatelands' high cross), say which. That is a note, not a reason for A or B.
+
+Pictures:
+- [The Gatelands, the row](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-gatelands.jpg)
+- [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-mark.jpg)
+- [The Mark at dusk, the lamps lit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-mark-dusk.jpg)
+- [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-aurenne.jpg)
+- [The figures, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-figures.jpg)
+- [The Guest's niche on each island](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-guest.jpg)
+- [The row from 30 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-far.jpg)
+- [One god's wayside shrine, three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside.jpg)
+- [In scale beside a person and the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside-scale.jpg)
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -30,6 +69,24 @@ On 2b0ee4e (Systems 940–1141 with main merged in), 13 of 15 checks were green;
 
 Michael: **Merge anyway**. (19 Oct 2026, on the control room) *Producer:* merged PR #353 at 2b0ee4e (main dad5f7c). turnin.test.mjs did not run on this head; the next CI run on main covers it.
 
+### A guard's blow can kill before the yield is offered: should it? (systems builder, Session 1162) — DECISION #456
+QA found it (backlog I, 19 Oct, `tests/guardplay`). When you refuse a guard's fine he draws, and once your health is under 30% he offers the yield (pay double or a night in the cells; backlog B's rule, Session 169). The offer is checked between blows. A guard is tier 3, so on a new character (130 health) his light blow takes 51–59 and his heavy blow (Session 1136, twice the damage, one in four) 102–118. A light blow then a heavy one goes 130 → about 75 → 0: you die without ever being offered the yield. QA counted it in 14 of the first 60 game minutes for Dunmore's guard, so about one fight in four for a new character.
+
+- **A. The blow that crosses the line stops at it** *(recommended)*. While the yield has not yet been offered, a drawn guard's blow that would take you below 30% leaves you just under it (29%), and the offer comes at once. Once you choose *Fight on*, his blows land in full and can kill. The heavy keeps its damage everywhere else.
+- **B. The blow that would kill leaves you at 1 health**, and the offer comes at once. Lower stakes before the offer, but you then pay or go to the cells at 1 health.
+- **C. As now.** Refusing a fine is a fight a new character can lose outright; the yield is offered only if you live to the line.
+
+Recommendation: **A.** The rule says a guard offers terms when you are low; a guard over a fine wants the fine, not a body. A keeps the heavy blow's threat (it still takes you from 75 to the line in one blow) without a death the rule never meant, and it changes nothing after *Fight on*.
+
+Michael: **The blow that crosses the line stops at it** (A). (2026-10-19)
+
+### Ending the merge bottleneck: how work gets tested and landed (local session, Claude with Michael in chat, 19 Oct 2026)
+Work piles up because of five things. (1) Every PR runs the whole game test suite, 16 to 20 jobs of up to an hour each, and GitHub runs only about 20 jobs at once. (2) Every branch edits the same few lines (the build number, the devlog, the backlog), so each merge makes every other PR clash and re-test. (3) An approval is pinned to one commit, and builders keep adding to the branch, so approvals go stale. (4) Each lane keeps one standing PR that collects 100+ commits before it lands. (5) One producer run does all the merging.
+- **A. Fix all five** *(recommended)*. 1: a PR runs only the tests its changes touch plus a short smoke set; the full suite runs on main after each merge, and a break is reverted within the hour. 2: the build number is stamped automatically on main, and each session writes its devlog and backlog note in its own file. 3: Michael approves the card, not one commit; later green commits that only add prototypes, docs or main merges go in without a new tap. 4: builders open a fresh small PR each run. 5: a workflow merges an approved PR the minute its tests pass. Tests-only, docs and prototype PRs merge on green without him; he approves what changes the game. One deep-work card for 1 to 3, prompt changes for 4 and 5.
+- **B. The mechanical fixes only (1 and 2).**
+- **C. Lighter tests only (1).**
+
+Michael: **Fix all five** (2026-10-19, on the control room). The deep-work card for 1 to 3 and the prompt changes for 4 and 5 are Claude (local)'s to write; PR #454 (docs-only PRs skip the game tests) is the first piece.
 ### The Gatelanders' tartan: a note on cloaks, wider, by family, or none? (bodies builder, Session 1146) — DECISION #445
 **L1's wardrobe matrix: the Gatelanders' tartan (bodies builder, Session 1146).** OG-111 names "tartans" among the Gatelands' fabrics, and the catalogue calls them "a new note". Nothing in the canon speaks for or against them. The builder can now weave one into a cloak's cloth.
 
@@ -88,6 +145,7 @@ Combat B's move sets (`docs/design/combat.md`) give every family a third move. S
 - **C. Only the snap and the stamp, with no string.** The wolf's third move is its lunge as it is now, and the troll's is a stamp in place of its sweep one blow in four. This is cheaper, but the page's "two-hit string" is dropped.
 
 Michael: **Second blow 0.45 s later, with its own glow**. (2026-10-18, on #438)
+*Acted on:* built, Session 1162 (systems builder): the wolf's lunge and snap and the troll's sweep and stamp, one wind-up in four, the second blow 0.45 s after the first with its own gold glow; `tests/string`. Issue #438 was already closed.
 
 ### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
 **Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.
