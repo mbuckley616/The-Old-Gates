@@ -1,4 +1,4 @@
-// ═══ THE LAND IN THE NEW LOOK (v80 S1175, card F3) ════════════════════════════════════════════════════════════════
+// ═══ THE LAND IN THE NEW LOOK (v80 S1180, card F3) ════════════════════════════════════════════════════════════════
 // The vista slice's land (docs/prototypes/levelup/main.js, Sessions 768–769) brought into the game behind `?look=new`:
 // the terrain shaded in its fragment shader, the sky as a gradient dome that follows the clock and the weather, the
 // water's sheen, and the post (ACES and the warm-and-cool grade of P10b, OG-147). Everything here is the new look's

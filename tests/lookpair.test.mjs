@@ -19,7 +19,7 @@ async function shoot(look) {
   // Session 1072: on the new look a Gatelands town is built from the kit (tests/kittown), so Dunmore's houses differ by design; this
   // suite compares the renderers, so both looks build the old town here.
   await page.evaluate(() => { window.OG_KIT_TOWNS = false; });
-  // Session 1175 (card F3): the new look's land (js/89-world-land.js) shades the ground, the sky and the water its own way and
+  // Session 1180 (card F3): the new look's land (js/89-world-land.js) shades the ground, the sky and the water its own way and
   // tone-maps the world's frame, by design; for the same reason, both looks draw the old land here. The world is not built yet,
   // so the switch holds for every chunk.
   await page.evaluate(() => { if (typeof LAND !== 'undefined') LAND.on = false; });

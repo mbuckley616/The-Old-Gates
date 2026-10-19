@@ -125,7 +125,7 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
     crime system (locks, witnesses, guards, the Church), painted windows, fish, whales. `87-world-quests.js` boarding, town quests,
     guild commissions, sigils, nations, the drivers, the war, plague, investment and the deed, the Guest's chapel.
     `88-world-ticks.js` the town line, the sea line, ticks, markers, leads, `enter`/`tick`, the dev helpers and `var WORLD={…}`.
-  - `89-world-land.js` the new look's land (card F3, Session 1175): `LAND` (`LAND.on` only on `?look=new`), the terrain's fragment shader
+  - `89-world-land.js` the new look's land (card F3, Session 1180): `LAND` (`LAND.on` only on `?look=new`), the terrain's fragment shader
     over `groundColor`'s vertex colour (`landTerrainMat`, the per-vertex mask `landMask`: stamps, woods, fields), the gradient sky dome
     (`landSky`, coloured by `landAtmosphere` at the end of `atmosphere()`), the water's sheen (`landWater`) and the post (`landPost`:
     ACES and P10b's grade in three's tone-mapping chunk, on the world's frame only); grass and wildflowers a chunk near the player

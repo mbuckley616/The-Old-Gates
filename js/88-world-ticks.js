@@ -223,10 +223,10 @@
     sc.background=new THREE.Color(BIOME_PROFILES.plains.bgCol);
     sc.fog=new THREE.FogExp2(BIOME_PROFILES.plains.fogCol,.004);
     terrainTex=makeTerrainTex();terrainTex.repeat.set(CHUNK/4,CHUNK/4);
-    terrainMat=LAND.on?landTerrainMat():new THREE.MeshLambertMaterial({map:terrainTex,vertexColors:true}); // S1175 (F3): the new look shades its land in the fragment shader
+    terrainMat=LAND.on?landTerrainMat():new THREE.MeshLambertMaterial({map:terrainTex,vertexColors:true}); // S1180 (F3): the new look shades its land in the fragment shader
     buildProtos();
     buildLights();buildSky();buildWater();
-    if(LAND.on){skyDome.visible=false;sc.add(landSky());landPost(sc);} // S1175 (F3): the gradient dome and the post
+    if(LAND.on){skyDome.visible=false;sc.add(landSky());landPost(sc);} // S1180 (F3): the gradient dome and the post
     ZONES.world={scene:sc,sol:STATIC_SOL,solidFn:solidAt,npcs,enemies:[],gates:[],size:SIZE*GRID,portals,herbs:[],houses:[],getY:groundY,platforms:[],_cfg:{id:'world',size:SIZE*GRID,seed:SEED}};
     // the home cell now (everything the spawn needs); neighbours stream in via jobs
     loadCell(HOME_I,HOME_J);
