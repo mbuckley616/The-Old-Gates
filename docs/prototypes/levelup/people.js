@@ -442,6 +442,8 @@ function tubeGeom(line, rad, sides = 8, twist = 0) {
     if (s < n - 1) for (let k = 0; k < sides; k++) { const a = s * (sides + 1) + k, b = a + sides + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
 }
+// tubeGeom winds its faces inward (its front faces look into the tube); turned out, so a tube seen from outside is drawn and lit from outside
+function turnOut(g) { const ix = g.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } g.computeVertexNormals(); return g; }
 const lockMat = color => new THREE.MeshStandardMaterial({ map: lockTex(), color, roughness: .78 });
 // a line falling from a start under gravity, pushed off the body to a clearance
 function drape(S, start, dir0, L, clearAt, o = {}) {
@@ -557,11 +559,14 @@ function buildHair(P, G, heads, scalpTris, headB, rnd) {
     if (rollFloor) for (let it = 0; it < 6; it++) { for (const q of line.slice(1)) rollFloor(q); if (it < 5) for (let i = 1; i < line.length - 1; i++) line[i].lerp(line[i - 1].clone().add(line[i + 1]).multiplyScalar(.5), .5); }
     for (const q of line.slice(3)) { const hit = heightOver(bodyOnly, q); if (hit) drapeMin = Math.min(drapeMin, hit.h); }
     // the tie, a short band where the gathering starts
-    { const band = [line[0], line[1], line[2]], m = new THREE.SkinnedMesh(skinTo(tubeGeom(band, band.map(() => .017), 10), headB), tie); m.name = 'tie'; out.push(m); }
+    // (turned out, Session 1154: it was drawn inside out, its far wall seen through the tail's see-through root)
+    { const band = [line[0], line[1], line[2]], m = new THREE.SkinnedMesh(skinTo(turnOut(tubeGeom(band, band.map(() => style === 'tail' ? .022 : .017), 10)), headB), tie); m.name = 'tie'; out.push(m); }
     if (style === 'tail') { const tail = []; for (let k = 0; k < 260; k++) { const a = rnd() * Math.PI * 2, r0 = .012 * Math.sqrt(rnd()), spread = .5 + rnd(), tipLen = .7 + .3 * rnd(), pts = [], ns = [];
         for (let i = 0; i < line.length * tipLen; i++) { const f = i / line.length, T = (line[Math.min(i + 1, line.length - 1)].clone().sub(line[Math.max(0, i - 1)])).normalize(), X = new THREE.Vector3(0, 0, 1).cross(T).normalize(), Y = T.clone().cross(X);
           const rr = r0 * (1 + 1.8 * f * spread); pts.push(line[i].clone().addScaledVector(X, Math.cos(a) * rr).addScaledVector(Y, Math.sin(a) * rr)); ns.push(X.clone().multiplyScalar(Math.cos(a)).addScaledVector(Y, Math.sin(a))); }
-        tail.push({ pts, ns, w: .009, v0: 0, v1: 1 }); }
+        tail.push({ pts, ns, w: .009, v0: 1, v1: 0 }); }
+      // (Session 1154: the strand texture is opaque at v 1 and fades to v 0, the canvas flipped; the tail ran 0 to 1, so its root by
+      // the tie was see-through and its ends blunt. It runs 1 to 0 now, and its strands start inside the tie, 2.2 cm round)
       const m = strandCards(tail, col, headB); m.name = 'tail'; out.push(m); continue; }
     // a braid: three locks crossing over one another, a tie near the end and a short brush below it
     const w = .034 * (.85 + .3 * len), endAt = line.length - 6;
@@ -603,8 +608,7 @@ function buildCoatHoodDown(G, body, byName, meshes) {
   const raw = R.slice(); for (let it = 0; it < 4; it++) { const s = R.slice(); for (let k = 1; k < N - 1; k++) R[k] = Math.max(raw[k], (s[k - 1] + 2 * s[k] + s[k + 1]) / 4); }
   const line = th.map((a, k) => new THREE.Vector3(neck.x + Math.sin(a) * R[k], ys[k], neck.z - Math.cos(a) * R[k]));
   let clear = 1e9; for (let k = 0; k < N; k++) for (const q of under) clear = Math.min(clear, q.distanceTo(line[k]) - rad[k]);
-  // tubeGeom winds its faces inward (its front faces look into the tube): turned out here, so the roll is lit from outside
-  const g = tubeGeom(line, rad, 12), ix = g.index.array; for (let i = 0; i < ix.length; i += 3) { const t = ix[i + 1]; ix[i + 1] = ix[i + 2]; ix[i + 2] = t; } g.computeVertexNormals();
+  const g = turnOut(tubeGeom(line, rad, 12)), ix = g.index.array;
   const out = [], m = new THREE.Mesh(g, clothMat(sRGB(...D.coat).multiplyScalar(.92), 'wool', { scale: 26 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'coatHoodDown'; m.castShadow = m.receiveShadow = true; out.push(m);
   // the hair below the crown, every lock of it (the strands, a tail, braids, their ties and brushes), against the roll's segments
   const seg = (p, a, b) => { const ab = b.clone().sub(a), t = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / ab.lengthSq())); return { d: p.distanceTo(a.clone().addScaledVector(ab, t)), t }; };

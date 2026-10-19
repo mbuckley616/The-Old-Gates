@@ -910,6 +910,8 @@ if (shotArg) { const only = shotArg.split('=')[1];
                 await shot('coathood-down-back', 'people=markman&seed=ch:0&sex=m&view=full&turn=2.6&dress=' + cq({ ...mk, coatHood: 'down' })); await shot('coathood-down-close', 'people=markman&seed=ch:0&sex=m&view=head&turn=2.2&dress=' + cq({ ...mk, coatHood: 'down' }));
                 await shot('coathood-down-front', 'people=markman&seed=ch:0&sex=m&view=head&turn=.5&dress=' + cq({ ...mk, coatHood: 'down' })); await shot('coathood-down-plain', 'people=markman&seed=ch:2&sex=m&style=tail&len=.8&view=head&turn=2.4&dress=' + cq({ ...mk, coat: [.24, .27, .32], coatFur: null, coatHood: 'down' }));
                 await shot('coathood-down-loose', 'people=markman&seed=ch:1&sex=f&style=loose&len=.8&view=head&turn=2.5&dress=' + cq({ ...mk, coat: [.32, .26, .2], coatFur: null, coatHood: 'down' }));
+                // the tail from its tie (Session 1154): the tie turned out, the tail's strands opaque at the root and fading to the ends
+                await shot('tail-tie', 'people=markman&seed=ch:2&sex=m&style=tail&len=.8&view=head&turn=2.4&dress=' + cq({ ...mk, coat: null, coatHood: null }));
                 await shot('coathood-down-woman', 'people=markman&seed=ch:1&sex=f&style=braids&len=.8&view=full&turn=2.8&dress=' + cq({ ...mk, coat: [.32, .26, .2], coatFur: [.55, .5, .44], coatLen: .75, coatHood: 'down' })); }
               // the Gatelanders' waistcoat (Session 1143, OG-109): green wool over an undyed tunic, close and full, from the side and the back; brown leather; under a cloak, hood down
               { const wq = x => dq({ tunic: [.82, .78, .68], waistcoat: [.3, .36, .22], cloak: null, hood: null, mantle: null, tabard: null, apron: null, bib: false, sash: null, mail: null, ...x });

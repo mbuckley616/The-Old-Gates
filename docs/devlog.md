@@ -26709,3 +26709,25 @@ Session 1152 owed the coat's hood lying on the back. The last run started it and
 - **A gap between the tie and the tail** shows from the side. It is there on a bare tunic too (seen in a throwaway picture, not committed), so it is the tail's root, not the hood. Owed as its own fix.
 - **The roll's section is round.** A real hood lying down is a flattened fold; an oval section would read flatter from the side.
 - **Owed:** who wears the hood down in which season (the game's, with `WX`), and the game after F4.
+
+## v80 — Session 1154 — A tail from its tie (prototype only)
+Session 1153 saw a gap between a tail's tie and the tail, on a bare tunic as well as under the coat. The cause is the strand texture, not the drape.
+- **The texture.** `strandTex` draws each strand opaque at the canvas's top and fading to nothing at its foot. A CanvasTexture is flipped, so `v = 1` is the opaque root and `v = 0` the faded end.
+- **The tail.** Its cards ran `v0: 0` at the tie to `v1: 1` at the ends: see-through for its first few centimetres by the tie, and blunt at the bottom. It runs 1 to 0 now.
+- **The tie.** It was also a `tubeGeom`, which winds its faces inward (Session 1153), so it had always been drawn inside out: what showed was its far inside wall, seen through the tail's see-through root. With the root opaque the tie disappeared. It is now turned out by a small shared `turnOut`, which the coat's hood roll uses too. A tail's tie is 2.2 cm round, against 1.7 cm before, so the strands start inside it; a braid's tie is unchanged.
+- **Left as they are:**
+  - the scalp's strands, which also run `v0: 0` at the root (the scalp's shell hides it there);
+  - the braids' brushes (0.5 to 1);
+  - the other tubes: the cloak's hood roll, the bun, the braids' locks.
+  Changing these would change every hairstyle's look, so each is its own question.
+
+Correction to Session 1153: its Needs eyes owed the gap "as its own fix": this is that fix.
+
+### Verified (headless Chromium)
+- **`builder.check.mjs`:** 500 of 500 pass, as before. The hair's own checks (no strand under the skin, none on the face, braids and tails clear of the clothes) are unchanged. The tail under the coat's hood roll still has 0 of 18,176 points in it.
+- **Pictures:**
+  - `builder-tail-tie.jpg` (new): a Markman's tail from the side on a bare tunic, the leather tie lit and the tail running from it;
+  - `builder-coathood-down-*.jpg`, retaken with the same fix.
+### Needs eyes
+- **Whether the tail's ends now fade as they should.** They taper and fade where they were blunt.
+- **Whether the scalp's strands and the brushes want the same turn.** On the scalp, roots fading into the shell may be what keeps the hairline soft.
