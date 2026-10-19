@@ -8,7 +8,7 @@
 // colour and every colour of the six is used; no door paint drowns in its wall; cottages limewashed under thatch, farmhouses
 // white, warehouses bare stone, town lots under slate; a lot builds the same twice, its lit windows included.
 // Session 964: the guild hall (Michael's C on #352), its own piece, in two guilds' dress.
-// Session 1178: a town's market three ways (the market house, the shelter, the stalls alone), asked of Michael.
+// Session 1179: a town's market three ways (the market house, the shelter, the stalls alone), asked of Michael.
 // Session 1063: the plans by bays (Michael's C on #396). Every plan on every count of bays it takes is that many bays wide and its ends;
 // its openings stand inside the face clear of the corners and of one another; every window above the ground floor stands on a bay's
 // line, and every bay has one on every upper floor; the door is in a bay; it builds in budget, the same twice; glBaysFor fits a lot of
@@ -161,7 +161,7 @@ check('no page errors', errs.length === 0, errs.slice(0, 3));
   const yard = by.bawn.rays, inner = by.bawn.size.gate.z - by.bawn.size.bawn.t - 1;
   check(`through the bawn's gateway (${by.bawn.size.gate.w} by ${by.bawn.size.gate.h} m) six rays reach the yard: they meet ${[...new Set(yard.map(r => r.part))].join(', ')} at z ${Math.min(...yard.map(r => r.z))} to ${Math.max(...yard.map(r => r.z))}`, yard.length === 6 && yard.every(r => r.z !== null && r.z < inner), yard);
 }
-// Session 1178: a town's market (gatelandsMarket), three ways (o.kind house | shelter | stalls, asked of Michael): each the same twice
+// Session 1179: a town's market (gatelandsMarket), three ways (o.kind house | shelter | stalls, asked of Michael): each the same twice
 // and in budget; the arches stand clear of the quoins with their voussoirs, and one walks under them (2.05 m or more 0.3 m in from each
 // jamb); rays through every arch of the front at the eye pass the front wall into the arcade; under the house's beams 2.6 m or more; its
 // stair 18 even risers of 0.2 m or less to a landing at the upper door's sill, the door on the landing; the scales' pans at a hand's height.

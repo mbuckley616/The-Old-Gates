@@ -1184,8 +1184,8 @@ function keep(o = {}) {
   for (const p of parts) { ud.tris += p.userData.tris; ud.calls += p.userData.calls; }
   ud.size = size; ud.door = door; ud.towerDoor = T.open.front[0]; G.userData = ud; return G;
 }
-// a town's market house (Session 1178, card F6; OG-114's eight workplaces, its "market hall", and OG-070's vocabulary): where the
-// Gatelands town keeps its market dry and its weights honest. o.kind is the question asked of Michael (DECISION, Session 1178):
+// a town's market house (Session 1179, card F6; OG-114's eight workplaces, its "market hall", and OG-070's vocabulary): where the
+// Gatelands town keeps its market dry and its weights honest. o.kind is the question asked of Michael (DECISION #475, Session 1179):
 // 'house' (the market house of an Irish town: two storeys, 14.8 by 8.6 m, limewashed with dressed quoins under a hipped slate roof; the
 // ground floor an open arcade of round arches, five a side and three on the west end, flagged inside under the beams of the floor
 // above; the room upstairs, 3 m to its ceiling, reached by a stone stair of 18 risers up the outside of the east end to its door; a

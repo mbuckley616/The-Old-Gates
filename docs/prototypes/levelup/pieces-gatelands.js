@@ -18,7 +18,7 @@
 // &cam=street (default) | gate (through the gateway into the yard) | yard (from the yard) | high.
 // ?view=keep (Session 1093): a town's keep, &keep=tower (default) | bawn | hall | all (the three in a row), the game's keep lot (14 by 11 m)
 // marked in gravel under it; &cam=street (default) | corner | door | far (from 90 m) | high.
-// ?view=market (Session 1178): a town's market on its square, &market=house (default) | shelter | stalls | all (the three in a row),
+// ?view=market (Session 1179): a town's market on its square, &market=house (default) | shelter | stalls | all (the three in a row),
 // &cam=square (default, from across the square) | arcade (inside, under the beams) | stair (the east end and its stair) | high.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
