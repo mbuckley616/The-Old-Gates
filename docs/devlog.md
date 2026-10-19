@@ -26652,7 +26652,7 @@ Session 1146 wove a sett into the cloak's cloth and asked Michael where it is wo
 ## v80 — Session 1152 — The Mark's fur-lined hooded coat (L1, prototype only)
 Session 1147's winter coat owed OG-109's Mark column: "fur-lined hooded coats". The sheet draws one and the canon says nothing against it, so this asks nothing, as with the coat itself. It touches only `people.js`, `builder.js` (one checkbox) and `builder.check.mjs`. FREEZE #441 is still open, so the run kept to the prototypes.
 
-- **The hood.** `D.coatHood: 'up'` puts the cloak's fitted hood (`buildHoodUp`, Session 1069's dome) over the head in the coat's own wool. Nothing new is shaped for it. `buildHoodUp` takes two new options:
+- **The hood.** `D.coatHood: 'up'` puts the cloak's fitted hood (`buildHoodUp`) over the head in the coat's own wool. Nothing new is shaped for it. `buildHoodUp` takes two new options:
   - `clr`, the hem's clearance over the shoulders: 7.5 cm over a fur collar, 5 cm over a plain coat, against the cloak's 4.
   - `fur`, the ruff.
 - **The ruff.** The hood's front within three tenths of the opening's size again of the face, in seven shells 3.5 mm apart. They are pushed out from the head's middle and cut at the opening's edge as the hood is. The outer edge is cut on a smooth, slightly noisy line, not on the triangles' stairs: the first picture's ruff was ragged along them. The shells share the hood's skinning. The rolled rim round the face takes the fur's colour.
