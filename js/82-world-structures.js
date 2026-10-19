@@ -989,10 +989,16 @@
     if(d<(near||.8))return true;
     if(near&&d<spd*dt){n.g.position.x=tx;n.g.position.z=tz;return true;}
     const mx=dx/d*spd*dt,mz=dz/d*spd*dt;
-    const try_=(x,z)=>!solidAt(x,z);
+    const try_=(x,z)=>!solidAt(x,z),slide=spd*dt*.2; /* S1160 — a slide along one axis of under a fifth of the step is no headway: with the target dead ahead on one
+       axis, a 1e-12 slide along the other "succeeded", reset the count and held Portclare's watch at a wall for ten minutes */
+    /* S1166 — along a wall at an angle: the lots stand turned since S1138, and a slide on x or z alone runs into a wall at 20°
+       (Portclare's watch, wedged at a house's corner one step from his beat point). The step turned 20° to 80°, the side
+       that last worked first, before the slides on one axis */
+    const turn=a=>{const c=Math.cos(a),s=Math.sin(a),x=mx*c-mz*s,z=mx*s+mz*c;if(!try_(gx+x,gz+z))return false;n.g.position.x+=x;n.g.position.z+=z;n._turnS=Math.sign(a);return true;};
     if(try_(gx+mx,gz+mz)){n.g.position.x+=mx;n.g.position.z+=mz;}
-    else if(try_(gx+mx,gz))n.g.position.x+=mx;
-    else if(try_(gx,gz+mz))n.g.position.z+=mz;
+    else if((()=>{const sd=n._turnS||1;for(let k=1;k<=4;k++){const a=k*.35;if(turn(a*sd)||turn(-a*sd))return true;}return false;})()){}
+    else if(Math.abs(mx)>slide&&try_(gx+mx,gz))n.g.position.x+=mx;
+    else if(Math.abs(mz)>slide&&try_(gx,gz+mz))n.g.position.z+=mz;
     else{n._stuck=(n._stuck||0)+1;if(n._stuck>40){n._stuck=0;return true;}return false;}
     n._stuck=0;n.g.rotation.y=Math.atan2(dx,dz);
     return false;
@@ -1015,6 +1021,9 @@
       const gx=n.g.position.x,gz=n.g.position.z;
       const plan=(n._settle&&n._settle.raid)?{hide:true}:scheduleFor(n,h);
       // hidden = indoors somewhere; the interior generator spawns them there
+      // arrived-and-hidden holds only while the plan is still "go, then hide": the sea tutorial's "wait at your door" brings the
+      // shipwright back out even when he gave up short of the inn (npcStep's no-headway rule since S1160)
+      if(!plan.thenHide)n._arrivedHide=false;
       if(plan.hide||(n._arrivedHide)){if(n.g.visible){n.g.visible=false;n.dot.visible=false;}if(n._torch&&n._torch.visible){n._torch.visible=false;n._torch.userData.light.intensity=0;}n._retreated=true;if(plan.hide)n._arrivedHide=false;continue;}
       if(n._drawn)continue; // S157 — drawn against you; the enemy stands in
       if(!n.g.visible){n.g.visible=true;n._retreated=false;n.g.position.set(n.home.x,worldH(n.home.x,n.home.z),n.home.z);}
@@ -1039,6 +1048,10 @@
           else{let arrived=npcStep(n,t.x,t.z,spd,dt); // blocked for good (npcStep gives up) is not arriving: once more cell by cell, then on to the next point
             if(arrived&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>=.8&&n._bwTry!==t){n._bwTry=t;n._bwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t,true);arrived=!n._bwp.length;}
             if(arrived)next();moving=!arrived;}}}
+      else if(plan.go&&n.sched.bawn){const t=plan.go; /* S1143 — a steward in a bawn goes by the streets, out through its gate (straight, the wall stops him and he gives up there) */
+        if(n._gwT!==t||(n._gwArr===t&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>2)){n._gwT=t;n._gwArr=null;n._gwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t);} /* again when he is far from a place he reached (the next day) */
+        if(n._gwp&&n._gwp.length){const w=n._gwp[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._gwp.shift();moving=true;}
+        else{const arrived=npcStep(n,t.x,t.z,spd,dt);if(arrived){n._gwArr=t;if(plan.thenHide)n._arrivedHide=true;}moving=!arrived;}}
       else if(plan.go){const arrived=npcStep(n,plan.go.x,plan.go.z,spd,dt);if(arrived&&plan.thenHide)n._arrivedHide=true;moving=!arrived;}
       else if(plan.wander){
         n.wt-=dt;

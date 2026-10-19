@@ -100,7 +100,10 @@ export function gatelandsSloop(o = {}, r = stream('sloop')) {
   // the deck: fore-and-aft planks at DECK, each cut to the hull's half-breadth at that height (deckAt), on beams below
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .16; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      const z0 = zz[0], z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+      const z0 = zz[0], z1 = zz[zz.length - 1];
+      /* o.open (Session 1129): the hatch open to the hold, its planks cut at the coaming's inside; otherwise the deck runs under its dark plate */
+      if (o.open && Math.abs(x) - PW / 2 < .6) { for (const [a2, b2] of [[z0, -2.6], [-1.4, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); }
+      else put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     /* the covering board: a strip along each side from the last plank out to the hull, so the deck meets the planking */
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // the bulwark's inner face is the top strakes' inside; the rail: stanchions every 0.9 m along the sheer, a cap rail at 1.0 m over the
@@ -112,7 +115,7 @@ export function gatelandsSloop(o = {}, r = stream('sloop')) {
   // the hatch amidships aft of the mast: a coaming 0.3 m high round a dark opening, its cover leaning beside it
   const MZ = 1.0, hatch = { x0: -.6, x1: .6, z0: -2.6, z1: -1.4 };
   { const hz = (hatch.z0 + hatch.z1) / 2; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(1.32, .3, .08), 'oak', 0, DECK + .15, hz + e * .62); put(new THREE.BoxGeometry(.08, .3, 1.24), 'oak', e * .62, DECK + .15, hz); }
-    put(new THREE.BoxGeometry(1.16, .02, 1.16), 'dark', 0, DECK + .02, hz); }
+    if (!o.open) put(new THREE.BoxGeometry(1.16, .02, 1.16), 'dark', 0, DECK + .02, hz); }
   // the mast, stepped forward of amidships; the yard at 9 m, the square sail from it to its foot 2.2 m over the deck, bellied forward
   // (the Mark's dress takes the Mark's rig instead, #306's one rig to an island: the cutter's gaff main and topsail, a staysail and a jib
   // on a bowsprit, the boom 2.15 m over the deck)
@@ -243,7 +246,10 @@ export function markCutter(o = {}, r = stream('cutter')) {
   // the deck at DECK, fore-and-aft planks cut to the hull's half-breadth there, a covering board out to the planking
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .14; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      const z0 = zz[0] - (zz[0] < ZT + .1 ? .06 : 0), z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+      const z0 = zz[0] - (zz[0] < ZT + .1 ? .06 : 0), z1 = zz[zz.length - 1];
+      /* o.open (Session 1148): the hatch open to the hold, its planks cut at the coaming's inside; otherwise the deck runs under its dark plate */
+      if (o.open && Math.abs(x) - PW / 2 < .55) { for (const [a2, b2] of [[z0, -1.6], [-.5, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); continue; }
+      put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // the rail: stanchions every 0.9 m, a cap rail at 1.0 m over the deck or 0.12 over the sheer, the gilt line along the sheer strake
   const rail = []; { const n = Math.round(L / .9); const top = z => Math.max(DECK + 1.0, sheerAt(z) + .12), inset = z => sect(z, 1)[0] - .06;
@@ -253,7 +259,7 @@ export function markCutter(o = {}, r = stream('cutter')) {
   // a hatch aft of the mast, its coaming 0.3 m
   const MZ = 1.6, hatch = { x0: -.55, x1: .55, z0: -1.6, z1: -.5 };
   { const hz = (hatch.z0 + hatch.z1) / 2, hw = hatch.x1 - hatch.x0 + .12, hd = hatch.z1 - hatch.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); }
-    put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
+    if (!o.open) put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
   // Aurenne's dress: the lateen on a mast raked forward, the yard slung to starboard, and the jib on the bowsprit above and forward of it
   let lateen = null, jib = null, yard = null, MH = 10.8, BY = DECK + 2.15, BZ1 = zs - .7;
   if (AURD) { const RAKE = 4 * Math.PI / 180, sy = 7.0, ang = 50 * Math.PI / 180, fw = 4.5, af = 7.6, side = 1, xs = .3, top = DECK + sy + .8, kb = keelAt(MZ) + .1, mast = y => MZ + (y - kb) * Math.tan(RAKE);
@@ -402,7 +408,10 @@ export function aurenneCaravel(o = {}, r = stream('caravel')) {
   // the main deck at DECK, fore-and-aft planks cut to the hull's half-breadth, a covering board out to the planking
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .15; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      const z0 = zz[0] - (zz[0] < ZT + .1 ? .06 : 0), z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+      const z0 = zz[0] - (zz[0] < ZT + .1 ? .06 : 0), z1 = zz[zz.length - 1];
+      /* o.open (Session 1149): the hatch open to the hold, its planks cut at the coaming's inside; otherwise the deck runs under its dark plate */
+      if (o.open && Math.abs(x) - PW / 2 < .6) { for (const [a2, b2] of [[z0, 2.2], [3.4, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); continue; }
+      put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // the gilt wale along the top of the tallow-and-wood, under the blue
   for (let i = 0; i + 1 <= NS; i += 2) { const za = zAt(i), zc = zAt(Math.min(NS, i + 2)), u = (NSTR - 2) / NSTR; for (const e of [1, -1]) rod([e * (sect(za, u)[0] + .03), sect(za, u)[1], zr(za, u)], [e * (sect(zc, u)[0] + .03), sect(zc, u)[1], zr(zc, u)], .045, .045, 'gilt'); }
@@ -438,7 +447,7 @@ export function aurenneCaravel(o = {}, r = stream('caravel')) {
   // the hatch between the main mast and the fore, its coaming 0.3 m
   const hatch = { x0: -.6, x1: .6, z0: 2.2, z1: 3.4 };
   { const hz = (hatch.z0 + hatch.z1) / 2, hw = hatch.x1 - hatch.x0 + .12, hd = hatch.z1 - hatch.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); }
-    put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
+    if (!o.open) put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
   // the three lateens. Each mast raked forward 4°; its yard slung on the lee side at 52° to 50°, a third of its length forward of the
   // mast; the sail hangs from the yard to a tack under its lower end and a clew aft, the foot 2.2 m or more over its deck.
   // [mast z, the deck it stands on, the sling's height over that deck, the yard's angle, its length forward and aft of the sling, the clew's z, side]
@@ -552,7 +561,10 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
   // the deck
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .18; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      const z0 = zz[0], z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+      const z0 = zz[0], z1 = zz[zz.length - 1];
+      /* o.open (Session 1099): the hatch open to the hold, its planks cut; otherwise the deck runs under the hatch's dark plate as before */
+      if (o.open && Math.abs(x) - PW / 2 < .6) { for (const [a2, b2] of [[z0, -3.0], [-1.2, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); }
+      else put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // the cream wale along the sheer strake's top
   for (let i = 0; i + 2 <= NS; i += 2) { const za = zAt(i), zc = zAt(i + 2); for (const e of [1, -1]) rod([e * (sect(za, 1)[0] + .02), sheerAt(za) - .02, za], [e * (sect(zc, 1)[0] + .02), sheerAt(zc) - .02, zc], .045, .045, 'cream'); }
@@ -587,7 +599,7 @@ export function gatelandsCog(o = {}, r = stream('cog')) {
   // the cargo hatch aft of the mast
   const MZ = .4, hatch = { x0: -.6, x1: .6, z0: -3.0, z1: -1.2 };
   { const hz = (hatch.z0 + hatch.z1) / 2, hw = hatch.x1 - hatch.x0 + .12, hd = hatch.z1 - hatch.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); }
-    put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
+    if (!o.open) put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
   // cargo along the sides: barrels and crates against the rail, lashed
   const cargo = []; for (const e of [1, -1]) for (const z of [-.9, 1.8, 3.0]) { const x = e * (deckAt(z) - .45); if (r() < .5) { put(new THREE.CylinderGeometry(.3, .27, .8, 12), 'oak', x, DECK + .4, z); cargo.push([x, z, .3]); }
     else { put(new THREE.BoxGeometry(.7, .6, .7), 'deck', x, DECK + .3, z, 0, (r() - .5) * .2); cargo.push([x, z, .45]); } }
@@ -695,7 +707,10 @@ export function gatelandsGalleon(o = {}, r = stream('galleon')) {
   // the deck, the covering boards
   const deckAt = z => { let lo = 0, hi = 1; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (sect(z, m)[1] < DECK) lo = m; else hi = m; } return sect(z, lo)[0] - TH * .6; };
   { const PW = .18; for (let x = -W / 2 + PW / 2; x < W / 2; x += PW) { const zz = []; for (let i = 0; i <= NS; i++) { const z = zAt(i); if (deckAt(z) >= Math.abs(x) + PW / 2) zz.push(z); } if (zz.length < 2) continue;
-      const z0 = zz[0] - (zz[0] < ZT + .1 ? .06 : 0), z1 = zz[zz.length - 1]; put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
+      const z0 = zz[0] - (zz[0] < ZT + .1 ? .06 : 0), z1 = zz[zz.length - 1];
+      /* o.open (Session 1150): both hatches open to the hold, their planks cut at the coamings' inside; otherwise the deck runs under their plates */
+      if (o.open && Math.abs(x) - PW / 2 < .7) { for (const [a2, b2] of [[z0, -3.2], [-1.6, 1.2], [2.6, z1]]) if (b2 - a2 > .02) put(new THREE.BoxGeometry(PW, .05, b2 - a2), 'deck', x, DECK - .025, (a2 + b2) / 2, 0, 0, 0, .35); continue; }
+      put(new THREE.BoxGeometry(PW, .05, z1 - z0), 'deck', x, DECK - .025, (z0 + z1) / 2, 0, 0, 0, .35); }
     for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= NS; i++) { const z = zAt(i), d = deckAt(z); rows.push([[e * Math.max(0, d - .3), DECK + .002, z], [e * (d + TH * .5), DECK + .002, z]]); } put(ribbon(rows, e < 0), 'oak', 0, 0, 0, 0, 0, 0, null); } }
   // the cream wale under the green; six gun-port lids a side on the gun deck, closed
   for (let i = 0; i + 2 <= NS; i += 2) { const za = zAt(i), zc = zAt(i + 2), u = (NSTR - 2) / NSTR; for (const e of [1, -1]) rod([e * (sect(za, u)[0] + .035), sect(za, u)[1], zr(za, u)], [e * (sect(zc, u)[0] + .035), sect(zc, u)[1], zr(zc, u)], .05, .05, 'cream'); }
@@ -731,7 +746,7 @@ export function gatelandsGalleon(o = {}, r = stream('galleon')) {
     for (let k = 1; k + 1 < n; k++) { const za = zs + L * k / n, zc = zs + L * (k + 1) / n; if (!ok(za) || !ok(zc)) continue; for (const e of [1, -1]) rod([e * Math.min(inset(za), deckAt(za) - .05), top(za), za], [e * Math.min(inset(zc), deckAt(zc) - .05), top(zc), zc], .045, .045, 'oak'); } }
   // two hatches, one each side of the main mast
   const hatches = [{ x0: -.7, x1: .7, z0: -3.2, z1: -1.6 }, { x0: -.7, x1: .7, z0: 1.2, z1: 2.6 }];
-  for (const h of hatches) { const hz = (h.z0 + h.z1) / 2, hw = h.x1 - h.x0 + .12, hd = h.z1 - h.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); } put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
+  for (const h of hatches) { const hz = (h.z0 + h.z1) / 2, hw = h.x1 - h.x0 + .12, hd = h.z1 - h.z0 + .12; for (const e of [-1, 1]) { put(new THREE.BoxGeometry(hw, .3, .08), 'oak', 0, DECK + .15, hz + e * hd / 2); put(new THREE.BoxGeometry(.08, .3, hd), 'oak', e * hw / 2, DECK + .15, hz); } if (!o.open) put(new THREE.BoxGeometry(hw - .1, .02, hd - .1), 'dark', 0, DECK + .02, hz); }
   // the square masts: course and topsail on each, a round top, the courses' feet 2.2 m over the deck,
   // bellied forward; the main course bears the harp, the others plain cloth (their UVs take a corner of the sail's map)
   const square = (mz, mh, cy, cw2, tw, foot, harpOn) => { rod([0, keelAt(mz) + .1, mz], [0, DECK + mh, mz], .24, .14, 'spar'); put(new THREE.CylinderGeometry(.55, .45, .45, 12), 'oak', 0, cy + .5, mz);
