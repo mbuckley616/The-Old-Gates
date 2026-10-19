@@ -13,7 +13,8 @@
 // niche(god, island, o) -> { group, tris, draws, sill, basin, lamp, pray [x, z] } in the niche's frame: its front face at z 0, its
 //   foot on y 0, the road at +z. god: one of GODS' keys or 'guest'. o.struck: the Guest's hand-sized struck recess low on the plinth
 //   (the wayside form of the seventh niche, the backlog's lore objects). o.ribbons (gatelands).
-// row(island) -> { group, tris, draws, niches: [{ god, x }], pray } the six and the Guest's in a row, 1.4 m apart (the Mark's housings 1.8 m), dressed.
+// row(island, o) -> { group, tris, draws, niches: [{ god, x }], pray, len } the six and the Guest's in a row, 1.4 m apart (the Mark's housings 1.8 m),
+//   dressed; o.yard (Session 1172; the Gatelands, in a churchyard: no wall, well, thorn, cross or ring-stone of its own).
 // wayside(island, god) -> one god's shrine as it stands on a road: the niche, the struck recess, and its island's dressing.
 // Everything is in metres and merged by material (one mesh per material per call), as rooms.js and props.js do; the god's name and
 // the roundel are one small textured plane each.
@@ -272,7 +273,10 @@ const ORDER = [...GODS.map(g => g.key), 'guest'];
 export function row(island, o = {}) {
   const K = kit(), r = stream('row:' + island), niches = [], lamps = []; const X = i => (i - 3) * SPACING[island];
   ORDER.forEach((g, i) => { const n = buildNiche(K, g, island, X(i)); niches.push(n); if (island === 'mark') lamps.push(housing(K, X(i), r)); });
-  if (island === 'gatelands') {
+  // o.yard (Session 1172): the row in a churchyard, which has its own wall and its own high cross: the niches, their rags and primroses only
+  if (island === 'gatelands' && o.yard) { for (let i = 0; i < 6; i++) primroses(K, X(i), .22, r, 5);
+    ORDER.forEach((g, i) => { if (g === 'guest') return; const len = .22 + r() * .16; K.put(new THREE.PlaneGeometry(.04, len), 'rag' + (i % 5), X(i) + (i % 2 ? 1 : -1) * (RW / 2 + .06), PL + RSPRING - .1 - len / 2, .06, (r() - .5) * .5, 0, (r() - .5) * .2); });
+  } else if (island === 'gatelands') {
     drystone(K, X(0) - 1.1, X(6) + 1.1, -1.35); for (let i = 0; i < 6; i++) primroses(K, X(i), .22, r, 5);
     // a rag or two tied on every hood moulding's stop, and the rag thorn at the row's west end
     ORDER.forEach((g, i) => { if (g === 'guest') return; for (let k = 0; k < 1; k++) { const len = .22 + r() * .16; K.put(new THREE.PlaneGeometry(.04, len), 'rag' + ((i + k * 2) % 5), X(i) + (i % 2 ? 1 : -1) * (RW / 2 + .06), PL + RSPRING - .1 - len / 2, .06, (r() - .5) * .5, 0, (r() - .5) * .2); } });
@@ -281,7 +285,7 @@ export function row(island, o = {}) {
   else { railing(K, X(0) - .9, X(6) + .9, 1.45, 0); tithe(K, .98, 1.15); notice(K, X(6) + .95, -.52); for (const x of [X(0) - .85, X(6) + .85]) pot(K, x, .5, r);
     K.bx('ochre', X(0) - .95, X(6) + .95, 0, .03, -.9, 1.3, .5); K.bx('aurplaster', X(6) + .6, X(6) + 1.3, 0, 2.2, -.7, -.55, .6); K.bx('aurplaster', X(0) - 1.3, X(0) - .6, 0, 2.2, -.7, -.55, .6);
     for (let i = 0; i < 6; i++) for (let k = 0; k < 3; k++) { const cx = X(i) - .2 + k * .06, ch = .05 + r() * .05; K.put(new THREE.CylinderGeometry(.018, .02, ch, 8), 'wax', cx, PL + SILL + ch / 2, -.06); K.put(new THREE.SphereGeometry(.01, 5, 4).scale(1, 2.3, 1), 'flame', cx, PL + SILL + ch + .02, -.06); } }
-  const f = K.finish(); return { ...f, niches, lamps, island, pray: [0, 1.4] };
+  const f = K.finish(); return { ...f, niches, lamps, island, pray: [0, 1.4], len: X(6) - X(0) + W };
 }
 export function wayside(island, god = 'teallach') {
   const K = kit(), r = stream(`wayside:${island}:${god}`), lamps = []; const n = buildNiche(K, god, island, 0, { struck: true });
