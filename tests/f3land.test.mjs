@@ -1,4 +1,4 @@
-// Card F3, the land in the new look (Session 1175, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
+// Card F3, the land in the new look (Session 1180, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
 // shaded by the land's own material, which paints fields, hedgerows, rock and the woods from afar over groundColor's vertex
 // colour; every chunk carries a per-vertex mask that keeps the fields off roads and out of site stamps; the sky is a gradient
 // dome that follows the clock; the world's frame is tone-mapped (ACES) and graded, and rooms are not. The console stays clean

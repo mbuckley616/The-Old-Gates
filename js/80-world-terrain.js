@@ -669,7 +669,7 @@
     geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
-    landMask(geo,ox,oz); // S1175 (F3): the new look's land reads roads, stamps, woods and fields per vertex; nothing on the old look
+    landMask(geo,ox,oz); // S1180 (F3): the new look's land reads roads, stamps, woods and fields per vertex; nothing on the old look
     const mesh=new THREE.Mesh(geo,terrainMat);
     mesh.position.set(ox+CHUNK/2,0,oz+CHUNK/2);
     mesh.receiveShadow=true;
@@ -767,7 +767,7 @@
   }
   function buildWater(){
     const wmat=new THREE.MeshLambertMaterial({color:0x2f7fb2,emissive:0x0a2a40,transparent:true,opacity:.8});
-    wmat.onBeforeCompile=sh=>{waterShader(sh);if(LAND.on)landWater(sh);wmat.userData.shader=sh;}; // S1175 (F3): the new look's sheen and glint
+    wmat.onBeforeCompile=sh=>{waterShader(sh);if(LAND.on)landWater(sh);wmat.userData.shader=sh;}; // S1180 (F3): the new look's sheen and glint
     water=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000,140,140),wmat);
     water.rotation.x=-Math.PI/2;
     water.position.y=SEA_Y;
@@ -933,7 +933,7 @@
     sc.fog.density+=(_fogTarget-sc.fog.density)*Math.min(1,cameraUnderwater()?dt*6:k);
     skyMat.color.copy(sc.background).multiplyScalar(1.15);
     skyBodies(dt); // v80 S148 — sun, moon and stars
-    landAtmosphere(); // S1175 (F3): the new look's sky dome follows the clock, the sky and the haze
+    landAtmosphere(); // S1180 (F3): the new look's sky dome follows the clock, the sky and the haze
     // Sun: elevation by hour, dimmed and cooled at night.
     const hr=(typeof gameHour==='function')?gameHour():12;
     const dayAng=Math.PI*(hr-6)/12; // 0 at 6h, π at 18h
