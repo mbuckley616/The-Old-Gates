@@ -27614,3 +27614,38 @@ FREEZE #441 is open, so this run keeps to the prototypes. Backlog L5's *Roads an
 - **The kiln's masonry:** the kiln uses the kit's coursed stone, which reads as blocks rather than the rubble of a country kiln.
 - **No smoke or glow:** the kiln stands cold. Whether it burns, and who works the quarry, are the systems builder's and the quest writer's.
 - **Into the game:** this goes in with F8 after the freeze. Nothing is asked: the quarry is from OG-046, which Michael kept.
+
+## v80 — Session 1157 — The Gatelander taproom, copied into the game's kit (card F9, Michael's 2 A on #320)
+The freeze (#441) is closed and F2a is on main, so card F9's rooms may come into the game. None has yet. The first is the one Michael already chose: his 2 A on #320 is the taproom drawn inside the kit's farmhouse (Session 893, `gatelandsInn` in `docs/prototypes/levelup/rooms.js`), and since Session 1086 a Gatelands village's inn on `?look=new` is that farmhouse from outside. Its room inside is still the old builder's. The work is two sessions, as the keep was (Sessions 1139 and 1143): this one copies the room into the game's kit, and the next hangs it inside the inn.
+- **The copy:** `gatelandsInn` and the rooms' materials come into `js/38-kit.js` line for line. Three names change: `mats()` becomes `roomMats()`, `GL_PLANS` becomes `PLANS`, and `gatelandsBuilding` becomes `building`. The kit's `building` already takes `plan.interior` (no dark box behind the openings) and the transom door's `ajar` (the room hangs its own leaf, open), so the shell is the farmhouse the street builds.
+- **Two surfaces:** the kit lacked two of `common.js`'s painters, the flags (the taproom's floor) and the rock (the turf of the fire and the earth). They are copied too. Each paints once, the first time a room asks for it.
+- **How to reach it:** `PKIT.gl.inn({paint}, PKIT.stream(key))` returns the prototype's record: the group (shell and room) in the farmhouse's frame, its centre on the ground and its front at +z. The record carries the 50 boxes the checks keep, the stair (16 risers of 0.178 m going 0.25 m), the well, the three rooms off the passage with their doors and beds, the bar, the tables, the benches, the settle, the hearth, the fire, the lamp and the walks. That is what the next session reads for the solids, the footholds and the beds to let.
+- **The old look:** nothing builds it, and nothing is painted until something is asked for.
+
+### Verified (headless Chromium)
+- **`kitinnroom` (new): 7 of 7 pass.**
+  - **The prototype's numbers, exactly:** four keys build to the triangles, draws and vertex hash that rooms.js gives for the same keys in the test Chromium:
+
+    | Key | Paint | Triangles | Draws |
+    |---|---|---|---|
+    | inn | green | 4,368 | 16 |
+    | inn:0 | green | 4,536 | 16 |
+    | inn:1 | blue | 4,560 | 16 |
+    | inn:2 | red | 4,392 | 16 |
+
+  - **The shell:** the farmhouse's 2,120 triangles in 10 draws, the same vertices in every key.
+  - **Each is the same twice.**
+  - **The measures:** 10.5 by 6.2 m, floors at 0.05 and 2.9 m, 3 beds, and the front door 1.05 by 2.5 m. The shell's glass is the clear pane from inside.
+  - **The old look** has `PKIT.gl.inn` and has painted nothing. There are no page errors on either look.
+- **`kitkeep`, `kitinn` and `kittown` pass as before.**
+- `parsecheck.py` is clean. Build tag s715.
+### Needs eyes
+- **Nothing to see yet:** no inn builds the room until the next session.
+- **Owed, the hanging:** on `?look=new`, a Gatelands village inn's room is the kit's taproom at its true size. The room is in metres, so it is scaled by 1, as the tower is. It needs:
+  - the boxes as solids;
+  - the floors, the stair (a flight foothold) and the upper floor with its well as footholds;
+  - the three beds as the inn's beds to let, one to a room;
+  - the innkeeper behind the bar;
+  - the way out at the front door;
+  - the hearth's and the lamp's lights;
+  - the innkeeper's directions (`galleryEast`), which must say the stair is east.
