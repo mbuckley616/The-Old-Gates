@@ -14,6 +14,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 **The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
+### A town's market on the new look: a market house, a shelter, or the stalls as today? (look builder, Session 1178) — DECISION #475
+OG-114 draws eight workplaces for the trades; the market hall is the one the new kit lacks. A Gatelands town holds its market today as trestle stalls on the square.
+- **A. A market house** *(recommended)*. Two storeys, 15 by 8.6 m: an open arcade of round arches below, a room above reached by an outside stair at the east end, a cupola with the market bell. Limewash, dressed stone and slate (OG-070). A plot on the square about 17 by 11 m, like the church's (#433 B); a second landmark on the square. 10.9k triangles in 21 draws.
+- **B. A market shelter.** One storey, 10 by 6.6 m, open on all sides; 5.3k triangles in 9 draws, a plot of about 12 by 9 m. Keeps the stalls dry, but no landmark.
+- **C. As today.** Stalls on the open square, the beam on a tripod. No plot, no building.
+
+A and B go in towns, ports and cities, not villages, placed after the church and the keep; the beam and scales hang in the middle of all three.
+
+Pictures: [all three](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/pieces-gatelands-market-all.jpg), [the house](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/pieces-gatelands-market-house.jpg), [the shelter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/pieces-gatelands-market-shelter.jpg). Devlog `docs/devlog/1178.md`; the prototype `docs/prototypes/levelup/pieces-gatelands.html?view=market`.
+
+### The players by island (OG-112): how many play, and where? (concept artist, 19 Oct 2026) — DECISION #471
+Each island has a band of five instruments (the Gatelands: fiddle, tin whistle, bodhrán, wire-strung harp, lute; the Mark: tagelharpa, war horn, frame drum, bowed lyre, bone flute; Aurenne: oud, qanun, ney, riq, santur), played by people from the people kit with no rig rebuilt. A band costs 9.5k to 12.1k triangles on top of its five people.
+- **A.** One player at each inn every evening; the island's five together only on feast days.
+- **B.** The five every evening in the great rooms (a town's inn, the Mark's longhall, Aurenne's caravanserai); one player in a village.
+- **C. By place** *(recommended)*. Evenings: two players at a village inn, three at a town inn, by the hearth. By day, one in a town's square. Feast days, the five on the green or the square.
+
+Recommendation: **C.** Music you can see in every town without five rigs in every inn (a town inn's three are about 6k triangles), and the feast days (OG-107) get something only they have.
+
+Pictures: [the Gatelands' five](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/musicians-gatelands.jpg), [all fifteen players](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/musicians-players.jpg). Recorded in `docs/concepts.md`; the prototype `docs/prototypes/levelup/musicians.html`.
+
 ## Answered
 ### Where does a town’s row of seven stand at its church? (look builder, Session 1172) — DECISION #464
 Your C on #439 puts the six gods' row (with the Guest's struck niche) once in each town, and you asked whether it belongs in or near the church. It does: the Church is the Weaver's, and the Weaver is one of the six. The town now lays out its church's plot first (#433 B): the church end-on to the square with its west tower, a yard of 2 m beside it and 3 m behind. The row is 9.4 m long and needs 2.5 m of depth with its basins. Where does it stand?
