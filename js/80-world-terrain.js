@@ -630,7 +630,7 @@
   // touches take their heights and colours again.
   function refreshChunkTerrain(ch){const geo=ch.terrain;const pa=geo.attributes.position;const col=geo.attributes.color;const ox=ch.cx*CHUNK,oz=ch.cz*CHUNK;const c=_tmpC;
     for(let i=0;i<pa.count;i++){const x=pa.getX(i)+ox+CHUNK/2,z=pa.getZ(i)+oz+CHUNK/2;const h=worldH(x,z);pa.setY(i,h);const ny=slopeNormalY(x,z);groundColor(x,z,h,ny,c);col.setXYZ(i,c.r,c.g,c.b);}
-    pa.needsUpdate=true;col.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();}
+    pa.needsUpdate=true;col.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();landMask(geo,ox,oz);}
   // S252 — stamps that arrive after a chunk was built (a cell placing its doors and pads after you jumped, fast-travelled
   // or loaded a save into it) left the chunk's trees, bushes and rocks standing on them: a forest in a fort's courtyard.
   // Scatter skips a stamp's core, so take out what stands in one now (the mesh's last instance fills the gap), drop its
@@ -669,6 +669,7 @@
     geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
+    landMask(geo,ox,oz); // S1175 (F3): the new look's land reads roads, stamps, woods and fields per vertex; nothing on the old look
     const mesh=new THREE.Mesh(geo,terrainMat);
     mesh.position.set(ox+CHUNK/2,0,oz+CHUNK/2);
     mesh.receiveShadow=true;
@@ -766,7 +767,7 @@
   }
   function buildWater(){
     const wmat=new THREE.MeshLambertMaterial({color:0x2f7fb2,emissive:0x0a2a40,transparent:true,opacity:.8});
-    wmat.onBeforeCompile=sh=>{waterShader(sh);wmat.userData.shader=sh;};
+    wmat.onBeforeCompile=sh=>{waterShader(sh);if(LAND.on)landWater(sh);wmat.userData.shader=sh;}; // S1175 (F3): the new look's sheen and glint
     water=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000,140,140),wmat);
     water.rotation.x=-Math.PI/2;
     water.position.y=SEA_Y;
@@ -932,6 +933,7 @@
     sc.fog.density+=(_fogTarget-sc.fog.density)*Math.min(1,cameraUnderwater()?dt*6:k);
     skyMat.color.copy(sc.background).multiplyScalar(1.15);
     skyBodies(dt); // v80 S148 — sun, moon and stars
+    landAtmosphere(); // S1175 (F3): the new look's sky dome follows the clock, the sky and the haze
     // Sun: elevation by hour, dimmed and cooled at night.
     const hr=(typeof gameHour==='function')?gameHour():12;
     const dayAng=Math.PI*(hr-6)/12; // 0 at 6h, π at 18h
