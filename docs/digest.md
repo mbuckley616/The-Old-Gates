@@ -274,6 +274,26 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 
 **Roadmap.** 240 of 303 stories done (239 yesterday); 2.0's new look 2 of 15 cards done (F1, F2a); the core loop's resolver and skills both wait on your approval.
 
+## 17 Oct 2026
+
+**Waiting on you.** Approve one: Quest builds 979–1030 (the Seventh Niche and Back to Their Bread in the game, 4f25ccc, green). Two decisions: #394 does the loot follow the place too (A, the tier sets the metal); #396 the Gatelands' towns, lots to the house's size or houses to the lot's (A, lots to the house, new look only).
+
+**Landed on main since yesterday.** Combat's resolver (60d7423): the attack table and one resolver. Look prototypes: places off the road for F8 (the shepherd's hut, the hunting cabin, the falls, the merchants' halt and more) and all five ship classes in three dresses. Bodies prototypes: the griffin, the gargoyles, the Aurennais' and Gatelanders' dress. QA's fixes to skillcurve, q7world and penance (d1ce93d). The loot-by-place build sheet, quest writer and critic runs. Build s666.
+
+**Blocked.** Systems 940–1050 (skills by use, the first perks, the double jump, enemies by place, F2b's reach): the approved bf251d1 loses the Caer Slige rematch; CI runs on 1ae8a6b, and the builder still owes QA's skillcurve fix. Look 1031–1046 waits on Systems for a shrine-name fix. F3 waits for Systems to land.
+
+**Roadmap.** 241 of 303 stories done (240 yesterday); 2.0's new look 2 of 15 cards done, F2b now under way; the core loop's resolver done, skills, enemies by place and the double jump under way.
+
+## 18 Oct 2026
+
+**Waiting on you.** Approve one: Quest builds 1092 (What the Stones Say, three lore books on the sigils, d7219d6, green). Three decisions: #422 how many carvings the main quest walks you to (A, nine); #429 the Weavers' ring of arches (A, 44 m and the script dead); #430 the foes' heavy attacks (A, one blow in four, a red glow). #431, gold piles by place, comes next run.
+
+**Landed on main since yesterday.** Look sessions 1031–1053 (c2e0352). Quest builds 979–1030: the Seventh Niche and Back to Their Bread (9d3e2ba). Bodies sessions 1058–1092 (35b0027). The magic B build sheet (355169a), quest writer run 21, the critic's playtests (83588ae), three QA runs and the concept artist's helms. Build s645.
+
+**Under way.** Look sessions 1062–1083, approved at 8aea55a (the Gatelands' towns from the new kit): main merged into PR #424 again, CI rerunning; it merges when green. Systems 940–1121: the approved bf251d1 stays red (the Caer Slige rematch); the new head faf8fa0 is in CI and comes back for one tap when green. F3 waits for Systems to land.
+
+**Roadmap.** 241 of 303 stories done; 2.0's new look 2 of 15 cards done, F2b, F6, F8, F9 and F11 under way; the core loop's resolver done, skills, enemies by place and the double jump under way.
+
 ## 19 Oct 2026
 
 **Waiting on you.** Approve one: Bodies sessions 1136–1154 (88ff7c6, green): a person killed against a wall slumps down it, people and beasts alike. One decision: #448, how a gate's inside gets its size (B, spaces first, then rooms, on one grid).

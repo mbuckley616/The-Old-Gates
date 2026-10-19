@@ -3,16 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Where does a town’s row of seven stand at its church? (look builder, Session 1172) — DECISION #464
-Your C on #439 puts the six gods' row (with the Guest's struck niche) once in each town, and you asked whether it belongs in or near the church. It does: the Church is the Weaver's, and the Weaver is one of the six. The town now lays out its church's plot first (#433 B): the church end-on to the square with its west tower, a yard of 2 m beside it and 3 m behind. The row is 9.4 m long and needs 2.5 m of depth with its basins. Where does it stand?
-- **A. Behind the chancel, in the plot as it is.** It fits only just: 1.34 m from the basins to the chancel's eaves, room for one person to kneel. It cannot be seen from the square, and the empty seventh niche is found only by walking round the church.
-- **B. Along the churchyard's long side, the yard widened by 2.5 m** *(recommended)*. The row stands among the graves, facing the nave, with the path from the gate running past it. You see it through the gate from the square. The plot grows from 10.4 to 12.9 m wide, one number in the town's layout; no other building changes size.
-- **C. On the square beside the tower door, free-standing**, in the wayside dress with its own wall, well, thorn and cross. It is the first thing on the square, and the plot is unchanged. It takes about 13 by 4.5 m of the square where the stalls and the town's people walk, and it stands apart from the church rather than in its keeping.
-
-Recommendation: **B.** The row is in the Church's keeping, in the yard where the town buries its dead (§3.1). It can be seen from the square and found by its gate, and you pass the Guest's empty niche on the path to it. It costs 2.5 m of one plot. The same answer would carry to the Mark's and Aurenne's churches.
-
-Pictures: [all three from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/shrines-church-all-high.jpg), [B at the gate](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/shrines-church-side-gate.jpg). Devlog `docs/devlog/1172.md`; the prototype `docs/prototypes/levelup/shrines-church.html`.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -25,6 +15,18 @@ Pictures: [all three from above](https://raw.githubusercontent.com/mbuckley616/T
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 ## Answered
+### Where does a town’s row of seven stand at its church? (look builder, Session 1172) — DECISION #464
+Your C on #439 puts the six gods' row (with the Guest's struck niche) once in each town, and you asked whether it belongs in or near the church. It does: the Church is the Weaver's, and the Weaver is one of the six. The town now lays out its church's plot first (#433 B): the church end-on to the square with its west tower, a yard of 2 m beside it and 3 m behind. The row is 9.4 m long and needs 2.5 m of depth with its basins. Where does it stand?
+- **A. Behind the chancel, in the plot as it is.** It fits only just: 1.34 m from the basins to the chancel's eaves, room for one person to kneel. It cannot be seen from the square, and the empty seventh niche is found only by walking round the church.
+- **B. Along the churchyard's long side, the yard widened by 2.5 m** *(recommended)*. The row stands among the graves, facing the nave, with the path from the gate running past it. You see it through the gate from the square. The plot grows from 10.4 to 12.9 m wide, one number in the town's layout; no other building changes size.
+- **C. On the square beside the tower door, free-standing**, in the wayside dress with its own wall, well, thorn and cross. It is the first thing on the square, and the plot is unchanged. It takes about 13 by 4.5 m of the square where the stalls and the town's people walk, and it stands apart from the church rather than in its keeping.
+
+Recommendation: **B.** The row is in the Church's keeping, in the yard where the town buries its dead (§3.1). It can be seen from the square and found by its gate, and you pass the Guest's empty niche on the path to it. It costs 2.5 m of one plot. The same answer would carry to the Mark's and Aurenne's churches.
+
+Pictures: [all three from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/shrines-church-all-high.jpg), [B at the gate](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/shrines-church-side-gate.jpg). Devlog `docs/devlog/1172.md`; the prototype `docs/prototypes/levelup/shrines-church.html`.
+
+Michael: **B, along the churchyard’s long side, yard widened 2.5 m.** (2026-10-19, on #464)
+
 ### The gate interiors, for F5 — how does a gate's inside get its size? (the designer, 2026-10-19) — DECISION #448
 Your A on #421 makes a gate's cell 3 m under a 6 m ceiling, which grows today's rooms and corridors to a Skyrim ruin but not to the foundation's halls of 30 to 250 m. The proposal (`docs/design/gate-interiors.md`) asks how every gate, lesser and great, reaches that size and what you do inside one.
 - **A. The grid, grown.** Rooms up to 60 m with vaults to 30 m, still joined by corridors. Two sessions; the cobblestone dungeon at 1.6 times the size.
