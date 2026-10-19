@@ -71,7 +71,7 @@ P.head = (B, o) => {
   if (hn === 'head') B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
   if (o.skull) skullBits(B, o, S * (o.skull.k || 1), base, dir, up);
-  else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit(hn, eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
+  else for (const e of o.eyes || []) for (const sd of [1, -1]) { const m = B.bit(hn, eye(e.r * S, e.color, at(e.f, e.up, e.out * sd))); if (e.slit) m.scale.set(e.slit, .4, .5); if (e.glow) m.material.emissive.copy(m.material.color).multiplyScalar(e.glow); } // a slit, and a glow of its own (Session 1177)
   if (o.ears) for (const sd of [1, -1]) B.bit(hn, ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
   if (o.horns) for (const sd of [1, -1]) B.bit(hn, horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
   if (o.antlers) for (const sd of [1, -1]) { const m = B.bit(hn, antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
@@ -84,6 +84,10 @@ P.head = (B, o) => {
   if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit(hn, claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
     B.bit(hn, eye(o.stalks.r, o.stalks.color, p)); }
   // a brow (Session 927): a ridge of flesh across the skull over the eyes, grown into the head as one surface (the troll's)
+  // a hood (Session 1177, the wraith's: no head under it): the head's flesh is the cowl, and in its front a darkness, an unlit black hollow:
+  // the back half of a sphere, its rim at the opening, drawn from inside only and casting no shadow, so a see-through cowl does not show it
+  // from behind (its shadow on the cowl's inside read there as a second face)
+  if (o.hood) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.hood.r * S, 18, 12, Math.PI, Math.PI), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })); m.scale.set(1, o.hood.h ?? 1.2, .55); m.position.copy(at(o.hood.f, o.hood.up || 0, 0)); m.quaternion.setFromUnitVectors(V(0, 0, 1), dir); m.name = 'hood'; m.userData.noShadow = 1; B.bit(hn, m); }
   if (o.brow) B.meat(hn, at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
   if (o.fangs) for (const sd of [1, -1]) B.bit(hn, claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
@@ -198,7 +202,7 @@ P.arms = (B, o) => {
     const elbow = root.clone().addScaledVector(dir, len * .5), d2 = o.dir2 ? V(side * o.dir2[0], o.dir2[1], o.dir2[2]).normalize() : dir.clone().applyAxisAngle(V(1, 0, 0), -(o.bend || 30) * DEG).normalize(), wrist = elbow.clone().addScaledVector(d2, len * .42), hand = wrist.clone().addScaledVector(d2, len * .14);
     const tag = 'arm' + (B.arms.length / 2 | 0) + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, [root, elbow, wrist, hand]);
     const r = o.r; B.meat(names[0], root, elbow, r[0], r[1], { group: tag, tone: o.tone, s: o.s }); B.meat(names[1], elbow, wrist, r[1], r[2], { group: tag, tone: o.tone, s: o.s }); B.meat(names[2], wrist, hand, r[2], r[2] * .7, { group: tag, tone: o.tone, s: o.s });
-    if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone('dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
+    if (o.claws) for (let c = -1; c <= 1; c++) B.bit(names[3], claw(o.claws.r, o.claws.len, B.tone(o.claws.tone || 'dark'), hand.clone().add(V(c * o.claws.r * 2, 0, 0)), d2.clone().add(V(c * .2, 0, 0)).normalize()));
     // a pincer (Session 773): a swollen hand and two fingers, the fixed one longer
     if (o.chela) { const c = o.chela; B.meat(names[2], wrist.clone().addScaledVector(d2, -len * .04), hand, c.r, c.r * .8, { s: [1, .62, 1], tone: o.tone, group: tag + 'c' });
       const fx = d2.clone().add(V(-side * .25, 0, 0)).normalize(), mv = d2.clone().add(V(side * .3, .1, 0)).normalize();
@@ -731,7 +735,7 @@ export function build(g) {
     meshes.push(m); }
   for (const m of meshes) { rig.add(m); m.bind(skel); m.frustumCulled = false; m.receiveShadow = true; }
   if (B.mist) B.mistObj = B.bit('head', mistPoints(B.mist, g.seed));
-  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = !obj.isPoints; bones[b.i].add(obj); }
+  for (const { bone, obj } of B.bits) { const b = B.by[bone]; obj.position.sub(b.p); obj.castShadow = !obj.isPoints && !obj.userData.noShadow; bones[b.i].add(obj); }
   rig.scale.setScalar(g.sliders.size * (plan.scale || 1)); // a plan may stand at a multiple of its parts (the post hare is a hare at 5.5)
   const C = { g, plan, B, root, rig, bones, byName: Object.fromEntries(bones.map(b => [b.name, b])), skel, meshes, phase: 0, gait: plan.gaits[0], stats: { bones: bones.length, tris: geo.index.count / 3, verts: geo.attributes.position.count, grid: grid.join('x'), cell: +cell.toFixed(3), ms: Math.round(performance.now() - t0) } };
   for (const L of B.legs) { L.bones = L.names.map(n => C.byName[n]); L.restLocal = L.bones[0].position.clone(); L.rest = L.J.map(p => p.clone()); L.dirs = L.J.slice(1).map((p, k) => p.clone().sub(L.J[k]).normalize()); L.lens = L.J.slice(1).map((p, k) => p.distanceTo(L.J[k]));
@@ -779,6 +783,8 @@ function wingGeo(B, w, pal) {
 // number (speed against leg length, so a big body walks at a big body's pace), and the phase of each foot by its pair and side.
 export const GAITS = {
   stand: { duty: 1, fr: 0, phase: () => 0 },
+  // Session 1177: a body with no legs that floats (the wraith's), paced in body lengths; it bobs, and leans into its going
+  hover: { duty: 1, bl: .3, hover: 1, phase: () => 0 },
   // a wave from the back pair forward, left then right: a quadruped's four-beat walk, a hexapod's wave, a biped's walk
   walk: { duty: .68, fr: .22, lift: .14, bob: .02, sway: .05, phase: (p, s, n) => s * .5 + (n - 1 - p) * (.5 / n) },
   // alternating diagonals: a trot, an insect's tripods, a spider's tetrapods, a biped's run
@@ -884,6 +890,8 @@ export function pose(C, phase) {
       b.quaternion.setFromAxisAngle(axis, ang); } }
   if (G.bell || (B.radials.length && C.plan.bellBone)) { const beat = Math.pow(Math.max(0, Math.sin(tau * ph)), 2), s = 1 - (G.bell ? .14 : .04) * beat; sp.scale.set(s, 1 + (1 - s) * .7, s); sp.position.y += (G.bell ? .03 : .01) * C.len / C.S * Math.sin(tau * ph - 1); }
   else if (G.ripple && B.radials.length) sp.position.y += .015 * C.len / C.S * Math.sin(tau * ph * 2);
+  // a floating body (Session 1177) bobs, slowly at rest; going, it leans into the way it goes
+  if (C.plan.hover) { sp.position.y += C.plan.hover * Math.sin(tau * ph * (G.hover ? 1 : .35)); if (G.hover) sp.rotation.x += .08; }
   // a jelly's crests (Session 1174) roll forward and back down their length, each on its own beat; slower and smaller at rest
   for (const Cr of B.crests || []) { const np = Cr.names.length; for (let j = 0; j < np - 1; j++) C.byName[Cr.names[j]].rotation.set((G.bl ? .2 : .07) * Math.sin(tau * ph * (G.bl ? 1 : .4) + Cr.phase - j * .7) * (j ? 1 : .5), 0, 0); }
   // arms swing against the legs; wings rest half-folded, breathing, or beat
@@ -2149,6 +2157,25 @@ Object.assign(PLANS, {
       : k === 'arms' ? [[k, { ...o, out: .3 }], [k, { ...o, at: .9, out: .5, up: .02, dz: -.05, len: .78, dir: [.42, -1, -.04], bend: 16, swing: .2, phase: 1.6 }]] : [[k, o]])] })
 });
 FAILING.push('failinggolem');
+// ── Session 1177: the wraith (OG-018's Scáth row: "Phantom, Wraith"; canon §9a's Scáth dark). The game's own since S555 (Michael's B on
+// DECISION #158): no head under a hollow hood, a darkness there with two slits of light; no legs, a robe that floats clear of the ground,
+// torn at the hem into ragged tongues; arms a quarter longer than a man's, ending in long bone claws; hunched, reaching. Here a body with
+// no legs: the spine leans forward over a robe that widens to its hem (the rump's capsule run down and flared), the cowl is the head's
+// flesh with a black hollow in its front, the sleeves are the arms' flesh, and the robe is a little see-through. Scáth's violet only in
+// its slits. Steady: nothing else lit. Its failing form ("more rags and limbs") grows from this ──
+Object.assign(PLANS, {
+  wraith: { name: 'Wraith', src: 'OG-018 (Scáth: a Wraith of the violet dark)', school: 'Scáth', gaits: ['hover', 'stand'], hover: .05, clear: .82, rough: .85, mottle: .9, wag: 0, pant: 0, neckNod: .04, bl: .3, finOpacity: .92,
+    palette: { coat: [.17, .15, .21], saddle: [.11, .1, .14], belly: [.23, .21, .27], cloth: [.15, .13, .19], clothTip: [.06, .05, .08], leather: [.09, .08, .1], bone: [.74, .7, .6], dark: [0, 0, 0] },
+    parts: [
+      ['spine', { hip: [1.28, -.06], chest: [1.78, .1], n: 4, r: [.2, .17, .19], s: [1.15, .85], arch: .05, rump: .03, rumpDrop: .75, rumpTaper: 1.55, front: 0 }],
+      ['neck', { len: .14, n: 1, rise: 30, r: [.09, .08], up: .02 }],
+      ['head', { len: .3, r: .14, pitch: 20, s: [1, 1.15, 1.1], brow: { f: .5, up: .75, out: .55, r: .06 }, hood: { f: .5, up: -.05, r: .1, h: 1.3 },
+        eyes: [{ f: .44, up: .08, out: .3, r: .016, slit: 2.6, glow: 1.6, color: [.85, .6, 1.6] }] }],
+      ['arms', { at: .95, out: .26, up: -.02, len: 1.05, r: [.07, .06, .05], dir: [.2, -.55, .8], bend: 25, tone: 'coat', claws: { r: .014, len: .17, tone: 'bone' }, swing: .14 }],
+      ['rags', { n: 18, len: .34, w: .12, rx: .3, rz: .25, up: -.64, gaps: .05, tone: 'cloth', tip: 'clothTip', cord: 'clothTip' }]
+    ] }
+});
+export const WRAITHS = ['wraith'];
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it

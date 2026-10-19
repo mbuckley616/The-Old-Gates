@@ -315,6 +315,25 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     check(`${k}: moss on ${(t.moss * 100).toFixed(1)}% of the stone (OG-018's mossy golem of ${t.school})`, t.moss > .03 && t.moss < .4 && t.school === 'Cloch' && /OG-018/.test(t.src), t);
     check(`${k}: nothing lit but its ${t.eyes.length} eyes, in rune-blue`, t.lit === 0 && t.eyes.length === 2 && t.eyes.every(c => c[2] > c[0] * 1.5), t); }
   check(`the golems: ${Object.keys(gm).join(', ')}`, Object.keys(gm).length >= 1, Object.keys(gm));
+  // the wraith (Session 1177; OG-018's Scáth wraith, the game's since S555, Michael's B on #158): no legs, floating clear of the ground through
+  // its bob; no head under the hood, a black hollow there with two lit slits; arms longer than a man's, reaching ahead, with bone claws
+  const wr = await page.evaluate(async () => { const T = await import('three'), K = await import('./creatures.js'), out = {};
+    for (const k of K.WRAITHS || []) { const C = K.build(K.genome(k, k + ':check')), inv = new T.Matrix4(), P = new T.Vector3(), box = new T.Box3(); let low = 1e9, reach = -1e9;
+      for (const gait of C.plan.gaits) { C.gait = gait; for (let i = 0; i < 24; i++) { K.pose(C, i / 24); C.rig.updateMatrixWorld(true); inv.copy(C.rig.matrixWorld).invert();
+        for (const m of C.meshes) { box.setFromObject(m, true); low = Math.min(low, box.min.y - C.root.position.y); }
+        const ch = C.byName[C.B.spineNames[C.B.spineNames.length - 1]].getWorldPosition(new T.Vector3()).applyMatrix4(inv);
+        for (const A of C.B.arms) { C.byName[A.names[3]].getWorldPosition(P).applyMatrix4(inv); if (gait === 'stand') reach = Math.max(reach, P.z - ch.z); } } }
+      let hood = null, slits = [], claws = 0, lit = 0; C.rig.traverse(o => { if (o.name === 'hood') hood = { black: o.material.color.getHex() === 0, onHead: o.parent === C.byName.head };
+        if (o.isMesh && o.material?.clearcoat === 1) slits.push({ sx: +(o.scale.x / o.scale.y).toFixed(2), em: o.material.emissive.toArray().map(v => +v.toFixed(2)) }); if (o.isMesh && o.geometry.type === 'ConeGeometry') claws++; });
+      const gl = C.meshes[0].geometry.attributes.aGlow; for (let v = 0; v < gl.count; v++) if (gl.getX(v) > .01) lit++;
+      const arm = C.plan.parts.find(([q]) => q === 'arms')[1];
+      out[k] = { legs: C.B.legs.length, low: +low.toFixed(3), hood, slits, claws, lit, reach: +(reach * C.S).toFixed(2), arm: +(arm.len * C.S).toFixed(2), rags: C.B.rags, school: C.plan.school, src: C.plan.src, tris: C.stats.tris, bones: C.stats.bones }; }
+    return out; });
+  for (const [k, t] of Object.entries(wr)) { console.log(k, JSON.stringify(t));
+    check(`${k}: no legs, floating clear of the ground through its bob (lowest ${t.low} m, its hem torn into ${t.rags?.strips} tongues)`, t.legs === 0 && t.low > .03 && t.rags?.strips >= 12, t);
+    check(`${k}: no head under its hood, a black hollow on the head bone with ${t.slits.length} slits of light in it, Scáth's violet`, t.hood?.black && t.hood.onHead && t.slits.length === 2 && t.slits.every(e => e.sx > 2 && e.em[2] > e.em[0] && e.em[0] > e.em[1] && e.em[2] > .5) && t.school === 'Scáth' && /OG-018/.test(t.src), t);
+    check(`${k}: arms ${t.arm} m long (a man's are about 0.75), reaching ${t.reach} m ahead of its chest standing, ${t.claws} bone claws; nothing else lit (${t.lit})`, t.arm > .9 && t.reach > .4 && t.claws >= 6 && t.lit === 0, t); }
+  check(`the wraiths: ${Object.keys(wr).join(', ')}`, Object.keys(wr).length >= 1, Object.keys(wr));
   // the sea (Session 854): OG-016's coast, open ocean and deep, with OG-084's seals and dolphins and OG-031's Shatterback, each a plan
   const sea = await page.evaluate(async () => { const K = await import('./creatures.js'); return (K.SEA || []).map(k => ({ k, ok: !!K.PLANS[k], src: K.PLANS[k]?.src || '' })); });
   check(`the sea: twenty-four animals, each a plan from OG-016, OG-084 or OG-031 (${sea.length})`, sea.length === 24 && sea.every(c => c.ok && /OG-0(16|84|31)/.test(c.src)), sea.filter(c => !c.ok || !/OG-0(16|84|31)/.test(c.src)));
