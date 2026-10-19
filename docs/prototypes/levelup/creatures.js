@@ -377,7 +377,7 @@ P.rags = (B, o) => { const r = rng(B.g.seed + 43), h = B.spinePts[0].clone().add
     for (let i = 0; i < ROWS; i++) for (let j = 0; j < 2; j++) { const a = i * 3 + j, b = a + 1, c = a + 3, d = c + 1; tris.push(a, c, b, b, c, d); }
     B.sheets.push({ pts, tris, bones, blend, cols }); strips++; }
   const g = new THREE.TorusGeometry(1, .06, 6, 28); g.rotateX(Math.PI / 2); g.scale(o.rx * S + .006, 1, o.rz * S + .006); const cord = new THREE.Mesh(g, stdMat(B.tone(o.cord || 'leather'), { rough: .8 })); cord.position.copy(h); cord.scale.y = .15; B.bit(B.spineNames[0], cord);
-  B.rags = { strips, low: +low.toFixed(3) }; };
+  B.rags = { strips: (B.rags?.strips || 0) + strips, low: +Math.min(low, B.rags?.low ?? 1e9).toFixed(3) }; }; // a second ring adds to the first (Session 1178)
 
 // straps (Session 944, OG-041's goblin, "a scrap-leather harness"): a harness laid on the grown skin. Each strap is a path of
 // (t, angle) pairs round the spine (t along it, hip 0 to chest 1; angle 0 the belly, 90 its left), drawn as a ribbon `w` wide. It is
@@ -2176,6 +2176,18 @@ Object.assign(PLANS, {
     ] }
 });
 export const WRAITHS = ['wraith'];
+// ── Session 1178: Scáth's failing wraith (OG-073's Scáth row: the wraith "spreads more rags and limbs"). The wraith grown wrong: a second
+// pair of arms out of the robe's middle, reaching wider and lower on their own beat, with bone claws; a second ring of torn cloth halfway
+// down the robe and the hem's tongues longer (the whole floating 8 cm higher, so they still clear the ground); the robe's seams lit Scáth's violet (the kit's Scáth light, as the stag of shadows'), and
+// nothing else lit but its slits ──
+Object.assign(PLANS, {
+  failingwraith: re(PLANS.wraith, { name: 'Wraith of Scáth (failing gate)', src: 'OG-073 (Scáth: the wraith at a failing gate, spreading more rags and limbs)', school: 'Scáth', condition: 'failing', from: 'wraith',
+    hover: .07, clear: .78, palette: PLANS.wraith.palette, glow: { color: [1.3, .5, 2.6], freq: 3.2, w: .05, all: .8 },
+    parts: [...PLANS.wraith.parts.map(([k, o]) => k === 'rags' ? [k, { ...o, len: o.len * 1.15 }] : k === 'spine' ? [k, { ...o, hip: [o.hip[0] + .08, o.hip[1]], chest: [o.chest[0] + .08, o.chest[1]] }] : [k, o]),
+      ['arms', { at: .45, out: .2, up: 0, dz: .04, len: .9, r: [.06, .05, .04], dir: [.6, -.45, .6], bend: 30, tone: 'coat', claws: { r: .012, len: .15, tone: 'bone' }, swing: .2, phase: 1.8 }],
+      ['rags', { n: 14, len: .4, w: .11, rx: .26, rz: .21, up: -.32, gaps: .1, tone: 'cloth', tip: 'clothTip', cord: 'clothTip' }]] })
+});
+FAILING.push('failingwraith');
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
