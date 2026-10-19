@@ -27649,3 +27649,54 @@ The freeze (#441) is closed and F2a is on main, so card F9's rooms may come into
   - the way out at the front door;
   - the hearth's and the lamp's lights;
   - the innkeeper's directions (`galleryEast`), which must say the stair is east.
+
+## v80 — Session 1158 — The Gatelander taproom inside the village inn (card F9, Michael's 2 A on #320)
+Session 1157 copied the taproom into the game's kit. This session hangs it: on `?look=new`, the inn of a Gatelands village on three bays is the kit's farmhouse outside (Session 1086) and now the taproom inside, the room Michael chose on #320 (2 A).
+
+**`buildKitTaproom` (`83-world-generator.js`).** `buildInteriorFor` hands the room to it when `kitTaproom(house)` holds: the inn, the kit's farmhouse on three bays, not a coaching inn, on the new look.
+- **The frame:** the kit's frame (its centre on the ground, the front at +z, the flags at 0.05) moves to the room's: 0 to 9.5 m across, 0 to 5.2 m deep, the door at the middle of the front, the floor at 0.
+- **No scaling:** the taproom is drawn in metres, so it is not scaled (`scaleRoom`'s factor is 1, as for the tower).
+- **What it reads from the record:**
+  - every box the prototype keeps for its checks becomes a solid, and its top a foothold, except the partitions', the rail's and the door leaf's;
+  - the upper floor is one foothold over the house at 2.85 m, with the stair's well as its hole;
+  - each of the three rooms off the passage gets a door, hung by `intDoorAt` at the doorway's own 0.76 by 1.91 m (a new optional size; without it a door is as before);
+  - the three beds are the inn's beds to let, rooms 0, 1 and 2 from the west.
+- **The innkeeper** stands behind the bar between it and the kegs, facing the room. You speak to him across the bar at 1.05 m.
+- **The cellar's hatch** is in the flags in the front west corner, clear of the hearth, the stools and the walks.
+- **The light:**
+  - six sources: the fire, the bar's lantern, one on the passage and one in each room;
+  - the room's warmth, as the old rooms have;
+  - through the game's pool of 20 lights for a room.
+- **The windows and the open front door** look out on a plane lit by the hour. The room's background is the dark, so without it the panes read as night at noon.
+- **The door's paint inside** is the paint outside: `lot.kit.paint`, kept when the farmhouse is built.
+
+**Three changes outside the builder.**
+- **`innRooms` and `galleryEast` (`86-world-crime.js`)** say three rooms and the stair east for a kit taproom, so the innkeeper names them as they stand: from the stair head, the first door on the left is room 2, and the last is room 0.
+- **The door's reach (`50-travel.js`)**, where E takes you out, reads `house._exitD` and `_exitW` when a room sets them; otherwise it is 1.6 by 1.6 as before. The taproom is 5.2 m deep, so the old reach would have taken you out from beside the hearth-side table. It sets 0.8 deep and 1.0 to each side of the door.
+- **The rail down the well's west side** stops 0.25 m short of the landing as a solid, though not as drawn. The landing is 0.75 m deep, and a body of 0.3 m would have had to round the rail's end in a band of 0.2 m.
+
+A two-bay inn (7.4 m) and a coaching inn keep the old room. The taproom is laid out for three bays, and the coaching inn's board and travellers are laid out in the old room.
+
+### Verified (headless Chromium)
+- **`kittaproom` (new): 18 of 18 pass,** in Cill Beag's *The Wandering Ram* (three bays, a blue door), the village nearest Dunmore, at noon.
+  - **The room:** the farmhouse's inside, 9.5 by 5.2 m, at scale 1.
+  - **The walls:** rays at 0.6 m, 2 m and upstairs every metre along every wall find no opening. That counts the windows and the open front door, which meet the day's plane.
+  - **The floor and beams:** the flags 1.001 m under a point 1 m up, and the beams 2.65 m up.
+  - **Arriving and leaving:** you arrive clear at z 3.45, outside the door's reach (from 4.4). Neither table stands in the reach. At the arrival spot E keeps you in, and at the door it takes you out.
+  - **The stair, walked with the game's own `footholdY`, `intSolidAt` (radius 0.3) and `headCeil`:** it reaches the upper floor at 2.85 m in steps of 0.178 m, with nothing in the way and 2.33 m or more over the head.
+  - **Upstairs:** the passage runs from the landing to the last door on the floor, clear, with 2.42 m over the head.
+  - **The rooms:** three doors hung at 2.85 m, each 1.91 m high, and a bed to let behind each, rooms 0, 1 and 2.
+  - **The innkeeper's words:** he counts three rooms from an east stair, and names room 2 the first door on the left.
+  - **The innkeeper** stands at 4.45, 0.75, behind the bar, 1.05 m from you across it (in reach under 2.2).
+  - **The hatch** is at 0.85, 4.7, clear to stand at.
+  - **The cost:** 49 meshes and 11,932 triangles with the innkeeper. The pool's 20 lights carry the six sources.
+  - **No page errors.**
+  - **Pictures:** `docs/prototypes/kit-taproom-ingame.png` (from the door: the hearth, the bar and the innkeeper, the lantern) and `kit-taproom-upstairs.png` (the passage and the rooms' doors).
+- **`kitinn`: all pass.** Its room check now builds the taproom: 22 pieces, 3 beds to let, and Niall offers *A bed for the night?*.
+- **`kitinnroom`** passes. **`innrooms`** (the old look's inns) passes.
+- `parsecheck.py` is clean. Build tag s716.
+### Needs eyes
+- **The passage upstairs is bright** where its lamp is near the limewash. In the picture the back wall reads overexposed. The game's light pool and the prototype's lights differ, and L12's light indoors will set them properly.
+- **The taproom is small for an inn.** It is 9.5 by 5.2 inside, against the old village inn's 10 to 12 by 11.7 to 13. It is Michael's chosen room, at the farmhouse's true size, and a village inn holds few guests. A playtest will tell whether it feels cramped with the third-person camera.
+- **The day beyond the windows** is a flat plane in three tones by the hour (day, dusk and dawn, night), not a view. It is enough to stop the panes reading as night at noon.
+- **Owed:** a two-bay inn's taproom; a coaching inn's (the board and the travellers in the kit's room); the Mark's alehall and Aurenne's tavern, once #321 and #322 are answered.

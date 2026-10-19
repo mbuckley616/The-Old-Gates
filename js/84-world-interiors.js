@@ -4,8 +4,8 @@
   // The dungeon's doors are grid cells with a mesh and an open flag; interiors cut doorways but hung
   // nothing in them. A leaf now hangs on the hinge side of every doorway a partition cuts: solid when
   // shut, swung clear when open, on the same E press and the same sounds as a cave door.
-  function intDoorAt(sc_,SOL,x,z,by,ang,beamC){
-    const w=1.34,h=1.46,dir=(Math.floor(Math.abs(x*7+z*13))%2)?1:-1; // which way it swings, steady per doorway
+  function intDoorAt(sc_,SOL,x,z,by,ang,beamC,dim){ /* S1158 — dim {w, h}: a doorway's own size in metres (the kit's taproom); without it the old unit's */
+    const w=dim&&dim.w||1.34,h=dim&&dim.h||1.46,dir=(Math.floor(Math.abs(x*7+z*13))%2)?1:-1; // which way it swings, steady per doorway
     const ux=Math.sin(ang),uz=Math.cos(ang);                          // along the wall
     const hx=x-ux*w/2,hz=z-uz*w/2;                                    // the hinge post
     const g=new THREE.Group();g.position.set(hx,by,hz);g.rotation.y=ang;sc_.add(g);
