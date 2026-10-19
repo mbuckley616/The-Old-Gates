@@ -27441,3 +27441,55 @@ A FREEZE is open (#441, the waiting branches landing on main), so this run keeps
 - **Owed:**
   - the galleon's base, with more rooms, and the caravel's;
   - then the base into the game (`CABIN`, `85-world-sea.js`) with card F11, after the freeze.
+## v80 — Session 1149 — The caravel's base below deck: a cabin under her castle, a hold, a firebox on deck (backlog L6, Michael's A on #418; prototype only)
+The FREEZE (#441) still holds, so this is a prototype session. The cutter's base was Session 1148. This session draws the caravel's, as `caravelBase` in `docs/prototypes/levelup/shipbase.js`, at `shipbase.html?ship=caravel&view=cut|cabin|hold|galley&dress=…`. Aurenne's dress is the default, since the yards sell the caravel at Aurenne. Cited images: OG-027 and OG-072.
+
+**A correction to Session 1148.** That entry called the cutter "the second of the five classes" and gave it "OG-027's next rung" after the sloop. By the yards' worth (`SHIP_CLASSES`, `86-world-crime.js`) the order is sloop 400, cog 1,300, cutter 2,000, caravel 3,200, galleon 3,500. So the cutter sits above the cog. She is the Mark's fast, narrow hull, and her base is smaller than the cog's only because Michael's A sizes a base by its hull. The base stands as built. The comment in `shipbase.js` now says this, and the entry's wording is corrected here rather than rewritten.
+
+- **The hull:** the game's caravel is 17.5 m by 5.0 m with a draft of 1.3. That is the cog's length, narrower and a little shallower, with a sterncastle over her last 4.6 m and no forecastle. So her rooms are the cog's, less the forecastle.
+- **The hatch:** `aurenneCaravel` in `ships.js` takes `o.open`, as the other three hulls do, and so do `markCaravel` and `gatelandsCaravel`. With it shut she is the hull she was.
+- **The cabin under the sterncastle** (z -8.7 to -4.1, 2.03 m clear, entered by the castle's door from the waist):
+  - a box bunk to port, with the sea chest at its foot;
+  - the chart table to starboard, with a stool;
+  - a shelf of books and bottles on the after wall, a lantern and the island's rug;
+  - the mizzen mast standing through it to its step.
+  - Nothing stands within a metre of the door.
+- **The hold** (z -4.0 to 5.8): 1.86 m between the beams and 1.69 under them, over a floor at -0.91. A person stands between the beams and ducks under them, as in the cutter. In it:
+  - the workbench, with a vice and a rack of five tools, to port aft;
+  - the alchemist's table (the still, a retort, a rack of phials) across from it;
+  - two chests for the stash, staggered aft of the main mast;
+  - four barrels forward of the hatch;
+  - the main and fore masts through it, raked where the rig is a lateen;
+  - two lanterns.
+- **The galley is on deck.** With no forecastle, the galley is a firebox on its tray of sand on the main deck forward of the hatch, as a caravel's was, with a crane and pot and a water cask beside it. The island's firebox is brick, iron on stones or blue tile, as on the cog.
+- **Fixed on the way:**
+  - the first chests stood either side of the ladder's foot, in its way;
+  - moved aft and side by side, they left 0.38 m of way through the hold, so they are now staggered (0.95 m past each);
+  - a crate between the forward barrels overlapped them and was dropped;
+  - the first comment called the hold "sitting headroom". The measure says 1.69 m under the beams, so it does not.
+- **The cost:** 5,696 triangles in 17 draws in Aurenne's and the Gatelands' dress, 5,950 in 15 in the Mark's, over the caravel's 31,396.
+
+### Verified (headless Chromium)
+- **`shipbase.check.mjs`: 48 of 48 pass,** 13 of them new.
+  - **Builds:** the caravel's base builds the same twice in all three dresses.
+  - **What is in it:** 19 pieces, the list above.
+  - **Inside her lines:** every piece stands inside her planking (in the cabin, inside the castle's walls; on deck, inside the rail) and inside its room. 0 of 19 are out in each dress.
+  - **Nothing in the way:** no two pieces overlap, none stands on a mast (checked at the rake), in the ladder's way or in the cabin's doorway, and no beam crosses the ladder.
+  - **Headroom and the ways:** as above. The ways are 1.45 m in the cabin past the stool, 0.99 m between the bench and the still, and 0.95 m past each chest.
+  - **The hatch:** a ray down beside the ladder meets the floor's planks at -0.91 m.
+  - **Lights:** four, counting the firebox.
+  - **Shut, she is the caravel as built:** 31,300 triangles shut and 31,396 open. The difference is exactly the cut deck planks and the plate's 12.
+  - **The views:** the six new views render without page errors.
+- **`ships.check.mjs`: 101 of 101 pass,** with `aurenneCaravel`'s `o.open` added.
+- **Pictures:**
+  - `shipbase-caravel-cut.jpg`: from above abeam, her starboard side cut away: the firebox, the hold and the cabin under the castle.
+  - `shipbase-caravel-cabin.jpg`: from the door.
+  - `shipbase-caravel-hold.jpg`: aft to the bench, the still and a chest.
+  - `shipbase-caravel-galley.jpg`: the firebox by the open hatch.
+  - `shipbase-caravel-cut-mark.jpg`: the Mark's dress.
+### Needs eyes
+- **The firebox on an open deck.** It is right for a caravel, but it is the one base station a player reaches in the rain.
+- **The mizzen through the middle of the cabin.** It is true to the hull, and the cabin is planned round it (the bunk and the table to the sides). Whether it reads as clutter is for an eye to judge.
+- **Owed:**
+  - the galleon's base, with more rooms;
+  - then the bases into the game (`CABIN`, `85-world-sea.js`) with card F11, after the freeze.
