@@ -103,10 +103,26 @@ const LOZ = `vec3 lozAt(float t, float s){ float k = clamp(fwidth(s) * 14. - .6,
 const LOZ_AT = o => o.at.map(a => `{ float t = ${a.t}, s = ${a.s}; if (${a.on || 'true'}) { if (t >= 0. && t <= 1.) diffuseColor.rgb = lozAt(t, s) * triTex(tW, 60.);${a.hem ? ' else if (t < 0.) diffuseColor.rgb = lozG * triTex(tW, 60.);' : ''} } }`).join(' ');
 // the three places on the rest body: the neck from rest .58 to .606, round the neck's axis (x 0, z .025, 5.5 cm out); the cuff across
 // its width (rest |x| .371 to .411, as the woven cuff band), round the wrist's middle where that slab cuts it (y .285, z .116); the hem 4 cm up from the skirt's cut (a short skirt's at -.2, a long
-// one's lowest edge at -.705 to -.728), round the body's axis
+// one's own edge, -.687 at the sides to -.728 at the front, below), round the body's axis
 const LOZ_NECK = { t: '(vB.y - .58) / .026', s: 'atan(vB.x, vB.z - .025) * .055 / .028', on: 'abs(vB.x) < .1' };
 const LOZ_CUFF = { t: '(abs(vB.x) - .371) / .04', s: 'atan(vB.y - .285, vB.z - .116) * .045 / .04' };
-const lozHem = long => ({ t: long ? '(vB.y + .705) / .045' : '(vB.y + .195) / .04', s: `atan(vB.x, vB.z - .02) * ${long ? '.24' : '.2'} / .04`, hem: true });
+// a long gown's cut is the skirt helper's own edge, not a line: 2.8 cm higher at the sides than at the front (Session 1163). Its band
+// is laid up from that edge, read off a table of 48 heights round the body's axis, filled from the edge's points on the rest body
+const lozHem = long => ({ t: long ? '(vB.y - lozHemY(vB)) / .045' : '(vB.y + .195) / .04', s: `atan(vB.x, vB.z - .02) * ${long ? '.24' : '.2'} / .04`, hem: true, ...(long ? { lut: true } : {}) });
+const LOZ_HEM = `uniform float lozHemT[48]; float lozHemY(vec3 p){ float u = (atan(p.x, p.z - .02) / 6.28319 + .5) * 48.; int i = int(floor(u)) % 48; return mix(lozHemT[i], lozHemT[(i + 1) % 48], fract(u)); }`;
+// the table: the edges of the long skirt's triangles that only one triangle has, below rest -.5, their points sorted by angle and read
+// at 48 even angles, wrapping round the back
+function lozHemTable() {
+  if (PACK.lozHemT) return PACK.lozHemT; const ix = PACK.R.skirtLong, R0 = PACK.rest, E = new Map();
+  for (let t = 0; t < ix.length; t += 3) for (let k = 0; k < 3; k++) { const a = ix[t + k], b = ix[t + (k + 1) % 3], key = a < b ? a + ',' + b : b + ',' + a; E.set(key, (E.get(key) || 0) + 1); }
+  const seen = new Set(), pts = []; for (const [key, n] of E) if (n === 1) for (const v of key.split(',').map(Number)) if (R0[v * 3 + 1] < -.5 && !seen.has(v)) { seen.add(v); pts.push([Math.atan2(R0[v * 3], R0[v * 3 + 2] - .02), R0[v * 3 + 1]]); }
+  pts.sort((a, b) => a[0] - b[0]); const T = new Float32Array(48), m = pts.length;
+  for (let i = 0; i < 48; i++) { const a = (i / 48 - .5) * Math.PI * 2; let j = pts.findIndex(q => q[0] > a); if (j < 0) j = m; const p0 = pts[(j - 1 + m) % m], p1 = pts[j % m];
+    let a0 = p0[0], a1 = p1[0]; if (j === 0) a0 -= Math.PI * 2; if (j === m) a1 += Math.PI * 2; T[i] = p0[1] + (p1[1] - p0[1]) * (a1 > a0 ? (a - a0) / (a1 - a0) : 0); }
+  return PACK.lozHemT = T;
+}
+// the same reading in JS, for the checks
+export function lozHemY(x, z) { const T = lozHemTable(), u = (Math.atan2(x, z - .02) / (Math.PI * 2) + .5) * 48, i = Math.floor(u) % 48; return T[i] + (T[(i + 1) % 48] - T[i]) * (u - Math.floor(u)); }
 // folds round a wound band (Session 1010, the sash belt): soft ridges and sharp creases running round the body, n of them across
 // the band's width (rest y lo to hi), wandering with the angle round the waist so they are not ruled lines. Drawn in the shader:
 // the band's colour darkens into each crease and its normal is bent by the ridges' slope, as a bump map bends it
@@ -155,7 +171,8 @@ function clothMat(color, kind = 'wool', o = {}) {
       s.fragmentShader = 'uniform vec3 tartK; uniform vec3 tartL; uniform vec2 tartO; uniform float tartR; varying vec3 vT;\n' + TARTAN + '\n' + s.fragmentShader; }
     if (o.band) s.fragmentShader = 'uniform vec3 bandC;\n' + s.fragmentShader;
     // the Mark's woven bands (Session 1156), laid after everything else on the cloth
-    if (o.loz) { s.uniforms.lozG = { value: o.loz.g }; s.uniforms.lozM = { value: o.loz.m }; s.fragmentShader = 'uniform vec3 lozG; uniform vec3 lozM;\n' + LOZ + '\n' + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n ' + LOZ_AT(o.loz)); }
+    if (o.loz) { const lut = o.loz.at.some(a => a.lut); if (lut) s.uniforms.lozHemT = { value: Array.from(lozHemTable()) };
+      s.uniforms.lozG = { value: o.loz.g }; s.uniforms.lozM = { value: o.loz.m }; s.fragmentShader = 'uniform vec3 lozG; uniform vec3 lozM;\n' + (lut ? LOZ_HEM + '\n' : '') + LOZ + '\n' + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n ' + LOZ_AT(o.loz)); }
     // a block print (Session 1029, OG-048's patterned headscarf): sprigs in the print's own colour where the vertex's aPrint is 1
     if (o.print) { s.uniforms.printC = { value: o.print }; s.vertexShader = 'attribute float aPrint; varying float vPr;\n' + s.vertexShader.replace('vB = aBase;', 'vB = aBase; vPr = aPrint;');
       s.fragmentShader = 'uniform vec3 printC; varying float vPr;\n' + SPRIGS + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, printC * triTex(tW, ' + (o.scale ?? 22).toFixed(1) + '), printAt(vB, vRN) * vPr);'); }

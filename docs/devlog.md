@@ -26779,3 +26779,20 @@ OG-109's Mark column draws its formal dress as "blue and red, with woven bands":
 - **The neck band ends in the beard** on a bearded man, and shows mostly from the side.
 - **Formal dress is more than its edges:** OG-109's Markmen wear their formal tunics longer, nearer the knee, and the women a mantle over the gown. Neither is built.
 - **Owed:** who wears it (the game, by rank or occasion), and the game after F4.
+
+## v80 — Session 1163 — The woven band on a long gown's hem, fitted to its cut (L1, prototype only)
+Session 1156's Needs eyes: on a long gown the woven band's lower thread ran along a straight line at rest -.705, but the gown's cut is the skirt helper's own edge, which is not level. Measured on the rest body this session, it is -.715 at the back, rises to -.687 over each hip (±1.6 rad round the body) and falls to -.728 at the front. So at the front a strip of the ground up to 2.3 cm deep showed under the band's lower thread, and over the hips the thread and the lowest lozenges were cut off by the edge. A short skirt's cut is a line in the shader (-.2, with 5 mm of noise), so its band was already right. This is a fix to something Michael chose, so it asks nothing. It touches only `people.js` and `builder.check.mjs`.
+
+- **The table** (`lozHemTable`). The long skirt's edge is found as the triangle edges that only one triangle has, below rest -.5: 36 points. Sorted by their angle round the body's axis (the same axis the band's lozenges are laid round), they are read at 48 even angles, wrapping round the back. The table is built once per pack.
+- **The band.** A long gown's band now runs from `lozHemY(vB)`, the table read at the point's angle and blended between the two nearest entries in the shader, up 4.5 cm as before. Below its lower thread, the ground still fills to the cut, as a hem, but that strip is now under a millimetre and a half.
+- **`lozHemY(x, z)`** is exported, the same reading in JS, for the check.
+- The short skirt, the neck and the cuffs are unchanged.
+
+### Verified (headless Chromium)
+- **A new check** (`builder.check.mjs`): the 36 points of the long gown's cut (rest -.728 to -.687) lie within 1.37 mm of the band's lower edge, against 23.5 mm off Session 1156's line. The skirt's program carries the table.
+- **Session 1156's three band checks** still pass. The madder gown's hem view changes 17.2% against the plain gown (it was in the 18.6–27.7% range before; the band now covers the cut where the ground strip did). The chest stays at 0 pixels.
+- **`builder.check.mjs`:** 504 of 504 pass (503 before and the one above).
+- **Pictures:** `builder-bands-*.jpg` retaken, and `builder-bands-hem-side.jpg` (new), the gown's hem from a quarter turn the other way. In both close views the lower thread runs unbroken along the cut.
+### Needs eyes
+- **The lozenges' spacing** looks uneven in the close views. It steps to 12 threads a lozenge on a pixel grid, so neighbouring lozenges differ by a thread. It was there before this fix.
+- **Owed:** the knee-length formal tunic, the mantle over the gown, who wears it (the game), and the game after F4.
