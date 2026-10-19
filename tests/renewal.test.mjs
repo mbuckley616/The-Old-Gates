@@ -21,9 +21,14 @@ const pray = await page.evaluate((id) => {
   return { ok, god: S.god && S.god.key, buff: b && { rate: b.rate, remaining: b.remaining, label: b.label }, hp: PHP, max: effMaxHP() };
 }, id);
 check('praying gives the Boon of Renewal at 0.5 a second for 30 minutes', pray.ok && pray.god === 'speir' && pray.buff && pray.buff.rate === 0.5 && pray.buff.remaining === 1800, pray);
+// S1104 — since S1059 a tier-2 chunk holds its Highwaymen from level 1 (they were latent before), and one stands 4.3 m from this
+// altar: over the measure he wakes and kills you, and a dead player regains nothing. The suite measures the boon, so the foes
+// around the altar are put down before each measure.
+await page.evaluate(() => { window._clearFoes = () => { for (const e of (ZONES.world.enemies || [])) if (!e.dead && Math.hypot(e.x - px, e.z - pz) < 60) { e.dead = true; e.alert = false; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); } }; });
 // the main loop's dt is capped at .05 a frame, and the scene runs well under 20 fps here, so each frame is .05 s of play
 const run = (withBoon) => page.evaluate(async (withBoon) => {
   if (!withBoon) { const i = ACTIVE_BUFFS.findIndex(b => b.type === 'regen'); if (i >= 0) ACTIVE_BUFFS.splice(i, 1); }
+  _clearFoes(); dead = false;
   PHP = 10; mana = 10; stamina = 10; staminaCD = 1e9;
   const t0 = performance.now();
   await new Promise(r => { let k = 0; const f = () => (++k >= 40 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
@@ -35,6 +40,7 @@ check('under the boon, health and stamina each rise 0.5 a second of play (40 fra
 check('and mana rises 0.5 a second above its own 0.8', Math.abs(on.mp - on.hp * 2.6) < 0.08, on);
 check('without it, health and stamina stay put and mana keeps its own rate', !off.boon && off.hp === 0 && off.st === 0 && off.mp > 1.4 && off.mp < 1.65, off);
 const cap = await page.evaluate(async () => {
+  _clearFoes();
   ACTIVE_BUFFS.push({ type: 'regen', mult: 1, rate: 0.5, remaining: 1800, duration: 1800, label: 't' });
   PHP = effMaxHP() - .1; mana = effMaxMana() - .1; stamina = effMaxStamina() - .1;
   await new Promise(r => { let k = 0; const f = () => (++k >= 10 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });

@@ -1,5 +1,5 @@
 // The Gate-Blade's trial (Session 802; the page's Stone row, the approved draft's first run §5): the blade stands in a standing
-// stone 8 to 18 units from its ruined gate's door, on open ground. The first time within ten units, the draft's line, once.
+// stone outside its ruined gate's compound, beside its gate, on open ground (Session 993; it was 8 to 18 units from the door). The first time within ten units, the draft's line, once.
 // *Press 'E' to take hold of the hilt* within 1.8; Might under 30 gives one of three lines by how short (logged, kept for the
 // Journal); at 30 the draft's words and log line, the blade in the bag, the hilt gone from the stone; E at the stone after says
 // what is left. The hermit gives the way, and the townland tells of it while it stands there.
@@ -18,9 +18,12 @@ let B = null;
 for (let k = 0; k < 40 && !B; k++) { await page.waitForTimeout(1500);
   B = await page.evaluate(() => { const P = artifactPlaces().gate_blade; px = P.x + 20; pz = P.z + 20; tickBladeStone(true); const S = BLADE_STONE; if (!S) return null;
     let clear = !solidAt(S.x, S.z); for (let q = 0; q < 8; q++) if (solidAt(S.x + Math.cos(q / 8 * Math.PI * 2) * 1.4, S.z + Math.sin(q / 8 * Math.PI * 2) * 1.4)) clear = false;
-    return { x: S.x, z: S.z, off: Math.hypot(S.x - P.x, S.z - P.z), clear, inScene: S.mesh.parent === WORLD.scene, hilt: S.hilt.visible, again: (() => { const s2 = bladeStoneSpot(P); return s2 && s2.x === S.x && s2.z === S.z; })() }; }); }
+    const W = dungeonWorldPos[P.door] || P; const gate = Math.atan2(S.z - W.z - 4, S.x - W.x);
+    S.mesh.updateMatrixWorld(true); const hb = new THREE.Box3().setFromObject(S.hilt), gy = worldH(S.x, S.z);
+    return { x: S.x, z: S.z, off: Math.hypot(S.x - W.x, S.z - W.z - 4), bearing: +Math.abs(gate - Math.PI / 2).toFixed(2), hiltLo: hb.min.y - gy, hiltHi: hb.max.y - gy, clear, inScene: S.mesh.parent === WORLD.scene, hilt: S.hilt.visible, again: (() => { const s2 = bladeStoneSpot(P); return s2 && s2.x === S.x && s2.z === S.z; })() }; }); }
 console.log('stone', JSON.stringify(B));
-check(`the stone stands ${B && B.off.toFixed(1)} units from the gate's door, on open ground, the same spot again`, B && B.off >= 7.99 && B.off <= 18.01 && B.clear && B.inScene && B.hilt && B.again, B);
+check(`the stone stands ${B && B.off.toFixed(1)} units from the compound's centre, outside its ring of 27, on open ground, ${B && B.bearing} rad off the gate's line, the same spot again`, B && B.off >= 30.99 && B.off <= 41.01 && B.bearing >= .23 && B.bearing <= 1.1 && B.clear && B.inScene && B.hilt && B.again, B);
+check(`the hilt stands ${B && B.hiltLo.toFixed(2)}–${B && B.hiltHi.toFixed(2)} m over the ground, at waist to chest (S993, the critic's s632; it was 2.0–2.4)`, B && B.hiltLo >= .9 && B.hiltHi <= 1.55, B);
 
 const rumour = await page.evaluate(() => { const P = artifactPlaces().gate_blade; const [gi, gj] = cellOf(P.x, P.z); let site = null;
   for (let i = gi - 1; i <= gi + 1 && !site; i++) for (let j = gj - 1; j <= gj + 1 && !site; j++) { const c = getCell(i, j); if (c && c.sites) site = c.sites.find(t => ['town', 'village', 'port', 'city'].includes(t.kind)); }

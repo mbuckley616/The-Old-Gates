@@ -11,7 +11,9 @@ const r = await page.evaluate(() => {
   // a dummy in the zone list, a step in front of the player, that cannot die
   const dummy = () => { const mesh = new THREE.Group(); scene.add(mesh);
     return { name: 'Dummy', x: px + fwdX * 1.2, z: pz + fwdZ * 1.2, y: 0, hp: 1e6, maxHp: 1e6, def: 0, mesh, alert: false, ai: 'melee' }; };
-  const melee = pts => { ATTRS.might = pts; const e = dummy(); ZE.push(e); const before = e.hp; _resolveZoneStrike(false); ZE.splice(ZE.indexOf(e), 1); scene.remove(e.mesh); return before - e.hp; };
+  // S941: the level no longer adds to a hit (skills and perks A), so the big base is a roll of 200 at Blade 50 (×1.0)
+  const melee = pts => { ATTRS.might = pts; const kw = EQ.weapon, kb = SKILLS.blade; EQ.weapon = { name: 'Test Sword', slot: 'weapon', weaponShape: 'sword', wType: 'slash', weight: 3, atk: [200, 200] }; SKILLS.blade = { lv: 50, p: 0 }; try { return meleeHit(); } finally { EQ.weapon = kw; SKILLS.blade = kb; } };
+  const meleeHit = () => { const e = dummy(); ZE.push(e); const before = e.hp; _resolveZoneStrike(false); ZE.splice(ZE.indexOf(e), 1); scene.remove(e.mesh); return before - e.hp; };
   const spell = pts => { ATTRS.intelligence = pts; const sp = SPELLS.find(s => s.id === 'fireball') || SPELLS.find(s => s.dmg || s.mag) || SPELLS[0];
     return { id: sp.id, dmg: applySpellDamage({ def: 0, resist: {} }, sp, 1).dmg }; };
   const out = { m0: melee(0), m10: melee(10), m30: melee(30), s0: spell(0), s10: spell(10), per: ATTR_DMG_PER_POINT, bow: BOW_FINESSE_DMG };
