@@ -61,6 +61,21 @@ Combat B's move sets (`docs/design/combat.md`) give every family a third move. S
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 ## Answered
+### The Gatelanders' tartan: a note on cloaks, wider, by family, or none? (bodies builder, Session 1146) — DECISION #445
+**L1's wardrobe matrix: the Gatelanders' tartan (bodies builder, Session 1146).** OG-111 names "tartans" among the Gatelands' fabrics, and the catalogue calls them "a new note". Nothing in the canon speaks for or against them. The builder can now weave one into a cloak's cloth.
+
+The sett repeats every 16.8 cm. The cloak's own colour is the ground, with two dark bands side by side and a fine overcheck, in a 2/2 twill. It is laid round the wearer from the back's middle, and it covers the cloak, the shoulder cape and the hood, up or down. Nobody is rolled with it yet.
+
+**Where should tartan be worn?**
+- **A. A note, on cloaks** *(recommended)*. About one Gatelander cloak or cape in five is woven in a sett, in the people's colours (moss, madder, brown, muted blue), with two or three setts in all. Everything else stays plain wool, so the tartan stays a note.
+- **B. Wider.** Cloaks, capes and the women's skirts in tartan, about one in three Gatelanders. It becomes part of how the Gatelands look.
+- **C. By family.** One sett for each great house (Caelmont in the Crown's crimson, say), worn only by its people and its retainers. A tartan then says who someone belongs to, and plain is everyone else.
+- **D. None.** The Gatelands keep plain wools; the tartan stays in the kit, unrolled.
+
+Pictures: [the moss cloak from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-back.jpg) · [at full length](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-full.jpg) · [close, the twill](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-close.jpg) · [a madder cape](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-cape.jpg) · [a brown cloak, hood up](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-tartan-hood.jpg)
+
+Michael: **A, a note on cloaks.** (2026-10-19, on #445) *Bodies builder, Session 1151:* rolled. One Gatelander cloak or shoulder cape in five is woven in one of three setts (moss with dark green and a madder overcheck, madder with dark blue, brown with near-black and an ochre overcheck), the cloak taking the sett's ground; never a fur-lined cloak; nobody else; from a stream of its own, so every other roll is as it was (`people.js` `PEOPLES.gatelander.tartan`, `setts`). Pictures: `builder-tartan-rolled-*.jpg`.
+
 ### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
 **Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
 
@@ -176,6 +191,7 @@ Pictures:
 - [the drifts now, full](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies/docs/prototypes/levelup/builder-dots-full.jpg)
 
 Michael: **Powdered, every colour kept**. (18 Oct 2026)
+Done, Session 1142 (bodies builder): powdering is the default (`DRESS_FLAGS.dotsStyle: 'powder'`), so every rolled Old Blood with dot embroidery is powdered in oxblood, slate, violet or bone, and a genome saved before the flag loads powdered; the drifts stay only for a genome that asks for `'drift'`. Issue #432 closed.
 
 ### Gold piles by place too? (systems builder, 18 Oct 2026) — DECISION #431
 Your A on #394 put a loot roll's metal and a lair hoard's gold on the place's tier. A gold pile in a chest, a barrel or on a body (`rollGold`, `14-items.js`) still adds your level. A chest gives 4–12 + your level, a treasure chest 8–18 + 1.5 × your level, a body 2–8 + 0.7 × your level and a barrel 1–6 + half your level. At level 25 a coast chest holds 29 to 37 gold, and at level 1 a tier-3 chest holds 5 to 13. Two friends opening one chest in a shared world would find different piles.
