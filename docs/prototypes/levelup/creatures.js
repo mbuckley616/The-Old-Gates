@@ -57,33 +57,35 @@ P.neck = (B, o) => {
 };
 // the head: a skull, a muzzle and a jaw; eyes, ears, horns and antlers are bits on it
 P.head = (B, o) => {
-  const S = B.g.sliders.head, len = o.len * S, r = o.r * S, base = (B.neckEnd || B.front).clone(), parent = B.neckBone || B.spineNames[B.spineNames.length - 1];
+  // `name` and `off` (Session 1176, the failing golem's second head): a further head is its own bone, set off from the first's place
+  const hn = o.name || 'head', S = B.g.sliders.head, len = o.len * S, r = o.r * S, base = (B.neckEnd || B.front).clone().add(V(...(o.off || [0, 0, 0]))), parent = B.neckBone || B.spineNames[B.spineNames.length - 1];
   const pitch = (o.pitch || 0) * DEG, dir = V(0, -Math.sin(pitch), Math.cos(pitch)), up = V(0, Math.cos(pitch), Math.sin(pitch)), s = o.s || [1, 1, 1];
-  B.bone('head', parent, base);
-  B.meat('head', base, base.clone().addScaledVector(dir, len * .42), r, r * .92, { s, tone: o.tone });
+  if (o.yaw) { dir.applyAxisAngle(UP, o.yaw * DEG); up.applyAxisAngle(UP, o.yaw * DEG); }
+  B.bone(hn, parent, base);
+  B.meat(hn, base, base.clone().addScaledVector(dir, len * .42), r, r * .92, { s, tone: o.tone });
   const m = o.muzzle; if (m) { const a = base.clone().addScaledVector(dir, len * .35), b = base.clone().addScaledVector(dir, len).addScaledVector(up, -(m.drop || 0) * len);
-    B.meat('head', a, b, m.r * S, m.r * S * (m.taper ?? .62), { s: m.s || s, tone: o.tone });
-    if (m.nose) B.bit('head', ball(m.r * S * .42, B.tone('dark'), b.clone().addScaledVector(dir, m.r * S * .35).addScaledVector(up, m.r * S * .25), .35)); }
-  if (o.jaw) { const j = base.clone().addScaledVector(dir, len * .3).addScaledVector(up, -r * .5); B.bone('jaw', 'head', j);
+    B.meat(hn, a, b, m.r * S, m.r * S * (m.taper ?? .62), { s: m.s || s, tone: o.tone });
+    if (m.nose) B.bit(hn, ball(m.r * S * .42, B.tone('dark'), b.clone().addScaledVector(dir, m.r * S * .35).addScaledVector(up, m.r * S * .25), .35)); }
+  if (o.jaw) { const j = base.clone().addScaledVector(dir, len * .3).addScaledVector(up, -r * .5); B.bone('jaw', hn, j);
     B.meat('jaw', j, base.clone().addScaledVector(dir, len * o.jaw.len).addScaledVector(up, -r * o.jaw.drop), o.jaw.r * S, o.jaw.r * S * .55, { tone: o.tone }); }
-  B.headFrame = { base, dir, up, len, r };
+  if (hn === 'head') B.headFrame = { base, dir, up, len, r };
   const at = (f, u, x) => base.clone().addScaledVector(dir, len * f).addScaledVector(up, r * u).add(V(r * x, 0, 0));
   if (o.skull) skullBits(B, o, S * (o.skull.k || 1), base, dir, up);
-  else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit('head', eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
-  if (o.ears) for (const sd of [1, -1]) B.bit('head', ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
-  if (o.horns) for (const sd of [1, -1]) B.bit('head', horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
-  if (o.antlers) for (const sd of [1, -1]) { const m = B.bit('head', antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
+  else for (const e of o.eyes || []) for (const sd of [1, -1]) B.bit(hn, eye(e.r * S, e.color, at(e.f, e.up, e.out * sd)));
+  if (o.ears) for (const sd of [1, -1]) B.bit(hn, ear(o.ears, S, B.tone(o.ears.tone || o.tone || 'coat'), at(o.ears.f, o.ears.up, o.ears.out * sd), sd));
+  if (o.horns) for (const sd of [1, -1]) B.bit(hn, horn(o.horns, S, B.tone(o.horns.tone || 'horn'), at(o.horns.f, o.horns.up, o.horns.out * sd), sd));
+  if (o.antlers) for (const sd of [1, -1]) { const m = B.bit(hn, antler(o.antlers, S, B.tone('horn'), at(o.antlers.f, o.antlers.up, o.antlers.out * sd), sd, rng(B.g.seed + (sd > 0 ? 1 : 2))));
     if (o.antlers.mist) (B.mistTips ||= []).push(...m.userData.tips); }
   if (o.antlers?.mist) B.mist = { ...o.antlers.mist, tips: B.mistTips, color: B.tone(o.antlers.mist.tone || 'mist') };
-  if (o.crystals) for (const sd of [1, -1]) B.bit('head', crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
-  if (o.beak) B.bit('head', beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
+  if (o.crystals) for (const sd of [1, -1]) B.bit(hn, crystals(o.crystals, S, B.tone('horn'), at(o.crystals.f, o.crystals.up, o.crystals.out * sd), sd, rng(B.g.seed + (sd > 0 ? 3 : 4))));
+  if (o.beak) B.bit(hn, beak(o.beak, S, B.tone('horn'), at(1, o.beak.up || 0, 0), dir));
   // a throat sac (the Bellthroat's): a rigid ball under the jaw that the pose fills and empties
-  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit('head', m); B.sac = m; }
-  if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit('head', claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
-    B.bit('head', eye(o.stalks.r, o.stalks.color, p)); }
+  if (o.sac) { const m = new THREE.Mesh(new THREE.SphereGeometry(o.sac.r * S, 24, 16), new THREE.MeshPhysicalMaterial({ color: B.tone('sac'), roughness: .25, clearcoat: .6, transmission: 0 })); m.position.copy(at(o.sac.f, -o.sac.drop, 0)); m.scale.set(1.15, .8, 1); B.bit(hn, m); B.sac = m; }
+  if (o.stalks) for (const sd of [1, -1]) { const p = at(o.stalks.f, o.stalks.up, o.stalks.out * sd); B.bit(hn, claw(o.stalks.r * .5, o.stalks.len, B.tone('dark'), p.clone().addScaledVector(up, -o.stalks.len), up.clone()));
+    B.bit(hn, eye(o.stalks.r, o.stalks.color, p)); }
   // a brow (Session 927): a ridge of flesh across the skull over the eyes, grown into the head as one surface (the troll's)
-  if (o.brow) B.meat('head', at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
-  if (o.fangs) for (const sd of [1, -1]) B.bit('head', claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
+  if (o.brow) B.meat(hn, at(o.brow.f, o.brow.up, -o.brow.out), at(o.brow.f, o.brow.up, o.brow.out), o.brow.r * S, o.brow.r * S, { tone: o.tone });
+  if (o.fangs) for (const sd of [1, -1]) B.bit(hn, claw(o.fangs.r * S, o.fangs.len * S, B.tone('dark'), at(o.fangs.f, o.fangs.up, o.fangs.out * sd), V(0, -1, .4).normalize()));
 };
 // inclusions (Session 928): what a clear body has swallowed, seen through it (the slime's bones and rubble). Each is a rigid
 // bit on the nearest spine bone, placed from the seed inside the body (never out of it): `rubble` a flat-faced stone,
@@ -2133,6 +2135,20 @@ Object.assign(PLANS, {
     ] }
 });
 export const GOLEMS = ['golem'];
+// ── Session 1176: Cloch's failing golem (OG-073's Cloch row: the golem "doubles into a pair"). One rig, as the sheet's failing column asks:
+// the golem split down its middle into two, fused at the hip. Its chest widened to carry two upper bodies, a second head on the right
+// shoulder, set lower and turned out, beside the first moved left, and a second pair of arms from the outer shoulders, hanging wider and
+// swinging on their own beat; and the blocks cracked with only the cracks lit Cloch's violet (the kit's Cloch light, as the blight
+// boar's and the stone troll's), the four eyes lit the same ──
+Object.assign(PLANS, {
+  failinggolem: re(PLANS.golem, { name: 'Golem of Cloch (failing gate)', src: 'OG-073 (Cloch: the golem at a failing gate, doubled into a pair)', school: 'Cloch', condition: 'failing', from: 'golem',
+    bare: { blocks: { ...PLANS.golem.bare.blocks, seg: .035, jit: 6 } }, scale: 1.45, speedK: .6, palette: PLANS.golem.palette, pattern: { ...PLANS.golem.pattern, amount: .6 },
+    glow: { color: [1.4, .5, 2.4], freq: 2.6, w: .055, all: .8 },
+    parts: [...PLANS.golem.parts.flatMap(([k, o]) => k === 'spine' ? [[k, { ...o, r: [.16, .2, .27], s: [1.75, .9] }]]
+      : k === 'head' ? [[k, { ...o, off: [.15, .08, 0], yaw: 8, eyes: o.eyes.map(e => ({ ...e, color: [.72, .32, 1] })) }], [k, { ...o, name: 'head1', off: [-.21, .04, -.01], yaw: -14, eyes: o.eyes.map(e => ({ ...e, color: [.72, .32, 1] })) }]]
+      : k === 'arms' ? [[k, { ...o, out: .3 }], [k, { ...o, at: .9, out: .5, up: .02, dz: -.05, len: .78, dir: [.42, -1, -.04], bend: 16, swing: .2, phase: 1.6 }]] : [[k, o]])] })
+});
+FAILING.push('failinggolem');
 // ── Session 945: the cave troll's lashed-on armour (OG-041: scraps of plate and hide tied on with rope). Laid on its grown skin as the
 // goblin's harness is (Session 944): a dented iron plate on its chest, an iron plate over its left shoulder, a rawhide sheet across its
 // back, and three leather lashings over them, standing 1.2 cm further out. Only the OG-041 troll wears it: the trolls built from it
