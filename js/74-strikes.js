@@ -104,12 +104,18 @@ const HEAVY_ROW=(o)=>Object.assign({share:.25,tell:1.0,add:.35,dmg:2,posture:2,b
 // One wind-up in four, as the heavy: a seeded roll of its own (`feint`, on the id and the blow's count) after the heavy roll has said
 // light, never twice running; `roll` is that roll's odds on a light blow, which lands one in four in all (25.1% of 4,000, tests/feint).
 const FEINT_ROW=(o)=>Object.assign({share:.25,roll:.43,pause:.3},o);
+// S1162 — the two-hit string (combat.md's move sets; Michael's A on DECISION #438): the wolf's lunge and snap, the troll's sweep and
+// stamp. The first blow is a light blow as any; the second follows `gap` (0.45 s, TELL_MIN) after it, a wind-up of its own with its
+// own gold glow in its last 0.15 s, so one roll cannot cover both. Each is a light blow. The wolf's snap is a second bite at its own
+// reach and arc with no second leap; the troll's stamp reaches `reach` (1.6 m, hull to hull) all round it. A parried first blow
+// staggers the foe and the second never comes. One wind-up in four, as the feint: its own seeded roll (`string`) after the heavy roll.
+const STRING_ROW=(o)=>Object.assign({share:.25,roll:.43,gap:TELL_MIN},o);
 const FOE_ATTACKS={
   humanoid: FOE_ROW({tells:{Goblin:.51,'Kobold Thief':.45,Skeleton:.60,Bandit:.57},hulls:true,engage:1.2,heavy:HEAVY_ROW({}),feint:FEINT_ROW({})}),
-  beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70,heavy:HEAVY_ROW({})}),
+  beast:    FOE_ROW({hulls:true,engage:.6,lunge:1.5,reach:.9,arc:70,heavy:HEAVY_ROW({}),string:STRING_ROW({})}),
   spider:   FOE_ROW({tells:{Spider:.51},hulls:true,engage:.8,reach:1.2,arc:100,heavy:HEAVY_ROW({})}),
   brute:    FOE_ROW({tells:{Golem:.90,Gargoyle:.80},hulls:true,engage:.8,reach:1.2,arc:100,heavy:HEAVY_ROW({})}),
-  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},hulls:true,engage:1.6,reach:2.4,arc:140,heavy:HEAVY_ROW({})}),
+  troll:    FOE_ROW({tells:{'Cave Troll':.83,'Forest Troll':.83},hulls:true,engage:1.6,reach:2.4,arc:140,heavy:HEAVY_ROW({}),string:STRING_ROW({reach:1.6,arc:360})}),
   slime:    FOE_ROW({tells:{Slime:.54,'Small Slime':.54},heavy:HEAVY_ROW({})}),
   elemental:FOE_ROW({tells:{'Fire Elemental':.65},heavy:HEAVY_ROW({})}),
   wraith:   FOE_ROW({tells:{Phantom:.54,Wraith:.57},heavy:HEAVY_ROW({})}),
@@ -149,10 +155,30 @@ function foeFeintRoll(e){
   const u=seededRng('feint',(e.id||e.baseType||e.baseName||e.name||'foe')+':'+(e._blowN||0))();
   return e._feintLast=u<F.roll;
 }
+// S1162 — the string's row (wolves and trolls) and its roll, made as the feint's on a wind-up the heavy roll has left light
+function foeStringRow(e){if(!e||e.isBoss)return null;const r=foeAttack(e);return r&&r.string||null;}
+function foeStringRoll(e){
+  const S=foeStringRow(e);if(!S)return false;
+  if(e._stringLast){e._stringLast=false;return false;}
+  const u=seededRng('string',(e.id||e.baseType||e.baseName||e.name||'foe')+':'+(e._blowN||0))();
+  return e._stringLast=u<S.roll;
+}
+// S1162 — after a string's first blow (landed, blocked, rolled or whiffed): the second wind-up, `gap` long, facing you anew. Not
+// after a perfect parry (the foe is staggered) or a death. Returns true when the second blow is armed.
+function foeStringNext(e){
+  if(e._string!==1){e._string=0;return false;}
+  if(e.dead||e.hp<=0||isStaggered(e)){e._string=0;return false;}
+  const S=foeStringRow(e);if(!S){e._string=0;return false;}
+  e._string=2;e._heavy=false;e._feint=0;e.telegraphMax=e.telegraphT=S.gap;
+  const T=targetOf(e);if(T)e.combatYaw=Math.atan2(T.x-e.x,T.z-e.z);
+  if(typeof sndTelegraph==='function')sndTelegraph();
+  return true;
+}
 function foeWindUp(e){
-  const base=telegraphDuration(e);e._heavy=foeHeavyRoll(e);e._feint=0;
-  if(e._heavy){e._feintLast=false;return Math.max(foeHeavyRow(e).tell,base+foeHeavyRow(e).add);}
+  const base=telegraphDuration(e);e._heavy=foeHeavyRoll(e);e._feint=0;e._string=0;
+  if(e._heavy){e._feintLast=false;e._stringLast=false;return Math.max(foeHeavyRow(e).tell,base+foeHeavyRow(e).add);}
   if(foeFeintRoll(e)){e._feint=foeFeintRow(e).pause;return base+e._feint;} /* the pose tops out at base and holds (telegraphPulse) */
+  if(foeStringRoll(e))e._string=1; /* S1162 — a light blow, and the second follows it (foeStringNext) */
   return base;
 }
 // S1041 — the weapon a person-bodied foe holds (its genome's, 32-people.js), and that weapon's reach from your table: a knife
@@ -424,7 +450,7 @@ function applyMeleeDamage(e, rawDmg){
 // hit anyone within 1.4 units (1.3 in a dungeon) whichever way it faced.
 // S940 — the reach and the arc are the family's row in the attack table (FOE_ATTACKS).
 // S1041 — F2b: the reach is foeReach's blow, hull to hull for the families the sheet names (see FOE_ATTACKS).
-function strikeArc(e){const f=foeReach(e);return {reach:f.blow,deg:f.deg};}
+function strikeArc(e){const f=foeReach(e);if(e&&e._string===2){const S=foeStringRow(e);if(S&&S.reach!=null)return {reach:reachTo(e,S.reach),deg:S.arc};}return {reach:f.blow,deg:f.deg};} /* S1162 — the troll's stamp, all round */
 // S1041 — the wolf's lunge (F2b): at the bite it leaps along the line it wound up on (combatYaw), up to its lunge, to stand at
 // its engage distance from you, so a wolf that started its tell from 2.1 hull to hull still bites a player who stood still,
 // and one who stepped aside during the tell is bitten at the end of the leap only if still in its 70°.
@@ -580,7 +606,7 @@ function executeDungeonStrike(e, now){
   e.atkDir = {x: dx2/dd, z: dz3/dd};
   e.atkAnim = 0.35;
   // Whiff — player stepped out of reach during wind-up, or out of its arc (S275). Enemy still commits to the lunge.
-  if(!strikeReaches(e)){ e._heavy = false; sndSwing(); return; }
+  if(!strikeReaches(e)){ e._heavy = false; sndSwing(); foeStringNext(e); return; }
   // v61d5 — Mimic burst-pounce branch. The first strike after reveal uses
   // the burst formula (14 + level + dmgMult, scaled by .3 of def) instead
   // of the standard melee roll. This is the "pounced from a chest" hit —
@@ -595,6 +621,7 @@ function executeDungeonStrike(e, now){
     return;
   }
   executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
+  foeStringNext(e); /* S1162 — the string's second blow */
 
 }
 
