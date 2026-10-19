@@ -781,7 +781,7 @@ function itemDesc(it){
     const def=BOOKS.find(b=>b.id===it.bookId);
     if(!def)return'Book';
     const read=booksRead.has(def.id);
-    if(!def.attr)return read?'Lore book (already read)':'Lore book';
+    if(!def.attr){const k=def.sheet?'Lore':'Lore book';return read?k+' (already read)':k;} /* S1092 — a sheet is one leaf */
     const attrLbl=(typeof ATTR_DEF!=='undefined'&&ATTR_DEF[def.attr])?ATTR_DEF[def.attr].label:def.attr;
     return read?`Skill book (already read)`:`Skill book · +1 ${attrLbl} on read`;
   }

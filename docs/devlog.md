@@ -25395,6 +25395,21 @@ Corrections made during the session:
 - **The cliffs are one height field,** so their faces fall as smooth vertical folds, like a curtain, with no ledges, overhangs or stacks. A carved face of its own, as the caves have, would read as rock.
 - **The palisade is unbroken.** A fort whose gate was burst might show a breach or burnt logs too.
 
+## v80 — Session 1092 — What the Stones Say: the sigil-lore books in the guilds (the approved draft)
+Michael approved the quest writer's *What the Stones Say* on 14 Oct (`docs/quest_drafts.md`), the other half of backlog A's lore-objects line that *The Seventh Niche* (Session 979) took. It asks for no new system: three lore books on the machinery Session 979 made (`attr:null`, read like a skill book, granting nothing, outside the skill-book roll), and two guild topics in the head's own people's voice. The text is the draft's, word for word.
+
+- **The books** (`20-quests.js`, beside *The Seventh Niche*): *On the Seals* (📘, six pages, the academy's primer in the Aurennais register), *The Words on the Stones* (📗, five pages, a Gatelander hedge-schoolmaster's glossary) and *Warm Stones — for New Hands* (📄, three pages, the Fighters' Guild's sheet in a Markman's sentences). The sheet carries `sheet:true`, so the bag calls it *Lore* / *Lore (already read)* and its card *Lore*, as the draft asks, not *Lore book* (`itemDesc` in `60-shop.js`, the card in `66-hub.js`). The catalogue page gives the build's own common names (`nameEn` in `64-spells.js`), so *Sioc, Frost Bolt* where Part I's table says Ice Shard; the draft chose those on purpose.
+- **The Mages' Guild head** (`sigilLoreTopic` in `87-world-quests.js`, pushed in `guildDef`'s topics in `83-world-generator.js`): *What does the Guild teach of the sigils?*, a folder in the head's people's voice (Markish when the people is unknown, as the draft says), whose follow sells *On the Seals* for 40 gold, or says the short-of-gold line and takes nothing. The draft gives the follow as *Is it written down?* and then a buy; the dialogue has no node between a question and a purchase, so the one button reads *Is it written down? (Buy On the Seals, 40 gold)*: the draft's words, and the price before the gold goes.
+- **The Fighters' Guild head**: *Anything I should know about the warm stones?* hands over the sheet once, and says the *already given* line while the sheet is in the bag or has been read.
+- **The glossary** is a rare roll in the library pool (`library_chest`, weight 2 beside *The Seventh Niche*'s 3). The draft also puts one copy on a shelf in every Gatelands Mages' Guild, not for sale. A book to take from a shelf in a generated room is a new interaction (a prompt and a pick-up on a piece of furniture), which is not the quest writer's to build: it is written into backlog A for the systems builder, and the shelf's words are none (the book is the text).
+- No `worldState` key: `booksRead` is saved already, and the sheet's *once* reads `booksRead` and the bag.
+
+### Verified (headless Chromium)
+- **`stonessay`, 9 of 9.** The three books, their pages, icons and `attr:null`; none in 3,000 skill-book rolls (the six skill books seen); the glossary in the library pool and neither it nor the primer on the guild's counter (which keeps *The Seventh Niche* only). At Vieux Marché (a Gatelander town) the Mages' head asks in a folder with the one buy, and the Fighters' head does not; 10 gold buys nothing and takes nothing, 100 gold pays 40 and bags *On the Seals*; read, it changes nothing in `ATTRS`, logs *Read "On the Seals".* and reads *Lore book (already read)*. The four Mages' heads and the four Fighters' heads say the draft's lines; the sheet is given once, not again while held, not again once read, and reads *Lore* → *Lore (already read)*. No page errors.
+- **Neighbours:** `seventhniche`, `cloakguild`, `armourlines-numbers`, `handback`, `standingcount` and `panelfocus` pass.
+### Needs eyes
+- Whether the one button (*Is it written down? (Buy On the Seals, 40 gold)*) reads well in the dialogue box, or wants a node between.
+- The glossary's shelf copy waits on a shelf pick-up (backlog A).
 ## v80 — Session 1084 — F2b, session 2, part 2: the water in metres (swim at 1.40, the eye 0.20 over it)
 F2b's second session (`docs/design/scale-numbers-build.md`, *Water*) has four parts left after the step; this is the water. You
 swam wherever the bed lay more than 0.40 under the sea, with the feet 0.35 under the surface (`SWIM_Y`). That was set for the old
@@ -26468,6 +26483,41 @@ The people's ragdoll in `32-people.js` has the same hold. It is left as it is: n
 - **Owed:**
   - the people's hold, the same check on `ragdollStep`;
   - a bear's body overlapping a solid at death is itself odd, since foes collide by their centre point only. That is the systems builder's, and noted here only.
+## v80 — Session 1162 — The wolf's snap and the troll's stamp (Michael's A on DECISION #438)
+Combat B's move sets give the wolf a *lunge and snap* and the troll a *sweep and stamp*, both the page's two-hit string. Session 1140
+asked when the second blow comes, since the page leaves it open; Michael chose A: 0.45 s after the first, with its own glow. This session
+builds both under that answer and #430's one-in-four.
+
+- **The roll** (`foeStringRoll`, `74-strikes.js`): as the feint's, made only on a wind-up the heavy roll has left light, a seeded roll of
+  its own (`string`, on the foe's id and its blow's count), never twice running, 0.43 on a light blow (`STRING_ROW`). Only the `beast`
+  (wolves) and `troll` rows carry it; a boss (the Faolchú) never does. The heavy roll is untouched.
+- **The first blow** is a light blow: the kind's own tell (a wolf 0.61, a troll 0.83), the gold glow, the light damage, and the wolf
+  still leaps at it (S1041).
+- **The second** (`foeStringNext`, called after the first blow in both the world's tick and the dungeon's): a wind-up of its own,
+  `TELL_MIN` (0.45 s) long, facing you anew, its gold glow in its last 0.15 s, the tell's sound, then a light blow. The wolf's snap bites
+  at its own reach and 70° with no second leap, so a step back clears it. The troll's stamp reaches 1.6 m hull to hull all round it
+  (`strikeArc` reads the string's row), so stepping behind a troll after its sweep does not save you. A perfect parry of the first blow
+  staggers the foe and the second never comes; a whiffed, rolled or blocked first blow still brings it.
+- **One roll cannot cover both:** the untouchable span is 0.08–0.30 s and the blows are 0.45 s apart.
+### Verified (headless Chromium)
+- **`string`** (new) 1/1, 15 checks. Of 4,000 seeded wind-ups a wolf strings 25.3% and a troll 25.4%, heavies 24.6% and 25.2%, never two
+  strings running; the same wolf repeats its 4,000, another wolf differs; the heavies fall on exactly the blows `foeHeavyRoll` alone gives.
+  A bandit, golem, spider, boss and shark never string. Live through `tickZoneEnemies` at 1/60: a wolf winds up 0.61 then 0.45 s and both
+  bites land (21 and 13, inside the light range 13–21); the second wind-up runs 28 frames with its glow from frame 19. The wolf leaps 0.8 m
+  at the first bite and 0 at the snap; stepped back 0.5 m, the snap misses. A roll timed to the first bite takes it (0) and the snap lands
+  (13). A perfect parry of the first: one wind-up only. A troll sweeps 0.83 then stamps 0.45 (19 and 21); behind it at 1.2 m the sweep's
+  arc misses and the stamp lands (21), at 2.0 m it misses.
+- **Neighbours, 27 suites four at a time, all green:** `heavyblow`, `feint`, `tells`, `wolves`, `roll`, `resolver`, `counters`,
+  `parryclock`, `posture`, `foes`, `lockon`, `targetof`, `beastfall`, `duelrhythm`, `questfoes`, `trolls`, `fiercewolf`, `foereach`,
+  `reachtable`, `dungeonpace`, `masterslam`, `chasesight`, `posturefloor`, `lairmaster`, `ogre`, `wolfcloak`, `cowards`.
+### Needs eyes
+- **Does the second wind-up read?** The body runs the shared wind-up pose again over 0.45 s; there is no snap or stamp pose of its own.
+  A stamp that looks like a second sweep may surprise a player standing behind the troll. A stamp pose and a snap pose are the bodies
+  builder's, whenever they choose.
+- **The dungeon's path** (`executeDungeonStrike`) arms the second blow by the same call; `string` drives the world's tick only, and the
+  dungeon suites above (`dungeonpace`, `lairmaster`, `masterslam`) pass without measuring it.
+- **With the heavy, a wolf's or troll's wind-ups are now half something other than one plain blow.** `STRING_ROW.roll` is the one
+  number to change if it is too busy.
 
 ## v80 — Session 1158 — `guardplay`: the guard's heavy blow rolled on the runner's clock (tests only; the kill filed in I)
 `guardplay` was red twice on four CI runs on 18 and 19 Oct, two of them docs-only branches and one main itself (d3a4faa). Each red read the same: the drawn guard's blows took the player from 130 to 0 in 174 ticks and the yield was never offered, where a green run reaches the yield at 18 health in 42 ticks. The QA ledger of 19 Oct 07:20 guessed at S1136's heavy blow and could not test it under FREEZE #441.

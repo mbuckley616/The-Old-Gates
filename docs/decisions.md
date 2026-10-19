@@ -3,6 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### A guard's blow can kill before the yield is offered: should it? (systems builder, Session 1162) — DECISION #456
+QA found it (backlog I, 19 Oct, `tests/guardplay`). When you refuse a guard's fine he draws, and once your health is under 30% he offers the yield (pay double or a night in the cells; backlog B's rule, Session 169). The offer is checked between blows. A guard is tier 3, so on a new character (130 health) his light blow takes 51–59 and his heavy blow (Session 1136, twice the damage, one in four) 102–118. A light blow then a heavy one goes 130 → about 75 → 0: you die without ever being offered the yield. QA counted it in 14 of the first 60 game minutes for Dunmore's guard, so about one fight in four for a new character.
+
+- **A. The blow that crosses the line stops at it** *(recommended)*. While the yield has not yet been offered, a drawn guard's blow that would take you below 30% leaves you just under it (29%), and the offer comes at once. Once you choose *Fight on*, his blows land in full and can kill. The heavy keeps its damage everywhere else.
+- **B. The blow that would kill leaves you at 1 health**, and the offer comes at once. Lower stakes before the offer, but you then pay or go to the cells at 1 health.
+- **C. As now.** Refusing a fine is a fight a new character can lose outright; the yield is offered only if you live to the line.
+
+Recommendation: **A.** The rule says a guard offers terms when you are low; a guard over a fine wants the fine, not a body. A keeps the heavy blow's threat (it still takes you from 75 to the line in one blow) without a death the rule never meant, and it changes nothing after *Fight on*.
+
 ### The gate interiors, for F5 — how does a gate's inside get its size? (the designer, 2026-10-19) — DECISION #448
 Your A on #421 makes a gate's cell 3 m under a 6 m ceiling, which grows today's rooms and corridors to a Skyrim ruin but not to the foundation's halls of 30 to 250 m. The proposal (`docs/design/gate-interiors.md`) asks how every gate, lesser and great, reaches that size and what you do inside one.
 - **A. The grid, grown.** Rooms up to 60 m with vaults to 30 m, still joined by corridors. Two sessions; the cobblestone dungeon at 1.6 times the size.
@@ -41,13 +50,6 @@ Pictures:
 - [The row from 30 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-far.jpg)
 - [One god's wayside shrine, three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside.jpg)
 - [In scale beside a person and the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside-scale.jpg)
-
-### The wolf's snap and the troll's stamp: when does the second blow of a two-hit string come? (systems builder, Session 1140) — DECISION #438
-Combat B's move sets (`docs/design/combat.md`) give every family a third move. Session 1140 built the bandit's feint, the page's delayed swing, under your A on #430: one wind-up in four, with the pose held 0.3 s at its top. Two moves are left: the wolf's *lunge and snap* and the troll's *sweep and stamp*. Both are the page's two-hit string. The wolf's lunge already exists (it leaps up to 1.5 m at the bite, S1041). The page does not say when the second blow comes or what it covers, and a player would feel both. Today a roll is untouchable from 0.08 to 0.30 s.
-
-- **A. The second blow 0.45 s after the first, with its own gold glow in its last 0.15 s** *(recommended)*. 0.45 s is the shortest tell any foe has (TELL_MIN), so the second blow reads as a quick tell of its own. One roll cannot cover both blows: you roll the first and then block or roll the second. Each blow does light damage. The wolf's snap is a second bite at its reach with no second leap. The troll's stamp hits all round it out to 1.6 m, so stepping behind a troll after its sweep does not save you. Like the feint, it comes one wind-up in four.
-- **B. The second blow 0.25 s after the first.** One well-timed roll takes both blows, and a block that is held takes both. The string punishes standing still, not a roll that comes too early.
-- **C. Only the snap and the stamp, with no string.** The wolf's third move is its lunge as it is now, and the troll's is a stamp in place of its sweep one blow in four. This is cheaper, but the page's "two-hit string" is dropped.
 
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
@@ -125,6 +127,7 @@ Combat B's move sets (`docs/design/combat.md`) give every family a third move. S
 - **C. Only the snap and the stamp, with no string.** The wolf's third move is its lunge as it is now, and the troll's is a stamp in place of its sweep one blow in four. This is cheaper, but the page's "two-hit string" is dropped.
 
 Michael: **Second blow 0.45 s later, with its own glow**. (2026-10-18, on #438)
+*Acted on:* built, Session 1162 (systems builder): the wolf's lunge and snap and the troll's sweep and stamp, one wind-up in four, the second blow 0.45 s after the first with its own gold glow; `tests/string`. Issue #438 was already closed.
 
 ### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
 **Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.

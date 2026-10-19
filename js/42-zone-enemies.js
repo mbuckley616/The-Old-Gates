@@ -1235,13 +1235,14 @@ function tickZoneEnemies(dt,now,sc){
         if(e.isBoss && e.bossId==='faolchu' && typeof sndFaolchuBite==='function'){
           sndFaolchuBite();
         }
-        if(_fr.lunge&&foeLunge(e,currentZoneSolid)>0){const _ly=activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,_ly,e.z);e.el.position.set(e.x,_ly+.8,e.z);} /* S1041 — the wolf leaps at the bite */
+        if(_fr.lunge&&e._string!==2&&foeLunge(e,currentZoneSolid)>0){const _ly=activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,_ly,e.z);e.el.position.set(e.x,_ly+.8,e.z);} /* S1041 — the wolf leaps at the bite */
         if(strikeReaches(e)){
           executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
         } else {
           e._heavy = false;
           sndSwing();
         }
+        foeStringNext(e); /* S1162 — the string's second blow: the snap, no second leap; the stamp all round */
       }
     } else if(dist<_fr.engage && e.atkCd<=0){ /* S1041 — F2b: where the tell starts, hull to hull for the sheet's families; a boss's bite its biteRange less its snout */
       // v61c2 — bosses use bossDef.telegraphBase (0.6s for Faolchú) scaled
