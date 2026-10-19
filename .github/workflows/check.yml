@@ -9,6 +9,22 @@ concurrency:
   group: check-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 jobs:
+  # 19 Oct 2026 (Michael: unblock the queue): a pull request that changes only docs/ (the producer's digests and decisions,
+  # the concept artist's prototypes, devlog and backlog) skips the game's suites, which then show as skipped, not failed.
+  # Anything else, and every push to main, runs them all.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.d.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: d
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
+          echo "$files"
+          if [ -z "$files" ] || echo "$files" | grep -qv '^docs/'; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
   parse:
     runs-on: ubuntu-latest
     steps:
@@ -23,6 +39,8 @@ jobs:
       - run: python3 scripts/split.py --check
         continue-on-error: true
   headless:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     # Session 254: the suites run in eight shares side by side. One job running all of them had outgrown its 30 minutes,
     # and every run was cancelled before it could report.
     # 30 Sep 2026 (the split session): 45, not 30. On a slow shared runner five of eight shards ran past 30 minutes
