@@ -703,7 +703,7 @@
         if(kind==='barrel'){const B=kitBarrel(1.75,0x6a4418);g=B.body;g.position.set(sx,y,sz);top=B.top;top.position.set(sx,y+.96,sz);} // S200 — the kit's barrel
         else{g=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),crateMat);g.position.set(sx,y+.4,sz);g.rotation.y=r()*.6;top=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.92),new THREE.MeshLambertMaterial({color:0x5a3e18}));top.position.set(sx,y+.83,sz);top.rotation.y=g.rotation.y;}
         g.castShadow=true;group.add(g);group.add(top);
-        let items=(typeof rollContainerLoot==='function'?rollContainerLoot('barrel',1,null,.9,site.id+':barrel:'+made+':'+lootDay()):[])||[];
+        let items=(typeof rollContainerLoot==='function'?rollContainerLoot('barrel',1,null,.9,site.id+':barrel:'+made+':'+lootDay(),worldTierAt(site.x,site.z)):[])||[];
         items=items.filter(it=>it&&it.dmg==null&&it.def==null&&!it.slot&&it.type!=='weapon'&&it.type!=='armor');
         if(!items.length)items.push(pick(r,[{name:'Tallow Candle',ico:'🕯️',type:'misc',weight:.2,sellMult:.3,buyPrice:4},{name:'Coil of Rope',ico:'🪢',type:'misc',weight:1,sellMult:.3,buyPrice:9},{name:'Salt Sack',ico:'🧂',type:'misc',weight:.6,sellMult:.3,buyPrice:6},{name:'Hard Bread',ico:'🍞',type:'potion',heal:6,weight:.3,sellMult:.2,buyPrice:3},{name:'Wax-sealed Letter',ico:'✉️',type:'misc',weight:.05,sellMult:.5,buyPrice:12},{name:'Tin Cup',ico:'🥛',type:'misc',weight:.3,sellMult:.3,buyPrice:3}]));
         items.forEach(it=>{if(it.qty==null)it.qty=1;});
@@ -1141,11 +1141,13 @@
     else if(kind==='ship'){ctx.beginPath();ctx.moveTo(-8,2);ctx.lineTo(8,2);ctx.lineTo(6,6);ctx.lineTo(-6,6);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillRect(-.6,-9,1.2,11);ctx.beginPath();ctx.moveTo(.6,-8);ctx.lineTo(7,-2);ctx.lineTo(.6,-1);ctx.closePath();ctx.fill();ctx.stroke();}
     ctx.restore();
   }
+  /* S1065 — the door's grade on its subtitle (Very Easy to Very Hard), its place's and fixed, so cached on the door by where it stands */
+  function mapDoorGrade(e,p){if(typeof doorGrade!=='function')return '';const k=p.x+','+p.z;if(e._mapGradeAt!==k){e._mapGradeAt=k;e._mapGrade=(DIFF_SCALE[doorGrade(e,p.x,p.z)]||{}).label||'';}return e._mapGrade?' · '+e._mapGrade:'';}
   function mapEntries(cell){
     const out=[];const c=cell;if(!c)return out;
     const SUB={glade:'Glade',shrine:'Shrine',lair:'Lair',tower:'Spire',bcamp:'Bandit camp',bridge:'Bridge'};
     c.sites.forEach(t=>{if(t.kind==='portal')return;out.push({id:t.id,name:t.name,kind:t.kind,x:t.x,z:t.z,sub:t.kind==='glade'&&typeof gladeDoubled==='function'&&gladeDoubled(t)?'Glade · grown thick since the beast died':SUB[t.kind]||(t.kind.charAt(0).toUpperCase()+t.kind.slice(1)),major:t.kind==='city'||t.kind==='town'||t.kind==='port'||t.kind==='garrison'||t.kind==='tower'||t.kind==='shrine'});});
-    c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`,major:e.kind==='fort_door'});});
+    c.doors.forEach(e=>{if(e.wet)return;const p=dungeonWorldPos[e.seed]||(e.zone==='gen'?{x:e.x,z:e.z}:null);if(!p)return;out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'Old gate'),kind:e.kind==='fort_door'?'fort':'cave',x:p.x,z:p.z,sub:`${e.kind==='fort_door'?'Fort':'Old gate'} · ${e.theme}`+mapDoorGrade(e,p),major:e.kind==='fort_door'});});
     c.peaks.forEach(p=>out.push({id:p.id,name:p.name,kind:'peak',x:p.x,z:p.z,sub:'Mountain',major:true}));
     c.lakes.forEach(l=>out.push({id:l.id,name:l.name,kind:'lake',x:l.x,z:l.z,sub:'Lake',major:true}));
     const wk=worldState.ship&&worldState.ship.sunk;if(wk&&wk.x>=c.ox&&wk.x<c.ox+SIZE&&wk.z>=c.oz&&wk.z<c.oz+SIZE)out.push({id:'shipwreck',name:`The wreck of the ${worldState.ship.name||SHIP.name}`,kind:'ship',x:wk.x,z:wk.z,sub:'Where she went down',major:true});
@@ -1495,7 +1497,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     (INT_BEDS||[]).forEach(r=>S(r,['x','z','y','cz']));
     (INT_DOORS||[]).forEach(r=>{S(r,['x','z','y']);S(r.sol,BOX);S(r.box,BOX);});
     (INT_NPCS||[]).forEach(r=>S(r.box,BOX));
-    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,house._hatch])S(r,['x','z','y']);
+    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch])S(r,['x','z','y']);
     if(HATCH.active||HATCH.x!=null)S(HATCH,['x','z','y']);
     house.intW*=k;house.intD*=k;
   }
@@ -1544,7 +1546,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const SOL=[];
     // solid(x,z,hw,hd,top): a block you can step or jump onto (foothold at `top`).
     const solid=(x,z,hw,hd,top)=>{const t=(top==null?.62:top)*F;SOL.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y0:-.5,y1:t});FOOTHOLDS.push({x0:x-hw,x1:x+hw,z0:z-hd,z1:z+hd,y:t});};
-    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;
+    INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;intBedPos=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     const bedOwner=type==='inn'?'inn':type==='home'?'home':(type==='guild_f'||type==='guild_m')?'guild':'free';
     // S289 — the room's nation (the furniture's wood) and a seed from the house id; S293: declared before the gallery uses it
     const FN=nationAt(house.doorX,house.doorZ),FSEED=String(house.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13)%100000;
@@ -1704,7 +1706,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       solid(W/2,3.4,2.6,.45,1.05);
       if(F_){for(let k=0;k<3;k++)solid(2+k*1.6,5.2,.25,.25,1.8);{const z=D*.3;solid(W/2,z,3,.65,.76);[-1,1].forEach(sd=>solid(W/2,z+sd*1.05,2.9,.2,.44));}}
       else{light(W-2.4,1.3,2.4,0x60ff80,1.0,5);solid(W-2.4,2.4,.4,.4,1.0);solid(W/2,D*.3,2.5,.6,.76);
-        for(let x=W/2-4;x<=W/2+4;x+=8)for(let z=6;z<D-3;z+=5)solid(x,z,.4,.4,H/F);}
+        for(let x=W/2-4;x<=W/2+4;x+=8)for(let z=6;z<D-3;z+=5)solid(x,z,.4,.4,H/F);
+        /* S1121 — the first of the two bookcases on the east wall (furnKit's guildM puts it there): a book can be taken from it (shelfPrompt, 86) */
+        {const off=Math.min(0,D*.52-.25-(D*.35+3.85));INT_SHELF={x:W-.2,z:D*.35+off-1.95,y:0,id:house.id,house};}}
       // ground floor rooms: the hall (north) holds desk/board/training; a
       // cross wall with a central doorway; south of it a corridor with two
       // dormitory rooms each side (2 beds each) and the front door at the end.
@@ -1860,7 +1864,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitShell){const beams=[];for(let i=1;i<=(tower?0:nb);i++)beams.push(D*i/(nb+1));const wins=[];for(let z=D*.3;z<Math.min(D*.9,D-1.05);z+=Math.max(3,D*.3))wins.push(z);
       shellFrame(sc_,{W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TALLZ,SOL,FOOTHOLDS});}
     // S896 (F2a) — the room was laid out in the old unit; it stands at true size from here on (scaleRoom)
-    const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;
+    const KS=type==='tower'?1:KR;scaleRoom(sc_,house,KS);npc.x*=KS;npc.z*=KS;npc.maxZ*=KS;W*=KS;D*=KS;house._roomH=H*KS; /* S1009 — the room's true height, floor to ceiling: the head stops there (headCeil) */
     // keeper / resident — only if the schedule says they're indoors right now
     // (the same person you see in the street is the one behind the counter).
     if(npcInsideNow(house)){
@@ -2043,7 +2047,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       if(t.kind==='relic'&&!t.got&&!t._obj){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.28,0),new THREE.MeshBasicMaterial({color:0x9ad0ff}));m.position.set(t.x,worldH(t.x,t.z)+.5,t.z);sc.add(m);const l=regLight(0x80c0ff,1.2,6,'task');l.position.copy(m.position);t._obj={m,l};pickups.push({id:t.id+':pickup',x:t.x,z:t.z,task:t});} /* S518 — a task's relic is <task id>:pickup */
       if((t.kind==='beast'||t.kind==='wizard'||t.kind==='creature')&&!t.spawned&&!t.done&&Math.hypot(px-t.sx,pz-t.sz)<220){
         const name=t.kind==='beast'?t.beast:t.kind==='wizard'?'Rogue Mage':'Shore Wisp';
-        const fid=t.id+':foe:0'; /* S504 — a job's foe is the job and its index (co-op rules) */ const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,level,'hard',seededRng('variant',fid)):null)),fid);e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
+        const fid=t.id+':foe:0'; /* S504 — a job's foe is the job and its index (co-op rules) */ const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,t.sx,t.sz,name,typeof pickVariant==='function'?pickVariant(name,tierLevel(worldTierAt(t.sx,t.sz)),tierDiffKey(worldTierAt(t.sx,t.sz),1)/* S1060 — a grade above the place's (the enemies-by-place sheet); it was 'hard' everywhere */,seededRng('variant',fid)):null)),fid);e._guildTag=t.id;e.hp=Math.round(e.hp*1.6);e.maxHp=e.hp;ZONES.world.enemies.push(e);t.spawned=true;showMsg(`${name} sighted.`,'#ffb060');
       }
       if(t.kind==='raid'&&!t.spawned){const S=SETTLE.get(t.siteId);if(S&&Math.hypot(px-S.site.x,pz-S.site.z)<150){t.spawned=true;S.raid=true;const site=S.site;const pr=seededRng('place',t.id);for(let i=0;i<t.count;i++){const ang=pr()*Math.PI*2;const ex=site.x+Math.cos(ang)*(site.pad+8),ez=site.z+Math.sin(ang)*(site.pad+8);const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Bandit',null)),t.id+':foe:'+i);e._guildTag=t.id;e.alert=true;ZONES.world.enemies.push(e);}showMsg(`Raiders! ${t.count} of them. Hold ${site.name}.`,'#ff8060');}}
     }
@@ -2060,7 +2064,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(/:c\d+$/.test(String(t.id))&&st.commissions){const at=+String(t.id).split(':c').pop();st.commissions=st.commissions.filter(x=>x!==at);}
     if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}. Handed back.`);qJournal(t,'lapsed',`Handed back to the ${GUILD_DEF[g].name}.`);
     return ({gatelander:"Better a thing set down than a thing dropped. It goes back on the board, and there'll be another when you want one.",markman:"Aye. Back on the board. Come back when you want another.",aurennais:"Then the contract is void, Master, and nothing is owed on either side. It returns to the board; another can be drawn up when you wish.",oldblood:"Then it goes back. Someone else will carry it. Come when you want another."})[gp]||"Then it goes back on the board. Come back when you want another.";}
-  function offer(g,site){gLapse();const st=gstate()[g];if(st.active)return `You still owe us: ${st.active.short}. ${progressLine(st.active)}.`;const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
+  const OWE_LINES={gatelander:(s,p)=>`You'll not plough two fields with the one ox. Yours is still on the board: ${s}. ${p}.`,markman:(s,p)=>`You still owe us: ${s}. ${p}.`,aurennais:(s,p)=>`Forgive me, Master; one contract is closed before the next is entered. Yours is still open: ${s}. ${p}.`,oldblood:(s,p)=>`Yours is not done: ${s}. ${p}.`};
+  function offer(g,site,gp){gLapse();const st=gstate()[g];if(st.active)return (OWE_LINES[gp]||OWE_LINES.markman)(st.active.short,progressLine(st.active));const cm=commissionFor(g,site);const t=cm||gDated(genTask(g,site),g,site);st.active=t;if(typeof addLog==='function')addLog('📜',`${GUILD_DEF[g].name}: ${t.short}.`);qJournal(t,'accept',t.desc);showMsg(`New task: ${t.short}`,'#e8d8a0');return (t.title?`${t.title}. `:'')+t.desc+(t.due?` Pay is ${t.gold} gold; ${Math.round(t.gold*1.25)} if it is done by ${calDateLine(t.due-1)}. After that, the guild gives it to someone else.`:` Pay is ${t.gold} gold.`);}
   // S254 — the guild head greets in the voice of their own people (quest review, run 1, finding 1)
   const GUILD_GREET={
     guild_f:{
@@ -2078,5 +2083,5 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const gr=rngFor(site.c*31+(g==='guild_f'?101:211),site.r*17+5); // S172 — the same head every visit (was Math.random: a new name and face each time)
     const gp=peopleOfSite(site);const gb=NAMES[PEOPLES[gp].names]||NAMES.irish;keeper=pickFor(gr,gr()<.4?gb.f:gb.m,true);const tk='tw:'+g,tr=_curNM&&_curNM[tk]?String(_curNM[tk]).split('|'):null;const tw=noteName(keeper,true,tr&&tr[0]===keeper?tr[1]:null);if(_curNM)_curNM[tk]=keeper+'|'+tw;
     return Object.assign({name:keeper,_twin:tw||undefined,_siteId:site.id,people:gp,sCol:pick(gr,PEOPLES[gp].skin),hairCol:pick(gr,PEOPLES[gp].hair),bodyScale:[PEOPLES[gp].width/PEOPLES[gp].height,1,PEOPLES[gp].width/PEOPLES[gp].height],role:gd.role,ico:g==='guild_f'?'⚔':'✨',greeting:(GUILD_GREET[g][gp]||GUILD_GREET[g].markman),
-      get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site)},{label:"It's done.",quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&taskDone(t);},fn:()=>turnIn(g)},{label:'I can\u2019t do it.',quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&!taskDone(t);},fn:()=>handBack(g,gp)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} task${gstate()[g].done===1?'':'s'} done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_f'&&typeof cloakGuildTopics==='function')base.push(...cloakGuildTopics(site,gp)); /* S789 — the cloak's claimant */if(g==='guild_m')base.push({label:'Browse your wares.',trade:true}); /* S566 — robes at the Mages' Guild (#163) */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));return base.filter(t=>!t.avail||t.avail()).concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
+      get topics(){const base=[{label:'Any work?',quest:true,fn:()=>offer(g,site,gp)},{label:"It's done.",quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&taskDone(t);},fn:()=>turnIn(g)},{label:'I can\u2019t do it.',quest:true,avail:()=>{gLapse();const t=gstate()[g].active;return !!t&&!taskDone(t);},fn:()=>handBack(g,gp)},{label:'My standing?',quest:true,fn:()=>`${rankOf(g)} of the ${gd.name}. ${gstate()[g].done} task${gstate()[g].done===1?'':'s'} done.`}];{const w=directionTopics(site,this);if(w.length)base.push({label:'Where can I find \u2026',folder:true,response:'Outside these walls? Ask, then.',follow:w});} /* v80 S138 */if(g==='guild_f'&&typeof cloakGuildTopics==='function')base.push(...cloakGuildTopics(site,gp)); /* S789 — the cloak's claimant */if(g==='guild_m')base.push({label:'Browse your wares.',trade:true}); /* S566 — robes at the Mages' Guild (#163) */if(g==='guild_m'&&typeof spellShopTopics==='function')base.push(...spellShopTopics(Math.min(4,Math.floor(gstate()[g].done/3))),...rubbingTopics(site));return base.filter(t=>!t.avail||t.avail()).concat(this._tail);},_tail:[{label:'What is this place?',response:g==='guild_f'?"The Fighters' Guild. We take contracts the watch won't: beasts, raiders, old doors that need emptying. Beds upstairs for members.":"The Mages' Guild. Ingredients, relics, errands that need a spell at the end of them. There are beds if you've nowhere else."},{label:'Farewell.',bye:true}]},extra||{});
   }

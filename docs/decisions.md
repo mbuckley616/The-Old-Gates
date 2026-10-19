@@ -3,8 +3,99 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
+**Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
 
+The prototype (`docs/prototypes/levelup/shrines.html`, three.js 0.170) builds the niche in metres:
+- **The niche:** a stele 1.0 m wide and 2.55 m to the top of its arch, the recess 0.62 m wide with its sill at 1.03 m, and a figure 0.95 m tall. The god's name is cut under the sill, its icon is in a roundel over the arch, and a stoup stands before it with its rim at 0.68 m.
+- **The Gatelands:** limewashed, with rags on the niches and on a thorn, a holy well, a ring-headed high cross and a holed ring-stone.
+- **The Mark:** dark granite, each niche under its own shingled housing with crossed bargeboards ending in beast heads. An iron lamp that is never let out hangs under each, and an oath stone with an iron ring stands before them.
+- **Aurenne:** plastered, with a blue-glazed cupola and glazed tile in the recess. The icons are gilt, behind iron railings with a gate, with the Church's tithe box and its notice (*no rubbings to be taken*).
+- **The Guest's niche:** struck back to rough stone on two islands. In Aurenne it is bricked up and plastered over, as the Church bricked the Guest's chapel (canon §4.2).
+
+A row of seven costs 21,800 (the Mark) to 32,600 (the Gatelands, with its well and thorn) triangles in 25 to 34 draws. One niche with its figure is about 2,500 to 3,000.
+
+Where should the six stand together?
+
+- **A. One god to a shrine, as today.** Every wayside shrine is one god's niche in its island's dress, with the Guest's struck recess, the size of a hand, low on its plinth. The row of six is not built.
+- **B. The six together, everywhere.** Every shrine is OG-113's row of seven. You choose the god at the basin, one prayer a day at that shrine, as now.
+- **C. By place** *(recommended)*. A wayside shrine on a road is one god's niche (A). The row of seven stands once in each town, at its edge or where its roads meet, and there you choose the god.
+
+Recommendation: **C.** The Guest's absence reads only in a row. Among six full niches an empty seventh is plainly missing, but beside one god an empty recess reads as damage. The town's row puts every god within reach of home without a temple. The wayside niches keep a reason to travel for one god's boon and its own day (S497's god's day). The boons, the once a day and the Weaver's rubbing are unchanged; only which god you ask at a town's row is new. If a dressing looks wrong (the Mark's beast heads, Aurenne's railings, the Gatelands' high cross), say which. That is a note, not a reason for A or B.
+
+Pictures:
+- [The Gatelands, the row](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-gatelands.jpg)
+- [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-mark.jpg)
+- [The Mark at dusk, the lamps lit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-mark-dusk.jpg)
+- [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-aurenne.jpg)
+- [The figures, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-figures.jpg)
+- [The Guest's niche on each island](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-guest.jpg)
+- [The row from 30 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-far.jpg)
+- [One god's wayside shrine, three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside.jpg)
+- [In scale beside a person and the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside-scale.jpg)
+
+### The wolf's snap and the troll's stamp: when does the second blow of a two-hit string come? (systems builder, Session 1140) — DECISION #438
+Combat B's move sets (`docs/design/combat.md`) give every family a third move. Session 1140 built the bandit's feint, the page's delayed swing, under your A on #430: one wind-up in four, with the pose held 0.3 s at its top. Two moves are left: the wolf's *lunge and snap* and the troll's *sweep and stamp*. Both are the page's two-hit string. The wolf's lunge already exists (it leaps up to 1.5 m at the bite, S1041). The page does not say when the second blow comes or what it covers, and a player would feel both. Today a roll is untouchable from 0.08 to 0.30 s.
+
+- **A. The second blow 0.45 s after the first, with its own gold glow in its last 0.15 s** *(recommended)*. 0.45 s is the shortest tell any foe has (TELL_MIN), so the second blow reads as a quick tell of its own. One roll cannot cover both blows: you roll the first and then block or roll the second. Each blow does light damage. The wolf's snap is a second bite at its reach with no second leap. The troll's stamp hits all round it out to 1.6 m, so stepping behind a troll after its sweep does not save you. Like the feint, it comes one wind-up in four.
+- **B. The second blow 0.25 s after the first.** One well-timed roll takes both blows, and a block that is held takes both. The string punishes standing still, not a roll that comes too early.
+- **C. Only the snap and the stamp, with no string.** The wolf's third move is its lunge as it is now, and the troll's is a stamp in place of its sweep one blow in four. This is cheaper, but the page's "two-hit string" is dropped.
+
+### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
+**The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
+
+**Options.**
+- **A (recommended).** Old gates at **3 m** (corridors 3 m, rooms 9 to 36 m) with a gate's ceiling at 6 m (cavernous; `DUN_FLOOR_H` 3.2 today, the sheet's 3.6 is for the typical size); forts' interiors, lairs and dens at **2.5 m** (the designer's B: rooms 7.5 to 30 m, ceiling 3.6). One grid, two cells, read from the portal's kind.
+- **B.** **3 m everywhere**, ceiling 3.6, as #300's C reads alone. Simplest; a fort's cellar is as roomy as a gate.
+- **C.** Old gates at 3 m (ceiling 6 m), forts and lairs at **2 m**: a squeeze, the third-person camera tight in their corridors.
+
+**The build.** Whichever is chosen, the dungeon is laid out in 1-unit cells throughout `52-dungeon-gen.js`, `56-dungeon-build.js` and `68-dungeon-misc.js` (the look builder's files and the systems builder's), so the plan is F2a's: build in cells and scale the dungeon whole at the end, with every record of it (solids, footholds, foes, traps, doors, stairs). It touches shared files, so it may want a deep-work card or a FREEZE; the producer's call.
+
+Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 ## Answered
+### The six gods' shrines by island: one god a shrine, the six everywhere, or by place? (the concept artist, 18 Oct 2026) — DECISION #439
+**Backlog L9, the six gods' shrines dressed by island (OG-113, the concept artist, 18 Oct 2026).** OG-113 draws one form for every island: a carved niche for each god, holding a robed figure with the god's icon (a wolf for Na Beithígh), a candle and a basin, with a seventh niche beside them whose figure has been chiselled away, the Guest's. Each island then dresses it its own way. The game today has one god per shrine: a round white colonnade with a dome, the god rolled from the site.
+
+The prototype (`docs/prototypes/levelup/shrines.html`, three.js 0.170) builds the niche in metres:
+- **The niche:** a stele 1.0 m wide and 2.55 m to the top of its arch, the recess 0.62 m wide with its sill at 1.03 m, and a figure 0.95 m tall. The god's name is cut under the sill, its icon is in a roundel over the arch, and a stoup stands before it with its rim at 0.68 m.
+- **The Gatelands:** limewashed, with rags on the niches and on a thorn, a holy well, a ring-headed high cross and a holed ring-stone.
+- **The Mark:** dark granite, each niche under its own shingled housing with crossed bargeboards ending in beast heads. An iron lamp that is never let out hangs under each, and an oath stone with an iron ring stands before them.
+- **Aurenne:** plastered, with a blue-glazed cupola and glazed tile in the recess. The icons are gilt, behind iron railings with a gate, with the Church's tithe box and its notice (*no rubbings to be taken*).
+- **The Guest's niche:** struck back to rough stone on two islands. In Aurenne it is bricked up and plastered over, as the Church bricked the Guest's chapel (canon §4.2).
+
+A row of seven costs 21,800 (the Mark) to 32,600 (the Gatelands, with its well and thorn) triangles in 25 to 34 draws. One niche with its figure is about 2,500 to 3,000.
+
+Where should the six stand together?
+
+- **A. One god to a shrine, as today.** Every wayside shrine is one god's niche in its island's dress, with the Guest's struck recess, the size of a hand, low on its plinth. The row of six is not built.
+- **B. The six together, everywhere.** Every shrine is OG-113's row of seven. You choose the god at the basin, one prayer a day at that shrine, as now.
+- **C. By place** *(recommended)*. A wayside shrine on a road is one god's niche (A). The row of seven stands once in each town, at its edge or where its roads meet, and there you choose the god.
+
+Recommendation: **C.** The Guest's absence reads only in a row. Among six full niches an empty seventh is plainly missing, but beside one god an empty recess reads as damage. The town's row puts every god within reach of home without a temple. The wayside niches keep a reason to travel for one god's boon and its own day (S497's god's day). The boons, the once a day and the Weaver's rubbing are unchanged; only which god you ask at a town's row is new. If a dressing looks wrong (the Mark's beast heads, Aurenne's railings, the Gatelands' high cross), say which. That is a note, not a reason for A or B.
+
+Pictures:
+- [The Gatelands, the row](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-gatelands.jpg)
+- [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-mark.jpg)
+- [The Mark at dusk, the lamps lit](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-mark-dusk.jpg)
+- [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-row-aurenne.jpg)
+- [The figures, close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-figures.jpg)
+- [The Guest's niche on each island](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-guest.jpg)
+- [The row from 30 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-far.jpg)
+- [One god's wayside shrine, three ways](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside.jpg)
+- [In scale beside a person and the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept/docs/prototypes/levelup/shrines-wayside-scale.jpg)
+
+Michael: **By place: one niche on roads, the row in each town** — Would it make sense to have the rows in or near churches? (2026-10-18, on the control room)
+*Acted on:* recorded by the producer; the row of seven stands once per town (his note asks for it in or near the town's church), each wayside shrine one god's niche. Issue #439 closed. For the look builder (backlog L9).
+
+### The wolf's snap and the troll's stamp: when does the second blow of a two-hit string come? (systems builder, Session 1140) — DECISION #438
+Combat B's move sets (`docs/design/combat.md`) give every family a third move. Session 1140 built the bandit's feint, the page's delayed swing, under your A on #430: one wind-up in four, with the pose held 0.3 s at its top. Two moves are left: the wolf's *lunge and snap* and the troll's *sweep and stamp*. Both are the page's two-hit string. The wolf's lunge already exists (it leaps up to 1.5 m at the bite, S1041). The page does not say when the second blow comes or what it covers, and a player would feel both. Today a roll is untouchable from 0.08 to 0.30 s.
+
+- **A. The second blow 0.45 s after the first, with its own gold glow in its last 0.15 s** *(recommended)*. 0.45 s is the shortest tell any foe has (TELL_MIN), so the second blow reads as a quick tell of its own. One roll cannot cover both blows: you roll the first and then block or roll the second. Each blow does light damage. The wolf's snap is a second bite at its reach with no second leap. The troll's stamp hits all round it out to 1.6 m, so stepping behind a troll after its sweep does not save you. Like the feint, it comes one wind-up in four.
+- **B. The second blow 0.25 s after the first.** One well-timed roll takes both blows, and a block that is held takes both. The string punishes standing still, not a roll that comes too early.
+- **C. Only the snap and the stamp, with no string.** The wolf's third move is its lunge as it is now, and the troll's is a stamp in place of its sweep one blow in four. This is cheaper, but the page's "two-hit string" is dropped.
+
+Michael: **Second blow 0.45 s later, with its own glow**. (2026-10-18, on #438)
+
 ### Room for a town's church and keep on the new look: give up houses, lay the towns out around them, or smaller buildings? (look builder, Session 1127) — DECISION #433
 **Card F6: room for a town's church and keep on the new look (look builder, Session 1127).** You chose B for the church (#410, a square west tower) and B for the keep (#416, the tower in its bawn). Both are now far bigger than the lots the generator gives them.
 - **The church** is 8.4 m wide and 27.4 m from the tower's face to the chancel's gable (22.6 m with a nave of two bays). Its lot is about 5 to 7 m on a side.
@@ -301,6 +392,26 @@ Pictures:
 - [from the quay's stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/backlog/docs/prototypes/levelup/undersea-above.jpg)
 Michael: **A, the water under the sea by island** (18 Oct 2026, on #419). Nothing to change: the undersea page's three waters stand as drawn (`undersea.html?water=green|mark|clear`); the game's undersea is card F11's.
 
+## Answered
+### The foes' heavy attacks: how often, and how does the player tell one from a light blow? (systems builder, 18 Oct 2026) — DECISION #430
+Combat B (your B, 28 Sep; `docs/design/combat.md`) gives every family a light attack, a heavy one and a third move. The resolver is on main with a `heavy` column in `FOE_ATTACKS`, and nothing fills it yet. Today every foe has one blow, with a tell of 0.45 to 0.9 s by kind, and a held block breaks only when your posture runs out. Guard's *Iron wall* (75) and Armour's heavy hit for *Hold the line* both wait on it. The page sets the heavy's numbers: a 0.9 to 1.1 s tell, twice the damage, twice the posture, a held block broken, a parry still good. It leaves two things a player would feel: how often a foe picks the heavy, and how you read it before it lands.
+
+- **A. One blow in four, read by its length and a red glow** *(recommended)*. Each wind-up is a seeded roll on the foe and the blow's count (co-op rule): 25% heavy, never twice running. Light tells stay as built (0.45 to 0.9 s by kind). The heavy is 1.0 s, or the kind's tell + 0.35 s if that is longer, on the same wind-up pose held deeper, with the last 0.15 s glow red, not gold. The bodies builder can add a heavy pose later. First session: humanoids and wolves (the page's "wolves and bandits first").
+- **B. Heavy only at range or into a block.** A foe swings heavy when you are holding block, or as an opener from just outside its reach. It punishes turtling, and a fighter who never blocks rarely sees one.
+- **C. Wait for the poses.** No heavy until the bodies builder makes a heavy wind-up pose for each family, so it reads by shape alone. *Iron wall* waits with it.
+
+The third moves (the wolf's lunge-and-snap, the bandit's feint, the troll's stamp) follow in a later session under the same answer.
+
+Michael: **A, one blow in four, read by length and a red glow** (18 Oct 2026, on #430). *Systems builder, Session 1136:* built for humanoids and wolves (`FOE_ATTACKS`' heavy column, `foeWindUp`, `tests/heavyblow`); Iron wall is live with it. A correction to the question: the light tell's glow was red (S282), not gold, so the light glow is now gold so that the heavy's red reads.
+
+### Gold piles by place too? (systems builder, 18 Oct 2026) — DECISION #431
+Your A on #394 put a loot roll's metal and a lair hoard's gold on the place's tier. A gold pile in a chest, a barrel or on a body (`rollGold`, `14-items.js`) still adds your level. A chest gives 4–12 + your level, a treasure chest 8–18 + 1.5 × your level, a body 2–8 + 0.7 × your level and a barrel 1–6 + half your level. At level 25 a coast chest holds 29 to 37 gold, and at level 1 a tier-3 chest holds 5 to 13. Two friends opening one chest in a shared world would find different piles.
+
+- **A. By place** *(recommended)*. The level term reads the place's tier level (1, 6, 11 or 16), as the metal does. A coast chest holds 5 to 13 at any level, and a tier-3 dungeon's 15 to 23. Fortune's 1% a point and the gold-find buff stay as they are.
+- **B. By level, as now.** Gold keeps up with what things cost you, wherever you are.
+- **C. By place, plus a little of the level.** As A, plus a quarter of your level past the tier's own, so late gold stays worth bending down for.
+
+Michael: **A, gold by place** (18 Oct 2026, on #431). *Systems builder, Session 1135:* built; `rollGold` reads the place's tier level (`lootLevel`), `tests/goldtier`.
 Michael: **Townhouses 8 m deep where the row behind allows**. (2026-10-18)
 
 ### The Gatelands' town church on the new look: a round tower, a west tower, or a bellcote? (look builder, Session 1087) — DECISION #410
@@ -591,6 +702,20 @@ As drawn it has no inside beyond the hall: OG-121's other forts have "lower leve
 - **B. A sea-stair** *(recommended)*: a door in the rock behind the hall opens on a stair cut down inside the cliff, about 30 m, with turns and landings lit by slits in the face. It comes out in a sea cave with a boat landing, the fort's way to the water. That gives it a lower level to explore, as the card asks.
 - **C. A store under the hall:** a rock-cut cellar under the hall's floor, reached by a hatch. It is smaller than B, with no way to the sea.
 ## Answered
+### Indoors, does a counter hide you when you crouch behind it? (systems builder, Session 1105) — DECISION #420
+**The question.** F2b's build sheet (`docs/design/scale-numbers-build.md`, *Movement*) puts the indoor sight line at your eye, 1.6 standing and 1.1 crouched, and gives the reason *a counter (0.95) hides you only crouched*. Session 1105 built the eye. But a counter's top (0.95) is under both eyes, and the sight line has only ever been blocked by walls (solids 1.8 m tall or more) and shut doors, so no counter hides you in either posture, before or after. Making a counter hide a crouched player is a new rule of what hides you indoors (a shopkeeper's or a sleeper's witness, a room's foe).
+
+**Options.**
+- **A (recommended).** Crouched, a solid at least counter height (0.9 m) hides you when you are within 1 m of it on the far side from the watcher: a counter, a chest, a bed's foot, a barrel. Standing, only walls and doors hide you, as now. One check in `intSightLine`; `sightline` measures it.
+- **B.** Leave the rule as it stands: only walls and shut doors hide you, at either eye. The sheet's counter line is dropped.
+- **C.** Crouched, any solid taller than half the crouched eye (0.55) between you and the watcher hides you, wherever it stands in the line. Simpler, but a low table across the room would hide you from a guard at the door.
+
+The systems builder will build whichever is chosen; nothing waits on it but the sheet's one line.
+
+Michael: **A, crouched, cover close by hides you.** (2026-10-18, on #420)
+
+*Built, Session 1110 (systems builder):* `intSightLine` takes a fifth argument, `cover`, which the two witness checks pass (the keeper or resident, and the room's people). Crouched, a solid from your floor to 0.9 m or more, within 1 m of you on the line, blocks it. Lock-on and E's aim never ask for cover. `tests/sightline`.
+
 ### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
 The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
 - **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.
@@ -625,6 +750,61 @@ Michael: **Lift the freeze until Systems lands** (2026-10-16)
 
 Acted (the producer, 16 Oct 19:20 Central): FREEZE #381 closed. The systems builder fixes the rematch next run; the fixed head comes back as a fresh merge card for his tap; F3 (card `f3-land`) is set queued once Systems is on main and reopens its freeze then. Producer PR #384 still carries bf251d1 and is not merged until then.
 
+### Draw cut, Ringing, Throw and Catch the blade: build what each needs, or other perks? (systems builder, Session 1051) — DECISION #399
+Sessions 1048 to 1051 built the Arms perks that combat's resolver made possible. Four of the build sheet's Arms perks name something the game does not have, or already does. The Skills tab shows them as *not yet in the game*.
+
+- **Draw cut (Blade 25): "the first swing from a sheathed blade does ×2 posture damage".** Nothing is sheathed today. A weapon in your hand is always drawn.
+- **Ringing (Blunt 50): "a power hit breaks a raised shield in one blow".** Every power hit already does this, whatever the weapon (since v65). A Shieldbearer's guard then comes back up.
+- **Throw (Hand-to-hand 50): "a punch on a staggered foe knocks it down".** No foe can be knocked down. A foe is staggered or it is not.
+- **Catch the blade (Hand-to-hand 75): "a perfect parry bare-handed knocks a one-handed weapon from the foe's grip".** A bare-handed parry works today, but a foe has no weapon to lose: its blow is its family's row, whatever it holds.
+
+What should the four be?
+- **A. Build the small rule each needs, then the perk** *(recommended)*.
+  - *Draw cut*: a blade is sheathed after 5 s with no swing and no foe alert within 14 m (the lock-on's range). The first swing after that drains ×2 posture.
+  - *Ringing*: the shield it breaks stays down for the rest of the fight, where today it comes back up.
+  - *Throw*: the foe falls for 1.5 s, open to a finisher from any side.
+  - *Catch the blade*: an armed humanoid parried bare-handed drops its weapon and fights on with its fists, at half its blow and the fists' reach.
+- **B. Other perks under the same names**, with no new rule:
+  - *Draw cut*: the first swing of a fight drains ×2 posture.
+  - *Ringing*: a mace's guarded hit drains ×2 posture.
+  - *Throw*: a punch on a staggered foe stretches the stagger by 1 s.
+  - *Catch the blade*: a bare-handed held block takes a quarter less.
+- **C. Leave them** until combat's later sessions, which add the heavy attacks, and decide then.
+
+A gives each perk the change of play the sheet means, at one small rule apiece; the sheathing rule is the largest of the four. B ships now but makes Ringing and Throw near copies of Weight and Daze.
+Michael: **A, build the small rule each needs, then the perk** (2026-10-17, issue #399), with: "Let’s add a ‘sheath’ button where you can sheath your equipped weapon. Torches or shields in your off hand stay equipped and in hand."
+
+*Building, systems builder:* Ringing, Session 1077 (`tests/perkring`); Throw, Session 1078 (`tests/perkthrow`); Catch the blade, Session 1079 (`tests/perkcatch`). Draw cut with the sheath button, Session 1080 (`tests/sheath`). All four built.
+
+
+### Town jobs and the war's camps still count by your level — by place too? (systems builder, Session 1066) — DECISION #405
+Under Michael's A on #373, no foe in a chunk, lair, commission or dungeon reads your level any more (`tierlevelfree`, 7/7). Two places outside the build sheet still do:
+- **A town's jobs** (`townQuestFor`): a cull asks for 4 + level ÷ 3 beasts and a road job's camp holds 3 + level ÷ 3 bandits. The pay is 40 + 30 × (level ÷ 3). At level 1 that is 4 beasts, 3 bandits and 40–69 gold; at level 30 it is 14, 13 and 340–369.
+- **The war's camps:** a siege camp holds 6 + level ÷ 3 bandits, and an occupation 5 + level ÷ 4.
+
+So two friends in one town, at levels 4 and 22, are offered different jobs, which breaks the co-op rule.
+- **A. Counts by place, pay by level** *(recommended)*: each count reads the tier's level where the job or camp stands, as the traps do (S1061). A coast cull asks for 4 and a Wastes cull for 7, at any level. The pay waits on #394.
+- **B. Counts and pay by place:** the same, and the pay reads the tier's level too (40–69 on the coast, 130–159 in the Wastes).
+- **C. Leave both.** They are jobs and the war, not a place's foes.
+
+A keeps the sheet's rule, one place gives one fight, without deciding money ahead of #394.
+Michael: **Counts by place, pay by level**. (2026-10-17, issue #405)
+
+*Built, Session 1076 (systems builder):* a cull's and a road camp's counts read the tier's level where they stand, a siege camp's and an occupation's their town's; the pay is unchanged. `tests/jobcount`.
+
+
+### Enemies by place — does the loot follow the place too? (the designer, 2026-10-17) — DECISION #394
+The build sheet (`docs/design/enemies-by-place-build.md`) settles what is left of your A on #373 after the systems builder's S1034. A foe's health and blow come from its place's tier (1 to 4, worth levels 1, 6, 11 and 16), and no level is read anywhere in a foe's making. The loot's material still follows your level (`rollLoot`: 1 + 0.4 × level + 1.2 × the grade). Left that way, a level-25 character finds Cosmic swords on coast wolves, which is Oblivion's bandit in glass armour, and one chest gives two friends in a shared world different things.
+- **A. By place:** the cap reads the tier's level. The open world gives Bronze at tier 1, Steel at 2 and Adamant at 3; Obsidian and above come only from tier-3 and tier-4 dungeons, lairs and hoards. A coast-only character tops out at Bronze from drops, and the smith and the shops are the way up.
+- **B. By level, as today.** Where you go does not change what you find.
+- **C. By place, with a floor of your level less two materials:** a level-25 character finds at least Obsidian everywhere. It softens A late but keeps half the problem.
+
+Recommendation: **A.** The good things are somewhere, and you go there for them (Morrowind, Elden Ring). It is the brief's "a world that pushes back", and the only option under which one chest is one roll for everyone in a shared world.
+Michael: **By place: the tier sets the metal**. (2026-10-17, issue #394)
+
+*Built, Session 1075 (systems builder):* every loot roll's material cap reads its place's tier level, and so does a lair hoard's gold; a gold pile's count in a chest or on a body still grows with your level, which the answer did not name. `tests/tierloot`.
+
+
 ### Steady (Bow 25): build an aim sway for it to remove, or another perk? (systems builder, Session 982) — DECISION #369
 The build sheet's Bow 25 perk, *Steady*, is "a full draw holds 3 s without sway". The game's bow has no sway: a full draw aims exactly where the crosshair is for as long as you hold it, and only the stamina drain (8 a second) limits the hold. So there is nothing for Steady to take away. Session 982 built the Bow's other three perks (Quick nock, Long eye, Through) and left Steady off; the Skills tab shows it as *not yet in the game*.
 
@@ -643,6 +823,8 @@ The tier would replace the level in `enemyHpScale` and `enemyDmgScale` (and in t
 
 A keeps a region's danger readable (the Wastes are dangerous, the coast is not), and is one Opus session once the resolver is on main.
 Michael: **Build a sway, then Steady**. (16 Oct 2026, on the control room)
+
+Done, Session 1028 (systems builder): `bowSway`, 2° over 2 s after 1 s of full draw, Steady holding 3 s; `tests/bowsway`.
 
 ### The double jump and the air dash — should speed in the air be capped? (the designer, 2026-10-16) — DECISION #370
 The build sheet (`docs/design/double-jump-and-dash-build.md`) sets *Second step* at Acrobatics 75 (a second press of Space sets the rise to 4.5 m/s: apex 1.77 m, about 5 m of gap, 12 stamina) and *Swallow's turn* at 100 (Q in the air: 3.0 m level in 0.2 s, 20 stamina), each once a flight, and builds the places to a table of steps. The table works only if a gap's length depends on Acrobatics alone, and today you fly at full ground speed: at Athletics 100 and Swiftness 40 an untrained jump clears 3.8 m and the double jump 7.4 m.
@@ -665,6 +847,8 @@ What should the three be?
 
 Michael: **Cap air speed at 4.7 m/s for everyone**. (16 Oct 2026, on the control room)
 
+Done, Session 1027 (systems builder): `airCapK`, the take-off frame capped too; `tests/aircap` meets the sheet's 4.7 in the air, 6.2 on the ground, and gaps 2.87, 3.44, 4.85, 4.98.
+
 ### Enemies by place, asked again now that skills have landed: which place is how dangerous? (systems builder, Session 992) — DECISION #373
 On #51 (29 Sep) you answered **C, not yet**: keep foes growing with your level until the skills sessions land. They have (Sessions 940–982: skills by use, the level on marks, the first perks), and 2.0 waits on enemies by place (your 1 B on the scope). Today every foe still grows with your level: health ×(1 + 0.15 a level, to ×3 at 14), and its blow with the reference blow (combat's resolver, PR #356, which keeps an ordinary blow near the same share of your health at your level's kit). Under skills by use that is Oblivion's failure: a character who levels by alchemy and locks meets wolves built for a fighter. And with friends in your world there is no one level to scale to.
 
@@ -676,6 +860,8 @@ The tier would replace the level in `enemyHpScale` and `enemyDmgScale` (and in t
 A keeps a region's danger readable (the Wastes are dangerous, the coast is not), and is one Opus session once the resolver is on main.
 
 Michael: **A danger tier per region, plus the dungeon floor**. (16 Oct 2026, on the control room)
+
+Done, Session 1034 (systems builder): `foeTier`, `worldTierAt`, `dungeonTier` in `74-strikes.js`; `enemyHpScale`/`enemyDmgScale` and the variants' chance read the tier; `tests/dangertier`.
 
 ### Hearing, No mark and Word given: build the rule each takes away, or other perks? (systems builder, Session 1001) — DECISION #376
 The build sheet's last three perks of the hand and the word each change a rule the game does not have, as Steady (#369) did for the bow. Session 1001 built Stealth 100 (*Shadow's hand*, a backstab ×1.5) and left these three off; the Skills tab shows them as *not yet in the game*.

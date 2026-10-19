@@ -500,7 +500,7 @@
   function eyeOnBox(box,reach){if(typeof CAM==='undefined'||!CAM)return false;CAM.updateMatrixWorld();CAM.getWorldDirection(_eyeD);_eyeR.set(CAM.position,_eyeD);
     const tpb=(typeof thirdPerson!=='undefined'&&thirdPerson&&typeof TP!=='undefined')?TP.dist:0;return !!_eyeR.intersectBox(box,_eyeP)&&CAM.position.distanceTo(_eyeP)<=reach+tpb;}
   function wheelAimed(){const w=SHIP.mesh&&SHIP.mesh.userData.wheel;if(!w)return false;w.updateMatrixWorld(true);_eyeB.setFromObject(w).expandByScalar(.15);return eyeOnBox(_eyeB,3.2);}
-  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<2.4&&wheelAimed();}
+  function nearWheel(){return onDeck()&&Math.hypot(px-SHIP.wheel.x,pz-SHIP.wheel.z)<TOUCH&&wheelAimed();}
   function shipInteract(){
     if(climbing())return true;
     if(roofInteract())return true;
@@ -516,8 +516,8 @@
     return false;
   }
   function nearNpcName(){let best=null,bd=3.2;for(const n of npcs){if(n._retreated||!n.g.visible)continue;const d=Math.hypot(n.g.position.x-px,n.g.position.z-pz);if(d<bd){bd=d;best=n;}}return best?`${best.def.name}${best.def.role&&best.def.role!=='Villager'?' — '+best.def.role:''}`:null;}
-  function roofPrompt(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<1.4)return "Press 'E' to climb back down";}return null;}
-  function roofInteract(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<1.4){const hs=ZONES.world.houses.find(x=>x.type==='tower'&&x.siteId===S.site.id);if(!hs)return false;window._pendingPos={x:4.5,z:4.5-2.2+1.0,yaw:0,jumpY:30};goToInterior(hs);return true;}}return false;}
+  function roofPrompt(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH)return "Press 'E' to climb back down";}return null;}
+  function roofInteract(){for(const S of SETTLE.values()){if(!S.roof)continue;if(Math.abs(jumpY-S.roof.y)<1.2&&Math.hypot(px-S.roof.hatch.x,pz-S.roof.hatch.z)<TOUCH){const hs=ZONES.world.houses.find(x=>x.type==='tower'&&x.siteId===S.site.id);if(!hs)return false;window._pendingPos={x:4.5,z:4.5-2.2+1.0,yaw:0,jumpY:30};goToInterior(hs);return true;}}return false;}
   function shipPrompt(){const rp=roofPrompt();if(rp)return rp;const cop=coachPrompt();if(cop)return cop;const sp=shrinePrompt();if(sp)return sp;const fp=fishPrompt();if(fp)return fp;const op=otherPrompt();if(op)return op;if(!SHIP.mesh)return null;if(SHIP.sailing)return "Press 'E' to let go of the wheel";const cp=cabinPrompt();if(cp)return cp;if(nearWheel())return `Press 'E' to pilot the ${SHIP.name}`;if(nearShip())return `Press 'E' to climb aboard the ${SHIP.name}`;return null;}
   // ── sea sounds (use the engine's AX / sfxGain) ──
   const SND={wind:null,windG:null,creakT:0,splashT:0,wasSwim:false};
@@ -557,9 +557,12 @@
     shipUpdatePlacement();
   }
   // Swimming: the water surface is the ground wherever the bed is deep.
-  const SWIM_Y=SEA_Y-.35;
-  function groundY(x,z){const h=worldH(x,z);if(h<SWIM_Y&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
-  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!SHIP.sailing&&worldH(px,pz)<SWIM_Y-.05&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
+  // S1084 (F2b, the water) — in metres for a 1.8 m body: you swim where the water is over 1.40 deep (chest-deep), and the
+  // swimmer's feet hang 1.45 under the surface, so the eye (SCALE.EYE_SWIM 1.65) rides 0.20 over it. They were 0.40 and 0.35,
+  // knee-deep. Water walking still holds you up wherever the water is over 0.35 deep (WALK_WATER), as it did.
+  const SWIM_DEPTH=1.40,SWIM_Y=SEA_Y-1.45,WALK_WATER=SEA_Y-.35;
+  function groundY(x,z){const h=worldH(x,z);if(h<WALK_WATER&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
+  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!SHIP.sailing&&worldH(px,pz)<SEA_Y-SWIM_DEPTH&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
   function onAnyPlatform(){for(const p of ZONES.world.platforms){if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-p.y)<1.2)return true;}return false;}
 
   // ═══ UNDER THE WATER (Session D) ═════════════════════════════════════
@@ -578,10 +581,10 @@
     const fwd=HELD_KEYS.KeyW,down=pitch<-.35,up=pitch>.35||HELD_KEYS.Space;
     let vy=0;
     if(fwd&&down)vy=-2.2;else if((fwd&&up)||HELD_KEYS.Space)vy=2.4;else if(!fwd)vy=.6; // buoyancy
-    DIVE.depth=Math.max(bed+.55,Math.min(SWIM_Y,DIVE.depth+vy*dt));
+    DIVE.depth=Math.min(SWIM_Y,Math.max(bed+.9,DIVE.depth+vy*dt)); /* S1084 (F2b) — a body lying in the water clears the bed by 0.90 (0.55), and never rises over the swimmer's line */
     const under=DIVE.depth<SWIM_Y-.15;
     if(under!==DIVE.under){DIVE.under=under;if(under)splash(false);}
-    if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath')))DIVE.breath=Math.max(0,DIVE.breath-dt/BREATH_S);if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+    if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath')))DIVE.breath=Math.max(0,DIVE.breath-dt/breathSecs()); /* S976 — Long breath (Athletics 50) */if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
     else DIVE.breath=Math.min(1,DIVE.breath+dt/4);
     breathUI();return DIVE.depth;
   }
@@ -644,7 +647,7 @@
     const m=new THREE.Mesh(wreckGeo(pRng(pHash('wreck|'+ch.cx+'|'+ch.cz))),VC_MAT);m.position.set(x,y,z);m.rotation.y=ry;m.castShadow=true;m.receiveShadow=true;ch.group.add(m); // S259 — a broken hull on the kit
     // S259 — the sea chest on the kit (S198's chest, the old box's size), its lid on the hinge
     const chest=new THREE.Group();chest.position.set(x+Math.cos(ry)*2.2,worldH(x+Math.cos(ry)*2.2,z+Math.sin(ry)*2.2),z+Math.sin(ry)*2.2);chest.rotation.set(.08,ry+2.2,-.06);const {lid}=buildChestShell(chest,1.8,0x5a3a1c);ch.group.add(chest);
-    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',1.4,null,1,'wreck:'+chunkKey(ch.cx,ch.cz)+':'+lootDay()):[])||[];
+    let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',1.4,null,1,'wreck:'+chunkKey(ch.cx,ch.cz)+':'+lootDay(),worldTierAt(x,z)):[])||[];
     if(!items.length)items.push({name:'Sea-worn Coins',ico:'🪙',type:'misc',weight:.4,sellMult:1,buyPrice:60});
     items.forEach(it=>{if(it.qty==null)it.qty=1;});
     const cobj={id:'wreck:'+chunkKey(ch.cx,ch.cz),x:chest.position.x,z:chest.position.z,y:chest.position.y+.3,name:'Sea Chest',displayName:'Sea Chest',items,zone:'world',kind:'chest',g:chest,lid,opened:false,_chunk:chunkKey(ch.cx,ch.cz)};
@@ -835,21 +838,21 @@
   function tickArrows(dt){
     for(let i=ARROWS.length-1;i>=0;i--){const a=ARROWS[i];a.t+=dt;const u=Math.min(1,a.t/a.dur);const arc=Math.sin(u*Math.PI)*a.dur*4;
       const x=a.sx+(a.tx-a.sx)*u,z=a.sz+(a.tz-a.sz)*u,y=a.sy+(a.ty-a.sy)*u+arc;a.m.position.set(x,y,z);a.m.lookAt(a.tx,a.ty,a.tz);
-      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){const dmg=_warded(Math.round((6+level*.8)*(blocking?.4:1)));PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
+      if(u>=1){(a.scene||sc).remove(a.m);ARROWS.splice(i,1);if(a.v&&!a.v.hit&&volleyOnDeck(a.tx,a.tz,a.ty)){a.v.hit=true;shipWear(2,3);}if(Math.hypot(px-a.tx,pz-a.tz)<1.6&&Math.abs(jumpY+.6-a.ty)<1.5&&!rollUntouchable(performance.now()/1000)){if(deflectsArrows()){try{sndBlock();}catch(err){}showMsg('🛡 The arrow glances off your shield.','#ffd700');}else{const dmg=_warded(Math.round((6+tierLevel(worldTierAt(a.tx,a.tz))*.8)*(blocking?.4:1))); /* S1036 — the volley grows with the water's tier's level, not yours (#373 A) */PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();showMsg(`An arrow strikes you for ${dmg}.`,'#ff6060');if(typeof sfxNoise==='function')sfxNoise(.12,0,0,.14,900);if(PHP<=0&&typeof playerDead==='function')playerDead();}}}}
   }
   // boarding: E beside another ship (hulls close, or swimming up to her)
   // S638 — her net under the crosshair, or swum against (shipNetSide, 86-world-crime.js); off her deck
   function nearOther(){if(climbing()||jumpY>=4)return null;let best=null,bd=1e9;for(const o of OTHER){if(o.boarded||o.dead)continue;const p=o.plat;const d=Math.hypot(Math.max(p.x0-px,0,px-p.x1),Math.max(p.z0-pz,0,pz-p.z1));const on=d===0&&Math.abs(jumpY-DECK_Y)<1&&(!p.inside||p.inside(px,pz));if(!on&&d<bd&&d<8&&shipNetSide(o.mesh,o.W)){bd=d;best=o;}}return best;}
   function crewUp(o,alert){
     if(o.crew.length)return;
-    for(let k=0;k<3;k++){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const ex=o.x+fwd[0]*(-3+k*3)+(-fwd[1])*(k%2?1:-1)*1.2,ez=o.z+fwd[1]*(-3+k*3)+fwd[0]*(k%2?1:-1)*1.2;const fid=o.id?`${o.id}:crew:${k}`:null;const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',typeof pickVariant==='function'?pickVariant('Pirate',level,'normal',fid?seededRng('variant',fid):undefined):null);if(fid)keyFoe(e,fid);e.alert=!!alert;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
+    for(let k=0;k<3;k++){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const ex=o.x+fwd[0]*(-3+k*3)+(-fwd[1])*(k%2?1:-1)*1.2,ez=o.z+fwd[1]*(-3+k*3)+fwd[0]*(k%2?1:-1)*1.2;const fid=o.id?`${o.id}:crew:${k}`:null;const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',typeof pickVariant==='function'?pickVariant('Pirate',tierLevel(worldTierAt(ex,ez)),'normal',fid?seededRng('variant',fid):undefined):null);if(fid)keyFoe(e,fid);e.alert=!!alert;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
   }
   function boardOther(o,at){
     o.boarded=true;o.speed=0;o._fled=false;
     if(at){px=at.x;pz=at.z;}else{px=o.x;pz=o.z;}jumpY=DECK_Y;onGround=true;velY=0; /* S638 — at the rail she was climbed or landed on */
     if(o.kind==='pirate'){crewUp(o,true);o.crew.forEach(e=>{if(!e.dead)e.alert=true;});showMsg('You board her. The crew turns.','#ff8060');} else if(o.kind==='merchant'){showMsg('A merchantman. Her crew keep their heads down.','#c8b880');}
     if(!o.chest){const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];const cx=o.x+fwd[0]*(-o.L/2+3.2),cz=o.z+fwd[1]*(-o.L/2+3.2);const g=new THREE.Mesh(new THREE.BoxGeometry(.9,.6,.6),new THREE.MeshLambertMaterial({color:0x4a3018}));g.position.set(cx,DECK_Y+.3,cz);sc.add(g);const lid=new THREE.Mesh(new THREE.BoxGeometry(.92,.12,.62),new THREE.MeshLambertMaterial({color:0x7a5a2a}));lid.position.set(cx,DECK_Y+.65,cz);sc.add(lid);
-      let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',o.kind==='pirate'?1.8:1.2,null,1,o.id?`${o.id}:chest`:undefined):[])||[];if(!items.length)items.push({name:'Pirate Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120});
+      let items=(typeof rollContainerLoot==='function'?rollContainerLoot('chest',o.kind==='pirate'?1.8:1.2,null,1,o.id?`${o.id}:chest`:undefined,worldTierAt(o.x,o.z)):[])||[];if(!items.length)items.push({name:'Pirate Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120});
       if(o.kind==='pirate'){const cr=o.id?seededRng('loot',`${o.id}:cargo`):Math.random;const ks=Object.keys(CARGO_GOODS).filter(k=>!CARGO_GOODS[k].hold);items.push({...cargoItem(ks[Math.floor(cr()*ks.length)]),qty:1+(cr()<.5?1:0)});}
       if(o.loot){items.push(...o.loot);o.loot=null;}
       items.forEach(it=>{if(it.qty==null)it.qty=1;});

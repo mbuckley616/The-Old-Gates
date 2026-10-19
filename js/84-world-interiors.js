@@ -23,7 +23,7 @@
   // between you and its near face (the sight line stops short of the leaf on your side, which would block a line to its middle)
   function intDoorAimed(d){if(typeof aimBox!=='function')return true;const b=d.box,nx=Math.cos(d.ang),nz=-Math.sin(d.ang),side=((px-d.x)*nx+(pz-d.z)*nz)<0?-1:1;
     return aimBox((b.x0+b.x1)/2,(b.z0+b.z1)/2,d.y,(b.x1-b.x0)/2,(b.z1-b.z0)/2,1.5,d.x+nx*side*.2,d.z+nz*side*.2);}
-  function intDoorNear(){return INT_DOORS.find(d=>Math.hypot(px-d.x,pz-d.z)<1.5&&Math.abs(jumpY-d.y)<1.3&&intDoorAimed(d))||null;}
+  function intDoorNear(){return INT_DOORS.find(d=>Math.hypot(px-d.x,pz-d.z)<TOUCH&&Math.abs(jumpY-d.y)<1.3&&intDoorAimed(d))||null;}
   function intDoorPrompt(){const d=intDoorNear();if(!d)return null;return d.open?"Press 'E' to close the door":"Press 'E' to open the door";}
   function intDoorInteract(door){ /* S680 — door: the one to work, named (a test, a later host); none, the one in reach under the crosshair */
     const d=door||intDoorNear();if(!d)return false;

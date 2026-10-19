@@ -30,6 +30,7 @@ The design page had 21. Survival B's Smithing makes 22, because Michael named it
 |---|---|---|---|---|
 | Blade (swords, daggers, axes, spears) | Might | a hit on an alert foe | 1; a riposte or finisher 3 | damage × (0.6 + 0.8 × skill/100) |
 | Blunt (maces, clubs, staves, hammers) | Might | as Blade | as Blade | as Blade |
+| Hand-to-hand (bare fists; Michael's C on #357, added by the systems builder, Session 950) | Might | a punch on an alert foe | 1; a riposte or finisher 3 | the fists' 2–3 × (0.6 + 0.8 × skill/100) |
 | Bow | Finesse | an arrow that hits an alert foe | 1; past 30 m, 2 | as Blade |
 | Guard | Resolve | a held block 1, a bash 1, a perfect parry 3 | — | parry window 160 ms + 1 ms a level (combat B) |
 | Athletics | Swiftness | 10 m sprinted or swum | 1 | run 3.83 → 4.2; swim ×0.8 → ×1.3; sprint cost −30% at 100 |
@@ -45,6 +46,8 @@ The design page had 21. Survival B's Smithing makes 22, because Michael named it
 | Woodcutting | Fortitude | a strike 1, a log 4, ten arrows fletched 2 | — | as survival; fletching is everyone's, ten arrows from a log and feathers |
 | Smithing | Might | an ingot 2, a piece made 10 + 5 × tier | — | the tier you can make, on the weapon gates below |
 | Joinery | Finesse | a plank or a spar 2, a patch or splice 6, a bow, staff or shield 15 | — | field repair 60% + 0.4% a level (`sailing.md` A) |
+
+**Hand-to-hand** is the 23rd (Michael's C on #357, 15 Oct: "a 23rd skill with a Might share; the systems builder adds its row and perks"). No archetype's suggested set takes it, so it starts at 5 and a brawl is longer until it is trained; the creator's sheet (session 2) lets any character take it as a major or minor. Its perks follow Blade's and Blunt's: what a fist can do that a blade cannot.
 
 Fortune governs no skill, as Luck in Morrowind governs none. The ×1 point falls on skill 50, so a weapon at 50 hits exactly as today's weapon does without the level bonus. A skill starting at 5 hits at ×0.64, and one at 100 at ×1.4.
 
@@ -93,6 +96,7 @@ Every perk arrives on its own at 25, 50, 75 and 100. Each changes what you can d
 |---|---|---|---|---|
 | Blade | *Draw cut*: the first swing from a sheathed blade does ×2 posture damage | *Long riposte*: the riposte window 0.8 → 1.2 s | *Crossing*: a perfect parry also staggers a second attacker within 3 m | *Clean edge*: a finisher ignores `def` |
 | Blunt | *Weight*: +25% posture damage | *Ringing*: a power hit breaks a raised shield in one blow | *Daze*: a staggered foe stays down 0.6 s longer | *Earthshaker*: the chain's third hit staggers every foe within 2 m |
+| Hand-to-hand | *Hard knuckles*: a punch drains ×1.5 posture | *Throw*: a punch on a staggered foe knocks it down | *Catch the blade*: a perfect parry bare-handed knocks a one-handed weapon from the foe's grip | *Stone hand*: the fists roll 4 to 7 |
 | Bow | *Steady*: a full draw holds 3 s without sway | *Quick nock*: draw 30% faster | *Long eye*: half the drop past 50 m | *Through*: a full-draw arrow passes the first foe |
 | Guard | *Deflect*: a held shield turns arrows | *Bulwark*: a bash drains +50% posture | *Iron wall*: a heavy attack no longer breaks a held block | *Second parry*: within 0.4 s of a perfect parry, the next parry is perfect too |
 | Athletics | *Swimmer*: swim at run speed | *Long breath*: three times the air underwater | *Road legs*: no sprint cost on a road | *Tireless*: stamina regeneration doesn't pause after a sprint |

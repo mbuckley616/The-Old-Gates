@@ -6,6 +6,10 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// S941 (skills and perks A): the weapon's skill carries the damage and the flat level × 1.5 is gone. Every skill is set to 50
+// (×1.0, no perk above 50), so the blows are big enough for the guard, the riposte and the finisher to be told apart.
+// Fists roll 3 here, and the Bandit's armour takes a 3 to 1, where the old level term made it 2; Hand-to-hand 100 (×1.4) gives the 4 the suite was written for.
+await page.evaluate(() => { for (const k in SKILLS) SKILLS[k] = { lv: 50, p: 0 }; SKILLS.hand = { lv: 100, p: 0 }; });
 
 // ── the table: every weapon's light swing keeps today's times (0.55 s × the weight's factor, impact at 0.55, the last third recovery)
 const tbl = await page.evaluate(() => {
@@ -115,6 +119,7 @@ check('through the loop, walking in a swing\'s wind-up goes at ×0.35 of the sam
 // ── the light chain: three in a row, the third ×1.3 damage and ×1.5 posture; lost after 0.4 s idle; a power blow breaks it
 const ch = await page.evaluate(() => {
   const out = {}; const EQk = { ...EQ }; for (const k in EQ) EQ[k] = null; CHAIN.n = 0; CHAIN.endG = -1e9;
+  const hand0 = SKILLS.hand; SKILLS.hand = { lv: 24, p: 0 }; /* S1051 — the chain's fists without Hard knuckles (25) and Stone hand (100), `perkarms` */
   const g0 = playClockS; const seq = []; let t = g0;
   const go = (gap, pow) => { const S = beginSwing(!!pow, () => {}); _pendingStrike = null; seq.push(S.chain); t = S.t0 + S.total + gap; playClockS = t; };
   go(.1); go(.39); go(0); go(0); go(.5); go(.2, true); go(.1);
@@ -125,10 +130,10 @@ const ch = await page.evaluate(() => {
     e.locked = false; e.spd = 0; e.atkCd = 1e9; e.rng = null; e.hp = e.maxHp = 1000; e.def = 0; e.resist = {}; e.combatYaw = Math.atan2(px - e.x, pz - e.z); if (typeof e.posture !== 'number') initPosture(e); e.posture = e.maxPosture = 1000;
     SWING = { t0: playClockS, tell: .3, strike: .06, recovery: .18, total: .55, isPow: false, chain }; _swingStartS = -1e9; ZE = [e];
     try { resolvePlayerStrike(false); } finally { ZE = keepZ; } const r = { lost: 1000 - e.hp, post: 1000 - e.posture }; WORLD.scene.remove(e.mesh); SWING = null; return r; };
-  const raw = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0])) + Math.floor(level * 1.5)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1));
-  const raw3 = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0])) + Math.floor(level * 1.5)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1) * 1.3);
+  const raw = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1));
+  const raw3 = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1) * 1.3);
   out.first = blow(1); out.third = blow(3); out.want = { first: challengeDealt(Math.max(1, raw)), third: challengeDealt(Math.max(1, raw3)) };
-  Math.random = rnd; Object.assign(EQ, EQk); return out;
+  Math.random = rnd; Object.assign(EQ, EQk); SKILLS.hand = hand0; return out;
 });
 console.log(JSON.stringify(ch));
 check('light swings chain 1, 2, 3 within 0.4 s of each other, then start again; 0.5 s idle loses it; a power blow breaks it', JSON.stringify(ch.seq) === JSON.stringify([1, 2, 3, 1, 2, 0, 1]), ch.seq);
@@ -169,16 +174,18 @@ console.log(JSON.stringify(arm));
 check('a blow is × 50/(50 + armour): all of it at 0, 56% at 40, a third at 100 (never 1 by armour alone)', arm.share.every(s => s.got === s.want) && arm.share[2].got > 1, arm.share);
 check('a dungeon foe\'s own blow at 40 armour lands as the share says', arm.armour === 40 && arm.e2e.lost === arm.e2e.want && arm.e2e.lost > 1, arm);
 
-// ── the retune: an ordinary blow at your level's kit is near a sixth of the reference health (Michael's B on #355), level 1 to 20, both places
+// ── the retune: an ordinary blow at your level's kit is near a sixth of the reference health (Michael's B on #355), both places.
+// Since S1034 (enemies by place, #373 A) a foe's blow reads its place's tier, worth the levels 1, 6, 11 and 16: measured at each
+// tier against the kit and health of the tier's level (it was every level from 1 to 20, when the blow read yours).
 const tune = await page.evaluate(() => {
   const L0 = level, rows = [];
-  for (let L = 1; L <= 20; L++) { level = L; const s = enemyDmgScale(), kit = kitRef(L), hp = hpRef(L);
+  for (let T = 1; T <= 4; T++) { const L = tierLevel(T); const s = enemyDmgScale(T), kit = kitRef(L), hp = hpRef(L);
     const dun = Math.round(armourShare(30 * s * foePlaceK({}), kit)), wld = Math.round(armourShare(7 * s * foePlaceK({ dmg: 7 }), kit));
-    rows.push({ L, kit, hp, scale: +s.toFixed(2), dun, wld, dShare: +(dun / hp).toFixed(3), wShare: +(wld / hp).toFixed(3), hitsToFall: Math.ceil(hp / dun) }); }
+    rows.push({ T, L, kit, hp, scale: +s.toFixed(2), dun, wld, dShare: +(dun / hp).toFixed(3), wShare: +(wld / hp).toFixed(3), hitsToFall: Math.ceil(hp / dun) }); }
   level = L0; return rows;
 });
 console.log(JSON.stringify(tune));
-check('an ordinary blow at your level\'s kit lands at 15–18% of your health from level 1 to 20, in the dungeon and the open world: six blows to fall', tune.every(r => Math.abs(r.dShare - 1 / 6) <= 1 / 60 && Math.abs(r.wShare - 1 / 6) <= 1 / 60 && r.hitsToFall === 6), tune);
+check('an ordinary blow at each tier\'s level\'s kit lands at 15–18% of that level\'s health, tiers 1 to 4, in the dungeon and the open world: six blows to fall', tune.every(r => Math.abs(r.dShare - 1 / 6) <= 1 / 60 && Math.abs(r.wShare - 1 / 6) <= 1 / 60 && r.hitsToFall === 6), tune);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -76,6 +76,7 @@ function _enterGame(){
     if(e2.code==='Escape'){e2.preventDefault();openPauseLeaf();return;} // S690 — Esc in play, no panel open: the pause leaf
     K[e2.code]=true;if(['KeyW','KeyS','KeyA','KeyD','KeyF','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e2.code))e2.preventDefault();if(e2.code==='KeyF')castSpell();if(e2.code==='KeyI')openHub('inv');if(e2.code==='KeyE'){e2.preventDefault();interact();}
     if(e2.code==='KeyQ'&&!e2.repeat)startRoll(performance.now()/1000,K); // S275 — the roll
+    if(e2.code==='KeyH'&&!e2.repeat)toggleSheath(); // S1080 — sheathe or draw (#399)
     // S389 — R locks on as the middle button does (Michael's A on #89: a trackpad has no middle button); again, it lets go.
     if(e2.code==='KeyR'&&!e2.repeat){e2.preventDefault();toggleLock();}
     // v63 — Ctrl toggles sneak. Both ControlLeft and ControlRight handled.
@@ -492,7 +493,20 @@ function applyArchetypePreset(id){
   // weapon picker after — but switching archetype resets the weapon to
   // the new archetype's default for sane re-flow.
   _ccState.weaponId = a.defaultWeapon || 'sword';
+  const A=SKILL_ARCH[id]||SKILL_ARCH.warrior;_ccState.majors=A.maj.slice();_ccState.minors=A.min.slice(); /* S952 — the archetype's suggested skills */
+  renderSkillPicker();
 }
+// S952 — the creator's majors and minors (the build sheet's session 2): a skill clicked goes none → major → minor → none,
+// five of each; the archetype suggests a set and any of it can change
+function renderSkillPicker(){const grid=document.getElementById('cc-skill-grid');if(!grid)return;const M=_ccState.majors||[],m=_ccState.minors||[];
+  grid.innerHTML=Object.keys(SKILL_DEF).map(id=>`<span class="cc-skill${M.includes(id)?' maj':m.includes(id)?' min':''}" data-skill="${id}">${SKILL_DEF[id].label}${M.includes(id)?' · 25':m.includes(id)?' · 15':''}</span>`).join('');
+  grid.querySelectorAll('.cc-skill').forEach(el=>el.onclick=()=>ccSkillCycle(el.dataset.skill));
+  const c=document.getElementById('cc-skill-count');if(c)c.textContent=`— majors ${M.length} of 5 (start at 25), minors ${m.length} of 5 (15), the rest at 5`;}
+function ccSkillCycle(id){const M=_ccState.majors,m=_ccState.minors;
+  if(M.includes(id)){M.splice(M.indexOf(id),1);if(m.length<5)m.push(id);}
+  else if(m.includes(id))m.splice(m.indexOf(id),1);
+  else if(M.length<5)M.push(id);else if(m.length<5)m.push(id);
+  renderSkillPicker();}
 function _archetypePrimaries(){
   const a=ARCHETYPES.find(x=>x.id===_ccState.archetypeId);
   return a ? new Set(a.primaries||[]) : new Set();
@@ -701,6 +715,11 @@ function ccBegin(){
   const raw=(nameEl&&nameEl.value||'').trim();
   playerName = raw || 'Traveller';
   playerArchetype = _ccState.archetypeId;
+  skillsInit(playerArchetype,1); // S941 — the archetype's majors at 25, minors at 15, the rest at 5
+  { const A=SKILL_ARCH[playerArchetype]||SKILL_ARCH.warrior,M=(_ccState.majors||A.maj).slice(),m=(_ccState.minors||A.min).filter(k=>!M.includes(k)); // S952 — the skills chosen on the sheet; a set left short is filled from the archetype's
+    for(const k of A.maj.concat(A.min)){if(M.length<5&&!M.includes(k)&&!m.includes(k))M.push(k);}for(const k of A.min.concat(A.maj)){if(m.length<5&&!M.includes(k)&&!m.includes(k))m.push(k);}
+    skillsChoose(M,m); levelMarks=0; levelUps={}; }
+  _ssLoadGen++; // S951 — a new character, like a load: the last one's autosave still in flight keeps its save but not Continue
   // Copy chosen attribute distribution into the live ATTRS.
   for(const k of Object.keys(_ccState.attrs)){
     ATTRS[k] = _ccState.attrs[k]||0;
