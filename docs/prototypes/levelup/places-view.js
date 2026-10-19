@@ -38,6 +38,7 @@ else if (Q.get('place') === 'carriage') await import('./places-carriage-view.js'
 else if (Q.get('place') === 'cellar') await import('./places-cellar-view.js') /* Session 1026: the Gatelands' locked cellar */;
 else if (Q.get('place') === 'erratic') await import('./places-erratic-view.js') /* Session 1031: the Gatelands' perched stone */;
 else if (Q.get('place') === 'unfinished') await import('./places-unfinished-view.js') /* Session 1032: the Mark's unfinished camp */;
+else if (Q.get('place') === 'quarry') await import('./places-quarry-view.js') /* Session 1155: the Gatelands' limestone quarry and its kiln */;
 else if (Q.get('place') === 'towerhouse') await import('./places-towerhouse-view.js') /* Session 1052: the Gatelands' ruined tower house */;
 else if (Q.get('place') === 'clifffort') await import('./places-clifffort-view.js') /* Session 1053: the Mark's cliff fort */;
 else if (Q.get('place') === 'ring') await import('./places-ring-view.js') /* Session 1119: the Weavers' ring of broken arches on a coast (OG-104) */;
