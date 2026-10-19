@@ -926,6 +926,7 @@ function settingRows(){const r=[
   {k:'look',g:'The mouse',w:'Look speed',min:.25,max:3,st:.05,fmt:v=>v.toFixed(2)+'×',note:'at 1×, 0.23° a pixel, as it was; from a quarter to three times'},
   {k:'invert',w:'Up and down',opts:['As is','Inverted'],get:()=>SETTINGS.invert?1:0},
   {k:'renderer',g:'The renderer',w:'Renderer',opts:['As it was','three.js 0.170'],get:()=>rendererChoice()==='new'?1:0,note:rendererNote()}];
+  if(window.OG_LOOK==='new')r.push({k:'quality',w:'Quality',opts:['Low','Middle','High'],get:()=>SETTINGS.quality,note:'the land: grass, shadows, clouds; middle is the budget’s'}); // S1176 (F3): what the new look's land spends
   if(typeof setChallenge==='function'&&typeof challengeStep==='function'&&typeof CHALLENGE_STEPS!=='undefined')
     r.push({k:'challenge',g:'The challenge',w:'How hard the world strikes',opts:CHALLENGE_STEPS,get:()=>challengeStep()});
   return r;}
@@ -935,6 +936,7 @@ function settingSet(row,v){
     else if(row.k==='invert'){SETTINGS.invert=v===1;settingsSave();}
     else if(row.k==='challenge')setChallenge(v);
     else if(row.k==='renderer')setRenderer(v===1?'new':'old',{reload:!started});
+    else if(row.k==='quality'){SETTINGS.quality=v;settingsSave();if(typeof landQuality==='function')landQuality();}
     return;}
   v=Math.max(row.min,Math.min(row.max,Math.round(v/row.st)*row.st));SETTINGS[row.k]=+v.toFixed(2);settingsSave();
   if(['master','music','effects','voices'].includes(row.k)&&typeof applyVolumes==='function')applyVolumes();

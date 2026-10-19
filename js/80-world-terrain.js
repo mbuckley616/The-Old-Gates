@@ -690,6 +690,7 @@
     if(ch.fish){const i=LIFE.fish.indexOf(ch.fish);if(i>=0)LIFE.fish.splice(i,1);}
     ch.herbs.forEach(h=>{if(h.g&&h.g.parent)h.g.parent.remove(h.g);const i=ZONES.world.herbs.indexOf(h);if(i>=0)ZONES.world.herbs.splice(i,1);});ch.herbs.length=0;
     if(ch.loot&&typeof ZONE_CORPSES!=='undefined')ch.loot.forEach(c=>{const i=ZONE_CORPSES.indexOf(c);if(i>=0)ZONE_CORPSES.splice(i,1);});
+    landGrassDrop(ch); // S1176 (F3): the grass's blade and flower are shared by every chunk; only its instances go
     sc.remove(ch.group);
     ch.terrain.dispose();
     ch.group.traverse(o=>{if(o.isInstancedMesh){o.geometry.dispose();o.dispose();}});

@@ -1,4 +1,4 @@
-// Card F3, the land in the new look (Session 1175, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
+// Card F3, the land in the new look (Sessions 1175–1176, js/89-world-land.js): booted on three.js 0.170, the world's chunks are
 // shaded by the land's own material, which paints fields, hedgerows, rock and the woods from afar over groundColor's vertex
 // colour; every chunk carries a per-vertex mask that keeps the fields off roads and out of site stamps; the sky is a gradient
 // dome that follows the clock; the world's frame is tone-mapped (ACES) and graded, and rooms are not. The console stays clean
@@ -29,16 +29,43 @@ check('fields are laid on the open country and never on a road or in a site\'s s
 check('the gradient dome replaces the old sky dome', m.dome && !m.oldDome, m);
 
 // the sky follows the clock: zenith brightest at noon, a warm horizon at dawn and at the golden hour (17.5; on the game's clock the
-// sun is down by 18.5, so 20h is already night), dark at midnight
+// sun is down by 18.5, so 20h is already night), dark at midnight. In clear weather: an overcast greys the zenith toward .5 by
+// design, and the first run of this suite drew a sky that had clouded over (midnight's zenith .131)
 const sky = {};
 for (const h of [6, 12, 17.5, 20, 0]) {
-  sky[h] = await page.evaluate(h => { forceTime(h); for (let i = 0; i < 240; i++) WORLD.tick(1 / 60, performance.now()); const U = LAND.skyMat.uniforms;
+  sky[h] = await page.evaluate(h => { forceTime(h); const wx = WORLD.wx; wx.type = wx.next = 'clear'; wx.k = 1; for (let i = 0; i < 240; i++) WORLD.tick(1 / 60, performance.now()); const U = LAND.skyMat.uniforms;
     const L = c => +(.2126 * c.r + .7152 * c.g + .0722 * c.b).toFixed(3);
     return { zen: L(U.uZen.value), hor: L(U.uHor.value), warm: +(U.uHor.value.r / Math.max(.01, U.uHor.value.b)).toFixed(2), sunY: +U.uSun.value.y.toFixed(2) }; }, h);
 }
 check('the sky follows forceTime: noon\'s zenith brighter than 17.5h\'s, 17.5h\'s than midnight\'s, and 20h and midnight are night', sky[12].zen > sky[17.5].zen && sky[17.5].zen > sky[0].zen && sky[0].zen < .12 && sky[20].zen < .12, sky);
 check('the sun rides the dome: up at noon, down at midnight', sky[12].sunY > .9 && sky[0].sunY < -.9, sky);
 check('the horizon warms at sunrise and at the golden hour and is cooler at noon', sky[6].warm > sky[12].warm && sky[17.5].warm > sky[12].warm, sky);
+
+// Session 1176: grass and wildflowers, streamed with the chunks. Out in the open country west of Dunmore, the chunks in the quality
+// level's ring of the player's own grow instanced blades (a chunk a frame), none on a road, in a stamp or under the sea; the three
+// levels change the counts, the sun's shadow map and the clouds, which are one instanced mesh, one draw call.
+const field = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); let best = null;
+  for (let r = 60; r < 400 && !best; r += 20) for (let a = 0; a < 24; a++) { const x = t.x + Math.cos(a / 24 * 6.283) * r, z = t.z + Math.sin(a / 24 * 6.283) * r; const ri = roadInfo(x, z);
+    if (stampAt(x, z) || (ri && ri.d < 20) || worldH(x, z) < 6) continue; best = { x: Math.round(x), z: Math.round(z) }; break; }
+  px = best.x; pz = best.z; forceTime(11); for (let i = 0; i < 240; i++) WORLD.tick(1 / 60, performance.now()); return best; });
+const grass = () => page.evaluate(() => { const cx = Math.floor(px / CHUNK), cz = Math.floor(pz / CHUNK), Q = landQ(); let chunksG = 0, blades = 0, flowers = 0, most = 0, ringN = 0, bad = 0, checked = 0;
+  const M = new THREE.Matrix4(), v = new THREE.Vector3();
+  for (const ch of chunks.values()) { const inRing = Math.abs(ch.cx - cx) <= Q.ring && Math.abs(ch.cz - cz) <= Q.ring; if (inRing) ringN++; const G = ch.landGrass; if (!G) continue; chunksG++;
+    blades += G.grass.count; most = Math.max(most, G.grass.count); flowers += G.flowers ? G.flowers.count : 0;
+    for (let i = 0; i < G.grass.count; i += 13) { G.grass.getMatrixAt(i, M); v.setFromMatrixPosition(M); const x = v.x + ch.cx * CHUNK, z = v.z + ch.cz * CHUNK; checked++;
+      const ri = roadInfo(x, z); if ((ri && ri.d < ROAD_HALF) || stampAt(x, z) || v.y < SEA_Y) bad++; } }
+  return { level: Q.name, cap: Q.grass, chunksG, ringN, blades, most, flowers, bad, checked, shadow: sun.shadow.mapSize.x, puffs: LAND.clouds ? LAND.clouds.count : 0, cloudMeshes: LAND.clouds ? 1 : 0,
+    row: settingRows().some(r => r.k === 'quality') }; });
+const setQ = q => page.evaluate(q => { const row = settingRows().find(r => r.k === 'quality'); settingSet(row, q); for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now()); }, q);
+const mid = await grass();
+check('grass grows in every chunk of the middle level\'s ring, within its count, with wildflowers among it', mid.level === 'Middle' && mid.chunksG === mid.ringN && mid.ringN >= 4 && mid.blades > 2000 && mid.most <= mid.cap && mid.flowers > 0, { field, ...mid });
+check('no blade stands on a road, in a site\'s stamp or under the sea', mid.checked > 100 && mid.bad === 0, mid);
+check('the clouds are one instanced mesh of puffs (one draw call), and the settings sheet has the Quality row', mid.cloudMeshes === 1 && mid.puffs > 200 && mid.row, mid);
+await setQ(2); const hi = await grass();
+await setQ(0); const lo = await grass();
+await setQ(1); const back = await grass();
+check('the three levels change what the land spends: grass, the shadow map and the clouds', lo.blades === 0 && lo.puffs === 0 && lo.shadow === 1024 && mid.shadow === 2048 && hi.shadow === 4096 && hi.blades > mid.blades * 1.5 && hi.puffs > mid.puffs, { lo, mid, hi });
+check('back at the middle level, the same grass grows again (a chunk\'s blades come from a stream seeded by the chunk)', back.blades === mid.blades && back.flowers === mid.flowers, { mid: mid.blades, back: back.blades });
 
 // the post: the world's frame is tone-mapped and graded, and the renderer is left as it was after it
 const post = await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
